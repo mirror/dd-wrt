@@ -1,0 +1,26 @@
+
+comment "Atheros 802.11(a/b/g) PCI/Cardbus support"
+
+config ATHEROS
+	tristate "Atheros PCI/Cardbus cards"
+	depends on PCI && NET_RADIO && EXPERIMENTAL && HOTPLUG
+	select ATHEROS_HAL
+	select ATHEROS_RATE
+	select NET80211
+       ---help---
+	  Say Y here if you intend to attach an Atheros Cardbus or PCI
+	  wireless Ethernet networking card to your computer.  This
+	  driver support the standard Linux Wireless Extensions.
+
+	  You will also very likely also need the Wireless Tools in order to
+	  configure your card and that /etc/pcmcia/wireless.opts works:
+	  <http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
+
+	  To compile this driver as a module, choose M here: the module will be
+	  called ath_pci.  If unsure, say N.
+
+source "drivers/net/wireless/_ath_hal/Kconfig"
+
+source "drivers/net/wireless/_ath_rate/Kconfig"
+
+source "drivers/net/wireless/net80211/Kconfig"

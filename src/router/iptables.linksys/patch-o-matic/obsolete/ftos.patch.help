@@ -1,0 +1,11 @@
+Author: Matthew G. Marsh <mgm@paktronix.com>
+Status: Obsoleted by new DSCP and ECN targets
+
+This adds CONFIG_IP_NF_TARGET_FTOS option, which allows setting the
+TOS field within the packet to any value between 0x0 and 0xff. This
+includes all legal TOS values. It does not take account of the DiffServ
+split of the field nor does it account for the ECN bit states.
+
+Basically you can set the TOS field to whatever value you want.
+
+

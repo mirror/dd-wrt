@@ -1,0 +1,332 @@
+.\" Process this file with
+.\" groff -man -Tascii ipsecadm.8
+.\"
+.TH IPSECADM 8 "APRIL 2002" Linux "User Manuals"
+.SH NAME
+ipsecadm \- ipsec_tunnel administration
+.SH SYNOPSIS
+.B ipsecadm
+.BI < mode >
+.BI < command >
+.BI [ options ]
+.SH DESCRIPTION
+.B ipsecadm
+is used to add, modify, remove and show IPsec related settings in the
+Linux kernel.
+.LP
+An SA is a contract between two hosts that defines a set of security
+parameters that are use when communicating. Every SA defines a
+security parameter index (SPI) which is a plain 32-bit number. An SA
+is uniquely identified by a source and a destination IP number and an
+SPI. Every IPsec packet contains the SPI unencrypted. The receiving
+IPsec uses the source address, destination address and SPI to know how
+to handle (e.g. decrypt) the packet.
+.LP
+An IPsec tunnel is a special network device that encrypts packets
+transmitted through it, and then adds a new IP header to the packet.
+The source and destination addresses of the new IP header are set when
+creating the tunnel.  After the new IP header is added, the packet is
+re-routed like any normal packet.
+.SH MODES
+The first argument to
+.B ipsecadm
+determines the mode of the application, which can be one of the
+following:
+.IP sa
+.br
+Add, delete or show security associations (SAs).
+.IP tunnel
+.br
+Add, modify, delete or show tunnels.
+.IP stats
+.br
+Show statistics and error counters.
+.IP key
+.br
+Create keys.
+.SH ADDING SECURITY ASSOCIATIONS
+To add a new security association (SA),
+.B ipsecadm sa add
+is used.
+.LP
+The following options are recognized:
+.IP --dst=\fIdestination
+Specifies the IP number used to match the destination of IP packets.
+This is a required option.
+.IP --src=\fIsource
+Specifies the IP number used to match the source of IP packets. This
+is a required option.
+.IP --spi=\fIspi
+Specifies the SPI. The SPI is added to outgoing packets, and used to
+match incoming packets. This is a required option.
+.IP --cipher=\fIcipher
+Specifies the name of the cipher to use for this SA. Either this
+option or the
+.I --digest
+option is required; you may specify both. If you specify this
+option, you must also specify a key using either the
+.I --cipher-key
+or the
+.I --cipher-keyfile
+option.
+.IP --cipher-key=\fIkey
+Specifies the cipher key to use as a hexadecimal string. The size of
+the key depends on the cipher. Note that it is recommended to store the
+key in a file and use the
+.I --cipher-keyfile
+option instead, since the command line can be visible to ordinary
+users on the same system.
+.IP --cipher-keyfile=\fIfile
+Specifies the name of a file containing a binary cipher key.
+.IP --digest=\fIdigest
+Specifies the name of the digest to use for this SA. Either this
+option or the
+.I --cipher
+option is required; you may specify both. If you specify this
+option, you must also specify a key using either the
+.I --digest-key
+or the
+.I --digest-keyfile
+option.
+.IP --digest-key=\fIkey
+Specifies the digest key to use as a hexadecimal string. The size of
+the key depends on the digest. Note that it is recommended to store the
+key in a file and use the
+.I --digest-keyfile
+option instead, since the command line can be visible to ordinary
+users on the same system.
+.IP --digest-keyfile=\fIfile
+Specifies the name of a file containing a binary digest key.
+.IP --digest-hmac=\fIsize
+Specify the number of HMAC bits. The default value is 96 bits.
+.IP --duplex
+Create a pair of SAs with the local and remote addresses mirrored.
+.SH DELETING SECURITY ASSOCIATIONS
+To delete security associations,
+.B ipsecadm sa del
+is used. This command will delete all SAs matching the specified
+options. In order to delete all SAs, the option
+.I --all
+must be used.
+.LP
+The following options are recognized:
+.IP --all
+Delete all SAs.
+.IP --dst=\fIdestination
+Specifies the IP number used to match the destination of IP packets.
+This is a required option if
+.I --all
+is not used.
+.IP --src=\fIsource
+Specifies the IP number used to match the source of IP packets. This
+is a required option if
+.I --all
+is not used.
+.IP --spi=\fIspi
+Specifies the SPI. The SPI is added to outgoing packets, and used to
+match incoming packets.
+.IP --duplex
+Delete a pair of SAs with the local and remote addresses mirrored.
+.SH SHOWING SECURITY ASSOCIATIONS
+To show information on SAs,
+.B ipsecadm sa show
+is used. The command will show all SAs that match the specified
+options. If no option is specified, all SAs are shown.
+.LP
+The following options are recognized:
+.IP --dst=\fIdestination
+Specifies the IP number used to match the destination of IP packets.
+.IP --src=\fIsource
+Specifies the IP number used to match the source of IP packets.
+.IP --spi=\fIspi
+Specifies the SPI. The SPI is added to outgoing packets, and used to
+match incoming packets.
+.SH ADDING TUNNELS
+To add a new IPsec tunnel,
+.B ipsecadm tunnel add
+is used. Each tunnel must have a unique combination of local and
+remote addresses. If either address is omitted it is acting as a
+wildcard address for incoming packets. It is optional to specify the
+SPI. If omitted, any SA matching the local and remote address of the
+packet is used.
+.LP
+The following options are recognized:
+.IP --local=\fIlocal
+Specifies the local IP number. It is used as a source address for the
+outer IP header when sending packets, and is matched with the
+destination address of incoming IPsec tunnel packets. If not
+specified, the inner source address is also used as the outer
+source address for outgoing packets, and the tunnel will match any
+destination address of
+incoming IPsec packets.
+.IP --remote=\fIremote
+Specifies the remote IP number. It is used as a destination address
+for the outer IP header when sending packets, and is matched with the
+source address of incoming IPsec tunnel packets. If not specified,
+the inner destination address is also used as the outer destination
+address for outgoing packets, and
+the tunnel will match any source address of incoming IPsec
+packets.
+.IP --spi=\fIspi
+Force the use of a certain SPI. If not specified, the SPI of the
+first SA matching the destination and source addresses is used.
+.IP --nextdev=\fIdev
+Specifies the next device for outgoing packets. Use this option to
+avoid loops when the outer destination address of a packet would cause
+the packet to be routed to the same IPsec device after encapsulation.
+.SH MODIFYING TUNNELS
+To modify IPsec tunnels,
+.B ipsecadm tunnel modify
+is used. This command accepts the same options as the
+.B ipsecadm tunnel add
+command.
+.SH DELETING TUNNELS
+To delete an IPsec tunnel,
+.B ipsecadm tunnel del
+is used. It takes one argument, which is either the name of an IPsec
+tunnel device, or
+.I --all
+to delete all tunnels.
+.SH SHOWING TUNNELS
+To show information on a tunnel,
+.B ipsecadm tunnel show
+is used. It takes one optional argument, which is the name of the IPsec
+tunnel to show. If omitted, all IPsec tunnels will be shown.
+.SH SHOWING STATISTICS
+To show all ipsec_tunnel statistics,
+.B ipsecadm stats show
+is used. It is a very useful tool to find out the cause of problems
+with IPsec tunnels.
+.SH CREATING KEYS
+To create keys used for authentication and encryption,
+.B ipsecadm key create
+is used. This is especially useful when creating DES and 3DES keys
+which contain parity bits. Creation of weak keys is avoided for most
+algorithms. The key files are created with the permission bits set to
+only allow access by the user creating the key. The algorithm for
+which the key is going to be used is specified by the first
+argument. The following algorithms are known:
+.IP generic
+.br
+Generate a generic key of any size. The
+.I --bits
+option must be used to specify the size of the key in bits. No tests
+are made for weak keys (since the algorithm is unknown).
+.IP des
+.br
+Generate a DES key. The key size is 64 bits by default, but only 56
+bits are used since 8 bits are used for parity bits. Weak keys will
+not be generated.
+.IP 3des
+.br
+Generate a 3DES (i.e. tripple-DES) key. The key size is 192 bits, but
+only 168 bits are used since 24 bits are used for parity bits. Weak
+keys will not be generated.
+.IP md5
+.br
+Generate an MD5 key. The default key size is 128 bits.
+.IP sha1
+.br
+Generate an SHA-1 key. The default key size is 160 bits.
+.LP
+The following options are recognized:
+.IP --file=\fIfilename
+Name of the file where the key is stored. The file must not
+exist. This is a required option for all algorithms.
+.IP --bits=\fIkeysize
+Size of the key in bits. This option is required by some algorithms
+(e.g. generic), but not by all.
+.SH EXAMPLES
+In the examples below there are two hosts A and B. Host A has the
+external IP address 1.2.3.4 and a local private network 10.1.1.1/24.
+Host B has the external IP address 5.6.7.8 and a local private network
+10.2.2.1/24. All commands are entered on host A.
+.LP
+Create a 3DES key:
+.IP
+ipsecadm key create 3des --file=demo.ciph.key
+.LP
+Add two SAs for communication between hosts A and B using SPI 0x1000:
+.IP
+ipsecadm sa add --src=1.2.3.4 --dst=5.6.7.8 \\
+.br
+    --spi=0x1000 --cipher=3des-cbc \\
+.br
+    --cipher-keyfile=demo.ciph.key \\
+.br
+    --duplex
+.LP
+Show a list of all SAs:
+.IP
+ipsecadm sa show
+.LP
+Create a tunnel named ipsecB between host A and B:
+.IP
+ipsecadm tunnel add ipsecB \\
+.br
+    --local=1.2.3.4 --remote=5.6.7.8
+.LP
+Give the new tunnel an IP number:
+.IP
+ifconfig ipsecB 10.1.1.1 up
+.LP
+Route all traffic to the private network at host B through the IPsec
+tunnel:
+.IP
+route add -net 10.2.2.0/24 dev ipsecB
+.LP
+Verify that it works:
+.IP
+ping 10.2.2.1
+.LP
+Delete the tunnel:
+.IP
+ipsecadm tunnel del ipsecB
+.LP
+Delete the two SAs:
+.IP
+ipsecadm sa del --src=1.2.3.4 --dst=5.6.7.8 \\
+.br
+    --spi=0x1000 --duplex
+.LP
+Sometimes you want the outer (new) IP header destination address to be
+the same as the inner destination address. An example of this occurs
+when you want to tunnel packets between two hosts on the same
+network. Let us add the host C with the IP address 1.2.3.5, which is
+on the same local network as host A. To create a tunnel on host A to
+host C, you might want to do it like this:
+.IP
+ipsecadm tunnel add t1 --local=1.2.3.4 \\
+.br
+    --remote=1.2.3.5
+.br
+route add -host 1.2.3.5 dev t1
+.LP
+The problem with this approach is that when sending a packet to host
+C, the routing table will send the packet to t1 which will add the new
+destination address 1.2.3.5. If we tried to route this packet we
+would send it back to t1, and we would have a routing loop. Instead,
+we must specify the next network interface to send the packet to when
+creating the tunnel:
+.IP
+ipsecadm tunnel add t1 --local=1.2.3.4 \\
+.br
+    --remote=1.2.3.5 --nextdev=eth0
+.br
+route add -host 1.2.3.5 dev t1
+.LP
+This time it works!
+.SH DIAGNOSTICS
+All commands will hopefully generate meaningful error messages on all
+possible errors.
+.SH BUGS
+To be discovered...
+.SH AUTHOR
+Tobias Ringström <tobias@ringstrom.mine.nu>
+.SH CONTRIBUTORS
+.IP "Norman Shulman <norm@arcturusnetworks.com>"
+Authentication support, code review and bug fixes.
+.SH "SEE ALSO"
+.BR ifconfig (8),
+.BR ip (8),
+.BR route (8)

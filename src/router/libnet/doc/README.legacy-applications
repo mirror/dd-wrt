@@ -1,0 +1,29 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+    All legacy applications written on top of libnet that have NOT been
+    modified to make use of the libnet-config script will fail.  This is
+    because as of version 0.99e libnet needs to have an endian-ness defined
+    (handled by the script).  You'll know you have this problem if you see an
+    error like:
+
+/usr/include/libnet.h:89: #error "byte order has not been specified, you'll
+need to #define either LIBNET_LIL_ENDIAN or LIBNET_BIG_ENDIAN.  See the
+documentation regarding the libnet-config script."
+
+    To remedy this, add to your Makefile something like:
+
+DEFINES     =  `libnet-config --defines` <OTHER_DEFINES_HERE...>
+
+    Or, if you're compiling at the command line, simply do something like:
+
+host:~> gcc -Wall `libnet-config --defines` foo.c `libnet-config --libs`
+
+    For more information on the libnet-config script, see README.libnet-config.
+
+    Also, by version 1.0, expect support for the older style naming
+    nomenclature to be removed.
+
+EOF

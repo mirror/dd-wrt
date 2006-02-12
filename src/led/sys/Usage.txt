@@ -1,0 +1,45 @@
+LEDs.o
+
+   Usage:
+   ====================================================
+   insmod LEDs.o [PowerLED=X]  [ConnectedLED=Y] [RegID=Z]
+   where X and Y are:
+      0: Turn off the LED.
+         This is assumed if that LED parameter is not present.
+      1: Turn on the LED
+     -1: Disable the LED GPIO output.
+
+   Z is 0~4, the GPIO Register to use for LED control. Default is 0.
+     This shall be issued if the LEDs are not working properly.
+     It happens when multiple programs are accessing the GPIOs
+     by the *same* register. To solve the above problem, you
+     need to *guess* which one is not used by looking at the LED
+     behaviors.
+     Once you have chosen, e.g. 2, You shall always use RegID=2
+     for LED control.
+
+   Example:
+   ===========================================
+   Turn on Both LEDs:
+      insmod ./LEDs.o PowerLED=1 ConnectedLED=1
+      rmmod LEDs
+   Turn on PowerLED, turn off ConnectedLED:
+      insmod ./LEDs.o PowerLED=1 ConnectedLED=0
+      (or equivalently: insmod ./LEDs.o PowerLED=1)
+      rmmod LEDs
+   Turn off PowerLED, turn on ConnectedLED:
+      insmod ./LEDs.o PowerLED=0 ConnectedLED=1
+      (or equivalently: insmod ./LEDs.o ConnectedLED=1)
+      rmmod LEDs
+   Turn off Both LEDs
+      insmod ./LEDs.o PowerLED=0 ConnectedLED=0
+      (or equivalently: insmod ./LEDs.o)
+      rmmod LEDs
+   Disable the LED GPIO output:
+      insmod ./LEDs.o PowerLED=-1 ConnectedLED=-1
+      rmmod LEDs
+
+   Note
+   ================================================
+   rmmod LEDs must be executed before next insmod.
+   

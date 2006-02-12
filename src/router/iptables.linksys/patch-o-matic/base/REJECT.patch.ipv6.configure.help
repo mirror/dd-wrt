@@ -1,0 +1,9 @@
+CONFIG_IP6_NF_FILTER
+REJECT target support
+CONFIG_IP6_NF_TARGET_REJECT
+  The REJECT target allows a filtering rule to specify that an ICMPv6
+  error should be issued in response to an incoming packet, rather
+  than silently being dropped.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

@@ -1,0 +1,13 @@
+diff -ur linux.current/net/ipv4/netfilter/ipt_multiport.c linux-mine/net/ipv4/netfilter/ipt_multiport.c
+--- linux-2.4.19-rc1/net/ipv4/netfilter/ipt_multiport.c	Tue Jun 20 23:32:27 2000
++++ linux/net/ipv4/netfilter/ipt_multiport.c	Tue Jul  9 10:43:23 2002
+@@ -78,7 +78,7 @@
+ 
+ 	/* Must specify proto == TCP/UDP, no unknown flags or bad count */
+ 	return (ip->proto == IPPROTO_TCP || ip->proto == IPPROTO_UDP)
+-		&& !(ip->flags & IPT_INV_PROTO)
++		&& !(ip->invflags & IPT_INV_PROTO)
+ 		&& matchsize == IPT_ALIGN(sizeof(struct ipt_multiport))
+ 		&& (multiinfo->flags == IPT_MULTIPORT_SOURCE
+ 		    || multiinfo->flags == IPT_MULTIPORT_DESTINATION
+

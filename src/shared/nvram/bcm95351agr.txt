@@ -1,0 +1,111 @@
+# BCM95351AGR sdram board
+# Copyright 2005, Broadcom Corporation
+# All Rights Reserved.
+# 
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+# $Id$
+boardtype=0x0470
+boardnum=${serno}
+boardflags=0x1358
+boardflags2=0
+# Board revision 1.0
+boardrev=0x10
+# SROM version
+sromrev=2
+
+# MIPS clock frequency in MHz
+clkfreq=200
+
+# 16 MB SDR SDRAM (4 Meg x 16 x 2)
+sdram_init=0x0000
+sdram_config=0x22
+sdram_refresh=0x0
+sdram_ncdl=0
+
+# Ethernet w/Robo switch
+et0macaddr=00:90:4c:9c:${maclo}
+et0phyaddr=30
+et0mdcport=0
+
+# Bootloader variables
+dl_ram_addr=a0001000
+os_ram_addr=80001000
+os_flash_addr=bfc40000
+lan_ipaddr=192.168.1.1
+lan_netmask=255.255.255.0
+scratch=a0180000
+boot_wait=on
+reset_gpio=3
+
+# Watchdog timer in ms
+watchdog=3000
+
+# Robo switch config (vlan0:LAN, vlan1:WAN)
+vlan0ports=1 2 3 4 5*
+vlan0hwname=et0
+vlan1ports=0 5u
+
+# Bootloader and OS glue
+landevs=vlan0 wl0 wl1
+wandevs=et0
+
+# SES parameters
+# gpio12=ses_led
+gpio2=ses_button
+
+#
+# -- on-chip d11 device parameters
+#
+
+# single band d11 device
+wl0id=0x4320
+
+# 802.11g parameters
+il0macaddr=00:90:4c:9d:${maclo}
+aa0=1
+ag0=255
+pa0maxpwr=80
+pa0itssit=62
+pa0b0=0x1780
+pa0b1=0xfa7a
+pa0b2=0xfea5
+opo=12
+
+# Commons wireless parameters
+ccode=0
+
+# Wireless LED GPIO mapping/behavior
+wl0gpio2=0
+
+#
+# --- off-chip d11 device parameters ---
+#
+
+# PCI config fix
+pci/1/1/b0w=0x18001000
+
+# dual band d11 device
+pci/1/1/wl0id=0x4318
+
+# 802.11a parameters
+pci/1/1/il0macaddr=00:90:4c:9e:${maclo}
+pci/1/1/aa0=1
+pci/1/1/ag0=255
+pci/1/1/pa0maxpwr=80
+pci/1/1/pa0itssit=62
+pci/1/1/pa0b0=0x1780
+pci/1/1/pa0b1=0xfa7a
+pci/1/1/pa0b2=0xfea5
+pci/1/1/opo=12
+
+# Commons wireless parameters
+pci/1/1/ccode=0
+
+# Wireless LED GPIO mapping/behavior
+pci/1/1/wl0gpio0=2
+pci/1/1/wl0gpio1=3
+pci/1/1/wl0gpio2=0
+

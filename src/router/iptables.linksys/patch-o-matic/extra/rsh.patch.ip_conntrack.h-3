@@ -1,0 +1,2 @@
+	/* insert conntrack helper private data (master) here */
+	struct ip_ct_rsh_master ct_rsh_info;

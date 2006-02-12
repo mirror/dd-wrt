@@ -1,0 +1,35 @@
+#!/bin/sh
+REMOTESUB=$(/usr/sbin/nvram get pptpd_client_srvsub)
+REMOTENET=$(/usr/sbin/nvram get pptpd_client_srvsubmsk)
+case "$6" in
+ kelokepptpd)
+  /sbin/route del -net $REMOTESUB netmask $REMOTENET dev $1
+  /usr/sbin/iptables -D OUTPUT --source 0.0.0.0/0.0.0.0 --destination $REMOTESUB/$REMOTENET --jump ACCEPT --out-interface $1
+  /usr/sbin/iptables -D INPUT --source $REMOTESUB/$REMOTENET --destination 0.0.0.0/0.0.0.0 --jump ACCEPT --in-interface $1
+  /usr/sbin/iptables -D FORWARD --source 0.0.0.0/0.0.0.0 --destination $REMOTESUB/$REMOTENET --jump ACCEPT --out-interface $1
+  /usr/sbin/iptables -D FORWARD --source $REMOTESUB/$REMOTENET --destination 0.0.0.0/0.0.0.0 --jump ACCEPT --in-interface $1
+  /usr/sbin/iptables --table nat -D POSTROUTING --out-interface $1 --jump MASQUERADE
+  /usr/sbin/iptables -D FORWARD --protocol tcp --tcp-flags SYN,RST SYN --jump TCPMSS --clamp-mss-to-pmtu 
+  ;;
+  pptpsnotlocal) 
+   PPTPSERVERNET=`cat /tmp/pptpd_client/pptpservernet`
+   OLDDEFROUTE=`cat /tmp/pptpd_client/olddefaultroute`
+   /sbin/route delete default
+   /sbin/route add default gw ${OLDDEFROUTE}
+   /sbin/route del -net ${PPTPSERVERNET} netmask 255.255.255.0 gw ${OLDDEFROUTE}
+   /usr/sbin/iptables --table nat -D POSTROUTING --out-interface $1 --jump MASQUERADE
+   /usr/sbin/iptables -D FORWARD -o $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+   /usr/sbin/nvram unset pptpd_client_info_localip
+   /usr/sbin/nvram unset pptpd_client_info_remoteip
+   /usr/sbin/nvram set pptpd_connected=0
+   if /usr/bin/test -f /tmp/pptpd_client/old_wan_get_dns
+   then
+	OLD_WAN_GET_DNS=$(/bin/cat /tmp/pptpd_client/old_wan_get_dns)
+	/usr/sbin/nvram set wan_get_dns="${OLD_WAN_GET_DNS}"
+	/sbin/restart_dns
+	/bin/rm /tmp/pptpd_client/old_wan_get_dns
+   fi
+  ;;
+  *)
+esac   
+exit 0 

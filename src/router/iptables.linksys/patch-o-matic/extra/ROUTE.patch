@@ -1,0 +1,342 @@
+diff -Nru linux.orig/include/linux/netfilter_ipv4/ipt_ROUTE.h linux/include/linux/netfilter_ipv4/ipt_ROUTE.h
+--- linux.orig/include/linux/netfilter_ipv4/ipt_ROUTE.h	Thu Jan  1 01:00:00 1970
++++ linux/include/linux/netfilter_ipv4/ipt_ROUTE.h	Thu Nov 21 10:36:35 2002
+@@ -0,0 +1,17 @@
++/* Header file for iptables ipt_ROUTE target
++ *
++ * (C) 2002 by Cédric de Launois <delaunois@info.ucl.ac.be>
++ *
++ * This software is distributed under GNU GPL v2, 1991
++ */
++#ifndef _IPT_ROUTE_H_target
++#define _IPT_ROUTE_H_target
++
++#define IPT_ROUTE_IFNAMSIZ 16
++
++struct ipt_route_target_info {
++	char ifname[IPT_ROUTE_IFNAMSIZ];
++	unsigned int ipto;
++};
++
++#endif /*_IPT_ROUTE_H_target*/
+diff -Nru linux.orig/net/ipv4/netfilter/ipt_ROUTE.c linux/net/ipv4/netfilter/ipt_ROUTE.c
+--- linux.orig/net/ipv4/netfilter/ipt_ROUTE.c	Thu Jan  1 01:00:00 1970
++++ linux/net/ipv4/netfilter/ipt_ROUTE.c	Fri Nov 22 14:53:06 2002
+@@ -0,0 +1,317 @@
++/*
++ * This is a module which is used for directly sending a received packet to
++ * an interface or a host specified by the user. This target NEVER modifies 
++ * packets but allows a different routing scheme than the one provided by 
++ * the standard kernel routing table.
++ *
++ * Based on code from: ipt_MIRROR.c and various sources.
++ *
++ * Copyright (C) 2002 Cedric de Launois <delaunois@info.ucl.ac.be>
++ *
++ * This software is distributed under GNU GPL v2, 1991
++ */
++
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_ROUTE.h>
++#include <linux/netdevice.h>
++#include <linux/route.h>
++#include <net/ip.h>
++#include <net/icmp.h>
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++
++/* Try to route the packet according to the routing keys specified in
++ * route_info. Keys are :
++ *  - ifindex : 
++ *      0 if no oif prefered, 
++ *      otherwise set to the index of the desired oif
++ *  - route_info->ipto :
++ *      0 if no gateway specified,
++ *      otherwise set to the next host to which the pkt must be routed
++ * If success, skb->dev is the output device to which the packet must 
++ * be sent and skb->dst is not NULL
++ *
++ * RETURN: -1 if an error occured
++ *          1 if the packet was succesfully routed to the 
++ *            destination desired
++ *          0 if the kernel routing table could not route the packet
++ *            according to the keys specified
++ */
++static int route(struct sk_buff *skb,
++		 unsigned int ifindex,
++		 const struct ipt_route_target_info *route_info)
++{
++	int err;
++	struct rtable *rt;
++        struct iphdr *iph = skb->nh.iph;
++	struct rt_key key = { 
++		dst:iph->daddr,
++		src:0,
++		oif:ifindex, 
++		tos:RT_TOS(iph->tos) 
++	};
++
++	/* The destination address may be overloaded by the target */
++	if (route_info->ipto)
++		key.dst = route_info->ipto;
++
++	/* Trying to route the packet with the standard routing table. */
++	if ((err = ip_route_output_key(&rt, &key))) {
++		DEBUGP("ipt_ROUTE: couldn't route pkt (err: %i)",err);
++		return -1;
++	}
++
++	/* Success if no oif specified or if the oif correspond to the 
++	 * one desired */
++	if (!ifindex || rt->u.dst.dev->ifindex == ifindex) {
++		/* Drop old route. */
++		dst_release(skb->dst);
++		skb->dst = &rt->u.dst;
++		skb->dev = skb->dst->dev;
++		return 1;
++	}
++
++	/* The interface selected by the routing table is not the one
++	 * specified by the user. This may happen because the dst address
++	 * is one of our own addresses. This module makes it possible to
++	 * reroute such packets by forcing the device to use.
++	 */
++	DEBUGP("ipt_ROUTE: failed to route as desired (oif: %i)", 
++	       rt->u.dst.dev->ifindex);
++
++	return 0;
++}
++
++
++/* Stolen from ip_finish_output2
++ * PRE : skb->dev is set to the device we are leaving by
++ *       skb->dst is not NULL
++ * POST: the packet is sent with the link layer header pushed
++ */
++static inline int ip_direct_send(struct sk_buff *skb)
++{
++	struct dst_entry *dst = skb->dst;
++	struct hh_cache *hh;
++
++	hh = dst->hh;
++	if (hh) {
++		read_lock_bh(&hh->hh_lock);
++		memcpy(skb->data - 16, hh->hh_data, 16);
++		read_unlock_bh(&hh->hh_lock);
++		skb_push(skb, hh->hh_len);
++		return hh->hh_output(skb);
++	} else if (dst->neighbour)
++		return dst->neighbour->output(skb);
++
++	if (net_ratelimit())
++		DEBUGP(KERN_DEBUG "ipt_ROUTE: no hdr & no neighbour cache!\n");
++	kfree_skb(skb);
++	return -EINVAL;
++}
++
++
++/* PRE : skb->dev is set to the device we are leaving by
++ * POST: - the packet is directly sent to the skb->dev device, without 
++ *         pushing the link layer header.
++ *       - skb has been freed !!
++ */
++static inline int dev_direct_send(struct sk_buff *skb)
++{
++	return dev_queue_xmit(skb);
++}
++
++
++static unsigned int ipt_route_target(struct sk_buff **pskb,
++				      unsigned int hooknum,
++				      const struct net_device *in,
++				      const struct net_device *out,
++				      const void *targinfo,
++				      void *userinfo)
++{
++	const struct ipt_route_target_info *route_info = targinfo;
++	struct net_device *dev_out = NULL;
++	struct sk_buff *skb = *pskb;
++	unsigned int ifindex = 0;
++
++	if (!route_info->ipto && !route_info->ifname[0]) {
++		DEBUGP(KERN_DEBUG "ipt_ROUTE: missing argument!\n");
++		return NF_ACCEPT;
++	}
++
++	/* raw socket (tcpdump) may have clone of incoming
++	 * skb: don't disturb it
++	 */
++	if (skb_cloned(skb) && !skb->sk) {
++		struct sk_buff *nskb = skb_copy(skb, GFP_ATOMIC);
++		if (!nskb)
++			return NF_DROP;
++		kfree_skb(skb);
++		skb = nskb;
++	}
++
++	/* If we are at PREROUTING hook
++	 * the TTL isn't decreased by the IP stack
++	 */
++	if (hooknum == NF_IP_PRE_ROUTING) {
++		struct iphdr *iph = skb->nh.iph;
++
++		if (iph->ttl <= 1) {
++			struct rtable *rt;
++
++			if (ip_route_output(&rt, iph->saddr, iph->daddr,
++					    RT_TOS(iph->tos) | RTO_CONN,
++					    0)) {
++				return NF_DROP;
++			}
++
++			if (skb->dev == rt->u.dst.dev) {
++				/* Drop old route. */
++				dst_release(skb->dst);
++				skb->dst = &rt->u.dst;
++
++				/* this will traverse normal stack, and 
++				 * thus call conntrack on the icmp packet */
++				icmp_send(skb, ICMP_TIME_EXCEEDED, 
++					  ICMP_EXC_TTL, 0);
++			}
++
++			return NF_DROP;
++		}
++
++		ip_decrease_ttl(iph);
++	}
++
++	/* Tell conntrack to forget this packet since it may get confused 
++	 * when a packet is leaving with dst address == our address.
++	 * Good idea ? Dunno. Need advice.
++	 */
++	nf_conntrack_put(skb->nfct);
++	skb->nfct = NULL;
++	skb->nfcache = 0;
++#ifdef CONFIG_NETFILTER_DEBUG
++	skb->nf_debug = 0;
++#endif
++
++	if (route_info->ifname[0]) {
++		/* The user set the interface name to use.
++		 * Getting the current interface index.
++		 */
++		if ((dev_out = dev_get_by_name(route_info->ifname)))
++			ifindex = dev_out->ifindex;
++		else 
++			/* Unknown interface name : packet dropped */
++			return NF_DROP;
++
++	}
++
++	DEBUGP(KERN_DEBUG "Index of %s is %i\n", route_info->ifname, ifindex);
++
++	/* Trying the standard way of routing packets */
++	if (route(skb, ifindex, route_info)==1) {
++		DEBUGP(KERN_DEBUG "ROUTE ok, skb->dev->index=%i\n",
++		       skb->dev->ifindex);
++
++		if (dev_out) dev_put(dev_out);
++		if (ip_direct_send(skb) == -EINVAL) return NF_DROP;
++		return NF_STOLEN;
++	}
++
++	if (!route_info->ifname[0]) {
++		if (dev_out) dev_put(dev_out);
++		return NF_DROP;
++	}
++
++	/* Failed to correctly route. Trying the hard way */
++
++	DEBUGP(KERN_DEBUG "HARD ROUTING\n");
++
++	/* Drop old route. */
++	dst_release(skb->dst);
++	skb->dst = NULL;
++
++	/* We have to force the use of an interface.
++	 * This interface must be a tunnel interface since
++	 * otherwise we can't guess the hw address for
++	 * the packet. For a tunnel interface, no hw address
++	 * is needed.
++	 */
++	if ((dev_out->type != ARPHRD_TUNNEL)
++	    && (dev_out->type != ARPHRD_IPGRE)) {
++		DEBUGP("ipt_ROUTE: can't guess the hw addr !\n");
++		dev_put(dev_out);
++		return NF_DROP;
++	}
++	
++	/* Send the packet. This will also free skb ! 
++	 * Do not go through the POST_ROUTING hook because 
++	 * skb->dst is not set and because it will probably
++	 * get confused by the destination IP address.
++	 */
++	skb->dev = dev_out;
++	dev_direct_send(skb);
++	dev_put(dev_out);
++	
++	return NF_STOLEN;
++}
++
++
++static int ipt_route_checkentry(const char *tablename,
++				 const struct ipt_entry *e,
++				 void *targinfo,
++				 unsigned int targinfosize,
++				 unsigned int hook_mask)
++{
++	if (strcmp(tablename, "mangle") != 0) {
++		printk("ipt_ROUTE: bad table `%s', use the `mangle' table.\n",
++		       tablename);
++		return 0;
++	}
++
++	if (hook_mask & ~(  (1 << NF_IP_PRE_ROUTING)
++			  | (1 << NF_IP_FORWARD)
++			  | (1 << NF_IP_POST_ROUTING))) {
++		printk("ipt_ROUTE: bad hook\n");
++		return 0;
++	}
++
++	if (targinfosize != IPT_ALIGN(sizeof(struct ipt_route_target_info))) {
++		printk(KERN_WARNING "ipt_ROUTE: targinfosize %u != %Zu\n",
++		       targinfosize,
++		       IPT_ALIGN(sizeof(struct ipt_route_target_info)));
++		return 0;
++	}
++
++	return 1;
++}
++
++
++static struct ipt_target ipt_route_reg
++= { { NULL, NULL }, "ROUTE", ipt_route_target, ipt_route_checkentry, NULL,
++    THIS_MODULE };
++
++
++static int __init init(void)
++{
++	if (ipt_register_target(&ipt_route_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++
++static void __exit fini(void)
++{
++	ipt_unregister_target(&ipt_route_reg);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");

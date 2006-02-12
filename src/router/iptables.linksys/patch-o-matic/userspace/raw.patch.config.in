@@ -1,0 +1,4 @@
+if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
+  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+    tristate 'raw table support (required for NOTRACK/TRACE)' CONFIG_IP_NF_RAW $CONFIG_IP_NF_IPTABLES
+  fi

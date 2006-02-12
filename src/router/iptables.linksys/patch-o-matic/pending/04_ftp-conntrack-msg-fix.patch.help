@@ -1,0 +1,15 @@
+Author: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
+Status: Pending for kernel inclusion
+
+As 2.4.20 came out with newnat included, there were several reports on
+excessive logging of reused FTP expectations.
+
+A tcpdump (thanks to jpiszcz) proved that such log entries can easily be
+triggered when a client tries to download/list non-existent entries in
+active mode and then wants to download other files as well
+
+The patch fixes the problem by separating the two possible cases:
+when the conntrack helper is registered with the reuse flag enabled, then
+the logging is converted to debugging (not enabled by default), otherwise
+the logging is kept to notify the admin on the violation of the given protocol.
+

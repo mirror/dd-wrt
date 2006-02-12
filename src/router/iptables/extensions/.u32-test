@@ -1,0 +1,3 @@
+#!/bin/sh
+# True if u32 is applied.
+[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_u32.h ] && echo u32

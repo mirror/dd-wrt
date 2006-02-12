@@ -1,0 +1,9 @@
+CONFIG_IP_NF_MATCH_TOS
+psd match support
+CONFIG_IP_NF_MATCH_PSD
+  This option adds a `psd' match, which allows you to create rules in
+  any iptables table wich will detect TCP and UDP port scans.
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

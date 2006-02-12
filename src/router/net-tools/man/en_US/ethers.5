@@ -1,0 +1,31 @@
+.TH ETHERS 5 "April 26th, 1996" "" "File formats"
+.SH NAME \"{{{roff}}}\"{{{
+ethers \- Ethernet address to IP number database
+.\"}}}
+.SH DESCRIPTION \"{{{
+\fB/etc/ethers\fP contains 48 bit Ethernet addresses and their corresponding
+IP numbers, one line for each IP number:
+.sp
+.RS
+\fIEthernet-address\fP  \fIIP-number\fP
+.RE
+.sp
+The two items are separated by any number of SPACE and/or TAB char
+acters.   A \fB#\fP at the beginning of a line starts a comment
+which extends to the end of the line.  The \fIEthernet-address\fP is
+written as
+.IR x : x : x : x : x : x ,
+where \fIx\fP is a hexadecimal number between \fB0\fP and \fBff\fP
+which represents one byte of the address, which is in network byte
+order (big-endian).  The \fIIP-number\fP may be a hostname which
+can be resolved by DNS or a dot separated number.
+.\"}}}
+.SH EXAMPLES \"{{{
+08:00:20:00:61:CA  pal
+.\"}}}
+.SH FILES \"{{{
+/etc/ethers
+.\"}}}
+.SH "SEE ALSO" \"{{{
+rarp(8)
+.\"}}}

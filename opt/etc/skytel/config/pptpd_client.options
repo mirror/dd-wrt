@@ -1,0 +1,16 @@
+defaultroute
+lock
+noauth
+nodetach
+mppe required,no40,no56,stateless
+refuse-eap
+lcp-echo-failure 3
+lcp-echo-interval 2
+persist
+usepeerdns
+idle 0
+ip-up-script /tmp/pptpd_client/ip-up
+ip-down-script /tmp/pptpd_client/ip-down
+ipparam kelokepptpd
+mtu 1460
+mru 1460

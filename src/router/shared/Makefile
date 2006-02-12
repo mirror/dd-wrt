@@ -1,0 +1,175 @@
+#
+# Linux router shared code Makefile
+#
+# Copyright 2001-2003, Broadcom Corporation
+# All Rights Reserved.
+#
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: Makefile,v 1.10 2005/11/30 11:53:42 seg Exp $
+#
+include $(TOP)/.config
+
+ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
+  include $(SRCBASE)/cy_conf.mak
+endif
+
+ifeq ($(CONFIG_MSSID),y)
+CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+else
+CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
+endif
+#CFLAGS	+= -g -DDEBUG
+CFLAGS	+= -s $(COPTS) 
+LDFLAGS += -L.
+OBJS := nvparse.o shutils.o wl.o wl_linux.o linux_timer.o defaults.o utils.o support.o sveasoft.o nvports.o closed/madwifi.o
+
+ifeq ($(CONFIG_DROPBEAR_SSHD),y)
+  CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
+endif
+
+ifeq ($(CONFIG_SILENCE),y)
+  CFLAGS += -DHAVE_SILENCE
+endif
+
+ifeq ($(CONFIG_RB500),y)
+  CFLAGS += -DHAVE_RB500
+endif
+
+
+ifeq ($(CONFIG_34TELECOM),y)
+  CFLAGS += -DHAVE_34TELECOM
+endif
+
+ifeq ($(CONFIG_MADWIFI),y)
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi-ng -include ../madwifi-ng/include/compat.h
+endif
+
+ifeq ($(CONFIG_NEWMEDIA),y)
+  CFLAGS += -DHAVE_NEWMEDIA
+endif
+
+ifeq ($(CONFIG_SAGAR),y)
+  CFLAGS += -DHAVE_SAGAR
+endif
+
+ifeq ($(CONFIG_OPENVPN),y)
+  CFLAGS += -DHAVE_OPENVPN
+endif
+
+ifeq ($(CONFIG_CDEBUG),y)
+  CFLAGS += -DCDEBUG
+endif
+
+ifeq ($(CONFIG_MSSID),y)
+  CFLAGS += -DHAVE_MSSID
+endif
+
+ifeq ($(CONFIG_BOOT_WAIT_ON),y)
+  CFLAGS += -DSET_BOOT_WAIT
+endif
+
+ifeq ($(CONFIG_ANTIFLASH),y)
+CFLAGS += -DANTI_FLASH
+endif
+
+
+ifeq ($(CONFIG_MACBIND),y)
+CFLAGS += -DHAVE_MACBIND
+endif
+
+ifeq ($(CONFIG_OMNI),y)
+CFLAGS += -DANTI_OMNI
+endif
+
+ifeq ($(CONFIG_ZEROIP),y)
+CFLAGS += -DHAVE_ZEROIP
+endif
+
+ifeq ($(CONFIG_BRANDING),y)
+CFLAGS += -DCONFIG_BRANDING
+endif
+
+ifeq ($(CONFIG_MASKMAC),y)
+CFLAGS += -DFBNFW
+endif
+
+ifeq ($(CONFIG_OPENSSL),y)
+CFLAGS += -DHAVE_HTTPS
+endif
+
+ifeq ($(CONFIG_MATRIXSSL),y)
+CFLAGS += -DHAVE_HTTPS
+endif
+
+ifeq ($(CONFIG_WTS),y)
+CFLAGS += -DHAVE_WTS
+endif
+
+ifeq ($(CONFIG_DLS),y)
+CFLAGS += -DHAVE_DLS
+endif
+
+ifeq ($(CONFIG_SKYTRON),y)
+CFLAGS += -DHAVE_SKYTRON
+endif
+
+ifeq ($(CONFIG_POWERNOC),y)
+CFLAGS += -DHAVE_POWERNOC
+endif
+
+ifeq ($(CONFIG_POWERNOC_WORT54G),y)
+CFLAGS += -DHAVE_POWERNOC_WORT54G
+endif
+
+ifeq ($(CONFIG_POWERNOC_WOAP54G),y)
+CFLAGS += -DHAVE_POWERNOC_WOAP54G
+endif
+
+ifeq ($(CONFIG_SKYTEL),y)
+CFLAGS += -DHAVE_SKYTEL
+endif
+ifeq ($(CONFIG_FON),y)
+CFLAGS += -DHAVE_FON
+endif
+ifeq ($(CONFIG_FONBETA),y)
+CFLAGS += -DHAVE_FONBETA
+endif
+
+ifeq ($(CONFIG_SPUTNIK_APD),y)
+CFLAGS += -DHAVE_SPUTNIK_APD
+endif
+
+ifeq ($(CONFIG_AQOS),y)
+CFLAGS += -DHAVE_AQOS
+endif
+
+ifeq ($(CONFIG_MATRIXSSL),y)
+CFLAGS += -I$(TOP)/matrixssl
+LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixssl
+CFLAGS += -DHAVE_MATRIXSSL
+#OBJS += matrixssl_xface.o
+endif
+
+all: libshared.so libshared.a
+
+install: all
+	install -d $(INSTALLDIR)/usr/lib
+	install -m 755 libshared.so $(INSTALLDIR)/usr/lib
+	$(STRIP) $(INSTALLDIR)/usr/lib/libshared.so
+
+clean:
+	rm -f *.o *.so
+#	rm -f closed/*.o
+	rm -f *.a
+
+libshared.so: $(OBJS) 
+	$(LD) -shared -o $@ $^
+
+libshared.a: $(OBJS)
+	$(AR) arc -o  $@ $^
+
+*.o: $(CY_DEPS)

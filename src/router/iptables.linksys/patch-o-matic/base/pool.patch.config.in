@@ -1,0 +1,7 @@
+  dep_tristate '  limit match support' CONFIG_IP_NF_MATCH_LIMIT $CONFIG_IP_NF_IPTABLES
+
+  dep_tristate '  IP address pool support' CONFIG_IP_NF_POOL $CONFIG_IP_NF_IPTABLES
+  if [ "$CONFIG_IP_NF_POOL" = "y" -o "$CONFIG_IP_NF_POOL" = "m" ]; then
+    bool '    enable statistics on pool usage' CONFIG_IP_POOL_STATISTICS n
+  fi
+

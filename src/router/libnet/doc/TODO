@@ -1,0 +1,18 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                        http://www.infonexus.com/~daemon9/Projects/Libnet
+===============================================================================
+
+    - By version 1.0 the old naming convention will be completely removed.
+      Take heed!
+
+    - Architectures such as Solaris have strict alignment requirements.  TCP
+      and IP option insertion code seem to break there.  Fix that.
+
+    - Make .so's
+
+    - Add build_rpc()
+
+    - Add IPv6 functionality
+
+EOF

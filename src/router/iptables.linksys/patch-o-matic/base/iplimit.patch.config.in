@@ -1,0 +1,2 @@
+    dep_tristate '  Connection state match support' CONFIG_IP_NF_MATCH_STATE $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
+    dep_tristate '  Connections/IP limit match support' CONFIG_IP_NF_MATCH_IPLIMIT $CONFIG_IP_NF_IPTABLES

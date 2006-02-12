@@ -1,0 +1,121 @@
+--- userspace/extensions/libipt_MARK.c	Tue Aug  7 02:50:22 2001
++++ userspace/extensions/libipt_MARK.c	Thu Feb 21 00:27:05 2002
+@@ -20,12 +20,16 @@
+ 	printf(
+ "MARK target v%s options:\n"
+ "  --set-mark value                   Set nfmark value\n"
++"  --and-mark value                   Binary AND the nfmark with value\n"
++"  --or-mark  value                   Binary OR  the nfmark with value\n"
+ "\n",
+ IPTABLES_VERSION);
+ }
+ 
+ static struct option opts[] = {
+ 	{ "set-mark", 1, 0, '1' },
++	{ "and-mark", 1, 0, '2' },
++	{ "or-mark", 1, 0, '3' },
+ 	{ 0 }
+ };
+ 
+@@ -45,16 +49,38 @@
+ 	struct ipt_mark_target_info *markinfo
+ 		= (struct ipt_mark_target_info *)(*target)->data;
+ 
+-	switch (c) {
++	if ((c=='1') || (c=='2') || (c=='3'))
++	{
+ 		char *end;
+-	case '1':
++		
++		if (*flags)
++			exit_error(PARAMETER_PROBLEM, "MARK target: can specify only one action");
+ 		markinfo->mark = strtoul(optarg, &end, 0);
+ 		if (*end != '\0' || end == optarg)
+ 			exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
+-		if (*flags)
+-			exit_error(PARAMETER_PROBLEM,
+-			           "MARK target: Can't specify --set-mark twice");
+ 		*flags = 1;
++	}
++
++	switch (c) {
++	case '1':
++		if (invert)
++			exit_error(PARAMETER_PROBLEM, "unexpected '!' with --set-mark");
++
++		markinfo->mode = IPT_MARK_SET;
++		break;
++
++	case '2':
++		if (invert)
++			exit_error(PARAMETER_PROBLEM, "unexpected '!' with --and-mark");
++
++		markinfo->mode = IPT_MARK_AND;
++		break;
++
++	case '3':
++		if (invert)
++			exit_error(PARAMETER_PROBLEM, "unexpected '!' with --or-mark");
++
++		markinfo->mode = IPT_MARK_OR;
+ 		break;
+ 
+ 	default:
+@@ -72,12 +98,6 @@
+ 		           "MARK target: Parameter --set-mark is required");
+ }
+ 
+-static void
+-print_mark(unsigned long mark, int numeric)
+-{
+-	printf("0x%lx ", mark);
+-}
+-
+ /* Prints out the targinfo. */
+ static void
+ print(const struct ipt_ip *ip,
+@@ -86,8 +106,20 @@
+ {
+ 	const struct ipt_mark_target_info *markinfo =
+ 		(const struct ipt_mark_target_info *)target->data;
+-	printf("MARK set ");
+-	print_mark(markinfo->mark, numeric);
++	switch (markinfo->mode) {
++		case IPT_MARK_SET:
++			printf("MARK set ");
++			break;
++		case IPT_MARK_AND:
++			printf("MARK and ");
++			break;
++		case IPT_MARK_OR:
++			printf("MARK or ");
++			break;
++		default:
++			printf("MARK set "); /* This shouldn't happen.. */
++	}
++	printf("0x%lx ", markinfo->mark);
+ }
+ 
+ /* Saves the union ipt_targinfo in parsable form to stdout. */
+@@ -97,7 +129,20 @@
+ 	const struct ipt_mark_target_info *markinfo =
+ 		(const struct ipt_mark_target_info *)target->data;
+ 
+-	printf("--set-mark 0x%lx ", markinfo->mark);
++	switch (markinfo->mode) {
++		case IPT_MARK_SET:
++			printf("--set-mark ");
++			break;
++		case IPT_MARK_AND:
++			printf("--and-mark ");
++			break;
++		case IPT_MARK_OR:
++			printf("--or-mark ");
++			break;
++		default:
++			printf("--set-mark ");
++	}
++	printf("0x%lx ", markinfo->mark);
+ }
+ 
+ static

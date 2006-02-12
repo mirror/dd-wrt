@@ -1,0 +1,9 @@
+* Fix "address already in use" errors
+* Testing suite
+* Specify location of nocat.conf on command line
+* Static build targets
+* Work with pfctl, ipchains
+* Implement LastConnectionTime, ConnectionCount
+* Better recovery from broken HTTP fetch
+* Activity logging
+* General robustness auditing

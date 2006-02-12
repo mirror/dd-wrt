@@ -1,0 +1,32 @@
+Author: Maciej Soltysiak <solt@dns.toxicfilms.tv>
+Status: Works for me
+
+This patch extends unclean's module to match packets with IP unused bit
+set.  This bit is the first bit in fragmentation offset of the IP header.
+The offset contains 2 fields:
+  3 bit fragmentation flags
+ 13 bit fragmentation offset
+
+Exerpt from RFC 791:
+
+ Flags:  3 bits
+
+    Various Control Flags.
+
+      Bit 0: reserved, must be zero
+      Bit 1: (DF) 0 = May Fragment,  1 = Don't Fragment.
+      Bit 2: (MF) 0 = Last Fragment, 1 = More Fragments.
+
+          0   1   2
+        +---+---+---+
+        |   | D | M |
+        | 0 | F | F |
+        +---+---+---+
+
+
+This adds what i see as a security feature to the unclean match, as the bit
+may be used in very discrete OS fingerprinting as described by Ofir Arkin
+in "Unverified Fields - A Problem with Firewalls & Firewall Technology
+Today" available to read at:
+http://www.sys-security.com/archive/papers/Unverified_Fields_1.0.pdf
+http://www.sys-security.com/archive/papers/Unverified_Fields_1.0.ps

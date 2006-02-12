@@ -1,0 +1,10 @@
+Author: Fabrice MARIE <fabrice@netfilter.org>
+Status: Works For Me.
+
+This patch adds support for setting the nfmark bitwise (and & or).
+
+# iptables -t mangle -A PREROUTING -p icmp -j MARK --or-mark 0x15
+# iptables -t mangle -A PREROUTING -p icmp -j MARK --and-mark 0x15
+
+***** WARNING ***** This patch also patch the userspace directory which means that you
+                    you have to recompile and reinstall the iptables package after that.

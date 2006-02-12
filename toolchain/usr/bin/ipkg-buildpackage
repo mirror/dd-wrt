@@ -1,0 +1,227 @@
+#!/bin/sh
+#
+# $Id: ipkg-buildpackage,v 1.1 2001/07/26 15:36:36 oku Exp $
+#
+# Author: Oliver Kurth <oliver.kurth@innominate.com>
+#
+# Description:
+# builds an ipkg package from a source tarball using ipkg-build. Idea stolen
+# from Debian dpkg-buildpackage.
+# 
+# - unpack the source tarball.
+# - cd to the source distribution, change whatever you need to make the
+#   package compile and work on the ipaq.
+# - create a directory 'ipkg'
+# - put all files which go to the 'CONTROL' directory of the root of the
+#   installed package into ipkg.
+# - the version (Version field in control) should match the version of the
+#   source tarball, optionally with a digit (eg. -1) appended.
+# - additionally, put a file there called 'rules' which is a shell script
+#   accepting arguments 'build', 'install' and 'clean'. It can be a 
+#   Makefile starting with the line '#!/usr/bin/make -f'
+#   * the build target does things like ./configure and make.
+#   * the install target installs to a temporary directory (make
+#   DESTDIR=/tmp/package) and removes unnecessary items (eg. man pages)
+#   * clean cleans ;-)
+#
+# You should run this with fakeroot (1) or as root.
+# If all went well, you will find a diff file and an *.ipk file in the
+# directory above.
+
+set -e
+
+SCRIPTDIR=/usr/local/bin
+
+IPKG_BUILD_OPTIONS=$*
+
+SCRIPTNAME=`basename $0`
+
+ipkg_extract_value() {
+	sed -e "s/^[^:]*:[[:space:]]*//"
+}
+
+required_field() {
+	field=$1
+
+	value=`grep "^$field:" < $CONTROL/control | ipkg_extract_value`
+	if [ -z "$value" ]; then
+		echo "ipkg-build: Error: $CONTROL/control is missing field $field" ;
+		PKG_ERROR=1
+	fi
+	echo $value
+}
+
+pkg_appears_sane_control() {
+	local pkg_dir=$1
+
+	local owd=`pwd`
+	cd $pkg_dir
+
+	if [ ! -f "$CONTROL/control" ]; then
+		echo "ipkg-build: Error: Control file $pkg_dir/$CONTROL/control not found."
+		cd $owd
+		return 1
+	fi
+
+	pkg=`required_field Package`
+	version=`required_field Version | sed 's/.*://;'`
+	arch=`required_field Architecture`
+	required_field Maintainer >/dev/null
+	required_field Description >/dev/null
+
+	if echo $pkg | grep '[^a-z0-9.+-]'; then
+		echo "ipkg-build: Error: Package name $name contains illegal characters, (other than [a-z0-9.+-])"
+		PKG_ERROR=1;
+	fi
+
+	local bad_fields=`sed -ne 's/^\([^[:space:]][^:[:space:]]\+[[:space:]]\+\)[^:].*/\1/p' < $CONTROL/control | sed -e 's/\\n//'`
+	if [ -n "$bad_fields" ]; then
+		bad_fields=`echo $bad_fields`
+		echo "ipkg-build: Error: The following fields in $CONTROL/control are missing a ':'"
+		echo "	$bad_fields"
+		echo "ipkg-build: This may be due to a missing initial space for a multi-line field value"
+		PKG_ERROR=1
+	fi
+
+	cd $owd
+	return $PKG_ERROR
+}
+
+pkg_appears_sane_scripts() {
+	local pkg_dir=$1
+
+	local owd=`pwd`
+	cd $pkg_dir
+
+	for script in $CONTROL/preinst $CONTROL/postinst $CONTROL/prerm $CONTROL/postrm; do
+		if [ -f $script -a ! -x $script ]; then
+			echo "ipkg-build: Error: package script $script is not executable"
+			PKG_ERROR=1
+		fi
+	done
+
+	cd $owd
+	return $PKG_ERROR
+}
+
+pkg_dir_abs=`pwd`
+pkg_dir_base=`basename ${pkg_dir_abs}`
+
+pkg_dir=.
+
+[ -d ./CONTROL ] && CONTROL=./CONTROL
+[ -d ./ipkg ] && CONTROL=./ipkg
+if [ -z "$CONTROL" ]; then
+        echo "${SCRIPT_NAME}: Error: Directory $pkg_dir has no ipkg or CONTROL subdirectory."
+        exit 1
+fi
+
+if ! pkg_appears_sane_control $pkg_dir && pkg_appears_sane_control $pkg_dir; then
+        echo "Please fix the above errors and try again."
+        exit 1
+fi
+
+echo "Package = $pkg"
+echo "Version = $version"
+version_up=`echo ${version} | sed "s/\-[0-9]\+//"`
+echo "Upstream Version = $version_up"
+pkg_upname=${pkg}-${version_up}
+echo "Package Name = $pkg_upname"
+pkg_tarball=${pkg_upname}.tar.gz
+echo "Tarball Name = $pkg_tarball"
+
+if [ ! -x ${CONTROL}/rules ]; then
+	echo "${CONTROL}/rules not found or not executable."
+	exit 1
+fi
+
+#
+# unpack upstream tarball and make diff
+#
+if [ -e ../${pkg_tarball} ] ; then
+	(
+	set +e
+
+	cd ..
+
+	rm -rf ${pkg_upname}.tmp
+	rm -rf ${pkg_upname}.orig
+
+	mkdir ${pkg_upname}.tmp
+	cd ${pkg_upname}.tmp
+	echo "unpacking source tarball ${pkg_tarball}"
+	tar zxf ${pkg_dir_abs}/../${pkg_tarball}
+	dir=`find . -maxdepth 1 -name "*" -type d`
+	cnt=`echo $dir | wc -l`
+	if [ ${cnt} != 1 ] ; then
+		echo "Arrghh !!!!"
+		echo "upstream package contains more than one top level directory"
+		echo "giving up..."
+		exit 1
+	fi
+	mv ${dir} ${pkg_upname}.orig
+	mv ${pkg_upname}.orig ..
+	cd ..
+	echo "creating diff"
+	diff -uNr  ${pkg_upname}.orig ${pkg_dir_base} > ${pkg}-${version}.diff
+	rm -f ${pkg}-${version}.diff.gz
+	echo "gzipping ${pkg}-${version}.diff"
+	gzip ${pkg}-${version}.diff
+
+	echo "Removing temporary source directorys"
+	rm -rf ${pkg_upname}.tmp
+	rm -rf ${pkg_upname}.orig
+	)
+fi
+
+# build package
+if ! ${CONTROL}/rules build; then
+	echo "Build failed"
+	exit 1
+fi
+
+# install it to tmp directory
+if ! ${CONTROL}/rules install; then
+	echo "Install failed"
+	exit 1
+fi
+
+# copy contents of control directory
+mkdir /tmp/${pkg}/CONTROL
+
+files_required="control"
+files_optional="preinst postinst prerm postrm"
+
+for i in ${files_required} ; do
+	file=${CONTROL}/$i
+	
+	if [ -e ${file} ] ; then
+		cp $file /tmp/${pkg}/CONTROL
+	else
+		echo "required file ${file} missing"
+	fi
+done
+
+for i in ${files_optional} ; do
+	file=${CONTROL}/$i
+	
+	if [ -e ${file} ] ; then
+		cp $file /tmp/${pkg}/CONTROL
+	fi
+done
+
+# build the ipk package
+owd=`pwd`
+cd ..
+ipkg-build $IPKG_BUILD_OPTIONS /tmp/${pkg} || exit 1
+
+rm -rf /tmp/${pkg}
+
+cd $owd
+if ! ${CONTROL}/rules clean; then
+	echo "Clean failed"
+	exit 1
+fi
+
+# Yep. That's it!
+exit 0

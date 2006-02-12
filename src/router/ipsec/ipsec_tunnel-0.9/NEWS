@@ -1,0 +1,69 @@
+Bug fixes for 0.9
+=================
+
+* Bug fixes from Norman Shulman <norm@arcturusnetworks.com>:
+
+  - The first sequence number was not 1 as it should be.
+
+  - The source and destination IP addresses matching was reversed
+    in some cases which caused problems for assymetric SAs.
+
+  - Assorted minor fixes.
+
+* depmod was run for the wrong kernel version
+
+* Fixed a small SMP race when removing tunnels.
+
+News for 0.9
+============
+
+* Renamed the kernel module to ipsec_tunnel.o.
+
+* Authentication support contributed by Norman Shulman
+  <norm@arcturusnetworks.com>
+
+* Added support for modifying tunnels in ipsecadm.
+
+* Added support for deleting all tunnels in one go.
+
+* Added ipsecadm stats to display packet statistics and error
+  counters.
+
+* Added ipsecadm key to create keys in a safe and simple way.
+
+* Support for CONFIG_MODVERSIONS added by Martin Johansson
+  <martin@fatbob.nu>
+
+* A configure script has been added to simplify installation.
+
+* Install the kernel module in /lib/modules/version/misc to prevent
+  the Linux kernel modules_install make target from deleting it.
+
+Bug fixes for 0.2.2
+===================
+
+* Compile with -aa kernels (e.g. 2.4.19-rc1aa1)
+
+* Fixes after review by Norman Shulman <norm@arcturusnetworks.com>:
+
+  - Fixed an incorrect unlock in an error path.
+
+  - Fixed potential panic for SIOCIPSEC_GET_SA for an SA with no
+    cipher.
+
+* A few minor issues that have no influence on the functionality.
+
+Bug fixes for 0.2.1
+===================
+
+* Fixed compilation problems with newer CryptoAPI versions which
+  contain an incompatible API change.
+
+* Fixed warning message when installing the man page.
+
+* Only find atomic ciphers.
+
+News for 0.2
+============
+
+First documented release.

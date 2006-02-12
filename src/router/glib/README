@@ -1,0 +1,70 @@
+General Information
+===================
+
+This is GLib version 1.2.10. GLib is a library which includes support
+routines for C such as lists, trees, hashes, memory allocation, and
+many other things.
+
+The official ftp site is:
+  ftp://ftp.gtk.org/pub/gtk
+
+The official web site is:
+  http://www.gtk.org/
+
+Information about mailing lists can be found at
+  http://www.gtk.org/mailinglists.html
+
+To subscribe: mail -s subscribe gtk-list-request@gnome.org < /dev/null
+(Send mail to gtk-list-request@gnome.org with the subject "subscribe")
+
+Installation
+============
+
+See the file 'INSTALL'
+
+How to report bugs
+==================
+
+Bugs should be reported to the GNOME bug tracking system. 
+(http://bugzilla.gnome.org, product glib.) You will need
+to create an account for yourself.
+
+In the bug report please include:
+
+* Information about your system. For instance:
+
+   - What operating system and version
+   - For Linux, what version of the C library
+
+  And anything else you think is relevant.
+
+* How to reproduce the bug. 
+
+  If you can reproduce it with the testgtk program that is built 
+  in the gtk/ subdirectory, that will be most convenient.  Otherwise, 
+  please include a short test program that exhibits the behavior. 
+  As a last resort, you can also provide a pointer to a larger piece 
+  of software that can be downloaded.
+
+* If the bug was a crash, the exact text that was printed out
+  when the crash occured.
+
+* Further information such as stack traces may be useful, but
+  is not necessary.
+
+Patches
+=======
+
+Patches should also be submitted to bugzilla.gnome.org. If the
+patch fixes an existing bug, add the patch as an attachment
+to that bug report.
+
+Otherwise, enter a new bug report that describes the patch,
+and attach the patch to that bug report.
+
+Bug reports containing patches should include the PATCH keyword
+in their keyword fields. If the patch adds to or changes the GLib 
+programming interface, the API keyword should also be included.
+
+Patches should be in unified diff form. (The -u option to GNU
+diff.)

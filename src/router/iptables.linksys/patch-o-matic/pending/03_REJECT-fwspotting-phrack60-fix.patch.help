@@ -1,0 +1,9 @@
+Author: Patrick McHardy <kaber@trash.net>
+Status: Pending for kernel inclusion
+
+ipt_REJECT sends unreachables in response to UDP packets with invalid
+checksums, thereby exposing the
+existance of a firewall  (as described in phrack #60, "broken crc
+firewall spotting" (or something like this), www.phrack.com).
+
+The patch makes ipt_REJECT verify UDP checksums if set.                         

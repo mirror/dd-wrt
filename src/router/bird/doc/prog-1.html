@@ -1,0 +1,179 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD Programmer's Documentation: BIRD Design</TITLE>
+ <LINK HREF="prog-2.html" REL=next>
+
+ <LINK HREF="prog.html#toc1" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="prog-2.html">Next</A>
+Previous
+<A HREF="prog.html#toc1">Contents</A>
+<HR>
+<H2><A NAME="s1">1.</A> <A HREF="prog.html#toc1">BIRD Design</A></H2>
+
+<H2><A NAME="ss1.1">1.1</A> <A HREF="prog.html#toc1.1">Introduction</A>
+</H2>
+
+<P>This document describes the internal workings of BIRD, its architecture,
+design decisions and rationale behind them. It also contains documentation on
+all the essential components of the system and their interfaces.
+<P>
+<P>Routing daemons are complicated things which need to act in real time
+to complex sequences of external events, respond correctly even to the most erroneous behavior
+of their environment and still handle enormous amount of data with reasonable
+speed. Due to all of this, their design is very tricky as one needs to carefully
+balance between efficiency, stability and (last, but not least) simplicity of
+the program and it would be possible to write literally hundreds of pages about
+all of these issues. In accordance to the famous quote of Anton Chekhov "Shortness
+is a sister of talent", we've tried to write a much shorter document highlighting
+the most important stuff and leaving the boring technical details better explained
+by the program source itself together with comments contained therein.
+<P>
+<H2><A NAME="ss1.2">1.2</A> <A HREF="prog.html#toc1.2">Design goals</A>
+</H2>
+
+<P>When planning the architecture of BIRD, we've taken a close look at the other existing routing
+daemons and also at some of the operating systems used on dedicated routers, gathered all important
+features and added lots of new ones to overcome their shortcomings and to better match the requirements
+of routing in today's Internet: IPv6, policy routing, route filtering and so on. From this
+planning, the following set of design goals has arisen:
+<P>
+<UL>
+<LI><I>Support all the standard routing protocols and make it easy to add new ones.</I>
+This leads to modularity and clean separation between the core and the protocols.
+</LI>
+<LI><I>Support both IPv4 and IPv6 in the same source tree, re-using most of the code.</I>
+This leads to abstraction of IP addresses and operations on them.
+</LI>
+<LI><I>Minimize OS dependent code to make porting as easy as possible.</I>
+Unfortunately, such code cannot be avoided at all as the details of communication with
+the IP stack differ from OS to OS and they often vary even between different
+versions of the same OS. But we can isolate such code in special modules and
+do the porting by changing or replacing just these modules.
+Also, don't rely on specific features of various operating systems, but be able
+to make use of them if they are available.
+</LI>
+<LI><I>Allow multiple routing tables.</I>
+Easily solvable by abstracting out routing tables and the corresponding operations.
+</LI>
+<LI><I>Offer powerful route filtering.</I>
+There already were several attempts to incorporate route filters to a dynamic router,
+but most of them have used simple sequences of filtering rules which were very inflexible
+and hard to use for non-trivial filters. We've decided to employ a simple loop-free
+programming language having access to all the route attributes and being able to
+modify the most of them.
+</LI>
+<LI><I>Support easy configuration and re-configuration.</I>
+Most routers use a simple configuration language designed ad hoc with no structure at all
+and allow online changes of configuration by using their command-line interface, thus
+any complex re-configurations are hard to achieve without replacing the configuration
+file and restarting the whole router. We've decided to use a more general approach: to
+have a configuration defined in a context-free language with blocks and nesting, to
+perform all configuration changes by editing the configuration file, but to be able
+to read the new configuration and smoothly adapt to it without disturbing parts of
+the routing process which are not affected by the change.
+</LI>
+<LI><I>Be able to be controlled online.</I>
+In addition to the online reconfiguration, a routing daemon should be able to communicate
+with the user and with many other programs (primarily scripts used for network maintenance)
+in order to make it possible to inspect contents of routing tables, status of all
+routing protocols and also to control their behavior (disable, enable or reset a protocol without restarting all the others). To achieve
+this, we implement a simple command-line protocol based on those used by FTP and SMTP
+(that is textual commands and textual replies accompanied by a numeric code which makes
+them both readable to a human and easy to recognize in software).
+</LI>
+<LI><I>Respond to all events in real time.</I>
+A typical solution to this problem is to use lots of threads to separate the workings
+of all the routing protocols and also of the user interface parts and to hope that
+the scheduler will assign time to them in a fair enough manner. This is surely a good
+solution, but we have resisted the temptation and preferred to avoid the overhead of threading
+and the large number of locks involved and preferred a event driven architecture with
+our own scheduling of events. An unpleasant consequence of such an approach
+is that long lasting tasks must be split to more parts linked by special
+events or timers to make the CPU available for other tasks as well.
+</LI>
+</UL>
+<P>
+<H2><A NAME="ss1.3">1.3</A> <A HREF="prog.html#toc1.3">Architecture</A>
+</H2>
+
+<P>The requirements set above have lead to a simple modular architecture containing
+the following types of modules:
+<P>
+<DL>
+<P>
+<DT>Core modules<DD><P>implement the core functions of BIRD: taking care
+of routing tables, keeping protocol status, interacting with the user using
+the Command-Line Interface (to be called CLI in the rest of this document)
+etc.
+<P>
+<DT>Library modules<DD><P>form a large set of various library functions
+implementing several data abstractions, utility functions and also functions
+which are a part of the standard libraries on some systems, but missing on other
+ones.
+<P>
+<DT>Resource management modules<DD><P>take care of resources, their allocation
+and automatic freeing when the module having requested shuts itself down.
+<P>
+<DT>Configuration modules<DD><P>are fragments of lexical analyzer,
+grammar rules and the corresponding snippets of C code. For each group
+of code modules (core, each protocol, filters) there exist a configuration
+module taking care of all the related configuration stuff.
+<P>
+<DT>The filter<DD><P>implements the route filtering language.
+<P>
+<DT>Protocol modules<DD><P>implement the individual routing protocols.
+<P>
+<DT>System-dependent modules<DD><P>implement the interface between BIRD
+and specific operating systems.
+<P>
+<DT>The client<DD><P>is a simple program providing an easy, though friendly
+interface to the CLI.
+<P>
+</DL>
+<P>
+<H2><A NAME="ss1.4">1.4</A> <A HREF="prog.html#toc1.4">Implementation</A>
+</H2>
+
+<P>BIRD has been written in GNU C. We've considered using C++, but we've
+preferred the simplicity and straightforward nature of C which gives us fine
+control over all implementation details and on the other hand enough
+instruments to build the abstractions we need.
+<P>
+<P>The modules are statically linked to produce a single executable file
+(except for the client which stands on its own).
+<P>
+<P>The building process is controlled by a set of Makefiles for GNU Make,
+intermixed with several Perl and shell scripts.
+<P>
+<P>The initial configuration of the daemon, detection of system features
+and selection of the right modules to include for the particular OS
+and the set of protocols the user has chosen is performed by a configure
+script generated by GNU Autoconf.
+<P>
+<P>The parser of the configuration is generated by the GNU Bison.
+<P>
+<P>The documentation is generated using SGMLtools with our own DTD
+and mapping rules which produce both an online version in HTML and
+a neatly formatted one for printing (first converted
+from SGML to LaTeX and then processed by TeX and dvips to
+get a PostScript file).
+<P>
+<P>The comments from C sources which form a part of the programmer's
+documentation are extracted using a modified version of the kernel-doc
+tool.
+<P>
+<P>If you want to work on BIRD, it's highly recommended to configure it
+with a <CODE>--enable-debug</CODE> switch which enables some internal consistency
+checks and it also links BIRD with a memory allocation checking library
+if you have one (either <CODE>efence</CODE> or <CODE>dmalloc</CODE>).
+<P>
+<HR>
+<A HREF="prog-2.html">Next</A>
+Previous
+<A HREF="prog.html#toc1">Contents</A>
+</BODY>
+</HTML>

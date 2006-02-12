@@ -1,0 +1,49 @@
+############################################################################
+# Shorewall 1.4 -- /etc/shorewall/common.def
+#
+# This file defines the rules that are applied before a policy of
+# DROP or REJECT is applied. In addition to the rules defined in this file,
+# the firewall will also define a DROP rule for each subnet broadcast
+# address defined in /etc/shorewall/interfaces (including "detect").
+#
+# Do not modify this file -- if you wish to change these rules, create
+# /etc/shorewall/common to replace it. It is suggested that you include
+# the command ". /etc/shorewall/common.def" in your
+# /etc/shorewall/common file so that you will continue to get the
+# advantage of new releases of this file.
+#
+run_iptables -A common -p icmp -j icmpdef
+############################################################################
+# NETBIOS chatter
+#
+run_iptables -A common -p udp --dport 135	  -j DROP
+run_iptables -A common -p udp --dport 137:139     -j DROP
+run_iptables -A common -p udp --dport 445         -j DROP
+run_iptables -A common -p tcp --dport 139         -j DROP
+run_iptables -A common -p tcp --dport 445         -j DROP
+run_iptables -A common -p tcp --dport 135	  -j DROP
+############################################################################
+# UPnP
+#
+run_iptables -A common -p udp --dport 1900	  -j DROP
+############################################################################
+# BROADCASTS
+#
+run_iptables -A common -d 255.255.255.255 -j DROP
+run_iptables -A common -d 224.0.0.0/4     -j DROP
+############################################################################
+# AUTH -- Silently reject it so that connections don't get delayed.
+#
+run_iptables -A common -p tcp --dport 113 -j reject
+############################################################################
+# DNS -- Silenty drop late replies
+#
+run_iptables -A common -p udp --sport 53 -mstate --state NEW -j DROP
+############################################################################
+# ICMP -- Silently drop null-address ICMPs
+#
+run_iptables -A common -p icmp -s 0.0.0.0 -j DROP
+run_iptables -A common -p icmp -d 0.0.0.0 -j DROP
+
+
+

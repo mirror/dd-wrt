@@ -1,0 +1,8 @@
+Author: Emmanuel Roger <winfield@freegates.be>
+Status: Working, not with kernel 2.4.9
+
+This patch adds CONFIG_IP_NF_MATCH_STRING which allows you to
+match a string in a whole packet.
+
+THIS PATCH DOES NOT WORK WITH KERNEL 2.4.9 !!!
+

@@ -1,0 +1,38 @@
+$Id: FIREWALL,v 1.1 2005/09/28 11:53:38 seg Exp $
+
+
+Several people have asked me for ipchains firewalling on bridge
+forwarding. Although this is a violation of the OSI model it turns out
+to be very useful, and it was very easy to implement, so I did it.
+
+Now how does it work?
+
+First of all, if you want to use bridge firewalling, you'll have to
+apply the extra patch bridge-ipchains.diff in the bridge-utils
+distribution to your (already patched with the bridge patch) kernel
+tree. Recompile the kernel.
+
+Now if you boot this kernel, the bridging code will check each
+to-be-forwarded packet against the ipchains chain which has the same
+name as the bridge. So.. if a packet on eth0 is to be forwarded to
+eth1, and those interfaces are both part of the bridge group br0, the
+bridging code will check the packet against the chain called 'br0'.
+
+If the chain does not exist, the packet will be forwarded. So if you
+want to do firewalling, you'll have to create the chain yourself. This
+is important!
+
+
+
+Example:
+# brctl addbr br0
+# brctl addif br0 eth0
+# brctl addif br0 eth1
+# ifconfig br0 10.0.0.254
+# ipchains -N br0
+# ipchains -A br0 -s 10.0.0.1/8 -i eth0 -j DENY
+
+
+
+Lennert Buytenhek
+<buytenh@openrock.net>

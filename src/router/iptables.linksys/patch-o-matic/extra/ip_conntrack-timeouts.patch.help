@@ -1,0 +1,45 @@
+Author: Jay Schulist <jschlst@linux-sna.org>
+Status: New
+
+Here is a patch which allows the user to set the connection tracking
+timeout values on a per state basis via sysctl.
+
+The sysctl files and their format is described below:
+
+The timeout values are based on connection tracking states and are in
+seconds.
+ 
+cat /proc/sys/net/ipv4/ip_conntrack_tcp_timeouts
+300 600 120 60 120 120 10 60 30 120
+ 
+NONE = 300 (5 minutes)
+ESTABLISHED = 600 (10 minutes)
+SYN_SENT = 120 (2 minutes)
+SYN_RECV =  60 (60 seconds)
+FIN_WAIT = 120 (2 minutes)
+TIME_WAIT = 120 (2 minutes)
+CLOSE = 10 (10 seconds)
+CLOSE_WAIT = 60 (60 seconds)
+LAST_ACK = 30 (30 seconds)
+LISTEN = 120 (2 minutes)
+ 
+To change the settings for this file example root level syntax would be:
+sysctl -w net.ipv4.ip_conntrack_tcp_timeouts="300 600 120 60 120 120 10
+60 30 120"
+ 
+cat /proc/sys/net/ipv4/ip_conntrack_udp_timeouts
+60 180
+ 
+UNREPLIED = 60 (60 seconds)
+ASSURED = 180 (3 minutes)
+ 
+sysctl -w net.ipv4.ip_conntrack_udp_timeouts="60 180"
+ 
+When any values are changed in these files they only have immediate effect
+on new flows, old flows will use the old value until the flow has been
+refreshed.
+
+
+This patch does not work in combination with tcp-window-tracking.patch
+(that patch already has this functionality and a lot of other things)
+

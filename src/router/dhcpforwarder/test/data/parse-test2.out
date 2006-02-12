@@ -1,0 +1,24 @@
+uid=1
+gid=1
+chroot_path='/var/tmp'
+logfile_name='/var/tmp/dhcp-fwd.log'
+pidfile_name='/var/run/dhcp-fwd.pid'
+loglevel=8
+ulimits={9, data={
+  stack     -> (16, 16)
+  data      -> (16777216, 16777216)
+  core      -> (16000000, 16000000)
+  rss       -> (16384, 16384)
+  nproc     -> (16000, 16000)
+  memlock   -> (16777216, 16777216)
+  as        -> (8000000, 8000000)
+  locks     -> (8192, 8192)
+  nofile    -> (8000, 8000)}}
+interfaces={len=3, data={
+  'eth0', 'eth0-name', 1, 0, 0, 192.168.42.23
+  'eth1', 'X', 0, 0, 1, 255.255.255.255
+  'eth2', '', 1, 1, 0, 10.0.0.2}}
+servers={len=3, data={
+  UNICAST, 192.168.31.41, &eth2
+  UNICAST, 192.168.31.42, &eth2
+  BROADCAST, &eth0}}

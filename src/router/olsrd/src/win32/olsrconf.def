@@ -1,0 +1,6 @@
+EXPORTS
+        olsrd_parse_cnf                         @1
+        olsrd_get_default_cnf                   @2
+        olsrd_free_cnf                          @3
+        olsrd_write_cnf                         @4
+        olsrd_print_cnf                         @5

@@ -1,0 +1,2 @@
+  dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
+  dep_tristate '  ROUTE target support' CONFIG_IP_NF_TARGET_ROUTE $CONFIG_IP_NF_IPTABLES

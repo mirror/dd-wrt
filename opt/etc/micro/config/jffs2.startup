@@ -1,0 +1,22 @@
+#!/bin/sh
+if [ "$(nvram get clean_jffs2)" = "1" ]; then
+    nvram set clean_jffs2=0
+    nvram set sys_clean_jffs2=1
+    nvram commit
+    reboot
+fi
+if [ "$(nvram get enable_jffs2)" = "1" ]; then
+    if [ "$(nvram get sys_enable_jffs2)" = "0" ]; then
+    nvram set sys_enable_jffs2=1
+    nvram commit
+    reboot
+    fi
+fi
+
+if [ "$(nvram get enable_jffs2)" = "0" ]; then
+    if [ "$(nvram get sys_enable_jffs2)" = "1" ]; then
+    nvram set sys_enable_jffs2=0
+    nvram commit
+    reboot
+    fi
+fi

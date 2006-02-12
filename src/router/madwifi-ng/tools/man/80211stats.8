@@ -1,0 +1,30 @@
+.TH "80211STATS" "8" "October 2005" "" ""
+.SH "NAME"
+\fB80211stats\fp \- print statistical data about madwifi interfaces
+.SH "DESCRIPTION"
+Provide statistics about the madwifi 802.11 stack. \fB80211stats\fP
+will print a summary of statistical elements including rx errors, node, crypto
+and key management information.
+.PP
+If a madwifi interface is specified, \fB80211stats\fP will contain the output to 
+statistics derived from interactions between the specified interface and the 
+802.11 stack.
+.SH "OPTIONS"
+.TP
+.B \-i <interface>
+The madwifi interface to derive statistics for. If no interface is specified, 
+it will default to ath0.
+.PP
+.SH "EXAMPLES"
+.TP
+.B 80211stats
+Print summary of statistics derived from the madwifi 802.11 stack, not specific 
+to any madwifi interc=face present in the system.
+.TP
+.B 80211stats \-i ath1
+Print summary of statistics specific to madwifi interface ath1.
+.PP
+.SH "SEE ALSO"
+\fBathstats\fP(8)
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au>.

@@ -1,0 +1,22 @@
+--- Configure.help.orig	Tue Sep 28 12:57:52 2004
++++ Configure.help	Tue Sep 28 12:57:58 2004
+@@ -6517,6 +6517,19 @@
+   kernel: saying N will just cause the configurator to skip all
+   the questions about amateur radio.
+ 
++Atheros wireless support
++CONFIG_ATHEROS
++  Say Y here if you intend to attach an Atheros Cardbus or PCI
++  wireless Ethernet networking card to your computer.  This driver
++  support the standard Linux Wireless Extensions.
++
++  You will also very likely also need the Wireless Tools in order to
++  configure your card and that /etc/pcmcia/wireless.opts works:
++  <http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
++
++  To compile this driver as a module, choose M here: the module will
++  be called ath_pci.o  If unsure, say N.
++
+ Amateur Radio AX.25 Level 2 protocol
+ CONFIG_AX25
+   This is the protocol used for computer communication over amateur

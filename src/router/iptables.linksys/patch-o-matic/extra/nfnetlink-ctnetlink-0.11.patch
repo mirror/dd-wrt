@@ -1,0 +1,1319 @@
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linuxppc-020802-newnat/net/ipv4/netfilter/nfnetlink.c linuxppc-020802-newnat14-ctnl/net/ipv4/netfilter/nfnetlink.c
+--- linuxppc-020802-newnat/net/ipv4/netfilter/nfnetlink.c	Thu Jan  1 01:00:00 1970
++++ linuxppc-020802-newnat14-ctnl/net/ipv4/netfilter/nfnetlink.c	Fri Aug  2 16:35:39 2002
+@@ -0,0 +1,344 @@
++/* Netfilter messages via netlink socket. Allows for user space
++ * protocol helpers and general trouble making from userspace.
++ *
++ * (C) 2001 by Jay Schulist <jschlst@samba.org>,
++ * (C) 2002 by Harald Welte <laforge@gnumonks.org>
++ *
++ * Initial netfilter messages via netlink development funded and
++ * generally made possible by Network Robots, Inc. (www.networkrobots.com)
++ *
++ * Further development of this code funded by Astaro AG (http://www.astaro.com)
++ *
++ * This software may be used and distributed according to the terms
++ * of the GNU General Public License, incorporated herein by reference.
++ */
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/socket.h>
++#include <linux/kernel.h>
++#include <linux/major.h>
++#include <linux/sched.h>
++#include <linux/timer.h>
++#include <linux/string.h>
++#include <linux/sockios.h>
++#include <linux/net.h>
++#include <linux/fcntl.h>
++#include <linux/skbuff.h>
++#include <asm/uaccess.h>
++#include <asm/system.h>
++#include <net/sock.h>
++#include <linux/init.h>
++#include <linux/spinlock.h>
++#include <linux/list.h>
++
++#include <linux/netfilter.h>
++#include <linux/netlink.h>
++#include <linux/nfnetlink.h>
++
++MODULE_LICENSE("GPL");
++
++char nfversion[] = "0.11";
++int nf_debug_level = 1;
++#define nf_debug(level, format, arg...) \
++        if(nf_debug_level > level)  \
++                printk(__FUNCTION__ ": " format, ## arg)
++
++static struct sock *nfnl = NULL;
++static LIST_HEAD(subsys_list);
++static struct nfnetlink_subsystem *subsys_table[NFNL_SUBSYS_COUNT];
++DECLARE_MUTEX(nfnl_sem);
++
++void nfnl_lock(void)
++{
++	nfnl_shlock();
++	nfnl_exlock();
++}
++
++void nfnl_unlock(void)
++{
++	nfnl_exunlock();
++	nfnl_shunlock();
++}
++
++struct nfnetlink_subsystem *nfnetlink_subsys_alloc(int cb_count)
++{
++	int size;
++	struct nfnetlink_subsystem *ss;
++
++	size = sizeof(struct nfnetlink_subsystem)
++		+ (cb_count * sizeof(struct nfnl_callback));
++
++	ss = kmalloc(size, GFP_KERNEL);
++	if (!ss)
++		return NULL;
++	memset(ss, 0, size);
++
++	return ss;
++}
++
++int nfnetlink_subsys_register(struct nfnetlink_subsystem *n)
++{
++	MOD_INC_USE_COUNT;
++
++	nf_debug(0, "registering subsystem ID %u\n", n->subsys_id);
++
++	nfnl_lock();
++	list_add(&n->list, &subsys_list);
++	subsys_table[n->subsys_id] = n;
++	nfnl_unlock();
++
++	return 0;
++}
++
++int nfnetlink_subsys_unregister(struct nfnetlink_subsystem *n)
++{
++	nf_debug(0, "unregistering subsystem ID %u\n", n->subsys_id);
++
++	nfnl_lock();
++	subsys_table[n->subsys_id] = NULL;
++	list_del(&n->list);
++	nfnl_unlock();
++
++	MOD_DEC_USE_COUNT;
++
++	return 0;
++}
++
++struct nfnl_callback *nfnetlink_find_client(u_int16_t nlmsg_type)
++{
++	struct nfnetlink_subsystem *ss;
++	u_int8_t subsys_id = NFNL_SUBSYS_ID(nlmsg_type);
++	u_int8_t type = NFNL_MSG_TYPE(nlmsg_type);
++
++	if (subsys_id >= NFNL_SUBSYS_COUNT
++	    || subsys_table[subsys_id] == NULL)
++		return NULL;
++
++	ss = subsys_table[subsys_id];
++
++	if (type >= ss->cb_count) {
++		nf_debug(0, "msgtype %u >= %u, returning\n", type, 
++			 ss->cb_count);
++		return NULL;
++	}
++
++	return &ss->cb[type];
++}
++
++void __nfa_fill(struct sk_buff *skb, int attrtype, int attrlen,
++		const void *data)
++{
++	struct nfattr *nfa;
++	int size = NFA_LENGTH(attrlen);
++
++	nfa = (struct nfattr *)skb_put(skb, NFA_ALIGN(size));
++	nfa->nfa_type = attrtype;
++	nfa->nfa_len  = size;
++	memcpy(NFA_DATA(nfa), data, attrlen);
++}
++
++int nfattr_parse(struct nfattr *tb[], int maxattr, struct nfattr *nfa, int len)
++{
++	memset(tb, 0, sizeof(struct nfattr *)*maxattr);
++
++	while (NFA_OK(nfa, len)) {
++		unsigned flavor = nfa->nfa_type;
++		if (flavor && flavor <= maxattr)
++			tb[flavor-1] = nfa;
++		nfa = NFA_NEXT(nfa, len);
++	}
++
++	return 0;
++}
++
++/**
++ * nfnetlink_check_attributes - check and parse nfnetlink attributes
++ *
++ * subsys: nfnl subsystem for which this message is to be parsed
++ * nlmsghdr: netlink message to be checked/parsed
++ * cda: array of pointers, needs to be at least subsys->attr_count big
++ *
++ */
++int
++nfnetlink_check_attributes(struct nfnetlink_subsystem *subsys,
++			   struct nlmsghdr *nlh, struct nfattr *cda[])
++{
++	int min_len;
++
++	/* check attribute lengths. */
++	min_len = sizeof(struct nfgenmsg);
++	if (nlh->nlmsg_len < min_len)
++		return -EINVAL;
++
++	if (nlh->nlmsg_len > min_len) {
++		struct nfattr *attr = NFM_NFA(NLMSG_DATA(nlh));
++		int attrlen = nlh->nlmsg_len - NLMSG_ALIGN(min_len);
++
++		while (NFA_OK(attr, attrlen)) {
++			unsigned flavor = attr->nfa_type;
++			if (flavor) {
++				if (flavor > subsys->attr_count)
++					return -EINVAL;
++				cda[flavor - 1] = attr;
++			}
++			attr = NFA_NEXT(attr, attrlen);
++		}
++	} else
++		return -EINVAL;
++
++        return 0;
++}
++
++int nfnetlink_send(struct sk_buff *skb, u32 pid, unsigned group, int echo)
++{
++	int err = 0;
++
++	NETLINK_CB(skb).dst_groups = group;
++	if (echo)
++		atomic_inc(&skb->users);
++	netlink_broadcast(nfnl, skb, pid, group, GFP_KERNEL);
++	if (echo)
++		err = netlink_unicast(nfnl, skb, pid, MSG_DONTWAIT);
++
++	return err;
++}
++
++/* Process one complete nfnetlink message. */
++static inline int nfnetlink_rcv_msg(struct sk_buff *skb,
++				    struct nlmsghdr *nlh, int *errp)
++{
++	struct nfnl_callback *nc;
++	int type, err = 0;
++
++	nf_debug(0, "entered; subsys=%u, msgtype=%u\n",
++		 NFNL_SUBSYS_ID(nlh->nlmsg_type),
++		 NFNL_MSG_TYPE(nlh->nlmsg_type));
++
++	/* Only requests are handled by kernel now. */
++	if (!(nlh->nlmsg_flags & NLM_F_REQUEST)) {
++		nf_debug(0, "received non-request message\n");
++		return 0;
++	}
++
++	/* Unknown message: reply with EINVAL */
++	type = nlh->nlmsg_type;
++	if (NFNL_SUBSYS_ID(type) > NFNL_SUBSYS_COUNT) {
++		nf_debug(0, "subsys_id > subsys_count\n");
++		goto err_inval;
++	}
++
++	/* All the messages must have at least 1 byte length */
++	if (nlh->nlmsg_len < NLMSG_LENGTH(sizeof(struct nfgenmsg))) {
++		nf_debug(0, "received message was too short\n");
++		return 0;
++	}
++
++	nc = nfnetlink_find_client(type);
++	if (!nc) {
++		nf_debug(0, "unable to find client for type %d\n", type);
++		goto err_inval;
++	}
++
++	if (nc->cap_required && 
++	    !cap_raised(NETLINK_CB(skb).eff_cap, nc->cap_required)) {
++		nf_debug(0, "permission denied for type %d\n", type);
++		*errp = -EPERM;
++		return -1;
++	}
++
++	err = nc->call(nfnl, skb, nlh, errp);
++	*errp = err;
++	return err;
++
++err_inval:
++	*errp = -EINVAL;
++	return -1;
++}
++
++/* Process one packet of messages. */
++static inline int nfnetlink_rcv_skb(struct sk_buff *skb)
++{
++	int err;
++	struct nlmsghdr *nlh;
++
++	while (skb->len >= NLMSG_SPACE(0)) {
++		u32 rlen;
++
++		nlh = (struct nlmsghdr *)skb->data;
++		if (nlh->nlmsg_len < sizeof(struct nlmsghdr)
++		    || skb->len < nlh->nlmsg_len)
++			return 0;
++		rlen = NLMSG_ALIGN(nlh->nlmsg_len);
++		if (rlen > skb->len)
++			rlen = skb->len;
++		if (nfnetlink_rcv_msg(skb, nlh, &err)) {
++			if (!err)
++				return -1;
++			netlink_ack(skb, nlh, err);
++		} else
++			if (nlh->nlmsg_flags & NLM_F_ACK)
++				netlink_ack(skb, nlh, 0);
++		skb_pull(skb, rlen);
++	}
++
++	return 0;
++}
++
++static void nfnetlink_rcv(struct sock *sk, int len)
++{
++	do {
++		struct sk_buff *skb;
++
++		if (nfnl_shlock_nowait())
++			return;
++
++		while ((skb = skb_dequeue(&sk->receive_queue)) != NULL) {
++			if (nfnetlink_rcv_skb(skb)) {
++				if (skb->len)
++					skb_queue_head(&sk->receive_queue, skb);
++				else
++					kfree_skb(skb);
++				break;
++			}
++			kfree_skb(skb);
++		}
++
++		up(&nfnl_sem);
++	} while(nfnl && nfnl->receive_queue.qlen);
++}
++
++void __exit nfnetlink_exit(void)
++{
++	printk("Netfilter removing netlink socket.\n");
++	sock_release(nfnl->socket);
++	return;
++}
++
++int __init nfnetlink_init(void)
++{
++	int i;
++	printk("Netfilter messages via NETLINK v%s.\n", nfversion);
++
++	for (i = 0; i < NFNL_SUBSYS_COUNT; i++)
++		subsys_table[i] = NULL;
++
++	nfnl = netlink_kernel_create(NETLINK_NETFILTER, nfnetlink_rcv);
++	if (!nfnl) {
++		printk(KERN_ERR "cannot initialize nfnetlink!\n");
++		return -1;
++	}
++
++	return 0;
++}
++
++module_init(nfnetlink_init);
++module_exit(nfnetlink_exit);
++
++EXPORT_SYMBOL_GPL(nfnetlink_subsys_alloc);
++EXPORT_SYMBOL_GPL(nfnetlink_subsys_register);
++EXPORT_SYMBOL_GPL(nfnetlink_subsys_unregister);
++EXPORT_SYMBOL_GPL(nfnetlink_check_attributes);
++EXPORT_SYMBOL_GPL(nfnetlink_send);
++EXPORT_SYMBOL_GPL(__nfa_fill);
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linuxppc-020802-newnat/net/ipv4/netfilter/nfnetlink_conntrack.c linuxppc-020802-newnat14-ctnl/net/ipv4/netfilter/nfnetlink_conntrack.c
+--- linuxppc-020802-newnat/net/ipv4/netfilter/nfnetlink_conntrack.c	Thu Jan  1 01:00:00 1970
++++ linuxppc-020802-newnat14-ctnl/net/ipv4/netfilter/nfnetlink_conntrack.c	Fri Aug  2 16:00:42 2002
+@@ -0,0 +1,717 @@
++/* Connection tracking via netlink socket. Allows for user space
++ * protocol helpers and general trouble making from userspace.
++ *
++ * (C) 2001 by Jay Schulist <jschlst@samba.org>
++ * (C) 2002 by Harald Welte <laforge@gnumonks.org>
++ *
++ * Initial connection tracking via netlink development funded and 
++ * generally made possible by Network Robots, Inc. (www.networkrobots.com)
++ *
++ * Further development of this code funded by Astaro AG (http://www.asaro.com)
++ *
++ * This software may be used and distributed according to the terms
++ * of the GNU General Public License, incorporated herein by reference.
++ */
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/socket.h>
++#include <linux/kernel.h>
++#include <linux/major.h>
++#include <linux/sched.h>
++#include <linux/timer.h>
++#include <linux/string.h>
++#include <linux/sockios.h>
++#include <linux/net.h>
++#include <linux/fcntl.h>
++#include <linux/skbuff.h>
++#include <asm/uaccess.h>
++#include <asm/system.h>
++#include <net/sock.h>
++#include <linux/init.h>
++#include <linux/netlink.h>
++#include <linux/spinlock.h>
++#include <linux/rtnetlink.h>
++
++#include <linux/netfilter.h>
++#include <linux/netfilter_ipv4.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++#include <linux/netfilter_ipv4/ip_conntrack_core.h>
++
++#include <linux/nfnetlink.h>
++#include <linux/nfnetlink_conntrack.h>
++
++#define ASSERT_READ_LOCK(x) MUST_BE_READ_LOCKED(&ip_conntrack_lock)
++#define ASSERT_WRITE_LOCK(x) MUST_BE_WRITE_LOCKED(&ip_conntrack_lock)
++#include <linux/netfilter_ipv4/listhelp.h>
++
++MODULE_LICENSE("GPL");
++
++char ctversion[] = "0.11";
++int ct_debug_level = 1;
++#define ct_debug(level, format, arg...) \
++	if(ct_debug_level > level)  \
++		printk(__FUNCTION__ ": " format, ## arg)
++
++
++#define DEBUGP(format, args...)	ct_debug(0, format, ## args)
++
++static struct nfnetlink_subsystem *ctnl_subsys;
++
++static int
++ctnetlink_fill_info(struct sk_buff *skb, u32 pid, u32 seq,
++		    int event, 
++		    int nowait, 
++		    const struct ip_conntrack *ct, 
++		    const enum ip_conntrack_info *ctinfo, 
++		    unsigned char proto,
++		    const struct net_device *in,
++		    const struct net_device *out)
++{
++	struct nlmsghdr *nlh;
++	struct nfgenmsg *nfmsg;
++	struct cta_proto cp;
++	unsigned long s;
++	unsigned char *b;
++
++	b = skb->tail;
++	nlh = NLMSG_PUT(skb, pid, seq, (NFNL_SUBSYS_CTNETLINK<<8)|event, 
++			sizeof(struct nfgenmsg));
++	nfmsg = NLMSG_DATA(nlh);
++
++	nlh->nlmsg_flags 	= (nowait && pid) ? NLM_F_MULTI : 0;
++	nfmsg->nfgen_family	= AF_INET;
++	NFA_PUT(skb, CTA_ORIG, sizeof(struct ip_conntrack_tuple), 
++		&ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple);
++	NFA_PUT(skb, CTA_RPLY, sizeof(struct ip_conntrack_tuple),
++		&ct->tuplehash[IP_CT_DIR_REPLY].tuple);
++	s = ct->status;
++	NFA_PUT(skb, CTA_STATUS, sizeof(unsigned long), &s);
++	if (in)
++		NFA_PUT(skb, CTA_IIF, IFNAMSIZ, in->name);
++	if (out)
++		NFA_PUT(skb, CTA_OIF, IFNAMSIZ, out->name);
++	if (ctinfo)
++		NFA_PUT(skb, CTA_INFO, sizeof(unsigned long), ctinfo);
++
++	cp.num_proto = proto;
++	memcpy(&cp.proto, &ct->proto, sizeof (cp.proto));
++	NFA_PUT(skb, CTA_PROTOINFO, sizeof(cp), &cp);
++
++	if (ct->helper) {
++		struct cta_help ch;
++
++		memcpy(&ch.tuple, &ct->helper->tuple, 
++			sizeof(struct ip_conntrack_tuple));
++		memcpy(&ch.mask, &ct->helper->mask,
++			sizeof(struct ip_conntrack_tuple));
++		strncpy((char *)&ch.name, ct->helper->name, sizeof(ch.name));
++		memcpy(&ch.help, &ct->help, sizeof(ch.help));
++		NFA_PUT(skb, CTA_HELPINFO, sizeof(ch), &ch);
++	}
++
++#ifdef CONFIG_IP_NF_NAT_NEEDED
++	if (ct->nat.info.initialized && ct->nat.info.num_manips) {
++		const struct ip_nat_info *nat = &ct->nat.info;
++		struct cta_nat cn;
++
++		cn.num_manips = nat->num_manips;
++		memcpy(&cn.manips, &nat->manips, (nat->num_manips 
++			* sizeof(struct ip_nat_info_manip)));
++		NFA_PUT(skb, CTA_NATINFO, sizeof(struct cta_nat), &cn);
++	}
++#endif /* CONFIG_IP_NF_NAT_NEEDED */
++
++	nlh->nlmsg_len = skb->tail - b;
++	return skb->len;
++
++nlmsg_failure:
++nfattr_failure:
++	skb_trim(skb, b - skb->data);
++	return -1;
++}
++
++static inline struct sk_buff *
++ctnetlink_event_build_msg(const struct ip_conntrack *ct, 
++			  const enum ip_conntrack_info ctinfo, 
++			  const unsigned char proto,
++			  const struct net_device *in,
++			  const struct net_device *out)
++{
++	struct sk_buff *skb;
++	int err;
++
++	skb = alloc_skb(NLMSG_GOODSIZE, GFP_ATOMIC);
++	if (!skb)
++		return NULL;
++
++	err = ctnetlink_fill_info(skb, 0, 0, CTNL_MSG_NEWCONNTRACK, 1, ct,
++				  &ctinfo, proto, in, out);
++	if (err <= 0)
++		goto nlmsg_failure;
++	return skb;
++
++nlmsg_failure:
++	if (skb)
++		kfree_skb(skb);
++        return NULL;
++}
++
++static void
++ctnetlink_create(struct ip_conntrack *ct,
++		 enum ip_conntrack_info ctinfo,
++		 const struct net_device *in, 
++		 const struct net_device *out)
++{
++	u16 proto = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum;
++	struct sk_buff *skb;
++
++	skb = ctnetlink_event_build_msg(ct, ctinfo, proto, in, out);
++	if (!skb)
++		return;
++
++	if (proto == IPPROTO_TCP) {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_TCP, 0);
++		return;
++       	} else if (proto == IPPROTO_UDP) {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_UDP, 0);
++		return;
++       	} else if (proto == IPPROTO_ICMP) {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_ICMP, 0);
++		return;
++	} else {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_OTHER, 0);
++		return;
++	}
++	kfree_skb(skb);
++	return;
++}
++
++#if 0
++static void ctnetlink_destroy(struct ip_conntrack *ct)
++{
++        ctnetlink_create(ct, IP_CT_DELETE, NULL, NULL);
++}
++#endif
++
++static inline int ctnetlink_kill(const struct ip_conntrack *i, void *data)
++{
++	struct ip_conntrack *t = (struct ip_conntrack *)data;
++
++	if (!memcmp(&i->tuplehash[IP_CT_DIR_ORIGINAL], 
++	    &t->tuplehash[IP_CT_DIR_ORIGINAL], 
++	    sizeof(struct ip_conntrack_tuple_hash))) {
++		//ip_conntrack_put(t);
++		nf_conntrack_put(&t->infos[0]);
++		return 1;
++	}
++
++	return 0;
++}
++
++static int
++ctnetlink_del_conntrack(struct sock *ctnl, struct sk_buff *skb, 
++			struct nlmsghdr *nlh, int *errp)
++{
++        struct ip_conntrack_tuple_hash *h;
++	struct ip_conntrack_tuple *tuple;
++	struct nfattr *cda[CTA_MAX];
++
++	ct_debug(0, "entered\n");
++
++	if (nfnetlink_check_attributes(ctnl_subsys, nlh, cda) < 0)
++		return -EINVAL;
++
++	if (cda[CTA_ORIG-1])
++		tuple = NFA_DATA(cda[CTA_ORIG-1]);
++	else {
++		if (cda[CTA_RPLY-1])
++			tuple = NFA_DATA(cda[CTA_RPLY-1]);
++		else {
++			ct_debug(0, "no tuple found in request\n");
++			return -EINVAL;
++		}
++	}
++
++	h = ip_conntrack_find_get(tuple, NULL);
++        if (!h) {
++		ct_debug(0, "tuple not found in conntrack hash:");
++		DUMP_TUPLE(tuple);
++		return -ENOENT;
++	}
++
++	ct_debug(0, "calling selective_cleanup\n");
++	ip_ct_selective_cleanup(ctnetlink_kill, h->ctrack);
++
++	return 0;
++}
++
++static int ctnetlink_done(struct netlink_callback *cb)
++{
++	ct_debug(0, "entering\n");
++        return 0;
++}
++
++static int
++ctnetlink_dump_build_msg(const struct ip_conntrack_tuple_hash *hash,
++			 struct sk_buff *skb, u32 pid, u32 seq)
++{
++	struct ip_conntrack *ct;
++	int err, proto;
++
++	/* Only count originals */
++	if (DIRECTION(hash))
++		return 0;
++
++	ct = hash->ctrack;
++	if (!ct)
++		goto nlmsg_failure;
++
++	proto = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum;
++	err = ctnetlink_fill_info(skb, pid, seq, CTNL_MSG_NEWCONNTRACK, 1,
++				  ct, NULL, proto, NULL, NULL);
++	if (err <= 0)
++		goto nlmsg_failure;
++	return 0;
++
++nlmsg_failure:
++	if (skb)
++		kfree_skb(skb);
++	return -1;
++}
++
++static int
++ctnetlink_dump_table(struct sk_buff *skb, struct netlink_callback *cb)
++{
++	int i;
++	int idx;
++	int s_idx = cb->args[0];
++
++	/* Traverse hash; send originals then reply. */
++	READ_LOCK(&ip_conntrack_lock);
++        for (i = 0, idx = 0; i < ip_conntrack_htable_size; i++, idx++) {
++		if (idx < s_idx)
++			continue;
++		if (LIST_FIND(&ip_conntrack_hash[i], ctnetlink_dump_build_msg,
++			      struct ip_conntrack_tuple_hash *, skb,
++			      NETLINK_CB(cb->skb).pid, cb->nlh->nlmsg_seq))
++			continue;
++	}
++	READ_UNLOCK(&ip_conntrack_lock);
++
++	cb->args[0] = idx;
++	return skb->len;
++}
++
++static int
++ctnetlink_get_conntrack(struct sock *ctnl, struct sk_buff *skb, 
++			struct nlmsghdr *nlh, int *errp)
++{
++	struct ip_conntrack_tuple_hash *h;
++	struct ip_conntrack_tuple *tuple;
++	struct nfattr *cda[CTA_MAX];
++	struct ip_conntrack *ct;
++	struct sk_buff *skb2 = NULL;
++	int err, proto;
++
++	ct_debug(0, "entered\n");
++
++	if (nlh->nlmsg_flags & NLM_F_DUMP) {
++		struct nfgenmsg *msg = NLMSG_DATA(nlh);
++		u32 rlen;
++
++		if (msg->nfgen_family != AF_INET)
++			return -EAFNOSUPPORT;
++
++		ct_debug(0, "starting dump\n");
++                if ((*errp = netlink_dump_start(ctnl, skb, nlh,
++		    				ctnetlink_dump_table,
++						ctnetlink_done)) != 0)
++			return -EINVAL;
++		rlen = NLMSG_ALIGN(nlh->nlmsg_len);
++		if (rlen > skb->len)
++			rlen = skb->len;
++		skb_pull(skb, rlen);
++		return 0;
++	}
++
++	if (nfnetlink_check_attributes(ctnl_subsys, nlh, cda) < 0)
++		return -EINVAL;
++
++	if (cda[CTA_ORIG-1])
++		tuple = NFA_DATA(cda[CTA_ORIG-1]);
++	else {
++		if (cda[CTA_RPLY-1])
++			tuple = NFA_DATA(cda[CTA_RPLY-1]);
++		else
++			return -EINVAL;
++	}
++
++	h = ip_conntrack_find_get(tuple, NULL);
++	if (!h)
++		return -ENOENT;
++
++	ct = h->ctrack;
++	if (!ct)
++		goto nlmsg_failure;
++
++	skb2 = alloc_skb(NLMSG_GOODSIZE, GFP_ATOMIC);
++	if (!skb2)
++		return -ENOMEM;
++	NETLINK_CB(skb2).dst_pid = NETLINK_CB(skb).pid;
++
++        proto = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum;
++	err = ctnetlink_fill_info(skb2, NETLINK_CB(skb).pid, nlh->nlmsg_seq, 
++				  CTNL_MSG_NEWCONNTRACK, 1, ct, NULL, 
++				  proto, NULL, NULL);
++	ip_conntrack_put(ct);
++	if (err <= 0)
++		goto nlmsg_failure;
++
++	err = netlink_unicast(ctnl, skb2, NETLINK_CB(skb).pid, MSG_DONTWAIT);
++	if (err < 0)
++		return err;
++	return 0;
++
++nlmsg_failure:
++	if (skb2)
++		kfree_skb(skb2);
++	return -1;
++}
++
++/* Finish me: should support NLM_F_CREATE and NLM_F_REPLACE. */
++static int 
++ctnetlink_new_conntrack(struct sock *ctnl, struct sk_buff *skb, 
++			struct nlmsghdr *nlh, int *errp)
++{
++	return -EOPNOTSUPP;
++}
++
++
++/* EXPECT */
++
++static int
++ctnetlink_exp_fill_info(struct sk_buff *skb, u32 pid, u32 seq,
++		    int event, 
++		    int nowait, 
++		    const struct ip_conntrack_expect *exp)
++{
++	struct nlmsghdr *nlh;
++	struct nfgenmsg *nfmsg;
++	unsigned char *b;
++
++	b = skb->tail;
++	nlh = NLMSG_PUT(skb, pid, seq, (NFNL_SUBSYS_CTNETLINK<<8)|event, 
++			sizeof(struct nfgenmsg));
++	nlh->nlmsg_flags 	= (nowait && pid) ? NLM_F_MULTI : 0;
++	nfmsg = NLMSG_DATA(nlh);
++	nfmsg->nfgen_family = AF_INET;
++
++	NFA_PUT(skb, CTA_EXP_TUPLE, sizeof(struct ip_conntrack_tuple),
++		&exp->tuple);
++	NFA_PUT(skb, CTA_EXP_MASK, sizeof(struct ip_conntrack_tuple),
++		&exp->mask);
++	NFA_PUT(skb, CTA_EXP_SEQNO, sizeof(u_int32_t), &exp->seq);
++	NFA_PUT(skb, CTA_EXP_HELP, sizeof(union ip_conntrack_expect_help),
++		&exp->help);
++
++	
++
++#ifdef CONFIG_IP_NF_NAT_NEEDED
++#endif /* CONFIG_IP_NF_NAT_NEEDED */
++
++	nlh->nlmsg_len = skb->tail - b;
++	return skb->len;
++
++nlmsg_failure:
++nfattr_failure:
++	skb_trim(skb, b - skb->data);
++	return -1;
++}
++
++static inline struct sk_buff *
++ctnetlink_exp_event_build_msg(const struct ip_conntrack_expect *exp)
++{
++	struct sk_buff *skb;
++	int err;
++
++	skb = alloc_skb(NLMSG_GOODSIZE, GFP_ATOMIC);
++	if (!skb)
++		return NULL;
++
++	err = ctnetlink_exp_fill_info(skb, 0, 0, CTNL_MSG_NEWEXPECT, 1, exp);
++	if (err <= 0)
++		goto nlmsg_failure;
++	return skb;
++
++nlmsg_failure:
++	if (skb)
++		kfree_skb(skb);
++        return NULL;
++}
++
++static void
++ctnetlink_exp_create(struct ip_conntrack_expect *exp)
++{
++	u16 proto = exp->tuple.dst.protonum;
++	struct sk_buff *skb;
++
++	skb = ctnetlink_exp_event_build_msg(exp);
++	if (!skb)
++		return;
++
++	if (proto == IPPROTO_TCP) {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_TCP, 0);
++		return;
++       	} else if (proto == IPPROTO_UDP) {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_UDP, 0);
++		return;
++       	} else if (proto == IPPROTO_ICMP) {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_ICMP, 0);
++		return;
++	} else {
++		nfnetlink_send(skb, 0, NFGRP_IPV4_CT_OTHER, 0);
++		return;
++	}
++	kfree_skb(skb);
++	return;
++}
++
++
++static int
++ctnetlink_del_expect(struct sock *ctnl, struct sk_buff *skb, 
++		     struct nlmsghdr *nlh, int *errp)
++{
++        struct ip_conntrack_expect *exp;
++	struct ip_conntrack_tuple *tuple;
++	struct nfattr *cda[CTA_MAX];
++
++	if (nfnetlink_check_attributes(ctnl_subsys, nlh, cda) < 0)
++		return -EINVAL;
++
++	if (cda[CTA_ORIG-1])
++		tuple = NFA_DATA(cda[CTA_ORIG-1]);
++	else {
++		if (cda[CTA_RPLY-1])
++			tuple = NFA_DATA(cda[CTA_RPLY-1]);
++		else
++			return -EINVAL;
++	}
++
++	/* bump usage count to 2 */
++	exp = ip_conntrack_expect_find_get(tuple);
++	if (!exp)
++		return -ENOENT;
++
++	/* after list removal, usage count == 1 */
++	ip_conntrack_unexpect_related(exp);
++	/* we have put what we 'get' above. after this line usage count == 0 */
++	ip_conntrack_expect_put(exp);
++
++	return 0;
++}
++
++static int
++ctnetlink_exp_dump_build_msg(const struct ip_conntrack_expect *exp,
++			 struct sk_buff *skb, u32 pid, u32 seq)
++{
++	int err, proto;
++
++	proto = exp->tuple.dst.protonum;
++	err = ctnetlink_exp_fill_info(skb, pid, seq, CTNL_MSG_NEWEXPECT, 1, 
++				      exp);
++	if (err <= 0)
++		goto nlmsg_failure;
++	return 0;
++
++nlmsg_failure:
++	if (skb)
++		kfree_skb(skb);
++	return -1;
++}
++
++static int
++ctnetlink_exp_dump_table(struct sk_buff *skb, struct netlink_callback *cb)
++{
++	ct_debug(0, "entered\n");
++	if (cb->args[0] == 0) {
++		READ_LOCK(&ip_conntrack_lock);
++		LIST_FIND(&ip_conntrack_expect_list, 
++			  ctnetlink_exp_dump_build_msg,
++			  struct ip_conntrack_expect *, skb,
++			  NETLINK_CB(cb->skb).pid, cb->nlh->nlmsg_seq);
++		READ_UNLOCK(&ip_conntrack_lock);
++		cb->args[0] = 1;
++	}
++	ct_debug(0, "returning\n");
++
++	return skb->len;
++}
++
++
++static int
++ctnetlink_get_expect(struct sock *ctnl, struct sk_buff *skb, 
++		     struct nlmsghdr *nlh, int *errp)
++{
++	struct ip_conntrack_expect *exp;
++	struct ip_conntrack_tuple *tuple;
++	struct nfattr *cda[CTA_MAX];
++	struct sk_buff *skb2 = NULL;
++	int err, proto;
++
++	ct_debug(0, "entered\n");
++
++	if (nlh->nlmsg_flags & NLM_F_DUMP) {
++		struct nfgenmsg *msg = NLMSG_DATA(nlh);
++		u32 rlen;
++
++		if (msg->nfgen_family != AF_INET)
++			return -EAFNOSUPPORT;
++
++		ct_debug(0, "starting dump\n");
++                if ((*errp = netlink_dump_start(ctnl, skb, nlh,
++		    				ctnetlink_exp_dump_table,
++						ctnetlink_done)) != 0)
++			return -EINVAL;
++		rlen = NLMSG_ALIGN(nlh->nlmsg_len);
++		if (rlen > skb->len)
++			rlen = skb->len;
++		skb_pull(skb, rlen);
++		return 0;
++	}
++
++	if (nfnetlink_check_attributes(ctnl_subsys, nlh, cda) < 0)
++		return -EINVAL;
++
++	if (cda[CTA_ORIG-1])
++		tuple = NFA_DATA(cda[CTA_ORIG-1]);
++	else {
++		if (cda[CTA_RPLY-1])
++			tuple = NFA_DATA(cda[CTA_RPLY-1]);
++		else
++			return -EINVAL;
++	}
++
++	exp = ip_conntrack_expect_find_get(tuple);
++	if (!exp)
++		return -ENOENT;
++
++	skb2 = alloc_skb(NLMSG_GOODSIZE, GFP_ATOMIC);
++	if (!skb2)
++		return -ENOMEM;
++	NETLINK_CB(skb2).dst_pid = NETLINK_CB(skb).pid;
++	proto = exp->tuple.dst.protonum;
++	
++	err = ctnetlink_exp_fill_info(skb2, NETLINK_CB(skb).pid, 
++				      nlh->nlmsg_seq, CTNL_MSG_NEWEXPECT,
++				      1, exp);
++	if (err <= 0)
++		goto nlmsg_failure;
++
++	err = netlink_unicast(ctnl, skb2, NETLINK_CB(skb).pid, MSG_DONTWAIT);
++	if (err < 0)
++		return err;
++	return 0;
++
++nlmsg_failure:
++	if (skb2)
++		kfree_skb(skb2);
++	return -1;
++}
++
++static int
++ctnetlink_new_expect(struct sock *ctnl, struct sk_buff *skb,
++		     struct nlmsghdr *nlh, int *errp)
++{
++	return -EOPNOTSUPP;
++}
++
++/* struct conntrack_expect stuff */
++
++#if 0
++static struct ip_conntrack_notify ctnl_notify = { { NULL, NULL },
++						ctnetlink_destroy,
++						ctnetlink_create };
++
++static struct ip_conntrack_notify ctnl_exp_notify;
++#endif
++
++static void __exit ctnetlink_exit(void)
++{
++	printk("ctnetlink: unregistering with nfnetlink.\n");
++//	ip_conntrack_notify_unregister(&ctnl_exp_notify);
++//	ip_conntrack_notify_unregister(&ctnl_notify);
++	nfnetlink_subsys_unregister(ctnl_subsys);
++	kfree(ctnl_subsys);
++	return;
++}
++
++static int __init ctnetlink_init(void)
++{
++	int ret;
++
++	ctnl_subsys = nfnetlink_subsys_alloc(CTNL_MSG_COUNT);
++	if (!ctnl_subsys) {
++		ret = -ENOMEM;
++		goto err_out; 
++	}
++
++	ctnl_subsys->name = "conntrack";
++	ctnl_subsys->subsys_id = NFNL_SUBSYS_CTNETLINK;
++	ctnl_subsys->cb_count = CTNL_MSG_COUNT;
++	ctnl_subsys->attr_count = CTA_MAX;
++	ctnl_subsys->cb[CTNL_MSG_NEWCONNTRACK].call = ctnetlink_new_conntrack;
++	ctnl_subsys->cb[CTNL_MSG_NEWCONNTRACK].cap_required = CAP_NET_ADMIN;
++	ctnl_subsys->cb[CTNL_MSG_DELCONNTRACK].call = ctnetlink_del_conntrack;
++	ctnl_subsys->cb[CTNL_MSG_DELCONNTRACK].cap_required = CAP_NET_ADMIN;
++	ctnl_subsys->cb[CTNL_MSG_GETCONNTRACK].call = ctnetlink_get_conntrack;
++	ctnl_subsys->cb[CTNL_MSG_GETCONNTRACK].cap_required = 0;
++	ctnl_subsys->cb[CTNL_MSG_NEWEXPECT].call = ctnetlink_new_expect;
++	ctnl_subsys->cb[CTNL_MSG_NEWEXPECT].cap_required = CAP_NET_ADMIN;
++	ctnl_subsys->cb[CTNL_MSG_DELEXPECT].call = ctnetlink_del_expect;
++	ctnl_subsys->cb[CTNL_MSG_DELEXPECT].cap_required = CAP_NET_ADMIN;
++	ctnl_subsys->cb[CTNL_MSG_GETEXPECT].call = ctnetlink_get_expect;
++	ctnl_subsys->cb[CTNL_MSG_GETEXPECT].cap_required = 0;
++	// FIXME: CONFIRM
++
++	printk("ctnetlink: registering with nfnetlink v%s.\n", ctversion);
++	if (nfnetlink_subsys_register(ctnl_subsys) < 0) {
++		printk("ctnetlink_init: cannot register with nfnetlink.\n");
++		ret = -1;
++		goto err_free_subsys;
++	}
++
++
++#if 0
++	if (ip_conntrack_notify_register(&ctnl_notify) < 0) {
++		printk("ctnetlink_init: cannot register notifier.\n");
++		ret = -1;
++		goto err_unreg_subsys;
++	}
++
++	if (ip_conntrack_notify_register(&ctnl_exp_notify) < 0) {
++		printk("ctnetlink_init: cannot register exp notifier\n");
++		ret = -1;
++		goto err_unreg_notify;
++	}
++#endif
++
++
++	return 0;
++	
++#if 0
++err_unreg_notify:
++	ip_conntrack_notify_unregister(&ctnl_notify);
++#endif 
++err_unreg_subsys:
++	nfnetlink_subsys_unregister(ctnl_subsys);
++err_free_subsys:
++	kfree(ctnl_subsys);
++err_out:
++	return ret;
++}
++
++module_init(ctnetlink_init);
++module_exit(ctnetlink_exit);
+diff -Nru linuxppc-020802-newnat/include/linux/nfnetlink.h linuxppc-020802-newnat14-ctnl/include/linux/nfnetlink.h
+--- linuxppc-020802-newnat/include/linux/nfnetlink.h	Thu Jan  1 01:00:00 1970
++++ linuxppc-020802-newnat14-ctnl/include/linux/nfnetlink.h	Fri Aug  2 15:58:27 2002
+@@ -0,0 +1,158 @@
++#ifndef _NFNETLINK_H
++#define _NFNETLINK_H
++#include <linux/types.h>
++
++/* Generic structure for encapsulation optional netfilter information.
++ * It is reminiscent of sockaddr, but with sa_family replaced
++ * with attribute type. 
++ * ! This should someday be put somewhere generic as now rtnetlink and
++ * ! nfnetlink use the same attributes methods. - J. Schulist.
++ */
++
++struct nfattr
++{
++	unsigned short  nfa_len;
++	unsigned short  nfa_type;
++};
++
++#define NFA_ALIGNTO     4
++#define NFA_ALIGN(len)	(((len) + NFA_ALIGNTO - 1) & ~(NFA_ALIGNTO - 1))
++#define NFA_OK(nfa,len)	((len) > 0 && (nfa)->nfa_len >= sizeof(struct nfattr) \
++	&& (nfa)->nfa_len <= (len))
++#define NFA_NEXT(nfa,attrlen)	((attrlen) -= NFA_ALIGN((nfa)->nfa_len), \
++	(struct nfattr *)(((char *)(nfa)) + NFA_ALIGN((nfa)->nfa_len)))
++#define NFA_LENGTH(len)	(NFA_ALIGN(sizeof(struct nfattr)) + (len))
++#define NFA_SPACE(len)	NFA_ALIGN(NFA_LENGTH(len))
++#define NFA_DATA(nfa)   ((void *)(((char *)(nfa)) + NFA_LENGTH(0)))
++#define NFA_PAYLOAD(nfa) ((int)((nfa)->nfa_len) - NFA_LENGTH(0))
++
++/* General form of address family dependent message.
++ */
++struct nfgenmsg {
++	unsigned char nfgen_family;
++};
++
++#if 0
++struct iptgenmsg {
++	unsigned char 	iptgen_family;
++	char 		iptgen_table[IPT_TABLE_MAXNAMELEN];
++};
++
++struct iptmsg {
++	unsigned char	iptm_family;
++	char		iptm_table[IPT_TABLE_MAXNAMELEN];
++	char		iptm_chain[IPT_FUNCTION_MAXNAMELEN];
++	unsigned int	iptm_entry_num;
++};
++
++enum iptattr_type_t
++{
++        IPTA_UNSPEC,	/* [none] I don't know (unspecified). */
++	IPTA_IP,	/* [ipt_ip] */
++	IPTA_NFCACHE,	/* [u_int] */
++	IPTA_COUNTERS,	/* [ipt_counters] */
++	IPTA_MATCH,	/* [ipt_info] */
++	IPTA_TARGET,	/* [ipt_info] */
++        IPTA_MAX = IPTA_TARGET
++};
++
++struct ipta_info {
++	u_int16_t 	size;
++	char 		name[IPT_FUNCTION_MAXNAMELEN];
++	unsigned char 	data[0];
++};
++
++#define NFM_IPTA(n)	((struct nfattr *)(((char *)(n)) \
++	+ NLMSG_ALIGN(sizeof(struct iptmsg))))
++
++#endif
++
++#define NFM_NFA(n)      ((struct nfattr *)(((char *)(n)) \
++        + NLMSG_ALIGN(sizeof(struct nfgenmsg))))
++#define NFM_PAYLOAD(n)  NLMSG_PAYLOAD(n, sizeof(struct nfgenmsg))
++
++
++#ifndef NETLINK_NETFILTER
++#define NETLINK_NETFILTER	6
++#endif
++
++/* netfilter netlink message types are split in two pieces:
++ * 8 bit subsystem, 8bit operation.
++ */
++
++#define NFNL_SUBSYS_ID(x)	((x & 0xff00) >> 8)
++#define NFNL_MSG_TYPE(x)	(x & 0x00ff)
++
++enum nfnl_subsys_id {
++	NFNL_SUBSYS_NONE = 0,
++	NFNL_SUBSYS_CTNETLINK,
++	NFNL_SUBSYS_CTNETLINK_EXP,
++	NFNL_SUBSYS_IPTNETLINK,
++	NFNL_SUBSYS_QUEUE,
++	NFNL_SUBSYS_ULOG,
++	NFNL_SUBSYS_COUNT,
++};
++
++#ifdef __KERNEL__
++
++#include <linux/capability.h>
++
++struct nfnl_callback
++{
++	kernel_cap_t cap_required; /* capabilities required for this msg */
++	int (*call)(struct sock *nl, struct sk_buff *skb, 
++		struct nlmsghdr *nlh, int *errp);
++};
++
++struct nfnetlink_subsystem
++{
++	/* Internal use. */
++	struct list_head list;
++	
++	const char *name;
++	__u8 subsys_id;		/* nfnetlink subsystem ID */
++	__u8 cb_count;		/* number of callbacks */
++	u_int32_t attr_count;	/* number of nfattr's */
++	struct nfnl_callback cb[0]; /* callback for individual types */
++};
++
++extern void __nfa_fill(struct sk_buff *skb, int attrtype,
++        int attrlen, const void *data);
++#define NFA_PUT(skb, attrtype, attrlen, data) \
++({ if (skb_tailroom(skb) < (int)NFA_SPACE(attrlen)) goto nfattr_failure; \
++   __nfa_fill(skb, attrtype, attrlen, data); })
++
++extern struct semaphore nfnl_sem;
++#define nfnl_exlock()		do { } while(0)
++#define nfnl_exunlock()		do { } while(0)
++#define nfnl_exlock_nowait()	(0)
++
++#define nfnl_shlock()		down(&nfnl_sem)
++#define nfnl_shlock_nowait()	down_trylock(&nfnl_sem)
++
++#ifndef CONFIG_NF_NETLINK
++#define nfnl_shunlock()		up(&nfnl_sem)
++#else
++#define nfnl_shunlock()		do { up(&nfnl_sem); \
++                             		if(nfnl && nfnl->receive_queue.qlen) \
++                                     		nfnl->data_ready(nfnl, 0); \
++                        	} while(0)
++#endif
++
++extern void nfnl_lock(void);
++extern void nfnl_unlock(void);
++
++extern struct nfnetlink_subsystem *nfnetlink_subsys_alloc(int cb_count);
++extern int nfnetlink_subsys_register(struct nfnetlink_subsystem *n);
++extern int nfnetlink_subsys_unregister(struct nfnetlink_subsystem *n);
++
++extern int nfnetlink_check_attributes(struct nfnetlink_subsystem *subsys,
++				      struct nlmsghdr *nlh, 
++				      struct nfattr *cda[]);
++extern int nfattr_parse(struct nfattr *tb[], int maxattr, 
++			struct nfattr *nfa, int len);
++extern int nfnetlink_send(struct sk_buff *skb, u32 pid, unsigned group, 
++			  int echo);
++
++#endif	/* __KERNEL__ */
++#endif	/* _NFNETLINK_H */
+diff -Nru linuxppc-020802-newnat/include/linux/nfnetlink_conntrack.h linuxppc-020802-newnat14-ctnl/include/linux/nfnetlink_conntrack.h
+--- linuxppc-020802-newnat/include/linux/nfnetlink_conntrack.h	Thu Jan  1 01:00:00 1970
++++ linuxppc-020802-newnat14-ctnl/include/linux/nfnetlink_conntrack.h	Fri Aug  2 16:09:29 2002
+@@ -0,0 +1,84 @@
++#ifndef _NFNETLINK_CONNTRACK_H
++#define _NFNETLINK_CONNTRACK_H
++#include <linux/nfnetlink.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++//#include <linux/netfilter_ipv4/ip_conntrack_protocol.h>
++
++/* CTNETLINK for ip_conntrack */
++
++enum cntl_msg_types {
++	CTNL_MSG_NEWCONNTRACK,
++	CTNL_MSG_GETCONNTRACK,
++	CTNL_MSG_DELCONNTRACK,
++
++	CTNL_MSG_NEWEXPECT,
++	CTNL_MSG_GETEXPECT,
++	CTNL_MSG_DELEXPECT,
++	CTNL_MSG_CONFIRMEXPECT,
++
++	CTNL_MSG_COUNT,
++};
++
++/* ctnetlink attribute types.
++ */
++enum ctattr_type_t
++{
++        CTA_UNSPEC,     /* [none] I don't know (unspecified). */
++        CTA_ORIG,       /* [ip_conntrack_tuple] Original tuple. */
++        CTA_RPLY,       /* [ip_conntrack_tuple] Reply tuple. */
++        CTA_IIF,        /* [char] Input interface name (ie eth0). */
++        CTA_OIF,        /* [char] Output interface name (ie eth1). */
++        CTA_STATUS,     /* [unsigned long] Status of connection. */
++        CTA_INFO,       /* [unsigned long] Information (ctinfo). */
++        CTA_PROTOINFO,  /* [cta_proto] Protocol specific ct information. */
++        CTA_HELPINFO,   /* [cta_help] Helper specific information. */
++        CTA_NATINFO,    /* [cta_nat] Any NAT transformations. */
++	CTA_TIMEOUT,	/* [unsigne long] timer */
++
++	CTA_EXP_TIMEOUT,
++	CTA_EXP_TUPLE,	/* [ip_conntrack_tuple] Expected tuple */
++	CTA_EXP_MASK,	/* [ip_conntrack_tuple] Mask for EXP_TUPLE */
++	CTA_EXP_SEQNO,	/* [u_int32_t] sequence number */
++	CTA_EXP_PROTO,	/* [cta_exp_proto] */
++	CTA_EXP_HELP,	/* [cta_exp_help] */
++
++        CTA_MAX = CTA_EXP_HELP
++};
++
++/* Attribute specific data structures.
++ */
++
++#ifdef CONFIG_IP_NF_NAT_NEEDED
++#include <linux/netfilter_ipv4/ip_nat.h>
++struct cta_nat {
++	unsigned int num_manips;
++        struct ip_nat_info_manip manips[IP_NAT_MAX_MANIPS];
++};
++#endif /* CONFIG_IP_NF_NAT_NEEDED */
++
++struct cta_proto {
++	unsigned char num_proto;	/* Protocol number IPPROTO_X */
++	union ip_conntrack_proto proto;
++};
++
++struct cta_help {
++	struct ip_conntrack_tuple tuple;
++        struct ip_conntrack_tuple mask;
++	char name[31];			/* name of conntrack helper */
++	union ip_conntrack_help help;
++};
++
++/* ctnetlink multicast groups: reports any change of ctinfo,
++ * ctstatus, or protocol state change.
++ */
++#define NFGRP_IPV4_CT_TCP	0x01
++#define NFGRP_IPV4_CT_UDP	0x02
++#define NFGRP_IPV4_CT_ICMP	0x04
++#define NFGRP_IPV4_CT_OTHER 	0x08
++
++#define NFGRP_IPV6_CT_TCP       0x10
++#define NFGRP_IPV6_CT_UDP       0x20
++#define NFGRP_IPV6_CT_ICMP      0x40
++#define NFGRP_IPV6_CT_OTHER 	0x80
++
++#endif /* _NFNETLINK_CONNTRACK_H */

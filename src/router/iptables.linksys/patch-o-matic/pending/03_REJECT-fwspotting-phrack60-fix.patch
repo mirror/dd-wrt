@@ -1,0 +1,41 @@
+diff -urN linux-2.4.21-pre2-clean/net/ipv4/netfilter/ipt_REJECT.c linux-2.4.21-pre2/net/ipv4/netfilter/ipt_REJECT.c
+--- linux-2.4.21-pre2-clean/net/ipv4/netfilter/ipt_REJECT.c	2002-11-29 00:53:15.000000000 +0100
++++ linux-2.4.21-pre2/net/ipv4/netfilter/ipt_REJECT.c	2003-01-05 19:59:27.000000000 +0100
+@@ -6,6 +6,8 @@
+ #include <linux/module.h>
+ #include <linux/skbuff.h>
+ #include <linux/ip.h>
++#include <linux/udp.h>
++#include <linux/icmp.h>
+ #include <net/icmp.h>
+ #include <net/ip.h>
+ #include <net/tcp.h>
+@@ -157,6 +159,7 @@
+ static void send_unreach(struct sk_buff *skb_in, int code)
+ {
+ 	struct iphdr *iph;
++	struct udphdr *udph;
+ 	struct icmphdr *icmph;
+ 	struct sk_buff *nskb;
+ 	u32 saddr;
+@@ -186,6 +189,19 @@
+ 	if (iph->frag_off&htons(IP_OFFSET))
+ 		return;
+ 
++	/* if UDP checksum is set, verify it's correct */
++	if (iph->protocol == IPPROTO_UDP
++	    && skb_in->tail-(u8*)iph >= sizeof(struct udphdr)) {
++		int datalen = skb_in->len - (iph->ihl<<2);
++		udph = (struct udphdr *)((char *)iph + (iph->ihl<<2));
++		if (udph->check
++		    && csum_tcpudp_magic(iph->saddr, iph->daddr,
++		                         datalen, IPPROTO_UDP,
++		                         csum_partial((char *)udph, datalen,
++		                                      0)) != 0)
++			return;
++	}
++		    
+ 	/* If we send an ICMP error to an ICMP error a mess would result.. */
+ 	if (iph->protocol == IPPROTO_ICMP
+ 	    && skb_in->tail-(u8*)iph >= sizeof(struct icmphdr)) {
+Binärdateien linux-2.4.21-pre2-clean/net/ipv4/netfilter/.ipt_REJECT.c.swp and linux-2.4.21-pre2/net/ipv4/netfilter/.ipt_REJECT.c.swp sind verschieden.

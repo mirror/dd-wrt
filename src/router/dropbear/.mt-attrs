@@ -1,0 +1,2 @@
+   file "debian/rules"
+execute "true"

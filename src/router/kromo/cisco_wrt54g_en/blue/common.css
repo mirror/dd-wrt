@@ -1,0 +1,313 @@
+* {
+font-family:Tahoma, Arial, Helvertica, sans-serif;
+font-size:1em;
+}
+body {
+background:#fff;
+margin:.906em;
+font-size:69%;
+}
+body.gui {
+text-align:center;
+background:#111;
+margin:0;
+}
+hr {
+height:.09em;
+border:none;
+text-align:center;
+color:#ccc;
+background:#ccc;
+width:100%;
+}
+pre {
+text-align:left;
+font-family:Courier New, Courier;
+}
+form {
+margin:0;
+}
+#wrapper {
+position:relative;
+text-align:left;
+width:72.464em;
+margin:0 auto;
+}
+#header {
+position:absolute;
+top:.906em;
+left:0;
+width:72.464em;
+background:#111;
+}
+#header #logo {
+background:url(logo.png) left center no-repeat;
+height:4.076em;
+width:260px;
+}
+#header #logo h1 {
+display:none;
+}
+#statusInfo {
+position:absolute;
+top:.906em;
+right:0;
+width:32.609em;
+text-align:right;
+color:#ccc;
+}
+#menu {
+position:absolute;
+top:4.257em;
+left:0;
+width:72.464em;
+background:#111;
+}
+#menuSub {
+position:absolute;
+top:2.264em;
+left:0;
+width:72.283em;
+padding-top:.362em;
+border-style:solid solid none solid;
+border-width:.09em;
+}
+#menuMainList, 
+#menuSubList {
+margin:0;
+padding:0;
+}
+#menuMainList li, 
+#menuSubList li {
+display:inline;
+float:left;
+list-style-type:none;
+}
+#menuMainList li span,
+#menuMainList li a, 
+#menuSubList li span,
+#menuSubList li a {
+display:block;
+padding:.453em .906em .543em .906em;
+margin-left:.369em;
+}
+#menuMainList li a {
+background:#333;
+font-weight:bold;
+text-decoration:none;
+color:#999;
+border-style:solid solid none solid;
+border-color:#555 #222 #000 #555;
+border-width:.09em;
+margin-top:.09em;
+}
+#menuMainList li a:hover {
+background:#666;
+color:#ccc;
+border-style:solid solid none solid;
+border-color:#888 #444 #000 #888;
+border-width:.09em;
+margin-top:0;
+}
+#menuMainList li span, 
+#menuMainList li.current a, 
+#menuMainList li.current a:hover {
+position:relative;
+z-index:1;
+font-weight:bold;
+border-style:solid solid none solid;
+border-width:.09em;
+padding-bottom:.626em;
+margin-top:0;
+}
+#menuMainList #menuSubList li a {
+font-weight:normal;
+border-style:solid solid none solid;
+border-width:.09em;
+padding-bottom:.543em;
+margin-top:.09em;
+z-index:0;
+}
+#menuMainList #menuSubList li a:hover {
+margin-top:0;
+}
+#menuMainList #menuSubList li span {
+background:#fff;
+font-weight:normal;
+color:#000;
+border-style:solid solid none solid;
+border-color:#fff #ccc #000 #fff;
+border-width:.09em;
+padding-bottom:.626em;
+}
+#main, 
+#helpContainer {
+position:absolute;
+top:10.165em;
+left:0;
+width:72.464em;
+background:#fff;
+}
+#main #contents {
+position:relative;
+z-index:1;
+width:52.536em;
+padding:.906em;
+}
+h2, 
+h3, 
+.submitFooter {
+position:relative;
+z-index:2;
+margin:0 0 .906em 0;
+background:#ccc;
+padding:.181em .725em;
+border-style:solid;
+border-color:#ddd #999 #999 #ddd;
+border-width:.09em;
+}
+.setting {
+margin-bottom:.453em;
+min-height:1.822em;
+overflow:visible;
+}
+.setting .label {
+float:left;
+width:18.116em;
+}
+.setting input,
+.setting select {
+font-weight:normal;
+}
+.warning {
+padding:.725em;
+margin:.362em;
+border:solid .181em #f00;
+text-align:center;
+}
+.comment {
+display:block;
+margin-bottom:.725em;
+font-style:italic;
+color:#999;
+}
+fieldset {
+border:solid .09em #ccc;
+padding:.725em;
+margin:0;
+}
+fieldset legend {
+font-weight:bold;
+background:#fff;
+margin-left:-.362em;
+padding:0 .272em;
+}
+table {
+margin:0 auto;
+}
+table tr th {
+padding:0 .725em;
+color:#666;
+text-align:center;
+}
+table tr td {
+padding:.725em .725em 0 .725em;
+}
+#help {
+position:relative;
+z-index:1;
+width:17.210em;
+padding:.906em;
+left:53.442em;
+}
+#help dl {
+padding:0;
+margin:0;
+}
+#help dt.term {
+margin:0 0 .362em 0;
+font-weight:bold;
+}
+#help dd.definition {
+padding-bottom:.908em;
+border-bottom:dotted .09em #ccc;
+margin:0 0 .908em 0;
+}
+#help a {
+display:block;
+position:absolute;
+top:1.178em;
+right:1.812em;
+text-align:right;
+text-decoration:none;
+text-transform:lowercase;
+z-index:3;
+}
+.submitFooter {
+padding:.725em;
+margin:0;
+text-align:center;
+}
+.submitFooter input,
+.message div input {
+padding:.362em 1.087em;
+margin:0 .362em;
+}
+.message {
+max-width:72.464em;
+margin:0 auto;
+}
+.message div {
+padding:1.812em;
+font-weight:bold;
+text-align:center;
+border-style:solid;
+border-color:#ddd #999 #999 #ddd;
+border-width:.09em;
+background:#ccc;
+}
+.message div input {
+margin-top:1.812em;
+font-weight:normal;
+}
+.popup {
+background:#fff;
+padding:.906em;
+}
+* html #menuSub {
+width:72.464em;
+}
+* html #main #contents {
+position:relative;
+z-index:0;
+width:54.348em;
+padding:.906em;
+}
+* html .setting {
+height:1.812em;
+}
+* html .submitFooter input {
+padding:.362em .543em;
+}
+* html fieldset {
+padding:0 .725em .362em .725em;
+}
+* html fieldset legend {
+margin-left:-9px;
+margin-bottom:8px;
+padding:0 .09em;
+}
+* html #helpContainer {
+position:absolute;
+top:10.174em;
+left:53.442em;
+width:19.03em;
+background:#fff;
+}
+* html #help {
+position:relative;
+width:19.03em;
+padding:.91em;
+left:0;
+z-index:0;
+}

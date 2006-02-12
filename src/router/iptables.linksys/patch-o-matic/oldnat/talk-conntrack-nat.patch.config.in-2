@@ -1,0 +1,10 @@
+      dep_tristate '    REDIRECT target support' CONFIG_IP_NF_TARGET_REDIRECT $CONFIG_IP_NF_NAT
+      # If they want talk, set to $CONFIG_IP_NF_NAT (m or y), 
+      # or $CONFIG_IP_NF_TALK (m or y), whichever is weaker.  Argh.
+      if [ "$CONFIG_IP_NF_TALK" = "m" ]; then
+	define_tristate CONFIG_IP_NF_NAT_TALK m
+      else
+        if [ "$CONFIG_IP_NF_TALK" = "y" ]; then
+          define_tristate CONFIG_IP_NF_NAT_TALK $CONFIG_IP_NF_NAT
+        fi
+      fi

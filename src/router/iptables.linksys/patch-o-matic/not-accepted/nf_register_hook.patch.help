@@ -1,0 +1,7 @@
+Author: Jamal Hadi Selim <drj@cyberus.ca>
+Status: Submitted at 2.4.18-pre9 time, REJECTED
+
+Have nf_register_hook() return an error in case somebody registers the
+same function at the same hook twice.
+
+Reason for reject: Nobody is allowed to register twice.

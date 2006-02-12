@@ -1,0 +1,130 @@
+NoCatSplash is a Open Public Network Gateway Daemon.  It performs as a
+[captive/open/active] portal.  When run on a gateway/router on a network,
+all web requests are redirected until the client either logs in or clicks
+"I Accept" to an AUP. The gateway daemon then changes the firewall rules
+on the gateway to pass traffic for that client (based on IP address and
+MAC address).
+
+NoCatSplash is the successor to NoCatAuth, which was written in Perl.
+NoCatSplash is written in ANSI C in order to be smaller and work better on
+embedded style devices. NoCatSplash uses the portable GLib library from the
+GNOME Project for its event loop, memory management, and high-level data
+structures.
+
+*** Quickstart
+
+./configure
+make 
+make install
+vi /usr/local/etc/nocat.conf
+/usr/local/sbin/splashd
+
+*** Requirements - Current
+
+- Linux
+ * glib 1.2
+ * iptables
+ * netfilter kernel modules for NAT, redirection, etc.
+ * GnuPG (passive mode only)
+ * libghttp (remote splash only)
+
+*** Requirements - Future Version
+
+- FreeBSD
+ * ipfw - no MAC address filtering
+ * ipfwv2 - includes MAC address filtering
+ * gmake
+
+- OpenBSD
+ * pfctl
+
+- NetBSD
+
+- Mac OS X
+
+*** Building NoCatSplash for normal operation
+
+To build and configure the NoCatSplash gateway, run:
+
+$ cd NoCatSplash-nightly
+$ ./configure
+$ make 
+
+iptables must be in your path when you run ./configure! Next, as root:
+
+# make install
+# vi /usr/local/etc/nocat.conf [or use your editor of choice]
+
+In addition to the usual GNU ./configure options, NoCatSplash also supports:
+
+  --prefix=<path to install> 
+	defaults to /usr/local
+
+  --with-remote-splash
+	If enabled, splashd will attempt to fetch its splash page
+	from the URL specified by SplashURL, rather than using the
+	local one specified by SplashForm. SplashForm is retained
+	as a fallback in the event that SplashURL can't be loaded.
+
+  --with-mode=passive
+	Compile for *experimental* authenticating passive mode. Passive mode
+	basically doesn't really work yet. Patches welcome.
+
+  --with-firewall=loopback       
+	Compiles with "loopback" firewall scripts for testing.
+
+  --with-ghttpd
+	Also compiles ghttpd for local web server testing.
+
+
+*** Running the NoCatSplash gateway
+
+To run the NoCatSplash gateway, you must be root. Run:
+
+# export PATH=$PATH:/sbin
+# ./splashd
+
+In particular, you need to make sure that iptables can be found via the
+PATH environment variable before executing splashd.
+
+*** Building NoCatSplash for testing purposes
+
+You can build NoCatSplash with the "loopback" firewall scripts in order
+to test it on a machine without any network connection:
+
+$ cd splash
+$ ./configure --prefix=/tmp/nocat --with-firewall=loopback \
+     --with-ghttpd
+$ make
+$ make install
+$ vi /tmp/nocat/etc/nocat.conf
+
+Set "LoginTimeout" to a low value, say, 120 seconds. As root, run:
+
+# /tmp/nocat/sbin/ghttpd &
+# /tmp/nocat/sbin/splashd
+
+If you're not currently running a web server,  this will start ghttpd, a
+lightweight web server, running on port 80, serving data out of the
+DocumentRoot specified in nocat.conf.  Then run /tmp/nocat/sbin/splashd. Open a
+browser, and go to http://localhost/test.html or some other page on your local
+web server. You should be captured and allowed to log in, at which point you
+should be directed to the web page you attempted to visit. You should be able
+to browse your local web server until your login expires.
+
+*** Notes
+
+NoCatSplash only runs on Linux at present. Contact me if you are
+interested in porting it to other operating systems, particularly *BSD,
+and I will give you pointers on how to do so.
+
+People who have been paying attention will note that I've temporarily
+thrown out my original design for NoCatSplash, and concentrated on
+building a simplified rendition of the NoCatAuth Open mode in C. This
+is deliberate. The original design was nice, but too baroque for getting
+this project off the ground.
+
+Anyway, this code is going to change very rapidly. It might
+not be fancy, but it should work. Comments and questions welcome.
+
+SDE <schuyler@nocat.net>

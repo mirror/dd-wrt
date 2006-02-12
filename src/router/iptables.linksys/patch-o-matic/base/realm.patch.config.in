@@ -1,0 +1,2 @@
+  dep_tristate '  tcpmss match support' CONFIG_IP_NF_MATCH_TCPMSS $CONFIG_IP_NF_IPTABLES
+  dep_tristate '  realm match support' CONFIG_IP_NF_MATCH_REALM $CONFIG_IP_NF_IPTABLES

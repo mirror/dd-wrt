@@ -1,0 +1,108 @@
+/* Styling */
+
+body {
+	background:				#CCCCDD;
+}
+
+#left {
+	background-color:		#CCCCDD;
+}
+
+body.gui {
+	background:				#CCCCDD url(images/help_bg.png) top right repeat-y;
+}
+
+#header, li#current {
+	background-color:		#F2F2F9;
+}
+
+#header {
+	background-image:		url(images/header_bg.png);
+	background-position:	top right;
+	background-repeat:		repeat-x;
+}
+
+#header div.logo  {
+	background-image:		url(images/logo.png);
+	background-repeat:		no-repeat;
+}
+
+#menuMain {
+	background-image:		url(images/nav_bar.png);
+}
+
+ul#menuMainList li#current {
+	border-left-color:			#003366;
+	border-right-color:			#003366;
+}
+
+ul#menuMainList li, ul#menuSubList li {
+	border-left-color:			#003366;
+}
+
+#help {
+	background2:				transparent;
+	background-image2:		url(images/help_bg.png);
+}
+
+#help div.logo {
+	background-image:		url(images/help.png);
+	background-repeat:		no-repeat;
+}
+
+#statusInfo  {
+	background:				#CCCCDD url(images/bg.png2);
+}
+
+input,select {
+	background-color:		#EEEEF3;
+	border-color:			#003399;
+}
+
+div.message div {
+	background-color:		#DDDDEE;
+	border-color:			#EAEAEA;
+}
+
+div.message div {
+	background:				url(images/message_bg.png);
+}
+
+#footer {
+	background-image:		url(images/footer.png);
+}
+
+	
+/* Text */
+body,td,th,input,select {
+	color:					#115B80;
+}
+
+a:link {
+	color:					#167DAF;
+}
+
+a:visited {
+	color:					#167DAF;
+}
+
+a:hover {
+	color:					#167DAF;
+}
+
+a:active {
+	color: 					#167DAF;
+}
+
+.section {
+	color:					#9CCCFF;
+	border-color:			#EAEAEA;
+}
+
+.info {
+	color:					#eeeeff;
+}
+
+div.warning {
+	color:					#EE3333;
+}

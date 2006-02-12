@@ -1,0 +1,7 @@
+# The targets
+  if [ "$CONFIG_IP6_NF_RAW" != "n" ]; then
+      dep_tristate '    TRACE target support' CONFIG_IP6_NF_TARGET_TRACE $CONFIG_IP6_NF_FILTER
+      if [ "$CONFIG_IP6_NF_TARGET_TRACE" != "n" ]; then
+        define_bool CONFIG_IP6_NF_TARGET_TRACE_NEEDED y
+      fi
+  fi

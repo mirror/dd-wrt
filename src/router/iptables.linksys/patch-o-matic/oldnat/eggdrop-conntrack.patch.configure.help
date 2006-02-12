@@ -1,0 +1,9 @@
+CONFIG_IP_NF_FTP
+Eggdrop bot support
+CONFIG_IP_NF_EGG
+  If you are running an eggdrop hub bot on this machine, then you
+  may want to enable this feature. This enables eggdrop bots to share
+  their user file to other eggdrop bots.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

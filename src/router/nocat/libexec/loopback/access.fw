@@ -1,0 +1,27 @@
+#!/bin/sh
+
+# Note: your PATH is inherited from the gateway process
+#
+
+usage="Usage: $0 [permit|deny] [MAC] [IP] [Class]"
+action=$1
+mac=$2
+ip=$3
+class=$4
+
+if [ "$action" == "permit" ]; then
+    cmd="-A"
+elif [ "$action" == "deny" ]; then
+    cmd="-D"
+else
+    echo $usage
+    exit 1
+fi
+
+if [ -z "$ip" ]; then
+    echo $usage
+    exit 1
+fi
+
+iptables -t nat $cmd NoCat_OK -j ACCEPT
+

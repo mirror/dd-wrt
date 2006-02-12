@@ -1,0 +1,11 @@
+prefix=${PWD}/../glib-1.2.10-install
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/include
+
+Name: GLib
+Description: C Utility Library
+Version: 1.2.10
+Libs: -L${libdir} -lglib
+Cflags: -I${includedir}/glib-1.2 -I${libdir}/glib/include 
+

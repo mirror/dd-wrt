@@ -1,0 +1,12 @@
+- fix translations
+- fix documentation
+- implement a "make check" -> automate the testing process
+- better resolving error output
+- 255.255.255.255 doesn't work with HP-UX gethostbyname
+- add option for autoexecuting wol-*? -> install wol-* to ${libexecdir}
+- sitewide config (/etc/wol/wol.config) and user config ($HOME/.wolrc)?
+- check if macaddress is valid (look at http://standards.ieee.org/getieee802/)
+- wolp (Wake On LAN proxy) support http://etherboot.sf.net/wolp, maybe a reimplementation
+- magic packets > 1 -> put several packets into one buffer for sending over the line
+- ipv6? only for interest, cause there is no ipv6-only host out there, huh?
+- a graphical frontend with some cool gimmicks?

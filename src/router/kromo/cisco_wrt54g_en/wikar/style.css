@@ -1,0 +1,223 @@
+/* defaults
+----------------------------------- */
+
+* {
+	padding: 0;
+	margin: 0;
+	font-family: verdana, arial, helvetica, sans-serif;
+	font-size: 12px;
+}
+
+p { 
+	color: #000;
+}
+
+h1 {
+	font-size: 24px;
+}
+
+h2, h3, dt {
+	padding: 0px 0px 5px 0px;
+	font-weight: bold;
+}
+
+hr {
+	display: none;
+}
+
+input.num {
+	width: auto;
+}
+
+input.ipnum {
+	text-transform:	uppercase;
+	text-align: center;
+}
+
+th, td {
+	padding: 0px 10px 0px 0px;	
+}
+
+dd {
+	padding: 0px 0px 5px 0px;
+}
+
+select, option {
+	width: auto;
+	min-width: 30px;
+}
+
+/* gui
+----------------------------------- */
+
+.gui {
+	background-color: #fff;
+}
+
+/* content
+----------------------------------- */
+
+#content {
+	background-color: #000;
+}
+
+/* header
+----------------------------------- */
+
+#header {
+	height: 65px;	
+	background-color: #000;
+}
+
+/* logo
+----------------------------------- */
+
+#header #logo {
+	background-color: #2b226f;
+	color: #0f0;
+	padding: 0px 5px 0px 5px;
+}
+
+/* menu
+----------------------------------- */
+
+#header #menu {
+	background-color: #2b226f;
+	border-bottom: solid 1px #4336af;
+	color: #fff;
+	padding: 0px 5px 0px 5px;
+}
+
+#header #menu ul {
+	list-style-type: none;
+}
+
+#header #menu li {
+	display: inline;
+	padding: 0px 3px 0px 3px;
+}
+
+#header #menu li a {
+	color: #fff;
+	text-decoration: none;
+}
+
+#header #menu li a:hover {
+	text-decoration: underline;
+}
+
+/* menu -> main
+----------------------------------- */
+
+#header #menu #menuMain {
+	width: 100%;
+	padding: 2px 0px 3px 0px;
+}
+
+#header #menu .current {
+	border-bottom: solid 1px #0f0;
+}
+
+#header #menu a.current {
+	border-bottom: none;
+}
+
+/* menu -> sub
+----------------------------------- */
+
+#header #menu #menuSub {
+	width: 100%;
+	background-color: #000;
+	margin: 4px 0px 0px 0px;
+	padding: 2px 0px 3px 0px;
+	float: left;
+}
+
+#header #menu #menuSub span {
+	border-bottom: solid 1px #0f0;
+}
+
+/* main
+----------------------------------- */
+
+#main {
+	background-color: #fff;
+	border-top: solid 1px #ddd;
+	clear: both;
+	padding: 5px 5px 5px 5px;
+}
+
+#main fieldset {
+	width: -150px;
+	margin: 0px 150px 0px 0px;
+	color: #2300af;
+	padding: 5px 5px 5px 5px;
+}
+
+#main .comment {
+	font-style: italic;
+	color: #000;
+	padding: 0px 0px 5px 0px;
+}
+
+#main .label {
+	width: 16em;
+	color: #000;
+	padding: 0px 0px 5px 0px;
+	float: left;
+	clear: both;
+}
+
+#main .label input{
+	float: left;
+}
+
+#main .setting {
+	color: #000;
+	padding: 0px 0px 5px 0px;
+}
+
+#main .setting input, #main .setting option {
+	margin: 0px 2px 0px 0px;
+}
+
+/* submit footer
+----------------------------------- */
+
+.submitFooter {
+	padding: 5px 5px 5px 5px;
+}
+
+/* status info
+----------------------------------- */
+
+#statusInfo {
+	position: absolute;
+	top: 100px;
+	right: 5px;
+	width: 130px;
+	padding: 5px 5px 5px 5px;
+}
+
+/* help
+----------------------------------- */
+
+#helpContainer {
+	position: absolute;
+	top: 240px;
+	right: 5px;
+	width: 130px;
+	padding: 5px 5px 5px 5px;
+}
+
+/* warning & process
+----------------------------------- */
+
+.warning {
+	font-weight: bold;
+}
+
+.warning input {
+	margin: 5px 0px 5px 0px;
+	color: #2b226f;
+}
