@@ -1,0 +1,61 @@
+AvantCom Private 802.11 MIB for MadWiFi and HostAP Drivers using NetSNMP
+
+The AvantCom Private 802.11 MIB for NetSNMP 5.0.8 found here uses Wireless Extension information 
+and driver specific /proc files to populate the AvantCom private 802.11 MIB. See 
+http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html for more details about 
+Wireless Extensions.
+
+Drivers vary in what funtions and data they do and do not support in terms of Wireless 
+Extensions and driver /proc files, so the AVC 802.11 MIB is populated based on what the 
+particular driver makes available. 
+
+See http://hostap.epitest.fi/ for information on the HostAP driver for the 
+Prism 2/2.5/3 chipsets and http://sourceforge.net/projects/madwifi/ for more 
+information on the MadWiFi driver for the Atheros chipsets.
+
+This release assumes you already have a working build for NetSNMP in place. See 
+http://www.net-snmp.org/ for details about installing NetSNMP on a Linux or other
+Unix oriented OS. To add AvantCom private 802.11 MIB support, unzip the files in this 
+release to the following directory:
+
+.../net-snmp-5.0.8/agent/mibgroup 
+
+Reconfigure NetSNMP by adding the following parameter to the configuration step 
+(from the .../net-snmp-5.0.8 directory):
+
+--with-mib-modules="avc802dot11"
+
+Your configuration command may look a bit different than mine which is:
+
+./configure --with-cflags="-g -O0 -Dlinux" --with-mib-modules="avc802dot11"
+
+Now rebuild NetSNMP using the make clean, make, make install commands.
+
+That's it, assuming you already had a NetSNMP build that was responding to SNMP
+requests.
+
+Keep in mind this is a beta release and only GETs are supported at
+the moment. Please send feedback about problems and/or enhancements 
+to lsimmons@avantcom.com.
+
+Always use the MIB file that comes with the release. This is an experimental
+MIB and objects will move about from time to time. If there is a question
+about compatiblily, compare the DEFVAL section of the avSystem.sysMIBVersion and the
+value returned in the avSystem.sysExpectedMIBVersion to be certain they match.
+
+Support for the standard 802.11 MIB can be found at: 
+http://www.avantcom.com/snmp80211.asp
+
+
+avc802do11-0.0.2 - 09/25/2003
+
+Initial BETA release:
+
+Atheros Chipset - MAC and PHY statistics
+Prism Chipset - Associated clients table with statistics
+
+
+Larry Simmons
+AvantCom Corporation
+www.avantcom.com
+lsimmons@avantcom.com

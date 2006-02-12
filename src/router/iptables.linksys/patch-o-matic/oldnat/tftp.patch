@@ -1,0 +1,343 @@
+diff -X dontdiff -Nru linux-2.4.17/net/ipv4/netfilter/ip_conntrack_tftp.c linux-2.4.17-tftp/net/ipv4/netfilter/ip_conntrack_tftp.c
+--- linux-2.4.17/net/ipv4/netfilter/ip_conntrack_tftp.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.17-tftp/net/ipv4/netfilter/ip_conntrack_tftp.c	Tue Jan 22 19:23:25 2002
+@@ -0,0 +1,123 @@
++/*
++ * Licensed under GNU GPL version 2 Copyright Magnus Boden <mb@ozaba.mine.nu>
++ * Version: 0.0.7
++ *
++ */
++
++#include <linux/module.h>
++#include <linux/ip.h>
++#include <linux/udp.h>
++
++#include <linux/netfilter.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ip_conntrack_helper.h>
++
++#define TFTP_PORT 69
++#define OPCODE_READ 1
++#define OPCODE_WRITE 2
++
++MODULE_AUTHOR("Magnus Boden <mb@ozaba.mine.nu>");
++MODULE_DESCRIPTION("Netfilter connection tracking module for tftp");
++MODULE_LICENSE("GPL");
++
++#define MAX_PORTS 8
++static int ports[MAX_PORTS];
++#ifdef MODULE_PARM
++MODULE_PARM(ports, "1-" __MODULE_STRING(MAX_PORTS) "i");
++MODULE_PARM_DESC(ports, "port numbers of tftp servers");
++#endif
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++struct tftphdr {
++	u_int16_t opcode;
++};
++
++static int tftp_help(const struct iphdr *iph, size_t len,
++	struct ip_conntrack *ct,
++	enum ip_conntrack_info ctinfo)
++{
++	struct udphdr *udph = (void *)iph + iph->ihl * 4;
++	struct tftphdr *tftph = (void *)udph + 8;
++	struct ip_conntrack_tuple t, m;
++
++	switch(ntohs(tftph->opcode)) {
++		/* RRQ and WRQ works the same way */
++		case OPCODE_READ:
++		case OPCODE_WRITE:
++			DEBUGP("<1> ip_ct_tftp: %u.%u.%u.%u:%u <-> %u.%u.%u.%u:%u - %u.%u.%u.%u:%u <-> %u.%u.%u.%u:%u\n",
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u.udp.port),
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.u.udp.port),
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.u.udp.port),
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.u.udp.port));
++			memset(&t, 0, sizeof(struct ip_conntrack_tuple));
++			memset(&m, 0, sizeof(struct ip_conntrack_tuple));
++			t.dst.protonum = IPPROTO_UDP;
++			m.dst.protonum = 0xFFFF;
++			t.src.ip = ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.ip;
++			m.src.ip = 0xFFFF;
++			t.dst.ip = ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.ip;
++			m.dst.ip = 0xFFFF;
++			t.dst.u.udp.port = ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.u.udp.port;
++			m.dst.u.udp.port = 0xFFFF;
++			ip_conntrack_expect_related(ct, &t, &m, NULL);
++			break;
++		default:
++			DEBUGP("<1> ip_ct_tftp: Unknown opcode\n");
++	}
++	return(NF_ACCEPT);
++}
++
++static struct ip_conntrack_helper tftp[MAX_PORTS];
++
++static void fini(void)
++{
++	int i;
++
++	for(i = 0 ; (i < MAX_PORTS) && ports[i] ; i++) {
++		DEBUGP("<1> Unregistering ip_conntrack_tftp.o for port %d\n",
++					ports[i]);
++		ip_conntrack_helper_unregister(&tftp[i]);
++	} 
++}
++
++static int __init init(void)
++{
++	int i, ret;
++
++	if(!ports[0])
++		ports[0]=TFTP_PORT;
++
++	for(i = 0 ; (i < MAX_PORTS) && ports[i] ; i++) {
++		/* Create helper structure */
++		memset(&tftp[i], 0, sizeof(struct ip_conntrack_helper));
++
++		tftp[i].tuple.dst.protonum = IPPROTO_UDP;
++		tftp[i].tuple.src.u.udp.port = htons(ports[i]);
++		tftp[i].mask.dst.protonum = 0xFFFF;
++		tftp[i].mask.src.u.udp.port = 0xFFFF;
++		tftp[i].help = tftp_help;
++
++		DEBUGP("<1> Registering ip_conntrack_tftp.o for port %d\n",
++					ports[i]);
++
++		ret=ip_conntrack_helper_register(&tftp[i]);
++		if(ret) {
++			fini();
++			return(ret);
++		}
++	}
++
++	return(0);
++}
++
++module_init(init);
++module_exit(fini);
+diff -X dontdiff -Nru linux-2.4.17/net/ipv4/netfilter/ip_nat_tftp.c linux-2.4.17-tftp/net/ipv4/netfilter/ip_nat_tftp.c
+--- linux-2.4.17/net/ipv4/netfilter/ip_nat_tftp.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.17-tftp/net/ipv4/netfilter/ip_nat_tftp.c	Tue Jan 22 19:25:50 2002
+@@ -0,0 +1,212 @@
++/*
++ * Licensed under GNU GPL version 2 Copyright Magnus Boden <mb@ozaba.mine.nu>
++ * Version: 0.0.7
++ * This module currently supports DNAT:
++ * iptables -t nat -A PREROUTING -d x.x.x.x -j DNAT --to-dest x.x.x.y
++ *
++ * and SNAT:
++ * iptables -t nat -A POSTROUTING { -j MASQUERADE , -j SNAT --to-source x.x.x.x }
++ *
++ * It has not been tested with
++ * -j SNAT --to-source x.x.x.x-x.x.x.y since I only have one external ip
++ * If you do test this please let me know if it works or not.
++ */
++
++#include <linux/module.h>
++#include <linux/netfilter_ipv4.h>
++#include <linux/ip.h>
++#include <linux/udp.h>
++
++#include <linux/netfilter.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ip_nat.h>
++#include <linux/netfilter_ipv4/ip_nat_helper.h>
++#include <linux/netfilter_ipv4/ip_nat_rule.h>
++#include <linux/netfilter_ipv4/ip_conntrack_helper.h>
++
++MODULE_AUTHOR("Magnus Boden <mb@ozaba.mine.nu>");
++MODULE_DESCRIPTION("Netfilter NAT helper for tftp");
++MODULE_LICENSE("GPL");
++
++#define MAX_PORTS 8
++#define OPCODE_READ 1
++#define OPCODE_WRITE 2
++#define TFTP_PORT 69
++
++static int ports[MAX_PORTS];
++#ifdef MODULE_PARM
++MODULE_PARM(ports,"1-" __MODULE_STRING(MAX_PORTS) "i");
++MODULE_PARM_DESC(ports, "port numbers of tftp servers");
++#endif
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++struct tftphdr {
++	u_int16_t opcode;
++};
++
++static unsigned int tftp_nat_help(struct ip_conntrack *ct,
++                         struct ip_nat_info *info,
++                         enum ip_conntrack_info ctinfo,
++                         unsigned int hooknum,
++                         struct sk_buff **pskb)
++{
++	struct iphdr *iph = (*pskb)->nh.iph;
++	struct udphdr *udph = (void *)iph + iph->ihl * 4;
++	struct tftphdr *tftph = (void *)udph + 8;
++	struct ip_conntrack_tuple t, m;
++
++	switch(ntohs(tftph->opcode)) {
++		/* RRQ and WRQ works the same way */
++		case OPCODE_READ:
++			case OPCODE_WRITE:
++			DEBUGP("<1> ip_nat_tftp: %u.%u.%u.%u:%u <-> %u.%u.%u.%u:%u - %u.%u.%u.%u:%u <-> %u.%u.%u.%u:%u\n",                       
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u.udp.port),
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.u.udp.port),
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.u.udp.port),
++				NIPQUAD(ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.ip),
++				ntohs(ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.u.udp.port));
++			memset(&t, 0, sizeof(struct ip_conntrack_tuple));
++			memset(&m, 0, sizeof(struct ip_conntrack_tuple));
++			t.dst.protonum = IPPROTO_UDP;
++			t.src.ip = ct->tuplehash[IP_CT_DIR_REPLY].tuple.src.ip;
++			t.dst.ip = ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.ip;
++			t.dst.u.udp.port = ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.u.udp.port;
++			m.dst.protonum = 0xFFFF;
++			m.src.ip = 0xFFFF;
++			m.dst.ip = 0xFFFF;
++			m.dst.u.udp.port = 0xFFFF;
++			ip_conntrack_expect_related(ct, &t, &m, NULL);
++			break;
++		default:
++			DEBUGP("<1> ip_nat_tftp: Unknown opcode\n");
++	}               
++
++	return(NF_ACCEPT);
++}
++
++static int tftp_nat_expected(struct sk_buff **pskb,
++	unsigned int hooknum,
++	struct ip_conntrack *ct,
++	struct ip_nat_info *info,
++	struct ip_conntrack *master,
++	struct ip_nat_info *masterinfo,
++	unsigned int *verdict)
++{
++	struct ip_nat_multi_range mr;
++	int i;
++	u_int8_t is_tftp=0;
++	struct iphdr *iph = (*pskb)->nh.iph;
++#if 0
++	struct udphdr *udph = (void *)iph + iph->ihl*4;
++#endif
++
++	/* Remove this when netfilter stops giving me
++	   tcp packets */
++	if(iph->protocol != IPPROTO_UDP)
++		return(0);
++
++	/* Check if master is tftp, The check is only
++	   if the helper is registered for that port */
++	for(i = 0; i<MAX_PORTS && ports[i]; i++) {
++		if(master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.u.udp.port == htons(ports[i]))
++			is_tftp=1;
++	}
++	if(!is_tftp)
++		return(0);
++
++	mr.rangesize = 1;
++	mr.range[0].flags = IP_NAT_RANGE_MAP_IPS;
++
++	if(HOOK2MANIP(hooknum) == IP_NAT_MANIP_SRC){
++		mr.range[0].min_ip = mr.range[0].max_ip = master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip;
++
++		DEBUGP("<1> ip_nat_tftp: orig: %u.%u.%u.%u:%u <-> %u.%u.%u.%u:%u newsrc: %u.%u.%u.%u\n",
++                                NIPQUAD((*pskb)->nh.iph->saddr),
++				ntohs(udph->source),
++                                NIPQUAD((*pskb)->nh.iph->daddr),
++				ntohs(udph->dest),
++                                NIPQUAD(master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip));
++	}else{
++		mr.range[0].min_ip = mr.range[0].max_ip = master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip;
++		mr.range[0].min.udp.port = mr.range[0].max.udp.port = master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u.udp.port;
++		mr.range[0].flags |= IP_NAT_RANGE_PROTO_SPECIFIED;
++
++		DEBUGP("<1> ip_nat_tftp: orig: %u.%u.%u.%u:%u <-> %u.%u.%u.%u:%u newdst: %u.%u.%u.%u:%u\n",
++                                NIPQUAD((*pskb)->nh.iph->saddr),
++				ntohs(udph->source),
++                                NIPQUAD((*pskb)->nh.iph->daddr),
++				ntohs(udph->dest),
++                                NIPQUAD(master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip),
++				ntohs(master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.u.udp.port));
++	}
++
++	*verdict = ip_nat_setup_info(ct,&mr,hooknum);
++
++	return(NF_ACCEPT);
++}
++
++static struct ip_nat_expect tftp_expect = {
++	{ NULL, NULL },
++	tftp_nat_expected
++};
++static struct ip_nat_helper tftp[MAX_PORTS];
++
++static void fini(void)
++{
++	int i;
++
++	for(i = 0 ; (i < MAX_PORTS) && ports[i] ; i++){
++		DEBUGP("<1> Unregistering ip_nat_tftp.o for port %d\n",
++					ports[i]);
++		ip_nat_helper_unregister(&tftp[i]);
++	}
++
++	ip_nat_expect_unregister(&tftp_expect);
++}
++
++static int __init init(void)
++{
++	int i, ret;
++
++	ret = ip_nat_expect_register(&tftp_expect);
++	if(!ret) {
++		if(!ports[0])
++			ports[0] = TFTP_PORT;
++
++		for(i = 0 ; (i < MAX_PORTS) && ports[i] ; i++) {
++			memset(&tftp[i], 0, sizeof(struct ip_nat_helper));
++			tftp[i].tuple.dst.protonum = IPPROTO_UDP;
++			tftp[i].tuple.src.u.udp.port = htons(ports[i]);
++			tftp[i].mask.dst.protonum = 0xFFFF;
++			tftp[i].mask.src.u.udp.port = 0xFFFF;
++			tftp[i].help = tftp_nat_help;
++			DEBUGP("<1> Registering ip_nat_tftp.o for port %d\n",
++						ports[i]);
++
++			/* tmpname thingy */
++
++			ret = ip_nat_helper_register(&tftp[i]);
++			if(ret) {
++				DEBUGP("ip_nat_tftp.o: Unable to register for port %d\n",
++						ports[i]);
++				fini();
++				return(ret);
++			}
++		}
++	} else {
++		ip_nat_expect_unregister(&tftp_expect);
++	}
++
++	return(ret);
++}
++
++module_init(init);
++module_exit(fini);

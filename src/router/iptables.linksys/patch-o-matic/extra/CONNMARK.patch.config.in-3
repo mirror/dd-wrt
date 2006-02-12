@@ -1,0 +1,4 @@
+    dep_tristate '  Connection state match support' CONFIG_IP_NF_MATCH_STATE $CONFIG_IP_NF_CONNTRACK $CONFIG_IP_NF_IPTABLES 
+    if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
+      dep_tristate '  Connection mark match support' CONFIG_IP_NF_MATCH_CONNMARK $CONFIG_IP_NF_IPTABLES
+    fi

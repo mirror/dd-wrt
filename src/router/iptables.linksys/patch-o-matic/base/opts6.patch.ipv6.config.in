@@ -1,0 +1,4 @@
+  dep_tristate '  MAC address match support' CONFIG_IP6_NF_MATCH_MAC $CONFIG_IP6_NF_IPTABLES
+  if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+    dep_tristate '  Hop-by-Hop and Dst opts header match (EXPERIMENTAL)' CONFIG_IP6_NF_MATCH_OPTS $CONFIG_IP6_NF_IPTABLES
+  fi

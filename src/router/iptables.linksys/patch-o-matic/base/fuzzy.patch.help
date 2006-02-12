@@ -1,0 +1,12 @@
+Author: Hime Aguiar e Oliveira Jr. <hime@engineer.com>
+Status: Under development , but works .
+
+This option adds CONFIG_IP_NF_MATCH_FUZZY,
+which allows you to match packets according to a dynamic profile
+implemented by means of a simple Fuzzy Logic Controller (FLC) .
+
+Suppported options are:
+
+--upper-limit => Desired upper bound for traffic rate
+
+--lower-limit => Lower bound over which the FLC starts to limit traffic 

@@ -1,0 +1,158 @@
+
+
+<!-- Schedule Reboot Configuration by keloke-->
+<!--- Edited to work by Thibor-->
+<!--- Re-Edited to Really work by keloke-->
+<!--- In conclusion created/edited by Thibor&keloke-->
+        <TR>
+          <TD width=153 bgColor=#000000 colSpan=3 height=25><p align=right><B><FONT style="FONT-SIZE: 9pt" color=#ffffff>Schedule Reboot</FONT></B></P></TD>
+          <TD width=8 bgColor=#000000 height=25></TD>
+          <TD colSpan=6 width="452" height="25">
+            <TABLE>
+              <TBODY>
+              <TR>
+                <TD width=16 height=25>&nbsp;</TD>
+                <TD width=12 height=25>&nbsp;</TD>
+                <TD style="BORDER-TOP: 1px solid; BORDER-LEFT-WIDTH: 1px;BORDER-BOTTOM-WIDTH: 1px; BORDER-RIGHT-WIDTH: 1px" borderColor=#b5b5e6 width=411 height=25>&nbsp;</TD>
+                <TD width=15 height=25>&nbsp;</TD></TR></TBODY></TABLE></TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
+         <TR>
+          <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
+          <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
+          <TD colSpan=3 height=25 width="41">&nbsp;</TD>
+                  <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">Schedule Reboot:</SPAN></TD>
+          <TD width=298 height=25>
+            <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
+              <TBODY>
+              <TR>
+                          <TD width=242 height=25><INPUT type=radio value=1 name=schedule_enable <% nvram_selmatch("schedule_enable","1","checked"); %>><b>Enable</b>&nbsp;&nbsp;&nbsp;&nbsp;<input type=radio value=0 name=schedule_enable <% nvram_selmatch("schedule_enable","0","checked"); %>><b>Disable</b></TD>
+                </TR></TBODY></TABLE></TD>
+          <TD width=13 height=25>&nbsp;</TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
+          
+		  <TR>
+          <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
+          <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
+          <TD colSpan=3 height=25 width="41">&nbsp;</TD>
+                  <TD width=100 height=25><span lang=zh-tw style="FONT-SIZE: 8pt">Time in Sec Eg: 1 Hour = 3600</span></TD>
+          <TD width=298 height=25>
+            <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
+              <TBODY>
+              <TR>
+                          <TD width=242 height=25><input type=radio value=1 name=schedule_hour_time <% nvram_selmatch("schedule_hour_time","1","checked"); %>><input class=num maxlength=5 size=7 name="schedule_time" value='<% nvram_get("schedule_time"); %>'></TD>
+                </TR></TBODY></TABLE></TD>
+          <TD width=13 height=25>&nbsp;</TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
+		  
+		  <TR>
+          <TD bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
+          <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
+          <TD colSpan=3 height=25 width="41">&nbsp;</TD>
+                  <TD width=100 height=25><span lang=zh-tw style="FONT-SIZE: 8pt">At a set Time&nbsp;(Cron must be enabled)</span></TD>
+          <TD width=246 height=25>
+            <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
+              <TBODY>
+              <TR>
+                          <TD width=242 height=25><input type=radio value=2 name=schedule_hour_time <% nvram_selmatch("schedule_hour_time","2","checked"); %>>
+                             <select name="schedule_hours">
+                             <option value="00" <% nvram_selmatch("schedule_hours","00","selected"); %>>00</option>
+                             <option value="01" <% nvram_selmatch("schedule_hours","01","selected"); %>>01</option>
+                             <option value="02" <% nvram_selmatch("schedule_hours","02","selected"); %>>02</option>
+                             <option value="03" <% nvram_selmatch("schedule_hours","03","selected"); %>>03</option>
+                             <option value="04" <% nvram_selmatch("schedule_hours","04","selected"); %>>04</option>
+                             <option value="05" <% nvram_selmatch("schedule_hours","05","selected"); %>>05</option>
+                             <option value="06" <% nvram_selmatch("schedule_hours","06","selected"); %>>06</option>
+                             <option value="07" <% nvram_selmatch("schedule_hours","07","selected"); %>>07</option>
+                             <option value="08" <% nvram_selmatch("schedule_hours","08","selected"); %>>08</option>
+                             <option value="09" <% nvram_selmatch("schedule_hours","09","selected"); %>>09</option>
+                             <option value="10" <% nvram_selmatch("schedule_hours","10","selected"); %>>10</option>
+                             <option value="11" <% nvram_selmatch("schedule_hours","11","selected"); %>>11</option>
+                             <option value="12" <% nvram_selmatch("schedule_hours","12","selected"); %>>12</option>
+                             <option value="13" <% nvram_selmatch("schedule_hours","13","selected"); %>>13</option>
+                             <option value="14" <% nvram_selmatch("schedule_hours","14","selected"); %>>14</option>
+                             <option value="15" <% nvram_selmatch("schedule_hours","15","selected"); %>>15</option>
+                             <option value="16" <% nvram_selmatch("schedule_hours","16","selected"); %>>16</option>
+                             <option value="17" <% nvram_selmatch("schedule_hours","17","selected"); %>>17</option>
+                             <option value="18" <% nvram_selmatch("schedule_hours","18","selected"); %>>18</option>
+                             <option value="19" <% nvram_selmatch("schedule_hours","19","selected"); %>>19</option>
+                             <option value="20" <% nvram_selmatch("schedule_hours","20","selected"); %>>20</option>
+                             <option value="21" <% nvram_selmatch("schedule_hours","21","selected"); %>>21</option>
+                             <option value="22" <% nvram_selmatch("schedule_hours","22","selected"); %>>22</option>
+                             <option value="23" <% nvram_selmatch("schedule_hours","23","selected"); %>>23</option>
+                            </select>
+                            <select name="schedule_minutes">
+                             <option value="00" <% nvram_selmatch("schedule_minutes","00","selected"); %>>:00</option>
+                             <option value="01" <% nvram_selmatch("schedule_minutes","01","selected"); %>>:01</option>
+                             <option value="02" <% nvram_selmatch("schedule_minutes","02","selected"); %>>:02</option>
+                             <option value="03" <% nvram_selmatch("schedule_minutes","03","selected"); %>>:03</option>
+                             <option value="04" <% nvram_selmatch("schedule_minutes","04","selected"); %>>:04</option>
+                             <option value="05" <% nvram_selmatch("schedule_minutes","05","selected"); %>>:05</option>
+                             <option value="06" <% nvram_selmatch("schedule_minutes","06","selected"); %>>:06</option>
+                             <option value="07" <% nvram_selmatch("schedule_minutes","07","selected"); %>>:07</option>
+                             <option value="08" <% nvram_selmatch("schedule_minutes","08","selected"); %>>:08</option>
+                             <option value="09" <% nvram_selmatch("schedule_minutes","09","selected"); %>>:09</option>
+                             <option value="10" <% nvram_selmatch("schedule_minutes","10","selected"); %>>:10</option>
+                             <option value="11" <% nvram_selmatch("schedule_minutes","11","selected"); %>>:11</option>
+                             <option value="12" <% nvram_selmatch("schedule_minutes","12","selected"); %>>:12</option>
+                             <option value="13" <% nvram_selmatch("schedule_minutes","13","selected"); %>>:13</option>
+                             <option value="14" <% nvram_selmatch("schedule_minutes","14","selected"); %>>:14</option>
+                             <option value="15" <% nvram_selmatch("schedule_minutes","15","selected"); %>>:15</option>
+                             <option value="16" <% nvram_selmatch("schedule_minutes","16","selected"); %>>:16</option>
+                             <option value="17" <% nvram_selmatch("schedule_minutes","17","selected"); %>>:17</option>
+                             <option value="18" <% nvram_selmatch("schedule_minutes","18","selected"); %>>:18</option>
+                             <option value="19" <% nvram_selmatch("schedule_minutes","19","selected"); %>>:19</option>
+                             <option value="20" <% nvram_selmatch("schedule_minutes","20","selected"); %>>:20</option>
+                             <option value="21" <% nvram_selmatch("schedule_minutes","21","selected"); %>>:21</option>
+                             <option value="22" <% nvram_selmatch("schedule_minutes","22","selected"); %>>:22</option>
+                             <option value="23" <% nvram_selmatch("schedule_minutes","23","selected"); %>>:23</option>
+                             <option value="24" <% nvram_selmatch("schedule_minutes","24","selected"); %>>:24</option>
+                             <option value="25" <% nvram_selmatch("schedule_minutes","25","selected"); %>>:25</option>
+                             <option value="26" <% nvram_selmatch("schedule_minutes","26","selected"); %>>:26</option>
+                             <option value="27" <% nvram_selmatch("schedule_minutes","27","selected"); %>>:27</option>
+                             <option value="28" <% nvram_selmatch("schedule_minutes","28","selected"); %>>:28</option>
+                             <option value="29" <% nvram_selmatch("schedule_minutes","29","selected"); %>>:29</option>
+                             <option value="30" <% nvram_selmatch("schedule_minutes","30","selected"); %>>:30</option>
+                             <option value="31" <% nvram_selmatch("schedule_minutes","31","selected"); %>>:31</option>
+                             <option value="32" <% nvram_selmatch("schedule_minutes","32","selected"); %>>:32</option>
+                             <option value="33" <% nvram_selmatch("schedule_minutes","33","selected"); %>>:33</option>
+                             <option value="34" <% nvram_selmatch("schedule_minutes","34","selected"); %>>:34</option>
+                             <option value="35" <% nvram_selmatch("schedule_minutes","35","selected"); %>>:35</option>
+                             <option value="36" <% nvram_selmatch("schedule_minutes","36","selected"); %>>:36</option>
+                             <option value="37" <% nvram_selmatch("schedule_minutes","37","selected"); %>>:37</option>
+                             <option value="38" <% nvram_selmatch("schedule_minutes","38","selected"); %>>:38</option>
+                             <option value="39" <% nvram_selmatch("schedule_minutes","39","selected"); %>>:39</option>
+                             <option value="40" <% nvram_selmatch("schedule_minutes","40","selected"); %>>:40</option>
+                             <option value="41" <% nvram_selmatch("schedule_minutes","41","selected"); %>>:41</option>
+                             <option value="42" <% nvram_selmatch("schedule_minutes","42","selected"); %>>:42</option>
+                             <option value="43" <% nvram_selmatch("schedule_minutes","43","selected"); %>>:43</option>
+                             <option value="44" <% nvram_selmatch("schedule_minutes","44","selected"); %>>:44</option>
+                             <option value="45" <% nvram_selmatch("schedule_minutes","45","selected"); %>>:45</option>
+                             <option value="46" <% nvram_selmatch("schedule_minutes","46","selected"); %>>:46</option>
+                             <option value="47" <% nvram_selmatch("schedule_minutes","47","selected"); %>>:47</option>
+                             <option value="48" <% nvram_selmatch("schedule_minutes","48","selected"); %>>:48</option>
+                             <option value="49" <% nvram_selmatch("schedule_minutes","49","selected"); %>>:49</option>
+                             <option value="50" <% nvram_selmatch("schedule_minutes","50","selected"); %>>:50</option>
+                             <option value="51" <% nvram_selmatch("schedule_minutes","51","selected"); %>>:51</option>
+                             <option value="52" <% nvram_selmatch("schedule_minutes","52","selected"); %>>:52</option>
+                             <option value="53" <% nvram_selmatch("schedule_minutes","53","selected"); %>>:53</option>
+                             <option value="54" <% nvram_selmatch("schedule_minutes","54","selected"); %>>:54</option>
+                             <option value="55" <% nvram_selmatch("schedule_minutes","55","selected"); %>>:55</option>
+                             <option value="56" <% nvram_selmatch("schedule_minutes","56","selected"); %>>:56</option>
+                             <option value="57" <% nvram_selmatch("schedule_minutes","57","selected"); %>>:57</option>
+                             <option value="58" <% nvram_selmatch("schedule_minutes","58","selected"); %>>:58</option>
+                             <option value="59" <% nvram_selmatch("schedule_minutes","59","selected"); %>>:59</option>
+                            </select>
+                            <select name="schedule_weekdays">
+                             <option value="*" <%  nvram_selmatch("schedule_weekdays","*","selected"); %>>Everyday</option>
+                             <option value="00" <% nvram_selmatch("schedule_weekdays","00","selected"); %>>Sunday</option>
+                             <option value="01" <% nvram_selmatch("schedule_weekdays","01","selected"); %>>Monday</option>
+                             <option value="02" <% nvram_selmatch("schedule_weekdays","02","selected"); %>>Tuesday</option>
+                             <option value="03" <% nvram_selmatch("schedule_weekdays","03","selected"); %>>Wednesday</option>
+                             <option value="04" <% nvram_selmatch("schedule_weekdays","04","selected"); %>>Thursday</option>
+                             <option value="05" <% nvram_selmatch("schedule_weekdays","05","selected"); %>>Friday</option>
+                             <option value="06" <% nvram_selmatch("schedule_weekdays","06","selected"); %>>Saturday</option>
+                            </select>
+                            </TD>
+                </TR></TBODY></TABLE></TD>
+          <TD width=13 height=25>&nbsp;</TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>

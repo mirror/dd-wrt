@@ -1,0 +1,4 @@
+table_name(str) table_version(int)
+subscriber:3
+location:6
+aliases:6

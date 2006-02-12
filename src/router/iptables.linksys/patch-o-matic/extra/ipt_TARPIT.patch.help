@@ -1,0 +1,31 @@
+Author: "Aaron Hopkins" <lists@die.net>
+Status: Works for me
+
+
+Adds a TARPIT target to iptables, which captures and holds incoming TCP
+connections using no local per-connection resources.  Connections are
+accepted, but immediately switched to the persist state (0 byte window), in
+which the remote side stops sending data and asks to continue every 60-240
+seconds.  Attempts to close the connection are ignored, forcing the remote
+side to time out the connection in 12-24 minutes.
+
+This offers similar functionality to LaBrea
+<http://www.hackbusters.net/LaBrea/> but doesn't require dedicated hardware
+or IPs.  Any TCP port that you would normally DROP or REJECT can instead
+become a tarpit.
+
+To tarpit connections to TCP port 80 destined for the current machine:
+
+  iptables -A INPUT -p tcp -m tcp --dport 80 -j TARPIT
+
+To significantly slow down Code Red/Nimda-style scans of unused address
+space, forward unused ip addresses to a Linux box not acting as a router
+(e.g. "ip route 10.0.0.0 255.0.0.0 ip.of.linux.box" on a Cisco), enable IP
+forwarding on the Linux box, and add:
+
+  iptables -A FORWARD -p tcp -j TARPIT
+  iptables -A FORWARD -j DROP
+
+You probably don't want the conntrack module loaded while you are using
+TARPIT, or you will be using resources per connection.
+

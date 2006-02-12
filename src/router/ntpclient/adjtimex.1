@@ -1,0 +1,60 @@
+.TH ADJTIMEX 1 "Oct 2000" local "Linux Programmer's Manual"
+.SH NAME
+adjtimex \- access to kernel time controls and readouts
+.SH SYNOPSIS
+.B adjtimex
+.RB [ -q ]
+.RB [ -o
+.IR offset ]
+.RB [ -f
+.IR freq ]
+.RB [ -p
+.IR pll-time-constant ]
+.SH DESCRIPTION
+.B adjtimex
+reads and optionally sets adjustment parameters for the Linux system clock.
+This program provides shell-level access
+to the system call 
+.I adjtimex(2),
+which actually manipulates the
+.I timex
+structure.  All parameters are left alone unless asked to change
+with the corresponding option.  By default, the values of the
+.I timex
+structure on return from
+.I adjtimex(2)
+are printed, along with helpful
+hints about what
+.I adjtimex(1)
+switches control them.
+
+Mortal users may view all these parameters; only the superuser may change them.
+.SH OPTIONS
+.TP 8
+.B -q
+quiet mode - do not print 
+.TP 8
+.BI \-o " offset"
+Time offset in microseconds.
+.TP 8
+.BI \-f " freq"
+Frequency adjust, in integer kernel units (65536 units is one part-per-million)
+Positive values make the system clock run fast.
+.TP 8
+.BI \-t " tick"
+Microseconds per tick, nominally 10000.  Coarse corrections (within
+100 ppm) to clock frequency are better made here than with -f.
+.TP 8
+.BI \-p " timeconstant"
+rate 
+.SH SEE ALSO
+adjtimex(2), tickadj(1), /usr/include/linux/timex.h.
+An independent implementation of similar functionality was
+written by Steven Dick and Jim Van Zandt, see
+http://metalab.unc.edu/pub/Linux/system/admin/time/adjtimex*
+.SH BUGS
+Every writable member of the
+.I timex
+structure should be settable from this program.
+.SH AUTHOR
+Larry Doolittle <larry@doolittle.boa.org>

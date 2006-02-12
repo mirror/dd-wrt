@@ -1,0 +1,45 @@
+--- original/linux/net/ipv4/netfilter/ipt_MARK.c	Mon Oct  1 03:26:08 2001
++++ linux/net/ipv4/netfilter/ipt_MARK.c	Wed Feb 20 22:45:12 2002
+@@ -17,10 +17,22 @@
+ {
+ 	const struct ipt_mark_target_info *markinfo = targinfo;
+ 
+-	if((*pskb)->nfmark != markinfo->mark) {
++	switch (markinfo->mode) {
++	case IPT_MARK_SET:
+ 		(*pskb)->nfmark = markinfo->mark;
+-		(*pskb)->nfcache |= NFC_ALTERED;
++		break;
++		
++	case IPT_MARK_AND:
++		(*pskb)->nfmark = (*pskb)->nfmark & markinfo->mark;
++		break;
++		
++	case IPT_MARK_OR:
++		(*pskb)->nfmark = (*pskb)->nfmark | markinfo->mark;
++		break;
++	default:
++		break;
+ 	}
++        (*pskb)->nfcache |= NFC_ALTERED;
+ 	return IPT_CONTINUE;
+ }
+ 
+--- original/linux/include/linux/netfilter_ipv4/ipt_MARK.h	Sat Mar 18 02:56:20 2000
++++ linux/include/linux/netfilter_ipv4/ipt_MARK.h	Wed Feb 20 22:24:16 2002
+@@ -1,8 +1,15 @@
+ #ifndef _IPT_MARK_H_target
+ #define _IPT_MARK_H_target
+ 
++enum {
++        IPT_MARK_SET,
++        IPT_MARK_AND,
++        IPT_MARK_OR
++};
++
+ struct ipt_mark_target_info {
+ 	unsigned long mark;
++	u_int8_t mode;
+ };
+ 
+ #endif /*_IPT_MARK_H_target*/

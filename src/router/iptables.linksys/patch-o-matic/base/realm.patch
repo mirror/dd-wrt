@@ -1,0 +1,82 @@
+diff -urN linux.orig/include/linux/netfilter_ipv4/ipt_realm.h linux/include/linux/netfilter_ipv4/ipt_realm.h
+--- linux.orig/include/linux/netfilter_ipv4/ipt_realm.h	Thu Jan  1 02:00:00 1970
++++ linux/include/linux/netfilter_ipv4/ipt_realm.h	Mon Jul 30 13:01:13 2001
+@@ -0,0 +1,8 @@
++#ifndef _IPT_REALM_H
++#define _IPT_REALM_H
++
++struct ipt_realm_info {
++    unsigned long id, mask;
++    u_int8_t invert;
++};
++#endif /*_IPT_REALM_H*/
+diff -urN linux.orig/net/ipv4/netfilter/ipt_realm.c linux/net/ipv4/netfilter/ipt_realm.c
+--- linux.orig/net/ipv4/netfilter/ipt_realm.c	Thu Jan  1 02:00:00 1970
++++ linux/net/ipv4/netfilter/ipt_realm.c	Mon Jul 30 13:00:42 2001
+@@ -0,0 +1,66 @@
++/* Kernel module to match realm from routing. */
++#include <linux/module.h>
++#include <net/ip.h>
++#include <net/route.h>
++#include <linux/skbuff.h>
++#include <linux/if_ether.h>
++
++#include <linux/netfilter_ipv4/ipt_realm.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++MODULE_LICENSE("GPL");
++
++static int
++match(const struct sk_buff *skb,
++      const struct net_device *in,
++      const struct net_device *out,
++      const void *matchinfo,
++      int offset,
++      const void *hdr,
++      u_int16_t datalen,
++      int *hotdrop)
++{
++    struct dst_entry *dst;
++    u32 id;
++    const struct ipt_realm_info *info = matchinfo;
++    
++    if((dst = skb->dst) == NULL)
++         return 0;
++    id = dst->tclassid;
++
++    return (info->id == (id & info->mask)) ^ info->invert;
++}
++
++static int check(const char *tablename,
++                 const struct ipt_ip *ip,
++		 void *matchinfo,
++		 unsigned int matchsize,
++		 unsigned int hook_mask)
++{
++	if (hook_mask
++	    & ~((1 << NF_IP_POST_ROUTING) | (1 << NF_IP_FORWARD) | (1 << NF_IP_LOCAL_OUT)| (1 << NF_IP_LOCAL_IN))) {
++		printk("ipt_realm: only valid for POST_ROUTING, LOCAL_OUT, LOCAL_IN or FORWARD.\n");
++		return 0;
++	}
++
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_realm_info)))
++		return 0;
++
++	return 1;
++}
++
++static struct ipt_match realm_match
++= { { NULL, NULL }, "realm", &match, &check, NULL, THIS_MODULE };
++
++static int __init init(void)
++{
++	return ipt_register_match(&realm_match);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&realm_match);
++}
++
++module_init(init);
++module_exit(fini);

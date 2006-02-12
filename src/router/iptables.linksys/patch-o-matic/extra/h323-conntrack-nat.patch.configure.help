@@ -1,0 +1,10 @@
+CONFIG_IP_NF_FTP
+H.323 (netmeeting) support
+CONFIG_IP_NF_H323
+  H.323 is a standard signalling protocol used by teleconferencing
+  softwares like netmeeting. With the ip_conntrack_h323 and
+  the ip_nat_h323 modules you can support the protocol on a connection
+  tracking/NATing firewall.
+
+  If you want to compile it as a module, say 'M' here and read
+  Documentation/modules.txt.  If unsure, say 'N'.

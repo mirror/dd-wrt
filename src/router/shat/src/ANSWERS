@@ -1,0 +1,68 @@
+Copyright (C) 2003-2005 Maxina GmbH - Jordan Hrycaj
+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public
+ License along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+
+$Id: ANSWERS,v 1.5 2005/03/10 16:47:18 jordan Exp $
+--
+
+
+Local services (Linux specific):
+--------------------------------
+
++ SHAT works completely transparent to local services as long as these
+  services do not bind to a particular interface.  Using iptables with
+  REDIRECT works under certain conditions.
+
+  - Examples:
+
+    * Apache listening on any IP address works well with REDIRECT.
+
+    * DNS listening on the LAN interface does not work, even if you REDIRECT
+      your service to the local system with iptables.  This is so because
+      REDIRECT maps your destination to the incoming interface and SHAT ends
+      up at the TUN interface.  So your DNS name server must also listen
+      on the TUN interface.
+
+
+Command line client on the control socket:
+------------------------------------------
+
++ The command line client (shatc or shatc.pl) needs access to the
+  communication socket of the shatd server.  By default, this is possible
+  for root only.  In order to allow non-root users to communicate with
+  the shatd server, you need to change the access modes.
+
+  - Example:
+
+    * user victor belonging to group hugo:
+      allow group hugo to access the communication socket:
+
+      start shatd with the option: --groupid=hugo
+
++ If the shatd server runs in a chroot environment, you also need to
+  be able to create a response socket so that the server can reply.
+
+  - Example:
+
+    * the shatd server runs under the chroot /jail:
+      allow group hugo to create a response socket:
+
+      mkdir   -p /jail/tmp
+      chmod 1777 /jail/tmp
+      chmod  750 /jail
+      chgrp hugo /jail
+
+--
+Jordan Hrycaj <jordan@mjh.teddy.net.com>

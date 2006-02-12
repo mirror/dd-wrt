@@ -1,0 +1,21 @@
+CONFIG_IP_NF_FTP
+RSH protocol support
+CONFIG_IP_NF_RSH
+  The RSH connection tracker is required if the dynamic
+  stderr "Server to Client" connection is to occur during a
+  normal RSH session.  This typically operates as follows;
+
+    Client 0:1023 --> Server 514    (stream 1 - stdin/stdout)
+    Client 0:1023 <-- Server 0:1023 (stream 2 - stderr)
+
+  This connection tracker will identify new RSH sessions,
+  extract the outbound session details, and notify netfilter
+  of pending "related" sessions.
+
+  Warning: This module could be dangerous. It is not "best
+           practice" to use RSH, use SSH in all instances.
+           (see rfc1244, rfc1948, rfc2179, etc ad-nauseum)
+
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `N'.

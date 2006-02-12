@@ -1,0 +1,13 @@
+ddns3 inside bpalogin2 patch readme
+
+QUICK BUILD
+
+	tar -cxf bpalogin-2.0-src.tar.gz
+	cd bpalogin-2.0
+	zcat ../bpalogin-2.0-with-ddns-v3.patch.gz | patch -p1
+	make
+
+QUESTIONS
+
+	This is an unsupported hack.
+	admin@ddns.nu

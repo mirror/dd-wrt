@@ -1,0 +1,47 @@
+.TH "ATHCTRL" "8" "September 2005" "" ""
+.SH "NAME"
+\fBathctrl\fP \- sets the maximum distance in meters between communicating 
+stations
+.SH "SYNOPSIS"
+\fBathctrl\fP [-h] [-i <interface>] [-d <distance>]
+.SH "DESCRIPTION"
+Athctrl sets the maximum distance in meters of stations with which 
+communication occurs. This distance metric determines how much time the radio
+waits for an acknowledgment after every transmission and it sets a few other 
+derived timing parameters. This limits the distance between two stations at 
+which the collision avoidance, acknowledgment, retransmission protocols will 
+work correctly. 
+.PP
+In particular, when transmitting to too distant stations the radio will start 
+retransmitting packets before an ACK can possibly have been received causing 
+unecessary retransmissions and collisions. The distance parameter needs to be 
+set properly on all stations that perform long-distance communication 
+irrespective of their mode of operation (master/managed/ad-hoc). For best 
+operation all stations communicating with each other should be set to the same
+value.
+.PP
+.SH "OPTIONS"
+.TP
+.B \-i <interface>
+The madwifi interface to apply the settings to. If no interface is specified, 
+it will default to ath0.
+.TP
+.B \-d <distance>
+Distance in metric meters.
+.TP 
+.B \-h
+Display usage.
+.PP
+.SH "EXAMPLES"
+.TP
+.B athctrl \-i ath1 \-d 500
+Set maximum distance of 500m for the madwifi interface ath1.
+.TP
+.B athctrl 100
+Set maximum distance of 100m for the default madwifi interface ath0.
+.PP
+.SH "SEE ALSO"
+\fBathchans\fP(8), \fBathkey\fP(8), \fBathstats\fP(8)
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au> and was based
+upon previous text written by Eric S. Raymond and Thorsten von Eicken.

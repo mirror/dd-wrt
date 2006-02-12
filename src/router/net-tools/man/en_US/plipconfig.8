@@ -1,0 +1,45 @@
+.TH PLIPCONFIG 8 "17 February 1995" "" ""
+.SH NAME
+plipconfig \- fine tune PLIP device parameters 
+.SH SYNOPSIS
+.B "plipconfig interface"
+.br
+.B "plipconfig interface [nibble NN] [trigger NN] [unit NN]"
+.SH DESCRIPTION
+.B Plipconfig
+is used to (hopefully) improve PLIP performance by changing the default
+timing parameters used by the PLIP protocol. Results are dependent on
+the parallel port hardware, cable, and the CPU speed of each machine
+on each end of the PLIP link.
+.LP
+If the single 
+.B interface
+argument is given,
+.B plipconfig
+displays the status of the given interface
+only.  Otherwise, it will try to set the options.
+.SH OPTIONS
+.TP
+.B "nibble NN"
+Sets the nibble wait value in microseconds. Default is 3000.
+.TP
+.B "trigger NN"
+Sets the trigger wait value in microseconds. Default is 500.
+.LP
+PLIP speed can in some cases be improved by lowering the default values.
+Values which are too low may cause excess use of CPU, poor interrupt 
+response time resulting in serial ports dropping characters, or in dropping
+of PLIP packets. Changing the plip MTU can also affect PLIP speed.
+.SH NOTE
+If you get no response it is far more likely the irq is wrong and needs
+setting with ifconfig. The few cases where the default parameters will
+be too fast are those using very long cables. Something you should
+never do as the parallel port is not specified or designed for driving
+long cable runs.
+.SH SEE ALSO
+.I ifconfig(8)
+.SH BUGS
+Non.
+.SH AUTHOR
+John Paul Morrison, <jmorriso@bogomips.ee.ubc.ca>, <ve7jpm@ve7jpm.ampr.org>
+

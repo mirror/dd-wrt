@@ -1,0 +1,9 @@
+#!/bin/sh
+
+ifconfig br2 down
+ifconfig br1 down
+ifconfig br0 down
+brctl delbr br2
+brctl delbr br1
+brctl delbr br0
+rmmod bridge

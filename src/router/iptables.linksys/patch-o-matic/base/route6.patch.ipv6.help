@@ -1,0 +1,14 @@
+Author: Andras Kis-Szabo <kisza@sch.bme.hu>
+Status: It works 4 me!
+
+  This match extension (`rt') allow you to select the packet based on the
+  fileds of the routing header of the IPv6 packets.
+
+ RT options:
+ --rt-type [!] type            match the type
+ --rt-segsleft [!] num[:num]   match the Segments Left field (range)
+ --rt-len [!] length           total length of this header
+ --rt-0-res                    check the reserved filed, too (type 0)
+ --rt-0-addrs ADDR[,ADDR...]   Type=0 addresses (list, max: 16)
+ --rt-0-not-strict             List of Type=0 addresses not a strict list
+

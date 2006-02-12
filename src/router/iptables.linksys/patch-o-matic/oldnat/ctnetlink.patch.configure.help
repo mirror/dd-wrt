@@ -1,0 +1,10 @@
+CONFIG_IP_NF_FTP
+IP: conntection tracking via NETLINK (EXPERIMENTAL)
+CONFIG_IP_NF_CTNETLINK
+  Netfilter has the ability to communicate connection tracking
+  information to user space. This feature allows the user to
+  receive connection tracking event notification and provides the
+  ability to change connection states from user space.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

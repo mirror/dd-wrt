@@ -1,0 +1,10 @@
+<fieldset>
+<legend>SIPatH</legend>
+<div class="setting"><div class="label">SIP Port</div>
+<input type="text" class="num" maxlength="100" size="3" name="sip_port" value="<% nvram_get("sip_port"); %>" />
+<div class="setting"><div class="label">SIP Domain</div>
+<input maxlength="79" size="20" name="sip_domain" value="<% nvram_get("sip_domain"); %>" /></div>
+
+</div>
+</fieldset>
+

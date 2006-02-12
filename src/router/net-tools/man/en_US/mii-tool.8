@@ -1,0 +1,78 @@
+.\" Copyright (C) 2000 David A. Hinds -- dhinds@pcmcia.sourceforge.org
+.\" mii-tool.8 1.5 2000/04/25 22:58:19
+.\"
+.TH MII-TOOL 8 "2000/04/25 22:58:19" "net-tools"
+
+.SH NAME
+mii-tool \- view, manipulate media-independent interface status
+
+.SH SYNOPSIS
+.B mii-tool
+[\fB\-v\fR, \fB\-\-verbose\fR]
+[\fB\-V\fR, \fB\-\-version\fR]
+[\fB\-R\fR, \fB\-\-reset\fR]
+[\fB\-r\fR, \fB\-\-restart\fR]
+[\fB\-w\fR, \fB\-\-watch\fR]
+[\fB\-l\fR, \fB\-\-log\fR]
+[\fB\-A\fR, \fB\-\-advertise=\fImedia,...\fR]
+[\fB\-F\fR, \fB\-\-force=\fImedia\fR]
+.RI [ "interface\ ..." ]
+
+.SH DESCRIPTION
+This utility checks or sets the status of a network interface's Media
+Independent Interface (MII) unit.  Most fast ethernet adapters use an
+MII to autonegotiate link speed and duplex setting.
+.PP
+Most intelligent network devices use an autonegotiation protocol to
+communicate what media technologies they support, and then select the
+fastest mutually supported media technology.  The \fB\-A\fR or
+\fB\-\-advertise\fR options can be used to tell the MII to only
+advertise a subset of its capabilities.  Some passive devices, such as
+single-speed hubs, are unable to autonegotiate.  To handle such
+devices, the MII protocol also allows for establishing a link by
+simply detecting either a 10baseT or 100baseT link beat.  The \fB\-F\fR
+or \fB\-\-force\fR options can be used to force the MII to operate in
+one mode, instead of autonegotiating.  The \fB\-A\fR and \fB-F\fR
+options are mutually exclusive.
+.PP
+The default short output reports the negotiated link speed and link
+status for each interface.  If an interface or interfaces are not
+specified on the command line, then \fBmii-tool\fR will check any
+available interfaces from \fBeth0\fR through \fBeth7\fR.
+.SH OPTIONS
+.TP
+\fB\-v\fR, \fB\-\-verbose\fR
+Display more detailed MII status information.  If used twice, also
+display raw MII register contents.
+.TP
+\fB\-V\fR, \fB\-\-version\fR
+Display program version information.
+.TP
+\fB\-R\fR, \fB\-\-reset\fR
+Reset the MII to its default configuration.
+.TP
+\fB\-r\fR, \fB\-\-restart\fR
+Restart autonegotiation.
+.TP
+\fB\-w\fR, \fB\-\-watch\fR
+Watch interface(s) and report changes in link status.  The MII
+interfaces are polled at one second intervals.
+.TP
+\fB\-l\fR, \fB\-\-log\fR
+Used with \fB-w\fR, records link status changes in the system log
+instead of printing on standard output.
+.TP
+\fB\-F\fI media\fR, \fB\-\-force=\fImedia\fR
+Disable autonegotiation, and force the MII to either \fB100baseTx-FD\fR,
+\fB100baseTx-HD\fR, \fB10baseT-FD\fR, or \fB10baseT-HD\fR operation.
+.TP
+\fB\-A\fI media,...\fR, \fB\-\-advertise=\fImedia,...\fR
+Enable and restart autonegotiation, and advertise only the specified
+media technologies.  Multiple technologies should be separated by
+commas.  Valid media are \fB100baseT4\fR, \fB100baseTx-FD\fR,
+\fB100baseTx-HD\fR, \fB10baseT-FD\fR, and \fB10baseT-HD\fR.
+
+.SH AUTHORS
+David Hinds \- dhinds@pcmcia.sourceforge.org
+.br
+Donald Becker \- becker@scyld.com

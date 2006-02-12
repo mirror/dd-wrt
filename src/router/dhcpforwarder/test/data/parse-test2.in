@@ -1,0 +1,32 @@
+user		bin
+group		bin
+
+chroot		/var/tmp
+logfile		/var/tmp/dhcp-fwd.log
+
+pidfile         /var/run/dhcp-fwd.pid
+
+if eth0		true	false	false
+if eth1		false	false	true
+if eth2		true	true	false
+
+name eth0	eth0-name
+name eth1	X
+
+ip eth0		192.168.42.23
+ip eth2		10.0.0.2
+
+server		ip 192.168.31.41 eth2
+server		ip 192.168.31.42 eth2
+server		bcast eth0
+
+ulimit stack	0x10
+ulimit data	0x10M
+ulimit core	0x10m
+ulimit rss	0x10K
+ulimit nproc	0x10k
+loglevel	010
+ulimit memlock	0x10M
+ulimit as	010m
+ulimit locks	010K
+ulimit nofile	010k

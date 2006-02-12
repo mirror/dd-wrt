@@ -1,0 +1,12 @@
+You should move this directory in <fmwr_base_dir>/src/router/ipsec.
+
+'make install' will create 'modules' directory with kernel 
+modules and 'sbin' directory with ipsecadm utility.
+
+You'll need to load cryptoapi.o before ciphers, digests and ipsec_tunnel.o
+modules. 
+
+AES key generation is not implemented in ipsecadm utility yet.
+
+Email: nikki <at> gattaca <dot> ru
+

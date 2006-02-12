@@ -1,0 +1,22 @@
+#
+# Makefile for Onoe's rate control algorithm.
+#
+# $Id: //depot/sw/linuxsrc/src/802_11/madwifi/madwifi/ath_rate/amrr/Makefile.kernel#1 $
+#
+
+HAL=	$(src)/../hal
+ATH=	$(src)/../ath
+WLAN=	${src}/../net80211
+COMPAT=	${WLAN}/compat
+
+INCS=	-include ${COMPAT}/compat.h -I${COMPAT}
+EXTRA_CFLAGS+=	${INCS} -I${HAL} -I${HAL}/linux -I${ATH} -I${WLAN} -I${NET}
+
+obj-$(CONFIG_ATHEROS_RATE_ONOE) += ath_rate_onoe.o
+
+ath_rate_onoe-objs	:= onoe.o
+##2.4##export-objs	:= onoe.o
+##2.4##list-multi	:= ath_rate_onoe.o
+
+#ath_rate_onoe.o: ${ath_rate_onoe-objs}
+#	$(LD) -o ath_rate_onoe.$(KMODSUF) -r $(ath_rate_onoe-objs)

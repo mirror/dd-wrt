@@ -1,0 +1,61 @@
+*************************************************************************
+*
+*  The file descripts my porting story, I hope it can answer you some
+*  questions. Plus, I also modify some code that you can check the log 
+*  or diff from CVS.
+* 	
+*				Sparq-Huang in Nov 12, 2002.
+*
+*************************************************************************
+
+
+1. RPM source code
+
+   It's Mandrake souce RPM. I ever downloaded the original tarball,
+   but it can't be compiled successfully.
+
+       rpm -ivh vixie-cron-3.0.1-54mdk.src.rpm
+
+   ( Note: Make sure that you have directory "/usr/src/RPM/SOURCE".) 
+   
+
+2. Patch the source code
+
+   After the souce RPM installed, you can find the vixie-cron original
+   package and some patch files, for some flaws and Linux compliant. 
+
+       cd /usr/src/RPM/SOURCE
+       cat vixie-cron-3.0.1.tar.bz2 | bunzip2 - | tar xvf -
+
+   Collect those patch files.
+
+       cat vixie*patch* | bunzip2 - > vixie.all.patch
+
+   Patch it.
+     
+       mv vixie.all.patch vixie-cron-3.0.1
+       cd vixie-cron-3.0.1
+       patch -p1 < vixie.all.patch
+
+   You might find that few files will be rejected, then try to modify by 
+   yourself.
+
+
+3. Compile it
+
+   Move the souce code into here, and change its parent 'Makefile'.
+
+4. Install
+
+   Make sure you have directory "/etc/cron.d", and the 'crontab' file
+   should be in the '/tmp' directory.
+
+
+
+
+
+
+
+
+
+

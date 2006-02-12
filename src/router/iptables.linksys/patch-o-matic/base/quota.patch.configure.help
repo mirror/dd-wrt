@@ -1,0 +1,8 @@
+CONFIG_IP_NF_MATCH_LIMIT
+quota match support
+CONFIG_IP_NF_MATCH_QUOTA
+  This match implements network quotas.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

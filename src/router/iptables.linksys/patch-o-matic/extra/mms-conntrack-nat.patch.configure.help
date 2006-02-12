@@ -1,0 +1,10 @@
+CONFIG_IP_NF_IRC
+MMS protocol support
+CONFIG_IP_NF_MMS
+  Tracking MMS (Microsoft Windows Media Services) connections
+  could be problematic if random ports are used to send the
+  streaming content. This option allows users to track streaming
+  connections over random UDP or TCP ports.
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `Y'.

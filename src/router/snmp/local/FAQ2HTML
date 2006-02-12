@@ -1,0 +1,53 @@
+#!/usr/bin/perl -w
+
+$TOCHEADER=" TABLE OF CONTENTS";
+
+open(O, ">FAQ.html");
+print O "<body bgcolor=\"#ffffff\" background=\"ucd-snmp-bg3.gif\">
+<title>NET-SNMP FAQ</title>
+<div align=center>
+<h1>Frequently Asked Questions (FAQ) for the Net-SNMP package</h1>
+FAQ Maintainer: Dave Shield<br>
+Email: <a href=\"mailto:net-snmp-coders\@lists.sourceforge.net\">net-snmp-coders\@list.sourceforge.net</a><br>
+</div>
+<hr>
+<h2>Table of Contents</h2>\n";
+
+while(<>) {
+    last if (/$TOCHEADER/);
+}
+
+while(<>) {
+    last if (/^\s*$/);
+    chomp();
+    if (/^     */) {
+	# continuation of the question.
+	print O "<a href=\"#$x\">$_</a>\n";
+	next;
+    }
+    $_ =~ s/^ *//;
+    $x = $_;
+    $x =~ s/^ *//g;
+    $x =~ s/[^a-zA-Z]/_/g;
+    $xlate{$_} = $x;
+    if (/^[ A-Z]+$/) {
+	print O "</ul><li><b>$_</b><ul>\n";
+    } else {
+	print O "<li> <a href=\"#$x\">$_</a>\n";
+    }
+}
+
+print O "</ul><hr><pre>\n";
+
+while(<>) {
+    $y = $_;
+    chomp($y);
+    if (defined($xlate{$y})) {
+	print O "<a name=\"$xlate{$y}\">\n";
+    }
+    print O $_;
+}
+
+$dt = localtime(time());
+print O "</pre><hr>
+Last modified: $dt\n";

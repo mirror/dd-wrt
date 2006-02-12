@@ -1,0 +1,6 @@
+Author: Marcus Sundberg <marcus@ingate.com>
+Status: Pending for kernel inclusion
+
+This patch fixes the multiport match, when it is used in combination
+with the invert (!) flag.
+

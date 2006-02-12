@@ -1,0 +1,657 @@
+#!/bin/sh
+echo Content-type: text/html
+echo
+
+cat<<EOF
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<html>
+  <head>
+    <title>Phonebook of $(nvram get lan_ipaddr)</title>
+
+    <meta content="text/html; charset=iso-8559-1" http-equiv="Content-Type" />
+
+    <link href="mf.css" rel="StyleSheet" type="text/css" />
+
+    <script language="JavaScript" type="text/javascript"><!--
+function navarr(){}
+navset=new navarr();
+navres=new navarr();
+
+function set(idx){
+  if(!!navset[idx]){
+    document.images[idx].src=navset[idx].src;
+  }
+}
+
+function res(idx){
+  if(!!navres[idx]){
+    document.images[idx].src=navres[idx];
+  }
+}
+
+function ini() {
+  if (!!document.images){
+    for(var idx=0; idx<document.images.length; idx++){
+      var src=document.images[idx].src;
+      var pos=src.indexOf('_white.gif');
+      if (0<pos) {
+        navres[idx]=src;
+        src=src.substring(0, src.indexOf('_white.gif'))+'_red.gif';
+        navset[idx]=new Image(document.images[idx].width, document.images[idx].height);
+        navset[idx].src=src;
+        document.images[idx].onmouseover=new Function("if(!!window.set)set("+idx+");");
+        document.images[idx].onmouseout=new Function("if(!!window.res)res("+idx+");");
+      }
+      else if (!document.images[idx].mozbug && !!src.search &&
+        0<=src.search(new RegExp('progress[0-9]+\\.gif$')))
+      {
+        document.images[idx].mozbug=1;
+        document.images[idx].src='';
+        document.images[idx].src=src;
+      }
+    }
+  }
+}
+//--></script>
+  </head>
+
+  <body onload="if(null!=window.ini)window.ini()"><table border="0"
+  cellpadding="0" cellspacing="0" class="body"><tbody><tr><td class="yellow"
+  colspan="5" height="19"><span class="yellow"><a
+  class="yellow" href="mf.html">Home</a></span><!--<img alt=""
+  height="10" hspace="2" src="images/vertbar.gif" width="1" /><span
+  class="yellow"><a class="yellow" href="cgi-bin-contact.html">Contact</a></span>--></td></tr><tr><td
+  height="5" width="150"></td><td height="5" width="5"> </td><td
+  height="5"></td><td height="5" width="5"></td><td height="5" width="150"></td></tr><tr><td
+  height="33" width="150"></td><td height="33" width="5"></td><td
+  align="right" height="33"><img alt="" height="33"
+  src="images/lgo_mf_1l.gif" width="106" /></td><td align="right" height="33"
+  width="5"><img alt="" height="33" src="images/lgo_mf_1m.gif" width="5" /></td><td
+  height="33" width="150"><img alt="" height="33" src="images/lgo_mf_1r.gif"
+  width="150" /></td></tr><tr><td class="magenta" colspan="4" height="19"> </td><td
+  class="magenta" height="19" width="150"><img alt="" height="19"
+  src="images/lgo_mf_2.gif" width="150" /></td></tr><tr><td height="5"
+  width="150"></td><td height="5" width="5"></td><td height="5"></td><td
+  height="5" width="5"></td><td class="yellow" height="5" rowspan="2"
+  valign="top" width="150"><img alt="" height="94" src="images/lgo_mf_3.gif"
+  width="150" /></td></tr><tr><td class="yellow" valign="top" width="150"><table
+  border="0" cellpadding="0" cellspacing="7" width="150">
+  <tbody><tr><td><h1 class="yellow">Navigation</h1></td></tr>
+  <tr><td><div class="yellow"><a class="yellow" href="cgi-bin-mf-phonebook.html">Phonebook</a></div></td></tr>
+  <tr><td><div class="yellow"><a class="yellow" href="cgi-bin-mf-status.html">Status</a></div></td></tr>
+  </tbody></table></td><td
+  valign="top" width="5"></td><td valign="top">
+
+
+<script language="JavaScript" type="text/javascript"><!--
+function help(e) {
+  if (!e) e = event;
+  // (virt)KeyVal is Konqueror, charCode is Moz/Firefox, else MSIE, Netscape, Opera
+  if (26 == e.virtKeyVal || !e.keyVal && !e.charCode && 112 == (e.which || e.keyCode)) {
+    var o = null;
+    if (e.preventDefault) {
+      if (e.cancelable) e.preventDefault();
+      o = e.target;
+    }
+    else {
+      e.cancelBubble = true;
+      o = e.srcElement;
+    }
+    while(o && '' == o.title) o = o.parentNode;
+    if (o) alert(o.title);
+  }
+}
+if (document.all) {
+  document.onkeydown = help;
+  document.onhelp = function(){return false;}
+}
+else {
+  document.onkeypress = help;
+}
+//--></script>
+EOF
+
+if [ "$REQUEST_METHOD" = "POST" ]; then
+  read QUERY_STRING
+fi
+if [ -n "$QUERY_STRING" ]; then
+  eval $(echo "$QUERY_STRING"|awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+fi
+
+
+if [ -n "$post_savedb" ]; then
+
+cat<<EOF
+<h1>Phonebook: Save Database</h1>
+  <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1"
+  cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
+EOF
+
+if [ $(nvram get sip_domain) ];
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}');
+fi;
+serctl stop ser|awk 'sub("", "<br>") {print}'; sleep 3s;
+echo "<br>cp /var/dbtext/ser/aliases /etc/ser/ <br>";
+cp /var/dbtext/ser/aliases /etc/ser/;
+echo "cp /var/dbtext/ser/location /etc/ser/ <br>";
+cp /var/dbtext/ser/location /etc/ser/;
+echo "cp /var/dbtext/ser/subscriber /etc/ser/ <br>";
+cp /var/dbtext/ser/subscriber /etc/ser/;
+echo "cp /var/dbtext/ser/version /etc/ser/ <br>";
+cp /var/dbtext/ser/version /etc/ser/;
+serctl start ser|awk 'sub("", "<br>") {print}'; sleep 3s;
+echo "Done <br>";
+
+#route -n|awk '
+#function td(s) {
+#  printf("<TD ALIGN="left" STYLE=\"padding:0 2 0 2;font-size:9px;\">%s</TD>", s);
+#}
+#function ip(s) {
+##  if(s!~/\.0$/) {
+##    td(sprintf("<A HREF=\"http://%s/\">%s</A>", s, s));
+##  }
+##  else {
+#    td(s);
+##  }
+#
+#}
+#BEGIN {
+#  print "<TABLE BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"1\">";
+#}
+#/^[0-9]/ {
+#  printf "<TR>";
+#  ip($1);
+#  ip($2);
+#  for(i=3;i<=NF;i++) td($i);
+#  printf "</TR>\n";
+#}
+#/^Destination/ {
+#  printf "<TR>";
+#  for(i=1;i<=NF;i++) printf("<TH ALIGN=\"left\" STYLE=\"padding:0 2 0 2;\">%s</TH>", $i);
+#  printf "</TR>\n";
+#}
+#END {
+#  print "</TABLE>";
+#}'
+
+
+cat<<EOF
+</td></tr><tr><td> </td></tr><tr><td><input
+  name="post_contacts"
+  title="Contacts"
+  type="submit" value="Contacts" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Details" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Database" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Again" /></td></tr></tbody></table></form>
+EOF
+
+elif [ -n "$post_flushdb" ]; then
+
+cat<<EOF
+<h1>Phonebook: Flush Database</h1>
+  <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1"
+  cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
+EOF
+
+if [ $(nvram get sip_domain) ];
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}');
+fi;
+serctl stop ser|awk 'sub("", "<br>") {print}'; sleep 3s;
+echo "<br>Emptying /var/dbtext/ser/aliases <br>";
+echo "username(str) domain(str,null) contact(str,null) expires(int,null) q(double,null) callid(str,null) cseq(int,null) last_modified(str,null) replicate(int,null) state(int,null) flags(int) user_agent(str) received(str,null)" > /var/dbtext/ser/aliases;
+echo "<br>Emptying  /var/dbtext/ser/location <br>";
+echo "username(str) domain(str,null) contact(str,null) expires(int,null) q(double,null) callid(str,null) cseq(int,null) last_modified(str,null) replicate(int,null) state(int,null) flags(int) user_agent(str) received(str,null)" > /var/dbtext/ser/location;
+echo "<br>Emptying /var/dbtext/ser/subscriber <br>";
+echo "sername(str) domain(str) password(str) first_name(str) last_name(str) phone(str) email_address(str) datetime_created(int) datetime_modified(int) confirmation(str) flag(str) sendnotification(str) greeting(str) ha1(str) ha1b(str) perms(str) allow_find(str) timezone(str,null) rpid(str,null) uuid(str,null)" > /var/dbtext/ser/subscriber;
+echo "<br>Emptying /var/dbtext/ser/version <br>";
+echo "table_name(str) table_version(int)
+subscriber:3
+location:6
+aliases:6" > /var/dbtext/ser/version;
+serctl start ser|awk 'sub("", "<br>") {print}'; sleep 3s;
+echo "Done <br>";
+
+cat<<EOF
+</td></tr><tr><td> </td></tr><tr><td><input
+  name="post_contacts"
+  title="Contacts"
+  type="submit" value="Contacts" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Details" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Again" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Database" /></td></tr></tbody></table></form>
+EOF
+
+elif [ -n "$post_details" ]; then
+
+#if [ -n "$post_details" ]; then
+#else
+
+cat<<EOF
+<h1>Phonebook: Details</h1>
+  <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
+  cellspacing="0" class="form" width="548"><tbody><tr><td>SER Userlist:</td>
+  <td>Contact Details$(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  serctl ul show| grep "^domain    :\|^aor       :\|^Contact\|^Expires\|^Call-ID\|^User-Agent\|^State" | \
+  sed -e "s/^\(domain \)/======================================\n\1/" | awk 'sub("", "<br>") {print}';)</td></tr>
+  <tr><td><input name="post_rmaor" title="Remove AOR" type="submit" value="Remove" /></td><td>$(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  serctl ul show | grep 'aor   :' | awk 'sub("","") {print $3}' | cut -f2 -d"'" | awk '
+  function td(s) {
+  printf("1 %s 2", s);
+  }
+  function ip(s) {
+  #  if(s!~/\.0$/) {
+  #    td(sprintf("<A HREF=\"http://%s/\">%s</A>", s, s));
+  #  }
+  #  else {
+     td(s);
+     #  }
+    }
+    BEGIN {
+    print "<SELECT NAME=\"AOR\"><OPTION VALUE=\"\">Select for removal<\/OPTION>";
+    }
+    /^[0-9]/ {
+    printf "<OPTION VALUE=\"";
+    for(i=1;i<=NF;i++)  {
+     printf("%s", $i);
+     printf "\">";
+     printf("%s", $i);
+     printf "<\/OPTION>";
+    }
+    printf "";
+   }
+   /^[a-z]/ {
+    printf "<OPTION VALUE=\"";
+    for(i=1;i<=NF;i++)  {
+     printf("%s", $i);
+     printf "\">";
+     printf("%s", $i);
+     printf "<\/OPTION>";
+    }
+    printf "";
+   }
+   /^sip:/ {
+    printf "<OPTION VALUE=\"";
+    for(i=1;i<=NF;i++) {
+     printf("%s", $i);
+     printf "\">";
+     printf("%s", $i);
+     printf "<\/OPTION>";
+    }
+   printf "";
+  }
+  END {
+ print "";
+ }')</td></tr>
+ <tr><td></td><td></td></tr>
+ <tr><td></td><td></td></tr>
+ <tr><td>Alias:</td><td>$(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  serctl ul show | grep 'Contact   :' | awk 'sub("","") {print $3}' | cut -f2 -d"'" | awk '
+  function td(s) {
+  printf("1 %s 2", s);
+  }
+  function ip(s) {
+  #  if(s!~/\.0$/) {
+  #    td(sprintf("<A HREF=\"http://%s/\">%s</A>", s, s));
+  #  }
+  #  else {
+     td(s);
+     #  }
+    }
+    BEGIN {
+    print "<SELECT NAME=\"URI\"><OPTION VALUE=\"\">Choose URI for Alias<\/OPTION>";
+    }
+    /^[0-9]/ {
+    printf "ta";
+    ip($1);
+    ip($2);
+    for(i=3;i<=NF;i++) td($i);
+    printf "da\n";
+   }
+   /^sip:/ {
+    printf "<OPTION VALUE=\"";
+    for(i=1;i<=NF;i++) {
+     printf("%s", $i);
+     printf "\">";
+     printf("%s", $i);
+     printf "<\/OPTION>";
+    }
+   printf "";
+  }
+  END {
+ print "";
+ }')</td></tr>
+ <!--<tr><td></td><td></td></tr>-->
+ <TR TITLE="Enter alias here"><TD></TD><TD><INPUT NAME="newalias" SIZE="32" TYPE="TEXT" VALUE="aka">
+ <input name="post_newalias" title="Add Alias" type="submit" value="Add" />
+ <input name="post_rmalias" title="Remove Alias" type="submit" value="Remove" /></TD>
+ </TR>
+ 
+  <tr><td colspan="2"><input
+  name="post_contacts"
+  title="Contacts"
+  type="submit" value="Contacts" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Reload" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Database" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Database" /></td></tr></tbody></table></form>
+EOF
+
+
+#if [ $(nvram get sip_domain) ]; 
+#  | grep "^aor       :\|^User-Agent: 'SIP Express Router FIFO'" | \
+#    then export SIP_DOMAIN=$(nvram get sip_domain);
+#    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+#serctl restart ser|awk 'sub("", "<br>") {print}'; sleep 3s;
+
+
+elif [ -n "$post_newalias" ]; then
+
+cat<<EOF
+<h1>Phonebook: Alias addition</h1>
+<form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
+cellspacing="0" class="form" width="548"><tbody><tr><td>
+EOF
+
+#test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
+ if [ $(nvram get sip_domain) ]; 
+ then export SIP_DOMAIN=$(nvram get sip_domain);
+ else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+# echo "$URI <br>";
+ echo "serctl alias add $newalias $(echo "$URI" | sed -n -f html.sed) <br>";
+ serctl alias add $newalias $(echo "$URI" | sed -n -f html.sed;);
+ echo "<br>";
+ 
+cat<<EOF
+  </td></tr><tr><td colspan="7"><input name="post_contacts"
+  title="Contacts"
+  type="submit" value="Contacts" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Details" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Database" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Database" /></td></tr></tbody></table></form>
+EOF
+
+elif [ -n "$post_rmalias" ]; then
+
+cat<<EOF
+<h1>Phonebook: Alias removal</h1>
+<form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
+cellspacing="0" class="form" width="548"><tbody><tr><td>
+EOF
+
+#test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
+ if [ $(nvram get sip_domain) ]; 
+ then export SIP_DOMAIN=$(nvram get sip_domain);
+ else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+# echo "$URI <br>";
+ echo "serctl alias rm $newalias <br>";
+ serctl alias rm $newalias;
+ echo "<br>";
+ 
+cat<<EOF
+  </td></tr><tr><td colspan="7"><input name="post_contacts"
+  title="Contacts"
+  type="submit" value="Contacts" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Details" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Database" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Database" /></td></tr></tbody></table></form>
+EOF
+
+elif [ -n "$post_rmaor" ]; then
+
+cat<<EOF
+<h1>Phonebook: URI removal</h1>
+<form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
+cellspacing="0" class="form" width="548"><tbody><tr><td>
+EOF
+
+#test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
+ if [ $(nvram get sip_domain) ]; 
+ then export SIP_DOMAIN=$(nvram get sip_domain);
+ else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+# echo "$URI <br>";
+ echo "serctl ul rm $AOR <br>";
+ serctl ul rm $AOR;
+ echo "<br>";
+ 
+cat<<EOF
+  </td></tr><tr><td colspan="7"><input name="post_contacts"
+  title="Contacts"
+  type="submit" value="Contacts" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Details" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Database" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Database" /></td></tr></tbody></table></form>
+EOF
+
+
+elif [ -n "$post_sendmsg" ]; then
+
+cat<<EOF
+<h1>Phonebook: SIP Messaging</h1>
+<form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
+cellspacing="0" class="form" width="548"><tbody><tr><td>
+EOF
+
+
+##test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
+# if [ $(nvram get sip_domain) ]; 
+# then export SIP_DOMAIN=$(nvram get sip_domain);
+# else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+## echo "$URI <br>";
+# echo "serctl ul rm $AOR <br>";
+# serctl ul rm $AOR;
+# echo "<br>";
+
+#  echo ("cat > /tmp/ser_fifo <<EOF
+echo "Sending message...<br>";
+echo ":t_uac_dlg:ser_fifo_replies
+MESSAGE
+$(echo "$URI" | sed -n -f html.sed;)
+.
+From: sip:mf@$(nvram get sip_domain)
+To: $(echo "$URI" | sed -n -f html.sed;)
+foo: bar_special_header
+x: y
+p_header: p_value
+Contact: <sip:devnull@$(nvram get sip_domain):9>
+Content-Type: text/plain; charset=UTF-8
+.
+$(echo "$sendmsg" | sed -n -f html.sed)
+.
+EOF" > /tmp/msg;
+#  cat /tmp/msg;
+  mkfifo -m 666 /tmp/ser_fifo_replies;
+  cat /tmp/msg > /tmp/ser_fifo;
+  echo "<br>";
+  cat /tmp/ser_fifo_replies | awk 'sub("", "<br>") {print}';
+  echo "<br>";
+  rm /tmp/ser_fifo_replies;
+  #if [ $(nvram get sip_domain) ]; 
+  #then export SIP_DOMAIN=$(nvram get sip_domain);
+  #else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  #serctl restart | awk 'sub("", "<br>") {print}';
+ 
+cat<<EOF
+  </td></tr><tr><td colspan="7"><input name="post_contacts"
+  title="Contacts"
+  type="submit" value="Contacts" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Details" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Database" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Database" /></td></tr></tbody></table></form>
+EOF
+
+
+#elif [ -n "$post_contacts" ]; then
+#cat<<EOF
+#<meta http-equiv="refresh" content="0; URL=http://$(nvram get lan_ipaddr)/mf.html">
+#EOF
+
+
+else 
+
+cat<<EOF
+<h1>Phonebook: Contacts</h1>
+  <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
+  cellspacing="0" class="form" width="548"><tbody><tr><td>Active URIs</td><td>
+  Phone URI / Alias $(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  serctl ul show | grep 'aor   :' | awk 'sub("","") {print $3}' | \
+  sed -e "s/^\('\)/======================================\n\1/" | awk 'sub("", "<br>") {print}';)
+  <br>======================================<br>
+  <tr><td>Messaging:</td><td>$(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  serctl ul show | grep 'Contact   :' | awk 'sub("","") {print $3}' | cut -f2 -d"'" | awk '
+  function td(s) {
+  printf("1 %s 2", s);
+  }
+  function ip(s) {
+  #  if(s!~/\.0$/) {
+  #    td(sprintf("<A HREF=\"http://%s/\">%s</A>", s, s));
+  #  }
+  #  else {
+     td(s);
+     #  }
+    }
+    BEGIN {
+    print "<SELECT NAME=\"URI\"><OPTION VALUE=\"\">Choose recipient<\/OPTION>";
+    }
+    /^[0-9]/ {
+    printf "ta";
+    ip($1);
+    ip($2);
+    for(i=3;i<=NF;i++) td($i);
+    printf "da\n";
+   }
+   /^sip:/ {
+    printf "<OPTION VALUE=\"";
+    for(i=1;i<=NF;i++) {
+     printf("%s", $i);
+     printf "\">";
+     printf("%s", $i);
+     printf "<\/OPTION>";
+    }
+   printf "";
+  }
+  END {
+ print "";
+ }')</td></tr>
+ <!--<tr><td></td><td></td></tr>-->
+ <TR TITLE="Enter Message here"><TD></TD><TD><INPUT NAME="sendmsg" SIZE="32" TYPE="TEXT" VALUE="">
+ <!--<input name="post_sendmsg" title="Send" type="submit" value="Send" />--></TD>
+ </td></tr>
+EOF
+
+cat<<EOF
+</td></tr><tr><td colspan="7"><input name="post_sendmsg"
+  title="Send Message"
+  type="submit" value="Send" />
+  <input
+  name="post_details"
+  title="Details"
+  type="submit" value="Details" />
+  <input
+  name="post_flushdb"
+  title="Flush Database"
+  type="submit" value="Flush Database" />
+  <input
+  name="post_savedb"
+  title="Save Database"
+  type="submit" value="Save Database" /></td></tr></tbody></table></form>
+EOF
+
+fi
+
+cat<<EOF
+  <td valign="top" width="5"></td></tr><tr><td height="5" width="150"></td><td height="5"
+  width="5"></td><td height="5"></td><td height="5" width="5"></td><td
+  height="5" width="150"></td></tr><tr><td class="magenta" colspan="4"
+  height="19" width="150"><address class="magenta">Changed: May 6th 2005</address></td><td
+  class="magenta" height="19" width="150"><span
+  class="magenta"><a class="magenta"
+  href="javascript:location.href=location.href;"><!--<img alt="" border="0"
+  height="14" src="images/btn_top_arrow.gif" width="14" />-->Top of page</a></span></td></tr></tbody></table>
+  <center><font size=-2>
+  Copyright &copy 2005 <a href="http://sipath.sourceforge.net" target="new">SIP at Home Project</a> Crew - All rights reserved.<br>
+  Logos and trademarks are the property of their respective owners.<br>
+  This web page is licensed under the <a
+  href="http://www.gnu.org/licenses/fdl.html" target="new">GNU Free Documentation License</a><br>
+  The software promoted on this website is licensed under the <a
+  href="http://www.gnu.org/licenses/gpl.html" target="new">GNU General Public License</a><br>
+  Please note that this software is under development <br>
+  and comes with absolutely no warranty, to the extend permitted by applicable law.<br>
+  <a href="http://www.opensource.org/docs/definition.php" target="new">Definition of Open Source</a></font>
+  </center>
+  </body>
+</html>
+EOF

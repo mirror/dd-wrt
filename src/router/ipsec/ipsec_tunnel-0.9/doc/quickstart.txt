@@ -1,0 +1,121 @@
+An IPsec tunnel implementation for Linux
+========================================
+
+Quickstart Instructions
+-----------------------
+
+The IPsec tunnel implementation is divided into two parts, one kernel
+module called ipsec_tunnel.o, and a tool to administrate security
+associations and tunnels, called ipsecadm. Both the kernel module and
+the ipsecadm tool are installed by running make install. Start by
+loading the kernel module into the Linux kernel by running modprobe
+ipsec_tunnel. You now have a new inactive network device called ipsec0
+which can be seen if you run ifconfig -a.
+
+The ipsecadm tool has a built-in brief help which is displayed if you
+execute it without paramters, or with unknown or invalid
+parameters. You can also look at the manual page by running man
+ipsecadm. The tool has two main modes. One is for adding and removing
+security associations (SAs), and one for adding and removing
+tunnels. Before we start, we need an example scenario. Let's say that
+we are going to create a tunnel between two hosts A and B. The public
+IP number of host A is 1.2.3.4 and it's private IP address is is
+10.0.1.1/24.
+
+        Host                 A             B
+        ------------------------------------------------
+        Public IP address    1.2.3.4       5.6.7.8
+        Private IP address   10.0.1.1      10.0.2.1
+        Private network      10.0.1.0/24   10.0.2.0/24
+
+IPsec uses Security Associations (SA), which is another name for a
+security agreement between two hosts. The SA is uniquely identified by
+two IP addresses and a 32-bit number called a Security Parameter Index
+(SPI). The SPI allows more than one SA between a pair of hosts. When
+the SA was agreed upon, the two parties agreed upon the type of the SA
+which can basically be encryption and/or authentication, and also the
+algorithms, key sizes and keys to be used. It's time for an
+example. This is an SA in (more or less) plain English:
+
+        SPI:                        0x1000
+        Destination IP:             5.6.7.8
+        Source IP:                  1.2.3.4
+        Encryption algorithm:       3DES
+        Encryption key size:        192 bits
+        Encryption key:             ...
+        Authentication algorithm:   SHA-1
+        Authentication key size:    160 bits
+        Authentication key:         ...
+        Authentication HMAC size:   96 bits (default)
+
+Before we can create an SA we need a key, which can most easily be
+created using the ipsecadm key create command. To create a 3DES key in
+the file /etc/ipsec/demo.ciph.key run the following:
+
+        ipsecadm key create 3des --file=/etc/ipsec/demo.ciph.key
+
+A 160-bit (20 byte) authentication key can be created in
+/etc/ipsec/demo.auth.key using the following command:
+
+        ipsecadm key create sha1 --file=/etc/ipsec/demo.auth.key
+
+Now we can use ipsecadm to create the SA above. The --cipher option
+specifies the algorithm used for encryption, and the --digest option
+specifies the algorithm used for authentication. The cipher name is
+specified by its cryptoapi name. The name for the standard IPsec 3DES
+algorithm depends on the version of CryptoAPI you have installed. If
+you have a recent version, it is 3des-cbc, but if you have an old
+version, it is des_ede3-cbc. You can see which ciphers and digest you
+have installed by looking in the directories /proc/crypto/cipher and
+/proc/crypto/digest.
+
+        ipsecadm sa add --spi=0x1000 --dst=5.6.7.8 --src=1.2.3.4 \
+                 --cipher=3des-cbc \
+                 --cipher-keyfile=/etc/ipsec/demo.ciph.key \
+                 --digest=sha1 \
+                 --digest-keyfile=/etc/ipsec/demo.auth.key \
+                 --duplex
+
+Simple, isn't it? Note that authentication is optional, but use of
+encryption without authentication may subject traffic to certain forms
+of active attacks that could undermine the security of encryption.
+Wondering about the --duplex parameter? To create a tunnel you need
+two SAs, one in each direction. Since it is common to use the same
+security settings for both directions you can create a pair of SAs in
+one go by using --duplex. To look at the two SAs you just created, run
+the following:
+
+        ipsecadm sa show
+
+Note that the SAs can be used for all IPsec traffic, and not only for
+tunnels, but right now only tunnels are implemented. Also make sure
+you add the SAs on both hosts. The next step is to create the
+tunnels. I will show the commands needed for host A, and leave the
+commands for host B as a simple excercise. Run the following:
+
+        ipsecadm tunnel add ipsec1 --local=1.2.3.4 --remote=5.6.7.8
+
+As you can see there is no need to specify the SPI. You can do that if
+you want to using the --spi option, but if unspecified, the local and
+remote addresses will be used to find a suitable SA. Now we need to
+set an IP number on the newly created tunnel device, but what should
+it be? When a packet is created on a machine, the destination address
+is used by the routing table to find the outgoing device for the
+connection, and the source address is set to the address of the
+device. (This is a bit simplified, but enough for us now.) If you
+initiate a connection from host A to an address on the private network
+at host B, you probably want the source address of your packets to be
+the private address of host A, which is 10.0.1.1:
+
+        ifconfig ipsec1 10.0.1.1 up
+
+The last step is to create an entry in the routing table that makes
+the packets to the private network at host B go out via the ipsec1
+device:
+
+        route add -net 10.0.2.0/24 dev ipsec1
+
+That's it! Do the equivalent thing on host B and you should be all
+set! Nothe that you should not generate a new key on host B, but copy
+the one you made for host A to host B. Make sure that you copy the key
+in a secure manner, e.g. using ssh/scp.

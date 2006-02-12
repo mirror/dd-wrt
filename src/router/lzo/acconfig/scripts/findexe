@@ -1,0 +1,89 @@
+#! /usr/bin/env python2.2
+##
+## vi:ts=4:et
+##
+##---------------------------------------------------------------------------##
+##  Author:
+##      Markus F.X.J. Oberhumer <markus@oberhumer.com>
+##  Copyright:
+##      Distributed under the terms of the GNU General Public License.
+##  Description:
+##      xx
+##  Usage:
+##      python findexe ls
+##      python findexe "python*" [glob expression]
+##---------------------------------------------------------------------------##
+
+
+import fnmatch, getopt, os, re, string, sys
+
+
+# /***********************************************************************
+# //
+# ************************************************************************/
+
+opts = {
+    "abspath":      0,
+    "realpath":     0,
+}
+
+
+def getname(n):
+    if opts.get("abspath"):
+        n = os.path.abspath(n)
+    if opts.get("realpath"):
+        n = os.path.realpath(n)
+    if opts.get("normpath"):
+        n = os.path.normpath(n)
+    if opts.get("normcase"):
+        n = os.path.normcase(n)
+    return n
+
+
+def main(argv):
+    longopts = opts.keys()
+    longopts.sort()
+    xopts, xargs = getopt.getopt(argv[1:], "", longopts)
+    ##print xopts, xargs
+    for o, a in xopts:
+        if o[:2] == "--":
+            o = o[2:]
+        assert o
+        ##print o, a
+        if not a: a = 1
+        opts[o] = a
+    #
+    path = os.environ.get("PATH", "")
+    path = string.splitfields(path, os.pathsep)
+    #
+    re_flags = 0
+    if os.name == "nt": re_flags = re.I
+    patterns = []
+    for pat in xargs:
+        p = fnmatch.translate(pat)
+        r = re.compile(p, re_flags)
+        patterns.append(r)
+    #
+    result = []
+    for dir in path:
+        if not dir or not os.path.isdir(dir):
+            continue
+        try:
+            names = os.listdir(dir)
+        except:
+            names = []
+        names.sort()
+        for n in names:
+            for pat in patterns:
+                if pat.match(n):
+                    fn = os.path.join(dir, n)
+                    if os.path.isfile(fn):
+                        exe = getname(fn)
+                        if not exe in result:
+                            result.append(exe)
+    for r in result:
+        print r
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))
+

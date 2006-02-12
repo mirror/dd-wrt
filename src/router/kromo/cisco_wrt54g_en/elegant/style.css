@@ -1,0 +1,31 @@
+@import url(../common.css); 
+#menuSub, 
+#menuMainList li span, 
+#menuMainList li.current a, 
+#menuMainList li.current a:hover, 
+#help h2 { 
+background:#30519C; 
+color:#FFFFFF; 
+border-color:#496FC7; 
+} 
+#menuMainList #menuSubList li a { 
+background:#496FC7; 
+color:#FFFFFF; 
+border-color:#6384CF; 
+} 
+#menuMainList #menuSubList li a:hover { 
+background:#6384CF; 
+color:#fff; 
+border-color:#849DD9; 
+} 
+fieldset legend { 
+color:#30519C; 
+} 
+#help a { 
+color:#FFFFFF; 
+} 
+#help a:hover { 
+color:#FFFFFF; 
+text-decoration: underline; 
+}
+

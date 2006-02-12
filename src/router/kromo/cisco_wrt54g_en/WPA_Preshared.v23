@@ -1,0 +1,18 @@
+<div>
+	<div class="setting">
+		<div class="label">WPA Algorithms</div>
+		<select name="wl_crypto">
+		<option value="tkip" <% nvram_selmatch("wl_crypto","tkip","selected"); %>>TKIP</option>
+		<option value="aes" <% nvram_selmatch("wl_crypto","aes","selected"); %>>AES</option>
+		<option value="tkip+aes" <% nvram_selmatch("wl_crypto","tkip+aes","selected"); %>>TKIP+AES</option>
+		</select>
+	</div>
+	<div class="setting">
+		<div class="label">WPA Shared Key</div>
+		<input name="wl_wpa_psk" maxlength="64" size="32" value='<% nvram_get("wl_wpa_psk"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">Group Key Renewal</div>
+		<input name="wl_wpa_gtk_rekey" maxlength="5" size="10" onblur="valid_range(this,0,99999,'rekey interval')" value='<% nvram_get("wl_wpa_gtk_rekey"); %>' /> seconds
+	</div>
+</div>

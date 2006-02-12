@@ -1,0 +1,469 @@
+.\"
+.\" netstat.8 
+.\"
+.\" Original: (mdw@tc.cornell.edu & dc6iq@insu1.etec.uni-karlsruhe.de)
+.\"
+.\" Modificado por: Bernd.Eckenfels@inka.de
+.\" Modificado por: Andi Kleen ak@muc.de
+.\" Traduzido para português por Arnaldo Carvalho de Melo <acme@conectiva.com.br>
+.\" Revisado por Jorge Luiz Godoy Filho <jorge@bestway.com.br>
+.\"
+.TH NETSTAT 8 "19 de maio de 1997" "net-tools" "Manual do Programador Linux"
+
+.SH NOME
+netstat \- Mostra conexões de rede, tabelas de roteamento, estatísticas de interface e conexões
+mascaradas.
+.SH SINOPSE
+
+.B netstat 
+.RB [ \-venaoc ]
+.RB [ \-\-tcp | \-t ]
+.RB [ \-\-udp | \-u ]
+.RB [ \-\-raw | \-w ]
+.RB [ \-\-unix | \-x ] 
+.RB [ \-\-inet | \-\-ip ]
+.RB [ \-\-ax25 ]
+.RB [ \-\-ipx ] 
+.RB [ \-\-netrom ]
+
+.PP
+
+.B netstat 
+.RB [ \-veenc ]
+.RB [ \-\-inet ] 
+.RB [ \-\-ipx ]
+.RB [ \-\-netrom ] 
+.RB [ \-\-ddp ]
+.RB [ \-\-ax25 ]
+.RB { \-\-route | \-r }
+
+.PP
+
+.B netstat
+.RB [ \-veenac ]
+.RB { \-\-interfaces | \-i }
+.RI [ iface ]
+
+.PP
+
+.B netstat
+.RB [ \-enc ]
+.RB { \-\-masquerade | \-M }
+
+.PP
+
+.B netstat 
+.\".RB [ \-cn ]
+.RB { \-\-statistics | \-s }
+
+.PP
+
+.B netstat 
+.RB { \-V | \-\-version }
+.RB { \-h | \-\-help }
+
+.PP
+.SH DESCRIÇÃO
+.B netstat
+mostra informações do subsistema de rede do Linux.
+
+.SS "(sem opções)"
+Você pode ver o estado das conexões de rede através da listagem dos sockets
+abertos. Esta é a operação padrão: se você não especificar nenhuma
+família de endereços, os sockets ativos de todas as famílias de endereços
+configuradas serão mostrados. Com
+.B -e
+você obterá informações adicionais (userid). Com a chave
+.B -v
+você poderá fazer com que o netstat reclame sobre famílias de endereços
+conhecidas que não sejam suportadas pelo kernel. A opção
+.B -o
+mostra algumas informações adicionais sobre temporizadores de rede.
+.B -a
+mostra todos os sockets, incluindo sockets de servidores. A família de
+endereços
+.B inet
+mostrará sockets raw, udp e tcp.
+
+.SS "\-r, \-\-route"
+Com a opção
+.BR \-r ", " \-\-route
+você obterá as tabelas de roteamento do kernel no mesmo formato usado por
+.BR "route -e" .
+.B "netstat -er" 
+usará o formato de apresentação do comando
+.BR route .
+Por favor veja
+.BR route (8)
+para maiores detalhes.
+
+.SS "\-i, \-\-interface \fIiface\fI"
+Se você usar a opção
+.BR -i ", " --interfaces
+, uma tabela de todas (ou da
+.IR iface
+especificada) as interfaces de rede será mostrada. A saída usa o formato
+.B "ifconfig -e"
+, e é descrita em
+.BR ifconfig (8).
+.B "netstat -ei" 
+mostrará uma tabela ou uma entrada de interface como
+.B ifconfig
+mostra. Com a chave
+.B -a
+, você pode incluir interfaces que não estejam configuradas (i.e. não tem
+a flag 
+.BR U = UP
+configurada).
+
+.SS "\-M, \-\-masquerade"
+
+Uma lista de todas as sessões mascaradas também pode ser vista. Com a chave
+.B -e 
+você pode incluir mais algumas informações sobre numeração sequencial e deltas
+, causados por reescritas de dados em sessões FTP (comando PORT).
+O suporte a mascaramento é usado para esconder máquinas em endereços de
+rede não oficiais do resto do mundo, como descrito em
+.BR ipfw (4), ipfwadm "(8) e ipfw (8).
+
+.SS "\-s, \-\-statistics"
+
+Mostra estatísticas sobre o subsistema de rede do kernel do Linux, que 
+são lidas a partir de
+.IR /proc/net/snmp .
+
+.PP
+.SH OPÇÕES
+.SS "\-v, \-\-verbose"
+Informa ao usuário o que está ocorrendo, sendo detalhado. Especialmente 
+mostra algumas informações úteis sobre famílias de endereços não 
+configuradas.
+
+.SS "\-n, \-\-numeric"
+Mostra endereços numéricos, sem tentar resolver os nomes da máquina, porta ou
+usuário.
+
+.SS "\-A, \-\-af \fIfamília\fI"
+Usa um método diferente para configurar as famílias de endereços.
+.I família 
+é uma lista de palavras-chave de famílias de endereços separadas por vírgulas
+(',') como
+.BR inet , 
+.BR unix , 
+.BR ipx , 
+.BR ax25 , 
+.B netrom 
+e
+.BR ddp .
+Tem o mesmo efeito de usar as opções longas
+.BR \-\-inet ,
+.BR \-\-unix ,
+.BR \-\-ipx ,
+.BR \-\-ax25 ,
+.B \-\-netrom
+e
+.BR \-\-ddp.
+
+.SS "\-c, \-\-continuous"
+Isto fará com que 
+.B netstat
+mostre a tabela selecionada a cada segundo, continuamente na tela até que
+você o interrompa.
+
+.PP
+.SH SAÍDA
+
+.PP
+.SS Conexões Internet Ativas \fR(TCP, UDP, RAW)\fR
+
+.SS "Proto" 
+O protocolo (tcp, udp, raw) usado pelo socket.
+
+.SS "Recv-Q"
+O contador de bytes não copiados pelo programa conectado a este socket.
+
+.SS "Send-Q"
+O contador de bytes não confirmados pela máquina remota.
+
+.SS "Endereço Local" 
+O endereço local (nome da máquina local) e o numero da porta do socket. A menos
+que a chave
+.B -n
+seja especificada o endereço do socket será resolvido para seu nome de máquina
+canônico e o número da porta será traduzido para o serviço correspondente.
+
+.SS "Endereço Remoto"
+O endereço remoto (nome da máquina remota) e o número da porta do socket. Como
+com o endereço local, a chave
+.B -n
+desliga a resolução do nome da máquina e do serviço.
+
+.SS "Estado"
+O estado do socket. Uma vez que não existem estados no modo RAW e normalmente
+nenhum estado é usado em UDP, esta linha pode ser deixada em branco. Normalmente
+ele pode assumir um de vários valores:
+.TP
+.I
+ESTABELECIDO
+O socket tem uma conexão estabelecida.
+.TP
+.I
+SYN_SENT
+O socket está ativamente tentando estabelecer uma conexão.
+.TP
+.I
+SYN_RECV
+Uma requisição de conexão foi recebida da rede.
+.TP
+.I
+FIN_WAIT1
+O socket está fechado e a conexão está terminando.
+.TP
+.I
+FIN_WAIT2
+A conexão está fechada e o socket está esperando por uma terminação pela
+máquina remota.
+.TP
+.I
+TIME_WAIT
+O socket está esperando após o fechamento para tratar os pacotes ainda na rede.
+.TP
+.I
+FECHADO
+O socket não está sendo usado.
+.TP
+.I
+CLOSE_WAIT
+O lado remoto terminou, esperando pelo fechamento do socket.
+.TP
+.I
+ÚLTIMO_ACK
+O lado remoto terminou, e o socket está fechado. Esperando por uma
+confirmação.
+.TP
+.I
+OUVINDO
+O socket está ouvindo por conexões. Estes socket são somente mostrados se
+a chave
+.BR -a , --listening
+for especificada.
+.TP
+.I
+FECHANDO
+Ambos os sockets estão terminados mas nós ainda não enviamos todos os nossos
+dados.
+.TP
+.I
+DESCONHECIDO
+O estado do socket é desconhecido.
+
+.SS "Usuário"
+O nome ou UID do dono do socket.
+
+.SS "Temporizador"
+(precisa ser escrito)
+
+
+.PP
+.SS UNIX domain sockets Ativos
+
+
+.SS "Proto" 
+O protocolo (normalmente unix) usado pelo socket.
+
+.SS "CntRef"
+O contador de referências (i.e. processos conectados via este socket).
+
+.SS "Flags"
+As flags mostradas são SO_ACCEPTON (mostrada como 
+.BR ACC ),
+SO_WAITDATA 
+.RB ( W )
+ou SO_NOSPACE 
+.RB ( N ). 
+SO_ACCECPTON 
+é usada para sockets não-conectados se seus processos correspondentes
+estiverem esperando por uma solicitação de conexão. As demais flags não
+são de interesse comum.
+
+.SS "Tipos"
+Há diversos tipos de acesso a sockets:
+.TP
+.I
+SOCK_DGRAM
+O socket é usado no modo de Datagramas (sem conexão).
+.TP
+.I
+SOCK_STREAM
+É um socket usado quando há conexões (stream socket).
+.TP
+.I
+SOCK_RAW
+É usado como o socket básico (raw socket).
+.TP
+.I
+SOCK_RDM
+Este é usado para confirmação de entrega de mensagens.
+.TP
+.I
+SOCK_SEQPACKET
+É um socket para um pacote sequencial.
+.TP
+.I
+SOCK_PACKET
+Socket para acesso da interface BÁSICA.
+.TP
+.I
+UNKNOWN
+Quem sabe o que nos trará o futuro? Preencha aqui :-)
+
+.PP
+.SS "Estados"
+Este campo conterá uma das seguintes palavras-chave:
+.TP
+.I
+FREE
+Este socket não está alocado.
+.TP
+.I
+LISTENING
+O socket está aguardando por uma solicitação de conexão. São mostrados
+apenas se as opções
+.BR -a , --listening
+forem selecionadas.
+.TP
+.I
+CONNECTING
+O socket está por estabelecer uma conexão.
+.TP
+.I
+CONNECTED
+O socket está conectado.
+.TP
+.I
+DISCONNECTING
+O socket está desconectado.
+.TP
+.I
+(nada)
+O socket não está conectado a nenhum outro.
+.TP
+.I
+UNKNOWN
+Isto não deve acontecer nunca.
+
+.SS "Path"
+Mostra o caminho (path) do processo do qual está tratando esse socket.
+
+.PP
+.SS Sockets IPX ativos
+
+(Isso precisa ser feito por alguém que saiba fazê-lo.)
+
+.PP
+.SS Sockets NET/ROM ativos
+
+(Isso precisa ser feito por alguém que saiba fazê-lo.)
+
+.PP
+.SS Sockets AX.25 ativos
+
+(Isso precisa ser feito por alguém que saiba fazê-lo.)
+
+.PP
+.SH NOTAS
+Desde o kernel 2.2 o netstat -i não mostra estatísticas para apelidos (aliases)
+de interfaces. Para obter contadores por apelido de interface você precisa
+configurar regras explícitas usando o comando
++.BR ipchains(8)
+.
+.SH FILES
+.ta
+.I /etc/services
+-- O arquivo de "tradução" (correspondência) entre socket e serviço.
+
+.I /proc/net/dev
+-- Informações de dispositivos.
+
+.I /proc/net/snmp
+-- Estatísticas da rede.
+
+.I /proc/net/raw
+-- Informação sobre o socket BÁSICO (RAW).
+
+.I /proc/net/tcp
+-- Informação sobre o socket TCP.
+
+.I /proc/net/udp
+-- Informação sobre o socket UDP.
+
+.I /proc/net/unix
+-- Informação sobre o socket de domínio Unix.
+
+.I /proc/net/ipx
+-- Informação sobre o socket IPX.
+
+.I /proc/net/ax25
+-- Informação sobre o socket AX25.
+
+.I /proc/net/appletalk
+-- Informação sobre o socket DDP (Appletalk).
+
+.I /proc/net/nr
+-- Informação sobre o socket NET/ROM.
+
+.I /proc/net/route
+-- Informação sobre os roteamentos IP realizados pelo kernel
+
+.I /proc/net/ax25_route
+-- Informação sobre os roteamentos AX25 realizados pelo kernel
+
+.I /proc/net/ipx_route
+-- Informação sobre os roteamentos IPX realizados pelo kernel
+
+.I /proc/net/nr_nodes
+-- Lista de nós NET/ROM do kernel
+
+.I /proc/net/nr_neigh
+-- "Vizinhos" NET/ROM do kernel
+
+.I /proc/net/ip_masquerade
+-- Conexões mascaradas do kernel
+
+.fi
+
+.PP
+.SH VEJA TAMBÉM
+.BR route (8), 
+.BR ifconfig (8), 
+.BR ipfw (4), 
+.BR ipfw (8), 
+.BR ipfwadm (8)
+.BR ipchains (8)
+
+.PP
+.SH BUGS
+Ocasionalmente informações estranhas podem surgir se um socket mudar
+enquanto é visualizado. Isso é incomum.
+.br
+As opções descritas para
+.B netstat -i
+foram descritas como deverão funcionar após alguma limpeza da liberação
+BETA do pacote net-tools.
+
+.PP
+.SH AUTORES
+A interface com o usuário foi escrita por Fred Baumgarten
+<dc6iq@insu1.etec.uni-karlsruhe.de> a página do manual basicamente
+por Matt Welsh <mdw@tc.cornell.edu>. Foi atualizada por
+Alan Cox <Alan.Cox@linux.org> mas poderia ter sido feita com um pouco
+mais de trabalho.
+.BR
+.LP
+A página do manual e os comandos incluídos no pacote net-tools
+foram totalmente reescritos desde Bernd Eckenfels
+<ecki@linux.de>.
+.BR
+.SH TRADUÇÃO E REVISÃO PARA PORTUGUÊS
+Traduzido para o português por Arnaldo Carvalho de Melo
+<acme@conectiva.com.br> e Jorge Luiz Godoy Filho <jorge@bestway.com.br>.

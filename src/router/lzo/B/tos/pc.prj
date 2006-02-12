@@ -1,0 +1,46 @@
+;
+;  pc.prj -- project file for Pure C 1.0 (Sep 20 1991)
+;
+
+; name of executable program
+ltest.ttp
+
+
+; ----- compiler options -----
+;; .C[-DSIZEOF_SIZE_T=4]
+;; .C[-DLZO_BYTE_ORDER=4321]
+;; .C[-DLZO_NO_SYS_TYPES_H]
+;; .C[-DLZO_DEBUG]
+
+.C[-P]          ; use absolute calls
+.C[-Iinclude]
+.C[-W -W-rch]
+.C[-L48]        ; maximum identifier length
+;; .C[-G]          ; size optimization
+;; .C[-Y]          ; add debug information
+
+; ----- linker options -----
+.L[-S=8192]     ; stacksize
+;; .L[-Y]          ; add debug information
+;; .L[-G]          ; add global symbols
+;; .L[-L]          ; add local symbols
+
+; ----- assembler options -----
+;; .S[-Y]          ; add debug information
+
+
+=           ; list of modules follows...
+
+PCXSTART.O      ; startup code
+
+ltest\ltest.c
+
+pclib.prj
+
+PCFLTLIB.LIB       ; floating point library
+PCSTDLIB.LIB       ; standard library
+
+; PCEXTLIB.LIB       ; extended library
+; PCBGILIB.LIB       ; BGI library
+; PCTOSLIB.LIB       ; TOS library
+; PCGEMLIB.LIB       ; AES and VDI library

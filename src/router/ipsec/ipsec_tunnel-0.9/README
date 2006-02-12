@@ -1,0 +1,33 @@
+An IPsec tunnel implementation for Linux
+========================================
+
+You are looking at the README file for the IPsec tunnel implementation
+known as ipsec_tunnel.  This package was created to provide a very
+easy to use IPsec tunnel implementation, very well suited to create
+a secure VPN over an insecure network such as the Internet.  Since
+the ipsec_tunnel module was based on the standard Linux kernel
+network tunnels ipip and ip-gre, it is very easy to switch from an
+insecure ipip tunnel to a secure IPsec tunnel.  This also means that
+you use the route command to direct which packets that should enter
+the tunnel device instead of IPsec specific commands.
+
+This implementation consists of two parts.  The first is a kernel
+module that implements IPsec in the Linux kernel.  This module adds a
+new network device called ipsec0, which is used to communicate with
+the administration tool ipsecadm.  There will be no traffic going
+through this interface.
+
+The second part is the ipsecadm tool which is used to configure the
+kernel by adding, removing and showing IPsec security associations
+(SAs) and tunnels.  The standard utilities ifconfig and route are
+then used to control the traffic.
+
+To begin, read the INSTALL file in this directory for installation
+instructions, and then have a look at the contents of the doc
+subdirectory for a tutorial and examples.
+
+Good luck!
+
+-----------------------------------------------------------------------
+Tobias Ringström <tobias@ringstrom.mine.nu>
+http://ringstrom.mine.nu/ipsec_tunnel/

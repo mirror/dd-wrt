@@ -1,0 +1,10 @@
+<fieldset>
+<legend>Zero IP Config</legend>
+<span class="comment">Zero IP Config</span>
+<div class="setting"><div class="label">Zero IP Config enabled</div>
+<input type="radio" value="1" name="shat_enable" <% nvram_match("shat_enable","1","checked"); %> /> Enable
+<input type="radio" value="0" name="shat_enable" <% nvram_match("shat_enable","0","checked"); %> /> Disable
+</div>
+<div class="setting"><div class="label">Range</div>
+<input class="text" maxLength="100" size="25" name="shat_range" value='<% nvram_get("shat_range"); %>' /></div>
+</fieldset>

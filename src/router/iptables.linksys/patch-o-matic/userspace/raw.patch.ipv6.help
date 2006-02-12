@@ -1,0 +1,19 @@
+Author: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
+Status: Testing.
+
+This patch adds a new table called 'raw' with a new target
+called 'TRACE' to netfilter/iptables (plus some modifications).
+
+The raw table is the very first in netfilter and uses the 
+PREROUTING and OUTPUT built-in chains.
+
+The TRACE target can be used to trace how the packet "flows trough" 
+your tables and rules. When a packet marked with the TRACE target
+matches any rule, the system logs the packet with the following
+prefix:
+
+	TRACE: tablename/chainname/rulenum packet
+
+The internal logging functionality relies on the available
+"backend" logging module (ip6t_LOG). You must load the logging
+module in, otherwise no log will be generated. 

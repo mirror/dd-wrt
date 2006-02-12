@@ -1,0 +1,6 @@
+.libs
+Makefile
+*.lo
+*.la
+.gdb.auto.init
+.gdbinit

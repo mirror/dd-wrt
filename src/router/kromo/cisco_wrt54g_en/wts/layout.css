@@ -1,0 +1,282 @@
+/* Properties */
+div#header {
+	background: url("Logo1.gif") left top no-repeat;
+	position: absolute;
+	height: 109px;
+	width: 216px;
+}
+
+html {
+	height:			100%;
+	padding:		0px;
+	margin:			0px;
+	/*background: #d0d0da;*/
+	text-decoration:none;
+}
+
+body {
+	position: absolute;
+	background-color:  #d0d0da;
+}
+
+body {
+	position: absolute;
+	padding:		0px;
+	margin:			0px;
+	color:			#000;
+	font-family:	Verdana,Sans-serif;
+	font-size:		90%;
+}
+
+form {
+	margin:			0;
+	display:		inline;
+}
+input, select, option, button {
+	font-weight:	bold;
+	color:			#A57B46;
+}
+input.num {
+	width:			auto;
+}
+input.ipnum {
+	text-transform:	uppercase;
+	text-align:		center;
+}
+
+h1, h3, h4, h5, h6, legend, label {
+	margin:			1em 0 0.5em 0;
+}
+
+h2 {
+	color: #fac59d;
+	/*margin:			1em 0 0.5em 0;*/
+}
+
+.secondLevel h1 { font-size: 120%; }
+.secondLevel h2, legend { font-size: 100%; }
+.secondLevel h3, label { font-size: 80%; }
+
+h1 { color: #003466; }
+h2, legend { color: #003466; }
+h3, label { color: black; }
+
+legend, label { font-weight: bold; }
+
+fieldset
+{
+	border: 2px solid #ff934b;
+	padding-left: 5px;
+	padding-right: 5px;
+}
+
+sup {
+	font-size: 70%;
+}
+:link {
+	color: #554FA0;
+	font-weight: bold;
+}
+:visited {
+	color: #090051;
+	font-weight: bold;
+}
+:link:hover, :visited:hover {
+	color: #5B52CB;
+}
+
+hr {
+	padding: 0px;
+	height: 4px;
+	border: 0px;
+	margin: 2em 0;
+}
+table {
+	width: 600px;
+	border-width: 0px;
+}
+font.fieldName {
+	font-size: 8pt;
+}
+font.fieldDefault {
+	font-size: 8pt;
+}
+font.fieldValue {
+	font-size: 8pt;
+	font-weight: bold;
+}
+
+/*structure*/
+
+#container {
+	margin: 0px;
+	padding: 0px;
+}
+#mBody {
+	background2: #EEEAE4;
+	margin: 0px;
+	padding: 0px;
+}
+.nomenu #mBody {
+	background2: #fff;
+}
+#side {
+	background2: #EEEAE4;
+	position: absolute;
+	left: 0px;
+	top: 50px;
+	padding: 10px 15px;
+	width: 206px;
+	width: 176px;
+} 
+
+#ignored {}
+
+#buttons {
+	padding-bottom: 20px;
+	margin-bottom: 20px;
+	border-bottom: solid 3px #ff0000
+}
+
+input.button{
+	width: 176px;
+}
+.nomenu #side {
+	display: none;
+}
+
+#side h2 {
+	margin-top: 1em;
+	}
+
+.flLeft {
+	float: left;
+	margin: 5px 10px 5px 0;
+}
+
+.flRight {
+	float: right;
+	margin: 5px 0 5px 10px;
+}
+
+/*
+#wrapper {
+	position:				absolute;
+	top:					0px;
+	left:					0px;
+	height:					100%;
+	width:					100%;
+}
+#wrapper {
+	margin:			0;
+}
+*/
+
+#header div#logo  {
+	position: absolute;
+	left: 217px;
+	top: 109px;
+	width: 759px;
+	height: 103;
+	margin-left: 0px;
+	background-color: #ffffff;
+	/*border: 1px solid;*/
+}
+
+#header div#logo h1
+{
+	padding-top: 10px;
+	padding-bottom: 23px;
+	color: #003466;
+	font-size: x-large;
+	background-color:: transparent;
+}
+
+div#main
+{
+	background: url("Logo2.jpg") 217px top no-repeat;
+	position: absolute;
+	height: 109px;
+	width: 976px;
+}
+
+#main #contents {
+	z-index: 1;
+	position: absolute;
+	left: 217px;
+	top: 212px;
+	width: 759px;
+	/*height: 100%;*/
+	/*height: 500px;*/
+	/*background2:		#fff;*/
+	/*border: 1px solid;*/
+	/*overflow: scroll;*/
+	padding-left: 5px;
+	padding-right: 5px;
+	/*clip: auto;*/
+	background-color: #ffffff;
+}
+
+/*
+#header {
+	position:				absolute;
+	top:					0px;
+	left:					0px;
+	width:					100%;
+	margin:					0px;
+	padding:				0px;
+	display:				block;
+	color:					#955322;
+}
+*/
+
+div#main div#contents > h2:first-of-type  {
+	position:				absolute;
+	display:				block;
+	top:					10px;
+	left:					10px;
+}
+
+div#contents div div[class="setting"] div[class="label"]:before
+{
+}
+
+div#contents form h2
+{
+	/*padding-top: 20px;*/
+	clear:both;
+}
+
+#helpContainer {
+	display:				none;
+}
+
+#statusInfo {
+	display:				none;
+}
+
+#main #contents form .submitFooter {
+	position:				absolute;
+	top:					-102px;
+	left:					-208px;
+	text-align:				center;
+	display:				inline;
+	width:					196px;
+}
+
+.submitFooter input{
+	padding:				2px;	
+	margin:					2px;	
+	width:					90%;
+	color: #003466;
+}
+
+div.setting {
+	margin:					0px;
+	padding:				1px;	
+	padding-left:			0px;	
+}
+.label {
+	width:					16em;
+	float:					left;
+}

@@ -1,0 +1,51 @@
+#! /bin/sh
+
+# Script to tell whether a patch has been applied to a tree or not.
+# Assume patch is in diff -u form, and applies in dir with -p1.
+
+if [ $# != 2 ] || [ ! -d $1 ] || [ ! -f $2 ]
+then
+    echo Need directory and patch. >&2
+    exit 1
+fi
+
+# Convert $2 to absolute.
+case "$2"
+in
+    /*) PATCH="$2" ;;
+    *) PATCH="`pwd`/$2" ;;
+esac
+
+[ -d tmp-isapplied ] && rm -rf tmp-isapplied
+
+# Copy only files which are mentioned in patch.
+# eg. +++ working-2.4.0-test11-5/net/ipv4/netfilter/ipt_MASQUERADE.c	Fri Dec  1 17:56:02 2000
+mkdir tmp-isapplied
+for f in `grep '^+++ ' $2 | cut -d/ -f2- | cut -d'	' -f1`
+do
+    mkdir -p `dirname tmp-isapplied/$f` 2>/dev/null
+    cp $1/$f tmp-isapplied/$f 2>/dev/null
+done
+
+cd tmp-isapplied || (echo Can\'t change into tmp-isapplied >&2; exit 1)
+
+MISSING_FILES=`patch -R -s -f -p1 < $PATCH | grep "No file to patch" | wc -l`
+
+REJECTS="`find . -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+HUNKS="`grep -c ^@@ $PATCH`"
+
+if [ "$MISSING_FILES" -ne 0 ]
+then
+    echo `basename $PATCH` NOT APPLIED \($MISSING_FILES missing files\)
+    cd .. && rm -rf tmp-isapplied
+    exit 1
+elif [ `expr $REJECTS \* 2` -gt $HUNKS ]
+then
+    echo `basename $PATCH` NOT APPLIED \($REJECTS rejects out of $HUNKS hunks\)
+    cd .. && rm -rf tmp-isapplied
+    exit 1
+else
+    echo `basename $PATCH` ALREADY APPLIED \($REJECTS rejects out of $HUNKS hunks\).
+    cd .. && rm -rf tmp-isapplied
+    exit 0
+fi

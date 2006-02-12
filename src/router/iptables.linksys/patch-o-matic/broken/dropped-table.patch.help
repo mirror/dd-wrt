@@ -1,0 +1,9 @@
+Author: Rusty Russell <rusty@rustcorp.com.au>
+Status: Beta, redesign underway, applies now to 2.4.4-final
+
+This patch adds a `drop' table to iptables, adding a
+CONFIG_IP_NF_DROPTABLE option.  Packets which are going to be dropped
+by the NAT or routing code (among others) will traverse this table,
+allowing them to be logged.
+
+THIS PATCH WILL BREAK OTHER PATCHES (irc-conntrack-nat,talk,NETMAP,SAME,...)

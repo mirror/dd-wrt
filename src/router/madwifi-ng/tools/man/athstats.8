@@ -1,0 +1,41 @@
+.TH "ATHSTATS" "8" "October 2005" "" ""
+.SH "NAME"
+\fBathstats\fp \- print statistical data about madwifi interfaces
+.SH "DESCRIPTION"
+Provide statistics about a madwifi interface. Without any arguments, \fBathstats\fP
+will print a summary of statistical elements for the specified interface. If an
+additional argument is given as an integer, athstats will print progressive 
+statistical data at an interval equal to the specified integer in seconds.
+.PP
+Statistical elements of the summary report include packets sent/received, 
+tx/rx errors, calibration information and an antenna profile.
+.PP
+The progressive report details packet input/output as well as altrate, short,
+long, xretry, crcerr, crypt, phyerror packet counts. rssi and rate info is also
+displayed.
+.PP
+The statistical data is derived from device ioctls and /proc/net/dev.
+.SH "OPTIONS"
+.TP
+.B \-i <interface>
+The madwifi interface to apply the settings to. If no interface is specified, 
+it will default to ath0.
+.TP
+.B <integer>
+Define the interval between realtime statistical feedback in seconds.
+.PP
+.SH "EXAMPLES"
+.TP
+.B athstats \-i ath1
+Print summary of statistics for madwifi interface ath1.
+.TP
+.B athstats
+Print summary of statistics for the default madwifi interface ath0.
+.TP
+.B athstats \-i ath1 5
+Print progessive statistical report every 5 seconds.
+.PP
+.SH "SEE ALSO"
+\fB80211stats\fP(8)
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au>.

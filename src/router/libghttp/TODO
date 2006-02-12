@@ -1,0 +1,17 @@
+Before first release:
+
+* Support digest authentication
+* Better header parsing support including quality ratings.
+* Combining headers.
+* A real public interface that people who aren't smoking crack like
+	me and don't case about the internals of HTTP can use.  This
+	means a real http user agent that automatically handles
+	redirects and whatnot.
+* Support for byte ranges
+* Support encoding strings for posting as "forms"
+
+Blue sky:
+
+* Support SSL
+* Support Content-MD5 for sending and recieving entity bodies
+* Support gzip and deflate content encodings

@@ -1,0 +1,2 @@
+config ATHEROS_HAL
+	tristate

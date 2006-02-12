@@ -1,0 +1,8 @@
+Package: iptables
+Priority: optional
+Section: net
+Maintainer: Felix Fietkau <nbd@vd-s.ath.cx>
+Source: buildroot internal
+Description: The netfilter firewalling software for IPv4
+Version: 1.3.1-1
+Architecture: mipsel

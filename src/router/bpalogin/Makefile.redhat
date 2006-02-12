@@ -1,0 +1,33 @@
+SBINPATH = /usr/sbin
+ETCPATH = /etc
+INITPATH = /etc/rc.d/init.d
+
+CFLAGS = -O2 -Wall 
+CC = gcc
+LIBS = 
+LFLAGS = 
+
+OBJS = bpalogin.o protocol.o transaction.o gen_md5.o unixmain.o
+
+bpalogin: $(OBJS)
+	$(CC) -o $@ $(OBJS) $(LIBS) $(LFLAGS)
+
+.c.o:
+	$(CC) $(CFLAGS) -c $<
+
+clean:
+	rm -fr *.o 
+
+pristine: clean
+	rm -f bpalogin
+
+$(OBJS): bpalogin.h
+
+install: bpalogin bpalogin.init
+	mkdir -p $(SBINPATH)
+	mkdir -p $(ETCPATH)
+	mkdir -p $(INITPATH)
+	install -m 755 bpalogin $(SBINPATH)
+	install -m 600 bpalogin.conf $(ETCPATH)
+	install -m 755 bpalogin.init $(INITPATH)/bpalogin
+	/sbin/chkconfig --add bpalogin

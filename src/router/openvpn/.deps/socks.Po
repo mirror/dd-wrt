@@ -1,0 +1,3 @@
+socks.o socks.o: socks.c config.h
+
+config.h:

@@ -1,0 +1,403 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:1543: checking if I need to feed myself to ksh
+configure:1578: checking for gcc
+configure:1691: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -s) works
+configure:1707: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c  1>&5
+configure:1733: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -s) is a cross-compiler
+configure:1738: checking whether we are using GNU C
+configure:1766: checking whether mipsel-linux-uclibc-gcc accepts -g
+configure:1798: checking how to run the C preprocessor
+configure:1878: checking for AIX
+configure:1902: checking for Cygwin environment
+configure:1935: checking for mingw32 environment
+configure:1966: checking for executable suffix
+configure:2105: checking host system type
+configure:2126: checking build system type
+configure:2155: checking for ld used by GCC
+configure:2223: checking if the linker (/home/backup/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld) is GNU ld
+configure:2240: checking for /home/backup/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld option to reload object files
+configure:2252: checking for BSD-compatible nm
+configure:2290: checking for a sed that does not truncate output
+configure:2374: checking whether ln -s works
+configure:2395: checking how to recognise dependent libraries
+configure:2581: checking for object suffix
+configure:2615: checking command to parse /usr/bin/nm -B output
+configure:2801: checking for dlfcn.h
+configure:2980: checking for ranlib
+configure:3047: checking for strip
+configure:3564: checking for objdir
+configure:3595: checking for mipsel-linux-uclibc-gcc option to produce PIC
+configure:3743: checking if mipsel-linux-uclibc-gcc PIC flag  -fPIC works
+configure:3813: checking if mipsel-linux-uclibc-gcc static flag -static works
+configure:3859: checking if mipsel-linux-uclibc-gcc supports -c -o file.o
+configure:3907: checking if mipsel-linux-uclibc-gcc supports -c -o file.lo
+configure:3983: checking if mipsel-linux-uclibc-gcc supports -fno-rtti -fno-exceptions
+configure:3996: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -fno-rtti -fno-exceptions -c conftest.c  conftest.c 1>&5
+cc1: warning: "-fno-rtti" is valid for C++ but not for C/ObjC
+cc1: warning: "-fno-rtti" is valid for C++ but not for C/ObjC
+configure:4027: checking whether the linker (/home/backup/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld) supports shared libraries
+configure:4730: checking how to hardcode library paths into programs
+configure:4762: checking whether stripping libraries is possible
+configure:4780: checking dynamic linker characteristics
+configure:5195: checking if libtool supports shared libraries
+configure:5203: checking whether to build shared libraries
+configure:5230: checking whether to build static libraries
+configure:5273: checking for shl_load
+configure:5319: checking for shl_load in -ldld
+configure:5357: checking for dlopen
+configure:5403: checking for dlopen in -ldl
+configure:5554: checking whether a program can dlopen itself
+configure:6393: checking for a BSD compatible install
+configure:6446: checking whether ln -s works
+configure:6467: checking whether make sets ${MAKE}
+configure:6496: checking for ps
+configure:6531: checking for perl
+configure:6568: checking for whoami
+configure:6603: checking for sed
+configure:6635: checking for autoconf
+configure:6664: checking for autoheader
+configure:6702: checking for uname
+configure:6740: checking for working const
+configure:6815: checking for inline
+configure:6856: checking for net-snmp version number
+configure:6871: checking for developer gcc flags
+configure:6908: checking host system type
+configure:6929: checking target system type
+configure:6947: checking build system type
+configure:6981: checking for system include file
+configure:7011: checking for machine-type include file
+configure:7035: checking for mipsel-linux-uclibc-gcc
+configure:7090: checking for additional cpp flags
+configure:7361: checking whether we have to build PIC code
+configure:7373: checking for and configuring transport modules to use
+configure:7463: checking for security modules to use
+configure:7609: checking for and configuring mib modules to use
+configure:7665: checking for and configuring mib modules pieces to use
+configure:7783: checking if directories need to be created
+configure:7790: checking default mib files to read
+configure:7802: checking for location of system kernel
+configure:7838: checking for mount table location
+configure:7861: checking for location of swap device
+configure:7946: checking for asin in -lm
+configure:7993: checking for nlist in -lelf
+configure:8041: checking for gethostbyname
+configure:8136: checking for getservbyname
+configure:8232: checking for kstat_lookup in -lkstat
+configure:8279: checking for nlist in -lmld
+configure:8765: checking for zlib.h
+configure:8846: checking for bzread in -lbz2
+configure:8884: checking for BZ2_bzread in -lbz2
+configure:8927: checking for dbopen in -ldb1
+configure:8965: checking for dbopen in -ldb
+configure:9008: checking for db_create in -ldb-3.1
+configure:9046: checking for db_create in -ldb-3.0
+configure:9089: checking for poptParseArgvString in -lpopt
+configure:9130: checking for Fopen in -lrpmio
+configure:9171: checking for rpmGetFilesystemList in -lrpm
+configure:9217: checking for rpmdbOpen in -lrpmdb
+configure:9269: checking for kvm_read in -lkvm
+configure:9316: checking for dlopen in -ldl
+configure:9365: checking for dlopen
+configure:9421: checking for kvm_openfiles
+configure:9421: checking for nlist
+configure:9421: checking for knlist
+configure:9421: checking for kvm_getprocs
+configure:9684: checking for ANSI C header files
+configure:9792: checking for dirent.h that defines DIR
+configure:9830: checking for opendir in -ldir
+configure:9913: checking for sys/wait.h that is POSIX.1 compatible
+configure:9958: checking for stdarg.h
+configure:9958: checking for string.h
+configure:9958: checking for fcntl.h
+configure:9958: checking for limits.h
+configure:9958: checking for sys/file.h
+configure:9958: checking for sys/ioctl.h
+configure:9958: checking for syslog.h
+configure:9958: checking for unistd.h
+configure:9958: checking for netinet/tcpip.h
+configure:9958: checking for netinet/in.h
+configure:9958: checking for netinet/ip.h
+configure:9958: checking for netinet/ip_icmp.h
+configure:9958: checking for net/if.h
+configure:9958: checking for netdb.h
+configure:9958: checking for sys/dmap.h
+configure:9958: checking for machine/pte.h
+configure:9958: checking for xti.h
+configure:9958: checking for sys/sockio.h
+configure:9958: checking for sys/socket.h
+configure:9958: checking for sys/un.h
+configure:9958: checking for fstab.h
+configure:9958: checking for sys/fs.h
+configure:9958: checking for mtab.h
+configure:9958: checking for ufs/fs.h
+configure:9958: checking for ufs/ffs/fs.h
+configure:9958: checking for sys/fixpoint.h
+configure:9958: checking for machine/param.h
+configure:9958: checking for sys/vm.h
+configure:9958: checking for vm/vm.h
+configure:9958: checking for sys/vmmeter.h
+configure:9958: checking for sys/vmparam.h
+configure:9958: checking for sys/vmmac.h
+configure:9958: checking for sys/vmsystm.h
+configure:9958: checking for sys/mbuf.h
+configure:9958: checking for sys/time.h
+configure:9958: checking for sys/swap.h
+configure:9958: checking for inet/mib2.h
+configure:9958: checking for sys/statvfs.h
+configure:9958: checking for sys/vfs.h
+configure:9958: checking for sys/mnttab.h
+configure:9958: checking for sys/user.h
+configure:9958: checking for sys/proc.h
+configure:9958: checking for sys/select.h
+configure:9958: checking for mntent.h
+configure:9958: checking for sys/mntent.h
+configure:9958: checking for kstat.h
+configure:9958: checking for utsname.h
+configure:9958: checking for sys/utsname.h
+configure:9958: checking for sys/cdefs.h
+configure:9958: checking for getopt.h
+configure:9958: checking for locale.h
+configure:9958: checking for pthread.h
+configure:9958: checking for sys/loadavg.h
+configure:9958: checking for regex.h
+configure:9958: checking for linux/tasks.h
+configure:9958: checking for pwd.h
+configure:9958: checking for grp.h
+configure:9958: checking for utmpx.h
+configure:9998: checking for malloc.h
+configure:9998: checking for sys/param.h
+configure:9998: checking for net/if_dl.h
+configure:9998: checking for sys/sysctl.h
+configure:9998: checking for stdlib.h
+configure:9998: checking for net/if_mib.h
+configure:9998: checking for net/if_types.h
+configure:9998: checking for net/if_var.h
+configure:9998: checking for sys/queue.h
+configure:9998: checking for osreldate.h
+configure:9998: checking for machine/types.h
+configure:9998: checking for sys/socketvar.h
+configure:10038: checking for sys/conf.h
+configure:10038: checking for netinet/in_systm.h
+configure:10038: checking for netinet/tcp.h
+configure:10038: checking for netinet/udp.h
+configure:10038: checking for netinet/in_var.h
+configure:10038: checking for netinet/if_ether.h
+configure:10038: checking for netinet/ip_var.h
+configure:10038: checking for netinet/tcp_timer.h
+configure:10038: checking for netinet/tcp_var.h
+configure:10038: checking for netinet/tcp_fsm.h
+configure:10038: checking for netinet/udp_var.h
+configure:10038: checking for netinet/icmp_var.h
+configure:10038: checking for sys/protosw.h
+configure:10038: checking for nlist.h
+configure:10038: checking for ioctls.h
+configure:10038: checking for asm/page.h
+configure:10038: checking for netipx/ipx.h
+configure:10078: checking for arpa/inet.h
+configure:10078: checking for kvm.h
+configure:10078: checking for sys/pool.h
+configure:10078: checking for uvm/uvm_param.h
+configure:10078: checking for uvm/uvm_extern.h
+configure:10078: checking for vm/vm_param.h
+configure:10078: checking for vm/vm_extern.h
+configure:10118: checking for sys/mount.h
+configure:10118: checking for vm/swap_pager.h
+configure:10118: checking for ufs/ufs/dinode.h
+configure:10158: checking for sys/stat.h
+configure:10158: checking for sys/vnode.h
+configure:10158: checking for ufs/ufs/quota.h
+configure:10158: checking for ufs/ufs/inode.h
+configure:10198: checking for sys/hashing.h
+configure:10198: checking for sys/tcpipstats.h
+configure:10198: checking for sys/sysmp.h
+configure:10238: checking for err.h
+configure:10238: checking for sys/filio.h
+configure:10238: checking for sgtty.h
+configure:10278: checking for sys/statfs.h
+configure:10318: checking for net/route.h
+configure:10358: checking for sys/dkio.h
+configure:10358: checking for sys/diskio.h
+configure:10358: checking for sys/pstat.h
+configure:10358: checking for linux/hdreg.h
+configure:10358: checking for pkglocs.h
+configure:10398: checking for pkginfo.h
+configure:10482: checking for winsock.h
+configure:10522: checking for io.h
+configure:10562: checking for sys/stream.h
+configure:10602: checking for netinet/ip6.h
+configure:10602: checking for netinet6/in6_var.h
+configure:10602: checking for netinet6/in6_pcb.h
+configure:10602: checking for netinet6/ip6_var.h
+configure:10602: checking for netinet6/tcp6.h
+configure:10602: checking for netinet6/tcp6_fsm.h
+configure:10602: checking for netinet6/nd6.h
+configure:10602: checking for netinet6/tcp6_timer.h
+configure:10602: checking for netinet6/tcp6_var.h
+configure:10642: checking for dlfcn.h
+configure:10682: checking for search.h
+configure:10724: checking for rpmio.h
+configure:10761: checking for rpm/rpmio.h
+configure:10804: checking for netinet/in_pcb.h
+configure:10817: mipsel-linux-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:10812:28: netinet/in_pcb.h: No such file or directory
+configure: failed program was:
+#line 10809 "configure"
+#include "confdefs.h"
+
+#include <netinet/in.h>
+#include <netinet/in_pcb.h>
+
+configure:10841: checking for sys/disklabel.h
+configure:10854: mipsel-linux-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:10848:27: machine/types.h: No such file or directory
+configure:10849:27: sys/disklabel.h: No such file or directory
+configure: failed program was:
+#line 10846 "configure"
+#include "confdefs.h"
+
+#include <machine/types.h>
+#include <sys/disklabel.h>
+
+configure:10881: checking for openssl/hmac.h
+configure:10881: checking for openssl/evp.h
+configure:10881: checking for openssl/aes.h
+configure:10881: checking for openssl/des.h
+configure:10921: checking for lpstat
+configure:10966: checking for cgetnext
+configure:11026: checking for authentication support
+configure:11078: checking for off_t
+configure:11111: checking for pid_t
+configure:11144: checking whether time.h and sys/time.h may both be included
+configure:11180: checking for socklen_t
+configure:11217: checking for in_addr_t
+configure:11254: checking for correct flags to ps
+configure:11394: checking for working alloca.h
+configure:11427: checking for alloca
+configure:11627: checking whether mipsel-linux-uclibc-gcc needs -traditional
+configure:11673: checking for 8-bit clean memcmp
+configure:11709: checking return type of signal handlers
+configure:11751: checking for getmntent in -lsun
+configure:11789: checking for getmntent in -lseq
+configure:11827: checking for getmntent in -lgen
+configure:11871: checking for getmntent
+configure:11924: checking for setmntent
+configure:11924: checking for gethostname
+configure:11924: checking for uname
+configure:11924: checking for gettimeofday
+configure:11924: checking for select
+configure:11924: checking for socket
+configure:11924: checking for strtol
+configure:11924: checking for strtoul
+configure:11924: checking for strlcpy
+configure:11979: checking for strchr
+configure:11979: checking for strdup
+configure:11979: checking for memcpy
+configure:11979: checking for memmove
+configure:11979: checking for index
+configure:11979: checking for bcopy
+configure:11979: checking for strcasestr
+configure:11979: checking for regcomp
+configure:12034: checking for signal
+configure:12034: checking for setsid
+configure:12034: checking for sigset
+configure:12034: checking for sigblock
+configure:12034: checking for sighold
+configure:12034: checking for strerror
+configure:12034: checking for setenv
+configure:12034: checking for vsnprintf
+configure:12034: checking for snprintf
+configure:12089: checking for sigaction
+configure:12144: checking for snprintf
+configure:12144: checking for strtoul
+configure:12199: checking for random
+configure:12199: checking for lrand48
+configure:12199: checking for rand
+configure:12254: checking for execv
+configure:12254: checking for system
+configure:12254: checking for fork
+configure:12254: checking for getpid
+configure:12254: checking for strncasecmp
+configure:12254: checking for sigalrm
+configure:12312: checking for rpmGetPath
+configure:12370: checking for getloadavg
+configure:12425: checking for getaddrinfo
+configure:12425: checking for getipnodebyname
+configure:12480: checking for statvfs
+configure:12480: checking for statfs
+configure:12535: checking for getdtablesize
+configure:12590: checking for getfsstat
+configure:12645: checking for usleep
+configure:12700: checking for setlocale
+configure:12755: checking for tcgetattr
+configure:12810: checking for if_nameindex
+configure:12810: checking for if_freenameindex
+configure:12865: checking for getpagesize
+configure:12920: checking for mkstemp
+configure:12975: checking for getpwnam
+configure:12975: checking for getgrnam
+configure:12975: checking for setgid
+configure:12975: checking for setuid
+configure:12975: checking for setgroups
+configure:13030: checking for setitimer
+configure:13084: checking for SIOCGIFADDR in sys/ioctl.h
+configure:13122: checking for two-argument statfs with struct fs_data (Ultrix)
+configure:13174: checking if __FUNCTION__ is defined
+configure:13218: checking for sigaction.sa_sigaction
+configure:13283: checking for sockaddr.sa_len
+configure:13352: checking for sockaddr.sa_union.sa_generic.sa_family2
+configure:13421: checking for rtentry.rt_dst
+configure:13484: checking type of rtentry structure
+configure:13579: checking for struct rtentry
+configure:13687: checking for rtentry.rt_unit
+configure:13757: checking for rtentry.rt_refcnt
+configure:13827: checking for rtentry.rt_hash
+configure:13897: checking for rtentry.rt_use
+configure:13967: checking for tcpstat.tcp_rcvmemdrop
+configure:14040: checking for ifnet.if_mtu
+configure:14103: checking if _KERNEL needs to be defined for if_mtu
+configure:14168: checking for ifaddr.ifa_next
+configure:14244: checking for ifnet.if_baudrate
+configure:14352: checking for ifnet.if_baudrate.ifs_value
+configure:14460: checking for ifnet.if_speed
+configure:14568: checking for ifnet.if_type
+configure:14676: checking for ifnet.if_imcasts
+configure:14784: checking for ifnet.if_iqdrops
+configure:14892: checking for ifnet.if_noproto
+configure:15000: checking for ifnet.if_omcasts
+configure:15108: checking for ifnet.if_xname
+configure:15216: checking for ifnet.if_lastchange.tv_sec
+configure:15324: checking for ifnet.if_obytes
+configure:15432: checking for ifnet.if_ibytes
+configure:15540: checking for ifnet.if_addrlist
+configure:15648: checking for ifnet.if_addrhead.tqh_first
+configure:15756: checking for udpstat.udps_discard
+configure:15829: checking for udpstat.udps_noport
+configure:15902: checking for udpstat.udps_noportbcast
+configure:15975: checking for udpstat.udps_fullsock
+configure:16048: checking for arphd.at_next
+configure:16123: checking for swdevt.sw_nblksenabled
+configure:16186: checking for statvfs.f_frsize
+configure:16255: checking for statvfs.f_files
+configure:16324: checking for statfs.f_files
+configure:16397: checking for statfs.f_ffree
+configure:16470: checking for statfs.f_favail
+configure:16543: checking for nlist.n_value
+configure:16606: checking for ipstat.ips_cantforward
+configure:16673: checking for ipstat.ips_cantfrag
+configure:16740: checking for ipstat.ips_delivered
+configure:16807: checking for ipstat.ips_fragdropped
+configure:16874: checking for ipstat.ips_fragtimeout
+configure:16941: checking for ipstat.ips_localout
+configure:17008: checking for ipstat.ips_noproto
+configure:17075: checking for ipstat.ips_noroute
+configure:17142: checking for ipstat.ips_odropped
+configure:17209: checking for ipstat.ips_ofragments
+configure:17276: checking for ipstat.ips_reassembled
+configure:17474: checking whether TCP timers depend on `hz'
+configure:17579: checking Default version of SNMP to use
+configure:17657: checking System Contact Information
+configure:17721: checking System Location
+configure:17791: checking Location to write logfile
+configure:17868: checking Location to write persistent information

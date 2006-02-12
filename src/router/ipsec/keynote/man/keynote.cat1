@@ -1,0 +1,171 @@
+KEYNOTE(1)                 OpenBSD Reference Manual                 KEYNOTE(1)
+
+NNAAMMEE
+     kkeeyynnoottee - command line tool for keynote(3) operations
+
+SSYYNNOOPPSSIISS
+     kkeeyynnoottee kkeeyyggeenn _A_l_g_o_r_i_t_h_m_N_a_m_e _K_e_y_S_i_z_e _P_u_b_l_i_c_K_e_y_F_i_l_e _P_r_i_v_a_t_e_K_e_y_F_i_l_e
+            [print-offset] [print-length]
+
+     kkeeyynnoottee ssiiggnn [--vv] _A_l_g_o_r_i_t_h_m_N_a_m_e _A_s_s_e_r_t_i_o_n_F_i_l_e _P_r_i_v_a_t_e_K_e_y_F_i_l_e
+            [print-offset] [print-length]
+
+     kkeeyynnoottee ssiiggvveerr [AssertionFile]
+
+     kkeeyynnoottee vveerriiffyy [--hh] [--ee _f_i_l_e] --ll _f_i_l_e --rr _r_e_t_l_i_s_t [--kk _f_i_l_e] [--ll _f_i_l_e]
+            [_f_i_l_e _._._.]
+
+DDEESSCCRRIIPPTTIIOONN
+     For more details on KKeeyyNNoottee, see RFC 2704.
+
+KKEEYY GGEENNEERRAATTIIOONN
+     "keynote keygen" creates a public/private key of size _K_e_y_S_i_z_e, (in bits)
+     for the algorithm specified by _A_l_g_o_r_i_t_h_m_N_a_m_e. Typical keysizes are 512,
+     1024, or 2048 (bits). The minimum key size for DSA keys is 512 (bits).
+     Supported _A_l_g_o_r_i_t_h_m_N_a_m_e identifiers are:
+
+     ``dsa-hex:''
+
+     ``dsa-base64:''
+
+     ``rsa-hex:''
+
+     ``rsa-base64:''
+
+     ``x509-hex:''
+
+     ``x509-base64:''
+
+     Notice that the trailing colon is required. The resulting public key is
+     stored in file _P_u_b_l_i_c_K_e_y_F_i_l_e. Similarly, the resulting private key is
+     stored in file _P_r_i_v_a_t_e_K_e_y_F_i_l_e. Either of the filenames can be specified
+     to be ``-'', in which case the corresponding key(s) will be printed in
+     standard output.
+
+     The optional parameters _p_r_i_n_t_-_o_f_f_s_e_t and _p_r_i_n_t_-_l_e_n_g_t_h specify the offset
+     from the beginning of the line where the key will be printed, and the
+     number of characters of the key that will be printed per line.  _p_r_i_n_t_-
+     _l_e_n_g_t_h includes _A_l_g_o_r_i_t_h_m_N_a_m_e for the first line and has to be longer (by
+     at least 2) than _A_l_g_o_r_i_t_h_m_N_a_m_e. _p_r_i_n_t_-_l_e_n_g_t_h also accounts for the line-
+     continuation character (backslash) at the end of each line, and the dou-
+     blequotes at the beginning and end of the key encoding.  Default values
+     are 12 and 50 respectively.
+
+AASSSSEERRTTIIOONN SSIIGGNNIINNGG
+     "keynote sign" reads the assertion contained in _A_s_s_e_r_t_i_o_n_F_i_l_e and gener-
+     ates a signature specified by _A_l_g_o_r_i_t_h_m_N_a_m_e using the private key stored
+     in _P_r_i_v_a_t_e_K_e_y_F_i_l_e. The private key is expected to be of the form output
+     by "keynote keygen".  The private key algorithm and the _A_l_g_o_r_i_t_h_m_N_a_m_e
+     specified as an argument are expected to match. There is no requirement
+     for the internal or ASCII encodings to match.  Valid _A_l_g_o_r_i_t_h_m_N_a_m_e iden-
+     tifiers are:
+
+     ``sig-dsa-sha1-hex:''
+
+
+
+     ``sig-dsa-sha1-base64:''
+
+     ``sig-rsa-sha1-hex:''
+
+     ``sig-rsa-sha1-base64:''
+
+     ``sig-rsa-md5-hex:''
+
+     ``sig-rsa-md5-base64:''
+
+     ``sig-x509-sha1-hex:''
+
+     ``sig-x509-sha1-base64:''
+
+     Notice that the trailing colon is required.  The resulting signature is
+     printed in standard output. This can then be added (via cut-and-paste or
+     some script) at the end of the assertion, in the _S_i_g_n_a_t_u_r_e field.
+
+     The public key corresponding to the private key in _P_r_i_v_a_t_e_K_e_y_F_i_l_e is ex-
+     pected to already be included in the _A_u_t_h_o_r_i_z_e_r field of the assertion,
+     either directly or indirectly (i.e., through use of a _L_o_c_a_l_-_C_o_n_s_t_a_n_t_s at-
+     tribute). Furthermore, the assertion must have a _S_i_g_n_a_t_u_r_e field (even if
+     it is empty), as the signature is computed on everything between the
+     _K_e_y_N_o_t_e_-_V_e_r_s_i_o_n and _S_i_g_n_a_t_u_r_e keywords (inclusive), and the _A_l_g_o_r_i_t_h_m_N_a_m_e
+     string.
+
+     If the --vv flag is provided, "keynote sign" will also verify the newly-
+     created signature using the _A_u_t_h_o_r_i_z_e_r field key.
+
+     The optional parameters _p_r_i_n_t_-_o_f_f_s_e_t and _p_r_i_n_t_-_l_e_n_g_t_h specify the offset
+     from the beginning of the line where the signature will be printed, and
+     the number of characters of the signature that will be printed per line.
+     _p_r_i_n_t_-_l_e_n_g_t_h includes _A_l_g_o_r_i_t_h_m_N_a_m_e for the first line and has to be
+     longer (by at least 2) than _A_l_g_o_r_i_t_h_m_N_a_m_e. _p_r_i_n_t_-_l_e_n_g_t_h also accounts for
+     the line-continuation character (backslash) at the end of each line, and
+     the doublequotes at the beginning and end of the signature encoding.  De-
+     fault values are 12 and 50 respectively.
+
+SSIIGGNNAATTUURREE VVEERRIIFFIICCAATTIIOONN
+     "keynote sigver" reads the assertions contained in _A_s_s_e_r_t_i_o_n_F_i_l_e and ver-
+     ifies the public-key signatures on all of them.
+
+QQUUEERRYY TTOOOOLL
+     For each operand that names a "keynote verify" reads the file and parses
+     the assertions contained therein (one assertion per file).
+
+     Files given with the --ll flag are assumed to contain trusted assertions
+     (no signature verification is performed, and the _A_u_t_h_o_r_i_z_e_r field can
+     contain non-key principals.  There should be at least one assertion with
+     the _P_O_L_I_C_Y keyword in the _A_u_t_h_o_r_i_z_e_r field.
+
+     The --rr flag is used to provide a comma-separated list of return values,
+     in increasing order of compliance from left to right.
+
+     Files given with the --ee flag are assumed to contain environment variables
+     and their values, in the format:
+
+            varname = "value"
+
+     _v_a_r_n_a_m_e can begin with any letter (upper or lower case) or number, and
+     can contain underscores.  _v_a_l_u_e is a quoted string, and can contain any
+     character, and escape (backslash) processing is performed, as specified
+     in the KeyNote RFC.
+
+
+     The remaining options are:
+
+     --hh      Print a usage message and exit.
+
+     --kk _f_i_l_e
+             Add a key from _f_i_l_e in the action authorizers.
+
+     Exactly one --rr and least one of each --ee, --ll, and --kk flags should be given
+     per invocation. If no flags are given, "keynote verify" prints the usage
+     message and exits with error code -1.
+
+     "keynote verify" exits with code -1 if there was an error, and 0 on suc-
+     cess.
+
+SSEEEE AALLSSOO
+     keynote(3), keynote(4), keynote(5)
+
+     ``The KeyNote Trust-Management System, Version 2''
+              M. Blaze, J. Feigenbaum, A. D. Keromytis, Internet Drafts, RFC
+              2704.
+
+     ``Decentralized Trust Management''
+              M. Blaze, J. Feigenbaum, J. Lacy, 1996 IEEE Conference on Priva-
+              cy and Security
+
+     ``Compliance-Checking in the PolicyMaker Trust Management System''
+              M. Blaze, J. Feigenbaum, M. Strauss, 1998 Financial Crypto Con-
+              ference
+
+AAUUTTHHOORR
+     Angelos D. Keromytis (angelos@dsl.cis.upenn.edu)
+
+WWEEBB PPAAGGEE
+     http://www.cis.upenn.edu/~keynote
+
+BBUUGGSS
+     None that we know of.  If you find any, please report them at
+           keynote@research.att.com
+
+OpenBSD 2.7                     April 29, 1999                               3

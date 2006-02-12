@@ -1,0 +1,41 @@
+OUTPUT_ARCH(mips)
+ENTRY(startup)
+SECTIONS {
+	. = TEXT_START;
+	.text : {
+		_ftext = . ;
+		text_start = .;
+		*(.init)
+		*(.text)
+		*(.text.*)
+		*(.fini)
+		*(.rodata)
+		*(.rodata.*)
+		_etext = .;
+		text_end = .;
+	}
+
+	.data DATA_START: 
+		AT (text_end)
+	{
+		data_start = .;
+		_fdata = .;
+		*(.rdata)
+		*(.data)
+		*(.data.*)
+		*(.sdata)
+		data_end = .;
+		_edata = .;
+	}
+
+	.bss : {
+		_fbss = .;
+		bss_start = .;
+		*(.sbss)
+		*(.scommon)
+		*(.bss)
+		*(COMMON)
+		bss_end = .;
+	}
+	_end = .;
+}

@@ -1,0 +1,6 @@
+- Command line option for MAC format (done)
+
+Post 0.01:
+- Do not link against libshared, will save much
+  memory
+- Find out how nas blocks on the device

@@ -1,0 +1,188 @@
+diff -urN -x *~ linux.orig/include/linux/netfilter_ipv4/ip_conntrack_helper.h linux/include/linux/netfilter_ipv4/ip_conntrack_helper.h
+--- linux.orig/include/linux/netfilter_ipv4/ip_conntrack_helper.h	Mon Dec 11 22:31:23 2000
++++ linux/include/linux/netfilter_ipv4/ip_conntrack_helper.h	Wed Jan  9 22:07:44 2002
+@@ -10,6 +10,8 @@
+ 	/* Internal use. */
+ 	struct list_head list;
+ 
++	char name[30];
++	
+ 	/* Mask of things we will help (compared against server response) */
+ 	struct ip_conntrack_tuple tuple;
+ 	struct ip_conntrack_tuple mask;
+diff -urN -x *~ linux.orig/include/linux/netfilter_ipv4/ipt_helper.h linux/include/linux/netfilter_ipv4/ipt_helper.h
+--- linux.orig/include/linux/netfilter_ipv4/ipt_helper.h	Thu Jan  1 01:00:00 1970
++++ linux/include/linux/netfilter_ipv4/ipt_helper.h	Wed Jan  9 22:07:44 2002
+@@ -0,0 +1,8 @@
++#ifndef _IPT_HELPER_H
++#define _IPT_HELPER_H
++
++struct ipt_helper_info {
++	int invert;
++	char name[30];
++};
++#endif /* _IPT_HELPER_H */
+diff -urN -x *~ linux.orig/net/ipv4/netfilter/ip_conntrack_core.c linux/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux.orig/net/ipv4/netfilter/ip_conntrack_core.c	Tue Aug  7 17:30:50 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_core.c	Thu Jan 10 22:54:42 2002
+@@ -554,6 +554,7 @@
+ 		conntrack->status = IPS_EXPECTED;
+ 		conntrack->master.master = &expected->expectant->ct_general;
+ 		IP_NF_ASSERT(conntrack->master.master);
++		conntrack->helper = expected->expectant->helper;
+ 		LIST_DELETE(&expect_list, expected);
+ 		expected->expectant = NULL;
+ 		nf_conntrack_get(&conntrack->master);
+@@ -686,7 +687,7 @@
+ 		return NF_ACCEPT;
+ 	}
+ 
+-	if (ret != NF_DROP && ct->helper) {
++	if (ret != NF_DROP && !(ct->status & IPS_EXPECTED) && ct->helper) {
+ 		ret = ct->helper->help((*pskb)->nh.iph, (*pskb)->len,
+ 				       ct, ctinfo);
+ 		if (ret == -1) {
+@@ -770,6 +771,8 @@
+ int ip_conntrack_alter_reply(struct ip_conntrack *conntrack,
+ 			     const struct ip_conntrack_tuple *newreply)
+ {
++	struct ip_conntrack_helper *newhelper;
++	
+ 	WRITE_LOCK(&ip_conntrack_lock);
+ 	if (__ip_conntrack_find(newreply, conntrack)) {
+ 		WRITE_UNLOCK(&ip_conntrack_lock);
+@@ -782,9 +785,15 @@
+ 	DUMP_TUPLE(newreply);
+ 
+ 	conntrack->tuplehash[IP_CT_DIR_REPLY].tuple = *newreply;
+-	conntrack->helper = LIST_FIND(&helpers, helper_cmp,
+-				      struct ip_conntrack_helper *,
+-				      newreply);
++
++	/* only change helper if we find a new one, it breaks
++	   ipt_helper otherwise. */
++	newhelper = LIST_FIND(&helpers, helper_cmp,
++			      struct ip_conntrack_helper *,
++			      newreply);
++	if (newhelper)
++		conntrack->helper = newhelper;
++	
+ 	WRITE_UNLOCK(&ip_conntrack_lock);
+ 	return 1;
+ }
+diff -urN -x *~ linux.orig/net/ipv4/netfilter/ip_conntrack_ftp.c linux/net/ipv4/netfilter/ip_conntrack_ftp.c
+--- linux.orig/net/ipv4/netfilter/ip_conntrack_ftp.c	Wed Oct 31 00:08:12 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_ftp.c	Wed Jan  9 22:07:44 2002
+@@ -401,6 +401,7 @@
+ 		ftp[i].mask.src.u.tcp.port = 0xFFFF;
+ 		ftp[i].mask.dst.protonum = 0xFFFF;
+ 		ftp[i].help = help;
++		strcpy(ftp[i].name, "ftp");
+ 		DEBUGP("ip_ct_ftp: registering helper for port %d\n", 
+ 				ports[i]);
+ 		ret = ip_conntrack_helper_register(&ftp[i]);
+diff -urN -x *~ linux.orig/net/ipv4/netfilter/ip_conntrack_irc.c linux/net/ipv4/netfilter/ip_conntrack_irc.c
+--- linux.orig/net/ipv4/netfilter/ip_conntrack_irc.c	Wed Jan  9 21:54:18 2002
++++ linux/net/ipv4/netfilter/ip_conntrack_irc.c	Fri Jan 11 11:24:36 2002
+@@ -245,6 +245,7 @@
+ 		irc_helpers[i].mask.src.u.tcp.port = 0xFFFF;
+ 		irc_helpers[i].mask.dst.protonum = 0xFFFF;
+ 		irc_helpers[i].help = help;
++		strcpy(irc_helpers[i].name, "irc");
+ 
+ 		DEBUGP("port #%d: %d\n", i, ports[i]);
+ 
+diff -urN -x *~ linux.orig/net/ipv4/netfilter/ipt_helper.c linux/net/ipv4/netfilter/ipt_helper.c
+--- linux.orig/net/ipv4/netfilter/ipt_helper.c	Thu Jan  1 01:00:00 1970
++++ linux/net/ipv4/netfilter/ipt_helper.c	Wed Jan  9 22:07:44 2002
+@@ -0,0 +1,90 @@
++/*
++ * iptables module to match on related connections
++ *   (c) 2001 Martin Josefsson <gandalf@wlug.westbo.se>
++ */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++#include <linux/netfilter_ipv4/ip_conntrack_helper.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_helper.h>
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++static int
++match(const struct sk_buff *skb,
++      const struct net_device *in,
++      const struct net_device *out,
++      const void *matchinfo,
++      int offset,
++      const void *hdr,
++      u_int16_t datalen,
++      int *hotdrop)
++{
++	const struct ipt_helper_info *info = matchinfo;
++	struct ip_conntrack *ct;
++	enum ip_conntrack_info ctinfo;
++	
++	ct = ip_conntrack_get((struct sk_buff *)skb, &ctinfo);
++	if ( ct == NULL ) {
++		DEBUGP("ipt_helper: Eek! invalid conntrack?\n");
++		return 0;
++	}
++	if ( ct->helper == NULL ) {
++		DEBUGP("ipt_helper: Hmmm this packet has no helper\n");
++		return 0;
++	}
++
++	DEBUGP("ct->helper->name = %s , info->name = %s\n", ct->helper->name, info->name);
++
++	return !strncmp(ct->helper->name, info->name, strlen(ct->helper->name)) ^ info->invert;
++}
++
++static int check(const char *tablename,
++		 const struct ipt_ip *ip,
++		 void *matchinfo,
++		 unsigned int matchsize,
++		 unsigned int hook_mask)
++{
++	struct ipt_helper_info *info = matchinfo;
++
++	info->name[29] = '\0';
++
++	/* verify size */
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_helper_info)))
++		return 0;
++
++	/* verify that we actually should match anything */
++	if ( strlen(info->name) == 0 )
++		return 0;
++	
++	return 1;
++}
++
++static struct ipt_match helper_match
++= { { NULL, NULL }, "helper", &match, &check, NULL, THIS_MODULE };
++
++static int __init init(void)
++{
++	/* NULL if ip_conntrack not a module */
++	if (ip_conntrack_module)
++		__MOD_INC_USE_COUNT(ip_conntrack_module);
++	return ipt_register_match(&helper_match);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&helper_match);
++	if (ip_conntrack_module)
++		__MOD_DEC_USE_COUNT(ip_conntrack_module);
++}
++
++module_init(init);
++module_exit(fini);
++
++MODULE_LICENSE("GPL");
++

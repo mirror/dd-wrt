@@ -1,0 +1,95 @@
+#! /usr/bin/env python
+##
+## vi:ts=4:et
+##
+##---------------------------------------------------------------------------##
+##  Author:
+##      Markus F.X.J. Oberhumer <markus@oberhumer.com>
+##  Copyright:
+##      Distributed under the terms of the GNU General Public License.
+##  Description:
+##      List files. See ls(1).
+##  Usage:
+##      python ls_subdirs dirs...
+##---------------------------------------------------------------------------##
+
+
+import getopt, os, re, stat, sys
+
+
+# /***********************************************************************
+# //
+# ************************************************************************/
+
+opts = {
+    "all":          0,
+    "abspath":      0,
+    "basename":     0,
+    "normcase":     0,
+    "normpath":     0,
+}
+
+
+def ls(dir):
+    if not os.path.isdir(dir):
+        return
+    #
+    files = os.listdir(dir)
+    files.sort()
+    for f in files:
+        if not f or f == "." or f == "..":
+            continue
+        if f[0] == "." and not opts.get("all"):
+            continue
+        if dir == ".":
+            relname = f
+        else:
+            relname = os.path.join(dir, f)
+        st = os.lstat(relname)
+        #
+        # check file type
+        #
+        if not os.path.isdir(relname):
+            continue
+        #
+        # print
+        #
+        if opts.get("abspath"):
+            p = os.path.abspath(relname)
+        elif opts.get("basename"):
+            p = os.path.basename(relname)
+            assert p == f
+        else:
+            p = relname
+        if opts.get("normpath"):
+            p = os.path.normpath(p)
+        if opts.get("normcase"):
+            p = os.path.normcase(p)
+        print p
+
+
+# /***********************************************************************
+# //
+# ************************************************************************/
+
+def main(argv):
+    longopts = opts.keys()
+    longopts.sort()
+    xopts, xargs = getopt.getopt(argv[1:], "", longopts)
+    ##print xopts, xargs
+    for o, a in xopts:
+        if o[:2] == "--":
+            o = o[2:]
+        assert o
+        ##print o, a
+        if not a: a = 1
+        opts[o] = a
+    if not xargs:
+        xargs = ["."]
+    for arg in xargs:
+        ls(arg)
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main(sys.argv))

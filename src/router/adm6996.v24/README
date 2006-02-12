@@ -1,0 +1,353 @@
+adm6996 kernel module provides transparent interface to ADM6996L control 
+and stats registers.
+
+ProcFS interface
+~~~~~~~~~~~~~~~~
+
+Statistics:
+
+/proc/driver/adm6996 - adm switch statistics.
+
+ADM6996L version 3.1 by Nikki Chumakov
+--- Stats ---
+Port 0:  DOWN 10M HD 802.3X NOCABLE
+RX packets:0 bytes:0 TX packets:0 bytes:0
+errors:0 collisions:0 cable length:0
+ 
+Port 1:  UP 100M FD 802.3X
+RX packets:841 bytes:89490 TX packets:98 bytes:9896
+errors:0 collisions:0 cable length:0
+ 
+Port 2:  UP 100M FD 802.3X
+RX packets:2046 bytes:179160 TX packets:2255 bytes:271067
+errors:0 collisions:0 cable length:0
+ 
+Port 3:  DOWN 10M HD 802.3X NOCABLE
+RX packets:0 bytes:0 TX packets:0 bytes:0
+errors:0 collisions:0 cable length:0
+ 
+Port 4:  DOWN 10M HD 802.3X NOCABLE
+RX packets:0 bytes:0 TX packets:0 bytes:0
+errors:0 collisions:0 cable length:0
+ 
+Port 5:  UP 100M FD 802.3X
+RX packets:1414 bytes:181577 TX packets:2767 bytes:255578
+errors:0 collisions:0 cable length:0
+ 
+Possible port flags:
+UP/DOWN - port status
+10M/100M - port speed
+FD/HD - full/half duplex
+802.3X - enabled flow control (only for full duplex ports)
+BP - enabled back pressure (only for half duplex ports)
+NOCABLE - ADM6996L detected that no TP cable present or cable is broken.
+
+When RX/TX/errors counted overflowed, the counter is resetting to zero and 
+'(overflow)' string appended to after that counter only once.
+
+Example of overflowing TX bytes counter.
+
+First read:
+RX packets:1414 bytes:181577 TX packets:2767 bytes:255578
+
+Second read:
+RX packets:1414 bytes:181577 TX packets:2768 bytes:250 (overflow)
+
+Third read:
+RX packets:1414 bytes:181577 TX packets:2769 bytes:500
+
+
+Control interface:
+
+/proc/sys/dev/adm6996 - base directory for adm settings
+
+port0/, port1/. port2/, port3/, port4/, port5/ - 
+   settings for particular switch ports. 
+	 port0 - is for port marked 'WAN'. 
+	 port1-4 - is for 'LAN' ports 1-4. 
+	 port5 is internal port communicating with router and 
+	 connected with eth0 interface.
+
+ports settings:
+~~~~~~~~~~~~~~~
+
+portX/auto-negotiation: auto negotiation function 
+	between 100TX-FD, 100TX-HD, 10TX-FD, 10TX-HD
+	1: enable, 0: disable
+
+portX/bandwidth - port threshold control. Possible values:
+	full, 50M, 20M, 10M, 5M, 2M, 1M, 512K, 256K 
+	what means: full port bandwidth, 50Mbit/s, 20Mbit/s, and so on.
+
+portX/cont-recv - receive packet length conted on source port X.
+	1: enable, 0: disable
+
+portX/crossover - crossover auto MDIX enable. It let to connect hub and
+	switches with usual TP cables.
+	1: enable, 0: disable
+
+portX/duplex - port duplex
+	1: full duplex, 0: half duplex
+
+portX/enable - port enable
+	1: enable, 0: disable
+
+portX/flow - 802.3x flow for full duplex and back pressure for half duplex 
+	control command ability. 
+	1: enable, 0: disable.
+
+portX/fx - select FX mode (useless on WRT)
+  1: FX mode, 0: TP mode
+
+portX/mac-lock - lock first MAC address seen on port X. Use it if you 
+want to prevent connection hubs and switches to port.
+  1: enable, 0: disable.
+
+portX/tos-over-vlan-prio - TOS over VLAN priority.
+  1: check TOS first, 0: check VLAN.
+	
+portX/port-prio - port base priority. Values: 0-3
+
+portX/port-prio-enable - enable port based priority.
+  1: port base priority, 0: VLAN or TOS priority.
+	Note: If this bit tunred on, then ADM6996L will not check TOS or VLAN as 
+	priority reference. ADM6996L will check port base priority only. 
+	ADM6996L default is bypass mode which checks port base priority only. 
+	If user want check VLAN tag priority then must set chip as Tag mode.
+	
+portX/speed - port speed.
+	10: 10Mbit/s, 100: 100Mbit/s
+
+portX/tagging - output packet tagging.
+  0: Untag, 1: Tag
+
+portX/vlan-group (read only) - active port VLAN ID. Values: 0-15.
+portX/vlan-group-mask - port VLAN ID mask. Actual mask is calculated from
+this value and shift register (adm6996/tag-shift) as: 
+pvid = (mask >> tag_shift) & 0x0f
+
+general switch settings:
+~~~~~~~~~~~~~~~~~~~~~~~
+
+aging - aging function. ADM6996L has a 300sec timer and MAC addresses will
+	removed from address table if unused for such time. This is usefull for
+	topology changes. Normally, disabling aging function is for security
+	purpose.
+	1: enable, 0: disable
+
+back-pressure - OBSOLETE setting (there is error in ADM6996L documenation). 
+	Really back pressure is controled by portX/flow setting.
+
+smart-squelch - noise reduction on RX inputs. The receive squelch threshold 
+	level can be lowered for use in longer cable applications.
+	1: enable, 0: disable
+NB: ADM6996L is incomplete defining this function, so I'm not sure, if it is
+  working.
+
+crc - input packets CRC checks
+  1: enable, 0: disable
+NB: another description of the same bit exists:
+  jabber function - disables the transmitter if it attempts to transmit a
+	longer than legal size packet - bit 4 of reg 10h.
+
+reg_10_bit_3 - 0, 1. reserved. It may be jabber function, but I not sure.
+
+polarity_error (read only) - if input polarity is reversed, the error
+	condition will be automatically corrected and reported in bit 5 of reg 10h
+
+drop-on-collisions - drop packets when excessive collisions happen
+  1: enable, 0: disable
+
+drop-scheme - discard mode (drop scheme for Q0-3)
+	Values: 0-3 for each priority queue
+	Drop Scheme for each queue: 0   1   2   3  
+	Utilization Drop          : 0%  0% 25% 50%
+
+far-end-fault - Far end fault detection.
+  1: enable, 0: disable
+
+fwd-management-mac-1 - control reserved MAC 0180C2000010-0180C20000FF
+fwd-management-mac-2 - same for 0180C2000002-0180C200000F
+fwd-management-mac-3 - 0180C2000001
+fwd-management-mac-4 - 0180C2000000
+  1: forward, 0: discard
+
+ipg-bits - IPG leveling. Inter Packet Gap is the idle time between any two
+	successive packets from the same port. 96bit - default. 92bit is for
+	preventing packet lost when turn off Flow Control and clock P.P.M. value
+	difference.
+  92: 92bits, 96: 96bits
+
+mac-clone-reg30h - reg30h, bit5, 'Mac clone enable bit'. Meaning unclear.
+
+mac-clone-reg11h - MAC clone enable.
+	0: normal mode, learning MAC addresses from packet source address only,
+	   ADM6996L fill/search MAC table by source or destination addresses only.
+	1: MAC clone mode, learning with source address, VID0. ADM6996L fill/search
+	   MAC table by SA or DA with VID0. This bit let chip learn two same
+		 addresses with different VID0.
+
+mii-speed-double - port5 MII CLK maximum speed
+  0: 25MHZ, 1: 50MHZ
+
+port-led - port 4 len mode
+	1: link/act/speed
+	0: link/act/dupcol/speed
+
+replace-vid01-with-pvid - replaced packet VID0,1 by port VLAN ID.
+	1: enable, 0: disable
+
+speed-led - dual speed hub led display
+  Values: 0-1.
+
+storming - broadcast storming threshold. The broadcast packets over the rising
+	threshold withing 50ms will be discarded by the treshold setting. The max
+	packet number is 7490 in 100Base, 749 in 10Base.
+	Values: 0-3
+	If all ports 100TX:
+	val:            0   1   2   3 
+	rising thrs.    -  10% 20% 40%
+	falling thrs.   -   5% 10% 20%
+
+	If not all ports 100TX:
+	val:            0   1   2   3 
+	rising thrs.    -   1%  2%  4%
+	falling thrs.   - 0.5%  1%  2%
+
+
+tag-shift - tag shift for VLAN groupping
+	Values: 0-7
+	see portX/vlan-mask fopr explanation
+	
+tos-prio - mapped priority queue of tag (TOS) value 0-7
+	Values: 0-3 for each of 8 tags
+	see comments for vlan-prio.
+
+trunk - enable port 3,4 as Trunk port
+	1: enable, 0: disable
+	
+vlan-mode - vlan mode select
+	0: by-pass mode with port based VLAN
+	1: 802.1q based VLAN
+
+vlan-prio - mapped priority queue of tag (VLAN) value 0-7
+	Values: 0-3 for each of 8 tags
+	The weight ratio of priority queues is Q3:Q2:Q1:Q0 = 8:4:2:1
+	note: the default is port based priority for un-tag packet and non_IP frame.
+
+reg_2c_bit_11 - 0, 1. unknown. see vlan-groups comments.
+
+VLAN settings:
+~~~~~~~~~~~~~
+
+adm6996/vlan-groups/0
+adm6996/vlan-groups/1
+...
+adm6996/vlan-groups/15
+ Configures how vlans commutates to switch ports 0-5.
+ 1: vlan is connected to port (enable packets output)
+ 0: vlan is not connected.
+
+ (note: ADM6996L docs refers to reg_2c_bit_11 here:
+ "16 VLAN group: See Register 0x2c bit 11=0", 
+ but this bit marked reserved).
+
+VLAN settings description
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+ADM6996L supports bypass mode and untagged port as default settings while the	
+chip is power on. (NB. WRT54 et driver is actually utilizing vlan mode and
+untagged port). Thus, every packet with or without tag will be forwarding to
+destination port without and modification by ADM6996L. Meanwhile port-base
+VLAN could be enabled according the PVID value (portX/vlan-group) of the
+configuration content of each port.
+
+ADM6996L also supports 16 802.1Q VLAN groups. If coming packet is non VLAN
+packet then ADM6996L will use PVID value as VLAN group reference, otherwise it
+will use packet's VLAN value.
+
+User can define each port as Tag port or Untag port (portX/tagging). On tagged
+ports ADM6996L honor input packets VLAN values (instead or port PVID value)
+and adds VLAN tag to the output packets.
+
+Priority description
+~~~~~~~~~~~~~~~~~~~~
+
+portX/tos-over-vlan-prio
+portX/port-prio
+portX/port-prio-enable
+tos-prio
+vlan-prio
+
+ADM6996L provides 4 priority queues Q0-3 with packet flow ratio 8:4:2:1. The
+priority function can be set thee ways as below:
+
+1. By port base: Set specific port to specific queue. ADM6996L only check the
+port priority and not check packet's content VLAN and TOS.
+
+2. By VLAN first: ADM6996L check VLAN priority first then IP TOS priority.
+
+3. By IP TOS first: ADM6996L check IP TOS priority first then VLAN priotity.
+
+If port set at VLAN/TOS priority but receiving packet without VLAN or TOS
+information then port base priority will be used.
+
+MAC Clone description
+~~~~~~~~~~~~~~~~~~~~~
+																																								mac-clone-reg11h
+mac-clone-reg30h (reserved?)
+
+If user's ISP vendor (cable modem) lock Registrations Card's ID (MAC address)
+then Router CPU must send this Lock Registration Card's ID to WAN port. One
+condition happen is there exist two same MAC ID on this Switch. One is
+original Card and another one is CPU. This will make Switch learning table
+trouble.
+
+ADM6996L provide MAC Clone function that allows two same MAC address with
+different VLAN ID0 on learning table. This will sovle lock registration card's
+ID issue.
+
+VLAN usage examples
+~~~~~~~~~~~~~~~~~~
+
+Let's we need to group 1-2 ports in VLAN#0, 3-4 in VLAN#1 and make port 0
+(WAN) tagged VLAN#0 + VLAN#1 port (say - we have 802.1q enabled router or
+switch connected to port0). What we need to do is:
+
+1. reset tag-shift (just in case)
+	echo 0 > /proc/sys/dev/adm6996/tag-shift
+	
+2. set PVID#0 to ports 1-2
+	echo 0 > /proc/sys/dev/adm6996/port1/vlan-group-mask
+	echo 0 > /proc/sys/dev/adm6996/port2/vlan-group-mask
+
+3. set PVID#1 to ports 3-4
+	echo 1 > /proc/sys/dev/adm6996/port3/vlan-group-mask
+	echo 1 > /proc/sys/dev/adm6996/port4/vlan-group-mask
+
+4 set ports 1-4 untagged and port 0 tagged. also set internal port 5
+  tagged (just in case)
+	echo 0 > /proc/sys/dev/adm6996/port1/tagging
+	echo 0 > /proc/sys/dev/adm6996/port2/tagging
+	echo 0 > /proc/sys/dev/adm6996/port3/tagging
+	echo 0 > /proc/sys/dev/adm6996/port4/tagging
+	echo 1 > /proc/sys/dev/adm6996/port0/tagging
+	echo 1 > /proc/sys/dev/adm6996/port5/tagging
+
+5. set switch mode to 802.1q (that's default, just in case)
+  echo 1 > /proc/sys/dev/adm6996/vlan-mode
+
+6. set vlan#0 grouping to ports 0, 1-2 and to internal port 5
+  echo 1 1 1 0 0 1 > /proc/sys/dev/adm6996/vlan-groups/0
+
+7. set vlan#1 ports groupping to ports 0, 3-4 and to internal port
+  echo 1 0 0 1 1 1 > /proc/sys/dev/adm6996/vlan-groups/1
+
+8. configure 802.1q inteface for vlan#0
+  vconfig add eth0 0
+	ifconfig vlan0 X.X.X.X netmask ....... broadcast ......
+	
+8. configure 802.1q inteface for vlan#1
+  vconfig add eth0 1
+	ifconfig vlan1 X.X.X.X netmask ....... broadcast .......
+	

@@ -1,0 +1,60 @@
+IMPORTANT NOTE: This version _only_ supports kernel >= 2.4.18
+
+README:
+   This is the patch-o-matic distribution by the netfilter project
+   (http://www.netfilter.org/)
+
+   As of iptables-1.2.7, patch-o-matic is distributed as a seperate
+   package, available from ftp://ftp.netfilter.org/pub/patch-o-matic.
+
+================================================================
+
+FOLLOW THESE STEPS:
+
+0) There may be some outstanding bugfixes or tweaks which are not yet
+   in the official kernel.  To look through these, do:
+	# KERNEL_DIR=<<where-you-built-your-kernel>>  ./runme pending
+
+   Please note that you have to recompile your kernel and your kernel modules
+   after this step of kernel patching.
+
+That's it!
+================================================================
+
+FEELING BRAVE?
+
+1) The netfilter core team is maintaining a set of extensions / new 
+   features which are not yet committed to the mainstream kernel tree.
+
+They are a collection of maybe-broken maybe-cool third-party extensions. 
+
+Please note that you cannot apply any combination of any of those patches.
+Some of them are incompatible... 
+
+This is why we provide two ways of applying them:
+
+If you want to try some extensions, and be sure that they don't break each
+other, you can do the following:
+
+	# KERNEL_DIR=<<where-you-built-your-kernel>>  ./runme base
+
+It will modify you kernel source (so back it up first!).  You will have
+to recompile / rebuild your kernel and modules.
+
+Alternatively, if you really know what your are doing, you can use the
+following command in order to offer you the full list of choices.  Be aware
+that we don't prevent you from shooting yourself in the foot.
+
+	% KERNEL_DIR=<<where-you-built-your-kernel>>  ./runme extra
+
+================================================================
+
+QUESTIONS ?
+
+There is a FAQ, and a netfilter-extensions-HOWTO, both can be found
+at http://www.netfilter.org/documentation/
+
+Please direct any usage questions to the netfilter mailinglist:
+
+netfilter@lists.netfilter.org.
+

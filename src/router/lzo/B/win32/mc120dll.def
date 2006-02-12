@@ -1,0 +1,7 @@
+-nologo
+-dll
+-incremental:no
+-opt:noref
+-release
+-comment:"LZO real-time data compression library. Copyright (C) Markus F.X.J. Oberhumer"
+-version:1.07

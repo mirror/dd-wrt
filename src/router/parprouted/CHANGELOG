@@ -1,0 +1,44 @@
+Mon 24 May 2004 09:38:44 PM EEST
+parprouted 0.63:
+Fix memory leak reported by Doug Bostrom <dbostrom AT mindspring.com>: 
+in case request queue was full the oldest entry wasn't actually freed.
+
+------------------------------------------------------------------------
+Tue 20 Apr 2004 07:37:20 AM EEST
+parprouted 0.62:
+Fix problem with systems checking for IP address conflicts, such as
+Windows XP.
+
+Sun 11 Jan 2004 01:38:43 PM EET
+parprouted 0.6:
+Now ARP queries from the local host are resolved as well. Various small updates
+to code and documentation.
+
+------------------------------------------------------------------------
+Tue 06 Jan 2004 09:22:09 PM EET
+parprouted 0.50:
+Much improved performance and robustness. Request queue is now kept
+for all received ARP requests, ensuring that all new requests get answered
+quickly (around 60 ms in my test).
+
+------------------------------------------------------------------------
+Wed 18 Sep 2002 11:10:41 AM EEST
+parprouted 0.42:
+Fixed incorrect route installation using unfinished ARP entry.
+More aggressive use of mutexes.
+
+------------------------------------------------------------------------
+Sun 07 Jul 2002 10:20:16 PM EEST
+
+parprouted 0.4:
+Refresh ARP entries by ARP pinging them. Or make permanent ARP
+entries if "-p" switch is given.
+
+------------------------------------------------------------------------
+Sun 07 Jul 2002 12:51:36 AM EEST
+
+parprouted 0.3:
+Critical bugfix. Previous parprouted failed in networks of any 
+considerable complexity. Almost complete rewrite. parprouted now is 
+multithreaded and does  everything in userspace (including ARP relaying,
+spoofing and listening). No need to set proxy_arp in kernel anymore.

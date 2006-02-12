@@ -1,0 +1,25 @@
+<div><div class="setting"><div class="label">Default Transmit Key</div>
+<input type="hidden" name="wl_WEP_key" />
+<input type="hidden" name="wl_wep value=restricted" />
+<input type="radio" value="1" name="wl_key" <% nvram_match("wl_key","1","checked"); %> /> 1
+<input type="radio" value="2" name="wl_key" <% nvram_match("wl_key","2","checked"); %> /> 2
+<input type="radio" value="3" name="wl_key" <% nvram_match("wl_key","3","checked"); %> /> 3
+<input type="radio" value="4" name="wl_key" <% nvram_match("wl_key","4","checked"); %> /> 4
+</div>
+<div class="setting"><div class="label">WEP Encryption</div>
+<select name=wl_wep_bit size="1" onChange=keyMode(this.form.wl_wep_bit.selectedIndex,this.form)>
+<option value="64" <% nvram_selmatch("wl_wep_bit","64","selected"); %>>64 bits 10 hex digits</option>
+<option value="128" <% nvram_selmatch("wl_wep_bit","128","selected"); %>>128 bits 26 hex digits</option>
+</select></div><div class="setting"><div class="label">Passphrase</div>
+<input name=wl_passphrase maxLength="16" size="20" value='<% get_wep_value("passphrase"); %>' />
+<input type="hidden" value="Null" name="generateButton" />
+<input type="button" value="Generate" onclick=generateKey(this.form,"wl") name=wepGenerate /></div>
+<div class="setting"><div class="label">Key 1</div>
+<input name=wl_key1 size="36" value='<% get_wep_value("key1"); %>' /></div>
+<div class="setting"><div class="label">Key 2</div>
+<input name=wl_key2 size="36" value='<% get_wep_value("key2"); %>' /></div>
+<div class="setting"><div class="label">Key 3</div>
+<input name=wl_key3 size="36" value='<% get_wep_value("key3"); %>' /></div>
+<div class="setting"><div class="label">Key 4</div>
+<input name=wl_key4 size="36" value='<% get_wep_value("key4"); %>' /></div>
+</div>

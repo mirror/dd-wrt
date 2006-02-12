@@ -1,0 +1,2 @@
+#!/bin/sh
+[ -f $KERNEL_DIR/net/ipv6/netfilter/ip6t_ipv6header.c -a -f $KERNEL_DIR/include/linux/netfilter_ipv6/ip6t_ipv6header.h ] && echo ipv6header

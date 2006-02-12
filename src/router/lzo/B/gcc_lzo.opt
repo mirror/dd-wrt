@@ -1,0 +1,10 @@
+-Wbad-function-cast
+-Wcast-qual
+-Wimplicit
+-Wmissing-declarations
+-Wmissing-prototypes
+-Wnested-externs
+-Wpointer-arith
+-Wshadow
+-Wstrict-prototypes
+-Wno-uninitialized

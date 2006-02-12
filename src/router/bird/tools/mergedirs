@@ -1,0 +1,63 @@
+#!/bin/sh
+
+if [ -z "$4" ] ; then
+	echo "Usage: mergedirs <src-dir> <src-dir-rel> <obj-dir> <list-of-dirs>"
+	exit 1
+	fi
+cpp=${CPP:-gcc -E}
+SRCDIR=$1
+shift
+SRCREL=$1
+case $SRCDIR in
+	/*) ;;
+	*) SRCREL="../$SRCREL" ;;
+	esac
+shift
+OBJDIR=$1
+LIBDIR=$OBJDIR/lib
+CONFDIR=$OBJDIR/conf
+shift
+
+echo "Merging system-dependent modules ($@)"
+MODULES=`for a in $@ ; do
+		cat $SRCDIR/sysdep/config.h $SRCDIR/$a/Modules |
+		$cpp -U unix -D MACROS_ONLY -I $OBJDIR - |
+		sed "/^[ ]*\$/d;/^#/d;s@\\(.*\\)@\\1 $a/\\1@"
+		done |
+	sort -k1,1 -u |
+	cut -d ' ' -f 2`
+rm -rf $LIBDIR $CONFDIR
+mkdir -p $LIBDIR $CONFDIR
+for a in $MODULES ; do
+	b=`basename $a`
+	case $b in
+		*.h)	ln -s $SRCREL/$a $LIBDIR/$b
+			;;
+		*.c)	OBJ=`echo $b | sed 's/\.c$/\.o/'`
+			OBJS="$OBJS $OBJ"
+			SRCS="$SRCS \\
+	$b"
+			ln -s $SRCREL/$a $LIBDIR/$b
+			;;
+		*.Y)	CONFS="$CONFS\$(srcdir)/$a "
+			ln -s $SRCREL/$a $CONFDIR/$b
+			;;
+		*)	echo "$b: Unknown file type"
+			exit 1
+			;;
+		esac
+	done
+
+cat >$LIBDIR/Makefile <<EOF
+source=$SRCS
+lib-dest=birdlib.a
+root-rel=../
+
+include ../Rules
+EOF
+
+sed <$SRCDIR/conf/Makefile >$CONFDIR/Makefile "s|@CONFS@|$CONFS|"
+CONFS=`cd $SRCDIR ; ls conf/*.[chl]`
+for a in $CONFS ; do
+	ln -s $SRCREL/$a $CONFDIR/
+done

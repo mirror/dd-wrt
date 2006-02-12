@@ -1,0 +1,294 @@
+###### gateway.conf -- NoCatAuth Gateway Configuration.
+#
+# Format of this file is: <Directive> <Value>, one per
+#   line. Trailing and leading whitespace is ignored. Any
+#   line beginning with a punctuation character is assumed to
+#   be a comment.
+
+###### General settings.
+#
+# See the bottom of this file for options for logging to syslog.
+#
+# Log verbosity -- 0 is (almost) no logging. 10 is log
+#   everything. 5 is probably a safe middle road.
+#
+Verbosity       10
+
+##### Gateway application settings.
+#
+# GatewayName -- The name of this gateway, to be optionally displayed
+#   on the splash and status pages. Any short string of text will do.
+#
+GatewayName	the NoCat Network
+
+##
+#
+# GatewayMode -- Determines the mode of operation of the gateway. Possible
+#   values are:
+#   
+#   Open	- Simply require a user to view a splash page and accept 
+#		    a use agreement.
+#
+# Only Open mode is currently supported.
+#
+GatewayMode	Open
+
+##
+# GatewayLog -- Optional.  If unset, messages will go to STDERR.
+# (currently unused!)
+#
+# GatewayLog	/var/log/nocat.log
+
+##
+# LoginTimeout - Number of seconds after a client's last
+#   login/renewal to terminate their connection. Probably
+#   don't want to set this to less than 60 or a lot of 
+#   bandwidth is likely to get consumed by the client's
+#   renewal attempts. 
+#
+# For Open Mode portals, you probably want to comment out
+#   the preceding and set LoginTimeout to 
+#   something large (like 86400, for one notification
+#   per day).
+#
+LoginTimeout	86400
+
+###### Open Portal settings.
+#
+##
+# HomePage -- The authservice's notion of a default
+#   redirect.
+#
+HomePage	http://nocat.net/
+
+# DocumentRoot -- Where all of the application templates (including
+#   SplashPage) are hiding. Can be different from Apache's DocumentRoot.
+#   Defaults to @htdocsdir@ via compile-time option.
+#
+# DocumentRoot	@htdocsdir@	
+
+# SplashForm -- Form displayed to users on capture.
+#
+SplashForm	splash.html
+
+# StatusForm -- Page displaying status of logged in users.
+#   NOT YET IMPLEMENTED.
+#
+StatusForm	status.html
+
+# SplashURL -- URL to fetch remote splash page from. You must compile
+#   with --with-remote-splash for this to work. SplashTimeout specifies
+#   the reload period of the remote splash page.
+#
+# SplashURL	http://example.com/get_splash_page.cgi?node=$NodeID
+# 
+# SplashTimeout	21600
+
+###### Active/Passive Portal settings. 
+# None of these settings affect open mode operation.
+#
+# TrustedGroups - A list of groups registered with the auth server
+#   that a user may claim membership in order to gain Member-class
+#   access through this portal. The default magic value "Any" indicates
+#   that a member of *any* group is granted member-class access from
+#   this gateway. NOT YET IMPLEMENTED.
+#
+# TrustedGroups	NoCat NYCWireless PersonalTelco
+#
+TrustedGroups Any
+
+##
+# Owners - Optional.  List all local "owner" class users here, separated 
+#   by spaces.  Owners typically get full bandwidth, and unrestricted
+#   access to all network resources. NOT YET IMPLEMENTED.
+#
+# Owners rob@nocat.net schuyler@nocat.net
+
+##
+# AuthServiceAddr - Required, for captive mode. Must be set to the address of
+#   your authentication service. You must use an IP address
+#   if DNS resolution isn't available at gateway startup.
+#
+# AuthServiceAddr 208.201.239.21
+#
+AuthServiceAddr	auth.nocat.net
+
+##
+# AuthServiceURL - HTTPS URL to the login script at the authservice. 
+#
+AuthServiceURL  https://auth.nocat.net/cgi-bin/login
+
+##
+# LogoutURL - HTTP URL to redirect user after logout.
+#
+LogoutURL	https://auth.nocat.net/logout.html
+
+##
+# PGPKeyPath -- The directory in which PGP keys are stored.
+#   NoCat tries to find this in the pgp/ directory above
+#   the bin/ parent directory. Set this only if you put it
+#   somewhere that NoCat doesn't expect.
+#
+# PGPKeyPath	@pgpdir@
+
+
+### Network Topology
+#
+# FirewallPath - Where to find the firewall scripts.
+#   Defaults to @pkglibexecdir@ via compile-time option.
+#
+# FirewallPath	@pkglibexecdir@
+
+#
+# ExternalDevice - Required if and only if NoCatAuth can't figure it out
+#   from looking at your routing tables and picking the interface
+#   that carries the default route. Must be set to the interface
+#   connected to the Internet. Usually 'eth0' or 'eth1'
+#   under Linux, or maybe even 'ppp0' if you're running
+#   PPP or PPPoE.
+#
+# ExternalDevice	eth0
+
+##
+# InternalDevice - Required if and only if your machine has more than two
+#   network interfaces. Must be set to the interface connected to your local
+#   network, normally your wireless card.
+#
+# InternalDevice	eth1
+
+##
+# LocalNetwork - Required if and only if NoCatSplash can't figure it out
+#   by polling the InternalDevice. Must be set to the network
+#   address and net mask of your internal network. You
+#   can use the number of bits in the netmask (e.g. /16, /24, etc.)
+#   or the full x.x.x.x specification.
+#
+# LocalNetwork	10.0.1.0/24
+
+##
+# DNSAddr - Optional. *If* you choose not to run DNS on your internal network,
+#   specify the address(es) of one or more domain name server on the Internet
+#   that wireless clients can use to get out. Should be the same DNS that your
+#   DHCP server hands out.
+#
+# DNSAddr 111.222.333.444
+
+##
+# AllowedWebHosts - Optional.  List any domains that you would like to
+#   allow web access (TCP port 80 and 443) BEFORE logging in (this is the
+#   pre-'skip' stage, so be careful about what you allow.)
+#
+# AllowedWebHosts	nocat.net
+
+##
+# RouteOnly - Required only if you DO NOT want your gateway to act as a NAT. 
+#   Uncomment this only if you're running a strictly routed network, and
+#   don't need the gateway to enable NAT for you.
+#
+# RouteOnly	1
+
+##
+# MembersOnly - Optional.  Uncomment this if you want to disable public
+#   access (i.e. unauthenticated 'skip' button access).  You'll also want to
+#   point AuthServiceURL somewhere that doesn't include a skip button (like
+#   at your own Auth server.)
+#
+# MembersOnly	1
+
+##
+# IncludePorts - Optional.  Specify TCP ports to allow access to when 
+#   public class users login.  All others will be denied.
+#
+#   For a list of common services and their respective port numbers, see 
+#   your /etc/services file. Depending on your firewall, you might even
+#   be able to specify said services here, instead of using port numbers.
+#
+# IncludePorts    22 80 443
+
+##
+# ExcludePorts - Optional.  Specify TCP ports to denied access to when
+#   public class users login.  All others will be allowed.
+#
+#   Note that you should use either IncludePorts or ExcludePorts, but not
+#   both.  If neither is specified, access is granted to all ports to
+#   public class users.
+#
+#   You should *always* exclude port 25, unless you want to run an portal
+#   for wanton spam sending. Users should have their own way of sending
+#   mail. It sucks, but that's the way it is. Comment this out *only if*
+#   you're using IncludePorts instead.
+#
+# ExcludePorts 23 25 111
+#
+ExcludePorts    25
+
+####### Syslog Options -- alter these only if you want NoCat to log to the
+#        system log! NOT YET IMPLEMENTED.
+#
+# Log Facility - syslog or internal.  Internal sends log messages
+#    using the GatewayLog or STDERR if GatewayLog is unset.  Syslog
+#    sends all messages to the system log.
+#
+# LogFacility	internal
+
+##
+# SyslogSocket - inet or unix.  Inet connects to an inet socket returned
+#    by getsrvbyname().  Unix connects to a unix domain socket returned by 
+#    _PATH_LOG in syslog.ph (typically /dev/log).  Defaults to unix.
+#
+# SyslogSocket unix
+
+##
+# SyslogOptions - Zero or more of the words pid, ndelay, cons, nowait
+#    Defaults to "cons,pid". 
+#
+# SyslogOptions cons,pid
+
+##
+# SyslogPriority - The syslog class of message to use:  In decreasing importance,
+#    the typical priorities are EMERG, ALERT, CRIT, ERR, WARNING, NOTICE, INFO, 
+#    and DEBUG.  Defaults to INFO.
+#
+# SyslogPriority INFO
+
+##
+# SyslogFacility - The facility used to log messages.  Defaults to user.
+# SyslogFacility user
+
+##
+# SyslogIdent - The ident of the program that is calling syslog.  This will
+#    be prepended to every log entry made by NoCat.  Defaults to NoCat.
+#
+# SyslogIdent NoCat
+
+###### Other Common Gateway Options. (stuff you probably won't have to change)
+#
+# ResetCmd, PermitCmd, DenyCmd -- Shell commands to reset,
+#   open and close the firewall. You probably don't need to
+#   change these.
+#
+# ResetCmd	initialize.fw
+# PermitCmd	access.fw permit $MAC $IP $Class 
+# DenyCmd	access.fw deny $MAC $IP $Class 
+
+##
+# GatewayPort - The TCP port to bind the gateway 
+#   service to. 5280 is de-facto standard for NoCatAuth.
+#   Change this only if you absolutely need to.
+#
+# GatewayPort     5280
+
+##
+#
+# IdleTimeout -- How often to check the ARP cache, in seconds,
+#   for expiration of idle clients. NOT YET IMPLEMENTED.
+#
+# MaxMissedARP -- How many times a client can be missing from
+#   the ARP cache before we assume they've gone away, and log them
+#   out. Set to 0 to disable logout based on ARP cache expiration.
+# 
+# MaxMissedARP	2
+#
+# IdleTimeout   300
+
+### Fin!

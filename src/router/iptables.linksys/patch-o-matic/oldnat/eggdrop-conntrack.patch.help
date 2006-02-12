@@ -1,0 +1,6 @@
+Author: Magnus Sandin <magnus@sandin.cx>
+Status: Development
+
+This adds CONFIG_IP_NF_EGG:
+Connection tracking for eggdrop bot networks.
+It now also supports eggdrop v1.6.x

@@ -1,0 +1,2 @@
+      dep_tristate '    REDIRECT target support' CONFIG_IP_NF_TARGET_REDIRECT $CONFIG_IP_NF_NAT
+      dep_tristate '    SAME target support' CONFIG_IP_NF_TARGET_SAME $CONFIG_IP_NF_NAT
