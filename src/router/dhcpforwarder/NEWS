@@ -1,0 +1,78 @@
+Version 0.7
+-----------
+
+	- fixed compilation with dietlibc 0.27
+	
+	
+Version 0.6
+-----------
+
+	- allowed to bind sender-side sockets to one interface only; this
+	  should allow to run multiple instances of dhcp-forwarder. To
+	  enable this feature, an additional parameter was added to the
+	  'server ip ...' option
+
+Version 0.5
+-----------
+	- minor cleanups in the spec-file
+	- allowed '.' in interface names to make it work with VLAN kernels
+
+Version 0.4
+-----------
+	- remove agent-id in BOOTREPLYs instead of padding it; WinNT seems
+	  to misinterpret it
+	- non-ethernet interfaces on server-side are allowed now; thanks to
+	  Michal Pokrywka for reporting this
+	- minor enhancements in the initscript
+	- controlling-terminal will be now closed after forking; thanks to
+	  Michal Pokrywka for reporting the problem and giving the proper
+	  solution
+	- minor code cleanups
+	- it _should_ compile with uClibc now
+	- FIX: fixed improper usage of alloca() which caused burning
+	  computers and crashing satellites when not enabling inlining
+	  (reported by Michal Pokrywka)
+	- fixed 'condrestart' command of the initscript
+
+Version 0.3
+-----------
+	- Minor enhancements in the build-system (generalized sed-subst
+	  rule)
+	- FIX: closing cfg-files after parsing now
+	- closing unneeded fd 0 before forking
+	- FIX: remove agent-id accordingly RFC 3046 when relaying
+	  BOOTREPLY messages
+	- 'make splint' finishes checking without warnings now (requires
+	  recent CVS version of splint)
+	- minor cross-compilation fixes
+	- minor fixes to compile with CVS version of dietlibc
+	- added option to set specific 'giaddr'; see man-page for
+	  instructions
+	- added sample configurations to README
+	- resource-limits will be used now (after killing remotely a 10km
+	  away located router by memory-overcommiting I felt this a good
+	  idea)
+	- improved logging
+	- compiles with egcs-1.1.2 and glibc-2.1.3 now
+	- added whitebox-testsuite for some error-prone functions
+	- made resource-limits configurabely
+	- splint succeeds now with '-strict' settings
+	- minor fixes and extensions in the configfile parser
+	- SECFIX: drop supplemental groups also
+	- awakened the logfile-functionality to life
+	- changed default username from dhcpfwd to dhcp-fwd; using three
+	  different names (dhcp-forwarder, dhcp-fwd and dhcpfwd) in one
+	  small project is a little bit too confusing...
+	
+Version 0.2
+-----------
+	- Small fixes in the build-system (WWW distribution rules,
+  	  requirements for automake 1.6
+	- Fixed broken '--disable-dietlibc' and enhanced this option
+	- Added doc
+	- Added man-page
+	
+  
+Version 0.1
+-----------
+	- initial release

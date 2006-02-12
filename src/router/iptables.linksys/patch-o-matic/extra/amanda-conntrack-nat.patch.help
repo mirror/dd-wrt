@@ -1,0 +1,5 @@
+Author: Brian J. Murrell <netfilter@interlinx.bc.ca>
+Status: Works for me
+
+This adds CONFIG_IP_NF_AMANDA:
+Connection tracking and NATting for the Amanda backup protocol.

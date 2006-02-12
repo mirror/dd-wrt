@@ -1,0 +1,22 @@
+--- network.c	2005-05-31 13:10:26.000000000 +0000
++++ ../../../../DD-WRT1/src/router/rc/network.c	2005-06-04 02:44:22.000000000 +0000
+@@ -504,7 +504,7 @@
+ 
+ 		mkdir("/tmp/ppp", 0777);
+ 		int timeout = 5;
+-
++			
+ 		// Lets open option file and enter all the parameters.
+ 		fp = fopen("/tmp/ppp/options.pppoe","w");
+ 
+@@ -618,6 +618,10 @@
+ 		symlink("/sbin/rc", "/tmp/ppp/ip-up");
+ 		symlink("/sbin/rc", "/tmp/ppp/ip-down");
+ 		unlink("/tmp/ppp/log");
++		
++		//Clean pppoe linksys client files - Added by ice-man (Wed Jun 1)
++		unlink("/tmp/ppp/connect-log");
++		unlink("/tmp/ppp/set-pppoepid");
+ 
+ 		stop_dhcpc();
+ 		stop_pptp();

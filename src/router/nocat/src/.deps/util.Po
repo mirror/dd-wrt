@@ -1,0 +1,195 @@
+util.o util.o: util.c \
+  /home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2/glib.h \
+  /home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include/glibconfig.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/limits.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/syslimits.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/limits.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/features.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/posix1_lim.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/local_lim.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/linux/limits.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/posix2_lim.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/float.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/stdarg.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/ctype.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/types.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/stddef.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/string.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/fcntl.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/fcntl.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/types.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/time.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/endian.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/select.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/select.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/unistd.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/posix_opt.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/confname.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/getopt.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdio.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/wchar.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdlib.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/alloca.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/crypt.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/stat.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/stat.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/socket.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/uio.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uio.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/socket.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sockaddr.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/asm/socket.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/asm/sockios.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/asm/ioctl.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/netinet/in.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdint.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/wordsize.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/in.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/byteswap.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/arpa/inet.h \
+  util.h config.h
+
+/home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2/glib.h:
+
+/home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include/glibconfig.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/limits.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/syslimits.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/limits.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/features.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/posix1_lim.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/local_lim.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/linux/limits.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/posix2_lim.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/float.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/stdarg.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/ctype.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/types.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/stddef.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/string.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/fcntl.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/fcntl.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/types.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/time.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/endian.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/select.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/select.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/unistd.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/posix_opt.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/confname.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/getopt.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdio.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/wchar.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdlib.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/alloca.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/crypt.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/stat.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/stat.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/socket.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/uio.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uio.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/socket.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sockaddr.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/asm/socket.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/asm/sockios.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/asm/ioctl.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/netinet/in.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdint.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/wordsize.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/in.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/byteswap.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/arpa/inet.h:
+
+util.h:
+
+config.h:

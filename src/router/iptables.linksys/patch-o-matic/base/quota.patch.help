@@ -1,0 +1,10 @@
+Author: Sam Johnston <samj@samj.net>
+Status: worksforme
+
+This option adds CONFIG_IP_NF_MATCH_QUOTA, which implements network
+quotas by decrementing a byte counter with each packet.
+
+Supported options are:
+--quota <bytes>
+  The quota in bytes.
+

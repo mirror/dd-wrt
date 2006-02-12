@@ -1,0 +1,8 @@
+          define_tristate CONFIG_IP_NF_NAT_IRC $CONFIG_IP_NF_NAT
+        fi
+      fi
+      if [ "$CONFIG_IP_NF_QUAKE3" = "m" ]; then
+        define_tristate CONFIG_IP_NF_NAT_QUAKE3 m
+      else
+        if [ "$CONFIG_IP_NF_QUAKE3" = "y" ]; then
+         define_tristate CONFIG_IP_NF_NAT_QUAKE3 $CONFIG_IP_NF_NAT

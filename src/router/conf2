@@ -1,0 +1,3 @@
+cd openvpn
+./configure --host=mipsel-linux CC=mipsel-linux-uclibc-gcc CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --enable-management --disable-socks --enable-lzo --enable-server --enable-small --enable-password-save --disable-http CFLAGS="-Os -mips32 -mtune=mips32 -pipe -funit-at-a-time" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
+cd ..

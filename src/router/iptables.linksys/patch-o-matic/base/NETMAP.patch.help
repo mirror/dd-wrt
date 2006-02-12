@@ -1,0 +1,16 @@
+Author: Svenning Soerensen <svenning@post5.tele.dk>
+Status: Experimental
+
+This adds CONFIG_IP_NF_TARGET_NETMAP option, which provides a target for
+the nat table. It creates a static 1:1 mapping of the network address,
+while keeping host addresses intact. It can be applied to the
+PREROUTING chain to alter the destination of incoming connections,
+to the POSTROUTING chain to alter the source of outgoing connections,
+or both (with separate rules).
+
+Examples:
+
+iptables -t nat -A PREROUTING -d 1.2.3.0/24 -j NETMAP --to 5.6.7.0/24
+
+iptables -t nat -A POSTROUTING -s 5.6.7.0/24 -j NETMAP --to 1.2.3.0/24
+

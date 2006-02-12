@@ -1,0 +1,10 @@
+CONFIG_IP_NF_IRC
+Quake III Arena protocol support
+CONFIG_IP_NF_QUAKE3
+  Quake III Arena  connection tracking helper. This module allows for a
+  stricter firewall rulebase if one only allows traffic to a master
+  server. Connections to Quake III server IP addresses and ports returned
+  by the master server will be tracked automatically.
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `Y'.

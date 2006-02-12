@@ -1,0 +1,152 @@
+#
+# Shorewall 1.4 -- Interfaces File
+#
+# /etc/shorewall/interfaces
+#
+#	You must add an entry in this file for each network interface on your
+#	firewall system.
+#
+# Columns are:
+#
+#	ZONE		Zone for this interface. Must match the short name
+#			of a zone defined in /etc/shorewall/zones.
+#
+#			If the interface serves multiple zones that will be
+#			defined in the /etc/shorewall/hosts file, you should
+#			place "-" in this column.
+#
+#	INTERFACE	Name of interface. Each interface may be listed only
+#			once in this file. You may NOT specify the name of
+#			an alias (e.g., eth0:0) here; see
+#			http://www.shorewall.net/FAQ.htm#faq18
+#
+#			You may specify wildcards here. For example, if you
+#			want to make an entry that applies to all PPP
+#			interfaces, use 'ppp+'.
+#
+#			DO NOT DEFINE THE LOOPBACK INTERFACE (lo) IN THIS FILE.
+#
+#	BROADCAST	The broadcast address for the subnetwork to which the
+#			interface belongs. For P-T-P interfaces, this
+#			column is left black.If the interface has multiple
+#			addresses on multiple subnets then list the broadcast
+#			addresses as a comma-separated list.
+#
+#			If you use the special value "detect", the firewall
+#			will detect the broadcast address for you. If you
+#			select this option, the interface must be up before
+#			the firewall is started, you must have iproute
+#			installed and the interface must only be associated
+#			with a single subnet.
+#
+#			If you don't want to give a value for this column but
+#			you want to enter a value in the OPTIONS column, enter
+#			"-" in this column.
+#
+#	OPTIONS		A comma-separated list of options including the
+#			following:
+#
+#			dhcp	     - interface is managed by DHCP or used by
+#                                      a DHCP server running on the firewall or
+#				       you have a static IP but are on a LAN
+#				       segment with lots of Laptop DHCP clients.
+#			norfc1918    - This interface should not receive
+#				       any packets whose source is in one
+#				       of the ranges reserved by RFC 1918
+#				       (i.e., private or "non-routable"
+#				       addresses. If packet mangling is
+#				       enabled in shorewall.conf, packets
+#				       whose destination addresses are
+#				       reserved by RFC 1918 are also rejected.
+#			routefilter  - turn on kernel route filtering for this
+#				       interface (anti-spoofing measure). This
+#                                      option can also be enabled globally in
+#				       the /etc/shorewall/shorewall.conf file.
+#			dropunclean  - Logs and drops mangled/invalid packets
+#
+#			logunclean   - Logs mangled/invalid packets but does
+#				       not drop them.
+#	.	.	blacklist    - Check packets arriving on this interface
+#				       against the /etc/shorewall/blacklist
+#				       file.
+#			maclist	     - Connection requests from this interface
+#				       are compared against the contents of
+#				       /etc/shorewall/maclist. If this option
+#				       is specified, the interface must be
+#				       an ethernet NIC and must be up before
+#				       Shorewall is started.
+#			tcpflags     - Packets arriving on this interface are
+#				       checked for certain illegal combinations
+#				       of TCP flags. Packets found to have
+#				       such a combination of flags are handled
+#				       according to the setting of
+#				       TCP_FLAGS_DISPOSITION after having been
+#				       logged according to the setting of
+#				       TCP_FLAGS_LOG_LEVEL.
+#			proxyarp     -
+#				Sets
+#				/proc/sys/net/ipv4/conf/<interface>/proxy_arp.
+#				Do NOT use this option if you are
+#				employing Proxy ARP through entries in
+#				/etc/shorewall/proxyarp. This option is
+#				intended soley for use with Proxy ARP
+#				sub-networking as described at:
+#				http://www.tldp.org/HOWTO/mini/Proxy-ARP-Subnet
+#
+#			newnotsyn    - TCP packets that don't have the SYN 
+#				       flag set and which are not part of an
+#				       established connection will be accepted
+#				       from this interface, even if 
+#				       NEWNOTSYN=No has been specified in
+#				       /etc/shorewall/shorewall.conf.
+#
+#				       This option has no effect if 
+#				       NEWNOTSYN=Yes.
+#
+#			routeback    - If specified, indicates that Shorewall
+#				       should include rules that allow filtering
+#				       traffic arriving on this interface back
+#				       out that same interface.
+#
+#			arp_filter   - If specified, this interface will only
+#				       respond to ARP who-has requests for IP
+#				       addresses configured on the interface.
+#				       If not specified, the interface can
+#				       respond to ARP who-has requests for
+#				       IP addresses on any of the firewall's
+#                                      interface. The interface must be up
+#				       when Shorewall is started.
+#
+#			The order in which you list the options is not
+#			significant but the list should have no embedded white
+#			space.
+#
+#	Example 1:	Suppose you have eth0 connected to a DSL modem and
+#			eth1 connected to your local network and that your
+#			local subnet is 192.168.1.0/24. The interface gets
+#			it's IP address via DHCP from subnet
+#			206.191.149.192/27. You have a DMZ with subnet
+#			192.168.2.0/24 using eth2.
+#
+#			Your entries for this setup would look like:
+#
+#			net	eth0	206.191.149.223	dhcp
+#			local	eth1	192.168.1.255
+#			dmz	eth2	192.168.2.255
+#
+#	Example 2:	The same configuration without specifying broadcast
+#			addresses is:
+#
+#			net	eth0	detect		dhcp
+#			loc	eth1	detect
+#			dmz	eth2	detect
+#
+#	Example 3:	You have a simple dial-in system with no ethernet
+#			connections.
+#
+#			net	ppp0	-
+##############################################################################
+#ZONE	 INTERFACE	BROADCAST	OPTIONS
+net      br0            detect
+loc      wds0.2         detect
+#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE

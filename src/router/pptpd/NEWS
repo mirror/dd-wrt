@@ -1,0 +1,78 @@
+1.2.3: released 2005-02-17
+
+- error check critical dup2 calls [Cameron]
+- add --enable-facility configure feature for syslog customisation [Cameron]
+- performance, use writev() if available, avoiding memcpy() [Sundberg]
+- compilation fix for gcc old versions [Cameron]
+
+1.2.2: released 2005-01-05
+
+- fix deadlock hang due to syslog(3) called by signal handler [Cameron]
+- turn off logging to stderr, to prevent loopback [Hall]
+- allow RPM to be build on RHEL [Brady]
+- init.d script, avoid spitting garbage [Mueller]
+
+1.2.1: released 2004-06-23
+
+- depend on ppp 2.4.3 CVS packages for plugin [Cameron]
+- init.d script, warn that restart may cause problems [Mueller]
+
+1.2.0-b4: released 2004-05-25
+
+- fix rpmbuild [Cameron]
+- include Debian downstream packaging patches [Mayrhofer]
+- fix for options file check when no options file wanted [Cameron]
+- fix for SIGTERM handling [Guraj]
+- minor manual page edits [Wilson]
+- fix printing of connection speed [Dubiec]
+- fix segfault if built --with-bcrelay but no option used [Cameron]
+- add --logwtmp option to track users online [Cameron/Guraj]
+- remove vpnwho.pl from package (due to --logwtmp) [Cameron]
+- include README.portslave in distribution [Cameron]
+
+1.2.0-b3: released 2004-04-25 (ANZAC day)
+
+- add hint for EIO to suggest pppd option syntax [Cameron]
+- add routing checklists to pptpd.conf man page [Cameron]
+- fix broken --stimeout option [Cameron]
+- rework all manual pages, cross check against programs [Cameron]
+- add --ppp option for portslave support [Cameron]
+- fix unanticipated exit() when --noipparam option used [Cameron]
+- fix segfault on pptpctrl called with no arguments [Cameron]
+  {closes: Bug#140709}
+- include vpnwho.pl in package [!3runo]
+- note that speed is ineffective on Linux [Cameron]
+- rework comments in sample configuration files [Cameron]
+- update references to web sites [Cameron]
+- minor edits to manual pages [Cameron]
+- improve script comments [Cameron]
+- remove superfluous files and tidy CVS repository [Cameron]
+- disable obsolete scripts [Cameron]
+
+1.2.0-b2: released 2004-04-22 to test team (Peter & Bruno)
+
+- fix build without bcrelay [Cameron]
+- adopt bcrelay version from main package [Cameron]
+- when built without bcrelay, the bcrelay will exit [Cameron]
+- GNU standards compliance, no CVS in dist
+- new maintainer [Cameron]
+
+1.1.4-b4: 
+
+- terminate call on any CALL_CLR_RQST [!3runo]
+- unblock SIGCHLD [Stamfest]
+  {closes: Bug#248123}
+- report pppd path in debug mode [Cameron]
+- report cause of failed execvp() [Cameron]
+- explain pppd launch failure [Cameron]
+- pass ipparam to pppd [Ammirata]
+- add bcrelay [Bolhuis]
+- fix loss of first GRE packet [fghdgh]
+- fix inheritance of console file descriptors [fghdgh]
+- fix pidfile option [Mandzgaladze]
+- fix two buffer overflows [Otero]
+- fix potential buffer overflow [Vroede]
+- enhance callid [Latypov] {does not close Bug#171831}
+
+1.1.3: 
+

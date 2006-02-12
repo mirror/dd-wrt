@@ -1,0 +1,16 @@
+Author: Fabrice MARIE <fabrice@netfilter.org>
+Status: It Works For Me.
+
+Adds the possibility to send icmp-unreachable messages
+from a fake source IP address. The original destination of the packet will be
+used as the source of the icmp-unreach.
+
+To make it so that the icmp-unreach seems to come from the destination host :
+# iptables -A FORWARD -p tcp -d 202.156.58.0/24 --dport domain -j REJECT --fake-source
+# iptables --list
+Chain FORWARD (policy ACCEPT)
+target     prot opt source               destination
+REJECT     tcp  --  anywhere             202.156.58.0/24    tcp dpt:domain reject-with icmp-port-unreachable source-faked
+
+***** WARNING ***** This patch also patch the userspace directory which means that you
+                    you have to recompile and reinstall the iptables package after that.

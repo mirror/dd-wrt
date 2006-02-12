@@ -1,0 +1,137 @@
+#!/bin/sh 
+#
+# $Id: serresponse,v 1.16 2003/09/09 00:28:31 calrissian Exp $
+#
+# PLEASE configure before use !!!
+#
+# This script uses sipsak (http://sipsak.berlios.de) to test if a
+# SIP server is still responding to requests and will send messages
+# to the developers. It is configured for the iptel.org enviroment.
+# PLEASE adapt it to your local enviroment.
+#
+
+NOTIFY=sr@iptel.org
+SIPSAK=/home/srouter/sipsak/sipsak
+SIPURI=sip:sipsak@iptel.org
+LOCKDIR=/var/lock
+LOCKFILE=serresponse
+LOCK_TIMEOUT=240
+TMP=/tmp/serresponse.$$
+MAILCOMMAND=/bin/mail
+HOSTN=`hostname`
+RUNHOST=iptel.org
+SMSSEND=/home/sms/smstools/bin/putsms
+SMSDEVICE=/dev/ttyS0
+SMSNUMBERS=""
+
+############################
+
+LOCKF=$LOCKDIR/$LOCKFILE
+TMP2=$TMP.dns
+TMP3=$TMP.ips
+SIPSAKCMD="$SIPSAK -v -s $SIPURI"
+SIPSAKNCMD="$SIPSAK -v -n -s $SIPURI"
+SMSCMD="$SMSSEND -d$SMSDEVICE -b9600"
+
+if [ -e $LOCKF ] ; then
+	find $LOCKDIR -name $LOCKFILE -amin +$LOCK_TIMEOUT -exec rm {} ';'
+	if [ ! -e $LOCKF ] ; then
+		echo "This is a reminder !!!" > $TMP
+		echo "The lockfile $LOCKF" >> $TMP
+		echo "was just removed because ist was older then $LOCK_TIMEOUT minutes." >> $TMP
+		echo "But if you receive this mail the cause of this error still exists or respawned." >> $TMP
+		SERR_SUBJECT="serresponse reminder"
+	fi
+fi
+
+if [ ! -e $LOCKF ] ; then
+	if [ ! -x $SIPSAK ] ; then
+		echo "serresponse did not find the required sipsak executable $SIPSAK" >> $TMP
+		SERR_SUBJECT="serresponse config failure"
+	elif [ ! -x $SMSSEND ]; then
+		echo "serresponse did not find the required SMS send executable $SMSSEND" >> $TMP
+		SERR_SUBJECT="serresponse config failure"
+	else
+		date >> $TMP2
+		echo "  $SIPSAKCMD" >> $TMP2
+		echo "produced this output:" >> $TMP2
+		$SIPSAKCMD >> $TMP2 2>&1
+		if [ $? -eq 3 ] ; then
+			grep -i "Connection refused" $TMP2
+			if [ $? -eq 0 ] ; then
+				sleep 30
+			fi
+			date >> $TMP3
+			echo "  $SIPSAKNCMD" >> $TMP3
+			echo "produced this output:" >> $TMP3
+			$SIPSAKNCMD >> $TMP3 2>&1
+			if [ $? -le 1 ] ; then
+				echo "ser did not responsed (fast enough) on the sipsak requests with fqdn in Via" >> $TMP
+				echo "but the test with IPs in Via succeeded." >> $TMP
+				echo "" >> $TMP
+				echo "Sending this alert is stopped for $LOCK_TIMEOUT minutes." >>$TMP
+				echo "If you want to re-enable alerts sooner, please remove the lock file" >> $TMP
+				echo "$LOCKF @ $HOSTN" >> $TMP
+				echo "(you presumably need to be root to do this)" >> $TMP
+				echo "" >> $TMP
+				echo "Command output of sipsak with fqdn in Via follows:" >> $TMP
+				cat $TMP2 >> $TMP
+				SERR_SUBJECT="serresponse delayed"
+			else
+				echo "ser did not responsed (fast enough) on requests with fqdn in Via" >> $TMP
+				echo "but also requests with IPs in Via failed." >> $TMP
+				echo "" >> $TMP
+				echo "Sending this alert is stopped for $LOCK_TIMEOUT minutes." >>$TMP
+				echo "If you want to re-enable alerts sooner, please remove the lock file" >> $TMP
+				echo "$LOCKF @ $HOSTN" >> $TMP
+				echo "(you presumably need to be root to do this)" >> $TMP
+				echo "" >> $TMP
+				echo "First command output with fqdn in Via:" >> $TMP
+				cat $TMP2 >> $TMP
+				echo "" >> $TMP
+				echo "Second command output with IPs in Via:" >> $TMP
+				cat $TMP3 >> $TMP
+				SERR_SUBJECT="serresponse failed"
+			fi
+			rm -f $TMP3
+			rm -f $TMP2
+		elif [ $? -eq 2 ] ; then
+			echo "The ser response test failed due to a local error on" >> $TMP
+			echo "host $HOSTN ." >> $TMP
+			echo "" >> $TMP
+			echo "Sending this alert is stopped for $LOCK_TIMEOUT minutes." >>$TMP
+			echo "If you want to re-enable alerts sooner, please remove the lock file" >> $TMP
+			echo "$LOCKF @ $HOSTN" >> $TMP
+			echo "(you presumably need to be root to do this)" >> $TMP
+			echo "" >> $TMP
+			echo "Command output of sipsak with fqdn follows:" >> $TMP
+			cat $TMP2 >> $TMP
+			rm -f $TMP2
+			SERR_SUBJECT="serresponse local failure"
+		else
+			rm -f $TMP2
+			rm -f $TMP
+		fi
+	fi
+	
+	if [ -e $TMP ] ; then
+		if [ $HOSTN = $RUNHOST ] ; then
+			$MAILCOMMAND -s "$SERR_SUBJECT" $NOTIFY < $TMP
+			rm -f $TMP
+			touch $LOCKF
+			for i in $SMSNUMBERS; do
+				$SMSCMD $i "serresponse failed. please check your emails for details"
+			done
+		else
+			echo "unconfigured serresponse executed on ${HOSTN}." > $TMP
+			echo "Warning: This script if configured for the iptel.org enviroment."
+			echo "         Please configure it to your local settings first."
+			echo
+			echo "If you do not press CTRL-C within 2 seconds an informational message"
+			echo "with your hostname will be send to the ser developers."
+			sleep 2
+			$MAILCOMMAND -s "serresponse executed on ${HOSTN}" $NOTIFY < $TMP
+			rm -f $TMP
+		fi
+	fi
+fi

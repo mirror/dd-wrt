@@ -1,0 +1,28 @@
+#! /bin/sh
+
+# bootstrap - Execute relevant autotools scripts 
+
+# After running this script the directory is ready for distribution as
+# a tarball. It should also be executed before checking milestones
+# into CVS.
+
+# After executing this script the project can be build by executing:
+# ./configure
+# make
+# make install
+
+find . -exec chmod go-w '{}' \;
+
+aclocal
+autoheader
+touch config.h.in
+automake
+autoconf
+./configure
+make clean
+
+rm config.status
+rm libtool
+rm -r autom4te.cache/
+
+

@@ -1,0 +1,9 @@
+CONFIG_IP_NF_TARGET_REJECT
+NETLINK target support
+CONFIG_IP_NF_TARGET_NETLINK
+  The NETLINK target allows you to recieve packets in userspace via
+  the kernel firewall netlink socket. Apps such as fwmon
+  (http://firestorm.geek-ware.co.uk) can then recieve and dislpay
+  these packets. This option is basically a re-implementation of the
+  ipchains -o option.
+

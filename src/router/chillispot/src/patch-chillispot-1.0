@@ -1,0 +1,127 @@
+diff -aur chilli.c chilli.c
+--- old/chilli.c	2005-10-07 16:39:26.775158880 +0200
++++ new/chilli.c	2005-10-07 16:40:09.986589744 +0200
+@@ -3071,6 +3071,15 @@
+   /* If IP was requested before authentication it was UAM */
+   if (appconn->dnprot == DNPROT_DHCP_NONE)
+     appconn->dnprot = DNPROT_UAM;
++  /* ALPAPAD */
++  /* Add routing entry ;-) */
++  if(ipm->inuse == 2)
++  {
++      struct in_addr mask;
++      mask.s_addr = 0xffffffff;
++      printf("Adding route: %d\n", tun_addroute(tun,addr,&appconn->ourip,&mask));
++  }
++
+ 
+   return 0;
+ }
+@@ -3150,11 +3159,20 @@
+ 
+   conn->authstate = DHCP_AUTH_NONE; /* TODO: Redundant */
+ 
+-  if (appconn->uplink)
++  /* ALPAPAD */
++  if (appconn->uplink) {
++    struct ippoolm_t *member;
++    member = (struct ippoolm_t *) appconn->uplink;
++    if(member->inuse  == 2) {
++         struct in_addr mask;
++         mask.s_addr = 0xffffffff;
++         printf("Removing route: %d\n", tun_delroute(tun,&member->addr,&appconn->ourip,&mask,1));
++    }
+     if (ippool_freeip(ippool, (struct ippoolm_t *) appconn->uplink)) {
+       sys_err(LOG_ERR, __FILE__, __LINE__, 0,
+ 	      "ippool_freeip() failed!");
+     }
++    }
+   
+   (void) freeconn(appconn);
+ 
+diff -aur dhcp.c dhcp.c
+--- old/dhcp.c	2005-10-07 16:39:32.583275912 +0200
++++ new/dhcp.c	2005-10-07 16:40:14.231944352 +0200
+@@ -2027,7 +2027,21 @@
+     ourip.s_addr = conn->ourip.s_addr;
+   }
+   else {
+-    if (this->debug) printf("Address not found\n");
++    /* ALPAPAD */
++    struct in_addr reqaddr;
++    /* Get local copy */
++    memcpy(&reqaddr.s_addr, &pack->iph.saddr, DHCP_IP_ALEN);
++    if (this->debug) printf("Address not found (%s)\n",inet_ntoa(reqaddr));
++    /* Allocate new connection */
++    if (dhcp_newconn(this, &conn, pack->ethh.src))
++      return 0; /* Out of connections */
++
++    /* Request an IP address */
++    if (conn->authstate == DHCP_AUTH_NONE) {
++       this->cb_request(conn,&reqaddr);
++    }
++  
++  
+     ourip.s_addr = this->ourip.s_addr;
+     
+     /* Do we allow dynamic allocation of IP addresses? */
+@@ -2263,15 +2277,24 @@
+ 
+   /* Check to see if we know MAC address. */
+   if (dhcp_hashget(this, &conn, pack->ethh.src)) {
+-    if (this->debug) printf("Address not found\n");
++    /* ALPAPAD */
++    struct in_addr reqaddr;
++    /* Get local copy */
++    memcpy(&reqaddr.s_addr, &pack->arp.spa, DHCP_IP_ALEN);
++    if (this->debug) printf("Address not found (%s)\n",inet_ntoa(reqaddr));
++    /* Allocate new connection */
++    if (dhcp_newconn(this, &conn, pack->ethh.src))
++      return 0; /* Out of connections */
++
++    /* Request an IP address */
++    if (conn->authstate == DHCP_AUTH_NONE) {
++       this->cb_request(conn,&reqaddr);
++    }
++  
+     
+     /* Do we allow dynamic allocation of IP addresses? */
+     if (!this->allowdyn)  /* TODO: Experimental */
+       return 0; 
+-    
+-    /* Allocate new connection */
+-    if (dhcp_newconn(this, &conn, pack->ethh.src)) /* TODO: Experimental */
+-      return 0; /* Out of connections */
+   }
+   
+   
+@@ -2282,7 +2305,7 @@
+     return 0; /* Only reply if he was allocated an address */
+   }
+   
+-  if (memcmp(&conn->ourip.s_addr, pack->arp.tpa, 4)) {
++  if (!memcmp(&conn->hisip.s_addr, pack->arp.tpa, 4)) {
+     if (this->debug) printf("Did not ask for router address: %.8x - %.2x%.2x%.2x%.2x\n", conn->ourip.s_addr, 
+ 			    pack->arp.tpa[0],
+ 			    pack->arp.tpa[1],
+diff -aur ippool.c ippool.c
+--- old/ippool.c	2005-10-07 16:39:02.693819800 +0200
++++ new/ippool.c	2005-10-07 16:40:19.247181920 +0200
+@@ -393,7 +393,7 @@
+   }
+ 
+   /* If not found yet and dynamic IP then allocate dynamic IP */
+-  if ((!p2) && (!statip)) {
++if ((!p2) && (!statip) && (!addr->s_addr)) {
+     if (!this ->firstdyn) {
+       sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
+ 	      "No more IP addresses available");
+@@ -431,7 +431,7 @@
+   /* It was not possible to allocate from dynamic address pool */
+   /* Try to allocate from static address space */
+ 
+-  if ((addr) && (addr->s_addr) && (statip)) { /* IP address given */
++  if ((addr) && (addr->s_addr)) { /* IP address given */
+     if (!this->firststat) {
+       sys_err(LOG_ERR, __FILE__, __LINE__, 0, 
+ 	      "No more IP addresses available");

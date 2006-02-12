@@ -1,0 +1,81 @@
+.TH RARP 8 "4 Août 1997" "net-tools" "Linux Programmer's Manual"
+.SH NOM
+rarp \- manipule la table système RARP
+.SH SYNOPSIS
+.B "rarp [-V] [--version] [-h] [--help]"
+.br
+.B "rarp -a"
+.br
+.B "rarp [-v] -d nom_d_hote ..."
+.br
+.B "rarp [-v] [-t type] -s nom_d_hote adr_materiel"
+.SH DESCRIPTION
+.B Rarp
+manipule la table RARP du noyau de différentes façons.  Les options de base
+permettent d'effacer une entrée de correspondance d'adresses et d'en
+redéfinir une manuellement.  Pour des besoins de débogage, le programme
+.B rarp
+permet aussi de vider complètement la table RARP.
+.SH OPTIONS
+.TP
+.B \-V
+Affiche la version de RARP utilisé.
+.TP
+.B \-v
+Dit à l'utilisateur ce qui se passe, en étant verbeux.
+.TP
+.B "\-t type"
+En définissant ou lisant la table RARP, ce paramètre optionnel dit à
+.B rarp
+quelles classes d'entrées il doit contrôler.  La valeur par défaut de
+ce paramètre est
+.B ether
+(i.e. code matériel
+.B 0x01
+pour
+.B "IEEE 802.3 10Mbps Ethernet".
+D'autres valeurs doivent correspondre à des technologies réseaux telles que
+.B AX.25 (ax25).
+et
+.B NET/ROM (netrom).
+.TP
+.B "\-a"
+.TP
+.B "\-\-list"
+Liste les entrées de la table RARP.
+.TP
+.B "\-d nom_d_hote"
+.TP
+.B "\-\-delete nom_d_hote"
+Supprime toutes les entrées RARP relatives à l'hôte spécifié.
+.TP
+.B "\-s nom_d_hote adr_materielle"
+.TP
+.B "\-\-set nom_d_hote adr_materielle"
+Crée manuellement une correspondance d'adresses RARP pour l'hôte
+.B nom_d_hôte
+avec l'adresse matérielle
+.B adr_materielle
+. Le format de l'adresse matérielle est dépendant du matériel,
+mais pour la plupart on peut considérer que la présentation classique
+peut être utilisée.  Pour la classe Ethernet, c'est 6 octets en hexadécimal,
+séparés par des double-points.
+
+.SH ATTENTION
+Certains systèmes (notamment des vieux Sun's) supposent que l'hôte
+répondant à une requête RARP peut aussi fournir d'autres services
+de boot à distance. Par conséquent n'ajoutez jamais
+d'entrées RARP à la légère à moins que vous souhaitiez affronter la
+colère de votre administrateur réseau.
+.SH FICHIERS
+.I /proc/net/rarp,
+.SH VOIR AUSSI
+arp(8), route(8), ifconfig(8), netstat(8)
+.SH AUTEURS
+Ross D. Martin, <martin@trcsun3.eas.asu.edu>
+.br
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Phil Blundell, <Philip.Blundell@pobox.com>
+.SH TRADUCTION
+Jean-Michel VANSTEENE (vanstee@worldnet.fr)

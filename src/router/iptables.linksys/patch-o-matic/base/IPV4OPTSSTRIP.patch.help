@@ -1,0 +1,16 @@
+Author: Fabrice MARIE <fabrice@netfilter.org>
+Status: Works For Me.
+
+This option adds CONFIG_IP_NF_TARGET_IPV4OPTSSTRIP, which supplies a target
+module that will allow you to strip all the IP options from a packet.
+
+The target doesn't take any option, and therefore is extremly easy to use :
+
+# iptables -t mangle -A PREROUTING -j IPV4OPTSSTRIP
+# iptables -t mangle --list -n
+Chain PREROUTING (policy ACCEPT)
+target     prot opt source               destination
+IPV4OPTSSTRIP  all  --  0.0.0.0/0            0.0.0.0/0
+
+Chain OUTPUT (policy ACCEPT)
+target     prot opt source               destination

@@ -1,0 +1,322 @@
+#!/bin/sh
+echo Content-type: text/html
+echo
+
+cat<<EOF
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<html>
+  <head>
+    <title>Status of $(nvram get lan_ipaddr)</title>
+
+    <meta content="text/html; charset=iso-8559-1" http-equiv="Content-Type" />
+
+    <link href="mf.css" rel="StyleSheet" type="text/css" />
+
+    <script language="JavaScript" type="text/javascript"><!--
+function navarr(){}
+navset=new navarr();
+navres=new navarr();
+
+function set(idx){
+  if(!!navset[idx]){
+    document.images[idx].src=navset[idx].src;
+  }
+}
+
+function res(idx){
+  if(!!navres[idx]){
+    document.images[idx].src=navres[idx];
+  }
+}
+
+function ini() {
+  if (!!document.images){
+    for(var idx=0; idx<document.images.length; idx++){
+      var src=document.images[idx].src;
+      var pos=src.indexOf('_white.gif');
+      if (0<pos) {
+        navres[idx]=src;
+        src=src.substring(0, src.indexOf('_white.gif'))+'_red.gif';
+        navset[idx]=new Image(document.images[idx].width, document.images[idx].height);
+        navset[idx].src=src;
+        document.images[idx].onmouseover=new Function("if(!!window.set)set("+idx+");");
+        document.images[idx].onmouseout=new Function("if(!!window.res)res("+idx+");");
+      }
+      else if (!document.images[idx].mozbug && !!src.search &&
+        0<=src.search(new RegExp('progress[0-9]+\\.gif$')))
+      {
+        document.images[idx].mozbug=1;
+        document.images[idx].src='';
+        document.images[idx].src=src;
+      }
+    }
+  }
+}
+//--></script>
+  </head>
+
+  <body onload="if(null!=window.ini)window.ini()"><table border="0"
+  cellpadding="0" cellspacing="0" class="body"><tbody><tr><td class="yellow"
+  colspan="5" height="19"><span class="yellow"><a
+  class="yellow" href="mf.html">Home</a></span><!--<img alt=""
+  height="10" hspace="2" src="images/vertbar.gif" width="1" /><span
+  class="yellow"><a class="yellow" href="cgi-bin-contact.html">Contact</a></span>--></td></tr><tr><td
+  height="5" width="150"></td><td height="5" width="5"> </td><td
+  height="5"></td><td height="5" width="5"></td><td height="5" width="150"></td></tr><tr><td
+  height="33" width="150"></td><td height="33" width="5"></td><td
+  align="right" height="33"><img alt="" height="33"
+  src="images/lgo_mf_1l.gif" width="106" /></td><td align="right" height="33"
+  width="5"><img alt="" height="33" src="images/lgo_mf_1m.gif" width="5" /></td><td
+  height="33" width="150"><img alt="" height="33" src="images/lgo_mf_1r.gif"
+  width="150" /></td></tr><tr><td class="magenta" colspan="4" height="19"> </td><td
+  class="magenta" height="19" width="150"><img alt="" height="19"
+  src="images/lgo_mf_2.gif" width="150" /></td></tr><tr><td height="5"
+  width="150"></td><td height="5" width="5"></td><td height="5"></td><td
+  height="5" width="5"></td><td class="yellow" height="5" rowspan="2"
+  valign="top" width="150"><img alt="" height="94" src="images/lgo_mf_3.gif"
+  width="150" /></td></tr><tr><td class="yellow" valign="top" width="150"><table
+  border="0" cellpadding="0" cellspacing="7" width="150">
+  <tbody><tr><td><h1 class="yellow">Navigation</h1></td></tr>
+  <tr><td><div class="yellow"><a class="yellow" href="cgi-bin-mf-phonebook.html">Phonebook</a></div></td></tr>
+  <tr><td><div class="yellow"><a class="yellow" href="cgi-bin-mf-status.html">Status</a></div></td></tr>
+  </tbody></table></td><td
+  valign="top" width="5"></td><td valign="top">
+
+
+<script language="JavaScript" type="text/javascript"><!--
+function help(e) {
+  if (!e) e = event;
+  // (virt)KeyVal is Konqueror, charCode is Moz/Firefox, else MSIE, Netscape, Opera
+  if (26 == e.virtKeyVal || !e.keyVal && !e.charCode && 112 == (e.which || e.keyCode)) {
+    var o = null;
+    if (e.preventDefault) {
+      if (e.cancelable) e.preventDefault();
+      o = e.target;
+    }
+    else {
+      e.cancelBubble = true;
+      o = e.srcElement;
+    }
+    while(o && '' == o.title) o = o.parentNode;
+    if (o) alert(o.title);
+  }
+}
+if (document.all) {
+  document.onkeydown = help;
+  document.onhelp = function(){return false;}
+}
+else {
+  document.onkeypress = help;
+}
+//--></script>
+EOF
+
+if [ "$REQUEST_METHOD" = "POST" ]; then
+  read QUERY_STRING
+fi
+if [ -n "$QUERY_STRING" ]; then
+  eval $(echo "$QUERY_STRING"|awk -F'&' '{for(i=1;i<=NF;i++){print $i}}')
+fi
+
+
+if [ -n "$post_reboot" ]; then
+
+cat<<EOF
+<h1>Status: Rebooting...</h1>
+  <form action="cgi-bin-mf-status.html" method="post"><table border="1"
+  cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
+EOF
+
+echo "Your router is now rebooting.<br>If you reload this page another reboot will be initiated!"
+sh -c "sleep 2;reboot">/dev/null 2>&1 &
+
+cat<<EOF
+</td></tr><tr><td> </td></tr><tr><td><input
+  name="post_overview"
+  title="Overview"
+  type="submit" value="Overview" />   <input
+  name="post_route"
+  title="Routing Table"
+  type="submit" value="Routing Table" />   <input
+  name="post_restart"
+  title="SER Restart"
+  type="submit" value="Restart SER" />   <input
+  name="post_reboot"
+  title="Reboot Router"
+  type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
+EOF
+
+
+elif [ -n "$post_route" ]; then
+
+cat<<EOF
+<h1>Status: Routing Table</h1>
+  <form action="cgi-bin-mf-status.html" method="post"><table border="1"
+  cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
+EOF
+
+route -n|awk '
+function td(s) {
+  printf("<TD ALIGN="left" STYLE=\"padding:0 2 0 2;font-size:9px;\">%s</TD>", s);
+}
+function ip(s) {
+#  if(s!~/\.0$/) {
+#    td(sprintf("<A HREF=\"http://%s/\">%s</A>", s, s));
+#  }
+#  else {
+    td(s);
+#  }
+}
+BEGIN {
+  print "<TABLE BORDER=\"0\" CELLPADDING=\"3\" CELLSPACING=\"1\">";
+}
+/^[0-9]/ {
+  printf "<TR>";
+  ip($1);
+  ip($2);
+  for(i=3;i<=NF;i++) td($i);
+  printf "</TR>\n";
+}
+/^Destination/ {
+  printf "<TR>";
+  for(i=1;i<=NF;i++) printf("<TH ALIGN=\"left\" STYLE=\"padding:0 2 0 2;\">%s</TH>", $i);
+  printf "</TR>\n";
+}
+END {
+  print "</TABLE>";
+}'
+
+cat<<EOF
+</td></tr><tr><td> </td></tr><tr><td><input
+  name="post_overview"
+  title="Overview"
+  type="submit" value="Overview" />   <input
+  name="post_route"
+  title="Routing Table"
+  type="submit" value="Routing Table" />   <input
+  name="post_restart"
+  title="SER Restart"
+  type="submit" value="Restart SER" />   <input
+  name="post_reboot"
+  title="Reboot Router"
+  type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
+EOF
+
+elif [ -n "$post_restart" ]; then
+
+cat<<EOF
+<h1>Status: SER Restart</h1>
+  <form action="cgi-bin-mf-status.html" method="post"><table border="1"
+  cellpadding="0" cellspacing="0" class="form"><tbody><!--<tr><th>SSID</th><th>Channel</th><th>Ad
+  Hoc</th><th>Signal</th><th>WEP</th><th>Max.</th><th>BSSID</th></tr><tr>--><td
+  colspan="7">
+EOF
+
+if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+serctl restart ser|awk 'sub("", "<br>") {print}'; sleep 3s;
+
+cat<<EOF
+</td></tr><tr><td colspan="7"><input name="post_overview"
+  title="Overview"
+  type="submit" value="Overview" />   <input
+  name="post_route"
+  title="Routing Table"
+  type="submit" value="Routing Table" />   <input
+  name="post_restart"
+  title="Restart SER"
+  type="submit" value="Restart SER" />   <input
+  name="post_reboot"
+  title="Reboot Router"
+  type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
+EOF
+
+else
+
+cat<<EOF
+<h1>Status: Overview</h1> <form
+  action="cgi-bin-mf-status.html" method="post"><table border="1" cellpadding="0"
+  cellspacing="0" class="form" width="548"><tbody>
+  <tr><td>SER Stats:</td><td>$(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  echo "Message type: Occurances";
+  serctl fifo sl_stats | awk 'sub("", "<br>") {print}';)</td></tr>
+  
+  <!--<tr><td>SER Userlist:</td><td>
+  Address of Record / Contact $(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  serctl ul show| grep "^aor       \|^Contact\|^Expires\|^Call-ID\|^User-Agent" | \
+  sed -e "s/^\(aor \)/======================================\n\1/" | awk 'sub("", "<br>") {print}';)</td></tr>-->
+    
+  <tr><td>SER processes:</td><td>First Receiver Process per IP:Port $(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi ;
+    serctl ps| grep child=0\ sock=0 | awk 'sub("", "<br>") {print}';
+    serctl ps| grep child=0\ sock=1 | awk 'sub("", "<br>") {print}';
+    serctl ps| grep child=0\ sock=2 | awk 'sub("", "<br>") {print}';)</td></tr>
+  <tr><td>RTPproxy:</td><td>
+    $(ps | grep 'rtpproxy -l' | grep -v 'grep' | cut -f2 -d'l';)
+  <tr><td>lan address:</td><td>
+    $( ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}')
+  </td></tr>
+  <tr><td>wan address:</td><td>
+    $(if [ $(nvram get wan_proto) = pppoe ] ; then
+      if [ "`ifconfig | grep ppp0`" ]; then
+        echo $(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print $1}')
+      else echo "ppp0 interface not up"                  
+      fi
+     else
+      echo $(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print $1}')
+    fi)
+  <tr><td>Device Info:</td><td>Boardtype:  $(nvram get boardtype), Boardnum: $(nvram get boardnum)</td></tr>
+  <tr><td>SER Uptime:</td><td>$(if [ $(nvram get sip_domain) ]; 
+    then export SIP_DOMAIN=$(nvram get sip_domain);
+    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
+  echo "Please note: Automatic SER restarts may be due to changing network interface addresses";    
+  serctl fifo uptime | awk 'sub("", "<br>") {print}';)</td></tr>
+  <tr><td>Router Uptime:</td><td>$(uptime)</td></tr>
+  <tr><td colspan="2"> </td></tr>
+  <tr><td colspan="2"><input
+  name="post_overview"
+  title="Overview"
+  type="submit" value="Reload" />   <input
+  name="post_route"
+  title="Routing Table"
+  type="submit" value="Routing Table" />   <input
+  name="post_restart"
+  title="SER Restart"
+  type="submit" value="Restart SER" />   <input
+  name="post_reboot"
+  title="Reboot Router"
+  type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
+EOF
+
+fi
+
+cat<<EOF
+</td><td valign="top"
+  width="5"></td></tr><tr><td height="5" width="150"></td><td height="5"
+  width="5"></td><td height="5"></td><td height="5" width="5"></td><td
+  height="5" width="150"></td></tr><tr><td class="magenta" colspan="4"
+  height="19" width="150"><address class="magenta">Changed: May 6th 2005</address></td><td
+  class="magenta" height="19" width="150"><span
+  class="magenta"><a class="magenta"
+  href="javascript:location.href=location.href;"><!--<img alt="" border="0"
+  height="14" src="images/btn_top_arrow.gif" width="14" />-->Top of page</a></span></td></tr></tbody></table>
+  <center><font size=-2>
+  Copyright &copy 2005 <a href="http://sipath.sourceforge.net" target="new">SIP at Home Project</a> Crew - All rights reserved.<br>
+  Logos and trademarks are the property of their respective owners.<br>
+  This web page is licensed under the <a
+  href="http://www.gnu.org/licenses/fdl.html" target="new">GNU Free Documentation License</a><br>
+  The software promoted on this website is licensed under the <a
+  href="http://www.gnu.org/licenses/gpl.html" target="new">GNU General Public License</a><br>
+  Please note that this software is under development <br>
+  and comes with absolutely no warranty, to the extend permitted by applicable law.<br>
+  <a href="http://www.opensource.org/docs/definition.php" target="new">Definition of Open Source</a></font>
+  </center>
+  </body>
+</html>
+EOF

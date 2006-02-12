@@ -1,0 +1,22 @@
+<!-- Acc Module Developer's Guide -->
+
+<chapter>
+    <chapterinfo>
+	<revhistory>
+	    <revision>
+		<revnumber>$Revision: 1.1 $</revnumber>
+		<date>$Date: 2003/07/14 21:03:05 $</date>
+	    </revision>
+	</revhistory>
+    </chapterinfo>
+    <title>Developer's Guide</title>
+    <para>
+	To be done.
+    </para>
+</chapter>
+
+<!-- Keep this element at the end of the file
+Local Variables:
+sgml-parent-document: ("acc.sgml" "book" "chapter")
+End:
+-->

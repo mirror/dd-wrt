@@ -1,0 +1,3 @@
+ifeq (-s adm_hw.o adm_procfs.o adm_init.o adm_ioctl.o adm_utils.o,$(strip $(subst $(comma),:,$(LDFLAGS) $(EXTRA_LDFLAGS) $(obj-y))))
+FILES_FLAGS_UP_TO_DATE += adm6996.o
+endif

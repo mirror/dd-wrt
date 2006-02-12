@@ -1,0 +1,487 @@
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/include/linux/netfilter.h linux-2.4.4-dropped/include/linux/netfilter.h
+--- linux-2.4.4-plain/include/linux/netfilter.h	Mon Apr 30 00:15:33 2001
++++ linux-2.4.4-dropped/include/linux/netfilter.h	Wed May  2 20:00:50 2001
+@@ -41,6 +41,13 @@
+ 			       const struct net_device *out,
+ 			       int (*okfn)(struct sk_buff *));
+ 
++/* Simple drop the packet fn for NF_HOOK(). */
++extern inline int nf_drop_okfn(struct sk_buff *skb)
++{
++	kfree_skb(skb);
++	return 0;
++}
++
+ struct nf_hook_ops
+ {
+ 	struct list_head list;
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/include/linux/netfilter_ipv4/ip_nat.h linux-2.4.4-dropped/include/linux/netfilter_ipv4/ip_nat.h
+--- linux-2.4.4-plain/include/linux/netfilter_ipv4/ip_nat.h	Sun Apr 29 03:29:35 2001
++++ linux-2.4.4-dropped/include/linux/netfilter_ipv4/ip_nat.h	Wed May  2 20:00:50 2001
+@@ -111,10 +111,13 @@
+ 	struct ip_nat_seq seq[IP_CT_DIR_MAX];
+ };
+ 
+-/* Set up the info structure to map into this range. */
++/* Set up the info structure to map into this range.  Returns verdict. */
+ extern unsigned int ip_nat_setup_info(struct ip_conntrack *conntrack,
+ 				      const struct ip_nat_multi_range *mr,
+-				      unsigned int hooknum);
++				      unsigned int hooknum,
++				      const struct net_device *in,
++				      const struct net_device *out,
++				      struct sk_buff *skb);
+ 
+ /* Is this tuple already taken? (not by us)*/
+ extern int ip_nat_used_tuple(const struct ip_conntrack_tuple *tuple,
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/include/linux/netfilter_ipv4.h linux-2.4.4-dropped/include/linux/netfilter_ipv4.h
+--- linux-2.4.4-plain/include/linux/netfilter_ipv4.h	Mon Apr 30 00:15:33 2001
++++ linux-2.4.4-dropped/include/linux/netfilter_ipv4.h	Wed May  2 20:00:50 2001
+@@ -47,7 +47,9 @@
+ #define NF_IP_LOCAL_OUT		3
+ /* Packets about to hit the wire. */
+ #define NF_IP_POST_ROUTING	4
+-#define NF_IP_NUMHOOKS		5
++/* `Interesting' packets we're about to drop: nfmark holds nf_ip_dropreason */
++#define NF_IP_DROPPING		5
++#define NF_IP_NUMHOOKS		6
+ 
+ enum nf_ip_hook_priorities {
+ 	NF_IP_PRI_FIRST = INT_MIN,
+@@ -57,6 +59,18 @@
+ 	NF_IP_PRI_FILTER = 0,
+ 	NF_IP_PRI_NAT_SRC = 100,
+ 	NF_IP_PRI_LAST = INT_MAX,
++};
++
++enum nf_ip_dropreason {
++	NF_IP_DROP_NSA_WATCHING,        /* `They' didn't like the packet */
++	NF_IP_DROP_INVALID_REDIRECT,    /* Invalid redirect */
++	NF_IP_DROP_IGNORES_REDIRECT,    /* Not heeding redirects */
++	NF_IP_DROP_MARTIAN_SOURCE,      /* Unexpected source address */
++	NF_IP_DROP_MARTIAN_DESTINATION, /* Unexpected destination address */
++	NF_IP_DROP_NAT_UNTRACKED,       /* NAT dropped untracked packet */
++	NF_IP_DROP_NAT_NO_UNIQUE_TUPLE, /* NAT couldn't map connection */
++	NF_IP_DROP_NAT_FTP_ERROR,       /* NAT on malformed FTP packet */
++	NF_IP_DROP_MAX
+ };
+ 
+ #ifdef CONFIG_NETFILTER_DEBUG
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/include/net/route.h linux-2.4.4-dropped/include/net/route.h
+--- linux-2.4.4-plain/include/net/route.h	Mon Apr 30 00:13:03 2001
++++ linux-2.4.4-dropped/include/net/route.h	Wed May  2 20:00:50 2001
+@@ -97,7 +97,7 @@
+ struct in_device;
+ extern void		ip_rt_init(void);
+ extern void		ip_rt_redirect(u32 old_gw, u32 dst, u32 new_gw,
+-				       u32 src, u8 tos, struct net_device *dev);
++				       u32 src, u8 tos, struct sk_buff *skb);
+ extern void		ip_rt_advice(struct rtable **rp, int advice);
+ extern void		rt_cache_flush(int how);
+ extern int		ip_route_output_key(struct rtable **, const struct rt_key *key);
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/core/netfilter.c linux-2.4.4-dropped/net/core/netfilter.c
+--- linux-2.4.4-plain/net/core/netfilter.c	Sun Apr 29 03:29:35 2001
++++ linux-2.4.4-dropped/net/core/netfilter.c	Wed May  2 20:00:50 2001
+@@ -559,6 +559,14 @@
+    with it. */
+ void (*ip_ct_attach)(struct sk_buff *, struct nf_ct_info *);
+ 
++/* Embodyment of drop the packet fn for NF_HOOK() (sometimes this
++   address is taken) */
++int nf_drop_okfn(struct sk_buff *skb)
++{
++	kfree_skb(skb);
++	return 0;
++}
++
+ void __init netfilter_init(void)
+ {
+ 	int i, h;
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/icmp.c linux-2.4.4-dropped/net/ipv4/icmp.c
+--- linux-2.4.4-plain/net/ipv4/icmp.c	Sun Apr 29 03:29:35 2001
++++ linux-2.4.4-dropped/net/ipv4/icmp.c	Wed May  2 20:00:50 2001
+@@ -705,7 +705,7 @@
+ 			 
+ 		case ICMP_REDIR_HOST:
+ 		case ICMP_REDIR_HOSTTOS:
+-			ip_rt_redirect(skb->nh.iph->saddr, ip, skb->h.icmph->un.gateway, iph->saddr, iph->tos, skb->dev);
++			ip_rt_redirect(skb->nh.iph->saddr, ip, skb->h.icmph->un.gateway, iph->saddr, iph->tos, skb);
+ 			break;
+ 		default:
+ 			break;
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/ip_fw_compat_masq.c linux-2.4.4-dropped/net/ipv4/netfilter/ip_fw_compat_masq.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/ip_fw_compat_masq.c	Mon Sep 18 19:09:55 2000
++++ linux-2.4.4-dropped/net/ipv4/netfilter/ip_fw_compat_masq.c	Wed May  2 20:00:50 2001
+@@ -85,7 +85,8 @@
+ 			     newsrc, newsrc,
+ 			     { htons(61000) }, { htons(65095) } } } });
+ 
+-		ret = ip_nat_setup_info(ct, &range, NF_IP_POST_ROUTING);
++		ret = ip_nat_setup_info(ct, &range, NF_IP_POST_ROUTING,
++					NULL, dev, *pskb);
+ 		if (ret != NF_ACCEPT) {
+ 			WRITE_UNLOCK(&ip_nat_lock);
+ 			return ret;
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/ip_nat_core.c linux-2.4.4-dropped/net/ipv4/netfilter/ip_nat_core.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/ip_nat_core.c	Sun Apr 29 03:29:36 2001
++++ linux-2.4.4-dropped/net/ipv4/netfilter/ip_nat_core.c	Wed May  2 20:00:50 2001
+@@ -500,7 +500,10 @@
+ unsigned int
+ ip_nat_setup_info(struct ip_conntrack *conntrack,
+ 		  const struct ip_nat_multi_range *mr,
+-		  unsigned int hooknum)
++		  unsigned int hooknum,
++		  const struct net_device *in,
++		  const struct net_device *out,
++		  struct sk_buff *skb)
+ {
+ 	struct ip_conntrack_tuple new_tuple, inv_tuple, reply;
+ 	struct ip_conntrack_tuple orig_tp;
+@@ -551,7 +554,12 @@
+ 				      hooknum)) {
+ 			DEBUGP("ip_nat_setup_info: Can't get unique for %p.\n",
+ 			       conntrack);
+-			return NF_DROP;
++			skb->nfmark = NF_IP_DROP_NAT_NO_UNIQUE_TUPLE;
++			NF_HOOK(PF_INET, NF_IP_DROPPING, skb,
++				(struct net_device *)in,
++				(struct net_device *)out,
++				nf_drop_okfn);
++			return NF_STOLEN;
+ 		}
+ 
+ #if 0
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/ip_nat_ftp.c linux-2.4.4-dropped/net/ipv4/netfilter/ip_nat_ftp.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/ip_nat_ftp.c	Sun Apr 29 03:29:36 2001
++++ linux-2.4.4-dropped/net/ipv4/netfilter/ip_nat_ftp.c	Wed May  2 20:00:50 2001
+@@ -94,8 +94,8 @@
+ 			= ((union ip_conntrack_manip_proto)
+ 				{ htons(ftpinfo->port) });
+ 	}
+-	*verdict = ip_nat_setup_info(ct, &mr, hooknum);
+-
++	*verdict = ip_nat_setup_info(ct, &mr, hooknum, (*pskb)->dev, NULL,
++				     *pskb);
+ 	return 1;
+ }
+ 
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/ip_nat_rule.c linux-2.4.4-dropped/net/ipv4/netfilter/ip_nat_rule.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/ip_nat_rule.c	Sun Apr 29 03:29:36 2001
++++ linux-2.4.4-dropped/net/ipv4/netfilter/ip_nat_rule.c	Wed May  2 20:00:50 2001
+@@ -127,7 +127,7 @@
+ 	IP_NF_ASSERT(ct && (ctinfo == IP_CT_NEW || ctinfo == IP_CT_RELATED));
+ 	IP_NF_ASSERT(out);
+ 
+-	return ip_nat_setup_info(ct, targinfo, hooknum);
++	return ip_nat_setup_info(ct, targinfo, hooknum, in, out, *pskb);
+ }
+ 
+ static unsigned int ipt_dnat_target(struct sk_buff **pskb,
+@@ -148,7 +148,7 @@
+ 	/* Connection must be valid and new. */
+ 	IP_NF_ASSERT(ct && (ctinfo == IP_CT_NEW || ctinfo == IP_CT_RELATED));
+ 
+-	return ip_nat_setup_info(ct, targinfo, hooknum);
++	return ip_nat_setup_info(ct, targinfo, hooknum, in, out, *pskb);
+ }
+ 
+ static int ipt_snat_checkentry(const char *tablename,
+@@ -224,7 +224,10 @@
+ static inline unsigned int
+ alloc_null_binding(struct ip_conntrack *conntrack,
+ 		   struct ip_nat_info *info,
+-		   unsigned int hooknum)
++		   unsigned int hooknum,
++		   const struct net_device *in,
++		   const struct net_device *out,
++		   struct sk_buff *skb)
+ {
+ 	/* Force range to this IP; let proto decide mapping for
+ 	   per-proto parts (hence not IP_NAT_RANGE_PROTO_SPECIFIED).
+@@ -239,7 +242,7 @@
+ 
+ 	DEBUGP("Allocating NULL binding for %p (%u.%u.%u.%u)\n", conntrack,
+ 	       NIPQUAD(ip));
+-	return ip_nat_setup_info(conntrack, &mr, hooknum);
++	return ip_nat_setup_info(conntrack, &mr, hooknum, in, out, skb);
+ }
+ 
+ static inline int call_expect(const struct ip_nat_expect *i,
+@@ -278,9 +281,11 @@
+ 	}
+ 	ret = ipt_do_table(pskb, hooknum, in, out, &nat_table, NULL);
+ 	if (ret == NF_ACCEPT) {
+-		if (!(info->initialized & (1 << HOOK2MANIP(hooknum))))
++		if (!(info->initialized & (1 << HOOK2MANIP(hooknum)))) {
+ 			/* NUL mapping */
+-			ret = alloc_null_binding(ct, info, hooknum);
++			ret = alloc_null_binding(ct, info, hooknum, in, out,
++						 *pskb);
++		}
+ 	}
+ 	return ret;
+ }
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/ipt_LOG.c linux-2.4.4-dropped/net/ipv4/netfilter/ipt_LOG.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/ipt_LOG.c	Mon Jan  1 15:54:07 2001
++++ linux-2.4.4-dropped/net/ipv4/netfilter/ipt_LOG.c	Wed May  2 20:00:50 2001
+@@ -281,8 +281,10 @@
+ 	level_string[1] = '0' + (loginfo->level % 8);
+ 	spin_lock_bh(&log_lock);
+ 	printk(level_string);
+-	printk("%sIN=%s OUT=%s ",
+-	       loginfo->prefix,
++	printk("%s", loginfo->prefix);
++	if (userinfo && hooknum == NF_IP_DROPPING)
++		printk("(%s) ", (const char *)userinfo);
++	printk("IN=%s OUT=%s ",
+ 	       in ? in->name : "",
+ 	       out ? out->name : "");
+ 	if (in && !out) {
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/ipt_MASQUERADE.c linux-2.4.4-dropped/net/ipv4/netfilter/ipt_MASQUERADE.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/ipt_MASQUERADE.c	Sun Apr 29 03:29:36 2001
++++ linux-2.4.4-dropped/net/ipv4/netfilter/ipt_MASQUERADE.c	Wed May  2 20:00:50 2001
+@@ -112,7 +112,7 @@
+ 			 mr->range[0].min, mr->range[0].max } } });
+ 
+ 	/* Hand modified range to generic setup. */
+-	return ip_nat_setup_info(ct, &newrange, hooknum);
++	return ip_nat_setup_info(ct, &newrange, hooknum, in, out, *pskb);
+ }
+ 
+ static inline int
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/ipt_REDIRECT.c linux-2.4.4-dropped/net/ipv4/netfilter/ipt_REDIRECT.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/ipt_REDIRECT.c	Tue Jun 20 18:32:27 2000
++++ linux-2.4.4-dropped/net/ipv4/netfilter/ipt_REDIRECT.c	Wed May  2 20:00:50 2001
+@@ -86,7 +86,7 @@
+ 			 mr->range[0].min, mr->range[0].max } } });
+ 
+ 	/* Hand modified range to generic setup. */
+-	return ip_nat_setup_info(ct, &newrange, hooknum);
++	return ip_nat_setup_info(ct, &newrange, hooknum, in, out, *pskb);
+ }
+ 
+ static struct ipt_target redirect_reg
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/netfilter/iptable_drop.c linux-2.4.4-dropped/net/ipv4/netfilter/iptable_drop.c
+--- linux-2.4.4-plain/net/ipv4/netfilter/iptable_drop.c	Wed Dec 31 21:00:00 1969
++++ linux-2.4.4-dropped/net/ipv4/netfilter/iptable_drop.c	Wed May  2 20:00:50 2001
+@@ -0,0 +1,123 @@
++/*
++ * Table for dropped packets.
++ *
++ * Copyright (C) 2000 Paul `Rusty' Russell
++ */
++#include <linux/module.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++#define DROPPED_VALID_HOOKS (1 << NF_IP_DROPPING)
++
++/* Standard entry. */
++struct ipt_standard
++{
++	struct ipt_entry entry;
++	struct ipt_standard_target target;
++};
++
++struct ipt_error_target
++{
++	struct ipt_entry_target target;
++	char errorname[IPT_FUNCTION_MAXNAMELEN];
++};
++
++struct ipt_error
++{
++	struct ipt_entry entry;
++	struct ipt_error_target target;
++};
++
++static struct
++{
++	struct ipt_replace repl;
++	struct ipt_standard entries[1];
++	struct ipt_error term;
++} initial_table __initdata
++= { { "drop", DROPPED_VALID_HOOKS, 2,
++      sizeof(struct ipt_standard) + sizeof(struct ipt_error),
++      { [NF_IP_DROPPING] 0 },
++      { [NF_IP_DROPPING] 0 },
++      0, NULL, { } },
++    {
++	    /* DROPPING */
++	    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ipt_entry),
++		sizeof(struct ipt_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IPT_ALIGN(sizeof(struct ipt_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } }
++    },
++    /* ERROR */
++    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++	0,
++	sizeof(struct ipt_entry),
++	sizeof(struct ipt_error),
++	0, { 0, 0 }, { } },
++      { { { { IPT_ALIGN(sizeof(struct ipt_error_target)), IPT_ERROR_TARGET } },
++	  { } },
++	"ERROR"
++      }
++    }
++};
++
++static struct ipt_table packet_dropped
++= { { NULL, NULL }, "drop", &initial_table.repl,
++    DROPPED_VALID_HOOKS, RW_LOCK_UNLOCKED, NULL };
++
++static const char *dropnames[NF_IP_DROP_MAX]
++= { [NF_IP_DROP_IGNORES_REDIRECT] = "Invalid redirect",
++    [NF_IP_DROP_MARTIAN_SOURCE] = "Unexpected source address",
++    [NF_IP_DROP_MARTIAN_DESTINATION] = "Unexpected destination address",
++    [NF_IP_DROP_NAT_UNTRACKED] = "NAT dropped untracked packet",
++    [NF_IP_DROP_NAT_NO_UNIQUE_TUPLE] = "NAT couldn't map connection",
++    [NF_IP_DROP_NAT_FTP_ERROR] = "NAT failed on malformed FTP packet",
++};
++
++/* The work comes in here from netfilter.c. */
++static unsigned int
++ipt_hook(unsigned int hook,
++	 struct sk_buff **pskb,
++	 const struct net_device *in,
++	 const struct net_device *out,
++	 int (*okfn)(struct sk_buff *))
++{
++	const char *reason = NULL;
++
++	if ((*pskb)->nfmark < NF_IP_DROP_MAX)
++		reason = dropnames[(*pskb)->nfmark];
++
++	return ipt_do_table(pskb, hook, in, out, &packet_dropped, (void *)reason);
++}
++
++static struct nf_hook_ops ipt_ops
++= { { NULL, NULL }, ipt_hook, PF_INET, NF_IP_DROPPING, NF_IP_PRI_FILTER };
++
++static int __init init(void)
++{
++	int ret;
++
++	/* Register table */
++	ret = ipt_register_table(&packet_dropped);
++	if (ret < 0) {
++		printk("iptable_drop: ipt_register_table failed!\n");
++		return ret;
++	}
++
++	/* Register hooks */
++	ret = nf_register_hook(&ipt_ops);
++	if (ret < 0) {
++		printk("iptable_drop: nf_register_hook failed!\n");
++		ipt_unregister_table(&packet_dropped);
++	}
++	return ret;
++}
++
++static void __exit fini(void)
++{
++	nf_unregister_hook(&ipt_ops);
++	ipt_unregister_table(&packet_dropped);
++}
++
++module_init(init);
++module_exit(fini);
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/ipv4/route.c linux-2.4.4-dropped/net/ipv4/route.c
+--- linux-2.4.4-plain/net/ipv4/route.c	Sun Apr 29 03:29:36 2001
++++ linux-2.4.4-dropped/net/ipv4/route.c	Wed May  2 20:00:50 2001
+@@ -711,9 +711,10 @@
+ }
+ 
+ void ip_rt_redirect(u32 old_gw, u32 daddr, u32 new_gw,
+-		    u32 saddr, u8 tos, struct net_device *dev)
++		    u32 saddr, u8 tos, struct sk_buff *skb)
+ {
+ 	int i, k;
++	struct net_device *dev = skb->dev;
+ 	struct in_device *in_dev = in_dev_get(dev);
+ 	struct rtable *rth, **rthp;
+ 	u32  skeys[2] = { saddr, 0 };
+@@ -828,6 +829,17 @@
+ 		       NIPQUAD(old_gw), dev->name, NIPQUAD(new_gw),
+ 		       NIPQUAD(saddr), NIPQUAD(daddr), tos);
+ #endif
++#ifdef CONFIG_NETFILTER
++	if (IN_DEV_LOG_MARTIANS(in_dev)) {
++		/* Send clone through logging */
++		struct sk_buff *nskb = skb_clone(skb, GFP_ATOMIC);
++		if (nskb) {
++			nskb->nfmark = NF_IP_DROP_INVALID_REDIRECT;
++			NF_HOOK(PF_INET, NF_IP_DROPPING, nskb, dev, NULL,
++				nf_drop_okfn);
++		}
++	}
++#endif
+ 	in_dev_put(in_dev);
+ }
+ 
+@@ -909,6 +921,18 @@
+ 				NIPQUAD(rt->rt_src), rt->rt_iif,
+ 				NIPQUAD(rt->rt_dst), NIPQUAD(rt->rt_gateway));
+ #endif
++#ifdef CONFIG_NETFILTER
++		/* We're not dropping, but user will be interested --RR */
++		if (IN_DEV_LOG_MARTIANS(in_dev) &&
++		    rt->u.dst.rate_tokens == ip_rt_redirect_number) {
++			struct sk_buff *nskb = skb_clone(skb, GFP_ATOMIC);
++			if (nskb) {
++				nskb->nfmark = NF_IP_DROP_IGNORES_REDIRECT;
++				NF_HOOK(PF_INET, NF_IP_DROPPING, nskb, NULL, 
++					rt->u.dst.dev, nf_drop_okfn);
++			}
++		}
++#endif
+ 	}
+ out:
+         in_dev_put(in_dev);
+@@ -1511,6 +1535,16 @@
+ 		printk(KERN_WARNING "martian destination %u.%u.%u.%u from %u.%u.%u.%u, dev %s\n",
+ 			NIPQUAD(daddr), NIPQUAD(saddr), dev->name);
+ #endif
++#ifdef CONFIG_NETFILTER
++	{
++		struct sk_buff *nskb = skb_clone(skb, GFP_ATOMIC);
++		if (nskb) {
++			nskb->nfmark = NF_IP_DROP_MARTIAN_SOURCE;
++			NF_HOOK(PF_INET, NF_IP_DROPPING, nskb, dev, NULL,
++				nf_drop_okfn);
++		}
++	}
++#endif
+ e_inval:
+ 	err = -EINVAL;
+ 	goto done;
+@@ -1538,6 +1572,16 @@
+ 					printk(":");
+ 			}
+ 			printk("\n");
++		}
++	}
++#endif
++#ifdef CONFIG_NETFILTER
++	if (IN_DEV_LOG_MARTIANS(in_dev)) {
++		struct sk_buff *nskb = skb_clone(skb, GFP_ATOMIC);
++		if (nskb) {
++			nskb->nfmark = NF_IP_DROP_MARTIAN_SOURCE;
++			NF_HOOK(PF_INET, NF_IP_DROPPING, nskb, dev, NULL,
++				nf_drop_okfn);
+ 		}
+ 	}
+ #endif
+diff -Nru --exclude *~ --exclude *.rej linux-2.4.4-plain/net/netsyms.c linux-2.4.4-dropped/net/netsyms.c
+--- linux-2.4.4-plain/net/netsyms.c	Sun Apr 29 03:29:36 2001
++++ linux-2.4.4-dropped/net/netsyms.c	Wed May  2 20:03:44 2001
+@@ -561,6 +561,7 @@
+ EXPORT_SYMBOL(nf_setsockopt);
+ EXPORT_SYMBOL(nf_getsockopt);
+ EXPORT_SYMBOL(ip_ct_attach);
++EXPORT_SYMBOL(nf_drop_okfn);
+ #endif
+ 
+ EXPORT_SYMBOL(register_gifconf);

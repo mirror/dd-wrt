@@ -1,0 +1,66 @@
+#!/bin/sh
+#
+# adsl                     This script starts or stops an ADSL connection
+#
+# chkconfig: 2345 99 01
+# description: Connects to ADSL provider
+#
+# LIC: GPL
+#
+# Copyright (C) 2000 Roaring Penguin Software Inc.  This software may
+# be distributed under the terms of the GNU General Public License, version
+# 2 or any later version.
+
+# Source function library if it exists
+test -r /etc/rc.d/init.d/functions && . /etc/rc.d/init.d/functions
+
+# From AUTOCONF
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+
+# Paths to programs
+START=@sbindir@/adsl-start
+STOP=@sbindir@/adsl-stop
+STATUS=@sbindir@/adsl-status
+case "$1" in
+    start)
+        echo -n "Bringing up ADSL link"
+
+	$START
+	if [ $? = 0 ] ; then
+		touch /var/lock/subsys/adsl
+	        echo_success
+	else
+		echo_failure
+	fi
+        echo ""
+        ;;
+
+    stop)
+        echo -n "Shutting down ADSL link"
+
+	$STOP > /dev/null 2>&1
+	if [ $? = 0 ] ; then
+		rm -f /var/lock/subsys/adsl
+	        echo_success
+	else
+		echo_failure
+	fi
+        echo ""
+        ;;
+
+    restart)
+	$0 stop
+	$0 start
+	;;
+
+    status)
+	$STATUS
+	;;
+
+    *)
+        echo "Usage: adsl {start|stop|restart|status}"
+        exit 1
+esac
+
+exit 0

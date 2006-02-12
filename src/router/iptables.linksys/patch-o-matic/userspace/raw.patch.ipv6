@@ -1,0 +1,484 @@
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/include/linux/netfilter_ipv6/ip6_tables.h linux-2.4.18-raw/include/linux/netfilter_ipv6/ip6_tables.h
+--- linux-2.4.18-orig/include/linux/netfilter_ipv6/ip6_tables.h	Mon Feb 25 20:38:13 2002
++++ linux-2.4.18-raw/include/linux/netfilter_ipv6/ip6_tables.h	Wed Jun 12 17:17:45 2002
+@@ -451,5 +451,17 @@
+ 
+ #define IP6T_ALIGN(s) (((s) + (__alignof__(struct ip6t_entry)-1)) & ~(__alignof__(struct ip6t_entry)-1))
+ 
++/* Internal packet logging interface */
++extern void (*ip6t_packet_log_fn)(struct sk_buff **pskb,
++				  unsigned int hooknum,
++				  const struct net_device *in,
++				  const struct net_device *out,
++				  const char *prefix);
++
++extern void ip6t_log_packet(struct sk_buff **pskb,
++			    unsigned int hooknum,
++			    const struct net_device *in,
++			    const struct net_device *out,
++			    const char *prefix);
+ #endif /*__KERNEL__*/
+ #endif /* _IP6_TABLES_H */
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv6/netfilter/ip6_tables.c linux-2.4.18-raw/net/ipv6/netfilter/ip6_tables.c
+--- linux-2.4.18-orig/net/ipv6/netfilter/ip6_tables.c	Mon Feb 25 20:38:14 2002
++++ linux-2.4.18-raw/net/ipv6/netfilter/ip6_tables.c	Tue Jul 23 11:22:03 2002
+@@ -7,6 +7,8 @@
+  * 19 Jan 2002 Harald Welte <laforge@gnumonks.org>
+  * 	- increase module usage count as soon as we have rules inside
+  * 	  a table
++ * 8  Jun 2002 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
++ *	- packet logging interface added
+  */
+ #include <linux/config.h>
+ #include <linux/skbuff.h>
+@@ -26,6 +28,16 @@
+ 
+ #define IPV6_HDR_LEN	(sizeof(struct ipv6hdr))
+ 
++#ifdef CONFIG_IP6_NF_TARGET_TRACE_NEEDED
++static const char *hook6names[]
++= { [NF_IP6_PRE_ROUTING]  "PREROUTING",
++    [NF_IP6_LOCAL_IN]     "INPUT",
++    [NF_IP6_FORWARD]      "FORWARD",
++    [NF_IP6_LOCAL_OUT]    "OUTPUT",
++    [NF_IP6_POST_ROUTING] "POSTROUTING",
++};
++#endif
++
+ /*#define DEBUG_IP_FIREWALL*/
+ /*#define DEBUG_ALLOW_ALL*/ /* Useful for remote debugging */
+ /*#define DEBUG_IP_FIREWALL_USER*/
+@@ -121,6 +133,31 @@
+ #define up(x) do { printk("UP:%u:" #x "\n", __LINE__); up(x); } while(0)
+ #endif
+ 
++/* We rely on the LOG targets */
++void (*ip6t_packet_log_fn)(struct sk_buff **pskb,
++			   unsigned int hooknum,
++			   const struct net_device *in,
++			   const struct net_device *out,
++			   const char *prefix) = NULL;
++
++void ip6t_log_packet(struct sk_buff **pskb,
++		     unsigned int hooknum,
++		     const struct net_device *in,
++		     const struct net_device *out,
++		     const char *prefix)
++{
++	static unsigned int reported = 0;
++	
++	if (ip6t_packet_log_fn == NULL) {
++		if (!reported) {
++			printk(KERN_WARNING "ip_tables: can\'t log yet, "
++			       "no backend logging module loaded in!\n");
++			reported++;
++		}
++	} else
++		ip6t_packet_log_fn(pskb, hooknum, in, out, prefix);
++}
++
+ static int ip6_masked_addrcmp(struct in6_addr addr1, struct in6_addr mask,
+ 			      struct in6_addr addr2)
+ {
+@@ -298,6 +335,39 @@
+ 	return (struct ip6t_entry *)(base + offset);
+ }
+ 
++static inline int
++get_chainname_rulenum(struct ip6t_entry *s, struct ip6t_entry *e,
++		      char **chainname, u_int16_t *rulenum)
++{
++	struct ip6t_entry_target *t;
++	
++	(*rulenum)++;
++
++	if (s == e)
++		return 1;
++
++	t = ip6t_get_target(s);
++	if (strcmp(t->u.kernel.target->name, IP6T_ERROR_TARGET) == 0) {
++		*chainname = t->data;
++		(*rulenum) = 0;
++	}
++	
++	return 0;
++}
++
++/* All zeroes == unconditional rule. */
++static inline int
++unconditional(const struct ip6t_ip6 *ipv6)
++{
++	unsigned int i;
++
++	for (i = 0; i < sizeof(*ipv6); i++)
++		if (((char *)ipv6)[i])
++			break;
++
++	return (i == sizeof(*ipv6));
++}
++
+ /* Returns one of the generic firewall policies, like NF_ACCEPT. */
+ unsigned int
+ ip6t_do_table(struct sk_buff **pskb,
+@@ -372,6 +442,32 @@
+ 
+ 			t = ip6t_get_target(e);
+ 			IP_NF_ASSERT(t->u.kernel.target);
++#ifdef CONFIG_IP6_NF_TARGET_TRACE_NEEDED
++			/* The packet traced and the rule isn't an unconditional return/END. */
++			if (((*pskb)->nfcache & NFC_TRACE)
++			    && !(e->target_offset == sizeof(struct ip6t_entry)
++			    	 && (strcmp(t->u.kernel.target->name,
++				       IP6T_STANDARD_TARGET) == 0)
++				 && !t->u.kernel.target->target
++			    	 && ((struct ip6t_standard_target *)t)->verdict < 0
++			    	 && unconditional(&e->ipv6))) {
++				/* "TRACE: tablename/chainname/rulenum " */
++				char prefix[11+2*IP6T_TABLE_MAXNAMELEN+6];
++				char *chainname = (char *) hook6names[hook];
++				u_int16_t rulenum = 0;
++				
++				IP6T_ENTRY_ITERATE(get_entry(table_base, table->private->hook_entry[hook]),
++						   table->private->size,
++						   get_chainname_rulenum,
++						   e, &chainname, &rulenum);
++						  
++				snprintf(prefix, sizeof(prefix), "TRACE: %s/%s/%u ", 
++					table->name,
++					chainname, rulenum);
++
++				ip6t_log_packet(pskb, hook, in, out, prefix);
++			}
++#endif
+ 			/* Standard target? */
+ 			if (!t->u.kernel.target->target) {
+ 				int v;
+@@ -528,19 +624,6 @@
+ 	return find_inlist_lock(&ip6t_target, name, "ip6t_", error, mutex);
+ }
+ 
+-/* All zeroes == unconditional rule. */
+-static inline int
+-unconditional(const struct ip6t_ip6 *ipv6)
+-{
+-	unsigned int i;
+-
+-	for (i = 0; i < sizeof(*ipv6); i++)
+-		if (((char *)ipv6)[i])
+-			break;
+-
+-	return (i == sizeof(*ipv6));
+-}
+-
+ /* Figures out from what hook each rule can be called: returns 0 if
+    there are loops.  Puts hook bitmask in comefrom. */
+ static int
+@@ -1820,6 +1903,8 @@
+ EXPORT_SYMBOL(ip6t_unregister_match);
+ EXPORT_SYMBOL(ip6t_register_target);
+ EXPORT_SYMBOL(ip6t_unregister_target);
++EXPORT_SYMBOL(ip6t_packet_log_fn);
++EXPORT_SYMBOL(ip6t_log_packet);
+ 
+ module_init(init);
+ module_exit(fini);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv6/netfilter/ip6t_LOG.c linux-2.4.18-raw/net/ipv6/netfilter/ip6t_LOG.c
+--- linux-2.4.18-orig/net/ipv6/netfilter/ip6t_LOG.c	Mon Nov  5 18:53:07 2001
++++ linux-2.4.18-raw/net/ipv6/netfilter/ip6t_LOG.c	Thu Jun 13 16:07:07 2002
+@@ -266,23 +266,21 @@
+ 	}
+ }
+ 
+-static unsigned int
+-ip6t_log_target(struct sk_buff **pskb,
+-		unsigned int hooknum,
+-		const struct net_device *in,
+-		const struct net_device *out,
+-		const void *targinfo,
+-		void *userinfo)
++static void
++ip6t_log(struct sk_buff **pskb,
++	 unsigned int hooknum,
++	 const struct net_device *in,
++	 const struct net_device *out,
++	 const struct ip6t_log_info *loginfo,
++	 const char *level_string,
++	 const char *prefix)
+ {
+ 	struct ipv6hdr *ipv6h = (*pskb)->nh.ipv6h;
+-	const struct ip6t_log_info *loginfo = targinfo;
+-	char level_string[4] = "< >";
+ 
+-	level_string[1] = '0' + (loginfo->level % 8);
+ 	spin_lock_bh(&log_lock);
+ 	printk(level_string);
+ 	printk("%sIN=%s OUT=%s ",
+-		loginfo->prefix,
++		prefix == NULL ? loginfo->prefix : prefix,
+ 		in ? in->name : "",
+ 		out ? out->name : "");
+ 	if (in && !out) {
+@@ -302,10 +300,37 @@
+ 	dump_packet(loginfo, ipv6h, 1);
+ 	printk("\n");
+ 	spin_unlock_bh(&log_lock);
++}
++
++static unsigned int
++ip6t_log_target(struct sk_buff **pskb,
++		unsigned int hooknum,
++		const struct net_device *in,
++		const struct net_device *out,
++		const void *targinfo,
++		void *userinfo)
++{
++	const struct ip6t_log_info *loginfo = targinfo;
++	char level_string[4] = "< >";
++
++	level_string[1] = '0' + (loginfo->level % 8);
++	ip6t_log(pskb, hooknum, in, out, loginfo, level_string, NULL);
+ 
+ 	return IP6T_CONTINUE;
+ }
+ 
++static void
++ip6t_log_fn(struct sk_buff **pskb,
++	    unsigned int hooknum,
++	    const struct net_device *in,
++	    const struct net_device *out,
++	    const char *prefix)
++{
++	struct ip6t_log_info loginfo = { 0, IP6T_LOG_MASK, ""};
++
++	ip6t_log(pskb, hooknum, in, out, &loginfo, KERN_WARNING, prefix);
++}
++
+ static int ip6t_log_checkentry(const char *tablename,
+ 			       const struct ip6t_entry *e,
+ 			       void *targinfo,
+@@ -343,12 +368,18 @@
+ 	if (ip6t_register_target(&ip6t_log_reg))
+ 		return -EINVAL;
+ 
++	if (ip6t_packet_log_fn == NULL)
++		ip6t_packet_log_fn = ip6t_log_fn;
++
+ 	return 0;
+ }
+ 
+ static void __exit fini(void)
+ {
+ 	ip6t_unregister_target(&ip6t_log_reg);
++
++	if (ip6t_packet_log_fn == ip6t_log_fn)	
++		ip6t_packet_log_fn = NULL;
+ }
+ 
+ module_init(init);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv6/netfilter/ip6t_TRACE.c linux-2.4.18-raw/net/ipv6/netfilter/ip6t_TRACE.c
+--- linux-2.4.18-orig/net/ipv6/netfilter/ip6t_TRACE.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-raw/net/ipv6/netfilter/ip6t_TRACE.c	Thu Jun 13 09:39:19 2002
+@@ -0,0 +1,60 @@
++/* This is a module which is used for setting
++   the NFC_TRACE flag in the nfcache field of an skb. */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++
++#include <linux/netfilter_ipv6/ip6_tables.h>
++
++MODULE_LICENSE("GPL");
++
++static unsigned int
++target(struct sk_buff **pskb,
++	unsigned int hooknum,
++	const struct net_device *in,
++	const struct net_device *out,
++	const void *targinfo,
++	void *userinfo)
++{
++	(*pskb)->nfcache |= NFC_TRACE;
++	return IP6T_CONTINUE;
++}
++
++static int 
++checkentry(const char *tablename,
++       	   const struct ip6t_entry *e,
++           void *targinfo,
++           unsigned int targinfosize,
++           unsigned int hook_mask)
++{
++	if (targinfosize != 0) {
++		printk(KERN_WARNING "TRACE: targinfosize %u != 0\n",
++		       targinfosize);
++		return 0;
++	}
++
++	if (strcmp(tablename, "raw") != 0) {
++		printk(KERN_WARNING "TRACE: can only be called from \"raw\" table, not \"%s\"\n", tablename);
++		return 0;
++	}
++
++	return 1;
++}
++
++static struct ip6t_target ip6t_trace_reg
++= { { NULL, NULL }, "TRACE", target, checkentry, NULL, THIS_MODULE };
++
++static int __init init(void)
++{
++	if (ip6t_register_target(&ip6t_trace_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ip6t_unregister_target(&ip6t_trace_reg);
++}
++
++module_init(init);
++module_exit(fini);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv6/netfilter/ip6table_raw.c linux-2.4.18-raw/net/ipv6/netfilter/ip6table_raw.c
+--- linux-2.4.18-orig/net/ipv6/netfilter/ip6table_raw.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-raw/net/ipv6/netfilter/ip6table_raw.c	Thu Jun 13 09:38:08 2002
+@@ -0,0 +1,139 @@
++/*
++ * IPv6 raw table, a port of the IPv4 raw table to IPv6
++ *
++ */
++#include <linux/module.h>
++#include <linux/netfilter_ipv6/ip6_tables.h>
++
++#define RAW_VALID_HOOKS ((1 << NF_IP6_PRE_ROUTING) | (1 << NF_IP6_LOCAL_OUT))
++
++#if 0
++#define DEBUGP(x, args...)	printk(KERN_DEBUG x, ## args)
++#else
++#define DEBUGP(x, args...)
++#endif
++
++/* Standard entry. */
++struct ip6t_standard
++{
++	struct ip6t_entry entry;
++	struct ip6t_standard_target target;
++};
++
++struct ip6t_error_target
++{
++	struct ip6t_entry_target target;
++	char errorname[IP6T_FUNCTION_MAXNAMELEN];
++};
++
++struct ip6t_error
++{
++	struct ip6t_entry entry;
++	struct ip6t_error_target target;
++};
++
++static struct
++{
++	struct ip6t_replace repl;
++	struct ip6t_standard entries[2];
++	struct ip6t_error term;
++} initial_table __initdata
++= { { "raw", RAW_VALID_HOOKS, 3,
++      sizeof(struct ip6t_standard) * 2 + sizeof(struct ip6t_error),
++      { [NF_IP6_PRE_ROUTING] 	0,
++	[NF_IP6_LOCAL_OUT]	sizeof(struct ip6t_standard) },
++      { [NF_IP6_PRE_ROUTING] 	0,
++	[NF_IP6_LOCAL_OUT]	sizeof(struct ip6t_standard) },
++      0, NULL, { } },
++    {
++	    /* PRE_ROUTING */
++            { { { { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ip6t_entry),
++		sizeof(struct ip6t_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IP6T_ALIGN(sizeof(struct ip6t_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } },
++	    /* LOCAL_OUT */
++            { { { { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ip6t_entry),
++		sizeof(struct ip6t_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IP6T_ALIGN(sizeof(struct ip6t_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } },
++    },
++    /* ERROR */
++    { { { { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, { { { 0 } } }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++	0,
++	sizeof(struct ip6t_entry),
++	sizeof(struct ip6t_error),
++	0, { 0, 0 }, { } },
++      { { { { IP6T_ALIGN(sizeof(struct ip6t_error_target)), IP6T_ERROR_TARGET } },
++	  { } },
++	"ERROR"
++      }
++    }
++};
++
++static struct ip6t_table packet_raw
++= { { NULL, NULL }, "raw", &initial_table.repl,
++    RAW_VALID_HOOKS, RW_LOCK_UNLOCKED, NULL, THIS_MODULE };
++
++/* The work comes in here from netfilter.c. */
++static unsigned int
++ip6t_hook(unsigned int hook,
++	 struct sk_buff **pskb,
++	 const struct net_device *in,
++	 const struct net_device *out,
++	 int (*okfn)(struct sk_buff *))
++{
++	return ip6t_do_table(pskb, hook, in, out, &packet_raw, NULL);
++}
++
++static struct nf_hook_ops ip6t_ops[]
++= { { { NULL, NULL }, ip6t_hook, PF_INET6, NF_IP6_PRE_ROUTING,  NF_IP6_PRI_FIRST },
++    { { NULL, NULL }, ip6t_hook, PF_INET6, NF_IP6_LOCAL_OUT,    NF_IP6_PRI_FIRST }
++};
++
++static int __init init(void)
++{
++	int ret;
++
++	/* Register table */
++	ret = ip6t_register_table(&packet_raw);
++	if (ret < 0)
++		return ret;
++
++	/* Register hooks */
++	ret = nf_register_hook(&ip6t_ops[0]);
++	if (ret < 0)
++		goto cleanup_table;
++
++	ret = nf_register_hook(&ip6t_ops[1]);
++	if (ret < 0)
++		goto cleanup_hook0;
++
++	return ret;
++
++ cleanup_hook0:
++	nf_unregister_hook(&ip6t_ops[0]);
++ cleanup_table:
++	ip6t_unregister_table(&packet_raw);
++
++	return ret;
++}
++
++static void __exit fini(void)
++{
++	unsigned int i;
++
++	for (i = 0; i < sizeof(ip6t_ops)/sizeof(struct nf_hook_ops); i++)
++		nf_unregister_hook(&ip6t_ops[i]);
++
++	ip6t_unregister_table(&packet_raw);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");

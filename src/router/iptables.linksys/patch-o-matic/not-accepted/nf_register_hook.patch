@@ -1,0 +1,18 @@
+--- linuxppc-190102-plain/net/core/netfilter.c	Thu Jan 17 21:44:29 2002
++++ linuxppc-190102-nfpom/net/core/netfilter.c	Mon Feb 11 12:14:12 2002
+@@ -61,6 +61,15 @@
+ 	for (i = nf_hooks[reg->pf][reg->hooknum].next; 
+ 	     i != &nf_hooks[reg->pf][reg->hooknum]; 
+ 	     i = i->next) {
++		/* assumption: If exact same thing already on the list
++		 * we dont want to add a new one
++		 */
++		if ((reg->priority == ((struct nf_hook_ops *)i)->priority)
++		&& (reg->hook == (((struct nf_hook_ops  *)i)->hook))) {
++			br_write_unlock_bh(BR_NETPROTO_LOCK);
++			return -1;
++		}
++
+ 		if (reg->priority < ((struct nf_hook_ops *)i)->priority)
+ 			break;
+ 	}

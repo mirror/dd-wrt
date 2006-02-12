@@ -1,0 +1,18 @@
+2005-03-14 
+ * DD-WRT (SeG) implemented a feature which allows a defined number of unauthicated users associated to the AP
+ 
+2004-09-28
+ * Implement -n commandline-switch to allow selection of
+   radius MAC format
+
+2004-07-12
+ * Change implementation from static memory chunk to linked list,
+   reduces memory-usage significantly
+ * Added TODO
+
+2004-07-09
+ * Now check the validity of the radius response
+ * Display radius-reply message
+
+2004-07-05
+ * Initial release

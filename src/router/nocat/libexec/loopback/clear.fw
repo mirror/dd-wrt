@@ -1,0 +1,13 @@
+#!/bin/sh
+##
+# reset.fw: you guessed it.
+##
+
+# Note: your PATH is inherited from the gateway process
+#
+
+iptables -F
+iptables -t nat -F
+iptables -t mangle -F
+iptables -t filter -F
+

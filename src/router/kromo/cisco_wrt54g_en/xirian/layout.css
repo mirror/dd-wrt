@@ -1,0 +1,198 @@
+/* Properties */
+html,body,#wrapper {
+	height:					100%;
+	margin:					0px;
+	padding:				0px;
+}
+
+input {
+	 margin:				0px;
+	 margin-left:			1px;
+	 margin-right:			1px;
+}
+
+div.message {
+	margin:					0px;
+	padding:				0px;
+	height:					100%;
+	width:					100%;
+	margin2:				auto;
+}
+
+div.message form{
+	display:				inline;
+	margin:					0px;
+	padding:				0px;
+}
+
+div.message div {
+	text-align:				center;
+	vertical-align:			middle;
+}
+
+div.message div {
+	position:				absolute;
+	top:					50%;
+	left:					50%;
+	width:					700px;
+	height:					400px;
+	margin-left:			-350px;
+	margin-top:				-200px;
+}
+
+div.message div form{
+	position:				absolute;
+	top:					50%;
+	left:					50%;
+	width:					400px;
+	height:					100px;
+	margin-left:			-200px;
+	margin-top:				-40px;
+}
+
+div.message3 div {
+	 padding:				0px;
+	 margin-right:			auto;
+	 margin-left:			auto;
+	 height2:				100%;
+}
+
+div.message2 {
+	 margin:				100px;
+	 margin-left:			150px;
+	 margin-right:			150px;
+}
+
+#content {
+	margin:					0px;
+	margin-right:			180px;
+}
+
+#header {
+	top:					0px;
+	height:					105px;
+}
+
+#header div.logo  {
+	position:				absolute;
+	top:					0px;
+	height: 				70px;
+	width:	 				300px;
+	z-index:				30;
+}
+
+#menu {
+	padding-top:			65px;
+	height:					40px;
+}
+
+#menuMain,#menuSub{
+	left:					0px;
+	width:					100%;
+}
+
+#menuMain,#menuSub,#menuMainList,#menuSubList {
+	height:					20px;
+	line-height:			20px;
+	vertical-align:			middle;
+}
+
+#menuSub {
+	position:				absolute;
+	top:					85px;
+}
+
+#menuMainList,#menuSubList {
+	margin:					0px;
+	padding:				0px;
+	display:				inline;
+	z-index2:				2;
+}
+
+#menuSubList {
+	margin-left:			10px;
+	top:					20px;
+}
+
+ul#menuMainList li, ul#menuSubList li {
+	display:				inline;
+	line-height:			20px;
+	margin:					0px;
+	padding-right:			3px;
+	padding-left:			3px;
+}
+
+#main {
+	top:					100px;
+	height:					100%;
+	padding:				0px;
+	z-index:				1;
+}
+
+#left {
+	margin:					0px;
+	padding:				20px;
+	padding-top:			10px;
+	padding-bottom:			0px;
+	float2:					left;
+	z-index:				1;
+}
+
+#right {
+	margin:					0px;
+	padding:				0px;
+	right:					0px;
+	width:					180px;
+	float2:					right;
+}
+
+#helpContainer {
+	position:				absolute;
+	top:					0px;
+	right:					0px;
+	width:					180px;
+	height:					100%;
+	z-index:				3;
+}
+
+#help {
+	padding:				7px;
+	padding-top:			165px;
+}
+
+#help div.logo  {
+	position:				absolute;
+	top:					110px;
+	margin-right:			auto;
+	margin-left:			auto;
+	height: 				54px;
+	width:	 				130px;
+	z-index:				30;
+}
+
+#statusInfo  {
+	position:				absolute;
+	top:					0px;
+	right:					0px;
+	height: 				105px;
+	width:	 				180px;
+	margin:	 				0px;
+	padding: 				0px;
+	z-index:				30;
+}
+
+.submitFooter {
+	margin:					20px;	
+	padding-bottom:			20px;	
+	text-align:				center;
+}
+
+div.setting {
+	margin:					0px;
+	padding:				3px;	
+	padding-left:			0px;	
+}
+
+fieldset {
+	padding-left:			10px;
+}

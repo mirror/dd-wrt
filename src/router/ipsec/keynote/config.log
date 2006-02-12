@@ -1,0 +1,307 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:531: checking for flex
+configure:565: checking for yywrap in -lfl
+configure:584: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c -lfl   1>&5
+/opt/brcm/hndtools-mipsel-linux/bin/../lib/gcc-lib/mipsel-linux/3.0/../../../../mipsel-linux/bin/ld: cannot find -lfl
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 573 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char yywrap();
+
+int main() {
+yywrap()
+; return 0; }
+configure:609: checking for gcc
+configure:722: checking whether the C compiler (mipsel-uclibc-gcc -Os -s) works
+configure:738: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  1>&5
+configure:764: checking whether the C compiler (mipsel-uclibc-gcc -Os -s) is a cross-compiler
+configure:769: checking whether we are using GNU C
+configure:778: mipsel-uclibc-gcc -E conftest.c
+configure:797: checking whether mipsel-uclibc-gcc accepts -g
+configure:831: checking for ranlib
+configure:863: checking for bison
+configure:898: checking for openssl
+configure:938: checking for rm
+configure:974: checking for ar
+configure:1010: checking for nroff
+configure:1046: checking for tar
+configure:1082: checking for true
+configure:1118: checking for mkdir
+configure:1154: checking for tr
+configure:1190: checking for echo
+configure:1226: checking for sed
+configure:1264: checking for floor in -lm
+configure:1283: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c -lm   1>&5
+configure:1304: checking for RSAPrivateDecrypt in -lrsaref
+configure:1323: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c -lrsaref   -lm 1>&5
+/opt/brcm/hndtools-mipsel-linux/bin/../lib/gcc-lib/mipsel-linux/3.0/../../../../mipsel-linux/bin/ld: cannot find -lrsaref
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1312 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char RSAPrivateDecrypt();
+
+int main() {
+RSAPrivateDecrypt()
+; return 0; }
+configure:1344: checking for i2a_ASN1_STRING in -lcrypto
+configure:1363: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c -lcrypto   -lm 1>&5
+configure:1384: checking for RSA_ref_private_encrypt in -lRSAglue
+configure:1403: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c -lRSAglue   -lm -lcrypto 1>&5
+/opt/brcm/hndtools-mipsel-linux/bin/../lib/gcc-lib/mipsel-linux/3.0/../../../../mipsel-linux/bin/ld: cannot find -lRSAglue
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1392 "configure"
+#include "confdefs.h"
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char RSA_ref_private_encrypt();
+
+int main() {
+RSA_ref_private_encrypt()
+; return 0; }
+configure:1429: checking how to run the C preprocessor
+configure:1450: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1509: checking for ANSI C header files
+configure:1522: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1613: checking whether time.h and sys/time.h may both be included
+configure:1627: mipsel-uclibc-gcc -c -Os  conftest.c 1>&5
+configure:1651: checking for fcntl.h
+configure:1661: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1651: checking for limits.h
+configure:1661: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1651: checking for unistd.h
+configure:1661: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1651: checking for regex.h
+configure:1661: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1651: checking for sys/time.h
+configure:1661: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1651: checking for io.h
+configure:1661: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1657:16: io.h: No such file or directory
+configure: failed program was:
+#line 1656 "configure"
+#include "confdefs.h"
+#include <io.h>
+configure:1691: checking for ssl/crypto.h
+configure:1701: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1697:24: ssl/crypto.h: No such file or directory
+configure: failed program was:
+#line 1696 "configure"
+#include "confdefs.h"
+#include <ssl/crypto.h>
+configure:1691: checking for openssl/crypto.h
+configure:1701: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1691: checking for crypto.h
+configure:1701: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1697:20: crypto.h: No such file or directory
+configure: failed program was:
+#line 1696 "configure"
+#include "confdefs.h"
+#include <crypto.h>
+configure:1691: checking for memory.h
+configure:1701: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1730: checking for working const
+configure:1784: mipsel-uclibc-gcc -c -Os  conftest.c 1>&5
+configure:1805: checking for u_int
+configure:1838: checking for u_char
+configure:1874: checking for regcomp
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1874: checking for open
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1874: checking for close
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1874: checking for read
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1874: checking for _open
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+/tmp/ccETgMxZ.o: In function `main':
+configure(.text+0x1c): undefined reference to `_open'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1879 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char _open(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char _open();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub__open) || defined (__stub____open)
+choke me
+#else
+_open();
+#endif
+
+; return 0; }
+configure:1874: checking for _close
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+/tmp/cc0bY80a.o: In function `main':
+configure(.text+0x1c): undefined reference to `_close'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1879 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char _close(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char _close();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub__close) || defined (__stub____close)
+choke me
+#else
+_close();
+#endif
+
+; return 0; }
+configure:1874: checking for _read
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+/tmp/ccYJzQqk.o: In function `main':
+configure(.text+0x1c): undefined reference to `_read'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1879 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char _read(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char _read();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub__read) || defined (__stub____read)
+choke me
+#else
+_read();
+#endif
+
+; return 0; }
+configure:1874: checking for strchr
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1886: warning: conflicting types for built-in function `strchr'
+configure:1874: checking for memcpy
+configure:1902: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1886: warning: conflicting types for built-in function `memcpy'
+configure:1929: checking for strcasecmp
+configure:1957: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1929: checking for strncasecmp
+configure:1957: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1929: checking for stricmp
+configure:1957: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+/tmp/cccHMswO.o: In function `main':
+configure(.text+0x1c): undefined reference to `stricmp'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1934 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char stricmp(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char stricmp();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_stricmp) || defined (__stub___stricmp)
+choke me
+#else
+stricmp();
+#endif
+
+; return 0; }
+configure:1929: checking for strnicmp
+configure:1957: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+/tmp/ccKbMlTX.o: In function `main':
+configure(.text+0x1c): undefined reference to `strnicmp'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1934 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char strnicmp(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char strnicmp();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub_strnicmp) || defined (__stub___strnicmp)
+choke me
+#else
+strnicmp();
+#endif
+
+; return 0; }
+configure:1929: checking for snprintf
+configure:1957: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+configure:1929: checking for __b64_ntop
+configure:1957: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5
+/tmp/ccusPsXg.o: In function `main':
+configure(.text+0x1c): undefined reference to `__b64_ntop'
+collect2: ld returned 1 exit status
+configure: failed program was:
+#line 1934 "configure"
+#include "confdefs.h"
+/* System header to define __stub macros and hopefully few prototypes,
+    which can conflict with char __b64_ntop(); below.  */
+#include <assert.h>
+/* Override any gcc2 internal prototype to avoid an error.  */
+/* We use char because int might match the return type of a gcc2
+    builtin and then its argument prototype would still apply.  */
+char __b64_ntop();
+
+int main() {
+
+/* The GNU C library defines this for functions which it implements
+    to always fail with ENOSYS.  Some functions are actually named
+    something starting with __ and the normal name is an alias.  */
+#if defined (__stub___b64_ntop) || defined (__stub_____b64_ntop)
+choke me
+#else
+__b64_ntop();
+#endif
+
+; return 0; }
+configure:1984: checking for getopt
+configure:2012: mipsel-uclibc-gcc -o conftest -Os  -s conftest.c  -lm -lcrypto 1>&5

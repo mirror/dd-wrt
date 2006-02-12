@@ -1,0 +1,37 @@
+.TH "ATHCHANS" "8" "September 2005"
+.SH "NAME"
+\fBathchans\fP \- define channel range of madwifi interface
+.SH "SYNOPSIS"
+\fBathchans\fP [-i <interface>] <channel range>
+.SH "DESCRIPTION"
+Athchans constrains the set of channels used when scanning for access points,
+neighbors in an IBSS network, or looking for unoccupied channels when 
+operating as an access point. 
+.PP
+The set of channels is specified as a range of the form x-y. Channel numbers 
+must be in the range 1 to 255 and be permissible according to the operating 
+characteristics of the device.
+.PP
+.SH "OPTIONS"
+.TP
+.B \-i <interface> 
+The madwifi interface to apply the settings to. If no interface is specified,
+it will default to ath0.
+.TP
+.B <channel range>
+Range of channel constraint applied to the specified interface. The range must
+be specified in the form of x-y and be within 1 to 255.
+.PP
+.SH "EXAMPLES"
+.TP
+.B athchans \-i ath1 5\-9
+Restrict madwifi interface ath1 to channels in the range of 5 to 9.
+.TP
+.B athchans 20\-30
+Restrict default madwifi interface ath0 to channels in the range of 5 to 9.
+.PP
+.SH "SEE ALSO"
+\fBathctrl\fP(8), \fBathkey\fP(8), \fBathstats\fP(8)
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au> and was based
+upon previous text written by Eric S. Raymond and Thorsten von Eicken.

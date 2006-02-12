@@ -1,0 +1,246 @@
+diff -aruN linux-2.4.20-pre10-ac1-machiavel/include/linux/netfilter_ipv4/ipt_condition.h linux-2.4.20-pre10-ac1-machiavel-new/include/linux/netfilter_ipv4/ipt_condition.h
+--- linux-2.4.20-pre10-ac1-machiavel/include/linux/netfilter_ipv4/ipt_condition.h	1969-12-31 19:00:00.000000000 -0500
++++ linux-2.4.20-pre10-ac1-machiavel-new/include/linux/netfilter_ipv4/ipt_condition.h	2002-10-25 21:26:09.000000000 -0400
+@@ -0,0 +1,11 @@
++#ifndef __IPT_CONDITION_MATCH__
++#define __IPT_CONDITION_MATCH__
++
++#define VARIABLE_NAME_LEN  32
++
++struct condition_info {
++  char	name[VARIABLE_NAME_LEN];
++  int   invert;
++};
++
++#endif
+diff -aruN linux-2.4.20-pre10-ac1-machiavel/net/ipv4/netfilter/ipt_condition.c linux-2.4.20-pre10-ac1-machiavel-new/net/ipv4/netfilter/ipt_condition.c
+--- linux-2.4.20-pre10-ac1-machiavel/net/ipv4/netfilter/ipt_condition.c	1969-12-31 19:00:00.000000000 -0500
++++ linux-2.4.20-pre10-ac1-machiavel-new/net/ipv4/netfilter/ipt_condition.c	2002-10-25 23:30:15.000000000 -0400
+@@ -0,0 +1,227 @@
++/*-------------------------------------------*\
++|          Netfilter Condition Module         |
++|                                             |
++|  Description: This module allows firewall   |
++|    rules to match using condition variables |
++|    stored in /proc files.                   |
++|                                             |
++|  Author: Stephane Ouellette     2002-10-22  |
++|          (ouellettes@videotron.ca)          |
++\*-------------------------------------------*/
++
++#include<linux/module.h>
++#include<linux/proc_fs.h>
++#include<linux/spinlock.h>
++#include<linux/interrupt.h>
++#include<asm/uaccess.h>
++#include<linux/ctype.h>
++#include<linux/vmalloc.h>
++
++#include<linux/netfilter_ipv4/ip_tables.h>
++#include<linux/netfilter_ipv4/ipt_condition.h>
++
++
++MODULE_AUTHOR("Stephane Ouellette <ouellettes@videotron.ca>");
++MODULE_DESCRIPTION("Allows rules to match against condition variables");
++MODULE_LICENSE("GPL");
++
++
++struct condition_variable {
++  char         name[VARIABLE_NAME_LEN];
++			   // Variable Name (NULL-terminated string)
++  u_int32_t    refcount;   // Number of references to this variable
++  u_int32_t    boolean;    // TRUE == 1, FALSE == 0
++  spinlock_t   variable_lock;
++  struct proc_dir_entry *status_proc;
++  struct condition_variable *next;
++};
++
++
++static spinlock_t list_lock = SPIN_LOCK_UNLOCKED;
++static struct condition_variable *head = NULL;
++static struct proc_dir_entry *proc_net_condition = NULL;
++
++
++static int ipt_condition_read_info(char *buffer, char **start, off_t offset,
++int length, int *eof, void *data)
++{
++  if(offset == 0)
++  {
++    *start = buffer;
++    buffer[0] = '0' + (char)((struct condition_variable*)data)->boolean;
++    buffer[1] = '\n';
++    return 2;
++  }
++ 
++  *eof = 1;
++  return 0;
++}
++
++
++static int ipt_condition_write_info(struct file *file, const char *buffer,
++unsigned long length, void *data)
++{
++  if(length)
++  {
++    // Match only on the first character
++    if(buffer[0] == '0')
++      ((struct condition_variable*)data)->boolean = 0;
++    else if(buffer[0] == '1') 
++      ((struct condition_variable*)data)->boolean = 1;
++  }
++
++  return length;
++}
++
++
++static int match(const struct sk_buff *skb, const struct net_device *in,
++const struct net_device *out, const void *matchinfo, int offset,
++const void *hdr, u_int16_t datalen, int *hotdrop)
++{
++  const struct condition_info *info = (const struct condition_info*)matchinfo;
++  struct condition_variable *var = head;
++  
++  while(var && strncmp(info->name, var->name, VARIABLE_NAME_LEN))
++    var = var->next;
++
++  return((var) ? var->boolean ^ info->invert : 0);
++}
++
++
++static int checkentry(const char *tablename, const struct ipt_ip *ip,
++void *matchinfo, unsigned int matchsize, unsigned int hook_mask)
++{
++  struct condition_info *info = (struct condition_info*)matchinfo;
++  struct condition_variable *var, *previous;
++
++  if(matchsize != IPT_ALIGN(sizeof(struct condition_info)))
++    return 0;
++
++  var = head;
++  previous = NULL;
++  spin_lock_bh(&list_lock);
++
++  // Search for the condition variable in the list
++  while(var && (strncmp(info->name, var->name, VARIABLE_NAME_LEN))) 
++  {
++    previous = var;
++    var = var->next;
++  }
++
++  if(var)
++  {
++    // The variable already exists, increment the reference count
++    spin_lock_bh(&var->variable_lock);
++    var->refcount++;    
++    spin_unlock_bh(&var->variable_lock);
++  }
++  else
++  {
++    // Create a new variable 
++    if((var = vmalloc(sizeof(struct condition_variable))) == NULL)
++    {
++      spin_unlock_bh(&list_lock);
++      return -ENOMEM;
++    }
++
++    strncpy(var->name, info->name, VARIABLE_NAME_LEN - 1);
++    var->name[VARIABLE_NAME_LEN - 1] = 0;
++    var->refcount = 1;
++    var->boolean = 0;
++    var->variable_lock = SPIN_LOCK_UNLOCKED;
++    var->next = NULL;
++    var->status_proc = create_proc_entry(var->name, 0644, proc_net_condition);
++
++    if(!var->status_proc)
++    {
++      vfree(var);
++      spin_unlock_bh(&list_lock);
++      return -ENOMEM;
++    }
++
++    var->status_proc->owner = THIS_MODULE;
++    var->status_proc->read_proc = ipt_condition_read_info;
++    var->status_proc->write_proc = ipt_condition_write_info;
++    var->status_proc->data = var;
++
++    if(previous)
++      previous->next = var;
++    else
++      head = var;
++  }
++
++  spin_unlock_bh(&list_lock);
++  return 1;
++}
++
++
++static void destroy(void *matchinfo, unsigned int matchsize)
++{
++  struct condition_info *info = (struct condition_info*)matchinfo;
++  struct condition_variable *var, *previous;
++
++  if(matchsize != IPT_ALIGN(sizeof(struct condition_info)))
++    return;
++
++  var = head;
++  previous = NULL;
++  
++  spin_lock_bh(&list_lock);
++
++  while(var && strncmp(info->name, var->name, VARIABLE_NAME_LEN))
++  {
++    previous = var;
++    var = var->next;
++  }
++
++  if(var)
++  {
++    spin_lock_bh(&var->variable_lock);
++
++    if(--var->refcount == 0)
++    {
++      if(previous)
++        previous->next = var->next;
++      else
++        head = var->next;
++
++      remove_proc_entry(var->name, proc_net_condition);
++      spin_unlock_bh(&var->variable_lock);
++      vfree(var);
++    }
++    else spin_unlock_bh(&var->variable_lock);
++  }
++
++  spin_unlock_bh(&list_lock);
++}
++
++
++static struct ipt_match condition_match =
++{ { NULL, NULL }, "condition", &match, &checkentry, &destroy, THIS_MODULE };
++
++
++static int __init init(void)
++{
++  int  errorcode;
++  proc_net_condition = proc_mkdir("ipt_condition", proc_net);
++
++  if(proc_net_condition)
++  {
++    if((errorcode = ipt_register_match(&condition_match)) != 0)
++      remove_proc_entry("ipt_condition", proc_net);
++  }
++  else errorcode = -EACCES;
++
++  return(errorcode);
++}
++
++
++static void __exit fini(void)
++{
++  ipt_unregister_match(&condition_match);
++  remove_proc_entry("ipt_condition", proc_net);
++}
++
++module_init(init);
++module_exit(fini);
++

@@ -1,0 +1,7 @@
+-u alphasort
+-u index
+-u netconf_add_filter
+-u netconf_add_nat
+-u netconf_del_filter
+-u netconf_del_nat
+-u netconf_get_nat

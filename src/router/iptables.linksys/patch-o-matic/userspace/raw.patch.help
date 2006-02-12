@@ -1,0 +1,45 @@
+Author: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
+Status: Testing.
+
+This patch adds a new table called 'raw' with two new targets
+'NOTRACK' and 'TRACE' to netfilter/iptables (plus some modifications).
+
+The raw table is the very first in netfilter (it even precedes 
+the conntrack subsystem) and uses the PREROUTING and OUTPUT
+built-in chains.
+
+The TRACE target can be used to trace how the packet "flows trough" 
+your tables and rules. When a packet marked with the TRACE target
+matches any rule, the system logs the packet with the following
+prefix:
+
+	TRACE: tablename/chainname/rulenum packet
+
+The internal logging functionality relies on the available
+"backend" logging modules (ipt_LOG or ipt_ULOG). You must load
+at least one of the logging modules in. If both modules are 
+loaded, then default ipt_LOG generates the internal loggings,
+which can be overridden by the module parameter 'takeover' of
+the ipt_ULOG module:
+
+	modprobe ipt_ULOG takeover=1 
+
+The NOTRACK target can be used to select which packets *not* 
+to enter the conntrack/NAT subsystems. Please keep in mind:
+if you mark a packet with NOTRACK, then
+
+- all the conntrack functionalities are lost for the packet
+  (ICMP error tracking, protocol helpers, etc)
+- all the NAT functionalities are also lost.
+
+Packets marked with NOTRACK can be matched by the 'UNTRACKED'
+state. Example
+
+# Very busy webserver
+iptables -t raw -A PREROUTING -d 1.2.3.4 -p tcp --dport 80 -j NOTRACK
+iptables -t raw -A PREROUTING -s 1.2.3.4 -p tcp --sport 80 -j NOTRACK
+...
+
+# filter rules
+iptables -A FORWARD -m state --state UNTRACKED -j ACCEPT
+

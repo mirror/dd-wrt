@@ -1,0 +1,9 @@
+CONFIG_IP6_NF_MATCH_MAC
+IPv6 Extension Headers Match (EXPERIMENTAL)
+CONFIG_IP6_NF_MATCH_IPV6HEADER
+  extension header matching allows you to controll the packets based
+  on their extension headers.
+  
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

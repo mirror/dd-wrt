@@ -1,0 +1,6 @@
+Author: Harald Welte <laforge@gnumonks.org>
+Status: Stable, needs new checksum handling
+
+This adds CONFIG_IP_NF_TARGET_TTL option, which enables the user
+to set the TTL value of an IP packet or to increment / decrement it 
+by a given value.

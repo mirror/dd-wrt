@@ -1,0 +1,2 @@
+    dep_tristate '  Unclean match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_UNCLEAN $CONFIG_IP_NF_IPTABLES
+    dep_tristate '  Helper match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_HELPER $CONFIG_IP_NF_IPTABLES

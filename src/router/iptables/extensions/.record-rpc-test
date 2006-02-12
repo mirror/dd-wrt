@@ -1,0 +1,3 @@
+#! /bin/sh
+# True if record rpc is applied.
+[ -f $KERNEL_DIR/net/ipv4/netfilter/ipt_record_rpc.c ] && echo record_rpc

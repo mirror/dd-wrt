@@ -1,0 +1,337 @@
+TUNNEL-MIB DEFINITIONS ::= BEGIN
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, transmission,
+    Integer32, IpAddress             FROM SNMPv2-SMI
+    RowStatus                        FROM SNMPv2-TC
+    MODULE-COMPLIANCE, OBJECT-GROUP  FROM SNMPv2-CONF
+    ifIndex, InterfaceIndexOrZero    FROM IF-MIB;
+
+tunnelMIB MODULE-IDENTITY
+    LAST-UPDATED "9908241200Z" -- August 24, 1999
+    ORGANIZATION "IETF Interfaces MIB Working Group"
+    CONTACT-INFO
+            " Dave Thaler
+              Microsoft Corporation
+              One Microsoft Way
+              Redmond, WA  98052-6399
+              EMail: dthaler@dthaler.microsoft.com"
+    DESCRIPTION
+            "The MIB module for management of IP Tunnels, independent of
+            the specific encapsulation scheme in use."
+    REVISION     "9908241200Z" -- August 24, 1999
+    DESCRIPTION
+            "Initial version, published as RFC 2667."
+    ::= { transmission 131 }
+
+tunnelMIBObjects OBJECT IDENTIFIER ::= { tunnelMIB 1 }
+
+tunnel      OBJECT IDENTIFIER ::= { tunnelMIBObjects 1 }
+
+-- the IP Tunnel MIB-Group
+--
+-- a collection of objects providing information about
+-- IP Tunnels
+
+tunnelIfTable OBJECT-TYPE
+    SYNTAX     SEQUENCE OF TunnelIfEntry
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "The (conceptual) table containing information on configured
+            tunnels."
+    ::= { tunnel 1 }
+
+tunnelIfEntry OBJECT-TYPE
+    SYNTAX     TunnelIfEntry
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "An entry (conceptual row) containing the information on a
+            particular configured tunnel."
+    INDEX      { ifIndex }
+    ::= { tunnelIfTable 1 }
+
+TunnelIfEntry ::= SEQUENCE {
+    tunnelIfLocalAddress            IpAddress,
+    tunnelIfRemoteAddress           IpAddress,
+    tunnelIfEncapsMethod            INTEGER,
+    tunnelIfHopLimit                Integer32,
+    tunnelIfSecurity                INTEGER,
+    tunnelIfTOS                     Integer32
+}
+
+tunnelIfLocalAddress OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "The address of the local endpoint of the tunnel (i.e., the
+            source address used in the outer IP header), or 0.0.0.0 if
+            unknown."
+    ::= { tunnelIfEntry 1 }
+
+tunnelIfRemoteAddress OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "The address of the remote endpoint of the tunnel (i.e., the
+            destination address used in the outer IP header), or 0.0.0.0
+            if unknown."
+    ::= { tunnelIfEntry 2 }
+
+tunnelIfEncapsMethod OBJECT-TYPE
+    SYNTAX     INTEGER {
+                   other(1),   -- none of the following
+                   direct(2),  -- no intermediate header
+                   gre(3),     -- GRE encapsulation
+                   minimal(4), -- Minimal encapsulation
+                   l2tp(5),    -- L2TP encapsulation
+                   pptp(6),    -- PPTP encapsulation
+                   l2f(7),     -- L2F encapsulation
+                   udp(8),     -- UDP encapsulation
+                   atmp(9)     -- ATMP encapsulation
+
+               }
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "The encapsulation method used by the tunnel. The value
+            direct indicates that the packet is encapsulated directly
+            within a normal IPv4 header, with no intermediate header,
+            and unicast to the remote tunnel endpoint (e.g., an RFC 2003
+            IP-in-IP tunnel, or an RFC 1933 IPv6-in-IPv4 tunnel). The
+            value minimal indicates that a Minimal Forwarding Header
+            (RFC 2004) is inserted between the outer header and the
+            payload packet. The value UDP indicates that the payload
+            packet is encapsulated within a normal UDP packet (e.g., RFC
+            1234).  The remaining protocol-specific values indicate that
+            a header of the protocol of that name is inserted between
+            the outer header and the payload header."
+    ::= { tunnelIfEntry 3 }
+
+tunnelIfHopLimit OBJECT-TYPE
+    SYNTAX     Integer32 (0..255)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The TTL to use in the outer IP header. A value of 0
+            indicates that the value is copied from the payload's
+            header."
+    ::= { tunnelIfEntry 4 }
+
+tunnelIfSecurity OBJECT-TYPE
+    SYNTAX     INTEGER {
+                   none(1),   -- no security
+                   ipsec(2),  -- IPSEC security
+                   other(3)
+               }
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "The method used by the tunnel to secure the outer IP
+            header.  The value ipsec indicates that IPsec is used
+            between the tunnel endpoints for authentication or
+            encryption or both.  More specific security-related
+            information may be available in a MIB for the security
+            protocol in use."
+    ::= { tunnelIfEntry 5 }
+
+tunnelIfTOS OBJECT-TYPE
+    SYNTAX     Integer32 (-2..63)
+    MAX-ACCESS read-write
+    STATUS     current
+    DESCRIPTION
+            "The method used to set the high 6 bits of the TOS in the
+            outer IP header.  A value of -1 indicates that the bits are
+            copied from the payload's header. A value of -2 indicates
+            that a traffic conditioner is invoked and more information
+            may be available in a traffic conditioner MIB.  A value
+            between 0 and 63 inclusive indicates that the bit field is
+            set to the indicated value."
+    ::= { tunnelIfEntry 6 }
+
+tunnelConfigTable OBJECT-TYPE
+    SYNTAX     SEQUENCE OF TunnelConfigEntry
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "The (conceptual) table containing information on configured
+            tunnels.  This table can be used to map a set of tunnel
+            endpoints to the associated ifIndex value.  It can also be
+            used for row creation.  Note that every row in the
+            tunnelIfTable with a fixed destination address should have a
+            corresponding row in the tunnelConfigTable, regardless of
+            whether it was created via SNMP."
+    ::= { tunnel 2 }
+
+tunnelConfigEntry OBJECT-TYPE
+    SYNTAX     TunnelConfigEntry
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "An entry (conceptual row) containing the information on a
+            particular configured tunnel."
+    INDEX      { tunnelConfigLocalAddress,
+                 tunnelConfigRemoteAddress,
+                 tunnelConfigEncapsMethod,
+                 tunnelConfigID }
+    ::= { tunnelConfigTable 1 }
+
+TunnelConfigEntry ::= SEQUENCE {
+    tunnelConfigLocalAddress            IpAddress,
+    tunnelConfigRemoteAddress           IpAddress,
+    tunnelConfigEncapsMethod            INTEGER,
+    tunnelConfigID                      Integer32,
+    tunnelConfigIfIndex                 InterfaceIndexOrZero,
+    tunnelConfigStatus                  RowStatus
+}
+
+tunnelConfigLocalAddress OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "The address of the local endpoint of the tunnel, or 0.0.0.0
+            if the device is free to choose any of its addresses at
+            tunnel establishment time."
+    ::= { tunnelConfigEntry 1 }
+
+tunnelConfigRemoteAddress OBJECT-TYPE
+    SYNTAX     IpAddress
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "The address of the remote endpoint of the tunnel."
+    ::= { tunnelConfigEntry 2 }
+
+tunnelConfigEncapsMethod OBJECT-TYPE
+    SYNTAX     INTEGER {
+                   other(1),   -- none of the following
+                   direct(2),  -- no intermediate header
+                   gre(3),     -- GRE encapsulation
+                   minimal(4), -- Minimal encapsulation
+                   l2tp(5),    -- L2TP encapsulation
+                   pptp(6),    -- PPTP encapsulation
+                   l2f(7),     -- L2F encapsulation
+                   udp(8),     -- UDP encapsulation
+                   atmp(9)
+               }
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "The encapsulation method used by the tunnel."
+    ::= { tunnelConfigEntry 3 }
+
+tunnelConfigID OBJECT-TYPE
+    SYNTAX     Integer32 (1..2147483647)
+    MAX-ACCESS not-accessible
+    STATUS     current
+    DESCRIPTION
+            "An identifier used to distinguish between multiple tunnels
+            of the same encapsulation method, with the same endpoints.
+            If the encapsulation protocol only allows one tunnel per set
+            of endpoint addresses (such as for GRE or IP-in-IP), the
+            value of this object is 1.  For encapsulation methods (such
+            as L2F) which allow multiple parallel tunnels, the manager
+            is responsible for choosing any ID which does not conflict
+            with an existing row, such as choosing a random number."
+    ::= { tunnelConfigEntry 4 }
+
+tunnelConfigIfIndex OBJECT-TYPE
+    SYNTAX     InterfaceIndexOrZero
+    MAX-ACCESS read-only
+    STATUS     current
+    DESCRIPTION
+            "If the value of tunnelConfigStatus for this row is active,
+            then this object contains the value of ifIndex corresponding
+            to the tunnel interface.  A value of 0 is not legal in the
+            active state, and means that the interface index has not yet
+            been assigned."
+    ::= { tunnelConfigEntry 5 }
+
+tunnelConfigStatus OBJECT-TYPE
+    SYNTAX     RowStatus
+    MAX-ACCESS read-create
+    STATUS     current
+    DESCRIPTION
+            "The status of this row, by which new entries may be
+            created, or old entries deleted from this table. The agent
+            need not support setting this object to createAndWait or
+            notInService since there are no other writable objects in
+            this table, and writable objects in rows of corresponding
+            tables such as the tunnelIfTable may be modified while this
+            row is active.
+
+            To create a row in this table for an encapsulation method
+            which does not support multiple parallel tunnels with the
+            same endpoints, the management station should simply use a
+            tunnelConfigID of 1, and set tunnelConfigStatus to
+            createAndGo.  For encapsulation methods such as L2F which
+            allow multiple parallel tunnels, the management station may
+            select a pseudo-random number to use as the tunnelConfigID
+            and set tunnelConfigStatus to createAndGo.  In the event
+            that this ID is already in use and an inconsistentValue is
+            returned in response to the set operation, the management
+            station should simply select a new pseudo-random number and
+            retry the operation.
+
+            Creating a row in this table will cause an interface index
+            to be assigned by the agent in an implementation-dependent
+            manner, and corresponding rows will be instantiated in the
+            ifTable and the tunnelIfTable.  The status of this row will
+            become active as soon as the agent assigns the interface
+            index, regardless of whether the interface is operationally
+            up.
+
+            Deleting a row in this table will likewise delete the
+            corresponding row in the ifTable and in the tunnelIfTable."
+    ::= { tunnelConfigEntry 6 }
+
+-- conformance information
+
+tunnelMIBConformance
+                  OBJECT IDENTIFIER ::= { tunnelMIB 2 }
+tunnelMIBCompliances
+                  OBJECT IDENTIFIER ::= { tunnelMIBConformance 1 }
+tunnelMIBGroups  OBJECT IDENTIFIER ::= { tunnelMIBConformance 2 }
+
+-- compliance statements
+
+tunnelMIBCompliance MODULE-COMPLIANCE
+    STATUS  current
+    DESCRIPTION
+            "The compliance statement for the IP Tunnel MIB."
+    MODULE  -- this module
+    MANDATORY-GROUPS { tunnelMIBBasicGroup }
+
+        OBJECT      tunnelIfHopLimit
+        MIN-ACCESS  read-only
+        DESCRIPTION
+            "Write access is not required."
+
+        OBJECT      tunnelIfTOS
+        MIN-ACCESS  read-only
+        DESCRIPTION
+            "Write access is not required."
+
+        OBJECT      tunnelConfigStatus
+        MIN-ACCESS  read-only
+        DESCRIPTION
+            "Write access is not required."
+   ::= { tunnelMIBCompliances 1 }
+
+-- units of conformance
+
+tunnelMIBBasicGroup OBJECT-GROUP
+    OBJECTS { tunnelIfLocalAddress, tunnelIfRemoteAddress,
+       tunnelIfEncapsMethod, tunnelIfHopLimit, tunnelIfTOS,
+       tunnelIfSecurity, tunnelConfigIfIndex, tunnelConfigStatus }
+    STATUS  current
+    DESCRIPTION
+            "A collection of objects to support basic management of IP
+            Tunnels."
+    ::= { tunnelMIBGroups 1 }
+
+END

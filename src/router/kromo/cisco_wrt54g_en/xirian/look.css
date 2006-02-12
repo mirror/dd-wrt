@@ -1,0 +1,102 @@
+/* Styling */
+
+dd {
+	margin-left:			10px;
+}
+
+#header div.logo * {
+	display:				none;
+}
+
+#menuMain, #menuSub {
+	border:					0px;
+}
+
+ul#menuMainList li#current {
+	border-left:			1px solid;
+	border-right:			1px solid;
+	padding-top:			4px;
+}
+
+ul#menuMainList li#current + li{
+	border:					0px
+}
+
+ul#menuMainList li:first-child, ul#menuSubList li:first-child {
+	border:					0px;
+}
+
+ul#menuSubList li:first-child {
+	margin-left:			10px;
+}
+
+ul#menuMainList li, ul#menuSubList li {
+	border:					0px;
+	border-left:			1px solid;
+}
+
+#help div.logo * {
+	display:				none;
+}
+
+input,select {
+	border:					1px solid;
+}
+input[type='radio'],input[type='checkbox']  {
+	border:					0px;
+}
+
+div.message div {
+	border-width:			1px;
+	border-style:			solid;
+}
+
+/* Text */
+body,td,th,input,select {
+	font-family:			Verdana, Arial, Helvetica, sans-serif;
+	font-size:				11px;
+}
+
+a:link {
+	text-decoration:		none;
+}
+
+a:visited {
+	text-decoration:		none;
+}
+
+a:hover {
+	text-decoration:		underline;
+}
+
+a:active {
+	text-decoration:		none;
+}
+
+.section {
+	font-size:				24px;
+	font-family:			Helvetica, Verdana, Arial, sans-serif;
+}
+
+.term {
+	font-weight:			900;
+}
+
+.label {
+	width:					125px;
+	float:					left;
+}
+
+.info:first-child {
+	margin-top:				10px;
+}
+.info {
+	margin-left:			10px;
+	overflow:				hidden;
+}
+div.warning {
+	color:					#EE3333;
+	margin:					30px;
+	text-size:				120%;
+	text-align:				center;
+}

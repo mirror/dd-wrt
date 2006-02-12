@@ -1,0 +1,831 @@
+#! /bin/sh
+# Script to ask user if they want patches applied or reversed.
+# Sun 12 Nov 2000 Harald Welte <laforge@gnumonks.org>
+#		- added support for other protocols than ipv4
+# Tue 12 Feb 2002 Bob Hockney <zeus@ix.netcom.com>
+#		- added support for reverting patches out
+# Fri 22 Feb 2002 Fabrice MARIE <fabrice@netfilter.org>
+#               - added support for userspace/ patches
+#
+
+# set -x
+
+printheader()
+{
+    clear 2> /dev/null
+    echo "Welcome to Rusty's Patch-o-matic!"
+    echo
+    echo "Each patch is a new feature: many have minimal impact, some do not."
+    echo "Almost every one has bugs, so I don't recommend applying them all!"
+    echo "-------------------------------------------------------"
+    if [ -n "$1" ]; then
+	if [ $MODE ]; then
+    	    echo -n "NOT applied:     "
+	else
+	    echo -n "Already applied: "
+	fi
+	rest=${1# }
+	first=${rest%% *}
+	rest=${1#*$first}
+	echo $first
+	for x in $rest
+	do
+	    echo "                 $x"
+	done
+	echo
+    fi 
+}
+
+entertocont()
+{
+	echo ""
+	echo "[Press enter to continue]"
+	read enter
+	echo
+}
+
+#
+# WARNING: this function could fail, always check the output.
+#
+tmpdirname()
+{
+	dd if=/dev/urandom bs=32 count=1 2>/dev/null | od -x -w32 -A n | tr -d ' '
+}
+
+# Too many rejects from trying to patch Configure.help/Config.help and Config.in.
+# So we use special format: First line specifies entry we want to
+# follow, and rest of file is pasted in under that.
+
+# Args: "patch" file, directory, file to patch
+apply_change()
+{
+    PRIOR="`head -1 $1`"
+    LINE=`fgrep -x -n "$PRIOR" $2/$3 | cut -d: -f1 | head -1`
+    if [ -z "$LINE" ]
+    then
+	echo Could not find place to slot in $3 line >&2
+	return 1
+    fi
+    rm -f $2/${3}.tmp
+ 
+    if [ $MODE ]; then
+        # Reverse "patch"
+
+        # Need to search for previously inserted lines 
+        # Might not be immediately under $LINE
+        BEGIN=2
+        TESTLINE=$BEGIN
+        NUMLINES1=`sed -n \$= $1`
+        NUMLINES2=`sed -n \$= $2/$3`
+
+        while [ $TESTLINE -le $NUMLINES1 ]; do
+            NOMATCH=`awk "NR==$LINE + $TESTLINE - 1" $2/$3|\
+                    fgrep -vcx "\`sed -n -e ${TESTLINE}p $1\`"`;
+            if [ $NOMATCH -ne 0 ]; then
+                LINE=`expr $LINE + $TESTLINE - 1`
+                TESTLINE=$BEGIN
+                continue
+            fi;
+
+            TESTLINE=`expr $TESTLINE + 1`;
+
+        done; 
+
+        if [ $LINE -lt $NUMLINES2 ] && \
+            (awk "NR==1,NR==$LINE" $2/$3 && awk "NR==$LINE + $NUMLINES1,NR=0" $2/$3) > $2/${3}.tmp
+        then
+            mv $2/${3}.tmp $2/$3
+            echo "   $3 updated"
+            return 0
+        else
+            echo Could not update $3 >&2
+            rm -f $2/${3}.tmp
+            return 1
+        fi
+    fi
+    # Apply "patch"
+    # Use awk to properly add newline if last line of code has only spaces
+    # Necessary to properly remove inserted code if patch is reversed
+    if (awk "NR==1,NR==$LINE" $2/$3 && awk "NR==2,NR==0" $1 && \
+        awk "NR==$LINE+1,NR==0" $2/$3) > $2/${3}.tmp
+    then
+	mv $2/${3}.tmp $2/$3
+    else
+	echo Could not slot in $3 line >&2
+	rm -f $2/${3}.tmp
+	return 1
+    fi
+    echo "   Placed new $3 line"
+    return 0
+}
+
+# Args: configure.help file, Documentation file to which to add it.
+apply_config_help_change()
+{
+    if [ "$2" = '/dev/null' ]; then
+        #return 0	#Use this one if you don't care that the config*.help file is not getting updated
+        return 1	#Fail
+    fi
+    BASEFILE=`basename $2`	#Configure.help or Config.help
+    PRIOR="`head -1 $1`"
+    LINE=`fgrep -x -n "$PRIOR" $2 | cut -d: -f1 | head -1`
+    if [ -z "$LINE" ] || [ "$LINE" -eq 0 ]
+    then
+	echo Could not find place to slot in $BASEFILE entry >&2
+	return 1
+    fi
+
+    if [ $MODE ];
+    then
+        # Reverse "patch"
+
+        NUMLINES1=`sed -n \$= $1`
+        NUMLINES2=`sed -n \$= $2`
+        BEGIN=2
+
+        LINES=`fgrep -nx "\`sed -n 2p $1\`" $2 | cut -d: -f1`
+        if [ -z "$LINES" ]
+        then
+	    echo $BASEFILE text not found >&2
+            return 1
+        fi
+
+        # First line of inserted text may appear more than once
+        # Check each occurance
+        MATCHES=
+        for x in $LINES; do
+            TESTLINE=$BEGIN
+            # Be paranoid and check for match on all lines
+            while `let "$TESTLINE <= $NUMLINES1"`; do
+                NOMATCH=`awk "NR==$x + $TESTLINE - $BEGIN" $2|\
+                        fgrep -xcv "\`sed -n -e ${TESTLINE}p $1\`"`;
+
+                if [ $NOMATCH -ne 0 ]; then continue 2; fi
+
+                TESTLINE=`expr $TESTLINE + 1`;
+
+            done; # while
+            MATCHES="$x $MATCHES"
+
+        done; # for
+
+        if [ ! "$MATCHES" ]; then
+            echo $BASEFILE text not found >&2
+            return 1
+        fi;
+
+        for x in $MATCHES; do
+#            if (head -`expr $x - 1` $2 && \
+#                tail -n +`expr $x + $NUMLINES1` $2) > $2.tmp
+	    if (awk "NR==1,NR==$x - 1" $2 && \
+                awk "NR==$x + $NUMLINES1,NR=0" $2) > $2.tmp
+            then
+                mv $2.tmp $2
+            else
+                echo Could not update $BASEFILE >&2
+                rm -f $2.tmp
+                return 1
+            fi
+        done
+        echo "   $BASEFILE updated"
+        return 0
+    fi
+
+    #Apply "Patch"
+
+    rm -f $2.tmp
+    # Use awk to force newline if last line of $1 has only spaces
+    # Necessary to properly remove inserted text if patch is reversed
+    if (awk "NR==1,NR==$LINE-2" $2 && awk "NR==2,NR==0" $1 && echo && \
+        awk "NR==$LINE-1,NR==0" $2) > $2.tmp
+    then
+	mv $2.tmp $2
+    else
+	echo Could not slot in $BASEFILE entry >&2
+	rm -f $2.tmp
+	return 1
+    fi
+    echo "   Placed new $BASEFILE entry"
+    return 0
+}
+
+# Don't like to use GLOBIGNORE stuff; can't use shopt (bash v1).
+expand_no_backups()
+{
+    for expansion in $1
+    do
+	case "$expansion"
+	in
+	    "$1") ;;
+	    *~) ;;
+	    *) echo "$expansion";;
+	esac
+    done
+}
+
+apply_config_in_changes()
+{
+	ret=0
+
+	for x in `expand_no_backups "$1.config.in*"`
+	do
+	    apply_change $x $2 Config.in || ret=1
+	done
+
+	return $ret
+}
+
+apply_config_help_changes()
+{
+	ret=0
+
+	for x in `expand_no_backups "$1.configure.help*"`
+	do
+	    apply_config_help_change $x $2 || ret=1
+	done
+
+	return $ret
+}
+
+apply_makefile_changes()
+{
+	ret=0
+
+	for x in `expand_no_backups "$1.makefile*"`
+	do
+	    apply_change $x $2 Makefile || ret=1
+	done
+
+	return $ret
+}
+
+apply_conntrack_h_changes()
+{
+	ret=0
+	case $2 in
+		*ipv4)
+			conntrack_h=ip_conntrack.h
+			;;
+		*ipv6)
+			conntrack_h=ip6_conntrack.h
+			;;
+		*)
+			return $ret
+			;;
+	esac
+
+	for x in `expand_no_backups "$1.${conntrack_h}*"`
+	do
+	    apply_change $x $2 $conntrack_h || ret=1
+	done
+
+	return $ret
+}
+
+# I'm paranoid.  Test patch first.
+# Args: patch filename, protocol.
+test_patch()
+{
+    KTMPDIR=`tmpdirname`
+    if [ -e $1.userspace ];
+    then
+        UTMPDIR=`tmpdirname`
+    fi
+    # I'm really paranoid.  What if there's no /dev/urandom?
+    if [ -z "$KTMPDIR" ]; then
+        echo Failed to generate kernel tmpdirname: perhaps your /dev/urandom is broken >&2
+	exit 1
+    fi
+    if [ -e $1.userspace ];
+    then
+        if [ -z "$UTMPDIR" ]; then
+            echo Failed to generate userspace tmpdirname: perhaps your /dev/urandom is broken >&2
+	    exit 1
+	fi
+    fi
+    KTMPDIR=$KERNEL_DIR/../$KTMPDIR
+    if [ -e $1.userspace ];
+    then
+        UTMPDIR=$NETFILTERDIR/../$UTMPDIR
+    fi
+         
+    # On exit, clean up
+    if [ -e $1.userspace ];
+    then
+    	trap "rm -rf $KTMPDIR $UTMPDIR" 0
+    else
+    	trap "rm -rf $KTMPDIR" 0
+    fi
+    if cp -al $KERNEL_DIR/. $KTMPDIR
+    then :
+    else
+	echo Failed to make copy of $KERNEL_DIR >&2
+	rm -rf $KTMPDIR
+	if [ -e $1.userspace ];
+	then
+	    rm -rf $UTMPDIR
+	fi
+	exit 1
+    fi
+    if [ -e $1.userspace ];
+    then
+        if cp -al $NETFILTERDIR/. $UTMPDIR
+        then :
+    	else
+            echo Failed to make copy of $NETFILTERDIR >&2
+            rm -rf $KTMPDIR $UTMPDIR
+            exit 1
+        fi
+    fi
+
+    echo Testing patch $1...
+
+    if [ -f "$KTMPDIR/net/$2/netfilter/Config.help" ]; then
+    	DOCUMENTATIONFILE="net/$2/netfilter/Config.help"
+    elif [ -f "$KTMPDIR/Documentation/Configure.help" ]; then
+        DOCUMENTATIONFILE="Documentation/Configure.help"
+    else
+        echo Warning - no help text file could be found in either >&2
+        echo $KTMPDIR/net/$2/netfilter/Config.help >&2
+        echo or $KTMPDIR/Documentation/Configure.help >&2
+	DOCUMENTATIONFILE=/dev/null
+    fi
+
+    if apply_config_in_changes $1 $KTMPDIR/net/$2/netfilter &&
+	apply_config_help_changes $1 $KTMPDIR/$DOCUMENTATIONFILE &&
+	apply_makefile_changes $1 $KTMPDIR/net/$2/netfilter &&
+	apply_conntrack_h_changes $1 $KTMPDIR/include/linux/netfilter_$2
+    then :
+    else
+	rm -rf $KTMPDIR
+	if [ -e $1.userspace ];
+	then
+	    rm -rf $UTMPDIR
+	fi
+	return 1
+    fi
+
+    REJECTSBEFORE="`find $KTMPDIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    if [ -e $1.userspace ];
+    then
+        REJECTSBEFOREU="`find $UTMPDIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    fi
+    if (cd $KTMPDIR && if [ $MODE ]; then patch -R -p1; else patch -p1; fi >/dev/null) < $1
+    then :
+    else
+	echo Failed to patch copy of $KERNEL_DIR >&2
+	rm -rf $KTMPDIR
+	if [ -e $1.userspace ];
+	then
+	    rm -rf $UTMPDIR
+	fi
+	return 1
+    fi
+    if [ -e $1.userspace ];
+    then
+        if (cd $UTMPDIR && if [ $MODE ]; then patch -R -p0; else patch -p0; fi >/dev/null) < $1.userspace
+        then :
+        else
+            echo Failed to patch copy of $NETFILTERDIR >&2
+            rm -rf $KTMPDIR $UTMPDIR
+	    return 1
+        fi
+    fi
+    REJECTSAFTER="`find $KTMPDIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    if [ -e $1.userspace ];
+    then
+        REJECTSAFTERU="`find $UTMPDIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    fi
+
+    if [ -e $1.userspace ];
+    then
+        if [ "$REJECTSBEFORE" -ne "$REJECTSAFTER" ] || [ "$REJECTSBEFOREU" -ne "$REJECTSAFTERU" ];
+        then
+            echo Patch $1 seems to have had rejects \(`expr $REJECTSAFTER + $REJECTSAFTERU - $REJECTSBEFORE - $REJECTSBEFOREU` new rejections\) >&2
+            rm -rf $KTMPDIR $UTMPDIR
+            return 1
+        fi
+    else
+        if [ "$REJECTSBEFORE" -ne "$REJECTSAFTER" ];
+        then
+            echo Patch $1 seems to have had rejects \(`expr $REJECTSAFTER - $REJECTSBEFORE` new rejections\) >&2
+	    rm -rf $KTMPDIR
+	    return 1
+        fi
+    fi
+    rm -rf $KTMPDIR
+    if [ -e $1.userspace ];
+    then
+        rm -rf $UTMPDIR
+    fi
+
+    echo "   Patch $1 `modesense 2` cleanly."
+    return 0
+}
+
+# Args: patch filename, protocol.
+apply_patch()
+{
+    echo `modesense 3` patch $1...
+    REJECTSBEFORE="`find $KERNEL_DIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    if [ -e $1.userspace ];
+    then
+        REJECTSBEFOREU="`find $NETFILTERDIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    fi
+    if (cd $KERNEL_DIR && if [ $MODE ]; then patch -R -p1; else patch -p1; fi > /dev/null) < $1
+    then :
+    else
+	echo Failed to patch $KERNEL_DIR >&2
+	return 1
+    fi
+    if [ -e $1.userspace ];
+    then
+        if (cd $NETFILTERDIR && if [ $MODE ]; then patch -R -p0; else patch -p0; fi > /dev/null) < $1.userspace
+        then :
+        else
+            echo Failed to patch $NETFILTERDIR >&2
+            return 1
+        fi
+    fi
+    REJECTSAFTER="`find $KERNEL_DIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    if [ -e $1.userspace ];
+    then
+        REJECTSAFTERU="`find $NETFILTERDIR/. -name '*.rej' -exec cat {} \; | grep -c '^\*\*\* '`"
+    fi
+
+    if [ -e $1.userspace ];
+    then
+        if [ "$REJECTSBEFORE" -ne "$REJECTSAFTER" ] || [ "$REJECTSBEFOREU" -ne "$REJECTSAFTERU" ];
+        then
+            echo WARNING: patch $1 seems to have had rejects \(`expr $REJECTSAFTER + $REJECTSAFTERU - $REJECTSBEFORE - $REJECTSBEFOREU` new rejections\):
+	    find $KERNEL_DIR/. -name '*rej'
+	    find $NETFILTERDIR/. -name '*rej'
+        else
+	    echo "   Patch $1 `modesense 2` cleanly."
+	    echo "   *******************"
+	    echo "   ***** WARNING ***** You have applied a userspace patch, so do not forget to recompile"
+	    echo "   ******************* and re-install iptables."
+	    echo "   *******************"
+        fi
+    else
+        if [ "$REJECTSBEFORE" -ne "$REJECTSAFTER" ];
+        then
+            echo WARNING: patch $1 seems to have had rejects \(`expr $REJECTSAFTER - $REJECTSBEFORE` new rejections\):
+	    find $KERNEL_DIR/. -name '*rej'
+        else
+	    echo "   Patch $1 `modesense 2` cleanly."
+        fi
+    fi
+    apply_config_in_changes $1 $KERNEL_DIR/net/$2/netfilter/
+    apply_config_help_changes $1 $KERNEL_DIR/$DOCUMENTATIONFILE
+    apply_makefile_changes $1 $KERNEL_DIR/net/$2/netfilter/
+    apply_conntrack_h_changes $1 $KERNEL_DIR/include/linux/netfilter_$2
+}
+
+# Reverse order of arguments.
+reverse_args()
+{
+    NUMARGS=$#
+    while [ $NUMARGS -gt 0 ]; do
+        eval "echo -n \${$NUMARGS}' '"
+        NUMARGS=`expr $NUMARGS - 1`
+    done
+}
+
+modesense()
+{
+    case $1 in
+        1)
+            if [ $MODE ]; then echo REVERSE; else echo apply; fi;
+            ;;
+        2)
+	    if [ $MODE ]; then echo REVERSED; else echo applied; fi;
+            ;;
+        3)
+	    if [ $MODE ]; then echo REVERSING; else echo Applying; fi;
+            ;;
+    esac
+}
+
+parse_filename()
+{
+    SUITE=${1%%/*}
+    FILE=${1##$SUITE/}
+    BASE=${FILE%%.patch*}	# filename without .patch*
+    PROTO=${FILE##$BASE.patch}
+    PROTO=${PROTO##.}
+}
+
+# Args: list of patches to process
+process_patches()
+{
+    CURRENT=0
+    while [ $CURRENT -le $# ];
+    do
+        CURRENT=`expr $CURRENT + 1`
+        if [ $CURRENT -gt $# ];
+        then
+    if [ $BATCH ]; then
+	return
+    fi
+    printheader "$PROCESSED"
+    ANSWER=""
+    while [ ! $ANSWER ]
+    do
+        echo "-----------------------------------------------------------------"
+	echo -n "No more patches to `modesense 1`! Q to Quit or ? for options "'[Q/a/r/b/?] '
+        read ANSWER
+        case "$ANSWER" in 
+            a*|A*)
+                WALK=
+                NEWMODE=
+                if ! [ "$NEWMODE" = "$MODE" ]; then PATCHES=`reverse_args $PATCHES`; fi;
+                MODE=$NEWMODE
+                continue 3 
+                ;;
+            r*|R*)
+                WALK=
+                NEWMODE=UN
+                if ! [ "$NEWMODE" = "$MODE" ]; then PATCHES=`reverse_args $PATCHES`; fi;
+                MODE=$NEWMODE
+                continue 3 
+                ;;
+            b*|B*)
+                WALK=1
+                BACK=1
+                SEEN=${SEEN%%$SUITE/$BASE${PROTO:+-$PROTO} }
+                PROCESSED=${PROCESSED%% $SUITE/$BASE${PROTO:+-$PROTO}}
+                if [ $CURRENT -gt 1 ]; then
+                    CURRENT=`expr $CURRENT - 2`
+                else
+                    CURRENT=0
+                fi
+                continue 2 
+                ;;
+    	    Q*|q*|'')
+	        ANSWER=Q
+                continue 2 
+                ;;
+    	    *)
+	        ANSWER=""
+	        echo "Answer one of the following: "
+                echo "  A to restart patch-o-matic in apply mode"
+                echo "  R to restart patch-o-matic in REVERSE mode"
+                echo "  B to walk Back one patch in the list"
+	        echo "  Q to quit immediately"
+	        echo "  ? for help"
+	        ;;
+        esac
+    done
+        fi
+
+        THIS_PATCH=`eval echo -n \\\${$CURRENT}` > /dev/null
+        parse_filename $THIS_PATCH # > /dev/null
+
+        printheader "$PROCESSED"
+        # Don't skip SEEN patches in REVERSE mode
+        if [ ! $MODE ] && [ ! $BACK ] && echo $SEEN | tr ' ' '\012' | grep -q "$BASE${PROTO:+-$PROTO}\$"
+        then
+	    # Patches seen at previous suites are skipped
+            continue
+        else
+            if [ $MODE ] || ! echo $SEEN | tr ' ' '\012' | grep -q "$BASE${PROTO:+-$PROTO}\$"; then
+                SEEN="$SEEN$SUITE/$BASE${PROTO:+-$PROTO} "
+            elif [ $BACK ]; then
+                if [ $CURRENT -gt 1 ]; then
+                    parse_filename `eval echo -n \\\${\`expr $CURRENT - 1\`}` > /dev/null
+                    SEEN=${SEEN%%$SUITE/$BASE${PROTO:+-$PROTO} }
+                    PROCESSED=${PROCESSED%% $SUITE/$BASE${PROTO:+-$PROTO}}
+                    CURRENT=`expr $CURRENT - 2`
+                else
+                    CURRENT=0
+                fi
+                continue
+            fi
+
+    	    echo -n "Testing... "
+
+            APPLIED=
+            if STATUS=`./isapplied $KERNEL_DIR $THIS_PATCH`; then APPLIED=Y ; fi
+            if [ ! $WALK ] && ([ "$APPLIED" -a -z "$MODE" ] || [ ! "$APPLIED" -a -n "$MODE" ]); 
+	    then
+                PROCESSED="$PROCESSED $SUITE/$BASE${PROTO:+-$PROTO}"
+                continue
+            else
+                WALK=
+                BACK=
+	        echo $STATUS
+		echo The $SUITE/$BASE ${PROTO:+$PROTO } patch:
+		if [ -f $THIS_PATCH.help ]; then while read LINE; do echo "   $LINE"; done < $THIS_PATCH.help; fi
+		ANSWER=""
+		if [ $BATCH ]; then
+		    if test_patch $THIS_PATCH ${PROTO:-"ipv4"}
+		    then
+			apply_patch $THIS_PATCH ${PROTO:-"ipv4"}
+			PROCESSED="$PROCESSED $SUITE/$BASE${PROTO:+-$PROTO}"
+			ANSWER=Y
+		    else
+			echo TEST FAILED: patch NOT `modesense 2`.
+		    fi
+		fi
+		while [ "$ANSWER" = "" ]
+		do
+		    echo "-----------------------------------------------------------------"
+		    echo -n "Do you want to `modesense 1` this patch "'[N/y/t/f/a/r/b/w/v/q/?] '
+		    read ANSWER
+		    case "$ANSWER" in 
+		        y*|Y*)
+			    if test_patch $THIS_PATCH ${PROTO:-"ipv4"}
+			    then
+			        apply_patch $THIS_PATCH ${PROTO:-"ipv4"}
+			        PROCESSED="$PROCESSED $SUITE/$BASE${PROTO:+-$PROTO}"
+			    else
+			        echo TEST FAILED: patch NOT `modesense 2`.
+			        ANSWER=""
+			    fi
+			    entertocont # pause before screen is cleared by printheader
+			    ;;
+		        t*|T*)
+			    ANSWER=""
+			    test_patch $THIS_PATCH ${PROTO:-"ipv4"}
+			    ;;
+		        f*|F*)
+			    apply_patch $THIS_PATCH ${PROTO:-"ipv4"}
+			    PROCESSED="$PROCESSED $SUITE/$BASE${PROTO:+-$PROTO}"
+			    entertocont # pause before screen is cleared by printheader
+			    ;;
+		        a*|A*)
+			    NEWMODE=
+			    if ! [ "$NEWMODE" = "$MODE" ]; then PATCHES=`reverse_args $PATCHES`; fi;
+			    MODE=$NEWMODE
+			    continue 3 
+			    ;;
+		        r*|R*)
+			    NEWMODE=UN
+			    if ! [ "$NEWMODE" = "$MODE" ]; then PATCHES=`reverse_args $PATCHES`; fi;
+			    MODE=$NEWMODE
+			    continue 3 
+			    ;;
+		        b*|B*)
+			    WALK=1
+			    BACK=1
+		 	    SEEN=${SEEN%%$SUITE/$BASE${PROTO:+-$PROTO} }
+			    PROCESSED=${PROCESSED%% $SUITE/$BASE${PROTO:+-$PROTO}}
+			    if [ $CURRENT -gt 1 ]; then
+			        parse_filename `eval echo -n \\\${\`expr $CURRENT - 1\`}` > /dev/null
+			        SEEN=${SEEN%%$SUITE/$BASE${PROTO:+-$PROTO} }
+			        PROCESSED=${PROCESSED%% $SUITE/$BASE${PROTO:+-$PROTO}}
+			        CURRENT=`expr $CURRENT - 2`
+		            else
+			        CURRENT=0
+		            fi
+		            continue 2 
+		            ;;
+		        w*|W*)
+		            WALK=1
+		            if [ "$APPLIED" -a -z "$MODE" ] || [ ! "$APPLIED" -a -n "$MODE" ]; 
+		            then
+			        PROCESSED="$PROCESSED $SUITE/$BASE${PROTO:+-$PROTO}"
+		            fi
+		            continue 2
+		            ;;
+		        N*|n*|'')
+		            ANSWER=N
+			        if [ "$APPLIED" -a -z "$MODE" ] || [ ! "$APPLIED" -a -n "$MODE" ]; 
+		            then
+			        PROCESSED="$PROCESSED $SUITE/$BASE${PROTO:+-$PROTO}"
+ 		            fi
+ 		            ;;
+ 		        q*|Q*)
+		            echo Bye!
+		            exit 0 ;;
+			*)
+		            ANSWER=""
+		            echo "Answer one of the following: "
+		            echo "  T to test that patch will `modesense 1` cleanly"
+		            echo "  Y to `modesense 1` patch"
+		            echo "  N to skip this patch"
+		            echo "  F to `modesense 1` patch even if test fails"
+		            echo "  A to restart patch-o-matic in apply mode"
+		            echo "  R to restart patch-o-matic in REVERSE mode"
+		            echo "  B to walk Back one patch in the list"
+		            echo "  W to Walk forard one patch in the list"
+		            echo "  Q to quit immediately"
+		            echo "  ? for help"
+		            ;;
+ 	            esac
+ 	        done # while [ "$ANSWER" = "" ]
+            fi
+        fi
+    done # [ $CURRENT -le $# ] 
+}
+
+# Make sure we are in the correct directory
+if [ ! -f ./isapplied ]
+then
+    echo
+    echo Please call $0 from the patch-o-matic directory!
+    exit 1
+fi 
+
+export NETFILTERDIR=`cd ..; pwd`
+
+# Check to see if we are running in batch mode
+BATCH=
+if [ "$1" = "--batch" ]; then
+    BATCH=1
+    shift
+fi
+
+# Check to see if we are applying or reversing patches
+MODE=
+if [ "$1" = "--reverse" ]; then
+    shift
+    MODE=UN
+fi
+
+# Check to see if there is excluded patches
+EXCLUDED=
+while [ "$1" = "--exclude" ]; do
+    EXCLUDED="$EXCLUDED $2"
+    shift
+    shift
+done
+
+# Script arg: suite name or a single patch file
+PATCHES=""
+for arg; do
+if [ -d "$arg" -a -e $arg/SUITE ]
+then
+    for x in `cat $arg/SUITE`
+    do
+	PATCHES="$PATCHES `ls $x/*.patch $x/*.patch.ipv6 2>/dev/null`"
+    done
+elif [ -e "$arg" -a -n "${arg%%.patch*}" ]
+then
+	PATCHES="$PATCHES $arg"
+else
+    echo "ERROR: Invalid option $arg"
+    exit 1
+fi
+done
+
+if [ -z "$PATCHES" ]; then
+    echo
+    echo "Usage: $0 [--batch] [--reverse] [--exclude suite/patch-file ...] suite|suite/patch-file"
+    echo
+    echo "  --batch	batch mode, automatically applying patches"
+    echo "  --reverse	back out the selected patches"
+    echo "  --exclude	excludes the named patches"
+    echo
+
+    echo Possible patch-o-matic suites:
+    echo
+    for x in */SUITE; do
+	suite=${x%%/*}
+	echo ${suite}:
+	fold -s -w 56 $suite/DESCRIPTION | sed 's/^/    /'
+    done
+    exit 1
+fi
+
+if [ $MODE ]; then
+    PATCHES=`reverse_args $PATCHES`
+fi
+
+if [ -z "$KERNEL_DIR" ]
+then
+    echo Hey\! KERNEL_DIR is not set.
+    echo -n "Where is your kernel? [/usr/src/linux] "
+    read KERNEL_DIR
+fi
+
+echo "Examining kernel in $KERNEL_DIR"
+echo "-----------------------------------------------------------------"
+
+if [ ! -f ${KERNEL_DIR:=/usr/src/linux}/Makefile ]
+then
+    echo $KERNEL_DIR doesn\'t look like a kernel tree to me. >&2
+    exit 1
+fi
+VERSION=`grep '^VERSION' $KERNEL_DIR/Makefile | cut -d= -f2`
+PATCHLEVEL=`grep '^PATCHLEVEL' $KERNEL_DIR/Makefile | cut -d= -f2`
+if [ "$VERSION" -lt 2 -o "$PATCHLEVEL" -lt 4 ]
+then
+    echo $KERNEL_DIR looks like a $VERSION.$PATCHLEVEL kernel tree to me. >&2
+    echo I expect a 2.4 kernel or above. >&2
+    exit 1
+fi
+
+DONE=
+until [ $DONE ];
+do
+    PROCESSED=
+    SEEN="$EXCLUDED "
+    process_patches $PATCHES
+    DONE=1
+done 
+
+echo
+echo Excellent\!  Kernel is now ready for compilation.
+exit 0

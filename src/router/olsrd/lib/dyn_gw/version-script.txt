@@ -1,0 +1,11 @@
+VERS_1.0
+{
+  global:
+    get_plugin_interface_version;
+    register_olsr_data;
+    plugin_io;
+    register_olsr_param;
+
+  local:
+    *;
+};

@@ -1,0 +1,147 @@
+#!/bin/sh
+# Sveasoft QoS for the WRT54G
+#
+# This script is based on the Wondershaper script but is modified to create 4 priority buckets
+#
+# Iptables mark, connmark, mac, source/dest netmasks, and L7-filters are used to separate the traffic
+#
+# This script uses four separate HTB queues and manages a single device at a time
+#
+# Priority map:	Premium=1:10, Express=1:20, Standard=1:30, Bulk=1:40
+#
+#DOWNLINK=$1
+#UPLINK=$2
+#DEV=$3
+#MTU=$4
+
+TC=/usr/sbin/tc
+IPTABLES=/usr/sbin/iptables
+IP=/usr/sbin/ip
+
+if [ "$1" = "status" ]
+then
+	$TC -s qdisc ls dev $2
+	$TC -s class ls dev $2
+	$TC -s qdisc ls dev imq0
+	$TC -s class ls dev imq0
+	exit
+fi
+
+# clean existing down- and uplink qdiscs, hide errors
+$TC qdisc del dev $3 root    2> /dev/null > /dev/null
+$TC qdisc del dev imq0 root  2> /dev/null > /dev/null
+$IP link set imq0 down
+#$TC qdisc del dev $3 ingress 2> /dev/null > /dev/null
+
+
+if [ "$1" = "stop" ]
+then
+	exit
+fi
+
+###### uplink
+# install root HTB, point default traffic to 1:30:
+$TC qdisc add dev $3 root handle 1: htb default 30
+
+# main class
+$TC class add dev $3 parent 1: classid 1:1 htb rate $2kbit burst 6k quantum $((${4}+18))
+
+# Premium class 1:10:
+$TC class add dev $3 parent 1:1 classid 1:10 htb rate $((75*${2}/100))kbit ceil $2kbit burst 6k prio 1 quantum $((${4}+18))
+
+# Express class 1:20
+$TC class add dev $3 parent 1:1 classid 1:20 htb rate $((15*${2}/100))kbit ceil $2kbit burst 6k prio 2 quantum $((${4}+18))
+
+# Standard class 1:30
+$TC class add dev $3 parent 1:1 classid 1:30 htb rate $((10*${2}/100))kbit ceil $2kbit burst 6k prio 3 quantum $((${4}+18))
+
+# Bulk class 1:40
+$TC class add dev $3 parent 1:1 classid 1:40 htb rate 1kbit ceil $2kbit burst 6k prio 4 quantum $((${4}+18))
+
+# add SFQ
+$TC qdisc add dev $3 parent 1:10 handle 10: sfq perturb 10
+$TC qdisc add dev $3 parent 1:20 handle 20: sfq perturb 10
+$TC qdisc add dev $3 parent 1:30 handle 30: sfq perturb 10
+$TC qdisc add dev $3 parent 1:40 handle 40: sfq perturb 10
+
+## separate iptables mark into proper classes
+## tc filter stops when it finds a match, so rules are reversed here
+## in order to make sure we put bulk traffic in its place
+$TC filter add dev $3 parent 1:0 protocol ip prio 2 handle 40 fw flowid 1:40
+$TC filter add dev $3 parent 1:0 protocol ip prio 4 handle 30 fw flowid 1:30
+$TC filter add dev $3 parent 1:0 protocol ip prio 6 handle 20 fw flowid 1:20
+$TC filter add dev $3 parent 1:0 protocol ip prio 8 handle 10 fw flowid 1:10
+
+# ICMP (ip protocol 1) in the interactive class 1:10
+# This goes in tc filter priority 3 -- after prioritizing bulk traffic
+$TC filter add dev $3 parent 1:0 protocol ip prio 3 u32 match ip protocol 1 0xff flowid 1:10
+
+# To speed up downloads while an upload is going on, put ACK packets in the interactive queue
+# This goes in tc filter priority 3 to prevent bulk traffic ACKs from being
+# put into the Premium queue priority.  I feel it's okay for Standard and up.
+$TC filter add dev $3 parent 1:0 protocol ip prio 3 u32 \
+   match ip protocol 6 0xff \
+   match u8 0x05 0x0f at 0 \
+   match u16 0x0000 0xffc0 at 2 \
+   match u8 0x10 0xff at 33 \
+   flowid 1:10
+
+# rest ends up in Standard 1:30
+# I'm not sure why we have this rule -- we already set default 30
+$TC filter add dev $3 parent 1: protocol ip prio 10 u32 match ip dst 0.0.0.0/0 flowid 1:30
+
+########## downlink #############
+# OBSOLETE !
+# slow downloads down to somewhat less than the real speed  to prevent
+# queuing at our ISP. Tune to see how high you can set it.
+# ISPs tend to have *huge* queues to make sure big downloads are fast
+#
+# attach ingress policer:
+
+#$TC qdisc add dev $3 handle ffff: ingress
+
+# filter *everything* to it (0.0.0.0/0), drop everything that's
+# coming in too fast:
+
+#$TC filter add dev $3 parent ffff: protocol ip prio 11 u32 match ip src 0.0.0.0/0 police rate $1kbit burst 10k drop flowid :1
+
+# new downlink uses IMQ device and RED qdisc to drop packets coming in too fast
+# bring up IMQ device
+$IP link set imq0 up
+$TC qdisc add dev imq0 root handle 1: htb default 30
+
+# main class
+$TC class add dev imq0 parent 1: classid 1:1 htb rate $1kbit burst 6k
+
+# Premium class 1:10:
+$TC class add dev imq0 parent 1:1 classid 1:10 htb rate $((75*${1}/100))kbit ceil $1kbit burst 6k prio 1 quantum $((${4}+18))
+
+# Express class 1:20
+$TC class add dev imq0 parent 1:1 classid 1:20 htb rate $((15*${1}/100))kbit ceil $1kbit burst 6k prio 2 quantum $((${4}+18))
+
+# Standard class 1:30
+$TC class add dev imq0 parent 1:1 classid 1:30 htb rate $((10*${1}/100))kbit ceil $1kbit burst 6k prio 3 quantum $((${4}+18))
+
+# Bulk class 1:40
+$TC class add dev imq0 parent 1:1 classid 1:40 htb rate 1kbit ceil $1kbit burst 6k prio 4 quantum $((${4}+18))
+
+# add SFQ & RED
+$TC qdisc add dev imq0 parent 1:10 handle 10: sfq perturb 10
+$TC qdisc add dev imq0 parent 1:20 handle 20: red bandwidth $((8*${1}/10))kbit limit 1000000 min 5000 max 100000 avpkt 1000 burst 50 ecn
+$TC qdisc add dev imq0 parent 1:30 handle 30: red bandwidth $((7*${2}/10))kbit limit  500000 min 2500 max  50000 avpkt  500 burst 25 ecn
+$TC qdisc add dev imq0 parent 1:40 handle 40: red limit 250000 min 1250 max 25000 avpkt 250 burst 10 ecn
+
+# To speed up downloads while an upload is going on, put ACK packets in the inte
+$TC filter add dev imq0 parent 1:0 protocol ip prio 4 u32 \
+   match ip protocol 6 0xff \
+   match u8 0x05 0x0f at 0 \
+   match u16 0x0000 0xffc0 at 2 \
+   match u8 0x10 0xff at 33 \
+   flowid 1:10
+               
+               
+## separate iptables mark into proper classes
+$TC filter add dev imq0 parent 1:0 protocol ip prio 5 handle 10 fw flowid 1:10
+$TC filter add dev imq0 parent 1:0 protocol ip prio 6 handle 20 fw flowid 1:20
+$TC filter add dev imq0 parent 1:0 protocol ip prio 7 handle 30 fw flowid 1:30
+$TC filter add dev imq0 parent 1:0 protocol ip prio 8 handle 40 fw flowid 1:40

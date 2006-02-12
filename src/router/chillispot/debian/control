@@ -1,0 +1,17 @@
+Source: chillispot
+Section: net 
+Priority: optional
+Maintainer: Jens Jakobsen <jj@chillispot.org>
+Build-Depends: debhelper (>> 3.0.0)
+Standards-Version: 3.5.2
+
+Package: chillispot
+Architecture: any
+Depends: ${shlibs:Depends}
+Description: ChilliSpot is a Wireless LAN Access Point Controller.  
+ ChilliSpot is an open source captive portal or wireless LAN access point
+ controller. It supports web based login which is today's standard for
+ public HotSpots and it supports Wireless Protected Access (WPA) which
+ is the standard of the future. Authentication, Authorization and 
+ Accounting (AAA) is handled by your favorite radius server. Read more
+ on http://www.chillispot.org

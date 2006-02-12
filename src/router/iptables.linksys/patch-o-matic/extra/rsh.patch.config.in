@@ -1,0 +1,2 @@
+  dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
+  dep_tristate '  RSH protocol support' CONFIG_IP_NF_RSH $CONFIG_IP_NF_CONNTRACK

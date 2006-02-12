@@ -1,0 +1,15 @@
+--- open.c.orig	2005-02-07 13:00:18.447323037 -0800
++++ open.c	2005-02-07 13:05:06.588826856 -0800
+@@ -74,7 +74,11 @@
+     if (hostname == NULL || strcmp( hostname, sockname ) != 0) {
+ 	capture_peer(h);
+     } else if (strcmp( h->uri, "/" ) == 0) {
+-	if ( QUERY("mode_login") != NULL || QUERY("mode_login.x") != NULL ) {
++	/* Irving - Force addition of an accept_terms checkbox */
++	if ( ( QUERY("accept_terms") != NULL ) &&
++	     ( QUERY("mode_login") != NULL || QUERY("mode_login.x") != NULL ) &&
++		 ( strncmp(QUERY("accept_terms"),"yes",3) == 0) ) 
++	{
+ 	    accept_peer(h);
+ 	    http_send_redirect( h, QUERY("redirect") );
+ 	} else if ( QUERY("redirect") != NULL ) {

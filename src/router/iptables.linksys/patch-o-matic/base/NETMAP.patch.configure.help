@@ -1,0 +1,11 @@
+CONFIG_IP_NF_TARGET_REDIRECT
+NETMAP target support
+CONFIG_IP_NF_TARGET_NETMAP
+  NETMAP is an implementation of static 1:1 NAT mapping of network
+  addresses. It maps the network address part, while keeping the
+  host address part intact. It is similar to Fast NAT, except that
+  Netfilter's connection tracking doesn't work well with Fast NAT.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  The module will be called
+  ipt_NETMAP.o.  If unsure, say `N'.

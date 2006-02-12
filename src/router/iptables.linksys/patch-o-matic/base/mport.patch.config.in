@@ -1,0 +1,2 @@
+  dep_tristate '  Multiple port match support' CONFIG_IP_NF_MATCH_MULTIPORT $CONFIG_IP_NF_IPTABLES
+  dep_tristate '  Multiple port with ranges match support' CONFIG_IP_NF_MATCH_MPORT $CONFIG_IP_NF_IPTABLES

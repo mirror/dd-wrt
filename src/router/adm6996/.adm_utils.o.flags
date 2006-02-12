@@ -1,0 +1,3 @@
+ifeq (-D__KERNEL__ -I/home/dev/workspace/DD-WRT/src/linux/linux.v23/include -Wall -Wstrict-prototypes -Wno-trigraphs -Os -fno-strict-aliasing -fno-common -fomit-frame-pointer -funit-at-a-time -I /home/dev/workspace/DD-WRT/src/linux/linux.v23/include/asm/gcc -G 0 -mno-abicalls -fno-pic -pipe -finline-limit=100000 -mabi=32 -march=mips32 -Wa:-32 -Wa:-march=mips32 -Wa:-mips32 -Wa:--trap -DMODULE -mlong-calls -fno-common -I/opt/openwrt/usr/include -I. -I../../linux/linux.v23/include -I../../linux/linux.v23/drivers/media/video -I../../include.v23 -nostdinc -iwithprefix include,$(strip $(subst $(comma),:,$(CFLAGS) $(EXTRA_CFLAGS_nostdinc) $(CFLAGS_adm_utils.o))))
+FILES_FLAGS_UP_TO_DATE += adm_utils.o
+endif

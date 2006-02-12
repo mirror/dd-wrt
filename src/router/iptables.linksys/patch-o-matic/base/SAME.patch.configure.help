@@ -1,0 +1,10 @@
+CONFIG_IP_NF_TARGET_REDIRECT
+SAME NAT target support
+CONFIG_IP_NF_TARGET_SAME
+  This option adds a `SAME' target, which works like the standard
+  SNAT target, but attempts to give clients the same IP for all
+  connections.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  The module will be called
+  ipt_SAME.o.  If unsure, say `N'.

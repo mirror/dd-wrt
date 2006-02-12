@@ -1,0 +1,721 @@
+#
+# For a description of the syntax of this configuration file,
+# see Kconfig-language.txt
+#
+#
+# Copyright 2001-2003, Broadcom Corporation
+# All Rights Reserved.
+#
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+#
+#
+
+mainmenu "Router Configuration"
+
+menu "Base Features"
+
+config CONFIG_RC
+       bool "Router control (rc)"
+       depends on CONFIG_NVRAM && CONFIG_SHARED && CONFIG_BUSYBOX
+       default y
+       help
+       rc is a compact replacement for traditional SysV init. rc
+       manages the execution of all daemons. Answer Y unless you have
+       configured busybox to provide SysV init functionality.
+
+config CONFIG_NVRAM
+       bool "NVRAM support"
+       default y
+       help
+       Answer Y for user mode NVRAM support.
+
+config CONFIG_SHARED
+       bool "Shared functions"
+       default y
+       help
+       Answer Y for shared functions required by most of the base
+       features.
+
+config CONFIG_BUSYBOX
+       bool "BusyBox"
+       default y
+       help
+       BusyBox combines tiny versions of many common UNIX utilities into
+       a single small executable.
+
+config CONFIG_LIBBCM
+       bool "Broadcom shared library functions"
+       default y
+       help
+       Answer Y for shared functions for accessing Broadcom h/w
+       
+config CONFIG_BUSYBOX_CONFIG
+       string "BusyBox default configuration"
+       depends on CONFIG_BUSYBOX
+       default "router"
+       help
+       Override the default BusyBox configuration. File must exist in busybox/configs.
+
+config CONFIG_WLCONF
+       bool "Wireless configuration"
+       depends on CONFIG_NVRAM && CONFIG_SHARED
+       default y
+       help
+       Answer Y for Broadcom wireless configuration support.
+
+config CONFIG_BRIDGE
+       bool "Ethernet bridging"
+       default y
+       help
+       Answer Y for the user mode Ethernet bridge configuration utility.
+
+config CONFIG_VLAN
+       bool "VLAN configuration"
+       default y
+       help
+       Answer Y for the user mode VLAN configuration utility.
+
+config CONFIG_HTTPD
+       bool "Web server"
+       depends on CONFIG_NVRAM && CONFIG_SHARED
+       default y
+       help
+       Answer Y for basic web configuration support.
+
+config CONFIG_WWW
+       bool "Web pages"
+       depends on CONFIG_HTTPD
+       
+choice
+	prompt "SSL Encryption"
+	default CONFIG_OPENSSL
+
+config CONFIG_OPENSSL
+       bool "OpenSSL Encryption (1 MB)"
+
+config CONFIG_MATRIXSSL
+       bool "MatrixSSL Encryption (50K)"
+
+config CONFIG_NOSSL
+       bool "No SSL support"
+
+endchoice
+
+config CONFIG_EBTABLES
+       bool "Ebtables"
+       default n
+       help
+       Answer Y userspace ebtables utility.
+
+config CONFIG_NOCAT
+       bool "NoCatSplash"
+       default y
+
+config CONFIG_HOTSPOT
+       bool "Configure Hotspot/Captive Portal"
+       default n
+       help
+       Answer Y to configure Hotspot capability
+
+
+
+
+config CONFIG_SVEASPOT
+       bool "Include Sveasoft hotspot portal with Radius, HTTPS, local or splash screen authentication"
+       depends on CONFIG_HOTSPOT
+       default n
+       help
+       Answer Y to build Sveaspot hotspot portal.
+
+config CONFIG_VPND
+       bool "Configure VPN Daemons"
+       default y
+       help
+       Answer Y to configure VPN Daemons
+
+config CONFIG_PPTPD
+       bool "PoPToP: PPTP VPN server (requires  Microsoft PPP compression/encryption in kernel"
+       depends on CONFIG_VPND
+       default n
+       help
+       Answer Y to build PPTP VPN server.
+
+menu "IPSec"
+
+config CONFIG_IPSEC
+        bool "IPSec"
+        depends on CONFIG_VPND
+	default n
+	help
+	IPSec is secured VPN implementation
+
+config CONFIG_IPSEC_TUNNEL
+        depends on CONFIG_IPSEC
+	bool "ipsec_tunnel"
+	default y
+	help
+	ipsec_tunnel is barebone ipsec implementation.
+
+config CONFIG_IPSEC_TUNNEL_MD5
+	depends on CONFIG_IPSEC_TUNNEL
+	bool "MD5 digest support"
+	default y
+
+config CONFIG_IPSEC_TUNNEL_SHA1
+	depends on CONFIG_IPSEC_TUNNEL
+	bool "SHA1 digest support"
+	default y
+
+config CONFIG_IPSEC_TUNNEL_DES
+	depends on CONFIG_IPSEC_TUNNEL
+	bool "DES cipher support (weak, depricated)"
+	default n
+
+config CONFIG_IPSEC_TUNNEL_3DES
+	depends on CONFIG_IPSEC_TUNNEL
+	bool "3DES cipher support"
+	default y
+
+config CONFIG_IPSEC_TUNNEL_AES
+	depends on CONFIG_IPSEC_TUNNEL
+	bool "AES cipher support"
+	default n
+
+config CONFIG_PIPSEC
+        depends on CONFIG_IPSEC
+	bool "pipsec (not integrated yet)"
+	default n
+	help
+	pipsec is alternative IPSec implementation
+
+config CONFIG_IPSEC_IPSECADM
+	depends on CONFIG_IPSEC_TUNNEL
+	bool "ipsecadm administration tool"
+	default n
+	help
+	ipsecadm sets up IPsec tunnels
+
+config CONFIG_IPSEC_ISAKMP
+        depends on CONFIG_IPSEC_TUNNEL
+	bool "ISAKMP support (need openssl)"
+	default n
+	help
+	ISAKMP is internet rekeying protocol
+
+
+config CONFIG_IPSEC_ISAKMPD
+        depends on CONFIG_IPSEC_ISAKMP
+	bool "OpenBSD isakmpd daemon"
+	default n
+	help
+	isakmpd is rekeying daemon from OpenBSD
+
+config CONFIG_IPSEC_ISAKMPD_X509
+        depends on CONFIG_IPSEC_ISAKMPD
+        bool "X509 Support"
+        default y
+        help
+        x509 support allows to exchange keys using RSA_SIG method
+
+config CONFIG_IPSEC_KEYNOTE
+        depends on CONFIG_IPSEC_ISAKMPD
+        bool "Keynote policies support"
+        default y
+        help
+        Use keynote and policies.
+
+endmenu
+
+config CONFIG_RADIUSPLUGIN
+       bool "Radius Plugin for PPTP VPN server"
+       depends on CONFIG_PPTPD
+       default n
+       help
+       Answer Y to build Radius Plugin for PPTP VPN server.
+
+config CONFIG_PPPSTATS
+       bool "Include pppstats utility"
+       depends on CONFIG_PPTPD
+       default n
+       help
+       Answer Y to build pppstats utility
+
+config CONFIG_L7
+        bool "Include Layer 7 patter files"
+        default n
+        help
+        Answer Y to include Layer 7 pattern files for iptables.
+
+choice
+	prompt "Routing daemon "
+	default CONFIG_BIRD
+
+config CONFIG_ZEBRA
+       bool "GNU Zebra (RIP, OSPF)"
+
+config CONFIG_BIRD
+       bool "BIRD (RIP, PIPE, BGP, OSPF & STATIC)"
+
+endchoice
+
+choice
+	prompt "Bandwidth Management (Q0S)"
+	default CONFIG_WSHAPER
+
+config CONFIG_WSHAPER
+       bool "Wondershaper QoS"
+
+config CONFIG_SVQOS
+       bool "Multi-level QoS"
+
+endchoice
+
+
+config CONFIG_FROTTLE
+       bool "Frottle"
+       default n
+       help
+       Answer Y for Frottle hidden node management.
+
+config CONFIG_PARPROUTED
+       bool "Parprouted"
+       default n
+       help
+       Answer Y for Parprouted ARP daemon for client mode.
+
+config CONFIG_WOL
+       bool "Wake-On-Lan"
+       default y
+       help
+       Answer Y for Wake-On-Lan support.       
+
+config CONFIG_SNMP
+        bool "NET SNMP"
+        default n
+        help
+        Answer Y to include snmp daemon.
+
+config CONFIG_RADVD
+        bool "radvd"
+        default n
+        help
+        Answer Y to include radvd daemon.
+
+config CONFIG_RFLOW
+        bool "RFLOW (NetFlow generator)"
+        default n
+        help
+        Answer Y to include rflow. rflow needs PF_RING kernel support.
+
+config CONFIG_NETCONF
+       bool "Firewall configuration"
+       depends on CONFIG_IPTABLES || CONFIG_LIBIPT
+       default y
+       help
+       netconf is a compact, portable replacement for full iptables
+       support. It provides enough functionality to configure a basic
+       NAT firewall. Answer Y unless you plan on configuring a full
+       iptables based firewall setup.
+
+config CONFIG_NETSTATNAT
+       bool "Netstat for NAT connections"
+       depends on CONFIG_NETCONF && CONFIG_IPTABLES
+       default n
+
+
+choice
+	prompt "Iptables"
+	default CONFIG_LIBIPT
+	optional
+	help
+	netconf only requires the iptables support library. Answer
+	"Library only" unless you want full iptables support. Full
+	iptables support requires libdl (see "Additional C libraries").
+
+config CONFIG_IPTABLES
+       bool "Full"
+       depends on CONFIG_LIBDL
+
+config CONFIG_LIBIPT
+       bool "Library only"
+
+endchoice
+
+choice
+	prompt "C library"
+	default CONFIG_GLIBC
+
+config CONFIG_GLIBC
+       bool "GNU libc"
+
+config CONFIG_UCLIBC
+       bool "uClibc"
+
+endchoice
+
+config CONFIG_LIBOPT
+       bool "Optimize C library"
+       depends on CONFIG_GLIBC || CONFIG_UCLIBC
+       default y
+
+config CONFIG_ADM6996
+       bool "ADM6996 module"
+       default y
+       help
+       Answer Y to include ADM6996 control module.
+endmenu
+
+
+menu "GUI Styles"
+
+config CONFIG_KROMO
+       bool "Include the default Kromo design"	
+       depends on CONFIG_WWW
+       default y
+
+config CONFIG_XIRIAN
+       bool "Include the default Xirian design"	
+       depends on CONFIG_WWW
+       default y
+
+config CONFIG_BRAINSLAYER
+       bool "Include the default BrainSlayer design"	
+       depends on CONFIG_WWW
+       default y
+
+config CONFIG_WIKAR
+       bool "Include the default Wikar design"	
+       depends on CONFIG_WWW
+       default y
+
+config CONFIG_FREEBIRD
+       bool "Include the default Freebird branding design"	
+       depends on CONFIG_WWW
+       default n
+
+config CONFIG_DLS
+       bool "Include the default DLS branding design"	
+       depends on CONFIG_WWW
+       default n
+
+config CONFIG_OMNI
+       bool "Include the default Omni Wifi branding design"	
+       depends on CONFIG_WWW
+       default n
+
+config CONFIG_WTS
+       bool "Include the default WTS branding design"	
+       depends on CONFIG_WWW
+       default n
+
+config CONFIG_FBN
+       bool "Include the default FBN branding design"	
+       depends on CONFIG_WWW
+       default n
+
+endmenu
+
+menu "Special DD-WRT Features"
+
+config CONFIG_MSSID
+       bool "multiple ssid support (V24)"
+       
+config CONFIG_MADWIFI
+       bool "include madwifi atheros drivers"
+
+config CONFIG_NOTRANS
+       bool "disable multilanguage translation feature"
+       
+config CONFIG_AQOS
+       bool "support for per User Kbits fixed bandwith control"
+
+config CONFIG_ROBOCFG
+       bool "Include openwrt ROBOCFG Vlan Switch configuration utility"
+
+config CONFIG_OPENVPN
+       bool "Include OpenVPN"
+
+config CONFIG_TELNET
+       bool "Include telnetd"
+       
+config CONFIG_MASKMAC
+       bool "Mask Mac Adresses in WWW Gui"
+       depends on CONFIG_WWW
+
+config CONFIG_MMC
+	bool "MMC/SD Card support"
+	default y
+
+config CONFIG_SAMBA
+	bool "Samba Filesystem support"
+	default y
+config CONFIG_KAID
+	bool "Xteamlink XBOX Portal"
+	default y
+		
+config CONFIG_ZEROIP
+	bool "Zero IP Configuration Daemon"
+	default n
+		
+config CONFIG_RADAUTH
+	bool "Radius Authenticator"
+	default y
+		
+config CONFIG_CHILLISPOT
+       bool "Include Chillspot hotspot portal with Radius authentication"
+       depends on CONFIG_HOTSPOT
+       default n
+       help
+       Answer Y to build Chillispot hotspot portal.
+
+choice 
+       prompt "DHCP FORWARD"
+       default CONFIG_DHCPFORWARD
+       
+config CONFIG_DHCPFORWARD
+       bool "Include DHCP Forwarder (dhcp-forward)"
+       
+config CONFIG_DHCPRELAY
+       bool "Include ISC DHCP RELAY (dhcrelay)"
+              
+endchoice
+
+menu "SIPATH"
+
+config CONFIG_RTPPROXY
+	bool "Include RTPProxy"
+	default n
+	
+config CONFIG_SER
+	bool "SIP Express Router"
+	default n
+
+endmenu
+
+endmenu
+
+
+menu "Options"
+
+config CONFIG_VENDOR
+       string "Vendor"
+       default "broadcom"
+       help
+       Answer Y for vendor-specific customization.
+
+config CONFIG_UDHCPD
+       bool "DHCP client and server"
+       default y
+
+config CONFIG_PPP
+       bool "Roaring Penguin PPPoE client"
+       default y
+
+config CONFIG_PPPOESERVER
+       bool "Include PPPoE Server (adds ~ +22KB to code.bin)"
+       depends on CONFIG_PPP
+       default n
+       help
+       pppoe-server  is a user-space server for PPPoE (Point-to-Point Protocol
+       over Ethernet) for Linux and other UNIX systems.  pppoe-server works in
+       concert with the pppoe client to respond to PPPoE discovery packets and
+       set up PPPoE sessions.
+
+config CONFIG_PPPOERELAY
+       bool "Include PPPoE relay agent (adds ~ +8KB to code.bin)"
+       depends on CONFIG_PPP
+       default n
+       help
+       pppoe-relay  is a user-space relay agent for PPPoE (Point-to-Point Pro-
+       tocol over Ethernet) for Linux.  pppoe-relay works in concert with  the
+       pppoe  client and pppoe-server server.  See the OPERATION section in the manual
+
+config CONFIG_PPPOESNIFF
+       bool "Include PPPoE Sniffer (adds ~ +13KB to code.bin)"
+       depends on CONFIG_PPP
+       default n
+       help
+       pppoe-sniff  listens  for  likely-looking PPPoE PADR and session frames
+       and deduces extra options required for pppoe(8) to work.
+       Some DSL providers seem to  use  non-standard  frame  types  for  PPPoE
+       frames,  and/or  require a certain value in the Service-Name field.  It
+       is often easier to sniff those values from a machine which can success-
+       fully connect rather than try to pry them out of the DSL provider.
+
+config CONFIG_UPNP
+       bool "UPnP IGD server"
+       depends on CONFIG_NETCONF && CONFIG_NVRAM && CONFIG_SHARED
+       default y
+
+config CONFIG_NAS
+       bool "802.1X/WPA network authenticator"
+       depends on CONFIG_NVRAM && CONFIG_SHARED
+       default y
+
+config CONFIG_SES
+       bool "Secure Easy Setup configurator"
+       depends on CONFIG_NVRAM && CONFIG_SHARED && CONFIG_LIBBCM
+       default y
+
+config CONFIG_WPA_SUPPLICANT
+       bool "802.1X/WPA supplicant"
+       depends on CONFIG_OPENSSL
+       default n
+
+config CONFIG_DROPBEAR_SSHD
+       bool "Install and run sshd (dropbear version) on startup"
+       default n
+
+config CONFIG_BOOT_WAIT_ON
+       bool "Set boot_wait flag to on"
+       default n
+
+config CONFIG_IPROUTE2
+       bool "Bandwidth management"
+       default n
+
+config CONFIG_NTP
+       bool "NTP client"
+       default y
+
+config CONFIG_DNSMASQ
+       bool "DNS forwarder"
+       default y
+
+config CONFIG_UTILS
+       bool "Broadcom driver utilities"
+       default y
+
+config CONFIG_ETC
+       bool "SysV init scripts"
+       depends on CONFIG_BUSYBOX
+       default n
+       help
+       SysV init scripts.
+
+config CONFIG_RCS
+       string "Default SysV init script"
+       depends on CONFIG_ETC
+       default "rcS"
+       help
+       Default initialization script.
+
+config CONFIG_SPUTNIK_APD
+	bool "Sputnik Agent"
+	depends CONFIG_RC
+	default y
+	help
+	Sputnik Agent for management from a Sputnik Control Center.
+
+config CONFIG_BCMWPA2
+       bool "WPA2 Config"
+       default y
+
+
+config CONFIG_TCPDUMP
+       bool "tcpdump traffic sniffer"
+       depends on CONFIG_LIBPCAP && CONFIG_OPENSSL
+       default n
+       help
+       Standard linux command line packet sniffer.
+
+config CONFIG_KISMETDRONE
+       bool "kismet_drone"
+       depends on CONFIG_LIBPCAP
+       default n
+       help
+       See http://www.kismetwireless.net/
+
+endmenu
+
+menu "Additional C libraries"
+
+config CONFIG_LIBCRYPT
+       bool "libcrypt"
+       default y
+       help
+       libcrypt is the cryptography library.
+
+config CONFIG_LIBPCAP
+       bool "libpcap"
+       default n
+       help
+       libpcap is the packet capture library needed by tcpdump, kismet_drone, isakmpd and some other programs
+
+config CONFIG_LIBDL
+       bool "libdl"
+       default n
+       help
+       libdl is the dynamic linking interface library.
+
+config CONFIG_LIBM
+       bool "libm"
+       default n
+       help
+       libm is the mathematical library.
+
+config CONFIG_LIBNSL
+       bool "libnsl"
+       default n
+       help
+       libnsl is the network services library.
+
+config CONFIG_LIBPTHREAD
+       bool "libpthread"
+       default n
+       help
+       The POSIX threads library.
+
+config CONFIG_LIBRESOLV
+       bool "libresolv"
+       default n
+       help
+       Functions in this library provide for creating, sending, and
+       interpreting packets to the Internet domain name servers.
+
+config CONFIG_LIBUTIL
+       bool "libutil"
+       default n
+       help
+       Contains code for "standard" functions used in many different
+       Unix utilities.
+
+endmenu
+
+menu "Environment"
+
+config PLATFORM
+       string "Target architecture"
+       default "mipsel"
+       help
+       Specify the target architecture.
+
+config LINUXDIR
+       string "Target Linux kernel"
+       default "$(SRCBASE)/linux/linux"
+       help
+       Specify the location of the target Linux kernel directory.
+
+config LIBDIR
+       string "Target /lib"
+       default "$(TOOLCHAIN)/lib"
+       help
+       Specify the location of the target /lib directory.
+
+config USRLIBDIR
+       string "Target /usr/lib"
+       default "$(TOOLCHAIN)/usr/lib"
+       help
+       Specify the location of the target /usr/lib directory.
+
+endmenu
+
+menu "Internal Options"
+
+
+
+endmenu

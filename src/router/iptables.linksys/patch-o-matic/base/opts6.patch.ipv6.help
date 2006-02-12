@@ -1,0 +1,16 @@
+Author: Andras Kis-Szabo <kisza@sch.bme.hu>
+Status: It works 4 me!
+
+  These match extensions (`hbh' and `dst') allow you to select the packet 
+  based on the fileds of the option header of the IPv6 packets.
+
+HBH options:
+ --hbh-len [!] length           total length of this header
+ --hbh-opts TYPE[:LEN][,TYPE[:LEN]...] 
+                                Options and its length (list, max: 16)
+
+DST options:
+ --dst-len [!] length           total length of this header
+ --dst-opts TYPE[:LEN][,TYPE[:LEN]...] 
+                                Options and its length (list, max: 16)
+

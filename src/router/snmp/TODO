@@ -1,0 +1,143 @@
+TODO list for the ucd-snmp-coders:
+
+  create our own source rpm spec file, independent from RedHat
+  possibly add WinSNMP wrappers around the ucd-snmp functions
+  Continue to add and improve manual pages/documentation.
+  More snmpset'able variables.
+  Should be able to set the fix script line in the .conf files per type.
+  Implement IP routing table manipulation using sysctl() on systems that
+    support the route socket (BSD 4.4 and IRIX >= 6.2)
+  Implement new IP forwarding table MIB (RFC 2096), at least on systems
+    that have classless routing tables internally
+  Implement IP/UDP/TCP statistics on IRIX 6.2 and later using
+    sysmp(MP_SAGET,MPSA_TCPIPSTAT,...) and <sys/tcpipstats.h>
+  Follow the evolution of the Interfaces Group MIB
+    (draft-ietf-ifmib-mib-05.txt) and implement what can be
+    implemented.
+  Make read_objid and sprint_objid agree on which shorthands they accept.
+  snmpset should check against MIB size if possible?
+  Remove unsuppored mib nodes from output instead of returning '0's.
+  Support for Counter64 in snmpdelta
+  API for traps that pass scripts can use.
+  Make memory/swap variables UInts instead of Ints.
+
+===================
+
+Issues:
+
+	CODE-RELATED ISSUES
+	-------------------
+
+Architecture-specific implementations:
+	How to handle differences between architectures
+	   - overall common template
+	   - "standard" implementation (with minor differences)
+	   - architecture unique implementations
+	pre-processor #ifdefs or separate files
+
+Function argument handling:
+	Function declaration prototypes
+	Function definition prototypes
+	How to handle both ANSI and K&R compilers
+
+Threading
+	Single thread / multi-thread / event driven / asynchronous
+
+Lookup design
+	Kernel digging vs "clean" interfaces (sysctl/ioctl)
+
+Error Handling
+	Ensure all return values are checked for validity
+
+Documented APIs
+
+WinSNMP interface
+
+Package name
+	UCD-snmp vs Net-snmp
+
+
+
+	FUNCTIONALITY-RELATED ISSUES
+	----------------------------
+
+Per-interface information
+	(speed/type/counters/non-ethernet address)
+
+Multi-CPU support
+
+Real Time O/S support
+
+64-bit counters
+
+Non-ethernet interface support
+	Address handling code tends to assume 6 octet
+	physical addresses and 4 octet transport addresses
+
+Non-fully-qualified name output
+	(Probably covered now?)
+
+Formatted dump
+	unpick the ASN encoding, rather than
+	simply dumping the bare data
+
+Module interdependence
+
+
+
+	EXTENSIBILITY-RELATED ISSUES
+	----------------------------
+
+AgentX
+
+SMUX
+
+Dynamic loading of modules
+
+"Intelligent" Agent
+	agent-initiated traps
+	threshold monitoring
+
+PHP scripting
+
+Extensible trapd
+
+
+
+	PERFORMANCE-RELATED ISSUES
+	--------------------------
+
+Memory Leaks
+
+Information caching
+	(e.g. Host Resources information)
+
+Intelligent table handling
+	(i.e. not resetting internal state for each request)
+
+Pre-compiled MIBs
+	to speed up MIB parsing
+
+Duplicate requests
+	Currently these are processed afresh each time.
+	They should probably be either dropped or use cached replies
+
+Security
+	Go through the library and apps and check all arrays and
+	buffers for overruns. There are a lot of unchecked ones.
+
+===================
+
+Other Ideas:
+  Make the mib parser figure out which of the above files it needs to
+    load rather than loading them all -- Tom Georges & Joe Marzot
+
+===================
+
+Want something done?  Have ideas?  Have code to submit?  Need
+something earlier than it is listed above? Please!  
+                                           Write us!
+                                           net-snmp-coders@lists.sourceforge.net
+
+(even if just to announce that you are going to be working on it so we 
+can avoid multiple people working on the same thing)

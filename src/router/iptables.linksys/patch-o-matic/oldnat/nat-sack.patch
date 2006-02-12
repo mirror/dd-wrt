@@ -1,0 +1,162 @@
+--- linuxppc-031201-nfpom/net/ipv4/netfilter/ip_nat_helper.c	Sun Dec  2 21:13:35 2001
++++ linuxppc-031201-nfpom-sack/net/ipv4/netfilter/ip_nat_helper.c	Mon Jan 14 21:54:58 2002
+@@ -1,8 +1,11 @@
+ /* ip_nat_mangle.c - generic support functions for NAT helpers 
+  *
+- * (C) 2000 by Harald Welte <laforge@gnumonks.org>
++ * (C) 2000-2002 by Harald Welte <laforge@gnumonks.org>
+  *
+  * distributed under the terms of GNU GPL
++ *
++ * 	14 Jan 2002 Harald Welte <laforge@gnumonks.org>:
++ *		- add support for SACK adjustment 
+  */
+ #include <linux/version.h>
+ #include <linux/module.h>
+@@ -32,6 +35,9 @@
+ #define DEBUGP(format, args...)
+ #define DUMP_OFFSET(x)
+ #endif
++
++
++#define CONFIG_IP_NF_NAT_SACK	1
+ 	
+ DECLARE_LOCK(ip_nat_seqofs_lock);
+ 			 
+@@ -182,6 +188,102 @@
+ 	return 1;
+ }
+ 
++#ifdef CONFIG_IP_NF_NAT_SACK
++/* Adjust one found SACK option including checksum correction */
++static void
++sack_adjust(struct tcphdr *tcph, 
++	    unsigned char *ptr, 
++	    struct ip_nat_seq *natseq)
++{
++	struct tcp_sack_block *sp = (struct tcp_sack_block *)(ptr+2);
++	int num_sacks = (ptr[1] - TCPOLEN_SACK_BASE)>>3;
++	int i;
++
++	for (i = 0; i < num_sacks; i++, sp++) {
++		u_int32_t new_start_seq, new_end_seq;
++
++		if (after(ntohl(sp->start_seq) - natseq->offset_before,
++			  natseq->correction_pos))
++			new_start_seq = ntohl(sp->start_seq) 
++					- natseq->offset_after;
++		else
++			new_start_seq = ntohl(sp->start_seq) 
++					- natseq->offset_before;
++		new_start_seq = htonl(new_start_seq);
++
++		if (after(ntohl(sp->end_seq) - natseq->offset_before,
++			  natseq->correction_pos))
++			new_end_seq = ntohl(sp->end_seq)
++				      - natseq->offset_after;
++		else
++			new_end_seq = ntohl(sp->end_seq)
++				      - natseq->offset_before;
++		new_end_seq = htonl(new_end_seq);
++
++		DEBUGP("sack_adjust: start_seq: %d->%d, end_seq: %d->%d\n",
++			ntohl(sp->start_seq), new_start_seq,
++			ntohl(sp->end_seq), new_end_seq);
++
++		tcph->check = 
++			ip_nat_cheat_check(~sp->start_seq, new_start_seq,
++					   ip_nat_cheat_check(~sp->end_seq, 
++						   	      new_end_seq,
++							      tcph->check));
++
++		sp->start_seq = new_start_seq;
++		sp->end_seq = new_end_seq;
++	}
++}
++			
++
++/* TCP SACK sequence number adjustment, return 0 if sack found and adjusted */
++static int
++ip_nat_sack_adjust(struct sk_buff *skb,
++			struct ip_conntrack *ct,
++			enum ip_conntrack_info ctinfo)
++{
++	struct iphdr *iph;
++	struct tcphdr *tcph;
++	unsigned char *ptr;
++	int length, dir, sack_adjusted = 0;
++
++	iph = skb->nh.iph;
++	tcph = (void *)iph + iph->ihl*4;
++	length = (tcph->doff*4)-sizeof(struct tcphdr);
++	ptr = (unsigned char *)(tcph+1);
++
++	dir = CTINFO2DIR(ctinfo);
++
++	while (length > 0) {
++		int opcode = *ptr++;
++		int opsize;
++
++		switch (opcode) {
++			case TCPOPT_EOL:
++				return !sack_adjusted;
++			case TCPOPT_NOP:
++				length--;
++				continue;
++			default:
++				opsize = *ptr++;
++				if (opsize > length) /* no partial opts */
++					return !sack_adjusted;
++				if (opcode == TCPOPT_SACK) {
++					/* found SACK */
++					if((opsize >= (TCPOLEN_SACK_BASE + TCPOLEN_SACK_PERBLOCK)) &&
++					   !((opsize - TCPOLEN_SACK_BASE) % TCPOLEN_SACK_PERBLOCK))
++						sack_adjust(tcph, ptr-2, &ct->nat.info.seq[!dir]);
++					
++					sack_adjusted = 1;
++				}
++				ptr += opsize-2;
++				length -= opsize;
++		}
++	}
++	return !sack_adjusted;
++}
++#endif /* CONFIG_IP_NF_NAT_SACK */
++
+ /* TCP sequence number adjustment */
+ int 
+ ip_nat_seq_adjust(struct sk_buff *skb, 
+@@ -226,9 +328,24 @@
+ 	tcph->seq = newseq;
+ 	tcph->ack_seq = newack;
+ 
++#ifdef CONFIG_IP_NF_NAT_SACK
++	ip_nat_sack_adjust(skb, ct, ctinfo);
++#endif
++
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_IP_NF_NAT_SACK
++
++/* Well, no need to fuck rusty anymore. We _can_ deal correctly with SACK */
++void 
++ip_nat_delete_sack(struct sk_buff *skb, struct tcphdr *tcph)
++{
++	return;
++}
++
++#else /* CONFIG_IP_NF_NAT_SACK */
++
+ /* Grrr... SACK.  Fuck me even harder.  Don't want to fix it on the
+    fly, so blow it away. */
+ void
+@@ -272,6 +389,8 @@
+ 	}
+ 	else DEBUGP("Something wrong with SACK_PERM.\n");
+ }
++
++#endif /* CONFIG_IP_NF_NAT_SACK */
+ 
+ static inline int
+ helper_cmp(const struct ip_nat_helper *helper,

@@ -1,0 +1,1 @@
+<fieldset><legend>PPPOE Module Selection</legend><span class="comment">PPPOE Configuration</span><div class="setting"><div class="label">Use RP PPPoE</div><input type="radio" value="1" name="pppoe_ver" <% nvram_match("pppoe_ver","1","checked"); %> /> Enable<input type="radio" value="0" name="pppoe_ver" <% nvram_match("pppoe_ver","0","checked"); %> /> Disable</div></fieldset>

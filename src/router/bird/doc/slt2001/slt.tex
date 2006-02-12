@@ -1,0 +1,275 @@
+\magnification=\magstep1
+\input epsf.tex
+\input mjmac.tex
+
+\language=\czech
+\chyph
+
+\hsize=160truemm	% A4 with 25mm margins
+\vsize=247truemm
+\parindent=2em
+\nopagenumbers
+
+\def\hdr#1{\medskip\leftline{\bf #1}\smallskip}
+\def\\{\hfil\break}
+\def\BIRD{{\sc Bird}}
+
+\def\inititemize{\vskip 1pt\begingroup
+\parskip=1pt plus 0.3pt minus 0.1pt
+\advance\leftskip by 3em
+\advance\rightskip by 3em
+\parindent=0pt
+}
+
+%%% Úvod a historie projektu
+\hdr{Na poèátku bylo vejce aneb Úvodem}
+
+\noindent Internet i UNIX jsou na svìtì ji¾ pìkných pár pátkù. Poèítaèe pracující
+pod nepøeberným mno¾stvím unixovských systémù od nepamìti fungují jako
+internetové po¹tovní servery, name-servery a men¹í routery. Skoro by se zdálo, ¾e
+si tyto dva svìty u¾ nemají co nového øíci. V~posledních letech ov¹em
+výraznì vzrostl výkon bì¾ných PC-èek a objevily se pro nì karty podporující
+nejrùznìj¹í sí»ové technologie, a~tak se tyto poèítaèe staly vhodnými
+kandidáty i~pro funkci routerù. Na~mnoha místech tak star¹í PC-èko
+s~volnì ¹iøitelným softwarem pøedstihlo svého star¹ího a dra¾¹ího
+komerèního sourozence. Aèkoliv podpora routingu, firewallingu a inteligentní
+queue management v~jádrech tìchto~OS (a~zejména Linuxu) je ji¾ velice
+vyspìlá, je¹tì nedávno byly notnì zanedbávány protokoly pro dynamický
+routing, tradièní unixovskou koncepcí umístìné do~u¾ivatelského prostoru
+v~podobì routovacích daemonù.
+
+Tento nedostatek se pokou¹ela mezi jinými napravit také skupina nad¹encù
+na~pra¾ské Matematicko-fyzikální fakultì UK, která se rozhodla jako svùj
+studijní projekt vytvoøit nového routovacího daemona, který by se stal
+nìèím víc ne¾ jen dùstojným konkurentem komerèních routerù -- nejen
+kopíroval u¾ známá øe¹ení, ale také pøispìl nìèím novým; na~jedné stranì
+být stabilním a efektivním programem pro praxi, na~stranì druhé ov¹em
+i~laboratoøí pro snadné experimentování s~novými my¹lenkami. A~tak se
+narodil projekt {\it BIRD Internet Routing Daemon} (zkrácenì \BIRD\footnote{$^0$}{Projekt
+si samozøejmì vyslou¾il nejrùznìj¹í pøezdívky -- od Ptáèete a¾ po~Ptákovinu.}).
+
+Pùvodní plány byly smìlé a rozhodné: Vytvoøit nejlep¹ího routovacího
+daemona na svìtì, který by fungoval na~v¹ech platformách, vy¾adoval
+minimum strojového èasu a pamìti, podporoval v¹echny routovací protokoly
+atd., zkrátka sen, jaký má být. Pøeskoème nyní dva roky vývoje\footnote{$^1$}{bìhem nich¾
+z~nìkterých po¾adavkù samozøejmì se¹lo -- napøíklad logem projektu
+se nakonec nestal ptáèek nesoucí v~zobáèku snítku byliny øeèené routa \dots}
+a podívejme se, co z~toho vze¹lo.
+
+%%% Svìt routingu
+%% v~ti¹tìné verzi pøeskoèíme
+
+%%% Co BIRD doká¾e
+\hdr{Kdy¾ ptáèka lapají, pìknì mu zpívají aneb Feature list}
+
+\noindent \BIRD\ dostal od svých sudièek do~vínku mnohé dary:
+
+\def\icirc{\raise0.2ex\hbox{$\circ$}} % Signs frequently used for \itemize
+
+\itemize\ibull
+\:Schopnost komunikovat protokoly IPv4 i IPv6.
+\:Podporu v¹ech základních routovacích protokolù:
+  \itemize\icirc
+    \:RIPv2 (Routing Information Protocol, viz RFC 1723 a 2080)\\
+      Urèen pro interní routing, dnes významu spí¹e historického.\\
+      Algoritmus: distance vector (Bellman-Ford).\\
+      Velmi pomalá konvergence, pou¾itelý pouze pro malièké sítì.
+    \:OSPFv2 (Open Shortest Path First, viz RFC 2328)\\
+      Urèen pro interní routing, v~souèasné dobì asi nejbì¾nìj¹í.\\
+      Algoritmus: link state (Dijkstra).\\
+      Rychlá konvergence, ale velice komplikovaný.\\
+      Zatím podporujeme pouze pro IPv4.
+    \:BGP4 (Border Gateway Protocol, viz RFC 1771 a 2283)\\
+      Standardní protokol pro externí routing mezi AS.\\
+      Rychlá konvergence, mo¾nost administrativní filtrace.\\
+      Algoritmus: path vector (upravený Bellman-Ford).
+  \endlist
+\:Propojování protokolù a výmìnu dat mezi nimi.
+\:Schopnost uplatòovat routing policy -- urèovat, které routovací informace
+  budou od~kterých protokolù pøijímány a do~kterých protokolù vysílány.
+\:Snadnou konfiguraci a údr¾bu, ale o~tom a¾ pozdìji.
+\:Modulární architekturu umo¾òující snadné doplòování nových protokolù,
+  filtrù i jednoduché portování na~dal¹í systémy. (Interface k~routovacím
+  slu¾bám jádra je bohu¾el i mezi jednotlivými unixovskými systémy natolik
+  rùznorodý, ¾e dokonce i~Linux 2.0 a Linux 2.2 jsou naprogramovány jako dva
+  odli¹né porty.)
+\:A v~neposlední øadì kvalitní dokumentaci jak u¾ivatelskou, tak
+  programátorskou (to je vítaný dùsledek bytí ¹kolním projektem).
+\endlist
+
+%%% A jak to v¹echno propojit
+\hdr{Svìt z~ptaèí perspektivy aneb Jak to v¹echno dát dohromady?}
+
+\noindent Hlavním problémem ov¹em není ani tak v¹echny tyto vymo¾enosti naprogramovat
+a popropojovat, nýbr¾ udìlat to tak, aby z~toho nevznikl neudr¾ovatelný
+a neefektivní zmatek\footnote{$^2$}{Nádherným pøíkladem je Mendelùv pes,
+jak ho kdysi nakreslil pan Kantorek.}. Z~toho se zrodil modulární pohled
+na~svìt routingu a následnì i celá modulární architektura programu:
+
+\bigskip
+
+\centerline{\epsfxsize=0.9\hsize\epsfbox{../slides/obr5.eps}}
+
+\medskip
+
+Základem pohledu na~Internet z~na¹í \uv{ptaèí perspektivy} je routovací
+tabulka. Na~ní jsou pøipojeny jednotlivé routovací protokoly -- jak
+protokoly reálné, tak i nìkolik virtuálních, jako je napøíklad protokol
+Kernel zaji¹»ující synchronizaci tabulky s~tabulkou jádra nebo protokol
+Static generující podle své konfigurace statické smìrování. Ka¾dý z~protokolù
+posílá do~tabulky polo¾ky pro v¹echny routy, které se na~základì svých informací
+o~topologii sítì dozvídá. Tabulka pro ka¾dou sí» vybírá na základì preferencí
+jednotlivých protokolù a jejich metrik optimální smìr a ten oznamuje
+zpìt protokolùm. V~cestì ov¹em v~obou smìrech stojí filtry, které mohou
+tok dat regulovat -- nìkteré polo¾ky odmítat, jiné upravovat (napøíklad
+jim pøenastavovat metriky èi tagy; to se dokonce vztahuje i~na
+atributy doplòované cílovým protokolem, proto¾e nejprve cílový protokol
+nastaví implicitní hodnoty svých atributù, pokud je ji¾ polo¾ka neobsahovala,
+a teprve pak dojde k~filtrování).
+
+Routovacích tabulek mù¾e dokonce existovat vícero a pomocí protokolu Pipe
+si mohou pøeposílat vybrané polo¾ky. Tím mù¾eme zajistit napøíklad
+routing závislý na~zdrojové adrese èi vstupním interfacu: u~Linuxu 2.2
+èi novìj¹ího nakonfigurujeme jádru více routovacích tabulek a ka¾dou
+z~nich pøipojíme na~jednu tabulku na¹i.
+
+\hdr{Ptaèí zpìv aneb User interface}
+%%% User interface: konfigurace, logging a filtry. Remote control.
+
+\noindent Sí» se mìní a s~ní se musí mìnit i konfigurace sí»ových
+komponent. Ta se pozvolna stala tradièním kamenem úrazu vìt¹iny routerù.
+U~tohoto kamene se toti¾ scházejí dva odvìcí nepøátelé:
+snaha o~snadnost a flexibilitu konfigurace a snaha o~nepøetr¾itý
+provoz sítì. A~jednou sleví ten, podruhé onen -- autoøi nìkterých
+routerù vsadili na~sílu textových konfiguraèních souborù za~cenu
+toho, ¾e se po~ka¾dé zmìnì konfigurace musí router restartovat
+a po~nìjakou dobu neroutuje, jiní zase podøídili non-stop provozu
+v¹e ostatní a stvoøili konfigurování nepøeberným mno¾stvím online
+pøíkazù, pomocí nich¾ se nìkteré vìci provádìjí snadno, jiné,
+na~které autoøi speciální pøíkaz nevymysleli, u¾ obtí¾nìji a je¹tì jiné
+vy¾adují do~výsledného stavu dospìt postupným provedením mnoha zmìn,
+co¾ má obvykle za~dùsledek daleko del¹í výpadek ne¾ jaký by byl vznikl
+reloadem celého routeru.
+
+\BIRD\ se sna¾í dosáhnout obojího: pou¾ívá textové konfiguraèní soubory,
+u¾ivateli tak dává mo¾nost vytváøet konfiguraci víceménì libovolným
+zpùsobem -- a» ji¾ ruèním editováním, interaktivními programy èi
+automatickým generováním pomocí scriptù. Po~zmìnì konfigurace je
+ov¹em schopen si novou verzi souboru pøeèíst, porovnat s~právì
+pou¾ívanou konfigurací a zmìnám se za bìhu pøízpùsobit (pokud
+jsou zmìny pøíli¹ velké, mù¾e to zpùsobit restart
+nìkterého z~protokolù, ale provoz tìch, kterých se zmìna
+netýkala, to nijak neohrozí).
+
+Konfigurace ka¾dého protokolu (lépe øeèeno ka¾dé jeho instance --
+protokoly mohou být spu¹tìny nìkolikrát na~rùzných rozhraních
+èi nad rùznými tabulkami) vypadá pøibli¾nì takto:
+
+\verbatim{   protocol bgp TestBGP {               # instanci si mù¾eme nazvat
+      local as 65000;			# ná¹ AS
+      neighbor 195.39.3.64 as 5588;	# sousední AS
+      export all;			# posílat budeme v¹echno
+      import filter {                   # na vstupu nìkteré odmítneme
+         if !(bgp_path ~ / ? 5588 ? /) then reject;
+         if net ~ [ 10.0.0.0/8+, 192.168.0.0/16+ ] then reject;
+         preference = 101;              # zbylým nastavíme preferenci
+         accept;                        # a pøijmeme je
+      };
+   }}
+\noindent V¾dy popisuje protokol, jeho parametry, pøipojení k~tabulkám
+(v~na¹em pøípadì pou¾íváme tabulku implicitní) a nastavení vstupních
+i~výstupních filtrù.
+
+Filtry jsou popisovány jednoduchým procedurálním programovacím jazykem,
+který má k~dispozici v¹echny informace o~právì zpracovávané polo¾ce, mù¾e
+se podle nich rozhodovat a libovolnì je mìnit. Díky tomu je mo¾né jednodu¹e
+zadávat i velice slo¾itá pravidla, definovat si podprogramy sdílené
+filtry patøícími k~více protokolùm, i~poèítat metriky pro jeden protokol
+na základì metrik protokolù ostatních.
+
+Vítaným pomocníkem pøi odhalování problémù v~sítích je rovnì¾ volitelné
+logování dùle¾itých událostí a trasování èinnosti protokolù: zde si je
+mo¾no pro ka¾dý protokol vy¾ádat prakticky cokoliv poèínaje základními informacemi o~bìhu
+protokolu (pøipojování a odpojování sousedù apod.), pøes výmìnu polo¾ek
+mezi protokolem, filtry a jeho tabulkou, a konèe detailním výpisem v¹ech
+pøijatých i odeslaných paketù.
+
+Mimo to \BIRD\ disponuje \uv{dálkovým ovládáním} -- jednoduchým pøíkazovým
+rozhraním, pøes které se mohou pøipojovat rùzní klienti a vydávat jak
+nìkteré øídící pøíkazy (restarty protokolù, reload konfigurace, pøepínání
+trasování, \dots), tak po¾adavky na~vypisování stavu routovacích tabulek
+a protokolù. U~tìchto pøíkazù je mo¾no vyu¾ívat plné síly filtrovacího
+jazyka, tak¾e chceme-li napøíklad znát v¹echny routy smìrované pomocí
+BGP na jednoho konkrétního souseda, staèí polo¾it dotaz typu
+
+\verbatim{   bird> show route where source=RTS_BGP && gw=62.168.0.1}
+
+\noindent a dozvíme se ihned v¹e, co jsme potøebovali. Ladìní filtrù
+navíc usnadní i~to, ¾e se mù¾eme zeptat na~obsah routovací tabulky
+z~pohledu nìkterého z~bì¾ících protokolù.
+
+%%% BIRD uvnitø
+%\hdr{Ptaèí anatomie}
+%% existuje progdoc
+
+%%% Netradicni pouziti
+\hdr{Cesty ta¾ných ptákù aneb Za hranicemi v¹edních dnù}
+
+\noindent Hotová modulární implementace routovacího daemona samozøejmì
+svádí i k~ménì tradiènímu vyu¾ití. Zde se fantazii meze nekladou, autory
+samé bìhem vývoje napadly napøíklad tyto triky:
+
+\itemize\ibull
+\:{\I multirouter} -- \uv{schizofrenní} zaøízení pracující na rùzných
+  skupinách interfacù jako rùzné routery øídící se rùznými pravidly,
+  le¾ící tøeba i v~rùzných autonomních systémech. To je mo¾no zaøídit
+  patøièným nastavením jádra a buïto více bì¾ícími \BIRD{}y nebo dokonce
+  jedním pracujícím s~nìkolika rùznými routovacími tabulkami. Tak by
+  mohl napøíklad celý pra¾ský NIX bì¾et na jediném routeru (pravda,
+  bì¾né PC by na to nestaèílo), a pøesto by si ka¾dý provider mohl sám
+  urèovat a konfigurovat svou vlastní routovací politiku.
+\:{\I ¹edá eminence} -- \BIRD\ by ani nemusel bì¾et pøímo na~stroji, který
+  pakety routuje, mohl by také hotové routovací tabulky diktovat
+  nìjakému dedikovanému routeru disponujícím výkonnìj¹ím hardwarem,
+  a tak skloubit ¹pièkovou propustnost \uv{velkého ¾eleza}
+  s~flexibilitou routeru be¾ícího pod unixovským systémem.
+\:{\I inteligentní mirror} -- aplikace se nemusí zastavovat u~routingu
+  jako takového, mnohdy je mo¾no informace získané z~provozu routeru
+  vyu¾ívat k~dal¹ím úèelùm, napøíklad k~inteligentnímu pøesmìrovávání
+  klientù na~nejbli¾¹í mirror va¹eho archivu.
+\endlist
+
+%%% A co dal?
+\hdr{Èas ptáèat aneb Co dál?}
+
+Pøesto¾e po~úspì¹ném obhájení projektu a prvních nìkolika desítkách
+spokojených u¾ivatelù (a samozøejmì i~pár opravených chybách) nyní vývoj
+spí¹e stagnuje, autoøi ji¾ spøádají plány do~budoucnosti, které
+by mìly \BIRD{}ovi pøinést mimo jiné také routování multicastù, agregaci
+sí»ových prefixù, OSPFv3 pro IPv6, on-demand linky a porty na~dal¹í systémy.
+
+%%% Reference na nás a ostatní routery
+\hdr{Snù¹ka odkazù na závìr}
+
+\noindent {\sc Bird Team} pod vedením RNDr. Libora Forsta ({\I forst@cuni.cz}) tvoøili:
+$$\vbox{\halign{#\hfil & \quad \it # \hfil & \quad \it # \hfil\cr
+Ondøej Filip&feela@ipex.cz&http:/$\!$/feela.ipex.cz/\cr
+Martin Mare¹&mj@ucw.cz&http:/$\!$/atrey.karlin.mff.cuni.cz/\char126mj/\cr
+Pavel Machek&pavel@ucw.cz&http:/$\!$/atrey.karlin.mff.cuni.cz/\char126pavel/\cr}}$$
+Domácí stránku projektu najdete na {\it http:/$\!$/bird.network.cz/,} odtamtud ji¾
+vedou odkazy na~aktuální verzi, online dokumentaci i mailing list
+u¾ivatelù.
+V¹echna zmiòovaná RFC i mnoho dal¹ích naleznete na {\it http:/$\!$/www.rfc-editor.org/},
+první my¹lenky o~vyu¾ívání ptactva v~Internetu sahají a¾ k~RFC~1149.
+\BIRD\ není na~svìtì sám, má i~pøíbuzné; mezi nimi za zmínku stojí
+daemoni {\sc GateD} ({\I http:/$\!$/www.gated.org/}), \hbox{\sc Zebra} ({\I http:/$\!$/www.zebra.org/})
+a {\sc Mrtd} ({\I http:/$\!$/www.mrtd.net/}).
+O~IPv6 se bohu¾el zatím jen pí¹e, na~jeho celointernetové nasazení se stále
+èeká a mezitím pøibývá address-translatorù a dal¹ích zvìrstev. Snad jediná
+vìt¹í sí» pou¾ívající tento protokol je experimentální virtuální sí» 6-bone
+(viz {\it http:/$\!$/www.6bone.net/} a odkazy odtamtud).
+
+Dotazy a pøipomínky posílejte buïto autorovi nebo celému {\sc Bird Team}u na~adresu
+{\I bird@bird.network.cz}.
+
+\bye

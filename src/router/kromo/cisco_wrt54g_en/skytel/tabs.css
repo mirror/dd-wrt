@@ -1,0 +1,70 @@
+#menu {
+	position:			absolute;
+	top:				212px;
+	left:				10px;
+	/*height:				2em;*/
+	/*border: 1px solid;*/
+	border-top:			solid 2px #ff934b;
+	padding-top:		6px;
+	width:				196px;
+	max-width:			196px;
+	background: #d0d0da;
+}
+
+#menuMain {
+	border:				solid 1px #fff;
+	width:				196px;
+	max-width:			196px;
+}
+
+#menu * {
+	margin:				0px;
+	padding:			0px;
+}
+
+#menuMainList li {
+	list-style:			none;
+	margin:				0;
+
+	background-image:	none;
+	padding:			0 0 1px 0;
+	line-height:		1.0;
+}
+#menuMainList :link, #menuMainList :visited, #menuMainList span {
+	font-weight:		normal;
+	line-height:		1.0;
+	color:				#003466;
+	display:			block;
+	text-decoration:	none;
+	background:			transparent;
+	border:				solid 1px #EEEAE4;
+	margin:				0;
+	padding:			5px 10px 5px 0.5em;
+	font-weight: normal;
+}
+#menuMainList :link:hover, #menuMainList :visited:hover {
+	color:				#003466;
+	border:				solid 1px #DDD9D4;
+	border-top-color:	#F5F3F0;
+	border-left-color:	#F5F3F0;
+	background:			#F3F0EC;
+	font-weight: normal;
+}
+#menuMainList :link:active, #menuMainList :visited:active {
+	background:			#fff;
+}
+#menuMainList ul {
+	margin:				0;
+	padding:			0;
+	background-color:	#d9d9e1;
+	border:				solid 1px #fff;
+}
+#menuMainList ul :link, #menuMainList ul :visited, #menuMainList ul span {
+	background-image:	none;
+	padding:			4px 10px 4px 1.5em;
+	border:				0;
+}
+#menuMainList ul :link:hover, #menuMainList ul :visited:hover {
+	background-image:	none;
+	border:				0;
+}

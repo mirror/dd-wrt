@@ -1,0 +1,6 @@
+# updated 2002-06-15
+ianaiftype-mib			IANAifType-MIB
+ianalanguage-mib		IANA-LANGUAGE-MIB
+ianaaddressfamilynumbers-mib	IANA-ADDRESS-FAMILY-NUMBERS-MIB
+ianaiprouteprotocol-mib		IANA-RTPROTO-MIB
+ianatn3270etc-mib		IANATn3270eTC-MIB

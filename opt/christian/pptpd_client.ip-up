@@ -1,0 +1,69 @@
+#!/bin/sh
+REMOTESUB=$(/usr/sbin/nvram get pptpd_client_srvsub)
+REMOTENET=$(/usr/sbin/nvram get pptpd_client_srvsubmsk)
+case "$6" in
+ kelokepptpd)
+  /sbin/route add -net $REMOTESUB netmask $REMOTENET dev $1
+  /usr/sbin/iptables --insert OUTPUT --source 0.0.0.0/0.0.0.0 --destination $REMOTESUB/$REMOTENET --jump ACCEPT --out-interface $1
+  /usr/sbin/iptables --insert INPUT --source $REMOTESUB/$REMOTENET --destination 0.0.0.0/0.0.0.0 --jump ACCEPT --in-interface $1
+  /usr/sbin/iptables --insert FORWARD --source 0.0.0.0/0.0.0.0 --destination $REMOTESUB/$REMOTENET --jump ACCEPT --out-interface $1
+  /usr/sbin/iptables --insert FORWARD --source $REMOTESUB/$REMOTENET --destination 0.0.0.0/0.0.0.0 --jump ACCEPT --in-interface $1
+  /usr/sbin/iptables --table nat --append POSTROUTING --out-interface $1 --jump MASQUERADE
+  /usr/sbin/iptables --insert FORWARD --protocol tcp --tcp-flags SYN,RST SYN --jump TCPMSS --clamp-mss-to-pmtu 
+  ;;
+ pptpsnotlocal)
+  PPTPSERVER=$(/usr/sbin/nvram get pptpd_client_srvip)
+  OLDDEFROUTE=`/sbin/route -n | /bin/grep "^0.0.0.0" | \
+     /usr/bin/awk '{print $2}' `
+  echo ${OLDDEFROUTE} > /tmp/pptpd_client/olddefaultroute
+  # fuer sebastian ;-)
+  IPTEST=$(echo ${PPTPSERVER} | /usr/bin/awk -F "." '{for (i=1;i<=NF;i++) if (!match($i,"^[0-9]{1,3}$")){ ip=-1;exit(1)}}END{if (ip==-1){print "noip"} else {print "ip"}}')
+  if [ $IPTEST = "ip" ]
+  then
+  	PPTPSERVERIP=${PPTPSERVER}
+	PPTPSERVERNET=`echo $PPTPSERVERIP | /usr/bin/awk -F "." '{print $1"."$2"."$3".0"}' `
+  else
+  	NOEXIT=1
+  	while [ x$NOEXIT = x1 ]
+  	do
+		output=$(/usr/bin/nslookup ${PPTPSERVER})
+		if  [ $? = 0 ]
+		then
+			echo PPTPSERVER FOUND
+			PPTPSERVERIP=`echo $output | /usr/bin/tail -n 1 | /usr/bin/awk '{print $8}'`
+			PPTPSERVERNET=`echo $PPTPSERVERIP | /usr/bin/awk -F "." '{print $1"."$2"."$3".0"}' `
+			NOEXIT=0
+		else			
+			echo PPTPSERVER NOT FOUND
+			sleep 1
+		fi
+  	done
+  fi
+  echo ${PPTPSERVERNET} >/tmp/pptpd_client/pptpservernet
+  echo ${PPTPSERVERIP} >/tmp/pptpd_client/pptpserverip
+  /sbin/route add -net ${PPTPSERVERNET} netmask 255.255.255.0 gw ${OLDDEFROUTE}
+  /usr/sbin/iptables --table nat -I POSTROUTING --out-interface $1 --jump MASQUERADE
+  /usr/sbin/iptables -I FORWARD -o $1 -p tcp --tcp-flags SYN,RST SYN -j TCPMSS --clamp-mss-to-pmtu
+  /sbin/route del default gw ${OLDDEFROUTE} 
+  /sbin/route add default gw ${IPREMOTE}
+  /usr/sbin/nvram set pptpd_client_info_localip=${IPLOCAL}
+  /usr/sbin/nvram set pptpd_client_info_remoteip=${IPREMOTE}
+  /usr/sbin/nvram set pptpd_connected=1
+  #das haengt keine leerzeichen hintendran...
+  WAN_GET_DNS=$(/bin/cat /tmp/ppp/resolv.conf | /usr/bin/awk 'BEGIN{first=1}{if (first==0) {if ($1 == "nameserver") {printf " ";}}else {first=0;} if ($1 == "nameserver") {printf $2;}}')
+  echo "_${WAN_GET_DNS}_"
+  /bin/rm /tmp/pptpd_client/old_wan_get_dns
+  if /usr/bin/test -z "${WAN_GET_DNS}"
+  then
+	echo keine aenderung
+  else
+  	#neustart erforderlich
+	/usr/sbin/nvram get wan_get_dns >/tmp/pptpd_client/old_wan_get_dns
+	/usr/sbin/nvram set wan_get_dns="${WAN_GET_DNS}"
+	/sbin/restart_dns
+  fi
+  ;; 
+ *)
+esac
+exit 0
+

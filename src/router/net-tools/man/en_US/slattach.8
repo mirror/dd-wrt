@@ -1,0 +1,95 @@
+.TH SLATTACH 8 "12 Feb 1994" "" ""
+.SH NAME
+slattach \- attach a network interface to a serial line
+.SH SYNOPSIS
+.B "slattach [-dehlLmnqv] [-c command] [-p proto] [-s speed] [tty]"
+.br
+.SH DESCRIPTION
+.B Slattach
+is a tiny little program that can be used to put a normal terminal
+("serial") line into one of several "network" modes, thus allowing
+you to use it for point-to-point links to other computers.
+.SH OPTIONS
+.TP
+.B "[-c command]"
+Execute
+.B command
+when the line is hung up. This can be used to run scripts or re-establish
+connections when a link goes down.
+.TP
+.B "[-d]"
+Enable debugging output.  Useful when determining why a given
+setup doesn't work.
+.TP
+.B "[-h]"
+Exit when the carrier is lost. This works on both /dev/tty and /dev/cua
+devices by directly monitoring the carrier status every 15 seconds.
+.B "[-v]"
+Enable verbose output.  Useful in shell scripts.
+.TP
+.B "[-q]"
+Operate in quiet mode - no messages at all.
+.TP
+.B "[-l]"
+Create an UUCP-style lockfile for the device in /var/lock.
+.TP
+.B "[-n]"
+Equivalent to the "mesg n" command.
+.TP
+.B "[-m]"
+Do \fBnot\fP initialize the line into 8 bits raw mode.
+.TP
+.B "[-e]"
+Exit right after initializing device, instead of waiting for the
+line to hangup.
+.TP
+.B "[-L]"
+Enable 3 wire operation. The terminal is moved into CLOCAL mode, 
+carrier watching is disabled.
+.TP
+.B "[-p proto]"
+Set a specific kind of protocol to use on the line.  The default
+is set to
+.B "cslip"
+, i.e. compressed SLIP.  Other possible values are
+.B "slip"
+(normal SLIP), 
+.B "adaptive"
+(adaptive CSLIP/SLIP),
+.B "ppp"
+(Point-to-Point Protocol)
+and
+.B "kiss"
+(a protocol used for communicating with AX.25 packet radio terminal node controllers).
+The special argument
+.B "tty"
+can be used to put the device back into normal serial operation.
+Using 'ppp' mode is not normally useful as ppp requires an additional ppp daemon
+.B pppd
+to be active on the line. For kiss connections the 
+.B axattach
+program should be used.
+.TP
+.B "[-s speed]"
+Set a specific line speed, other than the default.
+.PP
+If no arguments are given, the current terminal line (usually: the
+login device) is used.  Otherwise, an attempt is made to claim the
+indicated terminal port, lock it, and open it.
+.SH FILES
+.I /dev/cua* /var/lock/LCK.*
+.SH BUGS
+None known.
+.SH SEE ALSO
+axattach(8), dip(8) pppd(8), sliplogin(8).
+.SH AUTHORS
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Alan Cox, <Alan.Cox@linux.org>
+.br
+Miquel van Smoorenburg, <miquels@drinkel.ow.org>
+.br
+George Shearer, <gshearer@one.net>
+.br
+Yossi Gottlieb, <yogo@math.tau.ac.il>
+.br

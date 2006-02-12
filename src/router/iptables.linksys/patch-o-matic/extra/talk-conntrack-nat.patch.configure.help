@@ -1,0 +1,15 @@
+CONFIG_IP_NF_FTP
+Talk protocol support
+CONFIG_IP_NF_TALK
+  The talk protocols (both otalk/talk - or talk/ntalk, to confuse
+  you by the different namings about which is old or which is new :-)
+  use an additional channel to setup the talk session and a separated
+  data channel for the actual conversation (like in FTP). Both the 
+  initiating and the setup channels are over UDP, while the data channel 
+  is over TCP, on a random port. The conntrack part of this extension
+  will enable you to let in/out talk sessions easily by matching these
+  connections as RELATED by the state match, while the NAT part helps
+  you to let talk sessions trough a NAT machine.
+
+  If you want to compile it as a module, say 'M' here and read
+  Documentation/modules.txt.  If unsure, say 'N'.

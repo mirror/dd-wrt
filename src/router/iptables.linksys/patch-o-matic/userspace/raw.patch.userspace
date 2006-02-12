@@ -1,0 +1,312 @@
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/.NOTRACK-test extensions/.NOTRACK-test
+--- userspace/extensions.orig/.NOTRACK-test	Thu Jan  1 01:00:00 1970
++++ userspace/extensions/.NOTRACK-test	Fri Jul 19 09:55:47 2002
+@@ -0,0 +1,2 @@
++#! /bin/sh
++[ -f $KERNEL_DIR/net/ipv4/netfilter/ipt_NOTRACK.c ] && echo NOTRACK
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/.TRACE-test extensions/.TRACE-test
+--- userspace/extensions.orig/.TRACE-test	Thu Jan  1 01:00:00 1970
++++ userspace/extensions/.TRACE-test	Fri Jul 19 09:55:47 2002
+@@ -0,0 +1,2 @@
++#! /bin/sh
++[ -f $KERNEL_DIR/net/ipv4/netfilter/ipt_TRACE.c ] && echo TRACE
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/.TRACE-test6 extensions/.TRACE-test6
+--- userspace/extensions.orig/.TRACE-test6	Thu Jan  1 01:00:00 1970
++++ userspace/extensions/.TRACE-test6	Fri Jul 19 09:55:42 2002
+@@ -0,0 +1,2 @@
++#! /bin/sh
++[ -f $KERNEL_DIR/net/ipv6/netfilter/ip6t_TRACE.c ] && echo TRACE
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/libip6t_TRACE.c extensions/libip6t_TRACE.c
+--- userspace/extensions.orig/libip6t_TRACE.c	Thu Jan  1 01:00:00 1970
++++ userspace/extensions/libip6t_TRACE.c	Fri Jul 19 10:01:17 2002
+@@ -0,0 +1,63 @@
++/* Shared library add-on to iptables to add TRACE target support. */
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#include <getopt.h>
++
++#include <ip6tables.h>
++#include <linux/netfilter_ipv6/ip6_tables.h>
++
++/* Function which prints out usage message. */
++static void
++help(void)
++{
++	printf(
++"TRACE target v%s takes no options\n",
++IPTABLES_VERSION);
++}
++
++static struct option opts[] = {
++	{ 0 }
++};
++
++/* Initialize the target. */
++static void
++init(struct ip6t_entry_target *t, unsigned int *nfcache)
++{
++}
++
++/* Function which parses command options; returns true if it
++   ate an option */
++static int
++parse(int c, char **argv, int invert, unsigned int *flags,
++      const struct ip6t_entry *entry,
++      struct ip6t_entry_target **target)
++{
++	return 0;
++}
++
++static void
++final_check(unsigned int flags)
++{
++}
++
++static
++struct ip6tables_target trace
++= { NULL,
++    "TRACE",
++    IPTABLES_VERSION,
++    IP6T_ALIGN(0),
++    IP6T_ALIGN(0),
++    &help,
++    &init,
++    &parse,
++    &final_check,
++    NULL, /* print */
++    NULL, /* save */
++    opts
++};
++
++void _init(void)
++{
++	register_target6(&trace);
++}
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/libipt_NOTRACK.c extensions/libipt_NOTRACK.c
+--- userspace/extensions.orig/libipt_NOTRACK.c	Thu Jan  1 01:00:00 1970
++++ userspace/extensions/libipt_NOTRACK.c	Fri Jul 19 10:01:38 2002
+@@ -0,0 +1,63 @@
++/* Shared library add-on to iptables to add NOTRACK target support. */
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#include <getopt.h>
++
++#include <iptables.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++/* Function which prints out usage message. */
++static void
++help(void)
++{
++	printf(
++"NOTRACK target v%s takes no options\n",
++IPTABLES_VERSION);
++}
++
++static struct option opts[] = {
++	{ 0 }
++};
++
++/* Initialize the target. */
++static void
++init(struct ipt_entry_target *t, unsigned int *nfcache)
++{
++}
++
++/* Function which parses command options; returns true if it
++   ate an option */
++static int
++parse(int c, char **argv, int invert, unsigned int *flags,
++      const struct ipt_entry *entry,
++      struct ipt_entry_target **target)
++{
++	return 0;
++}
++
++static void
++final_check(unsigned int flags)
++{
++}
++
++static
++struct iptables_target notrack
++= { NULL,
++    "NOTRACK",
++    IPTABLES_VERSION,
++    IPT_ALIGN(0),
++    IPT_ALIGN(0),
++    &help,
++    &init,
++    &parse,
++    &final_check,
++    NULL, /* print */
++    NULL, /* save */
++    opts
++};
++
++void _init(void)
++{
++	register_target(&notrack);
++}
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/libipt_TRACE.c extensions/libipt_TRACE.c
+--- userspace/extensions.orig/libipt_TRACE.c	Thu Jan  1 01:00:00 1970
++++ userspace/extensions/libipt_TRACE.c	Fri Jul 19 10:00:57 2002
+@@ -0,0 +1,63 @@
++/* Shared library add-on to iptables to add TRACE target support. */
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#include <getopt.h>
++
++#include <iptables.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++/* Function which prints out usage message. */
++static void
++help(void)
++{
++	printf(
++"TRACE target v%s takes no options\n",
++IPTABLES_VERSION);
++}
++
++static struct option opts[] = {
++	{ 0 }
++};
++
++/* Initialize the target. */
++static void
++init(struct ipt_entry_target *t, unsigned int *nfcache)
++{
++}
++
++/* Function which parses command options; returns true if it
++   ate an option */
++static int
++parse(int c, char **argv, int invert, unsigned int *flags,
++      const struct ipt_entry *entry,
++      struct ipt_entry_target **target)
++{
++	return 0;
++}
++
++static void
++final_check(unsigned int flags)
++{
++}
++
++static
++struct iptables_target trace
++= { NULL,
++    "TRACE",
++    IPTABLES_VERSION,
++    IPT_ALIGN(0),
++    IPT_ALIGN(0),
++    &help,
++    &init,
++    &parse,
++    &final_check,
++    NULL, /* print */
++    NULL, /* save */
++    opts
++};
++
++void _init(void)
++{
++	register_target(&trace);
++}
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/libipt_ULOG.c extensions/libipt_ULOG.c
+--- userspace/extensions.orig/libipt_ULOG.c	Wed May 29 15:08:16 2002
++++ userspace/extensions/libipt_ULOG.c	Fri Jul 19 09:55:47 2002
+@@ -19,10 +19,6 @@
+ #include <linux/netfilter_ipv4/ip_tables.h>
+ #include <linux/netfilter_ipv4/ipt_ULOG.h>
+ 
+-#define ULOG_DEFAULT_NLGROUP 1
+-#define ULOG_DEFAULT_QTHRESHOLD 1
+-
+-
+ void print_groups(unsigned int gmask)
+ {
+ 	int b;
+diff -urN --exclude-from=/usr/src/diff.exclude-raw extensions.orig/libipt_state.c extensions/libipt_state.c
+--- userspace/extensions.orig/libipt_state.c	Wed May 29 15:08:16 2002
++++ userspace/extensions/libipt_state.c	Fri Jul 19 09:55:47 2002
+@@ -14,7 +14,7 @@
+ {
+ 	printf(
+ "state v%s options:\n"
+-" [!] --state [INVALID|ESTABLISHED|NEW|RELATED][,...]\n"
++" [!] --state [INVALID|ESTABLISHED|NEW|RELATED|UNTRACKED][,...]\n"
+ "				State(s) to match\n"
+ "\n", IPTABLES_VERSION);
+ }
+@@ -43,6 +43,8 @@
+ 		sinfo->statemask |= IPT_STATE_BIT(IP_CT_ESTABLISHED);
+ 	else if (strncasecmp(state, "RELATED", strlen) == 0)
+ 		sinfo->statemask |= IPT_STATE_BIT(IP_CT_RELATED);
++	else if (strncasecmp(state, "UNTRACKED", strlen) == 0)
++		sinfo->statemask |= IPT_STATE_UNTRACKED;
+ 	else
+ 		return 0;
+ 	return 1;
+@@ -115,6 +117,10 @@
+ 	}
+ 	if (statemask & IPT_STATE_BIT(IP_CT_ESTABLISHED)) {
+ 		printf("%sESTABLISHED", sep);
++		sep = ",";
++	}
++	if (statemask & IPT_STATE_UNTRACKED) {
++		printf("%sUNTRACKED", sep);
+ 		sep = ",";
+ 	}
+ 	printf(" ");
+diff -urN --exclude-from=/usr/src/diff.exclude-raw libiptc.orig/libip4tc.c libiptc/libip4tc.c
+--- userspace/libiptc.orig/libip4tc.c	Wed Jun 12 21:22:29 2002
++++ userspace/libiptc/libip4tc.c	Fri Jul 19 09:55:47 2002
+@@ -436,6 +436,20 @@
+ 			user_offset = h->info.hook_entry[NF_IP_POST_ROUTING];
+ 		}
+ 
++	} else if (strcmp(h->info.name, "raw") == 0) {
++		assert(h->info.valid_hooks
++		       == (1 << NF_IP_PRE_ROUTING
++			   | 1 << NF_IP_LOCAL_OUT));
++
++		/* Hooks should be first two */
++		assert(h->info.hook_entry[NF_IP_PRE_ROUTING] == 0);
++
++		n = get_chain_end(h, 0);
++		n += get_entry(h, n)->next_offset;
++		assert(h->info.hook_entry[NF_IP_LOCAL_OUT] == n);
++
++		user_offset = h->info.hook_entry[NF_IP_LOCAL_OUT];
++
+ #ifdef NF_IP_DROPPING
+ 	} else if (strcmp(h->info.name, "drop") == 0) {
+ 		assert(h->info.valid_hooks == (1 << NF_IP_DROPPING));
+diff -urN --exclude-from=/usr/src/diff.exclude-raw libiptc.orig/libip6tc.c libiptc/libip6tc.c
+--- userspace/libiptc.orig/libip6tc.c	Thu Feb 14 00:13:23 2002
++++ userspace/libiptc/libip6tc.c	Fri Jul 19 09:55:42 2002
+@@ -381,6 +381,19 @@
+ 			assert(h->info.hook_entry[NF_IP6_POST_ROUTING] == n);
+ 			user_offset = h->info.hook_entry[NF_IP6_POST_ROUTING];
+ 		}
++	} else if (strcmp(h->info.name, "raw") == 0) {
++		assert(h->info.valid_hooks
++		       == (1 << NF_IP6_PRE_ROUTING
++			   | 1 << NF_IP6_LOCAL_OUT));
++
++		/* Hooks should be first three */
++		assert(h->info.hook_entry[NF_IP6_PRE_ROUTING] == 0);
++
++		n = get_chain_end(h, n);
++		n += get_entry(h, n)->next_offset;
++		assert(h->info.hook_entry[NF_IP6_LOCAL_OUT] == n);
++
++		user_offset = h->info.hook_entry[NF_IP6_LOCAL_OUT];
+ 	} else {
+                 fprintf(stderr, "Unknown table `%s'\n", h->info.name);
+ 		abort();

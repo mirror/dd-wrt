@@ -1,0 +1,43 @@
+Installation instructions for ipsec_tunnel
+==========================================
+
+Only unpatched official kernel versions are supported.  Vendor
+kernels distributed with e.g. RedHat Linux should work, but it
+cannot be guaraneteed due to the diversity of vendor kernels and
+the amount of changes to the official Linux kernel.
+
+1. Download the latest cryptoapi and ipsec_tunnel packages:
+
+   http://www.kerneli.org/ or
+   ftp://ftp.kernel.org/pub/linux/kernel/crypto/v2.4/
+      (cryptoapi-0.1.0.tar.gz works fine)
+   http://ringstrom.mine.nu/ipsec_tunnel/
+
+2. Build and install cryptoapi.  Note that there are several
+   ways to build cryptoapi.  The instructions below demonstrate
+   a method where you do not need to patch you kernel at all.
+
+   tar xzf cryptoapi-x.y.z.tar.gz
+   cd cryptoapi-x.y.z
+   make KDIR=/path/to/linux/kernel/source/ modules
+   make KDIR=/path/to/linux/kernel/source/ modules_install
+
+3. Build and install ipsec_tunnel:
+
+   tar xzf ipsec_tunnel-x.y.z.tar.gz
+   cd ipsec_tunnel-x.y.z
+   ./configure
+   make
+   make install
+
+4. Load the kernel modules:
+
+   modprobe 3des-cbc
+   modprobe ipsec_tunnel
+
+5. Read doc/quickstart.txt and the manual page for instructions
+   on how to use ipsecadm.
+
+-----------------------------------------------------------------------
+Tobias Ringström <tobias@ringstrom.mine.nu>
+http://ringstrom.mine.nu/ipsec_tunnel/

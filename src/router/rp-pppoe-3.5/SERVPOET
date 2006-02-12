@@ -1,0 +1,41 @@
+# LIC: GPL
+
+ServPoET
+--------
+
+ServPoET is a commercial version of the PPPoE server.  While everything
+you received in this package is licensed under the GNU General Public
+License, ServPoET is not free software and is licensed under a traditional
+commercial license.
+
+ServPoET features RADIUS support, support for different realms,
+real-time server status reporting and a friendly curses-based GUI for
+administration.  For information on ServPoET:
+
+In Canada: Contact David Skoll <dfs@roaringpenguin.com>
+(http://www.roaringpenguin.com/)
+
+In other countries: Contact Fine Point Technologies, Inc.
+(http://www.finepoint.com/)
+
+While ServPoET is licensed as traditional closed-source software, we still
+strongly support free software.  To illustrate that support, we are committed
+to:
+
+- Porting all core server and client improvements from ServPoET to the
+GPL'd rp-pppoe immediately.  For example, Release 3.1 of rp-pppoe
+incorporates many improvements to the server which were done as part
+of the ServPoET work.
+
+- Donating 5% of all our ServPoET revenues to the Free Software Foundation.
+
+- Two years after introducing a ServPoET feature, releasing that feature
+under the GPL.  This is similar to the approach Alladin took with Ghostscript.
+
+We need to balance the creation of GPL'd software against the need to
+generate revenue to support software development, and we believe
+this model is the best option for Roaring Penguin Software and the
+free software community.
+
+--
+David F. Skoll <dfs@roaringpenguin.com>

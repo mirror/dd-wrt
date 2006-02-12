@@ -1,0 +1,68 @@
+        <TR>
+          <TD width=153 bgColor=#000000 colSpan=3 height=25><P align=right><B><FONT style="FONT-SIZE: 9pt" color=#ffffff>IP Filter Settings</FONT></B></P></TD>
+          <TD width=8 bgColor=#000000 height=25></TD>
+          <TD colSpan=6 width="452" height="25">
+            <TABLE>
+              <TBODY>
+              <TR>
+                <TD width=16 height=25>&nbsp;</TD>
+                <TD width=12 height=25>&nbsp;</TD>
+                <TD style="BORDER-TOP: 1px solid; BORDER-LEFT-WIDTH: 1px; BORDER-BOTTOM-WIDTH: 1px; BORDER-RIGHT-WIDTH: 1px" borderColor=#b5b5e6 width=411 height=25>&nbsp;</TD>
+                <TD width=15 height=25>&nbsp;</TD></TR></TBODY></TABLE></TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
+        
+	<!-- IP_Conntrack_MAX **********************************************************************************************************-->
+        
+	<TR>
+          <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
+          <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
+          <TD colSpan=3 height=25 width="41">&nbsp;</TD>
+          <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">Maximum Ports&nbsp;</SPAN></TD>
+          <TD width=298 height=25>
+            <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
+              <TBODY>
+              <TR>
+                <TD width=242 height=25>&nbsp;&nbsp;<INPUT maxLength=32 value='<% nvram_get("ip_conntrack_max"); %>' name="ip_conntrack_max" size="5"  >&nbsp;&nbsp;sec;&nbsp(4096 max)</TD>
+                </TR></TBODY></TABLE>
+          </TD>
+          <TD width=13 height=25>&nbsp;</TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD>
+        </TR>
+	<!-- IP_Conntrack_tcp_timeouts **********************************************************************************************************-->
+        
+	<TR>
+          <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
+          <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
+          <TD colSpan=3 height=25 width="41">&nbsp;</TD>
+          <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">TCP Timeout (sec)&nbsp;</SPAN></TD>
+          <TD width=298 height=25>
+            <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
+              <TBODY>
+              <TR>
+                <TD width=242 height=25>&nbsp;&nbsp;<INPUT maxLength=32 value='<% nvram_get("ip_conntrack_tcp_timeouts"); %>' name="ip_conntrack_tcp_timeouts" size="5"  >&nbsp;&nbsp;sec;&nbsp(3600 max)</TD>
+                </TR></TBODY></TABLE>
+          </TD>
+          <TD width=13 height=25>&nbsp;</TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD>
+        </TR>
+	
+
+	<!-- IP_Conntrack_udp_timeouts **********************************************************************************************************-->
+        
+	<TR>
+          <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
+          <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
+          <TD colSpan=3 height=25 width="41">&nbsp;</TD>
+          <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">UDP Timeout (sec)&nbsp;</SPAN></TD>
+          <TD width=298 height=25>
+            <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
+              <TBODY>
+              <TR>
+                <TD width=242 height=25>&nbsp;&nbsp;<INPUT maxLength=32 value='<% nvram_get("ip_conntrack_udp_timeouts"); %>' name="ip_conntrack_udp_timeouts" size="5"  >&nbsp;&nbsp;sec;&nbsp(3600 max)</TD>
+                </TR></TBODY></TABLE>
+          </TD>
+          <TD width=13 height=25>&nbsp;</TD>
+          <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD>
+        </TR>
+	
+

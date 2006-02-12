@@ -1,0 +1,153 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+   <head>
+      <META http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+      <title><% nvram_get("router_name"); %> - Info</title>
+      <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
+function replace_list(list,target,replacement) {
+	var result = list.search(target);
+	while(result != -1) {
+		list = list.replace(target,replacement);
+		result = list.search(target);
+	}
+
+	return list;
+}
+		</script></head>
+   <body class="gui">
+      <div id="wrapper">
+         <div id="content">
+            <div id="header">
+               <div id="logo">
+                  <h1><% show_control(); %></h1>
+               </div>
+            </div>
+            <div id="main">
+               <div id="contents">
+                  <h2>Sys-Info</h2>
+                  <fieldset>
+                     <legend>Info</legend>
+                     <div class="setting">
+                        <div class="label">Router Name</div><% nvram_get("router_name"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">LAN MAC</div><% nvram_get("lan_hwaddr"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Internet MAC</div><% nvram_get("wan_hwaddr"); %>
+                     </div>
+                  </fieldset><br /><fieldset>
+                     <legend>Wireless Info</legend>
+                     <div class="setting">
+                        <div class="label">SSID</div><% nvram_get("wl_ssid"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Xmit</div><% nvram_get("txpwr"); %> mW
+                     </div>
+                     <div class="setting">
+                        <div class="label">Network</div><% nvram_match("wl_gmode", "1", "Mixed"); %><% nvram_match("wl_gmode", "6", "Mixed"); %><% nvram_match("wl_gmode", "2", "G-Only"); %><% nvram_match("wl_gmode", "-1","Disabled"); %><% nvram_match("wl_gmode", "0", "B-Only"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">DHCP Server</div><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Channel</div><% get_curchannel(); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Rate (mbps)</div><% get_currate(); %>
+                     </div>
+                  </fieldset><br /><fieldset>
+                     <legend>IP Info</legend>
+                     <div class="setting">
+                        <div class="label">Internet IP</div><% nvram_status_get("wan_ipaddr"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">LAN IP</div><% nvram_get("lan_ipaddr"); %>
+                     </div>
+                  </fieldset><br /><form name="Eingabe"><input type="hidden" name="Feld" value='<% active_wireless(''); %><% active_wds(); %>' />
+		  <input type="hidden" name="FeldMEM" value='<% wl_packet_get(); %>' />
+		  <h3>
+		  <% nvram_match("wl_mode", "wet", "Connected AP"); %>
+		  <% nvram_match("wl_mode", "sta", "Connected AP"); %>
+		  <% nvram_match("wl_mode", "infra", "Connected Clients"); %>
+		  <% nvram_match("wl_mode","ap", "Wireless Clients"); %>
+                     </h3>
+                     <table class="table">
+                        <tbody>
+                           <tr>
+                              <th colspan="5">MAC-Address</th>
+                              <th>Level</th>
+                              <th colspan="5">&nbsp;</th>
+                           </tr><script language="JavaScript">
+							var clients = this.document.Eingabe.Feld.value;
+							clients=replace_list(clients,'Clients:','');
+							clients=replace_list(clients,'WDS Signal:','');
+							clients=replace_list(clients,'width=156 bgColor=#e7e7e7','width=0');
+							clients=replace_list(clients,'width=8 background=image/UI_04.gif','width=0');
+							clients=replace_list(clients,'colSpan=3','');
+							clients=replace_list(clients,'width=13','width=0');
+							clients=replace_list(clients,'width=15 background=image/UI_05.gif','width=0');
+							clients=replace_list(clients,'height=25','');
+							clients=replace_list(clients,'rssi ','</td><td></b><i>rssi</i>&nbsp;&nbsp;&nbsp;&nbsp;<b>');
+		
+							this.document.write(clients);
+						</script></tbody>
+                     </table>
+                  </form><% nvram_invmatch("wl_mode", "ap", "<!--"); %>
+                  <div class="setting">
+                     <h3>DHCP Client List</h3>
+                     <table class="table">
+                        <tr>
+                           <th>PC</th>
+                           <th>IP</th>
+                           <th>MAC</th>
+                           <th>Duration</th>
+                        </tr><script language="JavaScript">
+						var table = new Array( <% dumpleases(""); %> );
+						var i = 0;
+						var count = 0;
+						for(;;) {
+							if(!table[i]) {
+								if(i == 0){
+									document.write("<tr>");
+									document.write("<td>None</td>");
+									document.write("<td>None</td>");
+									document.write("<td>None</td>");
+									document.write("<td>None</td>");
+									document.write("<td>&nbsp;</td></tr>");
+								}
+								break;
+							}
+							document.write("<tr>");
+							document.write("<td>"+table[i]+"</td>");
+							document.write("<td>"+table[i+1]+"</td>");
+							document.write("<td>"+table[i+2]+"</td>");
+							document.write("<td>"+table[i+3]+"</td>");
+							document.write("<td>&nbsp;</td></tr>");
+							count ++;
+							i = i + 5;
+						}
+					</script></table>
+                  </div><% nvram_invmatch("wl_mode", "ap", "-->"); %>
+    		<% show_paypal(); %>
+               </div>
+            </div>
+	    <div id="statusInfo">
+               <div class="info">Firmware: <% get_firmware_version(); %></div>
+               <div class="info">Uptime: <% get_uptime(); %></div>
+               <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
+            </div>
+            <div id="helpContainer">
+               <div id="help">
+                  <div id="logo">
+                     <h2>Help</h2>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
+</html>

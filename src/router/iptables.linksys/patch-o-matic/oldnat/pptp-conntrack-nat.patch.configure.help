@@ -1,0 +1,9 @@
+CONFIG_IP_NF_FTP
+PPTP conntrack and NAT support
+CONFIG_IP_NF_PPTP
+  If you are running PPTP sessions over a stateful firewall or NAT box,
+  you may want to enable this feature.  It enables conntrack and NAT for
+  PPTP sessions.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

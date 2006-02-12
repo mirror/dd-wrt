@@ -1,0 +1,22 @@
+<html>
+<head><title>Welcome to the NoCat Authentication System!</title></head>
+<body bgcolor=#FFFFFF text=000000>
+<form method="POST" action="$action">
+<table border=0 cellpadding=5 cellspacing=0>
+<tr>
+  <td>Welcome to $GatewayName.</td>
+</tr>
+<tr>
+      <td align=center height="23"><input type="image" name="mode_login" src="images/login.gif" width="55" height="17" border="0"></td>
+</tr>
+</table>
+<!--
+There are currently $ConnectionCount user(s) connected.<BR>
+The last connection was at: $LastConnectionTime.
+-->
+    <input type="hidden" name="redirect" value="$redirect">
+</form>
+  <p><img src="/images/auth_logo.gif" width="112" height="35"> 
+<p>
+</body>
+</html>

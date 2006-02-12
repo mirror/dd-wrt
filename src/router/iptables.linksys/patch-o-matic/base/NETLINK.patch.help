@@ -1,0 +1,6 @@
+Author: Gianni Tedesco <gianni@ecsc.co.uk>
+Status: Working, will not go into main kernel
+
+This patch adds CONFIG_IP_NF_TARGET_NETLINK, which adds a NETLINK
+target that sends dropped packets to userspace via a netlink socket.
+It replaces the old ipchains -o option.

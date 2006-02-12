@@ -1,0 +1,19 @@
+#
+# Shorewall 1.4 /etc/shorewall/zones
+#
+# This file determines your network zones. Columns are:
+#
+#	ZONE		Short name of the zone (5 Characters or less in length).
+#	DISPLAY		Display name of the zone
+#	COMMENTS	Comments about the zone
+#
+# THE ORDER OF THE ENTRIES IN THIS FILE IS IMPORTANT IF YOU HAVE NESTED OR 
+# OVERLAPPING ZONES DEFINED THROUGH /etc/shorewall/hosts.
+#
+# See http://www.shorewall.net/Documentation.htm#Nested
+#
+#ZONE	DISPLAY		COMMENTS
+net	Net		Internet
+loc	Local		Local networks
+dmz	DMZ		Demilitarized zone
+#LAST LINE - ADD YOUR ENTRIES ABOVE THIS ONE - DO NOT REMOVE

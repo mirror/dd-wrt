@@ -1,0 +1,31 @@
+CONFIG_IP_NF_FILTER
+raw table support (required for NOTRACK/TRACE)
+CONFIG_IP_NF_RAW
+  This option adds a `raw' table to iptables. This table is the very
+  first in the netfilter framework and hooks in at the PREROUTING
+  and OUTPUT chains.
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `N'.
+
+TRACE target support
+CONFIG_IP_NF_TARGET_TRACE
+  The TRACE target allows packets to be traced as those
+  matches any subsequent rule in any table/rule. The matched
+  rule and the packet is logged with the prefix
+
+  TRACE: tablename/chainname/rulenum  
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `N'.
+
+NOTRACK target support
+CONFIG_IP_NF_TARGET_NOTRACK
+  The NOTRACK target allows a select rule to specify
+  which packets *not* to enter the conntrack/NAT
+  subsystem with all the consequences (no ICMP error tracking,
+  no protocol helpers for the selected packets).
+
+  If you want to compile it as a module, say M here and read
+  <file:Documentation/modules.txt>.  If unsure, say `N'.
+

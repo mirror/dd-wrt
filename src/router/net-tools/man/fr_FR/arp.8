@@ -1,0 +1,184 @@
+.TH ARP 8 "5 Jan 1999" "net-tools" "Linux Programmer's Manual"
+.SH NOM
+arp \- manipule la table ARP du système
+.SH SYNOPSIS
+.B arp 
+.RB [ \-vn ] 
+.RB [ "\-H type" ] 
+.RB [ "-i if" ] 
+.B -a 
+.RB [ nom_hôte ]
+.PP
+.B arp 
+.RB [ \-v ]
+.RB [ "\-i if" ] 
+.B "\-d nom_hôte"
+.RB [ pub ]
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H type" ] 
+.RB [ "\-i if" ] 
+.B -s nom_hôte hw_addr
+.RB [ temp ] 
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H type" ] 
+.RB [ "\-i if" ] 
+.B -s nom_hôte hw_addr
+.RB [ "netmask nm" ] 
+.B pub
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H type" ] 
+.RB [ "\-i if" ] 
+.B -Ds nom_hôte ifa
+.RB [ "netmask nm" ] 
+.B pub
+.PP
+.B arp 
+.RB [ \-vnD ]
+.RB [ "\-H type" ] 
+.RB [ "-i if" ]
+.B -f nom_fichier
+
+.SH DESCRIPTION
+.B Arp
+manipule la table ARP du noyau de différentes façons.  Les options principales
+permettent d'effacer une correspondance d'adresses   et d'en définir
+une manuellement.
+Pour les besoins de débogage, le programme
+.B arp
+permet aussi d'effectuer un dump complet de la table ARP.
+.SH OPTIONS
+.TP
+.B "\-v, \-\-verbose"
+Dit à l'utilisateur ce qui se passe en étant verbeux.
+.TP
+.B "\-n, \-\-numeric"
+Affiche les adresses numériques au lieu d'essayer de déterminer les nom
+d'hôtes symboliques.
+.TP
+.B "\-H type, \-\-hw-type type"
+En positionnant ou lisant les entrées ARP, ce paramètre optionnel indique
+à 
+.B arp
+les classes d'entrées qu'il doit contrôler.  La valeur par défaut de
+ce paramètre est
+.B ether
+(i.e. code de matériel
+.B 0x01
+pour
+.B "IEEE 802.3 10Mbps Ethernet".
+D'autres valeurs doivent correspondre à des technologies réseaux telles que
+.RB "ARCnet (" arcnet ")"
+,
+.RB "PROnet (" pronet ")"
+,
+.RB "AX.25 (" ax25 ")"
+and
+.RB "NET/ROM (" netrom ")."
+.TP
+.B "\-a [nom_d_hôte], \-\-display [nom_d_hôte]"
+Affiche les entrées concernant l'hôte spécifié.  Si le paramètre
+.B nom_d_hôte
+n'est pas utilisé,
+.B toutes
+les entrées seront affichées.
+.TP
+.B "\-d nom_d_hôte, \-\-delete nom_d_hôte"
+Enlève une entrée pour l'hôte spécifié.  Ceci peut être
+utilisé si l'hôte concerné ne fonctionne plus, par exemple.
+.TP
+.B "\-D, \-\-use-device"
+Utilise l'adresse matérielle de l'interface
+.BR ifa
+.
+.TP
+.B "\-i If, \-\-device If"
+Sélectionne une interface. Lors du dump du cache ARP, seules les entrées
+correspondant à l'interface spécifiée seront affichées. Lorsque l'on définit
+une entrée permanente ou une entrée
+.B temp
+, cette interface lui sera associée; si cette option n'est pas utilisée,
+le noyau fera des tentatives de résolution selon la table de routage. Pour
+les entrées 
+.B pub
+l'interface spécifiée est celle pour laquelle les requêtes ARP auront trouvé
+une réponse. 
+.br
+.B NOTE:
+Ceci est différent de l'interface vers laquelle les datagrammes IP seront routés.
+.TP
+.B "\-s nom_d_hôte hw_addr, \-\-set hostname hw_addr"
+Crée manuellement une correspondance d'adresses ARP pour l'hôte
+.B nom_d_hôte
+avec l'adresse matérielle positionnée à
+.B hw_addr.
+Le format de l'adresse matérielle est dépendant de la classe du matériel,
+mais pour la plupart on peut considérer que la présentation classique
+peut être utilisée.  Pour la classe Ethernet, c'est 6 octets en hexadécimal,
+séparés par des double-points. Pour ajouter des entrées proxy-arp
+(Ce sont celles avec l'indicateur
+.BR pub lish 
+positionné)
+un masque réseau (
+.B netmask 
+) peut être spécifié au proxy-arp pour le
+sous-réseau entier. Ceci n'est pas très recommandé, mais est supporté par
+les anciens noyaux, car c'est utile dans certains cas. Si l'indicateur
+.B temp
+n'est pas fourni, les entrées ARP seront permanentes.
+.br
+.B NOTE:
+A partir du noyau 2.2.0 il n'est plus possible de définir des entrées ARP
+pour un sous réseau entier.
+.TP
+.B "\-f nom_de_fichier, \-\-file nom_de_fichier"
+Similaire à l'option 
+.B \-s
+, mais cette fois les informations d'adresses sont prises dans le fichier
+.B nom_de_fichier
+. Ceci peut être utilisé si les entrées ARP à configurer sont
+nombreuses.  Le nom du fichier de données est très souvent nommé
+.B /etc/ethers
+, mais ce n'est pas officiel.
+.sp 1
+Le format du fichier est simple; Il contient
+seulement des lignes de texte ASCII avec sur chaque ligne un nom d'hôte et
+une adresse matérielle, séparés par des espaces. Les indicateurs
+.BR "pub" , " temp" " et" " netmask"
+peuvent également être utilisés.
+.LP
+A tous les endroits où un
+.B nom d'hôte
+est attendu, on peut aussi entrer une
+.B "addresse IP"
+en notation décimale pointée.
+.LP
+Chaque entrée complète se trouvant dans le cache ARP est marquée de
+l'indicateur
+.B C
+. Les entrées permanentes sont marquées de l'indicateur
+.B M
+et les entrées 'pub' ont l'indicateur
+.B P
+.
+.SH FICHIERS
+.I /proc/net/arp,
+.br
+.I /etc/networks
+.br
+.I /etc/hosts
+.br
+.I /etc/ethers
+.SH VOIR AUSSI
+rarp(8), route(8), ifconfig(8), netstat(8)
+.SH AUTEUR
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org> avec les améliorations
+apportées par le mainteneur des net-tools Bernd Eckenfels
+<net-tools@lina.inka.de>.
+.SH TRADUCTION
+Jean Michel VANSTEENE (vanstee@worldnet.fr)

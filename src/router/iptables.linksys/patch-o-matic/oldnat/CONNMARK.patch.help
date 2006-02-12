@@ -1,0 +1,35 @@
+Author: Henrik Nordstrom <hno@marasystems.com>
+Status: working
+
+This patch adds per connection marks, and a target (CONNMARK)
+respective a match (connmark) for using these.
+
+Usage:
+
+   connmark
+       This  module  matches  the netfilter mark field associated
+       with a connection (which can be  set  using  the  CONNMARK
+       target below).
+
+       --mark value[/mask]
+              Matches  packets  in  connections  with  the  given
+              unsigned mark value (if a mask is  specified,  this
+              is logically ANDed with the mark before the compar­
+              ison).
+
+
+   CONNMARK
+       This  is  used  to set the netfilter mark value associated
+       with the connection
+
+       --set-mark mark
+              Set connection mark
+
+       --save-mark
+              Set connection mark to the same as the one  on  the
+              packet
+
+       --restore-mark
+              Set  the  netfilter  packet  mark  value to the one
+              associated with the connection. This is only  valid
+              in the mangle table.

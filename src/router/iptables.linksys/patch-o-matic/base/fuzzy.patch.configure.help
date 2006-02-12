@@ -1,0 +1,10 @@
+CONFIG_IP_NF_MATCH_TOS
+Fuzzy Logic Controller match support
+CONFIG_IP_NF_MATCH_FUZZY
+  This option adds a `fuzzy' match,
+  which allows you to match packets according to a fuzzy logic
+  based law .
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

@@ -1,0 +1,29 @@
+#
+#   $Id: Makefile.in,v 1.1 2004/04/27 01:33:22 dyang Exp $
+#
+#   Libnet simple testcode makefile
+#   Copyright (c) 1998, 1999 Mike D. Schiffman <mike@infonexus.com>
+#                            route|daemon9 <route@infonexus.com>
+#   @configure_input@
+
+CC          =   @CC@
+CFLAGS      =   @CFLAGS@
+OBJECTS     =   prand_trials.o
+DEFINES     +=  @DEFS@
+LIBS        =   -L../../lib/ -lnet @ADDITIONAL_LIBS@
+
+.c.o:
+	$(CC) $(CFLAGS) $(DEFINES) -c $< -o $@
+
+all:    prand_trials
+
+prand_trials: $(OBJECTS)
+	$(CC) prand_trials.o $(LIBS) -o ./prand_trials
+
+clean:
+	rm -f *.core prand_trials *.o
+
+distclean: clean
+	rm -f Makefile
+
+# EOF
