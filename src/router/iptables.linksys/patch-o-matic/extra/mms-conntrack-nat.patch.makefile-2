@@ -1,0 +1,2 @@
+obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_irc.o
+obj-$(CONFIG_IP_NF_NAT_MMS) += ip_nat_mms.o

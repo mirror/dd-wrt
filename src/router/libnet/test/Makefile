@@ -1,0 +1,41 @@
+# Generated automatically from Makefile.in by configure.
+#
+#   $Id: Makefile,v 1.1 2004/04/27 01:33:22 dyang Exp $
+#
+#   Libnet testcode toplevel Makefile
+#   (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+#                   route|daemon9 <route@infonexus.com>
+#                                
+#   Generated automatically from Makefile.in by configure.
+
+all: test
+
+test:
+	if ! test -e ../lib/libnet.a; then \
+	    cd .. &&  make; \
+	fi
+	cd Random; make all
+	cd ICMP; make all
+	cd UDP; make all
+	cd TCP; make all
+	cd Ethernet; make all
+	cd OSPF; make all
+
+clean:
+	cd Random; make clean
+	cd ICMP; make clean
+	cd UDP; make clean
+	cd TCP; make clean
+	cd Ethernet; make clean
+	cd OSPF; make clean
+
+distclean: clean
+	cd TCP; make distclean
+	cd UDP; make distclean
+	cd ICMP; make distclean
+	cd Random; make distclean
+	cd Ethernet; make distclean
+	cd OSPF; make distclean
+	rm -f Makefile
+
+# EOF

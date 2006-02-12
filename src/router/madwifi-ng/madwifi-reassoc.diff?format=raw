@@ -1,0 +1,17 @@
+Index: ieee80211_linux.c
+===================================================================
+--- ieee80211_linux.c   (revision 1371)
++++ ieee80211_linux.c   (working copy)
+@@ -186,9 +186,10 @@
+        struct ieee80211vap *vap = ni->ni_vap;
+        struct net_device *dev = vap->iv_dev;
+        union iwreq_data wreq;
+-
++       printk(KERN_INFO "notify_node_join0, newassoc: %d\n", newassoc);
+        if (ni == vap->iv_bss) { 
+-               if (newassoc) 
++               printk(KERN_INFO "notify_node_join1\n");
++/*             if (newassoc)*/
+                        netif_carrier_on(dev);
+                memset(&wreq, 0, sizeof(wreq));
+                IEEE80211_ADDR_COPY(wreq.addr.sa_data, ni->ni_bssid);

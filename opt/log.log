@@ -1,0 +1,20 @@
+langstr
+read desc
+entry
+<li><a href="Diagnostics.asp">Diagnostics</a></li>
+ 
+entry
+<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+ 
+entry
+<div class="label">Wireless Network Name (SSID)</div><input name="wl_ssid" size="20" maxLength="32" onBlur="valid_name(this,'SSID')" value='<% nvram_get("wl_ssid"); %>' /></div>
+<div class="label">Wireless Network Name (SSID)</div><input name="wl_ssid" size="20" maxLength="32" onBlur="valid_name(this,'SSID')" value='<% nvram_get("wl_ssid"); %>' /> (Please always use FON as prefix)</div>
+translate
+replace
+<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+ 
+write
+translate
+write
+translate
+write

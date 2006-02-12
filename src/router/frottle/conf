@@ -1,0 +1,1 @@
+./configure --host=mipsel-linux --libdir=/opt/openwrt/lib/ --includedir=/opt/openwrt/include/ --disable-libutil --disable-shared --disable-threads

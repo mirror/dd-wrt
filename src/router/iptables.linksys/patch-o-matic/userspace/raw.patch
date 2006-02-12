@@ -1,0 +1,773 @@
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/include/linux/netfilter.h linux-2.4.18-raw/include/linux/netfilter.h
+--- linux-2.4.18-orig/include/linux/netfilter.h	Thu Nov 22 20:47:48 2001
++++ linux-2.4.18-raw/include/linux/netfilter.h	Mon Jul 15 17:56:27 2002
+@@ -22,6 +22,7 @@
+ /* Generic cache responses from hook functions. */
+ #define NFC_ALTERED 0x8000
+ #define NFC_UNKNOWN 0x4000
++#define NFC_TRACE   0x2000
+ 
+ #ifdef __KERNEL__
+ #include <linux/config.h>
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.18-raw/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.4.18-orig/include/linux/netfilter_ipv4/ip_conntrack.h	Mon Feb 25 20:38:13 2002
++++ linux-2.4.18-raw/include/linux/netfilter_ipv4/ip_conntrack.h	Thu Jun 13 11:34:50 2002
+@@ -190,5 +190,8 @@
+ }
+ 
+ extern unsigned int ip_conntrack_htable_size;
++
++/* A fake conntrack entry which never vanishes. */
++extern struct ip_conntrack ip_conntrack_untracked;
+ #endif /* __KERNEL__ */
+ #endif /* _IP_CONNTRACK_H */
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/include/linux/netfilter_ipv4/ip_tables.h linux-2.4.18-raw/include/linux/netfilter_ipv4/ip_tables.h
+--- linux-2.4.18-orig/include/linux/netfilter_ipv4/ip_tables.h	Mon Feb 25 20:38:13 2002
++++ linux-2.4.18-raw/include/linux/netfilter_ipv4/ip_tables.h	Wed Jun 12 17:37:50 2002
+@@ -443,5 +443,18 @@
+ 				 void *userdata);
+ 
+ #define IPT_ALIGN(s) (((s) + (__alignof__(struct ipt_entry)-1)) & ~(__alignof__(struct ipt_entry)-1))
++
++/* Internal packet logging interface */
++extern void (*ipt_packet_log_fn)(struct sk_buff **pskb,
++				 unsigned int hooknum,
++				 const struct net_device *in,
++				 const struct net_device *out,
++				 const char *prefix);
++
++extern void ipt_log_packet(struct sk_buff **pskb,
++			   unsigned int hooknum,
++			   const struct net_device *in,
++			   const struct net_device *out,
++			   const char *prefix);
+ #endif /*__KERNEL__*/
+ #endif /* _IPTABLES_H */
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/include/linux/netfilter_ipv4/ipt_ULOG.h linux-2.4.18-raw/include/linux/netfilter_ipv4/ipt_ULOG.h
+--- linux-2.4.18-orig/include/linux/netfilter_ipv4/ipt_ULOG.h	Mon Feb 25 20:38:13 2002
++++ linux-2.4.18-raw/include/linux/netfilter_ipv4/ipt_ULOG.h	Sat Jun  8 19:40:31 2002
+@@ -20,6 +20,9 @@
+  * Assuming a standard ethernet-mtu of 1500, we could define this up
+  * to 80... but even 50 seems to be big enough. */
+ 
++#define ULOG_DEFAULT_NLGROUP	1
++#define ULOG_DEFAULT_QTHRESHOLD	1
++
+ /* private data structure for each rule with a ULOG target */
+ struct ipt_ulog_info {
+ 	unsigned int nl_group;
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/include/linux/netfilter_ipv4/ipt_state.h linux-2.4.18-raw/include/linux/netfilter_ipv4/ipt_state.h
+--- linux-2.4.18-orig/include/linux/netfilter_ipv4/ipt_state.h	Fri Apr 14 18:37:20 2000
++++ linux-2.4.18-raw/include/linux/netfilter_ipv4/ipt_state.h	Sat Jun  8 17:09:52 2002
+@@ -3,6 +3,7 @@
+ 
+ #define IPT_STATE_BIT(ctinfo) (1 << ((ctinfo)%IP_CT_IS_REPLY+1))
+ #define IPT_STATE_INVALID (1 << 0)
++#define IPT_STATE_UNTRACKED (1 << (IP_CT_IS_REPLY+1))
+ 
+ struct ipt_state_info
+ {
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.18-raw/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ip_conntrack_core.c	Tue Aug  7 17:30:50 2001
++++ linux-2.4.18-raw/net/ipv4/netfilter/ip_conntrack_core.c	Thu Jun 13 11:32:30 2002
+@@ -54,6 +54,7 @@
+ static atomic_t ip_conntrack_count = ATOMIC_INIT(0);
+ struct list_head *ip_conntrack_hash;
+ static kmem_cache_t *ip_conntrack_cachep;
++struct ip_conntrack ip_conntrack_untracked;
+ 
+ extern struct ip_conntrack_protocol ip_conntrack_generic_protocol;
+ 
+@@ -1143,5 +1144,14 @@
+ 
+ 	/* For use by ipt_REJECT */
+ 	ip_ct_attach = ip_conntrack_attach;
++	
++	/* Set up fake conntrack:
++	    to never be deleted, not in any hashes */
++	atomic_set(&ip_conntrack_untracked.ct_general.use, 1);
++	/*  and look it like as a confirmed connection */
++	ip_conntrack_untracked.tuplehash[IP_CT_DIR_ORIGINAL].list.next = (struct list_head *)&ip_conntrack_untracked;
++	/*  and prepare the ctinfo field for NAT. */
++	ip_conntrack_untracked.infos[IP_CT_NEW].master = &ip_conntrack_untracked.ct_general;
++	
+ 	return ret;
+ }
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.4.18-raw/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ip_conntrack_standalone.c	Mon Feb 25 20:38:14 2002
++++ linux-2.4.18-raw/net/ipv4/netfilter/ip_conntrack_standalone.c	Thu Jun 13 11:31:59 2002
+@@ -338,3 +338,4 @@
+ EXPORT_SYMBOL(ip_conntrack_tuple_taken);
+ EXPORT_SYMBOL(ip_ct_gather_frags);
+ EXPORT_SYMBOL(ip_conntrack_htable_size);
++EXPORT_SYMBOL(ip_conntrack_untracked);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ip_nat_core.c linux-2.4.18-raw/net/ipv4/netfilter/ip_nat_core.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ip_nat_core.c	Fri Dec 21 18:42:05 2001
++++ linux-2.4.18-raw/net/ipv4/netfilter/ip_nat_core.c	Wed Jul 31 08:41:25 2002
+@@ -897,6 +897,10 @@
+ 	IP_NF_ASSERT(ip_conntrack_destroyed == NULL);
+ 	ip_conntrack_destroyed = &ip_nat_cleanup_conntrack;
++	
++	/* Initialize fake conntrack so that NAT will skip it */
++	ip_conntrack_untracked.nat.info.initialized |= 
++		(1 << IP_NAT_MANIP_SRC) | (1 << IP_NAT_MANIP_DST);
+ 
+ 	return 0;
+ }
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ip_tables.c linux-2.4.18-raw/net/ipv4/netfilter/ip_tables.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ip_tables.c	Mon Feb 25 20:38:14 2002
++++ linux-2.4.18-raw/net/ipv4/netfilter/ip_tables.c	Tue Jul 23 11:21:42 2002
+@@ -7,6 +7,8 @@
+  * 19 Jan 2002 Harald Welte <laforge@gnumonks.org>
+  * 	- increase module usage count as soon as we have rules inside
+  * 	  a table
++ * 8  Jun 2002 Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
++ *	- packet logging interface added
+  */
+ #include <linux/config.h>
+ #include <linux/skbuff.h>
+@@ -24,6 +26,16 @@
+ 
+ #include <linux/netfilter_ipv4/ip_tables.h>
+ 
++#ifdef CONFIG_IP_NF_TARGET_TRACE_NEEDED
++static const char *hooknames[]
++= { [NF_IP_PRE_ROUTING]  "PREROUTING",
++    [NF_IP_LOCAL_IN]     "INPUT",
++    [NF_IP_FORWARD]      "FORWARD",
++    [NF_IP_LOCAL_OUT]    "OUTPUT",
++    [NF_IP_POST_ROUTING] "POSTROUTING",
++};
++#endif
++
+ /*#define DEBUG_IP_FIREWALL*/
+ /*#define DEBUG_ALLOW_ALL*/ /* Useful for remote debugging */
+ /*#define DEBUG_IP_FIREWALL_USER*/
+@@ -117,6 +129,31 @@
+ #define up(x) do { printk("UP:%u:" #x "\n", __LINE__); up(x); } while(0)
+ #endif
+ 
++/* We rely on the LOG targets */
++void (*ipt_packet_log_fn)(struct sk_buff **pskb,
++			  unsigned int hooknum,
++			  const struct net_device *in,
++			  const struct net_device *out,
++			  const char *prefix) = NULL;
++
++void ipt_log_packet(struct sk_buff **pskb,
++		    unsigned int hooknum,
++		    const struct net_device *in,
++		    const struct net_device *out,
++		    const char *prefix)
++{
++	static unsigned int reported = 0;
++	
++	if (ipt_packet_log_fn == NULL) {
++		if (!reported) {
++			printk(KERN_WARNING "ip_tables: can\'t log yet, "
++			       "no backend logging module loaded in!\n");
++			reported++;
++		}
++	} else
++		ipt_packet_log_fn(pskb, hooknum, in, out, prefix);
++}
++
+ /* Returns whether matches rule or not. */
+ static inline int
+ ip_packet_match(const struct iphdr *ip,
+@@ -250,6 +287,39 @@
+ 	return (struct ipt_entry *)(base + offset);
+ }
+ 
++static inline int
++get_chainname_rulenum(struct ipt_entry *s, struct ipt_entry *e,
++		      char **chainname, u_int16_t *rulenum)
++{
++	struct ipt_entry_target *t;
++
++	(*rulenum)++;
++
++	if (s == e)
++		return 1;
++
++	t = ipt_get_target(s);
++	if (strcmp(t->u.kernel.target->name, IPT_ERROR_TARGET) == 0) {
++		*chainname = t->data;
++		(*rulenum) = 0;
++	}
++	
++	return 0;
++}
++
++/* All zeroes == unconditional rule. */
++static inline int
++unconditional(const struct ipt_ip *ip)
++{
++	unsigned int i;
++
++	for (i = 0; i < sizeof(*ip)/sizeof(__u32); i++)
++		if (((__u32 *)ip)[i])
++			return 0;
++
++	return 1;
++}
++
+ /* Returns one of the generic firewall policies, like NF_ACCEPT. */
+ unsigned int
+ ipt_do_table(struct sk_buff **pskb,
+@@ -325,6 +395,31 @@
+ 
+ 			t = ipt_get_target(e);
+ 			IP_NF_ASSERT(t->u.kernel.target);
++#ifdef CONFIG_IP_NF_TARGET_TRACE_NEEDED
++			/* The packet traced and the rule isn't an unconditional return/END. */
++			if (((*pskb)->nfcache & NFC_TRACE)
++			    && !(e->target_offset == sizeof(struct ipt_entry)
++			    	 && (strcmp(t->u.kernel.target->name,
++				       IPT_STANDARD_TARGET) == 0)
++			    	 && !t->u.kernel.target->target
++			    	 && ((struct ipt_standard_target *)t)->verdict < 0
++			    	 && unconditional(&e->ip))) {
++				/* "TRACE: tablename/chainname/rulenum " */
++				char prefix[11+2*IPT_TABLE_MAXNAMELEN+6];
++				char *chainname = (char *) hooknames[hook];
++				u_int16_t rulenum = 0;
++				
++				IPT_ENTRY_ITERATE(get_entry(table_base, table->private->hook_entry[hook]),
++						  table->private->size,
++						  get_chainname_rulenum,
++						  e, &chainname, &rulenum);
++						  
++				snprintf(prefix, sizeof(prefix), "TRACE: %s/%s/%u ", 
++					table->name, chainname, rulenum);
++
++				ipt_log_packet(pskb, hook, in, out, prefix);
++			}
++#endif
+ 			/* Standard target? */
+ 			if (!t->u.kernel.target->target) {
+ 				int v;
+@@ -481,19 +576,6 @@
+ 	return find_inlist_lock(&ipt_target, name, "ipt_", error, mutex);
+ }
+ 
+-/* All zeroes == unconditional rule. */
+-static inline int
+-unconditional(const struct ipt_ip *ip)
+-{
+-	unsigned int i;
+-
+-	for (i = 0; i < sizeof(*ip)/sizeof(__u32); i++)
+-		if (((__u32 *)ip)[i])
+-			return 0;
+-
+-	return 1;
+-}
+-
+ /* Figures out from what hook each rule can be called: returns 0 if
+    there are loops.  Puts hook bitmask in comefrom. */
+ static int
+@@ -1786,6 +1868,8 @@
+ EXPORT_SYMBOL(ipt_do_table);
+ EXPORT_SYMBOL(ipt_register_target);
+ EXPORT_SYMBOL(ipt_unregister_target);
++EXPORT_SYMBOL(ipt_log_packet);
++EXPORT_SYMBOL(ipt_packet_log_fn);
+ 
+ module_init(init);
+ module_exit(fini);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ipt_LOG.c linux-2.4.18-raw/net/ipv4/netfilter/ipt_LOG.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ipt_LOG.c	Mon Feb 25 20:38:14 2002
++++ linux-2.4.18-raw/net/ipv4/netfilter/ipt_LOG.c	Thu Jun 13 16:05:22 2002
+@@ -2,6 +2,7 @@
+  * This is a module which is used for logging packets.
+  */
+ #include <linux/module.h>
++#include <linux/kernel.h>
+ #include <linux/skbuff.h>
+ #include <linux/ip.h>
+ #include <linux/spinlock.h>
+@@ -270,23 +271,21 @@
+ 	/* maxlen = 230+   91  + 230 + 252 = 803 */
+ }
+ 
+-static unsigned int
+-ipt_log_target(struct sk_buff **pskb,
+-	       unsigned int hooknum,
+-	       const struct net_device *in,
+-	       const struct net_device *out,
+-	       const void *targinfo,
+-	       void *userinfo)
++static void
++ipt_log(struct sk_buff **pskb,
++	unsigned int hooknum,
++	const struct net_device *in,
++	const struct net_device *out,
++	const struct ipt_log_info *loginfo,
++	const char *level_string,
++	const char *prefix)
+ {
+ 	struct iphdr *iph = (*pskb)->nh.iph;
+-	const struct ipt_log_info *loginfo = targinfo;
+-	char level_string[4] = "< >";
+ 
+-	level_string[1] = '0' + (loginfo->level % 8);
+ 	spin_lock_bh(&log_lock);
+ 	printk(level_string);
+ 	printk("%sIN=%s OUT=%s ",
+-	       loginfo->prefix,
++	       prefix == NULL ? loginfo->prefix : prefix,
+ 	       in ? in->name : "",
+ 	       out ? out->name : "");
+ 	if (in && !out) {
+@@ -306,10 +305,37 @@
+ 	dump_packet(loginfo, iph, (*pskb)->len, 1);
+ 	printk("\n");
+ 	spin_unlock_bh(&log_lock);
++}
++
++static unsigned int
++ipt_log_target(struct sk_buff **pskb,
++	       unsigned int hooknum,
++	       const struct net_device *in,
++	       const struct net_device *out,
++	       const void *targinfo,
++	       void *userinfo)
++{
++	const struct ipt_log_info *loginfo = targinfo;
++	char level_string[4] = "< >";
++
++	level_string[1] = '0' + (loginfo->level % 8);
++	ipt_log(pskb, hooknum, in, out, loginfo, level_string, NULL);
+ 
+ 	return IPT_CONTINUE;
+ }
+ 
++static void
++ipt_log_fn(struct sk_buff **pskb,
++	   unsigned int hooknum,
++	   const struct net_device *in,
++	   const struct net_device *out,
++	   const char *prefix)
++{
++	struct ipt_log_info loginfo = { 0, IPT_LOG_MASK, ""};
++
++	ipt_log(pskb, hooknum, in, out, &loginfo, KERN_WARNING, prefix);
++}
++
+ static int ipt_log_checkentry(const char *tablename,
+ 			      const struct ipt_entry *e,
+ 			      void *targinfo,
+@@ -346,6 +372,9 @@
+ {
+ 	if (ipt_register_target(&ipt_log_reg))
+ 		return -EINVAL;
++		
++	if (ipt_packet_log_fn == NULL)
++		ipt_packet_log_fn = ipt_log_fn;
+ 
+ 	return 0;
+ }
+@@ -353,6 +382,9 @@
+ static void __exit fini(void)
+ {
+ 	ipt_unregister_target(&ipt_log_reg);
++
++	if (ipt_packet_log_fn == ipt_log_fn)	
++		ipt_packet_log_fn = NULL;
+ }
+ 
+ module_init(init);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ipt_NOTRACK.c linux-2.4.18-raw/net/ipv4/netfilter/ipt_NOTRACK.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ipt_NOTRACK.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-raw/net/ipv4/netfilter/ipt_NOTRACK.c	Thu Jun 13 11:33:59 2002
+@@ -0,0 +1,63 @@
++/* This is a module which is used for setting up fake conntracks
++   on packets so that they are not seen by the conntrack/NAT code */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++
++static unsigned int
++target(struct sk_buff **pskb,
++       unsigned int hooknum,
++       const struct net_device *in,
++       const struct net_device *out,
++       const void *targinfo,
++       void *userinfo)
++{
++	if((*pskb)->nfct == NULL) {
++		(*pskb)->nfct = &ip_conntrack_untracked.infos[IP_CT_NEW];
++		nf_conntrack_get((*pskb)->nfct);
++	}
++	return IPT_CONTINUE;
++}
++
++static int
++checkentry(const char *tablename,
++	   const struct ipt_entry *e,
++           void *targinfo,
++           unsigned int targinfosize,
++           unsigned int hook_mask)
++{
++	if (targinfosize != 0) {
++		printk(KERN_WARNING "NOTRACK: targinfosize %u != 0\n",
++		       targinfosize);
++		return 0;
++	}
++
++	if (strcmp(tablename, "raw") != 0) {
++		printk(KERN_WARNING "NOTRACK: can only be called from \"raw\" table, not \"%s\"\n", tablename);
++		return 0;
++	}
++
++	return 1;
++}
++
++static struct ipt_target ipt_notrack_reg
++= { { NULL, NULL }, "NOTRACK", target, checkentry, NULL, THIS_MODULE };
++
++static int __init init(void)
++{
++	if (ipt_register_target(&ipt_notrack_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_target(&ipt_notrack_reg);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ipt_TRACE.c linux-2.4.18-raw/net/ipv4/netfilter/ipt_TRACE.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ipt_TRACE.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-raw/net/ipv4/netfilter/ipt_TRACE.c	Fri Jun  7 23:35:58 2002
+@@ -0,0 +1,59 @@
++/* This is a module which is used for setting 
++   the NFC_TRACE flag in the nfcache field of an skb. */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++static unsigned int
++target(struct sk_buff **pskb,
++       unsigned int hooknum,
++       const struct net_device *in,
++       const struct net_device *out,
++       const void *targinfo,
++       void *userinfo)
++{
++	(*pskb)->nfcache |= NFC_TRACE;
++	return IPT_CONTINUE;
++}
++
++static int
++checkentry(const char *tablename,
++	   const struct ipt_entry *e,
++           void *targinfo,
++           unsigned int targinfosize,
++           unsigned int hook_mask)
++{
++	if (targinfosize != 0) {
++		printk(KERN_WARNING "TRACE: targinfosize %u != 0\n",
++		       targinfosize);
++		return 0;
++	}
++
++	if (strcmp(tablename, "raw") != 0) {
++		printk(KERN_WARNING "TRACE: can only be called from \"raw\" table, not \"%s\"\n", tablename);
++		return 0;
++	}
++
++	return 1;
++}
++
++static struct ipt_target ipt_trace_reg
++= { { NULL, NULL }, "TRACE", target, checkentry, NULL, THIS_MODULE };
++
++static int __init init(void)
++{
++	if (ipt_register_target(&ipt_trace_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_target(&ipt_trace_reg);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ipt_ULOG.c linux-2.4.18-raw/net/ipv4/netfilter/ipt_ULOG.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ipt_ULOG.c	Mon Feb 25 20:38:14 2002
++++ linux-2.4.18-raw/net/ipv4/netfilter/ipt_ULOG.c	Thu Jun 13 09:27:18 2002
+@@ -74,6 +74,9 @@
+ static unsigned int flushtimeout = 10 * HZ;
+ MODULE_PARM(flushtimeout, "i");
+ MODULE_PARM_DESC(flushtimeout, "buffer flush timeout");
++static unsigned int takeover = 0;
++MODULE_PARM(takeover, "i");
++MODULE_PARM_DESC(takeover, "take over internal logging from ipt_LOG");
+ 
+ /* global data structures */
+ 
+@@ -157,17 +160,17 @@
+ 	return skb;
+ }
+ 
+-static unsigned int ipt_ulog_target(struct sk_buff **pskb,
+-				    unsigned int hooknum,
+-				    const struct net_device *in,
+-				    const struct net_device *out,
+-				    const void *targinfo, void *userinfo)
++static void ipt_ulog(struct sk_buff **pskb,
++		     unsigned int hooknum,
++		     const struct net_device *in,
++		     const struct net_device *out,
++		     const struct ipt_ulog_info *loginfo,
++		     const char *prefix)
+ {
+ 	ulog_buff_t *ub;
+ 	ulog_packet_msg_t *pm;
+ 	size_t size, copy_len;
+ 	struct nlmsghdr *nlh;
+-	struct ipt_ulog_info *loginfo = (struct ipt_ulog_info *) targinfo;
+ 
+ 	/* calculate the size of the skb needed */
+ 	if ((loginfo->copy_range == 0) ||
+@@ -213,7 +216,9 @@
+ 	pm->timestamp_usec = (*pskb)->stamp.tv_usec;
+ 	pm->mark = (*pskb)->nfmark;
+ 	pm->hook = hooknum;
+-	if (loginfo->prefix[0] != '\0')
++	if (prefix != NULL)
++		strncpy(pm->prefix, prefix, sizeof(pm->prefix));
++	else if (loginfo->prefix[0] != '\0')
+ 		strncpy(pm->prefix, loginfo->prefix, sizeof(pm->prefix));
+ 	else
+ 		*(pm->prefix) = '\0';
+@@ -259,7 +264,7 @@
+ 
+ 	UNLOCK_BH(&ulog_lock);
+ 
+-	return IPT_CONTINUE;
++	return;
+ 
+ 
+ nlmsg_failure:
+@@ -269,10 +274,35 @@
+ 	PRINTR("ipt_ULOG: Error building netlink message\n");
+ 
+ 	UNLOCK_BH(&ulog_lock);
++}
++
++static unsigned int ipt_ulog_target(struct sk_buff **pskb,
++				    unsigned int hooknum,
++				    const struct net_device *in,
++				    const struct net_device *out,
++				    const void *targinfo, void *userinfo)
++{
++	struct ipt_ulog_info *loginfo = (struct ipt_ulog_info *) targinfo;
++
++	ipt_ulog(pskb, hooknum, in, out, loginfo, NULL);
+ 
+ 	return IPT_CONTINUE;
+ }
+ 
++static void ipt_ulog_fn(struct sk_buff **pskb,
++			unsigned int hooknum,
++			const struct net_device *in,
++			const struct net_device *out,
++			const char *prefix)
++{
++	struct ipt_ulog_info loginfo = { ULOG_DEFAULT_NLGROUP,
++					 0,
++					 ULOG_DEFAULT_QTHRESHOLD,
++					 "" };
++
++	ipt_ulog(pskb, hooknum, in, out, &loginfo, prefix);
++}
++
+ static int ipt_ulog_checkentry(const char *tablename,
+ 			       const struct ipt_entry *e,
+ 			       void *targinfo,
+@@ -334,6 +364,9 @@
+ 		return -EINVAL;
+ 	}
+ 
++	if (ipt_packet_log_fn == NULL || takeover)
++		ipt_packet_log_fn = ipt_ulog_fn;
++
+ 	return 0;
+ }
+ 
+@@ -343,6 +376,8 @@
+ 
+ 	ipt_unregister_target(&ipt_ulog_reg);
+ 	sock_release(nflognl->socket);
++	if (ipt_packet_log_fn == ipt_ulog_fn)	
++		ipt_packet_log_fn = NULL;
+ }
+ 
+ module_init(init);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/ipt_state.c linux-2.4.18-raw/net/ipv4/netfilter/ipt_state.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/ipt_state.c	Sun Sep 30 21:26:08 2001
++++ linux-2.4.18-raw/net/ipv4/netfilter/ipt_state.c	Thu Jun 13 11:34:20 2002
+@@ -21,7 +21,9 @@
+ 	enum ip_conntrack_info ctinfo;
+ 	unsigned int statebit;
+ 
+-	if (!ip_conntrack_get((struct sk_buff *)skb, &ctinfo))
++	if (skb->nfct == &ip_conntrack_untracked.infos[IP_CT_NEW])
++		statebit = IPT_STATE_UNTRACKED;
++	else if (!ip_conntrack_get((struct sk_buff *)skb, &ctinfo))
+ 		statebit = IPT_STATE_INVALID;
+ 	else
+ 		statebit = IPT_STATE_BIT(ctinfo);
+diff -urN --exclude-from=diff.exclude-raw linux-2.4.18-orig/net/ipv4/netfilter/iptable_raw.c linux-2.4.18-raw/net/ipv4/netfilter/iptable_raw.c
+--- linux-2.4.18-orig/net/ipv4/netfilter/iptable_raw.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-raw/net/ipv4/netfilter/iptable_raw.c	Sat Jun  8 17:46:42 2002
+@@ -0,0 +1,133 @@
++/* 
++ * 'raw' table, which is the very first hooked in at PRE_ROUTING and LOCAL_OUT 
++ */
++#include <linux/module.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++
++#define RAW_VALID_HOOKS ((1 << NF_IP_PRE_ROUTING) | (1 << NF_IP_LOCAL_OUT))
++
++/* Standard entry. */
++struct ipt_standard
++{
++	struct ipt_entry entry;
++	struct ipt_standard_target target;
++};
++
++struct ipt_error_target
++{
++	struct ipt_entry_target target;
++	char errorname[IPT_FUNCTION_MAXNAMELEN];
++};
++
++struct ipt_error
++{
++	struct ipt_entry entry;
++	struct ipt_error_target target;
++};
++
++static struct
++{
++	struct ipt_replace repl;
++	struct ipt_standard entries[2];
++	struct ipt_error term;
++} initial_table __initdata
++= { { "raw", RAW_VALID_HOOKS, 3,
++      sizeof(struct ipt_standard) * 2 + sizeof(struct ipt_error),
++      { [NF_IP_PRE_ROUTING] 0,
++	[NF_IP_LOCAL_OUT] sizeof(struct ipt_standard) },
++      { [NF_IP_PRE_ROUTING] 0,
++	[NF_IP_LOCAL_OUT] sizeof(struct ipt_standard) },
++      0, NULL, { } },
++    {
++	    /* PRE_ROUTING */
++	    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ipt_entry),
++		sizeof(struct ipt_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IPT_ALIGN(sizeof(struct ipt_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } },
++	    /* LOCAL_OUT */
++	    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++		0,
++		sizeof(struct ipt_entry),
++		sizeof(struct ipt_standard),
++		0, { 0, 0 }, { } },
++	      { { { { IPT_ALIGN(sizeof(struct ipt_standard_target)), "" } }, { } },
++		-NF_ACCEPT - 1 } }
++    },
++    /* ERROR */
++    { { { { 0 }, { 0 }, { 0 }, { 0 }, "", "", { 0 }, { 0 }, 0, 0, 0 },
++	0,
++	sizeof(struct ipt_entry),
++	sizeof(struct ipt_error),
++	0, { 0, 0 }, { } },
++      { { { { IPT_ALIGN(sizeof(struct ipt_error_target)), IPT_ERROR_TARGET } },
++	  { } },
++	"ERROR"
++      }
++    }
++};
++
++static struct ipt_table packet_raw
++= { { NULL, NULL }, "raw", &initial_table.repl,
++    RAW_VALID_HOOKS, RW_LOCK_UNLOCKED, NULL, THIS_MODULE };
++
++/* The work comes in here from netfilter.c. */
++static unsigned int
++ipt_hook(unsigned int hook,
++	 struct sk_buff **pskb,
++	 const struct net_device *in,
++	 const struct net_device *out,
++	 int (*okfn)(struct sk_buff *))
++{
++	return ipt_do_table(pskb, hook, in, out, &packet_raw, NULL);
++}
++
++/* 'raw' is the very first table. */
++static struct nf_hook_ops ipt_ops[]
++= { { { NULL, NULL }, ipt_hook, PF_INET, NF_IP_PRE_ROUTING, NF_IP_PRI_FIRST },
++    { { NULL, NULL }, ipt_hook, PF_INET, NF_IP_LOCAL_OUT, NF_IP_PRI_FIRST }
++};
++
++static int __init init(void)
++{
++	int ret;
++
++	/* Register table */
++	ret = ipt_register_table(&packet_raw);
++	if (ret < 0)
++		return ret;
++
++	/* Register hooks */
++	ret = nf_register_hook(&ipt_ops[0]);
++	if (ret < 0)
++		goto cleanup_table;
++
++	ret = nf_register_hook(&ipt_ops[1]);
++	if (ret < 0)
++		goto cleanup_hook0;
++
++	return ret;
++
++ cleanup_hook0:
++	nf_unregister_hook(&ipt_ops[0]);
++ cleanup_table:
++	ipt_unregister_table(&packet_raw);
++
++	return ret;
++}
++
++static void __exit fini(void)
++{
++	unsigned int i;
++
++	for (i = 0; i < sizeof(ipt_ops)/sizeof(struct nf_hook_ops); i++)
++		nf_unregister_hook(&ipt_ops[i]);
++
++	ipt_unregister_table(&packet_raw);
++}
++
++module_init(init);
++module_exit(fini);
++MODULE_LICENSE("GPL");

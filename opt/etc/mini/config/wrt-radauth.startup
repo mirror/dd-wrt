@@ -1,0 +1,52 @@
+#!/bin/sh
+
+if [ -z "$(nvram get wl_radportal)" ]; then     
+    nvram set wl_radportal=0
+    nvram set wl_radmactype=0
+    nvram set wl_radauth=0
+    nvram set wl_radmacpassword=0
+    nvram set need_commit=1
+fi
+
+IFNAME=$(nvram get wl0_ifname)
+killall -q -9 wrt-radauth
+
+if [ "$(nvram get wl_mode)" = "ap" ]; then 
+    if [ "$(nvram get wl_radauth)" = "1" ]; then
+	if [ "$(nvram get wl_radportal)" = "1" ]; then
+
+	redirector=$(nvram get wl_radportalsite)
+	allowedsubnet=$(nvram get wl_radallownet)
+	wlaninterface=$(nvram get wl0_ifname)
+	myipaddress=$(nvram get lan_ipaddr)
+        allowip=`echo $redirector|cut -d":" -f1`
+
+	iptables -t nat -F maccheck                                                            #Flush maccheck just incase
+	iptables -t nat -X maccheck                                                            #Erase maccheck incase it exists
+	iptables -t nat -N maccheck                                                            #Recreate maccheck to accept rulelist
+	iptables -t nat -I PREROUTING -i $wlaninterface -j maccheck                            #Pass all wlan through maccheck
+	iptables -t nat -I maccheck -p tcp --dport 80 -j DNAT --to-destination=$redirector     #dnat all port 80 to our hidden server
+	iptables -t nat -I maccheck -p tcp --destination $allowedsubnet -j RETURN              #allow access to our subnet
+        iptables -t nat -I maccheck -p tcp --dport 80 --destination $myipaddress -j RETURN     #allow access to my lanip
+	iptables -t nat -I maccheck -p tcp --destination $allowip -j RETURN  		       #allow access to dnat ip (incase diff subnet)
+	iptables -t nat -I maccheck -p udp --dport 53 -j RETURN				       #allow dns access
+	iptables -t nat -I maccheck -p udp --dport 67:68 -j RETURN                             #allow udp 67:68
+	iptables -t nat -A maccheck -j DROP                                                    #DROP EVERYTHING ELSE AT THE END
+
+	fi
+
+	if [ "$(nvram get wl_radmactype)" = "0" ]; then
+	wrt-radauth -n1 $IFNAME &
+	fi
+	if [ "$(nvram get wl_radmactype)" = "1" ]; then
+	wrt-radauth -n2 $IFNAME &
+	fi
+	if [ "$(nvram get wl_radmactype)" = "2" ]; then
+	wrt-radauth $IFNAME &
+	fi
+	
+
+
+    fi
+fi
+

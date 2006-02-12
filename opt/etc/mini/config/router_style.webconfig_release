@@ -1,0 +1,18 @@
+<fieldset>
+<legend>Router GUI Style</legend>
+<span class="comment">Style</span><div class="setting">
+	<div class="label">Style</div>
+	<select name="router_style">
+	<option value="blue.css" <% nvram_match("router_style","blue.css","selected"); %>>Blue</option>
+	<option value="brainslayer.css" <% nvram_match("router_style","brainslayer.css","selected"); %>>BrainSlayer</option>
+	<option value="cyan.css" <% nvram_match("router_style","cyan.css","selected"); %>>Cyan</option>
+	<option value="elegant.css" <% nvram_match("router_style","elegant.css","selected"); %>>Elegant</option>
+	<option value="green.css" <% nvram_match("router_style","green.css","selected"); %>>Green</option>
+	<option value="kromo.css" <% nvram_match("router_style","kromo.css","selected"); %>>Kromo</option>
+	<option value="red.css" <% nvram_match("router_style","red.css","selected"); %>>Red</option>
+	<option value="wikar.css" <% nvram_match("router_style","wikar.css","selected"); %>>Wikar</option>
+	<option value="xirian.css" <% nvram_match("router_style","xirian.css","selected"); %>>Xirian</option>
+	<option value="yellow.css" <% nvram_match("router_style","yellow.css","selected"); %>>Yellow</option>
+	</select></div>
+</fieldset>
+

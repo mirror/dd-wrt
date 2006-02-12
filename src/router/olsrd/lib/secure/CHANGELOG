@@ -1,0 +1,15 @@
+This changelog states changes from version 0.2
+
+0.5 - A local MD5 implementation can now be compiled
+      into the plugin so that no external library
+      is needed. Should be great for embedded systems.
+      MD5 might not be super-secure, but hey... it
+      still takes quite some effort to break ;)
+0.4 - Plugin now compiles under FreeBSD and win32.
+      To compile under win32(cygwin) you have to
+      make sure the openssl include directory
+      is present under /usr/include/mingw/
+      The plugin is not tested under win32.   
+0.3 - Only some minor fixes to make the plugin work
+      with olsrd 0.4.6.
+      Dynamic interface removal/addition supported.

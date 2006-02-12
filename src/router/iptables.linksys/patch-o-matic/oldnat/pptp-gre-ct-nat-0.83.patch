@@ -1,0 +1,2125 @@
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack.h	Wed Mar 13 15:00:35 2002
++++ linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack.h	Wed Mar 13 15:15:43 2002
+@@ -48,6 +48,7 @@
+ #include <linux/skbuff.h>
+ #include <linux/netfilter_ipv4/ip_conntrack_tcp.h>
+ #include <linux/netfilter_ipv4/ip_conntrack_icmp.h>
++#include <linux/netfilter_ipv4/ip_conntrack_proto_gre.h>
+ 
+ #ifdef CONFIG_NF_DEBUG
+ #define IP_NF_ASSERT(x)							\
+@@ -79,10 +80,12 @@
+ 
+ #ifdef CONFIG_IP_NF_NAT_NEEDED
+ #include <linux/netfilter_ipv4/ip_nat.h>
++#include <linux/netfilter_ipv4/ip_nat_pptp.h>
+ #endif
+ 
+ #include <linux/netfilter_ipv4/ip_conntrack_ftp.h>
+ #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
++#include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
+ 
+ struct ip_conntrack
+ {
+@@ -118,11 +121,13 @@
+ 	union {
+ 		struct ip_ct_tcp tcp;
+ 		struct ip_ct_icmp icmp;
++		struct ip_ct_gre gre;
+ 	} proto;
+ 
+ 	union {
+ 		struct ip_ct_ftp ct_ftp_info;
+ 		struct ip_ct_irc ct_irc_info;
++		struct ip_ct_pptp ct_pptp_info;
+ 	} help;
+ 
+ #ifdef CONFIG_IP_NF_NAT_NEEDED
+@@ -130,6 +135,7 @@
+ 		struct ip_nat_info info;
+ 		union {
+ 			/* insert nat helper private data here */
++			struct ip_nat_pptp nat_pptp_info;
+ 		} help;
+ #if defined(CONFIG_IP_NF_TARGET_MASQUERADE) || \
+ 	defined(CONFIG_IP_NF_TARGET_MASQUERADE_MODULE)
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack_pptp.h linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack_pptp.h
+--- linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack_pptp.h	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack_pptp.h	Wed Mar 13 15:02:41 2002
+@@ -0,0 +1,324 @@
++/* PPTP constants and structs */
++#ifndef _CONNTRACK_PPTP_H
++#define _CONNTRACK_PPTP_H
++
++DECLARE_LOCK_EXTERN(ip_pptp_lock);
++
++/* state of the control session */
++enum pptp_ctrlsess_state {
++	PPTP_SESSION_NONE,			/* no session present */
++	PPTP_SESSION_ERROR,			/* some session error */
++	PPTP_SESSION_STOPREQ,			/* stop_sess request seen */
++	PPTP_SESSION_REQUESTED,			/* start_sess request seen */
++	PPTP_SESSION_CONFIRMED,			/* session established */
++};
++
++/* state of the call inside the control session */
++enum pptp_ctrlcall_state {
++	PPTP_CALL_NONE,
++	PPTP_CALL_ERROR,
++	PPTP_CALL_OUT_REQ,
++	PPTP_CALL_OUT_CONF,
++	PPTP_CALL_IN_REQ,
++	PPTP_CALL_IN_REP,
++	PPTP_CALL_IN_CONF,
++	PPTP_CALL_CLEAR_REQ,
++};
++
++/* conntrack private data */
++struct ip_ct_pptp {
++	int is_pptp;				/* stupid hack for oldnat */
++	enum pptp_ctrlsess_state sstate;	/* session state */
++
++	/* everything below is going to be per-expectation in newnat,
++	 * since there could be more than one call within one session */
++	enum pptp_ctrlcall_state cstate;	/* call state */
++	u_int16_t pac_call_id;			/* call id of PAC, host byte order */
++	u_int16_t pns_call_id;			/* call id of PNS, host byte order */
++	struct ip_conntrack *slave;		/* pointer to slave GRE */
++};
++
++
++#define IP_CONNTR_PPTP		PPTP_CONTROL_PORT
++
++union pptp_ctrl_union {
++                void				*rawreq;
++		struct PptpStartSessionRequest	*sreq;
++		struct PptpStartSessionReply	*srep;
++		struct PptpStopSessionReqest	*streq;
++		struct PptpStopSessionReply	*strep;
++                struct PptpOutCallRequest       *ocreq;
++                struct PptpOutCallReply         *ocack;
++                struct PptpInCallRequest        *icreq;
++                struct PptpInCallReply          *icack;
++                struct PptpInCallConnected      *iccon;
++		struct PptpClearCallRequest	*clrreq;
++                struct PptpCallDisconnectNotify *disc;
++                struct PptpWanErrorNotify       *wanerr;
++                struct PptpSetLinkInfo          *setlink;
++};
++
++
++
++#define PPTP_CONTROL_PORT	1723
++
++#define PPTP_PACKET_CONTROL	1
++#define PPTP_PACKET_MGMT	2
++
++#define PPTP_MAGIC_COOKIE	0x1a2b3c4d
++
++struct pptp_pkt_hdr {
++	__u16	packetLength;
++	__u16	packetType;
++	__u32	magicCookie;
++};
++
++/* PptpControlMessageType values */
++#define PPTP_START_SESSION_REQUEST	1
++#define PPTP_START_SESSION_REPLY	2
++#define PPTP_STOP_SESSION_REQUEST	3
++#define PPTP_STOP_SESSION_REPLY		4
++#define PPTP_ECHO_REQUEST		5
++#define PPTP_ECHO_REPLY			6
++#define PPTP_OUT_CALL_REQUEST		7
++#define PPTP_OUT_CALL_REPLY		8
++#define PPTP_IN_CALL_REQUEST		9
++#define PPTP_IN_CALL_REPLY		10
++#define PPTP_IN_CALL_CONNECT		11
++#define PPTP_CALL_CLEAR_REQUEST		12
++#define PPTP_CALL_DISCONNECT_NOTIFY	13
++#define PPTP_WAN_ERROR_NOTIFY		14
++#define PPTP_SET_LINK_INFO		15
++
++#define PPTP_MSG_MAX			15
++
++/* PptpControlMessageType names */
++static const char *strMName[] = {
++	"UNKNOWN_MESSAGE",
++	"START_SESSION_REQUEST",
++	"START_SESSION_REPLY",
++	"STOP_SESSION_REQUEST",
++	"STOP_SESSION_REPLY",
++	"ECHO_REQUEST",
++	"ECHO_REPLY",
++	"OUT_CALL_REQUEST",
++	"OUT_CALL_REPLY",
++	"IN_CALL_REQUEST",
++	"IN_CALL_REPLY",
++	"IN_CALL_CONNECT",
++	"CALL_CLEAR_REQUEST",
++	"CALL_DISCONNECT_NOTIFY",
++	"CALL_ERROR_NOTIFY",
++	"WAN_ERROR_NOTIFY",
++	"SET_LINK_INFO"
++};
++
++/* PptpGeneralError values */
++#define PPTP_ERROR_CODE_NONE		0
++#define PPTP_NOT_CONNECTED		1
++#define PPTP_BAD_FORMAT			2
++#define PPTP_BAD_VALUE			3
++#define PPTP_NO_RESOURCE		4
++#define PPTP_BAD_CALLID			5
++#define PPTP_REMOVE_DEVICE_ERROR	6
++
++struct PptpControlHeader {
++	__u16	messageType;
++	__u16	reserved;
++};
++
++/* FramingCapability Bitmap Values */
++#define PPTP_FRAME_CAP_ASYNC		0x1
++#define PPTP_FRAME_CAP_SYNC		0x2
++
++/* BearerCapability Bitmap Values */
++#define PPTP_BEARER_CAP_ANALOG		0x1
++#define PPTP_BEARER_CAP_DIGITAL		0x2
++
++struct PptpStartSessionRequest {
++	__u16	protocolVersion;
++	__u8	reserved1;
++	__u8	reserved2;
++	__u32	framingCapability;
++	__u32	bearerCapability;
++	__u16	maxChannels;
++	__u16	firmwareRevision;
++	__u8	hostName[64];
++	__u8	vendorString[64];
++};
++
++/* PptpStartSessionResultCode Values */
++#define PPTP_START_OK			1
++#define PPTP_START_GENERAL_ERROR	2
++#define PPTP_START_ALREADY_CONNECTED	3
++#define PPTP_START_NOT_AUTHORIZED	4
++#define PPTP_START_UNKNOWN_PROTOCOL	5
++
++struct PptpStartSessionReply {
++	__u16	protocolVersion;
++	__u8	resultCode;
++	__u8	generalErrorCode;
++	__u32	framingCapability;
++	__u32	bearerCapability;
++	__u16	maxChannels;
++	__u16	firmwareRevision;
++	__u8	hostName[64];
++	__u8	vendorString[64];
++};
++
++/* PptpStopReasons */
++#define PPTP_STOP_NONE			1
++#define PPTP_STOP_PROTOCOL		2
++#define PPTP_STOP_LOCAL_SHUTDOWN	3
++
++struct PptpStopSessionRequest {
++	__u8	reason;
++};
++
++/* PptpStopSessionResultCode */
++#define PPTP_STOP_OK			1
++#define PPTP_STOP_GENERAL_ERROR		2
++
++struct PptpStopSessionReply {
++	__u8	resultCode;
++	__u8	generalErrorCode;
++};
++
++struct PptpEchoRequest {
++	__u32 identNumber;
++};
++
++/* PptpEchoReplyResultCode */
++#define PPTP_ECHO_OK			1
++#define PPTP_ECHO_GENERAL_ERROR		2
++
++struct PptpEchoReply {
++	__u32	identNumber;
++	__u8	resultCode;
++	__u8	generalErrorCode;
++	__u16	reserved;
++};
++
++/* PptpFramingType */
++#define PPTP_ASYNC_FRAMING		1
++#define PPTP_SYNC_FRAMING		2
++#define PPTP_DONT_CARE_FRAMING		3
++
++/* PptpCallBearerType */
++#define PPTP_ANALOG_TYPE		1
++#define PPTP_DIGITAL_TYPE		2
++#define PPTP_DONT_CARE_BEARER_TYPE	3
++
++struct PptpOutCallRequest {
++	__u16	callID;
++	__u16	callSerialNumber;
++	__u32	minBPS;
++	__u32	maxBPS;
++	__u32	bearerType;
++	__u32	framingType;
++	__u16	packetWindow;
++	__u16	packetProcDelay;
++	__u16	reserved1;
++	__u16	phoneNumberLength;
++	__u16	reserved2;
++	__u8	phoneNumber[64];
++	__u8	subAddress[64];
++};
++
++/* PptpCallResultCode */
++#define PPTP_OUTCALL_CONNECT		1
++#define PPTP_OUTCALL_GENERAL_ERROR	2
++#define PPTP_OUTCALL_NO_CARRIER		3
++#define PPTP_OUTCALL_BUSY		4
++#define PPTP_OUTCALL_NO_DIAL_TONE	5
++#define PPTP_OUTCALL_TIMEOUT		6
++#define PPTP_OUTCALL_DONT_ACCEPT	7
++
++struct PptpOutCallReply {
++	__u16	callID;
++	__u16	peersCallID;
++	__u8	resultCode;
++	__u8	generalErrorCode;
++	__u16	causeCode;
++	__u32	connectSpeed;
++	__u16	packetWindow;
++	__u16	packetProcDelay;
++	__u32	physChannelID;
++};
++
++struct PptpInCallRequest {
++	__u16	callID;
++	__u16	callSerialNumber;
++	__u32	callBearerType;
++	__u32	physChannelID;
++	__u16	dialedNumberLength;
++	__u16	dialingNumberLength;
++	__u8	dialedNumber[64];
++	__u8	dialingNumber[64];
++	__u8	subAddress[64];
++};
++
++/* PptpInCallResultCode */
++#define PPTP_INCALL_ACCEPT		1
++#define PPTP_INCALL_GENERAL_ERROR	2
++#define PPTP_INCALL_DONT_ACCEPT		3
++
++struct PptpInCallReply {
++	__u16	callID;
++	__u16	peersCallID;
++	__u8	resultCode;
++	__u8	generalErrorCode;
++	__u16	packetWindow;
++	__u16	packetProcDelay;
++	__u16	reserved;
++};
++
++struct PptpInCallConnected {
++	__u16	peersCallID;
++	__u16	reserved;
++	__u32	connectSpeed;
++	__u16	packetWindow;
++	__u16	packetProcDelay;
++	__u32	callFramingType;
++};
++
++struct PptpClearCallRequest {
++	__u16	callID;
++	__u16	reserved;
++};
++
++struct PptpCallDisconnectNotify {
++	__u16	callID;
++	__u8	resultCode;
++	__u8	generalErrorCode;
++	__u16	causeCode;
++	__u16	reserved;
++	__u8	callStatistics[128];
++};
++
++struct PptpWanErrorNotify {
++	__u16	peersCallID;
++	__u16	reserved;
++	__u32	crcErrors;
++	__u32	framingErrors;
++	__u32	hardwareOverRuns;
++	__u32	bufferOverRuns;
++	__u32	timeoutErrors;
++	__u32	alignmentErrors;
++};
++
++struct PptpSetLinkInfo {
++	__u16	peersCallID;
++	__u16	reserved;
++	__u32	sendAccm;
++	__u32	recvAccm;
++};
++
++
++struct pptp_priv_data {
++	__u16	call_id;
++	__u16	mcall_id;
++	__u16	pcall_id;
++};
++
++#endif /* _CONNTRACK_PPTP_H */
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h
+--- linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack_proto_gre.h	Wed Mar 13 15:02:41 2002
+@@ -0,0 +1,104 @@
++#ifndef _CONNTRACK_PROTO_GRE_H
++#define _CONNTRACK_PROTO_GRE_H
++
++/* structure for original <-> reply keymap */
++struct ip_ct_gre_keymap {
++	struct list_head list;
++
++	struct ip_conntrack_tuple tuple;
++	u_int32_t key_reply;
++};
++
++/* this is part of ip_conntrack */
++struct ip_ct_gre {
++	unsigned int stream_timeout;
++	unsigned int timeout;
++};
++
++/* add new tuple->key_reply pair to keymap */
++int ip_ct_gre_keymap_add(const struct ip_conntrack_tuple *t, u_int32_t key);
++
++/* delete old keymap entry by tuple */
++int ip_ct_gre_keymap_del(const struct ip_conntrack_tuple *t);
++
++
++/* GRE PROTOCOL HEADER */
++
++/* GRE Version field */
++#define GRE_VERSION_1701	0x0
++#define GRE_VERSION_PPTP	0x1
++
++/* GRE Protocol field */
++#define GRE_PROTOCOL_PPTP	0x880B
++
++/* GRE Flags */
++#define GRE_FLAG_C		0x80
++#define GRE_FLAG_R		0x40
++#define GRE_FLAG_K		0x20
++#define GRE_FLAG_S		0x10
++#define GRE_FLAG_A		0x80
++
++#define GRE_IS_C(f)	((f)&GRE_FLAG_C)
++#define GRE_IS_R(f)	((f)&GRE_FLAG_R)
++#define GRE_IS_K(f)	((f)&GRE_FLAG_K)
++#define GRE_IS_S(f)	((f)&GRE_FLAG_S)
++#define GRE_IS_A(f)	((f)&GRE_FLAG_A)
++
++/* GRE is a mess: Four different standards */
++struct gre_hdr {
++#if defined(__LITTLE_ENDIAN_BITFIELD)
++	__u16	rec:3,
++		srr:1,
++		seq:1,
++		key:1,
++		routing:1,
++		csum:1,
++		version:3,
++		reserved:4,
++		ack:1;
++#elif defined(__BIG_ENDIAN_BITFIELD)
++	__u16	csum:1,
++		routing:1,
++		key:1,
++		seq:1,
++		srr:1,
++		rec:3,
++		ack:1,
++		reserved:4,
++		version:3;
++#else
++#error "Adjust your <asm/byteorder.h> defines"
++#endif
++	__u16	protocol;
++};
++
++/* get pointer to gre key, if present */
++static inline u_int32_t *gre_key(struct gre_hdr *greh)
++{
++	if (!greh->key)
++		return NULL;
++	if (greh->csum || greh->routing)
++		return (u_int32_t *) (greh+sizeof(*greh)+4);
++	return (u_int32_t *) (greh+sizeof(*greh));
++}
++
++/* get pointer ot gre csum, if present */
++static inline u_int16_t *gre_csum(struct gre_hdr *greh)
++{
++	if (!greh->csum)
++		return NULL;
++	return (u_int16_t *) (greh+sizeof(*greh));
++}
++
++struct gre_hdr_pptp {
++	__u8  flags;		/* bitfield */
++	__u8  version;		/* should be GRE_VERSION_PPTP */
++	__u16 protocol;		/* should be GRE_PROTOCOL_PPTP */
++	__u16 payload_len;	/* size of ppp payload, not inc. gre header */
++	__u16 call_id;		/* peer's call_id for this session */
++	__u32 seq;		/* sequence number.  Present if S==1 */
++	__u32 ack;		/* seq number of highest packet recieved by */
++				/*  sender in this session */
++};
++
++#endif /* _CONNTRACK_PROTO_GRE_H */
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack_tuple.h linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
+--- linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	Mon Feb 25 20:38:13 2002
++++ linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	Wed Mar 13 15:02:41 2002
+@@ -14,7 +14,7 @@
+ union ip_conntrack_manip_proto
+ {
+ 	/* Add other protocols here. */
+-	u_int16_t all;
++	u_int32_t all;
+ 
+ 	struct {
+ 		u_int16_t port;
+@@ -25,6 +25,9 @@
+ 	struct {
+ 		u_int16_t id;
+ 	} icmp;
++	struct {
++		u_int32_t key;
++	} gre;
+ };
+ 
+ /* The manipulable part of the tuple. */
+@@ -44,7 +47,7 @@
+ 		u_int32_t ip;
+ 		union {
+ 			/* Add other protocols here. */
+-			u_int16_t all;
++			u_int32_t all;
+ 
+ 			struct {
+ 				u_int16_t port;
+@@ -55,6 +58,10 @@
+ 			struct {
+ 				u_int8_t type, code;
+ 			} icmp;
++			struct {
++				u_int16_t protocol;
++				u_int8_t version;
++			} gre;
+ 		} u;
+ 
+ 		/* The protocol. */
+@@ -72,10 +79,16 @@
+ #ifdef __KERNEL__
+ 
+ #define DUMP_TUPLE(tp)						\
+-DEBUGP("tuple %p: %u %u.%u.%u.%u:%hu -> %u.%u.%u.%u:%hu\n",	\
++DEBUGP("tuple %p: %u %u.%u.%u.%u:%u -> %u.%u.%u.%u:%u\n",	\
+        (tp), (tp)->dst.protonum,				\
+-       NIPQUAD((tp)->src.ip), ntohs((tp)->src.u.all),		\
+-       NIPQUAD((tp)->dst.ip), ntohs((tp)->dst.u.all))
++       NIPQUAD((tp)->src.ip), ntohl((tp)->src.u.all),		\
++       NIPQUAD((tp)->dst.ip), ntohl((tp)->dst.u.all))
++
++#define DUMP_TUPLE_RAW(x) 						\
++	DEBUGP("tuple %p: %u %u.%u.%u.%u:0x%08x -> %u.%u.%u.%u:0x%08x\n",\
++	(x), (x)->dst.protonum,						\
++	NIPQUAD((x)->src.ip), ntohl((x)->src.u.all), 			\
++	NIPQUAD((x)->dst.ip), ntohl((x)->dst.u.all))
+ 
+ #define CTINFO2DIR(ctinfo) ((ctinfo) >= IP_CT_IS_REPLY ? IP_CT_DIR_REPLY : IP_CT_DIR_ORIGINAL)
+ 
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_nat_pptp.h linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_nat_pptp.h
+--- linux-2.4.18-nfpom/include/linux/netfilter_ipv4/ip_nat_pptp.h	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-nfpom-gre/include/linux/netfilter_ipv4/ip_nat_pptp.h	Wed Mar 13 15:02:41 2002
+@@ -0,0 +1,11 @@
++/* PPTP constants and structs */
++#ifndef _NAT_PPTP_H
++#define _NAT_PPTP_H
++
++/* conntrack private data */
++struct ip_nat_pptp {
++	u_int16_t pns_call_id;		/* NAT'ed PNS call id */
++	u_int16_t pac_call_id;		/* NAT'ed PAC call id */
++};
++
++#endif /* _NAT_PPTP_H */
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/Config.in linux-2.4.18-nfpom-gre/net/ipv4/netfilter/Config.in
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/Config.in	Wed Mar 13 15:00:56 2002
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/Config.in	Wed Mar 13 15:02:41 2002
+@@ -8,6 +8,8 @@
+ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
+   dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
+   dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
++  dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
++  dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
+ fi
+ 
+ if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
+@@ -66,6 +68,20 @@
+         if [ "$CONFIG_IP_NF_FTP" = "y" ]; then
+           define_tristate CONFIG_IP_NF_NAT_FTP $CONFIG_IP_NF_NAT
+         fi
++      fi
++      if [ "$CONFIG_IP_NF_PPTP" = "m" ]; then
++        define_tristate CONFIG_IP_NF_NAT_PPTP m
++      else
++        if [ "$CONFIG_IP_NF_PPTP" = "y" ]; then
++          define_tristate CONFIG_IP_NF_NAT_PPTP $CONFIG_IP_NF_NAT
++        fi
++      fi
++      if [ "$CONFIG_IP_NF_CT_PROTO_GRE" = "m" ]; then
++        define_tristate CONFIG_IP_NF_NAT_PROTO_GRE m
++      else
++        if [ "$CONFIG_IP_NF_CT_PROTO_GRE" = "y" ]; then
++	  define_tristate CONFIG_IP_NF_NAT_PROTO_GRE $CONFIG_IP_NF_NAT
++	fi
+       fi
+     fi
+   fi
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/Makefile linux-2.4.18-nfpom-gre/net/ipv4/netfilter/Makefile
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/Makefile	Wed Mar 13 15:00:47 2002
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/Makefile	Wed Mar 13 15:02:41 2002
+@@ -9,7 +9,7 @@
+ 
+ O_TARGET := netfilter.o
+ 
+-export-objs = ip_conntrack_standalone.o ip_conntrack_ftp.o ip_fw_compat.o ip_nat_standalone.o ip_tables.o
++export-objs = ip_conntrack_standalone.o ip_conntrack_ftp.o ip_fw_compat.o ip_nat_standalone.o ip_tables.o ip_conntrack_proto_gre.o ip_conntrack_pptp.o
+ 
+ # Multipart objects.
+ list-multi		:= ip_conntrack.o iptable_nat.o ipfwadm.o ipchains.o
+@@ -31,13 +31,19 @@
+ # connection tracking
+ obj-$(CONFIG_IP_NF_CONNTRACK) += ip_conntrack.o
+ 
++# connection tracking protocol helpers
++obj-$(CONFIG_IP_NF_CT_PROTO_GRE) += ip_conntrack_proto_gre.o
++obj-$(CONFIG_IP_NF_NAT_PROTO_GRE) += ip_nat_proto_gre.o
++
+ # connection tracking helpers
+ obj-$(CONFIG_IP_NF_FTP) += ip_conntrack_ftp.o
+ obj-$(CONFIG_IP_NF_IRC) += ip_conntrack_irc.o
++obj-$(CONFIG_IP_NF_PPTP) += ip_conntrack_pptp.o
+ 
+ # NAT helpers 
+ obj-$(CONFIG_IP_NF_NAT_FTP) += ip_nat_ftp.o
+ obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_irc.o
++obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o
+ 
+ # generic IP tables 
+ obj-$(CONFIG_IP_NF_IPTABLES) += ip_tables.o
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_core.c	Wed Mar 13 15:00:52 2002
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_core.c	Wed Mar 13 17:47:42 2002
+@@ -132,6 +132,8 @@
+ 	tuple->dst.ip = iph->daddr;
+ 	tuple->dst.protonum = iph->protocol;
+ 
++	tuple->src.u.all = tuple->dst.u.all = 0;
++
+ 	ret = protocol->pkt_to_tuple((u_int32_t *)iph + iph->ihl,
+ 				     len - 4*iph->ihl,
+ 				     tuple);
+@@ -146,6 +148,8 @@
+ 	inverse->src.ip = orig->dst.ip;
+ 	inverse->dst.ip = orig->src.ip;
+ 	inverse->dst.protonum = orig->dst.protonum;
++
++	inverse->src.u.all = inverse->dst.u.all = 0;
+ 
+ 	return protocol->invert_tuple(inverse, orig);
+ }
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_pptp.c linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_pptp.c
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_pptp.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_pptp.c	Wed Mar 13 15:02:41 2002
+@@ -0,0 +1,504 @@
++/*
++ * ip_conntrack_pptp.c	- Version 1.1
++ *
++ * Connection tracking support for PPTP (Point to Point Tunneling Protocol).
++ * PPTP is a a protocol for creating virtual private networks.
++ * It is a specification defined by Microsoft and some vendors
++ * working with Microsoft.  PPTP is built on top of a modified
++ * version of the Internet Generic Routing Encapsulation Protocol.
++ * GRE is defined in RFC 1701 and RFC 1702.  Documentation of
++ * PPTP can be found in RFC 2637
++ *
++ * (C) 2000-2002 by Harald Welte <laforge@gnumonks.org>, 
++ *
++ * based on code and ideas from Gordon Chaffee
++ *
++ * TODO: - finish support for multiple calls within one session
++ * 	   (needs netfilter newnat code)
++ *	 - testing of incoming PPTP calls 
++ */
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/netfilter.h>
++#include <linux/ip.h>
++#include <net/checksum.h>
++#include <net/tcp.h>
++
++#include <linux/netfilter_ipv4/lockhelp.h>
++#include <linux/netfilter_ipv4/ip_conntrack_helper.h>
++#include <linux/netfilter_ipv4/ip_conntrack_proto_gre.h>
++#include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Harald Welte <laforge@gnumonks.org>");
++MODULE_DESCRIPTION("Netfilter connection tracking helper module for PPTP");
++
++DECLARE_LOCK(ip_pptp_lock);
++
++#if 1
++#define DEBUGP(format, args...)	printk(KERN_DEBUG __FILE__ ":" __FUNCTION__ \
++					": " format, ## args)
++#else
++#define DEBUGP(format, args...)
++#endif
++
++#define SECS *HZ
++#define MINS * 60 SECS
++#define HOURS * 60 MINS
++#define DAYS * 24 HOURS
++
++#define PPTP_GRE_TIMEOUT 		(10 MINS)
++#define PPTP_GRE_STREAM_TIMEOUT 	(5 DAYS)
++
++static int pptp_expectfn(struct ip_conntrack *ct)
++{
++	struct ip_conntrack *master = (struct ip_conntrack *) 
++					ct->master.master;
++
++#if 0
++	if (master->help.ct_pptp_info.is_pptp != IP_CONNTR_PPTP) {
++		DEBUGP("master not PPTP\n");
++		return 0;
++	}
++#endif
++
++	DEBUGP("increasing timeouts\n");
++	/* increase timeout of GRE data channel conntrack entry */
++	ct->proto.gre.timeout = PPTP_GRE_TIMEOUT;
++	ct->proto.gre.stream_timeout = PPTP_GRE_STREAM_TIMEOUT;
++	
++	/* need to save slave pointer for further reference */
++	DEBUGP("setting slave pointer of %p to %p\n", master, ct);
++	master->help.ct_pptp_info.slave = ct;
++
++	return 0;
++}
++
++/* timeout GRE data connection */
++static int pptp_timeout_related(struct ip_conntrack *ct)
++{
++	struct ip_conntrack *master = (struct ip_conntrack *)
++					&ct->master.master;
++
++#if 0
++	if (master->help.ct_pptp_info.is_pptp != IP_CONNTR_PPTP) {
++		DEBUGP("master not PPTP\n");
++		return 0;
++	}
++#endif
++
++	DEBUGP("setting timeout to 0\n");
++
++	ct->proto.gre.timeout = 0;
++	ct->proto.gre.stream_timeout = 0;
++
++	ip_ct_refresh(ct,0);
++
++	return 0;
++}
++
++static int 
++pptp_inbound_pkt(struct pptp_pkt_hdr *pptph, 
++		 size_t datalen,
++		 struct ip_conntrack *ct,
++		 enum ip_conntrack_info ctinfo)
++{
++	struct PptpControlHeader *ctlh;
++        union pptp_ctrl_union pptpReq;
++	
++	struct ip_ct_pptp *info = &ct->help.ct_pptp_info;
++	u_int16_t msg, *cid, *pcid;
++	
++	struct ip_conntrack_tuple t, mask;
++
++	ctlh = (struct PptpControlHeader *) 
++		((char *) pptph + sizeof(struct pptp_pkt_hdr));
++	pptpReq.rawreq = (void *) 
++		((char *) ctlh + sizeof(struct PptpControlHeader));
++
++	msg = ntohs(ctlh->messageType);
++	DEBUGP("inbound control message %s\n", strMName[msg]);
++
++	switch (msg) {
++		case PPTP_START_SESSION_REPLY:
++			/* server confirms new control session */
++			if (info->sstate < PPTP_SESSION_REQUESTED) {
++				DEBUGP("%s without START_SESS_REQUEST\n",
++					strMName[msg]);
++				break;
++			}
++			if (pptpReq.srep->resultCode == PPTP_START_OK)
++				info->sstate = PPTP_SESSION_CONFIRMED;
++			else 
++				info->sstate = PPTP_SESSION_ERROR;
++			break;
++
++		case PPTP_STOP_SESSION_REPLY:
++			/* server confirms end of control session */
++			if (info->sstate > PPTP_SESSION_STOPREQ) {
++				DEBUGP("%s without STOP_SESS_REQUEST\n",
++					strMName[msg]);
++				break;
++			}
++			if (pptpReq.strep->resultCode == PPTP_STOP_OK)
++				info->sstate = PPTP_SESSION_NONE;
++			else
++				info->sstate = PPTP_SESSION_ERROR;
++			break;
++
++		case PPTP_OUT_CALL_REPLY:
++			/* server accepted call, we now expect GRE frames */
++			if (info->sstate != PPTP_SESSION_CONFIRMED) {
++				DEBUGP("%s but no session\n", strMName[msg]);
++				break;
++			}
++			if (info->cstate != PPTP_CALL_OUT_REQ &&
++			    info->cstate != PPTP_CALL_OUT_CONF) {
++				DEBUGP("%s without OUTCALL_REQ\n", strMName[msg]);
++				break;
++			}
++			if (pptpReq.ocack->resultCode != PPTP_OUTCALL_CONNECT) {
++				info->cstate = PPTP_CALL_NONE;
++				break;
++			}
++
++			cid = &pptpReq.ocack->callID;
++			pcid = &pptpReq.ocack->peersCallID;
++			
++			if (htons(info->pns_call_id) != *pcid) {
++				DEBUGP("%s for unknown callid %u\n",
++					strMName[msg], ntohs(*pcid));
++				break;
++			}
++
++			DEBUGP("%s, CID=%X, PCID=%X\n", strMName[msg], 
++				ntohs(*pcid), ntohs(*cid));
++			
++			info->cstate = PPTP_CALL_OUT_CONF;
++
++			t.src.ip = 
++				ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip;
++			t.src.u.all = 0;
++			t.src.u.gre.key = *pcid;
++			t.dst.ip = 
++				ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip;
++			t.dst.u.all = 0;
++			t.dst.u.gre.version = GRE_VERSION_PPTP;
++			t.dst.u.gre.protocol = 
++				__constant_htons(GRE_PROTOCOL_PPTP);
++			t.dst.protonum = IPPROTO_GRE;
++
++			mask.src.ip = 0xffffffff;
++			mask.src.u.all = 0;
++			mask.src.u.gre.key = 0xffffffff;
++			mask.dst.u.all = 0;
++			mask.dst.u.gre.version = 0xff;
++			mask.dst.u.gre.protocol = 0xffff;
++			mask.dst.ip = 0xffffffff;
++			mask.dst.protonum = 0xffff;
++
++			ip_ct_gre_keymap_add(&t, *cid);
++			ip_conntrack_expect_related(ct, &t, &mask, 
++						    pptp_expectfn);
++
++			break;
++
++		case PPTP_IN_CALL_REQUEST:
++			/* server tells us about incoming call request */
++			if (info->sstate != PPTP_SESSION_CONFIRMED) {
++				DEBUGP("%s but no session\n", strMName[msg]);
++				break;
++			}
++			pcid = &pptpReq.icack->peersCallID;
++			DEBUGP("%s, PCID=%X\n", strMName[msg], ntohs(*pcid));
++			info->cstate = PPTP_CALL_IN_REQ;
++			info->pac_call_id= ntohs(*pcid);
++			break;
++
++		case PPTP_IN_CALL_CONNECT:
++			/* server tells us about incoming call established */
++			if (info->sstate != PPTP_SESSION_CONFIRMED) {
++				DEBUGP("%s but no session\n", strMName[msg]);
++				break;
++			}
++			if (info->sstate != PPTP_CALL_IN_REP
++			    && info->sstate != PPTP_CALL_IN_CONF) {
++				DEBUGP("%s but never sent IN_CALL_REPLY\n",
++					strMName[msg]);
++				break;
++			}
++
++			pcid = &pptpReq.iccon->peersCallID;
++
++			if (info->pns_call_id != ntohs(*cid)) {
++				DEBUGP("%s for unknown CallID %u\n", 
++					strMName[msg], ntohs(*cid));
++				break;
++			}
++
++			DEBUGP("%s, PCID=%X\n", strMName[msg], ntohs(*pcid));
++			info->cstate = PPTP_CALL_IN_CONF;
++
++			/* we expect a GRE connection from PAC to PNS */
++
++			t.src.ip = 
++				ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip;
++			t.src.u.all = 0;
++			t.src.u.gre.key = *pcid;
++			t.dst.ip = 
++				ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip;
++			t.dst.u.all = 0;
++			t.dst.u.gre.version = GRE_VERSION_PPTP;
++			t.dst.u.gre.protocol = 
++				__constant_htons(GRE_PROTOCOL_PPTP);
++			t.dst.protonum = IPPROTO_GRE;
++
++			mask.src.ip = 0xffffffff;
++			mask.src.u.all = 0;
++			mask.src.u.gre.key = 0xffffffff;
++			mask.dst.ip = 0xffffffff;
++			mask.dst.u.all = 0;
++			mask.dst.u.gre.version = 0xff;
++			mask.dst.u.gre.protocol = 0xffff;
++			mask.dst.protonum = 0xffff;
++
++			ip_ct_gre_keymap_add(&t, htons(info->pac_call_id));
++			ip_conntrack_expect_related(ct, &t, &mask, NULL);
++			break;
++
++		case PPTP_CALL_DISCONNECT_NOTIFY:
++			/* server confirms disconnect */
++			cid = &pptpReq.disc->callID;
++			DEBUGP("%s, CID=%X\n", strMName[msg], ntohs(*cid));
++			info->cstate = PPTP_CALL_NONE;
++
++			/* untrack this call id, unexpect GRE packets */
++			if (info->slave)
++				pptp_timeout_related(info->slave);
++			else
++				DEBUGP("%p has no slave pointer\n", ct);
++
++			ip_conntrack_unexpect_related(ct);
++			break;
++
++		case PPTP_WAN_ERROR_NOTIFY:
++		case PPTP_SET_LINK_INFO:
++			break;
++
++		case PPTP_ECHO_REQUEST:
++		case PPTP_ECHO_REPLY:
++			/* I don't have to explain these ;) */
++			break;
++		default:
++			DEBUGP("invalid %s (TY=%d)\n", (msg <= PPTP_MSG_MAX)
++				? strMName[msg]:strMName[0], msg);
++			break;
++	}
++
++	return NF_ACCEPT;
++
++}
++
++static int
++pptp_outbound_pkt(struct pptp_pkt_hdr *pptph,
++		  size_t datalen,
++		  struct ip_conntrack *ct,
++		  enum ip_conntrack_info ctinfo)
++{
++	struct PptpControlHeader *ctlh;
++        union pptp_ctrl_union pptpReq;
++	struct ip_ct_pptp *info = &ct->help.ct_pptp_info;
++	u_int16_t msg, *cid, *pcid;
++
++	ctlh = (struct PptpControlHeader *) ((void *) pptph + sizeof(*pptph));
++	pptpReq.rawreq = (void *) ((void *) ctlh + sizeof(*ctlh));
++
++	msg = ntohs(ctlh->messageType);
++	DEBUGP("inbound control message %s\n", strMName[msg]);
++
++	switch (msg) {
++		case PPTP_START_SESSION_REQUEST:
++			/* client requests for new control session */
++			if (info->sstate != PPTP_SESSION_NONE) {
++				DEBUGP("%s but we already have one",
++					strMName[msg]);
++			}
++			info->sstate = PPTP_SESSION_REQUESTED;
++			break;
++		case PPTP_STOP_SESSION_REQUEST:
++			/* client requests end of control session */
++			info->sstate = PPTP_SESSION_STOPREQ;
++			break;
++
++		case PPTP_OUT_CALL_REQUEST:
++			/* client initiating connection to server */
++			if (info->sstate != PPTP_SESSION_CONFIRMED) {
++				DEBUGP("%s but no session\n",
++					strMName[msg]);
++				break;
++			}
++			info->cstate = PPTP_CALL_OUT_REQ;
++			/* track PNS call id */
++			cid = &pptpReq.ocreq->callID;
++			DEBUGP("%s, CID=%X\n", strMName[msg], ntohs(*cid));
++			info->pns_call_id = ntohs(*cid);
++			break;
++		case PPTP_IN_CALL_REPLY:
++			/* client answers incoming call */
++			if (info->cstate != PPTP_CALL_IN_REQ
++			    && info->cstate != PPTP_CALL_IN_REP) {
++				DEBUGP("%s without incall_req\n", 
++					strMName[msg]);
++				break;
++			}
++			if (pptpReq.icack->resultCode != PPTP_INCALL_ACCEPT) {
++				info->cstate = PPTP_CALL_NONE;
++				break;
++			}
++			pcid = &pptpReq.icack->peersCallID;
++			if (info->pac_call_id != ntohs(*pcid)) {
++				DEBUGP("%s for unknown call %u\n", 
++					strMName[msg], ntohs(*pcid));
++				break;
++			}
++			DEBUGP("%s, CID=%X\n", strMName[msg], ntohs(*pcid));
++			/* part two of the three-way handshake */
++			info->cstate = PPTP_CALL_IN_REP;
++			info->pns_call_id = ntohs(pptpReq.icack->callID);
++			break;
++
++		case PPTP_CALL_CLEAR_REQUEST:
++			/* client requests hangup of call */
++			if (info->sstate != PPTP_SESSION_CONFIRMED) {
++				DEBUGP("CLEAR_CALL but no session\n");
++				break;
++			}
++			/* FUTURE: iterate over all calls and check if
++			 * call ID is valid.  We don't do this without newnat,
++			 * because we only know about last call */
++			info->cstate = PPTP_CALL_CLEAR_REQ;
++			break;
++		case PPTP_ECHO_REQUEST:
++		case PPTP_ECHO_REPLY:
++			/* I don't have to explain these ;) */
++			break;
++		default:
++			DEBUGP("invalid %s (TY=%d)\n", (msg <= PPTP_MSG_MAX)? 
++				strMName[msg]:strMName[0], msg);
++			/* unknown: no need to create GRE masq table entry */
++			break;
++	}
++
++	return NF_ACCEPT;
++}
++
++
++/* track caller id inside control connection, call expect_related */
++static int 
++conntrack_pptp_help(const struct iphdr *iph, size_t len,
++		    struct ip_conntrack *ct, enum ip_conntrack_info ctinfo)
++
++{
++	struct pptp_pkt_hdr *pptph;
++	
++	struct tcphdr *tcph = (void *) iph + iph->ihl * 4;
++	u_int32_t tcplen = len - iph->ihl * 4;
++	u_int32_t datalen = tcplen - tcph->doff * 4;
++	void *datalimit;
++	int dir = CTINFO2DIR(ctinfo);
++	struct ip_ct_pptp *info = &ct->help.ct_pptp_info;
++
++	int oldsstate, oldcstate;
++	int ret;
++
++	/* don't do any tracking before tcp handshake complete */
++	if (ctinfo != IP_CT_ESTABLISHED 
++	    && ctinfo != IP_CT_ESTABLISHED+IP_CT_IS_REPLY) {
++		DEBUGP("ctinfo = %u, skipping\n", ctinfo);
++		return NF_ACCEPT;
++	}
++	
++	/* not a complete TCP header? */
++	if (tcplen < sizeof(struct tcphdr) || tcplen < tcph->doff * 4) {
++		DEBUGP("tcplen = %u\n", tcplen);
++		return NF_ACCEPT;
++	}
++
++	/* checksum invalid? */
++	if (tcp_v4_check(tcph, tcplen, iph->saddr, iph->daddr,
++			csum_partial((char *) tcph, tcplen, 0))) {
++		printk(KERN_NOTICE __FILE__ ": bad csum\n");
++		return NF_ACCEPT;
++	}
++
++	pptph = (struct pptp_pkt_hdr *) ((void *) tcph + tcph->doff * 4);
++	datalimit = (void *) pptph + datalen;
++
++	/* not a full pptp packet header? */
++	if ((void *) pptph+sizeof(*pptph) >= datalimit) {
++		DEBUGP("no full PPTP header, can't track\n");
++		return NF_ACCEPT;
++	}
++	
++	/* if it's not a control message we can't do anything with it */
++        if (ntohs(pptph->packetType) != PPTP_PACKET_CONTROL ||
++	    ntohl(pptph->magicCookie) != PPTP_MAGIC_COOKIE) {
++		DEBUGP("not a control packet\n");
++		return NF_ACCEPT;
++	}
++
++	oldsstate = info->sstate;
++	oldcstate = info->cstate;
++
++	LOCK_BH(&ip_pptp_lock);
++	info->is_pptp = IP_CONNTR_PPTP;
++
++	
++	if (dir == IP_CT_DIR_ORIGINAL)
++		/* client -> server (PNS -> PAC) */
++		ret = pptp_outbound_pkt(pptph, datalen, ct, ctinfo);
++	else
++		/* server -> client (PAC -> PNS) */
++		ret = pptp_inbound_pkt(pptph, datalen, ct, ctinfo);
++	DEBUGP("sstate: %d->%d, cstate: %d->%d\n",
++		oldsstate, info->sstate, oldcstate, info->cstate);
++	UNLOCK_BH(&ip_pptp_lock);
++
++	return ret;
++}
++
++/* control protocol helper */
++static struct ip_conntrack_helper pptp = { 
++	{ NULL, NULL },
++	{ { 0, { tcp: { port: __constant_htons(PPTP_CONTROL_PORT) } } }, 
++	  { 0, { 0 }, IPPROTO_TCP } },
++	{ { 0, { tcp: { port: 0xffff } } }, 
++	  { 0, { 0 }, 0xffff } },
++	conntrack_pptp_help };
++
++/* ip_conntrack_pptp initialization */
++static int __init init(void)
++{
++	int retcode;
++
++	DEBUGP(__FILE__ ": registering helper\n");
++	if ((retcode = ip_conntrack_helper_register(&pptp))) {
++                printk(KERN_ERR "Unable to register conntrack application "
++				"helper for pptp: %d\n", retcode);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ip_conntrack_helper_unregister(&pptp);
++}
++
++module_init(init);
++module_exit(fini);
++
++EXPORT_SYMBOL(ip_pptp_lock);
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_proto_gre.c linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_proto_gre.c
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_proto_gre.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_proto_gre.c	Wed Mar 13 15:02:41 2002
+@@ -0,0 +1,356 @@
++/*
++ * ip_conntrack_proto_gre.c - Version 1.1
++ *
++ * Connection tracking protocol helper module for GRE.
++ *
++ * GRE is a generic encapsulation protocol, which is generally not very
++ * suited for NAT, as it has no protocol-specific part as port numbers.
++ *
++ * It has an optional key field, which may help us distinguishing two 
++ * connections between the same two hosts.
++ *
++ * GRE is defined in RFC 1701 and RFC 1702, as well as RFC 2784 
++ *
++ * PPTP is built on top of a modified version of GRE, and has a mandatory
++ * field called "CallID", which serves us for the same purpose as the key
++ * field in plain GRE.
++ *
++ * Documentation about PPTP can be found in RFC 2637
++ *
++ * (C) 2000-2002 by Harald Welte <laforge@gnumonks.org>
++ *
++ * based on code and ideas from Gordon Chaffee
++ *
++ */
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/timer.h>
++#include <linux/netfilter.h>
++#include <linux/ip.h>
++#include <linux/in.h>
++#include <linux/list.h>
++
++#define ASSERT_READ_LOCK(x) MUST_BE_READ_LOCKED(&ip_ct_gre_lock)
++#define ASSERT_WRITE_LOCK(x) MUST_BE_WRITE_LOCKED(&ip_ct_gre_lock)
++
++#include <linux/netfilter_ipv4/lockhelp.h>
++#include <linux/netfilter_ipv4/listhelp.h>
++#include <linux/netfilter_ipv4/ip_conntrack_protocol.h>
++#include <linux/netfilter_ipv4/ip_conntrack_proto_gre.h>
++
++#include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
++
++#if 0
++#include <linux/kernel.h>
++#include <linux/skbuff.h>
++#include <asm/system.h>
++#include <linux/inet.h>
++#include <net/checksum.h>
++#endif
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Harald Welte <laforge@gnumonks.org>");
++MODULE_DESCRIPTION("netfilter connection tracking protocol helper for GRE");
++
++/* shamelessly stolen from ip_conntrack_proto_udp.c */
++#define GRE_TIMEOUT		(30*HZ)
++#define GRE_STREAM_TIMEOUT	(180*HZ)
++
++#if 1
++#define DEBUGP(format, args...) printk(KERN_DEBUG __FILE__ ":" __FUNCTION__ \
++		                       ": " format, ## args)
++#define PRINT_KEYMAP(x)	do { 					\
++	printk("keymap: key_reply=0x%x ", x->key_reply); 	\
++	DUMP_TUPLE_GRE(&x->tuple); 				\
++	} while (0)
++#define DUMP_TUPLE_GRE(x) printk("%u.%u.%u.%u:0x%x -> %u.%u.%u.%u:%x:0x%x\n", \
++			NIPQUAD((x)->src.ip), ntohl((x)->src.u.gre.key), \
++			NIPQUAD((x)->dst.ip), (x)->dst.u.gre.version, \
++			ntohs((x)->dst.u.gre.protocol))
++#else
++#define DEBUGP(x, args...)
++#define PRINT_KEYMAP(x)
++#define DUMP_TUPLE_GRE(x)
++#endif
++				
++/* GRE KEYMAP HANDLING FUNCTIONS */
++static LIST_HEAD(gre_keylist);
++DECLARE_RWLOCK(ip_ct_gre_lock);
++
++static inline int gre_key_cmpfn(const struct ip_ct_gre_keymap *km,
++				const struct ip_conntrack_tuple *t)
++{
++	return ip_ct_tuple_equal(&km->tuple, t);
++}
++
++/* km = full tuple in list, km2 = tuple without key_reply */
++static inline int gre_km_cmpfn(const struct ip_ct_gre_keymap *km,
++			       const struct ip_conntrack_tuple *t)
++{
++	return ( km->tuple.src.ip == t->dst.ip
++		&& km->tuple.dst.ip == t->src.ip
++		&& km->tuple.dst.u.gre.version == t->dst.u.gre.version
++		&& km->tuple.dst.u.gre.protocol == t->dst.u.gre.protocol
++		&& km->tuple.dst.protonum == t->dst.protonum
++		&& km->key_reply == t->src.u.gre.key);
++}
++
++static u_int32_t ip_ct_gre_key_invert(const struct ip_conntrack_tuple *t)
++{
++	struct ip_ct_gre_keymap *km;
++	u_int32_t ret;
++
++	DEBUGP("trying to invert key for tuple ");
++	DUMP_TUPLE_GRE(t);
++	DUMP_TUPLE_RAW(t);
++
++	READ_LOCK(&ip_ct_gre_lock);
++	km = LIST_FIND(&gre_keylist, gre_key_cmpfn,
++			struct ip_ct_gre_keymap *, t);
++	if (km) {
++		ret = km->key_reply;
++		DEBUGP(__FUNCTION__ ": found inverse key 0x%x\n", ntohs(ret));
++	} else {
++		/* reverse lookup */
++		km = LIST_FIND(&gre_keylist, gre_km_cmpfn,
++			struct ip_ct_gre_keymap *, t);
++		if (km) {
++			ret = km->tuple.src.u.gre.key;
++			DEBUGP(__FUNCTION__ ": found inverse key 0x%x\n", 
++				ntohs(ret));
++		} else {
++			DEBUGP(": not found\n");
++			ret = t->src.u.gre.key;
++		}
++	}
++
++	READ_UNLOCK(&ip_ct_gre_lock);
++
++	return ret;
++}
++
++static void invert_keymap(const struct ip_ct_gre_keymap *km_old,
++			  struct ip_ct_gre_keymap *km)
++{
++	km->tuple.src.ip = km_old->tuple.dst.ip;
++	km->tuple.src.u.gre.key = km_old->key_reply;
++	km->tuple.dst.ip = km_old->tuple.src.ip;
++	km->tuple.dst.u.all = km_old->tuple.dst.u.all;
++	km->key_reply = km_old->tuple.src.u.gre.key;
++}
++
++
++int ip_ct_gre_keymap_add(const struct ip_conntrack_tuple *t, u_int32_t key)
++{
++	struct ip_ct_gre_keymap *km;
++
++	km = kmalloc(sizeof(*km), GFP_ATOMIC);
++	if (!km)
++		return -1;
++
++	memcpy(&km->tuple, t, sizeof(*t));
++	km->key_reply = key;
++
++	DEBUGP(__FUNCTION__ "adding new entry %p: ", km);
++	PRINT_KEYMAP(km);
++	DUMP_TUPLE_RAW(&km->tuple);
++
++	WRITE_LOCK(&ip_ct_gre_lock);
++	list_append(&gre_keylist, km);
++	WRITE_UNLOCK(&ip_ct_gre_lock);
++
++	return 0;
++}
++
++int ip_ct_gre_keymap_del(const struct ip_conntrack_tuple *t)
++{
++	struct ip_ct_gre_keymap *km;
++
++	DEBUGP("trying to delete key for tuple ");
++	DUMP_TUPLE_GRE(t);
++	DUMP_TUPLE_RAW(t);
++
++	WRITE_LOCK(&ip_ct_gre_lock);
++	km = LIST_FIND(&gre_keylist, gre_key_cmpfn,
++			struct ip_ct_gre_keymap *, t);
++	if (!km) {
++		WRITE_UNLOCK(&ip_ct_gre_lock);
++//		DEBUGP(__FUNCTION__ "unable to remove keymap\n");
++		return -1;
++	}
++
++	DEBUGP(__FUNCTION__ "deleting keymap %p\n", km);
++	list_del(&km->list);
++	WRITE_UNLOCK(&ip_ct_gre_lock);
++
++	return 0;
++}
++
++/* gre hdr info to tuple */
++static int gre_pkt_to_tuple(const void *datah, size_t datalen,
++			    struct ip_conntrack_tuple *tuple)
++{
++	struct gre_hdr *grehdr = (struct gre_hdr *) datah;
++	struct gre_hdr_pptp *pgrehdr = (struct gre_hdr_pptp *) datah;
++
++	/* core guarantees 8 protocol bytes, no need for size check */
++
++	tuple->dst.u.gre.version = grehdr->version; 
++	tuple->dst.u.gre.protocol = grehdr->protocol;
++
++	switch (grehdr->version) {
++		case 0:
++			if (!grehdr->key) {
++				DEBUGP("Can't track GRE without key\n");
++				return 0;
++			}
++			tuple->src.u.gre.key = *(gre_key(grehdr));
++			break;
++
++		case GRE_VERSION_PPTP:
++			if (ntohs(grehdr->protocol) != GRE_PROTOCOL_PPTP) {
++				DEBUGP("GRE_VERSION_PPTP but unknown proto\n");
++				return 0;
++			}
++			tuple->src.u.gre.key = pgrehdr->call_id;
++			break;
++
++		default:
++			printk(KERN_WARNING "unknown GRE version %hu\n",
++				tuple->dst.u.gre.version);
++			return 0;
++	}
++
++	return 1;
++}
++
++
++/* invert gre part of tuple */
++static int gre_invert_tuple(struct ip_conntrack_tuple *tuple,
++			    const struct ip_conntrack_tuple *orig)
++{
++
++	tuple->dst.u.gre.protocol = orig->dst.u.gre.protocol;
++	tuple->dst.u.gre.version = orig->dst.u.gre.version;
++
++	switch (tuple->dst.u.gre.version) {
++		case 0:
++			/* fallthrough - somebody needs to enter keymap */
++		case GRE_VERSION_PPTP:
++			/* key (callid) can be different in both directions */
++			tuple->src.u.gre.key = ip_ct_gre_key_invert(orig);
++			break;
++		default:
++			printk(KERN_WARNING "unknown GRE version %hu\n",
++				tuple->dst.u.gre.version);
++			return 0;
++		}
++
++	return 1;
++}
++
++/* print gre part of tuple */
++static unsigned int gre_print_tuple(char *buffer,
++				    const struct ip_conntrack_tuple *tuple)
++{
++	return sprintf(buffer, "version=%d protocol=0x%04x key=0x%x ", 
++			tuple->dst.u.gre.version,
++			ntohs(tuple->dst.u.gre.protocol),
++			ntohl(tuple->src.u.gre.key));
++}
++
++/* print private data for conntrack */
++static unsigned int gre_print_conntrack(char *buffer,
++					const struct ip_conntrack *ct)
++{
++	return sprintf(buffer, "timeout=%u, stream_timeout=%u ",
++			ct->proto.gre.timeout, ct->proto.gre.stream_timeout);
++}
++
++/* Returns verdict for packet, and may modify conntrack */
++static int gre_packet(struct ip_conntrack *ct,
++		      struct iphdr *iph, size_t len,
++		      enum ip_conntrack_info conntrackinfo)
++{
++	/* If we've seen traffic both ways, this is a GRE connection.
++	 * Extend timeout. */
++	if (ct->status & IPS_SEEN_REPLY) {
++		ip_ct_refresh(ct, ct->proto.gre.stream_timeout);
++		/* Also, more likely to be important, and not a probe. */
++		set_bit(IPS_ASSURED_BIT, &ct->status);
++	} else
++		ip_ct_refresh(ct, ct->proto.gre.timeout);
++	
++	return NF_ACCEPT;
++}
++
++/* Called when a new connection for this protocol found. */
++static int gre_new(struct ip_conntrack *ct,
++		   struct iphdr *iph, size_t len)
++{ 
++	DEBUGP(__FUNCTION__ ": ");
++	DUMP_TUPLE_GRE(&ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple);
++	DUMP_TUPLE_RAW(&ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple);
++
++	/* initialize to sane value.  Ideally a conntrack helper
++	 * (e.g. in case of pptp) is increasing them */
++	ct->proto.gre.stream_timeout = GRE_STREAM_TIMEOUT;
++	ct->proto.gre.timeout = GRE_TIMEOUT;
++
++	return 1;
++}
++
++/* Called when a conntrack entry has already been removed from the hashes
++ * and is about to be deleted from memory */
++static void gre_destroy(struct ip_conntrack *ct)
++{
++	struct ip_conntrack *master = (struct ip_conntrack *)
++					&ct->master.master;
++
++	DEBUGP("destroying %p\n", ct);
++	ip_ct_gre_keymap_del(&ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple);
++//	ip_ct_gre_keymap_del(&ct->tuplehash[IP_CT_DIR_REPLY].tuple);
++
++	if (master->help.ct_pptp_info.is_pptp == IP_CONNTR_PPTP)
++		master->help.ct_pptp_info.slave = NULL;
++}
++
++/* protocol helper struct */
++static struct ip_conntrack_protocol gre = { { NULL, NULL }, IPPROTO_GRE,
++					    "gre", 
++					    gre_pkt_to_tuple,
++					    gre_invert_tuple,
++					    gre_print_tuple,
++					    gre_print_conntrack,
++					    gre_packet,
++					    gre_new,
++					    gre_destroy,
++					    THIS_MODULE };
++
++/* ip_conntrack_proto_gre initialization */
++static int __init init(void)
++{
++	int retcode;
++
++	if ((retcode = ip_conntrack_protocol_register(&gre))) {
++                printk(KERN_ERR "Unable to register conntrack protocol "
++			        "helper for gre: %d\n",	retcode);
++		return -EIO;
++	}
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ip_conntrack_protocol_unregister(&gre); 
++	
++}
++
++EXPORT_SYMBOL(ip_ct_gre_keymap_add);
++EXPORT_SYMBOL(ip_ct_gre_keymap_del);
++
++module_init(init);
++module_exit(fini);
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/ip_conntrack_standalone.c	Wed Mar 13 15:00:54 2002
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_conntrack_standalone.c	Wed Mar 13 15:27:50 2002
+@@ -346,6 +346,7 @@
+ EXPORT_SYMBOL(ip_ct_selective_cleanup);
+ EXPORT_SYMBOL(ip_ct_refresh);
+ EXPORT_SYMBOL(ip_conntrack_expect_related);
++EXPORT_SYMBOL(ip_conntrack_unexpect_related);
+ EXPORT_SYMBOL(ip_conntrack_tuple_taken);
+ EXPORT_SYMBOL(ip_ct_gather_frags);
+ EXPORT_SYMBOL(ip_conntrack_htable_size);
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/ip_nat_pptp.c linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_nat_pptp.c
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/ip_nat_pptp.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_nat_pptp.c	Wed Mar 13 15:02:41 2002
+@@ -0,0 +1,372 @@
++/*
++ * ip_nat_pptp.c	- Version 1.1
++ *
++ * NAT support for PPTP (Point to Point Tunneling Protocol).
++ * PPTP is a a protocol for creating virtual private networks.
++ * It is a specification defined by Microsoft and some vendors
++ * working with Microsoft.  PPTP is built on top of a modified
++ * version of the Internet Generic Routing Encapsulation Protocol.
++ * GRE is defined in RFC 1701 and RFC 1702.  Documentation of
++ * PPTP can be found in RFC 2637
++ *
++ * (C) 2000-2002 by Harald Welte <laforge@gnumonks.org>
++ *
++ * based on code and ideas from Gordon Chaffee
++ *
++ * TODO: - Support for multiple calls within one session
++ * 	   (needs netfilter newnat code)
++ * 	 - NAT to a unique tuple, not to TCP source port
++ * 	   (needs netfilter tuple reservation)
++ * 	 - Support other NAT scenarios than SNAT of PNS
++ * 
++ */
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/ip.h>
++#include <linux/tcp.h>
++#include <net/tcp.h>
++#include <linux/netfilter_ipv4/ip_nat.h>
++#include <linux/netfilter_ipv4/ip_nat_rule.h>
++#include <linux/netfilter_ipv4/ip_nat_helper.h>
++#include <linux/netfilter_ipv4/ip_nat_pptp.h>
++#include <linux/netfilter_ipv4/ip_conntrack_helper.h>
++#include <linux/netfilter_ipv4/ip_conntrack_proto_gre.h>
++#include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
++
++#if 0
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <linux/skbuff.h>
++#include <asm/system.h>
++#include <linux/in.h>
++#include <linux/inet.h>
++#include <net/checksum.h>
++#endif
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Harald Welte <laforge@gnumonks.org>");
++MODULE_DESCRIPTION("Netfilter NAT helper module for PPTP");
++
++
++#if 1
++#define DEBUGP(format, args...) printk(KERN_DEBUG __FILE__ ":" __FUNCTION__ \
++				       ": " format, ## args)
++#else
++#define DEBUGP
++#endif
++
++static int
++pptp_nat_expected(struct sk_buff **pskb,
++		  unsigned int hooknum,
++		  struct ip_conntrack *ct,
++		  struct ip_nat_info *info,
++		  struct ip_conntrack *master,
++		  struct ip_nat_info *masterinfo, unsigned int *verdict)
++{
++	struct ip_nat_multi_range mr;
++	struct ip_ct_pptp *pptpinfo;
++	u_int32_t newsrcip, newdstip, newcid;
++	
++	IP_NF_ASSERT(info);
++	IP_NF_ASSERT(master);
++	IP_NF_ASSERT(maserinfo);
++
++	IP_NF_ASSERT(!(info->initialized & (1 << HOOK2MANIP(hooknum))));
++
++	LOCK_BH(&ip_pptp_lock);
++	pptpinfo = &master->help.ct_pptp_info;
++
++	if (pptpinfo->is_pptp != IP_CONNTR_PPTP) {
++		/* not pptp */
++		UNLOCK_BH(&ip_pptp_lock);
++		return 0;
++	}
++
++	DEBUGP("we have a connection!\n");
++
++	UNLOCK_BH(&ip_pptp_lock);
++
++	if (HOOK2MANIP(hooknum) == IP_NAT_MANIP_DST) {
++		newdstip = master->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip;
++
++		mr.rangesize = 1;
++		mr.range[0].flags = IP_NAT_RANGE_MAP_IPS;
++		mr.range[0].min_ip = mr.range[0].max_ip = newdstip;
++		DEBUGP("change dest ip to %u.%u.%u.%u\n", 
++			NIPQUAD(newdstip));
++	} else {
++		newsrcip = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip;
++		newcid = master->nat.help.nat_pptp_info.pns_call_id;
++
++		mr.rangesize = 1;
++		mr.range[0].flags = IP_NAT_RANGE_MAP_IPS
++			            |IP_NAT_RANGE_PROTO_SPECIFIED;
++		mr.range[0].min_ip = mr.range[0].max_ip = newsrcip;
++		mr.range[0].min = mr.range[0].max = 
++			((union ip_conntrack_manip_proto ) { newcid });
++		DEBUGP("change src ip to %u.%u.%u.%u\n", 
++			NIPQUAD(newdstip));
++		DEBUGP("change 'src' key to 0x%x\n", 
++			ntohs(newcid));
++	}
++
++	*verdict = ip_nat_setup_info(ct, &mr, hooknum);
++
++	return 1;
++}
++
++/* outbound packets == from PNS to PAC */
++static unsigned int
++pptp_outbound_pkt(struct tcphdr *tcph, struct pptp_pkt_hdr *pptph,
++		  size_t datalen,
++		  struct ip_conntrack *ct,
++		  enum ip_conntrack_info ctinfo)
++
++{
++	struct PptpControlHeader *ctlh;
++	union pptp_ctrl_union pptpReq;
++	struct ip_ct_pptp *ct_pptp_info = &ct->help.ct_pptp_info;
++	struct ip_nat_pptp *nat_pptp_info = &ct->nat.help.nat_pptp_info;
++
++	u_int16_t msg, *cid, new_callid;
++
++	
++	ctlh = (struct PptpControlHeader *) ((void *) pptph + sizeof(*pptph));
++	pptpReq.rawreq = (void *) ((void *) ctlh + sizeof(*ctlh));
++	
++	switch (msg = ntohs(ctlh->messageType)) {
++		case PPTP_OUT_CALL_REQUEST:
++			cid = &pptpReq.ocreq->callID;
++			
++
++			/* save original call ID in nat_info */
++			nat_pptp_info->pns_call_id = ct_pptp_info->pns_call_id;
++
++			/* store new callID in ct_info, so conntrack works */
++			ct_pptp_info->pns_call_id = ntohs(tcph->source);
++			break;
++		case PPTP_IN_CALL_REPLY:
++			cid = &pptpReq.icreq->callID;
++			break;
++		case PPTP_CALL_CLEAR_REQUEST:
++			cid = &pptpReq.clrreq->callID;
++			break;
++		case PPTP_CALL_DISCONNECT_NOTIFY:
++			cid = &pptpReq.disc->callID;
++			break;
++		case PPTP_SET_LINK_INFO:
++			/* only need to NAT in case PAC is behind NAT box */
++			break;
++
++		default:
++			DEBUGP("unknown outbound packet 0x%04x:%s\n", msg,
++			      (msg <= PPTP_MSG_MAX)? strMName[msg]:strMName[0]);
++			/* fall through */
++
++		case PPTP_START_SESSION_REQUEST:
++		case PPTP_START_SESSION_REPLY:
++		case PPTP_STOP_SESSION_REQUEST:
++		case PPTP_STOP_SESSION_REPLY:
++		case PPTP_ECHO_REQUEST:
++		case PPTP_ECHO_REPLY:
++			/* no need to alter packet */
++			return NF_ACCEPT;
++	}
++
++	IP_NF_ASSERT(cid);
++	new_callid = htons(ct_pptp_info->pns_call_id);
++
++	DEBUGP("altering call id from 0x%04x to 0x%04x\n",
++		ntohs(*cid), ntohs(new_callid));
++	/* mangle packet */
++	tcph->check = ip_nat_cheat_check(*cid^0xFFFF, 
++					 new_callid, tcph->check);
++	*cid = new_callid;
++
++	return NF_ACCEPT;
++}
++
++/* inbound packets == from PAC to PNS */
++static unsigned int
++pptp_inbound_pkt(struct tcphdr *tcph, struct pptp_pkt_hdr *pptph,
++		 size_t datalen,
++		 struct ip_conntrack *ct,
++		 enum ip_conntrack_info ctinfo)
++{
++	struct PptpControlHeader *ctlh;
++	union pptp_ctrl_union pptpReq;
++	struct ip_ct_pptp *ct_pptp_info = &ct->help.ct_pptp_info;
++	struct ip_nat_pptp *nat_pptp_info = &ct->nat.help.nat_pptp_info;
++
++	u_int16_t msg, new_callid, *pcid = NULL;
++
++	struct ip_conntrack_tuple t = ct->expected.tuple;
++
++	
++	ctlh = (struct PptpControlHeader *) ((void *) pptph + sizeof(*pptph));
++	pptpReq.rawreq = (void *) ((void *) ctlh + sizeof(*ctlh));
++
++	new_callid = htons(nat_pptp_info->pns_call_id);
++
++	switch (ntohs(ctlh->messageType)) {
++		case PPTP_OUT_CALL_REPLY:
++			pcid = &pptpReq.ocack->peersCallID;	
++			
++			/* alter expectation, no need for callID */
++			t.dst.ip = ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.ip;
++			ip_conntrack_expect_related(ct, &t,
++						&ct->expected.mask, 
++						ct->expected.expectfn);
++			ip_ct_gre_keymap_add(&t, new_callid);
++
++			break;
++		case PPTP_IN_CALL_CONNECT:
++			pcid = &pptpReq.iccon->peersCallID;
++			
++			/* alter expectation, no need for callID */
++			t.dst.ip = ct->tuplehash[IP_CT_DIR_REPLY].tuple.dst.ip;
++			ip_conntrack_expect_related(ct, &t,
++						&ct->expected.mask, 
++						ct->expected.expectfn);
++			ip_ct_gre_keymap_add(&t, new_callid);
++			break;
++		case PPTP_IN_CALL_REQUEST:
++			/* only need to nat in case PAC is behind NAT box */
++			break;
++		case PPTP_WAN_ERROR_NOTIFY:
++			pcid = &pptpReq.wanerr->peersCallID;
++			break;
++		default:
++			DEBUGP("unknown inbound packet %s\n",
++				(msg <= PPTP_MSG_MAX)? strMName[msg]:strMName[0]);
++			/* fall through */
++
++		case PPTP_START_SESSION_REQUEST:
++		case PPTP_START_SESSION_REPLY:
++		case PPTP_STOP_SESSION_REQUEST:
++		case PPTP_ECHO_REQUEST:
++		case PPTP_ECHO_REPLY:
++			/* no need to alter packet */
++			return NF_ACCEPT;
++	}
++
++	/* could unlock here, since no accesses to private structures below */
++
++	IP_NF_ASSERT(pcid);
++
++	DEBUGP("altering peer call id from 0x%04x to 0x%04x\n",
++		ntohs(*pcid), ntohs(new_callid));
++
++
++	/* mangle packet */
++	tcph->check = ip_nat_cheat_check(*pcid^0xFFFF, 
++					 new_callid, tcph->check);
++	*pcid = new_callid;
++
++	/* great, at least we don't need to resize packets */
++	return NF_ACCEPT;
++}
++
++
++static unsigned int tcp_help(struct ip_conntrack *ct,
++			     struct ip_nat_info *info,
++			     enum ip_conntrack_info ctinfo,
++			     unsigned int hooknum, struct sk_buff **pskb)
++{
++	struct iphdr *iph = (*pskb)->nh.iph;
++	struct tcphdr *tcph = (void *) iph + iph->ihl*4;
++	unsigned int datalen = (*pskb)->len - iph->ihl*4 - tcph->doff*4;
++	struct pptp_pkt_hdr *pptph;
++	void *datalimit;
++
++	int dir;
++
++	/* We don't delete SACK_OK on initial TCP SYNs since there are
++	 * no TCP sequence number alterations in PPTP. */
++
++	/* Only mangle things once: original direction in POST_ROUTING
++	   and reply direction on PRE_ROUTING. */
++	dir = CTINFO2DIR(ctinfo);
++	if (!((hooknum == NF_IP_POST_ROUTING && dir == IP_CT_DIR_ORIGINAL)
++	      || (hooknum == NF_IP_PRE_ROUTING && dir == IP_CT_DIR_REPLY))) {
++		DEBUGP("Not touching dir %s at hook %s\n",
++		       dir == IP_CT_DIR_ORIGINAL ? "ORIG" : "REPLY",
++		       hooknum == NF_IP_POST_ROUTING ? "POSTROUTING"
++		       : hooknum == NF_IP_PRE_ROUTING ? "PREROUTING"
++		       : hooknum == NF_IP_LOCAL_OUT ? "OUTPUT" : "???");
++		return NF_ACCEPT;
++	}
++
++	/* if packet is too small, just skip it */
++	if (datalen < sizeof(struct pptp_pkt_hdr)+
++		      sizeof(struct PptpControlHeader)) {
++		DEBUGP("pptp packet too short\n");
++		return NF_ACCEPT;	
++	}
++
++	
++
++	pptph = (struct pptp_pkt_hdr *) ((void *)tcph + tcph->doff*4);
++	datalimit = (void *) pptph + datalen;
++
++	LOCK_BH(&ip_pptp_lock);
++
++	if (dir == IP_CT_DIR_ORIGINAL) {
++		/* reuqests sent by client to server (PNS->PAC) */
++		pptp_outbound_pkt(tcph, pptph, datalen, ct, ctinfo);
++	} else {
++		/* response from the server to the client (PAC->PNS) */
++		pptp_inbound_pkt(tcph, pptph, datalen, ct, ctinfo);
++	}
++
++	UNLOCK_BH(&ip_pptp_lock);
++
++	return NF_ACCEPT;
++}
++
++/* nat helper struct for control connection */
++static struct ip_nat_helper pptp_tcp_helper = { 
++	{ NULL, NULL },
++	{ { 0, { tcp: { port: __constant_htons(PPTP_CONTROL_PORT) } } },
++	  { 0, { 0 }, IPPROTO_TCP } },
++	{ { 0, { tcp: { port: 0xFFFF } } },
++	  { 0, { 0 }, 0xFFFF } },
++	tcp_help, "pptp-tcp" };
++
++			  
++/* expect struct */ 
++static struct ip_nat_expect pptp_expect = { { NULL, NULL }, 
++					    pptp_nat_expected }; 
++
++static int __init init(void)
++{
++	DEBUGP("init_module\n" );
++
++	if (ip_nat_expect_register(&pptp_expect))
++		goto error_out;
++
++        if (ip_nat_helper_register(&pptp_tcp_helper))
++		goto cleanup_expect;
++
++        return 0;
++
++cleanup_expect:
++	ip_nat_expect_unregister(&pptp_expect);
++	
++error_out:
++	return -EIO;
++}
++
++static void __exit fini(void)
++{
++	DEBUGP("cleanup_module\n" );
++        ip_nat_helper_unregister(&pptp_tcp_helper);
++	ip_nat_expect_unregister(&pptp_expect);
++}
++
++module_init(init);
++module_exit(fini);
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.18-nfpom/net/ipv4/netfilter/ip_nat_proto_gre.c linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_nat_proto_gre.c
+--- linux-2.4.18-nfpom/net/ipv4/netfilter/ip_nat_proto_gre.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.18-nfpom-gre/net/ipv4/netfilter/ip_nat_proto_gre.c	Wed Mar 13 15:02:41 2002
+@@ -0,0 +1,225 @@
++/*
++ * ip_nat_proto_gre.c - Version 1.1
++ *
++ * NAT protocol helper module for GRE.
++ *
++ * GRE is a generic encapsulation protocol, which is generally not very
++ * suited for NAT, as it has no protocol-specific part as port numbers.
++ *
++ * It has an optional key field, which may help us distinguishing two 
++ * connections between the same two hosts.
++ *
++ * GRE is defined in RFC 1701 and RFC 1702, as well as RFC 2784 
++ *
++ * PPTP is built on top of a modified version of GRE, and has a mandatory
++ * field called "CallID", which serves us for the same purpose as the key
++ * field in plain GRE.
++ *
++ * Documentation about PPTP can be found in RFC 2637
++ *
++ * (C) 2000-2002 by Harald Welte <laforge@gnumonks.org>
++ *
++ * based on code and ideas from Gordon Chaffee
++ *
++ */
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/ip.h>
++#include <linux/netfilter_ipv4/ip_nat.h>
++#include <linux/netfilter_ipv4/ip_nat_rule.h>
++#include <linux/netfilter_ipv4/ip_nat_protocol.h>
++#include <linux/netfilter_ipv4/ip_conntrack_proto_gre.h>
++
++#if 0
++#include <linux/types.h>
++#include <linux/kernel.h>
++#include <linux/skbuff.h>
++#include <asm/system.h>
++#include <linux/in.h>
++#include <linux/inet.h>
++#include <net/checksum.h>
++#endif
++
++MODULE_LICENSE("GPL");
++MODULE_AUTHOR("Harald Welte <laforge@gnumonks.org>");
++MODULE_DESCRIPTION("Netfilter NAT protocol helper module for GRE");
++
++#if 1
++#define DEBUGP(format, args...) printk(KERN_DEBUG __FILE__ ":" __FUNCTION__ \
++				       ": " format, ## args)
++#else
++#define DEBUGP(x, args...)
++#endif
++
++/* is key in given range between min and max */
++static int
++gre_in_range(const struct ip_conntrack_tuple *tuple,
++	     enum ip_nat_manip_type maniptype,
++	     const union ip_conntrack_manip_proto *min,
++	     const union ip_conntrack_manip_proto *max)
++{
++	return ntohl(tuple->src.u.gre.key) >= ntohl(min->gre.key)
++		&& ntohl(tuple->src.u.gre.key) <= ntohl(max->gre.key);
++}
++
++/* generate unique tuple ... */
++static int 
++gre_unique_tuple(struct ip_conntrack_tuple *tuple,
++		 const struct ip_nat_range *range,
++		 enum ip_nat_manip_type maniptype,
++		 const struct ip_conntrack *conntrack)
++{
++	unsigned int min, i, range_size;
++	u_int32_t key, *keyptr;
++
++	/* key is stored in SRC, so we cannot do other NAT */
++	if (maniptype != IP_NAT_MANIP_SRC)
++		return 0;
++
++	keyptr = &tuple->src.u.gre.key;
++
++	if (!(range->flags & IP_NAT_RANGE_PROTO_SPECIFIED)) {
++
++		switch (tuple->dst.u.gre.version) {
++		case 0:
++			DEBUGP("NATing GRE version 0\n",
++				conntrack);
++			min = 1;
++			range_size = 0xffffffff;
++			break;
++		case GRE_VERSION_PPTP:
++			DEBUGP("%p: NATing GRE PPTP\n", 
++				conntrack);
++			min = 1;
++			range_size = 0xffff;
++			break;
++		default:
++			printk(KERN_WARNING "nat_gre: unknown GRE version\n");
++			return 0;
++			break;
++		}
++
++	} else {
++		min = ntohs(range->min.gre.key);
++		range_size = ntohs(range->max.gre.key) - min + 1;
++	}
++
++	for (i = 0; i < range_size; i++, key++) {
++		*keyptr = htonl(min + key % range_size);
++		if (!ip_nat_used_tuple(tuple, conntrack))
++			return 1;
++	}
++
++	DEBUGP("%p: no NAT mapping\n", conntrack);
++
++	return 0;
++}
++
++/* manipulate a GRE packet according to maniptype */
++static void 
++gre_manip_pkt(struct iphdr *iph, size_t len, 
++	      const struct ip_conntrack_manip *manip,
++	      enum ip_nat_manip_type maniptype)
++{
++	struct gre_hdr *greh = (struct gre_hdr *)((u_int32_t *)iph+iph->ihl);
++	struct gre_hdr_pptp *pgreh = (struct gre_hdr_pptp *) greh;
++
++	u_int32_t oldip;
++
++	if (maniptype == IP_NAT_MANIP_SRC) {
++		/* key manipulation is always dest */
++		switch (greh->version) {
++		case 0:
++			if (!greh->key) {
++				DEBUGP("can't nat GRE w/o key\n");
++				break;
++			}
++			if (greh->csum) {
++				
++				*(gre_csum(greh)) = 
++					ip_nat_cheat_check(~*(gre_key(greh)),
++							manip->u.gre.key,
++							*(gre_csum(greh)));
++			}
++			*(gre_key(greh)) = manip->u.gre.key;
++			break;
++		case GRE_VERSION_PPTP:
++			DEBUGP("call_id -> 0x%04x\n", 
++				ntohs(manip->u.gre.key));
++			pgreh->call_id = (u_int16_t) manip->u.gre.key;
++			break;
++		default:
++			DEBUGP("can't nat unknown GRE version\n");
++			break;
++		}
++	} else {
++		oldip = iph->daddr;
++	}
++}
++
++/* print out a nat tuple */
++static unsigned int 
++gre_print(char *buffer, 
++	  const struct ip_conntrack_tuple *match,
++	  const struct ip_conntrack_tuple *mask)
++{
++	unsigned int len = 0;
++
++	if (mask->dst.u.gre.version)
++		len += sprintf(buffer + len, "version=%d ",
++				ntohs(match->dst.u.gre.version));
++
++	if (mask->dst.u.gre.protocol)
++		len += sprintf(buffer + len, "protocol=0x%x ",
++				ntohs(match->dst.u.gre.protocol));
++
++	if (mask->src.u.gre.key)
++		len += sprintf(buffer + len, "key=0x%x ", 
++				ntohl(match->src.u.gre.key));
++
++	return len;
++}
++
++/* print a range of keys */
++static unsigned int 
++gre_print_range(char *buffer, const struct ip_nat_range *range)
++{
++	if (range->min.gre.key != 0 
++	    || range->max.gre.key != 0xFFFF) {
++		if (range->min.gre.key == range->max.gre.key)
++			return sprintf(buffer, "key 0x%x ",
++					ntohl(range->min.gre.key));
++		else
++			return sprintf(buffer, "keys 0x%u-0x%u ",
++					ntohl(range->min.gre.key),
++					ntohl(range->max.gre.key));
++	} else
++		return 0;
++}
++
++/* nat helper struct */
++static struct ip_nat_protocol gre = 
++	{ { NULL, NULL }, "GRE", IPPROTO_GRE,
++	  gre_manip_pkt,
++	  gre_in_range,
++	  gre_unique_tuple,
++	  gre_print,
++	  gre_print_range 
++	};
++				  
++static int __init init(void)
++{
++        if (ip_nat_protocol_register(&gre))
++                return -EIO;
++
++        return 0;
++}
++
++static void __exit fini(void)
++{
++        ip_nat_protocol_unregister(&gre);
++}
++
++module_init(init);
++module_exit(fini);

@@ -1,0 +1,3 @@
+#!/bin/sh
+# True if random is applied.
+[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_random.h ] && echo random

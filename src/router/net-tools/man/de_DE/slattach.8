@@ -1,0 +1,106 @@
+.TH SLATTACH 8 "6. M\(:arz 1999" "net-tools" "slattach"
+.SH NAME
+slattach \- Anbindung einer Netzwerksschnittstelle an eine serielle Verbindung
+.SH SYNOPSIS
+.B "slattach [-dehlLmnqv] [-c Kommando] [-p Protokoll] [-s Geschwindigkeit]
+[Terminal]"
+.br
+.SH BESCHREIBUNG
+.B Slattach
+ist ein Programm, das dazu benutzt wird, um ein Terminalger\(:at auf eine
+Reihe von m\(:oglichen Netzwerksmodi umzuschalten.  Dadurch wird es
+m\(:oglich, es zur Verbindung mit anderen Computern zu verwenden.
+.SH OPTIONEN
+.TP
+.B "[-c Kommando]"
+Den Befehl
+.B Kommando
+beim Auflegen der Verbindung ausf\(:uhren.  Die kann benutzt werden um
+Skripte laufen zu lassen oder eine Verbindung nach Abbruch wiederaufzubauen.
+.TP
+.B "[-d]"
+Zus\(:atzliche Ausgaben zur Fehlersuche einschalten.  N\(:utzlich, wenn
+eine Konfiguration nicht arbeitet.
+.TP
+.B "[-h]"
+Beenden, wenn der Tr\(:ager verloren geht.  Dies funktioniert sowohl auf
+/dev/tty als auch auf /dev/cua Ger\(:aten dadurch, da\(ss der Tr\(:ager
+alle 15 Sekunden \(:uberpr\(:uft wird.
+.B "[-v]"
+Ausf\(:uhrliche Ausgaben.  Die ist n\(:utzlich in Shellskripten.
+.TP
+.B "[-q]"
+Schaltet alle Ausgaben aus.
+.TP
+.B "[-l]"
+Erzeugt eine Sperrdatei in /var/lock \(:ahnlich wie UUCP.
+.TP
+.B "[-n]"
+Equivalent mit dem
+.B mesg n
+Befehl.
+.TP
+.B "[-m]"
+Versetzt \fBnot\fP die Verbindung in den 8-bit raw-Modus.
+.TP
+.B "[-e]"
+Beenden sofort nach der Initialisierung des Ger\(:ats anstelle darauf zu
+warten, da\(ss die Leitung aufgelegt wird.
+.TP
+.B "[-L]"
+Aktiviert 3-Draht-Betrieb.  Das Terminal wird in die CLOCAL Betriebsart
+geschaltet und der Tr\(:ager wird nicht \(:uberwacht.
+.TP
+.B "[-p Protokoll]"
+Setzt ein spezifisches Protkoll um eine Leitung zu benutzen.  Die
+Voreinstellung ist
+.BR cslip ,
+d.h. komprimiertes SLIP.  Andere m\(:ogliche Werte sind z.B.
+.B "slip"
+(normales SLIP), 
+.B "adaptive"
+(adaptives CSLIP/SLIP),
+.B "ppp"
+(Point-to-Point Protocol)
+und
+.B "kiss"
+(ein Protokoll, das zur Kommunikation \(:uber AX.25 Packet Radio Terminal Node
+Controller verwendet wird).
+Die spezielle Option
+.B "Terminal"
+kann benutzt werden um das Ger\(:at wieder in die normale serielle Betriebsart
+zur\(:uckzuversetzen.  Die Benutztung der Betriebsart
+.B ppp
+ist normalerweise nicht sinnvoll, da ppp einen zurs\(:atzlichen ppp-D\(:amon
+ben\(:otigt um eine Leitung zu betreiben.
+F\(:ur
+.B kiss
+Verbindungen sollte stattdessen das
+.B axattach
+Programm verwendet werden.
+.TP
+.B "[-s Geschwindigkeit]"
+Setzt eine von der Voreinstellung abweichende \(:Ubertragungseschwindigkeit.
+.PP
+Werden keine Argument gegeben, sie wird das aktuelle Terminal, das ist
+\(:ublicherweise das Terminalger\(:at auf dem man sich eingeloggt hat,
+benutzt.  Ansonten wird ein Versuch gemacht, den angegebenen seriellen Port
+zu erhalten, f\(:ur andere zu sperren und zu \(:offnen.
+.SH DATEIEN
+.I /dev/cua* /var/lock/LCK.*
+.SH FEHLER
+Keine bekannt.
+.SH SIEHE ALSO
+axattach(8), dip(8) pppd(8), sliplogin(8).
+.SH AUTOREN
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Alan Cox, <Alan.Cox@linux.org>
+.br
+Miquel van Smoorenburg, <miquels@drinkel.ow.org>
+.br
+George Shearer, <gshearer@one.net>
+.br
+Yossi Gottlieb, <yogo@math.tau.ac.il>
+.SH \(:Ubersetzung
+Ralf B\(:achle <ralf@gnu.org>

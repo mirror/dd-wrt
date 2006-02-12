@@ -1,0 +1,49 @@
+.TH PLIPCONFIG 8 "17 February 1995" "" ""
+.SH NOM
+plipconfig \- réglage fin des paramètres du périphérique PLIP
+.SH SYNOPSIS
+.B "plipconfig interface"
+.br
+.B "plipconfig interface [nibble NN] [trigger NN] [unit NN]"
+.SH DESCRIPTION
+.B Plipconfig
+est utilisé pour améliorer (espérons-le) les performances PLIP
+en changeant les timings par défaut utilisés par le protocole PLIP. Les
+résultats dépendent du port parallèle
+utilisé, du cable, et de la vitesse CPU de chaque machine
+à chaque bout du lien PLIP.
+.LP
+Si le seul argument est l'
+.B interface
+,
+.B plipconfig
+affiche seulement l'état de cette interface. Autrement, il essaiera de
+positionner les options données.
+.SH OPTIONS
+.TP
+.B "nibble NN"
+Définit la valeur d'attente des digits en microsecondes. Par défault : 3000.
+.TP
+.B "trigger NN"
+Définit le délai de déclenchement en microsecondes. Par défault : 500.
+.LP
+La vitesse de PLIP peut, dans certains cas, être améliorée en
+diminuant les valeurs par défaut.
+Les valeurs trop petites peuvent engendrer une utilisation excessive de CPU,
+et un temps de réponse aux interruptions mauvais, dont le résultat est
+la perte de caractères lus sur le port, ou de paquets PLIP.
+La modification du MTU PLIP peut aussi affecter la vitesse PLIP.
+.SH NOTE
+Si vous n'obtenez aucune réponse, il est fort probable que l'IRQ configurée
+soit mauvaise, et qu'elle nécessite une configuration avec ifconfig.
+Les quelques cas pour lesquels les timings par défaut sont trop courts,
+arrivent lorque l'on utilise de longs cables. Quelque chose à ne pas faire,
+puisque le port parallèle n'est pas fait pour fonctionner avec de longs cables.
+.SH VOIR AUSSI
+.I ifconfig(8)
+.SH BUGS
+Non.
+.SH AUTEURS
+John Paul Morrison, <jmorriso@bogomips.ee.ubc.ca>, <ve7jpm@ve7jpm.ampr.org>
+.SH TRADUCTION
+Jean-Michel VANSTEENE (vanstee@worldnet.fr)

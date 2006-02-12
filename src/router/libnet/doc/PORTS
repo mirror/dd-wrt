@@ -1,0 +1,14 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet       
+===============================================================================
+
+    I would love to port this to other architectures.  The problem is I don't
+    have the machines/software.  Donations of shells, hardware, or diffs are
+    greatly appreciated.  The following is a list of confirmed ports.  Other
+    Operating Systems / configurations may or may not work.  The main
+    development platform is OpenBSD.
+
+    For a list of ported architectures, please see the html documentation.
+
+EOF

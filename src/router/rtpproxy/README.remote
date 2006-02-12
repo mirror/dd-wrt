@@ -1,0 +1,23 @@
+Remote Control Mode
+-------------------
+
+In this mode RTP Proxy can be controlled from the remote machine over
+network. When it is being used with SIP Express Router (SER), this allows
+to force different paths for signalling (SIP) and media (RTP) streams.
+
+The mode can be activated by starting RTP Proxy with `-s' command line
+argument:
+
+$ rtpproxy -s <proto>:<address>[:<port>]
+
+proto can be either udp or udp6; address is either IPv4 or IPv6 local
+address at which command commands should be accepted or `*' if rtpproxy
+should accept commands at all local interfaces; port is UDP port,
+if omitted port 22222 is used.
+
+BEWARE: command protocol contains no security or auth measures, so that
+you should be using other means to secure RTP Proxy, such as firewall or
+even better a VPN between machine runing RTP Proxy and machine wich
+runs a software that controls it.
+
+$Id: README.remote,v 1.1 2004/03/01 12:31:55 sobomax Exp $

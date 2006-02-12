@@ -1,0 +1,11 @@
+	<fieldset>	
+	<legend>Syslogd</legend>
+	<div class="setting">
+		<div class="label">Syslogd</div>
+		<input type="radio" name="syslogd_enable" value="1" <% nvram_selmatch("syslogd_enable", "1", "checked"); %> /> 
+		Enable<input type="radio" name="syslogd_enable" value="0" <% nvram_selmatch("syslogd_enable", "0", "checked"); %> /> 
+		Disable</div>
+	<% nvram_match("syslogd_enable","0","<!--"); %><div class="setting">
+		<div class="label">Remote Server</div>
+		<input class="num" maxlength="16" size="16" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" /></div>
+	<% nvram_match("syslogd_enable","0","-->"); %></fieldset><br />

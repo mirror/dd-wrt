@@ -1,0 +1,25 @@
+Author: Martin Josefsson <gandalf@wlug.westbo.se>
+Status: Works for me(tm)
+
+This patch adds the ipt_helper module which is a new match
+for iptables. This adds the capability to match packets in a
+dynamically allocated connection that's related to a specific 
+conntrack helper.
+
+If you want to match all packets belonging to ftp-sessions:
+(both ftp-command and ftp-data connections)
+
+iptables -A INPUT -m helper --helper ftp -j ACCEPT
+
+use irc for irc-sessions.
+
+It will currently only work with the ftp and irc conntrack-helpers
+but it's easy to add support for other helpers (a one-line patch
+to the conntrack-helper).
+
+You'll also need the bidirectional irc patch for irc matching to work
+properly.
+
+This patch modifies the way helpers are looked up when iptable_nat is
+loaded, the behaviour changes slightly, see comment in patch.
+Please report any breakage caused by this.

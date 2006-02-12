@@ -1,0 +1,19 @@
+		
+% qwertz TeX macros
+
+\catcode`\"=12 
+\sloppy 
+\newtheorem{definition}{Definition} 
+\newtheorem{proposition}{Proposition} 
+\newtheorem{lemma}{Lemma} 
+\newtheorem{corollary}{Corollary} 
+\newtheorem{theorem}{Theorem} 
+\newcommand{\mch}[1]{{\ifmmode#1 \else\(#1\)\fi}} 
+\newcommand{\lt}{{\ifmmode{<}\else{\verb+<+}\fi}} 
+\newcommand{\gt}{{\ifmmode{>}\else{\verb+>+}\fi}} 
+\newcommand{\verbar}{{\ifmmode{|}\else{\tt|}\fi}} 
+\newcommand{\idx}[1]{#1\index{#1}}
+\newcommand{\cdx}[1]{#1\index{#1@{\tt #1}}}  
+\newcommand{\nidx}[1]{\index{#1}}
+\newcommand{\ncdx}[1]{\index{#1@{\tt #1}}}
+

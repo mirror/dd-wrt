@@ -1,0 +1,3 @@
+@cwd /usr/local
+@name libnet-0.9
+man/man3/libnet.3

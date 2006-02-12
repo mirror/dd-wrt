@@ -1,0 +1,21 @@
+	<fieldset>
+	<legend>PPTP</legend>
+	<div class="setting">
+		<div class="label">PPTP Server</div>
+		<input type="radio" name="pptpd_enable" value="1" <% nvram_selmatch("pptpd_enable", "1", "checked"); %> />Enable
+		<input type="radio" name="pptpd_enable" value="0" <% nvram_selmatch("pptpd_enable", "0", "checked"); %> />Disable
+		</div>
+	<% nvram_match("pptpd_enable","0","<!--"); %><div class="setting">
+		<div class="label">Server IP</div>
+		<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" /></div>
+	<div class="setting">
+		<div class="label">Client IP(s)</div>
+		<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" /></div>
+	<div class="setting">
+		<div class="label">CHAP-Secrets</div>
+		<textarea id="pptpd_auth" cols="35" rows="4" name="pptpd_auth">	</textarea><script language="javascript">
+		
+				var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
+				document.getElementById("pptpd_auth").value = var_pptpd_auth;
+			</script></div>
+	<% nvram_match("pptpd_enable","0","-->"); %></fieldset><br />

@@ -1,0 +1,23 @@
+CONFIG_IP_NF_TARGET_LOG
+pool match and target support
+CONFIG_IP_NF_MATCH_POOL
+  Pool matching lets you use bitmaps with one bit per address from some
+  range of IP addresses; the match depends on whether a checked source
+  or destination address has its bit set in the pool.
+
+  There is also a POOL netfilter target, which can be used to set or remove
+  the addresses of a packet from a pool.
+
+  To define and use pools, you need userlevel utilities: a patched iptables,
+  and the program ippool(8), which defines the pools and their bounds.
+  The current release of pool matching is ippool-0.0.2, and can be found
+  in the archives of the netfilter mailing list at
+  http://lists.samba.org/netfilter/.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+
+pool match and target statistics gathering
+CONFIG_IP_POOL_STATISTICS
+  This option controls whether usage gathering code is compiled into the
+  ip_pool module.  Disabling statistics may be substantially faster.

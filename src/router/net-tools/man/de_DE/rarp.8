@@ -1,0 +1,82 @@
+.TH RARP 8 "6. M\(:arz 1999" "net-tools" "Handbuch f\(:ur Linuxprogrammierer"
+.SH NAME
+rarp \- Manipulation des RARP-Caches
+.SH SYNOPSIS
+.B "rarp [-V] [--version] [-h] [--help]"
+.br
+.B "rarp -a"
+.br
+.B "rarp [-v] -d Rechnername ..."
+.br
+.B "rarp [-v] [-t type] -s Rechnername hw_addr"
+.SH BESCHREIBUNG
+.B Rarp
+kann die RARP-Tabelle des Kernels auf verschiedene Arten manipulieren.  Die
+wichtigsten Anwendungen sind das L\(:oschen und manuelle Erstellen von
+Eintr\(:agen.  Zur Fehlersuche kann
+.B rarp
+die RARP-Tabelle vollst\(:andig ausgeben.
+.SH OPTIONEN
+.TP
+.B \-V
+Zeigt die Version von
+.BR rarp (8)
+an.
+.TP
+.B \-v
+Schaltet ausf\(:uhrliche Ausgaben an.
+.TP
+.B "\-t Typ"
+Beim Auslesen oder Setzen der RARP-Tabelle teilt dieses optionale Argument
+.B rarp
+mit, welche Klasse von Eintr\(:agen bearbeitet wird.  Die Voreinstellung f\(:ur
+diesen Wert ist
+.B ether
+(z.B. Hardwarecode
+.B 0x01
+f\(:ur
+.B "IEEE 802.3 10Mbps Ethernet".
+Andere Werte k\(:onnen Netzwerkstechniken wie z.B.
+.B AX.25 (ax25)
+und
+.B NET/ROM (netrom)
+sein.
+.TP
+.B "\-a"
+.TP
+.B "\-\-list"
+Druckt die Eintr\(:age der RARP-Tabelle aus.
+.TP
+.B "\-d Rechnername"
+.TP
+.B "\-\-delete Rechnername"
+Alle RARP-Eintr\(:age f\(:ur den gegebenen Rechner l\(:oschen.
+.TP
+.B "\-s Rechnername hw_addr"
+.TP
+.B "\-\-set hostname hw_addr"
+Erzeugt einen Eintrag in der RARP-Tabelle f\(:ur den Rechner
+.B Rechnername
+dessen Hardwareadresse auf
+.B hw_addr
+gesetzt ist.  Das Format der Hardware Adresse ist von der Hardwareklasse
+abh\(:angig. F\(:ur die meisten Hardwareklassen wird die \(:ubliche
+Repr\(:asentation verwendet.  F\(:ur die Ethernetklasse sind dies sechs
+hexadezimale, durch Doppelpunkte getrennte Bytes.
+.SH WARNUNG
+Einige Systeme, insbesondere alte Suns, gehen davon aus, da\(ss das System,
+das RARP-Anfragen beantwortet auch weitere Bootdienste anbietet.  Deshalb
+sollten niemals einfach beliebige RARP-Eintr\(:age erzeugt werden, au\(sser
+man m\(:ochte einen Netzwerksverwalter in seiner Rollte als BOFH erleben.
+.SH DATEIEN
+.I /proc/net/rarp,
+.SH SIEHE AUCH
+arp(8), route(8), ifconfig(8), netstat(8)
+.SH AUTOREN
+Ross D. Martin, <martin@trcsun3.eas.asu.edu>
+.br
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Phil Blundell, <Philip.Blundell@pobox.com>
+.SH \(:Ubersetzung
+Ralf B\(:achle <ralf@gnu.org>

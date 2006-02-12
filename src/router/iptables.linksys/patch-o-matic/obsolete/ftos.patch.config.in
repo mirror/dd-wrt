@@ -1,0 +1,2 @@
+     dep_tristate '    TOS target support' CONFIG_IP_NF_TARGET_TOS $CONFIG_IP_NF_MANGLE
+     dep_tristate '    Full TOS target support' CONFIG_IP_NF_TARGET_FTOS $CONFIG_IP_NF_MANGLE 

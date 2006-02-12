@@ -1,0 +1,365 @@
+Supplied by Andy Warner.  He needed a version for a shell-less
+embedded system that
+  1. combined -s and -l behavior
+  2. provided initial frequency set
+  3. didn't spew much on stdout or stderr
+  4. sent important information to syslog
+  5. had as small a binary as possible
+This patch is the result.
+
+diff -ur ntpclient_2003/ntpclient.c ntpclient-andy/ntpclient.c
+--- ntpclient_2003/ntpclient.c	Sat Jul  5 12:30:17 2003
++++ ntpclient-andy/ntpclient.c	Wed Jun 25 07:41:44 2003
+@@ -2,7 +2,7 @@
+  * ntpclient.c - NTP client
+  *
+  * Copyright 1997, 1999, 2000, 2003  Larry Doolittle  <larry@doolittle.boa.org>
+- * Last hack: July 5, 2003
++ * Last hack: May 16, 2003
+  *
+  *  This program is free software; you can redistribute it and/or modify
+  *  it under the terms of the GNU General Public License (Version 2,
+@@ -34,33 +34,52 @@
+  *  labelled "XXXX fixme - non-automatic build configuration".
+  */
+ 
++/*
++ * $Id: ntpclient.c,v 1.4 2003/06/25 14:41:44 andyw Exp $
++ */
++
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <string.h>
+ #include <sys/types.h>
+ #include <sys/socket.h>
+ #include <netinet/in.h>
+-#include <netdb.h>     /* gethostbyname */
++#include <netdb.h>
+ #include <arpa/inet.h>
++#include <sys/utsname.h>
+ #include <time.h>
++#include <sys/time.h>
+ #include <unistd.h>
+ #include <errno.h>
+ #ifdef _PRECISION_SIOCGSTAMP
+ #include <sys/ioctl.h>
+ #endif
+ 
+-#define ENABLE_DEBUG
++#ifdef	ENABLE_SYSLOG
++#include <syslog.h>
++#define	SYSLOG_IDENT	"ntpclient"
++#define	SYSLOG_OPTIONS	(LOG_NOWAIT | LOG_PID)
++#define	SYSLOG_FACILITY	LOG_CRON
++#define	LOG_OPTION	"L"
++int	logging = 0 ;
++#else
++#define	LOG_OPTION
++#define	logging	0
++#endif
++
++#ifdef	ENABLE_REPLAY
++#define	REPLAY_OPTION	"r"
++#else
++#define	REPLAY_OPTION
++#endif
+ 
+ extern char *optarg;
+ 
+ /* XXXX fixme - non-automatic build configuration */
+ #ifdef linux
+-#include <sys/utsname.h>
+-#include <sys/time.h>
+ typedef u_int32_t __u32;
+ #include <sys/timex.h>
+ #else
+-extern struct hostent *gethostbyname(const char *name);
+ extern int h_errno;
+ #define herror(hostname) \
+ 	fprintf(stderr,"Error %d looking up hostname %s\n", h_errno,hostname)
+@@ -120,6 +139,7 @@
+ #define debug 0
+ #define DEBUG_OPTION
+ #endif
++int verbose = 0 ;	/* verbose flag, produce useful output on stdout */
+ 
+ int get_current_freq(void)
+ {
+@@ -170,7 +190,7 @@
+ 		fprintf(stderr,"size error\n");
+ 		return;
+ 	}
+-	bzero((char *) data,sizeof(data));
++	bzero(data,sizeof(data));
+ 	data[0] = htonl (
+ 		( LI << 30 ) | ( VN << 27 ) | ( MODE << 24 ) |
+ 		( STRATUM << 16) | ( POLL << 8 ) | ( PREC & 0xff ) );
+@@ -276,6 +296,17 @@
+ 		if (debug) {
+ 			printf("set time to %lu.%.6lu\n", tv_set.tv_sec, tv_set.tv_usec);
+ 		}
++#ifdef	ENABLE_SYSLOG
++		if (logging) {
++			syslog(LOG_NOTICE, "Time set from remote server") ;
++		}
++#endif
++		/*
++		 * Only set the clock once, if we are subsequently locking.
++		 */
++		if (live) {
++			set_clock = 0 ;
++		}
+ 	}
+ 
+ 	if (debug) {
+@@ -316,11 +347,19 @@
+ 			el_time+sec2u(disp), freq);
+ 		if (!debug && new_freq != freq) set_freq(new_freq);
+ 	}
+-	printf("%d %.5d.%.3d  %8.1f %8.1f  %8.1f %8.1f %9d\n",
+-		arrival->coarse/86400, arrival->coarse%86400,
+-		arrival->fine/4294967, el_time, st_time,
+-		(skew1-skew2)/2, sec2u(disp), freq);
+-	fflush(stdout);
++	if (verbose) {
++		printf("%d %.5d.%.3d  %8.1f %8.1f  %8.1f %8.1f %9d\n",
++			arrival->coarse/86400, arrival->coarse%86400,
++			arrival->fine/4294967, el_time, st_time,
++			(skew1-skew2)/2, sec2u(disp), freq);
++		fflush(stdout);
++	}
++#ifdef	ENABLE_SYSLOG
++	if (logging) {
++		syslog(LOG_NOTICE, "Skew %.1fmS, freq adjust %d",
++					(skew1-skew2)/2000, freq) ;
++	}
++#endif
+ 	return(el_time-st_time);
+ }
+ 
+@@ -415,6 +454,7 @@
+ 	}
+ }
+ 
++#ifdef ENABLE_REPLAY
+ void do_replay(void)
+ {
+ 	char line[100];
+@@ -447,12 +487,23 @@
+ 		}
+ 	}
+ }
++#endif
+ 
+ void usage(char *argv0)
+ {
+ 	fprintf(stderr,
+ 	"Usage: %s [-c count] [-d] -h hostname [-i interval] [-l]\n"
+-	"\t[-p port] [-r] [-s] \n",
++	"\t[-p port] [-s] [-v] [-a <initial freq>]"
++#ifdef	ENABLE_SYSLOG
++	" [-L]"
++#endif
++#ifdef	ENABLE_DEBUG
++	" [-d]"
++#endif
++#ifdef	ENABLE_REPLAY
++	" [-r]"
++#endif
++	"\n",
+ 	argv0);
+ }
+ 
+@@ -467,12 +518,21 @@
+ 	/* int debug=0; is a global above */
+ 	int goodness=0;
+ 	char *hostname=NULL;          /* must be set */
++#ifdef	ENABLE_REPLAY
+ 	int replay=0;                 /* replay mode overrides everything */
++#endif
++	int initial_freq = 0 ;		/* Initial freq value to use */
+ 
++#ifdef	ENABLE_SYSLOG
++	openlog(SYSLOG_IDENT, SYSLOG_OPTIONS, SYSLOG_FACILITY) ;
++#endif
+ 	for (;;) {
+-		c = getopt( argc, argv, "c:" DEBUG_OPTION "g:h:i:lp:rs");
++		c = getopt( argc, argv, "a:c:" DEBUG_OPTION LOG_OPTION REPLAY_OPTION "g:h:i:lp:sv");
+ 		if (c == EOF) break;
+ 		switch (c) {
++			case 'a':
++				initial_freq = atoi(optarg) ;
++				break ;
+ 			case 'c':
+ 				probe_count = atoi(optarg);
+ 				break;
+@@ -481,6 +541,16 @@
+ 				++debug;
+ 				break;
+ #endif
++#ifdef	ENABLE_SYSLOG
++			case 'L':
++				logging++ ;
++				break ;
++#endif
++#ifdef ENABLE_REPLAY
++			case 'r':
++				replay++;
++				break;
++#endif
+ 			case 'g':
+ 				goodness = atoi(optarg);
+ 				break;
+@@ -496,26 +566,33 @@
+ 			case 'p':
+ 				udp_local_port = atoi(optarg);
+ 				break;
+-			case 'r':
+-				replay++;
+-				break;
+ 			case 's':
+ 				set_clock++;
+-				probe_count = 1;
+ 				break;
++			case 'v':
++				verbose++ ;
++				break ;
+ 			default:
+ 				usage(argv[0]);
+ 				exit(1);
+ 		}
+ 	}
++#ifdef ENABLE_REPLAY
+ 	if (replay) {
+ 		do_replay();
+ 		exit(0);
+ 	}
++#endif
+ 	if (hostname == NULL) {
+ 		usage(argv[0]);
+ 		exit(1);
+ 	}
++
++
++	if (set_clock && !live) {
++		probe_count = 1;
++	}
++
+ 	if (debug) {
+ 		printf("Configuration:\n"
+ 		"  -c probe_count %d\n"
+@@ -525,9 +602,10 @@
+ 		"  -i interval    %d\n"
+ 		"  -l live        %d\n"
+ 		"  -p local_port  %d\n"
+-		"  -s set_clock   %d\n",
++		"  -s set_clock   %d\n"
++		"  -v (verbose)   %d\n",
+ 		probe_count, debug, goodness, hostname, cycle_time,
+-		live, udp_local_port, set_clock );
++		live, udp_local_port, set_clock, verbose );
+ 	}
+ 
+ 	/* Startup sequence */
+@@ -538,6 +616,20 @@
+ 
+ 	setup_transmit(usd, hostname, NTP_PORT);
+ 
++	if (initial_freq) {
++		set_freq(initial_freq) ;
++#ifdef	ENABLE_SYSLOG
++		if (logging) {
++			syslog(LOG_NOTICE, "Initial freq adjust %d", initial_freq) ;
++		}
++#endif
++	}
++
++#ifdef	ENABLE_SYSLOG
++	if (logging) {
++		syslog(LOG_NOTICE, "Using server: %s", hostname) ;
++	}
++#endif
+ 	primary_loop(usd, probe_count, cycle_time, goodness);
+ 
+ 	close(usd);
+diff -ur ntpclient_2003/phaselock.c ntpclient-andy/phaselock.c
+--- ntpclient_2003/phaselock.c	Wed Jun  4 17:58:17 2003
++++ ntpclient-andy/phaselock.c	Wed Jun 25 07:41:44 2003
+@@ -23,13 +23,15 @@
+  *      - Write documentation  :-(
+  */
+ 
+-#include <stdio.h>
++/*
++ * $Id: phaselock.c,v 1.3 2003/06/25 14:41:44 andyw Exp $
++ */
+ 
+-#define ENABLE_DEBUG
++#include <stdio.h>
+ 
+ #define RING_SIZE 16
+-#define MAX_CORRECT 250   /* ppm change to system clock */
+-#define MAX_C ((MAX_CORRECT)*65536)
++#define	MAX_CORRECT	(400)		/* ppm to change system clock */
++#define	MAX_C		(MAX_CORRECT * 65536) 
+ struct datum {
+ 	unsigned int absolute;
+ 	double skew;
+@@ -61,6 +63,12 @@
+ #define debug 0
+ #define DEBUG_OPTION
+ #endif
++extern int verbose ;
++
++#ifdef ENABLE_SYSLOG
++extern int logging ;
++#include <syslog.h>
++#endif
+ 
+ /* draw a line from a to c, what the offset is of that line
+  * where that line matches b's slope coordinate.
+@@ -234,7 +242,7 @@
+ 		 * line segments in s.max vs. absolute space, which are
+ 		 * points in freq vs. dt space.  Find points in order of increasing
+ 		 * slope == freq */
+-		dinit=1; last_slope=-2*MAX_CORRECT;
++		dinit=1; last_slope=-2 * MAX_CORRECT;
+ 		for (c=1, j=next_up(rp); ; j=nextj) {
+ 			nextj = search(rp, j, 1, 1, 0, &maxseg[c]);
+ 			        search(rp, j, 0, 1, 1, &check);
+@@ -254,7 +262,7 @@
+ 		 * line segments in s.min vs. absolute space, which are
+ 		 * points in freq vs. dt space.  These points are found in
+ 		 * order of decreasing slope. */
+-		dinit=1; last_slope=+2*MAX_CORRECT;
++		dinit=1; last_slope=+2 * MAX_CORRECT ;
+ 		for (c=1, j=next_up(rp); ; j=nextj) {
+ 			nextj = search(rp, j, 0, 0, 1, &minseg[c]);
+ 			        search(rp, j, 1, 0, 0, &check);
+@@ -316,7 +324,10 @@
+ 		/*
+ 		 * Pass 5: decide on a new freq */
+ 		if (inconsistent) {
+-			printf("# inconsistent\n");
++			if (verbose) printf("# inconsistent\n");
++#ifdef	ENABLE_SYSLOG
++			if (logging) syslog(LOG_WARNING, "Inconsistent sample") ;
++#endif
+ 		} else {
+ 			delta_f = find_df(&both_sides_now);
+ 			if (debug) printf("find_df() = %e\n", delta_f);
+@@ -324,9 +335,11 @@
+ 			delta_freq = delta_f*65536+.5;
+ 			if (debug) printf("delta_f %f  delta_freq %d  bsn %d\n", delta_f, delta_freq, both_sides_now);
+ 			computed_freq -= delta_freq;
+-			printf ("# box [( %.3f , %.1f ) ",  save_min.slope, save_min.offset);
+-			printf (      " ( %.3f , %.1f )] ", save_max.slope, save_max.offset);
+-			printf (" delta_f %.3f  computed_freq %d\n", delta_f, computed_freq);
++			if (verbose) {
++				printf ("# box [( %.3f , %.1f ) ",  save_min.slope, save_min.offset);
++				printf (      " ( %.3f , %.1f )] ", save_max.slope, save_max.offset);
++				printf (" delta_f %.3f  computed_freq %d\n", delta_f, computed_freq);
++			}
+ 
+ 			if (computed_freq < -MAX_C) computed_freq=-MAX_C;
+ 			if (computed_freq >  MAX_C) computed_freq= MAX_C;

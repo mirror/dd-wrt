@@ -1,0 +1,19 @@
+md5.o md5.o: md5.c \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/string.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/features.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
+  /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/stddef.h \
+  md5.h
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/string.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/features.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
+
+/home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/stddef.h:
+
+md5.h:

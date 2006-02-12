@@ -1,0 +1,18 @@
+SRCS= ether_mod-@KERNEL_VERSION@.c ether_mod_load.c
+OBJS=$(SRCS:.c=.o)
+
+MODOBJ=ether_spoof.o
+CFLAGS+= -D_KERNEL -I/sys
+
+.include <bsd.subdir.mk>
+
+all:	$(MODOBJ)
+
+$(MODOBJ): $(OBJS)
+	$(LD) -r -o $(MODOBJ) $(OBJS) 
+clean:
+	rm -f *.o
+
+distclean:
+	rm -f Makefile config.log config.cache config.status *.o
+

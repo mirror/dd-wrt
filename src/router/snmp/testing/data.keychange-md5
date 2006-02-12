@@ -1,0 +1,26 @@
+0x526f5eed9fcce26f8964c2930787d82b	# old kul
+0x87021d7bd9d101ba05ea6e3bf9d9bd4a	# new kul
+000000000000000000000000000000008805615141676cc9196174e742a32551							# keychange string -- auth/privacy
+
+
+		#		#		#		#
+
+#
+# Following data exerpted from:
+#
+#	Message-Id: <199809282003.QAA27494@relay.hq.tis.com>
+#	Date: Mon, 28 Sep 98 21:57:48 DST
+#	From: "Bert Wijnen" <WIJNEN@vnet.ibm.com>
+#	To: snmpv3@tis.com
+#	Subject: suggested new appendix section A.5 for RFC2274
+#
+maplesyrup				# old passphrase
+0x000000000000000000000002		# engineID
+
+newsyrup				# new passphrase
+01add273107c4e596b4b00f82b1d42a7	# new Ku
+87021d7bd9d101ba05ea6e3bf9d9bd4a	# new kul
+
+00000000000000000000000000000000	# random delta
+
+000000000000000000000000000000008805615141676cc9196174e742a32551							# keychange string -- auth/privacy

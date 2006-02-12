@@ -1,0 +1,213 @@
+.TH HOSTNAME 1 "28 Jan 1996" "net-tools" "Linux Programmer's Manual"
+
+.SH NAME
+hostname \- show or set the system's host name
+.br
+domainname \- show or set the system's NIS/YP domain name
+.br
+dnsdomainname \- show the system's DNS domain name
+.br
+nisdomainname \- show or set system's NIS/YP domain name
+.br
+ypdomainname \- show or set the system's NIS/YP domain name
+.br
+nodename \- show or set the system's DECnet node name
+
+.SH SYNOPSIS
+.B hostname
+.RB [ \-v ]
+.RB [ \-a ]
+.RB [ \-\-alias ]
+.RB [ \-d ]
+.RB [ \-\-domain ]
+.RB [ \-f ]
+.RB [ \-\-fqdn ]
+.RB [ \-i ]
+.RB [ \-\-ip-address ]
+.RB [ \-\-long ]
+.RB [ \-s ]
+.RB [ \-\-short ]
+.RB [ \-y ]
+.RB [ \-\-yp ]
+.RB [ \-\-nis ]
+.RB [ \-n ]
+.RB [ \-\-node ]
+
+.PP
+.B hostname 
+.RB [ \-v ]
+.RB [ \-F\ filename ]
+.RB [ \-\-file\ filename ]
+.RB [ hostname ]
+
+.PP
+.B domainname
+.RB [ \-v ]
+.RB [ \-F\ filename ]
+.RB [ \-\-file\ filename ]
+.RB [ name ]
+
+.PP 
+.B nodename
+.RB [ \-v ]
+.RB [ \-F\ filename ]
+.RB [ \-\-file\ filename ]
+.RB [ name ]
+
+.PP
+.B hostname
+.RB [ \-v ]
+.RB [ \-h ]
+.RB [ \-\-help ]
+.RB [ \-V ]
+.RB [ \-\-version ]
+
+.PP
+.B dnsdomainname
+.RB [ \-v ]
+.br
+.B nisdomainname
+.RB [ \-v ]
+.br
+.B ypdomainname
+.RB [ \-v ]
+
+.SH DESCRIPTION
+.B Hostname
+is the program that is used to either set or display
+the current host, domain or node name of the system.  These names are used
+by many of the networking programs to identify the machine. The domain 
+name is also used by NIS/YP.
+
+.SS "GET NAME"
+When called without any arguments, the program displays the current
+names:
+
+.LP
+.B hostname
+will print the name of the system as returned by the
+.BR gethostname (2)
+function.
+
+.LP
+.B "domainname, nisdomainname, ypdomainname"
+will print the name of the system as returned by the
+.BR getdomainname (2)
+function. This is also known as the YP/NIS domain name of the system.
+
+.LP
+.B nodename
+will print the DECnet node name of the system as returned by the
+.BR getnodename (2)
+function.
+
+.LP
+.B dnsdomainname
+will print the domain part of the FQDN (Fully Qualified Domain Name). The
+complete FQDN of the system is returned with
+.BR "hostname \-\-fqdn" .
+
+.SS "SET NAME"
+When called with one argument or with the 
+.B \-\-file
+option, the commands set the host name, the NIS/YP domain name or
+the node name. 
+
+.LP
+Note, that only the super-user can change the names. 
+
+.LP
+It is not possible to set the FQDN or the DNS domain name with the 
+.B dnsdomainname 
+command (see 
+.B "THE FQDN"
+below).
+
+.LP
+The host name is usually set once at system startup in
+.I /etc/rc.d/rc.inet1
+or
+.I /etc/init.d/boot
+(normally by reading the contents of a file which contains
+the host name, e.g. 
+.IR /etc/hostname ).
+
+.SS THE FQDN
+You can't change the FQDN (as returned by 
+.BR "hostname \-\-fqdn" ) 
+or the DNS domain name (as returned by
+.BR "dnsdomainname" ) 
+with this command. The FQDN of the system is the name that the
+.BR resolver (3)
+returns for the host name. 
+
+.LP
+Technically: The FQDN is the name
+.BR gethostbyname (2)
+returns for the host name returned by
+.BR gethostname (2).
+The DNS domain name is the part after the first dot.
+.LP
+Therefore it depends on the configuration (usually in 
+.IR /etc/host.conf )
+how you can change it. Usually (if the hosts file is parsed before DNS or 
+NIS) you can change it in 
+.IR /etc/hosts .
+
+
+.SH OPTIONS
+.TP
+.I "\-a, \-\-alias"
+Display the alias name of the host (if used).
+.TP
+.I "\-d, \-\-domain"
+Display the name of the DNS domain. Don't use the command
+.B domainname
+to get the DNS domain name because it will show the NIS domain name and
+not the DNS domain name. Use
+.B dnsdomainname 
+instead.
+.TP
+.I "\-F, \-\-file filename"
+Read the host name from the specified file. Comments (lines starting with
+a `#') are ignored.
+.TP
+.I "\-f, \-\-fqdn, \-\-long"
+Display the FQDN (Fully Qualified Domain Name). A FQDN consists of a
+short host name and the DNS domain name. Unless you are using bind or NIS
+for host lookups you can change the FQDN and the DNS domain name (which is
+part of the FQDN) in the \fI/etc/hosts\fR file.
+.TP
+.I "\-h, \-\-help"
+Print a usage message and exit.
+.TP
+.I "\-i, \-\-ip-address"
+Display the IP address(es) of the host.
+.TP
+.I "\-n, \-\-node"
+Display the DECnet node name. If a parameter is given (or
+.B \-\-file name
+) the root can also set a new node name.
+.TP
+.I "\-s, \-\-short"
+Display the short host name. This is the host name cut at the first dot.
+.TP
+.I "\-V, \-\-version"
+Print version information on standard output and exit successfully.
+.TP
+.I "\-v, \-\-verbose"
+Be verbose and tell what's going on.
+.TP
+.I "\-y, \-\-yp, \-\-nis"
+Display the NIS domain name. If a parameter is given (or 
+.B \-\-file name
+) then root can also set a new NIS domain.
+.SH FILES
+.B /etc/hosts
+.SH AUTHOR
+Peter Tobias, <tobias@et-inf.fho-emden.de>
+.br
+Bernd Eckenfels, <net-tools@lina.inka.de> (NIS and manpage).
+.br
+Steve Whitehouse, <SteveW@ACM.org> (DECnet support and manpage).
+

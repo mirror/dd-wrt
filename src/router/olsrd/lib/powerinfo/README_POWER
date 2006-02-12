@@ -1,0 +1,41 @@
+POWER STATUS PLUGIN FOR OLSRD
+by Andreas Tønnesen(andreto@olsr.org)
+
+ABOUT
+
+The olsrd power status plugin is ment to be a easy
+to understand example of how one can write custom
+plugins for the UniK olsr daemon.
+
+It gathers powerifno from the local node by polling
+the /proc/apm pseudofile. So to diffuse powerinfo
+about a node it needs to have APM enabled.
+All powerinfo is gathered in a database and you
+can wiev the output by telneting to 127.0.0.1
+port 8888 on the local machine.
+
+Feel free to use this as a framework for new 
+plugins! That's what it is intended to be used for.
+
+PORTABILITY
+
+The plugin compiles for GNU/Linux, FreeBSD and
+win32, but the APM interface only works on APM/ACPI 
+enabled GNU/Linux systems. But since this plugin
+is ment to be a startingpoint for new plugins, it
+has been "ported" to the other OSes.
+
+WHAT IS IT?
+
+This code compiles as a dynamic loadable library -
+known as so files in Linux and DLL in windows.
+The code is loaded by olsrd at runtime and the
+plugin can use certain functionality offered
+by olsrd.
+It is very usefull when adding custom packettypes
+but it could be used for a variety of purposes.
+
+
+Read the HOWTO at www.olsr.org for more info
+
+- Andreas T

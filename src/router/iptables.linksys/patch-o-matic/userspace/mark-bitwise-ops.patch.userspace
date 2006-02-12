@@ -1,0 +1,155 @@
+--- userspace/extensions/libipt_mark.c.old	Mon Mar 25 16:15:47 2002
++++ userspace/extensions/libipt_mark.c	Mon Mar 25 16:06:36 2002
+@@ -14,13 +14,17 @@
+ {
+ 	printf(
+ "MARK match v%s options:\n"
+-"[!] --mark value[/mask]         Match nfmark value with optional mask\n"
++"[!] --mark    value           Match nfmark value\n"
++"[!] --markor  value/mask      Match nfmark value, the packets nfmark is ORed with mask before matching.\n"
++"[!] --markand value/mask      Match nfmark value, the packets nfmark is ORed with mask before matching.\n"
+ "\n",
+ IPTABLES_VERSION);
+ }
+ 
+ static struct option opts[] = {
+ 	{ "mark", 1, 0, '1' },
++	{ "markor", 1, 0, '2' },
++	{ "markand", 1, 0, '3' },
+ 	{0}
+ };
+ 
+@@ -41,48 +45,60 @@
+       struct ipt_entry_match **match)
+ {
+ 	struct ipt_mark_info *markinfo = (struct ipt_mark_info *)(*match)->data;
++	char *end;
+ 
+-	switch (c) {
+-		char *end;
+-	case '1':
+-		check_inverse(optarg, &invert, &optind, 0);
++	if ((c=='1') || (c=='2') || (c=='3')) // we ate an option ?
++        {
++                if (*flags)
++                        exit_error(PARAMETER_PROBLEM, "mark match: can specify only one action");
+ 		markinfo->mark = strtoul(optarg, &end, 0);
+-		if (*end == '/') {
+-			markinfo->mask = strtoul(end+1, &end, 0);
+-		} else
+-			markinfo->mask = 0xffffffff;
+-		if (*end != '\0' || end == optarg)
+-			exit_error(PARAMETER_PROBLEM, "Bad MARK value `%s'", optarg);
++		if (((*end != '\0') && (*end != '/')) || (end == optarg))
++			exit_error(PARAMETER_PROBLEM, "Bad mark value `%s'", optarg);
+ 		if (invert)
+ 			markinfo->invert = 1;
+-		*flags = 1;
++                *flags = 1;
++        }
++	else
++		return 0;
++
++	switch (c) {
++
++	case '1':
++		markinfo->bit_op = IPT_MARK_BIT_OP_NONE;
++		markinfo->mask = 0;
+ 		break;
+ 
++	case '2':
++		if (*end != '/')
++			exit_error(PARAMETER_PROBLEM, "mark match: you must specify a mask when using markor\n");
++		markinfo->mask = strtoul(end+1, &end, 0);
++                if (*end != '\0' || end == optarg)
++                        exit_error(PARAMETER_PROBLEM, "Bad mark OR value `%s'", optarg);
++		markinfo->bit_op = IPT_MARK_BIT_OP_OR;
++                break;
++
++	case '3':
++		if (*end != '/')
++			exit_error(PARAMETER_PROBLEM, "mark match: you must specify a mask when using markand\n");
++		markinfo->mask = strtoul(end+1, &end, 0);
++                if (*end != '\0' || end == optarg)
++                        exit_error(PARAMETER_PROBLEM, "Bad mark AND value `%s'", optarg);
++		markinfo->bit_op = IPT_MARK_BIT_OP_AND;
++                break;
++
+ 	default:
+-		return 0;
++		break; /* will never happen, but at least no warning */
+ 	}
+ 	return 1;
+ }
+ 
+-static void
+-print_mark(unsigned long mark, unsigned long mask, int invert, int numeric)
+-{
+-	if (invert)
+-		fputc('!', stdout);
+-
+-	if(mask != 0xffffffff)
+-		printf("0x%lx/0x%lx ", mark, mask);
+-	else
+-		printf("0x%lx ", mark);
+-}
+-
+ /* Final check; must have specified --mark. */
+ static void
+ final_check(unsigned int flags)
+ {
+ 	if (!flags)
+ 		exit_error(PARAMETER_PROBLEM,
+-			   "MARK match: You must specify `--mark'");
++			   "MARK match: you must specify a mark to match");
+ }
+ 
+ /* Prints out the matchinfo. */
+@@ -91,20 +107,39 @@
+       const struct ipt_entry_match *match,
+       int numeric)
+ {
+-	printf("MARK match ");
+-	print_mark(((struct ipt_mark_info *)match->data)->mark,
+-		  ((struct ipt_mark_info *)match->data)->mask,
+-		  ((struct ipt_mark_info *)match->data)->invert, numeric);
++	struct ipt_mark_info *info = (struct ipt_mark_info *)match->data;
++
++	printf("MARK ");
++	if (info->bit_op == IPT_MARK_BIT_OP_AND)
++		printf("& 0x%lx ", info->mask);
++	else
++		if (info->bit_op == IPT_MARK_BIT_OP_OR)
++			printf("| 0x%lx ", info->mask);
++	if (info->invert)
++		printf("! ");
++	printf("match 0x%lx ", info->mark);
+ }
+ 
+ /* Saves the union ipt_matchinfo in parsable form to stdout. */
+ static void
+ save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
+ {
+-	printf("--mark ");
+-	print_mark(((struct ipt_mark_info *)match->data)->mark,
+-		  ((struct ipt_mark_info *)match->data)->mask,
+-		  ((struct ipt_mark_info *)match->data)->invert, 0);
++	struct ipt_mark_info *info = (struct ipt_mark_info *)match->data;
++
++	if (info->invert)
++		printf("! ");
++	switch (info->bit_op)
++	{
++	case IPT_MARK_BIT_OP_AND :
++		printf("--markand 0x%lx/0x%lx ", info->mark, info->mask);
++		break;
++	case IPT_MARK_BIT_OP_OR :
++		printf("--markor 0x%lx/0x%lx ", info->mark, info->mask);
++		break;
++	case IPT_MARK_BIT_OP_NONE :
++		printf("--mark 0x%lx ", info->mark);
++		break;
++	}
+ }
+ 
+ static

@@ -1,0 +1,13 @@
+CONFIG_IP_NF_MATCH_STATE
+RPC match support
+CONFIG_IP_NF_MATCH_RPC
+  This adds CONFIG_IP_NF_MATCH_RPC, which supplies two modules,
+  ip_conntrack_rpc_udp and ip_conntrack_rpc_tcp, which track
+  portmapper requests using UDP and TCP respectively.  It also adds
+  the record_rpc match for iptables, which matches if the source of
+  the packet has requested that port through the portmapper before,
+  or it is a new GET request to the portmapper, allowing effective RPC
+  filtering.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

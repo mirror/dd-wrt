@@ -1,0 +1,13 @@
+CONFIG_IP_NF_FTP
+Conservative TCP state tracking
+CONFIG_IP_NF_CONNTRACK_CONSERVATIVE
+  This is an EXPERIMENTAL patch making TCP connection tracking behave 
+  more conservative.  If this option is enabled, it will only track 
+  connections which are started after ip_conntrack.o was loaded (or
+  your firewall booted).  It does no attempt on picking up old, 
+  previously established TCP connections.
+
+  This might help in some rare cases where you have problems with ACK
+  flooding filling up your connection tracking tables...
+
+  If unsure, say `N'.

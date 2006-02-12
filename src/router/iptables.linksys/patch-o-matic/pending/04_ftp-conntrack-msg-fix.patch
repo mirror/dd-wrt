@@ -1,0 +1,44 @@
+diff -Nru --exclude .depend --exclude *.o --exclude *.ver --exclude .*.flags --exclude *.orig --exclude *.rej --exclude *~ linux-2.4.20-plain/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.20-ftp/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.4.20-plain/net/ipv4/netfilter/ip_conntrack_core.c	Fri Nov 29 00:53:15 2002
++++ linux-2.4.20-ftp/net/ipv4/netfilter/ip_conntrack_core.c	Tue Jan  7 19:43:29 2003
+@@ -966,23 +966,28 @@
+ 		   related_to->expecting >= related_to->helper->max_expected) {
+ 		struct list_head *cur_item;
+ 		/* old == NULL */
+-	    	if (net_ratelimit())
+-		    	printk(KERN_WARNING 
+-		    	       "ip_conntrack: max number of expected "
+-			       "connections %i of %s reached for "
+-			       "%u.%u.%u.%u->%u.%u.%u.%u%s\n",
+-		    	       related_to->helper->max_expected, 
+-		    	       related_to->helper->name,
+-		    	       NIPQUAD(related_to->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip),
+-		    	       NIPQUAD(related_to->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip),
+-		    	       related_to->helper->flags & IP_CT_HELPER_F_REUSE_EXPECT ?
+-		    	       ", reusing" : "");
+ 		if (!(related_to->helper->flags & 
+ 		      IP_CT_HELPER_F_REUSE_EXPECT)) {
+ 			WRITE_UNLOCK(&ip_conntrack_lock);
++ 		    	if (net_ratelimit())
++ 			    	printk(KERN_WARNING
++				       "ip_conntrack: max number of expected "
++				       "connections %i of %s reached for "
++				       "%u.%u.%u.%u->%u.%u.%u.%u\n",
++				       related_to->helper->max_expected,
++				       related_to->helper->name,
++ 		    	       	       NIPQUAD(related_to->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip),
++ 		    	       	       NIPQUAD(related_to->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip));
+ 			return -EPERM;
+ 		}
+-
++		DEBUGP("ip_conntrack: max number of expected "
++		       "connections %i of %s reached for "
++		       "%u.%u.%u.%u->%u.%u.%u.%u, reusing\n",
++ 		       related_to->helper->max_expected,
++		       related_to->helper->name,
++		       NIPQUAD(related_to->tuplehash[IP_CT_DIR_ORIGINAL].tuple.src.ip),
++		       NIPQUAD(related_to->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.ip));
++ 
+ 		/* choose the the oldest expectation to evict */
+ 		list_for_each(cur_item, &related_to->sibling_list) { 
+ 			struct ip_conntrack_expect *cur;

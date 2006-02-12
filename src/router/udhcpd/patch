@@ -1,0 +1,45 @@
+Index: ../udhcpd/dumpleases.c
+===================================================================
+RCS file: /projects/cvsroot/src/router/udhcpd/dumpleases.c,v
+retrieving revision 1.1
+retrieving revision 1.2
+diff -r1.1 -r1.2
+21a22
+> #define WEB 2
+39a41
+> 		{"web", 0, 0, 'w'},
+47c49
+< 		c = getopt_long(argc, argv, "arf:h", options, &option_index);
+---
+> 		c = getopt_long(argc, argv, "arwf:h", options, &option_index);
+52a55
+> 		case 'w': mode = WEB; break;
+61a65
+> 			printf("  -w, --web                       Pretty-print in HTML\n");
+71,72c75,78
+< 	printf("Mac Address       IP-Address      Expires %s\n", mode == REMAINING ? "in" : "at");  
+< 	/*     "00:00:00:00:00:00 255.255.255.255 Wed Jun 30 21:49:08 1993" */
+---
+> 	if (mode != WEB) {
+> 		printf("Mac Address       IP-Address      Expires %s\n", mode == REMAINING ? "in" : "at");  
+> 		/*     "00:00:00:00:00:00 255.255.255.255 Wed Jun 30 21:49:08 1993" */
+> 	}
+74c80,93
+< 
+---
+> 		addr.s_addr = lease.yiaddr;
+> 		if (mode == WEB) {
+> 			printf("<tr bgcolor=cccccc align=middle><td></td>");
+> 			printf("<td>%s</td>", inet_ntoa(addr));
+> 			printf("<td>");
+> 			for (i = 0; i < 6; i++) {
+> 				printf("%02X", lease.chaddr[i]);
+> 				if (i == 5)
+> 					printf("</td></tr>\n");
+> 				else
+> 					printf(":");
+> 			}
+> 			continue;
+> 		}
+79d97
+< 		addr.s_addr = lease.yiaddr;

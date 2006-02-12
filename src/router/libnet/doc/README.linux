@@ -1,0 +1,9 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+    As of version .99, libnet has optional support for PF_PACKET under linux.
+    To enable this support, run configure with `--with-pf_packet=yes`
+
+EOF

@@ -1,0 +1,6 @@
+Author: Harald Welte <laforge@gnumonks.org>
+Status: In Development, REQUIRES ipv6-fixes.patch
+
+This adds CONFIG_IP6_NF_TARGET_REJECT option, which adds a REJECT target
+to ip6tables. Please keep in mind that the icmp-types are different from
+the icmpv6 types (see ip6tables -j REJECT -h for more info)

@@ -1,0 +1,181 @@
+<!DOCTYPE HTML PUBLIC "-//IETF//DTD HTML//EN">
+<html>
+  <head>
+    <title>gHTTP library</title>
+    <style type="text/css">
+      BODY { font-family: helvetica; }
+      .COMMENT { color: green; }
+      .HIGHLIGHT { color: blue; }
+      .CODE { font-family: Courier; color: red; }
+    </style>
+  </head>
+
+  <body>
+    <div align=center><h3>libgHTTP</h3></div>
+
+    <h3>Overview</h3>
+
+    <p>
+      The HTTP protocol is the protocol that is the underlying
+      transport mechanism for the modern world wide web.  The protocol
+      is well documented and widely implemented.  While the use of the
+      protocol is generally associated with the web, its uses can be
+      extended to many other areas where a stateless, transactional
+      protocol may be appropriate.
+    </p>
+    <p>
+      This library is fully compliant with HTTP 1.1 as defined in
+      the draft 5 update of RFC 2068.
+    </p>
+    <p>
+      The gHTTP library is designed to be simple and easy to use while
+      still allowing you to get your feet wet at the protocol layer if
+      you have to.  It is also designed with graphical, non-threaded
+      applications in mind.  You should be able to use the library in
+      your application and never block waiting to send or recieve data
+      to a remote server.  The main thread of execution should always
+      be available to refresh its display.
+    </p>
+
+    <hr>
+    
+    <h3>A simple example</h3>
+
+    <p>
+      Here's a simple example to get you started.  This snippit of
+      code shows how you can go out and get a file off of an HTTP
+      server.  Please note that this code contains no error checking
+      at all.
+    </p>
+    <p>
+      <span class="CODE">
+	<span class="COMMENT">/* This is the http request object */</span><br>
+	ghttp_request *request = NULL;<br>
+	<span class="COMMENT">/* Allocate a new empty request object */</span><br>
+	request = ghttp_request_new();<br>
+	<span class="COMMENT">/* Set the URI for the request object */</span><br>
+	ghttp_set_uri(request, "http://localhost:8080/index.html");<br>
+	<span class="COMMENT">/* Close the connection after you are done. */</span><br>
+	ghttp_set_header(request, http_hdr_Connection, "close");<br>
+	<span class="COMMENT">/* Prepare the connection */</span><br>
+	ghttp_prepare(request);<br>
+	<span class="COMMENT">/* Process the request */</span><br>
+	ghttp_process(request);<br>
+	<span class="COMMENT">/* Write out the body.  Note that the body of the request may
+	  not be null terminated so we have to be careful of the length. */</span><br>
+	fwrite(ghttp_get_body(request), ghttp_get_body_len(request), 1, stdout);<br>
+	<span class="COMMENT">/* Destroy the request.  This closes any file descriptors that
+	  may be open and will free any memory associated with the request. */</span><br>
+	ghttp_request_destroy(request);<br>
+      </span>
+    </p>
+    <p>
+      As you can see, you can get a lot of work done with very few function calls.
+    </p>
+    <hr>
+    <a name="FLOW">
+    <h3>The flow of a HTTP request</h3>
+    <p>
+      HTTP requests, as implemented in gHTTP follow a very simple
+      pattern.  First, you must allocate a new HTTP request object
+      using the call <span class="CODE">ghttp_request_new()</span>.
+      The request object is what you will use to set properties for
+      your request and how you will retrieve the response to your
+      requests.
+    </p>
+    <p>
+      Once you have allocated the request object you will need to set
+      certian properties before actually making the request.
+    </p>
+    <p>
+      At a minimum, you must set the URI that the request is for.  You
+      can do this using the call <span
+      class="CODE">ghttp_set_uri()</span>.  This function takes the
+      request object and the uri that is the target of the request.
+      You can use any http URI as defined by RFC 2396.  gHTTP does not
+      do any other protocols other than HTTP.
+    </p>
+    <p>
+      For example, the following are examples of valid http URI's:
+    </p>
+    <p>
+      <span class="CODE">
+	http://localhost:8080/index.html<br>
+	http://www.foo.com:80/<br>
+	http://www.gnome.org<br>
+      </span>
+    </p>
+    <p>
+      There are a lot of other properties that you can set on a
+      request.  You can set specific headers in the request using
+      <span class="CODE">ghttp_set_header()</span>, you can set the
+      http URI of your proxy host using <span class="CODE">
+      ghttp_set_proxy()</span>, or you can set the body of the HTTP
+      request that you are making using <span
+      class="CODE">ghttp_set_body()</span>.  Other properties that you
+      can set on a transaction are documented below in the section <a
+      href="#PROPERTIES">Request Properties</a>.
+    </p>
+    <p>
+      Once you have set all of the properties on your request, you
+      must call <span class="CODE">ghttp_prepare()</span> on the
+      request.  This will do a hostname lookup on the host that the
+      resource is for and make some other internal preperations.
+    </p>
+    <p>
+      Now, you are ready to make the request.  Do complete the
+      request, simply call <span class="CODE">ghttp_process()</span>.
+      This will connect to the remote server and try to complete your
+      transaction.  If you have set the library to use asynchronous
+      operation ( see <a href="#PROPERTIES">Request Properties</a>
+      below ) you may need to call this more than once until the
+      transaction is complete.
+    </p>
+    <p>
+      Now that you have completed this transaction you can do several
+      things.  If you want to access another resource that is on the
+      same server you can change the URI and use the same request
+      object again.  For example if you have just completed a
+      transaction getting the URI <span
+      class="CODE">http://localhost/index.html</span> and now you want
+      to get <span class="CODE">http://localhost/image.gif</span> you
+      should call <span class="CODE">ghttp_set_uri()</span> to set the
+      request object to the new URI, call <span
+      class="CODE">ghttp_prepare()</span> to propagate any changes,
+      <span class="CODE">ghttp_clean()</span> to clean out any old
+      buffers, and then call <span class="CODE">ghttp_process()</span>
+      to run your request.  This has the advantage of using an open
+      connection if it is available and DNS information if it has
+      already been looked up.
+    </p>
+    <p>
+      Once you have completed a request you can use several functions
+      to get the data from the response.  You can examine a specific
+      header in the response using <span
+      class="CODE">ghttp_get_header()</span>.  You can get a handle to
+      the body of the data using <span
+      class="CODE">ghttp_get_body()</span> and the associated length
+      of the body using <span
+      class="CODE">ghttp_get_body_len()</span>.  Remember that the
+      data in the body of a response is not null-terminated as it can
+      be data of any type.
+    </p>
+    <p>
+      Additionally, you can get the actual code that was given in the
+      response using <span class="CODE">ghttp_status_code()</span> and
+      <span class="CODE">ghttp_reason_phrase()</span>.
+    </p>
+    <hr>
+    <a name="PROPERTIES">
+      <h3>Request Properties</h3>
+    <p>
+      
+    </p>
+    <hr>
+    <address><a href="mailto:blizzard@appliedtheory.com">Christopher Blizzard</a></address>
+<!-- Created: Mon Nov  9 00:45:57 CET 1998 -->
+<!-- hhmts start -->
+Last modified: Sat Nov 14 04:07:56 XXX 1998
+<!-- hhmts end -->
+  </body>
+</html>

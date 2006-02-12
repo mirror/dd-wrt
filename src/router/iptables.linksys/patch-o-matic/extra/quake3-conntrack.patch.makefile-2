@@ -1,0 +1,2 @@
+obj-$(CONFIG_IP_NF_NAT_IRC) += ip_nat_irc.o
+obj-$(CONFIG_IP_NF_NAT_QUAKE3) += ip_nat_quake3.o

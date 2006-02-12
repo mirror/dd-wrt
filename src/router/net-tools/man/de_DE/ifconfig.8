@@ -1,0 +1,206 @@
+.TH IFCONFIG 8 "6. M\(:arz 1999" "net-tools" "Handbuch f\(:ur Linuxprogrammierer"
+.SH NAME
+ifconfig \- Konfiguration einer Netzwerkskarte
+.SH SYNOPSIS
+.B "ifconfig [Schnittstelle]"
+.br
+.B "ifconfig Schnittstelle [AF-Typ] Optionen | Adresse ..."
+.SH BESCHREIBUNG
+.B Ifconfig
+wird benutzt um kernel-residente Netzwerksschnittstellen zu konfigurieren.
+Es wird zur Systemstartzeit verwendet, um die Schnittstellen nach Notwendigkeit
+zu initialisieren.  Danach wird es \(:ublicherweise nur zur Fehlersuche oder
+zur Verfeinerung der Systemkonfiguration verwendet.
+.LP
+Wenn keine Argumente angegeben werden, dann zeigt
+.B ifconfig
+den Zustand der Augenblicklich aktiven Netzwerksschnittstellen.
+Wird ein einzelne
+.BR Schnittstelle nargument
+angegeben, so zeigt es nur den Zustand der angegebenen Netzwerksschnittstelle
+an.  Wird ein einzelne
+.B -a
+Option angegeben, zeigt es den Zustand aller Schnittstellen an, selbst wenn
+diese inaktiviert sind.  Ansonsten konfiguriert
+.B ifconfig
+eine Schnittstelle.
+
+.SH Adressfamilien
+Wird das erste Argument hinter dem Schnittstellennamen als der Name einer
+unterst\(:utzten Adressfamilie erkannt, so wird diese Adressfamilie dazu
+benutzt um alle Protokolladressen zu dekodieren und darzustellen.  Zur
+Zeit werden u.A. folgende Adressfamilien unterst\(:utzt.
+.B inet
+(TCP/IP, standard), 
+.B inet6
+(IPv6),
+.B ax25
+(AMPR Packet Radio),
+.B ddp
+(Appletalk Phase 2),
+.B ipx
+(Novell IPX) and
+.B netrom
+(AMPR Packet radio).
+.SH OPTIONEN
+.TP
+.B Schnittstelle
+Der Name einer Netzwerksschnittstelle.  Dies ist \(:ublicherweise ein Treiber
+gefolgt von einer laufenden Nummer, z.B. eth0 f\(:ur die erste
+Ethernetschnittstelle
+.TP
+.B up
+Diese Flagge aktiviert die Schnittstelle.  Sie wird implizit gesetzt, wenn
+eine Adresse einer Schnittstelle zugewiesen wird.
+.TP
+.B down
+Durch diese Flagge wird der Treiber f\(:ur die Schnittstelle deaktiviert.
+.TP
+.B "[\-]arp"
+Schaltet das ARP-Protokoll auf dieser Schnittstelle ein oder aus.
+.TP
+.B "[\-]promisc"
+Ein-/Ausschalten des
+.B promiscuous
+Modus der Schnittstelle.  Ist er eingeschaltet, so werden alle Pakete vom
+Netzwerk empfangen unabh\(:angig davon ob sie an die Schnittstelle adressiert
+sind.
+.TP
+.B "[\-]allmulti"
+Ein-/Ausschalten des
+.B all-multicast
+Modus.  Ist er eingeschaltet, so werden alle Multicastpakete vom Netzwerk
+empfangen unabh\(:angig davon, ob sie an die Schnittstelle adressiert sind
+oder nicht.
+.TP
+.B "metric N"
+Dieses Argument setzt den Metrik-Wert f\(:ur die Schnittstelle auf N.
+.TP
+.B "mtu N"
+Dieses Argument setzt die Maximum Transfer Unit (MTU) der Schnittstelle,
+das ist das gr\(:o\(sste Paket, dass gesendet werden kann.
+.TP
+.B "dstaddr addr"
+Setzt die IP-Adresse der Gegenseite f\(:ur Punkt-zu-Punkt-Verbinungen wie z.B.
+PPP.  Dieses Schl\(:usselwort ist \(:uberholt; statt dessen sollte das
+.B pointopoint
+Schl\(:usselwort verwendet werden.
+.TP
+.B "netmask Adr"
+Setzt die IP Netzwerksmaske f\(:ur diese Schnittstelle.  Die Voreinstellung
+ist abh\(:angig von der IP-Adresse der Schnittstelle die Maske f\(:ur ein
+Klasse A, B oder C Netzwerk, kann aber auf jeden beliebigen Wert gesetzt
+werden.
+.TP
+.B "add Adr/Prefixl\(:ange"
+F\(:ugt der Schnittstelle eine IPv6-Adresse zu.
+.TP
+.B "del addr/prefixlen"
+Entfernt eine IPv6-Adresse von der Schnittstelle.
+.TP
+.B "tunnel aa.bb.cc.dd"
+Erzeugt ein neues SIT (IPv6-in-IPv4) Ger\(:at, das Pakete zum angegebenen
+Ziel tunnelt.
+.TP
+.B "irq addr"
+Setzt die Interruptleitung, die von diesem Ger\(:at benutzt wird.  Nicht alle
+Ger\(:ate koennen ihre Interruptkonfiguration dynamisch \(:andern.
+.TP
+.B "io_addr Adr"
+Setzt die I/O-Basisadresse f\(:ur dieses Ger\(:at.
+.TP
+.B "mem_start Adr"
+Setzt die Startadresse f\(:ur shared memory der von diesem Ger\(:at benutzt
+wird.  Dies wird nur von wenigen Ger\(:aten ben\(:otigt.
+.TP
+.B "media Typ"
+Setzt den physikalischen Anschluss oder den Mediumstyp, der vom Ger\(:at
+verwendet wird.  Nicht alle Ger\(:ate k\(:onnen diese Einstellung \(:andern,
+und bei denjenigen, bei denen dies m\(:oglich ist, variieren die
+unterst\(:utzten Werte.  Typische Werte f\(:ur
+.B Typ
+sind
+.B 10base2
+(thin Ethernet),
+.B 10baseT
+(twisted-pair 10Mbps Ethernet),
+.B AUI 
+(Externer Transceiver) und so weiter.  Der spezielle Mediumstyp
+.B auto
+kann benutzt werden, damit der Treiber automatischen den Typ des Mediums
+erkennt.  Wiederum unterst\(:utzen dies nicht alle Treiber.
+.TP
+.B "[-]broadcast [Adr]"
+Wird das Adressargument gegeben, so wird die Protokolladresse f\(:ur Broadcast
+f\(:ur diese Schnittstelle gesetzt.  Ansonsten wird die
+.B IFF_BROADCAST
+Flagge f\(:ur diese Schnittstelle gesetzt bzw. gel\(:oscht.
+.TP
+.B "[-]pointopoint [Adr]"
+Dieses Schl\(:usselwort aktiviert den
+.B Punkt-zu-Punkt
+Modus einer Schnittstelle.  Das bedeutet, da\(ss eine Verbindung zwischen zwei
+Maschine direkt ist ohne da\(ss weitere Maschinen mith\(:oren.
+.br
+Wird auch ein Adressargument gegeben, so wird die Protokolladrsse auf der
+Gegenseite der Verbindung gesetzt, genau wie beim jetzt \(:uberholten
+.B dstaddr
+Schl\(:usselwort.  Ansonsten wird die
+.B IFF_POINTOPOINT
+Flagge f\(:ur die Schnittstelle gesetzt bzw. gel\(:oscht.
+.TP
+.B hw Klasse Adresse
+Setzt die Hardwareadresse dieser Schnittstelle, wenn der Ger\(:atetreiber
+diese Operation unterst\(:utzt.  Das Schl\(:usselwort mu\(ss vom Namen der
+Hardwareklasse und der ASCII-Darstellung der Hardwareadresse gefolgt werden.
+Zur Zeit werden unter anderem folgende Hardwareklassen unterst\(:utzt:
+.B ether
+(Ethernet),
+.B ax25
+(AMPR AX.25),
+.B ARCnet
+and
+.B netrom
+(AMPR NET/ROM).
+.TP
+.B multicast
+Setzt die Multicastflagge der Schnittstelle.  Dies sollte im Normalfall nicht
+ben\(:otigt werden, da die Treiber die Flagge selbst setzen.
+.TP
+.B Adresse
+Die IP-Adresse, die der Schnittstelle zugewiesen wird.
+.TP
+.B txqueuelen L\(:ange
+Setzt die L\(:ange der Sendewarteschlange des Ger\(:ats.  Es kann n\(:utzlich
+sein, diesen Wert auf eine kleinen Wert f\(:ur langsame Ger\(:ate mit hoher
+Paketlaufzeit (Modems, ISDN) zu setzen um zu verhindern, da\(ss schnelle
+Gro\(ss\(:ubertragungen interaktiven Verkehr wie Telnet zu sehr st\(:oren.
+.SH BEMERKUNGEN
+Seit Kernel Version 2.2 gibt es keine expliziten Statistiken f\(:ur
+Schnittstellenaliase mehr.  Die Statistiken f\(:ur die Originaladresse werden
+mit allen Aliasen auf das gleiche Ger\(:at geteilt.  Um Statistiken per
+Adresse zu erhalten sollte explizite EIntr\(:age f\(:ur die Adresse mit dem
+.BR ipchains(8)
+Kommando gemacht werden.
+
+.SH DATEIEN
+.I /proc/net/socket 
+.br
+.I /proc/net/dev
+.br
+.I /proc/net/if_inet6
+.SH FEHLER
+W\(:ahrend AppleTalk DDP und IPX Adressen angezeigt werden, k\(:onnen sie mit
+diesem Kommando nicht ge\(:andert werden.
+.SH SIEHE AUCH
+route(8), netstat(8), arp(8), rarp(8), ipchains(8)
+.SH AUTOREN
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Alan Cox, <Alan.Cox@linux.org>
+.br
+Phil Blundell, <Philip.Blundell@pobox.com>
+.br
+Andi Kleen, 
+.SH \(:Ubersetzung
+Ralf B\(:achle <ralf@gnu.org>

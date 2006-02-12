@@ -1,0 +1,327 @@
+.TH ROUTE 8 "27 Jan 1996" "net-tools" "Manual do Programador Linux"
+.SH NOME
+route \- mostra / manipula a tabela de roteamento IP
+.SH SINOPSE
+.B route
+.RB [ \-vnee ]
+.TP
+.B route 
+.RB [ \-v ] 
+.B add 
+.RB [ \-net | \-host ] 
+Alvo 
+.RB [ netmask 
+Nm] 
+.RB [ gw 
+Gw] 
+.RB [ metric 
+N] 
+.RB [ mss 
+M] 
+.RB [ window 
+W] 
+.RB [ irtt 
+I]
+.RB [ reject ]
+.RB [ mod ]
+.RB [ dyn ] 
+.RB [ reinstate ] 
+.RB [[ dev ] 
+If]
+.TP
+.B route 
+.RB [ \-v ] 
+.B del 
+.RB [ \-net | \-host ] 
+Alvo 
+.RB [ gw 
+Gw] 
+.RB [ netmask 
+Nm] 
+.RB [ metric 
+N] 
+.RB [[ dev ]
+If]
+.TP
+.B route 
+.RB [ \-V ] 
+.RB [ \-\-version ]
+.RB [ \-h ]
+.RB [ \--help ]
+.SH DESCRICAO
+.B Route
+manipula a tabela de roteamento IP do kernel. Seu principal uso é
+configurar rotas estáticas para hosts ou redes especificadas através de
+uma interface, após a mesma ter sido configurada com o programa 
+.BR ifconfig (8)
+.
+
+.SH OPÇÕES
+.TP
+.B \-v
+flag para detalhamento (não usada).
+
+.TP
+.B \-n
+mostra endereços numéricos, sem tentar resolver o nomes simbólicos das
+máquinas. Útil se você esta tentando determinar por que a rota para o seu
+servidor de nomes sumiu.
+
+.TP
+.B \-e
+use o formato 
+.BR netstat (8)
+na apresentação da tabela de roteamento.
+.B \-ee 
+produzira uma linha bem grande com todos os parâmetros da tabela de roteamento.
+
+.TP
+.B \-net
+o
+.B Alvo
+é o endereço de uma rede (encontrado no arquivo
+.I /etc/networks
+pela função 
+.BR getnetbyname (2) 
+).
+
+.TP
+.B -host
+é o endereço de uma máquina (descoberto com a função 
+.BR gethostbyname (2)
+).
+
+.TP 
+.B (nenhum) 
+displays the kernel routing table. The layout can be changed with
+mostra a tabela de roteamento do kernel. O layout pode ser alterado com
+.B \-e
+e
+.B \-ee
+.
+
+.TP
+.B del
+remove uma rota.
+
+.TP 
+.B add 
+adiciona uma rota.
+
+.TP
+.B Alvo
+A máquina ou rede destino. Você pode fornecer endereços IP em formato
+decimal separado por pontos ou nomes de máquinas/redes.
+
+.TP
+.B netmask Nm
+modificador para especificar a mascara de rede da rota a ser adicionada.
+Somente faz sentido para uma rota para uma rede e quanto o endereço
+.B Alvo
+é valido com relação a mascara especificada. Se nenhuma mascara de rede
+for especificada, o comando
+.B route
+descobre-a, desta forma, para a maioria das configurações normais você não
+precisa especificar uma mascara de rede.
+
+.TP
+.B gw Gw
+Quaisquer pacotes IP para a rede/máquina destino serão roteadas através
+do gateway/roteador especificado.
+.B NOTA:
+O gateway especificado deve ser alcançável antes deste comando. Isto
+normalmente significa que você terá que configurar uma rota estática para
+o gateway antes de emitir este comando. Se você especificar o endereço
+de uma de suas interfaces locais, isto será usado para decidir sobre
+qual interface deve ser usada para rotear os pacotes. Isto esta disponível
+para manter compatibilidade com os sistemas baseados em BSD.
+
+.TP
+.B metric M
+Configura o campo de métrica na tabela de roteamento, usado em daemons
+para roteamento dinâmico.
+
+.TP 
+.B mss M
+Especifica o Tamanho Máximo do Segmento TCP em Bytes (MSS) para conexões
+TCP através desta rota. Isto é normalmente usado somente para otimização
+fina de configurações de roteamento. 
+
+.TP 
+.B window W 
+Especifica o tamanho da janela TCP para conexões TCP através desta rota.
+Tipicamente somente usado para redes AX.25 e em drivers incapazes de
+de tratar frames back to back.
+
+.TP
+.B irtt I
+Especifica o tempo de ida e volta inicial (irtt) para conexões TCP através
+desta rota. Tipicamente usado somente em redes AX.25. O numero é especificado
+em milisegundos (1-12000). Se omitido o default da RFC 1122 de 300ms é usado.
+
+.TP
+.B reject
+Instala uma rota de bloqueio, que forçará falha na procura por esta rota.
+Exemplo de utilização: bloquear rotas antes do uso da rota default.
+Isto não é firewalling.
+
+.TP
+.B mod, dyn, reinstate
+Instala uma rota modificada ou dinâmica. Ambas as flags são geralmente somente
+configuradas por um daemon de roteamento. Somente para propósitos de diagnostico.
+
+.TP
+.B dev If
+Força a associação da rota com o dispositivo especificado, pois o kernel
+de outra forma tentara determinar o dispositivo por conta própria
+(através da checagem de rotas e especificações de dispositivos já existentes
+e onde a rota esta adicionada).
+
+If 
+.B dev If
+é a última opção na linha de comando, a palavra
+.B dev
+pode ser omitida, pois é o default. De outra forma a ordem dos outros
+modificadores do route (metric - netmask - gw - dev) não importa.
+
+.SH EXEMPLOS
+.TP
+.B route add -net 127.0.0.0
+Adiciona a entrada para a interface loopback normal, usando mascara igual
+a 255.0.0.0 (rede classe A, determinada a partir do endereço de destino),
+associada ao dispositivo "lo" (assumindo que este dispositivo tenha sido
+previamente configurado com o
+.BR ifconfig (8)). 
+
+.TP 
+.B route add -net 192.56.76.0 netmask 255.255.255.0 dev eth0
+Adiciona uma rota para a rede 192.56.76.x através da interface "eth0". O 
+modificador de mascara classe C não é realmente necessário aqui por que
+192.* é um endereço IP de classe C. A palavra "dev" pode ser omitida aqui.
+
+.TP
+.B route add default gw mango-gw
+Adiciona uma rota default (que será usada se nenhuma outra rota for encontrada).
+Todos os pacotes que usarem esta rota serão passados para a máquina "mango-gw".
+O dispositivo que será utilizado para esta rota depende de como é possível
+alcançar "mango-gw" - a rota estática para "mango-gw" terá que ser configurada
+previamente.
+
+.TP
+.B route add ipx4 sl0
+Adiciona uma rota para a máquina "ipx4" através da interface SLIP (assumindo
+que "ipx4" é a máquina SLIP).
+
+.TP
+.B route add -net 192.57.66.0 netmask 255.255.255.0 gw ipx4
+Este comando adiciona a rede "192.57.66.x" para ser alcançada através da
+rota anterior através da interface SLIP.
+
+.TP
+.B route add -net 224.0.0.0 netmask 240.0.0.0 dev eth0
+Isto é bem obscura, documentada para que as pessoas saibam como usá-la. 
+Configura para que todas as rotas IP classe D (multicast) vão através da
+interface "eth0". Esta é a linha de configuração normal a ser usada com
+um kernel multicast.
+
+.TP
+.B route add 10.0.0.0 netmask 255.0.0.0 reject
+Esta instala uma rota de rejeição para a rede privada "10.x.x.x"
+
+.LP
+.SH SAÍDA
+A saída da tabela de roteamento do kernel é organizada nas seguintes colunas
+.TP
+.B Destino     
+A rede ou máquina de destino.
+.TP
+.B Roteador
+A máquina roteador ou '*' se nenhuma estiver configurada.
+.TP
+.B Mascara Genérica
+A mascara para a rede destino. '255.255.255.255' para uma máquina de destino,
+'0.0.0.0' para a rota
+.B default
+.
+.TP
+.B Flags 
+Os flags possíveis são
+.br
+.B U
+(rota esta
+.BR Up )
+.br
+.B H
+(alvo é uma
+.BR máquina )
+.br
+.B G
+(use
+.BR roteador )
+.br
+.B R
+.RB ( reinstate
+rota para roteamento dinâmico)
+.br
+.B D
+Instalada
+.RB ( Dinamicamente
+por um daemon ou por redirecionamento)
+.br
+.B M
+.RB ( Modificada
+por daemon de roteamento ou redirecionamento)
+.br
+.B !
+Rota
+.RB ( rejeitada
+)
+.TP
+.B Metric 
+A 'distância' até o alvo (geralmente contada em hops). Não é utilizada pelos
+kernels recentes, somente daemons de roteamento podem usa-la.
+.TP
+.B Ref    
+Numero de referências a esta rota. Não usado no kernel do Linux, sempre 0.
+.TP
+.B Uso
+Contagem de procuras por esta rota. Nos kernels recentes estes números são
+bem baixos, pois os sockets tem seu próprio cache e não precisam procurar
+por rotas.
+.TP
+.B Iface
+Interface através da qual os pacotes IP serão enviados.
+.TP
+.B MSS 
+Tamanho máximo de segmento default para conexões TCP através desta rota.
+.TP
+.B Window  
+Tamanho de janela default para conexões TCP através desta rota.
+.TP
+.B irtt
+RTT (Tempo de Ida e Volta) Inicial. O kernel usa isto para inferir os melhores
+parâmetros do protocolo TCP sem esperar por respostas (possivelmente lentas).
+.LP
+.SH ARQUIVOS
+.I /proc/net/route
+.br
+.I /etc/networks
+.br
+.I /etc/hosts
+.br
+.I /etc/init.d/network
+.LP
+.SH VEJA TAMBÉM
+.I ifconfig(8), netstat(8), arp(8)
+.LP
+.SH HISTÓRICO
+.B Route
+para o linux foi originalmente escrito por Fred N. van Kempen,
+<waltje@uwalt.nl.mugnet.org> e depois modificado por Johannes Stille e
+Linus Torvalds para a versão pl15. Alan Cox adicionou as opções para
+mss e window no kernel 1.1.22. O suporte a irtt (compartilhado com o
+netstat) foi feito por Bernd Eckenfels.
+.SH TRADUÇÃO
+Arnaldo Carvalho de Melo <acme@conectiva.com.br> - 13/04/1998
+.SH BUGS
+nenhum :)

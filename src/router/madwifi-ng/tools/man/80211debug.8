@@ -1,0 +1,103 @@
+.TH "80211DEBUG" "8" "October 2005" "" ""
+.SH "NAME"
+\fB80211debug\fp \- toggle debug flags of the madwifi net80211 stack
+.SH "DESCRIPTION"
+Set and clear debug flags for the madwifi net80211 stack. Each argument is a 
+flag name prefixed by either "-" to clear or "+" to set the flag.
+.PP
+.SH "OPTIONS"
+.TP
+.B \-?
+Display usage and list all debug flags.
+.TP
+.B \-i <interface>
+The madwifi interface to apply the settings to. If no interface is specified, 
+it will default to ath0.
+.TP
+.B \-/+ <flag>
+Set (+) or clear (-) a debug flag.
+.PP
+.SH "FLAGS"
+.TP
+.B debug
+IFF_DEBUG equivalent
+.TP
+.B dumpkits
+IFF_LINK2 equivalant
+.TP
+.B crypto
+crypto work
+.TP
+.B input
+input handling
+.TP
+.B xrate
+rate set handling
+.TP
+.B elemid
+element id parsing
+.TP
+.B node
+node handling
+.TP
+.B assoc
+association handling
+.TP
+.B auth
+authentication handling
+.TP
+.B scan
+scanning
+.TP
+.B output
+output handling
+.TP
+.B state
+state machine
+.TP
+.B power
+power save handling
+.TP
+.B dot1x
+802.1x authenticator
+.TP
+.B dot1xsm
+802.1x state machine
+.TP
+.B radius
+802.1x radius client
+.TP
+.B raddump
+dump 802.1x radius packets
+.TP
+.B radkeys
+dump 802.1x keys
+.TP
+.B wpa
+WPA/RSN protocol
+.TP
+.B ac1
+ACL handling
+.TP
+.B wme
+WME protocol
+.TP
+.B mlme
+MLME handling
+.PP
+.SH "EXAMPLES"
+.TP
+.B 80211debug \-i ath1 +radkeys
+Set radkeys debug flag on for the madwifi interface ath1.
+.TP
+.B 80211debug +state
+Set state debug flag on for the default madwifi interface ath0.
+.TP
+.B 80211debug \-state
+Clear state debug flag for the default madwifi interface ath0.
+.PP
+.SH "SEE ALSO"
+\fBathdebug\fP(8)
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au> and was based
+upon previous text written by Eric S. Raymond.

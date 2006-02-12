@@ -1,0 +1,28 @@
+Microsoft Visual Studio Solution File, Format Version 7.00
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "httpsClient", "httpsClient.vcproj", "{FEB5FEAA-EF6D-42E6-847B-AB015B9A2E68}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "matrixSsl", "..\src\matrixSsl.vcproj", "{8DBF200C-313A-485B-97D8-892158882E16}"
+EndProject
+Global
+	GlobalSection(SolutionConfiguration) = preSolution
+		ConfigName.0 = Debug
+		ConfigName.1 = Release
+	EndGlobalSection
+	GlobalSection(ProjectDependencies) = postSolution
+		{FEB5FEAA-EF6D-42E6-847B-AB015B9A2E68}.0 = {8DBF200C-313A-485B-97D8-892158882E16}
+	EndGlobalSection
+	GlobalSection(ProjectConfiguration) = postSolution
+		{FEB5FEAA-EF6D-42E6-847B-AB015B9A2E68}.Debug.ActiveCfg = Debug|Win32
+		{FEB5FEAA-EF6D-42E6-847B-AB015B9A2E68}.Debug.Build.0 = Debug|Win32
+		{FEB5FEAA-EF6D-42E6-847B-AB015B9A2E68}.Release.ActiveCfg = Release|Win32
+		{FEB5FEAA-EF6D-42E6-847B-AB015B9A2E68}.Release.Build.0 = Release|Win32
+		{8DBF200C-313A-485B-97D8-892158882E16}.Debug.ActiveCfg = Debug|Win32
+		{8DBF200C-313A-485B-97D8-892158882E16}.Debug.Build.0 = Debug|Win32
+		{8DBF200C-313A-485B-97D8-892158882E16}.Release.ActiveCfg = Release|Win32
+		{8DBF200C-313A-485B-97D8-892158882E16}.Release.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+	EndGlobalSection
+	GlobalSection(ExtensibilityAddIns) = postSolution
+	EndGlobalSection
+EndGlobal

@@ -1,0 +1,229 @@
+.\"
+.\" Original by ??
+.\"
+.\" German translation by Ralf Baechle (ralf@gnu.org)
+.\"
+.TH HOSTNAME 1 "6. M\(:arz 1999" "net-tools" "Handbuch f\(:ur Linuxprogrammierer"
+
+.SH NAME
+hostname \- den Rechnernamen anzeigen oder setzen.
+.br
+domainname \- den NIS/YP Domainnamen anzeigen oder setzen
+.br
+dnsdomainname \- den DNS Domainnamen des Systems anzeigen
+.br
+nisdomainname \- den NIS/YP Domainnamen anzeigen oder setzen
+.br
+ypdomainname \- den NIS/YP Domainnamen anzeigen oder setzen
+.br
+nodename \- den DECnet-Knotennamen anzeigen oder setzen
+
+.SH SYNOPSIS
+.B hostname
+.RB [ \-v ]
+.RB [ \-a ]
+.RB [ \-\-alias ]
+.RB [ \-d ]
+.RB [ \-\-domain ]
+.RB [ \-f ]
+.RB [ \-\-fqdn ]
+.RB [ \-i ]
+.RB [ \-\-ip-address ]
+.RB [ \-\-long ]
+.RB [ \-s ]
+.RB [ \-\-short ]
+.RB [ \-y ]
+.RB [ \-\-yp ]
+.RB [ \-\-nis ]
+.RB [ \-n ]
+.RB [ \-\-node ]
+
+.PP
+.B hostname 
+.RB [ \-v ]
+.RB [ \-F\ Dateiname ]
+.RB [ \-\-file\ Dateiname ]
+.RB [ Rechnername ]
+
+.PP
+.B domainname
+.RB [ \-v ]
+.RB [ \-F\ Dateiname ]
+.RB [ \-\-file\ Dateiname ]
+.RB [ Name ]
+
+.PP 
+.B nodename
+.RB [ \-v ]
+.RB [ \-F\ Dateiname ]
+.RB [ \-\-file\ Dateiname ]
+.RB [ Name ]
+
+.PP
+.B hostname
+.RB [ \-v ]
+.RB [ \-h ]
+.RB [ \-\-help ]
+.RB [ \-V ]
+.RB [ \-\-version ]
+
+.PP
+.B dnsdomainname
+.RB [ \-v ]
+.br
+.B nisdomainname
+.RB [ \-v ]
+.br
+.B ypdomainname
+.RB [ \-v ]
+
+.SH BESCHREIBUNG
+.B Hostname
+ist das Programm, das zum Anzeigen oder setzen des aktuellen Host-, Domain-,
+oder Knotennamens des Systems verwendet wird.  Diese Namen werden von vielen
+der Netzwerksprogrammen zur Identifikation der Maschine verwendet.
+Au\(sserdem wird der Domainname von NIS/YP verwendet.
+
+.SS "NAMEN AUSLESEN"
+Wenn ohne Argumente augerufen, zeigen die Programme den aktuellen Namen an:
+
+.LP
+.B hostname
+zeigt den aktuellen Rechnernamen des Systems, wie von der 
+.BR gethostname (2)
+Funktion ermittelt wird, an.
+
+.LP
+.B "domainname, nisdomainname, ypdomainname"
+zeigen den Namen des Systems, wie er von der
+.BR getdomainname (2)
+Funktion ermittelt wird, an.  Dieser Name wird auch der YP/NIS Domainname
+des Systems genannt.
+
+.LP
+.B nodename
+druckt den DECnet-Knotennamen des Systems, wie er von der
+.BR getnodename (2)
+Function ermittelt wird, aus.
+
+.LP
+.B dnsdomainname
+druckt den Domainteil des FQDN (Fully Qualified Domain Name oder zu deutsch
+vollst\(:andig spezifizierter Domainname) aus.  Der vollst\(:andige FQDN
+des Systems wird von
+.B "hostname \-\-fqdn"
+ausgegeben.
+
+.SS "NAME SETZEN"
+Wenn mit nur einem Argument oder mit der
+.B \-\-file
+Option aufgerufen, dann setzen diese Kommandos den Rechnernamen, den NIS/YP
+Domainnamen oder den DECnet-Knotennamen.
+
+.LP
+Nur der Superuser darf den Namen \(:andern.
+
+.LP
+Es ist nicht m\(:ogich den FQDN oder den DNS Domainnamen mit dem
+.B dnsdomainname 
+Befehl (Siehe 
+.B "Der FQDN"
+unten) zu setzen.
+
+.LP
+Der Rechnername wird \(:ublicherweise einmal beim Systemstart in
+.I /etc/rc.d/rc.inet1
+or
+.I /etc/init.d/boot
+gesetzt.  Der Rechnername wird dabei \(:ublicherweise aus einer Datei
+die den Rechnernamen, z.B.
+.I /etc/HOSTNAME
+gesetzt.
+
+.SS DER FQDN
+Der FQDN (wie er von
+.B "hostname \-\-fqdn"
+ausgegeben wird) 
+oder der DNS-Domainname (wie er von
+.B "dnsdomainname"
+ausgegeben wird) 
+kann nicht mit diesem Befehl ge\(:andert werden.  Der FQDN eines Systems ist
+der Name, den der
+.BR resolver (3)
+als den Namen des Systems zur\(:uckgibt.
+
+.LP
+Technisch: Der FQDN ist der Name, den
+.BR gethostbyname (2)
+f\(:ur den Rechnernamen zur\(:uckgibt, den
+.B gethostname (2)
+zur\(:uckgibt.
+Der DNS-Domainname ist der Teil nach dem ersten Punkt.
+.LP
+Deshalb h\(:angt es \(:ublicherweise von der Konfiguration in
+.IR /etc/host.conf )
+wie der Name ge\(:andert werden kann.  \(:Ublicherweise (wenn die Hosts Datei
+gelesen wird, bevor auf DNS oder NIS/YP zugegriffen wird) kann er in
+.I /etc/hosts
+ge\(:andert werden.
+
+
+.SH OPTIONEN
+.TP
+.I "\-a, \-\-alias"
+Den Aliasnamen des Rechners ausgeben, falls benutzt.
+.TP
+.I "\-d, \-\-domain"
+Den Namen der DNS-Domain ausgeben.  Der Befehl
+.B domainname
+kann nicht dazu verwendet werden um den Namen der DNS-Dom\(:ane auszugeben,
+da er den NIS Domainname und nicht den DNS Domainnamen ausgibt.  Zu diesem
+Zweck dient der Befehl
+.BR dnsdomainname .
+.TP
+.I "\-F, \-\-file filename"
+Den Rechnernamen aus der angegebenen Datei lesen.   Zeilen, die mit einem
+#-Zeichen anfangen sind Kommentare und werden ignoriert.
+.TP
+.I "\-f, \-\-fqdn, \-\-long"
+Den FQDN (Fully Qualified Domain Name) anzeigen.  Ein FQDN besteht aus einem
+kurzen Rechnernamen ohne Punkt und dem DNS-Domainnamen.  Au\(sser wenn BIND
+oder NIS zum Aufl\(:osen von Rechnernamen verwendet wird, kann der FQDN und
+der DNS-Domainname, der Teil des FQDN ist, in der Datei \fI/etc/hosts\fR
+ge\(:andert werden.
+.TP
+.I "\-h, \-\-help"
+Kurzanleitung ausdrucken und beenden.
+.TP
+.I "\-i, \-\-ip-address"
+Die IP-Adresse(n) des Rechners anzeigen und beenden.
+.TP
+.I "\-n, \-\-node"
+Den DECnet-Knotennamen anzeigen.  Wenn ein Argument oder die
+.B \-\-file name
+Option angegeben wird, dann kann Root auch einen neuen Knotennamen setzen.
+.TP
+.I "\-s, \-\-short"
+Den Kurznamen anzeigen.  Dies ist der ab dem ersten Punkt abgeschnittene
+Rechnername.
+.TP
+.I "\-V, \-\-version"
+Versionsinformation auf der Standardausgabe ausgeben und erfolgreich beenden.
+.TP
+.I "\-v, \-\-verbose"
+Ausf\(:uhrlichere Ausgaben.
+.TP
+.I "\-y, \-\-yp, \-\-nis"
+Den NIS-Domainnamen anzeigen.  Wenn ein Argument oder die 
+.B \-\-file name
+Option gegeben wird, dann kann Root auch eine neue NIS-Domain setzen.
+.SH DATEIEN
+.B /etc/hosts
+.SH AUTOREN
+Peter Tobias, <tobias@et-inf.fho-emden.de>
+.br
+Bernd Eckenfels, <net-tools@lina.inka.de> (NIS and manpage).
+.br
+Steve Whitehouse, <SteveW@ACM.org> (DECnet support and manpage).
+.SH \(:Ubersetzung
+Ralf B\(:achle <ralf@gnu.org>

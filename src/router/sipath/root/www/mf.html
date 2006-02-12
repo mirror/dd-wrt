@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<html>
+  <head>
+    <title>SIP at Home - Web Interface</title>
+    
+    <meta content="text/html; charset=iso-8559-1" http-equiv="Content-Type" />
+
+    <link href="mf.css" rel="StyleSheet" type="text/css" />
+
+    <script language="JavaScript" type="text/javascript"><!--
+function navarr(){}
+navset=new navarr();
+navres=new navarr();
+
+function set(idx){
+  if(!!navset[idx]){
+    document.images[idx].src=navset[idx].src;
+  }
+}
+
+function res(idx){
+  if(!!navres[idx]){
+    document.images[idx].src=navres[idx];
+  }
+}
+
+function ini() {
+  if (!!document.images){
+    for(var idx=0; idx<document.images.length; idx++){
+      var src=document.images[idx].src;
+      var pos=src.indexOf('_white.gif');
+      if (0<pos) {
+        navres[idx]=src;
+        src=src.substring(0, src.indexOf('_white.gif'))+'_red.gif';
+        navset[idx]=new Image(document.images[idx].width, document.images[idx].height);
+        navset[idx].src=src;
+        document.images[idx].onmouseover=new Function("if(!!window.set)set("+idx+");");
+        document.images[idx].onmouseout=new Function("if(!!window.res)res("+idx+");");
+      }
+      else if (!document.images[idx].mozbug && !!src.search &&
+        0<=src.search(new RegExp('progress[0-9]+\\.gif$')))
+      {
+        document.images[idx].mozbug=1;
+        document.images[idx].src='';
+        document.images[idx].src=src;
+      }
+    }
+  }
+}
+//--></script>
+  </head>
+
+  <body onload="if(null!=window.ini)window.ini()"><table border="0"
+  cellpadding="0" cellspacing="0" class="body"><tbody><tr><td class="yellow"
+  colspan="5" height="19"><span class="yellow"><a
+  class="yellow" href="index.html">Home</a></span><!--<img alt=""
+  height="10" hspace="2" src="images/vertbar.gif" width="1" /><span
+  class="yellow"><a class="yellow" href="cgi-bin-contact.html">Contact</a></span>--></td></tr><tr><td
+  height="5" width="150"></td><td height="5" width="5"> </td><td
+  height="5"></td><td height="5" width="5"></td><td height="5" width="150"></td></tr><tr><td
+  height="33" width="150"></td><td height="33" width="5"></td><td
+  align="right" height="33"><img alt="" height="33"
+  src="images/lgo_mf_1l.gif" width="106" /></td><td align="right" height="33"
+  width="5"><img alt="" height="33" src="images/lgo_mf_1m.gif" width="5" /></td><td
+  height="33" width="150"><img alt="" height="33" src="images/lgo_mf_1r.gif"
+  width="150" /></td></tr><tr><td class="magenta" colspan="4" height="19"> </td><td
+  class="magenta" height="19" width="150"><img alt="" height="19"
+  src="images/lgo_mf_2.gif" width="150" /></td></tr><tr><td height="5"
+  width="150"></td><td height="5" width="5"></td><td height="5"></td><td
+  height="5" width="5"></td><td class="yellow" height="5" rowspan="2"
+  valign="top" width="150"><img alt="" height="94" src="images/lgo_mf_3.gif"
+  width="150" /></td></tr><tr><td class="yellow" valign="top" width="150"><table
+  border="0" cellpadding="0" cellspacing="7" width="150"><tbody>
+  <tr><td><h1 class="yellow">Navigation</h1></td></tr>
+  <tr><td><div class="yellow"><a class="yellow" href="cgi-bin-mf-phonebook.html">Phonebook</a></div></td></tr>
+  <tr><td><div class="yellow"><a class="yellow" href="cgi-bin-mf-status.html">Status</a></div></td></tr>
+  </tbody></table></td><td valign="top" width="5"></td><td valign="top">
+	 <h1>Welcome..</h1> 
+	 <p>..on your <a href="http://sipath.sourceforge.net" target="new">SIP at Home</a> web interface for the
+	 <a href="http://sip-router.org/ser/" target="new">SIP Express Router</a> running on
+	 <a href="http://www.openwrt.org">OpenWRT Embedded Linux</a>.<br><br>
+	 Use the navigation options to the left to explore your VoIP server.<br><br>
+	 <b>Short SIP at Home Howto:</b><br>
+	 Standard configuration (/etc/ser/ser.cfg) will cause the router to function as an Outbound Proxy and local Registrar Server.<br>
+	 To enable the first function simply configure the routers IP address as <i>Outbound Proxy</i> in your SIP phones configuration.<br>
+	 Every registration your phone sends to your VoIP Provider will then pass through the SIP Express Router.<br>
+	 At the same time such a registration is forwarded to your Provider the router will remember you as being registered and will route calls to
+	 registered phones locally, so no internet traffic is being produced. A successful local registration can be checked on the Phonebook page in the
+	 table <i>Contacts</i>.	All listed <i>aor</i>s (Address Of Record) may be called locally.<br>
+	 All authentication passwords of your SIP account are statelessly forwarded to the <i>SIP Server</i>.<br>
+	 If a callees number cannot be resolved locally, the call signalling will be forwarded to the designated destination, being the
+	 <i>SIP Server</i> you set in the calling phones configuration.
+	 This may imply that your VoIP Service Provider configured in your SIP phones configuration as <i>SIP Server</i> (or similar), may be
+	 connected and an external call may be established.<br><br>
+	 If you cannot place or receive calls from or to your phones over the Internet or if your phones ring but you cannot talk to someone outside your
+	 network as soon as you raise the receiver, this may indicate that your firewall settings prevent the establishment of a RTP stream.
+	 In such a case, please refer to your firewalls configuration howto or manual.<br><br>
+	 <b>Examples:</b><br>
+	 <u>John</u> has configured this routers IP as the Outbound Proxy in his SIP phone and did a reset.
+	 His username is <u>123456</u>, which is a registered account at an Internet VoIP Provider.<br>
+	 <u>Peter</u> also changed the setting of the Outbound Proxy of his SIP phone and restarted it.
+	 He also has a registered user account which is <u>234567</u> at the same provider as John.<br>
+	 <u>Chasey</u> has a user account at the same provider as John and Peters, yet she isn't connected to John and Peters SIP at Home Router.
+	 Chasey's username at the boys provider is <u>345678</u>.<br>
+	 <u>Marilyn</u>, living on the other side of town, only has a standard landline phone with the number <u>456789</u>.<br><br>
+	 
+	 1. Scenario - Peter wants to call John:<br>
+	 So Peter dials 123456 with his SIP phone. The phone at first connects the SIP at Home Router. The router checks if 123456 is locally registered, which is the case.
+	 Peters phones call-invitation is being routed locally to Johns phone which thereby may start to ring.
+	 A RTP media stream is established between the two phones directly.<br><br>
+	 
+	 2. Scenario - John wants to call Chasey:<br>
+	 John therefore dials 345678. The phone uses the SIP at Home Router as the next signalling instance (Outbound Proxy) but 345678 is locally unknown and therefore the call
+	 is being forwarded to the <i>SIP Server</i> John has set in his phones configuration. This <i>SIP Server</i> checks the number which in this case matches with the
+	 user account of Chasey.
+	 The call invitation is then forwarded to Chaseys SIP phone.
+	 A RTP media stream is established between John's and Chasey's phone, either with the SIP Provider proxying the media or not, depending on the Providers settings.<br><br>
+	 
+	 3. Scenario - Peter wants to call Marilyn:<br>
+	 So he dials 00 as the prefix for landline calls and then 456789. The phone uses the SIP at Home Router as Outbound Proxy but 00456789 is locally
+	 unknown so the call is forwarded to the <i>SIP Server</i> Peter set in his phones settings. This SIP Server recognises from the prefix that Peter wants to place
+	 a call into the PSTN and directs the call to its gateway which connects to Marilyns phone. A RTP media stream is established between Peters phone, the
+	 Providers PSTN-Gateway over the PSTN to Marilyns phone.<br><br>
+	 Please note that this software is under development and comes with no warranty.
+	 </td>
+ <td valign="top"
+  width="5"></td></tr><tr><td height="5" width="150"></td><td height="5"
+  width="5"></td><td height="5"></td><td height="5" width="5"></td><td
+  height="5" width="150"></td></tr><tr><td class="magenta" colspan="4"
+  height="19" width="150"><address class="magenta">Changed: May 6th 2005</address></td>
+  <td
+  class="magenta" height="19" width="150"><span
+  class="magenta"><a class="magenta"
+  href="javascript:location.href=location.href;"><!--<img alt="" border="0"
+  height="14" src="images/btn_top_arrow.gif" width="14" />-->Top of page</a></span></td></tr></tbody></table>
+  <center><font size=-2>
+  Copyright &copy 2005 <a href="http://sipath.sourceforge.net" target="new">SIP at Home Project</a> Crew - All rights reserved.<br>
+  Logos and trademarks are the property of their respective owners.<br>
+  This web page is licensed under the <a 
+  href="http://www.gnu.org/licenses/fdl.html" target="new">GNU Free Documentation License</a><br>
+  The software promoted on this website is licensed under the <a 
+  href="http://www.gnu.org/licenses/gpl.html" target="new">GNU General Public License</a><br>
+  Please note that this software is under development <br>
+  and comes with absolutely no warranty, to the extend permitted by applicable law.<br>
+  <a href="http://www.opensource.org/docs/definition.php" target="new">Definition of Open Source</a></font>
+  </center>
+  </body>
+</html>

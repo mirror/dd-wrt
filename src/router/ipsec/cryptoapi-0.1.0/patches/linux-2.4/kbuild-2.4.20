@@ -1,0 +1,212 @@
+diff -Nur --exclude CVS linux-2.4.20-rc2/Makefile linux-int-2.4.20-rc2/Makefile
+--- linux-2.4.20-rc2/Makefile	Thu Nov 21 16:33:28 2002
++++ linux-int-2.4.20-rc2/Makefile	Thu Nov 21 16:35:22 2002
+@@ -123,9 +123,10 @@
+ 
+ CORE_FILES	=kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o
+ NETWORKS	=net/network.o
++CRYPTO		=crypto/crypto.o
+ 
+ LIBS		=$(TOPDIR)/lib/lib.a
+-SUBDIRS		=kernel drivers mm fs net ipc lib
++SUBDIRS		=kernel drivers mm fs net ipc lib crypto
+ 
+ DRIVERS-n :=
+ DRIVERS-y :=
+@@ -265,7 +266,7 @@
+ 
+ export	CPPFLAGS CFLAGS CFLAGS_KERNEL AFLAGS AFLAGS_KERNEL
+ 
+-export	NETWORKS DRIVERS LIBS HEAD LDFLAGS LINKFLAGS MAKEBOOT ASFLAGS
++export	NETWORKS CRYPTO DRIVERS LIBS HEAD LDFLAGS LINKFLAGS MAKEBOOT ASFLAGS
+ 
+ .S.s:
+ 	$(CPP) $(AFLAGS) $(AFLAGS_KERNEL) -traditional -o $*.s $<
+@@ -284,6 +285,7 @@
+ 		$(CORE_FILES) \
+ 		$(DRIVERS) \
+ 		$(NETWORKS) \
++		$(CRYPTO) \
+ 		$(LIBS) \
+ 		--end-group \
+ 		-o vmlinux
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/alpha/config.in linux-int-2.4.20-rc2/arch/alpha/config.in
+--- linux-2.4.20-rc2/arch/alpha/config.in	Thu Nov 21 16:33:28 2002
++++ linux-int-2.4.20-rc2/arch/alpha/config.in	Thu Nov 21 16:35:22 2002
+@@ -301,6 +301,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/arm/config.in linux-int-2.4.20-rc2/arch/arm/config.in
+--- linux-2.4.20-rc2/arch/arm/config.in	Thu Nov 21 16:33:28 2002
++++ linux-int-2.4.20-rc2/arch/arm/config.in	Thu Nov 21 16:35:22 2002
+@@ -493,6 +493,8 @@
+ source drivers/block/Config.in
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_ARCH_ACORN" = "y" ]; then
+    source drivers/acorn/block/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/cris/config.in linux-int-2.4.20-rc2/arch/cris/config.in
+--- linux-2.4.20-rc2/arch/cris/config.in	Thu Nov 21 16:33:28 2002
++++ linux-int-2.4.20-rc2/arch/cris/config.in	Thu Nov 21 16:35:22 2002
+@@ -154,6 +154,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/i386/config.in linux-int-2.4.20-rc2/arch/i386/config.in
+--- linux-2.4.20-rc2/arch/i386/config.in	Thu Nov 21 16:33:28 2002
++++ linux-int-2.4.20-rc2/arch/i386/config.in	Thu Nov 21 16:35:22 2002
+@@ -328,6 +328,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/ia64/config.in linux-int-2.4.20-rc2/arch/ia64/config.in
+--- linux-2.4.20-rc2/arch/ia64/config.in	Thu Nov 21 16:33:28 2002
++++ linux-int-2.4.20-rc2/arch/ia64/config.in	Thu Nov 21 16:35:22 2002
+@@ -167,6 +167,8 @@
+   endmenu
+ fi # HP_SIM
+ 
++source crypto/Config.in
++
+ mainmenu_option next_comment
+ comment 'SCSI support'
+ 
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/m68k/config.in linux-int-2.4.20-rc2/arch/m68k/config.in
+--- linux-2.4.20-rc2/arch/m68k/config.in	Thu Nov 21 16:33:28 2002
++++ linux-int-2.4.20-rc2/arch/m68k/config.in	Thu Nov 21 16:35:22 2002
+@@ -167,6 +167,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/mips/config-shared.in linux-int-2.4.20-rc2/arch/mips/config-shared.in
+--- linux-2.4.20-rc2/arch/mips/config-shared.in	Thu Nov 21 16:38:59 2002
++++ linux-int-2.4.20-rc2/arch/mips/config-shared.in	Thu Nov 21 16:41:49 2002
+@@ -646,6 +646,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/parisc/config.in linux-int-2.4.20-rc2/arch/parisc/config.in
+--- linux-2.4.20-rc2/arch/parisc/config.in	Thu Nov 21 16:33:29 2002
++++ linux-int-2.4.20-rc2/arch/parisc/config.in	Thu Nov 21 16:35:22 2002
+@@ -128,6 +128,8 @@
+ fi
+ endmenu
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    mainmenu_option next_comment
+    comment 'Network device support'
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/ppc/config.in linux-int-2.4.20-rc2/arch/ppc/config.in
+--- linux-2.4.20-rc2/arch/ppc/config.in	Thu Nov 21 16:33:29 2002
++++ linux-int-2.4.20-rc2/arch/ppc/config.in	Thu Nov 21 16:35:22 2002
+@@ -251,6 +251,8 @@
+ source drivers/block/Config.in
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/ppc64/config.in linux-int-2.4.20-rc2/arch/ppc64/config.in
+--- linux-2.4.20-rc2/arch/ppc64/config.in	Thu Nov 21 16:33:29 2002
++++ linux-int-2.4.20-rc2/arch/ppc64/config.in	Thu Nov 21 16:35:22 2002
+@@ -101,6 +101,8 @@
+ source drivers/block/Config.in
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/s390/config.in linux-int-2.4.20-rc2/arch/s390/config.in
+--- linux-2.4.20-rc2/arch/s390/config.in	Thu Nov 21 16:33:29 2002
++++ linux-int-2.4.20-rc2/arch/s390/config.in	Thu Nov 21 16:35:22 2002
+@@ -59,6 +59,8 @@
+ 
+ source drivers/s390/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/s390x/config.in linux-int-2.4.20-rc2/arch/s390x/config.in
+--- linux-2.4.20-rc2/arch/s390x/config.in	Thu Nov 21 16:33:29 2002
++++ linux-int-2.4.20-rc2/arch/s390x/config.in	Thu Nov 21 16:35:22 2002
+@@ -63,6 +63,8 @@
+ 
+ source drivers/s390/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/sh/config.in linux-int-2.4.20-rc2/arch/sh/config.in
+--- linux-2.4.20-rc2/arch/sh/config.in	Thu Nov 21 16:33:30 2002
++++ linux-int-2.4.20-rc2/arch/sh/config.in	Thu Nov 21 16:35:22 2002
+@@ -223,6 +223,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/sparc/config.in linux-int-2.4.20-rc2/arch/sparc/config.in
+--- linux-2.4.20-rc2/arch/sparc/config.in	Thu Nov 21 16:33:30 2002
++++ linux-int-2.4.20-rc2/arch/sparc/config.in	Thu Nov 21 16:35:22 2002
+@@ -99,6 +99,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ tristate 'RAM disk support' CONFIG_BLK_DEV_RAM
+ if [ "$CONFIG_BLK_DEV_RAM" = "y" -o "$CONFIG_BLK_DEV_RAM" = "m" ]; then
+ 	int '   Default RAM disk size' CONFIG_BLK_DEV_RAM_SIZE 4096
+diff -Nur --exclude CVS linux-2.4.20-rc2/arch/sparc64/config.in linux-int-2.4.20-rc2/arch/sparc64/config.in
+--- linux-2.4.20-rc2/arch/sparc64/config.in	Thu Nov 21 16:33:30 2002
++++ linux-int-2.4.20-rc2/arch/sparc64/config.in	Thu Nov 21 16:35:22 2002
+@@ -107,6 +107,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ tristate 'RAM disk support' CONFIG_BLK_DEV_RAM
+ if [ "$CONFIG_BLK_DEV_RAM" = "y" -o "$CONFIG_BLK_DEV_RAM" = "m" ]; then
+ 	int '   Default RAM disk size' CONFIG_BLK_DEV_RAM_SIZE 4096

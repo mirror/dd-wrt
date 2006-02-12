@@ -1,0 +1,20 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+    This directory contains useful utility code snippets.  These are intended
+    to be either stand-alone programs, or do something useful other than just
+    proving the library works (the testcode takes care of that).
+
+    Get-mac/get_mac.c   -   contains a simple routine to get the MAC address of
+                            a remote host given its IP address.  This is 
+                            crucial to applications that need to write link
+                            layer packets to hosts for which they don't
+                            have the MAC.  This technique can be used to hide
+                            the link layer interface from the programmer and
+                            abstract it further.  At this point, however,
+                            the code only works for hosts on the local network
+                            and does not timeout and resend packets.
+
+EOF

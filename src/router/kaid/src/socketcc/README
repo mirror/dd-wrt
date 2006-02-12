@@ -1,0 +1,180 @@
+socketcc Library Version 1.0
+----------------------------
+
+Author: Jason But
+
+
+--------------------------------------------------------------------------------
+Project Summary:
+
+This project will compile to a dynamically loaded library that can be used when
+developing network/socket applications in C++.  The socketcc library is based
+on the existing socket library available in most UNIX installations and also
+uses the pthreadcc library also developed by the author.  The library defines a
+series of classes that can be used to implement IP addressing and socket based
+communications using both TCP and UDP sockets over both an IPv4 and IPv6 based
+network.  This class library was developed by Jason But at Monash University.
+
+
+--------------------------------------------------------------------------------
+Purpose:
+
+For those wishing to develop socket based network applications in a C++ class
+oriented environment.  This library allows creation of sockets as classes as
+well as IPv4 and IPv6 address representation as a class abstraction.  The main
+aim is to allow the same code to work with both IPv4 and IPv6 implementations.
+
+
+--------------------------------------------------------------------------------
+Files:
+
+README                       : this file.
+Makefile                     : make file for the socketcc library.
+obj/Makefile                 : make file for the object files which make up the
+                               socketcc library.
+src/socketcc.h               : header file defining classes supported by the
+                               library and available to users of the library.
+src/socketexception.cpp      : implementation of the SocketException class.
+src/ipaddress.cpp            : implementation of the IPAddress class.
+src/socketbase.cpp           : implementation of the SocketBase class.
+src/tcpsockets.cpp           : implementation of the various TCP socket classes.
+src/udpsockets.cpp           : implementation of the various UDP socket classes.
+
+
+--------------------------------------------------------------------------------
+Installation:
+
+Running 'make', 'make all' or 'make library' will compile and link together the
+components of the library to create libsocketcc.so.1.0
+Running 'make objects' will compile the source code files to their respective
+object files.
+Running 'make install' will make the dynamic library and then install the
+libsocketcc.so.1.0 to /usr/lib and copy socketcc.h to /usr/include.
+Running 'make remove' will remove the dynamic library and header file from
+/usr/lib and /usr/include.
+
+NOTE: 'make install' and 'make remove' should be run as root.
+
+
+--------------------------------------------------------------------------------
+Usage:
+
+Once the library has been compiled and installed, it can be used within any
+other application program as follows:
+
+1.) Include the socketcc library header file.
+
+#include <socketcc.h>
+
+2.) Create and program class instances as required and use as defined in the
+    socketcc header file.
+
+3.) Link the application together using the '-lsocketcc' flag to ensure that
+    the dynamic library is linked into the final application.
+
+
+--------------------------------------------------------------------------------
+Updates:
+
+Version 1.38 - Release Date (April 11 2003)
+
+ - Added support for FreeBSD, many thanks to Clayborne D. Taylor.
+ - Added sample code for a multi-threaded TCP Server Deamon.
+ - Send Data methods on all socket classes now take const parameters to refer 
+   to the data being sent, this is more correct as the sent data is never
+   modified.
+ - Andrea Rui pointed out that accepting a connection on a TCPServerSocket 
+   wastes resources as a temporary socket is created and then closed before
+   the pending connection is assigned to the new socket.  I modified Andrea's
+   approach to produce a more streamlined result.  This problem has now been
+   fixed, temporary socket descriptors are not allocated or created, also it
+   is now far easier to accept a connection to varying types of different
+   socket classes - this doesn't make sense on any class other than TCPSocket
+   in the library but a programmer may want to create a new class calles
+   SSLSocket for example.  Unfortunately this fix has changed the interface
+   to the Accept() method in SocketBase, this should have minimal effect on
+   existing code that uses the inherited classes, but any code that directly
+   uses SocketBase may need to be changed.
+ - A side effect of the above change is that it is now possible to create
+   instances of SocketCC socket classes SocketBase, TCPSocket and UDPSocket
+   from  a socket descriptor.  Note that these descriptors are not checked to
+   ensure they refer to a valid socket or a socket of the correct type.  They
+   are primarily left public to allow piecemeal upgrade of existing software
+   to support SocketCC without having to change the entire code base.
+ - New class "SocketSet" added to library to allow better use of library with
+   the select() and pselect() function calls.  This class allows construction
+   of an fd_set analogue which can then be passed to these function calls.  The
+   class instance can then be queried to see which sockets were selected.
+ 
+Version 1.30 - Release Date (November 13th 2002)
+
+ - Added support for Apple MacOS X Original Release and Apple MacOS X Jaguar.  
+   Many thanks to Desmond Schmidt and Daniel Grimm.
+ - Enhanced functionality of TCPSocket::SendASCII() and TCPSocket::RecvASCII() 
+   to allow specification of the string terminating character.  For backwards
+   compatibility, this has a default value of '\0'.
+ - Enhanced functionality of send and receive methods in all TCP and UDP socket 
+   classes to allow specification of socket flags.  A default value of zero
+   allows backwards compatibility.
+ - Added new method to IPAddress to return an unmapped (not IPv6 Mapped IPv4)
+   string representation of the IP Address.
+ - Fixed minor bug in not releasing allocated memory.
+ - Installation directory changed.
+ - Error number for errUnknown exceptions NOW printed correcly.
+
+
+Version 1.20 - Release Date (September 12th 2002)
+
+ -  Fixed lazy evaluation bug, bStrAddressUnresolved and pcStrAddress incorrectly
+    set when copying from an IPAddress instance where this string has yet to be
+    evaluated.
+ -  New exception type - errHostUnreachable - added.
+ -  All errUnknown exceptions now include value of errno.
+ -  pcHostName replaced with strHostName of type std::string.  This should fix
+    a range of minor memory leakage problems as well as simplify the code.
+ -  Fixed bug with a non-blocking TCPServerSocket, each no pending connections 
+    situation was not releasing socket descriptors and resources allocated in
+    the AcceptClient() method.
+ -  Added new methods to TCPSocket to send and receive different types of data
+    (uint16_t, uint32_t, C-style strings.
+ -  UDPServerSocket constructor no longer requires the IPv6 flag when binding 
+    to a specific IP address, but is still required when binding to a wildcard 
+    address.
+
+Version 1.11
+
+ -  Added support for Solaris platform, many thanks to Andreas Almroth for his
+    contribution.
+ -  Fixed minor bugs which did not show up on Linux compile but did on Solaris 
+    compile. These just ensure that all structures are properly initialised 
+    before function calls (Linux didn't seem to care for certain function calls).
+ -  Incorporated both makefiles into a single Makefile. New Makefile offers basic
+    multi-platform support and a basic structure to enable support of further
+    platforms in the source code.
+ -  Fixed "Hiding of Local Variables" Bug in TCPServerSocket
+
+Version 1.10
+
+ -  SocketCC now uses PThreadCC to implement thread-safe code, requires
+    installation of PThreadCC.
+ -  Fixed implementation of IPAddress class, now performs lazy evaluation of
+    reverse-DNS lookup, improving execution times greatly.
+ -  Improved thread-safe implementation of SocketBase, only one thread can
+    execute a method on a given socket at a given time. If the socket connection
+    is closed, any other threads blocked on that socket will fail with an
+    exception. This allows an Accept() call on a listening socket to run in a
+    seperate thread, when the listening socket is closed, all threads blocked
+    on Accept() will unblock.
+ -  Fixed minor bugs and improved some implementation algorithms
+ -  Improved commenting
+
+
+--------------------------------------------------------------------------------
+Information:
+
+This library was originally developed for use in a multi-threaded, class based
+network application for Monash University.  While every effort will be made to
+update it, this will only be done as time permits.  You can email the author at:
+
+jason.but@eng.monash.edu.au
+

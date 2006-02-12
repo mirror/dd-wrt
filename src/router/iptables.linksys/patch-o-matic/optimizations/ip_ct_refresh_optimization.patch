@@ -1,0 +1,75 @@
+--- linux-2.4.19-pre9/include/linux/netfilter_ipv4/ip_conntrack.h.orig	Mon Jun  3 21:46:59 2002
++++ linux-2.4.19-pre9/include/linux/netfilter_ipv4/ip_conntrack.h	Mon Jun  3 21:46:37 2002
+@@ -226,6 +226,9 @@
+ extern void ip_ct_refresh(struct ip_conntrack *ct,
+ 			  unsigned long extra_jiffies);
+ 
++/* Kill conntrack */
++extern void ip_ct_death_by_timeout(unsigned long ul_conntrack);
++
+ /* These are for NAT.  Icky. */
+ /* Call me when a conntrack is destroyed. */
+ extern void (*ip_conntrack_destroyed)(struct ip_conntrack *conntrack);
+--- linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_core.c.orig	Mon Jun  3 20:32:28 2002
++++ linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_core.c	Tue Jun  4 20:56:18 2002
+@@ -267,7 +267,7 @@
+ 	atomic_dec(&ip_conntrack_count);
+ }
+ 
+-static void death_by_timeout(unsigned long ul_conntrack)
++void ip_ct_death_by_timeout(unsigned long ul_conntrack)
+ {
+ 	struct ip_conntrack *ct = (void *)ul_conntrack;
+ 
+@@ -527,7 +527,7 @@
+ 		return dropped;
+ 
+ 	if (del_timer(&h->ctrack->timeout)) {
+-		death_by_timeout((unsigned long)h->ctrack);
++		ip_ct_death_by_timeout((unsigned long)h->ctrack);
+ 		dropped = 1;
+ 	}
+ 	ip_conntrack_put(h->ctrack);
+@@ -617,7 +617,7 @@
+ 	/* Don't set timer yet: wait for confirmation */
+ 	init_timer(&conntrack->timeout);
+ 	conntrack->timeout.data = (unsigned long)conntrack;
+-	conntrack->timeout.function = death_by_timeout;
++	conntrack->timeout.function = ip_ct_death_by_timeout;
+ 
+ 	INIT_LIST_HEAD(&conntrack->sibling_list);
+ 
+@@ -1198,7 +1189,7 @@
+ 	while ((h = get_next_corpse(kill, data)) != NULL) {
+ 		/* Time to push up daises... */
+ 		if (del_timer(&h->ctrack->timeout))
+-			death_by_timeout((unsigned long)h->ctrack);
++			ip_ct_death_by_timeout((unsigned long)h->ctrack);
+ 		/* ... else the timer will get him soon. */
+ 
+ 		ip_conntrack_put(h->ctrack);
+--- linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_standalone.c.orig	Mon Jun  3 21:43:04 2002
++++ linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_standalone.c	Mon Jun  3 21:47:43 2002
+@@ -362,6 +362,7 @@
+ EXPORT_SYMBOL(ip_conntrack_helper_unregister);
+ EXPORT_SYMBOL(ip_ct_selective_cleanup);
+ EXPORT_SYMBOL(ip_ct_refresh);
++EXPORT_SYMBOL(ip_ct_death_by_timeout);
+ EXPORT_SYMBOL(ip_ct_find_proto);
+ EXPORT_SYMBOL(ip_ct_find_helper);
+ EXPORT_SYMBOL(ip_conntrack_expect_related);
+--- linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_core.c.orig	Mon Jun  3 20:32:28 2002
++++ linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_core.c	Mon Jun  3 20:48:13 2002
+@@ -1091,8 +1091,10 @@
+ 	if (!is_confirmed(ct))
+ 		ct->timeout.expires = extra_jiffies;
+ 	else {
+-		/* Need del_timer for race avoidance (may already be dying). */
+-		if (del_timer(&ct->timeout)) {
++		/* Don't update timer for each packet, only if it's been >HZ
++		 * ticks since last update.
++		 * Need del_timer for race avoidance (may already be dying). */
++		if (abs(jiffies + extra_jiffies - ct->timeout.expires) >= HZ && del_timer(&ct->timeout)) {
+ 			ct->timeout.expires = jiffies + extra_jiffies;
+ 			add_timer(&ct->timeout);
+ 		}

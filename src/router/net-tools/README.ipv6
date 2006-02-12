@@ -1,0 +1,28 @@
+Notes for IPv6
+--------------
+
+If you are using libc5, you may need to edit the Makefile so that
+libinet6 is linked in and your IPv6 include files are found in the
+right place.  The definitions in question are at about line 91.  You may
+also find that the header files provided with inet6-apps are not exactly
+what net-tools expects.  This is not a bug in net-tools as such and will
+not be fixed in future releases (though if anybody would like to contribute
+a patch I would be happy to add a pointer to it here.)  If you have the
+option you might consider changing to glibc instead (see below) in which
+case you can use the header files supplied with the C library.
+
+If you use glibc, you should ensure that you have version 2.1 or later
+installed.  The 2.1 release is available from
+<ftp://sourceware.cygnus.com/pub/glibc among> other places.  With this
+version of the C library there should be no need to edit the Makefile
+or apply any patches to net-tools.
+
+Version 2.0 of glibc has no support for IPv6; patches did exist at one
+point but they are now seriously outdated.  Instead you should upgrade
+to glibc 2.1.
+
+BUGS
+----
+
+"ifconfig eth0 add ..." does not currently auto-load the IPv6 module.
+

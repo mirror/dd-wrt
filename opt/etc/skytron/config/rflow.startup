@@ -1,0 +1,8 @@
+#!/bin/sh
+RFLOW_IP=$(nvram get rflow_ip)
+RFLOW_PORT=$(nvram get rflow_port)
+killall -q -9 rflow
+if [ "$(nvram get rflow_enable)" = "1" ]; then
+    rflow -i br0 -F $RFLOW_IP:$RFLOW_PORT&
+fi
+

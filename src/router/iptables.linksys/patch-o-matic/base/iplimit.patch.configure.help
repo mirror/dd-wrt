@@ -1,0 +1,8 @@
+CONFIG_IP_NF_MATCH_STATE
+Connections/IP limit match support
+CONFIG_IP_NF_MATCH_IPLIMIT
+  This match allows you to restrict the number of parallel TCP
+  connections to a server per client IP address (or address block).
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

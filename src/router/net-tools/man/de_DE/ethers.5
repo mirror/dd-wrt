@@ -1,0 +1,37 @@
+.\"
+.\" Original by ??
+.\"
+.\" German translation by Ralf Baechle (ralf@gnu.org)
+.\"
+.TH ETHERS 5 "6. M\(:arz, 1999" "" "Dateiformate"
+.SH NAME \"{{{roff}}}\"{{{
+ethers \- Zuordnung von Ethernetadressen nach IP-Adressen 
+.\"}}}
+.SH BESCHREIBUNG \"{{{
+\fB/etc/ethers\fP enth\(:alt 48 bit Ethernetadressen und die dazu equivalenten
+IP-Nummern, eine Zeile pro IP-Nummer.
+.sp
+.RS
+\fIEthernet-adresse\fP  \fIIP-Nummer\fP
+.RE
+.sp
+Diese zwei Felder d\(:urfen durch eine beliebige Anzahl von SPACE- oder
+TAB-Zeichen getrennt sein.  Hinter einem #-Zeichen am Anfang der Zeile beginnt
+ein Kommentar, der sich bis zum Ende der Zeile erstreckt.  Die
+\fIEthernet-adresse\fP wird als .IR x : x : x : x : x : x geschrieben, wobei
+\fIx\fP eine hexadecimale Zahl zwischen \fB0\fP und \fBff\fP ist, die ein
+Byte der Adresse repr\(:asentiert, die in Netzwerksbyteorder (big-endian) ist.
+Die \fIIP-Nummer\fP kann ein Hostname, der \(:uber DNS resolviert werden kann
+oder eine IP-Adresse in in Punktnotation sein.
+.\"}}}
+.SH BEISPIEL \"{{{
+08:00:20:00:61:CA  pal
+.\"}}}
+.SH DATEIEN \"{{{
+/etc/ethers
+.\"}}}
+.SH "SIEHE AUCH" \"{{{
+rarp(8)
+.\"}}}
+.SH \(:Ubersetzung
+Ralf B\(:achle <ralf@gnu.org>

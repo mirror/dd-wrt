@@ -1,0 +1,3302 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Generator" content="Microsoft Word 97">
+   <meta name="GENERATOR" content="Mozilla/4.6 [en] (Win98; I) [Netscape]">
+   <title>Introduction</title>
+</head>
+<body text="#000000" bgcolor="#CCCCCC" link="#0000FF" vlink="#800080" alink="#FF0000">
+<a href="6.html">Next</a> <a href="4.html">Previous</a> <a href="lrm.html">Top</a>
+<p>
+<hr ALIGN="LEFT">
+<br><b><font size=+2>5. Library Internals</font></b>
+<p><font size=-1>This section is devoted to the internals of the library.&nbsp;
+First covered are all the user-accessible functions, then constants, macros
+and finally libnet-specific data structures.</font>
+<p><font size=-1>Proceeding each function prototype is a small table listing
+the return values of the function, whether or not the function is reentrant
+(a function is considered reentrant if it may be called repeatedly, or
+may be called before previous invocations have completed, and each invocation
+is independent of all other invocations) and a brief description of the
+function's arguments.</font>
+<p><a NAME="s5_1"></a><b><font size=+2>5.1 Memory Management Functions</font></b>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_init_packet(u_short packet_size, u_char **buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="498" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - desired packet size</font>
+<br><font size=-1>2 - address of a u_char pointer</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_init_packet() creates memory for a packet (it doesn't
+so much create memory as it requests it from the underlying operating system
+via malloc()).&nbsp; Upon success the memory is zero-filled.&nbsp; The
+function accepts two arguments, the packet size and the address of the
+pointer to the packet.&nbsp; The packet size parameter may be 0, in which
+case the library will attempt to guess a packet size for you.&nbsp; Passing
+in the pointer to a pointer (passing by address) is necessary as we are
+allocating memory locally.&nbsp; If we instead passed in just a pointer
+(passing by value) the allocated memory would be lost.</font>
+<p><font size=-1>This function is a good example of interface hiding.&nbsp;
+This function is essentially a malloc() wrapper.&nbsp; By using this function
+the details of what's really happening are abstracted so that you, the
+programmer, can worry about your task at hand.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>void libnet_destroy_packet(u_char **buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="486" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - address of a u_char pointer&nbsp;</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_destroy_packet() is the free() analog to libnet_init_packet.&nbsp;
+It destroys the packet referenced by 'buf'.&nbsp; In reality, it is of
+course a simple free() wrapper.&nbsp; It frees the heap memory and points
+`buf` to NULL to dispel the dangling pointer.&nbsp; The function does make
+the assertion that `buf` is not NULL.&nbsp; A pointer to a pointer is passed
+to maintain interface consistency.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_init_packet_arena(struct libnet_arena **arena, u_short
+packet_size, u_short packet_size);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="566" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to an arena structure pointer</font>
+<br><font size=-1>2 - number of packets</font>
+<br><font size=-1>3 - packet size</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_init_packet_arena() allocates and initializes a
+memory pool.&nbsp; If you plan on building and sending several different
+packets, this is a good choice.&nbsp; It allocates a pool of memory from
+which you can grab chunks to build packets (see next_packet_from_arena()).&nbsp;
+It takes the address to an arena structure pointer, and&nbsp; hints on
+the possible packet size and number of packets.&nbsp; The last two arguments
+are used to compute the size of the memory pool.&nbsp; As before, they
+can be set to 0 and the library will attempt to choose a decent value.&nbsp;
+The function returns -1 if the malloc fails or 1 if everything goes ok.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>u_char *libnet_next_packet_from_arena(struct libnet_arena **arena,
+u_short packet_size);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="517" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>pointer to the request packet memory</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NULL</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to the arena</font>
+<br><font size=-1>2 - requested packet size</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_next_packet_from_arena() returns a chunk of memory
+from the specified arena of the requested size and decrements the arenas
+available byte counter.&nbsp; If the requested memory is not available
+from the arena, the function returns NULL.&nbsp; Note that there is nothing
+preventing a poorly coded application from using more memory than requested
+and causing all kinds of problems.&nbsp; Take heed.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>void libnet_destroy_packet_arena(struct libnet_arena **arena);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="436" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to the arena</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_destroy_packet_arena() frees the memory associated
+with the specified arena.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><a NAME="s5_2"></a><b><font size=+2>5.2 Address Resolution Functions</font></b>
+<br>
+<hr ALIGN="LEFT">
+<br><b>u_char *libnet_host_lookup(u_long ip, u_short use_name);</b>
+<br>&nbsp;
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="521" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>pointer to the converted IP address</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NULL</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>no</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - network-byte ordered IP address</font>
+<br><font size=-1>2 - use_name flag</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_host_lookup() converts the supplied network-ordered
+(big-endian) IP address into its human-readable counterpart.&nbsp; If the
+usename flag is LIBNET_RESOLVE, the function will attempt to resolve the
+IP address (possibly incurring DNS network traffic) and return a canonical
+hostname, otherwise if it is LIBNET_DONT_RESOLVE (or if the lookup fails),
+the function returns a dotted-decimal ASCII string.&nbsp; This function
+is hopelessly non reentrant as it uses static data.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>void libnet_host_lookup_r(u_long ip, u_short use_name, u_char *buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="579" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>depends on architecture</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - network-byte ordered IP address</font>
+<br><font size=-1>2 - use_name flag</font>
+<br><font size=-1>3 - buffer to contain the converted IP address</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_host_lookup_r() is the planned reentrant version
+of the above function.&nbsp; If reentrant network resolver libraries become
+available, this function will likewise be reentrant.&nbsp; An additional
+argument of a buffer to store the converted (or resolved) IP address is
+supplied by the user.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>u_long libnet_name_resolve(u_char *ip, u_short use_name);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="578" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>network-byte ordered IP address</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - human readable IP address or FQDN</font>
+<br><font size=-1>2 - use_name flag</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_name_resolve() takes a NULL terminated ASCII string
+representation of an IP address (dots and decimals or, if the usename flag
+is LIBNET_RESOLVE, a canonical hostname) and converts it into a network-ordered
+(big-endian) unsigned long value.</font>
+<hr ALIGN="LEFT">
+<br><b>u_long libnet_get_ipaddr(struct libnet_link_int *l, const u_char
+*device, const u_char *ebuf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="729" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>requested IP address</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a link interface structure</font>
+<br><font size=-1>2 - pointer to the device to query</font>
+<br><font size=-1>3 - pointer to a buffer to contain a possible error message</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_get_ipaddr() returns the IP address of a specified
+network device.&nbsp; The function takes a pointer to a link layer interface
+structure, a pointer to the network device name, and an empty buffer to
+be used in case of error.&nbsp; Upon success the function returns the IP
+address of the specified interface in network-byte order or 0 upon error
+(and errbuf will contain a reason).</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>struct ether_addr *libnet_get_hwaddr(struct libnet_link_int *l,
+const u_char *device,&nbsp; const u_char *ebuf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="720" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>pointer to the requested ethernet address</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NULL</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>depends on architecture</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a link interface structure</font>
+<br><font size=-1>2 - pointer to the device to query</font>
+<br><font size=-1>3 - pointer to a buffer to contain a possible error message</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_get_hwaddr() returns the hardware address of a
+specified network device.&nbsp; At the time of this writing, only ethernet
+is supported.&nbsp; The function takes a pointer to a link layer interface
+structure, a pointer to the network device name, and an empty buffer to
+be used in case of error.&nbsp; The function returns the MAC address of
+the specified interface upon success or NULL upon error (and errbuf will
+contain a reason).</font>
+<br>
+<hr ALIGN="LEFT">
+<br><a NAME="s5_3"></a><b><font size=+2>5.3 Packet Injection Support Functions</font></b>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_open_raw_sock(int protocol);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="601" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>opened socket</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - protocol number of desired socket type</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_open_raw_sock() opens a raw IP socket of the specified
+protocol type (supported types vary from system to system, but usually
+you'll want to open an IPPROTO_RAW socket).&nbsp; The function also sets
+the IP_HDRINCL socket option.&nbsp; Returned is the socket file descriptor
+or -1 on error.&nbsp; The function can fail if either of the underlying
+calls to socket or setsockopt fails.&nbsp; Checking errno will reveal the
+reason for the error.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_close_raw_sock(int socket);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="436" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - socket to be closed</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_close_raw_sock() will close the referenced raw
+socket.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_select_device(struct sockaddr_in *sin, u_char **device,
+u_char *ebuf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="693" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>no</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a sockaddr_in structure
+pointer</font>
+<br><font size=-1>2 - pointer to the device to query</font>
+<br><font size=-1>3 - pointer to a buffer to contain a possible error message</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_select_device() will run through the list of interfaces
+and select one for use (ignoring the loopback device).&nbsp; If the device
+argument points to NULL (don't pass in a NULL pointer, the function expects
+a pointer to a pointer, and C can't derefrence a NULL pointer) it will
+try to fill it in with the first non-loopback device it finds, otherwise,
+it will try to open the specified device.&nbsp; If successful, 1 is returned
+(and if device was NULL, it will now contain the device name which can
+be used in libnet_*link*() type calls).&nbsp; The function can fail for
+a variety of reasons, including socket system call failures, ioctl failures,
+if no interfaces are found, etc..&nbsp; If such an error occurs, -1 is
+returned and errbuf will contain a reason.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>struct libnet_link_int *libnet_open_link_interface(char *device,
+char *ebuf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="733" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>pointer to a link interface structure</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NULL</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a device</font>
+<br><font size=-1>2 - pointer to a buffer to contain a possible error message</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_open_link_interface() opens a low-level packet
+interface.&nbsp; This is required in order to be able inject link layer
+frames.&nbsp; Supplied is a u_char pointer to the interface device name
+and a u_char pointer to an error buffer.&nbsp; Returned is a filled-in
+link_int structure or NULL on error (with the error buffer containing the
+reason).&nbsp; The function can fail for a variety of reasons due to the
+fact that it is architecture specific.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_close_link_interface(struct libnet_link_int *l);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="712" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a link interface structure</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_close_link_interface() closes an opened low-level
+packet interface.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_write_ip(int socket, u_char *packet, int packet_size);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="436" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>packet size</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - socket</font>
+<br><font size=-1>2 - pointer to the packet</font>
+<br><font size=-1>3 - packet size</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_write_ip() writes an IP packet to the network.&nbsp;
+The first argument is the socket created with a previous call to libnet_open_raw_sock,
+the second is a pointer to a buffer containing a complete IP datagram,
+and the third argument is the total packet size.&nbsp; The function returns
+the number of bytes written upon success or -1 on error (with errno containing
+the reason).</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_write_link_layer(struct libnet_link_int *l, const u_char
+*device, u_char *packet, int packet_size);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="666" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>packet size</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>depends on architecture</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a link interface structure</font>
+<br><font size=-1>2 - pointer to the network device</font>
+<br><font size=-1>3 - pointer to the packet</font>
+<br><font size=-1>4 - packet size</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_write_link_layer() writes a link-layer frame to
+the network.&nbsp; The first argument is a pointer to a filled-in libnet_link_int
+structure, the next is a pointer to the network device, the third is the
+raw packet and the last is the packet size.&nbsp; Returned is the number
+of bytes written or -1 on error.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_do_checksum(u_char *packet, int protocol, int packet_size);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="659" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a packet</font>
+<br><font size=-1>2 - protocol number of packet type</font>
+<br><font size=-1>3 - packet size</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_do_checksum() calculates the checksum for a packet.&nbsp;
+The first argument is a pointer to a fully built IP packet.&nbsp; The second
+is the transport protocol of the packet and the third is the packet length
+(not including the IP header).&nbsp; The function calculates the checksum
+for the transport protocol and fills it in at the appropriate header location
+(this function should be called only after a complete packet has been built).</font>
+<p><font size=-1>Note that when using raw sockets the IP checksum is always
+computed by the kernel and does not need to done by the user.&nbsp; When
+using the link layer interface the IP checksum must be explicitly computed
+(in this case, the protocol would be of type IPPROTO_IP and the size would
+include IP_H).&nbsp; The function returns 1 upon success or -1 if the protocol
+is of an unsupported type.&nbsp; Currently supported are:</font>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="366" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>PROTOCOL</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IPPROTO_TCP</font></td>
+
+<td VALIGN=CENTER><font size=-1>TCP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IPPROTO_UDP</font></td>
+
+<td VALIGN=CENTER><font size=-1>UDP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IPPROTO_ICMP</font></td>
+
+<td VALIGN=CENTER><font size=-1>ICMP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IPPROTO_IGMP</font></td>
+
+<td VALIGN=CENTER><font size=-1>IGMP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IPPROTO_IP</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP (for the link-layer api)</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IPPROTO_OSPF</font></td>
+
+<td VALIGN=CENTER><font size=-1>OSPF</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IPPROTO_OSPF</font></td>
+
+<td VALIGN=CENTER><font size=-1>OSPF_LSA</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><a NAME="s5_4"></a><b><font size=+2>5.4 Packet Construction Functions</font></b>
+<br>
+<hr ALIGN="LEFT">
+<br><font size=-1>All libnet packet creation functions contain the same
+three terminal arguments: a pointer to an optional payload (or NULL if
+no payload is to be included), the length of the payload in bytes (or 0
+if no payload is included) and most importantly, a pointer to a pre-allocated
+block of memory (which must be large enough to accommodate the entire packet
+and payload).</font>
+<p><font size=-1>The only way for any libnet packet construction function
+will return an error is if the memory which is supposed to be pre-allocated
+points to NULL.</font>
+<p><b>libnet_build_arp(u_short hrdw, u_short prot, u_short h_len, u_short
+p_len, u_short op, u_char *s_ha, u_char *s_pa, u_char *t_ha, u_char *t_pa,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+const u_char *payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="656" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - hardware address format (ARPHRD_ETHER)</font>
+<br><font size=-1>2 - protocol address format</font>
+<br><font size=-1>3 - length of the hardware address</font>
+<br><font size=-1>4 - length of the protocol address</font>
+<br><font size=-1>5 - ARP operation type</font>
+<br><font size=-1>6 - sender's hardware address</font>
+<br><font size=-1>7 - sender's protocol address</font>
+<br><font size=-1>8 - target's hardware address</font>
+<br><font size=-1>9 - target's protocol address</font>
+<br><font size=-1>10 - pointer to packet payload</font>
+<br><font size=-1>11 - packet payload length</font>
+<br><font size=-1>12 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_arp() constructs an ARP (RARP) packet.&nbsp;
+At this point in the library, the function only builds ethernet/ARP packets,
+but this will be easy enough to change (whenever I get around to it).&nbsp;
+The first nine arguments are standard ARP header arguments, with the last
+three being standard libnet packet creation arguments.&nbsp; The ARP operation
+type should be one of the following symbolic types:</font>
+<br>&nbsp;
+<table BORDER WIDTH="472" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ARPOP_REQUEST</font></td>
+
+<td VALIGN=CENTER><font size=-1>ARP request</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ARPOP_REPLY</font></td>
+
+<td VALIGN=CENTER><font size=-1>ARP reply</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ARPOP_REVREQUEST</font></td>
+
+<td VALIGN=CENTER><font size=-1>RARP request</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ARPOP_REVREPLY</font></td>
+
+<td VALIGN=CENTER><font size=-1>RARP reply</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ARPOP_INVREQUEST&nbsp;</font></td>
+
+<td VALIGN=CENTER><font size=-1>request to identify peer</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ARPOP_INVREPLY</font></td>
+
+<td VALIGN=CENTER><font size=-1>reply identifying peer</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_dns(u_short id, u_short flags, u_short num_q, u_short
+num_answ_rr, u_short num_auth_rr, u_short num_add_rr, const u_char * payload,
+int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="658" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet id</font>
+<br><font size=-1>2 - control flags</font>
+<br><font size=-1>3 - number of questions</font>
+<br><font size=-1>4 - number of answer resource records</font>
+<br><font size=-1>5 - number of authority resource records</font>
+<br><font size=-1>6 - number of additional resource records</font>
+<br><font size=-1>7 - pointer to packet payload</font>
+<br><font size=-1>8 - packet payload length</font>
+<br><font size=-1>9 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_dns() constructs a DNS packet.&nbsp; The
+static DNS fields are included as the first six arguments, but the optional
+variable length fields must be included with the payload interface.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ethernet(u_char *daddr, u_char *saddr, u_short
+id, const u_char *payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="574" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to the destination address</font>
+<br><font size=-1>2 - pointer to the source address</font>
+<br><font size=-1>3 - ethernet packet type</font>
+<br><font size=-1>4 - pointer to packet payload</font>
+<br><font size=-1>5 - packet payload size</font>
+<br><font size=-1>6 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ethernet() constructs an ethernet packet.&nbsp;
+The destination address and source address arguments are expected to be
+arrays of unsigned character bytes.&nbsp; The packet type should be one
+of the following:</font>
+<br>&nbsp;
+<table BORDER WIDTH="469" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>PROTOCOL</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ETHERTYPE_PUP</font></td>
+
+<td VALIGN=CENTER><font size=-1>PUP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ETHERTYPE_IP</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ETHERTYPE_ARP</font></td>
+
+<td VALIGN=CENTER><font size=-1>ARP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ETHERTYPE_REVARP</font></td>
+
+<td VALIGN=CENTER><font size=-1>RARP</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ETHERTYPE_VLAN</font></td>
+
+<td VALIGN=CENTER><font size=-1>IEEE VLAN tagging</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ETHERTYPE_LOOPBACK</font></td>
+
+<td VALIGN=CENTER><font size=-1>loopback test</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_icmp_echo(u_char type, u_char code, u_short id,
+u_short seq, const u_char *payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="557" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1- packet type</font>
+<br><font size=-1>2 - packet code</font>
+<br><font size=-1>3 - packet id</font>
+<br><font size=-1>4 - packet sequence number</font>
+<br><font size=-1>5 - pointer to packet payload</font>
+<br><font size=-1>6 - packet payload size</font>
+<br><font size=-1>7 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_icmp_echo() constructs an ICMP_ECHO / ICMP_ECHOREPLY
+packet.&nbsp; The packet type should be ICMP_ECHOREPLY or ICMP_ECHO and
+the code should be 0.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_icmp_mask(u_char type, u_char code, u_short id,
+u_short seq, u_long mask, const u_char *payload, int payload_len, u_char
+*packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="596" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet type</font>
+<br><font size=-1>2 - packet code</font>
+<br><font size=-1>3 - packet id</font>
+<br><font size=-1>4 - packet sequence number</font>
+<br><font size=-1>5 - IP netmask</font>
+<br><font size=-1>6 - pointer to packet payload</font>
+<br><font size=-1>7 - packet payload length</font>
+<br><font size=-1>8 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_icmp_mask() constructs an ICMP_MASKREQ /
+ICMP_MASKREPLY packet.&nbsp; The packet type should be either ICMP_MASKREQ
+or ICMP_MASKREPLY and the code should be 0.&nbsp; The IP netmask argument
+should be a 32-bit network-byte ordered subnet mask.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_icmp_unreach(u_char type, u_char code, u_short
+orig_len, u_char orig_tos, u_short orig_id, u_short orig_frag, u_char orig_ttl,
+u_char orig_prot, u_long orig_saddr, u_long orig_daddr, const u_char *payload,
+int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="592" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet type</font>
+<br><font size=-1>2 - packet code</font>
+<br><font size=-1>3 - original IP length</font>
+<br><font size=-1>4 - original IP TOS</font>
+<br><font size=-1>5 - original IP id</font>
+<br><font size=-1>6 - original IP fragmentation bits</font>
+<br><font size=-1>7 - original IP time to live</font>
+<br><font size=-1>8 - original IP protocol</font>
+<br><font size=-1>9 - original IP source address</font>
+<br><font size=-1>10 - original IP destination address</font>
+<br><font size=-1>11 - pointer to original IP payload</font>
+<br><font size=-1>12 - original IP payload size</font>
+<br><font size=-1>13 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_icmp_unreach() constructs an ICMP_UNREACH
+packet.&nbsp; The 3rd through the 12th arguments are used to build the
+IP header of the original packet that caused the error message (the ICMP
+unreachable).&nbsp; The packet type should be ICMP_UNREACH and the code
+should be one of the following:</font>
+<br>&nbsp;
+<table BORDER WIDTH="699" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCSRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_NET</font></td>
+
+<td VALIGN=CENTER><font size=-1>network is unreachable</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_HOST</font></td>
+
+<td VALIGN=CENTER><font size=-1>host is unreachable</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_PROTOCOL</font></td>
+
+<td VALIGN=CENTER><font size=-1>protocol is unreachable</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_PORT</font></td>
+
+<td VALIGN=CENTER><font size=-1>port is unreachable</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_NEEDFRAG</font></td>
+
+<td VALIGN=CENTER><font size=-1>fragmentation required but DF bit set</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_SRCFAIL</font></td>
+
+<td VALIGN=CENTER><font size=-1>source routing failed</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_NET_UNKOWN</font></td>
+
+<td VALIGN=CENTER><font size=-1>network is unknown</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_HOST_PROHIB</font></td>
+
+<td VALIGN=CENTER><font size=-1>host is prohibited</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_TOSNET</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP TOS and network</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_TOSHOST</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP TOS and host</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_FILTER_PROHIB</font></td>
+
+<td VALIGN=CENTER><font size=-1>prohibitive filtering</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_HOST_PRECEDENCE</font></td>
+
+<td VALIGN=CENTER><font size=-1>host precedence</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_PRECEDENCE_CUTOFF</font></td>
+
+<td VALIGN=CENTER><font size=-1>host precedence cut-off</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_icmp_timeexceed(u_char, u_char, u_short, u_char,
+u_short, u_short, u_char, u_char, u_long, u_long, const u_char *, int,
+u_char *);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="637" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet type</font>
+<br><font size=-1>2 - packet code</font>
+<br><font size=-1>3 - original IP length</font>
+<br><font size=-1>4 - original IP TOS</font>
+<br><font size=-1>5 - original IP id</font>
+<br><font size=-1>6 - original IP fragmentation bits</font>
+<br><font size=-1>7 - original IP time to live</font>
+<br><font size=-1>8 - original IP protocol</font>
+<br><font size=-1>9 - original IP source address</font>
+<br><font size=-1>10 - original IP destination address</font>
+<br><font size=-1>11 - pointer to original IP payload</font>
+<br><font size=-1>12 - original IP payload size</font>
+<br><font size=-1>13 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_icmp_timeexceed() constructs an ICMP_TIMEXCEED
+packet.&nbsp; This function is identical to libnet_build_icmp_unreach with
+the exception of the packet type and code.&nbsp; The packet type should
+be either ICMP_TIMXCEED_INTRANS for packets that expired in transit (TTL
+expired) or ICMP_TIMXCEED_REASS for packets that expired in the fragmentation
+reassembly queue.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_icmp_redirect(u_char type, u_char code, u_long
+gateway, u_short orig_len, u_char orig_tos, u_short orig_id, u_short orig_frag,
+u_char orig_ttl, u_char orig_prot, u_long orig_saddr, u_long orig_daddr,
+const u_char *payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="590" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet type</font>
+<br><font size=-1>2 - packet code</font>
+<br><font size=-1>3 - IP address of the gateway</font>
+<br><font size=-1>4 - original IP length</font>
+<br><font size=-1>5 - original IP TOS</font>
+<br><font size=-1>6 - original IP id</font>
+<br><font size=-1>7 - original IP fragmentation bits</font>
+<br><font size=-1>8 - original IP time to live</font>
+<br><font size=-1>9 - original IP protocol</font>
+<br><font size=-1>10 - original IP source address</font>
+<br><font size=-1>11 - original IP destination address</font>
+<br><font size=-1>12 - pointer to original IP payload</font>
+<br><font size=-1>13 - original IP payload size</font>
+<br><font size=-1>14 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_icmp_redirect() constructs an ICMP_REDIRECT
+packet.&nbsp; This function is similar to libnet_build_icmp_unreach, the
+differences being the type and code and the addition of an argument to
+hold the IP address of the gateway that should be used (hence the redirect).
+The packet type should be ICMP_REDIRECT and the code should be one of the
+following:</font>
+<br>&nbsp;
+<table BORDER WIDTH="545" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCSRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_NET</font></td>
+
+<td VALIGN=CENTER><font size=-1>redirect for network</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_HOST</font></td>
+
+<td VALIGN=CENTER><font size=-1>redirect for host</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_PROTOCOL</font></td>
+
+<td VALIGN=CENTER><font size=-1>redirect for TOS and network</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>ICMP_UNREACH_PORT</font></td>
+
+<td VALIGN=CENTER><font size=-1>redirect for TOS and host</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_icmp_timestamp(u_char type, u_char code, u_short
+id, u_short seq, n_time otime, n_time rtime, n_time ttime, const u_char
+*payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="566" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet type</font>
+<br><font size=-1>2 - packet code</font>
+<br><font size=-1>3 - packet id</font>
+<br><font size=-1>4 - packet sequence number</font>
+<br><font size=-1>5 - originate timestamp</font>
+<br><font size=-1>6 - receive timestamp</font>
+<br><font size=-1>7 - transmit timestamp</font>
+<br><font size=-1>8 - pointer to packet payload</font>
+<br><font size=-1>9 - packet payload size</font>
+<br><font size=-1>10 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_icmp_timestamp() constructs an ICMP_TSTAMP
+/ ICMP_TSTAMPREPLY packet.&nbsp; The packet type should be ICMP_TSTAMP
+or ICMP_TSTAMPREPLY and the code should be 0.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_igmp(u_char type, u_char code, u_long ip, const
+u_char *payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="607" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet type</font>
+<br><font size=-1>2 - packet code</font>
+<br><font size=-1>3 - IP address</font>
+<br><font size=-1>4 - pointer to packet payload</font>
+<br><font size=-1>5 - packet payload size</font>
+<br><font size=-1>6 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_igmp() constructs an IGMP packet.&nbsp; The
+packet type should be one of the following:</font>
+<br>&nbsp;
+<table BORDER WIDTH="597" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCSRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IGMP_MEMBERSHIP_QUERY</font></td>
+
+<td VALIGN=CENTER><font size=-1>membership query</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IGMP_V1_MEMBERSHIP_REPORT</font></td>
+
+<td VALIGN=CENTER><font size=-1>version 1 membership report</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IGMP_V2_MEMBERSHIP_REPORT</font></td>
+
+<td VALIGN=CENTER><font size=-1>version 2 membership report</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IGMP_LEAVE_GROUP</font></td>
+
+<td VALIGN=CENTER><font size=-1>leave-group message</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The code, which is a routing sub-message, should probably
+be left to 0, unless you know what you're doing.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ip(u_short len, u_char tos, u_short ip_id, u_short
+frag, u_char ttl, u_char protocol, u_long saddr, u_long daddr, const u_char
+*payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="622" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet length (not including the IP
+header)</font>
+<br><font size=-1>2 - type of service</font>
+<br><font size=-1>3 - packet id</font>
+<br><font size=-1>4 - fragmentation bits / offset</font>
+<br><font size=-1>5 - time to live</font>
+<br><font size=-1>6 - protocol</font>
+<br><font size=-1>7 - source address</font>
+<br><font size=-1>8 - destination address</font>
+<br><font size=-1>9 - pointer to packet payload</font>
+<br><font size=-1>10 - packet payload length</font>
+<br><font size=-1>11 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ip() constructs the mighty IP packet.&nbsp;
+The fragmentation field may be 0 or contain some combination of the following:</font>
+<br>&nbsp;
+<table BORDER WIDTH="654" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IP_DF</font></td>
+
+<td VALIGN=CENTER><font size=-1>don't fragment this datagram (only valid
+when alone)</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>IP_MF</font></td>
+
+<td VALIGN=CENTER><font size=-1>more fragments on the way (OR'd together
+with an offset value)</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The IP_OFFMASK is used to retrieve the offset from the
+fragmentation field.&nbsp; IP packets may be no larger than IP_MAXPACKET
+bytes.&nbsp; The source and destination addresses need to be in network-byte
+order.&nbsp; The payload interface should only be used to construct an
+arbitrary or non-supported type IP datagram.&nbsp; To construct a TCP,
+UDP, or similar type packet, use the relevant libnet_build function.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf(u_short len, u_char type, u_long router_id,
+u_long area_id, u_short auth_type, const char *payload, int payload_s,
+u_char *buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="651" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet length (not including the OSPF
+header)</font>
+<br><font size=-1>2 - packet type</font>
+<br><font size=-1>3 - router ID</font>
+<br><font size=-1>4 - area ID</font>
+<br><font size=-1>5 - authentication type</font>
+<br><font size=-1>6 - pointer to packet payload</font>
+<br><font size=-1>7 - packet payload length</font>
+<br><font size=-1>8 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf() builds a OSPF packet.&nbsp; You pass
+the packet length (not including the OSPF header), the packet type, 32-bit
+router ID, 32-bit area ID, the authentication type, a pointer to an optional
+data payload, the payload length, and a pointer to a pre-allocated block
+of memory for the packet.&nbsp; The payload should not be used to build
+the Hello, LSA, LSU, LSR, or DBD packets as there are specific construction
+functions for those packet types.&nbsp; The following variables are to
+be used for the OSPF packet type:</font>
+<br>&nbsp;
+<table BORDER WIDTH="435" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCSRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_UMD</font></td>
+
+<td VALIGN=CENTER><font size=-1>UMD monitoring packet</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_HELLO</font></td>
+
+<td VALIGN=CENTER><font size=-1>Hello packet</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_DBD</font></td>
+
+<td VALIGN=CENTER><font size=-1>Database description packet</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_LSR</font></td>
+
+<td VALIGN=CENTER><font size=-1>Link state request packet</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_LSU</font></td>
+
+<td VALIGN=CENTER><font size=-1>Link state update packet</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_LSA</font></td>
+
+<td VALIGN=CENTER><font size=-1>Link state acknowledgement packet</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The following are the possible authentication types:</font>
+<br>&nbsp;
+<table BORDER WIDTH="513" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_AUTH_NULL</font></td>
+
+<td VALIGN=CENTER><font size=-1>NULL password</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_AUTH_SIMPLE</font></td>
+
+<td VALIGN=CENTER><font size=-1>plaintext, 8 character password</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>OSPF_AUTH_MD5</font></td>
+
+<td VALIGN=CENTER><font size=-1>MD5</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The following is the structure used for the 64 bit field
+when using MD5:</font>
+<p><tt>&nbsp;&nbsp;&nbsp; struct auth {</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; u_short ospf_auth_null;&nbsp;
+/* NULL 16 bits */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; u_char ospf_auth_keyid;&nbsp;
+/* Key ID */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; u_char ospf_auth_len;&nbsp;&nbsp;&nbsp;
+/* Auth data len */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; u_int ospf_auth_seq;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Sequence num */</tt>
+<br><tt>&nbsp;&nbsp;&nbsp; };</tt>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_hello(u_long netmask, u_short interval, u_char
+options, u_char priority, u_int dead_interval, u_long des_router, u_long
+backup, u_long neighbor, const char *payload, int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="609" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - netmask for interface</font>
+<br><font size=-1>2 - num of seconds since last packet was sent</font>
+<br><font size=-1>3 - options</font>
+<br><font size=-1>4 - priority</font>
+<br><font size=-1>5 - num of seconds until router is deemed dead</font>
+<br><font size=-1>6 - designated router</font>
+<br><font size=-1>7 - backup router</font>
+<br><font size=-1>8 - neighbor</font>
+<br><font size=-1>9 - packet payload</font>
+<br><font size=-1>10 - payload length</font>
+<br><font size=-1>11 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_hello() builds an OSPF Hello packet.&nbsp;
+You pass the netmask for the interface, the number of seconds since the
+last packet was sent, possible options, the router's priority (if 0, it
+can't be a backup router), the time (in seconds) until a router is deemed
+down, the networks designated router, the networks backup router, a neighbor,
+a pointer to an optional data payload, the payload length, and a pointer
+to a pre-allocated block of memory used for the packet.&nbsp; If there
+is more than one neighbor that is to be included in the packet, just allocate
+enough space for the packet buf, and pass the neighbors as the "optional
+data payload."</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_dbd(u_short len, u_char options, u_char type,
+u_int sequence_num, const char *payload, int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="603" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - length</font>
+<br><font size=-1>2 - options</font>
+<br><font size=-1>3 - type</font>
+<br><font size=-1>4 - sequence number</font>
+<br><font size=-1>5 - packet payload</font>
+<br><font size=-1>6 - payload length</font>
+<br><font size=-1>7 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_dbd() builds an OSPF DataBase Description
+(DBD) packet.&nbsp; You pass the maximum length of an IP packet the interface
+can use, packet options, the type of exchange occurring, a sequence number,
+a pointer to an optional data payload, the payload length, and a pointer
+to a pre-allocated block of memory for the packet.&nbsp; The following
+can be used for the type variable:</font>
+<br>&nbsp;
+<table BORDER WIDTH="382" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>DBD_IBIT</font></td>
+
+<td VALIGN=CENTER><font size=-1>Initialization bit</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>DBD_MBIT</font></td>
+
+<td VALIGN=CENTER><font size=-1>More DBD packets en route</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>DBD_MSBIT</font></td>
+
+<td VALIGN=CENTER><font size=-1>Sender is the master</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_lsr(u_int type, u_int ls_id, u_long adv_router,
+const char *payload, int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="594" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - type</font>
+<br><font size=-1>2 - ID</font>
+<br><font size=-1>3 - advertising router</font>
+<br><font size=-1>4 - packet payload</font>
+<br><font size=-1>5 - payload length</font>
+<br><font size=-1>6 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_lsr() builds an OSPF Link State Request
+(LSR) packet. You pass the type of link state packet being requested, the
+link state ID, the advertising router, a pointer to an optional data payload,
+the payload length, and a pointer to a pre-allocated block of memory for
+the packet.&nbsp; See the libnet_build_ospf_lsa() section for more information
+regarding variables.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_lsu(u_int num, const char *payload, int payload_s,
+u_char *buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="611" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - number of LSA packets inside</font>
+<br><font size=-1>2 - packet payload</font>
+<br><font size=-1>3 - payload length</font>
+<br><font size=-1>4 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_lsu() builds an OSPF Link State Update
+(LSU) packet.&nbsp; You pass the number of Link State Acknowledgment (LSA)
+packets that will be in the packet, a pointer to an optional data payload,
+the payload length, and a pointer to a pre-allocated block of memory for
+the packet.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_lsa(u_short age, u_char options, u_char type,
+u_int ls_id, u_long adv_router, u_int sequence_num, u_short len, const
+char *payload, int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="597" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - link state age</font>
+<br><font size=-1>2 - options</font>
+<br><font size=-1>3 - type</font>
+<br><font size=-1>4 - link state ID</font>
+<br><font size=-1>5 - advertising router</font>
+<br><font size=-1>6 - sequence number</font>
+<br><font size=-1>7 - length not including LSA header</font>
+<br><font size=-1>8 - packet payload</font>
+<br><font size=-1>9 - payload length</font>
+<br><font size=-1>10 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_lsa() builds an OSPF Link State Acknowledgement
+(LSA) packet.&nbsp; You pass the link state age, packet options, type of
+LSA, the link state ID, the advertising router, the packet's sequence number,
+the length of the packet (_not_ including the LSA header length), a pointer
+to an optional data payload, the payload length, and a pointer to a pre-allocated
+block of memory for the packet.&nbsp; The following variables can be used
+for the type of LSA:</font>
+<br>&nbsp;
+<table BORDER WIDTH="469" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LS_TYPE_RTR</font></td>
+
+<td VALIGN=CENTER><font size=-1>Router LSA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LS_TYPE_NET</font></td>
+
+<td VALIGN=CENTER><font size=-1>Network LSA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LS_TYPE_IP</font></td>
+
+<td VALIGN=CENTER><font size=-1>Summary LSA (IP network)</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LS_TYPE_ASBR</font></td>
+
+<td VALIGN=CENTER><font size=-1>Summary LSA (ASBR)</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LS_TYPE_ASEXT</font></td>
+
+<td VALIGN=CENTER><font size=-1>AS-External LSA</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_lsa_rtr(u_short flags, u_short num, u_int
+id, u_int data, u_char type, u_char tos, u_short metric, const char *payload,
+int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="605" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - flags</font>
+<br><font size=-1>2 - number of links</font>
+<br><font size=-1>3 - link ID</font>
+<br><font size=-1>4 - info for link ID</font>
+<br><font size=-1>5 - router link type</font>
+<br><font size=-1>6 - TOS metrics</font>
+<br><font size=-1>7 - packet payload</font>
+<br><font size=-1>8 - payload length</font>
+<br><font size=-1>9 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_lsa_rtr() builds an OSPF Link State
+Router packet.&nbsp; You pass the optional packet flags, the number of
+links within that packet, the link ID (helps describe the next variable),
+the info for the specified link ID, the type of router link, the number
+of TOS metrics for this link, the metric (the cost of using the link),
+a pointer to an optional data payload, the payload length, and a pointer
+to a pre-allocated block of memory for the packet.&nbsp; The possible flags
+(not including 0x00) are as follows:</font>
+<br>&nbsp;
+<table BORDER WIDTH="255" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RTR_FLAGS_W</font></td>
+
+<td VALIGN=CENTER><font size=-1>W bit</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RTR_FLAGS_E</font></td>
+
+<td VALIGN=CENTER><font size=-1>E bit</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RTR_FLAGS_B</font></td>
+
+<td VALIGN=CENTER><font size=-1>B bit</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The possible link ID's are as follows:</font>
+<br>&nbsp;
+<table BORDER WIDTH="255" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LINK_ID_NBR_ID</font></td>
+
+<td VALIGN=CENTER><font size=-1>Neighbors router ID</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LINK_ID_IP_DES</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP address of router</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LINK_ID_SUB</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP subnet number</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The possible values for the router type are as follows:</font>
+<br>&nbsp;
+<table BORDER WIDTH="255" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RTR_TYPE_PTP</font></td>
+
+<td VALIGN=CENTER><font size=-1>Point to point</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RTR_TYPE_TRANS</font></td>
+
+<td VALIGN=CENTER><font size=-1>Connection to a `transit network`</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RTR_TYPE_STUB</font></td>
+
+<td VALIGN=CENTER><font size=-1>Connection to a `stub network`</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RTR_TYPE_VRTL</font></td>
+
+<td VALIGN=CENTER><font size=-1>Connection to a `virtual link`</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_lsa_net(u_long netmask, u_int router_id, const
+char *payload, int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="573" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - netmask</font>
+<br><font size=-1>2 - router ID</font>
+<br><font size=-1>3 - packet payload</font>
+<br><font size=-1>4 - packet payload length</font>
+<br><font size=-1>5 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_lsa_net() builds an OSPF Link Sate Network
+packet.&nbsp; You pass the interface's netmask, the router ID, a pointer
+to an optional data payload, the payload length, and a pointer to a pre-allocated
+block of memory for the packet.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_lsa_sum(u_long netmask, u_int metric, u_int
+tos, const char *payload, int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="622" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - netmask</font>
+<br><font size=-1>2 - metric</font>
+<br><font size=-1>3 - TOS</font>
+<br><font size=-1>4 -&nbsp; packet payload</font>
+<br><font size=-1>5 - packet payload length</font>
+<br><font size=-1>6 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_ospf_lsa_sum() builds an OSPF Link State
+Summary packet.&nbsp; You pass the interface's netmask, the cost of using
+the link (metric), the TOS, which is passed as a unsigned integer but the
+first 8 bits are the TOS and the last 24 bits are the TOS metric, a pointer
+to an optional data payload, the payload length, and a pointer to a pre-allocated
+block of memory for the packet.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_ospf_lsa_as(u_long netmask, u_int metric, u_long
+fwd_addr, u_int tag, const char *payload, int payload_s, u_char *buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="578" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - netmask</font>
+<br><font size=-1>2 - metric</font>
+<br><font size=-1>3 - forwarding address</font>
+<br><font size=-1>4 - external route tag</font>
+<br><font size=-1>6 - packet payload</font>
+<br><font size=-1>7 - packet payload length</font>
+<br><font size=-1>8 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_buils_ospf_lsa_as() builds an OSPF Link State AS
+External packet. You pass the interface's netmask, the cost of using the
+link (metric), the forwarding address, the external route tag, a pointer
+to an optional data payload, the payload length, and a pointer to a pre-allocated
+block of memory for the packet.&nbsp; In reality, the metric only uses
+the last 24 bits of the unsigned int.&nbsp; The first 8bits are reserved
+for a possible bit to be set (the E bit, see above for more info).&nbsp;
+The variable AS_E_BIT_ON can be used logically to set the E bit on.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_rip(u_char cmd, u_char ver, u_short domain, u_short
+addr_fam, u_short route_tag, u_long ip, u_long mask, u_long next_hop, u_long
+metric, const u_char *payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="604" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - command</font>
+<br><font size=-1>2 - version</font>
+<br><font size=-1>3 - routing domain (or zero)</font>
+<br><font size=-1>4 - address family</font>
+<br><font size=-1>5 - route tag (or zero)</font>
+<br><font size=-1>6 - IP address</font>
+<br><font size=-1>7 - netmask (or zero)</font>
+<br><font size=-1>8 - next hop IP address (or zero)</font>
+<br><font size=-1>9 - metric</font>
+<br><font size=-1>10 - pointer to packet payload</font>
+<br><font size=-1>11 - packet payload length</font>
+<br><font size=-1>12 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_rip() constructs a RIP packet.&nbsp; Depending
+on the version of RIP you are using, packet fields are slightly different.&nbsp;
+The following chart highlights these differences:</font>
+<br>&nbsp;
+<table BORDER WIDTH="457" >
+<tr>
+<td VALIGN=CENTER><b>ARGUMENT</b></td>
+
+<td VALIGN=CENTER><b>VERSION 1</b></td>
+
+<td VALIGN=CENTER><b>VERSION 2</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>1</font></td>
+
+<td VALIGN=CENTER><font size=-1>command</font></td>
+
+<td VALIGN=CENTER><font size=-1>command</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>2</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIPVER_1</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIPVER_2</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>3</font></td>
+
+<td VALIGN=CENTER><font size=-1>zero</font></td>
+
+<td VALIGN=CENTER><font size=-1>routing domain</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>4</font></td>
+
+<td VALIGN=CENTER><font size=-1>address family</font></td>
+
+<td VALIGN=CENTER><font size=-1>address family</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>5</font></td>
+
+<td VALIGN=CENTER><font size=-1>zero</font></td>
+
+<td VALIGN=CENTER><font size=-1>subnet mask</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>6</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP address</font></td>
+
+<td VALIGN=CENTER><font size=-1>IP address</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>7</font></td>
+
+<td VALIGN=CENTER><font size=-1>zero</font></td>
+
+<td VALIGN=CENTER><font size=-1>subnet mask</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>8</font></td>
+
+<td VALIGN=CENTER><font size=-1>zero</font></td>
+
+<td VALIGN=CENTER><font size=-1>next hop ip</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>9</font></td>
+
+<td VALIGN=CENTER><font size=-1>metric</font></td>
+
+<td VALIGN=CENTER><font size=-1>metric</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The RIP commands should be one of the following:</font>
+<br>&nbsp;
+<table BORDER WIDTH="255" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RIPCMD_REQUEST</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIP request</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RIPCMD_RESPONSE</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIP response</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RIPCMD_TRACEON</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIP tracing on</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RIPCMD_TRACEOFF</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIP tracing off</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RIPCMD_POLL</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIP polling</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RIPCMD_POLLENTRY</font></td>
+
+<td VALIGN=CENTER><font size=-1>RIP poll entry</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>RIPCMD_MAX</font></td>
+
+<td VALIGN=CENTER>&nbsp;</td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_tcp(u_short th_sport, u_short th_dport, u_long
+th_seq, u_long th_ack, u_char th_flags, u_short th_win, u_short th_urg,
+const u_char *payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="565" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - source port</font>
+<br><font size=-1>2 - destination port</font>
+<br><font size=-1>3 - sequence number</font>
+<br><font size=-1>4 - acknowledgement number</font>
+<br><font size=-1>5 - control flags&nbsp;</font>
+<br><font size=-1>6 - window size</font>
+<br><font size=-1>7 - urgent pointer</font>
+<br><font size=-1>8 - pointer to packet payload</font>
+<br><font size=-1>9 - packet payload size</font>
+<br><font size=-1>10 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_tcp() constructs a TCP packet.&nbsp; The
+control flags should be one or more of the following (OR'd together if
+need be):</font>
+<br>&nbsp;
+<table BORDER WIDTH="517" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCSRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>TH_URG</font></td>
+
+<td VALIGN=CENTER><font size=-1>urgent data is present</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>TH_ACK</font></td>
+
+<td VALIGN=CENTER><font size=-1>acknowledgement number field should be
+checked</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>TH_PSH</font></td>
+
+<td VALIGN=CENTER><font size=-1>push this data to the application</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>TH_RST</font></td>
+
+<td VALIGN=CENTER><font size=-1>reset the referenced connection</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>TH_SYN</font></td>
+
+<td VALIGN=CENTER><font size=-1>synchronize connection sequence numbers</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>TH_FIN</font></td>
+
+<td VALIGN=CENTER><font size=-1>sender is finished sending data</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<br><b>int libnet_build_udp(u_short sport, u_short dport, const u_char
+*payload, int payload_len, u_char *packet_buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="560" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - source port</font>
+<br><font size=-1>2 - destination port</font>
+<br><font size=-1>3 - pointer to packet payload</font>
+<br><font size=-1>4 - packet payload size</font>
+<br><font size=-1>5 - pointer to pre-allocated packet memory</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_build_udp() constructs a UDP packet.&nbsp; Please
+remember that UDP checksums are considered mandatory by the host requirements
+RFC.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_insert_ipo(struct ipoption *opt, u_char opt_len, u_char
+*packet_buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="632" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a IP options structure (filled
+in)</font>
+<br><font size=-1>2 - options length</font>
+<br><font size=-1>3 - pointer to a complete IP packet</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_insert_ipo() inserts IP options into a pre-built
+IP packet.&nbsp; Supplied is a pointer to an ip options structure, the
+size of this options list, and a pointer the pre-built packet.&nbsp; The
+options list should be constructed as they will appear on the wire, as
+they are simply inserted into the packet at the appropriate location.</font>
+<p><font size=-1>The function returns -1 if the options would result in
+packet too large (greater then 65535 bytes), or if the packet buffer is
+NULL.&nbsp; It is an unchecked runtime error for the user to have not allocated
+enough heap memory for the IP packet plus the IP options.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_insert_tcpo(struct tcpoption *opt, u_char opt_len, u_char
+*packet_buf);</b>
+<br>&nbsp;
+<table BORDER WIDTH="615" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a TCP options structure
+(filled in)</font>
+<br><font size=-1>2 - options length</font>
+<br><font size=-1>3 - pointer to a complete IP/TCP packet</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_insert_tcpo() inserts TCP options into a pre-built
+IP/TCP packet. Supplied is a pointer to a tcp options structure, the size
+of this options list, and a pointer the pre-built packet.&nbsp; The options
+list should be constructed as they will appear on the wire, as they are
+simply inserted into the packet at the appropriate location.</font>
+<p><font size=-1>The function returns -1 if the options would result in
+packet too large (greater then 65535 bytes), if the packet isn't an IP/TCP
+packet, if the options list if longer than 20 bytes, or if the packet buffer
+is NULL.&nbsp; It is an unchecked runtime error for the user to have not
+allocated enough heap memory for the IP/TCP packet plus the IP options.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><a NAME="s5_5"></a><b><font size=+2>5.5 Support Functions</font></b>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_seed_prand();</b>
+<br>&nbsp;
+<table BORDER WIDTH="436" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_seed_prand() seeds the pseudo-random number generator.&nbsp;
+The function is basically a wrapper to srandom.&nbsp; It makes a call to
+gettimeofday to get entropy.&nbsp; It can return -1 if the call to gettimeofday
+fails (check errno).&nbsp; It otherwise returns 1.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>u_long libnet_get_prand(int modulus);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="690" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - maximum size of pseudo-random number
+desired</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_get_prand() generates a psuedo-random number.&nbsp;
+The range of the returned number is controlled by the function's only argument:</font>
+<br>&nbsp;
+<table BORDER WIDTH="255" >
+<tr>
+<td VALIGN=CENTER><b>VALUE</b></td>
+
+<td VALIGN=CENTER><b>DESCSRIPTION</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR2</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR8</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 255</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR16</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 32767</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PRu16</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 65535</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR32</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 2147483647</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PRu32</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 4294967295</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The function does not fail.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>void libnet_hex_dump(u_char * buf, int len, int swap, FILE *stream);</b>
+<br>&nbsp;
+<table BORDER WIDTH="699" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - packet to dump</font>
+<br><font size=-1>2 - packet length</font>
+<br><font size=-1>3 - byte swap flag</font>
+<br><font size=-1>4 - previously opened stream in which to dump packet</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_hex_dump() prints out a packet in hexadecimal.&nbsp;
+It will print the packet as it appears in memory, or as it will appear
+on the wire, depending on the value of the byte-swap flag.&nbsp; The function
+prints the packet to a previously opened stream (such as stdout).&nbsp;
+Note that on big-endian architectures such as Solaris, the packet will
+appear the same in memory as it will on the wire.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_plist_chain_new(struct libnet_plist_chain **plist, char
+*token_list);</b>
+<br>&nbsp;
+<table BORDER WIDTH="558" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a libnet_plist_chain pointer</font>
+<br><font size=-1>2 - pointer to token list</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_plist_chain_new() constructs a new libnet port-list
+chain.&nbsp; A libnet port-list chain is a fast and simple way of implementing
+port-list ranges (useful for applications that employ a list of ports -
+like a port scanner).&nbsp; You'll see naive implementations that allocate
+an entire array of 65535 bytes and fill in the desired ports one by one.&nbsp;
+However, we only really need to store the beginning port and the ending
+port, and we can efficiently store multiple port ranges (delimited by commas)
+by using a linked list chain with each node holding the beginning and ending
+port for a particular range.&nbsp; For example, The port range `1-1024`
+would occupy one node with the beginning port being 1 and the ending port
+being 1024.&nbsp; The port range `25,110-161,6000` would result in 3 nodes
+being allocated.&nbsp; Single ports are taken as single ranges (port 25
+ends up being 25-25).&nbsp; A port list range without a terminating port
+(port_num - ) is considered shorthand for (port_num - 65535).</font>
+<p><font size=-1>The arguments are a pointer to libnet_plist_chain pointer
+(which will end up being the head of the linked list) which needs to deference
+an allocated libnet_plist_chain structure and pointer to the port-list
+(token-list) itself.</font>
+<p><font size=-1>The function checks this character port list for valid
+tokens (1234567890,- ) and returns an error if an unrecognized token is
+found.</font>
+<p><font size=-1>Upon success the function returns 1, and head points to
+the newly formed port-list (and also contains the number of nodes in the
+list.&nbsp; If an error occurs (an unrecognized token is found or malloc
+fails) -1 is returned and head is set to NULL.</font>
+<p><font size=-1>libnet_plist_chain_next_pair() should be used to extract
+port list pairs.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_plist_chain_next_pair(struct libnet_plist_chain *plist,
+u_short *bport, u_short *eport);</b>
+<br>&nbsp;
+<table BORDER WIDTH="603" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1, 0</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a libnet_plist_chain pointer</font>
+<br><font size=-1>2 - pointer to the beginning port (to be filled in)</font>
+<br><font size=-1>3 - pointer to the ending port (to be filled in)</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_plist_chain_next_pair() fetches the next pair of
+ports from the list.&nbsp; The function takes a pointer to the head of
+the prebuilt list and a pointer to a u_short that will contain the beginning
+port and a&nbsp; pointer to a u_short that will contain the ending port.</font>
+<p><font size=-1>The function returns 1 and fills in these values if there
+are nodes remaining, or if the port list chain is exhausted, it returns
+0.&nbsp; If an error occurs (the libnet_plist_chain pointer is NULL) the
+function</font>
+<br><font size=-1>returns -1.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>int libnet_plist_chain_dump(struct libnet_plist_chain *plist);</b>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER WIDTH="539" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>-1</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a libnet_plist_chain pointer</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_plist_chain_dump() dumps the port-list chain referenced
+by the argument.&nbsp; The function prints the list to stdout (it's mainly
+meant as a debugging tool).&nbsp; It returns 1 upon success or if an error
+occurs (the libnet_plist_chain pointer is NULL) the function returns -1.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>u_char *libnet_plist_chain_dump_string(struct libnet_plist_chain
+*plist);</b>
+<br>&nbsp;
+<table BORDER WIDTH="557" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>pointer to the token list</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NULL</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>no</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a libnet_plist_chain pointer</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_plist_chain_dump_string() returns the port-list
+chain referenced by the argument as a string.&nbsp; It returns the port
+list string upon success or if an error occurs (the libnet_plist_chain
+pointer is NULL) the function returns NULL.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><b>void libnet_plist_chain_free(struct libnet_plist_chain *plist);</b>
+<br>&nbsp;
+<table BORDER WIDTH="559" >
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon success</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>return value upon failure</font></td>
+
+<td VALIGN=CENTER><font size=-1>NA</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>re-entrant</font></td>
+
+<td VALIGN=CENTER><font size=-1>yes</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>arguments</font></td>
+
+<td VALIGN=CENTER><font size=-1>1 - pointer to a libnet_plist_chain pointer</font></td>
+</tr>
+</table>
+
+<p><font size=-1>libnet_plist_chain_free() frees the memory associated
+with the libnet port list chain.</font>
+<br>
+<hr ALIGN="LEFT">
+<br><a NAME="s5_6"></a><b><font size=+2>5.6 Symbolic Constants</font></b>
+<br>
+<hr ALIGN="LEFT">
+<br><font size=-1>Libnet conveniently defines standard packet header sizes,
+for use with many packet manipulation functions, as per the following chart:</font>
+<br>&nbsp;
+<table BORDER CELLSPACING=3 CELLPADDING=3 >
+<tr>
+<td VALIGN=CENTER><b>SYMBOLIC CONSTANT&nbsp;</b></td>
+
+<td VALIGN=CENTER><b>SIZE IN BYTES</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ARP_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>28</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_DNS_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>12</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ETH_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>14</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ICMP_H (deprecated)</font></td>
+
+<td VALIGN=CENTER><font size=-1>4</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ICMP_ECHO_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>8</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ICMP_MASK_H&nbsp;</font></td>
+
+<td VALIGN=CENTER><font size=-1>12</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ICMP_UNREACH_H&nbsp;</font></td>
+
+<td VALIGN=CENTER><font size=-1>8</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ICMP_TIMXCEED_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>8&nbsp;</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ICMP_REDIRECT_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>8&nbsp;</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ICMP_TS_H&nbsp;</font></td>
+
+<td VALIGN=CENTER><font size=-1>20</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_IGMP_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>8</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_IP_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>20</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_RIP_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>24</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_TCP_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>20</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_UDP_H</font></td>
+
+<td VALIGN=CENTER><font size=-1>8</font></td>
+</tr>
+</table>
+
+<p><font size=-1>More packet memory constants:</font>
+<br>&nbsp;
+<table BORDER CELLSPACING=3 CELLPADDING=3 >
+<tr>
+<td VALIGN=CENTER><b>SYMBOLIC CONSTANT</b></td>
+
+<td VALIGN=CENTER><b>MEANING</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PACKET</font></td>
+
+<td VALIGN=CENTER><font size=-1>enough memory for a TCP or UDP header and
+an IP header</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_OPTS</font></td>
+
+<td VALIGN=CENTER><font size=-1>enough memory for IP or TCP options (40
+bytes)</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_MAX_PACKET</font></td>
+
+<td VALIGN=CENTER><font size=-1>enough memory for IP_MAXPACKET (65535 bytes)</font></td>
+</tr>
+</table>
+
+<p><font size=-1>The following are used for psuedo random number generation,
+with libnet_get_prand():</font>
+<br>&nbsp;
+<br>&nbsp;
+<table BORDER CELLSPACING=3 CELLPADDING=3 >
+<tr>
+<td VALIGN=CENTER><b>SYMBOLIC CONSTANT&nbsp;</b></td>
+
+<td VALIGN=CENTER><b>RANGE</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PRAND_MAX</font></td>
+
+<td VALIGN=CENTER><font size=-1>65535</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR2</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 2</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR8</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 255</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR16</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 32767</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PRu16</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 65535</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PR32</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 2147483647</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PRu32</font></td>
+
+<td VALIGN=CENTER><font size=-1>0 - 4294967295</font></td>
+</tr>
+</table>
+
+<p><font size=-1>For error messaging, used in conjunction with libnet_error():</font>
+<br>&nbsp;
+<table BORDER CELLSPACING=3 CELLPADDING=3 >
+<tr>
+<td VALIGN=CENTER><b>SYMBOLIC CONSTANT</b></td>
+
+<td VALIGN=CENTER><b>MEANING</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ERR_WARNING</font></td>
+
+<td VALIGN=CENTER>warning error message</td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ERR_CRITICAL</font></td>
+
+<td VALIGN=CENTER>critical error message</td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_ERR_FATAL</font></td>
+
+<td VALIGN=CENTER>fatal error message (program will exit)</td>
+</tr>
+</table>
+
+<p><font size=-1>For use with libnet_host_lookup(), libnet_host_lookup_r(),
+and libnet_name_resolve():</font>
+<br>&nbsp;
+<table BORDER CELLSPACING=3 CELLPADDING=3 >
+<tr>
+<td VALIGN=CENTER><b>SYMBOLIC CONSTANT&nbsp;</b></td>
+
+<td VALIGN=CENTER><b>MEANING</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_DONT_RESOLVE&nbsp;</font></td>
+
+<td VALIGN=CENTER><font size=-1>do not resolve IP addresses into FQDNs</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_RESOLVE&nbsp;</font></td>
+
+<td VALIGN=CENTER><font size=-1>attempt to resolve IP addresses into FQDNs</font></td>
+</tr>
+</table>
+
+<p>
+<hr ALIGN="LEFT">
+<br><a NAME="s5_7"></a><b><font size=+2>5.7 Macros</font></b>
+<br>
+<hr ALIGN="LEFT">
+<p><font size=-1>The arena interface defines the following macros:</font>
+<br>&nbsp;
+<table BORDER CELLSPACING=3 CELLPADDING=3 >
+<tr>
+<td VALIGN=CENTER><b>MACRO</b></td>
+
+<td VALIGN=CENTER><b>MEANING</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_GET_ARENA_SIZE(</font><tt>arena</tt><font size=-1>)</font></td>
+
+<td VALIGN=CENTER><font size=-1>returns the size of the arena</font></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_GET_ARENA_REMAINING_BYTES(</font><tt>arena</tt><font size=-1>)</font></td>
+
+<td VALIGN=CENTER><font size=-1>returns the number of bytes left in the
+arena</font></td>
+</tr>
+</table>
+
+<p><font size=-1>To print the ethernet address from an ether_addr struct
+use the following macro:</font>
+<br>&nbsp;
+<table BORDER CELLSPACING=3 CELLPADDING=3 >
+<tr>
+<td VALIGN=CENTER><b>MACRO</b></td>
+
+<td VALIGN=CENTER><b>MEANING</b></td>
+</tr>
+
+<tr>
+<td VALIGN=CENTER><font size=-1>LIBNET_PRINT_ETH_ADDR(</font><tt>e</tt><font size=-1>)</font></td>
+
+<td VALIGN=CENTER><font size=-1>Prints the ethernet address of the ether_addr
+struct</font></td>
+</tr>
+</table>
+
+<hr ALIGN="LEFT">
+<p><b><font size=-1><a href="6.html">Next</a> <a href="4.html">Previous</a><a href="lrm.html">Top</a></font></b>
+</body>
+</html>

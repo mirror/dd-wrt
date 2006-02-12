@@ -1,0 +1,27 @@
+<html>
+<head><title>NoCat Gateway Status: $GatewayName</title></head>
+<body bgcolor="#FFFFFF" text="#000000">
+<h1>NoCat Gateway Stats for $GatewayName at $LocalTime</h1>
+<hr noshade="1" />
+<table border="0" cellpadding="0" cellspacing="0">
+    <tr><td align="center">
+      <table border="0" cellpadding="5" cellspacing="0">
+        <tr><td>Gateway Up Since</td><td>$GatewayStartTime</td></tr>
+        <tr><td>TotalConnections</td><td>$TotalConnections</td></tr>
+	<tr><td>GatewayVersion</td><td>$Version</td></tr>
+        <tr><td>GatewayMode</td><td>$GatewayMode</td></tr>
+        <tr><td>LoginTimeout</td><td>$LoginTimeout</td></tr>
+        <tr><td>IdleTimeout</td><td>$IdleTimeout</td></tr>
+        <tr><td>HomePage</td><td>$HomePage</td></tr>
+        <tr><td>AllowedWebHosts</td><td>$AllowedWebHosts</td></tr>
+        <tr><td>LastConnectionTime</td><td>$LastConnectionTime</td></tr>
+        <tr><td>ConnectionCount</td><td>$ConnectionCount</td></tr>
+      </table>
+    </td></tr>
+    <tr><td align="center"><h2>Current Users</h2></td></tr>
+    <tr><td><table border="1" cellpadding="5">$UserTable</table></td></tr>
+</table>
+<hr noshade="1" />
+<p><img src="http://nocat.net/images/auth_logo.gif" width="112" height="35"></p>
+</body>
+</html>

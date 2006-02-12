@@ -1,0 +1,182 @@
+.TH ARP 8 "5 Jan 1999" "net-tools" "Linux Programmer's Manual"
+.SH NAME
+arp \- manipulate the system ARP cache
+.SH SYNOPSIS
+.B arp 
+.RB [ \-vn ] 
+.RB [ "\-H type" ] 
+.RB [ "-i if" ] 
+.B -a 
+.RB [ hostname ]
+.PP
+.B arp 
+.RB [ \-v ]
+.RB [ "\-i if" ] 
+.B "\-d hostname"
+.RB [ pub ]
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H type" ] 
+.RB [ "\-i if" ] 
+.B -s hostname hw_addr
+.RB [ temp ] 
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H type" ] 
+.RB [ "\-i if" ] 
+.B -s hostname hw_addr
+.RB [ "netmask nm" ] 
+.B pub
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H type" ] 
+.RB [ "\-i if" ] 
+.B -Ds hostname ifa
+.RB [ "netmask nm" ] 
+.B pub
+.PP
+.B arp 
+.RB [ \-vnD ]
+.RB [ "\-H type" ] 
+.RB [ "-i if" ]
+.B -f [filename]
+
+.SH DESCRIPTION
+.B Arp
+manipulates the kernel's ARP cache in various ways.  The primary options
+are clearing an address mapping entry and manually setting up one.  For
+debugging purposes, the
+.B arp
+program also allows a complete dump of the ARP cache.
+.SH OPTIONS
+.TP
+.B "\-v, \-\-verbose"
+Tell the user what is going on by being verbose.
+.TP
+.B "\-n, \-\-numeric"
+shows numerical addresses instead of trying to determine symbolic host, port
+or user names.
+.TP
+.B "\-H type, \-\-hw-type type"
+When setting or reading the ARP cache, this optional parameter tells
+.B arp
+which class of entries it should check for.  The default value of
+this parameter is
+.B ether
+(i.e. hardware code 0x01 for IEEE 802.3 10Mbps Ethernet).
+Other values might include network technologies such as
+.RB "ARCnet (" arcnet ")"
+,
+.RB "PROnet (" pronet ")"
+,
+.RB "AX.25 (" ax25 ")"
+and
+.RB "NET/ROM (" netrom ")."
+.TP
+.B "\-a [hostname], \-\-display [hostname]"
+Shows the entries of the specified hosts.  If the
+.B hostname
+parameter is not used,
+.B all
+entries will be displayed.
+.TP
+.B "\-d hostname, \-\-delete hostname"
+Remove any entry for the specified host.  This can be used if the
+indicated host is brought down, for example.
+.TP
+.B "\-D, \-\-use-device"
+Use the interface
+.BR ifa "'s"
+hardware address.
+.TP
+.B "\-i If, \-\-device If"
+Select an interface. When dumping the ARP cache only entries matching
+the specified interface will be printed. When setting a permanent or
+.B temp
+ARP entry this interface will be associated with the entry; if this
+option is not used, the kernel will guess based on the routing
+table. For
+.B pub
+entries the specified interface is the interface on which ARP requests will
+be answered. 
+.br
+.B NOTE:
+This has to be different from the interface to which the IP
+datagrams will be routed.
+.TP
+.B "\-s hostname hw_addr, \-\-set hostname"
+Manually create an ARP address mapping entry for host
+.B hostname
+with hardware address set to
+.B hw_addr
+.  The format of the hardware address is dependent on the hardware
+class, but for most classes one can assume that the usual presentation
+can be used.  For the Ethernet class, this is 6 bytes in hexadecimal,
+separated by colons. When adding proxy arp entries (that is those with
+the 
+.BR pub lish 
+flag set a 
+.B netmask 
+may be specified to proxy arp for entire subnets. This is not good
+practice, but is supported by older kernels because it can be
+useful. If the
+.B temp
+flag is not supplied entries will be permanent stored into the ARP
+cache.
+.br
+.B NOTE:
+As of kernel 2.2.0 it is no longer possible to set an ARP entry for an 
+entire subnet. Linux instead does automagic proxy arp when a route
+exists and it is forwarding. See 
+.BR arp (7)
+for details.
+.TP
+.B "\-f filename, \-\-file filename"
+Similar to the
+.B \-s
+option, only this time the address info is taken from file
+.B filename
+.  This can be used if ARP entries for a lot of hosts have to be
+set up.  The name of the data file is very often
+.IR /etc/ethers , 
+but this is not official. If no filename is specified /etc/ethers
+is used as default.
+.sp 1
+The format of the file is simple; it
+only contains ASCII text lines with a hostname, and a hardware
+address separated by whitespace. Additionally the 
+.BR "pub" , " temp" " and" " netmask"
+flags can be used.
+.LP
+In all places where a
+.B hostname
+is expected, one can also enter an
+.B "IP address"
+in dotted-decimal notation.
+.P
+As a special case for compatibility the order of the hostname and 
+the hardware address can be exchanged.
+.LP 
+Each complete entry in the ARP cache will be marked with the
+.B C
+flag. Permanent entries are marked with
+.B M
+and published entries have the
+.B P
+flag.
+.SH FILES
+.I /proc/net/arp,
+.br
+.I /etc/networks
+.br
+.I /etc/hosts
+.br
+.I /etc/ethers
+.SH SEE ALSO
+rarp(8), route(8), ifconfig(8), netstat(8)
+.SH AUTHORS
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org> with a lot of improvements
+from net-tools Maintainer Bernd Eckenfels <net-tools@lina.inka.de>.

@@ -1,0 +1,2 @@
+ "mmc_enable" "enable mmc support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+ "mmc_enable0" "enable mmc support" "CHOICE" "2" "0" "1"  "FALSE" "0"

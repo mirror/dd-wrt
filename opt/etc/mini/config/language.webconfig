@@ -1,0 +1,20 @@
+<fieldset>
+<legend>Language Selection</legend>
+<span class="comment">Language Configuration</span><div class="setting">
+	<div class="label">Language</div>
+	<select name="language">
+	<option value="bulgarian" <% nvram_match("language","bulgarian","selected"); %>>Bulgarian</option>
+	<option value="tradchinese" <% nvram_match("language","tradchinese","selected"); %>>Chinese (Trad.)</option>
+	<option value="croatian" <% nvram_match("language","croatian","selected"); %>>Croatian</option>
+	<option value="czech" <% nvram_match("language","czech","selected"); %>>Czech</option>
+	<option value="dutch" <% nvram_match("language","dutch","selected"); %>>Dutch</option>
+	<option value="english" <% nvram_match("language","english","selected"); %>>English</option>
+	<option value="french" <% nvram_match("language","french","selected"); %>>French</option>
+	<option value="german" <% nvram_match("language","german","selected"); %>>German</option>
+	<option value="italian" <% nvram_match("language","italian","selected"); %>>Italian</option>
+	<option value="brazilian" <% nvram_match("language","brazilian","selected"); %>>Portuguese (Brazil)</option>
+	<option value="slovenian" <% nvram_match("language","slovenian","selected"); %>>Slovenian</option>
+	<option value="spanish" <% nvram_match("language","spanish","selected"); %>>Spanish</option>
+	<option value="swedish" <% nvram_match("language","swedish","selected"); %>>Swedish</option>
+	</select></div>
+</fieldset>

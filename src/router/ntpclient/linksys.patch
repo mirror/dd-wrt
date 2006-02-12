@@ -1,0 +1,74 @@
+Adapted from the version of ntpclient posted by Linksys
+at http://www.linksys.com/support/gpl.asp .  They claim to
+use their slightly hacked ntpclient_2000_339 in some of
+their MIPS/Linux-based wireless routers.  It adds static
+linking of resolv.o, changes the default measurement interval
+from 10 minutes to 60 minutes, and includes a feeble attempt
+to port ntpclient to vxWorks.
+
+--- Makefile	Sun May 18 11:41:25 2003
++++ Makefile-linksys	Sat Jul  5 12:35:50 2003
+@@ -1,10 +1,11 @@
+-# Under Solaris, you need to 
++# Under Solaris, you need to
+ #    CFLAGS += -xO2 -Xc
+ #    LDLIBS += -lnsl -lsocket
+ # Some versions of Linux may need
+ #    CFLAGS += -D_GNU_SOURCE
+ # To cross-compile
+ #    CC = arm-linux-gcc
++CC=/opt/brcm/hndtools-mipsel-linux/bin/mipsel-linux-gcc
+ # To check for lint
+ # -Wundef not recognized by gcc-2.7.2.3
+ CFLAGS += -Wall -Wpointer-arith -Wcast-align -Wcast-qual -Wshadow \
+@@ -18,7 +19,8 @@
+ test: ntpclient
+ 	./ntpclient -d -r <test.dat
+ 
+-ntpclient: ntpclient.o phaselock.o
++ntpclient: ntpclient.o phaselock.o resolv.o
++	$(CC) $(CFLAGS) $^ -o $@
+ 
+ adjtimex: adjtimex.o
+ 
+--- ntpclient.c	Sat Jul  5 12:30:17 2003
++++ ntpclient-linksys.c	Sat Jul  5 12:33:00 2003
+@@ -60,6 +60,7 @@
+ typedef u_int32_t __u32;
+ #include <sys/timex.h>
+ #else
++#define main ntpclient
+ extern struct hostent *gethostbyname(const char *name);
+ extern int h_errno;
+ #define herror(hostname) \
+@@ -386,7 +387,7 @@
+ 		if ((i!=1)||(!FD_ISSET(usd,&fds))) {
+ 			if (i==EINTR) continue;
+ 			if (i<0) perror("select");
+-			if (to.tv_sec == 0) {
++			if ((to.tv_sec == 0)|| (to.tv_sec == interval)) {
+ 				if (probes_sent >= num_probes &&
+ 					num_probes != 0) break;
+ 				send_packet(usd);
+@@ -462,7 +463,7 @@
+ 	/* These parameters are settable from the command line
+ 	   the initializations here provide default behavior */
+ 	short int udp_local_port=0;   /* default of 0 means kernel chooses */
+-	int cycle_time=600;           /* seconds */
++	int cycle_time=3600;          /* seconds */
+ 	int probe_count=0;            /* default of 0 means loop forever */
+ 	/* int debug=0; is a global above */
+ 	int goodness=0;
+@@ -508,6 +509,12 @@
+ 				exit(1);
+ 		}
+ 	}
++
++#ifdef vxworks
++	hostname = argv[0];
++	set_clock++;
++#endif
++
+ 	if (replay) {
+ 		do_replay();
+ 		exit(0);

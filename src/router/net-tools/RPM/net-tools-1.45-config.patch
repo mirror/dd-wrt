@@ -1,0 +1,46 @@
+diff -C 2 -P net-tools/config.h net-tools-new/config.h
+*** net-tools/config.h	Wed Dec 31 18:00:00 1969
+--- net-tools-new/config.h	Fri Feb 27 20:21:30 1998
+***************
+*** 0 ****
+--- 1,40 ----
++ /*
++ * config.h	Automatically generated configuration includefile
++ *
++ * NET-TOOLS	A collection of programs that form the base set of the
++ *		NET-3 Networking Distribution for the LINUX operating
++ *		system.
++ *
++ *		DO  NOT  EDIT  DIRECTLY
++ *
++ * Version:	Generated from "config.in 1.04 (96-04-24)"
++ */
++ 
++ /* 
++  * 
++  * Protocol Families.
++  * 
++  */
++ #define HAVE_AFUNIX 1
++ #define HAVE_AFINET 1
++ #define HAVE_AFINET6 0
++ #define HAVE_AFIPX 1
++ #define HAVE_AFATALK 1
++ #define HAVE_AFAX25 1
++ #define HAVE_AFNETROM 1
++ 
++ /* 
++  * 
++  * Device Hardware types.
++  * 
++  */
++ #define HAVE_HWETHER 1
++ #define HAVE_HWARC 1
++ #define HAVE_HWSLIP 1
++ #define HAVE_HWPPP 1
++ #define HAVE_HWTUNNEL 1
++ #define HAVE_HWTR 1
++ #define HAVE_HWAX25 1
++ #define HAVE_HWNETROM 1
++ #define HAVE_HWFR 1
++ #define HAVE_HWSIT 0

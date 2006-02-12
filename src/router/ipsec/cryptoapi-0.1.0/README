@@ -1,0 +1,91 @@
+-*- text -*- 
+		    The International Kernel Patch
+		    ==============================
+		     (aka Linux Kernel CryptoAPI)
+
+  This README contains information on patching your kernel and compiling
+the CryptoAPI.  For information on using the CryptoAPI see  
+<./kernel/Documentation/cryptoapi.txt> and for information on how to
+set up filesystem encryption see <./kernel/Documentation/cryptoloop.txt>
+
+Installation
+~~~~~~~~~~~~
+
+  To use the Linux Kernel CryptoAPI you must have following:
+  - CryptoAPI source distribution
+  - directory with recent kernel sources
+
+  First unzip and untar the CryptoAPI file into your directory of choice. Then
+  on the top level CryptoAPI directory, to patch your kernel type:
+
+  The $KDIR make variable tells the Makefile where your kernel sources are
+  located. It is only necessary if they are not in /usr/src/linux. Alternatively
+  you can modify the Makefile for this instead.
+
+	$ make patch-kernel KDIR=<kernel source dir>
+
+  Similarly to remove CryptoAPI from your kernel:
+
+        $ make unpatch-kernel KDIR=<kernel source dir>
+
+  If you do not want to patch your kernel sources and you just want to
+compile the modules for CryptoAPI type:
+
+	$ make modules KDIR=<kernel source dir>
+
+  This will locally build the CryptoAPI kernel modules without patching
+your kernel source directory.  To install the compiled modules type:
+
+	$ make modules_install
+
+  The modules will then be copied to /lib/modules/<kernel version> and 
+will then be able to be loaded into the kernel.
+
+  To load a specific cipher(if it is not compiled into the kernel) first
+load the cryptoapi module and then the cipher you want:
+
+	$ insmod cryptoapi
+	$ insmod cipher-<cipher name>
+
+  Or if you are using a digest function:
+  
+	$ insmod digest-<digest name>
+
+  Now you can use the provided cipher or digest.
+
+Note: You can have any number of ciphers and/or digests loaded at the 
+same time in the kernel.
+
+Manual Patching
+~~~~~~~~~~~~~~~
+
+  If you want to apply the patches individually(or something goes wrong) then
+there are a couple different patches you have to apply.
+      
+      - kernel config patch (./patches/linux-2.<version>/kbuild-2.<version>)
+
+  Just go to your kernel sources directory and apply one of the patches:
+
+       $ patch -p0 < /path/to/patch/somepatch.diff
+      
+      - copying the source files to your kernel directory
+
+       $ cp -R kernel/crypto $(KDIR)/
+       $ cp kernel/include/linux/crypto.h $(KDIR)/include/linux/
+       $ cp kernel/include/linux/wordops.h $(KDIR)/include/linux/
+
+Updates
+~~~~~~~
+  To get the latest CryptoAPI release point your browser to the official 
+repository at <http://www.kerneli.org>.  You can also access our
+cvs repository anonymously with:
+
+$ cvs -d:pserver:anonymous@cvs.kerneli.org:/cvsroot/kerneli login
+$ cvs -z3 -d:pserver:anonymous@cvs.kerneli.org:/cvsroot/kerneli co cryptoapi
+$ cvs -z3 -d:pserver:anonymous@cvs.kerneli.org:/cvsroot/kerneli co cryptoloop
+
+see <./kernel/Documentation/cryptoapi/README> and 
+<./kernel/Documentation/cryptoapi/cryptoloop.txt> for more information
+
+--
+$Id: README,v 1.1.2.1 2004/05/23 12:29:03 nikki Exp $
