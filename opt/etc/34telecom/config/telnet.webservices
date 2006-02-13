@@ -1,8 +1,0 @@
-	<fieldset>
-	<legend>Telnet</legend>
-	<div class="setting">
-		<div class="label">Telnet</div>
-		<input type="radio" name="telnetd_enable" value="1" <% nvram_selmatch("telnetd_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="telnetd_enable" value="0" <% nvram_selmatch("telnetd_enable", "0", "checked"); %> />Disable
-		</div>
-	</fieldset><br />
