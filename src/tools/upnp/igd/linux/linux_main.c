@@ -58,7 +58,7 @@ reap(int sig)
 }
 
 
-int ignupnp_main(int argc, char *argv[])
+int main(int argc, char *argv[])
 {
     extern char g_wandevs[];
     //extern char g_landevs[];

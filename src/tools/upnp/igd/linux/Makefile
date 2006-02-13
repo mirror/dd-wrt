@@ -44,7 +44,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += -Os -mips32 -mtune=mips32 -pipe -DNDEBUG
+CFLAGS += -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -DNDEBUG
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused 
@@ -67,7 +67,7 @@ SOURCES.TEST = test.c shutils.c
 SOURCES.OBJ := $(SOURCES)
 SOURCES.OBJ := $(patsubst %.c,$(OBJDIR)/%.o,$(SOURCES.OBJ))
 
-TARGET = upnp.a
+TARGET = upnp
 LIBS = -L../../upnp/linux -L$(SRCBASE)/router/netconf \
 	-L$(SRCBASE)/router/nvram -L$(SRCBASE)/router/shared -lupnp -lnetconf -lnvram -lshared
 
@@ -117,12 +117,11 @@ endif
 	$(MAKE) -C ../../upnp/linux DEBUG=$(DEBUG) PLATFORM=x86 CC=$(CC) LD=$(LD) VENDOR=$(VENDOR)
 
 $(TARGET) :: ../../upnp/linux/libupnp.a  $(SOURCES.OBJ)
-	$(AR) arc -o $(TARGET) $(SOURCES.OBJ) 
-	#$(LIBS)
+	$(CC) -o $(TARGET) $(SOURCES.OBJ) $(LIBS)
 
 clean: 
 	rm -rf obj 
-	rm -f upnp.a
+	rm -f upnp
 	$(MAKE) -C ../../upnp/linux clean
 ifneq ($(BUILD_LIBS),)
 	$(MAKE) -C $(SRCBASE)/router/netconf clean
