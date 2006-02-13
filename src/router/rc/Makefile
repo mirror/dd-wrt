@@ -220,7 +220,7 @@ all: rc
 
 clean:
 	rm -f *.o *.a rc
-#	rm -f closed/*.o rc
+	rm -f closed/*.o rc
 	rm -f *.c~
 
 install: all
@@ -263,9 +263,9 @@ install: all
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox ip
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox iptables
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox iptables-restore
-ifeq ($(CONFIG_UPNP),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox upnp
-endif
+#ifeq ($(CONFIG_UPNP),y)
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox upnp
+#endif
 #ifeq ($(CONFIG_DDNS),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox ez-ipupdate
 #endif
