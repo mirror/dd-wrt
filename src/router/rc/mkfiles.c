@@ -18,8 +18,8 @@
 #define NOCAT_CONF      "/tmp/etc/nocat.conf"
 
 /* BPsmythe: Return the local network for the NOCAT conf file */
-char *
-get_network (char *ipaddr, char *snmask)
+static char *
+_get_network (char *ipaddr, char *snmask)
 {
   u_long ipaddr2long (char *ipstr)
   {
@@ -193,7 +193,7 @@ mk_nocat_conf (void)
   fprintf (fp, "ExternalDevice\t%s\n", nvram_safe_get ("wan_ifname"));
   fflush (fp);
   fprintf (fp, "LocalNetwork\t%s/%s\n",
-	   get_network (nvram_safe_get ("lan_ipaddr"),
+	   _get_network (nvram_safe_get ("lan_ipaddr"),
 			nvram_safe_get ("lan_netmask")),
 	   nvram_safe_get ("lan_netmask"));
   fflush (fp);

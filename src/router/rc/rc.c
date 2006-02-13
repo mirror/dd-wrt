@@ -72,7 +72,6 @@
 #include <bcmutils.h>
 #include <shutils.h>
 #include <wlutils.h>
-#include <sveasoft.h>
 #include <cy_conf.h>
 #include <ledcontrol.h>
 

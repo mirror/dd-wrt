@@ -16,8 +16,8 @@
     <input class="num" size="4" maxLength="4" name="ppp_redialperiod" onBlur="valid_range(this,20,180,'Redial period')" value='<% nvram_get("ppp_redialperiod"); %>' /> Sec.
 </div>
 <div class="setting">
-<div class="label">Use RP PPPoE</div>
-<input type="radio" value="1" name="pppoe_ver" <% nvram_match("pppoe_ver","1","checked"); %> /> Enable
-<input type="radio" value="0" name="pppoe_ver" <% nvram_match("pppoe_ver","0","checked"); %> /> Disable
+    <div class="label">Use RP PPPoE</div>
+    <input type="radio" value="1" name="pppoe_ver" <% nvram_match("pppoe_ver","1","checked"); %> />Enable
+    <input type="radio" value="0" name="pppoe_ver" <% nvram_match("pppoe_ver","0","checked"); %> />Disable
 </div>
 </div>
