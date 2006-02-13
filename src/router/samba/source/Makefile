@@ -9,8 +9,8 @@ exec_prefix=${prefix}
 mandir=${prefix}/man
 
 LIBS=-ldl  -lcrypt
-#CC=mipsel-linux-uclibc-gcc
-CFLAGS=$(COPTS)
+CC=mipsel-linux-uclibc-gcc
+CFLAGS=-O
 CPPFLAGS=
 LDFLAGS=
 AWK=mawk
@@ -18,7 +18,7 @@ AWK=mawk
 INSTALLCMD=/usr/bin/install -c
 
 srcdir=.
-builddir=.
+builddir=/home/openwrt/DD-WRT/opt/samba-2.0.7/source
 SHELL=/bin/sh
 
 BASEDIR= /usr
@@ -385,7 +385,7 @@ bin/smbspool: $(CUPS_OBJ) bin/.dummy
 
 bin/smbmount: $(MOUNT_OBJ) bin/.dummy
 	@echo Linking $@
-	@$(CC) $(FLAGS) -o $@ $(MOUNT_OBJ)
+	@$(CC) $(FLAGS) -o $@ $(MOUNT_OBJ) $(LIBS)
 
 bin/smbmnt: $(MNT_OBJ) bin/.dummy
 	@echo Linking $@

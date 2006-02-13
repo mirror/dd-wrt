@@ -1,38 +1,4 @@
 
-/*
- *********************************************************
- *   Copyright 2003, CyberTAN  Inc.  All Rights Reserved *
- *********************************************************
-
- This is UNPUBLISHED PROPRIETARY SOURCE CODE of CyberTAN Inc.
- the contents of this file may not be disclosed to third parties,
- copied or duplicated in any form without the prior written
- permission of CyberTAN Inc.
-
- This software should be used as a reference only, and it not
- intended for production use!
-
-
- THIS SOFTWARE IS OFFERED "AS IS", AND CYBERTAN GRANTS NO WARRANTIES OF ANY
- KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE.  CYBERTAN
- SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE
-*/
-
-/*
- * Miscellaneous services
- *
- * Copyright 2001-2003, Broadcom Corporation
- * All Rights Reserved.
- * 
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- *
- * $Id: services.c,v 1.12 2005/11/30 11:54:21 seg Exp $
- */
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

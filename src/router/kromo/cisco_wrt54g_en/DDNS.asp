@@ -26,6 +26,11 @@ function ddns_check(F,T) {
 		passwd = eval("F.ddns_username_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
 	}
+	} else if(F.ddns_enable.value == 4) {
+		username = eval("F.ddns_username_"+F.ddns_enable.value);
+		passwd = eval("F.ddns_username_"+F.ddns_enable.value);
+		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
+	}
 
 	if(username.value == ""){
 		alert("You must input a username!");
@@ -116,6 +121,7 @@ function SelDDNS(num,F) {
                               <option value="1" <% nvram_selmatch("ddns_enable", "1", "selected"); %>>DynDNS.org</option>
                               <option value="2" <% nvram_selmatch("ddns_enable", "2", "selected"); %>>TZO.com</option>
                               <option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %>>ZoneEdit.com</option></select></div><% nvram_selmatch("ddns_enable","1","<!--"); %><% nvram_selmatch("ddns_enable","2","<!--"); %><% nvram_selmatch("ddns_enable","3","<!--"); %><% nvram_selmatch("ddns_enable","1","-->"); %><% nvram_selmatch("ddns_enable","2","-->"); %><% nvram_selmatch("ddns_enable","3","-->"); %><% nvram_selmatch("ddns_enable","0","<!--"); %><% nvram_selmatch("ddns_enable","2","<!--"); %><% nvram_selmatch("ddns_enable","3","<!--"); %>
+                              <option value="4" <% nvram_selmatch("ddns_enable", "4", "selected"); %>>EasyDNS</option></select></div><% nvram_selmatch("ddns_enable","1","<!--"); %><% nvram_selmatch("ddns_enable","2","<!--"); %><% nvram_selmatch("ddns_enable","3","<!--"); %><% nvram_selmatch("ddns_enable","1","-->"); %><% nvram_selmatch("ddns_enable","2","-->"); %><% nvram_selmatch("ddns_enable","3","-->"); %><% nvram_selmatch("ddns_enable","0","<!--"); %><% nvram_selmatch("ddns_enable","2","<!--"); %><% nvram_selmatch("ddns_enable","3","<!--"); %>
                         <div class="setting">
                            <div class="label">User Name</div><input name="ddns_username" size="30" maxlength="32" onFocus="check_action(this,0)" onBlur="valid_name(this,'User Name')" value='<% nvram_get("ddns_username"); %>' /></div>
                         <div class="setting">
@@ -134,8 +140,8 @@ function SelDDNS(num,F) {
                            <div class="label">Password</div><input type="password" name="ddns_passwd_3" size="30" maxlength="32" onFocus="check_action(this,0)" onBlur="valid_name(this,'Password')" value='<% nvram_invmatch("ddns_passwd_3","","d6nw5v1x2pc7st9m"); %>' /></div>
                         <div class="setting">
                            <div class="label">Host Name</div><input name="ddns_hostname_3" size="42" maxlength="48" onFocus="check_action(this,0)" onBlur="valid_name(this,'Host Name')" value='<% nvram_get("ddns_hostname_3"); %>' /></div><% nvram_selmatch("ddns_enable","1","-->"); %><% nvram_selmatch("ddns_enable","2","-->"); %>
-                        <div class="setting">
-                           <div class="label">Internet IP Address</div><% show_ddns_ip(); %>
+                    	<div class="setting">
+			   <div class="label">Internet IP Address</div><% show_ddns_ip(); %>
                         </div>
                         <div class="setting">
                            <div class="label">Status</div><% show_ddns_status(); %>
