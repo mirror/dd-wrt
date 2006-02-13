@@ -87,7 +87,7 @@ rflow_main(int ac, char **av) {
 			if (! optarg) rflow_usage();
 			conf->netflow_version = atoi (optarg);
 			if (conf->netflow_version != 1 && conf->netflow_version != 5)
-				usage ();
+				rflow_usage ();
 			break;
 		case 'A':
 			if (! optarg) rflow_usage();
