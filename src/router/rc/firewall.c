@@ -80,7 +80,6 @@
 #include <code_pattern.h>
 #include <utils.h>
 #include <cy_conf.h>
-#include <sveasoft.h>
 #endif /* DEVELOPE_ENV */
 
 /* Same as the file "linux/netfilter_ipv4/ipt_webstr.h" */

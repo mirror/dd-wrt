@@ -1,3 +1,6 @@
+#ifndef UTILS_H
+#define UTILS_H
+
 #ifdef CDEBUG
 #include <shutils.h>
 #include <malloc.h>
@@ -19,6 +22,10 @@
 #define ROUTER_BOARD_500 10
 #define ROUTER_BUFFALO_WHRG54S 11
 #define ROUTER_BUFFALO_HP_WHRG54S 11  //no differences between these models. so we leave it
+
+
+
+#define NVROUTER "DD_BOARD"
 
 
 extern int check_vlan_support(void);
@@ -195,3 +202,18 @@ struct detect_wans {
 	} \
 	printf("\n\n"); \
 }
+
+
+int ishexit(char c);
+int sv_valid_hwaddr(char *value);
+int sv_valid_ipaddr(char *value);
+int sv_valid_range(char *value, int low, int high);
+int sv_valid_statics(char* value);
+void get_network(char *ipaddr, char *netmask);
+void get_broadcast(char *ipaddr, char *netmask);
+int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
+int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
+int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
+
+#define MAX_WDS_DEVS 10
+#endif

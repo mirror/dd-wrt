@@ -8,7 +8,6 @@
 #include <utils.h>
 #include <syslog.h>
 #include <bcmcvar.h> //Added by Daniel(2004-07-29) for EZC
-#include <sveasoft.h>
 
 #define sys_restart() kill(1, SIGHUP)
 #define sys_reboot() kill(1, SIGTERM)
@@ -462,3 +461,15 @@ extern void validate_noack(webs_t wp, char *value, struct variable *v);
 extern void validate_wl_wme_params(webs_t wp, char *value, struct variable *v);
 
 extern void validate_choice(webs_t wp, char *value, struct variable *v);
+#define MAX_WDS_DEVS 10
+
+int ishexit(char c);
+int sv_valid_hwaddr(char *value);
+int sv_valid_ipaddr(char *value);
+int sv_valid_range(char *value, int low, int high);
+int sv_valid_statics(char* value);
+void get_network(char *ipaddr, char *netmask);
+void get_broadcast(char *ipaddr, char *netmask);
+int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
+int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
+int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);

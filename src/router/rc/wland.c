@@ -44,7 +44,7 @@
 #include <bcmutils.h>
 #include <utils.h>
 #include <nvparse.h>
-#include <sveasoft.h>
+
 
 
 #define WL_IOCTL(name, cmd, buf, len) (wl_ioctl((name), (cmd), (buf), (len)))

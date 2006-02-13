@@ -19,10 +19,9 @@ CFLAGS	+= -s $(COPTS)
 all: upnp
 
 install: all
-	@true
-#	install -d $(INSTALLDIR)/usr/sbin
-#	install -m 755 upnp $(INSTALLDIR)/usr/sbin
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/upnp
+	install -d $(INSTALLDIR)/usr/sbin
+	install -m 755 upnp $(INSTALLDIR)/usr/sbin
+	$(STRIP) $(INSTALLDIR)/usr/sbin/upnp
 
 clean:
 	rm -f upnp
@@ -30,7 +29,7 @@ clean:
 
 upnp: FORCE
 	$(MAKE) -C $(UPNP) DEBUG=$(DEBUG) SRCBASE=$(SRCBASE) TARGET_PREFIX=$(CROSS_COMPILE)
-	cp $(UPNP)/upnp.a .
-	cp $(UPNP)/../../upnp/linux/libupnp.a .
+	cp $(UPNP)/upnp .
+#	cp $(UPNP)/../../upnp/linux/libupnp.a .
 
 FORCE:

@@ -31,7 +31,6 @@
 #include <broadcom.h>
 #include <cymac.h>
 #include <wlutils.h>
-#include <sveasoft.h>
 
 
 void

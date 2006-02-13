@@ -3097,7 +3097,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 {
   int action = NOTHING;
   char *value;
-  char *submit_button,*next_page;
+  char *submit_button, *next_page;
 
   int sleep_time = 0;
   int need_commit = 1;
@@ -3373,21 +3373,21 @@ initHandlers (void)
   websAspDefine ("static_route", ej_static_route);
   websAspDefine ("localtime", ej_localtime);
   websAspDefine ("dumplog", ej_dumplog;
-#ifdef HAVE_SPUTNIK_APD  
-  websAspDefine ("sputnik_apd_status", ej_sputnik_apd_status);
+#ifdef HAVE_SPUTNIK_APD
+		 websAspDefine ("sputnik_apd_status", ej_sputnik_apd_status);
 #endif
-  websAspDefine ("dumpleases", ej_dumpleases);
-  websAspDefine ("ppplink", ej_ppplink);
-
-  websUrlHandlerDefine ("/Management.asp", NULL, 0, apply_cgi, 0);
-  websUrlHandlerDefine ("/internal.cgi", NULL, 0, internal_cgi, 0);
-  //DD-WRT addition start
-  websUrlHandlerDefine ("/modules.cgi", NULL, 0, show_modules, 0);
-  //DD-WRT addition end
-  websSetPassword (nvram_safe_get ("http_passwd"));
-
-  websSetRealm ("DD-WRT Router OS Core");
-}
+		 websAspDefine ("dumpleases", ej_dumpleases);
+		 websAspDefine ("ppplink", ej_ppplink);
+		 websUrlHandlerDefine ("/Management.asp", NULL, 0, apply_cgi,
+				       0);
+		 websUrlHandlerDefine ("/internal.cgi", NULL, 0, internal_cgi,
+				       0);
+		 //DD-WRT addition start
+		 websUrlHandlerDefine ("/modules.cgi", NULL, 0, show_modules,
+				       0);
+		 //DD-WRT addition end
+		 websSetPassword (nvram_safe_get ("http_passwd"));
+		 websSetRealm ("DD-WRT Router OS Core");}
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3737,7 +3737,7 @@ struct ej_handler ej_handlers[] = {
   {"dumplog", ej_dumplog},
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik_apd_status", ej_sputnik_apd_status},
-  {"show_sputnik",ej_show_sputnik},
+  {"show_sputnik", ej_show_sputnik},
 #endif
   /* for filter */
   {"filter_init", ej_filter_init},

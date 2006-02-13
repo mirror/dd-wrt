@@ -502,7 +502,7 @@ bridge-install:
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
-busybox: busybox-config rc upnp net-tools
+busybox: busybox-config rc net-tools
 	rm -f busybox/busybox
 	$(MAKE) -C busybox STRIPTOOL=$(STRIP)
 
@@ -526,7 +526,7 @@ iptables:
 	$(MAKE) -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
 
 iptables-devel:
-	$(MAKE) -C iptables install-devel  KERNEL_DIR=$(LINUXDIR)
+	$(MAKE) -C iptables install-devel KERNEL_DIR=$(LINUXDIR)
 
 
 iptables-install:
@@ -795,7 +795,7 @@ chillispot-clean:
 
 frottle:
 ifeq ($(CONFIG_FROTTLE),y)
-	$(MAKE) -C frottle
+	$(MAKE) -C frottle 
 else
 	@true
 endif
