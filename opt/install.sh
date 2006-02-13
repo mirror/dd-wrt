@@ -15,7 +15,7 @@ cd ../opt
 
 cd ../src/router
 rm -dfr mipsel-uclibc/install
-mske httpd-clean
+make httpd-clean
 make rc-clean
 make shared-clean
 cd ../../opt
