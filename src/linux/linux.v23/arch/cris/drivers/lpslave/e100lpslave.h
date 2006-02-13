@@ -1,2 +1,0 @@
-#define HOST_CMD_SENDPACK 0
-#define HOST_CMD_SETMAC 1
