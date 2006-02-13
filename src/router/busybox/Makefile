@@ -117,12 +117,12 @@ endif
 #LIBRARIES += ../ipupdate/ez-ipupdate.a
 
 
-ifeq ($(CONFIG_UPNP),y)
-CFLAGS += -DHAVE_UPNP
-LIBRARIES += ../upnp/upnp.a
-LIBRARIES += ../upnp/libupnp.a
-LIBRARIES += -L../netconf -lnetconf
-endif
+#ifeq ($(CONFIG_UPNP),y)
+#CFLAGS += -DHAVE_UPNP
+#LIBRARIES += ../upnp/upnp.a
+#LIBRARIES += ../upnp/libupnp.a
+#LIBRARIES += -L../netconf -lnetconf
+#endif
 
 ifeq ($(CONFIG_OMNI),y)
 CFLAGS += -DHAVE_OMNI

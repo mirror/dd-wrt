@@ -49,6 +49,9 @@ function replace_list(list,target,replacement) {
                      <div class="setting">
                         <div class="label">Router Name</div><% nvram_get("router_name"); %>
                      </div>
+		     <div class="setting">
+                        <div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
+                     </div>
                      <div class="setting">
                         <div class="label">LAN MAC</div><% nvram_get("lan_hwaddr"); %>
                      </div>

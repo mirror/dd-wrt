@@ -116,10 +116,10 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
   which = &wan_variables[0];
 
 
-  char *pppoever = websGetVar(wp, "pppoe_ver", NULL);
+  char *pppoever = websGetVar (wp, "pppoe_ver", NULL);
   if (pppoever)
-    nvram_set("pppoe_ver",pppoever);
-    
+    nvram_set ("pppoe_ver", pppoever);
+
   get_merge_ipaddr ("wan_ipaddr", wan_ipaddr);
   get_merge_ipaddr ("wan_netmask", wan_netmask);
   if (!strcmp (wan_proto, "pptp"))

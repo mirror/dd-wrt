@@ -60,7 +60,6 @@
 #include <cy_conf.h>
 #include <code_pattern.h>
 #include <rc.h>
-#include <sveasoft.h>
 #include <wlutils.h>
 #include <nvparse.h>
 

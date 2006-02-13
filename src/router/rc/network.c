@@ -67,7 +67,6 @@ typedef u_int8_t u8;
 #include <cymac.h>
 #include <bcmutils.h>
 #include <nvparse.h>
-#include <sveasoft.h>
 #include <etsockio.h>
 #include <bcmparams.h>
 

@@ -25,7 +25,6 @@
 
 #include <broadcom.h>
 #include <cy_conf.h>
-#include <sveasoft.h>
 
 void
 validate_forward_upnp (webs_t wp, char *value, struct variable *v)
