@@ -120,6 +120,7 @@ function init() {
                <div class="info">Firmware: <% get_firmware_version(); %></div>
                <div class="info">Time: <% get_uptime(); %></div>
                <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
+	       <div class="info">Router Model: <% nvram_get("DD_ROUTER"); %></div>
             </div>
             <div id="helpContainer">
                <div id="help">

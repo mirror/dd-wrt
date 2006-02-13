@@ -102,6 +102,11 @@ init_ddns (void)
       strcpy (service, "zoneedit");
       flag = 3;
     }
+  else if (nvram_match ("ddns_enable", "4"))
+    {
+      strcpy (service, "easydns");
+      flag = 3;
+    }
 
   if (flag == 1)
     {

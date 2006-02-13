@@ -21,6 +21,7 @@ __PRETTY_FUNCTION__.0
 __PRETTY_FUNCTION__.1
 device_name
 hw_error
+router_type
 mac.3
 ipaddr.2
 name.0
@@ -41,6 +42,7 @@ find_name_by_proc
 bcm_timer_delete
 read_gpio
 set_autofw_port
+setRouter
 wl_probe
 _DYNAMIC
 nvSetPortAttrib
@@ -90,6 +92,7 @@ sv_valid_ipaddr
 first_time
 mtu_list
 C_led_4702
+internal_getRouterBrand
 set_host_domain_name
 _eval
 set_forward_port
@@ -103,6 +106,7 @@ fd2str
 ct_logger
 uclock
 find_pid_by_ps
+getRouter
 get_wl_assoc_mac
 get_mtu
 get_complete_lan_ip

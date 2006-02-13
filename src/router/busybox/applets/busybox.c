@@ -296,10 +296,10 @@ int main(int argc, char **argv)
   else if (strstr (base, "scp"))
     return scp_main(argc,argv);
 #endif
-#ifdef HAVE_UPNP
-  else if (strstr (base, "upnp"))
-    return ignupnp_main(argc,argv);
-#endif
+//#ifdef HAVE_UPNP
+//  else if (strstr (base, "upnp"))
+//    return ignupnp_main(argc,argv);
+//#endif
 #ifdef HAVE_DHCPFWD
   else if (strstr (base, "dhcp-fwd"))
     return dhcpforward_main(argc,argv);

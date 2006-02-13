@@ -45,7 +45,6 @@
 
 #include <cy_conf.h>
 #include <utils.h>
-#include <sveasoft.h>
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
