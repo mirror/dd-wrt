@@ -49,7 +49,7 @@ BUILD_INCLUDED_LIBINTL = no
 CATOBJEXT = 
 CC = mipsel-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Os -pipe -mips32 -mtune=mips32  -W -Wall -Wpointer-arith -Wimplicit-function-declaration
+CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -W -Wall -Wpointer-arith -Wimplicit-function-declaration
 CPP = mipsel-linux-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
