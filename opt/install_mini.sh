@@ -9,11 +9,10 @@ cp .config_mini .config
 #cp Makefile.standard Makefile
 
 cd ..
-make clean
+#make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
-#mkdir ../src/router/mipsel-uclibc/target/etc/kaid
 mkdir ../src/router/mipsel-uclibc/target/etc/langpack
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/busybox
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
@@ -28,12 +27,8 @@ cd ../../../../../opt
 cp ./etc/preinit ../src/router/mipsel-uclibc/target/etc
 cp ./etc/postinit ../src/router/mipsel-uclibc/target/etc
 cp ./etc/ipkg.conf ../src/router/mipsel-uclibc/target/etc
-#cp ./etc/kaid/* ../src/router/mipsel-uclibc/target/etc/kaid
 cp ./etc/mini/config/* ../src/router/mipsel-uclibc/target/etc/config
-#cp ./usr/lib/smb.conf ../src/router/mipsel-uclibc/target/usr/lib
-#cp ./usr/sbin/kaid ../src/router/mipsel-uclibc/target/usr/sbin
 cd ../src/router/mipsel-uclibc/target/www
-#ln -s ../tmp/smbshare smb
 
 cd ../../../../../opt
 
