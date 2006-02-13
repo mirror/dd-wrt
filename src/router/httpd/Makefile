@@ -199,7 +199,7 @@ all: httpd.a
 
 clean:
 	rm -f *.o *~ httpd
-#	rm -f closed/*.o
+	rm -f closed/*.o
 	rm -f *.a 
 	#Added by Daniel(2004-07-29)
 	#cp ../shared/ezc.o ./

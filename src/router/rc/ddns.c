@@ -105,7 +105,7 @@ init_ddns (void)
   else if (nvram_match ("ddns_enable", "4"))
     {
       strcpy (service, "easydns");
-      flag = 3;
+      flag = 4;
     }
 
   if (flag == 1)
@@ -127,6 +127,12 @@ init_ddns (void)
       snprintf (_username, sizeof (_username), "%s", "ddns_username_3");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_3");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_3");
+    }
+  else if (flag == 4)
+    {
+      snprintf (_username, sizeof (_username), "%s", "ddns_username_4");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_4");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_4");
     }
 
   return 0;
