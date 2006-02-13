@@ -42,7 +42,7 @@ AUTOHEADER	= :
 #
 # Compiler arguments
 #
-CFLAGS		= $(COPTS)
+CFLAGS		= -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -Delf 
 EXTRACPPFLAGS	= -x c
 LDFLAGS		= -s 
 LIBTOOL		= $(SHELL) $(top_builddir)/libtool 
