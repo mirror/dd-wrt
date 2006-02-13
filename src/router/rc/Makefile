@@ -220,7 +220,7 @@ all: rc
 
 clean:
 	rm -f *.o *.a rc
-	rm -f closed/*.o rc
+#	rm -f closed/*.o rc
 	rm -f *.c~
 
 install: all
