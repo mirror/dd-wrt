@@ -2,8 +2,8 @@
 # NO_SHARED_LIBS = 1
 
 # uncomment this to disable IPv6 support
-DO_IPV6 = 0
-NO_SHARED_LIBS = 1
+# DO_IPV6 = 0
+
 ######################################################################
 # YOU SHOULD NOT NEED TO TOUCH ANYTHING BELOW THIS LINE
 ######################################################################
@@ -27,13 +27,15 @@ INCDIR:=$(PREFIX)/include
 RELEASE_DIR:=/tmp
 
 # Need libc6 for this.  FIXME: Should covert to autoconf.
-ifeq ($(shell [ -f /usr/include/netinet/ip6.h ] && echo YES), YES)
-DO_IPV6:=1
-endif
+#ifeq ($(shell [ -f /usr/include/netinet/ip6.h ] && echo YES), YES)
+#DO_IPV6:=1
+#endif
 
-COPT_FLAGS:= $(COPTS)
+COPT_FLAGS:=$(COPTS)
 CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
 
+NO_SHARED_LIBS=1
+DO_MULTI=1
 ifdef NO_SHARED_LIBS
 CFLAGS += -DNO_SHARED_LIBS=1
 endif
@@ -43,9 +45,9 @@ EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/iptables $(DESTDIR)$(MANDIR)/man8/iptables.8
 
 # No longer experimental.
 ifneq ($(DO_MULTI), 1)
-EXTRAS+=iptables-save iptables-restore
+EXTRAS+=iptables-restore
 endif
-EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/iptables-save $(DESTDIR)$(BINDIR)/iptables-restore $(DESTDIR)$(MANDIR)/man8/iptables-restore.8 $(DESTDIR)$(MANDIR)/man8/iptables-save.8
+EXTRA_INSTALLS+=$(DESTDIR)$(BINDIR)/iptables-restore $(DESTDIR)$(MANDIR)/man8/iptables-restore.8 $(DESTDIR)$(MANDIR)/man8/iptables-save.8
 
 ifeq ($(DO_IPV6), 1)
 EXTRAS+=ip6tables ip6tables.o ip6tables.8
@@ -100,11 +102,10 @@ LDFLAGS      = -rdynamic
 LDLIBS       = -ldl -lnsl
 else
 DEPFILES = $(EXT_OBJS:%.o=%.d)
-SH_CFLAGS:=$(CFLAGS) -fPIC
 STATIC_LIBS  = extensions/libext.a
 STATIC6_LIBS = extensions/libext6.a
-LDFLAGS      = 
-LDLIBS       = -ldl -lnsl
+#LDFLAGS      = -static
+LDLIBS       =
 endif
 
 .PHONY: default
@@ -119,8 +120,7 @@ iptables.o: iptables.c
 
 ifeq ($(DO_MULTI), 1)
 iptables: iptables-multi.c iptables-restore.c iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libiptc.a
-	$(CC) $(CFLAGS) -c -DIPTABLES_MULTI -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" $^ 
-	$(AR) arc -o $@.a  iptables-multi.o iptables-restore.o iptables-standalone.o iptables.o 
+	$(CC) $(CFLAGS) -DIPTABLES_MULTI -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)
 else
 iptables: iptables-standalone.c iptables.o $(STATIC_LIBS) libiptc/libiptc.a
 	$(CC) $(CFLAGS) -DIPT_LIB_DIR=\"$(IPT_LIBDIR)\" $(LDFLAGS) -o $@ $^ $(LDLIBS)

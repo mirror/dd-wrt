@@ -54,20 +54,20 @@ main(int argc, char *argv[])
 //    cprintf("%s ",argv[i]);
 //    }
 //    cprintf("\n");
-	puts("executing iptables");
+//	puts("executing iptables");
 	program_name = "iptables";
 	program_version = IPTABLES_VERSION;
 
 	lib_dir = getenv("IPTABLES_LIB_DIR");
 	if (!lib_dir)
 		lib_dir = IPT_LIB_DIR;
-	puts("init extensions");
+//	puts("init extensions");
 #ifdef NO_SHARED_LIBS
 	init_extensions();
 #endif
-	puts("do command");
+//	puts("do command");
 	ret = do_command(argc, argv, &table, &handle);
-	puts("commit");
+//	puts("commit");
 	if (ret)
 		ret = iptc_commit(&handle);
 
