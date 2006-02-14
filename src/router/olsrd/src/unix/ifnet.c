@@ -36,11 +36,11 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ifnet.c,v 1.25 2005/03/07 19:17:02 kattemat Exp $
+ * $Id: ifnet.c,v 1.31 2005/12/29 18:37:16 tlopatic Exp $
  */
 
 
-#if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__
+#if defined __FreeBSD__ || defined __MacOSX__ || defined __NetBSD__ || defined __OpenBSD__
 #define ifr_netmask ifr_addr
 #endif
 
@@ -116,6 +116,11 @@ check_interface_updates(void *foo)
 
   for(tmp_if = olsr_cnf->interfaces; tmp_if != NULL; tmp_if = tmp_if->next)
     {
+      if(tmp_if->host_emul)
+	continue;
+      
+      if(olsr_cnf->host_emul) /* XXX: TEMPORARY! */
+	continue;
 
       if(tmp_if->configured)
 	chk_if_changed(tmp_if);
@@ -145,6 +150,9 @@ chk_if_changed(struct olsr_if *iface)
 #ifdef DEBUG
   OLSR_PRINTF(3, "Checking if %s is set down or changed\n", iface->name)
 #endif
+
+  if(iface->host_emul)
+    return -1;
 
   ifp = iface->interf;
 
@@ -199,6 +207,7 @@ chk_if_changed(struct olsr_if *iface)
       goto remove_interface;
     }
 
+  ifp->is_hcif = OLSR_FALSE;
 
   /* trying to detect if interface is wireless. */
   ifp->is_wireless = check_wireless_interface(ifr.ifr_name);
@@ -214,7 +223,8 @@ chk_if_changed(struct olsr_if *iface)
     ifp->int_mtu = 0;
   else
     {
-      ifp->int_mtu -= (olsr_cnf->ip_version == AF_INET6) ? UDP_IPV6_HDRSIZE : UDP_IPV4_HDRSIZE;
+      ifr.ifr_mtu -= (olsr_cnf->ip_version == AF_INET6) ? UDP_IPV6_HDRSIZE : UDP_IPV4_HDRSIZE;
+
       if(ifp->int_mtu != ifr.ifr_mtu)
 	{
 	  ifp->int_mtu = ifr.ifr_mtu;
@@ -490,7 +500,194 @@ chk_if_changed(struct olsr_if *iface)
 
 }
 
+/**
+ * Initializes the special interface used in
+ * host-client emulation
+ */
+int
+add_hemu_if(struct olsr_if *iface)
+{
+  struct interface *ifp;
+  union olsr_ip_addr null_addr;
+  olsr_u32_t addr[4];
 
+  if(!iface->host_emul)
+    return -1;
+
+  ifp = olsr_malloc(sizeof (struct interface), "Interface update 2");
+
+  memset(ifp, 0, sizeof (struct interface));
+
+  iface->configured = OLSR_TRUE;
+  iface->interf = ifp;
+
+  ifp->is_hcif = OLSR_TRUE;
+  ifp->int_name = olsr_malloc(strlen("hcif01") + 1, "Interface update 3");
+  ifp->int_metric = 0;
+
+  strcpy(ifp->int_name, "hcif01");
+
+  OLSR_PRINTF(1, "Adding %s(host emulation):\n", ifp->int_name)
+
+  OLSR_PRINTF(1, "       Address:%s\n", olsr_ip_to_string(&iface->hemu_ip));
+
+  OLSR_PRINTF(1, "       Index:%d\n", iface->index);
+
+  OLSR_PRINTF(1, "       NB! This is a emulated interface\n       that does not exist in the kernel!\n");
+
+  ifp->int_next = ifnet;
+  ifnet = ifp;
+
+  memset(&null_addr, 0, ipsize);
+  if(COMP_IP(&null_addr, &main_addr))
+    {
+      COPY_IP(&main_addr, &iface->hemu_ip);
+      OLSR_PRINTF(1, "New main address: %s\n", olsr_ip_to_string(&main_addr))
+	olsr_syslog(OLSR_LOG_INFO, "New main address: %s\n", olsr_ip_to_string(&main_addr));
+    }
+
+  /* setting the interfaces number*/
+  ifp->if_nr = iface->index;
+
+  ifp->int_mtu = OLSR_DEFAULT_MTU;
+
+  ifp->int_mtu -= (olsr_cnf->ip_version == AF_INET6) ? UDP_IPV6_HDRSIZE : UDP_IPV4_HDRSIZE;
+
+  /* Set up buffer */
+  net_add_buffer(ifp);
+
+
+  if(olsr_cnf->ip_version == AF_INET)
+    {
+      struct sockaddr_in sin;
+
+      memset(&sin, 0, sizeof(sin));
+
+      sin.sin_family = AF_INET;
+      sin.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+      sin.sin_port = htons(10150);
+ 
+     /* IP version 4 */
+      ifp->ip_addr.v4 = iface->hemu_ip.v4;
+
+      memcpy(&((struct sockaddr_in *)&ifp->int_addr)->sin_addr, &iface->hemu_ip, ipsize);
+      
+      /*
+       *We create one socket for each interface and bind
+       *the socket to it. This to ensure that we can control
+       *on what interface the message is transmitted
+       */
+      
+      ifp->olsr_socket = gethemusocket(&sin);
+      
+      if (ifp->olsr_socket < 0)
+	{
+	  fprintf(stderr, "Could not initialize socket... exiting!\n\n");
+	  olsr_syslog(OLSR_LOG_ERR, "Could not initialize socket... exiting!\n\n");
+	  exit_value = EXIT_FAILURE;
+	  kill(getpid(), SIGINT);
+	}
+
+    }
+  else
+    {
+      /* IP version 6 */
+      memcpy(&ifp->ip_addr, &iface->hemu_ip, ipsize);
+
+#if 0      
+      /*
+       *We create one socket for each interface and bind
+       *the socket to it. This to ensure that we can control
+       *on what interface the message is transmitted
+       */
+      
+      ifp->olsr_socket = gethcsocket6(&addrsock6, bufspace, ifp->int_name);
+      
+      join_mcast(ifp, ifp->olsr_socket);
+      
+      if (ifp->olsr_socket < 0)
+	{
+	  fprintf(stderr, "Could not initialize socket... exiting!\n\n");
+	  olsr_syslog(OLSR_LOG_ERR, "Could not initialize socket... exiting!\n\n");
+	  exit_value = EXIT_FAILURE;
+	  kill(getpid(), SIGINT);
+	}
+      
+#endif
+    }
+
+  /* Send IP as first 4/16 bytes on socket */
+  memcpy(addr, iface->hemu_ip.v6.s6_addr, ipsize);
+  addr[0] = htonl(addr[0]);
+  addr[1] = htonl(addr[1]);
+  addr[2] = htonl(addr[2]);
+  addr[3] = htonl(addr[3]);
+
+  if(send(ifp->olsr_socket, addr , ipsize, 0) != (int)ipsize)
+    {
+      fprintf(stderr, "Error sending IP!");
+    }  
+  
+  /* Register socket */
+  add_olsr_socket(ifp->olsr_socket, &olsr_input_hostemu);
+
+
+  if (olsr_cnf->lq_level == 0)
+    {
+      olsr_register_scheduler_event(&generate_hello, 
+                                    ifp, 
+                                    iface->cnf->hello_params.emission_interval, 
+                                    0, 
+                                    NULL);
+      olsr_register_scheduler_event(&generate_tc, 
+                                    ifp, 
+                                    iface->cnf->tc_params.emission_interval,
+                                    0, 
+                                    NULL);
+    }
+
+  else
+    {
+      olsr_register_scheduler_event(&olsr_output_lq_hello, 
+                                    ifp, 
+                                    iface->cnf->hello_params.emission_interval, 
+                                    0, 
+                                    NULL);
+      olsr_register_scheduler_event(&olsr_output_lq_tc, 
+                                    ifp, 
+                                    iface->cnf->tc_params.emission_interval,
+                                    0, 
+                                    NULL);
+    }
+
+  olsr_register_scheduler_event(&generate_mid, 
+				ifp, 
+				iface->cnf->mid_params.emission_interval,
+				0, 
+				NULL);
+  olsr_register_scheduler_event(&generate_hna, 
+				ifp, 
+				iface->cnf->hna_params.emission_interval,
+				0, 
+				NULL);
+
+  /* Recalculate max jitter */
+
+  if((max_jitter == 0) || ((iface->cnf->hello_params.emission_interval / 4) < max_jitter))
+    max_jitter = iface->cnf->hello_params.emission_interval / 4;
+
+  /* Recalculate max topology hold time */
+  if(max_tc_vtime < iface->cnf->tc_params.emission_interval)
+    max_tc_vtime = iface->cnf->tc_params.emission_interval;
+
+  ifp->hello_etime = iface->cnf->hello_params.emission_interval;
+  ifp->valtimes.hello = double_to_me(iface->cnf->hello_params.validity_time);
+  ifp->valtimes.tc = double_to_me(iface->cnf->tc_params.validity_time);
+  ifp->valtimes.mid = double_to_me(iface->cnf->mid_params.validity_time);
+  ifp->valtimes.hna = double_to_me(iface->cnf->hna_params.validity_time);
+
+  return 1;
+}
 
 /**
  * Initializes a interface described by iface,
@@ -510,6 +707,9 @@ chk_if_up(struct olsr_if *iface, int debuglvl)
   int precedence = IPTOS_PREC(olsr_cnf->tos);
   int tos_bits = IPTOS_TOS(olsr_cnf->tos);
 #endif
+
+  if(iface->host_emul)
+    return -1;
 
   memset(&ifr, 0, sizeof(struct ifreq));
   strncpy(ifr.ifr_name, iface->name, IFNAMSIZ);
@@ -547,6 +747,8 @@ chk_if_up(struct olsr_if *iface, int debuglvl)
       OLSR_PRINTF(debuglvl, "\tThis is a loopback interface - skipping it...\n")
       return 0;
     }
+
+  ifs.is_hcif = OLSR_FALSE;
 
   /* trying to detect if interface is wireless. */
   ifs.is_wireless = check_wireless_interface(ifr.ifr_name);
@@ -701,7 +903,6 @@ chk_if_up(struct olsr_if *iface, int debuglvl)
     {
       /* IP version 4 */
       ifp->ip_addr.v4 = ((struct sockaddr_in *)&ifp->int_addr)->sin_addr.s_addr;
-      
       /*
        *We create one socket for each interface and bind
        *the socket to it. This to ensure that we can control
@@ -830,7 +1031,7 @@ chk_if_up(struct olsr_if *iface, int debuglvl)
   if(max_tc_vtime < iface->cnf->tc_params.emission_interval)
     max_tc_vtime = iface->cnf->tc_params.emission_interval;
 
-  ifp->hello_etime = double_to_me(iface->cnf->hello_params.emission_interval);
+  ifp->hello_etime = iface->cnf->hello_params.emission_interval;
   ifp->valtimes.hello = double_to_me(iface->cnf->hello_params.validity_time);
   ifp->valtimes.tc = double_to_me(iface->cnf->tc_params.validity_time);
   ifp->valtimes.mid = double_to_me(iface->cnf->mid_params.validity_time);

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: link_set.c,v 1.56 2005/03/17 16:37:27 kattemat Exp $
+ * $Id: link_set.c,v 1.62 2005/11/17 04:25:44 tlopatic Exp $
  */
 
 
@@ -54,9 +54,11 @@
 #include "scheduler.h"
 #include "lq_route.h"
 
+
 static clock_t hold_time_neighbor;
 
-static struct link_entry *link_set;
+struct link_entry *link_set;
+
 
 static int
 check_link_status(struct hello_message *message, struct interface *in_if);
@@ -269,8 +271,10 @@ get_best_link_to_neighbor(union olsr_ip_addr *remote)
 
       // find the interface for the link - we select the link with the
       // best local interface metric
-
       tmp_if = if_ifwithaddr(&walker->local_iface_addr);
+
+      if(!tmp_if)
+	continue;
 
       // is this interface better than anything we had before?
 
@@ -409,7 +413,7 @@ add_new_entry(union olsr_ip_addr *local, union olsr_ip_addr *remote, union olsr_
    */
 
 #ifdef DEBUG
-  OLSR_PRINTF(3, "Adding %s to link set\n", olsr_ip_to_string(remote))
+  OLSR_PRINTF(1, "Adding %s=>%s to link set\n", olsr_ip_to_string(local), olsr_ip_to_string(remote))
 #endif
 
   /* a new tuple is created with... */
@@ -471,6 +475,9 @@ add_new_entry(union olsr_ip_addr *local, union olsr_ip_addr *remote, union olsr_
   new_link->loss_link_quality = 0.0;
   new_link->neigh_link_quality = 0.0;
 
+  new_link->loss_link_quality2 = 0.0;
+  new_link->neigh_link_quality2 = 0.0;
+
   new_link->saved_loss_link_quality = 0.0;
   new_link->saved_neigh_link_quality = 0.0;
 
@@ -507,11 +514,11 @@ add_new_entry(union olsr_ip_addr *local, union olsr_ip_addr *remote, union olsr_
       /* This is kind of sketchy... and not specified
        * in the RFC. We can only guess a vtime.
        * We'll go for one that is hopefully long
-       * enough in most cases. 20 seconds
+       * enough in most cases. 10 seconds
        */
       OLSR_PRINTF(1, "Adding MID alias main %s ", olsr_ip_to_string(remote_main))
       OLSR_PRINTF(1, "-> %s based on HELLO\n\n", olsr_ip_to_string(remote))
-      insert_mid_alias(remote_main, remote, 20.0);
+      insert_mid_alias(remote_main, remote, MID_ALIAS_HACK_VTIME);
     }
 
   return link_set;
@@ -842,6 +849,7 @@ olsr_time_out_hysteresis()
   return;
 }
 
+#ifndef SVEN_OLA
 void olsr_print_link_set(void)
 {
   struct link_entry *walker;
@@ -882,6 +890,7 @@ void olsr_print_link_set(void)
 		walker->neigh_link_quality, etx)
   }
 }
+#endif
 
 static void update_packet_loss_worker(struct link_entry *entry, int lost)
 {
@@ -960,8 +969,14 @@ static void update_packet_loss_worker(struct link_entry *entry, int lost)
     {
       entry->saved_loss_link_quality = entry->loss_link_quality;
 
-      changes_neighborhood = OLSR_TRUE;
-      changes_topology = OLSR_TRUE;
+      if (olsr_cnf->lq_dlimit > 0)
+      {
+        changes_neighborhood = OLSR_TRUE;
+        changes_topology = OLSR_TRUE;
+      }
+
+      else
+        OLSR_PRINTF(3, "Skipping Dijkstra (1)\n")
 
       // create a new ANSN
 
@@ -1068,3 +1083,15 @@ static void olsr_time_out_packet_loss()
       walker->loss_timeout = GET_TIMESTAMP(walker->loss_hello_int * 1000.0);
     }
 }
+
+void olsr_update_dijkstra_link_qualities()
+{
+  struct link_entry *walker;
+
+  for (walker = link_set; walker != NULL; walker = walker->next)
+  {
+    walker->loss_link_quality2 = walker->loss_link_quality;
+    walker->neigh_link_quality2 = walker->neigh_link_quality;
+  }
+}
+

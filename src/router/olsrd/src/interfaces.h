@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: interfaces.h,v 1.26 2005/03/07 07:08:02 kattemat Exp $
+ * $Id: interfaces.h,v 1.30 2005/06/03 08:00:55 kattemat Exp $
  */
 
 
@@ -121,6 +121,7 @@ struct interface
   struct        sockaddr_in6 int6_multaddr;     /* Multicast */
   /* IP independent */
   union         olsr_ip_addr ip_addr;
+  int           is_hcif;                        /* Is this a emulated host-client if? */
   int           olsr_socket;                    /* The broadcast socket for this interface */
   int	        int_metric;			/* metric of interface */
   int           int_mtu;                        /* MTU of interface */
@@ -142,20 +143,23 @@ struct interface
 
 #define OLSR_DEFAULT_MTU             1500
 
-#ifndef OLSR_PLUGIN
-
 /* Ifchange actions */
 
 #define IFCHG_IF_ADD           1
 #define IFCHG_IF_REMOVE        2
 #define IFCHG_IF_UPDATE        3
 
+/* The rate to poll for interface changes at */
+#define IFCHANGES_POLL_INT     2.5
+
+
 /* The interface linked-list */
-struct interface *ifnet;
+extern struct interface *ifnet;
 
 /* Datastructures to use when creating new sockets */
-struct sockaddr_in addrsock;
-struct sockaddr_in6 addrsock6;
+extern struct sockaddr_in addrsock;
+extern struct sockaddr_in6 addrsock6;
+
 
 int
 ifinit(void);
@@ -184,8 +188,8 @@ if_ifwithaddr(union olsr_ip_addr *);
 struct interface *
 if_ifwithname(const char *);
 
-void
-queue_if(char *);
+struct olsr_if *
+queue_if(char *, int);
 
 int
 add_ifchgf(int (*f)(struct interface *, int));
@@ -193,5 +197,4 @@ add_ifchgf(int (*f)(struct interface *, int));
 int
 del_ifchgf(int (*f)(struct interface *, int));
 
-#endif
 #endif

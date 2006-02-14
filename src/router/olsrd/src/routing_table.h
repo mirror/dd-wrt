@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: routing_table.h,v 1.14 2005/02/19 17:43:28 kattemat Exp $
+ * $Id: routing_table.h,v 1.17 2005/11/16 23:55:54 tlopatic Exp $
  */
 
 #ifndef _OLSR_ROUTING_TABLE
@@ -55,6 +55,7 @@ struct rt_entry
   union hna_netmask     rt_mask;
   olsr_u8_t  	        rt_flags; 
   olsr_u16_t 	        rt_metric;
+  float                 rt_etx;
   struct interface      *rt_if;
   struct rt_entry       *prev;
   struct rt_entry       *next;
@@ -89,10 +90,8 @@ union olsr_kernel_route
 };
 
 
-#ifndef OLSR_PLUGIN
-
-struct rt_entry routingtable[HASHSIZE];
-struct rt_entry hna_routes[HASHSIZE];
+extern struct rt_entry routingtable[HASHSIZE];
+extern struct rt_entry hna_routes[HASHSIZE];
 
 
 int
@@ -108,13 +107,15 @@ void
 olsr_print_routing_table(struct rt_entry *);
 
 struct rt_entry *
-olsr_insert_routing_table(union olsr_ip_addr *, union olsr_ip_addr *, struct interface *, int);
+olsr_insert_routing_table(union olsr_ip_addr *, union olsr_ip_addr *, struct interface *, int, float);
 
 struct rt_entry *
 olsr_lookup_routing_table(union olsr_ip_addr *);
 
+struct rt_entry *
+olsr_lookup_hna_routing_table(union olsr_ip_addr *dst);
+
 void
 olsr_free_routing_table(struct rt_entry *);
 
-#endif
 #endif

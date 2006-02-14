@@ -29,13 +29,25 @@
  *
  */
 
-/* $Id: olsrd_power.c,v 1.6 2005/03/04 22:03:54 kattemat Exp $ */
+/* $Id: olsrd_power.c,v 1.15 2005/12/30 02:24:00 tlopatic Exp $ */
 
 /*
  * Dynamic linked library example for UniK OLSRd
  */
 
 #include "olsrd_power.h"
+#include "olsrd_plugin.h"
+
+#include "olsr.h"
+#include "mantissa.h"
+#include "parser.h"
+#include "scheduler.h"
+#include "link_set.h"
+#include "socket_parser.h"
+#include "interfaces.h"
+#include "duplicate_set.h"
+#include "apm.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -60,6 +72,15 @@
 #define OS "Undefined"
 #endif
 
+/* The database - (using hashing) */
+static struct pwrentry list[HASHSIZE];
+
+
+static int has_apm;
+
+/* set buffer to size of IPv6 message */
+static char buffer[sizeof(struct olsrmsg6)];
+
 int ipc_socket;
 int ipc_open;
 int ipc_connection;
@@ -68,32 +89,6 @@ int ipc_connected;
 int
 ipc_send(char *, int);
 
-#ifdef WIN32
-
-static char *inet_ntop4(const unsigned char *src, char *dst, int size)
-{
-  static const char fmt[] = "%u.%u.%u.%u";
-  char tmp[sizeof "255.255.255.255"];
-
-  if (sprintf(tmp, fmt, src[0], src[1], src[2], src[3]) > size)
-    return (NULL);
-
-  return strcpy(dst, tmp);
-}
-
-char *inet_ntop(int af, void *src, char *dst, int size)
-{
-  switch (af)
-  {
-  case AF_INET:
-    return (inet_ntop4(src, dst, size));
-
-  default:
-    return (NULL);
-  }
-}
-
-#endif
 
 /**
  *Do initialization here
@@ -102,12 +97,12 @@ char *inet_ntop(int af, void *src, char *dst, int size)
  *function in uolsrd_plugin.c
  */
 int
-olsr_plugin_init()
+olsrd_plugin_init()
 {
   int i;
   struct olsr_apm_info apm_info;
 
-  if(ipversion != AF_INET)
+  if(olsr_cnf->ip_version != AF_INET)
     {
       fprintf(stderr, "This plugin only supports IPv4!\n");
       return 0;
@@ -163,7 +158,7 @@ plugin_ipc_init()
 	return 0;
       }
 
-#ifdef __FreeBSD__
+#if defined __FreeBSD__ && defined SO_NOSIGPIPE
       if (setsockopt(ipc_socket, SOL_SOCKET, SO_NOSIGPIPE, (char *)&yes, sizeof(yes)) < 0) 
       {
 	perror("SO_REUSEADDR failed");
@@ -245,23 +240,6 @@ olsr_plugin_exit()
 }
 
 
-
-/* Mulitpurpose funtion */
-int
-plugin_io(int cmd, void *data, size_t size)
-{
-
-  switch(cmd)
-    {
-    default:
-      return 0;
-    }
-  
-  return 1;
-}
-
-
-
 /**
  *A timeoutfunction called every time
  *the scheduler is polled
@@ -310,7 +288,7 @@ olsr_timeout()
 void
 olsr_event(void *foo)
 {
-  union olsr_message *message = (union olsr_message*)buffer;
+  union p_olsr_message *message = (union p_olsr_message*)buffer;
   struct interface *ifn;
 
   /* If we can't produce power info we do nothing */ 
@@ -320,17 +298,17 @@ olsr_event(void *foo)
   olsr_printf(3, "PLUG-IN: Generating package - ");
 
   /* looping trough interfaces */
-  for (ifn = ifs; ifn ; ifn = ifn->int_next) 
+  for (ifn = ifnet; ifn ; ifn = ifn->int_next) 
     {
       olsr_printf(3, "[%s]  ", ifn->int_name);
       /* Fill message */
-      if(ipversion == AF_INET)
+      if(olsr_cnf->ip_version == AF_INET)
 	{
 	  /* IPv4 */
 	  message->v4.olsr_msgtype = MESSAGE_TYPE;
 	  message->v4.olsr_vtime = double_to_me(7.5);
 	  message->v4.olsr_msgsize = htons(sizeof(struct olsrmsg));
-	  memcpy(&message->v4.originator, main_addr, ipsize);
+	  memcpy(&message->v4.originator, &main_addr, ipsize);
 	  message->v4.ttl = MAX_TTL;
 	  message->v4.hopcnt = 0;
 	  message->v4.seqno = htons(get_msg_seqno());
@@ -353,7 +331,7 @@ olsr_event(void *foo)
 	  message->v6.olsr_msgtype = MESSAGE_TYPE;
 	  message->v6.olsr_vtime = double_to_me(7.5);
 	  message->v6.olsr_msgsize = htons(sizeof(struct olsrmsg));
-	  memcpy(&message->v6.originator, main_addr, ipsize);
+	  memcpy(&message->v6.originator, &main_addr, ipsize);
 	  message->v6.ttl = MAX_TTL;
 	  message->v6.hopcnt = 0;
 	  message->v6.seqno = htons(get_msg_seqno());
@@ -387,27 +365,30 @@ olsr_event(void *foo)
 void
 olsr_parser(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *in_addr)
 {
+  union p_olsr_message* pm;
   struct  powermsg *message;
   union olsr_ip_addr originator;
   double vtime;
+  
+  pm = (union p_olsr_message*)m;
 
   /* Fetch the originator of the messsage */
   memcpy(&originator, &m->v4.originator, ipsize);
 
   /* Fetch the message based on IP version */
-  if(ipversion == AF_INET)
+  if(olsr_cnf->ip_version == AF_INET)
     {
-      message = &m->v4.msg;
-      vtime = me_to_double(m->v4.olsr_vtime);
+      message = &pm->v4.msg;
+      vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
     }
   else
     {
-      message = &m->v6.msg;
-      vtime = me_to_double(m->v6.olsr_vtime);
+      message = &pm->v6.msg;
+      vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
     }
 
   /* Check if message originated from this node */
-  if(memcmp(&originator, main_addr, ipsize) == 0)
+  if(memcmp(&originator, &main_addr, ipsize) == 0)
     /* If so - back off */
     return;
 
@@ -424,7 +405,7 @@ olsr_parser(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *
    * Remeber that this also registeres the message as
    * processed if nessecary
    */
-  if(!check_dup_proc(&originator,
+  if(!olsr_check_dup_table_proc(&originator,
                      ntohs(m->v4.seqno))) /* REMEMBER NTOHS!! */
     {
       /* If so - do not process */
@@ -445,7 +426,7 @@ olsr_parser(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *
   /* Forward the message if nessecary
    * default_fwd does all the work for us!
    */
-  default_fwd(m,
+  olsr_forward_message(m,
               &originator,
               ntohs(m->v4.seqno), /* IMPORTANT!!! */
               in_if,
@@ -563,7 +544,7 @@ ipc_send(char *data, int size)
   if(!ipc_connected)
     return 0;
 
-#ifdef __FreeBSD__
+#if defined __FreeBSD__ || defined __NetBSD__ || defined __OpenBSD__ || defined __MacOSX__
   if (send(ipc_connection, data, size, 0) < 0) 
 #else
   if (send(ipc_connection, data, size, MSG_NOSIGNAL) < 0) 
@@ -603,8 +584,8 @@ get_powerstatus(struct powermsg *msg)
   else
     {
       msg->source_type = OLSR_BATTERY_POWERED;
-      msg->percentage = apm_info.ac_line_status;
-      msg->time_left = 0;
+      msg->percentage = apm_info.battery_percentage;
+      msg->time_left = apm_info.battery_time_left;
     }
 
   return 1;
@@ -630,7 +611,7 @@ olsr_hashing(union olsr_ip_addr *address)
   olsr_u32_t hash;
   char *tmp;
 
-  if(ipversion == AF_INET)
+  if(olsr_cnf->ip_version == AF_INET)
     /* IPv4 */  
     hash = (ntohl(address->v4));
   else
@@ -659,7 +640,7 @@ olsr_hashing(union olsr_ip_addr *address)
 int
 olsr_timed_out(struct timeval *timer)
 {
-  return(timercmp(timer, now, <));
+  return(timercmp(timer, &now, <));
 }
 
 
@@ -705,45 +686,9 @@ olsr_get_timestamp(olsr_u32_t delay, struct timeval *hold_timer)
   time_value_sec = delay/1000;
   time_value_msec= delay - (delay*1000);
 
-  hold_timer->tv_sec = now->tv_sec + time_value_sec;
-  hold_timer->tv_usec = now->tv_usec + (time_value_msec*1000);   
+  hold_timer->tv_sec = now.tv_sec + time_value_sec;
+  hold_timer->tv_usec = now.tv_usec + (time_value_msec*1000);   
 }
 
-
-/**
- *Converts a olsr_ip_addr to a string
- *Goes for both IPv4 and IPv6
- *
- *NON REENTRANT! If you need to use this
- *function twice in e.g. the same printf
- *it will not work.
- *You must use it in different calls e.g.
- *two different printfs
- *
- *@param the IP to convert
- *@return a pointer to a static string buffer
- *representing the address in "dots and numbers"
- *
- */
-char *
-olsr_ip_to_string(union olsr_ip_addr *addr)
-{
-
-  char *ret;
-  struct in_addr in;
-  
-  if(ipversion == AF_INET)
-    {
-      in.s_addr=addr->v4;
-      ret = inet_ntoa(in);
-    }
-  else
-    {
-      /* IPv6 */
-      ret = (char *)inet_ntop(AF_INET6, &addr->v6, ipv6_buf, sizeof(ipv6_buf));
-    }
-
-  return ret;
-}
 
 

@@ -36,9 +36,8 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: hna_set.h,v 1.13 2005/02/20 17:34:10 kattemat Exp $
+ * $Id: hna_set.h,v 1.14 2005/05/29 12:47:45 br1 Exp $
  */
-
 
 
 #ifndef _OLSR_HNA
@@ -66,10 +65,10 @@ struct hna_entry
   struct hna_entry   *prev;
 };
 
-#ifndef OLSR_PLUGIN
 
-struct hna_entry hna_set[HASHSIZE];
-size_t netmask_size;
+extern struct hna_entry hna_set[HASHSIZE];
+extern size_t netmask_size;
+
 
 int
 olsr_init_hna_set(void);
@@ -95,6 +94,4 @@ olsr_time_out_hna_set(void *);
 void
 olsr_print_hna_set(void);
 
-
-#endif
 #endif

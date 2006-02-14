@@ -29,7 +29,7 @@
  *
  */
  
-/* $Id: olsrd_copy.c,v 1.2 2005/03/01 21:35:14 tlopatic Exp $ */
+/* $Id: olsrd_copy.c,v 1.4 2005/05/29 12:47:42 br1 Exp $ */
  
 /*
  * Dynamic linked library for UniK OLSRd
@@ -42,37 +42,11 @@
 // these functions are copied from the main olsrd source
 // TODO: there must be a better way!!!
 
+#include <string.h>
 #include "olsrd_plugin.h"
+#include "olsrd_copy.h"
 
-/**
- *Hashing function. Creates a key based on
- *an 32-bit address.
- *@param address the address to hash
- *@return the hash(a value in the 0-31 range)
- */
-olsr_u32_t
-olsr_hashing(union olsr_ip_addr *address)
-{
-  olsr_u32_t hash;
-  char *tmp;
-
-  if(ipversion == AF_INET)
-    /* IPv4 */  
-    hash = (ntohl(address->v4));
-  else
-    {
-      /* IPv6 */
-      tmp = (char *) &address->v6;
-      hash = (ntohl(*tmp));
-    }
-
-  //hash &= 0x7fffffff; 
-  hash &= HASHMASK;
-
-  return hash;
-}
-
-
+#include "defs.h"
 
 /**
  *Checks if a timer has times out. That means
@@ -85,9 +59,8 @@ olsr_hashing(union olsr_ip_addr *address)
 int
 olsr_timed_out(struct timeval *timer)
 {
-  return(timercmp(timer, now, <));
+  return(timercmp(timer, &now, <));
 }
-
 
 
 /**
@@ -111,11 +84,8 @@ olsr_init_timer(olsr_u32_t time_value, struct timeval *hold_timer)
 }
 
 
-
-
-
 /**
- *Generaties a timestamp a certain number of milliseconds
+ *Generates a timestamp a certain number of milliseconds
  *into the future.
  *
  *@param time_value how many milliseconds from now
@@ -130,44 +100,7 @@ olsr_get_timestamp(olsr_u32_t delay, struct timeval *hold_timer)
 
   time_value_sec = delay/1000;
   time_value_msec= delay - (delay*1000);
-
-  hold_timer->tv_sec = now->tv_sec + time_value_sec;
-  hold_timer->tv_usec = now->tv_usec + (time_value_msec*1000);   
-}
-
-
-/**
- *Converts a olsr_ip_addr to a string
- *Goes for both IPv4 and IPv6
- *
- *NON REENTRANT! If you need to use this
- *function twice in e.g. the same printf
- *it will not work.
- *You must use it in different calls e.g.
- *two different printfs
- *
- *@param the IP to convert
- *@return a pointer to a static string buffer
- *representing the address in "dots and numbers"
- *
- */
-char *
-olsr_ip_to_string(union olsr_ip_addr *addr)
-{
-
-  char *ret;
-  struct in_addr in;
   
-  if(ipversion == AF_INET)
-    {
-      in.s_addr=addr->v4;
-      ret = inet_ntoa(in);
-    }
-  else
-    {
-      /* IPv6 */
-      ret = (char *)inet_ntop(AF_INET6, &addr->v6, ipv6_buf, sizeof(ipv6_buf));
-    }
-
-  return ret;
+  hold_timer->tv_sec = now.tv_sec + time_value_sec;
+  hold_timer->tv_usec = now.tv_usec + (time_value_msec*1000);   
 }

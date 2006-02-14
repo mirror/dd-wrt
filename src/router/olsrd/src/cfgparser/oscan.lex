@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oscan.lex,v 1.17 2005/02/20 19:54:18 kattemat Exp $
+ * $Id: oscan.lex,v 1.20 2005/11/19 08:49:44 kattemat Exp $
  */
 
 
@@ -81,7 +81,7 @@ get_conf_token()
   if (t == NULL)
     {
       fprintf(stderr, "Cannot allocate %d bytes for an configuration token.\n",
-	      sizeof (struct conf_token));
+	      (int) sizeof (struct conf_token));
       exit(EXIT_FAILURE);
     }
 
@@ -365,6 +365,16 @@ IPV6ADDR {IP6PAT1}|{IP6PAT2}|{IP6PAT3}|{IP6PAT4}|{IP6PAT5}|{IP6PAT6}|{IP6PAT7}|{
 "LinkQualityLevel" {
   yylval = NULL;
   return TOK_LQ_LEVEL;
+}
+
+"LinkQualityFishEye" {
+  yylval = NULL;
+  return TOK_LQ_FISH;
+}
+
+"LinkQualityDijkstraLimit" {
+  yylval = NULL;
+  return TOK_LQ_DLIMIT;
 }
 
 "LinkQualityWinSize" {

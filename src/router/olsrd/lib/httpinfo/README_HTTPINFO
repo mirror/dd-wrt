@@ -23,7 +23,7 @@ is available.
 
 The plugin takes the parameter "Port" "[portnumber]" 
 to set the TCP port on which the server is to run. 
-It defaults to 8080.
+It defaults to 1978.
 Now remember to open this port in your firewall if 
 planning to access the HTTP server from a remote host!
 The parameter "Host" "[IP address]" is used to allow

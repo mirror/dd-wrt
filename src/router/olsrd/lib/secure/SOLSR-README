@@ -20,8 +20,11 @@ COMPILING
 
   To compile simply do:
   # make
-
-  Note that the plugin depends on the openssl libraries.
+  This compiles the local MD5 function and the plugin has
+  no external dependencies.
+  If you want the plugin to use SHA-1 using the openssl libs
+  do:
+  # make USE_OPENSSL=1
 
 INSTALLING
 

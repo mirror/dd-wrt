@@ -94,9 +94,11 @@ int olsr_ioctl_add_route(struct rt_entry *Dest)
     return -1;
   }
 
+#ifndef SVEN_OLA
   if(olsr_cnf->open_ipc)
     ipc_route_send_rtentry(&Dest->rt_dst, &Dest->rt_router, Dest->rt_metric,
                            1, Dest->rt_if->int_name);
+#endif
 
   return 0;
 }
@@ -144,8 +146,10 @@ int olsr_ioctl_del_route(struct rt_entry *Dest)
     return -1;
   }
 
+#ifndef SVEN_OLA
   if(olsr_cnf->open_ipc)
     ipc_route_send_rtentry(&Dest->rt_dst, NULL, Dest->rt_metric, 0, NULL);
+#endif
 
   return 0;
 }

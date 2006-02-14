@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: parser.c,v 1.22 2005/03/10 07:01:48 kattemat Exp $
+ * $Id: parser.c,v 1.29 2005/11/19 08:49:44 kattemat Exp $
  */
 
 #include "parser.h"
@@ -50,6 +50,9 @@
 #include "rebuild_packet.h"
 #include "net_os.h"
 #include "log.h"
+#ifndef SVEN_OLA
+#include "print_packet.h"
+#endif
 
 #ifdef WIN32
 #undef EWOULDBLOCK
@@ -59,6 +62,8 @@
 #undef strerror
 #define strerror(x) StrError(x)
 #endif
+
+struct parse_function_entry *parse_functions;
 
 static char inbuf[MAXMESSAGESIZE+1];
 
@@ -154,9 +159,6 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
   int msgsize;
   int processed;
   struct parse_function_entry *entry;
-  char *packet = (char*)olsr;
-  int i;
-  int x = 0;
 
   count = size - ((char *)m - (char *)olsr);
 
@@ -174,27 +176,11 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
 
   //printf("Message from %s\n\n", olsr_ip_to_string(from_addr)); 
       
+#ifndef SVEN_OLA
   /* Display packet */
   if(disp_pack_in)
-    {
-      printf("\n\tfrom: %s\n\tsize: %d\n\tcontent(decimal):\n\t", olsr_ip_to_string(from_addr), size);
-	
-      for(i = 0; i < size;i++)
-	{
-	  if(x == 4)
-	    {
-	      x = 0;
-	      printf("\n\t");
-	    }
-	  x++;
-	  if(olsr_cnf->ip_version == AF_INET)
-	    printf(" %03i", (u_char) packet[i]);
-	  else
-	    printf(" %02x", (u_char) packet[i]);
-	}
-	    
-      printf("\n");
-    }
+    print_olsr_serialized_packet(stdout, (union olsr_packet *)olsr, size, from_addr);
+#endif
 
   if(olsr_cnf->ip_version == AF_INET)
     msgsize = ntohs(m->v4.olsr_msgsize);
@@ -259,7 +245,7 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
       if(olsr_cnf->ip_version == AF_INET)
 	{
 	  /* IPv4 */
-	  if (m->v4.ttl <= 0)
+	  if (m->v4.ttl <= 0 && olsr_cnf->lq_fish == 0)
 	    {
 	      OLSR_PRINTF(2, "Dropping packet type %d from neigh %s with TTL 0\n", 
 			  m->v4.olsr_msgtype,
@@ -270,7 +256,7 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
       else
 	{
 	  /* IPv6 */
-	  if (m->v6.ttl <= 0) 
+	  if (m->v6.ttl <= 0 && olsr_cnf->lq_fish == 0) 
 	    {
 	      OLSR_PRINTF(2, "Dropping packet type %d from %s with TTL 0\n", 
 			  m->v4.olsr_msgtype,
@@ -361,11 +347,10 @@ olsr_input(int fd)
 {
   /* sockaddr_in6 is bigger than sockaddr !!!! */
   struct sockaddr_storage from;
-  size_t fromlen;
+  socklen_t fromlen;
   int cc;
   struct interface *olsr_in_if;
   union olsr_ip_addr from_addr;
-
 
   for (;;) 
     {
@@ -398,23 +383,21 @@ olsr_input(int fd)
 	  /* IPv6 sender address */
 	  COPY_IP(&from_addr, &((struct sockaddr_in6 *)&from)->sin6_addr);
 	}
-
-      /* are we talking to ourselves? */
-      if(if_ifwithaddr(&from_addr) != NULL)
-	return;
-
+      
+      
 #ifdef DEBUG
       OLSR_PRINTF(5, "Recieved a packet from %s\n", olsr_ip_to_string((union olsr_ip_addr *)&((struct sockaddr_in *)&from)->sin_addr.s_addr))
 #endif
-      //printf("\nCC: %d FROMLEN: %d\n\n", cc, fromlen);
-      if ((olsr_cnf->ip_version == AF_INET) && (fromlen != sizeof (struct sockaddr_in)))
-	break;
-      else if ((olsr_cnf->ip_version == AF_INET6) && (fromlen != sizeof (struct sockaddr_in6)))
-	break;
-
-      //printf("Recieved data on socket %d\n", socknr);
-
-
+	
+	if ((olsr_cnf->ip_version == AF_INET) && (fromlen != sizeof (struct sockaddr_in)))
+	  break;
+	else if ((olsr_cnf->ip_version == AF_INET6) && (fromlen != sizeof (struct sockaddr_in6)))
+	  break;
+      
+      /* are we talking to ourselves? */
+      if(if_ifwithaddr(&from_addr) != NULL)
+	return;
+      
       if((olsr_in_if = if_ifwithsock(fd)) == NULL)
 	{
 	  OLSR_PRINTF(1, "Could not find input interface for message from %s size %d\n",
@@ -434,6 +417,102 @@ olsr_input(int fd)
       parse_packet((struct olsr *)inbuf, cc, olsr_in_if, &from_addr);
     
     }
+}
+
+
+
+
+/**
+ *Processing OLSR data from socket. Reading data, setting 
+ *wich interface recieved the message, Sends IPC(if used) 
+ *and passes the packet on to parse_packet().
+ *
+ *@param fd the filedescriptor that data should be read from.
+ *@return nada
+ */
+void
+olsr_input_hostemu(int fd)
+{
+  /* sockaddr_in6 is bigger than sockaddr !!!! */
+  struct sockaddr_storage from;
+  socklen_t fromlen;
+  int cc;
+  struct interface *olsr_in_if;
+  union olsr_ip_addr from_addr;
+  olsr_u16_t pcklen;
+
+  /* Host emulator receives IP address first to emulate
+     direct link */
+
+  if((cc = recv(fd, from_addr.v6.s6_addr, ipsize, 0)) != (int)ipsize)
+    {
+      fprintf(stderr, "Error receiving host-client IP hook(%d) %s!\n", cc, strerror(errno));
+      COPY_IP(&from_addr, &((struct olsr *)inbuf)->olsr_msg->originator);
+    }
+
+  /* are we talking to ourselves? */
+  if(if_ifwithaddr(&from_addr) != NULL)
+    return;
+      
+  /* Extract size */
+  if((cc = recv(fd, &pcklen, 2, MSG_PEEK)) != 2)
+    {
+      if(cc <= 0)
+	{
+	  fprintf(stderr, "Lost olsr_switch connection - exit!\n");
+	  olsr_exit(__func__, EXIT_FAILURE);
+	}
+      fprintf(stderr, "[hust-emu] error extracting size(%d) %s!\n", cc, strerror(errno));
+      return;
+    }
+  else
+    {
+      pcklen = ntohs(pcklen);
+    }
+
+  fromlen = sizeof(struct sockaddr_storage);
+  
+  cc = olsr_recvfrom(fd, 
+		     inbuf, 
+		     pcklen, 
+		     0, 
+		     (struct sockaddr *)&from, 
+		     &fromlen);
+
+  if (cc <= 0) 
+    {
+      if (cc < 0 && errno != EWOULDBLOCK)
+	{
+	  OLSR_PRINTF(1, "error recvfrom: %s", strerror(errno))
+	    olsr_syslog(OLSR_LOG_ERR, "error recvfrom: %m");
+	}
+      return;
+    }
+  
+  if(cc != pcklen)
+    {
+      printf("Could not read whole packet(size %d, read %d)\n", pcklen, cc);
+      return;
+    }
+
+  if((olsr_in_if = if_ifwithsock(fd)) == NULL)
+    {
+      OLSR_PRINTF(1, "Could not find input interface for message from %s size %d\n",
+		  olsr_ip_to_string(&from_addr),
+		  cc)
+	olsr_syslog(OLSR_LOG_ERR, "Could not find input interface for message from %s size %d\n",
+		    olsr_ip_to_string(&from_addr),
+		    cc);
+      return;
+    }
+  
+  /*
+   * &from - sender
+   * &inbuf.olsr 
+   * cc - bytes read
+   */
+  parse_packet((struct olsr *)inbuf, cc, olsr_in_if, &from_addr);
+  
 }
 
 

@@ -2,6 +2,10 @@ DOT DATA GENERATION PLUGIN FOR OLSRD
 by Andreas Tønnesen(andreto@olsr.org)
    Bruno Randolf
 
+02.06.05
+
+Added patch by Sebastian Hagen to fix FD leakage
+
 05.12.2004
 
 Various updates by Bruno Randolf has been applied to this

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_conf.c,v 1.36 2005/03/14 21:24:22 kattemat Exp $
+ * $Id: olsrd_conf.c,v 1.46 2005/11/17 04:25:44 tlopatic Exp $
  */
 
 
@@ -56,41 +56,6 @@ extern FILE *yyin;
 extern int yyparse(void);
 
 static char copyright_string[] = "The olsr.org Optimized Link-State Routing daemon(olsrd) Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org) All rights reserved.";
-
-#ifdef MAKELIB
-
-/* Build as DLL */
-
-void __attribute__ ((constructor)) 
-my_init(void);
-
-void __attribute__ ((destructor)) 
-my_fini(void);
-
-
-/**
- *Constructor
- */
-void
-my_init()
-{
-  /* Print plugin info to stdout */
-  printf("olsrd config file parser %s loaded\n", PARSER_VERSION);
-
-  return;
-}
-
-/**
- *Destructor
- */
-void
-my_fini()
-{
-  printf("See you around!\n");
-  return;
-}
-
-#else
 
 #ifdef MAKEBIN
 
@@ -129,8 +94,6 @@ main(int argc, char *argv[])
 
 /* Build as part of olsrd */
 
-
-#endif
 
 #endif
 
@@ -197,6 +160,7 @@ olsrd_parse_cnf(const char *filename)
       in->index = cnf->ifcnt++;
       in->configured = OLSR_FALSE;
       in->interf = NULL;
+      in->host_emul = OLSR_FALSE;
       in = in->next;
     }
 
@@ -236,8 +200,7 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
     }
 
   if(cnf->willingness_auto == OLSR_FALSE &&
-     (cnf->willingness < MIN_WILLINGNESS ||
-      cnf->willingness > MAX_WILLINGNESS))
+     (cnf->willingness > MAX_WILLINGNESS))
     {
       fprintf(stderr, "Willingness %d is not allowed\n", cnf->willingness);
       return -1;
@@ -346,6 +309,16 @@ olsrd_sanity_check_cnf(struct olsrd_config *cnf)
 	}
 	
       /* HELLO interval */
+
+      if (io->hello_params.validity_time < 0.0)
+      {
+        if (cnf->lq_level == 0)
+          io->hello_params.validity_time = NEIGHB_HOLD_TIME;
+
+        else
+          io->hello_params.validity_time = cnf->lq_wsize * io->hello_params.emission_interval;
+      }
+
       if(io->hello_params.emission_interval < cnf->pollrate ||
 	 io->hello_params.emission_interval > io->hello_params.validity_time)
 	{
@@ -461,6 +434,7 @@ set_default_cnf(struct olsrd_config *cnf)
     
     cnf->debug_level = DEF_DEBUGLVL;
     cnf->no_fork = OLSR_FALSE;
+    cnf->host_emul = OLSR_FALSE;
     cnf->ip_version  = AF_INET;
     cnf->allow_no_interfaces = DEF_ALLOW_NO_INTS;
     cnf->tos = DEF_TOS;
@@ -478,6 +452,9 @@ set_default_cnf(struct olsrd_config *cnf)
     cnf->tc_redundancy = TC_REDUNDANCY;
     cnf->mpr_coverage = MPR_COVERAGE;
     cnf->lq_level = DEF_LQ_LEVEL;
+    cnf->lq_fish = DEF_LQ_FISH;
+    cnf->lq_dlimit = DEF_LQ_DIJK_LIMIT;
+    cnf->lq_dinter = DEF_LQ_DIJK_INTER;
     cnf->lq_wsize = DEF_LQ_WSIZE;
     cnf->clear_screen = DEF_CLEAR_SCREEN;
 }
@@ -514,8 +491,10 @@ get_default_if_config()
   io->weight.fixed = OLSR_FALSE;
   io->weight.value = 0;
 
+  io->ipv6_addrtype = 0; /* global */
+
   io->hello_params.emission_interval = HELLO_INTERVAL;
-  io->hello_params.validity_time = NEIGHB_HOLD_TIME;
+  io->hello_params.validity_time = -1.0;
   io->tc_params.emission_interval = TC_INTERVAL;
   io->tc_params.validity_time = TOP_HOLD_TIME;
   io->mid_params.emission_interval = MID_INTERVAL;
@@ -586,6 +565,10 @@ olsrd_print_cnf(struct olsrd_config *cnf)
    
   printf("LQ level         : %d\n", cnf->lq_level);
 
+  printf("LQ fish eye      : %d\n", cnf->lq_fish);
+
+  printf("LQ Dijkstra limit: %d, %0.2f\n", cnf->lq_dlimit, cnf->lq_dinter);
+
   printf("LQ window size   : %d\n", cnf->lq_wsize);
 
   printf("Clear screen     : %s\n", cnf->clear_screen ? "yes" : "no");
@@ -608,8 +591,7 @@ olsrd_print_cnf(struct olsrd_config *cnf)
 	      printf("\tIPv4 broadcast           : AUTO\n");
 	    }
 	  
-	  if(in->cnf->ipv6_addrtype)
-	    printf("\tIPv6 addrtype            : %s\n", in->cnf->ipv6_addrtype ? "site-local" : "global");
+	  printf("\tIPv6 addrtype            : %s\n", in->cnf->ipv6_addrtype ? "site-local" : "global");
 	  
 	  //union olsr_ip_addr       ipv6_multi_site;
 	  //union olsr_ip_addr       ipv6_multi_glbl;

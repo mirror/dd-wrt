@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dyn_gw.c,v 1.14 2005/01/30 15:12:59 kattemat Exp $
+ * $Id: olsrd_dyn_gw.c,v 1.18 2005/06/02 13:59:12 br1 Exp $
  */
 
 /*
@@ -45,10 +45,18 @@
  * -HNA4 checking by bjoern riemer
  */
 
+#include <arpa/inet.h>
+
+#include "olsr_types.h"
 #include "olsrd_dyn_gw.h"
+#include "scheduler.h"
+#include "olsr.h"
+#include "local_hna_set.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <net/route.h>
 #ifdef linux
 #include <linux/in_route.h>
@@ -82,6 +90,7 @@ struct ThreadPara
 
 #endif
 
+
 /* set default interval, in case none is given in the config file */
 static int check_interval = 5;
 
@@ -98,7 +107,7 @@ add_to_ping_list(char *, struct ping_list *);
 
 struct hna_list {
   union olsr_ip_addr hna_net;
-  union hna_netmask hna_netmask;
+  union olsr_ip_addr hna_netmask;
   struct ping_list *ping_hosts;
   int hna_added;
   int probe_ok;
@@ -108,7 +117,7 @@ struct hna_list {
 static struct hna_list *
 	add_to_hna_list(struct hna_list *,
 				union olsr_ip_addr *hna_net,
-				union hna_netmask *hna_netmask );
+				union olsr_ip_addr *hna_netmask );
 
 struct hna_list *the_hna_list = NULL;
 
@@ -116,7 +125,7 @@ static void *
 looped_checks(void *foo);
 
 static int
-check_gw(union olsr_ip_addr *, union hna_netmask *,struct ping_list *);
+check_gw(union olsr_ip_addr *, union olsr_ip_addr *,struct ping_list *);
 
 static int
 ping_is_possible(struct ping_list *);
@@ -128,14 +137,14 @@ ping_is_possible(struct ping_list *);
  * read config file parameters
  */  
 int
-register_olsr_param(char *key, char *value)
+olsrd_plugin_register_param(char *key, char *value)
 {
   /* foo_addr is only used for call to inet_aton */ 
   struct in_addr foo_addr;
   int retval = -1;
   int i;
   union olsr_ip_addr temp_net;
-  union hna_netmask temp_netmask;
+  union olsr_ip_addr temp_netmask;
   char s_netaddr[16];
   char s_mask[16];
  
@@ -188,7 +197,7 @@ register_olsr_param(char *key, char *value)
  *It is ran _after_ register_olsr_param
  */
 int
-olsr_plugin_init()
+olsrd_plugin_init()
 {
   pthread_t ping_thread;
   
@@ -214,40 +223,12 @@ olsr_plugin_init()
 }
 
 
-
-/*
- * destructor - called at unload
- */
-void
-olsr_plugin_exit()
-{
-
-}
-
-
-
-/* Mulitpurpose funtion */
-int
-plugin_io(int cmd, void *data, size_t size)
-{
-
-  switch(cmd)
-    {
-    default:
-      return 0;
-    }
-  
-  return 1;
-}
-
-
-
 /**
  * Scheduled event to update the hna table,
  * called from olsrd main thread to keep the hna table thread-safe
  */
 void
-olsr_event_doing_hna()
+olsr_event_doing_hna(void *foo)
 {
 	struct hna_list *li;
 	/*
@@ -276,11 +257,6 @@ olsr_event_doing_hna()
 		}
 	}
 }
-  
-
-
-
-
 
 
 
@@ -308,7 +284,7 @@ looped_checks(void *foo)
     struct timespec remainder_spec;
     /* the time to wait in "Interval" sec (see connfig), default=5sec */
     struct timespec sleeptime_spec  = {(time_t) check_interval, 0L };
-    
+
     li=the_hna_list;
     while(li){
 	    /* check for gw in table entry and if Ping IPs are given also do pings */
@@ -325,7 +301,7 @@ looped_checks(void *foo)
 
 
 static int
-check_gw(union olsr_ip_addr *net, union hna_netmask *mask, struct ping_list *the_ping_list)
+check_gw(union olsr_ip_addr *net, union olsr_ip_addr *mask, struct ping_list *the_ping_list)
 {
     char buff[1024], iface[16];
     olsr_u32_t gate_addr, dest_addr, netmask;
@@ -350,7 +326,7 @@ check_gw(union olsr_ip_addr *net, union hna_netmask *mask, struct ping_list *the
     */
     while (fgets(buff, 1023, fp))
 	{	
-	num = sscanf(buff, "%16s %128X %128X %X %d %d %d %128X \n",
+	num = sscanf(buff, "%15s %128X %128X %X %d %d %d %128X \n",
 		     iface, &dest_addr, &gate_addr,
 		     &iflags, &refcnt, &use, &metric, &netmask);
 
@@ -435,7 +411,7 @@ add_to_ping_list(char *ping_address, struct ping_list *the_ping_list)
 
 
 static struct hna_list *
-add_to_hna_list(struct hna_list * list_root, union olsr_ip_addr *hna_net, union hna_netmask *hna_netmask )
+add_to_hna_list(struct hna_list * list_root, union olsr_ip_addr *hna_net, union olsr_ip_addr *hna_netmask )
 {
   struct hna_list *new = (struct hna_list *) malloc(sizeof(struct hna_list));
   if(new == NULL)
@@ -535,20 +511,4 @@ int pthread_mutex_unlock(HANDLE *Hand)
   return 0;
 }
 
-int inet_aton(char *AddrStr, struct in_addr *Addr)
-{
-  Addr->s_addr = inet_addr(AddrStr);
-
-  return 1;
-}
-
-int nanosleep(struct timespec *Req, struct timespec *Rem)
-{
-  Sleep(Req->tv_sec * 1000 + Req->tv_nsec / 1000000);
-
-  Rem->tv_sec = 0;
-  Rem->tv_nsec = 0;
-
-  return 0;
-}
 #endif

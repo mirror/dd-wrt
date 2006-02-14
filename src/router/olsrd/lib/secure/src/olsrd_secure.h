@@ -41,7 +41,10 @@
 #ifndef _OLSRD_PLUGIN_TEST
 #define _OLSRD_PLUGIN_TEST
 
-#include "olsrd_plugin.h"
+#include "secure_messages.h"
+
+#include "hashing.h"
+
 
 #define KEYFILE "/root/.olsr/olsrd_secure_key"
 
@@ -51,8 +54,6 @@
 /* Algorithm definitions */
 #define SHA1_INCLUDING_KEY   1
 #define MD5_INCLUDING_KEY   2
-
-#define	MAXMESSAGESIZE 512
 
 #ifdef USE_OPENSSL
 #define SIGNATURE_SIZE 20
@@ -77,8 +78,8 @@ struct stamp
   int diff;
   olsr_u32_t challenge;
   olsr_u8_t validated;
-  struct timeval valtime; /* Validity time */
-  struct timeval conftime; /* Reconfiguration time */
+  clock_t valtime; /* Validity time */
+  clock_t conftime; /* Reconfiguration time */
   struct stamp *prev;
   struct stamp *next;
 };
@@ -144,7 +145,7 @@ void
 packet_parser(int);
 
 void
-timeout_timestamps(void);
+timeout_timestamps(void*);
 
 int
 check_timestamp(union olsr_ip_addr *, time_t);
@@ -154,5 +155,14 @@ lookup_timestamp_entry(union olsr_ip_addr *);
 
 int
 read_key_from_file(char *);
+
+int
+secure_plugin_init(void);
+
+void
+secure_plugin_exit(void);
+
+int
+plugin_ipc_init(void);
 
 #endif

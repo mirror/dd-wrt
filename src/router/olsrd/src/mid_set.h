@@ -36,9 +36,8 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mid_set.h,v 1.12 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: mid_set.h,v 1.13 2005/05/29 12:47:45 br1 Exp $
  */
-
 
 
 #ifndef _OLSR_MID
@@ -71,10 +70,9 @@ struct mid_entry
 };
 
 
-#ifndef OLSR_PLUGIN
+extern struct mid_entry mid_set[HASHSIZE];
+extern struct mid_address reverse_mid_set[HASHSIZE];
 
-struct mid_entry mid_set[HASHSIZE];
-struct mid_address reverse_mid_set[HASHSIZE];
 
 int
 olsr_init_mid_set(void);
@@ -103,5 +101,4 @@ olsr_update_mid_table(union olsr_ip_addr *, float);
 int
 mid_delete_node(struct mid_entry *);
 
-#endif
 #endif

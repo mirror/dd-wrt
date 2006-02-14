@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr_cfg.h,v 1.23 2005/03/14 21:24:21 kattemat Exp $
+ * $Id: olsr_cfg.h,v 1.27 2005/11/17 04:25:44 tlopatic Exp $
  */
 
 
@@ -54,6 +54,9 @@
 #define DEF_IPC_CONNECTIONS 0
 #define DEF_USE_HYST        OLSR_TRUE
 #define DEF_LQ_LEVEL        0
+#define DEF_LQ_FISH         0
+#define DEF_LQ_DIJK_LIMIT   255
+#define DEF_LQ_DIJK_INTER   0.0
 #define DEF_LQ_WSIZE        10
 #define DEF_CLEAR_SCREEN    OLSR_FALSE
 
@@ -68,7 +71,7 @@
 #define MAX_TOS             16
 #define MIN_TOS             0
 #define MAX_WILLINGNESS     7
-#define MIN_WILLINGNESS     1
+#define MIN_WILLINGNESS     0
 #define MAX_MPR_COVERAGE    20
 #define MIN_MPR_COVERAGE    1
 #define MAX_TC_REDUNDANCY   2
@@ -127,6 +130,8 @@ struct olsr_if
   char                     *config;
   int                      index;
   olsr_bool                configured;
+  olsr_bool                host_emul;
+  union olsr_ip_addr       hemu_ip;
   struct interface         *interf;
   struct if_config_options *cnf;
   struct olsr_if           *next;
@@ -188,6 +193,7 @@ struct olsrd_config
 {
   int                      debug_level;
   olsr_bool                no_fork;
+  olsr_bool                host_emul;
   int                      ip_version;
   olsr_bool                allow_no_interfaces;
   olsr_u16_t               tos;
@@ -203,6 +209,9 @@ struct olsrd_config
   olsr_bool                clear_screen;
   olsr_u8_t                lq_level;
   olsr_u32_t               lq_wsize;
+  olsr_u8_t                lq_fish;
+  olsr_u8_t                lq_dlimit;
+  float                    lq_dinter;
   struct plugin_entry      *plugins;
   struct hna4_entry        *hna4_entries;
   struct hna6_entry        *hna6_entries;

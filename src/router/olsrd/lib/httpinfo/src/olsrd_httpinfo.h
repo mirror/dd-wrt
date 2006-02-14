@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_httpinfo.h,v 1.27 2005/01/24 07:55:35 kattemat Exp $
+ * $Id: olsrd_httpinfo.h,v 1.28 2005/05/29 12:47:41 br1 Exp $
  */
 
 /*
@@ -77,11 +77,18 @@ struct http_stats
   olsr_u32_t ill_hits;
 };
 
+
+extern struct olsrd_config *olsr_cfg;
+
+
 char *
 olsr_ip_to_string(union olsr_ip_addr *);
 
 char *
 olsr_netmask_to_string(union hna_netmask *);
 
+/* Destructor function */
+void
+olsr_plugin_exit(void);
 
 #endif

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net.h,v 1.6 2004/11/21 11:30:30 kattemat Exp $
+ * $Id: net.h,v 1.7 2005/08/28 19:30:30 kattemat Exp $
  */
 
 
@@ -66,6 +66,7 @@
 
 /* The original state of the IP forwarding proc entry */
 char orig_fwd_state;
+char orig_global_redirect_state;
 
 /* Struct uesd to store original redirect/ingress setting */
 struct nic_state

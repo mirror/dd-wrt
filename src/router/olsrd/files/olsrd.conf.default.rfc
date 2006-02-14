@@ -3,7 +3,7 @@
 #
 # Lines starting with a # are discarded
 #
-# This file was shipped with olsrd 0.4.9
+# This file was shipped with olsrd 0.X.X
 #
 
 # Debug level(0-9)
@@ -89,7 +89,7 @@ IpcConnect
      #Net             192.168.1.0 255.255.255.0     
 }
 
-# Wether to use hysteresis or not
+# Whether to use hysteresis or not
 # Hysteresis adds more robustness to the
 # link sensing but delays neighbor registration.
 # Used by default. 'yes' or 'no'

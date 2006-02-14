@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: interfaces.c,v 1.21 2005/03/07 07:08:02 kattemat Exp $
+ * $Id: interfaces.c,v 1.27 2005/06/03 08:00:55 kattemat Exp $
  */
 
 #include "defs.h"
@@ -46,6 +46,14 @@
 #include "olsr.h"
 
 static olsr_u32_t if_property_id;
+
+/* The interface linked-list */
+struct interface *ifnet;
+
+/* Datastructures to use when creating new sockets */
+struct sockaddr_in addrsock;
+struct sockaddr_in6 addrsock6;
+
 
 /* Ifchange functions */
 struct ifchgf
@@ -94,14 +102,20 @@ ifinit()
     }
 
   OLSR_PRINTF(1, "\n ---- Interface configuration ---- \n\n")
-  /* Run trough all interfaces immedeatly */
-  for(tmp_if = olsr_cnf->interfaces; tmp_if != NULL; tmp_if = tmp_if->next)
-    {
-      chk_if_up(tmp_if, 1);	
-    }
+    /* Run trough all interfaces immedeatly */
+    for(tmp_if = olsr_cnf->interfaces; tmp_if != NULL; tmp_if = tmp_if->next)
+      {
+	if(!tmp_if->host_emul)
+	  {
+	    if(!olsr_cnf->host_emul) /* XXX: TEMPORARY! */
+	      chk_if_up(tmp_if, 1);	
+	  }
+	else
+	  add_hemu_if(tmp_if);
+      }
   
   /* register network interface update function with scheduler */
-  olsr_register_scheduler_event(&check_interface_updates, NULL, 5.0, 0, NULL);
+  olsr_register_scheduler_event(&check_interface_updates, NULL, IFCHANGES_POLL_INT, 0, NULL);
 
   return (ifnet == NULL) ? 0 : 1;
 }
@@ -302,10 +316,9 @@ if_ifwithname(const char *if_name)
  *
  *@return nada
  */
-void
-queue_if(char *name)
+struct olsr_if *
+queue_if(char *name, int hemu)
 {
-
   struct olsr_if *interf_n = olsr_cnf->interfaces;
 
   //printf("Adding interface %s\n", name);
@@ -316,7 +329,7 @@ queue_if(char *name)
       if(memcmp(interf_n->name, name, strlen(name)) == 0)
 	{
 	  fprintf(stderr, "Duplicate interfaces defined... not adding %s\n", name);
-	  return;
+	  return NULL;
 	}
       interf_n = interf_n->next;
     }
@@ -330,10 +343,13 @@ queue_if(char *name)
   interf_n->configured = 0;
   interf_n->index = olsr_cnf->ifcnt++;
 
-  strcpy(interf_n->name, name);
+  interf_n->host_emul = hemu ? OLSR_TRUE : OLSR_FALSE;
+
+  strncpy(interf_n->name, name, strlen(name) + 1);
   interf_n->next = olsr_cnf->interfaces;
   olsr_cnf->interfaces = interf_n;
 
+  return interf_n;
 }
 
 

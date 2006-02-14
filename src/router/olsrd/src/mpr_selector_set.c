@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mpr_selector_set.c,v 1.13 2005/02/27 10:43:38 kattemat Exp $
+ * $Id: mpr_selector_set.c,v 1.14 2005/12/16 08:21:59 kattemat Exp $
  */
 
 
@@ -81,6 +81,16 @@ void
 increase_local_ansn()
 {
   ansn++;
+}
+
+/**
+ * Check if we(this node) is selected as a MPR by any
+ * neighbors. If the list is empty we are not MPR.
+ */
+olsr_bool
+olsr_is_mpr()
+{
+    return ((mprs_list.next == &mprs_list) ? OLSR_FALSE : OLSR_TRUE);
 }
 
 /**
