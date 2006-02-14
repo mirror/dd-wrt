@@ -1,21 +1,3 @@
-
-/*
- *********************************************************
- *   Copyright 2003, 2004 Sveasoft AB                    *
- *   All Rights Reserved                                 *
- *********************************************************
-
- This is PROPRIETARY SOURCE CODE developed by Sveasoft AB
-
- THIS SOFTWARE IS OFFERED "AS IS", AND SVEASOFT GRANTS NO WARRANTIES OF ANY
- KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE.  SVEASOFT
- SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE
-
- COPYRIGHT 2004 Sveasoft AB
-
-*/
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
