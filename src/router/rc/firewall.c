@@ -1,45 +1,4 @@
 
-/*
- *********************************************************
- *   Copyright 2003, CyberTAN  Inc.  All Rights Reserved *
- *********************************************************
-
- This is UNPUBLISHED PROPRIETARY SOURCE CODE of CyberTAN Inc.
- the contents of this file may not be disclosed to third parties,
- copied or duplicated in any form without the prior written
- permission of CyberTAN Inc.
-
- This software should be used as a reference only, and it not
- intended for production use!
-
-
- THIS SOFTWARE IS OFFERED "AS IS", AND CYBERTAN GRANTS NO WARRANTIES OF ANY
- KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE.  CYBERTAN
- SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE
-*/
-
-/*
- * Router firewall 
- *
- * Copyright 2002, Cybertan Corporation
- * All Rights Reserved.
- *
- * Description:
- *   We use Netfilter to be our firewall. This program will generate a policy 
- *   file, and it is the same format as the output of "iptables-save". Thus,
- *   we can use "iptables-restore" to insert the rules in one time.
- *   It's pretty fast ;-)
- *
- *   
- * This is UNPUBLISHED PROPRIETARY SOURCE CODE of Cybertan Corporation;
- * the contents of this file may not be disclosed to third parties, copied or
- * duplicated in any form, in whole or in part, without the prior written
- * permission of Cybertan Corporation.
- *
- */
-
-
 /* The macro 'DEVELOPE_ENV' is for developement only. If it is defined, you
  * can compile it in your (x86) host machine and run it locally. This speeds
  * up the developing.
