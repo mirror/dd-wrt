@@ -163,7 +163,6 @@ install: all
 
 clean:
 	rm -f *.o *.so
-	rm -f closed/*.o
 	rm -f *.a
 
 libshared.so: $(OBJS) 
