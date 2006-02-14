@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: build_msg.c,v 1.29 2005/03/10 20:43:13 kattemat Exp $
+ * $Id: build_msg.c,v 1.31 2005/11/10 19:35:12 kattemat Exp $
  */
 
 
@@ -45,6 +45,7 @@
 #include "log.h"
 #include "build_msg.h"
 #include "local_hna_set.h"
+#include "mantissa.h"
 
 #define BMSG_DBGLVL 5
 
@@ -63,7 +64,7 @@
 
 /* All these functions share this buffer */
 
-static char msg_buffer[MAXMESSAGESIZE - OLSR_HEADERSIZE];
+static olsr_u8_t msg_buffer[MAXMESSAGESIZE - OLSR_HEADERSIZE];
 
 /* Prototypes for internal functions */
 
@@ -283,7 +284,7 @@ serialize_hello4(struct hello_message *message, struct interface *ifp)
 
   /* Fill HELLO header */
   h->willingness = message->willingness; 
-  h->htime = ifp->hello_etime;
+  h->htime = double_to_me(ifp->hello_etime);
 
   memset(&h->reserved, 0, sizeof(olsr_u16_t));
   
@@ -455,7 +456,7 @@ serialize_hello6(struct hello_message *message, struct interface *ifp)
   
   /* Fill packet header */
   h6->willingness = message->willingness; 
-  h6->htime = ifp->hello_etime;
+  h6->htime = double_to_me(ifp->hello_etime);
   memset(&h6->reserved, 0, sizeof(olsr_u16_t));
 
   /*

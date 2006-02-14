@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: rebuild_packet.c,v 1.15 2005/02/27 18:39:43 kattemat Exp $
+ * $Id: rebuild_packet.c,v 1.19 2005/05/28 16:01:14 kattemat Exp $
  */
 
 
@@ -58,10 +58,6 @@
 void
 hna_chgestruct(struct hna_message *hmsg, union olsr_message *m)
 {
-  struct hnamsg *hna;
-  struct hnamsg6 *hna6;
-  struct hnapair *haddr;
-  struct hnapair6 *haddr6;
   struct hna_net_addr *hna_pairs, *tmp_pairs;
   int no_pairs, i;
 
@@ -72,8 +68,10 @@ hna_chgestruct(struct hna_message *hmsg, union olsr_message *m)
 
   if(olsr_cnf->ip_version == AF_INET)
     {
-      hna = &m->v4.message.hna;
-      haddr = hna->hna_net;
+      /* IPv4 */
+      struct hnapair *haddr;
+
+      haddr = m->v4.message.hna.hna_net;
 
       /*
        * How many HNA pairs?
@@ -89,7 +87,7 @@ hna_chgestruct(struct hna_message *hmsg, union olsr_message *m)
       //printf("HNA from %s\n\n", olsr_ip_to_string((union olsr_ip_addr *)&hmsg->originator));
 
       /* Get vtime */
-      hmsg->vtime = me_to_double(m->v4.olsr_vtime);
+      hmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
 
       tmp_pairs = NULL;
       hna_pairs = NULL;
@@ -113,8 +111,9 @@ hna_chgestruct(struct hna_message *hmsg, union olsr_message *m)
   else
     {
       /* IPv6 */
-      hna6 = &m->v6.message.hna;
-      haddr6 = hna6->hna_net;
+      struct hnapair6 *haddr6;
+
+      haddr6 = m->v6.message.hna.hna_net;
 
       /*
        * How many HNA pairs?
@@ -128,7 +127,7 @@ hna_chgestruct(struct hna_message *hmsg, union olsr_message *m)
       hmsg->hop_count =  m->v6.hopcnt;
       
       /* Get vtime */
-      hmsg->vtime = me_to_double(m->v6.olsr_vtime);
+      hmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
       
       tmp_pairs = NULL;
       hna_pairs = NULL;
@@ -183,10 +182,6 @@ void
 mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
 {
   int i;
-  struct midmsg *mid;
-  struct midaddr *maddr;
-  struct midmsg6 *mid6;
-  struct midaddr6 *maddr6;
   struct mid_alias *alias, *alias_tmp;
   int no_aliases;
 
@@ -199,9 +194,9 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
   if(olsr_cnf->ip_version == AF_INET)
     {
       /* IPv4 */
+      struct midaddr *maddr;
 
-      mid = &m->v4.message.mid;
-      maddr = mid->mid_addr;
+      maddr = m->v4.message.mid.mid_addr;
       /*
        * How many aliases?
        * nextmsg contains size of
@@ -217,7 +212,7 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
       mmsg->mid_addr = NULL;
 
       /* Get vtime */
-      mmsg->vtime = me_to_double(m->v4.olsr_vtime);
+      mmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
 
       //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
 
@@ -249,9 +244,9 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
   else
     {
       /* IPv6 */
+      struct midaddr6 *maddr6;
 
-      mid6 = &m->v6.message.mid;
-      maddr6 = mid6->mid_addr;
+      maddr6 = m->v6.message.mid.mid_addr;
       /*
        * How many aliases?
        * nextmsg contains size of
@@ -267,7 +262,7 @@ mid_chgestruct(struct mid_message *mmsg, union olsr_message *m)
       mmsg->mid_addr = NULL;
 
       /* Get vtime */
-      mmsg->vtime = me_to_double(m->v6.olsr_vtime);
+      mmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
 
       //printf("Sequencenuber of MID from %s is %d\n", ip_to_string(&mmsg->addr), mmsg->mid_seqno);
 
@@ -360,11 +355,7 @@ unk_chgestruct(struct unknown_message *umsg, union olsr_message *m)
 void
 hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
 {
-  struct hellomsg *h;
-  struct hellomsg6 *h6;
-  struct hellinfo *hinfo, *hinf;
-  struct hellinfo6 *hinfo6, *hinf6;
-  union olsr_ip_addr *haddr, *hadr;
+  union olsr_ip_addr *hadr;
   struct hello_neighbor *nb;
   
   hmsg->neighbors = NULL;
@@ -374,69 +365,62 @@ hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
 
   if(olsr_cnf->ip_version == AF_INET)
     {
+      struct hellinfo *hinf;
+
       /* IPv4 */
-      h = &m->v4.message.hello;
-      hinfo = h->hell_info;
       COPY_IP(&hmsg->source_addr, &m->v4.originator);
       hmsg->packet_seq_number = ntohs(m->v4.seqno);
 
 
       /* Get vtime */
-      hmsg->vtime = me_to_double(m->v4.olsr_vtime);
+      hmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
 
       /* Get htime */
-      hmsg->htime = me_to_double(m->v4.message.hello.htime);
+      hmsg->htime = ME_TO_DOUBLE(m->v4.message.hello.htime);
 
       /* Willingness */
       hmsg->willingness = m->v4.message.hello.willingness;
 
       OLSR_PRINTF(3, "Got HELLO vtime: %f htime: %f\n", hmsg->vtime, hmsg->htime)
 
-      for (hinf = hinfo; (char *)hinf < ((char *)m + (ntohs(m->v4.olsr_msgsize))); 
+      for (hinf = m->v4.message.hello.hell_info; 
+	   (char *)hinf < ((char *)m + (ntohs(m->v4.olsr_msgsize))); 
 	   hinf = (struct hellinfo *)((char *)hinf + ntohs(hinf->size)))
 	{
 	  
-	  haddr = (union olsr_ip_addr  *)&hinf->neigh_addr;
-	    
-	  //printf("Haddr: %x, max: %x\n", (int)hadr, (int)hinf + ntohs(hinf->size));
-	  for (hadr = haddr; (char *)hadr < (char *)hinf + ntohs(hinf->size); hadr = (union olsr_ip_addr *)&hadr->v6.s6_addr[4])
+	  for (hadr = (union olsr_ip_addr  *)&hinf->neigh_addr; 
+	       (char *)hadr < (char *)hinf + ntohs(hinf->size); 
+	       hadr = (union olsr_ip_addr *)&hadr->v6.s6_addr[4])
 	    {
-	      //printf("*");
 	      nb = olsr_malloc(sizeof (struct hello_neighbor), "HELLO chgestruct");
 
 	      COPY_IP(&nb->address, hadr);
 
 	      /* Fetch link and status */
-	      //nb->link = hinf->link_code & 0x3; /* Two last bits */
 	      nb->link = EXTRACT_LINK(hinf->link_code);
-	      //nb->status =  (hinf->link_code & 0xC)>>2; /* Two previous bits */
 	      nb->status = EXTRACT_STATUS(hinf->link_code);
-
-	      //printf("HELLO: %s link code %d status %d\n", olsr_ip_to_string(&nb->address), nb->link, nb->status);
 
 	      nb->next = hmsg->neighbors;
 	      hmsg->neighbors = nb;
-	      //printf("Haddr: %x, max: %x\n", (int)hadr, (int)hinf + ntohs(hinf->size));
 	    }
-	  //printf("\n");
 	}
 
       
     }
   else
     {
+      struct hellinfo6 *hinf6;
+
       /* IPv6 */
-      h6 = &m->v6.message.hello;
-      hinfo6 = h6->hell_info;
       COPY_IP(&hmsg->source_addr, &m->v6.originator);
       //printf("parsing HELLO from %s\n", olsr_ip_to_string(&hmsg->source_addr));
       hmsg->packet_seq_number = ntohs(m->v6.seqno);
 
       /* Get vtime */
-      hmsg->vtime = me_to_double(m->v6.olsr_vtime);
+      hmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
 
       /* Get htime */
-      hmsg->htime = me_to_double(m->v6.message.hello.htime);
+      hmsg->htime = ME_TO_DOUBLE(m->v6.message.hello.htime);
 
       /* Willingness */
       hmsg->willingness = m->v6.message.hello.willingness;
@@ -444,30 +428,25 @@ hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
       OLSR_PRINTF(3, "Got HELLO vtime: %f htime: %f\n", hmsg->vtime, hmsg->htime)
 
 
-      for (hinf6 = hinfo6; (char *)hinf6 < ((char *)m + (ntohs(m->v6.olsr_msgsize))); 
+      for (hinf6 = m->v6.message.hello.hell_info; 
+	   (char *)hinf6 < ((char *)m + (ntohs(m->v6.olsr_msgsize))); 
 	   hinf6 = (struct hellinfo6 *)((char *)hinf6 + ntohs(hinf6->size)))
 	{
-	  //printf("Status %d:\n", hinf6->link_code);
 
-	  haddr = (union olsr_ip_addr *)hinf6->neigh_addr;
-	    
-	  for (hadr = haddr; (char *)hadr < (char *)hinf6 + ntohs(hinf6->size); hadr++)
+	  for (hadr = (union olsr_ip_addr *)hinf6->neigh_addr; 
+	       (char *)hadr < (char *)hinf6 + ntohs(hinf6->size); 
+	       hadr++)
 	    {
 	      nb = olsr_malloc(sizeof (struct hello_neighbor), "OLSR chgestruct 2");
 
 	      COPY_IP(&nb->address, hadr);
 
 	      /* Fetch link and status */
-	      //nb->link = hinf6->link_code & 0x3; /* Two last bits */
-	      //nb->status =  (hinf6->link_code & 0xC)>>2; /* Two previous bits */
 	      nb->link = EXTRACT_LINK(hinf6->link_code);
 	      nb->status = EXTRACT_STATUS(hinf6->link_code);
 
-	      //printf("HELLO: link code %d status %d\n", nb->link, nb->status);
-
 	      nb->next = hmsg->neighbors;
 	      hmsg->neighbors = nb;
-	      //printf("\t%s link: %d\n", olsr_ip_to_string(&nb->address), nb->status);
 	    }
 	}
 
@@ -489,10 +468,6 @@ hello_chgestruct(struct hello_message *hmsg, union olsr_message *m)
 void
 tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr *from_addr)
 {
-  struct tcmsg *tc;
-  struct tcmsg6 *tc6;
-  struct neigh_info *mprsaddr, *maddr;
-  struct neigh_info6 *mprsaddr6, *maddr6;
   struct tc_mpr_addr *mprs;
   union olsr_ip_addr *tmp_addr;
 
@@ -504,6 +479,9 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
   if(olsr_cnf->ip_version == AF_INET)
     {
       /* IPv4 */
+      struct tcmsg *tc;
+      struct neigh_info *mprsaddr, *maddr;
+
       tc = &m->v4.message.tc;
       mprsaddr = tc->neigh;
 
@@ -518,7 +496,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
 
 
       /* Get vtime */
-      tmsg->vtime = me_to_double(m->v4.olsr_vtime);
+      tmsg->vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
 
       OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime)
 
@@ -542,6 +520,9 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
   else
     {
       /* IPv6 */
+      struct tcmsg6 *tc6;
+      struct neigh_info6 *mprsaddr6, *maddr6;
+
       tc6 = &m->v6.message.tc;
       mprsaddr6 = tc6->neigh;
 
@@ -557,7 +538,7 @@ tc_chgestruct(struct tc_message *tmsg, union olsr_message *m, union olsr_ip_addr
       /* Check if sender is symmetric neighbor here !! */
       
       /* Get vtime */
-      tmsg->vtime = me_to_double(m->v6.olsr_vtime);
+      tmsg->vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
 
       OLSR_PRINTF(3, "Got TC vtime: %f\n", tmsg->vtime)
 

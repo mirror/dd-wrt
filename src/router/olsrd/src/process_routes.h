@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: process_routes.h,v 1.8 2004/11/21 11:28:56 kattemat Exp $
+ * $Id: process_routes.h,v 1.9 2005/05/29 12:47:45 br1 Exp $
  */
 
 #include "routing_table.h"
@@ -47,9 +47,8 @@
 
 #include <sys/ioctl.h>
 
-
-struct rt_entry old_routes[HASHSIZE];
-struct rt_entry old_hna[HASHSIZE];
+extern struct rt_entry old_routes[HASHSIZE];
+extern struct rt_entry old_hna[HASHSIZE];
 
 int
 olsr_init_old_table(void);

@@ -36,6 +36,9 @@
 #ifndef _OLSRD_PLUGIN_TEST
 #define _OLSRD_PLUGIN_TEST
 
+#include "hashing.h"
+#include "defs.h"
+
 #include "olsrd_plugin.h"
 
 #define IPC_PORT           8888
@@ -55,14 +58,87 @@ struct pwrentry
 };
 
 
-/* The database - (using hashing) */
-struct pwrentry list[HASHSIZE];
+/*****************************************************************************
+ *                               Plugin data                                 *
+ *                       ALTER THIS TO YOUR OWN NEED                         *
+ *****************************************************************************/
+
+#define PLUGIN_NAME    "OLSRD Powerstatus plugin"
+#define PLUGIN_VERSION "0.3"
+#define PLUGIN_AUTHOR   "Andreas Tønnesen"
+#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+
+/* The type of message you will use */
+#define MESSAGE_TYPE 128
+
+/* The type of messages we will receive - can be set to promiscuous */
+#define PARSER_TYPE MESSAGE_TYPE
 
 
-int has_apm;
+/****************************************************************************
+ *                            PACKET SECTION                                *
+ ****************************************************************************/
 
-/* set buffer to size of IPv6 message */
-static char buffer[sizeof(struct olsrmsg6)];
+
+/**********************************
+ * DEFINE YOUR CUSTOM PACKET HERE *
+ **********************************/
+
+struct powermsg
+{
+  olsr_u8_t       source_type;
+  olsr_u8_t       percentage;
+  olsr_u16_t      time_left;
+};
+
+/*
+ * OLSR message (several can exist in one OLSR packet)
+ */
+
+struct p_olsrmsg
+{
+  olsr_u8_t     olsr_msgtype;
+  olsr_u8_t     olsr_vtime;
+  olsr_u16_t    olsr_msgsize;
+  olsr_u32_t    originator;
+  olsr_u8_t     ttl;
+  olsr_u8_t     hopcnt;
+  olsr_u16_t    seqno;
+
+  /* YOUR PACKET GOES HERE */
+  struct powermsg msg;
+
+};
+
+/*
+ *IPv6
+ */
+
+struct p_olsrmsg6
+{
+  olsr_u8_t        olsr_msgtype;
+  olsr_u8_t        olsr_vtime;
+  olsr_u16_t       olsr_msgsize;
+  struct in6_addr  originator;
+  olsr_u8_t        ttl;
+  olsr_u8_t        hopcnt;
+  olsr_u16_t       seqno;
+
+  /* YOUR PACKET GOES HERE */
+  struct powermsg msg;
+
+};
+
+/* 
+ * ALWAYS USE THESE WRAPPERS TO
+ * ENSURE IPv4 <-> IPv6 compability 
+ */
+
+union p_olsr_message
+{
+  struct p_olsrmsg v4;
+  struct p_olsrmsg6 v6;
+};
 
 
 /* Timeout function to register with the sceduler */
@@ -88,5 +164,23 @@ update_power_entry(union olsr_ip_addr *, struct powermsg *, double);
 
 void
 print_power_table(void);
+
+int
+olsrd_plugin_init(void);
+
+int
+plugin_ipc_init(void);
+
+void
+olsr_plugin_exit(void);
+
+void
+olsr_get_timestamp(olsr_u32_t, struct timeval *);
+
+void
+olsr_init_timer(olsr_u32_t, struct timeval *);
+
+int
+olsr_timed_out(struct timeval *);
 
 #endif

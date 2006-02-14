@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mantissa.h,v 1.7 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: mantissa.h,v 1.9 2005/05/29 12:47:45 br1 Exp $
  */
 
 
@@ -44,13 +44,26 @@
 #define _OLSR_MANTISSA
 
 #include "olsr_types.h"
+#include "olsr_protocol.h"
 
+
+/**
+ * Macro for converting a mantissa/exponent 8bit value back
+ * to double as described in RFC3626:
+ *
+ * value = C*(1+a/16)*2^b [in seconds]
+ *
+ *  where a is the integer represented by the four highest bits of the
+ *  field and b the integer represented by the four lowest bits of the
+ *  field.
+ *
+ * me is the 8 bit mantissa/exponent value
+ *
+ */
+#define ME_TO_DOUBLE(me) \
+  (double)(VTIME_SCALE_FACTOR*(1+(double)(me>>4)/16)*(double)(1<<(me&0x0F)))
 
 olsr_u8_t
 double_to_me(double);
-
-double
-me_to_double(olsr_u8_t);
-
 
 #endif

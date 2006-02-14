@@ -36,13 +36,11 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mantissa.c,v 1.7 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: mantissa.c,v 1.8 2005/05/25 13:36:26 kattemat Exp $
  */
 
 
 #include "mantissa.h"
-#include "math.h"
-#include "olsr_protocol.h"
 
 /**
  *Function that converts a double to a mantissa/exponent
@@ -62,64 +60,36 @@
 olsr_u8_t
 double_to_me(double interval)
 {
-  int a, b;
+  olsr_u8_t a, b;
 
   b = 0;
 
-  while(interval / VTIME_SCALE_FACTOR >= pow((double)2, (double)b))
+  while(interval / VTIME_SCALE_FACTOR >= (1<<b))
     b++;
 
-  b--;
-  if(b < 0)
+  if(b == 0)
     {
       a = 1;
       b = 0;
     } 
   else 
-    if (b > 15)
-      {
-	a = 15;
-	b = 15;
-      } 
-    else 
-      { 
-	a = (int)(16*((double)interval/(VTIME_SCALE_FACTOR*(double)pow(2,b))-1));
-	while(a >= 16)
-	  {
-	    a -= 16;
-	    b++;
-	  }
-      }
-
-  //printf("Generated mantissa/exponent(%d/%d): %d from %f\n", a, b, (olsr_u8_t) (a*16+b), interval);
-  //printf("Resolves back to: %f\n", me_to_double((olsr_u8_t) (a*16+b)));
-  return (olsr_u8_t) (a*16+b);
-}
-
-
-
-
-/**
- *Function that converts a mantissa/exponent 8bit value back
- *to double as described in RFC3626:
- *
- * value = C*(1+a/16)*2^b [in seconds]
- *
- *  where a is the integer represented by the four highest bits of the
- *  field and b the integer represented by the four lowest bits of the
- *  field.
- *
- *@param me the 8 bit mantissa/exponen value
- *
- *@return a double value
- */
-double
-me_to_double(olsr_u8_t me)
-{
-  int a, b;
-
-  a = me>>4;
-  b = me - a*16;
-
-  return (double)(VTIME_SCALE_FACTOR*(1+(double)a/16)*(double)pow(2,b));
+    {
+      b--;
+      if (b > 15)
+	{
+	  a = 15;
+	  b = 15;
+	} 
+      else 
+	{ 
+	  a = (int)(16*((double)interval/(VTIME_SCALE_FACTOR*(double)(1<<b))-1));
+	  while(a >= 16)
+	    {
+	      a -= 16;
+	      b++;
+	    }
+	}
+    }
+  //printf("Generated mantissa/exponent(%d/%d): %d from %f\n", a, b, (olsr_u8_t) (a*16+b), interval);  //printf("Resolves back to: %f\n", ME_TO_DOUBLE(((a<<4)|(b&0x0F))));
+  return (olsr_u8_t) ((a<<4)|(b&0x0F));
 }

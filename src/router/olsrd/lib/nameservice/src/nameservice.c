@@ -29,7 +29,7 @@
  *
  */
 
-/* $Id: nameservice.c,v 1.10 2005/03/17 21:41:30 br1 Exp $ */
+/* $Id: nameservice.c,v 1.14 2005/05/29 12:47:42 br1 Exp $ */
 
 /*
  * Dynamic linked library for UniK OLSRd
@@ -39,9 +39,19 @@
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
+
+#include "olsr.h"
+#include "net_olsr.h"
+#include "routing_table.h"
+#include "mantissa.h"
+#include "scheduler.h"
+#include "parser.h"
+#include "duplicate_set.h"
+#include "link_set.h"
+
 #include "nameservice.h"
 #include "olsrd_copy.h"
-
+#include "compat.h"
 
 /* send buffer: huge */
 static char buffer[10240];
@@ -102,7 +112,7 @@ name_constructor()
  * called for all plugin parameters
  */
 int
-register_olsr_param(char *key, char *value)
+olsrd_plugin_register_param(char *key, char *value)
 {
 	if(!strcmp(key, "interval")) {
 		my_interval = atoi(value);
@@ -197,7 +207,7 @@ register_olsr_param(char *key, char *value)
  *   - register_olsr_data() then then finally calls this function
  */
 int
-olsr_plugin_init()
+name_init()
 {
 	struct name_entry *name;
 	struct name_entry *prev=NULL;
@@ -206,7 +216,7 @@ olsr_plugin_init()
 	for (name = my_names; name != NULL; name = name->next) {
 		if (name->ip.v4 == 0) {
 			// insert main_addr
-			memcpy(&name->ip, main_addr, ipsize);
+			memcpy(&name->ip, &main_addr, ipsize);
 			prev = name;
 		} else {
 			// IP from config file
@@ -229,7 +239,7 @@ olsr_plugin_init()
 		
 	if (have_dns_server) {
 		if (my_dns_server.v4 == 0) {
-			memcpy(&my_dns_server, main_addr, ipsize);
+			memcpy(&my_dns_server, &main_addr, ipsize);
 			printf("\nNAME PLUGIN: announcing upstream DNS server: %s\n", 
 				olsr_ip_to_string(&my_dns_server));
 		}
@@ -258,7 +268,7 @@ olsr_plugin_init()
  * called at unload: free everything
  */
 void
-olsr_plugin_exit()
+name_destructor()
 {
 	int i;
 	struct db_entry **tmp;
@@ -334,17 +344,17 @@ olsr_event(void *foo)
 	int namesize;
   
 	/* looping trough interfaces */
-	for (ifn = ifs; ifn ; ifn = ifn->int_next) 
+	for (ifn = ifnet; ifn ; ifn = ifn->int_next) 
 	{
 		olsr_printf(3, "NAME PLUGIN: Generating packet - [%s]\n", ifn->int_name);
 
 		/* fill message */
-		if(ipversion == AF_INET)
+		if(olsr_cnf->ip_version == AF_INET)
 		{
 			/* IPv4 */
 			message->v4.olsr_msgtype = MESSAGE_TYPE;
 			message->v4.olsr_vtime = double_to_me(my_timeout);
-			memcpy(&message->v4.originator, main_addr, ipsize);
+			memcpy(&message->v4.originator, &main_addr, ipsize);
 			message->v4.ttl = MAX_TTL;
 			message->v4.hopcnt = 0;
 			message->v4.seqno = htons(get_msg_seqno());
@@ -359,7 +369,7 @@ olsr_event(void *foo)
 			/* IPv6 */
 			message->v6.olsr_msgtype = MESSAGE_TYPE;
 			message->v6.olsr_vtime = double_to_me(my_timeout);
-			memcpy(&message->v6.originator, main_addr, ipsize);
+			memcpy(&message->v6.originator, &main_addr, ipsize);
 			message->v6.ttl = MAX_TTL;
 			message->v6.hopcnt = 0;
 			message->v6.seqno = htons(get_msg_seqno());
@@ -396,20 +406,20 @@ olsr_parser(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *
 	memcpy(&originator, &m->v4.originator, ipsize);
 		
 	/* Fetch the message based on IP version */
-	if(ipversion == AF_INET) {
-		vtime = me_to_double(m->v4.olsr_vtime);
+	if(olsr_cnf->ip_version == AF_INET) {
+		vtime = ME_TO_DOUBLE(m->v4.olsr_vtime);
 		size = ntohs(m->v4.olsr_msgsize);
 		namemessage = (struct namemsg*)&m->v4.message;
 	}
 	else {
-		vtime = me_to_double(m->v6.olsr_vtime);
+		vtime = ME_TO_DOUBLE(m->v6.olsr_vtime);
 		size = ntohs(m->v6.olsr_msgsize);
 		namemessage = (struct namemsg*)&m->v4.message;
 	}
 
 	/* Check if message originated from this node. 
 	If so - back off */
-	if(memcmp(&originator, main_addr, ipsize) == 0)
+	if(memcmp(&originator, &main_addr, ipsize) == 0)
 		return;
 
 	/* Check that the neighbor this message was received from is symmetric. 
@@ -423,7 +433,7 @@ olsr_parser(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *
 	* Remeber that this also registeres the message as
 	* processed if nessecary
 	*/
-	if(!check_dup_proc(&originator, ntohs(m->v4.seqno))) {
+	if(!olsr_check_dup_table_proc(&originator, ntohs(m->v4.seqno))) {
 		/* If so - do not process */
 		goto forward;
 	}
@@ -433,7 +443,7 @@ olsr_parser(union olsr_message *m, struct interface *in_if, union olsr_ip_addr *
 forward:
 	/* Forward the message if nessecary
 	* default_fwd does all the work for us! */
-	default_fwd(m, &originator, ntohs(m->v4.seqno), in_if, in_addr);
+	olsr_forward_message(m, &originator, ntohs(m->v4.seqno), in_if, in_addr);
 }
 
 
@@ -579,6 +589,7 @@ update_name_entry(union olsr_ip_addr *originator, struct namemsg *msg, int msg_s
 		
 	/* insert a new entry */
 	entry = olsr_malloc(sizeof(struct db_entry), "new db_entry");
+	
 	memcpy(&entry->originator, originator, ipsize);
 	olsr_get_timestamp(vtime * 1000, &entry->timer);
 	entry->names = NULL;
@@ -619,6 +630,8 @@ write_hosts_file()
 	
 	fprintf(hosts, "### this /etc/hosts file is overwritten regularly by olsrd\n");
 	fprintf(hosts, "### do not edit\n\n");
+
+	fprintf(hosts, "127.0.0.1\tlocalhost\n\n");
 	
 	// copy content from additional hosts filename
 	if (my_add_hosts[0] != '\0') {
@@ -677,7 +690,10 @@ write_resolv_file()
 	int hash;
 	struct name_entry *name;
 	struct db_entry *entry;
+	struct rt_entry *best_routes = NULL;
+	struct rt_entry *route, *tmp, *last;
 	FILE* resolv;
+	int i=0;
 	
 	if (my_resolv_file[0] == '\0')
 		return;
@@ -686,12 +702,6 @@ write_resolv_file()
 		return;
 
 	olsr_printf(2, "NAME PLUGIN: writing resolv file\n");
-		      
-	resolv = fopen( my_resolv_file, "w" );
-	if (resolv == NULL) {
-		olsr_printf(2, "NAME PLUGIN: cant write resolv file\n");
-		return;
-	}
 
 	for (hash = 0; hash < HASHSIZE; hash++) 
 	{
@@ -699,12 +709,69 @@ write_resolv_file()
 		{
 			for (name = entry->names; name != NULL; name = name->next) 
 			{
-				if (name->type == NAME_FORWARDER) {
-					//TODO: find the nearest one!!!
-					fprintf(resolv, "nameserver %s\n", olsr_ip_to_string(&name->ip));
+				if (name->type != NAME_FORWARDER)
+					continue;
+				
+				/* find the nearest one */
+				route = olsr_lookup_routing_table(&name->ip);
+				if (route==NULL) // it's possible that route is not present yet
+					continue;
+				
+				if (best_routes == NULL || route->rt_etx < best_routes->rt_etx) {
+					olsr_printf(6, "NAME PLUGIN: best nameserver %s\n",
+						olsr_ip_to_string(&route->rt_dst));
+					if (best_routes!=NULL)
+						olsr_printf(6, "NAME PLUGIN: better than %f (%s)\n",
+							best_routes->rt_etx,
+							olsr_ip_to_string(&best_routes->rt_dst));
+					
+					tmp = olsr_malloc(sizeof(struct rt_entry), "new rt_entry");
+					memcpy(&tmp->rt_dst, &route->rt_dst, ipsize);
+					tmp->rt_etx = route->rt_etx;
+					tmp->next = best_routes;
+					best_routes = tmp;
+				} else {
+					// queue in etx order
+					last = best_routes;
+					while ( last->next!=NULL && i<3 ) {
+						if (last->next->rt_etx > route->rt_etx)
+							break;
+						last = last->next;
+						i++;
+					}
+					if (i<3) {
+						olsr_printf(6, "NAME PLUGIN: queue %f (%s)",
+							route->rt_etx,
+							olsr_ip_to_string(&route->rt_dst));
+						olsr_printf(6, " after %f (%s)\n", 
+							last->rt_etx, olsr_ip_to_string(&last->rt_dst));
+						
+						tmp = olsr_malloc(sizeof(struct rt_entry), "new rt_entry");
+						memcpy(&tmp->rt_dst, &route->rt_dst, ipsize);
+						tmp->rt_etx = route->rt_etx;
+						tmp->next = last->next;
+						last->next = tmp;
+					} else {
+						olsr_printf(6, "NAME PLUGIN: don't need more than 3 nameservers\n");
+					}
 				}
 			}
 		}
+	}
+	if (best_routes==NULL)
+		return;
+		 
+	/* write to file */
+	resolv = fopen( my_resolv_file, "w" );
+	if (resolv == NULL) {
+		olsr_printf(2, "NAME PLUGIN: can't write resolv file\n");
+		return;
+	}
+	i=0;
+	for (tmp=best_routes; tmp!=NULL && i<3; tmp=tmp->next) {
+		olsr_printf(6, "NAME PLUGIN: nameserver %s\n", olsr_ip_to_string(&tmp->rt_dst));
+		fprintf(resolv, "nameserver %s\n", olsr_ip_to_string(&tmp->rt_dst));
+		i++;
 	}
 	fclose(resolv);
 }
@@ -742,7 +809,7 @@ allowed_ip(union olsr_ip_addr *addr)
 	
 	olsr_printf(6, "checking %s\n", olsr_ip_to_string(addr));
 	
-	for(iface = ifs; iface; iface = iface->int_next)
+	for(iface = ifnet; iface; iface = iface->int_next)
 	{
 		olsr_printf(6, "interface %s\n", olsr_ip_to_string(&iface->ip_addr));
 		if (COMP_IP(&iface->ip_addr, addr)) {
@@ -751,7 +818,7 @@ allowed_ip(union olsr_ip_addr *addr)
 		}
 	}
 	
-	for (hna4 = cfg->hna4_entries; hna4; hna4 = hna4->next)
+	for (hna4 = olsr_cnf->hna4_entries; hna4; hna4 = hna4->next)
 	{
 		olsr_printf(6, "HNA %s/%s\n", 
 			olsr_ip_to_string(&hna4->net),

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: neighbor_table.h,v 1.13 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: neighbor_table.h,v 1.14 2005/05/29 12:47:45 br1 Exp $
  */
 
 
@@ -73,13 +73,11 @@ struct neighbor_entry
 };
 
 
-#ifndef OLSR_PLUGIN
-
 /*
  * The neighbor table
  */
+extern struct neighbor_entry neighbortable[HASHSIZE];
 
-struct neighbor_entry neighbortable[HASHSIZE];
 
 void
 olsr_init_neighbor_table(void);
@@ -115,5 +113,4 @@ olsr_print_neighbor_table(void);
 int
 update_neighbor_status(struct neighbor_entry *, int);
 
-#endif
 #endif

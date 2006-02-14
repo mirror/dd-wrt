@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net.c,v 1.24 2005/03/04 21:30:16 kattemat Exp $
+ * $Id: net.c,v 1.29 2005/09/17 20:48:50 kattemat Exp $
  */
 
 
@@ -100,12 +100,12 @@ enable_ip_forwarding(int version)
 
   if(version == AF_INET)
     {
-      strcpy(procfile, "/proc/sys/net/ipv4/ip_forward");
+      strncpy(procfile, "/proc/sys/net/ipv4/ip_forward", FILENAME_MAX);
     }
   else
     if(version == AF_INET6)
       {
-	strcpy(procfile, "/proc/sys/net/ipv6/conf/all/forwarding");
+	strncpy(procfile, "/proc/sys/net/ipv6/conf/all/forwarding", FILENAME_MAX);
       }
     else
       return -1;
@@ -152,6 +152,53 @@ enable_ip_forwarding(int version)
     }
   return 1;
       
+}
+
+
+int
+disable_redirects_global(int version)
+{
+  FILE *proc_redirect;
+  char procfile[FILENAME_MAX];
+
+  if(version == AF_INET6)
+    return -1;
+
+  strcpy(procfile, "/proc/sys/net/ipv4/conf/all/send_redirects");
+
+  if((proc_redirect = fopen(procfile, "r")) == NULL)
+    {
+      fprintf(stderr, "WARNING! Could not open the %s file to check/disable ICMP redirects!\nAre you using the procfile filesystem?\nDoes your system support IPv4?\nI will continue(in 3 sec) - but you should mannually ensure that ICMP redirects are disabled!\n\n", procfile);
+      
+      sleep(3);
+      return -1;
+    }
+  else
+    {
+      orig_global_redirect_state = fgetc(proc_redirect);
+      fclose(proc_redirect);
+    }
+
+  if(orig_global_redirect_state == '0')
+    {
+      return 0;
+    }
+
+  if ((proc_redirect = fopen(procfile, "w"))==NULL)
+    {
+      fprintf(stderr, "Could not open %s for writing!\n", procfile);
+      fprintf(stderr, "I will continue(in 3 sec) - but you should mannually ensure that ICMP redirect is disabeled!\n\n");
+      sleep(3);
+      return 0;
+    }
+  else
+    {
+      syslog(LOG_INFO, "Writing \"0\" to %s", procfile);
+      fputs("0", proc_redirect);
+    }
+  fclose(proc_redirect);
+  
+  return 1;
 }
 
 
@@ -294,11 +341,35 @@ restore_settings(int version)
 
     }
 
+  /* Restore global ICMP redirect setting */
+  if(orig_global_redirect_state != '0')
+    {
+      if(version == AF_INET)
+	{
+	  strcpy(procfile, "/proc/sys/net/ipv4/conf/all/send_redirects");
+
+	  if ((proc_fd = fopen(procfile, "w")) == NULL)
+	    {
+	      fprintf(stderr, "Could not open %s for writing!\nSettings not restored!\n", procfile);
+	    }
+	  else
+	    {
+	      syslog(LOG_INFO, "Resetting %s to %c\n", procfile, orig_global_redirect_state);
+	      fputc(orig_global_redirect_state, proc_fd);
+	      fclose(proc_fd);
+	    }
+	}
+    }
+
+
   if(version == AF_INET6)
     return 0;
 
   for(ifs = ifnet; ifs != NULL; ifs = ifs->int_next)
     {
+      /* Discard host-emulation interfaces */
+      if(ifs->is_hcif)
+	continue;
       /* ICMP redirects */
       
       /* Generate the procfile name */
@@ -339,6 +410,46 @@ restore_settings(int version)
 
 }
 
+
+/**
+ *Creates a nonblocking broadcast socket.
+ *@param sa sockaddr struct. Used for bind(2).
+ *@return the FD of the socket or -1 on error.
+ */
+int
+gethemusocket(struct sockaddr_in *pin)
+{
+  int sock, on = 1;
+
+  OLSR_PRINTF(1, "       Connecting to switch daemon port 10150...");
+
+
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+    {
+      perror("hcsocket");
+      syslog(LOG_ERR, "hcsocket: %m");
+      return (-1);
+    }
+
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) 
+    {
+      perror("SO_REUSEADDR failed");
+      return (-1);
+    }
+  /* connect to PORT on HOST */
+  if (connect(sock,(struct sockaddr *) pin, sizeof(*pin)) < 0) 
+    {
+      printf("FAILED\n");
+      fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));
+      printf("connection refused\n");
+      return (-1);
+    }
+
+  printf("OK\n");
+
+  /* Keep TCP socket blocking */  
+  return (sock);
+}
 
 
 /**
@@ -629,10 +740,12 @@ get_ipv6_address(char *ifname, struct sockaddr_in6 *saddr6, int scope_in)
 		      addr6p[0], addr6p[1], addr6p[2], addr6p[3],
 		      addr6p[4], addr6p[5], addr6p[6], addr6p[7]);
 	      OLSR_PRINTF(5, "\tinet6 addr: %s\n", addr6)
-	      OLSR_PRINTF(5, "\tScope: %d", scope)
+	      OLSR_PRINTF(5, "\tScope: %d\n", scope)
 	      if(scope == scope_in)
 		{
-		  OLSR_PRINTF(4, "IPv6 addr:\n")
+		  OLSR_PRINTF(4, "Found addr: %s:%s:%s:%s:%s:%s:%s:%s\n",
+			      addr6p[0], addr6p[1], addr6p[2], addr6p[3],
+			      addr6p[4], addr6p[5], addr6p[6], addr6p[7])
 		  inet_pton(AF_INET6,addr6,&tmp_sockaddr6);
 		  memcpy(&saddr6->sin6_addr, &tmp_sockaddr6, sizeof(struct in6_addr));	  
 		  fclose(f);
@@ -677,7 +790,7 @@ olsr_recvfrom(int  s,
   return recvfrom(s, 
 		  buf, 
 		  len, 
-		  0, 
+		  flags, 
 		  from, 
 		  fromlen);
 }

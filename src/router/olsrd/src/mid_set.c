@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: mid_set.c,v 1.14 2005/02/26 23:01:41 kattemat Exp $
+ * $Id: mid_set.c,v 1.15 2005/05/29 12:47:45 br1 Exp $
  */
 
 #include "defs.h"
@@ -46,6 +46,11 @@
 #include "scheduler.h"
 #include "neighbor_table.h"
 #include "link_set.h"
+
+
+struct mid_entry mid_set[HASHSIZE];
+struct mid_address reverse_mid_set[HASHSIZE];
+
 
 /**
  * Initialize the MID set

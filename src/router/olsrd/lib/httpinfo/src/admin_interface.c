@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: admin_interface.c,v 1.5 2005/03/14 19:38:39 kattemat Exp $
+ * $Id: admin_interface.c,v 1.6 2005/05/29 12:47:41 br1 Exp $
  */
 
 /*
@@ -71,9 +71,9 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
   size += sprintf(&buf[size], "<tr>\n");
 
   size += sprintf(&buf[size], admin_basic_setting_int,
-		  "Debug level:", "debug_level", 2, cfg->debug_level);
+		  "Debug level:", "debug_level", 2, olsr_cnf->debug_level);
   size += sprintf(&buf[size], admin_basic_setting_float,
-		  "Pollrate:", "pollrate", 4, cfg->pollrate);
+		  "Pollrate:", "pollrate", 4, olsr_cnf->pollrate);
   size += sprintf(&buf[size], admin_basic_setting_string,
 		  "TOS:", "tos", 6, "TBD");
 
@@ -81,24 +81,24 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
   size += sprintf(&buf[size], "<tr>\n");
 
   size += sprintf(&buf[size], admin_basic_setting_int,
-		  "TC redundancy:", "tc_redundancy", 1, cfg->tc_redundancy);
+		  "TC redundancy:", "tc_redundancy", 1, olsr_cnf->tc_redundancy);
   size += sprintf(&buf[size], admin_basic_setting_int,
-		  "MPR coverage:", "mpr_coverage", 1, cfg->mpr_coverage);
+		  "MPR coverage:", "mpr_coverage", 1, olsr_cnf->mpr_coverage);
   size += sprintf(&buf[size], admin_basic_setting_int,
-		  "Willingness:", "willingness", 1, cfg->willingness);
+		  "Willingness:", "willingness", 1, olsr_cnf->willingness);
 
   size += sprintf(&buf[size], "</tr>\n");
   size += sprintf(&buf[size], "<tr>\n");
 
-  if(cfg->use_hysteresis)
+  if(olsr_cnf->use_hysteresis)
     {
       size += sprintf(&buf[size], admin_basic_setting_float,
-		      "Hyst scaling:", "hyst_scaling", 4, cfg->hysteresis_param.scaling);
+		      "Hyst scaling:", "hyst_scaling", 4, olsr_cnf->hysteresis_param.scaling);
 
       size += sprintf(&buf[size], admin_basic_setting_float,
-		      "Lower thr:", "hyst_lower", 4, cfg->hysteresis_param.thr_low);
+		      "Lower thr:", "hyst_lower", 4, olsr_cnf->hysteresis_param.thr_low);
       size += sprintf(&buf[size], admin_basic_setting_float,
-		      "Upper thr:", "hyst_upper", 4, cfg->hysteresis_param.thr_high);
+		      "Upper thr:", "hyst_upper", 4, olsr_cnf->hysteresis_param.thr_high);
     }
   else
     {
@@ -108,12 +108,12 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
   size += sprintf(&buf[size], "</tr>\n");
   size += sprintf(&buf[size], "<tr>\n");
   
-  if(cfg->lq_level)
+  if(olsr_cnf->lq_level)
     {
       size += sprintf(&buf[size], admin_basic_setting_int,
-		      "LQ level:", "lq_level", 1, cfg->lq_level);
+		      "LQ level:", "lq_level", 1, olsr_cnf->lq_level);
       size += sprintf(&buf[size], admin_basic_setting_int,
-		      "LQ winsize:", "lq_wsize", 2, cfg->lq_wsize);
+		      "LQ winsize:", "lq_wsize", 2, olsr_cnf->lq_wsize);
     }
   else
     {
@@ -139,11 +139,11 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
 
   i++;
 
-  if((cfg->ip_version == AF_INET) && (cfg->hna4_entries))
+  if((olsr_cnf->ip_version == AF_INET) && (olsr_cnf->hna4_entries))
     {
       struct hna4_entry *hna4;
       
-      for(hna4 = cfg->hna4_entries; hna4; hna4 = hna4->next)
+      for(hna4 = olsr_cnf->hna4_entries; hna4; hna4 = hna4->next)
 	{
 	  size += sprintf(&buf[size], admin_frame[i], 
 			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->net),
@@ -152,11 +152,11 @@ build_admin_body(char *buf, olsr_u32_t bufsize)
 			  olsr_ip_to_string((union olsr_ip_addr *)&hna4->netmask));
 	}
     }
-  else if((cfg->ip_version == AF_INET6) && (cfg->hna6_entries))
+  else if((olsr_cnf->ip_version == AF_INET6) && (olsr_cnf->hna6_entries))
     {
       struct hna6_entry *hna6;
 	
-      for(hna6 = cfg->hna6_entries; hna6; hna6 = hna6->next)
+      for(hna6 = olsr_cnf->hna6_entries; hna6; hna6 = hna6->next)
 	{
 	  size += sprintf(&buf[size], admin_frame[i], 
 			  olsr_ip_to_string((union olsr_ip_addr *)&hna6->net),
@@ -190,7 +190,7 @@ process_param(char *key, char *value)
       if((ival < 0) || (ival > 9))
 	return -1;
 
-      cfg->debug_level = ival;
+      olsr_cnf->debug_level = ival;
       return 1;
     }
 
@@ -200,7 +200,7 @@ process_param(char *key, char *value)
       if((ival < 0) || (ival > 3))
 	return -1;
 
-      cfg->tc_redundancy = ival;
+      olsr_cnf->tc_redundancy = ival;
       return 1;
     }
 
@@ -210,7 +210,7 @@ process_param(char *key, char *value)
       if(ival < 0)
 	return -1;
 
-      cfg->mpr_coverage = ival;
+      olsr_cnf->mpr_coverage = ival;
       return 1;
     }
 
@@ -220,7 +220,7 @@ process_param(char *key, char *value)
       if((ival < 0) || (ival > 7))
 	return -1;
 
-      cfg->willingness = ival;
+      olsr_cnf->willingness = ival;
       return 1;
     }
 
@@ -230,7 +230,7 @@ process_param(char *key, char *value)
       if((ival < 0) || (ival > 2))
 	return -1;
 
-      cfg->lq_level = ival;
+      olsr_cnf->lq_level = ival;
       return 1;
     }
 
@@ -240,7 +240,7 @@ process_param(char *key, char *value)
       if((ival < 0) || (ival > 10))
 	return -1;
 
-      cfg->lq_wsize = ival;
+      olsr_cnf->lq_wsize = ival;
       return 1;
     }
 
@@ -252,7 +252,7 @@ process_param(char *key, char *value)
 	return -1;
 
       printf("HYST SCALING: %f\n", fval);
-      cfg->hysteresis_param.scaling = fval;
+      olsr_cnf->hysteresis_param.scaling = fval;
       return 1;
     }
 
@@ -263,7 +263,7 @@ process_param(char *key, char *value)
       if((fval < 0.0) || (fval > 1.0))
 	return -1;
 
-      cfg->hysteresis_param.scaling = fval;
+      olsr_cnf->hysteresis_param.scaling = fval;
       return 1;
     }
 
@@ -274,7 +274,7 @@ process_param(char *key, char *value)
       if((fval < 0.0) || (fval > 1.0))
 	return -1;
 
-      cfg->hysteresis_param.thr_low = fval;
+      olsr_cnf->hysteresis_param.thr_low = fval;
       return 1;
     }
 
@@ -285,7 +285,7 @@ process_param(char *key, char *value)
       if((fval < 0.0) || (fval > 1.0))
 	return -1;
 
-      cfg->hysteresis_param.thr_high = fval;
+      olsr_cnf->hysteresis_param.thr_high = fval;
       return 1;
     }
 
@@ -296,7 +296,7 @@ process_param(char *key, char *value)
       if((fval < 0.0) || (fval > 1.0))
 	return -1;
 
-      cfg->pollrate = fval;
+      olsr_cnf->pollrate = fval;
       return 1;
     }
 

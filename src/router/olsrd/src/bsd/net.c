@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net.c,v 1.20 2005/03/20 16:52:25 tlopatic Exp $
+ * $Id: net.c,v 1.26 2005/08/28 19:30:29 kattemat Exp $
  */
 
 #include "defs.h"
@@ -44,19 +44,31 @@
 #include "parser.h" /* dnc: needed for call to packet_parser() */
 #include "net.h"
 
+#include <net/if.h>
+
 #ifdef __NetBSD__
 #include <sys/param.h>
+#include <net/if_ether.h>
 #endif
 
-#include <net/if.h>
-#include <net/if_var.h>
-#include <net/ethernet.h>
+#ifdef __OpenBSD__
+#include <netinet/if_ether.h>
+#include <netinet/in_systm.h>
+#include <netinet/ip.h>
+#include <netinet/ip_icmp.h>
+#include <netinet/icmp_var.h>
+#include <netinet/icmp6.h>
+#endif
 
 #ifdef __FreeBSD__
+#include <net/if_var.h>
+#include <net/ethernet.h>
+#ifndef FBSD_NO_80211
 #include <net80211/ieee80211.h>
 #include <net80211/ieee80211_ioctl.h>
 #include <dev/wi/if_wavelan_ieee.h>
 #include <dev/wi/if_wireg.h>
+#endif
 #endif
 
 #ifdef SPOOF
@@ -73,15 +85,53 @@ static int ignore_redir;
 static int send_redir;
 static int gateway;
 
-static int first_time = 1;
-
 static int set_sysctl_int(char *name, int new)
 {
   int old;
   unsigned int len = sizeof (old);
 
+#ifdef __OpenBSD__
+  int mib[4];
+
+  /* Set net.inet.ip.forwarding by default. */
+  mib[0] = CTL_NET;
+  mib[1] = PF_INET;
+  mib[2] = IPPROTO_IP;
+  mib[3] = IPCTL_FORWARDING;
+
+  if (!strcmp(name, "net.inet6.ip6.forwarding"))
+  {
+    mib[1] = PF_INET6;
+    mib[2] = IPPROTO_IPV6;
+  }
+  else if (!strcmp(name, "net.inet.icmp.rediraccept"))
+  {
+    mib[2] = IPPROTO_ICMP;
+    mib[3] = ICMPCTL_REDIRACCEPT;
+  }
+  else if (!strcmp(name, "net.inet6.icmp6.rediraccept"))
+  {
+    mib[2] = IPPROTO_ICMPV6;
+    mib[3] = ICMPV6CTL_REDIRACCEPT;
+  }
+  else if (!strcmp(name, "net.inet.ip.redirect"))
+  {
+    mib[3] = IPCTL_SENDREDIRECTS;
+  }
+  else if (!strcmp(name, "net.inet6.ip6.redirect"))
+  {
+    mib[1] = PF_INET6;
+    mib[2] = IPPROTO_IPV6;
+    mib[3] = IPCTL_SENDREDIRECTS;
+  }
+
+  if (sysctl(mib, 4, &old, &len, &new, sizeof (new)) < 0)
+    return -1;
+#else
+
   if (sysctlbyname(name, &old, &len, &new, sizeof (new)) < 0)
     return -1;
+#endif
 
   return old;
 }
@@ -107,22 +157,22 @@ int enable_ip_forwarding(int version)
   return 1;
 }
 
-int disable_redirects(char *if_name, int index, int version)
+int
+disable_redirects_global(int version)
 {
   char *name;
 
-  // this function gets called for each interface olsrd uses; however,
-  // FreeBSD can only globally control ICMP redirects, and not on a
-  // per-interface basis; hence, only disable ICMP redirects on the first
-  // invocation
-
-  if (first_time == 0)
-    return 1;
-
-  first_time = 0;
-
   // do not accept ICMP redirects
 
+#ifdef __OpenBSD__
+  if (olsr_cnf->ip_version == AF_INET)
+    name = "net.inet.icmp.rediraccept";
+
+  else
+    name = "net.inet6.icmp6.rediraccept";
+
+  ignore_redir = set_sysctl_int(name, 0);
+#else
   if (olsr_cnf->ip_version == AF_INET)
     name = "net.inet.icmp.drop_redirect";
 
@@ -130,6 +180,7 @@ int disable_redirects(char *if_name, int index, int version)
     name = "net.inet6.icmp6.drop_redirect";
 
   ignore_redir = set_sysctl_int(name, 1);
+#endif
 
   if (ignore_redir < 0)
     {
@@ -156,6 +207,15 @@ int disable_redirects(char *if_name, int index, int version)
   return 1;
 }
 
+int disable_redirects(char *if_name, int index, int version)
+{
+  // this function gets called for each interface olsrd uses; however,
+  // FreeBSD can only globally control ICMP redirects, and not on a
+  // per-interface basis; hence, only disable ICMP redirects in the "global"
+  // function
+  return 1;
+}
+
 int deactivate_spoof(char *if_name, int index, int version)
 {
   return 1;
@@ -177,11 +237,19 @@ int restore_settings(int version)
 
   // reset incoming ICMP redirects
 
+#ifdef __OpenBSD__
+  if (olsr_cnf->ip_version == AF_INET)
+    name = "net.inet.icmp.rediraccept";
+  else
+    name = "net.inet6.icmp6.rediraccept";
+
+#else
   if (olsr_cnf->ip_version == AF_INET)
     name = "net.inet.icmp.drop_redirect";
 
   else
     name = "net.inet6.icmp6.drop_redirect";
+#endif
 
   set_sysctl_int(name, ignore_redir);
 
@@ -197,6 +265,48 @@ int restore_settings(int version)
 
   return 1;
 }
+
+
+/**
+ *Creates a nonblocking broadcast socket.
+ *@param sa sockaddr struct. Used for bind(2).
+ *@return the FD of the socket or -1 on error.
+ */
+int
+gethemusocket(struct sockaddr_in *pin)
+{
+  int sock, on = 1;
+
+  OLSR_PRINTF(1, "       Connecting to switch daemon port 10150...");
+
+
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+    {
+      perror("hcsocket");
+      syslog(LOG_ERR, "hcsocket: %m");
+      return (-1);
+    }
+
+  if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on)) < 0) 
+    {
+      perror("SO_REUSEADDR failed");
+      return (-1);
+    }
+  /* connect to PORT on HOST */
+  if (connect(sock,(struct sockaddr *) pin, sizeof(*pin)) < 0) 
+    {
+      printf("FAILED\n");
+      fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));
+      printf("connection refused\n");
+      return (-1);
+    }
+
+  printf("OK\n");
+
+  /* Keep TCP socket blocking */  
+  return (sock);
+}
+
 
 int
 getsocket(struct sockaddr *sa, int bufspace, char *int_name)
@@ -596,7 +706,7 @@ olsr_select(int nfds,
 int 
 check_wireless_interface(char *ifname)
 {
-#ifdef __FreeBSD__
+#if defined __FreeBSD__ &&  !defined FBSD_NO_80211
   struct wi_req	wreq;
   struct ifreq ifr;
 

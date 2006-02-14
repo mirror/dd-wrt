@@ -58,11 +58,18 @@ struct list
 
 void list_init(struct list *list);
 
+#ifdef SVEN_OLA
+#define list_get_head(node) (node)->head
+#define list_get_tail(node) (node)->tail
+#define list_get_next(node) (node)->next
+#define list_get_prev(node) (node)->prev
+#else
 struct list_node *list_get_head(struct list *list);
 struct list_node *list_get_tail(struct list *list);
 
 struct list_node *list_get_next(struct list_node *node);
 struct list_node *list_get_prev(struct list_node *node);
+#endif
 
 void list_add_head(struct list *list, struct list_node *node);
 void list_add_tail(struct list *list, struct list_node *node);

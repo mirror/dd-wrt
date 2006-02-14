@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr.c,v 1.43 2005/03/06 19:33:35 kattemat Exp $
+ * $Id: olsr.c,v 1.47 2005/11/17 04:25:44 tlopatic Exp $
  */
 
 /**
@@ -59,10 +59,15 @@
 #include "misc.h"
 #include "neighbor_table.h"
 #include "log.h"
+#include "lq_packet.h"
 
 #include <stdarg.h>
 #include <signal.h>
 
+
+olsr_bool changes_topology;
+olsr_bool changes_neighborhood;
+olsr_bool changes_hna;
 
 /**
  * Process changes functions
@@ -204,6 +209,7 @@ olsr_process_changes()
         }
     }
   
+#ifndef SVEN_OLA
   if (olsr_cnf->debug_level > 0)
     {      
       if (olsr_cnf->debug_level > 2) 
@@ -221,6 +227,7 @@ olsr_process_changes()
       olsr_print_neighbor_table();
       olsr_print_tc_table();
     }
+#endif
 
   for(tmp_pc_list = pcf_list; 
       tmp_pc_list != NULL;
@@ -490,6 +497,80 @@ olsr_calculate_willingness()
   return (ainfo.battery_percentage / 26);
 }
 
+const char *
+olsr_msgtype_to_string(olsr_u8_t msgtype)
+{
+  static char type[20];
+
+  switch(msgtype)
+    {
+    case(HELLO_MESSAGE):
+      return "HELLO";
+    case(TC_MESSAGE):
+      return "TC";
+    case(MID_MESSAGE):
+      return "MID";
+    case(HNA_MESSAGE):
+      return "HNA";
+    case(LQ_HELLO_MESSAGE):
+      return("LQ-HELLO");
+    case(LQ_TC_MESSAGE):
+      return("LQ-TC");
+    default:
+      break;
+    }
+
+  snprintf(type, 20, "UNKNOWN(%d)", msgtype);
+  return type;
+}
+
+
+const char *
+olsr_link_to_string(olsr_u8_t linktype)
+{
+  static char type[20];
+
+  switch(linktype)
+    {
+    case(UNSPEC_LINK):
+      return "UNSPEC";
+    case(ASYM_LINK):
+      return "ASYM";
+    case(SYM_LINK):
+      return "SYM";
+    case(LOST_LINK):
+      return "LOST";
+    case(HIDE_LINK):
+      return "HIDE";
+    default:
+      break;
+    }
+
+  snprintf(type, 20, "UNKNOWN(%d)", linktype);
+  return type;
+}
+
+
+const char *
+olsr_status_to_string(olsr_u8_t status)
+{
+  static char type[20];
+
+  switch(status)
+    {
+    case(NOT_NEIGH):
+      return "NOT NEIGH";
+    case(SYM_NEIGH):
+      return "NEIGHBOR";
+    case(MPR_NEIGH):
+      return "MPR";
+    default:
+      break;
+    }
+
+  snprintf(type, 20, "UNKNOWN(%d)", status);
+  return type;
+}
 
 
 /**
