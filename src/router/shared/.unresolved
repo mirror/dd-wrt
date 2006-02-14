@@ -9,17 +9,20 @@
          U MD5Final
          U MD5Init
          U MD5Update
+         U MDStringArray
          U __assert
          U __cmsg_nxthdr
          U __ctype_b
          U __ctype_tolower
          U __ctype_toupper
+         U __dn_expand
          U __environ
          U __errno_location
          U __fgetc_unlocked
          U __fputc_unlocked
          U __h_errno_location
          U __res_init
+         U __res_search
          U __sigaddset
          U __sigdelset
          U __sigsetjmp
@@ -33,16 +36,20 @@
          U _exit
          U _res
          U _setjmp
+         U _shm_resize
          U _sigintr
          U abort
          U accept
          U access
+         U add_lump_rpl
          U addmntent
          U adjtimex
          U aes_unwrap
          U aes_wrap
          U alarm
          U alphasort
+         U anchor_lump
+         U append_branch
          U asctime
          U asprintf
          U atexit
@@ -62,8 +69,14 @@
          U bcmp
          U bcopy
          U bind
+         U bind_dbmod
+         U bind_idx
+         U branch_builder
          U bsearch
          U buf_to_file
+         U build_req_buf_from_sip_req
+         U build_res_buf_from_sip_req
+         U build_res_buf_from_sip_res
          U bzero
          U calloc
          U ceil
@@ -77,11 +90,16 @@
          U check_flash
          U check_hw_type
          U check_now_boot
+         U check_self
+         U check_transaction_quadruple
          U check_vlan_support
          U check_wan_link
+         U children_no
          U chmod
          U chown
          U chroot
+         U clean_hdr_field
+         U clear_branches
          U clearenv
          U clearerr
          U close
@@ -89,16 +107,24 @@
          U closelog
          U connect
          U convert_ver
+         U crcitt_string_array
          U create_module
          U crypt
          U ct_openlog
          U ct_syslog
          U ctime
          U daemon
+         U dbf
+         U debug
          U decode
+         U default_global_address
+         U default_global_port
          U del_forward_port
+         U del_lump
+         U del_nonshm_lump_rpl
          U del_wds_wsec
          U delete_module
+         U destroy_avp_list_unsafe
          U diag_led
          U difftime
          U dirname
@@ -108,10 +134,15 @@
          U dlopen
          U dlsym
          U dns_to_resolv
+         U do_action
+         U dont_fork
+         U dprint
          U dprintf
          U drand48
          U dup
          U dup2
+         U dup_lump_list
+         U eat_line
          U encrypt
          U endgrent
          U endmntent
@@ -120,8 +151,12 @@
          U endusershell
          U endutent
          U environ
+         U err
+         U err2reason_phrase
          U errno
          U error
+         U error_text
+         U errx
          U ether_atoe
          U ether_aton
          U ether_etoa
@@ -134,6 +169,7 @@
          U execvp
          U exit
          U fPRF
+         U failure_rlist
          U fchmod
          U fchown
          U fclose
@@ -144,21 +180,33 @@
          U fflush
          U fgetc
          U fgets
+         U fifo
+         U fifo_reply
          U file2str
          U file_to_buf
          U fileno
          U find_all_pid_by_ps
+         U find_export
          U find_pid_by_name
          U find_pid_by_ps
          U flock
+         U fm_free
+         U fm_malloc
          U fnmatch
          U fopen
          U fork
+         U forward_request
          U fprintf
          U fputc
          U fputs
          U fread
          U free
+         U free_duped_lump_list
+         U free_hdr_field_lst
+         U free_lump
+         U free_lump_rpl
+         U free_params
+         U free_proxy
          U freeaddrinfo
          U freopen
          U fscanf
@@ -170,6 +218,7 @@
          U fwrite
          U gai_strerror
          U getRouterBrand
+         U get_authorized_cred
          U get_broadcast
          U get_complete_lan_ip
          U get_dns_list
@@ -177,7 +226,10 @@
          U get_int_len
          U get_mac_from_ip
          U get_mtu
+         U get_reply_status
+         U get_send_socket
          U get_single_ip
+         U get_ticks
          U get_wan_face
          U get_wds_wsec
          U get_wl_assoc_mac
@@ -196,6 +248,7 @@
          U getgroups
          U gethostbyaddr
          U gethostbyname
+         U gethostbyname2
          U gethostname
          U getitimer
          U getline
@@ -251,14 +304,22 @@
          U inet_ntoa
          U inet_ntop
          U inet_pton
+         U init_branch_iterator
          U init_event_queue
          U init_module
          U initgroups
+         U insert_cond_lump_after
+         U insert_cond_lump_before
+         U insert_new_lump_after
+         U insert_new_lump_before
+         U insert_subst_lump_after
          U ioctl
          U is_exist
+         U is_main
          U isalnum
          U isatty
          U isdigit
+         U isflagset
          U isprint
          U isspace
          U isxdigit
@@ -294,16 +355,21 @@
          U lockf
          U log
          U log10
+         U log_facility
+         U log_stderr
          U longjmp
          U lseek
          U lstat
          U malloc
+         U mem_block
+         U mem_lock
          U memchr
          U memcmp
          U memcpy
          U memmove
          U mempcpy
          U memset
+         U mk_proxy
          U mkdir
          U mkfifo
          U mknod
@@ -324,13 +390,17 @@
          U netconf_del_filter
          U netconf_del_nat
          U netconf_get_nat
+         U new_hash2
+         U next_branch
          U nvram2file
          U nvram_commit
          U nvram_get
          U nvram_getall
          U nvram_set
          U nvram_unset
+         U onreply_rlist
          U open
+         U open_reply_pipe
          U opendir
          U openlog
          U openpty
@@ -338,7 +408,16 @@
          U opterr
          U optind
          U optopt
+         U parse_contact
+         U parse_expires
+         U parse_from_header
+         U parse_headers
+         U parse_params
+         U parse_rr
+         U parse_sip_msg_uri
+         U parse_uri
          U passhash
+         U pathconf
          U pause
          U pclose
          U perror
@@ -347,7 +426,12 @@
          U popen
          U pow
          U prepare_key
+         U prev_ser_error
+         U print_dset
+         U print_rr
          U printf
+         U process_no
+         U pt
          U pthread_attr_init
          U pthread_attr_setdetachstate
          U pthread_cancel
@@ -374,11 +458,15 @@
          U random
          U rc4
          U read
+         U read_body
+         U read_line
+         U read_line_set
          U readdir
          U readlink
          U realloc
          U realpath
          U reboot
+         U received_test
          U recv
          U recvfrom
          U recvmsg
@@ -386,13 +474,19 @@
          U regerror
          U regexec
          U regfree
+         U register_fifo_cmd
+         U register_script_cb
+         U register_timer
          U remove
          U rename
+         U replace_lst_free
+         U reply_to_via
          U rewind
          U rindex
          U rint
          U rmdir
          U router_defaults
+         U run_actions
          U safe_fread
          U safe_fwrite
          U scandir
@@ -405,6 +499,9 @@
          U sendfile
          U sendmsg
          U sendto
+         U ser_error
+         U server_signature
+         U set_avp_list
          U set_forward_port
          U set_host_domain_name
          U set_ip_forward
@@ -412,6 +509,7 @@
          U setegid
          U setenv
          U seteuid
+         U setflag
          U setgid
          U setgrent
          U setgroups
@@ -436,6 +534,9 @@
          U setusershell
          U setutent
          U setvbuf
+         U shm_block
+         U shm_duplicate_rr
+         U shm_free_rr
          U shmat
          U shmctl
          U shmdt
@@ -452,8 +553,11 @@
          U sigprocmask
          U sigsetmask
          U sigsuspend
+         U sip_resolvehost
          U sleep
          U snprintf
+         U sock_info
+         U sock_no
          U socket
          U socketpair
          U sprintf
@@ -499,11 +603,15 @@
          U strtoll
          U strtoul
          U strtoull
+         U subst_parser
+         U subst_run
+         U subst_str
          U supports
          U sv_valid_ipaddr
          U sv_valid_range
          U sv_valid_statics
          U symlink
+         U syn_branch
          U sync
          U syscall
          U sysconf
@@ -515,6 +623,9 @@
          U tcflush
          U tcgetattr
          U tcgetpgrp
+         U tcp_children_no
+         U tcp_disable
+         U tcp_send
          U tcsetattr
          U tcsetpgrp
          U time
@@ -522,6 +633,7 @@
          U timer_connect
          U timer_create
          U timer_delete
+         U timer_list
          U timer_settime
          U times
          U timezone
@@ -529,14 +641,17 @@
          U toupper
          U ttyname
          U tzset
+         U udp_send
          U umask
          U umount
          U umount2
          U uname
          U ungetc
          U unlink
+         U unlink_lump_rpl
          U unlockpt
          U unsetenv
+         U update_sock_struct_from_via
          U updwtmp
          U usleep
          U utime
@@ -546,6 +661,7 @@
          U vdprintf
          U vfork
          U vfprintf
+         U via_builder
          U vprintf
          U vsnprintf
          U vsprintf
@@ -571,6 +687,7 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/bin/busybox:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/sbin/radvd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/sbin/radvdump:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/bin/rtpproxy:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/l2tp/cmd.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/l2tp/sync-pppd.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/libbcm.so:
@@ -578,6 +695,15 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/libnetconf.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/libnvram.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/libshared.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/dbtext.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/inner_nathelper.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/maxfwd.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/registrar.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/rr.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/sl.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/textops.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/tm.so:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/ser/modules/usrloc.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/bcrelay:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/bpalogin:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/brctl:
@@ -604,6 +730,7 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/pptpd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/radius-client:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/robocfg:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/ser:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/smbmnt:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/smbmount:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/snmpd:
