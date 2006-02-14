@@ -18,7 +18,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
- * $Id: wlcompat.c 2530 2005-11-19 01:07:50Z nbd $
+ * $Id: wlcompat.c 2529 2005-11-19 01:07:28Z nbd $
  */
 
 

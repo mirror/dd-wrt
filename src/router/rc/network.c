@@ -1408,15 +1408,15 @@ start_wan_done (char *wan_ifname)
   runStartup ("/jffs/etc/config", ".ipup");
   runStartup ("/mmc/etc/config", ".ipup");
   cprintf ("trigger gpio");
-   int brand = getRouterBrand ();
+  int brand = getRouterBrand ();
   switch (brand)
     {
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
-    eval ("gpio", "disable", "3");
-    break;
+      eval ("gpio", "disable", "3");
+      break;
     default:
-    break;
+      break;
     }
   cprintf ("done\n");
   char *wani = nvram_safe_get ("wan_iface");
@@ -1455,10 +1455,10 @@ stop_wan (void)
     {
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
-    eval ("gpio", "enable", "3");
-    break;
+      eval ("gpio", "enable", "3");
+      break;
     default:
-    break;
+      break;
     }
   cprintf ("%s %s\n", wan_ifname, nvram_safe_get ("wan_proto"));
 #ifdef HAVE_NEWMEDIA

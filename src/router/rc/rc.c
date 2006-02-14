@@ -418,10 +418,16 @@ restore_defaults (void)
       ds = nvram_safe_get ("dhcp_start");
       if (ds != NULL && strlen (ds) > 3)
 	{
-	  nvram_set ("dhcp_start", "100");	//siemens se505 to dd-wrt default mapping
+	fprintf(stderr,"cleaning nvram variables\n");
+	for (t = router_defaults; t->name; t++)
+	{
+	    nvram_unset (t->name);
+	}
+	nvram_commit();
+
 	}
 
-      ds = nvram_safe_get ("http_passwd");
+/*      ds = nvram_safe_get ("http_passwd");
       if (ds == NULL || strlen (ds) == 0)	//fix for empty default password
 	{
 	  nvram_set ("http_passwd", "admin");
@@ -430,7 +436,7 @@ restore_defaults (void)
       if (ds != NULL && strlen (ds) < 3)
 	{
 	  nvram_set ("language", "english");
-	}
+	}*/
       // fall through  
     default:
       if (check_vlan_support ())
@@ -576,8 +582,8 @@ restore_defaults (void)
   nvram_set ("os_version", EPI_VERSION_STR);
 #ifdef HAVE_SPUTNIK_APD
   /* Added for Sputnik Agent */
-  nvram_unset("sputnik_mjid");
-  nvram_unset("sputnik_rereg");
+  nvram_unset ("sputnik_mjid");
+  nvram_unset ("sputnik_rereg");
 #endif
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
@@ -1012,8 +1018,8 @@ main_loop (void)
 //create vlans for b44 driver
 //robo
 #ifndef HAVE_RB500
-  
-  system("echo 1 > /proc/switch/eth0/reset");
+
+  system ("echo 1 > /proc/switch/eth0/reset");
   sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/0/ports",
 	   nvram_safe_get ("vlan0ports"));
   system (tmp);
@@ -1168,7 +1174,7 @@ main_loop (void)
 	  state = IDLE;
 	  break;
 	case RESTART:
-	  cprintf("RESET NVRAM VARS\n");
+	  cprintf ("RESET NVRAM VARS\n");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
 	  if (nvram_match ("wl_wep", "tkip"))
@@ -1211,14 +1217,14 @@ main_loop (void)
 	  setenv ("LD_LIBRARY_PATH",
 		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
 		  1);
-	  cprintf("STOP WAN\n");
+	  cprintf ("STOP WAN\n");
 	  stop_wan ();
-	  cprintf("STOP SERVICES\n");
+	  cprintf ("STOP SERVICES\n");
 	  stop_services ();
-	  cprintf("STOP LAN\n");
+	  cprintf ("STOP LAN\n");
 	  stop_lan ();
 #ifndef HAVE_RB500
-	  cprintf("STOP RESETBUTTON\n");
+	  cprintf ("STOP RESETBUTTON\n");
 	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54))	//belkin doesnt like that
 	    {
 	      stop_resetbutton ();
@@ -1245,7 +1251,7 @@ main_loop (void)
 
 	  start_ipv6 ();
 #ifndef HAVE_RB500
-	  if ((brand != ROUTER_BELKIN)&& (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54))	//belkin doesnt like that
+	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54))	//belkin doesnt like that
 	    {
 	      start_resetbutton ();
 	    }
@@ -1896,7 +1902,7 @@ ddwrt_main (int argc, char **argv)
     {
 #ifndef HAVE_RB500
       int brand = getRouterBrand ();
-      if ((brand != ROUTER_BELKIN)  && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_SIEMENS))	//belkin doesnt like that
+      if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_SIEMENS))	//belkin doesnt like that
 	{
 	  return resetbutton_main (argc, argv);
 	}

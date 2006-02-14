@@ -47,18 +47,51 @@ void start_tmp_ppp (int num);
 void
 load_vpn_modules (void)
 {
-
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1"))
       && nvram_invmatch ("pptpd_enable", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_proto_gre");
       eval ("/sbin/insmod", "ip_nat_proto_gre");
+      nvram_set ("vpn_loaded", "1");
     }
+
   if (nvram_match ("pptp_pass", "1") && nvram_invmatch ("pptpd_enable", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_pptp");
       eval ("/sbin/insmod", "ip_nat_pptp");
+      nvram_set ("vpn_loaded", "1");
+    }
+}
+
+void
+depend_vpn_modules (void)
+{
+  if (nvram_match ("vpn_loaded", "0"))
+    {
+      load_vpn_modules ();
+    }
+  else
+    {
+      if (nvram_match ("pptp_pass", "0")
+	  || nvram_invmatch ("pptpd_enable", "0"))
+	{
+	  eval ("/sbin/rmmod", "ip_nat_pptp");
+	  eval ("/sbin/rmmod", "ip_conntrack_pptp");
+	  nvram_set ("vpn_loaded", "0");
+	}
+      if ((nvram_match ("pptp_pass", "0") && nvram_match ("l2tp_pass", "0")
+	   && nvram_match ("ipsec_pass", "0"))
+	  || nvram_invmatch ("pptpd_enable", "0"))
+	{
+	  eval ("/sbin/rmmod", "ip_nat_proto_gre");
+	  eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
+	  nvram_set ("vpn_loaded", "0");
+	}
+
+
+
+
     }
 }
 
@@ -81,6 +114,7 @@ unload_vpn_modules (void)
   eval ("/sbin/rmmod", "ip_nat_pptp");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
   eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
+  nvram_set ("vpn_loaded", "0");
 }
 
 int
@@ -1052,27 +1086,28 @@ stop_nas (void)
 #ifdef HAVE_SPUTNIK_APD
 /* Sputnik APD Service Handling */
 int
-start_sputnik_apd(void) 
+start_sputnik_apd (void)
 {
-	int ret;
+  int ret;
 
-  	// Only start if enabled
-  	if (!nvram_invmatch ("apd_enable", "0"))
- 	   return 0;
+  // Only start if enabled
+  if (!nvram_invmatch ("apd_enable", "0"))
+    return 0;
 
-	ret = eval("apd");
-	cprintf ("done\n");
-	return ret;
+  ret = eval ("apd");
+  cprintf ("done\n");
+  return ret;
 }
 
 int
-stop_sputnik_apd(void)
+stop_sputnik_apd (void)
 {
-	int ret = eval("killall", "apd");
+  int ret = eval ("killall", "apd");
 
-	cprintf("done\n");
-	return ret;
+  cprintf ("done\n");
+  return ret;
 }
+
 /* END Sputnik Service Handling */
 
 #endif
@@ -1172,7 +1207,7 @@ start_services (void)
 #endif
 
 #ifdef HAVE_SPUTNIK_APD
-  start_sputnik_apd();
+  start_sputnik_apd ();
 #endif
 
 
@@ -1239,7 +1274,7 @@ stop_services (void)
 #endif
 
 #ifdef HAVE_SPUTNIK_APD
-  stop_sputnik_apd();
+  stop_sputnik_apd ();
 #endif
 
 // end Sveasoft additions
@@ -1933,7 +1968,7 @@ start_chilli (void)
   int i;
   if (!nvram_match ("chilli_enable", "1"))
     return 0;
-    
+
 #ifdef HAVE_FON
 
   if (!(fp = fopen ("/tmp/fonusers.local", "w")))
@@ -1941,20 +1976,20 @@ start_chilli (void)
       perror ("/tmp/fonusers.local");
       return errno;
     }
-char *users = nvram_safe_get("fon_userlist");
-char *u = (char*)malloc(strlen(users)+1);
-char *o = u;
-strcpy(u,users);
-char *sep = strsep(&u,"=");
-    while(sep!=NULL)
-	{
-	fprintf(fp,"%s ",sep);
-	char *pass=strsep(&u," ");
-	fprintf(fp,"%s \n",pass!=NULL?pass:"");
-	sep = strsep(&u,"=");
-	}
-free(o);
-    fclose(fp);
+  char *users = nvram_safe_get ("fon_userlist");
+  char *u = (char *) malloc (strlen (users) + 1);
+  char *o = u;
+  strcpy (u, users);
+  char *sep = strsep (&u, "=");
+  while (sep != NULL)
+    {
+      fprintf (fp, "%s ", sep);
+      char *pass = strsep (&u, " ");
+      fprintf (fp, "%s \n", pass != NULL ? pass : "");
+      sep = strsep (&u, "=");
+    }
+  free (o);
+  fclose (fp);
 #endif
 
 

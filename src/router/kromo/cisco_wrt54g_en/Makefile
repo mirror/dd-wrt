@@ -209,7 +209,7 @@ endif
 endif
 endif
 endif
-ifdef OMNI_WIFI
+ifeq ($(CONFIG_OMNI),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/omni-wifi/ install
 endif
 
