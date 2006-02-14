@@ -33,7 +33,7 @@ endif
 #CFLAGS	+= -I$(SRCBASE)/linux/linux/include
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s  
-LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared
+LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared
 
 ifeq ($(CONFIG_ANTIFLASH),y)
 CFLAGS += -DANTI_FLASH
@@ -193,13 +193,13 @@ endif
 #OBJS  += code_header.o
 
 
-vpath %.c $(TOP)/shared $(SRCBASE)/../tools/src
+vpath %.c modules $(SRCBASE)/../tools/src
 
 all: httpd.a
 
 clean:
 	rm -f *.o *~ httpd
-	rm -f closed/*.o
+#	rm -f modules/*.o
 	rm -f *.a 
 	#Added by Daniel(2004-07-29)
 	#cp ../shared/ezc.o ./
@@ -224,7 +224,7 @@ cert:
 
 httpd.a: cgi.o ej.o httpd.o broadcom.o \
        index.o status.o dhcp.o log.o upgrade.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
-       find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o sveaweb.o closed/dd-wrt.o nvramsr.o $(OBJS)
+       find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o sveaweb.o dd-wrt.o nvramsr.o $(OBJS)
 	$(AR) arc -o $@ $^
 	rm -f ../rc/rc
 	
