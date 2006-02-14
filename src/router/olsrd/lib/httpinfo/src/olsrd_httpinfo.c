@@ -36,26 +36,34 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_httpinfo.c,v 1.50 2005/03/31 04:43:55 kattemat Exp $
+ * $Id: olsrd_httpinfo.c,v 1.57 2005/12/22 15:06:52 kattemat Exp $
  */
 
 /*
  * Dynamic linked library for the olsr.org olsr daemon
  */
 
-#include "olsrd_httpinfo.h"
-#include "olsr_cfg.h"
-#include "link_set.h"
-#include "gfx.h"
-#include "html.h"
-#include "admin_interface.h"
-#include "interfaces.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
+#include <stdarg.h>
 #include <unistd.h>
 #include <errno.h>
+
+#include "olsr.h"
+#include "olsr_cfg.h"
+#include "interfaces.h"
 #include "olsr_protocol.h"
+#include "net_olsr.h"
+#include "link_set.h"
+#include "socket_parser.h"
+
+#include "olsrd_httpinfo.h"
+#include "admin_interface.h"
+#include "html.h"
+#ifndef SVEN_OLA
+#include "gfx.h"
+#endif
 
 #ifdef OS
 #undef OS
@@ -121,6 +129,7 @@ struct dynamic_file_entry
   int(*process_data_cb)(char *, olsr_u32_t, char *, olsr_u32_t);
 };
 
+
 static int
 get_http_socket(int);
 
@@ -182,6 +191,11 @@ static int client_sockets[MAX_CLIENTS];
 static int curr_clients;
 static int http_socket;
 
+int netsprintf(char *str, const char* format, ...);
+static int netsprintf_direct = 0;
+static int netsprintf_error = 0;
+#define sprintf netsprintf
+#define NETDIRECT
 
 
 struct tab_entry tab_entries[] =
@@ -194,10 +208,13 @@ struct tab_entry tab_entries[] =
     {"Admin", "admin", build_admin_body, OLSR_TRUE},
 #endif
     {"About", "about", build_about_body, OLSR_TRUE},
+#ifndef SVEN_OLA
     {"FOO", "cfgfile", build_cfgfile_body, OLSR_FALSE},
+#endif
     {NULL, NULL, NULL}
   };
 
+#ifndef SVEN_OLA
 struct static_bin_file_entry static_bin_files[] =
   {
     {"favicon.ico", favicon_ico, 1406/*favicon_ico_len*/},
@@ -205,6 +222,7 @@ struct static_bin_file_entry static_bin_files[] =
     {"grayline.gif", grayline_gif, 43/*grayline_gif_len*/},
     {NULL, NULL, 0}
   };
+#endif
 
 struct static_txt_file_entry static_txt_files[] =
   {
@@ -228,7 +246,7 @@ struct dynamic_file_entry dynamic_files[] =
  *function in uolsrd_plugin.c
  */
 int
-olsr_plugin_init()
+olsrd_plugin_init()
 {
   get_copyright_string();
   /* Get start time */
@@ -406,6 +424,7 @@ parse_http_request(int fd)
       int i = 0;
       int y = 0;
 
+#ifndef SVEN_OLA
       while(static_bin_files[i].filename)
 	{
 	  if(FILENREQ_MATCH(filename, static_bin_files[i].filename))
@@ -423,6 +442,7 @@ parse_http_request(int fd)
 	}
 
       i = 0;
+#endif
 
       while(static_txt_files[i].filename)
 	{
@@ -459,6 +479,17 @@ parse_http_request(int fd)
 
       if(tab_entries[i].filename)
 	{
+#ifdef NETDIRECT
+	  c = build_http_header(HTTP_OK, OLSR_TRUE, size, req, MAX_HTTPREQ_SIZE);
+	  r = send(client_sockets[curr_clients], req, c, 0);   
+	  if(r < 0)
+	    {
+	      olsr_printf(1, "(HTTPINFO) Failed sending data to client!\n");
+	      goto close_connection;
+	    }
+	  netsprintf_error = 0;
+	  netsprintf_direct = 1;
+#endif
 	  y = 0;
 	  while(http_ok_head[y])
 	    {
@@ -483,9 +514,14 @@ parse_http_request(int fd)
 	      y++;
 	    }  
 	  
+#ifdef NETDIRECT
+	  netsprintf_direct = 1;
+	  goto close_connection;
+#else
 	  c = build_http_header(HTTP_OK, OLSR_TRUE, size, req, MAX_HTTPREQ_SIZE);
 	  
 	  goto send_http_data;
+#endif
 	}
       
       
@@ -574,7 +610,7 @@ build_http_header(http_header_type type,
   /* Content length */
   if(size > 0)
     {
-      sprintf(tmp, "Content-length: %i\r\n", size);
+      snprintf(tmp, sizeof(tmp), "Content-length: %i\r\n", size);
       strcat(buf, tmp);
     }
 
@@ -652,22 +688,6 @@ olsr_plugin_exit()
 }
 
 
-/* Mulitpurpose funtion */
-int
-plugin_io(int cmd, void *data, size_t size)
-{
-
-  switch(cmd)
-    {
-    default:
-      return 0;
-    }
-  
-  return 1;
-
-}
-
-
 static int
 build_frame(char *title, 
 	    char *link, 
@@ -701,19 +721,20 @@ build_routes_body(char *buf, olsr_u32_t bufsize)
 
   size += sprintf(&buf[size], "<h2>OLSR routes in kernel</h2>\n");
 
-  size += sprintf(&buf[size], "<table width=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0 ALIGN=center><tr><th>Destination</th><th>Gateway</th><th>Metric</th><th>Interface</th><th>Type</th></tr>\n");
+  size += sprintf(&buf[size], "<table width=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0 ALIGN=center><tr><th>Destination</th><th>Gateway</th><th>Metric</th><th>ETX</th><th>Interface</th><th>Type</th></tr>\n");
 
   /* Neighbors */
   for(index = 0;index < HASHSIZE;index++)
     {
-      for(routes = host_routes[index].next;
-	  routes != &host_routes[index];
+      for(routes = routingtable[index].next;
+	  routes != &routingtable[index];
 	  routes = routes->next)
 	{
-	  size += sprintf(&buf[size], "<tr><td>%s</td><td>%s</td><td>%d</td><td>%s</td><td>HOST</td></tr>\n",
+	  size += sprintf(&buf[size], "<tr><td>%s</td><td>%s</td><td>%d</td><td>%.2f</td><td>%s</td><td>HOST</td></tr>\n",
 			  olsr_ip_to_string(&routes->rt_dst),
 			  olsr_ip_to_string(&routes->rt_router),
 			  routes->rt_metric,
+			  routes->rt_etx,
 			  routes->rt_if->int_name);
 	}
     }
@@ -780,37 +801,39 @@ build_config_body(char *buf, olsr_u32_t bufsize)
 
     size += sprintf(&buf[size], "<table width=\"100%%\" border=0>\n<tr>");
 
-    size += sprintf(&buf[size], "<td>Main address: <b>%s</b></td>\n", olsr_ip_to_string(main_addr));
+    size += sprintf(&buf[size], "<td>Main address: <b>%s</b></td>\n", olsr_ip_to_string(&main_addr));
     
-    size += sprintf(&buf[size], "<td>IP version: %d</td>\n", cfg->ip_version == AF_INET ? 4 : 6);
+    size += sprintf(&buf[size], "<td>IP version: %d</td>\n", olsr_cnf->ip_version == AF_INET ? 4 : 6);
 
-    size += sprintf(&buf[size], "<td>Debug level: %d</td>\n", cfg->debug_level);
-
-    size += sprintf(&buf[size], "</tr>\n<tr>\n");
-
-    size += sprintf(&buf[size], "<td>Pollrate: %0.2f</td>\n", cfg->pollrate);
-    size += sprintf(&buf[size], "<td>TC redundancy: %d</td>\n", cfg->tc_redundancy);
-    size += sprintf(&buf[size], "<td>MPR coverage: %d</td>\n", cfg->mpr_coverage);
-
+    size += sprintf(&buf[size], "<td>Debug level: %d</td>\n", olsr_cnf->debug_level);
 
     size += sprintf(&buf[size], "</tr>\n<tr>\n");
 
-    size += sprintf(&buf[size], "<td>TOS: 0x%04x</td>\n", cfg->tos);
+    size += sprintf(&buf[size], "<td>Pollrate: %0.2f</td>\n", olsr_cnf->pollrate);
+    size += sprintf(&buf[size], "<td>TC redundancy: %d</td>\n", olsr_cnf->tc_redundancy);
+    size += sprintf(&buf[size], "<td>MPR coverage: %d</td>\n", olsr_cnf->mpr_coverage);
 
-    size += sprintf(&buf[size], "<td>Willingness: %d %s</td>\n", cfg->willingness, cfg->willingness_auto ? "(auto)" : "");
+
+    size += sprintf(&buf[size], "</tr>\n<tr>\n");
+
+    size += sprintf(&buf[size], "<td>Fisheye: %s</td>\n", olsr_cnf->lq_fish ? "Enabled" : "Disabled");
+
+    size += sprintf(&buf[size], "<td>TOS: 0x%04x</td>\n", olsr_cnf->tos);
+
+    size += sprintf(&buf[size], "<td>Willingness: %d %s</td>\n", olsr_cnf->willingness, olsr_cnf->willingness_auto ? "(auto)" : "");
     
     size += sprintf(&buf[size], "</tr>\n<tr>\n");
 
-    size += sprintf(&buf[size], "<td>Hysteresis: %s</td>\n", cfg->use_hysteresis ? "Enabled" : "Disabled");
+    size += sprintf(&buf[size], "<td>Hysteresis: %s</td>\n", olsr_cnf->use_hysteresis ? "Enabled" : "Disabled");
 	
-    size += sprintf(&buf[size], "<td>Hyst scaling: %0.2f</td>\n", cfg->hysteresis_param.scaling);
-    size += sprintf(&buf[size], "<td>Hyst lower/upper: %0.2f/%0.2f</td>\n", cfg->hysteresis_param.thr_low, cfg->hysteresis_param.thr_high);
+    size += sprintf(&buf[size], "<td>Hyst scaling: %0.2f</td>\n", olsr_cnf->hysteresis_param.scaling);
+    size += sprintf(&buf[size], "<td>Hyst lower/upper: %0.2f/%0.2f</td>\n", olsr_cnf->hysteresis_param.thr_low, olsr_cnf->hysteresis_param.thr_high);
 
     size += sprintf(&buf[size], "</tr>\n<tr>\n");
 
-    size += sprintf(&buf[size], "<td>LQ extention: %s</td>\n", cfg->lq_level ? "Enabled" : "Disabled");
-    size += sprintf(&buf[size], "<td>LQ level: %d</td>\n", cfg->lq_level);
-    size += sprintf(&buf[size], "<td>LQ winsize: %d</td>\n", cfg->lq_wsize);
+    size += sprintf(&buf[size], "<td>LQ extention: %s</td>\n", olsr_cnf->lq_level ? "Enabled" : "Disabled");
+    size += sprintf(&buf[size], "<td>LQ level: %d</td>\n", olsr_cnf->lq_level);
+    size += sprintf(&buf[size], "<td>LQ winsize: %d</td>\n", olsr_cnf->lq_wsize);
     size += sprintf(&buf[size], "<td></td>\n");
 
     size += sprintf(&buf[size], "</tr></table>\n");
@@ -821,7 +844,7 @@ build_config_body(char *buf, olsr_u32_t bufsize)
     size += sprintf(&buf[size], "<table width=\"100%%\" border=0>\n");
 
 
-    for(ifs = cfg->interfaces; ifs; ifs = ifs->next)
+    for(ifs = olsr_cnf->interfaces; ifs; ifs = ifs->next)
       {
 	struct interface *rifs = ifs->interf;
 
@@ -832,7 +855,7 @@ build_config_body(char *buf, olsr_u32_t bufsize)
 	    continue;
 	  }
 	
-	if(cfg->ip_version == AF_INET)
+	if(olsr_cnf->ip_version == AF_INET)
 	  {
 	    size += sprintf(&buf[size], "<tr><td>IP: %s</td>\n", 
 			    sockaddr_to_string(&rifs->int_addr));
@@ -858,7 +881,7 @@ build_config_body(char *buf, olsr_u32_t bufsize)
 
     size += sprintf(&buf[size], "</table>\n");
 
-    if(cfg->allow_no_interfaces)
+    if(olsr_cnf->allow_no_interfaces)
       size += sprintf(&buf[size], "<i>Olsrd is configured to run even if no interfaces are available</i><br>\n");
     else
       size += sprintf(&buf[size], "<i>Olsrd is configured to halt if no interfaces are available</i><br>\n");
@@ -867,7 +890,7 @@ build_config_body(char *buf, olsr_u32_t bufsize)
 
     size += sprintf(&buf[size], "<table width=\"100%%\" border=0><tr><th>Name</th><th>Parameters</th></tr>\n");
 
-    for(pentry = cfg->plugins; pentry; pentry = pentry->next)
+    for(pentry = olsr_cnf->plugins; pentry; pentry = pentry->next)
       {
 	size += sprintf(&buf[size], "<tr><td>%s</td>\n", pentry->name);
 
@@ -887,14 +910,14 @@ build_config_body(char *buf, olsr_u32_t bufsize)
     size += sprintf(&buf[size], "</table>\n");
 
 
-    if((cfg->ip_version == AF_INET) && (cfg->hna4_entries))
+    if((olsr_cnf->ip_version == AF_INET) && (olsr_cnf->hna4_entries))
       {
 	struct hna4_entry *hna4;
 	
 	size += sprintf(&buf[size], "<h2>Announced HNA entries</h2>\n");
 	size += sprintf(&buf[size], "<table width=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0 ALIGN=center><tr><th>Network</th><th>Netmask</th></tr>\n");
 	
-	for(hna4 = cfg->hna4_entries; hna4; hna4 = hna4->next)
+	for(hna4 = olsr_cnf->hna4_entries; hna4; hna4 = hna4->next)
 	  {
 	    size += sprintf(&buf[size], "<tr><td>%s</td><td>%s</td></tr>\n", 
 			    olsr_ip_to_string((union olsr_ip_addr *)&hna4->net),
@@ -903,14 +926,14 @@ build_config_body(char *buf, olsr_u32_t bufsize)
 	
 	size += sprintf(&buf[size], "</table>\n");
       }
-    else if((cfg->ip_version == AF_INET6) && (cfg->hna6_entries))
+    else if((olsr_cnf->ip_version == AF_INET6) && (olsr_cnf->hna6_entries))
       {
 	struct hna6_entry *hna6;
 	
 	size += sprintf(&buf[size], "<h2>Announced HNA entries</h2>\n");
 	size += sprintf(&buf[size], "<table width=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0 ALIGN=center><tr><th>Network</th><th>Prefix length</th></tr>\n");
 	
-	for(hna6 = cfg->hna6_entries; hna6; hna6 = hna6->next)
+	for(hna6 = olsr_cnf->hna6_entries; hna6; hna6 = hna6->next)
 	  {
 	    size += sprintf(&buf[size], "<tr><td>%s</td><td>%d</td></tr>\n", 
 			    olsr_ip_to_string((union olsr_ip_addr *)&hna6->net),
@@ -938,8 +961,7 @@ build_neigh_body(char *buf, olsr_u32_t bufsize)
   size += sprintf(&buf[size], "<table width=\"100%%\" BORDER=0 CELLSPACING=0 CELLPADDING=0 ALIGN=center><tr><th>Local IP</th><th>remote IP</th><th>Hysteresis</th><th>LinkQuality</th><th>lost</th><th>total</th><th>NLQ</th><th>ETX</th></tr>\n");
 
   /* Link set */
-  if(olsr_plugin_io(GETD__LINK_SET, &link, sizeof(link)) && link)
-  {
+  link = link_set;
     while(link)
       {
 	size += sprintf(&buf[size], "<tr><td>%s</td><td>%s</td><td>%0.2f</td><td>%0.2f</td><td>%d</td><td>%d</td><td>%0.2f</td><td>%0.2f</td></tr>\n",
@@ -954,7 +976,6 @@ build_neigh_body(char *buf, olsr_u32_t bufsize)
 
 	link = link->next;
       }
-  }
 
   size += sprintf(&buf[size], "</table>\n");
 
@@ -972,9 +993,7 @@ build_neigh_body(char *buf, olsr_u32_t bufsize)
 			  olsr_ip_to_string(&neigh->neighbor_main_addr),
 			  (neigh->status == SYM) ? "YES" : "NO",
 			  neigh->is_mpr ? "YES" : "NO",
-			  olsr_lookup_mprs_set ? 
-			  (olsr_lookup_mprs_set(&neigh->neighbor_main_addr) ? "YES" : "NO") 
-			  : "UNAVAILABLE",
+			  olsr_lookup_mprs_set(&neigh->neighbor_main_addr) ? "YES" : "NO",
 			  neigh->willingness);
 
 	  size += sprintf(&buf[size], "<td><select>\n");
@@ -1169,6 +1188,7 @@ build_about_body(char *buf, olsr_u32_t bufsize)
   return size;
 }
 
+#ifndef SVEN_OLA
 int
 build_cfgfile_body(char *buf, olsr_u32_t bufsize)
 {
@@ -1180,7 +1200,7 @@ build_cfgfile_body(char *buf, olsr_u32_t bufsize)
       i++;
     }
 
-  size += olsrd_write_cnf_buf(cfg, &buf[size], bufsize-size);
+  size += olsrd_write_cnf_buf(olsr_cnf, &buf[size], bufsize-size);
   
   if(size < 0)
     {
@@ -1196,7 +1216,7 @@ build_cfgfile_body(char *buf, olsr_u32_t bufsize)
  
   return size;
 }
-
+#endif
 
 olsr_bool
 check_allowed_ip(union olsr_ip_addr *addr)
@@ -1228,46 +1248,6 @@ check_allowed_ip(union olsr_ip_addr *addr)
 
 
 /**
- *Converts a olsr_ip_addr to a string
- *Goes for both IPv4 and IPv6
- *
- *@param the IP to convert
- *@return a pointer to a static string buffer
- *representing the address in "dots and numbers"
- *
- */
-char *
-olsr_ip_to_string(union olsr_ip_addr *addr)
-{
-  static int index = 0;
-  static char buff[4][100];
-  char *ret;
-  struct in_addr in;
- 
-  if(ipversion == AF_INET)
-    {
-      in.s_addr=addr->v4;
-      ret = inet_ntoa(in);
-    }
-  else
-    {
-      /* IPv6 */
-      ret = (char *)inet_ntop(AF_INET6, &addr->v6, ipv6_buf, sizeof(ipv6_buf));
-    }
-
-  strncpy(buff[index], ret, 100);
-
-  ret = buff[index];
-
-  index = (index + 1) & 3;
-
-  return ret;
-}
-
-
-
-
-/**
  *This function is just as bad as the previous one :-(
  */
 char *
@@ -1277,7 +1257,7 @@ olsr_netmask_to_string(union hna_netmask *mask)
   struct in_addr in;
   static char netmask[5];
 
-  if(ipversion == AF_INET)
+  if(olsr_cnf->ip_version == AF_INET)
     {
       in.s_addr = mask->v4;
       ret = inet_ntoa(in);
@@ -1287,7 +1267,7 @@ olsr_netmask_to_string(union hna_netmask *mask)
   else
     {
       /* IPv6 */
-      sprintf(netmask, "%d", mask->v6);
+      snprintf(netmask, sizeof(netmask), "%d", mask->v6);
       return netmask;
     }
 
@@ -1297,19 +1277,34 @@ olsr_netmask_to_string(union hna_netmask *mask)
 
 
 
-char *
-sockaddr_to_string(struct sockaddr *address_to_convert)
-{
-  struct sockaddr_in           *address;
-  
-  address=(struct sockaddr_in *)address_to_convert; 
-  return(inet_ntoa(address->sin_addr));
-  
-}
-
-
 static char *
 get_copyright_string()
 {
   return copyright_string;
+}
+
+/*
+ * In a bigger mesh, there are probs with the fixed
+ * bufsize. Because the Content-Length header is
+ * optional, the sprintf() is changed to a more
+ * scalable solution here.
+ */
+ 
+int netsprintf(char *str, const char* format, ...)
+{
+	va_list arg;
+	int rv;
+	va_start(arg, format);
+	rv = vsprintf(str, format, arg);
+	va_end(arg);
+	if (0 != netsprintf_direct) {
+		if (0 == netsprintf_error) {
+			if (0 > send(client_sockets[curr_clients], str, rv, 0)) {
+				olsr_printf(1, "(HTTPINFO) Failed sending data to client!\n");
+				netsprintf_error = 1;
+			}
+		}
+		return 0;
+	}
+	return rv;
 }

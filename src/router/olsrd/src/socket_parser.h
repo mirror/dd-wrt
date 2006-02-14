@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: socket_parser.h,v 1.9 2004/11/21 11:28:56 kattemat Exp $
+ * $Id: socket_parser.h,v 1.10 2005/05/29 12:47:45 br1 Exp $
  */
 
 
@@ -51,7 +51,8 @@ struct olsr_socket_entry
   struct olsr_socket_entry *next;
 };
 
-struct olsr_socket_entry *olsr_socket_entries;
+
+extern struct olsr_socket_entry *olsr_socket_entries;
 
 
 void

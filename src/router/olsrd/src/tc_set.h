@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: tc_set.h,v 1.14 2005/02/20 18:52:19 kattemat Exp $
+ * $Id: tc_set.h,v 1.15 2005/05/29 12:47:46 br1 Exp $
  */
 
 #ifndef _OLSR_TOP_SET
@@ -68,10 +68,9 @@ struct tc_entry
 };
 
 
-#ifndef OLSR_PLUGIN
-
 /* Queue */
-struct tc_entry tc_table[HASHSIZE];
+extern struct tc_entry tc_table[HASHSIZE];
+
 
 int
 olsr_init_tc(void);
@@ -106,5 +105,4 @@ olsr_print_tc_table(void);
 void
 olsr_time_out_tc_set(void);
 
-#endif
 #endif

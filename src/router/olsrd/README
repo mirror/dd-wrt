@@ -1,6 +1,6 @@
 
 +====================================================================+
-| README - olsr.org OLSR daemon 0.4.8, 05.12.04                      |
+| README - olsr.org OLSR daemon 0.4.10, 23.11.05                     |
 +====================================================================+
 
 Andreas Tonnesen(andreto@olsr.org)
@@ -43,17 +43,11 @@ II.  - BUILDING AND RUNNING OLSRD
 The olsr.org OLSR daemon is an implementation of the Optimized Link State
 routing protocol. The protocol is documented in RFC3626. The website
 of olsrd is http://www.olsr.org
-Olsrd started out as part of the master thesis project for Andreas Tønnesen 
-at UniK University Graduate Center in Norway. This master thesis is now 
-finished(it is available for download at the olsrd website) but the olsrd 
-project moves on. Initially olsrd only compiled for GNU/Linux systems.
-Then Thomas Lopatic joined up with the project in aug. 04 and he has seen 
-to it that olsrd now, also compiles on MS-Windows, Mac OSX and FreeBSD.
 
 Olsrd is designed to be a modular an extensible implementation. It features
 a plugin interface, allowing for developers to extend OLSR operation without
 interfering with the core code. It also features a experimental link quality
-routing scheme, by Thomas and people at the c-base in Berlin.
+routing scheme.
 
 To ask questions or make comments, join up with the mailing lists:
 olsr-dev@olsr.org   - development discussion
@@ -63,7 +57,7 @@ A bug tracker is also available at the sourceforge project site
 http://sourceforge.net/projects/olsrd/
 
 Olsrd source or binaries can be downloaded from olsr.org. CVS is available
-for the brave ;)
+for the cutting edge features ;-)
 
 
 =================
@@ -79,7 +73,9 @@ for the brave ;)
 If olsrd is ran without using link-quality routing/MPR selection it is RFC3626
 compliant in that it will inter-operate with other RFC3626 implementations.
 Internally there are a few things that are solved differently that proposed 
-in the RFC. Check out the "Conclusions" section of my master thesis for details.
+in the RFC. Check out the "Conclusions" section of the "Implementing And
+Extending The Optimized Link State routing Protocol" thesis available at
+olsr.org.
 
 
 ===========
@@ -95,9 +91,8 @@ amongst others, the following reasons:
    functionality.
  * Users are free to implement olsrd plugins and license them under whatever 
    terms they like.
- * If you, unlike yours truly, don't love C, the plugins can be written in 
-   any language that can be compiled as a dynamic library. Linux even allows 
-   scripts!
+ * The plugins can be written in any language that can be compiled as 
+   a dynamic library. Linux even allows scripts!
  * No need for people with extended OLSR versions to rely on heavy patching 
    to maintain functionality when new olsrd versions are released.
 
@@ -118,6 +113,15 @@ it with custom actions.
 
   Plugins that are part of this release(can be found in the lib/ directory):
 
+  - Tiny Application Server(TAS).
+
+  - HttpInfo. This plugin implements a simple HTTP server that serves dynamic
+    pages with lots of information about the running olsrd process.
+
+  - Mini.
+
+  - Nameservice.
+
   - Dynamic Internet gateway. A plugin that dynamically adds and removes Internet
     HNA transmissions based on if there exists a default gateway to Internet
     with hop count = 0(non OLSR gateway). It has been extended to be able to
@@ -132,8 +136,8 @@ it with custom actions.
     You need to have the OpenSSL libs installed to use this plugin.
 
   - Power plugin. A plugin that uses OLSRs MPR flooding to spread information
-    about the power status of nodes. Meant as an example plugin to get coders
-    started.
+    about the power status of nodes. Meant as an example plugin for code
+    reference only.
 
 
 ========================
@@ -149,33 +153,14 @@ hops. Have a look at the README-Link-Quality.html file for details.
  * KNOWN PROBLEMS
 ==================
 
-We suspect that in the previous version 0.4.7 OLSR traffic, in
-particular HELLO messages, is more prone to packet loss than data
-traffic. We think so, because the OLSR people of Vienna have excellent
-links but link detection reports links as broken very often. This
-problem exists in 0.4.7. We think that the reason for this is that in
-multi-interface configurations olsrd 0.4.7 sends HELLO messages via
-all interfaces at the same time without any jitter, which probably
-results in interference, as HELLO messages from different interfaces
-"collide". 0.4.8 should solve this problem, as we now have
-per-interface jitter when sending HELLO messages. So collisions
-between HELLO messages of different interfaces should be significantly
-reduced. So, if you have a multi-interface configuration, too, please
-let us know if you observe anything unusual. We'll also keep
-investigating this problem with the Vienna guys.
 
 ===============
  * FUTURE WORK
 ===============
 
-As the 0.4.8 release contains huge amounts of new code, the releases up to 0.5 
-will focus much on bug fixing. If relatively serious bugs are found new releases
-will be made fixing thees issues.
-Asides from that there will be some focus on redesigning the IPC interface, and
-hopefully we will end up with a neat platform independent GUI front-end to
-work over this new IPC interface.
-IPv6 support for Windows, FreeBSD and OSX will also be an issue.
-
+Future releases of the 0.4 series will be maintainance releases focused
+on bugfixing. Work will soon begin on a 0.5 series where we will focus
+much more on new ideas. 0.4 and 0.5 might coexist for some time. 
 
 ----------------------------------------------------------------------
  II.  - BUILDING AND RUNNING OLSRD
@@ -185,9 +170,8 @@ IPv6 support for Windows, FreeBSD and OSX will also be an issue.
  * GENERAL INFORMATION
 =======================
 
-Olsrd is implemented in pure C with very few dependencies. The 0.4.8
-release has removed the pthread dependency making olsrd even more
-portable! Olsrd is known to run on various hardware like:
+Olsrd is implemented in pure C with very few dependencies. Olsrd is 
+known to run on various hardware like:
  * x86    - your regular PC
  * PPC    - Macintosh hardware
  * MIPSEL - Embedded systems like the LinkSys WRT54g
@@ -208,13 +192,38 @@ while installing requires(as root):
 make install
 To use the plugins add them to the olsrd configuration file.
 
+=====================
+ * OS SUPPORT STATUS
+=====================
+
+COMPONENT/OS	Linux	Win32	FreeBSD	NetBSD	OpenBSD	OSX
+------------------------------------------------------------
+olsrd		+/+	+/+	+/+	+/+	+/+	?
+olsr_switch	+/+	+/+	+/+	+/+	+/+	?
+------------------------------------------------------------
+PLUGINS
+dot_draw	+/+	+/?	+/+	+/+	+/+	?
+dyn_gw		+/+	+/?	+/-	+/-	+/-	?
+httpinfo	+/+	+/+	+/+	+/+	+/+	?
+mini		+/+	+/?	+/+	+/+	+/+	?
+nameservice	+/+	+/?	+/+	+/+	+/+	?
+powerinfo	+/+	+/+	+/-	+/-	+/-	?
+secure		+/+	+/+	+/+	+/+	+/+	?
+tas		+/+	-	-	-	-	?
+------------------------------------------------------------
+
+LEGEND:   +/+ = compiles/runs
+          +/- = compiles/does not work
+          -   = does not compile
+          ?   = unknown
+
 =================
  * GUI FRONTENDS
 =================
 
-A GUI front end for GNU/Linux using GTK is available in the gui/ directory.
-this implementation is really no longer supported, but it should work with
-0.4.8 except that it will not show correct configuration parameters.
+A GUI front end for GNU/Linux using GTK is available in the gui/ 
+directory. This implementation is no longer supported, and might
+not work any more. It will be completly removed in a future release.
 
 There currently is, however, a native MFC-based Windows GUI. Unlike
 olsrd the GUI has to be compiled with Visual C++ 6. It can be found in
@@ -307,30 +316,31 @@ for details.
  * LINUX
 =========
 
-To build olsrd you need to have all the regular development tools installed.
-This includes gcc, make, glibc, makedep etc.
-To install to a directory different from /(/etc, /usr/bin) use INSTALL_PREFIX=targetdir
-To use other compilers set CC=yourcompiler
+To build olsrd you need to have all the regular development tools 
+installed. This includes gcc, make, glibc, makedep etc.
+To install to a directory different from /(/etc, /usr/bin) use 
+INSTALL_PREFIX=targetdir. To use other compilers set CC=yourcompiler.
 
 To build:
- make OS=linux
+ make
 To install(as root):
  make install
 To delete object files run:
  make clean
+Optionally, to clean all generated files:
+ make uberclean
 
-
-Before running olsrd you must edit the default configuration file /etc/olsrd.conf
-adding at least what interfaces olsrd is to run on. Options in the config file can 
-also be overridden by command line options. See the manual pages olsrd(8) and 
-olsrd.conf(5) for details.
+Before running olsrd you must edit the default configuration file 
+/etc/olsrd.conf adding at least what interfaces olsrd is to run on. 
+Options in the config file can also be overridden by command line 
+options. See the manual pages olsrd(8) and olsrd.conf(5) for details.
 The binary is named 'olsrd' and is installed in (PREFIX)/usr/sbin. 
 You must have root privileges to run olsrd!
 To run olsrd just type:
 olsrd
 
-If debug level is set to 0 olsrd will detach and run in the background, if not
-it will keep running in your shell.
+If debug level is set to 0 olsrd will detach and run in the background, 
+if not it will keep running in your shell.
 
 ===========
  * WINDOWS
@@ -342,7 +352,7 @@ To compile the Windows version of the OLSR server or the dot_draw
 plugin you need a Cygwin installation with a current version of GCC
 and Mingw32. Simply use
 
-  make OS=win32
+  make
 
 to build the olsrd executable. Building the dot_draw plugin works
 slightly different, we do not yet have a unified makefile for all
@@ -400,17 +410,19 @@ If you do not specify a configuration file, the OLSR server
 directory, e.g. "C:\WINDOWS\olsrd.conf".
 
 
-===========
- * FREEBSD
-===========
+=========================
+ * FREEBSD/NETBSD/OPENBSD
+=========================
 
-The FreeBSD version is an initial port. It has not been extensively
-tested beyond "doesn't core dump and it looks like it adds routes". In
-order to build it, you need GNU make. Then use
+The FreeBSD port should be relativley stable at this point.
+The OpenBSD and NetBSD versions are pretty much untested. They have 
+not been extensively tested beyond "doesn't core dump and it looks 
+like it adds routes". In order to build it, you need GNU make. Then 
+use:
 
-  gmake OS=fbsd
+  gmake
 
-to build the olsrd executable. Then say
+to build the olsrd executable. Then do:
 
   gmake install
 
@@ -424,10 +436,7 @@ the Linux section for details.
 
 The OS X port is a direct descendant of the FreeBSD port. So, the same
 limitations with respect to testing and maturity apply. Building and
-installing works in the same was as on FreeBSD, except that you have
-to use "osx" instead of "fbsd", as in
-
-  gmake OS=osx
+installing works in the same was as on FreeBSD.
 
 
-$Id: README,v 1.8 2004/12/05 21:45:46 tlopatic Exp $
+$Id: README,v 1.16 2005/11/23 05:51:07 kattemat Exp $

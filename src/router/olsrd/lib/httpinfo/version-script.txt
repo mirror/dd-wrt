@@ -1,10 +1,9 @@
 VERS_1.0
 {
   global:
-    get_plugin_interface_version;
-    register_olsr_data;
-    plugin_io;
-    register_olsr_param;
+    olsrd_plugin_interface_version;
+    olsrd_plugin_register_param;
+    olsrd_plugin_init;
 
   local:
     *;

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: apm.c,v 1.13 2005/03/10 07:01:48 kattemat Exp $
+ * $Id: apm.c,v 1.14 2005/04/07 18:22:43 kattemat Exp $
  */
 
 /*
@@ -144,9 +144,10 @@ apm_init()
 void
 apm_printinfo(struct olsr_apm_info *ainfo)
 {
-  OLSR_PRINTF(5, "APM info:\n\tAC status %d\n\tBattery percentage %d%%\n\n",
+  OLSR_PRINTF(5, "APM info:\n\tAC status %d\n\tBattery percentage %d%%\n\tBattery time left %d mins\n\n",
 	      ainfo->ac_line_status,
-	      ainfo->battery_percentage)
+	      ainfo->battery_percentage,
+	      ainfo->battery_time_left)
 
   return;
 }
@@ -243,6 +244,7 @@ apm_read_apm(struct olsr_apm_info *ainfo)
     ainfo->ac_line_status = OLSR_BATTERY_POWERED;
   
   ainfo->battery_percentage = lainfo.battery_percentage;
+  ainfo->battery_time_left = lainfo.battery_time;
   
   fclose(apm_procfile);
 

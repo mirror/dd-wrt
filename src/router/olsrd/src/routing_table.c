@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: routing_table.c,v 1.19 2005/02/26 23:01:41 kattemat Exp $
+ * $Id: routing_table.c,v 1.23 2005/11/16 23:55:54 tlopatic Exp $
  */
 
 
@@ -48,6 +48,10 @@
 #include "neighbor_table.h"
 #include "olsr.h"
 #include "link_set.h"
+
+
+struct rt_entry routingtable[HASHSIZE];
+struct rt_entry hna_routes[HASHSIZE];
 
 
 /* Begin:
@@ -129,8 +133,28 @@ olsr_lookup_routing_table(union olsr_ip_addr *dst)
   
 }
 
+/**
+ * Look up an entry in the HNA routing table.
+ *
+ * @param dst the address of the entry
+ *
+ * @return a pointer to a rt_entry struct 
+ * representing the route entry.
+ */
 
+struct rt_entry *
+olsr_lookup_hna_routing_table(union olsr_ip_addr *dst)
+{
+  struct rt_entry *walker;
+  olsr_u32_t hash = olsr_hashing(dst);
 
+  for (walker = hna_routes[hash].next; walker != &hna_routes[hash];
+       walker = walker->next)
+    if (COMP_IP(&walker->rt_dst, dst))
+      return walker;
+
+  return NULL;
+}
 
 /**
  *Delete all the entries in the routing table hash
@@ -172,7 +196,8 @@ struct rt_entry *
 olsr_insert_routing_table(union olsr_ip_addr *dst, 
 			  union olsr_ip_addr *router, 
 			  struct interface *iface, 
-			  int metric)
+			  int metric,
+			  float etx)
 {
   struct rt_entry *new_route_entry, *rt_list;
   olsr_u32_t       hash;
@@ -187,6 +212,8 @@ olsr_insert_routing_table(union olsr_ip_addr *dst,
   new_route_entry->rt_if = iface;
 
   new_route_entry->rt_metric = metric;
+  new_route_entry->rt_etx = etx;
+  
   if(COMP_IP(dst, router))
     /* Not GW */
     new_route_entry->rt_flags = (RTF_UP|RTF_HOST);
@@ -261,7 +288,8 @@ olsr_fill_routing_table_with_neighbors()
 			  olsr_insert_routing_table(&addrs2->alias, 
 						    &link->neighbor_iface_addr,
 						    iface,
-						    1);
+						    1,
+						    0);
 			}
 		    }
 	      
@@ -375,7 +403,8 @@ olsr_fill_routing_table_with_two_hop_neighbors()
 			    olsr_insert_routing_table(&addrsp->alias, 
 						      &link->neighbor_iface_addr,
 						      iface,
-						      2);
+						      2,
+						      0);
 			  
 			  if(new_route_entry != NULL)
 			    {
@@ -471,7 +500,8 @@ olsr_calculate_routing_table()
 			    olsr_insert_routing_table(&tmp_addrsp->alias, 
 						      &list_destination_n->destination->rt_router, 
 						      list_destination_n->destination->rt_if,
-						      list_destination_n->destination->rt_metric+1);
+						      list_destination_n->destination->rt_metric+1,
+						      0);
 			  if(destination_n_1->destination != NULL)
 			    {
 			      destination_n_1->next=list_destination_n_1;
@@ -724,7 +754,7 @@ olsr_print_routing_table(struct rt_entry *table)
   olsr_u8_t index;
 
   printf("ROUTING TABLE\n");
-  printf("DESTINATION\tNEXT HOP\n");
+  printf("DESTINATION\tNEXT HOP\tHOPCNT\tINTERFACE\n");
   for(index=0;index<HASHSIZE;index++)
     {
       struct rt_entry *destination;
@@ -733,7 +763,10 @@ olsr_print_routing_table(struct rt_entry *table)
 	  destination = destination->next)
 	{
 	  printf("%s\t", olsr_ip_to_string(&destination->rt_dst));
-	  printf("%s\n", olsr_ip_to_string(&destination->rt_router));
+	  printf("%s\t%d\t%s\n", 
+		 olsr_ip_to_string(&destination->rt_router),
+		 destination->rt_metric,
+		 destination->rt_if->int_name);
 	}
     }
 }

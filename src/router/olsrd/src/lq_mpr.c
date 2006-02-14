@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_mpr.c,v 1.9 2005/02/16 14:44:43 tlopatic Exp $
+ * $Id: lq_mpr.c,v 1.10 2005/11/29 18:37:58 kattemat Exp $
  */
 
 #include "defs.h"
@@ -106,6 +106,9 @@ void olsr_calculate_lq_mpr(void)
               // determine the link quality of the direct link
 
               link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
+
+	      if(!link)
+		continue;
 
               best = link->loss_link_quality * link->neigh_link_quality;
 

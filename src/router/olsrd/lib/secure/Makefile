@@ -1,121 +1,62 @@
+# The olsr.org Optimized Link-State Routing daemon(olsrd)
+# Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
+# All rights reserved.
+#
+# Redistribution and use in source and binary forms, with or without 
+# modification, are permitted provided that the following conditions 
+# are met:
+#
+# * Redistributions of source code must retain the above copyright 
+#   notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright 
+#   notice, this list of conditions and the following disclaimer in 
+#   the documentation and/or other materials provided with the 
+#   distribution.
+# * Neither the name of olsr.org, olsrd nor the names of its 
+#   contributors may be used to endorse or promote products derived 
+#   from this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS 
+# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT 
+# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS 
+# FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE 
+# COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, 
+# INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, 
+# BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; 
+# LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER 
+# CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT 
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN 
+# ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
+# POSSIBILITY OF SUCH DAMAGE.
+#
+# Visit http://www.olsr.org for more information.
+#
+# If you find this software useful feel free to make a donation
+# to the project. For more information see the website or contact
+# the copyright holders.
+#
+# $Id: Makefile,v 1.16 2005/05/25 13:50:22 br1 Exp $
 
-#############################################
-#          OLSR.ORG SECURE PLUGIN           #
-#############################################
+OLSRD_PLUGIN =	true
+PLUGIN_NAME =	olsrd_secure
+PLUGIN_VER =	0.5
 
-
-CC ?= gcc
-STRIP ?= strip
-PLUGINFLAGS = -fPIC -DOLSR_PLUGIN -I../../src
+TOPDIR = ../..
+include $(TOPDIR)/Makefile.inc
 
 ifdef USE_OPENSSL
-PLUGINFLAGS += -DUSE_OPENSSL
-endif
-
-ifdef DEBUG
-PLUGINFLAGS += -DDEBUG
-endif
-
-ifeq ($(OS), linux)
-NAME ?= olsrd_secure.so.0.5
-LIBDIR ?= $(INSTALL_PREFIX)/usr/lib
-LIBS ?= -lc -lm
-ifdef USE_OPENSSL
+CFLAGS += -DUSE_OPENSSL
 LIBS += -lssl -lcrypto
 endif
-LDFLAGS += -fPIC
-CFLAGS ?= -Wall -Wmissing-prototypes -Wstrict-prototypes -g -O2
-INSTALL_LIB = install -D -m 755 $(NAME) $(LIBDIR)/$(NAME);\
-	/sbin/ldconfig -n $(LIBDIR)
 
-all:	plugin
-install:install_olsrd
-else
-ifeq ($(OS), fbsd)
-NAME ?= olsrd_secure.so.0.5
-LIBDIR ?= $(INSTALL_PREFIX)/usr/lib
-LIBS ?= -lc -lm
-ifdef USE_OPENSSL
-LIBS += -lssl -lcrypto
-endif
-LDFLAGS += -fPIC
-CFLAGS ?= -Wall -Wmissing-prototypes -Wstrict-prototypes -g -O2
-INSTALL_LIB = install -m 755 $(NAME) $(LIBDIR)/$(NAME);\
-	/sbin/ldconfig
+default_target: $(PLUGIN_FULLNAME)
 
-all:	plugin
-install:install_olsrd
-else
-ifeq ($(OS), win32)
-NAME ?= olsrd_secure.dll
-CFLAGS ?= -O2 -g -DWIN32 -mno-cygwin -I../../src/win32 -Wall -Wmissing-prototypes -Wstrict-prototypes
-LDFLAGS ?= -fPIC -mno-cygwin -shared
-LIBS ?= -lws2_32
-ifdef USE_OPENSSL
-LIBS += -lssl -lcrypto
-endif
-INSTALL_LIB = 	cp $(NAME) ../..
-all:    plugin
-install:install_olsrd
-else
-all: 	help
-install:help
-endif
-endif
-endif
+$(PLUGIN_FULLNAME): $(OBJS)
+		$(CC) $(LDFLAGS) -o $(PLUGIN_FULLNAME) $(OBJS) $(LIBS)
 
-CFLAGS +=  $(PLUGINFLAGS)
-
-#Sourcefiles
-SRCS=	src/olsrd_plugin.c src/olsrd_secure.c
-
-#Objectfiles
-OBJS=	src/olsrd_plugin.o src/olsrd_secure.o
-
-#Headerfiles
-HDRS=	src/olsrd_plugin.h src/olsrd_secure.h
-
-ifndef USE_OPENSSL
-#Sourcefiles
-SRCS+=	src/md5.c
-
-#Objectfiles
-OBJS+=	src/md5.o
-
-#Headerfiles
-HDRS+=	src/md5.h
-
-endif
-
-plugin: $(OBJS)
-	$(CC) $(LDFLAGS) -shared -Wl,-soname,$(NAME) \
-	-Wl,--version-script=version-script.txt \
-	-o $(NAME) $(OBJS) $(LIBS)
-
-
-install_olsrd:
-	$(STRIP) $(NAME)
-	$(INSTALL_LIB)
+install:	$(PLUGIN_FULLNAME)
+		$(STRIP) $(PLUGIN_FULLNAME)
+		$(INSTALL_LIB)
 
 clean:
-	rm -f $(OBJS) $(NAME)
-
-help:
-	@echo
-	@echo '**** olsr.org secure plugin Make ***'
-	@echo ' You must provide a valid target OS '
-	@echo ' by setting the OS variable! Valid  '
-	@echo ' target OSes are:                   '
-	@echo ' ---------------------------------  '
-	@echo ' linux - GNU/Linux                  '
-	@echo ' fbsd  - FreeBSD                    '
-	@echo ' win32 - Windows                    '
-	@echo ' ---------------------------------  '
-	@echo ' Example - build for FreeBSD:       '
-	@echo ' gmake OS=fbsd                      '
-	@echo '************************************'
-	@echo
-
-src/olsrd_plugin.o: $(HDRS)
-
-src/olsrd_secure.o: $(HDRS)
+		rm -f $(OBJS) $(SRCS:%.c=%.d) $(PLUGIN_FULLNAME)

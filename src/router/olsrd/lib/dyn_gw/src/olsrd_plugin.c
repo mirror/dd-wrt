@@ -37,28 +37,25 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_plugin.c,v 1.11 2005/02/25 22:43:21 kattemat Exp $
+ * $Id: olsrd_plugin.c,v 1.12 2005/05/29 12:47:40 br1 Exp $
  */
 
 #include "olsrd_plugin.h"
-#include "plugin_loader.h"
 #include <stdio.h>
+
+#define PLUGIN_NAME    "OLSRD dynamic gateway plugin"
+#define PLUGIN_VERSION "0.4"
+#define PLUGIN_AUTHOR   "Various artists"
+#define MOD_DESC PLUGIN_NAME " " PLUGIN_VERSION " by " PLUGIN_AUTHOR
+#define PLUGIN_INTERFACE_VERSION 4
+
 
 /**
  * "Private" declarations
  */
 
-void __attribute__ ((constructor)) 
+static void __attribute__ ((constructor)) 
 my_init(void);
-
-void __attribute__ ((destructor)) 
-my_fini(void);
-
-int
-register_olsr_data(struct olsr_plugin_data *);
-
-int
-fetch_olsrd_data(void);
 
 
 /*
@@ -67,7 +64,7 @@ fetch_olsrd_data(void);
  * Do not alter unless you know what you are doing!
  */
 int 
-get_plugin_interface_version()
+olsrd_plugin_interface_version()
 {
   return PLUGIN_INTERFACE_VERSION;
 }
@@ -83,118 +80,4 @@ my_init()
   printf("%s\n", MOD_DESC);
 
   return;
-}
-
-/**
- *Destructor
- */
-void
-my_fini()
-{
-
-  /* Calls the destruction function
-   * olsr_plugin_exit()
-   * This function should be present in your
-   * sourcefile and all data destruction
-   * should happen there - NOT HERE!
-   */
-  olsr_plugin_exit();
-
-  return;
-}
-
-
-
-/**
- *Register needed functions and pointers
- *
- *This function should not be changed!
- *
- */
-int
-register_olsr_data(struct olsr_plugin_data *data)
-{
-  /* IPversion */
-  ipversion = data->ipversion;
-  /* Main address */
-  main_addr = data->main_addr;
-
-  /* Multi-purpose function */
-  olsr_plugin_io = data->olsr_plugin_io;
-
-  /* Set size of IP address */
-  if(ipversion == AF_INET)
-    {
-      ipsize = sizeof(olsr_u32_t);
-    }
-  else
-    {
-      ipsize = sizeof(struct in6_addr);
-    }
-
-  if(!fetch_olsrd_data())
-    {
-      fprintf(stderr, "Could not fetch the neccessary functions from olsrd!\n");
-      return 0;
-    }
-
-  /* Calls the initialization function
-   * olsr_plugin_init()
-   * This function should be present in your
-   * sourcefile and all data initialization
-   * should happen there - NOT HERE!
-   */
-  if(!olsr_plugin_init())
-    {
-      fprintf(stderr, "Could not initialize plugin!\n");
-      return 0;
-    }
-
-  return 1;
-
-}
-
-
-
-int
-fetch_olsrd_data()
-{
-  int retval = 1;
-
-
-  /* Olsr debug output function */
-  if(!olsr_plugin_io(GETF__OLSR_PRINTF, 
-		     &olsr_printf, 
-		     sizeof(olsr_printf)))
-  {
-    olsr_printf = NULL;
-    retval = 0;
-  }
-
-  /* Scheduler event registration */
-  if(!olsr_plugin_io(GETF__OLSR_REGISTER_SCHEDULER_EVENT, 
-		     &olsr_register_scheduler_event, 
-		     sizeof(olsr_register_scheduler_event)))
-  {
-    olsr_register_scheduler_event = NULL;
-    retval = 0;
-  }
-
-
-  /* Add hna net IPv4 */
-  if(!olsr_plugin_io(GETF__ADD_LOCAL_HNA4_ENTRY, &add_local_hna4_entry, sizeof(add_local_hna4_entry)))
-  {
-    add_local_hna4_entry = NULL;
-    retval = 0;
-  }
-
-  /* Remove hna net IPv4 */
-  if(!olsr_plugin_io(GETF__REMOVE_LOCAL_HNA4_ENTRY, &remove_local_hna4_entry, sizeof(remove_local_hna4_entry)))
-  {
-    remove_local_hna4_entry = NULL;
-    retval = 0;
-  }
-
-  return retval;
-
 }

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: tc_set.c,v 1.21 2005/02/26 23:01:41 kattemat Exp $
+ * $Id: tc_set.c,v 1.23 2005/11/17 04:25:44 tlopatic Exp $
  */
 
 
@@ -44,6 +44,10 @@
 #include "olsr.h"
 #include "scheduler.h"
 #include "lq_route.h"
+
+
+struct tc_entry tc_table[HASHSIZE];
+
 
 /**
  * Initialize the topology set
@@ -299,7 +303,11 @@ olsr_tc_update_mprs(struct tc_entry *entry, struct tc_message *msg)
                   existing_dst->saved_link_quality =
                     existing_dst->link_quality;
 
-                  retval = 1;
+                  if (msg->hop_count <= olsr_cnf->lq_dlimit)
+                    retval = 1;
+
+                  else
+                    OLSR_PRINTF(3, "Skipping Dijkstra (4)\n")
                 }
 
               saved_lq = existing_dst->saved_inverse_link_quality;
@@ -316,7 +324,11 @@ olsr_tc_update_mprs(struct tc_entry *entry, struct tc_message *msg)
                   existing_dst->saved_inverse_link_quality =
                     existing_dst->inverse_link_quality;
 
-                  retval = 1;
+                  if (msg->hop_count <= olsr_cnf->lq_dlimit)
+                    retval = 1;
+
+                  else
+                    OLSR_PRINTF(3, "Skipping Dijkstra (5)\n")
                 }
             }
 	}
@@ -418,6 +430,7 @@ olsr_time_out_tc_set()
 /**
  *Print the topology table to stdout
  */
+#ifndef SVEN_OLA
 int
 olsr_print_tc_table()
 {
@@ -477,3 +490,4 @@ olsr_print_tc_table()
 
   return 1;
 }
+#endif

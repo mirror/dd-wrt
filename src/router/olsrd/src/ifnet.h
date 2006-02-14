@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: ifnet.h,v 1.10 2005/02/15 20:40:31 kattemat Exp $
+ * $Id: ifnet.h,v 1.11 2005/05/30 13:13:37 kattemat Exp $
  */
 
 /* Network interface configuration interface.
@@ -64,5 +64,8 @@ chk_if_changed(struct olsr_if *);
 
 int
 chk_if_up(struct olsr_if *, int);
+
+int
+add_hemu_if(struct olsr_if *);
 
 #endif

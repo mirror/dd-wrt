@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr_protocol.h,v 1.17 2005/02/20 17:24:50 kattemat Exp $
+ * $Id: olsr_protocol.h,v 1.19 2005/10/11 14:55:55 kattemat Exp $
  */
 
 /*
@@ -59,6 +59,9 @@
 #define OLSR_IPV6_MCAST_GLOBAL     "ff0e::1"
 
 #define OLSR_HEADERSIZE (sizeof(olsr_u16_t) + sizeof(olsr_u16_t))
+
+#define OLSR_MSGHDRSZ_IPV4 12
+#define OLSR_MSGHDRSZ_IPV6 24
 
 
 /*
@@ -210,7 +213,7 @@ struct hellinfo
   olsr_u8_t   reserved;
   olsr_u16_t  size;
   olsr_u32_t  neigh_addr[1]; /* neighbor IP address(es) */
-};
+} __attribute__ ((packed));
 
 struct hellomsg 
 {
@@ -218,7 +221,7 @@ struct hellomsg
   olsr_u8_t       htime;
   olsr_u8_t       willingness;
   struct hellinfo hell_info[1];
-};
+} __attribute__ ((packed));
 
 /*
  *IPv6
@@ -230,7 +233,7 @@ struct hellinfo6
   olsr_u8_t       reserved;
   olsr_u16_t      size;
   struct in6_addr neigh_addr[1]; /* neighbor IP address(es) */
-};
+} __attribute__ ((packed));
 
 struct hellomsg6
 {
@@ -238,7 +241,7 @@ struct hellomsg6
   olsr_u8_t          htime;
   olsr_u8_t          willingness;
   struct hellinfo6   hell_info[1];
-};
+} __attribute__ ((packed));
 
 /*
  * Topology Control packet
@@ -247,7 +250,7 @@ struct hellomsg6
 struct neigh_info
 {
   olsr_u32_t       addr;
-};
+} __attribute__ ((packed));
 
 
 struct tcmsg 
@@ -255,7 +258,7 @@ struct tcmsg
   olsr_u16_t        ansn;
   olsr_u16_t        reserved;
   struct neigh_info neigh[1];
-};
+} __attribute__ ((packed));
 
 
 
@@ -266,7 +269,7 @@ struct tcmsg
 struct neigh_info6
 {
   struct in6_addr      addr;
-};
+} __attribute__ ((packed));
 
 
 struct tcmsg6
@@ -274,7 +277,7 @@ struct tcmsg6
   olsr_u16_t           ansn;
   olsr_u16_t           reserved;
   struct neigh_info6   neigh[1];
-};
+} __attribute__ ((packed));
 
 
 
@@ -292,13 +295,13 @@ struct tcmsg6
 struct midaddr
 {
   olsr_u32_t addr;
-};
+} __attribute__ ((packed));
 
 
 struct midmsg 
 {
   struct midaddr mid_addr[1];
-};
+} __attribute__ ((packed));
 
 
 /*
@@ -307,13 +310,13 @@ struct midmsg
 struct midaddr6
 {
   struct in6_addr addr;
-};
+} __attribute__ ((packed));
 
 
 struct midmsg6
 {
   struct midaddr6 mid_addr[1];
-};
+} __attribute__ ((packed));
 
 
 
@@ -327,12 +330,12 @@ struct hnapair
 {
   olsr_u32_t   addr;
   olsr_u32_t   netmask;
-};
+} __attribute__ ((packed));
 
 struct hnamsg
 {
   struct hnapair hna_net[1];
-};
+} __attribute__ ((packed));
 
 /*
  *IPv6
@@ -342,12 +345,12 @@ struct hnapair6
 {
   struct in6_addr   addr;
   struct in6_addr   netmask;
-};
+} __attribute__ ((packed));
 
 struct hnamsg6
 {
   struct hnapair6 hna_net[1];
-};
+} __attribute__ ((packed));
 
 
 
@@ -375,7 +378,7 @@ struct olsrmsg
     struct midmsg   mid;
   } message;
 
-};
+} __attribute__ ((packed));
 
 /*
  *IPv6
@@ -399,7 +402,7 @@ struct olsrmsg6
     struct midmsg6   mid;
   } message;
 
-};
+} __attribute__ ((packed));
 
 
 
@@ -412,7 +415,7 @@ struct olsr
   olsr_u16_t	  olsr_packlen;		/* packet length */
   olsr_u16_t	  olsr_seqno;
   struct olsrmsg  olsr_msg[1];          /* variable messages */
-};
+} __attribute__ ((packed));
 
 
 struct olsr6
@@ -420,7 +423,7 @@ struct olsr6
   olsr_u16_t	    olsr_packlen;        /* packet length */
   olsr_u16_t	    olsr_seqno;
   struct olsrmsg6   olsr_msg[1];         /* variable messages */
-};
+} __attribute__ ((packed));
 
 
 /* IPv4 <-> IPv6 compability */
@@ -429,13 +432,13 @@ union olsr_message
 {
   struct olsrmsg  v4;
   struct olsrmsg6 v6;
-};
+} __attribute__ ((packed));
 
 union olsr_packet
 {
   struct olsr  v4;
   struct olsr6 v6;
-};
+} __attribute__ ((packed));
 
 
 #endif

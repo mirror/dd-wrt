@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_route.c,v 1.33 2005/03/02 21:14:54 tlopatic Exp $
+ * $Id: lq_route.c,v 1.40 2005/11/29 18:37:58 kattemat Exp $
  */
 
 #include "defs.h"
@@ -90,8 +90,8 @@ static int avl_comp_ipv4(void *ip1, void *ip2)
 
 static int (*avl_comp)(void *, void *);
 
-static void add_vertex(struct avl_tree *vertex_tree, struct list *vertex_list,
-                       union olsr_ip_addr *addr, float path_etx)
+static void add_vertex(struct avl_tree *vertex_tree, union olsr_ip_addr *addr,
+                       float path_etx)
 {
   struct avl_node *node;
   struct dijk_vertex *vert;
@@ -109,8 +109,6 @@ static void add_vertex(struct avl_tree *vertex_tree, struct list *vertex_list,
     vert->tree_node.data = vert;
     vert->tree_node.key = &vert->addr;
 
-    vert->node.data = vert;
-
     COPY_IP(&vert->addr, addr);
     
     vert->path_etx = path_etx;
@@ -121,11 +119,10 @@ static void add_vertex(struct avl_tree *vertex_tree, struct list *vertex_list,
     list_init(&vert->edge_list);
 
     avl_insert(vertex_tree, &vert->tree_node);
-    list_add_tail(vertex_list, &vert->node);
   }
 }
 
-static void add_edge(struct avl_tree *vertex_tree, struct list *vertex_list,
+static void add_edge(struct avl_tree *vertex_tree,
                      union olsr_ip_addr *src, union olsr_ip_addr *dst,
                      float etx)
 {
@@ -195,6 +192,56 @@ static void add_edge(struct avl_tree *vertex_tree, struct list *vertex_list,
     avl_insert(&dvert->edge_tree, &edge->tree_node);
     list_add_tail(&dvert->edge_list, &edge->node);
   }
+}
+
+static void create_vertex_list_rec(struct list *vertex_list,
+                                   struct avl_node *node,
+                                   int (*comp)(void *, void *))
+{
+  struct dijk_vertex *vert = node->data;
+
+  if (node->left != NULL)
+    create_vertex_list_rec(vertex_list, node->left, comp);
+
+  // add the vertex to the list, if it's not us
+
+#ifdef SVEN_OLA
+  if (0 == comp) {
+    if (svenola_avl_comp_ipv4(&main_addr, node->key) != 0)
+    {
+      vert->node.data = vert;
+      list_add_tail(vertex_list, &vert->node);
+    }
+  }
+  else
+#endif
+  if ((*comp)(&main_addr, node->key) != 0)
+  {
+    vert->node.data = vert;
+    list_add_tail(vertex_list, &vert->node);
+  }
+
+  if (node->right != NULL)
+    create_vertex_list_rec(vertex_list, node->right, comp);
+}
+
+static void create_vertex_list(struct avl_tree *vertex_tree,
+                               struct list *vertex_list)
+{
+  struct avl_node *node;
+  struct dijk_vertex *vert;
+
+  // make ourselves the first vertex in the list
+
+  node = avl_find(vertex_tree, &main_addr);
+  vert = node->data;
+
+  vert->node.data = vert;
+  list_add_tail(vertex_list, &vert->node);
+
+  // add the remaining vertices ordered by their main address
+
+  create_vertex_list_rec(vertex_list, vertex_tree->root, vertex_tree->comp);
 }
 
 static void free_everything(struct list *vertex_list)
@@ -304,7 +351,7 @@ static char *etx_to_string(float etx)
   if (etx == INFINITE_ETX)
     return "INF";
 
-  sprintf(buff, "%.2f", etx);
+  snprintf(buff, 20, "%.2f", etx);
   return buff;
 }
 
@@ -328,11 +375,17 @@ void olsr_calculate_lq_routing_table(void)
   struct hna_net *hna;
   struct rt_entry *gw_rt, *hna_rt, *head_rt;
   struct neighbor_2_entry *neigh2;
+#if 0
   struct neighbor_list_entry *neigh_walker;
+#endif
   struct interface *inter;
 
   if (ipsize == 4)
+#ifdef SVEN_OLA
+    avl_comp = 0;
+#else
     avl_comp = avl_comp_ipv4;
+#endif
 
   else
     avl_comp = avl_comp_ipv6;
@@ -342,9 +395,9 @@ void olsr_calculate_lq_routing_table(void)
   avl_init(&vertex_tree, avl_comp);
   list_init(&vertex_list);
 
-  // add ourselves to the vertex list
+  // add ourselves to the vertex tree
 
-  add_vertex(&vertex_tree, &vertex_list, &main_addr, 0.0);
+  add_vertex(&vertex_tree, &main_addr, 0.0);
 
   // add our neighbours
 
@@ -352,8 +405,7 @@ void olsr_calculate_lq_routing_table(void)
     for (neigh = neighbortable[i].next; neigh != &neighbortable[i];
          neigh = neigh->next)
       if (neigh->status == SYM)
-        add_vertex(&vertex_tree, &vertex_list, &neigh->neighbor_main_addr,
-                   INFINITE_ETX);
+        add_vertex(&vertex_tree, &neigh->neighbor_main_addr, INFINITE_ETX);
 
   // add our two-hop neighbours
 
@@ -361,8 +413,7 @@ void olsr_calculate_lq_routing_table(void)
     for (neigh2 = two_hop_neighbortable[i].next;
          neigh2 != &two_hop_neighbortable[i];
          neigh2 = neigh2->next)
-      add_vertex(&vertex_tree, &vertex_list, &neigh2->neighbor_2_addr,
-                 INFINITE_ETX);
+      add_vertex(&vertex_tree, &neigh2->neighbor_2_addr, INFINITE_ETX);
 
   // add remaining vertices
 
@@ -371,15 +422,13 @@ void olsr_calculate_lq_routing_table(void)
     {
       // add source
 
-      add_vertex(&vertex_tree, &vertex_list, &tcsrc->T_last_addr,
-                 INFINITE_ETX);
+      add_vertex(&vertex_tree, &tcsrc->T_last_addr, INFINITE_ETX);
 
       // add destinations of this source
 
       for (tcdst = tcsrc->destinations.next; tcdst != &tcsrc->destinations;
            tcdst = tcdst->next)
-        add_vertex(&vertex_tree, &vertex_list, &tcdst->T_dest_addr,
-                   INFINITE_ETX);
+        add_vertex(&vertex_tree, &tcdst->T_dest_addr, INFINITE_ETX);
     }
 
   // add edges to and from our neighbours
@@ -391,15 +440,21 @@ void olsr_calculate_lq_routing_table(void)
       {
         link = get_best_link_to_neighbor(&neigh->neighbor_main_addr);
 
-        if (link->loss_link_quality >= MIN_LINK_QUALITY &&
-            link->neigh_link_quality >= MIN_LINK_QUALITY)
-          {
-            etx = 1.0 / (link->loss_link_quality * link->neigh_link_quality);
+	if(!link)
+	  continue;
 
-            add_edge(&vertex_tree, &vertex_list, &neigh->neighbor_main_addr,
-                     &main_addr, etx);
+        if (link->loss_link_quality2 >= MIN_LINK_QUALITY &&
+            link->neigh_link_quality2 >= MIN_LINK_QUALITY)
+          {
+            etx = 1.0 / (link->loss_link_quality2 * link->neigh_link_quality2);
+
+            add_edge(&vertex_tree, &neigh->neighbor_main_addr, &main_addr, etx);
           }
       }
+
+// we now rely solely on TC messages for routes to our two-hop neighbours
+
+#if 0
 
   // add edges between our neighbours and our two-hop neighbours
 
@@ -418,10 +473,12 @@ void olsr_calculate_lq_routing_table(void)
 
           etx = 1.0 / neigh_walker->second_hop_link_quality;
 
-          add_edge(&vertex_tree, &vertex_list, &neigh2->neighbor_2_addr,
+          add_edge(&vertex_tree, &neigh2->neighbor_2_addr,
                    &neigh->neighbor_main_addr, etx);
         }
       }
+
+#endif
 
   // add remaining edges
 
@@ -435,10 +492,14 @@ void olsr_calculate_lq_routing_table(void)
           {
             etx = 1.0 / (tcdst->link_quality * tcdst->inverse_link_quality);
 
-            add_edge(&vertex_tree, &vertex_list, &tcdst->T_dest_addr,
-                     &tcsrc->T_last_addr, etx);
+            add_edge(&vertex_tree, &tcdst->T_dest_addr, &tcsrc->T_last_addr,
+                     etx);
           }
       }
+
+  // create a sorted vertex list from the vertex tree
+
+  create_vertex_list(&vertex_tree, &vertex_list);
 
   // run Dijkstra's algorithm
 
@@ -531,7 +592,7 @@ void olsr_calculate_lq_routing_table(void)
 
         if (olsr_lookup_routing_table(&vert->addr) == NULL)
           olsr_insert_routing_table(&vert->addr, &link->neighbor_iface_addr,
-                                    inter, hops);
+                                    inter, hops, vert->path_etx);
 
         // route addition, case B - add routes to the remaining interfaces
         // of the destination node
@@ -540,7 +601,8 @@ void olsr_calculate_lq_routing_table(void)
              mid_walker = mid_walker->next_alias)
           if (olsr_lookup_routing_table(&mid_walker->alias) == NULL)
             olsr_insert_routing_table(&mid_walker->alias,
-                                      &link->neighbor_iface_addr, inter, hops);
+                                      &link->neighbor_iface_addr, inter, hops, 
+                                      vert->path_etx);
 
         // XXX - we used to use olsr_lookup_routing_table() only here, but
         //       this assumed that case A or case B had already happened for
@@ -554,10 +616,15 @@ void olsr_calculate_lq_routing_table(void)
 
         if (olsr_lookup_routing_table(&link->neighbor_iface_addr) == NULL)
           olsr_insert_routing_table(&link->neighbor_iface_addr,
-                                    &link->neighbor_iface_addr, inter, 1);
+                                    &link->neighbor_iface_addr, inter, 1,
+                                    vert->path_etx);
       }
     }
   }
+
+  // save the old HNA routing table
+
+  olsr_move_route_table(hna_routes, old_hna);
 
   // add HNA routes - the set of unprocessed network nodes contains
   // all reachable network nodes
@@ -600,7 +667,7 @@ void olsr_calculate_lq_routing_table(void)
     {
       // we already have a route via a previous (better) node
 
-      if (olsr_lookup_routing_table(&hna->A_network_addr) != NULL)
+      if (olsr_lookup_hna_routing_table(&hna->A_network_addr) != NULL)
         continue;
 
       // create route for the HNA
@@ -616,6 +683,7 @@ void olsr_calculate_lq_routing_table(void)
 
       COPY_IP(&hna_rt->rt_router, &gw_rt->rt_router);
       hna_rt->rt_metric = gw_rt->rt_metric;
+      hna_rt->rt_etx = gw_rt->rt_etx;
       hna_rt->rt_if = gw_rt->rt_if;
 
       // we're not a host route
@@ -624,7 +692,7 @@ void olsr_calculate_lq_routing_table(void)
 
       // find the correct list
 
-      head_rt = &routingtable[olsr_hashing(&hna->A_network_addr)];
+      head_rt = &hna_routes[olsr_hashing(&hna->A_network_addr)];
 
       // enqueue
 
@@ -643,8 +711,10 @@ void olsr_calculate_lq_routing_table(void)
   // move the route changes into the kernel
 
   olsr_update_kernel_routes();
+  olsr_update_kernel_hna_routes();
 
   // free the saved routing table
 
   olsr_free_routing_table(old_routes);
+  olsr_free_routing_table(old_hna);
 }

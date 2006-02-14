@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: link_set.h,v 1.25 2005/03/17 16:31:08 kattemat Exp $
+ * $Id: link_set.h,v 1.28 2005/10/23 20:58:14 tlopatic Exp $
  */
 
 
@@ -47,9 +47,9 @@
 #ifndef _LINK_SET_H
 #define _LINK_SET_H
 
-#ifndef OLSR_PLUGIN
 #include "packet.h"
-#endif
+
+#define MID_ALIAS_HACK_VTIME  10.0
 
 struct link_entry
 {
@@ -85,7 +85,7 @@ struct link_entry
   int lost_packets;
   int total_packets;
 
-  double loss_link_quality;
+  double loss_link_quality, loss_link_quality2;
   double loss_link_multiplier;
 
   int loss_window_size;
@@ -93,7 +93,7 @@ struct link_entry
 
   unsigned char loss_bitmap[16];
 
-  double neigh_link_quality;
+  double neigh_link_quality, neigh_link_quality2;
 
   double saved_loss_link_quality;
   double saved_neigh_link_quality;
@@ -101,7 +101,10 @@ struct link_entry
   struct link_entry *next;
 };
 
-#ifndef OLSR_PLUGIN
+
+extern struct link_entry *link_set;
+
+
 /* Function prototypes */
 
 struct link_entry *
@@ -140,6 +143,8 @@ olsr_update_packet_loss(union olsr_ip_addr *, union olsr_ip_addr *, olsr_u16_t);
 
 void 
 olsr_print_link_set(void);
-#endif
+
+void
+olsr_update_dijkstra_link_qualities(void);
 
 #endif

@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: process_package.c,v 1.33 2005/02/26 23:01:41 kattemat Exp $
+ * $Id: process_package.c,v 1.36 2005/11/29 18:38:40 kattemat Exp $
  */
 
 
@@ -128,8 +128,14 @@ olsr_hello_tap(struct hello_message *message, struct interface *in_if,
         {
           link->saved_neigh_link_quality = link->neigh_link_quality;
 
-          changes_neighborhood = OLSR_TRUE;
-          changes_topology = OLSR_TRUE;
+          if (olsr_cnf->lq_dlimit > 0)
+          {
+            changes_neighborhood = OLSR_TRUE;
+            changes_topology = OLSR_TRUE;
+          }
+
+          else
+            OLSR_PRINTF(3, "Skipping Dijkstra (2)\n")
 
           // create a new ANSN
 
@@ -200,6 +206,12 @@ olsr_process_received_hello(union olsr_message *m, struct interface *in_if, unio
   struct hello_message      message;
 
   hello_chgestruct(&message, m);
+
+  if(!olsr_validate_address(&message.source_addr))
+    {
+      olsr_free_hello_packet(&message);
+      return;
+    }
 
   olsr_hello_tap(&message, in_if, from_addr);
 }
@@ -317,6 +329,12 @@ olsr_process_received_tc(union olsr_message *m, struct interface *in_if, union o
 
   tc_chgestruct(&message, m, from_addr);
 
+  if(!olsr_validate_address(&message.source_addr))
+    {
+      olsr_free_tc_packet(&message);
+      return;
+    }
+
   olsr_tc_tap(&message, in_if, from_addr, m);
 }
 
@@ -341,6 +359,12 @@ olsr_process_received_mid(union olsr_message *m, struct interface *in_if, union 
   struct mid_message message;
 
   mid_chgestruct(&message, m);
+
+  if(!olsr_validate_address(&message.mid_origaddr))
+    {
+      olsr_free_mid_packet(&message);
+      return;
+    }
 
   if(!olsr_check_dup_table_proc(&message.mid_origaddr, 
 				message.mid_seqno))
@@ -417,6 +441,12 @@ olsr_process_received_hna(union olsr_message *m, struct interface *in_if, union 
 #endif
 
   hna_chgestruct(&message, m);
+
+  if(!olsr_validate_address(&message.originator))
+    {
+      olsr_free_hna_packet(&message);
+      return;
+    }
 
   if(!olsr_check_dup_table_proc(&message.originator, 
 				message.packet_seq_number))
@@ -564,6 +594,9 @@ olsr_process_message_neighbors(struct neighbor_entry *neighbor,
 
               link = get_best_link_to_neighbor(&neighbor->neighbor_main_addr);
 
+	      if(!link)
+		continue;
+
               // loop through the one-hop neighbors that see this
               // two hop neighbour
 
@@ -621,8 +654,14 @@ olsr_process_message_neighbors(struct neighbor_entry *neighbor,
                           walker->saved_path_link_quality =
                             walker->path_link_quality;
 
-                          changes_neighborhood = OLSR_TRUE;
-                          changes_topology = OLSR_TRUE;
+                          if (olsr_cnf->lq_dlimit > 0)
+                          {
+                            changes_neighborhood = OLSR_TRUE;
+                            changes_topology = OLSR_TRUE;
+                          }
+
+                          else
+                            OLSR_PRINTF(3, "Skipping Dijkstra (3)\n")
                         }
                     }
                 }

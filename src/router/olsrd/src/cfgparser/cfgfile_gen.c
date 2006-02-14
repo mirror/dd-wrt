@@ -36,13 +36,14 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: cfgfile_gen.c,v 1.1 2005/03/14 21:24:22 kattemat Exp $
+ * $Id: cfgfile_gen.c,v 1.2 2005/12/30 02:24:00 tlopatic Exp $
  */
 
 
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 

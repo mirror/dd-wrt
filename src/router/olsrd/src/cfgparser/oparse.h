@@ -1,7 +1,7 @@
-/* A Bison parser, made by GNU Bison 2.0.  */
+/* A Bison parser, made by GNU Bison 2.1.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
-   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004, 2005 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -15,8 +15,8 @@
 
    You should have received a copy of the GNU General Public License
    along with this program; if not, write to the Free Software
-   Foundation, Inc., 59 Temple Place - Suite 330,
-   Boston, MA 02111-1307, USA.  */
+   Foundation, Inc., 51 Franklin Street, Fifth Floor,
+   Boston, MA 02110-1301, USA.  */
 
 /* As a special exception, when this file is copied by Bison into a
    Bison output file, you may use that output file without restriction.
@@ -55,33 +55,36 @@
      TOK_TCREDUNDANCY = 281,
      TOK_MPRCOVERAGE = 282,
      TOK_LQ_LEVEL = 283,
-     TOK_LQ_WSIZE = 284,
-     TOK_LQ_MULT = 285,
-     TOK_CLEAR_SCREEN = 286,
-     TOK_PLNAME = 287,
-     TOK_PLPARAM = 288,
-     TOK_HOSTLABEL = 289,
-     TOK_NETLABEL = 290,
-     TOK_MAXIPC = 291,
-     TOK_IP4BROADCAST = 292,
-     TOK_IP6ADDRTYPE = 293,
-     TOK_IP6MULTISITE = 294,
-     TOK_IP6MULTIGLOBAL = 295,
-     TOK_IFWEIGHT = 296,
-     TOK_HELLOINT = 297,
-     TOK_HELLOVAL = 298,
-     TOK_TCINT = 299,
-     TOK_TCVAL = 300,
-     TOK_MIDINT = 301,
-     TOK_MIDVAL = 302,
-     TOK_HNAINT = 303,
-     TOK_HNAVAL = 304,
-     TOK_IP4_ADDR = 305,
-     TOK_IP6_ADDR = 306,
-     TOK_DEFAULT = 307,
-     TOK_COMMENT = 308
+     TOK_LQ_FISH = 284,
+     TOK_LQ_DLIMIT = 285,
+     TOK_LQ_WSIZE = 286,
+     TOK_LQ_MULT = 287,
+     TOK_CLEAR_SCREEN = 288,
+     TOK_PLNAME = 289,
+     TOK_PLPARAM = 290,
+     TOK_HOSTLABEL = 291,
+     TOK_NETLABEL = 292,
+     TOK_MAXIPC = 293,
+     TOK_IP4BROADCAST = 294,
+     TOK_IP6ADDRTYPE = 295,
+     TOK_IP6MULTISITE = 296,
+     TOK_IP6MULTIGLOBAL = 297,
+     TOK_IFWEIGHT = 298,
+     TOK_HELLOINT = 299,
+     TOK_HELLOVAL = 300,
+     TOK_TCINT = 301,
+     TOK_TCVAL = 302,
+     TOK_MIDINT = 303,
+     TOK_MIDVAL = 304,
+     TOK_HNAINT = 305,
+     TOK_HNAVAL = 306,
+     TOK_IP4_ADDR = 307,
+     TOK_IP6_ADDR = 308,
+     TOK_DEFAULT = 309,
+     TOK_COMMENT = 310
    };
 #endif
+/* Tokens.  */
 #define TOK_OPEN 258
 #define TOK_CLOSE 259
 #define TOK_SEMI 260
@@ -108,31 +111,33 @@
 #define TOK_TCREDUNDANCY 281
 #define TOK_MPRCOVERAGE 282
 #define TOK_LQ_LEVEL 283
-#define TOK_LQ_WSIZE 284
-#define TOK_LQ_MULT 285
-#define TOK_CLEAR_SCREEN 286
-#define TOK_PLNAME 287
-#define TOK_PLPARAM 288
-#define TOK_HOSTLABEL 289
-#define TOK_NETLABEL 290
-#define TOK_MAXIPC 291
-#define TOK_IP4BROADCAST 292
-#define TOK_IP6ADDRTYPE 293
-#define TOK_IP6MULTISITE 294
-#define TOK_IP6MULTIGLOBAL 295
-#define TOK_IFWEIGHT 296
-#define TOK_HELLOINT 297
-#define TOK_HELLOVAL 298
-#define TOK_TCINT 299
-#define TOK_TCVAL 300
-#define TOK_MIDINT 301
-#define TOK_MIDVAL 302
-#define TOK_HNAINT 303
-#define TOK_HNAVAL 304
-#define TOK_IP4_ADDR 305
-#define TOK_IP6_ADDR 306
-#define TOK_DEFAULT 307
-#define TOK_COMMENT 308
+#define TOK_LQ_FISH 284
+#define TOK_LQ_DLIMIT 285
+#define TOK_LQ_WSIZE 286
+#define TOK_LQ_MULT 287
+#define TOK_CLEAR_SCREEN 288
+#define TOK_PLNAME 289
+#define TOK_PLPARAM 290
+#define TOK_HOSTLABEL 291
+#define TOK_NETLABEL 292
+#define TOK_MAXIPC 293
+#define TOK_IP4BROADCAST 294
+#define TOK_IP6ADDRTYPE 295
+#define TOK_IP6MULTISITE 296
+#define TOK_IP6MULTIGLOBAL 297
+#define TOK_IFWEIGHT 298
+#define TOK_HELLOINT 299
+#define TOK_HELLOVAL 300
+#define TOK_TCINT 301
+#define TOK_TCVAL 302
+#define TOK_MIDINT 303
+#define TOK_MIDVAL 304
+#define TOK_HNAINT 305
+#define TOK_HNAVAL 306
+#define TOK_IP4_ADDR 307
+#define TOK_IP6_ADDR 308
+#define TOK_DEFAULT 309
+#define TOK_COMMENT 310
 
 
 

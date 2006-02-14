@@ -36,7 +36,7 @@
 ;  to the project. For more information see the website or contact
 ;  the copyright holders.
 ;
-;  $Id: installer.nsi,v 1.13 2005/03/31 18:20:02 tlopatic Exp $
+;  $Id: installer.nsi,v 1.14 2005/12/29 21:26:31 tlopatic Exp $
 ;
 
 Name olsr.org
@@ -55,7 +55,7 @@ UninstPage uninstConfirm
 UninstPage instfiles
 
 Function .onInit
-        MessageBox MB_YESNO "This will install olsr.org 0.4.9 on your computer. Continue?" IDYES NoAbort
+        MessageBox MB_YESNO "This will install olsr.org 0.4.10 on your computer. Continue?" IDYES NoAbort
         Abort
 NoAbort:
 FunctionEnd
@@ -72,9 +72,12 @@ Section "Program Files"
         File ..\Main\Release\Switch.exe
         File ..\Shim\Release\Shim.exe
         File ..\..\..\olsrd.exe
+        File ..\..\..\olsr_switch.exe
         File ..\..\..\src\cfgparser\olsrd_cfgparser.dll
         File /oname=README.txt ..\..\..\README
         File /oname=README-LQ.html ..\..\..\README-Link-Quality.html
+        File /oname=README-Fish-Eye.txt ..\..\..\README-Link-Quality-Fish-Eye.txt
+        File ..\..\..\README-Olsr-Switch.html
         File linux-manual.txt
         File /oname=olsrd.conf.rfc ..\..\..\files\olsrd.conf.win32.rfc
         File /oname=olsrd.conf.lq ..\..\..\files\olsrd.conf.win32.lq
@@ -157,9 +160,12 @@ Section "Uninstall"
         Delete $INSTDIR\Switch.exe
         Delete $INSTDIR\Shim.exe
         Delete $INSTDIR\olsrd.exe
+        Delete $INSTDIR\olsr_switch.exe
 	Delete $INSTDIR\olsrd_cfgparser.dll
         Delete $INSTDIR\README.txt
         Delete $INSTDIR\README-LQ.html
+        Delete $INSTDIR\README-Fish-Eye.txt
+        Delete $INSTDIR\README-Olsr-Switch.html
         Delete $INSTDIR\linux-manual.txt
         Delete $INSTDIR\Default.olsr
         Delete $INSTDIR\RFC-Default.olsr

@@ -38,7 +38,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: oparse.y,v 1.26 2005/02/25 16:03:19 kattemat Exp $
+ * $Id: oparse.y,v 1.28 2005/11/17 04:25:44 tlopatic Exp $
  */
 
 
@@ -148,6 +148,8 @@ static int lq_mult_helper(YYSTYPE ip_addr_arg, YYSTYPE mult_arg)
 %token TOK_TCREDUNDANCY
 %token TOK_MPRCOVERAGE
 %token TOK_LQ_LEVEL
+%token TOK_LQ_FISH
+%token TOK_LQ_DLIMIT
 %token TOK_LQ_WSIZE
 %token TOK_LQ_MULT
 %token TOK_CLEAR_SCREEN
@@ -198,6 +200,8 @@ stmt:       idebug
           | atcredundancy
           | amprcoverage
           | alq_level
+          | alq_fish
+          | alq_dlimit
           | alq_wsize
           | bclear_screen
           | vcomment
@@ -891,6 +895,23 @@ alq_level: TOK_LQ_LEVEL TOK_INTEGER
 {
   if(PARSER_DEBUG) printf("Link quality level %d\n", $2->integer);
   cnf->lq_level = $2->integer;
+  free($2);
+}
+;
+
+alq_fish: TOK_LQ_FISH TOK_INTEGER
+{
+  if(PARSER_DEBUG) printf("Link quality fish eye %d\n", $2->integer);
+  cnf->lq_fish = $2->integer;
+  free($2);
+}
+;
+
+alq_dlimit: TOK_LQ_DLIMIT TOK_INTEGER TOK_FLOAT
+{
+  if(PARSER_DEBUG) printf("Link quality dijkstra limit %d, %0.2f\n", $2->integer, $3->floating);
+  cnf->lq_dlimit = $2->integer;
+  cnf->lq_dinter = $3->floating;
   free($2);
 }
 ;
