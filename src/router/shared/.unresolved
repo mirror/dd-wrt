@@ -117,6 +117,7 @@
          U endmntent
          U endprotoent
          U endpwent
+         U endusershell
          U endutent
          U environ
          U errno
@@ -158,6 +159,7 @@
          U fputs
          U fread
          U free
+         U freeaddrinfo
          U freopen
          U fscanf
          U fseek
@@ -166,6 +168,7 @@
          U ftell
          U ftruncate
          U fwrite
+         U gai_strerror
          U getRouterBrand
          U get_broadcast
          U get_complete_lan_ip
@@ -178,6 +181,7 @@
          U get_wan_face
          U get_wds_wsec
          U get_wl_assoc_mac
+         U getaddrinfo
          U getassoclist
          U getcwd
          U getdomainname
@@ -197,6 +201,7 @@
          U getline
          U getlogin
          U getmntent
+         U getnameinfo
          U getnetbyaddr
          U getnetbyname
          U getopt
@@ -222,8 +227,10 @@
          U getservbyport
          U getsockname
          U getsockopt
+         U getspnam
          U gettimeofday
          U getuid
+         U getusershell
          U getutent
          U gmtime
          U grantpt
@@ -426,6 +433,7 @@
          U setsockopt
          U settimeofday
          U setuid
+         U setusershell
          U setutent
          U setvbuf
          U shmat
@@ -532,6 +540,7 @@
          U updwtmp
          U usleep
          U utime
+         U utimes
          U utmpname
          U vasprintf
          U vdprintf
@@ -575,6 +584,7 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/chilli:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/cron:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/dumpleases:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/ebtables:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/epi_ttcp:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/et:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/ez-ipupdate:
@@ -593,8 +603,7 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/pptpctrl:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/pptpd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/radius-client:
-/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/shatc:
-/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/shatd:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/robocfg:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/smbmnt:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/smbmount:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/snmpd:
