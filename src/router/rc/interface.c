@@ -182,7 +182,7 @@ config_vlan (void)
   char tmp[200];
 
   /* set vlan i/f name to style "vlan<ID>" */
-  
+
   eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");
 
   /* create vlan interfaces */

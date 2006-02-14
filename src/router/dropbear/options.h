@@ -33,7 +33,7 @@
  * Both of these flags can be defined at once, don't compile without at least
  * one of them. */
 #define NON_INETD_MODE
-#define INETD_MODE
+//#define INETD_MODE
 
 /* Setting this disables the fast exptmod bignum code. It saves ~5kB, but is
  * perhaps 20% slower for pubkey operations (it is probably worth experimenting
@@ -107,7 +107,7 @@ etc) slower (perhaps by 50%). Recommended for most small systems. */
 /* #define DSS_PROTOK */
 
 /* Whether to do reverse DNS lookups. */
-#define DO_HOST_LOOKUP
+//#define DO_HOST_LOOKUP
 
 /* Whether to print the message of the day (MOTD). This doesn't add much code
  * size */

@@ -252,6 +252,7 @@ extern int wland_main(int argc, char **argv);
 
 extern void load_vpn_modules(void);
 extern void unload_vpn_modules(void);
+extern void depend_vpn_modules(void);
 
 extern int zebra_ospf_init(void);
 extern int zebra_ripd_init(void);
