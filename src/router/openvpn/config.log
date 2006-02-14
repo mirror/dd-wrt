@@ -69,7 +69,7 @@ configure:2047: result: mawk
 configure:2057: checking whether make sets $(MAKE)
 configure:2077: result: yes
 configure:2156: checking for mipsel-linux-strip
-configure:2182: result: /home/backup/mikrotik/toolchain/bin/mipsel-linux-uclibc-strip
+configure:2182: result: mipsel-linux-uclibc-strip
 configure:2323: checking for mipsel-linux-gcc
 configure:2349: result: mipsel-linux-uclibc-gcc
 configure:2631: checking for C compiler version
@@ -2733,9 +2733,9 @@ configure:7855: $? = 0
 configure:7867: result: yes
 configure:7779: checking for chsize
 configure:7836: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c  >&5
-/tmp/ccO2D5ed.o: In function `main':
+/tmp/ccf7UaTd.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `chsize'
-/tmp/ccO2D5ed.o:(.data.rel+0x0): undefined reference to `chsize'
+/tmp/ccf7UaTd.o:(.data.rel+0x0): undefined reference to `chsize'
 collect2: ld returned 1 exit status
 configure:7842: $? = 1
 configure: failed program was:
@@ -3747,9 +3747,9 @@ configure:10147: checking for openssl/engine.h
 configure:10154: result: no
 configure:10171: checking for ENGINE_load_builtin_engines
 configure:10228: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccToAE7l.o: In function `main':
+/tmp/ccpQhWUe.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_load_builtin_engines'
-/tmp/ccToAE7l.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
+/tmp/ccpQhWUe.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
 collect2: ld returned 1 exit status
 configure:10234: $? = 1
 configure: failed program was:
@@ -3932,9 +3932,9 @@ configure: failed program was:
 configure:10259: result: no
 configure:10273: checking for ENGINE_register_all_complete
 configure:10330: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccNNCJJx.o: In function `main':
+/tmp/cclQEYxt.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_register_all_complete'
-/tmp/ccNNCJJx.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
+/tmp/cclQEYxt.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
 collect2: ld returned 1 exit status
 configure:10336: $? = 1
 configure: failed program was:
@@ -4117,9 +4117,9 @@ configure: failed program was:
 configure:10361: result: no
 configure:10375: checking for ENGINE_cleanup
 configure:10432: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccl9aHuJ.o: In function `main':
+/tmp/ccD3ChIK.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_cleanup'
-/tmp/ccl9aHuJ.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
+/tmp/ccD3ChIK.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
 collect2: ld returned 1 exit status
 configure:10438: $? = 1
 configure: failed program was:
@@ -4499,7 +4499,7 @@ ac_cv_path_install='/usr/bin/install -c'
 ac_cv_prog_AWK=mawk
 ac_cv_prog_CC=mipsel-linux-uclibc-gcc
 ac_cv_prog_CPP='mipsel-linux-uclibc-gcc -E'
-ac_cv_prog_STRIP=/home/backup/mikrotik/toolchain/bin/mipsel-linux-uclibc-strip
+ac_cv_prog_STRIP=mipsel-linux-uclibc-strip
 ac_cv_prog_cc_g=yes
 ac_cv_prog_cc_stdc=
 ac_cv_prog_egrep='grep -E'
@@ -4585,7 +4585,7 @@ PTHREAD_LIBS=''
 ROUTE='/sbin/route'
 SET_MAKE=''
 SHELL='/bin/sh'
-STRIP='/home/backup/mikrotik/toolchain/bin/mipsel-linux-uclibc-strip'
+STRIP='mipsel-linux-uclibc-strip'
 VERSION='2.0.5'
 ac_ct_CC=''
 ac_ct_STRIP=''
