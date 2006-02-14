@@ -1,5 +1,71 @@
 This file states changes as of version 0.2.4:
-$Id: CHANGELOG,v 1.41 2005/04/01 22:14:27 kattemat Exp $
+$Id: CHANGELOG,v 1.54 2005/12/21 14:58:06 kattemat Exp $
+
+0.4.10 --------------------------------------------------------------------
+
+OLSR NETWORK SIMULATOR
+
+An application called olsr_switch(sorry for the nameclash with the win32 
+GUI) has been added. If olsrd is ran using the -hint option it can now
+connect to olsr_switch and be part of a virtual network. This means
+that multiple instances can be ran at the same host! The olsr_switch
+application allows the user to define link variables on all viritual
+links in the network, creating all possible topologies. Read more in 
+the readme file.
+
+EXPERIMENTAL FISH EYE ALGORITHM
+
+An experimental algorithm for TTL settings on TC messages has
+been added. Read more in the corresponding README file.
+
+OPENBSD SUPPORT
+
+olsrd now also compiles on OpenBSD systems. Thanks a lot to Holger
+Mauermann for the patches! 
+
+BUILDSYSTEM REWRITE
+
+Bruno has rewritten the make system. OS detection is now done
+automagically and the general design is much improved.
+
+IP ADDRESS VALIDATION
+
+Olsrd now maintains a set of IP addresses that is considered
+invalid. Checks against this set is done on all received
+OLSR packets announced originator addresses. The dataset can
+be updated dynamically.
+
+PLUGIN INTERFACE
+
+Updated interface version to 3 and added more noticeable warning 
+for version missmatch.
+
+MATH LIB DEPENDENCY
+
+The dependency on the math lib came from the use of pow(3) in the
+mantissa/exponent calculation. The calls to pow in this long forgotten 
+code, was very unnessecarry. The pow calls are replaced with bitwise 
+shifts and -lm is no longer needed.
+
+ICMP REDIRECTS ON LINUX
+
+On Linux systems "0" is now also written to the all/send_redirects
+procfile and not only the pr. interface ones. Hopefully this resolves
+problems reported with systems still sending ICMP redirects.
+
+BUGFIXES
+
+- Fixed init of IPv6 addrtype variable. It used to be uninitialized,
+  causing it to default to site-local and have some weird side-effects.
+- Fixed crash when changing IPv6 address at run-time
+- Fixed a bug that prevented setting willingness 0 in the configfile
+- Fixed bad handling of missing command line arguments
+- Did various updates to prevent assertion when a neighbor
+  has changed IP and sends HELLO before its olsrd precess has detected
+  the change.
+- Fixed return value check on times(2) calls in the scheduler
+- Fixed bug(s) that could cause crash when an interface was brought
+  down while olsrd was running.
 
 0.4.9 ---------------------------------------------------------------------
 

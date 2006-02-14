@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: socket_parser.c,v 1.22 2005/02/27 18:39:43 kattemat Exp $
+ * $Id: socket_parser.c,v 1.23 2005/05/29 12:47:45 br1 Exp $
  */
 
 #include <unistd.h>
@@ -55,6 +55,8 @@
 #define strerror(x) StrError(x)
 #endif
 
+
+struct olsr_socket_entry *olsr_socket_entries;
 
 static int hfd = 0;
 

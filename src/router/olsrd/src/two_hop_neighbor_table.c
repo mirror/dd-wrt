@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: two_hop_neighbor_table.c,v 1.15 2005/02/26 23:01:41 kattemat Exp $
+ * $Id: two_hop_neighbor_table.c,v 1.16 2005/05/29 12:47:46 br1 Exp $
  */
 
 
@@ -45,6 +45,9 @@
 #include "two_hop_neighbor_table.h"
 #include "mid_set.h"
 #include "neighbor_table.h"
+
+
+struct neighbor_2_entry two_hop_neighbortable[HASHSIZE];
 
 
 /**
@@ -233,6 +236,7 @@ olsr_lookup_two_hop_neighbor_table_mid(union olsr_ip_addr *dest)
 
 
 
+#ifndef SVEN_OLA
 /**
  *Print the two hop neighbor table to STDOUT.
  *
@@ -285,3 +289,4 @@ olsr_print_two_hop_neighbor_table()
 	}
     }
 }
+#endif

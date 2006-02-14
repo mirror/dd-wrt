@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_packet.c,v 1.15 2005/03/09 23:06:30 tlopatic Exp $
+ * $Id: lq_packet.c,v 1.19 2005/11/17 01:58:51 tlopatic Exp $
  */
 
 #include "olsr_protocol.h"
@@ -54,6 +54,8 @@
 #include "hysteresis.h"
 #include "olsr.h"
 
+olsr_bool lq_tc_pending = OLSR_FALSE;
+
 static unsigned char msg_buffer[MAXMESSAGESIZE - OLSR_HEADERSIZE];
 
 static void
@@ -65,7 +67,7 @@ create_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   // initialize the static fields
 
   lq_hello->comm.type = LQ_HELLO_MESSAGE;
-  lq_hello->comm.vtime = me_to_double(outif->valtimes.hello);
+  lq_hello->comm.vtime = ME_TO_DOUBLE(outif->valtimes.hello);
   lq_hello->comm.size = 0;
 
   COPY_IP(&lq_hello->comm.orig, &main_addr);
@@ -74,7 +76,7 @@ create_lq_hello(struct lq_hello_message *lq_hello, struct interface *outif)
   lq_hello->comm.hops = 0;
   lq_hello->comm.seqno = get_msg_seqno();
 
-  lq_hello->htime = me_to_double(outif->hello_etime);
+  lq_hello->htime = outif->hello_etime;
   lq_hello->will = olsr_cnf->willingness;
 
   lq_hello->neigh = NULL;
@@ -147,16 +149,35 @@ create_lq_tc(struct lq_tc_message *lq_tc, struct interface *outif)
   int i;
   struct neighbor_entry *walker;
   struct link_entry *link;
+  static int ttl_list[] = { MAX_TTL, 3, 2, 1, 2, 1, 1, 3, 2, 1, 2, 1, 1, 0 };
+  static int ttl_index = 0;
+
+  // remember that we have generated an LQ TC message; this is
+  // checked in net_output()
+
+  lq_tc_pending = OLSR_TRUE;
 
   // initialize the static fields
 
   lq_tc->comm.type = LQ_TC_MESSAGE;
-  lq_tc->comm.vtime = me_to_double(outif->valtimes.tc);
+  lq_tc->comm.vtime = ME_TO_DOUBLE(outif->valtimes.tc);
   lq_tc->comm.size = 0;
 
   COPY_IP(&lq_tc->comm.orig, &main_addr);
 
-  lq_tc->comm.ttl = MAX_TTL;
+  if (olsr_cnf->lq_fish > 0)
+  {
+    if (ttl_list[ttl_index] == 0)
+      ttl_index = 0;
+
+    lq_tc->comm.ttl = ttl_list[ttl_index++];
+
+    OLSR_PRINTF(3, "Creating LQ TC with TTL %d.\n", lq_tc->comm.ttl);
+  }
+
+  else
+    lq_tc->comm.ttl = MAX_TTL;
+
   lq_tc->comm.hops = 0;
   lq_tc->comm.seqno = get_msg_seqno();
 
@@ -552,7 +573,7 @@ static void *deserialize_common(struct olsr_common *comm, void *ser)
       olsr_head_v4 = (struct olsr_header_v4 *)ser;
 
       comm->type = olsr_head_v4->type;
-      comm->vtime = me_to_double(olsr_head_v4->vtime);
+      comm->vtime = ME_TO_DOUBLE(olsr_head_v4->vtime);
       comm->size = ntohs(olsr_head_v4->size);
 
       COPY_IP(&comm->orig, &olsr_head_v4->orig);
@@ -569,7 +590,7 @@ static void *deserialize_common(struct olsr_common *comm, void *ser)
   olsr_head_v6 = (struct olsr_header_v6 *)ser;
 
   comm->type = olsr_head_v6->type;
-  comm->vtime = me_to_double(olsr_head_v6->vtime);
+  comm->vtime = ME_TO_DOUBLE(olsr_head_v6->vtime);
   comm->size = ntohs(olsr_head_v6->size);
 
   COPY_IP(&comm->orig, &olsr_head_v6->orig);
@@ -602,7 +623,7 @@ deserialize_lq_hello(struct lq_hello_message *lq_hello, void *ser)
 
   limit = ((unsigned char *)ser) + lq_hello->comm.size;
 
-  lq_hello->htime = me_to_double(head->htime);
+  lq_hello->htime = ME_TO_DOUBLE(head->htime);
   lq_hello->will = head->will;
 
   lq_hello->neigh = NULL;
@@ -773,6 +794,12 @@ process_lq_hello(struct lq_hello_message *lq_hello, struct interface *inif,
   struct lq_hello_neighbor *neigh;
   struct hello_neighbor *new_neigh;
 
+  // SVEN_OLA: Check the message source addr
+  if(!olsr_validate_address(&lq_hello->comm.orig))
+    {
+      return;
+    }
+
   // XXX - translation is ugly; everybody should use lq_hello_message :-)
 
   // move the static fields from LQ_HELLO to HELLO
@@ -793,6 +820,9 @@ process_lq_hello(struct lq_hello_message *lq_hello, struct interface *inif,
 
   for (neigh = lq_hello->neigh; neigh != NULL; neigh = neigh->next)
     {
+      // SVEN_OLA: Also check the neighbours
+      if(!olsr_validate_address(&neigh->addr)) continue;
+      
       // allocate HELLO neighbour
 
       new_neigh = olsr_malloc(sizeof (struct hello_neighbor),
@@ -824,6 +854,12 @@ process_lq_tc(struct lq_tc_message *lq_tc, struct interface *inif,
   struct lq_tc_neighbor *neigh;
   struct tc_mpr_addr *new_neigh;
 
+  // SVEN_OLA: Check the message source addr
+  if(!olsr_validate_address(&lq_tc->from)||!olsr_validate_address(&lq_tc->comm.orig))
+    {
+      return;
+    }
+
   // XXX - translation is ugly; everybody should use lq_tc_message :-)
 
   // move the static fields from LQ_TC to TC
@@ -844,6 +880,9 @@ process_lq_tc(struct lq_tc_message *lq_tc, struct interface *inif,
 
   for (neigh = lq_tc->neigh; neigh != NULL; neigh = neigh->next)
     {
+      // SVEN_OLA: Also check the neighbours
+      if(!olsr_validate_address(&neigh->main)) continue;
+      
       // allocate TC neighbour
 
       new_neigh = olsr_malloc(sizeof (struct tc_mpr_addr),

@@ -33,7 +33,7 @@
  * ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE 
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: olsrd_secure.c,v 1.12 2005/03/10 19:57:48 kattemat Exp $
+ * $Id: olsrd_secure.c,v 1.17 2005/11/19 08:37:23 kattemat Exp $
  */
 
 
@@ -42,6 +42,7 @@
  */
 
 #include "olsrd_secure.h"
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -51,6 +52,12 @@
 #include <unistd.h>
 #include <errno.h>
 #include <signal.h>
+
+#include "defs.h"
+#include "olsr.h"
+#include "socket_parser.h"
+#include "parser.h"
+#include "scheduler.h"
 
 #ifdef USE_OPENSSL
 /* OpenSSL stuff */
@@ -64,16 +71,13 @@
 #include "md5.h"
 
 static void
-MD5_checksum(char *, olsr_u16_t, char *);
-
-static void
 MD5_checksum(char *data, olsr_u16_t data_len, char *hashbuf)
 {
   MD5_CTX context;
 
   MD5Init(&context);
-  MD5Update(&context, data, data_len);
-  MD5Final(hashbuf, &context);
+  MD5Update(&context, (unsigned char *)data, data_len);
+  MD5Final((unsigned char *)hashbuf, &context);
 }
 
 #define CHECKSUM MD5_checksum
@@ -103,34 +107,6 @@ MD5_checksum(char *data, olsr_u16_t data_len, char *hashbuf)
 #endif
 
 
-#ifdef WIN32
-
-static char *inet_ntop4(const unsigned char *src, char *dst, int size)
-{
-  static const char fmt[] = "%u.%u.%u.%u";
-  char tmp[sizeof "255.255.255.255"];
-
-  if (sprintf(tmp, fmt, src[0], src[1], src[2], src[3]) > size)
-    return (NULL);
-
-  return strcpy(dst, tmp);
-}
-
-char *inet_ntop(int af, void *src, char *dst, int size)
-{
-  switch (af)
-  {
-  case AF_INET:
-    return (inet_ntop4(src, dst, size));
-
-  default:
-    return (NULL);
-  }
-}
-
-#endif
-
-
 /**
  *Do initialization here
  *
@@ -139,7 +115,7 @@ char *inet_ntop(int af, void *src, char *dst, int size)
  */
 
 int
-olsr_plugin_init()
+secure_plugin_init()
 {
   struct interface *ints;
   int i;
@@ -176,7 +152,7 @@ olsr_plugin_init()
   add_ifchgf(&ifchange);
 
   /* Hijack OLSR socket parser functions */
-  ints = ifs;
+  ints = ifnet;
   while(ints)
     {
       olsr_printf(1, "[ENC]Hijacking %s socket %d\n", ints->int_name, ints->olsr_socket);
@@ -185,7 +161,7 @@ olsr_plugin_init()
       add_olsr_socket(ints->olsr_socket, &packet_parser);
      
       /* Reducing maxmessagesize */
-      net_reserve_bufspace(ints, sizeof(struct olsrmsg));
+      net_reserve_bufspace(ints, sizeof(struct s_olsrmsg));
 
       ints = ints->int_next;
     }
@@ -195,6 +171,7 @@ olsr_plugin_init()
 
   return 1;
 }
+
 
 int
 plugin_ipc_init()
@@ -207,26 +184,9 @@ plugin_ipc_init()
  * destructor - called at unload
  */
 void
-olsr_plugin_exit()
+secure_plugin_exit()
 {
 }
-
-
-
-/* Mulitpurpose funtion */
-int
-plugin_io(int cmd, void *data, size_t size)
-{
-
-  switch(cmd)
-    {
-    default:
-      return 0;
-    }
-  
-  return 1;
-}
-
 
 
 /**
@@ -259,7 +219,7 @@ ifchange(struct interface *ifn, int action)
       remove_olsr_socket(ifn->olsr_socket, olsr_input);
       add_olsr_socket(ifn->olsr_socket, &packet_parser);
       /* Reducing maxmessagesize */
-      net_reserve_bufspace(ifn, sizeof(struct olsrmsg));
+      net_reserve_bufspace(ifn, sizeof(struct s_olsrmsg));
       break;
 
     case(IFCHG_IF_REMOVE):
@@ -285,7 +245,7 @@ packet_parser(int fd)
 {
   /* sockaddr_in6 is bigger than sockaddr !!!! */
   struct sockaddr_storage from;
-  size_t fromlen;
+  socklen_t fromlen;
   int cc;
   union olsr_ip_addr from_addr;
   union
@@ -310,7 +270,7 @@ packet_parser(int fd)
 	  break;
 	}
 
-      if(ipversion == AF_INET)
+      if(olsr_cnf->ip_version == AF_INET)
 	{
 	  /* IPv4 sender address */
 	  memcpy(&from_addr, &((struct sockaddr_in *)&from)->sin_addr.s_addr, ipsize);
@@ -372,9 +332,9 @@ packet_parser(int fd)
       //olsr_printf(1, "Recieved a packet from %s\n", olsr_ip_to_string((union olsr_ip_addr *)&((struct sockaddr_in *)&from)->sin_addr.s_addr));
 
       //printf("\nCC: %d FROMLEN: %d\n\n", cc, fromlen);
-      if ((ipversion == AF_INET) && (fromlen != sizeof (struct sockaddr_in)))
+      if ((olsr_cnf->ip_version == AF_INET) && (fromlen != sizeof (struct sockaddr_in)))
 	break;
-      else if ((ipversion == AF_INET6) && (fromlen != sizeof (struct sockaddr_in6)))
+      else if ((olsr_cnf->ip_version == AF_INET6) && (fromlen != sizeof (struct sockaddr_in6)))
 	break;
 
 
@@ -437,7 +397,7 @@ check_auth(char *pck, int *size)
 int
 add_signature(char *pck, int *size)
 {
-  struct olsrmsg *msg;
+  struct s_olsrmsg *msg;
 #ifdef DEBUG
   int i, j;
   char *sigmsg;                                                                                        
@@ -446,15 +406,15 @@ add_signature(char *pck, int *size)
   olsr_printf(2, "[ENC]Adding signature for packet size %d\n", *size);
   fflush(stdout);
   
-  msg = (struct olsrmsg *)&pck[*size];
+  msg = (struct s_olsrmsg *)&pck[*size];
   /* Update size */
-  ((struct olsr*)pck)->olsr_packlen = htons(*size + sizeof(struct olsrmsg));
+  ((struct olsr*)pck)->olsr_packlen = htons(*size + sizeof(struct s_olsrmsg));
   
   /* Fill packet header */
   msg->olsr_msgtype = MESSAGE_TYPE;
   msg->olsr_vtime = 0;
-  msg->olsr_msgsize = htons(sizeof(struct olsrmsg));
-  memcpy(&msg->originator, main_addr, ipsize);
+  msg->olsr_msgsize = htons(sizeof(struct s_olsrmsg));
+  memcpy(&msg->originator, &main_addr, ipsize);
   msg->ttl = 1;
   msg->hopcnt = 0;
   msg->seqno = htons(get_msg_seqno());
@@ -465,11 +425,11 @@ add_signature(char *pck, int *size)
   memset(&msg->sig.reserved, 0, 2);
   
   /* Add timestamp */
-  msg->sig.timestamp = htonl(now->tv_sec);
-  olsr_printf(3, "[ENC]timestamp: %d\n", now->tv_sec);
+  msg->sig.timestamp = htonl(now.tv_sec);
+  olsr_printf(3, "[ENC]timestamp: %d\n", now.tv_sec);
   
   /* Set the new size */
-  *size = *size + sizeof(struct olsrmsg);
+  *size = *size + sizeof(struct s_olsrmsg);
   
   /* Create packet + key cache */
   /* First the OLSR packet + signature message - digest */
@@ -487,7 +447,7 @@ add_signature(char *pck, int *size)
   j = 0;
   sigmsg = (char *)msg;
 
-  for(i = 0; i < sizeof(struct olsrmsg); i++)
+  for(i = 0; i < sizeof(struct s_olsrmsg); i++)
     {
       olsr_printf(1, "  %3i", (u_char) sigmsg[i]);
       j++;
@@ -511,7 +471,7 @@ validate_packet(char *pck, int *size)
 {
   int packetsize;
   char sha1_hash[SIGNATURE_SIZE];
-  struct olsrmsg *sig;
+  struct s_olsrmsg *sig;
   time_t rec_time;
 
 #ifdef DEBUG
@@ -520,12 +480,12 @@ validate_packet(char *pck, int *size)
 #endif
 
   /* Find size - signature message */
-  packetsize = *size - sizeof(struct olsrmsg);
+  packetsize = *size - sizeof(struct s_olsrmsg);
 
   if(packetsize < 4)
     return 0;
 
-  sig = (struct olsrmsg *)&pck[packetsize];
+  sig = (struct s_olsrmsg *)&pck[packetsize];
 
   //olsr_printf(1, "Size: %d\n", packetsize);
 
@@ -535,7 +495,7 @@ validate_packet(char *pck, int *size)
   j = 0;
   sigmsg = (char *)sig;
 
-  for(i = 0; i < sizeof(struct olsrmsg); i++)
+  for(i = 0; i < sizeof(struct s_olsrmsg); i++)
     {
       olsr_printf(1, "  %3i", (u_char) sigmsg[i]);
       j++;
@@ -550,7 +510,7 @@ validate_packet(char *pck, int *size)
   /* Sanity check first */
   if((sig->olsr_msgtype != MESSAGE_TYPE) || 
      (sig->olsr_vtime) ||
-     (sig->olsr_msgsize != ntohs(sizeof(struct olsrmsg))) ||
+     (sig->olsr_msgsize != ntohs(sizeof(struct s_olsrmsg))) ||
      (sig->ttl != 1) ||
      (sig->hopcnt != 0))
     {
@@ -630,7 +590,7 @@ validate_packet(char *pck, int *size)
       return 0;
     }
 
-  olsr_printf(1, "[ENC]Received timestamp %d diff: %d\n", rec_time, now->tv_sec - rec_time);
+  olsr_printf(1, "[ENC]Received timestamp %d diff: %d\n", rec_time, now.tv_sec - rec_time);
 
   /* Remove signature message */
   *size = packetsize;
@@ -661,7 +621,7 @@ check_timestamp(union olsr_ip_addr *originator, time_t tstamp)
       return 0;
     }
 
-  diff = entry->diff - (now->tv_sec - tstamp);
+  diff = entry->diff - (now.tv_sec - tstamp);
 
   olsr_printf(3, "[ENC]Timestamp slack: %d\n", diff);
 
@@ -672,13 +632,14 @@ check_timestamp(union olsr_ip_addr *originator, time_t tstamp)
     }
 
   /* ok - update diff */
-  entry->diff = ((now->tv_sec - tstamp) + entry->diff) ?
-    ((now->tv_sec - tstamp) + entry->diff) / 2 : 0;
+  entry->diff = ((now.tv_sec - tstamp) + entry->diff) ?
+    ((now.tv_sec - tstamp) + entry->diff) / 2 : 0;
 
   olsr_printf(3, "[ENC]Diff set to : %d\n", entry->diff);
 
   /* update validtime */
-  olsr_get_timestamp((olsr_u32_t) TIMESTAMP_HOLD_TIME*1000, &entry->valtime);
+
+  entry->valtime = GET_TIMESTAMP(TIMESTAMP_HOLD_TIME * 1000);
 
   return 1;
 }
@@ -711,7 +672,7 @@ send_challenge(union olsr_ip_addr *new_host)
   cmsg.olsr_msgtype = TYPE_CHALLENGE;
   cmsg.olsr_vtime = 0;
   cmsg.olsr_msgsize = htons(sizeof(struct challengemsg));
-  memcpy(&cmsg.originator, main_addr, ipsize);
+  memcpy(&cmsg.originator, &main_addr, ipsize);
   cmsg.ttl = 1;
   cmsg.hopcnt = 0;
   cmsg.seqno = htons(get_msg_seqno());
@@ -753,8 +714,8 @@ send_challenge(union olsr_ip_addr *new_host)
   memcpy(&entry->addr, new_host, ipsize);
 
   /* update validtime - not validated */
-  olsr_get_timestamp((olsr_u32_t) EXCHANGE_HOLD_TIME*1000, &entry->conftime);
-  
+  entry->conftime = GET_TIMESTAMP(EXCHANGE_HOLD_TIME * 1000);
+
   hash = olsr_hashing(new_host);
   
   /* Queue */
@@ -847,10 +808,10 @@ parse_cres(char *in_msg)
 
   entry->challenge = 0;
   entry->validated = 1;
-  entry->diff = now->tv_sec - msg->timestamp;
+  entry->diff = now.tv_sec - msg->timestamp;
 
   /* update validtime - validated entry */
-  olsr_get_timestamp((olsr_u32_t) TIMESTAMP_HOLD_TIME*1000, &entry->valtime);
+  entry->valtime = GET_TIMESTAMP(TIMESTAMP_HOLD_TIME * 1000);
 
   olsr_printf(1, "[ENC]%s registered with diff %d!\n",
 	      olsr_ip_to_string((union olsr_ip_addr *)&msg->originator),
@@ -942,10 +903,10 @@ parse_rres(char *in_msg)
 
   entry->challenge = 0;
   entry->validated = 1;
-  entry->diff = now->tv_sec - msg->timestamp;
+  entry->diff = now.tv_sec - msg->timestamp;
 
   /* update validtime - validated entry */
-  olsr_get_timestamp((olsr_u32_t) TIMESTAMP_HOLD_TIME*1000, &entry->valtime);
+  entry->valtime = GET_TIMESTAMP(TIMESTAMP_HOLD_TIME * 1000);
 
   olsr_printf(1, "[ENC]%s registered with diff %d!\n",
 	      olsr_ip_to_string((union olsr_ip_addr *)&msg->originator),
@@ -1031,8 +992,7 @@ parse_challenge(char *in_msg)
   entry->validated = 0;
 
   /* update validtime - not validated */
-  olsr_get_timestamp((olsr_u32_t) EXCHANGE_HOLD_TIME*1000, &entry->conftime);
-
+  entry->conftime = GET_TIMESTAMP(EXCHANGE_HOLD_TIME * 1000);
 
   /* Build and send response */
 
@@ -1072,13 +1032,13 @@ send_cres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in, 
   crmsg.olsr_msgtype = TYPE_CRESPONSE;
   crmsg.olsr_vtime = 0;
   crmsg.olsr_msgsize = htons(sizeof(struct c_respmsg));
-  memcpy(&crmsg.originator, main_addr, ipsize);
+  memcpy(&crmsg.originator, &main_addr, ipsize);
   crmsg.ttl = 1;
   crmsg.hopcnt = 0;
   crmsg.seqno = htons(get_msg_seqno());
 
   /* set timestamp */
-  crmsg.timestamp = now->tv_sec;
+  crmsg.timestamp = now.tv_sec;
   olsr_printf(3, "[ENC]Timestamp %d\n", crmsg.timestamp);
 
   /* Fill subheader */
@@ -1146,13 +1106,13 @@ send_rres(union olsr_ip_addr *to, union olsr_ip_addr *from, olsr_u32_t chal_in)
   rrmsg.olsr_msgtype = TYPE_RRESPONSE;
   rrmsg.olsr_vtime = 0;
   rrmsg.olsr_msgsize = htons(sizeof(struct r_respmsg));
-  memcpy(&rrmsg.originator, main_addr, ipsize);
+  memcpy(&rrmsg.originator, &main_addr, ipsize);
   rrmsg.ttl = 1;
   rrmsg.hopcnt = 0;
   rrmsg.seqno = htons(get_msg_seqno());
 
   /* set timestamp */
-  rrmsg.timestamp = now->tv_sec;
+  rrmsg.timestamp = now.tv_sec;
   olsr_printf(3, "[ENC]Timestamp %d\n", rrmsg.timestamp);
 
   /* Fill subheader */
@@ -1231,7 +1191,7 @@ lookup_timestamp_entry(union olsr_ip_addr *adr)
  *@return nada
  */
 void
-timeout_timestamps()
+timeout_timestamps(void* foo)
 {
   struct stamp *tmp_list;
   struct stamp *entry_to_delete;
@@ -1297,139 +1257,4 @@ read_key_from_file(char *file)
   fclose(kf);
   return 1;
 }
-
-
-/*************************************************************
- *                 TOOLS DERIVED FROM OLSRD                  *
- *************************************************************/
-
-
-/**
- *Hashing function. Creates a key based on
- *an 32-bit address.
- *@param address the address to hash
- *@return the hash(a value in the 0-31 range)
- */
-olsr_u32_t
-olsr_hashing(union olsr_ip_addr *address)
-{
-  olsr_u32_t hash;
-  char *tmp;
-
-  if(ipversion == AF_INET)
-    /* IPv4 */  
-    hash = (ntohl(address->v4));
-  else
-    {
-      /* IPv6 */
-      tmp = (char *) &address->v6;
-      hash = (ntohl(*tmp));
-    }
-
-  //hash &= 0x7fffffff; 
-  hash &= HASHMASK;
-
-  return hash;
-}
-
-
-
-/**
- *Checks if a timer has times out. That means
- *if it is smaller than present time.
- *@param timer the timeval struct to evaluate
- *@return positive if the timer has not timed out,
- *0 if it matches with present time and negative
- *if it is timed out.
- */
-int
-olsr_timed_out(struct timeval *timer)
-{
-  return(timercmp(timer, now, <));
-}
-
-
-
-/**
- *Initiates a "timer", wich is a timeval structure,
- *with the value given in time_value.
- *@param time_value the value to initialize the timer with
- *@param hold_timer the timer itself
- *@return nada
- */
-void
-olsr_init_timer(olsr_u32_t time_value, struct timeval *hold_timer)
-{ 
-  olsr_u16_t  time_value_sec;
-  olsr_u16_t  time_value_msec;
-
-  time_value_sec = time_value/1000;
-  time_value_msec = time_value-(time_value_sec*1000);
-
-  hold_timer->tv_sec = time_value_sec;
-  hold_timer->tv_usec = time_value_msec*1000;   
-}
-
-
-
-
-
-/**
- *Generaties a timestamp a certain number of milliseconds
- *into the future.
- *
- *@param time_value how many milliseconds from now
- *@param hold_timer the timer itself
- *@return nada
- */
-void
-olsr_get_timestamp(olsr_u32_t delay, struct timeval *hold_timer)
-{ 
-  olsr_u16_t  time_value_sec;
-  olsr_u16_t  time_value_msec;
-
-  time_value_sec = delay/1000;
-  time_value_msec= delay - (delay*1000);
-
-  hold_timer->tv_sec = now->tv_sec + time_value_sec;
-  hold_timer->tv_usec = now->tv_usec + (time_value_msec*1000);   
-}
-
-
-/**
- *Converts a olsr_ip_addr to a string
- *Goes for both IPv4 and IPv6
- *
- *NON REENTRANT! If you need to use this
- *function twice in e.g. the same printf
- *it will not work.
- *You must use it in different calls e.g.
- *two different printfs
- *
- *@param the IP to convert
- *@return a pointer to a static string buffer
- *representing the address in "dots and numbers"
- *
- */
-char *
-olsr_ip_to_string(union olsr_ip_addr *addr)
-{
-
-  char *ret;
-  struct in_addr in;
-  
-  if(ipversion == AF_INET)
-    {
-      in.s_addr=addr->v4;
-      ret = inet_ntoa(in);
-    }
-  else
-    {
-      /* IPv6 */
-      ret = (char *)inet_ntop(AF_INET6, &addr->v6, ipv6_buf, sizeof(ipv6_buf));
-    }
-
-  return ret;
-}
-
 

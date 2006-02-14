@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: scheduler.c,v 1.29 2005/03/23 22:41:45 tlopatic Exp $
+ * $Id: scheduler.c,v 1.33 2005/12/29 22:34:37 kattemat Exp $
  */
 
 
@@ -63,6 +63,14 @@ static float pollrate;
 static struct timeout_entry *timeout_functions;
 static struct event_entry *event_functions;
 
+
+static void trigger_dijkstra(void *dummy)
+{
+  OLSR_PRINTF(3, "Triggering Dijkstra\n");
+
+  changes_neighborhood = OLSR_TRUE;
+  changes_topology = OLSR_TRUE;
+}
 
 /**
  *Main scheduler event loop. Polls at every
@@ -99,6 +107,9 @@ scheduler()
   /* Global buffer for times(2) calls */
   struct tms tms_buf;
  
+  if(olsr_cnf->lq_level > 1 && olsr_cnf->lq_dinter > 0.0)
+    olsr_register_scheduler_event(trigger_dijkstra, NULL, olsr_cnf->lq_dinter, 0, NULL);
+
   pollrate = olsr_cnf->pollrate;
   interval_usec = (olsr_u32_t)(pollrate * 1000000);
 
@@ -113,15 +124,7 @@ scheduler()
     {
 
       /* Update now_times */
-      if((now_times = times(&tms_buf)) < 0)
-	{
-	  if((now_times = times(&tms_buf)) < 0)
-	    {
-	      fprintf(stderr, "Fatal!scheduler could not get new_times.\n%s\n", strerror(errno));
-	      olsr_syslog(OLSR_LOG_ERR, "Fatal!scheduler could not get new_times.\n%m\n");
-	      olsr_exit(__func__, EXIT_FAILURE);
-	    }
-	}
+      now_times = times(&tms_buf);
 
       /* Update the global timestamp - kept for plugin compat */
       gettimeofday(&now, NULL);
@@ -199,15 +202,7 @@ scheduler()
 	}
 
 
-      if((end_of_loop = times(&tms_buf)) < 0)
-	{
-	  if((end_of_loop = times(&tms_buf)) < 0)
-	    {
-	      fprintf(stderr, "Fatal!scheduler could not get new_times.\n%s\n", strerror(errno));
-	      olsr_syslog(OLSR_LOG_ERR, "Fatal!scheduler could not get new_times.\n%m\n");
-	      olsr_exit(__func__, EXIT_FAILURE);
-	    }
-	}
+      end_of_loop = times(&tms_buf);
 
       //printf("Tick diff: %d\n", end_of_loop - now_times);
       time_used.tv_sec = ((end_of_loop - now_times) * system_tick_divider) / 1000;

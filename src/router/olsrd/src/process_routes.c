@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: process_routes.c,v 1.24 2005/02/28 14:42:57 tlopatic Exp $
+ * $Id: process_routes.c,v 1.27 2005/05/30 13:13:38 kattemat Exp $
  */
 
 
@@ -51,6 +51,9 @@
 #define strerror(x) StrError(x)
 #endif
 
+
+struct rt_entry old_routes[HASHSIZE];
+struct rt_entry old_hna[HASHSIZE];
 
 
 int
@@ -212,7 +215,7 @@ olsr_update_kernel_routes()
 {
   struct destination_n *delete_kernel_list = NULL;
   struct destination_n *add_kernel_list = NULL;
-  
+
   OLSR_PRINTF(3, "Updating kernel routes...\n")
   delete_kernel_list = olsr_build_update_list(old_routes, routingtable);
   add_kernel_list = olsr_build_update_list(routingtable, old_routes);
@@ -298,6 +301,7 @@ olsr_delete_routes_from_kernel(struct destination_n *delete_kernel_list)
   int metric_counter = 1;
   olsr_bool last_run = OLSR_FALSE;
 
+
   /* Find highest metric */
   for(destination_ptr = delete_kernel_list;
       destination_ptr != NULL;
@@ -306,6 +310,7 @@ olsr_delete_routes_from_kernel(struct destination_n *delete_kernel_list)
       if(destination_ptr->destination->rt_metric > metric_counter)
 	metric_counter = destination_ptr->destination->rt_metric;
     }
+
 #ifdef DEBUG
   OLSR_PRINTF(3, "%s highest metric %d\n",
 	      __func__, metric_counter)
@@ -321,42 +326,53 @@ olsr_delete_routes_from_kernel(struct destination_n *delete_kernel_list)
       for(destination_ptr = delete_kernel_list; destination_ptr != NULL; )
 	{
 
-	  if((destination_ptr->destination->rt_metric == metric_counter) &&
-	     ((last_run || 
-	       !COMP_IP(&destination_ptr->destination->rt_dst, 
-                        &destination_ptr->destination->rt_router))))
+	  if(destination_ptr->destination->rt_metric == metric_counter)
 	    {
-	      olsr_16_t error;
-#ifdef DEBUG
-	      OLSR_PRINTF(3, "Deleting route to %s hopcount %d\n",
-			  olsr_ip_to_string(&destination_ptr->destination->rt_dst),
-			  destination_ptr->destination->rt_metric)
-#endif
-	      
-	      if(olsr_cnf->ip_version == AF_INET)
-		error = olsr_ioctl_del_route(destination_ptr->destination);
+	      /* Make sure one-hop direct neighbors are deleted last */
+	      if(metric_counter == 1 &&
+		 (!last_run && 
+		  COMP_IP(&destination_ptr->destination->rt_dst, 
+			  &destination_ptr->destination->rt_router)))
+		{
+		  previous_node = destination_ptr;
+		  destination_ptr = destination_ptr->next;
+		}
 	      else
-		error = olsr_ioctl_del_route6(destination_ptr->destination);
-	      
-	      if(error < 0)
 		{
-		  OLSR_PRINTF(1, "Delete route(%s):%s\n", olsr_ip_to_string(&destination_ptr->destination->rt_dst), strerror(errno))
-		  olsr_syslog(OLSR_LOG_ERR, "Delete route:%m");
-		}
-	      
-	      /* Getting rid of this node and hooking up the broken point */
-	      if(destination_ptr == delete_kernel_list) 
-		{
-		  destination_ptr = delete_kernel_list->next;
-		  free(delete_kernel_list);
-		  delete_kernel_list = destination_ptr;
-		  previous_node = delete_kernel_list;
-		}
-	      else 
-		{
-		  previous_node->next = destination_ptr->next;
-		  free(destination_ptr);
-		  destination_ptr = previous_node->next;
+		  olsr_16_t error;		  
+#ifdef DEBUG
+		  OLSR_PRINTF(3, "Deleting route to %s hopcount %d\n",
+			      olsr_ip_to_string(&destination_ptr->destination->rt_dst),
+			      destination_ptr->destination->rt_metric)
+#endif
+		    if(!olsr_cnf->host_emul)
+		      {
+			if(olsr_cnf->ip_version == AF_INET)
+			  error = olsr_ioctl_del_route(destination_ptr->destination);
+			else
+			  error = olsr_ioctl_del_route6(destination_ptr->destination);
+			
+			if(error < 0)
+			  {
+			    OLSR_PRINTF(1, "Delete route(%s):%s\n", olsr_ip_to_string(&destination_ptr->destination->rt_dst), strerror(errno))
+			      olsr_syslog(OLSR_LOG_ERR, "Delete route:%m");
+			  }
+		    }
+		  
+		  /* Getting rid of this node and hooking up the broken point */
+		  if(destination_ptr == delete_kernel_list) 
+		    {
+		      destination_ptr = delete_kernel_list->next;
+		      free(delete_kernel_list);
+		      delete_kernel_list = destination_ptr;
+		      previous_node = delete_kernel_list;
+		    }
+		  else 
+		    {
+		      previous_node->next = destination_ptr->next;
+		      free(destination_ptr);
+		      destination_ptr = previous_node->next;
+		    }
 		}
 	    }
 	  else 
@@ -417,16 +433,20 @@ olsr_add_routes_in_kernel(struct destination_n *add_kernel_list)
 			  destination_kernel->destination->rt_metric)
 #endif
 			  
-	      if(olsr_cnf->ip_version == AF_INET)
-		error=olsr_ioctl_add_route(destination_kernel->destination);
-	      else
-		error=olsr_ioctl_add_route6(destination_kernel->destination);
-	      
-	      if(error < 0)
-		{
-		  OLSR_PRINTF(1, "Add route(%s): %s\n", olsr_ip_to_string(&destination_kernel->destination->rt_dst), strerror(errno))
-		  olsr_syslog(OLSR_LOG_ERR, "Add route:%m");
-		}
+		if(!olsr_cnf->host_emul)
+		  {
+		    if(olsr_cnf->ip_version == AF_INET)
+		      error=olsr_ioctl_add_route(destination_kernel->destination);
+		    else
+		      error=olsr_ioctl_add_route6(destination_kernel->destination);
+		    
+		    if(error < 0)
+		      {
+			OLSR_PRINTF(1, "Add route(%s): %s\n", olsr_ip_to_string(&destination_kernel->destination->rt_dst), strerror(errno))
+			  olsr_syslog(OLSR_LOG_ERR, "Add route:%m");
+		      }
+		  }
+
 	      
 	      /* Getting rid of this node and hooking up the broken point */
 	      if(destination_kernel == add_kernel_list) 

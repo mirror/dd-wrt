@@ -37,7 +37,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsrd_dyn_gw.h,v 1.10 2005/02/19 17:56:05 kattemat Exp $
+ * $Id: olsrd_dyn_gw.h,v 1.11 2005/05/29 12:47:40 br1 Exp $
  */
 
 #ifndef _OLSRD_PLUGIN_TEST
@@ -57,6 +57,6 @@ olsr_timeout(void);
 
 /* Event function to register with the scheduler */
 void
-olsr_event_doing_hna(void);
+olsr_event_doing_hna(void *);
 
 #endif

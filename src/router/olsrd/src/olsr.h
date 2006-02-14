@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: olsr.h,v 1.21 2005/03/06 19:33:35 kattemat Exp $
+ * $Id: olsr.h,v 1.24 2005/05/29 12:47:45 br1 Exp $
  */
 
 
@@ -46,9 +46,9 @@
 #include "olsr_protocol.h"
 #include "interfaces.h"
 
-olsr_bool changes_topology;
-olsr_bool changes_neighborhood;
-olsr_bool changes_hna;
+extern olsr_bool changes_topology;
+extern olsr_bool changes_neighborhood;
+extern olsr_bool changes_hna;
 
 void
 register_pcf(int (*)(int, int, int));
@@ -83,6 +83,15 @@ olsr_update_willingness(void *);
 
 olsr_u8_t
 olsr_calculate_willingness(void);
+
+const char *
+olsr_msgtype_to_string(olsr_u8_t);
+
+const char *
+olsr_link_to_string(olsr_u8_t);
+
+const char *
+olsr_status_to_string(olsr_u8_t);
 
 void
 olsr_exit(const char *, int);

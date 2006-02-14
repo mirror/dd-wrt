@@ -57,6 +57,12 @@ static struct avl_node *avl_find_rec(struct avl_node *node, void *key,
 {
   int diff;
 
+#ifdef SVEN_OLA
+  if (0 == comp) {
+    diff = svenola_avl_comp_ipv4(key, node->key);
+  }
+  else
+#endif
   diff = (*comp)(key, node->key);
 
   if (diff < 0)
@@ -87,6 +93,13 @@ struct avl_node *avl_find(struct avl_tree *tree, void *key)
 
   node = avl_find_rec(tree->root, key, tree->comp);
 
+#ifdef SVEN_OLA
+  if (0 == tree->comp) {
+    if (0 != svenola_avl_comp_ipv4(node->key, key))
+      return NULL;
+  }
+  else
+#endif
   if ((*tree->comp)(node->key, key) != 0)
     return NULL;
 
@@ -228,6 +241,12 @@ int avl_insert(struct avl_tree *tree, struct avl_node *new)
 
   node = avl_find_rec(tree->root, new->key, tree->comp);
 
+#ifdef SVEN_OLA
+  if (0 == tree->comp) {
+    diff = svenola_avl_comp_ipv4(new->key, node->key);
+  }
+  else
+#endif
   diff = (*tree->comp)(new->key, node->key);
 
   if (diff == 0)

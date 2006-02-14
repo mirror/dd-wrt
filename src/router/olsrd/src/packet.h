@@ -36,10 +36,9 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: packet.h,v 1.16 2005/02/20 17:34:10 kattemat Exp $
+ * $Id: packet.h,v 1.17 2005/05/29 12:47:45 br1 Exp $
  */
 
-#ifndef OLSR_PLUGIN
 #ifndef _OLSR_PACKET
 #define _OLSR_PACKET
 
@@ -171,5 +170,4 @@ olsr_free_mid_packet(struct mid_message *);
 void
 olsr_free_hna_packet(struct hna_message *);
 
-#endif
 #endif

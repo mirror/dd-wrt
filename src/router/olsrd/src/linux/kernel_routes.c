@@ -135,6 +135,7 @@ olsr_ioctl_add_route(struct rt_entry *destination)
    *Send IPC route update message
    */
   
+#ifndef SVEN_OLA
   if(olsr_cnf->open_ipc)
       {
 	ipc_route_send_rtentry(&destination->rt_dst, 
@@ -143,6 +144,7 @@ olsr_ioctl_add_route(struct rt_entry *destination)
 			       1,
 			       destination->rt_if->int_name); /* Send interface name */
       }
+#endif
   
   
   if (ifnet && kernel_route.rt_dev)
@@ -210,6 +212,7 @@ olsr_ioctl_add_route6(struct rt_entry *destination)
 
   if((tmp = ioctl(ioctl_s, SIOCADDRT, &kernel_route)) >= 0)
     {
+#ifndef SVEN_OLA
       if(olsr_cnf->open_ipc)
 	{
 	  if(memcmp(&destination->rt_router, &null_addr6, ipsize) != 0)
@@ -220,6 +223,7 @@ olsr_ioctl_add_route6(struct rt_entry *destination)
 				   destination->rt_if->int_name); /* Send interface name */
 
 	}
+#endif
     }
     return(tmp);
 }
@@ -281,12 +285,14 @@ olsr_ioctl_del_route(struct rt_entry *destination)
      *Send IPC route update message
      */
 
+#ifndef SVEN_OLA
   if(olsr_cnf->open_ipc)
     ipc_route_send_rtentry(&destination->rt_dst, 
 			   NULL, 
 			   destination->rt_metric, 
 			   0,
 			   NULL); /* Send interface name */
+#endif
 
   return tmp;
 }
@@ -338,12 +344,14 @@ olsr_ioctl_del_route6(struct rt_entry *destination)
      *Send IPC route update message
      */
 
+#ifndef SVEN_OLA
   if(olsr_cnf->open_ipc)
     ipc_route_send_rtentry(&destination->rt_dst, 
 			   NULL, 
 			   destination->rt_metric, 
 			   0,
 			   NULL); /* Send interface name */
+#endif
 
   return tmp;
 }

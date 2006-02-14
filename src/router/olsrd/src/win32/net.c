@@ -36,7 +36,7 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: net.c,v 1.18 2005/03/21 02:17:37 tlopatic Exp $
+ * $Id: net.c,v 1.19 2005/05/30 13:50:27 kattemat Exp $
  */
 
 #if defined WINCE
@@ -66,6 +66,35 @@ void PError(char *);
 
 void DisableIcmpRedirects(void);
 int disable_ip_forwarding(int Ver);
+
+
+int
+gethemusocket(struct sockaddr_in *pin)
+{
+  int sock;
+
+  OLSR_PRINTF(1, "       Connecting to switch daemon port 10150...");
+
+  if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) 
+    {
+      perror("hcsocket");
+      return (-1);
+    }
+
+  /* connect to PORT on HOST */
+  if (connect(sock,(struct sockaddr *) pin, sizeof(*pin)) < 0) 
+    {
+      printf("FAILED\n");
+      fprintf(stderr, "Error connecting %d - %s\n", errno, strerror(errno));
+      printf("connection refused\n");
+      return (-1);
+    }
+
+  printf("OK\n");
+
+  /* Keep TCP socket blocking */  
+  return (sock);
+}
 
 int getsocket(struct sockaddr *Addr, int BuffSize, char *Int)
 {
