@@ -513,7 +513,7 @@ s,@AUTOHEADER@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --
 s,@MAKEINFO@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run makeinfo,;t t
 s,@AMTAR@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run tar,;t t
 s,@install_sh@,/home/dev/workspace/DD-WRT/src/router/openvpn/install-sh,;t t
-s,@STRIP@,/home/backup/mikrotik/toolchain/bin/mipsel-linux-uclibc-strip,;t t
+s,@STRIP@,mipsel-linux-uclibc-strip,;t t
 s,@ac_ct_STRIP@,,;t t
 s,@INSTALL_STRIP_PROGRAM@,${SHELL} $(install_sh) -c -s,;t t
 s,@mkdir_p@,mkdir -p -- .,;t t
