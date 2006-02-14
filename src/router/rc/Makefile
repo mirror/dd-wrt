@@ -18,7 +18,7 @@ else
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L../libnet/lib ../dnsmasq/src/dnsmasq.a -lnet -lcrypt 
 endif
 
-OBJS := rc.o init.o interface.o network.o services.o udhcpc.o ppp.o http.o stats.o crc.o closed/mssid.o closed/openvpn.o
+OBJS := rc.o init.o interface.o network.o services.o udhcpc.o ppp.o http.o stats.o crc.o mssid.o openvpn.o
 OBJS += firewall.o resetbutton.o ntp.o gpio.o iptable.o ddns.o listen.o check_ps.o process_monitor.o wshaper.o wland.o mkfiles.o sendudp.o 
 OBJS += ledcontrol.o
 
@@ -220,7 +220,6 @@ all: rc
 
 clean:
 	rm -f *.o *.a rc
-	rm -f closed/*.o rc
 	rm -f *.c~
 
 install: all
