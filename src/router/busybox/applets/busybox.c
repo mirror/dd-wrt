@@ -318,12 +318,14 @@ int main(int argc, char **argv)
   else if (!strcmp (base, "ip"))
     return ip_main(argc,argv);
 #endif
+
   else if (!strcmp (base, "arp"))
     return arp_main(argc,argv);
-  else if (!strcmp (base, "iptables-restore"))
+/*  else if (!strcmp (base, "iptables-restore"))
     return iptables_restore_main(argc,argv);
   else if (!strcmp (base, "iptables"))
     return iptables_main(argc,argv);
+*/
 #ifdef HAVE_DDNS
   else if (!strcmp (base, "ez-ipupdate"))
     return ipupdate_main(argc,argv);

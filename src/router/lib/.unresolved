@@ -27,6 +27,7 @@
          U __stdout
          U __sysv_signal
          U __uClibc_start_main
+         U __xpg_basename
          U _errno
          U _eval
          U _exit
@@ -578,6 +579,7 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/et:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/ez-ipupdate:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/igmprt:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/iptables:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/l2tp-control:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/l2tpd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/macupd:

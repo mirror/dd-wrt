@@ -535,7 +535,7 @@ ifeq ($(CONFIG_IPTABLES),y)
 #	install -d $(INSTALLDIR)/iptables/usr/lib/iptables
 #	install iptables/extensions/*.so $(INSTALLDIR)/iptables/usr/lib/iptables
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/lib/iptables/*.so
-#	install -D iptables/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables
+	install -D iptables/iptables $(INSTALLDIR)/iptables/usr/sbin/iptables
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables
 #	install -D iptables/iptables-restore $(INSTALLDIR)/iptables/usr/sbin/iptables-restore
 #	$(STRIP) $(INSTALLDIR)/iptables/usr/sbin/iptables-restore

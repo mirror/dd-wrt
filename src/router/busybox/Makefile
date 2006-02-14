@@ -249,7 +249,7 @@ ifeq ($(CONFIG_MATRIXSSL),y)
 LIBRARIES += -L../matrixssl/src -lmatrixsslstatic -lpthread
 endif
 
-LIBRARIES += ../iptables/iptables.a ../iptables/extensions/libext.a ../iptables/libiptc/libiptc.a
+#LIBRARIES += ../iptables/iptables.a ../iptables/extensions/libext.a ../iptables/libiptc/libiptc.a
 
 
 CONFIG_CONFIG_IN = $(top_srcdir)/sysdeps/$(TARGET_OS)/Config.in
