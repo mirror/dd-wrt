@@ -58,8 +58,8 @@
 #define BCM47XX_SOFTWARE_RESET  0x40	/* GPIO 6 */
 #define BCM47XX_SW_PUSH         0x10	/* GPIO 4 */
 
-#define WHR_SOFTWARE_RESET 0x10 //GPIO 4 
-#define WHR_SW_PUSH 0 //GPIO 0, code unknown
+#define WHR_SOFTWARE_RESET 0x10	//GPIO 4
+#define WHR_SW_PUSH 0		//GPIO 0, code unknown
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
@@ -162,19 +162,19 @@ period_check (int sig)
     perror (GPIO_FILE);
 
   DEBUG ("resetbutton: GPIO = 0x%x\n", val);
-int gpio = 0;
-int state = 0;
-  switch(brand)
-  {
-  case ROUTER_BUFFALO_WHRG54S:
-  gpio = WHR_SOFTWARE_RESET;
-  state = (val & gpio);
-  break;
-  default:
-  gpio = BCM47XX_SOFTWARE_RESET;
-  state = !(val & gpio);
-  break;
-  }
+  int gpio = 0;
+  int state = 0;
+  switch (brand)
+    {
+    case ROUTER_BUFFALO_WHRG54S:
+      gpio = WHR_SOFTWARE_RESET;
+      state = (val & gpio);
+      break;
+    default:
+      gpio = BCM47XX_SOFTWARE_RESET;
+      state = !(val & gpio);
+      break;
+    }
   /*  The value is zero during button-pushed. */
   if (state)
     {
@@ -196,7 +196,8 @@ int state = 0;
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_BUFFALO_WHRG54S)
+	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
+		  || brand == ROUTER_BUFFALO_WHRG54S)
 		{
 		  printf ("resetbutton: factory default.\n");
 		  ACTION ("ACT_HW_RESTORE");

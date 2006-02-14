@@ -194,7 +194,7 @@ mk_nocat_conf (void)
   fflush (fp);
   fprintf (fp, "LocalNetwork\t%s/%s\n",
 	   _get_network (nvram_safe_get ("lan_ipaddr"),
-			nvram_safe_get ("lan_netmask")),
+			 nvram_safe_get ("lan_netmask")),
 	   nvram_safe_get ("lan_netmask"));
   fflush (fp);
   fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
