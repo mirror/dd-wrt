@@ -7,7 +7,7 @@ int iptables_main(int argc, char **argv);
 int iptables_save_main(int argc, char **argv);
 int iptables_restore_main(int argc, char **argv);
 
-int iptables_multimain(int argc, char **argv) {
+int main(int argc, char **argv) {
   char *progname;
 
   if (argc == 0) {
