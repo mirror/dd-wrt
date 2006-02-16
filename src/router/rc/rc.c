@@ -292,8 +292,8 @@ main_loop (void)
 	  nvram_set ("sys_clean_jffs2", "0");
 	  nvram_commit ();
 	  itworked = mtd_erase (rwpart);
-//        eval ("insmod", "crc32");
-//        eval ("insmod", "jffs2");
+        eval ("insmod", "crc32");
+        eval ("insmod", "jffs2");
 
 	  itworked +=
 	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
@@ -312,8 +312,8 @@ main_loop (void)
       else
 	{
 	  itworked = mtd_unlock ("mtd4");
-//        eval ("insmod", "crc32");
-//        eval ("insmod", "jffs2");
+        eval ("insmod", "crc32");
+        eval ("insmod", "jffs2");
 	  itworked +=
 	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
 	  if (itworked)
