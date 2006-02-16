@@ -65,6 +65,16 @@ typedef u_int8_t u8;
 
 #define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
+/* configure loopback interface */
+void
+config_loopback (void)
+{
+  /* Bring up loopback interface */
+  ifconfig ("lo", IFUP, "127.0.0.1", "255.0.0.0");
+
+  /* Add to routing table */
+  route_add ("lo", 0, "127.0.0.0", "0.0.0.0", "255.0.0.0");
+}
 
 char *
 getwlif ()

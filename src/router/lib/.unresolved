@@ -84,7 +84,6 @@
          U close
          U closedir
          U closelog
-         U config_loopback
          U connect
          U console_init
          U convert_ver
@@ -116,7 +115,7 @@
          U endmntent
          U endprotoent
          U endpwent
-         U endswith
+         U endservent
          U endusershell
          U endutent
          U environ
@@ -226,6 +225,7 @@
          U getrusage
          U getservbyname
          U getservbyport
+         U getservent
          U getsockname
          U getsockopt
          U getspnam
@@ -244,7 +244,6 @@
          U hsearch_r
          U if_indextoname
          U if_nametoindex
-         U ifconfig
          U index
          U inet_addr
          U inet_aton
@@ -289,7 +288,6 @@
          U l2tp_tunnel_state_name
          U l2tp_tunnel_stop_all
          U lchown
-         U led_ctrl
          U link
          U listen
          U localtime
@@ -340,7 +338,6 @@
          U pipe
          U popen
          U pow
-         U powerled_ctrl
          U prepare_key
          U printf
          U ptsname
@@ -374,7 +371,6 @@
          U rindex
          U rint
          U rmdir
-         U route_add
          U route_del
          U router_defaults
          U safe_fread
@@ -408,6 +404,7 @@
          U setprotoent
          U setreuid
          U setrlimit
+         U setservent
          U setsid
          U setsockopt
          U settimeofday
@@ -440,6 +437,7 @@
          U srandom
          U sscanf
          U start_servicep
+         U startstop
          U stat
          U statfs
          U stderr
@@ -544,6 +542,7 @@
          w __deregister_frame_info
          w __register_frame_info
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/bin/busybox:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/sbin/rc:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/l2tp/cmd.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/l2tp/sync-pppd.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/libbcm.so:
@@ -561,6 +560,7 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/epi_ttcp:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/et:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/ez-ipupdate:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/httpd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/igmprt:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/iptables:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/l2tp-control:
