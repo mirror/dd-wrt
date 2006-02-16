@@ -100,9 +100,9 @@ int main(int argc, char **argv)
 
   /* ppp */
   if (strstr (base, "ip-up"))
-    return ipup_main (argc, argv);
+    return start_main ("ipup",argc, argv);
   else if (strstr (base, "ip-down"))
-    return ipdown_main (argc, argv);
+    return start_main ("updown",argc, argv);
 
   /* udhcpc [ deconfig bound renew ] */
   else if (strstr (base, "udhcpc"))
@@ -156,7 +156,7 @@ int main(int argc, char **argv)
       if (argc >= 2)
 	{
 	  if (!strcmp (argv[1], "net"))
-	    return hotplug_net ();
+	    return start_service("hotplug_net");
 	}
       else
 	{
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
   //////////////////////////////////////////////////////
   //
   else if (strstr (base, "filtersync"))
-    return filtersync_main ();
+    return start_service("filtersync");
   /* filter [add|del] number */
   else if (strstr (base, "filter"))
     {
@@ -243,31 +243,31 @@ int main(int argc, char **argv)
 
 
   else if (strstr (base, "hb_connect"))
-    return hb_connect_main (argc, argv);
+    return start_main("hb_connect",argc, argv);
   else if (strstr (base, "hb_disconnect"))
-    return hb_disconnect_main (argc, argv);
+    return start_main("hb_disconnect",argc, argv);
 
   else if (strstr (base, "gpio"))
-    return gpio_main (argc, argv);
+    return start_main("gpio",argc, argv);
   else if (strstr (base, "listen"))
-    return listen_main (argc, argv);
+    return listen_main(argc, argv);
   else if (strstr (base, "check_ps"))
     return check_ps_main (argc, argv);
   else if (strstr (base, "ddns_success"))
-    return ddns_success_main (argc, argv);
+    return start_main("ddns_success",argc, argv);
 //      else if (strstr(base, "eou_status"))
 //                return eou_status_main();
   else if (strstr (base, "process_monitor"))
     return process_monitor_main ();
   else if (strstr (base, "restart_dns"))
     {
-      stop_dns ();
-      stop_dhcpd ();
-      start_dhcpd ();
-      start_dns ();
+      stop_service("dnsmasq");
+      stop_service("dhcpd");
+      start_service("dhcpd");
+      start_service("dnsmasq");
     }
   else if (strstr (base, "site_survey"))
-    return site_survey_main (argc, argv);
+    return start_main ("site_survey",argc, argv);
   else if (strstr (base, "setpasswd"))
     mkfiles ();
   else if (strstr (base, "wol"))

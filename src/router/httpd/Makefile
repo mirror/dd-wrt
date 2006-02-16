@@ -172,6 +172,8 @@ endif
 OBJS  += site_suvery.o
 #endif
 
+OBJS += http.o
+
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_OPENSSL),y)
 CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
@@ -224,7 +226,7 @@ cert:
 
 httpd.a: cgi.o ej.o httpd.o broadcom.o \
        index.o status.o dhcp.o log.o upgrade.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
-       find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o sveaweb.o dd-wrt.o nvramsr.o $(OBJS)
+       find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
 	$(AR) arc -o $@ $^
 	rm -f ../rc/rc
 	
