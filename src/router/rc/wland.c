@@ -567,31 +567,3 @@ wland_main (int argc, char **argv)
 
   return 0;
 }				// end main
-
-int
-stop_wland (void)
-{
-  int ret = eval ("killall", "-9", "wland");
-
-  cprintf ("done\n");
-  return ret;
-}
-
-int
-start_wland (void)
-{
-  int ret;
-  pid_t pid;
-  char *wland_argv[] = { "/sbin/wland",
-    NULL
-  };
-
-  stop_wland ();
-
-//      if( nvram_match("apwatchdog_enable", "0") )
-//          return 0;
-
-  ret = _eval (wland_argv, NULL, 0, &pid);
-  cprintf ("done\n");
-  return ret;
-}
