@@ -157,23 +157,13 @@ route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
   return route_manip (SIOCDELRT, name, metric, dst, gateway, genmask);
 }
 
-/* configure loopback interface */
-void
-config_loopback (void)
-{
-  /* Bring up loopback interface */
-  ifconfig ("lo", IFUP, "127.0.0.1", "255.0.0.0");
-
-  /* Add to routing table */
-  route_add ("lo", 0, "127.0.0.0", "0.0.0.0", "255.0.0.0");
-}
 
 #define MAX_VLAN_GROUPS	16
 #define MAX_DEV_IFINDEX	16
 
 /* configure vlan interface(s) based on nvram settings */
 int
-config_vlan (void)
+start_config_vlan (void)
 {
   int s;
   struct ifreq ifr;
@@ -231,7 +221,7 @@ config_vlan (void)
 /* begin lonewolf mods */
 
 int
-setup_vlans (void)
+start_setup_vlans (void)
 {
 #ifndef HAVE_RB500
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */

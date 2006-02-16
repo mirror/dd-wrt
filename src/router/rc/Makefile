@@ -18,9 +18,8 @@ else
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L../libnet/lib ../dnsmasq/src/dnsmasq.a -lnet -lcrypt 
 endif
 
-OBJS := rc.o init.o interface.o servicemanager.o services.o udhcpc.o stats.o crc.o
+OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
 OBJS += resetbutton.o ntp.o iptable.o listen.o check_ps.o process_monitor.o wland.o mkfiles.o sendudp.o 
-OBJS += ledcontrol.o 
 
 
 
@@ -109,7 +108,6 @@ endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 CFLAGS += -DHAVE_SSHD
-LDFLAGS += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz  -lcrypt
 #LDFLAGS += -Wl,--gc-sections
 endif
 
@@ -119,11 +117,9 @@ endif
 
 ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
-LDFLAGS += ../dhcpforwarder/dhcpfwd.a
 endif
 ifeq ($(CONFIG_PPPD),y)
 CFLAGS += -DHAVE_PPPD
-LDFLAGS += ../pppd/pppd/pppd.a
 endif
 
 ifeq ($(CONFIG_CHILLISPOT),y)
@@ -132,16 +128,6 @@ endif
 
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
-LDFLAGS += ../bird/obj/nest/all.o 
-LDFLAGS += ../bird/obj/filter/all.o 
-LDFLAGS += ../bird/obj/proto/bgp/all.o 
-LDFLAGS += ../bird/obj/proto/ospf/all.o 
-LDFLAGS += ../bird/obj/proto/pipe/all.o 
-LDFLAGS += ../bird/obj/proto/rip/all.o 
-LDFLAGS += ../bird/obj/proto/static/all.o 
-LDFLAGS += ../bird/obj/conf/all.o
-LDFLAGS += ../bird/obj/lib/birdlib.a
-
 endif
 
 ifeq ($(CONFIG_PPP),y)
@@ -199,8 +185,6 @@ endif
 
 ifeq ($(CONFIG_MATRIXSSL),y)
 CFLAGS += -DHAVE_HTTPS
-LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
-
 endif
 
 ifeq ($(CONFIG_SPUTNIK_APD),y)
@@ -218,37 +202,36 @@ clean:
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
 	install -d $(INSTALLDIR)/sbin
-	#install rc $(INSTALLDIR)/sbin	
-	#$(STRIP) $(INSTALLDIR)/sbin/rc
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox rc	
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox init
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox erase
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox write
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox restore
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox stats
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox hotplug
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox filter
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox resetbutton
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox filtersync
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox ntpd
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox ipupdated
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox redial
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox hb_connect
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox hb_disconnect
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox gpio
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox listen
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox check_ps
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox ddns_success
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox process_monitor
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox site_survey
+	install rc $(INSTALLDIR)/sbin	
+	$(STRIP) $(INSTALLDIR)/sbin/rc
+	cd $(INSTALLDIR)/sbin && ln -sf rc init
+	cd $(INSTALLDIR)/sbin && ln -sf rc erase
+	cd $(INSTALLDIR)/sbin && ln -sf rc write
+	cd $(INSTALLDIR)/sbin && ln -sf rc restore
+	cd $(INSTALLDIR)/sbin && ln -sf rc stats
+	cd $(INSTALLDIR)/sbin && ln -sf rc hotplug
+	cd $(INSTALLDIR)/sbin && ln -sf rc filter
+	cd $(INSTALLDIR)/sbin && ln -sf rc resetbutton
+	cd $(INSTALLDIR)/sbin && ln -sf rc filtersync
+	cd $(INSTALLDIR)/sbin && ln -sf rc ntpd
+	cd $(INSTALLDIR)/sbin && ln -sf rc ipupdated
+	cd $(INSTALLDIR)/sbin && ln -sf rc redial
+	cd $(INSTALLDIR)/sbin && ln -sf rc hb_connect
+	cd $(INSTALLDIR)/sbin && ln -sf rc hb_disconnect
+	cd $(INSTALLDIR)/sbin && ln -sf rc gpio
+	cd $(INSTALLDIR)/sbin && ln -sf rc listen
+	cd $(INSTALLDIR)/sbin && ln -sf rc check_ps
+	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
+	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
+	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
 	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox arp
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox sendudp
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox misc	
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox check_ses_led	
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox setpasswd
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox wland
-	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox restart_dns
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
+	cd $(INSTALLDIR)/sbin && ln -sf rc sendudp
+	cd $(INSTALLDIR)/sbin && ln -sf rc misc	
+	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
+	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
+	cd $(INSTALLDIR)/sbin && ln -sf rc wland
+	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox bird
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dnsmasq
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox tc
@@ -284,7 +267,7 @@ ifeq ($(CONFIG_WOL),y)
 endif
 
 rc: $(OBJS)
-	$(AR) arc -o $@.a $^
-#	$(CC) -o $@ $^ ../httpd/httpd.a $(LDFLAGS) -lshared
+#	$(AR) arc -o $@.a $^
+	$(CC) -o $@ $^ $(LDFLAGS) -lshared
 
 $(OBJS): $(CY_DEPS)

@@ -54,7 +54,6 @@
 #include <shutils.h>
 #include <wlutils.h>
 #include <cy_conf.h>
-#include <ledcontrol.h>
 
 
 
@@ -267,12 +266,12 @@ main_loop (void)
     case ROUTER_SIEMENS:
 //    case ROUTER_WRT54G:
 //    case ROUTER_WRT54G1X:
-      config_vlan ();
+    start_service("config_vlan");
       break;
     default:
       if (check_vlan_support ())
 	{
-	  config_vlan ();
+	start_service("config_vlan");
 	}
       break;
 
@@ -354,7 +353,7 @@ main_loop (void)
   stop_service("httpd");
   if (brand == ROUTER_SIEMENS)
     {
-      powerled_ctrl (1);
+      start_service("powerled_ctrl_1");
     }
 
   /* Loop forever */
@@ -453,7 +452,7 @@ main_loop (void)
 	      start_service("resetbutton");
 	    }
 #endif
-	  setup_vlans ();
+	  start_service("setup_vlans");
 	  start_service("lan");
 	  eval ("rm", "/tmp/hosts");
 	  addHost ("localhost", "127.0.0.1");
@@ -544,3 +543,202 @@ main_loop (void)
 
 
 
+int main(int argc,char **argv)
+{
+  char *base = strrchr (argv[0], '/');
+      
+  base = base ? base + 1 : argv[0];
+
+  /* init */
+  if (strstr (base, "init"))
+    {
+      main_loop ();
+      return 0;
+    }
+
+  /* Set TZ for all rc programs */
+  setenv ("TZ", nvram_safe_get ("time_zone"), 1);
+
+  /* ppp */
+  if (strstr (base, "ip-up"))
+    return start_main ("ipup",argc, argv);
+  else if (strstr (base, "ip-down"))
+    return start_main ("updown",argc, argv);
+
+  /* udhcpc [ deconfig bound renew ] */
+  else if (strstr (base, "udhcpc"))
+    return start_main("udhcpc",argc, argv);
+#ifdef HAVE_PPTPD
+  /* poptop [ stop start restart ]  */
+  else if (strstr (base, "poptop"))
+    return pptpd_main (argc, argv);
+#endif
+#ifndef HAVE_RB500
+  /* erase [device] */
+  else if (strstr (base, "erase"))
+    {
+      int brand = getRouterBrand ();
+      if (brand == ROUTER_MOTOROLA)
+	{
+	  if (argv[1] && strcmp (argv[1], "nvram"))
+	    {
+	      fprintf (stderr,
+		       "Sorry, erasing nvram will get the motorola unit unuseable\n");
+	      return 0;
+	    }
+	}
+      else
+	{
+	  if (argv[1])
+	    return mtd_erase (argv[1]);
+	  else
+	    {
+	      fprintf (stderr, "usage: erase [device]\n");
+	      return EINVAL;
+	    }
+	}
+    }
+
+  /* write [path] [device] */
+  else if (strstr (base, "write"))
+    {
+      if (argc >= 3)
+	return mtd_write (argv[1], argv[2]);
+      else
+	{
+	  fprintf (stderr, "usage: write [path] [device]\n");
+	  return EINVAL;
+	}
+    }
+#endif
+  /* hotplug [event] */
+  else if (strstr (base, "hotplug"))
+    {
+      if (argc >= 2)
+	{
+	  if (!strcmp (argv[1], "net"))
+	    return start_service("hotplug_net");
+	}
+      else
+	{
+	  fprintf (stderr, "usage: hotplug [event]\n");
+	  return EINVAL;
+	}
+    }
+  /* rc [stop|start|restart ] */
+  else if (strstr (base, "rc"))
+    {
+      if (argv[1])
+	{
+	  if (strncmp (argv[1], "start", 5) == 0)
+	    return kill (1, SIGUSR2);
+	  else if (strncmp (argv[1], "stop", 4) == 0)
+	    return kill (1, SIGINT);
+	  else if (strncmp (argv[1], "restart", 7) == 0)
+	    return kill (1, SIGHUP);
+	}
+      else
+	{
+	  fprintf (stderr, "usage: rc [start|stop|restart]\n");
+	  return EINVAL;
+	}
+    }
+
+  //////////////////////////////////////////////////////
+  //
+  else if (strstr (base, "filtersync"))
+    return start_service("filtersync");
+  /* filter [add|del] number */
+  else if (strstr (base, "filter"))
+    {
+      if (argv[1] && argv[2])
+	{
+	  int num = 0;
+	  if ((num = atoi (argv[2])) > 0)
+	    {
+	      if (strcmp (argv[1], "add") == 0)
+		return filter_add (num);
+	      else if (strcmp (argv[1], "del") == 0)
+		return filter_del (num);
+	    }
+	}
+      else
+	{
+	  fprintf (stderr, "usage: filter [add|del] number\n");
+	  return EINVAL;
+	}
+    }
+  else if (strstr (base, "redial"))
+    return redial_main (argc, argv);
+
+  else if (strstr (base, "resetbutton"))
+    {
+#ifndef HAVE_RB500
+      int brand = getRouterBrand ();
+      if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_SIEMENS))	//belkin doesnt like that
+	{
+	  return resetbutton_main (argc, argv);
+	}
+      else
+	{
+	  fprintf (stderr,
+		   "Belkin,Buffalo,Siemens S505 doesnt support the resetbutton!");
+	  return 0;
+	}
+#endif
+    }
+#ifndef HAVE_MADWIFI
+  else if (strstr (base, "wland"))
+    return wland_main (argc, argv);
+#endif
+//  else if (strstr (base, "write_boot"))
+//    return write_boot ("/tmp/boot.bin", "pmon");
+
+#ifdef DEBUG_IPTABLE
+  else if (strstr (base, "iptable_range"))
+    return range_main (argc, argv);
+  else if (strstr (base, "iptable_rule"))
+    return rule_main (argc, argv);
+#endif
+
+
+
+  else if (strstr (base, "hb_connect"))
+    return start_main("hb_connect",argc, argv);
+  else if (strstr (base, "hb_disconnect"))
+    return start_main("hb_disconnect",argc, argv);
+
+  else if (strstr (base, "gpio"))
+    return start_main("gpio",argc, argv);
+  else if (strstr (base, "listen"))
+    return listen_main(argc, argv);
+  else if (strstr (base, "check_ps"))
+    return check_ps_main (argc, argv);
+  else if (strstr (base, "ddns_success"))
+    return start_main("ddns_success",argc, argv);
+//      else if (strstr(base, "eou_status"))
+//                return eou_status_main();
+  else if (strstr (base, "process_monitor"))
+    return process_monitor_main ();
+  else if (strstr (base, "restart_dns"))
+    {
+      stop_service("dnsmasq");
+      stop_service("dhcpd");
+      start_service("dhcpd");
+      start_service("dnsmasq");
+    }
+  else if (strstr (base, "site_survey"))
+    return start_main ("site_survey",argc, argv);
+  else if (strstr (base, "setpasswd"))
+    mkfiles ();
+  else if (strstr (base, "wol"))
+    wol_main ();
+  else if (strstr (base, "sendudp"))
+    return sendudp_main (argc, argv);
+  else if (strstr (base, "check_ses_led"))
+    return check_ses_led_main (argc, argv);
+
+//  else if (strstr (base, "reboot"))
+//    shutdown_system();
+
+}

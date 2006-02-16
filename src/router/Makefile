@@ -450,7 +450,7 @@ httpd-clean:
 	$(MAKE) -C httpd clean
 
 
-rc: netconf nvram shared hsiab libnet httpd dnsmasq bird dropbear zlib iproute2 dhcpforwarder pppd rflow iptables 
+rc: netconf nvram shared hsiab libnet dnsmasq bird dropbear zlib iproute2 dhcpforwarder pppd rflow iptables 
 
 www www-%:
 

@@ -218,6 +218,8 @@ led_ctrl (int on)
   return 0;
 }				//  led_ctrl
 
+
+
 int
 powerled_ctrl (int on)
 {
@@ -263,3 +265,9 @@ powerled_ctrl (int on)
   serrGPIOClose ();
   return 0;
 }				//  powerled_ctrl
+
+int
+start_powerled_ctrl_1 (void)
+{
+return powerled_ctrl(1);
+}

@@ -18,7 +18,7 @@ else
 LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L../libnet/lib -lnet -lcrypt 
 endif
 
-OBJS = services.o openvpn.o heartbeat.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o ppp.o sysinit.o
+OBJS = services.o openvpn.o heartbeat.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o ppp.o sysinit.o interface.o udhcpc.o ledcontrol.o
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
 CFLAGS += -DHAVE_ONLYCLIENT

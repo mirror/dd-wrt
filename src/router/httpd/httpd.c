@@ -934,7 +934,7 @@ static char *encodeString(const char *string)
   return out;
 }
 
-int httpd_main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	usockaddr usa;
 	int listen_fd;
