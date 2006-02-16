@@ -29,8 +29,46 @@
 #define NTP_N_TIMER "30"
 
 extern void timer_cancel (timer_t timerid);
+int
+isRunning (char *name)
+{
+  return !eval ("pidof", name);
+}
 
-
+void
+check_udhcpd (timer_t t, int arg)
+{
+  if (nvram_invmatch ("router_disable", "1")
+      || nvram_match ("lan_proto", "dhcp"))
+    {
+      if (nvram_match ("dhcp_dnsmasq", "1"))
+	{
+	  if (!isRunning ("dnsmasq"))
+	    {
+	      //killps("dnsmasq","-9");
+	      //killps("udhcpd","-9");
+	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
+	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
+	      sleep (1);
+	      start_service("dhcpd");
+	      sleep (1);
+	      start_service("dnsmasq");
+	    }
+	}
+      else
+	{
+	  if (!isRunning ("udhcpd"))
+	    {
+	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
+	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
+	      sleep (1);
+	      start_service("dhcpd");
+	      sleep (1);
+	      start_service("dnsmasq");
+	    }
+	}
+    }
+}
 //<<tofu
 int
 do_ntp (void)			// called from ntp_main and process_monitor_main; called every hour!
@@ -133,8 +171,7 @@ ntp_main (timer_t t, int arg)
   gettimeofday (&now, NULL);
 #endif
 //              syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
-
-  stop_ntp ();
+  stop_service("ntp");
   if (do_ntp () == 0)
     {
       if (arg == FIRST)
@@ -152,17 +189,9 @@ ntp_main (timer_t t, int arg)
 
   if (abs (now.tv_sec - then.tv_sec) > 10)
     {
-      stop_snmp ();
-      start_snmp ();
+      startstop("snmp");
     }
 #endif
-}
-
-int
-stop_ntp (void)
-{
-  eval ("killall", "-9", "ntpclient");
-  return 0;
 }
 
 //tofu>>
@@ -302,7 +331,7 @@ ntp_main (timer_t t, int arg)
 
   if (check_action () == ACT_IDLE && check_wan_link (0))
     {				// Don't execute during upgrading
-      stop_ntp ();
+      stop_service("ntp");
       ret = do_ntp ();
       if (ret == 0 && arg == FIRST)
 	{
@@ -316,13 +345,5 @@ ntp_main (timer_t t, int arg)
 
 
 
-int
-stop_ntp (void)
-{
-  int ret = eval ("killall", "-9", "ntpclient");
-
-  cprintf ("done\n");
-  return ret;
-}
 
 #endif

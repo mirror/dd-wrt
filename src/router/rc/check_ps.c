@@ -25,8 +25,8 @@ struct mon
   char *name;			// Process name
   int count;			// Process count, 0 means don't check
   int type;			// LAN or WAN
-  int (*stop) (void);		// stop function
-  int (*start) (void);		// start function
+//  int (*stop) (void);		// stop function
+//  int (*start) (void);		// start function
 };
 
 enum
@@ -34,22 +34,22 @@ enum
 
 struct mon mons[] = {
 //  {"tftpd", 1, M_LAN, stop_tftpd, start_tftpd},
-  {"process_monitor", 1, M_LAN, stop_process_monitor, start_process_monitor},
-  {"httpd", 2, M_LAN, stop_httpd, start_httpd},
-  {"udhcpd", 1, M_LAN, stop_dhcpd, start_dhcpd},
-  {"dnsmasq", 1, M_LAN, stop_dns, start_dns},
-  {"upnp", 1, M_LAN, stop_upnp, start_upnp},
+  {"process_monitor", 1, M_LAN},
+  {"httpd", 2, M_LAN},
+  {"udhcpd", 1, M_LAN},
+  {"dnsmasq", 1, M_LAN},
+  {"upnp", 1, M_LAN},
 #ifdef HAVE_CHILLI
-  {"chilli", 1, M_LAN, stop_chilli, start_chilli},
+  {"chilli", 1, M_LAN},
 #endif
 #ifdef HAVE_NOCAT
-  {"splashd", 1, M_LAN, stop_splashd, start_splashd},
+  {"splashd", 1, M_LAN},
 #endif
 #ifdef HAVE_CHILLI
-  {"chilli", 1, M_LAN, stop_chilli, start_chilli},
+  {"chilli", 1, M_LAN},
 #endif
 #ifdef HAVE_SPUTNIK_APD
-  {"apd", 1, M_LAN, stop_sputnik_apd, start_sputnik_apd},
+  {"apd", 1, M_LAN},
 #endif
 };
 
@@ -114,17 +114,12 @@ do_mon (void)
 	{
 
 	  cprintf ("Maybe %s had died, we need to re-exec it\n", v->name);
-	  if (v->stop)
-	    {
-	      v->stop ();
-	      sleep (2);
-	    }
-
+	  stop_service(v->name);
+	  sleep(2);
 	  eval ("/usr/bin/killall", "-SIGKILL", v->name);	// try to remove any zombies
 
 	  sleep (1);
-	  if (v->start)
-	    v->start ();
+	  start_service(v->name);
 	}
     }
 
