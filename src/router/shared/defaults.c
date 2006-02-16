@@ -579,7 +579,7 @@ struct nvram_tuple router_defaults[] = {
   {"block_java", "0", 0},	/* Block Java [1|0] */
   {"block_activex", "0", 0},	/* Block ActiveX [1|0] */
   {"block_cookie", "0", 0},	/* Block Cookie [1|0] */
-  {"multicast_pass", "1", 0},	/* Multicast Pass Through [1|0] */
+  {"multicast_pass", "0", 0},	/* Multicast Pass Through [1|0] */
   {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
   {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
   {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
