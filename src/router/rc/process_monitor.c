@@ -102,28 +102,3 @@ process_monitor_main (void)
 
   return 1;
 }
-
-int
-start_process_monitor (void)
-{
-  pid_t pid;
-
-  char *argv[] = { "process_monitor", NULL };
-  int ret = _eval (argv, NULL, 0, &pid);
-
-  cprintf ("done");
-
-  return ret;
-}
-
-int
-stop_process_monitor (void)
-{
-  int ret;
-
-  ret = eval ("killall", "process_monitor");
-
-  cprintf ("done\n");
-
-  return ret;
-}
