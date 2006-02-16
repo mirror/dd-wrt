@@ -48,6 +48,8 @@
 -u is_exist
 -u kill
 -u read
+-u route_add
+-u route_del
 -u router_defaults
 -u safe_fread
 -u safe_fwrite
