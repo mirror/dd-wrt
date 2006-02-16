@@ -18,21 +18,16 @@ else
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L../libnet/lib ../dnsmasq/src/dnsmasq.a -lnet -lcrypt 
 endif
 
-OBJS := rc.o init.o interface.o network.o services.o udhcpc.o ppp.o http.o stats.o crc.o mssid.o openvpn.o
-OBJS += firewall.o resetbutton.o ntp.o gpio.o iptable.o ddns.o listen.o check_ps.o process_monitor.o wshaper.o wland.o mkfiles.o sendudp.o 
-OBJS += ledcontrol.o
+OBJS := rc.o init.o interface.o servicemanager.o services.o udhcpc.o stats.o crc.o
+OBJS += resetbutton.o ntp.o iptable.o listen.o check_ps.o process_monitor.o wland.o mkfiles.o sendudp.o 
+OBJS += ledcontrol.o 
 
-OBJS += heartbeat.o
-#OBJS += eou.o
-OBJS += site_suvery.o
+
 
 ifneq ($(CONFIG_RB500),y)
 OBJS += mtd.o
 endif
 
-ifeq ($(CONFIG_NETCONF),y)
-OBJS += firewall.o
-endif
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
 CFLAGS += -DHAVE_ONLYCLIENT
@@ -113,7 +108,6 @@ CFLAGS += -DBOOT_WAIT_ON
 endif
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
-OBJS += sshd.o
 CFLAGS += -DHAVE_SSHD
 LDFLAGS += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz  -lcrypt
 #LDFLAGS += -Wl,--gc-sections
@@ -168,12 +162,11 @@ endif
 
 ifeq ($(CONFIG_SNMP),y)
 CFLAGS += -DHAVE_SNMP
-OBJS += snmp.o
 endif
 
 ifeq ($(CONFIG_WOL),y)
+OBJS +=wol.o
 CFLAGS += -DHAVE_WOL
-OBJS += wol.o
 endif
 
 ifeq ($(CONFIG_NOCAT),y)
@@ -292,6 +285,6 @@ endif
 
 rc: $(OBJS)
 	$(AR) arc -o $@.a $^
-#	$(CC) -o $@ $^ ../httpd/httpd.a $(LDFLAGS)
+#	$(CC) -o $@ $^ ../httpd/httpd.a $(LDFLAGS) -lshared
 
 $(OBJS): $(CY_DEPS)
