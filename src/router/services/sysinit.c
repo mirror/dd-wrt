@@ -72,7 +72,7 @@ int start_nvram (void);
 
 extern struct nvram_tuple router_defaults[];
 
-#if 0
+
 int
 endswith (char *str, char *cmp)
 {
@@ -88,7 +88,7 @@ endswith (char *str, char *cmp)
     }
   return (1);
 }
-#endif
+
 
 
 
@@ -144,7 +144,7 @@ enableAfterBurner (void)
       fprintf (stderr, "enable Afterburner....\n");
       sprintf (ab, "0x0%X", boardflags);
       nvram_set ("boardflags", ab);
-      nvram_commit ();
+      nvram_set ("need_commit","1");
     }
 }
 
@@ -368,8 +368,7 @@ start_restore_defaults (void)
 	{
 	    nvram_unset (t->name);
 	}
-	nvram_commit();
-
+        restore_defaults=1;
 	}
 
 /*      ds = nvram_safe_get ("http_passwd");
@@ -642,7 +641,7 @@ setup_4712 (void)
 	      nvram_set ("vlan1hwname", "et0");
 	      nvram_set ("pppoe_ifname", "vlan1");
 	      nvram_set ("wl0_ifname", "eth1");
-	      nvram_commit ();
+              nvram_set ("need_commit","1");
 	    }
 	}			// VLAN enabled
       else
@@ -667,7 +666,8 @@ setup_4712 (void)
       else
 	nvram_set ("lan_ifnames", "eth0 eth2");
     }
-  nvram_commit ();
+nvram_set ("need_commit","1");
+
 
 
 }
@@ -1206,7 +1206,6 @@ check_cfe_nv (void)
 	{
 	  /* Lower the DDR ram drive strength , the value will be stable for all boards
 	     Latency 3 is more stable for all ddr 20050420 by honor */
-//      if (!nvram_match("manual_boot_nv", "1")) {
 
 	  ret += check_nv ("sdram_init", "0x010b");
 	  ret += check_nv ("sdram_config", "0x0062");
@@ -1214,11 +1213,8 @@ check_cfe_nv (void)
 	  if (ret)
 	    {
 	      nvram_set ("sdram_ncdl", "0x0");
-	      nvram_commit ();
-//                  kill(1, SIGTERM);
-//                  exit(0);
+
 	    }
-//              }
 	  ret += check_nv ("pa0itssit", "62");
 	  ret += check_nv ("pa0b0", "0x15eb");
 	  ret += check_nv ("pa0b1", "0xfa82");
@@ -1265,7 +1261,7 @@ check_cfe_nv (void)
 	  if (ret)
 	    {
 	      nvram_set ("sdram_ncdl", "0x0");
-	      nvram_commit ();
+
 	    }
 	  ret += check_nv ("pa0itssit", "62");
 	  ret += check_nv ("pa0b0", "0x15eb");
