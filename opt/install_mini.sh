@@ -58,7 +58,7 @@ cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
 #cd ../../../../../opt
 
 
-../src/linux/linux.v24/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
+../src/linux/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
 ./make_kernel.sh
 ../tools/trx -o dd-wrt.v23_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ../tools/trx_gs -o dd-wrt.v23_gs_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
