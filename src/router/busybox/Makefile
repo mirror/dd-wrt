@@ -56,7 +56,7 @@ endif
 CFLAGS += -I../../include.v23
 
 LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -lshared -L../libnet/lib  
-LIBRARIES += ../rc/rc.a ../dnsmasq/src/dnsmasq.a ../httpd/httpd.a -lnvram -lnet -lcrypt
+LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet -lcrypt
 
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
