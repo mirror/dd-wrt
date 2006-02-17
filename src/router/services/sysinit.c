@@ -641,7 +641,7 @@ setup_4712 (void)
 	      nvram_set ("vlan1hwname", "et0");
 	      nvram_set ("pppoe_ifname", "vlan1");
 	      nvram_set ("wl0_ifname", "eth1");
-              nvram_set ("need_commit","1");
+//              nvram_set ("need_commit","1");
 	    }
 	}			// VLAN enabled
       else
@@ -666,7 +666,7 @@ setup_4712 (void)
       else
 	nvram_set ("lan_ifnames", "eth0 eth2");
     }
-nvram_set ("need_commit","1");
+//nvram_set ("need_commit","1");
 
 
 
@@ -780,7 +780,7 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag et wl switch-core switch-robo";
+		"diag wl switch-core switch-robo";
 	      break;
 	    }
 	}
@@ -792,25 +792,25 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag et wl switch-core switch-robo";
+		"diag wl switch-core switch-robo";
 	      break;
 	    case ROUTER_BUFFALO_WZRRSG54:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag b44 wl";
+		"diag wl";
 	      break;
 	    default:
 	      if (check_vlan_support ())
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag et wl switch-core switch-robo";
+		  "diag wl switch-core switch-robo";
 	      else
 		modules =
 		  nvram_invmatch ("ct_modules",
 				  "") ? nvram_safe_get ("ct_modules") :
-		  "diag et wl";
+		  "diag wl";
 	      break;
 	    }
 	}
