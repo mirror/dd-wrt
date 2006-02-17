@@ -144,7 +144,7 @@ enableAfterBurner (void)
       fprintf (stderr, "enable Afterburner....\n");
       sprintf (ab, "0x0%X", boardflags);
       nvram_set ("boardflags", ab);
-      nvram_set ("need_commit","1");
+      nvram_set ("need_commit", "1");
     }
 }
 
@@ -213,14 +213,16 @@ return 0;
 */
 // begin Sveasoft addition
 
-int start_create_rc_startup(void)
+int
+start_create_rc_startup (void)
 {
-create_rc_file(RC_STARTUP);
+  create_rc_file (RC_STARTUP);
 }
 
-int start_create_rc_shutdown(void)
+int
+start_create_rc_shutdown (void)
 {
-create_rc_file(RC_SHUTDOWN);
+  create_rc_file (RC_SHUTDOWN);
 }
 
 
@@ -363,12 +365,12 @@ start_restore_defaults (void)
       ds = nvram_safe_get ("dhcp_start");
       if (ds != NULL && strlen (ds) > 3)
 	{
-	fprintf(stderr,"cleaning nvram variables\n");
-	for (t = router_defaults; t->name; t++)
-	{
-	    nvram_unset (t->name);
-	}
-        restore_defaults=1;
+	  fprintf (stderr, "cleaning nvram variables\n");
+	  for (t = router_defaults; t->name; t++)
+	    {
+	      nvram_unset (t->name);
+	    }
+	  restore_defaults = 1;
 	}
 
 /*      ds = nvram_safe_get ("http_passwd");
@@ -975,6 +977,23 @@ start_nvram (void)
 	    }
 	}
     }
+// changed by steve
+	if ((nvram_match("restore_defaults", "1")) || (nvram_match("upnpcas", "1"))) {
+		nvram_set("upnp_clear", "1");
+	}
+	else {
+		char s[32];
+		char *nv;
+		for (i = 0; i < MAX_NVPARSE; ++i) {
+    		sprintf(s, "forward_port%d", i);
+			if ((nv = nvram_get(s)) != NULL) {
+				if (strstr(nv, "msmsgs")) nvram_unset(s);
+			}
+		}
+	}
+	nvram_set("upnp_wan_proto", "");
+
+// changed by steve
 
   /* The tkip and aes already are changed to wl_crypto from v3.63.3.0 */
   if (nvram_match ("wl_wep", "tkip"))

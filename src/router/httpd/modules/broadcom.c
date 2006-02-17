@@ -73,6 +73,11 @@ int debug_value = 0;
 //tofu
 int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
+// changed by steve
+static int tf_upnp(webs_t wp);
+static int ej_tf_upnp(int eid, webs_t wp, int argc, char_t **argv);
+// end changed by steve
+
 /* Example:
  * ISDIGIT("", 0); return true;
  * ISDIGIT("", 1); return false;
@@ -2048,10 +2053,12 @@ Initnvramtab ()
 		    {
 		      tmp->validate = validate_forward_spec;
 		    }
-		  if (!stricmp (tmpstr, "FORWARDUPNP"))
+// changed by steve
+		  /*if (!stricmp (tmpstr, "FORWARDUPNP"))
 		    {
 		      tmp->validate = validate_forward_upnp;
-		    }
+		    }*/
+// end changed by steve
 		  if (!stricmp (tmpstr, "PORTTRIGGER"))
 		    {
 		      tmp->validate = validate_port_trigger;
@@ -2782,7 +2789,9 @@ struct apply_action apply_actions[] = {
   {"OnePage", "", 0, RESTART, NULL},	// same as index
   {"Expose", "filters", 0, SYS_RESTART, NULL},	// same as DMZ
   {"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
-  {"Forward_UPnP", "forward_upnp", 0, SERVICE_RESTART, NULL},	// upnp added 
+// changed by steve
+  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added 
+// end changed by steve
 //#endif
   {"Security", "", 1, RESTART, NULL},
   {"System", "", 0, RESTART, NULL},
@@ -3351,7 +3360,10 @@ initHandlers (void)
   websAspDefine ("filter_port", ej_filter_port);
   websAspDefine ("forward_port", ej_forward_port);
   websAspDefine ("forward_spec", ej_forward_spec);
-  websAspDefine ("forward_upnp", ej_forward_upnp);	// upnp added 
+// changed by steve
+//websAspDefine ("forward_upnp", ej_forward_upnp);	// upnp added 
+// end changed by steve
+
   websAspDefine ("static_route", ej_static_route);
   websAspDefine ("localtime", ej_localtime);
   websAspDefine ("dumplog", ej_dumplog;
@@ -3736,7 +3748,9 @@ struct ej_handler ej_handlers[] = {
   /* for forward */
   {"port_forward_table", ej_port_forward_table},
   {"port_forward_spec", ej_port_forward_spec},
-  {"forward_upnp", ej_forward_upnp},
+// changed by steve
+  //{"forward_upnp", ej_forward_upnp},
+// end changed by steve
   {"port_trigger_table", ej_port_trigger_table},
   /* for route */
   {"static_route_table", ej_static_route_table},
@@ -3829,7 +3843,83 @@ struct ej_handler ej_handlers[] = {
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
 /* end lonewolf additions */
+// changed by steve
+  { "tf_upnp", ej_tf_upnp },
+// end changed by steve
 
   {NULL, NULL}
 };
 #endif /* !WEBS */
+
+// changed by steve
+// writes javascript-string safe text
+static int tf_webWriteJS(webs_t wp, const char *s) 
+{
+	char buf[512];
+	int n;
+	int r;
+
+	n = 0;
+	r = 0;
+	for (; *s; s++) {
+		if ((*s != '"') && (*s != '\\') && (*s != '\'') && (isprint(*s))) {
+			buf[n++] = *s;
+		}
+		else {
+			sprintf(buf + n, "\\x%02x", *s);
+			n += 4;
+		}
+		if (n > (sizeof(buf) - 10)) {	// ! extra space for \xHH
+			buf[n] = 0;
+			n = 0;
+			r += wfputs(buf, wp);
+		}
+	}
+	if (n > 0) {
+		buf[n] = 0;
+		r += wfputs(buf, wp);
+	}
+	wfflush(wp);
+	return r;
+}
+
+// handle UPnP.asp requests / added 10
+static int tf_upnp(webs_t wp)
+{
+	char *v;
+	char s[64];
+
+	if (((v = websGetVar(wp, "remove", NULL)) != NULL) && (*v)) {
+		if (strcmp(v, "all") == 0) {
+			nvram_set("upnp_clear", "1");
+		}
+		else {
+			sprintf(s, "forward_port%s", v);
+			nvram_unset(s);
+		}
+	}
+
+	// firewall + upnp service is restarted after this
+	return 0;
+}
+
+//	<% tf_upnp(); %>
+//	returns all "forward_port#" nvram entries containing upnp port forwardings
+static int ej_tf_upnp(int eid, webs_t wp, int argc, char_t **argv)
+{
+	int i;
+	int r;
+	char s[32];
+
+	r = 0;
+	if (nvram_match("upnp_enable", "1")) {
+		for (i = 0; i < 50; i++) {
+			r += websWrite(wp, (i > 0) ? ",'" : "'");
+			sprintf(s, "forward_port%d", i);
+			r += tf_webWriteJS(wp, nvram_safe_get(s));
+			r += websWrite(wp, "'");
+		}
+	}
+	return r;
+}
+// end changed by steve

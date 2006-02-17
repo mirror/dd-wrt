@@ -33,11 +33,15 @@
 #define FILTER_MAC_PAGE 5
 #define BLOCKED_SERVICE_NUM 5
 
+
+// changed by steve
 /* for forward */
 //#define FORWARDING_NUM 60
 #define SPECIAL_FORWARDING_NUM 30
 #define UPNP_FORWARDING_NUM 30
 //#define PORT_TRIGGER_NUM 50
+// end changed by steve
+
 
 /* for static route */
 #define STATIC_ROUTE_PAGE 20
@@ -205,8 +209,11 @@ extern void validate_staticleases(webs_t wp, char *value, struct variable *v);
 extern void validate_forward_spec(webs_t wp, char *value, struct variable *v);
 extern int ej_port_trigger_table(int eid, webs_t wp, int argc, char_t **argv);
 extern void validate_port_trigger(webs_t wp, char *value, struct variable *v);
-extern int ej_forward_upnp(int eid, webs_t wp, int argc, char_t **argv); //upnp added 
-extern void validate_forward_upnp(webs_t wp, char *value, struct variable *v); //upnp added 
+// Changed by Steve
+//extern int ej_forward_upnp(int eid, webs_t wp, int argc, char_t **argv); //upnp added 
+//extern void validate_forward_upnp(webs_t wp, char *value, struct variable *v); //upnp added 
+// End Changed by Steve
+
 
 /* for dynamic route */
 extern int ej_dump_route_table(int eid, webs_t wp, int argc, char_t **argv);

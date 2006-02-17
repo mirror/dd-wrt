@@ -408,6 +408,7 @@ parse_port_forward (char *wordlist)
   }
 }
 
+// changed by steve
 static void
 parse_upnp_forward ()
 {
@@ -419,6 +420,16 @@ parse_upnp_forward ()
 
   if (nvram_invmatch ("upnp_enable", "1"))
     return;
+
+
+	if (nvram_match("upnp_clear", "1")) {	// tofu10
+		nvram_unset("upnp_clear");
+		for (i = 0; i < 50 ; ++i){
+			sprintf(name, "forward_port%d", i);
+			nvram_unset(name);
+		}
+		return;
+	}
 
   /* Set wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc */
   for (i = 0; i < 15; i++)
@@ -508,6 +519,8 @@ parse_upnp_forward ()
 	}
     }
 }
+// end changed by steve
+
 
 static void
 parse_spec_forward (char *wordlist)
@@ -1291,7 +1304,8 @@ lan2wan_chains (void)
     }
 }
 
-void start_filtersync(void)
+void
+start_filtersync (void)
 {
   time_t ct;			/* Calendar time */
   struct tm *bt;		/* Broken time */
@@ -1599,7 +1613,7 @@ filter_forward (void)
       save2file ("-A FORWARD -i br1 -o %s -j ACCEPT\n", get_wan_face ());
 
     }
-stop_vpn_modules();
+  stop_vpn_modules ();
 //  unload_vpn_modules ();
 
   if (nvram_invmatch ("filter", "off"))
@@ -1621,7 +1635,7 @@ stop_vpn_modules();
 		   wanface, ISAKMP_PORT, log_drop);
 
     }
-start_vpn_modules();
+  start_vpn_modules ();
 //  load_vpn_modules ();
   if (nvram_invmatch ("filter", "off"))
     {
@@ -2204,8 +2218,8 @@ start_firewall (void)
   strncpy (lanface, nvram_safe_get ("lan_ifname"), IFNAMSIZ);
   strncpy (wanface, get_wan_face (), IFNAMSIZ);
 
-  stop_vpn_modules();
-  start_vpn_modules();
+  stop_vpn_modules ();
+  start_vpn_modules ();
 
   if (nvram_match ("wan_proto", "pptp"))
     strncpy (wanaddr, nvram_safe_get ("pptp_get_ip"), sizeof (wanaddr));
@@ -2453,4 +2467,3 @@ if_tod_intime (int seq)
 
   return 0;
 }
-
