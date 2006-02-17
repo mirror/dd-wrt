@@ -1,5 +1,5 @@
 /*
- * Copyright 2004, Broadcom Corporation
+ * Copyright 2005, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,7 +7,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linux_osl.h,v 1.1.1.6 2004/04/12 04:30:38 honor Exp $
+ * $Id: linux_osl.h,v 1.1.1.7 2005/03/07 07:31:12 kanki Exp $
  */
 
 #include <arpa/inet.h>	    
@@ -32,3 +32,7 @@
 #define UPNP_INET_ATON(a,b)   (inet_aton(a,b)!=0)
 
 #define OSL_NULL_FILE "/dev/null"
+
+#include <upnp.h>
+int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port);	// added - tofu
+

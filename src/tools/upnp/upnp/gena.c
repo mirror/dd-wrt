@@ -1,5 +1,5 @@
 /*
-    Copyright 2004, Broadcom Corporation      
+    Copyright 2005, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -411,7 +411,6 @@ static struct net_connection *make_gena_connection(PService psvc, PSubscription 
 {
     struct gena_connection *c = NULL;
     int fd;
-    struct linger optval;
     extern int mbufShow ();
 
     /* create our GENA socket. */
@@ -423,9 +422,12 @@ static struct net_connection *make_gena_connection(PService psvc, PSubscription 
 	goto error;
     }
 
+/*  
+    struct linger optval;
     optval.l_onoff = 1;
     optval.l_linger = 0;
-    setsockopt(sr, SOL_SOCKET, SO_LINGER, &optval, sizeof (optval));
+    setsockopt(fd, SOL_SOCKET, SO_LINGER, &optval, sizeof (optval));	// sr>fd -- tofu
+*/	// removed - tofu
 
     // if we have not yet resolved the address of this host, do so now.
     // cache the result in the subscription.

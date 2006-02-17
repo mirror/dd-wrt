@@ -1,14 +1,14 @@
 /*
  * OS Independent Layer
  * 
- * Copyright 2004, Broadcom Corporation      
+ * Copyright 2005, Broadcom Corporation      
  * All Rights Reserved.      
  *       
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
- * $Id: upnp_osl.h,v 1.1.1.7 2004/04/12 04:30:38 honor Exp $
+ * $Id: upnp_osl.h,v 1.1.1.8 2005/03/07 07:31:12 kanki Exp $
  */
 
 #ifndef _upnp_osl_h_

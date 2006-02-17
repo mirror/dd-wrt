@@ -87,9 +87,10 @@ static bool SameInternalClient(netconf_nat_t *e1,   netconf_nat_t *e2)
    but RemoteHost is different. 
    pp 15, WANIPConection Sevice.
 */
+/* not used -- tofu
 static bool OverlappingRange(netconf_nat_t *e1, netconf_nat_t *e2)
 {
-    bool overlap = FALSE; /* assume no conflict */
+    bool overlap = FALSE; // assume no conflict
 
     do {
 	if (e1->ports[1] < e2->ports[0])
@@ -108,6 +109,7 @@ static bool OverlappingRange(netconf_nat_t *e1, netconf_nat_t *e2)
     printf("%s\n", (overlap ? "OverlappingRange" : "not OverlappingRange"));
     return overlap;
 }
+*/
 
 int AddPortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t args, int nargs)
 /* {"NewRemoteHost", VAR_RemoteHost, VAR_IN},				*/

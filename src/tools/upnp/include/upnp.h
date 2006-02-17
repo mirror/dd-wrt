@@ -1,5 +1,5 @@
 /*
- * Copyright 2004, Broadcom Corporation
+ * Copyright 2005, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,7 +7,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: upnp.h,v 1.1.1.6 2004/04/12 04:30:38 honor Exp $
+ * $Id: upnp.h,v 1.1.1.7 2005/03/07 07:31:12 kanki Exp $
  */
  
 #ifndef _upnp_h_

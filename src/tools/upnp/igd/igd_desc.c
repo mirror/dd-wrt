@@ -29,7 +29,7 @@
 
 extern int WANDevice_Init(PDevice pdev, device_state_t state, va_list ap);
 extern int LANDevice_Init(PDevice pdev, device_state_t state, va_list ap);
-extern int IGDevice_Init(PDevice igdev, device_state_t state);
+extern int IGDevice_Init(PDevice igdev, device_state_t state, va_list ap);
 
 
 /* Global structure for storing the state table for this device */

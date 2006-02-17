@@ -15,7 +15,7 @@
 #include "upnp.h"
 #include "igd.h"
 #include "bcmnvram.h"
-
+#include <cyutils.h>
 #include <signal.h>
 
 extern DeviceTemplate LANDeviceTemplate;
@@ -44,16 +44,19 @@ Error IGDErrors[] = {
 int IGDevice_Init(PDevice igdev, device_state_t state, va_list ap)
 {
     char *wan_ifname = &g_wandevs[0];
-    char *lan_ifname = &g_landevs[0];
     PDevice subdev;
+	static char name[64];
 
     switch (state) {
     case DEVICE_CREATE:
 	soap_register_errors(IGDErrors);
 
-	igdev->friendlyname = "Residential Gateway Device";
+	// tofu
+	sprintf(name, "DD-WRT Router (%s)", nvram_safe_get("lan_ipaddr"));
+	igdev->friendlyname = name;
 
 #if INCLUDE_LANDEVICE
+    char *lan_ifname = &g_landevs[0];
 	/* Include this code if you want a LAN device in your IGD.  If
 	   you do, make sure that the LANHOSTCONFIG service is also included
 	   in igd_desc.c */
@@ -111,7 +114,7 @@ int WANDevice_Init(PDevice pdev, device_state_t state, va_list ap)
 
 int LANDevice_Init(PDevice pdev, device_state_t state, va_list ap)
 {
-    PLANDevicePrivateData pdata;
+    PLANDevicePrivateData pdata;	// - tofu
     char *ifname = NULL;
 
     switch (state) {
@@ -149,7 +152,7 @@ void sigusr1_handler(int i)
     extern struct iface *global_lans;
     struct iface *pif;
 
-    printf("upnp reinitialize.\n");
+    UPNP_TRACE(("upnp reinitialize.\n"));
     bump_generation();
 
     for (pif = global_lans; pif; pif = pif->next) 
@@ -160,3 +163,15 @@ void sigusr1_handler(int i)
 }
 
 
+/* -- not used // moved out of header - tofu
+
+// Allow some time for the page to reload before killing ourselves
+int kill_after(pid_t pid, int sig, unsigned int after)
+{
+	if (fork() == 0) {
+		sleep(after);
+		return kill(pid, sig);
+	}
+	return 0;
+}
+*/
