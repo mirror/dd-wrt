@@ -33,7 +33,6 @@
 -u find_pid_by_ps
 -u getRouterBrand
 -u get_broadcast
--u get_complete_lan_ip
 -u get_dns_list
 -u get_forward_port
 -u get_int_len

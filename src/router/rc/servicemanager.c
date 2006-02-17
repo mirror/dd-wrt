@@ -113,6 +113,27 @@ dlclose(handle);
 return 0;
 }
 
+int start_servicei(char *name,int param)
+{
+cprintf("start_servicep\n");
+void *handle = load_service(name);
+if (handle==NULL)
+    {
+    return -1;
+    }
+void (*fptr)(int);
+char service[64];
+sprintf(service,"start_%s",name);
+cprintf("resolving %s\n",service);
+fptr = (void (*)(int))dlsym(handle,service);
+if (fptr)
+    (*fptr)(param);
+else
+    fprintf(stderr,"function %s not found \n",service);
+dlclose(handle);
+return 0;
+}
+
 
 int start_main(char *name,int argc,char **argv)
 {
