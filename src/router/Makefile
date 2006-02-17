@@ -94,7 +94,7 @@ obj-y += libcrypto
 CONFIG_IPTABLES=y
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
-obj-$(CONFIG_HTTPD) += httpd
+obj-$(CONFIG_HTTPD) += httpd validate
 obj-$(CONFIG_RC) += rc services
 obj-$(CONFIG_LIBBCM) += libbcm
 obj-$(CONFIG_SHARED) += shared
@@ -1305,7 +1305,9 @@ olsrd-install:
 
 
 rflow-install:
-	@true
+	install -D rflow/config/rflow.nvramconfig $(INSTALLDIR)/rflow/etc/config/rflow.nvramconfig
+	install -D rflow/config/rflow.webservices $(INSTALLDIR)/rflow/etc/config/rflow.webservices
+	install -D rflow/config/rflow.startup $(INSTALLDIR)/rflow/etc/config/rflow.startup
 
 #
 # Generic rules

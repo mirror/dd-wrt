@@ -237,9 +237,10 @@ cprintf("is all?\n");
 
 }
 
-void start_wlconf(void)
+void
+start_wlconf (void)
 {
-wlconf_up (nvram_safe_get ("wl0_ifname"));
+  wlconf_up (nvram_safe_get ("wl0_ifname"));
 }
 
 void
@@ -1215,16 +1216,16 @@ start_wan (int status)
   cprintf ("done()()()\n");
 }
 
-void 
-start_wan_boot(void)
+void
+start_wan_boot (void)
 {
-start_wan(BOOT);
+  start_wan (BOOT);
 }
 
-void 
-start_wan_redial(void)
+void
+start_wan_redial (void)
 {
-start_wan(REDIAL);
+  start_wan (REDIAL);
 }
 
 void
@@ -1796,5 +1797,3 @@ init_mtu (char *wan_proto)
     }
   return 0;
 }
-
-

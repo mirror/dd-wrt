@@ -6,6 +6,8 @@
 #include <broadcom.h>
 #include <cy_conf.h>
 
+
+/*
 void
 validate_forward_upnp (webs_t wp, char *value, struct variable *v)
 {
@@ -55,7 +57,6 @@ validate_forward_upnp (webs_t wp, char *value, struct variable *v)
 	  (!strcmp (ip, "0") || !strcmp (ip, "")))
 	continue;
 
-      /* check name */
       if (strcmp (name, ""))
 	{
 	  if (!valid_name (wp, name, &which[0]))
@@ -69,7 +70,6 @@ validate_forward_upnp (webs_t wp, char *value, struct variable *v)
 	    }
 	}
 
-      /* check PORT number */
 
       if (!valid_range (wp, from, &which[1])
 	  || !valid_range (wp, to, &which[2]))
@@ -78,7 +78,6 @@ validate_forward_upnp (webs_t wp, char *value, struct variable *v)
 	  continue;
 	}
 
-      /* check ip address */
 
       if (!valid_range (wp, ip, &which[4]))
 	{
@@ -116,41 +115,34 @@ ej_forward_upnp (int eid, webs_t wp, int argc, char_t ** argv)
     goto def;
   strncpy (value, nvram_get (name), sizeof (value));
 
-  /* Check for LAN IP address specification */
   lan_ipaddr = value;
   wan_port0 = strsep (&lan_ipaddr, ">");
   if (!lan_ipaddr)
     return FALSE;
 
-  /* Check for LAN destination port specification */
   lan_port0 = lan_ipaddr;
   lan_ipaddr = strsep (&lan_port0, ":");
   if (!lan_port0)
     return FALSE;
 
-  /* Check for protocol specification */
   proto = lan_port0;
   lan_port0 = strsep (&proto, ":,");
   if (!proto)
     return FALSE;
 
-  /* Check for enable specification */
   enable = proto;
   proto = strsep (&enable, ":,");
   if (!enable)
     return FALSE;
 
-  /* Check for description specification (optional) */
   desc = enable;
   enable = strsep (&desc, ":,");
 
-  /* Check for WAN destination port range (optional) */
   wan_port1 = wan_port0;
   wan_port0 = strsep (&wan_port1, "-");
   if (!wan_port1)
     wan_port1 = wan_port0;
 
-  /* Check for LAN destination port range (optional) */
   lan_port1 = lan_port0;
   lan_port0 = strsep (&lan_port1, "-");
   if (!lan_port1)
@@ -215,7 +207,7 @@ def:
 
 }
 
-
+*/
 /* Example:
  * name:[on|off]:[tcp|udp|both]:8000:80>100
  */
