@@ -33,13 +33,13 @@
 
 #define _PATH_PROCNET_DEV           "/proc/net/dev"
 
-static int dump_ecmd(struct ethtool_cmd *ep);
+//static int dump_ecmd(struct ethtool_cmd *ep);
 
 int osl_ifstats(char *ifname, if_stats_t *pstats )
 {
     extern int get_dev_fields(char *, int , if_stats_t *);
     extern int procnetdev_version(char *);
-    extern char *get_devname(char *, char *);
+    extern char *get_name(char *, char *);
 
     FILE *fh;
     char buf[512];
@@ -65,7 +65,7 @@ int osl_ifstats(char *ifname, if_stats_t *pstats )
 	char *s;
 	char name[50];
 	
-	s = get_devname(name, buf);
+	s = get_name(name, buf);
 	if (strcmp(name, ifname) == 0) {
 	    get_dev_fields(s, procnetdev_vsn, pstats);
 	    break;
@@ -176,13 +176,13 @@ uint osl_max_bitrates(char *devname, ulong *rx, ulong *tx)
 		speed = 0;
 	    }
 	} else {
-	    UPNP_ERROR(("ioctl(SIOCETHTOOL) failed in " __FUNCTION__));
+	    UPNP_ERROR(("ioctl(SIOCETHTOOL) failed in %s", __FUNCTION__));
 	}
 
 	/* close the control socket */
 	close(fd);
     } else {
-	UPNP_ERROR(("cannot open socket in " __FUNCTION__));
+	UPNP_ERROR(("cannot open socket in %s", __FUNCTION__));
     }
 
     *rx = *tx = speed;
@@ -191,7 +191,7 @@ uint osl_max_bitrates(char *devname, ulong *rx, ulong *tx)
 }
 
 
-
+/* not used
 static void dump_supported(struct ethtool_cmd *ep)
 {
 	u_int32_t mask = ep->supported;
@@ -293,7 +293,6 @@ static void dump_advertised(struct ethtool_cmd *ep)
 		fprintf(stdout, "No\n");
 }
 
-
 static int dump_ecmd(struct ethtool_cmd *ep)
 {
 	dump_supported(ep);
@@ -369,7 +368,7 @@ static int dump_ecmd(struct ethtool_cmd *ep)
 		"off" : "on");
 	return 0;
 }
-
+*/
 
 void osl_sys_restart()
 {
@@ -385,7 +384,7 @@ bool osl_wan_isup(char *devname)
 {
     struct in_addr inaddr = {0};
     bool status = FALSE;
-	char tmp[100];
+//	char tmp[100];
 
     if (strcasecmp(nvram_safe_get("wan_proto"), "disabled") != 0) {
 	if (osl_ifaddr(nvram_safe_get("wan_iface"), &inaddr)) {

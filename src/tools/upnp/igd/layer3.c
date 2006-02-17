@@ -61,7 +61,10 @@ ServiceTemplate Template_Layer3Forwarding = {
     Layer3_GetVar,
     NULL,   /* SVCXML */
     ARRAYSIZE(StateVariables)-1, StateVariables,
-    Actions
+    Actions,
+	0,
+	"urn:upnp-org:serviceId:L3Forwarding",			// was "Layer3Forwarding:11" - tofu
+	NULL
 };
 
 struct Layer3Forwarding {

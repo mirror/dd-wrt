@@ -223,7 +223,9 @@ ServiceTemplate Template_WANIPConnection = {
     NULL,			/* xml generator */
     ARRAYSIZE(StateVariables)-1, StateVariables,
     Actions, 0,
-    "urn:upnp-org:serviceId:WANIPConn"
+    "urn:upnp-org:serviceId:WANIPConn",
+//	"urn:upnp-org:serviceId:WANIPConnection",		// alt test - tofu
+	NULL
 };
 
 extern void enable_wan();
@@ -417,7 +419,7 @@ static int WANIPConnection_GetVar(struct Service *psvc, int varindex)
 {
     PWANIPConnectionData data = psvc->opaque;
     struct StateVar *var;
-    time_t now;
+//    time_t now;
     char **p, *cur;
     int len;
     struct sysinfo info;
@@ -469,7 +471,7 @@ static int ForceTermination(UFILE *uclient, PService psvc, PAction ac, pvar_entr
 {
     uint success = TRUE; /* assume no error will occur */
     PWANIPConnectionData pdata = (PWANIPConnectionData) psvc->opaque;
-    PWANDevicePrivateData pdevdata = (PWANDevicePrivateData) psvc->device->parent->opaque;
+//    PWANDevicePrivateData pdevdata = (PWANDevicePrivateData) psvc->device->parent->opaque;
     char wanproto[100];
 
     /* Our ConnectionType is always IP_Routed, so I don't need to check that here. */

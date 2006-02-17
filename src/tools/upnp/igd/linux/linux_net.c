@@ -19,7 +19,7 @@
 #include "upnp.h"
 #include "../igd/igd.h"
 
-char *get_devname(char *name, char *p)
+char *get_name(char *name, char *p)
 {
     while (isspace(*p))
 	p++;
