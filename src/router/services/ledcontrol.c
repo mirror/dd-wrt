@@ -269,5 +269,5 @@ powerled_ctrl (int on)
 int
 start_powerled_ctrl_1 (void)
 {
-return powerled_ctrl(1);
+  return powerled_ctrl (1);
 }
