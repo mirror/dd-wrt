@@ -1,5 +1,5 @@
 /*
-    Copyright 2004, Broadcom Corporation      
+    Copyright 2005, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -555,13 +555,13 @@ static void process_get( UFILE *up, char *fname, char *msg )
     
     /* Send the HTTP response header */
     uprintf(up, "HTTP/1.0 200 OK\r\n");
-    uprintf(up, "SERVER: %s\r\n", SERVER);
-    uprintf(up, "DATE: %s\r\n", date);
-    /* uprintf(up, "CONTENT-TYPE: text/xml\r\n"); */
-    uprintf(up, "CONTENT-TYPE: application/octet-stream\r\n");
+    uprintf(up, "Server: %s\r\n", SERVER);
+    uprintf(up, "Date: %s\r\n", date);
+	uprintf(up, "Content-Type: text/xml\r\n");	// this should be text/xml... right? -- tofu
+//	uprintf(up, "Content-Type: application/octet-stream\r\n");
     uprintf(up, "Cache-Control: max-age=1\r\n");
-    uprintf(up, "PRAGMA: no-cache\r\n");
-    uprintf(up, "Connection: Close\r\n" );
+    uprintf(up, "Pragma: no-cache\r\n");
+    uprintf(up, "Connection: close\r\n" );
     uprintf(up, "\r\n" );
     uflush(up);
     
@@ -631,11 +631,11 @@ static void process_allxml( UFILE *up, char *fname )
 
     /* Send the HTTP response header */
     uprintf(up, "HTTP/1.1 200 OK\r\n");
-    uprintf(up, "SERVER: %s\r\n", SERVER);
-    /* uprintf(up, "CONTENT-TYPE: text/xml\r\n"); */
-    uprintf(up, "CONTENT-TYPE: application/octet-stream\r\n");
+    uprintf(up, "Server: %s\r\n", SERVER);
+	uprintf(up, "Content-Type: text/xml\r\n");	// tofu
+//	uprintf(up, "Content-Type: application/octet-stream\r\n");
     uprintf(up, "Cache-Control: max-age=1\r\n");
-    uprintf(up, "PRAGMA: no-cache\r\n");
+    uprintf(up, "Pragma: no-cache\r\n");
     uprintf(up, "Content-Length: %d\r\n", content_length);
     uprintf(up, "Connection: Keep-Alive\r\n" );
     uprintf(up, "\r\n" );

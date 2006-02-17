@@ -1,5 +1,5 @@
 /*
-    Copyright 2004, Broadcom Corporation      
+    Copyright 2005, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -92,7 +92,7 @@ void service_xml(PService psvc, UFILE *up)
     PVarTemplate pv;
     PAction *ac;
     PParam pa;
-    char *tstr;
+    const char *tstr;
 
     uprintf(up, 
 	    "<?xml version=\"1.0\"?>\r\n"

@@ -19,7 +19,7 @@
 #include "bcmnvram.h"
 #include "nvparse.h"
 #include "mapmgr.h"
-
+#include "igd.h"
 
 #if	FD_SETSIZE < 200
 #error "FD_SETSIZE is too small.  Must be >= 200"
@@ -91,21 +91,23 @@ static bool mapmgr_add_map(map_set_t *pset, mapping_t *m)
     bool foundit = FALSE;
     int i;
 
+	UPNP_TRACE((__FUNCTION__));
+
     foundit = FALSE;
     for (i = 0; i < NFDBITS; i++) {
 	if (!FD_ISSET(i, &ports.map) && !FD_ISSET(i, &ranges.map) ) {
 	    foundit = set_forward_port(i, (netconf_nat_t*)m);
-		fprintf(stderr, "m->desc[%s]\n", m->desc);	
+		UPNP_TRACE(("m->desc[%s]\n", m->desc));
 	    if(m->desc && 
 	      (strstr(m->desc, "msmsgs (") || 
 	       strstr(m->desc, "msnmsgr (") || 
 	       strstr(m->desc, "MsnMsgr (") || 
 	       strstr(m->desc, "MSMSGS (") || 
 	       strstr(m->desc, "Xbox (")))
-		fprintf(stderr, "MSN/Xbox add forward rule, not commit!\n");
-	    else{
-	        fprintf(stderr, "Not MSN/Xbox message, commit (add)!\n");
-	    	nvram_commit();
+			UPNP_TRACE(("MSN/Xbox add forward rule, not commit!\n"));
+	    else {
+			UPNP_TRACE(("Not MSN/Xbox message, commit (add)!\n"));
+	    	//	nvram_commit();		// removed/don't block -- tofu
 	    }
 	    FD_SET(i, &pset->map);
 	    pset->count++;
@@ -123,10 +125,12 @@ static bool mapmgr_delete_map(map_set_t *pset, int n)
     bool foundit = FALSE;
     int i;
 
+	UPNP_TRACE((__FUNCTION__));
+
     for (i = 0; i < NFDBITS; i++) {
 	if (FD_ISSET(i, &pset->map)) {	
 	    if (n-- == 0) {
-    		char name[] = "forward_portXXXXXXXXXX";
+    		char name[32];// = "forward_portXXXXXXXXXX";
 		FD_CLR(i, &pset->map);
 		pset->count--;
 		snprintf(name, sizeof(name), "forward_port%d", i);
@@ -135,13 +139,13 @@ static bool mapmgr_delete_map(map_set_t *pset, int n)
 		   strstr(nvram_safe_get(name), "MsnMsgr (") ||
 		   strstr(nvram_safe_get(name), "MSMSGS (") || 
 		   strstr(nvram_safe_get(name), "Xbox (")) {
-		    fprintf(stderr, "MSN/Xbox del forward rule, not commit!\n");
+		    UPNP_TRACE(("MSN/Xbox del forward rule, not commit!\n"));
 		    foundit = del_forward_port(i);
 		}
-	        else{
-		    fprintf(stderr, "Not MSN/Xbox message, commit (del)!\n");
+        else{
+		    UPNP_TRACE(("Not MSN/Xbox message, commit (del)!\n"));
 		    foundit = del_forward_port(i);
-		    nvram_commit();
+			//	nvram_commit();		// <-- removed/don't block; is this really necessary? -- tofu
 		}
 		break;
 	    }

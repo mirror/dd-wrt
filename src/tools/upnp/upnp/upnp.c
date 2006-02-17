@@ -1,5 +1,5 @@
 /*
- * Copyright 2004, Broadcom Corporation
+ * Copyright 2005, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,12 +7,13 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: upnp.c,v 1.1.1.6 2004/04/12 04:30:39 honor Exp $
+ * $Id: upnp.c,v 1.2 2005/05/25 02:12:07 honor Exp $
  */
 
 #include <signal.h>
 #include <stdarg.h>
-#include <time.h>
+#include <string.h>
+#include <bcmnvram.h>
 
 #include "upnp_dbg.h"
 #include "upnp_osl.h"
@@ -48,6 +49,8 @@ static void generate_uuids();
 struct net_connection *net_connections = NULL;
 
 int global_exit_now = FALSE;
+
+extern int ssdp_interval;
 
 struct iface *global_lans = NULL;
 
@@ -97,9 +100,6 @@ int upnp_main(PDeviceTemplate pdevtmpl, char *ifname)
     signal(SIGINT, interrupt_handler);
     signal(SIGTERM, interrupt_handler);
 
-    /* prevent socket errors to cause termination */
-    signal(SIGPIPE, SIG_IGN);
-
     memset(&timer, 0, sizeof(timer));
     timer.it_interval.tv_sec = 30;
     timer.it_value.tv_sec = 30;
@@ -111,8 +111,8 @@ int upnp_main(PDeviceTemplate pdevtmpl, char *ifname)
     td2 = enqueue_event(&timer, (event_callback_t)gena_subscription_reaper, NULL);
 
     memset(&timer, 0, sizeof(timer));
-    timer.it_interval.tv_sec = UPNP_REFRESH;
-    timer.it_value.tv_sec = UPNP_REFRESH;
+    timer.it_interval.tv_sec = ssdp_interval;
+    timer.it_value.tv_sec = ssdp_interval;
     td3 = enqueue_event(&timer, (event_callback_t)periodic_advertiser, (void *) SSDP_ALIVE);
 
     UPNP_TRACE(("Sending initial advertisements.\n"));
@@ -159,7 +159,8 @@ int upnp_main(PDeviceTemplate pdevtmpl, char *ifname)
 void interrupt_handler(int i)
 {
     //    signal(SIGINT, SIG_DFL);
-    send_advertisements(SSDP_BYEBYE);
+    if (nvram_match("upnp_enable", "0"))	// we're usually just restarting, so don't send a byebye unless this is to turn UPnP off -- tofu
+		send_advertisements(SSDP_BYEBYE);
     global_exit_now = TRUE;
 }
 

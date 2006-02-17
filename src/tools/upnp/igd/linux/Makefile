@@ -44,7 +44,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -DNDEBUG
+CFLAGS += -Os -mips32 -mtune=mips32 -pipe -DNDEBUG
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused 
@@ -118,6 +118,10 @@ endif
 
 $(TARGET) :: ../../upnp/linux/libupnp.a  $(SOURCES.OBJ)
 	$(CC) -o $(TARGET) $(SOURCES.OBJ) $(LIBS)
+ifneq ($(DEBUG),1)
+	$(STRIP)  $(TARGET)
+endif
+	$(SIZE)  $(TARGET)
 
 clean: 
 	rm -rf obj 

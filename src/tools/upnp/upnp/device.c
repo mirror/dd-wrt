@@ -1,5 +1,5 @@
 /*
-    Copyright 2004, Broadcom Corporation      
+    Copyright 2005, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -147,46 +147,49 @@ void device_xml(PDevice pdev, UFILE *up)
 {
     PFDEVXML func;
     char *friendlyname;
-    char *model_no = NULL;
+	char *myip;
+	int winmnp;
 
     // call the device's xml function, if defined.
     if ((func = pdev->template->devxml) != NULL) {
-	(*func)(pdev, up);
-	return;
+		(*func)(pdev, up);
+		return;
     }
+
+	myip = nvram_safe_get("lan_ipaddr");
+	winmnp = (!nvram_match("upnpmnp", "0"));
 
     if (ISROOT(pdev)) {
-	uprintf(up, 
-		"<?xml version=\"1.0\"?>\r\n"
-		"<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\r\n"
-		"<specVersion>\r\n"
-		"<major>1</major>\r\n"
-		"<minor>0</minor>\r\n"
-		"</specVersion>\r\n"
-		);
+		uprintf(up, 
+			"<?xml version=\"1.0\"?>\r\n"
+			"<root xmlns=\"urn:schemas-upnp-org:device-1-0\">\r\n"
+			"<specVersion>\r\n"
+			"<major>1</major>\r\n"
+			"<minor>0</minor>\r\n"
+			"</specVersion>\r\n"
+			);
+
+		if (winmnp) uprintf(up, "<URLBase>http://%s:5431</URLBase>\r\n", myip);	// tofu
     }
 
-    if (pdev->friendlyname)
-	friendlyname = pdev->friendlyname;
-    else {
-	friendlyname = pdev->template->type;
-    }
-
-    model_no = nvram_get("model_no");
-    if (!model_no || strlen(model_no) == 0) {
-	model_no = DEV_MODEL_NO;
-    }
+    if (pdev->friendlyname) friendlyname = pdev->friendlyname;
+        else friendlyname = pdev->template->type;
 
     uprintf(up, "<device>\r\n");
     uprintf(up, "<deviceType>%s</deviceType>\r\n", pdev->template->type);
     uprintf(up, "<friendlyName>%s</friendlyName>\r\n", friendlyname);
-    uprintf(up, "<manufacturer>%s</manufacturer>\r\n", DEV_MFR);
-    uprintf(up, "<manufacturerURL>%s</manufacturerURL>\r\n", DEV_MFR_URL);
-    uprintf(up, "<modelDescription>%s</modelDescription>\r\n", DEV_MODEL_DESCRIPTION);
-    uprintf(up, "<modelName>%s</modelName>\r\n", DEV_MODEL);
-    uprintf(up, "<modelNumber>%s</modelNumber>\r\n", model_no);
-    uprintf(up, "<modelURL>%s</modelURL>\r\n", DEV_MODEL_URL);
-    uprintf(up, "<UDN>%s</UDN>\r\n", pdev->udn);
+    uprintf(up, "<manufacturer>" DEV_MFR "</manufacturer>\r\n"
+				"<manufacturerURL>" DEV_MFR_URL "</manufacturerURL>\r\n"
+				"<modelDescription>" DEV_MODEL_DESCRIPTION "</modelDescription>\r\n"
+				"<modelName>" DEV_MODEL "</modelName>\r\n"
+				"<modelNumber>" DEV_MODEL_NO "</modelNumber>\r\n"
+				"<modelURL>" DEV_MODEL_URL "</modelURL>\r\n");
+	uprintf(up, "<UDN>%s</UDN>\r\n", pdev->udn);
+
+	if ((winmnp) && (ISROOT(pdev))) {
+		uprintf(up, "<presentationURL>http://%s/UPnP.asp</presentationURL>\r\n", myip);		// the "invoke" url -- tofu
+	}
+//		uprintf(up, "<UPC>01234-56789</UPC>\r\n");
 
     // generate XML for any services in this device.
     device_servicelist(pdev, up);
@@ -197,7 +200,7 @@ void device_xml(PDevice pdev, UFILE *up)
     uprintf(up, "</device>\r\n");
 
     if (ISROOT(pdev)) {
-	uprintf(up, "</root>\r\n");
+		uprintf(up, "</root>\r\n");
     }
 }
     
@@ -231,8 +234,16 @@ void device_servicelist(PDevice pdev, UFILE *up)
 	    uprintf(up, "<serviceType>urn:%s:service:%s</serviceType>\r\n", 
 		    psvc->template->schema, psvc->template->name);
 	    if (psvc->template->serviceid) {
-		uprintf(up, "<serviceId>%s%d</serviceId>\r\n", 
-			psvc->template->serviceid, psvc->instance);
+#if 0	// test alt serviceid - tofu
+			if ((strcmp(psvc->template->serviceid, "urn:upnp-org:serviceId:WANCommonInterfaceConfig") == 0) ||
+				(strcmp(psvc->template->serviceid, "urn:upnp-org:serviceId:WANIPConnection") == 0) ||
+				(strcmp(psvc->template->serviceid, "urn:upnp-org:serviceId:WANPPPConnection") == 0)) {
+				uprintf(up, "<serviceId>%s</serviceId>\r\n", psvc->template->serviceid);
+			}
+			else
+#endif
+			uprintf(up, "<serviceId>%s%d</serviceId>\r\n", 
+					psvc->template->serviceid, psvc->instance);
 	    } else {
 		uprintf(up, "<serviceId>urn:upnp-org:serviceId:%s%d</serviceId>\r\n", 
 			psvc->template->name, psvc->instance);

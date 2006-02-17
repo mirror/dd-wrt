@@ -61,7 +61,7 @@ reap(int sig)
 int main(int argc, char *argv[])
 {
     extern char g_wandevs[];
-    //extern char g_landevs[];
+//    extern char g_landevs[];
     extern DeviceTemplate IGDeviceTemplate;
     char **argp = &argv[1];
     char *wanif = NULL;
@@ -124,12 +124,12 @@ int main(int argc, char *argv[])
 	//	signal(SIGTERM, SIG_IGN);
 	signal(SIGUSR1, SIG_IGN);
 
-	fprintf(stderr, "calling upnp_main\n");
+	UPNP_TRACE(("calling upnp_main\n"));
 
 	if(sleep_time) {
-		fprintf(stderr, "SES2 first reboot, waiting for %d seconds to start UPNP\n", sleep_time);
+		UPNP_TRACE(("SES2 first reboot, waiting for %d seconds to start UPNP\n", sleep_time));
 		sleep(sleep_time);
-		fprintf(stderr, "Restart UPNP daemon.\n");
+		UPNP_TRACE(("Restart UPNP daemon.\n"));
 	}
 
 	upnp_main(&IGDeviceTemplate, lanif);
