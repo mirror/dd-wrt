@@ -98,7 +98,7 @@ zencrypt (char *passwd)
 
 
 int
-mkfiles (void)
+start_mkfiles (void)
 {
   FILE *fp;
   struct stat buf;
