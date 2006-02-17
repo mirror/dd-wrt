@@ -65,6 +65,11 @@
 #define	CONFIG_WL_STA	y
 #define	BACKUP_RESTORE_SUPPORT	1
 #define	CONFIG_BACKUP_RESTORE	y
+// changed by steve
+//#define	UPNP_FORWARD_SUPPORT	0	<remove the line>
+//#define	CONFIG_UPNP_FORWARD		<remove the line>
+#undef	__CONFIG_UPNP_FORWARD__
+// end changed by steve
 #define	PORT_TRIGGER_SUPPORT	1
 #define	CONFIG_PORT_TRIGGER	y
 #define	HW_QOS_SUPPORT	0
