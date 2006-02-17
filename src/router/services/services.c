@@ -63,8 +63,7 @@
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 
-void
-start_vpn_modules (void)
+void start_vpn_modules (void)
 {
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1"))
@@ -82,8 +81,7 @@ start_vpn_modules (void)
 }
 
 
-void
-stop_vpn_modules (void)
+void stop_vpn_modules (void)
 {
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
   eval ("/sbin/rmmod", "ip_nat_pptp");
@@ -92,8 +90,7 @@ stop_vpn_modules (void)
 }
 
 #ifdef HAVE_PPTPD
-int
-start_pptpd (void)
+int start_pptpd (void)
 {
   int ret = 0, mss = 0;
   char *lpTemp;
@@ -262,8 +259,7 @@ start_pptpd (void)
   return ret;
 }
 
-int
-stop_pptpd (void)
+int stop_pptpd (void)
 {
   int ret = 0;
 
@@ -272,9 +268,9 @@ stop_pptpd (void)
   return ret;
 }
 #endif
+
 /* AhMan  March 18 2005 */
 void start_tmp_ppp (int num);
-
 
 int
 softkill (char *name)
@@ -288,8 +284,7 @@ softkill (char *name)
 }
 
 
-int
-adjust_dhcp_range (void)
+int adjust_dhcp_range (void)
 {
   struct in_addr ipaddr, netaddr, netmask;
 
@@ -357,8 +352,7 @@ adjust_dhcp_range (void)
   return 1;
 }
 
-int
-killps (char *psname, char *sig)
+int killps (char *psname, char *sig)
 {
   if (check_process (psname) > 0)
     {
@@ -370,8 +364,7 @@ killps (char *psname, char *sig)
   return 0;
 }
 
-int
-write_nvram (char *name, char *nv)
+int write_nvram (char *name, char *nv)
 {
   if (nvram_invmatch (nv, ""))
     {
@@ -392,8 +385,7 @@ write_nvram (char *name, char *nv)
 }
 
 
-int
-start_dhcpfwd (void)
+int start_dhcpfwd (void)
 {
   if (nvram_match ("wl_mode", "wet"))	//dont start any dhcp services in bridge mode
     {
@@ -443,8 +435,7 @@ start_dhcpfwd (void)
 
 }
 
-void
-stop_dhcpfwd (void)
+void stop_dhcpfwd (void)
 {
 #ifdef HAVE_DHCPFORWARD
   eval ("killall", "dhcp-fwd");	//kill also dhcp forwarder if available
@@ -456,8 +447,7 @@ stop_dhcpfwd (void)
 
 int usejffs = 0;
 
-int
-start_dhcpd (void)
+int start_dhcpd (void)
 {
   struct dns_lists *dns_list = NULL;
   FILE *fp;
@@ -724,8 +714,7 @@ start_dhcpd (void)
   return 0;
 }
 
-int
-stop_dhcpd (void)
+int stop_dhcpd (void)
 {
   int ret;
   softkill ("udhcpd");
@@ -739,8 +728,7 @@ stop_dhcpd (void)
   return ret;
 }
 
-int
-start_dnsmasq (void)
+int start_dnsmasq (void)
 {
   FILE *fp;
   FILE *test;
@@ -876,8 +864,7 @@ start_dnsmasq (void)
   return ret;
 }
 
-int
-stop_dnsmasq (void)
+int stop_dnsmasq (void)
 {
   //int ret = killps("dnsmasq",NULL);
   int ret = softkill ("dnsmasq");
@@ -887,8 +874,7 @@ stop_dnsmasq (void)
   return ret;
 }
 
-int
-stop_dns_clear_resolv (void)
+int stop_dns_clear_resolv (void)
 {
   FILE *fp_w;
   //int ret = killps("dnsmasq",NULL);
@@ -907,8 +893,7 @@ stop_dns_clear_resolv (void)
   return ret;
 }
 
-int
-start_httpd (void)
+int start_httpd (void)
 {
   int ret;
   if (nvram_invmatch ("http_enable", "0") && !is_exist ("/var/run/httpd.pid"))
@@ -940,8 +925,7 @@ start_httpd (void)
   return ret;
 }
 
-int
-stop_httpd (void)
+int stop_httpd (void)
 {
   //int ret = killps("httpd",NULL);
   int ret = eval ("killall", "httpd");
@@ -955,8 +939,7 @@ stop_httpd (void)
 }
 
 
-int
-start_upnp (void)
+int start_upnp (void)
 {
   char *wan_ifname = get_wan_face ();
   int ret;
@@ -1071,8 +1054,7 @@ void start_nas_wan(void)
 start_nas("wan");
 }
 
-int
-start_nas (char *type)
+int start_nas (char *type)
 {
 
   char cfgfile[64];
@@ -1210,8 +1192,7 @@ start_nas (char *type)
     }
 }
 
-int
-stop_nas (void)
+int stop_nas (void)
 {
   /* NAS sometimes won't exit properly on a normal kill */
   //int ret = killps("nas",NULL);
@@ -1226,8 +1207,7 @@ stop_nas (void)
 
 #ifdef HAVE_SPUTNIK_APD
 /* Sputnik APD Service Handling */
-int
-start_apd (void)
+int start_apd (void)
 {
   int ret;
 
@@ -1240,8 +1220,7 @@ start_apd (void)
   return ret;
 }
 
-int
-stop_apd (void)
+int stop_apd (void)
 {
   int ret = eval ("killall", "apd");
 
@@ -1253,8 +1232,7 @@ stop_apd (void)
 
 #endif
 #if 0
-int
-start_ntpc (void)
+int start_ntpc (void)
 {
   char *servers = nvram_safe_get ("ntp_server");
 
@@ -1290,8 +1268,7 @@ stop_ntpc (void)
 
 
 /////////////////////////////////////////////////////
-int
-start_resetbutton (void)
+int start_resetbutton (void)
 {
   int ret = 0;
 
@@ -1305,8 +1282,7 @@ start_resetbutton (void)
   return ret;
 }
 
-int
-stop_resetbutton (void)
+int stop_resetbutton (void)
 {
   int ret = 0;
 
@@ -1317,8 +1293,7 @@ stop_resetbutton (void)
   return ret;
 }
 
-int
-start_iptqueue (void)
+int start_iptqueue (void)
 {
   int ret = 0;
 
@@ -1332,8 +1307,7 @@ start_iptqueue (void)
   return ret;
 }
 
-int
-stop_iptqueue (void)
+int stop_iptqueue (void)
 {
   int ret = 0;
 
@@ -1345,8 +1319,7 @@ stop_iptqueue (void)
 }
 
 #ifdef HAVE_TFTP
-int
-start_tftpd (void)
+int start_tftpd (void)
 {
   int ret = 0;
   pid_t pid;
@@ -1363,8 +1336,7 @@ start_tftpd (void)
   return ret;
 }
 
-int
-stop_tftpd (void)
+int stop_tftpd (void)
 {
   int ret;
 #ifndef ANTI_FLASH
@@ -1375,8 +1347,7 @@ stop_tftpd (void)
   return ret;
 }
 #endif
-int
-start_cron (void)
+int start_cron (void)
 {
   int ret = 0;
   struct stat buf;
@@ -1402,8 +1373,7 @@ start_cron (void)
   return ret;
 }
 
-int
-stop_cron (void)
+int stop_cron (void)
 {
   int ret = 0;
 
@@ -1415,8 +1385,7 @@ stop_cron (void)
 }
 
 #ifdef HAVE_ZEBRA
-int
-zebra_init (void)
+int zebra_init (void)
 {
   if (nvram_match ("wk_mode", "gateway"))
     {
@@ -1432,8 +1401,7 @@ zebra_init (void)
 }
 
 
-int
-zebra_ospf_init (void)
+int zebra_ospf_init (void)
 {
 
   char *lt = nvram_safe_get ("dr_lan_tx");
@@ -1576,8 +1544,7 @@ zebra_ospf_init (void)
   return ret1 + ret2;
 }
 
-int
-zebra_ripd_init (void)
+int zebra_ripd_init (void)
 {
 
   char *lt = nvram_safe_get ("dr_lan_tx");
@@ -1654,8 +1621,7 @@ zebra_ripd_init (void)
 #endif
 
 #ifdef HAVE_BIRD
-int
-bird_init (void)
+int bird_init (void)
 {
   FILE *fp;
   int ret1;
@@ -1765,8 +1731,7 @@ bird_init (void)
 #endif /* HAVE_BIRD */
 
 /* Written by Sparq in 2002/07/16 */
-int
-start_zebra (void)
+int start_zebra (void)
 {
 
   // Sveasoft 2003-12-15 only start if enabled
@@ -1794,8 +1759,7 @@ start_zebra (void)
 }
 
 /* Written by Sparq in 2002/07/16 */
-int
-stop_zebra (void)
+int stop_zebra (void)
 {
   int ret1, ret2, ret3;
 
@@ -1828,8 +1792,7 @@ stop_zebra (void)
 }
 
 
-int
-start_syslog (void)
+int start_syslog (void)
 {
   int ret1 = 0, ret2 = 0;
 
@@ -1847,8 +1810,7 @@ start_syslog (void)
   return ret1 | ret2;
 }
 
-int
-stop_syslog (void)
+int stop_syslog (void)
 {
   int ret;
 
@@ -1862,8 +1824,7 @@ stop_syslog (void)
 }
 
 
-int
-start_redial (void)
+int start_redial (void)
 {
   int ret;
   pid_t pid;
@@ -1880,8 +1841,7 @@ start_redial (void)
   return ret;
 }
 
-int
-stop_redial (void)
+int stop_redial (void)
 {
   int ret;
 
@@ -1892,8 +1852,7 @@ stop_redial (void)
   return ret;
 }
 
-int
-start_radvd (void)
+int start_radvd (void)
 {
   int ret = 0;
   int c = 0;
@@ -1935,8 +1894,7 @@ start_radvd (void)
   return ret;
 }
 
-int
-stop_radvd (void)
+int stop_radvd (void)
 {
   int ret = 0;
 
@@ -1949,8 +1907,7 @@ stop_radvd (void)
   return ret;
 }
 
-int
-start_ipv6 (void)
+int start_ipv6 (void)
 {
   int ret = 0;
 
@@ -1965,8 +1922,7 @@ start_ipv6 (void)
 
 #ifdef HAVE_CHILLI
 
-int
-start_chilli (void)
+int start_chilli (void)
 {
   int ret = 0;
   FILE *fp;
@@ -2099,8 +2055,7 @@ start_chilli (void)
   return ret;
 }
 
-int
-stop_chilli (void)
+int stop_chilli (void)
 {
   int ret = 0;
 
@@ -2113,8 +2068,7 @@ stop_chilli (void)
 
 #endif /* HAVE_CHILLI */
 
-int
-stop_pppoe (void)
+int stop_pppoe (void)
 {
   int ret;
 
@@ -2130,8 +2084,7 @@ stop_pppoe (void)
   return ret;
 }
 
-int
-stop_dhcpc (void)
+int stop_dhcpc (void)
 {
   int ret = 0;
 
@@ -2142,8 +2095,7 @@ stop_dhcpc (void)
   return ret;
 }
 
-int
-start_pptp (int status)
+int start_pptp (int status)
 {
   int ret;
   FILE *fp;
@@ -2390,8 +2342,7 @@ start_pptp (int status)
   return ret;
 }
 
-int
-stop_pptp (void)
+int stop_pptp (void)
 {
   int ret;
   route_del (nvram_safe_get ("wan_ifname"), 0,
@@ -2416,8 +2367,7 @@ stop_pptp (void)
 /*
  * This functin build the pppoe instuction & execute it.
  */
-int
-start_pppoe (int pppoe_num)
+int start_pppoe (int pppoe_num)
 {
   char idletime[20], retry_num[20], param[4];
   char username[80], passwd[80];
@@ -2814,12 +2764,14 @@ start_l2tp (int status)
 
 int start_l2tp_redial(void)
 {
-return start_l2tp(REDIAL);
+    return start_l2tp(REDIAL);
 }
+
 int start_l2tp_boot(void)
 {
-return start_l2tp(BOOT);
+    return start_l2tp(BOOT);
 }
+
 int
 stop_l2tp (void)
 {
