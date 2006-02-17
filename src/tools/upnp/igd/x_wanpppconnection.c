@@ -294,5 +294,6 @@ ServiceTemplate Template_WANPPPConnection = {
     Actions,             /* pointer to list of actions */
     0,			/* count */
     "urn:upnp-org:serviceId:WANPPPConn",	/* service id */
+//	"urn:upnp-org:serviceId:WANPPPConnection",	/* service id */		// alt test - tofu
     NULL		/* schema */
 };

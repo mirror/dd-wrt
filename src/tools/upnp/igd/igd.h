@@ -13,8 +13,6 @@
 #ifndef _igd_h_
 #define _igd_h_
 
-#include <signal.h>
-
 typedef struct _if_stats {
     unsigned long rx_packets;	/* total packets received       */
     unsigned long tx_packets;	/* total packets transmitted    */
@@ -73,6 +71,7 @@ typedef struct _WANCommonPrivateData {
 extern void osl_igd_disable(char *ifname);
 extern void osl_igd_enable(char *ifname);
 extern char *igd_pri_wan_var(char *prefix, int len, char *var);
+extern void bump_generation();
 
 #define SOAP_CONNECTIONNOTCONFIGURED	706 
 #define SOAP_DISCONNECTINPROGRESS	707 
@@ -85,18 +84,9 @@ extern char *igd_pri_wan_var(char *prefix, int len, char *var);
 
 #if defined(linux)
 
-/* Allow some time for the page to reload before killing ourselves */
-static int
-kill_after(pid_t pid, int sig, unsigned int after)
-{
-	if (fork() == 0) {
-		sleep(after);
-		return kill(pid, sig);
-	}
-	return 0;
-}
-#define sys_restart() kill_after(1, SIGHUP, 3)
-#define sys_reboot() kill_after(1, SIGTERM, 3)
+//extern int kill_after(pid_t pid, int sig, unsigned int after);
+//#define sys_restart() kill_after(1, SIGHUP, 3)
+//#define sys_reboot() kill_after(1, SIGTERM, 3)
 
 #endif /* linux */
 

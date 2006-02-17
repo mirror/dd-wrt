@@ -1,5 +1,5 @@
 /*
-    Copyright 2004, Broadcom Corporation      
+    Copyright 2005, Broadcom Corporation      
     All Rights Reserved.      
           
     THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
@@ -23,6 +23,8 @@ extern PDevice root_devices;
 
 extern char *strip_chars(char *str, char *reject);
 extern PDevice find_dev_by_udn(char *udn);
+
+extern int max_age;
 
 static void advertise_device(PDevice pdev, ssdp_t sstype, struct iface *pif, struct sockaddr *addr, int addrlen);
 static void process_msearch(char *, struct iface *, struct sockaddr *, int);
@@ -87,7 +89,7 @@ void ssdp_receive(caction_t flag, struct net_connection *nc, struct iface *pif)
     struct sockaddr_in srcaddr;
     int nbytes, addrlen;
     
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     if (flag == CONNECTION_RECV) {
 	addrlen = sizeof(srcaddr);
 	memset(&srcaddr, 0, addrlen);
@@ -95,6 +97,7 @@ void ssdp_receive(caction_t flag, struct net_connection *nc, struct iface *pif)
 	// memset(buf, 0, sizeof(buf));
 	nbytes = recvfrom(nc->fd, buf, sizeof(buf), 0, (struct sockaddr*)&srcaddr, &addrlen);
 	buf[nbytes] = '\0';
+
 	if (MATCH_PREFIX(buf, "M-SEARCH * HTTP/1.1")) {
 	    process_msearch(buf, pif, (struct sockaddr *)&srcaddr, addrlen);
 	} 
@@ -113,7 +116,7 @@ static void process_msearch_all(char *st, struct iface *pif, struct sockaddr *sr
 {
     PDevice pdev;
 
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     forall_devices(pdev) {
 	advertise_device(pdev, SSDP_REPLY, pif, srcaddr,  addrlen);
     }
@@ -136,14 +139,14 @@ static void process_msearch_rootdevice(char *st, struct iface *pif, struct socka
     char tmpbuf[100];
     PDevice pdev;
     
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     if ((upkt = usopen(NULL, 0))) {
 	
 	for (pdev = root_devices; pdev; pdev = pdev->next) {
 	    snprintf(tmpbuf, sizeof(tmpbuf), "%s::upnp:rootdevice", pdev->udn);
 
 	    // build the SSDP packet
-	    ssdp_packet( upkt, SSDP_REPLY, st, tmpbuf, location(pdev, pif), SSDP_REFRESH);
+	    ssdp_packet( upkt, SSDP_REPLY, st, tmpbuf, location(pdev, pif), max_age);
 	    
 	    if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, srcaddr, addrlen) < 0)
 		UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
@@ -159,13 +162,13 @@ static void process_msearch_uuid(char *st, struct iface *pif, struct sockaddr *s
     UFILE *upkt;
     PDevice pdev;
 
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     if ((upkt = usopen(NULL, 0))) {
 	if ((pdev = find_dev_by_udn(st)) != NULL) {
 
 	    // build the SSDP packet
 	    ssdp_packet( upkt, SSDP_REPLY, pdev->udn, pdev->udn,
-			 location(pdev, pif), SSDP_REFRESH);
+			 location(pdev, pif), max_age);
 
 	    if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, srcaddr, addrlen) < 0)
 		UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
@@ -182,7 +185,7 @@ static void process_msearch_devicetype(char *st, struct iface *pif, struct socka
     PDevice pdev;
     char tmpbuf[100];
 
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     if ((upkt = usopen(NULL, 0))) {
 	forall_devices(pdev) {
 	    if (strcmp(pdev->template->type, st) == 0) {
@@ -190,7 +193,7 @@ static void process_msearch_devicetype(char *st, struct iface *pif, struct socka
 
 		// build the SSDP packet
 		ssdp_packet( upkt, SSDP_REPLY, pdev->template->type, tmpbuf,
-			     location(pdev, pif), SSDP_REFRESH);
+			     location(pdev, pif), max_age);
 		if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, addr, addrlen) < 0)
 		    UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
 		uflush(upkt); 	// reset the packet buffer before we build another.
@@ -211,7 +214,7 @@ static void process_msearch_service(char *st, struct iface *pif, struct sockaddr
     PService psvc;
     char tmpbuf[100];
     
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     p = strstr(st, ":service:");
     if (p) {
 	name = p+strlen(":service:");
@@ -231,7 +234,7 @@ static void process_msearch_service(char *st, struct iface *pif, struct sockaddr
 
 			// build the SSDP packet
 			ssdp_packet(upkt, SSDP_REPLY, st, tmpbuf,
-				    loc, SSDP_REFRESH);
+				    loc, max_age);
 
 			if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, addr, addrlen) < 0)
 			    UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
@@ -258,7 +261,7 @@ static void process_msearch(char *msg, struct iface *pif, struct sockaddr *srcad
     char *man = NULL;  // the MAN: header
     long int mxval;
 
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s\n", __FUNCTION__));
     if ( (body = strstr(msg, "\r\n\r\n" )) != NULL )
 	body += 4;
     else if ( (body = strstr(msg, "\r\n" )) != NULL )
@@ -337,7 +340,7 @@ static void advertise_device(PDevice pdev, ssdp_t sstype, struct iface *pif, str
 	    snprintf(tmpbuf, sizeof(tmpbuf), "%s::upnp:rootdevice", pdev->udn);
 	    ssdp_packet(
 		upkt, sstype, "upnp:rootdevice", tmpbuf,
-		loc, SSDP_REFRESH);
+		loc, max_age);
 	    if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, addr, addrlen) < 0)
 		UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
 	    uflush(upkt); 	// reset the packet buffer before we build another.
@@ -345,7 +348,7 @@ static void advertise_device(PDevice pdev, ssdp_t sstype, struct iface *pif, str
 
 	// advertise device by UDN
 	ssdp_packet( upkt, sstype, pdev->udn, pdev->udn, 
-		     loc, SSDP_REFRESH);
+		     loc, max_age);
 	if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, addr, addrlen) < 0)
 	    UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
 	uflush(upkt); 	// reset the packet buffer before we build another.
@@ -353,7 +356,7 @@ static void advertise_device(PDevice pdev, ssdp_t sstype, struct iface *pif, str
 	// advertise device by combination of UDN and type
 	snprintf(tmpbuf, sizeof(tmpbuf), "%s::%s", pdev->udn, pdev->template->type);
 	ssdp_packet( upkt, sstype, pdev->template->type, tmpbuf,
-		     loc, SSDP_REFRESH);
+		     loc, max_age);
 	if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, addr, addrlen) < 0)
 	    UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
 	uflush(upkt); 	// reset the packet buffer before we build another.
@@ -364,7 +367,7 @@ static void advertise_device(PDevice pdev, ssdp_t sstype, struct iface *pif, str
 	    snprintf(tmpbuf, sizeof(tmpbuf), "%s::%s", pdev->udn, svctype);
 
 	    ssdp_packet( upkt, sstype, svctype, tmpbuf,
-			 loc, SSDP_REFRESH);
+			 loc, max_age);
 
 	    if (sendto(pif->ssdp_connection->fd, ubuffer(upkt), utell(upkt), 0, addr, addrlen) == -1) 
 		UPNP_ERROR(("sendto failed at %s:%d - err %d\n", __FILE__, __LINE__, errno));
@@ -410,44 +413,45 @@ static void ssdp_packet(
     time_t now;
     char date[100];
 
-    UPNP_TRACE((__FUNCTION__ "\n"));
+    UPNP_TRACE(("%s ptype=%s\n", __FUNCTION__, (ptype==SSDP_REPLY)?"REPLY":(ptype==SSDP_ALIVE)?"ALIVE":(ptype==SSDP_BYEBYE)?"BYEBYE":"?"));
+
     switch (ptype) {
     case SSDP_REPLY:
-	uprintf(up, "HTTP/1.1 200 OK\r\n");
-	uprintf(up, "ST:%s\r\n", ntst);
-	uprintf(up, "USN:%s\r\n",Usn);
-	uprintf(up, "Location: %s\r\n", location);
-	uprintf(up, "Server: Custom/1.0 UPnP/1.0 Proc/Ver\r\n");
-	uprintf(up, "EXT:\r\n");
-	uprintf(up, "Cache-Control:max-age=%d\r\n", Duration);
-	now = time( (time_t*) 0 );
-	(void) strftime( date, sizeof(date), rfc1123_fmt, gmtime( &now ) );
-	uprintf(up, "DATE: %s\r\n", date);
-	break;
+		uprintf(up, "HTTP/1.1 200 OK\r\n");
+		uprintf(up, "ST: %s\r\n", ntst);
+		uprintf(up, "USN: %s\r\n",Usn);
+		uprintf(up, "Location: %s\r\n", location);
+		uprintf(up, "Server: Custom/1.0 UPnP/1.0 Proc/Ver\r\n");
+		uprintf(up, "EXT:\r\n");
+		uprintf(up, "Cache-Control: max-age=%d\r\n", Duration);
+		now = time( (time_t*) 0 );
+		(void) strftime( date, sizeof(date), rfc1123_fmt, gmtime( &now ) );
+		uprintf(up, "Date: %s\r\n", date);
+		break;
     case SSDP_ALIVE:
-	uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
-	uprintf(up, "HOST: %s:%d\r\n", SSDP_IP, SSDP_PORT);
-	uprintf(up, "CACHE-CONTROL: max-age=%d\r\n", Duration);
-	uprintf(up, "Location: %s\r\n", location);
-	uprintf(up, "NT: %s\r\n", ntst);
-	uprintf(up, "NTS: ssdp:alive\r\n");
-	uprintf(up, "SERVER:%s\r\n", SERVER);
-    uprintf(up, "USN: %s\r\n",Usn);
-	break;
+		uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
+		uprintf(up, "Host: %s:%d\r\n", SSDP_IP, SSDP_PORT);
+		uprintf(up, "Cache-Control: max-age=%d\r\n", Duration);
+		uprintf(up, "Location: %s\r\n", location);
+		uprintf(up, "NT: %s\r\n", ntst);
+		uprintf(up, "NTS: ssdp:alive\r\n");
+		uprintf(up, "SERVER: %s\r\n", SERVER);
+	    uprintf(up, "USN: %s\r\n",Usn);
+		break;
     case SSDP_BYEBYE:
-	uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
-	uprintf(up, "HOST: %s:%d\r\n", SSDP_IP, SSDP_PORT);
-
-	// Following two header is added to interop with Windows Millenium but this is not
-	// a part of UPNP spec 1.0 
-	uprintf(up, "CACHE-CONTROL: max-age=%d\r\n",Duration);
-	uprintf(up, "Location: %s\r\n", location);
-	uprintf(up, "NT: %s\r\n", ntst);
-	uprintf(up, "NTS: ssdp:byebye\r\n");  
-    uprintf(up, "USN: %s\r\n",Usn);
-	break;
+		uprintf(up, "NOTIFY * HTTP/1.1 \r\n");
+		uprintf(up, "Host: %s:%d\r\n", SSDP_IP, SSDP_PORT);
+	
+		// Following two header is added to interop with Windows Millenium but this is not
+		// a part of UPNP spec 1.0 
+		uprintf(up, "Cache-Control: max-age=%d\r\n",Duration);
+		uprintf(up, "Location: %s\r\n", location);
+		uprintf(up, "NT: %s\r\n", ntst);
+		uprintf(up, "NTS: ssdp:byebye\r\n");  
+	    uprintf(up, "USN: %s\r\n",Usn);
+		break;
     default:
-	UPNP_ERROR(("Bad SSDP packet type supplied - %d\r\n", ptype));
+		UPNP_ERROR(("Bad SSDP packet type supplied - %d\r\n", ptype));
     }
 
     /*     uprintf(up, "USN: %s\r\n",Usn); */

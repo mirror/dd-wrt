@@ -1,5 +1,5 @@
 /*
- * Copyright 2004, Broadcom Corporation
+ * Copyright 2005, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,7 +7,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: linux_osl.c,v 1.4 2004/04/12 05:42:39 honor Exp $
+ * $Id: linux_osl.c,v 1.5 2005/03/07 08:35:32 kanki Exp $
  */
 
 #include <sys/ioctl.h>
@@ -20,26 +20,7 @@
 #include <shutils.h>
 
 
-short osl_ifflags(const char *ifname)
-{
-    int sockfd;
-    struct ifreq ifreq;
-    short flags = 0;
-
-    if ((sockfd = socket( AF_INET, SOCK_DGRAM, 0 )) < 0) {
-	perror("socket");
-	return flags;
-    }
-
-    strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
-    if (ioctl(sockfd, SIOCGIFFLAGS, &ifreq) < 0) {
-	    flags = 0;
-    } else {
-	    flags = ifreq.ifr_flags;
-    }
-    close(sockfd);
-    return flags;
-}
+short osl_ifflags(const char *ifname);	// - tofu
 
 
 struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr)
@@ -63,6 +44,28 @@ struct in_addr *osl_ifaddr(const char *ifname, struct in_addr *inaddr)
     close(sockfd);
     return inaddr;
 }
+
+short osl_ifflags(const char *ifname)
+{
+    int sockfd;
+    struct ifreq ifreq;
+    short flags = 0;
+
+    if ((sockfd = socket( AF_INET, SOCK_DGRAM, 0 )) < 0) {
+	perror("socket");
+	return flags;
+    }
+
+    strncpy(ifreq.ifr_name, ifname, IFNAMSIZ);
+    if (ioctl(sockfd, SIOCGIFFLAGS, &ifreq) < 0) {
+	    flags = 0;
+    } else {
+	    flags = ifreq.ifr_flags;
+    }
+    close(sockfd);
+    return flags;
+}
+
 
 int osl_join_multicast(struct iface *pif, int fd, ulong ipaddr, ushort port)
 {
