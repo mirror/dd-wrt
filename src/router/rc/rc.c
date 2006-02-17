@@ -365,7 +365,7 @@ main_loop (void)
 	  cprintf ("USER1\n");
 	  start_single_service ();
 #ifdef HAVE_CHILLI
-	  start_chilli ();
+	  start_service("chilli");
 #endif
 
 	  state = IDLE;

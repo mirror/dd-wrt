@@ -49,6 +49,16 @@ get_wdev ()
 
 }
 
+
+static char *
+get_wshaper_dev (void)
+{
+  if (nvram_match ("wshaper_dev", "WAN"))
+    return get_wan_face ();
+  else
+    return "br0";
+}
+
 static int
 notify_nas (char *type, char *ifname, char *action)
 {
