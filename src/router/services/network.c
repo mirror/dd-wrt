@@ -679,6 +679,14 @@ start_lan (void)
 
   free (lan_ifnames);
   free (lan_ifname);
+	  eval ("rm", "/tmp/hosts");
+	  addHost ("localhost", "127.0.0.1");
+	  if (strlen (nvram_safe_get ("wan_hostname")) > 0)
+	    addHost (nvram_safe_get ("wan_hostname"),
+		     nvram_safe_get ("lan_ipaddr"));
+	  else if (strlen (nvram_safe_get ("router_name")) > 0)
+	    addHost (nvram_safe_get ("router_name"),
+		     nvram_safe_get ("lan_ipaddr"));
 
 }
 
@@ -1096,7 +1104,7 @@ start_wan (int status)
 	  if (nvram_match ("action_service", "start_pppoe"))
 	    {
 	      sleep (3);
-	      force_to_dial ();
+	      start_force_to_dial ();
 	      nvram_set ("action_service", "");
 	    }
 	}

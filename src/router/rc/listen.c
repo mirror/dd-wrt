@@ -431,9 +431,8 @@ listen_main (int argc, char *argv[])
 	    {
 	    case L_SUCCESS:
 	      DEBUG1
-		("**************** received an lan to wan packet **************\n\n");
-
-	      force_to_dial ();
+	    	("**************** received an lan to wan packet **************\n\n");
+	      start_service("force_to_dial");
 	      if (nvram_match ("wan_proto", "heartbeat"))
 		exit (0);
 

@@ -21,6 +21,8 @@
 #include <syslog.h>
 #include <signal.h>
 #include <string.h>
+#include <termios.h>
+
 #include <sys/klog.h>
 #include <sys/types.h>
 #include <sys/mount.h>
@@ -56,6 +58,8 @@
 #include <cy_conf.h>
 #include <ledcontrol.h>
 
+#define	_PATH_CONSOLE	"/dev/console"
+
 #define WL_IOCTL(name, cmd, buf, len) (ret = wl_ioctl((name), (cmd), (buf), (len)))
 
 #define TXPWR_MAX 251
@@ -72,6 +76,76 @@ int start_nvram (void);
 
 extern struct nvram_tuple router_defaults[];
 
+static void
+set_term (int fd)
+{
+  struct termios tty;
+
+  tcgetattr (fd, &tty);
+
+  /* set control chars */
+  tty.c_cc[VINTR] = 3;		/* C-c */
+  tty.c_cc[VQUIT] = 28;		/* C-\ */
+  tty.c_cc[VERASE] = 127;	/* C-? */
+  tty.c_cc[VKILL] = 21;		/* C-u */
+  tty.c_cc[VEOF] = 4;		/* C-d */
+  tty.c_cc[VSTART] = 17;	/* C-q */
+  tty.c_cc[VSTOP] = 19;		/* C-s */
+  tty.c_cc[VSUSP] = 26;		/* C-z */
+
+  /* use line dicipline 0 */
+  tty.c_line = 0;
+
+  /* Make it be sane */
+  tty.c_cflag &= CBAUD | CBAUDEX | CSIZE | CSTOPB | PARENB | PARODD;
+  tty.c_cflag |= CREAD | HUPCL | CLOCAL;
+
+
+  /* input modes */
+  tty.c_iflag = ICRNL | IXON | IXOFF;
+
+  /* output modes */
+  tty.c_oflag = OPOST | ONLCR;
+
+  /* local modes */
+  tty.c_lflag =
+    ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
+
+  tcsetattr (fd, TCSANOW, &tty);
+}
+
+int
+start_console_init ()
+{
+  int fd;
+
+  /* Clean up */
+  ioctl (0, TIOCNOTTY, 0);
+  close (0);
+  close (1);
+  close (2);
+  setsid ();
+
+  /* Reopen console */
+  if ((fd = open (_PATH_CONSOLE, O_RDWR)) < 0)
+    {
+      /* Avoid debug messages is redirected to socket packet if no exist a UART chip, added by honor, 2003-12-04 */
+      (void) open ("/dev/null", O_RDONLY);
+      (void) open ("/dev/null", O_WRONLY);
+      (void) open ("/dev/null", O_WRONLY);
+      perror (_PATH_CONSOLE);
+      return errno;
+    }
+  dup2 (fd, 0);
+  dup2 (fd, 1);
+  dup2 (fd, 2);
+
+  ioctl (0, TIOCSCTTY, 1);
+  tcsetpgrp (0, getpgrp ());
+  set_term (0);
+
+  return 0;
+}
 
 int
 endswith (char *str, char *cmp)
@@ -729,7 +803,7 @@ start_sysinit (void)
   cprintf ("sysinit() setup console\n");
 
   /* Setup console */
-  if (console_init ())
+  if (start_console_init ())
     noconsole = 1;
   cprintf ("sysinit() klogctl\n");
   klogctl (8, NULL, atoi (nvram_safe_get ("console_loglevel")));

@@ -26,11 +26,6 @@ function ddns_check(F,T) {
 		passwd = eval("F.ddns_username_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
 	}
-	} else if(F.ddns_enable.value == 4) {
-		username = eval("F.ddns_username_"+F.ddns_enable.value);
-		passwd = eval("F.ddns_username_"+F.ddns_enable.value);
-		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
-	}
 
 	if(username.value == ""){
 		alert("You must input a username!");
