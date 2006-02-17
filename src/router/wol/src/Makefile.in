@@ -186,8 +186,8 @@ all: all-am
 .SUFFIXES:
 .SUFFIXES: .c .o .obj
 $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
-	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  src/Makefile
+#	cd $(top_srcdir) && \
+#	  $(AUTOMAKE) --gnu  src/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
 wol-dhcpdconf: $(top_builddir)/config.status wol-dhcpdconf.in
