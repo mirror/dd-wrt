@@ -154,7 +154,7 @@ update_value (void)
   if (changed)
     {
       set_host_domain_name ();
-      startstop("dhcpd");
+      startstop ("dhcpd");
     }
   return 0;
 }
@@ -240,7 +240,7 @@ bound (void)
       cprintf ("interface havent changed, do nothing\n");
       return 0;
     }
-  stop_firewall();
+  stop_firewall ();
   cprintf ("configure to IF[%s] , IP[%s], MASK[%s]\n", wan_ifname,
 	   nvram_safe_get ("wan_ipaddr"), nvram_safe_get ("wan_netmask"));
 
@@ -264,10 +264,10 @@ bound (void)
 
       /* save dns to resolv.conf */
       dns_to_resolv ();
-      startstop("dhcpd");
-      start_firewall();
-      start_wshaper();
-      start_heartbeat_boot();
+      startstop ("dhcpd");
+      start_firewall ();
+      start_wshaper ();
+      start_heartbeat_boot ();
     }
   else if (nvram_match ("wan_proto", "pptp")
 	   && nvram_match ("pptp_usedhcp", "1"))
@@ -297,14 +297,14 @@ bound (void)
       /* clear dns from the resolv.conf */
       nvram_set ("wan_get_dns", "");
       dns_to_resolv ();
-      start_firewall();
-      start_l2tp_boot();
+      start_firewall ();
+      start_l2tp_boot ();
     }
 #endif
   else
     {
       cprintf ("start wan done\n");
-      start_wan_done(wan_ifname);
+      start_wan_done (wan_ifname);
     }
 
   cprintf ("done\n");

@@ -1,4 +1,4 @@
-getpass4.o getpass4.o: getpass4.c \
+^OCgetpass4.o getpass4.o: getpass4.c \
   /opt/brcm/hndtools-mipsel-uclibc-0.9.19/include/stdio.h \
   /opt/brcm/hndtools-mipsel-uclibc-0.9.19/include/features.h \
   /opt/brcm/hndtools-mipsel-uclibc-0.9.19/include/sys/cdefs.h \

@@ -70,6 +70,13 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"upnp_enable", "0", 0},	/* 0:Disable 1:Enable */
 #endif
+// changed by steve
+  {"upnp_ssdp_interval", "60", 0 }, /* SSDP interval */
+  {"upnp_max_age", "180", 0 },  /* MAX age time */
+  {"upnpmnp", "0", 0},		/* UPnP URL */
+  {"upnpcas", "0", 0},		/* UPnP clear at startup */
+// end changed by steve
+
   {"ezc_enable", "1", 0},	/* Enable EZConfig updates */
   {"ezc_version", EZC_VERSION_STR, 0},	/* EZConfig version */
   {"is_default", "1", 0},	/* is it default setting: 1:yes 0:no */

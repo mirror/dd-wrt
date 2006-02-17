@@ -473,6 +473,7 @@ flush_interfaces (void)
 
   return 0;
 }
+
 /*
 int
 start_nonstd_interfaces (void)

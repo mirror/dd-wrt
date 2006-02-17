@@ -20,6 +20,8 @@
          U __fputc_unlocked
          U __h_errno_location
          U __res_init
+         U __sigaddset
+         U __sigdelset
          U __sigsetjmp
          U __stdin
          U __stdout
@@ -31,10 +33,12 @@
          U _exit
          U _res
          U _setjmp
+         U _sigintr
          U abort
          U accept
          U access
          U addHost
+         U addmntent
          U adjtimex
          U aes_unwrap
          U aes_wrap
@@ -46,6 +50,7 @@
          U atof
          U atoi
          U atol
+         U atoll
          U basename
          U bcm_timer_change_expirytime
          U bcm_timer_connect
@@ -192,6 +197,7 @@
          U getenv
          U geteuid
          U getgid
+         U getgrent
          U getgrgid
          U getgrnam
          U getgroups
@@ -219,6 +225,7 @@
          U getprotoent
          U getpwnam
          U getpwuid
+         U getpwuid_r
          U getrlimit
          U getrpcbyname
          U getrpcbynumber
@@ -236,6 +243,7 @@
          U gmtime
          U grantpt
          U hash_num_entries
+         U hasmntopt
          U hcreate_r
          U hdestroy_r
          U herror
@@ -293,6 +301,7 @@
          U localtime
          U lockf
          U log
+         U log10
          U longjmp
          U lseek
          U lstat
@@ -303,6 +312,7 @@
          U memmove
          U mempcpy
          U memset
+         U mk_nocat_conf
          U mkdir
          U mkfifo
          U mknod
@@ -312,6 +322,11 @@
          U mmap
          U mount
          U mrand48
+         U msgctl
+         U msgget
+         U msgrcv
+         U msgsnd
+         U munmap
          U nanosleep
          U netconf_add_filter
          U netconf_add_nat
@@ -331,15 +346,31 @@
          U optarg
          U opterr
          U optind
+         U optopt
          U passhash
          U pause
          U pclose
          U perror
          U pipe
+         U poll
          U popen
          U pow
          U prepare_key
          U printf
+         U pthread_attr_init
+         U pthread_attr_setdetachstate
+         U pthread_cancel
+         U pthread_create
+         U pthread_join
+         U pthread_kill
+         U pthread_mutex_destroy
+         U pthread_mutex_init
+         U pthread_mutex_lock
+         U pthread_mutex_unlock
+         U pthread_mutexattr_destroy
+         U pthread_mutexattr_init
+         U pthread_mutexattr_settype
+         U pthread_setcancelstate
          U ptsname
          U putchar
          U putenv
@@ -376,11 +407,13 @@
          U safe_fread
          U safe_fwrite
          U scandir
+         U sched_yield
          U select
          U semctl
          U semget
          U semop
          U send
+         U sendfile
          U sendmsg
          U sendto
          U set_forward_port
@@ -391,17 +424,20 @@
          U setenv
          U seteuid
          U setgid
+         U setgrent
          U setgroups
          U sethostent
          U sethostname
          U setitimer
          U setkey
          U setlinebuf
+         U setlocale
          U setlogmask
          U setmntent
          U setpgid
          U setpgrp
          U setprotoent
+         U setpwent
          U setreuid
          U setrlimit
          U setservent
@@ -420,6 +456,7 @@
          U sigaction
          U sigaddset
          U sigblock
+         U sigdelset
          U sigemptyset
          U sigfillset
          U siglongjmp
@@ -440,6 +477,7 @@
          U startstop
          U stat
          U statfs
+         U statvfs
          U stderr
          U stdin
          U stdout
@@ -471,6 +509,7 @@
          U strstr
          U strtod
          U strtok
+         U strtok_r
          U strtol
          U strtoll
          U strtoul
@@ -483,6 +522,7 @@
          U sync
          U syscall
          U sysconf
+         U sysctl
          U sysinfo
          U syslog
          U system
@@ -499,9 +539,11 @@
          U timer_delete
          U timer_settime
          U times
+         U timezone
          U tolower
          U toupper
          U ttyname
+         U tzset
          U umask
          U umount
          U umount2
@@ -542,6 +584,8 @@
          w __deregister_frame_info
          w __register_frame_info
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/bin/busybox:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/sbin/radvd:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/sbin/radvdump:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/sbin/rc:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/l2tp/cmd.so:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/lib/l2tp/sync-pppd.so:
@@ -554,6 +598,7 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/bcrelay:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/bpalogin:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/brctl:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/chilli:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/cron:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/dumpleases:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/ebtables:
@@ -577,6 +622,10 @@
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/pptpd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/radius-client:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/robocfg:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/smbmnt:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/smbmount:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/snmpd:
+/home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/splashd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/telnetd:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/udhcpc:
 /home/dev/workspace/DD-WRT/src/router/mipsel-uclibc/target/usr/sbin/udhcpd:
