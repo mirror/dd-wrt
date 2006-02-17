@@ -63,6 +63,53 @@
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
 
+static int
+alreadyInHost (char *host)
+{
+  FILE *in = fopen ("/tmp/hosts", "rb");
+  if (in == NULL)
+    return 0;
+  char buf[100];
+  while (1)
+    {
+      fscanf (in, "%s", buf);
+      if (!strcmp (buf, host))
+	{
+	  fclose (in);
+	  return 1;
+	}
+      if (feof (in))
+	{
+	  fclose (in);
+	  return 0;
+	}
+    }
+}
+
+void
+addHost (char *host, char *ip)
+{
+  char buf[100];
+  char newhost[100];
+  if (host == NULL)
+    return;
+  if (ip == NULL)
+    return;
+  strcpy (newhost, host);
+  char *domain = nvram_safe_get ("lan_domain");
+  if (domain != NULL && strlen (domain) > 0 && strcmp (host, "localhost"))
+    {
+      sprintf (newhost, "%s.%s", host, domain);
+    }
+  else
+    sprintf (newhost, "%s", host);
+
+  if (alreadyInHost (newhost))
+    return;
+  sprintf (buf, "echo \"%s\t%s\">>/tmp/hosts", ip, newhost);
+  system (buf);
+}
+
 void
 start_vpn_modules (void)
 {
@@ -357,18 +404,6 @@ adjust_dhcp_range (void)
   return 1;
 }
 
-int
-killps (char *psname, char *sig)
-{
-  if (check_process (psname) > 0)
-    {
-      if (sig == NULL)
-	return eval ("killall", psname);
-      else
-	return eval ("killall", sig, psname);
-    }
-  return 0;
-}
 
 int
 write_nvram (char *name, char *nv)
@@ -2377,7 +2412,7 @@ start_pptp (int status)
       if (nvram_match ("action_service", "start_pptp")
 	  || nvram_match ("action_service", "start_l2tp"))
 	{
-	  force_to_dial ();
+	  start_force_to_dial ();
 //                      force_to_dial(nvram_safe_get("action_service"));
 	  nvram_set ("action_service", "");
 	}
@@ -2628,7 +2663,7 @@ start_tmp_ppp (int num)
     {
       sleep (3);
       // force_to_dial(nvram_safe_get("action_service"));
-      force_to_dial ();
+      start_force_to_dial ();
       nvram_set ("action_service", "");
     }
 
@@ -2801,7 +2836,7 @@ start_l2tp (int status)
       /* Trigger Connect On Demand if user press Connect button in Status page */
       if (nvram_match ("action_service", "start_l2tp"))
 	{
-	  force_to_dial ();
+	  start_force_to_dial ();
 	  nvram_set ("action_service", "");
 	}
       /* Trigger Connect On Demand if user ping pptp server */
@@ -3017,4 +3052,43 @@ stop_ntp (void)
 {
   eval ("killall", "-9", "ntpclient");
   return 0;
+}
+/* Trigger Connect On Demand */
+int
+start_force_to_dial (void)
+{
+//force_to_dial( char *whichone){
+  int ret = 0;
+  char dst[50];
+  pid_t pid;
+
+  {
+    //sprintf(&dst,"1.1.1.1");
+    sprintf (&dst, nvram_safe_get ("wan_gateway"));
+  }
+
+  char *ping_argv[] = { "ping",
+    "-c", "1",
+    dst,
+    NULL
+  };
+
+  sleep (1);
+  if (nvram_match ("wan_proto", "l2tp"))
+    {
+      char l2tpctrl[64];
+
+      snprintf (l2tpctrl, sizeof (l2tpctrl),
+		"/usr/sbin/l2tp-control \"start-session %s\"",
+		nvram_safe_get ("l2tp_server_ip"));
+      system (l2tpctrl);
+    }
+  else if (nvram_match ("wan_proto", "heartbeat"))
+    {
+      start_heartbeat_boot();
+    }
+  else
+    _eval (ping_argv, NULL, 3, NULL);
+
+  return ret;
 }

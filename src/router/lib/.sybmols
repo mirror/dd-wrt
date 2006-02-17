@@ -11,6 +11,7 @@
 -u nanosleep
 -u open
 -u pause
+-u pt
 -u pthread_attr_init
 -u pthread_attr_setdetachstate
 -u pthread_cancel

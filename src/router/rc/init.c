@@ -36,77 +36,6 @@
 #define loop_forever() do { sleep(1); } while (1)
 #define SHELL "/bin/sh"
 
-/* Set terminal settings to reasonable defaults */
-static void
-set_term (int fd)
-{
-  struct termios tty;
-
-  tcgetattr (fd, &tty);
-
-  /* set control chars */
-  tty.c_cc[VINTR] = 3;		/* C-c */
-  tty.c_cc[VQUIT] = 28;		/* C-\ */
-  tty.c_cc[VERASE] = 127;	/* C-? */
-  tty.c_cc[VKILL] = 21;		/* C-u */
-  tty.c_cc[VEOF] = 4;		/* C-d */
-  tty.c_cc[VSTART] = 17;	/* C-q */
-  tty.c_cc[VSTOP] = 19;		/* C-s */
-  tty.c_cc[VSUSP] = 26;		/* C-z */
-
-  /* use line dicipline 0 */
-  tty.c_line = 0;
-
-  /* Make it be sane */
-  tty.c_cflag &= CBAUD | CBAUDEX | CSIZE | CSTOPB | PARENB | PARODD;
-  tty.c_cflag |= CREAD | HUPCL | CLOCAL;
-
-
-  /* input modes */
-  tty.c_iflag = ICRNL | IXON | IXOFF;
-
-  /* output modes */
-  tty.c_oflag = OPOST | ONLCR;
-
-  /* local modes */
-  tty.c_lflag =
-    ISIG | ICANON | ECHO | ECHOE | ECHOK | ECHOCTL | ECHOKE | IEXTEN;
-
-  tcsetattr (fd, TCSANOW, &tty);
-}
-
-int
-console_init ()
-{
-  int fd;
-
-  /* Clean up */
-  ioctl (0, TIOCNOTTY, 0);
-  close (0);
-  close (1);
-  close (2);
-  setsid ();
-
-  /* Reopen console */
-  if ((fd = open (_PATH_CONSOLE, O_RDWR)) < 0)
-    {
-      /* Avoid debug messages is redirected to socket packet if no exist a UART chip, added by honor, 2003-12-04 */
-      (void) open ("/dev/null", O_RDONLY);
-      (void) open ("/dev/null", O_WRONLY);
-      (void) open ("/dev/null", O_WRONLY);
-      perror (_PATH_CONSOLE);
-      return errno;
-    }
-  dup2 (fd, 0);
-  dup2 (fd, 1);
-  dup2 (fd, 2);
-
-  ioctl (0, TIOCSCTTY, 1);
-  tcsetpgrp (0, getpgrp ());
-  set_term (0);
-
-  return 0;
-}
 
 pid_t
 ddrun_shell (int timeout, int nowait)
@@ -141,8 +70,8 @@ ddrun_shell (int timeout, int nowait)
 	signal (sig, SIG_DFL);
 
       /* Reopen console */
-      console_init ();
-
+      start_service("console_init");
+      
       /* Pass on TZ */
       snprintf (tz, sizeof (tz), "TZ=%s", getenv ("TZ"));
 

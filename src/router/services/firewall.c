@@ -293,6 +293,102 @@ save2file (const char *fmt, ...)
   fclose (fp);
 }
 
+
+
+#if 0
+#define DEBUG printf
+#else
+#define DEBUG(format, args...)
+#endif
+
+#define IPTABLES_RULE_STAT	"/tmp/.rule"
+
+/****************** Below is for 'filter' command *******************/
+
+
+/* 
+ * update_bitmap:
+ * 
+ * Update bitmap file for activative rule when we insert/delete
+ * rule. This file is for tracking the status of filter setting.
+ *
+ * PARAM - mode 0 : delete 
+ *              1 : insert
+ *
+ * RETURN - The rule order.
+ *
+ * Example:
+ *  mode = 1, seq = 7
+ *  before = 0,1,1,0,1,0,0,0,1,1,
+ *  after  = 0,1,1,0,1,0,1,0,1,1,
+ *  return = 3
+ */
+static int
+update_bitmap (int mode, int seq)
+{
+  FILE *fd;
+  char buf[100];
+  char sep[] = ",";
+  char *token;
+
+  int k, i = 1, order = 0;
+  int array[100];
+
+#if defined(REVERSE_RULE_ORDER)
+  seq = (NR_RULES + 1) - seq;
+#endif
+  /* Read active-rule bitmap */
+  if ((fd = fopen (IPTABLES_RULE_STAT, "r")) == NULL)
+    {
+      printf ("Can't open %s\n", IPTABLES_RULE_STAT);
+      exit (1);
+    }
+  fgets (buf, sizeof (buf), fd);
+
+  token = strtok (buf, sep);
+  while (token != NULL)
+    {
+      if (*token != '0' && *token != '1')
+	break;
+
+      array[i] = atoi (token);
+
+      if (i < seq)
+	order += array[i];
+      i++;
+      token = strtok (NULL, sep);
+    }
+
+  fclose (fd);
+
+  /* Modify setting */
+  if (mode == 1)
+    {				/* add */
+      if (array[seq] == 1)
+	return -1;
+      array[seq] = 1;
+    }
+  else
+    {				/* delete */
+      if (array[seq] == 0)
+	return -1;
+      array[seq] = 0;
+    }
+
+  /* Write back active-rule bitmap */
+  if ((fd = fopen (IPTABLES_RULE_STAT, "w")) == NULL)
+    {
+      printf ("Can't open %s\n", IPTABLES_RULE_STAT);
+      exit (1);
+    }
+  for (k = 1; k < i; k++)
+    fprintf (fd, "%d,", array[k]);
+
+  fclose (fd);
+
+  return order;
+}
+
 static int
 ip2cclass (char *ipaddr, char *new, int count)
 {
@@ -1304,6 +1400,56 @@ lan2wan_chains (void)
     }
 }
 
+/*
+ *
+ * mode 0 : delete
+ *      1 : insert
+ */
+static int
+update_filter (int mode, int seq)
+{
+  char target_ip[20];
+  char order[10];
+  int ord;
+
+  if ((ord = update_bitmap (mode, seq)) < 0)
+    return -1;
+
+  sprintf (target_ip, "grp_%d", seq);
+  sprintf (order, "%d", ord * 1 + 1);
+  DEBUG ("order=%s\n", order);
+
+  /* iptables -t mangle -I lan2wan 3 -j macgrp_9 */
+  if (mode == 1)
+    {				/* insert */
+      DEBUG ("iptables -I lan2wan %s -j %s\n", order, target_ip);
+      eval ("iptables", "-I", "lan2wan", order, "-j", target_ip);
+    }
+  else
+    {				/* delete */
+      DEBUG ("iptables -D lan2wan -j %s\n", target_ip);
+      eval ("iptables", "-D", "lan2wan", "-j", target_ip);
+    }
+
+  cprintf ("done\n");
+  return 0;
+}
+
+int
+start_filter_add (int seq)
+{
+  DEBUG ("filter_add:\n");
+  return update_filter (1, seq);
+
+}
+
+int
+start_filter_del (int seq)
+{
+  DEBUG ("filter_del:\n");
+  return update_filter (0, seq);
+}
+
 void
 start_filtersync (void)
 {
@@ -1323,9 +1469,9 @@ start_filtersync (void)
   for (seq = 1; seq <= NR_RULES; seq++)
     {
       if (if_tod_intime (seq) > 0)
-	ret = filter_add (seq);
+	ret = start_filter_add (seq);
       else
-	ret = filter_del (seq);
+	ret = start_filter_del (seq);
       DEBUG ("seq=%d, ret=%d\n", seq, ret);
     }
 

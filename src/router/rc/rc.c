@@ -47,7 +47,6 @@
 #include <code_pattern.h>
 #include <cy_conf.h>
 #include <support.h>
-#include <mkfiles.h>
 #include <typedefs.h>
 #include <bcmnvram.h>
 #include <bcmutils.h>
@@ -57,52 +56,6 @@
 
 
 
-static int
-alreadyInHost (char *host)
-{
-  FILE *in = fopen ("/tmp/hosts", "rb");
-  if (in == NULL)
-    return 0;
-  char buf[100];
-  while (1)
-    {
-      fscanf (in, "%s", buf);
-      if (!strcmp (buf, host))
-	{
-	  fclose (in);
-	  return 1;
-	}
-      if (feof (in))
-	{
-	  fclose (in);
-	  return 0;
-	}
-    }
-}
-
-void
-addHost (char *host, char *ip)
-{
-  char buf[100];
-  char newhost[100];
-  if (host == NULL)
-    return;
-  if (ip == NULL)
-    return;
-  strcpy (newhost, host);
-  char *domain = nvram_safe_get ("lan_domain");
-  if (domain != NULL && strlen (domain) > 0 && strcmp (host, "localhost"))
-    {
-      sprintf (newhost, "%s.%s", host, domain);
-    }
-  else
-    sprintf (newhost, "%s", host);
-
-  if (alreadyInHost (newhost))
-    return;
-  sprintf (buf, "echo \"%s\t%s\">>/tmp/hosts", ip, newhost);
-  system (buf);
-}
 
 
 /* States */
@@ -338,7 +291,7 @@ main_loop (void)
 //      system("/bin/echo 1 > /proc/sys/net/ipv4/tcp_westwood");
 
   // Sveasoft add 2004-01-04 create passwd, groups, misc files
-  mkfiles ();
+  start_service("mkfiles");
   char *hostname;
 
   /* set hostname to wan_hostname or router_name */
@@ -454,14 +407,6 @@ main_loop (void)
 #endif
 	  start_service("setup_vlans");
 	  start_service("lan");
-	  eval ("rm", "/tmp/hosts");
-	  addHost ("localhost", "127.0.0.1");
-	  if (strlen (nvram_safe_get ("wan_hostname")) > 0)
-	    addHost (nvram_safe_get ("wan_hostname"),
-		     nvram_safe_get ("lan_ipaddr"));
-	  else if (strlen (nvram_safe_get ("router_name")) > 0)
-	    addHost (nvram_safe_get ("router_name"),
-		     nvram_safe_get ("lan_ipaddr"));
 	  cprintf ("start services\n");
 	  start_services ();
 	  cprintf ("start wan boot\n");
@@ -657,9 +602,9 @@ int main(int argc,char **argv)
 	  if ((num = atoi (argv[2])) > 0)
 	    {
 	      if (strcmp (argv[1], "add") == 0)
-		return filter_add (num);
+		return start_servicei("filter_add",num);
 	      else if (strcmp (argv[1], "del") == 0)
-		return filter_del (num);
+		return start_servicei("filter_del",num);
 	    }
 	}
       else
@@ -730,7 +675,7 @@ int main(int argc,char **argv)
   else if (strstr (base, "site_survey"))
     return start_main ("site_survey",argc, argv);
   else if (strstr (base, "setpasswd"))
-    mkfiles ();
+    start_service("mkfiles");
   else if (strstr (base, "wol"))
     wol_main ();
   else if (strstr (base, "sendudp"))

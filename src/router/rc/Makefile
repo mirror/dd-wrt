@@ -19,7 +19,7 @@ LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared 
 endif
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
-OBJS += resetbutton.o ntp.o iptable.o listen.o check_ps.o process_monitor.o wland.o mkfiles.o sendudp.o 
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o wland.o sendudp.o 
 
 
 
