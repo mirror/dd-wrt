@@ -47,10 +47,10 @@ AUTOMAKE = ${SHELL} /opt/wrt/wol-0.7.0/missing --run automake-1.7
 AWK = gawk
 BUILD_INCLUDED_LIBINTL = no
 CATOBJEXT = 
-CC = mipsel-uclibc-gcc
+CC = mipsel-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
 CFLAGS = -Os -pipe -mips32 -mtune=mips32  -W -Wall -Wpointer-arith -Wimplicit-function-declaration
-CPP = mipsel-uclibc-gcc -E
+CPP = mipsel-linux-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
 DATADIRNAME = share
@@ -100,11 +100,11 @@ PERL = /usr/bin/perl
 POD2TEXI_FALSE = #
 POD2TEXI_TRUE = 
 POSUB = 
-RANLIB = mipsel-uclibc-ranlib
+RANLIB = mipsel-linux-uclibc-ranlib
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
-STRIP = mipsel-uclibc-strip
+STRIP = mipsel-linux-uclibc-strip
 USE_INCLUDED_LIBINTL = no
 USE_NLS = no
 VERSION = 0.7.0
