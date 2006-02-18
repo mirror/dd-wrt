@@ -47,10 +47,10 @@ AUTOMAKE = ${SHELL} /opt/wrt/wol-0.7.0/missing --run automake-1.7
 AWK = gawk
 BUILD_INCLUDED_LIBINTL = no
 CATOBJEXT = 
-CC = mipsel-linux-uclibc-gcc
+CC = mipsel-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -W -Wall -Wpointer-arith -Wimplicit-function-declaration
-CPP = mipsel-linux-uclibc-gcc -E
+CFLAGS = -Os -W -Wall -Wpointer-arith -Wimplicit-function-declaration
+CPP = mipsel-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
 DATADIRNAME = share
@@ -100,11 +100,11 @@ PERL = /usr/bin/perl
 POD2TEXI_FALSE = #
 POD2TEXI_TRUE = 
 POSUB = 
-RANLIB = mipsel-linux-uclibc-ranlib
+RANLIB = mipsel-uclibc-ranlib
 SED = /bin/sed
 SET_MAKE = 
 SHELL = /bin/sh
-STRIP = mipsel-linux-uclibc-strip
+STRIP = mipsel-uclibc-strip
 USE_INCLUDED_LIBINTL = no
 USE_NLS = no
 VERSION = 0.7.0
@@ -147,23 +147,23 @@ target_alias =
 INCLUDES = -I$(top_srcdir)/include -I$(top_srcdir)/lib -I$(top_srcdir)/intl
 
 bin_PROGRAMS = wol
-bin_SCRIPTS = #wol-dhcpdconf wol-bootptab
-wol_SOURCES = wol.c net.c magic.c # getpass4.c # macfile.c
-wol_LDADD =   # $(top_builddir)/lib/libwrappers.a
+bin_SCRIPTS = wol-dhcpdconf wol-bootptab
+wol_SOURCES = wol.c macfile.c net.c magic.c
+wol_LDADD =   $(top_builddir)/lib/libwrappers.a
 
 MAINTAINERCLEANFILES = Makefile.in
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 mkinstalldirs = $(SHELL) $(top_srcdir)/mkinstalldirs
 CONFIG_HEADER = $(top_builddir)/config.h
-CONFIG_CLEAN_FILES = #wol-dhcpdconf wol-bootptab
+CONFIG_CLEAN_FILES = wol-dhcpdconf wol-bootptab
 bin_PROGRAMS = wol$(EXEEXT)
 PROGRAMS = $(bin_PROGRAMS)
 
-am_wol_OBJECTS = wol.$(OBJEXT) net.$(OBJEXT) \
-	magic.$(OBJEXT) # getpass4.$(OBJEXT) # macfile.$(OBJEXT)
+am_wol_OBJECTS = wol.$(OBJEXT) macfile.$(OBJEXT) net.$(OBJEXT) \
+	magic.$(OBJEXT)
 wol_OBJECTS = $(am_wol_OBJECTS)
-wol_DEPENDENCIES = # $(top_builddir)/lib/libwrappers.a
+wol_DEPENDENCIES = $(top_builddir)/lib/libwrappers.a
 wol_LDFLAGS =
 SCRIPTS = $(bin_SCRIPTS)
 
@@ -171,14 +171,14 @@ SCRIPTS = $(bin_SCRIPTS)
 DEFAULT_INCLUDES =  -I. -I$(srcdir) -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/depcomp
 am__depfiles_maybe = depfiles
-DEP_FILES = ./$(DEPDIR)/magic.Po \
-	./$(DEPDIR)/net.Po ./$(DEPDIR)/wol.Po # ./$(DEPDIR)/macfile.Po
+DEP_FILES = ./$(DEPDIR)/macfile.Po ./$(DEPDIR)/magic.Po \
+	./$(DEPDIR)/net.Po ./$(DEPDIR)/wol.Po
 COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 DIST_SOURCES = $(wol_SOURCES)
-DIST_COMMON = Makefile.am Makefile.in # wol-bootptab.in wol-dhcpdconf.in
+DIST_COMMON = Makefile.am Makefile.in wol-bootptab.in wol-dhcpdconf.in
 SOURCES = $(wol_SOURCES)
 
 all: all-am
@@ -190,10 +190,10 @@ $(srcdir)/Makefile.in:  Makefile.am  $(top_srcdir)/configure.ac $(ACLOCAL_M4)
 #	  $(AUTOMAKE) --gnu  src/Makefile
 Makefile:  $(srcdir)/Makefile.in  $(top_builddir)/config.status
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@ $(am__depfiles_maybe)
-#wol-dhcpdconf: $(top_builddir)/config.status wol-dhcpdconf.in
-#	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-#wol-bootptab: $(top_builddir)/config.status wol-bootptab.in
-#	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+wol-dhcpdconf: $(top_builddir)/config.status wol-dhcpdconf.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+wol-bootptab: $(top_builddir)/config.status wol-bootptab.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
@@ -248,8 +248,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-# include ./$(DEPDIR)/macfile.Po
-# include ./$(DEPDIR)/getpass4.Po
+include ./$(DEPDIR)/macfile.Po
 include ./$(DEPDIR)/magic.Po
 include ./$(DEPDIR)/net.Po
 include ./$(DEPDIR)/wol.Po
