@@ -9,9 +9,9 @@
     <link type="text/css" rel="stylesheet" href="style.css" />
     <script type="text/JavaScript" src="common.js">{}</script>
     <script language="JavaScript">
-    
+
 var EN_DIS = '<% nvram_else_match("wl_gmode","-1","0","1"); %>';
-    
+
 function SelWL(num,F) {
   if ( num == 0)
     I = "0";
