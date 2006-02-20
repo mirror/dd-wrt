@@ -863,6 +863,7 @@ set_info(int		skfd,		/* The socket */
       if(!strcasecmp(args[i], "essid"))
 	{
 	  char		essid[IW_ESSID_MAX_SIZE + 1];
+	  int		we_kernel_version;
 
 	  i++;
 	  if(i >= count)
@@ -877,6 +878,7 @@ set_info(int		skfd,		/* The socket */
 	    if(!strcasecmp(args[i], "on"))
 	      {
 		/* Get old essid */
+		memset(essid, '\0', sizeof(essid));
 		wrq.u.essid.pointer = (caddr_t) essid;
 		wrq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
 		wrq.u.essid.flags = 0;
@@ -918,8 +920,14 @@ set_info(int		skfd,		/* The socket */
 		  }
 	      }
 
+	  /* Get version from kernel, device may not have range... */
+	  we_kernel_version = iw_get_kernel_we_version();
+
+	  /* Finally set the ESSID value */
 	  wrq.u.essid.pointer = (caddr_t) essid;
 	  wrq.u.essid.length = strlen(essid) + 1;
+	  if(we_kernel_version > 20)
+	    wrq.u.essid.length--;
 	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWESSID, &wrq,
 			 "Set ESSID");
 	  continue;
@@ -960,14 +968,20 @@ set_info(int		skfd,		/* The socket */
       /* ---------- Set NickName ---------- */
       if(!strncmp(args[i], "nick", 4))
 	{
+	  int		we_kernel_version;
+
 	  i++;
 	  if(i >= count)
 	    ABORT_ARG_NUM("Set Nickname", SIOCSIWNICKN);
 	  if(strlen(args[i]) > IW_ESSID_MAX_SIZE)
 	    ABORT_ARG_SIZE("Set Nickname", SIOCSIWNICKN, IW_ESSID_MAX_SIZE);
 
+	  we_kernel_version = iw_get_kernel_we_version();
+
 	  wrq.u.essid.pointer = (caddr_t) args[i];
 	  wrq.u.essid.length = strlen(args[i]) + 1;
+	  if(we_kernel_version > 20)
+	    wrq.u.essid.length--;
 	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWNICKN, &wrq,
 			 "Set Nickname");
 	  continue;
@@ -1270,8 +1284,13 @@ set_info(int		skfd,		/* The socket */
 			  ABORT_ARG_TYPE("Set Tx Power", SIOCSIWTXPOW,
 					 args[i]);
 
-			/* Check if milliwatt */
-			ismwatt = (index(args[i], 'm') != NULL);
+			/* Check if milliWatt
+			 * We authorise a single 'm' as a shorthand for 'mW',
+			 * on the other hand a 'd' probably means 'dBm'... */
+			ismwatt = ((index(args[i], 'm') != NULL)
+				   && (index(args[i], 'd') == NULL));
+
+			/* We could check 'W' alone... Another time... */
 
 			/* Convert */
 			if(range.txpower_capa & IW_TXPOW_RELATIVE)
