@@ -2231,6 +2231,8 @@ iw_get_priv_size(int	args)
  * this case.
  */
 
+/* -------------------------- CONSTANTS -------------------------- */
+
 /* Type of headers we know about (basically union iwreq_data) */
 #define IW_HEADER_TYPE_NULL	0	/* Not available */
 #define IW_HEADER_TYPE_CHAR	2	/* char [IFNAMSIZ] */
@@ -2241,84 +2243,315 @@ iw_get_priv_size(int	args)
 #define IW_HEADER_TYPE_PARAM	9	/* struct iw_param */
 #define IW_HEADER_TYPE_QUAL	10	/* struct iw_quality */
 
-/* Headers for the various requests */
-static const char standard_ioctl_hdr[] = {
-	IW_HEADER_TYPE_NULL,	/* SIOCSIWCOMMIT */
-	IW_HEADER_TYPE_CHAR,	/* SIOCGIWNAME */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWNWID */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWNWID */
-	IW_HEADER_TYPE_FREQ,	/* SIOCSIWFREQ */
-	IW_HEADER_TYPE_FREQ,	/* SIOCGIWFREQ */
-	IW_HEADER_TYPE_UINT,	/* SIOCSIWMODE */
-	IW_HEADER_TYPE_UINT,	/* SIOCGIWMODE */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWSENS */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWSENS */
-	IW_HEADER_TYPE_NULL,	/* SIOCSIWRANGE */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWRANGE */
-	IW_HEADER_TYPE_NULL,	/* SIOCSIWPRIV */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWPRIV */
-	IW_HEADER_TYPE_NULL,	/* SIOCSIWSTATS */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWSTATS */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWSPY */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWSPY */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWTHRSPY */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWTHRSPY */
-	IW_HEADER_TYPE_ADDR,	/* SIOCSIWAP */
-	IW_HEADER_TYPE_ADDR,	/* SIOCGIWAP */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWMLME */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWAPLIST */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWSCAN */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWSCAN */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWESSID */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWESSID */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWNICKN */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWNICKN */
-	IW_HEADER_TYPE_NULL,	/* -- hole -- */
-	IW_HEADER_TYPE_NULL,	/* -- hole -- */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWRATE */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWRATE */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWRTS */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWRTS */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWFRAG */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWFRAG */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWTXPOW */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWTXPOW */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWRETRY */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWRETRY */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWENCODE */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWENCODE */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWPOWER */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWPOWER */
-	IW_HEADER_TYPE_NULL,	/* -- hole -- */
-	IW_HEADER_TYPE_NULL,	/* -- hole -- */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWGENIE */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWGENIE */
-	IW_HEADER_TYPE_PARAM,	/* SIOCSIWAUTH */
-	IW_HEADER_TYPE_PARAM,	/* SIOCGIWAUTH */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWENCODEEXT */
-	IW_HEADER_TYPE_POINT,	/* SIOCGIWENCODEEXT */
-	IW_HEADER_TYPE_POINT,	/* SIOCSIWPMKSA */
-	IW_HEADER_TYPE_NULL,	/* -- hole -- */
+/* Handling flags */
+/* Most are not implemented. I just use them as a reminder of some
+ * cool features we might need one day ;-) */
+#define IW_DESCR_FLAG_NONE	0x0000	/* Obvious */
+/* Wrapper level flags */
+#define IW_DESCR_FLAG_DUMP	0x0001	/* Not part of the dump command */
+#define IW_DESCR_FLAG_EVENT	0x0002	/* Generate an event on SET */
+#define IW_DESCR_FLAG_RESTRICT	0x0004	/* GET : request is ROOT only */
+				/* SET : Omit payload from generated iwevent */
+#define IW_DESCR_FLAG_NOMAX	0x0008	/* GET : no limit on request size */
+/* Driver level flags */
+#define IW_DESCR_FLAG_WAIT	0x0100	/* Wait for driver event */
+
+/* ---------------------------- TYPES ---------------------------- */
+
+/*
+ * Describe how a standard IOCTL looks like.
+ */
+struct iw_ioctl_description
+{
+	__u8	header_type;		/* NULL, iw_point or other */
+	__u8	token_type;		/* Future */
+	__u16	token_size;		/* Granularity of payload */
+	__u16	min_tokens;		/* Min acceptable token number */
+	__u16	max_tokens;		/* Max acceptable token number */
+	__u32	flags;			/* Special handling of the request */
 };
-static const unsigned int standard_ioctl_num = sizeof(standard_ioctl_hdr);
+
+/* -------------------------- VARIABLES -------------------------- */
+
+/*
+ * Meta-data about all the standard Wireless Extension request we
+ * know about.
+ */
+static const struct iw_ioctl_description standard_ioctl_descr[] = {
+	[SIOCSIWCOMMIT	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_NULL,
+	},
+	[SIOCGIWNAME	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_CHAR,
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWNWID	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+		.flags		= IW_DESCR_FLAG_EVENT,
+	},
+	[SIOCGIWNWID	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWFREQ	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_FREQ,
+		.flags		= IW_DESCR_FLAG_EVENT,
+	},
+	[SIOCGIWFREQ	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_FREQ,
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWMODE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_UINT,
+		.flags		= IW_DESCR_FLAG_EVENT,
+	},
+	[SIOCGIWMODE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_UINT,
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWSENS	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWSENS	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWRANGE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_NULL,
+	},
+	[SIOCGIWRANGE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= sizeof(struct iw_range),
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWPRIV	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_NULL,
+	},
+	[SIOCGIWPRIV	- SIOCIWFIRST] = { /* (handled directly by us) */
+		.header_type	= IW_HEADER_TYPE_NULL,
+	},
+	[SIOCSIWSTATS	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_NULL,
+	},
+	[SIOCGIWSTATS	- SIOCIWFIRST] = { /* (handled directly by us) */
+		.header_type	= IW_HEADER_TYPE_NULL,
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWSPY	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= sizeof(struct sockaddr),
+		.max_tokens	= IW_MAX_SPY,
+	},
+	[SIOCGIWSPY	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= sizeof(struct sockaddr) +
+				  sizeof(struct iw_quality),
+		.max_tokens	= IW_MAX_SPY,
+	},
+	[SIOCSIWTHRSPY	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= sizeof(struct iw_thrspy),
+		.min_tokens	= 1,
+		.max_tokens	= 1,
+	},
+	[SIOCGIWTHRSPY	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= sizeof(struct iw_thrspy),
+		.min_tokens	= 1,
+		.max_tokens	= 1,
+	},
+	[SIOCSIWAP	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_ADDR,
+	},
+	[SIOCGIWAP	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_ADDR,
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWMLME	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.min_tokens	= sizeof(struct iw_mlme),
+		.max_tokens	= sizeof(struct iw_mlme),
+	},
+	[SIOCGIWAPLIST	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= sizeof(struct sockaddr) +
+				  sizeof(struct iw_quality),
+		.max_tokens	= IW_MAX_AP,
+		.flags		= IW_DESCR_FLAG_NOMAX,
+	},
+	[SIOCSIWSCAN	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.min_tokens	= 0,
+		.max_tokens	= sizeof(struct iw_scan_req),
+	},
+	[SIOCGIWSCAN	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_SCAN_MAX_DATA,
+		.flags		= IW_DESCR_FLAG_NOMAX,
+	},
+	[SIOCSIWESSID	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+		.flags		= IW_DESCR_FLAG_EVENT,
+	},
+	[SIOCGIWESSID	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+		.flags		= IW_DESCR_FLAG_DUMP,
+	},
+	[SIOCSIWNICKN	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+	},
+	[SIOCGIWNICKN	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_ESSID_MAX_SIZE + 1,
+	},
+	[SIOCSIWRATE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWRATE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWRTS	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWRTS	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWFRAG	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWFRAG	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWTXPOW	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWTXPOW	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWRETRY	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWRETRY	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWENCODE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_ENCODING_TOKEN_MAX,
+		.flags		= IW_DESCR_FLAG_EVENT | IW_DESCR_FLAG_RESTRICT,
+	},
+	[SIOCGIWENCODE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_ENCODING_TOKEN_MAX,
+		.flags		= IW_DESCR_FLAG_DUMP | IW_DESCR_FLAG_RESTRICT,
+	},
+	[SIOCSIWPOWER	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWPOWER	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWGENIE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_GENERIC_IE_MAX,
+	},
+	[SIOCGIWGENIE	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_GENERIC_IE_MAX,
+	},
+	[SIOCSIWAUTH	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWAUTH	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWENCODEEXT - SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.min_tokens	= sizeof(struct iw_encode_ext),
+		.max_tokens	= sizeof(struct iw_encode_ext) +
+				  IW_ENCODING_TOKEN_MAX,
+	},
+	[SIOCGIWENCODEEXT - SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.min_tokens	= sizeof(struct iw_encode_ext),
+		.max_tokens	= sizeof(struct iw_encode_ext) +
+				  IW_ENCODING_TOKEN_MAX,
+	},
+	[SIOCSIWPMKSA - SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.min_tokens	= sizeof(struct iw_pmksa),
+		.max_tokens	= sizeof(struct iw_pmksa),
+	},
+};
+static const unsigned int standard_ioctl_num = (sizeof(standard_ioctl_descr) /
+						sizeof(struct iw_ioctl_description));
 
 /*
  * Meta-data about all the additional standard Wireless Extension events
  * we know about.
  */
-static const char	standard_event_hdr[] = {
-	IW_HEADER_TYPE_ADDR,	/* IWEVTXDROP */
-	IW_HEADER_TYPE_QUAL,	/* IWEVQUAL */
-	IW_HEADER_TYPE_POINT,	/* IWEVCUSTOM */
-	IW_HEADER_TYPE_ADDR,	/* IWEVREGISTERED */
-	IW_HEADER_TYPE_ADDR,	/* IWEVEXPIRED */
-	IW_HEADER_TYPE_POINT,	/* IWEVGENIE */
-	IW_HEADER_TYPE_POINT,	/* IWEVMICHAELMICFAILURE */
-	IW_HEADER_TYPE_POINT,	/* IWEVASSOCREQIE */
-	IW_HEADER_TYPE_POINT,	/* IWEVASSOCRESPIE */
-	IW_HEADER_TYPE_POINT,	/* IWEVPMKIDCAND */
+static const struct iw_ioctl_description standard_event_descr[] = {
+	[IWEVTXDROP	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_ADDR,
+	},
+	[IWEVQUAL	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_QUAL,
+	},
+	[IWEVCUSTOM	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_CUSTOM_MAX,
+	},
+	[IWEVREGISTERED	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_ADDR,
+	},
+	[IWEVEXPIRED	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_ADDR, 
+	},
+	[IWEVGENIE	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_GENERIC_IE_MAX,
+	},
+	[IWEVMICHAELMICFAILURE	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT, 
+		.token_size	= 1,
+		.max_tokens	= sizeof(struct iw_michaelmicfailure),
+	},
+	[IWEVASSOCREQIE	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_GENERIC_IE_MAX,
+	},
+	[IWEVASSOCRESPIE	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= IW_GENERIC_IE_MAX,
+	},
+	[IWEVPMKIDCAND	- IWEVFIRST] = {
+		.header_type	= IW_HEADER_TYPE_POINT,
+		.token_size	= 1,
+		.max_tokens	= sizeof(struct iw_pmkid_cand),
+	},
 };
-static const unsigned int standard_event_num = sizeof(standard_event_hdr);
+static const unsigned int standard_event_num = (sizeof(standard_event_descr) /
+						sizeof(struct iw_ioctl_description));
 
 /* Size (in bytes) of various events */
 static const int event_type_size[] = {
@@ -2362,6 +2595,7 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
 			struct iw_event *	iwe,	/* Extracted event */
 			int			we_version)
 {
+  const struct iw_ioctl_description *	descr = NULL;
   int		event_type = 0;
   unsigned int	event_len = 1;		/* Invalid */
   char *	pointer;
@@ -2398,14 +2632,16 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
     {
       cmd_index = iwe->cmd - SIOCIWFIRST;
       if(cmd_index < standard_ioctl_num)
-	event_type = standard_ioctl_hdr[cmd_index];
+	descr = &(standard_ioctl_descr[cmd_index]);
     }
   else
     {
       cmd_index = iwe->cmd - IWEVFIRST;
       if(cmd_index < standard_event_num)
-	event_type = standard_event_hdr[cmd_index];
+	descr = &(standard_event_descr[cmd_index]);
     }
+  if(descr != NULL)
+    event_type = descr->header_type;
   /* Unknown events -> event_type=0 => IW_EV_LCP_LEN */
   event_len = event_type_size[event_type];
   /* Fixup for earlier version of WE */
@@ -2453,9 +2689,40 @@ iw_extract_event_stream(struct stream_descr *	stream,	/* Stream of events */
   if(event_type == IW_HEADER_TYPE_POINT)
     {
       /* Check the length of the payload */
-      if((iwe->len - (event_len + IW_EV_LCP_LEN)) > 0)
-	/* Set pointer on variable part (warning : non aligned) */
-	iwe->u.data.pointer = pointer;
+      unsigned int	extra_len = iwe->len - (event_len + IW_EV_LCP_LEN);
+      if(extra_len > 0)
+	{
+	  /* Set pointer on variable part (warning : non aligned) */
+	  iwe->u.data.pointer = pointer;
+
+	  /* Check that we have a descriptor for the command */
+	  if(descr == NULL)
+	    /* Can't check payload -> unsafe... */
+	    iwe->u.data.pointer = NULL;	/* Discard paylod */
+	  else
+	    {
+	      /* Those checks are actually pretty hard to trigger,
+	       * because of the checks done in the kernel... */
+
+	      /* Discard bogus events which advertise more tokens than
+	       * what they carry... */
+	      unsigned int	token_len = iwe->u.data.length * descr->token_size;
+	      if(token_len > extra_len)
+		iwe->u.data.pointer = NULL;	/* Discard paylod */
+	      /* Check that the advertised token size is not going to
+	       * produce buffer overflow to our caller... */
+	      if((iwe->u.data.length > descr->max_tokens)
+		 && !(descr->flags & IW_DESCR_FLAG_NOMAX))
+		iwe->u.data.pointer = NULL;	/* Discard paylod */
+	      /* Same for underflows... */
+	      if(iwe->u.data.length < descr->min_tokens)
+		iwe->u.data.pointer = NULL;	/* Discard paylod */
+#if DEBUG
+	      printf("DBG - extra_len = %d, token_len = %d, token = %d, max = %d, min = %d\n",
+		     extra_len, token_len, iwe->u.data.length, descr->max_tokens, descr->min_tokens);
+#endif
+	    }
+	}
       else
 	/* No data */
 	iwe->u.data.pointer = NULL;
@@ -2556,9 +2823,9 @@ iw_process_scanning_token(struct iw_event *		event,
     case SIOCGIWESSID:
       wscan->b.has_essid = 1;
       wscan->b.essid_on = event->u.data.flags;
+      memset(wscan->b.essid, '\0', IW_ESSID_MAX_SIZE+1);
       if((event->u.essid.pointer) && (event->u.essid.length))
 	memcpy(wscan->b.essid, event->u.essid.pointer, event->u.essid.length);
-      wscan->b.essid[event->u.essid.length] = '\0';
       break;
     case SIOCGIWENCODE:
       wscan->b.has_key = 1;

@@ -1107,9 +1107,9 @@ print_scanning_token(struct stream_descr *	stream,	/* Stream of events */
     case SIOCGIWESSID:
       {
 	char essid[IW_ESSID_MAX_SIZE+1];
+	memset(essid, '\0', sizeof(essid));
 	if((event->u.essid.pointer) && (event->u.essid.length))
 	  memcpy(essid, event->u.essid.pointer, event->u.essid.length);
-	essid[event->u.essid.length] = '\0';
 	if(event->u.essid.flags)
 	  {
 	    /* Does it have an ESSID index ? */
@@ -1127,7 +1127,7 @@ print_scanning_token(struct stream_descr *	stream,	/* Stream of events */
       {
 	unsigned char	key[IW_ENCODING_TOKEN_MAX];
 	if(event->u.data.pointer)
-	  memcpy(key, event->u.essid.pointer, event->u.data.length);
+	  memcpy(key, event->u.data.pointer, event->u.data.length);
 	else
 	  event->u.data.flags |= IW_ENCODE_NOKEY;
 	printf("                    Encryption key:");
