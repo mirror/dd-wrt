@@ -21,106 +21,123 @@
 #define ROUTER_BUFFALO_WZRRSG54 9
 #define ROUTER_BOARD_500 10
 #define ROUTER_BUFFALO_WHRG54S 11
-#define ROUTER_BUFFALO_HP_WHRG54S 11  //no differences between these models. so we leave it
+#define ROUTER_BUFFALO_HP_WHRG54S 11	//no differences between these models. so we leave it
+#define ROUTER_BUFFALO_WLA2G54L 5	//should work like a WBR2
 
 
 
 #define NVROUTER "DD_BOARD"
 
 
-extern int check_vlan_support(void);
-extern int startswith(char *source,char *cmp);
-extern int getRouterBrand(void);
-extern int diag_led(int type, int act);
-extern int C_led(int i);
-extern int get_single_ip(char *ipaddr, int which);
-extern char *get_mac_from_ip(char *ip);
-extern struct dns_lists *get_dns_list(void);
-extern int dns_to_resolv(void);
-extern char *get_wan_face(void);
-extern int check_wan_link(int num);
-extern char *get_complete_lan_ip(char *ip);
-extern int get_int_len(int num);
-extern int file_to_buf(char *path, char *buf, int len);
-extern int buf_to_file(char *path, char *buf);
-extern pid_t* find_pid_by_name( char* pidName);
-extern int find_pid_by_ps(char* pidName);
-extern int *find_all_pid_by_ps(char* pidName);
-extern char *find_name_by_proc(int pid);
-extern int get_ppp_pid(char *file);
-extern long convert_ver(char *ver);
-extern int check_flash(void);
-extern int check_action(void);
-extern int check_now_boot(void);
-extern int check_hw_type(void);
-extern int is_exist(char *filename);
-extern void set_ip_forward(char c);
-struct mtu_lists *get_mtu(char *proto);
-extern void set_host_domain_name(void);
+extern int check_vlan_support (void);
+extern int startswith (char *source, char *cmp);
+extern int getRouterBrand (void);
+extern int diag_led (int type, int act);
+extern int C_led (int i);
+extern int get_single_ip (char *ipaddr, int which);
+extern char *get_mac_from_ip (char *ip);
+extern struct dns_lists *get_dns_list (void);
+extern int dns_to_resolv (void);
+extern char *get_wan_face (void);
+extern int check_wan_link (int num);
+extern char *get_complete_lan_ip (char *ip);
+extern int get_int_len (int num);
+extern int file_to_buf (char *path, char *buf, int len);
+extern int buf_to_file (char *path, char *buf);
+extern pid_t *find_pid_by_name (char *pidName);
+extern int find_pid_by_ps (char *pidName);
+extern int *find_all_pid_by_ps (char *pidName);
+extern char *find_name_by_proc (int pid);
+extern int get_ppp_pid (char *file);
+extern long convert_ver (char *ver);
+extern int check_flash (void);
+extern int check_action (void);
+extern int check_now_boot (void);
+extern int check_hw_type (void);
+extern int is_exist (char *filename);
+extern void set_ip_forward (char c);
+struct mtu_lists *get_mtu (char *proto);
+extern void set_host_domain_name (void);
 
-extern void encode(char *buf, int len);
-extern void decode(char *buf, int len);
+extern void encode (char *buf, int len);
+extern void decode (char *buf, int len);
 
 
 #ifdef CDEBUG
-extern int mcoreleft(void);
-extern int coreleft(void);
-static void cdebug(char *function)
+extern int mcoreleft (void);
+extern int coreleft (void);
+static void
+cdebug (char *function)
 {
-FILE *in = fopen("/tmp/console.log","a");
-fprintf(in,"free ram in %s = %d (malloc %d)\n",function,coreleft(),mcoreleft());
-fclose(in);
+  FILE *in = fopen ("/tmp/console.log", "a");
+  fprintf (in, "free ram in %s = %d (malloc %d)\n", function, coreleft (),
+	   mcoreleft ());
+  fclose (in);
 }
 
 #else
 #define cdebug(a)
 #endif
-extern int first_time(void);
+extern int first_time (void);
 
-extern int set_register_value(unsigned short port_addr, unsigned short option_content);
-extern unsigned long get_register_value(unsigned short id, unsigned short num);
+extern int set_register_value (unsigned short port_addr,
+			       unsigned short option_content);
+extern unsigned long get_register_value (unsigned short id,
+					 unsigned short num);
 //extern int sys_netdev_ioctl(int family, int socket, char *if_name, int cmd, struct ifreq *ifr);
 
-int ct_openlog(const char *ident, int option, int facility, char *log_name);
-void ct_syslog(int level, int enable, const char *fmt,...);
-void ct_logger(int level, const char *fmt,...);
-struct wl_assoc_mac * get_wl_assoc_mac(int *c);
-	
-extern struct detect_wans * detect_protocol(char *wan_face, char *lan_face, char *type);
+int ct_openlog (const char *ident, int option, int facility, char *log_name);
+void ct_syslog (int level, int enable, const char *fmt, ...);
+void ct_logger (int level, const char *fmt, ...);
+struct wl_assoc_mac *get_wl_assoc_mac (int *c);
 
-enum {	WL = 0,
-	DIAG = 1,
-	SES_LED1 = 2,
-	SES_LED2 = 3,
-	SES_BUTTON = 4,
-	DMZ = 7 };  
+extern struct detect_wans *detect_protocol (char *wan_face, char *lan_face,
+					    char *type);
 
-enum { START_LED, STOP_LED, MALFUNCTION_LED };
+enum
+{ WL = 0,
+  DIAG = 1,
+  SES_LED1 = 2,
+  SES_LED2 = 3,
+  SES_BUTTON = 4,
+  DMZ = 7
+};
 
-typedef enum { ACT_IDLE, 
-	       ACT_TFTP_UPGRADE, 
-	       ACT_WEB_UPGRADE, 
+enum
+{ START_LED, STOP_LED, MALFUNCTION_LED };
+
+typedef enum
+{ ACT_IDLE,
+  ACT_TFTP_UPGRADE,
+  ACT_WEB_UPGRADE,
 #ifdef HAVE_HTTPS
-	       ACT_WEBS_UPGRADE,
-#endif 
-	       ACT_SW_RESTORE, 
-	       ACT_HW_RESTORE,
-	       ACT_ERASE_NVRAM,
-	       ACT_NVRAM_COMMIT } ACTION;
+  ACT_WEBS_UPGRADE,
+#endif
+  ACT_SW_RESTORE,
+  ACT_HW_RESTORE,
+  ACT_ERASE_NVRAM,
+  ACT_NVRAM_COMMIT
+} ACTION;
 
-enum { UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
+enum
+{ UNKNOWN_BOOT = -1, PMON_BOOT, CFE_BOOT };
 
-enum { BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM4704_BCM5325F_CHIP, BCM5352E_CHIP, NO_DEFINE_CHIP };
+enum
+{ BCM4702_CHIP, BCM4712_CHIP, BCM5325E_CHIP, BCM4704_BCM5325F_CHIP,
+    BCM5352E_CHIP, NO_DEFINE_CHIP };
 
-enum { FIRST, SECOND };
+enum
+{ FIRST, SECOND };
 
-enum { SYSLOG_LOG=1, SYSLOG_DEBUG, CONSOLE_ONLY, LOG_CONSOLE, DEBUG_CONSOLE };
+enum
+{ SYSLOG_LOG = 1, SYSLOG_DEBUG, CONSOLE_ONLY, LOG_CONSOLE, DEBUG_CONSOLE };
 
 #define ACTION(cmd)	buf_to_file(ACTION_FILE, cmd)
 
-struct dns_lists {
-        int num_servers;
-        char dns_server[4][16];
+struct dns_lists
+{
+  int num_servers;
+  char dns_server[4][16];
 };
 
 #define NOT_USING	0
@@ -128,20 +145,22 @@ struct dns_lists {
 
 struct wl_assoc_mac
 {
-	char mac[18];
+  char mac[18];
 };
 
-struct mtu_lists {
-        char	*proto;	/* protocol */
-        char	*min;	/* min mtu */
-        char	*max;	/* max mtu */
+struct mtu_lists
+{
+  char *proto;			/* protocol */
+  char *min;			/* min mtu */
+  char *max;			/* max mtu */
 };
 
-struct detect_wans {
-	int proto;
-	int count;
-	char *name;
-	char desc[1024];
+struct detect_wans
+{
+  int proto;
+  int count;
+  char *name;
+  char desc[1024];
 };
 
 #define	PROTO_DHCP	0
@@ -204,16 +223,19 @@ struct detect_wans {
 }
 
 
-int ishexit(char c);
-int sv_valid_hwaddr(char *value);
-int sv_valid_ipaddr(char *value);
-int sv_valid_range(char *value, int low, int high);
-int sv_valid_statics(char* value);
-void get_network(char *ipaddr, char *netmask);
-void get_broadcast(char *ipaddr, char *netmask);
-int route_manip(int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
-int route_add(char *name, int metric, char *dst, char *gateway, char *genmask);
-int route_del(char *name, int metric, char *dst, char *gateway, char *genmask);
+int ishexit (char c);
+int sv_valid_hwaddr (char *value);
+int sv_valid_ipaddr (char *value);
+int sv_valid_range (char *value, int low, int high);
+int sv_valid_statics (char *value);
+void get_network (char *ipaddr, char *netmask);
+void get_broadcast (char *ipaddr, char *netmask);
+int route_manip (int cmd, char *name, int metric, char *dst, char *gateway,
+		 char *genmask);
+int route_add (char *name, int metric, char *dst, char *gateway,
+	       char *genmask);
+int route_del (char *name, int metric, char *dst, char *gateway,
+	       char *genmask);
 
 #define MAX_WDS_DEVS 10
 #endif
