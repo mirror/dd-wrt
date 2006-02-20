@@ -19,7 +19,7 @@
 #include <wlioctl.h>
 
 /* Sveasoft addition - get wireless interface */
-extern char* get_wdev(void);
+extern char *get_wdev (void);
 
 /*
  * Pass a wlioctl request to the specified interface.
@@ -29,7 +29,7 @@ extern char* get_wdev(void);
  * @param	len	length of buf
  * @return	>= 0 if successful or < 0 otherwise
  */
-extern int wl_ioctl(char *name, int cmd, void *buf, int len);
+extern int wl_ioctl (char *name, int cmd, void *buf, int len);
 
 /*
  * Get the MAC (hardware) address of the specified interface.
@@ -37,18 +37,18 @@ extern int wl_ioctl(char *name, int cmd, void *buf, int len);
  * @param	hwaddr	6-byte buffer for receiving address
  * @return	>= 0 if successful or < 0 otherwise
  */
-extern int wl_hwaddr(char *name, unsigned char *hwaddr);
+extern int wl_hwaddr (char *name, unsigned char *hwaddr);
 
 /*
  * Probe the specified interface.
  * @param	name	interface name
  * @return	>= 0 if a Broadcom wireless device or < 0 otherwise
  */
-extern int wl_probe(char *name);
+extern int wl_probe (char *name);
 
 
 /* Returns the list of associated stations in the pre-existing buffer list */
-int getassoclist(char *name, unsigned char *list);
+int getassoclist (char *name, unsigned char *list);
 
 /*
  * Set/Get named variable.
@@ -58,10 +58,10 @@ int getassoclist(char *name, unsigned char *list);
  * @param	len	variable value/buffer length
  * @return	success == 0, failure != 0
  */
-extern int wl_set_val(char *name, char *var, void *val, int len);
-extern int wl_get_val(char *name, char *var, void *val, int len);
-extern int wl_set_int(char *name, char *var, int val);
-extern int wl_get_int(char *name, char *var, int *val);
+extern int wl_set_val (char *name, char *var, void *val, int len);
+extern int wl_get_val (char *name, char *var, void *val, int len);
+extern int wl_set_int (char *name, char *var, int val);
+extern int wl_get_int (char *name, char *var, int *val);
 
 
 /*
@@ -75,18 +75,28 @@ extern int wl_get_int(char *name, char *var, int *val);
  * @param	val		val or val pointer for int routines
  * @return	success == 0, failure != 0
  */
-extern int wl_iovar_setbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen);
-extern int wl_iovar_getbuf(char *ifname, char *iovar, void *param, int paramlen, void *bufptr, int buflen);
-extern int wl_iovar_set(char *ifname, char *iovar, void *param, int paramlen);
-extern int wl_iovar_get(char *ifname, char *iovar, void *bufptr, int buflen);
-extern int wl_iovar_setint(char *ifname, char *iovar, int val);
-extern int wl_iovar_getint(char *ifname, char *iovar, int *val);
+extern int wl_iovar_setbuf (char *ifname, char *iovar, void *param,
+			    int paramlen, void *bufptr, int buflen);
+extern int wl_iovar_getbuf (char *ifname, char *iovar, void *param,
+			    int paramlen, void *bufptr, int buflen);
+extern int wl_iovar_set (char *ifname, char *iovar, void *param,
+			 int paramlen);
+extern int wl_iovar_get (char *ifname, char *iovar, void *bufptr, int buflen);
+extern int wl_iovar_setint (char *ifname, char *iovar, int val);
+extern int wl_iovar_getint (char *ifname, char *iovar, int *val);
 
-extern int wl_bssiovar_setbuf(char *ifname, char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen);
-extern int wl_bssiovar_getbuf(char *ifname, char *iovar, int bssidx, void *param, int paramlen, void *bufptr, int buflen);
-extern int wl_bssiovar_get(char *ifname, char *iovar, int bssidx, void *outbuf, int len);
-extern int wl_bssiovar_set(char *ifname, char *iovar, int bssidx, void *param, int paramlen);
-extern int wl_bssiovar_setint(char *ifname, char *iovar, int bssidx, int val);
+extern int wl_bssiovar_setbuf (char *ifname, char *iovar, int bssidx,
+			       void *param, int paramlen, void *bufptr,
+			       int buflen);
+extern int wl_bssiovar_getbuf (char *ifname, char *iovar, int bssidx,
+			       void *param, int paramlen, void *bufptr,
+			       int buflen);
+extern int wl_bssiovar_get (char *ifname, char *iovar, int bssidx,
+			    void *outbuf, int len);
+extern int wl_bssiovar_set (char *ifname, char *iovar, int bssidx,
+			    void *param, int paramlen);
+extern int wl_bssiovar_setint (char *ifname, char *iovar, int bssidx,
+			       int val);
 
 
 #endif /* _wlutils_h_ */
