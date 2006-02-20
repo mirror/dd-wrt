@@ -671,7 +671,7 @@ default_get (char *var, char *def)
   if (v == NULL || strlen (v) == 0)
     {
       nvram_set (var, def);
-      
+
       nvram_commit ();
     }
   return nvram_safe_get (var);
@@ -698,7 +698,7 @@ setupEncryption (char *prefix)
   char akm[16];
   sprintf (akm, "%s_akm", prefix);
 //wep key support
-  if (nvram_match(akm, "wep"))
+  if (nvram_match (akm, "wep"))
     {
       char key[16];
       int cnt = 1;
@@ -714,15 +714,15 @@ setupEncryption (char *prefix)
 	      eval ("iwconfig", prefix, "key", bul, athkey);	// setup wep encryption key
 	    }
 	}
-     sprintf(key,"%s_key",prefix);
-     sprintf(bul,"[%s]",nvram_safe_get(key));
-     eval ("iwconfig",prefix,"key",bul);	
-     eval ("iwpriv", prefix, "authmode", "2");
+      sprintf (key, "%s_key", prefix);
+      sprintf (bul, "[%s]", nvram_safe_get (key));
+      eval ("iwconfig", prefix, "key", bul);
+      eval ("iwpriv", prefix, "authmode", "2");
     }
   else
     {
       eval ("iwconfig", prefix, "key", "off");
-      eval ("iwpriv", prefix,"authmode","0");
+      eval ("iwpriv", prefix, "authmode", "0");
     }
 
 
@@ -899,7 +899,8 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 //  eval ("insmod", "ath_hal");
 //  eval ("insmod", "ath_rate_onoe");
 //  sleep(1);
-  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor,"autocreate=none");
+  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor,
+	"autocreate=none");
 
 //  sleep(1);
 //  eval ("modprobe", "-r", "ath_pci");
