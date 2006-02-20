@@ -240,7 +240,7 @@ parseForwards();
 				<input type="radio" name="upnpmnp" value="0" <% nvram_match("upnpmnp","0","checked"); %> />Disable
 			</div>
 			</fieldset><br />
-                     <div class="submitFooter"><input type="button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+                     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
                   </form>
                </div>
             </div>
