@@ -3,7 +3,7 @@
  *
  *	create and assemble magic packets
  *
- *	$Id: magic.c,v 1.1.2.1 2004/06/20 21:55:18 nikki Exp $
+ *	$Id: magic.c,v 1.9 2003/08/12 16:45:22 wol Exp $
  *
  *	Copyright (C) 2000-2003 Thomas Krennwallner <krennwallner@aon.at>
  *
@@ -93,14 +93,14 @@ magic_create (int with_passwd)
 {
 	struct magic *mag;
 
-	mag = (struct magic *) malloc (sizeof (struct magic));
+	mag = (struct magic *) xmalloc (sizeof (struct magic));
 
 	if (with_passwd)
 		mag->size = sizeof (struct secureon);
 	else
 		mag->size = sizeof (struct packet);
 
-	mag->packet = (unsigned char *) malloc (mag->size);
+	mag->packet = (unsigned char *) xmalloc (mag->size);
 
 	return mag;
 }
@@ -130,7 +130,6 @@ magic_assemble (struct magic *magic_buf, const char *mac_str,
 	if (sscanf (mac_str, "%2x:%2x:%2x:%2x:%2x:%2x",
 							&m[0], &m[1], &m[2], &m[3], &m[4], &m[5]) != MAC_LEN)
 		{
-#if 0
 			struct ether_addr ea;
 
 			/* lets parse /etc/ethers for ethernet name resolving
@@ -138,29 +137,26 @@ magic_assemble (struct magic *magic_buf, const char *mac_str,
 			 */
 			if (ether_hostton (mac_str, &ea))
 				{
-#endif
 					errno = EINVAL;
 					return -1;
-#if 0
 				}
 
 			for (j = 0; j < MAC_LEN; ++j)
 				m[j] = ea.ETHER_ADDR_OCTET[j];
-#endif
 		}
 
 	/* accommodate the packet chunk's size to the packet type */
 	if (passwd_str && magic_buf->size != sizeof (struct secureon))
 		{
 			magic_buf->packet = \
-									(unsigned char *) realloc ((void *) magic_buf->packet,
+									(unsigned char *) xrealloc ((void *) magic_buf->packet,
 																							sizeof (struct secureon));
 			magic_buf->size = sizeof (struct secureon);
 		}
 	else if (passwd_str == NULL && magic_buf->size != sizeof (struct packet))
 		{
 			magic_buf->packet = \
-									(unsigned char *) realloc ((void *) magic_buf->packet,
+									(unsigned char *) xrealloc ((void *) magic_buf->packet,
 																							sizeof (struct packet));
 			magic_buf->size = sizeof (struct packet);
 		}
