@@ -9,7 +9,7 @@ cp .config_mini .config
 #cp Makefile.standard Makefile
 
 cd ..
-make clean
+#make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
