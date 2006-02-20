@@ -612,6 +612,11 @@
  *	---
  *	o Revert to previous iw_extract_event_stream() API, debloat [iwlib]
  *	o Keep track of value index in [iwlist]
+ *	---
+ *	o Check event stream 'point' payload size to avoid overflow [iwlib]
+ *	o Make all users of event stream 'point' safe to NULL [iwlist/iwevent]
+ *	o 'iwconfig txpower 1dBm' should not be 'mW' [iwconfig]
+ *	o Forward compart to WE-21 : essid len is strlen, not +1 [iwconfig]
  */
 
 /* ----------------------------- TODO ----------------------------- */

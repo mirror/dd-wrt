@@ -342,9 +342,9 @@ print_event_token(struct iw_event *	event,		/* Extracted token */
     case SIOCGIWESSID:
       {
 	char essid[IW_ESSID_MAX_SIZE+1];
+	memset(essid, '\0', sizeof(essid));
 	if((event->u.essid.pointer) && (event->u.essid.length))
 	  memcpy(essid, event->u.essid.pointer, event->u.essid.length);
-	essid[event->u.essid.length] = '\0';
 	if(event->u.essid.flags)
 	  {
 	    /* Does it have an ESSID index ? */
@@ -362,7 +362,7 @@ print_event_token(struct iw_event *	event,		/* Extracted token */
       {
 	unsigned char	key[IW_ENCODING_TOKEN_MAX];
 	if(event->u.data.pointer)
-	  memcpy(key, event->u.essid.pointer, event->u.data.length);
+	  memcpy(key, event->u.data.pointer, event->u.data.length);
 	else
 	  event->u.data.flags |= IW_ENCODE_NOKEY;
 	printf("Set Encryption key:");
@@ -402,9 +402,9 @@ print_event_token(struct iw_event *	event,		/* Extracted token */
     case IWEVCUSTOM:
       {
 	char custom[IW_CUSTOM_MAX+1];
+	memset(custom, '\0', sizeof(custom));
 	if((event->u.data.pointer) && (event->u.data.length))
 	  memcpy(custom, event->u.data.pointer, event->u.data.length);
-	custom[event->u.data.length] = '\0';
 	printf("Custom driver event:%s\n", custom);
       }
       break;
