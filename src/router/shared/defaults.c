@@ -71,8 +71,8 @@ struct nvram_tuple router_defaults[] = {
   {"upnp_enable", "0", 0},	/* 0:Disable 1:Enable */
 #endif
 // changed by steve
-  {"upnp_ssdp_interval", "60", 0 }, /* SSDP interval */
-  {"upnp_max_age", "180", 0 },  /* MAX age time */
+  {"upnp_ssdp_interval", "60", 0},	/* SSDP interval */
+  {"upnp_max_age", "180", 0},	/* MAX age time */
   {"upnpmnp", "0", 0},		/* UPnP URL */
   {"upnpcas", "0", 0},		/* UPnP clear at startup */
 // end changed by steve

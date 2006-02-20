@@ -90,6 +90,16 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WBR54G");
       return ROUTER_BUFFALO_WBR54G;
     }
+  if (nvram_match ("product_name", "Product_name") &&
+      nvram_match ("boardrev", "0x10") &&
+      nvram_match ("boardtype", "0x0101") && nvram_match ("boardnum", "00"))
+    {
+      cprintf ("router is buffalo WLA2");
+      setRouter ("Buffalo WLA2-G54L");
+      return ROUTER_BUFFALO_WLA2G54L;
+    }
+
+
   if (nvram_match ("boardtype", "bcm95365r") &&
       nvram_match ("boardnum", "45"))
     {
