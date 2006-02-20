@@ -531,7 +531,7 @@ ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
 		 i, sep != NULL ? sep : "");
       sep = strsep (&leases, "=");
       websWrite (wp,
-		 "<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"16\" maxlength=\"16\" class=\"num\" /></td>",
+		 "<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"24\" maxlength=\"24\" class=\"num\" /></td>",
 		 i, sep != NULL ? sep : "");
       sep = strsep (&leases, " ");
       websWrite (wp,
