@@ -2,31 +2,29 @@
 <!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-   <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-   
-      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-      <title><% nvram_get("router_name"); %> - UPnP Forward</title>
-	<style type="text/css">
-	<!--
-		A{color: #000000; text-decoration: underline;}
-		A:link{color: #000000; text-decoration: underline;}
-		A:hover{color: #000000; text-decoration: none;}
-		A:visited{color: #000000; text-decoration: underline,}
-		.ta tr{cursor: pointer;}
-		.dis th {color: #A04040; }
-	-->
-	</style>
-      <link type="text/css" rel="stylesheet" href="style.css" />
-<!--
-
-UPnP
-11.2005	tofu10		init
-Intergated to DD-WRT by LawnMowerGuy1
-
--->
-
-<script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
+	<head>
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
+		<title><% nvram_get("router_name"); %> - UPnP Forward</title>
+		<style type="text/css">
+		<!--
+			A{color: #000000; text-decoration: underline;}
+			A:link{color: #000000; text-decoration: underline;}
+			A:hover{color: #000000; text-decoration: none;}
+			A:visited{color: #000000; text-decoration: underline;}
+			.ta tr{cursor: pointer;}
+			.dis th {color: #A04040; }
+		-->
+		</style>
+		<link type="text/css" rel="stylesheet" href="style.css" />
+		<!--
+		UPnP
+		11.2005	tofu10		init
+		Intergated to DD-WRT by LawnMowerGuy1
+		-->
+	
+		<script type="text/JavaScript" src="common.js">{}</script>
+		<script language="JavaScript">
 
 function to_submit(F) 
 {
@@ -128,7 +126,8 @@ function makeTable()
 {
 	var s;
 	s = "<table class='ta' cellspacing='1'>";
-	s += "<tr><th><a href='Javascript:resort(0)'>From (WAN)</a></th><th><a href='Javascript:resort(1)'>To (LAN)</a></th><th><a href='Javascript:resort(2)'>IP Address</a></th><th><a href='Javascript:resort(3)'>Proto</a></th><th><a href='Javascript:resort(4)'>Description</a></th></tr>";
+	s += "<tr title='Click to order column'><th><a href='Javascript:resort(0)'>From (WAN)</a></th><th><a href='Javascript:resort(1)'>To (LAN)</a></th><th><a href='Javascript:resort(2)'>IP Address</a></th><th><a href='Javascript:resort(3)'>Proto</a></th><th><a href='Javascript:resort(4)'>Description</a></th></tr>";
+	s += "<tr><tr/><tr><tr/><tr><tr/>";
 	for (var i = 0; i < data.length; ++i) {
 		var e = data[i];
 		var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
@@ -151,7 +150,7 @@ function unmap(x)
 		if (!confirm("Delete " + e.desc + "? [" + e.wanPorts + "->" + e.lanPorts + " " + e.lanIP + " " + e.proto + "]")) return;
 	}
 	else {
-		if (!confirm("Delete all entries?")) return;
+		if (!confirm("Delete all entries ?")) return;
 	}
 	var fupnp = document.getElementById("fupnp");
 	
@@ -166,101 +165,108 @@ function unmap(x)
 
 parseForwards();
 
-</script></head>
-   <body class="gui">
-      <div id="wrapper">
-         <div id="content">
-            <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-               <div id="menu">
-                  <div id="menuMain">
-                     <ul id="menuMainList">
-                        <li><a href="index.asp">Setup</a></li>
-                        <li><a href="Wireless_Basic.asp">Wireless</a></li>
-			<% nvram_invmatch("sipgate","1","<!--"); %>
-                        <li><a href="Sipath.asp">SIPatH</a></li> 
-                        <% nvram_invmatch("sipgate","1","-->"); %> 
-                        <li><a href="Firewall.asp">Security</a></li> 
-                        <li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li> 
-                        <li class="current"><a class="current" href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a><div id="menuSub"> 
-                                <ul id="menuSubList"> 
-                                   <li><a href="Forward.asp">Port Range Forward</a></li> 
-                                   <li><a href="ForwardSpec.asp">Port Forwarding</a></li> 
-                                   <li><a href="Triggering.asp">Port Triggering</a></li> 
-                                   <li><span>UPnP Forward</span></li> 
-                                   <li><a href="DMZ.asp">DMZ</a></li> 
-                                   <li><a href="QoS.asp">QoS</a></li> 
-                                </ul> 
-                           </div>
-                        </li>
-                        <li><a href="Management.asp">Administration</a></li>
-                        <li><a href="Status_Router.asp">Status</a></li>
-                     </ul>
-                  </div>
-               </div>
-            </div>
-            <div id="main">
-               <div id="contents">
-                   <form name="fupnp" id="fupnp" action="apply.cgi" method="<% get_http_method(); %>"> 
-                   <input type="hidden" name="submit_button" />
-				   <input type="hidden" name="submit_type" />
-		   		   <input type="hidden" name="change_action" />
-                   <input type="hidden" name="action" />
-		           <input type="hidden" name="commit" value="1" />
-		           <input type="hidden" name="remove" />
-                   <h2>Universal Plug and Play</h2>
-			<fieldset>
-			<legend>UPnP Forwards</legend>
-			<div id="theforwards">
-				<script language="Javascript">document.write(makeTable())</script>
+		</script>
+	</head>
+	
+	<body class="gui">
+		<div id="wrapper">
+			<div id="content">
+				<div id="header">
+					<div id="logo"><h1><% show_control(); %></h1></div>
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp">Setup</a></li>
+								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp">SIPatH</a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp">Security</a></li>
+								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+								<li class="current"><a class="current" href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a>
+									<div id="menuSub">
+										<ul id="menuSubList"> 
+											<li><a href="Forward.asp">Port Range Forward</a></li>
+											<li><a href="ForwardSpec.asp">Port Forwarding</a></li>
+											<li><a href="Triggering.asp">Port Triggering</a></li>
+											<li><span>UPnP Forward</span></li>
+											<li><a href="DMZ.asp">DMZ</a></li>
+											<li><a href="QoS.asp">QoS</a></li>
+										</ul>
+									</div>
+							  	</li>
+								<li><a href="Management.asp">Administration</a></li>
+								<li><a href="Status_Router.asp">Status</a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div id="main">
+					<div id="contents">
+						<form name="fupnp" id="fupnp" action="apply.cgi" method="<% get_http_method(); %>">
+							<input type="hidden" name="submit_button"/>
+							<input type="hidden" name="submit_type"/>
+							<input type="hidden" name="change_action"/>
+							<input type="hidden" name="action"/>
+							<input type="hidden" name="commit" value="1"/>
+							<input type="hidden" name="remove"/>
+							<h2>Universal Plug and Play</h2>
+							<fieldset>
+								<legend>UPnP Forwards</legend>
+								<div id="theforwards">
+									<script language="Javascript">document.write(makeTable())</script>
+								</div>
+								<input type="button" value="Delete All" onclick="unmap('all')"/>
+								<input type="button" value="Refresh" onclick="window.location.replace('UPnP.asp')"/>
+							</fieldset>
+							<br/>
+							<fieldset>
+								<legend>UPnP Configuration</legend>
+								<div class="setting">
+									<div class="label">UPnP Service</div>
+									<input type="radio" name="upnp_enable" value="1" <% nvram_match("upnp_enable","1","checked"); %> />Enable
+									<input type="radio" name="upnp_enable" value="0" <% nvram_match("upnp_enable","0","checked"); %> />Disable
+								</div>
+								<div class="setting">
+									<div class="label">Clear port forwards at startup</div>
+									<input type="radio" name="upnpcas" value="1" <% nvram_match("upnpcas","1","checked"); %> />Enable
+									<input type="radio" name="upnpcas" value="0" <% nvram_match("upnpcas","0","checked"); %> />Disable
+								</div>
+								<div class="setting">
+									<div class="label">Send presentation URL</div>
+									<input type="radio" name="upnpmnp" value="1" <% nvram_match("upnpmnp","1","checked"); %> />Enable
+									<input type="radio" name="upnpmnp" value="0" <% nvram_match("upnpmnp","0","checked"); %> />Disable
+								</div>
+							</fieldset>
+							<br/>
+							<div class="submitFooter">
+								<input type="button" name="save_button"  value="Save Settings" onclick="to_submit(this.form)"/>
+								<input type="reset" value="Cancel Changes" />
+							</div>
+						</form>
+					</div>
+				</div>
+				<div id="statusInfo">
+					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
+				</div>
+				<div id="helpContainer">
+					<div id="help">
+						<div id="logo"><h2>Help</h2></div>
+						<dl>
+							<dt class="term">UPnP Service:</dt>
+							<dd class="definition">Allows applications to automatically setup port forwardings. Click an entry to Delete.</dd>
+							<dt class="term">Clear port forwards at startup:</dt>
+							<dd class="definition">If enabled, all UPnP port forwardings are deleted when the router starts up.</dd>
+							<dt class="term">Send presentation URL:</dt>
+							<dd class="definition">If enabled, a presentation url tag is sent with the device description. This allows the router to show up in Windows' My Network Places. When enabling this option you may need to reboot your PC.</dd>
+						</dl>
+						<br/>
+						<a target="_blank" href="help/HSetup.asp">More...</a>
+					</div>
+				</div>
 			</div>
-			<input type="button" value="Delete All" onClick="unmap('all')" />
-			<input type="button" value="Refresh" onClick="window.location.replace('UPnP.asp')" />
-			</fieldset>
-			<fieldset>
-			<legend>UPnP Configuration</legend>
-			<div class="setting">
-				<div class="label">UPnP Service</div>
-				<input type="radio" name="upnp_enable" value="1" <% nvram_match("upnp_enable","1","checked"); %> />Enable
-				<input type="radio" name="upnp_enable" value="0" <% nvram_match("upnp_enable","0","checked"); %> />Disable
-			</div>
-			<div class="setting">
-				<div class="label">Clear port forwards at startup</div>
-				<input type="radio" name="upnpcas" value="1" <% nvram_match("upnpcas","1","checked"); %> />Enable
-				<input type="radio" name="upnpcas" value="0" <% nvram_match("upnpcas","0","checked"); %> />Disable
-			</div>
-			<div class="setting">
-				<div class="label">Send presentation URL</div>
-				<input type="radio" name="upnpmnp" value="1" <% nvram_match("upnpmnp","1","checked"); %> />Enable
-				<input type="radio" name="upnpmnp" value="0" <% nvram_match("upnpmnp","0","checked"); %> />Disable
-			</div>
-			</fieldset><br />
-                     <div class="submitFooter"><input type="button" name="save_button"  value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
-                  </form>
-               </div>
-            </div>
-            <div id="statusInfo">
-               <div class="info">Firmware: <% get_firmware_version(); %></div>
-               <div class="info">Time: <% get_uptime(); %></div>
-               <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
-            </div>
-            <div id="helpContainer">
-               <div id="help">
-                  <div id="logo">
-                     <h2>Help</h2>
-                  </div>
-		<dl>
-                     <dt class="term">UPnP Service:</dt>
-                     <dd class="definition">Allows applications to automatically setup port forwardings. Click an entry to Delete.</dd>
-                     <dt class="term">Clear port forwards at startup:</dt>
-                     <dd class="definition">If enabled, all UPnP port forwardings are deleted when the router starts up.</dd>
-                     <dt class="term">Send presentation URL:</dt>
-                     <dd class="definition">If enabled, a presentation url tag is sent with the device description. This allows the router to show up in Windows' My Network Places. When enabling this option you may need to reboot your PC.</dd>
-		</dl><br /><a target="_blank" href="help/HSetup.asp">More...</a></div>
-            </div>
-         </div>
-      </div>
-   </body>
+		</div>
+	</body>
 </html>
