@@ -620,6 +620,7 @@ else
 endif
 
 wol:
+	cd wol && ./configure --disable-nls --host=mipsel-linux CC=$(CC) CFLAGS="$(COPTS)"
 	$(MAKE) -C wol/src
 
 wol-clean:
