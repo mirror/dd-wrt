@@ -7,6 +7,16 @@
    
       <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
       <title><% nvram_get("router_name"); %> - UPnP Forward</title>
+	<style type="text/css">
+	<!--
+		A{color: #000000; text-decoration: underline;}
+		A:link{color: #000000; text-decoration: underline;}
+		A:hover{color: #000000; text-decoration: none;}
+		A:visited{color: #000000; text-decoration: underline,}
+		.ta tr{cursor: pointer;}
+		.dis th {color: #A04040; }
+	-->
+	</style>
       <link type="text/css" rel="stylesheet" href="style.css" />
 <!--
 
@@ -15,31 +25,16 @@ UPnP
 Intergated to DD-WRT by LawnMowerGuy1
 
 -->
-<style type="text/css">
-a:link, a visted {
-	color: black;
-	text-decoration: underline;
-}
-a:hover, a:active {
-	color: black;
-	text-decoration: none;
-}
-.dis th {
-	color: #A04040;
-}
-.ta tr {
-	cursor: pointer;
-</style>
 
-      <script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
+<script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
 
 function to_submit(F) 
-{ 
-         F.submit_button.value = "UPnP"; 
-         F.action.value = "Apply"; 
-         F.save_button.value = "Saved";
-         F.save_button.disable = true;
-         F.submit(); 
+{
+        F.submit_button.value = "UPnP"; 
+        F.action.value = "Apply"; 
+        F.save_button.value = "Saved";
+        F.save_button.disable = true;
+        F.submit(); 
 } 
 
 var upnpForwards = [<% tf_upnp(); %>];
@@ -159,12 +154,13 @@ function unmap(x)
 		if (!confirm("Delete all entries?")) return;
 	}
 	var fupnp = document.getElementById("fupnp");
+	
 	fupnp.submit_button.value = "UPnP"; 
 	fupnp.action.value = "Apply"; 
 	fupnp.remove.value = x;
 	fupnp.save_button.value = "Deleted";
 	fupnp.save_button.disable = true;
-	fupnp.submit(); 
+	fupnp.submit();
 	
 }
 
@@ -209,10 +205,11 @@ parseForwards();
                <div id="contents">
                    <form name="fupnp" id="fupnp" action="apply.cgi" method="<% get_http_method(); %>"> 
                    <input type="hidden" name="submit_button" />
-		   <input type="hidden" name="change_action" />
+				   <input type="hidden" name="submit_type" />
+		   		   <input type="hidden" name="change_action" />
                    <input type="hidden" name="action" />
-		   <input type="hidden" name="commit" value="1" />
-		   <input type="hidden" name="remove" />
+		           <input type="hidden" name="commit" value="1" />
+		           <input type="hidden" name="remove" />
                    <h2>Universal Plug and Play</h2>
 			<fieldset>
 			<legend>UPnP Forwards</legend>
@@ -240,7 +237,7 @@ parseForwards();
 				<input type="radio" name="upnpmnp" value="0" <% nvram_match("upnpmnp","0","checked"); %> />Disable
 			</div>
 			</fieldset><br />
-                     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+                     <div class="submitFooter"><input type="button" name="save_button"  value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
                   </form>
                </div>
             </div>
@@ -260,7 +257,7 @@ parseForwards();
                      <dt class="term">Clear port forwards at startup:</dt>
                      <dd class="definition">If enabled, all UPnP port forwardings are deleted when the router starts up.</dd>
                      <dt class="term">Send presentation URL:</dt>
-                     <dd class="definition">If enabled, a presentation url tag is sent with the device description. This allows the router to show up in Windows' My Network Places. When enabling this option you many need to reboot your PC.</dd>
+                     <dd class="definition">If enabled, a presentation url tag is sent with the device description. This allows the router to show up in Windows' My Network Places. When enabling this option you may need to reboot your PC.</dd>
 		</dl><br /><a target="_blank" href="help/HSetup.asp">More...</a></div>
             </div>
          </div>
