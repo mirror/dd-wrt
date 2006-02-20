@@ -37,6 +37,7 @@
 			<h4>See also</h4>
 			<ul>
 				<li><a href="HWireless.asp">Wireless Settings</a></li>
+				<li><a href="Hradauth.asp">Radius Authentification</a></li>
 				<li><a href="HWirelessMAC.asp">Wireless MAC Filter</a></li>
 				<li><a href="HWirelessAdvanced.asp">Advanced Wireless Settings</a></li>
 			</ul>
