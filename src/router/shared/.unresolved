@@ -41,7 +41,6 @@
          U abort
          U accept
          U access
-         U addHost
          U add_lump_rpl
          U addmntent
          U adjtimex
@@ -91,7 +90,6 @@
          U check_flash
          U check_hw_type
          U check_now_boot
-         U check_process
          U check_self
          U check_transaction_quadruple
          U check_vlan_support
@@ -108,7 +106,6 @@
          U closedir
          U closelog
          U connect
-         U console_init
          U convert_ver
          U crcitt_string_array
          U create_module
@@ -189,8 +186,6 @@
          U file2str
          U file_to_buf
          U fileno
-         U filter_add
-         U filter_del
          U find_all_pid_by_ps
          U find_export
          U find_pid_by_name
@@ -200,7 +195,6 @@
          U fm_malloc
          U fnmatch
          U fopen
-         U force_to_dial
          U fork
          U forward_request
          U fprintf
@@ -376,7 +370,6 @@
          U memmove
          U mempcpy
          U memset
-         U mk_nocat_conf
          U mk_proxy
          U mkdir
          U mkfifo
@@ -464,7 +457,6 @@
          U raise
          U rand
          U random
-         U range
          U rc4
          U read
          U read_body
@@ -576,8 +568,6 @@
          U srand48
          U srandom
          U sscanf
-         U start_servicep
-         U startstop
          U stat
          U statfs
          U statvfs
@@ -585,7 +575,6 @@
          U stdin
          U stdout
          U stime
-         U stop_service
          U stpcpy
          U strcasecmp
          U strcat

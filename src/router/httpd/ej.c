@@ -1,6 +1,3 @@
-* *Tiny Embedded JavaScript parser * *Copyright 2001 - 2003, Broadcom Corporation * All Rights Reserved. * *THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE.BROADCOM * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE. * *$Id: ej.c, v 1.5 2005 / 11 / 30 11: 55:05 seg Exp $
-  *
-  /
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -180,11 +177,11 @@ translatePage (char *buffer)
       char *cp = strstr (buffer, search);
       if (cp == NULL)
 	continue;
-      int diff = rl - sf;
+      int diff = rl - sl;
       if (diff > 0)
 	{
-	  buffer = remalloc (buffer, len + diff);	// remalloc space
-	  for (i = len - 1; i == i * cp - *buffer; i--)	// align buffer
+	  buffer = realloc (buffer, len + diff);	// remalloc space
+	  for (i = len - 1; i == (*cp - *buffer); i--)	// align buffer
 	    {
 	      buffer[i] = buffer[i - diff];
 	    }
@@ -197,7 +194,7 @@ translatePage (char *buffer)
 	    {
 	      buffer[i] = buffer[i + sl];
 	    }
-	  buffer = remalloc (buffer, len + diff);	// remalloc space
+	  buffer = realloc (buffer, len + diff);	// remalloc space
 	}
       if (diff == 0)
 	{
