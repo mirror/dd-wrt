@@ -134,9 +134,13 @@ void entry(unsigned long icache_size, unsigned long icache_lsize,
 	/* look for trx header, 32-bit data access */
 	for (data = ((unsigned char *) KSEG1ADDR(BCM4710_FLASH));
 		((struct trx_header *)data)->magic != TRX_MAGIC; data += 65536);
-	
-	/* compressed kernel is in the partition 1 */
-	data += ((struct trx_header *)data)->offsets[1];
+
+	/* compressed kernel is in the partition 0 or 1 */
+	if (((struct trx_header *)data)->offsets[1] > 65536) 
+		data += ((struct trx_header *)data)->offsets[0];
+	else
+		data += ((struct trx_header *)data)->offsets[1];
+
 	offset = 0;
 
 	/* lzma args */
