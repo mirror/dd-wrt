@@ -89,7 +89,7 @@ print_essid(int			skfd,
   unsigned int		i;
   unsigned int		j;
 
-  /* Make shure ESSID is NULL terminated */
+  /* Make sure ESSID is always NULL terminated */
   memset(essid, 0, sizeof(essid));
 
   /* Get ESSID */
