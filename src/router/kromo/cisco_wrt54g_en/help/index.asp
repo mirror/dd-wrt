@@ -27,6 +27,7 @@
 				<dd>
 					<ul>
 						<li><a href="HWireless.asp">Wireless Settings</a></li>
+						<li><a href="Hradauth.asp">Radius Authentification</a></li>
 						<li><a href="HWPA.asp">Wireless Security</a></li>
 						<li><a href="HWirelessMAC.asp">Wireless MAC Filter</a></li>
 						<li><a href="HWirelessAdvanced.asp">Advanced Settings</a></li>
