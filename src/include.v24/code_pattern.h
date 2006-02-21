@@ -41,10 +41,20 @@
  * define country                      *
  * LOCALE=COUNTRY =                    *
  ***************************************/
+#define CODE_PATTERN_WRT54GL   "W54U"
+#define CODE_PATTERN_WRT54GSV4   "W54s"
 #define CODE_PATTERN_WRT54GS   "W54S"
 #define CODE_PATTERN_WRT54G   "W54G"
-#define MODEL_NAME	"WRT54G"
-#define	VENDOR		"LINKSYS"
+
+//#define CODE_PATTERN_WRT54GS   "W54S"
+//#define CODE_PATTERN_WRT54G   "W54G"
+#ifdef HAVE_OMNI
+#define MODEL_NAME	"OMNI"
+#else
+#define MODEL_NAME	"DD-WRT"
+#endif
+#define	VENDOR		"BLUELINE-AG"
+
 
 
 #define COUNTRY		LOCALE
