@@ -3,10 +3,10 @@
   PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-	<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+	<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 	<title><% nvram_get("router_name"); %> - Advanced Interface Configuration</title>
-	<link type="text/css" rel="stylesheet" href="style.css" />
+	<link type="text/css" rel="stylesheet" href="style.css"/>
 	<script type="text/JavaScript" src="common.js">{}</script>
 	<script language="JavaScript">
 	
@@ -111,6 +111,7 @@ function init() {
 							<input type="hidden" name="submit_button" value="Vlan"/>
 							<input type="hidden" name="action" value="Apply"/>
 							<input type="hidden" name="commit" value="1"/>
+							<h2>Virtual Local Area Network (VLAN)</h2>
 							<table id="vlan" class="table center">
 								<tbody>
 									<tr>
