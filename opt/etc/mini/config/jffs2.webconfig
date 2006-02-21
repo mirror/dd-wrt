@@ -8,4 +8,4 @@
 <input type="radio" value="1" name="clean_jffs2" <% nvram_match("clean_jffs2","1","checked"); %> /> Enable
 <input type="radio" value="0" name="clean_jffs2" <% nvram_match("clean_jffs2","0","checked"); %> /> Disable
 </div>
-</fieldset>
+</fieldset><br/>
