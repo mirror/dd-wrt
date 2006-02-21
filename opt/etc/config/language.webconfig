@@ -17,4 +17,4 @@
 	<option value="spanish" <% nvram_match("language","spanish","selected"); %>>Spanish</option>
 	<option value="swedish" <% nvram_match("language","swedish","selected"); %>>Swedish</option>
 	</select></div>
-</fieldset>
+</fieldset><br/>
