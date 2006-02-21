@@ -13,7 +13,7 @@
 			A:hover{color: #000000; text-decoration: none;}
 			A:visited{color: #000000; text-decoration: underline;}
 			.ta tr{cursor: pointer;}
-			.dis th {color: #A04040; }
+			.dis th {color: #A04040;}
 		-->
 		</style>
 		<link type="text/css" rel="stylesheet" href="style.css" />
@@ -31,7 +31,7 @@ function to_submit(F)
         F.submit_button.value = "UPnP"; 
         F.action.value = "Apply"; 
         F.save_button.value = "Saved";
-        F.save_button.disable = true;
+        F.save_button.disabled = true;
         F.submit(); 
 } 
 
@@ -158,7 +158,7 @@ function unmap(x)
 	fupnp.action.value = "Apply"; 
 	fupnp.remove.value = x;
 	fupnp.save_button.value = "Deleted";
-	fupnp.save_button.disable = true;
+	fupnp.save_button.disabled = true;
 	fupnp.submit();
 	
 }
@@ -238,7 +238,7 @@ parseForwards();
 									<input type="radio" name="upnpmnp" value="0" <% nvram_match("upnpmnp","0","checked"); %> />Disable
 								</div>
 							</fieldset>
-							<br/>
+							<br />
 							<div class="submitFooter">
 								<input type="button" name="save_button"  value="Save Settings" onclick="to_submit(this.form)"/>
 								<input type="reset" value="Cancel Changes" />
