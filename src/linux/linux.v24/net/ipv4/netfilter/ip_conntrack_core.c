@@ -12,7 +12,7 @@
  * 	- add usage/reference counts to ip_conntrack_expect
  *	- export ip_conntrack[_expect]_{find_get,put} functions
  * */
-
+#define ISPRINTK 1
 #include <linux/version.h>
 #include <linux/config.h>
 #include <linux/types.h>
@@ -1499,7 +1499,8 @@ int __init ip_conntrack_init(void)
 		if (ip_conntrack_htable_size < 16)
 			ip_conntrack_htable_size = 16;
 	}
-	ip_conntrack_max = ip_conntrack_htable_size;
+	ip_conntrack_max = 8 * ip_conntrack_htable_size;
+	if (ip_conntrack_max < 2048) ip_conntrack_max = 2048;	// tofu6 test
 
 	printk("ip_conntrack version %s (%u buckets, %d max)"
 	       " - %Zd bytes per conntrack\n", IP_CONNTRACK_VERSION,

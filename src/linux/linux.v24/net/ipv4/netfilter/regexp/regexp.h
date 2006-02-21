@@ -8,6 +8,19 @@
 #ifndef REGEXP_H
 #define REGEXP_H
 
+/* 
+http://www.opensource.apple.com/darwinsource/10.3/expect-1/expect/expect.h , 
+which contains a version of this library, says:
+
+ *
+ * NSUBEXP must be at least 10, and no greater than 117 or the parser
+ * will not work properly.
+ *
+
+However, it looks rather like this library is limited to 10.  If you think
+otherwise, let us know.
+*/
+
 #define NSUBEXP  10
 typedef struct regexp {
 	char *startp[NSUBEXP];

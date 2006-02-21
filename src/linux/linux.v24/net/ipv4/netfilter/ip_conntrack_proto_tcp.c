@@ -231,7 +231,7 @@ static int tcp_new(struct ip_conntrack *conntrack,
 
 	/* Invalid: delete conntrack */
 	if (newconntrack == TCP_CONNTRACK_MAX) {
-		DEBUGP("ip_conntrack_tcp: invalid new deleting.\n");
+	//	DEBUGP("ip_conntrack_tcp: invalid new deleting.\n");
 		return 0;
 	}
 

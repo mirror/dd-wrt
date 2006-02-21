@@ -7,6 +7,8 @@
 #
 # Note 2! The CFLAGS definition is now in the main makefile...
 
+
+EXTRA_CFLAGS := -DISPRINTK
 O_TARGET := netfilter.o
 
 export-objs = ip_conntrack_standalone.o ip_fw_compat.o ip_nat_standalone.o ip_tables.o arp_tables.o

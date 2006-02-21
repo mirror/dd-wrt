@@ -183,6 +183,7 @@ if [ "$CONFIG_NET_ETHERNET" = "y" ]; then
       dep_tristate '    Apricot Xen-II on board Ethernet' CONFIG_APRICOT $CONFIG_ISA
       dep_tristate '    Broadcom 4400 ethernet support (EXPERIMENTAL)' CONFIG_B44 $CONFIG_PCI $CONFIG_EXPERIMENTAL
       dep_tristate '    Proprietary Broadcom 10/100 Ethernet support' CONFIG_ET $CONFIG_PCI
+      dep_tristate '    NBD Broadcom Switch Management support' CONFIG_BRCMSWITCH $CONFIG_PCI
       dep_tristate '    Proprietary Broadcom Robo support' CONFIG_ROBO $CONFIG_PCI
       dep_tristate '    CS89x0 support' CONFIG_CS89x0 $CONFIG_ISA
       dep_tristate '    DECchip Tulip (dc21x4x) PCI support' CONFIG_TULIP $CONFIG_PCI
