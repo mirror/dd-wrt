@@ -21,7 +21,7 @@ function to_submit(F) {
 		</script>
 	</head>
 	
-	<body class="gui" onload="init()"> <% showad(); %>
+	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
