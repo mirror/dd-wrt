@@ -14,5 +14,5 @@
 	<option value="xirian.css" <% nvram_match("router_style","xirian.css","selected"); %>>Xirian</option>
 	<option value="yellow.css" <% nvram_match("router_style","yellow.css","selected"); %>>Yellow</option>
 	</select></div>
-</fieldset>
+</fieldset><br/>
 
