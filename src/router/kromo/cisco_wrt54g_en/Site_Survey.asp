@@ -20,7 +20,7 @@ function do_join(F,SSID) {
 		return false;
 	}
 
-	F.submit_button.value = "Wireless_Basic";
+	F.submit_button.value = "Join";
 	F.action.value = "Apply";
 	F.submit();
 }
@@ -29,7 +29,7 @@ function do_join(F,SSID) {
 
    <body onload="window.focus();">
    <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
-   <input type="hidden" name="submit_button" value="Wireless_Basic" />
+   <input type="hidden" name="submit_button" />
    <input type="hidden" name="commit" value="1" />
    <input type="hidden" name="action" value="Apply" />
       <input type="hidden" name="wl_ssid" />
