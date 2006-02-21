@@ -6,4 +6,4 @@
 <input size="5" maxLength="32" name="ip_conntrack_tcp_timeouts" value='<% nvram_get("ip_conntrack_tcp_timeouts"); %>' />&nbsp;s;&nbsp;(3600 max)</div>
 <div class="setting"><div class="label">UDP Timeout (s)</div>
 <input size="5" maxLength="32" name="ip_conntrack_udp_timeouts" value='<% nvram_get("ip_conntrack_udp_timeouts"); %>' />&nbsp;s;&nbsp;(3600 max)</div>
-</fieldset>
+</fieldset><br/>
