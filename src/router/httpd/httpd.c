@@ -751,7 +751,7 @@ handle_request (void)
       exec = fopen ("/tmp/exec.tmp", "wb");
       fprintf (exec, "export REQUEST_METHOD=\"%s\"\n", method);
       if (query)
-	fprintf (exec, "/%s/%s</tmp/exec.query\n",
+	fprintf (exec, "%s/%s</tmp/exec.query\n",
 		 server_dir != NULL ? server_dir : "/www", file);
       else
 	fprintf (exec, "/%s/%s\n", server_dir != NULL ? server_dir : "/www",

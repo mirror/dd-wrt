@@ -3,6 +3,7 @@
  * Copyright (C) 2002 David S. Miller (davem@redhat.com)
  * Copyright (C) 2004 Pekka Pietikainen (pp@ee.oulu.fi)
  * Copyright (C) 2004 Florian Schirmer (jolt@tuxbox.org)
+ * Copyright (C) 2006 Felix Fietkau (nbd@openwrt.org)
  *
  * Distribute under GPL.
  */
@@ -35,6 +36,31 @@
 #include <sbconfig.h>
 #include <sbchipc.h>
 #include <sflash.h>
+
+#ifdef CONFIG_BCM947XX
+#define atoi(str) simple_strtoul(((str != NULL) ? str : ""), NULL, 0)
+ 
+static inline void e_aton(char *str, char *dest)
+{
+	int i = 0;
+	u16 *d = (u16 *) dest;
+
+	if (str == NULL) {
+		memset(dest, 0, 6);
+		return;
+	}
+	
+	for (;;) {
+		dest[i++] = (char) simple_strtoul(str, NULL, 16);
+		str += 2;
+		if (!*str++ || i == 6)
+			break;
+	}
+}
+
+static int instance = 0;
+#endif
+
 
 #define DRV_MODULE_NAME		"b44"
 #define PFX DRV_MODULE_NAME	": "
@@ -285,7 +311,7 @@ static int ssb_is_core_up(struct b44 *bp)
 		== SBTMSLOW_CLOCK);
 }
 
-static void __b44_cam_read(struct b44 *bp, unsigned char *data, int index)
+static inline void __b44_cam_read(struct b44 *bp, unsigned char *data, int index)
 {
 	u32 val;
 
@@ -465,6 +491,20 @@ static int b44_setup_phy(struct b44 *bp)
 	u32 val;
 	int err;
 
+
+	/*
+	 * workaround for bad hardware design in Linksys WAP54G v1.0
+	 * see https://dev.openwrt.org/ticket/146
+	 * check and reset bit "isolate"
+	 */
+	if ((bp->pdev->device == PCI_DEVICE_ID_BCM4713) &&
+			(atoi(nvram_get("boardnum")) == 2) &&
+			(__b44_readphy(bp, 0, MII_BMCR, &val) == 0) && 
+			(val & BMCR_ISOLATE) &&
+			(__b44_writephy(bp, 0, MII_BMCR, val & ~BMCR_ISOLATE) != 0)) {
+		printk(KERN_WARNING PFX "PHY: cannot reset MII transceiver isolate bit.\n");
+	}
+	
 	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
 		return 0;
 
@@ -1298,6 +1338,8 @@ static int b44_open(struct net_device *dev)
 	struct b44 *bp = dev->priv;
 	int err;
 
+	netif_carrier_off(dev);
+
 	err = b44_alloc_consistent(bp);
 	if (err)
 		return err;
@@ -1318,9 +1360,10 @@ static int b44_open(struct net_device *dev)
 	bp->timer.expires = jiffies + HZ;
 	bp->timer.data = (unsigned long) bp;
 	bp->timer.function = b44_timer;
-	add_timer(&bp->timer);
+	b44_timer((unsigned long) bp);
 
 	b44_enable_ints(bp);
+	netif_start_queue(dev);
 
 	return 0;
 
@@ -1751,10 +1794,18 @@ static int b44_read_eeprom(struct b44 *bp, u8 *data)
 static int __devinit b44_get_invariants(struct b44 *bp)
 {
 	u8 eeprom[128];
+	u8 buf[32];
 	int err;
 	unsigned long flags;
 
 	if (bp->pdev->device == PCI_DEVICE_ID_BCM4713) {
+#ifdef CONFIG_BCM947XX
+		sprintf(buf, "et%dmacaddr", instance - 1);
+		e_aton(nvram_get(buf), bp->dev->dev_addr);
+
+		sprintf(buf, "et%dphyaddr", instance - 1);
+		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
+#else
 		/*
 		 * BCM47xx boards don't have a EEPROM. The MAC is stored in
 		 * a NVRAM area somewhere in the flash memory. As we don't
@@ -1771,6 +1822,7 @@ static int __devinit b44_get_invariants(struct b44 *bp)
 		 * chip with multiple PHYs connected to the PHY port.
 		 */
 		bp->phy_addr = B44_PHY_ADDR_NO_PHY;
+#endif
 		bp->dma_offset = 0;
 	} else {
 		err = b44_read_eeprom(bp, &eeprom[0]);
@@ -1813,6 +1865,10 @@ static int __devinit b44_init_one(struct pci_dev *pdev,
 	struct net_device *dev;
 	struct b44 *bp;
 	int err, i;
+
+#ifdef CONFIG_BCM947XX
+	instance++;
+#endif
 
 	if (b44_version_printed++ == 0)
 		printk(KERN_INFO "%s", version);

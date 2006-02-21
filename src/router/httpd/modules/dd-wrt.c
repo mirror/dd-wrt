@@ -755,7 +755,7 @@ int
 ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
-  return ej_show_security_single (eid, wp, argc, argv, "wl0")
+  return ej_show_security_single (eid, wp, argc, argv, "wl0");
 #else
   int c = getdevicecount ();
   int i;
@@ -1461,7 +1461,7 @@ ej_show_wireless (int eid, webs_t wp, int argc, char_t ** argv)
       ej_show_wireless_single (wp, buf);
     }
 #else
-  ej_show_wireless_single ("wl0");
+  ej_show_wireless_single (wp, "wl0");
 #endif
   return 0;
 }

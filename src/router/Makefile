@@ -42,7 +42,7 @@ export PLATFORM := $(PLATFORM)-uclibc
 endif
 
 ifeq ($(CONFIG_MSSID),y)
-export LINUXDIR := $(SRCBASE)/linux/linux.v24.mipsel
+export LINUXDIR := $(SRCBASE)/linux/linux.v24
 else
 export LINUXDIR := $(SRCBASE)/linux/linux.v23
 endif
@@ -295,7 +295,7 @@ ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
 ifeq ($(CONFIG_MSSID),y)
-	../../opt/loader-0.02/lzma e ../linux/linux.v24.mipsel/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinuz
+	../../opt/loader-0.02/lzma e ../linux/linux.v24/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinuz
 else
 	../../opt/loader-0.02/lzma e ../linux/linux.v23/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinuz
 endif
@@ -621,10 +621,10 @@ endif
 
 wol:
 	cd wol && ./configure --disable-nls --host=mipsel-linux CC=$(CC) CFLAGS="$(COPTS)"
-	$(MAKE) -C wol/src
+	$(MAKE) -C wol
 
 wol-clean:
-	$(MAKE) -C wol/src clean
+	$(MAKE) -C wol clean
 
 wol-install:
 	install -D wol/src/wol $(INSTALLDIR)/wol/usr/sbin/wol

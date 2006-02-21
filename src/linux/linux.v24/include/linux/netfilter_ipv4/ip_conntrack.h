@@ -235,6 +235,13 @@ struct ip_conntrack
 	} nat;
 #endif /* CONFIG_IP_NF_NAT_NEEDED */
 
+#if defined(CONFIG_IP_NF_CONNTRACK_MARK)
+	unsigned long mark;
+#endif
+
+#ifdef CONFIG_IP_NF_CONNTRACK_RATE
+        struct ip_conntrack_rate rate;
+#endif
 #if defined(CONFIG_IP_NF_MATCH_LAYER7) || defined(CONFIG_IP_NF_MATCH_LAYER7_MODULE)
 	struct {
 		unsigned int numpackets; /* surely this is kept track of somewhere else, right? I can't find it... */
@@ -245,13 +252,6 @@ struct ip_conntrack
 
 		unsigned int app_data_len;
 	} layer7;
-#endif
-#if defined(CONFIG_IP_NF_CONNTRACK_MARK)
-	unsigned long mark;
-#endif
-
-#ifdef CONFIG_IP_NF_CONNTRACK_RATE
-        struct ip_conntrack_rate rate;
 #endif
 
 };
