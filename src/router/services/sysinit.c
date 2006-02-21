@@ -605,6 +605,7 @@ start_restore_defaults (void)
   nvram_unset ("sputnik_mjid");
   nvram_unset ("sputnik_rereg");
 #endif
+  
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
   else if (check_now_boot () == PMON_BOOT)
