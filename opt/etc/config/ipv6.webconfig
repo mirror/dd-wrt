@@ -20,4 +20,4 @@
 						document.getElementById("radvd_conf").value = radvd_conf;
 				</script>
 	</div>
-<% nvram_match("ipv6_enable0","0","-->"); %></fieldset>
+<% nvram_match("ipv6_enable0","0","-->"); %></fieldset><br/>
