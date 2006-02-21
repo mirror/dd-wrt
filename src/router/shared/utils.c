@@ -83,8 +83,7 @@ internal_getRouterBrand ()
 #else
   char *et0, *et1;
   if (nvram_match ("boardnum", "42") &&
-      nvram_match ("boardtype", "bcm94710ap") &&
-      (nvram_match ("product_name", "WBR-G54") | nvram_match("product_name","Product_name")))
+      nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is buffalo\n");
       setRouter ("Buffalo WBR54G");
