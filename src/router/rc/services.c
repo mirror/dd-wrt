@@ -277,6 +277,7 @@ start_single_service (void)
       start_service("zebra");
       startstop("firewall");
       startstop("wshaper");
+      startstop("httpd");
 
 
 #ifdef HAVE_WOL
