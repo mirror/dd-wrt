@@ -93,39 +93,10 @@ initLanguage ()
   char *langstr;
   LANGUAGE *desc;
   FILE *in;
-//if (language!=NULL)return;
-  langcount = 0;
-  LOG ("langstr");
-	
-
-
-  langstr = nvram_safe_get ("language");
-  if (langstr == NULL)
+  if (language != NULL)
     return;
-  if (langstr != NULL && lastlanguage != NULL)
-    {
-  if (strcmp (langstr, lastlanguage) == 0)
-	{
-	return;
-	}
-    } 
-  
-  if (language != NULL && lastlanguage != NULL)
-    {
-      if (strcmp (langstr, lastlanguage) != 0)
-	{
-	  lastlanguage = langstr;
-	  for (i = 0; i < langcount; i++)
-	    {
-	      free (language[i]->original);
-	      free (language[i]->translation);
-	    }
-	  langcount = 0;
-	}
-    }
-  else if (lastlanguage == NULL)
-    lastlanguage = langstr;
-  
+  langcount = 0;
+  langstr = nvram_safe_get ("language");
   LOG ("malloc");
   fd =
     (char *) malloc (strlen (LANG_PREFIX) + strlen (langstr) +
@@ -170,29 +141,31 @@ initLanguage ()
 }
 
 
-static char *searchS(char *str, char *s)
+static char *
+searchS (char *str, char *s)
 {
 
 
-int s_len = strlen(str);
-int f_len = strlen(s);
-int i;
-int len = s_len-f_len;
-int a=0;
-for (i=0;i<len;i++)
+  int s_len = strlen (str);
+  int f_len = strlen (s);
+  int i;
+  int len = s_len - f_len;
+  int a = 0;
+  for (i = 0; i < len; i++)
     {
-    if (str[i]==s[a])
+      if (str[i] == s[a])
 	{
-	a++;
-	if (a==f_len)
+	  a++;
+	  if (a == f_len)
 	    {
-	    a--;
-	    return (char*)&str[i-a];
+	      a--;
+	      return (char *) &str[i - a];
 	    }
-	}else
-	a=0;
+	}
+      else
+	a = 0;
     }
-return NULL;
+  return NULL;
 }
 
 char *
@@ -204,7 +177,7 @@ translatePage (char *buffer)
   char *replace;
   int i, a, z, sl, rl;
   LOG ("translate");
-  len = strlen (buffer)+1;
+  len = strlen (buffer) + 1;
   for (a = 0; a < langcount; a++)
     {
       search = language[a]->original;
@@ -212,23 +185,23 @@ translatePage (char *buffer)
       char *cp = searchS (buffer, search);
       if (cp == NULL)
 	continue;
-      int pnt = cp-buffer;
+      int pnt = cp - buffer;
       sl = strlen (search);
       rl = strlen (replace);
       int diff = rl - sl;
       if (diff > 0)
 	{
 	  buffer = realloc (buffer, len + diff);	// remalloc space
-	  memmove(&buffer[pnt+rl],&buffer[pnt+sl],(len-pnt)-sl);
+	  memmove (&buffer[pnt + rl], &buffer[pnt + sl], (len - pnt) - sl);
 	  memcpy (cp, replace, rl);
-	  len=strlen(buffer)+1;
+	  len = strlen (buffer) + 1;
 	}
       if (diff < 0)
 	{
 	  memcpy (cp, replace, rl);	// replace string
-	  memmove(&buffer[pnt+rl],&buffer[pnt+sl],(len-pnt)-sl);
+	  memmove (&buffer[pnt + rl], &buffer[pnt + sl], (len - pnt) - sl);
 	  buffer = realloc (buffer, len + diff);	// remalloc space
-	  len=strlen(buffer)+1;	  
+	  len = strlen (buffer) + 1;
 	}
       if (diff == 0)
 	{
