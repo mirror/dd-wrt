@@ -11,7 +11,7 @@
 		<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onblur="valid_name(this,'Password',SPACE_NO)" /></div>
 	</fieldset><br />
 	<fieldset>
-	<legend>Remote Router Access</legend>
+	<legend>Remote Access</legend>
 	<div class="setting">
 		<div class="label">Remote Management</div>
 		<input type="radio" value="1" name="remote_management" onclick="SelPort(1,this.form)" <% nvram_match("remote_management","1","checked"); %> />Enable
