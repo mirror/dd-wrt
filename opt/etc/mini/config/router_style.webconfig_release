@@ -1,6 +1,6 @@
 <fieldset>
 <legend>Router GUI Style</legend>
-<span class="comment">Style</span><div class="setting">
+<div class="setting">
 	<div class="label">Style</div>
 	<select name="router_style">
 	<option value="blue.css" <% nvram_match("router_style","blue.css","selected"); %>>Blue</option>
