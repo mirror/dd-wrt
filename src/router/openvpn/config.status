@@ -506,13 +506,13 @@ s,@INSTALL_DATA@,${INSTALL} -m 644,;t t
 s,@CYGPATH_W@,echo,;t t
 s,@PACKAGE@,openvpn,;t t
 s,@VERSION@,2.0.5,;t t
-s,@ACLOCAL@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run aclocal-1.8,;t t
-s,@AUTOCONF@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run autoconf,;t t
-s,@AUTOMAKE@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run automake-1.8,;t t
-s,@AUTOHEADER@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run autoheader,;t t
-s,@MAKEINFO@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run makeinfo,;t t
-s,@AMTAR@,${SHELL} /home/dev/workspace/DD-WRT/src/router/openvpn/missing --run tar,;t t
-s,@install_sh@,/home/dev/workspace/DD-WRT/src/router/openvpn/install-sh,;t t
+s,@ACLOCAL@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/openvpn/missing --run aclocal-1.8,;t t
+s,@AUTOCONF@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/openvpn/missing --run autoconf,;t t
+s,@AUTOMAKE@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/openvpn/missing --run automake-1.8,;t t
+s,@AUTOHEADER@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/openvpn/missing --run autoheader,;t t
+s,@MAKEINFO@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/openvpn/missing --run makeinfo,;t t
+s,@AMTAR@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/openvpn/missing --run tar,;t t
+s,@install_sh@,/home/openwrt/workspace/DD-WRT/src/router/openvpn/install-sh,;t t
 s,@STRIP@,mipsel-linux-uclibc-strip,;t t
 s,@ac_ct_STRIP@,,;t t
 s,@INSTALL_STRIP_PROGRAM@,${SHELL} $(install_sh) -c -s,;t t
