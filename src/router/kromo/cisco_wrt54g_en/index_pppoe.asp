@@ -8,6 +8,10 @@
     <input name="ppp_passwd" size="50" maxLength="63" onBlur="valid_name(this,'Password')" type="password" value='<% nvram_invmatch("ppp_passwd","","d6nw5v1x2pc7st9m"); %>' />
 </div>
 <div class="setting">
+    <div class="label">Service Name</div>
+    <input name="ppp_service" size="50" maxLength="63" onBlur="valid_name(this,'Service Name')" value='<% nvram_get("ppp_service"); %>' />
+</div>
+<div class="setting">
     <input type="radio" name="ppp_demand" value="1" onBlur="ppp_enable_disable(this.form,1)" <% nvram_match("ppp_demand","1","checked"); %> /> Connect on Demand: Max Idle Time
     <input class="num" size="4" maxLength="4" name="ppp_idletime" onBlur="valid_range(this,1,9999,'Idle time')" value='<% nvram_get("ppp_idletime"); %>' /> Min.
 </div>
