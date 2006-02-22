@@ -9,6 +9,9 @@ cd ../src
 cd linux/linux.v23
 make clean
 cd ../../
+cd linux/linux.v24
+make clean
+cd ../../
 make clean
 cd ../opt
 
@@ -66,3 +69,11 @@ make rc-clean
 make shared-clean
 cd ../../opt
 ./install_voip.sh
+
+cd ../src/router
+rm -dfr mipsel-uclibc/install
+mske httpd-clean
+make rc-clean
+make shared-clean
+cd ../../opt
+./install_voip.v24.sh
