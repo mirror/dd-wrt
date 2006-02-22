@@ -64,8 +64,6 @@ site_survey_main (int argc, char *argv[])
   int ret;
   char *dev = name;
   unlink (SITE_SURVEY_DB);
-  puts ("switch radio");
-
   int ap = 0, oldap = 0;
   wl_scan_params_t params;
 
@@ -87,18 +85,15 @@ site_survey_main (int argc, char *argv[])
   params.home_time = -1;
 
   /* can only scan in STA mode */
-  printf ("set sta\n");
   wl_ioctl (dev, WLC_GET_AP, &oldap, sizeof (oldap));
   if (oldap > 0)
     wl_ioctl (dev, WLC_SET_AP, &ap, sizeof (ap));
-  puts ("do scan");
   if (wl_ioctl (dev, WLC_SCAN, &params, 64) < 0)
     return -1;
   sleep (1);
   bzero (buf, sizeof (buf));
   scan_res->buflen = sizeof (buf);
 
-  puts ("scan results");
   if (wl_ioctl (dev, WLC_SCAN_RESULTS, buf, WLC_IOCTL_MAXLEN) < 0)
     return -1;
 
@@ -112,7 +107,6 @@ site_survey_main (int argc, char *argv[])
     }
 
   bss_info = &scan_res->bss_info[0];
-  puts ("create db");
   for (i = 0; i < scan_res->count; i++)
     {
       strcpy (site_survey_lists[i].SSID, bss_info->SSID);
@@ -128,7 +122,6 @@ site_survey_main (int argc, char *argv[])
 
       bss_info = (wl_bss_info_t *) ((uint32) bss_info + bss_info->length);
     }
-  puts ("write db");
   write_site_survey ();
   open_site_survey ();
   for (i = 0; i < SITE_SURVEY_NUM && site_survey_lists[i].SSID[0]; i++)
@@ -143,18 +136,9 @@ site_survey_main (int argc, char *argv[])
     }
 
 endss:
-  puts ("switch back");
-  puts ("reset sta");
   if (oldap > 0)
     wl_ioctl (dev, WLC_SET_AP, &oldap, sizeof (oldap));
 
-  /*if(!nvram_match("wl_mode", "sta") && !nvram_match("wl_mode", "wet") && !nvram_match("wl_mode", "bridge")) {
-     eval("wl", "ap", "1");
-
-     //   C_led(1);
-     //   sys_restart();
-     } */
-  //sleep(3);
   C_led (0);
   return 0;
 }
