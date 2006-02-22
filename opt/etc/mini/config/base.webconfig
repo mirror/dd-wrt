@@ -1,7 +1,6 @@
 <div>
 	<fieldset>
-	<legend>Router Password</legend>
-	<legend>Local Router Access</legend>
+	<legend>Router Password/Local Router Access</legend>
 	<div class="setting">
 		<div class="label">
 			Router Password</div>
