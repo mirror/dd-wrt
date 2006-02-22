@@ -1,0 +1,23 @@
+--- Makefile.orig	Tue Sep 28 13:07:41 2004
++++ Makefile	Wed Sep 29 09:29:51 2004
+@@ -24,4 +24,20 @@
+ obj-$(CONFIG_AIRO)		+= airo.o
+ obj-$(CONFIG_AIRO_CS)		+= airo_cs.o airo.o
+ 
++subdir-$(CONFIG_ATHEROS_HAL)	+= _ath_hal
++subdir-$(CONFIG_ATHEROS_RATE)	+= _ath_rate
++subdir-$(CONFIG_ATHEROS)	+= ath
++subdir-$(CONFIG_NET80211)	+= net80211
++
++ifeq ($(CONFIG_ATHEROS),y)
++	obj-y += _ath_hal/ath_hal.o
++	obj-y += _ath_rate/ath_rate.o
++ifeq ($(strip ${BUS}),AHB)
++	obj-y += ath/ath_ahb.o
++else
++	obj-y += ath/ath_pci.o
++endif
++	obj-y += net80211/net80211.o
++endif
++
+ include $(TOPDIR)/Rules.make
