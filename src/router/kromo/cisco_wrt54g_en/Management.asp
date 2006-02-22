@@ -187,6 +187,7 @@ function init() {
 								<input type="hidden" name="remote_mgt_https"/>
 								<input type="hidden" name="http_enable"/>
 								<input type="hidden" name="https_enable"/>
+								<h2>Management</h2>
 								<% show_modules(".webconfig"); %>
 								<% show_modules(".webconfig_release"); %>
 								<div class="submitFooter">
