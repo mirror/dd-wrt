@@ -3,16 +3,16 @@
   PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 		<title><% nvram_get("router_name"); %> - Log</title>
-		<link type="text/css" rel="stylesheet" href="style.css" />
+		<link type="text/css" rel="stylesheet" href="style.css"/>
 		<script type="text/JavaScript" src="common.js">{}</script>
 		<script language="JavaScript">
 
 function to_submit(F) {
 	F.submit_button.value = "Log";
-	F.action.value="Apply";
+	F.action.value = "Apply";
 	F.save_button.value = "Saved";
 	F.save_button.disabled = true;
 	F.submit();
@@ -102,7 +102,7 @@ function init() {
 							<input type="hidden" name="submit_button"/>
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="action"/>
-							<h2>Log</h2>
+							<h2>Log Management</h2>
 							<div class="setting">
 								<div class="label">Log</div>
 								<input type="radio" value="1" name="log_enable" <% nvram_match("log_enable", "1", "checked"); %> onclick="SelLog(1,this.form)">Enable</input>
