@@ -82,7 +82,7 @@ function to_reboot(F) {
 
 function to_submit(F) {
 	if( F.http_passwd.value != F.http_passwdConfirm.value ) {
-		alert("Password confirmation is not matched.");
+		alert("Password confirmation doesn't match !");
 		return false;
 	}
 	
@@ -138,6 +138,7 @@ function init() {
 
 		</script>
 	</head>
+	
 	<body class="gui" onload="init()"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -187,7 +188,7 @@ function init() {
 								<input type="hidden" name="remote_mgt_https"/>
 								<input type="hidden" name="http_enable"/>
 								<input type="hidden" name="https_enable"/>
-								<h2>Management</h2>
+								<h2>Router Management</h2>
 								<% show_modules(".webconfig"); %>
 								<% show_modules(".webconfig_release"); %>
 								<div class="submitFooter">
