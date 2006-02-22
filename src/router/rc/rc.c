@@ -167,9 +167,6 @@ main_loop (void)
   start_service("restore_defaults");
   
 
-//#ifdef HAVE_MSSID
-//create vlans for b44 driver
-//robo
 #ifndef HAVE_RB500
 
   system ("echo 1 > /proc/switch/eth0/reset");
@@ -180,36 +177,12 @@ main_loop (void)
 	   nvram_safe_get ("vlan1ports"));
   system (tmp);
 
-//  system("echo 1 > /proc/switch/eth0/reset");
-
-/*  sprintf (tmp, "echo %s > /proc/switch/bcm53xx/vlan/0/ports",
-	   nvram_safe_get ("vlan0ports"));
-  system (tmp);
-  sprintf (tmp, "echo %s > /proc/switch/bcm53xx/vlan/1/ports",
-	   nvram_safe_get ("vlan1ports"));
-  system (tmp);
-//  system("echo 1 > /proc/switch/adm6996/reset");
-  sprintf (tmp, "echo %s > /proc/switch/adm6996/vlan/0/ports",
-	   nvram_safe_get ("vlan0ports"));
-  system (tmp);
-  sprintf (tmp, "echo %s > /proc/switch/adm6996/vlan/1/ports",
-	   nvram_safe_get ("vlan1ports"));
-  system (tmp);*/
 #endif
-//#endif
   /* Add vlan */
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   nvram_set ("wanup", "0");
-  /* begin Sveasoft add */
-  /* force afterburner even for older boards */
-//  boardflags |= BFL_AFTERBURNER;
-  /* end Sveasoft add */
-//  char ab[100];
-//  sprintf(ab,"0x%X",boardflags);
-//  nvram_set("boardflags",ab);
 
 
-//      if (boardflags & BFL_ENETVLAN || check_hw_type() == BCM4712_CHIP)
   int brand = getRouterBrand ();
 #ifndef HAVE_RB500
   switch (brand)
@@ -217,8 +190,6 @@ main_loop (void)
     case ROUTER_ASUS:
     case ROUTER_MOTOROLA:
     case ROUTER_SIEMENS:
-//    case ROUTER_WRT54G:
-//    case ROUTER_WRT54G1X:
     start_service("config_vlan");
       break;
     default:
@@ -231,7 +202,6 @@ main_loop (void)
     }
 #endif
 
-  // Sveasoft add 2004-07-23 - set ip_forwarding, adjust ip_contrack limits, timeouts, enable Westwood+ congestion handling
   set_ip_forward ('1');
   system ("/etc/preinit");	//sets default values for ip_conntrack
 
@@ -282,15 +252,6 @@ main_loop (void)
 	}
     }
 #endif
-  //sprintf(tmp,"%s%s",CYBERTAN_VERSION, MINOR_VERSION);
-  //setenv("FIRMWARE_VERSION",tmp,1);
-
-//      system("/bin/echo 4096 > /proc/sys/net/ipv4/ip_conntrack_max");
-//      system("/bin/echo 3600 > /proc/sys/net/ipv4/ip_conntrack_tcp_timeouts");
-//      system("/bin/echo 3600 > /proc/sys/net/ipv4/ip_conntrack_udp_timeouts");
-//      system("/bin/echo 1 > /proc/sys/net/ipv4/tcp_westwood");
-
-  // Sveasoft add 2004-01-04 create passwd, groups, misc files
   start_service("mkfiles");
   char *hostname;
 
@@ -431,13 +392,7 @@ main_loop (void)
 	  start_service("create_rc_startup");
 	  chmod ("/tmp/.rc_startup", 0700);
 	  system ("/tmp/.rc_startup");
-	  //#ifdef HAVE_SER
 	  system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
-	  //#endif
-	  //start_sambafs();
-	  //start_macupd();
-	  //start_rflow();
-	  //start_radius();
 	  cprintf ("start modules\n");
 	  start_service("modules");
 #ifdef HAVE_CHILLI
@@ -447,17 +402,7 @@ main_loop (void)
 	  startstop("syslog");
 
 	  system ("/etc/postinit");
-//#ifdef HAVE_SKYTRON   
-//eval("ifconfig","vlan1","172.16.1.1","255.255.255.0");
-//#endif
 
-/*			if (nvram_match("wl_mode", "bridge"))
-				{
-				if (wl_probe("eth2"))
-				    eval("brctl", "addif", "br0", "eth1"); //create bridge
-				else
-				    eval("brctl", "addif", "br0", "eth2");
-				}*/
 	  diag_led (DIAG, STOP_LED);
 	  /* Fall through */
 	case TIMER:
