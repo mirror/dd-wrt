@@ -6,8 +6,8 @@
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 		<title><% nvram_get("router_name"); %> - Services</title>
-		<link type="text/css" rel="stylesheet" href="style.css"/
-		><script type="text/JavaScript" src="common.js">{}</script>
+		<link type="text/css" rel="stylesheet" href="style.css"/>
+		<script type="text/JavaScript" src="common.js">{}</script>
 		<script language="JavaScript">
 		
 var EN_DIS1 = '<% nvram_get("remote_management"); %>'
@@ -30,13 +30,13 @@ function lease_remove_submit(F) {
 }
 
 function to_reboot(F) {
-	F.action.value="Reboot";
+	F.action.value = "Reboot";
 	F.submit();
 	return true;
 }
 
 function to_submit(F) {
-	F.action.value="Apply";
+	F.action.value = "Apply";
 	F.submit_button.value = "Services";
 	F.save_button.value = "Saved";
 	F.save_button.disabled = true;
@@ -84,13 +84,14 @@ function to_submit(F) {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" />
-							<input type="hidden" name="change_action" />
-							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="action" />
-							<input type="hidden" name="reboot_button" />
-							<input type="hidden" name="commit" value="1" />
-							<input type="hidden" name="static_leases" value="13" />
+							<input type="hidden" name="submit_button"/>
+							<input type="hidden" name="change_action"/>
+							<input type="hidden" name="submit_type"/>
+							<input type="hidden" name="action"/>
+							<input type="hidden" name="reboot_button"/>
+							<input type="hidden" name="commit" value="1"/>
+							<input type="hidden" name="static_leases" value="13"/>
+							<h2>Services Management</h2>
 							<% show_modules(".webservices"); %>
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
@@ -102,7 +103,7 @@ function to_submit(F) {
 				</div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <% get_firmware_version(); %></div>
-					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info">Time: <% get_uptime(); %></div>a
 					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
 				</div>
 				<div id="helpContainer">
