@@ -79,6 +79,7 @@ function init() {
 							<input type="hidden" name="action"/>
 							<input type="hidden" name="reboot_button"/>
 							<input type="hidden" name="commit" value="1"/>
+							<h2>Keep Alive</h2>
 							<% show_modules(".webalive"); %>
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
