@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																										  /* channel info structure *///from 11.9
+													/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -997,12 +997,12 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 0 * WL_FILTER_MAC_NUM + i + 1;
 	  ret +=
 	    websWrite (wp,
-		       "<div/>%s %02d:<INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"/>",
+		       "<div/>%s %02d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
 		       mac_mess, item, box_len, item - 1,
 		       wl_filter_mac_get ("mac", item - 1));
 	  ret +=
 	    websWrite (wp,
-		       "%s %02d:<INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"/>\n",
+		       "%s %02d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>\n",
 		       mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
 		       item + (WL_FILTER_MAC_NUM / 2) - 1,
 		       wl_filter_mac_get ("mac",
@@ -1011,7 +1011,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 	}
 
-      ret += websWrite (wp, "</fieldset>\n");
+      ret += websWrite (wp, "</fieldset><br/>\n");
       ret += websWrite (wp, "<fieldset><legend>Table 2</legend>\n");
 
       for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
@@ -1020,12 +1020,12 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 1 * WL_FILTER_MAC_NUM + i + 1;
 	  ret +=
 	    websWrite (wp,
-		       "<div/>%s %02d:<INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"/>",
+		       "<div/>%s %02d : <INPUT maxLength=\"17\" onBlur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
 		       mac_mess, item, box_len, item - 1,
 		       wl_filter_mac_get ("mac", item - 1));
 	  ret +=
 	    websWrite (wp,
-		       "%s %02d:<INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"/>\n",
+		       "%s %02d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>\n",
 		       mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
 		       item + (WL_FILTER_MAC_NUM / 2) - 1,
 		       wl_filter_mac_get ("mac",
@@ -1033,11 +1033,9 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 					  1));
 
 	}
-      ret += websWrite (wp, "</fieldset>\n");
+      ret += websWrite (wp, "</fieldset><br/>\n");
 
     }
-
-
 
 
 
@@ -1050,14 +1048,14 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 0 * WL_FILTER_MAC_NUM + i + 1;
 	  ret += websWrite (wp, " \
 	<TR> \n\
-          <TD align=right height=30 width=\"54\"> <FONT face=Arial size=-1><B>%s %02d:</B></FONT></TD> \n\
-          <TD align=left height=30><b>&nbsp; </b> \n\
-                <INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
-          <TD align=left height=30 width=\"16\">&nbsp;</TD>\n", mac_mess, item, box_len, item - 1, wl_filter_mac_get ("mac", item - 1));
+          <TD align=\"right\" height=\"30\" width=\"54\"> <FONT face=Arial size=-1><B>%s %02d : </B></FONT></TD> \n\
+          <TD align=\"left\" height=\"30\"><b>&nbsp; </b> \n\
+                <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
+          <TD align=\"left\" height=\"30\" width=\"16\">&nbsp;</TD>\n", mac_mess, item, box_len, item - 1, wl_filter_mac_get ("mac", item - 1));
 	  ret += websWrite (wp, " \
-          <TD align=right height=30 width=\"54\"> <FONT face=Arial size=-1><B>%s %02d:</B></FONT></TD> \n\
-          <TD align=left height=30>&nbsp;  \n\
-                <INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
+          <TD align=\"right\" height=\"30\" width=\"54\"> <FONT face=Arial size=-1><B>%s %02d : </B></FONT></TD> \n\
+          <TD align=\"left\" height=\"30\">&nbsp;  \n\
+                <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
         </TR>\n", mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get ("mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
@@ -1072,14 +1070,14 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 1 * WL_FILTER_MAC_NUM + i + 1;
 	  ret += websWrite (wp, " \
 	<TR> \n\
-          <TD align=right height=30 width=\"54\"> <FONT face=Arial size=-1><B>%s %02d:</B></FONT></TD> \n\
-          <TD align=left height=30><b>&nbsp; </b> \n\
-                <INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
-          <TD align=left height=30 width=\"16\">&nbsp;</TD>\n", mac_mess, item, box_len, item - 1, wl_filter_mac_get ("mac", item - 1));
+          <TD align=right height=\"30\" width=\"54\"> <FONT face=Arial size=-1><B>%s %02d : </B></FONT></TD> \n\
+          <TD align=left height=\"30\"><b>&nbsp; </b> \n\
+                <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
+          <TD align=left height=\"30\" width=\"16\">&nbsp;</TD>\n", mac_mess, item, box_len, item - 1, wl_filter_mac_get ("mac", item - 1));
 	  ret += websWrite (wp, " \
-          <TD align=right height=30 width=\"54\"> <FONT face=Arial size=-1><B>%s %02d:</B></FONT></TD> \n\
-          <TD align=left height=30>&nbsp;  \n\
-                <INPUT maxLength=17 onBlur=valid_macs_all(this) size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
+          <TD align=\"right\" height=\"30\" width=\"54\"> <FONT face=Arial size=-1><B>%s %02d : </B></FONT></TD> \n\
+          <TD align=\"left\" height=\"30\">&nbsp;  \n\
+                <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></TD> \n\
         </TR>\n", mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get ("mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
