@@ -107,4 +107,4 @@
 <option value="06" <% nvram_selmatch("schedule_weekdays","06","selected"); %>>Saturday</option>
 </select>
 </div>
-</fieldset>
+</fieldset><br/>
