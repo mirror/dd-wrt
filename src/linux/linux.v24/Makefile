@@ -1,7 +1,7 @@
 VERSION = 2
 PATCHLEVEL = 4
-SUBLEVEL = 32
-EXTRAVERSION = -rc2
+SUBLEVEL = 33
+EXTRAVERSION = -pre1
 
 KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
 
@@ -19,7 +19,7 @@ FINDHPATH	= $(HPATH)/asm $(HPATH)/linux $(HPATH)/scsi $(HPATH)/net $(HPATH)/math
 HOSTCC  	= gcc
 HOSTCFLAGS	= -Wall -Wstrict-prototypes -Os -fomit-frame-pointer
 
-CROSS_COMPILE=mipsel-linux-uclibc-
+CROSS_COMPILE   = mipsel-linux-
 
 #
 # Include the make variables (CC, etc...)
@@ -89,6 +89,8 @@ export MODLIB
 # standard CFLAGS
 #
 
+check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
+
 CPPFLAGS := -D__KERNEL__ -I$(HPATH)
 
 CFLAGS := $(CPPFLAGS) -Wall -Wstrict-prototypes -Wno-trigraphs -Os \
@@ -99,6 +101,11 @@ ifndef CONFIG_FRAME_POINTER
 CFLAGS += -fomit-frame-pointer
 endif
 AFLAGS := -D__ASSEMBLY__ $(CPPFLAGS)
+
+CFLAGS += $(call check_gcc, -funit-at-a-time,)
+
+
+
 
 #
 # ROOT_DEV specifies the default root-device when making the image.

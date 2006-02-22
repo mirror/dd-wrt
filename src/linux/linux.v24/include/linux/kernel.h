@@ -94,14 +94,9 @@ extern void dev_probe_unlock(void);
 extern int session_of_pgrp(int pgrp);
 
 
-#ifndef ISPRINTK
-
-#define printk(a,arg...)
-#else
 
 asmlinkage int printk(const char * fmt, ...)
 	__attribute__ ((format (printf, 1, 2)));
-#endif
 
 static inline void console_silent(void)
 {
