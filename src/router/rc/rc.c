@@ -127,7 +127,7 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
-  start_service("sysinit");
+  start_service ("sysinit");
 
   /* Setup signal handlers */
   signal_init ();
@@ -142,7 +142,7 @@ main_loop (void)
 //  if (!noconsole)
 //    ddrun_shell (1, 0);
 
-  start_service("nvram");
+  start_service ("nvram");
 
   /* Restore defaults if necessary */
 #ifdef HAVE_SKYTEL
@@ -164,19 +164,22 @@ main_loop (void)
 	}
     }
 #endif
-  start_service("restore_defaults");
-  
+  start_service ("restore_defaults");
+
 
 #ifndef HAVE_RB500
-
   system ("echo 1 > /proc/switch/eth0/reset");
-  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/0/ports",
-	   nvram_safe_get ("vlan0ports"));
-  system (tmp);
-  sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/1/ports",
-	   nvram_safe_get ("vlan1ports"));
-  system (tmp);
-
+  int i;
+  for (i = 0; i < 16; i++)
+    {
+      char vlanb[16];
+      sprintf (vlanb, "vlan%dports", i);
+      if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
+	continue;
+      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
+	       nvram_safe_get (vlanb), i);
+      system (tmp);
+    }
 #endif
   /* Add vlan */
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
@@ -190,12 +193,12 @@ main_loop (void)
     case ROUTER_ASUS:
     case ROUTER_MOTOROLA:
     case ROUTER_SIEMENS:
-    start_service("config_vlan");
+      start_service ("config_vlan");
       break;
     default:
       if (check_vlan_support ())
 	{
-	start_service("config_vlan");
+	  start_service ("config_vlan");
 	}
       break;
 
@@ -215,8 +218,8 @@ main_loop (void)
 	  nvram_set ("sys_clean_jffs2", "0");
 	  nvram_commit ();
 	  itworked = mtd_erase (rwpart);
-        eval ("insmod", "crc32");
-        eval ("insmod", "jffs2");
+	  eval ("insmod", "crc32");
+	  eval ("insmod", "jffs2");
 
 	  itworked +=
 	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
@@ -235,8 +238,8 @@ main_loop (void)
       else
 	{
 	  itworked = mtd_unlock ("mtd4");
-        eval ("insmod", "crc32");
-        eval ("insmod", "jffs2");
+	  eval ("insmod", "crc32");
+	  eval ("insmod", "jffs2");
 	  itworked +=
 	    mount ("/dev/mtdblock/4", "/jffs", "jffs2", MS_MGC_VAL, NULL);
 	  if (itworked)
@@ -252,7 +255,7 @@ main_loop (void)
 	}
     }
 #endif
-  start_service("mkfiles");
+  start_service ("mkfiles");
   char *hostname;
 
   /* set hostname to wan_hostname or router_name */
@@ -264,10 +267,10 @@ main_loop (void)
     hostname = "dd-wrt";
 
   sethostname (hostname, strlen (hostname));
-  stop_service("httpd");
+  stop_service ("httpd");
   if (brand == ROUTER_SIEMENS)
     {
-      start_service("powerled_ctrl_1");
+      start_service ("powerled_ctrl_1");
     }
 
   /* Loop forever */
@@ -279,7 +282,7 @@ main_loop (void)
 	  cprintf ("USER1\n");
 	  start_single_service ();
 #ifdef HAVE_CHILLI
-	  start_service("chilli");
+	  start_service ("chilli");
 #endif
 
 	  state = IDLE;
@@ -315,7 +318,7 @@ main_loop (void)
 	    {
 	      eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
 	      sleep (4);
-	      start_service("wlconf");
+	      start_service ("wlconf");
 
 	    }
 	  /* Fall through */
@@ -329,19 +332,19 @@ main_loop (void)
 		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
 		  1);
 	  cprintf ("STOP WAN\n");
-	  stop_service("wan");
+	  stop_service ("wan");
 	  cprintf ("STOP SERVICES\n");
 	  stop_services ();
 	  cprintf ("STOP LAN\n");
-	  stop_service("lan");
+	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
 	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54))	//belkin doesnt like that
 	    {
-	      stop_service("resetbutton");
+	      stop_service ("resetbutton");
 	    }
 #endif
-	  start_service("create_rc_shutdown");
+	  start_service ("create_rc_shutdown");
 	  system ("/tmp/.rc_shutdown");
 	  if (state == STOP)
 	    {
@@ -359,19 +362,19 @@ main_loop (void)
 	  setenv ("LD_LIBRARY_PATH",
 		  "/lib:/usr/lib:/jffs/lib:/jffs/usr/lib:/mmc/lib:/mmc/usr/lib:",
 		  1);
-	  start_service("ipv6");
+	  start_service ("ipv6");
 #ifndef HAVE_RB500
 	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54))	//belkin doesnt like that
 	    {
-	      start_service("resetbutton");
+	      start_service ("resetbutton");
 	    }
 #endif
-	  start_service("setup_vlans");
-	  start_service("lan");
+	  start_service ("setup_vlans");
+	  start_service ("lan");
 	  cprintf ("start services\n");
 	  start_services ();
 	  cprintf ("start wan boot\n");
-	  start_service("wan_boot");
+	  start_service ("wan_boot");
 	  cprintf ("diaG STOP LED\n");
 	  diag_led (DIAG, STOP_LED);
 	  cprintf ("set led release wan control\n");
@@ -387,19 +390,19 @@ main_loop (void)
 		eval ("/sbin/ifconfig", "eth2", "up");
 	    }
 	  cprintf ("start nas\n");
-	  start_service("nas_wan");
+	  start_service ("nas_wan");
 	  cprintf ("create rc file\n");
-	  start_service("create_rc_startup");
+	  start_service ("create_rc_startup");
 	  chmod ("/tmp/.rc_startup", 0700);
 	  system ("/tmp/.rc_startup");
 	  system ("/etc/init.d/rcS");	// start openwrt startup script (siPath impl)
 	  cprintf ("start modules\n");
-	  start_service("modules");
+	  start_service ("modules");
 #ifdef HAVE_CHILLI
-          start_service("chilli");
+	  start_service ("chilli");
 #endif
 	  cprintf ("start syslog\n");
-	  startstop("syslog");
+	  startstop ("syslog");
 
 	  system ("/etc/postinit");
 
@@ -433,10 +436,11 @@ main_loop (void)
 
 
 
-int main(int argc,char **argv)
+int
+main (int argc, char **argv)
 {
   char *base = strrchr (argv[0], '/');
-      
+
   base = base ? base + 1 : argv[0];
 
   /* init */
@@ -451,13 +455,13 @@ int main(int argc,char **argv)
 
   /* ppp */
   if (strstr (base, "ip-up"))
-    return start_main ("ipup",argc, argv);
+    return start_main ("ipup", argc, argv);
   else if (strstr (base, "ip-down"))
-    return start_main ("updown",argc, argv);
+    return start_main ("updown", argc, argv);
 
   /* udhcpc [ deconfig bound renew ] */
   else if (strstr (base, "udhcpc"))
-    return start_main("udhcpc",argc, argv);
+    return start_main ("udhcpc", argc, argv);
 #ifdef HAVE_PPTPD
   /* poptop [ stop start restart ]  */
   else if (strstr (base, "poptop"))
@@ -507,7 +511,7 @@ int main(int argc,char **argv)
       if (argc >= 2)
 	{
 	  if (!strcmp (argv[1], "net"))
-	    return start_service("hotplug_net");
+	    return start_service ("hotplug_net");
 	}
       else
 	{
@@ -537,7 +541,7 @@ int main(int argc,char **argv)
   //////////////////////////////////////////////////////
   //
   else if (strstr (base, "filtersync"))
-    return start_service("filtersync");
+    return start_service ("filtersync");
   /* filter [add|del] number */
   else if (strstr (base, "filter"))
     {
@@ -547,9 +551,9 @@ int main(int argc,char **argv)
 	  if ((num = atoi (argv[2])) > 0)
 	    {
 	      if (strcmp (argv[1], "add") == 0)
-		return start_servicei("filter_add",num);
+		return start_servicei ("filter_add", num);
 	      else if (strcmp (argv[1], "del") == 0)
-		return start_servicei("filter_del",num);
+		return start_servicei ("filter_del", num);
 	    }
 	}
       else
@@ -594,33 +598,33 @@ int main(int argc,char **argv)
 
 
   else if (strstr (base, "hb_connect"))
-    return start_main("hb_connect",argc, argv);
+    return start_main ("hb_connect", argc, argv);
   else if (strstr (base, "hb_disconnect"))
-    return start_main("hb_disconnect",argc, argv);
+    return start_main ("hb_disconnect", argc, argv);
 
   else if (strstr (base, "gpio"))
-    return start_main("gpio",argc, argv);
+    return start_main ("gpio", argc, argv);
   else if (strstr (base, "listen"))
-    return listen_main(argc, argv);
+    return listen_main (argc, argv);
   else if (strstr (base, "check_ps"))
     return check_ps_main (argc, argv);
   else if (strstr (base, "ddns_success"))
-    return start_main("ddns_success",argc, argv);
+    return start_main ("ddns_success", argc, argv);
 //      else if (strstr(base, "eou_status"))
 //                return eou_status_main();
   else if (strstr (base, "process_monitor"))
     return process_monitor_main ();
   else if (strstr (base, "restart_dns"))
     {
-      stop_service("dnsmasq");
-      stop_service("dhcpd");
-      start_service("dhcpd");
-      start_service("dnsmasq");
+      stop_service ("dnsmasq");
+      stop_service ("dhcpd");
+      start_service ("dhcpd");
+      start_service ("dnsmasq");
     }
   else if (strstr (base, "site_survey"))
-    return start_main ("site_survey",argc, argv);
+    return start_main ("site_survey", argc, argv);
   else if (strstr (base, "setpasswd"))
-    start_service("mkfiles");
+    start_service ("mkfiles");
   else if (strstr (base, "wol"))
     wol_main ();
   else if (strstr (base, "sendudp"))
