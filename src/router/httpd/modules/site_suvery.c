@@ -120,7 +120,7 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 	}
 
       ret +=
-	websWrite (wp, "%c'%s','%s','%d','%d','%d','%d','%d','%d','%s'\n",
+	websWrite (wp, "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\"\n",
 		   i ? ',' : ' ', site_survey_lists[i].SSID,
 		   site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		   site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
