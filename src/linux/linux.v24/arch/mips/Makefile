@@ -44,7 +44,7 @@ check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1
 # crossformat linking we rely on the elf2ecoff tool for format conversion.
 #
 GCCFLAGS	:= -I $(TOPDIR)/include/asm/gcc
-GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe
+GCCFLAGS	+= -G 0 -mno-abicalls -fno-pic -pipe -DBCMGPIO2
 GCCFLAGS	+= $(call check_gcc, -finline-limit=100000,)
 LINKFLAGS	+= -G 0 -static -n -nostdlib
 MODFLAGS	+= -mlong-calls -fno-common
