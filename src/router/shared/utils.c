@@ -86,7 +86,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is buffalo\n");
-      setRouter ("Buffalo WBR-G54/WLA-G54");
+      setRouter ("Buffalo WBR-G54 / WLA-G54");
       return ROUTER_BUFFALO_WBR54G;
     }
   if (nvram_match ("product_name", "Product_name") &&
