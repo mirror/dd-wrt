@@ -1,0 +1,11 @@
+--- Kconfig.orig	2004-09-28 10:58:29.315549520 -0700
++++ Kconfig	2004-09-28 10:58:40.179897888 -0700
+@@ -355,6 +355,8 @@
+ 	  say M here and read <file:Documentation/modules.txt>.  The module
+ 	  will be called prism54.ko.
+ 
++source "drivers/net/wireless/ath/Kconfig"
++
+ # yes, this works even when no drivers are selected
+ config NET_WIRELESS
+ 	bool

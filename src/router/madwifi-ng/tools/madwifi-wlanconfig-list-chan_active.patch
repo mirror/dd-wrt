@@ -1,0 +1,21 @@
+Index: wlanconfig.c
+===================================================================
+--- wlanconfig.c	(revision 1350)
++++ wlanconfig.c	(working copy)
+@@ -653,14 +653,14 @@
+ 	if (get80211priv(ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof(chans)) < 0)
+ 		errx(1, "unable to get channel information");
+ 	if (!allchans) {
+-		struct ieee80211req_chanlist active;
++		uint8_t active[32];
+ 
+ 		if (get80211priv(ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof(active)) < 0)
+ 			errx(1, "unable to get active channel list");
+ 		memset(&achans, 0, sizeof(achans));
+ 		for (i = 0; i < chans.ic_nchans; i++) {
+ 			c = &chans.ic_chans[i];
+-			if (isset(active.ic_channels, ieee80211_mhz2ieee(c->ic_freq)) || allchans)
++			if (isset(active, ieee80211_mhz2ieee(c->ic_freq)) || allchans)
+ 				achans.ic_chans[achans.ic_nchans++] = *c;
+ 		}
+ 	} else
