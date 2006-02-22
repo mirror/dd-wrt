@@ -9,4 +9,4 @@
     <input size="40" maxLength="47" class="text" name="wds_watchdog_ips" value='<% nvram_get("wds_watchdog_ips"); %>' /></div>
     <div class="setting"><div class="label">IPs Format</div>xxx.xxx.xxx.xxx xxx.xxx.xxx.xxx</div>
     <div class="setting"><div class="label"> </div>The IPs need to be separated by a SPACE.<br />Maximum of three IPs</div>
-</fieldset>
+</fieldset><br/>
