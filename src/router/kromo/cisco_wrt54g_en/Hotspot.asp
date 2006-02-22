@@ -30,13 +30,13 @@ function user_remove_submit(F) {
 }
 
 function to_reboot(F) {
-	F.action.value='Reboot';
+	F.action.value="Reboot";
 	F.submit();
 	return true;
 }
 
 function to_submit(F) {
-	F.action.value='Apply';
+	F.action.value="Apply";
 	F.submit_button.value = "Hotspot";
 	F.save_button.value = "Saved";
 	F.save_button.disabled = true;
@@ -50,23 +50,24 @@ function init() {
 		</script>
 	</head>
 	
-	<body class="gui"> <% showad(); %>
+	<body class="gui"><% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-						<div id="menu">
-							<div id="menuMain">
-								<ul id="menuMainList">
-									<li><a href="index.asp">Setup</a></li>
-									<li><a href="Wireless_Basic.asp">Wireless</a></li>
-									<% nvram_invmatch("sipgate","1","<!--"); %>
-									<li><a href="Sipath.asp">SIPatH</a></li>
-									<% nvram_invmatch("sipgate","1","-->"); %>
-									<li><a href="Firewall.asp">Security</a></li>
-									<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
-									<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-									<li class="current"><span>Administration</span><div id="menuSub">
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp">Setup</a></li>
+								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp">SIPatH</a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp">Security</a></li>
+								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
+								<li class="current"><span>Administration</span>
+									<div id="menuSub">
 										<ul id="menuSubList">
 											<li><a href="Management.asp">Management</a></li>
 											<li><span>Hotspot</span></li>
@@ -94,6 +95,7 @@ function init() {
 							<input type="hidden" name="action"/>
 							<input type="hidden" name="reboot_button"/>
 							<input type="hidden" name="commit" value="1"/>
+							<h2>Hotspot Portal</h2>
 							<% show_modules(".webhotspot"); %>
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
@@ -112,7 +114,7 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<br/>
-						<a target="_blank" href="help/HManagement.asp">More...</a>
+						<a target="_blank" href="help/HHotspot.asp">More...</a>
 					</div>
 				</div>
 			</div>
