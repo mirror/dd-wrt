@@ -4,7 +4,7 @@
 		<div class="label">Set Vendorclass</div>
 		<input maxlength="79" size="20" name="dhcpc_vendorclass" value="<% nvram_get("dhcpc_vendorclass"); %>" />
 		</div>
-	</fieldset>
+	</fieldset><br/>
 	<fieldset>
 	<legend>DHCPd</legend>
 	<div class="setting">
@@ -41,8 +41,8 @@
 			    <tr>
                               <td>&nbsp;</td>
                               <td colspan="2">
-			      <input type="button" value="Add" onClick=lease_add_submit(this.form) />
-			      <input type="button" value="Remove" onClick=lease_remove_submit(this.form) />
+			      <input type="button" value="Add" onclick="lease_add_submit(this.form)"/>
+			      <input type="button" value="Remove" onclick="lease_remove_submit(this.form)"/>
 			      </td>
                            </tr>
     
@@ -50,10 +50,9 @@
 		</center>
 	<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
 		<div class="label">Additional DHCPD Options</div>
-		<textarea cols="40" rows="2" id="dhcpd_options" name="dhcpd_options">	</textarea><script language="javascript">
+		<textarea cols="60" rows="2" id="dhcpd_options" name="dhcpd_options">	</textarea><script language="javascript">
 		
 				var dhcpd_options = fix_cr( '<% nvram_get("dhcpd_options"); %>' );
 				document.getElementById("dhcpd_options").value = dhcpd_options;
 			</script></div>
-	<% nvram_invmatch("expert_mode","1","-->"); %></fieldset><br />
-
+	<% nvram_invmatch("expert_mode","1","-->"); %></fieldset><br/>
