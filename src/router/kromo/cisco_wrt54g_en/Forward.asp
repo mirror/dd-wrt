@@ -90,12 +90,13 @@ function to_submit(F) {
 			    <tr>
                               <td>&nbsp;</td>
                               <td colspan="2">
-			      <input type="button" value="Add" onClick=forward_add_submit(this.form) />
-			      <input type="button" value="Remove" onClick=forward_remove_submit(this.form) />
+			      <input type="button" value="Add" onClick="forward_add_submit(this.form)"/>
+			      <input type="button" value="Remove" onClick="forward_remove_submit(this.form)"/>
 			      </td>
                            </tr>
     
                      </table>
+                     <br/>
                      <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick=to_submit(this.form) /><input type="reset" value="Cancel Changes" /></div>
                   </form>
                </div>
