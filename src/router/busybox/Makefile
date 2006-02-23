@@ -165,10 +165,11 @@ ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
 LIBRARIES += ../dhcpforwarder/dhcpfwd.a
 endif
-ifeq ($(CONFIG_PPP),y)
-CFLAGS += -DHAVE_PPP
-LIBRARIES += ../pppd/pppd/pppd.a
-endif
+
+#ifeq ($(CONFIG_PPP),y)
+#CFLAGS += -DHAVE_PPP
+#LIBRARIES += ../pppd/pppd/pppd.a
+#endif
 LIBRARIES += ../net-tools/arp.a ../net-tools/lib/libnet-tools.a		
 
 

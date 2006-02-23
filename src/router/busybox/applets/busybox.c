@@ -92,10 +92,10 @@ int main(int argc, char **argv)
   if (strstr (base, "dhcp-fwd"))
     return dhcpforward_main(argc,argv);
 #endif
-#ifdef HAVE_PPP
+/*#ifdef HAVE_PPP
   else if (strstr (base, "pppd"))
     return pppd_main(argc,argv);
-#endif
+#endif*/
 #ifdef HAVE_RFLOW
   else if (strstr (base, "rflow"))
     return rflow_main(argc,argv);

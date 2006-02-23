@@ -1,18 +1,1182 @@
 langstr
 read desc
 entry
-<li><a href="Diagnostics.asp">Diagnostics</a></li>
- 
+ - Status
+ - Estado
 entry
-<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
- 
+Firmware version:
+Versión del Firmware:
 entry
-<div class="label">Wireless Network Name (SSID)</div><input name="wl_ssid" size="20" maxLength="32" onBlur="valid_name(this,'SSID')" value='<% nvram_get("wl_ssid"); %>' /></div>
-<div class="label">Wireless Network Name (SSID)</div><input name="wl_ssid" size="20" maxLength="32" onBlur="valid_name(this,'SSID')" value='<% nvram_get("wl_ssid"); %>' /> (Please always use FON as prefix)</div>
+Sys-Info
+Información de Sistema
+entry
+Wireless-G Broadband Router
+Router de Banda Ancha Inalámbrica-G
+entry
+WRT Info
+Información del WRT
+entry
+RouterName:
+Nombre del Router:
+entry
+LAN MAC:
+MAC de LAN:
+entry
+WAN MAC:
+MAC de WAN:
+entry
+Wireless MAC:
+MAC Inalámbrica:
+entry
+Wireless Info
+Información Inalámbrica
+entry
+Mode</div>
+Modo</div>
+entry
+Network</div>
+Red</div>
+entry
+B-Only
+B-Solamente
+entry
+G-Only
+G-Solamente
+entry
+Enabled
+Activado
+entry
+Disabled
+Inactivo
+entry
+DHCP Server:
+Servidor de DHCP:
+entry
+Channel</div>
+Canal</div>
+entry
+Rate (mbps)</div>
+Velocidad (Mbps)</div>
+entry
+IP Info
+Información de IP
+entry
+WAN IP
+IP WAN
+entry
+LAN IP
+IP LAN
+entry
+ Active
+ Activo
+entry
+>Active
+>Activo
+entry
+Samba Mount
+Montaje De Samba
+entry
+Connected AP
+PA Conectados
+entry
+Connected Clients
+Clientes Conectados
+entry
+Wireless Clients
+Clientes Inalámbricos
+entry
+Clients:'
+Clientes:'
+entry
+WDS Signal:
+Señal WDS:
+entry
+MAC-Address
+Nombre de MAC
+entry
+Level</b>
+Nivel</b>
+entry
+DHCP Client List
+Lista de Cliente de DHCP
+entry
+Duration
+Transcurso
+entry
+<td>None</td>
+<td>Ninguno</td>
+entry
+Packet Info:
+Información de Paquetes:
+entry
+Mem Info&nbsp;:
+información de memoria&nbsp;:
+entry
+GUI Setup
+Opciones administrativas
+entry
+This firmware was developed under GPL and is free or donation ware. Selling is strictly forbidden
+Este Firmware fue desarrollado bajo GLP y es mercancías libres o de donación.<br>La venta se prohíbe terminantemente
+entry
+programming:
+Programación:
+entry
+webinterface:
+Interfaz web:
+entry
+testing:
+Prueba:
+entry
+Everyone
+Todo el mundo
+entry
+>Setup<
+>Configuración<
+entry
+> Setup<
+> Configuración<
+entry
+>Wireless<
+>Inalámbrico<
+entry
+>Security<
+>Seguridad<
+entry
+>Access Restrictions<
+>Restricción de Acceso<
+entry
+>Applications
+>Aplicaciones
+entry
+<BR>&amp; Gaming<
+<BR> Y Juego<
+entry
+>Administration<
+>Administración<
+entry
+>Status<
+>Estado<
+entry
+>Basic Setup<
+>Configuración Básica<
+entry
+>MAC Address Clone<
+>Clonar la dirección MAC<
+entry
+>Advanced Routing<
+>Enrutado Avanzado<
+entry
+>VLANs<
+>LANs Virtuales<
+entry
+>Disable
+>Desactivado
+entry
+> Disable
+> Desactivado
+entry
+>Internet Connection Type<
+>Tipo de Conexión a Internet<
+entry
+> Enable
+> Activado
+entry
+>Enable
+>Activado
+entry
+(disable for COMCAST ISP)
+(Desactivado para los que usan COMCAST ISP)
+entry
+Router Name:
+Nombre del Router:
+entry
+More...
+Ayuda...
+entry
+Size:
+Tamaño:
+entry
+Local IP Address:
+IP Local:
+entry
+Local DNS:
+DNS Local:
+entry
+developed by
+Desarrollado Por
+entry
+Starting IP Address:
+Comenzar con IP:
+entry
+Maximum Number of &nbsp;DHCP Users:
+Número máximo de usuarios de DHCP:
+entry
+Client Lease Time:
+Tiempo del prestamo de la IP:
+entry
+minutes<
+Minutos<
+entry
+Static DNS
+DNS Estático
+entry
+Time Zone
+Zona Horaria
+entry
+>Network Address</B><BR><B>Server Settings (DHCP)<
+>Ajustes Del Servidor</B><BR><B>De la Dirección De Red (DHCP)<
+entry
+Router IP
+IP del Router
+entry
+Network Setup
+Configuración de la Red Local
+entry
+Optional Settings</B><BR><B>(required by some ISPs)
+Ajustes opcionales</B><BR><B>(requeridos por algúnos ISPs)
+entry
+Internet Connection Type
+Tipo de Conexión a Internet
+entry
+Automatically adjust clock for daylight saving changes
+Ajustar automáticamente el reloj al horario de verano
+entry
+Save Settings
+Guardar Cambios
+entry
+mbps&nbsp;
+Mbps&nbsp;
+entry
+Local Network
+Red Local
+entry
+Router Information
+Información del Router
+entry
+Configuration Type
+Tipo de Configuración
+entry
+Login Type
+Tipo de Conexión
+entry
+value=Refresh
+value=Re-Cargar
+entry
+DHCP Clients Table
+Tabla de Clientes DHCP
+entry
+Automatic Configuration - DHCP
+Configuración Automática - DHCP
+entry
+Clone WAN MAC
+Clonar MAC WAN
+entry
+Clone Wireless MAC
+Clonar MAC Inalámbrica
+entry
+Get Current PC MAC Address
+Obtener MAC del PC actual
+entry
+Operating Mode
+Modo De Funcionamiento
+entry
+Dynamic Routing
+Rutas Dinámica
+entry
+Let OSPF determine the default route
+Deje al OSPF determinar la ruta predeterminada
+entry
+Zebra manual config
+Configuración manual de Zebra <br>
+entry
+(leave blank for autogen):
+(Deje el espacio en blanco para que sea auto generado):<br>
+entry
+OSPF manual config
+Configuración manual de OSPF
+entry
+&amp; Wireless
+y Inalámbrico
+entry
+>Both<
+>Ambos<
+entry
+>Replace<
+>Reemplazar<
+entry
+>Append<
+>Añadir<
+entry
+Select set number:
+Seleccione el número Set:
+entry
+Enter Route Name:
+Introduzca el nombre de la ruta:
+entry
+Static Routing
+Rutas Estáticas
+entry
+Destination LAN IP:
+IP de la LAN de Destino:
+entry
+Show Routing Table
+Muestre La Tabla De Rutas
+entry
+Delete This Entry
+Borre Esta Entrada
+entry
+Show Routing Table
+Mostrar La Tabla De Rutas
+entry
+>VLAN<
+>LANs Virtuales<
+entry
+>Port<
+>Puerto<
+entry
+Assigned To<br>Bridge
+Asignado al<br>Puente
+entry
+>Port Range
+>
+entry
+Forward<
+Re-Expedition de<br> Gama de Puerto<
+entry
+Basic Settings
+Configuración Básica
+entry
+WRT-radauth
+WRT-Radius
+entry
+Wireless Security
+Seguridad Inalámbrica
+entry
+MAC Filter&nbsp;
+Filtro de MAC&nbsp;
+entry
+Advanced Settings
+Configuración Avanzada
+entry
+Wireless Network</font>
+Red Inalámbrica</font>
+entry
+8pt">Wireless
+8pt">
+entry
+Mode:</font></TD>
+Modo de la Red Inalámbrica:</font></TD>
+entry
+Network Mode:
+Tipo de Red Inalámbrica:
+entry
+Network Name (SSID):
+Nombre de la Red Inalámbrica &nbsp;(SSID):
+entry
+Channel:</font></TD>
+Canal de señal Inalámbrica:</font></TD>
+entry
+>Mixed<
+>Ambos<
+entry
+>B-Only<
+>Solo-B<
+entry
+>G-Only<
+>Solo-G<
+entry
+>Client<
+>Cliente<
+entry
+MAC Radius Client:
+Utilizar Radius:
+entry
+MAC Format:
+Formato de MAC
+entry
+Enable Portal:
+Utilizar Portal
+entry
+Portal Site:
+Pagina de Portal
+entry
+>Allownet:<
+Permitir Net
+entry
+Radius Server IP:
+IP del Servidor Radius:
+entry
+Radius Server Port:
+Puerto del Servidor Radius:
+entry
+Maximum Authenticated Users:
+Cantidad Máxima de Usuario:
+entry
+Password Format:
+Formato de Clave
+entry
+RADIUS Shared Secret:
+Secreto Compartido del &nbsp;RADIUS:
+entry
+><b>Type
+><b>Tipo
+entry
+WRT radauth
+Config de Radius WRT
+entry
+Security Mode:
+Modo de Seguridad:
+entry
+WPA Pre-Shared Key
+WPA con clave predeterminada(PSK)
+entry
+Wireless MAC Filter
+Filtro de MAC para &nbsp;Red Inalámbrica
+entry
+Prevent:
+Evitar:
+entry
+Permit only:
+Permitir solamente:
+entry
+Prevent</b> PCs listed from accessing the wireless
+Evite</b> que las PCs enumeradas tengan acceso a la red
+entry
+</span>&nbsp;network</TD>
+</span>&nbsp;Inalámbrica</TD>
+entry
+Permit only</b> PCs listed to access the wireless network
+Permitir</b> solamente las PC enumeradas para tener acceso a la red
+entry
+Edit MAC Filter List
+Edite la lista del filtro de MAC
+entry
+Default:
+Por Defecto:
+entry
+Authentication Type:
+Tipo de Autentificación:
+entry
+Basic Rate:
+Velocidad Básica:
+entry
+Transmission Rate:
+Velocidad de transmisión:
+entry
+CTS Protection Mode:
+Protección para clientes -B:
+entry
+Beacon Interval:
+Intervalo de señal reconfiguradora:
+entry
+AP Isolation
+Aislamiento de AP
+entry
+TX Antenna:
+Antena TX:
+entry
+RX Antenna:
+Antena RX:
+entry
+Xmit Power:
+Potencia de trasmisión:
+entry
+Wireless WDS
+Interconexión de redes Inalámbricas con WDS
+entry
+Wireless MAC:
+MAC Inalámbrica de este Router:
+entry
+Firewall Protection:
+Protección  Firewall:
+entry
+Additional Filters
+Filtros Adicionales
+entry
+Block WAN Requests
+Bloquear Peticiones que vienen del Puerto WAN (Externo/Internet)
+entry
+ Filter
+ Filtrar
+entry
+Block Anonymous Internet Requests
+Bloquear Peticiones Anónimas de Internet
+entry
+Multicast&nbsp; </td>
+Multicast&nbsp;(Mandado por algunos ISPs) </td>
+entry
+Internet NAT Redirection
+Redirección NAT de Internet
+entry
+IDENT(Port 113)&nbsp;
+IDENT(Puerto 113)&nbsp;
+entry
+Firewall Protection: </b>Enable or disable the SPI firewall.
+Protección  Firewall: </b><br>Activa o Desactiva el firewall<br> del Router.
+entry
+VPN Passthrough
+Dejar pasar conexiones VPN
+entry
+IPSec Passthrough
+Dejar pasar IPSec
+entry
+PPTP Passthrough
+Dejar pasar PPTP
+entry
+L2TP Passthrough
+Dejar pasar L2TP
+entry
+<B>Port Range
+<B>Gama de Puerto
+entry
+<B>Application
+<B>Aplicación
+entry
+Start</B>
+Desde el puerto</B>
+entry
+End</B>
+Hasta el puerto</B>
+entry
+IP Address</B>
+IP de la PC Local</B>
+entry
+Cancel Changes
+Anular Cambios
+entry
+Reboot Router
+Iniciar Router
+entry
+Milliseconds
+Milisegundos
+entry
+"Summary"
+"Resumen"
+entry
+Internet Access Policy:
+Reglas de Acceso<br> a Internet:
+entry
+Status:
+Estado:
+entry
+Enter Policy Name:
+Introduzca El Nombre De la Política:
+entry
+>Deny
+>Negar
+entry
+>Allow
+>Permitir
+entry
+Days
+Dias
+entry
+Everyday
+Todos los Dias
+entry
+Sun&nbsp;
+Dom&nbsp;
+entry
+Mon&nbsp;
+Lun&nbsp;
+entry
+Tue&nbsp;
+Mar&nbsp;
+entry
+Wed&nbsp;
+Mié&nbsp;
+entry
+Thu&nbsp;
+Jue&nbsp;
+entry
+Fri&nbsp;
+Vie&nbsp;
+entry
+Sat&nbsp;
+Sáb&nbsp;
+entry
+Sunday
+Domingo
+entry
+Monday
+Lunes
+entry
+Tuesday
+Martes
+entry
+Wednesday
+Miércoles
+entry
+Thursday
+Jueves
+entry
+Friday
+Viernes
+entry
+Saturday
+Sábado
+entry
+Times
+Horas
+entry
+24 Hours
+Las 24 Horas
+entry
+From:
+De:
+entry
+To:
+A:
+entry
+Blocked Services
+Servicios Bloqueados
+entry
+Edit List of PCs
+Editar la lista de PCs
+entry
+Internet access during selected days and hours.
+&nbsp;Acceso a Internet durante <br>&nbsp;los días y las horas seleccionada.
+entry
+Add/Edit Service
+Agregar/Editar Servicios
+entry
+Website Blocking<BR>by URL Address
+Bloquear sitio Web por URL
+entry
+Website Blocking<BR>by Keyword
+Bloquear sitio Web por <BR>Palabra Clave
+entry
+Internet Access
+Póliza de Acceso&nbsp;<br> al Internet&nbsp;
+entry
+Port Range Forward
+Re-Expedition de<br> Gama de Puerto
+entry
+Port Triggering
+Re-Expedition de<br> Puerto
+entry
+UPnP Forward
+Re-Expedition de<br> UPnP
+entry
+<B>Enable
+<B>Habilitar
+entry
+Start Port</B>
+Desde el puerto</B>
+entry
+End Port</B>
+Hasta el puerto</B>
+entry
+Triggered Range
+Triggered Range
+entry
+Forwarded Range
+Forwarded Range
+entry
+DMZ Host IP Address:
+(DMZ) IP del PC:
+entry
+Current Time:
+Hora Actual:
+entry
+DHCP Clients Table
+Tabla de Clientes DHCP
+entry
+Log</FONT>
+Registro</FONT>
+entry
+Diagnostics</A>
+Diagnóstico</A>
+entry
+Factory Defaults
+Configuración de Fábrica
+entry
+Firmware Upgrade
+Actualización de Firmware
+entry
+Incoming Log
+Registro Entrante
+entry
+Outgoing Log
+Registro Saliente
+entry
+Router Password:
+Password del Router:
+entry
+Re-enter to confirm
+Confirme el Password:
+entry
+Remote Management:
+Administración remota:
+entry
+Management Port:
+Puerto de Administración:
+entry
+Use https:
+Usar https:
+entry
+Info-onStart:
+Página de información:
+entry
+Interval&nbsp;
+Intervalo:&nbsp;
+entry
+Local Router Access
+Password para Administrar el Router
+entry
+Remote</span> Rout<span >er Access
+Administrar el Router del Internet
+entry
+Used Domain
+Usar Dominio
+entry
+LAN Domain
+Dominio del LAN
+entry
+Static Allocations:
+Alocacion Estatica:
+entry
+( Format:
+( Formato:
+entry
+Additional DHCPD Options:
+Opciones Adicionales para DHCPD:
+entry
+DNS Masq:
+DNS Masq:
+entry
+Local DNS:
+DNS Local:
+entry
+Server IP:
+IP del Servidor:
+entry
+Client IP(s):
+IP(s) de los Clientes:
+entry
+Remote Server:
+Servidor Remoto
+entry
+(Optional)
+(Opcional)
+entry
+JFFS2 enabled:
+Habilitadar JFFS2:
+entry
+Clean JFFS2:
+Limpiar JFFS2
+entry
+Kaid enabled:
+Habilitar Kaid
+entry
+SMBFS enabled:
+Habilirar SMBFS
+entry
+Startscript
+Comenzar Script
+entry
+Time in Sec Eg: 1 Hour = 3600
+Tiempo en Sec Ej: 1 Hora = 3600
+entry
+At a set Time&nbsp;(Cron must be enabled)
+A una hora especifica &nbsp;(Cron debe de estar habilitado)
+entry
+The values you entered are invalid. Please try again.
+Los valores que usted introdujo son inválidos. <br> Por favor intento otra vez.
+entry
+Upgrade are failed.
+La actualización ha Fallado.
+entry
+Log Level:
+Nivel de Registro:
+entry
+Log Type:
+Tipo de Registro:
+entry
+146
+169
+entry
+Survey>
+Encuesta>
+entry
+Rate:<
+Velocidad:<
+entry
+Language<
+Idioma:<
+entry
+Maximum Ports
+Cantidad maxima<br> de Puertos
+entry
+IPs Format:
+Formato para <br>las IPs:<br>&nbsp;
+entry
+The IPs need to be separated by a SPACE.<BR>Maximum of three IPs
+Necesita separar los IPS espacio .<BR>Maximum de tres IP
+entry
+WDS/Connection Watchdog
+Conexión y WDS<br>Watchdog
+entry
+Schedule Reboot
+Horario Para Re-Iniciar <br>el Router
+entry
+IP Filter Settings
+Ajustes del Filtro de IP
+entry
+JFFS2 Support
+Soporte para JFFS2
+entry
+Commands:
+Comandos:
+entry
+>Restore
+>Restaurar
+entry
+Yes
+Si
+entry
+Upgrade Firmware
+Actualización de Firmware
+entry
+Reset after flashing to:
+Después del Flasheo resetear a:
+entry
+No reset
+No resetear
+entry
+Firmware Defaults
+Los Valores del Firmware
+entry
+Please select a file to upgrade:
+Seleccione el archivo para actualizar:
+entry
+<B>Warning: </B>Upgrading firmware may take a few minutes, please don't <BR>turn off the power or press the reset button.
+<B>Advertencia: </B><br>La actualización de Firmware puede tomar algunos minutos,<br> no resetee Ó apague el Router.
+entry
+>Upgrade must
+>
+entry
+NOT be interrupted ! (do wait 2 min.)
+La actualización no debe de ser interrumpida.!!!!!<br> (Por Favor espere 2 minutos)
+entry
+Backup & Restore
+Backup y Restauración
+entry
+Restore "
+Restaurar "
+entry
+Please select a file to restore:
+Seleccione el archivo para Restaurar:&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<br>
+entry
+<B>Warning: </B>Only upload files backed up using
+<B>Advertencia:</B> Solamente Restauren archivo que fueron guardado
+entry
+firmware and
+
+entry
+size=2>DD-WRT
+size=2>
+entry
+color="#FF0000">D</font><FONT face=Arial color=#ff0000 size=2>o
+color="#FF0000"></font><FONT face=Arial color=#ff0000 size=2>
+entry
+from the same model of router
+con el Firmware DD-WRT Y el mismo modelo de router
+entry
+not upload any file that wasn't created by this interface!
+No Traten de Restaurar archivo que fueron guardado con otro Frimware!
+entry
+Routing Table Entry List
+Tabla de Rutas
+entry
+value=Close>
+value=Cerrar>
+entry
+Refresh ">
+Actualizar ">
+entry
+Interface<
+Interfaz<
+entry
+Table<
+<
+entry
+>Destination
+>Destino de
+entry
+Port Number
+Y Numero de Puerto
+entry
+Source IP
+Origen de la Conexión (IP)
+entry
+Time of Day
+Hora del Dia
+entry
+Policy Name
+Nombre de la regla
+entry
+DHCP Active IP
+IP Activo del DHCP
+entry
+DHCP Server IP Address:
+IP de Servidor DHCP:
+entry
+Enable MAC Filter
+Habilitar Filtro de MAC
+entry
+Active PC
+PCs Activa
+entry
+Inactive PC
+PCs Inactiva
+entry
+Wireless Client MAC List
+Lista de MAC de Clientes Inalámbrico
+entry
+Update Filter List
+Actualizar Lista de Filtro
+entry
+value is out of range
+ Valor esta fuera de rango
+entry
+List of PCs
+Lista de PCs
+entry
+Enter MAC Address of the PCs in this format: xxxxxxxxxxxx
+Introduzca la direccion MAC  de los PCs en este formato: xxxxxxxxxxxx
+entry
+Enter the IP Address of the PCs
+Introduzca la direcion IP de las PCs
+entry
+The WAN MAC Address is out of range
+El Valor de la MAC (WAN) esta fuera de rango
+entry
+The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E]
+El Segundo Caracter de la MAC debe ser  un numero par : [0, 2, 4, 6, 8, A, C, E]
+entry
+The MAC Address is not correct!!
+La MAC es Incorecta!!
+entry
+The MAC Address length is not correct
+La longitud de la MAC es incorrecta
+entry
+The MAC Address cannot be the broadcast address
+La MAC no puede ser igual a la direccion de broadcast
+entry
+value is illegal
+Valor es Inlegal
+entry
+IP address and gateway is not at same subnet mask
+La direccion IP  y la puerta de enlace no estan en la misma mascara de subred
+entry
+IP address and gateway can't be same
+La direccion IP  y la puerta de enlace no pueden ser la misma
+entry
+You must input a username
+Debe introducir un Nombre de Usuario
+entry
+You must input a passwd
+Debe introducir un password
+entry
+You must input a hostname
+Debe introducir un nombre de host
+entry
+Illegal DMZ IP Address
+La IP de la Computadora que va a ser DMZ es Ilegal
+entry
+You must at least select a day.
+Debe seleccionar por lo menos un día.
+entry
+The end time must be bigger than start time
+La hora de comienzo debe ser mayor que la hora final
+entry
+Confirmed password did not match Entered Password.  Please re-enter password
+La contraseña confirmada no corresponde con la contraseña introducida. Por favor, Vuelva a introducir la contraseña
+entry
+Password confirmation is not matched.
+La confirmación de la contraseña no es igual
+entry
+Out of range, please adjust start IP address or user's numbers
+Fuera de rango, ajuste por favor los números de la direccion IP  o del usuario del comienzo
+entry
+You must input a command to run
+Usted debe introducir un comando
+entry
+You must input a Service Name
+Usted debe introducir un nombre de servicio
+entry
+The Service Name exists
+El nombre del servicio existe
+entry
+Service Name
+Nombre De los Servicios
+entry
+Wireless-G Broadband</span> Router&nbsp;&nbsp;
+Router de Banda Ancha Inalámbrica-G&nbsp;&nbsp;
+entry
+Wireless-G Broadband Router&nbsp;&nbsp;
+Router de Banda Ancha Inalámbrica-G&nbsp;&nbsp;
+entry
+Settings are successful.
+Los cambios han sido guardado con éxito.
+entry
+Upgrade successful
+La actualización termino con éxito
+entry
+Enable&nbsp;
+Activado&nbsp;
+entry
+Disable&nbsp;
+Desactivado&nbsp;
+entry
+LAN & wLAN
+LAN y wLAN
+entry
+Port:</TD>
+Puerto:</TD>
+entry
+Delete</TD>
+Eliminar</TD>
+entry
+value="Add"
+value="añadir"
+entry
+: Disable)
+: Desactivado)
+entry
+</b>&nbsp;&nbsp;&nbsp;
+</b>&nbsp;
+entry
+Administration&nbsp;&nbsp;&nbsp;&nbsp;
+Administración
+entry
+Enable&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+Activado&nbsp;
+entry
+Disable&nbsp;
+Desactivado&nbsp;
+entry
+>Priority<
+>Prioridad<
+entry
+>Max Rate<
+>Max Rate<
+entry
+Ethernet Port Priority
+Prioridad de los puertos <br>Locales
+entry
+MAC Priority
+Prioridad por MAC
+entry
+Netmask Priority
+Prioridad por Netmask
+entry
+Services Priority
+Priorida de Servicios
+entry
+<B>Port
+<B>Puerto
 translate
 replace
-<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
- 
+Sys-Info
+Información de Sistema
+replace
+Wireless Info
+Información Inalámbrica
+replace
+Mode</div>
+Modo</div>
+replace
+Network</div>
+Red</div>
+replace
+B-Only
+B-Solamente
+replace
+G-Only
+G-Solamente
+replace
+Enabled
+Activado
+replace
+Disabled
+Inactivo
+replace
+Disabled
+Inactivo
+replace
+Disabled
+Inactivo
+replace
+Disabled
+Inactivo
+replace
+Disabled
+Inactivo
+replace
+Disabled
+Inactivo
+replace
+Channel</div>
+Canal</div>
+replace
+IP Info
+Información de IP
+replace
+WAN IP
+IP WAN
+replace
+WAN IP
+IP WAN
+replace
+LAN IP
+IP LAN
+replace
+Samba Mount
+Montaje De Samba
+replace
+DHCP Client List
+Lista de Cliente de DHCP
+replace
+Duration
+Transcurso
+replace
+<td>None</td>
+<td>Ninguno</td>
+replace
+<td>None</td>
+<td>Ninguno</td>
+replace
+<td>None</td>
+<td>Ninguno</td>
+replace
+<td>None</td>
+<td>Ninguno</td>
+replace
+>Setup<
+>Configuración<
+replace
+>Wireless<
+>Inalámbrico<
+replace
+>Security<
+>Seguridad<
+replace
+>Access Restrictions<
+>Restricción de Acceso<
+replace
+>Applications
+>Aplicaciones
+replace
+>Administration<
+>Administración<
+replace
+>Status<
+>Estado<
+replace
+WRT-radauth
+WRT-Radius
 write
 translate
 write
