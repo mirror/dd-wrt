@@ -1,37 +1,47 @@
 <fieldset>
-<legend>NoCatSplash</legend>
-<div class="setting"><div class="label">NoCatSplash:</div>
-<INPUT type=radio value=1 name=NC_enable <% nvram_match("NC_enable","1","checked"); %>/>Enable
-<INPUT type=radio value=0 name=NC_enable <% nvram_match("NC_enable","0","checked"); %>/>Disable
-</div>
-<% nvram_match("NC_enable","0","<!--"); %>
-<div class="setting"><div class="label">Gateway Name</div>
-<INPUT maxLength=39 name="NC_GatewayName" size="20" value='<% nvram_get("NC_GatewayName"); %>'>
-</div>
-<div class="setting"><div class="label">Home Page</div>
-<INPUT maxLength=80 name="NC_HomePage" size="40" value='<% nvram_get("NC_HomePage"); %>'>
-</div>
-<div class="setting"><div class="label">Allowed Web Hosts</div>
-<INPUT maxLength=80 name="NC_AllowedWebHosts" size="40" value='<% nvram_get("NC_AllowedWebHosts"); %>'>
-</div>
-<div class="setting"><div class="label">Document Root</div>
-<INPUT maxLength=80 name="NC_DocumentRoot" size="40" value='<% nvram_get("NC_DocumentRoot"); %>'>
-</div>
-<div class="setting"><div class="label">Splash URL</div>
-<INPUT maxLength=80 name="NC_SplashURL" size="40" value='<% nvram_get("NC_SplashURL"); %>'>
-</div>
-<div class="setting"><div class="label">Exclude Ports</div>
-<INPUT maxLength=39 name="NC_ExcludePorts" size="20" value='<% nvram_get("NC_ExcludePorts"); %>'>
-</div>
-<div class="setting"><div class="label">Login Timeout</div>
-<INPUT type=text size=3 name=NC_LoginTimeout value=<% nvram_get("NC_LoginTimeout"); %>>
-</div>
-<div class="setting"><div class="label">Verbosity</div>
-<INPUT type=text size=3 name=NC_Verbosity value=<% nvram_get("NC_Verbosity"); %>>
-</div>
-<div class="setting"><div class="label">Route Only:</div>
-<INPUT type=radio value=1 name=NC_RouteOnly <% nvram_match("NC_RouteOnly","1","checked"); %>>Enable
-<INPUT type=radio value=0 name=NC_RouteOnly <% nvram_match("NC_RouteOnly","0","checked"); %>>Disable
-</div>
-<% nvram_match("NC_enable","0","-->"); %>
-</fieldset>
+	<legend>NoCatSplash</legend>
+	<div class="setting">
+		<div class="label">NoCatSplash:</div>
+		<INPUT type="radio" value="1" name="NC_enable" <% nvram_match("NC_enable","1","checked"); %>/>Enable
+		<INPUT type="radio" value="0" name="NC_enable" <% nvram_match("NC_enable","0","checked"); %>/>Disable
+	</div>
+	<% nvram_match("NC_enable","0","<!--"); %>
+	<div class="setting">
+		<div class="label">Gateway Name</div>
+		<INPUT maxLength="39" name="NC_GatewayName" size="39" value='<% nvram_get("NC_GatewayName"); %>'>
+	</div>
+	<div class="setting">
+		<div class="label">Home Page</div>
+		<INPUT maxLength="80" name="NC_HomePage" size="39" value='<% nvram_get("NC_HomePage"); %>'>
+	</div>
+	<div class="setting">
+		<div class="label">Allowed Web Hosts</div>
+		<INPUT maxLength="80" name="NC_AllowedWebHosts" size="39" value='<% nvram_get("NC_AllowedWebHosts"); %>'>
+	</div>
+	<div class="setting">
+		<div class="label">Document Root</div>
+		<INPUT maxLength="80" name="NC_DocumentRoot" size="39" value='<% nvram_get("NC_DocumentRoot"); %>'>
+	</div>
+	<div class="setting">
+		<div class="label">Splash URL</div>
+		<INPUT maxLength="80" name="NC_SplashURL" size="39" value='<% nvram_get("NC_SplashURL"); %>'>
+	</div>
+	<div class="setting">
+		<div class="label">Exclude Ports</div>
+		<INPUT maxLength="39" name="NC_ExcludePorts" size="39" value='<% nvram_get("NC_ExcludePorts"); %>'>
+	</div>
+	<div class="setting">
+		<div class="label">Login Timeout</div>
+		<INPUT type="text" size="3" name="NC_LoginTimeout" value=<% nvram_get("NC_LoginTimeout"); %>>
+	</div>
+	<div class="setting">
+		<div class="label">Verbosity</div>
+		<INPUT type="text" size="3" name="NC_Verbosity" value=<% nvram_get("NC_Verbosity"); %>>
+	</div>
+	<div class="setting">
+		<div class="label">Route Only:</div>
+		<INPUT type="radio" value="1" name="NC_RouteOnly" <% nvram_match("NC_RouteOnly","1","checked"); %>>Enable
+		<INPUT type="radio" value="0" name="NC_RouteOnly" <% nvram_match("NC_RouteOnly","0","checked"); %>>Disable
+	</div>
+	<% nvram_match("NC_enable","0","-->"); %>
+</fieldset><br/>
