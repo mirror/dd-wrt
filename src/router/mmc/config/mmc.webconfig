@@ -5,4 +5,4 @@
 		<input type="radio" value="1" name="mmc_enable0" <% nvram_match("mmc_enable0","1","checked"); %> />Enable
 		<input type="radio" value="0" name="mmc_enable0" <% nvram_match("mmc_enable0","0","checked"); %> />Disable
 	</div>
-</fieldset>
+</fieldset><br/>
