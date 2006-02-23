@@ -1,11 +1,13 @@
-<fieldset><legend>JFFS2 Support</legend>
-<span class="comment">JFFS2 Configuration</span>
-<div class="setting"><div class="label">JFFS2 enabled</div>
-<input type="radio" value="1" name="enable_jffs2" <% nvram_match("enable_jffs2","1","checked"); %> /> Enable
-<input type="radio" value="0" name="enable_jffs2" <% nvram_match("enable_jffs2","0","checked"); %> /> Disable
-</div>
-<div class="setting"><div class="label">Clean JFFS2</div>
-<input type="radio" value="1" name="clean_jffs2" <% nvram_match("clean_jffs2","1","checked"); %> /> Enable
-<input type="radio" value="0" name="clean_jffs2" <% nvram_match("clean_jffs2","0","checked"); %> /> Disable
-</div>
+<fieldset>
+	<legend>JFFS2 Support</legend>
+	<div class="setting">
+		<div class="label">JFFS2 enabled</div>
+		<input type="radio" value="1" name="enable_jffs2" <% nvram_match("enable_jffs2","1","checked"); %> />Enable
+		<input type="radio" value="0" name="enable_jffs2" <% nvram_match("enable_jffs2","0","checked"); %> />Disable
+	</div>
+	<div class="setting">
+		<div class="label">Clean JFFS2</div>
+		<input type="radio" value="1" name="clean_jffs2" <% nvram_match("clean_jffs2","1","checked"); %> />Enable
+		<input type="radio" value="0" name="clean_jffs2" <% nvram_match("clean_jffs2","0","checked"); %> />Disable
+	</div>
 </fieldset><br/>
