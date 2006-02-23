@@ -132,7 +132,40 @@ start_dhcpc (char *wan_ifname)
 
 }
 
+/* Enable WET DHCP relay for ethernet clients */
+static int
+enable_dhcprelay(char *ifname)
+{
+	char name[80], *next;
 
+	dprintf("%s\n", ifname);
+	
+	/* WET interface is meaningful only in bridged environment */
+	if (strncmp(ifname, "br", 2) == 0) {
+		foreach(name, nvram_safe_get("lan_ifnames"), next) {
+			char mode[] = "wlXXXXXXXXXX_mode";
+			int unit;
+
+			/* make sure the interface is indeed of wl */
+			if (wl_probe(name))
+				continue;
+			
+			/* get the instance number of the wl i/f */
+			wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
+			snprintf(mode, sizeof(mode), "wl%d_mode", unit);
+
+			/* enable DHCP relay, there should be only one WET i/f */
+			if (nvram_match(mode, "wet")) {
+				uint32 ip;
+				inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
+				if (wl_iovar_setint(name, "wet_host_ipv4", ip))
+					perror("wet_host_ipv4");
+				break;
+			}
+		}
+	}
+	return 0;
+} 
 static int
 wlconf_up (char *name)
 {
@@ -423,6 +456,7 @@ start_lan (void)
 				sleep(5); // waiting for nas
 				//eval("brctl", "addif", lan_ifname, name); //create bridge
 				*/
+	      enable_dhcprelay(lan_ifname);
 	      }
 
 	    if (nvram_match (wl_name, "ap"))

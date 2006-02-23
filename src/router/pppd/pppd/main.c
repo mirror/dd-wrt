@@ -304,7 +304,7 @@ struct protent *protocols[] = {
 #endif /* !defined(PPP_DRV_NAME) */
 
 int
-pppd_main(argc, argv)
+main(argc, argv)
     int argc;
     char *argv[];
 {

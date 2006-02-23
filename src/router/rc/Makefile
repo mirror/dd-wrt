@@ -250,9 +250,9 @@ endif
 ifeq ($(CONFIG_DHCPFORWARD),y)
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dhcp-fwd
 endif
-ifeq ($(CONFIG_PPPD),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox pppd
-endif
+#ifeq ($(CONFIG_PPPD),y)
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox pppd
+#endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dropbearkonvert && ln -sf /bin/busybox dropbearkey && ln -sf /bin/busybox dbclient && ln -sf /bin/busybox dropbear
 	mkdir -p $(INSTALLDIR)/usr/bin
