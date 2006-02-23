@@ -1,39 +1,65 @@
-<fieldset><legend>Chillispot</legend>
-<div class="setting"><div class="label">Chillispot</div>
-<input type="radio" value="1" name="chilli_enable" <% nvram_match("chilli_enable","1","checked"); %> /> Enable
-<input type="radio" value="0" name="chilli_enable" <% nvram_match("chilli_enable","0","checked"); %> /> Disable
-</div>
-<div class="setting"><div class="label">Primary Radius Server IP</div>
-<input class="text" maxLength="100" size="25" name="chilli_radius" value='<% nvram_get("chilli_radius"); %>' /></div>
-<div class="setting"><div class="label">Backup Radius Server IP</div>
-<input class="text" maxLength="100" size="25" name="chilli_backup" value='<% nvram_get("chilli_backup"); %>' /></div>
-<div class="setting"><div class="label">DNS</div>
-<input type="hidden" name="chilli_dns1" value="0.0.0.0" /><input size="3" maxlength="3" class="num" name="chilli_dns1_0" onBlur="valid_range(this,0,255,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","0"); %>' />.<input size="3" maxlength="3" class="num" name="chilli_dns1_1" onBlur="valid_range(this,0,255,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","1"); %>' />.<input size="3" maxlength="3" class="num" name="chilli_dns1_2" onBlur="valid_range(this,0,255,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","2"); %>' />.<input size="3" maxlength="3" class="num" name="chilli_dns1_3" onBlur="valid_range(this,1,254,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","3"); %>' /></div>
-<div class="setting"><div class="label">Redirect URL</div>
-<input class="text" maxLength="100" size="25" name="chilli_url" value='<% nvram_get("chilli_url"); %>' /></div>
-<div class="setting"><div class="label">Shared Key</div>
-<input class="text" maxLength="100" size="25" name="chilli_pass" value='<% nvram_get("chilli_pass"); %>' /></div>
-<div class="setting"><div class="label">DHCP Interface</div>
-<select name="chilli_interface">
-<option value="wan" <% nvram_match("chilli_interface","wan","selected"); %>>WAN</option>
-<option value="lan" <% nvram_match("chilli_interface","lan","selected"); %>>LAN</option>
-<option value="lanwan" <% nvram_match("chilli_interface","lanwan","selected"); %>>LAN+WLAN</option>
-</select></div>
-<div class="setting"><div class="label">Radius NAS ID</div>
-<input class="text" maxLength="100" size="25" name="chilli_radiusnasid" value='<% nvram_get("chilli_radiusnasid"); %>' /></div>
-<div class="setting"><div class="label">UAM Secret</div>
-<input class="text" maxLength="100" size="25" name="chilli_uamsecret" value='<% nvram_get("chilli_uamsecret"); %>' /></div>
-<div class="setting"><div class="label">UAM Any DNS</div>
-<input class="text" maxLength="100" size="25" name="chilli_uamanydns" value='<% nvram_get("chilli_uamanydns"); %>' /></div>
-<div class="setting"><div class="label">UAM Allowed</div>
-<input class="text" maxLength="100" size="25" name="chilli_uamallowed" value='<% nvram_get("chilli_uamallowed"); %>' /></div>
-<div class="setting"><div class="label">Macauth</div>
-<input class="text" maxLength="100" size="25" name="chilli_macauth" value='<% nvram_get("chilli_macauth"); %>' /></div>
-<div class="setting"><div class="label">Additional Chillispot Options</div>
-<textarea id="chilli_additional" name="chilli_additional" cols="40" rows="2"></textarea>
-            <script language="javascript">
+<fieldset>
+	<legend>Chillispot</legend>
+	<div class="setting">
+		<div class="label">Chillispot</div>
+		<input type="radio" value="1" name="chilli_enable" <% nvram_match("chilli_enable","1","checked"); %> />Enable
+		<input type="radio" value="0" name="chilli_enable" <% nvram_match("chilli_enable","0","checked"); %> />Disable
+	</div>
+	<div class="setting">
+		<div class="label">Primary Radius Server IP</div>
+		<input class="text" maxLength="100" size="25" name="chilli_radius" value='<% nvram_get("chilli_radius"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">Backup Radius Server IP</div>
+		<input class="text" maxLength="100" size="25" name="chilli_backup" value='<% nvram_get("chilli_backup"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">DNS</div>
+		<input type="hidden" name="chilli_dns1" value="0.0.0.0"/>
+		<input size="3" maxlength="3" class="num" name="chilli_dns1_0" onBlur="valid_range(this,0,255,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","0"); %>' />.<input size="3" maxlength="3" class="num" name="chilli_dns1_1" onBlur="valid_range(this,0,255,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","1"); %>' />.<input size="3" maxlength="3" class="num" name="chilli_dns1_2" onBlur="valid_range(this,0,255,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","2"); %>' />.<input size="3" maxlength="3" class="num" name="chilli_dns1_3" onBlur="valid_range(this,1,254,'SMTP1 IP')" value='<% get_single_ip("chilli_dns1","3"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">Redirect URL</div>
+		<input class="text" maxLength="100" size="25" name="chilli_url" value='<% nvram_get("chilli_url"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">Shared Key</div>
+		<input class="text" maxLength="100" size="25" name="chilli_pass" value='<% nvram_get("chilli_pass"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">DHCP Interface</div>
+		<select name="chilli_interface">
+			<option value="wan" <% nvram_match("chilli_interface","wan","selected"); %>>WAN</option>
+			<option value="lan" <% nvram_match("chilli_interface","lan","selected"); %>>LAN</option>
+			<option value="lanwan" <% nvram_match("chilli_interface","lanwan","selected"); %>>LAN+WLAN</option>
+		</select>
+	</div>
+	<div class="setting">
+		<div class="label">Radius NAS ID</div>
+		<input class="text" maxLength="100" size="25" name="chilli_radiusnasid" value='<% nvram_get("chilli_radiusnasid"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">UAM Secret</div>
+		<input class="text" maxLength="100" size="25" name="chilli_uamsecret" value='<% nvram_get("chilli_uamsecret"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">UAM Any DNS</div>
+		<input class="text" maxLength="100" size="25" name="chilli_uamanydns" value='<% nvram_get("chilli_uamanydns"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">UAM Allowed</div>
+		<input class="text" maxLength="100" size="25" name="chilli_uamallowed" value='<% nvram_get("chilli_uamallowed"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">Macauth</div>
+		<input class="text" maxLength="100" size="25" name="chilli_macauth" value='<% nvram_get("chilli_macauth"); %>' />
+	</div>
+	<div class="setting">
+		<div class="label">Additional Chillispot Options</div>
+		<textarea id="chilli_additional" name="chilli_additional" cols="60" rows="4"></textarea>
+        <script language="javascript">
 		var chilli_additional = fix_cr( '<% nvram_get("chilli_additional"); %>' );
 		document.getElementById("chilli_additional").value = chilli_additional;
-              </script>
-
-</div></fieldset>
+        </script>
+    </div>
+</fieldset><br/>
