@@ -1,23 +1,22 @@
 <fieldset>
 	<legend>IPv6 Support</legend>
-	<span class="comment">IPV6 Configuration</span>
-		<div class="setting">
+	<div class="setting">
 		<div class="label">IPv6 enabled</div>
-		<input type="radio" value="1" name="ipv6_enable0" <% nvram_match("ipv6_enable0","1","checked"); %> /> Enable
-		<input type="radio" value="0" name="ipv6_enable0" <% nvram_match("ipv6_enable0","0","checked"); %> /> Disable
-		</div>
-	<% nvram_match("ipv6_enable0","0","<!--"); %><div class="setting">
-		<div class="label">Radvd enabled</div>
-		<input type="radio" value="1" name="radvd_enable" <% nvram_match("radvd_enable","1","checked"); %> /> Enable
-		<input type="radio" value="0" name="radvd_enable" <% nvram_match("radvd_enable","0","checked"); %> /> Disable
+		<input type="radio" value="1" name="ipv6_enable0" <% nvram_match("ipv6_enable0","1","checked"); %> />Enable
+		<input type="radio" value="0" name="ipv6_enable0" <% nvram_match("ipv6_enable0","0","checked"); %> />Disable
 	</div>
-	
+	<% nvram_match("ipv6_enable0","0","<!--"); %><div class="setting">
+	<div class="label">Radvd enabled</div>
+		<input type="radio" value="1" name="radvd_enable" <% nvram_match("radvd_enable","1","checked"); %> />Enable
+		<input type="radio" value="0" name="radvd_enable" <% nvram_match("radvd_enable","0","checked"); %> />Disable
+	</div>
 	<div class="setting">
 		<div class="label">Radvd config</div>
-		<textarea id="radvd_conf" name="radvd_conf" cols="40" rows="4"></textarea>
-				<script language="javascript">
-						var radvd_conf = fix_cr( '<% nvram_get("radvd_conf"); %>' );
-						document.getElementById("radvd_conf").value = radvd_conf;
-				</script>
+		<textarea id="radvd_conf" name="radvd_conf" cols="60" rows="4"></textarea>
+		<script language="javascript">
+			var radvd_conf = fix_cr( '<% nvram_get("radvd_conf"); %>' );
+			document.getElementById("radvd_conf").value = radvd_conf;
+		</script>
 	</div>
-<% nvram_match("ipv6_enable0","0","-->"); %></fieldset><br/>
+	<% nvram_match("ipv6_enable0","0","-->"); %>
+</fieldset><br/>
