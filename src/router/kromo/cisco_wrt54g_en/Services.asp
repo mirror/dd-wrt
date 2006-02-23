@@ -103,7 +103,7 @@ function to_submit(F) {
 				</div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <% get_firmware_version(); %></div>
-					<div class="info">Time: <% get_uptime(); %></div>a
+					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
 				</div>
 				<div id="helpContainer">
