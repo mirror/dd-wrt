@@ -96,7 +96,10 @@ function to_submit(F) {
                            </tr>
     
                      </table>
-                     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick=to_submit(this.form) /><input type="reset" value="Cancel Changes" /></div>
+                     <br/>
+                     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
+                     <input type="reset" value="Cancel Changes"/>
+                     </div>
                   </form>
                </div>
             </div>
