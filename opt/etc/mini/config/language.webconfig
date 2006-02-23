@@ -1,6 +1,5 @@
 <fieldset>
 <legend>Language Selection</legend>
-<span class="comment">Language Configuration</span><div class="setting">
 	<div class="label">Language</div>
 	<select name="language">
 	<option value="bulgarian" <% nvram_match("language","bulgarian","selected"); %>>Bulgarian</option>
