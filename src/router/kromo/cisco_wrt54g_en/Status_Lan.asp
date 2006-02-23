@@ -69,14 +69,16 @@ function exit() {
                         <div class="label">Start IP Address</div><% prefix_ip_get("lan_ipaddr",1); %><% nvram_get("dhcp_start"); %>
                      </div>
                      <div class="setting">
-                        <div class="label">End IP Address</div><script language="javascript">
+                        <div class="label">End IP Address</div>
+                        <script language="javascript">
 	var prefix = "<% prefix_ip_get("lan_ipaddr",1); %>";
 	var start = <% nvram_get("dhcp_start"); %>;
 	var num = <% nvram_get("dhcp_num"); %>;
 	document.write(prefix);
 	document.write(start+num-1);
-</script></div>
-                  </div><br /><form>
+</script>
+</div>
+                  </div><br/><br/><form>
                      <div class="setting"><input id="button1" onclick="ViewDHCP()" type="button" value="DHCP Clients Table" name="dhcp_table" /></div>
                   </form>
                   <form>
