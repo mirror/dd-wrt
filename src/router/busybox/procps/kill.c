@@ -132,8 +132,8 @@ do_it_now:
 			pidList = find_pid_by_name(*argv);
 			if (!pidList || *pidList<=0) {
 				errors++;
-				if (quiet==0)
-					bb_error_msg( "%s: no process killed", *argv);
+				//if (quiet==0)
+				//	bb_error_msg( "%s: no process killed", *argv);
 			} else {
 				long *pl;
 

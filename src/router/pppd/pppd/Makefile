@@ -208,8 +208,8 @@ install: pppd
 	$(INSTALL) -c -m 444 pppd.8 $(MANDIR)
 
 pppd: $(PPPDOBJS)
-#	$(CC) $(CFLAGS) $(LDFLAGS) -o pppd $(PPPDOBJS) $(LIBS)
-	$(AR) arc -o pppd.a $(PPPDOBJS)
+	$(CC) $(CFLAGS) $(LDFLAGS) -o pppd $(PPPDOBJS) $(LIBS)
+#	$(AR) arc -o pppd.a $(PPPDOBJS)
 
 srp-entry:	srp-entry.c
 	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ srp-entry.c $(LIBS)
