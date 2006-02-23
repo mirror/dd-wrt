@@ -3327,7 +3327,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  ret +=
 	    websWrite (wp,
-		       "              <TR height=20><TD>&nbsp;</TD></TR>\n");
+		       "              <TR height=10><TD>&nbsp;</TD></TR>\n");
 	}
     }
 
@@ -3346,7 +3346,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, ">LAN</option></select></TD>\n");
   ret += websWrite (wp, "              </TR>\n");
 
-  ret += websWrite (wp, "              <TR height=20><TD>&nbsp;</TD></TR>\n");
+  ret += websWrite (wp, "              <TR height=10><TD>&nbsp;</TD></TR>\n");
 
   ret += websWrite (wp, "              <TR>\n");
   ret +=
@@ -3364,7 +3364,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
     ret += websWrite (wp, " selected");
 
   ret += websWrite (wp, ">Trunk</option></select></TD>\n");
-  ret += websWrite (wp, "              </TR>");
+  ret += websWrite (wp, "              </TR><br/>");
 
   return ret;
 }
