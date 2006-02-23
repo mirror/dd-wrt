@@ -7,18 +7,18 @@
 	</div>
 	<div class="setting">
 		<div class="label">Share</div>
-		<input maxLength="100" size="25" name="samba_share" value='<% nvram_get("samba_share"); %>' />
+		<input maxLength="100" size="35" name="samba_share" value='<% nvram_get("samba_share"); %>' />
 	</div>
 	<div class="setting">
 		<div class="label">User</div>
-		<input maxLength="100" size="25" name="samba_user" value='<% nvram_get("samba_user"); %>' />
+		<input maxLength="100" size="35" name="samba_user" value='<% nvram_get("samba_user"); %>' />
 	</div>
 	<div class="setting">
 		<div class="label">Password</div>
-		<input maxLength="100" size="25" name="samba_password" value='<% nvram_get("samba_password"); %>' />
+		<input maxLength="100" size="35" name="samba_password" value='<% nvram_get("samba_password"); %>' />
 	</div>
 	<div class="setting">
 		<div class="label">Startscript</div>
-		<input maxLength="100" size="25" name="samba_script" value='<% nvram_get("samba_script"); %>' />
+		<input maxLength="100" size="35" name="samba_script" value='<% nvram_get("samba_script"); %>' />
 	</div>
 </fieldset><br/>
