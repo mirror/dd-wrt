@@ -220,7 +220,8 @@ function init(){
 		  <input type="hidden" name="filter_mac_value" />
 		  <h2>Wireless Security</h2>
 		 <% show_security(); %>
-                <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick=to_submit(this.form) /><input type="reset" value="Cancel Changes" /></div>
+		 <br/>
+                <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/><input type="reset" value="Cancel Changes"/></div>
                   </form>
                </div>
             </div>
