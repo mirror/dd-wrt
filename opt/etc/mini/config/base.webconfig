@@ -141,12 +141,12 @@
 		<div class="label">SecureOn Passwd</div>
 		<input maxlength="63" size="25" name="wol_passwd" value="<% nvram_get("wol_passwd"); %>" /></div>
 	<div class="setting">
-		<div class="label">MAC Addresses</div>
-		( Format: XX:XX:XX:XX:XX:XX )<br />
-		<textarea id="wol_macs" name="wol_macs" cols="40" rows="2">	</textarea><script language="javascript">
-		
-				var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
-				document.getElementById("wol_macs").value = wol_macs;
-			</script></div>
-	<% nvram_invmatch("wol_enable", "1", "-->"); %></fieldset><br />
+		<div class="label">MAC Addresses<br/>( Format: XX:XX:XX:XX:XX:XX )</div>
+		<textarea id="wol_macs" name="wol_macs" cols="60" rows="2"></textarea>
+		<script language="javascript">
+			var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
+			document.getElementById("wol_macs").value = wol_macs;
+		</script>
+	</div>
+	<% nvram_invmatch("wol_enable", "1", "-->"); %></fieldset><br/>
 </div>
