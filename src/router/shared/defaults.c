@@ -1042,7 +1042,7 @@ struct nvram_tuple router_defaults[] = {
   {"rflow_if", "br0", 0},
   {"pppoe_ver", "0", 0},
   {"schedule_enable", "0", 0},
-  {"schedule_time", "1", 0},
+  {"schedule_time", "3600", 0},
   {"schedule_hour_time", "1", 0},
   {"schedule_minutes", "00", 0},
   {"schedule_hours", "00", 0},
