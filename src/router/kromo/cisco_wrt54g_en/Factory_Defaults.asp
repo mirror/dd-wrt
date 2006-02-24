@@ -89,7 +89,10 @@ function to_submit(F) {
 				<div id="statusInfo">
 					<div class="info">Firmware: <% get_firmware_version(); %></div>
 					<div class="info">Time: <% get_uptime(); %></div>
+					<% nvram_match("wan_proto","disabled","<!--"); %>
 					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
+					<% nvram_match("wan_proto","disabled","-->"); %>
+                    <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
