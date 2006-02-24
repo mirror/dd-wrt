@@ -88,7 +88,7 @@ function do_join(F,SSID) {
 		document.write("<td>"+table[i+6]+"</td>");
 		document.write("<td>"+table[i+7]+"</td>");
 		document.write("<td>"+table[i+8]+"</td>");
-		document.write("<td><input type=\"button\" value=\"Join\" onclick=\"do_join(this.form,\""+table[i]+"\")\"/></td>");
+		document.write("<td><input type=\"button\" value=\"Join\" onclick='do_join(this.form,\""+table[i]+"\")'/></td>");		
 		document.write("</tr>");
 		count ++;
 		i = i + 9;
