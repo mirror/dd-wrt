@@ -88,8 +88,12 @@ function replace_list(list,target,replacement) {
                   </fieldset><br /><fieldset>
                      <legend>IP Info</legend>
                      <div class="setting">
-                        <div class="label">WAN IP</div><% nvram_status_get("wan_ipaddr"); %>
-                     </div>
+                        <div class="label">WAN IP</div>
+                        <% nvram_match("wan_proto","disabled","Disabled"); %>
+                        <% nvram_match("wan_proto","disabled","<!--"); %>
+                        <% nvram_status_get("wan_ipaddr"); %>
+                        <% nvram_match("wan_proto","disabled","-->"); %>
+                       </div>
                      <div class="setting">
                         <div class="label">LAN IP</div><% nvram_get("lan_ipaddr"); %>
                      </div>
