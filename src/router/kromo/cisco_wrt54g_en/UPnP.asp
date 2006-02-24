@@ -219,26 +219,25 @@ parseForwards();
 								<input type="button" value="Delete All" onclick="unmap('all')"/>
 								<input type="button" value="Refresh" onclick="window.location.replace('UPnP.asp')"/>
 							</fieldset>
-							<br/>
+							<br />
 							<fieldset>
 								<legend>UPnP Configuration</legend>
 								<div class="setting">
 									<div class="label">UPnP Service</div>
-									<input type="radio" name="upnp_enable" value="1" <% nvram_match("upnp_enable","1","checked"); %> />Enable
-									<input type="radio" name="upnp_enable" value="0" <% nvram_match("upnp_enable","0","checked"); %> />Disable
+									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> />Enable
+									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> />Disable
 								</div>
-								<div class="setting">
+								<% nvram_invmatch("upnp_enable", "1", "<!--"); %><div class="setting">
 									<div class="label">Clear port forwards at startup</div>
-									<input type="radio" name="upnpcas" value="1" <% nvram_match("upnpcas","1","checked"); %> />Enable
-									<input type="radio" name="upnpcas" value="0" <% nvram_match("upnpcas","0","checked"); %> />Disable
+									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> />Enable
+									<input type="radio" name="upnpcas" value="0" <% nvram_selmatch("upnpcas","0","checked"); %> />Disable
 								</div>
 								<div class="setting">
 									<div class="label">Send presentation URL</div>
-									<input type="radio" name="upnpmnp" value="1" <% nvram_match("upnpmnp","1","checked"); %> />Enable
-									<input type="radio" name="upnpmnp" value="0" <% nvram_match("upnpmnp","0","checked"); %> />Disable
+									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> />Enable
+									<input type="radio" name="upnpmnp" value="0" <% nvram_selmatch("upnpmnp","0","checked"); %> />Disable
 								</div>
-							</fieldset>
-							<br />
+							<% nvram_invmatch("upnp_enable", "1", "-->"); %></fieldset><br />
 							<div class="submitFooter">
 								<input type="button" name="save_button"  value="Save Settings" onclick="to_submit(this.form)"/>
 								<input type="reset" value="Cancel Changes" />
