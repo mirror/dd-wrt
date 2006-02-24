@@ -2305,7 +2305,7 @@ int dhcp_receive_arp(struct dhcp_t *this,
     return 0; /* Only reply if he was allocated an address */
   }
   
-  if (!memcmp(&conn->hisip.s_addr, pack->arp.tpa, 4)) {
+  if (memcmp(&conn->ourip.s_addr, pack->arp.tpa, 4)) {
     if (this->debug) printf("Did not ask for router address: %.8x - %.2x%.2x%.2x%.2x\n", conn->ourip.s_addr, 
 			    pack->arp.tpa[0],
 			    pack->arp.tpa[1],
