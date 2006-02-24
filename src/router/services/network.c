@@ -131,7 +131,7 @@ start_dhcpc (char *wan_ifname)
     }
 
 }
-
+#ifdef HAVE_MSSID
 /* Enable WET DHCP relay for ethernet clients */
 static int
 enable_dhcprelay(char *ifname)
@@ -166,6 +166,7 @@ enable_dhcprelay(char *ifname)
 	}
 	return 0;
 } 
+#endif
 static int
 wlconf_up (char *name)
 {
@@ -456,7 +457,9 @@ start_lan (void)
 				sleep(5); // waiting for nas
 				//eval("brctl", "addif", lan_ifname, name); //create bridge
 				*/
+#ifdef HAVE_MSSID
 	      enable_dhcprelay(lan_ifname);
+#endif
 	      }
 
 	    if (nvram_match (wl_name, "ap"))
