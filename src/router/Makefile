@@ -978,7 +978,7 @@ pppd-clean pppd-distclean: pppd-symlinks
 	$(MAKE) -C pppd/pppd clean
 
 pppd-install:
-#	install -D pppd/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
+	install -D pppd/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
 ifeq ($(CONFIG_PPPSTATS),y)
 	install -D pppd/pppstats/pppstats $(INSTALLDIR)/pppd/usr/sbin/pppstats
 else
