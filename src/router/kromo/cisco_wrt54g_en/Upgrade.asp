@@ -106,6 +106,7 @@ function upgrade(F){
                <div id="contents">
                   <form name="firmware" method="post" action="upgrade.cgi" encType="multipart/form-data"><input type="hidden" name="submit_button" /><input type="hidden" name="action" /><input type="hidden" name="change_action" /><h2>Firmware Upgrade</h2>
                      <div>Reset after flashing to:
+                      <br/>
                         <div class="setting"><input type="radio" value="0" name="erase" checked/> No reset
                         </div>
                         <div class="setting"><input type="radio" value="1" name="erase" /> Firmware Defaults
