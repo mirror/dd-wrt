@@ -9,6 +9,7 @@
  * 
  */
 
+
 #include <syslog.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -21,6 +22,7 @@
 #include <net/if.h>
 #include <errno.h>
 #include <sys/types.h>
+#include <sys/sysinfo.h>
 
 #if defined(__linux__)
 #include <asm/types.h>
@@ -3471,7 +3473,9 @@ int main(int argc, char **argv)
   struct itimerval itval;
 
    /* Set startup time */
-  lastboot=time(0);
+  struct sysinfo info;
+  sysinfo(&info);
+  lastboot=info.uptime;
  
 /* open a connection to the syslog daemon */
   /*openlog(PACKAGE, LOG_PID, LOG_DAEMON);*/

@@ -27,6 +27,7 @@
 
 #include <time.h>
 #include <sys/time.h>
+#include <sys/sysinfo.h>
 
 #include <signal.h>
 
@@ -435,7 +436,10 @@ static int redir_reply(struct redir_t *redir, int fd, int res,
 		    mid2, sizeof(mid2));
     redir_stradd(buffer, sizeof(buffer), "&redirurl=%s", mid2);
   }
-  if (time(0)-lastboot < 300) {
+  struct sysinfo info;
+  sysinfo(&info);
+
+  if (info.uptime-lastboot < 300) {
     redir_stradd(buffer, sizeof(buffer), "&preregister=%s", "true");
   }
 
