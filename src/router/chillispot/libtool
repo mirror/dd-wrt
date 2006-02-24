@@ -30,10 +30,10 @@
 # the same distribution terms that you use for the rest of that program.
 
 # A sed program that does not truncate output.
-SED="/home/backup/mikrotik/toolchain/bin//sed"
+SED="/home/openwrt/workspace/mikrotik/toolchain/bin//sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
-Xsed="/home/backup/mikrotik/toolchain/bin//sed -e 1s/^X//"
+Xsed="/home/openwrt/workspace/mikrotik/toolchain/bin//sed -e 1s/^X//"
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
@@ -94,7 +94,7 @@ with_gcc=yes
 EGREP="grep -E"
 
 # The linker used to build libraries.
-LD="/home/backup/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld"
+LD="/home/openwrt/workspace/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld"
 
 # Whether we need hard or soft links.
 LN_S="ln -s"
@@ -319,7 +319,7 @@ variables_saved_for_relink="PATH  LD_RUN_PATH GCC_EXEC_PREFIX COMPILER_PATH LIBR
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=" /home/backup/mikrotik/toolchain/bin/../lib/gcc-lib/mipsel-linux-uclibc/3.3.6/ /home/backup/mikrotik/toolchain/bin/../lib/gcc-lib/ /home/backup/whiterussian_rc2/openwrt/staging_dir_mipsel/lib/gcc-lib/mipsel-linux-uclibc/3.3.6/ /usr/lib/gcc/mipsel-linux-uclibc/3.3.6/ /home/backup/mikrotik/toolchain/bin/../lib/gcc-lib/mipsel-linux-uclibc/3.3.6/../../../../mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.3.6/ /home/backup/mikrotik/toolchain/bin/../lib/gcc-lib/mipsel-linux-uclibc/3.3.6/../../../../mipsel-linux-uclibc/lib/ /home/backup/whiterussian_rc2/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.3.6/ /home/backup/whiterussian_rc2/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/"
+sys_lib_search_path_spec=" /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/ /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/ /home/backup/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.5/ /usr/lib/gcc/mipsel-linux-uclibc/3.4.5/ /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.4.5/ /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/lib/ /home/backup/whiterussian/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.4.5/ /home/backup/whiterussian/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/"
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec="/lib /usr/lib"
@@ -6821,7 +6821,7 @@ with_gcc=yes
 EGREP="grep -E"
 
 # The linker used to build libraries.
-LD="/home/backup/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld"
+LD="/home/openwrt/workspace/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld"
 
 # Whether we need hard or soft links.
 LN_S="ln -s"

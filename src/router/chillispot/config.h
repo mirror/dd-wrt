@@ -27,7 +27,7 @@
 
 /* Define to 1 if your system has a GNU libc compatible `malloc' function, and
    to 0 otherwise. */
-#define HAVE_MALLOC 0
+#define HAVE_MALLOC 1
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -147,7 +147,6 @@
 /* #undef const */
 
 /* Define to rpl_malloc if the replacement function should be used. */
-#define malloc rpl_malloc
 
 /* Define to `int' if <sys/types.h> does not define. */
 /* #undef mode_t */
