@@ -52,11 +52,10 @@
 							<h2>Backup Configuration</h2>
 							<input onclick="window.location.href='/nvrambak.bin'" type="button" value="Backup" name="B1"/><hr width="90%"/>
 							<h2>Restore Configuration</h2>
-							Please select a file to restore: <input type="file" name="file" size="20"/>
+							Please select a file to restore:&nbsp;&nbsp;<input type="file" name="file" size="30"/>
 							<br/><input type="submit" value=" Restore "/>
 							<hr width="90%"/>
-							<div class="warning">
-								<em>Warning:</em> Only upload files backed up using
+							<div class="warning"><em>Warning:</em> Only upload files backed up using
 								<br/>this firmware and from the same model of router.
 								<br/>Do not upload any files that weren't created by this interface!
 							</div>
