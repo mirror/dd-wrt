@@ -399,7 +399,7 @@ main_loop (void)
 	  cprintf ("start modules\n");
 	  start_service ("modules");
 #ifdef HAVE_CHILLI
-	  start_service ("chilli");
+ 	  start_service ("chilli");
 #endif
 	  cprintf ("start syslog\n");
 	  startstop ("syslog");

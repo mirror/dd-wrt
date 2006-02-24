@@ -2095,6 +2095,7 @@ start_chilli (void)
   if (i > 0)
     fprintf (fp, "radiusnasid %s\n", hyp);
   nvram_set ("chilli_radiusnasid", hyp);
+  fprintf(fp,"interval 300\n");
 #else
   if (nvram_invmatch ("chilli_radiusnasid", ""))
     fprintf (fp, "radiusnasid %s\n", nvram_get ("chilli_radiusnasid"));
@@ -2130,7 +2131,14 @@ start_chilli (void)
     }
   fflush (fp);
   fclose (fp);
-
+/*  if (nvram_match ("ntp_enable", "1"))
+  {
+  if (time(0)<1000)
+    {
+    sleep(10); // wait for ntp connectivity
+    }
+  }
+*/    
   ret = eval ("/usr/sbin/chilli", "-c", "/tmp/chilli.conf");
 
   cprintf ("done\n");

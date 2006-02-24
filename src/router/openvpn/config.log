@@ -29,7 +29,6 @@ hostinfo               = unknown
 
 PATH: /home/openwrt/workspace/DD-WRT/tools
 PATH: /home/backup/mikrotik/toolchain/bin
-PATH: /home/backup/mikrotik/toolchain/bin/
 PATH: /usr/local/sbin
 PATH: /usr/local/bin
 PATH: /usr/sbin
@@ -2733,9 +2732,9 @@ configure:7855: $? = 0
 configure:7867: result: yes
 configure:7779: checking for chsize
 configure:7836: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c  >&5
-/tmp/ccTnwC1x.o: In function `main':
+/tmp/ccPgg0FP.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `chsize'
-/tmp/ccTnwC1x.o:(.data.rel+0x0): undefined reference to `chsize'
+/tmp/ccPgg0FP.o:(.data.rel+0x0): undefined reference to `chsize'
 collect2: ld returned 1 exit status
 configure:7842: $? = 1
 configure: failed program was:
@@ -3747,9 +3746,9 @@ configure:10147: checking for openssl/engine.h
 configure:10154: result: no
 configure:10171: checking for ENGINE_load_builtin_engines
 configure:10228: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccq5Cu0z.o: In function `main':
+/tmp/ccyO8mkg.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_load_builtin_engines'
-/tmp/ccq5Cu0z.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
+/tmp/ccyO8mkg.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
 collect2: ld returned 1 exit status
 configure:10234: $? = 1
 configure: failed program was:
@@ -3932,9 +3931,9 @@ configure: failed program was:
 configure:10259: result: no
 configure:10273: checking for ENGINE_register_all_complete
 configure:10330: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccEUnCxR.o: In function `main':
+/tmp/cch1nOpl.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_register_all_complete'
-/tmp/ccEUnCxR.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
+/tmp/cch1nOpl.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
 collect2: ld returned 1 exit status
 configure:10336: $? = 1
 configure: failed program was:
@@ -4117,9 +4116,9 @@ configure: failed program was:
 configure:10361: result: no
 configure:10375: checking for ENGINE_cleanup
 configure:10432: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/cce3Uuv5.o: In function `main':
+/tmp/ccDGHlov.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_cleanup'
-/tmp/cce3Uuv5.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
+/tmp/ccDGHlov.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
 collect2: ld returned 1 exit status
 configure:10438: $? = 1
 configure: failed program was:

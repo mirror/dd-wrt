@@ -10,7 +10,7 @@ cp .config_fon .config
 
 #copy config.normal .config
 cd ..
-make clean
+#make clean
 rm -rf ./router/mipsel-uclibc/install
 make
 cd ../opt
