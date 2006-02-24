@@ -689,8 +689,9 @@
 
 "# SAUVEGARDE #" = ""
 "value=\"Backup\"" = "value=\"Sauvegarder\""
+">Backup Configuration<" = ">sauvegarder les paramètres<"
 "Restore Configuration" = "Restaurer les paramètres d'une précédente sauvegarde"
-"Please select a file to restore:" = "Sélectionnez SVP le fichier à restaurer"
+"Please select a file to restore:" = "Sélectionnez SVP le fichier à restaurer :"
 "value=\" Restore \"" = "value=\" Restaurer \""
 "><em>Warning:</em> Only upload files backed up using<" = "><em>Attention :</em> ne restaurer uniquement un fichier de sauvegarde correspondant à ce Firmware<"
 "this firmware and from the same model of router." = "et provenant du même modèle de routeur."
@@ -746,7 +747,7 @@
 "value=\"Survey\"" = "value=\"Points d'accès disponibles\""
 "This is the Router's MAC Address, as seen on your local, wireless network." = "Adresse MAC du routeur sur le réseau sans fil local."
 "As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network." = "Comme défini dans l'onglet <em>Sans Fil</em>, ceci informe sur le mode sans fil du réseau (Mixte, B Uniquement, G Uniquement, ou Désactivé)."
-
+"Successfully joined the network as a client." = "Le router est maintenant connecté au nouveau réseau sans fil."
 
 
 "## MESSAGES succès/erreur ##" = ""
