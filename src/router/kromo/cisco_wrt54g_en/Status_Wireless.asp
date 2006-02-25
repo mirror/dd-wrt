@@ -7,7 +7,10 @@
       <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
       <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
       <title><% nvram_get("router_name"); %> - Status</title>
-      <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
+      <link type="text/css" rel="stylesheet" href="style.css" />
+      <script type="text/JavaScript" src="common.js">{}</script>
+      <script language="JavaScript">
+        
 function ViewDHCP() {
 	self.open('DHCPTable.asp', 'DHCP', 'alwaysRaised,resizable,scrollbars,width=560,height=400');
 }
@@ -21,7 +24,9 @@ function popup_survey() {
 	popup = window.open("Site_Survey.asp", 'survey', 'resizable=yes, scrollbars=yes, width=' + w + ', height=' + h + ',top=' + t + ',left=' + l);
 	popup.focus();
 }
-</script></head>
+      </script>
+   </head>
+   
    <body class="gui"> <% showad(); %>
       <div id="wrapper">
          <div id="content">
@@ -100,7 +105,7 @@ function popup_survey() {
                      </div>
 
 		    <% active_wireless(0); %><% active_wds(0); %>
-                  </div><br /><form><input onclick="popup_survey()" type="button" value="Survey" /></form>
+                  </div><br/><form><input onclick="popup_survey()" type="button" value="Survey" /></form><br/>
                   <form>
                      <div class="submitFooter"><input onclick="window.location.replace('Status_Wireless.asp')" type="button" value="Refresh" /></div>
                   </form>
