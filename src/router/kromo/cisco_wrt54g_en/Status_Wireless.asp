@@ -82,10 +82,20 @@ function popup_survey() {
                      <div class="setting">
                         <div class="label">Rate</div><% get_currate(); %> Mbps
                      </div>
-		     <div class="setting">
-                        <div class="label">Encryption</div><% nvram_match("security_mode", "disabled", "Disabled"); %><% nvram_invmatch("security_mode", "disabled", "Enabled"); %>
+		     		 <div class="setting">
+                        <div class="label">Encryption</div>
+							<% nvram_match("security_mode", "disabled", "Disabled"); %>
+							<% nvram_invmatch("security_mode", "disabled", "Enabled, "); %>
+							<% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %>
+							<% nvram_match("security_mode", "wpa", "WPA RADIUS"); %>
+							<% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %>
+							<% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %>
+							<% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %>
+							<% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %>
+							<% nvram_match("security_mode", "radius", "RADIUS"); %>
+							<% nvram_match("security_mode", "wep", "WEP"); %>     
                      </div>
-		    <div class="setting">
+		    		 <div class="setting">
                         <div class="label">PPTP Status</div><% nvram_match("pptpd_connected","0","Disconnected"); %> <% nvram_match("pptpd_connected","1","Connected"); %>
                      </div>
 
