@@ -30,16 +30,13 @@ function do_join(F,SSID) {
 	
 	<body onload="window.focus();">
 		<form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
-		<input type="hidden" name="submit_button"/>
-		<input type="hidden" name="commit" value="1"/>
-		<input type="hidden" name="action" value="Apply"/>
-		<input type="hidden" name="wl_ssid"/>
-		<input type="hidden" name="wl_mode"/>
-         <table class="center table">
-				<tr>
-					<th colspan="8"><h2>Neighbor's Wireless Networks</h2></th>
-					<th align="right"><input type="button" value=" Refresh " onclick="window.location.reload()"/></th>
-				</tr>
+			<input type="hidden" name="submit_button"/>
+			<input type="hidden" name="commit" value="1"/>
+			<input type="hidden" name="action" value="Apply"/>
+			<input type="hidden" name="wl_ssid"/>
+			<input type="hidden" name="wl_mode"/>
+			<h2>Neighbor's Wireless Networks</h2>
+        	<table class="center table">
 				<tr>
 				   <th width="31%">SSID</th>
 				   <th width="20%">MAC</th>
@@ -80,22 +77,24 @@ function do_join(F,SSID) {
 		}
 		document.write("<tr>");
 		document.write("<td>"+table[i]+"</td>");
-		document.write("<td>"+table[i+1]+"</td>");
-		document.write("<td>"+table[i+2]+"</td>");
-		document.write("<td>"+table[i+3]+"</td>");
-		document.write("<td>"+table[i+4]+"</td>");
-		document.write("<td>"+table[i+5]+"</td>");
-		document.write("<td>"+table[i+6]+"</td>");
-		document.write("<td>"+table[i+7]+"</td>");
-		document.write("<td>"+table[i+8]+"</td>");
-		document.write("<td><input type=\"button\" value=\"Join\" onclick='do_join(this.form,\""+table[i]+"\")'/></td>");		
+		document.write("<td align=\"center\">"+table[i+1]+"</td>");
+		document.write("<td align=\"center\">"+table[i+2]+"</td>");
+		document.write("<td align=\"center\">"+table[i+3]+"</td>");
+		document.write("<td align=\"center\">"+table[i+4]+"</td>");
+		document.write("<td align=\"center\">"+table[i+5]+"</td>");
+		document.write("<td align=\"center\">"+table[i+6]+"</td>");
+		document.write("<td align=\"center\">"+table[i+7]+"</td>");
+		document.write("<td align=\"center\">"+table[i+8]+"</td>");
+		document.write("<td align=\"center\"><input type=\"button\" value=\"Join\" onclick='do_join(this.form,\""+table[i]+"\")'/></td>");		
 		document.write("</tr>");
 		count ++;
 		i = i + 9;
 	}
 	</script>
 				<tr>
-					<td colspan="9" align="center"><input type="reset" value="Close" onclick="self.close()"/></td>
+					<td colspan="6">&nbsp;</td>
+					<td colspan="3" align="center"><input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/>
+					<input type="reset" value="Close" onclick="self.close()"/></td>
 				</tr>
 			</table>
 		</form>
