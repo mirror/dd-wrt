@@ -65,6 +65,7 @@ function exit() {
                      <div class="setting">
                         <div class="label">DHCP Server</div><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>
                      </div>
+                     <% nvram_match("lan_proto", "static", "<!--"); %>
                      <div class="setting">
                         <div class="label">Start IP Address</div><% prefix_ip_get("lan_ipaddr",1); %><% nvram_get("dhcp_start"); %>
                      </div>
@@ -81,6 +82,8 @@ function exit() {
                   </div><br/><br/><form>
                      <div class="setting"><input id="button1" onclick="ViewDHCP()" type="button" value="DHCP Clients Table" name="dhcp_table" /></div>
                   </form>
+					<% nvram_match("lan_proto", "static", "-->"); %>
+					<% nvram_match("lan_proto", "static", "</div><br/><br/>"); %>
                   <form>
                      <div class="submitFooter"><input onclick="window.location.replace('Status_Lan.asp')" type="button" value="Refresh" /></div>
                   </form>
