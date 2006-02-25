@@ -66,7 +66,7 @@ function time_enable_disable(F,I){
 }
 
 function ViewSummary() {
-	summary_win = self.open('FilterSummary.asp','FilterSummary','alwaysRaised,resizable,scrollbars,width=700,height=420');
+	summary_win = self.open('FilterSummary.asp','FilterSummary','alwaysRaised,resizable,scrollbars,width=700,height=480');
 	summary_win.focus();
 }
 
