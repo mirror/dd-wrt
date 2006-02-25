@@ -54,11 +54,7 @@ function init() {
 			<table>
 				<tbody>
 					<tr>
-						<td colspan="2">&nbsp;</td>
-						<td colspan="2" align="right"><input onclick="window.location.reload()" type="button" value=" Refresh "/></td>
-					</tr>
-					<tr>
-						<td>Active PC</td>
+						<td><strong>Active PC</strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
@@ -69,7 +65,10 @@ function init() {
 					</tr>
 					<% wireless_active_table("online"); %>
 					<tr>
-						<td>Inactive PC</td>
+						<td colspan="4">&nbsp;</td>
+					</tr>
+					<tr>
+						<td><strong>Inactive PC</strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
@@ -83,8 +82,8 @@ function init() {
 						<td colspan="4">&nbsp;</td>
 					</tr>
 					<tr>
-						<td colspan="2">&nbsp;</td>
-						<td colspan="2"><input type="button" name="action" value="Update Filter List" onclick="MACAct(this.form)"/>&nbsp;<input onclick="self.close()" type="reset" value="Close"/></td>
+						<td ><input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/></td>
+						<td align="right" colspan="3"><input type="button" name="action" value="Update Filter List" onclick="MACAct(this.form)"/>&nbsp;<input onclick="self.close()" type="reset" value="Close"/></td>
 					</tr>
 				</tbody>
 			</table>
