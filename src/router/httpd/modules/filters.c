@@ -1617,13 +1617,13 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i, ret;
 #if LANGUAGE == JAPANESE
-  char w[7][10] = { "ì˙", "åé", "âŒ", "êÖ", "ñÿ", "ã‡", "ìy" }
+  char w[7][10] = { "ì˙", "åé", "âŒ", "?Ö", "ñÿ", "ã‡", "ìy" }
   char week_d[7][10] =
     { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
     "Saturday"
   };
   char week_s[7][10] =
-    { "ì˙ój", "åéój", "âŒój", "êÖój", "ñÿój", "ã‡ój", "ìyój" }
+    { "ì˙ój", "åéój", "âŒój", "?Öój", "ñÿój", "ã‡ój", "ìyój" }
   char am[] = "åﬂëO";
   char pm[] = "åﬂå„";
   char _24h[] = "24 éûä‘";
@@ -1676,7 +1676,8 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
                   <td width=17 bgcolor=\"%s\" style=\"border-style: solid; border-width: 1\">%s</td>\n\
                   <td width=17 bgcolor=\"%s\" style=\"border-style: solid; border-width: 1\">%s</td>\n\
                 </tr>\n\
-              </table></td>", tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3], tod_data_null == 0 && (day_all == 1 || week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], tod_data_null == 0 && (day_all == 1 || week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5], tod_data_null == 0 && (day_all == 1 || week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
+              </table>\n
+      </td>\n", tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3], tod_data_null == 0 && (day_all == 1 || week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], tod_data_null == 0 && (day_all == 1 || week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5], tod_data_null == 0 && (day_all == 1 || week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
       if (tod_data_null == 0)
 	{
 	  if (time_all == 1)
@@ -1692,7 +1693,7 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 	    }
 	}
       ret = websWrite (wp, " \
-        <td width=150><font face=Arial size=2> %s </font> </td>\n\
+        <td align=\"center\" width=150><font face=Arial size=2> %s </font> </td>\n\
         <td width=70><input type=checkbox name=sum%d value=1 ></td>\n\
       </tr>\n", time_buf, i + 1);
     }
