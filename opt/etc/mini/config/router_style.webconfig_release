@@ -15,4 +15,3 @@
 	<option value="yellow.css" <% nvram_match("router_style","yellow.css","selected"); %>>Yellow</option>
 	</select></div>
 </fieldset><br/>
-

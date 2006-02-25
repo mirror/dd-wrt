@@ -29,5 +29,5 @@
 		<div class="label">Password</div>
 		<input size="27" name="pptpd_client_srvpass" type="password" value="<% nvram_get("pptpd_client_srvpass"); %>" /></div>
 		
-	<% nvram_match("pptpd_client_enable","0","-->"); %></fieldset>	<br />
+	<% nvram_match("pptpd_client_enable","0","-->"); %></fieldset><br/>
 	
