@@ -123,6 +123,9 @@ function ViewDHCP() {
                            <div class="label">Router Name</div><% nvram_get("router_name"); %>
                         </div>
                         <div class="setting">
+                           <div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
+                        </div>
+                        <div class="setting">
                            <div class="label">Host Name</div><% nvram_get("wan_hostname"); %>
                         </div>
                         <div class="setting">
