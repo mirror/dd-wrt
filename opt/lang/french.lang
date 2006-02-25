@@ -707,6 +707,7 @@
 "# ROUTEUR #" = ""
 "Router Information" = "Informations Routeur"
 "Firmware Version" = "Version du Firmware"
+"Router Model" = "Modèle"
 "Current Time" = "Heure courante"
 ">Time<" = ">Heure<"
 "Configuration Type" = "Type de Configuration"
