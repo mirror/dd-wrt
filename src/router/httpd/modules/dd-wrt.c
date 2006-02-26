@@ -2147,6 +2147,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   char line[80];
   char cmd[80];
   char title[20];
+  char title2[20];
   int macmask;
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
@@ -2162,9 +2163,15 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   system (cmd);			// get active wireless mac
 
   if (strcmp (mode, "ap") != 0)
+  	{
     strcpy (title, "AP Signal");
+    strcpy (title2, "AP");
+    }
   else
-    strcpy (title, "Clients");
+  	{
+    strcpy (title, "Wireless AP");
+    strcpy (title2, "Clients");
+    }
 
   if ((fp = fopen (ASSOCLIST_TMP, "r")))
     {
@@ -2222,8 +2229,10 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (!cnt)
 	    {
 	      cnt++;
+	      websWrite (wp, "<h2>%s</h2>\n", title);
+	      websWrite (wp, "<fieldset>\n");
+	      websWrite (wp, "<legend>%s</legend>\n", title2);
 	      websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp, "<h3>%s</h3>\n", title);
 	      websWrite (wp, "<table class=\"table\">\n");
 	      websWrite (wp, "<tr>\n");
 	      websWrite (wp, "<th>MAC</th>\n");
@@ -2249,7 +2258,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
       fclose (fp);
     }
   if (cnt)
-    websWrite (wp, "</table></div>\n");
+    websWrite (wp, "</table></div></fieldset><br/>\n");
 
   unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
@@ -2314,9 +2323,9 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 		{
 		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
 		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-		  snprintf (title, sizeof (title), "WDS Signal (%s):", desc);
+		  snprintf (title, sizeof (title), "WDS Signal (%s) :", desc);
 		  if (!strcmp (nvram_get (wdsvar), ""))
-		    strcpy (title, "WDS Signal:");
+		    strcpy (title, "WDS Signal :");
 		}
 	    }
 
@@ -2348,8 +2357,10 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (!cnt)
 	    {
 	      cnt++;
+	      websWrite (wp, "<h2>WDS</h2>\n");
+	      websWrite (wp, "<fieldset>\n");
+	      websWrite (wp, "<legend>Nodes</legend>\n");
 	      websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp, "<h3>WDS Nodes</h3>\n");
 	      websWrite (wp, "<table class=\"table\">\n");
 	      websWrite (wp, "<tr>\n");
 	      websWrite (wp, "<th>MAC</th>\n");
@@ -2367,7 +2378,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
       fclose (fp);
     }
   if (cnt)
-    websWrite (wp, "</table></div>\n");
+    websWrite (wp, "</table></div></fieldset><br/>\n");
 
   unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
