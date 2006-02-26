@@ -256,6 +256,7 @@ parseForwards();
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
+						<!--
 						<dl>
 							<dt class="term">UPnP Service:</dt>
 							<dd class="definition">Allows applications to automatically setup port forwardings. Click an entry to Delete.</dd>
@@ -264,8 +265,9 @@ parseForwards();
 							<dt class="term">Send presentation URL:</dt>
 							<dd class="definition">If enabled, a presentation url tag is sent with the device description. This allows the router to show up in Windows' My Network Places. When enabling this option you may need to reboot your PC.</dd>
 						</dl>
+						-->
 						<br/>
-						<a target="_blank" href="help/HSetup.asp">More...</a>
+						<a target="_blank" href="help/HUPnP.asp">More...</a>
 					</div>
 				</div>
 			</div>
