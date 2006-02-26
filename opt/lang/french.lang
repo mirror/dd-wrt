@@ -244,6 +244,7 @@
 ">Wireless Network Name (SSID)<" = ">Nom du réseau (SSID)<"
 ">Wireless Channel<" =">Canal<"
 ">Wireless SSID Broadcast<" =">Diffusion du SSID<"
+"#####>Distance (ACK Timing)<" = ">???<"
 ">B-Only</option>" = ">B Uniquement</option>"
 ">G-Only</option>" = ">G Uniquement</option>"
 ">Mixed</option>" = ">Mixte</option>"
@@ -530,7 +531,7 @@
 
 "##  ADMINISTRATION  ##" = ""
 "# GESTION #" = ""
-"Router Password" = "Mot de passe du Routeur"
+">Router Password<" = ">Mot de passe<"
 "Local Router Access" = ""
 "Re-enter to confirm" = "Confirmation du mot de passe"
 "Remote Router Access" = "Gestion du Routeur à distance"
