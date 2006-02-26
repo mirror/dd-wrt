@@ -15,7 +15,7 @@
 	</div>
 	<% nvram_invmatch("enable_jffs2","1","<!--"); %>
 	<div class="setting">
-		<div class="label">use JFFS2 for client lease DB</div>
+		<div class="label">Use JFFS2 for client lease DB</div>
 		<input type="radio" name="dhcpd_usejffs" value="1" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> />Enable
 		<input type="radio" name="dhcpd_usejffs" value="0" <% nvram_selmatch("dhcpd_usejffs", "0", "checked"); %> />Disable
 	</div>
