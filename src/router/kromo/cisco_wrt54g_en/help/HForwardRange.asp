@@ -46,6 +46,7 @@
 			<h4>See also</h4>
 			<ul>
 				<li><a href="HForward.asp">Port Forwarding</a></li>
+				<li><a href="HUpnp.asp">UPnP</a></li>
 				<li><a href="HTrigger.asp">Port Triggering</a></li>
 				<li><a href="HDMZ.asp">DMZ</a></li>
 			</ul>
