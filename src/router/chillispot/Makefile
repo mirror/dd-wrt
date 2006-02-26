@@ -83,7 +83,7 @@ AUTOMAKE = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing
 AWK = mawk
 CC = mipsel-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Os -mtune=mips32 -pipe -mips32 -funit-at-a-time
+CFLAGS = -Os -mtune=mips32 -pipe -mips32 -funit-at-a-time -DHAVE_MALLOC=1 -Drpl_malloc=malloc
 CPP = mipsel-linux-uclibc-gcc -E
 CPPFLAGS = 
 CXX = g++

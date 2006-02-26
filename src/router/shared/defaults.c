@@ -373,6 +373,7 @@ struct nvram_tuple router_defaults[] = {
   {"ppp_get_srv", "", 0},	/* PPPoE Server service name */
 
   /* Wireless parameters */
+  {"wl_distance", "20000", 0},  /* ack timing, distance in meters */
   {"wl_ifname", "", 0},		/* Interface name */
   {"wl_hwaddr", "", 0},		/* MAC address */
   {"wl_phytype", "g", 0},	/* Current wireless band ("a" (5 GHz), "b" (2.4 GHz), or "g" (2.4 GHz)) *//* Modify */
