@@ -106,7 +106,7 @@ s%@SET_MAKE@%%g
 s%@PSPROG@%/bin/ps%g
 s%@PERLPROG@%/usr/bin/perl%g
 s%@WHOAMI@%whoami%g
-s%@SED@%/home/backup/mikrotik/toolchain/bin//sed%g
+s%@SED@%/home/openwrt/workspace/mikrotik/toolchain/bin//sed%g
 s%@AUTOCONF@%:%g
 s%@AUTOHEADER@%:%g
 s%@UNAMEPROG@%/bin/uname%g
@@ -118,7 +118,7 @@ s%@target_alias@%mipsel-unknown-elf%g
 s%@target_cpu@%mipsel%g
 s%@target_vendor@%unknown%g
 s%@target_os@%elf%g
-s%@CCPATH@%/home/backup/mikrotik/toolchain/bin//mipsel-linux-uclibc-gcc%g
+s%@CCPATH@%/home/openwrt/workspace/mikrotik/toolchain/bin//mipsel-linux-uclibc-gcc%g
 s%@EXTRACPPFLAGS@%-x c%g
 s%@SNMPCONFPATH@%/tmp/snmp%g
 s%@transport_hdr_list@%snmpUDPDomain.h snmpCallbackDomain.h %g

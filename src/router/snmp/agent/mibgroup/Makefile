@@ -34,7 +34,7 @@ persistentdir	= /tmp/snmp-persist
 #
 INSTALL		= $(LIBTOOL) --mode=install /usr/bin/install -c
 INSTALL_DATA    = ${INSTALL} -m 644
-SED		= /home/backup/mikrotik/toolchain/bin//sed
+SED		= /home/openwrt/workspace/mikrotik/toolchain/bin//sed
 LN_S		= ln -s
 AUTOCONF	= :
 AUTOHEADER	= :

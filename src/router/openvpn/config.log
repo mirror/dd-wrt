@@ -29,6 +29,7 @@ hostinfo               = unknown
 
 PATH: /home/openwrt/workspace/DD-WRT/tools
 PATH: /home/backup/mikrotik/toolchain/bin
+PATH: /home/openwrt/workspace/mikrotik/toolchain/bin/
 PATH: /usr/local/sbin
 PATH: /usr/local/bin
 PATH: /usr/sbin
@@ -80,7 +81,7 @@ warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 configure:2637: $? = 0
 configure:2639: mipsel-linux-uclibc-gcc -v </dev/null >&5
-Reading specs from /home/backup/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/specs
+Reading specs from /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/specs
 Configured with: /home/backup/whiterussian/openwrt/toolchain_build_mipsel/gcc-3.4.5/configure --prefix=/home/backup/whiterussian/openwrt/staging_dir_mipsel --build=i386-pc-linux-gnu --host=i386-pc-linux-gnu --target=mipsel-linux-uclibc --enable-languages=c,c++ --enable-shared --disable-__cxa_atexit --enable-target-optspace --with-gnu-ld --disable-nls
 Thread model: posix
 gcc version 3.4.5
@@ -2732,9 +2733,9 @@ configure:7855: $? = 0
 configure:7867: result: yes
 configure:7779: checking for chsize
 configure:7836: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c  >&5
-/tmp/ccPgg0FP.o: In function `main':
+/tmp/ccZlu6PL.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `chsize'
-/tmp/ccPgg0FP.o:(.data.rel+0x0): undefined reference to `chsize'
+/tmp/ccZlu6PL.o:(.data.rel+0x0): undefined reference to `chsize'
 collect2: ld returned 1 exit status
 configure:7842: $? = 1
 configure: failed program was:
@@ -3746,9 +3747,9 @@ configure:10147: checking for openssl/engine.h
 configure:10154: result: no
 configure:10171: checking for ENGINE_load_builtin_engines
 configure:10228: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccyO8mkg.o: In function `main':
+/tmp/cctFAY5b.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_load_builtin_engines'
-/tmp/ccyO8mkg.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
+/tmp/cctFAY5b.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
 collect2: ld returned 1 exit status
 configure:10234: $? = 1
 configure: failed program was:
@@ -3931,9 +3932,9 @@ configure: failed program was:
 configure:10259: result: no
 configure:10273: checking for ENGINE_register_all_complete
 configure:10330: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/cch1nOpl.o: In function `main':
+/tmp/cc9CUtsm.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_register_all_complete'
-/tmp/cch1nOpl.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
+/tmp/cc9CUtsm.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
 collect2: ld returned 1 exit status
 configure:10336: $? = 1
 configure: failed program was:
@@ -4116,9 +4117,9 @@ configure: failed program was:
 configure:10361: result: no
 configure:10375: checking for ENGINE_cleanup
 configure:10432: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccDGHlov.o: In function `main':
+/tmp/ccX4VKDy.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_cleanup'
-/tmp/ccDGHlov.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
+/tmp/ccX4VKDy.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
 collect2: ld returned 1 exit status
 configure:10438: $? = 1
 configure: failed program was:

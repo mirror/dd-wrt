@@ -108,7 +108,7 @@ ipup_main (int argc, char **argv)
     nvram_set ("ppp_get_srv", value);
   if ((value = getenv ("MTU")))
     nvram_set ("wan_run_mtu", value);
-  start_wan_done(wan_ifname);
+  start_wan_done (wan_ifname);
 #ifdef HAVE_SER
   cprintf ("starting sipath ip-up script\n");
   eval ("/etc/ppp/ip-up", getenv ("IPREMOTE"), getenv ("IPLOCAL"));
@@ -125,10 +125,10 @@ ipdown_main (int argc, char **argv)
 {
   if (check_action () != ACT_IDLE)
     return -1;
-  stop_ddns();
-  stop_ntp();
-  
- 
+  stop_ddns ();
+  stop_ntp ();
+
+
 
   unlink ("/tmp/ppp/link");
 

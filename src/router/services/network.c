@@ -131,41 +131,45 @@ start_dhcpc (char *wan_ifname)
     }
 
 }
+
 #ifdef HAVE_MSSID
 /* Enable WET DHCP relay for ethernet clients */
 static int
-enable_dhcprelay(char *ifname)
+enable_dhcprelay (char *ifname)
 {
-	char name[80], *next;
+  char name[80], *next;
 
-	dprintf("%s\n", ifname);
-	
-	/* WET interface is meaningful only in bridged environment */
-	if (strncmp(ifname, "br", 2) == 0) {
-		foreach(name, nvram_safe_get("lan_ifnames"), next) {
-			char mode[] = "wlXXXXXXXXXX_mode";
-			int unit;
+  dprintf ("%s\n", ifname);
 
-			/* make sure the interface is indeed of wl */
-			if (wl_probe(name))
-				continue;
-			
-			/* get the instance number of the wl i/f */
-			wl_ioctl(name, WLC_GET_INSTANCE, &unit, sizeof(unit));
-			snprintf(mode, sizeof(mode), "wl%d_mode", unit);
+  /* WET interface is meaningful only in bridged environment */
+  if (strncmp (ifname, "br", 2) == 0)
+    {
+      foreach (name, nvram_safe_get ("lan_ifnames"), next)
+      {
+	char mode[] = "wlXXXXXXXXXX_mode";
+	int unit;
 
-			/* enable DHCP relay, there should be only one WET i/f */
-			if (nvram_match(mode, "wet")) {
-				uint32 ip;
-				inet_aton(nvram_safe_get("lan_ipaddr"), (struct in_addr *)&ip);
-				if (wl_iovar_setint(name, "wet_host_ipv4", ip))
-					perror("wet_host_ipv4");
-				break;
-			}
-		}
-	}
-	return 0;
-} 
+	/* make sure the interface is indeed of wl */
+	if (wl_probe (name))
+	  continue;
+
+	/* get the instance number of the wl i/f */
+	wl_ioctl (name, WLC_GET_INSTANCE, &unit, sizeof (unit));
+	snprintf (mode, sizeof (mode), "wl%d_mode", unit);
+
+	/* enable DHCP relay, there should be only one WET i/f */
+	if (nvram_match (mode, "wet"))
+	  {
+	    uint32 ip;
+	    inet_aton (nvram_safe_get ("lan_ipaddr"), (struct in_addr *) &ip);
+	    if (wl_iovar_setint (name, "wet_host_ipv4", ip))
+	      perror ("wet_host_ipv4");
+	    break;
+	  }
+      }
+    }
+  return 0;
+}
 #endif
 static int
 wlconf_up (char *name)
@@ -266,6 +270,26 @@ cprintf("is all?\n");
 	}
 	WL_IOCTL(name, WLC_SET_RATESET, &rs, sizeof (wl_rateset_t));
 */
+
+  // Set ACK Timing. Thx to Nbd
+  char *v;
+  if (v = nvram_get ("wl0_distance"))
+    {
+      rw_reg_t reg;
+      uint32 shm;
+
+      val = atoi (v);
+      val = 9 + (val / 300) + ((val % 300) ? 1 : 0);
+
+      shm = 0x10;
+      shm |= (val << 16);
+      WL_IOCTL (name, 197, &shm, sizeof (shm));
+
+      reg.byteoff = 0x684;
+      reg.val = val + 510;
+      reg.size = 2;
+      WL_IOCTL (name, 102, &reg, sizeof (reg));
+    }
 
   return ret;
 
@@ -458,7 +482,7 @@ start_lan (void)
 				//eval("brctl", "addif", lan_ifname, name); //create bridge
 				*/
 #ifdef HAVE_MSSID
-	      enable_dhcprelay(lan_ifname);
+		enable_dhcprelay (lan_ifname);
 #endif
 	      }
 
@@ -716,14 +740,12 @@ start_lan (void)
 
   free (lan_ifnames);
   free (lan_ifname);
-	  eval ("rm", "/tmp/hosts");
-	  addHost ("localhost", "127.0.0.1");
-	  if (strlen (nvram_safe_get ("wan_hostname")) > 0)
-	    addHost (nvram_safe_get ("wan_hostname"),
-		     nvram_safe_get ("lan_ipaddr"));
-	  else if (strlen (nvram_safe_get ("router_name")) > 0)
-	    addHost (nvram_safe_get ("router_name"),
-		     nvram_safe_get ("lan_ipaddr"));
+  eval ("rm", "/tmp/hosts");
+  addHost ("localhost", "127.0.0.1");
+  if (strlen (nvram_safe_get ("wan_hostname")) > 0)
+    addHost (nvram_safe_get ("wan_hostname"), nvram_safe_get ("lan_ipaddr"));
+  else if (strlen (nvram_safe_get ("router_name")) > 0)
+    addHost (nvram_safe_get ("router_name"), nvram_safe_get ("lan_ipaddr"));
 
 }
 
