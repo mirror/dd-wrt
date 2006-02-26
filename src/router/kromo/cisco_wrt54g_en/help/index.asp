@@ -54,7 +54,7 @@
 						<li><a href="HForward.asp">Port Forwarding</a></li>
 						<li><a href="HTrigger.asp">Port Triggering</a></li>
 						<li><a href="HDMZ.asp">DMZ</a></li>
-						<li><a href="HUpnp.asp">UPnP</a></li>
+						<li><a href="HUPnP.asp">UPnP</a></li>
 						<li><a href="HQos.asp">Quality of Service (QoS)</a></li>
 					</ul>
 				</dd>
