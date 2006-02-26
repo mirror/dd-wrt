@@ -47,6 +47,7 @@
 			<ul>
 				<li><a href="HForwardRange.asp">Port Range Forwarding</a></li>
 				<li><a href="HTrigger.asp">Port Triggering</a></li>
+				<li><a href="HUpnp.asp">UPnP</a></li>
 				<li><a href="HDMZ.asp">DMZ</a></li>
 			</ul>
 		</div>
