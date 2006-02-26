@@ -144,6 +144,10 @@ function init() {
                   </div>
                   <% nvram_invmatch("wl_mode", "ap", "-->"); %>
                 <br>
+		 <div class="setting">
+		    <div class="label">Distance (ACK Timing)</div>
+		    <input name="wl_distance" size="8" maxlength="8" value='<% nvram_get("wl_distance"); %>' />
+		 </div>
                 <div class="submitFooter">
                   <input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)">
                   <input type="reset" value="Cancel Changes" />

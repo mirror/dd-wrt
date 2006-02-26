@@ -605,7 +605,7 @@ start_restore_defaults (void)
   nvram_unset ("sputnik_mjid");
   nvram_unset ("sputnik_rereg");
 #endif
-  
+
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
   else if (check_now_boot () == PMON_BOOT)
@@ -1053,20 +1053,26 @@ start_nvram (void)
 	}
     }
 // changed by steve
-	if ((nvram_match("restore_defaults", "1")) || (nvram_match("upnpcas", "1"))) {
-		nvram_set("upnp_clear", "1");
+  if ((nvram_match ("restore_defaults", "1"))
+      || (nvram_match ("upnpcas", "1")))
+    {
+      nvram_set ("upnp_clear", "1");
+    }
+  else
+    {
+      char s[32];
+      char *nv;
+      for (i = 0; i < MAX_NVPARSE; ++i)
+	{
+	  sprintf (s, "forward_port%d", i);
+	  if ((nv = nvram_get (s)) != NULL)
+	    {
+	      if (strstr (nv, "msmsgs"))
+		nvram_unset (s);
+	    }
 	}
-	else {
-		char s[32];
-		char *nv;
-		for (i = 0; i < MAX_NVPARSE; ++i) {
-    		sprintf(s, "forward_port%d", i);
-			if ((nv = nvram_get(s)) != NULL) {
-				if (strstr(nv, "msmsgs")) nvram_unset(s);
-			}
-		}
-	}
-	nvram_set("upnp_wan_proto", "");
+    }
+  nvram_set ("upnp_wan_proto", "");
 
 // changed by steve
 

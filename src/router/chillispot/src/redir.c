@@ -8,6 +8,7 @@
  * substantial portions of the software.
  *
  */
+#include <sys/sysinfo.h>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -27,7 +28,6 @@
 
 #include <time.h>
 #include <sys/time.h>
-#include <sys/sysinfo.h>
 
 #include <signal.h>
 
@@ -436,6 +436,7 @@ static int redir_reply(struct redir_t *redir, int fd, int res,
 		    mid2, sizeof(mid2));
     redir_stradd(buffer, sizeof(buffer), "&redirurl=%s", mid2);
   }
+
   struct sysinfo info;
   sysinfo(&info);
 

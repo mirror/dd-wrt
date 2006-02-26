@@ -518,14 +518,16 @@ parse_upnp_forward ()
     return;
 
 
-	if (nvram_match("upnp_clear", "1")) {	// tofu10
-		nvram_unset("upnp_clear");
-		for (i = 0; i < 50 ; ++i){
-			sprintf(name, "forward_port%d", i);
-			nvram_unset(name);
-		}
-		return;
+  if (nvram_match ("upnp_clear", "1"))
+    {				// tofu10
+      nvram_unset ("upnp_clear");
+      for (i = 0; i < 50; ++i)
+	{
+	  sprintf (name, "forward_port%d", i);
+	  nvram_unset (name);
 	}
+      return;
+    }
 
   /* Set wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc */
   for (i = 0; i < 15; i++)
@@ -615,6 +617,7 @@ parse_upnp_forward ()
 	}
     }
 }
+
 // end changed by steve
 
 
