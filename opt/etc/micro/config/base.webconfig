@@ -1,7 +1,6 @@
 <div>
 	<fieldset>
 	<legend>Router Password</legend>
-	<legend>Local Router Access</legend>
 	<div class="setting">
 		<div class="label">
 			Router Password</div>
@@ -63,16 +62,16 @@
 		<input type="radio" value="0" name="wshaper_enable" <% nvram_match("wshaper_enable","0","checked"); %> />Disable
 		</div>
 	<div class="setting">
-		<div class="label">Â&nbsp;</div>
+		<div class="label">ï¿½nbsp;</div>
 		<input type="radio" value="WAN" name="wshaper_dev" <% nvram_match("wshaper_dev","wan","checked"); %> />WAN
 		<input type="radio" value="LAN" name="wshaper_dev" <% nvram_match("wshaper_dev","lan","checked"); %> />LAN &amp; wLAN
 		</div>
 	<div class="setting">
-		<div class="label">Â&nbsp;</div>
+		<div class="label">ï¿½nbsp;</div>
 		<input type="text" size="16" name="wshaper_uplink" value="<% nvram_get("wshaper_uplink"); %>" />kbps Uplink
 		</div>
 	<div class="setting">
-		<div class="label">Â&nbsp;</div>
+		<div class="label">ï¿½nbsp;</div>
 		<input type="text" size="16" name="wshaper_downlink" value="<% nvram_get("wshaper_downlink"); %>" />kbps Downlink
 		</div>
 	<div class="setting">
