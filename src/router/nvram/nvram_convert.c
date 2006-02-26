@@ -59,6 +59,7 @@ struct nvram_convert nvram_converts[] = {
   {WL ("afterburner"), WL0 ("afterburner"), ""},
   {WL ("hwaddr"), WL0 ("hwaddr"), ""},
   {WL ("ap_isolate"), WL0 ("ap_isolate"), ""},
+  {WL ("distance"), WL0 ("distance"), ""), //ack timing
   // Below change from 3.63.13.1
   {WL ("akm"), WL0 ("akm"), ""},
   {WL ("preauth"), WL0 ("preauth"), ""},

@@ -1004,11 +1004,11 @@ start_upnp (void)
   ret = eval ("killall", "-SIGUSR1", "upnp");
   if (ret != 0)
     {
-	ret = eval("upnp", "-D",
-	"-L", nvram_safe_get("lan_ifname"),
-	"-W", wan_ifname,
-	"-I", nvram_safe_get("upnp_ssdp_interval"),
-	"-A", nvram_safe_get("upnp_max_age"));
+      ret = eval ("upnp", "-D",
+		  "-L", nvram_safe_get ("lan_ifname"),
+		  "-W", wan_ifname,
+		  "-I", nvram_safe_get ("upnp_ssdp_interval"),
+		  "-A", nvram_safe_get ("upnp_max_age"));
     }
 
   cprintf ("done\n");
@@ -2095,7 +2095,7 @@ start_chilli (void)
   if (i > 0)
     fprintf (fp, "radiusnasid %s\n", hyp);
   nvram_set ("chilli_radiusnasid", hyp);
-  fprintf(fp,"interval 300\n");
+  fprintf (fp, "interval 300\n");
 #else
   if (nvram_invmatch ("chilli_radiusnasid", ""))
     fprintf (fp, "radiusnasid %s\n", nvram_get ("chilli_radiusnasid"));
@@ -2138,7 +2138,7 @@ start_chilli (void)
     sleep(10); // wait for ntp connectivity
     }
   }
-*/    
+*/
   ret = eval ("/usr/sbin/chilli", "-c", "/tmp/chilli.conf");
 
   cprintf ("done\n");
@@ -3061,6 +3061,7 @@ stop_ntp (void)
   eval ("killall", "-9", "ntpclient");
   return 0;
 }
+
 /* Trigger Connect On Demand */
 int
 start_force_to_dial (void)
@@ -3093,7 +3094,7 @@ start_force_to_dial (void)
     }
   else if (nvram_match ("wan_proto", "heartbeat"))
     {
-      start_heartbeat_boot();
+      start_heartbeat_boot ();
     }
   else
     _eval (ping_argv, NULL, 3, NULL);
