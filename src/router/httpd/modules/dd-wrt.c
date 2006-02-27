@@ -1138,6 +1138,8 @@ save_prefix (webs_t wp, char *prefix)
   char n[80];
   sprintf (n, "%s_ssid", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_distance", prefix);
+  copytonv (wp, n);
 #ifdef HAVE_MADWIFI
   sprintf (n, "%s_regdomain", prefix);
   copytonv (wp, n);
@@ -1170,7 +1172,7 @@ wireless_save (webs_t wp)
   char var[80];
   char vif[16];
 #ifndef HAVE_MADWIFI
-  save_prefix (wp, "wl");
+  save_prefix (wp, "wl0");
   char *vifs = nvram_safe_get ("wl0_vifs");
 #else
   int c = getdevicecount ();
@@ -1285,6 +1287,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 //wireless mode
   websWrite (wp, "<h2>Wireless Physical Interface %s</h2>\n", prefix);
   websWrite (wp, "<div>\n");
+  char power[16];
 #ifdef HAVE_MADWIFI
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
@@ -1305,18 +1308,17 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 //power adjustment
-  char power[16];
   sprintf(power,"%s_txpwr",prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> mW (Default: 28)\n",power,nvram_safe_get(power));
   websWrite (wp,"</div>\n");
 
-  sprintf(power,"%s_sens",prefix);
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Sensitivity Range</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> Km (Default: 20)\n",power,nvram_safe_get(power));
-  websWrite (wp,"</div>\n");
-
 #endif
+
+  sprintf(power,"%s_distance",prefix);
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\">Sensitivity Range</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> m (Default: 20000)\n",power,nvram_safe_get(power));
+  websWrite (wp,"</div>\n");
 
 
 

@@ -61,7 +61,7 @@ function to_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
-	F.submit_button.value = "Saved";
+	F.save_button.value = "Saved";
 	F.action.value = "Apply";
 	F.submit();
 }
@@ -123,7 +123,6 @@ function init() {
 			   <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
 			   <% nvram_match("wan_proto","disabled","-->"); %>
                <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
-	       <div class="info">Router Model: <% nvram_get("DD_ROUTER"); %></div>
             </div>
             <div id="helpContainer">
                <div id="help">
