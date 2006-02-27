@@ -142,6 +142,7 @@
  "mac_clone_enable"  "User define WAN MAC Address"  "CHOICE" "2" "0" "1"  "TRUE" "0"  
  "def_hwaddr"  "User define WAN MAC Address"  "MERGEMAC"  "TRUE" "0"  
  "upgrade_enable"  "Tftp upgrade"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
+ "wl_distance" "ACK Timing" "NULL" "TRUE" "0"
  "wl_enable"  "Enable Wireless"  "CHOICE" "2"  "0" "1"  "TRUE" "0"  
  "wl_ssid"  "Network NAME SSID"  "NAME"  "32"  "TRUE" "3"   
  "wl_closed"  "Network Type"  "CHOICE" "2" "0"  "1"  "FALSE" "3"   
