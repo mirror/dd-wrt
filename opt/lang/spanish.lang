@@ -266,7 +266,7 @@
 "Survey>" = "Encuesta>"
 "Rate:<" = "Velocidad:<"
 "Language<" = "Idioma:<"
-"Maximum Ports" = "Cantidad maxima<br> de Puertos"
+"Maximum Ports" = "Puertos Máximos"
 "IPs Format:" = "Formato para <br>las IPs:<br>&nbsp;"
 "The IPs need to be separated by a SPACE.<BR>Maximum of three IPs" = "Necesita separar los IPS espacio .<BR>Maximum de tres IP"
 "WDS/Connection Watchdog" = "Conexión y WDS<br>Watchdog"
