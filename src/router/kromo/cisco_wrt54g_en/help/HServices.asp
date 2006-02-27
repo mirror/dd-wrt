@@ -21,7 +21,8 @@
 						<li>Used domain &ndash; You can select here which domain the DHCP clients should get as their local domain. This can be the WAN domain set on the Setup screen or the LAN domain which can be set here.</li>
 						<li>LAN Domain &ndash; You can define here your local LAN domain which is used as local domain for DNSmasq and DHCP service if chosen above.</li>
 						<li>Static allocations &ndash; If you want to assign certain hosts a specific address then you can define them here. This is also the way to add hosts with a fixed address to the router's local DNS service (DNSmasq).</li>
-					</ul>
+					</ul><br/>
+					There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.
 				</dd>
 				<dt>PPTP</dt>
 				<dd>A VPN technology by Microsoft and remote access vendors. It is implemented in Windows XP. Configuring this allows you to access you LAN at home remotely.
