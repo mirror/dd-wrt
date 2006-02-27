@@ -7,6 +7,9 @@
 #
 # Note 2! The CFLAGS definition is now in the main makefile...
 
+
+EXTRA_CFLAGS := -DISPRINTK
+
 O_TARGET := ipv4.o
 
 export-objs = ipip.o ip_gre.o

@@ -13,27 +13,12 @@
  *	2 of the License, or (at your option) any later version.
  */
 
-
-#define __UNDEF_NO_VERSION__
-#define EXPORT_SYMTAB
-
-#include <linux/module.h>
 #include <linux/kernel.h>
 #include <linux/if_bridge.h>
 #include <linux/smp_lock.h>
 #include <asm/uaccess.h>
 #include "br_private.h"
 #include "br_private_stp.h"
-#include <typedefs.h>
-#include <swapi.h>
-
-/* Robo switch API pointers (null if Robo switch module not loaded) */
-BCM_GET_PORT_FROM_INTERFACE pbcm_get_port_from_interface = NULL;
-BCM_PORT_STP_SET pbcm_port_stp_set = NULL;
-EXPORT_SYMBOL(pbcm_get_port_from_interface);
-EXPORT_SYMBOL(pbcm_port_stp_set);
-
-
 
 /* since time values in bpdu are in jiffies and then scaled (1/256)
  * before sending, make sure that is at least one.
@@ -371,11 +356,6 @@ void br_become_designated_port(struct net_bridge_port *p)
 /* called under bridge lock */
 static void br_make_blocking(struct net_bridge_port *p)
 {
-int port;
-
-  /* get switch port from interface name.  if interface is vlan, it will have */
-  bcm_get_port(p->dev->name, &port);
-
 	if (p->state != BR_STATE_DISABLED &&
 	    p->state != BR_STATE_BLOCKING) {
 		if (p->state == BR_STATE_FORWARDING ||
@@ -386,8 +366,6 @@ int port;
 		       p->br->dev.name, p->port_no, p->dev->name, "blocking");
 
 		p->state = BR_STATE_BLOCKING;
-	    if (pbcm_port_stp_set != NULL)
-        	pbcm_port_stp_set(port,BCM_PORT_STP_BLOCK);
 		br_timer_clear(&p->forward_delay_timer);
 	}
 }
@@ -395,10 +373,6 @@ int port;
 /* called under bridge lock */
 static void br_make_forwarding(struct net_bridge_port *p)
 {
-  int port;
-  
-  /* get switch port from interface name.  if interface is vlan, it will have */
-  bcm_get_port(p->dev->name, &port);
 	if (p->state == BR_STATE_BLOCKING) {
 		if (p->br->stp_enabled) {
 			printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
@@ -406,16 +380,12 @@ static void br_make_forwarding(struct net_bridge_port *p)
 			       "listening");
 
 			p->state = BR_STATE_LISTENING;
-            if (pbcm_port_stp_set != NULL)
-                pbcm_port_stp_set(port,BCM_PORT_STP_LISTEN);
 		} else {
 			printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
 			       p->br->dev.name, p->port_no, p->dev->name,
 			       "learning");
 
 			p->state = BR_STATE_LEARNING;
-            if (pbcm_port_stp_set != NULL)
-                pbcm_port_stp_set(port,BCM_PORT_STP_LEARN);
 		}
 		br_timer_set(&p->forward_delay_timer, jiffies);
 	}

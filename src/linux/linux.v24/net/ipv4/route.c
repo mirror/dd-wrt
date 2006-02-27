@@ -1854,6 +1854,11 @@ int ip_route_output_slow(struct rtable **rp, const struct rt_key *oldkey)
 			dev_put(dev_out);
 			goto out;	/* Wrong error code */
 		}
+		err = -ENETDOWN;
+		if (!(dev_out->flags&IFF_UP)) {
+			dev_put(dev_out);
+			goto out;
+		}
 
 		if (LOCAL_MCAST(oldkey->dst) || oldkey->dst == 0xFFFFFFFF) {
 			if (!key.src)
@@ -1923,10 +1928,41 @@ int ip_route_output_slow(struct rtable **rp, const struct rt_key *oldkey)
 		goto e_inval;
 
 	if (res.type == RTN_LOCAL) {
-		if (!key.src)
-			key.src = key.dst;
+		struct in_device *in_dev;
+		u32 src;
+
 		if (dev_out)
 			dev_put(dev_out);
+		dev_out = FIB_RES_DEV(res);
+		in_dev = in_dev_get(dev_out);
+		src = key.src? : FIB_RES_PREFSRC(res);
+		if (in_dev && IN_DEV_LOOP(in_dev) && src) {
+			struct net_device *dev_src;
+
+			in_dev_put(in_dev);
+			in_dev = NULL;
+			dev_src = ip_dev_find(src);
+			if (dev_src && dev_src != dev_out &&
+			    (in_dev = in_dev_get(dev_src)) &&
+			    IN_DEV_LOOP(in_dev)) {
+				in_dev_put(in_dev);
+				dev_out = dev_src;
+				key.src = src;
+				key.oif = dev_out->ifindex;
+				res.type = RTN_UNICAST;
+				if (res.fi) {
+					fib_info_put(res.fi);
+					res.fi = NULL;
+				}
+				goto make_route;
+			}
+			if (dev_src)
+				dev_put(dev_src);
+		}
+		if (in_dev)
+			in_dev_put(in_dev);
+		if (!key.src)
+			key.src = key.dst;
 		dev_out = &loopback_dev;
 		dev_hold(dev_out);
 		key.oif = dev_out->ifindex;

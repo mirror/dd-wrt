@@ -1151,7 +1151,7 @@ int devinet_sysctl_forward(ctl_table *ctl, int write, struct file * filp,
 static struct devinet_sysctl_table
 {
 	struct ctl_table_header *sysctl_header;
-	ctl_table devinet_vars[20];
+	ctl_table devinet_vars[21];
 	ctl_table devinet_dev[2];
 	ctl_table devinet_conf_dir[2];
 	ctl_table devinet_proto_dir[2];
@@ -1205,6 +1205,9 @@ static struct devinet_sysctl_table
 	 &proc_dointvec},
 	{NET_IPV4_CONF_ARP_IGNORE, "arp_ignore",
 	 &ipv4_devconf.arp_ignore, sizeof(int), 0644, NULL,
+	 &proc_dointvec},
+	{NET_IPV4_CONF_LOOP, "loop",
+	 &ipv4_devconf.loop, sizeof(int), 0644, NULL,
 	 &proc_dointvec},
 	{NET_IPV4_CONF_FORCE_IGMP_VERSION, "force_igmp_version",
 	 &ipv4_devconf.force_igmp_version, sizeof(int), 0644, NULL,
