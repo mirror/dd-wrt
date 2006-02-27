@@ -1,1 +1,1 @@
-./configure --with-glib-prefix=${PWD}/../glib-1.2.10-install --disable-glibtest --host=mipsel-linux --with-remote-splash CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -pipe -mips32 -mtune=mips32"
+./configure --with-glib-prefix=${PWD}/../glib-1.2.10-install --disable-glibtest --host=mipsel-linux --with-remote-splash CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time"

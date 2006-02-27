@@ -13,6 +13,7 @@
 # include "http.h"
 # include "firewall.h"
 # include "util.h"
+# include "conf.h"
 
 ssize_t http_sendfile ( http_request *h, int in_fd ) {
     int out_fd = g_io_channel_unix_get_fd( h->sock );
@@ -38,25 +39,46 @@ ssize_t http_sendfile ( http_request *h, int in_fd ) {
     return r;
 }
 
-gchar *peer_arp( peer *p ) {
+gchar *find_peer_arp( peer *p ) {
+    gchar *result;
     gchar ip[16], hw[18];
     FILE *arp;
 
     g_assert( p != NULL );
+    result = NULL;
 
     arp = fopen( "/proc/net/arp", "r" );
-    if ( arp == NULL )
-	g_error( "Can't open /proc/net/arp: %m" );
+    if ( arp == NULL ) {
+	    g_warning( "Can't open /proc/net/arp: %m" ); 
+        return NULL; 
+    }
    
     fscanf(arp, "%*s %*s %*s %*s %*s %*s %*s %*s %*s"); // Skip first line 
     while (fscanf( arp, "%15s %*s %*s %17s %*s %*s\n", ip, hw ) != EOF)  {
-	if ( strncmp( p->ip, ip, sizeof(p->ip) ) == 0 ) {
-	    g_strncpy( p->hw, hw, sizeof(p->hw) );
-	    break;
-	}
+        if ( strncmp( p->ip, ip, sizeof(p->ip) ) == 0 ) {
+            g_strncpy( p->hw, hw, sizeof(p->hw) );
+            result = p->hw;
+	    if (CONFd("Verbosity") >= 7) g_message("Reading %s in /proc/net/arp: %s MATCHES %s\n", ip, hw, p->ip);
+            break;
+        }
+	else 
+	    if (CONFd("Verbosity") >= 7) g_message("Reading %s in /proc/net/arp: %s does not MATCH %s\n", ip, hw, p->ip);
     }
 
+    /* Done in check_peer_expire/idle_check now 
+    if ( NULL != result ) {
+        p->missing_count = 0;
+    } else {
+        p->missing_count ++;
+    }
+    */
+
     fclose( arp );
+    return ( result );
+}
+
+gchar *peer_arp( peer *p ) {
+    find_peer_arp(p);
     return ( p->hw[0] != '\0' ? p->hw : NULL );
 }
 

@@ -108,6 +108,10 @@
 /* Which mode the gateway runs in. */
 #undef NC_SPLASHD_MODE
 
+#undef NC_STATE_DIR
+
+#undef NC_PID_FILE
+
 /* Name of package */
 #undef PACKAGE
 
