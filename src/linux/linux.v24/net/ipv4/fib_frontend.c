@@ -209,7 +209,7 @@ int fib_validate_source(u32 src, u32 dst, u8 tos, int oif,
 	struct in_device *in_dev;
 	struct rt_key key;
 	struct fib_result res;
-	int no_addr, rpf;
+	int no_addr, rpf, loop;
 	int ret;
 
 	key.dst = src;
@@ -219,12 +219,13 @@ int fib_validate_source(u32 src, u32 dst, u8 tos, int oif,
 	key.iif = oif;
 	key.scope = RT_SCOPE_UNIVERSE;
 
-	no_addr = rpf = 0;
+	no_addr = rpf = loop = 0;
 	read_lock(&inetdev_lock);
 	in_dev = __in_dev_get(dev);
 	if (in_dev) {
 		no_addr = in_dev->ifa_list == NULL;
 		rpf = IN_DEV_RPFILTER(in_dev);
+		loop = IN_DEV_LOOP(in_dev);
 	}
 	read_unlock(&inetdev_lock);
 
@@ -233,6 +234,11 @@ int fib_validate_source(u32 src, u32 dst, u8 tos, int oif,
 
 	if (fib_lookup(&key, &res))
 		goto last_resort;
+	if (loop && res.type == RTN_LOCAL) {
+		*spec_dst = FIB_RES_PREFSRC(res);
+		fib_res_put(&res);
+		return 0;
+	}
 	if (res.type != RTN_UNICAST)
 		goto e_inval_res;
 	*spec_dst = FIB_RES_PREFSRC(res);

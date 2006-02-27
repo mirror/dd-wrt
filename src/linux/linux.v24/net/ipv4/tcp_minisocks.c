@@ -940,6 +940,13 @@ struct sock *tcp_check_req(struct sock *sk,struct sk_buff *skb,
 	 */
 	if (flg & (TCP_FLAG_RST|TCP_FLAG_SYN))
 		goto embryonic_reset;
+  
+    /* ACK sequence verified above, just make sure ACK is
+     * set.  If ACK not set, just silently drop the packet.
+     */
+    if (!(flg & TCP_FLAG_ACK))
+                return NULL;
+ 
 
 	/* ACK sequence verified above, just make sure ACK is
 	 * set.  If ACK not set, just silently drop the packet.

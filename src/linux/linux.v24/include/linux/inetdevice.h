@@ -22,6 +22,7 @@ struct ipv4_devconf
 	int	arp_ignore;
 	int	medium_id;
 	int	force_igmp_version;
+	int	loop;
 	void	*sysctl;
 };
 
@@ -71,6 +72,7 @@ struct in_device
 	  (ipv4_devconf.accept_redirects || (in_dev)->cnf.accept_redirects)))
 
 #define IN_DEV_ARPFILTER(in_dev)	(ipv4_devconf.arp_filter || (in_dev)->cnf.arp_filter)
+#define IN_DEV_LOOP(in_dev)		((in_dev)->cnf.loop)
 #define IN_DEV_ARP_ANNOUNCE(in_dev)	(max(ipv4_devconf.arp_announce, (in_dev)->cnf.arp_announce))
 #define IN_DEV_ARP_IGNORE(in_dev)	(max(ipv4_devconf.arp_ignore, (in_dev)->cnf.arp_ignore))
 

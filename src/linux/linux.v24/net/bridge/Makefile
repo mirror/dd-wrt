@@ -7,12 +7,7 @@
 #
 # Note 2! The CFLAGS definition is now in the main makefile...
 
-
-SRCBASE		:= $(TOPDIR)/../..
-EXTRA_CFLAGS	+= -I$(SRCBASE)/switch/sys -I$(SRCBASE)/include.v24
-
-
-export-objs := br.o br_stp.o
+export-objs := br.o
 
 O_TARGET	:= bridge.o
 obj-y		:= br.o br_device.o br_fdb.o br_forward.o br_if.o br_input.o \

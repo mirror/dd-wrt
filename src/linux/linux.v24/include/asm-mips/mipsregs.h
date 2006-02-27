@@ -958,14 +958,6 @@ __BUILD_SET_C0(cause)
 __BUILD_SET_C0(config)
 __BUILD_SET_C0(intcontrol)
 
-/*
- * Functions to access the performance counter and control registers
- */
-extern asmlinkage unsigned int read_perf_cntr(unsigned int counter);
-extern asmlinkage void write_perf_cntr(unsigned int counter, unsigned int val);
-extern asmlinkage unsigned int read_perf_cntl(unsigned int counter);
-extern asmlinkage void write_perf_cntl(unsigned int counter, unsigned int val);
-
 #endif /* !__ASSEMBLY__ */
 
 #endif /* _ASM_MIPSREGS_H */
