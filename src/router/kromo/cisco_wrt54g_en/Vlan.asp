@@ -128,7 +128,7 @@ function init() {
 									</tr>
 									<% port_vlan_table(); %>
 								</tbody>
-							</table>
+							</table><br/>
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
 								<input type="reset" value="Cancel Changes"/>
