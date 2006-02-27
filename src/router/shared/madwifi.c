@@ -758,7 +758,7 @@ configure_single (int count)
   sprintf (net, "ath%d_net_mode", count);
   sprintf (broadcast, "ath%d_closed", count);
   sprintf (power, "ath%d_txpwr", count);
-  sprintf (sens, "ath%d_sens", count);
+  sprintf (sens, "ath%d_distance", count);
   //create base device
   cprintf ("configure base interface %d\n", count);
 
@@ -813,7 +813,7 @@ configure_single (int count)
 
   cprintf ("adjust sensitivity\n");
 
-  int distance = atoi (default_get (sens, "20")) * 1000;	//to meter
+  int distance = atoi (default_get (sens, "20000"));	//to meter
   setdistance (wif, distance);	//sets the receiver sensitivity
   memset (var, 0, 80);
 

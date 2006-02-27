@@ -493,6 +493,13 @@ start_lan (void)
 		do_mssid (lan_ifname);
 #endif
 	      }
+	    if (nvram_match (wl_name, "apsta"))
+	      {
+		eval ("brctl", "addif", lan_ifname, name);
+#ifdef HAVE_MSSID
+		do_mssid (lan_ifname);
+#endif
+	      }
 
 	    /* if client/wet mode, turn off ap mode et al */
 

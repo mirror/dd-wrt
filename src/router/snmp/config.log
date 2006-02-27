@@ -3,9 +3,9 @@ running configure, to aid debugging if configure makes a mistake.
 
 configure:1543: checking if I need to feed myself to ksh
 configure:1578: checking for gcc
-configure:1691: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -s) works
-configure:1707: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c  1>&5
-configure:1733: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -s) is a cross-compiler
+configure:1691: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -funit-at-a-time ) works
+configure:1707: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c  1>&5
+configure:1733: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -funit-at-a-time ) is a cross-compiler
 configure:1738: checking whether we are using GNU C
 configure:1747: mipsel-linux-uclibc-gcc -E conftest.c
 configure:1766: checking whether mipsel-linux-uclibc-gcc accepts -g
@@ -13,7 +13,7 @@ configure:1798: checking how to run the C preprocessor
 configure:1819: mipsel-linux-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:1878: checking for AIX
 configure:1902: checking for Cygwin environment
-configure:1918: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32  conftest.c 1>&5
+configure:1918: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time  conftest.c 1>&5
 configure: In function `main':
 configure:1914: error: `__CYGWIN32__' undeclared (first use in this function)
 configure:1914: error: (Each undeclared identifier is reported only once
@@ -30,7 +30,7 @@ int main() {
 return __CYGWIN__;
 ; return 0; }
 configure:1935: checking for mingw32 environment
-configure:1947: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32  conftest.c 1>&5
+configure:1947: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time  conftest.c 1>&5
 configure: In function `main':
 configure:1943: error: `__MINGW32__' undeclared (first use in this function)
 configure:1943: error: (Each undeclared identifier is reported only once
@@ -43,7 +43,7 @@ int main() {
 return __MINGW32__;
 ; return 0; }
 configure:1966: checking for executable suffix
-configure:1976: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c  1>&5
+configure:1976: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c  1>&5
 configure:2105: checking host system type
 configure:2126: checking build system type
 configure:2155: checking for ld used by GCC
@@ -55,11 +55,11 @@ configure:2290: checking for a sed that does not truncate output
 configure:2374: checking whether ln -s works
 configure:2395: checking how to recognise dependent libraries
 configure:2581: checking for object suffix
-configure:2587: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32  conftest.c 1>&5
+configure:2587: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time  conftest.c 1>&5
 configure:2615: checking command to parse /usr/bin/nm -B output
-configure:2698: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32  conftest.c 1>&5
+configure:2698: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time  conftest.c 1>&5
 configure:2701: /usr/bin/nm -B conftest.o | sed -n -e 's/^.*[ ]\([ABCDGISTW][ABCDGISTW]*\)[ ][ ]*\(\)\([_A-Za-z][_A-Za-z0-9]*\)$/\1 \2\3 \3/p' > conftest.nm
-configure:2752: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c conftstm.o 1>&5
+configure:2752: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c conftstm.o 1>&5
 configure:2801: checking for dlfcn.h
 configure:2811: mipsel-linux-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:2980: checking for ranlib
@@ -67,15 +67,15 @@ configure:3047: checking for strip
 configure:3564: checking for objdir
 configure:3595: checking for mipsel-linux-uclibc-gcc option to produce PIC
 configure:3743: checking if mipsel-linux-uclibc-gcc PIC flag -fPIC works
-configure:3757: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -fPIC -DPIC  conftest.c 1>&5
+configure:3757: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -fPIC -DPIC  conftest.c 1>&5
 configure:3813: checking if mipsel-linux-uclibc-gcc static flag -static works
-configure:3828: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s -static conftest.c  1>&5
+configure:3828: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   -static conftest.c  1>&5
 configure:3859: checking if mipsel-linux-uclibc-gcc supports -c -o file.o
-configure:3878: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -o out/conftest2.o  conftest.c 1>&5
+configure:3878: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -o out/conftest2.o  conftest.c 1>&5
 configure:3907: checking if mipsel-linux-uclibc-gcc supports -c -o file.lo
-configure:3925: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -c -o conftest.lo  conftest.c 1>&5
+configure:3925: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -c -o conftest.lo  conftest.c 1>&5
 configure:3983: checking if mipsel-linux-uclibc-gcc supports -fno-rtti -fno-exceptions
-configure:3996: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -fno-rtti -fno-exceptions -c conftest.c  conftest.c 1>&5
+configure:3996: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -fno-rtti -fno-exceptions -c conftest.c  conftest.c 1>&5
 cc1: warning: command line option "-fno-rtti" is valid for C++/ObjC++ but not for C
 cc1: warning: command line option "-fno-rtti" is valid for C++/ObjC++ but not for C
 configure:4027: checking whether the linker (/home/openwrt/workspace/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld) supports shared libraries
@@ -86,8 +86,8 @@ configure:5195: checking if libtool supports shared libraries
 configure:5203: checking whether to build shared libraries
 configure:5230: checking whether to build static libraries
 configure:5273: checking for shl_load
-configure:5301: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c  1>&5
-/tmp/ccMfUW2S.o: In function `main':
+configure:5301: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c  1>&5
+/tmp/ccqg2I2L.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `shl_load'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -114,7 +114,7 @@ shl_load();
 
 ; return 0; }
 configure:5319: checking for shl_load in -ldld
-configure:5338: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c -ldld   1>&5
+configure:5338: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c -ldld   1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldld
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -129,8 +129,8 @@ int main() {
 shl_load()
 ; return 0; }
 configure:5357: checking for dlopen
-configure:5385: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c  1>&5
-/tmp/ccEo8Els.o: In function `main':
+configure:5385: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c  1>&5
+/tmp/ccoMcgjn.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `dlopen'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -157,7 +157,7 @@ dlopen();
 
 ; return 0; }
 configure:5403: checking for dlopen in -ldl
-configure:5422: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32  -s conftest.c -ldl   1>&5
+configure:5422: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c -ldl   1>&5
 configure:5554: checking whether a program can dlopen itself
 configure:6393: checking for a BSD compatible install
 configure:6446: checking whether ln -s works
@@ -170,9 +170,9 @@ configure:6635: checking for autoconf
 configure:6664: checking for autoheader
 configure:6702: checking for uname
 configure:6740: checking for working const
-configure:6794: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32  conftest.c 1>&5
+configure:6794: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time  conftest.c 1>&5
 configure:6815: checking for inline
-configure:6829: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32  conftest.c 1>&5
+configure:6829: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time  conftest.c 1>&5
 configure:6856: checking for net-snmp version number
 configure:6871: checking for developer gcc flags
 configure:6908: checking host system type
@@ -193,10 +193,10 @@ configure:7802: checking for location of system kernel
 configure:7838: checking for mount table location
 configure:7861: checking for location of swap device
 configure:7946: checking for asin in -lm
-configure:7965: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm   1>&5
+configure:7965: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm   1>&5
 configure:7958: warning: conflicting types for built-in function 'asin'
 configure:7993: checking for nlist in -lelf
-configure:8012: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lelf  -lm  1>&5
+configure:8012: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lelf  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lelf
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -211,11 +211,11 @@ int main() {
 nlist()
 ; return 0; }
 configure:8041: checking for gethostbyname
-configure:8069: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:8069: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:8136: checking for getservbyname
-configure:8164: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:8164: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:8232: checking for kstat_lookup in -lkstat
-configure:8251: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lkstat  -lm  1>&5
+configure:8251: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lkstat  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lkstat
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -230,7 +230,7 @@ int main() {
 kstat_lookup()
 ; return 0; }
 configure:8279: checking for nlist in -lmld
-configure:8298: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lmld  -lm  1>&5
+configure:8298: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lmld  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lmld
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -252,7 +252,7 @@ configure: failed program was:
 #include "confdefs.h"
 #include <zlib.h>
 configure:8846: checking for bzread in -lbz2
-configure:8865: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lbz2  -lm  1>&5
+configure:8865: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lbz2  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lbz2
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -267,7 +267,7 @@ int main() {
 bzread()
 ; return 0; }
 configure:8884: checking for BZ2_bzread in -lbz2
-configure:8903: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lbz2  -lm  1>&5
+configure:8903: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lbz2  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lbz2
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -282,7 +282,7 @@ int main() {
 BZ2_bzread()
 ; return 0; }
 configure:8927: checking for dbopen in -ldb1
-configure:8946: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldb1  -lm  1>&5
+configure:8946: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb1  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb1
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -297,7 +297,7 @@ int main() {
 dbopen()
 ; return 0; }
 configure:8965: checking for dbopen in -ldb
-configure:8984: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldb  -lm  1>&5
+configure:8984: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -312,7 +312,7 @@ int main() {
 dbopen()
 ; return 0; }
 configure:9008: checking for db_create in -ldb-3.1
-configure:9027: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldb-3.1  -lm  1>&5
+configure:9027: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb-3.1  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb-3.1
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -327,7 +327,7 @@ int main() {
 db_create()
 ; return 0; }
 configure:9046: checking for db_create in -ldb-3.0
-configure:9065: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldb-3.0  -lm  1>&5
+configure:9065: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb-3.0  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb-3.0
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -342,7 +342,7 @@ int main() {
 db_create()
 ; return 0; }
 configure:9089: checking for poptParseArgvString in -lpopt
-configure:9108: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lpopt  -lm  1>&5
+configure:9108: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lpopt  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lpopt
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -357,7 +357,7 @@ int main() {
 poptParseArgvString()
 ; return 0; }
 configure:9130: checking for Fopen in -lrpmio
-configure:9149: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lrpmio  -lm  1>&5
+configure:9149: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lrpmio  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpmio
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -372,7 +372,7 @@ int main() {
 Fopen()
 ; return 0; }
 configure:9171: checking for rpmGetFilesystemList in -lrpm
-configure:9190: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lrpm  -lm  1>&5
+configure:9190: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lrpm  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpm
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -387,7 +387,7 @@ int main() {
 rpmGetFilesystemList()
 ; return 0; }
 configure:9217: checking for rpmdbOpen in -lrpmdb
-configure:9236: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lrpmdb -lrpm  -lm  1>&5
+configure:9236: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lrpmdb -lrpm  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpmdb
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -402,7 +402,7 @@ int main() {
 rpmdbOpen()
 ; return 0; }
 configure:9269: checking for kvm_read in -lkvm
-configure:9288: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lkvm  -lm  1>&5
+configure:9288: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lkvm  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lkvm
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -419,8 +419,8 @@ kvm_read()
 configure:9316: checking for dlopen in -ldl
 configure:9365: checking for dlopen
 configure:9421: checking for kvm_openfiles
-configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/cccNpGwn.o: In function `main':
+configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
+/tmp/cciI7aiI.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `kvm_openfiles'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -447,8 +447,8 @@ kvm_openfiles();
 
 ; return 0; }
 configure:9421: checking for nlist
-configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/cc2WbAHG.o: In function `main':
+configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
+/tmp/ccQq376Y.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `nlist'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -475,8 +475,8 @@ nlist();
 
 ; return 0; }
 configure:9421: checking for knlist
-configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccQL7llZ.o: In function `main':
+configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
+/tmp/cc0Ajmyi.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `knlist'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -503,8 +503,8 @@ knlist();
 
 ; return 0; }
 configure:9421: checking for kvm_getprocs
-configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccOrqPhg.o: In function `main':
+configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
+/tmp/ccabH40B.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `kvm_getprocs'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -533,9 +533,9 @@ kvm_getprocs();
 configure:9684: checking for ANSI C header files
 configure:9697: mipsel-linux-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:9792: checking for dirent.h that defines DIR
-configure:9805: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:9805: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:9830: checking for opendir in -ldir
-configure:9849: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldir  -lm  1>&5
+configure:9849: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldir  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldir
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -550,7 +550,7 @@ int main() {
 opendir()
 ; return 0; }
 configure:9913: checking for sys/wait.h that is POSIX.1 compatible
-configure:9934: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:9934: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:9958: checking for stdarg.h
 configure:9968: mipsel-linux-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
 configure:9958: checking for string.h
@@ -1253,8 +1253,8 @@ configure: failed program was:
 #include <openssl/des.h>
 configure:10921: checking for lpstat
 configure:10966: checking for cgetnext
-configure:10994: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccqnkMGy.o: In function `main':
+configure:10994: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
+/tmp/cckGt9bO.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `cgetnext'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1284,20 +1284,20 @@ configure:11026: checking for authentication support
 configure:11078: checking for off_t
 configure:11111: checking for pid_t
 configure:11144: checking whether time.h and sys/time.h may both be included
-configure:11158: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:11158: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:11180: checking for socklen_t
 configure:11217: checking for in_addr_t
 configure:11254: checking for correct flags to ps
 configure:11394: checking for working alloca.h
-configure:11406: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11406: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11427: checking for alloca
-configure:11460: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11460: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11627: checking whether mipsel-linux-uclibc-gcc needs -traditional
 configure:11673: checking for 8-bit clean memcmp
 configure:11709: checking return type of signal handlers
-configure:11731: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:11731: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:11751: checking for getmntent in -lsun
-configure:11770: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lsun  -lm  1>&5
+configure:11770: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lsun  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lsun
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1312,7 +1312,7 @@ int main() {
 getmntent()
 ; return 0; }
 configure:11789: checking for getmntent in -lseq
-configure:11808: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lseq  -lm  1>&5
+configure:11808: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lseq  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lseq
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1327,7 +1327,7 @@ int main() {
 getmntent()
 ; return 0; }
 configure:11827: checking for getmntent in -lgen
-configure:11846: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lgen  -lm  1>&5
+configure:11846: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lgen  -lm  1>&5
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lgen
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1342,90 +1342,90 @@ int main() {
 getmntent()
 ; return 0; }
 configure:11871: checking for getmntent
-configure:11899: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11899: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for setmntent
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for gethostname
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for uname
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for gettimeofday
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for select
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for socket
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for strtol
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for strtoul
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11924: checking for strlcpy
-configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:11952: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11979: checking for strchr
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11991: warning: conflicting types for built-in function 'strchr'
 configure:11979: checking for strdup
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11991: warning: conflicting types for built-in function 'strdup'
 configure:11979: checking for memcpy
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11991: warning: conflicting types for built-in function 'memcpy'
 configure:11979: checking for memmove
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11991: warning: conflicting types for built-in function 'memmove'
 configure:11979: checking for index
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11991: warning: conflicting types for built-in function 'index'
 configure:11979: checking for bcopy
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11991: warning: conflicting types for built-in function 'bcopy'
 configure:11979: checking for strcasestr
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:11979: checking for regcomp
-configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12007: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for signal
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for setsid
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for sigset
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for sigblock
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for sighold
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for strerror
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for setenv
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12034: checking for vsnprintf
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12046: warning: conflicting types for built-in function 'vsnprintf'
 configure:12034: checking for snprintf
-configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12062: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12046: warning: conflicting types for built-in function 'snprintf'
 configure:12089: checking for sigaction
-configure:12117: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12117: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12144: checking for snprintf
 configure:12144: checking for strtoul
 configure:12199: checking for random
-configure:12227: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12227: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12199: checking for lrand48
-configure:12227: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12227: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12199: checking for rand
-configure:12227: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12227: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12254: checking for execv
-configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12254: checking for system
-configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12254: checking for fork
-configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12254: checking for getpid
-configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12254: checking for strncasecmp
-configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12254: checking for sigalrm
-configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccGa0TKY.o: In function `main':
+configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
+/tmp/ccV65f8n.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `sigalrm'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1452,8 +1452,8 @@ sigalrm();
 
 ; return 0; }
 configure:12312: checking for rpmGetPath
-configure:12340: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccCdFbUi.o: In function `main':
+configure:12340: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
+/tmp/ccoany3w.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `rpmGetPath'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1480,8 +1480,8 @@ rpmGetPath();
 
 ; return 0; }
 configure:12370: checking for getloadavg
-configure:12398: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
-/tmp/cc087TbA.o: In function `main':
+configure:12398: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
+/tmp/ccY3ib6P.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getloadavg'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1508,10 +1508,10 @@ getloadavg();
 
 ; return 0; }
 configure:12425: checking for getaddrinfo
-configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12425: checking for getipnodebyname
-configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccsSvFsf.o: In function `main':
+configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
+/tmp/cc0fZwyt.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getipnodebyname'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1538,14 +1538,14 @@ getipnodebyname();
 
 ; return 0; }
 configure:12480: checking for statvfs
-configure:12508: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12508: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12480: checking for statfs
-configure:12508: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12508: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12535: checking for getdtablesize
-configure:12563: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12563: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12590: checking for getfsstat
-configure:12618: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccEMwzyc.o: In function `main':
+configure:12618: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
+/tmp/ccAq2Svt.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getfsstat'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1572,41 +1572,41 @@ getfsstat();
 
 ; return 0; }
 configure:12645: checking for usleep
-configure:12673: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12673: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12700: checking for setlocale
-configure:12728: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12728: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12755: checking for tcgetattr
-configure:12783: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12783: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12810: checking for if_nameindex
-configure:12838: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12838: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12810: checking for if_freenameindex
-configure:12838: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12838: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12865: checking for getpagesize
-configure:12893: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12893: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12920: checking for mkstemp
-configure:12948: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:12948: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12975: checking for getpwnam
-configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12975: checking for getgrnam
-configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12975: checking for setgid
-configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12975: checking for setuid
-configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12975: checking for setgroups
-configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:13003: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:13030: checking for setitimer
-configure:13058: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -Delf  -s conftest.c -lm  1>&5
+configure:13058: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:13084: checking for SIOCGIFADDR in sys/ioctl.h
 configure:13122: checking for two-argument statfs with struct fs_data (Ultrix)
 configure:13174: checking if __FUNCTION__ is defined
-configure:13189: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13189: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13184: warning: initialization discards qualifiers from pointer target type
 configure:13218: checking for sigaction.sa_sigaction
-configure:13249: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13249: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:13283: checking for sockaddr.sa_len
-configure:13318: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13318: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13313: error: structure has no member named `sa_len'
 configure: failed program was:
@@ -1632,7 +1632,7 @@ testit.sa_len ;
 
 ; return 0; }
 configure:13352: checking for sockaddr.sa_union.sa_generic.sa_family2
-configure:13387: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13387: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13382: error: structure has no member named `sa_union'
 configure: failed program was:
@@ -1658,9 +1658,9 @@ testit.sa_union.sa_generic.sa_family2 ;
 
 ; return 0; }
 configure:13421: checking for rtentry.rt_dst
-configure:13457: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13457: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:13484: checking type of rtentry structure
-configure:13518: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13518: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13512: error: structure has no member named `rt_nodes'
 configure: failed program was:
@@ -1690,7 +1690,7 @@ int main() {
   rt.rt_dst;
   
 ; return 0; }
-configure:13550: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13550: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13545: error: structure has no member named `rt_hash'
 configure: failed program was:
@@ -1716,7 +1716,7 @@ rt.rt_hash;
 ; return 0; }
 configure:13579: checking for struct rtentry
 configure:13687: checking for rtentry.rt_unit
-configure:13723: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13723: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13718: error: structure has no member named `rt_unit'
 configure: failed program was:
@@ -1743,7 +1743,7 @@ testit.rt_unit = 0;
 
 ; return 0; }
 configure:13757: checking for rtentry.rt_refcnt
-configure:13793: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13793: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13788: error: structure has no member named `rt_refcnt'
 configure: failed program was:
@@ -1770,7 +1770,7 @@ testit.rt_refcnt = 0;
 
 ; return 0; }
 configure:13827: checking for rtentry.rt_hash
-configure:13863: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13863: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13858: error: structure has no member named `rt_hash'
 configure: failed program was:
@@ -1797,7 +1797,7 @@ testit.rt_hash = 0;
 
 ; return 0; }
 configure:13897: checking for rtentry.rt_use
-configure:13933: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:13933: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13928: error: structure has no member named `rt_use'
 configure: failed program was:
@@ -1824,7 +1824,7 @@ testit.rt_use = 0;
 
 ; return 0; }
 configure:13967: checking for tcpstat.tcp_rcvmemdrop
-configure:14005: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14005: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:13999: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -1853,7 +1853,7 @@ testit.tcp_rcvmemdrop = 0;
 
 ; return 0; }
 configure:14040: checking for ifnet.if_mtu
-configure:14075: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14075: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:14069: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -1879,7 +1879,7 @@ testit.if_mtu = 0;
 
 ; return 0; }
 configure:14103: checking if _KERNEL needs to be defined for if_mtu
-configure:14136: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14136: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:14130: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -1907,9 +1907,9 @@ testit.if_mtu = 0;
 
 ; return 0; }
 configure:14168: checking for ifaddr.ifa_next
-configure:14209: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14209: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:14244: checking for ifnet.if_baudrate
-configure:14317: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14317: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:14312: error: structure has no member named `if_baudrate'
 configure: failed program was:
@@ -1973,7 +1973,7 @@ testit.if_baudrate = 0;
 
 ; return 0; }
 configure:14352: checking for ifnet.if_baudrate.ifs_value
-configure:14425: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14425: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:14420: error: structure has no member named `if_baudrate'
 configure: failed program was:
@@ -2037,11 +2037,11 @@ testit.if_baudrate.ifs_value = 0;
 
 ; return 0; }
 configure:14460: checking for ifnet.if_speed
-configure:14533: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14533: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:14568: checking for ifnet.if_type
-configure:14641: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14641: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:14676: checking for ifnet.if_imcasts
-configure:14749: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14749: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:14744: error: structure has no member named `if_imcasts'
 configure: failed program was:
@@ -2105,9 +2105,9 @@ testit.if_imcasts = 0;
 
 ; return 0; }
 configure:14784: checking for ifnet.if_iqdrops
-configure:14857: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14857: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:14892: checking for ifnet.if_noproto
-configure:14965: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:14965: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:14960: error: structure has no member named `if_noproto'
 configure: failed program was:
@@ -2171,7 +2171,7 @@ testit.if_noproto = 0;
 
 ; return 0; }
 configure:15000: checking for ifnet.if_omcasts
-configure:15073: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15073: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15068: error: structure has no member named `if_omcasts'
 configure: failed program was:
@@ -2235,7 +2235,7 @@ testit.if_omcasts = 0;
 
 ; return 0; }
 configure:15108: checking for ifnet.if_xname
-configure:15181: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15181: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15176: error: structure has no member named `if_xname'
 configure: failed program was:
@@ -2299,7 +2299,7 @@ testit.if_xname ;
 
 ; return 0; }
 configure:15216: checking for ifnet.if_lastchange.tv_sec
-configure:15289: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15289: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15284: error: structure has no member named `if_lastchange'
 configure: failed program was:
@@ -2363,11 +2363,11 @@ testit.if_lastchange.tv_sec = 0;
 
 ; return 0; }
 configure:15324: checking for ifnet.if_obytes
-configure:15397: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15397: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:15432: checking for ifnet.if_ibytes
-configure:15505: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15505: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:15540: checking for ifnet.if_addrlist
-configure:15613: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15613: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15608: error: structure has no member named `if_addrlist'
 configure: failed program was:
@@ -2431,7 +2431,7 @@ testit.if_addrlist = 0;
 
 ; return 0; }
 configure:15648: checking for ifnet.if_addrhead.tqh_first
-configure:15721: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15721: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15716: error: structure has no member named `if_addrhead'
 configure: failed program was:
@@ -2495,7 +2495,7 @@ testit.if_addrhead.tqh_first = 0;
 
 ; return 0; }
 configure:15756: checking for udpstat.udps_discard
-configure:15795: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15795: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15789: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2525,7 +2525,7 @@ testit.udps_discard = 0;
 
 ; return 0; }
 configure:15829: checking for udpstat.udps_noport
-configure:15868: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15868: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15862: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2555,7 +2555,7 @@ testit.udps_noport = 0;
 
 ; return 0; }
 configure:15902: checking for udpstat.udps_noportbcast
-configure:15941: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:15941: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:15935: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2585,7 +2585,7 @@ testit.udps_noportbcast = 0;
 
 ; return 0; }
 configure:15975: checking for udpstat.udps_fullsock
-configure:16014: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16014: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16008: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2615,7 +2615,7 @@ testit.udps_fullsock = 0;
 
 ; return 0; }
 configure:16048: checking for arphd.at_next
-configure:16089: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16089: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16083: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2647,7 +2647,7 @@ testit.at_next = 0;
 
 ; return 0; }
 configure:16123: checking for swdevt.sw_nblksenabled
-configure:16152: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16152: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16146: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2667,15 +2667,15 @@ testit.sw_nblksenabled = 0;
 
 ; return 0; }
 configure:16186: checking for statvfs.f_frsize
-configure:16221: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16221: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:16255: checking for statvfs.f_files
-configure:16290: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16290: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:16324: checking for statfs.f_files
-configure:16363: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16363: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:16397: checking for statfs.f_ffree
-configure:16436: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16436: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:16470: checking for statfs.f_favail
-configure:16509: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16509: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16504: error: structure has no member named `f_favail'
 configure: failed program was:
@@ -2705,7 +2705,7 @@ testit.f_favail = 0;
 
 ; return 0; }
 configure:16543: checking for nlist.n_value
-configure:16572: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16572: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16566: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2725,7 +2725,7 @@ testit.n_value = 0;
 
 ; return 0; }
 configure:16606: checking for ipstat.ips_cantforward
-configure:16639: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16639: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16633: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2749,7 +2749,7 @@ testit.ips_cantforward = 0;
 
 ; return 0; }
 configure:16673: checking for ipstat.ips_cantfrag
-configure:16706: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16706: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16700: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2773,7 +2773,7 @@ testit.ips_cantfrag = 0;
 
 ; return 0; }
 configure:16740: checking for ipstat.ips_delivered
-configure:16773: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16773: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16767: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2797,7 +2797,7 @@ testit.ips_delivered = 0;
 
 ; return 0; }
 configure:16807: checking for ipstat.ips_fragdropped
-configure:16840: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16840: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16834: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2821,7 +2821,7 @@ testit.ips_fragdropped = 0;
 
 ; return 0; }
 configure:16874: checking for ipstat.ips_fragtimeout
-configure:16907: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16907: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16901: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2845,7 +2845,7 @@ testit.ips_fragtimeout = 0;
 
 ; return 0; }
 configure:16941: checking for ipstat.ips_localout
-configure:16974: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:16974: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:16968: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2869,7 +2869,7 @@ testit.ips_localout = 0;
 
 ; return 0; }
 configure:17008: checking for ipstat.ips_noproto
-configure:17041: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:17041: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:17035: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2893,7 +2893,7 @@ testit.ips_noproto = 0;
 
 ; return 0; }
 configure:17075: checking for ipstat.ips_noroute
-configure:17108: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:17108: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:17102: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2917,7 +2917,7 @@ testit.ips_noroute = 0;
 
 ; return 0; }
 configure:17142: checking for ipstat.ips_odropped
-configure:17175: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:17175: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:17169: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2941,7 +2941,7 @@ testit.ips_odropped = 0;
 
 ; return 0; }
 configure:17209: checking for ipstat.ips_ofragments
-configure:17242: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:17242: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:17236: error: storage size of 'testit' isn't known
 configure: failed program was:
@@ -2965,7 +2965,7 @@ testit.ips_ofragments = 0;
 
 ; return 0; }
 configure:17276: checking for ipstat.ips_reassembled
-configure:17309: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -Delf  conftest.c 1>&5
+configure:17309: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure: In function `main':
 configure:17303: error: storage size of 'testit' isn't known
 configure: failed program was:
