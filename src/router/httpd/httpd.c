@@ -1031,7 +1031,7 @@ main (int argc, char **argv)
   strcpy (pid_file, "/var/run/httpd.pid");
   server_port = DEFAULT_HTTP_PORT;
 
-  while ((c = getopt (argc, argv, "Sp:d:t:s:gh")) != -1)
+  while ((c = getopt (argc, argv, "Sih:p:d:t:s:g:e:")) != -1)
     switch (c)
       {
 #ifdef HAVE_HTTPS

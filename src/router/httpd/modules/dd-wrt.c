@@ -36,13 +36,55 @@
 #include <wlutils.h>
 #include <bcmparams.h>
 
+
+int
+ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fcpu = fopen ("/proc/cpuinfo", "r");
+  if (fcpu == NULL)
+    {
+    websWrite(wp," Not Detected!\n");
+    return 0;
+    }
+  char buf[256];
+  int i;
+  for (i=0;i<256;i++)
+    {
+    int c=getc(fcpu);
+    if (c==EOF)
+	{
+	websWrite(wp," Not Detected!\n");
+	fclose(fcpu);
+	return 0;
+	}
+    if (c==':')
+	break;
+    }
+    getc(fcpu);
+  for (i=0;i<256;i++)
+    {
+    int c=getc(fcpu);
+    if (c==EOF)
+	{
+	websWrite(wp," Not Detected!\n");
+	fclose(fcpu);
+	return 0;
+	}
+    if (c==0xa || c==0xd)
+	break;
+    buf[i]=c;
+    }
+    buf[i]=0;
+    websWrite(wp,buf);
+    fclose(fcpu);
+    return 0;
+}
+
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
-
-
 
 
 
