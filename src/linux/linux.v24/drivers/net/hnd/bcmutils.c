@@ -69,166 +69,305 @@ pkttotlen(osl_t *osh, void *p)
 	return (total);
 }
 
-void
-pktq_init(struct pktq *q, uint maxlen, const uint8 prio_map[])
+/*
+ * osl multiple-precedence packet queue
+ * hi_prec is always >= the number of the highest non-empty queue
+ */
+
+void *
+pktq_penq(struct pktq *pq, int prec, void *p)
 {
-	q->head = q->tail = NULL;
-	q->maxlen = maxlen;
-	q->len = 0;
-	if (prio_map) {
-		q->priority = TRUE;
-		bcopy(prio_map, q->prio_map, sizeof(q->prio_map));
-	}
+	struct pktq_prec *q;
+
+	ASSERT(prec >= 0 && prec < pq->num_prec);
+	ASSERT(PKTLINK(p) == NULL);         /* queueing chains not allowed */
+
+	ASSERT(!pktq_full(pq));
+	ASSERT(!pktq_pfull(pq, prec));
+
+	q = &pq->q[prec];
+
+	if (q->head)
+		PKTSETLINK(q->tail, p);
 	else
-		q->priority = FALSE;
-}
+		q->head = p;
 
-/* should always check pktq_full before calling pktenq */
-void
-pktenq(struct pktq *q, void *p, bool lifo)
-{
-	void *next, *prev;
-
-	/* allow 10 pkts slack */
-	ASSERT(q->len < (q->maxlen + 10));
-
-	/* Queueing chains not allowed */
-	ASSERT(PKTLINK(p) == NULL);
-
-	/* Queue is empty */
-	if (q->tail == NULL) {
-		ASSERT(q->head == NULL);
-		q->head = q->tail = p;
-	}
-
-	/* Insert at head or tail */
-	else if (q->priority == FALSE) {
-		/* Insert at head (LIFO) */
-		if (lifo) {
-			PKTSETLINK(p, q->head);
-			q->head = p;
-		}
-		/* Insert at tail (FIFO) */
-		else {
-			ASSERT(PKTLINK(q->tail) == NULL);
-			PKTSETLINK(q->tail, p);
-			PKTSETLINK(p, NULL);
-			q->tail = p;
-		}
-	}
-
-	/* Insert by priority */
-	else {
-		/* legal priorities 0-7 */
-		ASSERT(PKTPRIO(p) <= MAXPRIO);
-
-		ASSERT(q->head);
-		ASSERT(q->tail);
-		/* Shortcut to insertion at tail */
-		if (_pktq_pri(q, PKTPRIO(p)) < _pktq_pri(q, PKTPRIO(q->tail)) ||
-		    (!lifo && _pktq_pri(q, PKTPRIO(p)) <= _pktq_pri(q, PKTPRIO(q->tail)))) {
-			prev = q->tail;
-			next = NULL;
-		}
-		/* Insert at head or in the middle */
-		else {
-			prev = NULL;
-			next = q->head;
-		}
-		/* Walk the queue */
-		for (; next; prev = next, next = PKTLINK(next)) {
-			/* Priority queue invariant */
-			ASSERT(!prev || _pktq_pri(q, PKTPRIO(prev)) >= _pktq_pri(q, PKTPRIO(next)));
-			/* Insert at head of string of packets of same priority (LIFO) */
-			if (lifo) {
-				if (_pktq_pri(q, PKTPRIO(p)) >= _pktq_pri(q, PKTPRIO(next)))
-					break;
-			}
-			/* Insert at tail of string of packets of same priority (FIFO) */
-			else {
-				if (_pktq_pri(q, PKTPRIO(p)) > _pktq_pri(q, PKTPRIO(next)))
-					break;
-			}
-		}
-		/* Insert at tail */
-		if (next == NULL) {
-			ASSERT(PKTLINK(q->tail) == NULL);
-			PKTSETLINK(q->tail, p);
-			PKTSETLINK(p, NULL);
-			q->tail = p;
-		}
-		/* Insert in the middle */
-		else if (prev) {
-			PKTSETLINK(prev, p);
-			PKTSETLINK(p, next);
-		}
-		/* Insert at head */
-		else {
-			PKTSETLINK(p, q->head);
-			q->head = p;
-		}
-	}
-
-	/* List invariants after insertion */
-	ASSERT(q->head);
-	ASSERT(PKTLINK(q->tail) == NULL);
-
+	q->tail = p;
 	q->len++;
+
+	if (pq->hi_prec < prec)
+		pq->hi_prec = (uint8)prec;
+
+	pq->len++;
+
+	return p;
 }
 
-/* dequeue packet at head */
-void*
-pktdeq(struct pktq *q)
+void *
+pktq_penq_head(struct pktq *pq, int prec, void *p)
 {
-	void *p;
+	struct pktq_prec *q;
 
-	if ((p = q->head)) {
-		ASSERT(q->tail);
-		q->head = PKTLINK(p);
-		PKTSETLINK(p, NULL);
-		q->len--;
-		if (q->head == NULL)
-			q->tail = NULL;
-	}
-	else {
-		ASSERT(q->tail == NULL);
-	}
+	ASSERT(prec >= 0 && prec < pq->num_prec);
+	ASSERT(PKTLINK(p) == NULL);         /* queueing chains not allowed */
 
-	return (p);
+	ASSERT(!pktq_full(pq));
+	ASSERT(!pktq_pfull(pq, prec));
+
+	q = &pq->q[prec];
+
+	if (q->head)
+		PKTSETLINK(p, q->head);
+	else
+		q->tail = p;
+
+	q->head = p;
+	q->len++;
+
+	if (pq->hi_prec < prec)
+		pq->hi_prec = (uint8)prec;
+
+	pq->len++;
+
+	return p;
 }
 
-/* dequeue packet at tail */
-void*
-pktdeqtail(struct pktq *q)
+void *
+pktq_pdeq(struct pktq *pq, int prec)
 {
+	struct pktq_prec *q;
 	void *p;
-	void *next, *prev;
 
-	if (q->head == q->tail) {  /* last packet on queue or queue empty */
-		p = q->head;
-		q->head = q->tail = NULL;
-		q->len = 0;
-		return(p);
-	}
+	ASSERT(prec >= 0 && prec < pq->num_prec);
 
-	/* start walk at head */
-	prev = NULL;
-	next = q->head;
+	q = &pq->q[prec];
 
-	/* Walk the queue to find prev of q->tail */
-	for (; next; prev = next, next = PKTLINK(next)) {
-		if (next == q->tail)
-			break;
-	}
+	if ((p = q->head) == NULL)
+		return NULL;
 
-	ASSERT(prev);
+	if ((q->head = PKTLINK(p)) == NULL)
+		q->tail = NULL;
 
-	PKTSETLINK(prev, NULL);
+	q->len--;
+
+	pq->len--;
+
+	PKTSETLINK(p, NULL);
+
+	return p;
+}
+
+void *
+pktq_pdeq_tail(struct pktq *pq, int prec)
+{
+	struct pktq_prec *q;
+	void *p, *prev;
+
+	ASSERT(prec >= 0 && prec < pq->num_prec);
+
+	q = &pq->q[prec];
+
+	if ((p = q->head) == NULL)
+		return NULL;
+
+	for (prev = NULL; p != q->tail; p = PKTLINK(p))
+		prev = p;
+
+	if (prev)
+		PKTSETLINK(prev, NULL);
+	else
+		q->head = NULL;
+
 	q->tail = prev;
 	q->len--;
-	p = next;
 
-	return (p);
+	pq->len--;
+
+	return p;
+}
+
+void
+pktq_init(struct pktq *pq, int num_prec, int max)
+{
+	int prec;
+
+	ASSERT(num_prec >= 0 && num_prec <= PKTQ_MAX_PREC);
+
+	bzero(pq, sizeof (*pq));
+
+	pq->num_prec = (uint16)num_prec;
+
+	pq->max = (uint16)max;
+
+	for (prec = 0; prec < num_prec; prec++)
+		pq->q[prec].max = pq->max;
+}
+
+void *
+pktq_deq(struct pktq *pq, int *prec_out)
+{
+	struct pktq_prec *q;
+	void *p;
+	int prec;
+
+	if (pq->len == 0)
+		return NULL;
+
+	while ((prec = pq->hi_prec) > 0 && pq->q[prec].head == NULL)
+		pq->hi_prec--;
+
+	q = &pq->q[prec];
+
+	if ((p = q->head) == NULL)
+		return NULL;
+
+	if ((q->head = PKTLINK(p)) == NULL)
+		q->tail = NULL;
+
+	q->len--;
+
+	if (prec_out)
+		*prec_out = prec;
+
+	pq->len--;
+
+	PKTSETLINK(p, NULL);
+
+	return p;
+}
+
+void *
+pktq_deq_tail(struct pktq *pq, int *prec_out)
+{
+	struct pktq_prec *q;
+	void *p, *prev;
+	int prec;
+
+	if (pq->len == 0)
+		return NULL;
+
+	for (prec = 0; prec < pq->hi_prec; prec++)
+		if (pq->q[prec].head)
+			break;
+
+	q = &pq->q[prec];
+
+	if ((p = q->head) == NULL)
+		return NULL;
+
+	for (prev = NULL; p != q->tail; p = PKTLINK(p))
+		prev = p;
+
+	if (prev)
+		PKTSETLINK(prev, NULL);
+	else
+		q->head = NULL;
+
+	q->tail = prev;
+	q->len--;
+
+	if (prec_out)
+		*prec_out = prec;
+
+	pq->len--;
+
+	PKTSETLINK(p, NULL);
+
+	return p;
+}
+
+void *
+pktq_peek(struct pktq *pq, int *prec_out)
+{
+	void *p;
+	int prec;
+
+	if (pq->len == 0)
+		return NULL;
+
+	while ((prec = pq->hi_prec) > 0 && pq->q[prec].head == NULL)
+		pq->hi_prec--;
+
+	if ((p = pq->q[prec].head) == NULL)
+		return NULL;
+
+	if (prec_out)
+		*prec_out = prec;
+
+	return p;
+}
+
+void *
+pktq_peek_tail(struct pktq *pq, int *prec_out)
+{
+	void *p;
+	int prec;
+
+	if (pq->len == 0)
+		return NULL;
+
+	for (prec = 0; prec < pq->hi_prec; prec++)
+		if (pq->q[prec].head)
+			break;
+
+	if ((p = pq->q[prec].tail) == NULL)
+		return NULL;
+
+	if (prec_out)
+		*prec_out = prec;
+
+	return p;
+}
+
+int
+pktq_mlen(struct pktq *pq, uint prec_bmp)
+{
+	int prec, len;
+
+	len = 0;
+
+	for (prec = 0; prec <= pq->hi_prec; prec++)
+		if (prec_bmp & (1 << prec))
+			len += pq->q[prec].len;
+
+	return len;
+}
+
+void *
+pktq_mdeq(struct pktq *pq, uint prec_bmp, int *prec_out)
+{
+	struct pktq_prec *q;
+	void *p;
+	int prec;
+
+	if (pq->len == 0)
+		return NULL;
+
+	while ((prec = pq->hi_prec) > 0 && pq->q[prec].head == NULL)
+		pq->hi_prec--;
+
+	while ((prec_bmp & (1 << prec)) == 0 || pq->q[prec].head == NULL)
+		if (prec-- == 0)
+			return NULL;
+
+	q = &pq->q[prec];
+
+	if ((p = q->head) == NULL)
+		return NULL;
+
+	if ((q->head = PKTLINK(p)) == NULL)
+		q->tail = NULL;
+
+	q->len--;
+
+	if (prec_out)
+		*prec_out = prec;
+
+	pq->len--;
+
+	PKTSETLINK(p, NULL);
+
+	return p;
 }
 
 unsigned char bcm_ctype[] = {
