@@ -1755,13 +1755,20 @@ bird_init (void)
 
 	  fprintf (fp, "protocol rip WRT54G_rip {\n");
 	  if (nvram_match ("routing_lan", "on"))
-	    fprintf (fp, "	interface \"%s\" { };\n",
-		     nvram_safe_get ("lan_ifname"));
+	    fprintf (fp, "	interface \"%s\" { };\n",nvram_safe_get ("lan_ifname"));
 	  if (nvram_match ("routing_wan", "on"))
-	    fprintf (fp, "	interface \"%s\" { };\n",
-		     nvram_safe_get ("wan_ifname"));
+	    {
+	    char *wanif = nvram_safe_get("wan_ifname");
+	    if (nvram_match("wl_mode","sta"))
+	    fprintf (fp, "	interface \"%s\" { };\n",getwlif());
+	    else
+	    fprintf (fp, "	interface \"%s\" { };\n",nvram_safe_get ("wan_ifname"));
+	    
+	    }
+	    fprintf(fp,"	honor always;\n");
+	    fprintf(fp,"	import filter { print \"importing\"; accept; };\n");
+	    fprintf(fp,"	export filter { print \"exporting\"; accept; };\n");    
 	  fprintf (fp, "}\n");
-
 
 	}
       if (nvram_match ("routing_ospf", "on"))
