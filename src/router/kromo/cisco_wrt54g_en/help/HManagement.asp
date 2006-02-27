@@ -23,7 +23,7 @@
 					</div>
 				</dd>
 				<dt>Remote Router Access</dt>
-				<dd>This feature allows you to manage your router from a remote location, via the Internet. To disable this feature, keep the default setting, <i>Disable</i>. To enable this feature, select <i>Enable</i>, and use the specified port (default is 8080) on your PC to remotely manage the router. You must also change the router's default password to one of your own, if you haven't already.<br /><br />
+				<dd>This feature allows you to manage your router from a remote location, via the Internet. To disable this feature, keep the default setting, <em>Disable</em>. To enable this feature, select <em>Enable</em>, and use the specified port (default is 8080) on your PC to remotely manage the router. You must also change the router's default password to one of your own, if you haven't already.<br /><br />
 					To remotely manage the router, enter <tt>http://xxx.xxx.xxx.xxx:8080</tt> (the x's represent the router's Internet IP address, and 8080 represents the specified port) in your web browser's address field. You will be asked for the router's password.<br /><br />
 					If you use https you need to specify the url as <tt>https://xxx.xxx.xxx.xxx:8080</tt> (not all DD-WRT firmwares does support this without rebuilding with SSL support).<br /><br />
 					<div class="note">
@@ -43,7 +43,18 @@
 				<dt>Cron</dt>
 				<dd>The cron subsystem schedules execution of Linux commands. You'll need to use the command line or startup scripts to actually use this.</dd>
 				<dt>DNS Masq</dt>
-				<dd>DNSmasq is a local DNS server. It will resolve all host names known to the router from dhcp (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. <i>Local DNS</i> enables DHCP clients on the LAN to resolve static and dynamic DHCP hostnames.</dd>
+				<dd>DNSmasq is a local DNS server. It will resolve all host names known to the router from dhcp (dynamic and static) as well as forwarding and caching DNS entries from remote DNS servers. <em>Local DNS</em> enables DHCP clients on the LAN to resolve static and dynamic DHCP hostnames.<br/>
+				There are some extra options you can set by entering them in <em>Additional DNS Options</em>. For example : <br/>
+					<ul>
+						<li>static allocation : dhcp-host=AB:CD:EF:11:22:33,192.168.0.10,myhost,myhost.domain,12h</li>
+						<li>max lease number : dhcp-lease-max=2</li>
+						<li>DHCP server IP range : dhcp-range=192.168.0.110,192.168.0.111,12h</li>
+					</ul>
+				<br/><br/>
+					<div class="note">
+						<h4>Note</h4>
+						<div>All options are saved in /tmp/dnsmasq.conf file. The format of this file consists of one option per line.<br/>The complete list of available options : <a href="http://thekelleys.org.uk/dnsmasq/docs/dnsmasq-man.html" target="_new">DNSMasq man</a>.</div>
+					</div></dd>
 				<dt>Loopback</dt>
 				<dd>Enable / disable the loopback interface. The loopback interface makes your internal clients appear as if they are external. This is useful for testing things like DynDNS names. The loopback is an option because enabling it will break PPTP and Windows machine browsing by wireless clients.</dd>
 				<dt>802.1x</dt>
@@ -61,7 +72,7 @@
 				<dd>Routing enables the OSPF and RIP routing daemons if you have set up OSPF or RIP routing in the Advanced Routing page.</dd>
 				<dt>UPnP (Universal Plug and Play)</dt>
 				<dd>A Microsoft technology for automatic configuration of devices. You need this enabled if you want to connect the X-Box to the internet via your router.</dd>
-				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes. Click <i>Reboot router</i> to reboot your router immediately.</dd>
+				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
 		<div class="also">
