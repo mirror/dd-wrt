@@ -57,32 +57,68 @@ extern unsigned char bcm_ctype[];
 	} \
 }
 
-/* generic osl packet queue */
-struct pktq {
-	void *head;	/* first packet to dequeue */
-	void *tail;	/* last packet to dequeue */
-	uint len;	/* number of queued packets */
-	uint maxlen;	/* maximum number of queued packets */
-	bool priority;	/* enqueue by packet priority */
-	uint8 prio_map[MAXPRIO+1]; /* user priority to packet enqueue policy map */
-};
-#define DEFAULT_QLEN	128
+/* osl packet chain functions */
 
-#define	pktq_len(q)	((q)->len)
-#define	pktq_avail(q)	((q)->maxlen - (q)->len)
-#define	pktq_head(q)	((q)->head)
-#define	pktq_full(q)	((q)->len >= (q)->maxlen)
-#define	_pktq_pri(q, pri)	((q)->prio_map[pri])
-#define	pktq_tailpri(q)	((q)->tail ? _pktq_pri(q, PKTPRIO((q)->tail)) : _pktq_pri(q, 0))
-
-/* externs */
-/* packet */
 extern uint pktcopy(osl_t *osh, void *p, uint offset, int len, uchar *buf);
 extern uint pkttotlen(osl_t *osh, void *);
-extern void pktq_init(struct pktq *q, uint maxlen, const uint8 prio_map[]);
-extern void pktenq(struct pktq *q, void *p, bool lifo);
-extern void *pktdeq(struct pktq *q);
-extern void *pktdeqtail(struct pktq *q);
+
+#define pktenq(pq, p)		pktq_penq((pq), 0, (p))		/* legacy */
+#define pktdeq(pq)		pktq_pdeq((pq), 0)		/* legacy */
+
+/* osl multi-precedence packet queue */
+
+#define PKTQ_LEN_DEFAULT        128
+#define PKTQ_MAX_PREC           8
+
+struct pktq {
+	struct pktq_prec {
+		void *head;     /* first packet to dequeue */
+		void *tail;     /* last packet to dequeue */
+		uint16 len;     /* number of queued packets */
+		uint16 max;     /* maximum number of queued packets */
+	} q[PKTQ_MAX_PREC];
+	uint16 num_prec;        /* number of precedences in use */
+	uint16 hi_prec;         /* rapid dequeue hint (>= highest non-empty prec) */
+	uint16 max;             /* total max packets */
+	uint16 len;             /* total number of packets */
+};
+
+/* operations on a specific precedence in packet queue */
+
+#define pktq_psetmax(pq, prec, _max)    ((pq)->q[prec].max = (_max))
+#define pktq_plen(pq, prec)             ((pq)->q[prec].len)
+#define pktq_pavail(pq, prec)           ((pq)->q[prec].max - (pq)->q[prec].len)
+#define pktq_pfull(pq, prec)            ((pq)->q[prec].len >= (pq)->q[prec].max)
+#define pktq_pempty(pq, prec)           ((pq)->q[prec].len == 0)
+
+#define pktq_ppeek(pq, prec)            ((pq)->q[prec].head)
+#define pktq_ppeek_tail(pq, prec)       ((pq)->q[prec].tail)
+
+extern void *pktq_penq(struct pktq *pq, int prec, void *p);
+extern void *pktq_penq_head(struct pktq *pq, int prec, void *p);
+extern void *pktq_pdeq(struct pktq *pq, int prec);
+extern void *pktq_pdeq_tail(struct pktq *pq, int prec);
+
+/* operations on packet queue as a whole */
+
+extern void pktq_init(struct pktq *pq, int num_prec, int max);
+
+#define pktq_len(pq)                    ((int)(pq)->len)
+#define pktq_max(pq)                    ((int)(pq)->max)
+#define pktq_avail(pq)                  ((int)((pq)->max - (pq)->len))
+#define pktq_full(pq)                   ((pq)->len >= (pq)->max)
+#define pktq_empty(pq)                  ((pq)->len == 0)
+
+extern void *pktq_deq(struct pktq *pq, int *prec_out);
+extern void *pktq_deq_tail(struct pktq *pq, int *prec_out);
+extern void *pktq_peek(struct pktq *pq, int *prec_out);
+extern void *pktq_peek_tail(struct pktq *pq, int *prec_out);
+
+extern int pktq_mlen(struct pktq *pq, uint prec_bmp);
+extern void *pktq_mdeq(struct pktq *pq, uint prec_bmp, int *prec_out);
+
+#define PKTQ_PREC_ITER(pq, prec)        for (prec = (pq)->num_prec - 1; prec >= 0; prec--)
+
 /* string */
 extern uint bcm_atoi(char *s);
 extern uchar bcm_toupper(uchar c);

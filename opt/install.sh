@@ -1,5 +1,5 @@
 #!/bin/sh
-export PATH=/home/backup/mikrotik/toolchain/bin:$PATH
+export PATH=/home/openwrt/workspace/mikrotik/toolchain/bin:$PATH
 
 echo "#define BUILD_DATE \"$(date +%D)\"" > build.h 
 
