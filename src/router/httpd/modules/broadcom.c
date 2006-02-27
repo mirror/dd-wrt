@@ -3837,8 +3837,8 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_FON
   {"show_userlist", ej_show_userlist},
 #endif
+  {"show_cpuinfo", ej_show_cpuinfo},
 
-/* end Sveasoft additions */
 
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
