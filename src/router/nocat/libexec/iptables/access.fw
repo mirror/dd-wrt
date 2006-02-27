@@ -19,8 +19,10 @@ fi
 
 if [ "$action" = "permit" ]; then
     cmd=-A
+    cmd_traffic=-I
 elif [ "$action" = "deny" ]; then
     cmd=-D
+    cmd_traffic=-D
 else
     echo "FATAL: Bad action: $action!"
     exit 1
@@ -40,9 +42,25 @@ fi
 # Mark outbound traffic from this node.
 iptables -t mangle $cmd NoCat -m mac --mac-source $mac -s $ip -j MARK --set-mark $mark
 
-# Mark inbound traffic to this node.
+# Mark inbound traffic to this node as ACCEPT
 iptables -t filter $cmd NoCat_Inbound -d $ip -j ACCEPT
 
+# Traffic count by adding forward rules
+
+lan_if=`/usr/sbin/nvram get lan_ifname`
+if [ -z "$lan_if" ]; then
+
+iptables -t filter $cmd_traffic FORWARD -d $ip -j NoCat_Download
+iptables -t filter $cmd_traffic FORWARD -s $ip -j NoCat_Upload
+
+else
+
+iptables -t filter $cmd_traffic FORWARD -o $lan_if -d $ip -j NoCat_Download
+iptables -t filter $cmd_traffic FORWARD -i $lan_if -s $ip -j NoCat_Upload
+
+fi
+
+#echo 0
 #
 # Ende
 #

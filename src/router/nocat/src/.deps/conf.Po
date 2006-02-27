@@ -1,6 +1,6 @@
 conf.o conf.o: conf.c \
-  /home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2/glib.h \
-  /home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include/glibconfig.h \
+  /home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2/glib.h \
+  /home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include/glibconfig.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/limits.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/syslimits.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/limits.h \
@@ -20,23 +20,24 @@ conf.o conf.o: conf.c \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h \
+  /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/time.h \
+  /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
+  /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_clk_tck.h \
   conf.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdlib.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/types.h \
-  /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/time.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/endian.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/select.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/select.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h \
-  /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/alloca.h \
   config.h util.h
 
-/home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2/glib.h:
+/home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2/glib.h:
 
-/home/dev/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include/glibconfig.h:
+/home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include/glibconfig.h:
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/include/limits.h:
 
@@ -76,13 +77,17 @@ conf.o conf.o: conf.c \
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h:
 
+/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/time.h:
+
+/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
+
+/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_clk_tck.h:
+
 conf.h:
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/stdlib.h:
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/types.h:
-
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/time.h:
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/endian.h:
 
@@ -93,8 +98,6 @@ conf.h:
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/select.h:
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h:
-
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h:
 

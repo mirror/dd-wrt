@@ -1,5 +1,5 @@
 # Process this file with autoconf to produce a configure script.
-AC_INIT(nocat, [0.92], [schuyler@nocat.net], [NoCatSplash])
+AC_INIT(nocat, [0.93pre2], [schuyler@nocat.net], [NoCatSplash])
 AC_CONFIG_SRCDIR([src/http.c])
 AM_CONFIG_HEADER(src/config.h)
 AM_INIT_AUTOMAKE
@@ -40,7 +40,7 @@ if test "$exec_prefix" = "NONE"; then
     exec_prefix="$prefix"
 fi
 if test "$pkgdatadir" = ""; then
-    pkgdatadir="$datadir/$PACKAGE"
+    pkgdatadir="$datadir/$PACKAGE_NAME"
 fi
 
 # which g/w mode?
@@ -48,6 +48,7 @@ AC_ARG_WITH(mode,
     [  --with-mode             Authentication mode (open) ],
     [case "${withval}" in
        open) splashd_mode="open.c" ;;
+       passive-radius) splashd_mode="passive_radius.c radius.c md5.c" ;;
        passive) 
 	    splashd_mode="passive.c base64.c"
 	    AC_CHECK_LIB([crypt], [crypt])
@@ -59,12 +60,17 @@ AC_ARG_WITH(mode,
     ],
     splashd_mode="open.c"
 )
-AC_SUBST(SPLASHD_MODE, "$splashd_mode")
 
 AC_ARG_WITH(remote-splash,
-    [  --with-remote-splash   Fetch splash page from elsewhere with libghttp. ],
-    AC_CHECK_LIB([ghttp], [ghttp_request_new])
+    [  --with-remote-splash   Fetch splash page from a configurable service. ],
+    [ splashd_mode="$splashd_mode ../libghttp/libghttp.a"; 
+      splashd_subdirs="libghttp";
+      HAVE_LIBGHTTP=1;
+      AC_SUBST(HAVE_LIBGHTTP) ]
 )
+
+AC_SUBST(SPLASHD_MODE,	    "$splashd_mode")
+AC_SUBST(SPLASHD_SUBDIRS,   "$splashd_subdirs")
 
 # with ghttpd?
 AC_ARG_WITH(ghttpd,
@@ -85,7 +91,7 @@ if test "$firewall" = ""; then
 fi
 AC_SUBST(libexecscripts,
     `find libexec/$firewall -type f ! -path "*CVS*" -exec echo -n "{} " \;`)
-AC_SUBST(pkglibexecdir, $libexecdir/$PACKAGE)
+AC_SUBST(pkglibexecdir, $libexecdir/$PACKAGE_NAME)
 eval "NC_FIREWALL_PATH=`eval echo ${pkglibexecdir}`"
 AC_DEFINE_UNQUOTED(NC_FIREWALL_PATH, "$NC_FIREWALL_PATH",
     [Where to find firewall scripts?])
@@ -105,13 +111,44 @@ eval "NC_CONF_PATH=`eval echo ${sysconfdir}`"
 AC_DEFINE_UNQUOTED(NC_CONF_PATH, "$NC_CONF_PATH",
     [Where to find our nocat.conf, by default])
 
+eval "NC_STATE_DIR=`eval echo ${localstatedir}`"
+AC_DEFINE_UNQUOTED(NC_STATE_DIR, "$NC_STATE_DIR",
+    [Where to chdir after daemonizing, by default])
+
+AC_DEFINE_UNQUOTED(NC_PID_FILE, "$NC_STATE_DIR/run/splashd.pid",
+    [Where to store our PID file, by default])
+
 # PGP files?
 AC_SUBST(pgpdir, "$pkgdatadir/pgp")
 eval "NC_PGP_PATH=`eval echo ${pgpdir}`"
 AC_DEFINE_UNQUOTED(NC_PGP_PATH, "$NC_PGP_PATH",
     [Where to find our PGP keys?])
 
+# libghttp configuration details
+GHTTP_MAJOR_VERSION=1
+GHTTP_MINOR_VERSION=0
+GHTTP_MICRO_VERSION=9
+GHTTP_VERSION=$GHTTP_MAJOR_VERSION.$GHTTP_MINOR_VERSION.$GHTTP_MICRO_VERSION
+
+AC_SUBST(GHTTP_MAJOR_VERSION)
+AC_SUBST(GHTTP_MINOR_VERSION)
+AC_SUBST(GHTTP_MICRO_VERSION)
+AC_SUBST(GHTTP_VERSION)
+
+AC_DEFINE_UNQUOTED(GHTTP_MAJOR_VERSION, $GHTTP_MAJOR_VERSION)
+AC_DEFINE_UNQUOTED(GHTTP_MINOR_VERSION, $GHTTP_MINOR_VERSION)
+AC_DEFINE_UNQUOTED(GHTTP_MICRO_VERSION, $GHTTP_MICRO_VERSION)
+
+GHTTP_LIBDIR='-L${libdir}'
+GHTTP_INCLUDEDIR='-I${includedir}'
+GHTTP_LIBS="-lghttp"
+
+AC_SUBST(GHTTP_LIBDIR)
+AC_SUBST(GHTTP_LIBS)
+AC_SUBST(GHTTP_INCLUDEDIR)
+
 # Build makefiles
 AC_CONFIG_FILES([Makefile
-                 src/Makefile])
+                 src/Makefile
+		 libghttp/Makefile])
 AC_OUTPUT
