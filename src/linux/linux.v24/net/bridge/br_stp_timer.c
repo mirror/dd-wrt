@@ -5,7 +5,7 @@
  *	Authors:
  *	Lennert Buytenhek		<buytenh@gnu.org>
  *
- *	$Id$
+ *	$Id: br_stp_timer.c,v 1.3 2000/05/05 02:17:17 davem Exp $
  *
  *	This program is free software; you can redistribute it and/or
  *	modify it under the terms of the GNU General Public License
@@ -19,11 +19,6 @@
 #include <asm/uaccess.h>
 #include "br_private.h"
 #include "br_private_stp.h"
-#include <typedefs.h>
-#include <swapi.h>
-/* Robo switch API pointers (null if Robo switch module not loaded) */
-extern BCM_GET_PORT_FROM_INTERFACE pbcm_get_port_from_interface;
-extern BCM_PORT_STP_SET pbcm_port_stp_set;
 
 static void dump_bridge_id(bridge_id *id)
 {
@@ -85,25 +80,17 @@ static void br_message_age_timer_expired(struct net_bridge_port *p)
 /* called under bridge lock */
 static void br_forward_delay_timer_expired(struct net_bridge_port *p)
 {
-  int port;
-
-  /* get switch port from interface name.  if interface is vlan, it will have */
-  bcm_get_port(p->dev->name, &port);
-  if (p->state == BR_STATE_LISTENING) {
+	if (p->state == BR_STATE_LISTENING) {
 		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
 		       p->br->dev.name, p->port_no, p->dev->name, "learning");
 
 		p->state = BR_STATE_LEARNING;
-        if (pbcm_port_stp_set != NULL)
-            pbcm_port_stp_set(port,BCM_PORT_STP_LEARN);
 		br_timer_set(&p->forward_delay_timer, jiffies);
 	} else if (p->state == BR_STATE_LEARNING) {
 		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
 		       p->br->dev.name, p->port_no, p->dev->name, "forwarding");
 
 		p->state = BR_STATE_FORWARDING;
-        if (pbcm_port_stp_set != NULL)
-            pbcm_port_stp_set(port,BCM_PORT_STP_FORWARD);
 		if (br_is_designated_for_some_port(p->br))
 			br_topology_change_detection(p->br);
 	}

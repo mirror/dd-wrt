@@ -151,6 +151,28 @@ void (*mips_timer_ack)(void);
 unsigned int (*mips_hpt_read)(void);
 void (*mips_hpt_init)(unsigned int);
 
+extern __u32 get_htscl(void)
+{
+	return timerhi;
+}
+
+static __u64 tscll_last = 0;
+
+extern __u64 get_tscll(void)
+{
+	__u64 h = (__u64) timerhi;
+	__u32 c = read_c0_count();
+
+	h <<= 32;
+	h += c;
+
+	while (h < tscll_last)
+		h += (((__u64) 1) << 32);
+
+	tscll_last = h;
+	return h;	
+}
+
 
 /*
  * timeofday services, for syscalls.
@@ -761,3 +783,5 @@ EXPORT_SYMBOL(rtc_lock);
 EXPORT_SYMBOL(to_tm);
 EXPORT_SYMBOL(rtc_set_time);
 EXPORT_SYMBOL(rtc_get_time);
+EXPORT_SYMBOL(get_htscl);
+EXPORT_SYMBOL(get_tscll);

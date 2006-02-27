@@ -31,6 +31,19 @@ static inline cycles_t get_cycles (void)
 	return read_c0_count();
 }
 
+extern __u32 get_htscl(void);
+extern __u64 get_tscll(void);
+
+#define rdtsc(low, high) \
+		high = get_htscl(); \
+		low = read_c0_count();
+
+#define rdtscl(low) \
+		low = read_c0_count();
+
+#define rdtscll(val) \
+		val = get_tscll();
+
 #define vxtime_lock()		do {} while (0)
 #define vxtime_unlock()		do {} while (0)
 

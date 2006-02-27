@@ -22,13 +22,6 @@
 #include <linux/etherdevice.h>
 #include <asm/uaccess.h>
 #include "br_private.h"
-#include <typedefs.h>
-#include <swapi.h>
-
-/* Robo switch API pointers (null if Robo switch module not loaded) */
-extern BCM_GET_PORT_FROM_INTERFACE pbcm_get_port_from_interface;
-extern BCM_PORT_STP_SET pbcm_port_stp_set;
-
 
 static int br_initial_port_cost(struct net_device *dev)
 {
@@ -132,7 +125,7 @@ static struct net_bridge_port *new_nbp(struct net_bridge *br, struct net_device 
 {
 	int i;
 	struct net_bridge_port *p;
-	int port;
+
 	p = kmalloc(sizeof(*p), GFP_ATOMIC);
 	if (p == NULL)
 		return p;
@@ -151,16 +144,12 @@ static struct net_bridge_port *new_nbp(struct net_bridge *br, struct net_device 
 		kfree(p);
 		return NULL;
 	}
-  /* get switch port from interface name.  if interface is vlan, it will have */
-  bcm_get_port(p->dev->name, &port);
 
 	dev->br_port = p;
 
 	p->port_no = i;
 	br_init_port(p);
 	p->state = BR_STATE_DISABLED;
-    if (pbcm_port_stp_set != NULL)
-        pbcm_port_stp_set(port,BCM_PORT_STP_DISABLE);
 
 	p->next = br->port_list;
 	br->port_list = p;

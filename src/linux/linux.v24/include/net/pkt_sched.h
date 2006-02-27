@@ -5,7 +5,11 @@
 #define PSCHED_JIFFIES 		2
 #define PSCHED_CPU 		3
 
+#ifdef __mips__
+#define PSCHED_CLOCK_SOURCE	PSCHED_CPU
+#else
 #define PSCHED_CLOCK_SOURCE	PSCHED_JIFFIES
+#endif
 
 #include <linux/config.h>
 #include <linux/types.h>
@@ -271,7 +275,7 @@ extern int psched_clock_scale;
 #define PSCHED_US2JIFFIE(delay) (((delay)+psched_clock_per_hz-1)/psched_clock_per_hz)
 #define PSCHED_JIFFIE2US(delay) ((delay)*psched_clock_per_hz)
 
-#ifdef CONFIG_X86_TSC
+#if defined(CONFIG_X86_TSC) || defined(__mips__)
 
 #define PSCHED_GET_TIME(stamp) \
 ({ u64 __cur; \

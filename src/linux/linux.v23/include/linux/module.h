@@ -202,7 +202,7 @@ extern int try_inc_mod_count(struct module *mod);
 /* Embedded module documentation macros.  */
 
 /* For documentation purposes only.  */
-
+/*
 #define MODULE_AUTHOR(name)						   \
 const char __module_author[] __attribute__((section(".modinfo"))) = 	   \
 "author=" name
@@ -210,6 +210,10 @@ const char __module_author[] __attribute__((section(".modinfo"))) = 	   \
 #define MODULE_DESCRIPTION(desc)					   \
 const char __module_description[] __attribute__((section(".modinfo"))) =   \
 "description=" desc
+*/
+#define MODULE_AUTHOR(name)						   
+
+#define MODULE_DESCRIPTION(desc)					   
 
 #define MODULE_SUPPORTED_DEVICE(dev)					   \
 const char __module_device[] __attribute__((section(".modinfo"))) = 	   \
@@ -281,8 +285,6 @@ static const struct gtype##_id * __module_##gtype##_table \
  * 2.	So the community can ignore bug reports including proprietary modules
  * 3.	So vendors can do likewise based on their own policies
  */
-
-
  
 #define MODULE_LICENSE(license) 	\
 static const char __module_license[] __attribute_used__ __attribute__((section(".modinfo"))) =   \

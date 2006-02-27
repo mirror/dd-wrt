@@ -708,6 +708,9 @@ struct sock {
 #if defined (CONFIG_PACKET) || defined(CONFIG_PACKET_MODULE)
 		struct packet_opt	*af_packet;
 #endif
+#if defined(CONFIG_RING) || defined(CONFIG_RING_MODULE)
+	  struct ring_opt *pf_ring;
+#endif
 #if defined(CONFIG_X25) || defined(CONFIG_X25_MODULE)
 		x25_cb			*x25;
 #endif
@@ -735,9 +738,6 @@ struct sock {
 #endif
 #if defined(CONFIG_WAN_ROUTER) || defined(CONFIG_WAN_ROUTER_MODULE)
                struct wanpipe_opt      *af_wanpipe;
-#endif
-#if defined(CONFIG_RING) || defined(CONFIG_RING_MODULE)
-	  struct ring_opt *pf_ring;
 #endif
 
 	} protinfo;  		
