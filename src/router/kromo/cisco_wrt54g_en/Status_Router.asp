@@ -126,6 +126,11 @@ function ViewDHCP() {
                            <div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
                         </div>
                         <div class="setting">
+                           <div class="label">CPU</div><% show_cpuinfo(); %>
+                        </div><div class="setting">
+                           <div class="label">CPU Clock</div><% nvram_get("clkfreq"); %> MHz
+                        </div>
+                        <div class="setting">
                            <div class="label">Host Name</div><% nvram_get("wan_hostname"); %>
                         </div>
                         <div class="setting">
