@@ -18,6 +18,7 @@ extern GHashTable *nocat_conf;
 GHashTable *parse_conf_line( GHashTable *out, gchar *line );
 GHashTable *parse_conf_string( const gchar *in );
 GHashTable *set_conf_defaults( GHashTable *conf, struct conf_t *def );
+void set_network_defaults( GHashTable *conf );
 GHashTable *read_conf_file( const gchar *path );
 gchar *conf_string( GHashTable *conf, const gchar *key );
 glong conf_int( GHashTable *conf, const gchar *key );

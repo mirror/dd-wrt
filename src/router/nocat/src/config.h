@@ -20,7 +20,7 @@
 /* #undef HAVE_LIBCRYPT */
 
 /* Define to 1 if you have the `ghttp' library (-lghttp). */
-#define HAVE_LIBGHTTP 1
+/* #undef HAVE_LIBGHTTP */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
@@ -95,19 +95,23 @@
 #define HAVE_WORKING_VFORK 1
 
 /* Where to find our nocat.conf, by default */
-#define NC_CONF_PATH "/etc"
+#define NC_CONF_PATH "/usr/local/etc"
 
 /* Where to serve documents from? */
-#define NC_DOCUMENT_ROOT "/usr/share/nocat/htdocs"
+#define NC_DOCUMENT_ROOT "/usr/local/share/nocat/htdocs"
 
 /* Where to find firewall scripts? */
-#define NC_FIREWALL_PATH "/usr/libexec/nocat"
+#define NC_FIREWALL_PATH "/usr/local/libexec/nocat"
 
 /* Where to find our PGP keys? */
-#define NC_PGP_PATH "/tmp/etc/pgp"
+#define NC_PGP_PATH "/usr/local/share/nocat/pgp"
 
 /* Which mode the gateway runs in. */
 /* #undef NC_SPLASHD_MODE */
+
+#define NC_STATE_DIR "/usr/local/var"
+
+#define NC_PID_FILE "/usr/local/var/run/splashd.pid"
 
 /* Name of package */
 #define PACKAGE "NoCatSplash"
@@ -119,13 +123,13 @@
 #define PACKAGE_NAME "nocat"
 
 /* Define to the full name and version of this package. */
-#define PACKAGE_STRING "nocat 0.92"
+#define PACKAGE_STRING "nocat 0.93pre2-ewrt0.4"
 
 /* Define to the one symbol short name of this package. */
 #define PACKAGE_TARNAME "NoCatSplash"
 
 /* Define to the version of this package. */
-#define PACKAGE_VERSION "0.92"
+#define PACKAGE_VERSION "0.93pre2-ewrt0.4"
 
 /* Define as the return type of signal handlers (`int' or `void'). */
 #define RETSIGTYPE void
@@ -134,7 +138,7 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "0.92"
+#define VERSION "0.93pre2-ewrt0.4"
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
