@@ -20,18 +20,78 @@
 
 export PATH=/tmp/sbin:/tmp/bin:/bin:/usr/bin:/sbin:/usr/sbin
 
+VERBOSITY=`/usr/sbin/nvram get NC_Verbosity`
+
+
+#special handling of linksys firewall:
+#we replace the FORWARD jump to lan2wan rule with jump to NoCat
+#in NoCat we will jump to lan2wan instead of accept for the accepted marked client packets
+#at the end we will not drop but return, so the port forwarding as defined in the linksys rules can be applied
+#after those rules we will remove the general acceptance of
+#any connections on non authorized clients and add a drop just to be sure
+
+#reinitalization
+#in case the initialization was already perfromed  we will replace the nocat rule
+#first back with the the lan2wan rule, if the nocat rule contains a lan2wan rule
+#so a reinitalization will replace the lan2wwan rule again witht the nocat rule ase described above
+
+# get a rule number in the filter table, chain FORWARD
+rule_num() {
+    NUM=`iptables -t filter -L FORWARD -n | sed -e '1,2d' | grep -n "$1" | cut -d : -f 1`
+    if [ -z "$NUM" ]; then echo "0"; else echo "$NUM"; fi
+}
+
+# test for re-initialization
+NOCAT_RULE_NR=`rule_num "NoCat"`
+if [ $NOCAT_RULE_NR -gt 0 ]; then
+    #yes, now check if this a linksys specific re-initialization
+    TEST_NOCAT_LAN2WAN_IPTABLES_RESULT=`/usr/sbin/iptables -t filter -n -L NoCat | /bin/grep -c 'lan2wan' `
+    if [ $TEST_NOCAT_LAN2WAN_IPTABLES_RESULT -gt 0 ]; then
+        #yes, now put lan2wan back in the forward chain
+        iptables -t filter -D FORWARD $NOCAT_RULE_NR
+        iptables -t filter -I FORWARD $NOCAT_RULE_NR -j lan2wan
+    fi
+fi
+
+LAN2WAN_RULE_NR=`rule_num "lan2wan"`
+
+# set accept target
+TARGET_ACCEPT="ACCEPT"
+if [ $LAN2WAN_RULE_NR -gt 0 ]; then
+ if [ $VERBOSITY -gt 4 ]; then logger "Linksys specific"; fi
+ 
+ LOG_LEVEL=`/usr/sbin/nvram get log_level`
+ if [ $VERBOSITY -gt 4 ]; then logger "log level: $LOG_LEVEL"; fi 
+ if [ $LOG_LEVEL -gt 0 ]; then
+    TARGET_ACCEPT="logaccept"
+    if [ $VERBOSITY -gt 4 ]; then logger "accept target: $TARGET_ACCEPT"; fi 
+ fi
+fi
+ 
+
+if [ $VERBOSITY -gt 4 ]; then logger "Enable IP forwarding and rp_filter (to kill IP spoof attempts)"; fi
 # Enable IP forwarding and rp_filter (to kill IP spoof attempts).
 #
 echo "1" > /proc/sys/net/ipv4/ip_forward
 echo "1" > /proc/sys/net/ipv4/conf/all/rp_filter
 
+if [ $VERBOSITY -gt 4 ]; then logger "Flush all user-defined chains"; fi
 # Flush all user-defined chains
 #
 iptables -t filter -N NoCat 2>/dev/null
 iptables -t filter -F NoCat
 iptables -t filter -D FORWARD -j NoCat 2>/dev/null
-iptables -t filter -A FORWARD -j NoCat
-
+if [ $LAN2WAN_RULE_NR -gt 0 ]; then
+   #replace lan2wan, 
+   # get rule num again because deleting the NoCat rule of the FORWARD chain before
+   # may have changed the rule nr
+   LAN2WAN_RULE_NR=`rule_num "lan2wan"`
+   iptables -t filter -D FORWARD $LAN2WAN_RULE_NR
+   iptables -t filter -I FORWARD $LAN2WAN_RULE_NR -j NoCat
+else
+   #-A does not work as already other rules may be in front
+   iptables -t filter -I FORWARD -j NoCat
+fi
 iptables -t filter -N NoCat_Ports 2>/dev/null
 iptables -t filter -F NoCat_Ports
 iptables -t filter -D NoCat -j NoCat_Ports 2>/dev/null
@@ -50,6 +110,16 @@ iptables -t nat -A PREROUTING -j NoCat_Capture
 iptables -t nat -N NoCat_NAT 2>/dev/null
 iptables -t nat -F NoCat_NAT
 
+#traffic chains as target in filter FORWARD
+iptables -t filter -N NoCat_Download 2>/dev/null
+iptables -t filter -F NoCat_Download
+iptables -t filter -D FORWARD -j NoCat_Download 2>/dev/null
+
+iptables -t filter -N NoCat_Upload 2>/dev/null
+iptables -t filter -F NoCat_Upload
+iptables -t filter -D FORWARD -j NoCat_Upload 2>/dev/null
+
+if [ $VERBOSITY -gt 4 ]; then logger "Only nat if we're not routing:RouteOnly=$RouteOnly"; fi
 #
 # Only nat if we're not routing
 #
@@ -61,67 +131,118 @@ iptables -t mangle -F NoCat
 iptables -t mangle -D PREROUTING -j NoCat 2>/dev/null
 iptables -t mangle -A PREROUTING -j NoCat
 
+
+sip_enable=`/usr/sbin/nvram get sip_enable`
+sip_listen_port=`/usr/sbin/nvram get sip_listen_port`
+sip_rtp_port_low=`/usr/sbin/nvram get sip_rtp_port_low`
+sip_rtp_port_high=`/usr/sbin/nvram get sip_rtp_port_high`
+sip_if_inbound=$InternalDevice
+sip_if_outbound=$ExternalDevice
+sip_self_ip=$GatewayAddr
+
+MACWhiteList=`/usr/sbin/nvram get NC_MACWhiteList`
+
+if [ $VERBOSITY -gt 4 ]; then logger "SIP Proxy enabled=$sip_enable"; fi
+if [ "$sip_enable" -eq "1" ]; then
+  if [ $VERBOSITY -gt 4 ]; then logger "redirect outgoing SIP traffic to siproxd (myself) at $sip_self_ip:$sip_listen_port"; fi
+  iptables -t nat -A PREROUTING -m udp -p udp -i $sip_if_inbound --destination-port $sip_self_ip:$sip_listen_port -j REDIRECT
+  
+  if [ $VERBOSITY -gt 4 ]; then logger "allow incoming SIP and RTP traffic on $sip_if_outbound, SIP port: $sip_listen_port, RTP ports $sip_rtp_port_low:$sip_rtp_port_high"; fi
+  iptables -A INPUT -m udp -p udp -i $sip_if_outbound --dport $sip_listen_port -j ACCEPT
+  iptables -A INPUT -m udp -p udp -i $sip_if_outbound --dport $sip_rtp_port_low:$sip_rtp_port_high -j ACCEPT
+fi
+
 fwd="iptables	    -t filter -A NoCat"
 ports="iptables	    -t filter -A NoCat_Ports"
 nat="iptables	    -t nat    -A NoCat_NAT"
 redirect="iptables  -t nat    -A NoCat_Capture"
 mangle="iptables    -t mangle -A NoCat"
 
+if [ $VERBOSITY -gt 4 ]; then logger "MembersOnly=$MembersOnly"; fi
 if [ "$MembersOnly" ]; then
   classes="1 2"
 else
   classes="1 2 3"
 fi
 
+if [ $VERBOSITY -gt 4 ]; then logger "Handle tagged traffic InternalDevice=$InternalDevice , LocalNetwork=$LocalNetwork , classes=$classes , ExternalDevice=$ExternalDevice"; fi
 # Handle tagged traffic.
 #
 for iface in $InternalDevice; do
     for net in $LocalNetwork; do
 	for fwmark in $classes; do
 	    # Only forward tagged traffic per class
-	    $fwd -i $iface -s $net -m mark --mark $fwmark -j ACCEPT
-#	    $fwd -o $iface -d $net -m mark --mark $fwmark -j ACCEPT
-
+            if [ $VERBOSITY -gt 4 ]; then logger "Only forward tagged traffic per class iface=$iface , net=$net , fwmark=$fwmark"; fi
+            if [ $LAN2WAN_RULE_NR -gt 0 ]; then
+                $fwd -i $iface -s $net -m mark --mark $fwmark -j lan2wan
+                # this is added in case lan2wan does simply return instead of reject, drop or accept
+                # what is the case if no policy is activated
+                $fwd -i $iface -s $net -m mark --mark $fwmark -j $TARGET_ACCEPT
+            else
+                $fwd -i $iface -s $net -m mark --mark $fwmark -j ACCEPT
+#	        $fwd -o $iface -d $net -m mark --mark $fwmark -j ACCEPT
+            fi
+        
 	    # Masquerade permitted connections.
-	    $nat -o $ExternalDevice -s $net -m mark --mark $fwmark -j MASQUERADE
+            if [ $VERBOSITY -gt 4 ]; then logger "Masquerade permitted connections"; fi
+            $nat -o $ExternalDevice -s $net -m mark --mark $fwmark -j MASQUERADE
 	done
 
-	# Allow web traffic to the specified hosts, and don't capture
-	# connections intended for them.
-	#
-	if [ "$AuthServiceAddr" -o "$AllowedWebHosts" ]; then 
-	    for host in $AuthServiceAddr $AllowedWebHosts; do
-		for port in 80 443; do
-		    $nat      -s $net -d $host -p tcp --dport $port -j MASQUERADE
-    		    $redirect -s $net -d $host -p tcp --dport $port -j RETURN
+        # Allow (i.e. forward & NAT enabled) all traffic to those on the MACWhiteList, and don't capture
+        # connections initially.  NOTE: these are completely bypassed from NoCat's 
+	# AUTH mechanism, and internal peers-database. Excellent for infrastructure
+        # routing or serving over an otherwise captive portal.
+	# NOTE: we may want to watch out for mac/arp-spoofing attempts
+        if [ $MACWhiteList ]; then
+            for mac in $MACWhiteList; do
+                if [ $VERBOSITY -gt 4 ]; then logger "Passing all traffic to/from MAC: $mac"; fi
+    	        $redirect -s $net -m mac --mac-source $mac -j RETURN
+	        $fwd -s $net -m mac --mac-source $mac -j ACCEPT
+	        $fwd -d $net -m mac --mac-source $mac -j ACCEPT
+	        $nat      -s $net -m mac --mac-source $mac -j MASQUERADE
+	    done
+        fi
+	   
+        # Allow web traffic to the specified hosts, and don't capture
+        # connections intended for them.
+        #
+        if [ $VERBOSITY -gt 4 ]; then logger "Allow web traffic to the specified hosts AuthServiceAddr=$AuthServiceAddr AllowedWebHosts=$AllowedWebHosts"; fi
+        if [ "$AuthServiceAddr" -o "$AllowedWebHosts" ]; then 
+	    for host in $GatewayAddr $AuthServiceAddr $AllowedWebHosts; do
+	        for port in 80 443; do
+    	            $redirect -s $net -d $host -p tcp --dport $port -j RETURN
 		    $fwd -s $net -d $host -p tcp --dport $port -j ACCEPT
 		    $fwd -d $net -s $host -p tcp --sport $port -j ACCEPT
-		done
+	            $nat      -s $net -d $host -p tcp --dport $port -j MASQUERADE
+	        done
 	    done
-	fi
+        fi
 
 	# Accept forward and back traffic to/from DNSAddr
-	if [ "$DNSAddr" ]; then
+        if [ "$DNSAddr" ]; then
+	    if [ $VERBOSITY -gt 4 ]; then logger "Accept forward and back traffic to/from DNSAddr=$DNSAddr"; fi
             for dns in $DNSAddr; do
 	        $fwd -o $iface -d $net -s $dns -j ACCEPT
 
 		for prot in tcp udp; do
 		    $fwd -i $iface -s $net -d $dns -p $prot --dport 53 -j ACCEPT
 		    $nat -p $prot -s $net -d $dns --dport 53 -j MASQUERADE
-		    
+		
 		    # Force unauthenticated DNS traffic through this server.
 		    # Of course, only the first rule of this type will match.
 		    # But it's easier to leave them all in ATM.
 		    #
 		    $redirect -i $InternalDevice -m mark --mark 4 -p $prot \
-			--dport 53 -j DNAT --to-destination $dns:53
+		        --dport 53 -j DNAT --to-destination $dns:53
 		done
 	    done
-	fi
+        fi
     done
 
     # Set packets from internal devices to fw mark 4, or 'denied', by default.
+    if [ $VERBOSITY -gt 4 ]; then logger "Set packets from internal devices to fw mark 4, or 'denied', by default"; fi
     $mangle -i $iface -j MARK --set-mark 4
+
 done
 
 # Redirect outbound non-auth web traffic to the local gateway process
@@ -129,16 +250,18 @@ done
 #
 # If MembersOnly is active, then redirect public class as well
 #
+if [ $VERBOSITY -gt 4 ]; then logger "Redirect outbound non-auth web traffic to the local gateway process"; fi
 if [ "$MembersOnly" ]; then
     nonauth="3 4"
 else
     nonauth="4"
 fi
-for port in 80 443; do
+#for port in 80 443; do
+for port in 80; do
     for mark in $nonauth; do
 #	$redirect -m mark --mark $mark -d windowsupdate.microsoft.com -j DROP
 	$redirect -m mark --mark $mark -p tcp --dport $port  -j DNAT \
-	    --to-destination $InsideIP:$GatewayPort
+	    --to-destination $GatewayAddr:$GatewayPort
     done
 done
 
@@ -159,10 +282,13 @@ done
 # will be to deny all traffic, allowing everything in IncludePorts, and
 # issue a warning.
 #
+if [ $VERBOSITY -gt 4 ]; then logger "Lock down more ports for public users IncludePorts=$IncludePorts , ExcludePorts=$ExcludePorts"; fi
 if [ "$IncludePorts" ]; then
   if [ "$ExcludePorts" ]; then
-    echo "Warning: ExcludePorts and IncludePorts are both defined."
-    echo "Ignoring 'ExcludePorts'.  Please check your nocat.conf."
+    if [ $VERBOSITY -gt 4 ]; then 
+        logger "Warning: ExcludePorts and IncludePorts are both defined."
+        logger "Ignoring 'ExcludePorts'.  Please check your nocat.conf."
+    fi
   fi
 
   # Enable all ports in IncludePorts
@@ -194,13 +320,32 @@ fi
 #
 # Disable access on the external to GatewayPort from anything but the AuthServiceAddr
 #
-if [ "$AuthServiceAddr" ]; then
-    $fwd -i $ExternalDevice -s ! $AuthServiceAddr -p tcp --dport $GatewayPort -j DROP
+if [ $LAN2WAN_RULE_NR -gt 0 ]; then
+    if [ $VERBOSITY -gt 4 ]; then logger "Linkysys specific: remove the general ACCEPT behavior"; fi
+    
+    ACCEPT_RELATED_RULE_NR=`rule_num "state RELATED"`
+    if [ $ACCEPT_RELATED_RULE_NR -gt 0 ]; then
+        iptables -t filter -D FORWARD $ACCEPT_RELATED_RULE_NR
+    fi
+    ACCEPT_NEW_RULE_NR=`rule_num "state NEW"`
+    if [ $ACCEPT_NEW_RULE_NR -gt 0 ]; then
+        iptables -t filter -D FORWARD $ACCEPT_NEW_RULE_NR
+    fi
+    #just to be sure
+    iptables -t filter -I FORWARD $ACCEPT_NEW_RULE_NR -j DROP
+    
+else
+    if [ $VERBOSITY -gt 4 ]; then logger "Disable access on the external to GatewayPort from anything but the AuthServiceAddr AuthServiceAddr=$AuthServiceAddr"; fi
+    
+    if [ "$AuthServiceAddr" ]; then
+        $fwd -i $ExternalDevice -s ! $AuthServiceAddr -p tcp --dport $GatewayPort -j DROP
+    fi
+    
+    # Filter policy.
+    if [ $VERBOSITY -gt 4 ]; then logger "Filter policy"; fi
+    $fwd -j DROP
+
 fi
-
-# Filter policy.
-$fwd -j DROP
-
 #
 # Call the bandwidth throttle rules.
 #
@@ -216,12 +361,15 @@ $fwd -j DROP
 #
 # chmod +x throttle.fw
 #
+#logger "Calling the bandwidth throttle rules..."
 #[ -x throttle.fw ] && throttle.fw
 
 ##
 # Add any other local firewall rules below.
 ##
 
+# just for re-initialize call, as we wait for completion in this case
+#echo 0
 #
 # Ende
 #
