@@ -20,6 +20,7 @@ endif
 	install fstab $(INSTALLDIR)/etc
 	install ethertypes $(INSTALLDIR)/etc
 	install protocols $(INSTALLDIR)/etc
+	install txackset.sh $(INSTALLDIR)/etc
 	install network.overrides $(INSTALLDIR)/etc
 	install init.d/rcS $(INSTALLDIR)/etc/init.d
 #install nvram/nvram $(INSTALLDIR)/etc/nvram
