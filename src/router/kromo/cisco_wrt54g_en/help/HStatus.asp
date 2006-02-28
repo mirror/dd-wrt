@@ -19,10 +19,18 @@
 				<dd>The version number of the firmware currently installed is displayed here. Firmware should only be upgraded from the System screen if you experience problems with the router. Visit <a href="http://www.dd-wrt.com" target="_new">www.dd-wrt.com</a> to find out if there is updated firmware.</dd>
 				<dt>Current Time</dt>
 				<dd>The current date and time are displayed here.</dd
-				<dt>Host Name</dt>
-				<dd>The Host Name is the name of the router. This entry is necessary for some ISPs.</dd>
 				<dt>MAC Address </dt>
 				<dd>The MAC Address of the Internet interface is displayed here.</dd>
+				<dt>Router Name</dt>
+				<dd>Shows the configured name of the router</dd>
+				<dt>Router Model</dt>
+				<dd>Shows the router vendor and the model</dd>
+				<dt>CPU</dt>
+				<dd>Shows the CPU type and revision</dd>
+				<dt>CPU Clock</dt>
+				<dd>Shows the current CPU clock</dd>
+				<dt>Host Name</dt>
+				<dd>The Host Name is the name of the router. This entry is necessary for some ISPs.</dd>
 				<dt>Configuration Type</dt>
 				<dd>The current Internet connection type is displayed here.</dd>
 				<dt>IP Address, Subnet Mask, and Default Gateway</dt>

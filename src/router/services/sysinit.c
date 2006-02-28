@@ -68,7 +68,7 @@
 int start_restore_defaults (void);
 int start_sysinit (void);
 static void rc_signal (int sig);
-
+static void overclock(void);
 static int check_cfe_nv (void);
 static int check_pmon_nv (void);
 static void unset_nvram (void);
@@ -291,12 +291,14 @@ int
 start_create_rc_startup (void)
 {
   create_rc_file (RC_STARTUP);
+return 0;
 }
 
 int
 start_create_rc_shutdown (void)
 {
   create_rc_file (RC_SHUTDOWN);
+return 0;
 }
 
 
@@ -605,7 +607,12 @@ start_restore_defaults (void)
   nvram_unset ("sputnik_mjid");
   nvram_unset ("sputnik_rereg");
 #endif
-
+  if (nvram_get("overclocking")==NULL)
+    nvram_set("overclocking",nvram_safe_get("clkfreq"));
+cprintf("start overclocking\n");
+  overclock();
+cprintf("done()");
+  
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
   else if (check_now_boot () == PMON_BOOT)
@@ -923,7 +930,7 @@ start_sysinit (void)
     }
 #endif
 
-
+return 0;
   cprintf ("done\n");
 }
 
@@ -1233,6 +1240,81 @@ check_nv (char *name, char *value)
 
   return ret;
 }
+#define ISCLK(a) nvram_match("clkfreq",a);
+static void overclock(void)
+{
+char *ov = nvram_get("overclocking");
+if (ov==NULL)return;
+int clk = atoi(ov);
+if (nvram_match("clkfreq","125"))return; //unsupported
+//int cclk = atoi(nvram_safe_get("clkfreq"));
+//if (cclk<192)return; //unsupported
+char *pclk = nvram_safe_get("clkfreq");
+char dup[64];
+strcpy(dup,pclk);
+int i;
+for (i=0;i<strlen(dup);i++)
+    if (dup[i]==',')dup[i]=0;
+int cclk = atoi(dup);
+if (cclk<192)
+    {
+    cprintf("clkfreq is %d (%s), this is unsupported\n",cclk,dup);
+    return; //unsupported
+    }
+
+if (clk==cclk) 
+    {
+    cprintf("clkfreq identical with new setting\n");
+    return; //clock already set
+    }
+int set=1;
+switch(clk)
+{
+case 192:
+nvram_set("clkfreq","192,96");
+break;
+case 200:
+nvram_set("clkfreq","200,100");
+break;
+case 216:
+nvram_set("clkfreq","216,108");
+break;
+case 228:
+nvram_set("clkfreq","228,114");
+break;
+case 240:
+nvram_set("clkfreq","240,120");
+break;
+case 252:
+nvram_set("clkfreq","252,126");
+break;
+case 264:
+nvram_set("clkfreq","264,132");
+break;
+case 280:
+nvram_set("clkfreq","280,120");
+break;
+case 300:
+nvram_set("clkfreq","300,120");
+break;
+default:
+set=0;
+break;
+}
+
+if (set)
+    {
+    cprintf("clock frequency adjusted from %d to %d, reboot needed\n",cclk,clk);
+    nvram_commit();
+      kill (1, SIGTERM);
+      exit (0);
+    }
+}
+
+int start_overclocking(void)
+{
+overclock();
+}
 
 static int
 check_cfe_nv (void)
@@ -1246,7 +1328,6 @@ check_cfe_nv (void)
 //      ret += check_nv("boardrev", "0x10");
 //      ret += check_nv("boardflags2", "0");
 //      ret += check_nv("sromrev", "2");
-
   switch (getRouterBrand ())
     {
     case ROUTER_ASUS:
@@ -1309,7 +1390,12 @@ check_cfe_nv (void)
 
 	  ret += check_nv ("sdram_init", "0x010b");
 	  ret += check_nv ("sdram_config", "0x0062");
-	  ret += check_nv ("clkfreq", "216");
+	  if (nvram_match("clkfreq","200") && nvram_match("overclocking","200"))
+	    {
+	    ret +=check_nv ("clkfreq", "216");
+	    nvram_set("overclocking","216");
+	    }
+	  
 	  if (ret)
 	    {
 	      nvram_set ("sdram_ncdl", "0x0");

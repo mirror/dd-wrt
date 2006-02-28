@@ -1767,13 +1767,9 @@ save_prefix (webs_t wp, char *prefix)
   char n[80];
   char radius[80];
   char p2[80];
-
-
   strcpy (p2, prefix);
   if (strcmp(prefix,"wl0"))
     rep (p2, '.', 'X');
-
-
 
   sprintf (n, "%s_crypto", prefix);
   copytonv (wp, n);
