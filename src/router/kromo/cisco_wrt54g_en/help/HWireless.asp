@@ -14,6 +14,13 @@
 		<div id="content">
 			<h2>Wireless Settings</h2>
 			<dl>
+				<dt>Sensitivity Range</dt>
+				<dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
+					<ul class="wide">
+						<li> 0 disables ack timing completely</li>
+						<li> 1 - 999999 adjusts ack timing</li>
+					</ul>
+				</dd>					 
 				<dt>Wireless Mode</dt>
 				<dd>The wireless part of your router can run in different modes:
 					<ul class="wide">

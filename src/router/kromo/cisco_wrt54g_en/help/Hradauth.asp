@@ -26,9 +26,9 @@
 				<dt>Radius Server IP and Port</dt>
 				<dd>The radius server IP address and TCP port.</dd>
 				<dt>Maximum Unauthenticated Users</dt>
-				<dd></dd>
+				<dd>Sets a amount of users which ran access without any valid radius authentifaction</dd>
 				<dt>Password Format</dt>
-				<dd></dd>
+				<dd>Sets the property which radius password should be used, the shared key or the mac adress itself</dd>
 				<dt>RADIUS Shared Secret</dt>
 				<dd>Transactions between the client and RADIUS accounting server are authenticated through the use of a shared secret, which is never sent over the network.</dd>
 			</dl>

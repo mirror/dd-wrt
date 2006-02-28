@@ -62,6 +62,7 @@ function to_submit(F) {
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
 	F.save_button.value = "Saved";
+	F.save_button.disabled = true;
 	F.action.value = "Apply";
 	F.submit();
 }
