@@ -34,7 +34,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGES.
  *
- * $Id: if_athrate.h 1441 2006-02-06 16:03:21Z mrenzmann $
+ * $Id: if_athrate.h 1456 2006-02-24 20:48:57Z jbicket $
  */
 #ifndef _ATH_RATECTRL_H_
 #define _ATH_RATECTRL_H_
@@ -128,7 +128,7 @@ void ath_rate_findrate(struct ath_softc *, struct ath_node *, int, size_t,
  * The rate index returned by ath_rate_findrate is passed back in.
  */
 void ath_rate_setupxtxdesc(struct ath_softc *, struct ath_node *,
-	struct ath_desc *, int, u_int8_t);
+	struct ath_desc *, int, size_t, u_int8_t);
 /*
  * Update rate control state for a packet associated with the
  * supplied transmit descriptor.  The routine is invoked both

@@ -1,0 +1,17 @@
+<fieldset>
+  <legend>Overclocking</legend>
+  <div class="setting">
+    <div class="label">Frequency</div>
+    <select name="overclocking">
+      <option value="192" <% nvram_match("overclocking","192","selected"); %>>192 Mhz</option>
+      <option value="200" <% nvram_match("overclocking","200","selected"); %>>200 Mhz</option>
+      <option value="216" <% nvram_match("overclocking","216","selected"); %>>216 Mhz</option>
+      <option value="228" <% nvram_match("overclocking","228","selected"); %>>228 Mhz</option>
+      <option value="240" <% nvram_match("overclocking","240","selected"); %>>240 Mhz</option>
+      <option value="252" <% nvram_match("overclocking","252","selected"); %>>252 Mhz</option>
+      <option value="264" <% nvram_match("overclocking","264","selected"); %>>264 Mhz</option>
+      <option value="280" <% nvram_match("overclocking","280","selected"); %>>280 Mhz</option>
+      <option value="300" <% nvram_match("overclocking","300","selected"); %>>300 Mhz</option>
+    </select>
+  </div>
+</fieldset><br/>

@@ -43,7 +43,7 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
   FILE *fcpu = fopen ("/proc/cpuinfo", "r");
   if (fcpu == NULL)
     {
-    websWrite(wp," Not Detected!\n");
+    websWrite(wp,"Not Detected!\n");
     return 0;
     }
   char buf[256];
@@ -53,7 +53,7 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
     int c=getc(fcpu);
     if (c==EOF)
 	{
-	websWrite(wp," Not Detected!\n");
+	websWrite(wp,"Not Detected!\n");
 	fclose(fcpu);
 	return 0;
 	}
@@ -66,7 +66,7 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
     int c=getc(fcpu);
     if (c==EOF)
 	{
-	websWrite(wp," Not Detected!\n");
+	websWrite(wp,"Not Detected!\n");
 	fclose(fcpu);
 	return 0;
 	}
@@ -1359,7 +1359,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
   sprintf(power,"%s_distance",prefix);
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Sensitivity Range</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> m (Default: 20000)\n",power,nvram_safe_get(power));
+  websWrite (wp, "<div class=\"label\">Sensitivity Range</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"6\" value='%s'/> m (Default: 20000)\n",power,nvram_safe_get(power));
   websWrite (wp,"</div>\n");
 
 

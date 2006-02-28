@@ -271,6 +271,7 @@ cprintf("is all?\n");
 	WL_IOCTL(name, WLC_SET_RATESET, &rs, sizeof (wl_rateset_t));
 */
 
+
   // Set ACK Timing. Thx to Nbd
   char *v;
   if (v = nvram_get ("wl0_distance"))
@@ -279,6 +280,14 @@ cprintf("is all?\n");
       uint32 shm;
 
       val = atoi (v);
+      if (v==0)
+        {
+	eval("/etc/txackset.sh","0"); // disable ack timing
+	return;
+	}else
+	{
+	eval("/etc/txackset.sh","1"); // enable ack timing
+	}
       val = 9 + (val / 300) + ((val % 300) ? 1 : 0);
 
       shm = 0x10;

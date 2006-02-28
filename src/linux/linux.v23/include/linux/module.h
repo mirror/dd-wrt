@@ -215,10 +215,13 @@ const char __module_description[] __attribute__((section(".modinfo"))) =   \
 
 #define MODULE_DESCRIPTION(desc)					   
 
+#define MODULE_SUPPORTED_DEVICE(dev)					
+
+/*
 #define MODULE_SUPPORTED_DEVICE(dev)					   \
 const char __module_device[] __attribute__((section(".modinfo"))) = 	   \
 "device=" dev
-
+*/
 /* Used to verify parameters given to the module.  The TYPE arg should
    be a string in the following format:
    	[min[-max]]{b,h,i,l,s}
@@ -232,16 +235,23 @@ const char __module_device[] __attribute__((section(".modinfo"))) = 	   \
 	s	string
 */
 
+#define MODULE_PARM(var,type)
+/*
+
+
 #define MODULE_PARM(var,type)			\
 const char __module_parm_##var[]		\
 __attribute__((section(".modinfo"))) =		\
 "parm_" __MODULE_STRING(var) "=" type
+*/
+#define MODULE_PARM_DESC(var,desc)		\
 
+/*
 #define MODULE_PARM_DESC(var,desc)		\
 const char __module_parm_desc_##var[]		\
 __attribute__((section(".modinfo"))) =		\
 "parm_desc_" __MODULE_STRING(var) "=" desc
-
+*/
 /*
  * MODULE_DEVICE_TABLE exports information about devices
  * currently supported by this module.  A device type, such as PCI,
@@ -255,12 +265,19 @@ __attribute__((section(".modinfo"))) =		\
  * isapnp - struct isapnp_device_id - List of ISA PnP ids supported by this module
  * usb - struct usb_device_id - List of USB ids supported by this module
  */
+
+
+
+
+#define MODULE_GENERIC_TABLE(gtype,name)
+/*
+
 #define MODULE_GENERIC_TABLE(gtype,name)	\
 static const unsigned long __module_##gtype##_size \
   __attribute_used__ = sizeof(struct gtype##_id); \
 static const struct gtype##_id * __module_##gtype##_table \
   __attribute_used__ = name
-
+*/
 /*
  * The following license idents are currently accepted as indicating free
  * software modules
@@ -285,11 +302,15 @@ static const struct gtype##_id * __module_##gtype##_table \
  * 2.	So the community can ignore bug reports including proprietary modules
  * 3.	So vendors can do likewise based on their own policies
  */
+
+#define MODULE_LICENSE(license) 
+
+/*
  
 #define MODULE_LICENSE(license) 	\
 static const char __module_license[] __attribute_used__ __attribute__((section(".modinfo"))) =   \
 "license=" license
-
+*/
 /* Define the module variable, and usage macros.  */
 extern struct module __this_module;
 
