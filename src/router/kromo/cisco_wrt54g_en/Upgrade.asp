@@ -117,7 +117,7 @@ function upgrade(F){
                      </div>
                      <hr width="90%" />
                      <div class="warning">
-                        <p><input type="text" name="process" size="27" maxlength="120" value="" onFocus="blur()" /></p><em>Upgrade must NOT be interrupted ! (please wait 2 mins.)</em></div>
+                        <p><input type="text" name="process" size="27" maxlength="120" value="" onFocus="blur()" /></p><em>Upgrade must NOT be interrupted! (please wait 2 mins.)</em></div>
                      <div class="submitFooter"><input type="button" name="Upgrade_b" value=" Upgrade " onclick="upgrade(this.form)" /></div>
                   </form>
                </div>
