@@ -54,7 +54,7 @@ function init() {
 									<li class="current"><span>Administration</span><div id="menuSub">
 										<ul id="menuSubList">
 											<li><a href="Management.asp">Management</a></li>
-											<li><a href="Hotspot.asp">Hotspot</a>a></li>
+											<li><a href="Hotspot.asp">Hotspot</a></li>
 											<li><a href="Services.asp">Services</a></li>
 											<li><span>Keep Alive</span></li>
 											<li><a href="Log.asp">Log</a></li>
