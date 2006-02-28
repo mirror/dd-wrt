@@ -1,6 +1,7 @@
 <fieldset>
   <legend>Overclocking</legend>
   <div class="setting">
+   <% nvram_match("clkfreq","125","<!--"); %>
     <div class="label">Frequency</div>
     <select name="overclocking">
       <option value="192" <% nvram_match("overclocking","192","selected"); %>>192 Mhz</option>
@@ -13,5 +14,7 @@
       <option value="280" <% nvram_match("overclocking","280","selected"); %>>280 Mhz</option>
       <option value="300" <% nvram_match("overclocking","300","selected"); %>>300 Mhz</option>
     </select>
+   <% nvram_match("clkfreq","125","-->"); %>
+   <% nvram_match("clkfreq","125","Not Supported"); %>
   </div>
 </fieldset><br/>
