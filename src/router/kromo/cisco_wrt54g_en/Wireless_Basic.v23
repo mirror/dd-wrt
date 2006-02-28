@@ -145,7 +145,7 @@ function init() {
                   <% nvram_invmatch("wl_mode", "ap", "-->"); %>
                 <br>
 		 <div class="setting">
-		    <div class="label">Distance (ACK Timing)</div>
+		    <div class="label">Sensitivity Range (ACK Timing)</div>
 		    <input name="wl_distance" size="8" maxlength="8" value='<% nvram_get("wl_distance"); %>' /> Meter
 		 </div>
                 <div class="submitFooter">
