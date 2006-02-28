@@ -218,7 +218,7 @@ function init() {
 										<td>&nbsp;</td>
 										<td colspan="2">
 											<input type="button" value="Add" onclick="ip_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;
-											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,'Netmask')" class="num"/>
+											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>/<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,'Netmask')" class="num"/>
 										</td>
 									</tr>
 								</table>
