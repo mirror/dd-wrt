@@ -215,6 +215,7 @@ start_single_service (void)
     kill (1, SIGHUP);
 
   cprintf ("Restart service=[%s]\n", service);
+  start_service("overclocking");
 
   if (!strcmp (service, "dhcp") || !strcmp (service, "services"))
     {

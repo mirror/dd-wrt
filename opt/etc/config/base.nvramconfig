@@ -213,3 +213,4 @@
  "enable_game" "enable game" "NULL" "FALSE" "0"
  "default_level" "default qos level" "NULL" "FALSE" "0"
  "static_leases" "static leases" "STATICLEASES" "TRUE" "0" 
+ "overclocking" "Overclocking" "NULL" "FALSE" "0" 

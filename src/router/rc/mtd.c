@@ -267,7 +267,7 @@ mtd_write (const char *path, const char *mtd)
 	    {
 	      fprintf (stderr, "%s: CRC OK\n", mtd);
 	      fprintf (stderr,
-		       "Writing image to flash, waiting a monent...\n");
+		       "Writing image to flash, waiting a moment...\n");
 	    }
 	}
       /* Do it */
