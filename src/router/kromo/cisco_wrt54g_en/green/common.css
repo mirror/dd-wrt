@@ -311,3 +311,8 @@ padding:.91em;
 left:0;
 z-index:0;
 }
+* #contentsInfo {
+position:relative;
+z-index:0;
+padding:.906em;
+}
