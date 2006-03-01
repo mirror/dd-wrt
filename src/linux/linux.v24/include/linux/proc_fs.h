@@ -70,6 +70,7 @@ struct proc_dir_entry {
 	atomic_t count;		/* use count */
 	int deleted;		/* delete flag */
 	kdev_t	rdev;
+	void *set;
 };
 
 #define PROC_INODE_PROPER(inode) ((inode)->i_ino & ~0xffff)

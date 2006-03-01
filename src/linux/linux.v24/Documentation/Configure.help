@@ -8257,7 +8257,7 @@ CONFIG_AIC7XXX_DEBUG_ENABLE
 Debug code enable mask (2048 for all debugging)
 CONFIG_AIC7XXX_DEBUG_MASK
   Bit mask of debug options that is only valid if the
-  CONFIG_AIC7XXX_DEBUG_ENBLE option is enabled.  The bits in this mask
+  CONFIG_AIC7XXX_DEBUG_ENABLE option is enabled.  The bits in this mask
   are defined in the drivers/scsi/aic7xxx/aic7xxx.h - search for the
   variable ahc_debug in that file to find them.
 
@@ -8431,7 +8431,7 @@ CONFIG_AIC79XX_DEBUG_ENABLE
 
 CONFIG_AIC79XX_DEBUG_MASK
   Bit mask of debug options that is only valid if the
-  CONFIG_AIC79XX_DEBUG_ENBLE option is enabled.  The bits in this mask
+  CONFIG_AIC79XX_DEBUG_ENABLE option is enabled.  The bits in this mask
   are defined in the drivers/scsi/aic7xxx/aic79xx.h - search for the
   variable ahd_debug in that file to find them.
 
@@ -15398,6 +15398,24 @@ CONFIG_INPUT_JOYDEV
   inserted in and removed from the running kernel whenever you want).
   The module will be called joydev.o. If you want to compile it as a
   module, say M here and read <file:Documentation/modules.txt>.
+
+Dummy keyboard driver
+CONFIG_DUMMY_KEYB
+  What is this for?
+
+  Not all systems have keyboards.  Some don't even have a keyboard
+  port.  However, some of those systems have video support and can
+  use the virtual terminal support for display.  However, the virtual
+  terminal code expects a keyboard of some kind.  This driver keeps
+  the virtual terminal code happy by providing it a "keyboard", albeit
+  a very quiet one.
+
+  If you want to use the virtual terminal support but your system
+  does not support a keyboard, define CONFIG_DUMMY_KEYB along with
+  CONFIG_VT.
+
+  This can also be selected lonesome without any VT support (i.e. no
+  monitor or keyboard attached) - just define CONFIG_DUMMY_KEYB.
 
 Event interface support
 CONFIG_INPUT_EVDEV

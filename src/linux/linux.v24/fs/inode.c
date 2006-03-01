@@ -854,8 +854,8 @@ void prune_icache(int goal)
 	 */
 	if (goal <= 0)
 		return;
-	if (inodes_stat.nr_unused * sizeof(struct inode) * 10 <
-				freeable_lowmem() * PAGE_SIZE)
+	if (inodes_stat.nr_unused <
+	    (freeable_lowmem() * PAGE_SIZE) / (sizeof(struct inode) * 10))
 		return;
 
 	wakeup_bdflush();

@@ -13,21 +13,26 @@
  *  This driver probably works with non-Apple versions of the
  *  Broadcom chipset...
  *
- *  The contents of this file are subject to the Open
- *  Software License version 1.1 that can be found at
- *  http://www.opensource.org/licenses/osl-1.1.txt and is included herein
- *  by reference.
  *
- *  Alternatively, the contents of this file may be used under the terms
- *  of the GNU General Public License version 2 (the "GPL") as distributed
- *  in the kernel source COPYING file, in which case the provisions of
- *  the GPL are applicable instead of the above.  If you wish to allow
- *  the use of your version of this file only under the terms of the
- *  GPL and not to allow others to use your version of this file under
- *  the OSL, indicate your decision by deleting the provisions above and
- *  replace them with the notice and other provisions required by the GPL.
- *  If you do not delete the provisions above, a recipient may use your
- *  version of this file under either the OSL or the GPL.
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ *
+ *  libata documentation is available via 'make {ps|pdf}docs',
+ *  as Documentation/DocBook/libata.*
+ *
+ *  Hardware documentation available under NDA.
  *
  */
 
@@ -49,7 +54,7 @@
 #endif /* CONFIG_PPC_OF */
 
 #define DRV_NAME	"sata_svw"
-#define DRV_VERSION	"1.06"
+#define DRV_VERSION	"1.07"
 
 /* Taskfile registers offsets */
 #define K2_SATA_TF_CMD_OFFSET		0x00
@@ -79,6 +84,8 @@
 /* Port stride */
 #define K2_SATA_PORT_OFFSET		0x100
 
+static u8 k2_stat_check_status(struct ata_port *ap);
+
 
 static u32 k2_sata_scr_read (struct ata_port *ap, unsigned int sc_reg)
 {
@@ -97,7 +104,7 @@ static void k2_sata_scr_write (struct ata_port *ap, unsigned int sc_reg,
 }
 
 
-static void k2_sata_tf_load(struct ata_port *ap, struct ata_taskfile *tf)
+static void k2_sata_tf_load(struct ata_port *ap, const struct ata_taskfile *tf)
 {
 	struct ata_ioports *ioaddr = &ap->ioaddr;
 	unsigned int is_addr = tf->flags & ATA_TFLAG_ISADDR;
@@ -131,16 +138,24 @@ static void k2_sata_tf_load(struct ata_port *ap, struct ata_taskfile *tf)
 static void k2_sata_tf_read(struct ata_port *ap, struct ata_taskfile *tf)
 {
 	struct ata_ioports *ioaddr = &ap->ioaddr;
-	u16 nsect, lbal, lbam, lbah;
+	u16 nsect, lbal, lbam, lbah, feature;
 
-	nsect = tf->nsect = readw(ioaddr->nsect_addr);
-	lbal = tf->lbal = readw(ioaddr->lbal_addr);
-	lbam = tf->lbam = readw(ioaddr->lbam_addr);
-	lbah = tf->lbah = readw(ioaddr->lbah_addr);
+	tf->command = k2_stat_check_status(ap);
 	tf->device = readw(ioaddr->device_addr);
+	feature = readw(ioaddr->error_addr);
+	nsect = readw(ioaddr->nsect_addr);
+	lbal = readw(ioaddr->lbal_addr);
+	lbam = readw(ioaddr->lbam_addr);
+	lbah = readw(ioaddr->lbah_addr);
+
+	tf->feature = feature;
+	tf->nsect = nsect;
+	tf->lbal = lbal;
+	tf->lbam = lbam;
+	tf->lbah = lbah;
 
 	if (tf->flags & ATA_TFLAG_LBA48) {
-		tf->hob_feature = readw(ioaddr->error_addr) >> 8;
+		tf->hob_feature = feature >> 8;
 		tf->hob_nsect = nsect >> 8;
 		tf->hob_lbal = lbal >> 8;
 		tf->hob_lbam = lbam >> 8;
@@ -195,18 +210,18 @@ static void k2_bmdma_start_mmio (struct ata_queued_cmd *qc)
 	/* start host DMA transaction */
 	dmactl = readb(mmio + ATA_DMA_CMD);
 	writeb(dmactl | ATA_DMA_START, mmio + ATA_DMA_CMD);
-	/* There is a race condition in certain SATA controllers that can 
-	   be seen when the r/w command is given to the controller before the 
+	/* There is a race condition in certain SATA controllers that can
+	   be seen when the r/w command is given to the controller before the
 	   host DMA is started. On a Read command, the controller would initiate
 	   the command to the drive even before it sees the DMA start. When there
-	   are very fast drives connected to the controller, or when the data request 
+	   are very fast drives connected to the controller, or when the data request
 	   hits in the drive cache, there is the possibility that the drive returns a part
 	   or all of the requested data to the controller before the DMA start is issued.
 	   In this case, the controller would become confused as to what to do with the data.
 	   In the worst case when all the data is returned back to the controller, the
 	   controller could hang. In other cases it could return partial data returning
 	   in data corruption. This problem has been seen in PPC systems and can also appear
-	   on an system with very fast disks, where the SATA controller is sitting behind a 
+	   on an system with very fast disks, where the SATA controller is sitting behind a
 	   number of bridges, and hence there is significant latency between the r/w command
 	   and the start command. */
 	/* issue r/w command if the access is to ATA*/
@@ -214,7 +229,7 @@ static void k2_bmdma_start_mmio (struct ata_queued_cmd *qc)
 		ap->ops->exec_command(ap, &qc->tf);
 }
 
-									      
+
 static u8 k2_stat_check_status(struct ata_port *ap)
 {
        	return readl((void *) ap->ioaddr.status_addr);
@@ -292,7 +307,7 @@ static Scsi_Host_Template k2_sata_sht = {
 };
 
 
-static struct ata_port_operations k2_sata_ops = {
+static const struct ata_port_operations k2_sata_ops = {
 	.port_disable		= ata_port_disable,
 	.tf_load		= k2_sata_tf_load,
 	.tf_read		= k2_sata_tf_read,
@@ -313,7 +328,7 @@ static struct ata_port_operations k2_sata_ops = {
 	.scr_write		= k2_sata_scr_write,
 	.port_start		= ata_port_start,
 	.port_stop		= ata_port_stop,
-	.host_stop		= ata_host_stop,
+	.host_stop		= ata_pci_host_stop,
 };
 
 static void k2_sata_setup_port(struct ata_ioports *port, unsigned long base)
@@ -341,13 +356,13 @@ static int k2_sata_init_one (struct pci_dev *pdev, const struct pci_device_id *e
 	static int printed_version;
 	struct ata_probe_ent *probe_ent = NULL;
 	unsigned long base;
-	void *mmio_base;
+	void __iomem *mmio_base;
 	int pci_dev_busy = 0;
 	int rc;
 	int i;
 
 	if (!printed_version++)
-		printk(KERN_DEBUG DRV_NAME " version " DRV_VERSION "\n");
+		pdev_printk(KERN_DEBUG, pdev, "version " DRV_VERSION "\n");
 
 	/*
 	 * If this driver happens to only be useful on Apple's K2, then
@@ -373,6 +388,9 @@ static int k2_sata_init_one (struct pci_dev *pdev, const struct pci_device_id *e
 	rc = pci_set_dma_mask(pdev, ATA_DMA_MASK);
 	if (rc)
 		goto err_out_regions;
+	rc = pci_set_consistent_dma_mask(pdev, ATA_DMA_MASK);
+	if (rc)
+		goto err_out_regions;
 
 	probe_ent = kmalloc(sizeof(*probe_ent), GFP_KERNEL);
 	if (probe_ent == NULL) {
@@ -384,8 +402,7 @@ static int k2_sata_init_one (struct pci_dev *pdev, const struct pci_device_id *e
 	probe_ent->dev = pci_dev_to_dev(pdev);
 	INIT_LIST_HEAD(&probe_ent->node);
 
-	mmio_base = ioremap(pci_resource_start(pdev, 5),
-		            pci_resource_len(pdev, 5));
+	mmio_base = pci_iomap(pdev, 5, 0);
 	if (mmio_base == NULL) {
 		rc = -ENOMEM;
 		goto err_out_free_ent;
@@ -447,7 +464,7 @@ err_out:
  * 0x24a is device ID for BCM5785 (aka HT1000) HT southbridge integrated SATA
  * controller
  * */
-static struct pci_device_id k2_sata_pci_tbl[] = {
+static const struct pci_device_id k2_sata_pci_tbl[] = {
 	{ 0x1166, 0x0240, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 4 },
 	{ 0x1166, 0x0241, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 4 },
 	{ 0x1166, 0x0242, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 8 },

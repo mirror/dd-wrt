@@ -125,6 +125,8 @@ int exec_usermodehelper(char *program_path, char *argv[], char *envp[])
 	curtask->euid = curtask->uid = curtask->suid = curtask->fsuid = 0;
 	curtask->egid = curtask->gid = curtask->sgid = curtask->fsgid = 0;
 
+	memcpy(&curtask->rlim, &init_task.rlim, sizeof(struct rlimit)*RLIM_NLIMITS);
+
 	curtask->ngroups = 0;
 
 	cap_set_full(curtask->cap_effective);

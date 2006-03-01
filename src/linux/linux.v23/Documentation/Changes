@@ -91,6 +91,8 @@ The Red Hat gcc 2.96 compiler subtree can also be used to build this tree.
 You should ensure you use gcc-2.96-74 or later. gcc-2.96-54 will not build
 the kernel correctly.
 
+gcc 4 is not supported.
+
 In addition, please pay attention to compiler optimization.  Anything
 greater than -O2 may not be wise.  Similarly, if you choose to use gcc-2.95.x
 or derivatives, be sure not to use -fstrict-aliasing (which, depending on

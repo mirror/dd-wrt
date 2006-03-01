@@ -4826,7 +4826,7 @@ ahc_linux_queue_recovery_cmd(Scsi_Cmnd *cmd, scb_flag flag)
 		  	if (ahc_match_scb(ahc, pending_scb, cmd->device->id,
 					  cmd->device->channel + 'A',
 					  CAM_LUN_WILDCARD,
-					  SCB_LIST_NULL, ROLE_INITIATOR) == 0)
+					  SCB_LIST_NULL, ROLE_INITIATOR))
 				break;
 		}
 	}
