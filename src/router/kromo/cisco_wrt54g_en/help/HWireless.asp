@@ -14,13 +14,6 @@
 		<div id="content">
 			<h2>Wireless Settings</h2>
 			<dl>
-				<dt>Sensitivity Range</dt>
-				<dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
-					<ul class="wide">
-						<li> 0 disables ack timing completely</li>
-						<li> 1 - 999999 adjusts ack timing</li>
-					</ul>
-				</dd>					 
 				<dt>Wireless Mode</dt>
 				<dd>The wireless part of your router can run in different modes:
 					<ul class="wide">
@@ -40,8 +33,15 @@
 				</dd>
 				<dt>Wireless Channel</dt>
 				<dd>Select the appropriate channel from the list provided to correspond with your network settings (in North America between channel 1 and 11, in Europe 1 and 13, in Japan all 14 channels). All devices in your wireless network must use the same channel in order to function correctly. Try to avoid conflicts with other wireless networks by choosing a channel where the upper and lower three channels are not in use.</dd>
-				<dt>SSID Broadcast</dt>
+				<dt>Wireless SSID Broadcast</dt>
 				<dd>When wireless clients survey the local area for wireless networks to associate with, they will detect the SSID broadcast by the router. To broadcast the router SSID, keep the default setting, <i>Enable</i>. If you do not want to broadcast the router SSID, then select <i>Disable</i>.</dd>
+				<dt>Sensitivity Range</dt>
+				<dd>Adjusts the ack timing in Atheros typical way based on the maximum distance in meters
+					<ul class="wide">
+						<li> 0 disables ack timing completely</li>
+						<li> 1 - 999999 adjusts ack timing</li>
+					</ul>
+				</dd>
 				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
 			</dl>
 		</div>
