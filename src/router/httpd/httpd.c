@@ -223,16 +223,16 @@ auth_check (char *dirname, char *authorization)
   *authpass++ = '\0';
 
   /* Is this the right user and password? */
-#ifdef DDM_SUPPORT
+//#ifdef DDM_SUPPORT
   if (strcmp (auth_userid, authinfo) == 0
       && strcmp (auth_passwd, authpass) == 0)
     {
       return 1;
     }
-#else
-  if (strcmp (auth_passwd, authpass) == 0)
-    return 1;
-#endif
+//#else
+//  if (strcmp (auth_passwd, authpass) == 0)
+//    return 1;
+//#endif
   //send_authenticate( dirname );
   return 0;
 }
@@ -1083,7 +1083,7 @@ main (int argc, char **argv)
 		 "	-s ciphers: set cipher lists\n"
 		 "	-g: get cipher lists\n"
 		 "	-h: home directory: use directory\n"
-		 "	-d: decode string\n",
+		 "	-d: decode string\n"
 		 "	-e: encode string\n", argv[0]);
 	exit (0);
 	break;

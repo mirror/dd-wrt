@@ -36,6 +36,26 @@
 #include <wlutils.h>
 #include <bcmparams.h>
 
+
+int
+ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fcpu = fopen ("/proc/meminfo", "r");
+  if (fcpu == NULL)
+    {
+      return 0;
+    }
+char buf[128];
+int n = 0;
+rep:; 
+if (n==EOF)
+    return 0;
+if (n)websWrite(wp,"'%s'",buf);
+n = fscanf(fcpu,"%s",buf);
+if (n!=EOF)
+    websWrite(wp,",");
+goto rep;
+}
 int
 ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 {
