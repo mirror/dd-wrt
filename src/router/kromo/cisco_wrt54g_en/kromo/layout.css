@@ -139,7 +139,8 @@ fieldset {
 	z-index:				30;
 }
 
-.submitFooter {
+.submitFooter,
+.submitFooterCmd {
 	margin:					1em;	
 	padding-top:			0.5em;	
 	padding-bottom:			0.5em;	
