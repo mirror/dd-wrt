@@ -8,22 +8,22 @@ enum exittype {
 	VERSION_PROBLEM
 };
 extern void exit_printhelp(void) __attribute__((noreturn));
-extern void tc_exit_tryhelp(int) __attribute__((noreturn));
+extern void exit_tryhelp(int) __attribute__((noreturn));
 int check_inverse(const char option[], int *invert, int *optind, int argc);
-extern int tc_string_to_number(const char *, 
+extern int string_to_number(const char *, 
 			    unsigned int, 
 			    unsigned int,
 			    unsigned int *);
-extern int tc_string_to_number_l(const char *, 
+extern int string_to_number_l(const char *, 
 			    unsigned long int, 
 			    unsigned long int,
 			    unsigned long *);
-extern int tc_string_to_number_ll(const char *, 
+extern int string_to_number_ll(const char *, 
 			    unsigned long long int, 
 			    unsigned long long int,
 			    unsigned long long *);
 extern int iptables_insmod(const char *modname, const char *modprobe);
-void tc_exit_error(enum exittype, char *, ...)__attribute__((noreturn,
+void exit_error(enum exittype, char *, ...)__attribute__((noreturn,
 							  format(printf,2,3)));
 extern const char *program_name, *program_version;
 extern char *lib_dir;

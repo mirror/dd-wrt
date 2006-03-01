@@ -81,10 +81,12 @@ endif
 ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS += -DHAVE_OPENVPN
 endif
-ifeq ($(CONFIG_IPROUTE2),y)
-CFLAGS += -DHAVE_IPROUTE2
-LIBRARIES += ../iproute2/ip/ip.a ../iproute2/lib/libnetlink.a ../iproute2/lib/libutil.a ../iproute2/tc/q_htb.o ../iproute2/tc/tc.o ../iproute2/tc/tc_qdisc.o ../iproute2/tc/tc_class.o ../iproute2/tc/tc_filter.o ../iproute2/tc/tc_util.o ../iproute2/tc/m_police.o ../iproute2/tc/m_estimator.o ../iproute2/tc/m_action.o ../iproute2/tc/q_fifo.o ../iproute2/tc/q_sfq.o ../iproute2/tc/q_red.o ../iproute2/tc/q_prio.o ../iproute2/tc/q_tbf.o ../iproute2/tc/q_cbq.o ../iproute2/tc/q_wrr.o ../iproute2/tc/f_rsvp.o ../iproute2/tc/f_u32.o ../iproute2/tc/f_route.o ../iproute2/tc/f_fw.o ../iproute2/tc/q_dsmark.o ../iproute2/tc/q_gred.o ../iproute2/tc/f_tcindex.o ../iproute2/tc/q_ingress.o ../iproute2/tc/q_hfsc.o ../iproute2/tc/m_gact.o ../iproute2/tc/m_mirred.o ../iproute2/tc/m_ipt.o ../iproute2/tc/m_pedit.o ../iproute2/tc/p_ip.o ../iproute2/tc/p_icmp.o ../iproute2/tc/p_tcp.o ../iproute2/tc/p_udp.o ../iproute2/tc/tc_core.o ../iproute2/tc/tc_red.o ../iproute2/tc/tc_cbq.o ../iproute2/tc/tc_estimator.o -ldl -lm
-endif
+
+#ifeq ($(CONFIG_IPROUTE2),y)
+#CFLAGS += -DHAVE_IPROUTE2
+#LIBRARIES += ../iproute2/ip/ip.a ../iproute2/lib/libnetlink.a ../iproute2/lib/libutil.a ../iproute2/tc/q_htb.o ../iproute2/tc/tc.o ../iproute2/tc/tc_qdisc.o ../iproute2/tc/tc_class.o ../iproute2/tc/tc_filter.o ../iproute2/tc/tc_util.o ../iproute2/tc/m_police.o ../iproute2/tc/m_estimator.o ../iproute2/tc/m_action.o ../iproute2/tc/q_fifo.o ../iproute2/tc/q_sfq.o ../iproute2/tc/q_red.o ../iproute2/tc/q_prio.o ../iproute2/tc/q_tbf.o ../iproute2/tc/q_cbq.o ../iproute2/tc/q_wrr.o ../iproute2/tc/f_rsvp.o ../iproute2/tc/f_u32.o ../iproute2/tc/f_route.o ../iproute2/tc/f_fw.o ../iproute2/tc/q_dsmark.o ../iproute2/tc/q_gred.o ../iproute2/tc/f_tcindex.o ../iproute2/tc/q_ingress.o ../iproute2/tc/q_hfsc.o ../iproute2/tc/m_gact.o ../iproute2/tc/m_mirred.o ../iproute2/tc/m_ipt.o ../iproute2/tc/m_pedit.o ../iproute2/tc/p_ip.o ../iproute2/tc/p_icmp.o ../iproute2/tc/p_tcp.o ../iproute2/tc/p_udp.o ../iproute2/tc/tc_core.o ../iproute2/tc/tc_red.o ../iproute2/tc/tc_cbq.o ../iproute2/tc/tc_estimator.o -ldl -lm
+#endif
+
 ifeq ($(CONFIG_NEWMEDIA),y)
 CFLAGS += -DHAVE_NEWMEDIA
 endif

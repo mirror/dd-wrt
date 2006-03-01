@@ -11,7 +11,7 @@ cp .config_voip .config
 #cp Makefile.standard Makefile
 #copy config.normal .config
 cd ..
-#make clean
+make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
