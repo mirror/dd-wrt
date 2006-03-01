@@ -73,7 +73,7 @@
 		</div>
 	<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
 		<div class="label">Additional DNS Options</div>
-			<textarea cols="60" rows="2" id="dnsmasq_options" name="dnsmasq_options"></textarea>
+			<textarea cols="60" rows="4" id="dnsmasq_options" name="dnsmasq_options"></textarea>
 			<script language="javascript">
 				var dnsmasq_options = fix_cr( '<% nvram_get("dnsmasq_options"); %>' );
 				document.getElementById("dnsmasq_options").value = dnsmasq_options;
