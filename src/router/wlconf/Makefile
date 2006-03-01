@@ -38,4 +38,8 @@ endif
 	$(STRIP) $(INSTALLDIR)/usr/sbin/wlconf
 
 wlconf: $(OBJS)
+ifeq ($(CONFIG_MSSID),y)
 	$(CC) -o $@ $^ $(LDFLAGS)
+else
+	@true
+endif

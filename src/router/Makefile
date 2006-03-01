@@ -779,6 +779,7 @@ smtp-redirect-install:
 
 		
 chillispot:
+	cd chillispot && . ./conf
 	$(MAKE) -C chillispot
 
 chillispot-install:

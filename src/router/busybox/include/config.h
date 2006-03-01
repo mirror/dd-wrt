@@ -4,7 +4,7 @@
 
 /* Version Number */
 #define BB_VER "1.01"
-#define BB_BT "2006.03.01-11:29+0000"
+#define BB_BT "2006.03.01-17:17+0000"
 
 #define HAVE_DOT_CONFIG 1
 
