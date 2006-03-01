@@ -3401,10 +3401,10 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  ret += websWrite (wp, " onClick=");
 	  if (i < 17)
 	    snprintf (buff, sizeof (buff),
-		      "\"SelVLAN(this.form,\"port%d\")\"", j);
+		      "\"SelVLAN(this.form,\'port%d\')\"", j);
 	  else if (i == 17)
 	    snprintf (buff, sizeof (buff),
-		      "\"SelSpeed(this.form,\"port%d\")\"", j);
+		      "\"SelSpeed(this.form,\'port%d\')\"", j);
 
 	  ret += websWrite (wp, buff);
 	  ret += websWrite (wp, "></B></TD>\n");
