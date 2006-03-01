@@ -183,7 +183,15 @@ internal_getRouterBrand ()
 	}
     }
 
-
+  if (nvram_match ("boardnum", "2") &&
+      nvram_match ("boardrev", "0x10") &&
+      nvram_match ("boardtype", "bcm94710dev") &&
+      nvram_match ("boardflags", "0x0200"))
+    {
+      cprintf ("router is linksys WRT55AG\n");
+      setRouter ("Linksys WRT55AG");
+      return ROUTER_LINKSYS_WRT55AG;
+    }
 
 //      [  "$(nvram get boardtype)" = "bcm95365r" \
 //-a "$(nvram get boardnum)" = "45" ] && {

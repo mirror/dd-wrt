@@ -246,7 +246,7 @@ install package: $(filter-out lib-install,$(obj-install)) $(LINUXDIR)/.config
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
 	fi
 ifeq ($(CONFIG_MADWIFI),y)
-	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre1/kernel/drivers/net/wl
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/wl
 endif
 #	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 #	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
@@ -273,8 +273,8 @@ endif
 	# quick n dirty - stuff Nikki's module where it belongs
 	#mkdir $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996
 	if [ "$(CONFIG_MMC)" = "y" ] ; then \
-	mkdir $(TARGETDIR)/lib/modules/2.4.33-pre1/kernel/fs/mmc ; \
-	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.33-pre1/kernel/fs/mmc ; \
+	mkdir $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/mmc ; \
+	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/mmc ; \
 	fi ; 
 #ifeq ($(CONFIG_MSSID),y)
 #	cp adm6996.v24/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
@@ -282,7 +282,7 @@ endif
 #	cp adm6996/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
 #endif
 
-	rm -f $(TARGETDIR)/lib/modules/2.4.33-pre1/build
+	rm -f $(TARGETDIR)/lib/modules/2.4.33-pre2/build
 	
 	
         # Prepare filesystem
@@ -698,7 +698,7 @@ mmc:
 	$(MAKE) -C mmc
 
 mmc-install:
-	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/2.4.33-pre1/kernel/fs/mmc/mmc.o
+	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/2.4.33-pre2/kernel/fs/mmc/mmc.o
 	install -D  mmc/config/mmc.webconfig $(INSTALLDIR)/mmc/etc/config/mmc.webconfig
 	install -D  mmc/config/mmc.startup $(INSTALLDIR)/mmc/etc/config/mmc.startup
 	install -D  mmc/config/mmc.nvramconfig $(INSTALLDIR)/mmc/etc/config/mmc.nvramconfig
@@ -1160,9 +1160,9 @@ endif
 
 adm6996-install:
 ifeq ($(CONFIG_MSSID),y)
-	install -D adm6996.v24/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-pre1/kernel/drivers/net/adm6996/adm6996.o
+	install -D adm6996.v24/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-pre2/kernel/drivers/net/adm6996/adm6996.o
 else
-	install -D adm6996/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-pre1/kernel/drivers/net/adm6996/adm6996.o
+	install -D adm6996/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-pre2/kernel/drivers/net/adm6996/adm6996.o
 endif
 #	$(STRIP) $(INSTALLDIR)/adm6996/lib/adm6996.o
 
@@ -1226,12 +1226,12 @@ madwifi-clean:
 	make -C madwifi-ng clean KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf ATH_RATE=ath_rate/sample
 
 madwifi-install:
-	mkdir -p $(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre1
+	mkdir -p $(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre2
 	cp -fpR ./madwifi-ng/net80211/wlan*.o \
 		./madwifi-ng/ath_hal/ath_hal.o \
 		./madwifi-ng/ath_rate/sample/ath_rate_sample.o \
 		./madwifi-ng/ath/ath_pci.o \
-		$(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre1/
+		$(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre2/
 	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
 	cp -fpR madwifi-ng/tools/athstats \
 		madwifi-ng/tools/athdebug \
