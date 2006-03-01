@@ -664,7 +664,7 @@ struct nvram_tuple router_defaults[] = {
   {"samba_script", "yourscript", 0},
   {"rflow_enable", "0", 0},
   {"status_auth", "1", 0},
-  {"info_passwd", "1", 0},
+  {"info_passwd", "0", 0},
   {"macupd_enable", "0", 0},
   {"wl_radauth", "0", 0},
   /* Sveasoft added defaults */

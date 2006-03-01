@@ -71,9 +71,13 @@ struct ip_ct_gre {
 	unsigned int timeout;
 };
 
+/* this is part of ip_conntrack_expect */
+struct ip_ct_gre_expect {
+	struct ip_ct_gre_keymap *keymap_orig, *keymap_reply;
+};
+
 #ifdef __KERNEL__
 struct ip_conntrack_expect;
-struct ip_conntrack;
 
 /* structure for original <-> reply keymap */
 struct ip_ct_gre_keymap {
@@ -82,13 +86,18 @@ struct ip_ct_gre_keymap {
 	struct ip_conntrack_tuple tuple;
 };
 
+
 /* add new tuple->key_reply pair to keymap */
-int ip_ct_gre_keymap_add(struct ip_conntrack *ct,
+int ip_ct_gre_keymap_add(struct ip_conntrack_expect *exp,
 			 struct ip_conntrack_tuple *t,
 			 int reply);
 
+/* change an existing keymap entry */
+void ip_ct_gre_keymap_change(struct ip_ct_gre_keymap *km,
+			     struct ip_conntrack_tuple *t);
+
 /* delete keymap entries */
-void ip_ct_gre_keymap_destroy(struct ip_conntrack *ct);
+void ip_ct_gre_keymap_destroy(struct ip_conntrack_expect *exp);
 
 
 /* get pointer to gre key, if present */

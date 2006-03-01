@@ -8,7 +8,6 @@
       <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
       <title><% nvram_get("router_name"); %> - Status</title>
       <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
-var cpu_freq = "<% nvram_get("clkfreq"); %>"
       
 function DHCPAction(F,I) {
 	F.submit_type.value = I;
@@ -130,7 +129,7 @@ function ViewDHCP() {
                         <div class="setting">
                            <div class="label">CPU</div><% show_cpuinfo(); %>
                         </div><div class="setting">
-                           <div class="label">CPU Clock</div><script type="text/javascript">document.write(cpu_freq.substr(0,3));</script> MHz
+                           <div class="label">CPU Clock</div><% get_clkfreq(); %> MHz
                         </div>
                         <div class="setting">
                            <div class="label">Host Name</div><% nvram_get("wan_hostname"); %>

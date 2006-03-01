@@ -1,5 +1,5 @@
 /*
- * ip_nat_proto_gre.c - Version 2.0
+ * ip_nat_proto_gre.c - Version 1.2
  *
  * NAT protocol helper module for GRE.
  *
@@ -17,7 +17,7 @@
  *
  * Documentation about PPTP can be found in RFC 2637
  *
- * (C) 2000-2004 by Harald Welte <laforge@gnumonks.org>
+ * (C) 2000-2003 by Harald Welte <laforge@gnumonks.org>
  *
  * Development of this code funded by Astaro AG (http://www.astaro.com/)
  *
@@ -36,8 +36,8 @@ MODULE_AUTHOR("Harald Welte <laforge@gnumonks.org>");
 MODULE_DESCRIPTION("Netfilter NAT protocol helper module for GRE");
 
 #if 0
-#define DEBUGP(format, args...) printk(KERN_DEBUG "%s:%s: " format, __FILE__, \
-				       __FUNCTION__, ## args)
+#define DEBUGP(format, args...) printk(KERN_DEBUG __FILE__ ":" __FUNCTION__ \
+				       ": " format, ## args)
 #else
 #define DEBUGP(x, args...)
 #endif
@@ -68,7 +68,7 @@ gre_unique_tuple(struct ip_conntrack_tuple *tuple,
 		 const struct ip_conntrack *conntrack)
 {
 	u_int32_t min, i, range_size;
-	u_int16_t key = 0, *keyptr;
+	u_int32_t key = 0, *keyptr;
 
 	if (maniptype == IP_NAT_MANIP_SRC)
 		keyptr = &tuple->src.u.gre.key;
@@ -76,9 +76,11 @@ gre_unique_tuple(struct ip_conntrack_tuple *tuple,
 		keyptr = &tuple->dst.u.gre.key;
 
 	if (!(range->flags & IP_NAT_RANGE_PROTO_SPECIFIED)) {
+
 		DEBUGP("%p: NATing GRE PPTP\n", conntrack);
 		min = 1;
 		range_size = 0xffff;
+
 	} else {
 		min = ntohl(range->min.gre.key);
 		range_size = ntohl(range->max.gre.key) - min + 1;
@@ -98,24 +100,13 @@ gre_unique_tuple(struct ip_conntrack_tuple *tuple,
 }
 
 /* manipulate a GRE packet according to maniptype */
-static int
-gre_manip_pkt(struct sk_buff **pskb,
-	      unsigned int iphdroff,
-	      const struct ip_conntrack_tuple *tuple,
+static void 
+gre_manip_pkt(struct iphdr *iph, size_t len, 
+	      const struct ip_conntrack_manip *manip,
 	      enum ip_nat_manip_type maniptype)
 {
-	struct gre_hdr *greh;
-	struct gre_hdr_pptp *pgreh;
-	struct iphdr *iph = (struct iphdr *)((*pskb)->data + iphdroff);
-	unsigned int hdroff = iphdroff + iph->ihl*4;
-
-	/* pgreh includes two optional 32bit fields which are not required
-	 * to be there.  That's where the magic '8' comes from */
-	if (!skb_ip_make_writable(pskb, hdroff + sizeof(*pgreh)-8))
-		return 0;
-
-	greh = (void *)(*pskb)->data + hdroff;
-	pgreh = (struct gre_hdr_pptp *) greh;
+	struct gre_hdr *greh = (struct gre_hdr *)((u_int32_t *)iph+iph->ihl);
+	struct gre_hdr_pptp *pgreh = (struct gre_hdr_pptp *) greh;
 
 	/* we only have destination manip of a packet, since 'source key' 
 	 * is not present in the packet itself */
@@ -131,23 +122,21 @@ gre_manip_pkt(struct sk_buff **pskb,
 				/* FIXME: Never tested this code... */
 				*(gre_csum(greh)) = 
 					ip_nat_cheat_check(~*(gre_key(greh)),
-							tuple->dst.u.gre.key,
+							manip->u.gre.key,
 							*(gre_csum(greh)));
 			}
-			*(gre_key(greh)) = tuple->dst.u.gre.key;
+			*(gre_key(greh)) = manip->u.gre.key;
 			break;
 		case GRE_VERSION_PPTP:
 			DEBUGP("call_id -> 0x%04x\n", 
-				ntohl(tuple->dst.u.gre.key));
-			pgreh->call_id = htons(ntohl(tuple->dst.u.gre.key));
+				ntohl(manip->u.gre.key));
+			pgreh->call_id = htons(ntohl(manip->u.gre.key));
 			break;
 		default:
 			DEBUGP("can't nat unknown GRE version\n");
-			return 0;
 			break;
 		}
 	}
-	return 1;
 }
 
 /* print out a nat tuple */
@@ -187,27 +176,26 @@ gre_print_range(char *buffer, const struct ip_nat_range *range)
 }
 
 /* nat helper struct */
-static struct ip_nat_protocol gre = { 
-	.name		= "GRE", 
-	.protonum	= IPPROTO_GRE,
-	.manip_pkt	= gre_manip_pkt,
-	.in_range	= gre_in_range,
-	.unique_tuple	= gre_unique_tuple,
-	.print		= gre_print,
-	.print_range	= gre_print_range 
-};
+static struct ip_nat_protocol gre = 
+	{ { NULL, NULL }, "GRE", IPPROTO_GRE,
+	  gre_manip_pkt,
+	  gre_in_range,
+	  gre_unique_tuple,
+	  gre_print,
+	  gre_print_range 
+	};
 				  
 static int __init init(void)
 {
-	if (ip_nat_protocol_register(&gre))
-		return -EIO;
+        if (ip_nat_protocol_register(&gre))
+                return -EIO;
 
-	return 0;
+        return 0;
 }
 
 static void __exit fini(void)
 {
-	ip_nat_protocol_unregister(&gre);
+        ip_nat_protocol_unregister(&gre);
 }
 
 module_init(init);
