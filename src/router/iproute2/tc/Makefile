@@ -56,7 +56,6 @@ LDFLAGS += -Wl,-export-dynamic
 all: libtc.a tc $(TCSO)
 
 tc: $(TCOBJ) $(LIBNETLINK) $(LIBUTIL) $(TCLIB)
-	$(AR) arc -o tc.a $(TCOBJ) $(LIBNETLINK) $(LIBUTIL) $(TCLIB)
 
 libtc.a: $(TCLIB)
 	$(AR) rcs $@ $(TCLIB)
@@ -69,7 +68,7 @@ install: all
 	done
 
 clean:
-	rm -f $(TCOBJ) $(TCLIB) tc.a libtc.a tc *.so
+	rm -f $(TCOBJ) $(TCLIB) libtc.a tc *.so
 
 q_atm.so: q_atm.c
 	$(CC) $(CFLAGS) -shared -fpic -o q_atm.so q_atm.c -latm

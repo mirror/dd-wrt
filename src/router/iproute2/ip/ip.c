@@ -1,5 +1,4 @@
 /*
-
  * ip.c		"ip" utility frontend.
  *
  *		This program is free software; you can redistribute it and/or
@@ -29,8 +28,8 @@
 #include "ip_common.h"
 
 int preferred_family = AF_UNSPEC;
-extern int show_stats;
-extern int resolve_hosts;
+int show_stats = 0;
+int resolve_hosts = 0;
 int oneline = 0;
 char * _SL_ = NULL;
 
@@ -47,11 +46,10 @@ static void usage(void)
 	exit(-1);
 }
 
-int ip_main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	char *basename;
-	resolve_hosts=0;
-	show_stats=0;
+
 	basename = strrchr(argv[0], '/');
 	if (basename == NULL)
 		basename = argv[0];

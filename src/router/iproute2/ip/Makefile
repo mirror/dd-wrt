@@ -12,7 +12,6 @@ TARGETS=ip rtmon
 all: $(TARGETS) $(SCRIPTS)
 
 ip: $(IPOBJ) $(LIBNETLINK) $(LIBUTIL)
-	$(AR) arc -o ip.a $(IPOBJ)
 
 rtmon: $(RTMONOBJ) $(LIBNETLINK)
 
@@ -21,5 +20,5 @@ install: all
 	install -m 0755 $(SCRIPTS) $(DESTDIR)$(SBINDIR)
 
 clean:
-	rm -f tc.a $(ALLOBJ) $(TARGETS)
+	rm -f $(ALLOBJ) $(TARGETS)
 

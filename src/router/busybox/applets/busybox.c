@@ -100,12 +100,6 @@ int main(int argc, char **argv)
   else if (strstr (base, "rflow"))
     return rflow_main(argc,argv);
 #endif
-#ifdef HAVE_IPROUTE2
-  else if (!strcmp (base, "tc"))
-    return tc_main(argc,argv);
-  else if (!strcmp (base, "ip"))
-    return ip_main(argc,argv);
-#endif
 #ifdef HAVE_SSHD
   else if (strstr (base, "dropbearkey"))
     return dropbearkey_main(argc,argv);
