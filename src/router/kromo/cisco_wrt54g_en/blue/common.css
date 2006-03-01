@@ -156,7 +156,8 @@ padding:.906em;
 }
 h2, 
 h3, 
-.submitFooter {
+.submitFooter,
+.submitFooterCmd {
 position:relative;
 z-index:2;
 margin:0 0 .906em 0;
@@ -243,12 +244,14 @@ text-decoration:none;
 text-transform:lowercase;
 z-index:3;
 }
-.submitFooter {
+.submitFooter,
+.submitFooterCmd {
 padding:.725em;
 margin:0;
 text-align:center;
 }
 .submitFooter input,
+.submitFooterCmd input,
 .message div input {
 padding:.362em 1.087em;
 margin:0 .362em;
@@ -286,7 +289,8 @@ padding:.906em;
 * html .setting {
 height:1.812em;
 }
-* html .submitFooter input {
+* html .submitFooter input,
+* html .submitFooterCmd input {
 padding:.362em .543em;
 }
 * html fieldset {
