@@ -188,7 +188,8 @@ padding:.906em;
 /* submit footer
 ----------------------------------- */
 
-.submitFooter {
+.submitFooter,
+.submitFooterCmd {
 	padding: 5px 5px 5px 5px;
 }
 
