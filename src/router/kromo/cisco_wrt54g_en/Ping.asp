@@ -84,7 +84,7 @@ for(var i = 0; i < table.length; i++){
 						</td>
 					</tr>
 				</table>
-				<div class="submitFooter">
+				<div class="submitFooterCmd">
 					<input type="button" onclick="to_submit(this.form,'startup');" value="Save Startup" name="startup"/>
 					<input type="button" onclick="to_submit(this.form,'firewall');" value="Save Firewall" name="firewall"/>
 					<input type="button" onclick="exit()" value="Close"/>
