@@ -1613,14 +1613,19 @@ static int sis900_rx(struct net_device *net_dev)
 	long ioaddr = net_dev->base_addr;
 	unsigned int entry = sis_priv->cur_rx % NUM_RX_DESC;
 	u32 rx_status = sis_priv->rx_ring[entry].cmdsts;
+	int rx_work_limit;
 
 	if (sis900_debug > 3)
 		printk(KERN_INFO "sis900_rx, cur_rx:%4.4d, dirty_rx:%4.4d "
 		       "status:0x%8.8x\n",
 		       sis_priv->cur_rx, sis_priv->dirty_rx, rx_status);
+	rx_work_limit = sis_priv->dirty_rx + NUM_RX_DESC - sis_priv->cur_rx;
 
 	while (rx_status & OWN) {
 		unsigned int rx_size;
+
+		if (--rx_work_limit < 0)
+			break;
 
 		rx_size = (rx_status & DSIZE) - CRC_SIZE;
 
@@ -1648,9 +1653,11 @@ static int sis900_rx(struct net_device *net_dev)
 			   some unknow bugs, it is possible that
 			   we are working on NULL sk_buff :-( */
 			if (sis_priv->rx_skbuff[entry] == NULL) {
-				printk(KERN_INFO "%s: NULL pointer " 
-				       "encountered in Rx ring, skipping\n",
-				       net_dev->name);
+				printk(KERN_WARNING "%s: NULL pointer "
+					"encountered in Rx ring\n"
+					"cur_rx:%4.4d, dirty_rx:%4.4d\n",
+					net_dev->name, sis_priv->cur_rx,
+					sis_priv->dirty_rx);
 				break;
 			}
 
@@ -1688,6 +1695,7 @@ static int sis900_rx(struct net_device *net_dev)
 				sis_priv->rx_ring[entry].cmdsts = 0;
 				sis_priv->rx_ring[entry].bufptr = 0;
 				sis_priv->stats.rx_dropped++;
+				sis_priv->cur_rx++;
 				break;
 			}
 			skb->dev = net_dev;
@@ -1705,7 +1713,7 @@ static int sis900_rx(struct net_device *net_dev)
 
 	/* refill the Rx buffer, what if the rate of refilling is slower than 
 	   consuming ?? */
-	for (;sis_priv->cur_rx - sis_priv->dirty_rx > 0; sis_priv->dirty_rx++) {
+	for (; sis_priv->cur_rx != sis_priv->dirty_rx; sis_priv->dirty_rx++) {
 		struct sk_buff *skb;
 
 		entry = sis_priv->dirty_rx % NUM_RX_DESC;

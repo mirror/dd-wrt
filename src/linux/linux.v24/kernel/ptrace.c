@@ -58,7 +58,7 @@ int ptrace_attach(struct task_struct *task)
 	task_lock(task);
 	if (task->pid <= 1)
 		goto bad;
-	if (task == current)
+	if (task->tgid == current->tgid)
 		goto bad;
 	if (!task->mm)
 		goto bad;

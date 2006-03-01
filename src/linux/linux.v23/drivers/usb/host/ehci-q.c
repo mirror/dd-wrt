@@ -199,8 +199,6 @@ ehci_urb_done (struct ehci_hcd *ehci, struct urb *urb, struct pt_regs *regs)
 #ifdef	INTR_AUTOMAGIC
 	struct urb		*resubmit = 0;
 	struct usb_device	*dev = 0;
-
-	static int ehci_urb_enqueue (struct usb_hcd *, struct urb *, int);
 #endif
 
 	if (likely (urb->hcpriv != 0)) {
@@ -280,6 +278,7 @@ ehci_urb_done (struct ehci_hcd *ehci, struct urb *urb, struct pt_regs *regs)
 }
 
 static void start_unlink_async (struct ehci_hcd *ehci, struct ehci_qh *qh);
+static void unlink_async (struct ehci_hcd *ehci, struct ehci_qh *qh);
 
 /*
  * Process and free completed qtds for a qh, returning URBs to drivers.
@@ -430,7 +429,7 @@ halt:
 			qh_refresh(ehci, qh);
 			break;
 		case QH_STATE_LINKED:
-			start_unlink_async (ehci, qh);
+			unlink_async (ehci, qh);
 			break;
 		/* otherwise, unlink already started */
 		}

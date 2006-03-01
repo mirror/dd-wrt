@@ -45,6 +45,8 @@
 #include <pcmcia/cisreg.h>
 #include <pcmcia/ds.h>
 
+#include "airo.h"
+
 /*
    All the PCMCIA modules use PCMCIA_DEBUG to control debugging.  If
    you do not define PCMCIA_DEBUG at all, all the debug code will be
@@ -90,10 +92,6 @@ MODULE_PARM(irq_list, "1-4i");
    insertion and ejection events.  They are invoked from the airo_cs
    event handler. 
 */
-
-struct net_device *init_airo_card( int, int, int );
-void stop_airo_card( struct net_device *, int );
-int reset_airo_card( struct net_device * );
 
 static void airo_config(dev_link_t *link);
 static void airo_release(u_long arg);

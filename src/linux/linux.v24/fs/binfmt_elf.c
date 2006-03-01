@@ -848,7 +848,7 @@ static int load_elf_binary(struct linux_binprm * bprm, struct pt_regs * regs)
 			printk(KERN_ERR "Unable to load interpreter %.128s\n",
 				elf_interpreter);
 			force_sig(SIGSEGV, current);
-			retval = -ENOEXEC; /* Nobody gets to see this, but.. */
+			retval = IS_ERR((void *)elf_entry) ? PTR_ERR((void *)elf_entry) : -ENOEXEC;
 			goto out_free_dentry;
 		}
 		reloc_func_desc = interp_load_addr;

@@ -5049,7 +5049,7 @@ e1000_config_dsp_after_link_change(struct e1000_hw *hw,
             if(ret_val)
                 return ret_val;
 
-            msec_delay(20);
+            msec_delay_irq(20);
 
             ret_val = e1000_write_phy_reg(hw, 0x0000,
                                           IGP01E1000_IEEE_FORCE_GIGA);
@@ -5073,7 +5073,7 @@ e1000_config_dsp_after_link_change(struct e1000_hw *hw,
             if(ret_val)
                 return ret_val;
 
-            msec_delay(20);
+            msec_delay_irq(20);
 
             /* Now enable the transmitter */
             ret_val = e1000_write_phy_reg(hw, 0x2F5B, phy_saved_data);
@@ -5098,7 +5098,7 @@ e1000_config_dsp_after_link_change(struct e1000_hw *hw,
             if(ret_val)
                 return ret_val;
 
-            msec_delay(20);
+            msec_delay_irq(20);
 
             ret_val = e1000_write_phy_reg(hw, 0x0000,
                                           IGP01E1000_IEEE_FORCE_GIGA);
@@ -5114,7 +5114,7 @@ e1000_config_dsp_after_link_change(struct e1000_hw *hw,
             if(ret_val)
                 return ret_val;
 
-            msec_delay(20);
+            msec_delay_irq(20);
 
             /* Now enable the transmitter */
             ret_val = e1000_write_phy_reg(hw, 0x2F5B, phy_saved_data);

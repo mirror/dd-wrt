@@ -467,15 +467,35 @@ static void __devinit init_hwif_atiixp(ide_hwif_t *hwif)
 static ide_pci_device_t atiixp_pci_info[] __devinitdata = {
 	{	/* 0 */
 		.vendor		= PCI_VENDOR_ID_ATI,
-		.device		= PCI_DEVICE_ID_ATI_IXP_IDE,
-		.name		= "ATIIXP",
+		.device		= PCI_DEVICE_ID_ATI_IXP200_IDE,
+		.name		= "ATI-IXP200",
 		.init_chipset	= init_chipset_atiixp,
 		.init_hwif	= init_hwif_atiixp,
 		.channels	= 2,
 		.autodma	= AUTODMA,
 		.enablebits	= {{0x48,0x01,0x00}, {0x48,0x08,0x00}},
 		.bootable	= ON_BOARD,
-	}
+	},{	/* 1 */
+		.vendor		= PCI_VENDOR_ID_ATI,
+		.device		= PCI_DEVICE_ID_ATI_IXP300_IDE,
+		.name		= "ATI-IXP300",
+		.init_chipset	= init_chipset_atiixp,
+		.init_hwif	= init_hwif_atiixp,
+		.channels	= 2,
+		.autodma	= AUTODMA,
+		.enablebits	= {{0x48,0x01,0x00}, {0x48,0x08,0x00}},
+		.bootable	= ON_BOARD,
+	},{	/* 2 */
+		.vendor		= PCI_VENDOR_ID_ATI,
+		.device		= PCI_DEVICE_ID_ATI_IXP400_IDE,
+		.name		= "ATI-IXP400",
+		.init_chipset	= init_chipset_atiixp,
+		.init_hwif	= init_hwif_atiixp,
+		.channels	= 2,
+		.autodma	= AUTODMA,
+		.enablebits	= {{0x48,0x01,0x00}, {0x48,0x08,0x00}},
+		.bootable	= ON_BOARD,
+        }
 };
 
 /**
@@ -498,7 +518,9 @@ static int __devinit atiixp_init_one(struct pci_dev *dev, const struct pci_devic
 }
 
 static struct pci_device_id atiixp_pci_tbl[] = {
-	{ PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_IXP_IDE, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
+	{ PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_IXP200_IDE, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0},
+	{ PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_IXP300_IDE, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 1},
+	{ PCI_VENDOR_ID_ATI, PCI_DEVICE_ID_ATI_IXP400_IDE, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 2},
 	{ 0, },
 };
 

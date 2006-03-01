@@ -29,6 +29,7 @@
 #include <linux/errno.h>
 #include <linux/init.h>
 #include <linux/input.h>
+#include <asm/keyboard.h>
 
 void kbd_leds(unsigned char leds)
 {

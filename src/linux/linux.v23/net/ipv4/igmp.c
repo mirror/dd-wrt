@@ -876,6 +876,10 @@ int igmp_rcv(struct sk_buff *skb)
 		/* Is it our report looped back? */
 		if (((struct rtable*)skb->dst)->key.iif == 0)
 			break;
+		/* don't rely on MC router hearing unicast reports */
+		if (skb->pkt_type == PACKET_MULTICAST ||
+		    skb->pkt_type == PACKET_BROADCAST)
+			igmp_heard_report(in_dev, ih->group);
 		igmp_heard_report(in_dev, ih->group);
 		break;
 	case IGMP_PIM:
@@ -1876,8 +1880,11 @@ int ip_mc_msfilter(struct sock *sk, struct ip_msfilter *msf, int ifindex)
 			sock_kfree_s(sk, newpsl, IP_SFLSIZE(newpsl->sl_max));
 			goto done;
 		}
-	} else
-		newpsl = 0;
+	} else {
+		newpsl = NULL;
+		(void) ip_mc_add_src(in_dev, &msf->imsf_multiaddr,
+		       msf->imsf_fmode, 0, NULL, 0);
+	}
 	psl = pmc->sflist;
 	if (psl) {
 		(void) ip_mc_del_src(in_dev, &msf->imsf_multiaddr, pmc->sfmode,
