@@ -181,7 +181,8 @@ ul#menuMainList li, ul#menuSubList li {
 	z-index:				30;
 }
 
-.submitFooter {
+.submitFooter,
+.submitFooterCmd {
 	margin:					20px;	
 	padding-bottom:			20px;	
 	text-align:				center;
