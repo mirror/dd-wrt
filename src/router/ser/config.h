@@ -117,7 +117,7 @@
 #define PKG_MEM_POOL_SIZE 1024*1024
 
 /*used if SH_MEM is defined*/
-#define SHM_MEM_SIZE 8
+#define SHM_MEM_SIZE 4
 
 #define TIMER_TICK 1
 

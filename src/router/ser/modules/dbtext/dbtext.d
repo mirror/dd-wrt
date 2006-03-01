@@ -12,5 +12,5 @@ dbtext.o dbtext.d : dbtext.c ../../sr_module.h ../../parser/msg_parser.h \
   ../../db/db_op.h ../../db/db_val.h dbt_lib.h ../../str.h \
   ../../locking.h ../../dprint.h ../../lock_ops.h ../../lock_alloc.h \
   ../../mem/mem.h ../../mem/../config.h ../../mem/../dprint.h \
-  ../../mem/f_malloc.h ../../mem/shm_mem.h ../../mem/../lock_ops.h \
+  ../../mem/q_malloc.h ../../mem/shm_mem.h ../../mem/../lock_ops.h \
   dbt_api.h ../../db/db_row.h

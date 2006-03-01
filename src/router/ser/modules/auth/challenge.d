@@ -7,7 +7,7 @@ challenge.o challenge.d : challenge.c ../../data_lump.h ../../lump_struct.h \
   ../../parser/parse_def.h ../../parser/parse_cseq.h \
   ../../parser/parse_to.h ../../parser/parse_via.h \
   ../../parser/parse_fline.h ../../parser/hf.h ../../mem/mem.h \
-  ../../mem/../config.h ../../mem/../dprint.h ../../mem/f_malloc.h \
+  ../../mem/../config.h ../../mem/../dprint.h ../../mem/q_malloc.h \
   ../../parser/digest/digest.h ../../parser/digest/digest_parser.h \
   ../../parser/digest/../../str.h ../../parser/digest/../hf.h \
   ../../parser/digest/../msg_parser.h auth_mod.h ../../str.h \

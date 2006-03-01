@@ -3385,44 +3385,55 @@ initHandlers (void)
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
-void
+int
 do_auth (char *userid, char *passwd, char *realm)
 {
   strncpy (userid, nvram_safe_get ("skyhttp_username"), AUTH_MAX);
   strncpy (passwd, nvram_safe_get ("skyhttp_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
+return 0;
 }
 
 
-void
+int
 do_auth2 (char *userid, char *passwd, char *realm)
 {
   strncpy (userid, nvram_safe_get ("http_username"), AUTH_MAX);
   strncpy (passwd, nvram_safe_get ("http_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
+return 0;
 }
 #else
 #ifdef HAVE_NEWMEDIA
-void
+int
 do_auth2 (char *userid, char *passwd, char *realm)
 {
   strncpy (userid, nvram_safe_get ("newhttp_username"), AUTH_MAX);
   strncpy (passwd, nvram_safe_get ("newhttp_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
+return 0;
 }
 #endif
 
 
-void
+
+int
 do_auth (char *userid, char *passwd, char *realm)
 {
   strncpy (userid, nvram_safe_get ("http_username"), AUTH_MAX);
   strncpy (passwd, nvram_safe_get ("http_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
+return 0;
+}
+
+int do_cauth(char *userid, char *passwd, char *realm)
+{
+if (nvram_match("info_passwd","1"))return -1;
+return do_auth(userid,passwd,realm);
 }
 #endif
 
@@ -3552,7 +3563,7 @@ struct mime_handler mime_handlers[] = {
   {"**.htm", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"**.html", "text/html", no_cache, NULL, do_ej, do_auth2},
 #else
-  {"Info.htm*", "text/html", no_cache, NULL, do_ej, NULL},
+  {"Info.htm*", "text/html", no_cache, NULL, do_ej, do_cauth},
   {"**.htm", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.html", "text/html", no_cache, NULL, do_ej, NULL},
 

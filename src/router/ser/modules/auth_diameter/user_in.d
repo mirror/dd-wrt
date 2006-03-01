@@ -1,5 +1,5 @@
 user_in.o user_in.d : user_in.c ../../mem/mem.h ../../mem/../config.h \
-  ../../mem/../types.h ../../mem/../dprint.h ../../mem/f_malloc.h \
+  ../../mem/../types.h ../../mem/../dprint.h ../../mem/q_malloc.h \
   ../../mem/shm_mem.h ../../mem/../lock_ops.h ../../dprint.h ../../str.h \
   ../../ut.h ../../comp_defs.h ../../config.h ../../dprint.h ../../str.h \
   ../../parser/digest/digest.h ../../parser/digest/digest_parser.h \

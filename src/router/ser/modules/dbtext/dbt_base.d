@@ -1,5 +1,5 @@
 dbt_base.o dbt_base.d : dbt_base.c ../../str.h ../../mem/mem.h ../../mem/../config.h \
-  ../../mem/../types.h ../../mem/../dprint.h ../../mem/f_malloc.h \
+  ../../mem/../types.h ../../mem/../dprint.h ../../mem/q_malloc.h \
   ../../mem/shm_mem.h ../../mem/../lock_ops.h dbtext.h ../../db/db_con.h \
   ../../db/db_res.h ../../db/db_row.h ../../db/db_val.h ../../db/../str.h \
   ../../db/db_con.h ../../db/db_res.h ../../db/db_key.h ../../db/db_key.h \

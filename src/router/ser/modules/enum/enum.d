@@ -11,4 +11,4 @@ enum.o enum.d : enum.c enum.h ../../parser/msg_parser.h \
   ../../parser/msg_parser.h ../../ut.h ../../comp_defs.h ../../config.h \
   ../../dprint.h ../../str.h ../../resolve.h ../../ip_addr.h \
   ../../mem/mem.h ../../mem/../config.h ../../mem/../dprint.h \
-  ../../mem/f_malloc.h enum_mod.h ../../str.h regexp.h
+  ../../mem/q_malloc.h enum_mod.h ../../str.h regexp.h

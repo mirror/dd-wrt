@@ -6,4 +6,4 @@ parser/parse_from.o parser/parse_from.d : parser/parse_from.c parser/parse_from.
   parser/parse_to.h parser/parse_via.h parser/parse_fline.h parser/hf.h \
   parser/../dprint.h parser/../ut.h parser/../comp_defs.h \
   parser/../config.h parser/../mem/mem.h parser/../mem/../config.h \
-  parser/../mem/../dprint.h parser/../mem/f_malloc.h
+  parser/../mem/../dprint.h parser/../mem/q_malloc.h

@@ -32,12 +32,12 @@ cd ../src/router/mipsel-uclibc/target/www
 
 cd ../../../../../opt
 
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre1/kernel/fs/mmc/mmc.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre1/kernel/fs/fat/*
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre1/kernel/fs/smbfs/*
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre1/kernel/fs/vfat/*
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre1/kernel/fs/msdos/*
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre1/kernel/net/ipv6/*
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/kernel/fs/mmc/mmc.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/kernel/fs/fat/*
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/kernel/fs/smbfs/*
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/kernel/fs/vfat/*
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/kernel/fs/msdos/*
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/kernel/net/ipv6/*
 
 
 ./strip_libs.sh

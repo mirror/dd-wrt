@@ -8,7 +8,7 @@ rpid.o rpid.d : rpid.c ../../str.h ../../data_lump.h ../../lump_struct.h \
   ../../parser/parse_to.h ../../parser/parse_via.h \
   ../../parser/parse_fline.h ../../parser/hf.h ../../dprint.h \
   ../../mem/mem.h ../../mem/../config.h ../../mem/../dprint.h \
-  ../../mem/f_malloc.h ../../parser/parse_nameaddr.h \
+  ../../mem/q_malloc.h ../../parser/parse_nameaddr.h \
   ../../parser/parse_uri.h ../../parser/../parser/msg_parser.h \
   ../../parser/parser_f.h ../../ut.h ../../comp_defs.h ../../config.h \
   ../../dprint.h ../../str.h auth_mod.h ../../parser/msg_parser.h api.h \

@@ -64,7 +64,7 @@ union ip_conntrack_proto {
 
 union ip_conntrack_expect_proto {
 	/* insert expect proto private data here */
-	struct ip_ct_gre_expect gre;
+//	struct ip_ct_gre_expect gre;
 };
 
 /* Add protocol helper include file here */

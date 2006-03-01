@@ -115,6 +115,12 @@ function to_submit(F) {
 		else
 			F.http_enable.value = 0;
 	}
+	if(F._info_passwd){
+		if(F._info_passwd.checked == true)
+			F.info_passwd.value = 1;
+		else
+			F.info_passwd.value = 0;
+	}
 	F.submit_button.value = "Management";
 	F.save_button.value = "Saved";
 	F.save_button.disabled = true;
@@ -187,6 +193,7 @@ function init() {
 								<input type="hidden" name="PasswdModify" value='<% nvram_else_match("http_passwd", "admin", "1", "0"); %>'/>
 								<input type="hidden" name="remote_mgt_https"/>
 								<input type="hidden" name="http_enable"/>
+								<input type="hidden" name="info_passwd"/>
 								<input type="hidden" name="https_enable"/>
 								<h2>Router Management</h2>
 								<% show_modules(".webconfig"); %>

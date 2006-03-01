@@ -76,7 +76,7 @@ struct mime_handler {
 	char *extra_header;
 	void (*input)(char *path, FILE *stream, int len, char *boundary);
 	void (*output)(char *path, FILE *stream);
-	void (*auth)(char *userid, char *passwd, char *realm);
+	int (*auth)(char *userid, char *passwd, char *realm);
 };
 extern struct mime_handler mime_handlers[];
 
