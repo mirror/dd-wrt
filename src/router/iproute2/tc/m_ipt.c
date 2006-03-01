@@ -74,7 +74,7 @@ static unsigned int global_option_offset = 0;
 
 
 void
-tc_register_target(struct iptables_target *me)
+register_target(struct iptables_target *me)
 {
 /*      fprintf(stderr, "\nDummy register_target %s \n", me->name);
 */
@@ -84,7 +84,7 @@ tc_register_target(struct iptables_target *me)
 }
 
 void
-tc_exit_tryhelp(int status)
+exit_tryhelp(int status)
 {
 	fprintf(stderr, "Try `%s -h' or '%s --help' for more information.\n",
 		pname, pname);
@@ -92,7 +92,7 @@ tc_exit_tryhelp(int status)
 }
 
 void
-tc_exit_error(enum exittype status, char *msg, ...)
+exit_error(enum exittype status, char *msg, ...)
 {
 	va_list args;
 
@@ -102,7 +102,7 @@ tc_exit_error(enum exittype status, char *msg, ...)
 	va_end(args);
 	fprintf(stderr, "\n");
 	if (status == PARAMETER_PROBLEM)
-		tc_exit_tryhelp(status);
+		exit_tryhelp(status);
 	if (status == VERSION_PROBLEM)
 		fprintf(stderr,
 			"Perhaps iptables or your kernel needs to be upgraded.\n");
@@ -115,7 +115,7 @@ Email them next time i remember
 */
 
 char *
-tc_addr_to_dotted(const struct in_addr *addrp)
+addr_to_dotted(const struct in_addr *addrp)
 {
 	static char buf[20];
 	const unsigned char *bytep;
@@ -125,7 +125,7 @@ tc_addr_to_dotted(const struct in_addr *addrp)
 	return buf;
 }
 
-int tc_string_to_number_ll(const char *s, unsigned long long min, 
+int string_to_number_ll(const char *s, unsigned long long min, 
 			unsigned long long max,
 		 unsigned long long *ret)
 {
@@ -145,25 +145,25 @@ int tc_string_to_number_ll(const char *s, unsigned long long min,
 	return -1;
 }
 
-int tc_string_to_number_l(const char *s, unsigned long min, unsigned long max,
+int string_to_number_l(const char *s, unsigned long min, unsigned long max,
 		       unsigned long *ret)
 {
 	int result;
 	unsigned long long number;
 
-	result = tc_string_to_number_ll(s, min, max, &number);
+	result = string_to_number_ll(s, min, max, &number);
 	*ret = (unsigned long)number;
 
 	return result;
 }
 
-int tc_string_to_number(const char *s, unsigned int min, unsigned int max,
+int string_to_number(const char *s, unsigned int min, unsigned int max,
 		unsigned int *ret)
 {
 	int result;
 	unsigned long number;
 
-	result = tc_string_to_number_l(s, min, max, &number);
+	result = string_to_number_l(s, min, max, &number);
 	*ret = (unsigned int)number;
 
 	return result;
@@ -245,12 +245,12 @@ get_target_name(char *name)
 	if (new_name)
 		memset(new_name, '\0', strlen(name) + 1);
 	else
-		tc_exit_error(PARAMETER_PROBLEM, "get_target_name");
+		exit_error(PARAMETER_PROBLEM, "get_target_name");
 
 	if (lname)
 		memset(lname, '\0', strlen(name) + 1);
 	else
-		tc_exit_error(PARAMETER_PROBLEM, "get_target_name");
+		exit_error(PARAMETER_PROBLEM, "get_target_name");
 
 	strcpy(new_name, name);
 	strcpy(lname, name);
@@ -302,7 +302,7 @@ get_target_name(char *name)
 }
 
 
-struct in_addr *tc_dotted_to_addr(const char *dotted)
+struct in_addr *dotted_to_addr(const char *dotted)
 {
 	static struct in_addr addr;
 	unsigned char *addrp;
@@ -321,7 +321,7 @@ struct in_addr *tc_dotted_to_addr(const char *dotted)
 			return (struct in_addr *) NULL;
 
 		*q = '\0';
-		if (tc_string_to_number(p, 0, 255, &onebyte) == -1)
+		if (string_to_number(p, 0, 255, &onebyte) == -1)
 			return (struct in_addr *) NULL;
 
 		addrp[i] = (unsigned char) onebyte;
@@ -329,7 +329,7 @@ struct in_addr *tc_dotted_to_addr(const char *dotted)
 	}
 
 	/* we've checked 3 bytes, now we check the last one */
-	if (tc_string_to_number(p, 0, 255, &onebyte) == -1)
+	if (string_to_number(p, 0, 255, &onebyte) == -1)
 		return (struct in_addr *) NULL;
 
 	addrp[3] = (unsigned char) onebyte;
