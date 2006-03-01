@@ -798,7 +798,7 @@ handle_request (void)
 	      if (handler->auth)
 		{
 		  int result = handler->auth (auth_userid, auth_passwd, auth_realm);
-		  if (!result)
+		  if (result==0)
 		  {
 		  auth_fail = 0;
 		  if (!auth_check (auth_realm, authorization))
