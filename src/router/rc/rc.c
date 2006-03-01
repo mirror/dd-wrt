@@ -288,6 +288,7 @@ main_loop (void)
 	  state = IDLE;
 	  break;
 	case RESTART:
+	  start_service("overclocking");
 	  cprintf ("RESET NVRAM VARS\n");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));

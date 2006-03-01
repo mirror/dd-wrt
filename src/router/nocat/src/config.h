@@ -94,24 +94,26 @@
 /* Define to 1 if `vfork' works. */
 #define HAVE_WORKING_VFORK 1
 
+
 /* Where to find our nocat.conf, by default */
-#define NC_CONF_PATH "/usr/local/etc"
+#define NC_CONF_PATH "/etc"
 
 /* Where to serve documents from? */
-#define NC_DOCUMENT_ROOT "/usr/local/share/nocat/htdocs"
+#define NC_DOCUMENT_ROOT "/usr/share/nocat/htdocs"
 
 /* Where to find firewall scripts? */
-#define NC_FIREWALL_PATH "/usr/local/libexec/nocat"
+#define NC_FIREWALL_PATH "/usr/libexec/nocat"
 
 /* Where to find our PGP keys? */
-#define NC_PGP_PATH "/usr/local/share/nocat/pgp"
+#define NC_PGP_PATH "/tmp/etc/pgp"
+
 
 /* Which mode the gateway runs in. */
 /* #undef NC_SPLASHD_MODE */
 
-#define NC_STATE_DIR "/usr/local/var"
+#define NC_STATE_DIR "/var"
 
-#define NC_PID_FILE "/usr/local/var/run/splashd.pid"
+#define NC_PID_FILE "/var/run/splashd.pid"
 
 /* Name of package */
 #define PACKAGE "NoCatSplash"

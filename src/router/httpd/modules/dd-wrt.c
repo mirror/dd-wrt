@@ -36,6 +36,27 @@
 #include <wlutils.h>
 #include <bcmparams.h>
 
+int
+ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *clk = nvram_get ("clkfreq");
+  if (clk == NULL)
+    {
+      websWrite (wp, "125");
+      return 0;
+    }
+  char buf[64];
+  strcpy (buf, clk);
+  int i = 0;
+  while (buf[i++] != 0)
+    {
+      if (buf[i] == ',')
+	buf[i] = 0;
+    }
+  websWrite (wp, buf);
+  return 0;
+}
+
 
 int
 ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
@@ -43,41 +64,41 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
   FILE *fcpu = fopen ("/proc/cpuinfo", "r");
   if (fcpu == NULL)
     {
-    websWrite(wp,"Not Detected!\n");
-    return 0;
+      websWrite (wp, "Not Detected!\n");
+      return 0;
     }
   char buf[256];
   int i;
-  for (i=0;i<256;i++)
+  for (i = 0; i < 256; i++)
     {
-    int c=getc(fcpu);
-    if (c==EOF)
+      int c = getc (fcpu);
+      if (c == EOF)
 	{
-	websWrite(wp,"Not Detected!\n");
-	fclose(fcpu);
-	return 0;
+	  websWrite (wp, "Not Detected!\n");
+	  fclose (fcpu);
+	  return 0;
 	}
-    if (c==':')
+      if (c == ':')
 	break;
     }
-    getc(fcpu);
-  for (i=0;i<256;i++)
+  getc (fcpu);
+  for (i = 0; i < 256; i++)
     {
-    int c=getc(fcpu);
-    if (c==EOF)
+      int c = getc (fcpu);
+      if (c == EOF)
 	{
-	websWrite(wp,"Not Detected!\n");
-	fclose(fcpu);
-	return 0;
+	  websWrite (wp, "Not Detected!\n");
+	  fclose (fcpu);
+	  return 0;
 	}
-    if (c==0xa || c==0xd)
+      if (c == 0xa || c == 0xd)
 	break;
-    buf[i]=c;
+      buf[i] = c;
     }
-    buf[i]=0;
-    websWrite(wp,buf);
-    fclose(fcpu);
-    return 0;
+  buf[i] = 0;
+  websWrite (wp, buf);
+  fclose (fcpu);
+  return 0;
 }
 
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
@@ -240,13 +261,13 @@ ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv)
 int
 macro_add (char *a)
 {
-cprintf("adding %s\n",a);
+  cprintf ("adding %s\n", a);
 
   char *count;
   int c;
   char buf[20];
   count = nvram_safe_get (a);
-cprintf("count = %s\n",count);
+  cprintf ("count = %s\n", count);
   if (count != NULL && strlen (count) > 0)
     {
       c = atoi (count);
@@ -254,7 +275,7 @@ cprintf("count = %s\n",count);
 	{
 	  c++;
 	  sprintf (buf, "%d", c);
-	  cprintf("set %s to %s\n",a,buf);
+	  cprintf ("set %s to %s\n", a, buf);
 	  nvram_set (a, buf);
 	}
     }
@@ -415,6 +436,7 @@ buildmac (char *in)
   outmac[c++] = 0;
   return outmac;
 }
+
 #ifdef HAVE_FON
 
 int
@@ -439,28 +461,32 @@ ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv)
   int leasenum = atoi (sln);
   if (leasenum == 0)
     return 0;
-int i;
-char username[32];
-char password[32];
-char *u = nvram_safe_get("fon_userlist");
-char *userlist = (char *) malloc (strlen (u) + 1);
-strcpy(userlist,u);
-char *o = userlist;
+  int i;
+  char username[32];
+  char password[32];
+  char *u = nvram_safe_get ("fon_userlist");
+  char *userlist = (char *) malloc (strlen (u) + 1);
+  strcpy (userlist, u);
+  char *o = userlist;
   for (i = 0; i < leasenum; i++)
     {
-    snprintf (username, 31, "fon_user%d_name", i);
-    char *sep = strsep (&userlist, "=");
-    websWrite(wp,"<tr><td>\n");
-    websWrite(wp,"<input class=\"num\" name=\"%s\" value=\"%s\" size=\"18\" maxlength=\"63\" />\n",username,sep!=NULL?sep:"");
-    websWrite(wp,"</td>\n");
-    sep = strsep (&userlist, " ");    
-    snprintf (password, 31, "fon_user%d_password", i);
-    websWrite(wp,"<td>\n");
-    websWrite(wp,"<input type=\"password\" name=\"%s\" value=\"blahblahblah\" size=\"18\" maxlength=\"63\" />\n",password);
-    websWrite(wp,"</td></tr>\n");
+      snprintf (username, 31, "fon_user%d_name", i);
+      char *sep = strsep (&userlist, "=");
+      websWrite (wp, "<tr><td>\n");
+      websWrite (wp,
+		 "<input class=\"num\" name=\"%s\" value=\"%s\" size=\"18\" maxlength=\"63\" />\n",
+		 username, sep != NULL ? sep : "");
+      websWrite (wp, "</td>\n");
+      sep = strsep (&userlist, " ");
+      snprintf (password, 31, "fon_user%d_password", i);
+      websWrite (wp, "<td>\n");
+      websWrite (wp,
+		 "<input type=\"password\" name=\"%s\" value=\"blahblahblah\" size=\"18\" maxlength=\"63\" />\n",
+		 password);
+      websWrite (wp, "</td></tr>\n");
     }
-free(o);    
-return 0;
+  free (o);
+  return 0;
 }
 
 
@@ -1242,7 +1268,9 @@ wireless_save (webs_t wp)
 #endif
   return 0;
 }
-int ej_showad(int eid, webs_t wp, int argc,char_t **argv)
+
+int
+ej_showad (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_NOAD
 /*
@@ -1266,7 +1294,7 @@ websWrite(wp,"  src=\"http://pagead2.googlesyndication.com/pagead/show_ads.js\">
 websWrite(wp,"</script>\n");
 }*/
 #endif
-return 0;
+  return 0;
 }
 
 
@@ -1344,23 +1372,29 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       char domcode[16];
       sprintf (domcode, "%d", regdomains[domcount].code);
       websWrite (wp, "<option value=\"%d\" %s>%s</option>\n",
-		 regdomains[domcount].code, nvram_match (wl_regdomain, domcode) ? "selected" : "",regdomains[domcount].name);
+		 regdomains[domcount].code, nvram_match (wl_regdomain,
+							 domcode) ? "selected"
+		 : "", regdomains[domcount].name);
       domcount++;
     }
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 //power adjustment
-  sprintf(power,"%s_txpwr",prefix);
+  sprintf (power, "%s_txpwr", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> mW (Default: 28)\n",power,nvram_safe_get(power));
-  websWrite (wp,"</div>\n");
+  websWrite (wp,
+	     "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> mW (Default: 28)\n",
+	     power, nvram_safe_get (power));
+  websWrite (wp, "</div>\n");
 
 #endif
 
-  sprintf(power,"%s_distance",prefix);
+  sprintf (power, "%s_distance", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Sensitivity Range</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"6\" value='%s'/> m (Default: 20000)\n",power,nvram_safe_get(power));
-  websWrite (wp,"</div>\n");
+  websWrite (wp,
+	     "<div class=\"label\">Sensitivity Range</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"6\" value='%s'/> m (Default: 20000)\n",
+	     power, nvram_safe_get (power));
+  websWrite (wp, "</div>\n");
 
 
 
@@ -1441,9 +1475,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       int i = 0;
       while (chan[i].freq != -1)
 	{
-	  cprintf("%d\n",chan[i].channel);
-	  cprintf("%d\n",chan[i].freq);
-	  
+	  cprintf ("%d\n", chan[i].channel);
+	  cprintf ("%d\n", chan[i].freq);
+
 	  sprintf (cn, "%d", chan[i].channel);
 	  websWrite (wp,
 		     "document.write(\"<option value=%s %s>%s - %dMhz</option>\");\n",
@@ -2207,14 +2241,14 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   system (cmd);			// get active wireless mac
 
   if (strcmp (mode, "ap") != 0)
-  	{
-    strcpy (title, "AP Signal");
-    strcpy (title2, "AP");
+    {
+      strcpy (title, "AP Signal");
+      strcpy (title2, "AP");
     }
   else
-  	{
-    strcpy (title, "Wireless AP");
-    strcpy (title2, "Clients");
+    {
+      strcpy (title, "Wireless AP");
+      strcpy (title2, "Clients");
     }
 
   if ((fp = fopen (ASSOCLIST_TMP, "r")))

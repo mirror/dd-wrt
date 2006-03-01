@@ -74,8 +74,8 @@ int debug_value = 0;
 int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
 // changed by steve
-static int tf_upnp(webs_t wp);
-static int ej_tf_upnp(int eid, webs_t wp, int argc, char_t **argv);
+static int tf_upnp (webs_t wp);
+static int ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv);
 // end changed by steve
 
 /* Example:
@@ -2055,9 +2055,9 @@ Initnvramtab ()
 		    }
 // changed by steve
 		  /*if (!stricmp (tmpstr, "FORWARDUPNP"))
-		    {
-		      tmp->validate = validate_forward_upnp;
-		    }*/
+		     {
+		     tmp->validate = validate_forward_upnp;
+		     } */
 // end changed by steve
 		  if (!stricmp (tmpstr, "PORTTRIGGER"))
 		    {
@@ -3361,7 +3361,7 @@ initHandlers (void)
   websAspDefine ("forward_port", ej_forward_port);
   websAspDefine ("forward_spec", ej_forward_spec);
 // changed by steve
-//websAspDefine ("forward_upnp", ej_forward_upnp);	// upnp added 
+//websAspDefine ("forward_upnp", ej_forward_upnp);      // upnp added 
 // end changed by steve
 
   websAspDefine ("static_route", ej_static_route);
@@ -3381,7 +3381,8 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");}
+		 websSetRealm ("DD-WRT Router OS Core");
+		 }
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3392,7 +3393,7 @@ do_auth (char *userid, char *passwd, char *realm)
   strncpy (passwd, nvram_safe_get ("skyhttp_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
-return 0;
+  return 0;
 }
 
 
@@ -3403,7 +3404,7 @@ do_auth2 (char *userid, char *passwd, char *realm)
   strncpy (passwd, nvram_safe_get ("http_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
-return 0;
+  return 0;
 }
 #else
 #ifdef HAVE_NEWMEDIA
@@ -3414,7 +3415,7 @@ do_auth2 (char *userid, char *passwd, char *realm)
   strncpy (passwd, nvram_safe_get ("newhttp_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
-return 0;
+  return 0;
 }
 #endif
 
@@ -3427,13 +3428,15 @@ do_auth (char *userid, char *passwd, char *realm)
   strncpy (passwd, nvram_safe_get ("http_passwd"), AUTH_MAX);
   //strncpy(realm, MODEL_NAME, AUTH_MAX);
   strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
-return 0;
+  return 0;
 }
 
-int do_cauth(char *userid, char *passwd, char *realm)
+int
+do_cauth (char *userid, char *passwd, char *realm)
 {
-if (nvram_match("info_passwd","1"))return -1;
-return do_auth(userid,passwd,realm);
+  if (nvram_match ("info_passwd", "1"))
+    return -1;
+  return do_auth (userid, passwd, realm);
 }
 #endif
 
@@ -3849,13 +3852,13 @@ struct ej_handler ej_handlers[] = {
   {"show_userlist", ej_show_userlist},
 #endif
   {"show_cpuinfo", ej_show_cpuinfo},
-
+  {"get_clkfreq", ej_get_clkfreq},
 
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
 /* end lonewolf additions */
 // changed by steve
-  { "tf_upnp", ej_tf_upnp },
+  {"tf_upnp", ej_tf_upnp},
 // end changed by steve
 
   {NULL, NULL}
@@ -3864,73 +3867,87 @@ struct ej_handler ej_handlers[] = {
 
 // changed by steve
 // writes javascript-string safe text
-static int tf_webWriteJS(webs_t wp, const char *s) 
+static int
+tf_webWriteJS (webs_t wp, const char *s)
 {
-	char buf[512];
-	int n;
-	int r;
+  char buf[512];
+  int n;
+  int r;
 
-	n = 0;
-	r = 0;
-	for (; *s; s++) {
-		if ((*s != '"') && (*s != '\\') && (*s != '\'') && (isprint(*s))) {
-			buf[n++] = *s;
-		}
-		else {
-			sprintf(buf + n, "\\x%02x", *s);
-			n += 4;
-		}
-		if (n > (sizeof(buf) - 10)) {	// ! extra space for \xHH
-			buf[n] = 0;
-			n = 0;
-			r += wfputs(buf, wp);
-		}
+  n = 0;
+  r = 0;
+  for (; *s; s++)
+    {
+      if ((*s != '"') && (*s != '\\') && (*s != '\'') && (isprint (*s)))
+	{
+	  buf[n++] = *s;
 	}
-	if (n > 0) {
-		buf[n] = 0;
-		r += wfputs(buf, wp);
+      else
+	{
+	  sprintf (buf + n, "\\x%02x", *s);
+	  n += 4;
 	}
-	wfflush(wp);
-	return r;
+      if (n > (sizeof (buf) - 10))
+	{			// ! extra space for \xHH
+	  buf[n] = 0;
+	  n = 0;
+	  r += wfputs (buf, wp);
+	}
+    }
+  if (n > 0)
+    {
+      buf[n] = 0;
+      r += wfputs (buf, wp);
+    }
+  wfflush (wp);
+  return r;
 }
 
 // handle UPnP.asp requests / added 10
-static int tf_upnp(webs_t wp)
+static int
+tf_upnp (webs_t wp)
 {
-	char *v;
-	char s[64];
+  char *v;
+  char s[64];
 
-	if (((v = websGetVar(wp, "remove", NULL)) != NULL) && (*v)) {
-		if (strcmp(v, "all") == 0) {
-			nvram_set("upnp_clear", "1");
-		}
-		else {
-			sprintf(s, "forward_port%s", v);
-			nvram_unset(s);
-		}
+  if (((v = websGetVar (wp, "remove", NULL)) != NULL) && (*v))
+    {
+      if (strcmp (v, "all") == 0)
+	{
+	  nvram_set ("upnp_clear", "1");
 	}
+      else
+	{
+	  sprintf (s, "forward_port%s", v);
+	  nvram_unset (s);
+	}
+    }
 
-	// firewall + upnp service is restarted after this
-	return 0;
+  // firewall + upnp service is restarted after this
+  return 0;
 }
 
-//	<% tf_upnp(); %>
-//	returns all "forward_port#" nvram entries containing upnp port forwardings
-static int ej_tf_upnp(int eid, webs_t wp, int argc, char_t **argv)
+//      <% tf_upnp(); %>
+//      returns all "forward_port#" nvram entries containing upnp port forwardings
+static int
+ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
 {
-	int i;
-	int r;
-	char s[32];
+  int i;
+  int r;
+  char s[32];
 
-	r = 0;
-	if (nvram_match("upnp_enable", "1")) {
-		for (i = 0; i < 50; i++) {
-			r += websWrite(wp, (i > 0) ? ",'" : "'");
-			sprintf(s, "forward_port%d", i);
-			r += tf_webWriteJS(wp, nvram_safe_get(s));
-			r += websWrite(wp, "'");
-		}
+  r = 0;
+  if (nvram_match ("upnp_enable", "1"))
+    {
+      for (i = 0; i < 50; i++)
+	{
+	  r += websWrite (wp, (i > 0) ? ",'" : "'");
+	  sprintf (s, "forward_port%d", i);
+	  r += tf_webWriteJS (wp, nvram_safe_get (s));
+	  r += websWrite (wp, "'");
 	}
-	return r;
+    }
+  return r;
 }
+
 // end changed by steve
