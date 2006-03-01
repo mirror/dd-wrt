@@ -2,6 +2,7 @@
 
 body {
 	background:				#CCCCDD;
+	margin:.700em;
 }
 
 #left {
@@ -41,8 +42,8 @@ ul#menuMainList li, ul#menuSubList li {
 }
 
 #help {
-	background2:				transparent;
-	background-image2:		url(images/help_bg.png);
+	background:				transparent;
+	background-image:		url(images/help_bg.png);
 }
 
 #help div.logo {
