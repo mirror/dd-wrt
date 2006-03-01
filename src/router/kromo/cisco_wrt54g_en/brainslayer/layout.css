@@ -139,7 +139,8 @@ table {
 	padding:				0;
 }
 
-.submitFooter input{
+.submitFooter input,
+.submitFooterCmd input {
 	padding:				2px;
 	margin:					2px;	
 	width:					90%;
@@ -213,4 +214,10 @@ div.setting {
 #menuMainList ul :link:hover, #menuMainList ul :visited:hover {
 	background-image:	none;
 	border:				0;
+}
+
+* #contentsInfo {
+position:relative;
+z-index:0;
+padding:.906em;
 }
