@@ -61,6 +61,11 @@ select, option {
 	background-color: #000;
 }
 
+* #contentsInfo {
+position:relative;
+z-index:0;
+padding:.906em;
+}
 /* header
 ----------------------------------- */
 
@@ -148,7 +153,6 @@ select, option {
 }
 
 #main fieldset {
-	width: -150px;
 	margin: 0px 150px 0px 0px;
 	color: #2300af;
 	padding: 5px 5px 5px 5px;
