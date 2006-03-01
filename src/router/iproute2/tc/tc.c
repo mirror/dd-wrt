@@ -314,12 +314,10 @@ static int batch(const char *name)
 }
 
 
-int tc_main(int argc, char **argv)
+int main(int argc, char **argv)
 {
 	int ret;
 	char *batchfile = NULL;
-	resolve_hosts=0;
-	show_stats=0;
 
 	while (argc > 1) {
 		if (argv[1][0] != '-')
