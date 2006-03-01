@@ -176,7 +176,7 @@ gboolean process_http_fetch (struct ghttp_process *proc) {
     }
 
     else if (r == ghttp_error) {
-	g_warning( "process_http_fetch: Can't load URL %s, retrying: %s", 
+	g_warning( "%s, retrying: %s", 
 	    proc->uri, ghttp_get_error(req));
 	
 	/* We could retry at this point...
@@ -188,7 +188,7 @@ gboolean process_http_fetch (struct ghttp_process *proc) {
     }
     
     else if (ghttp_status_code(req) != 200) {
-	g_warning( "process_http_fetch: Can't load URL %s: %d %s", proc->uri,
+	g_warning( "%s: %d %s", proc->uri,
 		    ghttp_status_code(req), ghttp_reason_phrase(req) );
     }
 

@@ -1,7 +1,7 @@
 cd ../src
 #cp cy_voip.mak cy_conf.mak
 #cp cy_voip.h cy_conf.h
-make clean
+#make clean
 cd router
 make shared-clean
 make rc-clean
@@ -11,7 +11,7 @@ cp .config_voip .config
 #cp Makefile.standard Makefile
 #copy config.normal .config
 cd ..
-make clean
+#make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config

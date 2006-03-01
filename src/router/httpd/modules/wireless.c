@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-													/* channel info structure *///from 11.9
+																    /* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -1768,7 +1768,7 @@ save_prefix (webs_t wp, char *prefix)
   char radius[80];
   char p2[80];
   strcpy (p2, prefix);
-  if (strcmp(prefix,"wl0"))
+  if (strcmp (prefix, "wl0"))
     rep (p2, '.', 'X');
 
   sprintf (n, "%s_crypto", prefix);

@@ -1250,6 +1250,7 @@ static void overclock(void)
 char *ov = nvram_get("overclocking");
 if (ov==NULL)return;
 int clk = atoi(ov);
+if (nvram_get("clkfreq")==NULL)return; //unsupported
 if (nvram_match("clkfreq","125"))return; //unsupported
 //int cclk = atoi(nvram_safe_get("clkfreq"));
 //if (cclk<192)return; //unsupported
