@@ -16,7 +16,6 @@ div.message {
 	padding:				0px;
 	height:					100%;
 	width:					100%;
-	margin2:				auto;
 }
 
 div.message form{
@@ -54,7 +53,6 @@ div.message3 div {
 	 padding:				0px;
 	 margin-right:			auto;
 	 margin-left:			auto;
-	 height2:				100%;
 }
 
 div.message2 {
@@ -71,6 +69,7 @@ div.message2 {
 #header {
 	top:					0px;
 	height:					105px;
+	padding-bottom: 11px;
 }
 
 #header div.logo  {
@@ -106,7 +105,6 @@ div.message2 {
 	margin:					0px;
 	padding:				0px;
 	display:				inline;
-	z-index2:				2;
 }
 
 #menuSubList {
@@ -134,7 +132,6 @@ ul#menuMainList li, ul#menuSubList li {
 	padding:				20px;
 	padding-top:			10px;
 	padding-bottom:			0px;
-	float2:					left;
 	z-index:				1;
 }
 
@@ -143,7 +140,6 @@ ul#menuMainList li, ul#menuSubList li {
 	padding:				0px;
 	right:					0px;
 	width:					180px;
-	float2:					right;
 }
 
 #helpContainer {
@@ -181,8 +177,7 @@ ul#menuMainList li, ul#menuSubList li {
 	z-index:				30;
 }
 
-.submitFooter,
-.submitFooterCmd {
+.submitFooter {
 	margin:					20px;	
 	padding-bottom:			20px;	
 	text-align:				center;
@@ -190,16 +185,16 @@ ul#menuMainList li, ul#menuSubList li {
 
 div.setting {
 	margin:					0px;
-	padding:				3px;	
-	padding-left:			0px;	
+	padding:				3px;
+	padding-left:			0px;
+
+}
+
+.setting .label {
+float:left;
+width:18.116em;
 }
 
 fieldset {
 	padding-left:			10px;
 }
-
-* #contentsInfo {
-position:relative;
-z-index:0;
-padding:.906em;
-}s
