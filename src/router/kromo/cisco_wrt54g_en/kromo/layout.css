@@ -119,7 +119,7 @@ fieldset {
 }
 
 #help {
-	margin-top:				7.6em;
+	margin-top:				9.0em;
 	padding:				7px;
 }
 
@@ -215,4 +215,10 @@ fieldset {
 
 #menuMain ul#menuSubList li a:hover {
 	padding:			0 10px;
+}
+
+* #contentsInfo {
+position:relative;
+z-index:0;
+padding:.906em;
 }
