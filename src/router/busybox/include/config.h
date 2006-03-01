@@ -4,7 +4,7 @@
 
 /* Version Number */
 #define BB_VER "1.01"
-#define BB_BT "2006.02.26-16:55+0000"
+#define BB_BT "2006.03.01-10:25+0000"
 
 #define HAVE_DOT_CONFIG 1
 
@@ -117,7 +117,7 @@
 #define CONFIG_FEATURE_LS_COLOR 1
 #define CONFIG_MD5SUM 1
 #define CONFIG_MKDIR 1
-#undef CONFIG_MKFIFO
+#define CONFIG_MKFIFO 1
 #undef CONFIG_MKNOD
 #define CONFIG_MV 1
 #undef CONFIG_OD

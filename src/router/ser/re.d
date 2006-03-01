@@ -1,5 +1,5 @@
 re.o re.d : re.c dprint.h mem/mem.h mem/../config.h mem/../types.h \
-  mem/../dprint.h mem/f_malloc.h re.h str.h parser/msg_parser.h \
+  mem/../dprint.h mem/q_malloc.h re.h str.h parser/msg_parser.h \
   parser/../comp_defs.h parser/../str.h parser/../lump_struct.h \
   parser/../flags.h parser/../ip_addr.h parser/../str.h \
   parser/../dprint.h parser/../md5utils.h parser/../config.h \

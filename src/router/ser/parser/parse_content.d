@@ -1,6 +1,6 @@
 parser/parse_content.o parser/parse_content.d : parser/parse_content.c parser/../mem/mem.h \
   parser/../mem/../config.h parser/../mem/../types.h \
-  parser/../mem/../dprint.h parser/../mem/f_malloc.h parser/../dprint.h \
+  parser/../mem/../dprint.h parser/../mem/q_malloc.h parser/../dprint.h \
   parser/../str.h parser/../ut.h parser/../comp_defs.h parser/../config.h \
   parser/../dprint.h parser/../str.h parser/parse_content.h \
   parser/msg_parser.h parser/../comp_defs.h parser/../lump_struct.h \

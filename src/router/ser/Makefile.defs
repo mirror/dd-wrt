@@ -285,7 +285,7 @@ DEFS+= $(extra_defs) \
 	 -DPKG_MALLOC \
 	 -DSHM_MEM -DSHM_MMAP \
 	 -DDNS_IP_HACK \
-	 -DUSE_IPV6 \
+	# -DUSE_IPV6 \
 	 -DUSE_TCP \
 	 -DDISABLE_NAGLE \
 	 -DF_MALLOC \

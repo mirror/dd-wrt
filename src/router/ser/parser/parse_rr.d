@@ -6,6 +6,6 @@ parser/parse_rr.o parser/parse_rr.d : parser/parse_rr.c parser/parse_rr.h parser
   parser/parse_to.h parser/parse_via.h parser/parse_fline.h parser/hf.h \
   parser/parse_nameaddr.h parser/parse_param.h parser/../mem/mem.h \
   parser/../mem/../config.h parser/../mem/../dprint.h \
-  parser/../mem/f_malloc.h parser/../mem/shm_mem.h \
+  parser/../mem/q_malloc.h parser/../mem/shm_mem.h \
   parser/../mem/../lock_ops.h parser/../dprint.h parser/../trim.h \
   parser/../ut.h parser/../comp_defs.h parser/../config.h

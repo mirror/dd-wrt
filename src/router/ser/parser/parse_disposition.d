@@ -1,6 +1,6 @@
 parser/parse_disposition.o parser/parse_disposition.d : parser/parse_disposition.c parser/../mem/mem.h \
   parser/../mem/../config.h parser/../mem/../types.h \
-  parser/../mem/../dprint.h parser/../mem/f_malloc.h parser/../dprint.h \
+  parser/../mem/../dprint.h parser/../mem/q_malloc.h parser/../dprint.h \
   parser/../ut.h parser/../comp_defs.h parser/../config.h \
   parser/../dprint.h parser/../str.h parser/parse_disposition.h \
   parser/../str.h parser/msg_parser.h parser/../comp_defs.h \

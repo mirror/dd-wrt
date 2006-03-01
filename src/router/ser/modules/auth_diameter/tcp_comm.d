@@ -1,5 +1,5 @@
 tcp_comm.o tcp_comm.d : tcp_comm.c ../../mem/mem.h ../../mem/../config.h \
-  ../../mem/../types.h ../../mem/../dprint.h ../../mem/f_malloc.h \
+  ../../mem/../types.h ../../mem/../dprint.h ../../mem/q_malloc.h \
   ../../dprint.h ../../str.h auth_diameter.h ../../parser/msg_parser.h \
   ../../parser/../comp_defs.h ../../parser/../str.h \
   ../../parser/../lump_struct.h ../../parser/../flags.h \
