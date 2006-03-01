@@ -196,3 +196,9 @@ div.setting {
 fieldset {
 	padding-left:			10px;
 }
+
+* #contentsInfo {
+position:relative;
+z-index:0;
+padding:.906em;
+}s
