@@ -8,6 +8,6 @@ parser/msg_parser.o parser/msg_parser.d : parser/msg_parser.c parser/../comp_def
   parser/../config.h parser/../error.h parser/../dprint.h \
   parser/../data_lump_rpl.h parser/../parser/msg_parser.h \
   parser/../mem/mem.h parser/../mem/../config.h parser/../mem/../dprint.h \
-  parser/../mem/f_malloc.h parser/../globals.h parser/../ip_addr.h \
+  parser/../mem/q_malloc.h parser/../globals.h parser/../ip_addr.h \
   parser/parse_hname2.h parser/parse_uri.h parser/../parser/msg_parser.h \
   parser/parse_content.h

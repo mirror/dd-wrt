@@ -1,5 +1,5 @@
 exec.o exec.d : exec.c ../../comp_defs.h ../../mem/mem.h ../../mem/../config.h \
-  ../../mem/../types.h ../../mem/../dprint.h ../../mem/f_malloc.h \
+  ../../mem/../types.h ../../mem/../dprint.h ../../mem/q_malloc.h \
   ../../error.h ../../str.h ../../config.h ../../parser/msg_parser.h \
   ../../parser/../comp_defs.h ../../parser/../str.h \
   ../../parser/../lump_struct.h ../../parser/../flags.h \

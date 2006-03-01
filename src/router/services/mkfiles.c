@@ -218,36 +218,25 @@ mk_nocat_conf (void)
 
   /* These are user defined, eventually via the web page */
   fprintf (fp, "ExcludePorts\t%s\n", nvram_safe_get ("NC_ExcludePorts"));
-  fflush (fp);
   fprintf (fp, "Verbosity\t%s\n", nvram_safe_get ("NC_Verbosity"));
-  fflush (fp);
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
-  fflush (fp);
+  fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get("lan_ipaddr") );
+  fprintf(fp, "GatewayMAC\t%s\n", nvram_safe_get("et0macaddr") );
   fprintf (fp, "HomePage\t%s\n", nvram_safe_get ("NC_HomePage"));
-  fflush (fp);
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
 	   nvram_safe_get ("NC_AllowedWebHosts"));
-  fflush (fp);
   fprintf (fp, "LoginTimeout\t%s\n", nvram_safe_get ("NC_LoginTimeout"));
-  fflush (fp);
   fprintf (fp, "DocumentRoot\t%s\n", nvram_safe_get ("NC_DocumentRoot"));
-  fflush (fp);
   fprintf (fp, "SplashURL\t%s\n", nvram_safe_get ("NC_SplashURL"));
   fprintf (fp, "SplashTimeout\t900\n");
 
-  fflush (fp);
   fprintf (fp, "RouteOnly\t%s\n", nvram_safe_get ("NC_RouteOnly"));
-  fflush (fp);
 
   /* These should be hardcoded as the defaults */
   fprintf (fp, "SplashForm\t%s\n", "splash.html");
-  fflush (fp);
   fprintf (fp, "StatusForm\t%s\n", "status.html");
-  fflush (fp);
   fprintf (fp, "GatewayMode\t%s\n", "Open");
-  fflush (fp);
   fprintf (fp, "FirewallPath\t%s\n", "/usr/libexec/nocat");
-  fflush (fp);
 
   fclose (fp);
   /* end BPsmythe */

@@ -8,7 +8,7 @@ auth_diameter.o auth_diameter.d : auth_diameter.c ../../sr_module.h \
   ../../parser/parse_to.h ../../parser/parse_via.h \
   ../../parser/parse_fline.h ../../parser/hf.h ../../error.h ../../str.h \
   ../../dprint.h ../../mem/mem.h ../../mem/../config.h \
-  ../../mem/../dprint.h ../../mem/f_malloc.h diameter_msg.h ../../str.h \
+  ../../mem/../dprint.h ../../mem/q_malloc.h diameter_msg.h ../../str.h \
   auth_diameter.h ../../parser/msg_parser.h defs.h authorize.h \
   ../../parser/digest/digest_parser.h ../../parser/digest/../../str.h \
   ../../parser/hf.h tcp_comm.h

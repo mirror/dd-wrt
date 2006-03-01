@@ -2,7 +2,7 @@ parser/hf.o parser/hf.d : parser/hf.c parser/hf.h parser/../str.h parser/../comp
   parser/parse_via.h parser/parse_to.h parser/parse_cseq.h \
   parser/../dprint.h parser/../mem/mem.h parser/../mem/../config.h \
   parser/../mem/../types.h parser/../mem/../dprint.h \
-  parser/../mem/f_malloc.h parser/parse_def.h parser/digest/digest.h \
+  parser/../mem/q_malloc.h parser/parse_def.h parser/digest/digest.h \
   parser/digest/digest_parser.h parser/digest/../../str.h \
   parser/digest/../hf.h parser/digest/../msg_parser.h \
   parser/digest/../../comp_defs.h parser/digest/../../str.h \

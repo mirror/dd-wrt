@@ -10,5 +10,5 @@ parser/digest/digest.o parser/digest/digest.d : parser/digest/digest.c parser/di
   parser/digest/../parse_to.h parser/digest/../parse_via.h \
   parser/digest/../parse_fline.h parser/digest/../hf.h \
   parser/digest/../../mem/mem.h parser/digest/../../mem/../config.h \
-  parser/digest/../../mem/../dprint.h parser/digest/../../mem/f_malloc.h \
+  parser/digest/../../mem/../dprint.h parser/digest/../../mem/q_malloc.h \
   parser/digest/../../dprint.h

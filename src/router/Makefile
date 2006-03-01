@@ -707,7 +707,7 @@ mmc-clean:
 	$(MAKE) -C mmc clean
 ser:
 
-	$(MAKE) -C ser modules all ARCH=mipsel CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -pipe -mips32 -mtune=mips32" extra_defs="-DUSE_PTHREAD_MUTEX "
+	$(MAKE) -C ser modules all ARCH=mipsel CFLAGS="$(COPTS)" extra_defs="-DUSE_PTHREAD_MUTEX "
 
 
 ser-install:
