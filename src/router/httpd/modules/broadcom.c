@@ -3853,7 +3853,7 @@ struct ej_handler ej_handlers[] = {
 #endif
   {"show_cpuinfo", ej_show_cpuinfo},
   {"get_clkfreq", ej_get_clkfreq},
-
+  {"dumpmeminfo", ej_dumpmeminfo},
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
 /* end lonewolf additions */
