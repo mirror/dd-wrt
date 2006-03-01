@@ -88,7 +88,7 @@ List any webservers, that you would like connecting clients to be able to access
 				</dd>
 				<dt>Route Only</dt>
 				<dd>Required only if you DO NOT want your gateway to act as a NAT. Enable this only if you're running a strictly routed network, and don't need the gateway to enable NAT for you. You would not normally use this option. So if you don't understand it, leave it to No/Off.</dd>
-				
+				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
 		<div class="also">

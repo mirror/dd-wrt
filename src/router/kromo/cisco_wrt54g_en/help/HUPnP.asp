@@ -33,6 +33,7 @@
 						<div>When enabling this option you may need to reboot your PC.</div>
 					</div>
 				</dd>
+				<dd>Click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
 			</dl>
 		</div>
 		<div class="also">
