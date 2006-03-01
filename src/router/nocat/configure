@@ -5734,7 +5734,7 @@ fi;
 # Check whether --with-remote-splash or --without-remote-splash was given.
 if test "${with_remote_splash+set}" = set; then
   withval="$with_remote_splash"
-   splashd_mode="$splashd_mode ../libghttp/libghttp.a";
+   splashd_mode="$splashd_mode ../../libghttp/.libs/libghttp.a";
       splashd_subdirs="libghttp";
       HAVE_LIBGHTTP=1;
 

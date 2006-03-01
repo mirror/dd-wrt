@@ -96,7 +96,7 @@ AUTOMAKE = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/nocat/missing --ru
 AWK = mawk
 CC = mipsel-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time
+CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../../libghttp
 CPP = mipsel-linux-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -143,7 +143,7 @@ POW_LIB = -lm
 RANLIB = mipsel-linux-ranlib
 SET_MAKE = 
 SHELL = /bin/sh
-SPLASHD_MODE = open.c ../libghttp/libghttp.a
+SPLASHD_MODE = open.c ../../libghttp/.libs/libghttp.a
 SPLASHD_SUBDIRS = libghttp
 STRIP = mipsel-linux-strip
 VERSION = 0.93pre2-ewrt0.4
@@ -183,10 +183,10 @@ sbindir = ${exec_prefix}/sbin
 sharedstatedir = ${prefix}/com
 sysconfdir = ${prefix}/etc
 target_alias = 
-AM_CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I/home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2 -I/home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include -Wall
+AM_CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../../libghttp -I/home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/include/glib-1.2 -I/home/openwrt/workspace/DD-WRT/src/router/nocat/../glib-1.2.10-install/lib/glib/include -Wall
 splashd_SOURCES = splashd.c
 EXTRA_splashd_SOURCES = open.c passive.c base64.c passive_radius.c radius.c md5.c
-splashd_LDADD = open.c ../libghttp/libghttp.a libsplash.a 
+splashd_LDADD = open.c ../../libghttp/.libs/libghttp.a libsplash.a 
 splashtest_SOURCES = splashtest.c
 EXTRA_splashtest_SOURCES =
 splashtest_LDADD = libsplash.a
