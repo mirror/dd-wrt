@@ -797,7 +797,9 @@ handle_request (void)
 	    {
 	      if (handler->auth)
 		{
-		  handler->auth (auth_userid, auth_passwd, auth_realm);
+		  int result = handler->auth (auth_userid, auth_passwd, auth_realm);
+		  if (!result)
+		  {
 		  auth_fail = 0;
 		  if (!auth_check (auth_realm, authorization))
 		    {
@@ -805,7 +807,7 @@ handle_request (void)
 		      return;
 		      //auth_fail = 1;
 		    }
-
+		  }
 		}
 	      post = 0;
 	      if (strcasecmp (method, "post") == 0)

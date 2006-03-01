@@ -9,5 +9,5 @@ exec_hf.o exec_hf.d : exec_hf.c ../../comp_defs.h ../../parser/msg_parser.h \
   ../../parser/parse_fline.h ../../parser/hf.h ../../parser/parse_to.h \
   ../../parser/parse_via.h ../../parser/parse_uri.h \
   ../../parser/../parser/msg_parser.h ../../mem/mem.h \
-  ../../mem/../config.h ../../mem/../dprint.h ../../mem/f_malloc.h \
+  ../../mem/../config.h ../../mem/../dprint.h ../../mem/q_malloc.h \
   ../../dprint.h ../../md5utils.h exec_hf.h

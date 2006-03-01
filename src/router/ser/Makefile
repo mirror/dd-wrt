@@ -29,9 +29,8 @@
 #              added skip_cfg_install (andrei)
 #
 
-export ARCH=mipsel
-export CC=mipsel-uclibc-gcc
-export COPTS=-Os -mtune=mips32 -mips32 -pipe 
+#export ARCH=mipsel
+#export CC=mipsel-uclibc-gcc
 
 auto_gen=lex.yy.c cfg.tab.c   #lexx, yacc etc
 
