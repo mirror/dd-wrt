@@ -215,19 +215,26 @@ mk_nocat_conf (void)
   if (dns_list)
     free (dns_list);
   fflush (fp);
-
+  
   /* These are user defined, eventually via the web page */
   fprintf (fp, "ExcludePorts\t%s\n", nvram_safe_get ("NC_ExcludePorts"));
   fprintf (fp, "Verbosity\t%s\n", nvram_safe_get ("NC_Verbosity"));
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
   fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get("lan_ipaddr") );
-  fprintf(fp, "GatewayMAC\t%s\n", nvram_safe_get("et0macaddr") );
+  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get("et0macaddr") );
   fprintf (fp, "HomePage\t%s\n", nvram_safe_get ("NC_HomePage"));
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
 	   nvram_safe_get ("NC_AllowedWebHosts"));
   fprintf (fp, "LoginTimeout\t%s\n", nvram_safe_get ("NC_LoginTimeout"));
   fprintf (fp, "DocumentRoot\t%s\n", nvram_safe_get ("NC_DocumentRoot"));
-  fprintf (fp, "SplashURL\t%s\n", nvram_safe_get ("NC_SplashURL"));
+  char *sp = nvram_get("NC_SplashURL");
+  if (sp)
+    {
+    if (sp[strlen(sp)-1]=='/')
+    fprintf (fp, "SplashURL\t%s\n", sp);
+    else
+    fprintf (fp, "SplashURL\t%s/\n", sp);
+    }
   fprintf (fp, "SplashTimeout\t900\n");
 
   fprintf (fp, "RouteOnly\t%s\n", nvram_safe_get ("NC_RouteOnly"));
