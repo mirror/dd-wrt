@@ -105,7 +105,7 @@ AUTOMAKE = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/nocat/missing --ru
 AWK = mawk
 CC = mipsel-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time
+CFLAGS = -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../../libghttp
 CPP = mipsel-linux-uclibc-gcc -E
 CPPFLAGS = 
 CYGPATH_W = echo
@@ -152,7 +152,7 @@ POW_LIB = -lm
 RANLIB = mipsel-linux-ranlib
 SET_MAKE = 
 SHELL = /bin/sh
-SPLASHD_MODE = open.c ../libghttp/libghttp.a
+SPLASHD_MODE = open.c ../../libghttp/.libs/libghttp.a
 SPLASHD_SUBDIRS = libghttp
 STRIP = mipsel-linux-strip
 VERSION = 0.93pre2-ewrt0.4
