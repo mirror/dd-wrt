@@ -129,10 +129,15 @@ function init() {
                         for(i=0; i<=max_channel ; i++){
                           if(i == wl_channel) buf = "selected";
                           else buf = "";
-                          if(i==0)
+                          if(i==0){
                             document.write("<option value="+i+" "+buf+">Auto</option>");
-                          else
+                          }
+                          else{
+                            if(i<10) 
+                              document.write("<option value="+i+" "+buf+">&nbsp;&nbsp;"+i+" - "+freq[i]+"&nbsp;GHz</option>");
+                            else
                               document.write("<option value="+i+" "+buf+">"+i+" - "+freq[i]+"&nbsp;GHz</option>");
+                          }
                         }
                       </script>
                     </select>
