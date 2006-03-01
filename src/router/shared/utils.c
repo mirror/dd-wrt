@@ -89,9 +89,19 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WBR-G54 / WLA-G54");
       return ROUTER_BUFFALO_WBR54G;
     }
+    
+  if (nvram_match ("boardnum", "100") &&		//added by Eko - experimental
+      nvram_match ("boardtype", "bcm94710dev"))	//detect WLA-G54C 
+    {
+      cprintf ("router is buffalo\n");
+      setRouter ("Buffalo WLA-G54C");			//set nice name
+      return ROUTER_BUFFALO_WBR54G;				//should work as WBR54G
+    }
+      
   if (nvram_match ("product_name", "Product_name") &&
       nvram_match ("boardrev", "0x10") &&
-      nvram_match ("boardtype", "0x0101") && nvram_match ("boardnum", "00"))
+      nvram_match ("boardtype", "0x0101") && 
+      nvram_match ("boardnum", "00"))
     {
       cprintf ("router is buffalo WLA2");
       setRouter ("Buffalo WLA2-G54L");
@@ -108,7 +118,8 @@ internal_getRouterBrand ()
     }
 
   if (nvram_match ("boardnum", "00") &&
-      nvram_match ("boardtype", "0x0101") && nvram_match ("boardrev", "0x10"))
+      nvram_match ("boardtype", "0x0101") && 
+      nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is buffalo wbr2\n");
       setRouter ("Buffalo WBR2-G54S");
