@@ -1502,6 +1502,7 @@ start_wan_done (char *wan_ifname)
   int brand = getRouterBrand ();
   switch (brand)
     {
+    case ROUTER_LINKSYS_WRT55AG:
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
       eval ("gpio", "disable", "3");
@@ -1544,6 +1545,7 @@ stop_wan (void)
   int brand = getRouterBrand ();
   switch (brand)
     {
+    case ROUTER_LINKSYS_WRT55AG:
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
       eval ("gpio", "enable", "3");

@@ -2491,7 +2491,7 @@ _static int process_interrupt (uhci_t *s, struct urb *urb)
 			((urb_priv_t*)urb->hcpriv)->flags=0;		       			
 		}
 		
-		if ((urb->status != -ECONNABORTED) && (urb->status != ECONNRESET) &&
+		if ((urb->status != -ECONNABORTED) && (urb->status != -ECONNRESET) &&
 			    (urb->status != -ENOENT)) {
 
 			urb->status = -EINPROGRESS;

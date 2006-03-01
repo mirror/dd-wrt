@@ -796,6 +796,30 @@ static int ehci_urb_enqueue (
 	}
 }
 
+static void unlink_async (struct ehci_hcd *ehci, struct ehci_qh *qh)
+{
+	/* if we need to use IAA and it's busy, defer */
+	if (qh->qh_state == QH_STATE_LINKED
+			&& ehci->reclaim
+			&& HCD_IS_RUNNING (ehci->hcd.state)) {
+		struct ehci_qh		*last;
+
+		for (last = ehci->reclaim;
+				last->reclaim;
+				last = last->reclaim)
+			continue;
+		qh->qh_state = QH_STATE_UNLINK_WAIT;
+		last->reclaim = qh;
+
+	/* bypass IAA if the hc can't care */
+	} else if (!HCD_IS_RUNNING (ehci->hcd.state) && ehci->reclaim)
+		end_unlink_async (ehci, NULL);
+
+	/* something else might have unlinked the qh by now */
+	if (qh->qh_state == QH_STATE_LINKED)
+		start_unlink_async (ehci, qh);
+}
+
 /* remove from hardware lists
  * completions normally happen asynchronously
  */
@@ -814,28 +838,7 @@ static int ehci_urb_dequeue (struct usb_hcd *hcd, struct urb *urb)
 		qh = (struct ehci_qh *) urb->hcpriv;
 		if (!qh)
 			break;
-
-		/* if we need to use IAA and it's busy, defer */
-		if (qh->qh_state == QH_STATE_LINKED
-				&& ehci->reclaim
-				&& HCD_IS_RUNNING (ehci->hcd.state)
-				) {
-			struct ehci_qh		*last;
-
-			for (last = ehci->reclaim;
-					last->reclaim;
-					last = last->reclaim)
-				continue;
-			qh->qh_state = QH_STATE_UNLINK_WAIT;
-			last->reclaim = qh;
-
-		/* bypass IAA if the hc can't care */
-		} else if (!HCD_IS_RUNNING (ehci->hcd.state) && ehci->reclaim)
-			end_unlink_async (ehci, NULL);
-
-		/* something else might have unlinked the qh by now */
-		if (qh->qh_state == QH_STATE_LINKED)
-			start_unlink_async (ehci, qh);
+		unlink_async (ehci, qh);
 		break;
 
 	case PIPE_INTERRUPT:

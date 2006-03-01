@@ -488,7 +488,7 @@ static void post_helper(void *arg)
 	struct usb_serial_post_job *job;
 	struct usb_serial_port *port;
 	struct usb_serial *serial;
-	unsigned int flags;
+	unsigned long flags;
 
 	spin_lock_irqsave(&post_lock, flags);
 	pos = post_list.next;

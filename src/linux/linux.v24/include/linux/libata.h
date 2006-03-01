@@ -1,23 +1,26 @@
 /*
-   Copyright 2003-2004 Red Hat, Inc.  All rights reserved.
-   Copyright 2003-2004 Jeff Garzik
-
-   The contents of this file are subject to the Open
-   Software License version 1.1 that can be found at
-   http://www.opensource.org/licenses/osl-1.1.txt and is included herein
-   by reference.
-
-   Alternatively, the contents of this file may be used under the terms
-   of the GNU General Public License version 2 (the "GPL") as distributed
-   in the kernel source COPYING file, in which case the provisions of
-   the GPL are applicable instead of the above.  If you wish to allow
-   the use of your version of this file only under the terms of the
-   GPL and not to allow others to use your version of this file under
-   the OSL, indicate your decision by deleting the provisions above and
-   replace them with the notice and other provisions required by the GPL.
-   If you do not delete the provisions above, a recipient may use your
-   version of this file under either the OSL or the GPL.
-
+ *  Copyright 2003-2005 Red Hat, Inc.  All rights reserved.
+ *  Copyright 2003-2005 Jeff Garzik
+ *
+ *
+ *  This program is free software; you can redistribute it and/or modify
+ *  it under the terms of the GNU General Public License as published by
+ *  the Free Software Foundation; either version 2, or (at your option)
+ *  any later version.
+ *
+ *  This program is distributed in the hope that it will be useful,
+ *  but WITHOUT ANY WARRANTY; without even the implied warranty of
+ *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ *  GNU General Public License for more details.
+ *
+ *  You should have received a copy of the GNU General Public License
+ *  along with this program; see the file COPYING.  If not, write to
+ *  the Free Software Foundation, 675 Mass Ave, Cambridge, MA 02139, USA.
+ *
+ *
+ *  libata documentation is available via 'make {ps|pdf}docs',
+ *  as Documentation/DocBook/libata.*
+ *
  */
 
 #ifndef __LINUX_LIBATA_H__
@@ -38,7 +41,6 @@
 #undef ATA_VERBOSE_DEBUG	/* yet more debugging output */
 #undef ATA_IRQ_TRAP		/* define to ack screaming irqs */
 #undef ATA_NDEBUG		/* define to disable quick runtime checks */
-#undef ATA_ENABLE_ATAPI		/* define to enable ATAPI support */
 #undef ATA_ENABLE_PATA		/* define to enable PATA support in some
 				 * low-level drivers */
 #undef ATAPI_ENABLE_DMADIR	/* enables ATAPI DMADIR bridge support */
@@ -56,6 +58,8 @@
 #define DPRINTK(fmt, args...)
 #define VPRINTK(fmt, args...)
 #endif	/* ATA_DEBUG */
+
+#define BPRINTK(fmt, args...) if (ap->flags & ATA_FLAG_DEBUGMSG) printk(KERN_ERR "%s: " fmt, __FUNCTION__, ## args)
 
 #ifdef ATA_NDEBUG
 #define assert(expr)
@@ -90,12 +94,13 @@ enum {
 	ATA_SHT_NEW_EH_CODE	= 0, /* IORL hack, part one */
 	ATA_SHT_CMD_PER_LUN	= 1,
 	ATA_SHT_THIS_ID		= -1,
-	ATA_SHT_USE_CLUSTERING	= 0,
+	ATA_SHT_USE_CLUSTERING	= 1,
 
 	/* struct ata_device stuff */
 	ATA_DFLAG_LBA48		= (1 << 0), /* device supports LBA48 */
 	ATA_DFLAG_PIO		= (1 << 1), /* device currently in PIO mode */
 	ATA_DFLAG_LOCK_SECTORS	= (1 << 2), /* don't adjust max_sectors */
+	ATA_DFLAG_LBA		= (1 << 3), /* device supports LBA */
 
 	ATA_DEV_UNKNOWN		= 0,	/* unknown device */
 	ATA_DEV_ATA		= 1,	/* ATA device */
@@ -114,6 +119,9 @@ enum {
 	ATA_FLAG_MMIO		= (1 << 6), /* use MMIO, not PIO */
 	ATA_FLAG_SATA_RESET	= (1 << 7), /* use COMRESET */
 	ATA_FLAG_PIO_DMA	= (1 << 8), /* PIO cmds via DMA */
+	ATA_FLAG_NOINTR		= (1 << 9), /* FIXME: Remove this once
+					     * proper HSM is in place. */
+	ATA_FLAG_DEBUGMSG	= (1 << 10),
 
 	ATA_QCFLAG_ACTIVE	= (1 << 1), /* cmd not yet ack'd to scsi lyer */
 	ATA_QCFLAG_SG		= (1 << 3), /* have s/g table? */
@@ -151,17 +159,32 @@ enum {
 	ATA_SHIFT_UDMA		= 0,
 	ATA_SHIFT_MWDMA		= 8,
 	ATA_SHIFT_PIO		= 11,
+
+	/* size of buffer to pad xfers ending on unaligned boundaries */
+	ATA_DMA_PAD_SZ		= 4,
+	ATA_DMA_PAD_BUF_SZ	= ATA_DMA_PAD_SZ * ATA_MAX_QUEUE,
+	
+	/* Masks for port functions */
+	ATA_PORT_PRIMARY	= (1 << 0),
+	ATA_PORT_SECONDARY	= (1 << 1),
 };
 
-enum pio_task_states {
-	PIO_ST_UNKNOWN,
-	PIO_ST_IDLE,
-	PIO_ST_POLL,
-	PIO_ST_TMOUT,
-	PIO_ST,
-	PIO_ST_LAST,
-	PIO_ST_LAST_POLL,
-	PIO_ST_ERR,
+enum hsm_task_states {
+	HSM_ST_UNKNOWN,
+	HSM_ST_IDLE,
+	HSM_ST_POLL,
+	HSM_ST_TMOUT,
+	HSM_ST,
+	HSM_ST_LAST,
+	HSM_ST_LAST_POLL,
+	HSM_ST_ERR,
+};
+
+enum ata_completion_errors {
+	AC_ERR_OTHER		= (1 << 0),
+	AC_ERR_DEV		= (1 << 1),
+	AC_ERR_ATA_BUS		= (1 << 2),
+	AC_ERR_HOST_BUS		= (1 << 3),
 };
 
 /* forward declarations */
@@ -171,7 +194,7 @@ struct ata_port;
 struct ata_queued_cmd;
 
 /* typedefs */
-typedef int (*ata_qc_cb_t) (struct ata_queued_cmd *qc, u8 drv_stat);
+typedef int (*ata_qc_cb_t) (struct ata_queued_cmd *qc, unsigned int err_mask);
 
 struct ata_ioports {
 	unsigned long		cmd_addr;
@@ -194,7 +217,7 @@ struct ata_ioports {
 struct ata_probe_ent {
 	struct list_head	node;
 	struct device 		*dev;
-	struct ata_port_operations	*port_ops;
+	const struct ata_port_operations *port_ops;
 	Scsi_Host_Template	*sht;
 	struct ata_ioports	port[ATA_MAX_PORTS];
 	unsigned int		n_ports;
@@ -217,7 +240,7 @@ struct ata_host_set {
 	void __iomem		*mmio_base;
 	unsigned int		n_ports;
 	void			*private_data;
-	struct ata_port_operations *ops;
+	const struct ata_port_operations *ops;
 	struct ata_port *	ports[0];
 };
 
@@ -234,8 +257,11 @@ struct ata_queued_cmd {
 	unsigned long		flags;		/* ATA_QCFLAG_xxx */
 	unsigned int		tag;
 	unsigned int		n_elem;
+	unsigned int		orig_n_elem;
 
 	int			dma_dir;
+
+	unsigned int		pad_len;
 
 	unsigned int		nsect;
 	unsigned int		cursect;
@@ -247,9 +273,11 @@ struct ata_queued_cmd {
 	unsigned int		cursg_ofs;
 
 	struct scatterlist	sgent;
+	struct scatterlist	pad_sgent;
 	void			*buf_virt;
 
-	struct scatterlist	*sg;
+	/* DO NOT iterate over __sg manually, use ata_for_each_sg() */
+	struct scatterlist	*__sg;
 
 	ata_qc_cb_t		complete_fn;
 
@@ -275,15 +303,18 @@ struct ata_device {
 	u8			xfer_mode;
 	unsigned int		xfer_shift;	/* ATA_SHIFT_xxx */
 
-	/* cache info about current transfer mode */
-	u8			xfer_protocol;	/* taskfile xfer protocol */
-	u8			read_cmd;	/* opcode to use on read */
-	u8			write_cmd;	/* opcode to use on write */
+	unsigned int		multi_count;	/* sectors count for
+						   READ/WRITE MULTIPLE */
+
+	/* for CHS addressing */
+	u16			cylinders;	/* Number of cylinders */
+	u16			heads;		/* Number of heads */
+	u16			sectors;	/* Number of sectors per track */
 };
 
 struct ata_port {
 	struct Scsi_Host	*host;	/* our co-allocated scsi host */
-	struct ata_port_operations	*ops;
+	const struct ata_port_operations *ops;
 	unsigned long		flags;	/* ATA_FLAG_xxx */
 	unsigned int		id;	/* unique id req'd by scsi midlyr */
 	unsigned int		port_no; /* unique port #; from zero */
@@ -291,6 +322,9 @@ struct ata_port {
 
 	struct ata_prd		*prd;	 /* our SG list */
 	dma_addr_t		prd_dma; /* and its DMA mapping */
+
+	void			*pad;	/* array of DMA pad buffers */
+	dma_addr_t		pad_dma;
 
 	struct ata_ioports	ioaddr;	/* ATA cmd/ctl/dma register blocks */
 
@@ -316,7 +350,7 @@ struct ata_port {
 	struct tq_struct	packet_task;
 
 	struct tq_struct	pio_task;
-	unsigned int		pio_task_state;
+	unsigned int		hsm_task_state;
 	unsigned long		pio_task_timeout;
 
 	void			*private_data;
@@ -330,13 +364,12 @@ struct ata_port_operations {
 	void (*set_piomode) (struct ata_port *, struct ata_device *);
 	void (*set_dmamode) (struct ata_port *, struct ata_device *);
 
-	void (*tf_load) (struct ata_port *ap, struct ata_taskfile *tf);
+	void (*tf_load) (struct ata_port *ap, const struct ata_taskfile *tf);
 	void (*tf_read) (struct ata_port *ap, struct ata_taskfile *tf);
 
-	void (*exec_command)(struct ata_port *ap, struct ata_taskfile *tf);
+	void (*exec_command)(struct ata_port *ap, const struct ata_taskfile *tf);
 	u8   (*check_status)(struct ata_port *ap);
 	u8   (*check_altstatus)(struct ata_port *ap);
-	u8   (*check_err)(struct ata_port *ap);
 	void (*dev_select)(struct ata_port *ap, unsigned int device);
 
 	void (*phy_reset) (struct ata_port *ap);
@@ -364,7 +397,7 @@ struct ata_port_operations {
 
 	void (*host_stop) (struct ata_host_set *host_set);
 
-	void (*bmdma_stop) (struct ata_port *ap);
+	void (*bmdma_stop) (struct ata_queued_cmd *qc);
 	u8   (*bmdma_status) (struct ata_port *ap);
 };
 
@@ -374,9 +407,23 @@ struct ata_port_info {
 	unsigned long		pio_mask;
 	unsigned long		mwdma_mask;
 	unsigned long		udma_mask;
-	struct ata_port_operations	*port_ops;
+	const struct ata_port_operations *port_ops;
+	void 			*private_data;
 };
 
+struct ata_timing {
+	unsigned short mode;		/* ATA mode */
+	unsigned short setup;		/* t1 */
+	unsigned short act8b;		/* t2 for 8-bit I/O */
+	unsigned short rec8b;		/* t2i for 8-bit I/O */
+	unsigned short cyc8b;		/* t0 for 8-bit I/O */
+	unsigned short active;		/* t2 or tD */
+	unsigned short recover;		/* t2i or tK */
+	unsigned short cycle;		/* t0 */
+	unsigned short udma;		/* t2CYCTYP/2 */
+};
+
+#define FIT(v,vmin,vmax)	max_t(short,min_t(short,v,vmax),vmin)
 
 extern void ata_port_probe(struct ata_port *);
 extern void __sata_phy_reset(struct ata_port *ap);
@@ -389,26 +436,28 @@ extern int ata_pci_init_one (struct pci_dev *pdev, struct ata_port_info **port_i
 			     unsigned int n_ports);
 extern void ata_pci_remove_one (struct pci_dev *pdev);
 #endif /* CONFIG_PCI */
-extern int ata_device_add(struct ata_probe_ent *ent);
+extern int ata_device_add(const struct ata_probe_ent *ent);
+extern void ata_host_set_remove(struct ata_host_set *host_set);
 extern int ata_scsi_detect(Scsi_Host_Template *sht);
 extern int ata_scsi_ioctl(struct scsi_device *dev, int cmd, void __user *arg);
 extern int ata_scsi_queuecmd(struct scsi_cmnd *cmd, void (*done)(struct scsi_cmnd *));
 extern int ata_scsi_error(struct Scsi_Host *host);
 extern int ata_scsi_release(struct Scsi_Host *host);
 extern unsigned int ata_host_intr(struct ata_port *ap, struct ata_queued_cmd *qc);
+extern int ata_ratelimit(void);
+
 /*
  * Default driver ops implementations
  */
-extern void ata_tf_load(struct ata_port *ap, struct ata_taskfile *tf);
+extern void ata_tf_load(struct ata_port *ap, const struct ata_taskfile *tf);
 extern void ata_tf_read(struct ata_port *ap, struct ata_taskfile *tf);
-extern void ata_tf_to_fis(struct ata_taskfile *tf, u8 *fis, u8 pmp);
-extern void ata_tf_from_fis(u8 *fis, struct ata_taskfile *tf);
+extern void ata_tf_to_fis(const struct ata_taskfile *tf, u8 *fis, u8 pmp);
+extern void ata_tf_from_fis(const u8 *fis, struct ata_taskfile *tf);
 extern void ata_noop_dev_select (struct ata_port *ap, unsigned int device);
 extern void ata_std_dev_select (struct ata_port *ap, unsigned int device);
 extern u8 ata_check_status(struct ata_port *ap);
 extern u8 ata_altstatus(struct ata_port *ap);
-extern u8 ata_chk_err(struct ata_port *ap);
-extern void ata_exec_command(struct ata_port *ap, struct ata_taskfile *tf);
+extern void ata_exec_command(struct ata_port *ap, const struct ata_taskfile *tf);
 extern int ata_port_start (struct ata_port *ap);
 extern void ata_port_stop (struct ata_port *ap);
 extern void ata_host_stop (struct ata_host_set *host_set);
@@ -419,21 +468,47 @@ extern void ata_sg_init_one(struct ata_queued_cmd *qc, void *buf,
 		unsigned int buflen);
 extern void ata_sg_init(struct ata_queued_cmd *qc, struct scatterlist *sg,
 		 unsigned int n_elem);
-extern unsigned int ata_dev_classify(struct ata_taskfile *tf);
-extern void ata_dev_id_string(u16 *id, unsigned char *s,
+extern unsigned int ata_dev_classify(const struct ata_taskfile *tf);
+extern void ata_dev_id_string(const u16 *id, unsigned char *s,
 			      unsigned int ofs, unsigned int len);
 extern void ata_dev_config(struct ata_port *ap, unsigned int i);
 extern void ata_bmdma_setup (struct ata_queued_cmd *qc);
 extern void ata_bmdma_start (struct ata_queued_cmd *qc);
-extern void ata_bmdma_stop(struct ata_port *ap);
+extern void ata_bmdma_stop(struct ata_queued_cmd *qc);
 extern u8   ata_bmdma_status(struct ata_port *ap);
 extern void ata_bmdma_irq_clear(struct ata_port *ap);
-extern void ata_qc_complete(struct ata_queued_cmd *qc, u8 drv_stat);
+extern void ata_qc_complete(struct ata_queued_cmd *qc, unsigned int err_mask);
 extern void ata_eng_timeout(struct ata_port *ap);
 extern void ata_scsi_simulate(u16 *id, struct scsi_cmnd *cmd,
 			      void (*done)(struct scsi_cmnd *));
 extern void ata_add_to_probe_list (struct ata_probe_ent *probe_ent);
 extern int ata_std_bios_param(Disk * disk, kdev_t dev, int *ip);
+
+/*
+ * Timing helpers
+ */
+extern int ata_timing_compute(struct ata_device *, unsigned short,
+			      struct ata_timing *, int, int);
+extern void ata_timing_merge(const struct ata_timing *,
+			     const struct ata_timing *, struct ata_timing *,
+			     unsigned int);
+
+enum {
+	ATA_TIMING_SETUP	= (1 << 0),
+	ATA_TIMING_ACT8B	= (1 << 1),
+	ATA_TIMING_REC8B	= (1 << 2),
+	ATA_TIMING_CYC8B	= (1 << 3),
+	ATA_TIMING_8BIT		= ATA_TIMING_ACT8B | ATA_TIMING_REC8B |
+				  ATA_TIMING_CYC8B,
+	ATA_TIMING_ACTIVE	= (1 << 4),
+	ATA_TIMING_RECOVER	= (1 << 5),
+	ATA_TIMING_CYCLE	= (1 << 6),
+	ATA_TIMING_UDMA		= (1 << 7),
+	ATA_TIMING_ALL		= ATA_TIMING_SETUP | ATA_TIMING_ACT8B |
+				  ATA_TIMING_REC8B | ATA_TIMING_CYC8B |
+				  ATA_TIMING_ACTIVE | ATA_TIMING_RECOVER |
+				  ATA_TIMING_CYCLE | ATA_TIMING_UDMA,
+};
 
 
 #ifdef CONFIG_PCI
@@ -444,19 +519,45 @@ struct pci_bits {
 	unsigned long		val;
 };
 
+extern void ata_pci_host_stop (struct ata_host_set *host_set);
 extern struct ata_probe_ent *
-ata_pci_init_native_mode(struct pci_dev *pdev, struct ata_port_info **port);
-extern int pci_test_config_bits(struct pci_dev *pdev, struct pci_bits *bits);
+ata_pci_init_native_mode(struct pci_dev *pdev, struct ata_port_info **port, int portmask);
+extern int pci_test_config_bits(struct pci_dev *pdev, const struct pci_bits *bits);
 
 #endif /* CONFIG_PCI */
 
+
+static inline int
+ata_sg_is_last(struct scatterlist *sg, struct ata_queued_cmd *qc)
+{
+	if (sg == &qc->pad_sgent)
+		return 1;
+	if (qc->pad_len)
+		return 0;
+	if (((sg - qc->__sg) + 1) == qc->n_elem)
+		return 1;
+	return 0;
+}
+
+static inline struct scatterlist *
+ata_qc_next_sg(struct scatterlist *sg, struct ata_queued_cmd *qc)
+{
+	if (sg == &qc->pad_sgent)
+		return NULL;
+	if (++sg - qc->__sg < qc->n_elem)
+		return sg;
+	return qc->pad_len ? &qc->pad_sgent : NULL;
+}
+
+#define ata_for_each_sg(sg, qc) \
+	for (sg = qc->__sg; sg; sg = ata_qc_next_sg(sg, qc))
 
 static inline unsigned int ata_tag_valid(unsigned int tag)
 {
 	return (tag < ATA_MAX_QUEUE) ? 1 : 0;
 }
 
-static inline unsigned int ata_dev_present(struct ata_device *dev)
+static inline unsigned int ata_dev_present(const struct ata_device *dev)
 {
 	return ((dev->class == ATA_DEV_ATA) ||
 		(dev->class == ATA_DEV_ATAPI));
@@ -559,6 +660,17 @@ static inline void ata_tf_init(struct ata_port *ap, struct ata_taskfile *tf, uns
 		tf->device = ATA_DEVICE_OBS | ATA_DEV1;
 }
 
+static inline void ata_qc_reinit(struct ata_queued_cmd *qc)
+{
+	qc->__sg = NULL;
+	qc->flags = 0;
+	qc->cursect = qc->cursg = qc->cursg_ofs = 0;
+	qc->nsect = 0;
+	qc->nbytes = qc->curbytes = 0;
+
+	ata_tf_init(qc->ap, &qc->tf, qc->dev->devno);
+}
+
 
 /**
  *	ata_irq_on - Enable interrupts on a port.
@@ -643,7 +755,7 @@ static inline void scr_write(struct ata_port *ap, unsigned int reg, u32 val)
 	ap->ops->scr_write(ap, reg, val);
 }
 
-static inline void scr_write_flush(struct ata_port *ap, unsigned int reg, 
+static inline void scr_write_flush(struct ata_port *ap, unsigned int reg,
 				   u32 val)
 {
 	ap->ops->scr_write(ap, reg, val);
@@ -655,11 +767,41 @@ static inline unsigned int sata_dev_present(struct ata_port *ap)
 	return ((scr_read(ap, SCR_STATUS) & 0xf) == 0x3) ? 1 : 0;
 }
 
-static inline int ata_try_flush_cache(struct ata_device *dev)
+static inline int ata_try_flush_cache(const struct ata_device *dev)
 {
 	return ata_id_wcache_enabled(dev->id) ||
 	       ata_id_has_flush(dev->id) ||
 	       ata_id_has_flush_ext(dev->id);
+}
+
+static inline unsigned int ac_err_mask(u8 status)
+{
+	if (status & ATA_BUSY)
+		return AC_ERR_ATA_BUS;
+	if (status & (ATA_ERR | ATA_DF))
+		return AC_ERR_DEV;
+	return 0;
+}
+
+static inline unsigned int __ac_err_mask(u8 status)
+{
+	unsigned int mask = ac_err_mask(status);
+	if (mask == 0)
+		return AC_ERR_OTHER;
+	return mask;
+}
+
+static inline int ata_pad_alloc(struct ata_port *ap, struct device *dev)
+{
+	ap->pad_dma = 0;
+	ap->pad = dma_alloc_coherent(dev, ATA_DMA_PAD_BUF_SZ,
+				     &ap->pad_dma, GFP_KERNEL);
+	return (ap->pad == NULL) ? -ENOMEM : 0;
+}
+
+static inline void ata_pad_free(struct ata_port *ap, struct device *dev)
+{
+	dma_free_coherent(dev, ATA_DMA_PAD_BUF_SZ, ap->pad, ap->pad_dma);
 }
 
 #endif /* __LINUX_LIBATA_H__ */

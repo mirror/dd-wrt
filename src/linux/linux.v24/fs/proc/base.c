@@ -185,8 +185,12 @@ static int proc_pid_cmdline(struct task_struct *task, char * buffer)
 	int res = 0;
 	task_lock(task);
 	mm = task->mm;
-	if (mm)
-		atomic_inc(&mm->mm_users);
+	if (mm) {
+		if (mm->arg_end)
+			atomic_inc(&mm->mm_users);
+		else
+			mm = NULL;
+	}
 	task_unlock(task);
 	if (mm && mm->arg_start && mm->arg_start < mm->arg_end) {
 		unsigned long len = mm->arg_end - mm->arg_start;

@@ -2733,9 +2733,9 @@ configure:7855: $? = 0
 configure:7867: result: yes
 configure:7779: checking for chsize
 configure:7836: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c  >&5
-/tmp/ccTjHdKA.o: In function `main':
+/tmp/ccS0JyLS.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `chsize'
-/tmp/ccTjHdKA.o:(.data.rel+0x0): undefined reference to `chsize'
+/tmp/ccS0JyLS.o:(.data.rel+0x0): undefined reference to `chsize'
 collect2: ld returned 1 exit status
 configure:7842: $? = 1
 configure: failed program was:
@@ -3747,9 +3747,9 @@ configure:10147: checking for openssl/engine.h
 configure:10154: result: no
 configure:10171: checking for ENGINE_load_builtin_engines
 configure:10228: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccHFd9sg.o: In function `main':
+/tmp/cc4WkqED.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_load_builtin_engines'
-/tmp/ccHFd9sg.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
+/tmp/cc4WkqED.o:(.data.rel+0x0): undefined reference to `ENGINE_load_builtin_engines'
 collect2: ld returned 1 exit status
 configure:10234: $? = 1
 configure: failed program was:
@@ -3932,9 +3932,9 @@ configure: failed program was:
 configure:10259: result: no
 configure:10273: checking for ENGINE_register_all_complete
 configure:10330: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/cc2yeHdo.o: In function `main':
+/tmp/ccGCWg8R.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_register_all_complete'
-/tmp/cc2yeHdo.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
+/tmp/ccGCWg8R.o:(.data.rel+0x0): undefined reference to `ENGINE_register_all_complete'
 collect2: ld returned 1 exit status
 configure:10336: $? = 1
 configure: failed program was:
@@ -4117,9 +4117,9 @@ configure: failed program was:
 configure:10361: result: no
 configure:10375: checking for ENGINE_cleanup
 configure:10432: mipsel-linux-uclibc-gcc -o conftest -Os -mips32 -mtune=mips32 -pipe -funit-at-a-time -I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs -I.   -L../openssl -L../lzo -L../lzo/src/.libs conftest.c ../openssl/libcrypto.a -llzo  >&5
-/tmp/ccAidWaA.o: In function `main':
+/tmp/ccIZ3Xw4.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `ENGINE_cleanup'
-/tmp/ccAidWaA.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
+/tmp/ccIZ3Xw4.o:(.data.rel+0x0): undefined reference to `ENGINE_cleanup'
 collect2: ld returned 1 exit status
 configure:10438: $? = 1
 configure: failed program was:
