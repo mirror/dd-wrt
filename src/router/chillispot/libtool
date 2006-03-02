@@ -30,10 +30,10 @@
 # the same distribution terms that you use for the rest of that program.
 
 # A sed program that does not truncate output.
-SED="/home/openwrt/workspace/mikrotik/toolchain/bin//sed"
+SED="/home/openwrt/workspace/mikrotik/toolchain/bin/sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
-Xsed="/home/openwrt/workspace/mikrotik/toolchain/bin//sed -e 1s/^X//"
+Xsed="/home/openwrt/workspace/mikrotik/toolchain/bin/sed -e 1s/^X//"
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.

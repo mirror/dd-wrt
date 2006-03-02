@@ -615,6 +615,13 @@ start_restore_defaults (void)
 cprintf("start overclocking\n");
   overclock();
 cprintf("done()");
+  if (nvram_get("http_username")!=NULL)
+    {
+    if (nvram_match("http_username",""))
+	{
+	nvram_set("http_username","root");
+	}
+    }
   
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
