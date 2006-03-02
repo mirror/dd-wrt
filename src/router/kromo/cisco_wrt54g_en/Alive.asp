@@ -101,7 +101,7 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<br/>
-						<a target="_blank" href="help/HManagement.asp">More...</a>
+						<a target="_blank" href="help/HAlive.asp">More...</a>
 					</div>
 				</div>
 			</div>
