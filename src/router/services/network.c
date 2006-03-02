@@ -525,7 +525,9 @@ start_lan (void)
 		eval ("wl", "join", nvram_get ("wl_ssid"));
 #endif
 //		eval ("brctl", "addif", lan_ifname, name);
-//		do_mssid (lan_ifname);
+#ifndef HAVE_FOM
+		do_mssid (lan_ifname);
+#endif
 	      }
 #endif
 
@@ -765,7 +767,7 @@ start_lan (void)
     }
 
 #ifndef HAVE_RB500
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
     {
       system ("wl wep sw");
       sleep (1);
