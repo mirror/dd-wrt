@@ -5,7 +5,7 @@ cd ../src
 cd router
 
 #make clean
-cp .config_fon .config
+cp .config_fon.v24 .config
 #cp Makefile.standard Makefile
 
 #copy config.normal .config
@@ -67,5 +67,5 @@ cp dd-wrt.v23_asus.trx /GruppenLW
 cp dd-wrt.v23_wrt54g.bin /GruppenLW
 cp dd-wrt.v23_wrt54gs.bin /GruppenLW
 cp dd-wrt.v23_wrt54gsv4.bin /GruppenLW
-cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v23_fon_generic.bin
+cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v23_fon_relay_generic.bin
 #cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
