@@ -19,6 +19,7 @@
 					<ul class="wide">
 						<li>AP mode &ndash; This is the default mode, also called Infrastructure mode. Your router acts as an central connection point, which wireless clients can connect to.</li>
 						<li>Client mode &ndash; This mode turns the router into a wireless client (like a wirless PCI card or PCMCIA card). This in turn connects to a Wireless access point. The client is isolated from other Wireless clients. Also only one ethernet device can be connected though it could be a router in AP mode.</li>
+						<li>Client Bridged mode &ndash; Wireless Bridging is used to connect 2 LAN segments via a wireless link. The 2 segments will be in the same subnet and looks like 2 ethernet switches connected by a cable, to all computers on the subnet. Since the computers are on the same subnet, broadcasts will reach all machines allowing DHCP clients in one segment to get their addresses from a DHCP server in a different segment. You could use a Wireless Bridge to transparently connect computer(s) in one room to computer(s) in a different room when you could not, or did not want to run an ethernet cable between the rooms.</li>
 						<li>Ad-Hoc mode &ndash; This is for peer to peer wireless connections. Clients running in Ad-Hoc mode can connect to each other as required without involving central access points.</li>
 					</ul>
 				</dd>
