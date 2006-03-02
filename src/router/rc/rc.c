@@ -382,7 +382,8 @@ main_loop (void)
 	  SET_LED (RELEASE_WAN_CONTROL);
 	  cprintf ("ifconfig wl up\n");
 	  if (nvram_match ("wl_mode", "sta")
-	      || nvram_match ("wl_mode", "wet"))
+	      || nvram_match ("wl_mode", "wet")
+	      || nvram_match ("wl_mode", "apsta"))
 	    {
 	      //fix for client mode
 	      if (wl_probe ("eth2"))

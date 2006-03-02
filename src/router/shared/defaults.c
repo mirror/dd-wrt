@@ -35,7 +35,12 @@
 
 struct nvram_tuple router_defaults[] = {
 #ifdef HAVE_FON
+#ifdef HAVE_MSSID
+  {"fon_revision", "913", 0},
+#else
   {"fon_revision", "13", 0},
+
+#endif
   {"router_style", "fon.css", 0},
 #else
   {"router_style", "cyan.css", 0},
@@ -395,7 +400,11 @@ struct nvram_tuple router_defaults[] = {
 #elif HAVE_34TELECOM
   {"wl_ssid", "Lobo", 0},	/* Service set ID (network name) */
 #elif HAVE_FON
+#ifdef HAVE_MSSID
+  {"wl_ssid", "FON_INIT", 0},	/* Service set ID (network name) */
+#else
   {"wl_ssid", "FON", 0},	/* Service set ID (network name) */
+#endif
 #else
   {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 #endif
@@ -437,6 +446,14 @@ struct nvram_tuple router_defaults[] = {
 #elif HAVE_SKYTRON
   {"wl_mode", "sta", 0},
 #else
+#ifdef HAVE_MSSID
+#ifdef HAVE_FON
+  {"wl_mode", "apsta", 0},
+  {"wl_vifs", "wl0.1", 0},
+  {"wl0_vifs", "wl0.1", 0},
+  {"wl0.1_ssid", "FON", 0},
+#endif
+#else
 #ifndef HAVE_MADWIFI
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
 #else
@@ -446,6 +463,7 @@ struct nvram_tuple router_defaults[] = {
   {"ath3_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath4_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath5_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
+#endif
 #endif
 #endif
   {"wl_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
