@@ -28,6 +28,7 @@ hostinfo               = unknown
 /bin/universe          = unknown
 
 PATH: /home/openwrt/workspace/DD-WRT/tools
+PATH: /home/openwrt/workspace/mikrotik/toolchain/bin
 PATH: /home/openwrt/workspace/mikrotik/toolchain/bin/
 PATH: /usr/local/sbin
 PATH: /usr/local/bin
@@ -136,7 +137,7 @@ configure:3158: result: i686-pc-linux-gnu
 configure:3166: checking host system type
 configure:3180: result: mipsel-linux-elf
 configure:3188: checking for a sed that does not truncate output
-configure:3242: result: /home/openwrt/workspace/mikrotik/toolchain/bin//sed
+configure:3242: result: /home/openwrt/workspace/mikrotik/toolchain/bin/sed
 configure:3245: checking for egrep
 configure:3255: result: grep -E
 configure:3271: checking for ld used by mipsel-linux-uclibc-gcc
@@ -1274,7 +1275,7 @@ lt_cv_objdir=.libs
 lt_cv_path_LD=mipsel-linux-uclibc-ld
 lt_cv_path_LDCXX=mipsel-linux-uclibc-ld
 lt_cv_path_NM=mipsel-linux-uclibc-nm
-lt_cv_path_SED=/home/openwrt/workspace/mikrotik/toolchain/bin//sed
+lt_cv_path_SED=/home/openwrt/workspace/mikrotik/toolchain/bin/sed
 lt_cv_prog_compiler_c_o=yes
 lt_cv_prog_compiler_c_o_CXX=yes
 lt_cv_prog_compiler_rtti_exceptions=no
