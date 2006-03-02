@@ -24,6 +24,13 @@
 					</ul><br/>
 					There are some extra options you can set by entering them in <em>Additional DHCPD Options</em>.
 				</dd>
+				<dt>XBOX Kaid</dt>
+				<dd>Kai is a means of connecting platform games over the internet. Enable the service and then add XBox MAC addresses separeted with ";".<br/><br/>
+					<div class="note">
+						<h4>Note</h4>
+						<div>Xbox must be connected directly via one of the Ethernet ports of the router.</div>
+					</div>
+				</dd>
 				<dt>PPTP</dt>
 				<dd>A VPN technology by Microsoft and remote access vendors. It is implemented in Windows XP. Configuring this allows you to access you LAN at home remotely.
 					<ul class="wide">
@@ -32,7 +39,20 @@
 						<li>CHAP-Secrets &ndash; A list of usernames and passwords for the VPN login, one user per line (Example: joe * joespassword *). For more details look up the pppd man page.</li>
 					</ul>
 				</dd>
-				<dt>SSHd</dt>
+				<dt>RFlow / MACupd</dt>
+				<dd>RFlow Collector is a traffic monitoring and management tool that allows to watch a complete network of DD-WRT routers.<br/>
+					<ul class="wide">
+						<li>RFlow Default port is 2055</li>
+						<li>MACupd Default port is 2056</li>
+						<li>Interval = 10 seems messages will be sent to server each 10 seconds</li>
+						<li>Interface : choose which interface to monitor</li>
+					</ul><br/>
+					<div class="note">
+						<h4>Note</h4>
+						<div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div>
+					</div>
+				 </dd>
+				<dt>SSH</dt>
 				<dd>Enabling SSHd allows you to access the Linux OS of your router with an SSH client (Putty works well on Windows, for example).
 					<ul class="wide">
 						<li>Password login &ndash; allow login with the router password (username is <tt>root</tt>)</li>
@@ -42,14 +62,14 @@
 				</dd>
 				<dt>Syslogd</dt>
 				<dd>Enable Syslogd to capture and forward all messages to another system. Enter the IP-address of the server for the syslog messages.</dd>
-				<dt>Telnetd</dt>
-				<dd>Enable a telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the router password.<br /><br />
+				<dt>Telnet</dt>
+				<dd>Enable a telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the router password.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
 						<div>If you using the router in an untrusted environment (for example as a public hotspot), it is strongly recommended to use SSHd and deactivate telnet.</div>
 					</div>
 				</dd>
-				<dd>Check all values and click <i>Save Settings</i> to save your settings or click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
+				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
 		<div class="also">
