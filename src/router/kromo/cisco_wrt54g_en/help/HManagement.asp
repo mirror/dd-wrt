@@ -19,11 +19,12 @@
 				<dd>The new password must not exceed 32 characters in length and must not include any spaces. Enter the new password a second time to confirm it.<br /><br />
 					<div class="note">
 						<h4>Note</h4>
-						<div>It is strongly recommended that you change the factory default password of the router, which is <tt>admin</tt>. All users who try to access the router's web-based utility or Setup Wizard will be prompted for the router's password.</div>
+						<div>Default username is <tt>root</tt><br/>
+						It is strongly recommended that you change the factory default password of the router, which is <tt>admin</tt>. All users who try to access the router's web-based utility or Setup Wizard will be prompted for the router's password.</div>
 					</div>
 				</dd>
-				<dt>Remote Router Access</dt>
-				<dd>This feature allows you to manage your router from a remote location, via the Internet. To disable this feature, keep the default setting, <em>Disable</em>. To enable this feature, select <em>Enable</em>, and use the specified port (default is 8080) on your PC to remotely manage the router. You must also change the router's default password to one of your own, if you haven't already.<br /><br />
+				<dt>Remote Access</dt>
+				<dd>This feature allows you to manage the router from a remote location, via the Internet. To disable this feature, keep the default setting, <em>Disable</em>. To enable this feature, select <em>Enable</em>, and use the specified port (default is 8080) on your PC to remotely manage the router. You must also change the router's default password to one of your own, if you haven't already.<br /><br />
 					To remotely manage the router, enter <tt>http://xxx.xxx.xxx.xxx:8080</tt> (the x's represent the router's Internet IP address, and 8080 represents the specified port) in your web browser's address field. You will be asked for the router's password.<br /><br />
 					If you use https you need to specify the url as <tt>https://xxx.xxx.xxx.xxx:8080</tt> (not all DD-WRT firmwares does support this without rebuilding with SSL support).<br /><br />
 					<div class="note">
@@ -31,8 +32,12 @@
 						<div>If the Remote Router Access feature is enabled, anyone who knows the router's Internet IP address and password will be able to alter the router's settings.</div>
 					</div>
 				</dd>
-				<dt>AP Watchdog</dt>
-				<dd>The AP Watchdog enables a timer that will check to see if any clients are connected in the interval seconds given. If no clients are attached, the watchdog assumes the AP needs to be reset. When clients are connected this reset will not occur. The watchdog is intended for situations where the AP becomes unavailable due to interference or internal chip problems.</dd>
+				
+				<!--<dt>AP Watchdog</dt>
+				<dd>The AP Watchdog enables a timer that will check to see if any clients are connected in the interval seconds given. If no clients are attached, the watchdog assumes the AP needs to be reset. When clients are connected this reset will not occur. The watchdog is intended for situations where the AP becomes unavailable due to interference or internal chip problems.</dd>-->
+				<dt>Web Access</dt>
+				<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol.<br/>
+				You can also activate or not the router information web page. It's now possible to password protect this page (same username and password than above)</dd>
 				<dt>Boot Wait</dt>
 				<dd>Boot Wait is a feature you will hopefully never need. It introduces a short delay while booting (5s). During this delay you can initiate the download of a new firmware if the one in the flash rom is not broken. Obviously this is only necessary if you can no longer reflash using the web interface because the installed firmware will not boot. See the DD-WRT documentation for more information.<br /><br />
 					<div class="note">
@@ -60,7 +65,7 @@
 				<dt>802.1x</dt>
 				<dd>A limited 802.1x server needed to fulfill WPA handshake requirements to allow Windows XP clients to work with WPA.</dd>
 				<dt>NTP Client</dt>
-				<dd>Synchronize the clock of the router with an NTP timeserver.</dd>
+				<dd>Synchronize the clock of the router with an NTP time server.</dd>
 				<dt>Resetbuttond</dt>
 				<dd>The resetbuttond monitors the reset button and initiates actions depending on how long you press it.
 					<ul>
