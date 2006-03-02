@@ -68,7 +68,63 @@ function ViewDHCP() {
 	dhcp_win = self.open('DHCPTable.asp','inLogTable','alwaysRaised,resizable,scrollbars,width=720,height=600');
 	dhcp_win.focus();
 }
-</script></head>
+
+var mem_info = new Array('mem:'<% dumpmeminfo(); %>);
+
+var mem_total = parseInt(mem_info[19]);
+var mem_free = parseInt(mem_info[22]);
+var mem_used = mem_total - mem_free;
+var mem_buffer = parseInt(mem_info[28]);
+var mem_cached = parseInt(mem_info[31]);
+var mem_active = parseInt(mem_info[37]);
+var mem_inactive = parseInt(mem_info[40]);
+
+var mem_system = 65536;
+if (mem_total < 65537) {mem_system = 65536};
+if (mem_total < 32769) {mem_system = 32768};
+if (mem_total < 16385) {mem_system = 16384};
+if (mem_total < 8193) {mem_system = 8192};
+
+var mem_total_f = mem_total / mem_system * 100;
+var mem_free_f = mem_free / mem_total * 100;
+var mem_used_f = mem_used / mem_total * 100;
+var mem_buffer_f = mem_buffer / mem_used * 100;
+var mem_cached_f = mem_cached / mem_used * 100;
+var mem_active_f = mem_active / mem_used * 100;
+var mem_inactive_f = mem_inactive / mem_used * 100;
+
+var mem_total_str = '<strong class=\"bar\" style=\"width: ' + mem_total_f.toFixed(1) + '%;\">' + mem_total_f.toFixed(1) + '%</strong>';
+var mem_free_str = '<strong class=\"bar\" style=\"width: ' + mem_free_f.toFixed(1) + '%;\">' + mem_free_f.toFixed(1) + '%</strong>';
+var mem_used_str = '<strong class=\"bar\" style=\"width: ' + mem_used_f.toFixed(1) + '%;\">' + mem_used_f.toFixed(1) + '%</strong>';
+var mem_buffer_str = '<strong class=\"bar\" style=\"width: ' + mem_buffer_f.toFixed(1) + '%;\">' + mem_buffer_f.toFixed(1) + '%</strong>';
+var mem_cached_str = '<strong class=\"bar\" style=\"width: ' + mem_cached_f.toFixed(1) + '%;\">' + mem_cached_f.toFixed(1) + '%</strong>';
+var mem_active_str = '<strong class=\"bar\" style=\"width: ' + mem_active_f.toFixed(1) + '%;\">' + mem_active_f.toFixed(1) + '%</strong>';
+var mem_inactive_str = '<strong class=\"bar\" style=\"width: ' + mem_inactive_f.toFixed(1) + '%;\">' + mem_inactive_f.toFixed(1) + '%</strong>';
+
+
+</script>
+<style>
+    .graph { 
+        position: relative;
+	    float:right;
+	    width:200px;
+        border: 1px solid black; 
+        padding: 1px; 
+    }
+    .graph .bar { 
+        display: block;
+        position: relative;
+ 	    float:left;
+	    width:200px;
+        background: lightblue; 
+        text-align: left; 
+        color: black; 
+        height: 1em; 
+        line-height: 1em;            
+    }
+    .graph .bar span { position: absolute; left: 1em; }
+    
+</style></head>
    <body class="gui" onload="init()"> <% showad(); %>
       <div id="wrapper">
          <div id="content">
@@ -110,7 +166,15 @@ function ViewDHCP() {
 		  <input type="hidden" name="action" />
 		  <input type="hidden" name="wan_proto" value='<% nvram_get("wan_proto"); %>' />
 		  <h2>Router Information</h2>
-                     <div>
+		  	<div>
+		  		<fieldset>
+                        <legend>System</legend>                    
+                        <div class="setting">
+                           <div class="label">Router Name</div><% nvram_get("router_name"); %>
+                        </div>
+                        <div class="setting">
+                           <div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
+                        </div>
                         <div class="setting">
                            <div class="label">Firmware Version</div><% get_firmware_version(); %>
                         </div>
@@ -121,17 +185,6 @@ function ViewDHCP() {
                            <div class="label">MAC Address</div><% nvram_get("wan_hwaddr"); %>
                         </div>
                         <div class="setting">
-                           <div class="label">Router Name</div><% nvram_get("router_name"); %>
-                        </div>
-                        <div class="setting">
-                           <div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
-                        </div>
-                        <div class="setting">
-                           <div class="label">CPU</div><% show_cpuinfo(); %>
-                        </div><div class="setting">
-                           <div class="label">CPU Clock</div><% get_clkfreq(); %> MHz
-                        </div>
-                        <div class="setting">
                            <div class="label">Host Name</div><% nvram_get("wan_hostname"); %>
                         </div>
                         <div class="setting">
@@ -140,8 +193,70 @@ function ViewDHCP() {
                         <div class="setting">
                            <div class="label">Time</div><% get_uptime(); %>
                         </div>
+				</fieldset><br>
+				<fieldset>
+                        <legend>CPU</legend>
+                        <div class="setting">
+                           <div class="label">CPU Model</div><% show_cpuinfo(); %>
+                        </div>
+                        <div class="setting">
+                           <div class="label">CPU Clock</div><% get_clkfreq(); %> MHz
+                        </div>
+                </fieldset><br>
+                <fieldset>
+                        <legend>Memory</legend>
+                        <div class="graph">
+   							<strong class="bar" style="width: 100%;">100.0%</strong>
+						</div>
+                        <div class="setting">
+                           <div class="label">System</div><script type="text/JavaScript">document.write(mem_system);</script> kB
+                        </div>
+                        <div class="graph">
+   							<script type="text/JavaScript">document.write(mem_total_str);</script>
+						</div>
+                        <div class="setting">
+                           <div class="label">MemTotal</div><script type="text/JavaScript">document.write(mem_total);</script> kB
+                        </div>
+                        <div class="graph">
+   							<script type="text/JavaScript">document.write(mem_free_str);</script>
+						</div>
+                        <div class="setting">
+                           <div class="label">MemFree</div><script type="text/JavaScript">document.write(mem_free);</script> kB
+                        </div>
+                        <div class="graph">
+   							<script type="text/JavaScript">document.write(mem_used_str);</script>
+						</div>
+                        <div class="setting">
+                           <div class="label">MemUsed</div><script type="text/JavaScript">document.write(mem_used);</script> kB
+                        </div>
+                        <div class="graph">
+   							<script type="text/JavaScript">document.write(mem_buffer_str);</script>
+						</div>
+                        <div class="setting">
+                           <div class="label">Buffers</div><script type="text/JavaScript">document.write(mem_buffer);</script> kB
+                        </div>
+                        <div class="graph">
+   							<script type="text/JavaScript">document.write(mem_cached_str);</script>
+						</div>
+                        <div class="setting">
+                           <div class="label">Cached</div><script type="text/JavaScript">document.write(mem_cached);</script> kB
+                        </div>
+                        <div class="graph">
+   							<script type="text/JavaScript">document.write(mem_active_str);</script>
+						</div>
+                        <div class="setting">
+                           <div class="label">Active</div><script type="text/JavaScript">document.write(mem_active);</script> kB
+                        </div>
+                        <div class="graph">
+   							<script type="text/JavaScript">document.write(mem_inactive_str);</script>
+						</div>
+                        <div class="setting">
+                           <div class="label">Inactive</div><script type="text/JavaScript">document.write(mem_inactive);</script> kB
+                        </div>
+                        </fieldset>
                      </div><br /><h2>Internet</h2>
-                     <fieldset>
+                <fieldset><br>
+                
                         <legend>Configuration Type</legend>
                         <div class="setting">
                            <div class="label">Login Type</div>
