@@ -79,7 +79,7 @@ var mem_cached = parseInt(mem_info[31]);
 var mem_active = parseInt(mem_info[37]);
 var mem_inactive = parseInt(mem_info[40]);
 
-var mem_system = 65536;
+var mem_system = 131072;
 if (mem_total < 65537) {mem_system = 65536};
 if (mem_total < 32769) {mem_system = 32768};
 if (mem_total < 16385) {mem_system = 16384};
