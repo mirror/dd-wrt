@@ -304,6 +304,14 @@ cprintf("is all?\n");
 
 }
 
+int isClient(void)
+{
+ if (nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
+ return 1;
+ 
+ return 0;
+
+}
 void
 start_wlconf (void)
 {
@@ -333,7 +341,7 @@ start_lan (void)
     return;
 
   // If running in client-mode, remove old WAN-configuration
-  if (nvram_match ("wl0_mode", "sta"))
+  if (nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
     {
       //#ifdef HAVE_SKYTRON
       //ifconfig(wan_ifname,IFUP,"172.16.1.1","255.255.255.0");
@@ -502,13 +510,24 @@ start_lan (void)
 		do_mssid (lan_ifname);
 #endif
 	      }
+#ifdef HAVE_MSSID
 	    if (nvram_match (wl_name, "apsta"))
 	      {
-		eval ("brctl", "addif", lan_ifname, name);
-#ifdef HAVE_MSSID
-		do_mssid (lan_ifname);
+#ifndef HAVE_MADWIFI
+		eval ("wl", "ap", "0");
+		wl_ioctl (wl_name, WLC_SCAN, svbuf, sizeof (svbuf));
+		wlconf_up (name);
 #endif
+		//eval("wlconf", name, "up");
+		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
+#ifndef HAVE_MADWIFI
+		eval ("wl", "ap", "0");
+		eval ("wl", "join", nvram_get ("wl_ssid"));
+#endif
+//		eval ("brctl", "addif", lan_ifname, name);
+//		do_mssid (lan_ifname);
 	      }
+#endif
 
 	    /* if client/wet mode, turn off ap mode et al */
 
@@ -571,6 +590,8 @@ start_lan (void)
 	  snprintf (prefix, sizeof (prefix), "wl%d_", unit);
 	  /* Receive all multicast frames in WET mode */
 	  if (nvram_match (strcat_r (prefix, "mode", tmp), "sta"))
+	    ifconfig (lan_ifname, IFUP | IFF_ALLMULTI, NULL, NULL);
+	  if (nvram_match (strcat_r (prefix, "mode", tmp), "apsta"))
 	    ifconfig (lan_ifname, IFUP | IFF_ALLMULTI, NULL, NULL);
 
 	}
@@ -744,7 +765,7 @@ start_lan (void)
     }
 
 #ifndef HAVE_RB500
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
     {
       system ("wl wep sw");
       sleep (1);
@@ -827,7 +848,7 @@ start_wan (int status)
       dns_to_resolv ();
       return;
     }
-  if (nvram_match ("wl_mode", "sta"))
+  if (isClient())
     {
       pppoe_wan_ifname = getwlif ();
     }
@@ -867,7 +888,7 @@ start_wan (int status)
   if ((!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
       && (!strcmp (nvram_safe_get ("boardtype"), "bcm94710ap")))
     pppoe_wan_ifname = "eth1";
-  if (nvram_match ("wl_mode", "sta"))
+  if (isClient())
     pppoe_wan_ifname = getwlif ();
 
 #endif
@@ -1287,7 +1308,7 @@ start_wan (int status)
       while (route_del (get_wan_face (), 0, NULL, NULL, NULL) == 0);
     }
   cprintf ("wep handling\n");
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
     {
       system ("wl wep sw");
       sleep (1);
@@ -1531,8 +1552,23 @@ start_wan_done (char *wan_ifname)
   start_dhcpfwd ();
   nvram_set ("wanup", "1");
 #ifdef HAVE_FON
+#ifndef HAVE_MSSID
   eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
   ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+#else
+if (nvram_match("wl0_mode","apsta"))
+{
+  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
+  ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+}
+else if (nvram_match("wl0_mode","ap"))
+{
+  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+}
+stop_chilli();
+start_chilli();
+#endif
 #endif
 
 }
@@ -1590,7 +1626,7 @@ stop_wan (void)
 	    eval("rmmod","slhc");	 */
 #endif
 #ifdef HAVE_FON
-  eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
+    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
 #endif
   cprintf ("done\n");
 }
