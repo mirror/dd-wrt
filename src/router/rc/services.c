@@ -260,7 +260,7 @@ start_single_service (void)
     }
   else if (!strcmp (service, "management"))
     {
-      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
+      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
         stop_service("nas");
 
       stop_service("zebra");
@@ -284,7 +284,7 @@ start_single_service (void)
 #ifdef HAVE_WOL
       startstop("wol");
 #endif
-      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
+      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
         start_service("nas_lan");
 
     }

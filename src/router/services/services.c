@@ -1759,7 +1759,7 @@ bird_init (void)
 	  if (nvram_match ("routing_wan", "on"))
 	    {
 	    char *wanif = nvram_safe_get("wan_ifname");
-	    if (nvram_match("wl_mode","sta"))
+	    if (nvram_match("wl_mode","sta") || nvram_match("wl_mode","apsta"))
 	    fprintf (fp, "	interface \"%s\" { };\n",getwlif());
 	    else
 	    fprintf (fp, "	interface \"%s\" { };\n",nvram_safe_get ("wan_ifname"));
@@ -2055,10 +2055,24 @@ start_chilli (void)
   if (nvram_match ("chilli_interface", "wlan")
       || nvram_match ("chilli_interface", "wan"))
     {
+#ifndef HAVE_MSSID
       if (wl_probe ("eth2"))
 	fprintf (fp, "dhcpif eth1\n");
       else
 	fprintf (fp, "dhcpif eth2\n");
+#else
+if (nvram_match("wl0_mode","apsta"))
+    {
+	fprintf(fp, "dhcpif wl0.1\n");
+    }
+    else
+    {
+      if (wl_probe ("eth2"))
+	fprintf (fp, "dhcpif eth1\n");
+      else
+	fprintf (fp, "dhcpif eth2\n");
+    }
+#endif
     }
   else
     {
