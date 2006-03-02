@@ -2263,7 +2263,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
   system (cmd);			// get active wireless mac
 
-  if (strcmp (mode, "ap") != 0)
+  if (strcmp (mode, "ap") != 0 && strcmp(mode, "apsta") !=0)
     {
       strcpy (title, "AP Signal");
       strcpy (title2, "AP");
@@ -2287,7 +2287,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	  rssi = 0;
 	  noise = 0;
 	  // get rssi value
-	  if (strcmp (mode, "ap"))
+	  if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
 	    snprintf (cmd, sizeof (cmd), "%s > %s", RSSI_CMD, RSSI_TMP);
 	  else
 	    snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
@@ -2305,14 +2305,23 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 
 	      // get rssi
-	      if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
+#ifdef HAVE_MSSID
+	      if (sscanf (line, "%d", &rssi) != 1)
 		continue;
 
-	      // get noise for client/wet mode
+	      if (strcmp (mode, "ap") &&
+		  fgets (line, sizeof (line), fp2) != NULL &&
+		  sscanf (line, "%d", &noise) != 1)
+		continue;
+#else
+	      if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
+		continue;
 	      if (strcmp (mode, "ap") &&
 		  fgets (line, sizeof (line), fp2) != NULL &&
 		  sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
 		continue;
+#endif
+	      // get noise for client/wet mode
 
 	      fclose (fp2);
 	    }
@@ -2399,7 +2408,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   snprintf (cmd, sizeof (cmd), "%s > %s", WDS_CMD, WDS_LIST_TMP);
   system (cmd);			// get active wireless mac
 
-  if (strcmp (mode, "ap") == 0)
+  if (strcmp (mode, "ap") == 0 || strcmp (mode, "apsta") == 0) 
     strcpy (title, "WDS Signal");
   else
     return -1;
@@ -2439,9 +2448,13 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 
 	      // get rssi
+#ifdef HAVE_MSSID
+	      if (sscanf (line, "%d", &rssi) != 1)
+		continue;
+#else
 	      if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
 		continue;
-
+#endif
 	      fclose (fp2);
 	    }
 	  if (nvram_match ("maskmac", "1") && macmask)
