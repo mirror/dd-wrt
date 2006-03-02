@@ -49,7 +49,10 @@ char buf[128];
 int n = 0;
 rep:; 
 if (n==EOF)
+    {
+    fclose (fcpu);
     return 0;
+    }
 if (n)websWrite(wp,"'%s'",buf);
 n = fscanf(fcpu,"%s",buf);
 if (n!=EOF)
