@@ -139,8 +139,8 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "0x467") &&
       nvram_match ("boardflags", "0x1758"))
     {
-      cprintf ("router is buffalo WHR-HP-G54S\n");
-      setRouter ("Buffalo WHR-HP-G54S");
+      cprintf ("router is buffalo WHR-HP-G54\n");
+      setRouter ("Buffalo WHR-HP-G54");
       return ROUTER_BUFFALO_HP_WHRG54S;
     }
   if (nvram_match ("boardnum", "42") &&
