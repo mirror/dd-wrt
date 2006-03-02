@@ -64,7 +64,9 @@
 						<li><a href="HManagement.asp">Management</a></li>
 						<li><a href="HHotspot.asp">Hotspot</a></li>
 						<li><a href="HServices.asp">Services</a></li>
+						<li><a href="HAlive.asp">Keep Alive</a></li>
 						<li><a href="HLog.asp">Log</a></li>
+						<li><a href="HDiagnostics.asp">Diagnostics</a></li>
 						<li><a href="HDefault.asp">Factory Defaults</a></li>
 						<li><a href="HUpgrade.asp">Firmware Upgrade</a></li>
 						<li><a href="HBackup.asp">Backup</a></li>
