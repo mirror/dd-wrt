@@ -103,6 +103,17 @@ function mac_add_submit(F) {
 	F.submit();
 }
 
+function service(id, name, port_start, port_end){
+	this.id = id;
+	this.name = name;
+	this.start = port_start;
+	this.end = port_end;
+}
+services=new Array();
+services_length=0;
+/* Init. services data structure */
+<% filter_port_services_get("all_list", "0"); %>
+
 function to_submit(F) {
 	if (F._enable_game.checked == false){
 	    F.enable_game.value = 0;
@@ -201,7 +212,15 @@ function init() {
 									<% get_qossvcs(); %>
 									<tr>
 										<td>&nbsp;</td>
-										<td colspan="2"><input type="button" name="add_svc_button" value="Add" onclick="svc_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;<select name="add_svc"><% get_services_options(); %></select></td>
+										<td colspan="2"><input type="button" name="add_svc_button" value="Add" onclick="svc_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;<select name="add_svc">
+										<script language="Javascript">
+										var i=0;
+										for(i=0;i<services_length;i++)
+										document.write("<option value="+services[i].name+">"+services[i].name+ " [ "+
+										services[i].start+" ~ "+
+										services[i].end + " ]" + "</option>");
+										</script>
+										</select></td>
 									</tr>
 									<tr>
 										<td>&nbsp;</td>
@@ -218,7 +237,8 @@ function init() {
 										<td>&nbsp;</td>
 										<td colspan="2">
 											<input type="button" value="Add" onclick="ip_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;
-											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>/<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,'Netmask')" class="num"/>
+											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>/
+											<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,'Netmask')" class="num"/>
 										</td>
 									</tr>
 								</table>
@@ -371,7 +391,7 @@ function init() {
 							<dl>
 								<dt class="term">Uplink: </dt>
 								<dd class="definition">Set this to 80%-95% (max) of your total upload limit</dd>
-								<dt class="term">Downlink: </dt>
+								<dt class="term">Dnlink: </dt>
 								<dd class="definition">Set this to 80%-100% (max) of your total download limit</dd>
 								<dt class="term">Application Priority: </dt>
 								<dd class="definition">You may control your data rate with respect to the application that is consuming bandwidth.</dd>
