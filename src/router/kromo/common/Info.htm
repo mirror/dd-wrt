@@ -45,7 +45,7 @@ function replace_list(list,target,replacement) {
 						</div>
 					</div>
 				    <div id="main">
-						<div id="contents">
+						<div id="contentsInfo">
 							<h2>Sys-Info</h2>
 							<fieldset>
 								<legend>Info</legend>
@@ -190,11 +190,6 @@ this.document.write(clients);
 					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
 					<% nvram_match("wan_proto","disabled","-->"); %>
 					<div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
-				</div>
-				<div id="helpContainer">
-					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
-					</div>
 				</div>
 			</div>
 		</div>
