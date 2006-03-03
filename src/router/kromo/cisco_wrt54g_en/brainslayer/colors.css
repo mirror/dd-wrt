@@ -99,3 +99,11 @@ background-color: #E3DDD5;
 .meter .text {
 color:#955322;
 }
+
+.progressbar {
+background-color: #fff;
+border-color: #999;
+}
+.progressbarblock {
+background-color: #E3DDD5;
+}
