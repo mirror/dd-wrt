@@ -148,7 +148,7 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<br/>
-						<a target="_blank" href="help/HSetup.asp">More...</a>
+						<!--<a target="_blank" href="help/HVlan.asp">More...</a>-->
 					</div>
 				</div>
 			</div>
