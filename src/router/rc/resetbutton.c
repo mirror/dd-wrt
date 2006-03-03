@@ -149,6 +149,10 @@ period_check (int sig)
       gpio = WHR_SOFTWARE_RESET;
       state = (val & gpio);
       break;
+    case ROUTER_ASUS:
+      gpio = BCM47XX_SOFTWARE_RESET;
+      state = (val & gpio);
+      break;      
     default:
       gpio = BCM47XX_SOFTWARE_RESET;
       state = !(val & gpio);
