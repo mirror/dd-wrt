@@ -21,7 +21,7 @@
 				<dd>Allows applications to automatically setup port forwardings.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
-						<div>This can be also enable in Management tab, see <a href="HManagement.asp">Management</a>.</div>
+						<div>This can be also enabled in Management tab, see <a href="HManagement.asp">Management</a>.</div>
 					</div>
 				</dd>
 				<dt>Clear port forwards at startup</dt>
