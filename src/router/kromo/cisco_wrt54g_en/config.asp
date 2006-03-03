@@ -50,10 +50,16 @@
 					<div id="contents">
 						<form name="nvramrestore" action="nvram.cgi" method="POST" encType="multipart/form-data">
 							<h2>Backup Configuration</h2>
-							<input onclick="window.location.href='/nvrambak.bin'" type="button" value="Backup" name="B1"/><hr width="90%"/>
+							<div class="settings">
+							   <input onclick="window.location.href='/nvrambak.bin'" type="button" value="Backup" name="B1"/>
+							</div>
+							<br/>
 							<h2>Restore Configuration</h2>
-							Please select a file to restore:&nbsp;&nbsp;<input type="file" name="file" size="30"/>
+							<div class="settings">
+							   Please select a file to restore:&nbsp;&nbsp;<input type="file" name="file" size="50"/>
 							<br/><input type="submit" value=" Restore "/>
+						</div>
+						<br/>
 							<hr width="90%"/>
 							<div class="warning"><em>Warning:</em> Only upload files backed up using
 								<br/>this firmware and from the same model of router.
