@@ -107,3 +107,11 @@ a:active {
 div.warning {
 	color:					#EE3333;
 }
+
+.meter .bar {
+  background-image:		url(images/help_bg.png);
+}
+
+.meter .text {
+  color:					#115B80;
+}
