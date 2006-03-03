@@ -160,3 +160,11 @@ div.warning {
 .meter .text {
   color: #115B80;
 }
+
+.progressbar {
+background-color: #fff;
+border-color: #999;
+}
+.progressbarblock {
+background-color: #FFF7CD;
+}
