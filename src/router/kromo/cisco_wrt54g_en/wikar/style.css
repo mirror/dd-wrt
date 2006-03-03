@@ -226,3 +226,47 @@ padding:.906em;
 	margin: 5px 0px 5px 0px;
 	color: #2b226f;
 }
+
+/* bar
+----------------------------------- */
+/*.meter0 {
+	height: 16px;
+	width: 80%;
+	padding: 0px;
+	border: 1px solid #000000;
+	display: table;
+	background-color: #FFFFFF;
+	margin-bottom: 8px;
+}
+.meter0 .bar {
+     height: 14px;
+     margin: 1px;
+     padding: 0px;
+}
+.meter0 .text {
+	position: absolute;
+	margin-left: 3px;
+}*/
+.meter {
+	float:right;
+	position:relative;
+	top:-.09em;
+	height: 1.1em;
+	width: 14.49em;
+	background:#999;
+	border-style:solid;
+	border-width:.09em;
+	border-color:#666 #ccc #ccc #666;
+}
+.meter .bar {
+	height: 1.1em;
+	background:#2b226f;
+}
+.meter .text {
+	position:absolute;
+	top:0;
+	left:0;
+	width:14.49em;
+	text-align:center;
+	color:#fff;
+}
