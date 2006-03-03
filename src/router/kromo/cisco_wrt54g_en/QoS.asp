@@ -110,11 +110,10 @@ function service(id, name, port_start, port_end){
 	this.end = port_end;
 }
 
-var sorton = function(x,y)
-{
-if(x.name <  y.name) return -1;
-else if (x.name == y.name) return 0;
-else return 1;
+var sorton = function(x,y){
+	if(x.name <  y.name) return -1;
+	else if (x.name == y.name) return 0;
+	else return 1;
 }
 
 services=new Array();
