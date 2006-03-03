@@ -28,5 +28,8 @@ color:#cfc;
 color:#fff;
 }
 .meter .bar {
-background-color: #6c6;
+background-color: #3b3;
+}
+.meter .text {
+color:#fff;
 }
