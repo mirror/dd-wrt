@@ -28,5 +28,8 @@ color:#660;
 color:#000;
 }
 .meter .bar {
-background-color: #ee7;
+background-color: #dd5;
+}
+.meter .text {
+color:#000;
 }
