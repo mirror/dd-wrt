@@ -109,10 +109,19 @@ function service(id, name, port_start, port_end){
 	this.start = port_start;
 	this.end = port_end;
 }
+
+var sorton = function(x,y)
+{
+if(x.name <  y.name) return -1;
+else if (x.name == y.name) return 0;
+else return 1;
+}
+
 services=new Array();
 services_length=0;
 /* Init. services data structure */
 <% filter_port_services_get("all_list", "0"); %>
+services.sort(sorton);
 
 function to_submit(F) {
 	if (F._enable_game.checked == false){
