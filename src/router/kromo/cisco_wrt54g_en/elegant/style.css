@@ -28,4 +28,6 @@ color:#FFFFFF;
 color:#FFFFFF; 
 text-decoration: underline; 
 }
-
+.meter .bar {
+     background-color: #6384CF;
+}
