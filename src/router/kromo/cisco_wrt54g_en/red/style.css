@@ -27,3 +27,6 @@ color:#fcc;
 #help a:hover {
 color:#fff;
 }
+.meter .bar {
+background-color: #e77;
+}
