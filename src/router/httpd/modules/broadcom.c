@@ -3434,7 +3434,7 @@ do_auth (char *userid, char *passwd, char *realm)
 int
 do_cauth (char *userid, char *passwd, char *realm)
 {
-  if (nvram_match ("info_passwd", "1"))
+  if (nvram_match ("info_passwd", "0"))
     return -1;
   return do_auth (userid, passwd, realm);
 }
