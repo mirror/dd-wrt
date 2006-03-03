@@ -10,7 +10,7 @@
 		<script type="text/JavaScript" src="common.js">{}</script>
 		<script language="JavaScript">
 
-var showchar = '|';
+/*var showchar = '|';
 var maxchars = 60;
 var delay_time = 1000;
 var counter=0;
@@ -20,7 +20,7 @@ function progress(){
 	var F = document.forms[0];
 	if(num == 4){
 		clearTimeout(timerID);
-		alert("Upgrade failed!");
+		alert("Upgrade failed !");
 		return false;
 	}
 	if (counter < maxchars)	{
@@ -35,6 +35,12 @@ function progress(){
 		num ++;
 		progress();
     }
+}*/
+
+function process_aborted(F) {
+  bar1.togglePause();
+  alert("Upgrade failed !");
+  return false;
 }
 
 function stop(){
@@ -58,14 +64,14 @@ function upgrade(F){
 	}
 
 	if(ns4)
-		delay_time = 1500;
-
-	choose_disable(F.Upgrade_b);
-
-	F.submit_button.value = "Upgrade";
-   	F.submit();
-   	//document.onstop = stop;
-   	progress();
+	  delay_time = 1500;
+		choose_disable(F.Upgrade_b);
+		F.Upgrade_b.value = " Upgrading ";
+		F.submit_button.value = "Upgrade";
+		F.submit();
+		//document.onstop = stop;
+		//progress();
+		bar1.togglePause();
 }
 		</script>
 	</head>
@@ -127,14 +133,18 @@ function upgrade(F){
 								</div>
 								<br/>Please select a file to upgrade: <input type="file" name="file" size="20"/><br/><br/>
 								<div class="warning"><em>Warning:</em> Upgrading firmware may take a few minutes, please don't turn off the power or press the reset button.</div>
-								<hr width="90%" />
-								<div class="warning">
-									<p><input type="text" name="process" size="27" maxlength="120" value="" onFocus="blur()"/></p>
+								<br/><hr width="90%" /><br/>
+								<div class="warning"><p><center>
+									<script language="javascript">
+										var bar1=createBar(500,15,100,15,50,"process_aborted(this.form)");
+										bar1.togglePause();
+									</script></center></p>
+									<br/>
 									<em>Upgrade must NOT be interrupted! (please wait 2 mins.)</em>
 								</div>
 								<br/>
 								<div class="submitFooter">
-									<input type="button" name="Upgrade_b" value=" Upgrade " onclick="upgrade(this.form)"/>
+									 <input type="button" name="Upgrade_b" value=" Upgrade " onclick="upgrade(this.form)"/>
 								</div>
 							</form>
 						</div>
