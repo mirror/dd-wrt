@@ -179,10 +179,17 @@ function service(id, name, port_start, port_end, protocol) {
 	this.modified = false;
 }
 
+var sorton = function(x,y){
+	if(x.name <  y.name) return -1;
+	else if (x.name == y.name) return 0;
+	else return 1;
+}
+
 services=new Array();
 services_length=0;
 /* Init. services data structure */
 <% filter_port_services_get("all_list", "0"); %>
+services.sort(sorton);
 
 servport_name0 = "<% filter_port_services_get("service", "0"); %>";
 servport_name1 = "<% filter_port_services_get("service", "1"); %>";
