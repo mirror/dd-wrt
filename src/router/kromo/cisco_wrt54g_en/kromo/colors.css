@@ -152,3 +152,11 @@ div.warning {
 	color:					#000;
 	background:				transparent;
 }
+
+.meter .bar {
+  background-color: #FFF7CD;
+
+}
+.meter .text {
+  color: #115B80;
+}
