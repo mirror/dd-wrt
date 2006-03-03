@@ -1097,6 +1097,29 @@ convert_wds (void)
     }
 }
 
+#ifdef HAVE_MSSID
+int
+start_guest_nas(void)
+{
+	char *unbridged_interfaces;
+	char *next;
+	char name[IFNAMSIZ],lan[IFNAMSIZ];
+	int index;
+		
+/*	unbridged_interfaces = nvram_get("unbridged_ifnames");
+	
+	if (unbridged_interfaces)
+		foreach(name,unbridged_interfaces,next){
+			index = get_ipconfig_index(name);
+			if (index < 0) 
+				continue;
+			snprintf(lan,sizeof(lan),"lan%d",index);
+			start_nas(lan);
+		}
+*/
+	return 0;
+} 
+#endif
 void
 start_nas_lan (void)
 {
