@@ -93,3 +93,9 @@ h3, label {
 #menuMainList ul :link:hover, #menuMainList ul :visited:hover {
 	background-image:		none;
 }
+.meter .bar {
+background-color: #E3DDD5;
+}
+.meter .text {
+color:#fff;
+}
