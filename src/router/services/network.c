@@ -525,7 +525,7 @@ start_lan (void)
 		eval ("wl", "join", nvram_get ("wl_ssid"));
 #endif
 //		eval ("brctl", "addif", lan_ifname, name);
-#ifndef HAVE_FOM
+#ifndef HAVE_FON
 		do_mssid (lan_ifname);
 #endif
 	      }
