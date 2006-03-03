@@ -107,7 +107,10 @@ function init() {
                <div id="contents">
                   <form name="mac" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" /><input type="hidden" name="change_action" /><input type="hidden" name="submit_type" /><input type="hidden" name="action" /><h2>MAC Clone</h2>
                      <div>
-                        <div class="setting"><input type="radio" value="1" name="mac_clone_enable" onclick="SelMac(1,this.form)" <% nvram_match("mac_clone_enable", "1", "checked"); %>>Enable</input><input type="radio" value="0" name="mac_clone_enable" onclick="SelMac(0,this.form)" <% nvram_match("mac_clone_enable", "0", "checked"); %>>Disable</input></div>
+                        <div class="setting">
+			<input type="radio" value="1" name="mac_clone_enable" onclick="SelMac(1,this.form)" <% nvram_match("mac_clone_enable", "1", "checked"); %>>Enable</input>
+			<input type="radio" value="0" name="mac_clone_enable" onclick="SelMac(0,this.form)" <% nvram_match("mac_clone_enable", "0", "checked"); %>>Disable</input>
+			</div>
                         <div class="setting">
                            <div class="label">Clone WAN MAC</div><input type="hidden" name="def_hwaddr" value="6" /><input class="num" size="2" maxlength="2" name="def_hwaddr_0" onblur="valid_mac(this,0)" value='<% get_clone_mac("0"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_1" onblur="valid_mac(this,1)" value='<% get_clone_mac("1"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_2" onblur="valid_mac(this,1)" value='<% get_clone_mac("2"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_3" onblur="valid_mac(this,1)" value='<% get_clone_mac("3"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_4" onblur="valid_mac(this,1)" value='<% get_clone_mac("4"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_5" onblur="valid_mac(this,1)" value='<% get_clone_mac("5"); %>' /></div>
                         <div class="setting">
