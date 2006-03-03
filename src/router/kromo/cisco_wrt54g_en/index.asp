@@ -431,11 +431,13 @@ function init() {
 								<br/>
 								<% nvram_match("wl_mode", "ap", "<!--"); %>
 								<fieldset>
+									<legend>WAN Port</legend>
 									<div class="setting">
-										<div class="label">Assign WAN Port to SWITCH</div>
+										<div class="label">Assign WAN Port to Switch</div>
 										<input type="checkbox" name="_fullswitch" value="1" <% nvram_match("fullswitch","1","checked"); %>/>
 									</div>
 								</fieldset>
+								<br/>
 								<% nvram_match("wl_mode", "ap", "-->"); %>
 								<% show_dhcpd_settings(); %>
 								<fieldset>
