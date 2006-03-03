@@ -29,5 +29,8 @@ color:#FFFFFF;
 text-decoration: underline; 
 }
 .meter .bar {
-     background-color: #6384CF;
+background-color: #496FC7;
+}
+.meter .text {
+color:#fff;
 }
