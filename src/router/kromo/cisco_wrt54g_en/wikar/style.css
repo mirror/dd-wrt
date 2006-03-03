@@ -270,3 +270,17 @@ padding:.906em;
 	text-align:center;
 	color:#fff;
 }
+
+.progressbar {
+  visibility: visible;
+  position: relative;
+  overflow:hidden;
+}
+
+.progressbar {
+background-color: #fff;
+border-color: #999;
+}
+.progressbarblock {
+background-color: #2b226f;
+}
