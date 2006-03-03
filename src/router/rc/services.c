@@ -99,6 +99,9 @@ start_services (void)
   start_service("dnsmasq");
   start_service("upnp");
   start_service("nas_lan");
+#ifdef HAVE_MSSID
+  start_service("guest_nas");
+#endif
   start_service("zebra");
   start_service("wland");
   start_service("wshaper");

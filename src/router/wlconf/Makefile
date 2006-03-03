@@ -15,7 +15,7 @@ include $(TOP)/.config
 
 CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s -Os -pipe -mips32 -mtune=mips32 -DBCMWPA2
+CFLAGS	+= -s -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DBCMWPA2
 LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared
 
 ifeq ($(CONFIG_MSSID),y)
