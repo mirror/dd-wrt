@@ -86,11 +86,7 @@ var mem_cached = parseInt(mem_info[31]);
 var mem_active = parseInt(mem_info[37]);
 var mem_inactive = parseInt(mem_info[40]);
 
-var mem_system = 131072;
-if (mem_total < 65537) {mem_system = 65536};
-if (mem_total < 32769) {mem_system = 32768};
-if (mem_total < 16385) {mem_system = 16384};
-if (mem_total < 8193) {mem_system = 8192};
+with(Math) { var mem_system = pow(2,(ceil(log(mem_total)/LN2))); };
 
 var mem_total_f = mem_total / mem_system * 100;
 var mem_free_f = mem_free / mem_total * 100;
