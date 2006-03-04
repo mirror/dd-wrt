@@ -1243,9 +1243,9 @@
 #define HAVE_GETSERVBYNAME 1
 
 /* printing system */
-/* #undef HAVE_LPSTAT */
-/* #undef LPSTAT_PATH */
-/* #undef HAVE_PRINTCAP */
+#define HAVE_LPSTAT 1
+#define LPSTAT_PATH "/usr/bin/lpstat"
+#define HAVE_PRINTCAP 1
 
 /*  Pluggable transports.  */
 
