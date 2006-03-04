@@ -147,8 +147,10 @@ function init() {
 		  <input type="hidden" name="submit_type" />
 		  <input type="hidden" name="commit" value="1" />
 		  <input type="hidden" name="action" value="Apply" />
-		  <h2>Wireless WDS</h2>
+		  <h2>Wireless Distribution System</h2>
                      <div>
+                      <fieldset>
+                        <legend>WDS Settings</legend>
                         <div class="setting">
                            <div class="label">Wireless MAC</div><% nvram_get("wl0_hwaddr"); %>
                         </div>
@@ -341,6 +343,10 @@ function init() {
 <!-- Begin WDS MAC #4 -->
 
                         </div>
+                        </fieldset>
+                        <br/>
+                        <fieldset>
+                          <legend>Extra Options</legend>
                         <div class="setting">
                            <div class="label">Lazy WDS</div><input type="radio" name="wl_lazywds" value="1" <% nvram_match("wl_lazywds", "1", "checked"); %>>Enable</input><input type="radio" name="wl_lazywds" value="0" <% nvram_match("wl_lazywds", "0", "checked"); %>>Disable</input> (Default: Disable)
                         </div>
@@ -355,7 +361,10 @@ function init() {
                            <div class="label">IP Address</div><input type="hidden" name="wl_br1_ipaddr" value="4" /><input class="num" name="wl_br1_ipaddr0" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("0"); %>' />.<input class="num" name="wl_br1_ipaddr1" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("1"); %>' />.<input class="num" name="wl_br1_ipaddr2" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("2"); %>' />.<input class="num" name="wl_br1_ipaddr3" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("3"); %>' /></div>
                         <div class="setting">
                            <div class="label">Subnet Mask</div><input type="hidden" name="wl_br1_netmask" value="4" /><input class="num" name="wl_br1_netmask0" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("0"); %>' />.<input class="num" name="wl_br1_netmask1" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("1"); %>' />.<input class="num" name="wl_br1_netmask2" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("2"); %>' />.<input class="num" name="wl_br1_netmask3" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("3"); %>' /></div>
-                     </div><br /><div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+                     </fieldset>
+                     </div>
+                     <br/>
+                     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
                   </form>
                </div>
             </div>
