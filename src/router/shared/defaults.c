@@ -54,19 +54,23 @@ struct nvram_tuple router_defaults[] = {
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
   {"time_zone", "+01 1 3", 0 },        /* Time zone (GNU TZ format) */
+  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
+  
 #ifdef HAVE_SKYTRON
   {"ntp_server", "ntp0.fau.de", 0},	/* NTP server *//* Modify */
-  {"time_zone", "+01 2 2", 0},	/* Time zone (GNU TZ format) Japan */
+  {"time_zone", "+01 1 3", 0},	/* Time zone (GNU TZ format) */
   {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
 #else
   {"ntp_server", "", 0},	/* NTP server *//* Modify */
 
-#if COUNTRY == JAPAN
-  {"time_zone", "+09 1 0", 0},	/* Time zone (GNU TZ format) Japan */
-  {"daylight_time", "0", 0},	/* Automatically adjust clock for daylight */
-#else
-  {"time_zone", "-08 1 1", 0},	/* Time zone (GNU TZ format) USA */
-  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
+// changed by Eko
+// #if COUNTRY == JAPAN
+//  {"time_zone", "+09 1 0", 0},	/* Time zone (GNU TZ format) Japan */
+//  {"daylight_time", "0", 0},	/* Automatically adjust clock for daylight */
+// #else
+//  {"time_zone", "-08 1 1", 0},	/* Time zone (GNU TZ format) USA */
+//  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
+
 #endif
 #endif
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
