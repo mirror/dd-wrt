@@ -52,7 +52,14 @@ function to_submit(F) {
             </div>
             <div id="main">
                <div id="contents">
-                  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" value="Wireless_radauth" /><input type="hidden" name="change_action" /><input type="hidden" name="action" value="Apply" /><input type="hidden" name="commit" value="1" /><h2>Radius</h2>
+                  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
+                    <input type="hidden" name="submit_button" value="Wireless_radauth" />
+                    <input type="hidden" name="change_action" />
+                    <input type="hidden" name="action" value="Apply" />
+                    <input type="hidden" name="commit" value="1" />
+                    <h2>Remote Authentication Dial-In User Service</h2>
+                    <fieldset>
+                      <legend>Radius</legend>
 		  <% nvram_invmatch("wl_mode", "ap", "Works only in AP-mode!"); %>
 		  <% nvram_invmatch("wl_mode", "ap", "<!--"); %>
                      <div>
@@ -75,8 +82,12 @@ function to_submit(F) {
                            <div class="label">Password Format</div><input type="radio" name="wl_radmacpassword" value="1" <% nvram_match("wl_radmacpassword","1","checked"); %> /> Shared Key<input type="radio" name="wl_radmacpassword" value="0" <% nvram_match("wl_radmacpassword","0","checked"); %> /> MAC
                         </div>
                         <div class="setting">
-                           <div class="label">RADIUS Shared Secret</div><input size="20" maxLength="32" name="wl_radius_key" value='<% nvram_get("wl_radius_key"); %>' /></div>
-                     </div><br />
+                           <div class="label">RADIUS Shared Secret</div>
+                           <input size="20" maxLength="32" name="wl_radius_key" value='<% nvram_get("wl_radius_key"); %>' />
+                        </div>
+                     </div>
+                    </fieldset>
+                      <br/>
 		     <% nvram_invmatch("wl_mode", "ap", "-->"); %>
 
 		     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
