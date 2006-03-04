@@ -47,9 +47,9 @@ configure:1976: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -f
 configure:2105: checking host system type
 configure:2126: checking build system type
 configure:2155: checking for ld used by GCC
-configure:2223: checking if the linker (/home/openwrt/workspace/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld) is GNU ld
+configure:2223: checking if the linker (/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/bin/ld) is GNU ld
 GNU ld version 2.16.1
-configure:2240: checking for /home/openwrt/workspace/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld option to reload object files
+configure:2240: checking for /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/bin/ld option to reload object files
 configure:2252: checking for BSD-compatible nm
 configure:2290: checking for a sed that does not truncate output
 configure:2374: checking whether ln -s works
@@ -78,7 +78,7 @@ configure:3983: checking if mipsel-linux-uclibc-gcc supports -fno-rtti -fno-exce
 configure:3996: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -fno-rtti -fno-exceptions -c conftest.c  conftest.c 1>&5
 cc1: warning: command line option "-fno-rtti" is valid for C++/ObjC++ but not for C
 cc1: warning: command line option "-fno-rtti" is valid for C++/ObjC++ but not for C
-configure:4027: checking whether the linker (/home/openwrt/workspace/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld) supports shared libraries
+configure:4027: checking whether the linker (/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/bin/ld) supports shared libraries
 configure:4730: checking how to hardcode library paths into programs
 configure:4762: checking whether stripping libraries is possible
 configure:4780: checking dynamic linker characteristics
@@ -87,7 +87,7 @@ configure:5203: checking whether to build shared libraries
 configure:5230: checking whether to build static libraries
 configure:5273: checking for shl_load
 configure:5301: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c  1>&5
-/tmp/ccqg2I2L.o: In function `main':
+/tmp/ccccDkRH.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `shl_load'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -115,7 +115,7 @@ shl_load();
 ; return 0; }
 configure:5319: checking for shl_load in -ldld
 configure:5338: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c -ldld   1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldld
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldld
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 5327 "configure"
@@ -130,7 +130,7 @@ shl_load()
 ; return 0; }
 configure:5357: checking for dlopen
 configure:5385: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time   conftest.c  1>&5
-/tmp/ccoMcgjn.o: In function `main':
+/tmp/cceioTtS.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `dlopen'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -197,7 +197,7 @@ configure:7965: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -f
 configure:7958: warning: conflicting types for built-in function 'asin'
 configure:7993: checking for nlist in -lelf
 configure:8012: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lelf  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lelf
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lelf
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 8001 "configure"
@@ -216,7 +216,7 @@ configure:8136: checking for getservbyname
 configure:8164: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:8232: checking for kstat_lookup in -lkstat
 configure:8251: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lkstat  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lkstat
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lkstat
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 8240 "configure"
@@ -231,7 +231,7 @@ kstat_lookup()
 ; return 0; }
 configure:8279: checking for nlist in -lmld
 configure:8298: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lmld  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lmld
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lmld
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 8287 "configure"
@@ -253,7 +253,7 @@ configure: failed program was:
 #include <zlib.h>
 configure:8846: checking for bzread in -lbz2
 configure:8865: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lbz2  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lbz2
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lbz2
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 8854 "configure"
@@ -268,7 +268,7 @@ bzread()
 ; return 0; }
 configure:8884: checking for BZ2_bzread in -lbz2
 configure:8903: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lbz2  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lbz2
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lbz2
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 8892 "configure"
@@ -283,7 +283,7 @@ BZ2_bzread()
 ; return 0; }
 configure:8927: checking for dbopen in -ldb1
 configure:8946: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb1  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb1
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb1
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 8935 "configure"
@@ -298,7 +298,7 @@ dbopen()
 ; return 0; }
 configure:8965: checking for dbopen in -ldb
 configure:8984: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 8973 "configure"
@@ -313,7 +313,7 @@ dbopen()
 ; return 0; }
 configure:9008: checking for db_create in -ldb-3.1
 configure:9027: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb-3.1  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb-3.1
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb-3.1
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9016 "configure"
@@ -328,7 +328,7 @@ db_create()
 ; return 0; }
 configure:9046: checking for db_create in -ldb-3.0
 configure:9065: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldb-3.0  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb-3.0
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldb-3.0
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9054 "configure"
@@ -343,7 +343,7 @@ db_create()
 ; return 0; }
 configure:9089: checking for poptParseArgvString in -lpopt
 configure:9108: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lpopt  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lpopt
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lpopt
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9097 "configure"
@@ -358,7 +358,7 @@ poptParseArgvString()
 ; return 0; }
 configure:9130: checking for Fopen in -lrpmio
 configure:9149: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lrpmio  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpmio
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpmio
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9138 "configure"
@@ -373,7 +373,7 @@ Fopen()
 ; return 0; }
 configure:9171: checking for rpmGetFilesystemList in -lrpm
 configure:9190: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lrpm  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpm
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpm
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9179 "configure"
@@ -388,7 +388,7 @@ rpmGetFilesystemList()
 ; return 0; }
 configure:9217: checking for rpmdbOpen in -lrpmdb
 configure:9236: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lrpmdb -lrpm  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpmdb
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lrpmdb
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9225 "configure"
@@ -403,7 +403,7 @@ rpmdbOpen()
 ; return 0; }
 configure:9269: checking for kvm_read in -lkvm
 configure:9288: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lkvm  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lkvm
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lkvm
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9277 "configure"
@@ -420,7 +420,7 @@ configure:9316: checking for dlopen in -ldl
 configure:9365: checking for dlopen
 configure:9421: checking for kvm_openfiles
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
-/tmp/cciI7aiI.o: In function `main':
+/tmp/ccYUtR3i.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `kvm_openfiles'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -448,7 +448,7 @@ kvm_openfiles();
 ; return 0; }
 configure:9421: checking for nlist
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
-/tmp/ccQq376Y.o: In function `main':
+/tmp/ccSOqGWo.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `nlist'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -476,7 +476,7 @@ nlist();
 ; return 0; }
 configure:9421: checking for knlist
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
-/tmp/cc0Ajmyi.o: In function `main':
+/tmp/ccqRfF2u.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `knlist'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -504,7 +504,7 @@ knlist();
 ; return 0; }
 configure:9421: checking for kvm_getprocs
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
-/tmp/ccabH40B.o: In function `main':
+/tmp/ccqiI0MA.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `kvm_getprocs'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -536,7 +536,7 @@ configure:9792: checking for dirent.h that defines DIR
 configure:9805: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:9830: checking for opendir in -ldir
 configure:9849: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldir  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldir
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -ldir
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 9838 "configure"
@@ -1254,7 +1254,7 @@ configure: failed program was:
 configure:10921: checking for lpstat
 configure:10966: checking for cgetnext
 configure:10994: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
-/tmp/cckGt9bO.o: In function `main':
+/tmp/ccYQ8RYf.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `cgetnext'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1298,7 +1298,7 @@ configure:11709: checking return type of signal handlers
 configure:11731: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  conftest.c 1>&5
 configure:11751: checking for getmntent in -lsun
 configure:11770: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lsun  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lsun
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lsun
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 11759 "configure"
@@ -1313,7 +1313,7 @@ getmntent()
 ; return 0; }
 configure:11789: checking for getmntent in -lseq
 configure:11808: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lseq  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lseq
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lseq
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 11797 "configure"
@@ -1328,7 +1328,7 @@ getmntent()
 ; return 0; }
 configure:11827: checking for getmntent in -lgen
 configure:11846: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lgen  -lm  1>&5
-/home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lgen
+/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/bin/ld: cannot find -lgen
 collect2: ld returned 1 exit status
 configure: failed program was:
 #line 11835 "configure"
@@ -1425,7 +1425,7 @@ configure:12254: checking for strncasecmp
 configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12254: checking for sigalrm
 configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
-/tmp/ccV65f8n.o: In function `main':
+/tmp/ccyODp4q.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `sigalrm'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1453,7 +1453,7 @@ sigalrm();
 ; return 0; }
 configure:12312: checking for rpmGetPath
 configure:12340: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -ldl -lm  1>&5
-/tmp/ccoany3w.o: In function `main':
+/tmp/cc0vs4hx.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `rpmGetPath'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1481,7 +1481,7 @@ rpmGetPath();
 ; return 0; }
 configure:12370: checking for getloadavg
 configure:12398: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
-/tmp/ccY3ib6P.o: In function `main':
+/tmp/ccsjLpgD.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getloadavg'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1511,7 +1511,7 @@ configure:12425: checking for getaddrinfo
 configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12425: checking for getipnodebyname
 configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
-/tmp/cc0fZwyt.o: In function `main':
+/tmp/ccur7rwP.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getipnodebyname'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1545,7 +1545,7 @@ configure:12535: checking for getdtablesize
 configure:12563: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
 configure:12590: checking for getfsstat
 configure:12618: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf   conftest.c -lm  1>&5
-/tmp/ccAq2Svt.o: In function `main':
+/tmp/ccMhazie.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getfsstat'
 collect2: ld returned 1 exit status
 configure: failed program was:
