@@ -1,2 +1,0 @@
-test x$(hostname -i) = x$(busybox hostname -i)
-
