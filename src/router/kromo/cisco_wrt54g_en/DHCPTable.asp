@@ -10,17 +10,17 @@
 		  <script type="text/JavaScript" src="common.js">{}</script>
 		  <script language="JavaScript">
 			
-	function DHCPAct(F) {
-		F.submit_button.value = "DHCPTable";
-		F.submit_type.value = "delete";
-		F.change_action.value = "gozila_cgi";
-		F.submit();
-	}
+function DHCPAct(F) {
+	F.submit_button.value = "DHCPTable";
+	F.submit_type.value = "delete";
+	F.change_action.value = "gozila_cgi";
+	F.submit();
+}
 		</script>
    </head>
     
-    <body onload="{window.focus();}">
-      <form action="apply.cgi" method="<% get_http_method(); %>">
+   <body onload="{window.focus();}">
+   	<form action="apply.cgi" method="<% get_http_method(); %>">
 	  	<input type="hidden" name="submit_button"/>
 		<input type="hidden" name="change_action"/>
 		<input type="hidden" name="submit_type"/>
@@ -77,8 +77,8 @@ for(;;){
 					<td colspan="5">&nbsp;</td>
 				</tr>
 				<tr>
-					<td colspan="2"><input name="button" type="button" onclick=window.location.reload() value=" Refresh " /></td>
-					<td align="right" colspan="3"><input type="button" name="action" value="Delete" onclick=DHCPAct(this.form)/>&nbsp;<input onclick="self.close()" type="reset" value="Close"/></td>
+					<td colspan="2"><input name="button" type="button" onclick="window.location.reload()" value=" Refresh " /></td>
+					<td align="right" colspan="3"><input type="button" name="action" value="Delete" onclick="DHCPAct(this.form)"/>&nbsp;<input onclick="self.close()" type="reset" value="Close"/></td>
 				</tr>
 			</tbody>
         </table>
