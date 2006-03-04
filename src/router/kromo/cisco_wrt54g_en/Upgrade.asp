@@ -119,17 +119,17 @@ function upgrade(F){
 								<input type="hidden" name="action"/>
 								<input type="hidden" name="change_action"/>
 								<h2>Firmware Upgrade</h2>
-								<div>Reset after flashing to:
+								<div>After flashing, reset to:
 								<br/>
 									<div class="setting">
 										<input type="radio" value="0" name="erase" checked/> No reset
 									</div>
 									<div class="setting">
-										<input type="radio" value="1" name="erase"/> Firmware Defaults
+										<input type="radio" value="1" name="erase"/> Default settings
 									</div>
-									<div class="setting">
+									<!--<div class="setting">
 										<input type="radio" value="2" name="erase"/> Factory Defaults
-									</div>
+									</div>-->
 								</div>
 								<br/>Please select a file to upgrade: <input type="file" name="file" size="20"/><br/><br/>
 								<div class="warning"><em>Warning:</em> Upgrading firmware may take a few minutes, please don't turn off the power or press the reset button.</div>
