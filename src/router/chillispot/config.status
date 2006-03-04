@@ -491,20 +491,20 @@ s,@INSTALL_DATA@,${INSTALL} -m 644,;t t
 s,@CYGPATH_W@,echo,;t t
 s,@PACKAGE@,chillispot,;t t
 s,@VERSION@,1.0,;t t
-s,@ACLOCAL@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run aclocal-1.9,;t t
-s,@AUTOCONF@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run autoconf,;t t
-s,@AUTOMAKE@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run automake-1.9,;t t
-s,@AUTOHEADER@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run autoheader,;t t
-s,@MAKEINFO@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run makeinfo,;t t
-s,@install_sh@,/home/openwrt/workspace/DD-WRT/src/router/chillispot/install-sh,;t t
+s,@ACLOCAL@,${SHELL} /home/dd-wrt/DEV/src/router/chillispot/missing --run aclocal-1.9,;t t
+s,@AUTOCONF@,${SHELL} /home/dd-wrt/DEV/src/router/chillispot/missing --run autoconf,;t t
+s,@AUTOMAKE@,${SHELL} /home/dd-wrt/DEV/src/router/chillispot/missing --run automake-1.9,;t t
+s,@AUTOHEADER@,${SHELL} /home/dd-wrt/DEV/src/router/chillispot/missing --run autoheader,;t t
+s,@MAKEINFO@,${SHELL} /home/dd-wrt/DEV/src/router/chillispot/missing --run makeinfo,;t t
+s,@install_sh@,/home/dd-wrt/DEV/src/router/chillispot/install-sh,;t t
 s,@STRIP@,mipsel-linux-uclibc-strip,;t t
 s,@ac_ct_STRIP@,,;t t
 s,@INSTALL_STRIP_PROGRAM@,${SHELL} $(install_sh) -c -s,;t t
 s,@mkdir_p@,mkdir -p --,;t t
-s,@AWK@,mawk,;t t
+s,@AWK@,gawk,;t t
 s,@SET_MAKE@,,;t t
 s,@am__leading_dot@,.,;t t
-s,@AMTAR@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run tar,;t t
+s,@AMTAR@,${SHELL} /home/dd-wrt/DEV/src/router/chillispot/missing --run tar,;t t
 s,@am__tar@,${AMTAR} chof - "$$tardir",;t t
 s,@am__untar@,${AMTAR} xf -,;t t
 s,@CC@,mipsel-linux-uclibc-gcc,;t t
@@ -523,9 +523,9 @@ s,@AMDEPBACKSLASH@,\,;t t
 s,@CCDEPMODE@,depmode=gcc3,;t t
 s,@am__fastdepCC_TRUE@,,;t t
 s,@am__fastdepCC_FALSE@,#,;t t
-s,@build@,i686-pc-linux-gnu,;t t
-s,@build_cpu@,i686,;t t
-s,@build_vendor@,pc,;t t
+s,@build@,x86_64-unknown-linux-gnu,;t t
+s,@build_cpu@,x86_64,;t t
+s,@build_vendor@,unknown,;t t
 s,@build_os@,linux-gnu,;t t
 s,@host@,mipsel-linux-elf,;t t
 s,@host_cpu@,mipsel,;t t
