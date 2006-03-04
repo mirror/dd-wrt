@@ -114,8 +114,10 @@ int main(int argc, char **argv)
   else if (strstr (base, "scp"))
     return scp_main(argc,argv);
 #endif
+#ifdef HAVE_BIRD
   else if (strstr (base, "bird"))
-    return bird_main(argc, argv);    
+    return bird_main(argc, argv);
+#endif    
   else if (strstr (base, "dnsmasq"))
     return dnsmasq_main(argc, argv);    
   else if (!strcmp (base, "arp"))
