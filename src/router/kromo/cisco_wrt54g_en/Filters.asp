@@ -343,8 +343,10 @@ function Status(F,I) {
 							<input type="hidden" name="f_status"/>
 							<h2>Internet Access</h2>
 							<div>
+							 <fieldset>
+							   <legend>Access Policy</legend>
 								<div class="setting">
-									<div class="label">Internet Access Policy</div>
+									<div class="label">Policy n&deg;</div>
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
 									<input type="button" value="Delete" onclick="to_delete(this.form)"/>
 									<input type="button" value="Summary" onclick="ViewSummary()"/>
@@ -356,7 +358,7 @@ function Status(F,I) {
 								</div>
 								<div class="setting">
 									<div class="label">Enter Policy Name</div>
-									<input maxlength="30" size="22" name="f_name" value="<% filter_policy_get("f_name",""); %>"/>
+									<input maxlength="30" size="22" name="f_name" value="<% filter_policy_get('f_name',''); %>"/>
 								</div>
 								<div class="setting">
 									<div class="label">PCs</div>
@@ -371,8 +373,9 @@ function Status(F,I) {
 								<div class="setting">
 									<div class="label">
 										<input type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /> Allow
-									</div>&nbsp;
+									</div>
 								</div>
+							</fieldset>
 							</div>
 							<br />
 							<fieldset>
@@ -380,7 +383,7 @@ function Status(F,I) {
 								<div class="setting">
 									<table>
 										<tr>
-											<td><input type="checkbox" value="1" name="day_all" onClick=dayall(this.form) <% filter_tod_get("day_all"); %> /></td>
+											<td><input type="checkbox" value="1" name="day_all" onClick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
 											<td><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
 											<td><input type="checkbox" value="1" name="week1" <% filter_tod_get("week1"); %> /></td>
 											<td><input type="checkbox" value="1" name="week2" <% filter_tod_get("week2"); %> /></td>
