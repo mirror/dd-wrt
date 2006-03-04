@@ -95,6 +95,8 @@ function init() {
                 <input type="hidden" name="commit" value="1" />
                 <input type="hidden" name="action" value="Apply" />
                 <h2>Wireless</h2>
+                <fieldset>
+                  <legend>Basic Settings</legend>
                   <div class="setting">
                     <div class="label">Wireless Mode</div>
                     <select name="wl_mode">
@@ -148,14 +150,16 @@ function init() {
                     <input type="radio" value="1" name="wl_closed" <% nvram_match("wl_closed","1","checked"); %>>Disable</input>
                   </div>
                   <% nvram_invmatch("wl_mode", "ap", "-->"); %>
-                <br>
-		 <div class="setting">
-		    <div class="label">Sensitivity Range (ACK Timing)</div>
-		    <input name="wl_distance" size="8" maxlength="8" value='<% nvram_get("wl_distance"); %>' /> Meter
-		 </div>
-                <div class="submitFooter">
-                  <input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)">
-                  <input type="reset" value="Cancel Changes" />
+                  <br/>
+                  <div class="setting">
+                    <div class="label">Sensitivity Range (ACK Timing)</div>
+                    <input name="wl_distance" size="8" maxlength="8" value='<% nvram_get("wl_distance"); %>' /> Meter
+                  </div>
+                </fieldset>
+                <br/>
+                  <div class="submitFooter">
+                    <input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)">
+                    <input type="reset" value="Cancel Changes" />
                 </div>
               </form>
           </div>
