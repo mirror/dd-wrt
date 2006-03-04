@@ -627,8 +627,10 @@ main (int argc, char **argv)
     return start_main ("site_survey", argc, argv);
   else if (strstr (base, "setpasswd"))
     start_service ("mkfiles");
+#ifdef HAVE_WOL
   else if (strstr (base, "wol"))
     wol_main ();
+#endif
   else if (strstr (base, "sendudp"))
     return sendudp_main (argc, argv);
   else if (strstr (base, "check_ses_led"))
