@@ -259,16 +259,19 @@ ac_cv_lib_seq_getmntent=${ac_cv_lib_seq_getmntent=no}
 ac_cv_lib_sun_getmntent=${ac_cv_lib_sun_getmntent=no}
 ac_cv_mingw32=${ac_cv_mingw32=no}
 ac_cv_objext=${ac_cv_objext=o}
-ac_cv_path_CCPATH=${ac_cv_path_CCPATH=/home/openwrt/workspace/mikrotik/toolchain/bin//mipsel-linux-uclibc-gcc}
+ac_cv_path_CCPATH=${ac_cv_path_CCPATH=/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//mipsel-linux-uclibc-gcc}
+ac_cv_path_LPSTAT_PATH=${ac_cv_path_LPSTAT_PATH=/usr/bin/lpstat}
 ac_cv_path_PERLPROG=${ac_cv_path_PERLPROG=/usr/bin/perl}
 ac_cv_path_PSPROG=${ac_cv_path_PSPROG=/bin/ps}
 ac_cv_path_UNAMEPROG=${ac_cv_path_UNAMEPROG=/bin/uname}
 ac_cv_path_install=${ac_cv_path_install='/usr/bin/install -c'}
+ac_cv_prog_AUTOCONF=${ac_cv_prog_AUTOCONF=}
+ac_cv_prog_AUTOHEADER=${ac_cv_prog_AUTOHEADER=}
 ac_cv_prog_CC=${ac_cv_prog_CC=mipsel-linux-uclibc-gcc}
 ac_cv_prog_CPP=${ac_cv_prog_CPP='mipsel-linux-uclibc-gcc -E'}
 ac_cv_prog_LN_S=${ac_cv_prog_LN_S='ln -s'}
 ac_cv_prog_RANLIB=${ac_cv_prog_RANLIB=ranlib}
-ac_cv_prog_SED=${ac_cv_prog_SED=/home/openwrt/workspace/mikrotik/toolchain/bin//sed}
+ac_cv_prog_SED=${ac_cv_prog_SED=/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed}
 ac_cv_prog_STRIP=${ac_cv_prog_STRIP=strip}
 ac_cv_prog_WHOAMI=${ac_cv_prog_WHOAMI=whoami}
 ac_cv_prog_cc_cross=${ac_cv_prog_cc_cross=yes}
@@ -350,9 +353,9 @@ lt_cv_file_magic_test_file=${lt_cv_file_magic_test_file=}
 lt_cv_global_symbol_to_c_name_address=${lt_cv_global_symbol_to_c_name_address='sed -n -e '\''s/^: \([^ ]*\) $/  {\"\1\", (lt_ptr) 0},/p'\'' -e '\''s/^[BCDEGRST] \([^ ]*\) \([^ ]*\)$/  {"\2", (lt_ptr) \&\2},/p'\'''}
 lt_cv_global_symbol_to_cdecl=${lt_cv_global_symbol_to_cdecl='sed -n -e '\''s/^. .* \(.*\)$/extern char \1;/p'\'''}
 lt_cv_ld_reload_flag=${lt_cv_ld_reload_flag=-r}
-lt_cv_path_LD=${lt_cv_path_LD=/home/openwrt/workspace/mikrotik/toolchain/mipsel-linux-uclibc/bin/ld}
+lt_cv_path_LD=${lt_cv_path_LD=/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/bin/ld}
 lt_cv_path_NM=${lt_cv_path_NM='/usr/bin/nm -B'}
-lt_cv_path_SED=${lt_cv_path_SED=/home/openwrt/workspace/mikrotik/toolchain/bin//sed}
+lt_cv_path_SED=${lt_cv_path_SED=/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed}
 lt_cv_prog_cc_can_build_shared=${lt_cv_prog_cc_can_build_shared=yes}
 lt_cv_prog_cc_no_builtin=${lt_cv_prog_cc_no_builtin=}
 lt_cv_prog_cc_pic=${lt_cv_prog_cc_pic=' -fPIC'}
