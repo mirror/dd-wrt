@@ -34,7 +34,7 @@ function SelSpeed(F,I) {
 
 function SelVLAN(F,I) {
 	var j=0;
-	if(eval("F."+I+"vlan16").checked == true) {
+	if(eval("F."+I+"vlan16").checked) {
 		for(i=0;i<16;i++)
 			choose_enable(eval("F."+I+"vlan"+i));
 	} else {
