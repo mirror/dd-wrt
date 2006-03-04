@@ -102,15 +102,22 @@ function replace_list(list,target,replacement) {
 								<div class="setting">
 									<div class="label">WRT-radauth</div><% nvram_invmatch("wl_mode", "ap", "<nobr>only AP Mode</nobr><!--"); %><% nvram_match("wl_radauth","0","Disabled"); %><% nvram_match("wl_radauth","1","Active"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %>
 								</div>
+								
+								<% nvram_match("dist_type", "mini", "<!--"); %>
+								
 								<div class="setting">
 									<div class="label">WRT-rflow</div><% nvram_match("rflow_enable","0","Disabled"); %> <% nvram_match("rflow_enable","1","Active"); %>
 								</div>
 								<div class="setting">
-									<div class="label">MAC-udp</div><% nvram_match("macupd_enable","0","Disabled"); %> <% nvram_match("macupd_enable","1","Active"); %>
-								</div>
-								<div class="setting">
 									<div class="label">Samba Mount</div><% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Active"); %>
 								</div>
+								
+								<% nvram_match("dist_type", "mini", "-->"); %>
+								
+								<div class="setting">
+									<div class="label">MAC-udp</div><% nvram_match("macupd_enable","0","Disabled"); %> <% nvram_match("macupd_enable","1","Active"); %>
+								</div>
+								
 							</fieldset>
 							<br/>
 							<form name="Eingabe">
