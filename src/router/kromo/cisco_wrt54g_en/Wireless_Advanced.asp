@@ -89,8 +89,14 @@ function init()
             </div>
             <div id="main">
                <div id="contents">
-                  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" /><input type="hidden" name="commit" value="1" /><input type="hidden" name="action" /><h2>Advanced Wireless</h2>
-                     <div>
+                  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
+                    <input type="hidden" name="submit_button" />
+                    <input type="hidden" name="commit" value="1" />
+                    <input type="hidden" name="action" />
+                    <h2>Advanced Wireless Settings</h2>
+                    <div>
+                      <fieldset>
+                      <legend>Advanced Settings</legend>
                         <div class="setting">
                            <div class="label">Authentication Type</div><select name="wl_auth">
                               <option value="0" <% nvram_selmatch("wl_auth", "0", "selected"); %>>Auto</option>
@@ -305,8 +311,13 @@ function init()
         			</select>
 			    </div>
 			</div>
-				
-                     </div><br /><div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+			</fieldset>
+                     </div>
+                     <br/>
+                     <div class="submitFooter">
+                      <input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" />
+                      <input type="reset" value="Cancel Changes" />
+                     </div>
                   </form>
                </div>
             </div>
