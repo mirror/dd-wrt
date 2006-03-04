@@ -331,9 +331,9 @@ function init() {
 					</div>
 				</div>
 				<div id="main">
-					<div id="contents">
-						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
+				  <div id="contents">
+				    <form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
+				      <input type="hidden" name="submit_button"/>
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="submit_type"/>
 							<input type="hidden" name="action"/>
@@ -344,11 +344,12 @@ function init() {
 							<input type="hidden" name="lan_ipaddr" value="4"/>
 							<% nvram_selmatch("wl_mode", "wet", "<!--"); %>
 							<h2><% nvram_match("wl_mode", "ap", "Internet"); %><% nvram_invmatch("wl_mode", "ap", "Wireless"); %> Setup</h2>
-							<div>
-								<div class="setting">
-									<div class="label">Internet Connection Type</div>
-									<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
-										<option value="disabled" <% nvram_selmatch("wan_proto", "disabled", "selected"); %>>Disable</option>
+							<fieldset>
+							  <legend>Internet Connection Type</legend>
+							  <div class="setting">
+							    <div class="label">&nbsp;</div>
+							    <select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
+							      <option value="disabled" <% nvram_selmatch("wan_proto", "disabled", "selected"); %>>Disable</option>
 										<option value="dhcp" <% nvram_selmatch("wan_proto", "dhcp", "selected"); %>>Automatic Configuration - DHCP</option>
 										<option value="static" <% nvram_selmatch("wan_proto", "static", "selected"); %>>Static IP</option>
 										<option value="pppoe" <% nvram_selmatch("wan_proto", "pppoe", "selected"); %>>PPPoE</option>
@@ -364,7 +365,7 @@ function init() {
 									<input type="radio" value="1" name="lan_stp" <% nvram_match("lan_stp","1","checked"); %>>Enable</input>
 									<input type="radio" value="0" name="lan_stp" <% nvram_match("lan_stp","0","checked"); %>>Disable (disable for COMCAST ISP)</input>
 								</div>
-							</div>
+							</fieldset>
 							<br/>
 							<fieldset>
 								<legend>Optional Settings (required by some ISPs)</legend>
