@@ -3,24 +3,29 @@
   PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
    <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-   
-      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-      <title><% nvram_get("router_name"); %> - Routing</title>
-      <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script language="javascript">
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+    <title><% nvram_get("router_name"); %> - Routing</title>
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <script type="text/JavaScript" src="common.js">{}</script>
+    <script language="javascript">
+
 var route_win = null;
+
 function ViewRoute() {
 	route_win = self.open('RouteTable.asp', 'Route', 'alwaysRaised,resizable,scrollbars,width=720,height=600');
 	route_win.focus();
 }
+
 function DeleteEntry(F) {
-	if(confirm("Delete the Entry?")) {
+	if(confirm("Delete the Entry ?")) {
 		F.submit_button.value = "Routing";
 		F.change_action.value = "gozila_cgi";
 		F.submit_type.value = "del";
 		F.submit();
 	}
 }
+
 function to_submit(F) {
 	if (F.routing_bgp_neighbor_ip != null) {
 		F.routing_bgp_neighbor_ip.value = F.routing_bgp_neighbor_ip_0.value+'.'+F.routing_bgp_neighbor_ip_1.value+'.'+F.routing_bgp_neighbor_ip_2.value+'.'+F.routing_bgp_neighbor_ip_3.value;
@@ -35,6 +40,7 @@ function to_submit(F) {
 		F.submit();
 	}
 }
+
 function valid_value(F) {
 	if(F.wk_mode.value != "ospf") {
 		if(!valid_ip(F,"F.route_ipaddr","IP",0))
@@ -50,6 +56,7 @@ function valid_value(F) {
 
 	return true;
 }
+
 function SelRoute(num,F) {
 	F.submit_button.value = "Routing";
 	F.change_action.value = "gozila_cgi";
@@ -67,7 +74,9 @@ function SelMode(num,F) {
 function exit() {
 	closeWin(route_win);
 }
-</script></head>
+      </script>
+   </head>
+   
    <body class="gui" onunload="exit()"> <% showad(); %>
       <div id="wrapper">
          <div id="content">
@@ -104,18 +113,26 @@ function exit() {
             </div>
             <div id="main">
                <div id="contents">
-                  <form name="static" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" /><input type="hidden" name="submit_type" /><input type="hidden" name="change_action" /><input type="hidden" name="action" /><input type="hidden" name="static_route" /><h2>Advanced Routing</h2>
+                  <form name="static" action="apply.cgi" method="<% get_http_method(); %>">
+                     <input type="hidden" name="submit_button" />
+                     <input type="hidden" name="submit_type" />
+                     <input type="hidden" name="change_action" />
+                     <input type="hidden" name="action" />
+                     <input type="hidden" name="static_route" />
+                     <h2>Advanced Routing</h2>
                      <div class="setting">
-                        <div class="label">Operating Mode</div><select name="wk_mode" onchange="SelMode(this.form.wk_mode.selectedIndex,this.form)">
+                      <div class="label">Operating Mode</div>
+                        <select name="wk_mode" onchange="SelMode(this.form.wk_mode.selectedIndex,this.form)">
                            <option value="gateway" <% nvram_selmatch("wk_mode", "gateway", "selected"); %>>Gateway</option>
                            <option value="bgp" <% nvram_selmatch("wk_mode", "bgp", "selected"); %>>BGP</option>
                            <option value="router" <% nvram_selmatch("wk_mode", "router", "selected"); %>>RIP2 Router</option>
-                           <option value="ospf" <% nvram_selmatch("wk_mode", "ospf", "selected"); %>>OSPF Router</option></select></div> 
-			   
-	             
-		    <% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
+                           <option value="ospf" <% nvram_selmatch("wk_mode", "ospf", "selected"); %>>OSPF Router</option>
+                        </select>
+                     </div> 
 
-		     <fieldset>
+                     <% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
+
+                     <fieldset>
                         <legend>BGP Settings</legend>
                         <div class="setting">
                            <div class="label">BGP</div><input size="10" name="routing_bgp_as" value='<% nvram_get("routing_bgp_as"); %>' /></div>
@@ -123,36 +140,68 @@ function exit() {
                            <div class="label">Neighbor IP</div><input type="hidden" name="routing_bgp_neighbor_ip" value="0.0.0.0" /><input size="3" maxlength="3" name="routing_bgp_neighbor_ip_0" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("routing_bgp_neighbor_ip","0"); %>' />.<input size="3" maxlength="3" name="routing_bgp_neighbor_ip_1" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("routing_bgp_neighbor_ip","1"); %>' />.<input size="3" maxlength="3" name="routing_bgp_neighbor_ip_2" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("routing_bgp_neighbor_ip","2"); %>' />.<input size="3" maxlength="3" name="routing_bgp_neighbor_ip_3" onblur="valid_range(this,0,254,'IP')" class="num" value='<% static_route_setting("routing_bgp_neighbor_ip","3"); %>' /></div>
                         <div class="setting">
                            <div class="label">Neighbor AS#</div><input size="10" name="routing_bgp_neighbor_as" value='<% nvram_get("routing_bgp_neighbor_as"); %>' /></div>
-                     </fieldset><br /> 
-		     
-		    <% nvram_else_selmatch("wk_mode","bgp","","-->"); %>
-		     <% nvram_selmatch("wk_mode", "gateway", "<!--"); %> 
-	
-                     <h2>Dynamic Routing</h2>
-                     <div class="setting">
-                        <div class="label">Interface</div><select size="1" name="dr_setting">
-                           <option value="0" <% nvram_match("dr_setting", "0", "selected"); %>>Disabled</option>
-                           <option value="1" <% nvram_match("dr_setting", "1", "selected"); %>>LAN & Wireless</option>
-                           <option value="2" <% nvram_match("dr_setting", "2", "selected"); %>>WAN (Internet)</option>
-                           <option value="3" <% nvram_match("dr_setting", "3", "selected"); %>>Both</option></select></div> 
-		    <% nvram_selmatch("wk_mode","gateway", "-->"); %> 
-                     <h2>Static Routing</h2>
-                     <div class="setting">
-                        <div class="label">Select set number</div><select size="1" name="route_page" onchange="SelRoute(this.form.route_page.selectedIndex,this.form)"> <% static_route_table("select"); %> </select><input type="button" onclick="DeleteEntry(this.form)" value="Delete This Entry" /></div>
-                     <div class="setting">
-                        <div class="label">Enter Route Name</div><input name="route_name" size="25" maxlength="25" onblur="valid_name(this,'Route%20Name')" value='<% static_route_setting("name",""); %>' /></div>
-                     <div class="setting">
-                        <div class="label">Destination LAN IP</div><input type="hidden" name="route_ipaddr" value="4" /><input name="route_ipaddr_0" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("ipaddr","0"); %>' />.<input name="route_ipaddr_1" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("ipaddr","1"); %>' />.<input name="route_ipaddr_2" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("ipaddr","2"); %>' />.<input name="route_ipaddr_3" size="3" maxlength="3" onblur="valid_range(this,0,254,'IP')" class="num" value='<% static_route_setting("ipaddr","3"); %>' /></div>
-                     <div class="setting">
-                        <div class="label">Subnet Mask</div><input type="hidden" name="route_netmask" value="4" /><input name="route_netmask_0" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","0"); %>' />.<input name="route_netmask_1" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","1"); %>' />.<input name="route_netmask_2" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","2"); %>' />.<input name="route_netmask_3" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","3"); %>' /></div>
-                     <div class="setting">
-                        <div class="label">Default Gateway</div><input type="hidden" name="route_gateway" value="4" /><input size="3" maxlength="3" name="route_gateway_0" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("gateway","0"); %>' />.<input size="3" maxlength="3" name="route_gateway_1" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("gateway","1"); %>' />.<input size="3" maxlength="3" name="route_gateway_2" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("gateway","2"); %>' />.<input size="3" maxlength="3" name="route_gateway_3" onblur="valid_range(this,0,254,'IP')" class="num" value='<% static_route_setting("gateway","3"); %>' /></div>
-                     <div class="setting">
-                        <div class="label">Interface</div><select name="route_ifname">
-                           <option value="lan" <% static_route_setting("lan","0"); %>>LAN & Wireless</option>
-                           <option value="wan" <% static_route_setting("wan","0"); %>>WAN (Internet)</option></select></div>
-                     <div class="setting"><input type="button" value="Show Routing Table" name="button2" onclick="ViewRoute()" /><input type="hidden" value="0" name="Route_reload" /></div>
-                     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+                     </fieldset><br/>
+
+                     <% nvram_else_selmatch("wk_mode","bgp","","-->"); %>
+                     <% nvram_selmatch("wk_mode", "gateway", "<!--"); %>
+
+                     <fieldset>
+                      <legend>Dynamic Routing</legend>
+                       <div class="setting">
+                          <div class="label">Interface</div>
+                          <select size="1" name="dr_setting">
+                            <option value="0" <% nvram_match("dr_setting", "0", "selected"); %>>Disabled</option>
+                            <option value="1" <% nvram_match("dr_setting", "1", "selected"); %>>LAN & Wireless</option>
+                            <option value="2" <% nvram_match("dr_setting", "2", "selected"); %>>WAN (Internet)</option>
+                            <option value="3" <% nvram_match("dr_setting", "3", "selected"); %>>Both</option>
+                          </select>
+                        </div>
+                      </fieldset><br/>
+
+                      <% nvram_selmatch("wk_mode","gateway", "-->"); %>
+
+                      <fieldset>
+                      <legend>Static Routing</legend>
+                       <div class="setting">
+                          <div class="label">Select set number</div>
+                          <select size="1" name="route_page" onchange="SelRoute(this.form.route_page.selectedIndex,this.form)"> <% static_route_table("select"); %> </select>&nbsp;&nbsp;
+                          <input type="button" onclick="DeleteEntry(this.form)" value="Delete This Entry" /></div>
+                       <div class="setting">
+                          <div class="label">Enter Route Name</div>
+                          <input name="route_name" size="25" maxlength="25" onblur="valid_name(this,'Route%20Name')" value='<% static_route_setting("name",""); %>' />
+                       </div>
+                       <div class="setting">
+                          <div class="label">Destination LAN IP</div>
+                          <input type="hidden" name="route_ipaddr" value="4" />
+                          <input name="route_ipaddr_0" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("ipaddr","0"); %>' />.<input name="route_ipaddr_1" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("ipaddr","1"); %>' />.<input name="route_ipaddr_2" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("ipaddr","2"); %>' />.<input name="route_ipaddr_3" size="3" maxlength="3" onblur="valid_range(this,0,254,'IP')" class="num" value='<% static_route_setting("ipaddr","3"); %>' />
+                       </div>
+                       <div class="setting">
+                          <div class="label">Subnet Mask</div>
+                          <input type="hidden" name="route_netmask" value="4" />
+                          <input name="route_netmask_0" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","0"); %>' />.<input name="route_netmask_1" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","1"); %>' />.<input name="route_netmask_2" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","2"); %>' />.<input name="route_netmask_3" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("netmask","3"); %>' />
+                       </div>
+                       <div class="setting">
+                          <div class="label">Default Gateway</div>
+                          <input type="hidden" name="route_gateway" value="4" />
+                          <input size="3" maxlength="3" name="route_gateway_0" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("gateway","0"); %>' />.<input size="3" maxlength="3" name="route_gateway_1" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("gateway","1"); %>' />.<input size="3" maxlength="3" name="route_gateway_2" onblur="valid_range(this,0,255,'IP')" class="num" value='<% static_route_setting("gateway","2"); %>' />.<input size="3" maxlength="3" name="route_gateway_3" onblur="valid_range(this,0,254,'IP')" class="num" value='<% static_route_setting("gateway","3"); %>' />
+                       </div>
+                       <div class="setting">
+                          <div class="label">Interface</div>
+                          <select name="route_ifname">
+                             <option value="lan" <% static_route_setting("lan","0"); %>>LAN & Wireless</option>
+                             <option value="wan" <% static_route_setting("wan","0"); %>>WAN (Internet)</option>
+                          </select>
+                       </div>
+                       <div class="setting">
+                          <input type="button" value="Show Routing Table" name="button2" onclick="ViewRoute()" />
+                          <input type="hidden" value="0" name="Route_reload" />
+                       </div>
+                      </fieldset>
+                      <br/>
+                     <div class="submitFooter">
+                      <input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" />
+                      <input type="reset" value="Cancel Changes" />
+                     </div>
                   </form>
                </div>
             </div>
