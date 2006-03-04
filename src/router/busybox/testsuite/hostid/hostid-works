@@ -1,2 +1,0 @@
-test x$(hostid) = x$(busybox hostid)
-
