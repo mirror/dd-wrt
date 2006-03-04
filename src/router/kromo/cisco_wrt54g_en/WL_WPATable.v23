@@ -244,7 +244,10 @@ function init(){
 		  <input type="hidden" name="wl_wep_last" />
 		  <input type="hidden" name="filter_mac_value" />
 		  <h2>Wireless Security</h2>
+		  <fieldset>
+		    <legend>Wireless Encryption</legend>
 		 <% show_security(); %>
+		 </fieldset>
 		 <br/>
                 <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/><input type="reset" value="Cancel Changes"/></div>
                   </form>
