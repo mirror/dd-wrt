@@ -859,6 +859,12 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_LINKSYS_WRT55AG:
+	      modules =
+		nvram_invmatch ("ct_modules",
+				"") ? nvram_safe_get ("ct_modules") :
+		"diag wl switch-core switch-adm";
+	    
+	    break;
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
@@ -885,6 +891,13 @@ start_sysinit (void)
 	{
 	  switch (brand)
 	    {
+	    case ROUTER_LINKSYS_WRT55AG:
+	      modules =
+		nvram_invmatch ("ct_modules",
+				"") ? nvram_safe_get ("ct_modules") :
+		"diag wl switch-core switch-adm";
+	    
+	    break;
 	    case ROUTER_ASUS:
 	      modules =
 		nvram_invmatch ("ct_modules",
