@@ -24,6 +24,9 @@ ifeq ($(CONFIG_ONLYCLIENT),y)
 CFLAGS += -DHAVE_ONLYCLIENT
 endif
 
+#ifdef $(CONFIG_DIST)
+CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
+#endif
 ifeq ($(CONFIG_34TELECOM),y)
 CFLAGS += -DHAVE_34TELECOM
 endif

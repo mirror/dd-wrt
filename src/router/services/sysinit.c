@@ -622,7 +622,9 @@ cprintf("done()");
 	nvram_set("http_username","root");
 	}
     }
-  
+#ifdef DIST
+  nvram_set("dist_type",DIST);
+#endif
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
   else if (check_now_boot () == PMON_BOOT)
