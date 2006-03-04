@@ -2,12 +2,14 @@
 <!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-   <head>
+    <head>
       <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-   
       <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
       <title><% nvram_get("router_name"); %> - WanMAC</title>
-      <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script type="text/javascript" language="JavaScript">
+      <link type="text/css" rel="stylesheet" href="style.css" />
+      <script type="text/JavaScript" src="common.js">{}</script>
+      <script type="text/javascript" language="JavaScript">
+
 function to_submit(F) {
 	F.submit_button.value = "WanMAC";
 	F.action.value = "Apply";
@@ -64,11 +66,14 @@ function mac_enable_disable(F,I) {
 		choose_enable(F.clone_b);
 	}
 }
+
 function init() {
 	mac_enable_disable(document.mac,'<% nvram_get("mac_clone_enable"); %>');
 	<% onload("MACClone", "document.mac.mac_clone_enable[0].checked = true; mac_enable_disable(document.mac,1);"); %>
 }
-</script></head>
+    </script>
+   </head>
+   
    <body class="gui" onload="init()"> <% showad(); %>
       <div id="wrapper">
          <div id="content">
@@ -105,19 +110,39 @@ function init() {
             </div>
             <div id="main">
                <div id="contents">
-                  <form name="mac" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" /><input type="hidden" name="change_action" /><input type="hidden" name="submit_type" /><input type="hidden" name="action" /><h2>MAC Clone</h2>
-                     <div>
-                        <div class="setting">
-			<input type="radio" value="1" name="mac_clone_enable" onclick="SelMac(1,this.form)" <% nvram_match("mac_clone_enable", "1", "checked"); %>>Enable</input>
-			<input type="radio" value="0" name="mac_clone_enable" onclick="SelMac(0,this.form)" <% nvram_match("mac_clone_enable", "0", "checked"); %>>Disable</input>
-			</div>
-                        <div class="setting">
-                           <div class="label">Clone WAN MAC</div><input type="hidden" name="def_hwaddr" value="6" /><input class="num" size="2" maxlength="2" name="def_hwaddr_0" onblur="valid_mac(this,0)" value='<% get_clone_mac("0"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_1" onblur="valid_mac(this,1)" value='<% get_clone_mac("1"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_2" onblur="valid_mac(this,1)" value='<% get_clone_mac("2"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_3" onblur="valid_mac(this,1)" value='<% get_clone_mac("3"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_4" onblur="valid_mac(this,1)" value='<% get_clone_mac("4"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_5" onblur="valid_mac(this,1)" value='<% get_clone_mac("5"); %>' /></div>
-                        <div class="setting">
-                           <div class="label"> </div><input type="button" name="clone_b" onclick="CloneMAC(this.form)" value="Get Current PC MAC Address" /></div>
-                        <div class="setting">
-                           <div class="label">Clone Wireless MAC</div><input type="hidden" name="def_whwaddr" value="6" /><input class="num" size="2" maxlength="2" name="def_whwaddr_0" onblur="valid_mac(this,0)" value='<% get_clone_wmac("0"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_1" onblur="valid_mac(this,1)" value='<% get_clone_wmac("1"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_2" onblur="valid_mac(this,1)" value='<% get_clone_wmac("2"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_3" onblur="valid_mac(this,1)" value='<% get_clone_wmac("3"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_4" onblur="valid_mac(this,1)" value='<% get_clone_wmac("4"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_5" onblur="valid_mac(this,1)" value='<% get_clone_wmac("5"); %>' /></div>
-                     </div><br /><div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+                  <form name="mac" action="apply.cgi" method="<% get_http_method(); %>">
+                    <input type="hidden" name="submit_button" />
+                    <input type="hidden" name="change_action" />
+                    <input type="hidden" name="submit_type" />
+                    <input type="hidden" name="action" />
+                    <h2>MAC Address Clone</h2>
+                    <fieldset>
+                      <legend>MAC Clone</legend>
+                      <div class="setting">
+                        <input type="radio" value="1" name="mac_clone_enable" onclick="SelMac(1,this.form)" <% nvram_match("mac_clone_enable", "1", "checked"); %>>Enable</input>
+                        <input type="radio" value="0" name="mac_clone_enable" onclick="SelMac(0,this.form)" <% nvram_match("mac_clone_enable", "0", "checked"); %>>Disable</input>
+                      </div>
+                      <div class="setting">
+                        <div class="label">Clone WAN MAC</div>
+                        <input type="hidden" name="def_hwaddr" value="6" />
+                        <input class="num" size="2" maxlength="2" name="def_hwaddr_0" onblur="valid_mac(this,0)" value='<% get_clone_mac("0"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_1" onblur="valid_mac(this,1)" value='<% get_clone_mac("1"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_2" onblur="valid_mac(this,1)" value='<% get_clone_mac("2"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_3" onblur="valid_mac(this,1)" value='<% get_clone_mac("3"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_4" onblur="valid_mac(this,1)" value='<% get_clone_mac("4"); %>' />:<input class="num" size="2" maxlength="2" name="def_hwaddr_5" onblur="valid_mac(this,1)" value='<% get_clone_mac("5"); %>' />
+                      </div>
+                      <div class="setting">
+                        <input type="button" name="clone_b" onclick="CloneMAC(this.form)" value="Get Current PC MAC Address" />
+                      </div>
+                      <hr width="90%">
+                      <br/>
+                      <div class="setting">
+                        <div class="label">Clone Wireless MAC</div>
+                        <input type="hidden" name="def_whwaddr" value="6" />
+                        <input class="num" size="2" maxlength="2" name="def_whwaddr_0" onblur="valid_mac(this,0)" value='<% get_clone_wmac("0"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_1" onblur="valid_mac(this,1)" value='<% get_clone_wmac("1"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_2" onblur="valid_mac(this,1)" value='<% get_clone_wmac("2"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_3" onblur="valid_mac(this,1)" value='<% get_clone_wmac("3"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_4" onblur="valid_mac(this,1)" value='<% get_clone_wmac("4"); %>' />:<input class="num" size="2" maxlength="2" name="def_whwaddr_5" onblur="valid_mac(this,1)" value='<% get_clone_wmac("5"); %>' />
+                      </div>
+                    </fieldset>
+                    <br/>
+                    <div class="submitFooter">
+                      <input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" />
+                      <input type="reset" value="Cancel Changes" />
+                    </div>
                   </form>
                </div>
             </div>
