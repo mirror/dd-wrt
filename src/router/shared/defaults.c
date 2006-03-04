@@ -35,11 +35,11 @@
 
 struct nvram_tuple router_defaults[] = {
 #ifdef HAVE_FON
+
 #ifdef HAVE_MSSID
   {"fon_revision", "913", 0},
 #else
   {"fon_revision", "13", 0},
-
 #endif
   {"router_style", "fon.css", 0},
 #else
@@ -71,7 +71,6 @@ struct nvram_tuple router_defaults[] = {
 //  {"time_zone", "-08 1 1", 0},	/* Time zone (GNU TZ format) USA */
 //  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
 
-#endif
 #endif
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
 #ifdef HAVE_SKYTRON
