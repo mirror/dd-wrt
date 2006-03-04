@@ -13,9 +13,9 @@ endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += -s $(COPTS)
 ifeq ($(ARCH),i386)
-LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L../../router.x86/libnet/lib -lnet -lcrypt
+LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -ldl
 else
-LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L../libnet/lib ../dnsmasq/src/dnsmasq.a -lnet -lcrypt 
+LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -L../libnet/lib -lnet -lshared -lcrypt -ldl
 endif
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
@@ -55,7 +55,6 @@ CFLAGS += -DHAVE_OPENVPN
 endif
 ifeq ($(CONFIG_IPROUTE2),y)
 CFLAGS += -DHAVE_IPROUTE2
-LDFLAGS += ../iproute2/ip/ip.a ../iproute2/tc/tc.a ../iproute2/lib/libnetlink.a ../iproute2/lib/libutil.a -ldl -lm
 endif
 ifeq ($(CONFIG_NEWMEDIA),y)
 CFLAGS += -DHAVE_NEWMEDIA
