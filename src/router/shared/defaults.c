@@ -53,7 +53,7 @@ struct nvram_tuple router_defaults[] = {
 
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
-  //{ "time_zone", "PST8PDT", 0 },                /* Time zone (GNU TZ format) */
+  {"time_zone", "+01 1 3", 0 },        /* Time zone (GNU TZ format) */
 #ifdef HAVE_SKYTRON
   {"ntp_server", "ntp0.fau.de", 0},	/* NTP server *//* Modify */
   {"time_zone", "+01 2 2", 0},	/* Time zone (GNU TZ format) Japan */
