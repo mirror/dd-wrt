@@ -79,23 +79,41 @@ function exit() {
             </div>
             <div id="main">
                <div id="contents">
-                  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>"><input type="hidden" name="submit_button" /><input type="hidden" name="change_action" /><input type="hidden" name="action" /><h2>Wireless MAC Filter</h2>
-                     <div>
-                        <div class="setting">
-			<input type="radio" value="other" name="wl_macmode1" <% nvram_match("wl_macmode1","other","checked"); %>>Enable</input>
-			<input type="radio" value="disabled" name="wl_macmode1" <% nvram_match("wl_macmode1","disabled","checked"); %>>Disable</input>
-			</div><% nvram_match("wl_macmode1","disabled","<!--"); %>
-                        <div class="setting">
-                           <div class="label">Prevent</div><input type="radio" value="deny" name="wl_macmode"  <% nvram_invmatch("wl_macmode","allow","checked"); %>>Prevent PCs listed from accessing the wireless network</input></div>
-                        <div class="setting">
-                           <div class="label">Permit only</div>
-			   <input type="radio" value="allow" name="wl_macmode"  <% nvram_match("wl_macmode","allow","checked"); %>>Permit only PCs listed to access the wireless network</input></div><input type="hidden" value="0" name="login_status" /><div class="setting">
-			   <div class="label"> </div><input type="button" name="mac_filter_button" value="Edit MAC Filter List" onclick=ViewFilter() /></div><% nvram_match("wl_macmode1","disabled","-->"); %>
-                     </div><br />
-		     <div class="submitFooter">
-		     <input type=button name="save_button" value="Save Settings" onClick=to_submit(this.form) />
-		     <input type=button value="Cancel Changes" name=cancel onclick=window.location.reload() />
-		     </div>
+                  <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
+                    <input type="hidden" name="submit_button" />
+                    <input type="hidden" name="change_action" />
+                    <input type="hidden" name="action" />
+                    <h2>Wireless MAC Filter</h2>
+                    <fieldset>
+                      <legend>MAC Filter</legend>
+                      <div class="setting">
+                        <div class="label">&nbsp;</div>
+                        <input type="radio" value="other" name="wl_macmode1" <% nvram_match("wl_macmode1","other","checked"); %>>Enable</input>
+                        <input type="radio" value="disabled" name="wl_macmode1" <% nvram_match("wl_macmode1","disabled","checked"); %>>Disable</input>
+                      </div>
+                      <% nvram_match("wl_macmode1","disabled","<!--"); %>
+                      <hr width="90%" />
+                      <br/>
+                      <div class="setting">
+                        <div class="label">Prevent</div>
+                          <input type="radio" value="deny" name="wl_macmode"  <% nvram_invmatch("wl_macmode","allow","checked"); %>>Prevent PCs listed from accessing the wireless network</input>
+                      </div>
+                      <div class="setting">
+                        <div class="label">Permit only</div>
+                        <input type="radio" value="allow" name="wl_macmode"  <% nvram_match("wl_macmode","allow","checked"); %>>Permit only PCs listed to access the wireless network</input>
+                      </div>
+                      <input type="hidden" value="0" name="login_status" />
+                      <div class="setting">
+                        <div class="label">&nbsp;</div>
+                        <input type="button" name="mac_filter_button" value="Edit MAC Filter List" onclick="ViewFilter()" />
+                      </div>
+                      <% nvram_match("wl_macmode1","disabled","-->"); %>
+                    </fieldset>
+                    <br/>
+                    <div class="submitFooter">
+                      <input type=button name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
+                      <input type=button value="Cancel Changes" name="cancel" onclick="window.location.reload()" />
+                    </div>
                   </form>
                </div>
             </div>
