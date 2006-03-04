@@ -112,23 +112,27 @@ function init() {
 							<input type="hidden" name="action" value="Apply"/>
 							<input type="hidden" name="commit" value="1"/>
 							<h2>Virtual Local Area Network (VLAN)</h2>
-							<table id="vlan" class="table center">
-								<tbody>
-									<tr>
-										<th rowspan="2">VLAN</th>
-										<th colspan="5">Port</th>
-										<th rowspan="2">Assigned To<br />Bridge</th>
-									</tr>
-									<tr>
-										<th>W</th>
-										<th>1</th>
-										<th>2</th>
-										<th>3</th>
-										<th>4</th>
-									</tr>
-									<% port_vlan_table(); %>
-								</tbody>
-							</table><br/>
+							<fieldset>
+							   <legend>VLAN</legend>
+							   <table id="vlan" class="table center">
+  								<tbody>
+  									<tr>
+  										<th rowspan="2">VLAN</th>
+  										<th colspan="5">Port</th>
+  										<th rowspan="2">Assigned To<br />Bridge</th>
+  									</tr>
+  									<tr>
+  										<th>W</th>
+  										<th>1</th>
+  										<th>2</th>
+  										<th>3</th>
+  										<th>4</th>
+  									</tr>
+  									<% port_vlan_table(); %>
+  								</tbody>
+  							 </table>
+  						</fieldset>
+  							 <br/>
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
 								<input type="reset" value="Cancel Changes"/>
