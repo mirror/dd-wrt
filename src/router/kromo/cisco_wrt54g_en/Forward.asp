@@ -73,7 +73,11 @@ function to_submit(F) {
 		  <input type="hidden" name="submit_type" />
 		  <input type="hidden" name="change_action" />
 		  <input type="hidden" name="action" />
-		  <input type="hidden" name="forward_port" value="13" /><h2>Port Range Forward</h2>
+		  <input type="hidden" name="forward_port" value="13" />
+		  <h2>Port Range Forward</h2>
+		  <div>
+		  <fieldset>
+		    <legend>Port Range</legend>
                      <table class="table center">
                         <tr>
                            <th colspan="6">Port Range</th>
@@ -96,6 +100,8 @@ function to_submit(F) {
                            </tr>
     
                      </table>
+                    </fieldset>
+                  </div>
                      <br/>
                      <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick=to_submit(this.form) /><input type="reset" value="Cancel Changes" /></div>
                   </form>
