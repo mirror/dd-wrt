@@ -190,27 +190,35 @@ function init() {
 							<input type="hidden" name="action" value="Apply"/>
 							<input type="hidden" name="commit" value="1"/>
 							<h2>Quality Of Service (QoS )</h2>
-							<div class="setting">
-								<input type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_match("wshaper_enable","1","checked"); %>>Enable</input>
-								<input type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_match("wshaper_enable","0","checked"); %>>Disable</input>
-							</div>
-							<div class="setting">
-								<div class="label">Port</div>
-								<input type="radio" name="wshaper_dev" value="WAN" <% nvram_match("wshaper_dev","WAN","checked"); %>>WAN</input>
-								<input type="radio" name="wshaper_dev" value="LAN" <% nvram_match("wshaper_dev","LAN","checked"); %>>LAN & wLAN</input>
-							</div>
-							<div class="setting">
-								<div class="label">&nbsp;</div>
-								<input type="text" size="5" class="num" name="wshaper_uplink" value='<% nvram_get("wshaper_uplink"); %>'/> Uplink kbps
-							</div>
-							<div class="setting">
-								<div class="label">&nbsp;</div>
-								<input type="text" size="5" class="num" name="wshaper_downlink" value='<% nvram_get("wshaper_downlink"); %>'/> Downlink kbps
-							</div>
-							<div class="setting">
-								<div class="label"></div>
-								<input type="checkbox" name="_enable_game" value="1" <% nvram_match("enable_game", "1", "checked"); %>/> Optimize for Gaming
-							</div>
+							<fieldset>
+  							<legend>QoS Settings</legend>
+  							<div class="setting">
+  							  <div class="label">Start QoS</div>
+  								<input type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_match("wshaper_enable","1","checked"); %>>Enable</input>
+  								<input type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_match("wshaper_enable","0","checked"); %>>Disable</input>
+  							</div>
+  							
+  							<div class="setting">
+  							 <div class="label">Port</div>
+  							 <select name="wshaper_dev">
+  							   <option value="WAN" <% nvram_match("wshaper_dev","WAN","selected"); %>>WAN</option>
+  							   <option value="LAN" <% nvram_match("wshaper_dev","LAN","selected"); %>>LAN &amp; WLAN</option>
+  							 </select>
+  							</div>
+  							<div class="setting">
+  								<div class="label">Uplink (kbps)</div>
+  								<input type="text" size="5" class="num" name="wshaper_uplink" value='<% nvram_get("wshaper_uplink"); %>'/>
+  							</div>
+  							<div class="setting">
+  								<div class="label">Downlink (kbps)</div>
+  								<input type="text" size="5" class="num" name="wshaper_downlink" value='<% nvram_get("wshaper_downlink"); %>'/>
+  							</div>
+  							<div class="setting">
+  								<div class="label">Optimize for Gaming</div>
+  								<input type="checkbox" name="_enable_game" value="1" <% nvram_match("enable_game", "1", "checked"); %>/> 
+  							</div>
+  						</fieldset>
+  						<br/>
 							<fieldset>
 								<legend>Services Priority</legend>
 								<table class="table">
