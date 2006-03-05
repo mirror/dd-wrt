@@ -47,6 +47,7 @@ function exit() {
                                  <li><a href="Status_Router.asp">Router</a></li>
                                  <li><span>LAN</span></li>
                                  <li><a href="Status_Wireless.asp">Wireless</a></li>
+                                 <li><a href="Info.htm">Sys-Info</a></li>
 				 <% show_sputnik(); %>
                               </ul>
                            </div>
