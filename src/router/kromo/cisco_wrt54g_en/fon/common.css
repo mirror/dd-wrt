@@ -368,3 +368,6 @@ padding:.906em;
 .progressbarblock {
   position:absolute;
 }
+.textblink {
+  text-decoration:blink;
+}
