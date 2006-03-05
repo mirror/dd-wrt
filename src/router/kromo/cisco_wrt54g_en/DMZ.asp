@@ -85,21 +85,24 @@ function init() {
             <div id="main">
             	<div id="contents">
                 	<form name="dmz" action="apply.cgi" method="<% get_http_method(); %>">
-						<input type="hidden" name="submit_button" value="DMZ"/>
-						<input type="hidden" name="change_action"/>
-						<input type="hidden" name="action" value="Apply"/>
-						<h2>Demilitarized Zone (DMZ)</h2>
-						<div>
-							<div class="setting">
-								<input type="radio" value="1" name="dmz_enable" onclick="SelDMZ(this.form,1)" <% nvram_match("dmz_enable","1","checked"); %>>Enable</input>
-								<input type="radio" value="0" name="dmz_enable" onclick="SelDMZ(this.form,0)" <% nvram_match("dmz_enable","0","checked"); %>>Disable</input>
-							</div>
-							<div class="setting">
-								<div class="label">DMZ Host IP Address</div>
-								<% prefix_ip_get("lan_ipaddr",1); %>
-								<input class="num" maxLength="3" onblur="valid_range(this,0,254,'IP')" size="3" name="dmz_ipaddr" value='<% nvram_get("dmz_ipaddr"); %>'/>
-							</div>
-							</div>
+                	  <input type="hidden" name="submit_button" value="DMZ"/>
+                	  <input type="hidden" name="change_action"/>
+                	  <input type="hidden" name="action" value="Apply"/>
+                	  <h2>Demilitarized Zone (DMZ)</h2>
+                	  <div>
+                	   <fieldset>
+                	   <legend>DMZ</legend>
+                	     <div class="setting">
+                	       <input type="radio" value="1" name="dmz_enable" onclick="SelDMZ(this.form,1)" <% nvram_match("dmz_enable","1","checked"); %>>Enable</input>
+                	       <input type="radio" value="0" name="dmz_enable" onclick="SelDMZ(this.form,0)" <% nvram_match("dmz_enable","0","checked"); %>>Disable</input>
+                	     </div>
+                	     <div class="setting">
+                	       <div class="label">DMZ Host IP Address</div>
+                	       <% prefix_ip_get("lan_ipaddr",1); %>
+                	       <input class="num" maxLength="3" onblur="valid_range(this,0,254,'IP')" size="3" name="dmz_ipaddr" value='<% nvram_get("dmz_ipaddr"); %>'/>
+                	     </div>
+                	   </fieldset>
+                	 </div>
 							<br/>
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
