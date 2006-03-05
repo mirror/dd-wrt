@@ -164,6 +164,8 @@ install: all
 clean:
 	rm -f *.o *.so
 	rm -f *.a
+	rm -f *.h~
+	rm -f *.c~
 
 libshared.so: $(OBJS) 
 	$(LD) -shared -o $@ $^
