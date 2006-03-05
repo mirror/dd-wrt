@@ -1947,7 +1947,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       snprintf (wdsif_var, 31, "%s_if", wds);
       if (!nvram_match (enabled_var, "0"))
 	{
-	  snprintf (wds_if, 31, "wds0.4915%d", devcount++);
+	  snprintf (wds_if, 31, "wds0.491%d", 50+(devcount++));
 	  nvram_set (wdsif_var, wds_if);
 	}
       else
