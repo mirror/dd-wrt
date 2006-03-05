@@ -27,7 +27,7 @@ hostinfo               = unknown
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
-PATH: /home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin/
+PATH: /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin/
 PATH: /sbin
 PATH: /usr/sbin
 PATH: /usr/local/sbin
@@ -61,17 +61,17 @@ configure:1964: checking for mipsel-linux-elf-gcc
 configure:1990: result: mipsel-linux-uclibc-gcc
 configure:2272: checking for C compiler version
 configure:2275: mipsel-linux-uclibc-gcc --version </dev/null >&5
-mipsel-linux-uclibc-gcc (GCC) 3.4.5 (OpenWrt-2.0)
+mipsel-linux-uclibc-gcc (GCC) 3.4.4 (OpenWrt-1.0)
 Copyright (C) 2004 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 configure:2278: $? = 0
 configure:2280: mipsel-linux-uclibc-gcc -v </dev/null >&5
-Reading specs from /home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/specs
-Configured with: /home/dd-wrt/trunk/openwrt/toolchain_build_mipsel/gcc-3.4.5/configure --prefix=/home/dd-wrt/trunk/openwrt/staging_dir_mipsel --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mipsel-linux-uclibc --enable-languages=c,c++ --enable-shared --disable-__cxa_atexit --enable-target-optspace --with-gnu-ld --disable-nls
+Reading specs from /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/specs
+Configured with: /home/dd-wrt/whiterussian/openwrt/toolchain_build_mipsel/gcc-3.4.4/configure --prefix=/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel --build=x86_64-pc-linux-gnu --host=x86_64-pc-linux-gnu --target=mipsel-linux-uclibc --enable-languages=c,c++ --enable-shared --disable-__cxa_atexit --enable-target-optspace --with-gnu-ld --disable-nls
 Thread model: posix
-gcc version 3.4.5 (OpenWrt-2.0)
+gcc version 3.4.4 (OpenWrt-1.0)
 configure:2283: $? = 0
 configure:2285: mipsel-linux-uclibc-gcc -V </dev/null >&5
 mipsel-linux-uclibc-gcc: `-V' option must have argument
@@ -123,7 +123,7 @@ configure:2708: test -s conftest.o
 configure:2711: $? = 0
 configure:2729: result: none needed
 configure:2747: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -pipe -mips32 -funit-at-a-time -DHAVE_MALLOC=1 -Drpl_malloc=malloc  conftest.c >&5
-conftest.c:2: error: syntax error before "me"
+conftest.c:2: error: parse error before "me"
 configure:2753: $? = 1
 configure: failed program was:
 | #ifndef __cplusplus
@@ -138,7 +138,7 @@ configure:3158: result: x86_64-unknown-linux-gnu
 configure:3166: checking host system type
 configure:3180: result: mipsel-linux-elf
 configure:3188: checking for a sed that does not truncate output
-configure:3242: result: /home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin//sed
+configure:3242: result: /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed
 configure:3245: checking for egrep
 configure:3255: result: grep -E
 configure:3271: checking for ld used by mipsel-linux-uclibc-gcc
@@ -1276,7 +1276,7 @@ lt_cv_objdir=.libs
 lt_cv_path_LD=mipsel-linux-uclibc-ld
 lt_cv_path_LDCXX=mipsel-linux-uclibc-ld
 lt_cv_path_NM=mipsel-linux-uclibc-nm
-lt_cv_path_SED=/home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin//sed
+lt_cv_path_SED=/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed
 lt_cv_prog_compiler_c_o=yes
 lt_cv_prog_compiler_c_o_CXX=yes
 lt_cv_prog_compiler_rtti_exceptions=no

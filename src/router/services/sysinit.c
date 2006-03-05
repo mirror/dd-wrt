@@ -209,6 +209,10 @@ enableAfterBurner (void)
 {
 
   int boardflags;
+if (getRouterBrand()==ROUTER_LINKSYS_WRT55AG)
+    return;
+if (nvram_get("boardflags")==NULL)
+    return;
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
   if (!(boardflags & BFL_AFTERBURNER))

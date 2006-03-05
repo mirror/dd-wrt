@@ -171,6 +171,21 @@ start_config_vlan (void)
   char ea[ETHER_ADDR_LEN];
   char tmp[200];
 
+// configure ports
+
+  system ("echo 1 > /proc/switch/eth0/reset");
+  for (i = 0; i < 16; i++)
+    {
+      char vlanb[16];
+      sprintf (vlanb, "vlan%dports", i);
+      if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
+	continue;
+      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
+	       nvram_safe_get (vlanb), i);
+      system (tmp);
+    }
+
+
   /* set vlan i/f name to style "vlan<ID>" */
 
   eval ("vconfig", "set_name_type", "VLAN_PLUS_VID_NO_PAD");

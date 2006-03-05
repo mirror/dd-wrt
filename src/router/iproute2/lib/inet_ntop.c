@@ -28,7 +28,7 @@ static char rcsid[] = "$Id: inet_ntop.c,v 1.4 1996/09/27 03:24:13 drepper Exp $"
 #include <errno.h>
 #include <stdio.h>
 
-#include <linux/in6.h>
+//#include <linux/in6.h>
 // #define IN6ADDRSZ sizeof(struct in6_addr)
 
 #ifdef SPRINTF_CHAR

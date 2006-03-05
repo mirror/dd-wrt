@@ -228,8 +228,6 @@ optimize-lib:
 
 
 install package: $(filter-out lib-install,$(obj-install)) $(LINUXDIR)/.config
-        # Install binaries into target directory
-	# Install binaries into target directory
 	install -d $(TARGETDIR)
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
@@ -283,8 +281,23 @@ endif
 #endif
 
 	rm -f $(TARGETDIR)/lib/modules/2.4.33-pre2/build
-	
-	
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre2/pcmcia
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre2/netfilter
+		
         # Prepare filesystem
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
         # Make sure mksquashfs-2.0 is used
@@ -599,6 +612,7 @@ endif
 
 snmp:
 ifeq ($(CONFIG_SNMP),y)
+	cd snmp && . ./conf.sh
 	$(MAKE) -C snmp 
 else
 	@true
@@ -698,7 +712,7 @@ mmc:
 	$(MAKE) -C mmc
 
 mmc-install:
-	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/2.4.33-pre2/kernel/fs/mmc/mmc.o
+	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/2.4.33-pre2/mmc.o
 	install -D  mmc/config/mmc.webconfig $(INSTALLDIR)/mmc/etc/config/mmc.webconfig
 	install -D  mmc/config/mmc.startup $(INSTALLDIR)/mmc/etc/config/mmc.startup
 	install -D  mmc/config/mmc.nvramconfig $(INSTALLDIR)/mmc/etc/config/mmc.nvramconfig
@@ -738,6 +752,7 @@ ser-clean:
 	rm -rf $(INSTALLDIR)/www/*
 			
 nocat:
+	cd nocat && . ./conf
 	make -C nocat
 
 nocat-clean:
