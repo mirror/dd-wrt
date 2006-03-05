@@ -130,6 +130,7 @@ var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' 
 										<li><span>Router</span></li>
 									    <li><a href="Status_Lan.asp">LAN</a></li>
 										<li><a href="Status_Wireless.asp">Wireless</a></li>
+										<li><a href="Info.htm">Sys-Info</a></li>
 										<% show_sputnik(); %>
 									</ul>
 								</div>
