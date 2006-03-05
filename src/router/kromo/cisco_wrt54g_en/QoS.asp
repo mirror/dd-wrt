@@ -32,6 +32,7 @@ function ips_grey(sw_disabled,F) {
 	F.svqos_ipaddr2.disabled = sw_disabled;
 	F.svqos_ipaddr3.disabled = sw_disabled;
 	F.svqos_netmask.disabled = sw_disabled;
+	F.add_ipsprio_button.disabled = sw_disabled;
 	for (i=0; i<F.svqos_noips.value; i++){
 		eval("F.svqos_ipdel" + i).disabled = sw_disabled;
 		eval("F.svqos_ipprio" + i).disabled = sw_disabled;
@@ -45,6 +46,7 @@ function macs_grey(sw_disabled,F) {
 	F.svqos_hwaddr3.disabled = sw_disabled;
 	F.svqos_hwaddr4.disabled = sw_disabled;
 	F.svqos_hwaddr5.disabled = sw_disabled;
+	F.add_macprio_button.disabled = sw_disabled;
 	for (i=0; i<F.svqos_nomacs.value; i++){
 		eval("F.svqos_macdel" + i).disabled = sw_disabled;
 		eval("F.svqos_macprio" + i).disabled = sw_disabled;
@@ -244,7 +246,7 @@ function init() {
 									<tr>
 										<td>&nbsp;</td>
 										<td colspan="2">
-											<input type="button" value="Add" onclick="ip_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;
+											<input type="button" name="add_ipsprio_button" value="Add" onclick="ip_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;
 											<input size="3" maxlength="3" name="svqos_ipaddr0" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr1" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr2" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>.<input size="3" maxlength="3" name="svqos_ipaddr3" value="0" onblur="valid_range(this,0,255,'IP')" class="num"/>/
 											<input size="3" maxlength="3" name="svqos_netmask" value="0" onblur="valid_range(this,0,32,'Netmask')" class="num"/>
 										</td>
@@ -259,7 +261,7 @@ function init() {
 										<tr>
 											<td>&nbsp;</td>
 											<td colspan="2">
-												<input type="button" value="Add" onclick="mac_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;
+												<input type="button" name="add_macprio_button" value="Add" onclick="mac_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;
 												<input name="svqos_hwaddr0" value="00" size="2" maxlength="2" onblur="valid_mac(this,0)" class="num"/>:<input name="svqos_hwaddr1" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr2" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr3" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr4" value="00" size="2" maxlength="2" onBlur="valid_mac(this,1)" class="num"/>:<input name="svqos_hwaddr5" value="00" size="2" maxlength="2" onblur="valid_mac(this,1)" class="num"/>
 											</td>
 										</tr>
