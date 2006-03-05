@@ -359,9 +359,12 @@ padding:.906em;
 	width:14.49em;
 	text-align:center;
 }
-
 .progressbar {
   visibility: visible;
   position: relative;
   overflow:hidden;
+  border-style:solid;
+}
+.progressbarblock {
+  position:absolute;
 }
