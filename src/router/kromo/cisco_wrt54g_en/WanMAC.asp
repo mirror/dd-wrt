@@ -84,7 +84,8 @@ function init() {
                <div id="menu">
                   <div id="menuMain">
                      <ul id="menuMainList">
-                        <li class="current"><a class="current" href="index.asp">Setup</a><div id="menuSub">
+                        <li class="current"><span>Setup</span>
+                          <div id="menuSub">
                               <ul id="menuSubList">
                                  <li><a href="index.asp">Basic Setup</a></li>
                                  <li><a href="DDNS.asp">DDNS</a></li>

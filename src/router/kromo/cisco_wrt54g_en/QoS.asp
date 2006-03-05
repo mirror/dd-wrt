@@ -160,7 +160,7 @@ function init() {
 								<% nvram_invmatch("sipgate","1","-->"); %>
 								<li><a href="Firewall.asp">Security</a></li>
 								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
-								<li class="current"><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a>
+								<li class="current"><span>Applications&nbsp;&amp;&nbsp;Gaming</span>
 									<div id="menuSub">
 										<ul id="menuSubList">
 											<li><a href="Forward.asp">Port Range Forward</a></li>
