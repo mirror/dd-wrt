@@ -2888,7 +2888,12 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
   int c = 0;
   count = nvram_safe_get ("forward_entries");
   if (count == NULL || strlen (count) == 0)
-    return -1;
+    //return -1;      botho 04/03 add "- No Forwards -" if empty
+    websWrite (wp, "<tr>\n");
+    websWrite (wp, "<td colspan=\"6\">&nbsp;</td>\n");
+    websWrite (wp, "<td colspan=\"6\" align=\"center\" valign=\"center\" class=\"row0\">- No Forward -</td>\n");
+    websWrite (wp, "</tr>\n");
+
   c = atoi (count);
   if (c < 0)
     return -1;
@@ -2940,7 +2945,11 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
   int c = 0;
   count = nvram_safe_get ("forwardspec_entries");
   if (count == NULL || strlen (count) == 0)
-    return -1;
+    //return -1;      botho 04/03 add "- No Forwards -" if empty
+    websWrite (wp, "<tr>\n");
+    websWrite (wp, "<td colspan=\"6\">&nbsp;</td>\n");
+    websWrite (wp, "<td colspan=\"6\" align=\"center\" valign=\"center\" class=\"row0\">- No Forward -</td>\n");
+    websWrite (wp, "</tr>\n");
   c = atoi (count);
   if (c < 0)
     return -1;
@@ -2992,7 +3001,11 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
   count = nvram_safe_get ("trigger_entries");
   if (count == NULL || strlen (count) == 0)
     {
-      return -1;
+      //return -1;      botho 04/03 add "- No Forwards -" if empty
+    websWrite (wp, "<tr>\n");
+    websWrite (wp, "<td colspan=\"6\">&nbsp;</td>\n");
+    websWrite (wp, "<td colspan=\"6\" align=\"center\" valign=\"center\" class=\"row0\">- No Forward -</td>\n");
+    websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c < 0)
