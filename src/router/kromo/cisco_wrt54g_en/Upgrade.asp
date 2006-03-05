@@ -63,15 +63,14 @@ function upgrade(F,id){
 		}
 	}
 
-	if(ns4)
-	  choose_disable(F.Upgrade_b);
-		F.Upgrade_b.value = " Upgrading ";
-		F.submit_button.value = "Upgrade";
-		change_style(id,'textblink')
-		F.submit();
-		//document.onstop = stop;
-		//progress();
-		bar1.togglePause();
+	choose_disable(F.Upgrade_b);
+	F.Upgrade_b.value = " Upgrading ";
+	F.submit_button.value = "Upgrade";
+	change_style(id,'textblink');
+	F.submit();
+	//document.onstop = stop;
+	//progress();
+	bar1.togglePause();
 }
 
 		</script>
