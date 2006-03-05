@@ -34,17 +34,17 @@ else
       ;;
     --agent-libs)
       # use this one == --netsnmp-agent-libs + --external-libs
-      echo  -L${exec_prefix}/lib $NSC_BASE_AGENT_LIBS -ldl -lm  
+      echo -s -L${exec_prefix}/lib $NSC_BASE_AGENT_LIBS -ldl -lm  
       ;;
     --libs)
       # use this one == --netsnmp-libs + --external-libs
-      echo  -L${exec_prefix}/lib -lnetsnmp -lm 
+      echo -s -L${exec_prefix}/lib -lnetsnmp -lm 
       ;;
     --external-libs)
-      echo  -lm 
+      echo -s -lm 
       ;;
     --external-agent-libs)
-      echo  -ldl -lm  
+      echo -s -ldl -lm  
       ;;
     --netsnmp-libs)
       echo -L${exec_prefix}/lib -lnetsnmp
@@ -265,7 +265,7 @@ EOF
 	exit 1
       fi
       prefix=/tmp/snmp
-      cmd="mipsel-linux-uclibc-gcc $cflags -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  -I. -I${prefix}/include -o $outname $tmpfile $cfiles  -L/tmp/snmp/lib -lnetsnmpagent -lnetsnmphelpers -lnetsnmpmibs -lnetsnmp -ldl -lm  $ldflags"
+      cmd="mipsel-linux-uclibc-gcc $cflags -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf  -I. -I${prefix}/include -o $outname $tmpfile $cfiles -s -L/tmp/snmp/lib -lnetsnmpagent -lnetsnmphelpers -lnetsnmpmibs -lnetsnmp -ldl -lm  $ldflags"
       echo "running: $cmd"
       `$cmd`
       if test "x$norm" != "x1" ; then

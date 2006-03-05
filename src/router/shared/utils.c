@@ -195,9 +195,8 @@ internal_getRouterBrand ()
     }
 
   if (nvram_match ("boardnum", "2") &&
-      nvram_match ("boardrev", "0x10") &&
-      nvram_match ("boardtype", "bcm94710dev") &&
-      nvram_match ("boardflags", "0x0200"))
+      nvram_match ("clkfreq", "125") &&
+      nvram_match ("boardtype", "bcm94710dev"))
     {
       cprintf ("router is linksys WRT55AG\n");
       setRouter ("Linksys WRT55AG");
@@ -1491,6 +1490,9 @@ check_vlan_support (void)
 
 //  if ((nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
 //  && nvram_invmatch ("boardnum", "2"))
+  if (getRouterBrand() == ROUTER_LINKSYS_WRT55AG)
+    return 0;
+
   if (nvram_match ("boardtype", "bcm94710dev")
       || nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
     return 1;
