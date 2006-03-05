@@ -501,3 +501,8 @@ this.tid=0;
 }}
 
 // END xp_progressbar
+
+function change_style(id, newClass) {
+   identity=document.getElementById(id);
+   identity.className=newClass;
+}
