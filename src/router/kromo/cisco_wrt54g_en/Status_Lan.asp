@@ -59,6 +59,8 @@ function exit() {
                <div id="contents">
                   <h2>Local Network</h2>
                   <div>
+                    <fieldset>
+                      <legend>LAN Status</legend>
                      <div class="setting">
                         <div class="label">MAC Address</div><% nvram_get("lan_hwaddr"); %>
                      </div>
@@ -77,17 +79,24 @@ function exit() {
                      </div>
                      <div class="setting">
                         <div class="label">End IP Address</div>
-                        <script language="javascript">
-	var prefix = "<% prefix_ip_get("lan_ipaddr",1); %>";
-	var start = <% nvram_get("dhcp_start"); %>;
-	var num = <% nvram_get("dhcp_num"); %>;
-	document.write(prefix);
-	document.write(start+num-1);
-</script>
-</div>
-                  </div><form>
-                     <div class="setting"><input id="button1" onclick="ViewDHCP()" type="button" value="DHCP Clients Table" name="dhcp_table" /></div>
-                  </form><br/>
+                        
+						<script language="javascript">
+							var prefix = "<% prefix_ip_get("lan_ipaddr",1); %>";
+							var start = <% nvram_get("dhcp_start"); %>;
+							var num = <% nvram_get("dhcp_num"); %>;
+							document.write(prefix);
+							document.write(start+num-1);
+						</script>
+					         </div>
+					         </fieldset>
+					         <br/>
+                 </div>
+				  <form>
+                     <div class="setting">
+                      <input id="button1" onclick="ViewDHCP()" type="button" value="DHCP Clients Table" name="dhcp_table" />
+                     </div>
+                   </form>
+				  <br/>
 					<% nvram_match("lan_proto", "static", "-->"); %>
 					<% nvram_match("lan_proto", "static", "</div><br/><br/>"); %>
                   <form>
