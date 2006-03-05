@@ -66,11 +66,11 @@ function upgrade(F,id){
 	choose_disable(F.Upgrade_b);
 	F.Upgrade_b.value = " Upgrading ";
 	F.submit_button.value = "Upgrade";
+	bar1.togglePause();
 	change_style(id,'textblink');
 	F.submit();
 	//document.onstop = stop;
 	//progress();
-	bar1.togglePause();
 }
 
 		</script>
