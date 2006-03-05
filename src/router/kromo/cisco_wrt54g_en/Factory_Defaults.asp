@@ -75,10 +75,14 @@ function to_submit(F) {
 							<input type="hidden" name="action"/>
 							<input type="hidden" name="change_action"/>
 							<h2>Factory Defaults</h2>
+							<fieldset>
+							<legend>Reset router settings</legend>
 							<div class="setting">
-								<name>Restore Factory Defaults</name>
+								<div class="label">Restore Factory Defaults</div>
 								<input type="radio" name="FactoryDefaults" value="1"/> Yes<input type="radio" name="FactoryDefaults" value="0" checked="checked"/> No
 							</div>
+							</fieldset>
+							<br/>
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
 								<input type="reset" value="Cancel Changes"/>
