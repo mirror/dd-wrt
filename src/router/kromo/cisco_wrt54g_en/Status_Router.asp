@@ -96,13 +96,13 @@ var mem_cached_f = mem_cached / mem_used * 100;
 var mem_active_f = mem_active / mem_used * 100;
 var mem_inactive_f = mem_inactive / mem_used * 100;
 
-var mem_total_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_total_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_total_f.toFixed(1) + ' %</div></div></div>' + mem_total + ' Kb / ' + mem_system + ' Kb';
-var mem_free_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_free_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_free_f.toFixed(1) + ' %</div></div></div>' + mem_free + ' Kb / ' + mem_total + ' Kb';
-var mem_used_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_used_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_used_f.toFixed(1) + ' %</div></div></div>' + mem_used + ' Kb / ' + mem_total + ' Kb';
-var mem_buffer_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_buffer_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_buffer_f.toFixed(1) + ' %</div></div></div>' + mem_buffer + ' Kb / ' + mem_total + ' Kb';
-var mem_cached_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_cached_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_cached_f.toFixed(1) + ' %</div></div></div>' + mem_cached + ' Kb / ' + mem_total + ' Kb';
-var mem_active_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_active_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_active_f.toFixed(1) + ' %</div></div></div>' + mem_active + ' Kb / ' + mem_total + ' Kb';
-var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_inactive_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_inactive_f.toFixed(1) + ' %</div></div></div>' + mem_inactive + ' Kb / ' + mem_total + ' Kb';
+var mem_total_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_total_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_total_f.toFixed(1) + ' %</div></div></div>' + mem_total + ' kB / ' + mem_system + ' kB';
+var mem_free_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_free_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_free_f.toFixed(1) + ' %</div></div></div>' + mem_free + ' kB / ' + mem_total + ' kB';
+var mem_used_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_used_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_used_f.toFixed(1) + ' %</div></div></div>' + mem_used + ' kB / ' + mem_total + ' kB';
+var mem_buffer_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_buffer_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_buffer_f.toFixed(1) + ' %</div></div></div>' + mem_buffer + ' kB / ' + mem_total + ' kB';
+var mem_cached_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_cached_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_cached_f.toFixed(1) + ' %</div></div></div>' + mem_cached + ' kB / ' + mem_total + ' kB';
+var mem_active_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_active_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_active_f.toFixed(1) + ' %</div></div></div>' + mem_active + ' kB / ' + mem_total + ' kB';
+var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_inactive_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_inactive_f.toFixed(1) + ' %</div></div></div>' + mem_inactive + ' kB / ' + mem_total + ' kB';
 
 		</script>
 	</head>
