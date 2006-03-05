@@ -11,10 +11,6 @@
       <script type="text/JavaScript" src="common.js">{}</script>
       <script language="JavaScript">
         
-function ViewDHCP() {
-	self.open('DHCPTable.asp', 'DHCP', 'alwaysRaised,resizable,scrollbars,width=560,height=400');
-}
-
 function popup_survey() {
 	w=760;
 	h=700;
@@ -63,6 +59,8 @@ function popup_survey() {
                <div id="contents">
                   <h2>Wireless</h2>
                   <div>
+                    <fieldset>
+                      <legend>Wireless Status</legend>
                      <div class="setting">
                         <div class="label">MAC Address</div><% nvram_get("wl0_hwaddr"); %>
                      </div>
@@ -87,37 +85,47 @@ function popup_survey() {
                      <div class="setting">
                         <div class="label">Rate</div><% get_currate(); %> Mbps
                      </div>
-		     		 <div class="setting">
+                     <div class="setting">
                         <div class="label">Encryption</div>
-							<% nvram_match("security_mode", "disabled", "Disabled"); %>
-							<% nvram_invmatch("security_mode", "disabled", "Enabled, "); %>
-							<% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %>
-							<% nvram_match("security_mode", "wpa", "WPA RADIUS"); %>
-							<% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %>
-							<% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %>
-							<% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %>
-							<% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %>
-							<% nvram_match("security_mode", "radius", "RADIUS"); %>
-							<% nvram_match("security_mode", "wep", "WEP"); %>     
-                     </div>
-		    		 <div class="setting">
-                        <div class="label">PPTP Status</div><% nvram_match("pptpd_connected","0","Disconnected"); %> <% nvram_match("pptpd_connected","1","Connected"); %>
-                     </div>
-
-		    <% active_wireless(0); %><% active_wds(0); %>
-                  </div><br/><form><input onclick="popup_survey()" type="button" value="Survey" /></form><br/>
-                  <form>
-                     <div class="submitFooter"><input onclick="window.location.replace('Status_Wireless.asp')" type="button" value="Refresh" /></div>
-                  </form>
-               </div>
-            </div>
-            <div id="statusInfo">
-               <div class="info">Firmware: <% get_firmware_version(); %></div>
-               <div class="info">Time: <% get_uptime(); %></div>
-			   <% nvram_match("wan_proto","disabled","<!--"); %>
-			   <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
-			   <% nvram_match("wan_proto","disabled","-->"); %>
-               <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
+                     		<% nvram_match("security_mode", "disabled", "Disabled"); %>
+                     		<% nvram_invmatch("security_mode", "disabled", "Enabled, "); %>
+                     		<% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %>
+                     		<% nvram_match("security_mode", "wpa", "WPA RADIUS"); %>
+                     		<% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %>
+                     		<% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %>
+                     		<% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %>
+                     		<% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %>
+                     		<% nvram_match("security_mode", "radius", "RADIUS"); %>
+                     		<% nvram_match("security_mode", "wep", "WEP"); %>     
+                    </div>
+                    <div class="setting">
+                      <div class="label">PPTP Status</div><% nvram_match("pptpd_connected","0","Disconnected"); %> <% nvram_match("pptpd_connected","1","Connected"); %>
+                    </div>
+                    </fieldset>
+                    <br/>
+                    
+                    <% active_wireless(0); %>
+                    <% active_wds(0); %>
+                    </div>
+                    <br/>
+                    <form>
+                      <input onclick="popup_survey()" type="button" value="Survey" />
+                    </form>
+                    <br/>
+                    <form>
+                      <div class="submitFooter">
+                        <input onclick="window.location.replace('Status_Wireless.asp')" type="button" value="Refresh" />
+                      </div>
+                    </form>
+                  </div>
+                </div>
+                <div id="statusInfo">
+                  <div class="info">Firmware: <% get_firmware_version(); %></div>
+                  <div class="info">Time: <% get_uptime(); %></div>
+                  <% nvram_match("wan_proto","disabled","<!--"); %>
+                  <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
+                  <% nvram_match("wan_proto","disabled","-->"); %>
+                  <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
             </div>
             <div id="helpContainer">
                <div id="help">
