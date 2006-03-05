@@ -136,7 +136,7 @@ function makeTable()
 			" title='Click to delete entry'><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th></tr>";
 	}
 	if (data.length == 0) {
-		s += "<tr><th colspan=5 align='center' valign='center' class='row0'>- No Forwards -</th></tr>";
+		s += "<tr><th colspan=5 align='center' valign='center' class='row0'>- No Forward -</th></tr>";
 	}
 	s += "</table><br>";
 
