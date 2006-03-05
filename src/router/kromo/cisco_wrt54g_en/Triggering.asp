@@ -80,7 +80,7 @@ function to_submit(F)
               <input type="hidden" name="port_trigger" value="10"/>
               <h2>Port Triggering</h2>
               <fieldset>
-              <legend>Triggers</legend>
+              <legend>Forwards</legend>
               <table class="table center">
                 <tr>
                   <th>&nbsp;</th>
