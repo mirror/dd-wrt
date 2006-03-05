@@ -54,7 +54,7 @@ s%@CPPFLAGS@%%g
 s%@CXXFLAGS@%%g
 s%@FFLAGS@%%g
 s%@DEFS@%-DHAVE_CONFIG_H%g
-s%@LDFLAGS@%%g
+s%@LDFLAGS@%-s%g
 s%@LIBS@%-lm %g
 s%@exec_prefix@%/tmp/snmp%g
 s%@prefix@%/tmp/snmp%g
@@ -93,10 +93,10 @@ s%@build_os@%elf%g
 s%@LN_S@%ln -s%g
 s%@OBJEXT@%o%g
 s%@ECHO@%echo%g
-s%@RANLIB@%ranlib%g
-s%@STRIP@%strip%g
+s%@RANLIB@%mipsel-linux-uclibc-ranlib%g
+s%@STRIP@%mipsel-linux-uclibc-strip%g
 s%@DLLTOOL@%dlltool%g
-s%@AS@%as%g
+s%@AS@%mipsel-linux-uclibc-as%g
 s%@OBJDUMP@%objdump%g
 s%@LIBTOOL@%$(SHELL) $(top_builddir)/libtool%g
 s%@INSTALL_PROGRAM@%${INSTALL}%g

@@ -30,10 +30,10 @@
 # the same distribution terms that you use for the rest of that program.
 
 # A sed program that does not truncate output.
-SED="/home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin//sed"
+SED="/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
-Xsed="/home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin//sed -e 1s/^X//"
+Xsed="/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed -e 1s/^X//"
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
@@ -319,7 +319,7 @@ variables_saved_for_relink="PATH  LD_RUN_PATH GCC_EXEC_PREFIX COMPILER_PATH LIBR
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=" /home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/ /home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin/../lib/gcc/ /home/dd-wrt/trunk/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.5/ /usr/lib/gcc/mipsel-linux-uclibc/3.4.5/ /home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.4.5/ /home/dd-wrt/openwrt/openwrt/staging_dir_mipsel/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/lib/ /home/dd-wrt/trunk/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.4.5/ /home/dd-wrt/trunk/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/"
+sys_lib_search_path_spec=" /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/ /usr/lib/gcc/mipsel-linux-uclibc/3.4.4/ /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.4.4/ /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.4/../../../../mipsel-linux-uclibc/lib/"
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec="/lib /usr/lib"
