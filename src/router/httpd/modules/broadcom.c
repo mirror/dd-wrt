@@ -3928,6 +3928,7 @@ tf_upnp (webs_t wp)
       if (strcmp (v, "all") == 0)
 	{
 	  nvram_set ("upnp_clear", "1");
+	  sleep (3); //wait until upnp is done clearing before continuing
 	}
       else
 	{
