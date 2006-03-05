@@ -37,7 +37,10 @@ color:#000;
 .progressbar {
 background-color: #fff;
 border-color: #999;
+font-size:.09em;
+border-width:.09em;
 }
 .progressbarblock {
 background-color: #dd5;
+font-size:.09em;
 }
