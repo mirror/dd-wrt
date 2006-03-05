@@ -127,3 +127,7 @@ border-width:.09em;
 background-image: url(images/help_bg.png);
 font-size:.09em;
 }
+
+.textblink {
+  text-decoration:blink;
+}
