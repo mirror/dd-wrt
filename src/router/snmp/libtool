@@ -73,16 +73,16 @@ CC="mipsel-linux-uclibc-gcc"
 with_gcc=yes
 
 # The linker used to build libraries.
-LD="/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/bin/ld"
+LD="mipsel-linux-uclibc-ld"
 
 # Whether we need hard or soft links.
 LN_S="ln -s"
 
 # A BSD-compatible nm program.
-NM="/usr/bin/nm -B"
+NM="mipsel-linux-uclibc-nm"
 
 # A symbol stripping program
-STRIP=strip
+STRIP=mipsel-linux-uclibc-strip
 
 # Used to examine libraries when file_magic_cmd begins "file"
 MAGIC_CMD=file
@@ -94,7 +94,7 @@ DLLTOOL="dlltool"
 OBJDUMP="objdump"
 
 # Used on cygwin: assembler.
-AS="as"
+AS="mipsel-linux-uclibc-as"
 
 # The name of the directory that contains temporary libtool files.
 objdir=.libs
@@ -116,7 +116,7 @@ libext="a"
 exeext=""
 
 # Additional compiler flags for building library objects.
-pic_flag=" -fPIC"
+pic_flag="   -fPIC"
 pic_mode=default
 
 # Does compiler simultaneously support -c and -o options?
@@ -172,7 +172,7 @@ library_names_spec=""
 soname_spec=""
 
 # Commands used to build and install an old-style archive.
-RANLIB="ranlib"
+RANLIB="mipsel-linux-uclibc-ranlib"
 old_archive_cmds="\$AR \$AR_FLAGS \$oldlib\$oldobjs\$old_deplibs~\$RANLIB \$oldlib"
 old_postinstall_cmds="\$RANLIB \$oldlib~chmod 644 \$oldlib"
 old_postuninstall_cmds=""
@@ -190,8 +190,8 @@ postinstall_cmds=""
 postuninstall_cmds=""
 
 # Commands to strip libraries.
-old_striplib="strip --strip-debug"
-striplib="strip --strip-unneeded"
+old_striplib="mipsel-linux-uclibc-strip --strip-debug"
+striplib="mipsel-linux-uclibc-strip --strip-unneeded"
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method="unknown"

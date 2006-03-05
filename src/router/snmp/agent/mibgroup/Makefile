@@ -44,7 +44,7 @@ AUTOHEADER	= :
 #
 CFLAGS		= -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf 
 EXTRACPPFLAGS	= -x c
-LDFLAGS		=  
+LDFLAGS		= -s 
 LIBTOOL		= $(SHELL) $(top_builddir)/libtool 
 EXEEXT		= 
 
@@ -64,7 +64,7 @@ LIB_EXTENSION   = la
 LIB_VERSION     =
 LIB_LDCONFIG_CMD = $(LIBTOOL) --mode=finish $(libdir)
 LINK		= $(LIBTOOL) --mode=link $(CC)
-# RANLIB 	= ranlib
+# RANLIB 	= mipsel-linux-uclibc-ranlib
 RANLIB		= :
 
 # libtool definitions

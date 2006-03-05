@@ -12,9 +12,10 @@ DEFINES= -DRESOLVE_HOSTNAMES
 
 #options if you have a bind>=4.9.4 libresolv (or, maybe, glibc)
 LDLIBS=-lresolv
-ADDLIB=
+ADDLIB=inet_ntop.o inet_pton.o
 
 #options for decnet
+
 ADDLIB+=dnet_ntop.o dnet_pton.o
 
 #options for ipx

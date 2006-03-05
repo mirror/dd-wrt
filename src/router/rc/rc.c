@@ -167,20 +167,6 @@ main_loop (void)
   start_service ("restore_defaults");
 
 
-#ifndef HAVE_RB500
-  system ("echo 1 > /proc/switch/eth0/reset");
-  int i;
-  for (i = 0; i < 16; i++)
-    {
-      char vlanb[16];
-      sprintf (vlanb, "vlan%dports", i);
-      if (nvram_get (vlanb) == NULL || nvram_match (vlanb, ""))
-	continue;
-      sprintf (tmp, "echo %s > /proc/switch/eth0/vlan/%d/ports",
-	       nvram_safe_get (vlanb), i);
-      system (tmp);
-    }
-#endif
   /* Add vlan */
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   nvram_set ("wanup", "0");
