@@ -77,7 +77,7 @@ function to_submit(F) {
 		  <h2>Port Range Forward</h2>
 		  <div>
 		  <fieldset>
-		    <legend>Port Range</legend>
+		    <legend>Forwards</legend>
                      <table class="table center">
                         <tr>
                            <th colspan="6">Port Range</th>
@@ -91,15 +91,10 @@ function to_submit(F) {
                            <th>Enable</th>
                         </tr>
                         <% show_forward(); %>
-			    <tr>
-                              <td>&nbsp;</td>
-                              <td colspan="2">
-			      <input type="button" value="Add" onClick="forward_add_submit(this.form)"/>
-			      <input type="button" value="Remove" onClick="forward_remove_submit(this.form)"/>
-			      </td>
-                           </tr>
-    
                      </table>
+                     <br/>
+                     <input type="button" value="Add" onClick="forward_add_submit(this.form)"/>
+                     <input type="button" value="Remove" onClick="forward_remove_submit(this.form)"/>
                     </fieldset>
                   </div>
                      <br/>

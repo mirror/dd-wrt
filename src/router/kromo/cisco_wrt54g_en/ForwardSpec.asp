@@ -73,7 +73,10 @@ function to_submit(F) {
 		  <input type="hidden" name="submit_type" />
 		  <input type="hidden" name="change_action" />
 		  <input type="hidden" name="action" />
-		  <input type="hidden" name="forward_spec" value="13" /><h2>Port Forwarding</h2>
+		  <input type="hidden" name="forward_spec" value="13" />
+		  <h2>Port Forwarding</h2>
+		  <fieldset>
+		    <legend>Forwards</legend>
                      <table class="table center">
                         <tr>
                            <th colspan="6">Port Forwards</th>
@@ -87,15 +90,11 @@ function to_submit(F) {
                            <th>Enable</th>
                         </tr>
                         <% show_forward_spec(); %>
-			    <tr>
-                              <td>&nbsp;</td>
-                              <td colspan="2">
-			      <input type="button" value="Add" onClick=forward_add_submit(this.form) />
-			      <input type="button" value="Remove" onClick=forward_remove_submit(this.form) />
-			      </td>
-                           </tr>
-    
                      </table>
+                     <br/>
+                     <input type="button" value="Add" onClick=forward_add_submit(this.form) />
+                     <input type="button" value="Remove" onClick=forward_remove_submit(this.form) />
+                    </fieldset>
                      <br/>
                      <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
                      <input type="reset" value="Cancel Changes"/>
