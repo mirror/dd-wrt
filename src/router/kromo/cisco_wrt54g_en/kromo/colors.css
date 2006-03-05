@@ -164,7 +164,10 @@ div.warning {
 .progressbar {
 background-color: #fff;
 border-color: #999;
+font-size:.09em;
+border-width:.09em;
 }
 .progressbarblock {
 background-color: #FFF7CD;
+font-size:.09em;
 }
