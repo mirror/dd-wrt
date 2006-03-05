@@ -34,7 +34,7 @@ function to_submit(F) {
 								<% nvram_invmatch("sipgate","1","<!--"); %>
 								<li><a href="Sipath.asp">SIPatH</a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li class="current"><a href="Firewall.asp">Security</a>
+								<li class="current"><span>Security</span>
 									<div id="menuSub">
 										<ul id="menuSubList">
 											<li><a href="Firewall.asp">Firewall</a></li>

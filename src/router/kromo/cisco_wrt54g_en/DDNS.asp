@@ -86,18 +86,19 @@ function SelDDNS(num,F) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li class="current"><a href="index.asp">Setup</a><div id="menuSub">
-									<ul id="menuSubList">
-										<li><a href="index.asp">Basic Setup</a></li>
-										<li><span>DDNS</span></li>
-										<li><a href="WanMAC.asp">MAC Address Clone</a></li>
-										<li><a href="Routing.asp">Advanced Routing</a></li><% support_invmatch("HSIAB_SUPPORT", "1", "<!--"); %>
-										<li><a href="HotSpot_Admin.asp">Hot Spot</a></li><% support_invmatch("HSIAB_SUPPORT", "1", "-->"); %>
-										<li><a href="Vlan.asp">VLANs</a></li>
-									</ul>
-								</div>
-							</li>
-							<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<li class="current"><span>Setup</span>
+								  <div id="menuSub">
+  									<ul id="menuSubList">
+  										<li><a href="index.asp">Basic Setup</a></li>
+  										<li><span>DDNS</span></li>
+  										<li><a href="WanMAC.asp">MAC Address Clone</a></li>
+  										<li><a href="Routing.asp">Advanced Routing</a></li><% support_invmatch("HSIAB_SUPPORT", "1", "<!--"); %>
+  										<li><a href="HotSpot_Admin.asp">Hot Spot</a></li><% support_invmatch("HSIAB_SUPPORT", "1", "-->"); %>
+  										<li><a href="Vlan.asp">VLANs</a></li>
+  									</ul>
+								  </div>
+							 </li>
+							 <li><a href="Wireless_Basic.asp">Wireless</a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
 								<li><a href="Sipath.asp">SIPatH</a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
