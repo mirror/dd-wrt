@@ -103,6 +103,8 @@ function init() {
 							<input type="hidden" name="change_action"/>
 							<input type="hidden" name="action"/>
 							<h2>Log Management</h2>
+							<fieldset>
+							<legend>Log</legend>
 							<div class="setting">
 								<div class="label">Log</div>
 								<input type="radio" value="1" name="log_enable" <% nvram_match("log_enable", "1", "checked"); %> onclick="SelLog(1,this.form)">Enable</input>
@@ -116,6 +118,8 @@ function init() {
 									<option value="2" <% nvram_match("log_level", "2", "selected"); %>>High</option>
 								</select>
 							</div>
+							</fieldset>
+							<br/>
 							<fieldset>
 								<legend>Log Type</legend>
 								<div class="setting">
