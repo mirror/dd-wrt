@@ -314,7 +314,7 @@ function Status(F,I) {
 								<li><a href="Sipath.asp">SIPatH</a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
 								<li><a href="Firewall.asp">Security</a></li>
-								<li class="current"><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a>
+								<li class="current"><span>Access Restrictions</span>
 									<div id="menuSub">
 										<ul id="menuSubList"><% support_invmatch("PARENTAL_CONTROL_SUPPORT", "1", "<!--"); %>
 											<li><a href="Parental_Control.asp">Parental Control</a></li>

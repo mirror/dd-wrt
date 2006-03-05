@@ -27,7 +27,8 @@ function to_submit(F) {
                   <div id="menuMain">
                      <ul id="menuMainList">
                         <li><a href="index.asp">Setup</a></li>
-                        <li class="current"><a class="current" href="Wireless_Basic.asp">Wireless</a><div id="menuSub">
+                        <li class="current"><span>Wireless</span>
+                          <div id="menuSub">
                               <ul id="menuSubList">
                                  <li><a href="Wireless_Basic.asp">Basic Settings</a></li>
                                  <li><span>Radius</span></li>

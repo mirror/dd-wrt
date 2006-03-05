@@ -92,7 +92,7 @@ function upgrade(F){
 									<li><a href="Firewall.asp">Security</a></li>
 									<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
 									<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-									<li class="current"><a class="current" href="Management.asp">Administration</a>
+									<li class="current"><span>Administration</span>
 										<div id="menuSub">
 											<ul id="menuSubList">
 												<li><a href="Management.asp">Management</a></li>
