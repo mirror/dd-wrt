@@ -48,7 +48,7 @@ function stop(){
   		document.all['style0'].style.visibility = 'hidden';
 }
 
-function upgrade(F){
+function upgrade(F,id){
 	var len = F.file.value.length;
 	var ext = new Array('.','b','i','n');
 	if (F.file.value == '')	{
@@ -64,15 +64,16 @@ function upgrade(F){
 	}
 
 	if(ns4)
-	  delay_time = 1500;
-		choose_disable(F.Upgrade_b);
+	  choose_disable(F.Upgrade_b);
 		F.Upgrade_b.value = " Upgrading ";
 		F.submit_button.value = "Upgrade";
+		change_style(id,'textblink')
 		F.submit();
 		//document.onstop = stop;
 		//progress();
 		bar1.togglePause();
 }
+
 		</script>
 	</head>
 	
@@ -118,7 +119,9 @@ function upgrade(F){
 								<input type="hidden" name="submit_button"/>
 								<input type="hidden" name="action"/>
 								<input type="hidden" name="change_action"/>
-								<h2>Firmware Upgrade</h2>
+								<h2>Firmware Management</h2>
+								<fieldset>
+								  <legend>Firmware Upgrade</legend>
 								<div>After flashing, reset to:
 								<br/>
 									<div class="setting">
@@ -131,20 +134,26 @@ function upgrade(F){
 										<input type="radio" value="2" name="erase"/> Factory Defaults
 									</div>-->
 								</div>
-								<br/>Please select a file to upgrade: <input type="file" name="file" size="20"/><br/><br/>
-								<div class="warning"><em>Warning:</em> Upgrading firmware may take a few minutes, please don't turn off the power or press the reset button.</div>
-								<br/><hr width="90%" /><br/>
-								<div class="warning"><p><center>
-									<script language="javascript">
-										var bar1=createBar(500,15,100,15,50,"process_aborted(this.form)");
-										bar1.togglePause();
-									</script></center></p>
-									<br/>
-									<em>Upgrade must NOT be interrupted! (please wait 2 mins.)</em>
+								<p>Please select a file to upgrade: <input type="file" name="file" size="50"/></p>
+								</fieldset>
+								<br/>
+								<div class="warning">
+								  <center>
+								  <p><div id="warning_text"><b>Warning</b></div></p>
+								    <p>
+								    Upgrading firmware may take a few minutes, please don't turn off the power or press the reset button.
+								  </p>
+								    <script language="javascript">
+								      var bar1=createBar(500,15,100,15,50,"process_aborted(this.form)");
+								      bar1.togglePause();
+								    </script>
+								    <br/>
+								    <em>Upgrade must NOT be interrupted ! (please wait 2 mins.)</em>
+								  </center>
 								</div>
 								<br/>
 								<div class="submitFooter">
-									 <input type="button" name="Upgrade_b" value=" Upgrade " onclick="upgrade(this.form)"/>
+									 <input type="button" name="Upgrade_b" value=" Upgrade " onclick="upgrade(this.form,'warning_text')"/>
 								</div>
 							</form>
 						</div>
