@@ -33,11 +33,13 @@ background-color: #d55;
 .meter .text {
 color:#fff;
 }
-
 .progressbar {
 background-color: #fff;
 border-color: #999;
+font-size:.09em;
+border-width:.09em;
 }
 .progressbarblock {
 background-color: #d55;
+font-size:.09em;
 }
