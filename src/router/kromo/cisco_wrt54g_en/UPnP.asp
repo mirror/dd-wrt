@@ -60,61 +60,61 @@ function parseForwards()
 			data.push(e);
 		}
 	}
-	data.sort(sorter);
+	//data.sort(sorter);
 }
 
-var sortby = 4;
-var sortrev = 0;
+//var sortby = 4;
+//var sortrev = 0;
 
-function sorter(a, b)
-{
-	var aa, bb, ax, bx, i;
+//function sorter(a, b)
+//{
+//	var aa, bb, ax, bx, i;
+//
+//	if (sortrev) {
+//		bb = b;
+//		b = a;
+//		a = bb;
+//	}
+//	switch (sortby) {
+//	case 0:
+//		aa = parseInt(a.wanPorts);
+//		bb = parseInt(a.wanPorts);
+//		if (aa < bb) return -1;
+//		if (aa > bb) return 1;
+//		break;
+//	case 1:
+//		aa = parseInt(a.lanPorts);
+//		bb = parseInt(a.lanPorts);
+//		if (aa < bb) return -1;
+//		if (aa > bb) return 1;
+//		break;
+//	case 2:
+//		aa = (a.lanIP + '....').split('.');
+//		bb = (b.lanIP + '....').split('.');
+//		for (i = 0; i < 4; ++i) {
+//			ax = parseInt('0' + aa[i]);
+//			bx = parseInt('0' + bb[i]);
+//			if (ax < bx) return -1;
+//			if (ax > bx) return 1;
+//		}
+//		break;
+//	case 3:
+//		if (a.proto < b.proto) return -1;
+//		if (a.proto > b.proto) return 1;
+//		break;
+//	}
+//	if (a.desc < b.desc) return -1;
+//	if (a.desc > b.desc) return 1;
+//	return 0;
+//}
 
-	if (sortrev) {
-		bb = b;
-		b = a;
-		a = bb;
-	}
-	switch (sortby) {
-	case 0:
-		aa = parseInt(a.wanPorts);
-		bb = parseInt(a.wanPorts);
-		if (aa < bb) return -1;
-		if (aa > bb) return 1;
-		break;
-	case 1:
-		aa = parseInt(a.lanPorts);
-		bb = parseInt(a.lanPorts);
-		if (aa < bb) return -1;
-		if (aa > bb) return 1;
-		break;
-	case 2:
-		aa = (a.lanIP + '....').split('.');
-		bb = (b.lanIP + '....').split('.');
-		for (i = 0; i < 4; ++i) {
-			ax = parseInt('0' + aa[i]);
-			bx = parseInt('0' + bb[i]);
-			if (ax < bx) return -1;
-			if (ax > bx) return 1;
-		}
-		break;
-	case 3:
-		if (a.proto < b.proto) return -1;
-		if (a.proto > b.proto) return 1;
-		break;
-	}
-	if (a.desc < b.desc) return -1;
-	if (a.desc > b.desc) return 1;
-	return 0;
-}
-
-function resort(by)
-{
-	if (sortby == by) sortrev ^= 1; else sortrev = 0;
-	sortby = by;
-	data.sort(sorter);
-	show();
-}
+//function resort(by)
+//{
+//	if (sortby == by) sortrev ^= 1; else sortrev = 0;
+//	sortby = by;
+//	data.sort(sorter);
+//	show();
+//}
 
 function show()
 {
@@ -126,7 +126,7 @@ function makeTable()
 {
 	var s;
 	s = "<table class='ta' cellspacing='1'>";
-	s += "<tr title='Click to order column'><th><a href='Javascript:resort(0)'>From (WAN)</a></th><th><a href='Javascript:resort(1)'>To (LAN)</a></th><th><a href='Javascript:resort(2)'>IP Address</a></th><th><a href='Javascript:resort(3)'>Proto</a></th><th><a href='Javascript:resort(4)'>Description</a></th></tr>";
+	s += "<tr><th>From (WAN)</th><th>To (LAN)</th><th>IP Address</th><th>Proto</th><th>Description</th></tr>";
 	s += "<tr><tr/><tr><tr/><tr><tr/>";
 	for (var i = 0; i < data.length; ++i) {
 		var e = data[i];
@@ -136,7 +136,7 @@ function makeTable()
 			" title='Click to delete entry'><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th></tr>";
 	}
 	if (data.length == 0) {
-		s += "<tr><th colspan=5 align='center' valign='center' class='row0'>- No Forward -</th></tr>";
+		s += "<tr><th colspan=5 align='center' valign='center' class='row0'>- No Forwards -</th></tr>";
 	}
 	s += "</table><br>";
 
@@ -183,7 +183,7 @@ parseForwards();
 								<% nvram_invmatch("sipgate","1","-->"); %>
 								<li><a href="Firewall.asp">Security</a></li>
 								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
-								<li class="current"><span>Applications&nbsp;&amp;&nbsp;Gaming</span>
+								<li class="current"><a class="current" href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a>
 									<div id="menuSub">
 										<ul id="menuSubList"> 
 											<li><a href="Forward.asp">Port Range Forward</a></li>
@@ -256,16 +256,10 @@ parseForwards();
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
-						<!--
 						<dl>
 							<dt class="term">UPnP Service:</dt>
-							<dd class="definition">Allows applications to automatically setup port forwardings. Click an entry to Delete.</dd>
-							<dt class="term">Clear port forwards at startup:</dt>
-							<dd class="definition">If enabled, all UPnP port forwardings are deleted when the router starts up.</dd>
-							<dt class="term">Send presentation URL:</dt>
-							<dd class="definition">If enabled, a presentation url tag is sent with the device description. This allows the router to show up in Windows' My Network Places. When enabling this option you may need to reboot your PC.</dd>
+							<dd class="definition">Allows applications to automatically setup port forwardings. Click an entry to delete.</dd>
 						</dl>
-						-->
 						<br/>
 						<a target="_blank" href="help/HUPnP.asp">More...</a>
 					</div>
