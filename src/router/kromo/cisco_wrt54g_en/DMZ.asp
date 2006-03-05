@@ -93,6 +93,7 @@ function init() {
                 	   <fieldset>
                 	   <legend>DMZ</legend>
                 	     <div class="setting">
+                	       <div class="label">Sart DMZ</div>
                 	       <input type="radio" value="1" name="dmz_enable" onclick="SelDMZ(this.form,1)" <% nvram_match("dmz_enable","1","checked"); %>>Enable</input>
                 	       <input type="radio" value="0" name="dmz_enable" onclick="SelDMZ(this.form,0)" <% nvram_match("dmz_enable","0","checked"); %>>Disable</input>
                 	     </div>
