@@ -20,7 +20,7 @@
 /* #undef HAVE_LIBCRYPT */
 
 /* Define to 1 if you have the `ghttp' library (-lghttp). */
-#define HAVE_LIBGHTTP 1
+/* #undef HAVE_LIBGHTTP */
 
 /* Define to 1 if you have the <memory.h> header file. */
 #define HAVE_MEMORY_H 1
