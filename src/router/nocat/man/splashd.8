@@ -1,0 +1,52 @@
+.\" splashd - NoCatSplash gateway daemon
+.\" This manual page is copyright 2005 Keegan Quinn.
+
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2, or (at your option)
+.\" any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+.TH splashd 8 "January 2005"
+.SH NAME
+splashd \- NoCatSplash gateway daemon
+
+.SH SYNOPSIS
+.B splashd
+
+.SH DESCRIPTION
+.B splashd
+is the NoCatSplash gateway daemon. At
+startup time, it reads and parses
+.B nocat.conf
+then falls into the background to accept connections. Currently
+the only supported command-line option is
+.B -D
+which forces splashd to run in the foreground.
+
+.SH FILES
+.TP
+.I /etc/nocat.conf 
+Configuration file.
+
+.SH SEE ALSO
+.BR nocat.conf(5)
+
+.BR http://nocat.net/
+
+.SH COPYRIGHT
+
+NoCatSplash is copyright (c) 2004 - 2005 Schuyler Erle <schuyler@nocat.net> and
+Rob Flickenger <rob@nocat.net>, and is distributed under the GNU Public License
+v2 or better.
+
+This manual page is copyright 2005 Keegan Quinn.
+
