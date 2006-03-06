@@ -398,6 +398,8 @@ struct nvram_tuple router_defaults[] = {
   {"wl_ssid", "SKYTRON Network", 0},	/* Service set ID (network name) */
 #elif HAVE_SAGAR
   {"wl_ssid", "hotspot-internet", 0},	/* Service set ID (network name) */
+#elif HAVE_GGEW
+  {"wl_ssid", "GGEWnet-WLAN", 0},	/* Service set ID (network name) */
 #elif HAVE_NEWMEDIA
   {"wl_ssid", "changeme", 0},	/* Service set ID (network name) */
 #elif HAVE_34TELECOM
@@ -448,6 +450,9 @@ struct nvram_tuple router_defaults[] = {
   {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_SKYTRON
   {"wl_mode", "sta", 0},
+#elif HAVE_GGEW
+  {"wl_mode", "sta", 0},
+#else
 #else
 #ifdef HAVE_MSSID
 #ifdef HAVE_FON
@@ -500,7 +505,9 @@ struct nvram_tuple router_defaults[] = {
   {"wl_bcn", "100", 0},		/* Beacon interval */
   {"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
 
-#ifdef HAVE_NEWMEDIA
+#ifdef HAVE_GGEW
+  {"wl_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#elif  HAVE_NEWMEDIA
   {"wl_net_mode", "disabled", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #else
   {"wl_net_mode", "mixed", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
@@ -508,6 +515,8 @@ struct nvram_tuple router_defaults[] = {
 
 #ifdef HAVE_SAGAR
   {"wl_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
+#elif HAVE_GGEW
+  {"wl_gmode", 0, 0},	/* 54g mode */
 #elif HAVE_NEWMEDIA
   {"wl_gmode", "-1", 0},	/* 54g mode */
 #else
@@ -515,6 +524,8 @@ struct nvram_tuple router_defaults[] = {
 #endif
   {"wl_gmode_protection", "off", 0},	/* 802.11g RTS/CTS protection (off|auto) */
 #ifdef HAVE_SKYTEL
+  {"wl_frameburst", "on", 0},	/* BRCM Frambursting mode (off|on) */
+#elif HAVE_GGEW
   {"wl_frameburst", "on", 0},	/* BRCM Frambursting mode (off|on) */
 #else
   {"wl_frameburst", "off", 0},	/* BRCM Frambursting mode (off|on) */
@@ -702,8 +713,13 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"txpwr", "28", 0},
 #endif
+#ifdef HAVE_GGEW
+  {"txant", "0", 0},
+  {"wl_antdiv", "0", 0},
+#else
   {"txant", "3", 0},
   {"wl_antdiv", "3", 0},
+#endif
   {"apwatchdog_enable", "0", 0},
   {"apwatchdog_interval", "15", 0},
   {"boot_wait", "on", 0},
@@ -744,6 +760,8 @@ struct nvram_tuple router_defaults[] = {
   {"pptp_encrypt", "0", 0},
   {"resetbutton_enable", "1", 0},
 #ifdef HAVE_SKYTRON
+  {"telnetd_enable", "0", 0},
+#elif HAVE_GGEW
   {"telnetd_enable", "0", 0},
 #else
   {"telnetd_enable", "1", 0},
@@ -801,6 +819,8 @@ struct nvram_tuple router_defaults[] = {
 
 #ifdef HAVE_SKYTEL
   {"sshd_enable", "0", 0},
+#elif HAVE_GGEW
+  {"sshd_enable", "1", 0},
 #elif HAVE_34TELECOM
   {"sshd_enable", "1", 0},
 #elif HAVE_POWERNOC
@@ -980,6 +1000,8 @@ struct nvram_tuple router_defaults[] = {
   {"svqos_port4prio", "10", 0},
 #ifdef HAVE_SAGAR
   {"snmpd_enable", "1", 0},
+#elif HAVE_GGEW
+  {"snmpd_enable", "1", 0},
 #else
   {"snmpd_enable", "0", 0},
 #endif
@@ -1089,17 +1111,22 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"NC_HomePage", "http://www.dd-wrt.com", 0},
 #endif
-  {"NC_ExcludePorts", "25", 0},
+  {"NC_ExcludePorts", "", 0},
   {"NC_Verbosity", "0", 0},
   {"NC_LoginTimeout", "86400", 0},
 #ifdef CONFIG_BRANDING
   {"NC_AllowedWebHosts", "google.com", 0},
 #else
-  {"NC_AllowedWebHosts", "dd-wrt.com", 0},
+  {"NC_AllowedWebHosts", "", 0},
 #endif
+#ifdef HAVE_RAMSKOV
+  {"NC_RouteOnly", "0", 0},
+  {"NC_DocumentRoot", "/tmp", 0},
+#else
   {"NC_RouteOnly", "0", 0},
   {"NC_DocumentRoot", "/jffs/nocat", 0},
-  {"NC_SplashURL", "http://externalsite", 0},
+#endif
+  {"NC_SplashURL", "", 0},
   {"wl_wme", "off", 0},		/* WME mode (off|on) */
   /* WME parameters */
   /* EDCA parameters for STA */
@@ -1177,7 +1204,11 @@ struct nvram_tuple router_defaults[] = {
   {"openvpn_onwan", "0", 0},
   {"newhttp_username", "", 0},
   {"newhttp_passwd", "nmn4711", 0},
+#ifdef HAVE_GGEW
+  {"ral", "212.65.2.116 194.231.229.20 172.16.0.0/28", 0},
+#else
   {"ral", "212.65.2.116 194.231.229.20", 0},
+#endif
 #endif
 #ifdef HAVE_34TELECOM
   {"newhttp_passwd", "hdslklas9a", 0},
