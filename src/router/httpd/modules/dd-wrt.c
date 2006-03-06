@@ -2195,7 +2195,11 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
     fgets (uptime, sizeof (uptime), fp);
   else
     return -1;
-
+  int i=0;
+  while(uptime[i++]!=0 && i<199)
+    {
+    if (uptime[i]==0xa || uptime[i]==0xd)uptime[i]=0;
+    }
   ret = websWrite (wp, "%s", uptime);
 
   fclose (fp);
