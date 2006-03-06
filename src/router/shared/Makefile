@@ -35,6 +35,10 @@ ifeq ($(CONFIG_SILENCE),y)
   CFLAGS += -DHAVE_SILENCE
 endif
 
+ifeq ($(CONFIG_RAMSKOV),y)
+  CFLAGS += -DHAVE_RAMSKOV
+endif
+
 ifeq ($(CONFIG_RB500),y)
   CFLAGS += -DHAVE_RB500
 endif
@@ -51,6 +55,12 @@ endif
 ifeq ($(CONFIG_NEWMEDIA),y)
   CFLAGS += -DHAVE_NEWMEDIA
 endif
+
+ifeq ($(CONFIG_GGEW),y)
+  CFLAGS += -DHAVE_NEWMEDIA
+  CFLAGS += -DHAVE_GGEW
+endif
+
 
 ifeq ($(CONFIG_SAGAR),y)
   CFLAGS += -DHAVE_SAGAR
