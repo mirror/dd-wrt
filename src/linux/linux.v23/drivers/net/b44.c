@@ -152,11 +152,13 @@ static int b44_wait_bit(struct b44 *bp, unsigned long reg,
 		udelay(10);
 	}
 	if (i == timeout) {
+#ifdef DEBUG
 		printk(KERN_ERR PFX "%s: BUG!  Timeout waiting for bit %08x of register "
 		       "%lx to %s.\n",
 		       bp->dev->name,
 		       bit, reg,
 		       (clear ? "clear" : "set"));
+#endif
 		return -ENODEV;
 	}
 	return 0;
@@ -353,7 +355,7 @@ static void __b44_cam_write(struct b44 *bp, unsigned char *data, int index)
 
 static inline void __b44_disable_ints(struct b44 *bp)
 {
-	bw32(B44_IMASK, 0);
+	bw32(B44_IMASK, ISTAT_TO); /* leave the timeout interrupt active */
 }
 
 static void b44_disable_ints(struct b44 *bp)
@@ -880,6 +882,25 @@ static int b44_rx(struct b44 *bp, int budget)
 	return received;
 }
 
+
+static inline void __b44_reset(struct b44 *bp)
+{
+	spin_lock_irq(&bp->lock);
+	b44_halt(bp);
+	b44_init_rings(bp);
+	b44_init_hw(bp);
+	spin_unlock_irq(&bp->lock);
+
+	b44_enable_ints(bp);
+	netif_wake_queue(bp->dev);
+}
+
+static inline void __b44_set_timeout(struct b44 *bp, int timeout)
+{
+	/* Set timeout for Rx to two seconds after the last Tx */
+	bw32(B44_GPTIMER, timeout ? 2 * 125000000 : 0);
+}
+
 static int b44_poll(struct net_device *netdev, int *budget)
 {
 	struct b44 *bp = netdev->priv;
@@ -887,13 +908,13 @@ static int b44_poll(struct net_device *netdev, int *budget)
 
 	spin_lock_irq(&bp->lock);
 
-	if (bp->istat & (ISTAT_TX | ISTAT_TO)) {
+	if (bp->istat & ISTAT_TX) {
 		/* spin_lock(&bp->tx_lock); */
 		b44_tx(bp);
 		/* spin_unlock(&bp->tx_lock); */
 	}
 	spin_unlock_irq(&bp->lock);
-
+	
 	done = 1;
 	if (bp->istat & ISTAT_RX) {
 		int orig_budget = *budget;
@@ -911,23 +932,17 @@ static int b44_poll(struct net_device *netdev, int *budget)
 			done = 0;
 	}
 
-	if (bp->istat & ISTAT_ERRORS) {
-		spin_lock_irq(&bp->lock);
-		b44_halt(bp);
-		b44_init_rings(bp);
-		b44_init_hw(bp);
-		netif_wake_queue(bp->dev);
-		spin_unlock_irq(&bp->lock);
-		done = 1;
-	}
-
 	if (done) {
 		netif_rx_complete(netdev);
 		b44_enable_ints(bp);
 	}
 
+	if ((bp->core_unit == 1) && (bp->istat & (ISTAT_TX | ISTAT_RX)))
+		__b44_set_timeout(bp, (bp->istat & ISTAT_TX) ? 1 : 0);
+
 	return (done ? 0 : 1);
 }
+
 
 static irqreturn_t b44_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 {
@@ -947,6 +962,18 @@ static irqreturn_t b44_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	 */
 	istat &= imask;
 	if (istat) {
+		/* Workaround for the WL-500g WAN port hang */
+		if (istat & (ISTAT_TO | ISTAT_ERRORS)) {
+			/*
+			 * no rx before the watchdog timeout
+			 * reset the interface
+			 */
+			__b44_reset(bp);
+		} 
+		
+		if ((bp->core_unit == 1) && (bp->istat & (ISTAT_TX | ISTAT_RX)))
+			__b44_set_timeout(bp, (bp->istat & ISTAT_TX) ? 1 : 0);
+
 		handled = 1;
 		if (netif_rx_schedule_prep(dev)) {
 			/* NOTE: These writes are posted by the readback of
@@ -974,16 +1001,7 @@ static void b44_tx_timeout(struct net_device *dev)
 	printk(KERN_ERR PFX "%s: transmit timed out, resetting\n",
 	       dev->name);
 
-	spin_lock_irq(&bp->lock);
-
-	b44_halt(bp);
-	b44_init_rings(bp);
-	b44_init_hw(bp);
-
-	spin_unlock_irq(&bp->lock);
-
-	b44_enable_ints(bp);
-
+	__b44_reset(bp);
 	netif_wake_queue(dev);
 }
 
