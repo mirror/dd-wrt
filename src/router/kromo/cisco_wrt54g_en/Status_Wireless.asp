@@ -47,8 +47,10 @@ function popup_survey() {
                                  <li><a href="Status_Router.asp">Router</a></li>
                                  <li><a href="Status_Lan.asp">LAN</a></li>
                                  <li><span>Wireless</span></li>
-                                 <li><a href="Info.htm">Sys-Info</a></li>
-				 <% show_sputnik(); %>
+                                 <% nvram_invmatch("status_auth","1","<!--"); %>
+								 <li><a href="Info.htm">Sys-Info</a></li>
+								 <% nvram_invmatch("status_auth","1","-->"); %>
+								 <% show_sputnik(); %>
                               </ul>
                            </div>
                         </li>
