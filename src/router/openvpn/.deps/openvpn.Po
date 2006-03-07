@@ -146,7 +146,8 @@ openvpn.o openvpn.o: openvpn.c config.h syshead.h \
   ../openssl/include/openssl/conf.h session_id.h reliable.h lzo.h \
   ../lzo/include/lzoutil.h ../lzo/include/lzoconf.h \
   ../lzo/include/lzo1x.h fragment.h shaper.h mbuf.h pool.h forward.h \
-  occ.h ping.h multi.h memdbg.h forward-inline.h
+  occ.h ping.h multi.h mroute.h list.h schedule.h mudp.h mtcp.h memdbg.h \
+  forward-inline.h
 
 config.h:
 
@@ -569,6 +570,16 @@ occ.h:
 ping.h:
 
 multi.h:
+
+mroute.h:
+
+list.h:
+
+schedule.h:
+
+mudp.h:
+
+mtcp.h:
 
 memdbg.h:
 

@@ -284,7 +284,6 @@ start_single_service (void)
       startstop("wshaper");
       startstop("httpd");
 
-
 #ifdef HAVE_WOL
       startstop("wol");
 #endif
