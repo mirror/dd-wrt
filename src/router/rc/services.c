@@ -97,7 +97,6 @@ start_services (void)
   start_service("httpd");
   start_service("dhcpd");
   start_service("dnsmasq");
-  start_service("upnp");
   start_service("nas_lan");
 #ifdef HAVE_MSSID
   start_service("guest_nas");
@@ -105,7 +104,9 @@ start_services (void)
   start_service("zebra");
   start_service("wland");
   start_service("wshaper");
-  start_service("cron");
+  start_service("cron");  
+  start_service("upnp");
+
   
 #ifdef HAVE_PPTPD
   start_service("pptpd");
