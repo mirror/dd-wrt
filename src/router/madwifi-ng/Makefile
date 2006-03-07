@@ -100,15 +100,6 @@ FILES=	ath_hal COPYRIGHT ath include Makefile Makefile.inc \
 	README release.h share net80211 ath_rate
 HAL_TAG=ATH_HAL_20030802
 
-release:
-	DATE=`date +'%Y%m%d'`; TAG="MADWIFI_$${DATE}"; DIR="madwifi-$${DATE}"; \
-	cvs tag -F $${TAG} ${FILES}; \
-	rm -rf $${DIR}; mkdir $${DIR}; \
-	cvs export -d $${DIR} -r $${TAG} linux; \
-	(cd $${DIR}; cvs export -r ${HAL_TAG} hal); \
-	tar zcf $${DIR}.tgz --exclude=CVS --exclude=hal/freebsd $${DIR}; \
-	rm -rf $${DIR}
-
 clean:
 	for i in ${DIRS_MODULES}; do \
 		$(MAKE) -C $$i clean; \

@@ -2,9 +2,9 @@
 # Generated automatically by configure.
 # Run this file to recreate the current configuration.
 # This directory was configured as follows,
-# on host dbserver:
+# on host colinux:
 #
-# ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
+# ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
 #
 # Compiler output produced by configure, useful for debugging
 # configure, is in ./config.log if it exists.
@@ -14,8 +14,8 @@ for ac_option
 do
   case "$ac_option" in
   -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
-    echo "running ${CONFIG_SHELL-/bin/sh} ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion"
-    exec ${CONFIG_SHELL-/bin/sh} ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion ;;
+    echo "running ${CONFIG_SHELL-/bin/sh} ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion"
+    exec ${CONFIG_SHELL-/bin/sh} ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion ;;
   -version | --version | --versio | --versi | --vers | --ver | --ve | --v)
     echo "./config.status generated by autoconf version 2.13"
     exit 0 ;;
@@ -49,7 +49,7 @@ sed 's/%@/@@/; s/@%/@@/; s/%g$/@g/; /@g$/s/[\\&%]/\\&/g;
 /^[ 	]*VPATH[ 	]*=[^:]*$/d
 
 s%@SHELL@%/bin/sh%g
-s%@CFLAGS@%-Os -mtune=mips32 -mips32 -funit-at-a-time -Delf%g
+s%@CFLAGS@%-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -Delf%g
 s%@CPPFLAGS@%%g
 s%@CXXFLAGS@%%g
 s%@FFLAGS@%%g
@@ -71,7 +71,7 @@ s%@includedir@%${prefix}/include%g
 s%@oldincludedir@%/usr/include%g
 s%@infodir@%${prefix}/info%g
 s%@mandir@%${prefix}/man%g
-s%@CONFIGURE_OPTIONS@%" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc"%g
+s%@CONFIGURE_OPTIONS@%" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc"%g
 s%@LIBTOOLFLAGS@%%g
 s%@HAVE_DMALLOC_H@%%g
 s%@WRAPLIBS@%%g
@@ -106,7 +106,7 @@ s%@SET_MAKE@%%g
 s%@PSPROG@%/bin/ps%g
 s%@PERLPROG@%/usr/bin/perl%g
 s%@WHOAMI@%whoami%g
-s%@SED@%/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed%g
+s%@SED@%/home/openwrt/workspace/mikrotik/toolchain/bin//sed%g
 s%@AUTOCONF@%:%g
 s%@AUTOHEADER@%:%g
 s%@UNAMEPROG@%/bin/uname%g
@@ -118,7 +118,7 @@ s%@target_alias@%mipsel-unknown-elf%g
 s%@target_cpu@%mipsel%g
 s%@target_vendor@%unknown%g
 s%@target_os@%elf%g
-s%@CCPATH@%/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//mipsel-linux-uclibc-gcc%g
+s%@CCPATH@%/home/openwrt/workspace/mikrotik/toolchain/bin//mipsel-linux-uclibc-gcc%g
 s%@EXTRACPPFLAGS@%-x c%g
 s%@SNMPCONFPATH@%/tmp/snmp%g
 s%@transport_hdr_list@%snmpUDPDomain.h snmpCallbackDomain.h %g
@@ -142,7 +142,7 @@ s%@PERLTARGS@%%g
 s%@PERLINSTALLTARGS@%%g
 s%@PERLARGS@%%g
 s%@EMBEDPERLINSTALL@%%g
-s%@LPSTAT_PATH@%/usr/bin/lpstat%g
+s%@LPSTAT_PATH@%%g
 s%@PSCMD@%/bin/ps -e%g
 s%@ALLOCA@%%g
 s%@LIBOBJS@% memcmp.o%g
@@ -294,9 +294,9 @@ for ac_file in .. $CONFIG_HEADERS; do if test "x$ac_file" != x..; then
   cat $ac_file_inputs > conftest.in
 
   cat > conftest.frag <<CEOF
-${ac_dA}CONFIGURE_OPTIONS${ac_dB}CONFIGURE_OPTIONS${ac_dC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_dD}
-${ac_uA}CONFIGURE_OPTIONS${ac_uB}CONFIGURE_OPTIONS${ac_uC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_uD}
-${ac_eA}CONFIGURE_OPTIONS${ac_eB}CONFIGURE_OPTIONS${ac_eC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_eD}
+${ac_dA}CONFIGURE_OPTIONS${ac_dB}CONFIGURE_OPTIONS${ac_dC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_dD}
+${ac_uA}CONFIGURE_OPTIONS${ac_uB}CONFIGURE_OPTIONS${ac_uC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_uD}
+${ac_eA}CONFIGURE_OPTIONS${ac_eB}CONFIGURE_OPTIONS${ac_eC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_eD}
 ${ac_dA}SNMP_ALWAYS_DEBUG${ac_dB}SNMP_ALWAYS_DEBUG${ac_dC}1${ac_dD}
 ${ac_uA}SNMP_ALWAYS_DEBUG${ac_uB}SNMP_ALWAYS_DEBUG${ac_uC}1${ac_uD}
 ${ac_eA}SNMP_ALWAYS_DEBUG${ac_eB}SNMP_ALWAYS_DEBUG${ac_eC}1${ac_eD}
@@ -657,21 +657,6 @@ CEOF
 ${ac_dA}HAVE_SEARCH_H${ac_dB}HAVE_SEARCH_H${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SEARCH_H${ac_uB}HAVE_SEARCH_H${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SEARCH_H${ac_eB}HAVE_SEARCH_H${ac_eC}1${ac_eD}
-${ac_dA}LPSTAT_PATH${ac_dB}LPSTAT_PATH${ac_dC}"/usr/bin/lpstat"${ac_dD}
-${ac_uA}LPSTAT_PATH${ac_uB}LPSTAT_PATH${ac_uC}"/usr/bin/lpstat"${ac_uD}
-${ac_eA}LPSTAT_PATH${ac_eB}LPSTAT_PATH${ac_eC}"/usr/bin/lpstat"${ac_eD}
-${ac_dA}HAVE_LPSTAT${ac_dB}HAVE_LPSTAT${ac_dC}1${ac_dD}
-${ac_uA}HAVE_LPSTAT${ac_uB}HAVE_LPSTAT${ac_uC}1${ac_uD}
-${ac_eA}HAVE_LPSTAT${ac_eB}HAVE_LPSTAT${ac_eC}1${ac_eD}
-${ac_dA}HAVE_PRINTCAP${ac_dB}HAVE_PRINTCAP${ac_dC}1${ac_dD}
-${ac_uA}HAVE_PRINTCAP${ac_uB}HAVE_PRINTCAP${ac_uC}1${ac_uD}
-${ac_eA}HAVE_PRINTCAP${ac_eB}HAVE_PRINTCAP${ac_eC}1${ac_eD}
-CEOF
-  sed -f conftest.frag conftest.in > conftest.out
-  rm -f conftest.in
-  mv conftest.out conftest.in
-
-  cat > conftest.frag <<CEOF
 ${ac_dA}USE_INTERNAL_MD5${ac_dB}USE_INTERNAL_MD5${ac_dC}1${ac_dD}
 ${ac_uA}USE_INTERNAL_MD5${ac_uB}USE_INTERNAL_MD5${ac_uC}1${ac_uD}
 ${ac_eA}USE_INTERNAL_MD5${ac_eB}USE_INTERNAL_MD5${ac_eC}1${ac_eD}
@@ -681,15 +666,15 @@ ${ac_eA}TIME_WITH_SYS_TIME${ac_eB}TIME_WITH_SYS_TIME${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SOCKLEN_T${ac_dB}HAVE_SOCKLEN_T${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SOCKLEN_T${ac_uB}HAVE_SOCKLEN_T${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SOCKLEN_T${ac_eB}HAVE_SOCKLEN_T${ac_eC}1${ac_eD}
-${ac_dA}HAVE_IN_ADDR_T${ac_dB}HAVE_IN_ADDR_T${ac_dC}1${ac_dD}
-${ac_uA}HAVE_IN_ADDR_T${ac_uB}HAVE_IN_ADDR_T${ac_uC}1${ac_uD}
-${ac_eA}HAVE_IN_ADDR_T${ac_eB}HAVE_IN_ADDR_T${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_IN_ADDR_T${ac_dB}HAVE_IN_ADDR_T${ac_dC}1${ac_dD}
+${ac_uA}HAVE_IN_ADDR_T${ac_uB}HAVE_IN_ADDR_T${ac_uC}1${ac_uD}
+${ac_eA}HAVE_IN_ADDR_T${ac_eB}HAVE_IN_ADDR_T${ac_eC}1${ac_eD}
 ${ac_dA}PSCMD${ac_dB}PSCMD${ac_dC}"/bin/ps -e"${ac_dD}
 ${ac_uA}PSCMD${ac_uB}PSCMD${ac_uC}"/bin/ps -e"${ac_uD}
 ${ac_eA}PSCMD${ac_eB}PSCMD${ac_eC}"/bin/ps -e"${ac_eD}
@@ -699,15 +684,15 @@ ${ac_eA}HAVE_ALLOCA_H${ac_eB}HAVE_ALLOCA_H${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_ALLOCA${ac_dB}HAVE_ALLOCA${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_ALLOCA${ac_uB}HAVE_ALLOCA${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_ALLOCA${ac_eB}HAVE_ALLOCA${ac_eC}1${ac_eD}
-${ac_dA}RETSIGTYPE${ac_dB}RETSIGTYPE${ac_dC}void${ac_dD}
-${ac_uA}RETSIGTYPE${ac_uB}RETSIGTYPE${ac_uC}void${ac_uD}
-${ac_eA}RETSIGTYPE${ac_eB}RETSIGTYPE${ac_eC}void${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}RETSIGTYPE${ac_dB}RETSIGTYPE${ac_dC}void${ac_dD}
+${ac_uA}RETSIGTYPE${ac_uB}RETSIGTYPE${ac_uC}void${ac_uD}
+${ac_eA}RETSIGTYPE${ac_eB}RETSIGTYPE${ac_eC}void${ac_eD}
 ${ac_dA}HAVE_GETMNTENT${ac_dB}HAVE_GETMNTENT${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_GETMNTENT${ac_uB}HAVE_GETMNTENT${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_GETMNTENT${ac_eB}HAVE_GETMNTENT${ac_eC}1${ac_eD}
@@ -717,15 +702,15 @@ ${ac_eA}HAVE_SETMNTENT${ac_eB}HAVE_SETMNTENT${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_GETHOSTNAME${ac_dB}HAVE_GETHOSTNAME${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_GETHOSTNAME${ac_uB}HAVE_GETHOSTNAME${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_GETHOSTNAME${ac_eB}HAVE_GETHOSTNAME${ac_eC}1${ac_eD}
-${ac_dA}HAVE_UNAME${ac_dB}HAVE_UNAME${ac_dC}1${ac_dD}
-${ac_uA}HAVE_UNAME${ac_uB}HAVE_UNAME${ac_uC}1${ac_uD}
-${ac_eA}HAVE_UNAME${ac_eB}HAVE_UNAME${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_UNAME${ac_dB}HAVE_UNAME${ac_dC}1${ac_dD}
+${ac_uA}HAVE_UNAME${ac_uB}HAVE_UNAME${ac_uC}1${ac_uD}
+${ac_eA}HAVE_UNAME${ac_eB}HAVE_UNAME${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_GETTIMEOFDAY${ac_dB}HAVE_GETTIMEOFDAY${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_GETTIMEOFDAY${ac_uB}HAVE_GETTIMEOFDAY${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_GETTIMEOFDAY${ac_eB}HAVE_GETTIMEOFDAY${ac_eC}1${ac_eD}
@@ -735,15 +720,15 @@ ${ac_eA}HAVE_SELECT${ac_eB}HAVE_SELECT${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SOCKET${ac_dB}HAVE_SOCKET${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SOCKET${ac_uB}HAVE_SOCKET${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SOCKET${ac_eB}HAVE_SOCKET${ac_eC}1${ac_eD}
-${ac_dA}HAVE_STRTOL${ac_dB}HAVE_STRTOL${ac_dC}1${ac_dD}
-${ac_uA}HAVE_STRTOL${ac_uB}HAVE_STRTOL${ac_uC}1${ac_uD}
-${ac_eA}HAVE_STRTOL${ac_eB}HAVE_STRTOL${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STRTOL${ac_dB}HAVE_STRTOL${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRTOL${ac_uB}HAVE_STRTOL${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRTOL${ac_eB}HAVE_STRTOL${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_STRTOUL${ac_dB}HAVE_STRTOUL${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_STRTOUL${ac_uB}HAVE_STRTOUL${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_STRTOUL${ac_eB}HAVE_STRTOUL${ac_eC}1${ac_eD}
@@ -753,15 +738,15 @@ ${ac_eA}HAVE_STRLCPY${ac_eB}HAVE_STRLCPY${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_STRCHR${ac_dB}HAVE_STRCHR${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_STRCHR${ac_uB}HAVE_STRCHR${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_STRCHR${ac_eB}HAVE_STRCHR${ac_eC}1${ac_eD}
-${ac_dA}HAVE_STRDUP${ac_dB}HAVE_STRDUP${ac_dC}1${ac_dD}
-${ac_uA}HAVE_STRDUP${ac_uB}HAVE_STRDUP${ac_uC}1${ac_uD}
-${ac_eA}HAVE_STRDUP${ac_eB}HAVE_STRDUP${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STRDUP${ac_dB}HAVE_STRDUP${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRDUP${ac_uB}HAVE_STRDUP${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRDUP${ac_eB}HAVE_STRDUP${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_MEMCPY${ac_dB}HAVE_MEMCPY${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_MEMCPY${ac_uB}HAVE_MEMCPY${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_MEMCPY${ac_eB}HAVE_MEMCPY${ac_eC}1${ac_eD}
@@ -771,15 +756,15 @@ ${ac_eA}HAVE_MEMMOVE${ac_eB}HAVE_MEMMOVE${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_INDEX${ac_dB}HAVE_INDEX${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_INDEX${ac_uB}HAVE_INDEX${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_INDEX${ac_eB}HAVE_INDEX${ac_eC}1${ac_eD}
-${ac_dA}HAVE_BCOPY${ac_dB}HAVE_BCOPY${ac_dC}1${ac_dD}
-${ac_uA}HAVE_BCOPY${ac_uB}HAVE_BCOPY${ac_uC}1${ac_uD}
-${ac_eA}HAVE_BCOPY${ac_eB}HAVE_BCOPY${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_BCOPY${ac_dB}HAVE_BCOPY${ac_dC}1${ac_dD}
+${ac_uA}HAVE_BCOPY${ac_uB}HAVE_BCOPY${ac_uC}1${ac_uD}
+${ac_eA}HAVE_BCOPY${ac_eB}HAVE_BCOPY${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_STRCASESTR${ac_dB}HAVE_STRCASESTR${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_STRCASESTR${ac_uB}HAVE_STRCASESTR${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_STRCASESTR${ac_eB}HAVE_STRCASESTR${ac_eC}1${ac_eD}
@@ -789,15 +774,15 @@ ${ac_eA}HAVE_REGCOMP${ac_eB}HAVE_REGCOMP${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SIGNAL${ac_dB}HAVE_SIGNAL${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SIGNAL${ac_uB}HAVE_SIGNAL${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SIGNAL${ac_eB}HAVE_SIGNAL${ac_eC}1${ac_eD}
-${ac_dA}HAVE_SETSID${ac_dB}HAVE_SETSID${ac_dC}1${ac_dD}
-${ac_uA}HAVE_SETSID${ac_uB}HAVE_SETSID${ac_uC}1${ac_uD}
-${ac_eA}HAVE_SETSID${ac_eB}HAVE_SETSID${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SETSID${ac_dB}HAVE_SETSID${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SETSID${ac_uB}HAVE_SETSID${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SETSID${ac_eB}HAVE_SETSID${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SIGSET${ac_dB}HAVE_SIGSET${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SIGSET${ac_uB}HAVE_SIGSET${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SIGSET${ac_eB}HAVE_SIGSET${ac_eC}1${ac_eD}
@@ -807,15 +792,15 @@ ${ac_eA}HAVE_SIGBLOCK${ac_eB}HAVE_SIGBLOCK${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SIGHOLD${ac_dB}HAVE_SIGHOLD${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SIGHOLD${ac_uB}HAVE_SIGHOLD${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SIGHOLD${ac_eB}HAVE_SIGHOLD${ac_eC}1${ac_eD}
-${ac_dA}HAVE_STRERROR${ac_dB}HAVE_STRERROR${ac_dC}1${ac_dD}
-${ac_uA}HAVE_STRERROR${ac_uB}HAVE_STRERROR${ac_uC}1${ac_uD}
-${ac_eA}HAVE_STRERROR${ac_eB}HAVE_STRERROR${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STRERROR${ac_dB}HAVE_STRERROR${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STRERROR${ac_uB}HAVE_STRERROR${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STRERROR${ac_eB}HAVE_STRERROR${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SETENV${ac_dB}HAVE_SETENV${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SETENV${ac_uB}HAVE_SETENV${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SETENV${ac_eB}HAVE_SETENV${ac_eC}1${ac_eD}
@@ -825,15 +810,15 @@ ${ac_eA}HAVE_VSNPRINTF${ac_eB}HAVE_VSNPRINTF${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SNPRINTF${ac_dB}HAVE_SNPRINTF${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SNPRINTF${ac_uB}HAVE_SNPRINTF${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SNPRINTF${ac_eB}HAVE_SNPRINTF${ac_eC}1${ac_eD}
-${ac_dA}HAVE_SIGACTION${ac_dB}HAVE_SIGACTION${ac_dC}1${ac_dD}
-${ac_uA}HAVE_SIGACTION${ac_uB}HAVE_SIGACTION${ac_uC}1${ac_uD}
-${ac_eA}HAVE_SIGACTION${ac_eB}HAVE_SIGACTION${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SIGACTION${ac_dB}HAVE_SIGACTION${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SIGACTION${ac_uB}HAVE_SIGACTION${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SIGACTION${ac_eB}HAVE_SIGACTION${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SNPRINTF${ac_dB}HAVE_SNPRINTF${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SNPRINTF${ac_uB}HAVE_SNPRINTF${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SNPRINTF${ac_eB}HAVE_SNPRINTF${ac_eC}1${ac_eD}
@@ -843,15 +828,15 @@ ${ac_eA}HAVE_STRTOUL${ac_eB}HAVE_STRTOUL${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_RANDOM${ac_dB}HAVE_RANDOM${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_RANDOM${ac_uB}HAVE_RANDOM${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_RANDOM${ac_eB}HAVE_RANDOM${ac_eC}1${ac_eD}
-${ac_dA}HAVE_LRAND48${ac_dB}HAVE_LRAND48${ac_dC}1${ac_dD}
-${ac_uA}HAVE_LRAND48${ac_uB}HAVE_LRAND48${ac_uC}1${ac_uD}
-${ac_eA}HAVE_LRAND48${ac_eB}HAVE_LRAND48${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_LRAND48${ac_dB}HAVE_LRAND48${ac_dC}1${ac_dD}
+${ac_uA}HAVE_LRAND48${ac_uB}HAVE_LRAND48${ac_uC}1${ac_uD}
+${ac_eA}HAVE_LRAND48${ac_eB}HAVE_LRAND48${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_RAND${ac_dB}HAVE_RAND${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_RAND${ac_uB}HAVE_RAND${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_RAND${ac_eB}HAVE_RAND${ac_eC}1${ac_eD}
@@ -861,15 +846,15 @@ ${ac_eA}HAVE_EXECV${ac_eB}HAVE_EXECV${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SYSTEM${ac_dB}HAVE_SYSTEM${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SYSTEM${ac_uB}HAVE_SYSTEM${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SYSTEM${ac_eB}HAVE_SYSTEM${ac_eC}1${ac_eD}
-${ac_dA}HAVE_FORK${ac_dB}HAVE_FORK${ac_dC}1${ac_dD}
-${ac_uA}HAVE_FORK${ac_uB}HAVE_FORK${ac_uC}1${ac_uD}
-${ac_eA}HAVE_FORK${ac_eB}HAVE_FORK${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_FORK${ac_dB}HAVE_FORK${ac_dC}1${ac_dD}
+${ac_uA}HAVE_FORK${ac_uB}HAVE_FORK${ac_uC}1${ac_uD}
+${ac_eA}HAVE_FORK${ac_eB}HAVE_FORK${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_GETPID${ac_dB}HAVE_GETPID${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_GETPID${ac_uB}HAVE_GETPID${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_GETPID${ac_eB}HAVE_GETPID${ac_eC}1${ac_eD}
@@ -879,15 +864,15 @@ ${ac_eA}HAVE_STRNCASECMP${ac_eB}HAVE_STRNCASECMP${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_GETADDRINFO${ac_dB}HAVE_GETADDRINFO${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_GETADDRINFO${ac_uB}HAVE_GETADDRINFO${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_GETADDRINFO${ac_eB}HAVE_GETADDRINFO${ac_eC}1${ac_eD}
-${ac_dA}HAVE_STATVFS${ac_dB}HAVE_STATVFS${ac_dC}1${ac_dD}
-${ac_uA}HAVE_STATVFS${ac_uB}HAVE_STATVFS${ac_uC}1${ac_uD}
-${ac_eA}HAVE_STATVFS${ac_eB}HAVE_STATVFS${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_STATVFS${ac_dB}HAVE_STATVFS${ac_dC}1${ac_dD}
+${ac_uA}HAVE_STATVFS${ac_uB}HAVE_STATVFS${ac_uC}1${ac_uD}
+${ac_eA}HAVE_STATVFS${ac_eB}HAVE_STATVFS${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_STATFS${ac_dB}HAVE_STATFS${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_STATFS${ac_uB}HAVE_STATFS${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_STATFS${ac_eB}HAVE_STATFS${ac_eC}1${ac_eD}
@@ -897,15 +882,15 @@ ${ac_eA}HAVE_GETDTABLESIZE${ac_eB}HAVE_GETDTABLESIZE${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_USLEEP${ac_dB}HAVE_USLEEP${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_USLEEP${ac_uB}HAVE_USLEEP${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_USLEEP${ac_eB}HAVE_USLEEP${ac_eC}1${ac_eD}
-${ac_dA}HAVE_SETLOCALE${ac_dB}HAVE_SETLOCALE${ac_dC}1${ac_dD}
-${ac_uA}HAVE_SETLOCALE${ac_uB}HAVE_SETLOCALE${ac_uC}1${ac_uD}
-${ac_eA}HAVE_SETLOCALE${ac_eB}HAVE_SETLOCALE${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SETLOCALE${ac_dB}HAVE_SETLOCALE${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SETLOCALE${ac_uB}HAVE_SETLOCALE${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SETLOCALE${ac_eB}HAVE_SETLOCALE${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_TCGETATTR${ac_dB}HAVE_TCGETATTR${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_TCGETATTR${ac_uB}HAVE_TCGETATTR${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_TCGETATTR${ac_eB}HAVE_TCGETATTR${ac_eC}1${ac_eD}
@@ -915,15 +900,15 @@ ${ac_eA}HAVE_IF_NAMEINDEX${ac_eB}HAVE_IF_NAMEINDEX${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_IF_FREENAMEINDEX${ac_dB}HAVE_IF_FREENAMEINDEX${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_IF_FREENAMEINDEX${ac_uB}HAVE_IF_FREENAMEINDEX${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_IF_FREENAMEINDEX${ac_eB}HAVE_IF_FREENAMEINDEX${ac_eC}1${ac_eD}
-${ac_dA}HAVE_GETPAGESIZE${ac_dB}HAVE_GETPAGESIZE${ac_dC}1${ac_dD}
-${ac_uA}HAVE_GETPAGESIZE${ac_uB}HAVE_GETPAGESIZE${ac_uC}1${ac_uD}
-${ac_eA}HAVE_GETPAGESIZE${ac_eB}HAVE_GETPAGESIZE${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_GETPAGESIZE${ac_dB}HAVE_GETPAGESIZE${ac_dC}1${ac_dD}
+${ac_uA}HAVE_GETPAGESIZE${ac_uB}HAVE_GETPAGESIZE${ac_uC}1${ac_uD}
+${ac_eA}HAVE_GETPAGESIZE${ac_eB}HAVE_GETPAGESIZE${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_MKSTEMP${ac_dB}HAVE_MKSTEMP${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_MKSTEMP${ac_uB}HAVE_MKSTEMP${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_MKSTEMP${ac_eB}HAVE_MKSTEMP${ac_eC}1${ac_eD}
@@ -933,15 +918,15 @@ ${ac_eA}HAVE_GETPWNAM${ac_eB}HAVE_GETPWNAM${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_GETGRNAM${ac_dB}HAVE_GETGRNAM${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_GETGRNAM${ac_uB}HAVE_GETGRNAM${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_GETGRNAM${ac_eB}HAVE_GETGRNAM${ac_eC}1${ac_eD}
-${ac_dA}HAVE_SETGID${ac_dB}HAVE_SETGID${ac_dC}1${ac_dD}
-${ac_uA}HAVE_SETGID${ac_uB}HAVE_SETGID${ac_uC}1${ac_uD}
-${ac_eA}HAVE_SETGID${ac_eB}HAVE_SETGID${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}HAVE_SETGID${ac_dB}HAVE_SETGID${ac_dC}1${ac_dD}
+${ac_uA}HAVE_SETGID${ac_uB}HAVE_SETGID${ac_uC}1${ac_uD}
+${ac_eA}HAVE_SETGID${ac_eB}HAVE_SETGID${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SETUID${ac_dB}HAVE_SETUID${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SETUID${ac_uB}HAVE_SETUID${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SETUID${ac_eB}HAVE_SETUID${ac_eC}1${ac_eD}
@@ -951,15 +936,15 @@ ${ac_eA}HAVE_SETGROUPS${ac_eB}HAVE_SETGROUPS${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_SETITIMER${ac_dB}HAVE_SETITIMER${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_SETITIMER${ac_uB}HAVE_SETITIMER${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_SETITIMER${ac_eB}HAVE_SETITIMER${ac_eC}1${ac_eD}
-${ac_dA}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_dB}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_dC}1${ac_dD}
-${ac_uA}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_uB}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_uC}1${ac_uD}
-${ac_eA}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_eB}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_dB}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_dC}1${ac_dD}
+${ac_uA}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_uB}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_uC}1${ac_uD}
+${ac_eA}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_eB}SYS_IOCTL_H_HAS_SIOCGIFADDR${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_CPP_UNDERBAR_FUNCTION_DEFINED${ac_dB}HAVE_CPP_UNDERBAR_FUNCTION_DEFINED${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_CPP_UNDERBAR_FUNCTION_DEFINED${ac_uB}HAVE_CPP_UNDERBAR_FUNCTION_DEFINED${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_CPP_UNDERBAR_FUNCTION_DEFINED${ac_eB}HAVE_CPP_UNDERBAR_FUNCTION_DEFINED${ac_eC}1${ac_eD}
@@ -969,15 +954,15 @@ ${ac_eA}STRUCT_SIGACTION_HAS_SA_SIGACTION${ac_eB}STRUCT_SIGACTION_HAS_SA_SIGACTI
 ${ac_dA}STRUCT_RTENTRY_HAS_RT_DST${ac_dB}STRUCT_RTENTRY_HAS_RT_DST${ac_dC}1${ac_dD}
 ${ac_uA}STRUCT_RTENTRY_HAS_RT_DST${ac_uB}STRUCT_RTENTRY_HAS_RT_DST${ac_uC}1${ac_uD}
 ${ac_eA}STRUCT_RTENTRY_HAS_RT_DST${ac_eB}STRUCT_RTENTRY_HAS_RT_DST${ac_eC}1${ac_eD}
-${ac_dA}RTENTRY${ac_dB}RTENTRY${ac_dC}struct rtentry${ac_dD}
-${ac_uA}RTENTRY${ac_uB}RTENTRY${ac_uC}struct rtentry${ac_uD}
-${ac_eA}RTENTRY${ac_eB}RTENTRY${ac_eC}struct rtentry${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}RTENTRY${ac_dB}RTENTRY${ac_dC}struct rtentry${ac_dD}
+${ac_uA}RTENTRY${ac_uB}RTENTRY${ac_uC}struct rtentry${ac_uD}
+${ac_eA}RTENTRY${ac_eB}RTENTRY${ac_eC}struct rtentry${ac_eD}
 ${ac_dA}STRUCT_IFADDR_HAS_IFA_NEXT${ac_dB}STRUCT_IFADDR_HAS_IFA_NEXT${ac_dC}1${ac_dD}
 ${ac_uA}STRUCT_IFADDR_HAS_IFA_NEXT${ac_uB}STRUCT_IFADDR_HAS_IFA_NEXT${ac_uC}1${ac_uD}
 ${ac_eA}STRUCT_IFADDR_HAS_IFA_NEXT${ac_eB}STRUCT_IFADDR_HAS_IFA_NEXT${ac_eC}1${ac_eD}
@@ -987,15 +972,15 @@ ${ac_eA}STRUCT_IFNET_HAS_IF_SPEED${ac_eB}STRUCT_IFNET_HAS_IF_SPEED${ac_eC}1${ac_
 ${ac_dA}STRUCT_IFNET_HAS_IF_TYPE${ac_dB}STRUCT_IFNET_HAS_IF_TYPE${ac_dC}1${ac_dD}
 ${ac_uA}STRUCT_IFNET_HAS_IF_TYPE${ac_uB}STRUCT_IFNET_HAS_IF_TYPE${ac_uC}1${ac_uD}
 ${ac_eA}STRUCT_IFNET_HAS_IF_TYPE${ac_eB}STRUCT_IFNET_HAS_IF_TYPE${ac_eC}1${ac_eD}
-${ac_dA}STRUCT_IFNET_HAS_IF_IQDROPS${ac_dB}STRUCT_IFNET_HAS_IF_IQDROPS${ac_dC}1${ac_dD}
-${ac_uA}STRUCT_IFNET_HAS_IF_IQDROPS${ac_uB}STRUCT_IFNET_HAS_IF_IQDROPS${ac_uC}1${ac_uD}
-${ac_eA}STRUCT_IFNET_HAS_IF_IQDROPS${ac_eB}STRUCT_IFNET_HAS_IF_IQDROPS${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}STRUCT_IFNET_HAS_IF_IQDROPS${ac_dB}STRUCT_IFNET_HAS_IF_IQDROPS${ac_dC}1${ac_dD}
+${ac_uA}STRUCT_IFNET_HAS_IF_IQDROPS${ac_uB}STRUCT_IFNET_HAS_IF_IQDROPS${ac_uC}1${ac_uD}
+${ac_eA}STRUCT_IFNET_HAS_IF_IQDROPS${ac_eB}STRUCT_IFNET_HAS_IF_IQDROPS${ac_eC}1${ac_eD}
 ${ac_dA}STRUCT_IFNET_HAS_IF_OBYTES${ac_dB}STRUCT_IFNET_HAS_IF_OBYTES${ac_dC}1${ac_dD}
 ${ac_uA}STRUCT_IFNET_HAS_IF_OBYTES${ac_uB}STRUCT_IFNET_HAS_IF_OBYTES${ac_uC}1${ac_uD}
 ${ac_eA}STRUCT_IFNET_HAS_IF_OBYTES${ac_eB}STRUCT_IFNET_HAS_IF_OBYTES${ac_eC}1${ac_eD}
@@ -1005,15 +990,15 @@ ${ac_eA}STRUCT_IFNET_HAS_IF_IBYTES${ac_eB}STRUCT_IFNET_HAS_IF_IBYTES${ac_eC}1${a
 ${ac_dA}STRUCT_STATVFS_HAS_F_FRSIZE${ac_dB}STRUCT_STATVFS_HAS_F_FRSIZE${ac_dC}1${ac_dD}
 ${ac_uA}STRUCT_STATVFS_HAS_F_FRSIZE${ac_uB}STRUCT_STATVFS_HAS_F_FRSIZE${ac_uC}1${ac_uD}
 ${ac_eA}STRUCT_STATVFS_HAS_F_FRSIZE${ac_eB}STRUCT_STATVFS_HAS_F_FRSIZE${ac_eC}1${ac_eD}
-${ac_dA}STRUCT_STATVFS_HAS_F_FILES${ac_dB}STRUCT_STATVFS_HAS_F_FILES${ac_dC}1${ac_dD}
-${ac_uA}STRUCT_STATVFS_HAS_F_FILES${ac_uB}STRUCT_STATVFS_HAS_F_FILES${ac_uC}1${ac_uD}
-${ac_eA}STRUCT_STATVFS_HAS_F_FILES${ac_eB}STRUCT_STATVFS_HAS_F_FILES${ac_eC}1${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}STRUCT_STATVFS_HAS_F_FILES${ac_dB}STRUCT_STATVFS_HAS_F_FILES${ac_dC}1${ac_dD}
+${ac_uA}STRUCT_STATVFS_HAS_F_FILES${ac_uB}STRUCT_STATVFS_HAS_F_FILES${ac_uC}1${ac_uD}
+${ac_eA}STRUCT_STATVFS_HAS_F_FILES${ac_eB}STRUCT_STATVFS_HAS_F_FILES${ac_eC}1${ac_eD}
 ${ac_dA}STRUCT_STATFS_HAS_F_FILES${ac_dB}STRUCT_STATFS_HAS_F_FILES${ac_dC}1${ac_dD}
 ${ac_uA}STRUCT_STATFS_HAS_F_FILES${ac_uB}STRUCT_STATFS_HAS_F_FILES${ac_uC}1${ac_uD}
 ${ac_eA}STRUCT_STATFS_HAS_F_FILES${ac_eB}STRUCT_STATFS_HAS_F_FILES${ac_eC}1${ac_eD}
@@ -1023,15 +1008,15 @@ ${ac_eA}STRUCT_STATFS_HAS_F_FFREE${ac_eB}STRUCT_STATFS_HAS_F_FFREE${ac_eC}1${ac_
 ${ac_dA}DEFAULT_SNMP_VERSION${ac_dB}DEFAULT_SNMP_VERSION${ac_dC}3${ac_dD}
 ${ac_uA}DEFAULT_SNMP_VERSION${ac_uB}DEFAULT_SNMP_VERSION${ac_uC}3${ac_uD}
 ${ac_eA}DEFAULT_SNMP_VERSION${ac_eB}DEFAULT_SNMP_VERSION${ac_eC}3${ac_eD}
-${ac_dA}SYS_CONTACT${ac_dB}SYS_CONTACT${ac_dC}"root"${ac_dD}
-${ac_uA}SYS_CONTACT${ac_uB}SYS_CONTACT${ac_uC}"root"${ac_uD}
-${ac_eA}SYS_CONTACT${ac_eB}SYS_CONTACT${ac_eC}"root"${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
   mv conftest.out conftest.in
 
   cat > conftest.frag <<CEOF
+${ac_dA}SYS_CONTACT${ac_dB}SYS_CONTACT${ac_dC}"root"${ac_dD}
+${ac_uA}SYS_CONTACT${ac_uB}SYS_CONTACT${ac_uC}"root"${ac_uD}
+${ac_eA}SYS_CONTACT${ac_eB}SYS_CONTACT${ac_eC}"root"${ac_eD}
 ${ac_dA}SYS_LOC${ac_dB}SYS_LOC${ac_dC}"Unknown"${ac_dD}
 ${ac_uA}SYS_LOC${ac_uB}SYS_LOC${ac_uC}"Unknown"${ac_uD}
 ${ac_eA}SYS_LOC${ac_eB}SYS_LOC${ac_eC}"Unknown"${ac_eD}
@@ -1041,6 +1026,12 @@ ${ac_eA}LOGFILE${ac_eB}LOGFILE${ac_eC}"/dev/null"${ac_eD}
 ${ac_dA}PERSISTENT_DIRECTORY${ac_dB}PERSISTENT_DIRECTORY${ac_dC}"/tmp/snmp-persist"${ac_dD}
 ${ac_uA}PERSISTENT_DIRECTORY${ac_uB}PERSISTENT_DIRECTORY${ac_uC}"/tmp/snmp-persist"${ac_uD}
 ${ac_eA}PERSISTENT_DIRECTORY${ac_eB}PERSISTENT_DIRECTORY${ac_eC}"/tmp/snmp-persist"${ac_eD}
+CEOF
+  sed -f conftest.frag conftest.in > conftest.out
+  rm -f conftest.in
+  mv conftest.out conftest.in
+
+  cat > conftest.frag <<CEOF
 s%^[ 	]*#[ 	]*undef[ 	][ 	]*[a-zA-Z_][a-zA-Z_0-9]*%/* & */%
 CEOF
   sed -f conftest.frag conftest.in > conftest.out

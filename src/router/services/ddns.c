@@ -189,12 +189,23 @@ start_ddns (void)
 	}
       else
 	{
+#ifdef HAVE_NEWMEDIA
+	  if (nvram_match ("pptpd_client_enable","1"))
+	    {
+	    fprintf (fp, "address=%s\n", nvram_safe_get("pptpd_client_info_localip"));
+	    }
+	  else
+	  {
+#endif
 	  if (nvram_match ("wan_proto", "pptp"))
 	    fprintf (fp, "address=%s\n", nvram_safe_get ("pptp_get_ip"));
 	  else if (nvram_match ("wan_proto", "l2tp"))
 	    fprintf (fp, "address=%s\n", nvram_safe_get ("l2tp_get_ip"));
 	  else
 	    fprintf (fp, "address=%s\n", nvram_safe_get ("wan_ipaddr"));
+#ifdef HAVE_NEWMEDIA
+	  }
+#endif
 	}
       if (nvram_match ("ddns_wildcard", "1")
 	  && nvram_match ("ddns_enable", "1"))
