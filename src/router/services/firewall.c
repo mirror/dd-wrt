@@ -514,10 +514,10 @@ parse_port_forward (char *wordlist)
 }
 
 // changed by steve
-static void
-parse_upnp_forward ()
+static void parse_upnp_forward ()
 {
-  char name[] = "forward_portXXXXXXXXXX", value[1000];
+  char name[32]; //= "forward_portXXXXXXXXXX",
+  char value[1000];
   char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
   char *enable, *desc;
   char buff[256];
@@ -526,9 +526,8 @@ parse_upnp_forward ()
   if (nvram_invmatch ("upnp_enable", "1"))
     return;
 
-
   if (nvram_match ("upnp_clear", "1"))
-    {				// tofu10
+    {	
       nvram_unset ("upnp_clear");
       for (i = 0; i < 50; ++i)
 	{
