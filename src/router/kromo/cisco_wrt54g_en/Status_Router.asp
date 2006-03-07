@@ -130,7 +130,9 @@ var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' 
 										<li><span>Router</span></li>
 									    <li><a href="Status_Lan.asp">LAN</a></li>
 										<li><a href="Status_Wireless.asp">Wireless</a></li>
+										<% nvram_invmatch("status_auth","1","<!--"); %>
 										<li><a href="Info.htm">Sys-Info</a></li>
+										<% nvram_invmatch("status_auth","1","-->"); %>
 										<% show_sputnik(); %>
 									</ul>
 								</div>
