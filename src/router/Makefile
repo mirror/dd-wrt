@@ -468,25 +468,6 @@ rc: netconf nvram shared hsiab libnet dnsmasq bird dropbear zlib iproute2 dhcpfo
 www www-%:
 
 
-ifeq ($(CONFIG_BIRD),y)
-ifeq ($(KROMOGUI),y)
-	cp kromo/$(WEB_PAGE)/Routing_zebra.asp kromo/$(WEB_PAGE)/Routing.asp
-else
-	cp www/$(WEB_PAGE)/Routing_zebra.asp www/$(WEB_PAGE)/Routing.asp
-endif
-else
-	@true
-endif
-
-ifeq ($(CONFIG_ZEBRA),y)
-ifeq ($(KROMOGUI),y)
-	cp kromo/$(WEB_PAGE)/Routing_zebra.asp kromo/$(WEB_PAGE)/Routing.asp
-else
-	cp www/$(WEB_PAGE)/Routing_zebra.asp www/$(WEB_PAGE)/Routing.asp
-endif
-else
-	@true
-endif
 ifeq ($(KROMOGUI),y)
 	$(MAKE) -C kromo/$(WEB_PAGE) $* INSTALLDIR=$(INSTALLDIR)/www
 else
@@ -752,7 +733,7 @@ ser-clean:
 	rm -rf $(INSTALLDIR)/www/*
 			
 nocat:
-	cd nocat && . ./conf
+#	cd nocat && . ./conf
 	make -C nocat
 
 nocat-clean:
@@ -766,10 +747,17 @@ nocat-install:
 	ln -sf /tmp/etc/nocat.conf $(INSTALLDIR)/nocat/etc/nocat.conf
 	mkdir -p $(INSTALLDIR)/nocat/usr/libexec
 	cp -r nocat/libexec/iptables $(INSTALLDIR)/nocat/usr/libexec/nocat
+ifeq ($(CONFIG_RAMSKOV),y)
+	install -D nocat/config_redirect/nocat.webhotspot $(INSTALLDIR)/nocat/etc/config/nocat.webhotspot
+	install -D nocat/config_redirect/nocat.nvramconfig $(INSTALLDIR)/nocat/etc/config/nocat.nvramconfig
+	install -D nocat/config_redirect/nocat.startup $(INSTALLDIR)/nocat/etc/config/nocat.startup
+	install -D nocat/config_redirect/nocat.header $(INSTALLDIR)/nocat/etc/config/nocat.header
+	install -D nocat/config_redirect/nocat.footer $(INSTALLDIR)/nocat/etc/config/nocat.footer
+else
 	install -D nocat/config/nocat.webhotspot $(INSTALLDIR)/nocat/etc/config/nocat.webhotspot
 	install -D nocat/config/nocat.nvramconfig $(INSTALLDIR)/nocat/etc/config/nocat.nvramconfig
 	install -D nocat/config/nocat.startup $(INSTALLDIR)/nocat/etc/config/nocat.startup
-
+endif
 http-redirect:
 	@true
 
@@ -952,9 +940,29 @@ pptp-client-clean:
 	$(MAKE) -C pptp-client clean
 
 pptp-client-install:
+ifneq ($(CONFIG_NEWMEDIA),y)
 	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
-	$(STRIP) $(INSTALLDIR)/pptp-client/usr/sbin/pptp
-
+	install -D pptp-client/config/pptpd_client.ip-up $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-up
+	install -D pptp-client/config/pptpd_client.ip-down $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-down
+	install -D pptp-client/config/pptpd_client.nvramconfig $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.nvramconfig
+	install -D pptp-client/config/pptpd_client.webservices $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.webservices
+	install -D pptp-client/config/pptpd_client.options $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.options
+	install -D pptp-client/config/pptpd_client.sh $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.sh
+	install -D pptp-client/config/pptpd_client.startup $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.startup
+	install -D pptp-client/config/pptpd_client.vpn $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.vpn
+	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
+else
+	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
+	install -D pptp-client/config2/pptpd_client.ip-up $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-up
+	install -D pptp-client/config2/pptpd_client.ip-down $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.ip-down
+	install -D pptp-client/config2/pptpd_client.nvramconfig $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.nvramconfig
+	install -D pptp-client/config2/pptpd_client.webconfig $(INSTALLDIR)/pptp-client/etc/config/1pptpd_client.webconfig
+	install -D pptp-client/config2/pptpd_client.options $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.options
+	install -D pptp-client/config2/pptpd_client.sh $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.sh
+	install -D pptp-client/config2/pptpd_client.startup $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.startup
+	install -D pptp-client/config2/pptpd_client.vpn $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.vpn
+	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
+endif
 
 netstatnat:
 	$(MAKE) -C netstatnat

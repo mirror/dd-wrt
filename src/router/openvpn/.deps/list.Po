@@ -107,7 +107,9 @@ list.o list.o: list.c config.h syshead.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/linux/autoconf.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/linux/errqueue.h \
   /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h \
-  /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h
+  /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h \
+  list.h basic.h thread.h common.h buffer.h misc.h integer.h error.h \
+  errlevel.h memdbg.h
 
 config.h:
 
@@ -330,3 +332,23 @@ syshead.h:
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h:
 
 /home/openwrt/workspace/mikrotik/toolchain/bin/../lib/gcc/mipsel-linux-uclibc/3.4.5/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h:
+
+list.h:
+
+basic.h:
+
+thread.h:
+
+common.h:
+
+buffer.h:
+
+misc.h:
+
+integer.h:
+
+error.h:
+
+errlevel.h:
+
+memdbg.h:

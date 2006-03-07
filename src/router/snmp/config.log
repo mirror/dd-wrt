@@ -3,9 +3,9 @@ running configure, to aid debugging if configure makes a mistake.
 
 configure:1543: checking if I need to feed myself to ksh
 configure:1578: checking for gcc
-configure:1691: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -funit-at-a-time -s) works
-configure:1707: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -funit-at-a-time  -s conftest.c  1>&5
-configure:1733: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -funit-at-a-time -s) is a cross-compiler
+configure:1691: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -s) works
+configure:1707: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time  -s conftest.c  1>&5
+configure:1733: checking whether the C compiler (mipsel-linux-uclibc-gcc -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -s) is a cross-compiler
 configure:1738: checking whether we are using GNU C
 configure:1766: checking whether mipsel-linux-uclibc-gcc accepts -g
 configure:1798: checking how to run the C preprocessor
@@ -29,12 +29,12 @@ configure:2980: checking for ranlib
 configure:3047: checking for strip
 configure:3564: checking for objdir
 configure:3595: checking for mipsel-linux-uclibc-gcc option to produce PIC
-configure:3743: checking if mipsel-linux-uclibc-gcc PIC flag   -fPIC works
+configure:3743: checking if mipsel-linux-uclibc-gcc PIC flag                 -fPIC works
 configure:3813: checking if mipsel-linux-uclibc-gcc static flag -static works
 configure:3859: checking if mipsel-linux-uclibc-gcc supports -c -o file.o
 configure:3907: checking if mipsel-linux-uclibc-gcc supports -c -o file.lo
 configure:3983: checking if mipsel-linux-uclibc-gcc supports -fno-rtti -fno-exceptions
-configure:3996: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -funit-at-a-time -fno-rtti -fno-exceptions -c conftest.c  conftest.c 1>&5
+configure:3996: mipsel-linux-uclibc-gcc -c -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -fno-rtti -fno-exceptions -c conftest.c  conftest.c 1>&5
 cc1: warning: command line option "-fno-rtti" is valid for C++/ObjC++ but not for C
 cc1: warning: command line option "-fno-rtti" is valid for C++/ObjC++ but not for C
 configure:4027: checking whether the linker (mipsel-linux-uclibc-ld) supports shared libraries

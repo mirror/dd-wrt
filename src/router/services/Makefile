@@ -51,6 +51,11 @@ endif
 ifeq ($(CONFIG_IPROUTE2),y)
 CFLAGS += -DHAVE_IPROUTE2
 endif
+ifeq ($(CONFIG_GGEW),y)
+CFLAGS += -DHAVE_GGEW
+CFLAGS += -DHAVE_NEWMEDIA
+endif
+
 ifeq ($(CONFIG_NEWMEDIA),y)
 CFLAGS += -DHAVE_NEWMEDIA
 endif
