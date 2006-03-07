@@ -453,7 +453,6 @@ struct nvram_tuple router_defaults[] = {
 #elif HAVE_GGEW
   {"wl_mode", "sta", 0},
 #else
-#else
 #ifdef HAVE_MSSID
 #ifdef HAVE_FON
   {"wl_mode", "apsta", 0},
@@ -1161,7 +1160,7 @@ struct nvram_tuple router_defaults[] = {
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
 #else
-  {"dhcp_dnsmasq", "0", 0},
+  {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
 #endif
 

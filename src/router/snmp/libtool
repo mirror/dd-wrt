@@ -27,10 +27,10 @@
 # the same distribution terms that you use for the rest of that program.
 
 # A sed that does not truncate output.
-SED="/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed"
+SED="/home/openwrt/workspace/mikrotik/toolchain/bin//sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
-Xsed="/home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed -e s/^X//"
+Xsed="/home/openwrt/workspace/mikrotik/toolchain/bin//sed -e s/^X//"
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
@@ -38,7 +38,7 @@ if test "X${CDPATH+set}" = Xset; then CDPATH=:; export CDPATH; fi
 
 # ### BEGIN LIBTOOL CONFIG
 
-# Libtool was configured on host dbserver:
+# Libtool was configured on host colinux:
 
 # Shell to use when invoking shell scripts.
 SHELL="/bin/sh"
@@ -116,7 +116,7 @@ libext="a"
 exeext=""
 
 # Additional compiler flags for building library objects.
-pic_flag="   -fPIC"
+pic_flag="                 -fPIC"
 pic_mode=default
 
 # Does compiler simultaneously support -c and -o options?

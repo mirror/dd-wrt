@@ -1157,7 +1157,7 @@
 #define LASTFIELD -1      /* internal define */
 
 /* configure options specified */
-#define CONFIGURE_OPTIONS "\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\""
+#define CONFIGURE_OPTIONS "\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\""
 
 /* got socklen_t? */
 #define HAVE_SOCKLEN_T 1
@@ -1243,9 +1243,9 @@
 #define HAVE_GETSERVBYNAME 1
 
 /* printing system */
-#define HAVE_LPSTAT 1
-#define LPSTAT_PATH "/usr/bin/lpstat"
-#define HAVE_PRINTCAP 1
+/* #undef HAVE_LPSTAT */
+/* #undef LPSTAT_PATH */
+/* #undef HAVE_PRINTCAP */
 
 /*  Pluggable transports.  */
 

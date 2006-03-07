@@ -34,7 +34,7 @@ persistentdir	= /tmp/snmp-persist
 #
 INSTALL		= $(LIBTOOL) --mode=install /usr/bin/install -c
 INSTALL_DATA    = ${INSTALL} -m 644
-SED		= /home/dd-wrt/whiterussian/openwrt/staging_dir_mipsel/bin//sed
+SED		= /home/openwrt/workspace/mikrotik/toolchain/bin//sed
 LN_S		= ln -s
 AUTOCONF	= :
 AUTOHEADER	= :
@@ -42,7 +42,7 @@ AUTOHEADER	= :
 #
 # Compiler arguments
 #
-CFLAGS		= -Os -mtune=mips32 -mips32 -funit-at-a-time -Delf 
+CFLAGS		= -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -Delf 
 EXTRACPPFLAGS	= -x c
 LDFLAGS		= -s 
 LIBTOOL		= $(SHELL) $(top_builddir)/libtool 
