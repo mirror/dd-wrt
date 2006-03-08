@@ -29,7 +29,7 @@ configure:2980: checking for ranlib
 configure:3047: checking for strip
 configure:3564: checking for objdir
 configure:3595: checking for mipsel-linux-uclibc-gcc option to produce PIC
-configure:3743: checking if mipsel-linux-uclibc-gcc PIC flag                 -fPIC works
+configure:3743: checking if mipsel-linux-uclibc-gcc PIC flag                             -fPIC works
 configure:3813: checking if mipsel-linux-uclibc-gcc static flag -static works
 configure:3859: checking if mipsel-linux-uclibc-gcc supports -c -o file.o
 configure:3907: checking if mipsel-linux-uclibc-gcc supports -c -o file.lo
