@@ -37,7 +37,7 @@
 #include <bcmparams.h>
 
 
-int 
+int
 ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv)
 {
 /*
@@ -54,7 +54,7 @@ websWrite(wp,"<dd class=\"definition\">In Kooperation mit NewMedia-NET GmbH</dd>
 websWrite(wp,"<dd class=\"definition\"><a href=\"http://www.newmedia-net.de\"/></dd>\n");
 websWrite(wp,"</dl>\n");
 #endif*/
-return 0;
+  return 0;
 }
 
 
@@ -66,20 +66,22 @@ ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv)
     {
       return 0;
     }
-char buf[128];
-int n = 0;
-rep:; 
-if (n==EOF)
+  char buf[128];
+  int n = 0;
+rep:;
+  if (n == EOF)
     {
-    fclose (fcpu);
-    return 0;
+      fclose (fcpu);
+      return 0;
     }
-if (n)websWrite(wp,"'%s'",buf);
-n = fscanf(fcpu,"%s",buf);
-if (n!=EOF)
-    websWrite(wp,",");
-goto rep;
+  if (n)
+    websWrite (wp, "'%s'", buf);
+  n = fscanf (fcpu, "%s", buf);
+  if (n != EOF)
+    websWrite (wp, ",");
+  goto rep;
 }
+
 int
 ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -1968,7 +1970,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       snprintf (wdsif_var, 31, "%s_if", wds);
       if (!nvram_match (enabled_var, "0"))
 	{
-	  snprintf (wds_if, 31, "wds0.491%d", 50+(devcount++));
+	  snprintf (wds_if, 31, "wds0.491%d", 50 + (devcount++));
 	  nvram_set (wdsif_var, wds_if);
 	}
       else
@@ -2216,10 +2218,11 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
     fgets (uptime, sizeof (uptime), fp);
   else
     return -1;
-  int i=0;
-  while(uptime[i++]!=0 && i<199)
+  int i = 0;
+  while (uptime[i++] != 0 && i < 199)
     {
-    if (uptime[i]==0xa || uptime[i]==0xd)uptime[i]=0;
+      if (uptime[i] == 0xa || uptime[i] == 0xd)
+	uptime[i] = 0;
     }
   ret = websWrite (wp, "%s", uptime);
 
@@ -2288,7 +2291,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
   system (cmd);			// get active wireless mac
 
-  if (strcmp (mode, "ap") != 0 && strcmp(mode, "apsta") !=0)
+  if (strcmp (mode, "ap") != 0 && strcmp (mode, "apsta") != 0)
     {
       strcpy (title, "AP Signal");
       strcpy (title2, "AP");
@@ -2433,7 +2436,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   snprintf (cmd, sizeof (cmd), "%s > %s", WDS_CMD, WDS_LIST_TMP);
   system (cmd);			// get active wireless mac
 
-  if (strcmp (mode, "ap") == 0 || strcmp (mode, "apsta") == 0) 
+  if (strcmp (mode, "ap") == 0 || strcmp (mode, "apsta") == 0)
     strcpy (title, "WDS Signal");
   else
     return -1;
