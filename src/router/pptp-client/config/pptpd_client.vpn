@@ -49,6 +49,40 @@ case $1 in
   done;
  ;;
 
+ "debug"  )
+  echo "Waiting......."
+  sleep 10
+  PIDFILE="/var/run/vpn.pid"
+  if [ -f "${PIDFILE}" ];
+  then
+   PID="`cat ${PIDFILE}`"
+   if egrep vpn "/proc/${PID}/cmdline" 2>&1 > /dev/null;
+   then
+    echo "Already active!"
+    exit 16
+   fi
+   echo "Removing PID file"
+   rm -f "${PIDFILE}"
+  fi
+  echo -n $$ > "${PIDFILE}"
+  echo "PID file created"
+  echo "Attempting initial connect"
+  pptp $PPTPSERVER file /tmp/pptpd_client/options.vpn debug nodetach
+  echo "Initial connection dropped"
+
+  while [ 1 ];
+  do
+   echo "Attempting connect... "
+   killall pptp 2>/dev/null
+   sleep 2
+   killall -9 pptp 2>/dev/null
+   sleep 1
+   pptp $PPTPSERVER file /tmp/pptpd_client/options.vpn debug nodetach
+   echo "Connection dropped... "
+   sleep 2
+  done;
+ ;;
+
 "stop"   )
 
   VPNPID=`cat /var/run/vpn.pid`
@@ -65,6 +99,17 @@ case $1 in
   sleep 2
   rm /var/run/vpn.pid
   echo "VPN Stopped"
- ;;
+ ;; 
+* ) 
+  echo " "
+  echo "  PTPP VPN CLIENT" 
+  echo "  --------" 
+  echo " " 
+  echo "   start  -  Starts the Client" 
+  echo "   stop   -  Stops the Client" 
+  echo "   go     -  Run the Client interactively (for debugging)" 
+  echo "   debug  -  Run the Client interactively (in full debug mode)" 
+  echo " " 
+ ;; 
 esac
 return $RESP
