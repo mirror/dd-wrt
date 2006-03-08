@@ -2430,7 +2430,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  rssi = 0;
 
-	  for (i = 0; i <= 10; i++)
+	  for (i = 0; i < 10; i++)
 	    {
 	      snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
 	      if (nvram_match (wdsvar, mac))
