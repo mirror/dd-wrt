@@ -2,12 +2,14 @@
 <!DOCTYPE html
   PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-   <head>
-      <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-   
-      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-      <title><% nvram_get("router_name"); %> - Wireless</title>
-      <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+    <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+    <title><% nvram_get("router_name"); %> - Wireless</title>
+    <link type="text/css" rel="stylesheet" href="style.css" />
+    <script type="text/JavaScript" src="common.js">{}</script>
+    <script language="JavaScript">
+      
 function SelSubnet(F,num) {
 	if(num==1){
 		choose_enable(F.wl_br1_ipaddr0);
@@ -104,8 +106,10 @@ function init() {
 	  alert("WDS is only available in AP mode!");
 	}
 }
-</script></head>
-   <body class="gui" onload="init()"> <% showad(); %>
+    </script>
+  </head>
+  
+  <body class="gui" onload="init()"> <% showad(); %>
       <div id="wrapper">
          <div id="content">
             <div id="header">
@@ -155,195 +159,187 @@ function init() {
                         <div class="setting">
                            <div class="label">Wireless MAC</div><% nvram_get("wl0_hwaddr"); %>
                         </div>
-                        <div class="setting"><select name="wl_wds1_enable" size="1" onChange=SelWDS(1,this.form.wl_wds1_enable.selectedIndex,this.form)>
-                              <option value="0" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds1_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(1); %>
-                              <option value="3" <% nvram_selmatch("wl_wds1_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds1_hwaddr" value="6" />
-			      <input class="num" name="wl_wds1_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("1", "0"); %>' />:
-			      <input class="num" name="wl_wds1_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("1", "1"); %>' />:
-			      <input class="num" name="wl_wds1_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("1", "2"); %>' />:
-			      <input class="num" name="wl_wds1_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("1", "3"); %>' />:
-			      <input class="num" name="wl_wds1_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("1", "4"); %>' />:
-			      <input class="num" name="wl_wds1_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("1", "5"); %>' />
-			      <input name="wl_wds1_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds1_desc"); %>' />
-			      <% get_wdsp2p(1); %>
-                        <!-- End WDS MAC #3 -->
+                        
+                        <div class="setting">
+                          <select name="wl_wds1_enable" size="1" onChange="SelWDS(1,this.form.wl_wds1_enable.selectedIndex,this.form)">
+                            <option value="0" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>>Disable</option>
+                            <option value="1" <% nvram_selmatch("wl_wds1_enable", "1", "selected"); %>>Point to Point</option>
+                            <% show_wds_subnet(1); %>
+                            <option value="3" <% nvram_selmatch("wl_wds1_enable", "3", "selected"); %>>LAN</option>
+                          </select>
+                          <input type="hidden" name="wl_wds1_hwaddr" value="6" />
+                          <input class="num" name="wl_wds1_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("1", "0"); %>' />:
+                          <input class="num" name="wl_wds1_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "1"); %>' />:
+                          <input class="num" name="wl_wds1_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "2"); %>' />:
+                          <input class="num" name="wl_wds1_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "3"); %>' />:
+                          <input class="num" name="wl_wds1_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "4"); %>' />:
+                          <input class="num" name="wl_wds1_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "5"); %>' />
+                          <input name="wl_wds1_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds1_desc"); %>' />
+                          <% get_wdsp2p(1); %>
+                        </div>
+                        
+                        <div class="setting">
+                          <select name="wl_wds2_enable" size="1" onChange="SelWDS(2,this.form.wl_wds2_enable.selectedIndex,this.form)">
+                            <option value="0" <% nvram_selmatch("wl_wds2_enable", "0", "selected"); %>>Disable</option>
+                            <option value="1" <% nvram_selmatch("wl_wds2_enable", "1", "selected"); %>>Point to Point</option>
+                            <% show_wds_subnet(2); %>
+                            <option value="3" <% nvram_selmatch("wl_wds2_enable", "3", "selected"); %>>LAN</option>
+                          </select>
+                          <input type="hidden" name="wl_wds2_hwaddr" value="6" />
+                          <input class="num" name="wl_wds2_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("2", "0"); %>' />:
+                          <input class="num" name="wl_wds2_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "1"); %>' />:
+                          <input class="num" name="wl_wds2_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "2"); %>' />:
+                          <input class="num" name="wl_wds2_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "3"); %>' />:
+                          <input class="num" name="wl_wds2_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "4"); %>' />:
+                          <input class="num" name="wl_wds2_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "5"); %>' />
+                          <input name="wl_wds2_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds2_desc"); %>' />
+                          <% get_wdsp2p(2); %>
 
-
-			</div>
-                        <div class="setting"><select name="wl_wds2_enable" size="1" onChange=SelWDS(2,this.form.wl_wds2_enable.selectedIndex,this.form)>
-                              <option value="0" <% nvram_selmatch("wl_wds2_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds2_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(2); %>
-                              <option value="3" <% nvram_selmatch("wl_wds2_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds2_hwaddr" value="6" />
-			      <input class="num" name="wl_wds2_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("2", "0"); %>' />:
-			      <input class="num" name="wl_wds2_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("2", "1"); %>' />:
-			      <input class="num" name="wl_wds2_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("2", "2"); %>' />:
-			      <input class="num" name="wl_wds2_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("2", "3"); %>' />:
-			      <input class="num" name="wl_wds2_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("2", "4"); %>' />:
-			      <input class="num" name="wl_wds2_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("2", "5"); %>' />
-			      <input name="wl_wds2_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds2_desc"); %>' />
-			      <% get_wdsp2p(2); %>
-
-<!-- Begin WDS MAC #4 -->
-
-			</div>
-                        <div class="setting"><select name="wl_wds3_enable" size="1" onChange=SelWDS(3,this.form.wl_wds3_enable.selectedIndex,this.form)>
+                          </div>
+                          <div class="setting">
+                            <select name="wl_wds3_enable" size="1" onChange="SelWDS(3,this.form.wl_wds3_enable.selectedIndex,this.form)">
                               <option value="0" <% nvram_selmatch("wl_wds3_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds3_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(3); %>
-			      <option value="3" <% nvram_selmatch("wl_wds3_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds3_hwaddr" value="6" />
-			      <input class="num" name="wl_wds3_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("3", "0"); %>' />:
-			      <input class="num" name="wl_wds3_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("3", "1"); %>' />:
-			      <input class="num" name="wl_wds3_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("3", "2"); %>' />:
-			      <input class="num" name="wl_wds3_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("3", "3"); %>' />:
-			      <input class="num" name="wl_wds3_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("3", "4"); %>' />:
-			      <input class="num" name="wl_wds3_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("3", "5"); %>' />
-			      <input name="wl_wds3_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds3_desc"); %>' />
-			   <% get_wdsp2p(3); %>
-                        <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
-			</div>
-                        <div class="setting"><select name="wl_wds4_enable" size="1" onChange=SelWDS(4,this.form.wl_wds4_enable.selectedIndex,this.form)>
+                              <option value="1" <% nvram_selmatch("wl_wds3_enable", "1", "selected"); %>>Point to Point</option>
+                              <% show_wds_subnet(3); %>
+                              <option value="3" <% nvram_selmatch("wl_wds3_enable", "3", "selected"); %>>LAN</option>
+                            </select>
+                            <input type="hidden" name="wl_wds3_hwaddr" value="6" />
+                            <input class="num" name="wl_wds3_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("3", "0"); %>' />:
+                            <input class="num" name="wl_wds3_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "1"); %>' />:
+                            <input class="num" name="wl_wds3_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "2"); %>' />:
+                            <input class="num" name="wl_wds3_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "3"); %>' />:
+                            <input class="num" name="wl_wds3_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "4"); %>' />:
+                            <input class="num" name="wl_wds3_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "5"); %>' />
+                            <input name="wl_wds3_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds3_desc"); %>' />
+                            <% get_wdsp2p(3); %>
+                          </div>
+                          
+                          <div class="setting">
+                            <select name="wl_wds4_enable" size="1" onChange="SelWDS(4,this.form.wl_wds4_enable.selectedIndex,this.form)">
                               <option value="0" <% nvram_selmatch("wl_wds4_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds4_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(4); %>
-			      <option value="3" <% nvram_selmatch("wl_wds4_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds4_hwaddr" value="6" />
-			      <input class="num" name="wl_wds4_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("4", "0"); %>' />:
-			      <input class="num" name="wl_wds4_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("4", "1"); %>' />:
-			      <input class="num" name="wl_wds4_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("4", "2"); %>' />:
-			      <input class="num" name="wl_wds4_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("4", "3"); %>' />:
-			      <input class="num" name="wl_wds4_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("4", "4"); %>' />:
-			      <input class="num" name="wl_wds4_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("4", "5"); %>' />
-			      <input name="wl_wds4_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds4_desc"); %>' />
-			   
-			   <% get_wdsp2p(4); %>
-                        <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
-			</div>
-                        <div class="setting"><select name="wl_wds5_enable" size="1" onChange=SelWDS(5,this.form.wl_wds5_enable.selectedIndex,this.form)>
-                              <option value="0" <% nvram_selmatch("wl_wds5_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds5_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(5); %>
-			      <option value="3" <% nvram_selmatch("wl_wds5_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds5_hwaddr" value="6" />
-			      <input class="num" name="wl_wds5_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("5", "0"); %>' />:
-			      <input class="num" name="wl_wds5_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("5", "1"); %>' />:
-			      <input class="num" name="wl_wds5_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("5", "2"); %>' />:
-			      <input class="num" name="wl_wds5_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("5", "3"); %>' />:
-			      <input class="num" name="wl_wds5_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("5", "4"); %>' />:
-			      <input class="num" name="wl_wds5_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("5", "5"); %>' />
-			      <input name="wl_wds5_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds5_desc"); %>' />
-			   <% get_wdsp2p(5); %>
-                        <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
-			</div>
-                        <div class="setting"><select name="wl_wds6_enable" size="1" onChange=SelWDS(6,this.form.wl_wds6_enable.selectedIndex,this.form)>
-                              <option value="0" <% nvram_selmatch("wl_wds6_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds6_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(6); %>
-			      <option value="3" <% nvram_selmatch("wl_wds6_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds6_hwaddr" value="6" />
-			      <input class="num" name="wl_wds6_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("6", "0"); %>' />:
-			      <input class="num" name="wl_wds6_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("6", "1"); %>' />:
-			      <input class="num" name="wl_wds6_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("6", "2"); %>' />:
-			      <input class="num" name="wl_wds6_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("6", "3"); %>' />:
-			      <input class="num" name="wl_wds6_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("6", "4"); %>' />:
-			      <input class="num" name="wl_wds6_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("6", "5"); %>' />
-			      <input name="wl_wds6_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds6_desc"); %>' />
-			      <% get_wdsp2p(6); %>
-                        <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
-			</div>
-                        <div class="setting"><select name="wl_wds7_enable" size="1" onChange=SelWDS(7,this.form.wl_wds7_enable.selectedIndex,this.form)>
-                              <option value="0" <% nvram_selmatch("wl_wds7_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds7_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(7); %>
-			      <option value="3" <% nvram_selmatch("wl_wds7_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds7_hwaddr" value="6" />
-			      <input class="num" name="wl_wds7_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("7", "0"); %>' />:
-			      <input class="num" name="wl_wds7_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("7", "1"); %>' />:
-			      <input class="num" name="wl_wds7_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("7", "2"); %>' />:
-			      <input class="num" name="wl_wds7_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("7", "3"); %>' />:
-			      <input class="num" name="wl_wds7_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("7", "4"); %>' />:
-			      <input class="num" name="wl_wds7_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("7", "5"); %>' />
-			      <input name="wl_wds7_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds7_desc"); %>' />
-			   <% get_wdsp2p(7); %>
-                        <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
-			</div>
-                        <div class="setting"><select name="wl_wds8_enable" size="1" onChange=SelWDS(8,this.form.wl_wds8_enable.selectedIndex,this.form)>
-                              <option value="0" <% nvram_selmatch("wl_wds8_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds8_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(8); %>
-			      <option value="3" <% nvram_selmatch("wl_wds8_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds8_hwaddr" value="6" />
-			      <input class="num" name="wl_wds8_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("8", "0"); %>' />:
-			      <input class="num" name="wl_wds8_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("8", "1"); %>' />:
-			      <input class="num" name="wl_wds8_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("8", "2"); %>' />:
-			      <input class="num" name="wl_wds8_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("8", "3"); %>' />:
-			      <input class="num" name="wl_wds8_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("8", "4"); %>' />:
-			      <input class="num" name="wl_wds8_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("8", "5"); %>' />
-			      <input name="wl_wds8_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds8_desc"); %>' />
-			   <% get_wdsp2p(8); %>
-                        <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
-			</div>
-                        <div class="setting"><select name="wl_wds9_enable" size="1" onChange=SelWDS(9,this.form.wl_wds9_enable.selectedIndex,this.form)>
-                              <option value="0" <% nvram_selmatch("wl_wds9_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds9_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(9); %>
-			      <option value="3" <% nvram_selmatch("wl_wds9_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds9_hwaddr" value="6" />
-			      <input class="num" name="wl_wds9_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("9", "0"); %>' />:
-			      <input class="num" name="wl_wds9_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("9", "1"); %>' />:
-			      <input class="num" name="wl_wds9_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("9", "2"); %>' />:
-			      <input class="num" name="wl_wds9_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("9", "3"); %>' />:
-			      <input class="num" name="wl_wds9_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("9", "4"); %>' />:
-			      <input class="num" name="wl_wds9_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("9", "5"); %>' />
-			      <input name="wl_wds9_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds9_desc"); %>' />
-			      <% get_wdsp2p(9); %>
-			      <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
-                        </div>
-                        <div class="setting"><select name="wl_wds10_enable" size="1" onChange=SelWDS(10,this.form.wl_wds10_enable.selectedIndex,this.form)>
+                              <option value="1" <% nvram_selmatch("wl_wds4_enable", "1", "selected"); %>>Point to Point</option>
+                              <% show_wds_subnet(4); %>
+                              <option value="3" <% nvram_selmatch("wl_wds4_enable", "3", "selected"); %>>LAN</option>
+                            </select>
+                            <input type="hidden" name="wl_wds4_hwaddr" value="6" />
+                            <input class="num" name="wl_wds4_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("4", "0"); %>' />:
+                            <input class="num" name="wl_wds4_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "1"); %>' />:
+                            <input class="num" name="wl_wds4_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "2"); %>' />:
+                            <input class="num" name="wl_wds4_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "3"); %>' />:
+                            <input class="num" name="wl_wds4_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "4"); %>' />:
+                            <input class="num" name="wl_wds4_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "5"); %>' />
+                            <input name="wl_wds4_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds4_desc"); %>' />
+                            <% get_wdsp2p(4); %>
+                            
+                            </div>
+                            <div class="setting">
+                              <select name="wl_wds5_enable" size="1" onChange="SelWDS(5,this.form.wl_wds5_enable.selectedIndex,this.form)">
+                                <option value="0" <% nvram_selmatch("wl_wds5_enable", "0", "selected"); %>>Disable</option>
+                                <option value="1" <% nvram_selmatch("wl_wds5_enable", "1", "selected"); %>>Point to Point</option>
+                                <% show_wds_subnet(5); %>
+                                <option value="3" <% nvram_selmatch("wl_wds5_enable", "3", "selected"); %>>LAN</option>
+                              </select>
+                              <input type="hidden" name="wl_wds5_hwaddr" value="6" />
+                              <input class="num" name="wl_wds5_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("5", "0"); %>' />:
+                              <input class="num" name="wl_wds5_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "1"); %>' />:
+                              <input class="num" name="wl_wds5_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "2"); %>' />:
+                              <input class="num" name="wl_wds5_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "3"); %>' />:
+                              <input class="num" name="wl_wds5_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "4"); %>' />:
+                              <input class="num" name="wl_wds5_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "5"); %>' />
+                              <input name="wl_wds5_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds5_desc"); %>' />
+                              <% get_wdsp2p(5); %>
+                            </div>
+                            
+                            <div class="setting">
+                              <select name="wl_wds6_enable" size="1" onChange="SelWDS(6,this.form.wl_wds6_enable.selectedIndex,this.form)">
+                                <option value="0" <% nvram_selmatch("wl_wds6_enable", "0", "selected"); %>>Disable</option>
+                                <option value="1" <% nvram_selmatch("wl_wds6_enable", "1", "selected"); %>>Point to Point</option>
+                                <% show_wds_subnet(6); %>
+                                <option value="3" <% nvram_selmatch("wl_wds6_enable", "3", "selected"); %>>LAN</option>
+                              </select>
+                              <input type="hidden" name="wl_wds6_hwaddr" value="6" />
+                              <input class="num" name="wl_wds6_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("6", "0"); %>' />:
+                              <input class="num" name="wl_wds6_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "1"); %>' />:
+                              <input class="num" name="wl_wds6_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "2"); %>' />:
+                              <input class="num" name="wl_wds6_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "3"); %>' />:
+                              <input class="num" name="wl_wds6_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "4"); %>' />:
+                              <input class="num" name="wl_wds6_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "5"); %>' />
+                              <input name="wl_wds6_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds6_desc"); %>' />
+                              <% get_wdsp2p(6); %>
+                            </div>
+                            
+                            <div class="setting">
+                              <select name="wl_wds7_enable" size="1" onChange="SelWDS(7,this.form.wl_wds7_enable.selectedIndex,this.form)">
+                                <option value="0" <% nvram_selmatch("wl_wds7_enable", "0", "selected"); %>>Disable</option>
+                                <option value="1" <% nvram_selmatch("wl_wds7_enable", "1", "selected"); %>>Point to Point</option>
+                                <% show_wds_subnet(7); %>
+                                <option value="3" <% nvram_selmatch("wl_wds7_enable", "3", "selected"); %>>LAN</option>
+                              </select>
+                              <input type="hidden" name="wl_wds7_hwaddr" value="6" />
+                   			      <input class="num" name="wl_wds7_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("7", "0"); %>' />:
+                   			      <input class="num" name="wl_wds7_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "1"); %>' />:
+                   			      <input class="num" name="wl_wds7_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "2"); %>' />:
+                   			      <input class="num" name="wl_wds7_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "3"); %>' />:
+                   			      <input class="num" name="wl_wds7_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "4"); %>' />:
+                   			      <input class="num" name="wl_wds7_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "5"); %>' />
+                   			      <input name="wl_wds7_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds7_desc"); %>' />
+                   			      <% get_wdsp2p(7); %>
+                   			    </div>
+                   			    
+                   			    <div class="setting">
+                   			      <select name="wl_wds8_enable" size="1" onChange="SelWDS(8,this.form.wl_wds8_enable.selectedIndex,this.form)">
+                   			        <option value="0" <% nvram_selmatch("wl_wds8_enable", "0", "selected"); %>>Disable</option>
+                   			        <option value="1" <% nvram_selmatch("wl_wds8_enable", "1", "selected"); %>>Point to Point</option>
+                   			        <% show_wds_subnet(8); %>
+                   			        <option value="3" <% nvram_selmatch("wl_wds8_enable", "3", "selected"); %>>LAN</option>
+                   			      </select>
+                              <input type="hidden" name="wl_wds8_hwaddr" value="6" />
+                              <input class="num" name="wl_wds8_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("8", "0"); %>' />:
+                              <input class="num" name="wl_wds8_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "1"); %>' />:
+                              <input class="num" name="wl_wds8_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "2"); %>' />:
+                              <input class="num" name="wl_wds8_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "3"); %>' />:
+                              <input class="num" name="wl_wds8_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "4"); %>' />:
+                              <input class="num" name="wl_wds8_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "5"); %>' />
+                              <input name="wl_wds8_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds8_desc"); %>' />
+                              <% get_wdsp2p(8); %>
+                            </div>
+                            
+                            <div class="setting">
+                              <select name="wl_wds9_enable" size="1" onChange="SelWDS(9,this.form.wl_wds9_enable.selectedIndex,this.form)">
+                                <option value="0" <% nvram_selmatch("wl_wds9_enable", "0", "selected"); %>>Disable</option>
+                                <option value="1" <% nvram_selmatch("wl_wds9_enable", "1", "selected"); %>>Point to Point</option>
+                                <% show_wds_subnet(9); %>
+                                <option value="3" <% nvram_selmatch("wl_wds9_enable", "3", "selected"); %>>LAN</option>
+                              </select>
+			                        <input type="hidden" name="wl_wds9_hwaddr" value="6" />
+			                        <input class="num" name="wl_wds9_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("9", "0"); %>' />:
+			                        <input class="num" name="wl_wds9_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "1"); %>' />:
+			                        <input class="num" name="wl_wds9_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "2"); %>' />:
+			                        <input class="num" name="wl_wds9_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "3"); %>' />:
+			                        <input class="num" name="wl_wds9_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "4"); %>' />:
+			                        <input class="num" name="wl_wds9_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "5"); %>' />
+			                        <input name="wl_wds9_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds9_desc"); %>' />
+			                        <% get_wdsp2p(9); %>
+                         </div>
+                         
+                          <div class="setting">
+                            <select name="wl_wds10_enable" size="1" onChange="SelWDS(10,this.form.wl_wds10_enable.selectedIndex,this.form)">
                               <option value="0" <% nvram_selmatch("wl_wds10_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds10_enable", "1", "selected"); %>>P2pP</option>
-			      <% show_wds_subnet(10); %>
-			      <option value="3" <% nvram_selmatch("wl_wds10_enable", "3", "selected"); %>>LAN</option></select>
-			      <input type="hidden" name="wl_wds10_hwaddr" value="6" />
-			      <input class="num" name="wl_wds10_hwaddr0" size="2" maxlength="2" onBlur=valid_mac(this,0) value='<% get_wds_mac("10", "0"); %>' />:
-			      <input class="num" name="wl_wds10_hwaddr1" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("10", "1"); %>' />:
-			      <input class="num" name="wl_wds10_hwaddr2" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("10", "2"); %>' />:
-			      <input class="num" name="wl_wds10_hwaddr3" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("10", "3"); %>' />:
-			      <input class="num" name="wl_wds10_hwaddr4" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("10", "4"); %>' />:
-			      <input class="num" name="wl_wds10_hwaddr5" size="2" maxlength="2" onBlur=valid_mac(this,1) value='<% get_wds_mac("10", "5"); %>' />
-			      <input name="wl_wds10_desc" size="10" maxlength="39" value='<% nvram_get("wl_wds10_desc"); %>' />			   
-			   <% get_wdsp2p(10); %>
-			   <!-- End WDS MAC #3 -->
-
-<!-- Begin WDS MAC #4 -->
-
+                              <option value="1" <% nvram_selmatch("wl_wds10_enable", "1", "selected"); %>>Point to Point</option>
+                              <% show_wds_subnet(10); %>
+                              <option value="3" <% nvram_selmatch("wl_wds10_enable", "3", "selected"); %>>LAN</option>
+                            </select>
+			                      <input type="hidden" name="wl_wds10_hwaddr" value="6" />
+			                      <input class="num" name="wl_wds10_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("10", "0"); %>' />:
+			                      <input class="num" name="wl_wds10_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "1"); %>' />:
+			                      <input class="num" name="wl_wds10_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "2"); %>' />:
+			                      <input class="num" name="wl_wds10_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "3"); %>' />:
+			                      <input class="num" name="wl_wds10_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "4"); %>' />:
+			                      <input class="num" name="wl_wds10_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "5"); %>' />
+			                      <input name="wl_wds10_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds10_desc"); %>' />
+			                      <% get_wdsp2p(10); %>
                         </div>
+                        
                         </fieldset>
                         <br/>
                         <fieldset>
