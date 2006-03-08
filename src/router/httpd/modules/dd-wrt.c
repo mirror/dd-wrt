@@ -37,6 +37,27 @@
 #include <bcmparams.h>
 
 
+int 
+ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv)
+{
+/*
+#ifdef HAVE_NEWMEDIA
+websWrite(wp,"<dl>\n");
+websWrite(wp,"<dd class=\"definition\">GGEW net GmbH</dd>\n");
+websWrite(wp,"<dd class=\"definition\">Dammstrasse 68</dd>\n");
+websWrite(wp,"<dd class=\"definition\">64625 Bensheim</dd>\n");
+websWrite(wp,"<dd class=\"definition\"><a href=\"http://ggew-net.de\"><img src=\"images/ggewlogo.gif\" border=\"0\"/></a></dd>\n");
+websWrite(wp,"<dd class=\"definition\"> </dd>\n");
+websWrite(wp,"<dd class=\"definition\"><a href=\"http://ggew-net.de\"/></dd>\n");
+websWrite(wp,"<dd class=\"definition\"> </dd>\n");
+websWrite(wp,"<dd class=\"definition\">In Kooperation mit NewMedia-NET GmbH</dd>\n");
+websWrite(wp,"<dd class=\"definition\"><a href=\"http://www.newmedia-net.de\"/></dd>\n");
+websWrite(wp,"</dl>\n");
+#endif*/
+return 0;
+}
+
+
 int
 ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
