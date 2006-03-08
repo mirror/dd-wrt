@@ -849,10 +849,13 @@ ppp-clean:
 
 ppp-install:
 	install -D rp-pppoe-3.5/src/pppoe $(INSTALLDIR)/ppp/usr/sbin/pppoe
-	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe
+#	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe
 ifeq ($(CONFIG_PPPOERELAY),y)
 	install -D rp-pppoe-3.5/src/pppoe-relay $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
-	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
+	install -D rp-pppoe-3.5/config/pppoe-relay.nvramconfig $(INSTALLDIR)/ppp/etc/config/pppoe-relay.nvramconfig
+	install -D rp-pppoe-3.5/config/pppoe-relay.webservices $(INSTALLDIR)/ppp/etc/config/pppoe-relay.webservices
+	install -D rp-pppoe-3.5/config/pppoe-relay.startup $(INSTALLDIR)/ppp/etc/config/pppoe-relay.startup
+#	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
 else
 	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
 endif
