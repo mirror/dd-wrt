@@ -83,6 +83,9 @@ endif
 ifeq ($(CONFIG_NEWMEDIA),y)
 	cp -f nmn/nmn_logo.png $(INSTALLDIR)/www/style/logo.png
 endif
+ifeq ($(CONFIG_GGEW),y)
+	cp -f ggew/ggewlogo.gif $(INSTALLDIR)/www/images/ggewlogo.gif
+endif
 
 ifneq ($(CONFIG_MSSID),y)
 	cp WEP.v23 $(INSTALLDIR)/www/WEP.asp

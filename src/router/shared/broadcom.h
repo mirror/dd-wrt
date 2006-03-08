@@ -384,6 +384,7 @@ extern int ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv);
 
 extern int ej_get_services_options (int eid, webs_t wp, int argc,
 				    char_t ** argv);
+extern int ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv);
 extern int ej_show_control (int eid, webs_t wp, int argc, char_t ** argv);
 extern int ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv);
 extern int qos_add_svc (webs_t wp);
