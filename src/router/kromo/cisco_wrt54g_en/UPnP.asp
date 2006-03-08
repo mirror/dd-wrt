@@ -12,7 +12,6 @@
 			A:link{color: #000000; text-decoration: underline;}
 			A:hover{color: #000000; text-decoration: none;}
 			A:visited{color: #000000; text-decoration: underline;}
-			.ta tr{cursor: pointer;}
 			.dis th {color: #A04040;}
 		-->
 		</style>
@@ -54,9 +53,9 @@ function parseForwards()
 			e.desc = RegExp.$6;
 
 			if ((e.wanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.wanPorts = RegExp.$1;
-				else e.wanPorts = RegExp.$1 + "-<br>" + RegExp.$2;
+				else e.wanPorts = RegExp.$1 + "-<br/>" + RegExp.$2;
 			if ((e.lanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.lanPorts = RegExp.$1;
-				else e.lanPorts = RegExp.$1 + "-<br>" + RegExp.$2;
+				else e.lanPorts = RegExp.$1 + "-<br/>" + RegExp.$2;
 			data.push(e);
 		}
 	}
@@ -125,20 +124,18 @@ function show()
 function makeTable()
 {
 	var s;
-	s = "<table class='ta' cellspacing='1'>";
+	s = "<table cellspacing='1'>";
 	s += "<tr><th>From (WAN)</th><th>To (LAN)</th><th>IP Address</th><th>Proto</th><th>Description</th></tr>";
 	s += "<tr><tr/><tr><tr/><tr><tr/>";
 	for (var i = 0; i < data.length; ++i) {
 		var e = data[i];
 		var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
-		s += "<tr class='" + c + "' onclick='unmap(" + i + ")' " +
-			(mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") +
-			" title='Click to delete entry'><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th></tr>";
+		s += "<tr class='" + c + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "<input type='button' value='Delete'" + "'onclick='unmap(" + i + ")'/>" + "</th></tr>";
 	}
 	if (data.length == 0) {
-		s += "<tr><th colspan=5 align='center' valign='center' class='row0'>- No Forwards -</th></tr>";
+		s += "<tr><th colspan=5 align='center' valign='center'>- No Forwards -</th></tr>";
 	}
-	s += "</table><br>";
+	s += "</table><br/>";
 
 	return s;
 }
