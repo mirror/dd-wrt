@@ -62,6 +62,7 @@ function parseForwards()
 	//data.sort(sorter);
 }
 
+//Get rid of sort function for now
 //var sortby = 4;
 //var sortrev = 0;
 
@@ -124,13 +125,13 @@ function show()
 function makeTable()
 {
 	var s;
-	s = "<table cellspacing='1'>";
+	s = "<table cellspacing='3'>";
 	s += "<tr><th>From (WAN)</th><th>To (LAN)</th><th>IP Address</th><th>Protocol</th><th>Description</th><th>&nbsp;</th></tr>";
 	s += "<tr><tr/><tr><tr/><tr><tr/>";
 	for (var i = 0; i < data.length; ++i) {
 		var e = data[i];
 		var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
-		s += "<tr class='" + c + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th valign='top'><input type='button' value='Delete' onclick='unmap(" + i + ")'/></th></tr>";
+		s += "<tr class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th valign='top'><input type='button' value='Delete' onclick='unmap(" + i + ")'/></th></tr>";
 	}
 	if (data.length == 0) {
 		s += "<tr><th colspan=5 align='center' valign='center'>- No Forwards -</th></tr>";
