@@ -1,0 +1,8 @@
+	<fieldset>
+	<legend>PPPOE Relay</legend>
+	<div class="setting">
+		<div class="label">Relay</div>
+		<input type="radio" name="pppoerelay_enable" value="1" <% nvram_selmatch("pppoerelay_enable", "1", "checked"); %> />Enable
+		<input type="radio" name="pppoerelay_enable" value="0" <% nvram_selmatch("pppoerelay_enable", "0", "checked"); %> />Disable
+		</div>
+	</fieldset><br />
