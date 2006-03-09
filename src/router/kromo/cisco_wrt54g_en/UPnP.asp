@@ -131,7 +131,7 @@ function makeTable()
 	for (var i = 0; i < data.length; ++i) {
 		var e = data[i];
 		var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
-		s += "<tr Height='15' class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\#Click to delete entry\" onclick='unmap(" + i + ")'></th></tr>";
+		s += "<tr Height='15' class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap(" + i + ")'></th></tr>";
 	}
 	if (data.length == 0) {
 		s += "<tr><th colspan=5 align='center' valign='center'>- No Forwards -</th></tr>";
