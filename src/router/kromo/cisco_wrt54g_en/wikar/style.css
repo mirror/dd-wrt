@@ -227,26 +227,6 @@ padding:.906em;
 	color: #2b226f;
 }
 
-/* bar
------------------------------------ */
-/*.meter0 {
-	height: 16px;
-	width: 80%;
-	padding: 0px;
-	border: 1px solid #000000;
-	display: table;
-	background-color: #FFFFFF;
-	margin-bottom: 8px;
-}
-.meter0 .bar {
-     height: 14px;
-     margin: 1px;
-     padding: 0px;
-}
-.meter0 .text {
-	position: absolute;
-	margin-left: 3px;
-}*/
 .meter {
 	float:right;
 	position:relative;
@@ -290,4 +270,9 @@ padding:.906em;
 
 .textblink {
   text-decoration:blink;
+}
+
+.bin {
+background:url(../images/bin_bt.gif) center no-repeat;
+cursor: pointer;
 }
