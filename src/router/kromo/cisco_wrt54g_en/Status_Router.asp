@@ -104,6 +104,10 @@ var mem_cached_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + 
 var mem_active_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_active_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_active_f.toFixed(1) + ' %</div></div></div>' + mem_active + ' kB / ' + mem_total + ' kB';
 var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_inactive_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_inactive_f.toFixed(1) + ' %</div></div></div>' + mem_inactive + ' kB / ' + mem_total + ' kB';
 
+var uptime_raw = '<% get_uptime(); %>';
+var uptime_up = uptime_raw.substring(uptime_raw.indexOf('up') + 3,uptime_raw.indexOf('load') - 2);
+var uptime_load = uptime_raw.substring(uptime_raw.indexOf('average') + 9);
+
 		</script>
 	</head>
 	
@@ -159,13 +163,10 @@ var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' 
 							   <div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
 							</div>
 							<div class="setting">
-							   <div class="label">Firmware Version</div><% get_firmware_version(); %>
-							</div>
-							<div class="setting">
-							   <div class="label">Current Time</div><% localtime(); %>
-							</div>
-							<div class="setting">
 							   <div class="label">MAC Address</div><% nvram_get("wan_hwaddr"); %>
+							</div>
+							<div class="setting">
+							   <div class="label">Firmware Version</div><% get_firmware_version(); %>
 							</div>
 							<div class="setting">
 							   <div class="label">Host Name</div><% nvram_get("wan_hostname"); %>
@@ -174,7 +175,13 @@ var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' 
 							   <div class="label">Domain Name</div><% nvram_get("wan_domain"); %>
 							</div>
 							<div class="setting">
-							   <div class="label">Time</div><% get_uptime(); %>
+							   <div class="label">Current Time</div><% localtime(); %>
+							</div>
+							<div class="setting">
+							   <div class="label">Uptime</div><script type="text/JavaScript">document.write(uptime_up);</script>
+							</div>
+							<div class="setting">
+							   <div class="label">Load Average</div><script type="text/JavaScript">document.write(uptime_load);</script>
 							</div>
 							</fieldset><br>
 							<fieldset>
