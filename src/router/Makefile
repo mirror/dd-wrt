@@ -72,7 +72,7 @@ export AS := $(CROSS_COMPILE)as
 export LD := $(CROSS_COMPILE)ld
 export NM := $(CROSS_COMPILE)nm
 export RANLIB := $(CROSS_COMPILE)ranlib
-export STRIP := $(CROSS_COMPILE)strip
+export STRIP := @true
 export SIZE := $(CROSS_COMPILE)size
 
 export CFLAGS :=$(BASEOPT) -pipe -mips32 -mtune=mips32 -funit-at-a-time
@@ -285,10 +285,11 @@ endif
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+#	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+#	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
