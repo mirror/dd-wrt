@@ -104,12 +104,14 @@ function exit() {
                         <input type="radio" value="allow" name="wl_macmode"  <% nvram_match("wl_macmode","allow","checked"); %>>Permit only PCs listed to access the wireless network</input>
                       </div>
                       <input type="hidden" value="0" name="login_status" />
+                      </fieldset>
+                      <% nvram_match("wl_macmode1","disabled","-->"); %>
+                      <fieldset>
                       <div class="setting">
                         <div class="label">&nbsp;</div>
                         <input type="button" name="mac_filter_button" value="Edit MAC Filter List" onclick="ViewFilter()" />
                       </div>
-                      <% nvram_match("wl_macmode1","disabled","-->"); %>
-                    </fieldset>
+                      </fieldset>
                     <br/>
                     <div class="submitFooter">
                       <input type=button name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
