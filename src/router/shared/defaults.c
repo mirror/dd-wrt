@@ -42,6 +42,8 @@ struct nvram_tuple router_defaults[] = {
   {"fon_revision", "13", 0},
 #endif
   {"router_style", "fon.css", 0},
+#elif HAVE_GGEW
+  {"router_style", "blue.css", 0},
 #else
   {"router_style", "cyan.css", 0},
 #endif
@@ -114,6 +116,8 @@ struct nvram_tuple router_defaults[] = {
 #endif
 #ifdef HAVE_SKYTRON
   {"lan_ipaddr", "192.168.0.1", 0},	/* LAN IP address */
+#elif HAVE_GGEW
+  {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_NEWMEDIA
   {"lan_ipaddr", "172.31.28.3", 0},	/* LAN IP address */
 #elif HAVE_FON
@@ -346,7 +350,11 @@ struct nvram_tuple router_defaults[] = {
   {"skyhttp_passwd", "skytron", 0},	/* Password */
   {"http_passwd", "skymax", 0},	/* Password */
 #elif HAVE_NEWMEDIA
+#ifndef HAVE_GGEW
   {"http_passwd", "nmn4711", 0},	/* Password */
+#else
+  {"http_passwd", "admin", 0},	/* Password */
+#endif
 #else
   {"http_passwd", "admin", 0},	/* Password */
 #endif
