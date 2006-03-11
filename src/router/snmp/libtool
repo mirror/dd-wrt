@@ -27,10 +27,10 @@
 # the same distribution terms that you use for the rest of that program.
 
 # A sed that does not truncate output.
-SED="/home/openwrt/workspace/mikrotik/toolchain/bin//sed"
+SED="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
-Xsed="/home/openwrt/workspace/mikrotik/toolchain/bin//sed -e s/^X//"
+Xsed="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//sed -e s/^X//"
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
@@ -82,7 +82,7 @@ LN_S="ln -s"
 NM="mipsel-linux-uclibc-nm"
 
 # A symbol stripping program
-STRIP=mipsel-linux-uclibc-strip
+STRIP=@true
 
 # Used to examine libraries when file_magic_cmd begins "file"
 MAGIC_CMD=file
@@ -116,7 +116,7 @@ libext="a"
 exeext=""
 
 # Additional compiler flags for building library objects.
-pic_flag="                              -fPIC"
+pic_flag="          -fPIC"
 pic_mode=default
 
 # Does compiler simultaneously support -c and -o options?
@@ -190,8 +190,8 @@ postinstall_cmds=""
 postuninstall_cmds=""
 
 # Commands to strip libraries.
-old_striplib="mipsel-linux-uclibc-strip --strip-debug"
-striplib="mipsel-linux-uclibc-strip --strip-unneeded"
+old_striplib=""
+striplib=""
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method="unknown"
