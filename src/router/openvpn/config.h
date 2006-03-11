@@ -14,7 +14,7 @@
 #define EMPTY_ARRAY_SIZE 0
 
 /* Enable client capability only */
-/* #undef ENABLE_CLIENT_ONLY */
+#define ENABLE_CLIENT_ONLY 1
 
 /* Enable client/server capability */
 #define ENABLE_CLIENT_SERVER 1
@@ -29,10 +29,10 @@
 /* #undef ENABLE_HTTP_PROXY */
 
 /* Enable management server capability */
-#define ENABLE_MANAGEMENT 1
+/* #undef ENABLE_MANAGEMENT */
 
 /* Allow --askpass and --auth-user-pass passwords to be read from a file */
-#define ENABLE_PASSWORD_SAVE 1
+/* #undef ENABLE_PASSWORD_SAVE */
 
 /* Enable smaller executable size */
 #define ENABLE_SMALL 1
