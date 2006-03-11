@@ -1,5 +1,5 @@
 #!/bin/sh
-export PATH=/home/openwrt/workspace/mikrotik/toolchain/bin:$PATH
+export PATH=/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin:$PATH
 
 echo "#define BUILD_DATE \"$(date +%D)\"" > build.h 
 
@@ -8,11 +8,13 @@ echo "#define BUILD_DATE \"$(date +%D)\"" > build.h
 cd ../src
 cd linux/linux.v23
 make clean
+make dep
 cd ../../
 cd linux/linux.v24
 make clean
 cd ../../
 make clean
+make dep
 cd ../opt
 
 
@@ -77,3 +79,11 @@ make rc-clean
 make shared-clean
 cd ../../opt
 ./install_voip.v24.sh
+
+cd ../src/router
+rm -dfr mipsel-uclibc/install
+mske httpd-clean
+make rc-clean
+make shared-clean
+cd ../../opt
+./install_ggew.sh
