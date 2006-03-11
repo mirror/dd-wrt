@@ -47,7 +47,7 @@ AUTOMAKE = ${SHELL} ${PWD}/../missing --run automake-1.7
 AWK = gawk
 CC = mipsel-linux-uclibc-gcc
 CCDEPMODE = depmode=gcc3
-CFLAGS = -pipe -Os -mtune=mips32 -mips32 -fomit-frame-pointer -Wall  -D_REENTRANT
+CFLAGS = -pipe -Os -mtune=mips32 -mips32 -fomit-frame-pointer -funit-at-a-time -Wall  -D_REENTRANT
 CPP = mipsel-linux-uclibc-gcc -E
 CPPFLAGS = 
 CXX = g++
