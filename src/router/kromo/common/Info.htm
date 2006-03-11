@@ -46,9 +46,9 @@ function replace_list(list,target,replacement) {
 					</div>
 				    <div id="main">
 						<div id="contentsInfo">
-							<h2>Sys-Info</h2>
+							<h2>System Information</h2>
 							<fieldset>
-								<legend>Info</legend>
+								<legend>Router</legend>
 								<div class="setting">
 									<div class="label">Router Name</div><% nvram_get("router_name"); %>
 								</div>
@@ -87,7 +87,7 @@ function replace_list(list,target,replacement) {
 									<div class="label">Channel</div><% get_curchannel(); %>
 								</div>
 								<div class="setting">
-									<div class="label">Rate (Mbps)</div><% get_currate(); %>
+									<div class="label">Rate</div><% get_currate(); %> Mbps
 								</div>
 							</fieldset>
 							<br/>
@@ -106,13 +106,13 @@ function replace_list(list,target,replacement) {
 								<% nvram_match("dist_type", "mini", "<!--"); %>
 								
 								<div class="setting">
-									<div class="label">WRT-rflow</div><% nvram_match("rflow_enable","0","Disabled"); %> <% nvram_match("rflow_enable","1","Active"); %>
+									<div class="label">WRT-rflow</div><% nvram_match("rflow_enable","0","Disabled"); %> <% nvram_match("rflow_enable","1","Enabled"); %>
 								</div>
 								<div class="setting">
-									<div class="label">MAC-udp</div><% nvram_match("macupd_enable","0","Disabled"); %> <% nvram_match("macupd_enable","1","Active"); %>
+									<div class="label">MAC-udp</div><% nvram_match("macupd_enable","0","Disabled"); %> <% nvram_match("macupd_enable","1","Enabled"); %>
 								</div>								
 								<div class="setting">
-									<div class="label">Samba Mount</div><% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Active"); %>
+									<div class="label">Samba Mount</div><% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Enabled"); %>
 								</div>
 								
 								<% nvram_match("dist_type", "mini", "-->"); %>
