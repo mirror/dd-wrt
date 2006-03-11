@@ -81,8 +81,8 @@ struct nvram_tuple router_defaults[] = {
   {"upnp_enable", "0", 0},	/* 0:Disable 1:Enable */
 #endif
 // changed by steve
-  {"upnp_ssdp_interval", "40", 0},	/* SSDP interval */
-  {"upnp_max_age", "120", 0},	/* MAX age time */
+  {"upnp_ssdp_interval", "60", 0},	/* SSDP interval */
+  {"upnp_max_age", "180", 0},	/* MAX age time */
   {"upnpmnp", "0", 0},		/* UPnP URL */
   {"upnpcas", "0", 0},		/* UPnP clear at startup */
 // end changed by steve
@@ -644,7 +644,6 @@ struct nvram_tuple router_defaults[] = {
   /* for forward */
   {"forward_port", "", 0},	/* name:[on|off]:[tcp|udp|both]:wan_port>lan_ipaddr:lan_port0 */
   {"forward_spec", "", 0},	/* name:[on|off]:[tcp|udp|both]:wan_port>lan_ipaddr:lan_port0 */
-  {"forward_upnp", "", 0},	/* name:[on|off]:[tcp|udp|both]:wan_port>lan_ipaddr:lan_port0 */
 
   {"port_trigger", "", 0},	/* name:[on|off]:[tcp|udp|both]:wan_port0-wan_port1>lan_port0-lan_port1 */
 
