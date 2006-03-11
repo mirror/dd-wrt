@@ -5,7 +5,7 @@
 	<head>
 	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 	<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
-	<title><% nvram_get("router_name"); %> - Advanced Interface Configuration</title>
+	<title><% nvram_get("router_name"); %> - VLAN</title>
 	<link type="text/css" rel="stylesheet" href="style.css"/>
 	<script type="text/JavaScript" src="common.js">{}</script>
 	<script language="JavaScript">
