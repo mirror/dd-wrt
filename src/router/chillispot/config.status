@@ -497,7 +497,7 @@ s,@AUTOMAKE@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missi
 s,@AUTOHEADER@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run autoheader,;t t
 s,@MAKEINFO@,${SHELL} /home/openwrt/workspace/DD-WRT/src/router/chillispot/missing --run makeinfo,;t t
 s,@install_sh@,/home/openwrt/workspace/DD-WRT/src/router/chillispot/install-sh,;t t
-s,@STRIP@,mipsel-linux-uclibc-strip,;t t
+s,@STRIP@,@true,;t t
 s,@ac_ct_STRIP@,,;t t
 s,@INSTALL_STRIP_PROGRAM@,${SHELL} $(install_sh) -c -s,;t t
 s,@mkdir_p@,mkdir -p --,;t t

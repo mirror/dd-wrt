@@ -50,9 +50,13 @@
 //#define CODE_PATTERN_WRT54G   "W54G"
 #ifdef HAVE_OMNI
 #define MODEL_NAME	"OMNI"
+#elif HAVE_GGEW
+#define MODEL_NAME	"ggew-router"
 #else
 #define MODEL_NAME	"DD-WRT"
 #endif
+
+
 #define	VENDOR		"BLUELINE-AG"
 
 
