@@ -203,15 +203,15 @@ static int compare(const struct ebt_entry_match* m1, const struct ebt_entry_matc
 
 static struct ebt_u_match limit_match =
 {
-	.name		EBT_LIMIT_MATCH,
-	.size		sizeof(struct ebt_limit_info),
-	.help		print_help,
-	.init		init,
-	.parse		parse,
-	.final_check	final_check,
-	.print		print,
-	.compare	compare,
-	.extra_ops	opts,
+	.name	=	EBT_LIMIT_MATCH,
+	.size	=	sizeof(struct ebt_limit_info),
+	.help	=	print_help,
+	.init	=	init,
+	.parse	=	parse,
+	.final_check =	final_check,
+	.print	=	print,
+	.compare =	compare,
+	.extra_ops =	opts,
 };
 
 static void _init(void) __attribute((constructor));
