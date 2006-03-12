@@ -24,7 +24,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: ieee80211_monitor.c 1459 2006-03-03 20:40:23Z jbicket $
+ * $Id: ieee80211_monitor.c 1466 2006-03-07 20:12:02Z jbicket $
  */
 
 #ifndef EXPORT_SYMTAB
@@ -264,7 +264,7 @@ ieee80211_input_monitor(struct ieee80211com *ic, struct sk_buff *skb,
 			ph->rssi.did = DIDmsg_lnxind_wlansniffrm_rssi;
 			ph->rssi.status = 0;
 			ph->rssi.len = 4;
-			ph->rssi.data = 0;
+			ph->rssi.data = signal;
 			
 			ph->noise.did = DIDmsg_lnxind_wlansniffrm_noise;
 			ph->noise.status = 0;
@@ -323,6 +323,8 @@ ieee80211_input_monitor(struct ieee80211com *ic, struct sk_buff *skb,
 				th->wr_chan_flags = 0;
 				th->wr_antenna = 0;
 				th->wr_antsignal = signal;
+				memcpy(&th->wr_fcs, &skb1->data[skb1->len - IEEE80211_CRC_LEN],
+				       IEEE80211_CRC_LEN);
 			}
 			break;
 		}
@@ -340,6 +342,10 @@ ieee80211_input_monitor(struct ieee80211com *ic, struct sk_buff *skb,
 			break;
 		}
 		if (skb1) {
+			if (!tx) {
+				/* Remove FCS from end of rx frames*/
+				skb_trim(skb1, skb1->len - IEEE80211_CRC_LEN);
+			}
 			skb1->dev = dev; /* NB: deliver to wlanX */
 			skb1->mac.raw = skb1->data;
 			skb1->ip_summed = CHECKSUM_NONE;

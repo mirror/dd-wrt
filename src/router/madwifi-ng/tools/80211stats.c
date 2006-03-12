@@ -33,7 +33,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGES.
  *
- * $Id: 80211stats.c 1427 2006-02-01 20:10:07Z mrenzmann $
+ * $Id: 80211stats.c 1470 2006-03-10 13:23:50Z kelmo $
  */
 
 /*
@@ -68,6 +68,8 @@
 #else
 #define INT64FMT "%llu"
 #endif
+
+const char *progname;
 
 static void
 printstats(FILE *fd, const struct ieee80211_stats *stats)
@@ -248,10 +250,22 @@ main(int argc, char *argv[])
 	struct iwreq iwr;
 	int allnodes = 0;
 
+	const char *ifname = "ath0";
+
 	s = socket(AF_INET, SOCK_DGRAM, 0);
 	if (s < 0)
 		err(1, "socket");
-	strncpy(ifr.ifr_name, "wlan0", sizeof (ifr.ifr_name));
+	if (argc > 1 && strcmp(argv[1], "-i") == 0) {
+		if (argc < 2) {
+			fprintf(stderr, "%s: missing interface name for -i\n",
+				argv[0]);
+			exit(-1);
+		}
+		ifname = argv[2];
+		argc -= 2, argv += 2;
+	}
+
+	strncpy(ifr.ifr_name, ifname, sizeof (ifr.ifr_name));
 	while ((c = getopt(argc, argv, "ai:")) != -1)
 		switch (c) {
 		case 'a':
