@@ -10,7 +10,7 @@ mandir=${prefix}/man
 
 LIBS=-ldl  -lcrypt
 CC=mipsel-linux-uclibc-gcc
-CFLAGS=-O
+CFLAGS=-Os -mips32 -mtune=mips32 -pipe -funit-at-a-time
 CPPFLAGS=
 LDFLAGS=
 AWK=mawk
