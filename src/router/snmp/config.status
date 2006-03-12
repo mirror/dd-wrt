@@ -4,7 +4,7 @@
 # This directory was configured as follows,
 # on host colinux:
 #
-# ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
+# ./configure  --quiet --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc
 #
 # Compiler output produced by configure, useful for debugging
 # configure, is in ./config.log if it exists.
@@ -14,8 +14,8 @@ for ac_option
 do
   case "$ac_option" in
   -recheck | --recheck | --rechec | --reche | --rech | --rec | --re | --r)
-    echo "running ${CONFIG_SHELL-/bin/sh} ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion"
-    exec ${CONFIG_SHELL-/bin/sh} ./configure  --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion ;;
+    echo "running ${CONFIG_SHELL-/bin/sh} ./configure  --quiet --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion"
+    exec ${CONFIG_SHELL-/bin/sh} ./configure  --quiet --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc --no-create --no-recursion ;;
   -version | --version | --versio | --versi | --vers | --ver | --ve | --v)
     echo "./config.status generated by autoconf version 2.13"
     exit 0 ;;
@@ -26,7 +26,7 @@ do
 done
 
 ac_given_srcdir=.
-ac_given_INSTALL="/usr/bin/install -c"
+ac_given_INSTALL="/usr/bin//install -c"
 
 trap 'rm -fr 
  Makefile
@@ -49,7 +49,7 @@ sed 's/%@/@@/; s/@%/@@/; s/%g$/@g/; /@g$/s/[\\&%]/\\&/g;
 /^[ 	]*VPATH[ 	]*=[^:]*$/d
 
 s%@SHELL@%/bin/sh%g
-s%@CFLAGS@%-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -Delf%g
+s%@CFLAGS@%-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf%g
 s%@CPPFLAGS@%%g
 s%@CXXFLAGS@%%g
 s%@FFLAGS@%%g
@@ -71,7 +71,7 @@ s%@includedir@%${prefix}/include%g
 s%@oldincludedir@%/usr/include%g
 s%@infodir@%${prefix}/info%g
 s%@mandir@%${prefix}/man%g
-s%@CONFIGURE_OPTIONS@%" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc"%g
+s%@CONFIGURE_OPTIONS@%" --quiet --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc"%g
 s%@LIBTOOLFLAGS@%%g
 s%@HAVE_DMALLOC_H@%%g
 s%@WRAPLIBS@%%g
@@ -103,13 +103,13 @@ s%@INSTALL_PROGRAM@%${INSTALL}%g
 s%@INSTALL_SCRIPT@%${INSTALL_PROGRAM}%g
 s%@INSTALL_DATA@%${INSTALL} -m 644%g
 s%@SET_MAKE@%%g
-s%@PSPROG@%/bin/ps%g
-s%@PERLPROG@%/usr/bin/perl%g
+s%@PSPROG@%/bin//ps%g
+s%@PERLPROG@%/usr/bin//perl%g
 s%@WHOAMI@%whoami%g
-s%@SED@%/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//sed%g
+s%@SED@%/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed%g
 s%@AUTOCONF@%:%g
 s%@AUTOHEADER@%:%g
-s%@UNAMEPROG@%/bin/uname%g
+s%@UNAMEPROG@%/bin//uname%g
 s%@VERSION@%5.0.9%g
 s%@RELEASEVERSION@%5:0:0.9%g
 s%@DEVFLAGS@%%g
@@ -118,7 +118,7 @@ s%@target_alias@%mipsel-unknown-elf%g
 s%@target_cpu@%mipsel%g
 s%@target_vendor@%unknown%g
 s%@target_os@%elf%g
-s%@CCPATH@%/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//mipsel-linux-uclibc-gcc%g
+s%@CCPATH@%/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//mipsel-linux-uclibc-gcc%g
 s%@EXTRACPPFLAGS@%-x c%g
 s%@SNMPCONFPATH@%/tmp/snmp%g
 s%@transport_hdr_list@%snmpUDPDomain.h snmpCallbackDomain.h %g
@@ -143,7 +143,7 @@ s%@PERLINSTALLTARGS@%%g
 s%@PERLARGS@%%g
 s%@EMBEDPERLINSTALL@%%g
 s%@LPSTAT_PATH@%%g
-s%@PSCMD@%/bin/ps -e%g
+s%@PSCMD@%/bin//ps -e%g
 s%@ALLOCA@%%g
 s%@LIBOBJS@% memcmp.o%g
 s%@AGENTLIBS@%-ldl -lm %g
@@ -294,9 +294,9 @@ for ac_file in .. $CONFIG_HEADERS; do if test "x$ac_file" != x..; then
   cat $ac_file_inputs > conftest.in
 
   cat > conftest.frag <<CEOF
-${ac_dA}CONFIGURE_OPTIONS${ac_dB}CONFIGURE_OPTIONS${ac_dC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_dD}
-${ac_uA}CONFIGURE_OPTIONS${ac_uB}CONFIGURE_OPTIONS${ac_uC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_uD}
-${ac_eA}CONFIGURE_OPTIONS${ac_eB}CONFIGURE_OPTIONS${ac_eC}"\\\\" --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_eD}
+${ac_dA}CONFIGURE_OPTIONS${ac_dB}CONFIGURE_OPTIONS${ac_dC}"\\\\" --quiet --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_dD}
+${ac_uA}CONFIGURE_OPTIONS${ac_uB}CONFIGURE_OPTIONS${ac_uC}"\\\\" --quiet --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_uD}
+${ac_eA}CONFIGURE_OPTIONS${ac_eB}CONFIGURE_OPTIONS${ac_eC}"\\\\" --quiet --prefix=/tmp/snmp --host=mipsel --with-cc=mipsel-linux-uclibc-gcc --with-ar=mipsel-linux-uclibc-ar --with-endianness=little '--with-cflags=-Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1' --enable-mini-agent --disable-debugging --disable-privacy --without-opaque-special-types --with-persistent-directory=/tmp/snmp-persist --with-default-snmp-version=3 --with-sys-contact=root --with-sys-location=Unknown --with-logfile=/dev/null --with-out-transports=UDPIPv6,TCPIPv6,AAL5PVC,IPX,TCP,Unix --enable-shared=no --enable-static --with-gnu-ld --enable-internal-md5 --with-copy-persistent-files=no --without-openssl -sysconfdir=/tmp --with-mib-modules=mibII,host,mibII/ip,mibII/tcp,mibII/udp,mibII/icmp,mibII/var_route,mibII/kernel_linux,qos,ucd_snmp,ieee802dot11,avc802dot11 --with-out-mib-modules=snmpv3mibs,agent_mips,agentx,notification,utilities,target --disable-ipv6 --with-defaults --without-efence --without-rsaref --without-kmem-usage --without-rpm --without-dmalloc\\\\""${ac_eD}
 ${ac_dA}SNMP_ALWAYS_DEBUG${ac_dB}SNMP_ALWAYS_DEBUG${ac_dC}1${ac_dD}
 ${ac_uA}SNMP_ALWAYS_DEBUG${ac_uB}SNMP_ALWAYS_DEBUG${ac_uC}1${ac_uD}
 ${ac_eA}SNMP_ALWAYS_DEBUG${ac_eB}SNMP_ALWAYS_DEBUG${ac_eC}1${ac_eD}
@@ -321,9 +321,9 @@ ${ac_eA}NO_DUMMY_VALUES${ac_eB}NO_DUMMY_VALUES${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_DLFCN_H${ac_dB}HAVE_DLFCN_H${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_DLFCN_H${ac_uB}HAVE_DLFCN_H${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_DLFCN_H${ac_eB}HAVE_DLFCN_H${ac_eC}1${ac_eD}
-${ac_dA}UNAMEPROG${ac_dB}UNAMEPROG${ac_dC}"/bin/uname"${ac_dD}
-${ac_uA}UNAMEPROG${ac_uB}UNAMEPROG${ac_uC}"/bin/uname"${ac_uD}
-${ac_eA}UNAMEPROG${ac_eB}UNAMEPROG${ac_eC}"/bin/uname"${ac_eD}
+${ac_dA}UNAMEPROG${ac_dB}UNAMEPROG${ac_dC}"/bin//uname"${ac_dD}
+${ac_uA}UNAMEPROG${ac_uB}UNAMEPROG${ac_uC}"/bin//uname"${ac_uD}
+${ac_eA}UNAMEPROG${ac_eB}UNAMEPROG${ac_eC}"/bin//uname"${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
@@ -675,9 +675,9 @@ CEOF
 ${ac_dA}HAVE_IN_ADDR_T${ac_dB}HAVE_IN_ADDR_T${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_IN_ADDR_T${ac_uB}HAVE_IN_ADDR_T${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_IN_ADDR_T${ac_eB}HAVE_IN_ADDR_T${ac_eC}1${ac_eD}
-${ac_dA}PSCMD${ac_dB}PSCMD${ac_dC}"/bin/ps -e"${ac_dD}
-${ac_uA}PSCMD${ac_uB}PSCMD${ac_uC}"/bin/ps -e"${ac_uD}
-${ac_eA}PSCMD${ac_eB}PSCMD${ac_eC}"/bin/ps -e"${ac_eD}
+${ac_dA}PSCMD${ac_dB}PSCMD${ac_dC}"/bin//ps -e"${ac_dD}
+${ac_uA}PSCMD${ac_uB}PSCMD${ac_uC}"/bin//ps -e"${ac_uD}
+${ac_eA}PSCMD${ac_eB}PSCMD${ac_eC}"/bin//ps -e"${ac_eD}
 ${ac_dA}HAVE_ALLOCA_H${ac_dB}HAVE_ALLOCA_H${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_ALLOCA_H${ac_uB}HAVE_ALLOCA_H${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_ALLOCA_H${ac_eB}HAVE_ALLOCA_H${ac_eC}1${ac_eD}

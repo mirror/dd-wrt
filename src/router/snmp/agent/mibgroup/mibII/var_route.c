@@ -1,3 +1,4 @@
+#undef CAN_USE_SYSCTL
 /*
  * snmp_var_route.c - return a pointer to the named variable.
  *

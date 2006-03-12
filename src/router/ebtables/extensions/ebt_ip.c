@@ -244,6 +244,7 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 	struct ebt_ip_info *ipinfo = (struct ebt_ip_info *)(*match)->data;
 	char *end;
 	long int i;
+	unsigned char j;
 
 	switch (c) {
 	case IP_SOURCE:
@@ -313,7 +314,7 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 			ipinfo->invflags |= EBT_IP_PROTO;
 		if (optind > argc)
 			print_error("Missing IP protocol argument");
-		(unsigned char) i = strtoul(argv[optind - 1], &end, 10);
+		j = strtoul(argv[optind - 1], &end, 10);
 		if (*end != '\0') {
 			struct protoent *pe;
 
@@ -324,7 +325,7 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 				     argv[optind - 1]);
 			ipinfo->protocol = pe->p_proto;
 		} else {
-			ipinfo->protocol = (unsigned char) i;
+			ipinfo->protocol = j;
 		}
 		ipinfo->bitmask |= EBT_IP_PROTO;
 		break;

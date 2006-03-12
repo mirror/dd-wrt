@@ -286,6 +286,8 @@ ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv)
 	return websWrite (wp, "%s", nvram_safe_get ("pptp_get_ip"));
       else if (nvram_match ("wan_proto", "l2tp"))
 	return websWrite (wp, "%s", nvram_safe_get ("l2tp_get_ip"));
+      else if (nvram_match ("pptpd_connected","1"))
+        return websWrite (wp, "%s", nvram_safe_get ("pptpd_client_info_localip"));
       else
 	return websWrite (wp, "%s", nvram_safe_get ("wan_ipaddr"));
     }

@@ -32,9 +32,9 @@ persistentdir	= /tmp/snmp-persist
 #
 # Programs
 #
-INSTALL		= $(LIBTOOL) --mode=install /usr/bin/install -c
+INSTALL		= $(LIBTOOL) --mode=install /usr/bin//install -c
 INSTALL_DATA    = ${INSTALL} -m 644
-SED		= /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//sed
+SED		= /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed
 LN_S		= ln -s
 AUTOCONF	= :
 AUTOHEADER	= :
@@ -42,7 +42,7 @@ AUTOHEADER	= :
 #
 # Compiler arguments
 #
-CFLAGS		= -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -Delf 
+CFLAGS		= -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf 
 EXTRACPPFLAGS	= -x c
 LDFLAGS		= -s 
 LIBTOOL		= $(SHELL) $(top_builddir)/libtool 
