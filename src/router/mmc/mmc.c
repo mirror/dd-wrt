@@ -298,7 +298,7 @@ static int mmc_release(struct inode *inode, struct file *filp)
 	return 0;
 }
 
-extern struct gendisk hd_gendisk;
+static struct gendisk hd_gendisk;
 static int mmc_revalidate(kdev_t dev)
 {
 	int target, max_p, start, i;

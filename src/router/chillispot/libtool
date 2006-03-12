@@ -30,10 +30,10 @@
 # the same distribution terms that you use for the rest of that program.
 
 # A sed program that does not truncate output.
-SED="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/sed"
+SED="/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
-Xsed="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/sed -e 1s/^X//"
+Xsed="/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed -e 1s/^X//"
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
@@ -319,7 +319,7 @@ variables_saved_for_relink="PATH  LD_RUN_PATH GCC_EXEC_PREFIX COMPILER_PATH LIBR
 link_all_deplibs=unknown
 
 # Compile-time system search path for libraries
-sys_lib_search_path_spec=" /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/ /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/ /home/openwrt/trunk/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/3.4.6/ /usr/lib/gcc/mipsel-linux-uclibc/3.4.6/ /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.4.6/ /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/lib/ /home/openwrt/trunk/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/mipsel-linux-uclibc/3.4.6/ /home/openwrt/trunk/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/"
+sys_lib_search_path_spec=" /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/ /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/ /home/openwrt/trunk/openwrt/staging_dir_mipsel/lib/gcc/mipsel-linux-uclibc/4.1.0/ /usr/lib/gcc/mipsel-linux-uclibc/4.1.0/ /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/lib/mipsel-linux-uclibc/4.1.0/ /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/lib/ /home/openwrt/trunk/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/mipsel-linux-uclibc/4.1.0/ /home/openwrt/trunk/openwrt/staging_dir_mipsel/mipsel-linux-uclibc/lib/"
 
 # Run-time system search path for libraries
 sys_lib_dlsearch_path_spec="/lib /usr/lib"
