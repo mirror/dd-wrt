@@ -33,7 +33,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGES.
  *
- * $Id: 80211debug.c 1426 2006-02-01 20:07:11Z mrenzmann $
+ * $Id: 80211debug.c 1470 2006-03-10 13:23:50Z kelmo $
  */
 
 /*
@@ -53,61 +53,65 @@
 
 const char *progname;
 
-#define	IEEE80211_MSG_DEBUG	0x40000000	/* IFF_DEBUG equivalent */
-#define	IEEE80211_MSG_DUMPPKTS	0x20000000	/* IFF_LINK2 equivalant */
-#define	IEEE80211_MSG_CRYPTO	0x10000000	/* crypto work */
-#define	IEEE80211_MSG_INPUT	0x08000000	/* input handling */
-#define	IEEE80211_MSG_XRATE	0x04000000	/* rate set handling */
-#define	IEEE80211_MSG_ELEMID	0x02000000	/* element id parsing */
-#define	IEEE80211_MSG_NODE	0x01000000	/* node handling */
-#define	IEEE80211_MSG_ASSOC	0x00800000	/* association handling */
-#define	IEEE80211_MSG_AUTH	0x00400000	/* authentication handling */
-#define	IEEE80211_MSG_SCAN	0x00200000	/* scanning */
-#define	IEEE80211_MSG_OUTPUT	0x00100000	/* output handling */
-#define	IEEE80211_MSG_STATE	0x00080000	/* state machine */
-#define	IEEE80211_MSG_POWER	0x00040000	/* power save handling */
-#define	IEEE80211_MSG_DOT1X	0x00020000	/* 802.1x authenticator */
-#define	IEEE80211_MSG_DOT1XSM	0x00010000	/* 802.1x state machine */
-#define	IEEE80211_MSG_RADIUS	0x00008000	/* 802.1x radius client */
-#define	IEEE80211_MSG_RADDUMP	0x00004000	/* dump 802.1x radius packets */
-#define	IEEE80211_MSG_RADKEYS	0x00002000	/* dump 802.1x keys */
-#define	IEEE80211_MSG_WPA	0x00001000	/* WPA/RSN protocol */
-#define	IEEE80211_MSG_ACL	0x00000800	/* ACL handling */
-#define	IEEE80211_MSG_WME	0x00000400	/* WME protocol */
-#define	IEEE80211_MSG_SUPG	0x00000200	/* SUPERG */
-#define	IEEE80211_MSG_DOTH	0x00000100	/* 11.h */
-#define	IEEE80211_MSG_INACT	0x00000080	/* inactivity handling */
-#define	IEEE80211_MSG_ROAM	0x00000040	/* sta-mode roaming */
+enum {
+	IEEE80211_MSG_DEBUG	= 0x40000000,	/* IFF_DEBUG equivalent */
+	IEEE80211_MSG_DUMPPKTS	= 0x20000000,	/* IFF_LINK2 equivalant, dump packets */
+	IEEE80211_MSG_CRYPTO	= 0x10000000,	/* crypto modules */
+	IEEE80211_MSG_INPUT	= 0x08000000,	/* input handling */
+	IEEE80211_MSG_XRATE	= 0x04000000,	/* rate set handling */
+	IEEE80211_MSG_ELEMID	= 0x02000000,	/* element id parsing */
+	IEEE80211_MSG_NODE	= 0x01000000,	/* node handling */
+	IEEE80211_MSG_ASSOC	= 0x00800000,	/* association handling */
+	IEEE80211_MSG_AUTH	= 0x00400000,	/* authentication handling */
+	IEEE80211_MSG_SCAN	= 0x00200000,	/* scanning */
+	IEEE80211_MSG_OUTPUT	= 0x00100000,	/* output handling */
+	IEEE80211_MSG_STATE	= 0x00080000,	/* state machine */
+	IEEE80211_MSG_POWER	= 0x00040000,	/* power save handling */
+	IEEE80211_MSG_DOT1X	= 0x00020000,	/* 802.1x authenticator */
+	IEEE80211_MSG_DOT1XSM	= 0x00010000,	/* 802.1x state machine */
+	IEEE80211_MSG_RADIUS	= 0x00008000,	/* 802.1x radius client */
+	IEEE80211_MSG_RADDUMP	= 0x00004000,	/* dump 802.1x radius packets */
+	IEEE80211_MSG_RADKEYS	= 0x00002000,	/* dump 802.1x keys */
+	IEEE80211_MSG_WPA	= 0x00001000,	/* WPA/RSN protocol */
+	IEEE80211_MSG_ACL	= 0x00000800,	/* ACL handling */
+	IEEE80211_MSG_WME	= 0x00000400,	/* WME protocol */
+	IEEE80211_MSG_SUPG	= 0x00000200,	/* SUPERG */
+	IEEE80211_MSG_DOTH	= 0x00000100,	/* 11.h */
+	IEEE80211_MSG_INACT	= 0x00000080,	/* inactivity handling */
+	IEEE80211_MSG_ROAM	= 0x00000040,	/* sta-mode roaming */
+	IEEE80211_MSG_ANY	= 0xffffffff
+};
 
 static struct {
 	const char	*name;
 	u_int		bit;
+	const char *desc;
 } flags[] = {
-	{ "debug",	IEEE80211_MSG_DEBUG },
-	{ "dumppkts",	IEEE80211_MSG_DUMPPKTS },
-	{ "crypto",	IEEE80211_MSG_CRYPTO },
-	{ "input",	IEEE80211_MSG_INPUT },
-	{ "xrate",	IEEE80211_MSG_XRATE },
-	{ "elemid",	IEEE80211_MSG_ELEMID },
-	{ "node",	IEEE80211_MSG_NODE },
-	{ "assoc",	IEEE80211_MSG_ASSOC },
-	{ "auth",	IEEE80211_MSG_AUTH },
-	{ "scan",	IEEE80211_MSG_SCAN },
-	{ "output",	IEEE80211_MSG_OUTPUT },
-	{ "state",	IEEE80211_MSG_STATE },
-	{ "power",	IEEE80211_MSG_POWER },
-	{ "dotx1",	IEEE80211_MSG_DOT1X },
-	{ "dot1xsm",	IEEE80211_MSG_DOT1XSM },
-	{ "radius",	IEEE80211_MSG_RADIUS },
-	{ "raddump",	IEEE80211_MSG_RADDUMP },
-	{ "radkeys",	IEEE80211_MSG_RADKEYS },
-	{ "wpa",	IEEE80211_MSG_WPA },
-	{ "acl",	IEEE80211_MSG_ACL },
-	{ "wme",	IEEE80211_MSG_WME },
-	{ "superg",	IEEE80211_MSG_SUPG },
-	{ "doth",	IEEE80211_MSG_DOTH },
-	{ "inact",	IEEE80211_MSG_INACT },
-	{ "roam",	IEEE80211_MSG_ROAM },
+	{ "debug",	IEEE80211_MSG_DEBUG, "IFF_DEBUG equivalent" },
+	{ "dumppkts",	IEEE80211_MSG_DUMPPKTS,  "dump packets" },
+	{ "crypto",	IEEE80211_MSG_CRYPTO, "crypto modules" },
+	{ "input",	IEEE80211_MSG_INPUT, "packet input handling" },
+	{ "xrate",	IEEE80211_MSG_XRATE, "rate set handling" },
+	{ "elemid",	IEEE80211_MSG_ELEMID, "element id parsing"},
+	{ "node",	IEEE80211_MSG_NODE, "node management" },
+	{ "assoc",	IEEE80211_MSG_ASSOC, "association handling" },
+	{ "auth",	IEEE80211_MSG_AUTH, "authentication handling" },
+	{ "scan",	IEEE80211_MSG_SCAN, "scanning" },
+	{ "output",	IEEE80211_MSG_OUTPUT, "packet output handling" },
+	{ "state",	IEEE80211_MSG_STATE, "802.11 state machine" },
+	{ "power",	IEEE80211_MSG_POWER, "power save functions" },
+	{ "dot1x",	IEEE80211_MSG_DOT1X, "802.1x authenticator" },
+	{ "dot1xsm",	IEEE80211_MSG_DOT1XSM, "802.1x state machine" },
+	{ "radius",	IEEE80211_MSG_RADIUS, "802.1x radius client" },
+	{ "raddump",	IEEE80211_MSG_RADDUMP, "802.1x radius packet dump" },
+	{ "radkeys",	IEEE80211_MSG_RADKEYS, "802.1x key dump" },
+	{ "wpa",	IEEE80211_MSG_WPA, "WPA/RSN protocol" },
+	{ "acl",	IEEE80211_MSG_ACL, "ACL handling" },
+	{ "wme",	IEEE80211_MSG_WME, "WME protocol" },
+	{ "superg",	IEEE80211_MSG_SUPG, "super G turbo mode" },
+	{ "doth",	IEEE80211_MSG_DOTH, "802.11h (DFS/TPC) handling" },
+	{ "inact",	IEEE80211_MSG_INACT, "timeout of inactive nodes"},
+	{ "roam",	IEEE80211_MSG_ROAM, "station mode roaming" },
 };
 
 static u_int
@@ -126,10 +130,10 @@ usage(void)
 {
 	int i;
 
-	fprintf(stderr, "usage: %s [-i device] [flags]\n", progname);
-	fprintf(stderr, "where flags are:\n");
+	fprintf(stderr, "usage: %s [-i interface] [(+/-) flags]\n", progname);
+	fprintf(stderr, "\twhere flags are:\n\n");
 	for (i = 0; i < N(flags); i++)
-		printf("%s\n", flags[i].name);
+		printf("\t%12s\t0x%08x\t%s\n", flags[i].name, flags[i].bit, flags[i].desc);
 	exit(-1);
 }
 
@@ -188,11 +192,9 @@ main(int argc, char *argv[])
 	char oid[256];
 
 	progname = argv[0];
-	if (argc == 1)
-	    usage();
 	if (argc > 1) {
 		if (strcmp(argv[1], "-i") == 0) {
-			if (argc < 2)
+			if (argc <= 2)
 				errx(1, "missing interface name for -i option");
 			ifname = argv[2];
 			argc -= 2, argv += 2;
@@ -242,13 +244,13 @@ main(int argc, char *argv[])
 		} while (*(cp = tp) != '\0');
 	}
 	if (debug != ndebug) {
-		printf("%s: 0x%x => ", oid, debug);
+		printf("%s: 0x%08x => ", oid, debug);
 		if (sysctlbyname(oid, NULL, NULL, &ndebug, sizeof(ndebug)) < 0)
 			err(1, "sysctl-set(%s)", oid);
-		printf("0x%x", ndebug);
+		printf("0x%08x", ndebug);
 		debug = ndebug;
 	} else
-		printf("%s: 0x%x", oid, debug);
+		printf("%s: 0x%08x", oid, debug);
 	sep = "<";
 	for (i = 0; i < N(flags); i++)
 		if (debug & flags[i].bit) {
@@ -258,3 +260,5 @@ main(int argc, char *argv[])
 	printf("%s\n", *sep != '<' ? ">" : "");
 	return 0;
 }
+
+
