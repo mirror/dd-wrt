@@ -127,11 +127,11 @@ function makeTable()
 	var s;
 	s = "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"3\">";
 	s += "<tr><th width=\"5%\" >From (WAN)</th><th width=\"5%\">To (LAN)</th><th width=\"20%\">IP Address</th><th width=\"10%\">Protocol</th><th width=\"55%\">Description</th><th width=\"5%\">&nbsp;</th></tr>";
-	s += "<tr><tr/><tr><tr/><tr><tr/>";
+	s += "<tr><tr/><tr><tr/>";
 	for (var i = 0; i < data.length; ++i) {
 		var e = data[i];
 		var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
-		s += "<tr Height='15' class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap(" + i + ")'></th></tr>";
+		s += "<tr height='15' class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap(" + i + ")'></th></tr>";
 	}
 	if (data.length == 0) {
 		s += "<tr><th colspan=5 align='center' valign='center'>- No Forwards -</th></tr>";
@@ -256,7 +256,7 @@ parseForwards();
 						<div id="logo"><h2>Help</h2></div>
 						<dl>
 							<dt class="term">UPnP Service:</dt>
-							<dd class="definition">Allows applications to automatically setup port forwardings. Click an entry to delete.</dd>
+							<dd class="definition">Allows applications to automatically setup port forwardings. Click the trash can to delete.</dd>
 						</dl>
 						<br/>
 						<a target="_blank" href="help/HUPnP.asp">More...</a>
