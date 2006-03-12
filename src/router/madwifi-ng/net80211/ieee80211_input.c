@@ -29,7 +29,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: ieee80211_input.c 1434 2006-02-03 11:28:14Z mrenzmann $
+ * $Id: ieee80211_input.c 1472 2006-03-10 13:50:04Z kelmo $
  */
 #ifndef EXPORT_SYMTAB
 #define	EXPORT_SYMTAB
@@ -228,15 +228,21 @@ ieee80211_input(struct ieee80211_node *ni,
 			if (type == IEEE80211_FC0_TYPE_DATA &&
 			    ni == vap->iv_bss) {
 				/*
-				 * Fake up a node for this newly discovered
-				 * member of the IBSS.  This should probably
-				 * done after an ACL check.
+				 * Try to find sender in local node table.
 				 */
-				ni = ieee80211_fakeup_adhoc_node(vap,
-						wh->i_addr2);
+				ni = ieee80211_find_node(ni->ni_table, wh->i_addr2);
 				if (ni == NULL) {
-					/* NB: stat kept for alloc failure */
-					goto err;
+					/*
+					 * Fake up a node for this newly discovered
+					 * member of the IBSS.  This should probably
+					 * done after an ACL check.
+					 */
+					ni = ieee80211_fakeup_adhoc_node(vap,
+							wh->i_addr2);
+					if (ni == NULL) {
+						/* NB: stat kept for alloc failure */
+						goto err;
+					}
 				}
 			}
 			break;
@@ -2496,10 +2502,35 @@ ieee80211_recv_mgmt(struct ieee80211_node *ni, struct sk_buff *skb,
 				ni = ieee80211_add_neighbor(vap, wh, &scan);
 			} else {
 				/*
-				 * Record tsf for potential resync.
+				 * Copy data from beacon to neighbor table.
+				 * Some of this information might change after
+				 * ieee80211_add_neighbor(), so we just copy
+				 * everything over to be safe.
 				 */
+				ni->ni_esslen = scan.ssid[1];
+				memcpy(ni->ni_essid, scan.ssid + 2, scan.ssid[1]);
+				IEEE80211_ADDR_COPY(ni->ni_bssid, wh->i_addr3);
 				memcpy(ni->ni_tstamp.data, scan.tstamp,
 					sizeof(ni->ni_tstamp));
+				ni->ni_intval = scan.bintval;
+				ni->ni_capinfo = scan.capinfo;
+				ni->ni_chan = ic->ic_curchan;
+				ni->ni_fhdwell = scan.fhdwell;
+				ni->ni_fhindex = scan.fhindex;
+				ni->ni_erp = scan.erp;
+				ni->ni_timoff = scan.timoff;
+				if (scan.wme != NULL)
+					ieee80211_saveie(&ni->ni_wme_ie, scan.wme);
+				if (scan.wpa != NULL)
+					ieee80211_saveie(&ni->ni_wpa_ie, scan.wpa);
+				if (scan.rsn != NULL)
+					ieee80211_saveie(&ni->ni_rsn_ie, scan.rsn);
+				if (scan.ath != NULL)
+					ieee80211_saveath(ni, scan.ath);
+
+				/* NB: must be after ni_chan is setup */
+				ieee80211_setup_rates(ni, scan.rates,
+					scan.xrates, IEEE80211_F_DOSORT);
 			}
 			if (ni != NULL) {
 				ni->ni_rssi = rssi;

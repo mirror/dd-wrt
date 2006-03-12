@@ -33,7 +33,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGES.
  *
- * $Id: athdebug.c 1443 2006-02-06 20:20:57Z mrenzmann $
+ * $Id: athdebug.c 1470 2006-03-10 13:23:50Z kelmo $
  */
 
 /*
@@ -64,8 +64,8 @@ enum {
 	ATH_DEBUG_RATE		= 0x00000010,	/* rate control */
 	ATH_DEBUG_RESET		= 0x00000020,	/* reset processing */
 	ATH_DEBUG_MODE		= 0x00000040,	/* mode init/setup */
-	ATH_DEBUG_BEACON 	= 0x00000080,	/* beacon handling */
-	ATH_DEBUG_WATCHDOG 	= 0x00000100,	/* watchdog timeout */
+	ATH_DEBUG_BEACON	= 0x00000080,	/* beacon handling */
+	ATH_DEBUG_WATCHDOG	= 0x00000100,	/* watchdog timeout */
 	ATH_DEBUG_INTR		= 0x00001000,	/* ISR */
 	ATH_DEBUG_TX_PROC	= 0x00002000,	/* tx ISR proc */
 	ATH_DEBUG_RX_PROC	= 0x00004000,	/* rx ISR proc */
@@ -82,26 +82,27 @@ enum {
 static struct {
 	const char *name;
 	u_int bit;
+	const char *desc;
 } flags[] = {
-	{ "xmit",	ATH_DEBUG_XMIT },
-	{ "xmit_desc",	ATH_DEBUG_XMIT_DESC },
-	{ "recv",	ATH_DEBUG_RECV },
-	{ "recv_desc",	ATH_DEBUG_RECV_DESC },
-	{ "rate",	ATH_DEBUG_RATE },
-	{ "reset",	ATH_DEBUG_RESET },
-	{ "mode",	ATH_DEBUG_MODE },
-	{ "beacon",	ATH_DEBUG_BEACON },
-	{ "watchdog",	ATH_DEBUG_WATCHDOG },
-	{ "intr",	ATH_DEBUG_INTR },
-	{ "xmit_proc",	ATH_DEBUG_TX_PROC },
-	{ "recv_proc",	ATH_DEBUG_RX_PROC },
-	{ "beacon_proc",ATH_DEBUG_BEACON_PROC },
-	{ "calibrate",	ATH_DEBUG_CALIBRATE },
-	{ "keycache",	ATH_DEBUG_KEYCACHE },
-	{ "state",	ATH_DEBUG_STATE },
-	{ "node",	ATH_DEBUG_NODE },
-	{ "ff",		ATH_DEBUG_FF },
-	{ "fatal",	ATH_DEBUG_FATAL },
+	{ "xmit",	ATH_DEBUG_XMIT, "transmission of packets before out to HW"},
+	{ "xmit_desc",	ATH_DEBUG_XMIT_DESC, "transmit descriptors" },
+	{ "recv",	ATH_DEBUG_RECV, "received packets directly from HW" },
+	{ "recv_desc",	ATH_DEBUG_RECV_DESC, "recv descriptors" },
+	{ "rate",	ATH_DEBUG_RATE, "rate control modules" },
+	{ "reset",	ATH_DEBUG_RESET, "reset processing and initialization" },
+	{ "mode",	ATH_DEBUG_MODE, "mode initialization and changes" },
+	{ "beacon",	ATH_DEBUG_BEACON, "beacon handling" },
+	{ "watchdog",	ATH_DEBUG_WATCHDOG, "watchdog timer" },
+	{ "intr",	ATH_DEBUG_INTR, "interrupt processing" },
+	{ "xmit_proc",	ATH_DEBUG_TX_PROC, "processing of transmit descriptors" },
+	{ "recv_proc",	ATH_DEBUG_RX_PROC, "processing of receive descriptors" },
+	{ "beacon_proc",ATH_DEBUG_BEACON_PROC, "beacon processing" },
+	{ "calibrate",	ATH_DEBUG_CALIBRATE, "periodic re-calibration" },
+	{ "keycache",	ATH_DEBUG_KEYCACHE, "key cache management" },
+	{ "state",	ATH_DEBUG_STATE, "802.11 state transitions" },
+	{ "node",	ATH_DEBUG_NODE, "node management" },
+	{ "ff",		ATH_DEBUG_FF, "fast frame handling" },
+	{ "fatal",	ATH_DEBUG_FATAL, "fatal errors" },
 };
 
 static u_int
@@ -120,10 +121,10 @@ usage(void)
 {
 	int i;
 
-	fprintf(stderr, "usage: %s [-i device] [flags]\n", progname);
-	fprintf(stderr, "where flags are:\n");
+	fprintf(stderr, "usage: %s [-i device] [(+/-) flags]\n", progname);
+	fprintf(stderr, "\twhere flags are:\n\n");
 	for (i = 0; i < N(flags); i++)
-		printf("%s\n", flags[i].name);
+		printf("\t%12s\t0x%08x\t%s\n", flags[i].name, flags[i].bit, flags[i].desc);
 	exit(-1);
 }
 
@@ -239,13 +240,13 @@ main(int argc, char *argv[])
 		} while (*(cp = tp) != '\0');
 	}
 	if (debug != ndebug) {
-		printf("%s: 0x%x => ", oid, debug);
+		printf("%s: 0x%08x => ", oid, debug);
 		if (sysctlbyname(oid, NULL, NULL, &ndebug, sizeof(ndebug)) < 0)
 			err(1, "sysctl-set(%s)", oid);
-		printf("0x%x", ndebug);
+		printf("0x%08x", ndebug);
 		debug = ndebug;
 	} else
-		printf("%s: 0x%x", oid, debug);
+		printf("%s: 0x%08x", oid, debug);
 	sep = "<";
 	for (i = 0; i < N(flags); i++)
 		if (debug & flags[i].bit) {
