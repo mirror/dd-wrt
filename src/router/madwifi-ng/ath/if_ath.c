@@ -33,7 +33,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF
  * THE POSSIBILITY OF SUCH DAMAGES.
  *
- * $Id: if_ath.c 1456 2006-02-24 20:48:57Z jbicket $
+ * $Id: if_ath.c 1473 2006-03-11 21:45:41Z jbicket $
  */
 
 /*
@@ -3182,6 +3182,9 @@ ath_calcrxfilter(struct ath_softc *sc)
 	    sc->sc_opmode == HAL_M_IBSS ||	/* NB: AHDEMO too */
 	    (sc->sc_nostabeacons) || sc->sc_scanning)
 		rfilt |= HAL_RX_FILTER_BEACON;
+	if (sc->sc_nmonvaps > 0) 
+		rfilt |= (HAL_RX_FILTER_CONTROL | HAL_RX_FILTER_BEACON | 
+			  HAL_RX_FILTER_PROBEREQ | HAL_RX_FILTER_PROM);
 	return rfilt;
 #undef RX_FILTER_PRESERVE
 }
@@ -5394,8 +5397,7 @@ rx_accept:
 		sc->sc_devstats.rx_packets++;
 		sc->sc_devstats.rx_bytes += len;
 
-
-		skb_put(skb, len - IEEE80211_CRC_LEN);
+		skb_put(skb, len);
 		skb->protocol = ETH_P_CONTROL;		/* XXX */
 
 		if (sc->sc_nmonvaps > 0) {
@@ -5419,6 +5421,9 @@ rx_accept:
 				goto rx_next;
 			}
 		}
+
+		/* remove the crc */
+		skb_trim(skb, skb->len - IEEE80211_CRC_LEN);
 
 		/*
 		 * From this point on we assume the frame is at least

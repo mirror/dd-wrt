@@ -29,7 +29,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * $Id: ieee80211_output.c 1458 2006-03-03 17:59:35Z jbicket $
+ * $Id: ieee80211_output.c 1467 2006-03-07 20:21:07Z jbicket $
  */
 #ifndef EXPORT_SYMTAB
 #define	EXPORT_SYMTAB
@@ -654,7 +654,9 @@ ieee80211_skbhdr_adjust(struct ieee80211vap *vap, int hdrsize,
 				skb = NULL;
 			}
 		}
-		skb->next = skb2;
+		if (skb) {
+			skb->next = skb2;
+		}
 		return skb;
 	}
 #endif /* ATH_SUPERG_FF */
@@ -664,8 +666,8 @@ ieee80211_skbhdr_adjust(struct ieee80211vap *vap, int hdrsize,
 		vap->iv_stats.is_tx_nobuf++;
 	} else if (skb_tailroom(skb) < need_tailroom) {
 		int n = 0;
-		if (inter_headroom > skb_headroom(skb2))
-			n = inter_headroom - skb_headroom(skb2);
+		if (need_headroom > skb_headroom(skb))
+			n = need_headroom - skb_headroom(skb);
 		if (pskb_expand_head(skb, n,
 			need_tailroom - skb_tailroom(skb), GFP_ATOMIC)) {
 			dev_kfree_skb(skb);
