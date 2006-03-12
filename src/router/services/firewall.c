@@ -2562,7 +2562,7 @@ stop_firewall (void)
  *          1 : in time and anytime
  *          2 : in time
  */
-static int
+int
 if_tod_intime (int seq)
 {
   char todname[] = "filter_todxxx";

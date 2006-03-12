@@ -1,3 +1,4 @@
+#undef CAN_USE_SYSCTL
 /*
  *  Template MIB group implementation - at.c
  *

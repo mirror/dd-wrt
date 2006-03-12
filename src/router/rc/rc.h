@@ -74,7 +74,7 @@ extern int stop_chilli(void);
 
 
 extern int check_process(char *name);
-extern int wlconf_up(char *name);
+static int wlconf_up(char *name);
 extern int stop_l2tp(void);
 extern int start_dhcpd(void);
 extern int stop_dhcpd(void);
@@ -289,7 +289,7 @@ extern int force_to_dial(void);
 extern char *range(char *start, char *end);
 
 
-extern int start_heartbeat(int status);
+static int start_heartbeat(int status);
 extern int stop_heartbeat(void);
 extern int hb_connect_main(int argc, char **argv);
 extern int hb_disconnect_main(int argc, char **argv);
