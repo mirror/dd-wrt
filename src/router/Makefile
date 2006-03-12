@@ -734,7 +734,7 @@ ser-clean:
 	rm -rf $(INSTALLDIR)/www/*
 			
 nocat:
-#	cd nocat && . ./conf
+	cd nocat && . ./conf
 	make -C nocat
 
 nocat-clean:
