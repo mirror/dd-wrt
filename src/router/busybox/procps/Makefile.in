@@ -1,0 +1,31 @@
+# Makefile for busybox
+#
+# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
+#
+# Licensed under the GPL v2, see the file LICENSE in this tarball.
+
+PROCPS_AR:=procps.a
+ifndef $(PROCPS_DIR)
+PROCPS_DIR:=$(top_builddir)/procps/
+endif
+srcdir=$(top_srcdir)/procps
+
+PROCPS-y:=
+PROCPS-$(CONFIG_FREE)		+= free.o
+PROCPS-$(CONFIG_KILL)		+= kill.o
+PROCPS-$(CONFIG_PIDOF)		+= pidof.o
+PROCPS-$(CONFIG_PS)		+= ps.o
+PROCPS-$(CONFIG_RENICE)		+= renice.o
+PROCPS-$(CONFIG_BB_SYSCTL)	+= sysctl.o
+PROCPS-$(CONFIG_TOP)		+= top.o
+PROCPS-$(CONFIG_UPTIME)		+= uptime.o
+PROCPS-$(CONFIG_FUSER)		+= fuser.o
+
+libraries-y+=$(PROCPS_DIR)$(PROCPS_AR)
+
+$(PROCPS_DIR)$(PROCPS_AR): $(patsubst %,$(PROCPS_DIR)%, $(PROCPS-y))
+	$(AR) $(ARFLAGS) $@ $(patsubst %,$(PROCPS_DIR)%, $(PROCPS-y))
+
+$(PROCPS_DIR)%.o: $(srcdir)/%.c
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -c -o $@ $<
+

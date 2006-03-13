@@ -1,0 +1,64 @@
+<!--#include file="header.html" -->
+
+
+<h3>Subversion Read/Write Access</h3>
+
+If you want to be able to commit things to Subversion, first contribute some
+stuff to show you are serious.  Then, very nicely ask <a
+href="mailto:andersen@codepoet.org">Erik Andersen</a> if he will set you up
+with an commit access to the Subversion repository.  To access Subversion, you
+will want to add the following to set up your environment:
+
+<p>
+
+To obtain commit access, you will need to demonstrate you are serious by
+submitting a few good patches first.  Then, you will need to select a username
+to use when committing changes to SVN, you will need to send me the username
+you have selected, you must send me your preferred contact email address, and
+finally, you must send me an ssh version 2 DSA key with 1024 bits (the default)
+or more.  If you do not currently have an ssh version 2 DSA key, you can
+generate a key using the command<pre>ssh-keygen -t dsa</pre>  This will
+create the files <pre>/home/&lt;USERNAME&gt;/.ssh/id_dsa
+/home/&lt;USERNAME&gt;/.ssh/id_dsa.pub</pre>  You must then send the content
+of 'id_dsa.pub' to me so I can setup your account.  The content of 'id_dsa'
+should of course be kept secret.
+
+<p>
+
+Note that if you would prefer to keep your communications with me
+private, you can encrypt your email using my
+<a href="http://www.codepoet.org/andersen/erik/gpg.asc">public key</a>.
+
+<p>
+
+Once you are setup with an account, you will need to use your account to
+checkout a copy of BusyBox from Subversion:
+
+<pre>
+svn list svn+ssh://username@svn.uclibc.org/svn/trunk/busybox</pre>
+<br>
+It goes without saying you must change <em>username</em> to your own
+username...
+<p>
+
+You can then enter the newly checked out BusyBox directory, make changes, check
+your changes, diff your changes, revert your changes, and and commit your
+changes usine commands such as:
+
+<pre>
+svn diff
+svn status
+svn revert
+svn commit</pre>
+
+<p>
+
+For additional detail on how to use Subversion, please visit the
+<a href="http://subversion.tigris.org/">the Subversion website</a>.
+You might also want to read online or buy a copy of <a
+href="http://svnbook.red-bean.com/">the Subversion Book</a>...
+
+
+<!--#include file="footer.html" -->
+
+
