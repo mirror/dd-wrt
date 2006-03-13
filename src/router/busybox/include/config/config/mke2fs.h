@@ -1,1 +1,0 @@
-#undef CONFIG_MKE2FS
