@@ -1,0 +1,35 @@
+# Makefile for busybox
+#
+# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
+#
+# Licensed under the GPL v2, see the file LICENSE in this tarball.
+
+EDITOR_AR:=editors.a
+ifndef $(EDITOR_DIR)
+EDITOR_DIR:=$(top_builddir)/editors/
+endif
+srcdir=$(top_srcdir)/editors
+
+EDITOR-y:=
+EDITOR-$(CONFIG_AWK)	   += awk.o
+EDITOR-$(CONFIG_PATCH)	   += patch.o
+EDITOR-$(CONFIG_SED)       += sed.o
+EDITOR-$(CONFIG_VI)        += vi.o
+EDITOR_SRC:= $(EDITOR-y)
+EDITOR_OBJ:= $(patsubst %.c,$(EDITOR_DIR)%.o, $(EDITOR_SRC))
+
+libraries-y+=$(EDITOR_DIR)$(EDITOR_AR)
+
+needlibm-y:=
+needlibm-$(CONFIG_FEATURE_AWK_MATH) := y
+
+ifeq ($(needlibm-y),y)
+  LIBRARIES += -lm
+endif
+
+$(EDITOR_DIR)$(EDITOR_AR): $(patsubst %,$(EDITOR_DIR)%, $(EDITOR-y))
+	$(AR) $(ARFLAGS) $@ $(patsubst %,$(EDITOR_DIR)%, $(EDITOR-y))
+
+$(EDITOR_DIR)%.o: $(srcdir)/%.c
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -c -o $@ $<
+
