@@ -1,1 +1,0 @@
-#define CONFIG_FEATURE_TAR_GZIP 1
