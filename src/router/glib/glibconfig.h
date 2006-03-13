@@ -120,7 +120,8 @@ struct _GStaticMutex
 #define GLIB_SYSDEF_POLLNVAL =32
 
 
-#define G_HAVE_BROKEN_WCTYPE 1
+#define G_HAVE_WCHAR_H 1
+#define G_HAVE_WCTYPE_H 1
 
 
 #ifdef __cplusplus
