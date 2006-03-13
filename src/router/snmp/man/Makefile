@@ -32,9 +32,9 @@ persistentdir	= /tmp/snmp-persist
 #
 # Programs
 #
-INSTALL		= $(LIBTOOL) --mode=install /usr/bin//install -c
+INSTALL		= $(LIBTOOL) --mode=install /usr/bin/install -c
 INSTALL_DATA    = ${INSTALL} -m 644
-SED		= /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed
+SED		= /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed
 LN_S		= ln -s
 AUTOCONF	= :
 AUTOHEADER	= :

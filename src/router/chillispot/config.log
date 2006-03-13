@@ -28,13 +28,15 @@ hostinfo               = unknown
 /bin/universe          = unknown
 
 PATH: /home/openwrt/workspace/DD-WRT/tools
-PATH: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/
-PATH: /bin/
-PATH: /sbin/
-PATH: /usr/bin/
-PATH: /usr/sbin/
-PATH: /usr/local/bin/
-PATH: /usr/local/sbin/
+PATH: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin
+PATH: /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/
+PATH: /usr/local/sbin
+PATH: /usr/local/bin
+PATH: /usr/sbin
+PATH: /usr/bin
+PATH: /sbin
+PATH: /bin
+PATH: /usr/bin/X11
 
 
 ## ----------- ##
@@ -42,13 +44,13 @@ PATH: /usr/local/sbin/
 ## ----------- ##
 
 configure:1553: checking for a BSD-compatible install
-configure:1608: result: /usr/bin//install -c
+configure:1608: result: /usr/bin/install -c
 configure:1619: checking whether build environment is sane
 configure:1662: result: yes
 configure:1727: checking for gawk
 configure:1756: result: no
 configure:1727: checking for mawk
-configure:1743: found /usr/bin//mawk
+configure:1743: found /usr/bin/mawk
 configure:1753: result: mawk
 configure:1763: checking whether make sets $(MAKE)
 configure:1783: result: yes
@@ -136,7 +138,7 @@ configure:3158: result: i686-pc-linux-gnu
 configure:3166: checking host system type
 configure:3180: result: mipsel-linux-elf
 configure:3188: checking for a sed that does not truncate output
-configure:3242: result: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed
+configure:3242: result: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed
 configure:3245: checking for egrep
 configure:3255: result: grep -E
 configure:3271: checking for ld used by mipsel-linux-uclibc-gcc
@@ -319,7 +321,7 @@ configure:4492: result: no
 configure:4463: checking for mipsel-linux-elf-xlC
 configure:4492: result: no
 configure:4505: checking for g++
-configure:4521: found /usr/bin//g++
+configure:4521: found /usr/bin/g++
 configure:4531: result: g++
 configure:4547: checking for C++ compiler version
 configure:4550: g++ --version </dev/null >&5
@@ -1247,7 +1249,7 @@ ac_cv_header_vfork_h=no
 ac_cv_host=mipsel-linux-elf
 ac_cv_host_alias=mipsel-linux-elf
 ac_cv_objext=o
-ac_cv_path_install='/usr/bin//install -c'
+ac_cv_path_install='/usr/bin/install -c'
 ac_cv_prog_AR=mipsel-linux-uclibc-ar
 ac_cv_prog_AWK=mawk
 ac_cv_prog_CC=mipsel-linux-uclibc-gcc
@@ -1275,7 +1277,7 @@ lt_cv_objdir=.libs
 lt_cv_path_LD=mipsel-linux-uclibc-ld
 lt_cv_path_LDCXX=mipsel-linux-uclibc-ld
 lt_cv_path_NM=mipsel-linux-uclibc-nm
-lt_cv_path_SED=/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed
+lt_cv_path_SED=/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed
 lt_cv_prog_compiler_c_o=yes
 lt_cv_prog_compiler_c_o_CXX=yes
 lt_cv_prog_compiler_rtti_exceptions=no

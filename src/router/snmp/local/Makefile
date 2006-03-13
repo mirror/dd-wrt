@@ -32,9 +32,9 @@ persistentdir	= /tmp/snmp-persist
 #
 # Programs
 #
-INSTALL		= $(LIBTOOL) --mode=install /usr/bin//install -c
+INSTALL		= $(LIBTOOL) --mode=install /usr/bin/install -c
 INSTALL_DATA    = ${INSTALL} -m 644
-SED		= /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed
+SED		= /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed
 LN_S		= ln -s
 AUTOCONF	= :
 AUTOHEADER	= :
@@ -88,7 +88,7 @@ SNMPCONFPATH=/tmp/snmp
 PERLSCRIPTS=snmpcheck tkmib mib2c fixproc ipf-mod.pl snmpconf traptoemail
 SCRIPTSMADEFORPERL=snmpcheck.made tkmib.made mib2c.made fixproc.made \
 	ipf-mod.pl.made snmpconf.made traptoemail.made
-PERLPROG=/usr/bin//perl
+PERLPROG=/usr/bin/perl
 DATASRCS=mib2c.conf mib2c.iterate.conf mib2c.create-dataset.conf \
 	mib2c.array-user.conf mib2c.column_enums.conf \
 	mib2c.column_defines.conf mib2c.old-api.conf mib2c.scalar.conf \

@@ -178,10 +178,10 @@
 /* location of swap device (ok if not found) */
 /* #undef DMEM_LOC */
 
-#define PSCMD "/bin//ps -e"
+#define PSCMD "/bin/ps -e"
 
 /* Where is the uname command */
-#define UNAMEPROG "/bin//uname"
+#define UNAMEPROG "/bin/uname"
 
 /* testing code sections. */
 /* #undef SNMP_TESTING_CODE */ 
