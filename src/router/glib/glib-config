@@ -1,6 +1,6 @@
 #!/bin/sh
 
-prefix=${PWD}/../glib-1.2.10-install
+prefix=/home/openwrt/workspace/DD-WRT/src/router/glib/../glib-1.2.10-install
 exec_prefix=${prefix}
 exec_prefix_set=no
 

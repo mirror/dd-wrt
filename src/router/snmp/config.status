@@ -26,7 +26,7 @@ do
 done
 
 ac_given_srcdir=.
-ac_given_INSTALL="/usr/bin//install -c"
+ac_given_INSTALL="/usr/bin/install -c"
 
 trap 'rm -fr 
  Makefile
@@ -103,13 +103,13 @@ s%@INSTALL_PROGRAM@%${INSTALL}%g
 s%@INSTALL_SCRIPT@%${INSTALL_PROGRAM}%g
 s%@INSTALL_DATA@%${INSTALL} -m 644%g
 s%@SET_MAKE@%%g
-s%@PSPROG@%/bin//ps%g
-s%@PERLPROG@%/usr/bin//perl%g
+s%@PSPROG@%/bin/ps%g
+s%@PERLPROG@%/usr/bin/perl%g
 s%@WHOAMI@%whoami%g
-s%@SED@%/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed%g
+s%@SED@%/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed%g
 s%@AUTOCONF@%:%g
 s%@AUTOHEADER@%:%g
-s%@UNAMEPROG@%/bin//uname%g
+s%@UNAMEPROG@%/bin/uname%g
 s%@VERSION@%5.0.9%g
 s%@RELEASEVERSION@%5:0:0.9%g
 s%@DEVFLAGS@%%g
@@ -118,7 +118,7 @@ s%@target_alias@%mipsel-unknown-elf%g
 s%@target_cpu@%mipsel%g
 s%@target_vendor@%unknown%g
 s%@target_os@%elf%g
-s%@CCPATH@%/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//mipsel-linux-uclibc-gcc%g
+s%@CCPATH@%/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/mipsel-linux-uclibc-gcc%g
 s%@EXTRACPPFLAGS@%-x c%g
 s%@SNMPCONFPATH@%/tmp/snmp%g
 s%@transport_hdr_list@%snmpUDPDomain.h snmpCallbackDomain.h %g
@@ -143,7 +143,7 @@ s%@PERLINSTALLTARGS@%%g
 s%@PERLARGS@%%g
 s%@EMBEDPERLINSTALL@%%g
 s%@LPSTAT_PATH@%%g
-s%@PSCMD@%/bin//ps -e%g
+s%@PSCMD@%/bin/ps -e%g
 s%@ALLOCA@%%g
 s%@LIBOBJS@% memcmp.o%g
 s%@AGENTLIBS@%-ldl -lm %g
@@ -321,9 +321,9 @@ ${ac_eA}NO_DUMMY_VALUES${ac_eB}NO_DUMMY_VALUES${ac_eC}1${ac_eD}
 ${ac_dA}HAVE_DLFCN_H${ac_dB}HAVE_DLFCN_H${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_DLFCN_H${ac_uB}HAVE_DLFCN_H${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_DLFCN_H${ac_eB}HAVE_DLFCN_H${ac_eC}1${ac_eD}
-${ac_dA}UNAMEPROG${ac_dB}UNAMEPROG${ac_dC}"/bin//uname"${ac_dD}
-${ac_uA}UNAMEPROG${ac_uB}UNAMEPROG${ac_uC}"/bin//uname"${ac_uD}
-${ac_eA}UNAMEPROG${ac_eB}UNAMEPROG${ac_eC}"/bin//uname"${ac_eD}
+${ac_dA}UNAMEPROG${ac_dB}UNAMEPROG${ac_dC}"/bin/uname"${ac_dD}
+${ac_uA}UNAMEPROG${ac_uB}UNAMEPROG${ac_uC}"/bin/uname"${ac_uD}
+${ac_eA}UNAMEPROG${ac_eB}UNAMEPROG${ac_eC}"/bin/uname"${ac_eD}
 CEOF
   sed -f conftest.frag conftest.in > conftest.out
   rm -f conftest.in
@@ -675,9 +675,9 @@ CEOF
 ${ac_dA}HAVE_IN_ADDR_T${ac_dB}HAVE_IN_ADDR_T${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_IN_ADDR_T${ac_uB}HAVE_IN_ADDR_T${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_IN_ADDR_T${ac_eB}HAVE_IN_ADDR_T${ac_eC}1${ac_eD}
-${ac_dA}PSCMD${ac_dB}PSCMD${ac_dC}"/bin//ps -e"${ac_dD}
-${ac_uA}PSCMD${ac_uB}PSCMD${ac_uC}"/bin//ps -e"${ac_uD}
-${ac_eA}PSCMD${ac_eB}PSCMD${ac_eC}"/bin//ps -e"${ac_eD}
+${ac_dA}PSCMD${ac_dB}PSCMD${ac_dC}"/bin/ps -e"${ac_dD}
+${ac_uA}PSCMD${ac_uB}PSCMD${ac_uC}"/bin/ps -e"${ac_uD}
+${ac_eA}PSCMD${ac_eB}PSCMD${ac_eC}"/bin/ps -e"${ac_eD}
 ${ac_dA}HAVE_ALLOCA_H${ac_dB}HAVE_ALLOCA_H${ac_dC}1${ac_dD}
 ${ac_uA}HAVE_ALLOCA_H${ac_uB}HAVE_ALLOCA_H${ac_uC}1${ac_uD}
 ${ac_eA}HAVE_ALLOCA_H${ac_eB}HAVE_ALLOCA_H${ac_eC}1${ac_eD}

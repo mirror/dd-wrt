@@ -407,7 +407,7 @@ extern int forward_add (webs_t wp);
 extern int forward_remove (webs_t wp);
 extern int lease_add (webs_t wp);
 extern int lease_remove (webs_t wp);
-#ifdef HAVE_FON
+#ifdef HAVE_CHILLILOCAL
 extern int user_add (webs_t wp);
 extern int user_remove (webs_t wp);
 extern int ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv);

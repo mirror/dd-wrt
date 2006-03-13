@@ -1235,10 +1235,19 @@ struct nvram_tuple router_defaults[] = {
   {"ath5_regdomain", "96", 0},
 
 #endif
-#ifdef HAVE_FON
+#ifdef HAVE_CHILLILOCAL
   {"fon_usernames", "0", 0},
   {"fon_userlist", "", 0},
 #endif
+ {"pptpd_client_enable","",0},  
+ {"pptpd_client_srvip","",0}, 
+ {"pptpd_client_srvsub","",0},  
+ {"pptpd_client_srvsubmsk","",0},  
+ {"pptpd_client_srvuser","",0}, 
+ {"pptpd_client_srvpass","",0}, 
+ {"pptpd_client_ipparam","",0},  
+ {"pptpd_client_mtu" "",0},
+ {"pptpd_client_mru","",0}, 
   {0, 0, 0}
 };
 
