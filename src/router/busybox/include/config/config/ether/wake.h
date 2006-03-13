@@ -1,0 +1,1 @@
+#define CONFIG_ETHER_WAKE 1

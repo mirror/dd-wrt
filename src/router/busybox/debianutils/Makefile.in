@@ -1,0 +1,28 @@
+# Makefile for busybox
+#
+# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
+#
+# Licensed under the GPL v2, see the file LICENSE in this tarball.
+
+DEBIANUTILS_AR:=debianutils.a
+ifndef $(DEBIANUTILS_DIR)
+DEBIANUTILS_DIR:=$(top_builddir)/debianutils/
+endif
+srcdir=$(top_srcdir)/debianutils
+
+DEBIANUTILS-y:=
+DEBIANUTILS-$(CONFIG_MKTEMP)		+= mktemp.o
+DEBIANUTILS-$(CONFIG_PIPE_PROGRESS)	+= pipe_progress.o
+DEBIANUTILS-$(CONFIG_READLINK)		+= readlink.o
+DEBIANUTILS-$(CONFIG_RUN_PARTS)		+= run_parts.o
+DEBIANUTILS-$(CONFIG_START_STOP_DAEMON)	+= start_stop_daemon.o
+DEBIANUTILS-$(CONFIG_WHICH)		+= which.o
+
+libraries-y+=$(DEBIANUTILS_DIR)$(DEBIANUTILS_AR)
+
+$(DEBIANUTILS_DIR)$(DEBIANUTILS_AR): $(patsubst %,$(DEBIANUTILS_DIR)%, $(DEBIANUTILS-y))
+	$(AR) $(ARFLAGS) $@ $(patsubst %,$(DEBIANUTILS_DIR)%, $(DEBIANUTILS-y))
+
+$(DEBIANUTILS_DIR)%.o: $(srcdir)/%.c
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -c -o $@ $<
+

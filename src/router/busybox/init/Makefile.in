@@ -1,0 +1,49 @@
+# Makefile for busybox
+#
+# Copyright (C) 1999-2005 by Erik Andersen <andersen@codepoet.org>
+#
+# Licensed under the GPL v2, see the file LICENSE in this tarball.
+
+INIT_AR:=init.a
+ifndef $(INIT_DIR)
+INIT_DIR:=$(top_builddir)/init/
+endif
+srcdir=$(top_srcdir)/init
+
+INIT-y:=
+INIT-$(CONFIG_HALT)			+= halt.o
+INIT-$(CONFIG_INIT)			+= init.o
+INIT-$(CONFIG_MESG)			+= mesg.o
+INIT-$(CONFIG_POWEROFF)			+= poweroff.o
+INIT-$(CONFIG_REBOOT)			+= reboot.o
+
+ifeq ($(CONFIG_HALT), y)
+CONFIG_INIT_SHARED=y
+else
+ifeq ($(CONFIG_INIT), y)
+CONFIG_INIT_SHARED=y
+else
+ifeq ($(CONFIG_POWEROFF), y)
+CONFIG_INIT_SHARED=y
+else
+ifeq ($(CONFIG_REBOOT), y)
+CONFIG_INIT_SHARED=y
+else
+CONFIG_INIT_SHARED=n
+endif
+endif
+endif
+endif
+
+ifeq ($(CONFIG_INIT_SHARED), y)
+INIT-$(CONFIG_INIT_SHARED)        += init_shared.o
+endif
+
+libraries-y+=$(INIT_DIR)$(INIT_AR)
+
+$(INIT_DIR)$(INIT_AR): $(patsubst %,$(INIT_DIR)%, $(INIT-y))
+	$(AR) $(ARFLAGS) $@ $(patsubst %,$(INIT_DIR)%, $(INIT-y))
+
+$(INIT_DIR)%.o: $(srcdir)/%.c
+	$(CC) $(CFLAGS) $(EXTRA_CFLAGS) -c -o $@ $<
+

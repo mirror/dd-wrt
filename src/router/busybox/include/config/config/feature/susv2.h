@@ -1,0 +1,1 @@
+#define CONFIG_FEATURE_SUSv2 1
