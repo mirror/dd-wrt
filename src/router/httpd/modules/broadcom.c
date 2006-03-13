@@ -3947,6 +3947,7 @@ tf_upnp (webs_t wp)
       if (strcmp (v, "all") == 0)
 	{
 	  nvram_set ("upnp_clear", "1");
+	  sleep(10);
 	}
       else
 	{
@@ -3954,10 +3955,8 @@ tf_upnp (webs_t wp)
 	  nvram_unset (s);
 	}
     }
-
   // firewall + upnp service is restarted after this
   return 0;
-  sleep (8);			//wait until upnp is done clearing before continuing
 }
 
 //      <% tf_upnp(); %>
