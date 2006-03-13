@@ -11,16 +11,16 @@
 # loading this file, other *unset* `ac_cv_foo' will be assigned the
 # following values.
 
-ac_cv_build=${ac_cv_build=i586-redhat-linux-gnu}
-ac_cv_build_alias=${ac_cv_build_alias=i586-redhat-linux-gnu}
+ac_cv_build=${ac_cv_build=i686-pc-linux-gnu}
+ac_cv_build_alias=${ac_cv_build_alias=i686-pc-linux-gnu}
 ac_cv_c_bigendian=${ac_cv_c_bigendian=no}
 ac_cv_c_compiler_gnu=${ac_cv_c_compiler_gnu=yes}
 ac_cv_c_const=${ac_cv_c_const=yes}
 ac_cv_cxx_compiler_gnu=${ac_cv_cxx_compiler_gnu=yes}
 ac_cv_env_CC_set=set
-ac_cv_env_CC_value=mipsel-uclibc-gcc
+ac_cv_env_CC_value=mipsel-linux-uclibc-gcc
 ac_cv_env_CFLAGS_set=set
-ac_cv_env_CFLAGS_value='-pipe -Os -fomit-frame-pointer'
+ac_cv_env_CFLAGS_value='-pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time'
 ac_cv_env_CPPFLAGS_set=
 ac_cv_env_CPPFLAGS_value=
 ac_cv_env_CPP_set=
@@ -35,8 +35,8 @@ ac_cv_env_F77_set=
 ac_cv_env_F77_value=
 ac_cv_env_FFLAGS_set=
 ac_cv_env_FFLAGS_value=
-ac_cv_env_LDFLAGS_set=
-ac_cv_env_LDFLAGS_value=
+ac_cv_env_LDFLAGS_set=set
+ac_cv_env_LDFLAGS_value=-s
 ac_cv_env_build_alias_set=
 ac_cv_env_build_alias_value=
 ac_cv_env_host_alias_set=set
@@ -44,13 +44,13 @@ ac_cv_env_host_alias_value=mipsel-linux
 ac_cv_env_target_alias_set=
 ac_cv_env_target_alias_value=
 ac_cv_exeext=${ac_cv_exeext=}
-ac_cv_f77_compiler_gnu=${ac_cv_f77_compiler_gnu=yes}
+ac_cv_f77_compiler_gnu=${ac_cv_f77_compiler_gnu=no}
 ac_cv_func__doprnt=${ac_cv_func__doprnt=no}
 ac_cv_func_atexit=${ac_cv_func_atexit=yes}
 ac_cv_func_dlerror=${ac_cv_func_dlerror=yes}
 ac_cv_func_dlopen=${ac_cv_func_dlopen=no}
 ac_cv_func_getpwuid_r=${ac_cv_func_getpwuid_r=yes}
-ac_cv_func_iswalnum=${ac_cv_func_iswalnum=no}
+ac_cv_func_iswalnum=${ac_cv_func_iswalnum=yes}
 ac_cv_func_localtime_r=${ac_cv_func_localtime_r=yes}
 ac_cv_func_lstat=${ac_cv_func_lstat=yes}
 ac_cv_func_memmove=${ac_cv_func_memmove=yes}
@@ -89,23 +89,21 @@ ac_cv_host_alias=${ac_cv_host_alias=mipsel-linux}
 ac_cv_lib_dl_dlopen=${ac_cv_lib_dl_dlopen=yes}
 ac_cv_lib_dl_dlsym=${ac_cv_lib_dl_dlsym=yes}
 ac_cv_lib_pthread_pthread_attr_init=${ac_cv_lib_pthread_pthread_attr_init=yes}
-ac_cv_lib_w_iswalnum=${ac_cv_lib_w_iswalnum=no}
 ac_cv_objext=${ac_cv_objext=o}
 ac_cv_path_install=${ac_cv_path_install='/usr/bin/install -c'}
-ac_cv_prog_AR=${ac_cv_prog_AR=mipsel-uclibc-ar}
-ac_cv_prog_AWK=${ac_cv_prog_AWK=gawk}
-ac_cv_prog_CC=${ac_cv_prog_CC=mipsel-uclibc-gcc}
-ac_cv_prog_CPP=${ac_cv_prog_CPP='mipsel-uclibc-gcc -E'}
-ac_cv_prog_CXXCPP=${ac_cv_prog_CXXCPP='g++ -E'}
-ac_cv_prog_RANLIB=${ac_cv_prog_RANLIB=mipsel-uclibc-ranlib}
-ac_cv_prog_STRIP=${ac_cv_prog_STRIP=mipsel-uclibc-strip}
-ac_cv_prog_ac_ct_CXX=${ac_cv_prog_ac_ct_CXX=g++}
-ac_cv_prog_ac_ct_F77=${ac_cv_prog_ac_ct_F77=g77}
+ac_cv_prog_AR=${ac_cv_prog_AR=mipsel-linux-uclibc-ar}
+ac_cv_prog_AWK=${ac_cv_prog_AWK=mawk}
+ac_cv_prog_CC=${ac_cv_prog_CC=mipsel-linux-uclibc-gcc}
+ac_cv_prog_CPP=${ac_cv_prog_CPP='mipsel-linux-uclibc-gcc -E'}
+ac_cv_prog_CXX=${ac_cv_prog_CXX=mipsel-linux-g++}
+ac_cv_prog_CXXCPP=${ac_cv_prog_CXXCPP='mipsel-linux-g++ -E'}
+ac_cv_prog_RANLIB=${ac_cv_prog_RANLIB=mipsel-linux-uclibc-ranlib}
+ac_cv_prog_STRIP=${ac_cv_prog_STRIP=@true}
 ac_cv_prog_cc_g=${ac_cv_prog_cc_g=yes}
 ac_cv_prog_cc_stdc=${ac_cv_prog_cc_stdc=}
 ac_cv_prog_cxx_g=${ac_cv_prog_cxx_g=yes}
 ac_cv_prog_egrep=${ac_cv_prog_egrep='grep -E'}
-ac_cv_prog_f77_g=${ac_cv_prog_f77_g=yes}
+ac_cv_prog_f77_g=${ac_cv_prog_f77_g=no}
 ac_cv_prog_make_make_set=${ac_cv_prog_make_make_set=yes}
 ac_cv_sizeof_char=${ac_cv_sizeof_char=1}
 ac_cv_sizeof_int=${ac_cv_sizeof_int=4}
@@ -139,16 +137,15 @@ glib_cv_va_copy=${glib_cv_va_copy=no}
 glib_cv_va_val_copy=${glib_cv_va_val_copy=yes}
 lt_cv_deplibs_check_method=${lt_cv_deplibs_check_method=pass_all}
 lt_cv_file_magic_cmd=${lt_cv_file_magic_cmd='$MAGIC_CMD'}
-lt_cv_file_magic_test_file=${lt_cv_file_magic_test_file='/lib/libc.so.6 /lib/libc-2.3.2.so'}
+lt_cv_file_magic_test_file=${lt_cv_file_magic_test_file='/lib/libc.so.6 /lib/libc-2.3.5.so'}
 lt_cv_ld_reload_flag=${lt_cv_ld_reload_flag=-r}
 lt_cv_objdir=${lt_cv_objdir=.libs}
-lt_cv_path_LD=${lt_cv_path_LD=mipsel-uclibc-ld}
-lt_cv_path_LDCXX=${lt_cv_path_LDCXX=mipsel-uclibc-ld}
-lt_cv_path_NM=${lt_cv_path_NM=mipsel-uclibc-nm}
-lt_cv_path_SED=${lt_cv_path_SED=/bin/sed}
+lt_cv_path_LD=${lt_cv_path_LD=mipsel-linux-uclibc-ld}
+lt_cv_path_LDCXX=${lt_cv_path_LDCXX=mipsel-linux-uclibc-ld}
+lt_cv_path_NM=${lt_cv_path_NM=mipsel-linux-uclibc-nm}
+lt_cv_path_SED=${lt_cv_path_SED=/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed}
 lt_cv_prog_compiler_c_o=${lt_cv_prog_compiler_c_o=yes}
 lt_cv_prog_compiler_c_o_CXX=${lt_cv_prog_compiler_c_o_CXX=yes}
-lt_cv_prog_compiler_c_o_F77=${lt_cv_prog_compiler_c_o_F77=yes}
 lt_cv_prog_compiler_rtti_exceptions=${lt_cv_prog_compiler_rtti_exceptions=no}
 lt_cv_prog_gnu_ld=${lt_cv_prog_gnu_ld=yes}
 lt_cv_prog_gnu_ldcxx=${lt_cv_prog_gnu_ldcxx=yes}
@@ -158,7 +155,6 @@ lt_cv_sys_global_symbol_to_cdecl=${lt_cv_sys_global_symbol_to_cdecl='sed -n -e '
 lt_cv_sys_max_cmd_len=${lt_cv_sys_max_cmd_len=32768}
 lt_lt_cv_prog_compiler_c_o=${lt_lt_cv_prog_compiler_c_o='"yes"'}
 lt_lt_cv_prog_compiler_c_o_CXX=${lt_lt_cv_prog_compiler_c_o_CXX='"yes"'}
-lt_lt_cv_prog_compiler_c_o_F77=${lt_lt_cv_prog_compiler_c_o_F77='"yes"'}
 lt_lt_cv_sys_global_symbol_pipe=${lt_lt_cv_sys_global_symbol_pipe='"sed -n -e '\''s/^.*[ 	]\\([ABCDGIRSTW][ABCDGIRSTW]*\\)[ 	][ 	]*\\(\\)\\([_A-Za-z][_A-Za-z0-9]*\\)\$/\\1 \\2\\3 \\3/p'\''"'}
 test "${lt_lt_cv_sys_global_symbol_to_c_name_address+set}" = set || lt_lt_cv_sys_global_symbol_to_c_name_address='"sed -n -e '\''s/^: \\([^ ]*\\) \$/  {\\\"\\1\\\", (lt_ptr) 0},/p'\'' -e '\''s/^[BCDEGRST] \\([^ ]*\\) \\([^ ]*\\)\$/  {\"\\2\", (lt_ptr) \\&\\2},/p'\''"'
 lt_lt_cv_sys_global_symbol_to_cdecl=${lt_lt_cv_sys_global_symbol_to_cdecl='"sed -n -e '\''s/^. .* \\(.*\\)\$/extern int \\1;/p'\''"'}

@@ -107,7 +107,11 @@ manage.o manage.o: manage.c config.h syshead.h \
   /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/linux/autoconf.h \
   /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/linux/errqueue.h \
   /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h \
-  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h \
+  error.h basic.h thread.h common.h errlevel.h fdmisc.h options.h mtu.h \
+  buffer.h route.h tun.h win32.h event.h sig.h status.h interval.h \
+  otime.h integer.h perf.h proto.h misc.h socket.h proxy.h socks.h \
+  plugin.h openvpn-plugin.h manage.h memdbg.h
 
 config.h:
 
@@ -330,3 +334,59 @@ syshead.h:
 /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h:
 
 /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h:
+
+error.h:
+
+basic.h:
+
+thread.h:
+
+common.h:
+
+errlevel.h:
+
+fdmisc.h:
+
+options.h:
+
+mtu.h:
+
+buffer.h:
+
+route.h:
+
+tun.h:
+
+win32.h:
+
+event.h:
+
+sig.h:
+
+status.h:
+
+interval.h:
+
+otime.h:
+
+integer.h:
+
+perf.h:
+
+proto.h:
+
+misc.h:
+
+socket.h:
+
+proxy.h:
+
+socks.h:
+
+plugin.h:
+
+openvpn-plugin.h:
+
+manage.h:
+
+memdbg.h:

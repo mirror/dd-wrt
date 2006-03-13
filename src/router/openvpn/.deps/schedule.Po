@@ -107,7 +107,31 @@ schedule.o schedule.o: schedule.c config.h syshead.h \
   /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/linux/autoconf.h \
   /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/linux/errqueue.h \
   /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h \
-  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h \
+  buffer.h basic.h thread.h common.h misc.h integer.h error.h errlevel.h \
+  crypto.h ../openssl/include/openssl/objects.h \
+  ../openssl/include/openssl/obj_mac.h ../openssl/include/openssl/bio.h \
+  ../openssl/include/openssl/crypto.h ../openssl/include/openssl/stack.h \
+  ../openssl/include/openssl/safestack.h \
+  ../openssl/include/openssl/opensslv.h \
+  ../openssl/include/openssl/symhacks.h \
+  ../openssl/include/openssl/e_os2.h \
+  ../openssl/include/openssl/opensslconf.h \
+  ../openssl/include/openssl/asn1.h ../openssl/include/openssl/bn.h \
+  ../openssl/include/openssl/ossl_typ.h ../openssl/include/openssl/rand.h \
+  ../openssl/include/openssl/evp.h ../openssl/include/openssl/md2.h \
+  ../openssl/include/openssl/md4.h ../openssl/include/openssl/md5.h \
+  ../openssl/include/openssl/sha.h ../openssl/include/openssl/ripemd.h \
+  ../openssl/include/openssl/des.h ../openssl/include/openssl/des_old.h \
+  ../openssl/include/openssl/ui_compat.h ../openssl/include/openssl/ui.h \
+  ../openssl/include/openssl/rc4.h ../openssl/include/openssl/rc2.h \
+  ../openssl/include/openssl/rc5.h ../openssl/include/openssl/blowfish.h \
+  ../openssl/include/openssl/cast.h ../openssl/include/openssl/idea.h \
+  ../openssl/include/openssl/mdc2.h ../openssl/include/openssl/aes.h \
+  ../openssl/include/openssl/rsa.h ../openssl/include/openssl/dsa.h \
+  ../openssl/include/openssl/dh.h ../openssl/include/openssl/hmac.h \
+  ../openssl/include/openssl/err.h ../openssl/include/openssl/lhash.h \
+  packet_id.h circ_list.h otime.h mtu.h schedule.h memdbg.h
 
 config.h:
 
@@ -330,3 +354,109 @@ syshead.h:
 /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/mman.h:
 
 /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/mman.h:
+
+buffer.h:
+
+basic.h:
+
+thread.h:
+
+common.h:
+
+misc.h:
+
+integer.h:
+
+error.h:
+
+errlevel.h:
+
+crypto.h:
+
+../openssl/include/openssl/objects.h:
+
+../openssl/include/openssl/obj_mac.h:
+
+../openssl/include/openssl/bio.h:
+
+../openssl/include/openssl/crypto.h:
+
+../openssl/include/openssl/stack.h:
+
+../openssl/include/openssl/safestack.h:
+
+../openssl/include/openssl/opensslv.h:
+
+../openssl/include/openssl/symhacks.h:
+
+../openssl/include/openssl/e_os2.h:
+
+../openssl/include/openssl/opensslconf.h:
+
+../openssl/include/openssl/asn1.h:
+
+../openssl/include/openssl/bn.h:
+
+../openssl/include/openssl/ossl_typ.h:
+
+../openssl/include/openssl/rand.h:
+
+../openssl/include/openssl/evp.h:
+
+../openssl/include/openssl/md2.h:
+
+../openssl/include/openssl/md4.h:
+
+../openssl/include/openssl/md5.h:
+
+../openssl/include/openssl/sha.h:
+
+../openssl/include/openssl/ripemd.h:
+
+../openssl/include/openssl/des.h:
+
+../openssl/include/openssl/des_old.h:
+
+../openssl/include/openssl/ui_compat.h:
+
+../openssl/include/openssl/ui.h:
+
+../openssl/include/openssl/rc4.h:
+
+../openssl/include/openssl/rc2.h:
+
+../openssl/include/openssl/rc5.h:
+
+../openssl/include/openssl/blowfish.h:
+
+../openssl/include/openssl/cast.h:
+
+../openssl/include/openssl/idea.h:
+
+../openssl/include/openssl/mdc2.h:
+
+../openssl/include/openssl/aes.h:
+
+../openssl/include/openssl/rsa.h:
+
+../openssl/include/openssl/dsa.h:
+
+../openssl/include/openssl/dh.h:
+
+../openssl/include/openssl/hmac.h:
+
+../openssl/include/openssl/err.h:
+
+../openssl/include/openssl/lhash.h:
+
+packet_id.h:
+
+circ_list.h:
+
+otime.h:
+
+mtu.h:
+
+schedule.h:
+
+memdbg.h:

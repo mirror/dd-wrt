@@ -30,10 +30,10 @@
 # the same distribution terms that you use for the rest of that program.
 
 # A sed program that does not truncate output.
-SED="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//sed"
+SED="/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed"
 
 # Sed that helps us avoid accidentally triggering echo(1) options like -n.
-Xsed="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//sed -e s/^X//"
+Xsed="/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed -e s/^X//"
 
 # The HP-UX ksh and POSIX shell print the target directory to stdout
 # if CDPATH is set.
@@ -72,7 +72,7 @@ host=mipsel-unknown-linux-gnu
 echo="echo"
 
 # The archiver.
-AR="mipsel-linux-ar"
+AR="mipsel-linux-uclibc-ar"
 AR_FLAGS="cru"
 
 # A C compiler.
@@ -88,16 +88,16 @@ with_gcc=yes
 EGREP="grep -E"
 
 # The linker used to build libraries.
-LD="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/mipsel-linux-uclibc/bin/ld"
+LD="mipsel-linux-uclibc-ld"
 
 # Whether we need hard or soft links.
 LN_S="ln -s"
 
 # A BSD-compatible nm program.
-NM="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//mipsel-linux-nm -B"
+NM="mipsel-linux-uclibc-nm"
 
 # A symbol stripping program
-STRIP=mipsel-linux-strip
+STRIP=@true
 
 # Used to examine libraries when file_magic_cmd begins "file"
 MAGIC_CMD=file
@@ -109,7 +109,7 @@ DLLTOOL="dlltool"
 OBJDUMP="objdump"
 
 # Used on cygwin: assembler.
-AS="as"
+AS="mipsel-linux-uclibc-as"
 
 # The name of the directory that contains temporary libtool files.
 objdir=.libs
@@ -190,7 +190,7 @@ library_names_spec="\${libname}\${release}\${shared_ext}\$versuffix \${libname}\
 soname_spec="\${libname}\${release}\${shared_ext}\$major"
 
 # Commands used to build and install an old-style archive.
-RANLIB="mipsel-linux-ranlib"
+RANLIB="mipsel-linux-uclibc-ranlib"
 old_archive_cmds="\$AR \$AR_FLAGS \$oldlib\$oldobjs\$old_deplibs~\$RANLIB \$oldlib"
 old_postinstall_cmds="\$RANLIB \$oldlib~chmod 644 \$oldlib"
 old_postuninstall_cmds=""
@@ -215,8 +215,8 @@ module_cmds=""
 module_expsym_cmds=""
 
 # Commands to strip libraries.
-old_striplib="mipsel-linux-strip --strip-debug"
-striplib="mipsel-linux-strip --strip-unneeded"
+old_striplib=""
+striplib=""
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -6670,7 +6670,7 @@ host=mipsel-unknown-linux-gnu
 echo="echo"
 
 # The archiver.
-AR="mipsel-linux-ar"
+AR="mipsel-linux-uclibc-ar"
 AR_FLAGS="cru"
 
 # A C compiler.
@@ -6686,16 +6686,16 @@ with_gcc=yes
 EGREP="grep -E"
 
 # The linker used to build libraries.
-LD="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/mipsel-linux-uclibc/bin/ld"
+LD="mipsel-linux-uclibc-ld"
 
 # Whether we need hard or soft links.
 LN_S="ln -s"
 
 # A BSD-compatible nm program.
-NM="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin//mipsel-linux-nm -B"
+NM="mipsel-linux-uclibc-nm"
 
 # A symbol stripping program
-STRIP=mipsel-linux-strip
+STRIP=@true
 
 # Used to examine libraries when file_magic_cmd begins "file"
 MAGIC_CMD=file
@@ -6707,7 +6707,7 @@ DLLTOOL="dlltool"
 OBJDUMP="objdump"
 
 # Used on cygwin: assembler.
-AS="as"
+AS="mipsel-linux-uclibc-as"
 
 # The name of the directory that contains temporary libtool files.
 objdir=.libs
@@ -6788,7 +6788,7 @@ library_names_spec="\${libname}\${release}\${shared_ext}\$versuffix \${libname}\
 soname_spec="\${libname}\${release}\${shared_ext}\$major"
 
 # Commands used to build and install an old-style archive.
-RANLIB="mipsel-linux-ranlib"
+RANLIB="mipsel-linux-uclibc-ranlib"
 old_archive_cmds="\$AR \$AR_FLAGS \$oldlib\$oldobjs\$old_deplibs~\$RANLIB \$oldlib"
 old_postinstall_cmds="\$RANLIB \$oldlib~chmod 644 \$oldlib"
 old_postuninstall_cmds=""
@@ -6810,16 +6810,16 @@ module_cmds=""
 module_expsym_cmds=""
 
 # Commands to strip libraries.
-old_striplib="mipsel-linux-strip --strip-debug"
-striplib="mipsel-linux-strip --strip-unneeded"
+old_striplib=""
+striplib=""
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
-predep_objects="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/lib/crti.o /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/crtbeginS.o"
+predep_objects="/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/lib/crti.o /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/crtbeginS.o"
 
 # Dependencies to place after the objects being linked to create a
 # shared library.
-postdep_objects="/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/crtendS.o /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/lib/crtn.o"
+postdep_objects="/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/crtendS.o /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/lib/crtn.o"
 
 # Dependencies to place before the objects being linked to create a
 # shared library.
@@ -6831,7 +6831,7 @@ postdeps="-lstdc++ -lm -lgcc_s -lc -lgcc_s"
 
 # The library search path used internally by the compiler when linking
 # a shared library.
-compiler_lib_search_path="-L/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6 -L/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc -L/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/lib"
+compiler_lib_search_path="-L/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0 -L/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc -L/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/lib"
 
 # Method to check whether dependent libraries are shared objects.
 deplibs_check_method="pass_all"

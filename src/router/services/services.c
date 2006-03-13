@@ -2042,7 +2042,7 @@ start_chilli (void)
   if (!nvram_match ("chilli_enable", "1"))
     return 0;
 
-#ifdef HAVE_FON
+#ifdef HAVE_CHILLILOCAL
 
   if (!(fp = fopen ("/tmp/fonusers.local", "w")))
     {

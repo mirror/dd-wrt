@@ -87,7 +87,7 @@ configure:5203: checking whether to build shared libraries
 configure:5230: checking whether to build static libraries
 configure:5273: checking for shl_load
 configure:5301: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1  -s conftest.c  1>&5
-/tmp/ccKZGo2m.o: In function `main':
+/tmp/ccAJu17C.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `shl_load'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -130,7 +130,7 @@ shl_load()
 ; return 0; }
 configure:5357: checking for dlopen
 configure:5385: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1  -s conftest.c  1>&5
-/tmp/ccTDIgkH.o: In function `main':
+/tmp/ccLGJ9EX.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `dlopen'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -420,7 +420,7 @@ configure:9316: checking for dlopen in -ldl
 configure:9365: checking for dlopen
 configure:9421: checking for kvm_openfiles
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccWW2sxH.o: In function `main':
+/tmp/ccJ5t5Dx.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `kvm_openfiles'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -448,7 +448,7 @@ kvm_openfiles();
 ; return 0; }
 configure:9421: checking for nlist
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccvO8RiR.o: In function `main':
+/tmp/ccIS6klL.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `nlist'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -476,7 +476,7 @@ nlist();
 ; return 0; }
 configure:9421: checking for knlist
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccKNxmz3.o: In function `main':
+/tmp/ccH7LiTS.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `knlist'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -504,7 +504,7 @@ knlist();
 ; return 0; }
 configure:9421: checking for kvm_getprocs
 configure:9449: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccBAGG1b.o: In function `main':
+/tmp/cc6Hn6Q5.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `kvm_getprocs'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1254,7 +1254,7 @@ configure: failed program was:
 configure:10921: checking for lpstat
 configure:10966: checking for cgetnext
 configure:10994: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccCYJ4BV.o: In function `main':
+/tmp/ccdT6GKm.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `cgetnext'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1428,7 +1428,7 @@ configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -
 configure:12266: warning: conflicting types for built-in function 'strncasecmp'
 configure:12254: checking for sigalrm
 configure:12282: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccSCMQVc.o: In function `main':
+/tmp/ccRffthZ.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `sigalrm'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1456,7 +1456,7 @@ sigalrm();
 ; return 0; }
 configure:12312: checking for rpmGetPath
 configure:12340: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -ldl -lm  1>&5
-/tmp/ccpp5J0p.o: In function `main':
+/tmp/ccW6YvQ7.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `rpmGetPath'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1484,7 +1484,7 @@ rpmGetPath();
 ; return 0; }
 configure:12370: checking for getloadavg
 configure:12398: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccIBtY6A.o: In function `main':
+/tmp/cciaIQ7d.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getloadavg'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1514,7 +1514,7 @@ configure:12425: checking for getaddrinfo
 configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -lm  1>&5
 configure:12425: checking for getipnodebyname
 configure:12453: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccXDU7yV.o: In function `main':
+/tmp/cc3atgOz.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getipnodebyname'
 collect2: ld returned 1 exit status
 configure: failed program was:
@@ -1548,7 +1548,7 @@ configure:12535: checking for getdtablesize
 configure:12563: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -lm  1>&5
 configure:12590: checking for getfsstat
 configure:12618: mipsel-linux-uclibc-gcc -o conftest -Os -mtune=mips32 -mips32 -pipe -funit-at-a-time -DCAN_USE_SYSCTL=1 -Delf  -s conftest.c -lm  1>&5
-/tmp/ccRDABrt.o: In function `main':
+/tmp/ccn2km6c.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `getfsstat'
 collect2: ld returned 1 exit status
 configure: failed program was:

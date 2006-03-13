@@ -27,6 +27,8 @@ hostinfo               = unknown
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
+PATH: /home/openwrt/workspace/DD-WRT/tools
+PATH: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin
 PATH: /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/
 PATH: /usr/local/sbin
 PATH: /usr/local/bin
@@ -60,20 +62,21 @@ configure:1801: checking for mipsel-linux-gcc
 configure:1827: result: mipsel-linux-uclibc-gcc
 configure:2109: checking for C compiler version
 configure:2112: mipsel-linux-uclibc-gcc --version </dev/null >&5
-mipsel-linux-uclibc-gcc (GCC) 3.4.6 (OpenWrt-2.0)
+mipsel-linux-uclibc-gcc (GCC) 4.1.0
 Copyright (C) 2006 Free Software Foundation, Inc.
 This is free software; see the source for copying conditions.  There is NO
 warranty; not even for MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 
 configure:2115: $? = 0
 configure:2117: mipsel-linux-uclibc-gcc -v </dev/null >&5
-Reading specs from /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/specs
-Configured with: /home/openwrt/trunk/openwrt/toolchain_build_mipsel/gcc-3.4.6/configure --prefix=/home/openwrt/trunk/openwrt/staging_dir_mipsel --build=i386-pc-linux-gnu --host=i386-pc-linux-gnu --target=mipsel-linux-uclibc --enable-languages=c,c++ --enable-shared --disable-__cxa_atexit --enable-target-optspace --with-gnu-ld --disable-nls
+Using built-in specs.
+Target: mipsel-linux-uclibc
+Configured with: /home/openwrt/trunk/openwrt/toolchain_build_mipsel/gcc-4.1.0/configure --prefix=/home/openwrt/trunk/openwrt/staging_dir_mipsel --build=i386-pc-linux-gnu --host=i386-pc-linux-gnu --target=mipsel-linux-uclibc --enable-languages=c,c++ --enable-shared --disable-__cxa_atexit --enable-target-optspace --with-gnu-ld --disable-nls
 Thread model: posix
-gcc version 3.4.6 (OpenWrt-2.0)
+gcc version 4.1.0
 configure:2120: $? = 0
 configure:2122: mipsel-linux-uclibc-gcc -V </dev/null >&5
-mipsel-linux-uclibc-gcc: `-V' option must have argument
+mipsel-linux-uclibc-gcc: '-V' option must have argument
 configure:2125: $? = 1
 configure:2148: checking for C compiler default output file name
 configure:2151: mipsel-linux-uclibc-gcc -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../libghttp  -s conftest.c  >&5
@@ -122,7 +125,7 @@ configure:2545: test -s conftest.o
 configure:2548: $? = 0
 configure:2566: result: none needed
 configure:2584: mipsel-linux-uclibc-gcc -c -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../libghttp  conftest.c >&5
-conftest.c:2: error: syntax error before "me"
+conftest.c:2: error: expected '=', ',', ';', 'asm' or '__attribute__' before 'me'
 configure:2590: $? = 1
 configure: failed program was:
 | #ifndef __cplusplus
@@ -144,7 +147,7 @@ configure:3335: checking how to run the C preprocessor
 configure:3370: mipsel-linux-uclibc-gcc -E  conftest.c
 configure:3376: $? = 0
 configure:3408: mipsel-linux-uclibc-gcc -E  conftest.c
-conftest.c:11:28: ac_nonexistent.h: No such file or directory
+conftest.c:11:28: error: ac_nonexistent.h: No such file or directory
 configure:3414: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
@@ -162,7 +165,7 @@ configure:3453: result: mipsel-linux-uclibc-gcc -E
 configure:3477: mipsel-linux-uclibc-gcc -E  conftest.c
 configure:3483: $? = 0
 configure:3515: mipsel-linux-uclibc-gcc -E  conftest.c
-conftest.c:11:28: ac_nonexistent.h: No such file or directory
+conftest.c:11:28: error: ac_nonexistent.h: No such file or directory
 configure:3521: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
@@ -389,7 +392,7 @@ configure:4295: checking for unistd.h
 configure:4300: result: yes
 configure:4304: checking vfork.h usability
 configure:4316: mipsel-linux-uclibc-gcc -c -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../libghttp  conftest.c >&5
-conftest.c:65:19: vfork.h: No such file or directory
+conftest.c:65:19: error: vfork.h: No such file or directory
 configure:4322: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
@@ -460,7 +463,7 @@ configure: failed program was:
 configure:4345: result: no
 configure:4349: checking vfork.h presence
 configure:4359: mipsel-linux-uclibc-gcc -E  conftest.c
-conftest.c:31:19: vfork.h: No such file or directory
+conftest.c:31:19: error: vfork.h: No such file or directory
 configure:4365: $? = 1
 configure: failed program was:
 | /* confdefs.h.  */
@@ -499,6 +502,7 @@ configure:4420: checking for vfork.h
 configure:4427: result: no
 configure:4445: checking for fork
 configure:4502: mipsel-linux-uclibc-gcc -o conftest -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../libghttp  -s conftest.c  >&5
+conftest.c:55: warning: conflicting types for built-in function 'fork'
 configure:4508: $? = 0
 configure:4512: test -z 
 			 || test ! -s conftest.err
@@ -549,9 +553,9 @@ configure:5336: result: no
 configure:5347: checking for pow
 configure:5404: mipsel-linux-uclibc-gcc -o conftest -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../libghttp  -s conftest.c  >&5
 conftest.c:63: warning: conflicting types for built-in function 'pow'
-/tmp/ccrwfrfN.o: In function `main':
+/tmp/ccesbGgr.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `pow'
-/tmp/ccrwfrfN.o:(.data.rel+0x0): undefined reference to `pow'
+/tmp/ccesbGgr.o:(.data.rel+0x0): undefined reference to `pow'
 collect2: ld returned 1 exit status
 configure:5410: $? = 1
 configure: failed program was:

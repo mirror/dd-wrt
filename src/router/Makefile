@@ -734,6 +734,8 @@ ser-clean:
 	rm -rf $(INSTALLDIR)/www/*
 			
 nocat:
+	cd glib && ./config.sh
+	make -C glib
 	cd nocat && . ./conf
 	make -C nocat
 
@@ -787,7 +789,7 @@ chillispot:
 	$(MAKE) -C chillispot
 
 chillispot-install:
-ifneq ($(CONFIG_FON),y)
+ifneq ($(CONFIG_CHILLILOCAL),y)
 	install -D chillispot/config/chillispot.nvramconfig $(INSTALLDIR)/chillispot/etc/config/chillispot.nvramconfig
 	install -D chillispot/config/chillispot.webhotspot $(INSTALLDIR)/chillispot/etc/config/chillispot.webhotspot
 else
