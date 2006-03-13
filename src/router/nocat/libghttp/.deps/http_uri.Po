@@ -1,70 +1,70 @@
 http_uri.o http_uri.o: http_uri.c \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/string.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/features.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stddef.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdlib.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/types.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/types.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/time.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/endian.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/select.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/select.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/alloca.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/ctype.h \
-  /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/string.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/features.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/include/stddef.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/stdlib.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/types.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/types.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/time.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/endian.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/select.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/select.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/alloca.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/ctype.h \
+  /home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h \
   http_uri.h
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/string.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/string.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/features.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/features.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stddef.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/include/stddef.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdlib.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/stdlib.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/types.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/types.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/types.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/types.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/time.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/time.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/endian.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/endian.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/select.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/select.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/select.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/select.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/alloca.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/alloca.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/ctype.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/ctype.h:
 
-/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h:
+/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin/../lib/gcc/mipsel-linux-uclibc/3.4.6/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h:
 
 http_uri.h:
