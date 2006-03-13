@@ -1,1 +1,0 @@
-#undef BB_APPLET_RUNLEVEL
