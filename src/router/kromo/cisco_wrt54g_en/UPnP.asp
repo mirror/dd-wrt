@@ -43,7 +43,7 @@ function parseForwards()
 	// wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc
 	data = [];
 	for (var i=0; i<upnpForwards.length; ++i) {
-		if (upnpForwards[i].match(/^(\d+-\d+)>(.*?):(\d+-\d+),(.*?),(.*?),(.*)/)) {
+		if (upnpForwards[i] !== '' && upnpForwards[i].match(/^(\d+-\d+)>(.*?):(\d+-\d+),(.*?),(.*?),(.*)/)) {
 			var e = {};
 			e.wanPorts = RegExp.$1;
 			e.lanIP = RegExp.$2;
@@ -129,6 +129,7 @@ function makeTable()
 {
 	var s;
 	var dataLen = data.length;
+	var nullCount = 0;
 
 	s = "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"3\">";
 	s += "<tr><th width=\"5%\" >From (WAN)</th><th width=\"5%\">To (LAN)</th><th width=\"20%\">IP Address</th><th width=\"10%\">Protocol</th><th width=\"55%\">Description</th><th width=\"5%\">Delete</th></tr>";
@@ -136,14 +137,11 @@ function makeTable()
 	for (var i=0; i<dataLen; ++i) {
 		var e = data[i];
 		if (e !== 'null') {
-		var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
-		s += "<tr height='15' class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
+			var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
+			s += "<tr height='15' class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
 		}
-	}
-	var nullCount = 0;
-	for (var i=0; i<dataLen; ++i) {
-  		if (data[i] == 'null') {
-    		nullCount++;
+		else {
+			nullCount++;
 		}
 	}
 	if (nullCount == dataLen) {
