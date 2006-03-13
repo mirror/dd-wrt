@@ -30,8 +30,8 @@
 static int donerandinit = 0;
 
 /* this is used to generate unique output from the same hashpool */
-static uint32_t counter = 0;
-#define MAX_COUNTER 1<<31 /* the max value for the counter, so it won't loop */
+static unsigned int counter = 0;
+#define MAX_COUNTER 1000000/* the max value for the counter, so it won't loop */
 
 static unsigned char hashpool[SHA1_HASH_SIZE];
 
@@ -132,8 +132,7 @@ void seedrandom() {
 
 	hash_state hs;
 
-	/* initialise so that things won't warn about
-     * hashing an undefined buffer */
+	/* initialise so compilers will be happy about hashing it */
 	if (!donerandinit) {
 		m_burn(hashpool, sizeof(hashpool));
 	}
@@ -149,30 +148,6 @@ void seedrandom() {
 
 	counter = 0;
 	donerandinit = 1;
-}
-
-/* hash the current random pool with some unique identifiers
- * for this process and point-in-time. this is used to separate
- * the random pools for fork()ed processes. */
-void reseedrandom() {
-
-    pid_t pid;
-    struct timeval tv;
-
-	if (!donerandinit) {
-		dropbear_exit("seedrandom not done");
-	}
-
-    pid = getpid();
-    gettimeofday(&tv, NULL);
-
-	hash_state hs;
-	unsigned char hash[SHA1_HASH_SIZE];
-	sha1_init(&hs);
-	sha1_process(&hs, (void*)hashpool, sizeof(hashpool));
-	sha1_process(&hs, (void*)&pid, sizeof(pid));
-	sha1_process(&hs, (void*)&tv, sizeof(tv));
-	sha1_done(&hs, hashpool);
 }
 
 /* return len bytes of pseudo-random data */

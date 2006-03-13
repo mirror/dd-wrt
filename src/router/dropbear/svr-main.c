@@ -1,7 +1,7 @@
 /*
  * Dropbear - a SSH2 server
  * 
- * Copyright (c) 2002-2006 Matt Johnston
+ * Copyright (c) 2002,2003 Matt Johnston
  * All rights reserved.
  * 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -29,7 +29,7 @@
 #include "signkey.h"
 #include "runopts.h"
 
-static size_t listensockets(int *sock, size_t sockcount, int *maxfd);
+static int listensockets(int *sock, int sockcount, int *maxfd);
 static void sigchld_handler(int dummy);
 static void sigsegv_handler(int);
 static void sigintterm_handler(int fish);
@@ -41,6 +41,8 @@ static void main_noinetd();
 #endif
 static void commonsetup();
 
+static int childpipes[MAX_UNAUTH_CLIENTS];
+
 #if defined(DBMULTI_dropbear) || !defined(DROPBEAR_MULTI)
 #if defined(DBMULTI_dropbear) && defined(DROPBEAR_MULTI)
 int dropbear_main(int argc, char ** argv)
@@ -48,6 +50,8 @@ int dropbear_main(int argc, char ** argv)
 int main(int argc, char ** argv)
 #endif
 {
+	
+
 	_dropbear_exit = svr_dropbear_exit;
 	_dropbear_log = svr_dropbear_log;
 
@@ -76,10 +80,10 @@ int main(int argc, char ** argv)
 static void main_inetd() {
 
 	struct sockaddr_storage remoteaddr;
-	socklen_t remoteaddrlen;
+	int remoteaddrlen;
 	char * addrstring = NULL;
 
-	/* Set up handlers, syslog, seed random */
+	/* Set up handlers, syslog */
 	commonsetup();
 
 	remoteaddrlen = sizeof(remoteaddr);
@@ -112,14 +116,14 @@ void main_noinetd() {
 	unsigned int i, j;
 	int val;
 	int maxsock = -1;
+	struct sockaddr_storage remoteaddr;
+	int remoteaddrlen;
 	int listensocks[MAX_LISTEN_ADDR];
-	size_t listensockcount = 0;
+	int listensockcount = 0;
 	FILE *pidfile = NULL;
 
-	int childpipes[MAX_UNAUTH_CLIENTS];
-	char * preauth_addrs[MAX_UNAUTH_CLIENTS];
-
 	int childsock;
+	pid_t childpid;
 	int childpipe[2];
 
 	/* fork */
@@ -136,6 +140,7 @@ void main_noinetd() {
 	}
 
 	commonsetup();
+
 
 	/* should be done after syslog is working */
 	if (svr_opts.forkbg) {
@@ -155,12 +160,11 @@ void main_noinetd() {
 	for (i = 0; i < MAX_UNAUTH_CLIENTS; i++) {
 		childpipes[i] = -1;
 	}
-	bzero(preauth_addrs, sizeof(preauth_addrs));
 	
 	/* Set up the listening sockets */
+	/* XXX XXX ports */
 	listensockcount = listensockets(listensocks, MAX_LISTEN_ADDR, &maxsock);
-	if (listensockcount == 0)
-	{
+	if (listensockcount < 0) {
 		dropbear_exit("No listening ports available.");
 	}
 
@@ -173,7 +177,7 @@ void main_noinetd() {
 		seltimeout.tv_usec = 0;
 		
 		/* listening sockets */
-		for (i = 0; i < listensockcount; i++) {
+		for (i = 0; i < (unsigned int)listensockcount; i++) {
 			FD_SET(listensocks[i], &fds);
 		}
 
@@ -204,27 +208,17 @@ void main_noinetd() {
 			dropbear_exit("Listening socket error");
 		}
 
-		/* close fds which have been authed or closed - svr-auth.c handles
+		/* close fds which have been authed or closed - auth.c handles
 		 * closing the auth sockets on success */
 		for (i = 0; i < MAX_UNAUTH_CLIENTS; i++) {
 			if (childpipes[i] >= 0 && FD_ISSET(childpipes[i], &fds)) {
-				m_close(childpipes[i]);
+				close(childpipes[i]);
 				childpipes[i] = -1;
-				m_free(preauth_addrs[i]);
 			}
 		}
 
 		/* handle each socket which has something to say */
-		for (i = 0; i < listensockcount; i++) {
-
-			struct sockaddr_storage remoteaddr;
-			socklen_t remoteaddrlen = 0;
-			size_t num_unauthed_for_addr = 0;
-			size_t num_unauthed_total = 0;
-			char * remote_addr_str = NULL;
-			pid_t fork_ret = 0;
-			size_t conn_idx = 0;
-
+		for (i = 0; i < (unsigned int)listensockcount; i++) {
 			if (!FD_ISSET(listensocks[i], &fds)) 
 				continue;
 
@@ -237,47 +231,28 @@ void main_noinetd() {
 				continue;
 			}
 
-			/* Limit the number of unauthenticated connections per IP */
-			remote_addr_str = getaddrstring(&remoteaddr, 0);
-
-			num_unauthed_for_addr = 0;
-			num_unauthed_total = 0;
+			/* check for max number of connections not authorised */
 			for (j = 0; j < MAX_UNAUTH_CLIENTS; j++) {
-				if (childpipes[j] >= 0) {
-					num_unauthed_total++;
-					if (strcmp(remote_addr_str, preauth_addrs[j]) == 0) {
-						num_unauthed_for_addr++;
-					}
-				} else {
-					/* a free slot */
-					conn_idx = j;
+				if (childpipes[j] < 0) {
+					break;
 				}
 			}
 
-			if (num_unauthed_total >= MAX_UNAUTH_CLIENTS
-					|| num_unauthed_for_addr >= MAX_UNAUTH_PER_IP) {
-				goto out;
+			if (j == MAX_UNAUTH_CLIENTS) {
+				/* no free connections */
+				/* TODO - possibly log, though this would be an easy way
+				 * to fill logs/disk */
+				close(childsock);
+				continue;
 			}
 
 			if (pipe(childpipe) < 0) {
 				TRACE(("error creating child pipe"))
-				goto out;
+				close(childsock);
+				continue;
 			}
 
-			fork_ret = fork();
-			if (fork_ret < 0) {
-				dropbear_log(LOG_WARNING, "error forking: %s", strerror(errno));
-				goto out;
-
-			} else if (fork_ret > 0) {
-
-				/* parent */
-				childpipes[conn_idx] = childpipe[0];
-				m_close(childpipe[1]);
-				preauth_addrs[conn_idx] = remote_addr_str;
-				remote_addr_str = NULL;
-
-			} else {
+			if ((childpid = fork()) == 0) {
 
 				/* child */
 				char * addrstring = NULL;
@@ -286,7 +261,6 @@ void main_noinetd() {
 				monstartup((u_long)&_start, (u_long)&etext);
 #endif /* DEBUG_FORKGPROF */
 
-				m_free(remote_addr_str);
 				addrstring = getaddrstring(&remoteaddr, 1);
 				dropbear_log(LOG_INFO, "Child connection from %s", addrstring);
 
@@ -295,11 +269,15 @@ void main_noinetd() {
 				}
 
 				/* make sure we close sockets */
-				for (i = 0; i < listensockcount; i++) {
-					m_close(listensocks[i]);
+				for (i = 0; i < (unsigned int)listensockcount; i++) {
+					if (m_close(listensocks[i]) == DROPBEAR_FAILURE) {
+						dropbear_exit("Couldn't close socket");
+					}
 				}
 
-				m_close(childpipe[0]);
+				if (m_close(childpipe[0]) == DROPBEAR_FAILURE) {
+					dropbear_exit("Couldn't close socket");
+				}
 
 				/* start the session */
 				svr_session(childsock, childpipe[1], 
@@ -308,12 +286,12 @@ void main_noinetd() {
 				/* don't return */
 				dropbear_assert(0);
 			}
-
-out:
-			/* This section is important for the parent too */
-			m_close(childsock);
-			if (remote_addr_str) {
-				m_free(remote_addr_str);
+			
+			/* parent */
+			childpipes[j] = childpipe[0];
+			if (m_close(childpipe[1]) == DROPBEAR_FAILURE
+					|| m_close(childsock) == DROPBEAR_FAILURE) {
+				dropbear_exit("Couldn't close socket");
 			}
 		}
 	} /* for(;;) loop */
@@ -381,16 +359,14 @@ static void commonsetup() {
 	/* Now we can setup the hostkeys - needs to be after logging is on,
 	 * otherwise we might end up blatting error messages to the socket */
 	loadhostkeys();
-
-    seedrandom();
 }
 
 /* Set up listening sockets for all the requested ports */
-static size_t listensockets(int *sock, size_t sockcount, int *maxfd) {
+static int listensockets(int *sock, int sockcount, int *maxfd) {
 	
 	unsigned int i;
 	char* errstring = NULL;
-	size_t sockpos = 0;
+	unsigned int sockpos = 0;
 	int nsock;
 
 	TRACE(("listensockets: %d to try\n", svr_opts.portcount))
