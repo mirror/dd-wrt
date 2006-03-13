@@ -7,10 +7,7 @@ if [ ${1} = "-a" ]; then
 	autoconf
 fi
 
-
-if [ ${1} = "-r" ]; then
 	rm -f config.cache config.log
-fi
 
 
 CC="mipsel-linux-uclibc-gcc" CFLAGS="-pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time" \

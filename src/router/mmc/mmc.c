@@ -402,7 +402,6 @@ mmc_card_init (void)
   save_flags (flags);
   cli ();
 
-  printk ("mmc Card init\n");
   mmc_spi_cs_high ();
   for (i = 0; i < 20; i++)
     mmc_spi_io (0xff);
@@ -427,7 +426,6 @@ mmc_card_init (void)
       return (1);
     }
 
-  printk ("mmc Card init *1*\n");
   for (j = 0; j < 10000; j++)
     {
       mmc_spi_cs_low ();
@@ -447,7 +445,6 @@ mmc_card_init (void)
       if (r == 0x00)
 	{
 	  restore_flags (flags);
-	  printk ("mmc Card init *2*\n");
 	  return (0);
 	}
     }
@@ -550,7 +547,6 @@ mmc_hardware_init (void)
   unsigned char gpio_outen;
 
   // Set inputs/outputs here
-  printk ("mmc Hardware init\n");
   gpio_outen = *gpioaddr_enable;
 
   gpio_outen = (gpio_outen | SD_DI | SD_CLK | SD_CS) & ~SD_DO;
@@ -624,7 +620,7 @@ mmc_init (void)
       rc = mmc_card_init ();
       if (rc != 0)
 	{
-
+	  printk ("mmc: definitly not a old GPIO MMC HW, try to use new GPIO Layout\n");
 	  SD_DI = SD_DIV4;	//try second one
 	  mmc_hardware_init ();
 	  rc = mmc_card_init ();
@@ -635,7 +631,7 @@ mmc_init (void)
 	      if (rc != 0)
 		{
 
-		  printk ("mmc: error in mmc_card_init (%d)\n", rc);
+		  printk ("mmc: Okay, as it seems this board has no MMC Mod!\n");
 		  return -1;
 		}
 	    }

@@ -483,7 +483,7 @@ buildmac (char *in)
   return outmac;
 }
 
-#ifdef HAVE_FON
+#ifdef HAVE_CHILLILOCAL
 
 int
 user_remove (webs_t wp)

@@ -1983,7 +1983,7 @@ Initnvramtab ()
 		    {
 		      tmp->validate = validate_staticleases;
 		    }
-#ifdef HAVE_FON
+#ifdef HAVE_CHILLILOCAL
 		  if (!stricmp (tmpstr, "USERLIST"))
 		    {
 		      tmp->validate = validate_userlist;
@@ -2659,7 +2659,7 @@ struct gozila_action gozila_actions[] = {
   {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
   {"Services", "add_lease", "", 1, REFRESH, lease_add},
   {"Services", "remove_lease", "", 1, REFRESH, lease_remove},
-#ifdef HAVE_FON
+#ifdef HAVE_CHILLILOCAL
   {"Hotspot", "add_user", "", 1, REFRESH, user_add},
   {"Hotspot", "remove_user", "", 1, REFRESH, user_remove},
 #endif
@@ -3880,7 +3880,7 @@ struct ej_handler ej_handlers[] = {
   {"show_wireless", ej_show_wireless},
 #endif
 
-#ifdef HAVE_FON
+#ifdef HAVE_CHILLILOCAL
   {"show_userlist", ej_show_userlist},
 #endif
   {"show_cpuinfo", ej_show_cpuinfo},
