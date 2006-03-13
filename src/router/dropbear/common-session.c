@@ -232,8 +232,10 @@ void session_identification() {
 		dropbear_exit("Error writing ident string");
 	}
 
-    /* If they send more than 50 lines, something is wrong */
-	for (i = 0; i < 50; i++) {
+	/* We allow up to 9 lines before the actual version string, to
+	 * account for wrappers/cruft etc. According to the spec only the client
+	 * needs to handle this, but no harm in letting the server handle it too */
+	for (i = 0; i < 10; i++) {
 		len = ident_readln(ses.sock, linebuf, sizeof(linebuf));
 
 		if (len < 0 && errno != EINTR) {
@@ -256,12 +258,6 @@ void session_identification() {
 		ses.remoteident = m_malloc(len);
 		memcpy(ses.remoteident, linebuf, len);
 	}
-
-    /* Shall assume that 2.x will be backwards compatible. */
-    if (strncmp(ses.remoteident, "SSH-2.", 6) != 0
-            && strncmp(ses.remoteident, "SSH-1.99-", 9) != 0) {
-        dropbear_exit("Incompatible remote version '%s'", ses.remoteident);
-    }
 
 	TRACE(("remoteident: %s", ses.remoteident))
 
