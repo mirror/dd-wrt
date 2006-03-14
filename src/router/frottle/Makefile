@@ -40,10 +40,10 @@ pkglibdir = $(libdir)/frottle
 pkgincludedir = $(includedir)/frottle
 top_builddir = .
 
-ACLOCAL = ${SHELL} /home/dev/DD-WRT/src/router/frottle/missing --run aclocal-1.6
-AUTOCONF = ${SHELL} /home/dev/DD-WRT/src/router/frottle/missing --run autoconf
-AUTOMAKE = ${SHELL} /home/dev/DD-WRT/src/router/frottle/missing --run automake-1.6
-AUTOHEADER = ${SHELL} /home/dev/DD-WRT/src/router/frottle/missing --run autoheader
+ACLOCAL = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/frottle/missing --run aclocal-1.6
+AUTOCONF = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/frottle/missing --run autoconf
+AUTOMAKE = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/frottle/missing --run automake-1.6
+AUTOHEADER = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/frottle/missing --run autoheader
 
 am__cd = CDPATH="$${ZSH_VERSION+.}$(PATH_SEPARATOR)" && cd
 INSTALL = /usr/bin/install -c
@@ -68,9 +68,9 @@ PATH_SEPARATOR = :
 
 # Set sysconfig dir to my favourite default and put sample .conf in it
 sysconfdir = /etc
-AMTAR = ${SHELL} /home/dev/DD-WRT/src/router/frottle/missing --run tar
+AMTAR = ${SHELL} /home/openwrt/workspace/DD-WRT/src/router/frottle/missing --run tar
 AWK = mawk
-CC = mipsel-linux-gcc
+CC = mipsel-linux-uclibc-gcc
 DEPDIR = .deps
 INSTALL_STRIP_PROGRAM = ${SHELL} $(install_sh) -c -s
 PACKAGE = frottle
@@ -78,13 +78,13 @@ STRIP = mipsel-linux-strip
 VERSION = 0.2.1
 am__include = include
 am__quote = 
-install_sh = /home/dev/DD-WRT/src/router/frottle/install-sh
+install_sh = /home/openwrt/workspace/DD-WRT/src/router/frottle/install-sh
 
 # Program name
 bin_PROGRAMS = frottle
 
 # Check for required, non-standard libraries
-frottle_LDFLAGS = -L/usr/lib -L../iptables/libipq
+frottle_LDFLAGS = -L/usr/lib
 frottle_LDADD = -lpthread -lipq
 
 # List of source files
