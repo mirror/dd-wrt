@@ -1,7 +1,0 @@
-  Net-SNMP Version:           5.0.9
-  Building for:               elf
-  Network transport support:  Callback UDP
-  SNMPv3 Security Modules:    usm
-  Agent MIB code:             mibII/snmp_mib mibII/system_mib mibII/sysORTable mibII/vacm_vars host mibII/ip mibII/tcp mibII/udp mibII/icmp mibII/var_route mibII/kernel_linux qos ucd_snmp ieee802dot11 avc802dot11
-  Authentication support:     MD5
-  Encryption support:         
