@@ -736,7 +736,7 @@ ser-clean:
 nocat:
 	cd glib && ./config.sh
 	make -C glib
-	cd nocat && . ./conf
+	cd nocat && . ./conf 
 	make -C nocat
 
 nocat-clean:

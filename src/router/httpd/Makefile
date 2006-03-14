@@ -32,7 +32,6 @@ endif
 
 #CFLAGS	+= -I$(SRCBASE)/linux/linux/include
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s  
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared
 
 ifeq ($(CONFIG_ANTIFLASH),y)
@@ -210,7 +209,8 @@ all: httpd
 
 clean:
 	rm -f *.o *~ httpd
-#	rm -f modules/*.o
+	rm -f modules/*.o
+	rm -f modules/*.*~
 	rm -f *.a 
 	#Added by Daniel(2004-07-29)
 	#cp ../shared/ezc.o ./
