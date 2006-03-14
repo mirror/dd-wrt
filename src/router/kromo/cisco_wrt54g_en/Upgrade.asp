@@ -10,42 +10,10 @@
 		<script type="text/JavaScript" src="common.js">{}</script>
 		<script language="JavaScript">
 
-/*var showchar = '|';
-var maxchars = 60;
-var delay_time = 1000;
-var counter=0;
-var num=0;
-
-function progress(){
-	var F = document.forms[0];
-	if(num == 4){
-		clearTimeout(timerID);
-		alert("Upgrade failed !");
-		return false;
-	}
-	if (counter < maxchars)	{
-		counter++;
-		var tmp = '';
-		for (var i=0; i < counter; i++)
-			tmp = tmp + showchar;
-		F.process.value = tmp;
-		timerID = setTimeout('progress()',delay_time);
-	} else {
-		counter = 0;
-		num ++;
-		progress();
-    }
-}*/
-
 function process_aborted(F) {
   bar1.togglePause();
   alert("Upgrade failed !");
   return false;
-}
-
-function stop(){
-	if(ie4)
-  		document.all['style0'].style.visibility = 'hidden';
 }
 
 function upgrade(F,id){
@@ -69,8 +37,6 @@ function upgrade(F,id){
 	bar1.togglePause();
 	change_style(id,'textblink');
 	F.submit();
-	//document.onstop = stop;
-	//progress();
 }
 
 		</script>
