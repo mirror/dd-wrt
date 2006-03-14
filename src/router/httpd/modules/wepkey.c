@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include "md5.h"
 
-unsigned char key128[4][13] = { "", "", "", "" };
-unsigned char key64[4][5] = { "", "", "", "" };
+unsigned char key128[4][14] = { "", "", "", "" };
+unsigned char key64[4][6] = { "", "", "", "" };
 
 //void nwepgen(char *genstr, int weptype)
 int
@@ -66,15 +66,19 @@ gen_key (char *genstr, int weptype)
       strcpy (str, genstr);
       wep128_passphase (str, key);
       memcpy ((unsigned char *) &key128[0], (unsigned char *) &key[0], 13);
+      key128[0][13]=0;
       strcat (str, "#$%");
       wep128_passphase (str, key);
       memcpy ((unsigned char *) &key128[1], (unsigned char *) &key[1], 13);
+      key128[1][13]=0;
       strcat (str, "!@#");
       wep128_passphase (str, key);
       memcpy ((unsigned char *) &key128[2], (unsigned char *) &key[2], 13);
+      key128[2][13]=0;
       strcat (str, "%&^");
       wep128_passphase (str, key);
       memcpy ((unsigned char *) &key128[3], (unsigned char *) &key[3], 13);
+      key128[3][13]=0;
       //for(i = 0;i<13;i++)
       //      printf("[%x]\n",key128[i]);
       return;
