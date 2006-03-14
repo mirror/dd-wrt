@@ -15,7 +15,7 @@
 		<input type="text" class="num" maxlength="100" size="3" name="sshd_port" value="<% nvram_get("sshd_port"); %>" /></div>
 	<div class="setting">
 		<div class="label">Authorized Keys</div>
-		<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="40" rows="4">	</textarea><script language="javascript">
+		<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2">	</textarea><script language="javascript">
 		
 				var var_authorized_keys = fix_cr( '<% nvram_get("sshd_authorized_keys"); %>' );
 				document.getElementById("sshd_authorized_keys").value = var_authorized_keys;
