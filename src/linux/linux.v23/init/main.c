@@ -87,9 +87,9 @@ extern int irda_device_init(void);
 /*
  * gcc >= 4 is not supported by kernel 2.4
  */
-#if __GNUC__ > 3
-#error Sorry, your GCC is too recent for kernel 2.4
-#endif
+//#if __GNUC__ > 3
+//#error Sorry, your GCC is too recent for kernel 2.4
+//#endif
 
 extern char _stext, _etext;
 extern char *linux_banner;

@@ -3582,7 +3582,9 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_NEWMEDIA
   {"Services.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
-
+#ifdef HAVE_NEWMEDIA
+  {"Diagnostics.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
+#endif
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},

@@ -785,7 +785,7 @@ smtp-redirect-install:
 
 		
 chillispot:
-	cd chillispot && . ./conf
+	cd chillispot && ./configure --host=$(ARCH)-linux-elf CFLAGS="$(COPTS) -DHAVE_MALLOC=1 -Drpl_malloc=malloc"
 	$(MAKE) -C chillispot
 
 chillispot-install:
@@ -1285,12 +1285,14 @@ sputnik-install:
 	
 
 openvpn:
+	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"
+	make -C lzo
 	make -C openssl
 ifeq ($(CONFIG_NEWMEDIA),y)
-	./conf2
+	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --disable-http CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
 	make -C openvpn clean
 else
-	./conf
+	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --disable-server --disable-http --enable-password-save CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
 	make -C openvpn clean
 endif
 	make -C openvpn
