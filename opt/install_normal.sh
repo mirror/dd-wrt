@@ -4,13 +4,13 @@ cd ../src
 
 cd router
 
-make clean
+#make clean
 cp .config_std .config
 #cp Makefile.standard Makefile
 
 #copy config.normal .config
 cd ..
-make clean
+#make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
