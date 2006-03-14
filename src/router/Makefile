@@ -789,10 +789,11 @@ chillispot:
 	$(MAKE) -C chillispot
 
 chillispot-install:
-ifneq ($(CONFIG_CHILLILOCAL),y)
+ifneq ($(CONFIG_FON),y)
 	install -D chillispot/config/chillispot.nvramconfig $(INSTALLDIR)/chillispot/etc/config/chillispot.nvramconfig
 	install -D chillispot/config/chillispot.webhotspot $(INSTALLDIR)/chillispot/etc/config/chillispot.webhotspot
-else
+endif
+ifeq ($(CONFIG_CHILLILOCAL),y)
 	install -D chillispot/config/fon.nvramconfig $(INSTALLDIR)/chillispot/etc/config/fon.nvramconfig
 	install -D chillispot/config/fon.webhotspot $(INSTALLDIR)/chillispot/etc/config/fon.webhotspot
 endif
@@ -1286,11 +1287,11 @@ sputnik-install:
 openvpn:
 	make -C openssl
 ifeq ($(CONFIG_NEWMEDIA),y)
-	make -C openvpn clean
 	./conf2
-else
 	make -C openvpn clean
+else
 	./conf
+	make -C openvpn clean
 endif
 	make -C openvpn
 
