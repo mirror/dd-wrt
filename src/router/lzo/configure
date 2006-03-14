@@ -2151,7 +2151,7 @@ elif test $ac_cv_prog_cc_g = yes; then
   fi
 else
   if test "$GCC" = yes; then
-    CFLAGS="-O2"
+    CFLAGS=
   else
     CFLAGS=
   fi
@@ -11896,7 +11896,7 @@ echo "${ECHO_T}$mfx_cv_prog_cc_bug_signed_to_unsigned_casting" >&6
 
 if test "$ac_cv_c_compiler_gnu" = yes; then
 mfx_save_cflags="$CFLAGS"
-CFLAGS="-O2 -fschedule-insns -fschedule-insns2"
+CFLAGS="-fschedule-insns -fschedule-insns2"
 echo "$as_me:$LINENO: checking whether ${CC-cc} suffers the -fschedule-insns bug" >&5
 echo $ECHO_N "checking whether ${CC-cc} suffers the -fschedule-insns bug... $ECHO_C" >&6
 if test "${mfx_cv_prog_gcc_bug_schedule_insns+set}" = set; then
@@ -11960,7 +11960,7 @@ fi
 
 if test "$ac_cv_c_compiler_gnu" = yes; then
 mfx_save_cflags="$CFLAGS"
-CFLAGS="-O2 -fstrength-reduce"
+CFLAGS="-fstrength-reduce"
 echo "$as_me:$LINENO: checking whether ${CC-cc} suffers the -fstrength-reduce bug" >&5
 echo $ECHO_N "checking whether ${CC-cc} suffers the -fstrength-reduce bug... $ECHO_C" >&6
 if test "${mfx_cv_prog_gcc_bug_strength_reduce+set}" = set; then
@@ -12062,9 +12062,9 @@ MFX_CPU=`echo "$MFX_CPU" | sed -e 's/^a-zA-Z0-9//g'`
 if test "X$GCC" = Xyes; then
   MFX_CC="GCC"
   if test "X$enable_debug" = Xyes; then
-    CFLAGS="$CFLAGS -O0"
+    CFLAGS="$CFLAGS"
   else
-    CFLAGS="$CFLAGS -O2"
+    CFLAGS="$CFLAGS"
   fi
   CFLAGS="$CFLAGS -Wall -Wcast-align -Wcast-qual -Wwrite-strings"
   case $MFX_CPU in
