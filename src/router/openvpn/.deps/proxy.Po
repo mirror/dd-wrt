@@ -1,3 +1,0 @@
-proxy.o proxy.o: proxy.c config.h
-
-config.h:
