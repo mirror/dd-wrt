@@ -19,8 +19,6 @@ function to_submit(F) {
 }
 
 function SelSpeed(F,I) {
-	return;
-
 	if(eval("F."+I+"vlan17").checked) {
 		eval("F."+I+"vlan18").checked=true;
 		eval("F."+I+"vlan19").checked=true;
@@ -34,7 +32,7 @@ function SelSpeed(F,I) {
 
 function SelVLAN(F,I) {
 	var j=0;
-	if(eval("F."+I+"vlan16").checked=true) {
+	if(eval("F."+I+"vlan16").checked == true) {
 		for(i=0;i<16;i++)
 			choose_enable(eval("F."+I+"vlan"+i));
 	} else {
@@ -63,8 +61,8 @@ function SelVLAN(F,I) {
 
 function init() {
 	for(k=0;k<5;k++) {
-		SelSpeed(document.Vlan, "port"+k);
-		SelVLAN(document.Vlan, "port"+k);
+		SelSpeed(document.static, "port"+k);
+		SelVLAN(document.static, "port"+k);
 	}
 }
 		</script>
