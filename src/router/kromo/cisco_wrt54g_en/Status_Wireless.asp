@@ -138,7 +138,7 @@ function popup_survey() {
                   <dl>
                      <dt class="term">MAC Address: </dt>
                      <dd class="definition">This is the Router's MAC Address, as seen on your local, wireless network.</dd>
-                     <dt class="term">Mode: </dt>
+                     <dt class="term">Network: </dt>
                      <dd class="definition">As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.</dd>
                   </dl><br /><a target="_blank" href="help/HStatusWireless.asp">More...</a></div>
             </div>
