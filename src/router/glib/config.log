@@ -27,7 +27,9 @@ hostinfo               = unknown
 /usr/bin/oslevel       = unknown
 /bin/universe          = unknown
 
-PATH: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/
+PATH: /home/openwrt/workspace/DD-WRT/tools
+PATH: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin
+PATH: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/
 PATH: /usr/local/sbin
 PATH: /usr/local/bin
 PATH: /usr/sbin
@@ -128,7 +130,7 @@ configure: failed program was:
 configure:3002: checking dependency style of mipsel-linux-uclibc-gcc
 configure:3085: result: gcc3
 configure:3102: checking for a sed that does not truncate output
-configure:3156: result: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed
+configure:3156: result: /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed
 configure:3159: checking for egrep
 configure:3169: result: grep -E
 configure:3185: checking for ld used by mipsel-linux-uclibc-gcc
@@ -260,7 +262,7 @@ configure:4297: result: yes
 configure:4333: checking for dlfcn.h
 configure:4340: result: yes
 configure:4363: checking for mipsel-linux-g++
-configure:4379: found /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//mipsel-linux-g++
+configure:4379: found /home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/mipsel-linux-g++
 configure:4389: result: mipsel-linux-g++
 configure:4447: checking for C++ compiler version
 configure:4450: mipsel-linux-g++ --version </dev/null >&5
@@ -667,9 +669,9 @@ configure:19998: $? = 0
 configure:20009: result: yes
 configure:20016: checking for _doprnt
 configure:20066: mipsel-linux-uclibc-gcc -o conftest -pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time -Wall  -s conftest.c  >&5
-/tmp/cc0KGCsf.o: In function `main':
+/tmp/ccDylEFg.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `_doprnt'
-/tmp/cc0KGCsf.o:(.data.rel+0x0): undefined reference to `_doprnt'
+/tmp/ccDylEFg.o:(.data.rel+0x0): undefined reference to `_doprnt'
 collect2: ld returned 1 exit status
 configure:20069: $? = 1
 configure: failed program was:
@@ -1053,7 +1055,7 @@ configure:24361: $? = 0
 configure:24372: result: yes
 configure:24384: checking for sys_errlist
 configure:24407: mipsel-linux-uclibc-gcc -o conftest -pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time -Wall  -s conftest.c  >&5
-/tmp/cc0vvJFr.o: In function `main':
+/tmp/ccBubIZM.o: In function `main':
 conftest.c:(.text+0xc): undefined reference to `sys_nerr'
 conftest.c:(.text+0x10): undefined reference to `sys_errlist'
 collect2: ld returned 1 exit status
@@ -1148,7 +1150,7 @@ configure: In function 'main':
 configure:24514: warning: implicit declaration of function 'exit'
 configure:24514: warning: incompatible implicit declaration of built-in function 'exit'
 configure:24514: warning: passing argument 1 of 'exit' makes integer from pointer without a cast
-/tmp/ccbtPrrC.o: In function `main':
+/tmp/ccSTd1XV.o: In function `main':
 conftest.c:(.text+0x18): undefined reference to `sys_siglist'
 collect2: ld returned 1 exit status
 configure:24461: $? = 1
@@ -1372,9 +1374,9 @@ configure:25109: checking whether va_lists can be copied by value
 configure:25189: result: yes
 configure:25199: checking for dlopen
 configure:25249: mipsel-linux-uclibc-gcc -o conftest -pipe -Os -fomit-frame-pointer -mips32 -mtune=mips32 -funit-at-a-time -Wall  -s conftest.c  >&5
-/tmp/ccmjDOrD.o: In function `main':
+/tmp/cc9AvQIV.o: In function `main':
 conftest.c:(.text+0x10): undefined reference to `dlopen'
-/tmp/ccmjDOrD.o:(.data.rel+0x0): undefined reference to `dlopen'
+/tmp/cc9AvQIV.o:(.data.rel+0x0): undefined reference to `dlopen'
 collect2: ld returned 1 exit status
 configure:25252: $? = 1
 configure: failed program was:
@@ -1835,7 +1837,7 @@ lt_cv_objdir=.libs
 lt_cv_path_LD=mipsel-linux-uclibc-ld
 lt_cv_path_LDCXX=mipsel-linux-uclibc-ld
 lt_cv_path_NM=mipsel-linux-uclibc-nm
-lt_cv_path_SED=/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin//sed
+lt_cv_path_SED=/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin/sed
 lt_cv_prog_compiler_c_o=yes
 lt_cv_prog_compiler_c_o_CXX=yes
 lt_cv_prog_compiler_rtti_exceptions=no
