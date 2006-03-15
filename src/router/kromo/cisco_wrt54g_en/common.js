@@ -420,6 +420,8 @@ function fix_cr(F) {
 return g;
 }
 
+// 03/03/06 : Botho - New progress bar implementation
+//
 // BEGIN xp_progressbar
 // Copyright 2004 Brian Gosselin of ScriptAsylum.com
 //
@@ -502,7 +504,14 @@ this.tid=0;
 
 // END xp_progressbar
 
+// 03/03/06 : Botho - Change style of the element in param
 function change_style(id, newClass) {
    identity=document.getElementById(id);
    identity.className=newClass;
 }
+
+// 14/03/06 : Botho - New way for translation. (Linksys one)
+function Capture(obj)
+{
+	document.write(obj);	
+}	
