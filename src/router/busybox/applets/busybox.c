@@ -87,10 +87,12 @@ int main(int argc, char **argv)
       
   base = base ? base + 1 : argv[0];
 
-
 #ifdef HAVE_DHCPFWD
   if (strstr (base, "dhcp-fwd"))
     return dhcpforward_main(argc,argv);
+#else
+  if (strstr (base, "blahblah"))
+    return puts(base);
 #endif
 /*#ifdef HAVE_PPP
   else if (strstr (base, "pppd"))
