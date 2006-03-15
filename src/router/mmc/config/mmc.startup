@@ -6,15 +6,13 @@ fi
 if [ "$(nvram get mmc_enable0)" = "1" ]; then
     if [ "$(nvram get mmc_enable)" = "0" ]; then
     nvram set mmc_enable=1
-    nvram commit
-    reboot
+    nvram set need_reboot=1
     fi
 fi
 if [ "$(nvram get mmc_enable0)" = "0" ]; then
     if [ "$(nvram get mmc_enable)" = "1" ]; then
     nvram set mmc_enable=0
-    nvram commit
-    reboot
+    nvram set need_reboot=1
     fi
 fi
 
