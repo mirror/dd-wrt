@@ -7,7 +7,7 @@ INCLUDE := -isystem ../../linux/linux.v24/include
 else
 INCLUDE := -isystem ../../linux/linux.v23/include 
 endif
-CFLAGS  := $(COPTS) -DMODULE -D__KERNEL__ ${WARN} ${INCLUDE} -fno-pic -mno-abicalls -mlong-calls
+CFLAGS  := -O2 -mtune=mips32 -mtune=mips32 -pipe -funit-at-a-time -DMODULE -D__KERNEL__ ${WARN} ${INCLUDE} -fno-pic -mno-abicalls -mlong-calls
 #CC      := mipsel-linux-uclibc-gcc
 
 ${TARGET}.o: ${TARGET}.c
