@@ -966,7 +966,7 @@ else
 	install -D pptp-client/config2/pptpd_client.webconfig $(INSTALLDIR)/pptp-client/etc/config/1pptpd_client.webconfig
 	install -D pptp-client/config2/pptpd_client.options $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.options
 	install -D pptp-client/config2/pptpd_client.sh $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.sh
-	install -D pptp-client/config2/pptpd_client.startup $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.startup
+	install -D pptp-client/config2/pptpd_client.wanup $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.wanup
 	install -D pptp-client/config2/pptpd_client.vpn $(INSTALLDIR)/pptp-client/etc/config/pptpd_client.vpn
 	install -D pptp-client/pptp $(INSTALLDIR)/pptp-client/usr/sbin/pptp
 endif

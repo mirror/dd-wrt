@@ -1,6 +1,8 @@
 #!/bin/sh
 
-
+if [ -z "$(nvram get pppoerelay_enable)" ]; then
+    nvram set pppoerelay_enable=0
+fi
 killall -9 pppoe-relay
 if [ "$(nvram get pppoerelay_enable)" = "1" ]; then
     if [ "$(nvram get wl_mode)" = "sta" ]; then
