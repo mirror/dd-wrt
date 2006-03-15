@@ -15,9 +15,9 @@
           <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
           <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
           <TD colSpan=3 height=25 width="41">&nbsp;</TD>
-          <TD width=100 height=25>Language</TD>
+          <TD width=100 height=25>Language (not finished yet)</TD>
           <TD width=298 height=25>
-	    <select name="language">
+	    <select name="language" disabled="disabled">
 	    	<option value="bulgarian" <% nvram_match("language","bulgarian","selected"); %>>Bulgarian</option>
 		<option value="tradchinese" <% nvram_match("language","tradchinese","selected"); %>>Chinese (Trad.)</option>		
 		<option value="croatian" <% nvram_match("language","croatian","selected"); %>>Croatian</option>
