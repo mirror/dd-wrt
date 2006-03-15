@@ -203,6 +203,15 @@ start_modules (void)
   return 0;
 }
 
+int
+start_wanup (void)
+{
+  runStartup ("/etc/config", ".wanup");
+  runStartup ("/jffs/etc/config", "wanup");	//if available
+  runStartup ("/mmc/etc/config", ".wanup");	//if available
+  return 0;
+}
+
 
 static void
 enableAfterBurner (void)

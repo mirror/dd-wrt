@@ -77,11 +77,11 @@ static unsigned char
 mmc_spi_io (unsigned char data_out)
 {
   int i;
-  unsigned char result = 0, tmp_data = 0;
+  unsigned char result, tmp_data;
 
-  for (i = 0; i < 8; i++)
+  for (i = 0x80; i; i>>=1)
     {
-      if (data_out & (0x01 << (7 - i)))
+      if (data_out & i)
 	port_state |= SD_DI;
       else
 	port_state &= ~SD_DI;
@@ -96,12 +96,63 @@ mmc_spi_io (unsigned char data_out)
       *gpioaddr_output = port_state;
 
       result <<= 1;
-
       if (tmp_data & SD_DO)
-	result |= 1;
+	result++;
     }
 
   return (result);
+}
+
+/* eventually add some __asm__ __volatile__("nop;");
+   to meet timing requirements?
+ */
+static inline void
+mmc_spi_o (unsigned char data_out)
+{
+  int i;
+
+  for (i = 0x80; i; i>>=1)
+    {
+      if (data_out & i)
+	port_state |= SD_DI;
+      else
+	port_state &= ~SD_DI;
+      *gpioaddr_output = port_state;
+
+      port_state |= SD_CLK;
+      *gpioaddr_output = port_state;
+
+      port_state &= ~SD_CLK;
+      *gpioaddr_output = port_state;
+    }
+}
+
+static inline unsigned char
+mmc_spi_i (void)
+{
+  int i;
+  unsigned char result, tmp_data;
+
+  port_state |= SD_DI;
+
+  for (i = 0; i < 8; i++)
+    {
+      *gpioaddr_output = port_state;
+
+      port_state |= SD_CLK;
+      *gpioaddr_output = port_state;
+      tmp_data = *gpioaddr_input;
+
+      port_state &= ~SD_CLK;
+      *gpioaddr_output = port_state;
+
+      result <<= 1;
+
+      if (tmp_data & SD_DO)
+	result++;
+    }
+
+  return result;
 }
 
 static int
@@ -142,7 +193,7 @@ mmc_write_block (unsigned int dest_addr, unsigned char *data)
 
   mmc_spi_io (0xfe);
   for (i = 0; i < 512; i++)
-    mmc_spi_io (data[i]);
+    mmc_spi_o (*data++);
   for (i = 0; i < 2; i++)
     mmc_spi_io (0xff);
 
@@ -214,8 +265,7 @@ mmc_read_block (unsigned char *data, unsigned int src_addr)
     }
   for (i = 0; i < 512; i++)
     {
-      r = mmc_spi_io (0xff);
-      data[i] = r;
+      *data++ = mmc_spi_i ();
     }
   for (i = 0; i < 2; i++)
     {
