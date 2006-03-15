@@ -8,7 +8,7 @@
 	<title>DDNS</title>
 	<link type="text/css" rel="stylesheet" href="style.css"/>
 	<script type="text/JavaScript" src="common.js">{}</script>
-	<script language="Javascript" type="text/javascript" src="lang_pack/english.js"></SCRIPT>
+	<script language="Javascript" type="text/javascript" src="lang_pack/language.js"></SCRIPT>
 	<script language="JavaScript">
 
 document.title = '<% nvram_get("router_name"); %>'+ddns.titl;
@@ -225,7 +225,7 @@ function SelDDNS(num,F) {
 					<% nvram_match("wan_proto","disabled","<!--"); %>
 					<div class="info"><script>Capture(share.interipaddr)</script> : <% nvram_status_get("wan_ipaddr"); %></div>
 					<% nvram_match("wan_proto","disabled","-->"); %>
-                    <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
+          <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
