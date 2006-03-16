@@ -10,6 +10,7 @@
 #include <linux/version.h>
 #include <linux/types.h>
 #include <linux/mtd/compatmac.h>
+#include <linux/notifier.h>
 #include <linux/module.h>
 #include <linux/uio.h>
 
@@ -216,6 +217,8 @@ struct mtd_info {
 	/* Power Management functions */
 	int (*suspend) (struct mtd_info *mtd);
 	void (*resume) (struct mtd_info *mtd);
+
+	struct notifier_block reboot_notifier;
 
 	void *priv;
 };
