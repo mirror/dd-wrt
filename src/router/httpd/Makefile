@@ -177,7 +177,7 @@ ifeq ($(PERFORMANCE_SUPPORT),1)
 OBJS  += performance.o
 endif
 #ifeq ($(WL_STA_SUPPORT),1)
-OBJS  += site_suvery.o
+OBJS  += site_survey.o
 #endif
 
 #OBJS += http.o
