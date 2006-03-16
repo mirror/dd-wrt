@@ -2901,7 +2901,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
     //return -1;      botho 07/03/06 add "- No Forwards -" if empty
     websWrite (wp, "<tr></tr><tr></tr>\n");
     websWrite (wp, "<tr>\n");
-    websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forward -</th>\n");
+    websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
     websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
