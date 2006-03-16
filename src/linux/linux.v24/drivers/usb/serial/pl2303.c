@@ -14,13 +14,6 @@
  * See Documentation/usb/usb-serial.txt for more information on using this driver
  *
  *
- * 2005_Oct_19 grsch
- * 		added some missing ioctl commands
- * 		it seems that there's still an issue with the 2.6.8 version when
- * 		using the device with echo "whatever" >/dev/usb/tts/0 .
- * 		Apparently, a timeout is needed upon pl2303_close (implemented in
- * 		2.6.13.4)
- *
  * 2005_Mar_05 grsch
  *      ported 2.6.8 pl2303.c to 2.4.20 format
  *      (HX model works fine now, ID table should be brought up to date)
@@ -149,8 +142,9 @@ static void pl2303_write_bulk_callback (struct urb *urb);
 static int pl2303_write (struct usb_serial_port *port, int from_user,
 			 const unsigned char *buf, int count);
 static void pl2303_break_ctl(struct usb_serial_port *port,int break_state);
-static int pl2303_tiocmget (struct usb_serial_port *port, unsigned int* value);
-static int pl2303_tiocmset (struct usb_serial_port *port, unsigned int cmd, unsigned int *value);
+static int pl2303_tiocmget (struct usb_serial_port *port, struct file *file);
+static int pl2303_tiocmset (struct usb_serial_port *port, struct file *file,
+			    unsigned int set, unsigned int clear);
 static int pl2303_startup (struct usb_serial *serial);
 static void pl2303_shutdown (struct usb_serial *serial);
 
@@ -444,7 +438,6 @@ static int pl2303_open (struct usb_serial_port *port, struct file *filp)
 	struct usb_serial *serial = port->serial;
 	struct pl2303_private *priv = port->private;
 	unsigned char *buf;
-	struct pl2303_private *priv = port->private;
 	int result;
 
 	dbg("%s -  port %d", __FUNCTION__, port->number);
@@ -649,108 +642,21 @@ static int wait_modem_info(struct usb_serial_port *port, unsigned int arg)
 	return 0;
 }
 
-
-
-static int pl2303_tiocmget (struct usb_serial_port *port, unsigned int *value)
-{
-	struct pl2303_private *priv = usb_get_serial_port_data(port);
-	unsigned long flags;
-	unsigned int mcr;
-	unsigned int status;
-	unsigned int result;
-
-	dbg("%s (%d)", __FUNCTION__, port->number);
-
-	spin_lock_irqsave (&priv->lock, flags);
-	mcr = priv->line_control;
-	status = priv->line_status;
-	spin_unlock_irqrestore (&priv->lock, flags);
-
-	result = ((mcr & CONTROL_DTR)		? TIOCM_DTR : 0)
-		  | ((mcr & CONTROL_RTS)	? TIOCM_RTS : 0)
-		  | ((status & UART_CTS)	? TIOCM_CTS : 0)
-		  | ((status & UART_DSR)	? TIOCM_DSR : 0)
-		  | ((status & UART_RING)	? TIOCM_RI  : 0)
-		  | ((status & UART_DCD)	? TIOCM_CD  : 0);
-
-	dbg("%s - result = %x", __FUNCTION__, result);
-
-	if (copy_to_user(value, &result, sizeof(int)))
-		return -EFAULT;
-	return 0;
-}
-
-
-
-static int pl2303_tiocmset (struct usb_serial_port *port, unsigned int cmd, unsigned int *value)
-{
-  /*
-	struct pl2303_private *priv = usb_get_serial_port_data(port);
-	unsigned long flags;
-	u8 control;
-
-	spin_lock_irqsave (&priv->lock, flags);
-	if (set & TIOCM_RTS)
-		priv->line_control |= CONTROL_RTS;
-	if (set & TIOCM_DTR)
-		priv->line_control |= CONTROL_DTR;
-	if (clear & TIOCM_RTS)
-		priv->line_control &= ~CONTROL_RTS;
-	if (clear & TIOCM_DTR)
-		priv->line_control &= ~CONTROL_DTR;
-	control = priv->line_control;
-	spin_unlock_irqrestore (&priv->lock, flags);
-
-	return set_control_lines (port->serial->dev, control);
-  */
-	struct pl2303_private *priv = port->private;
-	unsigned int arg;
-
-	if (copy_from_user(&arg, value, sizeof(int)))
-		return -EFAULT;
-
-	switch (cmd) {
-		case TIOCMBIS:
-			if (arg & TIOCM_RTS)
-				priv->line_control |= CONTROL_RTS;
-			if (arg & TIOCM_DTR)
-				priv->line_control |= CONTROL_DTR;
-			break;
-
-		case TIOCMBIC:
-			if (arg & TIOCM_RTS)
-				priv->line_control &= ~CONTROL_RTS;
-			if (arg & TIOCM_DTR)
-				priv->line_control &= ~CONTROL_DTR;
-			break;
-
-		case TIOCMSET:
-			/* turn off RTS and DTR and then only turn
-			   on what was asked to */
-			priv->line_control &= ~(CONTROL_RTS | CONTROL_DTR);
-			priv->line_control |= ((arg & TIOCM_RTS) ? CONTROL_RTS : 0);
-			priv->line_control |= ((arg & TIOCM_DTR) ? CONTROL_DTR : 0);
-			break;
-	}
-
-	return set_control_lines (port->serial->dev, priv->line_control);
-}
-
-
-
 static int pl2303_ioctl (struct usb_serial_port *port, struct file *file, unsigned int cmd, unsigned long arg)
 {
 	dbg("%s (%d) cmd = 0x%04x", __FUNCTION__, port->number, cmd);
 
 	switch (cmd) {
-	        case TIOCMGET:
-		  dbg("%s (%d) TIOCMGET", __FUNCTION__, port->number);
-		  return pl2303_tiocmget(port,(unsigned int *)arg);
+		case TIOCMGET:
+			dbg("%s (%d) TIOCMGET", __FUNCTION__, port->number);
+			return get_modem_info (port, (unsigned int *)arg);
+
 		case TIOCMBIS:
 		case TIOCMBIC:
-	        case TIOCMSET:
-		  dbg("%s (%d) TIOCMSET/TIOCMBIC/TIOCMSET", __FUNCTION__,  port->number);
-       		  return pl2303_tiocmset(port,cmd,(unsigned int*)arg);
+		case TIOCMSET:
+			dbg("%s (%d) TIOCMSET/TIOCMBIC/TIOCMSET", __FUNCTION__,  port->number);
+			return set_modem_info(port, cmd, (unsigned int *) arg);
+
 		case TIOCMIWAIT:
 			dbg("%s (%d) TIOCMIWAIT", __FUNCTION__,  port->number);
 			return wait_modem_info(port, arg);
@@ -809,8 +715,6 @@ static void pl2303_read_int_callback (struct urb *urb)
 
 	dbg("%s (%d)", __FUNCTION__, port->number);
 
-	dbg("%s - urb status %d...", __FUNCTION__, urb->status);
-
 	switch (urb->status) {
 	case 0:
 		/* success */
@@ -840,10 +744,12 @@ static void pl2303_read_int_callback (struct urb *urb)
 	spin_unlock_irqrestore(&priv->lock, flags);
 		
 exit:
-	status = usb_submit_urb (urb);
-	if (status)
-		err("%s - usb_submit_urb failed with result %d\n",
-			__FUNCTION__, status);
+	;
+//	urb->dev = port->serial->dev;
+//	status = usb_submit_urb (urb);
+//	if (status)
+//		err("%s - usb_submit_urb failed with result %d\n",
+//			__FUNCTION__, status);
 }
 
 
