@@ -3390,7 +3390,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
       ret += websWrite (wp, "              <TR>\n");
       ret +=
 	websWrite (wp,
-		   "			<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF height=30><B>");
+		   "			<TD style=\"border\" align=center valign=middle bgColor=#FFFFFF height=30><B>");
 
       switch (i)
 	{
@@ -3419,7 +3419,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  snprintf (buff, 31, "port%dvlan%d", j, i);
 	  ret +=
 	    websWrite (wp,
-		       "			<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#");
+		       "			<TD style=\"border\" align=center valign=middle bgColor=#");
 
 	  if (j % 2 == 0)
 	    ret += websWrite (wp, "CCCCCC");
@@ -3458,7 +3458,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  ret +=
 	    websWrite (wp,
-		       "			<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF height=30><select name=");
+		       "			<TD style=\"border\" align=center valign=middle bgColor=#FFFFFF height=30><select name=");
 	  snprintf (buff, 31, "vlan%d", i);
 	  ret += websWrite (wp, buff);
 	  ret += websWrite (wp, "><option value=\"-1\"");
@@ -3487,10 +3487,10 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, "              <TR>\n");
   ret +=
     websWrite (wp,
-	       "			<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF colspan=6><B>WIRELESS</B></TD>\n");
+	       "			<TD style=\"border\" align=center valign=middle bgColor=#FFFFFF colspan=6><B>WIRELESS</B></TD>\n");
   ret +=
     websWrite (wp,
-	       "			<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF><select name=wireless><option value=\"-1\"");
+	       "			<TD style=\"border\" align=center valign=middle bgColor=#FFFFFF><select name=wireless><option value=\"-1\"");
   if (wl_br < 0)
     ret += websWrite (wp, " selected");
   ret += websWrite (wp, ">None</option><option value=\"0\"");
@@ -3504,10 +3504,10 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, "              <TR>\n");
   ret +=
     websWrite (wp,
-	       "                  <TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF colspan=4><B>Link Aggregation<br>on Ports 3 & 4</B></TD>\n");
+	       "                  <TD style=\"border\" align=center valign=middle bgColor=#FFFFFF colspan=4><B>Link Aggregation<br>on Ports 3 & 4</B></TD>\n");
   ret +=
     websWrite (wp,
-	       "                  <TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF colspan=3 align=left><select name=trunking><option value=0>No</option><option value=1");
+	       "                  <TD style=\"border\" align=center valign=middle bgColor=#FFFFFF colspan=3><select name=trunking><option value=0>No</option><option value=1");
 
   c = nvram_safe_get ("trunking");
 
