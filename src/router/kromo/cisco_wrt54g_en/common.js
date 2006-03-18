@@ -532,7 +532,7 @@ var http_info;
 var int_info;
 
 function handle_status_info() {
-	if (http_info.readyState == 4 && http_info.status == 200) {
+	if (http_info.readyState == 4 && http_info.status == 200 && document.getElementById("statusInfo")) {
 		var regex = /\{uptime:([^\{\}]*)\}\n\{wan:([^\{\}]*)\}/;
 		var result = regex.exec(http_info.responseText);
 		var status_info = document.getElementById("statusInfo").getElementsByTagName("div");
@@ -556,7 +556,7 @@ function get_status_info() {
 
 int_info = setInterval("get_status_info()", 5000);
 
-// 18/03/06 : Botho - Gray all form when submitting (thanks to Philip) - NOT OK YET ?
+// 18/03/06 : Botho - Gray all form when submitting (thanks to Philip) - NOT OK YET !
 function apply(F) {
 	for (i = 0; i < F.elements.length; i++) {
 		if(typeof F.elements[i].disabled == "boolean") F.elements[i].disabled = true;
