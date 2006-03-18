@@ -8,7 +8,12 @@
 	<title><% nvram_get("router_name"); %> - VLAN</title>
 	<style type="text/css">
 	<!--
-		.border {BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid;}
+		.border {
+		border-right: 1px solid;
+		border-top: 1px solid; 
+		border-left: 1px solid; 
+		border-bottom: 1px solid;
+		}
 	-->	
 	</style>
 	<link type="text/css" rel="stylesheet" href="style.css"/>
@@ -70,7 +75,7 @@ function init() {
 		SelVLAN(document.static, "port"+k);
 	}
 }
-		</script>
+</script>
 	</head>
 	
 	<body class="gui" onload="init()"> <% showad(); %>
