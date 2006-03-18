@@ -515,3 +515,43 @@ function Capture(obj)
 {
 	document.write(obj);	
 }	
+
+// 18/03/06 : Botho - Help open window function (thanks to Philip)
+function help(url) {
+	var top = 30;
+	var left = Math.floor(screen.availWidth * .66) - 10;
+	var width = Math.floor(screen.availWidth * .33);
+	var height = Math.floor(screen.availHeight * .9) - 30;
+	var win = window.open(url, 'DDWRT_help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	win.focus();
+}
+
+
+// 18/03/06 : Botho - AJAX refreshing statusInfo every 5 sec. (thanks to Philip)
+var http_info;
+var int_info;
+
+int_info = setInterval("get_status_info()", 5000);
+
+function handle_status_info() {
+	if (http_info.readyState == 4 && http_info.status == 200) {
+		var regex = /\{uptime:([^\{\}]*)\}\n\{wan:([^\{\}]*)\}/;
+		var result = regex.exec(http_info.responseText);
+		var status_info = document.getElementById("statusInfo").getElementsByTagName("div");
+		status_info[1].innerHTML = result[1];
+		status_info[2].innerHTML = result[2];
+	}
+}
+
+function get_status_info() {
+	if(window.XMLHttpRequest) http_info = new XMLHttpRequest();
+	if(window.ActiveXObject) http_info = new ActiveXObject("Microsoft.XMLHTTP");
+	if(http_info) {
+		http_info.open("GET", "live/Live_Info.asp", true);
+		http_info.onreadystatechange = handle_status_info;
+		http_info.send("");
+	}
+	else {
+		exit_status_info();
+	}
+}
