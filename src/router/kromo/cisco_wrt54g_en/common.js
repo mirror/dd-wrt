@@ -531,8 +531,6 @@ function help(url) {
 var http_info;
 var int_info;
 
-int_info = setInterval("get_status_info()", 5000);
-
 function handle_status_info() {
 	if (http_info.readyState == 4 && http_info.status == 200) {
 		var regex = /\{uptime:([^\{\}]*)\}\n\{wan:([^\{\}]*)\}/;
@@ -555,3 +553,15 @@ function get_status_info() {
 		exit_status_info();
 	}
 }
+
+int_info = setInterval("get_status_info()", 5000);
+
+// 18/03/06 : Botho - Gray all form when submitting (thanks to Philip) - NOT OK YET ?
+function apply(F) {
+	for (i = 0; i < F.elements.length; i++) {
+		if(typeof F.elements[i].disabled == "boolean") F.elements[i].disabled = true;
+	}
+	document.getElementById('contents').style.color = '#999999';
+	F.submit();
+}
+
