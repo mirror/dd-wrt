@@ -1,14 +1,11 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html
-  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - Log</title>
-		<link type="text/css" rel="stylesheet" href="style.css"/>
-		<script type="text/JavaScript" src="common.js">{}</script>
-		<script language="JavaScript">
+		<link type="text/css" rel="stylesheet" href="style.css" />
+		<script type="text/JavaScript" src="common.js"></script>
+		<script type="text/JavaScript">
 
 function to_submit(F) {
 	F.submit_button.value = "Log";
@@ -16,30 +13,16 @@ function to_submit(F) {
 	F.save_button.value = "Saved";
 	F.save_button.disabled = true;
 	F.submit();
-	return true;
 }
 
-function SelLog(num,F) {
-	log_enable_disable(F,num);
-}
-
-function log_enable_disable(F,I) {
-        EN_DIS = I;
-        if ( I == "0" ){
-                choose_disable(F.log_incoming);
-                choose_disable(F.log_outgoing);
-                choose_disable(F.log_dropped);
-                choose_disable(F.log_accepted);
-                choose_disable(F.log_rejected);
-		
-        }
-        else{
-                choose_enable(F.log_incoming);
-                choose_enable(F.log_outgoing);
-                choose_enable(F.log_dropped);
-                choose_enable(F.log_accepted);
-                choose_enable(F.log_rejected);
-        }
+function log_enable_disable(F, I) {
+	var state = (I == 0);
+	F.log_level.disabled = state;
+	F.log_incoming.disabled = state;
+    F.log_outgoing.disabled = state;
+    F.log_dropped.disabled = state;
+    F.log_accepted.disabled = state;
+    F.log_rejected.disabled = state;
 }
 
 function ViewLogIn() {
@@ -54,17 +37,20 @@ function ViewLog() {
 	self.open('Log_all.asp','inLogTable','alwaysRaised,resizable,scrollbars,width=580,height=600').focus();
 }
 function init() {               
-        log_enable_disable(document.log,"<% nvram_get("log_enable"); %>");
+        log_enable_disable(document.log, <% nvram_get("log_enable"); %>);
 }
 
 		</script>
 	</head>
 	
-	<body class="gui" onload="init();"> <% showad(); %>
+	<body class="gui" onload="init();">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
-					<div id="logo"><h1><% show_control(); %></h1></div>
+					<div id="logo">
+						<h1><% show_control(); %></h1>
+					</div>
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
@@ -104,24 +90,23 @@ function init() {
 							<input type="hidden" name="action"/>
 							<h2>Log Management</h2>
 							<fieldset>
-							<legend>Log</legend>
-							<div class="setting">
-								<div class="label">Log</div>
-								<input type="radio" value="1" name="log_enable" <% nvram_match("log_enable", "1", "checked"); %> onclick="SelLog(1,this.form)">Enable</input>
-								<input type="radio" value="0" name="log_enable" <% nvram_match("log_enable", "0", "checked"); %> onclick="SelLog(0,this.form)">Disable</input>
-							</div>
-							<div class="setting">
-								<div class="label">Log Level</div>
-								<select name="log_level">
-									<option value="0" <% nvram_match("log_level", "0", "selected"); %>>Low</option>
-									<option value="1" <% nvram_match("log_level", "1", "selected"); %>>Medium</option>
-									<option value="2" <% nvram_match("log_level", "2", "selected"); %>>High</option>
-								</select>
-							</div>
-							</fieldset>
-							<br/>
+								<legend>Log</legend>
+								<div class="setting">
+									<div class="label">Log</div>
+									<input type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="log_enable_disable(this.form, 1)" />Enable
+									<input type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="log_enable_disable(this.form, 0)" />Disable
+								</div>
+								<div class="setting">
+									<div class="label">Log Level</div>
+									<select name="log_level">
+										<option value="0" <% nvram_selected("log_level", "0"); %>>Low</option>
+										<option value="1" <% nvram_selected("log_level", "1"); %>>Medium</option>
+										<option value="2" <% nvram_selected("log_level", "2"); %>>High</option>
+									</select>
+								</div>
+							</fieldset><br />
 							<fieldset>
-								<legend>Log Type</legend>
+								<legend>Options</legend>
 								<div class="setting">
 									<div class="label">Dropped</div>
 									<select name="log_dropped">
@@ -145,15 +130,17 @@ function init() {
 								</div>
 								<% support_invmatch("SYSLOG_SUPPORT", "1", "<!--"); %>
 								<div class="setting">
-									<name>IP Address</name><% prefix_ip_get("lan_ipaddr",1); %>
+									<name>IP Address</name>
+									<% prefix_ip_get("lan_ipaddr",1); %>
 									<input class="num" size="3" maxlength="3" name="log_ipaddr" onblur="valid_range(this,0,254,'IP')" value="<% nvram_get("log_ipaddr"); %>" />
 								</div>
 								<% support_invmatch("SYSLOG_SUPPORT", "1", "-->"); %>
+							</fieldset><br />
+							<div class="center">
 								<input type="button" value="Incoming Log" name="log_incoming" onclick="ViewLogIn()" id="button1"/>
 								<input type="button" value="Outgoing Log" name="log_outgoing" onclick="ViewLogOut()"/>
 								<% support_match("SYSLOG_SUPPORT", "1", "<input onclick=\"ViewLog()\" type=\"button\" value=\"System Log\"/>"); %>
-							</fieldset>
-							<br/>
+							</div><br />
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
 								<input type="button" value="Cancel Changes" onclick="window.location.replace('../Log.asp')"/>
@@ -161,19 +148,17 @@ function init() {
 						</form>
 					</div>
 				</div>
+				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <% get_firmware_version(); %></div>
 					<div class="info">Time: <% get_uptime(); %></div>
-					<% nvram_match("wan_proto","disabled","<!--"); %>
-					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
-					<% nvram_match("wan_proto","disabled","-->"); %>
-                    <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
+					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<br/>
-						<a target="_blank" href="help/HLog.asp">More...</a>
+						<a href="javascript:help('help/HLog.asp');">More...</a>
 					</div>
 				</div>
 			</div>
