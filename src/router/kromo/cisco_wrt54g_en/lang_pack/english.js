@@ -130,6 +130,7 @@ ddns.dynamic="Dynamic";
 ddns.static="Static";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
+ddns.statu="DDNS Status";
 
 var ddnsm = new Object();
 ddnsm.dyn_good="DDNS is updated successfully";
