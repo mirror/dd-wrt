@@ -1,15 +1,12 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html
-  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-	<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-	<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-	<title>DDNS</title>
-	<link type="text/css" rel="stylesheet" href="style.css"/>
-	<script type="text/JavaScript" src="common.js">{}</script>
-	<script language="Javascript" type="text/javascript" src="lang_pack/language.js"></SCRIPT>
-	<script language="JavaScript">
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+		<title>DDNS</title>
+		<link type="text/css" rel="stylesheet" href="style.css"/>
+		<script type="text/JavaScript" src="common.js"></script>
+		<script language="Javascript" type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/JavaScript">
 
 document.title = '<% nvram_get("router_name"); %>'+ddns.titl;
 
@@ -31,8 +28,7 @@ function ddns_check(F,T) {
 		passwd = eval("F.ddns_username_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
 	}
-
-	if(username.value == ""){
+	if(username.value == "") {
 //	alert("You must input a username !");
 		alert(errmsg.err0);
 		username.focus();
@@ -55,23 +51,21 @@ function ddns_check(F,T) {
 }
 
 function to_save(F) {
-	if(ddns_check(F,"update") == true){
-		F.change_action.value = "gozila_cgi";
-		F.submit_button.value = "DDNS";
-		F.submit_type.value = "save";
-		F.action.value = "Apply";
-		F.submit();
-	}
+	if(!ddns_check(F,"update")) return;
+	F.change_action.value = "gozila_cgi";
+	F.submit_button.value = "DDNS";
+	F.submit_type.value = "save";
+	F.action.value = "Apply";
+	F.submit();
 }
 
 function to_submit(F) {
-	if(ddns_check(F,"save") == true) {
-		F.submit_button.value = "DDNS";
-		F.action.value = "Apply";
-		F.save_button.value = "Saved";
-		F.save_button.disabled = true;
-		F.submit();
-	}
+	if(!ddns_check(F,"save")) return;
+	F.submit_button.value = "DDNS";
+	F.action.value = "Apply";
+	F.save_button.value = "Saved";
+	F.save_button.disabled = true;
+	F.submit();
 }
 
 function SelDDNS(num,F) {
@@ -80,10 +74,12 @@ function SelDDNS(num,F) {
 	F.ddns_enable.value=F.ddns_enable.options[num].value;
 	F.submit();
 }
+
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -118,10 +114,10 @@ function SelDDNS(num,F) {
 				<div id="main">
 					<div id="contents">
 						<form name="ddns" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="action"/>
-							<input type="hidden" name="change_action"/>
-							<input type="hidden" name="submit_type"/>
+							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="action" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
 							<h2><script>Capture(ddns.h2)</script></h2>
 							<fieldset>
 								<legend><script>Capture(ddns.legend)</script></legend>
@@ -134,12 +130,6 @@ function SelDDNS(num,F) {
 										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %>><script>Capture(ddns.zone)</script></option>
 									</select>
 								</div>
-								<% nvram_selmatch("ddns_enable","1","<!--"); %>
-								<% nvram_selmatch("ddns_enable","2","<!--"); %>
-								<% nvram_selmatch("ddns_enable","3","<!--"); %>
-								<% nvram_selmatch("ddns_enable","1","-->"); %>
-								<% nvram_selmatch("ddns_enable","2","-->"); %>
-								<% nvram_selmatch("ddns_enable","3","-->"); %>
 								<% nvram_selmatch("ddns_enable","0","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
@@ -190,28 +180,30 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<div class="setting">
-									<div class="label"><script>Capture(share.interipaddr)</script></div>
-									<% show_ddns_ip(); %>
+									<div class="label"><script>Capture(ddns.typ)</script></div>
+									<select name="ddns_dyndnstype">
+										<option value="1" <% nvram_selected("ddns_dyndnstype", "1"); %>><script>Capture(ddns.dynamic)</script></option>
+										<option value="2" <% nvram_selected("ddns_dyndnstype", "2"); %>><script>Capture(ddns.static)</script></option>
+										<option value="3" <% nvram_selected("ddns_dyndnstype", "3"); %>><script>Capture(ddns.custom)</script></option>
+									</select>
 								</div>
+								<div class="setting">
+									<div class="label"><script>Capture(ddns.wildcard)</script></div>
+									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_checked("ddns_wildcard", "1"; %>/>
+								</div>
+							</fieldset><br />
+							<fieldset>
+								<legend><script>Capture(ddns.statu)</script></legend>
 								<div class="setting">
 									<div class="label"><script>Capture(share.statu)</script></div>
 									<% show_ddns_status(); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script>Capture(ddns.typ)</script></div>
-									<select name="ddns_dyndnstype">
-										<option value="1" <% nvram_selmatch("ddns_dyndnstype", "1", "selected"); %>><script>Capture(ddns.dynamic)</script></option>
-										<option value="2" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %>><script>Capture(ddns.static)</script></option>
-										<option value="3" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %>><script>Capture(ddns.custom)</script></option>
-									</select>
-								</div>
-								<div class="setting">
-									<div class="label"><script>Capture(ddns.wildcard)</script></div>
-									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_selmatch("ddns_wildcard", "1", "checked"); %>/>
+									<div class="label"><script>Capture(share.interipaddr)</script></div>
+									<% show_ddns_ip(); %>
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
-							</fieldset>
-							<br/>
+							</fieldset><br />
 							<div class="submitFooter">
 							 <script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
 							 <script>document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");</script>
@@ -219,24 +211,23 @@ function SelDDNS(num,F) {
 						</form>
 					</div>
 				</div>
-				<div id="statusInfo">
-					<div class="info"><script>Capture(share.firmwarever)</script> : <% get_firmware_version(); %></div>
-					<div class="info"><script>Capture(share.time)</script> : <% get_uptime(); %></div>
-					<% nvram_match("wan_proto","disabled","<!--"); %>
-					<div class="info"><script>Capture(share.interipaddr)</script> : <% nvram_status_get("wan_ipaddr"); %></div>
-					<% nvram_match("wan_proto","disabled","-->"); %>
-          <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
-				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2><script>Capture(share.help)</script></h2></div>
+						<div id="logo">
+							<h2><script>Capture(share.help)</script></h2>
+						</div>
 						<dl>
 							<dt class="term"><script>Capture(hddns.right1)</script></dt>
 							<dd class="definition"><script>Capture(hddns.right2)</script></dd>
-						</dl>
-						<br/>
-						<a target="_blank" href="help/HDDNS.asp"><script>Capture(share.more)</script></a>
+						</dl><br />
+						<a href="javascript:help('help/HDDNS.asp');"><script>Capture(share.more)</script></a>
 					</div>
+				</div>
+				<div id="floatKiller"></div>
+				<div id="statusInfo">
+					<div class="info"><script>Capture(share.firmwarever)</script> : <% get_firmware_version(); %></div>
+					<div class="info"><script>Capture(share.time)</script> : <% get_uptime(); %></div>
+					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
 			</div>
 		</div>
