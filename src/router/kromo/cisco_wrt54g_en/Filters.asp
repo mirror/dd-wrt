@@ -138,6 +138,13 @@ function valid(F) {
 			F.f_status.value = "1";
 		}
 	}
+	if (F._filter_p2p)
+	if (F._filter_p2p.checked == false){
+	    F.filter_p2p.value = 0;
+	}else{
+	    F.filter_p2p.value = 1;
+	}
+
 
 	return true;
 }
@@ -340,6 +347,7 @@ function Status(F,I) {
 							<input type="hidden" name="blocked_service"/>
 							<input type="hidden" name="filter_web"/>
 							<input type="hidden" name="filter_policy"/>
+							<input type="hidded" name="filter_p2p"/>
 							<input type="hidden" name="f_status"/>
 							<h2>Internet Access</h2>
 							<div>
@@ -430,6 +438,10 @@ function Status(F,I) {
 							<br />
 							<fieldset>
 								<legend>Blocked Services</legend>
+								<div class="setting">
+								<div class="label">Catch all P2P Protocols</div>
+  								<input type="checkbox" name="_filter_p2p" value="1" <% nvram_match("filter_p2p", "1", "checked"); %>/> 
+								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onChange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
 										<option value="None" selected="selected">None</option>
