@@ -1274,6 +1274,12 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 	    proto = "soul";
 	  else if (!strcasecmp (realname, "ares"))
 	    proto = "ares";
+	  else if (!strcasecmp (realname, "mute"))
+	    proto = "mute";
+	  else if (!strcasecmp (realname, "waste"))
+	    proto = "waste";
+	  else if (!strcasecmp (realname, "xdcc"))
+	    proto = "xdcc";
 
 	  save2file ("-A advgrp_%d -p tcp -m ipp2p --%s -j %s\n", seq, proto,
 		     log_drop);
@@ -1281,6 +1287,11 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 	}
     }
   }
+  /* p2p catchall */
+  if (nvram_match("filter_p2p","1"))
+    {
+	  save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,log_drop);
+    }
   /* filter_web_host2=hello<&nbsp;>world<&nbsp;>friend */
   sprintf (nvname, "filter_web_host%d", seq);
   wordlist = nvram_safe_get (nvname);
