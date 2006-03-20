@@ -194,6 +194,9 @@ main_loop (void)
   set_ip_forward ('1');
   system ("/etc/preinit");	//sets default values for ip_conntrack
 
+
+
+
 #ifndef HAVE_RB500
   char *rwpart = "mtd4";
   int itworked = 0;
@@ -258,6 +261,14 @@ main_loop (void)
     {
       start_service ("powerled_ctrl_1");
     }
+//create loginprompt
+FILE *fp=fopen("/tmp/loginprompt","wb");
+#ifdef DIST
+fprintf(fp,"DD-WRT v23 %s Date: " BUILD_DATE "\n\n",DIST);
+#else
+fprintf(fp,"DD-WRT v23 custom Date: " BUILD_DATE "\n\n");
+#endif
+fclose(fp);
 
   /* Loop forever */
   for (;;)
