@@ -1,5 +1,3 @@
-$Id: SMPNOTES,v 1.1 2005/09/28 11:53:38 seg Exp $
-
 Notes on the (20000210) SMP-ization of the bridging code:
 
 Each bridge has a hash table of MAC addresses. This table is protected

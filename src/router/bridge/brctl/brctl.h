@@ -1,6 +1,4 @@
 /*
- * $Id: brctl.h,v 1.1 2005/09/28 11:53:38 seg Exp $
- *
  * Copyright (C) 2000 Lennert Buytenhek
  *
  * This program is free software; you can redistribute it and/or
@@ -23,15 +21,19 @@
 
 struct command
 {
-	int needs_bridge_argument;
-	char *name;
-	void (*func)(struct bridge *br, char *arg0, char *arg1);
+	int		nargs;
+	const char	*name;
+	int		(*func)(int argc, char *const* argv);
+	const char 	*help;
 };
 
-struct command *br_command_lookup(char *cmd);
-void br_dump_bridge_id(unsigned char *x);
-void br_show_timer(struct timeval *tv);
-void br_dump_port_info(struct port *p);
-void br_dump_info(struct bridge *br);
+const struct command *command_lookup(const char *cmd);
+void command_help(const struct command *);
+void command_helpall(void);
+
+void br_dump_bridge_id(const unsigned char *x);
+void br_show_timer(const struct timeval *tv);
+void br_dump_interface_list(const char *br);
+void br_dump_info(const char *br, const struct bridge_info *bri);
 
 #endif
