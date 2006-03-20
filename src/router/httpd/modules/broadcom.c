@@ -3568,6 +3568,19 @@ ej_get_http_method (int eid, webs_t wp, int argc, char_t ** argv)
 {
   return websWrite (wp, "%s", "post");
 }
+static void do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
+{
+char *lang = nvram_get("language");
+if (lang==NULL)
+{
+do_file("/lang_pack/english.js",stream);
+return;
+}
+char l[60];
+sprintf(l,"/lang_pack/%s.js",lang);
+do_file(l,stream);
+return;
+}
 
 
 static char no_cache[] =
@@ -3591,6 +3604,7 @@ struct mime_handler mime_handlers[] = {
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
 #endif
   {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
+  {"language.js", "text/javascript", NULL, NULL, do_language, NULL},
 
   {"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth},
 #ifdef HAVE_SKYTRON
