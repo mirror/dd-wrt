@@ -1,5 +1,3 @@
-$Id: HOWTO,v 1.1 2005/09/28 11:53:38 seg Exp $
-
 Hello everybody,
 
 Although there is a man page which documents most of the actual
@@ -104,9 +102,4 @@ ipchains -A forward -s 192.168.10.2/32 -d 10.0.0.0/8 -i br_10 -j ACCEPT
 
 
 
-Hope this helped. If not, send a cry for help to the mailing list (see
-http://openrock.net/mailman/listinfo/bridge for more information), or
-send me an email at buytenh@openrock.net
-
-
-That's all folks!
+Hope this helped. If not, send a cry for help to the mailing list.

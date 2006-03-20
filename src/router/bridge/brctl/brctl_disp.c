@@ -1,6 +1,4 @@
 /*
- * $Id: brctl_disp.c,v 1.1 2005/09/28 11:53:38 seg Exp $
- *
  * Copyright (C) 2000 Lennert Buytenhek
  *
  * This program is free software; you can redistribute it and/or
@@ -20,67 +18,91 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
+
 #include "libbridge.h"
 #include "brctl.h"
 
-void br_dump_bridge_id(unsigned char *x)
+void br_dump_bridge_id(const unsigned char *x)
 {
 	printf("%.2x%.2x.%.2x%.2x%.2x%.2x%.2x%.2x", x[0], x[1], x[2], x[3],
 	       x[4], x[5], x[6], x[7]);
 }
 
-void br_show_timer(struct timeval *tv)
+void br_show_timer(const struct timeval *tv)
 {
 	printf("%4i.%.2i", (int)tv->tv_sec, (int)tv->tv_usec/10000);
 }
 
-void br_dump_port_info(struct port *p)
+static int first;
+
+static int dump_interface(const char *b, const char *p, void *arg)
 {
-	char ifname[IFNAMSIZ];
-	struct port_info *pi;
 
-	pi = &p->info;
+	if (first) 
+		first = 0;
+	else
+		printf("\n\t\t\t\t\t\t\t");
 
-	printf("%s (%i)\n", if_indextoname(p->ifindex, ifname), p->index);
-	printf(" port id\t\t%.4x\t\t\t", pi->port_id);
-	printf("state\t\t\t%s\n", br_get_state_name(pi->state));
+	printf("%s", p);
+
+	return 0;
+}
+
+void br_dump_interface_list(const char *br)
+{
+	int err;
+
+	first = 1;
+	err = br_foreach_port(br, dump_interface, NULL);
+	if (err < 0)
+		printf(" can't get port info: %s\n", strerror(-err));
+	else
+		printf("\n");
+}
+
+static int dump_port_info(const char *br, const char *p,  void *arg)
+{
+	struct port_info pinfo;
+
+	if (br_get_port_info(br, p, &pinfo)) {
+		printf("Can't get info for %p",p);
+		return 1;
+	}
+
+	printf("%s (%d)\n", p, pinfo.port_no);
+	printf(" port id\t\t%.4x",  pinfo.port_id);
+	printf("\t\t\tstate\t\t%15s\n", br_get_state_name(pinfo.state));
 	printf(" designated root\t");
-	br_dump_bridge_id((unsigned char *)&pi->designated_root);
-	printf("\tpath cost\t\t%4i\n", pi->path_cost);
+	br_dump_bridge_id((unsigned char *)&pinfo.designated_root);
+	printf("\tpath cost\t\t%4i\n", pinfo.path_cost);
 
 	printf(" designated bridge\t");
-	br_dump_bridge_id((unsigned char *)&pi->designated_bridge);
+	br_dump_bridge_id((unsigned char *)&pinfo.designated_bridge);
 	printf("\tmessage age timer\t");
-	br_show_timer(&pi->message_age_timer_value);
-	printf("\n designated port\t%.4x", pi->designated_port);
+	br_show_timer(&pinfo.message_age_timer_value);
+	printf("\n designated port\t%.4x", pinfo.designated_port);
 	printf("\t\t\tforward delay timer\t");
-	br_show_timer(&pi->forward_delay_timer_value);
-	printf("\n designated cost\t%4i", pi->designated_cost);
+	br_show_timer(&pinfo.forward_delay_timer_value);
+	printf("\n designated cost\t%4i", pinfo.designated_cost);
 	printf("\t\t\thold timer\t\t");
-	br_show_timer(&pi->hold_timer_value);
+	br_show_timer(&pinfo.hold_timer_value);
 	printf("\n flags\t\t\t");
-	if (pi->config_pending)
+	if (pinfo.config_pending)
 		printf("CONFIG_PENDING ");
-	if (pi->top_change_ack)
+	if (pinfo.top_change_ack)
 		printf("TOPOLOGY_CHANGE_ACK ");
 	printf("\n");
 	printf("\n");
+	return 0;
 }
 
-void br_dump_info(struct bridge *br)
+void br_dump_info(const char *br, const struct bridge_info *bri)
 {
-	struct bridge_info *bri;
-	struct port *p;
+	int err;
 
-	bri = &br->info;
-
-	printf("%s\n", br->ifname);
-	if (!bri->stp_enabled) {
-		printf("\tSTP disabled\n");
-		return;
-	}
-
+	printf("%s\n", br);
 	printf(" bridge id\t\t");
 	br_dump_bridge_id((unsigned char *)&bri->bridge_id);
 	printf("\n designated root\t");
@@ -101,8 +123,6 @@ void br_dump_info(struct bridge *br)
 	br_show_timer(&bri->bridge_forward_delay);
 	printf("\n ageing time\t\t");
 	br_show_timer(&bri->ageing_time);
-	printf("\t\t\tgc interval\t\t");
-	br_show_timer(&bri->gc_interval);
 	printf("\n hello timer\t\t");
 	br_show_timer(&bri->hello_timer_value);
 	printf("\t\t\ttcn timer\t\t");
@@ -120,9 +140,7 @@ void br_dump_info(struct bridge *br)
 	printf("\n");
 	printf("\n");
 
-	p = br->firstport;
-	while (p != NULL) {
-		br_dump_port_info(p);
-		p = p->next;
-	}
+	err = br_foreach_port(br, dump_port_info, NULL);
+	if (err < 0)
+		printf("can't get ports: %s\n", strerror(-err));
 }
