@@ -694,7 +694,11 @@ static int hd_release(struct inode * inode, struct file * file)
 	return 0;
 }
 
-extern struct block_device_operations hd_fops;
+static struct block_device_operations hd_fops = {
+	open:		hd_open,
+	release:	hd_release,
+	ioctl:		hd_ioctl,
+};
 
 static struct gendisk hd_gendisk = {
 	major:		MAJOR_NR,
@@ -717,12 +721,6 @@ static void hd_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 	handler();
 	sti();
 }
-
-static struct block_device_operations hd_fops = {
-	open:		hd_open,
-	release:	hd_release,
-	ioctl:		hd_ioctl,
-};
 
 /*
  * This is the hard disk IRQ description. The SA_INTERRUPT in sa_flags

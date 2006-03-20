@@ -343,7 +343,14 @@ static char *pd_errs[17] = { "ERR","INDEX","ECC","DRQ","SEEK","WRERR",
 
 /* kernel glue structures */
 
-extern struct block_device_operations pd_fops;
+static struct block_device_operations pd_fops = {
+	owner:			THIS_MODULE,
+        open:			pd_open,
+        release:		pd_release,
+        ioctl:			pd_ioctl,
+        check_media_change:	pd_check_media,
+        revalidate:		pd_revalidate
+};
 
 static struct gendisk pd_gendisk = {
 	major:		PD_MAJOR,
@@ -353,15 +360,6 @@ static struct gendisk pd_gendisk = {
 	part:		pd_hd,
 	sizes:		pd_sizes,
 	fops:		&pd_fops,
-};
-
-static struct block_device_operations pd_fops = {
-	owner:			THIS_MODULE,
-        open:			pd_open,
-        release:		pd_release,
-        ioctl:			pd_ioctl,
-        check_media_change:	pd_check_media,
-        revalidate:		pd_revalidate
 };
 
 void pd_init_units( void )

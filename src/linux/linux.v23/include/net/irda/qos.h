@@ -83,7 +83,6 @@ struct qos_info {
 extern int sysctl_max_baud_rate;
 extern int sysctl_max_inactive_time;
 
-extern __u32 baud_rates[];
 extern __u32 data_sizes[];
 extern __u32 min_turn_times[];
 extern __u32 add_bofs[];

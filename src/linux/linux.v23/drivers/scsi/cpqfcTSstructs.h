@@ -965,7 +965,6 @@ void fcSestReset(CPQFCHBA *);
 
 void cpqfc_pci_unmap(struct pci_dev *pcidev, Scsi_Cmnd * cmd, PTACHYON fcChip, __u32 x_ID);
 
-extern const __u8 valid_al_pa[];
 extern const int number_of_al_pa;
 
 #define FCP_RESID_UNDER   0x80000

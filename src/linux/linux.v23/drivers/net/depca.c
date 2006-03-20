@@ -1746,7 +1746,7 @@ static int load_packet(struct net_device *dev, struct sk_buff *skb)
 
 		/* set up the buffer descriptors */
 		len = (skb->len < ETH_ZLEN) ? ETH_ZLEN : skb->len;
-		for (i = entry; i != end; i = (++i) & lp->txRingMask) {
+		for (i = entry; i != end; i = (i+1) & lp->txRingMask) {
 			/* clean out flags */
 			writel(readl(&lp->tx_ring[i].base) & ~T_FLAGS, &lp->tx_ring[i].base);
 			writew(0x0000, &lp->tx_ring[i].misc);	/* clears other error flags */

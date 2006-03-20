@@ -344,7 +344,6 @@ typedef struct eicon_card {
 
 #include "eicon_idi.h"
 
-extern eicon_card *cards;
 extern char *eicon_ctype_name[];
 
 

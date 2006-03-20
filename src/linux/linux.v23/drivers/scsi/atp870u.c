@@ -807,19 +807,19 @@ oktosend:
 			bttl = virt_to_bus(sgpnt[j].address);
 			l = sgpnt[j].length;
 			while (l > 0x10000) {
-				(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0x0000;
-				(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = 0x0000;
-				(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
+				(((unsigned short int *) (prd))[i + 3]) = 0x0000;
+				(((unsigned short int *) (prd))[i + 2]) = 0x0000;
+				(((unsigned long *) (prd))[i >> 1]) = bttl;
 				l -= 0x10000;
 				bttl += 0x10000;
 				i += 0x04;
 			}
-			(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
-			(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = l;
-			(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0;
+			(((unsigned long *) (prd))[i >> 1]) = bttl;
+			(((unsigned short int *) (prd))[i + 2]) = l;
+			(((unsigned short int *) (prd))[i + 3]) = 0;
 			i += 0x04;
 		}
-		(unsigned short int) (((unsigned short int *) (prd))[i - 1]) = 0x8000;
+		(((unsigned short int *) (prd))[i - 1]) = 0x8000;
 	} else {
 		/*
 		 *	For a linear request write a chain of blocks
@@ -828,16 +828,16 @@ oktosend:
 		l = workrequ->request_bufflen;
 		i = 0;
 		while (l > 0x10000) {
-			(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0x0000;
-			(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = 0x0000;
-			(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
+			(((unsigned short int *) (prd))[i + 3]) = 0x0000;
+			(((unsigned short int *) (prd))[i + 2]) = 0x0000;
+			(((unsigned long *) (prd))[i >> 1]) = bttl;
 			l -= 0x10000;
 			bttl += 0x10000;
 			i += 0x04;
 		}
-		(unsigned short int) (((unsigned short int *) (prd))[i + 3]) = 0x8000;
-		(unsigned short int) (((unsigned short int *) (prd))[i + 2]) = l;
-		(unsigned long) (((unsigned long *) (prd))[i >> 1]) = bttl;
+		(((unsigned short int *) (prd))[i + 3]) = 0x8000;
+		(((unsigned short int *) (prd))[i + 2]) = l;
+		(((unsigned long *) (prd))[i >> 1]) = bttl;
 	}
 	tmpcip = tmpcip + 4;
 	dev->id[target_id].prdaddru = virt_to_bus(dev->id[target_id].prd_tableu);

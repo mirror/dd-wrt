@@ -1002,7 +1002,7 @@ int sdla_peek (sdlahw_t* hw, unsigned long addr, void* buf, unsigned len)
                         peek_by_4 ((unsigned long)hw->dpmbase + curpos, buf,
 				curlen);
                         addr       += curlen;
-                        (char*)buf += curlen;
+                        buf         = (char*)buf + curlen;
                         len        -= curlen;
                 }
 
@@ -1086,7 +1086,7 @@ int sdla_poke (sdlahw_t* hw, unsigned long addr, void* buf, unsigned len)
                         poke_by_4 ((unsigned long)hw->dpmbase + curpos, buf,
 				curlen);
 	                addr       += curlen;
-                        (char*)buf += curlen;
+                        buf         = (char*)buf + curlen;
                         len        -= curlen;
                 }
 
@@ -2127,10 +2127,10 @@ static int detect_s514 (sdlahw_t* hw)
 		modname, hw->irq);
 
 	/* map the physical PCI memory to virtual memory */
-	(void *)hw->dpmbase = ioremap((unsigned long)S514_mem_base_addr,
+	hw->dpmbase = (void *)ioremap((unsigned long)S514_mem_base_addr,
 		(unsigned long)MAX_SIZEOF_S514_MEMORY);
     	/* map the physical control register memory to virtual memory */
-	(void *)hw->vector = ioremap(
+	hw->vector = (unsigned long)ioremap(
 		(unsigned long)(S514_mem_base_addr + S514_CTRL_REG_BYTE),
 		(unsigned long)16);
      

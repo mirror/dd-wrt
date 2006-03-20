@@ -720,7 +720,7 @@ int i2cproc_cleanup(void)
  * ----------------------------------------------------
  */
 
-int i2c_transfer(struct i2c_adapter * adap, struct i2c_msg msgs[],int num)
+int i2c_transfer(struct i2c_adapter * adap, struct i2c_msg *msgs,int num)
 {
 	int ret;
 

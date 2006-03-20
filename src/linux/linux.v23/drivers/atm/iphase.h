@@ -68,8 +68,6 @@
 #define IF_IADBG_SUNI_STAT      0x02000000        // suni statistics
 #define IF_IADBG_RESET          0x04000000        
 
-extern	unsigned int	IADebugFlag;
-
 #define IF_IADBG(f) if (IADebugFlag & (f))
 
 #ifdef  CONFIG_ATM_IA_DEBUG   /* Debug build */

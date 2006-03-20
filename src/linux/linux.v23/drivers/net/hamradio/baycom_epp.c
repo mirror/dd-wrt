@@ -60,8 +60,10 @@
 #include <net/ax25.h> 
 #endif /* CONFIG_AX25 || CONFIG_AX25_MODULE */
 
+static int my_errno;
+#define errno my_errno
 #define __KERNEL_SYSCALLS__
-#include <linux/unistd.h>
+#include <asm/unistd.h>
 
 /* --------------------------------------------------------------------- */
 
@@ -369,8 +371,6 @@ static void inline baycom_int_freq(struct baycom_state *bc)
 static char eppconfig_path[256] = "/usr/sbin/eppfpga";
 
 static char *envp[] = { "HOME=/", "TERM=linux", "PATH=/usr/bin:/bin", NULL };
-
-static int errno;
 
 static int exec_eppfpga(void *b)
 {
