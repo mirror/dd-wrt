@@ -3419,12 +3419,12 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  snprintf (buff, 31, "port%dvlan%d", j, i);
 	  ret +=
 	    websWrite (wp,
-		       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=#");
+		       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=");
 
 	  if (j % 2 == 0)
-	    ret += websWrite (wp, "\"CCCCCC\"");
+	    ret += websWrite (wp, "\"#CCCCCC\"");
 	  else
-	    ret += websWrite (wp, "\"FFFFFF\"");
+	    ret += websWrite (wp, "\"#FFFFFF\"");
 
 	  ret +=
 	    websWrite (wp,
@@ -3451,7 +3451,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 		      "\"SelSpeed(this.form,\'port%d\')\"", j);
 
 	  ret += websWrite (wp, buff);
-	  ret += websWrite (wp, "></b></td>\n");
+	  ret += websWrite (wp, "/></b></td>\n");
 	}
 
       if (i < 16)
@@ -3487,7 +3487,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, "              <tr>\n");
   ret +=
     websWrite (wp,
-	       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\" colspan=\"6\"><b>WIRELESS</b></td>\n");
+	       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\" colspan=\"6\"><b>Wireless</b></td>\n");
   ret +=
     websWrite (wp,
 	       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\"><select name=\"wireless\"><option value=\"-1\"");
@@ -4095,7 +4095,9 @@ int if_config_table_save(webs_t wp)
 		strcat(br_ifnames, " ");
 		strcat(br_ifnames, nvram_safe_get("wan_ifnames"));
 	}
-
+      <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   
+      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 	strcpy(all_ifnames, "eth1");
 	strcpy(ifnames, nvram_safe_get("port5vlans"));
 	if(strlen(ifnames) < 1)
@@ -4213,7 +4215,9 @@ int if_config_table_save(webs_t wp)
 
 			snprintf(buff3, sizeof(buff3), "%d", nm[i]);
 			strcat(buff, buff3);
-			if (i < 3)
+			if (i < 3)      <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+   
+      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 				strcat(buff, ".");
 		}
 
