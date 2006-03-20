@@ -481,6 +481,7 @@ static inline void dump_skb (char * prefix, unsigned int vc, struct sk_buff * sk
   return;
 }
 
+#if 0 /* unused and in conflict with <asm-ppc/system.h> */
 static inline void dump_regs (hrz_dev * dev) {
 #ifdef DEBUG_HORIZON
   PRINTD (DBG_REGS, "CONTROL 0: %#x", rd_regl (dev, CONTROL_0_REG));
@@ -494,6 +495,7 @@ static inline void dump_regs (hrz_dev * dev) {
 #endif
   return;
 }
+#endif
 
 static inline void dump_framer (hrz_dev * dev) {
 #ifdef DEBUG_HORIZON

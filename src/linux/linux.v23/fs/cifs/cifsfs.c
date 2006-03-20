@@ -50,8 +50,6 @@
 static struct quotactl_ops cifs_quotactl_ops;
 #endif
 
-extern struct file_system_type cifs_fs_type;
-
 int cifsFYI = 0;
 int cifsERROR = 1;
 int traceSMB = 0;

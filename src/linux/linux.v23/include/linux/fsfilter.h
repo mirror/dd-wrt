@@ -70,7 +70,6 @@ struct filter_fs {
 #define FILTER_FS_XFS 3
 #define FILTER_FS_OBDFS 4
 #define FILTER_FS_TMPFS 5
-extern struct filter_fs filter_oppar[FILTER_FS_TYPES];
 
 struct filter_fs *filter_get_filter_fs(const char *cache_type);
 void filter_setup_journal_ops(struct filter_fs *ops, char *cache_type);

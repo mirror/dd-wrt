@@ -151,7 +151,6 @@ struct hardware_info {
 /* --------------------------------------------------------------------- */
 
 extern const char sm_drvname[];
-extern const char sm_drvinfo[];
 
 /* --------------------------------------------------------------------- */
 /*
@@ -353,7 +352,6 @@ extern const struct hardware_info sm_hw_wssfdx;
 
 extern const struct modem_tx_info *sm_modem_tx_table[];
 extern const struct modem_rx_info *sm_modem_rx_table[];
-extern const struct hardware_info *sm_hardware_table[];
 
 /* --------------------------------------------------------------------- */
 

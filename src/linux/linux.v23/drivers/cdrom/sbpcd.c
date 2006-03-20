@@ -525,6 +525,8 @@ static int sbp_data(struct request *req);
 static int cmd_out(void);
 static int DiskInfo(void);
 static int sbpcd_chk_disk_change(kdev_t);
+static int cmd_out_T(void);
+static int cc_DriveReset(void);
 
 /*==========================================================================*/
 
@@ -1213,8 +1215,6 @@ static int get_state_T(void)
 {
 	int i;
 	
-	static int cmd_out_T(void);
-
 	clr_cmdbuf();
 	D_S[d].n_bytes=1;
 	drvcmd[0]=CMDT_STATUS;
@@ -1362,7 +1362,6 @@ static int cmd_out_T(void)
 #define CMDT_TRIES 1000
 #define TEST_FALSE_FF 1
 	
-	static int cc_DriveReset(void);
 	int i, j, l=0, m, ntries;
 	long flags;
 

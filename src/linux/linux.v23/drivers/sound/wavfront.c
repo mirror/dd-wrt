@@ -2484,10 +2484,10 @@ static int __init detect_wavefront (int irq, int io_base)
 #include <linux/fs.h>
 #include <linux/mm.h>
 #include <linux/slab.h>
-#include <linux/unistd.h>
+static int my_errno;
+#define errno my_errno
+#include <asm/unistd.h>
 #include <asm/uaccess.h>
-
-static int errno; 
 
 static int
 wavefront_download_firmware (char *path)

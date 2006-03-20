@@ -234,7 +234,7 @@ int __init rr_hippi_probe (struct net_device *dev)
 		 * Don't access any registes before this point!
 		 */
 #ifdef __BIG_ENDIAN
-		writel(readl(&regs->HostCtrl) | NO_SWAP, &regs->HostCtrl);
+		writel(readl(&rrpriv->regs->HostCtrl) | NO_SWAP, &rrpriv->regs->HostCtrl);
 #endif
 		/*
 		 * Need to add a case for little-endian 64-bit hosts here.

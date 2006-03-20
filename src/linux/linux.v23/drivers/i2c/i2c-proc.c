@@ -205,7 +205,7 @@ void i2c_deregister_entry(int id)
 		table = i2c_entries[id]->ctl_table;
 		unregister_sysctl_table(i2c_entries[id]);
 		/* 2-step kfree needed to keep gcc happy about const points */
-		(const char *) temp = table[4].procname;
+		temp = (char *) table[4].procname;
 		kfree(temp);
 		kfree(table);
 		i2c_entries[id] = NULL;
@@ -287,7 +287,7 @@ int i2c_proc_chips(ctl_table * ctl, int write, struct file *filp,
 			if(copy_to_user(buffer, BUF, buflen))
 				return -EFAULT;
 			curbufsize += buflen;
-			(char *) buffer += buflen;
+			buffer = (char *) buffer + buflen;
 		}
 	*lenp = curbufsize;
 	filp->f_pos += curbufsize;
@@ -318,7 +318,7 @@ int i2c_sysctl_chips(ctl_table * table, int *name, int nlen,
 					     sizeof(struct
 						    i2c_chips_data)))
 					return -EFAULT;
-				(char *) oldval +=
+				oldval = (char *) oldval +
 				    sizeof(struct i2c_chips_data);
 				nrels++;
 			}
@@ -473,7 +473,7 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 		       !((ret=get_user(nextchar, (char *) buffer))) &&
 		       isspace((int) nextchar)) {
 			bufsize--;
-			((char *) buffer)++;
+			buffer = (char *) buffer + 1;
 		}
 
 		if (ret)
@@ -492,7 +492,7 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 		    && (nextchar == '-')) {
 			min = 1;
 			bufsize--;
-			((char *) buffer)++;
+			buffer = (char *) buffer + 1;
 		}
 		if (ret)
 			return -EFAULT;
@@ -503,7 +503,7 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 		       isdigit((int) nextchar)) {
 			res = res * 10 + nextchar - '0';
 			bufsize--;
-			((char *) buffer)++;
+			buffer = (char *) buffer + 1;
 		}
 		if (ret)
 			return -EFAULT;
@@ -517,7 +517,7 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 		if (bufsize && (nextchar == '.')) {
 			/* Skip the dot */
 			bufsize--;
-			((char *) buffer)++;
+			buffer = (char *) buffer + 1;
 
 			/* Read digits while they are significant */
 			while (bufsize && (mag > 0) &&
@@ -526,7 +526,7 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 				res = res * 10 + nextchar - '0';
 				mag--;
 				bufsize--;
-				((char *) buffer)++;
+				buffer = (char *) buffer + 1;
 			}
 			if (ret)
 				return -EFAULT;
@@ -542,7 +542,7 @@ int i2c_parse_reals(int *nrels, void *buffer, int bufsize,
 		       !((ret=get_user(nextchar, (char *) buffer))) &&
 		       !isspace((int) nextchar)) {
 			bufsize--;
-			((char *) buffer)++;
+			buffer = (char *) buffer + 1;
 		}
 		if (ret)
 			return -EFAULT;
@@ -574,7 +574,7 @@ int i2c_write_reals(int nrels, void *buffer, int *bufsize,
 			if(put_user(' ', (char *) buffer))
 				return -EFAULT;
 			curbufsize++;
-			((char *) buffer)++;
+			buffer = (char *) buffer + 1;
 		}
 
 		/* Fill BUF with the representation of the next string */
@@ -615,7 +615,7 @@ int i2c_write_reals(int nrels, void *buffer, int *bufsize,
 		if(copy_to_user(buffer, BUF, buflen))
 			return -EFAULT;
 		curbufsize += buflen;
-		(char *) buffer += buflen;
+		buffer = (char *) buffer + buflen;
 
 		nr++;
 	}

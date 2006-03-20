@@ -5109,7 +5109,7 @@ mii_get_phy(struct net_device *dev)
     lp->useMII = TRUE;
 
     /* Search the MII address space for possible PHY devices */
-    for (n=0, lp->mii_cnt=0, i=1; !((i==1) && (n==1)); i=(++i)%DE4X5_MAX_MII) {
+    for (n=0, lp->mii_cnt=0, i=1; !((i==1) && (n==1)); i=(i+1)%DE4X5_MAX_MII) {
 	lp->phy[lp->active].addr = i;
 	if (i==0) n++;                             /* Count cycles */
 	while (de4x5_reset_phy(dev)<0) udelay(100);/* Wait for reset */

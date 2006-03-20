@@ -555,7 +555,6 @@ extern struct buffer_head * ufs_bread (struct inode *, unsigned, int, int *);
 extern struct file_operations ufs_dir_operations;
         
 /* super.c */
-extern struct file_system_type ufs_fs_type;
 extern void ufs_warning (struct super_block *, const char *, const char *, ...) __attribute__ ((format (printf, 3, 4)));
 extern void ufs_error (struct super_block *, const char *, const char *, ...) __attribute__ ((format (printf, 3, 4)));
 extern void ufs_panic (struct super_block *, const char *, const char *, ...) __attribute__ ((format (printf, 3, 4)));

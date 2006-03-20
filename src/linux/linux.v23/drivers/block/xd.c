@@ -125,7 +125,12 @@ static int xd_sizes[XD_MAXDRIVES << 6], xd_access[XD_MAXDRIVES];
 static int xd_blocksizes[XD_MAXDRIVES << 6];
 static int xd_maxsect[XD_MAXDRIVES << 6];
 
-extern struct block_device_operations xd_fops;
+static struct block_device_operations xd_fops = {
+	owner:		THIS_MODULE,
+	open:		xd_open,
+	release:	xd_release,
+	ioctl:		xd_ioctl,
+};
 
 static struct gendisk xd_gendisk = {
 	major:		MAJOR_NR,
@@ -136,13 +141,6 @@ static struct gendisk xd_gendisk = {
 	sizes:		xd_sizes,
 	real_devices:	(void *)xd_info,
 	fops:		&xd_fops,
-};
-
-static struct block_device_operations xd_fops = {
-	owner:		THIS_MODULE,
-	open:		xd_open,
-	release:	xd_release,
-	ioctl:		xd_ioctl,
 };
 
 static DECLARE_WAIT_QUEUE_HEAD(xd_wait_int);

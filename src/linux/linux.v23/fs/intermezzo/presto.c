@@ -344,8 +344,8 @@ int izo_mark_cache(struct dentry *dentry, int and_flag, int or_flag,
                 return -EBADF;
         }
 
-        ((int)cache->cache_flags) &= and_flag;
-        ((int)cache->cache_flags) |= or_flag;
+        cache->cache_flags &= and_flag;
+        cache->cache_flags |= or_flag;
         if (res)
                 *res = (int)cache->cache_flags;
 
@@ -383,8 +383,8 @@ int izo_mark_fset(struct dentry *dentry, int and_flag, int or_flag,
                 make_bad_inode(dentry->d_inode);
                 return -EBADF;
         }
-        ((int)fset->fset_flags) &= and_flag;
-        ((int)fset->fset_flags) |= or_flag;
+        fset->fset_flags &= and_flag;
+        fset->fset_flags |= or_flag;
         if (res)
                 *res = (int)fset->fset_flags;
 

@@ -82,6 +82,7 @@ static IADEV *ia_dev[8];
 static struct atm_dev *_ia_dev[8];
 static int iadev_count;
 static void ia_led_timer(unsigned long arg);
+static int ia_pkt_tx (struct atm_vcc *vcc, struct sk_buff *skb);
 static struct timer_list ia_timer = { function: ia_led_timer };
 struct atm_vcc *vcc_close_que[100];
 static int IA_TX_BUF = DFL_TX_BUFFERS, IA_TX_BUF_SZ = DFL_TX_BUF_SZ;
@@ -627,7 +628,6 @@ static int ia_que_tx (IADEV *iadev) {
    int num_desc;
    struct atm_vcc *vcc;
    struct ia_vcc *iavcc;
-   static int ia_pkt_tx (struct atm_vcc *vcc, struct sk_buff *skb);
    num_desc = ia_avail_descs(iadev);
    while (num_desc && (skb = skb_dequeue(&iadev->tx_backlog))) {
       if (!(vcc = ATM_SKB(skb)->vcc)) {

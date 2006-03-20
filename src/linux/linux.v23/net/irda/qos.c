@@ -97,7 +97,7 @@ static int irlap_param_min_turn_time(void *instance, irda_param_t *param,
 				     int get);
 
 __u32 min_turn_times[]  = { 10000, 5000, 1000, 500, 100, 50, 10, 0 }; /* us */
-__u32 baud_rates[]      = { 2400, 9600, 19200, 38400, 57600, 115200, 576000, 
+static __u32 baud_rates[] = { 2400, 9600, 19200, 38400, 57600, 115200, 576000, 
 			    1152000, 4000000, 16000000 };           /* bps */
 __u32 data_sizes[]      = { 64, 128, 256, 512, 1024, 2048 };        /* bytes */
 __u32 add_bofs[]        = { 48, 24, 12, 5, 3, 2, 1, 0 };            /* bytes */
