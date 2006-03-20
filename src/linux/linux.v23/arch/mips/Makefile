@@ -30,8 +30,6 @@ endif
 
 MAKEBOOT = $(MAKE) -C arch/$(ARCH)/boot
 
-check_gcc = $(shell if $(CC) $(1) -S -o /dev/null -xc /dev/null > /dev/null 2>&1; then echo "$(1)"; else echo "$(2)"; fi)
-
 #
 #
 # GCC uses -G 0 -mabicalls -fpic as default.  We don't want PIC in the kernel

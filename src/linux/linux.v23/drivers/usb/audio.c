@@ -462,6 +462,7 @@ struct usb_audio_state {
 
 /* prevent picking up a bogus abs macro */
 #undef abs
+#define abs my_abs
 static inline int abs(int x)
 {
         if (x < 0)

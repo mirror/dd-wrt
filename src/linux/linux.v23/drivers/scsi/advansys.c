@@ -3456,9 +3456,9 @@ do { \
 /*
  * Default EEPROM Configuration structure defined in a_init.c.
  */
-extern ADVEEP_3550_CONFIG Default_3550_EEPROM_Config;
-extern ADVEEP_38C0800_CONFIG Default_38C0800_EEPROM_Config;
-extern ADVEEP_38C1600_CONFIG Default_38C1600_EEPROM_Config;
+static ADVEEP_3550_CONFIG Default_3550_EEPROM_Config;
+static ADVEEP_38C0800_CONFIG Default_38C0800_EEPROM_Config;
+static ADVEEP_38C1600_CONFIG Default_38C1600_EEPROM_Config;
 
 /*
  * DvcGetPhyAddr() flag arguments
@@ -7171,7 +7171,7 @@ asc_isr_callback(ASC_DVC_VAR *asc_dvc_varp, ASC_QDONE_INFO *qdonep)
          * then return the number of underrun bytes.
          */
         if (scp->request_bufflen != 0 && qdonep->remain_bytes != 0 &&
-            qdonep->remain_bytes <= scp->request_bufflen != 0) {
+            qdonep->remain_bytes <= scp->request_bufflen) {
             ASC_DBG1(1, "asc_isr_callback: underrun condition %u bytes\n",
             (unsigned) qdonep->remain_bytes);
             scp->resid = qdonep->remain_bytes;

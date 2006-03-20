@@ -48,6 +48,7 @@
 #include "cpqfcTSchip.h"
 #include "cpqfcTSstructs.h"
 #include "cpqfcTStrigger.h"
+static const __u8 valid_al_pa[];
 
 //#define LOGIN_DBG 1
 

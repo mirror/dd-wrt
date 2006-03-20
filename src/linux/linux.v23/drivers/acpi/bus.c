@@ -623,7 +623,7 @@ acpi_bus_generate_event (
 	int			data)
 {
 	struct acpi_bus_event	*event = NULL;
-	u32			flags = 0;
+	unsigned long		flags = 0;
 
 	ACPI_FUNCTION_TRACE("acpi_bus_generate_event");
 
@@ -656,7 +656,7 @@ int
 acpi_bus_receive_event (
 	struct acpi_bus_event	*event)
 {
-	u32			flags = 0;
+	unsigned long		flags = 0;
 	struct acpi_bus_event	*entry = NULL;
 
 	DECLARE_WAITQUEUE(wait, current);

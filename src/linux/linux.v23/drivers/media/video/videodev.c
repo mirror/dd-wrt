@@ -489,7 +489,18 @@ static void videodev_proc_destroy_dev (struct video_device *vfd)
 
 #endif /* CONFIG_VIDEO_PROC_FS */
 
-extern struct file_operations video_fops;
+static struct file_operations video_fops=
+{
+	owner:		THIS_MODULE,
+	llseek:		no_llseek,
+	read:		video_read,
+	write:		video_write,
+	ioctl:		video_ioctl,
+	mmap:		video_mmap,
+	open:		video_open,
+	release:	video_release,
+	poll:		video_poll,
+};
 
 /**
  *	video_register_device - register video4linux devices
@@ -632,19 +643,6 @@ void video_unregister_device(struct video_device *vfd)
 	up(&videodev_lock);
 }
 
-
-static struct file_operations video_fops=
-{
-	owner:		THIS_MODULE,
-	llseek:		no_llseek,
-	read:		video_read,
-	write:		video_write,
-	ioctl:		video_ioctl,
-	mmap:		video_mmap,
-	open:		video_open,
-	release:	video_release,
-	poll:		video_poll,
-};
 
 /*
  *	Initialise video for linux

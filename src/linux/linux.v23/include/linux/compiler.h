@@ -27,6 +27,12 @@
 #define __attribute_used__	/* not implemented */
 #endif /* __GNUC__ */
 
+#if __GNUC__ > 2 || (__GNUC__ == 2 && __GNUC_MINOR__ >= 96)
+#define __attribute_const__	__attribute__((__const__))
+#else
+#define __attribute_const__	/* unimplemented */
+#endif
+
 #if __GNUC__ == 3
 #if __GNUC_MINOR__ >= 1
 # define inline         __inline__ __attribute__((always_inline))

@@ -209,7 +209,11 @@ static int do_probe = DO_PROBE;
 #ifdef CRC_EXPORTED
 extern __u16 const irda_crc16_table[];
 #else
-static __u16 const irda_crc16_table[256] = {
+/* Our local version of irda_crc16_table must have a unique
+   name to prevent extern-redefined-as-static compile errors.
+   This #define redirects the irda_fcs() macro to our version. */
+#define irda_crc16_table donauboe_irda_crc16_table
+static __u16 const donauboe_irda_crc16_table[256] = {
   0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
   0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
   0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,

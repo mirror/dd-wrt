@@ -209,6 +209,4 @@ static inline int irttp_is_primary(struct tsap_cb *self)
 	return(irlap_is_primary(self->lsap->lap->irlap));
 }
 
-extern struct irttp_cb *irttp;
-
 #endif /* IRTTP_H */

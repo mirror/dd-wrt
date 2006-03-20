@@ -277,7 +277,7 @@ static void release_arcbuf(struct net_device *dev, int bufnum)
 	BUGLVL(D_DURING) {
 		BUGMSG(D_DURING, "release_arcbuf: freed #%d; buffer queue is now: ",
 		       bufnum);
-		for (i = lp->next_buf; i != lp->first_free_buf; i = ++i % 5)
+		for (i = lp->next_buf; i != lp->first_free_buf; i = (i+1) % 5)
 			BUGMSG2(D_DURING, "#%d ", lp->buf_queue[i]);
 		BUGMSG2(D_DURING, "\n");
 	}
@@ -310,7 +310,7 @@ static int get_arcbuf(struct net_device *dev)
 
 	BUGLVL(D_DURING) {
 		BUGMSG(D_DURING, "get_arcbuf: got #%d; buffer queue is now: ", buf);
-		for (i = lp->next_buf; i != lp->first_free_buf; i = ++i % 5)
+		for (i = lp->next_buf; i != lp->first_free_buf; i = (i+1) % 5)
 			BUGMSG2(D_DURING, "#%d ", lp->buf_queue[i]);
 		BUGMSG2(D_DURING, "\n");
 	}

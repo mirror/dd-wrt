@@ -212,8 +212,6 @@ typedef u16	word;
 #define	SEEK_END	2
 #endif
 
-extern struct proc_dir_entry * comx_root_dir;
-
 extern int	comx_register_hardware(struct comx_hardware *comx_hw);
 extern int	comx_unregister_hardware(char *name);
 extern int	comx_register_protocol(struct comx_protocol *comx_line);

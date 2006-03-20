@@ -45,7 +45,6 @@ extern int loadtime;
 extern const char *const lvm_name;
 
 
-extern uint vg_count;
 extern vg_t *vg[];
 extern struct file_operations lvm_chr_fops;
 

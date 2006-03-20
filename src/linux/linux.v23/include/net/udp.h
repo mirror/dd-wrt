@@ -25,6 +25,7 @@
 #include <linux/udp.h>
 #include <linux/poll.h>
 #include <net/sock.h>
+#include <net/snmp.h>
 
 #define UDP_HTABLE_SIZE		128
 

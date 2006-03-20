@@ -58,7 +58,6 @@ extern int pvr_boot(struct bttv *btv);
 
 #define BTTV_MAX 16
 extern unsigned int bttv_num;			/* number of Bt848s in use */
-extern struct bttv bttvs[BTTV_MAX];
 
 #define UNSET -1U
 
@@ -203,6 +202,8 @@ struct bttv {
 	int shutdown;
         void (*audio_hook)(struct bttv *btv, struct video_audio *v, int set);
 };
+
+extern struct bttv bttvs[BTTV_MAX];
 #endif
 
 #define btwrite(dat,adr)    writel((dat), (char *) (btv->bt848_mem+(adr)))

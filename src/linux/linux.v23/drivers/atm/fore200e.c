@@ -112,8 +112,8 @@
 #endif
 
 
-extern const struct atmdev_ops   fore200e_ops;
-extern const struct fore200e_bus fore200e_bus[];
+static const struct atmdev_ops   fore200e_ops;
+static const struct fore200e_bus fore200e_bus[];
 
 static struct fore200e* fore200e_boards = NULL;
 

@@ -102,6 +102,7 @@ struct frag_hdr {
 #ifdef __KERNEL__
 
 #include <net/sock.h>
+#include <net/snmp.h>
 
 /* sysctls */
 extern int sysctl_ipv6_bindv6only;

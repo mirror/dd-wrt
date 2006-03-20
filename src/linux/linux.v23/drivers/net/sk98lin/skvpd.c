@@ -472,7 +472,7 @@ SK_IOC	IoC)	/* IO Context */
 	    ((unsigned char)pAC->vpd.vpd_buf[0x40] == 0x3c) &&
 	    ((unsigned char)pAC->vpd.vpd_buf[0x41] == 0x45) ) {
 		printk(KERN_INFO "sk98lin : humm... Asus mainboard with buggy VPD ? correcting data.\n");
-		(unsigned char)pAC->vpd.vpd_buf[0x40] = 0x38;
+		pAC->vpd.vpd_buf[0x40] = 0x38;
 	}
 
 	/* find the end tag of the RO area */

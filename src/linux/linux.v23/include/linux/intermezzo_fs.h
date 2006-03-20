@@ -321,7 +321,6 @@ int presto_fwrite(struct file *file, const char *str, int len, loff_t *off);
 int presto_ispresto(struct inode *);
 
 /* super.c */
-extern struct file_system_type presto_fs_type;
 extern int init_intermezzo_fs(void);
 
 /* fileset.c */

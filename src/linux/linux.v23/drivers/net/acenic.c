@@ -594,6 +594,7 @@ static struct net_device *root_dev;
 
 static int probed __initdata = 0;
 
+static void ace_watchdog(struct net_device *dev);
 
 int __devinit acenic_probe (ACE_PROBE_ARG)
 {
@@ -665,7 +666,6 @@ int __devinit acenic_probe (ACE_PROBE_ARG)
 		dev->vlan_rx_kill_vid = ace_vlan_rx_kill_vid;
 #endif
 		if (1) {
-			static void ace_watchdog(struct net_device *dev);
 			dev->tx_timeout = &ace_watchdog;
 			dev->watchdog_timeo = 5*HZ;
 		}

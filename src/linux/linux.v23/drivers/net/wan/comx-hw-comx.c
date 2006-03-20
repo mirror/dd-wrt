@@ -92,9 +92,9 @@ struct comx_privdata {
 };
 
 static struct net_device *memory_used[(COMX_MEM_MAX - COMX_MEM_MIN) / 0x10000];
-extern struct comx_hardware hicomx_hw;
-extern struct comx_hardware comx_hw;
-extern struct comx_hardware cmx_hw;
+static struct comx_hardware hicomx_hw;
+static struct comx_hardware comx_hw;
+static struct comx_hardware cmx_hw;
 
 static void COMX_interrupt(int irq, void *dev_id, struct pt_regs *regs);
 

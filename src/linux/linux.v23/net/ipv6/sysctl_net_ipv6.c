@@ -31,17 +31,14 @@ ctl_table ipv6_table[] = {
 
 #ifdef MODULE
 static struct ctl_table_header *ipv6_sysctl_header;
-static struct ctl_table ipv6_root_table[];
-static struct ctl_table ipv6_net_table[];
 
-
-ctl_table ipv6_root_table[] = {
-	{CTL_NET, "net", NULL, 0, 0555, ipv6_net_table},
+static ctl_table ipv6_net_table[] = {
+	{NET_IPV6, "ipv6", NULL, 0, 0555, ipv6_table},
         {0}
 };
 
-ctl_table ipv6_net_table[] = {
-	{NET_IPV6, "ipv6", NULL, 0, 0555, ipv6_table},
+static ctl_table ipv6_root_table[] = {
+	{CTL_NET, "net", NULL, 0, 0555, ipv6_net_table},
         {0}
 };
 
