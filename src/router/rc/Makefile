@@ -21,6 +21,9 @@ endif
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
 OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o wland.o sendudp.o 
 
+ifdef $(CONFIG_DIST)
+CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
+endif
 
 ifneq ($(CONFIG_RB500),y)
 OBJS += mtd.o

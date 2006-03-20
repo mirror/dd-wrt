@@ -899,9 +899,13 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 //  eval ("insmod", "ath_hal");
 //  eval ("insmod", "ath_rate_onoe");
 //  sleep(1);
+#ifdef HAVE_MADOLD
+
+  eval ("modprobe", "ath_pci");
+#else
   eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor,
 	"autocreate=none");
-
+#endif
 //  sleep(1);
 //  eval ("modprobe", "-r", "ath_pci");
 //  sleep(1);
