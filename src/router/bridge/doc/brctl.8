@@ -1,6 +1,4 @@
 .\"
-.\"	$Id: brctl.8,v 1.1 2005/09/28 11:53:38 seg Exp $
-.\"
 .\"	This program is free software; you can redistribute it and/or modify
 .\"	it under the terms of the GNU General Public License as published by
 .\"	the Free Software Foundation; either version 2 of the License, or
@@ -16,7 +14,7 @@
 .\"	Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
 .\"
 .\"
-.TH BRCTL 8 "January 22, 2000" "" ""
+.TH BRCTL 8 "November 7, 2001" "" ""
 .SH NAME
 brctl \- ethernet bridge administration
 .SH SYNOPSIS
@@ -128,11 +126,12 @@ probably won't feel the desire to tweak them.
 
 .B brctl stp <bridge> <state>
 controls this bridge instance's participation in the spanning tree
-protocol. When turned off, the bridge will not send or receive BPDUs,
-and will thus not participate in the spanning tree protocol. If your
-bridge isn't the only bridge on the LAN, or if there are loops in the
-LAN's topology, DO NOT turn this option off. If you turn this option
-off, please know what you are doing.
+protocol. If <state> is "on" or "yes" the STP will be turned on,
+otherwise it will be turned off.  When turned off, the bridge will not
+send or receive BPDUs, and will thus not participate in the spanning
+tree protocol. If your bridge isn't the only bridge on the LAN, or if
+there are loops in the LAN's topology, DO NOT turn this option off. If
+you turn this option off, please know what you are doing.
 
 
 .B brctl setbridgeprio <bridge> <priority>
@@ -166,7 +165,8 @@ selection algorithms.
 replaces the older brcfg tool.
 
 .SH SEE ALSO
-.BR ipchains(8)
+.BR ipchains(8),
+.BR iptables(8)
 
 .SH AUTHOR
 Lennert Buytenhek <buytenh@gnu.org>
