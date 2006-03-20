@@ -1,11 +1,4 @@
-$Id: WISHLIST,v 1.1 2005/09/28 11:53:38 seg Exp $
-
 Would be nice if:
-
-- Get the 802.1d tcpdump patch merged into Alexey's version.
-
-- Kernel driver (a la ipip and ip_gre) which encapsulates raw ethernet
-  frames in raw IP (proto 97) or UDP/IP packets.
 
 - Add address learning limiting (hard limit at a fixed # of
   addresses? or maybe using rate markers?). There is a nasty DoS in
@@ -28,3 +21,5 @@ Would be nice if:
   stabilises. It looks nice.
 
 - A cgi bridge configurer (a la Samba's SWAT, yummy....)
+
+
