@@ -63,7 +63,7 @@ cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
 #./tools/addpattern -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -2 -g
 #sed -e  1s,^W54S,W54G, < dd-wrt.v23_wrt54gs.bin > dd-wrt.v23_wrt54g.bin 
 
-cp dd-wrt.v23_asus.trx /GruppenLW/dd-wrt.v23_asus.trx
+cp dd-wrt.v23_asus.trx /GruppenLW/dd-wrt.v23_fon_asus.trx
 cp dd-wrt.v23_wrt54g.bin /GruppenLW/dd-wrt.v23_fon_wrt54g.bin
 cp dd-wrt.v23_wrt54gs.bin /GruppenLW/dd-wrt.v23_fon_wrt54gs.bin
 cp dd-wrt.v23_wrt54gsv4.bin /GruppenLW/dd-wrt.v23_fon_wrt54gsv4.bin
