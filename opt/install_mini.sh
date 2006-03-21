@@ -60,8 +60,14 @@ cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
 
 
 ../src/linux/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
+./mkfs.jffs2 --pad --little-endian --squash -e 0x10000 -o target.jffs2 -d ../src/router/mipsel-uclibc/target 
+
+
 ./make_kernel.sh
-../tools/trx -o dd-wrt.v23_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
+trx -o dd-wrt.v23_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs -a 1024
+trx -o dd-wrt.v23_jffs2_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.jffs2 -a 0x10000
+
+
 ../tools/trx_gs -o dd-wrt.v23_gs_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_mini_asus.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #add pattern
