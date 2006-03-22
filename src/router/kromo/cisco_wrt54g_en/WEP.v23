@@ -1,4 +1,4 @@
-<div><div class="setting"><div class="label">Default Transmit Key</div>
+<div class="setting"><div class="label">Default Transmit Key</div>
 <input type="hidden" name="wl_WEP_key" />
 <input type="hidden" name="wl_wep value=restricted" />
 <input type="radio" value="1" name="wl_key" <% nvram_match("wl_key","1","checked"); %> /> 1
@@ -22,4 +22,3 @@
 <input name=wl_key3 size="36" value='<% get_wep_value("key3"); %>' /></div>
 <div class="setting"><div class="label">Key 4</div>
 <input name=wl_key4 size="36" value='<% get_wep_value("key4"); %>' /></div>
-</div>

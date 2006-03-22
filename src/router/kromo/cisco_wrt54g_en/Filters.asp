@@ -1,9 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html
-  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - Access Restrictions</title>
 		<link type="text/css" rel="stylesheet" href="style.css" />
@@ -350,9 +347,8 @@ function Status(F,I) {
 							<input type="hidded" name="filter_p2p"/>
 							<input type="hidden" name="f_status"/>
 							<h2>Internet Access</h2>
-							<div>
-							 <fieldset>
-							   <legend>Access Policy</legend>
+							<fieldset>
+								<legend>Access Policy</legend>
 								<div class="setting">
 									<div class="label">Policy n&deg;</div>
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
@@ -383,9 +379,7 @@ function Status(F,I) {
 										<input type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /> Allow
 									</div>
 								</div>
-							</fieldset>
-							</div>
-							<br />
+							</fieldset><br />
 							<fieldset>
 								<legend>Days</legend>
 								<div class="setting">
@@ -412,8 +406,7 @@ function Status(F,I) {
 										</tr>
 									</table>
 								</div>
-							</fieldset>
-							<br />
+							</fieldset><br />
 							<fieldset>
 								<legend>Times</legend>
 								<div class="setting">
@@ -434,8 +427,7 @@ function Status(F,I) {
 										<option value="1" <% filter_tod_get("end_time_pm"); %>>PM</option>
 									</select>
 								</div>
-							</fieldset>
-							<br />
+							</fieldset><br />
 							<fieldset>
 								<legend>Blocked Services</legend>
 								<div class="setting">
@@ -473,8 +465,7 @@ function Status(F,I) {
 								<div class="setting">
 									<input type="button" value="Add/Edit Service" onclick="self.open('Port_Services.asp','Port_Services','alwaysRised,resizable,scrollbars,width=630,height=360').focus()" />
 								</div>
-							</fieldset>
-							<br />
+							</fieldset><br />
 							<fieldset>
 								<legend>Website Blocking by URL Address</legend>
 								<input class="num" size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />
@@ -482,8 +473,7 @@ function Status(F,I) {
 								<br />
 								<input class="num" size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />
 								<input class="num" size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />
-							</fieldset>
-							<br />
+							</fieldset><br />
 							<fieldset>
 								<legend>Website Blocking by Keyword</legend>
 								<input class="num" size="18" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />
@@ -493,8 +483,7 @@ function Status(F,I) {
 								<input class="num" size="18" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />
 								<input class="num" size="18" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" />
 								<input class="num" size="18" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />
-							</fieldset>
-							<br />
+							</fieldset><br />
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
 								<input type="reset" value="Cancel Changes" />
@@ -502,40 +491,38 @@ function Status(F,I) {
 						</form>
 					</div>
 				</div>
-				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
-					<div class="info">Time: <% get_uptime(); %></div>
-					<% nvram_match("wan_proto","disabled","<!--"); %>
-					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
-					<% nvram_match("wan_proto","disabled","-->"); %>
-                    <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
-				</div>
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
-							<dl>
-								<dt class="term">Internet Access Policy: </dt>
-								<dd class="definition">You may define up to 10 access policies. Click <em>Delete</em> to delete a policy or <em>Summary</em> to see a summary of the policy.</dd>
-								<dt class="term">Status: </dt>
-								<dd class="definition">Enable or disable a policy.</dd>
-								<dt class="term">Policy Name: </dt>
-								<dd class="definition">You may assign a name to your policy.</dd>
-								<dt class="term">Days: </dt>
-								<dd class="definition">Choose the day of the week you would like your policy to be applied.</dd>
-								<dt class="term">Times: </dt>
-								<dd class="definition">Enter the time of the day you would like your policy to apply.</dd>
-								<dt class="term">Blocked Services: </dt>
-								<dd class="definition">You may choose to block access to certain services. Click <em>Add/Edit</em> Services to modify these settings.</dd>
-								<dt class="term">Website Blocking by URL: </dt>
-								<dd class="definition">You can block access to certain websites by entering their URL.</dd>
-								<dt class="term">Website Blocking by Keyword: </dt>
-								<dd class="definition">You can block access to certain website by the keywords contained in their webpage.</dd>
-							</dl>
-							<br />
-							<a target="_blank" href="help/HFilters.asp">More...</a>
-						</div>
+						<dl>
+							<dt class="term">Internet Access Policy: </dt>
+							<dd class="definition">You may define up to 10 access policies. Click <em>Delete</em> to delete a policy or <em>Summary</em> to see a summary of the policy.</dd>
+							<dt class="term">Status: </dt>
+							<dd class="definition">Enable or disable a policy.</dd>
+							<dt class="term">Policy Name: </dt>
+							<dd class="definition">You may assign a name to your policy.</dd>
+							<dt class="term">Days: </dt>
+							<dd class="definition">Choose the day of the week you would like your policy to be applied.</dd>
+							<dt class="term">Times: </dt>
+							<dd class="definition">Enter the time of the day you would like your policy to apply.</dd>
+							<dt class="term">Blocked Services: </dt>
+							<dd class="definition">You may choose to block access to certain services. Click <em>Add/Edit</em> Services to modify these settings.</dd>
+							<dt class="term">Website Blocking by URL: </dt>
+							<dd class="definition">You can block access to certain websites by entering their URL.</dd>
+							<dt class="term">Website Blocking by Keyword: </dt>
+							<dd class="definition">You can block access to certain website by the keywords contained in their webpage.</dd>
+						</dl>
+						<br />
+						<a target="_blank" href="help/HFilters.asp">More...</a>
 					</div>
 				</div>
+				<div id="floatKiller"></div>
+				<div id="statusInfo">
+					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
+				</div>
 			</div>
+		</div>
 	</body>
 </html>

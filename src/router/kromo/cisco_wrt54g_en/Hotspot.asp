@@ -1,9 +1,6 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE html
-  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 		<title><% nvram_get("router_name"); %> - Hotspot</title>
 		<link type="text/css" rel="stylesheet" href="style.css"/>
@@ -105,20 +102,18 @@ function init() {
 						</form>
 					</div>
 				</div>
-				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
-					<div class="info">Time: <% get_uptime(); %></div>
-					<% nvram_match("wan_proto","disabled","<!--"); %>
-					<div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
-					<% nvram_match("wan_proto","disabled","-->"); %>
-                    <div class="info"><% nvram_match("wan_proto","disabled","WAN disabled"); %></div>
-				</div>
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<br/>
 						<a target="_blank" href="help/HHotspot.asp">More...</a>
 					</div>
+				</div>
+				<div id="floatKiller"></div>
+				<div id="statusInfo">
+					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
 			</div>
 		</div>

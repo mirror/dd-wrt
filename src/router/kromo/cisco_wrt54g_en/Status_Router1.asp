@@ -1,4 +1,4 @@
-<div><% nvram_status_get("hidden1"); %><div class="setting"><div class="label">Login Status</div><script language="JavaScript">
+<% nvram_status_get("hidden1"); %><div class="setting"><div class="label">Login Status</div><script language="JavaScript">
 var status1 = "<% nvram_status_get("status1"); %>";
 var status2 = "<% nvram_status_get("status2"); %>";
 if(status1 == "Status") {
@@ -41,4 +41,3 @@ document.write("<INPUT type=button value='"+but_value+"' onClick=Connect(this.fo
 <div class="setting"><div class="label">DNS 3</div>
 <% nvram_status_get("wan_dns2"); %></div>
 <% nvram_selmatch("wan_proto","disabled","-->"); %>
-</div>
