@@ -183,7 +183,7 @@ function SelDDNS(num,F) {
 									<div class="label"><script>Capture(ddns.typ)</script></div>
 									<select name="ddns_dyndnstype">
 										<option value="1" <% nvram_selected("ddns_dyndnstype", "1"); %>><script>Capture(ddns.dynamic)</script></option>
-										<option value="2" <% nvram_selected("ddns_dyndnstype", "2"); %>><script>Capture(ddns.static)</script></option>
+										<option value="2" <% nvram_selected("ddns_dyndnstype", "2"); %>><script>Capture(ddns.sttic)</script></option>
 										<option value="3" <% nvram_selected("ddns_dyndnstype", "3"); %>><script>Capture(ddns.custom)</script></option>
 									</select>
 								</div>
