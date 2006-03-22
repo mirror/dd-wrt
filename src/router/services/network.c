@@ -280,13 +280,14 @@ cprintf("is all?\n");
       uint32 shm;
 
       val = atoi (v);
-      if (v==0)
-        {
-	eval("/etc/txackset.sh","0"); // disable ack timing
-	return;
-	}else
+      if (v == 0)
 	{
-	eval("/etc/txackset.sh","1"); // enable ack timing
+	  eval ("/etc/txackset.sh", "0");	// disable ack timing
+	  return;
+	}
+      else
+	{
+	  eval ("/etc/txackset.sh", "1");	// enable ack timing
 	}
       val = 9 + (val / 300) + ((val % 300) ? 1 : 0);
 
@@ -304,14 +305,16 @@ cprintf("is all?\n");
 
 }
 
-int isClient(void)
+int
+isClient (void)
 {
- if (nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
- return 1;
- 
- return 0;
+  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta"))
+    return 1;
+
+  return 0;
 
 }
+
 void
 start_wlconf (void)
 {
@@ -341,7 +344,7 @@ start_lan (void)
     return;
 
   // If running in client-mode, remove old WAN-configuration
-  if (nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
+  if (nvram_match ("wl0_mode", "sta") || nvram_match ("wl0_mode", "apsta"))
     {
       //#ifdef HAVE_SKYTRON
       //ifconfig(wan_ifname,IFUP,"172.16.1.1","255.255.255.0");
@@ -524,10 +527,10 @@ start_lan (void)
 		eval ("wl", "ap", "0");
 		eval ("wl", "join", nvram_get ("wl_ssid"));
 #endif
-//		eval ("brctl", "addif", lan_ifname, name);
+//              eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
-		if (nvram_match("fon_enable","0"))
-		do_mssid (lan_ifname);
+		if (nvram_match ("fon_enable", "0"))
+		  do_mssid (lan_ifname);
 #endif
 	      }
 #endif
@@ -851,7 +854,7 @@ start_wan (int status)
       dns_to_resolv ();
       return;
     }
-  if (isClient())
+  if (isClient ())
     {
       pppoe_wan_ifname = getwlif ();
     }
@@ -891,7 +894,7 @@ start_wan (int status)
   if ((!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
       && (!strcmp (nvram_safe_get ("boardtype"), "bcm94710ap")))
     pppoe_wan_ifname = "eth1";
-  if (isClient())
+  if (isClient ())
     pppoe_wan_ifname = getwlif ();
 
 #endif
@@ -1311,7 +1314,8 @@ start_wan (int status)
       while (route_del (get_wan_face (), 0, NULL, NULL, NULL) == 0);
     }
   cprintf ("wep handling\n");
-  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
+  if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
+      || nvram_match ("wl0_mode", "apsta"))
     {
       system ("wl wep sw");
       sleep (1);
@@ -1559,40 +1563,40 @@ start_wan_done (char *wan_ifname)
   eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
   ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
-if (nvram_match("wl0_mode","apsta"))
-{
-  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
-  ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
-}
-else if (nvram_match("wl0_mode","ap"))
-{
-  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
-}
-stop_chilli();
-start_chilli();
+  if (nvram_match ("wl0_mode", "apsta"))
+    {
+      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
+      ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+    }
+  else if (nvram_match ("wl0_mode", "ap"))
+    {
+      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+      ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+    }
+  stop_chilli ();
+  start_chilli ();
 #endif
 #else
-if (nvram_match("fon_enable","1"))
-{
+  if (nvram_match ("fon_enable", "1"))
+    {
 #ifndef HAVE_MSSID
-  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+      ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
-if (nvram_match("wl0_mode","apsta"))
-{
-  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
-  ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
-}
-else if (nvram_match("wl0_mode","ap"))
-{
-  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
-}
-stop_chilli();
-start_chilli();
+      if (nvram_match ("wl0_mode", "apsta"))
+	{
+	  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
+	  ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+	}
+      else if (nvram_match ("wl0_mode", "ap"))
+	{
+	  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+	  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+	}
+      stop_chilli ();
+      start_chilli ();
 #endif
-}
+    }
 
 #endif
 
@@ -1651,7 +1655,7 @@ stop_wan (void)
 	    eval("rmmod","slhc");	 */
 #endif
 #ifndef HAVE_FON
-if (nvram_match("fon_enable","1"))
+  if (nvram_match ("fon_enable", "1"))
 #endif
     eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
 

@@ -237,7 +237,7 @@ get_wan_face (void)
   static char localwanface[IFNAMSIZ];
 
 #ifdef HAVE_NEWMEDIA
-  if (nvram_match("pptpd_client_enable","1"))
+  if (nvram_match ("pptpd_client_enable", "1"))
     {
       strncpy (localwanface, "ppp0", IFNAMSIZ);
       return localwanface;
@@ -514,113 +514,121 @@ parse_port_forward (char *wordlist)
 }
 
 // changed by steve
-static void 
-parse_upnp_forward()
+static void
+parse_upnp_forward ()
 {
-    char name[32];	// = "forward_portXXXXXXXXXX";
-    char value[1000];
-    char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
-    char *enable, *desc;
-    char buff[256];
-    int i;
+  char name[32];		// = "forward_portXXXXXXXXXX";
+  char value[1000];
+  char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
+  char *enable, *desc;
+  char buff[256];
+  int i;
 
-    if(nvram_invmatch("upnp_enable", "1"))
-	    return;
+  if (nvram_invmatch ("upnp_enable", "1"))
+    return;
 
-	if (nvram_match("upnp_clear", "1")) {	// tofu10
-		nvram_unset("upnp_clear");
-		for (i = 0; i < 50 ; ++i){
-			sprintf(name, "forward_port%d", i);
-			nvram_unset(name);
-		}
-		return;
+  if (nvram_match ("upnp_clear", "1"))
+    {				// tofu10
+      nvram_unset ("upnp_clear");
+      for (i = 0; i < 50; ++i)
+	{
+	  sprintf (name, "forward_port%d", i);
+	  nvram_unset (name);
 	}
+      return;
+    }
 
-    /* Set wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc */
-    for(i=0 ; i<15 ; i++){
-	snprintf(name, sizeof(name), "forward_port%d", i);
+  /* Set wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc */
+  for (i = 0; i < 15; i++)
+    {
+      snprintf (name, sizeof (name), "forward_port%d", i);
 
-	strncpy(value, nvram_safe_get(name), sizeof(value));
+      strncpy (value, nvram_safe_get (name), sizeof (value));
 
-	/* Check for LAN IP address specification */
-	lan_ipaddr = value;
-	wan_port0 = strsep(&lan_ipaddr, ">");
-	if (!lan_ipaddr)
-	    continue;
+      /* Check for LAN IP address specification */
+      lan_ipaddr = value;
+      wan_port0 = strsep (&lan_ipaddr, ">");
+      if (!lan_ipaddr)
+	continue;
 
-	/* Check for LAN destination port specification */
-	lan_port0 = lan_ipaddr;
-	lan_ipaddr = strsep(&lan_port0, ":");
-	if (!lan_port0)
-	    continue;
+      /* Check for LAN destination port specification */
+      lan_port0 = lan_ipaddr;
+      lan_ipaddr = strsep (&lan_port0, ":");
+      if (!lan_port0)
+	continue;
 
-	/* Check for protocol specification */
-	proto = lan_port0;
-	lan_port0 = strsep(&proto, ":,");
-	if (!proto)
-	    continue;
+      /* Check for protocol specification */
+      proto = lan_port0;
+      lan_port0 = strsep (&proto, ":,");
+      if (!proto)
+	continue;
 
-	/* Check for enable specification */
-	enable = proto;
-	proto = strsep(&enable, ":,");
-	if (!enable)
-	    continue;
+      /* Check for enable specification */
+      enable = proto;
+      proto = strsep (&enable, ":,");
+      if (!enable)
+	continue;
 
-	/* Check for description specification (optional) */
-	desc = enable;
-	enable = strsep(&desc, ":,");
+      /* Check for description specification (optional) */
+      desc = enable;
+      enable = strsep (&desc, ":,");
 
-	/* Check for WAN destination port range (optional) */
+      /* Check for WAN destination port range (optional) */
+      wan_port1 = wan_port0;
+      wan_port0 = strsep (&wan_port1, "-");
+      if (!wan_port1)
 	wan_port1 = wan_port0;
-	wan_port0 = strsep(&wan_port1, "-");
-	if (!wan_port1)
-	    wan_port1 = wan_port0;
 
-	/* Check for LAN destination port range (optional) */
+      /* Check for LAN destination port range (optional) */
+      lan_port1 = lan_port0;
+      lan_port0 = strsep (&lan_port1, "-");
+      if (!lan_port1)
 	lan_port1 = lan_port0;
-	lan_port0 = strsep(&lan_port1, "-");
-	if (!lan_port1)
-	    lan_port1 = lan_port0;
 
-	/* skip if it's disabled */
-	if( strcmp(enable, "off") == 0 )
-	    continue;
+      /* skip if it's disabled */
+      if (strcmp (enable, "off") == 0)
+	continue;
 
-	/* skip if it's illegal ip */
-	if(get_single_ip(lan_ipaddr,3) == 0 || 
-		get_single_ip(lan_ipaddr,3) == 255)
-	    continue;
+      /* skip if it's illegal ip */
+      if (get_single_ip (lan_ipaddr, 3) == 0 ||
+	  get_single_ip (lan_ipaddr, 3) == 255)
+	continue;
 
-	/* -A PREROUTING -p tcp -m tcp --dport 823 -j DNAT 
-	   --to-destination 192.168.1.88:23  */
-	if( !strcmp(proto,"tcp") || !strcmp(proto,"both") ){
-	    save2file("-A PREROUTING -i %s -p tcp -m tcp -d %s --dport %s "
-		    "-j DNAT --to-destination %s%d:%s\n"
-		    , wanface, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr,3), lan_port0);
+      /* -A PREROUTING -p tcp -m tcp --dport 823 -j DNAT 
+         --to-destination 192.168.1.88:23  */
+      if (!strcmp (proto, "tcp") || !strcmp (proto, "both"))
+	{
+	  save2file ("-A PREROUTING -i %s -p tcp -m tcp -d %s --dport %s "
+		     "-j DNAT --to-destination %s%d:%s\n", wanface, wanaddr,
+		     wan_port0, lan_cclass, get_single_ip (lan_ipaddr, 3),
+		     lan_port0);
 
-	    snprintf(buff, sizeof(buff), "-A FORWARD -p tcp "
-		    "-m tcp -d %s%d --dport %s -j %s\n"
-		    , lan_cclass, get_single_ip(lan_ipaddr,3), lan_port0, log_accept);
+	  snprintf (buff, sizeof (buff), "-A FORWARD -p tcp "
+		    "-m tcp -d %s%d --dport %s -j %s\n", lan_cclass,
+		    get_single_ip (lan_ipaddr, 3), lan_port0, log_accept);
 
-	    count += strlen(buff) + 1;
-	    suspense = realloc(suspense, count );
-	    strcat(suspense, buff );
+	  count += strlen (buff) + 1;
+	  suspense = realloc (suspense, count);
+	  strcat (suspense, buff);
 	}
-	if( !strcmp(proto,"udp") || !strcmp(proto,"both") ){
-	    save2file("-A PREROUTING -i %s -p udp -m udp -d %s --dport %s "
-		    "-j DNAT --to-destination %s%d:%s\n"
-		    , wanface, wanaddr, wan_port0, lan_cclass, get_single_ip(lan_ipaddr,3), lan_port0);
+      if (!strcmp (proto, "udp") || !strcmp (proto, "both"))
+	{
+	  save2file ("-A PREROUTING -i %s -p udp -m udp -d %s --dport %s "
+		     "-j DNAT --to-destination %s%d:%s\n", wanface, wanaddr,
+		     wan_port0, lan_cclass, get_single_ip (lan_ipaddr, 3),
+		     lan_port0);
 
-	    snprintf(buff, sizeof(buff), "-A FORWARD -p udp "
-		    "-m udp -d %s%d --dport %s -j %s\n"
-		    , lan_cclass, get_single_ip(lan_ipaddr,3), lan_port0, log_accept);
+	  snprintf (buff, sizeof (buff), "-A FORWARD -p udp "
+		    "-m udp -d %s%d --dport %s -j %s\n", lan_cclass,
+		    get_single_ip (lan_ipaddr, 3), lan_port0, log_accept);
 
-	    count += strlen(buff) + 1;
-	    suspense = realloc(suspense, count );
-	    strcat(suspense, buff); 
+	  count += strlen (buff) + 1;
+	  suspense = realloc (suspense, count);
+	  strcat (suspense, buff);
 	}
     }
 }
+
 // end changed by steve
 
 static void
@@ -1288,9 +1296,10 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
     }
   }
   /* p2p catchall */
-  if (nvram_match("filter_p2p","1"))
+  if (nvram_match ("filter_p2p", "1"))
     {
-	  save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,log_drop);
+      save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
+		 log_drop);
     }
   /* filter_web_host2=hello<&nbsp;>world<&nbsp;>friend */
   sprintf (nvname, "filter_web_host%d", seq);
@@ -2467,7 +2476,7 @@ start_firewall (void)
   /* end Sveasoft add */
 
   // run wanup scripts
-  start_service("wanup");
+  start_service ("wanup");
 
 
 

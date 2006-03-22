@@ -774,6 +774,8 @@ stop_dhcpd (void)
   return ret;
 }
 
+
+
 int
 start_dnsmasq (void)
 {
@@ -815,10 +817,18 @@ start_dnsmasq (void)
       return errno;
     }
 
-  if (nvram_match ("chilli_enable", "1"))
-    fprintf (fp, "interface=%s\n", nvram_safe_get ("wl0_ifname"));
+  if (nvram_match ("fon_enable", "1"))
+    {
+      fprintf (fp, "interface=%s br0\n", nvram_safe_get ("wl0_ifname"));
+    }
   else
-    fprintf (fp, "interface=%s\n", nvram_safe_get ("lan_ifname"));
+    {
+      if (nvram_match ("chilli_enable", "1"))
+	fprintf (fp, "interface=%s\n", nvram_safe_get ("wl0_ifname"));
+      else
+	fprintf (fp, "interface=%s\n", nvram_safe_get ("lan_ifname"));
+    }
+
   fprintf (fp, "resolv-file=/tmp/resolv.dnsmasq\n");
   if (!usejffs)
     {
@@ -1099,13 +1109,13 @@ convert_wds (void)
 
 #ifdef HAVE_MSSID
 int
-start_guest_nas(void)
+start_guest_nas (void)
 {
-	char *unbridged_interfaces;
-	char *next;
-	char name[IFNAMSIZ],lan[IFNAMSIZ];
-	int index;
-		
+  char *unbridged_interfaces;
+  char *next;
+  char name[IFNAMSIZ], lan[IFNAMSIZ];
+  int index;
+
 /*	unbridged_interfaces = nvram_get("unbridged_ifnames");
 	
 	if (unbridged_interfaces)
@@ -1117,8 +1127,8 @@ start_guest_nas(void)
 			start_nas(lan);
 		}
 */
-	return 0;
-} 
+  return 0;
+}
 #endif
 void
 start_nas_lan (void)
@@ -1778,19 +1788,24 @@ bird_init (void)
 
 	  fprintf (fp, "protocol rip WRT54G_rip {\n");
 	  if (nvram_match ("routing_lan", "on"))
-	    fprintf (fp, "	interface \"%s\" { };\n",nvram_safe_get ("lan_ifname"));
+	    fprintf (fp, "	interface \"%s\" { };\n",
+		     nvram_safe_get ("lan_ifname"));
 	  if (nvram_match ("routing_wan", "on"))
 	    {
-	    char *wanif = nvram_safe_get("wan_ifname");
-	    if (nvram_match("wl_mode","sta") || nvram_match("wl_mode","apsta"))
-	    fprintf (fp, "	interface \"%s\" { };\n",getwlif());
-	    else
-	    fprintf (fp, "	interface \"%s\" { };\n",nvram_safe_get ("wan_ifname"));
-	    
+	      char *wanif = nvram_safe_get ("wan_ifname");
+	      if (nvram_match ("wl_mode", "sta")
+		  || nvram_match ("wl_mode", "apsta"))
+		fprintf (fp, "	interface \"%s\" { };\n", getwlif ());
+	      else
+		fprintf (fp, "	interface \"%s\" { };\n",
+			 nvram_safe_get ("wan_ifname"));
+
 	    }
-	    fprintf(fp,"	honor always;\n");
-	    fprintf(fp,"	import filter { print \"importing\"; accept; };\n");
-	    fprintf(fp,"	export filter { print \"exporting\"; accept; };\n");    
+	  fprintf (fp, "	honor always;\n");
+	  fprintf (fp,
+		   "	import filter { print \"importing\"; accept; };\n");
+	  fprintf (fp,
+		   "	export filter { print \"exporting\"; accept; };\n");
 	  fprintf (fp, "}\n");
 
 	}
@@ -2084,17 +2099,17 @@ start_chilli (void)
       else
 	fprintf (fp, "dhcpif eth2\n");
 #else
-if (nvram_match("wl0_mode","apsta"))
-    {
-	fprintf(fp, "dhcpif wl0.1\n");
-    }
-    else
-    {
-      if (wl_probe ("eth2"))
-	fprintf (fp, "dhcpif eth1\n");
+      if (nvram_match ("wl0_mode", "apsta"))
+	{
+	  fprintf (fp, "dhcpif wl0.1\n");
+	}
       else
-	fprintf (fp, "dhcpif eth2\n");
-    }
+	{
+	  if (wl_probe ("eth2"))
+	    fprintf (fp, "dhcpif eth1\n");
+	  else
+	    fprintf (fp, "dhcpif eth2\n");
+	}
 #endif
     }
   else
@@ -2131,25 +2146,25 @@ if (nvram_match("wl0_mode","apsta"))
   if (nvram_invmatch ("chilli_macauth", ""))
     fprintf (fp, "macauth %s\n", nvram_get ("chilli_macauth"));
 #ifndef HAVE_FON
-if (nvram_match("fon_enable","1"))
-{
+  if (nvram_match ("fon_enable", "1"))
+    {
 #endif
-  char hyp[32];
-  strcpy (hyp, nvram_safe_get ("wl0_hwaddr"));
-  for (i = 0; i < strlen (hyp); i++)
-    if (hyp[i] == ':')
-      hyp[i] = '-';
-  if (i > 0)
-    fprintf (fp, "radiusnasid %s\n", hyp);
-  nvram_set ("chilli_radiusnasid", hyp);
-  fprintf (fp, "interval 300\n");
+      char hyp[32];
+      strcpy (hyp, nvram_safe_get ("wl0_hwaddr"));
+      for (i = 0; i < strlen (hyp); i++)
+	if (hyp[i] == ':')
+	  hyp[i] = '-';
+      if (i > 0)
+	fprintf (fp, "radiusnasid %s\n", hyp);
+      nvram_set ("chilli_radiusnasid", hyp);
+      fprintf (fp, "interval 300\n");
 #ifndef HAVE_FON
-}
-else
-{
-  if (nvram_invmatch ("chilli_radiusnasid", ""))
-    fprintf (fp, "radiusnasid %s\n", nvram_get ("chilli_radiusnasid"));
-}
+    }
+  else
+    {
+      if (nvram_invmatch ("chilli_radiusnasid", ""))
+	fprintf (fp, "radiusnasid %s\n", nvram_get ("chilli_radiusnasid"));
+    }
 #endif
 
   if (nvram_invmatch ("chilli_additional", ""))
