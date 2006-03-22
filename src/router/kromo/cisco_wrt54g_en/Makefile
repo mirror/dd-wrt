@@ -28,7 +28,7 @@ ifeq ($(CONFIG_RED),y)
 	cp red/logo.png $(INSTALLDIR)/www/style
 endif
 
-ifeq ($(CONFIG_FON),y)
+ifneq ($(CONFIG_BRANDING),y)
 	mkdir $(INSTALLDIR)/www/style/fon
 	cp fon/style.css $(INSTALLDIR)/www/style/fon
 	cp fon/common.css $(INSTALLDIR)/www/style
