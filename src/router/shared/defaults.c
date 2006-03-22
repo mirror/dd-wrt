@@ -1234,6 +1234,7 @@ struct nvram_tuple router_defaults[] = {
   {"fon_usernames", "0", 0},
   {"fon_userlist", "", 0},
 #endif
+ {"fon_enable","0",0},
  {"pptpd_client_enable","",0},  
  {"pptpd_client_srvip","",0}, 
  {"pptpd_client_srvsub","",0},  
