@@ -161,6 +161,12 @@ function init() {
 						<a href="javascript:help('help/HLog.asp');">More...</a>
 					</div>
 				</div>
+				<div id="floatKiller"></div>
+				<div id="statusInfo">
+					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
+				</div>
 			</div>
 		</div>
 	</body>
