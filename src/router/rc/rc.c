@@ -264,9 +264,12 @@ main_loop (void)
 //create loginprompt
 FILE *fp=fopen("/tmp/loginprompt","wb");
 #ifdef DIST
-fprintf(fp,"DD-WRT v23 %s Date: " BUILD_DATE "\n\n",DIST);
+if (strlen(DIST)>0)
+fprintf(fp,"DD-WRT v23 SP1 %s Date: " BUILD_DATE " (c) 2006 Blueline AG\n\n",DIST);
+else
+fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 Blueline AG\n\n");
 #else
-fprintf(fp,"DD-WRT v23 custom Date: " BUILD_DATE "\n\n");
+fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 Blueline AG\n\n");
 #endif
 fclose(fp);
 
@@ -451,6 +454,23 @@ main (int argc, char **argv)
 
   /* Set TZ for all rc programs */
   setenv ("TZ", nvram_safe_get ("time_zone"), 1);
+
+  if (strstr (base, "startservice"))
+    {
+    if (argc<2)
+	{
+	puts("try to be professional\n");
+	}
+    return start_service(argv[1]);
+    }
+  if (strstr (base, "stopservice"))
+    {
+    if (argc<2)
+	{
+	puts("try to be professional\n");
+	}
+    return stop_service(argv[1]);
+    }
 
   /* ppp */
   if (strstr (base, "ip-up"))
