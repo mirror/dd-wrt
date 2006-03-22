@@ -1,10 +1,10 @@
 #!/bin/sh
 cat<<EOF
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
 <title>Phonebook of $(nvram get lan_ipaddr)</title>
-<meta content="text/html; charset=iso-8559-1" http-equiv="Content-Type" />
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 <link href="style.css" rel="StyleSheet" type="text/css" />
 <script language="JavaScript" type="text/javascript"><!--
 function navarr(){}
@@ -66,14 +66,14 @@ function ini() {
                         <li><a href='Wireless_Basic.asp'>Wireless</a></li>
                         <li class="current"><span>SIPatH</span><div id="menuSub">
                               <ul id="menuSubList">
-                                 <li><a href='Sipath.asp'>Overview</a></li>                      
+                                 <li><a href='Sipath.asp'>Overview</a></li>
                                  <li><span>Phonebook</span></li>
                                  <li><a href='cgi-bin-mf-status.html'>Status</a></li>
                               </ul>
-                         </div>      
-                         </li> 
+                         </div>
+                         </li>
                         <li><a href='Firewall.asp'>Security</a></li>
-			<li><a href='Filters.asp'>Access Restrictions</a></li>                 
+			<li><a href='Filters.asp'>Access Restrictions</a></li>
                         <li><a href='Forward.asp'>Applications&nbsp;&amp;&nbsp;Gaming</a></li>
                         <li><a href='Management.asp'>Administration</a></li>
                         <li><a href='Status_Router.asp'>Status</a></li>
@@ -81,7 +81,7 @@ function ini() {
                   </div>
                </div>
             </div>
-               		
+
 		<script language="JavaScript" type="text/javascript"><!--
 function help(e) {
   if (!e) e = event;
@@ -108,14 +108,8 @@ else {
   document.onkeypress = help;
 }
 //--></script>
-		 
-            
-            <div id="statusInfo">
-	       <div class="info">Firmware: <% get_firmware_version(); %></div>
-               <div class="info">Uptime: <% get_uptime(); %></div>
-               <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
 
-            </div>
+
             <div id="helpContainer">
                <div id="help">
                   <div id="logo">
@@ -125,7 +119,7 @@ else {
 		  <a target="_blank" href="help/HManagement.asp">More...</a>
 		</div>
             </div>
-        
+
 EOF
 
 if [ "$REQUEST_METHOD" = "POST" ]; then
@@ -276,12 +270,12 @@ cat<<EOF
 <h1>Phonebook: Details</h1>
   <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
   cellspacing="0" class="form" width="548"><tbody><tr><td>SER Userlist:</td>
-  <td>Contact Details$(if [ $(nvram get sip_domain) ]; 
+  <td>Contact Details$(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   serctl ul show| grep "^domain    :\|^aor       :\|^Contact\|^Expires\|^Call-ID\|^User-Agent\|^State" | \
   sed -e "s/^\(domain \)/======================================\n\1/" | awk 'sub("", "<br>") {print}';)</td></tr>
-  <tr><td><input name="post_rmaor" title="Remove AOR" type="submit" value="Remove" /></td><td>$(if [ $(nvram get sip_domain) ]; 
+  <tr><td><input name="post_rmaor" title="Remove AOR" type="submit" value="Remove" /></td><td>$(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   serctl ul show | grep 'aor   :' | awk 'sub("","") {print $3}' | cut -f2 -d"'" | awk '
@@ -334,7 +328,7 @@ cat<<EOF
  }')</td></tr>
  <tr><td></td><td></td></tr>
  <tr><td></td><td></td></tr>
- <tr><td>Alias:</td><td>$(if [ $(nvram get sip_domain) ]; 
+ <tr><td>Alias:</td><td>$(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   serctl ul show | grep 'Contact   :' | awk 'sub("","") {print $3}' | cut -f2 -d"'" | awk '
@@ -377,7 +371,7 @@ cat<<EOF
  <input name="post_newalias" title="Add Alias" type="submit" value="Add" />
  <input name="post_rmalias" title="Remove Alias" type="submit" value="Remove" /></TD>
  </TR>
- 
+
   <tr><td colspan="2"><input
   name="post_contacts"
   title="Contacts"
@@ -397,7 +391,7 @@ cat<<EOF
 EOF
 
 
-#if [ $(nvram get sip_domain) ]; 
+#if [ $(nvram get sip_domain) ];
 #  | grep "^aor       :\|^User-Agent: 'SIP Express Router FIFO'" | \
 #    then export SIP_DOMAIN=$(nvram get sip_domain);
 #    else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
@@ -416,14 +410,14 @@ cellspacing="0" class="form" width="548"><tbody><tr><td>
 EOF
 
 #test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
- if [ $(nvram get sip_domain) ]; 
+ if [ $(nvram get sip_domain) ];
  then export SIP_DOMAIN=$(nvram get sip_domain);
  else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
 # echo "$URI <br>";
  echo "serctl alias add $newalias $(echo "$URI" | sed -n -f html.sed) <br>";
  serctl alias add $newalias $(echo "$URI" | sed -n -f html.sed;);
  echo "<br>";
- 
+
 cat<<EOF
   </td></tr><tr><td colspan="7"><input name="post_contacts"
   title="Contacts"
@@ -454,14 +448,14 @@ cellspacing="0" class="form" width="548"><tbody><tr><td>
 EOF
 
 #test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
- if [ $(nvram get sip_domain) ]; 
+ if [ $(nvram get sip_domain) ];
  then export SIP_DOMAIN=$(nvram get sip_domain);
  else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
 # echo "$URI <br>";
  echo "serctl alias rm $newalias <br>";
  serctl alias rm $newalias;
  echo "<br>";
- 
+
 cat<<EOF
   </td></tr><tr><td colspan="7"><input name="post_contacts"
   title="Contacts"
@@ -492,14 +486,14 @@ cellspacing="0" class="form" width="548"><tbody><tr><td>
 EOF
 
 #test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
- if [ $(nvram get sip_domain) ]; 
+ if [ $(nvram get sip_domain) ];
  then export SIP_DOMAIN=$(nvram get sip_domain);
  else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
 # echo "$URI <br>";
  echo "serctl ul rm $AOR <br>";
  serctl ul rm $AOR;
  echo "<br>";
- 
+
 cat<<EOF
   </td></tr><tr><td colspan="7"><input name="post_contacts"
   title="Contacts"
@@ -532,7 +526,7 @@ EOF
 
 
 ##test -z "$(nvram get ff_lan_proto)" && lan_proto=noconfig;
-# if [ $(nvram get sip_domain) ]; 
+# if [ $(nvram get sip_domain) ];
 # then export SIP_DOMAIN=$(nvram get sip_domain);
 # else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
 ## echo "$URI <br>";
@@ -564,11 +558,11 @@ EOF" > /tmp/msg;
   cat /tmp/ser_fifo_replies | awk 'sub("", "<br>") {print}';
   echo "<br>";
   rm /tmp/ser_fifo_replies;
-  #if [ $(nvram get sip_domain) ]; 
+  #if [ $(nvram get sip_domain) ];
   #then export SIP_DOMAIN=$(nvram get sip_domain);
   #else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   #serctl restart | awk 'sub("", "<br>") {print}';
- 
+
 cat<<EOF
   </td></tr><tr><td colspan="7"><input name="post_contacts"
   title="Contacts"
@@ -594,7 +588,7 @@ EOF
 #EOF
 
 
-else 
+else
 
 cat<<EOF
 <div id="main">
@@ -603,13 +597,13 @@ cat<<EOF
 <h1>Phonebook: Contacts</h1>
   <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
   cellspacing="0" class="form" width="548"><tbody><tr><td>Active URIs</td><td>
-  Phone URI / Alias $(if [ $(nvram get sip_domain) ]; 
+  Phone URI / Alias $(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   serctl ul show | grep 'aor   :' | awk 'sub("","") {print $3}' | \
   sed -e "s/^\('\)/======================================\n\1/" | awk 'sub("", "<br>") {print}';)
   <br>======================================<br>
-  <tr><td>Messaging:</td><td>$(if [ $(nvram get sip_domain) ]; 
+  <tr><td>Messaging:</td><td>$(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   serctl ul show | grep 'Contact   :' | awk 'sub("","") {print $3}' | cut -f2 -d"'" | awk '
@@ -677,8 +671,14 @@ fi
 cat<<EOF
 	    </div>
 	    </div>
-	 </div>
-      </div>
-   </body>
- </html>
+				<div id="floatKiller"></div>
+				<div id="statusInfo">
+					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
 EOF

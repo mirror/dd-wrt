@@ -1,10 +1,10 @@
 #!/bin/sh
 cat<<EOF
-<?xml version="1.0" encoding="ISO-8859-1"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 <head>
 <title>Status of $(nvram get lan_ipaddr)</title>
-<meta content="text/html; charset=iso-8559-1" http-equiv="Content-Type" />
+<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 <link href="style.css" rel="StyleSheet" type="text/css" />
 <script language="JavaScript" type="text/javascript"><!--
 function navarr(){}
@@ -66,12 +66,12 @@ function ini() {
                         <li><a href='Wireless_Basic.asp'>Wireless</a></li>
                         <li class="current"><span>SIPatH</span><div id="menuSub">
                               <ul id="menuSubList">
-                                 <li><a href='Sipath.asp'>Overview</a></li>                      
+                                 <li><a href='Sipath.asp'>Overview</a></li>
                                  <li><a href='cgi-bin-mf-phonebook.html'>Phonebook</a></li>
                                  <li><span>Status</span></li>
                               </ul>
-                         </div>      
-                         </li>                  
+                         </div>
+                         </li>
                         <li><a href='Firewall.asp'>Security</a></li>
 			<li><a href='Filters.asp'>Access Restrictions</a></li>
                         <li><a href='Forward.asp'>Applications&nbsp;&amp;&nbsp;Gaming</a></li>
@@ -107,11 +107,6 @@ else {
   document.onkeypress = help;
 }
 //--></script>
-            <div id="statusInfo">
-               <div class="info">Firmware: <% get_firmware_version(); %></div>
-               <div class="info">Uptime: <% get_uptime(); %></div>
-               <div class="info">WAN IP: <% nvram_status_get("wan_ipaddr"); %></div>
-            </div>
             <div id="helpContainer">
                <div id="help">
                   <div id="logo">
@@ -132,7 +127,7 @@ if [ -n "$post_reboot" ]; then
 
 cat<<EOF
             <div id="main">
-               <div id="contents">		
+               <div id="contents">
 
 <h1>Status: Rebooting...</h1>
   <form action="cgi-bin-mf-status.html" method="post"><table border="1"
@@ -163,7 +158,7 @@ elif [ -n "$post_route" ]; then
 
 cat<<EOF
             <div id="main">
-               <div id="contents">		
+               <div id="contents">
 
 <h1>Status: Routing Table</h1>
   <form action="cgi-bin-mf-status.html" method="post"><table border="1"
@@ -221,7 +216,7 @@ elif [ -n "$post_restart" ]; then
 
 cat<<EOF
             <div id="main">
-               <div id="contents">		
+               <div id="contents">
 
 <h1>Status: SER Restart</h1>
   <form action="cgi-bin-mf-status.html" method="post"><table border="1"
@@ -230,7 +225,7 @@ cat<<EOF
   colspan="7">
 EOF
 
-if [ $(nvram get sip_domain) ]; 
+if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
 serctl restart ser|awk 'sub("", "<br>") {print}'; sleep 3s;
@@ -254,25 +249,25 @@ else
 
 cat<<EOF
             <div id="main">
-               <div id="contents">		
+               <div id="contents">
 
 <h1>Status: Overview</h1> <form
   action="cgi-bin-mf-status.html" method="post"><table border="1" cellpadding="0"
   cellspacing="0" class="form" width="548"><tbody>
-  <tr><td>SER Stats:</td><td>$(if [ $(nvram get sip_domain) ]; 
+  <tr><td>SER Stats:</td><td>$(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   echo "Message type: Occurances";
   serctl fifo sl_stats | awk 'sub("", "<br>") {print}';)</td></tr>
-  
+
   <!--<tr><td>SER Userlist:</td><td>
-  Address of Record / Contact $(if [ $(nvram get sip_domain) ]; 
+  Address of Record / Contact $(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
   serctl ul show| grep "^aor       \|^Contact\|^Expires\|^Call-ID\|^User-Agent" | \
   sed -e "s/^\(aor \)/======================================\n\1/" | awk 'sub("", "<br>") {print}';)</td></tr>-->
-    
-  <tr><td>SER processes:</td><td>First Receiver Process per IP:Port $(if [ $(nvram get sip_domain) ]; 
+
+  <tr><td>SER processes:</td><td>First Receiver Process per IP:Port $(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi ;
     serctl ps| grep child=0\ sock=0 | awk 'sub("", "<br>") {print}';
@@ -287,16 +282,16 @@ cat<<EOF
     $(if [ $(nvram get wan_proto) = pppoe ] ; then
       if [ "`ifconfig | grep ppp0`" ]; then
         echo $(ifconfig ppp0|awk 'sub("inet addr:","") {print $1}')
-      else echo "ppp0 interface not up"                  
+      else echo "ppp0 interface not up"
       fi
      else
       echo $(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print $1}')
     fi)
   <tr><td>Device Info:</td><td>Boardtype:  $(nvram get boardtype), Boardnum: $(nvram get boardnum)</td></tr>
-  <tr><td>SER Uptime:</td><td>$(if [ $(nvram get sip_domain) ]; 
+  <tr><td>SER Uptime:</td><td>$(if [ $(nvram get sip_domain) ];
     then export SIP_DOMAIN=$(nvram get sip_domain);
     else export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}'); fi;
-  echo "Please note: Automatic SER restarts may be due to changing network interface addresses";    
+  echo "Please note: Automatic SER restarts may be due to changing network interface addresses";
   serctl fifo uptime | awk 'sub("", "<br>") {print}';)</td></tr>
   <tr><td>Router Uptime:</td><td>$(uptime)</td></tr>
   <tr><td colspan="2"> </td></tr>
@@ -320,9 +315,15 @@ fi
 cat<<EOF
 	</div>
 	</div>
-         </div>
-      </div>
-   </body>
+				<div id="floatKiller"></div>
+				<div id="statusInfo">
+					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
+				</div>
+			</div>
+		</div>
+	</body>
 </html>
 
 EOF
