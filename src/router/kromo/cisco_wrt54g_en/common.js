@@ -557,11 +557,13 @@ function get_status_info() {
 int_info = setInterval("get_status_info()", 5000);
 
 // 18/03/06 : Botho - Gray all form when submitting (thanks to Philip) - NOT OK YET !
+// 21/03/06 : Philip - now OK: disable AFTER submit.
 function apply(F) {
+	F.submit();
 	for (i = 0; i < F.elements.length; i++) {
 		if(typeof F.elements[i].disabled == "boolean") F.elements[i].disabled = true;
 	}
 	document.getElementById('contents').style.color = '#999999';
-	F.submit();
+
 }
 
