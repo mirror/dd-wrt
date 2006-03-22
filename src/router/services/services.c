@@ -463,7 +463,7 @@ start_dhcpfwd (void)
 	       nvram_safe_get ("lan_ifname"));
       fprintf (fp, "server	ip	%s\n", nvram_safe_get ("dhcpfwd_ip"));
       fclose (fp);
-      eval ("dhcp-fwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
+      eval ("dhcpfwd", "-c", "/tmp/dhcp-fwd/dhcp-fwd.conf");
       return 0;
     }
 #endif
@@ -2130,7 +2130,10 @@ if (nvram_match("wl0_mode","apsta"))
     fprintf (fp, "uamallowed %s\n", nvram_get ("chilli_uamallowed"));
   if (nvram_invmatch ("chilli_macauth", ""))
     fprintf (fp, "macauth %s\n", nvram_get ("chilli_macauth"));
-#ifdef HAVE_FON
+#ifndef HAVE_FON
+if (nvram_match("fon_enable","1"))
+{
+#endif
   char hyp[32];
   strcpy (hyp, nvram_safe_get ("wl0_hwaddr"));
   for (i = 0; i < strlen (hyp); i++)
@@ -2140,9 +2143,13 @@ if (nvram_match("wl0_mode","apsta"))
     fprintf (fp, "radiusnasid %s\n", hyp);
   nvram_set ("chilli_radiusnasid", hyp);
   fprintf (fp, "interval 300\n");
-#else
+#ifndef HAVE_FON
+}
+else
+{
   if (nvram_invmatch ("chilli_radiusnasid", ""))
     fprintf (fp, "radiusnasid %s\n", nvram_get ("chilli_radiusnasid"));
+}
 #endif
 
   if (nvram_invmatch ("chilli_additional", ""))
