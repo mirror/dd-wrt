@@ -526,6 +526,7 @@ start_lan (void)
 #endif
 //		eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
+		if (nvram_match("fon_enable","0"))
 		do_mssid (lan_ifname);
 #endif
 	      }
@@ -1571,6 +1572,28 @@ else if (nvram_match("wl0_mode","ap"))
 stop_chilli();
 start_chilli();
 #endif
+#else
+if (nvram_match("fon_enable","1"))
+{
+#ifndef HAVE_MSSID
+  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+#else
+if (nvram_match("wl0_mode","apsta"))
+{
+  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
+  ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+}
+else if (nvram_match("wl0_mode","ap"))
+{
+  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+}
+stop_chilli();
+start_chilli();
+#endif
+}
+
 #endif
 
 }
@@ -1627,9 +1650,11 @@ stop_wan (void)
 	    eval("rmmod","ppp_generic");
 	    eval("rmmod","slhc");	 */
 #endif
-#ifdef HAVE_FON
-    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
+#ifndef HAVE_FON
+if (nvram_match("fon_enable","1"))
 #endif
+    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
+
   cprintf ("done\n");
 }
 
