@@ -278,12 +278,12 @@ background:#fff;
 padding:.906em;
 }
 * html #menuSub {
-width:72.464em;
+/* width:72.464em; */
 }
 * html #main #contents {
 position:relative;
 z-index:0;
-width:54.348em;
+/* width:54.348em; */
 padding:.906em;
 }
 * html .setting {
@@ -310,7 +310,7 @@ background:#fff;
 }
 * html #help {
 position:relative;
-width:19.03em;
+/* width:19.03em; */
 padding:.91em;
 left:0;
 z-index:0;

@@ -1,4 +1,4 @@
-<div><div class="setting">
+<div class="setting">
 <div class="label">Internet IP Address</div>
 <input type="hidden" name="wan_ipaddr" value="4" />
 <input class="num" maxLength="3" size="3" name="wan_ipaddr_0" onBlur="valid_range(this,0,255,'IP')" value='<% get_single_ip("wan_ipaddr","0"); %>' />.
@@ -37,5 +37,4 @@
 <input class="num" name="wan_dns2_1" size="3" maxlength="3" onblur="valid_range(this,0,255,&#34;DNS&#34;)" value='<% get_dns_ip("wan_dns","2","1"); %>' />.
 <input class="num" name="wan_dns2_2" size="3" maxlength="3" onblur="valid_range(this,0,255,&#34;DNS&#34;)" value='<% get_dns_ip("wan_dns","2","2"); %>' />.
 <input class="num" name="wan_dns2_3" size="3" maxlength="3" onblur="valid_range(this,0,254,&#34;DNS&#34;)" value='<% get_dns_ip("wan_dns","2","3"); %>' />
-</div>
 </div>
