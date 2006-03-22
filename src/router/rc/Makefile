@@ -21,9 +21,11 @@ endif
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
 OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o wland.o sendudp.o 
 
-ifdef $(CONFIG_DIST)
+
+
+#ifdef $(CONFIG_DIST)
 CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
-endif
+#endif
 
 ifneq ($(CONFIG_RB500),y)
 OBJS += mtd.o
@@ -235,6 +237,8 @@ install: all
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
 	cd $(INSTALLDIR)/sbin && ln -sf rc wland
+	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
+	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox bird
@@ -253,7 +257,7 @@ ifeq ($(CONFIG_RFLOW),y)
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox rflow
 endif
 ifeq ($(CONFIG_DHCPFORWARD),y)
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dhcp-fwd
+	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dhcpfwd
 endif
 #ifeq ($(CONFIG_PPPD),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox pppd
