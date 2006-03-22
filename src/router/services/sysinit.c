@@ -68,7 +68,7 @@
 int start_restore_defaults (void);
 int start_sysinit (void);
 static void rc_signal (int sig);
-static void overclock(void);
+static void overclock (void);
 static int check_cfe_nv (void);
 static int check_pmon_nv (void);
 static void unset_nvram (void);
@@ -218,9 +218,9 @@ enableAfterBurner (void)
 {
 
   int boardflags;
-if (getRouterBrand()==ROUTER_LINKSYS_WRT55AG)
+  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG)
     return;
-if (nvram_get("boardflags")==NULL)
+  if (nvram_get ("boardflags") == NULL)
     return;
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
   fprintf (stderr, "boardflags are 0x0%X\n", boardflags);
@@ -304,14 +304,14 @@ int
 start_create_rc_startup (void)
 {
   create_rc_file (RC_STARTUP);
-return 0;
+  return 0;
 }
 
 int
 start_create_rc_shutdown (void)
 {
   create_rc_file (RC_SHUTDOWN);
-return 0;
+  return 0;
 }
 
 
@@ -594,7 +594,8 @@ start_restore_defaults (void)
 		nvram_set("boardflags", "0x0388");
 
 	}*/
-  if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG)
+  if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
+      || brand == ROUTER_LINKSYS_WRT55AG)
     {
       if (!nvram_get ("aa0"))
 	nvram_set ("aa0", "3");
@@ -623,20 +624,20 @@ start_restore_defaults (void)
   nvram_unset ("sputnik_mjid");
   nvram_unset ("sputnik_rereg");
 #endif
-  if (nvram_get("overclocking")==NULL)
-    nvram_set("overclocking",nvram_safe_get("clkfreq"));
-cprintf("start overclocking\n");
-  overclock();
-cprintf("done()");
-  if (nvram_get("http_username")!=NULL)
+  if (nvram_get ("overclocking") == NULL)
+    nvram_set ("overclocking", nvram_safe_get ("clkfreq"));
+  cprintf ("start overclocking\n");
+  overclock ();
+  cprintf ("done()");
+  if (nvram_get ("http_username") != NULL)
     {
-    if (nvram_match("http_username",""))
+      if (nvram_match ("http_username", ""))
 	{
-	nvram_set("http_username","root");
+	  nvram_set ("http_username", "root");
 	}
     }
 #ifdef DIST
-  nvram_set("dist_type",DIST);
+  nvram_set ("dist_type", DIST);
 #endif
   if (check_now_boot () == CFE_BOOT)
     check_cfe_nv ();
@@ -876,8 +877,8 @@ start_sysinit (void)
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
 		"diag wl switch-core switch-adm";
-	    
-	    break;
+
+	      break;
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
@@ -909,8 +910,8 @@ start_sysinit (void)
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
 		"diag wl switch-core switch-adm";
-	    
-	    break;
+
+	      break;
 	    case ROUTER_ASUS:
 	      modules =
 		nvram_invmatch ("ct_modules",
@@ -969,7 +970,7 @@ start_sysinit (void)
     }
 #endif
 
-return 0;
+  return 0;
   cprintf ("done\n");
 }
 
@@ -1279,81 +1280,89 @@ check_nv (char *name, char *value)
 
   return ret;
 }
+
 #define ISCLK(a) nvram_match("clkfreq",a);
-static void overclock(void)
+static void
+overclock (void)
 {
-char *ov = nvram_get("overclocking");
-if (ov==NULL)return;
-int clk = atoi(ov);
-if (nvram_get("clkfreq")==NULL)return; //unsupported
-if (nvram_match("clkfreq","125"))return; //unsupported
+  char *ov = nvram_get ("overclocking");
+  if (ov == NULL)
+    return;
+  int clk = atoi (ov);
+  if (nvram_get ("clkfreq") == NULL)
+    return;			//unsupported
+  if (nvram_match ("clkfreq", "125"))
+    return;			//unsupported
 //int cclk = atoi(nvram_safe_get("clkfreq"));
 //if (cclk<192)return; //unsupported
-char *pclk = nvram_safe_get("clkfreq");
-char dup[64];
-strcpy(dup,pclk);
-int i;
-for (i=0;i<strlen(dup);i++)
-    if (dup[i]==',')dup[i]=0;
-int cclk = atoi(dup);
-if (cclk<192)
+  char *pclk = nvram_safe_get ("clkfreq");
+  char dup[64];
+  strcpy (dup, pclk);
+  int i;
+  for (i = 0; i < strlen (dup); i++)
+    if (dup[i] == ',')
+      dup[i] = 0;
+  int cclk = atoi (dup);
+  if (cclk < 192)
     {
-    cprintf("clkfreq is %d (%s), this is unsupported\n",cclk,dup);
-    return; //unsupported
+      cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
+      return;			//unsupported
     }
 
-if (clk==cclk) 
+  if (clk == cclk)
     {
-    cprintf("clkfreq identical with new setting\n");
-    return; //clock already set
+      cprintf ("clkfreq identical with new setting\n");
+      return;			//clock already set
     }
-int set=1;
-switch(clk)
-{
-case 192:
-nvram_set("clkfreq","192,96");
-break;
-case 200:
-nvram_set("clkfreq","200,100");
-break;
-case 216:
-nvram_set("clkfreq","216,108");
-break;
-case 228:
-nvram_set("clkfreq","228,114");
-break;
-case 240:
-nvram_set("clkfreq","240,120");
-break;
-case 252:
-nvram_set("clkfreq","252,126");
-break;
-case 264:
-nvram_set("clkfreq","264,132");
-break;
-case 280:
-nvram_set("clkfreq","280,120");
-break;
-case 300:
-nvram_set("clkfreq","300,120");
-break;
-default:
-set=0;
-break;
-}
-
-if (set)
+  int set = 1;
+  switch (clk)
     {
-    cprintf("clock frequency adjusted from %d to %d, reboot needed\n",cclk,clk);
-    nvram_commit();
+    case 192:
+      nvram_set ("clkfreq", "192,96");
+      break;
+    case 200:
+      nvram_set ("clkfreq", "200,100");
+      break;
+    case 216:
+      nvram_set ("clkfreq", "216,108");
+      break;
+    case 228:
+      nvram_set ("clkfreq", "228,114");
+      break;
+    case 240:
+      nvram_set ("clkfreq", "240,120");
+      break;
+    case 252:
+      nvram_set ("clkfreq", "252,126");
+      break;
+    case 264:
+      nvram_set ("clkfreq", "264,132");
+      break;
+    case 280:
+      nvram_set ("clkfreq", "280,120");
+      break;
+    case 300:
+      nvram_set ("clkfreq", "300,120");
+      break;
+    default:
+      set = 0;
+      break;
+    }
+
+  if (set)
+    {
+      cprintf ("clock frequency adjusted from %d to %d, reboot needed\n",
+	       cclk, clk);
+      nvram_commit ();
       kill (1, SIGTERM);
       exit (0);
     }
 }
 
-int start_overclocking(void)
+int
+start_overclocking (void)
 {
-overclock();
+  overclock ();
 }
 
 static int
@@ -1431,12 +1440,13 @@ check_cfe_nv (void)
 
 	  ret += check_nv ("sdram_init", "0x010b");
 	  ret += check_nv ("sdram_config", "0x0062");
-	  if (nvram_match("clkfreq","200") && nvram_match("overclocking","200"))
+	  if (nvram_match ("clkfreq", "200")
+	      && nvram_match ("overclocking", "200"))
 	    {
-	    ret +=check_nv ("clkfreq", "216");
-	    nvram_set("overclocking","216");
+	      ret += check_nv ("clkfreq", "216");
+	      nvram_set ("overclocking", "216");
 	    }
-	  
+
 	  if (ret)
 	    {
 	      nvram_set ("sdram_ncdl", "0x0");
