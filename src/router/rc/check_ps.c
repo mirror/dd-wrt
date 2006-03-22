@@ -39,6 +39,7 @@ struct mon mons[] = {
   {"udhcpd", 1, M_LAN},
   {"dnsmasq", 1, M_LAN},
   {"upnp", 1, M_LAN},
+  {"dhcpfwd",1, M_LAN},
 #ifdef HAVE_CHILLI
   {"chilli", 1, M_LAN},
 #endif
