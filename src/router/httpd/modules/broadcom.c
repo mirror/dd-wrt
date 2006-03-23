@@ -3574,6 +3574,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("fon_enable", "1");
   nvram_commit ();
   char *next_page;
+  char *submit_button;
   if (my_next_page[0] != '\0')
     {
       sprintf (path, "%s", my_next_page);
