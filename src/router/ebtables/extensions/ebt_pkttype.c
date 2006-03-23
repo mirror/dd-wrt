@@ -1,9 +1,9 @@
-/*
- *  ebtables ebt_pkttype
+/* ebt_pkttype
  *
- *  Authors:
- *   Bart De Schuymer <bdschuym@pandora.be>
+ * Authors:
+ * Bart De Schuymer <bdschuym@pandora.be>
  *
+ * April, 2003
  */
 
 #include <stdio.h>
@@ -38,7 +38,7 @@ static void print_help()
 	printf(
 "pkttype options:\n"
 "--pkttype-type    [!] type: class the packet belongs to\n"
-"Possible values: broadcast, multicast, host, otherhost any byte value.\n");
+"Possible values: broadcast, multicast, host, otherhost, or any other byte value (which would be pretty useless).\n");
 }
 
 static void init(struct ebt_entry_match *match)
@@ -57,26 +57,22 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 
 	switch (c) {
 	case '1':
-		check_option(flags, 1);
-		if (check_inverse(optarg))
+		ebt_check_option2(flags, 1);
+		if (ebt_check_inverse2(optarg))
 			ptinfo->invert = 1;
-		if (optind > argc)
-			print_error("Missing pkttype class specification");
-
-		i = strtol(argv[optind - 1], &end, 16);
+		i = strtol(optarg, &end, 16);
 		if (*end != '\0') {
 			int j = 0;
 			i = -1;
 			while (classes[j][0])
-				if (!strcasecmp(argv[optind - 1], classes[j++])) {
+				if (!strcasecmp(optarg, classes[j++])) {
 					i = j - 1;
 					break;
 				}
 		}
 		if (i < 0 || i > 255)
-			print_error("Problem with specified pkttype class");
+			ebt_print_error2("Problem with specified pkttype class");
 		ptinfo->pkt_type = (uint8_t)i;
-
 		break;
 	default:
 		return 0;
@@ -129,8 +125,7 @@ static struct ebt_u_match pkttype_match =
 	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_match(&pkttype_match);
+	ebt_register_match(&pkttype_match);
 }

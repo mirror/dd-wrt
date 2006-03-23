@@ -212,6 +212,7 @@ svqos_iptables (void)
       eval ("rmmod", "ebt_snat");
       eval ("rmmod", "ebt_mark_m");
       eval ("rmmod", "ebt_mark");
+      eval ("rmmod", "ebtable_filter");
       eval ("rmmod", "ebtable_nat");
       eval ("rmmod", "ebtables");
     }
@@ -219,6 +220,7 @@ svqos_iptables (void)
     {
       eval ("insmod", "ebtables");
       eval ("insmod", "ebtable_nat");
+      eval ("insmod", "ebtable_filter");
       eval ("insmod", "ebt_mark");
       eval ("insmod", "ebt_mark_m");
       eval ("insmod", "ebt_snat");

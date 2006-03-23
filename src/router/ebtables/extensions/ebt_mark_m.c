@@ -1,3 +1,11 @@
+/* ebt_mark_m
+ *
+ * Authors:
+ * Bart De Schuymer <bdschuym@pandora.be>
+ *
+ * July, 2002
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -40,21 +48,19 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 
 	switch (c) {
 	case MARK:
-		check_option(flags, MARK);
-		if (check_inverse(optarg))
+		ebt_check_option2(flags, MARK);
+		if (ebt_check_inverse2(optarg))
 			markinfo->invert = 1;
-		if (optind > argc)
-			print_error("No mark specified");
-		markinfo->mark = strtoul(argv[optind - 1], &end, 0);
+		markinfo->mark = strtoul(optarg, &end, 0);
 		markinfo->bitmask = EBT_MARK_AND;
 		if (*end == '/') {
-			if (end == argv[optind - 1])
+			if (end == optarg)
 				markinfo->bitmask = EBT_MARK_OR;
 			markinfo->mask = strtoul(end+1, &end, 0);
 		} else
 			markinfo->mask = 0xffffffff;
-		if ( *end != '\0' || end == argv[optind - 1])
-			print_error("Bad mark value '%s'", argv[optind - 1]);
+		if ( *end != '\0' || end == optarg)
+			ebt_print_error2("Bad mark value '%s'", optarg);
 		break;
 	default:
 		return 0;
@@ -115,8 +121,7 @@ static struct ebt_u_match mark_match =
 	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_match(&mark_match);
+	ebt_register_match(&mark_match);
 }
