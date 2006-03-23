@@ -59,6 +59,8 @@
 #define ETH_P_8021Q	0x8100          /* 802.1Q VLAN Extended Header  */
 #define ETH_P_IPX	0x8137		/* IPX over DIX			*/
 #define ETH_P_IPV6	0x86DD		/* IPv6 over bluebook		*/
+#define ETH_P_WCCP	0x883E		/* Web-cache coordination protocol
+					 * defined in draft-wilson-wrec-wccp-v2-00.txt */
 #define ETH_P_PPP_DISC	0x8863		/* PPPoE discovery messages     */
 #define ETH_P_PPP_SES	0x8864		/* PPPoE session messages	*/
 #define ETH_P_MPLS_UC	0x8847		/* MPLS Unicast traffic		*/
@@ -67,7 +69,7 @@
 #define ETH_P_ATMFATE	0x8884		/* Frame-based ATM Transport
 					 * over Ethernet
 					 */
-#define ETH_P_EDP2	0x88A2		/* Coraid EDP2			*/
+#define ETH_P_AOE	0x88A2		/* ATA over Ethernet		*/
 
 /*
  *	Non DIX types. Won't clash for 1500 types.
@@ -89,16 +91,29 @@
 #define ETH_P_IRDA	0x0017		/* Linux-IrDA			*/
 #define ETH_P_ECONET	0x0018		/* Acorn Econet			*/
 #define ETH_P_HDLC	0x0019		/* HDLC frames			*/
+#define ETH_P_ARCNET	0x001A		/* 1A for ArcNet :-)            */
 
 /*
  *	This is an Ethernet frame header.
  */
  
-struct ethhdr 
-{
+struct ethhdr {
 	unsigned char	h_dest[ETH_ALEN];	/* destination eth addr	*/
 	unsigned char	h_source[ETH_ALEN];	/* source ether addr	*/
 	unsigned short	h_proto;		/* packet type ID field	*/
 } __attribute__((packed));
+
+#ifdef __KERNEL__
+#include <linux/skbuff.h>
+
+static inline struct ethhdr *eth_hdr(const struct sk_buff *skb)
+{
+	return (struct ethhdr *)skb->mac.raw;
+}
+
+#ifdef CONFIG_SYSCTL
+extern struct ctl_table ether_table[];
+#endif
+#endif
 
 #endif	/* _LINUX_IF_ETHER_H */

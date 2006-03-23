@@ -34,7 +34,7 @@ static void help()
 	command_helpall();
 }
 
-int brctl_main(int argc, char *const* argv)
+int main(int argc, char *const* argv)
 {
 	const struct command *cmd;
 	int f;

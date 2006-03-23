@@ -1,3 +1,12 @@
+/* ebt_arpreply
+ *
+ * Authors:
+ * Grzegorz Borowiak <grzes@gnu.univ.gda.pl>
+ * Bart De Schuymer <bdschuym@pandora.be>
+ *
+ *  August, 2003
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -48,17 +57,16 @@ static int parse(int c, char **argv, int argc,
 
 	switch (c) {
 	case REPLY_MAC:
-		check_option(flags, OPT_REPLY_MAC);
+		ebt_check_option2(flags, OPT_REPLY_MAC);
 		if (!(addr = ether_aton(optarg)))
-			print_error("Problem with specified "
-			            "--arpreply-mac mac");
+			ebt_print_error2("Problem with specified --arpreply-mac mac");
 		memcpy(replyinfo->mac, addr, ETH_ALEN);
 		mac_supplied = 1;
 		break;
 	case REPLY_TARGET:
-		check_option(flags, OPT_REPLY_TARGET);
+		ebt_check_option2(flags, OPT_REPLY_TARGET);
 		if (FILL_TARGET(optarg, replyinfo->target))
-			print_error("Illegal --arpreply-target target");
+			ebt_print_error2("Illegal --arpreply-target target");
 		break;
 
 	default:
@@ -74,17 +82,17 @@ static void final_check(const struct ebt_u_entry *entry,
 	struct ebt_arpreply_info *replyinfo =
 	   (struct ebt_arpreply_info *)target->data;
 
-	if (entry->ethproto != ETH_P_ARP || entry->invflags & EBT_IPROTO)
-		print_error("For ARP replying the protocol must be "
-		            "specified as ARP");
-	if (time == 0 && mac_supplied == 0)
-		print_error("No arpreply mac supplied");
-	if (BASE_CHAIN && replyinfo->target == EBT_RETURN)
-		print_error("--arpreply-target RETURN not allowed on "
-		            "base chain");
-	CLEAR_BASE_CHAIN_BIT;
-	if (strcmp(name, "nat") || hookmask & ~(1 << NF_BR_PRE_ROUTING))
-		print_error("arpreply only allowed in PREROUTING");
+	if (entry->ethproto != ETH_P_ARP || entry->invflags & EBT_IPROTO) {
+		ebt_print_error("For ARP replying the protocol must be specified as ARP");
+	} else if (time == 0 && mac_supplied == 0) {
+		ebt_print_error("No arpreply mac supplied");
+	} else if (BASE_CHAIN && replyinfo->target == EBT_RETURN) {
+		ebt_print_error("--arpreply-target RETURN not allowed on base chain");
+	} else {
+		CLEAR_BASE_CHAIN_BIT;
+		if (strcmp(name, "nat") || hookmask & ~(1 << NF_BR_PRE_ROUTING))
+			ebt_print_error("arpreply only allowed in PREROUTING");
+	}
 }
 
 static void print(const struct ebt_u_entry *entry,
@@ -94,7 +102,7 @@ static void print(const struct ebt_u_entry *entry,
 	   (struct ebt_arpreply_info *)target->data;
 
 	printf("--arpreply-mac ");
-	print_mac(replyinfo->mac);
+	ebt_print_mac(replyinfo->mac);
 	if (replyinfo->target == EBT_DROP)
 		return;
 	printf(" --arpreply-target %s", TARGET_NAME(replyinfo->target));
@@ -125,8 +133,7 @@ static struct ebt_u_target arpreply_target =
 	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute__ ((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_target(&arpreply_target);
+	ebt_register_target(&arpreply_target);
 }

@@ -25,6 +25,10 @@ help(void)
     " --winmx	[TCP] 		All known WinMX\n"
     " --soul		[TCP] 		All known SoulSeek\n"
     " --ares		[TCP] 		All known Ares\n\n"
+    " EXPERIMENTAL protocols (please send feedback to: ipp2p@ipp2p.org) :\n"
+    " --mute		[TCP]		All known Mute packets\n"
+    " --waste	[TCP]		All known Waste packets\n"
+    " --xdcc		[TCP]		All known XDCC packets (only xdcc login)\n\n"
     " DEBUG SUPPPORT, use only if you know why\n"
     " --debug		Generate kernel debug output, THIS WILL SLOW DOWN THE FILTER\n"
     "\nNote that the follwing options will have the same meaning:\n"
@@ -50,7 +54,10 @@ static struct option opts[] = {
 	{ "soul", 0, 0, 'd' },	
 	{ "winmx", 0, 0, 'e' },	
 	{ "ares", 0, 0, 'f' },
-	{ "debug", 0, 0, 'g' },
+	{ "mute", 0, 0, 'g' },
+	{ "waste", 0, 0, 'h' },
+	{ "xdcc", 0, 0, 'i' },
+	{ "debug", 0, 0, 'j' },
         {0}
 };
 
@@ -254,8 +261,36 @@ parse(int c, char **argv, int invert, unsigned int *flags,
             *flags += IPP2P_ARES;
 	    info->cmd = *flags;
 	    break;																											
+	
+	case 'g':		/*cmd: mute*/
+            if ((*flags & IPP2P_MUTE) == IPP2P_MUTE)
+            exit_error(PARAMETER_PROBLEM,
+                                "ipp2p: `--mute' may only be "
+                                "specified once!");
+	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
+            *flags += IPP2P_MUTE;
+	    info->cmd = *flags;
+	    break;																											
+	case 'h':		/*cmd: waste*/
+            if ((*flags & IPP2P_WASTE) == IPP2P_WASTE)
+            exit_error(PARAMETER_PROBLEM,
+                                "ipp2p: `--waste' may only be "
+                                "specified once!");
+	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
+            *flags += IPP2P_WASTE;
+	    info->cmd = *flags;
+	    break;																											
+	case 'i':		/*cmd: xdcc*/
+            if ((*flags & IPP2P_XDCC) == IPP2P_XDCC)
+            exit_error(PARAMETER_PROBLEM,
+                                "ipp2p: `--ares' may only be "
+                                "specified once!");
+	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
+            *flags += IPP2P_XDCC;
+	    info->cmd = *flags;
+	    break;																											
 
-	case 'g':		/*cmd: debug*/
+	case 'j':		/*cmd: debug*/
 	    if (invert) exit_error(PARAMETER_PROBLEM, "ipp2p: invert [!] is not allowed!");
 	    info->debug = 1;
 	    break;																											
@@ -302,6 +337,9 @@ print(const struct ipt_ip *ip,
     if ((info->cmd & IPP2P_SOUL) == IPP2P_SOUL) printf(" --soul");
     if ((info->cmd & IPP2P_WINMX) == IPP2P_WINMX) printf(" --winmx");
     if ((info->cmd & IPP2P_ARES) == IPP2P_ARES) printf(" --ares");
+    if ((info->cmd & IPP2P_MUTE) == IPP2P_MUTE) printf(" --mute");
+    if ((info->cmd & IPP2P_WASTE) == IPP2P_WASTE) printf(" --waste");
+    if ((info->cmd & IPP2P_XDCC) == IPP2P_XDCC) printf(" --xdcc");
     if (info->debug != 0) printf(" --debug");
     printf(" ");
 }
@@ -328,6 +366,9 @@ save(const struct ipt_ip *ip, const struct ipt_entry_match *match)
     if ((info->cmd & IPP2P_SOUL) == IPP2P_SOUL) printf("--soul ");
     if ((info->cmd & IPP2P_WINMX) == IPP2P_WINMX) printf("--winmx ");
     if ((info->cmd & IPP2P_ARES) == IPP2P_ARES) printf("--ares ");
+    if ((info->cmd & IPP2P_MUTE) == IPP2P_MUTE) printf(" --mute");
+    if ((info->cmd & IPP2P_WASTE) == IPP2P_WASTE) printf(" --waste");
+    if ((info->cmd & IPP2P_XDCC) == IPP2P_XDCC) printf(" --xdcc");
     if (info->debug != 0) printf("--debug ");
 }
 
