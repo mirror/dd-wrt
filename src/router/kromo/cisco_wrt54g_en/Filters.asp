@@ -3,10 +3,10 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - Access Restrictions</title>
-		<link type="text/css" rel="stylesheet" href="style.css" />
-		<script type="text/JavaScript" src="common.js">{}</script>
-		<script language="JavaScript">
-		
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript">
 <% filter_init(); %>
 var summary_win = null;
 var ipmac_win = null;
@@ -106,13 +106,13 @@ function to_delete(F) {
 
 function valid(F) {
 	if(
-		F.day_all.checked == false && 
-		F.week0.checked == false && 
-		F.week1.checked == false && 
-		F.week2.checked == false && 
-		F.week3.checked == false && 
-		F.week4.checked == false && 
-		F.week5.checked == false && 
+		F.day_all.checked == false &&
+		F.week0.checked == false &&
+		F.week1.checked == false &&
+		F.week2.checked == false &&
+		F.week3.checked == false &&
+		F.week4.checked == false &&
+		F.week5.checked == false &&
 		F.week6.checked == false
 	){
 		alert("You must at least select a day.");
@@ -301,7 +301,7 @@ function Status(F,I) {
 }
 		</script>
 	</head>
-	
+
 	<body class="gui" onunload="exit()" onload="init()"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -432,7 +432,7 @@ function Status(F,I) {
 								<legend>Blocked Services</legend>
 								<div class="setting">
 								<div class="label">Catch all P2P Protocols</div>
-  								<input type="checkbox" name="_filter_p2p" value="1" <% nvram_match("filter_p2p", "1", "checked"); %>/> 
+  								<input type="checkbox" name="_filter_p2p" value="1" <% nvram_match("filter_p2p", "1", "checked"); %>/>
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onChange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">

@@ -1,9 +1,9 @@
 <div class="setting">
 	<div class="label">WPA Algorithms</div>
 	<select name="wl_crypto">
-	<option value="tkip" <% nvram_selmatch("wl_crypto","tkip","selected"); %>>TKIP</option>
-	<option value="aes" <% nvram_selmatch("wl_crypto","aes","selected"); %>>AES</option>
-	<option value="tkip+aes" <% nvram_selmatch("wl_crypto","tkip+aes","selected"); %>>TKIP+AES</option>
+		<option value="tkip" <% nvram_selmatch("wl_crypto","tkip","selected"); %>>TKIP</option>
+		<option value="aes" <% nvram_selmatch("wl_crypto","aes","selected"); %>>AES</option>
+		<option value="tkip+aes" <% nvram_selmatch("wl_crypto","tkip+aes","selected"); %>>TKIP+AES</option>
 	</select>
 </div>
 <div class="setting">

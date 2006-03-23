@@ -1,10 +1,12 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-   <head>   
-      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-      <title><% nvram_get("router_name"); %> - Forward</title>
-      <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
-
+	<head>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+		<title><% nvram_get("router_name"); %> - Forward</title>
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript">
 function forward_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "ForwardSpec";
@@ -48,9 +50,9 @@ function to_submit(F) {
                         <li class="current"><span>Applications&nbsp;&amp;&nbsp;Gaming</span><div id="menuSub">
                               <ul id="menuSubList">
                                  <li><a href="Forward.asp">Port Range Forward</a></li>
-                                 <li><span>Port Forwarding</span></li> 
-                                 <li><a href="Triggering.asp">Port Triggering</a></li> 
-                                 <li><a href="UPnP.asp">UPnP Forward</a></li> 
+                                 <li><span>Port Forwarding</span></li>
+                                 <li><a href="Triggering.asp">Port Triggering</a></li>
+                                 <li><a href="UPnP.asp">UPnP Forward</a></li>
                                  <li><a href="DMZ.asp">DMZ</a></li>
                                  <li><a href="QoS.asp">QoS</a></li>
                               </ul>
