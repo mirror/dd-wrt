@@ -532,9 +532,9 @@ start_restore_defaults (void)
 	    nvram_set (t->name, t->value);
 	}
     }
-  if (restore_defaults && ((brand == ROUTER_BELKIN) || (brand == ROUTER_BUFFALO_WBR2G54S)))	//fix for belkin std ip
+  if (restore_defaults)	//fix for belkin std ip
     {
-      nvram_set ("lan_ipaddr", "192.168.11.1");
+      nvram_set ("lan_ipaddr", "192.168.1.1");
     }
 #ifdef HAVE_SKYTRON
   if (restore_defaults)

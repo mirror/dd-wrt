@@ -40,10 +40,7 @@ init_ddns (void)
       if (nvram_match ("ddns_enable_buf", "1"))
 	{			// before disable is dyndns, so we want to disable dyndns
 	  strcpy (service, "dyndns");
-	  if (getRouterBrand () != ROUTER_BELKIN)
-	    strcpy (disable_ip, "192.168.1.1");	// send this address to disable dyndns
-	  else
-	    strcpy (disable_ip, "192.168.11.1");	// send this address to disable dyndns
+	  strcpy (disable_ip, "192.168.1.1");	// send this address to disable dyndns
 
 	  flag = 1;
 	}
