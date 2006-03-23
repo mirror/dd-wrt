@@ -183,6 +183,29 @@ wlconf_up (char *name)
 #ifdef HAVE_MADWIFI
   return -1;
 #endif
+#ifndef HAVE_BRANDING
+    #ifndef HAVE_FON
+    if (nvram_match("fon_enable","1"))
+    {
+    #endif
+    char *ssid = nvram_get("wl_ssid");
+    if (ssid && strlen(ssid)>0)
+    {
+    if (!startswith(nvram_safe_get("wl_ssid"),"FON_"))
+	{
+	sprintf(tmp,"FON_%s",nvram_safe_get("wl_ssid"));
+	nvram_set("wl_ssid",tmp);
+	}
+    }else
+    {
+    nvram_set("wl_ssid","FON_HotSpot");
+    }
+
+    #ifndef HAVE_FON
+    }    
+    #endif
+
+#endif
 #ifdef HAVE_ONLYCLIENT
   if (nvram_match ("wl_mode", "ap"))
     {
