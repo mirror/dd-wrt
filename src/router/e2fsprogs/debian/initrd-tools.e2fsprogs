@@ -1,0 +1,27 @@
+#!/bin/sh
+#
+# /usr/share/initrd-tools/scripts/e2fsprogs
+#
+cp /usr/share/e2fsprogs/initrd.ext3-add-journal \
+    $INITRDDIR/scripts/ext3-add-journal.sh
+cp /sbin/tune2fs $INITRDDIR/sbin
+cp /usr/lib/e2initrd_helper $INITRDDIR/bin/e2initrd_helper
+
+case "$VERSION" in
+    2.4.*)
+    	LD_ASSUME_KERNEL=2.4
+	export LD_ASSUME_KERNEL
+	;;
+esac
+
+PROGS="/sbin/tune2fs /usr/lib/e2initrd_helper"
+LIBS=`unset LD_LIBRARY_PATH LD_PRELOAD; ldd $PROGS | \
+    grep -v 'linux-gate.so' | sort -u | awk '{print $3}'` 
+for i in $LIBS
+do
+  	if test -f /etc/ld.so.preload && grep -s ^$i\$ /etc/ld.so.preload; then
+	    continue
+	fi
+	mkdir -p `dirname $INITRDDIR/$i`
+	cp $i $INITRDDIR/$i
+done

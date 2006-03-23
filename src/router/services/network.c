@@ -184,6 +184,8 @@ wlconf_up (char *name)
   return -1;
 #endif
 #ifndef HAVE_BRANDING
+if (nvram_match("wl_mode","ap"))
+{
     #ifndef HAVE_FON
     if (nvram_match("fon_enable","1"))
     {
@@ -204,7 +206,7 @@ wlconf_up (char *name)
     #ifndef HAVE_FON
     }    
     #endif
-
+}
 #endif
 #ifdef HAVE_ONLYCLIENT
   if (nvram_match ("wl_mode", "ap"))
