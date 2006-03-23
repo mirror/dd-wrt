@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																				/* channel info structure *///from 11.9
+																							    /* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -1470,13 +1470,13 @@ get_wep_value (char *type, char *_bit, char *prefix)
     if (!wl_key4 || !wl_key_tx)
       continue;
 
-    cprintf("key1 = %s\n",wl_key1);
-    cprintf("key2 = %s\n",wl_key2);
-    cprintf("key3 = %s\n",wl_key3);
-    cprintf("key4 = %s\n",wl_key4);
-    cprintf("pass = %s\n",wl_passphrase);
-    
-    
+    cprintf ("key1 = %s\n", wl_key1);
+    cprintf ("key2 = %s\n", wl_key2);
+    cprintf ("key3 = %s\n", wl_key3);
+    cprintf ("key4 = %s\n", wl_key4);
+    cprintf ("pass = %s\n", wl_passphrase);
+
+
     if (!strcmp (type, "passphrase"))
       {
 	return wl_passphrase;
@@ -1516,20 +1516,20 @@ ej_get_wep_value (int eid, webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return -1;
     }
-cprintf("get wep value %s\n",type);
+  cprintf ("get wep value %s\n", type);
 #ifdef HAVE_MADWIFI
   bit = GOZILA_GET ("ath0_wep_bit");
 
   value = get_wep_value (type, bit, "ath0");
 #else
   bit = GOZILA_GET ("wl_wep_bit");
-  cprintf("bit = %s\n",bit);
+  cprintf ("bit = %s\n", bit);
   value = get_wep_value (type, bit, "wl");
 #endif
-  cprintf("value = %s\n",value);
+  cprintf ("value = %s\n", value);
   httpd_filter_name (value, new_value, sizeof (new_value), GET);
-  cprintf("newvalue = %s\n",new_value);
-  
+  cprintf ("newvalue = %s\n", new_value);
+
   return websWrite (wp, "%s", new_value);
 }
 
@@ -1615,7 +1615,7 @@ generate_wep_key (int key, char *prefix)
   passphrase = websGetVar (wp, var, NULL);
   sprintf (var, "%s_key", prefix);
   tx = websGetVar (wp, var, NULL);
-  cprintf("bits = %s\n",bit);
+  cprintf ("bits = %s\n", bit);
   if (!bit || !passphrase || !tx)
     return 0;
 
@@ -1623,60 +1623,60 @@ generate_wep_key (int key, char *prefix)
 
   if (atoi (bit) == 64)
     {
-  char key1[27] = "";
-  char key2[27] = "";
-  char key3[27] = "";
-  char key4[27] = "";
+      char key1[27] = "";
+      char key2[27] = "";
+      char key3[27] = "";
+      char key4[27] = "";
       for (i = 0; i < 5; i++)
-	sprintf (key1 + (i<<1), "%02X", key64[0][i]);
+	sprintf (key1 + (i << 1), "%02X", key64[0][i]);
       for (i = 0; i < 5; i++)
-	sprintf (key2 + (i<<1), "%02X", key64[1][i]);
+	sprintf (key2 + (i << 1), "%02X", key64[1][i]);
       for (i = 0; i < 5; i++)
-	sprintf (key3 + (i<<1), "%02X", key64[2][i]);
+	sprintf (key3 + (i << 1), "%02X", key64[2][i]);
       for (i = 0; i < 5; i++)
-	sprintf (key4 + (i<<1), "%02X", key64[3][i]);
+	sprintf (key4 + (i << 1), "%02X", key64[3][i]);
 
       snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", passphrase, key1,
 		key2, key3, key4, tx);
       //nvram_set("wl_wep_gen_64",buf);
-      cprintf("buf = %s\n",buf);
+      cprintf ("buf = %s\n", buf);
       sprintf (var, "%s_wep_gen", prefix);
 
       nvram_set (var, buf);
     }
   else if (atoi (bit) == 128)
     {
-  char key1[27] = "";
-  char key2[27] = "";
-  char key3[27] = "";
-  char key4[27] = "";
-  
-      for (i = 0; i < 13; i++)
-	sprintf (key1 + (i<<1), "%02X", key128[0][i]);
-      key1[26]=0;
+      char key1[27] = "";
+      char key2[27] = "";
+      char key3[27] = "";
+      char key4[27] = "";
 
       for (i = 0; i < 13; i++)
-	sprintf (key2 + (i<<1), "%02X", key128[1][i]);
-      key2[26]=0;
+	sprintf (key1 + (i << 1), "%02X", key128[0][i]);
+      key1[26] = 0;
 
       for (i = 0; i < 13; i++)
-	sprintf (key3 + (i<<1), "%02X", key128[2][i]);
-      key3[26]=0;
+	sprintf (key2 + (i << 1), "%02X", key128[1][i]);
+      key2[26] = 0;
 
       for (i = 0; i < 13; i++)
-	sprintf (key4 + (i<<1), "%02X", key128[3][i]);
-      key4[26]=0;
+	sprintf (key3 + (i << 1), "%02X", key128[2][i]);
+      key3[26] = 0;
+
+      for (i = 0; i < 13; i++)
+	sprintf (key4 + (i << 1), "%02X", key128[3][i]);
+      key4[26] = 0;
       //cprintf("passphrase[%s]\n", passphrase);
       //filter_name(passphrase, new_passphrase, sizeof(new_passphrase), SET);
       //cprintf("new_passphrase[%s]\n", new_passphrase);
-      cprintf("key1 = %s\n",key1);
-      cprintf("key2 = %s\n",key2);
-      cprintf("key3 = %s\n",key3);
-      cprintf("key4 = %s\n",key4);
-      
+      cprintf ("key1 = %s\n", key1);
+      cprintf ("key2 = %s\n", key2);
+      cprintf ("key3 = %s\n", key3);
+      cprintf ("key4 = %s\n", key4);
+
       snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", passphrase, key1,
 		key2, key3, key4, tx);
-      cprintf("buf = %s\n",buf);
+      cprintf ("buf = %s\n", buf);
       //nvram_set("wl_wep_gen_128",buf);
       sprintf (var, "%s_wep_gen", prefix);
       nvram_set (var, buf);
@@ -1689,7 +1689,7 @@ int
 generate_key_64 (webs_t wp)
 {
   int ret;
-cprintf("gen wep key 64");
+  cprintf ("gen wep key 64");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
   ret = generate_wep_key (64, websGetVar (wp, "security_varname", "ath0"));
@@ -1703,7 +1703,7 @@ int
 generate_key_128 (webs_t wp)
 {
   int ret;
-cprintf("gen wep key 128");
+  cprintf ("gen wep key 128");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
   ret = generate_wep_key (128, websGetVar (wp, "security_varname", "ath0"));
