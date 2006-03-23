@@ -1,0 +1,817 @@
+AC_INIT(version.h)
+AC_PREREQ(2.50)
+AC_CONFIG_AUX_DIR(config)
+MCONFIG=./MCONFIG
+AC_SUBST_FILE(MCONFIG)
+BINARY_TYPE=bin
+dnl
+dnl This is to figure out the version number and the date....
+dnl
+E2FSPROGS_VERSION=`grep E2FSPROGS_VERSION ${srcdir}/version.h  \
+	| awk '{print $3}' | tr \" " " | awk '{print $1}'`
+DATE=`grep E2FSPROGS_DATE ${srcdir}/version.h | awk '{print $3}' \
+	| tr \" " "`
+E2FSPROGS_DAY=`echo $DATE | awk -F- '{print $1}'`
+MONTH=`echo $DATE | awk -F- '{print $2}'`
+YEAR=`echo $DATE | awk -F- '{print $3}'`
+
+if expr $YEAR ">" 1900 > /dev/null ; then
+	E2FSPROGS_YEAR=$YEAR
+elif expr $YEAR ">" 90 >/dev/null ; then
+	E2FSPROGS_YEAR=19$YEAR
+else
+	E2FSPROGS_YEAR=20$YEAR
+fi
+
+case $MONTH in
+Jan)	E2FSPROGS_MONTH="January" ;;
+Feb)	E2FSPROGS_MONTH="February" ;;
+Mar)	E2FSPROGS_MONTH="March" ;;
+Apr)	E2FSPROGS_MONTH="April" ;;
+May)	E2FSPROGS_MONTH="May" ;;
+Jun)	E2FSPROGS_MONTH="June" ;;
+Jul)	E2FSPROGS_MONTH="July" ;;
+Aug)	E2FSPROGS_MONTH="August" ;;
+Sep)	E2FSPROGS_MONTH="September" ;;
+Oct)	E2FSPROGS_MONTH="October" ;;
+Nov)	E2FSPROGS_MONTH="November" ;;
+Dec)	E2FSPROGS_MONTH="December" ;;
+*)	echo "Unknown month $MONTH??" ;;
+esac
+
+unset DATE MONTH YEAR
+echo "Generating configuration file for e2fsprogs version $E2FSPROGS_VERSION"
+echo "Release date is ${E2FSPROGS_MONTH}, ${E2FSPROGS_YEAR}"
+AC_SUBST(E2FSPROGS_YEAR)
+AC_SUBST(E2FSPROGS_MONTH)
+AC_SUBST(E2FSPROGS_DAY)
+AC_SUBST(E2FSPROGS_VERSION)
+AC_CANONICAL_HOST
+dnl
+dnl Use diet libc
+dnl 
+AC_ARG_WITH([diet-libc],
+[  --with-diet-libc      Use diet libc],
+CC="diet cc -nostdinc"
+AC_MSG_RESULT(CC=$CC))dnl
+dnl
+dnl set $(CC) from --with-cc=value
+dnl
+AC_ARG_WITH([cc],
+[  --with-cc=COMPILER      select compiler to use],
+AC_MSG_RESULT(CC=$withval)
+CC=$withval,
+if test -z "$CC" ; then CC=cc; fi
+[AC_MSG_RESULT(CC defaults to $CC)])dnl
+export CC
+AC_SUBST([CC])
+AC_PROG_CC
+dnl
+dnl set $(LD) from --with-linker=value
+dnl
+AC_ARG_WITH([linker],
+[  --with-linker=LINKER    select linker to use],
+AC_MSG_RESULT(LD=$withval)
+LD=$withval,
+if test -z "$LD" ; then LD=$CC; fi
+[AC_MSG_RESULT(LD defaults to $LD)])dnl
+export LD
+AC_SUBST([LD])
+dnl
+dnl set $(CCOPTS) from --with-ccopts=value
+dnl
+AC_ARG_WITH([ccopts],
+[  --with-ccopts=CCOPTS    select compiler command line options],
+AC_MSG_RESULT(CCOPTS is $withval)
+CFLAGS=$withval,
+)dnl
+dnl
+dnl On systems without linux header files, we add an extra include directory
+dnl that holds enough to fake it (hopefully).  Note that the $(top_srcdir) here
+dnl is quoted so that it gets expanded by make, not by configure.
+dnl
+AC_CHECK_HEADER(linux/fs.h, [linux_headers=yes], [linux_headers=no])
+if test "$linux_headers" != yes; then
+  LINUX_INCLUDE='-I$(top_builddir)/include'
+fi
+AC_SUBST(LINUX_INCLUDE)
+dnl
+dnl Alpha computers use fast and imprecise floating point code that may
+dnl miss exceptions by default. Force sane options if we're using GCC.
+AC_MSG_CHECKING(for additional special compiler flags)
+if test "$GCC" = yes
+then
+    case "$host_cpu" in
+	alpha)		addcflags="-mieee" ;;
+    esac
+fi
+if test "x$addcflags" != x
+then
+    AC_MSG_RESULT($addcflags)
+    CFLAGS="$addcflags $CFLAGS"
+else
+    AC_MSG_RESULT([[(none)]])
+fi
+dnl
+dnl Set default values for library extentions.  Will be dealt with after
+dnl parsing configuration opions, which may modify these
+dnl
+LIB_EXT=.a
+STATIC_LIB_EXT=.a
+PROFILE_LIB_EXT=.a
+dnl
+dnl set $(LDFLAGS) from --with-ldopts=value
+dnl
+AC_ARG_WITH([ldopts],
+[  --with-ldopts=LDOPTS    select linker command line options],
+AC_MSG_RESULT(LDFLAGS is $withval)
+LDFLAGS=$withval,
+LDFLAGS=)dnl
+AC_SUBST(LDFLAGS)
+dnl
+dnl Allow separate `root_prefix' to be specified
+dnl
+AC_ARG_WITH([root-prefix],
+[  --with-root-prefix=PREFIX override prefix variable for files to be placed in the root],
+root_prefix=$withval,
+root_prefix=NONE)dnl
+dnl
+dnl handle --enable-maintainer-mode
+dnl
+AC_ARG_ENABLE([maintainer-mode],
+[  --enable-maintainer-mode enable makefile rules useful for maintainers],
+if test "$enableval" = "no"
+then
+	MAINTAINER_CMT=#
+	echo "Disabling maintainer mode"
+else
+	MAINTAINER_CMT=
+	echo "Enabling maintainer mode"
+fi
+,
+MAINTAINER_CMT=#
+echo "Disabling maintainer mode by default"
+)
+AC_SUBST(MAINTAINER_CMT)
+dnl
+dnl handle --enable-compression
+dnl
+AC_ARG_ENABLE([compression],
+[  --enable-compression	  enable EXPERIMENTAL compression support],
+if test "$enableval" = "no"
+then
+	echo "Disabling compression support"
+else
+	AC_DEFINE(ENABLE_COMPRESSION)
+	echo "Enabling compression support"
+	echo "WARNING: Compression support is experimental"
+fi
+,
+echo "Disabling compression support by default"
+)
+dnl
+dnl handle --enable-htree
+dnl
+AC_ARG_ENABLE([htree],
+[  --enable-htree      	  enable EXPERIMENTAL htree directory support],
+if test "$enableval" = "no"
+then
+	HTREE_CMT=#
+	echo "Disabling htree directory support"
+else
+	HTREE_CMT=
+	AC_DEFINE(ENABLE_HTREE)
+	echo "Enabling htree directory support"
+fi
+,
+HTREE_CMT=
+AC_DEFINE(ENABLE_HTREE)
+echo "Enabling htree directory support by default"
+)
+AC_SUBST(HTREE_CMT)
+dnl
+dnl handle --enable-elf-shlibs
+dnl
+AC_ARG_ENABLE([elf-shlibs],
+[  --enable-elf-shlibs	  select ELF shared libraries],
+if test "$enableval" = "no"
+then
+	ELF_CMT=#
+	MAKEFILE_ELF=/dev/null
+	echo "Disabling ELF shared libraries"
+else
+	ELF_CMT=
+	MAKEFILE_ELF=$srcdir/lib/Makefile.elf-lib
+	[case "$host_os" in
+	solaris2.*)
+		MAKEFILE_ELF=$srcdir/lib/Makefile.solaris-lib
+	;;
+	esac]
+	BINARY_TYPE=elfbin
+	LIB_EXT=.so
+	echo "Enabling ELF shared libraries"
+fi
+,
+MAKEFILE_ELF=/dev/null
+ELF_CMT=#
+echo "Disabling ELF shared libraries by default"
+)
+AC_SUBST(ELF_CMT)
+AC_SUBST_FILE(MAKEFILE_ELF)
+dnl
+dnl handle --enable-bsd-shlibs
+dnl
+AC_ARG_ENABLE([bsd-shlibs],
+[  --enable-bsd-shlibs	  select BSD shared libraries],
+if test "$enableval" = "no"
+then
+	BSDLIB_CMT=#
+	MAKEFILE_BSDLIB=/dev/null
+	echo "Disabling BSD shared libraries"
+else
+	BSDLIB_CMT=
+	MAKEFILE_BSDLIB=$srcdir/lib/Makefile.bsd-lib
+	LIB_EXT=.so
+	[case "$host_os" in
+	darwin*)
+		MAKEFILE_BSDLIB=$srcdir/lib/Makefile.darwin-lib
+		LIB_EXT=.dylib
+	;;
+	esac]
+	echo "Enabling BSD shared libraries"
+fi
+,
+MAKEFILE_BSDLIB=/dev/null
+BSDLIB_CMT=#
+echo "Disabling BSD shared libraries by default"
+)
+AC_SUBST(BSDLIB_CMT)
+AC_SUBST_FILE(MAKEFILE_BSDLIB)
+dnl
+dnl handle --enable-profile
+dnl
+AC_ARG_ENABLE([profile],
+[  --enable-profile	  build profiling libraries],
+if test "$enableval" = "no"
+then
+	PROFILE_CMT=#
+	MAKEFILE_PROFILE=/dev/null
+	echo "Disabling profiling libraries"
+else
+	PROFILE_CMT=
+	MAKEFILE_PROFILE=$srcdir/lib/Makefile.profile
+	PROFILED_LIB_EXT=_p.a
+	echo "Building profiling libraries"
+fi
+,
+PROFILE_CMT=#
+MAKEFILE_PROFILE=/dev/null
+echo "Disabling profiling libraries by default"
+)
+AC_SUBST(PROFILE_CMT)
+AC_SUBST_FILE(MAKEFILE_PROFILE)
+dnl
+dnl handle --enable-checker
+dnl
+AC_ARG_ENABLE([checker],
+[  --enable-checker	  build checker libraries],
+if test "$enableval" = "no"
+then
+	CHECKER_CMT=#
+	MAKEFILE_CHECKER=/dev/null
+	echo "Disabling checker libraries"
+else
+	CHECKER_CMT=
+	MAKEFILE_CHECKER=$srcdir/lib/Makefile.checker
+	echo "Building checker libraries"
+fi
+,
+CHECKER_CMT=#
+MAKEFILE_CHECKER=/dev/null
+echo "Disabling checker libraries by default"
+)
+AC_SUBST(CHECKER_CMT)
+AC_SUBST_FILE(MAKEFILE_CHECKER)
+dnl
+dnl Substitute library extensions
+dnl
+AC_SUBST(LIB_EXT)
+AC_SUBST(STATIC_LIB_EXT)
+AC_SUBST(PROFILED_LIB_EXT)
+dnl
+dnl handle --enable-jbd-debug
+dnl
+AC_ARG_ENABLE([jbd-debug],
+[  --enable-jbd-debug  	  enable journal debugging],
+if test "$enableval" = "no"
+then
+	echo "Disabling journal debugging"
+else
+	AC_DEFINE(CONFIG_JBD_DEBUG)
+	echo "Enabling journal debugging"
+fi
+,
+echo "Disabling journal debugging by default"
+)
+dnl
+dnl handle --enable-blkid-debug
+dnl
+AC_ARG_ENABLE([blkid-debug],
+[  --enable-blkid-debug    enable blkid debugging],
+if test "$enableval" = "no"
+then
+	echo "Disabling blkid debugging"
+else
+	AC_DEFINE(CONFIG_BLKID_DEBUG)
+	echo "Enabling blkid debugging"
+fi
+,
+echo "Disabling blkid debugging by default"
+)
+dnl
+dnl handle --enable-testio-debug
+dnl
+AC_ARG_ENABLE([testio-debug],
+[  --enable-testio-debug   enable the use of the test I/O manager for debugging],
+if test "$enableval" = "no"
+then
+	echo "Disabling testio debugging"
+else
+	AC_DEFINE(CONFIG_TESTIO_DEBUG)
+	echo "Enabling testio debugging"
+fi
+,
+echo "Disabling testio debugging by default"
+)
+dnl
+dnl handle --enable-swapfs
+dnl
+AC_ARG_ENABLE([swapfs],
+[  --disable-swapfs    	  disable support of legacy byte-swapped filesystems],
+if test "$enableval" = "no"
+then
+	SWAPFS_CMT=#
+	echo "Disabling swapfs support"
+else
+	SWAPFS_CMT=
+	AC_DEFINE(ENABLE_SWAPFS)
+	echo "Enabling swapfs support"
+fi
+,
+SWAPFS_CMT=
+echo "Enabling swapfs support by default"
+AC_DEFINE(ENABLE_SWAPFS)
+)
+AC_SUBST(SWAPFS_CMT)
+dnl
+dnl handle --enable-debugfs
+dnl
+AC_ARG_ENABLE([debugfs],
+[  --disable-debugfs   	  disable support of debugfs program],
+if test "$enableval" = "no"
+then
+	echo "Disabling debugfs support"
+	DEBUGFS_CMT="#"
+else
+	DEBUGFS_CMT=
+	echo "Enabling debugfs support"
+fi
+,
+echo "Enabling debugfs support by default"
+DEBUGFS_CMT=
+)
+AC_SUBST(DEBUGFS_CMT)
+dnl
+dnl handle --enable-imager
+dnl
+AC_ARG_ENABLE([imager],
+[  --disable-imager   	  disable support of e2image program],
+if test "$enableval" = "no"
+then
+	echo "Disabling e2image support"
+	IMAGER_CMT="#"
+else
+	IMAGER_CMT=
+	echo "Enabling e2image support"
+fi
+,
+echo "Enabling e2image support by default"
+IMAGER_CMT=
+)
+AC_SUBST(IMAGER_CMT)
+dnl
+dnl handle --enable-resizer
+dnl
+AC_ARG_ENABLE([resizer],
+[  --disable-resizer   	  disable support of e2resize program],
+if test "$enableval" = "no"
+then
+	echo "Disabling e2resize support"
+	RESIZER_CMT="#"
+else
+	RESIZER_CMT=
+	echo "Enabling e2resize support"
+fi
+,
+echo "Enabling e2resize support by default"
+RESIZER_CMT=
+)
+AC_SUBST(RESIZER_CMT)
+dnl
+dnl handle --enable-dynamic-e2fsck
+dnl
+AC_ARG_ENABLE([dynamic-e2fsck],
+[  --enable-dynamic-e2fsck build e2fsck dynamically],
+if test "$enableval" = "no"
+then
+	E2FSCK_TYPE=static
+	echo "Building e2fsck statically"
+else
+	E2FSCK_TYPE=shared
+	echo "Building e2fsck dynamically"
+fi
+,
+E2FSCK_TYPE=static
+echo "Building e2fsck statically by default"
+)
+AC_SUBST(E2FSCK_TYPE)
+dnl
+dnl See whether to install the `fsck' wrapper program (that calls e2fsck)
+dnl
+AC_ARG_ENABLE([fsck],
+[  --enable-fsck           build fsck wrapper program],
+[if test "$enableval" = "no"
+then
+	FSCK_PROG='' FSCK_MAN=''
+	echo "Not building fsck wrapper"
+else
+	FSCK_PROG=fsck FSCK_MAN=fsck.8
+	echo "Building fsck wrapper"
+fi]
+,
+[case "$host_os" in
+  gnu*)
+    FSCK_PROG='' FSCK_MAN=''
+    echo "Not building fsck wrapper by default"
+    ;;
+  *)
+    FSCK_PROG=fsck FSCK_MAN=fsck.8
+    echo "Building fsck wrapper by default"
+esac]
+)
+AC_SUBST(FSCK_PROG)
+AC_SUBST(FSCK_MAN)
+dnl
+dnl See whether to install the `e2initrd-helper' program
+dnl
+AC_ARG_ENABLE([e2initrd-helper],
+[  --enable-e2initrd-helper build e2initrd-helper program],
+[if test "$enableval" = "no"
+then
+	E2INITRD_PROG='' E2INITRD_MAN=''
+	echo "Not building e2initrd helper"
+else
+	E2INITRD_PROG=e2initrd_helper E2INITRD_MAN=e2initrd_helper.8
+	echo "Building e2initrd helper"
+fi]
+,
+E2INITRD_PROG=e2initrd_helper E2INITRD_MAN=e2initrd_helper.8
+echo "Building e2initrd helper by default"
+)
+AC_SUBST(E2INITRD_PROG)
+AC_SUBST(E2INITRD_MAN)
+dnl
+dnl
+MAKEFILE_LIBRARY=$srcdir/lib/Makefile.library
+AC_SUBST_FILE(MAKEFILE_LIBRARY)
+dnl
+dnl Add internationalization support, using gettext.
+dnl
+GETTEXT_PACKAGE=e2fsprogs
+PACKAGE=e2fsprogs
+VERSION="$E2FSPROGS_VERSION"
+VERSION=0.14.1
+AC_DEFINE_UNQUOTED(PACKAGE, "$PACKAGE")
+AC_DEFINE_UNQUOTED(VERSION, "$VERSION")
+AC_SUBST(GETTEXT_PACKAGE)
+AC_SUBST(PACKAGE)
+AC_SUBST(VERSION)
+
+AM_GNU_GETTEXT
+dnl
+dnl End of configuration options
+dnl
+AC_SUBST(BINARY_TYPE)
+AC_PROG_MAKE_SET
+AC_PATH_PROG(LN, ln, ln)
+AC_PROG_LN_S
+AC_PATH_PROG(MV, mv, mv)
+AC_PATH_PROG(CP, cp, cp)
+AC_PATH_PROG(RM, rm, rm)
+AC_PATH_PROG(CHMOD, chmod, :)
+AC_PROG_AWK
+AC_PROG_EGREP
+AC_PATH_PROG(SED, sed, sed)
+AC_PATH_PROG(PERL, perl, perl)
+AC_PATH_PROG(LDCONFIG, ldconfig, :)
+AC_CHECK_TOOL(AR, ar, ar)
+AC_CHECK_TOOL(RANLIB, ranlib, :)
+AC_CHECK_TOOL(STRIP, strip, :)
+AC_PROG_INSTALL
+# See if we need a separate native compiler.
+if test $cross_compiling = no; then
+  BUILD_CC="$CC"
+  AC_SUBST(BUILD_CC)
+else
+  AC_CHECK_PROGS(BUILD_CC, gcc cc)
+fi
+AC_CHECK_HEADERS(stdlib.h unistd.h stdarg.h stdint.h errno.h malloc.h mntent.h paths.h dirent.h getopt.h setjmp.h signal.h termios.h linux/fd.h linux/major.h sys/disklabel.h sys/ioctl.h sys/mkdev.h sys/prctl.h sys/queue.h sys/sockio.h sys/socket.h sys/sysmacros.h sys/time.h sys/stat.h sys/types.h sys/wait.h sys/resource.h net/if_dl.h netinet/in.h)
+AC_CHECK_HEADERS(sys/disk.h sys/mount.h,,,
+[[
+#if HAVE_SYS_QUEUE_H
+#include <sys/queue.h>
+#endif
+]])
+AC_CHECK_HEADERS(net/if.h,,,
+[[
+#if HAVE_SYS_TYPES_H
+#include <sys/types.h>
+#endif
+#if HAVE_SYS_SOCKET
+#include <sys/socket.h>
+#endif
+]])
+AC_FUNC_VPRINTF
+dnl Check to see if dirent has member d_reclen. On cygwin those d_reclen
+dnl is not decleared.
+AC_CHECK_MEMBER(struct dirent.d_reclen,[AC_DEFINE(HAVE_RECLEN_DIRENT)],,
+		[#include <dirent.h>])
+dnl Check to see if ssize_t was decleared
+AC_CHECK_TYPE(ssize_t,[AC_DEFINE(HAVE_TYPE_SSIZE_T)],,
+	      [#include <sys/types.h>])
+dnl
+dnl Check to see if llseek() is declared in unistd.h.  On some libc's 
+dnl it is, and on others it isn't..... Thank you glibc developers....
+dnl
+AC_CHECK_DECL(llseek,[AC_DEFINE(HAVE_LLSEEK_PROTOTYPE)],,
+	      [#include <unistd.h>])
+dnl
+dnl Check to see if lseek64() is declared in unistd.h.  Glibc's header files
+dnl are so convoluted that I can't tell whether it will always be defined,
+dnl and if it isn't defined while lseek64 is defined in the library, 
+dnl disaster will strike.  
+dnl
+dnl Warning!  Use of --enable-gcc-wall may throw off this test.
+dnl
+dnl
+AC_CHECK_DECL(lseek64,[AC_DEFINE(HAVE_LSEEK64_PROTOTYPE)],,
+		[#define _LARGEFILE_SOURCE
+		 #define _LARGEFILE64_SOURCE
+		 #include <unistd.h>])
+dnl
+dnl Word sizes...
+dnl
+if test "$cross_compiling" = yes -a "$ac_cv_sizeof_long" = ""; then
+  # if cross-compiling, with no cached values, just assume something common. 
+  ac_cv_sizeof_short=2
+  ac_cv_sizeof_int=4
+  ac_cv_sizeof_long=4
+  ac_cv_sizeof_long_long=8
+  AC_MSG_WARN([Cross-compiling, so cannot check type sizes; assuming short=2, int=4, long=4, long long=8])
+fi
+AC_CHECK_SIZEOF(short)
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
+AC_CHECK_SIZEOF(long long)
+SIZEOF_SHORT=$ac_cv_sizeof_short
+SIZEOF_INT=$ac_cv_sizeof_int
+SIZEOF_LONG=$ac_cv_sizeof_long
+SIZEOF_LONG_LONG=$ac_cv_sizeof_long_long
+AC_SUBST(SIZEOF_SHORT)
+AC_SUBST(SIZEOF_INT)
+AC_SUBST(SIZEOF_LONG)
+AC_SUBST(SIZEOF_LONG_LONG)
+AC_C_BIGENDIAN
+dnl
+dnl See if we have inttypes.h and if intptr_t is defined
+dnl
+AC_CHECK_HEADERS([inttypes.h])
+AC_CHECK_TYPES(intptr_t)
+dnl
+dnl See if struct stat has a st_flags field, in which case we can get file
+dnl flags somewhat portably.  Also check for the analogous setter, chflags().
+dnl
+AC_MSG_CHECKING(whether struct stat has a st_flags field)
+AC_CACHE_VAL(e2fsprogs_cv_struct_st_flags,
+	AC_TRY_COMPILE([#include <sys/stat.h>],
+		[struct stat stat; stat.st_flags = 0;],
+		[e2fsprogs_cv_struct_st_flags=yes],
+		[e2fsprogs_cv_struct_st_flags=no]))
+AC_MSG_RESULT($e2fsprogs_cv_struct_st_flags)
+if test "$e2fsprogs_cv_struct_st_flags" = yes; then
+  AC_MSG_CHECKING(whether st_flags field is useful)
+  AC_CACHE_VAL(e2fsprogs_cv_struct_st_flags_immut,
+	AC_TRY_COMPILE([#include <sys/stat.h>],
+		[struct stat stat; stat.st_flags |= UF_IMMUTABLE;],
+		[e2fsprogs_cv_struct_st_flags_immut=yes],
+		[e2fsprogs_cv_struct_st_flags_immut=no]))
+  AC_MSG_RESULT($e2fsprogs_cv_struct_st_flags_immut)
+  if test "$e2fsprogs_cv_struct_st_flags_immut" = yes; then
+	  AC_DEFINE(HAVE_STAT_FLAGS)
+  fi
+fi
+dnl
+dnl Check for the presence of SA_LEN
+dnl
+AC_CHECK_MEMBER(struct sockaddr.sa_len,
+		AC_DEFINE_UNQUOTED(HAVE_SA_LEN,1,[Define if struct sockaddr contains sa_len]),,
+	[#include <sys/types.h>
+	 #include <sys/socket.h>])
+dnl
+AC_CHECK_FUNCS(chflags getrusage llseek lseek64 open64 getmntinfo strtoull strcasecmp srandom fchown mallinfo fdatasync strnlen strptime sysconf pathconf posix_memalign memalign valloc __secure_getenv prctl)
+dnl
+dnl Check to see if -lsocket is required (solaris) to make something
+dnl that uses socket() to compile; this is needed for the UUID library
+dnl
+SOCKET_LIB=''
+AC_CHECK_LIB(socket, socket, [SOCKET_LIB=-lsocket])
+AC_SUBST(SOCKET_LIB)
+dnl
+dnl Check to see if libdl exists for the sake of dlopen
+dnl
+DLOPEN_LIB=''
+AC_CHECK_LIB(dl, dlopen, 
+[DLOPEN_LIB=-ldl
+AC_DEFINE(HAVE_DLOPEN)])
+AC_SUBST(DLOPEN_LIB)
+dnl
+dnl See if optreset exists
+dnl
+AC_MSG_CHECKING(for optreset)
+AC_CACHE_VAL(ac_cv_have_optreset,
+[AC_EGREP_HEADER(optreset, unistd.h,
+  ac_cv_have_optreset=yes, ac_cv_have_optreset=no)])dnl
+AC_MSG_RESULT($ac_cv_have_optreset)
+if test $ac_cv_have_optreset = yes; then
+  AC_DEFINE(HAVE_OPTRESET)
+fi
+dnl
+dnl We use the EXT2 ioctls only under Linux
+dnl
+case "$host_os" in
+linux*)
+	AC_DEFINE(HAVE_EXT2_IOCTLS)
+	;;
+esac
+dnl
+dnl OS-specific uncomment control
+dnl
+LINUX_CMT="#"
+CYGWIN_CMT="#"
+UNIX_CMT=
+case "$host_os" in
+linux*)
+	LINUX_CMT=
+	;;
+cygwin)
+	CYGWIN_CMT=
+	UNIX_CMT="#"
+	;;
+esac
+AC_SUBST(LINUX_CMT)
+AC_SUBST(CYGWIN_CMT)
+AC_SUBST(UNIX_CMT)
+dnl
+dnl Linux and Hurd places root files in the / by default
+dnl
+case "$host_os" in
+linux* | gnu* | k*bsd*-gnu)
+	if test "$prefix" = NONE -a "$root_prefix" = NONE ; then
+		root_prefix="";
+		echo "On $host_os systems, root_prefix defaults to ''"
+	fi
+	;;
+esac
+dnl
+dnl On Linux/hurd, force the prefix to be /usr
+dnl
+case "$host_os" in
+linux* | gnu* | k*bsd*-gnu)
+	if test "$prefix" = NONE ; then
+		prefix="/usr";
+		echo "On $host_os systems, prefix defaults to /usr"
+		if test "$mandir" = '${prefix}/man' ; then
+			echo "...and mandir defaults to /usr/share/man"
+			mandir=/usr/share/man
+		fi
+	fi
+;;
+esac
+if test "$root_prefix" = NONE ; then
+	if test "$prefix" = NONE ; then
+		root_prefix="$ac_default_prefix"
+	else
+		root_prefix="$prefix"
+	fi
+	root_bindir=$bindir
+	root_sbindir=$sbindir
+	root_libdir=$libdir
+	root_sysconfdir=$sysconfdir
+else
+	root_bindir='${root_prefix}/bin'
+	root_sbindir='${root_prefix}/sbin'
+	root_libdir='${root_prefix}/lib'
+	root_sysconfdir='${root_prefix}/etc'
+fi
+AC_SUBST(root_prefix)
+AC_SUBST(root_bindir)
+AC_SUBST(root_sbindir)
+AC_SUBST(root_libdir)
+AC_SUBST(root_sysconfdir)
+dnl
+dnl See if -static works.
+dnl
+AC_MSG_CHECKING([whether linker accepts -static])
+AC_CACHE_VAL(ac_cv_e2fsprogs_use_static,
+[SAVE_LDFLAGS=$LDFLAGS; LDFLAGS="$LDFLAGS -static"
+AC_TRY_LINK([#include <stdio.h>],[fflush(stdout);],
+ ac_cv_e2fsprogs_use_static=yes, ac_cv_e2fsprogs_use_static=no)
+LDFLAGS=$SAVE_LDFLAGS])
+dnl
+dnl Regardless of how the test turns out, Solaris doesn't handle -static
+dnl This is caused by the socket library requiring the nsl library, which
+dnl requires the -dl library, which only works for dynamically linked 
+dnl programs.  It basically means you can't have statically linked programs
+dnl which use the network under Solaris.  
+dnl
+case "$host_os" in
+solaris2.*)
+	ac_cv_e2fsprogs_use_static=no	
+;;
+esac
+AC_MSG_RESULT($ac_cv_e2fsprogs_use_static)
+LDFLAG_STATIC=
+if test $ac_cv_e2fsprogs_use_static = yes; then
+	LDFLAG_STATIC=-static
+fi
+AC_SUBST(LDFLAG_STATIC)
+dnl
+dnl Work around mysterious Darwin / GNU libintl problem
+dnl (__asm__ redirection doesn't work for some mysterious reason.  Looks like
+dnl Apple hacked gcc somehow?)
+dnl
+case "$host_os" in
+darwin*)
+	echo "Using Apple Darwin / GNU libintl workaround"
+	AC_DEFINE(_INTL_REDIRECT_MACROS)
+	;;
+esac
+dnl
+dnl Make the ss and et directories work correctly.
+dnl
+SS_DIR=`cd ${srcdir}/lib/ss; pwd`
+ET_DIR=`cd ${srcdir}/lib/et; pwd`
+AC_SUBST(SS_DIR)
+AC_SUBST(ET_DIR)
+dnl
+dnl Only try to run the test suite if we're not cross compiling.
+dnl
+if test "$cross_compiling" = yes ; then
+  DO_TEST_SUITE=
+else
+  DO_TEST_SUITE=check
+fi
+AC_SUBST(DO_TEST_SUITE)
+dnl
+dnl Only include the intl include files if we're building with them
+dnl 
+INTL_FLAGS=
+if test "$USE_INCLUDED_LIBINTL" = "yes" ; then
+	INTL_FLAGS='-I$(top_builddir)/intl -I$(top_srcdir)/intl'
+fi
+AC_SUBST(INTL_FLAGS)
+dnl
+dnl Make our output files, being sure that we create the some miscellaneous 
+dnl directories
+dnl
+test -d lib || mkdir lib
+test -d include || mkdir include
+test -d include/linux || mkdir include/linux
+test -d include/asm || mkdir include/asm
+for i in MCONFIG Makefile e2fsprogs.spec \
+	util/Makefile util/subst.conf util/gen-tarball \
+	lib/et/Makefile lib/ss/Makefile lib/ext2fs/Makefile lib/e2p/Makefile \
+	lib/uuid/Makefile lib/uuid/uuid_types.h \
+	lib/blkid/Makefile lib/blkid/blkid_types.h \
+	lib/ss/ss.pc lib/uuid/uuid.pc lib/et/com_err.pc \
+	lib/e2p/e2p.pc lib/blkid/blkid.pc lib/ext2fs/ext2fs.pc \
+	misc/Makefile ext2ed/Makefile e2fsck/Makefile \
+	debugfs/Makefile tests/Makefile tests/progs/Makefile \
+	resize/Makefile doc/Makefile intl/Makefile po/Makefile.in ; do
+	if test -d `dirname ${srcdir}/$i` ; then
+		outlist="$outlist $i"
+	fi
+done
+AC_OUTPUT($outlist)
+if test -f util/gen-tarball; then chmod +x util/gen-tarball; fi
+

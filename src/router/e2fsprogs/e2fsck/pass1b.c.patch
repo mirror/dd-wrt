@@ -1,0 +1,12 @@
+===== pass1b.c 1.31 vs edited =====
+--- 1.31/e2fsck/pass1b.c	2005-01-09 00:57:44 -05:00
++++ edited/pass1b.c	2005-04-14 10:23:24 -04:00
+@@ -432,7 +432,7 @@
+ 		shared_len = 0;
+ 		file_ok = 1;
+ 		ino = (ext2_ino_t)VOIDPTR_TO_INT(dnode_getkey(n));
+-		if (ino == EXT2_BAD_INO)
++		if (ino == EXT2_BAD_INO || ino == EXT2_RESIZE_INO)
+ 			continue;
+ 
+ 		/*

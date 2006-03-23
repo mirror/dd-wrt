@@ -1,0 +1,737 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-06-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* defaults/e_script, run_e2fsck, d_loaddump, f_resize_inode,
+		f_swapfs, f_move_itable, f_resize_inode, test_config:
+		Allow the diff options to be set in test_config so that
+		diff -u can be used on platforms that have it.  (To be
+		done: checking whether diff can support -u in the
+		configure script.)
+
+2005-04-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_dup_resize: New test case
+
+2005-04-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* test_script.in: Make the test script driver exit with a non-zero
+		status if there are any failed tests.
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_valid_ea_in_inode: New test case
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Remove emacs backup files on "make clean"
+
+	* Makefile.in, f_h_badnode, f_dup_de, f_h_reindex, f_h_normal,
+		f_h_badroot: Remove support for --enable-htree-clear
+
+2005-01-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_bad_inode, f_recnect_bad: Adjust test cases to take into
+		account the change which clears the i_file_acl field earlier.
+
+2005-01-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_clear_xattr: New test case
+
+2005-01-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_summary_counts: New test case
+
+2005-01-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* r_resize_inode: Skip this test if resize2fs is not compiled (due
+		to configure's --disable-resizer option)
+
+2005-01-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* r_resize_inode, m_dasd_bs, m_large_file, m_meta_bg, m_no_opt,
+		m_read_opt, m_std, run_mke2fs, filter_dumpe2fs: Make tests
+		portable so they pass correctly on a FreeBSD system.
+
+2005-01-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in, test_script.in: Use @EGREP@ instead of grep -E for
+		portability with Solaris systems.
+
+2005-01-13  Matthias Andree  <matthias.andree@gmx.de>
+
+	* f_dup_de, r_resize_inode: change ">& /dev/null" to ">/dev/null 2>&1"
+		for compatibility with FreeBSD. In $DEBUGFS commands, move the
+		-R arg argument first so that systems with non-GNU getopt()
+		can see the request argument (they would otherwise stop
+		parsing at the first non-option argument).
+
+2004-12-24  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_resize_inode, r_resize_inode: New tests to e2fsck and
+		resize2fs, which exercise their resize_inode handling and
+		code.
+
+	* test_config: Add support for calling debugfs from the testing
+		framework.
+ 
+2004-12-15  Theodore Ts'o  <tytso@mit.edu>
+
+	* m_meta_bg, m_no_opt, m_raid_opt: Adjust tests to take into
+		account the resize inode patch.
+
+2004-10-04  Richard Mortimer  <richm@oldelvet.org.uk>
+
+	* f_badjourblks: Add test case which tests a Journal with illegal
+		block numbers in both the journal inode and the superblock
+		inode backup.
+
+2004-09-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* test_script.in: Remove XSI:isms for greater portability.
+		(Addresses Debian Bug #255589)
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2004-01-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_selinux: Add test case which tests SE Linux generated symlinks
+		that contain extended attribute data.
+
+2003-12-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_lpf2: New test case to validate reconnecting a directory after
+		creating /lost+found.
+
+2003-09-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* m_meta_bg: New test case to test the meta block group feature.
+
+	* m_raid_opt: New test case to test raid striping
+
+	* run_e2fsck, run_mke2fs, filter_dumpe2fs: Add dumpe2fs output to
+		the test output for comparison.  Add support for
+		compressed expect scripts.
+
+2003-09-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_dup_de: Remove spurious rm error messages when htree is
+		enabled
+
+	* run_e2fsck, run_mke2fs: Add new support for mke2fs test cases.
+
+	* m_dasd_bs, m_large_file, m_no_opt, m_std: New test cases
+		exercising mke2fs.
+
+2003-08-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_bad_local_jnl, f_badorphan, f_h_badroot, f_h_reindex,
+		f_special_ea: Update tests to reflect that e2fsck will
+		backup the journal inode.
+
+	* f_journal: Change test to include a backed up journal location
+		in the superblock, and then corrupt the inode table so the
+		journal inode is trashed.  Make sure e2fsck can recover
+		from it.
+
+2003-08-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_salveage_dir: Remove HTREE flag from the test image's
+		superblock.  (It is not needed).
+
+	* f_h_reindex: Skip this test of the htree is not enabled
+
+	* f_dup_de: If htree is not enabled, clear the htree flag, and use
+		alternate expect scripts for the test.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-04-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* test_config: Define DYLD_LIBRAY_PATH so that "make check" works on
+		Darwin systems when building with shared libraries.
+
+2003-04-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_baddir, f_dup, f_dup2, f_end-bitmap, f_lpf: Update test cases
+		to deal with changes to automatically calculate and update
+		the global inode and block counts at the beginning of the
+		e2fsck run.
+
+2003-03-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_h_badnode, f_h_badroot, f_h_reindex: Updated expect script to
+		remove the optimizing directories message.
+
+2003-03-15  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_dup_de: Added test case provided from Debian bug report #176814
+
+2003-03-06  Theodore Tso  <tytso@mit.edu>
+
+	* run_e2fsck, defaults/e_script: Solaris doesn't support "tr -d \r",
+		so use "tr -d \015" instead.
+
+	* tests/f_swapfs/script: Avoid bash'ism; Solaris doesn't support
+		put a ! character in a "if ! cmd ; then .. fi" construct.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-11-08    <tytso@snap.thunk.org>
+
+	* f_swapfs: Skip the test if swapfs has been disabled via the
+		configure switch --disable-swapfs.
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2002-09-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_h_badroot, f_h_badnode: Update test cases to deal with
+		additional HTREE checks in e2fsck.
+
+	* f_h_reindex, f_h_salvage_dir: New test cases.
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-08-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_badinode, f_badroot, f_badsymlinks, f_badtable, f_dupdot,
+		f_filetype, f_illitable, f_imagic, f_imagic_fs, f_lpf,
+		f_lpffile, f_mke2fs2b, f_noroot, f_recnect_bad: Update
+		expect files to deal with changes in the extended
+		attribute block processing, and in how e2fsck updates
+		filesystem statistics when deleting files and creating
+		/lost+found.
+
+	* f_special_ea: New test which checks to make sure e2fsck
+		correctly handles special device files with extended
+		attribute blocks.
+
+2002-08-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_dup, f_dup2, f_dup3, f_bbfile, f_dupfsblks: Update expect
+		scripts to deal with ordering changes caused by use of a
+		red-block tree in pass1b.
+
+2002-07-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_expand, f_h_badnode, f_h_badroot: Modify the expect scripts to
+		reflect the rebuild hash index directories.
+
+2002-06-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_h_badroot: New test cases to test bogus HTREE node values
+
+2002-06-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in (test_script): Add pass in the state of
+		--enable-htree and --enable-clear-htree to the test
+		script.
+	
+	* f_h_normal, f_h_badnode: New test cases to test the htree
+		directory code.
+	
+2002-06-09  Andreas Dilger  <adilger@clusterfs.com>
+
+	* f_8192_block, f_16384_block: Basic tests of 8192-byte block
+		and 16384-byte blocksize filesystems.
+
+2002-05-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* f_badsymlinks: Check for symlink too big error message.
+
+	* f_lotsbad: Check for directory too big error message.
+
+	* f_big_sparse: New test case which e2fsck's response to a large,
+		sparse file, and tests the code which adds the LARGE_FILE
+		feature to a filesystem.
+
+	* f_badsymlinks, f_filetype: Revert expected text since we're no
+		longer checking for EXT2_INDEX_FL along with the other
+		immutable flags.
+	
+	* f_badsymlinks, f_badinode: The symlink invalid size problem text
+		has been generalized to "invalid symlink".
+
+2002-05-18  Andreas Dilger  <adilger@clusterfs.com>
+
+	* f_badsymlink: Add extra length checks for symlinks
+		- missing nul termination test (new)
+		- nul terminated but i_size is wrong
+		- i_size == maximum size (no space for nul, new)
+		- too many blocks for long symlink
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-03-07    <tytso@mit.edu>
+
+	* f_miss_journal, f_extra_journal: Added new test cases.
+
+2002-03-06    <tytso@mit.edu>
+
+	* f_badorphan, f_badtable, f_bbinode, f_dupsuper, f_expand,
+		f_illbbitmap, f_illibitmap, f_illitable, f_imagic, 
+		f_imagic_fs, f_lotsbad, f_lpf, f_messy_inode, 
+		f_miss_blk_bmap, f_misstable, f_overfsblks: Adjust expect
+		files to deal with the fact that e2fsck is now reporting
+		ranges during pass 5.
+
+2002-02-12  Theodore Tso  <tytso@mit.edu>
+
+	* run_e2fsck (status): Use separate sed invocations for greater
+		portabilty.  AIX's sed doesn't support multiple -e
+		specifications, even though it's required by Unix 98.
+
+	* test_script.in: Use printf instead of "echo -n", since the -n
+		option to echo is a BSD'ism which isn't specified by the
+		Unix 98 / SUSv3 specification.  (And which of course, AIX
+		doesn't implement as a result.)
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2002-02-03  Theodore Tso  <tytso@valinux.com>
+
+	* f_swapfs: Fix expect script to deal with extra spaces now
+		printed by debugfs's ls command.
+
+2002-01-06  Andreas Dilger  <adilger@turbolinux.com>
+
+	* Makefile: Add new target "make testnew" which will create a new
+		testcase for e2fsck with an empty 8MB filesystem.  After
+		the test filesystem is appropriately "broken" the new
+		target "make testend" will create expect files for it.
+
+2001-12-16  Theodore Tso  <tytso@mit.edu>
+
+	* f_ext_journal: Add new test which checks e2fsck's ability to use
+		an external journal.
+
+2001-11-30  Gabriel Paubert <paubert@iram.es>
+
+	* f_badorphan: Revert previous, erroneous change.
+
+2001-11-30  Theodore Tso  <tytso@mit.edu>
+
+	* f_badorphan, f_journal: Update expect files to reflect the fact
+		that new e2fsck's will move the .journal file to a hidden
+		inode.
+
+2001-11-26  Theodore Tso  <tytso@mit.edu>
+
+	* f_miss_blk_bmap: Add new test which checks for bug in e2fsck
+		where it wouldn't allocate a missing block bitmap on
+		filesystems with a blocksize of 2k or 4k.
+
+2001-10-07  Theodore Tso  <tytso@mit.edu>
+
+	* f_bad_local_jnl: New test which tests for a V2 journal with bad
+		fields caused by a botched V1->V2 upgrade.
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-08-04  Theodore Tso  <tytso@valinux.com>
+
+	* f_bad_inode, f_badsymlinks: Update expect files to reflect
+		changes in the problem code texts.
+
+	* f_swapfs: The image file used by f_swapfs had bugs which got
+		caught by Andreas' changes to be more strict about
+		symlinks.
+
+2001-07-26  Andreas Dilger  <adilger@turbolinux.com>
+
+	* f_symlinks: Add several fast symlink error cases to test.
+
+2001-07-27  Theodore Tso  <tytso@valinux.com>
+
+	* f_filetype: Update expect.1 to match changed problem message
+		text and the fact that symlinks shouldn't be immutable.
+
+2001-07-07  Theodore Tso  <tytso@valinux.com>
+
+	* f_badinode: Update expect.1 to match change in invalid symlink
+		size text.
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-22  Theodore Tso  <tytso@valinux.com>
+
+	* run_e2fsck, defaults/e_script: Filter out CR characters from the
+		output, since BK filtered \r fromthe expect files.  This
+		is needed to make the regression test suite work again.
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-06-02  Theodore Tso  <tytso@valinux.com>
+
+	* f_badinode: Added a fast symlink with an invalid size to test
+		e2fsck's handling of this case.
+
+	* f_dup3: New test case which checks handling of blocks claimed
+		multiple times by one inode which weren't handled
+		correctly by e2fsck 1.20.
+
+	* d_loaddump: Fix test script to remove bash'isms, and make the
+		shell script more robust in cases where the user has
+		overridden CFLAGS so that the debugfs binary isn't
+		compiled with -g, and is smaller than 128k.  Also specify
+		the blocksize to be used explictly to avoid problems with
+		people who change the mke2fs default parameters.
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-05-14  Theodore Tso  <tytso@valinux.com>
+
+	* f_badorphan: New test which verifies corrupted orphan list
+		handling.
+
+2001-05-05  Theodore Tso  <tytso@valinux.com>
+
+	* d_loaddump: New test which verifies debugfs's dump and load
+		routines.
+
+2000-10-24    <tytso@snap.thunk.org>
+
+	* f_journal: Update to take into account new printing by the
+		e2fsck program.
+
+2000-08-22    <tytso@valinux.com>
+
+	* f_journal: Make the test check for a wide variety of mixed sizes
+		of orphaned inodes (and not just a size of 0).
+
+2000-08-20    <tytso@valinux.com>
+
+	* run_e2fsck: Filter out JFS DEBUG messages when comparing e2fsck
+		output.
+
+	* f_journal: New test case which checks out running the ext3
+		journal.
+
+	* f_orphan: New test case which checks clearing the list of orphan
+		inodes (files and directories).
+
+	* f_swapfs/expect: Update to reflect new debugfs format for
+		dumping the blocks of an inode.
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-05-25    <tytso@snap.thunk.org>
+
+	* test_script.in: Ignore files in the test directory (to avoid
+		spurious messages when builddir==srcdir).
+
+2000-05-08  Theodore Ts'o  <tytso@valinux.com>
+
+	* f_hurd: Add test for Hurd-specific features (right now, just
+		checks to make sure the filetype feature is cleared)
+
+2000-04-06  Theodore Ts'o  <tytso@valinux.com>
+
+	* f_filetype: Updated expect script to match with new text for
+		immutable/append-only files.
+
+2000-02-07  Theodore Ts'o  <tytso@valinux.com>
+
+	* f_swapfs: Fix expected text to match changed debugfs dump
+		command for i_generation field.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-11-10    <tytso@valinux.com>
+
+	* f_imagic: New test case which tests handling of imagic inodes in
+		an non-imagic-enabled filessystem.
+
+	* f_imagic_fs: New test case which tests handling of imagic inodes
+		in an imagic-enabled filesystem.
+
+	* f_filetype: New test case which tests setting filetype
+		information in a filesystem.  Also tests handling of
+		immutable special files (device/fifo).
+
+	* run_e2fsck: Add support for PREP_CMD, which allows a test case
+		to specify some commands which will be run (via eval)
+		after the image is compressed and before running e2fsck.
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-09-16    <tytso@rsts-11.mit.edu>
+
+	* f_dupdot: New test case which tests duplicate '.' and '..' entries.
+
+1999-09-07    <tytso@rsts-11.mit.edu>
+
+	* f_expand: Make test case better by testing increasing the size
+		of lost+found where an indirect block must be created.
+		Also add checks to see what happens when directories are
+		disconnected because their containing directory is
+		destroyed (turned into a socket :-)
+
+1999-08-02    <tytso@rsts-11.mit.edu>
+
+	* f_dupfsblks: Add additional test cases where files share
+		duplicate blocks with both other files and filesystem
+		metadata.
+
+1999-07-30    <tytso@valinux.com>
+
+	* f_swapfs: Change to deal with new dump_inode command.
+
+1999-07-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.15
+
+1999-06-25    <tytso@rsts-11.mit.edu>
+
+	* f_recnect_bad: New test which checks the case where a disconnect
+		inode also bad inode fields; we need to make sure e2fsck
+		offers to fix the inode (or clear the inode, as necessary).
+
+1999-03-14  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_lpffile: New test which checks how e2fsck handles a the case
+		where lost+found exists, but it's not a directory.
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-12-04  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_badtable, f_illitable, f_lpf: Update to deal with the fact
+		that e2fsck will now create a lost+found directory at the
+		end of pass 3 if one isn't present.
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-07-05  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_swapfs: Fix script to ignore the version string header which
+		debugfs now prints when it starts up.
+
+1998-03-23  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_messy_inode: Modify test to deal with changes to support
+		64-bit size files.  (/MAKEDEV had i_dir_acl, now
+		i_size_high, set.)
+
+1998-02-20  Theodore Y. Ts'o  <tytso@edt.mit.edu>
+
+	* f_badinode: Set the immutable flag on the block and
+		character device so that e2fsck notices them as bad
+		devices, and offers to fix them.  E2fsck currently
+		only checks devices with the immutable flag set, since
+		otherwise there might be some false positives --- the
+		kernel doesn't always clear the all of i_blocks[n],
+		n>=4, due to a race condition.
+
+Sat Oct 25 18:38:56 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Add scripts to skip the e_brel_bma and e_irel_ima tests (since
+		they have been removed from the library for now)
+
+Thu Aug 14 11:25:23 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_badinode: Modify test to check for "bad" character and block
+		devices (i.e., ones which contain garbage block entries)
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Wed Mar 26 09:29:25 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e_icount_normal, e_icount_opt: New tests which validate the
+		icount abstraction.
+
+	* test_script.in: New feature; an argument of a single character
+		means do all the tests in that series.
+
+Tue Mar 18 15:11:04 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_config (LANG): Set the language to be C so that the brel
+		and irel tests don't fail.
+
+Wed Mar 12 13:32:05 1997  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs version 1.07
+
+Thu Mar  6 23:23:07 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_misstable: New test case which checks what happens when the
+		inode table for a block group is missing
+
+	* f_reconnect: New test case which makes sure a simple
+		disconnected inode is properly handled.
+
+Mon Dec  2 09:33:31 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_script.in: Add error checking to make sure a requested test
+		exists.
+
+Tue Oct 15 00:10:37 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_bbinode: New test case which exercises what happens when a bad
+		block appears in the inode table.
+
+Tue Oct  8 02:02:03 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.06
+
+Mon Oct  7 07:52:41 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_preen: New test case which makes sure that e2fsck -p won't
+ 		bash the backup superblock in case of a corrupted master
+ 		superblock.
+	
+	* test_script.in: Let the environment variable TEST_CONFIG to
+		override the location of the test_config file.  Move
+		definition of TMP_DIR to test_config.
+
+	* test_config: Add new defnitions for mke2fs, dumpe2fs, tune2fs,
+		lsattr, and chattr.
+
+Thu Sep 12 15:23:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.05
+
+Mon Sep  9 23:09:47 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (check): Add explicit ./ to test_script invokation,
+		since not all people will have "." in their path.
+
+Tue Sep  3 15:13:05 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_config (PAGER): Unset pager to prevent debugfs forking a
+ 		pager, since the escape sequences confuse the expect
+ 		script.
+
+Sun May 19 23:37:35 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_script: New feature; second optional argument allows
+		developers to only run one test case.
+
+	* f_crashdisk: New test case which contains a patently illegal
+		superblock with a valid magic number.
+
+Thu May 16 11:12:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.04
+
+Wed May 15 21:41:29 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* f_illibitmap/expect.1, f_illbbitmap/expect.1: Changed
+		expected output to reflect hint which e2fsck will print when
+		there is a illegal block in the block group
+		descriptors, pointing at a block bitmap, inode bitmap,
+		or block in the inode table.
+
+Wed Mar 27 00:33:40 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.03
+
+Wed Jan 31 11:06:08 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.02
+
+Mon Sep  4 23:06:06 1995  Remy Card  <card@bbj>
+
+	* Makefile.in (clean, distclean): Use the -f option when removing
+		files.
+
+Fri Aug 11 10:10:30 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* test_script: Count up the number of passed and failed tests by
+		tallying the *.ok and *.failed files.
+
+	* run_e2fsck: Create foo.ok and foo.failed files when tests
+		succeed or fail, respectively.
+
+	* test_config (TZ): Set the timezone to be GMT, so that test
+		results are consistent.
+
