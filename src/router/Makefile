@@ -178,6 +178,7 @@ obj-$(CONFIG_MULTICAST) += igmp-proxy
 obj-$(CONFIG_SKYTRON) += skytron
 obj-$(CONFIG_OPENVPN) += openvpn
 obj-$(CONFIG_OLSRD) += olsrd
+obj-$(CONFIG_E2FSPROGS) += e2fsprogs
 obj-$(CONFIG_HTTPREDIRECT) += http-redirect
 obj-$(CONFIG_SMTPREDIRECT) += smtp-redirect
 
@@ -821,6 +822,16 @@ else
         # So that generic rule does not take precedence
 	@true
 endif
+
+
+e2fsprogs:
+	cd e2fsprogs && ./configure --host=mipsel-linux CFLAGS="-Os" CC="$(CROSS_COMPILE)gcc $(COPTS)" --with-gnu-ld --disable-rpath --disable-shared --enable-static --enable-elf-shlibs --enable-dynamic-e2fsck
+	make -C e2fsprogs
+
+e2fsprogs-install:
+	mkdir -p $(INSTALLDIR)/e2fsprogs/sbin
+	cp e2fsprogs/misc/mke2fs.static $(INSTALLDIR)/e2fsprogs/sbin/mke2fs
+
 
 ebtables:
 	$(MAKE) -C ebtables BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR) KERNEL_INCLUDES=$(LINUXDIR)/include
