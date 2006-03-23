@@ -1,32 +1,33 @@
-/* Shared library add-on to ebtables to add limit support.
+/* ebt_limit
  *
- * Swipted from iptables' limit match.
+ * Authors:
+ * Tom Marshall <tommy@home.tig-grr.com>
+ *
+ * Mostly copied from iptables' limit match.
+ *
+ * September, 2003
  */
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
+#include <errno.h>
 #include "../include/ebtables_u.h"
 #include <linux/netfilter_bridge/ebt_limit.h>
 
 #define EBT_LIMIT_AVG	"3/hour"
 #define EBT_LIMIT_BURST	5
 
-/* from iptables.c */
-#include <errno.h>
-int
-string_to_number(const char *s, unsigned int min, unsigned int max,
-		 unsigned int *ret)
+int string_to_number(const char *s, unsigned int min, unsigned int max,
+   unsigned int *ret)
 {
 	long number;
 	char *end;
 
-	/* Handle hex, octal, etc. */
 	errno = 0;
 	number = strtol(s, &end, 0);
 	if (*end == '\0' && end != s) {
-		/* we parsed a number, let's see if we want this */
 		if (errno != ERANGE && min <= number && number <= max) {
 			*ret = number;
 			return 0;
@@ -37,7 +38,6 @@ string_to_number(const char *s, unsigned int min, unsigned int max,
 
 #define FLAG_LIMIT		0x01
 #define FLAG_LIMIT_BURST	0x02
-
 #define ARG_LIMIT		'1'
 #define ARG_LIMIT_BURST		'2'
 
@@ -52,12 +52,11 @@ static void print_help(void)
 {
 	printf(
 "limit options:\n"
-"--limit avg			max average match rate: default "EBT_LIMIT_AVG"\n"
+"--limit avg                   : max average match rate: default "EBT_LIMIT_AVG"\n"
 "                                [Packets per second unless followed by \n"
 "                                /sec /minute /hour /day postfixes]\n"
-"--limit-burst number		number to match in a burst, -1 < number < 10001,\n"
-"                                default %u\n"
-"\n", EBT_LIMIT_BURST);
+"--limit-burst number          : number to match in a burst, -1 < number < 10001,\n"
+"                                default %u\n", EBT_LIMIT_BURST);
 }
 
 static int parse_rate(const char *rate, u_int32_t *val)
@@ -120,20 +119,19 @@ static int parse(int c, char **argv, int argc,
 
 	switch(c) {
 	case ARG_LIMIT:
-		check_option(flags, FLAG_LIMIT);
-		if (check_inverse(optarg))
-			print_error("Unexpected `!' after --limit");
+		ebt_check_option2(flags, FLAG_LIMIT);
+		if (ebt_check_inverse2(optarg))
+			ebt_print_error2("Unexpected `!' after --limit");
 		if (!parse_rate(optarg, &r->avg))
-			print_error("bad rate `%s'", optarg);
+			ebt_print_error2("bad rate `%s'", optarg);
 		break;
 
 	case ARG_LIMIT_BURST:
-		check_option(flags, FLAG_LIMIT_BURST);
-		if (check_inverse(optarg))
-			print_error("Unexpected `!' after --limit-burst");
-
+		ebt_check_option2(flags, FLAG_LIMIT_BURST);
+		if (ebt_check_inverse2(optarg))
+			ebt_print_error2("Unexpected `!' after --limit-burst");
 		if (string_to_number(optarg, 0, 10000, &num) == -1)
-			print_error("bad --limit-burst `%s'", optarg);
+			ebt_print_error2("bad --limit-burst `%s'", optarg);
 		r->burst = num;
 		break;
 
@@ -148,7 +146,6 @@ static void final_check(const struct ebt_u_entry *entry,
    const struct ebt_entry_match *match, const char *name,
    unsigned int hookmask, unsigned int time)
 {
-	/* empty */
 }
 
 struct rates
@@ -177,17 +174,18 @@ static void print_rate(u_int32_t period)
 	printf("%u/%s ", g_rates[i-1].mult / period, g_rates[i-1].name);
 }
 
-/* Prints out the matchinfo. */
-static void
-print(const struct ebt_u_entry *entry, const struct ebt_entry_match *match)
+static void print(const struct ebt_u_entry *entry,
+   const struct ebt_entry_match *match)
 {
 	struct ebt_limit_info *r = (struct ebt_limit_info *)match->data;
 
-	printf("limit: avg "); print_rate(r->avg);
-	printf("burst %u ", r->burst);
+	printf("--limit ");
+	print_rate(r->avg);
+	printf("--limit-burst %u ", r->burst);
 }
 
-static int compare(const struct ebt_entry_match* m1, const struct ebt_entry_match *m2)
+static int compare(const struct ebt_entry_match* m1,
+   const struct ebt_entry_match *m2)
 {
 	struct ebt_limit_info* li1 = (struct ebt_limit_info*)m1->data;
 	struct ebt_limit_info* li2 = (struct ebt_limit_info*)m2->data;
@@ -203,19 +201,18 @@ static int compare(const struct ebt_entry_match* m1, const struct ebt_entry_matc
 
 static struct ebt_u_match limit_match =
 {
-	.name	=	EBT_LIMIT_MATCH,
-	.size	=	sizeof(struct ebt_limit_info),
-	.help	=	print_help,
-	.init	=	init,
-	.parse	=	parse,
-	.final_check =	final_check,
-	.print	=	print,
-	.compare =	compare,
-	.extra_ops =	opts,
+	.name		= EBT_LIMIT_MATCH,
+	.size		= sizeof(struct ebt_limit_info),
+	.help		= print_help,
+	.init		= init,
+	.parse		= parse,
+	.final_check	= final_check,
+	.print		= print,
+	.compare	= compare,
+	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_match(&limit_match);
+	ebt_register_match(&limit_match);
 }

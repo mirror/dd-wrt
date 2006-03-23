@@ -819,7 +819,7 @@ start_dnsmasq (void)
 
   if (nvram_match ("fon_enable", "1"))
     {
-      fprintf (fp, "interface=%s br0\n", nvram_safe_get ("wl0_ifname"));
+      fprintf (fp, "interface=%s,br0\n", nvram_safe_get ("wl0_ifname"));
     }
   else
     {

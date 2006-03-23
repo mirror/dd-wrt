@@ -1,3 +1,11 @@
+/* ebt_among
+ *
+ * Authors:
+ * Grzegorz Borowiak <grzes@gnu.univ.gda.pl>
+ *
+ * August, 2003
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -8,8 +16,6 @@
 #include "../include/ethernetdb.h"
 #include <linux/if_ether.h>
 #include <linux/netfilter_bridge/ebt_among.h>
-
-#define NODEBUG
 
 #define AMONG_DST '1'
 #define AMONG_SRC '2'
@@ -69,6 +75,8 @@ static struct ebt_mac_wormhash *new_wormhash(int n)
 	struct ebt_mac_wormhash *result =
 	    (struct ebt_mac_wormhash *) malloc(size);
 
+	if (!result)
+		ebt_print_memory();
 	memset(result, 0, size);
 	result->poolsize = n;
 	return result;
@@ -169,7 +177,7 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 	char token[4];
 
 	if (!(workcopy = new_wormhash(1024))) {
-		print_memory();
+		ebt_print_memory();
 	}
 	while (1) {
 		/* remember current position, we'll need it on error */
@@ -181,54 +189,53 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 		for (i = 0; i < 5; i++) {
 			if (read_until(&pc, ":", token, 2) < 0
 			    || token[0] == 0) {
-				print_error("MAC parse error: %.20s",
-					    anchor);
+				ebt_print_error("MAC parse error: %.20s", anchor);
+				return NULL;
 			}
 			mac[i] = strtol(token, &endptr, 16);
 			if (*endptr) {
-				print_error("MAC parse error: %.20s",
-					    anchor);
+				ebt_print_error("MAC parse error: %.20s", anchor);
+				return NULL;
 			}
 			pc++;
 		}
 		if (read_until(&pc, "=,", token, 2) == -2 || token[0] == 0) {
-			print_error("MAC parse error: %.20s", anchor);
+			ebt_print_error("MAC parse error: %.20s", anchor);
+			return NULL;
 		}
 		mac[i] = strtol(token, &endptr, 16);
 		if (*endptr) {
-			print_error("MAC parse error: %.20s", anchor);
+			ebt_print_error("MAC parse error: %.20s", anchor);
+			return NULL;
 		}
 		if (*pc == '=') {
 			/* an IP follows the MAC; collect similarly to MAC */
 			pc++;
 			anchor = pc;
 			for (i = 0; i < 3; i++) {
-				if (read_until(&pc, ".", token, 3) < 0
-				    || token[0] == 0) {
-					print_error
-					    ("IP parse error: %.20s",
-					     anchor);
+				if (read_until(&pc, ".", token, 3) < 0 || token[0] == 0) {
+					ebt_print_error("IP parse error: %.20s", anchor);
+					return NULL;
 				}
 				ip[i] = strtol(token, &endptr, 10);
 				if (*endptr) {
-					print_error
-					    ("IP parse error: %.20s",
-					     anchor);
+					ebt_print_error("IP parse error: %.20s", anchor);
+					return NULL;
 				}
 				pc++;
 			}
-			if (read_until(&pc, ",", token, 3) == -2
-			    || token[0] == 0) {
-				print_error("IP parse error: %.20s",
-					    anchor);
+			if (read_until(&pc, ",", token, 3) == -2 || token[0] == 0) {
+				ebt_print_error("IP parse error: %.20s", anchor);
+				return NULL;
 			}
 			ip[3] = strtol(token, &endptr, 10);
 			if (*endptr) {
-				print_error("IP parse error: %.20s",
-					    anchor);
+				ebt_print_error("IP parse error: %.20s", anchor);
+				return NULL;
 			}
 			if (*(uint32_t*)ip == 0) {
-				print_error("Illegal IP 0.0.0.0");
+				ebt_print_error("Illegal IP 0.0.0.0");
+				return NULL;
 			}
 		} else {
 			/* no IP, we set it to 0.0.0.0 */
@@ -243,7 +250,7 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 		/* re-allocate memory if needed */
 		if (*pc && nmacs >= workcopy->poolsize) {
 			if (!(h = new_wormhash(nmacs * 2))) {
-				print_memory();
+				ebt_print_memory();
 			}
 			copy_wormhash(h, workcopy);
 			free(workcopy);
@@ -259,7 +266,8 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 		/* increment this to the next char */
 		/* but first assert :-> */
 		if (*pc != ',') {
-			print_error("Something went wrong; no comma...\n");
+			ebt_print_error("Something went wrong; no comma...\n");
+			return NULL;
 		}
 		pc++;
 
@@ -270,7 +278,7 @@ static struct ebt_mac_wormhash *create_wormhash(const char *arg)
 		}
 	}
 	if (!(result = new_wormhash(nmacs))) {
-		print_memory();
+		ebt_print_memory();
 	}
 	copy_wormhash(result, workcopy);
 	free(workcopy);
@@ -295,30 +303,33 @@ static int parse(int c, char **argv, int argc,
 	switch (c) {
 	case AMONG_DST:
 	case AMONG_SRC:
-		if (check_inverse(optarg)) {
+		if (c == AMONG_DST) {
+			ebt_check_option2(flags, OPT_DST);
+		} else {
+			ebt_check_option2(flags, OPT_SRC);
+		}
+		if (ebt_check_inverse2(optarg)) {
 			if (c == AMONG_DST)
 				info->bitmask |= EBT_AMONG_DST_NEG;
 			else
 				info->bitmask |= EBT_AMONG_SRC_NEG;
 		}
-		if (optind > argc)
-			print_error("No MAC list specified\n");
-		wh = create_wormhash(argv[optind - 1]);
-		old_size = sizeof(struct ebt_entry_match) +
-				(**match).match_size;
-		h = malloc((new_size =
-			    old_size + ebt_mac_wormhash_size(wh)));
+		wh = create_wormhash(optarg);
+		if (ebt_errormsg[0] != '\0')
+			break;
+
+		old_size = sizeof(struct ebt_entry_match) + (**match).match_size;
+		h = malloc((new_size = old_size + ebt_mac_wormhash_size(wh)));
+		if (!h)
+			ebt_print_memory();
 		memcpy(h, *match, old_size);
-		memcpy((char *) h + old_size, wh,
-		       ebt_mac_wormhash_size(wh));
+		memcpy((char *) h + old_size, wh, ebt_mac_wormhash_size(wh));
 		h->match_size = new_size - sizeof(struct ebt_entry_match);
 		info = (struct ebt_among_info *) h->data;
 		if (c == AMONG_DST) {
-			check_option(flags, OPT_DST);
 			info->wh_dst_ofs =
 			    old_size - sizeof(struct ebt_entry_match);
 		} else {
-			check_option(flags, OPT_SRC);
 			info->wh_src_ofs =
 			    old_size - sizeof(struct ebt_entry_match);
 		}
@@ -364,7 +375,7 @@ static void wormhash_printout(const struct ebt_mac_wormhash *wh)
 		const struct ebt_mac_wormhash_tuple *p;
 
 		p = (const struct ebt_mac_wormhash_tuple *)(&wh->pool[i]);
-		print_mac(((const char *) &p->cmp[0]) + 2);
+		ebt_print_mac(((const char *) &p->cmp[0]) + 2);
 		if (p->ip) {
 			ip = (unsigned char *) &p->ip;
 			printf("=%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
@@ -436,8 +447,7 @@ static struct ebt_u_match among_match = {
 	.extra_ops 	= opts,
 };
 
-static void _init(void) __attribute__ ((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_match(&among_match);
+	ebt_register_match(&among_match);
 }

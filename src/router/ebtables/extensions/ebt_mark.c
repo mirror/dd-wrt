@@ -1,3 +1,11 @@
+/* ebt_mark
+ *
+ * Authors:
+ * Bart De Schuymer <bdschuym@pandora.be>
+ *
+ * July, 2002
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,7 +20,10 @@ static int mark_supplied;
 static struct option opts[] =
 {
 	{ "mark-target" , required_argument, 0, MARK_TARGET },
+	/* an oldtime messup, we should have always used the scheme
+	 * <extension-name>-<option> */
 	{ "set-mark"    , required_argument, 0, MARK_SETMARK },
+	{ "mark-set"    , required_argument, 0, MARK_SETMARK },
 	{ 0 }
 };
 
@@ -20,7 +31,7 @@ static void print_help()
 {
 	printf(
 	"mark target options:\n"
-	" --set-mark value     : Set nfmark value\n"
+	" --mark-set value     : Set nfmark value\n"
 	" --mark-target target : ACCEPT, DROP, RETURN or CONTINUE\n");
 }
 
@@ -46,15 +57,15 @@ static int parse(int c, char **argv, int argc,
 
 	switch (c) {
 	case MARK_TARGET:
-		check_option(flags, OPT_MARK_TARGET);
+		ebt_check_option2(flags, OPT_MARK_TARGET);
 		if (FILL_TARGET(optarg, markinfo->target))
-			print_error("Illegal --mark-target target");
+			ebt_print_error2("Illegal --mark-target target");
 		break;
 	case MARK_SETMARK:
-		check_option(flags, OPT_MARK_SETMARK);
+		ebt_check_option2(flags, OPT_MARK_SETMARK);
 		markinfo->mark = strtoul(optarg, &end, 0);
 		if (*end != '\0' || end == optarg)
-			print_error("Bad MARK value '%s'", optarg);
+			ebt_print_error2("Bad MARK value '%s'", optarg);
 		mark_supplied = 1;
                 break;
 	 default:
@@ -70,10 +81,10 @@ static void final_check(const struct ebt_u_entry *entry,
 	struct ebt_mark_t_info *markinfo =
 	   (struct ebt_mark_t_info *)target->data;
 
-	if (time == 0 && mark_supplied == 0)
-		print_error("No mark value supplied");
-	if (BASE_CHAIN && markinfo->target == EBT_RETURN)
-		print_error("--mark-target RETURN not allowed on base chain");
+	if (time == 0 && mark_supplied == 0) {
+		ebt_print_error("No mark value supplied");
+	} else if (BASE_CHAIN && markinfo->target == EBT_RETURN)
+		ebt_print_error("--mark-target RETURN not allowed on base chain");
 }
 
 static void print(const struct ebt_u_entry *entry,
@@ -82,7 +93,7 @@ static void print(const struct ebt_u_entry *entry,
 	struct ebt_mark_t_info *markinfo =
 	   (struct ebt_mark_t_info *)target->data;
 
-	printf("--set-mark 0x%lx", markinfo->mark);
+	printf("--mark-set 0x%lx", markinfo->mark);
 	if (markinfo->target == EBT_ACCEPT)
 		return;
 	printf(" --mark-target %s", TARGET_NAME(markinfo->target));
@@ -113,8 +124,7 @@ static struct ebt_u_target mark_target =
 	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute__ ((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_target(&mark_target);
+	ebt_register_target(&mark_target);
 }

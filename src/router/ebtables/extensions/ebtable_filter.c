@@ -1,10 +1,18 @@
+/* ebtable_filter
+ *
+ * Authors:
+ * Bart De Schuymer <bdschuym@pandora.be>
+ *
+ * April, 2002
+ */
+
 #include <stdio.h>
 #include "../include/ebtables_u.h"
 
 #define FILTER_VALID_HOOKS ((1 << NF_BR_LOCAL_IN) | (1 << NF_BR_FORWARD) | \
    (1 << NF_BR_LOCAL_OUT))
 
-static void print_help(char **hn)
+static void print_help(const char **hn)
 {
 	int i;
 
@@ -21,8 +29,7 @@ static struct ebt_u_table table =
 	.help		= print_help,
 };
 
-static void _init(void) __attribute__ ((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_table(&table);
+	ebt_register_table(&table);
 }
