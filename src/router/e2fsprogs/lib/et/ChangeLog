@@ -1,0 +1,408 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-06-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* error_message.c, init_et.c: Segregate error tables registered
+		via add_error_table() and the other dynamic methods from
+		the ones allocated via initialize_xxx_error_table() so
+		that we won't fail even for error tables created using old
+		versions of compile_et.  Thanks to Nalin Dahyabhai for
+		this suggested patch.
+
+	* et_c.awk: Use a dynamically allocated structure in
+		initialize_xxx_error_table(), to prevent segfaults if an
+		old library calls initialize_xxx_error_table, and another
+		library/application calls add_error_table() on the same
+		error table, and then calls remove_error_table().
+		(Addresses Sourcefroge Bug #1150146)
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Remove com_err.pc on a "make distclean"
+
+2005-01-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* com_err.pc.in: Add pkg-config files.
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output for "make
+		install"
+
+	* Makefile.in (installdirs): Use $(MKINSTALLDIRS) macro
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-09-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* compile_et.sh.in: Remove XSI:isms for greater portability.
+		(Addresses Debian Bug #255589)
+
+2004-02-29  Brian Bergstrand  <brian@bergstrand.org>
+
+	* Makefile.in: Use $(BSDLIB_PIC_FLAG) to determine whether to use
+		-fpic or -fPIC
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2003-12-11  Theodore Ts'o  <tytso@thunk.org>
+
+	* com_err.3: Fix C syntax error pointed out by ESR.
+
+2003-11-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* et_c.awk: Add declaration of the Heimdal initialization routine
+		to avoid gcc -Wall complaints
+
+2003-11-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* com_err.h, com_err.c: Use GCC attributes to mark com_err and
+		default_com_err_proc as taking printf-style format
+		strings.
+
+2003-11-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* com_err.h: Retore the type of n_msgs in the error_table
+		structure to "int" from "unsigned int" fix a core dumping 
+		bug in the com_right() function.  (Addresses Debian bug 
+		#213450)
+
+2003-08-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Delete com_err.info on a make clean
+
+	* testcases: Update to reflect fixed prototype for
+		initialize_xxx_err_table_r.
+
+2003-08-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* et_h.awk: Fix wrong prototype for initialize_xxx_err_table_r.
+		(Thanks to Gombas Gabor for pointing this out, addresses
+		Debian bug #204332)
+
+2003-08-01  Philipp Thomas <pthomas@suse.de>
+
+	* et_c.awk, et_h.awk: Add Heimdal compile_et extensions
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-05-13  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Bump minor version number of libcomerr to indicate
+		the addition of the Himdall compatibility functions.
+
+2003-05-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* et_c.awk, et_h.awk, com_err.h, com_right.c: Add full Heimdall
+		compatibility. 
+
+	* et_c.awk: Add support for OV-style continuations in compile_et.
+		(Closes Debian bug #191900).
+
+	* Makefile.in: Add regression test suite for compile_et.
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-03-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* et_h.awk (char_shift): Use the com_err.h file in et/com_err.h,
+		since /usr/include/com_err.h may not exist, and if it
+		does, it might be the wrong one.
+
+	* compile_et.sh.in: Add --build-tree option which forces the use
+		of the et_?.awk files in the build tree.
+
+	* error_table.h, error_message.c, com_err.c, internal.h,
+		init_et.c, com_err.h: Remove STDC legacy #define's.
+
+	* com_err.texinfo: Remove references to K&R C support, and to
+		potential problems that are no longer relevant.
+
+2003-03-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* com_err.h, error_table.h: Move definition of the error_table
+		structure from the internal error_table.h to com_err.h,
+		since it now needs to be public.
+
+	* et_c.awk, et_h.awk: Import changes from krb5's et library so
+		that the error_table structure is defined and available
+		publically.
+
+	* error_message.c: Import krb5 and heimdall com_err extensions to
+		the et library.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2002-09-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* internal.h: Remove declaration of perror.  All modern systems
+		can be expected to define perror() these days.
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-02-23  Theodore Tso  <tytso@mit.edu>
+
+	* com_err.texinfo: Fix up the com_err info file so that it
+		includes the directory node information.  (Taken from the
+		Debian diff file.)
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-12-02  Theodore Tso  <tytso@mit.edu>
+
+	* com_err.c (default_com_err_proc): Work around bug in diet libc
+		which core dumps when using fputc on stderr; besides, it
+		shaves bytes off of com_err.o if we use fputs instead of
+		two fputc calls.
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-16  Theodore Tso  <tytso@mit.edu>
+
+	* compile_et.sh.in: Make the shell script safe from directory
+		pathnames with spaces.
+
+2001-09-10  Theodore Tso  <tytso@mit.edu>
+
+	* com_err.texinfo: Add appropriate @node and @menu lines so that
+		the a valid .info file can be made.  Use @deftypefun to
+		define functions.  Change the e-mail address where bug
+		reports to be sent to be is the e2fsprogs maintainer.
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2000-12-04    <tytso@snap.thunk.org>
+
+	* compile_et.1: Fix simple typo in the man page.
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-07-04  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Remove explicit link of -lc in the shared library.
+		(It shouldn't be necessary, and is harmful in some cases).
+
+1999-11-19    <tytso@valinux.com>
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-10-22    <tytso@valinux.com>
+
+	* com_err.3: Fix to have correct #include path for com_err.h
+
+1999-09-07    <tytso@rsts-11.mit.edu>
+
+	* Updated copyright statements with permission of the original
+		authors.
+
+1999-07-18  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.15
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-06-27  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* et_h.awk, et_c.awk: Work around libm bug on the ARM.
+
+1998-03-30  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Fix bug where my_dir was set incorrectly.  Install
+		the et_c.awk and et_h.awk files in $(datadir)/et (i.e.,
+		/usr/share/et) directory.  Change to use new
+		installation directory variables convention.  Fix
+		uninstall rules to take $(DESTDIR) into account.
+
+	* compile_et.1: Change man page to reflect the fact that
+		compile_et is now a awk/sed script, not a yacc script.
+
+	* compile_et.sh.in: Look in $(datadir)/et for et_c.awk and
+		et_h.awk; if not found, look in the build directory.  Add
+		error checking for non-existent input file.
+
+Fri Oct 31 01:14:41 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* et_c.awk, et_h.awk: Remove support for non STDC compilers, since
+		the workarounds caused problems with the header file.
+
+Sun Aug 10 09:40:54 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* error_table.h:
+	* et_name.c (error_table_name): 
+	* error_message.c (error_message.c): Make code be 16-bit safe.
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Wed Mar 12 13:32:05 1997  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs version 1.07
+
+Tue Oct  8 02:02:03 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.06
+
+Thu Sep 12 15:23:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.05
+
+Thu May 16 11:12:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.04
+
+Wed Mar 27 00:33:40 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.03
+
+Wed Jan 31 11:06:08 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.02
+
+Mon Sep  4 21:44:47 1995  Remy Card  <card@bbj>
+
+	* Makefile.in: Added support for BSD shared libraries.
+
+Sat Aug 12 03:11:28 1995  Remy Card  <card@bbj>
+
+	* Makefile.in (install): Install static libraries in $(ulibdir)
+		(/usr/lib on Linux) instead of $(libdir) (/lib on Linux).
+
+Sat Aug  5 11:44:17 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* Makefile.in (DLL_INSTALL_DIR, ELF_INSTALL_DIR): Set the
+		installation directories correctly.
+
+Thu Jun 15 23:39:51 1995  Remy Card  <card@bbj>
+
+	* Makefile.in: Added support for ELF shared libraries.
+		Fixed typos in the compilation rules.
+		(distclean): Added compile_et.sh.
+
+Sat Jun 10 19:56:13 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* compile_et.sh.in: Use ET_DIR instead of srcdir to determine the
+		location of the et directory.
+
+Thu Jun  8 12:45:41 1995  Miles Bader  <miles@churchy.gnu.ai.mit.edu>
+
+	* vfprintf.c (vfprintf): Only compile this function if vfprintf
+	doesn't already exist and _doprnt does.
+
+	* compile_et.sh: Moved to compile_et.sh.in.
+
+	* Makefile.in: Rewritten to conform to GNU coding standards and
+	support separate compilation directories.
+	Don't preprocess compile_et.sh, as this is now done by configure.
+
+Mon Nov  7 21:17:48 1994  Remy Card  <card@bbj>
+
+	* Makefile: Added a dummy install target in case shared libraries
+		are not built.
+
+Thu Sep  8 22:33:33 1994    (tytso@rsx-11)
+
+	* com_err.c (default_com_err_proc): Reversed order of \n\r to make
+		jik happy.

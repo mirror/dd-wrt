@@ -1,0 +1,451 @@
+.\" -*- nroff -*-
+.\" Copyright 1993, 1994, 1995 by Theodore Ts'o.  All Rights Reserved.
+.\" This file may be copied under the terms of the GNU Public License.
+.\" 
+.TH MKE2FS 8 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
+.SH NAME
+mke2fs \- create an ext2/ext3 filesystem
+.SH SYNOPSIS
+.B mke2fs
+[
+.B \-c
+| 
+.B \-l
+.I filename
+]
+[
+.B \-b
+.I block-size
+]
+[
+.B \-f
+.I fragment-size
+]
+[
+.B \-g
+.I blocks-per-group
+]
+[
+.B \-i
+.I bytes-per-inode
+]
+[
+.B \-j
+]
+[
+.B \-J
+.I journal-options
+]
+[
+.B \-N
+.I number-of-inodes
+]
+[
+.B -n
+]
+[
+.B \-m
+.I reserved-blocks-percentage
+]
+[
+.B \-o
+.I creator-os
+]
+[
+.B \-O 
+.IR feature [,...]
+]
+[
+.B \-q
+]
+[
+.B \-r
+.I fs-revision-level
+]
+[
+.B \-E
+.I extended-options
+]
+[
+.B \-v
+]
+[
+.B \-F
+]
+[
+.B \-L
+.I volume-label
+]
+[
+.B \-M
+.I last-mounted-directory
+]
+[
+.B \-S
+]
+[
+.B \-T
+.I filesystem-type
+]
+[
+.B \-V
+]
+.I device
+[
+.I blocks-count
+]
+@JDEV@.sp
+@JDEV@.B "mke2fs \-O journal_dev"
+@JDEV@[
+@JDEV@.B \-b
+@JDEV@.I block-size
+@JDEV@]
+.\" No external-journal specific journal options yet (size is ignored)
+.\" @JDEV@[
+.\" @JDEV@.B \-J
+.\" @JDEV@.I journal-options
+.\" @JDEV@]
+@JDEV@[
+@JDEV@.B \-L
+@JDEV@.I volume-label
+@JDEV@]
+@JDEV@[
+@JDEV@.B \-n
+@JDEV@]
+@JDEV@[
+@JDEV@.B \-q
+@JDEV@]
+@JDEV@[
+@JDEV@.B \-v
+@JDEV@]
+@JDEV@.I external-journal
+@JDEV@[
+@JDEV@.I blocks-count
+@JDEV@]
+.SH DESCRIPTION
+.B mke2fs
+is used to create an ext2/ext3 filesystem (usually in a disk partition).
+.I device
+is the special file corresponding to the device (e.g 
+.IR /dev/hdXX ).
+.I blocks-count
+is the number of blocks on the device.  If omitted,
+.B mke2fs
+automagically figures the file system size.  If called as
+.B mkfs.ext3
+a journal is created as if the
+.B \-j
+option was specified.
+.SH OPTIONS
+.TP
+.BI \-b " block-size"
+Specify the size of blocks in bytes.  Valid block size vales are 1024, 
+2048 and 4096 bytes per block.  If omitted,
+.B mke2fs
+block-size is heuristically determined by the file system size and
+the expected usage of the filesystem (see the
+.B \-T
+option).  If 
+.I block-size
+is negative, then 
+.B mke2fs
+will use heuristics to determine the
+appropriate block size, with the constraint that the block size will be
+at least 
+.I block-size
+bytes.  This is useful for certain hardware devices which require that
+the blocksize be a multiple of 2k.
+.TP
+.B \-c
+Check the device for bad blocks before creating the file system.  If
+this option is specified twice, then a slower, read-write
+test is used instead of a fast read-only test.
+.TP
+.BI \-E " extended-options"
+Set extended options for the filesystem.  Extended options are comma
+separated, and may take an argument using the equals ('=') sign.  The
+.B -E
+option used to be 
+.B -R
+in earlier versions of 
+.BR mke2fs .
+The 
+.B -R
+option is still accepted for backwards compatibility.   The 
+following extended options are supported:
+.RS 1.2i
+.TP
+.BI stride= stripe-size
+Configure the filesystem for a RAID array with
+.I stripe-size
+filesystem blocks per stripe.
+.TP
+.BI resize= max-online-resize
+Reserve enough space so that the block group descriptor table can grow
+to support a filesystem that has max-online-resize blocks.
+.RE
+.TP
+.BI \-f " fragment-size"
+Specify the size of fragments in bytes.
+.TP
+.B \-F
+Force 
+.B mke2fs
+to run, even if the specified device is not a 
+block special device, or appears to be mounted.
+.TP
+.BI \-g " blocks-per-group"
+Specify the number of blocks in a block group.  There is generally no
+reason the user to ever set this parameter, as the default is optimal
+for the filesystem.  (For administrators who are creating
+filesystems on RAID arrays, it is preferable to use the
+.I stride
+RAID parameter as part of the
+.B \-R
+option rather than manipulating the number of blocks per group.)  
+This option is generally used by developers who
+are developing test cases.  
+.TP
+.BI \-i " bytes-per-inode"
+Specify the bytes/inode ratio. 
+.B mke2fs
+creates an inode for every
+.I bytes-per-inode
+bytes of space on the disk.  The larger the 
+.I bytes-per-inode
+ratio, the fewer inodes will be created.  This value generally shouldn't
+be smaller than the blocksize of the filesystem, since then too many
+inodes will be made.  Be warned that is not possible to expand the number 
+of inodes on a filesystem after it is created, so be careful deciding the
+correct value for this parameter. 
+.TP 
+.B \-j
+Create the filesystem with an ext3 journal.  If the
+.B \-J
+option is not specified, the default journal parameters will be used to
+create an appropriately sized journal (given the size of the filesystem) 
+stored within the filesystem.  Note that you must be using a kernel
+which has ext3 support in order to actually make use of the journal.
+.TP
+.BI \-J " journal-options"
+Create the ext3 journal using options specified on the command-line.
+Journal options are comma
+separated, and may take an argument using the equals ('=')  sign.
+The following journal options are supported:
+.RS 1.2i
+.TP
+.BI size= journal-size
+Create an internal journal (i.e., stored inside the filesystem) of size
+.I journal-size 
+megabytes.
+The size of the journal must be at least 1024 filesystem blocks 
+(i.e., 1MB if using 1k blocks, 4MB if using 4k blocks, etc.) 
+and may be no more than 102,400 filesystem blocks.  
+@JDEV@.TP
+@JDEV@.BI device= external-journal
+@JDEV@Attach the filesystem to the journal block device located on
+@JDEV@.IR external-journal .
+@JDEV@The external
+@JDEV@journal must already have been created using the command
+@JDEV@.IP
+@JDEV@.B mke2fs -O journal_dev
+@JDEV@.I external-journal
+@JDEV@.IP
+@JDEV@Note that
+@JDEV@.I external-journal
+@JDEV@must have been created with the
+@JDEV@same block size as the new filesystem.
+@JDEV@.IP
+@JDEV@Instead of specifying a device name directly,
+@JDEV@.I external-journal
+@JDEV@can also be specified by either
+@JDEV@.BI LABEL= label
+@JDEV@or
+@JDEV@.BI UUID= UUID
+@JDEV@to locate the external journal by either the volume label or UUID
+@JDEV@stored in the ext2 superblock at the start of the journal.  Use
+@JDEV@.BR dumpe2fs (8)
+@JDEV@to display a journal device's volume label and UUID.  See also the
+@JDEV@.B -L
+@JDEV@option of
+@JDEV@.BR tune2fs (8).
+.RE
+@JDEV@.IP
+@JDEV@Only one of the
+@JDEV@.BR size " or " device
+@JDEV@options can be given for a filesystem.
+.TP
+.BI \-l " filename"
+Read the bad blocks list from
+.IR filename .  
+Note that the block numbers in the bad block list must be generated
+using the same block size as used by mke2fs.  As a result, the
+.B \-c
+option to 
+.B mke2fs
+is a much simpler and less error-prone method of checking a disk for bad
+blocks before formatting it, as 
+.B mke2fs
+will automatically pass the correct parameters to the
+.B badblocks
+program.
+.TP
+.B \-L
+Set the volume label for the filesystem.
+.TP
+.BI \-m " reserved-blocks-percentage"
+Specify the percentage of the filesystem blocks reserved for 
+the super-user.  This avoids fragmentation, and allows root-owned
+daemons, such as 
+.BR syslogd (8),
+to continue to function correctly after non-privileged processes are 
+prevented from writing to the filesystem.  The default percentage 
+is 5%.
+.TP
+.B \-M
+Set the last mounted directory for the filesystem.  This might be useful 
+for the sake of utilities that key off of the last mounted directory to 
+determine where the filesystem should be mounted.
+.TP
+.B \-n
+causes mke2fs to not actually create a filesystem, but display what it
+would do if it were to create a filesystem.  This can be used to
+determine the location of the backup superblocks for a particular
+filesystem, so long as the mke2fs parameters that were passed when the
+filesystem was originally created are used again.  (With the
+.B \-n 
+option added, of course!)
+.TP
+.BI \-N " number-of-inodes"
+overrides the default calculation of the number of inodes that should be 
+reserved for the filesystem (which is based on the number of blocks and 
+the 
+.I bytes-per-inode
+ratio).  This allows the user to specify the number 
+of desired inodes directly.
+.TP
+.BI \-o " creator-os"
+Manually override the default value of the "creator os" field of the 
+filesystem.  Normally the creator field is set by default to the native OS
+of the
+.B mke2fs
+executable.
+.TP
+.B "\-O \fIfeature\fR[,...]"
+Create filesystem with given features (filesystem options), overriding 
+the default filesystem options.
+Currently, the
+.B sparse_super
+and
+.B filetype
+features are turned on by default when 
+.B mke2fs
+is run on a system with Linux 2.2 or later (unless creator-os is set to
+the Hurd).  Filesystems that may need to be mounted on pre-2.2 Linux or
+other kernels should be created with
+.B "\-O none"
+(or
+.B "\-r 0"
+for Linux 1.2) which will disable these features, even if 
+.B mke2fs 
+is run on a system which can support them.
+.sp
+The following filesystem options are supported:
+.RS 1.2i
+.TP
+.B dir_index
+Use hashed b-trees to speed up lookups in large directories.
+.TP
+.B filetype
+Store file type information in directory entries.
+.TP
+.B has_journal
+Create an ext3 journal (as if using the
+.B \-j
+option).
+@JDEV@.TP
+@JDEV@.B journal_dev
+@JDEV@Create an external ext3 journal on the given device
+@JDEV@instead of a regular ext2 filesystem.
+@JDEV@Note that
+@JDEV@.I external-journal
+@JDEV@must be created with the same
+@JDEV@block size as the filesystems that will be using it.
+.TP
+.B sparse_super
+Create a filesystem with fewer superblock backup copies
+(saves space on large filesystems).
+.RE
+.TP
+.B \-q
+Quiet execution.  Useful if 
+.B mke2fs
+is run in a script.
+.TP
+.BI \-r " revision"
+Set the filesystem revision for the new filesystem.  Note that 1.2
+kernels only support revision 0 filesystems.  The default is to 
+create revision 1 filesystems.
+.TP
+.B \-S
+Write superblock and group descriptors only.  This is useful if all of
+the superblock and backup superblocks are corrupted, and a last-ditch
+recovery method is desired.  It causes 
+.B mke2fs
+to reinitialize the 
+superblock and group descriptors, while not touching the inode table
+and the block and inode bitmaps.  The
+.B e2fsck
+program should be run immediately after this option is used, and there
+is no guarantee that any data will be salvageable.  It is critical to
+specify the correct filesystem blocksize when using this option,
+or there is no chance of recovery.
+.\" .TP
+.\" .BI \-t " test"
+.\" Check the device for bad blocks before creating the file system
+.\" using the specified test.
+.TP
+.BI \-T " fs-type"
+Specify how the filesystem is going to be used, so that mke2fs can 
+chose optimal filesystem parameters for that use.  The supported
+filesystem types are:
+.RS 1.2i
+.TP 1.2i
+news
+one inode per 4kb block
+.TP
+largefile
+one inode per megabyte
+.TP
+largefile4
+one inode per 4 megabytes
+.RE
+.TP
+.B \-v
+Verbose execution.
+.TP
+.B \-V
+Print the version number of 
+.B mke2fs
+and exit.
+.SH AUTHOR
+This version of
+.B mke2fs
+has been written by Theodore Ts'o <tytso@mit.edu>.
+.SH BUGS
+.B mke2fs
+accepts the
+.B \-f
+option but currently ignores it because the second
+extended file system does not support fragments yet.
+.br
+There may be other ones.  Please, report them to the author.
+.SH AVAILABILITY
+.B mke2fs
+is part of the e2fsprogs package and is available from 
+http://e2fsprogs.sourceforge.net.
+.SH SEE ALSO
+.BR badblocks (8),
+.BR dumpe2fs (8),
+.BR e2fsck (8),
+.BR tune2fs (8)

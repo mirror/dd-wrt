@@ -1,0 +1,1 @@
+e2fsck-static: statically-linked-binary ./sbin/e2fsck.static

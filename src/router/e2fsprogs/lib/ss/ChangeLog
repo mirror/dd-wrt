@@ -1,0 +1,441 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-05-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* pager.c (ss_safe_getenv): Fix bug so it would fetch the right
+		environment variable.
+
+2005-03-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* get_readline.c (ss_get_readline), pager.c (ss_page_stdin): If
+		called by a setuid/setgid or an otherwise privileged
+		program, be paranoid and ignore the PAGER and
+		SS_READLINE_PATH environment variables.
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Remove ss.pc on a "make distclean"
+
+2005-01-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* ss.pc.in: Add pkg-config files.
+
+2005-01-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Fix the kernel compile-time echo commands to be
+		consistent and portable
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output for "make
+		install"
+
+	* Makefile.in (installdirs): Use $(MKINSTALLDIRS) macro
+		Update dependencies.
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-09-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* mk_cmds.sh.in: Remove XSI:isms for greater portability.
+		(Addresses Debian Bug #255589)
+
+2004-02-29  Brian Bergstrand  <brian@bergstrand.org>
+
+	* Makefile.in: Use $(BSDLIB_PIC_FLAG) to determine whether to use
+		-fpic or -fPIC
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2003-12-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* list_rqs.c, listen.c, requests.c, ss.h, ss_internal.h: Fix gcc
+		-Wall nitpicks.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-04-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* help.c: Add #ifdef protection around #include <sys/wait.h>
+
+2003-04-11  Theodore Ts'o  <tytso@mit.edu>
+
+	* get_readline.c (DEFAULT_LIBPATH): Use the SS_READLINE_PATH
+		environment variable to control the search for a suitable
+		readine library.  As a default, try using libreadline,
+		libedit, and libeditline.
+
+2003-03-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* pager.c, listen.c, requests.c, list_rqs.c, ct_c.awk, prompt.c, 
+		error.c, request_tbl.c, ss_internal.h, invocation.c, ss.h,
+		get_readline.c: Remove old support for K&R C and Varargs.
+		Fix gcc -Wall nits.
+
+	* Makefile.in: Use the compile_et --build-tree option.
+
+2003-03-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* mk_cmds.1, Makefile.in: Add (bare-bone) man page
+
+	* Makefile.in (DLOPEN_LIB): Include the dlopen library if it is
+		present on shared libraries.
+
+	* ss_internal.h: Add pointers to dynamic readline functions in the
+		ss_info data structure.
+
+	* listen.c (ss_listen): Use readline instead of fgets if the
+		readline library is present.  Define helper functions to
+		provide command completion from the ss request tables.
+
+	* invocation.c (ss_create_invocation, ss_delete_invocation): If
+		HAVE_DLOPEN is defined, call ss_get_readline() to automatically
+		try to load the readline library.
+
+	* get_readline.c (ss_get_readline): New function which uses dlopen()
+		to dynamically load the readline library if it is present 
+		on the system.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-03-07  Theodore Tso  <tytso@mit.edu>
+
+	* pager.c (ss_pager_create), list_rqs.c (ss_list_requests): Fix
+		function prototypes to avoid gcc -Wall complaints.
+
+	* listen.c (ss_listen): Make sure the signal handler for SIGCONT
+		is restored when we exit.  Also, make sure we don't
+		clubber any variables after setjmp/longjmp.  Also removed
+		some bogus, fairly dubious coude.
+
+	* ss.h, ss_internal.h, execute_cmd.c: Add function prototypes to
+		prevent gcc -Wall complaints.
+
+2002-02-12  Theodore Tso  <tytso@mit.edu>
+
+	* requests.c (DECLARE): Fix bug in non-STDC declaration --- we
+		had a mismatch in the function signature and parameter
+		declaration sections for info/infop.
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-16  Theodore Tso  <tytso@mit.edu>
+
+	* mk_cmds.sh.in: Make the shell script safe from directory
+		pathnames with spaces.
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in: Move include/asm/types.h.in to
+		lib/ext2fs/ext2_types.h.in.
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-07-04  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Remove explicit link of -lc in the shared library.
+		(It shouldn't be necessary, and is harmful in some cases).
+
+2000-07-03    <tytso@snap.thunk.org>
+
+	* ct_c.awk: Work around a bug in gawk 3.05
+
+	* mk_cmds.sh.in: Allow the build system to override the standard
+		location for finding the ct_c.* files by setting the
+		_SS_DIR_OVERRIDE environment variable.
+
+	* Makefile.in: Use _SS_DIR_OVERRIDE to make sure we get the
+		version in the source tree.
+
+2000-05-25    <tytso@snap.thunk.org>
+
+	* Makefile: Add hack dependency rule so that parallel makes work
+		correctly. 
+
+1999-11-19    <tytso@valinux.com>
+
+	* execute_cmd.c (ss_execute_line): Fix memory leak; we weren't
+		freeing the argv array.
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-09-07    <tytso@rsts-11.mit.edu>
+
+	* Updated copyright statements with permission of the original
+		authors.
+
+1999-07-18  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.15
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+Mon Jan  4 00:05:14 1999  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* mk_cmds.sh.in (TMP): Fixed portability bug in shell script; we
+		were depending on a bash'ism.
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-07-10  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* mk_cmds.sh.in: Fix error message so that it says mk_cmds's
+		template files instead of compile_et's template files.
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-03-30  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Install the ct_c.awk and ct_c.sed files in
+		$(datadir)/ss (i.e., /usr/share/ss) directory.  Change
+		to use new installation directory variables
+		convention.  Fix uninstall rules to take $(DESTDIR)
+		into account.
+
+	* mk_cmds.sh.in: Look in $(datadir)/ss for ct_c.awk and
+		ct_c.sed; if not found, look in the build directory.  Add
+		error checking for non-existent input file.
+
+Thu Aug 14 08:17:22 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (install): Fix rm command to use $(DESTDIR)
+		appropriately.
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Wed Jun  4 15:04:03 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (install): Install the ss_err.h header file out of
+		the build directory instead of the source directory (since
+		it is a constructed file).
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Wed Mar 12 13:32:05 1997  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs version 1.07
+
+Wed Mar 12 21:54:32 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* help.c, pager.c, ss.h: Don't use "extern int errno", but use
+		#include <errno.h> instead.
+
+Thu Jan  2 00:16:03 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* parse.c: Put in an include of string.h
+
+Tue Oct  8 02:02:03 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.06
+
+Thu Sep 12 15:23:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.05
+
+Fri Aug 30 22:36:48 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* invocation.c (ss_create_invocation): Change function prototype
+ 		of invocation so that the first two arguments are const
+ 		char *, and that the info_ptr is a void *, not a char *.
+
+	* ss.h: Added declaration of ss_execute_line()
+
+Sat Aug 10 00:17:14 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* listen.c (ss_listen): Fix -Wall flames.
+
+Thu May 16 11:12:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.04
+
+Thu May 16 10:04:09 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (INSTALL_HFILES): Install the correct header files
+		so that /usr/include/ss/ss.h is actually usable!
+
+Wed Mar 27 00:33:40 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.03
+
+Wed Jan 31 11:06:08 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.02
+
+Wed Oct 25 11:58:20 1995    <tytso@rsts-11.mit.edu>
+
+	* ss_internal.h: Removed malloc, realloc, free definitions, and
+		#include <stdlib.h> instead.
+
+Mon Sep  4 21:46:00 1995  Remy Card  <card@bbj>
+
+	* Makefile.in: Added support for BSD shared libraries.
+		(distclean): Use the -f option when removing files.
+
+Fri Aug 18 15:15:09 1995  Theodore Y. Ts'o  <tytso@dcl>
+
+	* Makefile.in (mk_cmds): Remove usage of $<, since it's not
+		portable. 
+
+Sat Aug 12 03:11:02 1995  Remy Card  <card@bbj>
+
+	* Makefile.in (install): Install static libraries in $(ulibdir)
+		(/usr/lib on Linux) instead of $(libdir) (/lib on Linux).
+
+Thu Aug 10 14:23:31 1995  Remy Card  <card@bbj>
+
+	* Makefile.in (distclean): Remove mk_cmds.sh.
+
+Sat Aug  5 11:44:29 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* mk_cmds.sh.in: Remove the old .c file before moving the new file
+		into place.
+
+	* Makefile.in (DLL_INSTALL_DIR, ELF_INSTALL_DIR): Set the
+		installation directories correctly.
+
+	* Makefile.in (clean): Don't remove mk_cmds.sh, since it's built
+		from the configure script.
+
+Tue Jul 11 20:47:46 1995    <tytso@rsx-11.mit.edu>
+
+	* help.c (ss_help): Use malloc instead of alloca for maximal
+		portability.  Check return value of malloc before using
+		buffer.  Allocate memory when printing usage message.
+
+Thu Jun 15 23:46:16 1995  Remy Card  <card@bbj>
+
+	* Makefile.in: Added support for ELF shared libraries.
+		Fixed typos in the compilation rules.
+		(distclean): Added mk_cmds.sh.
+
+Sat Jun 10 19:57:07 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* mk_cmds.sh.in: Use SS_DIR instead of srcdir to determine the
+		location of the ss directory.
+
+Thu Jun  8 13:18:48 1995  Miles Bader  <miles@churchy.gnu.ai.mit.edu>
+
+	* help.c (ss_help): Use alloca to allocate space for filenames
+	instead of fixed buffers.
+	* error.c (ss_error, & includes): Change the selection of
+	varargs/stdarg to work with configure.
+	* pager.c: Include <errno.h> if possible.
+	* parse.c: Ditto.
+	* request_tbl.c: Ditto.
+
+	* Makefile.in: Rewritten to conform to GNU coding standards and
+	support separate compilation directories.
+	Don't preprocess mk_cmds.sh, as this is now done by configure.
+
+Sat Mar 11 18:14:52 1995  Theodore Y. Ts'o  <tytso@localhost>
+
+	* Makefile.in (DLL_INSTALL_DIR): Install libss in /lib, since it's
+		needed by debugfs (which is installed in /sbin).
+
+

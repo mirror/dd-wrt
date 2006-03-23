@@ -1,0 +1,144 @@
+.\" -*- nroff -*-
+.TH CHATTR 1 "@E2FSPROGS_MONTH@ @E2FSPROGS_YEAR@" "E2fsprogs version @E2FSPROGS_VERSION@"
+.SH NAME
+chattr \- change file attributes on a Linux second extended file system
+.SH SYNOPSIS
+.B chattr
+[
+.B \-RV
+]
+[
+.B \-v
+.I version
+]
+[
+.I mode
+]
+.I files...
+.SH DESCRIPTION
+.B chattr
+changes the file attributes on a Linux second extended file system.
+.PP
+The format of a symbolic mode is +-=[ASacDdIijsTtu].
+.PP
+The operator `+' causes the selected attributes to be added to the
+existing attributes of the files; `-' causes them to be removed; and
+`=' causes them to be the only attributes that the files have.
+.PP
+The letters `acdijsuADST' select the new attributes for the files: 
+append only (a), compressed (c), no dump (d), immutable (i),
+data journalling (j), secure deletion (s), no tail-merging (t), 
+undeletable (u), no atime updates (A), synchronous directory updates (D), 
+synchronous updates (S), and top of directory hierarchy (T).
+.SH OPTIONS
+.TP
+.B \-R
+Recursively change attributes of directories and their contents.
+Symbolic links encountered during recursive directory traversals are
+ignored.
+.TP
+.B \-V
+Be verbose with chattr's output and print the program version.
+.TP
+.BI \-v " version"
+Set the file's version/generation number.
+.SH ATTRIBUTES
+When a file with the 'A' attribute set is accessed, its atime record is
+not modified.  This avoids a certain amount of disk I/O for laptop
+systems.
+.PP
+A file with the `a' attribute set can only be open in append mode for writing.
+Only the superuser or a process possessing the CAP_LINUX_IMMUTABLE 
+capability can set or clear this attribute.
+.PP
+A file with the `c' attribute set is automatically compressed on the disk
+by the kernel.  A read from this file returns uncompressed data.  A write to
+this file compresses data before storing them on the disk.
+.PP
+When a directory with the `D' attribute set is modified,
+the changes are written synchronously on the disk; this is equivalent to
+the `dirsync' mount option applied to a subset of the files.
+.PP
+A file with the `d' attribute set is not candidate for backup when the
+.BR dump (8)
+program is run.
+.PP
+The 'E' attribute is used by the experimental compression patches to 
+indicate that a compressed file has a compression error.  It may not be
+set or reset using 
+.BR chattr (1),
+although it can be displayed by
+.BR lsattr (1).
+.PP
+The 'I' attribute is used by the htree code to indicate that a directory
+is behind indexed using hashed trees.  It may not be set or reset using 
+.BR chattr (1),
+although it can be displayed by
+.BR lsattr (1).
+.PP
+A file with the `i' attribute cannot be modified: it cannot be deleted or
+renamed, no link can be created to this file and no data can be written
+to the file.  Only the superuser or a process possessing the
+CAP_LINUX_IMMUTABLE capability can set or clear this attribute.
+.PP
+A file with the `j' attribute has all of its data written to the ext3
+journal before being written to the file itself, if the filesystem is
+mounted with the "data=ordered" or "data=writeback" options.  When the
+filesystem is mounted with the "data=journal" option all file data
+is already journalled and this attribute has no effect.  
+Only the superuser or a process possessing the CAP_SYS_RESOURCE
+capability can set or clear this attribute.
+.PP
+When a file with the `s' attribute set is deleted, its blocks are zeroed and
+written back to the disk.
+.PP
+When a file with the `S' attribute set is modified,
+the changes are written synchronously on the disk; this is equivalent to
+the `sync' mount option applied to a subset of the files.
+.PP
+A directory with the 'T' attribute will be deemed to be the top of 
+directory hierarchies for the purposes of the Orlov block allocator
+(which is used in on systems with Linux 2.5.46 or later).
+.PP
+A file with the 't' attribute will not have a partial block fragment at
+the end of the file merged with other files (for those filesystems which
+support tail-merging).  This is necessary for applications such as LILO 
+which read the filesystem directly, and which don't understand tail-merged
+files.  Note: As of this writing, the ext2 or ext3 filesystems do not
+(yet, except in very experimental patches) support tail-merging.
+.PP
+When a file with the `u' attribute set is deleted, its contents are saved.
+This allows the user to ask for its undeletion.
+.PP
+The 'X' attribute is used by the experimental compression patches to 
+indicate that a raw contents of a compressed file can be accessed
+directly.  It currently may not be set or reset using 
+.BR chattr (1),
+although it can be displayed by
+.BR lsattr (1).
+.PP
+The 'Z' attribute is used by the experimental compression patches to 
+indicate a compressed file is dirty.  It may not be set or reset using 
+.BR chattr (1),
+although it can be displayed by
+.BR lsattr (1).
+.PP
+.SH AUTHOR
+.B chattr
+was written by Remy Card <Remy.Card@linux.org>.  It is currently being
+maintained by Theodore Ts'o <tytso@alum.mit.edu>.
+.SH BUGS AND LIMITATIONS
+The `c', 's',  and `u' attributes are not honored 
+by the ext2 and ext3 filesystems as implemented in the current mainline
+Linux kernels.    These attributes may be implemented
+in future versions ext2 and ext3.
+.PP
+The `j' option is only useful if the filesystem is mounted as ext3.
+.PP
+The `D' option is only useful on Linux kernel 2.5.19 and later.
+.SH AVAILABILITY
+.B chattr
+is part of the e2fsprogs package and is available from
+http://e2fsprogs.sourceforge.net.
+.SH SEE ALSO
+.BR lsattr (1)

@@ -1,0 +1,23 @@
+#!/bin/sh
+
+dpkg --assert-support-predepends 2> /dev/null
+
+case $? in
+ 0) ;; # fine, supported
+ 1) exit 1 ;; # dpkg writes an error message to stdio
+ 2) cat <<EOT
+This package requires features of dpkg unavailable in this version.
+Please upgrade to a more recent version (>=1.1.0) of dpkg.
+EOT
+    exit 1 ;; # dpkg didn't recognise the option
+ *) exit 2 ;;
+esac
+
+# Old/erroneous conffile from early post-woody sid
+if [ -f /etc/mkinitrd/scripts/e2fsprogs ]
+then
+    rm -rf /etc/mkinitrd/scripts/e2fsprogs
+fi
+rm -f /etc/mkinitrd/scripts/e2fsprogs.mkinitrd
+
+#DEBHELPER#
