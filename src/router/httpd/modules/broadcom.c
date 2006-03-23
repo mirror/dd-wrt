@@ -1841,7 +1841,7 @@ Initnvramtab ()
   DIR *directory;
   FILE *in;
   int varcount = 0, len, i;
-  unsigned char *tmpstr;
+  char *tmpstr;
   struct variable *tmp;
   variables = NULL;
   char buf[1024];
@@ -2892,17 +2892,19 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
       websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
-      websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+      websWrite (wp,
+		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
-    //return -1;      botho 07/03/06 add "- No Forwards -" if empty
-    websWrite (wp, "<tr></tr><tr></tr>\n");
-    websWrite (wp, "<tr>\n");
-    websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
-    websWrite (wp, "</tr>\n");
+      //return -1;      botho 07/03/06 add "- No Forwards -" if empty
+      websWrite (wp, "<tr></tr><tr></tr>\n");
+      websWrite (wp, "<tr>\n");
+      websWrite (wp,
+		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+      websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
     {
@@ -2956,18 +2958,20 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
       websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
-      websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+      websWrite (wp,
+		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
-    //return -1;      botho 07/03/06 add "- No Forwards -" if empty
-    websWrite (wp, "<tr></tr><tr></tr>\n");
-    websWrite (wp, "<tr>\n");
-    websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
-    websWrite (wp, "</tr>\n");
-  }
+      //return -1;      botho 07/03/06 add "- No Forwards -" if empty
+      websWrite (wp, "<tr></tr><tr></tr>\n");
+      websWrite (wp, "<tr>\n");
+      websWrite (wp,
+		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+      websWrite (wp, "</tr>\n");
+    }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
@@ -3019,7 +3023,8 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
       //return -1;      botho 04/03/06 add "- No Forwards -" if empty
       websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
-      websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+      websWrite (wp,
+		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
@@ -3028,7 +3033,8 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
       websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
-      websWrite (wp, "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+      websWrite (wp,
+		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
@@ -3288,9 +3294,10 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     {
       ACTION ("ACT_SW_RESTORE");
       //eval("erase","nvram");
-      nvram_set ("sv_restore_defaults", "1");
+      //nvram_set ("sv_restore_defaults", "1");
       eval ("killall", "-9", "udhcpc");
       sys_commit ();
+      eval ("erase", "nvram");
       action = REBOOT;
     }
 
@@ -3413,7 +3420,8 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");}
+		 websSetRealm ("DD-WRT Router OS Core");
+		 }
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3538,6 +3546,55 @@ do_show_forward (char *url, webs_t stream)
 }
 #endif
 
+
+#ifdef HAVE_CHILLI
+static void
+do_fon_cgi (char *url, webs_t wp)
+{
+  char path[128], *query;
+
+  nvram_set ("router_style", "fon.css");
+  nvram_set ("wl_ssid", "FON");
+  nvram_set ("wl_ap_isolate", "1");	/* AP isolate mode */
+  nvram_set ("dnsmasq_enable", "1");
+  nvram_set ("chilli_enable", "1");
+  nvram_set ("chilli_url", "https://login.fon.com/cp/index.php");
+  nvram_set ("chilli_radius", "emilio.fon.com");
+  nvram_set ("chilli_backup", "emilio.fon.com");
+  nvram_set ("chilli_pass", "garrafon");
+  nvram_set ("chilli_dns1", "0.0.0.0");
+  nvram_set ("chilli_interface", "wlan");
+  nvram_set ("chilli_radiusnasid", "");
+  nvram_set ("chilli_uamsecret", "garrafon");
+  nvram_set ("chilli_uamanydns", "1");
+  nvram_set ("chilli_uamallowed",
+	     "www.fon.com,acceso.fon.com,en.fon.com,es.fon.com,www.paypal.com,www.paypalobjects.com");
+  nvram_set ("chilli_macauth", "");
+  nvram_set ("chilli_additional", "");
+  nvram_set ("fon_enable", "1");
+  nvram_commit ();
+  char *next_page;
+  if (my_next_page[0] != '\0')
+    {
+      sprintf (path, "%s", my_next_page);
+    }
+  else
+    {
+      next_page = websGetVar (wp, "next_page", NULL);
+      if (next_page)
+	sprintf (path, "%s", next_page);
+    }
+  cprintf ("refresh to %s\n", path);
+  do_ej (path, wp);		//refresh
+  websDone (wp, 200);
+  sleep (3);
+  sys_reboot ();
+  init_cgi (NULL);
+
+}
+
+#endif
+
 static void
 do_apply_cgi (char *url, webs_t stream)
 {
@@ -3568,18 +3625,19 @@ ej_get_http_method (int eid, webs_t wp, int argc, char_t ** argv)
 {
   return websWrite (wp, "%s", "post");
 }
-static void do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
+static void
+do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
-char *lang = nvram_get("language");
-if (lang==NULL)
-{
-do_file("/lang_pack/english.js",stream);
-return;
-}
-char l[60];
-sprintf(l,"/lang_pack/%s.js",lang);
-do_file(l,stream);
-return;
+  char *lang = nvram_get ("language");
+  if (lang == NULL)
+    {
+      do_file ("/lang_pack/english.js", stream);
+      return;
+    }
+  char l[60];
+  sprintf (l, "/lang_pack/%s.js", lang);
+  do_file (l, stream);
+  return;
 }
 
 
@@ -3598,6 +3656,7 @@ struct mime_handler mime_handlers[] = {
   {"Diagnostics.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
+  {"live/Live_Info.asp", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
 #ifdef KROMOGUI
@@ -3621,7 +3680,7 @@ struct mime_handler mime_handlers[] = {
   {"**.gif", "image/gif", NULL, NULL, do_file, NULL},
   {"**.png", "image/png", NULL, NULL, do_file, NULL},
   {"**.jpg", "image/jpeg", NULL, NULL, do_file, NULL},
-  {"**.js", "text/javascript", NULL, NULL, do_file, do_auth},
+  {"**.js", "text/javascript", NULL, NULL, do_file, NULL},
 #ifdef HAVE_SKYTRON
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth2},
@@ -3631,6 +3690,9 @@ struct mime_handler mime_handlers[] = {
 #else
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth},
+#endif
+#ifdef HAVE_CHILLI
+  {"fon.cgi*", "text/html", no_cache, NULL, do_fon_cgi, do_auth},
 #endif
   {"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth},
   {"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,

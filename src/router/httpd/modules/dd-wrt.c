@@ -1318,6 +1318,15 @@ wireless_save (webs_t wp)
 int
 ej_showad (int eid, webs_t wp, int argc, char_t ** argv)
 {
+#ifndef CONFIG_BRANDING
+#ifdef HAVE_CHILLI
+  if (nvram_invmatch ("fon_enable", "1"))
+    websWrite (wp,
+	       "<a href=\"fon.cgi\"><img src=\"images/turn.gif\" border=0 /></a>");
+#endif
+#endif
+
+
 #ifndef HAVE_NOAD
 /*
 if (nvram_match("wanup","1"))
@@ -3499,7 +3508,8 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, ">LAN</option></select></td>\n");
   ret += websWrite (wp, "              </tr>\n");
 
-  ret += websWrite (wp, "              <tr height=\"5\"><td>&nbsp;</td></tr>\n");
+  ret +=
+    websWrite (wp, "              <tr height=\"5\"><td>&nbsp;</td></tr>\n");
 
   ret += websWrite (wp, "              <tr>\n");
   ret +=
