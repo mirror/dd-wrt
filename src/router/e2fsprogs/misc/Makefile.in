@@ -14,7 +14,7 @@ INSTALL = @INSTALL@
 @IMAGER_CMT@E2IMAGE_PROG= e2image
 @IMAGER_CMT@E2IMAGE_MAN= e2image.8
 
-SPROGS=		mke2fs badblocks tune2fs dumpe2fs blkid logsave \
+SPROGS=		mke2fs mke2fs.static badblocks tune2fs dumpe2fs blkid logsave \
 			$(E2IMAGE_PROG) @FSCK_PROG@ 
 USPROGS=	mklost+found filefrag
 SMANPAGES=	tune2fs.8 mklost+found.8 mke2fs.8 dumpe2fs.8 badblocks.8 \
@@ -109,7 +109,7 @@ mke2fs: $(MKE2FS_OBJS) $(DEPLIBS) $(LIBE2P) $(DEPLIBUUID) $(DEPLIBS_BLKID)
 
 mke2fs.static: $(MKE2FS_OBJS) $(STATIC_DEPLIBS) $(STATIC_LIBE2P) $(DEPSTATIC_LIBUUID) $(DEPSTATIC_LIBBLKID)
 	@echo "	LD $@"
-	@$(CC) $(ALL_LDFLAGS) -static -o mke2fs.static $(MKE2FS_OBJS) \
+	@$(CC) $(ALL_LDFLAGS) -o mke2fs.static $(MKE2FS_OBJS) \
 		$(STATIC_LIBS) $(STATIC_LIBE2P) $(STATIC_LIBBLKID) \
 		$(STATIC_LIBUUID) $(LIBINTL)
 
