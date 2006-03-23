@@ -1,3 +1,11 @@
+/* ebt_redirect
+ *
+ * Authors:
+ * Bart De Schuymer <bdschuym@pandora.be>
+ *
+ * April, 2002
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -38,9 +46,9 @@ static int parse(int c, char **argv, int argc,
 
 	switch (c) {
 	case REDIRECT_TARGET:
-		check_option(flags, OPT_REDIRECT_TARGET);
+		ebt_check_option2(flags, OPT_REDIRECT_TARGET);
 		if (FILL_TARGET(optarg, redirectinfo->target))
-			print_error("Illegal --redirect-target target");
+			ebt_print_error2("Illegal --redirect-target target");
 		break;
 	default:
 		return 0;
@@ -55,13 +63,14 @@ static void final_check(const struct ebt_u_entry *entry,
 	struct ebt_redirect_info *redirectinfo =
 	   (struct ebt_redirect_info *)target->data;
 
-	if (BASE_CHAIN && redirectinfo->target == EBT_RETURN)
-		print_error("--redirect-target RETURN not allowed on "
-		            "base chain");
+	if (BASE_CHAIN && redirectinfo->target == EBT_RETURN) {
+		ebt_print_error("--redirect-target RETURN not allowed on base chain");
+		return;
+	}
 	CLEAR_BASE_CHAIN_BIT;
 	if ( ((hookmask & ~(1 << NF_BR_PRE_ROUTING)) || strcmp(name, "nat")) &&
 	   ((hookmask & ~(1 << NF_BR_BROUTING)) || strcmp(name, "broute")) )
-		print_error("Wrong chain for redirect");
+		ebt_print_error("Wrong chain for redirect");
 }
 
 static void print(const struct ebt_u_entry *entry,
@@ -99,8 +108,7 @@ static struct ebt_u_target redirect_target =
 	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute__ ((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_target(&redirect_target);
+	ebt_register_target(&redirect_target);
 }

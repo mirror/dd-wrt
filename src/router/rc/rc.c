@@ -460,6 +460,7 @@ main (int argc, char **argv)
     if (argc<2)
 	{
 	puts("try to be professional\n");
+	return 0;
 	}
     return start_service(argv[1]);
     }
@@ -468,6 +469,7 @@ main (int argc, char **argv)
     if (argc<2)
 	{
 	puts("try to be professional\n");
+	return 0;
 	}
     return stop_service(argv[1]);
     }

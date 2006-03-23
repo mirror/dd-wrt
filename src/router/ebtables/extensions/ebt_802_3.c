@@ -1,3 +1,11 @@
+/* 802_3
+ *
+ * Author:
+ * Chris Vitale <csv@bluetail.com>
+ *
+ * May 2003
+ */
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -43,29 +51,24 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 
 	switch (c) {
 		case _802_3_SAP:
-			check_option(flags, _802_3_SAP);
-			if (check_inverse(optarg))
+			ebt_check_option2(flags, _802_3_SAP);
+			if (ebt_check_inverse2(optarg))
 				info->invflags |= EBT_802_3_SAP;
-
-			if (optind > argc)
-				print_error("Missing 802.3-sap argument");
-			i = strtoul(argv[optind - 1], &end, 16);
+			i = strtoul(optarg, &end, 16);
 			if (i > 255 || *end != '\0') 
-				print_error("Problem with specified "
-				            "sap hex value, %x",i);
+				ebt_print_error2("Problem with specified "
+						"sap hex value, %x",i);
 			info->sap = i; /* one byte, so no byte order worries */
 			info->bitmask |= EBT_802_3_SAP;
 			break;
 		case _802_3_TYPE:
-			check_option(flags, _802_3_TYPE);
-			if (check_inverse(optarg))
+			ebt_check_option2(flags, _802_3_TYPE);
+			if (ebt_check_inverse2(optarg))
 				info->invflags |= EBT_802_3_TYPE;
-			if (optind > argc)
-				print_error("Missing 802.3-type argument");
-			i = strtoul(argv[optind - 1], &end, 16);
+			i = strtoul(optarg, &end, 16);
 			if (i > 65535 || *end != '\0') {
-				print_error("Problem with the specified "
-					    "type hex value, %x",i);
+				ebt_print_error2("Problem with the specified "
+						"type hex value, %x",i);
 			}
 			info->type = htons(i);
 			info->bitmask |= EBT_802_3_TYPE;
@@ -81,8 +84,8 @@ static void final_check(const struct ebt_u_entry *entry,
    unsigned int hookmask, unsigned int time)
 {
 	if (!(entry->bitmask & EBT_802_3))
-		print_error("For 802.3 DSAP/SSAP filtering the protocol "
-			    "must be LENGTH");
+		ebt_print_error("For 802.3 DSAP/SSAP filtering the protocol "
+				"must be LENGTH");
 }
 
 static void print(const struct ebt_u_entry *entry,
@@ -138,8 +141,7 @@ static struct ebt_u_match _802_3_match =
 	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute__ ((constructor));
-static void _init(void)
+void _init(void)
 {
-	        register_match(&_802_3_match);
+	ebt_register_match(&_802_3_match);
 }

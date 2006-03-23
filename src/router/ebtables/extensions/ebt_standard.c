@@ -1,3 +1,11 @@
+/* ebt_standard
+ *
+ * Authors:
+ * Bart De Schuymer <bdschuym@pandora.be>
+ *
+ * April, 2002
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
@@ -31,8 +39,6 @@ static void final_check(const struct ebt_u_entry *entry,
 {
 }
 
-struct ebt_u_entries *nr_to_chain(int nr);
-
 static void print(const struct ebt_u_entry *entry,
    const struct ebt_entry_target *target)
 {
@@ -41,7 +47,7 @@ static void print(const struct ebt_u_entry *entry,
 	if (verdict >= 0) {
 		struct ebt_u_entries *entries;
 
-		entries = nr_to_chain(verdict + NF_BR_NUMHOOKS);
+		entries = entry->replace->chains[verdict + NF_BR_NUMHOOKS];
 		printf("%s", entries->name);
 		return;
 	}
@@ -54,7 +60,7 @@ static void print(const struct ebt_u_entry *entry,
 	else if (verdict == EBT_RETURN)
 		printf("RETURN ");
 	else
-		print_bug("Bad standard target");
+		ebt_print_bug("Bad standard target");
 }
 
 static int compare(const struct ebt_entry_target *t1,
@@ -78,8 +84,7 @@ static struct ebt_u_target standard =
 	.extra_ops	= opts,
 };
 
-static void _init(void) __attribute__ ((constructor));
-static void _init(void)
+void _init(void)
 {
-	register_target(&standard);
+	ebt_register_target(&standard);
 }
