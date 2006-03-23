@@ -1,0 +1,67 @@
+#
+# Makefile for the doc directory
+#
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+top_builddir = ..
+my_dir = doc
+INSTALL = @INSTALL@
+
+@MCONFIG@
+
+DVI=texi2dvi
+DVIPS=dvips -o "$@"
+INFO=makeinfo
+HTML=texi2html
+
+all:: libext2fs.info libext2fs.dvi
+
+install-doc-libs:
+	@$(RM) -rf $(DESTDIR)$(infodir)/libext2fs.info*
+	@echo "	MKINSTALLDIRS $(infodir)"
+	@$(MKINSTALLDIRS) $(DESTDIR)$(infodir)
+	@for i in libext2fs.info* ; do \
+		echo "	INSTALL_DATA $(infodir)/$$i" ; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(infodir)/$$i ; \
+	done
+	@echo "	GZIP $(infodir)/libext2fs.info*"
+	@gzip -9 $(DESTDIR)$(infodir)/libext2fs.info*
+
+uninstall-doc-libs:
+	$(RM) -rf $(DESTDIR)$(infodir)/libext2fs.info*
+
+libext2fs.info: $(srcdir)/libext2fs.texinfo
+	@echo "	MAKEINFO $@"
+	-@$(INFO) $(srcdir)/libext2fs.texinfo
+
+libext2fs.dvi: $(srcdir)/libext2fs.texinfo
+	@echo "	TEXI2DVI $@"
+	-@$(DVI) $(srcdir)/libext2fs.texinfo
+
+.PHONY: distclean
+distclean:: clean
+	$(RM) -f Makefile
+
+.PHONY: clean
+clean:: clean-all
+
+.PHONY: clean-all
+clean-all:: clean-tex clean-backup clean-final clean-tarfiles
+
+.PHONY: clean-final
+clean-final::
+	$(RM) -f *.ps *.info *.info-? *.html
+
+.PHONY: clean-tex
+clean-tex::
+	$(RM) -f *.aux *.cp *.dvi *.fn *.ky *.log *.pg *.toc *.tp *.vr *.fns
+
+.PHONY: clean-backup
+clean-backup::
+	$(RM) -f *~ #*
+
+.PHONY: clean-tarfiles
+clean-tarfiles::
+	$(RM) -f *.tar *.tar.gz *.tgz

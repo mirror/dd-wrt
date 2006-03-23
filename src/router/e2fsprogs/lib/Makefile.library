@@ -1,0 +1,16 @@
+all:: subdirs $(LIBRARY).a
+
+install-shlibs::
+
+uninstall-shlibs::
+
+subdirs::
+
+$(LIBRARY).a: $(OBJS)
+	@echo "	GEN_LIB $@"
+	@(if test -r $@; then $(RM) -f $@.bak && $(MV) $@ $@.bak; fi)
+	@$(ARGEN) $@ $(OBJS)
+	-@$(RANLIB) $@
+	@$(RM) -f ../$@
+	@$(LN) $@ ../$@
+

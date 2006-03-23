@@ -1,0 +1,11 @@
+1s/^.*$//
+/^Filesystem UUID:/d
+/^Filesystem created:/d
+/^Last write time:/d
+/^Last mount time:/d
+/^Last checked:/d
+/^Directory Hash Seed:/d
+/^Next check after:/d
+/^Maximum mount count:/d
+/Reserved blocks uid:/s/ (user .*)//
+/Reserved blocks gid:/s/ (group .*)//

@@ -1,0 +1,1041 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-03-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Add tests for __secure_getenv(), prctl(),
+		and sys/prctl.h
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Make util/gen-tarball executable after it is created.
+
+2005-02-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Remove support for --enable-clear-htree; this was
+		only needed during the early development of the htree patch.
+
+	* configure.in, MCONFIG.in: Add support for --enable-maintainer-mode;
+		only rebuild configure from configure.in if it is enabled.
+
+2005-02-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Remove support for the (very old) sparc old-bitops
+		configure option.
+
+2005-01-19  Matthias Andree <matthias.andree@gmx.de>
+
+	* configure.in: Clean up checks for dirent.d_reclen, ssize_t,
+		llseek, lseek64, sockaddr.sa_len and make the lseek checks
+		immune to compiler warnings, so that they can be compiled
+		with Intel C++ 8.1.
+
+2005-01-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Make configure.in script check for prerequisite
+		headers when checking for the presence of sys/disk.h,
+		sys/mount.h, and net/if.h, to improve the configure script
+		on Solaris and *BSD systems. 
+
+2005-01-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Use AC_PROG_AWK instead of AC_PATH_PROG so that we
+		use nawk in preference to awk for Solaris systems.  Use
+		AC_PROG_EGREP because Solaris doesn't support "grep -E".
+
+2005-01-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Use AC_CHECK_TYPES instead of the autoconf 2.13
+		"broken by design" AC_CHECK_TYPE to look for intptr_t.
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Add install-strip and install-shlibs-strip targets
+
+	* MCONFIG.in: Add configure-defined variables for MKINSTALLDIRS
+		and INSTALL_SCRIPT.  Filter out comments inserted by newer
+		versions of gcc when using -M in make depend.
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Delete autom4te.cache, e2fsprogs.spec,
+		ext2ed/Makefile, and po/stamp-po on make distclean
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+	* MCONFIG.in: Add definition for ARGEN
+
+2004-09-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Add --disable-e2initrd-helper flag to control
+		whether or not e2initrd_helper program should be
+		built/installed.
+
+2004-09-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Remove XSI:isms for greater portability.
+		(Addresses Debian Bug #255589)
+
+	* config.guess, config.sub: Update to newer version from the FSF
+		(2004-06-11)
+
+	* configure.in, configure: Add test for the sys/queue.h header file.
+
+2004-05-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsprogs.spec.in: Fix up e2fsprogs.spec file so it should work
+		on a RH 9.0 system.  Based off of changes proposed by
+		Andreas Dilger.
+
+	* configure.in, configure: Enable the fsck wrapper for the Debian
+		FreeBSD kernel / GNU userspace port.  (Addresses Debian
+		Bug #246738)
+
+	* config.guess, config.sub: Update to newer version from the FSF
+		(2004-01-05)
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* MCONFIG.in (SUBSTITUTE_UPTIME): New definition which passes the
+		-t option to subst.
+
+	* configure.in: Add test for stdint.h
+
+2004-03-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Add tests for sa_len in struct sockaddr and test
+		for net/if_dl.h for better Darwin support.
+
+2004-03-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsprogs.spec.in: Mostly synchronize spec file with the one
+		found in Fedora core 2.
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2004-02-21  Matthias Andree <matthias.andree@gmx.de>
+
+	* configure.in: Add -mieee to CFLAGS if we're using GCC and the CPU is
+		an Alpha.
+
+2003-12-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsprogs.spec.in: Add filefrag program to the RPM spec file.
+
+2003-11-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* MCONFIG.in: Make the gcc-wall print more warnings to catch
+		signed vs. unsigned problems.
+
+2003-08-01  Philipp Thomas <pthomas@suse.de>
+
+	* configure.in: Add tests for inttypes.h and intptr_t.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-07-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Add tests for posix_memalign, memalign, and valloc.
+
+2003-07-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* MCONFIG.in (WFLAGS): Add additional warning checks.  Remove
+		--traditional since newer versions of gcc are overly annoying.
+
+2003-07-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Add workaround for Libintl / Darwin incompatibility.  Apparently
+		Darwin's gcc doesn't like the __asm__ statements used by
+		libintl to redirect the system-provided gettext calls.
+
+2003-06-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Adjust defaults for FreeBSD to no longer build the
+		fsck wrapper, and to not install into /usr/local by
+		default.  (Addresses Debian bug #195274)
+
+2003-05-17  Theodore Tso  <tytso@thunk.org>
+
+	* MCONFIG.in, configure.in: Only put the intl directory in the -I
+		search path if we are using --with-internal-gettext.
+		Otherwise causes compatibility problems with the woody
+		glibc.   (Addresses Debian bug #193372)
+
+2003-05-13  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Fix typo in help message for --enable-evms-11
+
+2003-05-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in, configure: Add --enable-testio-debug configure option. 
+
+	* configure.in, configure, Makefile.in: Add --with-diet-libc
+		convenience option.  Add --disable-evms option.
+
+2003-05-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Install the message catalog files
+
+	* ABOUT-NLS, MCONFIG.in, Makefile.in, aclocal.m4, configure,
+		configure.in: Update to using version 0.11.5 of the
+		gettext library.  We now enable NLS by default.
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-04-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Remove CYGWIN definition; we will use the
+		automatically defined __CYGWIN__ instead.
+
+2003-03-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Add E2FSPROGS_DAY expansion.  Add
+		e2fsprogs.spec and util/gen-tarball to the list of files
+		generated by config.status
+
+	* e2fsprogs.spec: Now generated from e2fsprogs.spec.in
+
+	* Makefile.in: Remove tarball generation functions; moved to
+		util/gen-tarball.
+
+2003-03-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Fix the Apple Darwin port.
+
+2003-03-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Check to see if libdl exists for the sake of dlopen
+
+2003-03-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Add support for Apple/Darwin shared libraries.
+
+2003-03-06  Theodore Tso  <tytso@thunk.org>
+
+	* Makefile.in (.exclude-subset): Include the doc directory in the
+		subset distribution.
+
+2003-03-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in, Makefile.in: Ignore missing directories so we can
+		do a subset distribution.  If there are no e2fsprogs
+		applications, then "make install" will install the
+		library's development files.  "make subset_tar_file" will
+		create a subset distribution which consists of the
+		et, ss, uuid, and blkid libraries.
+
+2003-02-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in, configure: Add new configure option 
+		--enable-blkid-debug
+
+2003-01-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in, configure, configure.in: Integrate new blkid library.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in, configure: Change --enable-jfs-debug to 
+		--enable-jbd-debug for consistency's sake.
+
+	* configure.in, configure: Add new substitution variable,
+		SWAPFS_CMT, which is '' if swapfs has been enabled, and
+		'#' if it has been disabled.
+	
+	* configure.in, configure: Add support for EVMS ABI 1.2.
+		Changed configure option from --enable-old-evms
+		to --enable-evms-10 and --enable-evms-11
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2002-10-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* MCONFIG.in (COMPRESS_EXT): Declare all compression extensions
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-08-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in, configure: Add new substitution variable,
+		LINUX_CMT, which is '' on Linux systems, and '#' on
+		non-Linux systems.  Enable HTREE support by default.
+
+	* Makefile.in: On Linux systems, build lib/evms.
+
+2002-07-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in, configure: Remove test for the presence (or
+		absence of d_namlen in the struct dirent) and replace it
+		with a check for pathconf().  lib/e2p/iod.c now uses a
+		different technique for providing struct dirent
+		compatibility.
+
+2002-06-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in, configure: Add --enable-htree and --enable-clear-htree
+
+2002-05-24  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: Add makefile for lib/evms for the EVMS FSIM
+		plugin.  Add --enable-old-evms configure option which uses
+		the EVMS 1.0.0 ABI, instead of the ABI used by EVMS 1.1.0.
+
+2002-05-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* configure.in: On Linux systems, if the prefix is defaulted to
+		/usr, then default mandir to /usr/share/man
+
+2002-05-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* Remove check for asm/page.h, and add check for sysconf()
+
+2002-05-16  Andreas Dilger <adilger@clusterfs.com>
+
+	* Add check for asm/page.h
+
+2002-05-11  Theodore Tso <tytso@mit.edu>
+
+	* configure.in, MCONFIG.in: Add new makefile variables, $datadir
+		and $root_sysconfdir, which are normally /usr/share and
+		/etc, respectively, on Linux systems.  Also changed
+		root_bindir, root_sbindir, and root_libdir so that their
+		value is set by the configure script.  This allows the
+		right thing to happen on non-Linux systems when bindir,
+		et. al.  are manually set via the configure script's
+		--bindir switch.  Add ext2ed/Makefile.in as a generated
+		file by the configure script.
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-12-24  Theodore Tso  <tytso@valinux.com>
+
+	* MCONFIG.in (ALL_CFLAGS): No longer put $(top_srcdir)/include in
+		the -I search path, since we don't have any header files
+		there any more.
+
+2001-12-16  Theodore Tso  <tytso@valinux.com>
+
+	* configure.in: If journal debugging is enabled, define
+		CONFIG_JBD_DEBUG instead of JFS_DEBUG.
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-27  Theodore Tso  <tytso@valinux.com>
+
+	* configure.in: Check for the presence of strnlen.  Stop checking
+		for strdup, since we don't actually care about that symbol
+		any more.
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-08-04  Andreas Dilger  <root@lynx.adilger.int>
+
+	* Makefile.in: Add "*.orig" to "make clean" target, change
+		explicit listing of ext2_types.h in "make distclean" to
+		$(SUBS).  Add $(SUBS) as a dependency to "make check"
+		target.  Add $(SUBS) as a dependency to "make check"
+		target.  Add -f flag to doc/Makefile $(RM) of files which
+		may not exist.
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-22  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in: Avoid including BitKeeper files into the source
+		tarball.
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-06-13  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in: Make the install target depend on $(SUBS) to
+		accomodate the fools who want to compile and install
+		e2fsprogs as root using just one command.
+
+	* Makefile.in: Don't recurse into debugfs and resize subdirectory
+		if --disable-debugfs or --disable-resizer is given as a
+		configuration option.
+
+	* configure.in: Add --disable-resizer, --disable-imager, and
+		--disable-debugfs switches, which allow people who are
+		building boot floppies to build a very restricted
+		e2fsprogs distribution.  Note: these functions limit the
+		functions in the shared library, so beware!
+
+2001-06-11  Theodore Tso  <tytso@valinux.com>
+
+	* configure.in: Add new switch, --disable-swapfs which disables
+		support of byte-swapping old filesystems.  Add new test,
+		AC_C_BIGENDIAN, which sets WORDS_BIGENDIAN on big-endian
+		machines.   Change handling of --with-ccopts so that if
+		set, the default CFLAGS is suppressed.
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* wordwrap.pl: Add some rules which help fix up the dependencies.
+
+	* Makefile.in: Move include/asm/types.h.in to
+		lib/ext2fs/ext2_types.h.in.
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in: Only exclude the top-level TODO file, not over the
+		entire tree.
+
+2001-05-19  Theodore Tso  <tytso@valinux.com>
+
+	* configure.in, MCONFIG.in (LDCONFIG): Use AC_PATH_PROG to find
+		the pathname for ldconfig.
+
+2001-05-05  Theodore Tso  <tytso@valinux.com>
+
+	* config.guess, config.sub: Update to use latest version from FSF
+		(2001-04-20)
+
+2001-01-11  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in (PROG_SUBDIRS): Build lib/e2p before lib/ext2fs
+		since libext2fs depends on libe2p.
+
+2001-01-11    <tytso@snap.thunk.org>
+
+	* MCONFIG.in: Change --enable-gcc-wall handling so that it's no
+		longer a configure option, but something which is done
+		when the developer uses the command "make gcc-wall".
+		(gcc-wall-new): Added new target which forgoes the make
+		clean so we only check the newly modified .c files.
+
+	* configure.in: Remove test for ino_t, since we don't use it any
+		more (we always use our own ext2_ino_t).  Remove
+		--enable-gcc-wall support.  Add test for sys/ioctl.h
+
+2001-01-05    <tytso@snap.thunk.org>
+
+	* configure.in: Add checks for the header files sys/mkdev.h and
+		sys/sysmacros.h.
+
+2000-12-08    <tytso@snap.thunk.org>
+
+	* MCONFIG.in, Makefile.in: Fix so that top-level "make check"
+		works correctly.
+
+2000-10-24    <tytso@snap.thunk.org>
+
+	* e2fsprogs.spec: Update spec file for Red Hat 7.0 compatibility
+
+	* configure.in: When compiling shared libraries for Solaris, use a
+		special-case Makefile fragment to deal with it.
+
+2000-08-18    <tytso@valinux.com>
+
+	* configure.in (JFS_DEBUG): Add support for --enable-jfs-debug
+
+2000-08-14    <tytso@valinux.com>
+
+	* e2fsprogs.spec (Summary): Add description of resize2fs to the
+		package summary.
+
+	* configure.in: Add test for sys/mount.h (required for e2fsck's
+		ext3 recovery code)
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-07-13    <tytso@snap.thunk.org>
+
+	* e2fsprogs.spec: Merge in a few changes from the Red Hat 6.2 spec
+		file, now that we're using a modern rpm to build
+		e2fsprogs.  Also updated version number to 1.19.
+
+2000-07-07  Theodore Ts'o  <tytso@valinux.com>
+
+	* e2fsprogs.spec (%post): Remove resize2fs from its old location
+		in /usr/sbin in the postinstall script.
+
+2000-07-05    <tytso@snap.thunk.org>
+
+	* config.guess, config.sub: Update to use latest version from FSF
+		(2000-06-13)
+
+2000-05-25    <tytso@snap.thunk.org>
+
+	* Makefile.in: Fix makefile so that it's safe to build in parallel.
+
+	* configure.in: Add test for lseek64 and open64.
+
+2000-05-25  Theodore Ts'o  <tytso@valinux.com>
+
+	* configure.in (DO_SUBSTITUTE_SCRIPT): Remove unneeded
+		substitution.  (Left over from before we moved to use a C
+		program to do substitutions.)
+	
+2000-05-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* e2fsprogs.spec (fsck.ext3): Add /sbin/fsck.ext3 to the spec file.
+
+2000-04-06  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in (source_tar_file): Remove the resize directory from
+		the list of excluded files.
+
+	* version.h: Update version header for an WIP release.
+
+	* e2fsprogs.spec: Updated for 1.19 release; added resize2fs.
+
+Thu Apr  6 17:43:11 2000  Theodore Y. Ts'o  <tytso@signal.thunk.org>
+
+	* configure.in (fdatasync): Add test for fdatasync(), since not
+		all OS's have this function.
+
+2000-04-03  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Remove uneeded parenthesis around shell pipelines
+		containing a "cd" command.  Use && instead of ; so that if
+		the "cd" fails, the makefile stops.
+
+	* MCONFIG.in (CPPFLAGS): Add define of CPPFLAGS from @CPPFLAGS@.
+		Remove uneeded parenthesis around shell pipelines
+		containing a "cd" command.
+
+2000-02-11    <tytso@snap.thunk.org>
+
+	* Makefile.in: Exclude the internationalization files from being
+		distributed.
+
+	* configure.in: Add support for --enable-compression.  This is
+		experimental code only for now, which is why it's under
+		--enable test.  Once it's stable, it will always be
+		compiled in.
+
+2000-02-11  Theodore Ts'o  <tytso@valinux.com>
+
+	* configure.in: Define HAVE_EXT2_IOCTLS based solely on the OS
+		type, instead of basising on whether a test program
+		compiles.  This was screwing up on some Linux kernel
+		header files, and we know the Hurd doesn't support the
+		ext2 ioctls anyway.
+
+2000-02-08  Theodore Ts'o  <tytso@valinux.com>
+
+	* configure.in, aclocal.m4: Add support for GNU gettext
+		internationalization support.
+
+2000-02-02  Theodore Ts'o  <tytso@valinux.com>
+
+	* MCONFIG.in: Always include src/include in the include path now.
+		This forces us to use our internally provided ext2_fs.h
+		file, for sanity's sake.  
+
+	* configure.in: If linux/fs.h isn't found, then add
+		build/include into the include path only, since
+		src/include is now always included.  Removed define of
+		HAVE_LINUX_FS_H, since we're not using it any more.
+		Removed i_version vs. i_generation check, since with the
+		included header file it is a permanently known quantity.
+		Removed AC_C_CROSS since it has been merged into
+		AC_PROG_CC in autoconf 2.13. 
+
+2000-01-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* MCONFIG.in (DEPLIBUUID): Since LIBUUID can sometimes include
+		"-lsocket" we need a separate DEPLIBUUID that can be used
+		in Makefile's dependency rules.
+
+1999-11-19    <tytso@valinux.com>
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.  Also, when making the .exclude file
+		for the source_tar_file, exclude those two files as well.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-26    <tytso@valinux.com>
+
+	* configure.in: Move the code that checks for the presence of
+		Linux header files, to earlier in the config file, since
+		it adds a directory to the include path, and that needs to
+		happen before any compile tests are run.  Add termios.h to
+		the headers which are checked.
+
+1999-10-25    <tytso@valinux.com>
+
+	* configure.in: Capitalized Hurd to make the GNU folks happy.
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-09-24    <tytso@valinux.com>
+
+	* configure.in (HAVE_STATE_FLAGS): Check to see if st_flags is
+		actually useful (since glibc 2.1 declares it on Alpha
+		without it being usable).  Add check for signal.h
+		header file, which doesn't exist on non-unix platforms.
+
+1999-07-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.15
+
+1999-07-03    <tytso@valinux.com>
+
+	* depfix.sed: Remove all line continuations from the dependencies;
+		the word wrapping is now done by wordwrap.pl.
+
+	* MCONFIG.in (BUILD_CC):
+	* configure.in (BUILD_CC): If cross compiling, find the native C
+		compiler and set it to BUILD_CC so that we can
+		successfully build util/subst.  Change default long long
+		size when cross compiling to be 8 (instead of 0).  Also
+		change the Hurd's defaults so that root files are placed
+		in / instead of /usr/local.
+
+	* Makefile.in (depend): Make "make depend" at the top-level
+		automatically recurse through all subdirectories.
+
+	* configure.in: Test for perl since it's needed by wordwrap.pl
+
+	* MCONFIG.in (depend): Fix make-depend so that it the dependencies
+		are automatically word-wrapped.  Added the makefile macro
+		$(PERL).
+
+	* wordwrap.pl: New file which does the word wrapping.
+
+	* MCONFIG.in (subst): Add rule to build the util/subst program if
+		necessary (by cd'ing to $(top_builddir)/util and making it.)
+
+1999-06-23    <tytso@valinux.com>
+
+	* configure.in: Check for the presence of i_generation field
+		versus i_version in the ext2_inode to support compiling
+		e2fsprogs in Linux 2.3.
+
+1999-04-17    <tytso@rsts-11.mit.edu>
+
+	* MCONFIG.in: Define man1dir, man3dir, and man8dir in terms of
+		mandir.
+
+1999-03-31  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* config.sub: Update config.sub from autoconf 2.13 so that it will
+		recognize new machine types from the Alpha.
+
+1999-03-16  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Add check for malloc.h and mallinfo().
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in (YEAR): Allow a 4-digit year for the version date,
+		so we can be Y2K politically correct.  (The date isn't
+		used for anything except display purposes, but it should
+		make people more comfortable to not use a 2-digit date,
+		even though it doesn't matter.)
+
+Mon Jan  4 02:36:23 1999  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Move the generated types.h file from the linux/
+ 		directory to the asm/ directory.
+
+	* configure.in: Force Solaris to never use -static, due to its
+ 		dynamic loader not being available to statically linked
+ 		programs.  Create the asm/ directory if needed.
+
+1999-01-01  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* INSTALL.elfbin (NOTE): Add a warning that the ELF binaries
+		assume glibc.
+
+	* config.guess: Update with a newer version from the FSF (although
+		I've removed rms's pathetic LINUX/GNU name kludgery)
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-11-27  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Add paths.h to header files for which we search.
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+Wed Apr  8 02:03:48 1998  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Fix missing "test" invokation in configure.in test.  (Only
+		affected default non-Linux builds).
+
+1998-03-30  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Change how the installation directions are
+		selected.  Previously, we had prefix and usr_prefix, where
+		prefix was '' and usr_prefix was /usr, and we then defined
+		bindir, ubindir, libdir, ulibdir, etc. in terms of that.
+		In autoconf 2.12, it's possible to override bindir,
+		libdir, etc., and so in order to make our installation
+		directory makefile variables more in line with autoconf
+		2.12, I've changed all of the various makefiles to use
+		prefix and root_prefix, where the default Linux
+		definitions are /usr and '', respectively.  What used to
+		be bindir is now root_bindir, and what used to be ubindir,
+		is now bindir.
+
+	* MCONFIG.in: Change directories to match with new installation
+		directory convention (see above).  Add Makefile
+		dependencies for makefile fragments, and define
+		DEP_LIB_MAKEFILES which library makefiles can use to
+		define DEP_MAKEFILES, so that the library makefiles will
+		get regenerated when the makefile fragments change.
+		Remove the cat?dir variables, since we aren't creating
+		those directories any more.
+
+	* Makefile.in: Add top-level uninstall targets.
+
+	* e2fsprogs-1.12.spec: Add to the RPM package the e2label man
+		page, and to reflect that fact that we now compile_et and
+		mk_cmds for the development package.
+
+1998-03-28  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Use && after a cd command so that the right thing
+		happens if the directory is missing.  Don't compile man
+		pages upon installation any more, since modern Linux
+		systems don't have /usr/man/cat? anymore (they 
+		typically cache man pages in /var/catman and delete them
+		if they haven't been used in a while, to save on disk
+		space, and because CPU's are fast enough these days that
+		you can get away with this).
+
+	* MCONFIG.in: Add a new makefile variable for the share
+		directory (i.e., /usr/share).  Make an autoconf magic
+		make rule so that $(top_builddir)/util/subst.conf gets
+		rebuilt automatically when necessary.
+
+Mon Jan 19 10:01:39 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsprogs-1.12.spec: Update spec file in preparation for 1.12
+		release. 
+
+Tue Nov 25 15:56:29 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Remove @EXTRA_PROGS@, since we aren't using it in
+	 	e2fsck/Makefile.in.
+
+Tue Nov  4 10:46:18 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Add check for setjmp.h
+
+Mon Oct 20 19:30:45 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in (HAVE_LLSEEK_PROTOTYPE): Added check to see if
+		llseek is declared in unistd.h
+
+Sun Oct 19 19:09:30 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Add tests for sys/stat.h, sys/time.h, and sys/types.h
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Sat Jun 14 03:26:45 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (SRCROOT): Allow people to set the version.h to
+		something like 1.10-PLUS.
+
+Sat Jun  7 16:38:40 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in (rmakefile): Added (optional) private directory for
+		resize2fs.
+
+	* Makefile.in: Change recursive descent rules to check to see if a
+		directory exists before trying to make it.
+
+Thu May  8 22:23:49 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (source_tar_file): Fix up makefile to work in new
+		CVS development environment.
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Tue Apr 22 10:48:03 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Add explicit check to see if linker accepts
+		-static (since even Linux systems might not work if 
+		libc.a isn't installed).
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Wed Mar 12 13:32:05 1997  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs version 1.07
+
+Wed Jan 15 11:37:36 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* config.sub (basic_machine): Added i686-* as another name for the
+ 		Pentium Pro.
+
+Tue Oct  8 02:02:03 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.06
+
+Mon Oct  7 08:22:31 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (all): Don't run "make check" by default.  User
+ 	 	should manually run "make check" if they wish to test
+ 	 	things out.
+
+Thu Sep 12 15:23:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.05
+
+Sat Aug 31 10:55:45 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in (AC_CHECK_FUNCS): Add fchown to list of functions
+	 	that we check.
+
+Wed Aug 28 14:42:12 1996  Miles Bader  <miles@gnu.ai.mit.edu>
+
+	* configure.in (usr_prefix): To be slightly more conformant with
+		the coding standards, always default to ${prefix}
+		unless on a linux system with prefix = ''.  Allow
+		--with-usr-prefix option.
+
+Tue Aug 27 16:53:29 1996  Miles Bader  <miles@gnu.ai.mit.edu>
+
+	* configure.in (AC_CHECK_HEADERS): Add net/if.h & netinet/in.h.
+		Add `--enable-fsck' switch, to allow configuration of
+		fsck wrapper building (default yes except on the hurd).
+		Make '' prefix default and LDFLAG_STATIC hacks work on
+		the hurd as well as linux.
+
+Tue Aug 27 16:23:56 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Check to see if sys/types.h defines ino_t.  Add
+		support for checking/sizing "long long".
+
+Wed Aug 21 00:44:22 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Added configure flag --enable-old-bitops, which
+ 		forces the bitops to use the standard bitmask operations.
+
+Fri Aug  9 08:29:00 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Check for existence of sys/utsname.h and
+	 	strcasecmp().  Remove check for EXT2 fragment in system
+	 	header file.  E2fsprogs now deals with the fragment fields
+	 	by dispatching off of the OS field.
+
+Tue Aug  6 14:34:19 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in (AC_OUPUT): Create substitutions for the uuid
+	 	library.
+
+	* MCONFIG.in (all): Add new variables for the uuid library.
+
+Thu May 23 12:39:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Make the default prefix be '' for Linux.
+
+Thu May 16 11:12:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.04
+
+Thu May 16 09:38:40 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: 
+	  MCONFIG.in: Man pages, shell scripts and include files are now
+		generated using the lib/substitute_sh script.  This is
+		faster than the configure substitution, and it doesn't
+		change the mod time of the file if it hasn't changed,
+		which prevents needless compilation of files.
+
+		Define new sets of Makefile variables: LIBSS, LIBCOM_ERR,
+ 		LIBEXT2FS, LIBE2P, and their static and profiled variants,
+ 		STATIC_* and PROFILED_*, which point to the actual file of
+ 		the shared or static library.  This way makefiles can link
+ 		directly with exactly the library they want.  Many ld's
+		(include GNU ld) have a really broken idea of how -L
+		works, and will link against an older library in /usr/lib
+		even though there is a newer on in a specified -L directory.
+		  
+Wed May 15 21:40:22 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* configure.in: Add support for --enable-dynamic-e2fsck, for
+ 		people who don't want to link e2fsck statically.  This
+ 		saves space, at the cost of increasing the reliance of
+ 		e2fsck other files (3-4 shared libraries).
+
+Wed Mar 27 00:33:40 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.03
+
+Wed Jan 31 11:06:08 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.02
+
+Thu Oct 26 11:59:44 1995    <tytso@rsts-11.mit.edu>
+
+	* configure.in (LDFALG_STATIC): Add temporary kludge for
+		determining how to link executables statically.  For now,
+		we assume that Linux systems only can link statically.
+
+Fri Sep 22 18:23:55 1995    <tytso@rsts-11.mit.edu>
+
+	* depfix.sed: Remove /usr/include lines which occur at the end of
+		the dependency listing.
+
+Mon Sep  4 21:40:22 1995  Remy Card  <card@bbj>
+
+	* configure.in: Added support for the --enable-bsd-shlibs option.
+
+Wed Aug  9 21:33:31 1995  Theodore Y. Ts'o  <tytso@dcl>
+
+	* MCONFIG.in (LD): Add $(PURE) to the definition to make it easier
+		to link executables using programs like purify.
+
+Sat Aug  5 11:41:03 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* configure.in: Check to see if strdup() is present
+
+	* INSTALL: Updated building and installation instructions to
+		reflect the new configure system.
+
+	* Makefile.in (install): When doing a general install, install the
+		shared libraries as well by using the new target 
+		install-shlibs-libs-recursive.
+
+	* configure.in: If we are building on a Linux system, set $prefix
+		to be '/' by default.
+
+Sun Jul  9 13:38:20 1995  Miles Bader  <miles@churchy.gnu.ai.mit.edu>
+
+	* configure.in (checking type sizes): provide some default for
+	type-sizes when cross-compiling, as we can't check them then.
+	(SS_DIR, ET_DIR): Make these correct even when ${srcdir} is absolute.
+
+Thu Jun 15 23:33:37 1995  Remy Card  <card@bbj>
+
+	* Makefile.in (distclean-local): Added config.cache and
+		include/linux/types.h.
+
+	* configure.in: Added support for the --enable-elf option.
+		Added a test to check for llseek() in the C library.
+
+	* lib/Makefile.dll-lib: Fixed incorrect RM and LN calls.
+
+	* lib/Makefile.elf-lib: New file, to create ELF shared libraries.
+
+Sat Jun 10 19:52:51 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* configure.in: Create ET_DIR and SS_DIR, which gives the absolute
+		pathname to the source directories of the lib/et and
+		lib/ss.  (Can't just use $srcdir since that may be a
+		relative path.)
+
+Thu Jun  8 12:25:57 1995  Miles Bader  <miles@churchy.gnu.ai.mit.edu>
+
+	* lib/Makefile.library ($(LIBRARY).a): Changed to work with the
+	new makefiles.
+	* lib/Makefile.dll-lib: Ditto.
+	* lib/Makefile.profiled: Ditto.
+	* lib/Makefile.checker: Ditto.
+
+	* Add the include subdirectory to hold substitute include files
+	for systems that need them.
+
+	* Makefile.in: Rewritten to conform to GNU coding standards.
+	* MCONFIG: Moved to MCONFIG.in, and totally changed to support
+	GNU-style makefiles.
+	* mkinstalldirs: New file, copied from /gd/gnu/lib.
+	* config.guess: Ditto.
+	* config.sub: Ditto.
+	* install-sh: Ditto.
+
+	* configure.in: Many new tests added.  --with-cc and --with-ccopts
+	options removed as configure already supports a method to do this,
+	and they were interfering with normal usage.
+
+Sat Mar 11 18:23:45 1995  Theodore Y. Ts'o  <tytso@localhost>
+
+	* Makefile.in (bin-tree): Add Makefile target which automatically
+		generates the binary distribution for e2fsprogs.
+
+

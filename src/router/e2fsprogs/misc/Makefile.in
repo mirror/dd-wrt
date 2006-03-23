@@ -1,0 +1,385 @@
+#
+# Standard e2fsprogs prologue....
+#
+
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+VPATH = @srcdir@
+top_builddir = ..
+my_dir = misc
+INSTALL = @INSTALL@
+
+@MCONFIG@
+
+@IMAGER_CMT@E2IMAGE_PROG= e2image
+@IMAGER_CMT@E2IMAGE_MAN= e2image.8
+
+SPROGS=		mke2fs badblocks tune2fs dumpe2fs blkid logsave \
+			$(E2IMAGE_PROG) @FSCK_PROG@ 
+USPROGS=	mklost+found filefrag
+SMANPAGES=	tune2fs.8 mklost+found.8 mke2fs.8 dumpe2fs.8 badblocks.8 \
+			e2label.8 findfs.8 blkid.8 $(E2IMAGE_MAN) \
+			logsave.8 filefrag.8 @FSCK_MAN@ 
+
+UPROGS=		chattr lsattr uuidgen
+UMANPAGES=	chattr.1 lsattr.1 uuidgen.1
+
+LPROGS=		@E2INITRD_PROG@
+
+TUNE2FS_OBJS=	tune2fs.o util.o
+MKLPF_OBJS=	mklost+found.o
+MKE2FS_OBJS=	mke2fs.o util.o 
+CHATTR_OBJS=	chattr.o
+LSATTR_OBJS=	lsattr.o
+UUIDGEN_OBJS=	uuidgen.o
+DUMPE2FS_OBJS=	dumpe2fs.o
+BADBLOCKS_OBJS=	badblocks.o
+E2IMAGE_OBJS=	e2image.o
+FSCK_OBJS=	fsck.o base_device.o
+BLKID_OBJS=	blkid.o
+FILEFRAG_OBJS=	filefrag.o
+
+SRCS=	$(srcdir)/tune2fs.c $(srcdir)/mklost+found.c $(srcdir)/mke2fs.c \
+		$(srcdir)/chattr.c $(srcdir)/lsattr.c $(srcdir)/dumpe2fs.c \
+		$(srcdir)/badblocks.c $(srcdir)/fsck.c $(srcdir)/util.c \
+		$(srcdir)/uuidgen.c $(srcdir)/blkid.c $(srcdir)/logsave.c \
+		$(srcdir)/filefrag.c $(srcdir)/base_device.c
+
+LIBS= $(LIBEXT2FS) $(LIBCOM_ERR) 
+DEPLIBS= $(LIBEXT2FS) $(LIBCOM_ERR) 
+
+STATIC_LIBS= $(STATIC_LIBEXT2FS) $(STATIC_LIBCOM_ERR) 
+STATIC_DEPLIBS= $(STATIC_LIBEXT2FS) $(STATIC_LIBCOM_ERR) 
+
+LIBS_BLKID= $(LIBBLKID) $(LIBUUID)
+DEPLIBS_BLKID= $(LIBBLKID) $(DEPLIBUUID)
+
+LIBS_E2P= $(LIBE2P) $(LIBCOM_ERR) 
+DEPLIBS_E2P= $(LIBE2P) $(LIBCOM_ERR) 
+
+.c.o:
+	@echo "	CC $<"
+	@$(CC) -c $(ALL_CFLAGS) $< -o $@
+
+all:: $(SPROGS) $(UPROGS) $(USPROGS) $(SMANPAGES) $(UMANPAGES) $(LPROGS)
+
+findsuper: findsuper.o
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o findsuper findsuper.o
+
+partinfo: partinfo.o
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o partinfo partinfo.o
+
+e2initrd_helper: e2initrd_helper.o $(DEPLIBS) $(DEPLIBS_E2P) $(DEPLIBS_BLKID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o e2initrd_helper e2initrd_helper.o $(LIBS) \
+		$(LIBS_BLKID) $(LIBS_E2P) $(LIBINTL)
+
+tune2fs: $(TUNE2FS_OBJS) $(DEPLIBS) $(DEPLIBS_E2P) $(DEPLIBS_BLKID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o tune2fs $(TUNE2FS_OBJS) $(LIBS) \
+		$(LIBS_BLKID) $(LIBS_E2P) $(LIBINTL)
+
+blkid: $(BLKID_OBJS) $(DEPLIBS_BLKID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o blkid $(BLKID_OBJS) $(LIBS_BLKID) $(LIBINTL)
+
+e2image: $(E2IMAGE_OBJS) $(DEPLIBS)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o e2image $(E2IMAGE_OBJS) $(LIBS) $(LIBINTL)
+
+base_device: base_device.c
+	@echo "	LD $@"
+	@$(CC) $(ALL_CFLAGS) $(ALL_LDFLAGS) $(srcdir)/base_device.c \
+		-DDEBUG -o base_device
+
+check:: base_device
+	./base_device < $(srcdir)/base_device.tst > base_device.out
+	cmp $(srcdir)/base_device.tst base_device.out
+
+mklost+found: $(MKLPF_OBJS)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o mklost+found $(MKLPF_OBJS) $(LIBINTL)
+
+mke2fs: $(MKE2FS_OBJS) $(DEPLIBS) $(LIBE2P) $(DEPLIBUUID) $(DEPLIBS_BLKID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o mke2fs $(MKE2FS_OBJS) $(LIBS) $(LIBS_BLKID) \
+		$(LIBE2P) $(LIBUUID) $(LIBINTL)
+
+mke2fs.static: $(MKE2FS_OBJS) $(STATIC_DEPLIBS) $(STATIC_LIBE2P) $(DEPSTATIC_LIBUUID) $(DEPSTATIC_LIBBLKID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -static -o mke2fs.static $(MKE2FS_OBJS) \
+		$(STATIC_LIBS) $(STATIC_LIBE2P) $(STATIC_LIBBLKID) \
+		$(STATIC_LIBUUID) $(LIBINTL)
+
+resize2fs: resize2fs.o $(DEPLIBS)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o resize2fs resize2fs.o $(LIBS) $(LIBINTL)
+
+chattr: $(CHATTR_OBJS) $(DEPLIBS_E2P)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o chattr $(CHATTR_OBJS) $(LIBS_E2P) $(LIBINTL)
+
+lsattr: $(LSATTR_OBJS) $(DEPLIBS_E2P)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o lsattr $(LSATTR_OBJS) $(LIBS_E2P) $(LIBINTL)
+
+uuidgen: $(UUIDGEN_OBJS) $(DEPLIBUUID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o uuidgen $(UUIDGEN_OBJS) $(LIBUUID) $(LIBINTL)
+
+dumpe2fs: $(DUMPE2FS_OBJS) $(DEPLIBS) $(DEPLIBS_E2P) $(DEPLIBUUID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o dumpe2fs $(DUMPE2FS_OBJS) $(LIBS) \
+		$(LIBS_E2P) $(LIBUUID) $(LIBINTL)
+
+fsck: $(FSCK_OBJS) $(DEBLIBS_BLKID)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o fsck $(FSCK_OBJS) $(LIBS_BLKID) $(LIBINTL)
+
+badblocks: $(BADBLOCKS_OBJS) $(DEPLIBS)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o badblocks $(BADBLOCKS_OBJS) $(LIBS) $(LIBINTL)
+
+logsave: logsave.o
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o logsave logsave.o
+
+filefrag: $(FILEFRAG_OBJS)
+	@echo "	LD $@"
+	@$(CC) $(ALL_LDFLAGS) -o filefrag $(FILEFRAG_OBJS) 
+
+tune2fs.8: $(DEP_SUBSTITUTE) $(srcdir)/tune2fs.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/tune2fs.8.in tune2fs.8
+
+mklost+found.8: $(DEP_SUBSTITUTE) $(srcdir)/mklost+found.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/mklost+found.8.in mklost+found.8
+
+mke2fs.8: $(DEP_SUBSTITUTE) $(srcdir)/mke2fs.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/mke2fs.8.in mke2fs.8
+
+e2label.8: $(DEP_SUBSTITUTE) $(srcdir)/e2label.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/e2label.8.in e2label.8
+
+findfs.8: $(DEP_SUBSTITUTE) $(srcdir)/findfs.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/findfs.8.in findfs.8
+
+e2image.8: $(DEP_SUBSTITUTE) $(srcdir)/e2image.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/e2image.8.in e2image.8
+
+dumpe2fs.8: $(DEP_SUBSTITUTE) $(srcdir)/dumpe2fs.8.in 
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/dumpe2fs.8.in dumpe2fs.8
+
+badblocks.8: $(DEP_SUBSTITUTE) $(srcdir)/badblocks.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/badblocks.8.in badblocks.8	
+
+fsck.8: $(DEP_SUBSTITUTE) $(srcdir)/fsck.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/fsck.8.in fsck.8 
+
+blkid.8: $(DEP_SUBSTITUTE) $(srcdir)/blkid.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/blkid.8.in blkid.8
+
+logsave.8: $(DEP_SUBSTITUTE) $(srcdir)/logsave.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/logsave.8.in logsave.8
+
+chattr.1: $(DEP_SUBSTITUTE) $(srcdir)/chattr.1.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/chattr.1.in chattr.1 
+
+lsattr.1: $(DEP_SUBSTITUTE) $(srcdir)/lsattr.1.in 
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/lsattr.1.in lsattr.1 
+
+uuidgen.1: $(DEP_SUBSTITUTE) $(srcdir)/uuidgen.1.in 
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/uuidgen.1.in uuidgen.1 
+
+blkid.1: $(DEP_SUBSTITUTE) $(srcdir)/blkid.1.in 
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/blkid.1.in blkid.1 
+
+filefrag.8: $(DEP_SUBSTITUTE) $(srcdir)/filefrag.8.in
+	@echo "	SUBST $@"
+	@$(SUBSTITUTE_UPTIME) $(srcdir)/filefrag.8.in filefrag.8
+
+installdirs:
+	@echo "	MKINSTALLDIRS $(sbindir) $(root_sbindir) $(bindir) $(man1dir) $(man8dir) $(libdir)"
+	@$(MKINSTALLDIRS) $(DESTDIR)$(sbindir) \
+		$(DESTDIR)$(root_sbindir) $(DESTDIR)$(bindir) \
+		$(DESTDIR)$(man1dir) $(DESTDIR)$(man8dir) $(DESTDIR)$(libdir)
+
+install: all $(SMANPAGES) $(UMANPAGES) installdirs
+	@for i in $(SPROGS); do \
+		echo "	INSTALL $(root_sbindir)/$$i"; \
+		$(INSTALL_PROGRAM) $$i $(DESTDIR)$(root_sbindir)/$$i; \
+	done
+	@for i in $(USPROGS); do \
+		echo "	INSTALL $(sbindir)/$$i"; \
+		$(INSTALL_PROGRAM) $$i $(DESTDIR)$(sbindir)/$$i; \
+	done
+	@echo "	LINK $(root_sbindir)/mkfs.ext2"
+	@$(LN) -f $(DESTDIR)$(root_sbindir)/mke2fs \
+		$(DESTDIR)$(root_sbindir)/mkfs.ext2
+	@echo "	LINK $(root_sbindir)/mkfs.ext3"
+	@$(LN) -f $(DESTDIR)$(root_sbindir)/mke2fs \
+		$(DESTDIR)$(root_sbindir)/mkfs.ext3
+	@echo "	LINK $(root_sbindir)/e2label"
+	@$(LN) -f $(DESTDIR)$(root_sbindir)/tune2fs \
+		$(DESTDIR)$(root_sbindir)/e2label
+	@echo "	LINK $(root_sbindir)/findfs"
+	@$(LN) -f $(DESTDIR)$(root_sbindir)/tune2fs \
+		$(DESTDIR)$(root_sbindir)/findfs
+	@for i in $(UPROGS); do \
+		echo "	INSTALL $(bindir)/$$i"; \
+		$(INSTALL_PROGRAM) $$i $(DESTDIR)$(bindir)/$$i; \
+	done
+	@for i in $(LPROGS); do \
+		echo "	INSTALL $(libdir)/$$i"; \
+		$(INSTALL_PROGRAM) $$i $(DESTDIR)$(libdir)/$$i; \
+	done
+	@for i in $(SMANPAGES); do \
+		for j in $(COMPRESS_EXT); do \
+			$(RM) -f $(DESTDIR)$(man8dir)/$$i.$$j; \
+		done; \
+		echo "	INSTALL_DATA $(man8dir)/$$i"; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(man8dir)/$$i; \
+	done
+	@$(RM) -f $(DESTDIR)$(man8dir)/mkfs.ext2.8.gz \
+		$(DESTDIR)$(man8dir)/mkfs.ext3.8.gz
+	@echo "	LINK mkfs.ext2.8"
+	@$(LN) -f $(DESTDIR)$(man8dir)/mke2fs.8 \
+		$(DESTDIR)$(man8dir)/mkfs.ext2.8
+	@echo "	LINK mkfs.ext3.8"
+	@$(LN) -f $(DESTDIR)$(man8dir)/mke2fs.8 \
+		$(DESTDIR)$(man8dir)/mkfs.ext3.8
+	@for i in $(UMANPAGES); do \
+		$(RM) -f $(DESTDIR)$(man1dir)/$$i.gz; \
+		echo "	INSTALL_DATA $(man1dir)/$$i"; \
+		$(INSTALL_DATA) $$i $(DESTDIR)$(man1dir)/$$i; \
+	done
+
+install-strip: install
+	@for i in $(SPROGS); do \
+		echo "	STRIP $(root_sbindir)/$$i"; \
+		$(STRIP) $(DESTDIR)$(root_sbindir)/$$i; \
+	done
+	@for i in $(USPROGS); do \
+		echo "	STRIP $(sbindir)/$$i"; \
+		$(STRIP) $(DESTDIR)$(sbindir)/$$i; \
+	done
+
+uninstall:
+	for i in $(SPROGS); do \
+		$(RM) -f $(DESTDIR)$(root_sbindir)/$$i; \
+	done
+	for i in $(USPROGS); do \
+		$(RM) -f $(DESTDIR)$(sbindir)/$$i; \
+	done
+	for i in $(LPROGS); do \
+		$(RM) -f $(DESTDIR)$(libdir)/$$i; \
+	done
+	$(RM) -f $(DESTDIR)$(root_sbindir)/mkfs.ext2 \
+			$(DESTDIR)$(root_sbindir)/mkfs.ext3
+	for i in $(UPROGS); do \
+		$(RM) -f $(DESTDIR)$(bindir)/$$i; \
+	done
+	for i in $(SMANPAGES); do \
+		$(RM) -f $(DESTDIR)$(man8dir)/$$i; \
+	done
+	$(RM) -f $(DESTDIR)$(man8dir)/mkfs.ext2.8 \
+		$(DESTDIR)$(man8dir)/mkfs.ext3.8
+	for i in $(UMANPAGES); do \
+		$(RM) -f $(DESTDIR)$(man1dir)/$$i; \
+	done
+	for i in findfs e2label ; do \
+		$(RM) -f $(DESTDIR)$(root_sbindir)/$$i; \
+	done
+	for i in fsck.ext2.8 fsck.ext3.8 ; do \
+		$(RM) -f $(DESTDIR)$(man8dir)/$$i; \
+	done
+
+clean:
+	$(RM) -f $(SPROGS) $(USPROGS) $(UPROGS) $(UMANPAGES) $(SMANPAGES) \
+		base_device base_device.out mke2fs.static filefrag \
+		e2initrd_helper partinfo \#* *.s *.o *.a *~ core 
+
+mostlyclean: clean
+distclean: clean
+	$(RM) -f .depend Makefile $(srcdir)/TAGS $(srcdir)/Makefile.in.old
+
+# +++ Dependency line eater +++
+# 
+# Makefile dependencies follow.  This must be the last section in
+# the Makefile.in file
+#
+tune2fs.o: $(srcdir)/tune2fs.c $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/uuid/uuid.h \
+ $(top_srcdir)/lib/e2p/e2p.h $(srcdir)/jfs_user.h \
+ $(top_srcdir)/lib/ext2fs/kernel-jbd.h $(top_srcdir)/lib/ext2fs/jfs_compat.h \
+ $(top_srcdir)/lib/ext2fs/kernel-list.h $(srcdir)/util.h \
+ $(top_srcdir)/lib/blkid/blkid.h $(top_builddir)/lib/blkid/blkid_types.h \
+ $(top_srcdir)/version.h $(srcdir)/nls-enable.h
+mklost+found.o: $(srcdir)/mklost+found.c $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/version.h \
+ $(srcdir)/nls-enable.h
+mke2fs.o: $(srcdir)/mke2fs.c $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/uuid/uuid.h $(top_srcdir)/lib/e2p/e2p.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/et/com_err.h $(top_srcdir)/lib/ext2fs/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(top_srcdir)/lib/ext2fs/bitops.h \
+ $(srcdir)/util.h $(top_srcdir)/version.h $(srcdir)/nls-enable.h
+chattr.o: $(srcdir)/chattr.c $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/e2p/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_srcdir)/version.h $(srcdir)/nls-enable.h
+lsattr.o: $(srcdir)/lsattr.c $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/e2p/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_srcdir)/version.h $(srcdir)/nls-enable.h
+dumpe2fs.o: $(srcdir)/dumpe2fs.c $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(top_srcdir)/lib/ext2fs/bitops.h $(top_srcdir)/lib/e2p/e2p.h \
+ $(srcdir)/jfs_user.h $(top_srcdir)/lib/ext2fs/kernel-jbd.h \
+ $(top_srcdir)/lib/ext2fs/jfs_compat.h $(top_srcdir)/lib/ext2fs/kernel-list.h \
+ $(top_srcdir)/lib/uuid/uuid.h $(top_srcdir)/version.h $(srcdir)/nls-enable.h
+badblocks.o: $(srcdir)/badblocks.c $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/ext2fs/ext2_fs.h $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/ext2fs/ext2_io.h $(top_builddir)/lib/ext2fs/ext2_err.h \
+ $(top_srcdir)/lib/ext2fs/bitops.h $(srcdir)/nls-enable.h
+fsck.o: $(srcdir)/fsck.c $(top_srcdir)/version.h $(srcdir)/nls-enable.h \
+ $(srcdir)/fsck.h $(top_srcdir)/lib/blkid/blkid.h \
+ $(top_builddir)/lib/blkid/blkid_types.h
+util.o: $(srcdir)/util.c $(top_srcdir)/lib/et/com_err.h \
+ $(top_srcdir)/lib/e2p/e2p.h $(top_srcdir)/lib/ext2fs/ext2_fs.h \
+ $(top_builddir)/lib/ext2fs/ext2_types.h $(top_srcdir)/lib/ext2fs/ext2fs.h \
+ $(top_srcdir)/lib/et/com_err.h $(top_srcdir)/lib/ext2fs/ext2_io.h \
+ $(top_builddir)/lib/ext2fs/ext2_err.h $(top_srcdir)/lib/ext2fs/bitops.h \
+ $(srcdir)/nls-enable.h $(top_srcdir)/lib/blkid/blkid.h \
+ $(top_builddir)/lib/blkid/blkid_types.h $(srcdir)/util.h
+uuidgen.o: $(srcdir)/uuidgen.c $(top_srcdir)/lib/uuid/uuid.h \
+ $(srcdir)/nls-enable.h
+blkid.o: $(srcdir)/blkid.c $(top_srcdir)/lib/blkid/blkid.h \
+ $(top_builddir)/lib/blkid/blkid_types.h
+logsave.o: $(srcdir)/logsave.c
+filefrag.o: $(srcdir)/filefrag.c
+base_device.o: $(srcdir)/base_device.c $(srcdir)/fsck.h
