@@ -1,19 +1,17 @@
 @import url(../common.css);
 #menuSub,
 #menuMainList li span, 
-#menuMainList li.current a, 
-#menuMainList li.current a:hover,
 #help h2 {
 background:#cc0;
 color:#000;
 border-color:#ee3 #880 #880 #ee3;
 }
-#menuMainList #menuSubList li a {
+#menuSubList li a {
 background:#dd5;
 color:#660;
 border-color:#ee7 #bb4 #bb4 #ee7;
 }
-#menuMainList #menuSubList li a:hover {
+#menuSubList li a:hover {
 background:#ee7;
 color:#000;
 border-color:#ff9 #cc5 #cc5 #ff9;
@@ -33,7 +31,6 @@ background-color: #dd5;
 .meter .text {
 color:#000;
 }
-
 .progressbar {
 background-color: #fff;
 border-color: #999;

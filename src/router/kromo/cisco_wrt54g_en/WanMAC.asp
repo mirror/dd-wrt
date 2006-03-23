@@ -1,12 +1,12 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-    <head>
-      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-      <title><% nvram_get("router_name"); %> - WanMAC</title>
-      <link type="text/css" rel="stylesheet" href="style.css" />
-      <script type="text/JavaScript" src="common.js">{}</script>
-      <script type="text/javascript" language="JavaScript">
-
+	<head>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
+		<title><% nvram_get("router_name"); %> - WanMAC</title>
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "WanMAC";
 	F.action.value = "Apply";

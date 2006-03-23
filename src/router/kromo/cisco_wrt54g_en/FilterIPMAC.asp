@@ -1,12 +1,12 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - List of PCs</title>
-		<link type="text/css" rel="stylesheet" href="style.css" />
-		<script type="text/JavaScript" src="common.js">{}</script>
-		<script language="JavaScript">
-
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "FilterIPMAC";
 	F.action.value = "Apply";
@@ -20,7 +20,7 @@ function valid_macs_all(I) {
 	if(I.value == "") {
 		return true;
 	}
-		
+
 	if(I.value.length == 12) {
 		valid_macs_12(I);
 	} else if(I.value.length == 17) {
@@ -32,7 +32,7 @@ function valid_macs_all(I) {
 }
 		</script>
 	</head>
-	
+
 	<body>
 		<form name="ipfilter" action="apply.cgi" method="<% get_http_method(); %>">
 			<input type="hidden" name="submit_button"/>

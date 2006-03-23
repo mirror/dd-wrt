@@ -1,8 +1,16 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - UPnP Forward</title>
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<!--
+		UPnP
+		11.2005	tofu10		init
+		Intergated to DD-WRT by LawnMowerGuy1
+		-->
 		<style type="text/css">
 		<!--
 			A{color: #000000; text-decoration: underline;}
@@ -12,15 +20,7 @@
 			.dis th {color: #A04040;}
 		-->
 		</style>
-		<link type="text/css" rel="stylesheet" href="style.css" />
-		<!--
-		UPnP
-		11.2005	tofu10		init
-		Intergated to DD-WRT by LawnMowerGuy1
-		-->
-	
-		<script type="text/JavaScript" src="common.js">{}</script>
-		<script language="JavaScript">
+		<script type="text/javascript">
 
 function to_submit(F) 
 {

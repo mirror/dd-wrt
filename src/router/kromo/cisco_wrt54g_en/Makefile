@@ -25,6 +25,7 @@ endif
 ifeq ($(CONFIG_RED),y)
 	mkdir $(INSTALLDIR)/www/style/red
 	cp red/style.css $(INSTALLDIR)/www/style/red
+	cp red/style_ie.css $(INSTALLDIR)/www/style/red
 	cp red/common.css $(INSTALLDIR)/www/style
 	cp red/logo.png $(INSTALLDIR)/www/style
 endif
@@ -32,6 +33,7 @@ endif
 ifneq ($(CONFIG_BRANDING),y)
 	mkdir $(INSTALLDIR)/www/style/fon
 	cp fon/style.css $(INSTALLDIR)/www/style/fon
+	cp fon/style_ie.css $(INSTALLDIR)/www/style/fon
 	cp fon/commonfon.css $(INSTALLDIR)/www/style
 	cp fon/fon.jpg $(INSTALLDIR)/www/style
 endif
@@ -39,6 +41,7 @@ endif
 ifeq ($(CONFIG_BLUE),y)
 	mkdir $(INSTALLDIR)/www/style/blue
 	cp blue/style.css $(INSTALLDIR)/www/style/blue
+	cp blue/style_ie.css $(INSTALLDIR)/www/style/blue
 	cp blue/common.css $(INSTALLDIR)/www/style
 	cp blue/logo.png $(INSTALLDIR)/www/style
 endif
@@ -46,6 +49,7 @@ endif
 ifeq ($(CONFIG_ELEGANT),y)
 	mkdir $(INSTALLDIR)/www/style/elegant
 	cp elegant/style.css $(INSTALLDIR)/www/style/elegant
+	cp elegant/style_ie.css $(INSTALLDIR)/www/style/elegant
 	cp elegant/common.css $(INSTALLDIR)/www/style
 	cp elegant/logo.png $(INSTALLDIR)/www/style
 endif
@@ -53,12 +57,14 @@ endif
 ifeq ($(CONFIG_CYAN),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
+	cp cyan/style_ie.css $(INSTALLDIR)/www/style/cyan
 	cp cyan/common.css $(INSTALLDIR)/www/style
 	cp cyan/logo.png $(INSTALLDIR)/www/style
 endif
 ifeq ($(CONFIG_ALEDR),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp aledr/style.css $(INSTALLDIR)/www/style/cyan
+	cp aledr/style_ie.css $(INSTALLDIR)/www/style/cyan
 	cp aledr/common.css $(INSTALLDIR)/www/style
 	cp aledr/logo.jpg $(INSTALLDIR)/www/style
 endif
@@ -66,6 +72,7 @@ endif
 ifeq ($(CONFIG_YELLOW),y)
 	mkdir $(INSTALLDIR)/www/style/yellow
 	cp yellow/style.css $(INSTALLDIR)/www/style/yellow
+	cp yellow/style_ie.css $(INSTALLDIR)/www/style/yellow
 	cp yellow/common.css $(INSTALLDIR)/www/style
 	cp yellow/logo.png $(INSTALLDIR)/www/style
 endif
@@ -73,6 +80,7 @@ endif
 ifeq ($(CONFIG_GREEN),y)
 	mkdir $(INSTALLDIR)/www/style/green
 	cp green/style.css $(INSTALLDIR)/www/style/green
+	cp green/style_ie.css $(INSTALLDIR)/www/style/green
 	cp green/common.css $(INSTALLDIR)/www/style
 	cp green/logo.png $(INSTALLDIR)/www/style
 endif
@@ -182,6 +190,7 @@ ifeq ($(CONFIG_34TELECOM),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/34telecom/ install
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
+	cp cyan/style_ie.css $(INSTALLDIR)/www/style/cyan
 	cp cyan/common.css $(INSTALLDIR)/www/style
 #	cp cyan/logo.png $(INSTALLDIR)/www/style
 	cp -f 34telecom/logo.png $(INSTALLDIR)/www/style/

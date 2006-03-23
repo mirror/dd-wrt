@@ -1,15 +1,14 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - Keep Alive</title>
-		<link type="text/css" rel="stylesheet" href="style.css"/>
-		<script type="text/JavaScript" src="common.js">{}</script>
-		<script language="JavaScript">
-		
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript">
 var EN_DIS1 = '<% nvram_get("remote_management"); %>'
 var wan_proto = '<% nvram_get("wan_proto"); %>'
-
 
 function to_reboot(F) {
 	F.action.value='Reboot';
@@ -31,24 +30,25 @@ function init() {
 }
 		</script>
 	</head>
-	
+
 	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-						<div id="menu">
-							<div id="menuMain">
-								<ul id="menuMainList">
-									<li><a href="index.asp">Setup</a></li>
-									<li><a href="Wireless_Basic.asp">Wireless</a></li>
-									<% nvram_invmatch("sipgate","1","<!--"); %>
-									<li><a href="Sipath.asp">SIPatH</a></li>
-									<% nvram_invmatch("sipgate","1","-->"); %>
-									<li><a href="Firewall.asp">Security</a></li>
-									<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
-									<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-									<li class="current"><span>Administration</span><div id="menuSub">
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp">Setup</a></li>
+								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp">SIPatH</a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp">Security</a></li>
+								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
+								<li class="current"><span>Administration</span>
+									<div id="menuSub">
 										<ul id="menuSubList">
 											<li><a href="Management.asp">Management</a></li>
 											<li><a href="Hotspot.asp">Hotspot</a></li>
