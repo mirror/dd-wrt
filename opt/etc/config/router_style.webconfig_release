@@ -1,17 +1,28 @@
+<script type="text/javascript">
+function setStyle(val) {
+	var linkTags = document.getElementsByTagName("link");
+	if(linkTags[0].href.indexOf("/" + val + "/") != -1) return false;
+	linkTags[0].href = "style/" + val + "/style.css";
+	if(linkTags[1]) linkTags[1].href = "style/" + val + "/style_ie.css";
+}
+document.forms[0].onreset = function() { setStyle("<% nvram_get("router_style"); %>"); }
+</script>
 <fieldset>
-<legend>Router GUI Style</legend>
-<div class="setting">
-	<div class="label">Style</div>
-	<select name="router_style">
-	<option value="blue.css" <% nvram_match("router_style","blue.css","selected"); %>>Blue</option>
-	<option value="brainslayer.css" <% nvram_match("router_style","brainslayer.css","selected"); %>>BrainSlayer</option>
-	<option value="cyan.css" <% nvram_match("router_style","cyan.css","selected"); %>>Cyan</option>
-	<option value="elegant.css" <% nvram_match("router_style","elegant.css","selected"); %>>Elegant</option>
-	<option value="green.css" <% nvram_match("router_style","green.css","selected"); %>>Green</option>
-	<option value="kromo.css" <% nvram_match("router_style","kromo.css","selected"); %>>Kromo</option>
-	<option value="red.css" <% nvram_match("router_style","red.css","selected"); %>>Red</option>
-	<option value="wikar.css" <% nvram_match("router_style","wikar.css","selected"); %>>Wikar</option>
-	<option value="xirian.css" <% nvram_match("router_style","xirian.css","selected"); %>>Xirian</option>
-	<option value="yellow.css" <% nvram_match("router_style","yellow.css","selected"); %>>Yellow</option>
-	</select></div>
-</fieldset><br/>
+	<legend>Router GUI Style</legend>
+	<div class="setting">
+		<div class="label">Style</div>
+		<select name="router_style">
+			<option value="blue" <% nvram_selected("router_style", "blue"); %>>Blue</option>
+			<option value="brainslayer" <% nvram_selected("router_style", "brainslayer"); %>>BrainSlayer</option>
+			<option value="cyan" <% nvram_selected("router_style", "cyan"); %>>Cyan</option>
+			<option value="elegant" <% nvram_selected("router_style", "elegant"); %>>Elegant</option>
+			<option value="green" <% nvram_selected("router_style", "green"); %>>Green</option>
+			<option value="kromo" <% nvram_selected("router_style", "kromo"); %>>Kromo</option>
+			<option value="red" <% nvram_selected("router_style", "red"); %>>Red</option>
+			<option value="wikar" <% nvram_selected("router_style", "wikar"); %>>Wikar</option>
+			<option value="xirian" <% nvram_selected("router_style", "xirian"); %>>Xirian</option>
+			<option value="yellow" <% nvram_selected("router_style", "yellow"); %>>Yellow</option>
+		</select>&nbsp;
+		<input type="button" value="Preview" onclick="setStyle(this.form.router_style.value)" />
+	</div>
+</fieldset><br />
