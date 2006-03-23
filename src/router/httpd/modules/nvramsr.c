@@ -76,8 +76,8 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  wfread (name, c, 1, wp);
 #ifdef HAVE_NEWMEDIA
 	  int a;
-	  for (a=0;a<c;a++)
-	    name[a]^=37;
+	  for (a = 0; a < c; a++)
+	    name[a] ^= 37;
 #endif
 	  name[c] = 0;
 	  len -= (c + 1);
@@ -85,8 +85,8 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  char *value = (char *) malloc (l + 1);
 	  wfread (value, l, 1, wp);
 #ifdef HAVE_NEWMEDIA
-	  for (a=0;a<l;a++)
-	    value[a]^=37;
+	  for (a = 0; a < l; a++)
+	    value[a] ^= 37;
 #endif
 	  len -= (l + 2);
 	  value[l] = 0;
@@ -167,7 +167,7 @@ nv_file_out (char *path, webs_t wp)
       int i;
 #ifdef HAVE_NEWMEDIA
       for (i = 0; i < strlen (v->name); i++)
-	wfputc (v->name[i]^37, wp);
+	wfputc (v->name[i] ^ 37, wp);
 #else
       for (i = 0; i < strlen (v->name); i++)
 	wfputc (v->name[i], wp);
@@ -177,7 +177,7 @@ nv_file_out (char *path, webs_t wp)
       wfputc (strlen (val) >> 8, wp);
 #ifdef HAVE_NEWMEDIA
       for (i = 0; i < strlen (val); i++)
-	wfputc (val[i]^67, wp);
+	wfputc (val[i] ^ 67, wp);
 #else
       for (i = 0; i < strlen (val); i++)
 	wfputc (val[i], wp);
