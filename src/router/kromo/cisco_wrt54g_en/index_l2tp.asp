@@ -1,11 +1,11 @@
 <div class="setting">
 	<div class="label">User Name</div>
 	<input name="ppp_username" size="50" maxLength="63" onBlur="valid_name(this,'User Name')" value='<% nvram_get("ppp_username"); %>' />
-	</div>
+</div>
 <div class="setting">
 	<div class="label">Password</div>
 	<input name="ppp_passwd" size="50" maxLength="63" onBlur="valid_name(this,'Password')" type="password" value='<% nvram_invmatch("ppp_passwd","","d6nw5v1x2pc7st9m"); %>' />
-	</div>
+</div>
 <div class="setting">
 	<div class="label">L2TP Server</div>
 	<input type="hidden" name="l2tp_server_ip" value="4"/>

@@ -3,11 +3,11 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title>DDNS</title>
-		<link type="text/css" rel="stylesheet" href="style.css"/>
-		<script type="text/JavaScript" src="common.js"></script>
-		<script language="Javascript" type="text/javascript" src="lang_pack/english.js"></script>
-		<script type="text/JavaScript">
-
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript">
 document.title = '<% nvram_get("router_name"); %>'+ddns.titl;
 
 function ddns_check(F,T) {

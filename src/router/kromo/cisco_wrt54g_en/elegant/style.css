@@ -1,8 +1,6 @@
 @import url(../common.css); 
 #menuSub, 
 #menuMainList li span, 
-#menuMainList li.current a, 
-#menuMainList li.current a:hover, 
 #help h2 { 
 background:#30519C; 
 color:#FFFFFF; 
@@ -34,7 +32,6 @@ background-color: #496FC7;
 .meter .text {
 color:#fff;
 }
-
 .progressbar {
 background-color: #fff;
 border-color: #999;
