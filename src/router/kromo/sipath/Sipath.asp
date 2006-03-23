@@ -3,8 +3,9 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 		<title><% nvram_get("router_name"); %> - SiPath Overview</title>
-		<link type="text/css" rel="stylesheet" href="style.css" />
-		<script type="text/JavaScript" src="common.js">{}</script>
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
 	</head>
    <body class="gui">
       <div id="wrapper">

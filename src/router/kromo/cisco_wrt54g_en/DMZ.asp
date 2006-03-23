@@ -3,10 +3,10 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - DMZ</title>
-		<link type="text/css" rel="stylesheet" href="style.css" />
-		<script type="text/JavaScript" src="common.js">{}</script>
-		<script type="text/JavaScript">
-
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "DMZ";
 	F.action.value = "Apply";
@@ -25,7 +25,7 @@ function init() {
 }
 		</script>
 	</head>
-	
+
 	<body class="gui" onload="init()">
 		<% showad(); %>
 		<div id="wrapper">
@@ -46,9 +46,9 @@ function init() {
 									<div id="menuSub">
 										<ul id="menuSubList">
 	  										<li><a href="Forward.asp">Port Range Forward</a></li>
-	  										<li><a href="ForwardSpec.asp">Port Forwarding</a></li> 
-	  										<li><a href="Triggering.asp">Port Triggering</a></li> 
-	  										<li><a href="UPnP.asp">UPnP Forward</a></li> 
+	  										<li><a href="ForwardSpec.asp">Port Forwarding</a></li>
+	  										<li><a href="Triggering.asp">Port Triggering</a></li>
+	  										<li><a href="UPnP.asp">UPnP Forward</a></li>
 	  										<li><span>DMZ</span></li>
 	  										<li><a href="QoS.asp">QoS</a></li>
 	  									</ul>

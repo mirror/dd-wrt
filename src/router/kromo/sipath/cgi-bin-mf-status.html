@@ -2,11 +2,12 @@
 cat<<EOF
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-<head>
-<title>Status of $(nvram get lan_ipaddr)</title>
-<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
-<link href="style.css" rel="StyleSheet" type="text/css" />
-<script language="JavaScript" type="text/javascript"><!--
+	<head>
+		<title>Status of $(nvram get lan_ipaddr)</title>
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
+		<link type="text/css" rel="stylesheet" href="style/$(nvram get router_style)/style.css" />
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/$(nvram get router_style)/style_ie.css" /><![endif]-->
+		<script type="text/javascript"><!--
 function navarr(){}
 navset=new navarr();
 navres=new navarr();

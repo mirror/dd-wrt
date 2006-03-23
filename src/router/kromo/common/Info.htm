@@ -3,187 +3,232 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 		<title><% nvram_get("router_name"); %> - Info</title>
-		<link type="text/css" rel="stylesheet" href="style.css"/>
-		<script type="text/JavaScript" src="common.js">{}</script>
-		<script language="JavaScript">
-
-function replace_list(list,target,replacement) {
-	var result = list.search(target);
-	while(result != -1) {
-		list = list.replace(target,replacement);
-		result = list.search(target);
-	}
-
-	return list;
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+		<!--[if IE]> <link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /> <![endif]-->
+		<!-- <script type="text/JavaScript" src="common.js"></script> -->
+		<script type="text/javascript">
+function setPacketInfo(val) {
+	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
+	document.getElementById("packet_rx").innerHTML = packet[0] + " OK, " + (packet[1] > 0 ? packet[1] + " with errors" : "no errors");
+	document.getElementById("packet_tx").innerHTML = packet[2] + " OK, " + (packet[3] > 0 ? packet[3] + " with errors" : "no errors");
+}
+function setMemory(val) {
+	var mem = val.replace(/'/g, "").split(",");
+	var memTotal = parseInt(mem[19]) / 1024;
+	var memSystem = Math.pow(2, Math.ceil(Math.log(memTotal) / Math.LN2));
+	var memFree = parseInt(mem[22]) / 1024;
+	var memUsed = memTotal - memFree;
+	var memBuffer = parseInt(mem[28]) / 1024;
+	var memCached = parseInt(mem[31]) / 1024;
+	var memActive = parseInt(mem[37]) / 1024;
+	var memInactive = parseInt(mem[40]) / 1024;
+	document.getElementById("mem_total").innerHTML = memTotal.toFixed(1) + " MB / " + memSystem.toFixed(1) + " MB";
+	document.getElementById("mem_free").innerHTML = memFree.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB";
+	document.getElementById("mem_used").innerHTML = memUsed.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB";
+	document.getElementById("mem_buffer").innerHTML = memBuffer.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB";
+	document.getElementById("mem_cached").innerHTML = memCached.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB";
+	document.getElementById("mem_active").innerHTML = memActive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB";
+	document.getElementById("mem_inactive").innerHTML = memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB";
+}
+function init() {
+	setPacketInfo("<% wl_packet_get(); %>");
+	setMemory("<% dumpmeminfo(); %>");
 }
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui" onload="init()"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-						<div id="menu">
-							<div id="menuMain">
-								<ul id="menuMainList">
-									<li><a href="index.asp">Setup</a></li>
-									<li><a href="Wireless_Basic.asp">Wireless</a></li>
-									<% nvram_invmatch("sipgate","1","<!--"); %>
-									<li><a href="Sipath.asp">SIPatH</a></li>
-									<% nvram_invmatch("sipgate","1","-->"); %>
-									<li><a href="Firewall.asp">Security</a></li>
-									<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
-									<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-									<li><a href="Management.asp">Administration</a></li>
-									<li><a href="Status_Router.asp">Status</a></li>
-								</ul>
-							</div>
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp">Setup</a></li>
+								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp">SIPatH</a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp">Security</a></li>
+								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
+								<li><a href="Management.asp">Administration</a></li>
+								<li><a href="Status_Router.asp">Status</a></li>
+							</ul>
 						</div>
 					</div>
-				    <div id="main">
-						<div id="contentsInfo">
-							<h2>System Information</h2>
+				</div>
+				<div id="main">
+					<div id="contentsInfo">
+						<h2>System Information</h2>
+						<div class="col2l">
 							<fieldset>
 								<legend>Router</legend>
 								<div class="setting">
-									<div class="label">Router Name</div><% nvram_get("router_name"); %>
+									<div class="label">Router Name</div>
+									<% nvram_get("router_name"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
+									<div class="label">Router Model</div>
+									<% nvram_get("DD_BOARD"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">LAN MAC</div><% nvram_get("lan_hwaddr"); %>
+									<div class="label">LAN MAC</div>
+									<% nvram_get("lan_hwaddr"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">WAN MAC</div><% nvram_get("wan_hwaddr"); %>
+									<div class="label">WAN MAC</div>
+									<% nvram_get("wan_hwaddr"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Wireless MAC</div><% nvram_get("wl0_hwaddr"); %>
+									<div class="label">Wireless MAC</div>
+									<% nvram_get("wl0_hwaddr"); %>&nbsp;
 								</div>
-							</fieldset>
-							<br/>
+							</fieldset><br />
 							<fieldset>
 								<legend>Wireless Info</legend>
 								<div class="setting">
-									<div class="label">SSID</div><% nvram_get("wl_ssid"); %>
+									<div class="label">SSID</div>
+									<% nvram_get("wl_ssid"); %>&nbsp;
 								</div>
 								<div class="setting">
-								<div class="label">Mode</div><% nvram_match("wl_mode", "wet", "Client Bridge"); %><% nvram_match("wl_mode", "ap", "AP"); %><% nvram_match("wl_mode", "sta", "Client"); %><% nvram_match("wl_mode", "infra", "Adhoc"); %>
+									<div class="label">Mode</div>
+									<% nvram_match("wl_mode", "wet", "Client Bridge"); %><% nvram_match("wl_mode", "ap", "AP"); %><% nvram_match("wl_mode", "sta", "Client"); %><% nvram_match("wl_mode", "infra", "Adhoc"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Xmit</div><% nvram_get("txpwr"); %> mW
+									<div class="label">Xmit</div>
+									<% nvram_get("txpwr"); %> mW
 								</div>
 								<div class="setting">
-									<div class="label">Network</div><% nvram_match("wl_net_mode", "mixed", "Mixed"); %><% nvram_match("wl_net_mode", "g-only", "G-Only"); %><% nvram_match("wl_net_mode", "disabled","Disabled"); %><% nvram_match("wl_net_mode", "b-only", "B-Only"); %>
+									<div class="label">Network</div>
+									<% nvram_match("wl_net_mode", "mixed", "Mixed"); %><% nvram_match("wl_net_mode", "g-only", "G-Only"); %><% nvram_match("wl_net_mode", "disabled","Disabled"); %><% nvram_match("wl_net_mode", "b-only", "B-Only"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">DHCP Server</div><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>
+									<div class="label">Channel</div>
+									<% get_curchannel(); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Channel</div><% get_curchannel(); %>
+									<div class="label">Rate</div>
+									<% get_currate(); %> Mbps
+								</div>
+							</fieldset><br />
+							<fieldset>
+								<legend>Packet Info</legend>
+								<div class="setting">
+									<div class="label">Received (RX)</div>
+									<span id="packet_rx"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Rate</div><% get_currate(); %> Mbps
+									<div class="label">Transfered (TX)</div>
+									<span id="packet_tx"></span>&nbsp;
 								</div>
-							</fieldset>
-							<br/>
+							</fieldset><br />
+						</div>
+						<div class="col2r">
 							<fieldset>
 								<legend>IP Info</legend>
 								<div class="setting">
-									<div class="label">WAN IP</div><% nvram_match("wan_proto","disabled","Disabled"); %><% nvram_match("wan_proto","disabled","<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %>
+									<div class="label">WAN IP</div>
+									<% nvram_match("wan_proto","disabled","Disabled<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">LAN IP</div><% nvram_get("lan_ipaddr"); %>
+									<div class="label">LAN IP</div>
+									<% nvram_get("lan_ipaddr"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">WRT-radauth</div><% nvram_invmatch("wl_mode", "ap", "<nobr>only AP Mode</nobr><!--"); %><% nvram_match("wl_radauth","0","Disabled"); %><% nvram_match("wl_radauth","1","Active"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %>
+									<div class="label">DHCP Server</div>
+									<% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>&nbsp;
 								</div>
-
+								<div class="setting">
+									<div class="label">WRT-radauth</div>
+									<% nvram_invmatch("wl_mode", "ap", "only&nbsp;AP&nbsp;Mode<!--"); %><% nvram_match("wl_radauth","0","Disabled"); %><% nvram_match("wl_radauth","1","Active"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %>&nbsp;
+								</div>
 								<% nvram_match("dist_type", "mini", "<!--"); %>
-
 								<div class="setting">
-									<div class="label">WRT-rflow</div><% nvram_match("rflow_enable","0","Disabled"); %> <% nvram_match("rflow_enable","1","Enabled"); %>
+									<div class="label">WRT-rflow</div>
+									<% nvram_match("rflow_enable","0","Disabled"); %><% nvram_match("rflow_enable","1","Enabled"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">MAC-udp</div><% nvram_match("macupd_enable","0","Disabled"); %> <% nvram_match("macupd_enable","1","Enabled"); %>
+									<div class="label">MAC-udp</div>
+									<% nvram_match("macupd_enable","0","Disabled"); %><% nvram_match("macupd_enable","1","Enabled"); %>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Samba Mount</div><% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Enabled"); %>
+									<div class="label">Samba Mount</div>
+									<% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Enabled"); %>&nbsp;
 								</div>
-
 								<% nvram_match("dist_type", "mini", "-->"); %>
-
-							</fieldset>
-							<br/>
-							<form name="Eingabe">
-								<input type="hidden" name="FeldMEM" value='<% wl_packet_get(); %>' />
-								<% active_wireless(1); %>
-								<% active_wds(1); %>
-								<% nvram_invmatch("wl_mode", "ap", "<!--"); %>
-								<h2>DHCP</h2>
-								<fieldset>
-									<legend>Clients List</legend>
-									<div class="setting">
-										<table class="table">
-											<tr>
-												<th>PC</th>
-												<th>IP</th>
-												<th>MAC</th>
-												<th>Duration</th>
-											</tr>
-<script language="JavaScript">
-
-var table = new Array( <% dumpleases(1); %> );
-var i = 0;
-var count = 0;
-
-for(;;) {
-	if(!table[i]) {
-		if(i == 0){
-			document.write("<tr>");
-			document.write("<td>None</td>");
-			document.write("<td>None</td>");
-			document.write("<td>None</td>");
-			document.write("<td>None</td>");
-			document.write("<td>&nbsp;</td></tr>");
-		}
-		break;
-	}
-	document.write("<tr>");
-	document.write("<td>"+table[i]+"</td>");
-	document.write("<td>"+table[i+1]+"</td>");
-	document.write("<td>"+table[i+2]+"</td>");
-	document.write("<td>"+table[i+3]+"</td>");
-	document.write("<td>&nbsp;</td></tr>");
-	count ++;
-	i = i + 5;
-}
-</script>
-									</table>
+							</fieldset><br />
+							<fieldset>
+								<legend>Memory</legend>
+								<div class="setting">
+									<div class="label">Total Available</div>
+									<span id="mem_total"></span>&nbsp;
 								</div>
-							</fieldset>
-							<br/>
-							<% nvram_invmatch("wl_mode", "ap", "-->"); %>
-							<div class="setting">
-								<div class="label">Packet Info</div>
-<script language="JavaScript">
+								<div class="setting">
+									<div class="label">Free</div>
+									<span id="mem_free"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Used</div>
+									<span id="mem_used"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Buffers</div>
+									<span id="mem_buffer"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Cached</div>
+									<span id="mem_cached"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Active</div>
+									<span id="mem_active"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Inactive</div>
+									<span id="mem_inactive"></span>&nbsp;
+								</div>
+							</fieldset><br />
+						</div><br clear="all" />
+						<% active_wireless(1); %>
+						<% active_wds(1); %>
+						<% nvram_invmatch("wl_mode", "ap", "<!--"); %>
+						<h2>DHCP</h2>
+						<fieldset>
+							<legend>Clients List</legend>
+							<table class="table" cellspacing="5">
+								<tr>
+									<th>PC</th>
+									<th>IP</th>
+									<th>MAC</th>
+									<th>Duration</th>
+								</tr>
+								<script type="text/javascript">
+var table = new Array(<% dumpleases(1); %>);
 
-var clients = this.document.Eingabe.FeldMEM.value;
-clients=replace_list(clients,';',' ');
-clients=replace_list(clients,'SWRXgoodPacket=',' RXg=');
-clients=replace_list(clients,'SWRXerrorPacket=','RXe=');
-clients=replace_list(clients,'SWTXgoodPacket=',' TXg=');
-clients=replace_list(clients,'SWTXerrorPacket=','TXe=');
-this.document.write(clients);
-
-</script>
-						  	</div>
-						</form>
-						<div class="setting">
-							<div class="label">Mem Info</div><% show_meminfo(); %>
+if(table.length == 0) {
+	document.write("<tr>");
+	document.write("<td colspan=\"4\" align=\"center\">- None -</td>");
+	document.write("</tr>");
+}
+else {
+	for(var i = 0; i < table.length; i = i + 5) {
+		document.write("<tr>");
+		document.write("<td>" + table[i] + "</td>");
+		document.write("<td>" + table[i + 1] + "</td>");
+		document.write("<td>" + table[i + 2] + "</td>");
+		document.write("<td>" + table[i + 3] + "</td>");
+		document.write("</tr>");
+	}
+}
+								</script>
+							</table>
+						</fieldset><br />
+						<% nvram_invmatch("wl_mode", "ap", "-->"); %>
+						<div class="center">
+							<% show_paypal(); %>
 						</div>
-						<% show_paypal(); %>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
