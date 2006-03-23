@@ -13,6 +13,7 @@ install:
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 	cp -a help $(INSTALLDIR)/www
+	cp -a live $(INSTALLDIR)/www
 	cp -a lang_pack $(INSTALLDIR)/www
 	ln -s ../tmp/www $(INSTALLDIR)/www/user
 
@@ -31,7 +32,7 @@ endif
 ifneq ($(CONFIG_BRANDING),y)
 	mkdir $(INSTALLDIR)/www/style/fon
 	cp fon/style.css $(INSTALLDIR)/www/style/fon
-	cp fon/common.css $(INSTALLDIR)/www/style
+	cp fon/commonfon.css $(INSTALLDIR)/www/style
 	cp fon/fon.jpg $(INSTALLDIR)/www/style
 endif
 
