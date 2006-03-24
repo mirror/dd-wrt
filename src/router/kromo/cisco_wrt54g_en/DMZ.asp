@@ -15,14 +15,13 @@ function to_submit(F) {
 	F.submit();
 }
 
-function dmz_enable_disable(F,I) {
-	var state = ( I == 0 );
-	F.dmz_ipaddr.disabled = state;
+function setDMZ(val) {
+	setElementActive("dmz_ipaddr", val == "1");
 }
 
-function init() {
-	dmz_enable_disable(document.dmz, <% nvram_get("dmz_enable"); %>);
-}
+addEvent(window, "load", function() {
+	setElementActive("dmz_ipaddr", "<% nvram_get("dmz_enable"); %>" == "1"
+});
 		</script>
 	</head>
 
@@ -71,8 +70,8 @@ function init() {
 								<legend>DMZ</legend>
 	                			<div class="setting">
 	                				<div class="label">Use DMZ</div>
-	                				<input type="radio" value="1" name="dmz_enable" onclick="dmz_enable_disable(this.form, 1)" <% nvram_checked("dmz_enable", "1"); %> />Enable
-	                				<input type="radio" value="0" name="dmz_enable" onclick="dmz_enable_disable(this.form, 0)" <% nvram_checked("dmz_enable", "0"); %> />Disable
+	                				<input type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "1"); %> />Enable
+	                				<input type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "0"); %> />Disable
 	                			</div>
 	                			<div class="setting">
 	                				<div class="label">DMZ Host IP Address</div>
@@ -95,7 +94,7 @@ function init() {
 							<dd class="definition">Enabling this option will expose your router to the Internet. All ports will be accessible from the Internet.</dd>
 						</dl>
 						<br />
-						<a href="javascript:help('help/HDMZ.asp');">More...</a>
+						<a href="javascript:openHelpWindow('HDMZ.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

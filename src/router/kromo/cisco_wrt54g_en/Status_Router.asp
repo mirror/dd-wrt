@@ -21,11 +21,11 @@ function Connect(F,I) {
 	F.submit();
 }
 
-function init() {
+/* function init() {
 	<% show_status("onload");%>
-}
+} */
 
-function ShowAlert(M) {
+/* function ShowAlert(M) {
 	var str = "";
 	var mode = "";
 	var wan_ip = "<% nvram_status_get("wan_ipaddr"); %>";
@@ -56,9 +56,9 @@ function ShowAlert(M) {
 	Refresh();
 }
 
-var value=0;
+var value=0; */
 
-function Refresh() {
+/* function Refresh() {
 	var refresh_time = "<% show_status("refresh_time"); %>";
 	if(refresh_time == "")	refresh_time = 60000;
 	if (value>=1) {
@@ -66,49 +66,59 @@ function Refresh() {
 	}
 	value++;
 	timerID=setTimeout("Refresh()",refresh_time);
+} */
+
+var update;
+
+function setMemoryValues(val) {
+	var mem = val.replace(/'/g, "").split(",");
+	var memTotal = parseInt(mem[19]) / 1024;
+	var memSystem = Math.pow(2, Math.ceil(Math.log(memTotal) / Math.LN2));
+	var memFree = parseInt(mem[22]) / 1024;
+	var memUsed = memTotal - memFree;
+	var memBuffer = parseInt(mem[28]) / 1024;
+	var memCached = parseInt(mem[31]) / 1024;
+	var memActive = parseInt(mem[37]) / 1024;
+	var memInactive = parseInt(mem[40]) / 1024;
+	setElementContent("mem_total", renderBar(memTotal / memSystem * 100) + memTotal.toFixed(1) + " MB / " + memSystem.toFixed(1) + " MB");
+	setElementContent("mem_free", renderBar(memFree / memTotal * 100) + memFree.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB");
+	setElementContent("mem_used", renderBar(memUsed / memTotal * 100) + memUsed.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB");
+	setElementContent("mem_buffer", renderBar(memBuffer / memUsed * 100) + memBuffer.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+	setElementContent("mem_cached", renderBar(memCached / memUsed * 100) + memCached.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+	setElementContent("mem_active", renderBar(memActive / memUsed * 100) + memActive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+	setElementContent("mem_inactive", renderBar(memInactive / memUsed * 100) + memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 }
 
-function ViewDHCP() {
-	dhcp_win = self.open('DHCPTable.asp','inLogTable','alwaysRaised,resizable,scrollbars,width=720,height=600');
-	dhcp_win.focus();
+function setUptimeValues(val) {
+	setElementContent("uptime_up", val.substring(val.indexOf("up") + 3, val.indexOf("load") - 2));
+	setElementContent("uptime_load", val.substring(val.indexOf("average") + 9));
 }
 
-var mem_info = new Array('mem:'<% dumpmeminfo(); %>);
+addEvent(window, "load", function() {
+	setMemoryValues("<% dumpmeminfo(); %>");
+	setUptimeValues("<% get_uptime(); %>");
+	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
+	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
+	setElementVisible("wan_connect", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
 
-var mem_total = parseInt(mem_info[19]);
-var mem_free = parseInt(mem_info[22]);
-var mem_used = mem_total - mem_free;
-var mem_buffer = parseInt(mem_info[28]);
-var mem_cached = parseInt(mem_info[31]);
-var mem_active = parseInt(mem_info[37]);
-var mem_inactive = parseInt(mem_info[40]);
+	update = new StatusUpdate("Status_Router.live.asp", 3);
+	update.onUpdate(function(u) {
+		setMemoryValues(u.mem_info);
+		setUptimeValues(u.uptime);
+		setElementVisible("wan_info", u.wan_shortproto != "disabled");
+		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp");
+		setElementVisible("wan_connect", u.wan_shortproto != "dhcp" && u.wan_shortproto != "static");
+	});
+	update.start();
+});
 
-with(Math) { var mem_system = pow(2,(ceil(log(mem_total)/LN2))); };
-
-var mem_total_f = mem_total / mem_system * 100;
-var mem_free_f = mem_free / mem_total * 100;
-var mem_used_f = mem_used / mem_total * 100;
-var mem_buffer_f = mem_buffer / mem_used * 100;
-var mem_cached_f = mem_cached / mem_used * 100;
-var mem_active_f = mem_active / mem_used * 100;
-var mem_inactive_f = mem_inactive / mem_used * 100;
-
-var mem_total_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_total_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_total_f.toFixed(1) + ' %</div></div></div>' + mem_total + ' kB / ' + mem_system + ' kB';
-var mem_free_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_free_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_free_f.toFixed(1) + ' %</div></div></div>' + mem_free + ' kB / ' + mem_total + ' kB';
-var mem_used_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_used_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_used_f.toFixed(1) + ' %</div></div></div>' + mem_used + ' kB / ' + mem_total + ' kB';
-var mem_buffer_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_buffer_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_buffer_f.toFixed(1) + ' %</div></div></div>' + mem_buffer + ' kB / ' + mem_total + ' kB';
-var mem_cached_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_cached_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_cached_f.toFixed(1) + ' %</div></div></div>' + mem_cached + ' kB / ' + mem_total + ' kB';
-var mem_active_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_active_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_active_f.toFixed(1) + ' %</div></div></div>' + mem_active + ' kB / ' + mem_total + ' kB';
-var mem_inactive_str = '<div class=\"meter\"><div class=\"bar\" style=\"width:' + mem_inactive_f.toFixed(1) + '%;\"><div class=\"text\">' + mem_inactive_f.toFixed(1) + ' %</div></div></div>' + mem_inactive + ' kB / ' + mem_total + ' kB';
-
-var uptime_raw = '<% get_uptime(); %>';
-var uptime_up = uptime_raw.substring(uptime_raw.indexOf('up') + 3,uptime_raw.indexOf('load') - 2);
-var uptime_load = uptime_raw.substring(uptime_raw.indexOf('average') + 9);
-
+addEvent(window, "unload", function() {
+	update.stop();
+});
 		</script>
 	</head>
-	
-	<body class="gui" onload="init()"> <% showad(); %>
+
+	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -126,145 +136,183 @@ var uptime_load = uptime_raw.substring(uptime_raw.indexOf('average') + 9);
 								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
 								<li><a href="Management.asp">Administration</a></li>
 								<li class="current"><span>Status</span>
-								<div id="menuSub">
-									<ul id="menuSubList">
-										<li><span>Router</span></li>
-									    <li><a href="Status_Lan.asp">LAN</a></li>
-										<li><a href="Status_Wireless.asp">Wireless</a></li>
-										<% nvram_invmatch("status_auth","1","<!--"); %>
-										<li><a href="Info.htm">Sys-Info</a></li>
-										<% nvram_invmatch("status_auth","1","-->"); %>
-										<% show_sputnik(); %>
-									</ul>
-								</div>
-							</li>
-						</ul>
+									<div id="menuSub">
+										<ul id="menuSubList">
+											<li><span>Router</span></li>
+											<li><a href="Status_Lan.asp">LAN</a></li>
+											<li><a href="Status_Wireless.asp">Wireless</a></li>
+											<% nvram_invmatch("status_auth","1","<!--"); %>
+											<li><a href="Info.htm">Sys-Info</a></li>
+											<% nvram_invmatch("status_auth","1","-->"); %>
+											<% show_sputnik(); %>
+										</ul>
+									</div>
+								</li>
+							</ul>
+						</div>
 					</div>
 				</div>
-			</div>
-            <div id="main">
-				<div id="contents">
-					<form name="status" action="apply.cgi" method="<% get_http_method(); %>">
-						<input type="hidden" name="submit_button"/>
-						<input type="hidden" name="submit_type"/>
-						<input type="hidden" name="change_action"/>
-						<input type="hidden" name="action"/>
-						<input type="hidden" name="wan_proto" value='<% nvram_get("wan_proto"); %>' />
-						<h2>Router Information</h2>
-						<fieldset>
-							<legend>System</legend>
-							<div class="setting">
-							   <div class="label">Router Name</div><% nvram_get("router_name"); %>
-							</div>
-							<div class="setting">
-							   <div class="label">Router Model</div><% nvram_get("DD_BOARD"); %>
-							</div>
-							<div class="setting">
-							   <div class="label">MAC Address</div><% nvram_get("wan_hwaddr"); %>
-							</div>
-							<div class="setting">
-							   <div class="label">Firmware Version</div><% get_firmware_version(); %>
-							</div>
-							<div class="setting">
-							   <div class="label">Host Name</div><% nvram_get("wan_hostname"); %>
-							</div>
-							<div class="setting">
-							   <div class="label">Domain Name</div><% nvram_get("wan_domain"); %>
-							</div>
-							<div class="setting">
-							   <div class="label">Current Time</div><% localtime(); %>
-							</div>
-							<div class="setting">
-							   <div class="label">Uptime</div><script type="text/JavaScript">document.write(uptime_up);</script>
-							</div>
-							<div class="setting">
-							   <div class="label">Load Average</div><script type="text/JavaScript">document.write(uptime_load);</script>
-							</div>
-							</fieldset><br>
+				<div id="main">
+					<div id="contents">
+						<form name="status" action="apply.cgi" method="<% get_http_method(); %>">
+							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="action" value="Apply" />
+							<!-- <input type="hidden" name="wan_proto" value='<% nvram_get("wan_proto"); %>' /> -->
+							<h2>Router Information</h2>
 							<fieldset>
-							<legend>CPU</legend>
-							<div class="setting">
-							   <div class="label">CPU Model</div><% show_cpuinfo(); %>
+								<legend>System</legend>
+								<div class="setting">
+								   <div class="label">Router Name</div>
+								   <span id="router_name"><% nvram_get("router_name"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">Router Model</div>
+								   <span id="router_model"><% nvram_get("DD_BOARD"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">Firmware Version</div>
+								   <span id="router_firmware"><% get_firmware_version(); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">MAC Address</div>
+								   <span id="wan_mac"><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">Host Name</div>
+								   <span id="wan_host"><% nvram_get("wan_hostname"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">Domain Name</div>
+								   <span id="wan_name"><% nvram_get("wan_domain"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">Current Time</div>
+								   <span id="router_time"><% localtime(); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">Uptime</div>
+								   <span id="uptime_up"></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">Load Average</div>
+								   <span id="uptime_load"></span>&nbsp;
+								</div>
+							</fieldset><br />
+							<fieldset>
+								<legend>CPU</legend>
+								<div class="setting">
+								   <div class="label">CPU Model</div>
+								   <span id="cpu_info"><% show_cpuinfo(); %></span>&nbsp;
+								</div>
+								<div class="setting">
+								   <div class="label">CPU Clock</div>
+								   <span id="cpu_clock"><% get_clkfreq(); %> MHz</span>&nbsp;
+								</div>
+							</fieldset><br />
+							<fieldset>
+								<legend>Memory</legend>
+								<div class="setting">
+									<div class="label">Total Available</div>
+									<span id="mem_total"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Free</div>
+									<span id="mem_free"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Used</div>
+									<span id="mem_used"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Buffers</div>
+									<span id="mem_buffer"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Cached</div>
+									<span id="mem_cached"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Active</div>
+									<span id="mem_active"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Inactive</div>
+									<span id="mem_inactive"></span>&nbsp;
+								</div>
+							</fieldset><br />
+								<h2>Internet</h2>
+								<fieldset>
+									<legend>Configuration Type</legend>
+									<div class="setting">
+										<div class="label">Login Type</div>
+										<span id="wan_proto"><% nvram_match("wan_proto", "dhcp", "Automatic Configuration - DHCP"); %><% nvram_match("wan_proto", "static", "Static"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "Disabled"); %></span>&nbsp;
+									</div>
+									<span id="wan_info" style="display:none">
+										<div class="setting" id="wan_connection">
+											<div class="label">Login Status</div>
+											<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;
+											<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" /></span>
+										</div>
+										<div class="setting">
+											<div class="label">IP Address</div>
+											<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
+										</div>
+										<div class="setting">
+											<div class="label">Subnet Mask</div>
+											<span id="wan_netmask"><% nvram_status_get("wan_netmask"); %></span>&nbsp;
+										</div>
+										<div class="setting">
+											<div class="label">Default Gateway</div>
+											<span id="wan_gateway"><% nvram_status_get("wan_gateway"); %></span>&nbsp;
+										</div>
+										<div class="setting">
+											<div class="label">DNS 1</div>
+											<span id="wan_dns0"><% nvram_status_get("wan_dns0"); %></span>&nbsp;
+										</div>
+										<div class="setting">
+											<div class="label">DNS 2</div>
+											<span id="wan_dns1"><% nvram_status_get("wan_dns1"); %></span>&nbsp;
+										</div>
+										<div class="setting">
+											<div class="label">DNS 3</div>
+											<span id="wan_dns2"><% nvram_status_get("wan_dns2"); %></span>&nbsp;
+										</div>
+										<div class="center" id="wan_dhcp">
+											<input onclick="DHCPAction(this.form,'release')" type="button" value="DHCP Release" />&nbsp;
+											<input onclick="DHCPAction(this.form,'renew')" type="button" value="DHCP Renew" />
+										</span>
+									</span>
+								</fieldset><br />
+							<div class="submitFooter">
+								<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()"/>
 							</div>
-							<div class="setting">
-							   <div class="label">CPU Clock</div><% get_clkfreq(); %> MHz
-							</div>
-						</fieldset><br>
-						<fieldset>
-							<legend>Memory</legend>
-							<div class="setting">
-								<div class="label">System</div><script type="text/JavaScript">document.write(mem_system);</script> kB
-							</div>
-							<div class="setting">
-								<div class="label">Total Available</div>
-								<script type="text/JavaScript">document.write(mem_total_str);</script>
-							</div>
-							<div class="setting">
-								<div class="label">Free</div>
-								<script type="text/JavaScript">document.write(mem_free_str);</script>
-							</div>
-							<div class="setting">
-								<div class="label">Used</div>
-								<script type="text/JavaScript">document.write(mem_used_str);</script>
-							</div>
-							
-							<div class="setting">
-								<div class="label">Buffers</div>
-								<script type="text/JavaScript">document.write(mem_buffer_str);</script>
-							</div>
-							
-							<div class="setting">
-								<div class="label">Cached</div>
-								<script type="text/JavaScript">document.write(mem_cached_str);</script>
-							</div>
-							
-							<div class="setting">
-								<div class="label">Active</div>
-								<script type="text/JavaScript">document.write(mem_active_str);</script>
-							</div>
-							
-							<div class="setting">
-								<div class="label">Inactive</div>
-								<script type="text/JavaScript">document.write(mem_inactive_str);</script>
-							</div>
-						</fieldset><br/>
-						<h2>Internet</h2>
-						<fieldset>
-							<legend>Configuration Type</legend>
-							<div class="setting">
-								<div class="label">Login Type</div>
-								<% nvram_match("wan_proto","dhcp","Automatic Configuration - DHCP"); %>
-								<% nvram_match("wan_proto","static","Static"); %>
-								<% nvram_match("wan_proto","pppoe","PPPoE"); %>
-								<% nvram_match("wan_proto","pptp","PPTP"); %>
-								<% nvram_match("wan_proto","heartbeat","HeartBeatSignal"); %>
-								<% nvram_match("wan_proto","disabled","Disabled"); %>
-							</div>
-							<% show_status_setting(); %>
-							<% nvram_match("wan_proto", "dhcp", "<input onclick=DHCPAction(this.form,'release') type=button value='DHCP Release'/><input onclick=DHCPAction(this.form,'renew') type=button value='DHCP Renew'/>"); %>
-						</fieldset><br/>
-						<div class="submitFooter">
-							<input type="button" value="Refresh" onclick="window.location.replace('Status_Router.asp')"/>
-						</div>
-					</form>
+						</form>
+					</div>
 				</div>
-			</div>
-            <div id="helpContainer">
-                <div id="help">
-                	<div id="logo"><h2>Help</h2></div>
-                  <dl>
-                     <dt class="term">Firmware Version: </dt>
-                     <dd class="definition">This is the Router's current firmware.</dd>
-                     <dt class="term">Current Time: </dt>
-                     <dd class="definition">This shows the time, as you set on the Setup Tab.</dd>
-                     <dt class="term">MAC Address: </dt>
-                     <dd class="definition">This is the Router's MAC Address, as seen by your ISP.</dd>
-                     <dt class="term">Router Name: </dt>
-                     <dd class="definition">This is the specific name for the Router, which you set on the Setup Tab.</dd>
-                     <dt class="term">Configuration Type: </dt>
-                     <dd class="definition">This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.</dd>
-                  </dl><br /><a target="_blank" href="help/HStatus.asp">More...</a></div>
-            </div>
+				<div id="helpContainer">
+					<div id="help">
+						<div id="logo"><h2>Help</h2></div>
+						<dl>
+							<dt class="term">Router Name: </dt>
+							<dd class="definition">This is the specific name for the router, which you set on the <i>Setup</i> tab.</dd>
+							<dt class="term">MAC Address: </dt>
+							<dd class="definition">This is the router's MAC Address, as seen by your ISP.</dd>
+							<dt class="term">Firmware Version: </dt>
+							<dd class="definition">This is the router's current firmware.</dd>
+							<dt class="term">Current Time: </dt>
+							<dd class="definition">This is the time, as you set on the Setup Tab.</dd>
+							<dt class="term">Uptime: </dt>
+							<dd class="definition">This is a measure of the time the router has been "up" and running.</dd>
+							<dt class="term">Load Average: </dt>
+							<dd class="definition">This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.</dd>
+							<dt class="term">Configuration Type: </dt>
+							<dd class="definition">This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.</dd>
+						</dl><br />
+						<a href="javascript:openHelpWindow('HStatus.asp')">More...</a>
+					</div>
+				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <% get_firmware_version(); %></div>
