@@ -73,12 +73,12 @@ PRE_CFLAGS  = -DPLATFORM_$(PLATFORM)
 ################################################################################
 ifeq ($(PLATFORM), linux)
 CC         = mipsel-linux-g++
-CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -Os -fPIC
+CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -Os -mtune=mips32 -mips32 -funit-at-a-time -pipe -I../pthreadcc/src -fPIC
 LIB_NAME   = libsocketcc.so
 LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
 LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
 LD         = mipsel-linux-g++
-LDFLAGS    = -lpthreadcc -shared -Wl,-soname,$(LIB_SONAME)
+LDFLAGS    = -L../pthreadcc -lpthreadcc -shared -Wl,-soname,$(LIB_SONAME) 
 CMD_DYLINK = /sbin/ldconfig $(LIB_DIR)
 CMD_STLINK = ln -s $(LIB_DIR)/$(LIB_TARGET) $(LIB_DIR)/$(LIB_NAME)
 endif
