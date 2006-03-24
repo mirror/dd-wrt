@@ -87,12 +87,6 @@ function init() {
 	                	</form>
 					</div>
 				</div>
-				<div id="floatKiller"></div>
-				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
-					<div class="info">Time: <% get_uptime(); %></div>
-					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
-				</div>
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
