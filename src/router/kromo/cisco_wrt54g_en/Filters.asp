@@ -344,7 +344,7 @@ function Status(F,I) {
 							<input type="hidden" name="blocked_service"/>
 							<input type="hidden" name="filter_web"/>
 							<input type="hidden" name="filter_policy"/>
-							<input type="hidded" name="filter_p2p"/>
+							<input type="hidden" name="filter_p2p"/>
 							<input type="hidden" name="f_status"/>
 							<h2>Internet Access</h2>
 							<fieldset>
