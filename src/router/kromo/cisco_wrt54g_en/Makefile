@@ -13,7 +13,6 @@ install:
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 	cp -a help $(INSTALLDIR)/www
-	cp -a live $(INSTALLDIR)/www
 	cp -a lang_pack $(INSTALLDIR)/www
 	ln -s ../tmp/www $(INSTALLDIR)/www/user
 
