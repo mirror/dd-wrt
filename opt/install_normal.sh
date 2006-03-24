@@ -10,7 +10,7 @@ cp .config_std .config
 
 #copy config.normal .config
 cd ..
-make clean
+#make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
