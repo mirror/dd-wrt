@@ -102,4 +102,12 @@ mske httpd-clean
 make rc-clean
 make shared-clean
 cd ../../opt
+./install_newmedia.sh
+
+cd ../src/router
+rm -dfr mipsel-uclibc/install
+mske httpd-clean
+make rc-clean
+make shared-clean
+cd ../../opt
 ./install_fon.sh
