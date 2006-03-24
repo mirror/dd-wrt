@@ -14,7 +14,7 @@ CC=mipsel-linux-uclibc-gcc
 IPKG		= /home/luis/devel/Kai/ipkg
 PRE_CFLAGS  = -D_REENTRANT -DPLATFORM_$(PLATFORM) -DVERSION=\"$(VERSION)\"
 #STATIC		= -static
-CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Os -pipe -mtune=mips32 -mips32 -funit-at-a-time -g -Wall -Ipthreadcc/src -Isocketcc/src -L../../libpcap -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\""
+CFLAGS		= $(SYSTEM_CFLAGS) $(PRE_CFLAGS) -Os -pipe -mtune=mips32 -mips32 -funit-at-a-time -Wall -Ipthreadcc/src -Isocketcc/src -L../../libpcap -I../../libpcap $(STATIC) -DCONFIG_FILE="\"$(PREFIX)/etc/kaid.conf\""
 ifneq ($(strip $(OPENWRT)),)
 #PRE_CFLAGS	+= -nostdinc
 PRE_CFLAGS	+= -DOPENWRT -static

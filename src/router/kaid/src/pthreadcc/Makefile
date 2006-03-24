@@ -71,7 +71,7 @@ PRE_CFLAGS  = -DPLATFORM_$(PLATFORM)
 # Linux.                                                                       #
 ################################################################################
 CC         = mipsel-linux-g++
-CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -Os -fPIC
+CFLAGS     = -I$/usr/include -Wall -Wstrict-prototypes -Os -mips32 -mtune=mips32 -funit-at-a-time -pipe -fPIC 
 LIB_NAME   = libpthreadcc.so
 LIB_SONAME = $(LIB_NAME).$(MAJ_VER)
 LIB_TARGET = $(LIB_SONAME).$(MIN_VER)
