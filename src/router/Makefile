@@ -287,11 +287,11 @@ endif
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-#	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-#	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/2.4.33-pre2
@@ -1296,6 +1296,7 @@ sputnik-clean:
 
 sputnik-install:
 	install -D sputnik/apd $(INSTALLDIR)/sputnik/usr/sbin/apd
+	install -D sputnik/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
 	
 
 openvpn:
