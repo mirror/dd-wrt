@@ -196,11 +196,11 @@ function SelDDNS(num,F) {
 								<legend><script>Capture(ddns.statu)</script></legend>
 								<div class="setting">
 									<div class="label"><script>Capture(share.statu)</script></div>
-									<% show_ddns_status(); %>
+									<% show_ddns_status(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script>Capture(share.interipaddr)</script></div>
-									<% show_ddns_ip(); %>
+									<% show_ddns_ip(); %>&nbsp;
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
 							</fieldset><br />
@@ -220,7 +220,7 @@ function SelDDNS(num,F) {
 							<dt class="term"><script>Capture(hddns.right1)</script></dt>
 							<dd class="definition"><script>Capture(hddns.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:help('help/HDDNS.asp');"><script>Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HDDNS.asp');"><script>Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

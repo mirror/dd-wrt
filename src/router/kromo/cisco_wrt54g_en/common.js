@@ -516,45 +516,125 @@ function Capture(obj)
 	document.write(obj);	
 }	
 
-// 18/03/06 : Botho - Help open window function (thanks to Philip)
-function help(url) {
+// Opens the help window at the right side of the screen.
+// 2DO: Would be nice to use frames it screenwidth > 1000
+function openHelpWindow(url) {
 	var top = 30;
 	var left = Math.floor(screen.availWidth * .66) - 10;
 	var width = Math.floor(screen.availWidth * .33);
 	var height = Math.floor(screen.availHeight * .9) - 30;
-	var win = window.open(url, 'DDWRT_help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	var win = window.open("help/" + url, 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
 	win.focus();
+	return win;
+}
+
+// Opens a new window in the center of the screen and closes it, if the parent window is unloaded
+function openWindow(url, width, height) {
+	var top = Math.floor((screen.availHeight - height - 10) / 2);
+	var left = Math.floor((screen.availWidth - width) / 2);
+	var win = window.open(url, 'DDWRT_' + url.replace(/\.asp/, ""), 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	addEvent(window, "unload", function() { win.close(); });
+	win.focus();
+	return win;
 }
 
 
-// 18/03/06 : Botho - AJAX refreshing statusInfo every 5 sec. (thanks to Philip)
-var http_info;
-var int_info;
+// Renders a nice meter with the percentage value
+function renderBar(fraq) {
+	if(isNaN(fraq) || fraq < 0 || fraq > 100) return "";
+	fraq = Math.round(fraq);
+	return "<div class=\"meter\"><div class=\"bar\" style=\"width:" + fraq + "%;\"><div class=\"text\">" + fraq + "%</div></div></div>";
+}
 
-function handle_status_info() {
-	if (http_info.readyState == 4 && http_info.status == 200 && document.getElementById("statusInfo")) {
-		var regex = /\{uptime:([^\{\}]*)\}\n\{wan:([^\{\}]*)\}/;
-		var result = regex.exec(http_info.responseText);
-		var status_info = document.getElementById("statusInfo").getElementsByTagName("div");
-		status_info[1].innerHTML = result[1];
-		status_info[2].innerHTML = result[2];
+// Sets the content inside the tag given by its id
+function setElementContent(id, content) {
+	if(!document.getElementById(id)) return;
+	document.getElementById(id).innerHTML = content;
+}
+
+// Shows or hides element given by its id
+function setElementVisible(id, state) {
+	if(!document.getElementById(id)) return;
+	document.getElementById(id).style.display = (state ? "" : "none");
+}
+
+// Disables or enables a form element given by its name
+// (Might replace choose_enable and choose_disable in future)
+function setElementActive(name, state) {
+	if(!document.forms[0].elements[name] || !document.forms[0].elements[name].type) return;
+	document.forms[0].elements[name].disabled = !state;
+}
+
+// Disables or enables several elements given by name of the first and the last element
+function setElementsActive(firstName, lastName, state) {
+	if(!document.forms[0].elements[firstName] || !document.forms[0].elements[lastName]) return;
+	var go = false;
+	for(var i = 0; i < document.forms[0].elements.length; i++) {
+		var currentName = document.forms[0].elements[i].name;
+		if((currentName != firstName && !go)) continue;
+		go = true;
+		setElementActive(currentName, state);
+		if(currentName == lastName) break;
 	}
 }
 
-function get_status_info() {
-	if(window.XMLHttpRequest) http_info = new XMLHttpRequest();
-	if(window.ActiveXObject) http_info = new ActiveXObject("Microsoft.XMLHTTP");
-	if(http_info) {
-		http_info.open("GET", "live/Live_Info.asp", true);
-		http_info.onreadystatechange = handle_status_info;
-		http_info.send("");
-	}
-	else {
-		exit_status_info();
-	}
+// Adds an eventlistner to object
+function addEvent(object, type, func) {
+	if(object.addEventListener)
+		object.addEventListener(type, func, false);
+	else if (object.attachEvent)
+		object.attachEvent("on" + type, func);
 }
 
-int_info = setInterval("get_status_info()", 5000);
+// Removes an eventlistner from object
+function removeEvent(object, type, func) {
+	if(object.removeEventListener)
+		object.removeEventListener(type, func, false);
+	else if (object.detachEvent)
+		object.detachEvent("on" + type, func);
+}
+
+// Class for requesting updates periodically using AJAX
+function StatusUpdate(_url, _frequency) {
+	var request;
+	var timer;
+	var url = _url;
+	var frequency = _frequency * 1000;
+	var callback = new Array();
+	var me = this;
+	
+	this.start = function() {
+		if(!window.XMLHttpRequest && !window.ActiveXObject) return false;
+		timer = setTimeout(me.doUpdate, frequency);
+	}
+	
+	this.stop = function() {
+		clearTimeout(timer);
+		request = null;
+	}
+	
+	this.onUpdate = function(func) {
+		callback.push(func);
+	}
+
+	this.doUpdate = function() {
+		if(request && request.readyState < 4) return;
+		if(window.XMLHttpRequest) request = new XMLHttpRequest();
+		if(window.ActiveXObject) request = new ActiveXObject("Microsoft.XMLHTTP");
+		request.open("GET", url, true);
+		request.onreadystatechange = function() {
+			if(request.readyState < 4 || request.status != 200) return;
+			var updates = new Object();
+			while(result = /\{(\w+)::([^\}]*)\}/g.exec(request.responseText)) {
+				updates[result[1]] = result[2];
+				setElementContent(result[1], result[2]);
+			}
+			for(var i = 0; i < callback.length; i++) { (callback[i])(updates); }
+			timer = setTimeout(me.doUpdate, frequency);
+		}
+		request.send("");
+	}
+}
 
 // 18/03/06 : Botho - Gray all form when submitting (thanks to Philip) - NOT OK YET !
 // 21/03/06 : Philip - now OK: disable AFTER submit.
@@ -564,6 +644,5 @@ function apply(F) {
 		if(typeof F.elements[i].disabled == "boolean") F.elements[i].disabled = true;
 	}
 	document.getElementById('contents').style.color = '#999999';
-
 }
-
+	
