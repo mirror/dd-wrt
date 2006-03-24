@@ -1155,9 +1155,9 @@ struct nvram_tuple router_defaults[] = {
 #elif HAVE_POWERNOC
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
-//#elif HAVE_FON
-//  {"dhcp_dnsmasq", "1", 0},
-//  {"enable_game", "0", 0},
+#elif HAVE_FON
+  {"dhcp_dnsmasq", "0", 0},
+  {"enable_game", "0", 0},
 #elif HAVE_WTS
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
