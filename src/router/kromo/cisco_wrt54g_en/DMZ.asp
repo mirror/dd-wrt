@@ -20,12 +20,12 @@ function setDMZ(val) {
 }
 
 addEvent(window, "load", function() {
-	setElementActive("dmz_ipaddr", "<% nvram_get("dmz_enable"); %>" == "1"
+	setElementActive("dmz_ipaddr", "<% nvram_get("dmz_enable"); %>" == "1");
 });
 		</script>
 	</head>
 
-	<body class="gui" onload="init()">
+	<body class="gui">
 		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
