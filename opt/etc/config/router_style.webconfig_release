@@ -16,6 +16,7 @@ document.forms[0].onreset = function() { setStyle("<% nvram_get("router_style");
 			<option value="brainslayer" <% nvram_selected("router_style", "brainslayer"); %>>BrainSlayer</option>
 			<option value="cyan" <% nvram_selected("router_style", "cyan"); %>>Cyan</option>
 			<option value="elegant" <% nvram_selected("router_style", "elegant"); %>>Elegant</option>
+			<option value="fon" <% nvram_selected("router_style", "fon"); %>>Fon</option>
 			<option value="green" <% nvram_selected("router_style", "green"); %>>Green</option>
 			<option value="kromo" <% nvram_selected("router_style", "kromo"); %>>Kromo</option>
 			<option value="red" <% nvram_selected("router_style", "red"); %>>Red</option>
