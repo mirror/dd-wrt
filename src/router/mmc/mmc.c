@@ -724,11 +724,11 @@ mmc_exit (void)
   hd[0].nr_sects = 0;
 }
 
-static void
+static int
 mmc_check_media (void)
 {
   int old_state;
-  int rc;
+  int rc=0;
 
   old_state = mmc_media_detect;
 
@@ -748,7 +748,7 @@ mmc_check_media (void)
 	  mmc_exit ();
 	}
     }
-
+return rc;
   /* del_timer(&mmc_timer);
      mmc_timer.expires = jiffies + 10*HZ;
      add_timer(&mmc_timer); */
@@ -771,14 +771,14 @@ mmc_driver_init (void)
   read_ahead[MAJOR_NR] = 8;
   add_gendisk (&hd_gendisk);
 
-  mmc_check_media ();
-
+  rc = mmc_check_media ();
+  
   /*init_timer(&mmc_timer);
      mmc_timer.expires = jiffies + HZ;
      mmc_timer.function = (void *)mmc_check_media;
      add_timer(&mmc_timer); */
 
-  return 0;
+  return rc;
 }
 
 static void __exit

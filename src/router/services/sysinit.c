@@ -436,7 +436,14 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WHRG54S:
       if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
 	restore_defaults = 1;
-
+      if (nvram_match("product_name","INSPECTION"))
+        {
+	nvram_unset("product_name");
+	restore_defaults=1;
+	}
+      if (nvram_get("router_name")==NULL)
+        restore_defaults=1;
+	
       if (restore_defaults)
 	cprintf ("Restoring defaults...");
       break;
@@ -537,12 +544,12 @@ start_restore_defaults (void)
 	    }
 	}
     }
-  if (nvcnt>50)	//fix for belkin std ip
+  if (restore_defaults)	//fix for belkin std ip
     {
       nvram_set ("lan_ipaddr", "192.168.1.1");
     }
 #ifdef HAVE_SKYTRON
-  if (nvcnt>50)
+  if (restore_defaults)
     {
       nvram_set ("lan_ipaddr", "192.168.0.1");
     }
@@ -830,7 +837,22 @@ start_sysinit (void)
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
   eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 #endif
-
+#ifdef HAVE_MMC
+if (nvram_match("mmc_enable","1"))
+    {
+    if (!eval ("insmod","mmc"))
+	{
+	//device detected
+	eval("insmod","ext2");
+	if (mount ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL,NULL))
+	    {
+	    //device not formated
+	    eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/mmc/disc0/part1");
+	    mount ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL,NULL);
+	    }
+	}
+    }
+#endif
   cprintf ("sysinit() var\n");
 
   /* /var */
