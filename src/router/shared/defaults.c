@@ -41,11 +41,11 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"fon_revision", "13", 0},
 #endif
-  {"router_style", "fon.css", 0},
+  {"router_style", "fon", 0},
 #elif HAVE_GGEW
-  {"router_style", "blue.css", 0},
+  {"router_style", "blue", 0},
 #else
-  {"router_style", "cyan.css", 0},
+  {"router_style", "cyan", 0},
 #endif
   /* OS parameters */
   {"os_name", "", 0},		/* OS name string */
