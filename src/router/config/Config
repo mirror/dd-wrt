@@ -427,6 +427,9 @@ config CONFIG_MSSID
 config CONFIG_MADWIFI
        bool "include madwifi atheros drivers"
 
+config CONFIG_E2FSPROGS
+       bool "include linux ext2 tools"
+       
 config CONFIG_NOTRANS
        bool "disable multilanguage translation feature"
        
@@ -503,7 +506,7 @@ menu "Options"
 
 config CONFIG_VENDOR
        string "Vendor"
-       default "broadcom"
+       default "Blueline AG"
        help
        Answer Y for vendor-specific customization.
 

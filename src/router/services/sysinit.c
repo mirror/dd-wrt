@@ -516,6 +516,7 @@ start_restore_defaults (void)
 	}
     }
 #endif
+  int nvcnt=0;
   for (t = router_defaults; t->name; t++)
     {
       if (restore_defaults || !nvram_get (t->name))
@@ -524,20 +525,24 @@ start_restore_defaults (void)
 	    {
 	      if (!strcmp (t->name, u->name))
 		{
+		  nvcnt++;
 		  nvram_set (u->name, u->value);
 		  break;
 		}
 	    }
 	  if (!u || !u->name)
+	    {
+	    nvcnt++;
 	    nvram_set (t->name, t->value);
+	    }
 	}
     }
-  if (restore_defaults)	//fix for belkin std ip
+  if (nvcnt>50)	//fix for belkin std ip
     {
       nvram_set ("lan_ipaddr", "192.168.1.1");
     }
 #ifdef HAVE_SKYTRON
-  if (restore_defaults)
+  if (nvcnt>50)
     {
       nvram_set ("lan_ipaddr", "192.168.0.1");
     }
