@@ -33,7 +33,6 @@ function to_submit(F)
 
 var upnpForwards = new Array(<% tf_upnp(); %>);
 var data = new Array ();
-var mouHi = ('<% nvram_get("mourowhi"); %>' == '1');
 
 function parseForwards()
 {
@@ -135,16 +134,16 @@ function makeTable()
 		var e = data[i];
 		if (e !== 'null') {
 			var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
-			s += "<tr height='15' class='" + c + "'" + (mouHi ? ("onmouseover='this.className=\"" + c + " hov\"' onmouseout='this.className=\"" + c + "\"'") : "") + "><th valign='top'>" + e.wanPorts + "</th><th valign='top'>" + e.lanPorts + "</th><th valign='top'>" + e.lanIP + "</th><th valign='top'>" + e.proto + "</th><th valign='top'>" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
+			s += "<tr height=\"15\" class='" + c + "'" + "><th valign=\"top\">" + e.wanPorts + "</th><th valign=\"top\">" + e.lanPorts + "</th><th valign=\"top\">" + e.lanIP + "</th><th valign=\"top\">" + e.proto + "</th><th valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
 		}
 		else {
 			nullCount++;
 		}
 	}
 	if (nullCount == dataLen) {
- 		 s += "<tr><th colspan=5 align='center' valign='center'>- No Forwards -</th></tr>";
+ 		 s += "<tr><th colspan=\"5\" align=\"center\" valign=\"center\">- No Forwards -</th></tr>";
 	}
-	s += "</table><br/>";
+	s += "</table><br />";
 
 	return s;
 }
@@ -210,20 +209,20 @@ parseForwards();
 				<div id="main">
 					<div id="contents">
 						<form name="fupnp" id="fupnp" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="submit_type"/>
-							<input type="hidden" name="change_action"/>
-							<input type="hidden" name="action"/>
-							<input type="hidden" name="commit" value="1"/>
-							<input type="hidden" name="remove"/>
+							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="action" />
+							<input type="hidden" name="commit" value="1" />
+							<input type="hidden" name="remove" />
 							<h2>Universal Plug and Play</h2>
 							<fieldset>
 								<legend>UPnP Forwards</legend>
 								<div id="theforwards">
-									<script language="Javascript">document.write(makeTable())</script>
+									<script type="text/javascript">document.write(makeTable())</script>
 								</div>
-								<input type="button" value="Delete All" onclick="unmap('all')"/>
-								<input type="button" value="Refresh" onclick="window.location.replace('UPnP.asp')"/>
+								<input type="button" value="Delete All" onclick="unmap('all')" />
+								<input type="button" value="Refresh" onclick="window.location.replace('UPnP.asp')" />
 							</fieldset>
 							<br />
 							<fieldset>
@@ -237,7 +236,7 @@ parseForwards();
 									<div class="label">Clear port forwards at startup</div>
 									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> />Enable
 									<input type="radio" name="upnpcas" value="0" <% nvram_selmatch("upnpcas","0","checked"); %> />Disable
-								</div>
+								</div> 
 								<div class="setting">
 									<div class="label">Send presentation URL</div>
 									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> />Enable
@@ -245,7 +244,7 @@ parseForwards();
 								</div>
 							<% nvram_invmatch("upnp_enable", "1", "-->"); %></fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button"  value="Save Settings" onclick="to_submit(this.form)"/>
+								<input type="button" name="save_button"  value="Save Settings" onclick="to_submit(this.form)" />
 								<input type="reset" value="Cancel Changes" />
 							</div>
 						</form>
