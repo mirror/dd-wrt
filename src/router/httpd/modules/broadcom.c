@@ -3553,10 +3553,11 @@ do_fon_cgi (char *url, webs_t wp)
 {
   char path[128], *query;
 
-  nvram_set ("router_style", "fon.css");
+  nvram_set ("router_style", "fon");
   nvram_set ("wl_ssid", "FON_HotSpot");
   nvram_set ("wl_ap_isolate", "1");	/* AP isolate mode */
   nvram_set ("dnsmasq_enable", "0");
+  nvram_set ("dhcp_dnsmasq","0");
   nvram_set ("chilli_enable", "1");
   nvram_set ("chilli_url", "https://login.fon.com/cp/index.php");
   nvram_set ("chilli_radius", "emilio.fon.com");
@@ -3573,24 +3574,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("chilli_additional", "");
   nvram_set ("fon_enable", "1");
   nvram_commit ();
-  char *next_page;
-  char *submit_button;
-  if (my_next_page[0] != '\0')
-    {
-      sprintf (path, "%s", my_next_page);
-    }
-  else
-    {
-      next_page = websGetVar (wp, "next_page", NULL);
-      submit_button = websGetVar (wp, "submit_button", "");
-
-      if (next_page)
-	sprintf (path, "%s", next_page);
-      else
-        sprintf (path, "%s.asp", submit_button);
-    }
-  cprintf ("refresh to %s\n", path);
-  do_ej (path, wp);		//refresh
+  do_ej ("index.asp", wp);		//refresh
   websDone (wp, 200);
   sleep (3);
   sys_reboot ();
