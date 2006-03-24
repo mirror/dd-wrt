@@ -29,7 +29,7 @@
 				<dd>The SSID is the network name shared among all devices in a wireless network. The SSID must be identical for all devices in the wireless network. It is case-sensitive and must not exceed 32 alphanumeric characters, which may be any keyboard character. Make sure this setting is the same for all devices in your wireless network.<br /><br />
 					<div class="note">
 						<h4>Note</h4>
-						<div>For added security, it is recommended to change the default SSID <tt>linksys</tt> to a unique name of your choice and deactivate SSID broadcast (see below).</div>
+						<div>For added security, it is recommended to change the default SSID <tt>linksys</tt> to a unique name of your choice.</div>
 					</div>
 				</dd>
 				<dt>Wireless Channel</dt>
