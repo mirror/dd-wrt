@@ -77,11 +77,11 @@ addEvent(window, "unload", function() {
 									<div class="label">SSID</div>
 									<span id="wl_ssid"><% nvram_get("wl_ssid"); %></span>&nbsp;
 								</div>
-								<div class="setting">
+<!--								<div class="setting">
 									<div class="label">DHCP Server</div>
 									<span id="lan_dhcp"><% nvram_else_match("lan_proto", "dhcp", "Enabled", "Disabled"); %></span>&nbsp;
 								</div>
-								<div class="setting">
+-->								<div class="setting">
 									<div class="label">Channel</div>
 									<span id="wl_channel"><% get_curchannel(); %></span>&nbsp;
 								</div>
@@ -105,10 +105,10 @@ addEvent(window, "unload", function() {
 							<span id="active_wireless"><% active_wireless(0); %></span>
 							<span id="active_wds"><% active_wds(0); %></span>
 							<div class="center">
-								<input type="button" value="Site Survey" onclick="openWindow('Site_Survey.asp', 760, 700)" />
+								<input type="button" name="site_survey" value="Site Survey" onclick="openWindow('Site_Survey.asp', 760, 700)" />
 							</div><br />
 							<div class="submitFooter">
-								<input type="button" value="Refresh" onclick="window.location.replace('Status_Wireless.asp')" />
+								<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()" />
 							</div>
 						</form>
 					</div>
