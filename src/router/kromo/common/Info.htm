@@ -32,13 +32,9 @@ function setMemoryValues(val) {
 	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 }
 
-// function setDHCPLeases(val) {
-// }
-
 addEvent(window, "load", function() {
 	setPacketInfoValues("<% wl_packet_get(); %>");
 	setMemoryValues("<% dumpmeminfo(); %>");
-//	setDHCPLeasesValues("<% dumpleases(1); %>");
 });
 		</script>
 	</head>
@@ -205,10 +201,10 @@ addEvent(window, "load", function() {
 							<legend>Clients List</legend>
 							<table class="table" cellspacing="5">
 								<tr>
-									<th>PC</th>
-									<th>IP</th>
-									<th>MAC</th>
-									<th>Duration</th>
+									<th>Host Name</th>
+									<th>IP Address</th>
+									<th>MAC Address</th>
+									<th>Expires</th>
 								</tr>
 								<script type="text/javascript">
 var table = new Array(<% dumpleases(1); %>);
