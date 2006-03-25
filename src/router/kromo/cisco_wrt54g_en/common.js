@@ -525,7 +525,6 @@ function openHelpWindow(url) {
 	var height = Math.floor(screen.availHeight * .9) - 30;
 	var win = window.open("help/" + url, 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
 	win.focus();
-	return win;
 }
 
 // Opens a new window in the center of the screen and closes it, if the parent window is unloaded
@@ -535,7 +534,6 @@ function openWindow(url, width, height) {
 	var win = window.open(url, 'DDWRT_' + url.replace(/\.asp/, ""), 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
 	addEvent(window, "unload", function() { win.close(); });
 	win.focus();
-	return win;
 }
 
 
@@ -571,9 +569,9 @@ function setElementsActive(firstName, lastName, state) {
 	var go = false;
 	for(var i = 0; i < document.forms[0].elements.length; i++) {
 		var currentName = document.forms[0].elements[i].name;
-		if((currentName != firstName && !go)) continue;
+		if(!document.forms[0].elements[i].type || (currentName != firstName && !go)) continue;
 		go = true;
-		setElementActive(currentName, state);
+		document.forms[0].elements[i].disabled = !state;
 		if(currentName == lastName) break;
 	}
 }
@@ -594,7 +592,7 @@ function removeEvent(object, type, func) {
 		object.detachEvent("on" + type, func);
 }
 
-// Class for requesting updates periodically using AJAX
+// Class for requesting updates periodically using ajax
 function StatusUpdate(_url, _frequency) {
 	var request;
 	var timer;
@@ -604,12 +602,14 @@ function StatusUpdate(_url, _frequency) {
 	var me = this;
 	
 	this.start = function() {
-		if(!window.XMLHttpRequest && !window.ActiveXObject) return false;
+		if((!window.XMLHttpRequest && !window.ActiveXObject) || frequency == 0) return false;
+		if(document.forms[0].refresh_button) document.forms[0].refresh_button.disabled = true;
 		timer = setTimeout(me.doUpdate, frequency);
 	}
 	
 	this.stop = function() {
 		clearTimeout(timer);
+		if(document.forms[0].refresh_button) document.forms[0].refresh_button.disabled = false;
 		request = null;
 	}
 	
@@ -625,7 +625,9 @@ function StatusUpdate(_url, _frequency) {
 		request.onreadystatechange = function() {
 			if(request.readyState < 4 || request.status != 200) return;
 			var updates = new Object();
-			while(result = /\{(\w+)::([^\}]*)\}/g.exec(request.responseText)) {
+			var regex = /\{(\w+)::([^\}]*)\}/g;
+			while(result = regex.exec(request.responseText)) {
+//				alert(result[1] + " --> " + result[2]);
 				updates[result[1]] = result[2];
 				setElementContent(result[1], result[2]);
 			}
@@ -633,6 +635,11 @@ function StatusUpdate(_url, _frequency) {
 			timer = setTimeout(me.doUpdate, frequency);
 		}
 		request.send("");
+	}
+	
+	this.forceUpdate = function() {
+		this.stop();
+		this.doUpdate();
 	}
 }
 
@@ -645,4 +652,46 @@ function apply(F) {
 	}
 	document.getElementById('contents').style.color = '#999999';
 }
+
+// Class for sending a request using ajax
+// This is work in progress, plz do not use yet.
+/* function Request(_url) {
+	var url = _url;
+	var values = new Array();
+	var callback = new Array();
 	
+	this.addAllElements = function() {
+		for(var i = 0; i < document.forms[0].elements.length; i++)
+			this.addElement(document.forms[0].elements[i].name);
+	}
+
+	this.addElement = function(name) {
+		if(!document.forms[0].elements[name]) return;
+		this.addValue(name, document.forms[0].elements[name].value);
+	}
+	
+	this.addValue = function(name, value) {
+		if(name.match(/[^\w]/)) return;
+		values.push(name + "=" + encodeURIComponent(value));
+	}
+	
+	this.onRequest = function(func) {
+		callback.push(func);
+	}
+
+	this.send = function() {
+		// some function to disable page
+		if(window.XMLHttpRequest) request = new XMLHttpRequest();
+		if(window.ActiveXObject) request = new ActiveXObject("Microsoft.XMLHTTP");
+		request.open("POST", url, false);
+		request.send(values.join("&"));
+		if(request.readyState < 4 || request.status != 200) alert("Error while processing this request: " + values.join("&"));
+		var updates = new Object();
+		while(result = /\{(\w+)::([^\}]*)\}/g.exec(request.responseText)) {
+			updates[result[1]] = result[2];
+		}
+		for(var i = 0; i < callback.length; i++) { (callback[i])(updates); }
+		// enable page
+	}
+
+} */

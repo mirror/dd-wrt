@@ -99,7 +99,7 @@ addEvent(window, "load", function() {
 	setUptimeValues("<% get_uptime(); %>");
 	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
 	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
-	setElementVisible("wan_connect", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
+	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
 
 	update = new StatusUpdate("Status_Router.live.asp", 3);
 	update.onUpdate(function(u) {
@@ -107,7 +107,7 @@ addEvent(window, "load", function() {
 		setUptimeValues(u.uptime);
 		setElementVisible("wan_info", u.wan_shortproto != "disabled");
 		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp");
-		setElementVisible("wan_connect", u.wan_shortproto != "dhcp" && u.wan_shortproto != "static");
+		setElementVisible("wan_connection", u.wan_shortproto != "dhcp" && u.wan_shortproto != "static");
 	});
 	update.start();
 });
@@ -242,51 +242,51 @@ addEvent(window, "unload", function() {
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
 							</fieldset><br />
-								<h2>Internet</h2>
-								<fieldset>
-									<legend>Configuration Type</legend>
-									<div class="setting">
-										<div class="label">Login Type</div>
-										<span id="wan_proto"><% nvram_match("wan_proto", "dhcp", "Automatic Configuration - DHCP"); %><% nvram_match("wan_proto", "static", "Static"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "Disabled"); %></span>&nbsp;
+							<h2>Internet</h2>
+							<fieldset>
+								<legend>Configuration Type</legend>
+								<div class="setting">
+									<div class="label">Login Type</div>
+									<span id="wan_proto"><% nvram_match("wan_proto", "dhcp", "Automatic Configuration - DHCP"); %><% nvram_match("wan_proto", "static", "Static"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "Disabled"); %></span>&nbsp;
+								</div>
+								<span id="wan_info" style="display:none">
+									<div class="setting" id="wan_connection">
+										<div class="label">Login Status</div>
+										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;
+										<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" /></span>
 									</div>
-									<span id="wan_info" style="display:none">
-										<div class="setting" id="wan_connection">
-											<div class="label">Login Status</div>
-											<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;
-											<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" /></span>
-										</div>
-										<div class="setting">
-											<div class="label">IP Address</div>
-											<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
-										</div>
-										<div class="setting">
-											<div class="label">Subnet Mask</div>
-											<span id="wan_netmask"><% nvram_status_get("wan_netmask"); %></span>&nbsp;
-										</div>
-										<div class="setting">
-											<div class="label">Default Gateway</div>
-											<span id="wan_gateway"><% nvram_status_get("wan_gateway"); %></span>&nbsp;
-										</div>
-										<div class="setting">
-											<div class="label">DNS 1</div>
-											<span id="wan_dns0"><% nvram_status_get("wan_dns0"); %></span>&nbsp;
-										</div>
-										<div class="setting">
-											<div class="label">DNS 2</div>
-											<span id="wan_dns1"><% nvram_status_get("wan_dns1"); %></span>&nbsp;
-										</div>
-										<div class="setting">
-											<div class="label">DNS 3</div>
-											<span id="wan_dns2"><% nvram_status_get("wan_dns2"); %></span>&nbsp;
-										</div>
-										<div class="center" id="wan_dhcp">
-											<input onclick="DHCPAction(this.form,'release')" type="button" value="DHCP Release" />&nbsp;
-											<input onclick="DHCPAction(this.form,'renew')" type="button" value="DHCP Renew" />
-										</span>
+									<div class="setting">
+										<div class="label">IP Address</div>
+										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
+									</div>
+									<div class="setting">
+										<div class="label">Subnet Mask</div>
+										<span id="wan_netmask"><% nvram_status_get("wan_netmask"); %></span>&nbsp;
+									</div>
+									<div class="setting">
+										<div class="label">Default Gateway</div>
+										<span id="wan_gateway"><% nvram_status_get("wan_gateway"); %></span>&nbsp;
+									</div>
+									<div class="setting">
+										<div class="label">DNS 1</div>
+										<span id="wan_dns0"><% nvram_status_get("wan_dns0"); %></span>&nbsp;
+									</div>
+									<div class="setting">
+										<div class="label">DNS 2</div>
+										<span id="wan_dns1"><% nvram_status_get("wan_dns1"); %></span>&nbsp;
+									</div>
+									<div class="setting">
+										<div class="label">DNS 3</div>
+										<span id="wan_dns2"><% nvram_status_get("wan_dns2"); %></span>&nbsp;
+									</div>
+									<div class="center" id="wan_dhcp">
+										<input onclick="DHCPAction(this.form,'release')" type="button" value="DHCP Release" />&nbsp;
+										<input onclick="DHCPAction(this.form,'renew')" type="button" value="DHCP Renew" />
 									</span>
-								</fieldset><br />
+								</span>
+							</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()"/>
+								<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()" />
 							</div>
 						</form>
 					</div>
