@@ -14,7 +14,7 @@ function DHCPAction(F,I) {
 	F.submit();
 }
 
-function Connect(F,I) {
+function connect(F,I) {
 	F.submit_type.value = I;
 	F.submit_button.value = "Status_Router";
 	F.change_action.value = "gozila_cgi";
