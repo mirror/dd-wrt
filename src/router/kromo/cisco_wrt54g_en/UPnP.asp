@@ -22,14 +22,14 @@
 		</style>
 		<script type="text/javascript">
 
-function to_submit(F) 
+function to_submit(F)
 {
-        F.submit_button.value = "UPnP"; 
-        F.action.value = "Apply"; 
+        F.submit_button.value = "UPnP";
+        F.action.value = "Apply";
         F.save_button.value = "Saved";
         F.save_button.disabled = true;
-        F.submit(); 
-} 
+        F.submit();
+}
 
 var upnpForwards = new Array(<% tf_upnp(); %>);
 var data = new Array ();
@@ -44,7 +44,7 @@ function parseForwards()
 			e.wanPorts = RegExp.$1;
 			e.lanIP = RegExp.$2;
 			e.lanPorts = RegExp.$3;
-			e.proto = RegExp.$4;
+			e.proto = RegExp.$4.toUpperCase();
 			e.enabled = (RegExp.$5 == 'on');
 			e.desc = RegExp.$6;
 
@@ -127,25 +127,24 @@ function makeTable()
 	var dataLen = data.length;
 	var nullCount = 0;
 
-	s = "<table width=\"100%\" cellpadding=\"0\" cellspacing=\"3\">";
-	s += "<tr><th width=\"5%\" >From (WAN)</th><th width=\"5%\">To (LAN)</th><th width=\"20%\">IP Address</th><th width=\"10%\">Protocol</th><th width=\"55%\">Description</th><th width=\"5%\">Delete</th></tr>";
-	s += "<tr><tr/>";
+	s = "<table class=\"table center\" width=\"100%\" cellspacing=\"5\">";
+	s += "<tr><th width=\"40%\">Description</th><th width=\"15\" >From&nbsp;(WAN)</th><th width=\"15%\">To&nbsp;(LAN)</th><th width=\"20%\">IP&nbsp;Address</th><th width=\"10%\">Protocol</th><th width=\"5%\">Delete</th></tr>";
+//	s += "<tr><tr/>";
 	for (var i=0; i<dataLen; ++i) {
 		var e = data[i];
 		if (e !== 'null') {
 			var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
-			s += "<tr height=\"15\" class='" + c + "'" + "><th valign=\"top\">" + e.wanPorts + "</th><th valign=\"top\">" + e.lanPorts + "</th><th valign=\"top\">" + e.lanIP + "</th><th valign=\"top\">" + e.proto + "</th><th valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
+//			s += "<tr height=\"15\" class='" + c + "'" + "><th valign=\"top\">" + e.wanPorts + "</th><th valign=\"top\">" + e.lanPorts + "</th><th valign=\"top\">" + e.lanIP + "</th><th valign=\"top\">" + e.proto + "</th><th valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
+			s += "<tr height=\"15\" class='" + c + "'" + "><td valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</td><td valign=\"top\">" + e.wanPorts + "</td><td valign=\"top\">" + e.lanPorts + "</td><td valign=\"top\">" + e.lanIP + "</td><td valign=\"top\">" + e.proto + "</td><td class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></td></tr>";
 		}
 		else {
 			nullCount++;
 		}
 	}
 	if (nullCount == dataLen) {
- 		 s += "<tr><th colspan=\"5\" align=\"center\" valign=\"center\">- No Forwards -</th></tr>";
+ 		 s += "<tr><td height=\"15\" colspan=\"6\" align=\"center\">- No Forwards -</td></tr>";
 	}
-	s += "</table><br />";
-
-	return s;
+	return s + "</table>";
 }
 
 function unmap(x)
@@ -158,21 +157,36 @@ function unmap(x)
 		if (!confirm("Delete all entries?")) return;
 	}
 	var fupnp = document.getElementById("fupnp");
-	
-	fupnp.submit_button.value = "UPnP"; 
-	fupnp.action.value = "Apply"; 
+
+	fupnp.submit_button.value = "UPnP";
+	fupnp.action.value = "Apply";
 	fupnp.remove.value = x;
 	fupnp.save_button.value = "Deleted";
 	fupnp.save_button.disabled = true;
 	fupnp.submit();
-	
+
 }
 
 parseForwards();
 
+var update;
+
+addEvent(window, "load", function() {
+	update = new StatusUpdate("UPnP.live.asp", 3);
+	update.onUpdate(function(u) {
+		upnpForwards = eval("new Array(" + u.upnp_forwards + ")");
+		parseForwards();
+		setElementContent("theforwards", makeTable());
+	});
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+});
 		</script>
 	</head>
-	
+
 	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -190,7 +204,7 @@ parseForwards();
 								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
 								<li class="current"><span>Applications&nbsp;&amp;&nbsp;Gaming</span>
 									<div id="menuSub">
-										<ul id="menuSubList"> 
+										<ul id="menuSubList">
 											<li><a href="Forward.asp">Port Range Forward</a></li>
 											<li><a href="ForwardSpec.asp">Port Forwarding</a></li>
 											<li><a href="Triggering.asp">Port Triggering</a></li>
@@ -218,13 +232,12 @@ parseForwards();
 							<h2>Universal Plug and Play</h2>
 							<fieldset>
 								<legend>UPnP Forwards</legend>
-								<div id="theforwards">
-									<script type="text/javascript">document.write(makeTable())</script>
+								<span id="theforwards"><script type="text/javascript">document.write(makeTable())</script></span><br />
+								<div class="center">
+									<input type="button" value="Delete All" onclick="unmap('all')" />
+									<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()" />
 								</div>
-								<input type="button" value="Delete All" onclick="unmap('all')" />
-								<input type="button" value="Refresh" onclick="window.location.replace('UPnP.asp')" />
-							</fieldset>
-							<br />
+							</fieldset><br />
 							<fieldset>
 								<legend>UPnP Configuration</legend>
 								<div class="setting">
@@ -232,17 +245,19 @@ parseForwards();
 									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> />Enable
 									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> />Disable
 								</div>
-								<% nvram_invmatch("upnp_enable", "1", "<!--"); %><div class="setting">
+								<% nvram_invmatch("upnp_enable", "1", "<!--"); %>
+								<div class="setting">
 									<div class="label">Clear port forwards at startup</div>
 									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> />Enable
 									<input type="radio" name="upnpcas" value="0" <% nvram_selmatch("upnpcas","0","checked"); %> />Disable
-								</div> 
+								</div>
 								<div class="setting">
 									<div class="label">Send presentation URL</div>
 									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> />Enable
 									<input type="radio" name="upnpmnp" value="0" <% nvram_selmatch("upnpmnp","0","checked"); %> />Disable
 								</div>
-							<% nvram_invmatch("upnp_enable", "1", "-->"); %></fieldset><br />
+								<% nvram_invmatch("upnp_enable", "1", "-->"); %>
+							</fieldset><br />
 							<div class="submitFooter">
 								<input type="button" name="save_button"  value="Save Settings" onclick="to_submit(this.form)" />
 								<input type="reset" value="Cancel Changes" />
@@ -258,7 +273,7 @@ parseForwards();
 							<dd class="definition">Allows applications to automatically setup port forwardings. Click the trash can to delete an individual entry.</dd>
 						</dl>
 						<br/>
-						<a target="_blank" href="help/HUPnP.asp">More...</a>
+						<a href="javascript:openHelpWindow('HUPnP.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
