@@ -128,7 +128,7 @@ table {
 	display:				none;
 }
 
-.submitFooter {
+#main .submitFooter {   /* philip: added #main */
 	position:				absolute;
 	top:					85px;
 	left:					0px;
@@ -139,7 +139,7 @@ table {
 	padding:				0;
 }
 
-.submitFooter input,
+#main .submitFooter input, /* philip: added #main */
 .submitFooterCmd input {
 	padding:				2px;
 	margin:					2px;	
@@ -150,6 +150,7 @@ div.setting {
 	margin:					1px;
 	padding:				1px;	
 	padding-left:			0px;	
+	clear:both; /* philip: added clear:both; */
 }
 .label {
 	width:					10em;
