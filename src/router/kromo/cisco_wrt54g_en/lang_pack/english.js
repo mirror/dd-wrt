@@ -89,7 +89,7 @@ var bmenu= new Object();
 bmenu.setup="Setup";
 bmenu.setupbasic="Basic Setup";
 bmenu.setupddns="DDNS";
-bmenu.setupmacclone="MAC Adress Clone";
+bmenu.setupmacclone="MAC Address Clone";
 bmenu.setuprouting="Advanced Routing";
 bmenu.setupvlan="VLANs";
 
