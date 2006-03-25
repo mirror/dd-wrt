@@ -1,4 +1,3 @@
-{lan_dhcp::<% nvram_else_match("lan_proto", "dhcp", "Enabled", "Disabled"); %>}
 {wl_mac::<% nvram_get("wl0_hwaddr"); %>}
 {wl_mode::<% nvram_match("wl_mode", "wet", "Client Bridge"); %><% nvram_match("wl_mode", "ap", "AP"); %><% nvram_match("wl_mode", "sta", "Client"); %><% nvram_match("wl_mode", "infra", "Adhoc"); %><% nvram_match("wl_mode", "apsta", "Repeater"); %>}
 {wl_net_mode::<% nvram_match("wl_net_mode", "mixed", "Mixed"); %><% nvram_match("wl_net_mode", "g-only", "G-Only"); %><% nvram_match("wl_net_mode", "disabled","Disabled"); %><% nvram_match("wl_net_mode", "b-only", "B-Only"); %>}
