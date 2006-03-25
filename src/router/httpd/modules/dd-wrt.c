@@ -1093,7 +1093,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input type=\"radio\" value=\"1\" name=\"%s_closed\" %s>Disable</input>\n",
 	       var, nvram_match (ssid, "1") ? "checked" : "");
     websWrite (wp, "</div>\n");
-//mode 
+//mode
 #ifdef HAVE_MADWIFI
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
@@ -1364,12 +1364,12 @@ websWrite(wp,"</script>\n");
 
 
 /*
-0x10 (FCC) 
-0x20 (DOC) 
-0x30 (ETSI) 
-0x31 (Spain) 
-0x32 (France) 
-0x40 (MKK-Japan) 
+0x10 (FCC)
+0x20 (DOC)
+0x30 (ETSI)
+0x31 (Spain)
+0x32 (France)
+0x40 (MKK-Japan)
 0xFF (debug)
 
 */
@@ -2379,10 +2379,10 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp, "<h2>%s</h2>\n", title);
 	      websWrite (wp, "<fieldset>\n");
 	      websWrite (wp, "<legend>%s</legend>\n", title2);
-	      websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp, "<table class=\"table\">\n");
+//	      websWrite (wp, "<div class=\"setting\">\n");
+	      websWrite (wp, "<table class=\"table center\" cellspacing=\"5\">\n");
 	      websWrite (wp, "<tr>\n");
-	      websWrite (wp, "<th>MAC</th>\n");
+	      websWrite (wp, "<th>MAC Address</th>\n");
 	      websWrite (wp, "<th>Signal</th>\n");
 	      websWrite (wp, "<th>Noise</th>\n");
 	      websWrite (wp, "<th>SNR</th>\n");
@@ -2405,7 +2405,8 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
       fclose (fp);
     }
   if (cnt)
-    websWrite (wp, "</table></div></fieldset><br/>\n");
+    websWrite (wp, "</table></fieldset><br />\n");
+//    websWrite (wp, "</table></div></fieldset><br/>\n");
 
   unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
@@ -2468,11 +2469,16 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
 	      if (nvram_match (wdsvar, mac))
 		{
+//		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
+//		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
+//		  snprintf (title, sizeof (title), "WDS Signal (%s) :", desc);
+//		  if (!strcmp (nvram_get (wdsvar), ""))
+//		    strcpy (title, "WDS Signal :");
 		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
 		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-		  snprintf (title, sizeof (title), "WDS Signal (%s) :", desc);
+		  snprintf (title, sizeof (title), "(%s)", desc);
 		  if (!strcmp (nvram_get (wdsvar), ""))
-		    strcpy (title, "WDS Signal :");
+		    strcpy (title, "");
 		}
 	    }
 
@@ -2511,25 +2517,29 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp, "<h2>WDS</h2>\n");
 	      websWrite (wp, "<fieldset>\n");
 	      websWrite (wp, "<legend>Nodes</legend>\n");
-	      websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp, "<table class=\"table\">\n");
+//	      websWrite (wp, "<div class=\"setting\">\n");
+	      websWrite (wp, "<table class=\"table center\" cellspacing=\"5\">\n");
 	      websWrite (wp, "<tr>\n");
-	      websWrite (wp, "<th>MAC</th>\n");
+	      websWrite (wp, "<th>MAC Address</th>\n");
 	      websWrite (wp, "<th>Signal</th>\n");
 	      websWrite (wp, "<th>Noise</th>\n");
 	      websWrite (wp, "<th>SNR</th>\n");
 	      websWrite (wp, "</tr>\n");
 	    }
 
+//	  websWrite (wp,
+//		     "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
+//		     title, mac, rssi, -100, rssi - (-100));
 	  websWrite (wp,
 		     "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
-		     title, mac, rssi, -100, rssi - (-100));
+		     mac, title, rssi, -100, rssi - (-100));
 	}
       // One less Top10-Wanted leak (belanger[AT]pobox.com)
       fclose (fp);
     }
   if (cnt)
-    websWrite (wp, "</table></div></fieldset><br/>\n");
+    websWrite (wp, "</table></fieldset><br />\n");
+//    websWrite (wp, "</table></div></fieldset><br/>\n");
 
   unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
@@ -4106,7 +4116,7 @@ int if_config_table_save(webs_t wp)
 		strcat(br_ifnames, nvram_safe_get("wan_ifnames"));
 	}
       <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-   
+
       <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 	strcpy(all_ifnames, "eth1");
 	strcpy(ifnames, nvram_safe_get("port5vlans"));
@@ -4226,7 +4236,7 @@ int if_config_table_save(webs_t wp)
 			snprintf(buff3, sizeof(buff3), "%d", nm[i]);
 			strcat(buff, buff3);
 			if (i < 3)      <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
-   
+
       <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 				strcat(buff, ".");
 		}
