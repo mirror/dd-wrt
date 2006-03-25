@@ -459,7 +459,7 @@ ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 /*
- * Example: 
+ * Example:
  * lan_ipaddr=192.168.1.1
  * <% prefix_ip_get("lan_ipaddr",1); %> produces "192.168.1."
  */
@@ -560,7 +560,7 @@ reltime (unsigned int seconds)
 }
 
 /*
- * Example: 
+ * Example:
  * lan_ipaddr = 192.168.1.1
  * <% nvram_get("lan_ipaddr"); %> produces "192.168.1.1"
  */
@@ -608,7 +608,7 @@ ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * lan_ipaddr = 192.168.1.1, gozila_action = 0
  * <% nvram_selget("lan_ipaddr"); %> produces "192.168.1.1"
  * lan_ipaddr = 192.168.1.1, gozila_action = 1, websGetVar(wp, "lan_proto", NULL) = 192.168.1.2;
@@ -646,7 +646,7 @@ ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * wan_mac = 00:11:22:33:44:55
  * <% nvram_mac_get("wan_mac"); %> produces "00-11-22-33-44-55"
  */
@@ -682,7 +682,7 @@ ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * wan_proto = dhcp; gozilla = 0;
  * <% nvram_gozila_get("wan_proto"); %> produces "dhcp"
  *
@@ -725,7 +725,7 @@ ej_webs_get (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * lan_ipaddr = 192.168.1.1
  * <% get_single_ip("lan_ipaddr","1"); %> produces "168"
  */
@@ -759,7 +759,7 @@ ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * wan_mac = 00:11:22:33:44:55
  * <% get_single_mac("wan_mac","1"); %> produces "11"
  */
@@ -790,7 +790,7 @@ ej_get_single_mac (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * wan_proto = dhcp; gozilla = 0;
  * <% nvram_selmatch("wan_proto", "dhcp", "selected"); %> produces "selected"
  *
@@ -875,7 +875,7 @@ ej_nvram_else_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * wan_proto=dhcp
  * <% nvram_else_match("wan_proto", "dhcp", "0","1"); %> produces "0"
  * <% nvram_else_match("wan_proto", "static", "0","1"); %> produces "1"
@@ -924,7 +924,7 @@ ej_nvram_match (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * wan_proto=dhcp
  * <% nvram_invmatch("wan_proto", "dhcp", "disabled"); %> does not produce
  * <% nvram_invmatch("wan_proto", "static", "disabled"); %> produces "disabled"
@@ -947,7 +947,7 @@ ej_nvram_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * HEARTBEAT_SUPPORT = 1
  * <% support_match("HEARTBEAT_SUPPORT", "0", "selected"); %> does not produce
  * <% support_match("HEARTBEAT_SUPPORT", "1", "selected"); %> produces "selected"
@@ -993,7 +993,7 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 /*
- * Example: 
+ * Example:
  * HEARTBEAT_SUPPORT = 1
  * <% support_invmatch("HEARTBEAT_SUPPORT", "1", "<!--"); %> does not produce
  * HEARTBEAT_SUPPORT = 0
@@ -1041,7 +1041,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * HEARTBEAT_SUPPORT = 1
  * <% support_elsematch("HEARTBEAT_SUPPORT", "1", "black", "red"); %> procude "black"
  */
@@ -1104,7 +1104,7 @@ ej_scroll (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /*
- * Example: 
+ * Example:
  * filter_mac=00:12:34:56:78:00 00:87:65:43:21:00
  * <% nvram_list("filter_mac", 1); %> produces "00:87:65:43:21:00"
  * <% nvram_list("filter_mac", 100); %> produces ""
@@ -1132,7 +1132,7 @@ ej_nvram_list (int eid, webs_t wp, int argc, char_t ** argv)
   return ret;
 }
 
-/* Example: 
+/* Example:
  * wan_dns = 168.95.1.1 210.66.161.125 168.95.192.1
  * <% get_dns_ip("wan_dns", "1", "2"); %> produces "161"
  * <% get_dns_ip("wan_dns", "2", "3"); %> produces "1"
@@ -1221,7 +1221,7 @@ valid_wep_key (webs_t wp, char *value, struct variable *v)
 
 /*
 	for(i=0 ; *(value+i) ; i++){
-		if(isxdigit(*(value+i))){ 
+		if(isxdigit(*(value+i))){
 			continue;
 		}
 		else{
@@ -1739,7 +1739,7 @@ ej_get_mtu (int eid, webs_t wp, int argc, char_t ** argv)
   return ret;
 }
 
-/* 
+/*
  * Variables are set in order (put dependent variables later). Set
  * nullok to TRUE to ignore zero-length values of the variable itself.
  * For more complicated validation that cannot be done in one pass or
@@ -1749,7 +1749,7 @@ ej_get_mtu (int eid, webs_t wp, int argc, char_t ** argv)
  */
 /*
 DD-WRT enhancement by seg
-This functions parses all /etc/config/xxxxx.nvramconfig files and creates the 
+This functions parses all /etc/config/xxxxx.nvramconfig files and creates the
 web var tab. so these vars arent defined anymore staticly
 */
 
@@ -1845,7 +1845,7 @@ Initnvramtab ()
   struct variable *tmp;
   variables = NULL;
   char buf[1024];
-// format = VARNAME VARDESC VARVALID VARVALIDARGS FLAGS FLAGS 
+// format = VARNAME VARDESC VARVALID VARVALIDARGS FLAGS FLAGS
 //open config directory directory =
   int idx;
   for (idx = 0; idx < 3; idx++)
@@ -1853,7 +1853,7 @@ Initnvramtab ()
       directory = opendir (directories[idx]);
       if (directory == NULL)
 	continue;
-//list all files in this directory 
+//list all files in this directory
       while ((entry = readdir (directory)) != NULL)
 	{
 	  if (endswith (entry->d_name, ".nvramconfig"))
@@ -2214,7 +2214,7 @@ Initnvramtab ()
 	//{ "wan_netmask", "WAN Subnet Mask", validate_merge_netmask, FALSE },
 	//{ "wan_gateway", "WAN Gateway", validate_merge_ipaddrs, ARGV("wan_ipaddr","wan_netmask"), FALSE },
 	{ "wan_proto", "WAN Protocol", validate_choice, ARGV("disabled", "dhcp", "static", "pppoe", "pptp", "l2tp", "heartbeat"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "ntp_server", "NTP Server", NULL, NULL, TRUE, 0 },  // not use 
+	{ "ntp_server", "NTP Server", NULL, NULL, TRUE, 0 },  // not use
 	{ "ntp_mode", "NTP Mode", validate_choice, ARGV("manual","auto"), TRUE, 0 },
 	{ "daylight_time", "Daylight", validate_choice, ARGV("0", "1"), TRUE, 0 },
 	{ "time_zone", "Time Zone", validate_choice, ARGV("-12 1 0","-11 1 0","-10 1 0","-09 1 1","-08 1 1","-07 1 0","-07 2 1","-06 1 0","-06 2 1","-05 1 0","-05 2 1","-04 1 0","-04 2 1","-03.5 1 1","-03 1 0","-03 2 1","-02 1 0","-01 1 2","+00 1 0","+00 2 2","+01 1 0","+01 2 2","+02 1 0","+02 2 2","+03 1 0","+04 1 0","+05 1 0","+06 1 0","+07 1 0","+08 1 0","+08 2 0","+09 1 0","+10 1 0","+10 2 4","+11 1 0","+12 1 0","+12 2 4"), FALSE, 0 },
@@ -2243,7 +2243,7 @@ Initnvramtab ()
 	{ "http_enable", "HTTP Server", validate_choice, ARGV("0", "1"), FALSE, 0 },
 	{ "https_enable", "HTTPS Server", validate_choice, ARGV("0", "1"), FALSE, 0 },
 
-	{ "samba_mount", "SambaFS Mount", validate_choice, ARGV("0", "1"), FALSE,0 },                  
+	{ "samba_mount", "SambaFS Mount", validate_choice, ARGV("0", "1"), FALSE,0 },
 	{ "samba_share", "SambaFS Share", NULL, NULL, FALSE,0 },
 	{ "samba_user" , "SambaFS User" , NULL, NULL, FALSE,0 },
 	{ "samba_password", "SambaFS Password", NULL,NULL, FALSE ,0},
@@ -2257,7 +2257,7 @@ Initnvramtab ()
 	{ "macupd_interval", "MAC Update Interval", NULL,NULL, FALSE,0 },
 	{ "status_auth","Status Site Authentication",NULL,NULL,FALSE,0},
 
-	
+
 	{ "rc_startup", "Startup Script", NULL, NULL, FALSE, 0 },
 	{ "rc_firewall", "Firewall Script", NULL, NULL, FALSE, 0 },
 	{ "lan_gateway", "LAN Gateway", validate_merge_ipaddrs, NULL, FALSE, 0 },
@@ -2331,14 +2331,14 @@ Initnvramtab ()
 	{ "chilli_radius1", "Primary Radius Server", validate_merge_ipaddrs, NULL, FALSE, 0 },
 	{ "chilli_radius2", "Backup Radius Server", validate_merge_ipaddrs, NULL, FALSE, 0 },
 	{ "chilli_pass", "Radius Password", validate_name, ARGV("128"), TRUE, 0 },
-	{ "chilli_dns1", "Chillispot DNS1", validate_merge_ipaddrs, NULL, FALSE, 0 },	
-	
+	{ "chilli_dns1", "Chillispot DNS1", validate_merge_ipaddrs, NULL, FALSE, 0 },
+
 	{ "def_whwaddr", "User define wireless MAC Address", validate_merge_mac, NULL, TRUE, 0 },
 
 	{ "log_dropped", "Access log D", validate_choice, ARGV("0", "1"), FALSE, 0 },
 	{ "log_rejected", "Access log R", validate_choice, ARGV("0", "1"), FALSE, 0 },
- 	{ "log_accepted", "Access log A", validate_choice, ARGV("0", "1"), FALSE, 0 },	
-	
+ 	{ "log_accepted", "Access log A", validate_choice, ARGV("0", "1"), FALSE, 0 },
+
 	{ "log_level", "Connection Logging", validate_range, ARGV("0", "3"), FALSE, 0 },
 	{ "log_enable", "Access log", validate_choice, ARGV("0", "1"), FALSE, 0 },
 	{ "filter", "Firewall Protection", validate_choice, ARGV("on", "off"), FALSE, 0 },
@@ -2419,7 +2419,7 @@ Initnvramtab ()
 	{ "wl_phytype", "Radio Band", validate_choice, ARGV("a", "b", "g"), TRUE, 0 },
 	{ "wl_wpa_psk", "WPA Pre-Shared Key", validate_wpa_psk, ARGV("64"), TRUE, EZC_FLAGS_WRITE },
 	{ "wl_wpa_gtk_rekey", "WPA GTK Rekey Timer", validate_range, ARGV("0","99999"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
-	{ "wl_radauth", "RADIUS Server ON", NULL, validate_choice, ARGV("0", "1"), FALSE ,0}, 	
+	{ "wl_radauth", "RADIUS Server ON", NULL, validate_choice, ARGV("0", "1"), FALSE ,0},
 	{ "wl_radius_ipaddr", "RADIUS Server", validate_merge_ipaddrs, NULL, TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
 	{ "wl_radius_port", "RADIUS Port", validate_range, ARGV("0", "65535"), FALSE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
 	{ "wl_radius_key", "RADIUS Shared Secret", validate_name, ARGV("255"), TRUE, EZC_FLAGS_READ | EZC_FLAGS_WRITE },
@@ -2515,7 +2515,7 @@ if (var->argv!=NULL)
  }
 count++;
 }
-    
+
 fclose(out);
 */
 //out=fopen("/tmp/dump.nv","wb");
@@ -2790,7 +2790,7 @@ struct apply_action apply_actions[] = {
   {"Expose", "filters", 0, SYS_RESTART, NULL},	// same as DMZ
   {"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
 // changed by steve
-  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added 
+  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added
 // end changed by steve
 //#endif
   {"Security", "", 1, RESTART, NULL},
@@ -2890,27 +2890,27 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
   if (count == NULL || strlen (count) == 0)
     {
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
-      websWrite (wp, "<tr></tr><tr></tr>\n");
+      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
-      websWrite (wp, "<tr></tr><tr></tr>\n");
+      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
       FWSHOW2
-	("<input class=\"num\" maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"<%% port_forward_table(\"name\",\"%d\"); %%>\" /></td>\n",
+	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"<%% port_forward_table(\"name\",\"%d\"); %%>\" /></td>\n",
 	 i, i);
       websWrite (wp, "<td>\n");
       FWSHOW2
@@ -2956,27 +2956,27 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
   if (count == NULL || strlen (count) == 0)
     {
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
-      websWrite (wp, "<tr></tr><tr></tr>\n");
+      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
-      websWrite (wp, "<tr></tr><tr></tr>\n");
+      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
       FWSHOW2
-	("<input class=\"num\" maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"<%% port_forward_spec(\"name\",\"%d\"); %%>\" /></td>\n",
+	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"<%% port_forward_spec(\"name\",\"%d\"); %%>\" /></td>\n",
 	 i, i);
       websWrite (wp, "<td>\n");
       FWSHOW2
@@ -3021,27 +3021,27 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
   if (count == NULL || strlen (count) == 0)
     {
       //return -1;      botho 04/03/06 add "- No Forwards -" if empty
-      websWrite (wp, "<tr></tr><tr></tr>\n");
+      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
       //return -1;      botho 07/03/06 add "- No Forwards -" if empty
-      websWrite (wp, "<tr></tr><tr></tr>\n");
+      //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<th colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</th>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
       FWSHOW2
-	("<input class=\"num\" maxLength=\"12\" size=\"12\" name=\"name%d\" onBlur=\"valid_name(this,'Name')\" value='<%% port_trigger_table(\"name\",\"%d\"); %%>' />\n",
+	("<input maxLength=\"12\" size=\"12\" name=\"name%d\" onBlur=\"valid_name(this,'Name')\" value='<%% port_trigger_table(\"name\",\"%d\"); %%>' />\n",
 	 i, i);
       websWrite (wp, "</td><td>\n");
       FWSHOW2
@@ -3083,7 +3083,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
       directory = opendir (directories[idx]);
       if (directory == NULL)
 	continue;
-//list all files in this directory 
+//list all files in this directory
       while ((entry = readdir (directory)) != NULL)
 	{
 	  if (argc > 0)
@@ -3285,7 +3285,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  diag_led (DIAG, STOP_LED);
 	  //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
 	  //nvram_set("is_default", "0");
-	  //nvram_set("is_modified", "1");                        
+	  //nvram_set("is_modified", "1");
 	  sys_commit ();
 	}
     }
@@ -3400,7 +3400,7 @@ initHandlers (void)
   websAspDefine ("forward_port", ej_forward_port);
   websAspDefine ("forward_spec", ej_forward_spec);
 // changed by steve
-//websAspDefine ("forward_upnp", ej_forward_upnp);      // upnp added 
+//websAspDefine ("forward_upnp", ej_forward_upnp);      // upnp added
 // end changed by steve
 
   websAspDefine ("static_route", ej_static_route);
