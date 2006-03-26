@@ -171,7 +171,7 @@ parseForwards();
 var update;
 
 addEvent(window, "load", function() {
-	update = new StatusUpdate("UPnP.live.asp", 3);
+	update = new StatusUpdate("UPnP.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate(function(u) {
 		upnpForwards = eval("new Array(" + u.upnp_forwards + ")");
 		parseForwards();

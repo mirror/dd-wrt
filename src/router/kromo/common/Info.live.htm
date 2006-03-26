@@ -1,0 +1,25 @@
+{router_name::<% nvram_get("router_name"); %>}
+{router_model::<% nvram_get("DD_BOARD"); %>}
+{lan_mac::<% nvram_get("lan_hwaddr"); %>}
+{wan_mac::<% nvram_get("wan_hwaddr"); %>}
+{wl_mac::<% nvram_get("wl0_hwaddr"); %>}
+{wl_mode_short::<% nvram_get("wl_mode"); %>}
+{wl_mode::<% nvram_match("wl_mode", "wet", "Client Bridge"); %><% nvram_match("wl_mode", "ap", "AP"); %><% nvram_match("wl_mode", "sta", "Client"); %><% nvram_match("wl_mode", "infra", "Adhoc"); %>}
+{wl_netmode::<% nvram_match("wl_net_mode", "mixed", "Mixed"); %><% nvram_match("wl_net_mode", "g-only", "G-Only"); %><% nvram_match("wl_net_mode", "disabled","Disabled"); %><% nvram_match("wl_net_mode", "b-only", "B-Only"); %>}
+{wl_ssid::<% nvram_get("wl_ssid"); %>}
+{wl_channel::<% get_curchannel(); %>}
+{wl_xmit::<% nvram_get("txpwr"); %> mW}
+{wl_rate::<% get_currate(); %> Mbps}
+{packet_info::<% wl_packet_get(); %>}
+{wan_ip::<% nvram_match("wan_proto","disabled","Disabled<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %>}
+{lan_ip::<% nvram_get("lan_ipaddr"); %>}
+{lan_dhcp_short::<% nvram_get("lan_proto"); %>}
+{lan_dhcp::<% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>}
+{wrt_radauth::<% nvram_invmatch("wl_mode", "ap", "only&nbsp;AP&nbsp;Mode<!--"); %><% nvram_match("wl_radauth","0","Disabled"); %><% nvram_match("wl_radauth","1","Active"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %>}
+{wrt_rflow::<% nvram_match("rflow_enable","0","Disabled"); %><% nvram_match("rflow_enable","1","Enabled"); %>}
+{macupd::<% nvram_match("macupd_enable","0","Disabled"); %><% nvram_match("macupd_enable","1","Enabled"); %>}
+{smb_mount::<% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Enabled"); %>}
+{mem_info::<% dumpmeminfo(); %>}
+{active_wireless::<% active_wireless(1); %>}
+{active_wds::<% active_wds(1); %>}
+{dhcp_leases::<% dumpleases(1); %>}

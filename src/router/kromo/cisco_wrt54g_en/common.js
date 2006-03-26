@@ -532,7 +532,7 @@ function openWindow(url, width, height) {
 	var top = Math.floor((screen.availHeight - height - 10) / 2);
 	var left = Math.floor((screen.availWidth - width) / 2);
 	var win = window.open(url, 'DDWRT_' + url.replace(/\.asp/, ""), 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
-	addEvent(window, "unload", function() { win.close(); });
+	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
 	win.focus();
 }
 
@@ -559,8 +559,9 @@ function setElementVisible(id, state) {
 // Disables or enables a form element given by its name
 // (Might replace choose_enable and choose_disable in future)
 function setElementActive(name, state) {
-	if(!document.forms[0].elements[name] || !document.forms[0].elements[name].type) return;
-	document.forms[0].elements[name].disabled = !state;
+	var elements = document.getElementsByName(name);
+	if(!elements) return;
+	for(var i = 0; i < elements.length; i++) { elements[i].disabled = !state; }
 }
 
 // Disables or enables several elements given by name of the first and the last element
@@ -603,13 +604,13 @@ function StatusUpdate(_url, _frequency) {
 	
 	this.start = function() {
 		if((!window.XMLHttpRequest && !window.ActiveXObject) || frequency == 0) return false;
-		if(document.forms[0].refresh_button) document.forms[0].refresh_button.disabled = true;
+		if(document.getElementsByName("refresh_button")) document.getElementsByName("refresh_button")[0].disabled = true;
 		timer = setTimeout(me.doUpdate, frequency);
 	}
 	
 	this.stop = function() {
 		clearTimeout(timer);
-		if(document.forms[0].refresh_button) document.forms[0].refresh_button.disabled = false;
+		if(document.getElementsByName("refresh_button")) document.getElementsByName("refresh_button")[0].disabled = false;
 		request = null;
 	}
 	
