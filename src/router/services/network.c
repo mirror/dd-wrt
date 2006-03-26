@@ -184,29 +184,30 @@ wlconf_up (char *name)
   return -1;
 #endif
 #ifndef HAVE_BRANDING
-if (nvram_match("wl_mode","ap"))
-{
-    #ifndef HAVE_FON
-    if (nvram_match("fon_enable","1"))
+  if (nvram_match ("wl_mode", "ap"))
     {
-    #endif
-    char *ssid = nvram_get("wl_ssid");
-    if (ssid && strlen(ssid)>0)
-    {
-    if (!startswith(nvram_safe_get("wl_ssid"),"FON_"))
+#ifndef HAVE_FON
+      if (nvram_match ("fon_enable", "1"))
 	{
-	sprintf(tmp,"FON_%s",nvram_safe_get("wl_ssid"));
-	nvram_set("wl_ssid",tmp);
-	}
-    }else
-    {
-    nvram_set("wl_ssid","FON_HotSpot");
-    }
+#endif
+	  char *ssid = nvram_get ("wl_ssid");
+	  if (ssid && strlen (ssid) > 0)
+	    {
+	      if (!startswith (nvram_safe_get ("wl_ssid"), "FON_"))
+		{
+		  sprintf (tmp, "FON_%s", nvram_safe_get ("wl_ssid"));
+		  nvram_set ("wl_ssid", tmp);
+		}
+	    }
+	  else
+	    {
+	      nvram_set ("wl_ssid", "FON_HotSpot");
+	    }
 
-    #ifndef HAVE_FON
-    }    
-    #endif
-}
+#ifndef HAVE_FON
+	}
+#endif
+    }
 #endif
 #ifdef HAVE_ONLYCLIENT
   if (nvram_match ("wl_mode", "ap"))

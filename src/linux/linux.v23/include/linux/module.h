@@ -320,6 +320,7 @@ extern struct module __this_module;
 #define MOD_IN_USE		__MOD_IN_USE(THIS_MODULE)
 
 #include <linux/version.h>
+
 static const char __module_kernel_version[] __attribute_used__ __attribute__((section(".modinfo"))) =
 "kernel_version=" UTS_RELEASE;
 #ifdef MODVERSIONS
