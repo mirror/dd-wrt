@@ -157,7 +157,7 @@ static void create_proc_decoder(struct bw_stats_struct *stats)
 	ent = create_proc_read_entry("bus_watcher", S_IWUSR | S_IRUGO, NULL,
 				     bw_read_proc, stats);
 	if (!ent) {
-		printk(KERN_INFO "Unable to initialize bus_watcher /proc entry\n");
+//		printk(KERN_INFO "Unable to initialize bus_watcher /proc entry\n");
 		return;
 	}
 }

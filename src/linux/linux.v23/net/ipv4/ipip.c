@@ -873,12 +873,12 @@ static struct inet_protocol ipip_protocol = {
 	name:		"IPIP"
 };
 
-static char banner[] __initdata =
-	KERN_INFO "IPv4 over IPv4 tunneling driver\n";
+//static char banner[] __initdata =
+//	KERN_INFO "IPv4 over IPv4 tunneling driver\n";
 
 int __init ipip_init(void)
 {
-	printk(banner);
+//	printk(banner);
 
 	ipip_fb_tunnel_dev.priv = (void*)&ipip_fb_tunnel;
 	register_netdev(&ipip_fb_tunnel_dev);

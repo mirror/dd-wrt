@@ -44,7 +44,7 @@ void br_inc_use_count()
 
 static int __init br_init(void)
 {
-	printk(KERN_INFO "NET4: Ethernet Bridge 008 for NET4.0\n");
+//	printk(KERN_INFO "NET4: Ethernet Bridge 008 for NET4.0\n");
 
 	br_handle_frame_hook = br_handle_frame;
 	br_ioctl_hook = br_ioctl_deviceless_stub;

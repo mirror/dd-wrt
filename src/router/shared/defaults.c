@@ -778,6 +778,7 @@ struct nvram_tuple router_defaults[] = {
   {"ipv6_enable", "0", 0},
   {"radvd_enable", "0", 0},
   {"radvd_conf", "", 0},
+#ifdef HAVE_CHILLI
 #ifdef HAVE_FONBETA
   {"chilli_enable", "1", 0},
   {"chilli_url", "https://beta.fon.com/test2/index.php", 0},
@@ -825,7 +826,7 @@ struct nvram_tuple router_defaults[] = {
   {"chilli_macauth", "", 0},
   {"chilli_additional", "", 0},
 #endif
-
+#endif
 #ifdef HAVE_SKYTEL
   {"sshd_enable", "0", 0},
 #elif HAVE_GGEW

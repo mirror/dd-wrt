@@ -39,7 +39,7 @@ static void br_send_bpdu(struct net_bridge_port *p, unsigned char *data, int len
 	dev = p->dev;
 
 	if ((skb = dev_alloc_skb(size)) == NULL) {
-		printk(KERN_INFO "br: memory squeeze!\n");
+//		printk(KERN_INFO "br: memory squeeze!\n");
 		return;
 	}
 

@@ -164,5 +164,5 @@ void __init prom_free_prom_memory(void)
 			freed += PAGE_SIZE;
 		}
 	}
-	printk(KERN_INFO "Freeing prom memory: %ldkb freed\n", freed >> 10);
+//	printk(KERN_INFO "Freeing prom memory: %ldkb freed\n", freed >> 10);
 }

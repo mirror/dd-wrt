@@ -134,14 +134,14 @@ static struct ipt_match p2p_match = {
 
 static int __init init(void)
 {
-	printk(KERN_INFO "iptables-p2p %s initialized\n", IPT_P2P_VERSION);
+//	printk(KERN_INFO "iptables-p2p %s initialized\n", IPT_P2P_VERSION);
 	return ipt_register_match(&p2p_match);
 }
 
 static void __exit fini(void)
 {
 	ipt_unregister_match(&p2p_match);
-	printk(KERN_INFO "iptables-p2p %s removed\n", IPT_P2P_VERSION);
+//	printk(KERN_INFO "iptables-p2p %s removed\n", IPT_P2P_VERSION);
 }
 
 module_init(init);

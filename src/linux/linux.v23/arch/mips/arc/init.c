@@ -35,8 +35,8 @@ void __init prom_init(int argc, char **argv, char **envp, int *prom_vec)
 
 	prom_init_cmdline();
 	prom_identify_arch();
-	printk(KERN_INFO "PROMLIB: ARC firmware Version %d Revision %d\n",
-	       pb->ver, pb->rev);
+//	printk(KERN_INFO "PROMLIB: ARC firmware Version %d Revision %d\n",
+//	       pb->ver, pb->rev);
 	prom_meminit();
 
 #ifdef DEBUG_PROM_INIT
