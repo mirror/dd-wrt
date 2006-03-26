@@ -1295,9 +1295,9 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 	}
     }
   }
-  sprintf (nvram, "filter_p2p_grp%d", seq);
+  sprintf (nvname, "filter_p2p_grp%d", seq);
   /* p2p catchall */
-  if (nvram_match (name, "1"))
+  if (nvram_match (nvname, "1"))
     {
       save2file ("-A advgrp_%d -p tcp -m ipp2p --ipp2p -j %s\n", seq,
 		 log_drop);
