@@ -105,7 +105,7 @@ function init() {
 }
 		</script>
 	</head>
-  
+
   <body class="gui" onload="init()"> <% showad(); %>
       <div id="wrapper">
          <div id="content">
@@ -156,7 +156,7 @@ function init() {
                         <div class="setting">
                            <div class="label">Wireless MAC</div><% nvram_get("wl0_hwaddr"); %>
                         </div>
-                        
+
                         <div class="setting">
                           <select name="wl_wds1_enable" size="1" onChange="SelWDS(1,this.form.wl_wds1_enable.selectedIndex,this.form)">
                             <option value="0" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>>Disable</option>
@@ -174,7 +174,7 @@ function init() {
                           <input name="wl_wds1_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds1_desc"); %>' />
                           <% get_wdsp2p(1); %>
                         </div>
-                        
+
                         <div class="setting">
                           <select name="wl_wds2_enable" size="1" onChange="SelWDS(2,this.form.wl_wds2_enable.selectedIndex,this.form)">
                             <option value="0" <% nvram_selmatch("wl_wds2_enable", "0", "selected"); %>>Disable</option>
@@ -210,7 +210,7 @@ function init() {
                             <input name="wl_wds3_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds3_desc"); %>' />
                             <% get_wdsp2p(3); %>
                           </div>
-                          
+
                           <div class="setting">
                             <select name="wl_wds4_enable" size="1" onChange="SelWDS(4,this.form.wl_wds4_enable.selectedIndex,this.form)">
                               <option value="0" <% nvram_selmatch("wl_wds4_enable", "0", "selected"); %>>Disable</option>
@@ -227,7 +227,7 @@ function init() {
                             <input class="num" name="wl_wds4_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "5"); %>' />
                             <input name="wl_wds4_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds4_desc"); %>' />
                             <% get_wdsp2p(4); %>
-                            
+
                             </div>
                             <div class="setting">
                               <select name="wl_wds5_enable" size="1" onChange="SelWDS(5,this.form.wl_wds5_enable.selectedIndex,this.form)">
@@ -246,7 +246,7 @@ function init() {
                               <input name="wl_wds5_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds5_desc"); %>' />
                               <% get_wdsp2p(5); %>
                             </div>
-                            
+
                             <div class="setting">
                               <select name="wl_wds6_enable" size="1" onChange="SelWDS(6,this.form.wl_wds6_enable.selectedIndex,this.form)">
                                 <option value="0" <% nvram_selmatch("wl_wds6_enable", "0", "selected"); %>>Disable</option>
@@ -264,7 +264,7 @@ function init() {
                               <input name="wl_wds6_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds6_desc"); %>' />
                               <% get_wdsp2p(6); %>
                             </div>
-                            
+
                             <div class="setting">
                               <select name="wl_wds7_enable" size="1" onChange="SelWDS(7,this.form.wl_wds7_enable.selectedIndex,this.form)">
                                 <option value="0" <% nvram_selmatch("wl_wds7_enable", "0", "selected"); %>>Disable</option>
@@ -282,7 +282,7 @@ function init() {
                    			      <input name="wl_wds7_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds7_desc"); %>' />
                    			      <% get_wdsp2p(7); %>
                    			    </div>
-                   			    
+
                    			    <div class="setting">
                    			      <select name="wl_wds8_enable" size="1" onChange="SelWDS(8,this.form.wl_wds8_enable.selectedIndex,this.form)">
                    			        <option value="0" <% nvram_selmatch("wl_wds8_enable", "0", "selected"); %>>Disable</option>
@@ -300,7 +300,7 @@ function init() {
                               <input name="wl_wds8_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds8_desc"); %>' />
                               <% get_wdsp2p(8); %>
                             </div>
-                            
+
                             <div class="setting">
                               <select name="wl_wds9_enable" size="1" onChange="SelWDS(9,this.form.wl_wds9_enable.selectedIndex,this.form)">
                                 <option value="0" <% nvram_selmatch("wl_wds9_enable", "0", "selected"); %>>Disable</option>
@@ -318,7 +318,7 @@ function init() {
 			                        <input name="wl_wds9_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds9_desc"); %>' />
 			                        <% get_wdsp2p(9); %>
                          </div>
-                         
+
                           <div class="setting">
                             <select name="wl_wds10_enable" size="1" onChange="SelWDS(10,this.form.wl_wds10_enable.selectedIndex,this.form)">
                               <option value="0" <% nvram_selmatch("wl_wds10_enable", "0", "selected"); %>>Disable</option>
@@ -336,7 +336,7 @@ function init() {
 			                      <input name="wl_wds10_desc" size="40" maxlength="39" value='<% nvram_get("wl_wds10_desc"); %>' />
 			                      <% get_wdsp2p(10); %>
                         </div>
-                        
+
                         </fieldset>
                         <br/>
                         <fieldset>
@@ -362,12 +362,13 @@ function init() {
                   </form>
                </div>
             </div>
-            <div id="helpContainer">
-               <div id="help">
-                  <div id="logo">
-                     <h2>Help</h2>
-                  </div><br /><a target="_blank" href="help/HWDS.asp">More...</a></div>
-            </div>
+				<div id="helpContainer">
+					<div id="help">
+						<div id="logo"><h2>Help</h2></div>
+						<br />
+						<a href="javascript:openHelpWindow('HWDS.asp')">More...</a>
+					</div>
+				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <% get_firmware_version(); %></div>

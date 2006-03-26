@@ -92,9 +92,8 @@ function to_submit(F) {
 						<div id="logo"><h2>Help</h2></div>
 						<dl>
 							<dd class="definition">This will reset all settings back to factory defaults. All of your settings will be erased.</dd>
-						</dl>
-						<br/>
-						<a target="_blank" href="help/HDefault.asp">More...</a>
+						</dl><br />
+						<a href="javascript:openHelpWindow('HDefault.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

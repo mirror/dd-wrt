@@ -10,7 +10,7 @@
 var update;
 
 addEvent(window, "load", function() {
-	update = new StatusUpdate("Status_Wireless.live.asp", 3);
+	update = new StatusUpdate("Status_Wireless.live.asp", <% nvram_get("refresh_time"); %>);
 	update.start();
 });
 
