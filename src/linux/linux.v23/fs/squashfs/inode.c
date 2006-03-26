@@ -1701,7 +1701,7 @@ static void squashfs_put_super(struct super_block *s)
 static int __init init_squashfs_fs(void)
 {
 
-	printk(KERN_INFO "Squashfs 2.2-r2 LZMA (released 2005/09/08) (C) 2002-2005 Phillip Lougher\n");
+//	printk(KERN_INFO "Squashfs 2.2-r2 LZMA (released 2005/09/08) (C) 2002-2005 Phillip Lougher\n");
 
 #ifndef SQUASHFS_LZMA
 	if(!(stream.workspace = (char *) vmalloc(zlib_inflate_workspacesize()))) {

@@ -2379,8 +2379,9 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp, "<h2>%s</h2>\n", title);
 	      websWrite (wp, "<fieldset>\n");
 	      websWrite (wp, "<legend>%s</legend>\n", title2);
-//	      websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp, "<table class=\"table center\" cellspacing=\"5\">\n");
+//            websWrite (wp, "<div class=\"setting\">\n");
+	      websWrite (wp,
+			 "<table class=\"table center\" cellspacing=\"5\">\n");
 	      websWrite (wp, "<tr>\n");
 	      websWrite (wp, "<th width=\"55%\">MAC Address</th>\n");
 	      websWrite (wp, "<th width=\"15%\">Signal</th>\n");
@@ -2469,11 +2470,11 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
 	      if (nvram_match (wdsvar, mac))
 		{
-//		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
-//		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-//		  snprintf (title, sizeof (title), "WDS Signal (%s) :", desc);
-//		  if (!strcmp (nvram_get (wdsvar), ""))
-//		    strcpy (title, "WDS Signal :");
+//                snprintf (wdsvar, 30, "wl_wds%d_desc", i);
+//                snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
+//                snprintf (title, sizeof (title), "WDS Signal (%s) :", desc);
+//                if (!strcmp (nvram_get (wdsvar), ""))
+//                  strcpy (title, "WDS Signal :");
 		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
 		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
 		  snprintf (title, sizeof (title), "(%s)", desc);
@@ -2517,8 +2518,9 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp, "<h2>WDS</h2>\n");
 	      websWrite (wp, "<fieldset>\n");
 	      websWrite (wp, "<legend>Nodes</legend>\n");
-//	      websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp, "<table class=\"table center\" cellspacing=\"5\">\n");
+//            websWrite (wp, "<div class=\"setting\">\n");
+	      websWrite (wp,
+			 "<table class=\"table center\" cellspacing=\"5\">\n");
 	      websWrite (wp, "<tr>\n");
 	      websWrite (wp, "<th width=\"55%\">MAC Address</th>\n");
 	      websWrite (wp, "<th width=\"15%\">Signal</th>\n");
@@ -2527,9 +2529,9 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp, "</tr>\n");
 	    }
 
-//	  websWrite (wp,
-//		     "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
-//		     title, mac, rssi, -100, rssi - (-100));
+//        websWrite (wp,
+//                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
+//                   title, mac, rssi, -100, rssi - (-100));
 	  websWrite (wp,
 		     "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 		     mac, title, rssi, -100, rssi - (-100));
