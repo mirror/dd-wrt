@@ -2383,10 +2383,10 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp,
 			 "<table class=\"table center\" cellspacing=\"5\">\n");
 	      websWrite (wp, "<tr>\n");
-	      websWrite (wp, "<th width=\"55%\">MAC Address</th>\n");
-	      websWrite (wp, "<th width=\"15%\">Signal</th>\n");
-	      websWrite (wp, "<th width=\"15%\">Noise</th>\n");
-	      websWrite (wp, "<th width=\"15%\">SNR</th>\n");
+	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
+	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
+	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
+	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
 	      websWrite (wp, "</tr>\n");
 	    }
 	  websWrite (wp, "<tr>\n");
@@ -2522,10 +2522,10 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      websWrite (wp,
 			 "<table class=\"table center\" cellspacing=\"5\">\n");
 	      websWrite (wp, "<tr>\n");
-	      websWrite (wp, "<th width=\"55%\">MAC Address</th>\n");
-	      websWrite (wp, "<th width=\"15%\">Signal</th>\n");
-	      websWrite (wp, "<th width=\"15%\">Noise</th>\n");
-	      websWrite (wp, "<th width=\"15%\">SNR</th>\n");
+	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
+	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
+	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
+	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
 	      websWrite (wp, "</tr>\n");
 	    }
 
