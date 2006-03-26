@@ -813,7 +813,7 @@ start_sysinit (void)
 
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-
+  eval ("mkdir", "/tmp/www");
 
 #ifdef HAVE_RB500
   //load ext2 
