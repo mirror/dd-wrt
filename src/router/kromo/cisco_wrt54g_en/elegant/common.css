@@ -44,6 +44,9 @@ height:9.340em;
 background:#111;
 padding-top:.908em;
 }
+.infopage #header {
+height:6.612em;
+}
 #header #logo {
 background:url(logo.png) left center no-repeat;
 height:4.076em;

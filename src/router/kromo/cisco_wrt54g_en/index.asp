@@ -10,10 +10,10 @@
 var EN_DIS1 = '<% nvram_get("mtu_enable"); %>';
 var wan_proto = '<% nvram_get("wan_proto"); %>';
 var dhcp_win = null;
- 
+
 function pptpUseDHCP(F, value)
 {
-        if(value == "0"){
+    if(value == "0"){
 		choose_enable(F.wan_ipaddr_0);
 		choose_enable(F.wan_ipaddr_1);
 		choose_enable(F.wan_ipaddr_2);
@@ -96,7 +96,7 @@ function to_submit(F) {
 		}
 		if(F._dhcp_dnsmasq)
 		{
- 		if(F._dhcp_dnsmasq.checked == false) 
+ 		if(F._dhcp_dnsmasq.checked == false)
 		{
 			F.dhcp_dnsmasq.value = 0;
 		} else {
@@ -105,14 +105,14 @@ function to_submit(F) {
 		}
 		if(F._fullswitch)
 		{
- 		if(F._fullswitch.checked == false) 
+ 		if(F._fullswitch.checked == false)
 		{
 			F.fullswitch.value = 0;
 		} else {
 			F.fullswitch.value = 1;
 		}
 		}
- 
+
 		F.submit_button.value = "index";
 		F.action.value = "Apply";
 		F.save_button.value = "Saved";
@@ -138,7 +138,7 @@ function valid_value(F) {
 		if(pptp_dhcp != "skip" && !valid_mask(F,"F.wan_netmask",ZERO_NO|BCST_NO))
 			return false;
 		}
-		
+
 		if(F.now_proto.value == "static"){
 			if(!valid_ip(F,"F.wan_gateway","Gateway",ZERO_NO|MASK_NO))
 				return false;
@@ -169,7 +169,7 @@ function valid_value(F) {
 	}
 	<% nvram_selmatch("dhcpfwd_enable", "1", "//"); %>if(!valid_dhcp_server(F))
 	<% nvram_selmatch("dhcpfwd_enable", "1", "//"); %>return false;
-	
+
 	if(F.router_name)
 	if(F.router_name.value == ""){
 		alert("You must input a Router Name!");
@@ -270,7 +270,7 @@ function daylight_enable_disable(F,aaa) {
 		choose_disable(F._daylight_time);
 		F.daylight_time.value = 0;
 	} else {
-		choose_enable(F._daylight_time);                
+		choose_enable(F._daylight_time);
 		F._daylight_time.checked = true;
 		F.daylight_time.value = 1;
 	}
@@ -292,14 +292,12 @@ function init() {
 }
 		</script>
 	</head>
-	
+
 	<body class="gui" onload="init();"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
-					<div id="logo">
-						<h1><% show_control(); %></h1>
-					</div>
+					<div id="logo"><h1><% show_control(); %></h1></div>
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
@@ -328,25 +326,25 @@ function init() {
 					</div>
 				</div>
 				<div id="main">
-				  <div id="contents">
-				    <form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-				      <input type="hidden" name="submit_button"/>
-							<input type="hidden" name="change_action"/>
-							<input type="hidden" name="submit_type"/>
-							<input type="hidden" name="action"/>
-							<input type="hidden" name="now_proto" value='<% nvram_gozila_get("wan_proto"); %>'/>
-							<input type="hidden" name="dhcp_dnsmasq" value="0"/>
-							<input type="hidden" name="fullswitch" value="0"/>
-							<input type="hidden" name="daylight_time" value="0"/>
-							<input type="hidden" name="lan_ipaddr" value="4"/>
+					<div id="contents">
+						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
+							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="action" />
+							<input type="hidden" name="now_proto" value='<% nvram_gozila_get("wan_proto"); %>' />
+							<input type="hidden" name="dhcp_dnsmasq" value="0" />
+							<input type="hidden" name="fullswitch" value="0" />
+							<input type="hidden" name="daylight_time" value="0" />
+							<input type="hidden" name="lan_ipaddr" value="4" />
 							<% nvram_selmatch("wl_mode", "wet", "<!--"); %>
-							<h2><% nvram_match("wl_mode", "ap", "Internet"); %><% nvram_invmatch("wl_mode", "ap", "Wireless"); %> Setup</h2>
+							<h2><% nvram_else_match("wl_mode", "ap", "Internet", "Wireless"); %> Setup</h2>
 							<fieldset>
-							  <legend>Internet Connection Type</legend>
-							  <div class="setting">
-							    <div class="label">&nbsp;</div>
-							    <select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
-							      <option value="disabled" <% nvram_selmatch("wan_proto", "disabled", "selected"); %>>Disable</option>
+								<legend>Internet Connection Type</legend>
+								<div class="setting">
+							    	<div class="label">Connection Type</div>
+							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
+										<option value="disabled" <% nvram_selmatch("wan_proto", "disabled", "selected"); %>>Disable</option>
 										<option value="dhcp" <% nvram_selmatch("wan_proto", "dhcp", "selected"); %>>Automatic Configuration - DHCP</option>
 										<option value="static" <% nvram_selmatch("wan_proto", "static", "selected"); %>>Static IP</option>
 										<option value="pppoe" <% nvram_selmatch("wan_proto", "pppoe", "selected"); %>>PPPoE</option>
@@ -359,135 +357,117 @@ function init() {
 								<% show_index_setting(); %>
 								<div class="setting">
 									<div class="label">STP</div>
-									<input type="radio" value="1" name="lan_stp" <% nvram_match("lan_stp","1","checked"); %>>Enable</input>
-									<input type="radio" value="0" name="lan_stp" <% nvram_match("lan_stp","0","checked"); %>>Disable (disable for COMCAST ISP)</input>
+									<input type="radio" value="1" name="lan_stp" <% nvram_match("lan_stp","1","checked"); %> />Enable&nbsp;
+									<input type="radio" value="0" name="lan_stp" <% nvram_match("lan_stp","0","checked"); %> />Disable&nbsp;
+									<span class="default">(disable for COMCAST ISP)</span>
 								</div>
-							</fieldset>
-							<br/>
+							</fieldset><br />
 							<fieldset>
 								<legend>Optional Settings (required by some ISPs)</legend>
-									<div class="setting">
-										<div class="label">Router Name</div>
-										<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value='<% nvram_get("router_name"); %>'/>
-									</div>
-									<div class="setting">
-										<div class="label">Host Name</div>
-										<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value='<% nvram_get("wan_hostname"); %>'/>
-									</div>
-									<div class="setting">
-										<div class="label">Domain Name</div>
-										<input maxlength="79" name="wan_domain" size="20" onblur="valid_name(this,&#34;Domain%20name&#34;,SPACE_NO)" value='<% nvram_get("wan_domain"); %>'/>
-									</div>
-									<div class="setting">
-										<div class="label">MTU</div>
-										<select name="mtu_enable" onchange="SelMTU(this.form.mtu_enable.selectedIndex,this.form)">
-											<option value="0" <% nvram_match("mtu_enable", "0", "selected"); %>>Auto</option>
-											<option value="1" <% nvram_match("mtu_enable", "1", "selected"); %>>Manual</option>
-										</select>
-									</div>
-									<div class="setting">
-										<div class="label">Size</div>
-										<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value='<% nvram_get("wan_mtu"); %>'/>
-									</div>
-								</fieldset>
-								<br/>
-								<% nvram_selmatch("wl_mode", "wet", "-->"); %>
-								<h2>Network Setup</h2>
-								<fieldset>
-									<legend>Router IP</legend>
-									<div class="setting">
-										<div class="label">Local IP Address</div>
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,223,&#34;IP&#34;)" name="lan_ipaddr_0" value='<% get_single_ip("lan_ipaddr","0"); %>'/>.
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,&#34;IP&#34;)" name="lan_ipaddr_1" value='<% get_single_ip("lan_ipaddr","1"); %>'/>.
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,&#34;IP&#34;)" name="lan_ipaddr_2" value='<% get_single_ip("lan_ipaddr","2"); %>'/>.
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,254,&#34;IP&#34;)" name="lan_ipaddr_3" value='<% get_single_ip("lan_ipaddr","3"); %>'/>
-									</div>
-									<div class="setting">
-										<div class="label">Subnet Mask</div>
-										<input type="hidden" name="lan_netmask" value="4"/>
-										<input class="num" maxLength="3" size="3" name="lan_netmask_0" onBlur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","0"); %>'/>.
-										<input class="num" maxLength="3" size="3" name="lan_netmask_1" onBlur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","1"); %>'/>.
-										<input class="num" maxLength="3" size="3" name="lan_netmask_2" onBlur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","2"); %>'/>.
-										<input class="num" maxLength="3" size="3" name="lan_netmask_3" onBlur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","3"); %>'/>
-									</div>
-									<div class="setting">
-										<div class="label">Gateway</div>
-										<input type="hidden" name="lan_gateway" value="4" /><input class="num" maxlength="3" size="3" name="lan_gateway_0" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("lan_gateway","0"); %>'/>.
-										<input class="num" maxlength="3" size="3" name="lan_gateway_1" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("lan_gateway","1"); %>'/>.
-										<input class="num" maxlength="3" name="lan_gateway_2" size="3" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("lan_gateway","2"); %>'/>.
-										<input class="num" maxlength="3" name="lan_gateway_3" size="3" onblur="valid_range(this,0,254,'IP')" value='<% get_single_ip("lan_gateway","3"); %>'/>
-									</div>
-									<div class="setting">
-										<div class="label">Local DNS</div>
-										<input type="hidden" name="sv_localdns" value="4"/>
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,&#34;IP&#34;)" name="sv_localdns_0" value='<% get_single_ip("sv_localdns","0"); %>'/>.
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,&#34;IP&#34;)" name="sv_localdns_1" value='<% get_single_ip("sv_localdns","1"); %>'/>.
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,&#34;IP&#34;)" name="sv_localdns_2" value='<% get_single_ip("sv_localdns","2"); %>'/>.
-										<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,254,&#34;IP&#34;)" name="sv_localdns_3" value='<% get_single_ip("sv_localdns","3"); %>'/>
-									</div>
-								</fieldset>
-								<br/>
-								<% nvram_match("wl_mode", "ap", "<!--"); %>
-								<fieldset>
-									<legend>WAN Port</legend>
-									<div class="setting">
-										<div class="label">Assign WAN Port to Switch</div>
-										<input type="checkbox" name="_fullswitch" value="1" <% nvram_match("fullswitch","1","checked"); %>/>
-									</div>
-								</fieldset>
-								<br/>
-								<% nvram_match("wl_mode", "ap", "-->"); %>
-								<% show_dhcpd_settings(); %>
-								<fieldset>
-									<legend>Time Setting</legend>
-									<div class="setting">
-										<div class="label">&nbsp;</div>
-										<select name="time_zone" onchange="SelTime(this.form.time_zone.selectedIndex,this.form)">
-											<option value="-12 1 3" <% nvram_match("time_zone", "-12 1 3", "selected"); %>>UTC-12:00</option>
-											<option value="-11 1 3" <% nvram_match("time_zone", "-11 1 3", "selected"); %>>UTC-11:00</option>
-											<option value="-10 1 3" <% nvram_match("time_zone", "-10 1 3", "selected"); %>>UTC-10:00</option>
-											<option value="-09.5 1 3" <% nvram_match("time_zone", "-09.5 1 3", "selected"); %>>UTC-09:30</option>
-											<option value="-09 1 3" <% nvram_match("time_zone", "-09 1 3", "selected"); %>>UTC-09:00</option>
-											<option value="-08 1 3" <% nvram_match("time_zone", "-08 1 3", "selected"); %>>UTC-08:00</option>
-											<option value="-07 1 3" <% nvram_match("time_zone", "-07 1 3", "selected"); %>>UTC-07:00</option>
-											<option value="-06 1 3" <% nvram_match("time_zone", "-06 1 3", "selected"); %>>UTC-06:00</option>
-											<option value="-05 1 3" <% nvram_match("time_zone", "-05 1 3", "selected"); %>>UTC-05:00</option>
-											<option value="-04 1 3" <% nvram_match("time_zone", "-04 1 3", "selected"); %>>UTC-04:00</option>
-											<option value="-03.5 1 3" <% nvram_match("time_zone", "-03.5 1 3", "selected"); %>>UTC-03:30</option>
-											<option value="-03 1 3" <% nvram_match("time_zone", "-03 1 3", "selected"); %>>UTC-03:00</option>
-											<option value="-02 1 3" <% nvram_match("time_zone", "-02 1 3", "selected"); %>>UTC-02:00</option>
-											<option value="-01 1 3" <% nvram_match("time_zone", "-01 1 3", "selected"); %>>UTC-01:00</option>
-											<option value="+00 1 3" <% nvram_match("time_zone", "+00 1 3", "selected"); %>>UTC</option>
-											<option value="+01 1 3" <% nvram_match("time_zone", "+01 1 3", "selected"); %>>UTC+01:00</option>
-											<option value="+02 1 3" <% nvram_match("time_zone", "+02 1 3", "selected"); %>>UTC+02:00</option>
-											<option value="+03 1 3" <% nvram_match("time_zone", "+03 1 3", "selected"); %>>UTC+03:00</option>
-											<option value="+03.5 1 3" <% nvram_match("time_zone", "+03.5 1 3", "selected"); %>>UTC+03:30</option>
-											<option value="+04 1 3" <% nvram_match("time_zone", "+04 1 3", "selected"); %>>UTC+04:00</option>
-											<option value="+05 1 3" <% nvram_match("time_zone", "+05 1 3", "selected"); %>>UTC+05:00</option>
-											<option value="+05.5 1 3" <% nvram_match("time_zone", "+05.5 1 3", "selected"); %>>UTC+05:30</option>
-											<option value="+05.75 1 3" <% nvram_match("time_zone", "+05.75 1 3", "selected"); %>>UTC+05:45</option>                     
-											<option value="+06 1 3" <% nvram_match("time_zone", "+06 1 3", "selected"); %>>UTC+06:00</option>
-											<option value="+06.5 1 3" <% nvram_match("time_zone", "+06.5 1 3", "selected"); %>>UTC+06:30</option>
-											<option value="+07 1 3" <% nvram_match("time_zone", "+07 1 3", "selected"); %>>UTC+07:00</option>
-											<option value="+08 1 3" <% nvram_match("time_zone", "+08 1 3", "selected"); %>>UTC+08:00</option>
-											<option value="+09 1 3" <% nvram_match("time_zone", "+09 1 3", "selected"); %>>UTC+09:00</option>
-											<option value="+09.5 1 3" <% nvram_match("time_zone", "+09.5 1 3", "selected"); %>>UTC+09:30</option>
-											<option value="+10 1 3" <% nvram_match("time_zone", "+10 1 3", "selected"); %>>UTC+10:00</option>
-											<option value="+10.5 1 3" <% nvram_match("time_zone", "+10.5 1 3", "selected"); %>>UTC+10:30</option>
-											<option value="+11 1 3" <% nvram_match("time_zone", "+11 1 3", "selected"); %>>UTC+11:00</option>
-											<option value="+11.5 1 3" <% nvram_match("time_zone", "+11.5 1 3", "selected"); %>>UTC+11:30</option>
-											<option value="+12 1 3" <% nvram_match("time_zone", "+12 1 3", "selected"); %>>UTC+12:00</option>
-											<option value="+12.75 1 3" <% nvram_match("time_zone", "+12.75 1 3", "selected"); %>>UTC+12:45</option>
-											<option value="+13 1 3" <% nvram_match("time_zone", "+13 1 3", "selected"); %>>UTC+13:00</option>
-											<option value="+14 1 3" <% nvram_match("time_zone", "+14 1 3", "selected"); %>>UTC+14:00</option>
+								<div class="setting">
+									<div class="label">Router Name</div>
+									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value='<% nvram_get("router_name"); %>'/>
+								</div>
+								<div class="setting">
+									<div class="label">Host Name</div>
+									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value='<% nvram_get("wan_hostname"); %>'/>
+								</div>
+								<div class="setting">
+									<div class="label">Domain Name</div>
+									<input maxlength="79" name="wan_domain" size="20" onblur="valid_name(this,&#34;Domain%20name&#34;,SPACE_NO)" value='<% nvram_get("wan_domain"); %>'/>
+								</div>
+								<div class="setting">
+									<div class="label">MTU</div>
+									<select name="mtu_enable" onchange="SelMTU(this.form.mtu_enable.selectedIndex,this.form)">
+										<option value="0" <% nvram_match("mtu_enable", "0", "selected"); %>>Auto</option>
+										<option value="1" <% nvram_match("mtu_enable", "1", "selected"); %>>Manual</option>
+									</select>&nbsp;
+									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value='<% nvram_get("wan_mtu"); %>'/>
+								</div>
+							</fieldset><br />
+							<% nvram_selmatch("wl_mode", "wet", "-->"); %>
+							<h2>Network Setup</h2>
+							<fieldset>
+								<legend>Router IP</legend>
+								<div class="setting">
+									<div class="label">Local IP Address</div>
+									<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,223,'IP')" name="lan_ipaddr_0" value='<% get_single_ip("lan_ipaddr","0"); %>'/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_1" value='<% get_single_ip("lan_ipaddr","1"); %>'/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_2" value='<% get_single_ip("lan_ipaddr","2"); %>'/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,254,'IP')" name="lan_ipaddr_3" value='<% get_single_ip("lan_ipaddr","3"); %>'/>
+								</div>
+								<div class="setting">
+									<div class="label">Subnet Mask</div>
+									<input type="hidden" name="lan_netmask" value="4" />
+									<input class="num" maxlength="3" size="3" name="lan_netmask_0" onblur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","0"); %>'/>.<input class="num" maxlength="3" size="3" name="lan_netmask_1" onblur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","1"); %>'/>.<input class="num" maxlength="3" size="3" name="lan_netmask_2" onblur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","2"); %>'/>.<input class="num" maxlength="3" size="3" name="lan_netmask_3" onblur="valid_range(this,0,255,'Netmask')" value='<% get_single_ip("lan_netmask","3"); %>'/>
+								</div>
+								<div class="setting">
+									<div class="label">Gateway</div>
+									<input type="hidden" name="lan_gateway" value="4" />
+									<input class="num" maxlength="3" size="3" name="lan_gateway_0" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("lan_gateway","0"); %>'/>.<input class="num" maxlength="3" size="3" name="lan_gateway_1" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("lan_gateway","1"); %>'/>.<input class="num" maxlength="3" size="3" name="lan_gateway_2" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("lan_gateway","2"); %>'/>.<input class="num" maxlength="3" size="3" name="lan_gateway_3" onblur="valid_range(this,0,254,'IP')" value='<% get_single_ip("lan_gateway","3"); %>'/>
+								</div>
+								<div class="setting">
+									<div class="label">Local DNS</div>
+									<input type="hidden" name="sv_localdns" value="4" />
+									<input class="num" maxlength="3" size="3" name="sv_localdns_0" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("sv_localdns","0"); %>'/>.<input class="num" maxlength="3" size="3" name="sv_localdns_1" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("sv_localdns","1"); %>'/>.<input class="num" maxlength="3" size="3" name="sv_localdns_2" onblur="valid_range(this,0,255,'IP')" value='<% get_single_ip("sv_localdns","2"); %>'/>.<input class="num" maxlength="3" size="3" name="sv_localdns_3" onblur="valid_range(this,0,254,'IP')" value='<% get_single_ip("sv_localdns","3"); %>'/>
+								</div>
+							</fieldset><br />
+							<% nvram_match("wl_mode", "ap", "<!--"); %>
+							<fieldset>
+								<legend>WAN Port</legend>
+								<div class="setting">
+									<div class="label">Assign WAN Port to Switch</div>
+									<input type="checkbox" name="_fullswitch" value="1" <% nvram_match("fullswitch","1","checked"); %>/>
+								</div>
+							</fieldset><br />
+							<% nvram_match("wl_mode", "ap", "-->"); %>
+							<% show_dhcpd_settings(); %>
+							<fieldset>
+								<legend>Time Settings</legend>
+								<div class="setting">
+									<div class="label">Time Zone</div>
+									<select name="time_zone" onchange="SelTime(this.form.time_zone.selectedIndex,this.form)">
+										<option value="-12 1 3" <% nvram_match("time_zone", "-12 1 3", "selected"); %>>UTC-12:00</option>
+										<option value="-11 1 3" <% nvram_match("time_zone", "-11 1 3", "selected"); %>>UTC-11:00</option>
+										<option value="-10 1 3" <% nvram_match("time_zone", "-10 1 3", "selected"); %>>UTC-10:00</option>
+										<option value="-09.5 1 3" <% nvram_match("time_zone", "-09.5 1 3", "selected"); %>>UTC-09:30</option>
+										<option value="-09 1 3" <% nvram_match("time_zone", "-09 1 3", "selected"); %>>UTC-09:00</option>
+										<option value="-08 1 3" <% nvram_match("time_zone", "-08 1 3", "selected"); %>>UTC-08:00</option>
+										<option value="-07 1 3" <% nvram_match("time_zone", "-07 1 3", "selected"); %>>UTC-07:00</option>
+										<option value="-06 1 3" <% nvram_match("time_zone", "-06 1 3", "selected"); %>>UTC-06:00</option>
+										<option value="-05 1 3" <% nvram_match("time_zone", "-05 1 3", "selected"); %>>UTC-05:00</option>
+										<option value="-04 1 3" <% nvram_match("time_zone", "-04 1 3", "selected"); %>>UTC-04:00</option>
+										<option value="-03.5 1 3" <% nvram_match("time_zone", "-03.5 1 3", "selected"); %>>UTC-03:30</option>
+										<option value="-03 1 3" <% nvram_match("time_zone", "-03 1 3", "selected"); %>>UTC-03:00</option>
+										<option value="-02 1 3" <% nvram_match("time_zone", "-02 1 3", "selected"); %>>UTC-02:00</option>
+										<option value="-01 1 3" <% nvram_match("time_zone", "-01 1 3", "selected"); %>>UTC-01:00</option>
+										<option value="+00 1 3" <% nvram_match("time_zone", "+00 1 3", "selected"); %>>UTC</option>
+										<option value="+01 1 3" <% nvram_match("time_zone", "+01 1 3", "selected"); %>>UTC+01:00</option>
+										<option value="+02 1 3" <% nvram_match("time_zone", "+02 1 3", "selected"); %>>UTC+02:00</option>
+										<option value="+03 1 3" <% nvram_match("time_zone", "+03 1 3", "selected"); %>>UTC+03:00</option>
+										<option value="+03.5 1 3" <% nvram_match("time_zone", "+03.5 1 3", "selected"); %>>UTC+03:30</option>
+										<option value="+04 1 3" <% nvram_match("time_zone", "+04 1 3", "selected"); %>>UTC+04:00</option>
+										<option value="+05 1 3" <% nvram_match("time_zone", "+05 1 3", "selected"); %>>UTC+05:00</option>
+										<option value="+05.5 1 3" <% nvram_match("time_zone", "+05.5 1 3", "selected"); %>>UTC+05:30</option>
+										<option value="+05.75 1 3" <% nvram_match("time_zone", "+05.75 1 3", "selected"); %>>UTC+05:45</option>
+										<option value="+06 1 3" <% nvram_match("time_zone", "+06 1 3", "selected"); %>>UTC+06:00</option>
+										<option value="+06.5 1 3" <% nvram_match("time_zone", "+06.5 1 3", "selected"); %>>UTC+06:30</option>
+										<option value="+07 1 3" <% nvram_match("time_zone", "+07 1 3", "selected"); %>>UTC+07:00</option>
+										<option value="+08 1 3" <% nvram_match("time_zone", "+08 1 3", "selected"); %>>UTC+08:00</option>
+										<option value="+09 1 3" <% nvram_match("time_zone", "+09 1 3", "selected"); %>>UTC+09:00</option>
+										<option value="+09.5 1 3" <% nvram_match("time_zone", "+09.5 1 3", "selected"); %>>UTC+09:30</option>
+										<option value="+10 1 3" <% nvram_match("time_zone", "+10 1 3", "selected"); %>>UTC+10:00</option>
+										<option value="+10.5 1 3" <% nvram_match("time_zone", "+10.5 1 3", "selected"); %>>UTC+10:30</option>
+										<option value="+11 1 3" <% nvram_match("time_zone", "+11 1 3", "selected"); %>>UTC+11:00</option>
+										<option value="+11.5 1 3" <% nvram_match("time_zone", "+11.5 1 3", "selected"); %>>UTC+11:30</option>
+										<option value="+12 1 3" <% nvram_match("time_zone", "+12 1 3", "selected"); %>>UTC+12:00</option>
+										<option value="+12.75 1 3" <% nvram_match("time_zone", "+12.75 1 3", "selected"); %>>UTC+12:45</option>
+										<option value="+13 1 3" <% nvram_match("time_zone", "+13 1 3", "selected"); %>>UTC+13:00</option>
+										<option value="+14 1 3" <% nvram_match("time_zone", "+14 1 3", "selected"); %>>UTC+14:00</option>
 									</select>
 								</div>
 								<div class="setting">
 									<div class="label">Use local time</div>
 									<input type="checkbox" value="1" name="_daylight_time" <% nvram_match("daylight_time","1","checked"); %>/>
 								</div>
-							</fieldset>
-							<br/>
+							</fieldset><br />
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
 								<input type="reset" value="Cancel Changes"/>
@@ -519,7 +499,7 @@ function init() {
 							<dd class="definition">Choose the time zone you are in. The router can use local time or UTC time.</dd>
 						</dl>
 						<br/>
-						<a target="_blank" href="help/HSetup.asp">More...</a>
+						<a href="javascript:openHelpWindow('HSetup.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

@@ -22,7 +22,7 @@ function connect(F,I) {
 }
 
 /* function init() {
-	<% show_status("onload");%>
+	<% show_status("onload"); %>
 } */
 
 /* function ShowAlert(M) {
@@ -54,45 +54,33 @@ function connect(F,I) {
 	alert(str);
 
 	Refresh();
-}
-
-var value=0; */
-
-/* function Refresh() {
-	var refresh_time = "<% show_status("refresh_time"); %>";
-	if(refresh_time == "")	refresh_time = 60000;
-	if (value>=1) {
-		window.location.replace("Status_Router.asp");
-	}
-	value++;
-	timerID=setTimeout("Refresh()",refresh_time);
 } */
-
-var update;
 
 function setMemoryValues(val) {
 	var mem = val.replace(/'/g, "").split(",");
-	var memTotal = parseInt(mem[19]) / 1024;
+	var memTotal = parseInt(mem[19]);
 	var memSystem = Math.pow(2, Math.ceil(Math.log(memTotal) / Math.LN2));
-	var memFree = parseInt(mem[22]) / 1024;
+	var memFree = parseInt(mem[22]);
 	var memUsed = memTotal - memFree;
-	var memBuffer = parseInt(mem[28]) / 1024;
-	var memCached = parseInt(mem[31]) / 1024;
-	var memActive = parseInt(mem[37]) / 1024;
-	var memInactive = parseInt(mem[40]) / 1024;
-	setElementContent("mem_total", renderBar(memTotal / memSystem * 100) + memTotal.toFixed(1) + " MB / " + memSystem.toFixed(1) + " MB");
-	setElementContent("mem_free", renderBar(memFree / memTotal * 100) + memFree.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB");
-	setElementContent("mem_used", renderBar(memUsed / memTotal * 100) + memUsed.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB");
-	setElementContent("mem_buffer", renderBar(memBuffer / memUsed * 100) + memBuffer.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
-	setElementContent("mem_cached", renderBar(memCached / memUsed * 100) + memCached.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
-	setElementContent("mem_active", renderBar(memActive / memUsed * 100) + memActive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
-	setElementContent("mem_inactive", renderBar(memInactive / memUsed * 100) + memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+	var memBuffer = parseInt(mem[28]);
+	var memCached = parseInt(mem[31]);
+	var memActive = parseInt(mem[37]);
+	var memInactive = parseInt(mem[40]);
+	setElementContent("mem_total", renderBar(memTotal / memSystem * 100) + memTotal + " kB / " + memSystem + " kB");
+	setElementContent("mem_free", renderBar(memFree / memTotal * 100) + memFree + " kB / " + memTotal + " kB");
+	setElementContent("mem_used", renderBar(memUsed / memTotal * 100) + memUsed + " kB / " + memTotal + " kB");
+	setElementContent("mem_buffer", renderBar(memBuffer / memUsed * 100) + memBuffer + " kB / " + memUsed + " kB");
+	setElementContent("mem_cached", renderBar(memCached / memUsed * 100) + memCached + " kB / " + memUsed + " kB");
+	setElementContent("mem_active", renderBar(memActive / memUsed * 100) + memActive + " kB / " + memUsed + " kB");
+	setElementContent("mem_inactive", renderBar(memInactive / memUsed * 100) + memInactive + " kB / " + memUsed + " kB");
 }
 
 function setUptimeValues(val) {
 	setElementContent("uptime_up", val.substring(val.indexOf("up") + 3, val.indexOf("load") - 2));
 	setElementContent("uptime_load", val.substring(val.indexOf("average") + 9));
 }
+
+var update;
 
 addEvent(window, "load", function() {
 	setMemoryValues("<% dumpmeminfo(); %>");
@@ -101,7 +89,7 @@ addEvent(window, "load", function() {
 	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
 	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
 
-	update = new StatusUpdate("Status_Router.live.asp", 3);
+	update = new StatusUpdate("Status_Router.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate(function(u) {
 		setMemoryValues(u.mem_info);
 		setUptimeValues(u.uptime);
@@ -162,53 +150,53 @@ addEvent(window, "unload", function() {
 							<!-- <input type="hidden" name="wan_proto" value='<% nvram_get("wan_proto"); %>' /> -->
 							<h2>Router Information</h2>
 							<fieldset>
-								<legend>System</legend>
+							<legend>System</legend>
 								<div class="setting">
-								   <div class="label">Router Name</div>
-								   <span id="router_name"><% nvram_get("router_name"); %></span>&nbsp;
+									<div class="label">Router Name</div>
+									<span id="router_name"><% nvram_get("router_name"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">Router Model</div>
-								   <span id="router_model"><% nvram_get("DD_BOARD"); %></span>&nbsp;
+									<div class="label">Router Model</div>
+									<span id="router_model"><% nvram_get("DD_BOARD"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">Firmware Version</div>
-								   <span id="router_firmware"><% get_firmware_version(); %></span>&nbsp;
+									<div class="label">Firmware Version</div>
+									<span id="router_firmware"><% get_firmware_version(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">MAC Address</div>
-								   <span id="wan_mac"><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									<div class="label">MAC Address</div>
+									<span id="wan_mac"><% nvram_get("wan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">Host Name</div>
-								   <span id="wan_host"><% nvram_get("wan_hostname"); %></span>&nbsp;
+									<div class="label">Host Name</div>
+									<span id="wan_host"><% nvram_get("wan_hostname"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">Domain Name</div>
-								   <span id="wan_name"><% nvram_get("wan_domain"); %></span>&nbsp;
+									<div class="label">Domain Name</div>
+									<span id="wan_name"><% nvram_get("wan_domain"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">Current Time</div>
-								   <span id="router_time"><% localtime(); %></span>&nbsp;
+									<div class="label">Current Time</div>
+									<span id="router_time"><% localtime(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">Uptime</div>
-								   <span id="uptime_up"></span>&nbsp;
+									<div class="label">Uptime</div>
+									<span id="uptime_up"></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">Load Average</div>
-								   <span id="uptime_load"></span>&nbsp;
+									<div class="label">Load Average</div>
+									<span id="uptime_load"></span>&nbsp;
 								</div>
 							</fieldset><br />
 							<fieldset>
 								<legend>CPU</legend>
 								<div class="setting">
-								   <div class="label">CPU Model</div>
-								   <span id="cpu_info"><% show_cpuinfo(); %></span>&nbsp;
+									<div class="label">CPU Model</div>
+									<span id="cpu_info"><% show_cpuinfo(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-								   <div class="label">CPU Clock</div>
-								   <span id="cpu_clock"><% get_clkfreq(); %> MHz</span>&nbsp;
+									<div class="label">CPU Clock</div>
+									<span id="cpu_clock"><% get_clkfreq(); %> MHz</span>&nbsp;
 								</div>
 							</fieldset><br />
 							<fieldset>

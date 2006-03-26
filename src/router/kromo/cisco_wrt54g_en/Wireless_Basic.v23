@@ -134,7 +134,7 @@ function init() {
                             document.write("<option value="+i+" "+buf+">Auto</option>");
                           }
                           else{
-                            if(i<10) 
+                            if(i<10)
                               document.write("<option value="+i+" "+buf+">&nbsp;&nbsp;"+i+" - "+freq[i]+"&nbsp;GHz</option>");
                             else
                               document.write("<option value="+i+" "+buf+">"+i+" - "+freq[i]+"&nbsp;GHz</option>");
@@ -157,25 +157,24 @@ function init() {
                 </fieldset>
                 <br/>
                   <div class="submitFooter">
-                    <input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)">
+                    <input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
                     <input type="reset" value="Cancel Changes" />
                 </div>
               </form>
           </div>
         </div>
-        <div id="helpContainer">
-          <div id="help">
-            <div id="logo"><h2>Help</h2></div>
-            <dl>
-              <dt class="term">Wireless Network Mode: </dt>
-              <dd class="definition">If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.</dd>
-            </dl>
-            <dt class="term">Sensitivity Range: </dt>
-              <dd class="definition">Adjusts the ack timing. 0 disables ack timing completely.
-            <br>
-            <a target="_blank" href="help/HWireless.asp">More...</a>
-          </div>
-        </div>
+				<div id="helpContainer">
+					<div id="help">
+						<div id="logo"><h2>Help</h2></div>
+						<dl>
+							<dt class="term">Wireless Network Mode: </dt>
+							<dd class="definition">If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.</dd>
+							<dt class="term">Sensitivity Range: </dt>
+							<dd class="definition">Adjusts the ack timing. 0 disables ack timing completely.</dt>
+						</dl><br />
+						<a href="javascript:openHelpWindow('HWireless.asp')">More...</a>
+					</div>
+				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <% get_firmware_version(); %></div>

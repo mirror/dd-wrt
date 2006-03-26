@@ -7,8 +7,6 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
-var update;
-
 function deleteDHCPLease(val) {
 /*	work in progress, plz do not use yet!
 	update.stop();
@@ -28,33 +26,39 @@ function deleteDHCPLease(val) {
 	document.forms[0].submit();
 }
 
-function getDHCPLeases(staticLeases, dynamicLeases) {
+function setDHCPLeases(sLeases, dLeases) {
 	var html = "";
-	var staticLeases = staticLeases.split(" ");
-	for(var i = 0; i < staticLeases.length - 1; i++) {
-		var lease = staticLeases[i].split("=");
-		html += "<tr height=\"15\"><td>" + lease[1] + "</td><td>" + lease[2] + "</td><td>" + lease[0] + "</td><td>never</td><td></td></tr>";
+	if(sLeases != "") {
+		sLeases = sLeases.split(" ");
+		for(var i = 0; i < sLeases.length - 1; i++) {
+			var l = sLeases[i].split("=");
+			html += "<tr height=\"15\"><td>" + l[1] + "</td><td>" + l[2] + "</td><td>" + l[0] + "</td><td>never</td><td></td></tr>";
+		}
 	}
-	for(var i = 0; i < dynamicLeases.length; i = i + 5) {
-		html += "<tr height=\"15\"><td>" + dynamicLeases[i] + "</td><td>" + dynamicLeases[i + 1] + "</td><td>" + dynamicLeases[i + 2] + "</td><td>" + dynamicLeases[i + 3] + "</td>"
-			 +  "<td class=\"bin\" title=\"Click to delete lease\" onclick=\"deleteDHCPLease('"+ dynamicLeases[i + 4] + "')\" /></td></tr>";
-		//document.write("<td><input type=\"checkbox\" name=\"d_" + Math.floor(i / 5) + "\" value=\"" + table[i + 4] + "\" /></td>");
+	if(dLeases != "") {
+		dLeases = dLeases.replace(/'/g, "").split(",");
+		for(var i = 0; i < dLeases.length && dLeases.length > 1; i = i + 5) {
+			html += "<tr height=\"15\"><td>" + dLeases[i] + "</td><td>" + dLeases[i + 1] + "</td><td>" + dLeases[i + 2] + "</td><td>" + dLeases[i + 3] + "</td>"
+				 +  "<td class=\"bin\" title=\"Click to delete lease\" onclick=\"deleteDHCPLease('"+ dLeases[i + 4] + "')\" /></td></tr>";
+		}
 	}
 	if(html == "") html = "<tr><td colspan=\"5\" align=\"center\">- None -</td></tr>";
-	return "<table class=\"table center\" cellspacing=\"5\"><tr><th width=\"25%\">Host&nbsp;Name</th><th width=\"25%\">IP&nbsp;Address</th><th width=\"25%\">MAC&nbsp;Address</th><th width=\"25%\">Expires</th><th>Delete</th></tr>" + html + "</table>";
+	setElementContent("dhcp_leases_table", "<table class=\"table center\" cellspacing=\"5\"><tr><th width=\"25%\">Host&nbsp;Name</th><th width=\"25%\">IP&nbsp;Address</th><th width=\"25%\">MAC&nbsp;Address</th><th width=\"25%\">Expires</th><th>Delete</th></tr>" + html + "</table>");
 }
+
+var update;
 
 addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
-	setElementContent("dhcp_leases_table", getDHCPLeases("<% nvram_get("static_leases"); %>", new Array(<% dumpleases(0); %>)));
+	setDHCPLeases("<% nvram_get("static_leases"); %>", "<% dumpleases(0); %>");
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
 
-	update = new StatusUpdate("Status_Lan.live.asp", 3);
+	update = new StatusUpdate("Status_Lan.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate(function(u) {
 		setElementContent("dhcp_start_ip", u.lan_ip_prefix + parseInt(u.dhcp_start));
 		setElementContent("dhcp_end_ip", u.lan_ip_prefix + (parseInt(u.dhcp_start) + parseInt(u.dhcp_num) - 1));
-		setElementContent("dhcp_leases_table", getDHCPLeases(u.dhcp_static_leases, eval("new Array(" + u.dhcp_dynamic_leases + ")")));
+		setDHCPLeases(u.dhcp_static_leases, u.dhcp_dynamic_leases);
 		setElementVisible("dhcp_1", u.lan_proto == "dhcp");
 		setElementVisible("dhcp_2", u.lan_proto == "dhcp");
 	});
