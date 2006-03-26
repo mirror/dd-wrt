@@ -274,6 +274,9 @@ margin:0 .362em;
 }
 #floatKiller {
 clear:both;
+width:1px;
+height:1px;
+font-size:1px;
 }
 div.center {
 text-align:center;
