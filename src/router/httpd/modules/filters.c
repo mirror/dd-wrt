@@ -1156,6 +1156,24 @@ validate_blocked_service (webs_t wp, char *value, struct variable *v)
   D ("right");
 }
 
+/*
+validates the p2p catchall filter
+*/
+void
+validate_catchall (webs_t wp, char *value, struct variable *v)
+{
+  int i;
+  char *p2p;
+  char port_grp[] = "filter_p2p_grpXXX";
+  p2p = websGetVar (wp, "filter_p2p", NULL);
+  if (p2p)
+    {
+      snprintf (port_grp, sizeof (port_grp), "filter_p2p_grp%s",
+		nvram_safe_get ("filter_id"));
+      nvram_set (port_grp, p2p);
+    }
+}
+
 
 int
 ej_filter_policy_select (int eid, webs_t wp, int argc, char_t ** argv)

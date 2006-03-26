@@ -2033,6 +2033,10 @@ Initnvramtab ()
 		    {
 		      tmp->validate = validate_blocked_service;
 		    }
+		  if (!stricmp (tmpstr, "FILTERP2P"))
+		    {
+		      tmp->validate = validate_catchall;
+		    }
 		  if (!stricmp (tmpstr, "FILTERMACGRP"))
 		    {
 		      tmp->validate = validate_filter_mac_grp;
@@ -3420,8 +3424,7 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");
-		 }
+		 websSetRealm ("DD-WRT Router OS Core");}
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3557,7 +3560,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("wl_ssid", "FON_HotSpot");
   nvram_set ("wl_ap_isolate", "1");	/* AP isolate mode */
   nvram_set ("dnsmasq_enable", "0");
-  nvram_set ("dhcp_dnsmasq","0");
+  nvram_set ("dhcp_dnsmasq", "0");
   nvram_set ("chilli_enable", "1");
   nvram_set ("chilli_url", "https://login.fon.com/cp/index.php");
   nvram_set ("chilli_radius", "emilio.fon.com");
@@ -3574,7 +3577,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("chilli_additional", "");
   nvram_set ("fon_enable", "1");
   nvram_commit ();
-  do_ej ("index.asp", wp);		//refresh
+  do_ej ("index.asp", wp);	//refresh
   websDone (wp, 200);
   sleep (3);
   sys_reboot ();
