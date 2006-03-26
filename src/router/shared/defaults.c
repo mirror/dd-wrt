@@ -57,7 +57,7 @@ struct nvram_tuple router_defaults[] = {
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
   {"time_zone", "+01 1 3", 0 },        /* Time zone (GNU TZ format) */
   {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
-  
+
 #ifdef HAVE_SKYTRON
   {"ntp_server", "ntp0.fau.de", 0},	/* NTP server *//* Modify */
   {"time_zone", "+01 1 3", 0},	/* Time zone (GNU TZ format) */
@@ -72,6 +72,9 @@ struct nvram_tuple router_defaults[] = {
 // #else
 //  {"time_zone", "-08 1 1", 0},	/* Time zone (GNU TZ format) USA */
 //  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
+
+// added 26.03.
+  {"refresh_time", "3", 0},
 
 #endif
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
@@ -1235,15 +1238,15 @@ struct nvram_tuple router_defaults[] = {
   {"fon_userlist", "", 0},
 #endif
  {"fon_enable","0",0},
- {"pptpd_client_enable","",0},  
- {"pptpd_client_srvip","",0}, 
- {"pptpd_client_srvsub","",0},  
- {"pptpd_client_srvsubmsk","",0},  
- {"pptpd_client_srvuser","",0}, 
- {"pptpd_client_srvpass","",0}, 
- {"pptpd_client_ipparam","",0},  
+ {"pptpd_client_enable","",0},
+ {"pptpd_client_srvip","",0},
+ {"pptpd_client_srvsub","",0},
+ {"pptpd_client_srvsubmsk","",0},
+ {"pptpd_client_srvuser","",0},
+ {"pptpd_client_srvpass","",0},
+ {"pptpd_client_ipparam","",0},
  {"pptpd_client_mtu" "1450",0},
- {"pptpd_client_mru","1450",0}, 
+ {"pptpd_client_mru","1450",0},
   {0, 0, 0}
 };
 
