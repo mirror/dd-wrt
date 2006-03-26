@@ -17,7 +17,7 @@
 			A:link{color: #000000; text-decoration: underline;}
 			A:hover{color: #000000; text-decoration: none;}
 			A:visited{color: #000000; text-decoration: underline;}
-			.dis th {color: #A04040;}
+			.dis td tr {color: #A04040;}
 		-->
 		</style>
 		<script type="text/javascript">
@@ -49,9 +49,9 @@ function parseForwards()
 			e.desc = RegExp.$6;
 
 			if ((e.wanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.wanPorts = RegExp.$1;
-				else e.wanPorts = RegExp.$1 + "-<br/>" + RegExp.$2;
+				else e.wanPorts = RegExp.$1 + "-<br />" + RegExp.$2;
 			if ((e.lanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.lanPorts = RegExp.$1;
-				else e.lanPorts = RegExp.$1 + "-<br/>" + RegExp.$2;
+				else e.lanPorts = RegExp.$1 + "-<br />" + RegExp.$2;
 			data.push(e);
 		}
 		else {
@@ -129,11 +129,10 @@ function makeTable()
 
 	s = "<table class=\"table center\" width=\"100%\" cellspacing=\"5\">";
 	s += "<tr><th width=\"40%\">Description</th><th width=\"15\" >From&nbsp;(WAN)</th><th width=\"15%\">To&nbsp;(LAN)</th><th width=\"20%\">IP&nbsp;Address</th><th width=\"10%\">Protocol</th><th width=\"5%\">Delete</th></tr>";
-//	s += "<tr><tr/>";
 	for (var i=0; i<dataLen; ++i) {
 		var e = data[i];
 		if (e !== 'null') {
-			var c = "row" + (i & 1) + (e.enabled ? "" : " dis");
+			var c = (e.enabled ? "" : "dis");
 //			s += "<tr height=\"15\" class='" + c + "'" + "><th valign=\"top\">" + e.wanPorts + "</th><th valign=\"top\">" + e.lanPorts + "</th><th valign=\"top\">" + e.lanIP + "</th><th valign=\"top\">" + e.proto + "</th><th valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
 			s += "<tr height=\"15\" class='" + c + "'" + "><td valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</td><td valign=\"top\">" + e.wanPorts + "</td><td valign=\"top\">" + e.lanPorts + "</td><td valign=\"top\">" + e.lanIP + "</td><td valign=\"top\">" + e.proto + "</td><td class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></td></tr>";
 		}
