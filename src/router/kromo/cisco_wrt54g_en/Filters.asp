@@ -385,14 +385,14 @@ function Status(F,I) {
 								<div class="setting">
 									<table>
 										<tr>
-											<td><input type="checkbox" value="1" name="day_all" onClick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
-											<td><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
-											<td><input type="checkbox" value="1" name="week1" <% filter_tod_get("week1"); %> /></td>
-											<td><input type="checkbox" value="1" name="week2" <% filter_tod_get("week2"); %> /></td>
-											<td><input type="checkbox" value="1" name="week3" <% filter_tod_get("week3"); %> /></td>
-											<td><input type="checkbox" value="1" name="week4" <% filter_tod_get("week4"); %> /></td>
-											<td><input type="checkbox" value="1" name="week5" <% filter_tod_get("week5"); %> /></td>
-											<td><input type="checkbox" value="1" name="week6" <% filter_tod_get("week6"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="day_all" onClick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="week1" <% filter_tod_get("week1"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="week2" <% filter_tod_get("week2"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="week3" <% filter_tod_get("week3"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="week4" <% filter_tod_get("week4"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="week5" <% filter_tod_get("week5"); %> /></td>
+											<td align="center"><input type="checkbox" value="1" name="week6" <% filter_tod_get("week6"); %> /></td>
 										</tr>
 										<tr>
 											<td>Everyday</td>
@@ -431,8 +431,8 @@ function Status(F,I) {
 							<fieldset>
 								<legend>Blocked Services</legend>
 								<div class="setting">
-								<div class="label">Catch all P2P Protocols</div>
-  								<input type="checkbox" name="_filter_p2p" value="1" <% nvram_match("filter_p2p", "1", "checked"); %>/>
+									<div class="label">Catch all P2P Protocols</div>
+  									<input type="checkbox" name="_filter_p2p" value="1" <% nvram_match("filter_p2p", "1", "checked"); %>/>
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onChange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
@@ -468,21 +468,27 @@ function Status(F,I) {
 							</fieldset><br />
 							<fieldset>
 								<legend>Website Blocking by URL Address</legend>
-								<input class="num" size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />
-								<input class="num" size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />
-								<br />
-								<input class="num" size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />
-								<input class="num" size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />
+								<div class="setting center">
+									<input class="num" size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />
+								</div>
+								<div class="setting center">
+									<input class="num" size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />
+									<input class="num" size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />
+								</div>
 							</fieldset><br />
 							<fieldset>
 								<legend>Website Blocking by Keyword</legend>
-								<input class="num" size="18" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />
-								<input class="num" size="18" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />
-								<input class="num" size="18" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" />
-								<br />
-								<input class="num" size="18" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />
-								<input class="num" size="18" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" />
-								<input class="num" size="18" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />
+								<div class="setting center">
+									<input class="num" size="18" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="18" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="18" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" />
+								</div>
+								<div class="setting center">
+									<input class="num" size="18" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="18" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="18" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />
+								</div>
 							</fieldset><br />
 							<div class="submitFooter">
 								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
