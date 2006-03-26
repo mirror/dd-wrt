@@ -843,7 +843,7 @@ int sock_create(int family, int type, int protocol, struct socket **res)
 		static int warned; 
 		if (!warned) {
 			warned = 1;
-			printk(KERN_INFO "%s uses obsolete (PF_INET,SOCK_PACKET)\n", current->comm);
+//			printk(KERN_INFO "%s uses obsolete (PF_INET,SOCK_PACKET)\n", current->comm);
 		}
 		family = PF_PACKET;
 	}
@@ -1669,8 +1669,8 @@ void __init sock_init(void)
 {
 	int i;
 
-	printk(KERN_INFO "Linux NET4.0 for Linux 2.4\n");
-	printk(KERN_INFO "Based upon Swansea University Computer Society NET3.039\n");
+//	printk(KERN_INFO "Linux NET4.0 for Linux 2.4\n");
+//	printk(KERN_INFO "Based upon Swansea University Computer Society NET3.039\n");
 
 	/*
 	 *	Initialize all address (protocol) families. 

@@ -380,7 +380,7 @@ static int __init sbprof_tb_init(void)
 				      &sbprof_tb_fops, NULL);
 	sbp.open = 0;
 	tb_period = zbbus_mhz * 10000LL;
-	printk(KERN_INFO DEVNAME ": initialized - tb_period = %lld\n", tb_period);
+//	printk(KERN_INFO DEVNAME ": initialized - tb_period = %lld\n", tb_period);
 	return 0;
 }
 

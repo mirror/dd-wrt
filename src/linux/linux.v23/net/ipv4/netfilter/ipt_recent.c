@@ -31,8 +31,8 @@ static int ip_list_perms = 0644;
 static int debug = 1;
 #endif
 
-static char version[] =
-KERN_INFO RECENT_NAME " " RECENT_VER ": Stephen Frost <sfrost@snowman.net>.  http://snowman.net/projects/ipt_recent/\n";
+//static char version[] =
+//KERN_INFO RECENT_NAME " " RECENT_VER ": Stephen Frost <sfrost@snowman.net>.  http://snowman.net/projects/ipt_recent/\n";
 
 MODULE_AUTHOR("Stephen Frost <sfrost@snowman.net>");
 MODULE_DESCRIPTION("IP tables recently seen matching module " RECENT_VER);
@@ -964,7 +964,7 @@ static int __init init(void)
 {
 	int err, count;
 
-	printk(version);
+//	printk(version);
 #ifdef CONFIG_PROC_FS
 	proc_net_ipt_recent = proc_mkdir("ipt_recent",proc_net);
 	if(!proc_net_ipt_recent) return -ENOMEM;

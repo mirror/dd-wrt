@@ -118,11 +118,11 @@ out:
 	return clnt;
 
 out_no_clnt:
-	printk(KERN_INFO "RPC: out of memory in rpc_create_client\n");
+//	printk(KERN_INFO "RPC: out of memory in rpc_create_client\n");
 	goto out;
 out_no_auth:
-	printk(KERN_INFO "RPC: Couldn't create auth handle (flavor %d)\n",
-		flavor);
+//	printk(KERN_INFO "RPC: Couldn't create auth handle (flavor %d)\n",
+//		flavor);
 	rpc_free(clnt);
 	clnt = NULL;
 	goto out;
@@ -479,7 +479,7 @@ call_allocate(struct rpc_task *task)
 
 	if ((task->tk_buffer = rpc_malloc(task, bufsiz << 1)) != NULL)
 		return;
-	printk(KERN_INFO "RPC: buffer allocation failed for task %p\n", task); 
+//	printk(KERN_INFO "RPC: buffer allocation failed for task %p\n", task); 
 
 	if (RPC_IS_ASYNC(task) || !(task->tk_client->cl_intr && signalled())) {
 		xprt_release(task);
@@ -530,7 +530,7 @@ call_encode(struct rpc_task *task)
 	/* Encode header and provided arguments */
 	encode = rpcproc_encode(clnt, task->tk_msg.rpc_proc);
 	if (!(p = call_header(task))) {
-		printk(KERN_INFO "RPC: call_header failed, exit EIO\n");
+//		printk(KERN_INFO "RPC: call_header failed, exit EIO\n");
 		rpc_exit(task, -EIO);
 	} else
 	if (encode && (status = encode(req, p, task->tk_msg.rpc_argp)) < 0) {

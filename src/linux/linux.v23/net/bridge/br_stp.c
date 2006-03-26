@@ -297,19 +297,19 @@ static void br_topology_change_acknowledged(struct net_bridge *br)
 /* called under bridge lock */
 void br_topology_change_detection(struct net_bridge *br)
 {
-	printk(KERN_INFO "%s: topology change detected", br->dev.name);
+//	printk(KERN_INFO "%s: topology change detected", br->dev.name);
 
 	if (br_is_root_bridge(br)) {
-		printk(", propagating");
+//		printk(", propagating");
 		br->topology_change = 1;
 		br_timer_set(&br->topology_change_timer, jiffies);
 	} else if (!br->topology_change_detected) {
-		printk(", sending tcn bpdu");
+//		printk(", sending tcn bpdu");
 		br_transmit_tcn(br);
 		br_timer_set(&br->tcn_timer, jiffies);
 	}
 
-	printk("\n");
+//	printk("\n");
 	br->topology_change_detected = 1;
 }
 
@@ -362,8 +362,8 @@ static void br_make_blocking(struct net_bridge_port *p)
 		    p->state == BR_STATE_LEARNING)
 			br_topology_change_detection(p->br);
 
-		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
-		       p->br->dev.name, p->port_no, p->dev->name, "blocking");
+//		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
+//		       p->br->dev.name, p->port_no, p->dev->name, "blocking");
 
 		p->state = BR_STATE_BLOCKING;
 		br_timer_clear(&p->forward_delay_timer);
@@ -375,15 +375,15 @@ static void br_make_forwarding(struct net_bridge_port *p)
 {
 	if (p->state == BR_STATE_BLOCKING) {
 		if (p->br->stp_enabled) {
-			printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
-			       p->br->dev.name, p->port_no, p->dev->name,
-			       "listening");
+//			printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
+//			       p->br->dev.name, p->port_no, p->dev->name,
+//			       "listening");
 
 			p->state = BR_STATE_LISTENING;
 		} else {
-			printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
-			       p->br->dev.name, p->port_no, p->dev->name,
-			       "learning");
+//			printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
+//			       p->br->dev.name, p->port_no, p->dev->name,
+//			       "learning");
 
 			p->state = BR_STATE_LEARNING;
 		}
@@ -470,8 +470,8 @@ void br_received_tcn_bpdu(struct net_bridge_port *p)
 	read_lock(&p->br->lock);
 	if (p->state != BR_STATE_DISABLED &&
 	    br_is_designated_port(p)) {
-		printk(KERN_INFO "%s: received tcn bpdu on port %i(%s)\n",
-		       p->br->dev.name, p->port_no, p->dev->name);
+//		printk(KERN_INFO "%s: received tcn bpdu on port %i(%s)\n",
+//		       p->br->dev.name, p->port_no, p->dev->name);
 
 		br_topology_change_detection(p->br);
 		br_topology_change_acknowledge(p);

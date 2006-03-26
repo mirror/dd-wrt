@@ -617,14 +617,14 @@ static int __init init(void)
 		return -EIO;
 	}
 
-	printk("ip_conntrack_pptp version %s loaded\n", IP_CT_PPTP_VERSION);
+//	printk("ip_conntrack_pptp version %s loaded\n", IP_CT_PPTP_VERSION);
 	return 0;
 }
 
 static void __exit fini(void)
 {
 	ip_conntrack_helper_unregister(&pptp);
-	printk("ip_conntrack_pptp version %s unloaded\n", IP_CT_PPTP_VERSION);
+//	printk("ip_conntrack_pptp version %s unloaded\n", IP_CT_PPTP_VERSION);
 }
 
 module_init(init);

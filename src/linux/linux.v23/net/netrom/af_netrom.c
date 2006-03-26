@@ -1295,19 +1295,19 @@ static struct notifier_block nr_dev_notifier = {
 
 static struct net_device *dev_nr;
 
-static char banner[] __initdata = KERN_INFO "G4KLX NET/ROM for Linux. Version 0.7 for AX25.037 Linux 2.4\n";
+//static char banner[] __initdata = KERN_INFO "G4KLX NET/ROM for Linux. Version 0.7 for AX25.037 Linux 2.4\n";
 
 static int __init nr_proto_init(void)
 {
 	int i;
 
 	if (nr_ndevs > 0x7fffffff/sizeof(struct net_device)) {
-		printk(KERN_ERR "NET/ROM: nr_proto_init - nr_ndevs parameter to large\n");
+//		printk(KERN_ERR "NET/ROM: nr_proto_init - nr_ndevs parameter to large\n");
 		return -1;
 	}
 
 	if ((dev_nr = kmalloc(nr_ndevs * sizeof(struct net_device), GFP_KERNEL)) == NULL) {
-		printk(KERN_ERR "NET/ROM: nr_proto_init - unable to allocate device structure\n");
+//		printk(KERN_ERR "NET/ROM: nr_proto_init - unable to allocate device structure\n");
 		return -1;
 	}
 
@@ -1321,7 +1321,7 @@ static int __init nr_proto_init(void)
 
 	sock_register(&nr_family_ops);
 	register_netdevice_notifier(&nr_dev_notifier);
-	printk(banner);
+//	printk(banner);
 
 	ax25_protocol_register(AX25_P_NETROM, nr_route_frame);
 	ax25_linkfail_register(nr_link_failed);

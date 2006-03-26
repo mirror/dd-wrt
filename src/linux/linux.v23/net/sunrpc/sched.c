@@ -623,7 +623,7 @@ rpc_execute(struct rpc_task *task)
 {
 	int status = -EIO;
 	if (rpc_inhibit) {
-		printk(KERN_INFO "RPC: execution inhibited!\n");
+//		printk(KERN_INFO "RPC: execution inhibited!\n");
 		goto out_release;
 	}
 

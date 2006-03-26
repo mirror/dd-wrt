@@ -104,7 +104,7 @@ void __init prom_identify_arch(void)
 	} else
 		iname = (char *) (long) p->iname;
 
-	printk(KERN_INFO "ARCH: %s\n", iname);
+//	printk(KERN_INFO "ARCH: %s\n", iname);
 	mach = string_to_mach(iname);
 	system_type = mach->liname;
 

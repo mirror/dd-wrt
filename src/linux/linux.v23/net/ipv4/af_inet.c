@@ -1134,7 +1134,7 @@ static int __init inet_init(void)
 	struct inet_protosw *q;
 	struct list_head *r;
 
-	printk(KERN_INFO "NET4: Linux TCP/IP 1.0 for NET4.0\n");
+//	printk(KERN_INFO "NET4: Linux TCP/IP 1.0 for NET4.0\n");
 
 	if (sizeof(struct inet_skb_parm) > sizeof(dummy_skb->cb)) {
 		printk(KERN_CRIT "inet_proto_init: panic\n");

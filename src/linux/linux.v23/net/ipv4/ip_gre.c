@@ -1265,7 +1265,7 @@ int init_module(void)
 int __init ipgre_init(void)
 #endif
 {
-	printk(KERN_INFO "GRE over IPv4 tunneling driver\n");
+//	printk(KERN_INFO "GRE over IPv4 tunneling driver\n");
 
 	ipgre_fb_tunnel_dev.priv = (void*)&ipgre_fb_tunnel;
 	register_netdev(&ipgre_fb_tunnel_dev);

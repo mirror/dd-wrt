@@ -1625,8 +1625,8 @@ static int atalk_sendmsg(struct socket *sock, struct msghdr *msg, int len,
 
 		/* netatalk doesn't implement this check */
 		if (usat->sat_addr.s_node == ATADDR_BCAST && !sk->broadcast) {
-			printk(KERN_INFO "SO_BROADCAST: Fix your netatalk as "
-					 "it will break before 2.2\n");
+//			printk(KERN_INFO "SO_BROADCAST: Fix your netatalk as "
+//					 "it will break before 2.2\n");
 #if 0
 			return -EPERM;
 #endif
@@ -1983,7 +1983,7 @@ static int __init atalk_init(void)
 #ifdef CONFIG_SYSCTL
 	atalk_register_sysctl();
 #endif /* CONFIG_SYSCTL */
-	printk(KERN_INFO "NET4: AppleTalk 0.18a for Linux NET4.0\n");
+//	printk(KERN_INFO "NET4: AppleTalk 0.18a for Linux NET4.0\n");
 	return 0;
 }
 module_init(atalk_init);
