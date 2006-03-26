@@ -138,7 +138,7 @@ static __init void rm7k_sc_enable(void)
 	if (read_c0_config() & 0x08)			/* CONF_SE */
 		return;
 
-	printk(KERN_INFO "Enabling secondary cache...");
+//	printk(KERN_INFO "Enabling secondary cache...");
 	func();
 }
 
@@ -154,8 +154,8 @@ static inline int __init rm7k_sc_probe(void)
 	if ((config >> 31) & 1)
 		return 0;
 
-	printk(KERN_INFO "Secondary cache size %dK, linesize %d bytes.\n",
-	       (scache_size >> 10), sc_lsize);
+//	printk(KERN_INFO "Secondary cache size %dK, linesize %d bytes.\n",
+//	       (scache_size >> 10), sc_lsize);
 
 	if ((config >> 3) & 1)                          /* CONF_SE */
 		return 1;
@@ -176,8 +176,8 @@ static inline int __init rm7k_sc_probe(void)
 	 * it, and may specify the size of the L3 cache so we don't have
 	 * to probe it.
 	 */
-	printk(KERN_INFO "Tertiary cache present, %s enabled\n",
-	       config&(1<<12) ? "already" : "not (yet)");
+//	printk(KERN_INFO "Tertiary cache present, %s enabled\n",
+//	       config&(1<<12) ? "already" : "not (yet)");
 
 	if ((config >> 12) & 1)
 		rm7k_tcache_enabled = 1;

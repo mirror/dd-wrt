@@ -767,8 +767,8 @@ static inline void parity_protection_init(void)
 	switch (current_cpu_data.cputype) {
 	case CPU_5KC:
 		/* Set the PE bit (bit 31) in the c0_ecc register. */
-		printk(KERN_INFO "Enable the cache parity protection for "
-		       "MIPS 5KC CPUs.\n");
+//		printk(KERN_INFO "Enable the cache parity protection for "
+//		       "MIPS 5KC CPUs.\n");
 		write_c0_ecc(read_c0_ecc() | 0x80000000);
 		break;
 	default:

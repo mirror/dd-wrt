@@ -842,7 +842,7 @@ void sit_cleanup(void)
 
 int __init sit_init(void)
 {
-	printk(KERN_INFO "IPv6 over IPv4 tunneling driver\n");
+//	printk(KERN_INFO "IPv6 over IPv4 tunneling driver\n");
 
 	ipip6_fb_tunnel_dev.priv = (void*)&ipip6_fb_tunnel;
 	strcpy(ipip6_fb_tunnel_dev.name, ipip6_fb_tunnel.parms.name);

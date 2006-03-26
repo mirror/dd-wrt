@@ -246,8 +246,8 @@ register_transform(struct transform_implementation *ti, int tgroup)
 	write_unlock(&ti->t_group->tg_lock);
 	if (!err) {
 		MOD_INC_USE_COUNT;
-		printk(KERN_INFO "cryptoapi: Registered %s (%d)\n", 
-			ti->t_name, ti->t_flags);
+//		printk(KERN_INFO "cryptoapi: Registered %s (%d)\n", 
+//			ti->t_name, ti->t_flags);
 #ifdef CONFIG_PROC_FS
 		ti->t_proc = create_proc_read_entry(ti->t_name,
 						    S_IFREG|S_IRUGO,
@@ -287,8 +287,8 @@ unregister_transform(struct transform_implementation *ti)
 
 	if (!ret) {
 		MOD_DEC_USE_COUNT;
-		printk(KERN_INFO "cryptoapi: Unregistered %s (%d)\n",
-		       ti->t_name, ti->t_flags);
+//		printk(KERN_INFO "cryptoapi: Unregistered %s (%d)\n",
+//		       ti->t_name, ti->t_flags);
 	}
 
 	return ret;
@@ -681,7 +681,7 @@ init_cryptoapi(void)
 	crypto_create_proc();
 #endif /* CONFIG_PROC_FS */
 
-	printk(KERN_INFO "cryptoapi: loaded\n");
+//	printk(KERN_INFO "cryptoapi: loaded\n");
 
 	return 0;
 }
@@ -693,7 +693,7 @@ cleanup_cryptoapi(void)
 	crypto_delete_proc();
 #endif /* CONFIG_PROC_FS */
 
-	printk(KERN_INFO "cryptoapi: unloaded\n");
+//	printk(KERN_INFO "cryptoapi: unloaded\n");
 }
 
 module_init(init_cryptoapi);

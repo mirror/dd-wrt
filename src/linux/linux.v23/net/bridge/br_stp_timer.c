@@ -58,10 +58,10 @@ static void br_message_age_timer_expired(struct net_bridge_port *p)
 	int was_root;
 
 	br = p->br;
-	printk(KERN_INFO "%s: ", br->dev.name);
-	printk("neighbour ");
+//	printk(KERN_INFO "%s: ", br->dev.name);
+//	printk("neighbour ");
 	dump_bridge_id(&p->designated_bridge);
-	printk(" lost on port %i(%s)\n", p->port_no, p->dev->name);
+//	printk(" lost on port %i(%s)\n", p->port_no, p->dev->name);
 
 	/*
 	 * According to the spec, the message age timer cannot be
@@ -81,14 +81,14 @@ static void br_message_age_timer_expired(struct net_bridge_port *p)
 static void br_forward_delay_timer_expired(struct net_bridge_port *p)
 {
 	if (p->state == BR_STATE_LISTENING) {
-		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
-		       p->br->dev.name, p->port_no, p->dev->name, "learning");
+//		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
+//		       p->br->dev.name, p->port_no, p->dev->name, "learning");
 
 		p->state = BR_STATE_LEARNING;
 		br_timer_set(&p->forward_delay_timer, jiffies);
 	} else if (p->state == BR_STATE_LEARNING) {
-		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
-		       p->br->dev.name, p->port_no, p->dev->name, "forwarding");
+//		printk(KERN_INFO "%s: port %i(%s) entering %s state\n",
+//		       p->br->dev.name, p->port_no, p->dev->name, "forwarding");
 
 		p->state = BR_STATE_FORWARDING;
 		if (br_is_designated_for_some_port(p->br))
@@ -99,7 +99,7 @@ static void br_forward_delay_timer_expired(struct net_bridge_port *p)
 /* called under bridge lock */
 static void br_tcn_timer_expired(struct net_bridge *br)
 {
-	printk(KERN_INFO "%s: retransmitting tcn bpdu\n", br->dev.name);
+//	printk(KERN_INFO "%s: retransmitting tcn bpdu\n", br->dev.name);
 	br_transmit_tcn(br);
 	br_timer_set(&br->tcn_timer, jiffies);
 }
