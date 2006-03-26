@@ -7,17 +7,23 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 	</head>
-   <body onload="window.focus()">
-      <div class="popup">
-         <form>
-            <h2>Outgoing Log Table</h2>
-            <table class="table">
-               <tr>
-                  <th>LAN IP</th>
-                  <th>Destination URL/IP</th>
-                  <th>Service/Port Number</th>
-               </tr><% dumplog("outgoing"); %>
-            </table><input onclick=self.close() type="reset" value="Close" /><input type="button" onclick="window.location.reload()" value=" Refresh " /></form>
-      </div>
-   </body>
+	<body>
+		<div class="popup">
+			<form>
+				<h2>Outgoing Log Table</h2>
+				<table class="table">
+					<tr>
+						<th>LAN IP</th>
+						<th>Destination URL/IP</th>
+						<th>Service/Port Number</th>
+					</tr>
+					<% dumplog("outgoing"); %>
+				</table><br />
+				<div class="submitFooter">
+					<input type="button" value="Close" onclick="self.close()" />
+					<input type="button" value="Refresh" onclick="window.location.reload()" />
+				</div>
+			</form>
+		</div>
+	</body>
 </html>

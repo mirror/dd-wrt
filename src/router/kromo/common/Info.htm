@@ -21,16 +21,6 @@ function setDHCPLeases(val) {
 	setElementContent("dhcp_leases_table", "<table class=\"table center\" cellspacing=\"5\"><tr><th width=\"25%\">Host&nbsp;Name</th><th width=\"25%\">IP&nbsp;Address</th><th width=\"25%\">MAC&nbsp;Address</th><th width=\"25%\">Expires</th><th>Delete</th></tr>" + html + "</table>");
 }
 
-function setDHCPLeases(val) {
-	var leases = val.replace(/'/g, "").split(",");
-	var html = "";
-	for(var i = 0; i < leases.length && leases.length > 1; i = i + 5) {
-		html += "<tr><td>" + leases[i] + "</td><td>" + leases[i + 1] + "</td><td>" + leases[i + 2] + "</td><td>" + leases[i + 3] + "</td></tr>";
-	}
-	if(html == "") html = "<tr><td colspan=\"4\" align=\"center\">- None -</td></tr>";
-	setElementContent("dhcp_leases_table", "<table class=\"table center\" cellspacing=\"5\"><tr><th width=\"25%\">Host&nbsp;Name</th><th width=\"25%\">IP&nbsp;Address</th><th width=\"25%\">MAC&nbsp;Address</th><th width=\"25%\">Expires</th></tr>" + html + "</table>");
-}
-
 function setPacketInfoValues(val) {
 	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
 	setElementContent("packet_rx", packet[0] + " OK, " + (packet[1] > 0 ? packet[1] : "no") + " errors");
