@@ -10,47 +10,25 @@
 function to_submit(F) {
 	F.submit_button.value = "Log";
 	F.action.value = "Apply";
-	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	apply(F);
 }
 
-function log_enable_disable(F, I) {
-	var state = (I == 0);
-	F.log_level.disabled = state;
-	F.log_incoming.disabled = state;
-    F.log_outgoing.disabled = state;
-    F.log_dropped.disabled = state;
-    F.log_accepted.disabled = state;
-    F.log_rejected.disabled = state;
+function setLog(val) {
+	setElementsActive("log_level", "log_outgoing", val == "1");
+	setElementActive("log_all", val == "1");
 }
 
-function ViewLogIn() {
-	self.open('Log_incoming.asp','inLogTable','alwaysRaised,resizable,scrollbars,width=580,height=600').focus();
-}
-
-function ViewLogOut() {
-	self.open('Log_outgoing.asp','outLogTable','alwaysRaised,resizable,scrollbars,width=760,height=600').focus();
-}
-
-function ViewLog() {
-	self.open('Log_all.asp','inLogTable','alwaysRaised,resizable,scrollbars,width=580,height=600').focus();
-}
-function init() {               
-        log_enable_disable(document.log, <% nvram_get("log_enable"); %>);
-}
-
+addEvent(window, "load", function() {
+	setLog("<% nvram_get("log_enable"); %>");
+});
 		</script>
 	</head>
-	
-	<body class="gui" onload="init();">
-		<% showad(); %>
+
+	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
-					<div id="logo">
-						<h1><% show_control(); %></h1>
-					</div>
+					<div id="logo"><h1><% show_control(); %></h1></div>
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
@@ -93,8 +71,8 @@ function init() {
 								<legend>Log</legend>
 								<div class="setting">
 									<div class="label">Log</div>
-									<input type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="log_enable_disable(this.form, 1)" />Enable
-									<input type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="log_enable_disable(this.form, 0)" />Disable
+									<input type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="setLog(this.value)" />Enable
+									<input type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="setLog(this.value)" />Disable
 								</div>
 								<div class="setting">
 									<div class="label">Log Level</div>
@@ -130,20 +108,20 @@ function init() {
 								</div>
 								<% support_invmatch("SYSLOG_SUPPORT", "1", "<!--"); %>
 								<div class="setting">
-									<name>IP Address</name>
+									<div class="label">IP Address</div>
 									<% prefix_ip_get("lan_ipaddr",1); %>
 									<input class="num" size="3" maxlength="3" name="log_ipaddr" onblur="valid_range(this,0,254,'IP')" value="<% nvram_get("log_ipaddr"); %>" />
 								</div>
 								<% support_invmatch("SYSLOG_SUPPORT", "1", "-->"); %>
 							</fieldset><br />
 							<div class="center">
-								<input type="button" value="Incoming Log" name="log_incoming" onclick="ViewLogIn()" id="button1"/>
-								<input type="button" value="Outgoing Log" name="log_outgoing" onclick="ViewLogOut()"/>
-								<% support_match("SYSLOG_SUPPORT", "1", "<input onclick=\"ViewLog()\" type=\"button\" value=\"System Log\"/>"); %>
+								<input type="button" value="Incoming Log" name="log_incoming" onclick="openWindow('Log_incoming.asp', 580, 600)" />
+								<input type="button" value="Outgoing Log" name="log_outgoing" onclick="openWindow('Log_outgoing.asp', 760, 600)" /><% support_invmatch("SYSLOG_SUPPORT", "1", "<!--"); %>
+								<input type="button" value="System Log" name="log_all" onclick="openWindow('Log_all.asp', 580, 600)" /><% support_invmatch("SYSLOG_SUPPORT", "1", "-->"); %>
 							</div><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
-								<input type="button" value="Cancel Changes" onclick="window.location.replace('../Log.asp')"/>
+								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
+								<input type="button" value="Cancel Changes" onclick="window.location.replace('Log.asp')" />
 							</div>
 						</form>
 					</div>
@@ -151,8 +129,8 @@ function init() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
-						<br/>
-						<a href="javascript:help('help/HLog.asp');">More...</a>
+						<br />
+						<a href="javascript:openHelpWindow('HLog.asp');">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

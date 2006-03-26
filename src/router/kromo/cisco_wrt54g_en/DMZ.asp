@@ -10,9 +10,7 @@
 function to_submit(F) {
 	F.submit_button.value = "DMZ";
 	F.action.value = "Apply";
-	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	apply(F);
 }
 
 function setDMZ(val) {
@@ -20,13 +18,12 @@ function setDMZ(val) {
 }
 
 addEvent(window, "load", function() {
-	setElementActive("dmz_ipaddr", "<% nvram_get("dmz_enable"); %>" == "1");
+	setDMZ("<% nvram_get("dmz_enable"); %>");
 });
 		</script>
 	</head>
 
-	<body class="gui">
-		<% showad(); %>
+	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -92,8 +89,7 @@ addEvent(window, "load", function() {
 						<dl>
 							<dt class="term">DMZ: </dt>
 							<dd class="definition">Enabling this option will expose your router to the Internet. All ports will be accessible from the Internet.</dd>
-						</dl>
-						<br />
+						</dl><br />
 						<a href="javascript:openHelpWindow('HDMZ.asp')">More...</a>
 					</div>
 				</div>
