@@ -101,14 +101,14 @@ addEvent(window, "load", function() {
 								</div>
 								<div class="setting">
 									<div class="label">CTS Protection Mode</div>
-									<input type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %> />Disable&nbsp;
 									<input type="radio" name="wl_gmode_protection" value="auto" <% nvram_checked("wl_gmode_protection", "auto"); %> />Auto&nbsp;
+									<input type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %> />Disable&nbsp;
 									<span class="default">(Default: Disable)</span>
 								</div>
 								<div class="setting">
 									<div class="label">Frame Burst</div>
-									<input type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %> />Disable&nbsp;
 									<input type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %> />Enable&nbsp;
+									<input type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %> />Disable&nbsp;
 									<span class="default">(Default: Disable)</span>
 								</div><br />
 								<div class="setting">
@@ -138,8 +138,8 @@ addEvent(window, "load", function() {
 							 	</div><br />
 								<div class="setting">
 									<div class="label">AP Isolation</div>
-									<input type="radio" name="wl_ap_isolate" value="0" <% nvram_checked("wl_ap_isolate", "0"); %> />Disable&nbsp;
 									<input type="radio" name="wl_ap_isolate" value="1" <% nvram_checked("wl_ap_isolate", "1"); %> />Enable&nbsp;
+									<input type="radio" name="wl_ap_isolate" value="0" <% nvram_checked("wl_ap_isolate", "0"); %> />Disable&nbsp;
 									<span class="default">(Default: Disable)</span>
 								</div>
 								<div class="setting">
@@ -185,8 +185,8 @@ addEvent(window, "load", function() {
 								</div>
 								<div class="setting">
 									<div class="label">Wireless GUI Access</div>
-									<input type="radio" name="web_wl_filter" value="1" <% nvram_checked("web_wl_filter", "1"); %> />Disable&nbsp;
 									<input type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> />Enable&nbsp;
+									<input type="radio" name="web_wl_filter" value="1" <% nvram_checked("web_wl_filter", "1"); %> />Disable&nbsp;
 									<span class="default">(Default: Enable)</span>
 								</div>
 							</fieldset><br />
@@ -194,14 +194,14 @@ addEvent(window, "load", function() {
 								<legend>Wireless Multimedia Support Settings</legend>
 								<div class="setting">
 									<div class="label">WMM Support</div>
-									<input type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="setWMM(this.value)" />Disable&nbsp;
 									<input type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="setWMM(this.value)" />Enable&nbsp;
+									<input type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="setWMM(this.value)" />Disable&nbsp;
 									<span class="default">(Default: Disable)</span>
 								</div>
 								<div class="setting">
 									<div class="label">No-Acknowledgement</div>
-									<input type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> />Disable&nbsp;
 									<input type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %>  />Enable&nbsp;
+									<input type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> />Disable&nbsp;
 									<span class="default">(Default: Disable)</span>
 								</div>
 								<table class="table center" cellspacing="5">
