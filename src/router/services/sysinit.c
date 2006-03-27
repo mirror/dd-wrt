@@ -1246,7 +1246,19 @@ unset_nvram (void)
   nvram_safe_unset ("hb_server_ip");
   nvram_safe_unset ("hb_server_domain");
 #endif
+ char style[32];
+ strcpy(style,nvram_safe_get("router_style"));
 
+// Fix for newer stylesheet settings, BrainSlayer
+{
+  if (endswith(style,".css"))
+    {
+    int i;
+    for (i=0;i<strlen(style);i++)
+	if (style[i]=='.')style[i]=0;
+    }
+   nvram_set("router_style",style);
+}  
 #ifndef PARENTAL_CONTROL_SUPPORT
   nvram_safe_unset ("artemis_enable");
   nvram_safe_unset ("artemis_SVCGLOB");
