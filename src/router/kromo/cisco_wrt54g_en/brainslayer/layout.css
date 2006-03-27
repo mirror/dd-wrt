@@ -115,7 +115,7 @@ table {
 	padding-top:			90px;
 }
 
-#content {
+#content, #contentInfo {
 	margin:					0;
 	padding:				0;
 }
@@ -217,11 +217,12 @@ div.setting {
 	border:				0;
 }
 
+/* philip: disabled
 * #contentsInfo {
 position:relative;
 z-index:0;
 padding:.906em;
-}
+} */
 
 .meter {
 	float:right;
@@ -254,6 +255,6 @@ padding:.906em;
   position:absolute;
 }
 .bin {
-background:url(../images/bin_bt.gif) center no-repeat;
+background:url(/images/bin_bt.gif) center no-repeat;
 cursor: pointer;
 }
