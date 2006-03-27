@@ -31,6 +31,7 @@ install:
 	-cp -a SysInfo.htm $(INSTALLDIR)/www/
 	-cp -a SysInfo1.htm $(INSTALLDIR)/www/
 	-cp -a Info.htm $(INSTALLDIR)/www/
+	-cp -a Info.live.htm $(INSTALLDIR)/www/
 	
 ifdef EMI_TEST
 	cp -a emi_test.asp $(INSTALLDIR)/www/
