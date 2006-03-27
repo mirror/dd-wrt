@@ -501,10 +501,6 @@ static int bsd_init (void *state, unsigned char *options,
 
     db->unit = unit;
     db->mru  = 0;
-#ifndef DEBUG
-    if (debug)
-#endif
-      db->debug = 1;
     
     bsd_reset(db);
     
@@ -882,11 +878,6 @@ static int bsd_decompress (void *state, unsigned char *ibuf, int isize,
 
     if (seq != db->seqno)
       {
-	if (db->debug)
-	  {
-	    printk("bsd_decomp%d: bad sequence # %d, expected %d\n",
-		   db->unit, seq, db->seqno - 1);
-	  }
 	return DECOMP_ERROR;
       }
 
@@ -944,10 +935,6 @@ static int bsd_decompress (void *state, unsigned char *ibuf, int isize,
 	  {
 	    if (ilen > 0)
 	      {
-		if (db->debug)
-		  {
-		    printk("bsd_decomp%d: bad CLEAR\n", db->unit);
-		  }
 		return DECOMP_FATALERROR;	/* probably a bug */
 	      }
 	    
@@ -958,13 +945,6 @@ static int bsd_decompress (void *state, unsigned char *ibuf, int isize,
 	if ((incode > max_ent + 2) || (incode > db->maxmaxcode)
 	    || (incode > max_ent && oldcode == CLEAR))
 	  {
-	    if (db->debug)
-	      {
-		printk("bsd_decomp%d: bad code 0x%x oldcode=0x%x ",
-		       db->unit, incode, oldcode);
-		printk("max_ent=0x%x explen=%d seqno=%d\n",
-		       max_ent, explen, db->seqno);
-	      }
 	    return DECOMP_FATALERROR;	/* probably a bug */
 	  }
 	
@@ -984,14 +964,6 @@ static int bsd_decompress (void *state, unsigned char *ibuf, int isize,
 	explen += codelen + extra;
 	if (explen > osize)
 	  {
-	    if (db->debug)
-	      {
-		printk("bsd_decomp%d: ran out of mru\n", db->unit);
-#ifdef DEBUG
-		printk("  len=%d, finchar=0x%x, codelen=%d, explen=%d\n",
-		       ilen, finchar, codelen, explen);
-#endif
-	      }
 	    return DECOMP_FATALERROR;
 	  }
 	
@@ -1122,14 +1094,7 @@ static int bsd_decompress (void *state, unsigned char *ibuf, int isize,
     db->comp_bytes   += isize - BSD_OVHD - PPP_HDRLEN;
     db->uncomp_bytes += explen;
 
-    if (bsd_check(db))
-      {
-	if (db->debug)
-	  {
-	    printk("bsd_decomp%d: peer should have cleared dictionary on %d\n",
-		   db->unit, db->seqno - 1);
-	  }
-      }
+    bsd_check(db);
     return explen;
   }
      
@@ -1161,8 +1126,6 @@ static struct compressor ppp_bsd_compress = {
 int __init bsdcomp_init(void)
 {
 	int answer = ppp_register_compressor(&ppp_bsd_compress);
-	if (answer == 0)
-		printk(KERN_INFO "PPP BSD Compression module registered\n");
 	return answer;
 }
 

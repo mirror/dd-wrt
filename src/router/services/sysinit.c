@@ -544,10 +544,12 @@ start_restore_defaults (void)
 	    }
 	}
     }
+#ifndef HAVE_FON
   if (restore_defaults)		//fix for belkin std ip
     {
       nvram_set ("lan_ipaddr", "192.168.1.1");
     }
+#endif
 #ifdef HAVE_SKYTRON
   if (restore_defaults)
     {

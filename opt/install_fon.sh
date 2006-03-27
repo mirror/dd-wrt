@@ -7,11 +7,16 @@ cd router
 #make clean
 cp .config_fon .config
 #cp Makefile.standard Makefile
+rm -rf mipsel-uclibc/install
+#make rc-clean
+#make services-clean
+#make shared-clean
+#make httpd-clean
+#rm busybox/busybox
+#rm busybox/applets/busybox.o
 
 #copy config.normal .config
 cd ..
-make clean
-rm -rf ./router/mipsel-uclibc/install
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config

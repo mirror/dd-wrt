@@ -106,7 +106,6 @@ struct ppp {
 	unsigned int	flags;		/* control bits 64 */
 	unsigned int	xstate;		/* transmit state bits 68 */
 	unsigned int	rstate;		/* receive state bits 6c */
-	int		debug;		/* debug flags 70 */
 	struct slcompress *vj;		/* state for VJ header compression */
 	enum NPmode	npmode[NUM_NP];	/* what to do with each net proto 78 */
 	struct sk_buff	*xmit_pending;	/* a packet ready to go out 88 */
@@ -114,6 +113,7 @@ struct ppp {
 	void		*xc_state;	/* its internal state 90 */
 	struct compressor *rcomp;	/* receive decompressor 94 */
 	void		*rc_state;	/* its internal state 98 */
+	int 		debug;
 	unsigned long	last_xmit;	/* jiffies when last pkt sent 9c */
 	unsigned long	last_recv;	/* jiffies when last pkt rcvd a0 */
 	struct net_device *dev;		/* network interface device a4 */
@@ -510,9 +510,7 @@ static int ppp_ioctl(struct inode *inode, struct file *file,
 		if (atomic_read(&file->f_count) <= 2) {
 			ppp_release(inode, file);
 			err = 0;
-		} else
-			printk(KERN_DEBUG "PPPIOCDETACH file->f_count=%d\n",
-			       atomic_read(&file->f_count));
+		} 
 		return err;
 	}
 
@@ -591,15 +589,9 @@ static int ppp_ioctl(struct inode *inode, struct file *file,
 	case PPPIOCSDEBUG:
 		if (get_user(val, (int *) arg))
 			break;
-		ppp->debug = val;
 		err = 0;
 		break;
 
-	case PPPIOCGDEBUG:
-		if (put_user(ppp->debug, (int *) arg))
-			break;
-		err = 0;
-		break;
 
 	case PPPIOCGIDLE:
 		idle.xmit_idle = (jiffies - ppp->last_xmit) / HZ;
@@ -619,7 +611,6 @@ static int ppp_ioctl(struct inode *inode, struct file *file,
 		}
 		vj = slhc_init(val2+1, val+1);
 		if (vj == 0) {
-			printk(KERN_ERR "PPP: no memory (VJ compressor)\n");
 			err = -ENOMEM;
 			break;
 		}
@@ -787,7 +778,6 @@ int __init ppp_init(void)
 {
 	int err;
 
-	printk(KERN_INFO "PPP generic driver version " PPP_VERSION "\n");
 	err = devfs_register_chrdev(PPP_MAJOR, "ppp", &ppp_device_fops);
 	if (err)
 		printk(KERN_ERR "failed to register PPP device (%d)\n", err);
@@ -970,8 +960,6 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 		if (ppp->pass_filter.filter
 		    && sk_run_filter(skb, ppp->pass_filter.filter,
 				     ppp->pass_filter.len) == 0) {
-			if (ppp->debug & 1)
-				printk(KERN_DEBUG "PPP: outbound frame not passed\n");
 			kfree_skb(skb);
 			return;
 		}
@@ -998,7 +986,6 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 		new_skb = alloc_skb(skb->len + ppp->dev->hard_header_len - 2,
 				    GFP_ATOMIC);
 		if (new_skb == 0) {
-			printk(KERN_ERR "PPP: no memory (VJ comp pkt)\n");
 			goto drop;
 		}
 		skb_reserve(new_skb, ppp->dev->hard_header_len - 2);
@@ -1060,7 +1047,6 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 		new_skb = alloc_skb(ppp->dev->mtu + ppp->dev->hard_header_len
 				    + comp_ovhd, GFP_ATOMIC);
 		if (new_skb == 0) {
-			printk(KERN_ERR "PPP: no memory (comp pkt)\n");
 			goto drop;
 		}
 		if (ppp->dev->hard_header_len > PPP_HDRLEN)
@@ -1088,7 +1074,6 @@ ppp_send_frame(struct ppp *ppp, struct sk_buff *skb)
 			 * the compress_proto because MPPE and MPPC share
 			 * the same number.
 			 */
-			printk(KERN_ERR "ppp: compressor dropped pkt\n");
 			kfree_skb(new_skb);
 			goto drop;
 		}
@@ -1306,8 +1291,6 @@ static int ppp_mp_explode(struct ppp *ppp, struct sk_buff *skb)
 
  noskb:
 	spin_unlock_bh(&pch->downl);
-	if (ppp->debug & 1)
-		printk(KERN_ERR "PPP: no memory (fragment)\n");
 	++ppp->stats.tx_errors;
 	++ppp->nxseq;
 	return 1;	/* abandon the frame */
@@ -1476,7 +1459,6 @@ ppp_receive_nonmp_frame(struct ppp *ppp, struct sk_buff *skb)
 			/* copy to a new sk_buff with more tailroom */
 			ns = dev_alloc_skb(skb->len + 128);
 			if (ns == 0) {
-				printk(KERN_ERR"PPP: no memory (VJ decomp)\n");
 				goto err;
 			}
 			skb_reserve(ns, 2);
@@ -1486,7 +1468,6 @@ ppp_receive_nonmp_frame(struct ppp *ppp, struct sk_buff *skb)
 		}
 		len = slhc_uncompress(ppp->vj, skb->data + 2, skb->len - 2);
 		if (len <= 0) {
-			printk(KERN_DEBUG "PPP: VJ decompression error\n");
 			goto err;
 		}
 		len += 2;
@@ -1501,7 +1482,6 @@ ppp_receive_nonmp_frame(struct ppp *ppp, struct sk_buff *skb)
 		if (ppp->vj == 0 || (ppp->flags & SC_REJ_COMP_TCP))
 			goto err;
 		if (slhc_remember(ppp->vj, skb->data + 2, skb->len - 2) <= 0) {
-			printk(KERN_ERR "PPP: VJ uncompressed error\n");
 			goto err;
 		}
 		proto = PPP_IP;
@@ -1537,8 +1517,6 @@ ppp_receive_nonmp_frame(struct ppp *ppp, struct sk_buff *skb)
 		if (ppp->pass_filter.filter
 		    && sk_run_filter(skb, ppp->pass_filter.filter,
 				     ppp->pass_filter.len) == 0) {
-			if (ppp->debug & 1)
-				printk(KERN_DEBUG "PPP: inbound frame not passed\n");
 			kfree_skb(skb);
 			return;
 		}
@@ -1580,7 +1558,6 @@ ppp_decompress_frame(struct ppp *ppp, struct sk_buff *skb)
 	if (proto == PPP_COMP) {
 		ns = dev_alloc_skb(ppp->mru_alloc + PPP_HDRLEN);
 		if (ns == 0) {
-			printk(KERN_ERR "ppp_decompress_frame: no memory\n");
 			goto err;
 		}
 		/* the decompressor still expects the A/C bytes in the hdr */
@@ -1760,8 +1737,6 @@ ppp_mp_reconstruct(struct ppp *ppp)
 		next = p->next;
 		if (seq_before(p->sequence, seq)) {
 			/* this can't happen, anyway ignore the skb */
-			printk(KERN_ERR "ppp_mp_reconstruct bad seq %u < %u\n",
-			       p->sequence, seq);
 			head = next;
 			continue;
 		}
@@ -1799,8 +1774,6 @@ ppp_mp_reconstruct(struct ppp *ppp)
 		if (lost == 0 && (p->BEbits & E) && (head->BEbits & B)) {
 			if (len > ppp->mrru + 2) {
 				++ppp->stats.rx_length_errors;
-				printk(KERN_DEBUG "PPP: reconstructed packet"
-				       " is too long (%d)\n", len);
 			} else if (p == head) {
 				/* fragment is complete packet - reuse skb */
 				tail = p;
@@ -1808,8 +1781,6 @@ ppp_mp_reconstruct(struct ppp *ppp)
 				break;
 			} else if ((skb = dev_alloc_skb(len)) == NULL) {
 				++ppp->stats.rx_missed_errors;
-				printk(KERN_DEBUG "PPP: no memory for "
-				       "reconstructed packet");
 			} else {
 				tail = p;
 				break;
@@ -1833,9 +1804,6 @@ ppp_mp_reconstruct(struct ppp *ppp)
 		/* If we have discarded any fragments,
 		   signal a receive error. */
 		if (head->sequence != ppp->nextseq) {
-			if (ppp->debug & 1)
-				printk(KERN_DEBUG "  missed pkts %u..%u\n",
-				       ppp->nextseq, head->sequence-1);
 			++ppp->stats.rx_dropped;
 			ppp_receive_error(ppp);
 		}
@@ -2322,8 +2290,6 @@ ppp_create_interface(int unit, int *retp)
 	ret = register_netdevice(dev);
 	rtnl_unlock();
 	if (ret != 0) {
-		printk(KERN_ERR "PPP: couldn't register device %s (%d)\n",
-		       dev->name, ret);
 		goto err_unlock;
 	}
 
@@ -2394,9 +2360,6 @@ static void ppp_destroy_interface(struct ppp *ppp)
 
 	if (!ppp->file.dead || ppp->n_channels) {
 		/* "can't happen" */
-		printk(KERN_ERR "ppp: destroying ppp struct %p but dead=%d "
-		       "n_channels=%d !\n", ppp, ppp->file.dead,
-		       ppp->n_channels);
 		return;
 	}
 
@@ -2541,8 +2504,6 @@ static void ppp_destroy_channel(struct channel *pch)
 
 	if (!pch->file.dead) {
 		/* "can't happen" */
-		printk(KERN_ERR "ppp: destroying undead channel %p !\n",
-		       pch);
 		return;
 	}
 	skb_queue_purge(&pch->file.xq);
@@ -2553,8 +2514,6 @@ static void ppp_destroy_channel(struct channel *pch)
 static void __exit ppp_cleanup(void)
 {
 	/* should never happen */
-	if (atomic_read(&ppp_unit_count) || atomic_read(&channel_count))
-		printk(KERN_ERR "PPP: removing module but units remain!\n");
 	cardmap_destroy(&all_ppp_units);
 	if (devfs_unregister_chrdev(PPP_MAJOR, "ppp") != 0)
 		printk(KERN_ERR "PPP: failed to unregister PPP device\n");

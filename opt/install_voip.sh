@@ -10,8 +10,14 @@ make httpd-clean
 cp .config_voip .config
 #cp Makefile.standard Makefile
 #copy config.normal .config
+rm -rf mipsel-uclibc/install
+make rc-clean
+make services-clean
+make shared-clean
+make httpd-clean
+rm busybox/busybox
+rm busybox/applets/busybox.o
 cd ..
-make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config

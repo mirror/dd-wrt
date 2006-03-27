@@ -3577,7 +3577,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("chilli_additional", "");
   nvram_set ("fon_enable", "1");
   nvram_commit ();
-  do_ej ("index.asp", wp);	//refresh
+  do_ej ("Reboot.asp", wp);
   websDone (wp, 200);
   sleep (3);
   sys_reboot ();
@@ -3648,7 +3648,7 @@ struct mime_handler mime_handlers[] = {
   {"Diagnostics.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
   {"**.sh", "text/html", no_cache, NULL, do_shell_script, do_auth},
-  {"live/Live_Info.asp", "text/html", no_cache, NULL, do_ej, NULL},
+  {"Info.live.htm", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
 #ifdef KROMOGUI

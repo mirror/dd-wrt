@@ -225,10 +225,6 @@ static int cop1Emulate(struct pt_regs *xcp, struct mips_fpu_soft_struct *ctx)
 		emulpc = REG_TO_VA(xcp->cp0_epc + 4);	/* Snapshot emulation target */
 
 		if (__compute_return_epc(xcp)) {
-#ifdef CP1DBG
-			printk("failed to emulate branch at %p\n",
-				REG_TO_VA(xcp->cp0_epc));
-#endif
 			return SIGILL;
 		}
 		if (get_user(ir, (mips_instruction *) emulpc)) {
@@ -370,11 +366,6 @@ static int cop1Emulate(struct pt_regs *xcp, struct mips_fpu_soft_struct *ctx)
 			}
 			if (MIPSInst_RD(ir) == FPCREG_CSR) {
 				value = ctx->sr;
-#ifdef CSRTRACE
-				printk("%p gpr[%d]<-csr=%08x\n",
-					REG_TO_VA(xcp->cp0_epc),
-					MIPSInst_RT(ir), value);
-#endif
 			}
 			else if (MIPSInst_RD(ir) == FPCREG_RID)
 				value = 0;
@@ -397,11 +388,6 @@ static int cop1Emulate(struct pt_regs *xcp, struct mips_fpu_soft_struct *ctx)
 			/* we only have one writable control reg
 			 */
 			if (MIPSInst_RD(ir) == FPCREG_CSR) {
-#ifdef CSRTRACE
-				printk("%p gpr[%d]->csr=%08x\n",
-					REG_TO_VA(xcp->cp0_epc),
-					MIPSInst_RT(ir), value);
-#endif
 				ctx->sr = value;
 				/* copy new rounding mode and
 				   flush bit to ieee library state! */

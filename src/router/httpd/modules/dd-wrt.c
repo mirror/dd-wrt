@@ -1318,11 +1318,13 @@ wireless_save (webs_t wp)
 int
 ej_showad (int eid, webs_t wp, int argc, char_t ** argv)
 {
+#ifndef HAVE_FON
 #ifndef CONFIG_BRANDING
 #ifdef HAVE_CHILLI
   if (nvram_invmatch ("fon_enable", "1"))
     websWrite (wp,
 	       "<a href=\"fon.cgi\"><img src=\"images/turn.gif\" border=0 /></a>");
+#endif
 #endif
 #endif
 

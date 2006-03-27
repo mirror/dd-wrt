@@ -63,7 +63,6 @@ struct ppp_mppe_state {
     u16		*hash;		/* Hash table; used only by compressor */
     u16		histptr;	/* history "cursor" */
     int		unit;
-    int		debug;
     int		mru;
     struct compstat stats;
 };
@@ -215,9 +214,6 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 	options[3] != 0 || options[4] != 0 ||
 	(options[5] & ~(MPPE_128BIT|MPPE_56BIT|MPPE_40BIT|MPPE_MPPC)) != 0 ||
 	(options[5] & (MPPE_128BIT|MPPE_56BIT|MPPE_40BIT|MPPE_MPPC)) == 0) {
-	printk(KERN_WARNING "%s: options rejected: o[0]=%02x, o[1]=%02x, "
-	       "o[2]=%02x, o[3]=%02x, o[4]=%02x, o[5]=%02x\n", fname, options[0],
-	       options[1], options[2], options[3], options[4], options[5]);
 	return NULL;
     }
 
@@ -238,8 +234,6 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 	state->hist = (u8*)vmalloc(2*MPPE_HIST_LEN*sizeof(u8));
 	if (state->hist == NULL) {
 	    kfree(state);
-	    printk(KERN_ERR "%s: cannot allocate space for MPPC history\n",
-		   fname);
 	    return NULL;
 	}
 
@@ -249,8 +243,6 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 	    if (state->hash == NULL) {
 		vfree(state->hist);
 		kfree(state);
-		printk(KERN_ERR "%s: cannot allocate space for MPPC history\n",
-		       fname);
 		return NULL;
 	    }
 	}
@@ -266,7 +258,6 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 		    vfree(state->hist);
 	    }
 	    kfree(state);
-	    printk(KERN_ERR "%s: cannot load ARC4 module\n", fname);
 	    return NULL;
 	}
 
@@ -280,7 +271,6 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 		    vfree(state->hist);
 	    }
 	    kfree(state);
-	    printk(KERN_ERR "%s: cannot load SHA1 module\n", fname);
 	    return NULL;
 	}
 
@@ -294,7 +284,6 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 		    vfree(state->hist);
 	    }
 	    kfree(state);
-	    printk(KERN_ERR "%s: CryptoAPI SHA1 digest size too small\n", fname);
 	}
 
 	state->sha1_digest = kmalloc(digestsize, GFP_KERNEL);
@@ -307,7 +296,6 @@ mppe_alloc(unsigned char *options, int opt_len, int comp)
 		    vfree(state->hist);
 	    }
 	    kfree(state);
-	    printk(KERN_ERR "%s: cannot allocate space for SHA1 digest\n", fname);
 	}
 
 	memcpy(state->master_key, options+CILEN_MPPE, MPPE_MAX_KEY_LEN);
@@ -368,9 +356,6 @@ mppe_init(void *arg, unsigned char *options, int opt_len, int unit,
     fname = comp ? "mppe_comp_init" : "mppe_decomp_init";
 
     if (opt_len < CILEN_MPPE) {
-	if (debug)
-	    printk(KERN_WARNING "%s: wrong options length: %u\n",
-		   fname, opt_len);
 	return 0;
     }
 
@@ -379,11 +364,6 @@ mppe_init(void *arg, unsigned char *options, int opt_len, int unit,
 	options[3] != 0 || options[4] != 0 ||
 	(options[5] & ~(MPPE_56BIT|MPPE_128BIT|MPPE_40BIT|MPPE_MPPC)) != 0 ||
 	(options[5] & (MPPE_56BIT|MPPE_128BIT|MPPE_40BIT|MPPE_MPPC)) == 0) {
-	if (debug)
-	    printk(KERN_WARNING "%s: options rejected: o[0]=%02x, o[1]=%02x, "
-		   "o[2]=%02x, o[3]=%02x, o[4]=%02x, o[5]=%02x\n", fname,
-		   options[0], options[1], options[2], options[3], options[4],
-		   options[5]);
 	return 0;
     }
 
@@ -391,9 +371,6 @@ mppe_init(void *arg, unsigned char *options, int opt_len, int unit,
 	(options[5] & ~MPPE_MPPC) != MPPE_56BIT &&
 	(options[5] & ~MPPE_MPPC) != MPPE_40BIT &&
 	(options[5] & MPPE_MPPC) != MPPE_MPPC) {
-	if (debug)
-	    printk(KERN_WARNING "%s: don't know what to do: o[5]=%02x\n",
-		   fname, options[5]);
 	return 0;
     }
 
@@ -423,7 +400,6 @@ mppe_init(void *arg, unsigned char *options, int opt_len, int unit,
     state->ccount = MPPE_MAX_CCOUNT;
     state->bits = 0;
     state->unit  = unit;
-    state->debug = debug;
     state->histptr = MPPE_HIST_LEN;
     if (state->mppc) {	/* reset history if MPPC was negotiated */
 	memset(state->hist, 0, 2*MPPE_HIST_LEN*sizeof(u8));
@@ -463,9 +439,6 @@ mppe_comp_reset(void *arg)
 {
     struct ppp_mppe_state *state = (struct ppp_mppe_state *)arg;
 
-    if (state->debug)
-	printk(KERN_DEBUG "%s%d: resetting MPPC/MPPE compressor\n",
-	       __FUNCTION__, state->unit);
 
     state->nextflushed = 1;
     if (state->mppe)
@@ -655,9 +628,6 @@ mppc_compress(struct ppp_mppe_state *state, unsigned char *ibuf,
 	} else {
 	    /* This shouldn't happen; we return 0 what means "packet expands",
 	    and we send packet uncompressed. */
-	    if (state->debug)
-		printk(KERN_DEBUG "%s%d: wrong offset value: %d\n",
-		       __FUNCTION__, state->unit, off);
 	    return 0;
 	}
 	/* encode length of match */
@@ -688,9 +658,6 @@ mppc_compress(struct ppp_mppe_state *state, unsigned char *ibuf,
 	} else {
 	    /* This shouldn't happen; we return 0 what means "packet expands",
 	    and send packet uncompressed. */
-	    if (state->debug)
-		printk(KERN_DEBUG "%s%d: wrong length of match value: %d\n",
-		       __FUNCTION__, state->unit, len);
 	    return 0;
 	}
     }
@@ -911,9 +878,6 @@ mppc_decompress(struct ppp_mppe_state *state, unsigned char *ibuf,
 		(state->hist)[(state->histptr)++] = (u8) val;
 	    } else {
 		/* buffer overflow; drop packet */
-		if (state->debug)
-		    printk(KERN_ERR "%s%d: trying to write outside history "
-			   "buffer\n", __FUNCTION__, state->unit);
 		return DECOMP_ERROR;
 	    }
 	    olen++;
@@ -929,9 +893,6 @@ mppc_decompress(struct ppp_mppe_state *state, unsigned char *ibuf,
 		    (u8) (0x80|((val&0x3f)<<1)|getbits(ibuf, 1 , &i ,&l));
 	    } else {
 		/* buffer overflow; drop packet */
-		if (state->debug)
-		    printk(KERN_ERR "%s%d: trying to write outside history "
-			   "buffer\n", __FUNCTION__, state->unit);
 		return DECOMP_ERROR;
 	    }
 	    olen++;
@@ -954,15 +915,9 @@ mppc_decompress(struct ppp_mppe_state *state, unsigned char *ibuf,
 		    off = ((((val&0x1f)<<8)|getbyte(ibuf, i++, l))+320);
 		    bits -= 16;
 		    if (off > MPPE_HIST_LEN - 1) {
-			if (state->debug)
-			    printk(KERN_DEBUG "%s%d: too big offset value: %d\n",
-				   __FUNCTION__, state->unit, off);
 			return DECOMP_ERROR;
 		    }
 		} else {		/* this shouldn't happen */
-		    if (state->debug)
-			printk(KERN_DEBUG "%s%d: cannot decode offset value\n",
-			       __FUNCTION__, state->unit);
 		    return DECOMP_ERROR;
 		}
 	    }
@@ -1024,9 +979,6 @@ mppc_decompress(struct ppp_mppe_state *state, unsigned char *ibuf,
 		    bits -= 8;
 		    i++;
 		} else {				/* this shouldn't happen */
-		    if (state->debug)
-			printk(KERN_DEBUG "%s%d: wrong length code: 0x%X\n",
-			       __FUNCTION__, state->unit, val);
 		    return DECOMP_ERROR;
 		}
 	    }
@@ -1046,9 +998,6 @@ mppc_decompress(struct ppp_mppe_state *state, unsigned char *ibuf,
 	    lamecopy(s, s - off, len);
 	} else {
 	    /* buffer overflow; drop packet */
-	    if (state->debug)
-		printk(KERN_ERR "%s%d: trying to write outside history "
-		       "buffer\n", __FUNCTION__, state->unit);
 	    return DECOMP_ERROR;
 	}
     }
@@ -1066,9 +1015,6 @@ mppc_decompress(struct ppp_mppe_state *state, unsigned char *ibuf,
 	memcpy(obuf, history, olen);
     } else {
 	/* buffer overflow; drop packet */
-	if (state->debug)
-	    printk(KERN_ERR "%s%d: too big uncompressed packet: %d\n",
-		   __FUNCTION__, state->unit, len + (PPP_HDRLEN / 2));
 	return DECOMP_ERROR;
     }
 
@@ -1083,10 +1029,6 @@ mppe_decompress(void *arg, unsigned char *ibuf, int isize,
     int seq, bits, uncomplen;
 
     if (isize <= PPP_HDRLEN + MPPE_OVHD) {
-	if (state->debug) {
-	    printk(KERN_DEBUG "%s%d: short packet (len=%d)\n",  __FUNCTION__,
-		   state->unit, isize);
-	}
 	return DECOMP_ERROR;
     }
 
@@ -1097,9 +1039,6 @@ mppe_decompress(void *arg, unsigned char *ibuf, int isize,
     if (state->stateless) {
 	/* RFC 3078, sec 8.1. */
 	mppe_increase_ccount(state);
-	if ((seq != state->ccount) && state->debug)
-	    printk(KERN_DEBUG "%s%d: bad sequence number: %d, expected: %d\n",
-		   __FUNCTION__, state->unit, seq, state->ccount);
 	while (seq != state->ccount)
 	    mppe_increase_ccount(state);
     } else {
@@ -1115,9 +1054,6 @@ mppe_decompress(void *arg, unsigned char *ibuf, int isize,
 	    mppe_increase_ccount(state);
 	    if (seq != state->ccount) {
 		/* Packet loss detected, enter the discard state. */
-		if (state->debug)
-		    printk(KERN_DEBUG "%s%d: bad sequence number: %d, expected: %d\n",
-			   __FUNCTION__, state->unit, seq, state->ccount);
 		state->flushexpected = 1;
 		return DECOMP_ERROR;
 	    }
@@ -1185,9 +1121,6 @@ mppe_decompress(void *arg, unsigned char *ibuf, int isize,
 		(state->stats).inc_packets++;
 	    }
 	} else { /* this shouldn't happen */
-	    if (state->debug)
-		printk(KERN_ERR "%s%d: encryption negotiated but not an "
-		       "encrypted packet received\n", __FUNCTION__, state->unit);
 	    mppe_change_key(state, 0);
 	    state->flushexpected = 1;
 	    return DECOMP_ERROR;
@@ -1214,9 +1147,6 @@ mppe_decompress(void *arg, unsigned char *ibuf, int isize,
 		(state->stats).inc_packets++;
 	    }
 	} else { /* this shouldn't happen */
-	    if (state->debug)
-		printk(KERN_ERR "%s%d: error - not an  MPPC or MPPE frame "
-		       "received\n", __FUNCTION__, state->unit);
 	    state->flushexpected = 1;
 	    return DECOMP_ERROR;
 	}
@@ -1291,9 +1221,6 @@ int __init mppe_module_init(void)
     memset(sha_pad->sha_pad2, 0xf2, sizeof(sha_pad->sha_pad2));
 
     answer = ppp_register_compressor(&ppp_mppe);
-    if (answer == 0) {
-	printk(KERN_INFO "MPPE/MPPC encryption/compression module registered\n");
-    }
     return answer;
 }
 
@@ -1301,7 +1228,6 @@ void __exit mppe_module_cleanup(void)
 {
     kfree(sha_pad);
     ppp_unregister_compressor(&ppp_mppe);
-    printk(KERN_INFO "MPPE/MPPC encryption/compression module unregistered\n");
 }
 
 module_init(mppe_module_init);
