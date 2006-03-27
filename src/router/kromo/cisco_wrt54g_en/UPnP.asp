@@ -17,7 +17,7 @@
 			A:link{color: #000000; text-decoration: underline;}
 			A:hover{color: #000000; text-decoration: none;}
 			A:visited{color: #000000; text-decoration: underline;}
-			.dis td tr {color: #A04040;}
+			.dis td {color: #00FFFF}
 		-->
 		</style>
 		<script type="text/javascript">
@@ -55,7 +55,7 @@ function parseForwards()
 			data.push(e);
 		}
 		else {
-			data.push("null");
+			data.push('null');
 		}
 	}
 	//data.sort(sorter);
@@ -132,7 +132,7 @@ function makeTable()
 	for (var i=0; i<dataLen; ++i) {
 		var e = data[i];
 		if (e !== 'null') {
-			var c = (e.enabled ? "" : "dis");
+			var c = e.enabled ? "" : "dis";
 //			s += "<tr height=\"15\" class='" + c + "'" + "><th valign=\"top\">" + e.wanPorts + "</th><th valign=\"top\">" + e.lanPorts + "</th><th valign=\"top\">" + e.lanIP + "</th><th valign=\"top\">" + e.proto + "</th><th valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
 			s += "<tr height=\"15\" class='" + c + "'" + "><td valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</td><td valign=\"top\">" + e.wanPorts + "</td><td valign=\"top\">" + e.lanPorts + "</td><td valign=\"top\">" + e.lanIP + "</td><td valign=\"top\">" + e.proto + "</td><td class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></td></tr>";
 		}
@@ -140,7 +140,7 @@ function makeTable()
 			nullCount++;
 		}
 	}
-	if (nullCount == dataLen) {
+	if (dataLen == nullCount) {
  		 s += "<tr><td height=\"15\" colspan=\"6\" align=\"center\">- No Forwards -</td></tr>";
 	}
 	return s + "</table>";
@@ -160,8 +160,9 @@ function unmap(x)
 	fupnp.submit_button.value = "UPnP";
 	fupnp.action.value = "Apply";
 	fupnp.remove.value = x;
-	fupnp.save_button.value = "Deleted";
+	fupnp.delete_button.value = "Deleted";
 	fupnp.save_button.disabled = true;
+	fupnp.delete_button.disabled = true;
 	fupnp.submit();
 
 }
@@ -224,16 +225,15 @@ addEvent(window, "unload", function() {
 						<form name="fupnp" id="fupnp" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" />
 							<input type="hidden" name="submit_type" />
-							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="remove" />
-							<h2>Universal Plug and Play</h2>
+							<h2>Universal Plug and Play (UPnP)</h2>
 							<fieldset>
-								<legend>UPnP Forwards</legend>
+								<legend>Forwards</legend>
 								<span id="theforwards"><script type="text/javascript">document.write(makeTable())</script></span><br />
 								<div class="center">
-									<input type="button" value="Delete All" onclick="unmap('all')" />
+									<input type="button" name="delete_button" value="Delete All" onclick="unmap('all')" />
 									<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()" />
 								</div>
 							</fieldset><br />
@@ -268,8 +268,10 @@ addEvent(window, "unload", function() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<dl>
+							<dt class="term">Forwards:</dt>
+							<dd class="definition">Click the trash can to delete an individual entry.</dd>
 							<dt class="term">UPnP Service:</dt>
-							<dd class="definition">Allows applications to automatically setup port forwardings. Click the trash can to delete an individual entry.</dd>
+							<dd class="definition">Allows applications to automatically setup port forwardings.</dd>
 						</dl>
 						<br/>
 						<a href="javascript:openHelpWindow('HUPnP.asp')">More...</a>
