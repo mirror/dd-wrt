@@ -13,8 +13,8 @@
 {packet_info::<% wl_packet_get(); %>}
 {wan_ip::<% nvram_match("wan_proto","disabled","Disabled<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %>}
 {lan_ip::<% nvram_get("lan_ipaddr"); %>}
-{lan_dhcp_short::<% nvram_get("lan_proto"); %>}
-{lan_dhcp::<% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>}
+{lan_proto::<% nvram_get("lan_proto"); %>}
+{dhcp_enabled::<% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>}
 {wrt_radauth::<% nvram_invmatch("wl_mode", "ap", "only&nbsp;AP&nbsp;Mode<!--"); %><% nvram_match("wl_radauth","0","Disabled"); %><% nvram_match("wl_radauth","1","Active"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %>}
 {wrt_rflow::<% nvram_match("rflow_enable","0","Disabled"); %><% nvram_match("rflow_enable","1","Enabled"); %>}
 {macupd::<% nvram_match("macupd_enable","0","Disabled"); %><% nvram_match("macupd_enable","1","Enabled"); %>}

@@ -66,13 +66,13 @@ function setMemoryValues(val) {
 	var memCached = parseInt(mem[31]);
 	var memActive = parseInt(mem[37]);
 	var memInactive = parseInt(mem[40]);
-	setElementContent("mem_total", renderBar(memTotal / memSystem * 100) + memTotal + " kB / " + memSystem + " kB");
-	setElementContent("mem_free", renderBar(memFree / memTotal * 100) + memFree + " kB / " + memTotal + " kB");
-	setElementContent("mem_used", renderBar(memUsed / memTotal * 100) + memUsed + " kB / " + memTotal + " kB");
-	setElementContent("mem_buffer", renderBar(memBuffer / memUsed * 100) + memBuffer + " kB / " + memUsed + " kB");
-	setElementContent("mem_cached", renderBar(memCached / memUsed * 100) + memCached + " kB / " + memUsed + " kB");
-	setElementContent("mem_active", renderBar(memActive / memUsed * 100) + memActive + " kB / " + memUsed + " kB");
-	setElementContent("mem_inactive", renderBar(memInactive / memUsed * 100) + memInactive + " kB / " + memUsed + " kB");
+	setMeterBar("mem_total", memTotal / memSystem * 100, memTotal + " kB / " + memSystem + " kB");
+	setMeterBar("mem_free", memFree / memTotal * 100, memFree + " kB / " + memTotal + " kB");
+	setMeterBar("mem_used", memUsed / memTotal * 100, memUsed + " kB / " + memTotal + " kB");
+	setMeterBar("mem_buffer", memBuffer / memUsed * 100, memBuffer + " kB / " + memUsed + " kB");
+	setMeterBar("mem_cached", memCached / memUsed * 100, memCached + " kB / " + memUsed + " kB");
+	setMeterBar("mem_active", memActive / memUsed * 100, memActive + " kB / " + memUsed + " kB");
+	setMeterBar("mem_inactive", memInactive / memUsed * 100, memInactive + " kB / " + memUsed + " kB");
 }
 
 function setUptimeValues(val) {
@@ -270,7 +270,7 @@ addEvent(window, "unload", function() {
 									<div class="center" id="wan_dhcp">
 										<input onclick="DHCPAction(this.form,'release')" type="button" value="DHCP Release" />&nbsp;
 										<input onclick="DHCPAction(this.form,'renew')" type="button" value="DHCP Renew" />
-									</span>
+									</div>
 								</span>
 							</fieldset><br />
 							<div class="submitFooter">
