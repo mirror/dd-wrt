@@ -1,6 +1,6 @@
 #!/bin/sh
 export MYPATH=$PATH
-export PATH=/home/openwrt/workspace/toolchains/3.4.6-uclibc-0.9.28/bin:$MYPATH
+export PATH=/home/dd-wrt/toolchains/3.4.6/bin:$MYPATH
 echo "#define BUILD_DATE \"$(date +%D)\"" > build.h 
 
 export SRCBASE=$(cd "../src" && pwd -P)
@@ -8,6 +8,7 @@ echo $SRCBASE
 
 cd ../src
 cd linux/linux.v23
+make oldconfig
 make clean
 make dep
 make
@@ -23,8 +24,8 @@ make modules
 cd ../../
 make clean
 cd ../opt
+export PATH=/home/dd-wrt/toolchains/4.1.0/bin:$MYPATH
 
-export PATH=/home/openwrt/workspace/toolchains/4.1.0-uclibc-0.9.28/bin:$MYPATH
 
 cd ../src/router
 rm -dfr mipsel-uclibc/install
