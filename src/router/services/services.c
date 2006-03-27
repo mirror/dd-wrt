@@ -959,9 +959,9 @@ start_httpd (void)
   if (nvram_invmatch ("http_enable", "0") && !is_exist ("/var/run/httpd.pid"))
     {
       chdir ("/www");
-      if (chdir ("/tmp/www") == 0)
-	cprintf ("[HTTPD Starting on /tmp/www]\n");
-      else
+//      if (chdir ("/tmp/www") == 0)
+//	cprintf ("[HTTPD Starting on /tmp/www]\n");
+//      else
 	cprintf ("[HTTPD Starting on /www]\n");
       ret = eval ("httpd");
       chdir ("/");

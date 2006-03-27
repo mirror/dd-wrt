@@ -10,10 +10,16 @@ make httpd-clean
  make clean
 cp .config_openvpn .config
 #cp Makefile.standard Makefile
+rm -rf mipsel-uclibc/install
+make rc-clean
+make services-clean
+make shared-clean
+make httpd-clean
+rm busybox/busybox
+rm busybox/applets/busybox.o
 
 #copy config.normal .config
 cd ..
-make clean
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
