@@ -21,7 +21,7 @@ cd ..
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
-mkdir ../src/router/mipsel-uclibc/target/etc/langpack
+#mkdir ../src/router/mipsel-uclibc/target/etc/langpack
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/busybox
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/sbin/*
@@ -51,7 +51,7 @@ cd ../../../../../opt
 
 #copy language packs to destination
 #cp ./lang/langpacks/* ../src/router/mipsel-uclibc/target/langpacks
-cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
+#cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
 ../src/linux/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
 ./make_kernel.sh
 ../tools/trx -o dd-wrt.v23_voip.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs

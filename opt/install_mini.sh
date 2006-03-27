@@ -21,7 +21,7 @@ cd ..
 make
 cd ../opt
 mkdir ../src/router/mipsel-uclibc/target/etc/config
-mkdir ../src/router/mipsel-uclibc/target/etc/langpack
+#mkdir ../src/router/mipsel-uclibc/target/etc/langpack
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/bin/busybox
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/sbin/*
@@ -58,7 +58,7 @@ rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/ipv6.o
 
 #copy language packs to destination
 #cp ./lang/langpacks/* ../src/router/mipsel-uclibc/target/langpacks
-cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
+#cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
 
 #vfs option
 #cd ../src/router/mipsel-uclibc/target/www
