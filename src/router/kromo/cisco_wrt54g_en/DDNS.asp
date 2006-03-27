@@ -189,7 +189,7 @@ function SelDDNS(num,F) {
 								</div>
 								<div class="setting">
 									<div class="label"><script>Capture(ddns.wildcard)</script></div>
-									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_checked("ddns_wildcard", "1"; %>/>
+									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_checked("ddns_wildcard", "1"); %> />
 								</div>
 							</fieldset><br />
 							<fieldset>
