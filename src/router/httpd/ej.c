@@ -1,4 +1,4 @@
-#define NO_TRANS 1
+#define HAVE_NOTRANS 1
 
 #include <stdio.h>
 #include <stdlib.h>

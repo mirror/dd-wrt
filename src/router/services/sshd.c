@@ -71,6 +71,7 @@ start_sshd (void)
      RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE,
      "-p", port, passwd_ok, NULL
      }; */
+  stop_sshd();
   char *port = nvram_safe_get ("sshd_port");
   char *passwd_ok = nvram_match ("sshd_passwd_auth", "1") ? "" : "-s";
   ret =
