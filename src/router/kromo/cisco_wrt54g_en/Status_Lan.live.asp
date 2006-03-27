@@ -10,5 +10,4 @@
 {dhcp_start::<% nvram_get("dhcp_start"); %>}
 {dhcp_num::<% nvram_get("dhcp_num"); %>}
 {dhcp_lease_time::<% nvram_get("dhcp_lease"); %> minutes}
-{dhcp_static_leases::<% nvram_get("static_leases"); %>}
-{dhcp_dynamic_leases::<% dumpleases(0); %>}
+{dhcp_leases::<% dumpleases(0); %>}

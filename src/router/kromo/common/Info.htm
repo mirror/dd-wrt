@@ -4,30 +4,47 @@
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 		<title><% nvram_get("router_name"); %> - Info</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
-		<!--[if IE]> <link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /> <![endif]-->
-		<script type="text/JavaScript" src="common.js"></script>
+		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
+		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
+var oldLease;
+var oldPacketInfo;
+var oldMemory;
+var update;
 
-
-function setDHCPLeases(val) {
-	var html = "";
+function setLeasesTable(val) {
+	if(val == oldLease) return;
+	oldLease = val;
+	var table = document.getElementById("dhcp_leases_table");
+	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
 	if(val != "") {
 		var leases = val.replace(/'/g, "").split(",");
 		for(var i = 0; i < leases.length; i = i + 5) {
-			html += "<tr><td>" + leases[i] + "</td><td>" + leases[i + 1] + "</td><td>" + leases[i + 2] + "</td><td>" + leases[i + 3] + "</td></tr>";
+			var row = table.insertRow(-1);
+			row.insertCell(-1).innerHTML = leases[i];
+			row.insertCell(-1).innerHTML = leases[i + 1];
+			row.insertCell(-1).innerHTML = leases[i + 2];
+			row.insertCell(-1).innerHTML = leases[i + 3];
 		}
+	} else {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 4;
+		cell.align = "center";
+		cell.innerHTML = "- None - ";
 	}
-	if(html == "") html = "<tr><td colspan=\"5\" align=\"center\">- None -</td></tr>";
-	setElementContent("dhcp_leases_table", "<table class=\"table center\" cellspacing=\"5\"><tr><th width=\"25%\">Host&nbsp;Name</th><th width=\"25%\">IP&nbsp;Address</th><th width=\"25%\">MAC&nbsp;Address</th><th width=\"25%\">Expires</th><th>Delete</th></tr>" + html + "</table>");
 }
 
-function setPacketInfoValues(val) {
+function setPacketInfo(val) {
+	if(val == oldPacketInfo) return;
+	oldPacketInfo = val;
 	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
 	setElementContent("packet_rx", packet[0] + " OK, " + (packet[1] > 0 ? packet[1] : "no") + " errors");
 	setElementContent("packet_tx", packet[2] + " OK, " + (packet[3] > 0 ? packet[3] : "no") + " errors");
 }
 
 function setMemoryValues(val) {
+	if(val == oldMemory) return;
+	oldMemory = val;
 	var mem = val.replace(/'/g, "").split(",");
 	var memTotal = parseInt(mem[19]) / 1024;
 	var memSystem = Math.pow(2, Math.ceil(Math.log(memTotal) / Math.LN2));
@@ -46,20 +63,19 @@ function setMemoryValues(val) {
 	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 }
 
-var update;
 
 addEvent(window, "load", function() {
-	setPacketInfoValues("<% wl_packet_get(); %>");
+	setPacketInfo("<% wl_packet_get(); %>");
 	setMemoryValues("<% dumpmeminfo(); %>");
-	setDHCPLeases("<% dumpleases(1); %>");
+	setLeasesTable("<% dumpleases(1); %>");
 	setElementVisible("dhcp", "<% nvram_get("wl_mode"); %>" == "ap" && "<% nvram_get("lan_proto"); %>" == "dhcp");
 
 	update = new StatusUpdate("Info.live.htm", <% nvram_get("refresh_time"); %>);
 	update.onUpdate(function(u) {
-		setPacketInfoValues(u.packet_info);
+		setPacketInfo(u.packet_info);
 		setMemoryValues(u.mem_info);
-		setDHCPLeases(u.dhcp_leases);
-		setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_dhcp_short == "dhcp");
+		setLeasesTable(u.dhcp_leases);
+		setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp");
 	});
 	update.start();
 });
@@ -171,7 +187,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">DHCP Server</div>
-									<span id="lan_dhcp"><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %></span>&nbsp;
+									<span id="dhcp_enabled"><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WRT-radauth</div>
@@ -224,13 +240,32 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 						</div><br clear="all" />
-						<span id="active_wireless"><% active_wireless(1); %></span>
+<!--					<h2>Wireless</h2>
+						<fieldset>
+							<legend></legend>
+							<table class="table center" cellspacing="6" id="active_wireless">
+								<tr>
+									<th width="55%">MAC Address</th>
+									<th width="15%">Signal</th>
+									<th width="15%">Noise</th>
+									<th width="15%">SNR</th>
+								</tr>
+							</table>
+						</fieldset>
+-->						<span id="active_wireless"><% active_wireless(1); %></span>
 						<span id="active_wds"><% active_wds(1); %></span>
 						<span id="dhcp" style="display:none">
 							<h2>DHCP</h2>
 							<fieldset>
 								<legend>Clients List</legend>
-								<span id="dhcp_leases_table"></span>
+								<table class="table center" cellspacing="6" id="dhcp_leases_table">
+									<tr>
+										<th width="25%">Host&nbsp;Name</th>
+										<th width="25%">IP&nbsp;Address</th>
+										<th width="25%">MAC&nbsp;Address</th>
+										<th width="25%">Expires</th>
+									</tr>
+								</table>
 							</fieldset><br />
 						</span>
 						<div class="center">

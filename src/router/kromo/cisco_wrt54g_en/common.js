@@ -538,11 +538,21 @@ function openWindow(url, width, height) {
 
 
 // Renders a nice meter with the percentage value
-function renderBar(fraq) {
-	if(isNaN(fraq) || fraq < 0 || fraq > 100) return "";
+function setMeterBar(id, fraq, text) {
+	if(isNaN(fraq) || fraq < 0 || fraq > 100 || !document.getElementById(id)) return "";
 	fraq = Math.round(fraq);
-	return "<div class=\"meter\"><div class=\"bar\" style=\"width:" + fraq + "%;\"><div class=\"text\">" + fraq + "%</div></div></div>";
+	var node = document.getElementById(id);
+	if(node.firstChild) {
+		node.firstChild.firstChild.style.width = fraq + "%";
+		node.firstChild.firstChild.firstChild.firstChild.data = fraq + "%";
+		node.lastChild.data = text;
+	} else {
+		node.innerHTML = "<div class=\"meter\"><div class=\"bar\" style=\"width:" + fraq + "%;\"><div class=\"text\">" + fraq + "%</div></div></div>" + text;
+	}
 }
+
+//function setTableContent(id, data, sortBy) {
+//}
 
 // Sets the content inside the tag given by its id
 function setElementContent(id, content) {
@@ -601,6 +611,7 @@ function StatusUpdate(_url, _frequency) {
 	var frequency = _frequency * 1000;
 	var callback = new Array();
 	var me = this;
+	var updates = new Object();
 	
 	this.start = function() {
 		if((!window.XMLHttpRequest && !window.ActiveXObject) || frequency == 0) return false;
@@ -625,12 +636,14 @@ function StatusUpdate(_url, _frequency) {
 		request.open("GET", url, true);
 		request.onreadystatechange = function() {
 			if(request.readyState < 4 || request.status != 200) return;
-			var updates = new Object();
 			var regex = /\{(\w+)::([^\}]*)\}/g;
 			while(result = regex.exec(request.responseText)) {
+				var key = result[1]; 
+				var value = result[2];
+				if(typeof updates[key] != "undefined" && updates[key] == value) continue;
+				updates[key] = value;
 //				alert(result[1] + " --> " + result[2]);
-				updates[result[1]] = result[2];
-				setElementContent(result[1], result[2]);
+				setElementContent(key, value);
 			}
 			for(var i = 0; i < callback.length; i++) { (callback[i])(updates); }
 			timer = setTimeout(me.doUpdate, frequency);
