@@ -7,7 +7,7 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
-function deleteDHCPLease(val) {
+function deleteLease(val) {
 /*	work in progress, plz do not use yet!
 	update.stop();
 	var req = new Request("apply.cgi");
@@ -26,39 +26,51 @@ function deleteDHCPLease(val) {
 	document.forms[0].submit();
 }
 
-function setDHCPLeases(sLeases, dLeases) {
-	var html = "";
-	if(sLeases != "") {
-		sLeases = sLeases.split(" ");
-		for(var i = 0; i < sLeases.length - 1; i++) {
-			var l = sLeases[i].split("=");
-			html += "<tr height=\"15\"><td>" + l[1] + "</td><td>" + l[2] + "</td><td>" + l[0] + "</td><td>never</td><td></td></tr>";
-		}
+var oldLease;
+
+function setLeasesTable(val) {
+	if(val == oldLease) return;
+	oldLease = val;
+	var table = document.getElementById("dhcp_leases_table");
+	for(var i = table.rows.length - 1; i > 0 ; i--) {
+		table.deleteRow(i);
 	}
-	if(dLeases != "") {
-		dLeases = dLeases.replace(/'/g, "").split(",");
-		for(var i = 0; i < dLeases.length && dLeases.length > 1; i = i + 5) {
-			html += "<tr height=\"15\"><td>" + dLeases[i] + "</td><td>" + dLeases[i + 1] + "</td><td>" + dLeases[i + 2] + "</td><td>" + dLeases[i + 3] + "</td>"
-				 +  "<td class=\"bin\" title=\"Click to delete lease\" onclick=\"deleteDHCPLease('"+ dLeases[i + 4] + "')\" /></td></tr>";
+	if(val != "") {
+		var leases = val.replace(/'/g, "").split(",");
+		for(var i = 0; i < leases.length; i = i + 5) {
+			var row = table.insertRow(-1);
+			row.insertCell(-1).innerHTML = leases[i];
+			row.insertCell(-1).innerHTML = leases[i + 1];
+			row.insertCell(-1).innerHTML = leases[i + 2];
+			row.insertCell(-1).innerHTML = leases[i + 3];
+			var cell = row.insertCell(-1);
+			cell.className = "bin";
+			cell.height = 15;
+			cell.title = "Click to delete lease";
+			cell.onclick = eval("function() { deleteLease(" + leases[i + 4] + "); }");
+			cell.innerHTML = " ";
 		}
+	} else {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 5;
+		cell.align = "center";
+		cell.innerHTML = "- None - ";
 	}
-	if(html == "") html = "<tr><td colspan=\"5\" align=\"center\">- None -</td></tr>";
-	setElementContent("dhcp_leases_table", "<table class=\"table center\" cellspacing=\"5\"><tr><th width=\"25%\">Host&nbsp;Name</th><th width=\"25%\">IP&nbsp;Address</th><th width=\"25%\">MAC&nbsp;Address</th><th width=\"25%\">Expires</th><th>Delete</th></tr>" + html + "</table>");
 }
 
 var update;
 
 addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
-	setDHCPLeases("<% nvram_get("static_leases"); %>", "<% dumpleases(0); %>");
+	setLeasesTable("<% dumpleases(0); %>");
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
 
 	update = new StatusUpdate("Status_Lan.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate(function(u) {
-		setElementContent("dhcp_start_ip", u.lan_ip_prefix + parseInt(u.dhcp_start));
+		setElementContent("dhcp_start_ip", u.lan_ip_prefix + u.dhcp_start);
 		setElementContent("dhcp_end_ip", u.lan_ip_prefix + (parseInt(u.dhcp_start) + parseInt(u.dhcp_num) - 1));
-		setDHCPLeases(u.dhcp_static_leases, u.dhcp_dynamic_leases);
+		setLeasesTable(u.dhcp_leases);
 		setElementVisible("dhcp_1", u.lan_proto == "dhcp");
 		setElementVisible("dhcp_2", u.lan_proto == "dhcp");
 	});
@@ -166,7 +178,15 @@ addEvent(window, "unload", function() {
 							<span id="dhcp_2" style="display:none">
 								<fieldset>
 									<legend>DHCP Clients</legend>
-									<span id="dhcp_leases_table"></span>
+									<table class="table center" cellspacing="6" id="dhcp_leases_table">
+										<tr>
+											<th width="25%">Host&nbsp;Name</th>
+											<th width="25%">IP&nbsp;Address</th>
+											<th width="25%">MAC&nbsp;Address</th>
+											<th width="25%">Expires</th>
+											<th>Delete</th>
+										</tr>
+									</table>
 								</fieldset><br />
 							</span>
 							<div class="submitFooter">
