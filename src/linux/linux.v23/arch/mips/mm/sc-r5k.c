@@ -96,8 +96,8 @@ static inline int __init r5k_sc_probe(void)
 
 	scache_size = (512 * 1024) << ((config & R5K_CONF_SS) >> 20);
 
-	printk("R5000 SCACHE size %ldkB, linesize 32 bytes.\n",
-			scache_size >> 10);
+//	printk("R5000 SCACHE size %ldkB, linesize 32 bytes.\n",
+//			scache_size >> 10);
 
 	return 1;
 }

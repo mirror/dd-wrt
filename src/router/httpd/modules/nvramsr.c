@@ -74,20 +74,43 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  wfread (&c, 1, 1, wp);
 	  char *name = (char *) malloc (c + 1);
 	  wfread (name, c, 1, wp);
-#ifdef HAVE_NEWMEDIA
-	  int a;
-	  for (a = 0; a < c; a++)
-	    name[a] ^= 37;
-#endif
 	  name[c] = 0;
 	  len -= (c + 1);
 	  wfread (&l, 2, 1, wp);
 	  char *value = (char *) malloc (l + 1);
 	  wfread (value, l, 1, wp);
-#ifdef HAVE_NEWMEDIA
+	  len -= (l + 2);
+	  value[l] = 0;
+	  //cprintf("setting %s to %s\n",name,value);
+	  nvram_set (name, value);
+	  free (value);
+	  free (name);
+	}
+      nvram_commit ();
+      restore_ret = 0;
+    }else
+  if (!strcmp (sign, "XX-WRT"))
+    {
+      wfread (&count, 2, 1, wp);
+      len -= 2;
+      int i;
+      for (i = 0; i < count; i++)
+	{
+	  unsigned short l = 0;
+	  unsigned char c = 0;
+	  wfread (&c, 1, 1, wp);
+	  char *name = (char *) malloc (c + 1);
+	  wfread (name, c, 1, wp);
+	  int a;
+	  for (a = 0; a < c; a++)
+	    name[a] ^= 37;
+	  name[c] = 0;
+	  len -= (c + 1);
+	  wfread (&l, 2, 1, wp);
+	  char *value = (char *) malloc (l + 1);
+	  wfread (value, l, 1, wp);
 	  for (a = 0; a < l; a++)
 	    value[a] ^= 37;
-#endif
 	  len -= (l + 2);
 	  value[l] = 0;
 	  //cprintf("setting %s to %s\n",name,value);
@@ -153,7 +176,12 @@ nv_file_out (char *path, webs_t wp)
   char *backup_argv[5];
   struct sysinfo info;
   int backupcount = 0;
+#ifdef HAVE_NEWMEDIA
+  char sign[7] = { "XX-WRT" };
+#else
   char sign[7] = { "DD-WRT" };
+#endif
+
   for (v = router_defaults; v->name; v++)
     {
       backupcount++;
@@ -177,7 +205,7 @@ nv_file_out (char *path, webs_t wp)
       wfputc (strlen (val) >> 8, wp);
 #ifdef HAVE_NEWMEDIA
       for (i = 0; i < strlen (val); i++)
-	wfputc (val[i] ^ 67, wp);
+	wfputc (val[i] ^ 37, wp);
 #else
       for (i = 0; i < strlen (val); i++)
 	wfputc (val[i], wp);

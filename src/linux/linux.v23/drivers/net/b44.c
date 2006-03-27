@@ -430,8 +430,8 @@ static int b44_phy_reset(struct b44 *bp)
 	err = b44_readphy(bp, MII_BMCR, &val);
 	if (!err) {
 		if (val & BMCR_RESET) {
-			printk(KERN_ERR PFX "%s: PHY Reset would not complete.\n",
-			       bp->dev->name);
+//			printk(KERN_ERR PFX "%s: PHY Reset would not complete.\n",
+//			       bp->dev->name);
 			err = -ENODEV;
 		}
 	}
@@ -504,7 +504,7 @@ static int b44_setup_phy(struct b44 *bp)
 			(__b44_readphy(bp, 0, MII_BMCR, &val) == 0) && 
 			(val & BMCR_ISOLATE) &&
 			(__b44_writephy(bp, 0, MII_BMCR, val & ~BMCR_ISOLATE) != 0)) {
-		printk(KERN_WARNING PFX "PHY: cannot reset MII transceiver isolate bit.\n");
+//		printk(KERN_WARNING PFX "PHY: cannot reset MII transceiver isolate bit.\n");
 	}
 	
 	if (bp->phy_addr == B44_PHY_ADDR_NO_PHY)
@@ -582,20 +582,8 @@ static void b44_stats_update(struct b44 *bp)
 
 static void b44_link_report(struct b44 *bp)
 {
-	if (!netif_carrier_ok(bp->dev)) {
-		printk(KERN_INFO PFX "%s: Link is down.\n", bp->dev->name);
-	} else {
-		printk(KERN_INFO PFX "%s: Link is up at %d Mbps, %s duplex.\n",
-		       bp->dev->name,
-		       (bp->flags & B44_FLAG_100_BASE_T) ? 100 : 10,
-		       (bp->flags & B44_FLAG_FULL_DUPLEX) ? "full" : "half");
+	netif_carrier_ok(bp->dev);
 
-		printk(KERN_INFO PFX "%s: Flow control is %s for TX and "
-		       "%s for RX.\n",
-		       bp->dev->name,
-		       (bp->flags & B44_FLAG_TX_PAUSE) ? "on" : "off",
-		       (bp->flags & B44_FLAG_RX_PAUSE) ? "on" : "off");
-	}
 }
 
 static void b44_check_phy(struct b44 *bp)
@@ -652,12 +640,6 @@ static void b44_check_phy(struct b44 *bp)
 			b44_link_report(bp);
 		}
 
-		if (bmsr & BMSR_RFAULT)
-			printk(KERN_WARNING PFX "%s: Remote fault detected in PHY\n",
-			       bp->dev->name);
-		if (bmsr & BMSR_JCD)
-			printk(KERN_WARNING PFX "%s: Jabber detected in PHY\n",
-			       bp->dev->name);
 	}
 }
 
@@ -982,10 +964,7 @@ static irqreturn_t b44_interrupt(int irq, void *dev_id, struct pt_regs *regs)
 			bp->istat = istat;
 			__b44_disable_ints(bp);
 			__netif_rx_schedule(dev);
-		} else {
-			printk(KERN_ERR PFX "%s: Error, poll already scheduled\n",
-			       dev->name);
-		}
+		} 
 
 		bw32(B44_ISTAT, istat);
 		br32(B44_ISTAT);
@@ -998,8 +977,6 @@ static void b44_tx_timeout(struct net_device *dev)
 {
 	struct b44 *bp = dev->priv;
 
-	printk(KERN_ERR PFX "%s: transmit timed out, resetting\n",
-	       dev->name);
 
 	__b44_reset(bp);
 	netif_wake_queue(dev);
@@ -1018,8 +995,6 @@ static int b44_start_xmit(struct sk_buff *skb, struct net_device *dev)
 	if (unlikely(TX_BUFFS_AVAIL(bp) < 1)) {
 		netif_stop_queue(dev);
 		spin_unlock_irq(&bp->lock);
-		printk(KERN_ERR PFX "%s: BUG! Tx Ring full when queue awake!\n",
-		       dev->name);
 		return 1;
 	}
 
@@ -1888,8 +1863,8 @@ static int __devinit b44_init_one(struct pci_dev *pdev,
 	instance++;
 #endif
 
-	if (b44_version_printed++ == 0)
-		printk(KERN_INFO "%s", version);
+//	if (b44_version_printed++ == 0)
+//		printk(KERN_INFO "%s", version);
 
 	err = pci_enable_device(pdev);
 	if (err) {
@@ -1997,11 +1972,6 @@ static int __devinit b44_init_one(struct pci_dev *pdev,
 
 	pci_save_state(bp->pdev, bp->pci_cfg_state);
 
-	printk(KERN_INFO "%s: Broadcom %s 10/100BaseT Ethernet ", dev->name,
-		(pdev->device == PCI_DEVICE_ID_BCM4713) ? "47xx" : "4400");
-	for (i = 0; i < 6; i++)
-		printk("%2.2x%c", dev->dev_addr[i],
-		       i == 5 ? '\n' : ':');
 
 	/* Initialize phy */
 	spin_lock_irq(&bp->lock);

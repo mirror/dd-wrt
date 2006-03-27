@@ -1177,58 +1177,6 @@ out_nounlock:
 	return retval;
 }
 
-static void show_task(struct task_struct * p)
-{
-	unsigned long free = 0;
-	int state;
-	static const char * stat_nam[] = { "R", "S", "D", "Z", "T", "W" };
-
-	printk("%-13.13s ", p->comm);
-	state = p->state ? ffz(~p->state) + 1 : 0;
-	if (((unsigned) state) < sizeof(stat_nam)/sizeof(char *))
-		printk(stat_nam[state]);
-	else
-		printk(" ");
-#if (BITS_PER_LONG == 32)
-	if (p == current)
-		printk(" current  ");
-	else
-		printk(" %08lX ", thread_saved_pc(&p->thread));
-#else
-	if (p == current)
-		printk("   current task   ");
-	else
-		printk(" %016lx ", thread_saved_pc(&p->thread));
-#endif
-	{
-		unsigned long * n = (unsigned long *) (p+1);
-		while (!*n)
-			n++;
-		free = (unsigned long) n - (unsigned long)(p+1);
-	}
-	printk("%5lu %5d %6d ", free, p->pid, p->p_pptr->pid);
-	if (p->p_cptr)
-		printk("%5d ", p->p_cptr->pid);
-	else
-		printk("      ");
-	if (p->p_ysptr)
-		printk("%7d", p->p_ysptr->pid);
-	else
-		printk("       ");
-	if (p->p_osptr)
-		printk(" %5d", p->p_osptr->pid);
-	else
-		printk("      ");
-	if (!p->mm)
-		printk(" (L-TLB)\n");
-	else
-		printk(" (NOTLB)\n");
-
-	{
-		extern void show_trace_task(struct task_struct *tsk);
-		show_trace_task(p);
-	}
-}
 
 char * render_sigset_t(sigset_t *set, char *buffer)
 {
@@ -1245,30 +1193,6 @@ char * render_sigset_t(sigset_t *set, char *buffer)
 	return buffer;
 }
 
-void show_state(void)
-{
-	struct task_struct *p;
-
-#if (BITS_PER_LONG == 32)
-	printk("\n"
-	       "                         free                        sibling\n");
-	printk("  task             PC    stack   pid father child younger older\n");
-#else
-	printk("\n"
-	       "                                 free                        sibling\n");
-	printk("  task                 PC        stack   pid father child younger older\n");
-#endif
-	read_lock(&tasklist_lock);
-	for_each_task(p) {
-		/*
-		 * reset the NMI-timeout, listing all files on a slow
-		 * console might take alot of time:
-		 */
-		touch_nmi_watchdog();
-		show_task(p);
-	}
-	read_unlock(&tasklist_lock);
-}
 
 /**
  * reparent_to_init() - Reparent the calling kernel thread to the init task.

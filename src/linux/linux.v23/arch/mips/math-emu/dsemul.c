@@ -68,7 +68,7 @@ int mips_dsemul(struct pt_regs *regs, mips_instruction ir, gpreg_t cpc)
 		return 0;
 	}
 #ifdef DSEMUL_TRACE
-	printk("dsemul %lx %lx\n", regs->cp0_epc, cpc);
+//	printk("dsemul %lx %lx\n", regs->cp0_epc, cpc);
 
 #endif
 
@@ -156,9 +156,6 @@ int do_dsemulret(struct pt_regs *xcp)
 	 * emulating the branch delay instruction.
 	 */
 
-#ifdef DSEMUL_TRACE
-	printk("dsemulret\n");
-#endif
 	if (__get_user(epc, &fr->epc)) {		/* Saved EPC */
 		/* This is not a good situation to be in */
 		force_sig(SIGBUS, current);

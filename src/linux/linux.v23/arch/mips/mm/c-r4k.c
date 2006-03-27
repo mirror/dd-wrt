@@ -919,13 +919,6 @@ static void __init probe_pcache(void)
 		break;
 	}
 
-	printk("Primary instruction cache %ldkB, %s, %s, linesize %d bytes.\n",
-	       icache_size >> 10,
-	       cpu_has_vtag_icache ? "virtually tagged" : "physically tagged",
-	       way_string[c->icache.ways], c->icache.linesz);
-
-	printk("Primary data cache %ldkB, %s, linesize %d bytes.\n",
-	       dcache_size >> 10, way_string[c->dcache.ways], c->dcache.linesz);
 }
 
 /*
@@ -1061,8 +1054,6 @@ static void __init setup_scache(void)
 
 	c->scache.sets = scache_size / (c->scache.linesz * c->scache.ways);
 
-	printk("Unified secondary cache %ldkB %s, linesize %d bytes.\n",
-	       scache_size >> 10, way_string[c->scache.ways], c->scache.linesz);
 
 	c->options |= MIPS_CPU_SUBSET_CACHES;
 }

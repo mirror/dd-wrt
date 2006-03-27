@@ -118,140 +118,9 @@ static inline int kernel_text_address(long addr)
 
 #endif
 
-/*
- * This routine abuses get_user()/put_user() to reference pointers
- * with at least a bit of error checking ...
- */
-void show_stack(long *sp)
-{
-	int i;
-	long stackdata;
 
-	sp = sp ? sp : (long *)&sp;
 
-	printk("Stack:   ");
-	i = 1;
-	while ((long) sp & (PAGE_SIZE - 1)) {
-		if (i && ((i % 8) == 0))
-			printk("\n");
-		if (i > 40) {
-			printk(" ...");
-			break;
-		}
 
-		if (__get_user(stackdata, sp++)) {
-			printk(" (Bad stack address)");
-			break;
-		}
-
-		printk(" %08lx", stackdata);
-		i++;
-	}
-	printk("\n");
-}
-
-void show_trace(long *sp)
-{
-	int i;
-	long addr;
-
-	sp = sp ? sp : (long *) &sp;
-
-	printk("Call Trace:  ");
-	i = 1;
-	while ((long) sp & (PAGE_SIZE - 1)) {
-
-		if (__get_user(addr, sp++)) {
-			if (i && ((i % 6) == 0))
-				printk("\n");
-			printk(" (Bad stack address)\n");
-			break;
-		}
-
-		/*
-		 * If the address is either in the text segment of the
-		 * kernel, or in the region which contains vmalloc'ed
-		 * memory, it *may* be the address of a calling
-		 * routine; if so, print it so that someone tracing
-		 * down the cause of the crash will be able to figure
-		 * out the call path that was taken.
-		 */
-
-		if (kernel_text_address(addr)) {
-			if (i && ((i % 6) == 0))
-				printk("\n");
-			if (i > 40) {
-				printk(" ...");
-				break;
-			}
-
-			printk(" [<%08lx>]", addr);
-			i++;
-		}
-	}
-	printk("\n");
-}
-
-void show_trace_task(struct task_struct *tsk)
-{
-	show_trace((long *)tsk->thread.reg29);
-}
-
-void show_code(unsigned int *pc)
-{
-	long i;
-
-	printk("\nCode:");
-
-	for(i = -3 ; i < 6 ; i++) {
-		unsigned long insn;
-		if (__get_user(insn, pc + i)) {
-			printk(" (Bad address in epc)\n");
-			break;
-		}
-		printk("%c%08lx%c",(i?' ':'<'),insn,(i?' ':'>'));
-	}
-}
-
-void show_regs(struct pt_regs *regs)
-{
-	/*
-	 * Saved main processor registers
-	 */
-	printk("$0 : %08x %08lx %08lx %08lx %08lx %08lx %08lx %08lx\n",
-	       0,             regs->regs[1], regs->regs[2], regs->regs[3],
-	       regs->regs[4], regs->regs[5], regs->regs[6], regs->regs[7]);
-	printk("$8 : %08lx %08lx %08lx %08lx %08lx %08lx %08lx %08lx\n",
-	       regs->regs[8],  regs->regs[9],  regs->regs[10], regs->regs[11],
-	       regs->regs[12], regs->regs[13], regs->regs[14], regs->regs[15]);
-	printk("$16: %08lx %08lx %08lx %08lx %08lx %08lx %08lx %08lx\n",
-	       regs->regs[16], regs->regs[17], regs->regs[18], regs->regs[19],
-	       regs->regs[20], regs->regs[21], regs->regs[22], regs->regs[23]);
-	printk("$24: %08lx %08lx                   %08lx %08lx %08lx %08lx\n",
-	       regs->regs[24], regs->regs[25],
-	       regs->regs[28], regs->regs[29], regs->regs[30], regs->regs[31]);
-	printk("Hi : %08lx\n", regs->hi);
-	printk("Lo : %08lx\n", regs->lo);
-
-	/*
-	 * Saved cp0 registers
-	 */
-	printk("epc   : %08lx    %s\n", regs->cp0_epc, print_tainted());
-	printk("Status: %08lx\n", regs->cp0_status);
-	printk("Cause : %08lx\n", regs->cp0_cause);
-	printk("PrId  : %08x\n", read_c0_prid());
-}
-
-void show_registers(struct pt_regs *regs)
-{
-	show_regs(regs);
-	printk("Process %s (pid: %d, stackpage=%08lx)\n",
-		current->comm, current->pid, (unsigned long) current);
-	show_stack((long *) regs->regs[29]);
-	show_trace((long *) regs->regs[29]);
-	show_code((unsigned int *) regs->cp0_epc);
-	printk("\n");
-}
 
 static spinlock_t die_lock = SPIN_LOCK_UNLOCKED;
 
@@ -264,7 +133,7 @@ void __die(const char * str, struct pt_regs * regs, const char * file,
 	if (file && func)
 		printk(" in %s:%s, line %ld", file, func, line);
 	printk(":\n");
-	show_registers(regs);
+//	show_registers(regs);
 	spin_unlock_irq(&die_lock);
 	do_exit(SIGSEGV);
 }
@@ -729,13 +598,13 @@ asmlinkage void do_watch(struct pt_regs *regs)
 	 * overflows.
 	 */
 	dump_tlb_all();
-	show_regs(regs);
+//	show_regs(regs);
 	panic("Caught WATCH exception - probably caused by stack overflow.");
 }
 
 asmlinkage void do_mcheck(struct pt_regs *regs)
 {
-	show_regs(regs);
+//	show_regs(regs);
 	dump_tlb_all();
 	/*
 	 * Some chips may have other causes of machine check (e.g. SB1
@@ -753,7 +622,7 @@ asmlinkage void do_reserved(struct pt_regs *regs)
 	 * caused by a new unknown cpu type or after another deadly
 	 * hard/software error.
 	 */
-	show_regs(regs);
+//	show_regs(regs);
 	panic("Caught reserved exception %ld - should not happen.",
 	      (regs->cp0_cause & 0x7f) >> 2);
 }
