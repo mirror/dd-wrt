@@ -50,17 +50,6 @@
 #include <net/if.h>
 
 /* Output buffer structure */
-
-struct olsr_netbuf
-{
-  char *buff;     /* Pointer to the allocated buffer */
-  int if_index;
-  int bufsize;    /* Size of the buffer */
-  int maxsize;    /* Max bytes of payload that can be added to the buffer */
-  int pending;    /* How much data is currently pending in the buffer */
-  int reserved;   /* Plugins can reserve space in buffers */
-};
-
 void
 init_net(void);
 

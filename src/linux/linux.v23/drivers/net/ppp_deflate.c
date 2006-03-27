@@ -49,7 +49,6 @@ struct ppp_deflate_state {
     int		w_size;
     int		unit;
     int		mru;
-    int		debug;
     z_stream	strm;
     struct compstat stats;
 };
@@ -154,7 +153,6 @@ z_comp_init(arg, options, opt_len, unit, hdrlen, debug)
 
 	state->seqno = 0;
 	state->unit  = unit;
-	state->debug = debug;
 
 	zlib_deflateReset(&state->strm);
 
@@ -220,9 +218,6 @@ z_compress(arg, rptr, obuf, isize, osize)
 	for (;;) {
 		r = zlib_deflate(&state->strm, Z_PACKET_FLUSH);
 		if (r != Z_OK) {
-			if (state->debug)
-				printk(KERN_ERR
-				       "z_compress: deflate returned %d\n", r);
 			break;
 		}
 		if (state->strm.avail_out == 0) {
@@ -338,7 +333,6 @@ z_decomp_init(arg, options, opt_len, unit, hdrlen, mru, debug)
 
 	state->seqno = 0;
 	state->unit  = unit;
-	state->debug = debug;
 	state->mru   = mru;
 
 	zlib_inflateReset(&state->strm);
@@ -386,18 +380,12 @@ z_decompress(arg, ibuf, isize, obuf, osize)
 	unsigned char overflow_buf[1];
 
 	if (isize <= PPP_HDRLEN + DEFLATE_OVHD) {
-		if (state->debug)
-			printk(KERN_DEBUG "z_decompress%d: short pkt (%d)\n",
-			       state->unit, isize);
 		return DECOMP_ERROR;
 	}
 
 	/* Check the sequence number. */
 	seq = (ibuf[PPP_HDRLEN] << 8) + ibuf[PPP_HDRLEN+1];
 	if (seq != (state->seqno & 0xffff)) {
-		if (state->debug)
-			printk(KERN_DEBUG "z_decompress%d: bad seq # %d, expected %d\n",
-			       state->unit, seq, state->seqno & 0xffff);
 		return DECOMP_ERROR;
 	}
 	++state->seqno;
@@ -428,9 +416,6 @@ z_decompress(arg, ibuf, isize, obuf, osize)
 	for (;;) {
 		r = zlib_inflate(&state->strm, Z_PACKET_FLUSH);
 		if (r != Z_OK) {
-			if (state->debug)
-				printk(KERN_DEBUG "z_decompress%d: inflate returned %d (%s)\n",
-				       state->unit, r, (state->strm.msg? state->strm.msg: ""));
 			return DECOMP_FATALERROR;
 		}
 		if (state->strm.avail_out != 0)
@@ -454,17 +439,11 @@ z_decompress(arg, ibuf, isize, obuf, osize)
 			state->strm.avail_out = 1;
 			overflow = 1;
 		} else {
-			if (state->debug)
-				printk(KERN_DEBUG "z_decompress%d: ran out of mru\n",
-				       state->unit);
 			return DECOMP_FATALERROR;
 		}
 	}
 
 	if (decode_proto) {
-		if (state->debug)
-			printk(KERN_DEBUG "z_decompress%d: didn't get proto\n",
-			       state->unit);
 		return DECOMP_ERROR;
 	}
 
@@ -512,10 +491,6 @@ z_incomp(arg, ibuf, icnt)
 	r = zlib_inflateIncomp(&state->strm);
 	if (r != Z_OK) {
 		/* gak! */
-		if (state->debug) {
-			printk(KERN_DEBUG "z_incomp%d: inflateIncomp returned %d (%s)\n",
-			       state->unit, r, (state->strm.msg? state->strm.msg: ""));
-		}
 		return;
 	}
 
@@ -576,9 +551,6 @@ struct compressor ppp_deflate_draft = {
 int __init deflate_init(void)
 {  
         int answer = ppp_register_compressor(&ppp_deflate);
-        if (answer == 0)
-                printk(KERN_INFO
-		       "PPP Deflate Compression module registered\n");
 	ppp_register_compressor(&ppp_deflate_draft);
         return answer;
 }

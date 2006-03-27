@@ -30,7 +30,7 @@
 static inline void forget_pte(pte_t page)
 {
 	if (!pte_none(page)) {
-		printk("forget_pte: old mapping existed!\n");
+//		printk("forget_pte: old mapping existed!\n");
 		BUG();
 	}
 }

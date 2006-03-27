@@ -419,7 +419,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef HAVE_MSSID
   {"wl_ssid", "FON_INIT", 0},	/* Service set ID (network name) */
 #else
-  {"wl_ssid", "FON", 0},	/* Service set ID (network name) */
+  {"wl_ssid", "FON_HotSpot", 0},	/* Service set ID (network name) */
 #endif
 #else
   {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */

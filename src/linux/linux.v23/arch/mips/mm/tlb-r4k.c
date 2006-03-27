@@ -311,7 +311,7 @@ __init int add_temporary_entry(unsigned long entrylo0, unsigned long entrylo1,
 	old_pagemask = read_c0_pagemask();
 	wired = read_c0_wired();
 	if (--temp_tlb_entry < wired) {
-		printk(KERN_WARNING "No TLB space left for add_temporary_entry\n");
+//		printk(KERN_WARNING "No TLB space left for add_temporary_entry\n");
 		ret = -ENOSPC;
 		goto out;
 	}

@@ -134,34 +134,6 @@ static void __init kmap_init(void)
 
 #endif /* CONFIG_HIGHMEM */
 
-void show_mem(void)
-{
-	int i, free = 0, total = 0, reserved = 0;
-	int shared = 0, cached = 0;
-
-	printk("Mem-info:\n");
-	show_free_areas();
-	printk("Free swap:       %6dkB\n", nr_swap_pages<<(PAGE_SHIFT-10));
-	i = max_mapnr;
-	while (i-- > 0) {
-		total++;
-		if (PageReserved(mem_map+i))
-			reserved++;
-		else if (PageSwapCache(mem_map+i))
-			cached++;
-		else if (!page_count(mem_map + i))
-			free++;
-		else
-			shared += page_count(mem_map + i) - 1;
-	}
-	printk("%d pages of RAM\n", total);
-	printk("%d reserved pages\n", reserved);
-	printk("%d pages shared\n", shared);
-	printk("%d pages swap cached\n",cached);
-	printk("%ld pages in page table cache\n",pgtable_cache_size);
-	printk("%d free pages\n", free);
-	show_buffers();
-}
 
 /* References to section boundaries */
 
@@ -261,12 +233,7 @@ void __init paging_init(void)
 	zones_size[ZONE_DMA] = low;
 #endif
 #ifdef CONFIG_HIGHMEM
-	if (cpu_has_dc_aliases) {
-		printk(KERN_WARNING "This processor doesn't support highmem.");
-		if (high - low)
-			printk(" %dk highmem ignored", high - low);
-		printk("\n");
-	} else
+	if (!cpu_has_dc_aliases)
 		zones_size[ZONE_HIGHMEM] = high - low;
 #endif
 
