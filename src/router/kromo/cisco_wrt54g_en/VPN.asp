@@ -38,7 +38,7 @@ function to_submit(F) {
 										</ul>
 									</div>
 								</li>
-								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+								<li><a href="Filters.asp">Access Restrictions</a></li>
 								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
 								<li><a href="Management.asp">Administration</a></li>
 								<li><a href="Status_Router.asp">Status</a></li>

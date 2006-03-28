@@ -201,7 +201,7 @@ addEvent(window, "unload", function() {
 								<li><a href="Sipath.asp">SIPatH</a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
 								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+								<li><a href="Filters.asp">Access Restrictions</a></li>
 								<li class="current"><span>Applications&nbsp;&amp;&nbsp;Gaming</span>
 									<div id="menuSub">
 										<ul id="menuSubList">

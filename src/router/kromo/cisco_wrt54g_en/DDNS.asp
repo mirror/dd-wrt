@@ -103,7 +103,7 @@ function SelDDNS(num,F) {
 								<li><a href="Sipath.asp"><script>Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
 								<li><a href="Firewall.asp"><script>Capture(bmenu.security)</script></a></li>
-								<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'><script>Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Filters.asp"><script>Capture(bmenu.accrestriction)</script></a></li>
 								<li><a href="Forward.asp"><script>Capture(bmenu.applications)</script></a></li>
 								<li><a href="Management.asp"><script>Capture(bmenu.admin)</script></a></li>
 								<li><a href="Status_Router.asp"><script>Capture(bmenu.statu)</script></a></li>

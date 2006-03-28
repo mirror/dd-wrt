@@ -164,10 +164,6 @@ ifneq ($(MPPPOE_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/Status_mpppoe.asp
 endif
 
-ifneq ($(PARENTAL_CONTROL_SUPPORT),1)
-	rm -f $(INSTALLDIR)/www/Parental_Control.asp
-endif
-
 ifneq ($(BACKUP_RESTORE_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/Backup_Restore.asp
 endif
