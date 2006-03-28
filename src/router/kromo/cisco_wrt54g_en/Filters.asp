@@ -320,9 +320,7 @@ function Status(F,I) {
 								<li><a href="Firewall.asp">Security</a></li>
 								<li class="current"><span>Access Restrictions</span>
 									<div id="menuSub">
-										<ul id="menuSubList"><% support_invmatch("PARENTAL_CONTROL_SUPPORT", "1", "<!--"); %>
-											<li><a href="Parental_Control.asp">Parental Control</a></li>
-											<% support_invmatch("PARENTAL_CONTROL_SUPPORT", "1", "-->"); %>
+										<ul id="menuSubList">
 											<li><span>Internet Access</span></li>
 										</ul>
 									</div>
