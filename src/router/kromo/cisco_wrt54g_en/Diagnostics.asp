@@ -77,14 +77,28 @@ function valid(F,I) {
 								<div class="setting">
 									<div class="label">Commands</div>
 									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New"><% nvram_get("ping_ip"); %></textarea>
-								</div><br />
+								</div>
 								<script type="text/javascript">
 var table = new Array(<% dump_ping_log(""); %>);
 if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
-	document.write("<pre style=\"padding:.906em; background:#000; color:#fff; overflow:scroll;\">" + table.join("\n") + "</pre>");
+	document.write("<br /><pre style=\"padding:.906em; background:#000; color:#fff; overflow:scroll;\">" + table.join("\n") + "</pre>");
 }
 								</script>
 							</fieldset><br />
+							<% nvram_match("rc_startup", "", "<!--"); %><fieldset>
+								<legend>Startup</legend>
+								<pre id="startup"><% nvram_get("rc_startup"); %></pre>
+								<div class="center">
+									<input type="button" value="Copy to text area" onclick="this.form.ping_ip.value = document.getElementById('startup').firstChild.data" />
+								</div>
+							</fieldset><br /><% nvram_match("rc_startup", "", "-->"); %>
+							<% nvram_match("rc_firewall", "", "<!--"); %><fieldset>
+								<legend>Firewall</legend>
+								<pre id="firewall"><% nvram_get("rc_firewall"); %></pre>
+								<div class="center">
+									<input type="button" value="Copy to text area" onclick="this.form.ping_ip.value = document.getElementById('firewall').firstChild.data" />
+								</div>
+							</fieldset><br /><% nvram_match("rc_firewall", "", "-->"); %>
 							<div class="submitFooter">
 								<input type="button" value="Run Commands" name="ping" onclick="to_submit(this.form, 'start');"/>
 								<input type="button" value="Save Startup" name="startup" onclick="to_submit(this.form, 'startup');" />
