@@ -121,14 +121,6 @@
 		</div>
 	</fieldset><br />
 	<fieldset>
-	<legend>UPnP</legend>
-	<div class="setting">
-		<div class="label">UPnP</div>
-		<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable", "0", "checked"); %> />Disable
-		</div>
-	</fieldset><br />
-	<fieldset>
 	<legend>WOL</legend>
 	<div class="setting">
 		<div class="label">Wake-On-LAN</div>
