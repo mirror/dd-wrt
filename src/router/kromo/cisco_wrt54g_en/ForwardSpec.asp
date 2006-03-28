@@ -2,12 +2,14 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-		<title><% nvram_get("router_name"); %> - Forward</title>
+		<title>Port Forwarding</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript">
+document.title = '<% nvram_get("router_name"); %>'+pforward.titl;
+
 function forward_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "ForwardSpec";
@@ -27,7 +29,8 @@ function forward_remove_submit(F) {
 function to_submit(F) {
 	F.submit_button.value = "ForwardSpec";
 	F.action.value = "Apply";
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.save.value;
 	F.save_button.disabled = true;
 	F.submit();
 }
@@ -76,44 +79,42 @@ function to_submit(F) {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="forward_spec" value="13" />
-							<h2>Port Forwarding</h2>
+							<h2><script>Capture(pforward.h2)</script></h2>
 							<fieldset>
-								<legend>Forwards</legend>
+								<legend><script>Capture(pforward.legend)</script></legend>
 								<table class="table center" cellspacing="5">
 									<tr>
-										<th>Application</th>
-										<th>Port from</th>
-										<th>Protocol</th>
-										<th>IP Address</th>
-										<th>Port to</th>
-										<th>Enable</th>
+										<th><script>Capture(pforward.app)</script></th>
+										<th><script>Capture(pforward.from)</script></th>
+										<th><script>Capture(share.proto)</script></th>
+										<th><script>Capture(share.ip)</script></th>
+										<th><script>Capture(pforward.to)</script></th>
+										<th><script>Capture(share.enable)</script></th>
 									</tr>
 									<% show_forward_spec(); %>
 								</table><br />
 								<div class="center">
-									<input type="button" value=" Add " onclick="forward_add_submit(this.form)" />&nbsp;
-									<input type="button" value="Remove" onclick="forward_remove_submit(this.form)" />
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form)\">");</script>
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form)\">");</script>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
-								<input type="reset" value="Cancel Changes"/>
+								<script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
+								<script>document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script>Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">Port Range Forwarding: </dt>
-							<dd class="definition">Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications
-								include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route
-								the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports
-								you are using, and uncheck the <em>Enable</em> checkbox after you are finished.
-							</dd>
+							<dt class="term"><script>Capture(hpforward.right1)</script></dt>
+							<dd class="definition"><script>Capture(hpforward.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HForward.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HForward.asp')"><script>Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
