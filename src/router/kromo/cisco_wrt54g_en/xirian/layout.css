@@ -11,6 +11,10 @@ input {
 	 margin-right:			1px;
 }
 
+input.btn {
+	padding:.0em .5em;
+}
+
 div.message {
 	margin:					0px;
 	padding:				0px;
