@@ -151,11 +151,11 @@ padding:.906em;
 }
 #main #contentsInfo div.col2l {
 float:left;
-width:34.782em;
+width:34.774em;
 }
 #main #contentsInfo div.col2r {
 float:left;
-width:34.783em;
+width:34.774em;
 margin-left:.906em;
 }
 h2, 
@@ -191,11 +191,7 @@ margin-top:-1.721em;
 .warning {
 font-weight:bold;
 padding:.725em;
-background:#f66;
-color:#000;
-border-style:solid solid solid solid;
-border-color:#f99 #c33 #c33 #f99;
-border-width:.09em;
+border:solid .09em #f99;
 text-align:center;
 }
 .comment {
@@ -213,6 +209,7 @@ fieldset legend {
 font-weight:bold;
 margin-left:-.362em;
 padding:0 .272em;
+background:#fff;
 }
 table {
 margin:0 auto;
@@ -340,9 +337,27 @@ position:absolute;
 text-decoration:blink;
 }
 .bin {
-background:url(../images/bin_bt.gif) center no-repeat;
+background:url(/images/bin_bt.gif) center no-repeat;
 cursor:pointer;
 }
 input.btn {
 padding:.0em .5em;
+}
+
+/* For Opera browsers only */
+@media all and (min-width: 0px){
+fieldset {
+padding-top:0;
+}
+fieldset legend {
+position:relative;
+left:-1.268em;
+margin-bottom:.634em;
+}
+.setting {
+margin-bottom:.362em;
+}
+.setting span.default {
+margin-top:0;
+}
 }
