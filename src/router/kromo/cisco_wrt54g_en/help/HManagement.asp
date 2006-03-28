@@ -75,8 +75,6 @@
 				</dd>
 				<dt>Routing</dt>
 				<dd>Routing enables the OSPF and RIP routing daemons if you have set up OSPF or RIP routing in the Advanced Routing page.</dd>
-				<dt>UPnP (Universal Plug and Play)</dt>
-				<dd>A Microsoft technology for automatic configuration of devices. You need this enabled if you want to connect the X-Box to the internet via your router.</dd>
 				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
