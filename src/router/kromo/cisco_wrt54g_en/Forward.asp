@@ -94,8 +94,8 @@ function to_submit(F) {
 									<% show_forward(); %>
 								</table><br />
 								<div class="center">
-									<script>document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form)\">");</script>
-									<script>document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form)\">");</script>
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form)\">");</script>
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form)\">");</script>
 								</div>
 						 	</fieldset><br />
 							<div class="submitFooter">
