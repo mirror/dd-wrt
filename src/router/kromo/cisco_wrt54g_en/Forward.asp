@@ -2,11 +2,14 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-		<title><% nvram_get("router_name"); %> - Range Forward</title>
+		<title>Port Range Forwarding</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript">
+document.title = '<% nvram_get("router_name"); %>'+prforward.titl;
+
 function forward_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Forward";
@@ -26,14 +29,16 @@ function forward_remove_submit(F) {
 function to_submit(F) {
 	F.submit_button.value = "Forward";
 	F.action.value = "Apply";
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.save.value;
 	F.save_button.disabled = true;
 	F.submit();
 }
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -41,27 +46,27 @@ function to_submit(F) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<li><a href="index.asp"><script>Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script>Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script>Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li class="current"><span>Applications&nbsp;&amp;&nbsp;Gaming</span>
+								<li><a href="Firewall.asp"><script>Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script>Capture(bmenu.accrestriction)</script></a></li>
+								<li class="current"><span><script>Capture(bmenu.applications)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><span>Port Range Forward</span></li>
-											<li><a href="ForwardSpec.asp">Port Forwarding</a></li>
-											<li><a href="Triggering.asp">Port Triggering</a></li>
-											<li><a href="UPnP.asp">UPnP Forward</a></li>
-											<li><a href="DMZ.asp">DMZ</a></li>
-											<li><a href="QoS.asp">QoS</a></li>
+											<li><span><script>Capture(bmenu.applicationsprforwarding)</script></span></li>
+											<li><a href="ForwardSpec.asp"><script>Capture(bmenu.applicationspforwarding)</script></a></li>
+											<li><a href="Triggering.asp"><script>Capture(bmenu.applicationsptriggering)</script></a></li>
+											<li><a href="UPnP.asp"><script>Capture(bmenu.applicationsUpnp)</script></a></li>
+											<li><a href="DMZ.asp"><script>Capture(bmenu.applicationsDMZ)</script></a></li>
+											<li><a href="QoS.asp"><script>Capture(bmenu.applicationsQoS)</script></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li><a href="Status_Router.asp">Status</a></li>
+								<li><a href="Management.asp"><script>Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script>Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
@@ -74,44 +79,42 @@ function to_submit(F) {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="forward_port" value="13" />
-							<h2>Port Range Forward</h2>
+							<h2><script>Capture(prforward.h2)</script></h2>
 							<fieldset>
-								<legend>Forwards</legend>
+								<legend><script>Capture(prforward.legend)</script></legend>
 								<table class="table center" cellspacing="5">
 									<tr>
-										<th>Application</th>
-										<th>Start</th>
-										<th>End</th>
-										<th>Protocol</th>
-										<th>IP Address</th>
-										<th>Enable</th>
+										<th><script>Capture(prforward.app)</script></th>
+										<th><script>Capture(share.start)</script></th>
+										<th><script>Capture(share.end)</script></th>
+										<th><script>Capture(share.proto)</script></th>
+										<th><script>Capture(share.ip)</script></th>
+										<th><script>Capture(share.enable)</script></th>
 									</tr>
 									<% show_forward(); %>
 								</table><br />
 								<div class="center">
-									<input type="button" value=" Add " onclick="forward_add_submit(this.form)" />&nbsp;
-									<input type="button" value="Remove" onclick="forward_remove_submit(this.form)" />
+									<script>document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form)\">");</script>
+									<script>document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form)\">");</script>
 								</div>
 						 	</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
+								<script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
+								<script>document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script>Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">Port Range Forwarding: </dt>
-							<dd class="definition">Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications
-								include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route
-								the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports
-								you are using, and uncheck the <em>Enable</em> checkbox after you are finished.
-							</dd>
+							<dt class="term"><script>Capture(hprforward.right1)</script></dt>
+							<dd class="definition"><script>Capture(hprforward.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HForwardRange.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HForwardRange.asp')"><script>Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
