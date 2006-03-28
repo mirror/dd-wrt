@@ -17,18 +17,28 @@ share.passwd="Password";
 share.hostname="Host Name";
 share.domainname="Domain Name";
 share.statu="Status";
+share.start="Start";
+share.end="End";
+share.proto="Protocol";
+share.ip="IP Address";
+share.none="None";
+share.both="Both";
+
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
+sbutton.save.value="Saved";
 sbutton.cancel="Cancel Changes";
 sbutton.refres="Refresh";
 sbutton.clos="Close";
 sbutton.del="Delete";
 sbutton.continu="Continue";
+sbutton.add="Add";
+sbutton.remove="Remove";
 
 
 
-// ************************************************************ COMMON EROR MESSAGE  ***************************************************************//
+// ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
 var errmsg = new Object();
 errmsg.err0="You must input a username.";
 errmsg.err1="You must input a Router Name.";
@@ -103,7 +113,12 @@ bmenu.accrestriction="Access Restrictions";
 
 
 bmenu.applications="Applications &amp; Gaming";
-
+bmenu.applicationsprforwarding="Port Range Forwarding";
+bmenu.applicationspforwarding="Port Forwarding";
+bmenu.applicationsptriggering="Port Triggering";
+bmenu.applicationsUpnp="UPnP";
+bmenu.applicationsDMZ="DMZ";
+bmenu.applicationsQoS="QoS";
 
 bmenu.sipath="SIPatH";
 
@@ -186,4 +201,32 @@ ddnsm.all_connectfail_test="success OK Fine Connect to server fail";
 //help container
 var hddns = new Object();
 hddns.right1="DDNS Service :";
-hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manages changing IP address and updates your domain information dynamically.  You must sign up for service through TZO.com or DynDNS.org.";
+hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. \
+	The service manages changing IP address and updates your domain information dynamically. \
+	You must sign up for service through TZO.com or DynDNS.org.";
+
+
+// **************************************************************** Forward.asp **********************************************************************//
+
+var prforward = new Object();
+prforward.titl=" - Port Range Forwarding";
+prforward.h2="Port Range Forward";
+prforward.legend="Forwards";
+prforward.app="Application";
+
+//help container
+var hprforward = new Object();
+hprforward.right1="Port Range Forwarding :";
+hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
+	Examples of these applications include servers and certain online games. \
+	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
+	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
+	and uncheck the <em>Enable</em> checkbox after you are finished.";
+
+
+
+
+
+
+
+
