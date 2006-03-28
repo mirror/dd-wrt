@@ -2893,21 +2893,21 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
   count = nvram_safe_get ("forward_entries");
   if (count == NULL || strlen (count) == 0)
     {
-      //return -1;      botho 07/03/06 add "- No Forwards -" if empty
+      //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script>Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
-      //return -1;      botho 07/03/06 add "- No Forwards -" if empty
+      //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script>Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
@@ -2932,7 +2932,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
 	("<option value=\"udp\" <%% port_forward_table(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
 	 i);
       FWSHOW1
-	("<option value=\"both\" <%% port_forward_table(\"sel_both\",\"%d\"); %%>>Both</option>\n",
+	("<option value=\"both\" <%% port_forward_table(\"sel_both\",\"%d\"); %%>><script>Capture(share.both)</script></option>\n",
 	 i);
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
@@ -2959,21 +2959,21 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
   count = nvram_safe_get ("forwardspec_entries");
   if (count == NULL || strlen (count) == 0)
     {
-      //return -1;      botho 07/03/06 add "- No Forwards -" if empty
+      //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script>Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
-      //return -1;      botho 07/03/06 add "- No Forwards -" if empty
+      //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script>Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
@@ -2994,7 +2994,7 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
 	("<option value=\"udp\" <%% port_forward_spec(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
 	 i);
       FWSHOW1
-	("<option value=\"both\" <%% port_forward_spec(\"sel_both\",\"%d\"); %%>>Both</option>\n",
+	("<option value=\"both\" <%% port_forward_spec(\"sel_both\",\"%d\"); %%>><script>Capture(share.both)</script></option>\n",
 	 i);
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
@@ -3024,21 +3024,21 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
   count = nvram_safe_get ("trigger_entries");
   if (count == NULL || strlen (count) == 0)
     {
-      //return -1;      botho 04/03/06 add "- No Forwards -" if empty
+      //return -1;      botho 04/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script>Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   c = atoi (count);
   if (c <= 0)
     {
-      //return -1;      botho 07/03/06 add "- No Forwards -" if empty
+      //return -1;      botho 07/03/06 add "- None -" if empty
       //websWrite (wp, "<tr></tr><tr></tr>\n");
       websWrite (wp, "<tr>\n");
       websWrite (wp,
-		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- No Forwards -</td>\n");
+		 "<td colspan=\"6\" align=\"center\" valign=\"center\">- <script>Capture(share.none)</script> -</td>\n");
       websWrite (wp, "</tr>\n");
     }
   for (i = 0; i < c; i++)
