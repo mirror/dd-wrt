@@ -3655,7 +3655,7 @@ struct mime_handler mime_handlers[] = {
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
 #endif
   {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
-  {"language.js", "text/javascript", NULL, NULL, do_language, NULL},
+  {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL},
 
   {"SysInfo.htm*", "text/plain", no_cache, NULL, do_ej, do_auth},
 #ifdef HAVE_SKYTRON
