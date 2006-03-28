@@ -216,7 +216,7 @@ prforward.app="Application";
 
 //help container
 var hprforward = new Object();
-hprforward.right1="Port Range Forwarding :";
+hprforward.right1="Port Range Forward :";
 hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
 	Examples of these applications include servers and certain online games. \
 	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
@@ -225,8 +225,22 @@ hprforward.right2="Certain applications may require to open specific ports in or
 
 
 
+// **************************************************************** ForwardSpec.asp **********************************************************************//
 
+var pforward = new Object();
+pforward.titl=" - Port Forwarding";
+pforward.h2="Port Forward";
+pforward.legend="Forwards";
+pforward.app="Application";
+pforward.from="Port from";
+pforward.to="Port to";
 
-
-
+//help container
+var hpforward = new Object();
+hpforward.right1="Port Forward :";
+hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
+	Examples of these applications include servers and certain online games. \
+	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
+	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
+	and uncheck the <em>Enable</em> checkbox after you are finished.";
 
