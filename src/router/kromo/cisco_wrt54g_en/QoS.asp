@@ -6,6 +6,7 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript">
 function PortCheck(I) {
 	d = parseInt(I.value, 10);
@@ -144,7 +145,8 @@ function init() {
 		</script>
 	</head>
 	
-	<body class="gui" onload="init()"> <% showad(); %>
+	<body class="gui" onload="init()">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -152,27 +154,27 @@ function init() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<li><a href="index.asp"><script>Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script>Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script>Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li class="current"><span>Applications&nbsp;&amp;&nbsp;Gaming</span>
+								<li><a href="Firewall.asp"><script>Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script>Capture(bmenu.accrestriction)</script></a></li>
+								<li class="current"><span><script>Capture(bmenu.applications)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Forward.asp">Port Range Forward</a></li>
-											<li><a href="ForwardSpec.asp">Port Forwarding</a></li>
-											<li><a href="Triggering.asp">Port Triggering</a></li>
-											<li><a href="UPnP.asp">UPnP Forward</a></li>
-											<li><a href="DMZ.asp">DMZ</a></li>
-											<li><span>QoS</span></li>
+											<li><a href="Forward.asp"><script>Capture(bmenu.applicationsprforwarding)</script></a></li>
+											<li><a href="ForwardSpec.asp"><script>Capture(bmenu.applicationspforwarding)</script></a></li>
+											<li><a href="Triggering.asp"><script>Capture(bmenu.applicationsptriggering)</script></a></li>
+	  										<li><a href="UPnP.asp"><script>Capture(bmenu.applicationsUpnp)</script></a></li>
+											<li><a href="DMZ.asp"><script>Capture(bmenu.applicationsDMZ)</script></a></li>
+											<li><span><script>Capture(bmenu.applicationsQoS)</script></span></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li><a href="Status_Router.asp">Status</a></li>
+								<li><a href="Management.asp"><script>Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script>Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
