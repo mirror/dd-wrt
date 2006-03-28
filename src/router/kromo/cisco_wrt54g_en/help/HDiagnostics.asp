@@ -14,9 +14,9 @@
 		<div id="content">
 			<h2>Command Shell</h2>
 			<dl>
-				<dd>You are able to run command lines directly via the Webinterface. Just open the popup window by clicking <em>Run</em>.</dd>
+				<dd>You are able to run command lines directly via the Webinterface.</dd>
 				<dt>Commands</dt>
-				<dd>Fill the text area with your command click <em>Cmd</em> to submit.</dd>				
+				<dd>Fill the text area with your command click <em>Run Commands</em> to submit.</dd>				
 				<dt>Save Startup</dt>
 				<dd>You can save some command lines to be executed at startup's router. Fill the text area with commands (only one command by row) and click <em>Save Startup</em>.</dd>
 				<dt>Save Firewall</dt>
