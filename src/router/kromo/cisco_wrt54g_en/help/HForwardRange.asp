@@ -21,7 +21,7 @@
 						<div>Any PC whose port is being forwarded must have a static IP address assigned to it because its IP address may change when using the DHCP function.</div>
 					</div>
 				</dd>
-				<dd>To add a new Port Range Forwarding rule, click <i>Add</i> and fill in the fields below. To remove the last rule, click <i>Delete</i>.</dd>
+				<dd>To add a new Port Range Forwarding rule, click <i>Add</i> and fill in the fields below. To remove the last rule, click <i>Remove</i>.</dd>
 				<dt>Application</dt>
 				<dd>Enter the name of the application in the field provided.</dd>
 				<dt>Start</dt>
