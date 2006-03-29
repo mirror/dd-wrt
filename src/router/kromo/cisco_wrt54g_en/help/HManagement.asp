@@ -75,6 +75,14 @@
 				</dd>
 				<dt>Routing</dt>
 				<dd>Routing enables the OSPF and RIP routing daemons if you have set up OSPF or RIP routing in the Advanced Routing page.</dd>
+				<dt>MAC Masquerading</dt>
+				<dd>This feature allows you to truncate MAC addresses in the Webinterface.
+					<br/><br/>
+					<div class="note">
+						<h4>Note</h4>
+						<div>If enabled, all the MAC addresses will be posted as follows: xx:xx:xx:xx:AA:BB. (Only Sys-Info page is concerned).</div>
+					</div>
+				</dd>
 				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
