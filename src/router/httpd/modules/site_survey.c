@@ -12,6 +12,7 @@
 #include <cyutils.h>
 #include <code_pattern.h>
 #include <broadcom.h>
+#include <proto/802.11.h>
 
 #define SITE_SURVEY_DB  "/tmp/site_survey"
 #define SITE_SURVEY_NUM 50
@@ -119,14 +120,28 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 	  snprintf (rates, 9, "%d", site_survey_lists[i].rate_count);
 	}
 
+/*#define DOT11_CAP_ESS				0x0001
+#define DOT11_CAP_IBSS				0x0002
+#define DOT11_CAP_POLLABLE			0x0004
+#define DOT11_CAP_POLL_RQ			0x0008
+#define DOT11_CAP_PRIVACY			0x0010
+#define DOT11_CAP_SHORT				0x0020
+#define DOT11_CAP_PBCC				0x0040
+#define DOT11_CAP_AGILITY			0x0080
+#define DOT11_CAP_SPECTRUM			0x0100
+#define DOT11_CAP_SHORTSLOT			0x0400
+#define DOT11_CAP_CCK_OFDM			0x2000
+*/
+      char *open =
+	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
+
       ret +=
 	websWrite (wp,
-		   "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\"\n",
+		   "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
 		   i ? ',' : ' ', site_survey_lists[i].SSID,
 		   site_survey_lists[i].BSSID, site_survey_lists[i].channel,
 		   site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
-		   site_survey_lists[i].beacon_period,
-		   site_survey_lists[i].capability,
+		   site_survey_lists[i].beacon_period, open,
 		   site_survey_lists[i].dtim_period, rates);
     }
 
