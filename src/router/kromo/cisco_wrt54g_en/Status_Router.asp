@@ -56,6 +56,8 @@ function connect(F,I) {
 	Refresh();
 } */
 
+var update;
+
 function setMemoryValues(val) {
 	var mem = val.replace(/'/g, "").split(",");
 	var memTotal = parseInt(mem[19]);
@@ -80,8 +82,6 @@ function setUptimeValues(val) {
 	setElementContent("uptime_load", val.substring(val.indexOf("average") + 9));
 }
 
-var update;
-
 addEvent(window, "load", function() {
 	setMemoryValues("<% dumpmeminfo(); %>");
 	setUptimeValues("<% get_uptime(); %>");
@@ -90,9 +90,9 @@ addEvent(window, "load", function() {
 	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
 
 	update = new StatusUpdate("Status_Router.live.asp", <% nvram_get("refresh_time"); %>);
-	update.onUpdate(function(u) {
-		setMemoryValues(u.mem_info);
-		setUptimeValues(u.uptime);
+	update.onUpdate("mem_info", function(u) { setMemoryValues(u.mem_info); });
+	update.onUpdate("uptime", function(u) { setUptimeValues(u.uptime); });
+	update.onUpdate("wan_shortproto", function(u) {
 		setElementVisible("wan_info", u.wan_shortproto != "disabled");
 		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp");
 		setElementVisible("wan_connection", u.wan_shortproto != "dhcp" && u.wan_shortproto != "static");
