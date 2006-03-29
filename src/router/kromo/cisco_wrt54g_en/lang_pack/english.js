@@ -90,7 +90,7 @@ errmsg.err43="URL";
 errmsg.err44="Keyword";
 errmsg.err45="Name";
 errmsg.err46="Port";
-errmsg.err47="Port%20number";
+errmsg.err47="Port number";
 
 
 
@@ -136,9 +136,6 @@ ddns.titl=" - Dynamic DNS"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS Service";
-ddns.dyndns="DynDNS.org";
-ddns.tzo="TZO.com";
-ddns.zone="ZoneEdit.com";
 ddns.emailaddr="E-mail Address";
 ddns.typ="Type";
 ddns.dynamic="Dynamic";
@@ -200,7 +197,7 @@ ddnsm.all_connectfail_test="success OK Fine Connect to server fail";
 
 //help container
 var hddns = new Object();
-hddns.right1="DDNS Service :";
+hddns.right1="DDNS Service:";
 hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. \
 	The service manages changing IP address and updates your domain information dynamically. \
 	You must sign up for service through TZO.com or DynDNS.org.";
@@ -216,7 +213,7 @@ prforward.app="Application";
 
 //help container
 var hprforward = new Object();
-hprforward.right1="Port Range Forward :";
+hprforward.right1="Port Range Forward:";
 hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
 	Examples of these applications include servers and certain online games. \
 	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
@@ -237,10 +234,39 @@ pforward.to="Port to";
 
 //help container
 var hpforward = new Object();
-hpforward.right1="Port Forward :";
+hpforward.right1="Port Forward:";
 hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
 	Examples of these applications include servers and certain online games. \
 	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
 	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
 	and uncheck the <em>Enable</em> checkbox after you are finished.";
+
+
+// **************************************************************** Triggering.asp **********************************************************************//
+
+var trforward = new Object();
+trforward.titl=" - Port Triggering";
+trforward.h2="Port Triggering";
+trforward.legend="Forwards";
+trforward.trrange="Triggered Port Range";
+trforward.fwdrange="Forwarded Port Range";
+trforward.app="Application";
+
+//help container
+var htrforward = new Object();
+htrforward.right1="Application:";
+htrforward.right2="Enter the application name of the trigger.";
+htrforward.right3="Triggered Range:";
+htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
+htrforward.right5="Forwarded Range:";
+htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
+htrforward.right7="Start:";
+htrforward.right8="Enter the starting port number of the Triggered and Forwarded Range.";
+htrforward.right9="End:";
+htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
+
+
+
+
+
 
