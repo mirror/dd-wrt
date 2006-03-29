@@ -29,7 +29,7 @@
 	<fieldset>
 	<legend>Web Access</legend>
 	<div class="setting">
-		<div class="label">Access Server</div>
+		<div class="label">Protocol</div>
 		<input type="checkbox" value="1" name="_http_enable" <% nvram_match("http_enable","1","checked"); %> />HTTP
 		<input type="checkbox" value="1" onclick="handle_https(this.form)" name="_https_enable" <% nvram_match("https_enable","1","checked"); %> />HTTPS
 		</div>
