@@ -86,7 +86,7 @@
 							Click <em>Restore</em> to overwrite all current configurations with the ones in the configuration file.</dd>
 						</dl>
 						<br/>
-						<a href="javascript:('HBackup.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HBackup.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
