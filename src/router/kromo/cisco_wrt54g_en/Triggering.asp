@@ -6,8 +6,10 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
-		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+document.title = '<% nvram_get("router_name"); %>'+trforward.titl;
+
 function trigger_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Triggering";
@@ -28,7 +30,8 @@ function to_submit(F)
 {
 	F.submit_button.value = "Triggering";
 	F.action.value = "Apply";
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.save.value;
 	F.save_button.disabled = true;
 	F.submit();
 }
@@ -54,17 +57,17 @@ function to_submit(F)
 								<li class="current"><span><script>Capture(bmenu.applications)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Forward.asp"><script>Capture(bmenu.applicationsprforwarding)</script></a></li>
-											<li><a href="ForwardSpec.asp"><script>Capture(bmenu.applicationspforwarding)</script></a></li>
-											<li><span><script>Capture(bmenu.applicationsptriggering)</script></span></li>
-											<li><a href="UPnP.asp"><script>Capture(bmenu.applicationsUpnp)</script></a></li>
-											<li><a href="DMZ.asp"><script>Capture(bmenu.applicationsDMZ)</script></a></li>
-											<li><a href="QoS.asp"><script>Capture(bmenu.applicationsQoS)</script></a></li>
+											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
+											<li><a href="ForwardSpec.asp"><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></span></li>
+											<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<li><a href="DMZ.asp"><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></a></li>
+											<li><a href="QoS.asp"><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp"><script>Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script>Capture(bmenu.statu)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
@@ -77,58 +80,56 @@ function to_submit(F)
 							<input type="hidden" name="submit_button" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="port_trigger" value="10" />
-							<h2>Port Triggering</h2>
+							<h2><script type="text/javascript">Capture(trforward.h2)</script></h2>
 							<fieldset>
-								<legend>Forwards</legend>
+								<legend><script type="text/javascript">Capture(trforward.legend)</script></legend>
 								<table class="table center" cellspacing="5">
 									<tr>
 										<td></td>
-										<th colspan="2">Triggered Range</th>
-										<th colspan="2">Forwarded Range</th>
+										<th colspan="2"><script type="text/javascript">Capture(trforward.trrange)</script></th>
+										<th colspan="2"><script type="text/javascript">Capture(trforward.fwdrange)</script></th>
 										<td></td>
 									</tr>
 									<tr>
-										<th>Application</th>
-										<th>Start Port</th>
-										<th>End Port</th>
-										<th>Start Port</th>
-										<th>End Port</th>
-										<th>Enable</th>
+										<th><script type="text/javascript">Capture(trforward.app)</script></th>
+										<th><script type="text/javascript">Capture(share.start)</script></th>
+										<th><script type="text/javascript">Capture(share.end)</script></th>
+										<th><script type="text/javascript">Capture(share.start)</script></th>
+										<th><script type="text/javascript">Capture(share.end)</script></th>
+										<th><script type="text/javascript">Capture(share.enable)</script></th>
 									</tr>
 									<% show_triggering(); %>
 								</table><br />
 								<div class="center">
-									<input type="button" value=" Add " onclick="trigger_add_submit(this.form)" />&nbsp;
-									<input type="button" value="Remove" onclick="trigger_remove_submit(this.form)" />
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"trigger_add_submit(this.form)\">");</script>
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"trigger_remove_submit(this.form)\">");</script>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
+								<script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
+								<script>document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">Application: </dt>
-							<dd class="definition">Enter the application name of the trigger.</dd>
-							<dt class="term">Triggered Range: </dt>
-							<dd class="definition">For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.</dd>
-							<dt class="term">Start Port: </dt>
-							<dd class="definition">Enter the starting port number of the Triggered Range.</dd>
-							<dt class="term">End Port: </dt>
-							<dd class="definition">Enter the ending port number of the Triggered Range.</dd>
-							<dt class="term">Forwarded Range: </dt>
-							<dd class="definition">For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.</dd>
-							<dt class="term">Start Port: </dt>
-							<dd class="definition">Enter the starting port number of the Forwarded Range.</dd>
-							<dt class="term">End Port: </dt>
-							<dd class="definition">Enter the ending port number of the Forwarded Range.</dd>
+							<dt class="term"><script type="text/javascript">Capture(htrforward.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(htrforward.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(htrforward.right3)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(htrforward.right4)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(htrforward.right5)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(htrforward.right6)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(htrforward.right7)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(htrforward.right8)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(htrforward.right9)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(htrforward.right10)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HTrigger.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HTrigger.asp')"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
