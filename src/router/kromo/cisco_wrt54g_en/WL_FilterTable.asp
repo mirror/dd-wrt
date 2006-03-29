@@ -59,7 +59,7 @@ function exit() {
 			<h2>MAC Address Filter List</h2>
 			<table width="100%" >
 				<tr>
-					<TD align="left">Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;XX:XX:XX:XX:XX:XX</TD>
+					<TD align="left">Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx</TD>
 					<TD align="right" ><input type="button" id="button4" name="button5" value="Wireless Client MAC List" onclick="ViewActive()"/></TD>
 				</tr>
 				<tr></tr>
