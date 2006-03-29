@@ -39,7 +39,8 @@ function upgrade(F,id){
 		</script>
 	</head>
 	
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -77,35 +78,35 @@ function upgrade(F,id){
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="firmware" method="post" action="upgrade.cgi" encType="multipart/form-data">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="action"/>
-							<input type="hidden" name="change_action"/>
+						<form name="firmware" method="post" action="upgrade.cgi" enctype="multipart/form-data">
+							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="action" />
+							<input type="hidden" name="change_action" />
 							<h2>Firmware Management</h2>
 							<fieldset>
 							  <legend>Firmware Upgrade</legend>
 							<div>After flashing, reset to:
 							<br/>
 								<div class="setting">
-									<input type="radio" value="0" name="erase" checked/> No reset
+									<input type="radio" value="0" name="erase" checked="checked" /> No reset
 								</div>
 								<div class="setting">
-									<input type="radio" value="1" name="erase"/> Default settings
+									<input type="radio" value="1" name="erase" /> Default settings
 								</div>
 								<!--<div class="setting">
-									<input type="radio" value="2" name="erase"/> Factory Defaults
+									<input type="radio" value="2" name="erase" /> Factory Defaults
 								</div>-->
 							</div>
 							<p>Please select a file to upgrade: <input type="file" name="file" size="50"/></p>
 							</fieldset>
-							<br/>
+							<br />
 							<div class="warning">
 							  <center>
 							  <p><div id="warning_text"><b>Warning</b></div></p>
 								<p>
 								Upgrading firmware may take a few minutes, please don't turn off the power or press the reset button.
 							  </p>
-								<script language="javascript">
+								<script type="text/javascript">
 								  var bar1=createBar(500,15,100,15,50,"process_aborted(this.form)");
 								  bar1.togglePause();
 								</script>
@@ -128,7 +129,7 @@ function upgrade(F,id){
 							<dd class="definition">Click the Upgrade button to begin the upgrade process. Upgrade must not be interrupted.</dd>
 						</dl>
 						<br/>
-						<a target="_blank" href="help/HUpgrade.asp">More...</a>
+						<a href="javascript:openHelpWindow('HUpgrade.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
