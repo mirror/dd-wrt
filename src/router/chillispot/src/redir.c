@@ -497,7 +497,7 @@ redir_reply (struct redir_t *redir, int fd, int res,
   struct sysinfo info;
   sysinfo (&info);
 
-  if (info.uptime - lastboot < 300)
+  if (info.uptime - lastboot < 7200)
     {
       redir_stradd (buffer, sizeof (buffer), "&preregister=%s", "true");
     }

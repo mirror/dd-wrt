@@ -41,7 +41,7 @@ function do_join(F,SSID) {
 				   <th width="7%">Rssi</th>
 				   <th width="7%">noise</th>
 				   <th width="7%">beacon</th>
-				   <th width="7%">cap</th>
+				   <th width="7%">Open</th>
 				   <th width="7%">dtim</th>
 				   <th width="7%">rates</th>
 				   <th width="10%">Join&nbsp;Site</th>
