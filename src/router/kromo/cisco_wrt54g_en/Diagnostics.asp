@@ -81,20 +81,20 @@ function valid(F,I) {
 								<script type="text/javascript">
 var table = new Array(<% dump_ping_log(""); %>);
 if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
-	document.write("<br /><pre style=\"padding:.906em; background:#000; color:#fff; overflow:scroll;\">" + table.join("\n") + "</pre>");
+	document.write("<br /><pre style=\"margin:0\">" + table.join("\n") + "</pre>");
 }
 								</script>
 							</fieldset><br />
 							<% nvram_match("rc_startup", "", "<!--"); %><fieldset>
 								<legend>Startup</legend>
-								<pre id="startup"><% nvram_get("rc_startup"); %></pre>
+								<pre id="startup" style="margin:0"><% nvram_get("rc_startup"); %></pre>
 								<div class="center">
 									<input type="button" value="Copy to text area" onclick="this.form.ping_ip.value = document.getElementById('startup').firstChild.data" />
 								</div>
 							</fieldset><br /><% nvram_match("rc_startup", "", "-->"); %>
 							<% nvram_match("rc_firewall", "", "<!--"); %><fieldset>
 								<legend>Firewall</legend>
-								<pre id="firewall"><% nvram_get("rc_firewall"); %></pre>
+								<pre id="firewall" style="margin:0"><% nvram_get("rc_firewall"); %></pre>
 								<div class="center">
 									<input type="button" value="Copy to text area" onclick="this.form.ping_ip.value = document.getElementById('firewall').firstChild.data" />
 								</div>

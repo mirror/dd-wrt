@@ -7,7 +7,7 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 	</head>
-	
+
 	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -49,26 +49,28 @@
 						<form name="nvramrestore" action="nvram.cgi" method="POST" encType="multipart/form-data">
 							<h2>Backup Configuration</h2>
 							<fieldset>
-							 <legend>Backup Settings to File</legend>
-							<div class="settings">
-							 <input type="button" value="Backup" name="B1" onclick="window.location.href='/nvrambak.bin'" />
-							</div>
-						</fieldset>
-							<br/>
+								<legend>Backup Settings</legend>
+								<div class="setting">
+									Click the "Backup" button to download the configuration backup file to your computer.
+								</div>
+							</fieldset><br />
 							<h2>Restore Configuration</h2>
 							<fieldset>
-							 <legend>Restore Settings from File</legend>
-							 <div class="settings">
-							   Please select a file to restore:&nbsp;&nbsp;<input type="file" name="file" size="50"/>
-							<br/><input type="submit" value=" Restore "/>
+								<legend>Restore Settings</legend>
+								<div class="setting">
+									<div class="label">Please select a file to restore</div>
+									<input type="file" name="file" size="40" />
+								</div>
+							</fieldset><br />
+							<div class="warning">
+								<p><b>W A R N I N G</b></p>
+								<p>Only upload files backed up using this firmware and from the same model of router.<br />
+								Do not upload any files that were not created by this interface!</p>
+							</div><br />
+							<div class="submitFooter">
+								<input type="button" value="Backup" name="B1" onclick="window.location.href='/nvrambak.bin'" />
+								<input type="submit" value=" Restore "/>
 							</div>
-							<br/>
-							<hr width="90%"/>
-							<div class="warning"><em>Warning:</em> Only upload files backed up using
-								<br/>this firmware and from the same model of router.
-								<br/>Do not upload any files that weren't created by this interface!
-							</div>
-              </fieldset>
 						</form>
 					</div>
 				</div>
@@ -76,15 +78,15 @@
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<dl>
-							<dd class="definition">
-								<p>You may backup your current configuration in case you need to reset the router back to its factory default settings.</p>
-								<p>You may click the Back up button to backup your current configuration.</p>
-								<p>Click the Browse button to browse for a configuration file that is currently saved on your PC.</p>
-								<p>Click Restore to overwrite all current configurations with the ones in the configuration file</p>
-							</dd>
+							<dt class="term">Backup: </dt>
+							<dd class="definition">You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />
+							Click the <em>Backup</em> button to backup your current configuration.</dd>
+							<dt class="term">Restore: </dt>
+							<dd class="definition">Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />
+							Click <em>Restore</em> to overwrite all current configurations with the ones in the configuration file.</dd>
 						</dl>
 						<br/>
-						<a target="_blank" href="help/HBackup.asp">More...</a>
+						<a href="javascript:('HBackup.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
