@@ -516,6 +516,11 @@ function Capture(obj)
 	document.write(obj);	
 }	
 
+
+function defined(val) {
+    return (typeof val != "undefined");
+}
+
 // Opens the help window at the right side of the screen.
 // 2DO: Would be nice to use frames it screenwidth > 1000
 function openHelpWindow(url) {
@@ -609,24 +614,26 @@ function StatusUpdate(_url, _frequency) {
 	var timer;
 	var url = _url;
 	var frequency = _frequency * 1000;
-	var callback = new Array();
 	var me = this;
+	var callbacks = new Object();
 	var updates = new Object();
 	
 	this.start = function() {
 		if((!window.XMLHttpRequest && !window.ActiveXObject) || frequency == 0) return false;
-		if(document.getElementsByName("refresh_button")) document.getElementsByName("refresh_button")[0].disabled = true;
+		if(document.getElementsByName("refresh_button")) 
+			document.getElementsByName("refresh_button")[0].disabled = true;
 		timer = setTimeout(me.doUpdate, frequency);
 	}
 	
 	this.stop = function() {
 		clearTimeout(timer);
-		if(document.getElementsByName("refresh_button")) document.getElementsByName("refresh_button")[0].disabled = false;
+		if(document.getElementsByName("refresh_button")) 
+			document.getElementsByName("refresh_button")[0].disabled = false;
 		request = null;
 	}
 	
-	this.onUpdate = function(func) {
-		callback.push(func);
+	this.onUpdate = function(id, func) {
+		callbacks[id] = func;
 	}
 
 	this.doUpdate = function() {
@@ -636,16 +643,17 @@ function StatusUpdate(_url, _frequency) {
 		request.open("GET", url, true);
 		request.onreadystatechange = function() {
 			if(request.readyState < 4 || request.status != 200) return;
+			var activeCallbacks = new Array();
 			var regex = /\{(\w+)::([^\}]*)\}/g;
 			while(result = regex.exec(request.responseText)) {
 				var key = result[1]; 
 				var value = result[2];
-				if(typeof updates[key] != "undefined" && updates[key] == value) continue;
+				if(defined(updates[key]) && updates[key] == value) continue;
 				updates[key] = value;
-//				alert(result[1] + " --> " + result[2]);
+				if(defined(callbacks[key])) activeCallbacks.push(callbacks[key]);
 				setElementContent(key, value);
 			}
-			for(var i = 0; i < callback.length; i++) { (callback[i])(updates); }
+			for(var i = 0; i < activeCallbacks.length; i++) { (activeCallbacks[i])(updates); }
 			timer = setTimeout(me.doUpdate, frequency);
 		}
 		request.send("");
@@ -659,10 +667,11 @@ function StatusUpdate(_url, _frequency) {
 
 // 18/03/06 : Botho - Gray all form when submitting (thanks to Philip) - NOT OK YET !
 // 21/03/06 : Philip - now OK: disable AFTER submit.
-function apply(F) {
-	F.submit();
-	for (i = 0; i < F.elements.length; i++) {
-		if(typeof F.elements[i].disabled == "boolean") F.elements[i].disabled = true;
+function apply(form) {
+	form.submit();
+	for (i = 0; i < form.elements.length; i++) {
+		if(defined(form.elements[i].disabled)) 
+			form.elements[i].disabled = true;
 	}
 	document.getElementById('contents').style.color = '#999999';
 }

@@ -26,11 +26,7 @@ function deleteLease(val) {
 	document.forms[0].submit();
 }
 
-var oldLease;
-
 function setLeasesTable(val) {
-	if(val == oldLease) return;
-	oldLease = val;
 	var table = document.getElementById("dhcp_leases_table");
 	for(var i = table.rows.length - 1; i > 0 ; i--) {
 		table.deleteRow(i);
@@ -47,8 +43,8 @@ function setLeasesTable(val) {
 			cell.className = "bin";
 			cell.height = 15;
 			cell.title = "Click to delete lease";
-			cell.onclick = eval("function() { deleteLease(" + leases[i + 4] + "); }");
 			cell.innerHTML = " ";
+			eval("addEvent(cell, 'click', function() { deleteLease(" + leases[i + 4] + ") })");
 		}
 	} else {
 		var cell = table.insertRow(-1).insertCell(-1);
@@ -67,12 +63,16 @@ addEvent(window, "load", function() {
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
 
 	update = new StatusUpdate("Status_Lan.live.asp", <% nvram_get("refresh_time"); %>);
-	update.onUpdate(function(u) {
-		setElementContent("dhcp_start_ip", u.lan_ip_prefix + u.dhcp_start);
-		setElementContent("dhcp_end_ip", u.lan_ip_prefix + (parseInt(u.dhcp_start) + parseInt(u.dhcp_num) - 1));
-		setLeasesTable(u.dhcp_leases);
+	update.onUpdate("lan_proto", function(u) {
 		setElementVisible("dhcp_1", u.lan_proto == "dhcp");
 		setElementVisible("dhcp_2", u.lan_proto == "dhcp");
+	});
+	update.onUpdate("dhcp_start", function(u) {
+		setElementContent("dhcp_start_ip", u.lan_ip_prefix + u.dhcp_start);
+		setElementContent("dhcp_end_ip", u.lan_ip_prefix + (parseInt(u.dhcp_start) + parseInt(u.dhcp_num) - 1));
+	});
+	update.onUpdate("dhcp_leases", function(u) {
+		setLeasesTable(u.dhcp_leases);
 	});
 	update.start();
 });
