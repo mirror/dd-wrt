@@ -131,6 +131,7 @@ function handle_https(F)
 		choose_enable(F._remote_mgt_https);
 	}
 	else {
+		F._remote_mgt_https.checked = false;
 		choose_disable(F._remote_mgt_https);
 	}
 } 
