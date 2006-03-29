@@ -88,8 +88,8 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	}
       nvram_commit ();
       restore_ret = 0;
-    }else
-  if (!strcmp (sign, "XX-WRT"))
+    }
+  else if (!strcmp (sign, "XX-WRT"))
     {
       wfread (&count, 2, 1, wp);
       len -= 2;

@@ -549,6 +549,11 @@ start_restore_defaults (void)
     {
       nvram_set ("lan_ipaddr", "192.168.1.1");
     }
+#else
+  if (restore_defaults)		//fix for belkin std ip
+    {
+      nvram_set ("lan_ipaddr", "192.168.10.1");
+    }
 #endif
 #ifdef HAVE_SKYTRON
   if (restore_defaults)
