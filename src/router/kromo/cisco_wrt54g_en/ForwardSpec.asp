@@ -46,27 +46,27 @@ function to_submit(F) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script>Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script>Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script>Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script>Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script>Capture(bmenu.accrestriction)</script></a></li>
-								<li class="current"><span><script>Capture(bmenu.applications)</script></span>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.applications)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Forward.asp"><script>Capture(bmenu.applicationsprforwarding)</script></a></li>
-											<li><span><script>Capture(bmenu.applicationspforwarding)</script></span></li>
-											<li><a href="Triggering.asp"><script>Capture(bmenu.applicationsptriggering)</script></a></li>
-											<li><a href="UPnP.asp"><script>Capture(bmenu.applicationsUpnp)</script></a></li>
-											<li><a href="DMZ.asp"><script>Capture(bmenu.applicationsDMZ)</script></a></li>
-											<li><a href="QoS.asp"><script>Capture(bmenu.applicationsQoS)</script></a></li>
+											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></span></li>
+											<li><a href="Triggering.asp"><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></a></li>
+											<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<li><a href="DMZ.asp"><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></a></li>
+											<li><a href="QoS.asp"><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp"><script>Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script>Capture(bmenu.statu)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
@@ -79,17 +79,17 @@ function to_submit(F) {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="forward_spec" value="13" />
-							<h2><script>Capture(pforward.h2)</script></h2>
+							<h2><script type="text/javascript">Capture(pforward.h2)</script></h2>
 							<fieldset>
-								<legend><script>Capture(pforward.legend)</script></legend>
+								<legend><script type="text/javascript">Capture(pforward.legend)</script></legend>
 								<table class="table center" cellspacing="5">
 									<tr>
-										<th><script>Capture(pforward.app)</script></th>
-										<th><script>Capture(pforward.from)</script></th>
-										<th><script>Capture(share.proto)</script></th>
-										<th><script>Capture(share.ip)</script></th>
-										<th><script>Capture(pforward.to)</script></th>
-										<th><script>Capture(share.enable)</script></th>
+										<th><script type="text/javascript">Capture(pforward.app)</script></th>
+										<th><script type="text/javascript">Capture(pforward.from)</script></th>
+										<th><script type="text/javascript">Capture(share.proto)</script></th>
+										<th><script type="text/javascript">Capture(share.ip)</script></th>
+										<th><script type="text/javascript">Capture(pforward.to)</script></th>
+										<th><script type="text/javascript">Capture(share.enable)</script></th>
 									</tr>
 									<% show_forward_spec(); %>
 								</table><br />
@@ -108,13 +108,13 @@ function to_submit(F) {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script>Capture(share.help)</script></h2>
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script>Capture(hpforward.right1)</script></dt>
-							<dd class="definition"><script>Capture(hpforward.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hpforward.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hpforward.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HForward.asp')"><script>Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HForward.asp')"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
