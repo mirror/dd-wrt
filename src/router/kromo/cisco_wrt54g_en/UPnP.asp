@@ -174,7 +174,7 @@ var update;
 
 addEvent(window, "load", function() {
 	update = new StatusUpdate("UPnP.live.asp", <% nvram_get("refresh_time"); %>);
-	update.onUpdate(function(u) {
+	update.onUpdate("upnp_forwards", function(u) {
 		upnpForwards = eval("new Array(" + u.upnp_forwards + ")");
 		parseForwards();
 		setElementContent("theforwards", makeTable());
