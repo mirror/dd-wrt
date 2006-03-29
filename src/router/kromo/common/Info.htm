@@ -7,14 +7,9 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
-var oldLease;
-var oldPacketInfo;
-var oldMemory;
 var update;
 
 function setLeasesTable(val) {
-	if(val == oldLease) return;
-	oldLease = val;
 	var table = document.getElementById("dhcp_leases_table");
 	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
 	if(val != "") {
@@ -35,16 +30,12 @@ function setLeasesTable(val) {
 }
 
 function setPacketInfo(val) {
-	if(val == oldPacketInfo) return;
-	oldPacketInfo = val;
 	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
 	setElementContent("packet_rx", packet[0] + " OK, " + (packet[1] > 0 ? packet[1] : "no") + " errors");
 	setElementContent("packet_tx", packet[2] + " OK, " + (packet[3] > 0 ? packet[3] : "no") + " errors");
 }
 
 function setMemoryValues(val) {
-	if(val == oldMemory) return;
-	oldMemory = val;
 	var mem = val.replace(/'/g, "").split(",");
 	var memTotal = parseInt(mem[19]) / 1024;
 	var memSystem = Math.pow(2, Math.ceil(Math.log(memTotal) / Math.LN2));
@@ -63,7 +54,6 @@ function setMemoryValues(val) {
 	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 }
 
-
 addEvent(window, "load", function() {
 	setPacketInfo("<% wl_packet_get(); %>");
 	setMemoryValues("<% dumpmeminfo(); %>");
@@ -71,12 +61,10 @@ addEvent(window, "load", function() {
 	setElementVisible("dhcp", "<% nvram_get("wl_mode"); %>" == "ap" && "<% nvram_get("lan_proto"); %>" == "dhcp");
 
 	update = new StatusUpdate("Info.live.htm", <% nvram_get("refresh_time"); %>);
-	update.onUpdate(function(u) {
-		setPacketInfo(u.packet_info);
-		setMemoryValues(u.mem_info);
-		setLeasesTable(u.dhcp_leases);
-		setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp");
-	});
+	update.onUpdate("packet_info", function(u) { setPacketInfo(u.packet_info); });
+	update.onUpdate("mem_info", function(u) { setMemoryValues(u.mem_info); });
+	update.onUpdate("dhcp_leases", function(u) { setLeasesTable(u.dhcp_leases); });
+	update.onUpdate("lan_proto", function(u) { setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp"); });
 	update.start();
 });
 
