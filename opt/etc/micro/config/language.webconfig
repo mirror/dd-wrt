@@ -1,4 +1,4 @@
-<!-- Language Configuration -->
+<!-- Internationalisation will be available in V24
 	<TR>
           <TD width=153 bgColor=#000000 colSpan=3 height=25><P align=right><B><FONT style="FONT-SIZE: 9pt" color=#ffffff>Language Selection</FONT></B></P></TD>
           <TD width=8 bgColor=#000000 height=25>¡</TD>
@@ -35,4 +35,5 @@
 	    </select></TD>
           <TD width=13 height=25>&nbsp;</TD>
           <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD>
- 	</TR>	
+ 	</TR>
+-->
