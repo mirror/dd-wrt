@@ -99,7 +99,9 @@ function to_submit(F) {
                <div id="help">
                   <div id="logo">
                      <h2>Help</h2>
-                  </div><br /><a target="_blank" href="help/Hradauth.asp">More...</a></div>
+                  </div><br />
+                  <a href="javascript:openHelpWindow('Hradauth.asp')">More...</a>
+               </div>
             </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">

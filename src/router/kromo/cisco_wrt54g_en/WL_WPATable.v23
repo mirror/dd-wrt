@@ -265,7 +265,9 @@ function init(){
                      <dd class="definition">You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same
                         security mode.
                      </dd>
-                  </dl><br /><a target="_blank" href="help/HWPA.asp">More...</a></div>
+                  </dl><br />
+                  <a href="javascript:openHelpWindow('HWPA.asp')">More...</a>
+               </div>
             </div>
 			<div id="floatKiller"></div>
 				<div id="statusInfo">
