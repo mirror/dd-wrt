@@ -215,4 +215,5 @@
  "static_leases" "static leases" "STATICLEASES" "TRUE" "0" 
  "overclocking" "Overclocking" "NULL" "FALSE" "0"
  "info_passwd" "info site password" "NULL" "FALSE" "0"
- "filter_p2p" "p2p filter" "FILTERP2P" "FALSE" "0"  
+ "filter_p2p" "p2p filter" "FILTERP2P" "FALSE" "0"
+ "maskmac"  "mac masquerading"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
