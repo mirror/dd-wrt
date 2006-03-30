@@ -2,11 +2,11 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-		<title><% nvram_get("router_name"); %> - UPnP Forward</title>
+		<title><% nvram_get("router_name"); %> - UPnP</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
-		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<!--
 		UPnP
 		11.2005	tofu10		init
@@ -142,7 +142,7 @@ function makeTable()
 		}
 	}
 	if (dataLen == nullCount) {
- 		 s += "<tr><td height=\"15\" colspan=\"6\" align=\"center\">- No Forwards -</td></tr>";
+ 		 s += "<tr><td height=\"15\" colspan=\"6\" align=\"center\">- None -</td></tr>";
 	}
 	return s + "</table>";
 }
