@@ -79,7 +79,9 @@ function init() {
                      <dd class="definition">The current Agent status.</dd>
                      <dt class="term">SCC License No: </dt>
                      <dd class="definition">The license number of your Sputnik&reg; Control Center.</dd>
-                  </dl><br /><a target="_blank" href="help/HSputnikStatus.asp">More...</a></div>
+                  </dl><br />
+                  <a href="javascript:openHelpWindow('HSputnikStatus.asp')">More...</a>
+               </div>
             </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">

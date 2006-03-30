@@ -116,7 +116,9 @@ function init() {
                   <dl>
                      <dt class="term">Firewall Protection: </dt>
                      <dd class="definition">Enable or disable the SPI firewall.</dd>
-                  </dl><br /><a target="_blank" href="help/HFirewall.asp">More...</a></div>
+                  </dl><br />
+                  <a href="javascript:openHelpWindow('HFirewall.asp')">More...</a>
+               </div>
             </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">

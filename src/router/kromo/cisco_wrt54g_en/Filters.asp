@@ -517,7 +517,7 @@ function Status(F,I) {
 							<dd class="definition">You can block access to certain website by the keywords contained in their webpage.</dd>
 						</dl>
 						<br />
-						<a target="_blank" href="help/HFilters.asp">More...</a>
+						<a href="javascript:openHelpWindow('HFilters.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

@@ -220,7 +220,9 @@ function exit() {
                      <dd class="definition">This is the remote host to which you would like to assign the static route.</dd>
                      <dt class="term">Subnet Mask: </dt>
                      <dd class="definition">Determines the host and the network portion.</dd>
-                  </dl><br /><a target="_blank" href="help/HRouting.asp">More...</a></div>
+                  </dl><br />
+                  <a href="javascript:openHelpWindow('HRouting.asp')">More...</a>
+               </div>
             </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
