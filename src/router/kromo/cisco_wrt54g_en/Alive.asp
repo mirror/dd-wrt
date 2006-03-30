@@ -114,8 +114,8 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<dl>
-							<dt class="term">IP addresses: </dt>
-							<dd class="definition">You can run command lines via the webinterface. Fill the text area with your command and click <i>Run Commands</i> to submit.</dd>
+							<dt class="term">IP Addresses:</dt>
+							<dd class="definition">A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.</dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HAlive.asp');">More...</a>
 					</div>
