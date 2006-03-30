@@ -1,8 +1,9 @@
+<!-- Internationalisation will be available in V24
 <fieldset>
   <legend>Language Selection</legend>
   <div class="setting">
       <div class="label">Language</div>
-      <select name="language">
+      <select name="language" disabled="disabled">
       <option value="bulgarian" <% nvram_match("language","bulgarian","selected"); %>>Bulgarian</option>
       <option value="tradchinese" <% nvram_match("language","tradchinese","selected"); %>>Chinese (Trad.)</option>
       <option value="croatian" <% nvram_match("language","croatian","selected"); %>>Croatian</option>
@@ -19,3 +20,4 @@
     </select>
   </div>
 </fieldset><br/>
+-->
