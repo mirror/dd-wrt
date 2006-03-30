@@ -22,7 +22,7 @@
             <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
               <TBODY>
               <TR>
-                          <TD width=242 height=25><INPUT type=radio value=1 name=wds_watchdog_enable <% nvram_selmatch("wds_watchdog_enable","1","checked"); %>><b>Enable</b>&nbsp;&nbsp;&nbsp;&nbsp;<input type=radio value=0 name=wds_watchdog_enable <% nvram_selmatch("wds_watchdog_enable","0","checked"); %>><b>Disable</b></TD>
+                          <TD width=242 height=25><INPUT type=radio value=1 name=wds_watchdog_enable <% nvram_selmatch("wds_watchdog_enable","1","checked"); %> onclick="setWDS(this.value)" ><b>Enable</b>&nbsp;&nbsp;&nbsp;&nbsp;<input type=radio value=0 name=wds_watchdog_enable <% nvram_selmatch("wds_watchdog_enable","0","checked"); %> onclick="setWDS(this.value)" ><b>Disable</b></TD>
                 </TR></TBODY></TABLE></TD>
           <TD width=13 height=25>&nbsp;</TD>
           <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
