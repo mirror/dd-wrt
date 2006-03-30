@@ -106,7 +106,7 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<br/>
-						<a target="_blank" href="help/HHotspot.asp">More...</a>
+						<a href="javascript:openHelpWindow('HHotspot.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
