@@ -1,7 +1,7 @@
 	<fieldset>
 	<legend>Sputnik</legend>
 	<div class="setting">
-		<div class="label">Enable Sputnik</div>
+		<div class="label">Activate Sputnik Agent</div>
 		<input type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> />Enable
 		<input type="radio" name="apd_enable" value="0" <% nvram_selmatch("apd_enable", "0", "checked"); %> />Disable
 		</div>
