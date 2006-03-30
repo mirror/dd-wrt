@@ -7,8 +7,6 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
-var EN_DIS1 = '<% nvram_get("remote_management"); %>'
-var wan_proto = '<% nvram_get("wan_proto"); %>'
 
 function to_reboot(F) {
 	F.action.value='Reboot';
@@ -25,13 +23,39 @@ function to_submit(F) {
 	return true;
 }
 
+function setWDS(val) {
+	setElementsActive("wds_watchdog_interval_sec", "wds_watchdog_ips", val == 1);
+}
+
+function alive_enable_disable(val) {
+  if (val == 1) {
+	  setElementsActive("schedule_hours", "schedule_weekdays", val == 2);
+	  setElementActive("schedule_hour_time", val == 1);
+	  setElementActive("schedule_time", val == 1);
+  }
+  else if (val == 2) {
+  	setElementsActive("schedule_hours", "schedule_weekdays", val == 2);
+  	setElementActive("schedule_hour_time", val == 2);
+  	setElementActive("schedule_time", val == 1);
+  } 
+  else {
+    setElementsActive("schedule_hour_time", "schedule_weekdays", val == 9);
+  }
+}
+
 function init() {
-	port_enable_disable(document.password, '<% nvram_get("remote_management"); %>');
+	setWDS(<% nvram_get("wds_watchdog_enable"); %>);
+	if (<% nvram_get("schedule_enable"); %> == 1) {
+	  alive_enable_disable(<% nvram_get("schedule_hour_time"); %>);
+	} else {
+	  alive_enable_disable(0)
+	}
 }
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui" onload="init()">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -79,9 +103,9 @@ function init() {
 							<h2>Keep Alive</h2>
 							<% show_modules(".webalive"); %>
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
-								<input type="reset" value="Cancel Changes"/>
-								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)"/>
+								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
+								<input type="reset" value="Cancel Changes" onclick="init()" />
+								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)" />
 							</div>
 						</form>
 					</div>
@@ -89,8 +113,11 @@ function init() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
-						<br/>
-						<a target="_blank" href="help/HAlive.asp">More...</a>
+						<dl>
+							<dt class="term">IP addresses: </dt>
+							<dd class="definition">You can run command lines via the webinterface. Fill the text area with your command and click <i>Run Commands</i> to submit.</dd>
+						</dl><br />
+						<a href="javascript:openHelpWindow('HAlive.asp');">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
