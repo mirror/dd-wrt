@@ -30,12 +30,12 @@
           <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
           <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
           <TD colSpan=3 height=25 width="41">&nbsp;</TD>
-                  <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">Interval:</SPAN></TD>
+                  <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">Interval (in seconds):</SPAN></TD>
           <TD width=298 height=25>
             <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
               <TBODY>
               <TR>
-                          <TD width=242 height=25><input class=num size=4 maxlength=4 name="wds_watchdog_interval_sec"  value='<% nvram_get("wds_watchdog_interval_sec"); %>'>&nbsp;Seconds</TD>
+                          <TD width=242 height=25><input class=num size=4 maxlength=4 name="wds_watchdog_interval_sec"  value='<% nvram_get("wds_watchdog_interval_sec"); %>'>&nbsp;</TD>
                 </TR></TBODY></TABLE></TD>
           <TD width=13 height=25>&nbsp;</TD>
           <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
@@ -43,7 +43,7 @@
           <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
           <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
           <TD colSpan=3 height=25 width="41">&nbsp;</TD>
-                  <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">IPs:</SPAN></TD>
+                  <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">IP Addresses:</SPAN></TD>
           <TD width=298 height=25>
             <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
               <TBODY>
@@ -55,14 +55,7 @@
           <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
           <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
           <TD colSpan=3 height=25 width="41">&nbsp;</TD>
-                  
-                <TD width=100 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">IPs Format:</SPAN></TD>
-          <TD width=298 height=25>
-            <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
-              <TBODY>
-              <TR>
-                          
-                        <TD width=242 height=25><SPAN lang=zh-tw style="FONT-SIZE: 8pt">xxx.xxx.xxx.xxx xxx.xxx.xxx.xxx<BR><BR>The IPs need to be separated by a SPACE.<BR>Maximum of three IPs</SPAN></TD>
-                </TR></TBODY></TABLE></TD>
+          <TD width=100 height=25>&nbsp;</TD>
+          <TD width=298 height=25>&nbsp;</TD>
           <TD width=13 height=25>&nbsp;</TD>
           <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
