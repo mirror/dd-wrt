@@ -408,7 +408,7 @@ function init() {
 								accordingly for devices connected on LAN ports 1 through 4.</dd>
 						</dl>
 						<br/>
-						<a target="_blank" href="help/HQos.asp">More...</a>
+						<a href="javascript:openHelpWindow('HQos.asp')">More...</a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

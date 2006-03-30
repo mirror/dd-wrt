@@ -149,7 +149,7 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<br/>
-						<!--<a target="_blank" href="help/HVlan.asp">More...</a>-->
+						<!--<a href="javascript:openHelpWindow('HVlan.asp')">More...</a>-->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
