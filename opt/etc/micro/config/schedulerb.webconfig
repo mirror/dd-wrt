@@ -25,7 +25,7 @@
             <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
               <TBODY>
               <TR>
-                          <TD width=242 height=25><INPUT type=radio value=1 name=schedule_enable <% nvram_selmatch("schedule_enable","1","checked"); %>><b>Enable</b>&nbsp;&nbsp;&nbsp;&nbsp;<input type=radio value=0 name=schedule_enable <% nvram_selmatch("schedule_enable","0","checked"); %>><b>Disable</b></TD>
+                          <TD width=242 height=25><INPUT type=radio value=1 name=schedule_enable <% nvram_selmatch("schedule_enable","1","checked"); %> onclick="alive_enable_disable(<% nvram_get("schedule_hour_time"); %>)" ><b>Enable</b>&nbsp;&nbsp;&nbsp;&nbsp;<input type=radio value=0 name=schedule_enable <% nvram_selmatch("schedule_enable","0","checked"); %> onclick="alive_enable_disable(this.value)" ><b>Disable</b></TD>
                 </TR></TBODY></TABLE></TD>
           <TD width=13 height=25>&nbsp;</TD>
           <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
@@ -34,12 +34,12 @@
           <TD width=153 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
           <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
           <TD colSpan=3 height=25 width="41">&nbsp;</TD>
-                  <TD width=100 height=25><span lang=zh-tw style="FONT-SIZE: 8pt">Time in Sec Eg: 1 Hour = 3600</span></TD>
+                  <TD width=100 height=25><span lang=zh-tw style="FONT-SIZE: 8pt">Time (in seconds)</span></TD>
           <TD width=298 height=25>
             <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
               <TBODY>
               <TR>
-                          <TD width=242 height=25><input type=radio value=1 name=schedule_hour_time <% nvram_selmatch("schedule_hour_time","1","checked"); %>><input class=num maxlength=5 size=7 name="schedule_time" value='<% nvram_get("schedule_time"); %>'></TD>
+                          <TD width=242 height=25><input type=radio value=1 name=schedule_hour_time <% nvram_selmatch("schedule_hour_time","1","checked"); %> onclick="alive_enable_disable(this.value)" ><input class=num maxlength=5 size=7 name="schedule_time" value='<% nvram_get("schedule_time"); %>'></TD>
                 </TR></TBODY></TABLE></TD>
           <TD width=13 height=25>&nbsp;</TD>
           <TD width=15 background=image/UI_05.gif height=25>&nbsp;</TD></TR>
@@ -53,7 +53,7 @@
             <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
               <TBODY>
               <TR>
-                          <TD width=242 height=25><input type=radio value=2 name=schedule_hour_time <% nvram_selmatch("schedule_hour_time","2","checked"); %>>
+                          <TD width=242 height=25><input type=radio value=2 name=schedule_hour_time <% nvram_selmatch("schedule_hour_time","2","checked"); %> onclick="alive_enable_disable(this.value)" >
                              <select name="schedule_hours">
                              <option value="00" <% nvram_selmatch("schedule_hours","00","selected"); %>>00</option>
                              <option value="01" <% nvram_selmatch("schedule_hours","01","selected"); %>>01</option>

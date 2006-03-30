@@ -2,17 +2,17 @@
 	<legend>Schedule Reboot</legend>
 	<div class="setting">
 		<div class="label">Schedule Reboot</div>
-		<input type="radio" value="1" name="schedule_enable" <% nvram_match("schedule_enable","1","checked"); %> />Enable
-		<input type="radio" value="0" name="schedule_enable" <% nvram_match("schedule_enable","0","checked"); %> />Disable
+		<input type="radio" value="1" name="schedule_enable" <% nvram_match("schedule_enable","1","checked"); %> onclick="alive_enable_disable(<% nvram_get("schedule_hour_time"); %>)" />Enable
+		<input type="radio" value="0" name="schedule_enable" <% nvram_match("schedule_enable","0","checked"); %> onclick="alive_enable_disable(this.value)" />Disable
 	</div>
 	<div class="setting">
 		<div class="label">Time (in seconds)</div>
-		<input type="radio" value="1" name="schedule_hour_time" <% nvram_match("schedule_hour_time","1","checked"); %> />
+		<input type="radio" value="1" name="schedule_hour_time" <% nvram_match("schedule_hour_time","1","checked"); %> onclick="alive_enable_disable(this.value)" />
 		<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvram_get("schedule_time"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label">At a set Time&nbsp;(Cron must be enabled)</div>
-		<input type="radio" value="2" name="schedule_hour_time" <% nvram_match("schedule_hour_time","2","checked"); %> />
+		<input type="radio" value="2" name="schedule_hour_time" <% nvram_match("schedule_hour_time","2","checked"); %> onclick="alive_enable_disable(this.value)" />
 		<select name="schedule_hours">
 			<option value="00" <% nvram_selmatch("schedule_hours","00","selected"); %>>00</option>
 			<option value="01" <% nvram_selmatch("schedule_hours","01","selected"); %>>01</option>
