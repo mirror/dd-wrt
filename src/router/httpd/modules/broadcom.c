@@ -3624,11 +3624,11 @@ do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
   char *lang = nvram_get ("language");
   if (lang == NULL)
     {
-      do_file ("/lang_pack/english.js", stream);
+      do_file ("lang_pack/english.js", stream);
       return;
     }
   char l[60];
-  sprintf (l, "/lang_pack/%s.js", lang);
+  sprintf (l, "lang_pack/%s.js", lang);
   do_file (l, stream);
   return;
 }
