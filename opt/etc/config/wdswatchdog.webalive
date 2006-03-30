@@ -2,8 +2,8 @@
 	<legend>WDS/Connection Watchdog</legend>
 	<div class="setting">
 		<div class="label">Enable Watchdog</div>
-		<input type="radio" value="1" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","1","checked"); %> />Enable
-		<input type="radio" value="0" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","0","checked"); %> />Disable
+		<input type="radio" value="1" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","1","checked"); %> onclick="setWDS(this.value)" />Enable
+		<input type="radio" value="0" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","0","checked"); %> onclick="setWDS(this.value)" />Disable
 	</div>
 	<div class="setting">
 		<div class="label">Interval (in seconds)</div>
