@@ -1018,7 +1018,8 @@ start_upnp (void)
 		  "-L", nvram_safe_get ("lan_ifname"),
 		  "-W", wan_ifname,
 		  "-I", nvram_safe_get ("upnp_ssdp_interval"),
-		  "-A", nvram_safe_get ("upnp_max_age"));
+		  "-A", nvram_safe_get ("upnp_max_age")),
+		  "-S", 0;
     }
 
   cprintf ("done\n");
