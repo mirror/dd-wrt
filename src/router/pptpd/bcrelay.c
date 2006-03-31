@@ -664,8 +664,14 @@ static void mainloop(int argc, char **argv)
                  */
                 if ((nrsent = sendto(cur_ifsnr[j].sock_nr, ipp_p, rlen, MSG_DONTWAIT|MSG_TRYHARD, (struct sockaddr *)&sa, salen)) < 0)
                 {
-                  syslog(LOG_ERR, "mainloop: Error, sendto failed! (rv=%d, errno=%d)", nrsent, errno);
-                  exit(1);
+		  if (errno == ENETDOWN) {
+		    syslog(LOG_NOTICE, "ignored ENETDOWN from sendto(), a network interface was going down?");
+		  } else if (errno == ENXIO) {
+		    syslog(LOG_NOTICE, "ignored ENXIO from sendto(), a network interface went down?");
+		  } else {
+		    syslog(LOG_ERR, "mainloop: Error, sendto failed! (rv=%d, errno=%d)", nrsent, errno);
+		    exit(1);
+		  }
                 }
                 NVBCR_PRINTF(("Successfully relayed %d bytes \n", nrsent));
                 if (vnologging == 0) {

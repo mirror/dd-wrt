@@ -1,3 +1,9 @@
+Note: logwtmp plugin source file patchlevel.h must match pppd version
+on system if it is used.  Edit the file plugins/patchlevel.h
+accordingly.
+
+--
+
 Basic Installation
 ==================
 

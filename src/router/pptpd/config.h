@@ -5,7 +5,7 @@
  *
  * Additional autoconf defines for this program.
  *
- * $Id: config.h.in,v 1.13 2005/02/17 02:04:59 quozl Exp $
+ * $Id: config.h.in,v 1.16 2005/08/03 07:48:37 quozl Exp $
  */
 
 /* Use BSD User land PPP? */
@@ -39,7 +39,7 @@
 #define PACKAGE "pptpd"
 
 /* Version */
-#define VERSION "1.2.3"
+#define VERSION "1.3.0"
 
 /* Just #define to int if it's not defined */
 /* #undef socklen_t */
@@ -162,7 +162,7 @@
 #define STDC_HEADERS 1
 
 /* Version number of package */
-#define VERSION "1.2.3"
+#define VERSION "1.3.0"
 
 /* Define to empty if `const' does not conform to ANSI C. */
 /* #undef const */
