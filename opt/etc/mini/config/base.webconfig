@@ -24,6 +24,10 @@
 	<fieldset>
 	<legend>Web Access</legend>
 	<div class="setting">
+		<div class="label">Auto-Refresh (in seconds)</div>
+		<input name="refresh_time" size="3" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
+	</div>
+	<div class="setting">
 		<div class="label">Enable Info Site</div>
 		<input type="radio" value="1" name="status_auth" <% nvram_match("status_auth","1","checked"); %> />Enable
 		<input type="radio" value="0" name="status_auth" <% nvram_match("status_auth","0","checked"); %> />Disable
