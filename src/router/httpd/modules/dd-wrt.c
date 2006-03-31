@@ -2286,8 +2286,8 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   char list[2][30];
   char line[80];
   char cmd[80];
-  char title[20];
-  char title2[20];
+//  char title[20];
+//  char title2[20];
   int macmask;
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
@@ -2298,20 +2298,20 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
   int cnt = 0;
-  mode = nvram_safe_get ("wl_mode");
+//  mode = nvram_safe_get ("wl_mode");
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
   system (cmd);			// get active wireless mac
 
-  if (strcmp (mode, "ap") != 0 && strcmp (mode, "apsta") != 0)
-    {
-      strcpy (title, "AP Signal");
-      strcpy (title2, "AP");
-    }
-  else
-    {
-      strcpy (title, "Wireless AP");
-      strcpy (title2, "Clients");
-    }
+//  if (strcmp (mode, "ap") != 0 && strcmp (mode, "apsta") != 0)
+//    {
+//      strcpy (title, "AP Signal");
+//      strcpy (title2, "AP");
+//    }
+//  else
+//    {
+//      strcpy (title, "Wireless AP");
+//      strcpy (title2, "Clients");
+//    }
 
   if ((fp = fopen (ASSOCLIST_TMP, "r")))
     {
@@ -2375,47 +2375,49 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	      mac[9] = 'x';
 	      mac[10] = 'x';
 	    }
-	  if (!cnt)
-	    {
-	      cnt++;
-	      websWrite (wp, "<h2>%s</h2>\n", title);
-	      websWrite (wp, "<fieldset>\n");
-	      websWrite (wp, "<legend>%s</legend>\n", title2);
-//            websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp,
-			 "<table class=\"table center\" cellspacing=\"5\">\n");
-	      websWrite (wp, "<tr>\n");
-	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
-	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
-	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
-	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
-	      websWrite (wp, "</tr>\n");
-	    }
-	  websWrite (wp, "<tr>\n");
+//	  if (!cnt)
+//	    {
+	  if(cnt) websWrite (wp, ",");
+	  cnt++;
+//	      websWrite (wp, "<h2>%s</h2>\n", title);
+//	      websWrite (wp, "<fieldset>\n");
+//	      websWrite (wp, "<legend>%s</legend>\n", title2);
+//	      websWrite (wp,
+//			 "<table class=\"table center\" cellspacing=\"5\">\n");
+//	      websWrite (wp, "<tr>\n");
+//	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
+//	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
+//	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
+//	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
+//	      websWrite (wp, "</tr>\n");
+//	    }
+//	  websWrite (wp, "<tr>\n");
 	  if (strcmp (mode, "ap") != 0)
 	    {
-	      websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
+//	      websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
+	      websWrite (wp, "'%s','%d','%d','%d'",
 			 mac, rssi, noise, rssi - noise);
 	    }
 	  else
 	    {
-	      websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
+//	      websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
+	      websWrite (wp, "'%s','%d','%d','%d'",
 			 mac, rssi, -100, rssi - (-100));
 	    }
-	  websWrite (wp, "</tr>\n");
+//	  websWrite (wp, "</tr>\n");
 	}
       // One less Top10-Wanted leak (belanger[AT]pobox.com)
       fclose (fp);
     }
-  if (cnt)
-    websWrite (wp, "</table></fieldset><br />\n");
-//    websWrite (wp, "</table></div></fieldset><br/>\n");
+//  if (cnt)
+//    websWrite (wp, "</table></fieldset><br />\n");
 
   unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
 
   return 0;
 }
+
 
 #define WDS_LIST_TMP	"/tmp/.wl_wdslist"
 #define WDS_RSSI_TMP	"/tmp/.rssi"
@@ -2431,7 +2433,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   char list[2][30];
   char line[80];
   char cmd[80];
-  char title[30];
+//  char title[30];
   char wdsvar[30];
   char desc[12];
   int cnt = 0;
@@ -2445,14 +2447,14 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
 
-  mode = nvram_safe_get ("wl_mode");
+//  mode = nvram_safe_get ("wl_mode");
   snprintf (cmd, sizeof (cmd), "%s > %s", WDS_CMD, WDS_LIST_TMP);
   system (cmd);			// get active wireless mac
 
-  if (strcmp (mode, "ap") == 0 || strcmp (mode, "apsta") == 0)
-    strcpy (title, "WDS Signal");
-  else
-    return -1;
+//  if (strcmp (mode, "ap") == 0 || strcmp (mode, "apsta") == 0)
+//    strcpy (title, "WDS Signal");
+//  else
+//    return -1;
 
 
   if ((fp = fopen (WDS_LIST_TMP, "r")))
@@ -2479,9 +2481,9 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 //                  strcpy (title, "WDS Signal :");
 		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
 		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-		  snprintf (title, sizeof (title), "(%s)", desc);
+//		  snprintf (title, sizeof (title), "%s", desc);
 		  if (!strcmp (nvram_get (wdsvar), ""))
-		    strcpy (title, "");
+		    strcpy (desc, "&nbsp;");
 		}
 	    }
 
@@ -2514,35 +2516,37 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      mac[9] = 'x';
 	      mac[10] = 'x';
 	    }
-	  if (!cnt)
-	    {
-	      cnt++;
-	      websWrite (wp, "<h2>WDS</h2>\n");
-	      websWrite (wp, "<fieldset>\n");
-	      websWrite (wp, "<legend>Nodes</legend>\n");
+//	  if (!cnt)
+//	    {
+	  if(cnt) websWrite (wp, ",");
+	  cnt++;
+//	      websWrite (wp, "<h2>WDS</h2>\n");
+//	      websWrite (wp, "<fieldset>\n");
+//	      websWrite (wp, "<legend>Nodes</legend>\n");
 //            websWrite (wp, "<div class=\"setting\">\n");
-	      websWrite (wp,
-			 "<table class=\"table center\" cellspacing=\"5\">\n");
-	      websWrite (wp, "<tr>\n");
-	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
-	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
-	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
-	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
-	      websWrite (wp, "</tr>\n");
-	    }
+//	      websWrite (wp,
+//			 "<table class=\"table center\" cellspacing=\"5\">\n");
+//	      websWrite (wp, "<tr>\n");
+//	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
+//	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
+//	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
+//	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
+//	      websWrite (wp, "</tr>\n");
+//	    }
 
 //        websWrite (wp,
 //                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 //                   title, mac, rssi, -100, rssi - (-100));
 	  websWrite (wp,
-		     "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
-		     mac, title, rssi, -100, rssi - (-100));
+//		     "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
+		     "'%s','%s','%d','%d','%d'",
+		     mac, desc, rssi, -100, rssi - (-100));
 	}
       // One less Top10-Wanted leak (belanger[AT]pobox.com)
       fclose (fp);
     }
-  if (cnt)
-    websWrite (wp, "</table></fieldset><br />\n");
+//  if (cnt)
+//    websWrite (wp, "</table></fieldset><br />\n");
 //    websWrite (wp, "</table></div></fieldset><br/>\n");
 
   unlink (WDS_LIST_TMP);
@@ -2550,6 +2554,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 
   return 0;
 }
+
 
 int
 ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
