@@ -324,6 +324,10 @@ float:none !important;
 margin-top:0 !important;
 width:9.01em !important;
 }
+.infopage td .meter,
+.infopage td .meter .text {
+width:14.49em !important;
+}
 .progressbar {
 visibility:visible;
 position:relative;
