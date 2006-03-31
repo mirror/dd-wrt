@@ -199,7 +199,7 @@ servport_name0 = "<% filter_port_services_get("service", "0"); %>";
 servport_name1 = "<% filter_port_services_get("service", "1"); %>";
 servport_name2 = "<% filter_port_services_get("service", "2"); %>";
 servport_name3 = "<% filter_port_services_get("service", "3"); %>";
-
+p2p_value = "<% filter_port_services_get("p2p", "0"); %>";
 function search_service_index(name) {
 	for(var i=0; i<services_length ; i++){
 		if(name == services[i].name){
@@ -223,7 +223,13 @@ function write_service_options(name) {
 
 function setBlockedServicesValue() {
 	var index;
-
+	
+	if (p2p_value)
+	if (p2p_value == "1")
+	    document.filters._filter_p2p.checked = true;
+	else
+	    document.filters._filter_p2p.checked = false;
+	     
 	/* for service port 0 */
 	index = search_service_index(servport_name0);
 	if(index!=-1){
