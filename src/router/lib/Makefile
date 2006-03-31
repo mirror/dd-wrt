@@ -84,7 +84,7 @@ $(MAP): $(OPTINFO)/libc.a
 
 # Re-link uClibc
 $(LIBC): .symbols $(OBJS)
-	xargs -t $(LD) $(LDFLAGS) -o $@ $(OBJS) $(LIBGCC) < .symbols
+	xargs -t $(LD) $(LDFLAGS) -o $@ $(OBJS) < .symbols
 
 else
 
@@ -93,7 +93,7 @@ OBJS := $(wildcard $(foreach file,soinit.os libc_pic.a sofini.os,$(OPTINFO)/$(fi
 
 # GNU libc link parameters
 ENTRY := __libc_main
-CFLAGS := -shared -Wl,-Os -pipe -mips32 -mtune=mips32  -Wl,-dynamic-linker=$(LINKER) -Wl,--version-script=$(MAP) -Wl,-soname=$(LIBC) -nostdlib -nostartfiles -e $(ENTRY)
+CFLAGS := -shared -Wl,-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -Wl,-dynamic-linker=$(LINKER) -Wl,--version-script=$(MAP) -Wl,-soname=$(LIBC) -nostdlib -nostartfiles -e $(ENTRY)
 
 $(MAP): $(OPTINFO)/libc.map
 	cp $< $@

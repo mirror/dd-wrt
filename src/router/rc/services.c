@@ -135,7 +135,7 @@ start_services (void)
 #endif
 
 #ifdef HAVE_SPUTNIK_APD
-  start_service("sputnik_apd");
+  start_service("apd");
 #endif
 
 
@@ -194,7 +194,7 @@ stop_services (void)
 #endif
 
 #ifdef HAVE_SPUTNIK_APD
-  stop_service("sputnik_apd");
+  stop_service("apd");
 #endif
 
 // end Sveasoft additions
@@ -241,6 +241,9 @@ start_single_service (void)
 #endif
 #ifdef HAVE_CHILLI
       startstop("chilli");
+#endif
+#ifdef HAVE_SPUTNIK_APD
+      startstop("apd");
 #endif
     }
   else if (!strcmp (service, "services"))
