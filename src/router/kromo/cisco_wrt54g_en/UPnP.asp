@@ -236,7 +236,7 @@ addEvent(window, "unload", function() {
 								<span id="theforwards"><script type="text/javascript">document.write(makeTable())</script></span><br />
 								<div class="center">
 									<input type="button" name="delete_button" value="Delete All" onclick="unmap('all')" />
-									<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()" />
+									<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh ON"); %>" onclick="window.location.reload()" />
 								</div>
 							</fieldset><br />
 							<fieldset>
