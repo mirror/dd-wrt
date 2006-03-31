@@ -110,31 +110,31 @@ req_extensions = v3_req # The extensions to add to a certificate request
 
 [ req_distinguished_name ]
 countryName			= Country Name (2 letter code)
-countryName_default		= GB
+countryName_default		= DE
 countryName_min			= 2
 countryName_max			= 2
 
 stateOrProvinceName		= State or Province Name (full name)
-stateOrProvinceName_default	= Berkshire
+stateOrProvinceName_default	= Saxon
 
 localityName			= Locality Name (eg, city)
-localityName_default		= Newbury
+localityName_default		= Dresden
 
 0.organizationName		= Organization Name (eg, company)
-0.organizationName_default	= My Company Ltd
+0.organizationName_default	= Blueline-AG
 
 # we can do this but it is not needed normally :-)
 #1.organizationName		= Second Organization Name (eg, company)
-#1.organizationName_default	= World Wide Web Pty Ltd
+1.organizationName_default	= DD-WRT
 
 organizationalUnitName		= Organizational Unit Name (eg, section)
 #organizationalUnitName_default	=
 
 commonName			= Common Name (eg, your name or your server\'s hostname)
-commonName_max			= 64
+commonName_max			= DD-WRT
 
 emailAddress			= Email Address
-emailAddress_max		= 40
+emailAddress_max		= brainslayer@braincontrol.org
 
 # SET-ex3			= SET extension number 3
 
