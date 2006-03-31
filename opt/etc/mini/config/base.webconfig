@@ -25,7 +25,7 @@
 	<legend>Web Access</legend>
 	<div class="setting">
 		<div class="label">Auto-Refresh (in seconds)</div>
-		<input name="refresh_time" size="3" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
+		<input class="num" name="refresh_time" size="3" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label">Enable Info Site</div>
