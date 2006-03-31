@@ -22,12 +22,12 @@ typedef struct  {
 
 void   matrixssl_init(void);
 void   matrixssl_new_session(int fp);
-char * matrixssl_gets(FILE* fp, char* buf, int len);
-int    matrixssl_puts(FILE* fp, char* buf);
-int    matrixssl_putc(FILE* fp, char buf);
-int    matrixssl_printf(FILE* fp, char* fmt, char* buf);
-int    matrixssl_write(FILE* fp, char* buf , int size);
-int    matrixssl_read(FILE* fp, char* buf , int size);
+char * matrixssl_gets(FILE* fp, unsigned char* buf, int len);
+int    matrixssl_puts(FILE* fp, unsigned char* buf);
+int    matrixssl_putc(FILE* fp, unsigned char buf);
+int    matrixssl_printf(FILE* fp, unsigned char* fmt, unsigned char* buf);
+int    matrixssl_write(FILE* fp, unsigned char* buf , int size);
+int    matrixssl_read(FILE* fp, unsigned char* buf , int size);
 int    matrixssl_flush(FILE* fp);
 int    matrixssl_free_session(FILE* fp);
 int    do_matrixssl_recv(FILE* fp);

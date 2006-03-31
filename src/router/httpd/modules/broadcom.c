@@ -3424,8 +3424,7 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");
-		 }
+		 websSetRealm ("DD-WRT Router OS Core");}
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
