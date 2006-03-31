@@ -544,13 +544,13 @@ function openWindow(url, width, height) {
 
 // Renders a nice meter with the percentage value
 function setMeterBar(id, fraq, text) {
-	if(isNaN(fraq) || fraq < 0 || fraq > 100 || !document.getElementById(id)) return "";
-	fraq = Math.round(fraq);
-	var node = document.getElementById(id);
+	if(isNaN(fraq)) fraq = 0;
+	fraq = Math.max(0, Math.min(100, Math.round(fraq)));
+	var node = (typeof id == "string" ? document.getElementById(id) : id);
 	if(node.firstChild) {
 		node.firstChild.firstChild.style.width = fraq + "%";
 		node.firstChild.firstChild.firstChild.firstChild.data = fraq + "%";
-		node.lastChild.data = text;
+		if(defined(text)) node.lastChild.data = text;
 	} else {
 		node.innerHTML = "<div class=\"meter\"><div class=\"bar\" style=\"width:" + fraq + "%;\"><div class=\"text\">" + fraq + "%</div></div></div>" + text;
 	}
