@@ -1,3 +1,15 @@
+1.3.0: released 2005-08-03
+
+- disable Van Jacobson compression by default [Pokrywka]
+- prototype packet buffering and reordering [Cameron/Anonymous]
+- comply with RFC2637 on echo wait and idle wait parameters [Brox]
+- new pptpd-logwtmp-strip-domain option [Cameron]
+- include html directory in make dist [Cameron]
+- defer writes to pty until pppd has set it up properly [Cameron]
+- process initial packet length header properly [Beregszaszi]
+- ignore ENETDOWN and ENXIO on sendto in bcrelay [Cameron]
+- add section on debugging to pptpd.8 [Mueller]
+
 1.2.3: released 2005-02-17
 
 - error check critical dup2 calls [Cameron]
