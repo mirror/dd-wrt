@@ -35,16 +35,17 @@ clean:
 
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
-	install -d $(INSTALLDIR)/usr/lib
+#	install -d $(INSTALLDIR)/usr/lib
 	install $(UTILS) $(INSTALLDIR)/usr/sbin
 	#install $(LIBS) $(INSTALLDIR)/usr/lib
-	$(STRIP) $(foreach file,$(UTILS),$(INSTALLDIR)/usr/sbin/$(file))
+#	$(STRIP) $(foreach file,$(UTILS),$(INSTALLDIR)/usr/sbin/$(file))
 ifeq ($(CONFIG_MSSID),y)
 	install wl $(INSTALLDIR)/usr/sbin
-	$(STRIP) $(INSTALLDIR)/usr/sbin/wl
+#	$(STRIP) $(INSTALLDIR)/usr/sbin/wl
 else
 	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
-	$(STRIP) $(INSTALLDIR)/usr/sbin/wl
+#	$(STRIP) $(INSTALLDIR)/usr/sbin/wl
 endif
-	install et $(INSTALLDIR)/usr/sbin
-	$(STRIP) $(INSTALLDIR)/usr/sbin/et
+#	install et $(INSTALLDIR)/usr/sbin
+#	$(STRIP) $(INSTALLDIR)/usr/sbin/et
+	@true
