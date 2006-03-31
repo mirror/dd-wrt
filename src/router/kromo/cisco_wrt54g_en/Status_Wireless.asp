@@ -202,7 +202,7 @@ addEvent(window, "unload", function() {
 								<input type="button" name="site_survey" value="Site Survey" onClick="<% nvram_else_match("wl_net_mode", "disabled", "alert('Not&nbsp;available!&nbsp;Please&nbsp;enable&nbsp;wireless&nbsp;network.')", "openWindow('Site_Survey.asp', 760, 700)"); %>" />
 							</div><br />
 							<div class="submitFooter">
-								<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()" />
+								<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh ON"); %>" onclick="window.location.reload()" />
 							</div>
 						</form>
 					</div>
