@@ -9,6 +9,7 @@
 		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "Wireless_Advanced";
+	F.save_button.value = "Saved";
 	F.action.value = "Apply";
 	apply(F);
 }
