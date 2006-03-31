@@ -37,7 +37,13 @@
 				<dd>The AP Watchdog enables a timer that will check to see if any clients are connected in the interval seconds given. If no clients are attached, the watchdog assumes the AP needs to be reset. When clients are connected this reset will not occur. The watchdog is intended for situations where the AP becomes unavailable due to interference or internal chip problems.</dd>-->
 				<dt>Web Access</dt>
 				<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol.<br/>
-				You can also activate or not the router information web page. It's now possible to password protect this page (same username and password than above)</dd>
+				You can also activate or not the router information web page. It's now possible to password protect this page (same username and password than above).<br/>
+				MAC Masquerading allows you to truncate MAC addresses in the Webinterface.<br/><br/>
+					<div class="note">
+						<h4>Note</h4>
+						<div>If MAC Masquerading is enabled, all the MAC addresses will be posted as follows: xx:xx:xx:xx:AA:BB. (Only Sys-Info page is concerned).</div>
+					</div>
+				</dd>
 				<dt>Boot Wait</dt>
 				<dd>Boot Wait is a feature you will hopefully never need. It introduces a short delay while booting (5s). During this delay you can initiate the download of a new firmware if the one in the flash rom is not broken. Obviously this is only necessary if you can no longer reflash using the web interface because the installed firmware will not boot. See the DD-WRT documentation for more information.<br /><br />
 					<div class="note">
@@ -75,14 +81,6 @@
 				</dd>
 				<dt>Routing</dt>
 				<dd>Routing enables the OSPF and RIP routing daemons if you have set up OSPF or RIP routing in the Advanced Routing page.</dd>
-				<dt>MAC Masquerading</dt>
-				<dd>This feature allows you to truncate MAC addresses in the Webinterface.
-					<br/><br/>
-					<div class="note">
-						<h4>Note</h4>
-						<div>If enabled, all the MAC addresses will be posted as follows: xx:xx:xx:xx:AA:BB. (Only Sys-Info page is concerned).</div>
-					</div>
-				</dd>
 				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
