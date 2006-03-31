@@ -14,33 +14,49 @@ int no_matrixssl_sessions = 0;
 matrixssl_buf *bufs[MAX_MATRIXSSL_SESSIONS];
 sslKeys_t *keys = NULL;
 
-#define MATRIXSSL_ADDSBUF(x, y, z)  if(y && x>0 && y->ssl_send_buflen - y->ssl_send_cur < x){\
-    					y->ssl_send_buf = (char*)realloc(y->ssl_send_buf, y->ssl_send_cur + x);\
-					if(y->ssl_send_buf)\
-						y->ssl_send_buflen = y->ssl_send_cur + x;\
-					else\
-						return -1;\
-    				    }\
-				    if(y && x>0){\
-					memcpy(y->ssl_send_buf + y->ssl_send_cur, z, x);\
-					y->ssl_send_cur += x;\
-				    }\
-				    else\
-				    	return -1;
+int
+MATRIXSSL_ADDSBUF (size_t x, matrixssl_buf * y, unsigned char *z)
+{
+  if (y && x > 0 && y->ssl_send_buflen - y->ssl_send_cur < x)
+    {
+      y->ssl_send_buf =
+	(char *) realloc (y->ssl_send_buf, y->ssl_send_cur + x);
+      if (y->ssl_send_buf)
+	y->ssl_send_buflen = y->ssl_send_cur + x;
+      else
+	return -1;
+    }
+  if (y && x > 0)
+    {
+      memcpy (y->ssl_send_buf + y->ssl_send_cur, z, x);
+      y->ssl_send_cur += x;
+    }
+  else
+    return -1;
+  return 0;
+}
 
-#define MATRIXSSL_ADDRBUF(x, y, z)  if(y && x>0 && y->ssl_recv_buflen - y->ssl_recv_cur < x){\
-    					y->ssl_recv_buf = (char*)realloc(y->ssl_recv_buf, y->ssl_recv_cur + x);\
-					if(y->ssl_recv_buf)\
-						y->ssl_recv_buflen = y->ssl_recv_cur + x;\
-					else\
-						return -1;\
-    				    }\
-				    if(y && x>0){\
-					memcpy(y->ssl_recv_buf + y->ssl_recv_cur, z, x);\
-					y->ssl_recv_cur += x;\
-    				    }\
-				    else\
-				  	return -1;
+int
+MATRIXSSL_ADDRBUF (size_t x, matrixssl_buf * y, unsigned char *z)
+{
+  if (y && x > 0 && y->ssl_recv_buflen - y->ssl_recv_cur < x)
+    {
+      y->ssl_recv_buf =
+	(char *) realloc (y->ssl_recv_buf, y->ssl_recv_cur + x);
+      if (y->ssl_recv_buf)
+	y->ssl_recv_buflen = y->ssl_recv_cur + x;
+      else
+	return -1;
+    }
+  if (y && x > 0)
+    {
+      memcpy (y->ssl_recv_buf + y->ssl_recv_cur, z, x);
+      y->ssl_recv_cur += x;
+    }
+  else
+    return -1;
+  return 0;
+}
 
 #define MATRIXSSL_RSTBUF(x)	if(x && x->ssl_recv_buflen == x->ssl_recv_cur && x->ssl_recv_buflen>0){\
 					x->ssl_recv_buflen = x->ssl_recv_cur = 0;\
@@ -140,10 +156,10 @@ matrixssl_new_session (int fp)
 }
 
 char *
-matrixssl_gets (FILE * fp, char *buf, int len)
+matrixssl_gets (FILE * fp, unsigned char *buf, int len)
 {
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);
-  char *p, *s;
+  unsigned char *p, *s;
 
   if (pbuf && pbuf->ssl_recv_buflen == 0 && do_matrixssl_recv (fp) <= 0)
     return NULL;
@@ -184,12 +200,14 @@ matrixssl_gets (FILE * fp, char *buf, int len)
 }
 
 int
-matrixssl_putc (FILE * fp, char c)
+matrixssl_putc (FILE * fp, unsigned char c)
 {
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);
 
   if (NULL == pbuf)
     return -1;
+  if (pbuf->ssl_send_cur > (SSL_MAX_RECORD_LEN - 2048))
+    matrixssl_flush (fp);
 
   MATRIXSSL_ADDSBUF (1, pbuf, &c);
 
@@ -197,23 +215,27 @@ matrixssl_putc (FILE * fp, char c)
 }
 
 int
-matrixssl_puts (FILE * fp, char *buf)
+matrixssl_puts (FILE * fp, unsigned char *buf)
 {
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);
 
   if (NULL == pbuf || NULL == buf || strlen (buf) <= 0)
     return -1;
 
+  if (pbuf->ssl_send_cur > (SSL_MAX_RECORD_LEN - 2048))
+    matrixssl_flush (fp);
+
   MATRIXSSL_ADDSBUF (strlen (buf), pbuf, buf);
+
 
   return strlen (buf);
 }
 
 int
-matrixssl_printf (FILE * fp, char *fmt, char *buf)
+matrixssl_printf (FILE * fp, unsigned char *fmt, unsigned char *buf)
 {
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);
-  char out_buf[1024] = { 0 };
+  unsigned char out_buf[1024] = { 0 };
 #ifdef DEBUG_MATRIXSSL
   printf ("matrixssl_printf\n");
 #endif
@@ -222,25 +244,31 @@ matrixssl_printf (FILE * fp, char *fmt, char *buf)
 
   snprintf (out_buf, 1023, fmt, buf);
 
+  if (pbuf->ssl_send_cur > (SSL_MAX_RECORD_LEN - 2048))
+    matrixssl_flush (fp);
+
   MATRIXSSL_ADDSBUF (strlen (out_buf), pbuf, out_buf);
 
   return do_matrixssl_send (fp);
 }
 
 int
-matrixssl_write (FILE * fp, char *buf, int size)
+matrixssl_write (FILE * fp, unsigned char *buf, int size)
 {
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);
 #ifdef DEBUG_MATRIXSSL
   printf ("matrixssl_write\n");
 #endif
+  if (pbuf->ssl_send_cur > (SSL_MAX_RECORD_LEN - 2048))
+    matrixssl_flush (fp);
+
   MATRIXSSL_ADDSBUF (size, pbuf, buf);
 
   return do_matrixssl_send (fp);
 }
 
 int
-matrixssl_read (FILE * fp, char *buf, int len)
+matrixssl_read (FILE * fp, unsigned char *buf, int len)
 {
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);
 #ifdef DEBUG_MATRIXSSL
@@ -345,7 +373,7 @@ do_matrixssl_recv (FILE * fp)
   int rc = -1, ret = -1, in_buf_size = 0, out_buf_size = 0;
   sslBuf_t in, out;
   unsigned char error = 0, alertLevel = 0, alertDescription = 0;
-  char *in_buf = NULL, *out_buf = NULL;;
+  unsigned char *in_buf = NULL, *out_buf = NULL;;
   long more = 0;
 
   matrixssl_buf *pbuf = matrixssl_findbuf ((int) fp);

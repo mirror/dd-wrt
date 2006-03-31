@@ -454,8 +454,17 @@ do_file (char *path, webs_t stream)	//jimmy, https, 8/4/2003
 
   if (!(fp = fopen (path, "rb")))
     return;
+/*  char buf[256];
+  int t=256; 
+  while(t==256)
+  {
+  t = fread(buf,1,t,fp);
+  wfwrite(buf,t,1,stream);
+  }
+  if (t)
+  wfwrite(buf,t,1,stream);
+  */
   while ((c = getc (fp)) != EOF)
-    //fputc(c, stream);
     wfputc (c, stream);		// jimmy, https, 8/4/2003
   fclose (fp);
 #endif
@@ -797,17 +806,18 @@ handle_request (void)
 	    {
 	      if (handler->auth)
 		{
-		  int result = handler->auth (auth_userid, auth_passwd, auth_realm);
-		  if (result==0)
-		  {
-		  auth_fail = 0;
-		  if (!auth_check (auth_realm, authorization))
+		  int result =
+		    handler->auth (auth_userid, auth_passwd, auth_realm);
+		  if (result == 0)
 		    {
-		      send_authenticate (auth_realm);
-		      return;
-		      //auth_fail = 1;
+		      auth_fail = 0;
+		      if (!auth_check (auth_realm, authorization))
+			{
+			  send_authenticate (auth_realm);
+			  return;
+			  //auth_fail = 1;
+			}
 		    }
-		  }
 		}
 	      post = 0;
 	      if (strcasecmp (method, "post") == 0)
@@ -1282,7 +1292,6 @@ wfputc (char c, FILE * fp)
 #ifdef HAVE_HTTPS
 #ifdef HAVE_OPENSSL
   if (do_ssl)
-
     return BIO_printf ((BIO *) fp, "%c", c);
   else
 #elif defined(HAVE_MATRIXSSL)
@@ -1364,7 +1373,20 @@ wfread (char *buf, int size, int n, FILE * fp)
   else
 #elif defined(HAVE_MATRIXSSL)
   if (do_ssl)
-    return matrixssl_read (fp, buf, n * size);
+    {
+      //do it in chains
+      int cnt = size * n / 0x4000;
+      int i;
+      int len = 0;
+      for (i = 0; i < cnt; i++)
+	{
+	  len += matrixssl_read (fp, buf, 0x4000);
+	  *buf += 0x4000;
+	}
+      len += matrixssl_read (fp, buf, (size * n) % 0x4000);
+
+      return len;
+    }
   else
 #endif
 #endif
