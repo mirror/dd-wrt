@@ -15,7 +15,7 @@ deps_config := \
 	console-tools/Config.in \
 	coreutils/Config.in \
 	archival/Config.in \
-	/home/dd-wrt/DEV/src/router/busybox/sysdeps/linux/Config.in
+	/home/openwrt/workspace/DD-WRT/src/router/busybox/sysdeps/linux/Config.in
 
 .config include/config.h: $(deps_config)
 

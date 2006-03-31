@@ -211,6 +211,11 @@ endif
 ifeq ($(CONFIG_SER),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/sipath/ install
 endif
+
+ifeq ($(CONFIG_DDLAN),y)
+	$(MAKE) -C $(SRCBASE)/router/kromo/ddlan/ install
+endif
+
 	
 
 

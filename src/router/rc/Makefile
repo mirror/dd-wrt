@@ -50,6 +50,9 @@ endif
 ifeq ($(CONFIG_TFTP),y)
 CFLAGS += -DHAVE_TFTP
 endif
+ifeq ($(CONFIG_DDLAN),y)
+CFLAGS += -DHAVE_DDLAN
+endif
 
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
@@ -274,6 +277,12 @@ endif
 ifeq ($(CONFIG_WOL),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wol
 endif
+
+ifeq ($(CONFIG_DDLAN),y)
+	cp check.sh $(INSTALLDIR)/sbin
+endif
+
+
 
 rc: $(OBJS)
 #	$(AR) arc -o $@.a $^
