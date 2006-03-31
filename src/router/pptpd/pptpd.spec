@@ -1,5 +1,5 @@
 %define name pptpd
-%define ver 1.2.3
+%define ver 1.3.0
 %define rel 0
 %define prefix /usr
 %define buildlibwrap 1
@@ -14,7 +14,7 @@ Name: %{name}
 Requires: ppp >= 2.4.3
 Version: %{ver}
 Release: %{rel}
-Copyright: GPL
+License: GPL
 Group: Networking/Daemons
 Vendor: Hewlett-Packard
 Packager: James Cameron <james.cameron@hp.com>
@@ -68,6 +68,8 @@ buildopts="$buildopts --with-bcrelay"
 buildopts="$buildopts --with-pns-mode"
 %endif
 ./configure --prefix=%{prefix} $buildopts
+echo '#undef VERSION' >> plugins/patchlevel.h
+echo '#define VERSION         "2.4.3"' >> plugins/patchlevel.h
 make 
 
 %install
@@ -131,6 +133,8 @@ rm -rf $RPM_BUILD_ROOT
 %config(noreplace) /etc/ppp/options.pptpd
 
 %changelog
+* Fri Feb 18 2005 James Cameron <james.cameron@hp.com>
+- fix to use ppp 2.4.3 for plugin
 * Thu Nov 11 2004 James Cameron <james.cameron@hp.com>
 - adjust for building on Red Hat Enterprise Linux, per Charlie Brady
 - remove vpnstats, superceded by vpnstats.pl

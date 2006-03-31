@@ -39,7 +39,6 @@ install-stamp: build-stamp
 	cp debian/pptpd.conf `pwd`/debian/tmp/etc 
 	cp debian/pptpd-options `pwd`/debian/tmp/etc/ppp
 	#cp debian/pptpdconfig.pl `pwd`/debian/tmp/usr/sbin
-	
 	touch install-stamp
 
 # Build architecture-independent files here.
@@ -52,7 +51,7 @@ binary-arch: build install
 	dh_testdir
 	dh_testroot
 	dh_installdocs
-	mv `pwd`/debian/tmp/usr/share/doc/pptpd/html/*.txt `pwd`/debian/tmp/usr/share/doc/pptpd/
+#	mv `pwd`/debian/tmp/usr/share/doc/pptpd/html/*.txt `pwd`/debian/tmp/usr/share/doc/pptpd/
 	dh_installexamples
 #	dh_installmenu
 #	dh_installemacsen

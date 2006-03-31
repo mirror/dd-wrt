@@ -3,7 +3,7 @@
  *
  * Manages the PoPToP sessions.
  *
- * $Id: pptpmanager.c,v 1.10 2005/01/05 23:07:09 quozl Exp $
+ * $Id: pptpmanager.c,v 1.11 2005/07/12 06:59:29 quozl Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -268,7 +268,7 @@ int pptp_manager(int argc, char **argv)
 					continue;
 				}
 
-				ph.length = htons(ph.length);
+				ph.length = ntohs(ph.length);
 				ph.pptp_type = ntohs(ph.pptp_type);
 				ph.magic = ntohl(ph.magic);
 				ph.ctrl_type = ntohs(ph.ctrl_type);
