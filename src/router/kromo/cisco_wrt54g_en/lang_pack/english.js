@@ -27,7 +27,7 @@ share.both="Both";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
-sbutton.save.value="Saved";
+sbutton.saving="Saved";
 sbutton.cancel="Cancel Changes";
 sbutton.refres="Refresh";
 sbutton.clos="Close";
