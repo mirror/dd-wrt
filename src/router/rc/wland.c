@@ -48,7 +48,18 @@ get_wdev ()
     return "eth1";
 
 }
-
+/*
+static void join(char *ss)
+{
+if (ss==NULL)
+    return;
+wlc_ssid_t ssid;
+ssid.SSID_len = strlen(ss);
+if (ssid.SSID_len > sizeof(ssid.SSID))
+ssid.SSID_len = sizeof(ssid.SSID);
+strncpy(ssid.SSID, ss, ssid.SSID_len);
+wl_ioctl(get_wdev(), WLC_SET_SSID, &ssid, sizeof(ssid));
+}*/
 
 static char *
 get_wshaper_dev (void)
@@ -459,7 +470,9 @@ do_client_check (void)
 
   if (len > 0 && strstr (buf, "Not associated."))
     {
-
+#ifdef HAVE_DDLAN
+    nvram_set("cur_state","Nicht Verbunden");
+#endif
       /*if (nvram_match("wl_mode", "wet"))
          {
 
@@ -473,8 +486,16 @@ do_client_check (void)
       /* let wl do this for us (no use in reinventing the wheel) */
       //eval("/usr/sbin/wlconf", get_wdev(), "down");
       //eval("/usr/sbin/wlconf", get_wdev(), "up"); 
-      eval ("wl", "join", nvram_safe_get ("wl0_ssid"));
+      eval("wl","join",nvram_safe_get("wl_ssid"));
+      
+//      join(nvram_get("wl_ssid"));
       fclose (fp);
+    }else
+    {
+#ifdef HAVE_DDLAN
+    nvram_set("cur_state","Verbunden");
+    eval("/sbin/check.sh");
+#endif
     }				/*else if (nvram_match("wl_mode","bridge"))
 				   {
 				   FILE *in;
