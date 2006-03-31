@@ -7,11 +7,72 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
+function setWirelessTable(val) {
+	var table = document.getElementById("wireless_table");
+	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
+	if(val != "") {
+		var leases = val.replace(/'/g, "").split(",");
+		for(var i = 0; i < leases.length; i = i + 4) {
+			var row = table.insertRow(-1);
+			row.insertCell(-1).innerHTML = leases[i];
+			row.insertCell(-1).innerHTML = leases[i + 1];
+			row.insertCell(-1).innerHTML = leases[i + 2];
+			row.insertCell(-1).innerHTML = leases[i + 3];
+			setMeterBar(row.insertCell(-1), (leases[i + 1] == "0" ? 0 : parseInt(leases[i + 1]) * 1.24 + 116), "");
+		}
+	} else {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 5;
+		cell.align = "center";
+		cell.innerHTML = "- None - ";
+	}
+}
+
+function setWDSTable(val) {
+	var table = document.getElementById("wds_table");
+	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
+	if(val != "") {
+		setElementVisible("wds", true);
+		var leases = val.replace(/'/g, "").split(",");
+		for(var i = 0; i < leases.length; i = i + 5) {
+			var row = table.insertRow(-1);
+			row.insertCell(-1).innerHTML = leases[i];
+			row.insertCell(-1).innerHTML = leases[i + 1];
+			row.insertCell(-1).innerHTML = leases[i + 2];
+			row.insertCell(-1).innerHTML = leases[i + 3];
+			row.insertCell(-1).innerHTML = leases[i + 4];
+			setMeterBar(row.insertCell(-1), (leases[i + 2] == "0" ? 0 : parseInt(leases[i + 2]) * 1.24 + 116), "");
+		}
+	} else {
+		setElementVisible("wds", false);
+	}
+}
+
+function setPacketInfo(val) {
+	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
+	setMeterBar("packet_rx",
+		(parseInt(packet[1]) == 0 ? 100 : parseInt(packet[0]) / (parseInt(packet[0]) + parseInt(packet[1])) * 100),
+		packet[0] + " OK, " + (packet[1] > 0 ? packet[1] : "no") + " errors"
+	);
+	setMeterBar("packet_tx",
+		(parseInt(packet[3]) == 0 ? 100 : parseInt(packet[2]) / (parseInt(packet[2]) + parseInt(packet[3])) * 100),
+		packet[2] + " OK, " + (packet[3] > 0 ? packet[3] : "no") + " errors"
+	);
+}
+
 var update;
 
 addEvent(window, "load", function() {
+	setWirelessTable(<% active_wireless(0); %>);
+	setWDSTable(<% active_wds(0); %>);
+	setPacketInfo("<% wl_packet_get(); %>");
+
 	update = new StatusUpdate("Status_Wireless.live.asp", <% nvram_get("refresh_time"); %>);
+	update.onUpdate("active_wireless", function(u) { setWirelessTable(u.active_wireless); });
+	update.onUpdate("active_wds", function(u) { setWDSTable(u.active_wds); });
+	update.onUpdate("packet_info", function(u) { setPacketInfo(u.packet_info); });
 	update.start();
+
 });
 
 addEvent(window, "unload", function() {
@@ -77,11 +138,7 @@ addEvent(window, "unload", function() {
 									<div class="label">SSID</div>
 									<span id="wl_ssid"><% nvram_get("wl_ssid"); %></span>&nbsp;
 								</div>
-<!--								<div class="setting">
-									<div class="label">DHCP Server</div>
-									<span id="lan_dhcp"><% nvram_else_match("lan_proto", "dhcp", "Enabled", "Disabled"); %></span>&nbsp;
-								</div>
--->								<div class="setting">
+								<div class="setting">
 									<div class="label">Channel</div>
 									<span id="wl_channel"><% get_curchannel(); %></span>&nbsp;
 								</div>
@@ -102,8 +159,45 @@ addEvent(window, "unload", function() {
 									<span id="pptp"><% nvram_else_match("pptpd_connected", "1", "Connected", "Disconnected"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
-							<span id="active_wireless"><% active_wireless(0); %></span>
-							<span id="active_wds"><% active_wds(0); %></span>
+							<fieldset>
+								<legend>Packet Info</legend>
+								<div class="setting">
+									<div class="label">Received (RX)</div>
+									<span id="packet_rx"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Transmitted (TX)</div>
+									<span id="packet_tx"></span>&nbsp;
+								</div>
+							</fieldset><br />
+							<h2>Wireless Nodes</h2>
+							<fieldset>
+								<legend id="wireless_table_legend">Clients</legend>
+								<table class="table center" cellspacing="6" id="wireless_table">
+									<tr>
+										<th width="64%">MAC Address</th>
+										<th width="12%">Signal</th>
+										<th width="12%">Noise</th>
+										<th width="12%">SNR</th>
+										<th>&nbsp;</th>
+									</tr>
+								</table>
+							</fieldset><br />
+							<span id="wds">
+								<fieldset>
+									<legend>WDS</legend>
+									<table class="table center" cellspacing="6" id="wds_table">
+										<tr>
+											<th width="30%">MAC Address</th>
+											<th width="30%">Description</th>
+											<th width="12%">Signal</th>
+											<th width="12%">Noise</th>
+											<th width="12%">SNR</th>
+											<th>&nbsp;</th>
+										</tr>
+									</table>
+								</fieldset><br />
+							</span>
 							<div class="center">
 								<input type="button" name="site_survey" value="Site Survey" onClick="<% nvram_else_match("wl_net_mode", "disabled", "alert('Not&nbsp;available!&nbsp;Please&nbsp;enable&nbsp;wireless&nbsp;network.')", "openWindow('Site_Survey.asp', 760, 700)"); %>" />
 							</div><br />
