@@ -30,7 +30,7 @@ function to_submit(F) {
 	F.submit_button.value = "ForwardSpec";
 	F.action.value = "Apply";
 //	F.save_button.value = "Saved";
-	F.save_button.value = sbutton.save.value;
+	F.save_button.value = sbutton.saving;
 	F.save_button.disabled = true;
 	F.submit();
 }
