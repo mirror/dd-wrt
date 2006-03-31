@@ -20,6 +20,7 @@
 {macupd::<% nvram_match("macupd_enable","0","Disabled"); %><% nvram_match("macupd_enable","1","Enabled"); %>}
 {smb_mount::<% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Enabled"); %>}
 {mem_info::<% dumpmeminfo(); %>}
+{wireless_table_legend::<% nvram_match("wl_mode", "wet", "Access Point"); %><% nvram_match("wl_mode", "ap", "Clients"); %><% nvram_match("wl_mode", "sta", "Access Point"); %><% nvram_match("wl_mode", "infra", "Access Point"); %><% nvram_match("wl_mode", "apsta", "Clients"); %>}
 {active_wireless::<% active_wireless(1); %>}
 {active_wds::<% active_wds(1); %>}
 {dhcp_leases::<% dumpleases(1); %>}

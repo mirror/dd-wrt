@@ -7,7 +7,46 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
-var update;
+function setWirelessTable(val) {
+	var table = document.getElementById("wireless_table");
+	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
+	if(val != "") {
+		var leases = val.replace(/'/g, "").split(",");
+		for(var i = 0; i < leases.length; i = i + 4) {
+			var row = table.insertRow(-1);
+			row.insertCell(-1).innerHTML = leases[i];
+			row.insertCell(-1).innerHTML = leases[i + 1];
+			row.insertCell(-1).innerHTML = leases[i + 2];
+			row.insertCell(-1).innerHTML = leases[i + 3];
+			setMeterBar(row.insertCell(-1), (leases[i + 1] == "0" ? 0 : parseInt(leases[i + 1]) * 1.24 + 116), "");
+		}
+	} else {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 5;
+		cell.align = "center";
+		cell.innerHTML = "- None - ";
+	}
+}
+
+function setWDSTable(val) {
+	var table = document.getElementById("wds_table");
+	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
+	if(val != "") {
+		setElementVisible("wds", true);
+		var leases = val.replace(/'/g, "").split(",");
+		for(var i = 0; i < leases.length; i = i + 5) {
+			var row = table.insertRow(-1);
+			row.insertCell(-1).innerHTML = leases[i];
+			row.insertCell(-1).innerHTML = leases[i + 1];
+			row.insertCell(-1).innerHTML = leases[i + 2];
+			row.insertCell(-1).innerHTML = leases[i + 3];
+			row.insertCell(-1).innerHTML = leases[i + 4];
+			setMeterBar(row.insertCell(-1), (leases[i + 2] == "0" ? 0 : parseInt(leases[i + 2]) * 1.24 + 116), "");
+		}
+	} else {
+		setElementVisible("wds", false);
+	}
+}
 
 function setLeasesTable(val) {
 	var table = document.getElementById("dhcp_leases_table");
@@ -54,15 +93,21 @@ function setMemoryValues(val) {
 	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
 }
 
+var update;
+
 addEvent(window, "load", function() {
 	setPacketInfo("<% wl_packet_get(); %>");
 	setMemoryValues("<% dumpmeminfo(); %>");
+	setWirelessTable(<% active_wireless(1); %>);
+	setWDSTable(<% active_wds(1); %>);
 	setLeasesTable("<% dumpleases(1); %>");
 	setElementVisible("dhcp", "<% nvram_get("wl_mode"); %>" == "ap" && "<% nvram_get("lan_proto"); %>" == "dhcp");
 
 	update = new StatusUpdate("Info.live.htm", <% nvram_get("refresh_time"); %>);
 	update.onUpdate("packet_info", function(u) { setPacketInfo(u.packet_info); });
 	update.onUpdate("mem_info", function(u) { setMemoryValues(u.mem_info); });
+	update.onUpdate("active_wireless", function(u) { setWirelessTable(u.active_wireless); });
+	update.onUpdate("active_wds", function(u) { setWDSTable(u.active_wds); });
 	update.onUpdate("dhcp_leases", function(u) { setLeasesTable(u.dhcp_leases); });
 	update.onUpdate("lan_proto", function(u) { setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp"); });
 	update.start();
@@ -228,20 +273,36 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 						</div><br clear="all" />
-<!--					<h2>Wireless</h2>
+						<h2>Wireless</h2>
 						<fieldset>
-							<legend></legend>
-							<table class="table center" cellspacing="6" id="active_wireless">
+							<legend id="wireless_table_legend">Clients</legend>
+							<table class="table center" cellspacing="6" id="wireless_table">
 								<tr>
-									<th width="55%">MAC Address</th>
-									<th width="15%">Signal</th>
-									<th width="15%">Noise</th>
-									<th width="15%">SNR</th>
+									<th width="64%">MAC Address</th>
+									<th width="12%">Signal</th>
+									<th width="12%">Noise</th>
+									<th width="12%">SNR</th>
+									<th>&nbsp;</th>
 								</tr>
 							</table>
-						</fieldset>
--->						<span id="active_wireless"><% active_wireless(1); %></span>
-						<span id="active_wds"><% active_wds(1); %></span>
+						</fieldset><br />
+						<span id="wds" style="display:none">
+							<fieldset>
+								<legend>WDS Nodes</legend>
+								<table class="table center" cellspacing="6" id="wds_table">
+									<tr>
+										<th width="30%">MAC Address</th>
+										<th width="30%">Description</th>
+										<th width="12%">Signal</th>
+										<th width="12%">Noise</th>
+										<th width="12%">SNR</th>
+										<th>&nbsp;</th>
+									</tr>
+								</table>
+							</fieldset><br />
+						</span>
+						<!--<span id="active_wireless"><% active_wireless(1); %></span>
+						<span id="active_wds"><% active_wds(1); %></span> -->
 						<span id="dhcp" style="display:none">
 							<h2>DHCP</h2>
 							<fieldset>

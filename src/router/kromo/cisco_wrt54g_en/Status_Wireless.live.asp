@@ -7,5 +7,7 @@
 {wl_rate::<% get_currate(); %> Mbps}
 {wl_security::<% nvram_match("security_mode", "disabled", "Disabled"); %><% nvram_invmatch("security_mode", "disabled", "Enabled,&nbsp;"); %><% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %><% nvram_match("security_mode", "wpa", "WPA RADIUS"); %><% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %><% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %><% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %><% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %><% nvram_match("security_mode", "radius", "RADIUS"); %><% nvram_match("security_mode", "wep", "WEP"); %>}
 {pptp::<% nvram_else_match("pptpd_connected", "1", "Connected", "Disconnected"); %>}
+{wireless_table_legend::<% nvram_match("wl_mode", "wet", "Access Point"); %><% nvram_match("wl_mode", "ap", "Clients"); %><% nvram_match("wl_mode", "sta", "Access Point"); %><% nvram_match("wl_mode", "infra", "Access Point"); %><% nvram_match("wl_mode", "apsta", "Clients"); %>}
 {active_wireless::<% active_wireless(0); %>}
 {active_wds::<% active_wds(0); %>}
+{packet_info::<% wl_packet_get(); %>}
