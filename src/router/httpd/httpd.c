@@ -1375,7 +1375,7 @@ wfread (char *buf, int size, int n, FILE * fp)
   if (do_ssl)
     {
       //do it in chains
-      int cnt = size * n / 0x4000;
+      int cnt = (size * n) / 0x4000;
       int i;
       int len = 0;
       for (i = 0; i < cnt; i++)
