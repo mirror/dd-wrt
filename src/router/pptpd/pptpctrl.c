@@ -3,7 +3,7 @@
  *
  * PPTP control connection between PAC-PNS pair
  *
- * $Id: pptpctrl.c,v 1.17 2005/01/24 22:04:13 quozl Exp $
+ * $Id: pptpctrl.c,v 1.18 2005/07/29 13:00:40 quozl Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -374,18 +374,37 @@ static void pptp_handle_ctrl_connection(char **pppaddrs, struct in_addr *inetadd
 						pty_fd = -1;
 					}
 				}
-				/* Start the call */
-				syslog(LOG_INFO, "CTRL: Starting call (launching pppd, opening GRE)");
-
-                                /* Fiddle with argv */
+                                /* change process title for accounting and status scripts */
                                 my_setproctitle(gargc, gargv,
                                       "pptpd [%s:%04X - %04X]",
                                       inet_ntoa(inetaddrs[1]),
                                       ntohs(((struct pptp_out_call_rply *) (rply_packet))->call_id_peer),
                                       ntohs(((struct pptp_out_call_rply *) (rply_packet))->call_id));
-
-				if ((pty_fd = startCall(pppaddrs, inetaddrs)) > maxfd)
-					maxfd = pty_fd;
+				/* start the call, by launching pppd */
+				syslog(LOG_INFO, "CTRL: Starting call (launching pppd, opening GRE)");
+				pty_fd = startCall(pppaddrs, inetaddrs);
+				if (pty_fd > maxfd) maxfd = pty_fd;
+				/* wait for first packet from ppp before proceeding, thus
+				   delaying outgoing call reply, and avoiding traffic 
+				   injection into the pty before echo has been turned off
+				   by pppd */
+				if (PPP_WAIT) {
+					fd_set pty_fds;
+					FD_ZERO(&pty_fds);
+					FD_SET(pty_fd, &pty_fds);
+					idleTime.tv_sec = PPP_WAIT;
+					idleTime.tv_usec = 0;
+					switch (select(maxfd + 1, &pty_fds, NULL, NULL, &idleTime)) {
+					case -1:
+						syslog(LOG_ERR, 
+						       "CTRL: pty select() failed, ignoring");
+						break;
+					case 0:
+						syslog(LOG_ERR, 
+						       "CTRL: timeout waiting for first packet from our pppd");
+						break;
+					}
+				}
 				if ((gre_fd = pptp_gre_init(call_id_pair, pty_fd, inetaddrs)) > maxfd)
 					maxfd = gre_fd;
 				break;
