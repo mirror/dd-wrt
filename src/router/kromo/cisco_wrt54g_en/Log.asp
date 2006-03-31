@@ -50,8 +50,8 @@ addEvent(window, "load", function() {
 											<li><span>Log</span></li>
 											<li><a href="Diagnostics.asp">Diagnostics</a></li>
 											<li><a href="Factory_Defaults.asp">Factory Defaults</a></li>
-											<li><% support_elsematch("HTTPS","1","<a onClick=alert('Not&nbsp;available!&nbsp;Please&nbsp;use&nbsp;HTTP&nbsp;mode.')>Firmware Upgrade</a>","<a href="Upgrade.asp">Firmware Upgrade</a>"); %></li>
-											<li><% support_elsematch("HTTPS","1","<a onClick=alert('Not&nbsp;available!&nbsp;Please&nbsp;use&nbsp;HTTP&nbsp;mode.')>Backup</a>","<a href="config.asp">Backup</a>"); %></li>
+											<li><a href="Upgrade.asp">Firmware Upgrade</a></li>
+											<li><a href="config.asp">Backup</a></li>
 										</ul>
 									</div>
 								</li>
