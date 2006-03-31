@@ -1014,7 +1014,7 @@ start_upnp (void)
   ret = eval ("killall", "-SIGUSR1", "upnp");
   if (ret != 0)
     {
-      ret = eval ("upnp", "-D -S 0",
+      ret = eval ("upnp", "-D",
 		  "-L", nvram_safe_get ("lan_ifname"),
 		  "-W", wan_ifname,
 		  "-I", nvram_safe_get ("upnp_ssdp_interval"),
