@@ -213,7 +213,7 @@ function init() {
 						</div>
 						<dl>
 							<dt class="term">Auto-Refresh:</dt>
-							<dd class="definition">Adjusts the Webinterface auto refreshing time. 0 disables Auto-Refresh completely.</dd>
+							<dd class="definition">Adjusts the WebInterface automatic refresh interval. 0 disables feature completely.</dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HManagement.asp');">More...</a>
 					</div>
