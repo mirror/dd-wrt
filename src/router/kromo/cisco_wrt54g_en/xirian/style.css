@@ -151,8 +151,8 @@ background:url(help_bg.png);
 padding:7px;
 }
 #help div#logo  {
-height: 54px;
-width: 100%;
+height:54px;
+width:100%;
 background:url(help.png) top center no-repeat;
 }
 #help div#logo * {
@@ -164,7 +164,7 @@ font-size:10px;
 }
 #help dt {
 font-weight:bold;
-margin-top: 14px;
+margin-top:14px;
 margin-bottom:6px;
 }
 #help a {
@@ -177,8 +177,8 @@ text-decoration:underline;
 position:absolute;
 top:7px;
 left:228px;
-height: 65px;
-width: 400px;
+height:65px;
+width:400px;
 }
 #statusInfo div.info {
 font-size:10px;
@@ -188,7 +188,7 @@ margin-bottom:2px;
 text-align:center;
 }
 .gui .submitFooter {
-margin: 0 -12px;
+margin:0 -12px;
 padding:6px 0;
 background:url(footer.png) top left;
 }
@@ -203,7 +203,7 @@ float:left;
 width:180px;
 }
 .setting .default {
-color: #889;
+color:#889;
 }
 fieldset {
 padding-left:10px;
@@ -219,7 +219,7 @@ color:#f33;
 position:absolute;
 top:6px;
 left:400px;
-height: 14px;
+height:14px;
 width:160px;
 background:#bbc;
 border-style:solid;
@@ -227,7 +227,7 @@ border-width:1px;
 }
 .meter .bar {
 background:url(help_bg.png);
-height: 14px;
+height:14px;
 }
 .meter .text {
 position:absolute;
@@ -247,20 +247,23 @@ visibility: visible;
 position: relative;
 overflow:hidden;
 border-style:solid;
-background-color: #fff;
-border-color: #999;
-font-size:.09em;
-border-width:.09em;
+background-color:#fff;
+border-color:#999;
+font-size:1px;
+border-width:1px;
 }
 .progressbarblock {
 position:absolute;
 background-image: url(help_bg.png);
-font-size:.09em;
+font-size:1px;
 }
 .bin {
 background:url(/images/bin_bt.gif) center center no-repeat;
-cursor: hand;
+cursor:pointer;
 }
 .textblink {
 text-decoration:blink;
+}
+input.btn {
+padding:.0em .5em;
 }
