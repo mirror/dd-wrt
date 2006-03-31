@@ -1822,6 +1822,18 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
       ret += websWrite (wp, "%s", name);
 
     }
+  else if (!strcmp (type, "p2p"))
+    {
+      char *port_data, filter_port[] = "filter_p2p_grpXXX";
+
+      snprintf (filter_port, sizeof (filter_port), "filter_p2p_grp%s",
+		nvram_safe_get ("filter_id"));
+      port_data = nvram_safe_get (filter_port);
+      if (!strcmp (port_data, ""))
+	return -1;		// no data
+      ret += websWrite (wp, "%s", port_data);
+
+    }
   D ("okay");
   return ret;
 }
