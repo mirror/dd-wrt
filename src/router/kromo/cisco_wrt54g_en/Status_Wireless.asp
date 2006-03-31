@@ -105,7 +105,7 @@ addEvent(window, "unload", function() {
 							<span id="active_wireless"><% active_wireless(0); %></span>
 							<span id="active_wds"><% active_wds(0); %></span>
 							<div class="center">
-								<input type="button" name="site_survey" value="Site Survey" onclick="openWindow('Site_Survey.asp', 760, 700)" />
+								<input type="button" name="site_survey" value="Site Survey" onClick="<% nvram_else_match("wl_net_mode", "disabled", "alert('Not&nbsp;available!&nbsp;Please&nbsp;enable&nbsp;wireless&nbsp;network.')", "openWindow('Site_Survey.asp', 760, 700)"); %>" />
 							</div><br />
 							<div class="submitFooter">
 								<input type="button" name="refresh_button" value="Refresh" onclick="window.location.reload()" />
