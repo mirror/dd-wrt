@@ -143,7 +143,8 @@ function init() {
 		</script>
 	</head>
 	
-	<body class="gui" onload="init()"> <% showad(); %>
+	<body class="gui" onload="init()">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -207,8 +208,13 @@ function init() {
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
-						<br/>
+						<div id="logo">
+							<h2>Help</h2>
+						</div>
+						<dl>
+							<dt class="term">Auto-Refresh:</dt>
+							<dd class="definition">Adjusts the Webinterface auto refreshing time. 0 disables Auto-Refresh completely.</dd>
+						</dl><br />
 						<a href="javascript:openHelpWindow('HManagement.asp');">More...</a>
 					</div>
 				</div>
