@@ -137,6 +137,7 @@ print_login_prompt (void)
 	}
       fclose (fp);
     }
+  fputs("\n");
   char buf[MAXHOSTNAMELEN + 1];
 
   gethostname (buf, MAXHOSTNAMELEN);
