@@ -25,6 +25,10 @@
 	<fieldset>
 	<legend>Web Access</legend>
 	<div class="setting">
+		<div class="label">Auto-Refresh (in seconds)</div>
+		<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
+	</div>
+	<div class="setting">
 		<div class="label">Protocol</div>
 		<input type="checkbox" value="1" name="http_enable" <% nvram_match("http_enable","1","checked"); %> />HTTP
 		<input type="checkbox" value="1" name="https_enable" <% nvram_match("https_enable","1","checked"); %> />HTTPS
