@@ -1235,6 +1235,10 @@ struct nvram_tuple router_defaults[] = {
   {"ath5_regdomain", "96", 0},
 
 #endif
+#ifdef HAVE_SPUTNIK_APD
+ {"sputnik_mjid_type","0",0},
+ {"sputnik_mjid","",0},
+#endif
 #ifdef HAVE_CHILLILOCAL
   {"fon_usernames", "0", 0},
   {"fon_userlist", "", 0},
