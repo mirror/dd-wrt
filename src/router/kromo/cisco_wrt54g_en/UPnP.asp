@@ -25,11 +25,11 @@
 
 function to_submit(F)
 {
-        F.submit_button.value = "UPnP";
-        F.action.value = "Apply";
-        F.save_button.value = "Saved";
-        F.save_button.disabled = true;
-        F.submit();
+	F.submit_button.value = "UPnP";
+	F.save_button.value = "Saved";
+        
+	F.action.value = "Apply";
+	apply(F);
 }
 
 var upnpForwards = new Array(<% tf_upnp(); %>);
