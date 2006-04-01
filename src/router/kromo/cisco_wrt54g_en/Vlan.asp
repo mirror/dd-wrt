@@ -8,13 +8,13 @@
 		<script type="text/javascript" src="common.js"></script>
 		<style type="text/css">
 		<!--
-			.border {
-			border-right: 1px solid;
-			border-top: 1px solid; 
-			border-left: 1px solid; 
-			border-bottom: 1px solid;
-			}
-		-->	
+td.vlan {
+border:solid 1px #666;
+text-align:center;
+vertical-align:center;
+height:30px;
+}
+		-->
 		</style>
 		<script type="text/javascript">
 function to_submit(F) {
@@ -74,7 +74,7 @@ function init() {
 }
 </script>
 	</head>
-	
+
 	<body class="gui" onload="init()"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -119,7 +119,7 @@ function init() {
 							<h2>Virtual Local Area Network (VLAN)</h2>
 							<fieldset>
 							   <legend>VLAN</legend>
-							   <table id="vlan" class="table center">
+							   <table id="vlan" class="table center vlan">
   								<tbody>
   									<tr>
   										<th rowspan="2">VLAN</th>
@@ -148,7 +148,7 @@ function init() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
-						<br/>
+						<br />
 						<!--<a href="javascript:openHelpWindow('HVlan.asp')">More...</a>-->
 					</div>
 				</div>
