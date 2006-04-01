@@ -562,6 +562,7 @@ struct nvram_tuple router_defaults[] = {
   {"wl_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"wl_radius_key", "", 0},	/* RADIUS shared secret */
   {"wl_radius_port", "1812", 0},	/* RADIUS server UDP port */
+  {"radius_override","1",0}, //overrides radius if server is unavailable
 #ifdef HAVE_SKYTEL
   {"wl_afterburner", "auto", 0},	/* Afterburner/Speedbooster */
 #else
