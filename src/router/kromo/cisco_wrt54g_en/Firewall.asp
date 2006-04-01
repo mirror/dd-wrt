@@ -43,7 +43,7 @@ function to_submit(F) {
 	F.save_button.disabled = true;
 
 	F.action.value = "Apply";
-	F.submit();
+	apply(F);
 }
 function init() {
 	if(document.firewall._block_wan.checked == true) {
