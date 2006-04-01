@@ -12,17 +12,18 @@ function to_submit(F) {
 		if(!confirm("Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.")) {
 			return false;
 		}
-		F.action.value='Restore';
 		F.submit_button.value = "Factory_Defaults";
-		F.submit();
+		
+		F.action.value="Restore";
+		apply(F);
 
        	return true;
 	}
-	F.action.value="Apply";
 	F.submit_button.value = "Factory_Defaults";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	
+	F.action.value="Apply";
+	apply(F);
 
 	return true;
 }
