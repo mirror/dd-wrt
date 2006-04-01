@@ -503,7 +503,7 @@ void check_servers(struct daemon *daemon)
   /* forward table rules reference servers, so have to blow them away */
   forward_init(0);
   
-  daemon->last_server = NULL;
+  daemon->last_server = daemon->srv_save = NULL;
   
   for (new = daemon->servers; new; new = tmp)
     {

@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2005 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -60,15 +60,16 @@
 
 static unsigned char *option_put(unsigned char *p, unsigned char *end, int opt, int len, unsigned int val);
 static unsigned char *option_end(unsigned char *p, unsigned char *end, struct dhcp_packet *start);
-static unsigned char *option_put_string(unsigned char *p, unsigned char *end, int opt, char *string);
+static unsigned char *option_put_string(unsigned char *p, unsigned char *end, 
+					int opt, char *string, int null_term);
 static void bootp_option_put(struct dhcp_packet *mess, 
 			     struct dhcp_boot *boot_opts, struct dhcp_netid *netids);
 static int option_len(unsigned char *opt);
 static void *option_ptr(unsigned char *opt);
 static struct in_addr option_addr(unsigned char *opt);
 static unsigned int option_uint(unsigned char *opt, int size);
-static void log_packet(char *type, struct in_addr *addr, unsigned char *hwaddr, char *interface, char *string);
-static unsigned char *option_find(struct dhcp_packet *mess, int size, int opt_type, int minsize);
+static void log_packet(char *type, struct in_addr *addr, unsigned char *hwaddr, int hw_len, char *interface, char *string);
+static unsigned char *option_find(struct dhcp_packet *mess, size_t size, int opt_type, int minsize);
 static unsigned char *do_req_options(struct dhcp_context *context,
 				     unsigned char *p, unsigned char *end, 
 				     unsigned char *req_options, 
@@ -76,21 +77,23 @@ static unsigned char *do_req_options(struct dhcp_context *context,
 				     char *hostname,
 				     struct dhcp_netid *netid,
 				     struct in_addr subnet_addr,
-				     unsigned char fqdn_flags);
+				     unsigned char fqdn_flags,
+				     int null_term);
 
-int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_name, 
-	       unsigned int sz, time_t now, int unicast_dest)
+size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_name, 
+	       size_t sz, time_t now, int unicast_dest)
 {
   unsigned char *opt, *clid = NULL;
   struct dhcp_lease *ltmp, *lease = NULL;
   struct dhcp_vendor *vendor;
+  struct dhcp_mac *mac;
   struct dhcp_netid_list *id_list;
   int clid_len = 0, ignore = 0;
   struct dhcp_packet *mess = &daemon->dhcp_packet->data;
   unsigned char *p = mess->options + sizeof(u32); /* skip cookie */
   unsigned char *end = (unsigned char *)(daemon->dhcp_packet + 1);
   char *hostname = NULL, *offer_hostname = NULL, *client_hostname = NULL;
-  int hostname_auth = 0;
+  int hostname_auth = 0, borken_opt = 0;
   unsigned char *req_options = NULL;
   char *message = NULL;
   unsigned int time;
@@ -99,11 +102,13 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
   struct in_addr subnet_addr, fallback;
   unsigned short fuzz = 0;
   unsigned int mess_type = 0;
-  u8 *chaddr;
   unsigned char fqdn_flags = 0;
   subnet_addr.s_addr = 0;
 
   if (mess->op != BOOTREQUEST)
+    return 0;
+   
+  if (mess->hlen > DHCP_CHADDR_MAX)
     return 0;
   
   /* check for DHCP rather than BOOTP */
@@ -132,8 +137,8 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	}
       
       /* do we have a lease in store? */
-      if (mess->htype != 0)
-	lease = lease_find_by_client(mess->chaddr, clid, clid_len);
+      if (mess->htype != 0 && mess->hlen != 0)
+	lease = lease_find_by_client(mess->chaddr, mess->hlen, mess->htype, clid, clid_len);
 
       /* If this request is missing a clid, but we've seen one before, 
 	 use it again for option matching etc. */
@@ -144,38 +149,31 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	}
     }
   
-  /* htype == 0 is only allowed in DHCPINFORM, this seems to be a
-     microsoftism. chaddr == NULL in that case */
-
-  if (mess->htype == 0 && mess_type == DHCPINFORM)
+  /* htype == 0 is only allowed in DHCPINFORM, 
+     this seems to be a microsoftism. */
+  if (mess->htype == 0)
     {
-      chaddr = NULL;
-      if (mess->hlen != 0)
+      if (mess_type != DHCPINFORM || mess->hlen != 0)
 	return 0;
     }
-  else
-    {
-      chaddr = mess->chaddr;
-
-      /* Token ring is supported when we have packet sockets
-	 to make the HW headers for us. We don't have the code to build
-	 token ring headers when using BPF. We rely on the fact that
-	 token ring hwaddrs are the same size as ethernet hwaddrs. */
-      
-#ifdef HAVE_BPF
-      if (mess->htype != ARPHRD_ETHER)	
-#else
-      if (mess->htype != ARPHRD_ETHER && mess->htype != ARPHRD_IEEE802)
-#endif
-	{
-	  syslog(LOG_WARNING, _("DHCP request for unsupported hardware type (%d) recieved on %s"), 
-		 mess->htype, iface_name);
-	  return 0;
-	}	
-      
-      if (mess->hlen != ETHER_ADDR_LEN)
-	return 0;
-    }
+  else if (mess->hlen == 0)
+     return 0;
+  
+  for (mac = daemon->dhcp_macs; mac; mac = mac->next)
+    if (mac->hwaddr_len == mess->hlen &&
+	(mac->hwaddr_type == mess->htype || mac->hwaddr_type == 0))
+      {
+	int i;
+	unsigned int mask = mac->mask;
+	for (i = mac->hwaddr_len - 1; i >= 0; i--, mask = mask >> 1)
+	  if (mask & 1)
+	    mac->hwaddr[i] = mess->chaddr[i];
+	if (memcmp(mac->hwaddr, mess->chaddr, mac->hwaddr_len) == 0)
+	  {
+	    mac->netid.next = netid;
+	    netid = &mac->netid;
+	  }
+      }
   
   /* Determine network for this packet. Our caller will have already linked all the 
      contexts which match the addresses of the receiving interface but if the 
@@ -228,7 +226,8 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
   
   mess->op = BOOTREPLY;
     
-  config = find_config(daemon->dhcp_conf, context, clid, clid_len, chaddr, NULL);
+  config = find_config(daemon->dhcp_conf, context, clid, clid_len, 
+		       mess->chaddr, mess->hlen, mess->htype, NULL);
   
   if (mess_type == 0)
     {
@@ -261,7 +260,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	}
       
       for (id_list = daemon->dhcp_ignore; id_list; id_list = id_list->next)
-	if (match_netid(id_list->list, netid))
+	if (match_netid(id_list->list, netid, 0))
 	  message = _("disabled");
       
       if (!message)
@@ -271,14 +270,15 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	      logaddr = &config->addr;
 	      mess->yiaddr = config->addr;
 	      if ((lease = lease_find_by_addr(config->addr)) &&
-		  memcmp(lease->hwaddr, chaddr, ETHER_ADDR_LEN) != 0)
+		  (lease->hwaddr_len != mess->hlen ||
+		   memcmp(lease->hwaddr, mess->chaddr, lease->hwaddr_len) != 0))
 		message = _("address in use");
 	    }
 	  else if (!(daemon->options & OPT_BOOTP_DYNAMIC))
 	    message = _("no address configured");
 	  else
 	    {
-	      if (!(lease = lease_find_by_client(mess->chaddr, NULL, 0)) ||
+	      if (!(lease = lease_find_by_client(mess->chaddr, mess->hlen, mess->htype, NULL, 0)) ||
 		  !address_available(context, lease->addr))
 		{
 		   if (lease)
@@ -287,14 +287,14 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 		       lease_prune(lease, now);
 		       lease = NULL;
 		     }
-		   if (!address_allocate(context, daemon, &mess->yiaddr, chaddr, netid, now))
+		   if (!address_allocate(context, daemon, &mess->yiaddr, mess->chaddr, mess->hlen, netid, now))
 		     message = _("no address available");
 		}
 	      else
 		mess->yiaddr = lease->addr;
 	    }
 	  
-	  if (!message && !lease && (!(lease = lease_allocate(chaddr, NULL, 0, mess->yiaddr))))
+	  if (!message && !lease && (!(lease = lease_allocate(mess->chaddr, NULL, mess->hlen, mess->htype, 0, mess->yiaddr))))
 	    message = _("no leases left");
 	  
 	  if (!message && !(context = narrow_context(context, mess->yiaddr)))
@@ -304,19 +304,19 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	    {
 	      logaddr = &mess->yiaddr;
 		
-	      if (context->netid.net && !(context->flags & CONTEXT_FILTER))
+	      if (context->netid.net)
 		{
 		  context->netid.next = netid;
 		  netid = &context->netid;
 		}	 
 	      
-	      lease_set_hwaddr(lease, chaddr, NULL, 0);
+	      lease_set_hwaddr(lease, mess->chaddr, NULL, mess->hlen, mess->htype, 0);
 	      if (hostname)
 		lease_set_hostname(lease, hostname, daemon->domain_suffix, 1); 
 	      lease_set_expires(lease, 0); /* infinite lease */
 	      
 	      p = do_req_options(context, p, end, NULL, daemon, 
-				 hostname, netid, subnet_addr, fqdn_flags);
+				 hostname, netid, subnet_addr, fqdn_flags, 0);
 	      /* must do this after do_req_options since it overwrites filename field. */
 	      mess->siaddr = context->local;
 	      bootp_option_put(mess, daemon->boot_config, netid);
@@ -324,7 +324,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	    }
 	}
       
-      log_packet(NULL, logaddr, chaddr, iface_name, message);
+      log_packet(NULL, logaddr, mess->chaddr, mess->hlen, iface_name, message);
       mess->file[128] = save;
 
       if (message)
@@ -346,7 +346,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       pp = op;
       
       /* Always force update, since the client has no way to do it itself. */
-      if (fqdn_flags & 0x01)
+      if (!(fqdn_flags & 0x01))
 	fqdn_flags |= 0x02;
       
       fqdn_flags &= ~0x08;
@@ -363,6 +363,8 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       else
 	{
 	  memcpy(pq, op, len);
+	  if (len > 0 && op[len-1] == 0)
+	    borken_opt = 1;
 	  pq += len + 1;
 	}
       
@@ -378,8 +380,13 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
     {
       int len = option_len(opt);
       memcpy(daemon->dhcp_buff, option_ptr(opt), len);
-      /* May not be zero terminated */
-      daemon->dhcp_buff[len] = 0;
+      /* Microsoft clients are broken, and need zero-terminated strings
+	 in options. We detect this state here, and do the same in
+	 any options we send */
+      if (len > 0 && daemon->dhcp_buff[len-1] == 0)
+	borken_opt = 1;
+      else
+	daemon->dhcp_buff[len] = 0;
       if (canonicalise(daemon->dhcp_buff))
 	client_hostname = daemon->dhcp_buff;
     }
@@ -398,7 +405,9 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       /* Search again now we have a hostname. 
 	 Only accept configs without CLID and HWADDR here, (they won't match)
 	 to avoid impersonation by name. */
-      struct dhcp_config *new = find_config(daemon->dhcp_conf, context, NULL, 0, chaddr, hostname);
+      struct dhcp_config *new = find_config(daemon->dhcp_conf, context, NULL, 0,
+					    mess->chaddr, mess->hlen, 
+					    mess->htype, hostname);
       if (!have_config(new, CONFIG_CLID) && !have_config(new, CONFIG_HWADDR))
 	config = new;
     }
@@ -442,10 +451,10 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	      break;
 	    }
       }
-
+  
   /* if all the netids in the ignore list are present, ignore this client */
   for (id_list = daemon->dhcp_ignore; id_list; id_list = id_list->next)
-    if (match_netid(id_list->list, netid))
+    if (match_netid(id_list->list, netid, 0))
       ignore = 1;
   
   /* Can have setting to ignore the client ID for a particular MAC address or hostname */
@@ -485,7 +494,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       if (!(opt = option_find(mess, sz, OPTION_REQUESTED_IP, INADDRSZ)))
 	return 0;
       
-      log_packet("DECLINE", option_ptr(opt), chaddr, iface_name, message);
+      log_packet("DECLINE", option_ptr(opt), mess->chaddr, mess->hlen, iface_name, message);
       
       if (lease && lease->addr.s_addr == option_addr(opt).s_addr)
 	lease_prune(lease, now);
@@ -513,7 +522,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       else
 	message = _("unknown lease");
 
-      log_packet("RELEASE", &mess->ciaddr, chaddr, iface_name, message);
+      log_packet("RELEASE", &mess->ciaddr, mess->chaddr, mess->hlen, iface_name, message);
 	
       return 0;
       
@@ -533,15 +542,15 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	else if (opt && address_available(context, addr) && !lease_find_by_addr(addr) && 
 		 !config_find_by_address(daemon->dhcp_conf, addr))
 	  mess->yiaddr = addr;
-	else if (!address_allocate(context, daemon, &mess->yiaddr, chaddr, netid, now))
+	else if (!address_allocate(context, daemon, &mess->yiaddr, mess->chaddr, mess->hlen, netid, now))
 	  message = _("no address available");      
-	log_packet("DISCOVER", opt ? &addr : NULL, chaddr, iface_name, message);          
+	log_packet("DISCOVER", opt ? &addr : NULL, mess->chaddr, mess->hlen, iface_name, message);          
       }
 
       if (message || !(context = narrow_context(context, mess->yiaddr)))
 	return 0;
 
-      if (context->netid.net && !(context->flags & CONTEXT_FILTER))
+      if (context->netid.net)
 	{
 	  context->netid.next = netid;
 	  netid = &context->netid;
@@ -569,10 +578,10 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	  p = option_put(p, end, OPTION_T2, 4, (time*7)/8);
 	}
       p = do_req_options(context, p, end, req_options, daemon, 
-			 offer_hostname, netid, subnet_addr, fqdn_flags);
+			 offer_hostname, netid, subnet_addr, fqdn_flags, borken_opt);
       p = option_end(p, end, mess);
       
-      log_packet("OFFER" , &mess->yiaddr, chaddr, iface_name, NULL);
+      log_packet("OFFER" , &mess->yiaddr, mess->chaddr, mess->hlen, iface_name, NULL);
       return p - (unsigned char *)mess;
       
     case DHCPREQUEST:
@@ -613,8 +622,12 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       else
 	{
 	  /* RENEWING or REBINDING */ 
-	  /* Must exist a lease for this address */
-	  if (!lease || mess->ciaddr.s_addr != lease->addr.s_addr)
+	  /* Check existing lease for this address.
+	     We allow it to be missing if dhcp-authoritative mode
+	     as long as we can allocate the lease now - checked below.
+	     This makes for a smooth recovery from a lost lease DB */
+	  if ((lease && mess->ciaddr.s_addr != lease->addr.s_addr) ||
+	      (!lease && !(daemon->options & OPT_AUTHORITATIVE)))
 	    {
 	      message = _("lease not found");
 	      /* ensure we broadcast NAK */
@@ -625,7 +638,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	  mess->yiaddr = mess->ciaddr;
 	}
       
-      log_packet("REQUEST", &mess->yiaddr, chaddr, iface_name, NULL);
+      log_packet("REQUEST", &mess->yiaddr, mess->chaddr, mess->hlen, iface_name, NULL);
  
       if (!message)
 	{
@@ -660,20 +673,20 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	  else if ((ltmp = lease_find_by_addr(mess->yiaddr)) && ltmp != lease)
 	    message = _("address in use");
 	  
-	  else if (!lease && !(lease = lease_allocate(chaddr, clid, clid_len, mess->yiaddr)))
+	  else if (!lease && !(lease = lease_allocate(mess->chaddr, clid, mess->hlen, mess->htype, clid_len, mess->yiaddr)))
 	    message = _("no leases left");
 	}
       
       if (message)
 	{
-	  log_packet("NAK", &mess->yiaddr, chaddr, iface_name, message);
+	  log_packet("NAK", &mess->yiaddr, mess->chaddr, mess->hlen, iface_name, message);
 	  
 	  mess->siaddr.s_addr = mess->yiaddr.s_addr = 0;
 	  bootp_option_put(mess, NULL, NULL);
 	  p = option_put(p, end, OPTION_MESSAGE_TYPE, 1, DHCPNAK);
 	  p = option_put(p, end, OPTION_SERVER_IDENTIFIER, INADDRSZ, 
 			 ntohl(context ? context->local.s_addr : fallback.s_addr));
-	  p = option_put_string(p, end, OPTION_MESSAGE, message);
+	  p = option_put_string(p, end, OPTION_MESSAGE, message, borken_opt);
 	  /* This fixes a problem with the DHCP spec, broadcasting a NAK to a host on 
 	     a distant subnet which unicast a REQ to us won't work. */
 	  if (!unicast_dest || mess->giaddr.s_addr != 0 || 
@@ -691,9 +704,9 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	      hostname_auth = 1;
 	    }
 
-	  log_packet("ACK", &mess->yiaddr, chaddr, iface_name, hostname);
+	  log_packet("ACK", &mess->yiaddr, mess->chaddr, mess->hlen, iface_name, hostname);
       
-	  if (context->netid.net && !(context->flags & CONTEXT_FILTER))
+	  if (context->netid.net)
 	    {
 	      context->netid.next = netid;
 	      netid = &context->netid;
@@ -707,7 +720,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 		time = req_time;
 	    }
 	  
-	  lease_set_hwaddr(lease, chaddr, clid, clid_len);
+	  lease_set_hwaddr(lease, mess->chaddr, clid, mess->hlen, mess->htype, clid_len);
 	  if (hostname)
 	    lease_set_hostname(lease, hostname, daemon->domain_suffix, hostname_auth);
 	  lease_set_expires(lease, time == 0xffffffff ? 0 : now + (time_t)time);
@@ -725,7 +738,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
 	      p = option_put(p, end, OPTION_T2, 4, ((time * 7)/8) - fuzz);
 	    }
 	  p = do_req_options(context, p, end, req_options, daemon, 
-			     hostname, netid, subnet_addr, fqdn_flags);
+			     hostname, netid, subnet_addr, fqdn_flags, borken_opt);
 	}
 
       p = option_end(p, end, mess);
@@ -735,7 +748,7 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       if (ignore || have_config(config, CONFIG_DISABLE))
 	message = _("ignored");
       
-      log_packet("INFORM", &mess->ciaddr, chaddr, iface_name, message);
+      log_packet("INFORM", &mess->ciaddr, mess->chaddr, mess->hlen, iface_name, message);
      
       if (message || mess->ciaddr.s_addr == 0 || 
 	  !(context = narrow_context(context, mess->ciaddr)))
@@ -754,31 +767,34 @@ int dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_
       if (!hostname)
 	hostname = host_from_dns(daemon, mess->yiaddr);
       p = do_req_options(context, p, end, req_options, daemon, 
-			 hostname, netid, subnet_addr, fqdn_flags);
+			 hostname, netid, subnet_addr, fqdn_flags, borken_opt);
       p = option_end(p, end, mess);
       
-      log_packet("ACK", &mess->ciaddr, chaddr, iface_name, hostname);
+      log_packet("ACK", &mess->ciaddr, mess->chaddr, mess->hlen, iface_name, hostname);
       return p - (unsigned char *)mess; 
     }
   
   return 0;
 }
 
-static void log_packet(char *type, struct in_addr *addr, unsigned char *hwaddr, char *interface, char *string)
+static void log_packet(char *type, struct in_addr *addr, unsigned char *hwaddr, int hw_len, char *interface, char *string)
 {
-  u8 empty[] = { 0, 0, 0, 0, 0, 0};
+  char buff[(DHCP_CHADDR_MAX * 3) + 1];
+  char *p = buff;
+  int i;
 
-  if (!hwaddr)
-    hwaddr = empty;
-
-  syslog(LOG_INFO, "%s%s(%s)%s%s %.2x:%.2x:%.2x:%.2x:%.2x:%.2x%s%s",
+  *buff = 0;
+  for (i = 0; i < hw_len - 1; i++)
+    p += sprintf(p, "%.2x:", hwaddr[i]);
+  p += sprintf(p, "%.2x ", hwaddr[i]);
+  
+  syslog(LOG_INFO, "%s%s(%s) %s%s%s%s",
 	 type ? "DHCP" : "BOOTP",
 	 type ? type : "",
 	 interface, 
-	 addr ? " " : "",
 	 addr ? inet_ntoa(*addr) : "",
-	 hwaddr[0], hwaddr[1], hwaddr[2], hwaddr[3], hwaddr[4], hwaddr[5],
-	 string ? " " : "",
+	 addr ? " " : "",
+	 buff,
 	 string ? string : "");
 }
 
@@ -822,12 +838,12 @@ static void bootp_option_put(struct dhcp_packet *mess,
   struct dhcp_boot *tmp;
   
   for (tmp = boot_opts; tmp; tmp = tmp->next)
-    if (match_netid(tmp->netid, netids))
+    if (match_netid(tmp->netid, netids, 0))
       break;
   if (!tmp)
     /* No match, look for one without a netid */
     for (tmp = boot_opts; tmp; tmp = tmp->next)
-      if (!tmp->netid)
+      if (match_netid(tmp->netid, netids, 1))
 	break;
 
   /* Do this _after_ the matching above, since in 
@@ -884,9 +900,13 @@ static unsigned char *option_end(unsigned char *p, unsigned char *end, struct dh
   return p;
 }
 
-static unsigned char *option_put_string(unsigned char *p, unsigned char *end, int opt, char *string)
+static unsigned char *option_put_string(unsigned char *p, unsigned char *end, int opt, 
+					char *string, int null_term)
 {
   size_t len = strlen(string);
+
+  if (null_term && len != 255)
+    len++;
 
   if (check_space(p, end, len, opt))
     {
@@ -935,7 +955,7 @@ static unsigned char *option_find1(unsigned char *p, unsigned char *end, int opt
   return NULL;
 }
  
-static unsigned char *option_find(struct dhcp_packet *mess, int size, int opt_type, int minsize)
+static unsigned char *option_find(struct dhcp_packet *mess, size_t size, int opt_type, int minsize)
 {
   int overload = 0; 
   unsigned char *ret;
@@ -976,31 +996,30 @@ static struct dhcp_opt *option_find2(struct dhcp_netid *netid, struct dhcp_opt *
   struct dhcp_opt *tmp;  
   for (tmp = opts; tmp; tmp = tmp->next)
     if (tmp->opt == opt)
-      {
-	if (netid)
-	  {
-	    if (match_netid(tmp->netid, netid))
-	      return tmp;
-	  }
-	else if (!tmp->netid)
-	  return tmp;
-      }
+      if (match_netid(tmp->netid, netid, 1) || match_netid(tmp->netid, netid, 0))
+	return tmp;
 	      
   return netid ? option_find2(NULL, opts, opt) : NULL;
 }
 
-static unsigned char *do_opt(struct dhcp_opt *opt, unsigned char *p, unsigned char *end,  struct in_addr local)
+static unsigned char *do_opt(struct dhcp_opt *opt, unsigned char *p, unsigned char *end,  
+			     struct in_addr local, int null_term)
 {
-  if (!check_space(p, end, opt->len, opt->opt))
+  int len = opt->len;
+
+  if ((opt->flags & DHOPT_STRING) && null_term && len != 255)
+    len++;
+
+  if (!check_space(p, end, len, opt->opt))
     return p;
     
   *(p++) = opt->opt;
-  *(p++) = opt->len;
+  *(p++) = len;
   
-  if (opt->len == 0)
+  if (len == 0)
     return p;
       
-  if (opt->is_addr && !opt->vendor_class)
+  if (opt->flags & DHOPT_ADDR)
     {
       int j;
       struct in_addr *a = (struct in_addr *)opt->val;
@@ -1016,8 +1035,8 @@ static unsigned char *do_opt(struct dhcp_opt *opt, unsigned char *p, unsigned ch
     }
   else
     {
-      memcpy(p, opt->val, opt->len);
-      p += opt->len;
+      memcpy(p, opt->val, len);
+      p += len;
     }
 
   return p;
@@ -1030,7 +1049,8 @@ static unsigned char *do_req_options(struct dhcp_context *context,
 				     char *hostname,
 				     struct dhcp_netid *netid,
 				     struct in_addr subnet_addr,
-				     unsigned char fqdn_flags)
+				     unsigned char fqdn_flags,
+				     int null_term)
 {
   struct dhcp_opt *opt, *config_opts = daemon->dhcp_opts;
   char *vendor_class = NULL;
@@ -1066,7 +1086,7 @@ static unsigned char *do_req_options(struct dhcp_context *context,
   
   if (daemon->domain_suffix && in_list(req_options, OPTION_DOMAINNAME) && 
       !option_find2(netid, config_opts, OPTION_DOMAINNAME))
-    p = option_put_string(p, end, OPTION_DOMAINNAME, daemon->domain_suffix);
+    p = option_put_string(p, end, OPTION_DOMAINNAME, daemon->domain_suffix, null_term);
  
   /* Note that we ignore attempts to set the hostname using 
      --dhcp-option=12,<name> and the fqdn using
@@ -1074,14 +1094,16 @@ static unsigned char *do_req_options(struct dhcp_context *context,
   if (hostname)
     {
       if (in_list(req_options, OPTION_HOSTNAME))
-	p = option_put_string(p, end, OPTION_HOSTNAME, hostname);
+	p = option_put_string(p, end, OPTION_HOSTNAME, hostname, null_term);
       
       if (fqdn_flags != 0)
 	{
 	  int len = strlen(hostname) + 3;
 	  if (fqdn_flags & 0x04)
 	    len += 2;
-	  
+	  else if (null_term)
+	    len++;
+
 	  if (daemon->domain_suffix)
 	    len += strlen(daemon->domain_suffix) + 1;
 	  
@@ -1109,7 +1131,9 @@ static unsigned char *do_req_options(struct dhcp_context *context,
 		      *(p++) = '.';
 		      memcpy(p, daemon->domain_suffix, strlen(daemon->domain_suffix));
 		      p += strlen(daemon->domain_suffix);
-		    } 
+		    }
+		  if (null_term)
+		    *(p++) = 0;
 		}
 	    }
 	}
@@ -1138,13 +1162,13 @@ static unsigned char *do_req_options(struct dhcp_context *context,
       if (opt->opt == OPTION_VENDOR_ID)
 	vendor_class = (char *)opt->val; 
       else
-	p = do_opt(opt, p, end, context->local);
+	p = do_opt(opt, p, end, context->local, null_term);
     }  
 
   if (in_list(req_options, OPTION_VENDOR_ID))
     {      
       for (opt = daemon->vendor_opts; opt; opt = opt->next)
-	if (!opt->netid || match_netid(opt->netid, netid))
+	if (match_netid(opt->netid, netid, 1) || match_netid(opt->netid, netid, 0))
 	  {
 	    if (vendor_class && strcmp(vendor_class, (char *)opt->vendor_class) != 0)
 	      syslog(LOG_WARNING, _("More than one vendor class matches, using %s"), vendor_class);
@@ -1154,7 +1178,7 @@ static unsigned char *do_req_options(struct dhcp_context *context,
 
       if (vendor_class)
 	{
-	  p = option_put_string(p, end, OPTION_VENDOR_ID, vendor_class);
+	  p = option_put_string(p, end, OPTION_VENDOR_ID, vendor_class, 0);
 	  
 	  if (in_list(req_options, OPTION_VENDOR_CLASS_OPT))
 	    {
@@ -1172,9 +1196,9 @@ static unsigned char *do_req_options(struct dhcp_context *context,
 	      plen = p++; /* fill in later */
 	      
 	      for (opt = daemon->vendor_opts; opt; opt = opt->next)
-		if ((!opt->netid || match_netid(opt->netid, netid)) && 
+		if ((match_netid(opt->netid, netid, 1) || match_netid(opt->netid, netid, 0)) && 
 		    strcmp(vendor_class, (char *)opt->vendor_class) == 0)
-		  p = do_opt(opt, p, oend, context->local);
+		  p = do_opt(opt, p, oend, context->local, null_term);
 	      
 	      *plen = p - plen - 1;
 	    }

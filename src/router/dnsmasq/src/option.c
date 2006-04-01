@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000 - 2005 Simon Kelley
+/* dnsmasq is Copyright (c) 2000 - 2006 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -21,7 +21,7 @@ struct myoption {
   int val;
 };
 
-#define OPTSTRING "31yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:"
+#define OPTSTRING "31yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:"
 
 static const struct myoption opts[] = { 
   {"version", 0, 0, 'v'},
@@ -82,6 +82,7 @@ static const struct myoption opts[] = {
   {"txt-record", 1, 0, 'Y'},
   {"enable-dbus", 0, 0, '1'},
   {"bootp-dynamic", 0, 0, '3'},
+  {"dhcp-mac", 1, 0, '4'},
   {0, 0, 0, 0}
 };
 
@@ -177,6 +178,7 @@ static const struct {
   { "-1, --enable-dbus", gettext_noop("Enable the DBus interface for setting upstream servers, etc."), NULL },
   { "-2, --no-dhcp-interface=interface", gettext_noop("Do not provide DHCP on this interface, only provide DNS."), NULL },
   { "-3, --bootp-dynamic", gettext_noop("Enable dynamic address allocation for bootp."), NULL },
+  { "-4, --dhcp-mac=<id>,<mac address>", gettext_noop("Map MAC address (with wildcards) to option set."), NULL },
   { NULL, NULL, NULL }
 }; 
 
@@ -949,6 +951,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		new->broadcast.s_addr = 0;
 		new->router.s_addr = 0;
 		new->netid.net = NULL;
+		new->filter = NULL;
 		new->flags = 0;
 		
 		problem = _("bad dhcp-range");
@@ -959,26 +962,40 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		    break;
 		  }
 		
-		for (cp = arg; *cp; cp++)
-		  if (!(*cp == ' ' || *cp == '.' ||  (*cp >='0' && *cp <= '9')))
-		    break;
-
-		if (*cp != ',' && (comma = strchr(arg, ',')))
+		while(1)
 		  {
-		    *comma = 0;
-		    if (strstr(arg, "net:") == arg)
+		    for (cp = arg; *cp; cp++)
+		      if (!(*cp == ' ' || *cp == '.' ||  (*cp >='0' && *cp <= '9')))
+			break;
+		    
+		    if (*cp != ',' && (comma = strchr(arg, ',')))
 		      {
-			new->netid.net = safe_string_alloc(arg+4);
-			new->netid.next = NULL;
-			new->flags |= CONTEXT_FILTER;
+			*comma = 0;
+			if (strstr(arg, "net:") == arg)
+			  {
+			    struct dhcp_netid *tt = safe_malloc(sizeof (struct dhcp_netid));
+			    tt->net = safe_string_alloc(arg+4);
+			    tt->next = new->filter;
+			    new->filter = tt;
+			  }
+			else
+			  {
+			    if (new->netid.net)
+			      {
+				option = '?';
+				problem = _("only one netid tag allowed");
+			      }
+			    else
+			      new->netid.net = safe_string_alloc(arg);
+			  }
+			arg = comma + 1;
 		      }
 		    else
-		      new->netid.net = safe_string_alloc(arg);
-		    a[0] = comma + 1;
+		      {
+			a[0] = arg;
+			break;
+		      }
 		  }
-		else
-		  a[0] = arg;
-
 		
 		for (k = 1; k < 5; k++)
 		  {
@@ -987,7 +1004,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		    *(a[k]++) = 0;
 		  }
 		  
-		if ((k < 2) || ((new->start.s_addr = inet_addr(a[0])) == (in_addr_t)-1))
+		if (option == '?' || (k < 2) || ((new->start.s_addr = inet_addr(a[0])) == (in_addr_t)-1))
 		  option = '?';
 		else if (strcmp(a[1], "static") == 0)
 		  {
@@ -1110,7 +1127,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			      int len;
 			      arg += 3; /* dump id: */
 			      if (strchr(arg, ':'))
-				len = parse_hex(arg, (unsigned char *)arg, -1, NULL);
+				len = parse_hex(arg, (unsigned char *)arg, -1, NULL, NULL);
 			      else
 				len = (int) strlen(arg);
 			      
@@ -1125,10 +1142,11 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			  new->flags |= CONFIG_NETID;
 			  new->netid.net = safe_string_alloc(arg+4);
 			}
-		      else if (parse_hex(a[j],  new->hwaddr, 6, &new->wildcard_mask) == 6)
+		      else 
+			{
+			  new->hwaddr_len = parse_hex(a[j],  new->hwaddr, DHCP_CHADDR_MAX, &new->wildcard_mask, &new->hwaddr_type);
 			  new->flags |= CONFIG_HWADDR;
-		      else
-			option = '?';
+			}
 		    }
 		  else if (strchr(a[j], '.') && (in.s_addr = inet_addr(a[j])) != (in_addr_t)-1)
 		    {
@@ -1223,7 +1241,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		int addrs, digs, is_addr, is_hex, is_dec;
 		
 		new->len = 0;
-		new->is_addr = 0;
+		new->flags = 0;
 		new->netid = NULL;
 		new->val = NULL;
 		new->vendor_class = NULL;
@@ -1335,7 +1353,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			  digs++;
 			  is_dec = is_addr = 0;
 			}
-		      else if (*cp == '.')
+		      else if (*cp == '.' || *cp == '/')
 			is_dec = is_hex = 0;
 		      else if (!((*cp >='0' && *cp <= '9') || *cp == '-'))
 			{
@@ -1357,7 +1375,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		      {
 			new->len = digs;
 			new->val = safe_malloc(new->len);
-			parse_hex(comma, new->val, digs, NULL);
+			parse_hex(comma, new->val, digs, NULL, NULL);
 		      }
 		    else if (is_dec)
 		      {
@@ -1396,19 +1414,42 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		    else if (is_addr)	
 		      {
 			struct in_addr in;
-			unsigned char *op;
-			new->len = INADDRSZ * addrs;
-			new->val = op = safe_malloc(new->len);
-			new->is_addr = 1;
+       			unsigned char *op;
+			char *slash;
+			/* max length of address/subnet descriptor is five bytes */
+			new->val = op = safe_malloc(5 * addrs);
+			if (!new->vendor_class)
+			  new->flags |= DHOPT_ADDR;
 			while (addrs--) 
 			  {
 			    cp = comma;
 			    if ((comma = strchr(cp, ',')))
 			      *comma++ = 0;
+			    if ((slash = strchr(cp, '/')))
+			      *slash++ = 0;
 			    in.s_addr = inet_addr(cp);
-			    memcpy(op, &in, INADDRSZ);
-			    op += INADDRSZ;
+			    if (!slash)
+			      {
+				memcpy(op, &in, INADDRSZ);
+				op += INADDRSZ;
+			      }
+			    else
+			      {
+				unsigned char *p = (unsigned char *)&in;
+				int netsize = atoi(slash);
+				*op++ = netsize;
+				if (netsize > 0)
+				  *op++ = *p++;
+				if (netsize > 8)
+				  *op++ = *p++;
+				if (netsize > 16)
+				  *op++ = *p++;
+				if (netsize > 24)
+				 *op++ = *p++;
+				new->flags &= ~DHOPT_ADDR; /* cannot re-write descriptor format */
+			      } 
 			  }
+			new->len = op - new->val;
 		      }
 		    else
 		      {
@@ -1416,6 +1457,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			new->len = strlen(comma);
 			/* keep terminating zero on string */
 			new->val = (unsigned char *)safe_string_alloc(comma);
+			new->flags |= DHOPT_STRING;
 		      }
 		  }
 
@@ -1508,7 +1550,24 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		  }
 		break;
 	      }
-
+	      
+	    case '4':
+	      {
+		if (!(comma = safe_strchr(arg, ',')))
+		  option = '?';
+		else
+		  {
+		    struct dhcp_mac *new = safe_malloc(sizeof(struct dhcp_mac));
+		    *comma = 0;
+		    new->netid.net = safe_string_alloc(arg);
+		    unhide_metas(comma+1);
+		    new->hwaddr_len = parse_hex(comma+1, new->hwaddr, DHCP_CHADDR_MAX, &new->mask, &new->hwaddr_type);
+		    new->next = daemon->dhcp_macs;
+		    daemon->dhcp_macs = new;
+		  }
+	      }
+	      break;
+	      
 	    case 'U':
 	    case 'j':
 	      {
