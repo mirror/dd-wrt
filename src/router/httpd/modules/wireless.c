@@ -990,6 +990,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef KROMOGUI
   if (!strcmp (type, "input"))
     {
+	  ret += websWrite (wp, "<div class=\"col2l\">\n");
       ret += websWrite (wp, "<fieldset><legend>Table 1</legend>\n");
       for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
 	{
@@ -997,12 +998,12 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 0 * WL_FILTER_MAC_NUM + i + 1;
 	  ret +=
 	    websWrite (wp,
-		       "<div/>%s %02d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+		       "<div>%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
 		       mac_mess, item, box_len, item - 1,
 		       wl_filter_mac_get ("mac", item - 1));
 	  ret +=
 	    websWrite (wp,
-		       "%s %02d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>\n",
+		       "%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
 		       mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
 		       item + (WL_FILTER_MAC_NUM / 2) - 1,
 		       wl_filter_mac_get ("mac",
@@ -1011,7 +1012,8 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 	}
 
-      ret += websWrite (wp, "</fieldset><br/>\n");
+      ret += websWrite (wp, "</fieldset></div>\n");
+      ret += websWrite (wp, "<div class=\"col2r\">\n");
       ret += websWrite (wp, "<fieldset><legend>Table 2</legend>\n");
 
       for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
@@ -1020,12 +1022,12 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  item = 1 * WL_FILTER_MAC_NUM + i + 1;
 	  ret +=
 	    websWrite (wp,
-		       "<div/>%s %02d : <INPUT maxLength=\"17\" onBlur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+		       "<div/>%s %03d : <INPUT maxLength=\"17\" onBlur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
 		       mac_mess, item, box_len, item - 1,
 		       wl_filter_mac_get ("mac", item - 1));
 	  ret +=
 	    websWrite (wp,
-		       "%s %02d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>\n",
+		       "%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
 		       mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
 		       item + (WL_FILTER_MAC_NUM / 2) - 1,
 		       wl_filter_mac_get ("mac",
@@ -1033,7 +1035,9 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 					  1));
 
 	}
-      ret += websWrite (wp, "</fieldset><br/>\n");
+
+      ret += websWrite (wp, "</fieldset>\n");
+      ret += websWrite (wp, "</div><br clear="all" /><br />\n");
 
     }
 
