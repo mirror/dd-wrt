@@ -118,7 +118,7 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 			ebt_print_error2("Prefix too long");
 		if (strchr(optarg, '\"'))
 			ebt_print_error2("Use of \\\" is not allowed in the prefix");
-		strcpy(loginfo->prefix, optarg);
+		strcpy((char *)loginfo->prefix, (char *)optarg);
 		break;
 
 	case LOG_LEVEL:
@@ -188,7 +188,7 @@ static int compare(const struct ebt_entry_watcher *w1,
 		return 0;
 	if (loginfo1->bitmask != loginfo2->bitmask)
 		return 0;
-	return !strcmp(loginfo1->prefix, loginfo2->prefix);
+	return !strcmp((char *)loginfo1->prefix, (char *)loginfo2->prefix);
 }
 
 static struct ebt_u_watcher log_watcher =

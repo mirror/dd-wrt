@@ -26,6 +26,13 @@
 #include <netinet/in.h>
 #include <linux/netfilter_bridge/ebtables.h>
 
+#ifndef IPPROTO_SCTP
+#define IPPROTO_SCTP		132
+#endif
+#ifndef IPPROTO_DCCP
+#define IPPROTO_DCCP		33
+#endif
+
 #define EXEC_STYLE_PRG		0
 #define EXEC_STYLE_DAEMON	1
 
@@ -285,9 +292,9 @@ extern int ebt_invert;
 void ebt_check_option(unsigned int *flags, unsigned int mask);
 #define ebt_check_inverse(arg) _ebt_check_inverse(arg, argc, argv)
 int _ebt_check_inverse(const char option[], int argc, char **argv);
-void ebt_print_mac(const char *mac);
-void ebt_print_mac_and_mask(const char *mac, const char *mask);
-int ebt_get_mac_and_mask(char *from, char *to, char *mask);
+void ebt_print_mac(const unsigned char *mac);
+void ebt_print_mac_and_mask(const unsigned char *mac, const unsigned char *mask);
+int ebt_get_mac_and_mask(const char *from, unsigned char *to, unsigned char *mask);
 void ebt_parse_ip_address(char *address, uint32_t *addr, uint32_t *msk);
 char *ebt_mask_to_dotted(uint32_t mask);
 

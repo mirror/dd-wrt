@@ -375,7 +375,7 @@ static void wormhash_printout(const struct ebt_mac_wormhash *wh)
 		const struct ebt_mac_wormhash_tuple *p;
 
 		p = (const struct ebt_mac_wormhash_tuple *)(&wh->pool[i]);
-		ebt_print_mac(((const char *) &p->cmp[0]) + 2);
+		ebt_print_mac(((const unsigned char *) &p->cmp[0]) + 2);
 		if (p->ip) {
 			ip = (unsigned char *) &p->ip;
 			printf("=%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);

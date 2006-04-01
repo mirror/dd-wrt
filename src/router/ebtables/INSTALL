@@ -8,6 +8,11 @@ If you are using the CVS code or need your own kernel includes, do this
 instead (change the include directory to the appropriate one):
 %make install KERNEL_INCLUDES=/usr/src/linux/include
 
+If you want to make a static binary for ebtables, containing all the
+extensions, without shared libraries, do this (this will make a
+binary called 'static', which you can rename):
+%make static
+
 WHAT GETS INSTALLED?
 --------------------
 
