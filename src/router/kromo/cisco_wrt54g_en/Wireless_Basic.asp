@@ -61,9 +61,8 @@ function to_submit(F) {
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
 	F.action.value = "Apply";
-	F.submit();
+	apply(F);
 }
 function init() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl_gmode","-1","0","1"); %>');
