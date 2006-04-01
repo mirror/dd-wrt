@@ -68,7 +68,7 @@ function ViewSummary() {
 }
 
 function ViewFilter() {
-	ipmac_win = self.open('FilterIPMAC.asp','FilterTable','alwaysRaised,resizable,scrollbars,width=590,height=485');
+	ipmac_win = self.open('FilterIPMAC.asp','FilterTable','alwaysRaised,resizable,scrollbars,width=590,height=700');
 	ipmac_win.focus();
 }
 
