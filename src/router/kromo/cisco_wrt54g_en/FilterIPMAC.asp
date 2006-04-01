@@ -42,7 +42,7 @@ function valid_macs_all(I) {
 			<input type="hidden" name="filter_mac_value"/>
 			<h2>List of PCs</h2>
 			<div>
-				<h3>Enter MAC Address of the PCs in this format: XX:XX:XX:XX:XX:XX</h3>
+				<h3>Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx</h3>
 				<div class="setting">
 					<div class="label">MAC 01</div><input class="num" size="17" maxLength="17" name="mac0" onBlur="valid_macs_all(this)" value='<% filter_mac_get(0); %>' /></div>
 				<div class="setting">
@@ -88,6 +88,7 @@ function valid_macs_all(I) {
 			<div class="submitFooter">
 				<input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" />
 				<input type="reset" value="Cancel Changes" />
+				<input type="button" value="Close" onclick="self.close()" />
 			</div>
 		</form>
 	</body>
