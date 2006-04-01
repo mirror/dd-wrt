@@ -12,8 +12,7 @@ function to_submit(F) {
 	F.change_action.value = "apply_cgi";
 	F.action.value = "Apply";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	apply(F);
 }
 
 function setMAC(val) {
