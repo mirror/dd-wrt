@@ -96,8 +96,8 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 	char *end;
 	uint32_t *addr;
 	uint32_t *mask;
-	char *maddr;
-	char *mmask;
+	unsigned char *maddr;
+	unsigned char *mmask;
 
 	switch (c) {
 	case ARP_OPCODE:

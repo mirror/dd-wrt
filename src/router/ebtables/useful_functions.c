@@ -44,18 +44,18 @@ const unsigned char msk_type_bridge_group[ETH_ALEN] = {255,255,255,255,255,255};
  * then always has the same length */
 int ebt_printstyle_mac;
 
-void ebt_print_mac(const char *mac)
+void ebt_print_mac(const unsigned char *mac)
 {
 	if (ebt_printstyle_mac == 2) {
 		int j;
 		for (j = 0; j < ETH_ALEN; j++)
-			printf("%02x%s", (unsigned char)mac[j],
+			printf("%02x%s", mac[j],
 				(j==ETH_ALEN-1) ? "" : ":");
 	} else
 		printf("%s", ether_ntoa((struct ether_addr *) mac));
 }
 
-void ebt_print_mac_and_mask(const char *mac, const char *mask)
+void ebt_print_mac_and_mask(const unsigned char *mac, const unsigned char *mask)
 {
 	char hlpmsk[6] = {0xff, 0xff, 0xff, 0xff, 0xff, 0xff};
 
@@ -91,7 +91,8 @@ struct ethertypeent *parseethertypebynumber(int type)
 }
 
 /* Put the mac address into 6 (ETH_ALEN) bytes returns 0 on success. */
-int ebt_get_mac_and_mask(char *from, char *to, char *mask)
+int ebt_get_mac_and_mask(const char *from, unsigned char *to,
+  unsigned char *mask)
 {
 	char *p;
 	int i;
