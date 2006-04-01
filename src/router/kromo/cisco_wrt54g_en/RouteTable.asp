@@ -7,57 +7,38 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 	</head>
-	
+
 	<body>
 		<form>
 			<h2>Routing Table Entry List</h2>
 			<table>
-				<tbody>
-					<tr>
-						<th>Destination LAN IP</th>
-						<th>Subnet Mask</th>
-						<th>Gateway</th>
-						<th>Interface</th>
-					</tr>
+				<tr>
+					<th>Destination LAN IP</th>
+					<th>Subnet Mask</th>
+					<th>Gateway</th>
+					<th>Interface</th>
+				</tr>
 <script language="JavaScript">
 
-var table = new Array(
-<% dump_route_table(""); %>
-);
+var table = new Array(<% dump_route_table(""); %>);
 
-var i = 0;
-
-for(;;) {
-	if(!table[i]){
-		if(i == 0) {
-			document.write("<tr>");
-			document.write("<td>None</td>");
-			document.write("<td>None</td>");
-			document.write("<td>None</td>");
-			document.write("<td>None</td></tr>");
-		}
-		break;
+if(table.length == 0) {
+	document.write("<tr><td align=\"center\" colspan=\"4\">- None -</td></tr>");
+} else {
+	for(var i = 0; i < table.length; i = i+4) {
+		if(table[i+3] == "LAN")
+			table[i+3] = "LAN &amp; Wireless";
+		else if(table[i+3] == "WAN")
+			table[i+3] = "WAN (Internet)";
+		document.write("<tr><td>"+table[i]+"</td><td>"+table[i+1]+"</td><td>"+table[i+2]+"</td><td>"+table[i+3]+"</td></tr>");
 	}
-	if(table[i+3] == "LAN") {
-		table[i+3] = "LAN &amp; Wireless";
-	} else if(table[i+3] == "WAN") {
-		table[i+3] = "WAN (Internet)";
-	}
-	document.write("<tr>");
-	document.write("<td>"+table[i]+"</td>");
-	document.write("<td>"+table[i+1]+"</td>");
-	document.write("<td>"+table[i+2]+"</td>");
-	document.write("<td>"+table[i+3]+"</td></tr>");
-	i = i + 4;
 }
 </script>
-					<tr>
-						<td colspan="3">&nbsp;</td>
-						<td><input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/>
-						<input onclick="self.close()" type="reset" value="Close"/></td>
-					</tr>
-				</tbody>
-			</table>
+			</table><br />
+			<div class="submitFooter">
+				<input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/>
+				<input onclick="self.close()" type="reset" value="Close"/>
+			</div>
 		</form>
 	</body>
 </html>

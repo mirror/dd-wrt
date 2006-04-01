@@ -8,20 +8,6 @@
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
 function deleteLease(val) {
-/*	work in progress, plz do not use yet!
-	update.stop();
-	var req = new Request("apply.cgi");
-	req.addValue("change_action", "gozila_cgi");
-	req.addValue("submit_button", "DHCPTable");
-	req.addValue("submit_type", "delete");
-	req.addValue("next_page", "Status_Lan.live.asp");
-	req.addValue("d_0", val);
-	req.onRequest(function(u) {
-		setDHCPLeases(eval("new Array(" + u.dhcp_leases + ")"));
-	});
-	req.send();
-	update.start();
-*/
 	document.forms[0].d_0.value = val;
 	document.forms[0].submit();
 }
@@ -31,26 +17,26 @@ function setLeasesTable(val) {
 	for(var i = table.rows.length - 1; i > 0 ; i--) {
 		table.deleteRow(i);
 	}
-	if(val != "") {
-		var leases = val.replace(/'/g, "").split(",");
-		for(var i = 0; i < leases.length; i = i + 5) {
-			var row = table.insertRow(-1);
-			row.insertCell(-1).innerHTML = leases[i];
-			row.insertCell(-1).innerHTML = leases[i + 1];
-			row.insertCell(-1).innerHTML = leases[i + 2];
-			row.insertCell(-1).innerHTML = leases[i + 3];
-			var cell = row.insertCell(-1);
-			cell.className = "bin";
-			cell.height = 15;
-			cell.title = "Click to delete lease";
-			cell.innerHTML = " ";
-			eval("addEvent(cell, 'click', function() { deleteLease(" + leases[i + 4] + ") })");
-		}
-	} else {
+	if(val == "") {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 5;
 		cell.align = "center";
 		cell.innerHTML = "- None - ";
+		return;
+	}
+	var leases = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < leases.length; i = i + 5) {
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = leases[i];
+		row.insertCell(-1).innerHTML = leases[i + 1];
+		row.insertCell(-1).innerHTML = leases[i + 2];
+		row.insertCell(-1).innerHTML = leases[i + 3];
+		var cell = row.insertCell(-1);
+		cell.className = "bin";
+		cell.height = 15;
+		cell.title = "Click to delete lease";
+		cell.innerHTML = " ";
+		eval("addEvent(cell, 'click', function() { deleteLease(" + leases[i + 4] + ") })");
 	}
 }
 
