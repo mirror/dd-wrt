@@ -990,7 +990,12 @@ void ebt_check_for_loops(struct ebt_u_replace *replace)
 	for (i = 0; i < replace->num_chains; i++) {
 		if (!(entries = replace->chains[i]))
 			continue;
-		entries->hook_mask = 0;
+		if (i < NF_BR_NUMHOOKS)
+			/* (1 << NF_BR_NUMHOOKS) implies it's a standard chain
+			 * (usefull in the final_check() funtions) */
+			entries->hook_mask = (1 << i) | (1 << NF_BR_NUMHOOKS);
+		else
+			entries->hook_mask = 0;
 	}
 	if (replace->num_chains == NF_BR_NUMHOOKS)
 		return;
@@ -1002,9 +1007,6 @@ void ebt_check_for_loops(struct ebt_u_replace *replace)
 	for (i = 0; i < NF_BR_NUMHOOKS; i++) {
 		if (!(entries = replace->chains[i]))
 			continue;
-		/* (1 << NF_BR_NUMHOOKS) implies it's a standard chain
-		 * (usefull in the final_check() funtions) */
-		entries->hook_mask = (1 << i) | (1 << NF_BR_NUMHOOKS);
 		chain_nr = i;
 
 		e = entries->entries->next;
