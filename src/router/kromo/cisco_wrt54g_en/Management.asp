@@ -83,8 +83,6 @@ function to_submit(F) {
 		return false;
 	}
 	
-	F.action.value="Apply";
-
 	valid_password(F);
 
 	if(F.remote_management[0].checked == true){
@@ -120,9 +118,9 @@ function to_submit(F) {
 	}
 	F.submit_button.value = "Management";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
-	return true;
+	
+	F.action.value="Apply";
+	apply(F);
 }
 
 function handle_https(F)
