@@ -7,6 +7,12 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
+
+function ViewFilterTable() {
+	summary_win = self.open('WL_FilterTable.asp','FilterTable','alwaysRaised,resizable,scrollbars,width=880,height=730');
+	summary_win.focus();
+}
+
 function to_submit(F) {
 	F.submit_button.value = "Wireless_MAC";
 	F.change_action.value = "apply_cgi";
@@ -25,7 +31,8 @@ addEvent(window, "load", function() {
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -78,7 +85,7 @@ addEvent(window, "load", function() {
 									<input type="radio" value="allow" name="wl_macmode" <% nvram_match("wl_macmode","allow","checked"); %> />Permit only PCs listed to access the wireless network
 								</div><br />
 								<div class="center">
-									<input type="button" name="mac_filter_button" value="Edit MAC Filter List" onclick="openWindow('WL_FilterTable.asp', 600, 530)" />
+									<input type="button" name="mac_filter_button" value="Edit MAC Filter List" onclick="ViewFilterTable()" />
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
