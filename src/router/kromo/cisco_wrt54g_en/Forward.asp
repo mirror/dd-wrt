@@ -28,11 +28,11 @@ function forward_remove_submit(F) {
 
 function to_submit(F) {
 	F.submit_button.value = "Forward";
-	F.action.value = "Apply";
 //	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
-	F.save_button.disabled = true;
-	F.submit();
+	
+	F.action.value = "Apply";
+	apply(F);
 }
 		</script>
 	</head>
