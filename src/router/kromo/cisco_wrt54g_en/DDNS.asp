@@ -66,8 +66,6 @@ function to_submit(F) {
 	F.save_button.value = sbutton.saving;
 	F.action.value = "Apply";
 	apply(F);
-//	F.save_button.disabled = true;
-//	F.submit();
 }
 
 function SelDDNS(num,F) {
