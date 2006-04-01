@@ -3418,7 +3418,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
       ret += websWrite (wp, "              <tr>\n");
       ret +=
 	websWrite (wp,
-		   "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\" height=\"30\"><b>");
+		   "<td style=\"vlan\">");
 
       switch (i)
 	{
@@ -3440,53 +3440,51 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  break;
 	}
 
-      ret += websWrite (wp, "</b></td>\n");
+      ret += websWrite (wp, "</td>\n");
 
       for (j = 0; j < 5; j++)
 	{
 	  snprintf (buff, 31, "port%dvlan%d", j, i);
 	  ret +=
 	    websWrite (wp,
-		       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=");
+		       "<td style=\"vlan\"");
 
 	  if (j % 2 == 0)
-	    ret += websWrite (wp, "\"#CCCCCC\"");
-	  else
-	    ret += websWrite (wp, "\"#FFFFFF\"");
+	    ret += websWrite (wp, " bgcolor=\"#CCCCCC\"");
 
 	  ret +=
 	    websWrite (wp,
-		       " height=\"30\"><b><input type=\"checkbox\" value=\"on\" name=");
+		       " height=\"30\"><input type=\"checkbox\" value=\"on\" name=");
 	  ret += websWrite (wp, buff);
 
 	  if (i < 17 || i > 19)
 	    {
 	      if (vlans[i][j] == 1)
-		ret += websWrite (wp, " checked");
+		ret += websWrite (wp, " checked=\"checked\"");
 	    }
 	  else
 	    {
 	      if (vlans[i][j] == -1)
-		ret += websWrite (wp, " checked");
+		ret += websWrite (wp, " checked=\"checked\"");
 	    }
 
 	  ret += websWrite (wp, " onclick=");
 	  if (i < 17)
 	    snprintf (buff, sizeof (buff),
-		      "\"SelVLAN(this.form,\'port%d\')\"", j);
+		      "\"SelVLAN(this.form,'port%d')\"", j);
 	  else if (i == 17)
 	    snprintf (buff, sizeof (buff),
-		      "\"SelSpeed(this.form,\'port%d\')\"", j);
+		      "\"SelSpeed(this.form,'port%d')\"", j);
 
 	  ret += websWrite (wp, buff);
-	  ret += websWrite (wp, "/></b></td>\n");
+	  ret += websWrite (wp, "/></td>\n");
 	}
 
       if (i < 16)
 	{
 	  ret +=
 	    websWrite (wp,
-		       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\" height=\"30\"><select name=");
+		       "			<td style=\"vlan\"><select name=");
 	  snprintf (buff, 31, "vlan%d", i);
 	  ret += websWrite (wp, buff);
 	  ret += websWrite (wp, "><option value=\"-1\"");
@@ -3499,51 +3497,51 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	}
       else
 	{
-	  ret += websWrite (wp, "                  <td>&nbsp;</td>\n");
+	  ret += websWrite (wp, "<td>&nbsp;</td>\n");
 	}
 
-      ret += websWrite (wp, "              </tr>\n");
+      ret += websWrite (wp, "</tr>\n");
 
       if (i == 16 || i == 19)
 	{
 	  ret +=
 	    websWrite (wp,
-		       "              <tr height=\"5\"><td>&nbsp;</td></tr>\n");
+		       "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 	}
     }
 
-  ret += websWrite (wp, "              <tr>\n");
+  ret += websWrite (wp, "<tr>\n");
   ret +=
     websWrite (wp,
-	       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\" colspan=\"6\"><b>Wireless</b></td>\n");
+	       "<td style=\"vlan\" colspan=\"6\">Wireless</td>\n");
   ret +=
     websWrite (wp,
-	       "			<td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\"><select name=\"wireless\"><option value=\"-1\"");
+	       "<td style=\"vlan\"><select name=\"wireless\"><option value=\"-1\"");
   if (wl_br < 0)
-    ret += websWrite (wp, " selected");
+    ret += websWrite (wp, " selected=\"selected\"");
   ret += websWrite (wp, ">None</option><option value=\"0\"");
   if (wl_br == 0)
-    ret += websWrite (wp, " selected");
+    ret += websWrite (wp, " selected=\"selected\"");
   ret += websWrite (wp, ">LAN</option></select></td>\n");
-  ret += websWrite (wp, "              </tr>\n");
+  ret += websWrite (wp, "</tr>\n");
 
   ret +=
-    websWrite (wp, "              <tr height=\"5\"><td>&nbsp;</td></tr>\n");
+    websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 
-  ret += websWrite (wp, "              <tr>\n");
+  ret += websWrite (wp, "<tr>\n");
   ret +=
     websWrite (wp,
-	       "                  <td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\" colspan=\"4\"><b>Link Aggregation<br>on Ports 3 & 4</b></td>\n");
+	       "<td style=\"vlan\" colspan=\"6\">Link Aggregation<br>on Ports 3 & 4</td>\n");
   ret +=
     websWrite (wp,
-	       "                  <td style=\"border\" align=\"center\" valign=\"middle\" bgcolor=\"#FFFFFF\" colspan=\"3\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
+	       "<td style=\"vlan\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
 
   c = nvram_safe_get ("trunking");
 
   snprintf (buff, 5, "%s", c);
 
   if (atoi (buff) == 1)
-    ret += websWrite (wp, " selected");
+    ret += websWrite (wp, " selected=\"selected\"");
 
   ret += websWrite (wp, ">Trunk</option></select></td>\n");
   ret += websWrite (wp, "              </tr>");
