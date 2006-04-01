@@ -13,7 +13,7 @@ function process_aborted(F) {
 	return false;
 }
 
-function upgrade(F,id){
+function upgrade(F,id) {
 	var len = F.file.value.length;
 	var ext = new Array('.','b','i','n');
 	if (F.file.value == '')	{
@@ -33,7 +33,7 @@ function upgrade(F,id){
 	F.submit_button.value = "Upgrade";
 	bar1.togglePause();
 	change_style(id,'textblink');
-	F.submit();
+	apply(F);
 }
 
 		</script>
