@@ -484,7 +484,7 @@ function init() {
 										<option value="+00 1 2" <% nvram_match("time_zone", "+00 1 2", "selected"); %>>UTC / first Sun Apr - last Sun Oct</option>
 										<option value="+00 1 3" <% nvram_match("time_zone", "+00 1 3", "selected"); %>>UTC / last Sun Mar - last Sun Oct</option>
 										<option value="+00 1 4" <% nvram_match("time_zone", "+00 1 4", "selected"); %>>UTC / last Sun Oct - last Sun Mar</option>
-										<option value="+01 1 1" <% nvram_match("time_zone", "+01 1 3", "selected"); %>>UTC+01:00 / none</option>
+										<option value="+01 1 1" <% nvram_match("time_zone", "+01 1 1", "selected"); %>>UTC+01:00 / none</option>
 										<option value="+01 1 2" <% nvram_match("time_zone", "+01 1 2", "selected"); %>>UTC+01:00 / first Sun Apr - last Sun Oct</option>
 										<option value="+01 1 3" <% nvram_match("time_zone", "+01 1 3", "selected"); %>>UTC+01:00 / last Sun Mar - last Sun Oct</option>
 										<option value="+01 1 4" <% nvram_match("time_zone", "+01 1 4", "selected"); %>>UTC+01:00 / last Sun Oct - last Sun Mar</option>
