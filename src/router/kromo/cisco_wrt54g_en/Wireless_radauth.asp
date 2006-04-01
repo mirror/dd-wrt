@@ -8,6 +8,13 @@
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
 function to_submit(F) {
+	if (F._radius_override)
+	if (F._radius_override.checked == false){
+	    F.radius_override.value = 0;
+	}else{
+	    F.radius_override.value = 1;
+	}
+
 	F.submit_button.value = "Wireless_radauth";
 	F.save_button.value = "Saved";
 	F.action.value = "Apply";
@@ -55,6 +62,7 @@ function to_submit(F) {
                   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
                     <input type="hidden" name="submit_button" value="Wireless_radauth" />
                     <input type="hidden" name="change_action" />
+                    <input type="hidden" name="_radius_override" />
                     <input type="hidden" name="action" value="Apply" />
                     <input type="hidden" name="commit" value="1" />
                     <h2>Remote Authentication Dial-In User Service</h2>
@@ -85,6 +93,11 @@ function to_submit(F) {
                            <div class="label">RADIUS Shared Secret</div>
                            <input size="20" maxLength="32" name="wl_radius_key" value='<% nvram_get("wl_radius_key"); %>' />
                         </div>
+			<div class="setting">
+			    <div class="label">Override Radius if Server is unavailable</div>
+  			    <input type="checkbox" name="_radius_override" value="1" <% nvram_match("radius_override", "1", "checked"); %>/>
+			</div>
+
                      </div>
                     </fieldset>
                       <br/>

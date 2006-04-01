@@ -7,9 +7,9 @@ STRIP=mipsel-linux-uclibc-strip
 
 
 ifeq ($(CONFIG_MSSID),y)
-CFLAGS=-Os -pipe -mips32 -mtune=mips32 -Wall -I. -I../shared -I../../include.v24
+CFLAGS=$(COPTS) -I. -I../shared -I../../include.v24
 else
-CFLAGS=-Os -pipe -mips32 -mtune=mips32 -Wall -I. -I../shared -I../../include.v23
+CFLAGS=$(COPTS) -Wall -I. -I../shared -I../../include.v23
 endif
 all: wrt-radauth radius-client macupd
 
