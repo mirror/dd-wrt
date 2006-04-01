@@ -19,9 +19,8 @@ function to_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "save";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
 
-       	F.submit();
+       	apply(F);
 }
 function valid_value(F) {
 	if(F.security_mode.value == "disabled")

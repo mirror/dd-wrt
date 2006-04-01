@@ -50,24 +50,31 @@ function exit() {
 	
 	<body onload="window.focus();" onunload="exit()">
 		<form name="macfilter" action="apply.cgi" method="<% get_http_method(); %>">
-			<input type="hidden" name="submit_button"/>
-			<input type="hidden" name="submit_type"/>
-			<input type="hidden" name="change_action"/>
-			<input type="hidden" name="action"/>
-			<input type="hidden" name="wl_mac_list"/>
-			<input type="hidden" name="small_screen"/>
-			<h2>MAC Address Filter List</h2>
-			<table width="100%" >
-				<tr>
-					<TD align="left">Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx</TD>
-					<TD align="right" ><input type="button" id="button4" name="button5" value="Wireless Client MAC List" onclick="ViewActive()"/></TD>
-				</tr>
-				<tr></tr>
-			</table>
-			<% wireless_filter_table("input"); %>
-			<div class="submitFooter">
-				<input type="button" name="save_button" value="Save Settings" onclick="to_submit_mac(this.form)"/>
-				<input type="reset" value="Cancel Changes"/>
+			<input type="hidden" name="submit_button" />
+			<input type="hidden" name="submit_type" />
+			<input type="hidden" name="change_action" />
+			<input type="hidden" name="action" />
+			<input type="hidden" name="wl_mac_list" />
+			<input type="hidden" name="small_screen" />
+			<div id="main">
+				<div id="contentsInfo">
+					<h2>MAC Address Filter List</h2>
+					<table width="100%" >
+						<tr>
+							<TD align="left">Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx</TD>
+							<TD align="right" ><input type="button" id="button4" name="button5" value="Wireless Client MAC List" onclick="ViewActive()"/></TD>
+						</tr>
+					</table><br/>
+					
+					<% wireless_filter_table("input"); %>
+					
+					
+					<div class="submitFooter">
+						<input type="button" name="save_button" value="Save Settings" onclick="to_submit_mac(this.form)" />
+						<input type="reset" value="Cancel Changes" />
+						<input onclick="self.close()" type="reset" value="Close" />
+					</div>
+				</div>
 			</div>
 		</form>
 	</body>
