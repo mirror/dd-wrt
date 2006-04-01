@@ -33,11 +33,11 @@ function to_reboot(F) {
 }
 
 function to_submit(F) {
-	F.action.value="Apply";
 	F.submit_button.value = "Hotspot";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	
+	F.action.value="Apply";
+	apply(F);
 	return true;
 }
 
