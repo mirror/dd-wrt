@@ -84,6 +84,7 @@ int main(int argc, char** argv)
 	unsigned char *pos;
 	char *iface;
 	char *maxun;
+	int override;
 	struct maclist *maclist;
 	struct ether_addr *ea;
 	int usePortal=0;
@@ -135,10 +136,10 @@ int main(int argc, char** argv)
 	}
 
 	/* Get configuration from nvram */
-	server=strdup(nvram_get("wl0_radius_ipaddr"));
-	port=atoi(nvram_get("wl0_radius_port"));
-	usePortal=atoi(nvram_get("wl_radportal"));
-	
+	server=strdup(nvram_safe_get("wl0_radius_ipaddr"));
+	port=atoi(nvram_safe_get("wl0_radius_port"));
+	usePortal=atoi(nvram_safe_get("wl_radportal"));
+        override=atoi(nvram_safe_get("radius_override"));
 	
 	/* SeG DD-WRT change */
 	maxun = nvram_get("max_unauth_users");
@@ -196,7 +197,11 @@ int main(int argc, char** argv)
 					if ( currsta->lastseen+WAIT < step )
 					{
 						currsta->changed=1;
-						if (authmac(pos)>0)
+						int response = authmac(pos);
+						if (response==-10 && override==1)
+						    currsta->accepted=1;
+						else
+						if (response>0)
 						{
 							currsta->accepted=1;
 #ifdef DEBUG
@@ -259,7 +264,11 @@ int main(int argc, char** argv)
 
 				memcpy(currsta->mac,pos,6);
 				currsta->lastseen = step;
-				if (authmac(currsta->mac)==1)
+				int response = authmac(currsta->mac);
+				if (response==-10 && override==1)
+				    currsta->accepted = 1;
+				else
+				if (response==1)
 				{
 					currsta->accepted = 1;
 #ifdef DEBUG

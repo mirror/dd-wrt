@@ -223,7 +223,7 @@ int radius(char *host, short port, char *user, char *password, char *radsecret)
 		if ( ret == 0 )
 		{
 			/* Timeout, no packet received. Reject! */
-			ret=2; // try again
+			return -10;//ret=2; // try again
 		
 		} else {
 			ret = recvfrom(sock, &buf, sizeof(buf), 0, (struct sockaddr *) &from_addr, &from_len);
