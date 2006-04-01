@@ -74,7 +74,7 @@ struct nvram_tuple router_defaults[] = {
 //  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
 
 // added 26.03.
-  {"refresh_time", "3", 0},
+  {"refresh_time", "3", 0},		/* GUI Auto-Refresh interval */
 
 #endif
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
