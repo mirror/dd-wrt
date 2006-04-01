@@ -2298,7 +2298,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
   int cnt = 0;
-//  mode = nvram_safe_get ("wl_mode");
+  mode = nvram_safe_get ("wl_mode");
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
   system (cmd);			// get active wireless mac
 
@@ -2447,14 +2447,12 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
 
-//  mode = nvram_safe_get ("wl_mode");
+  mode = nvram_safe_get ("wl_mode");
   snprintf (cmd, sizeof (cmd), "%s > %s", WDS_CMD, WDS_LIST_TMP);
   system (cmd);			// get active wireless mac
 
-//  if (strcmp (mode, "ap") == 0 || strcmp (mode, "apsta") == 0)
-//    strcpy (title, "WDS Signal");
-//  else
-//    return -1;
+  if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
+     return -1;
 
 
   if ((fp = fopen (WDS_LIST_TMP, "r")))
