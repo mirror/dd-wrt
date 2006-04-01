@@ -114,6 +114,8 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<dl>
+							<dt class="term">At a set Time:</dt>
+							<dd class="definition">Choose when reboot the router. Cron must be enabled in the managment tab.</dd>
 							<dt class="term">IP Addresses:</dt>
 							<dd class="definition">A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.</dd>
 						</dl><br />
