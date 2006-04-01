@@ -10,6 +10,7 @@
 		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "DMZ";
+	
 	F.action.value = "Apply";
 	apply(F);
 }
