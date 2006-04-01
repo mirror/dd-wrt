@@ -349,7 +349,7 @@ allowed to have more than one dhcp-range in a single subnet. The optional
 network-id is a alphanumeric label which marks this network so that
 dhcp options may be specified on a per-network basis. 
 When it is prefixed with 'net:' then its meaning changes from setting
-a tag to matching it.
+a tag to matching it. Only one tag may be set, but more than one tag may be matched.
 The end address may be replaced by the keyword 
 .B static
 which tells dnsmasq to enable DHCP for the network specified, but not
@@ -368,7 +368,7 @@ which case the IP address and lease times will apply to any machine
 claiming that name. For example 
 .B --dhcp-host=00:20:e0:3b:13:af,wap,infinite 
 tells dnsmasq to give
-the machine with ethernet address 00:20:e0:3b:13:af the name wap, and
+the machine with hardware address 00:20:e0:3b:13:af the name wap, and
 an infinite DHCP lease. 
 .B --dhcp-host=lap,192.168.0.199 
 tells
@@ -401,9 +401,15 @@ for this host.
 Ethernet addresses (but not client-ids) may have
 wildcard bytes, so for example 
 .B --dhcp-host=00:20:e0:3b:13:*,ignore 
-will cause dnsmasq to ignore a range of ethernet addresses. Note that
+will cause dnsmasq to ignore a range of hardware addresses. Note that
 the "*" will need to be escaped or quoted on a command line, but not
-in the configuration file.
+in the configuration file. Hardware addresses normally match any
+network (ARP) type, but it is possible to restrict them to a single
+ARP type by preceding them with the ARP-type (in HEX) and "-". so 
+.B --dhcp-host=06-00:20:e0:3b:13:af,1.2.3.4 
+will only match a
+Token-Ring hardware address, since the ARP-address type for token ring
+is 6.
 .TP 
 .B \-Z, --read-ethers
 Read /etc/ethers for information about hosts for the DHCP server. The
@@ -431,6 +437,11 @@ machine running dnsmasq". Data types allowed are comma separated
 dotted-quad IP addresses, a decimal number, colon-separated hex digits
 and a text string. If the optional network-ids are given then
 this option is only sent when all the network-ids are matched.
+
+Special processing is done on a text argument for option 119, to
+conform with RFC 3397, and dotted-quad IP addresses which are followed
+by a slash and then a netmask size are encoded as described in RFC
+3442.
 
 Be careful: no checking is done that the correct type of data for the
 option number is sent, it is quite possible to
@@ -476,7 +487,13 @@ to different classes of hosts. It is possible, for instance to use
 this to set a different printer server for hosts in the class
 "accounts" than for hosts in the class "engineering".
 .TP
-.B \ -J, --dhcp-ignore=<network-id>[,<network-id>]
+.B \-4, --dhcp-mac=<network-id>,<MAC address>
+Map from a MAC address to a network-id. The MAC address may include
+wildcards. For example
+.B --dhcp-mac=3com,01:34:23:*:*:*
+will set the tag "3com" for any host whose MAC address matches the pattern.
+.TP
+.B \-J, --dhcp-ignore=<network-id>[,<network-id>]
 When all the given network-ids match the set of network-ids derived
 from the net, host, vendor and user classes, ignore the host and do
 not allocate it a DHCP lease.
@@ -498,7 +515,9 @@ process.
 Should be set when dnsmasq is definately the only DHCP server on a network.
 It changes the behaviour from strict RFC compliance so that DHCP requests on
 unknown leases from unknown hosts are not ignored. This allows new hosts
-to get a lease without a tedious timeout under all circumstances.
+to get a lease without a tedious timeout under all circumstances. It also 
+allows dnsmasq to rebuild its lease database without each client needing to 
+reaquire a lease, if the database is lost.
 .TP
 .B \-3, --bootp-dynamic
 Enable dynamic allocation of IP addresses to BOOTP clients. Use this

@@ -5,7 +5,7 @@
 ###############################################################################
 
 Name: dnsmasq
-Version: 2.26
+Version: 2.27
 Release: 1
 License: GPL
 Group: System Environment/Daemons
@@ -127,7 +127,7 @@ fi
 %attr(0755,root,root) /etc/rc.d/init.d/dnsmasq
 %attr(0664,root,root) /etc/dnsmasq.conf
 %attr(0755,root,root) /usr/sbin/dnsmasq
-%attr(0644,root,root) /usr/share/man/*/man8/dnsmasq*
+#%attr(0644,root,root) /usr/share/man/*/man8/dnsmasq*
 %attr(0644,root,root) /usr/share/man/man8/dnsmasq*
 %attr(0644,root,root) /usr/share/locale/*/LC_MESSAGES/*
 

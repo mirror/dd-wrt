@@ -17,7 +17,7 @@ static int add_resource_record(HEADER *header, char *limit, int *truncp,
 			       unsigned long ttl, unsigned int *offset, unsigned short type, 
 			       unsigned short class, char *format, ...);
 
-static int extract_name(HEADER *header, unsigned int plen, unsigned char **pp, 
+static int extract_name(HEADER *header, size_t plen, unsigned char **pp, 
 			char *name, int isExtract)
 {
   unsigned char *cp = (unsigned char *)name, *p = *pp, *p1 = NULL;
@@ -38,7 +38,7 @@ static int extract_name(HEADER *header, unsigned int plen, unsigned char **pp,
 	  /* get offset */
 	  l = (l&0x3f) << 8;
 	  l |= *p++;
-	  if (l >= (unsigned int)plen) 
+	  if (l >= plen) 
 	    return 0;
 	  
 	  if (!p1) /* first jump, save location to go back to */
@@ -253,7 +253,7 @@ static int in_arpa_name_2_addr(char *namein, struct all_addr *addrp)
   return 0;
 }
 
-static unsigned char *skip_name(unsigned char *ansp, HEADER *header, unsigned int plen)
+static unsigned char *skip_name(unsigned char *ansp, HEADER *header, size_t plen)
 {
   while(1)
     {
@@ -298,7 +298,7 @@ static unsigned char *skip_name(unsigned char *ansp, HEADER *header, unsigned in
   return ansp;
 }
 
-static unsigned char *skip_questions(HEADER *header, unsigned int plen)
+static unsigned char *skip_questions(HEADER *header, size_t plen)
 {
   int q, qdcount = ntohs(header->qdcount);
   unsigned char *ansp = (unsigned char *)(header+1);
@@ -315,7 +315,7 @@ static unsigned char *skip_questions(HEADER *header, unsigned int plen)
   return ansp;
 }
 
-static unsigned char *skip_section(unsigned char *ansp, int count, HEADER *header, unsigned int plen)
+static unsigned char *skip_section(unsigned char *ansp, int count, HEADER *header, size_t plen)
 {
   int i, rdlen;
   
@@ -338,7 +338,7 @@ static unsigned char *skip_section(unsigned char *ansp, int count, HEADER *heade
    might be poisoning attacks. Note that we decode the name rather 
    than CRC the raw bytes, since replies might be compressed differently. 
    We ignore case in the names for the same reason. */
-unsigned int questions_crc(HEADER *header, unsigned int plen, char *name)
+unsigned int questions_crc(HEADER *header, size_t plen, char *name)
 {
   int q;
   unsigned int crc = 0xffffffff;
@@ -380,7 +380,7 @@ unsigned int questions_crc(HEADER *header, unsigned int plen, char *name)
 }
 
 
-int resize_packet(HEADER *header, unsigned int plen, unsigned char *pheader, unsigned int hlen)
+size_t resize_packet(HEADER *header, size_t plen, unsigned char *pheader, size_t hlen)
 {
   unsigned char *ansp = skip_questions(header, plen);
     
@@ -403,7 +403,7 @@ int resize_packet(HEADER *header, unsigned int plen, unsigned char *pheader, uns
   return ansp - (unsigned char *)header;
 }
 
-unsigned char *find_pseudoheader(HEADER *header, unsigned int plen, unsigned int *len, unsigned char **p)
+unsigned char *find_pseudoheader(HEADER *header, size_t plen, size_t  *len, unsigned char **p)
 {
   /* See if packet has an RFC2671 pseudoheader, and if so return a pointer to it. 
      also return length of pseudoheader in *len and pointer to the UDP size in *p */
@@ -428,7 +428,7 @@ unsigned char *find_pseudoheader(HEADER *header, unsigned int plen, unsigned int
       save = ansp;
       ansp += 6; /* class, TTL */
       GETSHORT(rdlen, ansp);
-      if ((unsigned int)(ansp + rdlen - (unsigned char *)header) > plen) 
+      if ((size_t)(ansp + rdlen - (unsigned char *)header) > plen) 
 	return NULL;
        ansp += rdlen;
        if (type == T_OPT)
@@ -470,7 +470,7 @@ static void dns_doctor(HEADER *header, struct doctor *doctor, struct in_addr *ad
       }
 }
 
-static int find_soa(HEADER *header, struct doctor *doctor, unsigned int qlen)
+static int find_soa(HEADER *header, struct doctor *doctor, size_t qlen)
 {
   unsigned char *p;
   int qtype, qclass, rdlen;
@@ -513,7 +513,7 @@ static int find_soa(HEADER *header, struct doctor *doctor, unsigned int qlen)
       else
 	p += rdlen;
       
-      if ((unsigned int)(p - (unsigned char *)header) > qlen)
+      if ((size_t)(p - (unsigned char *)header) > qlen)
 	return 0; /* bad packet */
     }
  
@@ -533,7 +533,7 @@ static int find_soa(HEADER *header, struct doctor *doctor, unsigned int qlen)
 	
 	p += rdlen;
 	
-	if ((unsigned int)(p - (unsigned char *)header) > qlen)
+	if ((size_t)(p - (unsigned char *)header) > qlen)
 	  return 0; /* bad packet */
       }
  
@@ -543,7 +543,7 @@ static int find_soa(HEADER *header, struct doctor *doctor, unsigned int qlen)
 /* Note that the following code can create CNAME chains that don't point to a real record,
    either because of lack of memory, or lack of SOA records.  These are treated by the cache code as 
    expired and cleaned out that way. */
-void extract_addresses(HEADER *header, unsigned int qlen, char *name, time_t now, struct daemon *daemon)
+void extract_addresses(HEADER *header, size_t qlen, char *name, time_t now, struct daemon *daemon)
 {
   unsigned char *p, *p1, *endrr;
   int i, j, qtype, qclass, aqtype, aqclass, ardlen, res, searched_soa = 0;
@@ -625,7 +625,7 @@ void extract_addresses(HEADER *header, unsigned int qlen, char *name, time_t now
 		    }
 		  
 		  p1 = endrr;
-		  if ((unsigned int)(p1 - (unsigned char *)header) > qlen)
+		  if ((size_t)(p1 - (unsigned char *)header) > qlen)
 		    return; /* bad packet */
 		}
 	    }
@@ -709,7 +709,7 @@ void extract_addresses(HEADER *header, unsigned int qlen, char *name, time_t now
 		    }
 		  
 		  p1 = endrr;
-		  if ((unsigned int)(p1 - (unsigned char *)header) > qlen)
+		  if ((size_t)(p1 - (unsigned char *)header) > qlen)
 		    return; /* bad packet */
 		}
 	    }
@@ -742,7 +742,7 @@ void extract_addresses(HEADER *header, unsigned int qlen, char *name, time_t now
 /* If the packet holds exactly one query
    return 1 and leave the name from the query in name. */
 
-unsigned short extract_request(HEADER *header,unsigned int qlen, char *name, unsigned short *typep)
+unsigned short extract_request(HEADER *header, size_t qlen, char *name, unsigned short *typep)
 {
   unsigned char *p = (unsigned char *)(header+1);
   int qtype, qclass;
@@ -776,7 +776,7 @@ unsigned short extract_request(HEADER *header,unsigned int qlen, char *name, uns
 }
 
 
-int setup_reply(HEADER *header, unsigned int qlen,
+size_t setup_reply(HEADER *header, size_t qlen,
 		struct all_addr *addrp, unsigned short flags, unsigned long ttl)
 {
   unsigned char *p = skip_questions(header, qlen);
@@ -841,7 +841,7 @@ int check_for_local_domain(char *name, time_t now, struct daemon *daemon)
 /* Is the packet a reply with the answer address equal to addr?
    If so mung is into an NXDOMAIN reply and also put that information
    in the cache. */
-int check_for_bogus_wildcard(HEADER *header, unsigned int qlen, char *name, 
+int check_for_bogus_wildcard(HEADER *header, size_t qlen, char *name, 
 			     struct bogus_addr *baddr, time_t now)
 {
   unsigned char *p;
@@ -966,8 +966,8 @@ static int add_resource_record(HEADER *header, char *limit, int *truncp, unsigne
 }
 
 /* return zero if we can't answer from cache, or packet size if we can */
-int answer_request(HEADER *header, char *limit, unsigned int qlen, struct daemon *daemon, 
-		   struct in_addr local_addr, struct in_addr local_netmask, time_t now) 
+size_t answer_request(HEADER *header, char *limit, size_t qlen, struct daemon *daemon, 
+		      struct in_addr local_addr, struct in_addr local_netmask, time_t now) 
 {
   char *name = daemon->namebuff;
   unsigned char *p, *ansp, *pheader;

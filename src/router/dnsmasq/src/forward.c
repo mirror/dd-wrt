@@ -36,7 +36,7 @@ void forward_init(int first)
 
 /* Send a UDP packet with it's source address set as "source" 
    unless nowild is true, when we just send it with the kernel default */
-static void send_from(int fd, int nowild, char *packet, int len, 
+static void send_from(int fd, int nowild, char *packet, size_t len, 
 		      union mysockaddr *to, struct all_addr *source,
 		      unsigned int iface)
 {
@@ -164,7 +164,7 @@ static unsigned short search_servers(struct daemon *daemon, time_t now, struct a
 	if (namelen >= domainlen &&
 	    hostname_isequal(matchstart, serv->domain) &&
 	    domainlen >= matchlen &&
-	    (namelen == domainlen || *(serv->domain) == '.' || *(matchstart-1) == '.' ))
+	    (domainlen == 0 || namelen == domainlen || *(serv->domain) == '.' || *(matchstart-1) == '.' ))
 	  {
 	    unsigned short sflag = serv->addr.sa.sa_family == AF_INET ? F_IPV4 : F_IPV6;
 	    *type = SERV_HAS_DOMAIN;
@@ -212,14 +212,14 @@ static unsigned short search_servers(struct daemon *daemon, time_t now, struct a
 /* returns new last_server */	
 static void forward_query(struct daemon *daemon, int udpfd, union mysockaddr *udpaddr,
 			  struct all_addr *dst_addr, unsigned int dst_iface,
-			  HEADER *header, int plen, time_t now, struct frec *forward)
+			  HEADER *header, size_t plen, time_t now, struct frec *forward)
 {
   char *domain = NULL;
   int type = 0;
   struct all_addr *addrp = NULL;
-  unsigned int crc = questions_crc(header, (unsigned int)plen, daemon->namebuff);
+  unsigned int crc = questions_crc(header, plen, daemon->namebuff);
   unsigned short flags = 0;
-  unsigned short gotname = extract_request(header, (unsigned int)plen, daemon->namebuff, NULL);
+  unsigned short gotname = extract_request(header, plen, daemon->namebuff, NULL);
   struct server *start = NULL;
     
   /* may be no servers available. */
@@ -302,6 +302,10 @@ static void forward_query(struct daemon *daemon, int udpfd, union mysockaddr *ud
 		}
 	      else
 		{
+		  /* Keep info in case we want to re-send this packet */
+		  daemon->srv_save = start;
+		  daemon->packet_len = plen;
+		  
 		  if (!gotname)
 		    strcpy(daemon->namebuff, "query");
 		  if (start->addr.sa.sa_family == AF_INET)
@@ -340,19 +344,20 @@ static void forward_query(struct daemon *daemon, int udpfd, union mysockaddr *ud
   /* could not send on, return empty answer or address if known for whole domain */
   if (udpfd != -1)
     {
-      plen = setup_reply(header, (unsigned int)plen, addrp, flags, daemon->local_ttl);
+      plen = setup_reply(header, plen, addrp, flags, daemon->local_ttl);
       send_from(udpfd, daemon->options & OPT_NOWILD, (char *)header, plen, udpaddr, dst_addr, dst_iface);
     }
 
   return;
 }
 
-static int process_reply(struct daemon *daemon, HEADER *header, time_t now, 
-			 unsigned int query_crc, struct server *server, unsigned int n)
+static size_t process_reply(struct daemon *daemon, HEADER *header, time_t now, 
+			 unsigned int query_crc, struct server *server, size_t n)
 {
   unsigned char *pheader, *sizep;
-  unsigned int plen, munged = 0;
-   
+  int munged = 0;
+  size_t plen; 
+
   /* If upstream is advertising a larger UDP packet size
 	 than we allow, trim it so that we don't get overlarge
 	 requests for the client. */
@@ -433,8 +438,12 @@ void reply_query(struct serverfd *sfd, struct daemon *daemon, time_t now)
   HEADER *header;
   union mysockaddr serveraddr;
   socklen_t addrlen = sizeof(serveraddr);
-  int n = recvfrom(sfd->fd, daemon->packet, daemon->edns_pktsz, 0, &serveraddr.sa, &addrlen);
-  
+  ssize_t n = recvfrom(sfd->fd, daemon->packet, daemon->edns_pktsz, 0, &serveraddr.sa, &addrlen);
+  size_t nn;
+
+  /* packet buffer overwritten */
+  daemon->srv_save = NULL;
+
   /* Determine the address of the server replying  so that we can mark that as good */
   serveraddr.sa.sa_family = sfd->source_addr.sa.sa_family;
 #ifdef HAVE_IPV6
@@ -453,14 +462,14 @@ void reply_query(struct serverfd *sfd, struct daemon *daemon, time_t now)
 	 /* for broken servers, attempt to send to another one. */
 	 {
 	   unsigned char *pheader;
-	   unsigned int plen;
-	   int nn;
+	   size_t plen;
+	   
 	   /* recreate query from reply */
-	   pheader = find_pseudoheader(header, n, &plen, NULL);
+	   pheader = find_pseudoheader(header, (size_t)n, &plen, NULL);
 	   header->ancount = htons(0);
 	   header->nscount = htons(0);
 	   header->arcount = htons(0);
-	   if ((nn = resize_packet(header, n, pheader, plen)))
+	   if ((nn = resize_packet(header, (size_t)n, pheader, plen)))
 	     {
 	       forward->forwardall = 1;
 	       header->qr = 0;
@@ -496,11 +505,11 @@ void reply_query(struct serverfd *sfd, struct daemon *daemon, time_t now)
       if (forward->forwardall == 0 || --forward->forwardall == 1 || 
 	  (header->rcode != REFUSED && header->rcode != SERVFAIL))
 	{
-	  if ((n = process_reply(daemon, header, now, forward->crc, server, (unsigned int)n)))
+	  if ((nn = process_reply(daemon, header, now, forward->crc, server, (size_t)n)))
 	    {
 	      header->id = htons(forward->orig_id);
 	      header->ra = 1; /* recursion if available */
-	      send_from(forward->fd, daemon->options & OPT_NOWILD, daemon->packet, n, 
+	      send_from(forward->fd, daemon->options & OPT_NOWILD, daemon->packet, nn, 
 			&forward->source, &forward->dest, forward->iface);
 	    }
 	  forward->new_id = 0; /* cancel */
@@ -516,7 +525,9 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
   struct iname *tmp;
   struct all_addr dst_addr;
   struct in_addr netmask, dst_addr_4;
-  int m, n, if_index = 0;
+  size_t m;
+  ssize_t n;
+  int if_index = 0;
   struct iovec iov[1];
   struct msghdr msg;
   struct cmsghdr *cmptr;
@@ -532,6 +543,9 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
 		 CMSG_SPACE(sizeof(struct sockaddr_dl))];
 #endif
   } control_u;
+  
+  /* packet buffer overwritten */
+  daemon->srv_save = NULL;
   
   if (listen->family == AF_INET && (daemon->options & OPT_NOWILD))
     {
@@ -658,7 +672,7 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
 	}
     }
   
-  if (extract_request(header, (unsigned int)n, daemon->namebuff, &type))
+  if (extract_request(header, (size_t)n, daemon->namebuff, &type))
     {
       if (listen->family == AF_INET) 
 	log_query(F_QUERY | F_IPV4 | F_FORWARD, daemon->namebuff, 
@@ -670,18 +684,18 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
 #endif
     }
 
-  m = answer_request (header, ((char *) header) + PACKETSZ, (unsigned int)n, daemon, 
+  m = answer_request (header, ((char *) header) + PACKETSZ, (size_t)n, daemon, 
 		      dst_addr_4, netmask, now);
   if (m >= 1)
     send_from(listen->fd, daemon->options & OPT_NOWILD, (char *)header, m, &source_addr, &dst_addr, if_index);
   else
     forward_query(daemon, listen->fd, &source_addr, &dst_addr, if_index,
-		  header, n, now, NULL);
+		  header, (size_t)n, now, NULL);
 }
 
 static int read_write(int fd, unsigned char *packet, int size, int rw)
 {
-  int n, done;
+  ssize_t n, done;
   
   for (done = 0; done < size; done += n)
     {
@@ -711,7 +725,8 @@ static int read_write(int fd, unsigned char *packet, int size, int rw)
 unsigned char *tcp_request(struct daemon *daemon, int confd, time_t now,
 			   struct in_addr local_addr, struct in_addr netmask)
 {
-  int size = 0, m;
+  int size = 0;
+  size_t m;
   unsigned short qtype, gotname;
   unsigned char c1, c2;
   /* Max TCP packet + slop */

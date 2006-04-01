@@ -12,13 +12,14 @@
 
 /* Author's email: simon@thekelleys.org.uk */
 
-#define VERSION "2.26"
+#define VERSION "2.27"
 
 #define FTABSIZ 150 /* max number of outstanding requests */
 #define MAX_PROCS 20 /* max no children for TCP requests */
 #define CHILD_LIFETIME 150 /* secs 'till terminated (RFC1035 suggests > 120s) */
 #define EDNS_PKTSZ 1280 /* default max EDNS.0 UDP packet from RFC2671 */
 #define TIMEOUT 20 /* drop UDP queries after TIMEOUT seconds */
+#define LEASE_RETRY 60 /* on error, retry writing leasefile after LEASE_RETRY seconds */
 #define LOGRATE 120 /* log table overflows every LOGRATE seconds */
 #define CACHESIZ 150 /* default cache size */
 #define MAXTOK 50 /* token in DHCP leases */

@@ -184,6 +184,10 @@ bogus-priv
 # of whose DHCP userclass strings includes the substring "accounts"
 #dhcp-userclass=red,accounts
 
+# Send extra options which are tagged as "red" to any machine whose
+# MAC address matches the pattern.
+#dhcp-mac=red,00:60:8C:*:*:*
+
 # If this line is uncommented, dnsmasq will read /etc/ethers and act
 # on the ethernet-address/IP pairs found there just as if they had
 # been given as --dhcp-host options. Useful if you keep
@@ -203,6 +207,10 @@ bogus-priv
 # default router - 3
 # DNS server - 6
 # broadcast address - 28
+
+# Override the default route supplied by dnsmasq, which assumes the
+# router is the same machine as the one running dnsmasq.
+#dhcp-option=3,1.2.3.4
 
 # Set the NTP time server addresses to 192.168.0.4 and 10.10.0.5
 #dhcp-option=42,192.168.0.4,10.10.0.5
@@ -243,6 +251,9 @@ bogus-priv
 # Send RFC-3397 DNS domain search DHCP option. WARNING: Your DHCP client
 # probably doesn't support this......
 #dhcp-option=119,eng.apple.com,marketing.apple.com
+
+# Send RFC-3442 classless static routes (note the netmask encoding)
+#dhcp-option=121,192.168.1.0/24,1.2.3.4,10.0.0.0/8,5.6.7.8
 
 # Send encapsulated vendor-class specific options. The vendor-class
 # is sent as DHCP option 60, and all the options marked with the
