@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2005 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -115,8 +115,9 @@ void dhcp_packet(struct daemon *daemon, time_t now)
   struct msghdr msg;
   struct iovec iov[2];
   struct cmsghdr *cmptr;
-  int sz, newlen, iface_index = 0;
-  int unicast_dest = 0;
+  ssize_t sz;
+  size_t newlen; 
+  int iface_index = 0, unicast_dest = 0;
   struct in_addr iface_addr;
 #ifdef HAVE_BPF
   unsigned char iface_hwaddr[ETHER_ADDR_LEN];
@@ -144,7 +145,7 @@ void dhcp_packet(struct daemon *daemon, time_t now)
   
   sz = recvmsg(daemon->dhcpfd, &msg, 0);
   
-  if (sz < (int)(sizeof(*mess) - sizeof(mess->options)))
+  if (sz < (ssize_t)(sizeof(*mess) - sizeof(mess->options)))
     return;
   
 #if defined (IP_PKTINFO)
@@ -248,8 +249,8 @@ void dhcp_packet(struct daemon *daemon, time_t now)
     }
 
   lease_prune(NULL, now); /* lose any expired leases */
-  newlen = dhcp_reply(daemon, context, ifr.ifr_name, sz, now, unicast_dest);
-  lease_update_file(0, now);
+  newlen = dhcp_reply(daemon, context, ifr.ifr_name, (size_t)sz, now, unicast_dest);
+  lease_update_file(daemon, 0, now);
   lease_update_dns(daemon);
   
   if (newlen == 0)
@@ -289,16 +290,16 @@ void dhcp_packet(struct daemon *daemon, time_t now)
 	 the kernel IP stack */
       
       u32 i, sum;
-      unsigned char hwdest[ETHER_ADDR_LEN];
+      unsigned char hwdest[DHCP_CHADDR_MAX];
       
       if (ntohs(mess->flags) & 0x8000)
 	{
-	  memset(hwdest, 255,  ETHER_ADDR_LEN);
+	  memset(hwdest, 255,  mess->hlen);
 	  rawpacket->ip.ip_dst.s_addr = INADDR_BROADCAST;
 	}
       else
 	{
-	  memcpy(hwdest, mess->chaddr, ETHER_ADDR_LEN); 
+	  memcpy(hwdest, mess->chaddr, mess->hlen); 
 	  rawpacket->ip.ip_dst.s_addr = mess->yiaddr.s_addr;
 	}
       
@@ -322,7 +323,8 @@ void dhcp_packet(struct daemon *daemon, time_t now)
       
       rawpacket->udp.uh_sport = htons(DHCP_SERVER_PORT);
       rawpacket->udp.uh_dport = htons(DHCP_CLIENT_PORT);
-      ((u8 *)&rawpacket->data)[newlen] = 0; /* for checksum, in case length is odd. */
+      if (newlen & 1)
+	((u8 *)&rawpacket->data)[newlen] = 0; /* for checksum, in case length is odd. */
       rawpacket->udp.uh_sum = 0;
       rawpacket->udp.uh_ulen = sum = htons(sizeof(struct udphdr) + newlen);
       sum += htons(IPPROTO_UDP);
@@ -338,26 +340,43 @@ void dhcp_packet(struct daemon *daemon, time_t now)
 #ifdef HAVE_BPF
 	struct ether_header header;
 	
-	header.ether_type = htons(ETHERTYPE_IP);
-	memcpy(header.ether_shost, iface_hwaddr, ETHER_ADDR_LEN);
-	memcpy(header.ether_dhost, hwdest, ETHER_ADDR_LEN); 
-	
-	ioctl(daemon->dhcp_raw_fd, BIOCSETIF, &ifr);
-	
-	iov[0].iov_base = (char *)&header;
-	iov[0].iov_len = sizeof(struct ether_header);
-	iov[1].iov_base = (char *)rawpacket;
-	iov[1].iov_len = ntohs(rawpacket->ip.ip_len);
-	while (writev(daemon->dhcp_raw_fd, iov, 2) == -1 && retry_send());
+	/* Only know how to do ethernet on *BSD */
+	if (mess->htype != ARPHRD_ETHER || mess->hlen != ETHER_ADDR_LEN)
+	  syslog(LOG_WARNING, _("DHCP request for unsupported hardware type (%d) recieved on %s"), 
+                 mess->htype, ifr.ifr_name);
+	else
+	  {
+	    header.ether_type = htons(ETHERTYPE_IP);
+	    memcpy(header.ether_shost, iface_hwaddr, ETHER_ADDR_LEN);
+	    memcpy(header.ether_dhost, hwdest, ETHER_ADDR_LEN); 
+	    
+	    ioctl(daemon->dhcp_raw_fd, BIOCSETIF, &ifr);
+	    
+	    iov[0].iov_base = (char *)&header;
+	    iov[0].iov_len = sizeof(struct ether_header);
+	    iov[1].iov_base = (char *)rawpacket;
+	    iov[1].iov_len = ntohs(rawpacket->ip.ip_len);
+	    while (writev(daemon->dhcp_raw_fd, iov, 2) == -1 && retry_send());
+	  }
 #else
-	struct sockaddr_ll dest;
+	/* Most definitions of this only include 8 bytes of address, 
+	   so we roll our own, since later kernels allow more. */
+	struct {
+	  unsigned short int sll_family;
+	  unsigned short int sll_protocol;
+	  int sll_ifindex;
+	  unsigned short int sll_hatype;
+	  unsigned char sll_pkttype;
+	  unsigned char sll_halen;
+	  unsigned char sll_addr[DHCP_CHADDR_MAX];
+	} dest;
 	
 	memset(&dest, 0, sizeof(dest));
 	dest.sll_family = AF_PACKET;
-	dest.sll_halen =  ETHER_ADDR_LEN;
+	dest.sll_halen =  mess->hlen;
 	dest.sll_ifindex = iface_index;
 	dest.sll_protocol = htons(ETHERTYPE_IP);
-	memcpy(dest.sll_addr, hwdest, ETHER_ADDR_LEN); 
+	memcpy(dest.sll_addr, hwdest, mess->hlen); 
 	while (sendto(daemon->dhcp_raw_fd, rawpacket, ntohs(rawpacket->ip.ip_len), 
 		      0, (struct sockaddr *)&dest, sizeof(dest)) == -1 &&
 	       retry_send());
@@ -493,12 +512,13 @@ struct dhcp_config *config_find_by_address(struct dhcp_config *configs, struct i
   return NULL;
 }
 
-/* Is every member of check matched by a member of pool? */
-int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool)
+/* Is every member of check matched by a member of pool? 
+   If negonly, match unless there's a negative tag which matches. */
+int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool, int negonly)
 {
   struct dhcp_netid *tmp1;
   
-  if (!check)
+  if (!check && !negonly)
     return 0;
 
   for (; check; check = check->next)
@@ -508,7 +528,7 @@ int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool)
 	  for (tmp1 = pool; tmp1; tmp1 = tmp1->next)
 	    if (strcmp(check->net, tmp1->net) == 0)
 	      break;
-	  if (!tmp1)
+	  if (!tmp1 || negonly)
 	    return 0;
 	}
       else
@@ -520,97 +540,91 @@ int match_netid(struct dhcp_netid *check, struct dhcp_netid *pool)
 }
 
 int address_allocate(struct dhcp_context *context, struct daemon *daemon,
-		     struct in_addr *addrp, unsigned char *hwaddr, 
+		     struct in_addr *addrp, unsigned char *hwaddr, int hw_len, 
 		     struct dhcp_netid *netids, time_t now)   
 {
   /* Find a free address: exclude anything in use and anything allocated to
      a particular hwaddr/clientid/hostname in our configuration.
-     Try to return from contexts which mathc netis first. */
+     Try to return from contexts which match netids first. */
 
   struct in_addr start, addr ;
   struct dhcp_context *c;
-  unsigned int i, j;
-  
-  for (c = context; c; c = c->current)
-    if (c->flags & CONTEXT_STATIC)
-      continue;
-    else if (netids && !(c->flags & CONTEXT_FILTER))
-      continue;
-    else if (!netids && (c->flags & CONTEXT_FILTER))
-      continue;
-    else if (netids && (c->flags & CONTEXT_FILTER) && !match_netid(&c->netid, netids))
-      continue;
-    else
-      {
-	/* pick a seed based on hwaddr then iterate until we find a free address. */
-	for (j = c->addr_epoch, i = 0; i < ETHER_ADDR_LEN; i++)
-	  j += hwaddr[i] + (hwaddr[i] << 8) + (hwaddr[i] << 16);
-	
-	start.s_addr = addr.s_addr = 
-	  htonl(ntohl(c->start.s_addr) + 
-		(j % (1 + ntohl(c->end.s_addr) - ntohl(c->start.s_addr))));
-	
-	do {
-	  if (!lease_find_by_addr(addr) && 
-	      !config_find_by_address(daemon->dhcp_conf, addr))
-	    {
-	      struct ping_result *r, *victim = NULL;
-	      int count;
+  int i, pass;
+  unsigned int j; 
 
-	      /* check if we failed to ping addr sometime in the last
-		 30s. If so, assume the same situation still exists.
-		 This avoids problems when a stupid client bangs
-		 on us repeatedly. As a final check, is we did more
-		 than six ping checks in the last 30s, we are in 
-		 high-load mode, so don't do any more. */
-	      for (count = 0, r = daemon->ping_results; r; r = r->next)
-		if (difftime(now, r->time) > 30.0)
-		  victim = r; /* old record */
-		else if (++count == 6 || r->addr.s_addr == addr.s_addr)
+  for (pass = 0; pass <= 1; pass++)
+    for (c = context; c; c = c->current)
+      if (c->flags & CONTEXT_STATIC)
+	continue;
+      else if (!match_netid(c->filter, netids, pass))
+	continue;
+      else
+	{
+	  /* pick a seed based on hwaddr then iterate until we find a free address. */
+	  for (j = c->addr_epoch, i = 0; i < hw_len; i++)
+	    j += hwaddr[i] + (hwaddr[i] << 8) + (hwaddr[i] << 16);
+	  
+	  start.s_addr = addr.s_addr = 
+	    htonl(ntohl(c->start.s_addr) + 
+		  (j % (1 + ntohl(c->end.s_addr) - ntohl(c->start.s_addr))));
+	  
+	  do {
+	    if (!lease_find_by_addr(addr) && 
+		!config_find_by_address(daemon->dhcp_conf, addr))
+	      {
+		struct ping_result *r, *victim = NULL;
+		int count;
+		
+		/* check if we failed to ping addr sometime in the last
+		   30s. If so, assume the same situation still exists.
+		   This avoids problems when a stupid client bangs
+		   on us repeatedly. As a final check, is we did more
+		   than six ping checks in the last 30s, we are in 
+		   high-load mode, so don't do any more. */
+		for (count = 0, r = daemon->ping_results; r; r = r->next)
+		  if (difftime(now, r->time) > 30.0)
+		    victim = r; /* old record */
+		  else if (++count == 6 || r->addr.s_addr == addr.s_addr)
+		    {
+		      *addrp = addr;
+		      return 1;
+		    }
+		
+		if (icmp_ping(daemon, addr))
+		  /* address in use: perturb address selection so that we are
+		     less likely to try this address again. */
+		  c->addr_epoch++;
+		else
 		  {
+		    /* at this point victim may hold an expired record */
+		    if (!victim)
+		      {
+			if ((victim = malloc(sizeof(struct ping_result))))
+			  {
+			    victim->next = daemon->ping_results;
+			    daemon->ping_results = victim;
+			  }
+		      }
+		    
+		    /* record that this address is OK for 30s 
+		       without more ping checks */
+		    if (victim)
+		      {
+			victim->addr = addr;
+			victim->time = now;
+		      }
 		    *addrp = addr;
 		    return 1;
 		  }
-	      
-	      if (icmp_ping(daemon, addr))
-		/* address in use: perturb address selection so that we are
-		   less likely to try this address again. */
-		c->addr_epoch++;
-	      else
-		{
-		  /* at this point victim may hold an expired record */
-		  if (!victim)
-		    {
-		      if ((victim = malloc(sizeof(struct ping_result))))
-			{
-			  victim->next = daemon->ping_results;
-			  daemon->ping_results = victim;
-			}
-		    }
-		  
-		  /* record that this address is OK for 30s 
-		     without more ping checks */
-		  if (victim)
-		    {
-		      victim->addr = addr;
-		      victim->time = now;
-		    }
-		  *addrp = addr;
-		  return 1;
-		}
-	    }
+	      }
 
-	  addr.s_addr = htonl(ntohl(addr.s_addr) + 1);
-	  
-	  if (addr.s_addr == htonl(ntohl(c->end.s_addr) + 1))
-	    addr = c->start;
-	  
-	} while (addr.s_addr != start.s_addr);
-      }
-
-  if (netids)
-    return address_allocate(context, daemon, addrp, hwaddr, NULL, now);
-
+	    addr.s_addr = htonl(ntohl(addr.s_addr) + 1);
+	    
+	    if (addr.s_addr == htonl(ntohl(c->end.s_addr) + 1))
+	      addr = c->start;
+	    
+	  } while (addr.s_addr != start.s_addr);
+	}
   return 0;
 }
 
@@ -631,7 +645,8 @@ static int is_addr_in_context(struct dhcp_context *context, struct dhcp_config *
 struct dhcp_config *find_config(struct dhcp_config *configs,
 				struct dhcp_context *context,
 				unsigned char *clid, int clid_len,
-				unsigned char *hwaddr, char *hostname)
+				unsigned char *hwaddr, int hw_len, 
+				int hw_type, char *hostname)
 {
   struct dhcp_config *config; 
   
@@ -653,15 +668,16 @@ struct dhcp_config *find_config(struct dhcp_config *configs,
 	}
   
 
-  if (hwaddr)
-    for (config = configs; config; config = config->next)
-      if ((config->flags & CONFIG_HWADDR) &&
-	  config->wildcard_mask == 0 &&
-	  memcmp(config->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0 &&
-	  is_addr_in_context(context, config))
-	return config;
+  for (config = configs; config; config = config->next)
+    if ((config->flags & CONFIG_HWADDR) &&
+	config->wildcard_mask == 0 &&
+	config->hwaddr_len == hw_len &&
+	(config->hwaddr_type == hw_type || config->hwaddr_type == 0) &&
+	memcmp(config->hwaddr, hwaddr, hw_len) == 0 &&
+	is_addr_in_context(context, config))
+      return config;
   
-  
+
   if (hostname && context)
     for (config = configs; config; config = config->next)
       if ((config->flags & CONFIG_NAME) && 
@@ -669,20 +685,21 @@ struct dhcp_config *find_config(struct dhcp_config *configs,
 	  is_addr_in_context(context, config))
 	return config;
   
-  if (hwaddr)
-    for (config = configs; config; config = config->next)
-      if ((config->flags & CONFIG_HWADDR) &&
-	  config->wildcard_mask != 0 &&
-	  is_addr_in_context(context, config))
-	{
-	  int i;
-	  unsigned int mask = config->wildcard_mask;
-	  for (i = ETHER_ADDR_LEN - 1; i >= 0; i--, mask = mask >> 1)
-	    if (mask & 1)
-	      config->hwaddr[i] = hwaddr[i];
-	  if (memcmp(config->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0)
-	    return config;
-	}
+  for (config = configs; config; config = config->next)
+    if ((config->flags & CONFIG_HWADDR) &&
+	config->wildcard_mask != 0 &&
+	config->hwaddr_len == hw_len &&	
+	(config->hwaddr_type == hw_type || config->hwaddr_type == 0) &&
+	is_addr_in_context(context, config))
+      {
+	int i;
+	unsigned int mask = config->wildcard_mask;
+	for (i = hw_len - 1; i >= 0; i--, mask = mask >> 1)
+	  if (mask & 1)
+	    config->hwaddr[i] = hwaddr[i];
+	if (memcmp(config->hwaddr, hwaddr, hw_len) == 0)
+	  return config;
+      }
   
   return NULL;
 }
@@ -719,7 +736,7 @@ void dhcp_read_ethers(struct daemon *daemon)
       for (ip = buff; *ip && !isspace(*ip); ip++);
       for(; *ip && isspace(*ip); ip++)
 	*ip = 0;
-      if (!*ip || parse_hex(buff, hwaddr, 6, NULL) != 6)
+      if (!*ip || parse_hex(buff, hwaddr, ETHER_ADDR_LEN, NULL, NULL) != ETHER_ADDR_LEN)
 	{
 	  syslog(LOG_ERR, _("bad line at %s line %d"), ETHERSFILE, lineno); 
 	  continue;
@@ -764,6 +781,8 @@ void dhcp_read_ethers(struct daemon *daemon)
 	  for (config = configs; config; config = config->next)
 	    if ((config->flags & CONFIG_HWADDR) && 
 		config->wildcard_mask == 0 &&
+		config->hwaddr_len == ETHER_ADDR_LEN &&
+		(config->hwaddr_type == ARPHRD_ETHER || config->hwaddr_type == 0) &&
 		memcmp(config->hwaddr, hwaddr, ETHER_ADDR_LEN) == 0)
 	      break;
 	  
@@ -793,7 +812,8 @@ void dhcp_read_ethers(struct daemon *daemon)
       
       config->flags |= CONFIG_HWADDR | CONFIG_NOCLID;
       memcpy(config->hwaddr, hwaddr, ETHER_ADDR_LEN);
-
+      config->hwaddr_len = ETHER_ADDR_LEN;
+      config->hwaddr_type = ARPHRD_ETHER;
       count++;
     }
   
