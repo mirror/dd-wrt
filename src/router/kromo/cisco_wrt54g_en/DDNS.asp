@@ -62,11 +62,12 @@ function to_save(F) {
 function to_submit(F) {
 	if(!ddns_check(F,"save")) return;
 	F.submit_button.value = "DDNS";
-	F.action.value = "Apply";
 //	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
-	F.save_button.disabled = true;
-	F.submit();
+	F.action.value = "Apply";
+	apply(F);
+//	F.save_button.disabled = true;
+//	F.submit();
 }
 
 function SelDDNS(num,F) {
