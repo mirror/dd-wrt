@@ -116,9 +116,9 @@ function to_submit(F) {
 		F.submit_button.value = "index";
 		F.save_button.value = "Saved";
 		F.save_button.disabled = true;
-		
+				
 		F.action.value = "Apply";
-		apply(F);
+		F.submit;
 	}
 }
 
