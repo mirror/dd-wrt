@@ -9,62 +9,64 @@
 		<script type="text/javascript">
 function setWirelessTable(val) {
 	var table = document.getElementById("wireless_table");
-	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
-	if(val != "") {
-		var leases = val.replace(/'/g, "").split(",");
-		for(var i = 0; i < leases.length; i = i + 4) {
-			var row = table.insertRow(-1);
-			row.insertCell(-1).innerHTML = leases[i];
-			row.insertCell(-1).innerHTML = leases[i + 1];
-			row.insertCell(-1).innerHTML = leases[i + 2];
-			row.insertCell(-1).innerHTML = leases[i + 3];
-			setMeterBar(row.insertCell(-1), (leases[i + 1] == "0" ? 0 : parseInt(leases[i + 1]) * 1.24 + 116), "");
-		}
-	} else {
-		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 5;
+	for(var i = table.rows.length - 1; i > 0; i--) { table.deleteRow(i); }
+	if(val == "") {
+		var row = table.insertRow(-1);
+		var cell = row.insertCell(-1);
+		cell.colSpan = 4;
 		cell.align = "center";
 		cell.innerHTML = "- None - ";
+		row.insertCell(-1).innerHTML = "<div class=\"meter\"></div>";
+		return;
+	}
+	var nodes = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < nodes.length; i = i + 4) {
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = nodes[i];
+		row.insertCell(-1).innerHTML = nodes[i + 1];
+		row.insertCell(-1).innerHTML = nodes[i + 2];
+		row.insertCell(-1).innerHTML = nodes[i + 3];
+		setMeterBar(row.insertCell(-1), (nodes[i + 1] == "0" ? 0 : parseInt(nodes[i + 1]) * 1.24 + 116), "");
 	}
 }
 
 function setWDSTable(val) {
 	var table = document.getElementById("wds_table");
-	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
-	if(val != "") {
-		setElementVisible("wds", true);
-		var leases = val.replace(/'/g, "").split(",");
-		for(var i = 0; i < leases.length; i = i + 5) {
-			var row = table.insertRow(-1);
-			row.insertCell(-1).innerHTML = leases[i];
-			row.insertCell(-1).innerHTML = leases[i + 1];
-			row.insertCell(-1).innerHTML = leases[i + 2];
-			row.insertCell(-1).innerHTML = leases[i + 3];
-			row.insertCell(-1).innerHTML = leases[i + 4];
-			setMeterBar(row.insertCell(-1), (leases[i + 2] == "0" ? 0 : parseInt(leases[i + 2]) * 1.24 + 116), "");
-		}
-	} else {
+	for(var i = table.rows.length - 1; i > 0; i--) { table.deleteRow(i); }
+	if(val == "") {
 		setElementVisible("wds", false);
+		return;
+	}
+	setElementVisible("wds", true);
+	var nodes = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < nodes.length; i = i + 5) {
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = nodes[i];
+		row.insertCell(-1).innerHTML = nodes[i + 1];
+		row.insertCell(-1).innerHTML = nodes[i + 2];
+		row.insertCell(-1).innerHTML = nodes[i + 3];
+		row.insertCell(-1).innerHTML = nodes[i + 4];
+		setMeterBar(row.insertCell(-1), (nodes[i + 2] == "0" ? 0 : parseInt(nodes[i + 2]) * 1.24 + 116), "");
 	}
 }
 
 function setLeasesTable(val) {
 	var table = document.getElementById("dhcp_leases_table");
-	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
-	if(val != "") {
-		var leases = val.replace(/'/g, "").split(",");
-		for(var i = 0; i < leases.length; i = i + 5) {
-			var row = table.insertRow(-1);
-			row.insertCell(-1).innerHTML = leases[i];
-			row.insertCell(-1).innerHTML = leases[i + 1];
-			row.insertCell(-1).innerHTML = leases[i + 2];
-			row.insertCell(-1).innerHTML = leases[i + 3];
-		}
-	} else {
+	for(var i = table.rows.length - 1; i > 0; i--) { table.deleteRow(i); }
+	if(val == "") {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 4;
 		cell.align = "center";
 		cell.innerHTML = "- None - ";
+		return;
+	}
+	var leases = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < leases.length; i = i + 5) {
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = leases[i];
+		row.insertCell(-1).innerHTML = leases[i + 1];
+		row.insertCell(-1).innerHTML = leases[i + 2];
+		row.insertCell(-1).innerHTML = leases[i + 3];
 	}
 }
 
@@ -98,18 +100,30 @@ var update;
 addEvent(window, "load", function() {
 	setPacketInfo("<% wl_packet_get(); %>");
 	setMemoryValues("<% dumpmeminfo(); %>");
-	setWirelessTable(<% active_wireless(1); %>);
-	setWDSTable(<% active_wds(1); %>);
+	setWirelessTable("<% active_wireless(1); %>");
+	setWDSTable("<% active_wds(1); %>");
 	setLeasesTable("<% dumpleases(1); %>");
 	setElementVisible("dhcp", "<% nvram_get("wl_mode"); %>" == "ap" && "<% nvram_get("lan_proto"); %>" == "dhcp");
 
 	update = new StatusUpdate("Info.live.htm", <% nvram_get("refresh_time"); %>);
-	update.onUpdate("packet_info", function(u) { setPacketInfo(u.packet_info); });
-	update.onUpdate("mem_info", function(u) { setMemoryValues(u.mem_info); });
-	update.onUpdate("active_wireless", function(u) { setWirelessTable(u.active_wireless); });
-	update.onUpdate("active_wds", function(u) { setWDSTable(u.active_wds); });
-	update.onUpdate("dhcp_leases", function(u) { setLeasesTable(u.dhcp_leases); });
-	update.onUpdate("lan_proto", function(u) { setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp"); });
+	update.onUpdate("packet_info", function(u) {
+		setPacketInfo(u.packet_info);
+	});
+	update.onUpdate("mem_info", function(u) {
+		setMemoryValues(u.mem_info);
+	});
+	update.onUpdate("active_wireless", function(u) {
+		setWirelessTable(u.active_wireless);
+	});
+	update.onUpdate("active_wds", function(u) {
+		setWDSTable(u.active_wds);
+	});
+	update.onUpdate("dhcp_leases", function(u) {
+		setLeasesTable(u.dhcp_leases);
+	});
+	update.onUpdate("lan_proto", function(u) {
+		setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp");
+	});
 	update.start();
 });
 

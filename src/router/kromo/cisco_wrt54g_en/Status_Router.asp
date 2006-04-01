@@ -91,8 +91,12 @@ addEvent(window, "load", function() {
 	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
 
 	update = new StatusUpdate("Status_Router.live.asp", <% nvram_get("refresh_time"); %>);
-	update.onUpdate("mem_info", function(u) { setMemoryValues(u.mem_info); });
-	update.onUpdate("uptime", function(u) { setUptimeValues(u.uptime); });
+	update.onUpdate("mem_info", function(u) {
+		setMemoryValues(u.mem_info);
+	});
+	update.onUpdate("uptime", function(u) {
+		setUptimeValues(u.uptime);
+	});
 	update.onUpdate("wan_shortproto", function(u) {
 		setElementVisible("wan_info", u.wan_shortproto != "disabled");
 		setElementVisible("wan_dhcp", u.wan_shortproto == "dhcp");
