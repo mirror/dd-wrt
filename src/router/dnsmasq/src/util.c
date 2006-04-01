@@ -319,25 +319,39 @@ void prettyprint_time(char *buf, unsigned int t)
 
 
 /* in may equal out, when maxlen may be -1 (No max len). */
-int parse_hex(char *in, unsigned char *out, int maxlen, unsigned int *wildcard_mask)
+int parse_hex(char *in, unsigned char *out, int maxlen, 
+	      unsigned int *wildcard_mask, int *mac_type)
 {
   int mask = 0, i = 0;
   char *r;
-
+    
+  if (mac_type)
+    *mac_type = 0;
+  
   while (maxlen == -1 || i < maxlen)
     {
       for (r = in; *r != 0 && *r != ':' && *r != '-'; r++);
       if (*r == 0)
 	maxlen = i;
+      
       if (r != in )
 	{
-	  *r = 0;
-	  mask = mask << 1;
-	  if (strcmp(in, "*") == 0)
-	    mask |= 1;
+	  if (*r == '-' && i == 0 && mac_type)
+	   {
+	      *r = 0;
+	      *mac_type = strtol(in, NULL, 16);
+	      mac_type = NULL;
+	   }
 	  else
-	    out[i] = strtol(in, NULL, 16);
-	  i++;
+	    {
+	      *r = 0;
+	      mask = mask << 1;
+	      if (strcmp(in, "*") == 0)
+		mask |= 1;
+	      else
+		out[i] = strtol(in, NULL, 16);
+	      i++;
+	    }
 	}
       in = r+1;
     }

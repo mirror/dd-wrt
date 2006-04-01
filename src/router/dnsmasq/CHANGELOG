@@ -1639,3 +1639,58 @@ version 2.26
 	    network. Thanks to Lutz Pressler for the bug report and
 	    patch.
 
+version 2.27
+	    Tweaked DHCP behaviour when a client attempts to renew a lease
+            which dnsmasq doesn't know about. Previously that would always
+            result in a DHCPNAK. Now, in dhcp-authoritative mode, the
+            lease will be created, if it's legal. This makes dnsmasq work
+            better if the lease database is lost, for example on an OpenWRT
+	    system which reboots. Thanks to Stephen Rose for work on
+	    this.
+
+	    Added the ability to support RFC-3442 style destination
+	    descriptors in dhcp-options. This makes classless static
+	    routes easy to do, eg dhcp-option=121,192.168.1.0/24,1.2.3.4
+
+	    Added error-checking to the code which writes the lease
+	    file. If this fails for any reason, an error is logged,
+	    and a retry occurs after one minute. This should improve
+	    things eg when a filesystem is full. Thanks to Jens Holze
+	    for the bug report.
+
+	    Fixed breakage of the "/#/ matches any domain" facility
+	    which happened in 2.24. Thanks to Peter Surda for the bug
+	    report.
+
+	    Use "size_t" and "ssize_t" types where appropriate in the
+	    code.
+
+	    Fix buggy CNAME handling in mixed IPv4 and IPv6
+	    queries. Thanks to Andreas Pelme for help finding that.
+
+	    Added some code to attempt to re-transmit DNS queries when 
+	    a network interface comes up.  This helps on DoD links, 
+	    where frequently the packet which triggers dialling is
+            a DNS query, which then gets lost. By re-sending, we can 
+	    avoid the lookup failing. This function is only active
+	    when netlink support is compiled in, and therefore only
+	    under Linux. Thanks to Jean Wolter for help with this.
+
+	    Tweaked the DHCP tag-matching code to work correctly with
+	    NOT-tag conditions. Thanks to Lutz Pressler for finding
+	    the bug.
+
+	    Generalised netid-tag matching in dhcp-range statements to
+	    allow more than one tag.
+
+	    Added --dhcp-mac to do MAC address matching in the same
+	    way as vendorclass and userclass matching. A good
+	    suggestion from Lutz Pressler.
+
+	    Add workaround for buggy early Microsoft DHCP clients
+	    which need zero-termination in string options.
+	    Thanks to Fabiano Pires for help with this.
+
+	    Generalised the DHCP code to cope with any hardware
+	    address type, at least on Linux. *BSD is still limited to
+	    ethernet only.

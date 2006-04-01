@@ -194,7 +194,7 @@ static int cache_scan_free(char *name, struct all_addr *addr, time_t now, unsign
 	      }
 	  } 
 	else if ((crecp->flags & F_FORWARD) && 
-		 ((flags & crecp->flags & (F_IPV4 | F_IPV6)) || (crecp->flags & F_CNAME)) &&
+		 ((flags & crecp->flags & (F_IPV4 | F_IPV6)) || ((crecp->flags | flags) & F_CNAME)) &&
 		 hostname_isequal(cache_get_name(crecp), name))
 	  {
 	    if (crecp->flags & (F_HOSTS | F_DHCP))

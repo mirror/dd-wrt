@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000-2005 Simon Kelley
+/* dnsmasq is Copyright (c) 2000-2006 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -256,7 +256,7 @@ int dnsmasq_main (int argc, char **argv)
 #endif
 	  
 	  if (daemon->dhcp && 
-	      (i == daemon->lease_fd || 
+	      (i == fileno(daemon->lease_stream) || 
 	       i == daemon->dhcpfd || 
 	       i == daemon->dhcp_raw_fd ||
 	       i == daemon->dhcp_icmp_fd))
@@ -314,14 +314,14 @@ int dnsmasq_main (int argc, char **argv)
       if (if_tmp->name && !if_tmp->used)
 	syslog(LOG_WARNING, _("warning: interface %s does not currently exist"), if_tmp->name);
   
+#ifdef HAVE_RTNETLINK
+  /* Must do this after daemonizing so that the pid is right */
+  netlink_init(daemon);
+#endif
+  
   if (daemon->dhcp)
     {
       struct dhcp_context *dhcp_tmp;
-
-#ifdef HAVE_RTNETLINK
-      /* Must do this after daemonizing so that the pid is right */
-      daemon->netlinkfd =  netlink_init();
-#endif
       
       for (dhcp_tmp = daemon->dhcp; dhcp_tmp; dhcp_tmp = dhcp_tmp->next)
 	{
@@ -375,7 +375,7 @@ int dnsmasq_main (int argc, char **argv)
 	{
 	  if (daemon->dhcp)
 	    {
-	      lease_update_file(1, now);
+	      lease_update_file(daemon, 1, now);
 #ifdef HAVE_BROKEN_RTC
 	      alarm(daemon->min_leasetime);
 #endif
@@ -399,6 +399,15 @@ int dnsmasq_main (int argc, char **argv)
 	      if (daemon->dhcpfd > maxfd)
 		maxfd = daemon->dhcpfd;
 	    }
+
+#ifdef HAVE_RTNETLINK
+	  if (daemon->netlinkfd != -1)
+	    {
+	      FD_SET(daemon->netlinkfd, &rset);
+	      if (daemon->netlinkfd > maxfd)
+		maxfd = daemon->netlinkfd;
+	    }
+#endif
 
 	  /* Whilst polling for the dbus, wake every quarter second */
 #ifdef HAVE_PSELECT
@@ -497,6 +506,11 @@ int dnsmasq_main (int argc, char **argv)
 		}
 	    }
 	}
+
+#ifdef HAVE_RTNETLINK
+      if (daemon->netlinkfd != -1 && FD_ISSET(daemon->netlinkfd, &rset))
+	netlink_multicast(daemon);
+#endif
       
 #ifdef HAVE_DBUS
       /* if we didn't create a DBus connection, retry now. */ 
@@ -522,9 +536,9 @@ int dnsmasq_main (int argc, char **argv)
   if (daemon->dhcp)
     { 
 #ifdef HAVE_BROKEN_RTC
-      lease_update_file(1, now);
+      lease_update_file(daemon, 1, now);
 #endif
-      close(daemon->lease_fd);
+      fclose(daemon->lease_stream);
     }
   
   return 0;
@@ -565,7 +579,7 @@ void clear_cache_and_reload(struct daemon *daemon, time_t now)
 	dhcp_read_ethers(daemon);
       dhcp_update_configs(daemon->dhcp_conf);
       lease_update_from_configs(daemon); 
-      lease_update_file(0, now); 
+      lease_update_file(daemon, 0, now); 
       lease_update_dns(daemon);
     }
 }
