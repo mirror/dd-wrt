@@ -21,7 +21,7 @@
 				<dd>You can schedule regular reboots for the router : 
 					<ul>
 						<li>Regularly after xxx seconds.</li>
-						<li>At a specific date time each week.</li>
+						<li>At a specific date time each week or everyday.</li>
 					</ul><br/>
 					<div class="note">
 						<h4>Note</h4>
