@@ -10,6 +10,7 @@
 function process_aborted(F) {
 	bar1.togglePause();
 	alert("Upgrade failed !");
+	window.location.replace('Upgrade.asp')
 	return false;
 }
 
