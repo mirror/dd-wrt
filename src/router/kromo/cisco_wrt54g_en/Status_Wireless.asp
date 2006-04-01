@@ -19,14 +19,14 @@ function setWirelessTable(val) {
 		row.insertCell(-1).innerHTML = "<div class=\"meter\"></div>";
 		return;
 	}
-	var leases = val.replace(/'/g, "").split(",");
-	for(var i = 0; i < leases.length; i = i + 4) {
+	var nodes = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < nodes.length; i = i + 4) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = leases[i];
-		row.insertCell(-1).innerHTML = leases[i + 1];
-		row.insertCell(-1).innerHTML = leases[i + 2];
-		row.insertCell(-1).innerHTML = leases[i + 3];
-		setMeterBar(row.insertCell(-1), (leases[i + 1] == "0" ? 0 : parseInt(leases[i + 1]) * 1.24 + 116), "");
+		row.insertCell(-1).innerHTML = nodes[i];
+		row.insertCell(-1).innerHTML = nodes[i + 1];
+		row.insertCell(-1).innerHTML = nodes[i + 2];
+		row.insertCell(-1).innerHTML = nodes[i + 3];
+		setMeterBar(row.insertCell(-1), (nodes[i + 1] == "0" ? 0 : parseInt(nodes[i + 1]) * 1.24 + 116), "");
 	}
 }
 
@@ -38,15 +38,15 @@ function setWDSTable(val) {
 		return;
 	}
 	setElementVisible("wds", true);
-	var leases = val.replace(/'/g, "").split(",");
-	for(var i = 0; i < leases.length; i = i + 5) {
+	var nodes = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < nodes.length; i = i + 5) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = leases[i];
-		row.insertCell(-1).innerHTML = leases[i + 1];
-		row.insertCell(-1).innerHTML = leases[i + 2];
-		row.insertCell(-1).innerHTML = leases[i + 3];
-		row.insertCell(-1).innerHTML = leases[i + 4];
-		setMeterBar(row.insertCell(-1), (leases[i + 2] == "0" ? 0 : parseInt(leases[i + 2]) * 1.24 + 116), "");
+		row.insertCell(-1).innerHTML = nodes[i];
+		row.insertCell(-1).innerHTML = nodes[i + 1];
+		row.insertCell(-1).innerHTML = nodes[i + 2];
+		row.insertCell(-1).innerHTML = nodes[i + 3];
+		row.insertCell(-1).innerHTML = nodes[i + 4];
+		setMeterBar(row.insertCell(-1), (nodes[i + 2] == "0" ? 0 : parseInt(nodes[i + 2]) * 1.24 + 116), "");
 	}
 }
 
