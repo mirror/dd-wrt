@@ -10,41 +10,43 @@
 function setWirelessTable(val) {
 	var table = document.getElementById("wireless_table");
 	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
-	if(val != "") {
-		var leases = val.replace(/'/g, "").split(",");
-		for(var i = 0; i < leases.length; i = i + 4) {
-			var row = table.insertRow(-1);
-			row.insertCell(-1).innerHTML = leases[i];
-			row.insertCell(-1).innerHTML = leases[i + 1];
-			row.insertCell(-1).innerHTML = leases[i + 2];
-			row.insertCell(-1).innerHTML = leases[i + 3];
-			setMeterBar(row.insertCell(-1), (leases[i + 1] == "0" ? 0 : parseInt(leases[i + 1]) * 1.24 + 116), "");
-		}
-	} else {
-		var cell = table.insertRow(-1).insertCell(-1);
-		cell.colSpan = 5;
+	if(val == "") {
+		var row = table.insertRow(-1);
+		var cell = row.insertCell(-1);
+		cell.colSpan = 4;
 		cell.align = "center";
 		cell.innerHTML = "- None - ";
+		row.insertCell(-1).innerHTML = "<div class=\"meter\"></div>";
+		return;
+	}
+	var leases = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < leases.length; i = i + 4) {
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = leases[i];
+		row.insertCell(-1).innerHTML = leases[i + 1];
+		row.insertCell(-1).innerHTML = leases[i + 2];
+		row.insertCell(-1).innerHTML = leases[i + 3];
+		setMeterBar(row.insertCell(-1), (leases[i + 1] == "0" ? 0 : parseInt(leases[i + 1]) * 1.24 + 116), "");
 	}
 }
 
 function setWDSTable(val) {
 	var table = document.getElementById("wds_table");
 	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
-	if(val != "") {
-		setElementVisible("wds", true);
-		var leases = val.replace(/'/g, "").split(",");
-		for(var i = 0; i < leases.length; i = i + 5) {
-			var row = table.insertRow(-1);
-			row.insertCell(-1).innerHTML = leases[i];
-			row.insertCell(-1).innerHTML = leases[i + 1];
-			row.insertCell(-1).innerHTML = leases[i + 2];
-			row.insertCell(-1).innerHTML = leases[i + 3];
-			row.insertCell(-1).innerHTML = leases[i + 4];
-			setMeterBar(row.insertCell(-1), (leases[i + 2] == "0" ? 0 : parseInt(leases[i + 2]) * 1.24 + 116), "");
-		}
-	} else {
+	if(val == "") {
 		setElementVisible("wds", false);
+		return;
+	}
+	setElementVisible("wds", true);
+	var leases = val.replace(/'/g, "").split(",");
+	for(var i = 0; i < leases.length; i = i + 5) {
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = leases[i];
+		row.insertCell(-1).innerHTML = leases[i + 1];
+		row.insertCell(-1).innerHTML = leases[i + 2];
+		row.insertCell(-1).innerHTML = leases[i + 3];
+		row.insertCell(-1).innerHTML = leases[i + 4];
+		setMeterBar(row.insertCell(-1), (leases[i + 2] == "0" ? 0 : parseInt(leases[i + 2]) * 1.24 + 116), "");
 	}
 }
 
@@ -63,14 +65,20 @@ function setPacketInfo(val) {
 var update;
 
 addEvent(window, "load", function() {
-	setWirelessTable(<% active_wireless(0); %>);
-	setWDSTable(<% active_wds(0); %>);
+	setWirelessTable("<% active_wireless(0); %>");
+	setWDSTable("<% active_wds(0); %>");
 	setPacketInfo("<% wl_packet_get(); %>");
 
 	update = new StatusUpdate("Status_Wireless.live.asp", <% nvram_get("refresh_time"); %>);
-	update.onUpdate("active_wireless", function(u) { setWirelessTable(u.active_wireless); });
-	update.onUpdate("active_wds", function(u) { setWDSTable(u.active_wds); });
-	update.onUpdate("packet_info", function(u) { setPacketInfo(u.packet_info); });
+	update.onUpdate("active_wireless", function(u) {
+		setWirelessTable(u.active_wireless);
+	});
+	update.onUpdate("active_wds", function(u) {
+		setWDSTable(u.active_wds);
+	});
+	update.onUpdate("packet_info", function(u) {
+		setPacketInfo(u.packet_info);
+	});
 	update.start();
 
 });
