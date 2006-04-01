@@ -21,10 +21,9 @@ function to_submit(F) {
 	}
 	if(!valid_value(F)) return;
 	F.submit_button.value = "Routing";
-	F.action.value = "Apply";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	F.action.value = "Apply";
+	apply(F);
 }
 
 function valid_value(F) {
