@@ -236,12 +236,14 @@ static int parse(int c, char **argv, int argc, const struct ebt_u_entry *entry,
 		break;
 	case EBT_STP_ROOTADDR:
 		if (ebt_get_mac_and_mask(argv[optind-1],
-		    stpinfo->config.root_addr, stpinfo->config.root_addrmsk))
+		    (unsigned char *)stpinfo->config.root_addr,
+		    (unsigned char *)stpinfo->config.root_addrmsk))
 			ebt_print_error("Bad --stp-root-addr address");
 		break;
 	case EBT_STP_SENDERADDR:
-		if (ebt_get_mac_and_mask(argv[optind-1], stpinfo->config.sender_addr,
-		    stpinfo->config.sender_addrmsk))
+		if (ebt_get_mac_and_mask(argv[optind-1],
+		    (unsigned char *)stpinfo->config.sender_addr,
+		    (unsigned char *)stpinfo->config.sender_addrmsk))
 			ebt_print_error("Bad --stp-sender-addr address");
 		break;
 	default:
@@ -293,13 +295,15 @@ static void print(const struct ebt_u_entry *entry,
 		} else if (EBT_STP_ROOTPRIO == (1 << i))
 			print_range(c->root_priol, c->root_priou);
 		else if (EBT_STP_ROOTADDR == (1 << i))
-			ebt_print_mac_and_mask(c->root_addr, c->root_addrmsk);
+			ebt_print_mac_and_mask((unsigned char *)c->root_addr,
+			   (unsigned char*)c->root_addrmsk);
 		else if (EBT_STP_ROOTCOST == (1 << i))
 			print_range(c->root_costl, c->root_costu);
 		else if (EBT_STP_SENDERPRIO == (1 << i))
 			print_range(c->sender_priol, c->sender_priou);
 		else if (EBT_STP_SENDERADDR == (1 << i))
-			ebt_print_mac_and_mask(c->sender_addr, c->sender_addrmsk);
+			ebt_print_mac_and_mask((unsigned char *)c->sender_addr,
+			   (unsigned char *)c->sender_addrmsk);
 		else if (EBT_STP_PORT == (1 << i))
 			print_range(c->portl, c->portu);
 		else if (EBT_STP_MSGAGE == (1 << i))

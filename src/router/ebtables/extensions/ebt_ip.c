@@ -208,18 +208,21 @@ static void final_check(const struct ebt_u_entry *entry,
    const struct ebt_entry_match *match, const char *name,
    unsigned int hookmask, unsigned int time)
 {
- 	struct ebt_ip_info *ipinfo = (struct ebt_ip_info *)match->data;
+	struct ebt_ip_info *ipinfo = (struct ebt_ip_info *)match->data;
 
 	if (entry->ethproto != ETH_P_IP || entry->invflags & EBT_IPROTO) {
 		ebt_print_error("For IP filtering the protocol must be "
 		            "specified as IPv4");
 	} else if (ipinfo->bitmask & (EBT_IP_SPORT|EBT_IP_DPORT) &&
-		(!(ipinfo->bitmask & EBT_IP_PROTO) || 
+		(!(ipinfo->bitmask & EBT_IP_PROTO) ||
 		ipinfo->invflags & EBT_IP_PROTO ||
-		(ipinfo->protocol!=IPPROTO_TCP && 
-			ipinfo->protocol!=IPPROTO_UDP)))
+		(ipinfo->protocol!=IPPROTO_TCP &&
+		 ipinfo->protocol!=IPPROTO_UDP &&
+		 ipinfo->protocol!=IPPROTO_SCTP &&
+		 ipinfo->protocol!=IPPROTO_DCCP)))
 		ebt_print_error("For port filtering the IP protocol must be "
-				"either 6 (tcp) or 17 (udp)");
+				"either 6 (tcp), 17 (udp), 33 (dccp) or "
+				"132 (sctp)");
 }
 
 static void print(const struct ebt_u_entry *entry,

@@ -441,7 +441,7 @@ ebt_translate_watcher(struct ebt_entry_watcher *w,
 }
 
 static int
-ebt_translate_entry(struct ebt_entry *e, unsigned int *hook, int *n, int *cnt,
+ebt_translate_entry(struct ebt_entry *e, int *hook, int *n, int *cnt,
    int *totalcnt, struct ebt_u_entry **u_e, struct ebt_u_replace *u_repl,
    unsigned int valid_hooks, char *base, struct ebt_cntchanges **cc)
 {
@@ -514,7 +514,7 @@ ebt_translate_entry(struct ebt_entry *e, unsigned int *hook, int *n, int *cnt,
 						break;
 				if (i == u_repl->num_chains)
 					ebt_print_bug("Can't find udc for jump");
-				((struct ebt_standard_target *)new->t)->verdict = i;
+				((struct ebt_standard_target *)new->t)->verdict = i-NF_BR_NUMHOOKS;
 			}
 		}
 
@@ -540,7 +540,7 @@ ebt_translate_entry(struct ebt_entry *e, unsigned int *hook, int *n, int *cnt,
 
 /* Initialize all chain headers */
 static int
-ebt_translate_chains(struct ebt_entry *e, unsigned int *hook,
+ebt_translate_chains(struct ebt_entry *e, int *hook,
    struct ebt_u_replace *u_repl, unsigned int valid_hooks)
 {
 	int i;
