@@ -1037,7 +1037,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 	}
 
       ret += websWrite (wp, "</fieldset>\n");
-      ret += websWrite (wp, "</div><br clear="all" /><br />\n");
+      ret += websWrite (wp, "</div><br clear=\"all\" /><br />\n");
 
     }
 
