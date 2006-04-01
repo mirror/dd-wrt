@@ -48,7 +48,7 @@
           <TD bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>
           <TD width=8 background=image/UI_04.gif height=25>&nbsp;</TD>
           <TD colSpan=3 height=25 width="41">&nbsp;</TD>
-                  <TD width=100 height=25><span lang=zh-tw style="FONT-SIZE: 8pt">At a set Time&nbsp;(Cron must be enabled)</span></TD>
+                  <TD width=100 height=25><span lang=zh-tw style="FONT-SIZE: 8pt">At a set Time</span></TD>
           <TD width=246 height=25>
             <TABLE id=AutoNumber12 cellSpacing=0 cellPadding=0 width=242 border=0>
               <TBODY>
