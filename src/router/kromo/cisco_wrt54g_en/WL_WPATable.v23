@@ -17,12 +17,11 @@ function SelMode(varname,num,F)	{
 function to_submit(F) {
 	if(valid_value(F)){
 		F.submit_button.value = "WL_WPATable";
-		F.action.value = "Apply";
 		//F.security_mode_last.value = F.security_mode.value;
 		//F.wl_wep_last.value = F.wl_wep.value;
-	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-       	F.submit();
+		F.save_button.value = "Saved";
+		F.action.value = "Apply";
+       	apply(F);
 	}
 }
 function valid_value(F) {

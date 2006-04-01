@@ -9,10 +9,9 @@
 		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "Wireless_radauth";
-	F.action.value = "Apply";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	F.action.value = "Apply";
+	apply(F);
 }
 		</script>
 	</head>
