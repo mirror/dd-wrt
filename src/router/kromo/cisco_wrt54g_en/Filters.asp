@@ -76,10 +76,9 @@ function to_submit(F) {
 	if(valid(F) == true) {
 		F.submit_type.value = "save";
 		F.submit_button.value = "Filters";
-		F.action.value = "Apply";
 		F.save_button.value = "Saved";
-		F.save_button.disabled = true;
-		F.submit();
+		F.action.value = "Apply";
+		apply(F);
 
 	}
 }
