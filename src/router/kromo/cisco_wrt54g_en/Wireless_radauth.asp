@@ -62,7 +62,7 @@ function to_submit(F) {
                   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
                     <input type="hidden" name="submit_button" value="Wireless_radauth" />
                     <input type="hidden" name="change_action" />
-                    <input type="hidden" name="_radius_override" />
+                    <input type="hidden" name="radius_override" />
                     <input type="hidden" name="action" value="Apply" />
                     <input type="hidden" name="commit" value="1" />
                     <h2>Remote Authentication Dial-In User Service</h2>
