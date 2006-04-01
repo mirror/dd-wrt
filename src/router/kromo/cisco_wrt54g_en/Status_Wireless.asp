@@ -187,7 +187,7 @@ addEvent(window, "unload", function() {
 										<th width="12%">Signal</th>
 										<th width="12%">Noise</th>
 										<th width="12%">SNR</th>
-										<th>&nbsp;</th>
+										<th>Signal Quality</th>
 									</tr>
 								</table>
 							</fieldset><br />
@@ -201,7 +201,7 @@ addEvent(window, "unload", function() {
 											<th width="12%">Signal</th>
 											<th width="12%">Noise</th>
 											<th width="12%">SNR</th>
-											<th>&nbsp;</th>
+											<th>Signal Quality</th>
 										</tr>
 									</table>
 								</fieldset><br />
