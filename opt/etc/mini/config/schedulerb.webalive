@@ -11,7 +11,7 @@
 		<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvram_get("schedule_time"); %>" />
 	</div>
 	<div class="setting">
-		<div class="label">At a set Time&nbsp;(Cron must be enabled)</div>
+		<div class="label">At a set Time</div>
 		<input type="radio" value="2" name="schedule_hour_time" <% nvram_match("schedule_hour_time","2","checked"); %> onclick="alive_enable_disable(this.value)" />
 		<select name="schedule_hours">
 			<option value="00" <% nvram_selmatch("schedule_hours","00","selected"); %>>00</option>
