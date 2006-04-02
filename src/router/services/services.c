@@ -1846,7 +1846,7 @@ bird_init (void)
 
 }
 #endif /* HAVE_BIRD */
-
+#ifdef HAVE_BIRD
 /* Written by Sparq in 2002/07/16 */
 int
 start_zebra (void)
@@ -1910,6 +1910,7 @@ stop_zebra (void)
 #endif
 }
 
+#endif
 
 int
 start_syslog (void)

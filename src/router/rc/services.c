@@ -97,12 +97,16 @@ start_services (void)
   start_service("httpd");
   start_service("dhcpd");
   start_service("dnsmasq");
+#ifdef HAVE_UPNP
   start_service("upnp"); //we'll start upnp right after dhcp and dns
+#endif
   start_service("nas_lan");
 #ifdef HAVE_MSSID
   start_service("guest_nas");
 #endif
+#ifdef HAVE_BIRD
   start_service("zebra");
+#endif
   start_service("wland");
   start_service("wshaper");
   start_service("cron");
@@ -148,7 +152,9 @@ stop_services (void)
 {
   //stop_ses();
   stop_service("nas");
+#ifdef HAVE_UPNP
   stop_service("upnp");
+#endif
   stop_service("dhcpd");
   stop_service("dns_clear_resolv");
   stop_service("cron");
@@ -157,7 +163,9 @@ stop_services (void)
   stop_service("tftpd");
 #endif
   stop_service("syslog");
+#ifdef HAVE_BIRD
   stop_service("zebra");
+#endif
   stop_service("wland");
 #ifdef HAVE_TELNET
   stop_service("telnetd");
@@ -232,7 +240,9 @@ start_single_service (void)
 /* Sveasoft addition */
   else if (!strcmp (service, "router"))
     {
+#ifdef HAVE_BIRD
       startstop("zebra");
+#endif
     }
   else if (!strcmp (service, "hotspot"))
     {
@@ -268,8 +278,9 @@ start_single_service (void)
     {
       if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
         stop_service("nas");
-
+#ifdef HAVE_BIRD
       stop_service("zebra");
+#endif
       stop_service("cron");
       stop_service("dhcpd");
       start_service("dhcpd");
@@ -281,7 +292,9 @@ start_single_service (void)
 #ifdef HAVE_PPTPD
       startstop("pptpd");
 #endif
+#ifdef HAVE_BIRD
       start_service("zebra");
+#endif
       startstop("firewall");
       startstop("wshaper");
       startstop("httpd");
@@ -325,9 +338,13 @@ start_single_service (void)
     }
   else if (!strcmp (service, "forward_upnp"))
     {
+#ifdef HAVE_UPNP
       stop_service("upnp");
+#endif
       stop_service("firewall");
+#ifdef HAVE_UPNP
       start_service("upnp");
+#endif
       start_service("firewall");
       startstop("wshaper");
     }
@@ -394,15 +411,23 @@ start_single_service (void)
     {
       stop_service("wan");
       stop_service("httpd");
+#ifdef HAVE_BIRD
       stop_service("zebra");
+#endif
+#ifdef HAVE_UPNP
       stop_service("upnp");
+#endif
       stop_service("cron");
     }
   else if (!strcmp (service, "http_upgrade"))
     {
       stop_service("wan");
+#ifdef HAVE_BIRD
       stop_service("zebra");
+#endif
+#ifdef HAVE_UPNP
       stop_service("upnp");
+#endif
       stop_service("cron");
     }
   else if (!strcmp (service, "wireless"))

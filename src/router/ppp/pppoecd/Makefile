@@ -11,6 +11,8 @@
 #
 # $Id: Makefile,v 1.8 2003/12/03 10:13:25 honor Exp $
 # 
+include $(TOP)/.config
+
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
