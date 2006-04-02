@@ -54,6 +54,23 @@ ifeq ($(CONFIG_NEWMEDIA),y)
 CFLAGS += -DHAVE_NEWMEDIA
 endif
 
+ifeq ($(CONFIG_PPPOE),y)
+CFLAGS += -DHAVE_PPPOE
+endif
+
+ifeq ($(CONFIG_BIRD),y)
+CFLAGS += -DHAVE_BIRD
+endif
+ifeq ($(CONFIG_PPTP),y)
+CFLAGS += -DHAVE_PPTP
+endif
+ifeq ($(CONFIG_L2TP),y)
+CFLAGS += -DHAVE_L2TP
+endif
+ifeq ($(CONFIG_HEARTBEAT),y)
+CFLAGS += -DHAVE_HEARTBEAT
+endif
+
 ifeq ($(CONFIG_CHILLILOCAL),y)
 CFLAGS += -DHAVE_CHILLILOCAL
 endif

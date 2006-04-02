@@ -3947,6 +3947,8 @@ struct ej_handler ej_handlers[] = {
   {"show_dhcpd_settings", ej_show_dhcpd_settings},
   {"show_wds_subnet", ej_show_wds_subnet},
   {"show_infopage", ej_show_infopage},
+  {"show_connectiontype", ej_show_connectiontype},
+  {"show_routing", ej_show_routing},
 #ifdef HAVE_MSSID
   {"show_wireless", ej_show_wireless},
 #endif
