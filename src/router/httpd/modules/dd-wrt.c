@@ -36,6 +36,39 @@
 #include <wlutils.h>
 #include <bcmparams.h>
 
+int
+ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
+{
+websWrite(wp,"<option value=\"gateway\" %s >>Gateway</option>\n",nvram_selmatch (wp, "wk_mode", "gateway") ? "selected":"");
+#ifdef HAVE_BIRD
+websWrite(wp,"<option value=\"bgp\" %s >>BGP</option>\n",nvram_selmatch (wp, "wk_mode", "bgp") ? "selected":"");
+websWrite(wp,"<option value=\"router\" %s >>RIP2 Router</option>\n",nvram_selmatch (wp, "wk_mode", "router") ? "selected":"");
+websWrite(wp,"<option value=\"ospf\" %s >>OSPF Router</option>\n",nvram_selmatch (wp, "wk_mode", "ospf") ? "selected":"");
+#else
+websWrite(wp,"<option value=\"router\" %s >>Router</option>\n",nvram_selmatch (wp, "wk_mode", "router") ? "selected":"");
+#endif
+return 0;
+
+}
+int
+ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
+{
+websWrite(wp,"<option value=\"disabled\" %s >>Disable</option>\n",nvram_selmatch (wp, "wan_proto", "disabled") ? "selected":"");
+websWrite(wp,"<option value=\"static\" %s >>Static IP</option>\n",nvram_selmatch (wp, "wan_proto", "static") ? "selected":"");
+#ifdef HAVE_PPPOE
+websWrite(wp,"<option value=\"pppoe\" %s >>PPPoE</option>\n",nvram_selmatch (wp, "wan_proto", "pppoe") ? "selected":"");
+#endif
+#ifdef HAVE_PPTP
+websWrite(wp,"<option value=\"pptp\" %s >>PPTP</option>\n",nvram_selmatch (wp, "wan_proto", "pptp") ? "selected":"");
+#endif
+#ifdef HAVE_L2TP
+websWrite(wp,"<option value=\"l2tp\" %s >>L2TP</option>\n",nvram_selmatch (wp, "wan_proto", "l2tp") ? "selected":"");
+#endif
+#ifdef HAVE_HEARTBEAT
+websWrite(wp,"<option value=\"heartbeat\" %s >>HeartBeat Signal</option>\n",nvram_selmatch (wp, "wan_proto", "heartbeat") ? "selected":"");			
+#endif
+return 0;
+}
 
 int
 ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv)
