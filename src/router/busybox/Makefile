@@ -40,7 +40,7 @@ vpath %/Config.in $(srctree)
 include $(top_builddir)/Rules.mak
 include $(top_builddir)/../.config
 CONFIG_UDHCPD=n
-CONFIG_UDHCPC=n
+#CONFIG_UDHCPC=n
 
 DIRS:=applets archival archival/libunarchive coreutils console-tools \
 	debianutils editors findutils init miscutils modutils networking \

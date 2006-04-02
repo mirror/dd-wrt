@@ -353,7 +353,9 @@ CONFIG_FEATURE_WGET_STATUSBAR=y
 # udhcp Server/Client
 #
 # CONFIG_UDHCPD is not set
-# CONFIG_UDHCPC is not set
+CONFIG_UDHCPC=y
+CONFIG_FEATURE_UDHCP_SYSLOG=y
+# CONFIG_FEATURE_UDHCP_DEBUG is not set
 
 #
 # Process Utilities
