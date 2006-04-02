@@ -18,7 +18,7 @@
 			A:link{color: #000000; text-decoration: underline;}
 			A:hover{color: #000000; text-decoration: none;}
 			A:visited{color: #000000; text-decoration: underline;}
-			.dis td {color: #00FFFF}
+			.dis td {color: #FF0000;}
 		-->
 		</style>
 		<script type="text/javascript">
@@ -134,7 +134,6 @@ function makeTable()
 		var e = data[i];
 		if (e !== 'null') {
 			var c = e.enabled ? "" : "dis";
-//			s += "<tr height=\"15\" class='" + c + "'" + "><th valign=\"top\">" + e.wanPorts + "</th><th valign=\"top\">" + e.lanPorts + "</th><th valign=\"top\">" + e.lanIP + "</th><th valign=\"top\">" + e.proto + "</th><th valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</th><th class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></th></tr>";
 			s += "<tr height=\"15\" class='" + c + "'" + "><td valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</td><td valign=\"top\">" + e.wanPorts + "</td><td valign=\"top\">" + e.lanPorts + "</td><td valign=\"top\">" + e.lanIP + "</td><td valign=\"top\">" + e.proto + "</td><td class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></td></tr>";
 		}
 		else {
