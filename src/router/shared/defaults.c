@@ -1236,8 +1236,9 @@ struct nvram_tuple router_defaults[] = {
 
 #endif
 #ifdef HAVE_SPUTNIK_APD
- {"sputnik_mjid_type","0",0},
+ {"sputnik_mjid_type","2",0},
  {"sputnik_mjid","",0},
+ {"apd_enable","0",0},
 #endif
 #ifdef HAVE_CHILLILOCAL
   {"fon_usernames", "0", 0},
