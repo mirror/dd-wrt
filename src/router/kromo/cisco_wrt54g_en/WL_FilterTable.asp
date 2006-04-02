@@ -9,11 +9,6 @@
 		<script type="text/javascript">
 var active_win = null;
 
-function ViewActive() {
-	active_win = self.open('WL_ActiveTable.asp','ActiveTable','alwaysRaised,resizable,scrollbars,width=650,height=450');
-	active_win.focus();
-}
-
 function to_submit_mac(F) {
 	F.submit_button.value = "WL_FilterTable";
 	F.action.value = "Apply";
@@ -62,7 +57,7 @@ function exit() {
 					<table width="100%" >
 						<tr>
 							<TD align="left">Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx</TD>
-							<TD align="right" ><input type="button" id="button4" name="button5" value="Wireless Client MAC List" onclick="ViewActive()"/></TD>
+							<TD align="right" ><input type="button" id="button4" name="button5" value="Wireless Client MAC List" onclick="openWindow('WL_ActiveTable.asp', 650, 450)" /></TD>
 						</tr>
 					</table><br/>
 					
