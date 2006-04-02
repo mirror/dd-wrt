@@ -12,7 +12,7 @@ USRSHAREDIR=${prefix}/share
 
 # Uncomment this to get a shared binary. Call as udhcpd for the server,
 # and udhcpc for the client
-#COMBINED_BINARY=1
+COMBINED_BINARY=1
 
 SYSLOG=1
 
@@ -21,6 +21,8 @@ ifdef DEBUG_DHCPD
 DEBUG=1
 endif
 
+
+#CROSS_COMPILE=arm-uclibc-
 CC = $(CROSS_COMPILE)gcc
 LD = $(CROSS_COMPILE)gcc
 INSTALL = install
@@ -35,7 +37,7 @@ DHCPC_OBJS = dhcpc.o clientpacket.o script.o
 ifdef COMBINED_BINARY
 EXEC1 = udhcpd
 OBJS1 = $(DHCPD_OBJS) $(DHCPC_OBJS) $(OBJS_SHARED) frontend.o
-CFLAGS = -DCOMBINED_BINARY
+CFLAGS += -DCOMBINED_BINARY
 else
 EXEC1 = udhcpd
 OBJS1 = $(DHCPD_OBJS) $(OBJS_SHARED)
@@ -57,11 +59,14 @@ endif
 
 CFLAGS += -W -Wall -Wstrict-prototypes -DVERSION='"$(VER)"'
 
+CFLAGS += -I$(SRCBASE)/include/ -I$(SRCBASE)/router/shared/ -I$(SRCBASE)/
+LDFLAGS +=  -L$(TOP)/shared -lshared  -L$(TOP)/nvram -lnvram
+
 ifdef DEBUG
 CFLAGS += -g -DDEBUG -DMY_DEBUG
 STRIP=true
 else
-CFLAGS += -fomit-frame-pointer
+CFLAGS += -O1 -fomit-frame-pointer
 STRIP=$(CROSS_COMPILE)strip
 endif
 
