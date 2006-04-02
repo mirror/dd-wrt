@@ -69,10 +69,10 @@
 #define SET_LINK_INFO			15
 
 /* how long before a link is idle? (seconds) */
-#define IDLE_WAIT			60
+#define IDLE_WAIT			65
 
 /* how long should we wait for an echo reply? (seconds) */
-#define MAX_ECHO_WAIT			60
+#define MAX_ECHO_WAIT			5
 
 /* how long to wait for ppp to begin negotiation (seconds) */
 #define PPP_WAIT			10
