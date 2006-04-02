@@ -196,27 +196,27 @@ addEvent(window, "unload", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script>Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script>Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script>Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script>Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script>Capture(bmenu.accrestriction)</script></a></li>
-								<li class="current"><span><script>Capture(bmenu.applications)</script></span>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.applications)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Forward.asp"><script>Capture(bmenu.applicationsprforwarding)</script></a></li>
-											<li><a href="ForwardSpec.asp"><script>Capture(bmenu.applicationspforwarding)</script></a></li>
-											<li><a href="Triggering.asp"><script>Capture(bmenu.applicationsptriggering)</script></a></li>
-											<li><span><script>Capture(bmenu.applicationsUpnp)</script></span></li>
-											<li><a href="DMZ.asp"><script>Capture(bmenu.applicationsDMZ)</script></a></li>
-											<li><a href="QoS.asp"><script>Capture(bmenu.applicationsQoS)</script></a></li>
+											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
+											<li><a href="ForwardSpec.asp"><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></a></li>
+											<li><a href="Triggering.asp"><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></span></li>
+											<li><a href="DMZ.asp"><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></a></li>
+											<li><a href="QoS.asp"><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp"><script>Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script>Capture(bmenu.statu)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
