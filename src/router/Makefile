@@ -499,6 +499,15 @@ busybox-config:
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
 busybox: busybox-config rc net-tools
+ifeq ($(CONFIG_DIST),"micro")
+	cp busybox/.config_micro busybox/oldconfig
+	cd busybox && make oldconfig
+else
+	cp busybox/.config_std busybox/oldconfig
+	cd busybox && make oldconfig
+endif
+	
+	make -C busybox clean
 	rm -f busybox/busybox
 	$(MAKE) -C busybox STRIPTOOL=$(STRIP)
 
