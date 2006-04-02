@@ -140,22 +140,6 @@ int send_selecting(unsigned long xid, unsigned long server, unsigned long reques
 				SERVER_PORT, MAC_BCAST_ADDR, client_config.ifindex);
 }
 
-/* Unicasts or broadcasts a DHCP decline message */
-int send_decline(unsigned long xid, unsigned long ciaddr)
-{
-	struct dhcpMessage packet;
-	int ret = 0;
-
-	init_packet(&packet, DHCPDECLINE);
-	packet.xid = xid;
-	packet.ciaddr = ciaddr;
-
-	add_requests(&packet);
-
-	LOG(LOG_INFO, "Sending decline...");
-	return  raw_packet(&packet, INADDR_ANY, CLIENT_PORT, INADDR_BROADCAST,
-				SERVER_PORT, MAC_BCAST_ADDR, client_config.ifindex);
-}
 
 /* Unicasts or broadcasts a DHCP renew message */
 int send_renew(unsigned long xid, unsigned long server, unsigned long ciaddr)

@@ -18,7 +18,6 @@
 #include "options.h"
 #include "leases.h"
 #include "get_time.h"
-#include <shutils.h>
 
 /* on these functions, make sure you datatype matches */
 static int read_ip(char *line, void *arg)
@@ -156,7 +155,6 @@ static struct config_keyword keywords[] = {
 	{"start",	read_ip,  &(server_config.start),	"192.168.0.20"},
 	{"end",		read_ip,  &(server_config.end),		"192.168.0.254"},
 	{"interface",	read_str, &(server_config.interface),	"eth0"},
-	{"wan_interface",       read_str, &(server_config.wan_interface),       "eth1"},	// Added by honor
 	{"option",	read_opt, &(server_config.options),	""},
 	{"opt",		read_opt, &(server_config.options),	""},
 	{"max_leases",	read_u32, &(server_config.max_leases),	"254"},
@@ -346,32 +344,7 @@ void read_leases(char *file)
 	DEBUG(LOG_INFO, "Read %d leases", i);
 	fclose(fp);
 }
-
-int compare_leases(uint32_t requested_ip)
-{
-	FILE *fp;
-        unsigned int i = 0;
-        struct dhcpOfferedAddr lease, *oldest;
-	int match = 0;
-
-	/* Write leases table to file */
-	system("killall -USR1 udhcpd");
 	
-	if (!(fp = fopen("/tmp/udhcpd.leases", "r"))) {
-		DEBUG(LOG_ERR, "Unable to open /tmp/udhcpd.leases for reading");
-		return;
-	}
-	
-	while (i < 254 && (fread(&lease, sizeof lease, 1, fp) == 1)) {
-		if(lease.yiaddr == requested_ip) {
-			match = 1;
-			break;
-		}
-		i++;
-	}
-	fclose(fp);
-	return match;
-}	
 		
 /* convert hex digits in hex to binary, ignore all non-hex digits like ':',
    return length of binary data 
