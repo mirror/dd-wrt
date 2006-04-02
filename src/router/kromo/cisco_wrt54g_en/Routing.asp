@@ -102,10 +102,7 @@ function SelMode(num,F) {
 							<div class="setting">
 								<div class="label">Operating Mode</div>
 								<select name="wk_mode" onchange="SelMode(this.form.wk_mode.selectedIndex,this.form)">
-									<option value="gateway" <% nvram_selmatch("wk_mode", "gateway", "selected"); %>>Gateway</option>
-									<option value="bgp" <% nvram_selmatch("wk_mode", "bgp", "selected"); %>>BGP</option>
-									<option value="router" <% nvram_selmatch("wk_mode", "router", "selected"); %>>RIP2 Router</option>
-									<option value="ospf" <% nvram_selmatch("wk_mode", "ospf", "selected"); %>>OSPF Router</option>
+									<% show_routing(); %>
 								</select>
 							</div> 
 							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
