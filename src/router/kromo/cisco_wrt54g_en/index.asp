@@ -344,15 +344,8 @@ function init() {
 								<div class="setting">
 							    	<div class="label">Connection Type</div>
 							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
-										<option value="disabled" <% nvram_selmatch("wan_proto", "disabled", "selected"); %>>Disable</option>
-										<option value="dhcp" <% nvram_selmatch("wan_proto", "dhcp", "selected"); %>>Automatic Configuration - DHCP</option>
-										<option value="static" <% nvram_selmatch("wan_proto", "static", "selected"); %>>Static IP</option>
-										<option value="pppoe" <% nvram_selmatch("wan_proto", "pppoe", "selected"); %>>PPPoE</option>
-										<option value="pptp" <% nvram_selmatch("wan_proto", "pptp", "selected"); %>>PPTP</option>
-										<option value="l2tp" <% nvram_selmatch("wan_proto", "l2tp", "selected"); %>>L2TP</option><% support_invmatch("HEARTBEAT_SUPPORT", "1", "<!--"); %>
-										<option value="heartbeat" <% nvram_selmatch("wan_proto", "heartbeat", "selected"); %>>HeartBeat Signal</option>
-										<% support_invmatch("HEARTBEAT_SUPPORT", "1", "-->"); %>
-									</select>
+								<% show_connectiontype(); %>
+								</select>
 								</div>
 								<% show_index_setting(); %>
 								<div class="setting">

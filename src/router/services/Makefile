@@ -40,6 +40,9 @@ endif
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON
 endif
+ifeq ($(CONFIG_UPNP),y)
+CFLAGS += -DHAVE_UPNP
+endif
 ifeq ($(CONFIG_CHILLILOCAL),y)
 CFLAGS += -DHAVE_CHILLILOCAL
 endif

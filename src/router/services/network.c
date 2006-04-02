@@ -1500,16 +1500,24 @@ start_wan_done (char *wan_ifname)
       start_wan_service ();
     }
   stop_process_monitor ();
+#ifdef HAVE_BIRD
   stop_zebra ();
+#endif
+#ifdef HAVE_UPNP
   stop_upnp ();
+#endif
   stop_cron ();
   stop_wshaper ();
   cprintf ("start process monitor\n");
   start_process_monitor ();
   cprintf ("start zebra\n");
+#ifdef HAVE_BIRD
   start_zebra ();
+#endif
   cprintf ("start upnp\n");
+#ifdef HAVE_UPNP
   start_upnp ();
+#endif
   cprintf ("start cron\n");
   start_cron ();
   cprintf ("start wshaper\n");
