@@ -70,15 +70,15 @@ function init() {
                      <h2>Help</h2>
                   </div>
                   <dl>
-                     <dt class="term">Sputnik&reg; Agent&trade; Status: </dt>
-                     <dd class="definition">This screen displays the status of the Sputnik&reg; Agent&trade; process.</dd>
+                     <dt class="term">Sputnik Agent Status: </dt>
+                     <dd class="definition">This screen displays the status of the Sputnik Agent process.</dd>
 
                      <dt class="term">Managed By: </dt>
-                     <dd class="definition">The Sputnik&reg; Control Center that this access point is connected to. </dd> 
+                     <dd class="definition">The Sputnik Control Center that this access point is connected to. </dd> 
                      <dt class="term">State: </dt>
                      <dd class="definition">The current Agent status.</dd>
                      <dt class="term">SCC License No: </dt>
-                     <dd class="definition">The license number of your Sputnik&reg; Control Center.</dd>
+                     <dd class="definition">The license number of your Sputnik Control Center.</dd>
                   </dl><br />
                   <a href="javascript:openHelpWindow('HSputnikStatus.asp')">More...</a>
                </div>
