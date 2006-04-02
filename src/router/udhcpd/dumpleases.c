@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
 		if (c == -1) break;
 		
 		switch (c) {
-//		case 'a': mode = ABSOLUTE; break;
+		case 'a': mode = ABSOLUTE; break;
 		case 'r': mode = REMAINING; break;
 		case 'f':
 			strncpy(file, optarg, 255);
@@ -67,16 +67,14 @@ int main(int argc, char *argv[])
 			printf("Usage: dumpleases -f <file> -[r|a]\n\n");
 			printf("  -f, --file=FILENAME             Leases file to load\n");
 			printf("  -r, --remaining                 Interepret lease times as time remaing\n");
-//			printf("  -a, --absolute                  Interepret lease times as expire time\n");
+			printf("  -a, --absolute                  Interepret lease times as expire time\n");
 			break;
 		}
 	}
 			
 	if (!(fp = fopen(file, "r"))) {
-	    if (!(fp = fopen("/jffs/udhcpd.leases", "r"))) {
 		perror("could not open input file");
 		return 0;
-		}
 	}
 
 	printf("Hostname         Mac Address       IP-Address      Expires %s\n", mode == REMAINING ? "in" : "at");  
