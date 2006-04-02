@@ -20,7 +20,6 @@ struct client_config_t {
 	char abort_if_no_lease;		/* Abort if no lease */
 	char background_if_no_lease;	/* Fork to background if no lease */
 	char *interface;		/* The name of the interface to use */
-	char *lan_interface;		/* The name of the lan interface to use */
 	char *pidfile;			/* Optionally store the process ID */
 	char *script;			/* User script to run at dhcp events */
 	unsigned char *clientid;	/* Optional client id to use */

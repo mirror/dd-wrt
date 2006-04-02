@@ -16,7 +16,6 @@
 #include "leases.h"
 #include "arpping.h"
 #include "get_time.h"
-#include <shutils.h>
 
 unsigned char blank_chaddr[] = {[0 ... 15] = 0};
 
@@ -140,8 +139,8 @@ struct dhcpOfferedAddr *find_lease_by_yiaddr(u_int32_t yiaddr)
 struct dhcpOfferedAddr *find_lease_by_hostname(unsigned char *hostname)
 {
 	unsigned int i;
-
 	for (i = 0; i < server_config.max_leases; i++) {
+	      if (leases[i].hostname!=NULL)
 		if (!strncmp(leases[i].hostname, hostname, hostname[-1]) &&
 		    (strlen(leases[i].hostname) == hostname[-1])) {
 			return &(leases[i]);
@@ -159,26 +158,11 @@ u_int32_t find_address(int check_expired)
 	u_int32_t addr, ret;
 	struct dhcpOfferedAddr *lease = NULL;		
 
-	if(server_config.wan_interface)
-		read_wan_interface(server_config.wan_interface, &server_config.wan_ipaddr);
-	
-	
 	addr = ntohl(server_config.start); /* addr is in host order here */
 	for (;addr <= ntohl(server_config.end); addr++) {
 
 		/* Router IP , by honor*/
-		if (ret == server_config.server) {
-			cprintf("The assigned IP Adreess is same as Router IP Address. Skip!\n");
-			continue;
-		}
- 		
-		/* If the WAN IP Address is same as PC's IP Address. 
-		   The PC will cann't access Router.
-		   We must to avoid this issue. */
-		if (server_config.wan_ipaddr && (ret == server_config.wan_ipaddr)) {
-			cprintf("The assigned IP Adreess is same as WAN IP Address. Skip!\n");
-			continue;
-		}
+		if (ret == server_config.server) continue;
 		
 		/* ie, 192.168.55.0 */
 		if (!(addr & 0xFF)) continue;
