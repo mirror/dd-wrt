@@ -382,6 +382,7 @@ function Status(F,I) {
 										<input type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /> Allow
 									</div>
 								</div>
+								<br />
 							</fieldset><br />
 							<fieldset>
 								<legend>Days</legend>
