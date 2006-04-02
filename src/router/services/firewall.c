@@ -2477,7 +2477,7 @@ start_firewall (void)
   /* end Sveasoft add */
 
   // run wanup scripts
-  start_service ("wanup");
+  start_wanup();
 
 
 
