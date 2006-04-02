@@ -13,7 +13,8 @@
 #
 
 UPNP	:= $(SRCBASE)/tools/upnp/igd/linux
-CFLAGS	+= -s $(COPTS)
+CFLAGS	+= -Os -mips32 -mtune=mips32 -pipe
+#CFLAGS	+= -s $(COPTS)
 #DEBUG	:= 1
 
 all: upnp
