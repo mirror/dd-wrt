@@ -97,12 +97,6 @@ int main(int argc, char *argv[])
 	int max_sock;
 	int sig;
 
-	/* DD-WRT (belanger) : ignore signals until we're ready */
-	signal(SIGUSR1, SIG_IGN);
-	signal(SIGUSR2, SIG_IGN);
-	signal(SIGHUP, SIG_IGN);
-	signal(SIGTERM, SIG_IGN);
-
 	OPEN_LOG("udhcpd");
 	LOG(LOG_INFO, "udhcp server (v%s) started", VERSION);
 
@@ -126,9 +120,6 @@ int main(int argc, char *argv[])
 	memset(leases, 0, sizeof(struct dhcpOfferedAddr) * server_config.max_leases);
 	read_leases(server_config.lease_file);
 	read_statics(server_config.statics_file);
-
-	/* DD-WRT (belanger) : write leases now */
-	write_leases();
 
 	if (read_interface(server_config.interface, &server_config.ifindex,
 			   &server_config.server, server_config.arp) < 0)
@@ -170,16 +161,13 @@ int main(int argc, char *argv[])
 			max_sock = server_socket > signal_pipe[0] ? server_socket : signal_pipe[0];
 			retval = select(max_sock + 1, &rfds, NULL, NULL, 
 					server_config.auto_time ? &tv : NULL);
-		} 
-		else 
-			retval = 0; /* If we already timed out, fall through */
+		} else retval = 0; /* If we already timed out, fall through */
 
 		if (retval == 0) {
 			write_leases();
 			timeout_end = get_time(0) + server_config.auto_time;
 			continue;
-		} 
-		else if (retval < 0 && errno != EINTR) {
+		} else if (retval < 0 && errno != EINTR) {
 			DEBUG(LOG_INFO, "error on select");
 			continue;
 		}
@@ -194,6 +182,10 @@ int main(int argc, char *argv[])
 				/* why not just reset the timeout, eh */
 				timeout_end = get_time(0) + server_config.auto_time;
 				continue;
+			case SIGUSR2:
+				 LOG(LOG_INFO, "Received a SIGUSR2");
+				 delete_leases(0);
+				 continue;
 			case SIGHUP:
 				LOG(LOG_INFO, "Received a SIGHUP");
 				read_leases(server_config.lease_file);
@@ -274,16 +266,12 @@ int main(int argc, char *argv[])
 					    requested_align == lease->yiaddr) {
 						sendACK(&packet, lease->yiaddr);
 					}
-					else
-						sendNAK(&packet); //Sveasoft - shouldn't we let them know we don't like the request?
-				} 
-				else {
+				} else {
 					if (requested) {
 						/* INIT-REBOOT State */
 						if (lease->yiaddr == requested_align)
 							sendACK(&packet, lease->yiaddr);
-						else 
-							sendNAK(&packet);
+						else sendNAK(&packet);
 					} else {
 						/* RENEWING or REBINDING State */
 						if (lease->yiaddr == packet.ciaddr)
@@ -312,33 +300,26 @@ int main(int argc, char *argv[])
 				}
 			
 			/* what to do if we have no record of the client */
-			} 
-			else if (server_id) {
+			} else if (server_id) {
 				/* SELECTING State */
 				sendNAK(&packet);       // by honor
 
-			} 
-			else if (requested) {
+			} else if (requested) {
 				/* INIT-REBOOT State */
 				if ((lease = find_lease_by_yiaddr(requested_align))) {
 					if (lease_expired(lease)) {
 						/* probably best if we drop this lease */
 						memset(lease->chaddr, 0, 16);
 					/* make some contention for this address */
-					} 
-					else 
-						sendNAK(&packet);
-				} 
-				else if (requested_align < server_config.start || 
-					 requested_align > server_config.end) {
+					} else sendNAK(&packet);
+				} else if (requested_align < server_config.start || 
+					   requested_align > server_config.end) {
 					sendNAK(&packet);
-				} 
-				else {
+				} else {
 					sendNAK(&packet);
 				}
 
-			} 
-			else if (packet.ciaddr) {
+			} else if (packet.ciaddr) {
 
 				/* RENEWING or REBINDING State */
 				sendNAK(&packet);

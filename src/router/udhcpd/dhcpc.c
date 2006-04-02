@@ -46,6 +46,7 @@
 #include "debug.h"
 #include "pidfile.h"
 #include "get_time.h"
+#include <shutils.h>
 
 static int state;
 static unsigned long requested_ip; /* = 0 */
@@ -69,6 +70,7 @@ struct client_config_t client_config = {
 	quit_after_lease: 0,
 	background_if_no_lease: 0,
 	interface: "eth0",
+	lan_interface: NULL,
 	pidfile: NULL,
 	script: DEFAULT_SCRIPT,
 	clientid: NULL,
@@ -89,6 +91,7 @@ static void show_usage(void)
 "  -b, --background                Fork to background if lease cannot be\n"
 "                                  immediately negotiated.\n"
 "  -i, --interface=INTERFACE       Interface to use (default: eth0)\n"
+"  -l, --LAN interface=INTERFACE   LAN Interface\n"
 "  -n, --now                       Exit with failure if lease cannot be\n"
 "                                  immediately negotiated.\n"
 "  -p, --pidfile=file              Store process ID of daemon in file\n"
@@ -133,7 +136,6 @@ static void perform_renew(void)
 		state = INIT_SELECTING;
 		break;
 	case INIT_SELECTING:
-	break;
 	}
 
 	/* start things over */
@@ -242,7 +244,7 @@ int main(int argc, char *argv[])
 	/* get options */
 	while (1) {
 		int option_index = 0;
-		c = getopt_long(argc, argv, "c:fbH:h:i:np:qr:s:v", arg_options, &option_index);
+		c = getopt_long(argc, argv, "c:fbH:h:i:l:np:qr:s:v", arg_options, &option_index);
 		if (c == -1) break;
 		
 		switch (c) {
@@ -272,6 +274,9 @@ int main(int argc, char *argv[])
 			break;
 		case 'i':
 			client_config.interface =  optarg;
+			break;
+		case 'l':
+			client_config.lan_interface =  optarg;
 			break;
 		case 'n':
 			client_config.abort_if_no_lease = 1;
@@ -479,10 +484,32 @@ int main(int argc, char *argv[])
 				/* Must be a DHCPOFFER to one of our xid's */
 				if (*message == DHCPOFFER) {
 					if ((temp = get_option(&packet, DHCP_SERVER_ID))) {
+						int ifindex;
+						u_int32_t lan_ip;
+						unsigned char lan_mac[6];
+
 						memcpy(&server_addr, temp, 4);
 						xid = packet.xid;
 						requested_ip = packet.yiaddr;
-						
+
+						/* If the WAN IP Address is same as PC's IP Address. 
+						   The PC will cann't access Router.
+						   We must to avoid this issue. */
+						/* Check lease table */
+						if(compare_leases(requested_ip)) {
+							cprintf("The offered IP address is exist in lease table. Skip!\n");
+							send_decline(xid, requested_ip);
+							continue;
+						}
+						/* Check network */
+						else if (client_config.lan_interface && read_interface(client_config.lan_interface, &ifindex, &lan_ip, lan_mac) >= 0) {
+							if(arpping(requested_ip, lan_ip, lan_mac, client_config.lan_interface) == 0) {
+								cprintf("The offered IP address is exist in network. Skip!\n");
+								send_decline(xid, requested_ip);
+								continue;
+							}
+						}
+			
 						/* enter requesting state */
 						state = REQUESTING;
 						timeout = now;

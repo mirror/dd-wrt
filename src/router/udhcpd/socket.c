@@ -89,6 +89,35 @@ int read_interface(char *interface, int *ifindex, u_int32_t *addr, unsigned char
 	return 0;
 }
 
+int read_wan_interface(char *interface, u_int32_t *addr)
+{
+	int fd;
+	struct ifreq ifr;
+	struct sockaddr_in *our_ip;
+
+	memset(&ifr, 0, sizeof(struct ifreq));
+	if((fd = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) >= 0) {
+		ifr.ifr_addr.sa_family = AF_INET;
+		strcpy(ifr.ifr_name, interface);
+
+		if (addr) { 
+			if (ioctl(fd, SIOCGIFADDR, &ifr) == 0) {
+				our_ip = (struct sockaddr_in *) &ifr.ifr_addr;
+				*addr = our_ip->sin_addr.s_addr;
+				DEBUG(LOG_INFO, "%s (WAN ip) = %s", ifr.ifr_name, inet_ntoa(our_ip->sin_addr));
+			} else {
+				LOG(LOG_ERR, "SIOCGIFADDR failed, is the interface up and configured?: %s", 
+						strerror(errno));
+				return -1;
+			}
+		}
+	} else {
+		LOG(LOG_ERR, "socket failed!: %s", strerror(errno));
+		return -1;
+	}
+	close(fd);
+	return 0;
+}
 
 int listen_socket(unsigned int ip, int port, char *inf)
 {
