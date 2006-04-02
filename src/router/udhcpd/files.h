@@ -12,6 +12,7 @@ struct config_keyword {
 int read_config(char *file);
 void write_leases(void);
 void delete_leases(int dummy);
+int compare_leases(uint32_t requested_ip);
 void read_leases(char *file);
 void read_statics(char *file);
 
