@@ -4,7 +4,7 @@
 
 /* Version Number */
 #define BB_VER "1.01"
-#define BB_BT "2006.04.02-22:01+0000"
+#define BB_BT "2006.04.02-22:20+0000"
 
 #define HAVE_DOT_CONFIG 1
 
@@ -180,7 +180,7 @@
 #undef CONFIG_READLINK
 #undef CONFIG_RUN_PARTS
 #undef CONFIG_START_STOP_DAEMON
-#define CONFIG_WHICH 1
+#undef CONFIG_WHICH
 
 /*
  * Editors
@@ -195,7 +195,10 @@
  * Finding Utilities
  */
 #undef CONFIG_FIND
-#undef CONFIG_GREP
+#define CONFIG_GREP 1
+#undef CONFIG_FEATURE_GREP_EGREP_ALIAS
+#undef CONFIG_FEATURE_GREP_FGREP_ALIAS
+#undef CONFIG_FEATURE_GREP_CONTEXT
 #undef CONFIG_XARGS
 
 /*
@@ -205,7 +208,7 @@
 #undef CONFIG_HALT
 #undef CONFIG_POWEROFF
 #define CONFIG_REBOOT 1
-#define CONFIG_MESG 1
+#undef CONFIG_MESG
 
 /*
  * Login/Password Management Utilities
@@ -308,7 +311,9 @@
  * udhcp Server/Client
  */
 #undef CONFIG_UDHCPD
-#undef CONFIG_UDHCPC
+#define CONFIG_UDHCPC 1
+#define CONFIG_FEATURE_UDHCP_SYSLOG 1
+#undef CONFIG_FEATURE_UDHCP_DEBUG
 
 /*
  * Process Utilities
