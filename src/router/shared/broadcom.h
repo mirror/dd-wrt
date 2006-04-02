@@ -146,6 +146,8 @@ extern int wan_proto (webs_t wp);
 
 extern int nvram_selmatch (webs_t wp, char *name, char *match);
 extern int ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv);
+extern int ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv);
+extern int ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv);
 extern int ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv);
 extern int ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv);
 extern int ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv);

@@ -999,7 +999,7 @@ stop_httpd (void)
   return ret;
 }
 
-
+#ifdef HAVE_UPNP
 int
 start_upnp (void)
 {
@@ -1038,7 +1038,7 @@ stop_upnp (void)
   cprintf ("done\n");
   return ret;
 }
-
+#endif
 /*int
 start_ses(void)
 {
