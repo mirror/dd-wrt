@@ -31,6 +31,8 @@
 				<dd>Sets the property which radius password should be used, the shared key or the mac adress itself</dd>
 				<dt>RADIUS Shared Secret</dt>
 				<dd>Transactions between the client and RADIUS accounting server are authenticated through the use of a shared secret, which is never sent over the network.</dd>
+				<dt>Override Radius if Server is unavailable</dt>
+				<dd>If the Radius server becomes unavailable, the radius authentication will be disabled until it becoms reachable again. This allows wireless remote administration of a Access Point in fail scenarios.</dd>
 			</dl>
 		</div>
 		<div class="also">
