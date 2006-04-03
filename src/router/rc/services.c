@@ -97,9 +97,6 @@ start_services (void)
   start_service("httpd");
   start_service("dhcpd");
   start_service("dnsmasq");
-#ifdef HAVE_UPNP
-  start_service("upnp"); //we'll start upnp right after dhcp and dns
-#endif
   start_service("nas_lan");
 #ifdef HAVE_MSSID
   start_service("guest_nas");
@@ -130,8 +127,13 @@ start_services (void)
 #ifdef HAVE_WOL
   start_service("wol");
 #endif
+
 #ifdef HAVE_NOCAT
   start_service("splashd");
+#endif
+
+#ifdef HAVE_UPNP
+  start_service("upnp");
 #endif
 
 #ifdef HAVE_NEWMEDIA
@@ -206,7 +208,7 @@ stop_services (void)
 #endif
 
 // end Sveasoft additions
-  //stop_eou();
+//stop_eou();
 
   cprintf ("done\n");
   return 0;
