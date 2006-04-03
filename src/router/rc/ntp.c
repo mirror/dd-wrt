@@ -50,7 +50,7 @@ check_udhcpd (timer_t t, int arg)
 	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
 	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
 	      sleep (1);
-	      start_service("dhcpd");
+	      start_service("udhcpd");
 	      sleep (1);
 	      start_service("dnsmasq");
 	    }
@@ -62,7 +62,7 @@ check_udhcpd (timer_t t, int arg)
 	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
 	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
 	      sleep (1);
-	      start_service("dhcpd");
+	      start_service("udhcpd");
 	      sleep (1);
 	      start_service("dnsmasq");
 	    }

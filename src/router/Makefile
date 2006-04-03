@@ -248,24 +248,6 @@ ifeq ($(CONFIG_MADWIFI),y)
 endif
 #	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 #	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
-	##not used yet
-	#mkdir -p $(TARGETDIR)/lib/modules/2.4.33-pre1/kernel/drivers/net/switch
-	#cp ./switch/switch-core.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-
-	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	#cp ./switch/switch-adm.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-
-	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	#cp ./switch/switch-robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/switch
-	
-	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc1/kernel/drivers/net/et
-	#cp ../et/linux/et.o $(TARGETDIR)/lib/modules/2.4.32-rc1/kernel/drivers/net/et
-	
-	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/et.4702
-	#cp ../et.4702/linux/4702et.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/et.4702
-	# robo switch
-	#mkdir -p $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/robo
-	#cp ../robo/linux/robo.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/robo
 	
 	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
 	# quick n dirty - stuff Nikki's module where it belongs
@@ -282,19 +264,29 @@ endif
 
 	rm -f $(TARGETDIR)/lib/modules/2.4.33-pre2/build
 	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+ifneq ($(CONFIG_DIST),"micro")
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+endif
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-pre2
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+ifneq ($(CONFIG_DIST),"micro")
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/2.4.33-pre2
-	mv $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+ifneq ($(CONFIG_DIST),"micro")
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+endif
+ifneq ($(CONFIG_DIST),"micro")
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+endif
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+ifneq ($(CONFIG_DIST),"micro")
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/2.4.33-pre2
+endif
 	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel
 	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre2/pcmcia
 	rm -rf $(TARGETDIR)/lib/modules/2.4.33-pre2/netfilter
@@ -499,7 +491,7 @@ busybox-config:
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
 
 busybox: busybox-config rc net-tools
-ifeq ($(CONFIG_DIST),micro)
+ifeq ($(CONFIG_DIST),"micro")
 	cp busybox/.config_micro busybox/sysdeps/linux/defconfig
 	cd busybox && make defconfig
 else

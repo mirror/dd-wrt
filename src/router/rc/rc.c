@@ -638,8 +638,8 @@ main (int argc, char **argv)
   else if (strstr (base, "restart_dns"))
     {
       stop_service ("dnsmasq");
-      stop_service ("dhcpd");
-      start_service ("dhcpd");
+      stop_service ("udhcpd");
+      start_service ("udhcpd");
       start_service ("dnsmasq");
     }
   else if (strstr (base, "site_survey"))
