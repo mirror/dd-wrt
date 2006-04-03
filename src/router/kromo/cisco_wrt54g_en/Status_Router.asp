@@ -246,7 +246,11 @@ addEvent(window, "unload", function() {
 							<fieldset>
 								<legend>Network</legend>
 								<div class="setting">
-									<div class="label">IP Count</div>
+									<div class="label">IP Filter Maximum Ports</div>
+									<span id="ip_conntrack_max"><% nvram_get("ip_conntrack_max"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Active IP Connections</div>
 									<span id="ip_count"></span>&nbsp;
 								</div>
 							</fieldset><br />
