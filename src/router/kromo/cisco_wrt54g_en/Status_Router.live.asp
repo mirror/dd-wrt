@@ -18,3 +18,4 @@
 {wan_dns2::<% nvram_status_get("wan_dns2"); %>}
 {mem_info::<% dumpmeminfo(); %>}
 {uptime::<% get_uptime(); %>}
+{ip_conntrack::<% dumpip_conntrack(); %>}
