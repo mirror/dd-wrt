@@ -1292,7 +1292,7 @@ stop_nas (void)
 #ifdef HAVE_SPUTNIK_APD
 /* Sputnik APD Service Handling */
 int
-start_apd (void)
+start_sputnik (void)
 {
   int ret;
 
@@ -1300,15 +1300,15 @@ start_apd (void)
   if (!nvram_invmatch ("apd_enable", "0"))
     return 0;
 
-  ret = eval ("apd");
+  ret = eval ("sputnik");
   cprintf ("done\n");
   return ret;
 }
 
 int
-stop_apd (void)
+stop_sputnik (void)
 {
-  int ret = eval ("killall", "apd");
+  int ret = eval ("killall", "sputnik");
 
   cprintf ("done\n");
   return ret;
