@@ -4731,7 +4731,7 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   fp = fopen ("/proc/net/ip_conntract", "rb");
   if (fp == NULL)
     return -1;
-  while (!feof (fp));
+  while (!feof (fp))
   {
     c = getc (fp);
     if (c == EOF)
