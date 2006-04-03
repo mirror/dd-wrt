@@ -3500,7 +3500,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  ret +=
 	    websWrite (wp,
-		       " height=\"20\"><input type=\"checkbox\" value=\"on\" name=");
+		       " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
 	  ret += websWrite (wp, buff);
 
 	  if (i < 17 || i > 19)
@@ -3526,7 +3526,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 		      "\"SelSpeed(this.form,'port%d')\"", j);
 		ret += websWrite (wp, buff);
 	  }
-	  ret += websWrite (wp, " /></td>\n");
+	  ret += websWrite (wp, " /></div></td>\n");
 	}
 
       if (i < 16)
