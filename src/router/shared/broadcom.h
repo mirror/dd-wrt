@@ -306,6 +306,8 @@ extern void sr_config_cgi (char *path, webs_t wp);
 /* for ddns */
 extern int ddns_save_value (webs_t wp);
 extern int ddns_update_value (webs_t wp);
+extern int ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv);
+extern int ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv);
 
 /* for nvram save-restore */
 extern void nv_file_in (char *url, webs_t stream, int len, char *boundary);
@@ -322,10 +324,7 @@ extern int ej_show_wl_wep_setting (int eid, webs_t wp, int argc,
 				   char_t ** argv);
 extern void validate_wl_wep_key (webs_t wp, char *value, struct variable *v);
 
-/* for ddns */
-extern int ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv);
-extern int ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv);
-//
+
 /* for test */
 extern int ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv);
 
@@ -342,6 +341,9 @@ extern int diag_traceroute_stop (webs_t wp);
 extern int diag_traceroute_clear (webs_t wp);
 extern int ping_onload (webs_t wp, char *arg);
 extern int traceroute_onload (webs_t wp, char *arg);
+
+/* Added by Botho 03.April.06 */
+extern int ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv);
 
 
 
