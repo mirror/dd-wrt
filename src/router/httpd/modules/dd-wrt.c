@@ -4729,7 +4729,7 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   int c;
   int ret=0;
 
-  fp = fopen ("/proc/net/ip_conntract", "rb");
+  fp = fopen ("/proc/net/ip_conntrack", "rb");
   if (fp == NULL)
     return -1;
   while (!feof (fp))
