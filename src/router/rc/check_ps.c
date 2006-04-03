@@ -47,7 +47,7 @@ struct mon mons[] = {
   {"chilli", 1, M_WAN},
 #endif
 #ifdef HAVE_SPUTNIK_APD
-  {"apd", 1, M_WAN},
+  {"sputnik", 1, M_WAN},
 #endif
 };
 
