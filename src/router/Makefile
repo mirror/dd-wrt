@@ -500,11 +500,11 @@ busybox-config:
 
 busybox: busybox-config rc net-tools
 ifeq ($(CONFIG_DIST),micro)
-	cp busybox/.config_micro busybox/oldconfig
-	cd busybox && make oldconfig
+	cp busybox/.config_micro busybox/sysdeps/linux/defconfig
+	cd busybox && make defconfig
 else
-	cp busybox/.config_std busybox/oldconfig
-	cd busybox && make oldconfig
+	cp busybox/.config_std busybox/sysdeps/linux/defconfig
+	cd busybox && make defconfig
 endif
 	
 	make -C busybox clean

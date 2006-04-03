@@ -111,7 +111,7 @@ start_services (void)
   start_service("wshaper");
   start_service("cron");
   
-#ifdef HAVE_PPTPD
+#ifdef HAVE_PPTP
   start_service("pptpd");
 #endif
 
@@ -191,7 +191,7 @@ stop_services (void)
 #endif
   stop_service("wshaper");
 
-#ifdef HAVE_PPTPD
+#ifdef HAVE_PPTP
   stop_service("pptpd");
 #endif
 #ifdef HAVE_NOCAT
@@ -289,7 +289,7 @@ start_single_service (void)
 #ifdef HAVE_RADVD
       startstop("radvd");
 #endif
-#ifdef HAVE_PPTPD
+#ifdef HAVE_PPTP
       startstop("pptpd");
 #endif
 #ifdef HAVE_BIRD
