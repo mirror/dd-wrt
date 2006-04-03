@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																		/* channel info structure *///from 11.9
+																																									/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -990,7 +990,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef KROMOGUI
   if (!strcmp (type, "input"))
     {
-	  ret += websWrite (wp, "<div class=\"col2l\">\n");
+      ret += websWrite (wp, "<div class=\"col2l\">\n");
       ret += websWrite (wp, "<fieldset><legend>Table 1</legend>\n");
       for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
 	{

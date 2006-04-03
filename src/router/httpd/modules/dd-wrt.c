@@ -39,37 +39,52 @@
 int
 ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
 {
-websWrite(wp,"<option value=\"gateway\" %s >Gateway</option>\n",nvram_selmatch (wp, "wk_mode", "gateway") ? "selected":"");
+  websWrite (wp, "<option value=\"gateway\" %s >Gateway</option>\n",
+	     nvram_selmatch (wp, "wk_mode", "gateway") ? "selected" : "");
 #ifdef HAVE_BIRD
-websWrite(wp,"<option value=\"bgp\" %s >BGP</option>\n",nvram_selmatch (wp, "wk_mode", "bgp") ? "selected":"");
-websWrite(wp,"<option value=\"router\" %s >RIP2 Router</option>\n",nvram_selmatch (wp, "wk_mode", "router") ? "selected":"");
-websWrite(wp,"<option value=\"ospf\" %s >OSPF Router</option>\n",nvram_selmatch (wp, "wk_mode", "ospf") ? "selected":"");
+  websWrite (wp, "<option value=\"bgp\" %s >BGP</option>\n",
+	     nvram_selmatch (wp, "wk_mode", "bgp") ? "selected" : "");
+  websWrite (wp, "<option value=\"router\" %s >RIP2 Router</option>\n",
+	     nvram_selmatch (wp, "wk_mode", "router") ? "selected" : "");
+  websWrite (wp, "<option value=\"ospf\" %s >OSPF Router</option>\n",
+	     nvram_selmatch (wp, "wk_mode", "ospf") ? "selected" : "");
 #else
-websWrite(wp,"<option value=\"router\" %s >Router</option>\n",nvram_selmatch (wp, "wk_mode", "router") ? "selected":"");
+  websWrite (wp, "<option value=\"router\" %s >Router</option>\n",
+	     nvram_selmatch (wp, "wk_mode", "router") ? "selected" : "");
 #endif
-return 0;
+  return 0;
 
 }
+
 int
 ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 {
-	
-websWrite(wp,"<option value=\"disabled\" %s >Disable</option>\n",nvram_selmatch (wp, "wan_proto", "disabled") ? "selected":"");
-websWrite(wp,"<option value=\"static\" %s >Static IP</option>\n",nvram_selmatch (wp, "wan_proto", "static") ? "selected":"");
-websWrite(wp,"<option value=\"dhcp\" %s >Automatic Configuration - DHCP</option>\n",nvram_selmatch (wp, "wan_proto", "dhcp") ? "selected":"");
+
+  websWrite (wp, "<option value=\"disabled\" %s >Disable</option>\n",
+	     nvram_selmatch (wp, "wan_proto", "disabled") ? "selected" : "");
+  websWrite (wp, "<option value=\"static\" %s >Static IP</option>\n",
+	     nvram_selmatch (wp, "wan_proto", "static") ? "selected" : "");
+  websWrite (wp,
+	     "<option value=\"dhcp\" %s >Automatic Configuration - DHCP</option>\n",
+	     nvram_selmatch (wp, "wan_proto", "dhcp") ? "selected" : "");
 #ifdef HAVE_PPPOE
-websWrite(wp,"<option value=\"pppoe\" %s >PPPoE</option>\n",nvram_selmatch (wp, "wan_proto", "pppoe") ? "selected":"");
+  websWrite (wp, "<option value=\"pppoe\" %s >PPPoE</option>\n",
+	     nvram_selmatch (wp, "wan_proto", "pppoe") ? "selected" : "");
 #endif
 #ifdef HAVE_PPTP
-websWrite(wp,"<option value=\"pptp\" %s >PPTP</option>\n",nvram_selmatch (wp, "wan_proto", "pptp") ? "selected":"");
+  websWrite (wp, "<option value=\"pptp\" %s >PPTP</option>\n",
+	     nvram_selmatch (wp, "wan_proto", "pptp") ? "selected" : "");
 #endif
 #ifdef HAVE_L2TP
-websWrite(wp,"<option value=\"l2tp\" %s >L2TP</option>\n",nvram_selmatch (wp, "wan_proto", "l2tp") ? "selected":"");
+  websWrite (wp, "<option value=\"l2tp\" %s >L2TP</option>\n",
+	     nvram_selmatch (wp, "wan_proto", "l2tp") ? "selected" : "");
 #endif
 #ifdef HAVE_HEARTBEAT
-websWrite(wp,"<option value=\"heartbeat\" %s >HeartBeat Signal</option>\n",nvram_selmatch (wp, "wan_proto", "heartbeat") ? "selected":"");			
+  websWrite (wp,
+	     "<option value=\"heartbeat\" %s >HeartBeat Signal</option>\n",
+	     nvram_selmatch (wp, "wan_proto", "heartbeat") ? "selected" : "");
 #endif
-return 0;
+  return 0;
 }
 
 int
@@ -2410,36 +2425,37 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	      mac[9] = 'x';
 	      mac[10] = 'x';
 	    }
-//	  if (!cnt)
-//	    {
-	  if(cnt) websWrite (wp, ",");
+//        if (!cnt)
+//          {
+	  if (cnt)
+	    websWrite (wp, ",");
 	  cnt++;
-//	      websWrite (wp, "<h2>%s</h2>\n", title);
-//	      websWrite (wp, "<fieldset>\n");
-//	      websWrite (wp, "<legend>%s</legend>\n", title2);
-//	      websWrite (wp,
-//			 "<table class=\"table center\" cellspacing=\"5\">\n");
-//	      websWrite (wp, "<tr>\n");
-//	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
-//	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
-//	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
-//	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
-//	      websWrite (wp, "</tr>\n");
-//	    }
-//	  websWrite (wp, "<tr>\n");
+//            websWrite (wp, "<h2>%s</h2>\n", title);
+//            websWrite (wp, "<fieldset>\n");
+//            websWrite (wp, "<legend>%s</legend>\n", title2);
+//            websWrite (wp,
+//                       "<table class=\"table center\" cellspacing=\"5\">\n");
+//            websWrite (wp, "<tr>\n");
+//            websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
+//            websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
+//            websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
+//            websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
+//            websWrite (wp, "</tr>\n");
+//          }
+//        websWrite (wp, "<tr>\n");
 	  if (strcmp (mode, "ap") != 0)
 	    {
-//	      websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
+//            websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
 	      websWrite (wp, "'%s','%d','%d','%d'",
 			 mac, rssi, noise, rssi - noise);
 	    }
 	  else
 	    {
-//	      websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
+//            websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
 	      websWrite (wp, "'%s','%d','%d','%d'",
 			 mac, rssi, -100, rssi - (-100));
 	    }
-//	  websWrite (wp, "</tr>\n");
+//        websWrite (wp, "</tr>\n");
 	}
       // One less Top10-Wanted leak (belanger[AT]pobox.com)
       fclose (fp);
@@ -2487,7 +2503,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   system (cmd);			// get active wireless mac
 
   if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
-     return -1;
+    return -1;
 
 
   if ((fp = fopen (WDS_LIST_TMP, "r")))
@@ -2514,7 +2530,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 //                  strcpy (title, "WDS Signal :");
 		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
 		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-//		  snprintf (title, sizeof (title), "%s", desc);
+//                snprintf (title, sizeof (title), "%s", desc);
 		  if (!strcmp (nvram_get (wdsvar), ""))
 		    strcpy (desc, "&nbsp;");
 		}
@@ -2549,29 +2565,30 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      mac[9] = 'x';
 	      mac[10] = 'x';
 	    }
-//	  if (!cnt)
-//	    {
-	  if(cnt) websWrite (wp, ",");
+//        if (!cnt)
+//          {
+	  if (cnt)
+	    websWrite (wp, ",");
 	  cnt++;
-//	      websWrite (wp, "<h2>WDS</h2>\n");
-//	      websWrite (wp, "<fieldset>\n");
-//	      websWrite (wp, "<legend>Nodes</legend>\n");
+//            websWrite (wp, "<h2>WDS</h2>\n");
+//            websWrite (wp, "<fieldset>\n");
+//            websWrite (wp, "<legend>Nodes</legend>\n");
 //            websWrite (wp, "<div class=\"setting\">\n");
-//	      websWrite (wp,
-//			 "<table class=\"table center\" cellspacing=\"5\">\n");
-//	      websWrite (wp, "<tr>\n");
-//	      websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
-//	      websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
-//	      websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
-//	      websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
-//	      websWrite (wp, "</tr>\n");
-//	    }
+//            websWrite (wp,
+//                       "<table class=\"table center\" cellspacing=\"5\">\n");
+//            websWrite (wp, "<tr>\n");
+//            websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
+//            websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
+//            websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
+//            websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
+//            websWrite (wp, "</tr>\n");
+//          }
 
 //        websWrite (wp,
 //                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 //                   title, mac, rssi, -100, rssi - (-100));
 	  websWrite (wp,
-//		     "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
+//                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 		     "'%s','%s','%d','%d','%d'",
 		     mac, desc, rssi, -100, rssi - (-100));
 	}
@@ -3449,9 +3466,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < 20; i++)
     {
       ret += websWrite (wp, "              <tr>\n");
-      ret +=
-	websWrite (wp,
-		   "<td style=\"vlan\">");
+      ret += websWrite (wp, "<td style=\"vlan\">");
 
       switch (i)
 	{
@@ -3478,9 +3493,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
       for (j = 0; j < 5; j++)
 	{
 	  snprintf (buff, 31, "port%dvlan%d", j, i);
-	  ret +=
-	    websWrite (wp,
-		       "<td style=\"vlan\"");
+	  ret += websWrite (wp, "<td style=\"vlan\"");
 
 	  if (j % 2 == 0)
 	    ret += websWrite (wp, " bgcolor=\"#CCCCCC\"");
@@ -3537,16 +3550,12 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 
       if (i == 16 || i == 19)
 	{
-	  ret +=
-	    websWrite (wp,
-		       "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
+	  ret += websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 	}
     }
 
   ret += websWrite (wp, "<tr>\n");
-  ret +=
-    websWrite (wp,
-	       "<td style=\"vlan\" colspan=\"6\">Wireless</td>\n");
+  ret += websWrite (wp, "<td style=\"vlan\" colspan=\"6\">Wireless</td>\n");
   ret +=
     websWrite (wp,
 	       "<td style=\"vlan\"><select name=\"wireless\"><option value=\"-1\"");
@@ -3558,8 +3567,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, ">LAN</option></select></td>\n");
   ret += websWrite (wp, "</tr>\n");
 
-  ret +=
-    websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
+  ret += websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 
   ret += websWrite (wp, "<tr>\n");
   ret +=
@@ -4713,29 +4721,30 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 /* Added by Botho 03.April.06 */
-#define IP_CONNTRACK	"/tmp/.ip_conntrack"
 int
 ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ip_count = 0;
   FILE *fp;
-  
-  unlink (IP_CONNTRACK);
-  int ret = -1;
-  
-  snprintf (cmd, 254, "cat /proc/net/ip_conntrack | wc -l | sed s/\" \"//g 2>&1 > %s", IP_CONNTRACK);
-  system (cmd);
-  
-  if ((fp = fopen (IP_CONNTRACK, "r")) != NULL)
-    fgets (ip_count, sizeof (ip_count), fp);
-  else
+  int c;
+
+  fp = fopen ("/proc/net/ip_conntract", "rb");
+  if (fp == NULL)
     return -1;
-  
+  while (!feof (fp));
+  {
+    c = getc (fp);
+    if (c == EOF)
+      break;
+    if (c == 0xa)
+      ip_count++;
+  }
+  fclose (fp);
+
+
   ret = websWrite (wp, "%s", ip_count);
 
   fclose (fp);
-
-  unlink (IP_CONNTRACK);
 
   return ret;
 }
