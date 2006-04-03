@@ -83,9 +83,14 @@ function setUptimeValues(val) {
 	setMeterBar("uptime_load", (parseFloat(loadAverage[0]) + parseFloat(loadAverage[1]) + parseFloat(loadAverage[2])) * 33.3, loadAverage.join(", "));
 }
 
+function setIpconntrackValues(val) {
+	setMeterBar("ip_count", val / <% nvram_get("ip_conntrack_max"); %> * 100, val);
+}
+
 addEvent(window, "load", function() {
 	setMemoryValues("<% dumpmeminfo(); %>");
 	setUptimeValues("<% get_uptime(); %>");
+	setIpconntrackValues("<% dumpip_conntrack(); %>");
 	setElementVisible("wan_info", "<% nvram_get("wan_proto"); %>" != "disabled");
 	setElementVisible("wan_dhcp", "<% nvram_get("wan_proto"); %>" == "dhcp");
 	setElementVisible("wan_connection", "<% nvram_get("wan_proto"); %>" != "dhcp" && "<% nvram_get("wan_proto"); %>" != "static");
@@ -96,6 +101,9 @@ addEvent(window, "load", function() {
 	});
 	update.onUpdate("uptime", function(u) {
 		setUptimeValues(u.uptime);
+	});
+	update.onUpdate("ip_conntrack", function(u) {
+		setIpconntrackValues(u.ip_conntrack);
 	});
 	update.onUpdate("wan_shortproto", function(u) {
 		setElementVisible("wan_info", u.wan_shortproto != "disabled");
@@ -233,6 +241,13 @@ addEvent(window, "unload", function() {
 								<div class="setting">
 									<div class="label">Inactive</div>
 									<span id="mem_inactive"></span>&nbsp;
+								</div>
+							</fieldset><br />
+							<fieldset>
+								<legend>Network</legend>
+								<div class="setting">
+									<div class="label">IP Count</div>
+									<span id="ip_count"></span>&nbsp;
 								</div>
 							</fieldset><br />
 							<h2>Internet</h2>
