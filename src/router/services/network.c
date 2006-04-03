@@ -1249,6 +1249,7 @@ start_wan (int status)
 #endif
     /* AhMan  March 19 2005 */
     /* Added original Linksys PPPoE module */
+#ifdef HAVE_PPPOE
   if (!pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     {
 
@@ -1260,22 +1261,33 @@ start_wan (int status)
 	    start_redial ();
 	}
     }
+#else
+if (0)
+{
+}
+#endif
   else if (strcmp (wan_proto, "dhcp") == 0)
     {
       start_dhcpc (wan_ifname);
     }
+#ifdef HAVE_PPTP
   else if (strcmp (wan_proto, "pptp") == 0)
     {
       start_pptp (status);
     }
+#endif
+#ifdef HAVE_L2TP
   else if (strcmp (wan_proto, "l2tp") == 0)
     {
       start_dhcpc (wan_ifname);
     }
+#endif
+#ifdef HAVE_HEARTBEAT
   else if (strcmp (wan_proto, "heartbeat") == 0)
     {
       start_dhcpc (wan_ifname);
     }
+#endif
   else
     {
       ifconfig (wan_ifname, IFUP,
@@ -1663,11 +1675,19 @@ stop_wan (void)
   /* Stop firewall */
   stop_firewall ();
   /* Kill any WAN client daemons or callbacks */
+#ifdef HAVE_PPPOE
   stop_pppoe ();
+#endif
+#ifdef HAVE_L2TP
   stop_l2tp ();
+#endif
   stop_dhcpc ();
+#ifdef HAVE_HEARTBEAT
   stop_heartbeat ();
+#endif
+#ifdef HAVE_PPTP
   stop_pptp ();
+#endif
   stop_ntp ();
   stop_redial ();
   nvram_set ("wan_get_dns", "");

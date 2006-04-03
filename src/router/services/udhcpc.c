@@ -253,6 +253,7 @@ bound (void)
 	      nvram_safe_get ("wan_netmask"));
 
   /* We only want to exec bellow functions after dhcp get ip if the wan_proto is heartbeat */
+#ifdef HAVE_HEARTBEAT  
   if (nvram_match ("wan_proto", "heartbeat"))
     {
       int i = 0;
@@ -271,6 +272,13 @@ bound (void)
       start_wshaper ();
       start_heartbeat_boot ();
     }
+#else
+  if (0)
+  {
+  //nothing
+  }
+#endif
+#ifdef HAVE_PPTP
   else if (nvram_match ("wan_proto", "pptp")
 	   && nvram_match ("pptp_usedhcp", "1"))
     {
@@ -282,7 +290,8 @@ bound (void)
       route_add (wan_ifname, 0, nvram_safe_get ("pptp_server_ip"), NULL,
 		 "255.255.255.255");
     }
-#ifdef L2TP_SUPPORT
+#endif
+#ifdef HAVE_L2TP
   else if (nvram_match ("wan_proto", "l2tp"))
     {
       int i = 0;

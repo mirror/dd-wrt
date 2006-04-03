@@ -1576,7 +1576,7 @@ filter_input (void)
   /* most of what was here has been moved to the end */
   save2file ("-A INPUT -m state --state RELATED,ESTABLISHED -j ACCEPT\n");
 
-#ifdef HAVE_PPTPD
+#ifdef HAVE_PPTP
   if (nvram_match ("pptpd_enable", "1")
       || nvram_match ("pptpd_client_enable", "1"))
     {

@@ -483,7 +483,7 @@ main (int argc, char **argv)
   /* udhcpc [ deconfig bound renew ] */
   else if (strstr (base, "udhcpc"))
     return start_main ("udhcpc", argc, argv);
-#ifdef HAVE_PPTPD
+#ifdef HAVE_PPTP
   /* poptop [ stop start restart ]  */
   else if (strstr (base, "poptop"))
     return pptpd_main (argc, argv);
