@@ -4742,10 +4742,7 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   }
   fclose (fp);
 
-
   ret = websWrite (wp, "%s", ip_count);
-
-  fclose (fp);
 
   return ret;
 }
