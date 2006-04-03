@@ -6,23 +6,13 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
-		<style type="text/css">
-		<!--
-td.vlan {
-border:solid 1px #666;
-text-align:center;
-vertical-align:center;
-height:30px;
-}
-		-->
-		</style>
 		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "Vlan";
-	F.action.value = "Apply";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+	
+	F.action.value = "Apply";
+	apply(F);
 }
 
 function SelSpeed(F,I) {
@@ -75,7 +65,8 @@ function init() {
 </script>
 	</head>
 
-	<body class="gui" onload="init()"> <% showad(); %>
+	<body class="gui" onload="init()">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -113,9 +104,9 @@ function init() {
 					<div id="main">
 					<div id="contents">
 						<form name="static" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" value="Vlan"/>
-							<input type="hidden" name="action" value="Apply"/>
-							<input type="hidden" name="commit" value="1"/>
+							<input type="hidden" name="submit_button" value="Vlan" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="commit" value="1" />
 							<h2>Virtual Local Area Network (VLAN)</h2>
 							<fieldset>
 							   <legend>VLAN</legend>
