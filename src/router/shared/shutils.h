@@ -142,6 +142,7 @@ strcat_r (const char *s1, const char *s2, char *buf)
 })
 /* Return NUL instead of NULL if undefined */
 #define safe_getenv(s) (getenv(s) ? : "")
+
 #define HAVE_SILENCE 1
 
 /* Print directly to the console */
@@ -180,22 +181,6 @@ strcat_r (const char *s1, const char *s2, char *buf)
 
 /* Return NUL instead of NULL if undefined */
 #define safe_getenv(s) (getenv(s) ? : "")
-
-#define HAVE_SILENCE 1
-
-/* Print directly to the console */
-#ifndef HAVE_SILENCE
-
-#define cprintf(fmt, args...) do { \
-	FILE *fp = fopen("/dev/console", "w"); \
-	if (fp) { \
-		fprintf(fp, fmt, ## args); \
-		fclose(fp); \
-	} \
-} while (0)
-#else
-#define cprintf(fmt, args...)
-#endif
 
 
 /* Debug print */
