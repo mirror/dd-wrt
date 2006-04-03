@@ -238,7 +238,7 @@ function init() {
 									</tr>
 									<tr>
 										<td>&nbsp;</td>
-										<td colspan="2"><input type="button" name="edit_svc_button" value="Add/Edit Service" onclick="self.open('QOSPort_Services.asp','QOSPortServices','alwaysRised,resizable,scrollbars,width=630,height=360').focus()"/></td>
+										<td colspan="2"><input type="button" name="edit_svc_button" value="Add/Edit Service" onclick="openWindow('QOSPort_Services.asp', 630, 390)" /></td>
 									</tr>
 								</table>
 							</fieldset><br />
