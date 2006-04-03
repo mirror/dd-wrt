@@ -657,7 +657,7 @@ start_lan (void)
       eval ("brctl", "setfd", "br1", "0");
 
       if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-	eval ("brctl", "stp", "br1", "dis");
+	eval ("brctl", "stp", "br1", "off");
 
       /* Bring up and configure br1 interface */
       if (nvram_invmatch ("wl_br1_ipaddr", "0.0.0.0"))
@@ -668,7 +668,7 @@ start_lan (void)
 
 	  if (nvram_match ("router_disable", "1")
 	      || nvram_match ("lan_stp", "0"))
-	    eval ("brctl", "stp", "br1", "dis");
+	    eval ("brctl", "stp", "br1", "off");
 
 //                      system("/usr/sbin/iptables -t nat -I POSTROUTING 1 -o br0 -j MASQUERADE");
 //                      if(nvram_invmatch("wan_proto", "disable") && check_vlan_support())
@@ -805,7 +805,7 @@ start_lan (void)
     }
 #endif
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-    system ("/usr/sbin/brctl stp br0 disable stp");
+    system ("/usr/sbin/brctl stp br0 off");
 
   free (lan_ifnames);
   free (lan_ifname);
@@ -1361,7 +1361,7 @@ if (0)
     }
   cprintf ("disable stp if neede\n");
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-    system ("/usr/sbin/brctl stp br0 disable stp");
+    system ("/usr/sbin/brctl stp br0 off");
   cprintf ("done()()()\n");
 }
 
@@ -1556,7 +1556,7 @@ start_wan_done (char *wan_ifname)
   cprintf ("std on\n");
   if (check_hw_type () == BCM4702_CHIP)
     {
-      eval ("brctl", "stp", nvram_safe_get ("lan_ifname"), "dis");
+      eval ("brctl", "stp", nvram_safe_get ("lan_ifname"), "off");
     }
   cprintf ("check wan link\n");
   if (check_wan_link (0))
@@ -1923,7 +1923,7 @@ start_hotplug_net (void)
       notify_nas ("lan", interface, "up");
 #endif
       if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-	system ("/usr/sbin/brctl stp br0 disable stp");
+	system ("/usr/sbin/brctl stp br0 off");
     }
   cprintf ("config done()\n");
   return 0;
