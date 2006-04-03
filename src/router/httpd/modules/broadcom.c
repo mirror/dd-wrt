@@ -2932,7 +2932,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
 	("<option value=\"udp\" <%% port_forward_table(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
 	 i);
       FWSHOW1
-    ("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%> >\" + share.both + \"</option>\");</script>\n",
+	("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%> >\" + share.both + \"</option>\");</script>\n",
 	 i);
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
@@ -2994,7 +2994,7 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
 	("<option value=\"udp\" <%% port_forward_spec(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
 	 i);
       FWSHOW1
-    ("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%> >\" + share.both + \"</option>\");</script>\n",
+	("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%> >\" + share.both + \"</option>\");</script>\n",
 	 i);
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
@@ -3284,8 +3284,8 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       if (need_commit)
 	{
 	  //If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
-//	  nvram_set ("eou_configured", "1");
-//	  eval ("wl", "custom_ie", "0");
+//        nvram_set ("eou_configured", "1");
+//        eval ("wl", "custom_ie", "0");
 	  diag_led (DIAG, STOP_LED);
 	  //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
 	  //nvram_set("is_default", "0");
@@ -3620,8 +3620,8 @@ ej_get_http_method (int eid, webs_t wp, int argc, char_t ** argv)
 static void
 do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
- // fprintf(stderr,"Read Language\n");
-  
+  // fprintf(stderr,"Read Language\n");
+
   char *lang = nvram_get ("language");
   if (lang == NULL)
     {
