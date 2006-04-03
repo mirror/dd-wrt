@@ -248,7 +248,7 @@ start_single_service (void)
       startstop("chilli");
 #endif
 #ifdef HAVE_SPUTNIK_APD
-      startstop("apd");
+      startstop("sputnik");
 #endif
     }
   else if (!strcmp (service, "services"))

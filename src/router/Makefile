@@ -1297,8 +1297,8 @@ sputnik-clean:
 sputnik-install:
 	mkdir -p $(INSTALLDIR)/sputnik/etc/config
 	cp -fpR sputnik/config/* $(INSTALLDIR)/sputnik/etc/config
-	install -D sputnik/apd.static $(INSTALLDIR)/sputnik/usr/sbin/apd
-#	install -D sputnik/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
+	install -D sputnik/sputnik $(INSTALLDIR)/sputnik/usr/sbin/sputnik
+	install -D sputnik/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
 
 openvpn:
 	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"

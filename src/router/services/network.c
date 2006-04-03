@@ -1605,8 +1605,8 @@ start_wan_done (char *wan_ifname)
   start_dhcpfwd ();
   nvram_set ("wanup", "1");
 #ifdef HAVE_SPUTNIK_APD
-  stop_apd();
-  start_apd();
+  stop_sputnik();
+  start_sputnik();
 #endif
 
 #ifdef HAVE_FON

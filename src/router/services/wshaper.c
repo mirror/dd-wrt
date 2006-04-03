@@ -453,7 +453,8 @@ svqos_iptables (void)
 	{
 
 	  char *proto = NULL;
-
+	  char *realname = name;
+	  
 	  if (!strcasecmp (realname, "gnutella"))
 	    proto = "gnu";
 	  else if (!strcasecmp (realname, "bearshare"))
