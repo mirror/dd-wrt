@@ -3518,11 +3518,13 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  	ret += websWrite (wp, " onclick=");
 	    snprintf (buff, sizeof (buff),
 		      "\"SelVLAN(this.form,'port%d')\"", j);
+		ret += websWrite (wp, buff);
 	  }
 	  else if (i == 17) {
 	  	ret += websWrite (wp, " onclick=");
 	    snprintf (buff, sizeof (buff),
 		      "\"SelSpeed(this.form,'port%d')\"", j);
+		ret += websWrite (wp, buff);
 	  }
 	  ret += websWrite (wp, "/></td>\n");
 	}
@@ -3557,7 +3559,9 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 
   ret += websWrite (wp, "<tr>\n");
   ret += websWrite (wp, "<td style=\"vlan\">Wireless</td>\n");
-  ret += websWrite (wp, "<td style=\"vlan\" colspan=\"6\"><select name=\"wireless\"><option value=\"-1\"");
+  ret +=
+    websWrite (wp,
+	       "<td style=\"vlan\" colspan=\"6\"><select name=\"wireless\"><option value=\"-1\"");
   if (wl_br < 0)
     ret += websWrite (wp, " selected=\"selected\"");
   ret += websWrite (wp, ">None</option><option value=\"0\"");
