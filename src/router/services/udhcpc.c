@@ -154,8 +154,8 @@ update_value (void)
   if (changed)
     {
       set_host_domain_name ();
-      stop_dhcpd ();
-      start_dhcpd ();
+      stop_udhcpd ();
+      start_udhcpd ();
     }
   return 0;
 }
@@ -266,8 +266,8 @@ bound (void)
 
       /* save dns to resolv.conf */
       dns_to_resolv ();
-      stop_dhcpd ();
-      start_dhcpd ();
+      stop_udhcpd ();
+      start_udhcpd ();
       start_firewall ();
       start_wshaper ();
       start_heartbeat_boot ();

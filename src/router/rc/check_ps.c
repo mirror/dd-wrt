@@ -40,17 +40,14 @@ struct mon mons[] = {
   {"dnsmasq", 1, M_LAN},
   {"upnp", 1, M_LAN},
   {"dhcpfwd",1, M_LAN},
-#ifdef HAVE_CHILLI
-  {"chilli", 1, M_LAN},
-#endif
 #ifdef HAVE_NOCAT
   {"splashd", 1, M_LAN},
 #endif
 #ifdef HAVE_CHILLI
-  {"chilli", 1, M_LAN},
+  {"chilli", 1, M_WAN},
 #endif
 #ifdef HAVE_SPUTNIK_APD
-  {"apd", 1, M_LAN},
+  {"apd", 1, M_WAN},
 #endif
 };
 
@@ -63,7 +60,7 @@ search_process (char *name, int count)
   c = check_process (name);
   if (!c)
     {
-      cprintf ("Cann't find %s\n", name);
+      cprintf ("Can't find %s\n", name);
       return 0;
     }
   else
@@ -93,9 +90,10 @@ check_process (char *name)
 	  c++;
 	}
     }
-
-  if (pidList)
-    free (pidList);
+  cprintf("interation done\n");
+//  if (pidList)
+//    free (pidList);
+  cprintf("memory freed\n");
 
   return c;
 }
@@ -105,23 +103,24 @@ do_mon (void)
 {
   struct mon *v;
 
-  for (v = mons; v < &mons[sizeof (mons) / sizeof (mons[0])]; v++)
+  for (v = mons; v < &mons[sizeof (mons) / sizeof (*v)]; v++)
     {
+      cprintf("checking %s\n",v->name);
       if (v->type == M_WAN)
 	if (!check_wan_link (0))
+	  {
+	  cprintf("process is wan, but wan is not up\n");
 	  continue;
-
+	  }
       if (!search_process (v->name, v->count))
 	{
 
 	  cprintf ("Maybe %s had died, we need to re-exec it\n", v->name);
 	  stop_service(v->name);
-	  sleep(2);
 	  eval ("/usr/bin/killall", "-SIGKILL", v->name);	// try to remove any zombies
-
-	  sleep (1);
 	  start_service(v->name);
 	}
+	cprintf("checking for %s done\n",v->name);
     }
 
   return 1;

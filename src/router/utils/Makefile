@@ -18,7 +18,7 @@ endif
 include $(TOP)/.config
 
 #LIBS := libbb.so libbcm.so libbcmcrypto.so
-UTILS := epi_ttcp mtd
+UTILS := mtd
 CFLAGS += -s -Os -mtune=mips32 -mips32 -pipe -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe 
 
 vpath %.c $(SRCBASE)/tools/misc
