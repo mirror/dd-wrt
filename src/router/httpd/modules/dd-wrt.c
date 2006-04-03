@@ -3492,7 +3492,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 
       for (j = 0; j < 5; j++)
 	{
-	  snprintf (buff, 31, "port%dvlan%d", j, i);
+	  snprintf (buff, 31, "\"port%dvlan%d\"", j, i);
 	  ret += websWrite (wp, "<td style=\"vlan\"");
 
 	  if (j % 2 == 0)
@@ -3500,7 +3500,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  ret +=
 	    websWrite (wp,
-		       " height=\"30\"><input type=\"checkbox\" value=\"on\" name=");
+		       " height=\"20\"><input type=\"checkbox\" value=\"on\" name=");
 	  ret += websWrite (wp, buff);
 
 	  if (i < 17 || i > 19)
@@ -3514,14 +3514,16 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 		ret += websWrite (wp, " checked=\"checked\"");
 	    }
 
-	  ret += websWrite (wp, " onclick=");
-	  if (i < 17)
+	  if (i < 17) {
+	  	ret += websWrite (wp, " onclick=");
 	    snprintf (buff, sizeof (buff),
 		      "\"SelVLAN(this.form,'port%d')\"", j);
-	  else if (i == 17)
+	  }
+	  else if (i == 17) {
+	  	ret += websWrite (wp, " onclick=");
 	    snprintf (buff, sizeof (buff),
 		      "\"SelSpeed(this.form,'port%d')\"", j);
-
+	  }
 	  ret += websWrite (wp, buff);
 	  ret += websWrite (wp, "/></td>\n");
 	}
@@ -3531,7 +3533,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  ret +=
 	    websWrite (wp,
 		       "			<td style=\"vlan\"><select name=");
-	  snprintf (buff, 31, "vlan%d", i);
+	  snprintf (buff, 31, "\"vlan%d\"", i);
 	  ret += websWrite (wp, buff);
 	  ret += websWrite (wp, "><option value=\"-1\"");
 	  if (vlans[i][5] < 0)
