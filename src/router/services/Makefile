@@ -18,7 +18,7 @@ else
 LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -L../libnet/lib -lnet -lcrypt 
 endif
 
-OBJS = services.o openvpn.o heartbeat.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o ppp.o sysinit.o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o
+OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o sysinit.o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
 CFLAGS += -DHAVE_ONLYCLIENT
@@ -29,6 +29,16 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 #endif
 ifeq ($(CONFIG_34TELECOM),y)
 CFLAGS += -DHAVE_34TELECOM
+endif
+ifeq ($(CONFIG_L2TP),y)
+CFLAGS += -DHAVE_L2TP
+endif
+ifeq ($(CONFIG_PPPOE),y)
+CFLAGS += -DHAVE_PPPOE
+endif
+ifeq ($(CONFIG_HEARTBEAT),y)
+CFLAGS += -DHAVE_HEARTBEAT
+OBJS += heartbeat.o
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
@@ -105,6 +115,9 @@ ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif
 
+ifeq ($(CONFIG_PPTP),y)
+CFLAGS += -DHAVE_PPTP
+endif
 ifeq ($(CONFIG_PPTPD),y)
 CFLAGS += -DHAVE_PPTPD
 endif
@@ -127,6 +140,7 @@ CFLAGS += -DHAVE_DHCPFWD
 endif
 ifeq ($(CONFIG_PPPD),y)
 CFLAGS += -DHAVE_PPPD
+OBJS += ppp.o
 endif
 
 ifeq ($(CONFIG_CHILLISPOT),y)

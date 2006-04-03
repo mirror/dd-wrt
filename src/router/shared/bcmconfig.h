@@ -23,7 +23,7 @@
 #define __CONFIG_HOTSPOT__ 1
 #undef __CONFIG_SVEASPOT__
 #define __CONFIG_VPND__ 1
-#define __CONFIG_PPTPD__ 1
+//#define __CONFIG_PPTPD__ 1
 
 /*
  * IPSec

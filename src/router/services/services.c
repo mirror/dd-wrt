@@ -2225,7 +2225,7 @@ stop_chilli (void)
 }
 
 #endif /* HAVE_CHILLI */
-
+#ifdef HAVE_PPPOE
 int
 stop_pppoe (void)
 {
@@ -2242,7 +2242,7 @@ stop_pppoe (void)
   cprintf ("done\n");
   return ret;
 }
-
+#endif
 int
 stop_dhcpc (void)
 {
@@ -2255,6 +2255,7 @@ stop_dhcpc (void)
   return ret;
 }
 
+#ifdef HAVE_PPTP
 int
 start_pptp (int status)
 {
@@ -2271,7 +2272,9 @@ start_pptp (int status)
      return 0; */
 
   stop_dhcpc ();
+#ifdef HAVE_PPPOE
   stop_pppoe ();
+#endif
   stop_vpn_modules ();
 
   if (nvram_match ("aol_block_traffic", "0"))
@@ -2522,13 +2525,14 @@ stop_pptp (void)
   return ret;
 }
 
-
+#endif
 
 //=========================================tallest============================================
 /* AhMan  March 18 2005   Start the Original Linksys PPPoE */
 /*
  * This functin build the pppoe instuction & execute it.
  */
+#ifdef HAVE_PPPOE
 int
 start_pppoe (int pppoe_num)
 {
@@ -2673,7 +2677,7 @@ start_pppoe (int pppoe_num)
   cprintf ("done. session %d\n", pppoe_num);
   return 0;
 }
-
+#endif
 /* AhMan  March 18 2005 */
 /*
  * Get the IP, Subnetmask, Geteway from WAN interface
@@ -2763,8 +2767,12 @@ start_l2tp (int status)
   char username[80], passwd[80];
 
   //stop_dhcpc();
+#ifdef HAVE_PPPOE
   stop_pppoe ();
+#endif
+#ifdef HAVE_PPTP
   stop_pptp ();
+#endif
 
   if (nvram_match ("aol_block_traffic", "0"))
     {
@@ -3150,6 +3158,7 @@ start_force_to_dial (void)
   };
 
   sleep (1);
+#ifdef HAVE_L2TP
   if (nvram_match ("wan_proto", "l2tp"))
     {
       char l2tpctrl[64];
@@ -3158,12 +3167,16 @@ start_force_to_dial (void)
 		"/usr/sbin/l2tp-control \"start-session %s\"",
 		nvram_safe_get ("l2tp_server_ip"));
       system (l2tpctrl);
+      return ret;
     }
-  else if (nvram_match ("wan_proto", "heartbeat"))
+#endif
+#ifdef HAVE_HEARTBEAT
+  if (nvram_match ("wan_proto", "heartbeat"))
     {
       start_heartbeat_boot ();
+      return ret;
     }
-  else
+#endif
     _eval (ping_argv, NULL, 3, NULL);
 
   return ret;
