@@ -454,22 +454,31 @@ svqos_iptables (void)
 
 	  char *proto = NULL;
 
-	  if (!strcasecmp (name, "gnutella"))
+	  if (!strcasecmp (realname, "gnutella"))
 	    proto = "gnu";
-	  else if (!strcasecmp (name, "bearshare"))
+	  else if (!strcasecmp (realname, "bearshare"))
 	    proto = "gnu";
-	  else if (!strcasecmp (name, "edonkey"))
+	  else if (!strcasecmp (realname, "edonkey"))
 	    proto = "edk";
-	  else if (!strcasecmp (name, "kazaa"))
+	  else if (!strcasecmp (realname, "kazaa"))
 	    proto = "kazaa";
-	  else if (!strcasecmp (name, "directconnect"))
+	  else if (!strcasecmp (realname, "directconnect"))
 	    proto = "dc";
-	  else if (!strcasecmp (name, "bittorrent"))
+	  else if (!strcasecmp (realname, "bittorrent"))
 	    proto = "bit";
-	  else if (!strcasecmp (name, "applejuice"))
+	  else if (!strcasecmp (realname, "applejuice"))
 	    proto = "apple";
-	  else if (!strcasecmp (name, "soulseeker"))
+	  else if (!strcasecmp (realname, "soulseek"))
 	    proto = "soul";
+	  else if (!strcasecmp (realname, "ares"))
+	    proto = "ares";
+	  else if (!strcasecmp (realname, "mute"))
+	    proto = "mute";
+	  else if (!strcasecmp (realname, "waste"))
+	    proto = "waste";
+	  else if (!strcasecmp (realname, "xdcc"))
+	    proto = "xdcc";
+
 
 	  snprintf (cmd, 1023,
 		    "/usr/sbin/iptables -t mangle -A SVQOS_OUT -p tcp -m mark --mark 0 -m ipp2p --%s -j MARK --set-mark %s",
