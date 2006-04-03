@@ -3466,7 +3466,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < 20; i++)
     {
       ret += websWrite (wp, "              <tr>\n");
-      ret += websWrite (wp, "<td style=\"vlan\">");
+      ret += websWrite (wp, "<td>");
 
       switch (i)
 	{
@@ -3493,7 +3493,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
       for (j = 0; j < 5; j++)
 	{
 	  snprintf (buff, 31, "\"port%dvlan%d\"", j, i);
-	  ret += websWrite (wp, "<td style=\"vlan\"");
+	  ret += websWrite (wp, "<td");
 
 	  if (j % 2 == 0)
 	    ret += websWrite (wp, " bgcolor=\"#CCCCCC\"");
@@ -3526,14 +3526,14 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 		      "\"SelSpeed(this.form,'port%d')\"", j);
 		ret += websWrite (wp, buff);
 	  }
-	  ret += websWrite (wp, "/></td>\n");
+	  ret += websWrite (wp, " /></td>\n");
 	}
 
       if (i < 16)
 	{
 	  ret +=
 	    websWrite (wp,
-		       "			<td style=\"vlan\"><select name=");
+		       "			<td><select name=");
 	  snprintf (buff, 31, "\"vlan%d\"", i);
 	  ret += websWrite (wp, buff);
 	  ret += websWrite (wp, "><option value=\"-1\"");
@@ -3558,10 +3558,10 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   ret += websWrite (wp, "<tr>\n");
-  ret += websWrite (wp, "<td style=\"vlan\">Wireless</td>\n");
+  ret += websWrite (wp, "<td>Wireless</td>\n");
   ret +=
     websWrite (wp,
-	       "<td style=\"vlan\" colspan=\"6\"><select name=\"wireless\"><option value=\"-1\"");
+	       "<td colspan=\"6\"><select name=\"wireless\"><option value=\"-1\"");
   if (wl_br < 0)
     ret += websWrite (wp, " selected=\"selected\"");
   ret += websWrite (wp, ">None</option><option value=\"0\"");
@@ -3575,10 +3575,10 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, "<tr>\n");
   ret +=
     websWrite (wp,
-	       "<td style=\"vlan\">Link Aggregation<br>on Ports 3 & 4</td>\n");
+	       "<td>Link Aggregation<br>on Ports 3 & 4</td>\n");
   ret +=
     websWrite (wp,
-	       "<td style=\"vlan\" colspan=\"6\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
+	       "<td colspan=\"6\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
 
   c = nvram_safe_get ("trunking");
 
