@@ -438,7 +438,7 @@ start_lan (void)
       eval ("brctl", "setfd", lan_ifname, "0");
       if (check_hw_type () != BCM4702_CHIP)
 	{
-	  eval ("brctl", "stp", lan_ifname, "dis");
+	  eval ("brctl", "stp", lan_ifname, "off");
 	}
       foreach (name, lan_ifnames, next)
       {
@@ -1567,7 +1567,7 @@ start_wan_done (char *wan_ifname)
     }
 
   //if (nvram_match("router_disable", "1") || nvram_match("lan_stp", "0"))
-  //      system("/usr/sbin/brctl stp br0 disable stp");
+  //      system("/usr/sbin/brctl stp br0 off");
   cprintf ("running custom DD-WRT ipup scripts\n");
   runStartup ("/etc/config", ".ipup");
   runStartup ("/jffs/etc/config", ".ipup");
