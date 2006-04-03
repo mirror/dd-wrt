@@ -4727,6 +4727,7 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   int ip_count = 0;
   FILE *fp;
   int c;
+  int ret=0;
 
   fp = fopen ("/proc/net/ip_conntract", "rb");
   if (fp == NULL)
