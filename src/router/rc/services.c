@@ -95,7 +95,7 @@ start_services (void)
   start_service("tftpd");
 #endif
   start_service("httpd");
-  start_service("dhcpd");
+  start_service("udhcpd");
   start_service("dnsmasq");
   start_service("nas_lan");
 #ifdef HAVE_MSSID
@@ -140,9 +140,6 @@ start_services (void)
   start_service("openvpnserversys");
 #endif
 
-#ifdef HAVE_SPUTNIK_APD
-  start_service("apd");
-#endif
 
 
   cprintf ("done\n");
@@ -157,7 +154,7 @@ stop_services (void)
 #ifdef HAVE_UPNP
   stop_service("upnp");
 #endif
-  stop_service("dhcpd");
+  stop_service("udhcpd");
   stop_service("dns_clear_resolv");
   stop_service("cron");
  
@@ -203,10 +200,6 @@ stop_services (void)
   stop_service("openvpnserversys");
 #endif
 
-#ifdef HAVE_SPUTNIK_APD
-  stop_service("apd");
-#endif
-
 // end Sveasoft additions
 //stop_eou();
 
@@ -232,7 +225,7 @@ start_single_service (void)
 
   if (!strcmp (service, "dhcp") || !strcmp (service, "services"))
     {
-      startstop("dhcpd");
+      startstop("udhcpd");
     }
   else if (!strcmp (service, "logging"))
     {
@@ -260,7 +253,7 @@ start_single_service (void)
     }
   else if (!strcmp (service, "services"))
     {
-      startstop("dhcpd");
+      startstop("udhcpd");
 #ifdef HAVE_TELNET
       startstop("telnetd");
 #endif
@@ -284,8 +277,8 @@ start_single_service (void)
       stop_service("zebra");
 #endif
       stop_service("cron");
-      stop_service("dhcpd");
-      start_service("dhcpd");
+      stop_service("udhcpd");
+      start_service("udhcpd");
       start_service("cron");
       start_service("ipv6");
 #ifdef HAVE_RADVD

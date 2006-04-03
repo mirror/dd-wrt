@@ -482,7 +482,7 @@ void
 stop_dhcpfwd (void)
 {
 #ifdef HAVE_DHCPFORWARD
-  eval ("killall", "dhcp-fwd");	//kill also dhcp forwarder if available
+  eval ("killall", "dhcpfwd");	//kill also dhcp forwarder if available
 #endif
 #ifdef HAVE_DHCPRELAY
   eval ("killall", "dhcrelay");
@@ -492,7 +492,7 @@ stop_dhcpfwd (void)
 int usejffs = 0;
 
 int
-start_dhcpd (void)
+start_udhcpd (void)
 {
   struct dns_lists *dns_list = NULL;
   FILE *fp;
@@ -515,7 +515,7 @@ start_dhcpd (void)
       || nvram_invmatch ("lan_proto", "dhcp")
       || nvram_match ("dhcp_dnsmasq", "1"))
     {
-      stop_dhcpd ();
+      stop_udhcpd ();
       return 0;
     }
 
@@ -760,16 +760,10 @@ start_dhcpd (void)
 }
 
 int
-stop_dhcpd (void)
+stop_udhcpd (void)
 {
   int ret;
   softkill ("udhcpd");
-#ifdef HAVE_DHCPFORWARD
-  eval ("killall", "dhcp-fwd");	//kill also dhcp forwarder if available
-#endif
-#ifdef HAVE_DHCPRELAY
-  eval ("killall", "dhcrelay");
-#endif
   cprintf ("done\n");
   return ret;
 }

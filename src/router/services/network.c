@@ -1471,8 +1471,8 @@ start_wan_done (char *wan_ifname)
 
   cprintf ("stop start dhcp server\n");
   /* Restart DHCP server */
-  stop_dhcpd ();
-  start_dhcpd ();
+  stop_udhcpd ();
+  start_udhcpd ();
   cprintf ("restart dns proxy\n");
   /* Restart DNS proxy */
   stop_dnsmasq ();
@@ -1604,6 +1604,11 @@ start_wan_done (char *wan_ifname)
   stop_dhcpfwd ();
   start_dhcpfwd ();
   nvram_set ("wanup", "1");
+#ifdef HAVE_SPUTNIK_APD
+  stop_apd();
+  start_apd();
+#endif
+
 #ifdef HAVE_FON
 #ifndef HAVE_MSSID
   eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
@@ -1687,6 +1692,9 @@ stop_wan (void)
 #endif
 #ifdef HAVE_PPTP
   stop_pptp ();
+#endif
+#ifdef HAVE_SPUTNIK_APD
+  stop_service("apd");
 #endif
   stop_ntp ();
   stop_redial ();
