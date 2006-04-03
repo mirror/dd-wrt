@@ -206,7 +206,7 @@ do_wds_check (void)
     }
 
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-    system ("/usr/sbin/brctl stp br0 disable stp");
+    system ("/usr/sbin/brctl stp br0 off");
 
   return 0;
 }
