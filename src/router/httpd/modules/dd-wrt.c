@@ -4711,3 +4711,31 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 #endif
+
+/* Added by Botho 03.April.06 */
+#define IP_CONNTRACK	"/tmp/.ip_conntrack"
+int
+ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  int ip_count = 0;
+  FILE *fp;
+  
+  unlink (IP_CONNTRACK);
+  int ret = -1;
+  
+  snprintf (cmd, 254, "cat /proc/net/ip_conntrack | wc -l | sed s/\" \"//g 2>&1 > %s", IP_CONNTRACK);
+  system (cmd);
+  
+  if ((fp = fopen (IP_CONNTRACK, "r")) != NULL)
+    fgets (ip_count, sizeof (ip_count), fp);
+  else
+    return -1;
+  
+  ret = websWrite (wp, "%s", ip_count);
+
+  fclose (fp);
+
+  unlink (IP_CONNTRACK);
+
+  return ret;
+}

@@ -3959,6 +3959,10 @@ struct ej_handler ej_handlers[] = {
   {"show_cpuinfo", ej_show_cpuinfo},
   {"get_clkfreq", ej_get_clkfreq},
   {"dumpmeminfo", ej_dumpmeminfo},
+
+/* Added by Botho 03.April.06 */
+  {"dumpip_conntrack", ej_dumpip_conntrack},
+
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
 /* end lonewolf additions */
