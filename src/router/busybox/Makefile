@@ -40,7 +40,7 @@ vpath %/Config.in $(srctree)
 include $(top_builddir)/Rules.mak
 include $(top_builddir)/../.config
 CONFIG_UDHCPD=n
-#CONFIG_UDHCPC=n
+CONFIG_UDHCPC=n
 
 DIRS:=applets archival archival/libunarchive coreutils console-tools \
 	debianutils editors findutils init miscutils modutils networking \
@@ -56,7 +56,7 @@ endif
 CFLAGS += -I../../include.v23
 
 LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -lshared -L../libnet/lib  
-LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet -lcrypt
+LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet
 
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
@@ -155,7 +155,7 @@ endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 #OBJS += sshd.o
 CFLAGS += -DHAVE_SSHD
-LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz  -lcrypt
+LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz 
 #LDFLAGS += -Wl,--gc-sections
 endif
 
