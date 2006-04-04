@@ -55,6 +55,13 @@ ifeq ($(CONFIG_CHILLISPOT),y)
   CFLAGS += -DHAVE_CHILLI
 endif
 
+ifeq ($(CONFIG_DDLAN),y)
+  CFLAGS += -DHAVE_DDLAN
+endif
+ifeq ($(CONFIG_CESAR),y)
+  CFLAGS += -DHAVE_CESAR
+endif
+
 
 ifeq ($(CONFIG_34TELECOM),y)
   CFLAGS += -DHAVE_34TELECOM

@@ -19,8 +19,7 @@
 
 #include <linux/blk.h>
 
-MODULE_AUTHOR
-  ("Madsuk/Rohde & Sebastian Gottschall (autodetection for newer models)");
+MODULE_AUTHOR ("Madsuk/Rohde & Sebastian Gottschall (autodetection for newer models)");
 MODULE_DESCRIPTION ("Driver MMC/SD-Cards");
 MODULE_SUPPORTED_DEVICE ("WRT54G");
 MODULE_LICENSE ("GPL");

@@ -44,6 +44,8 @@ struct nvram_tuple router_defaults[] = {
   {"router_style", "fon", 0},
 #elif HAVE_GGEW
   {"router_style", "blue", 0},
+#elif HAVE_CESAR
+  {"router_style", "cesar", 0},
 #else
   {"router_style", "cyan", 0},
 #endif
@@ -652,7 +654,11 @@ struct nvram_tuple router_defaults[] = {
   {"port_trigger", "", 0},	/* name:[on|off]:[tcp|udp|both]:wan_port0-wan_port1>lan_port0-lan_port1 */
 
   /* for dynamic route */
+#ifdef HAVE_DDLAN
+  {"wk_mode", "zero", 0},	/* Network mode [gateway|router] */
+#else
   {"wk_mode", "gateway", 0},	/* Network mode [gateway|router] */
+#endif
   {"dr_setting", "0", 0},	/* [ Disable | WAN | LAN | Both ] */
   {"dr_lan_tx", "0", 0},	/* Dynamic-Routing LAN out */
   {"dr_lan_rx", "0", 0},	/* Dynamic-Routing LAN in  */
