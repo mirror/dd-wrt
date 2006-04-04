@@ -891,11 +891,11 @@ else
 endif
 
 udhcpd-clean:
-#	make -C udhcpc clean
+	make -C udhcpc clean
 	make -C udhcpd clean
 	
 udhcpd: shared nvram
-#	make -C udhcpc
+	make -C udhcpc
 	make -C udhcpd
 
 udhcpd-install:
@@ -903,7 +903,7 @@ udhcpd-install:
 	install -D udhcpd/dumpleases $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
-#	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
+	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
 #	cd $(INSTALLDIR)/udhcpd/usr/sbin && ln -sf udhcpd udhcpc
 
 upnp: netconf nvram shared

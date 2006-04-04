@@ -166,10 +166,9 @@ CFLAGS += -DHAVE_AQOS
 endif
 
 ifeq ($(CONFIG_MATRIXSSL),y)
-CFLAGS += -I$(TOP)/matrixssl
-LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixssl
+#CFLAGS += -I$(TOP)/matrixssl
+#LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixssl
 CFLAGS += -DHAVE_MATRIXSSL
-#OBJS += matrixssl_xface.o
 endif
 
 all: libshared.so libshared.a
