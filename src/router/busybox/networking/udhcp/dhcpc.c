@@ -344,7 +344,7 @@ int main(int argc, char *argv[])
 				  	}
 					/* wait to try again */
 					packet_num = 0;
-					timeout = now + 60;
+					timeout = now + 5;
 				}
 				break;
 			case RENEW_REQUESTED:
