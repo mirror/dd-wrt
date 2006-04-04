@@ -1092,6 +1092,9 @@ struct nvram_tuple router_defaults[] = {
   {"rflow_port", "2055", 0},
   {"rflow_if", "br0", 0},
   {"pppoe_ver", "0", 0},
+#ifdef HAVE_PPPOERELAY
+  {"pppoerelay_enable","0",0},
+#endif
   {"schedule_enable", "0", 0},
   {"schedule_time", "3600", 0},
   {"schedule_hour_time", "1", 0},
