@@ -60,6 +60,13 @@ ifeq ($(CONFIG_CYAN),y)
 	cp cyan/common.css $(INSTALLDIR)/www/style
 	cp cyan/logo.png $(INSTALLDIR)/www/style
 endif
+ifeq ($(CONFIG_CESAR),y)
+	mkdir $(INSTALLDIR)/www/style/cesar
+	cp cesar/style.css $(INSTALLDIR)/www/style/cesar
+	cp cesar/style_ie.css $(INSTALLDIR)/www/style/cesar
+	cp cesar/common.css $(INSTALLDIR)/www/style
+	cp cesar/logo.png $(INSTALLDIR)/www/style
+endif
 ifeq ($(CONFIG_ALEDR),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp aledr/style.css $(INSTALLDIR)/www/style/cyan
