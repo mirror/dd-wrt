@@ -66,7 +66,7 @@ function port_grey(sw_disabled,F) {
 
 function qos_grey(num,F) {
 	var sw_disabled = (num == F.wshaper_enable[1].value) ? true : false;
-	
+
 	F._enable_game.disabled = sw_disabled;
 	F.wshaper_uplink.disabled = sw_disabled;
 	F.wshaper_downlink.disabled = sw_disabled;
@@ -128,7 +128,7 @@ function to_submit(F) {
 	}else{
 	    F.enable_game.value = 1;
 	}
-	    
+
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "QoS";
 	F.submit_type.value = "save";
@@ -143,7 +143,7 @@ function init() {
 }
 		</script>
 	</head>
-	
+
 	<body class="gui" onload="init()">
 		<% showad(); %>
 		<div id="wrapper">
@@ -212,7 +212,7 @@ function init() {
 								</div>
 								<div class="setting">
 									<div class="label">Optimize for Gaming</div>
-									<input type="checkbox" name="_enable_game" value="1" <% nvram_match("enable_game", "1", "checked"); %>/> 
+									<input type="checkbox" name="_enable_game" value="1" <% nvram_match("enable_game", "1", "checked"); %>/>
 								</div>
 							</fieldset><br />
 							<fieldset>
@@ -412,7 +412,7 @@ function init() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
