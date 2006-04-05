@@ -2949,7 +2949,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
 	("<option value=\"udp\" <%% port_forward_table(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
 	 i);
       FWSHOW1
-	("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%> >\" + share.both + \"</option>\");</script>\n",
+	("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%>>\" + share.both + \"</option>\");</script>\n",
 	 i);
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
@@ -3011,7 +3011,8 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
 	("<option value=\"udp\" <%% port_forward_spec(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
 	 i);
       FWSHOW1
-	("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%> >\" + share.both + \"</option>\");</script>\n",
+    ("<option value=\"both\" <%% port_forward_spec(\"sel_both\",\"%d\"); %%>>Both</option>\n",
+	//("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%>>\" + share.both + \"</option>\");</script>\n",
 	 i);
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
