@@ -542,7 +542,7 @@ static int __init adm_init()
 		interface: "eth0",
 		ports: 6,
 		cpuport: 5,
-		vlans: 16,
+		vlans: 256,
 		driver_handlers: cfg,
 		port_handlers: port,
 		vlan_handlers: vlan,
