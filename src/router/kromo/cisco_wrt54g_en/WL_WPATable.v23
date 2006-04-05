@@ -25,9 +25,9 @@ function to_submit(F) {
 	}
 }
 function valid_value(F) {
-	if(F.security_mode.value == "disabled")	
+	if(F.security_mode.value == "disabled")
 		return true;
-		
+
 	if(!valid_wpa_psk(F) || !valid_wep(F) || !valid_radius(F)) {
 		return false;
 	} else  {
@@ -63,7 +63,7 @@ function valid_wpa_psk(F) {
 			return false;
 		}
 	}
-	
+
 	return true;
 }
 
@@ -102,22 +102,22 @@ function ValidateKey(key, bit, index) {
 		switch(key.value.length){
 			case 0:
 				break;
-			case 10: 
+			case 10:
 				if(!isxdigit(key,key.value)) {
-					return false; 
+					return false;
 				}
 				break;
-			default: 
-				alert("Invalid Length in key " + key.value); 
+			default:
+				alert("Invalid Length in key " + key.value);
 				return false;
 		}
 	} else {
 		switch(key.value.length){
-			case 0: 
+			case 0:
 				break;
-			case 26: 
+			case 26:
 				if(!isxdigit(key,key.value)) {
-					return false; 
+					return false;
 				}
 				break;
 			default:
@@ -158,7 +158,7 @@ function keyMode(num, F) {
 	F.wl_key4.value = key4;
 }
 function generateKey(F,PREFIX) {
-	
+
 	F.submit_button.value = "WL_WPATable";
 	F.change_action.value = "gozila_cgi";
 	F.security_varname.value = PREFIX;
@@ -171,7 +171,7 @@ function generateKey(F,PREFIX) {
 	F.submit();
 }
 function generateKey64(F,PREFIX) {
-	
+
 	F.submit_button.value = "WL_WPATable";
 	F.change_action.value = "gozila_cgi";
 	F.security_varname.value = PREFIX;
@@ -179,7 +179,7 @@ function generateKey64(F,PREFIX) {
 	F.submit();
 }
 function generateKey128(F,PREFIX) {
-	
+
 	F.submit_button.value = "WL_WPATable";
 	F.change_action.value = "gozila_cgi";
 	F.security_varname.value = PREFIX;
@@ -270,7 +270,8 @@ function init(){
             </div>
 			<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>

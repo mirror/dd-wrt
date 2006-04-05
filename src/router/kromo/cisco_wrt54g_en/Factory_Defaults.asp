@@ -13,7 +13,7 @@ function to_submit(F) {
 			return false;
 		}
 		F.submit_button.value = "Factory_Defaults";
-		
+
 		F.action.value="Restore";
 		apply(F);
 
@@ -21,7 +21,7 @@ function to_submit(F) {
 	}
 	F.submit_button.value = "Factory_Defaults";
 	F.save_button.value = "Saved";
-	
+
 	F.action.value="Apply";
 	apply(F);
 
@@ -99,7 +99,7 @@ function to_submit(F) {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>

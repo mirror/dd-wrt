@@ -56,7 +56,7 @@ function SelMode(num,F) {
 }
 		</script>
 	</head>
-	
+
 	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -71,8 +71,8 @@ function SelMode(num,F) {
 											<li><a href="index.asp">Basic Setup</a></li>
 											<li><a href="DDNS.asp">DDNS</a></li>
 											<li><a href="WanMAC.asp">MAC Address Clone</a></li>
-											<li><span>Advanced Routing</span></li> <% support_invmatch("HSIAB_SUPPORT", "1", "<!--"); %> 
-											<li><a href="HotSpot_Admin.asp">Hot Spot</a></li> <% support_invmatch("HSIAB_SUPPORT", "1", "-->"); %> 
+											<li><span>Advanced Routing</span></li> <% support_invmatch("HSIAB_SUPPORT", "1", "<!--"); %>
+											<li><a href="HotSpot_Admin.asp">Hot Spot</a></li> <% support_invmatch("HSIAB_SUPPORT", "1", "-->"); %>
 											<li><a href="Vlan.asp">VLANs</a></li>
 										</ul>
 									</div>
@@ -104,7 +104,7 @@ function SelMode(num,F) {
 								<select name="wk_mode" onchange="SelMode(this.form.wk_mode.selectedIndex,this.form)">
 									<% show_routing(); %>
 								</select>
-							</div> 
+							</div>
 							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
 							<fieldset>
 								<legend>BGP Settings</legend>
@@ -201,7 +201,7 @@ function SelMode(num,F) {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
