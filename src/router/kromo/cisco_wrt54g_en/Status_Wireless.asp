@@ -7,47 +7,45 @@
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript">
-function setWirelessTable(val) {
+function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
-	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
-	if(val == "") {
-		var row = table.insertRow(-1);
-		var cell = row.insertCell(-1);
-		cell.colSpan = 4;
+	var val = arguments;
+	cleanTable(table);
+	if(!val.length) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 5;
 		cell.align = "center";
 		cell.innerHTML = "- None - ";
-		row.insertCell(-1).innerHTML = "<div class=\"meter\"></div>";
 		return;
 	}
-	var nodes = val.replace(/'/g, "").split(",");
-	for(var i = 0; i < nodes.length; i = i + 4) {
+	for(var i = 0; i < val.length; i = i + 4) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = nodes[i];
-		row.insertCell(-1).innerHTML = nodes[i + 1];
-		row.insertCell(-1).innerHTML = nodes[i + 2];
-		row.insertCell(-1).innerHTML = nodes[i + 3];
-		setMeterBar(row.insertCell(-1), (nodes[i + 1] == "0" ? 0 : parseInt(nodes[i + 1]) * 1.24 + 116), "");
+		row.insertCell(-1).innerHTML = val[i];
+		row.insertCell(-1).innerHTML = val[i + 1];
+		row.insertCell(-1).innerHTML = val[i + 2];
+		row.insertCell(-1).innerHTML = val[i + 3];
+		setMeterBar(row.insertCell(-1), (val[i + 1] == "0" ? 0 : parseInt(val[i + 1]) * 1.24 + 116), "");
 	}
 }
 
-function setWDSTable(val) {
+function setWDSTable() {
 	var table = document.getElementById("wds_table");
-	for(var i = table.rows.length - 1; i > 0 ; i--) { table.deleteRow(i); }
-	if(val == "") {
+	var val = arguments;
+	cleanTable(table);
+	if(!val.length) {
 		setElementVisible("wds", false);
 		return;
 	}
-	setElementVisible("wds", true);
-	var nodes = val.replace(/'/g, "").split(",");
-	for(var i = 0; i < nodes.length; i = i + 5) {
+	for(var i = 0; i < val.length; i = i + 5) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = nodes[i];
-		row.insertCell(-1).innerHTML = nodes[i + 1];
-		row.insertCell(-1).innerHTML = nodes[i + 2];
-		row.insertCell(-1).innerHTML = nodes[i + 3];
-		row.insertCell(-1).innerHTML = nodes[i + 4];
-		setMeterBar(row.insertCell(-1), (nodes[i + 2] == "0" ? 0 : parseInt(nodes[i + 2]) * 1.24 + 116), "");
+		row.insertCell(-1).innerHTML = val[i];
+		row.insertCell(-1).innerHTML = val[i + 1];
+		row.insertCell(-1).innerHTML = val[i + 2];
+		row.insertCell(-1).innerHTML = val[i + 3];
+		row.insertCell(-1).innerHTML = val[i + 4];
+		setMeterBar(row.insertCell(-1), (val[i + 2] == "0" ? 0 : parseInt(val[i + 2]) * 1.24 + 116), "");
 	}
+	setElementVisible("wds", true);
 }
 
 function setPacketInfo(val) {
@@ -65,16 +63,16 @@ function setPacketInfo(val) {
 var update;
 
 addEvent(window, "load", function() {
-	setWirelessTable("<% active_wireless(0); %>");
-	setWDSTable("<% active_wds(0); %>");
+	setWirelessTable(<% active_wireless(0); %>);
+	setWDSTable(<% active_wds(0); %>);
 	setPacketInfo("<% wl_packet_get(); %>");
 
 	update = new StatusUpdate("Status_Wireless.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate("active_wireless", function(u) {
-		setWirelessTable(u.active_wireless);
+		eval('setWirelessTable(' + u.active_wireless + ')');
 	});
 	update.onUpdate("active_wds", function(u) {
-		setWDSTable(u.active_wds);
+		eval('setWDSTable(' + u.active_wds + ')');
 	});
 	update.onUpdate("packet_info", function(u) {
 		setPacketInfo(u.packet_info);
@@ -183,11 +181,11 @@ addEvent(window, "unload", function() {
 								<legend id="wireless_table_legend">Clients</legend>
 								<table class="table center" cellspacing="6" id="wireless_table">
 									<tr>
-										<th width="64%">MAC Address</th>
-										<th width="12%">Signal</th>
-										<th width="12%">Noise</th>
-										<th width="12%">SNR</th>
-										<th>Signal Quality</th>
+										<th width="48%">MAC Address</th>
+										<th width="10%">Signal</th>
+										<th width="10%">Noise</th>
+										<th width="10%">SNR</th>
+										<th width="22%">Signal Quality</th>
 									</tr>
 								</table>
 							</fieldset><br />
@@ -196,12 +194,12 @@ addEvent(window, "unload", function() {
 									<legend>WDS</legend>
 									<table class="table center" cellspacing="6" id="wds_table">
 										<tr>
-											<th width="30%">MAC Address</th>
-											<th width="30%">Description</th>
-											<th width="12%">Signal</th>
-											<th width="12%">Noise</th>
-											<th width="12%">SNR</th>
-											<th>Signal Quality</th>
+											<th width="22%">MAC Address</th>
+											<th width="22%">Description</th>
+											<th width="10%">Signal</th>
+											<th width="10%">Noise</th>
+											<th width="10%">SNR</th>
+											<th width="22%">Signal Quality</th>
 										</tr>
 									</table>
 								</fieldset><br />
