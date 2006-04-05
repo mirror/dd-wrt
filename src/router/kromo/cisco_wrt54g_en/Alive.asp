@@ -37,7 +37,7 @@ function alive_enable_disable(val) {
   	setElementsActive("schedule_hours", "schedule_weekdays", val == 2);
   	setElementActive("schedule_hour_time", val == 2);
   	setElementActive("schedule_time", val == 1);
-  } 
+  }
   else {
     setElementsActive("schedule_hour_time", "schedule_weekdays", val == 9);
   }
@@ -124,7 +124,7 @@ function init() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>

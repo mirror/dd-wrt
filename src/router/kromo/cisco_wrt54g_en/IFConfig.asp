@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-	<head>   
+	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - Advanced Interface Configuration</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
@@ -63,18 +63,18 @@ function SelWAN(F,I) {
 function SelMode(F,I,n) {
 	switch(n) {
 		case "0" :
-			static_en_dis(F,I,1); 
-			dhcpd_en_dis(F,I,0); 
+			static_en_dis(F,I,1);
+			dhcpd_en_dis(F,I,0);
 			dhcpc_en_dis(F,I,0);
 			break;
 		case "1" :
-			static_en_dis(F,I,1); 
-			dhcpd_en_dis(F,I,1); 
+			static_en_dis(F,I,1);
+			dhcpd_en_dis(F,I,1);
 			dhcpc_en_dis(F,I,0);
 			break;
 		case "2" :
 			static_en_dis(F,I,0);
-			dhcpd_en_dis(F,I,0); 
+			dhcpd_en_dis(F,I,0);
 			dhcpc_en_dis(F,I,1);
 			break;
 		case "3" :
@@ -177,7 +177,7 @@ function init() {
             </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
