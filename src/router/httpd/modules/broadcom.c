@@ -3105,7 +3105,7 @@ while ((entry = readdir (directory)) != NULL)
     FILE *test=fopen(buf,"rb");
     if (test==NULL)continue;
     fclose(test);
-    websWrite(wp,"<option value=\"%s\" %s>%s</option>\n",nvram_selected("router_style",entry->d_name)?"selected":"",entry->d_name);    
+    websWrite(wp,"<option value=\"%s\" %s>%s</option>\n",entry->d_name,nvram_match("router_style",entry->d_name)?"selected":"",entry->d_name);    
     }
 closedir (directory);    
 return 0;
