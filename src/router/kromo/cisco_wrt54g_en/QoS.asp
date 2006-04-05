@@ -393,7 +393,7 @@ function init() {
 						<dl>
 							<dt class="term">Uplink: </dt>
 							<dd class="definition">Set this to 80%-95% (max) of your total upload limit</dd>
-							<dt class="term">Dnlink: </dt>
+							<dt class="term">Downlink: </dt>
 							<dd class="definition">Set this to 80%-100% (max) of your total download limit</dd>
 							<dt class="term">Application Priority: </dt>
 							<dd class="definition">You may control your data rate with respect to the application that is consuming bandwidth.</dd>
