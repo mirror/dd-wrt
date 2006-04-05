@@ -3092,6 +3092,26 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
 
 //SEG DD-WRT addition
 static int
+ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
+{
+//<option value="blue" <% nvram_selected("router_style", "blue"); %>>Blue</option>
+DIR *directory;
+char buf[256];
+directory = opendir ("/www/style");
+struct dirent *entry;
+while ((entry = readdir (directory)) != NULL)
+    {
+    sprintf(buf,"/www/style/%s/style.css",entry->d_name);
+    FILE *test=fopen(buf,"rb");
+    if (test==NULL)continue;
+    fclose(test);
+    websWrite(wp,"<option value=\"%s\" %s>%s</option>\n",nvram_selected("router_style",entry->d_name)?"selected":"",entry->d_name);    
+    }
+closedir (directory);    
+return 0;
+}
+
+static int
 ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char buf[256];
@@ -3941,6 +3961,7 @@ struct ej_handler ej_handlers[] = {
   {"get_services_options", ej_get_services_options},
   {"get_clone_wmac", ej_get_clone_wmac},
   {"show_modules", ej_show_modules},
+  {"show_styles", ej_show_styles},
   {"show_forward", ej_show_forward},
   {"show_forward_spec", ej_show_forward_spec},
   {"show_triggering", ej_show_triggering},
