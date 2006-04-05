@@ -121,11 +121,11 @@ margin:12px 12px 0 12px;
 }
 #contentsInfo .col2l {
 float:left;
-width:48%;
+width:49%;
 }
 #contentsInfo .col2r {
 float:right;
-width:48%;
+width:49%;
 }
 h2, h3 {
 margin:0 0 12px 0;
@@ -239,15 +239,15 @@ height:14px;
 .meter .text {
 position:absolute;
 top:0;
-left:0;
-width:160px;
+width:100%;
+height:1.268em;
 text-align:center;
-line-height:13px;
+line-height:1.181em;
 }
-td .meter  {
-position:relative;
-top:0;
-left:0;
+td .meter {
+float:none !important;
+margin-top:0 !important;
+width:99% !important;
 }
 .progressbar {
 visibility: visible;

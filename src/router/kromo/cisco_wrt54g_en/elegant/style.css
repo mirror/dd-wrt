@@ -1,33 +1,32 @@
 @import url(../common.css); 
-#menuSub, 
-#menuMainList li span, 
+#menusub, 
+#menumainlist li span, 
 #help h2 { 
-background:#30519C; 
-color:#FFFFFF; 
-border-color:#496FC7; 
-} 
-#menuMainList #menuSubList li a { 
-background:#496FC7; 
-color:#FFFFFF; 
-border-color:#6384CF; 
-} 
-#menuMainList #menuSubList li a:hover { 
-background:#6384CF; 
+background:#30519c; 
 color:#fff; 
-border-color:#849DD9; 
+border-color:#496fc7; 
+} 
+#menusublist li a { 
+background:#496fc7; 
+color:#fff; 
+border-color:#6384cf; 
+} 
+#menusublist li a:hover { 
+background:#6384cf; 
+color:#fff; 
+border-color:#849dd9; 
 } 
 fieldset legend { 
-color:#30519C; 
+color:#30519c; 
 } 
 #help a { 
-color:#FFFFFF; 
+color:#fff; 
 } 
 #help a:hover { 
-color:#FFFFFF; 
-text-decoration: underline; 
+color:#fff; 
 }
 .meter .bar {
-background-color: #496FC7;
+background-color: #496fc7;
 }
 .meter .text {
 color:#fff;
@@ -39,6 +38,6 @@ font-size:.09em;
 border-width:.09em;
 }
 .progressbarblock {
-background-color: #496FC7;
+background-color: #496fc7;
 font-size:.09em;
 }
