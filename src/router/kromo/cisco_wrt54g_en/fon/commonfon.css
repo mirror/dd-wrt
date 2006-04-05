@@ -313,20 +313,16 @@ height:1.268em;
 }
 .meter .text {
 position:absolute;
-width:14.49em;
+top:0;
+width:100%;
 height:1.268em;
 text-align:center;
 line-height:1.181em;
 }
-td .meter,
-td .meter .text {
+td .meter {
 float:none !important;
 margin-top:0 !important;
-width:9.01em !important;
-}
-.infopage td .meter,
-.infopage td .meter .text {
-width:14.49em !important;
+width:99% !important;
 }
 .progressbar {
 visibility:visible;

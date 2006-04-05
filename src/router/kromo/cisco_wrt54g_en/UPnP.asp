@@ -12,142 +12,70 @@
 		11.2005	tofu10		init
 		Intergated to DD-WRT by LawnMowerGuy1
 		-->
-		<style type="text/css">
-		<!--
-			A{color: #000000; text-decoration: underline;}
-			A:link{color: #000000; text-decoration: underline;}
-			A:hover{color: #000000; text-decoration: none;}
-			A:visited{color: #000000; text-decoration: underline;}
-			.dis td {color: #FF0000;}
-		-->
-		</style>
 		<script type="text/javascript">
-
-function to_submit(F)
-{
+function to_submit(F) {
 	F.submit_button.value = "UPnP";
 	F.save_button.value = "Saved";
-        
 	F.action.value = "Apply";
+	update.stop();
 	apply(F);
 }
 
-var upnpForwards = new Array(<% tf_upnp(); %>);
-var data = new Array ();
+var data = new Array();
 
-function parseForwards()
-{
+function parseForwards(upnpForwards) {
 	// wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc
 	data = [];
-	for (var i=0; i<upnpForwards.length; ++i) {
-		if (upnpForwards[i] !== '' && upnpForwards[i].match(/^(\d+-\d+)>(.*?):(\d+-\d+),(.*?),(.*?),(.*)/)) {
-			var e = {};
-			e.wanPorts = RegExp.$1;
-			e.lanIP = RegExp.$2;
-			e.lanPorts = RegExp.$3;
-			e.proto = RegExp.$4.toUpperCase();
-			e.enabled = (RegExp.$5 == 'on');
-			e.desc = RegExp.$6;
+	for (var i = 0; i < upnpForwards.length; ++i) {
+		if (upnpForwards[i] == '' || !upnpForwards[i].match(/^(\d+-\d+)>(.*?):(\d+-\d+),(.*?),(.*?),(.*)/)) continue;
+		var e = {};
+		e.index = i;
+		e.wanPorts = RegExp.$1;
+		e.lanIP = RegExp.$2;
+		e.lanPorts = RegExp.$3;
+		e.proto = RegExp.$4.toUpperCase();
+		e.enabled = (RegExp.$5 == 'on');
+		e.desc = RegExp.$6;
 
-			if ((e.wanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.wanPorts = RegExp.$1;
-				else e.wanPorts = RegExp.$1 + "-<br />" + RegExp.$2;
-			if ((e.lanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.lanPorts = RegExp.$1;
-				else e.lanPorts = RegExp.$1 + "-<br />" + RegExp.$2;
-			data.push(e);
-		}
-		else {
-			data.push('null');
-		}
+		if ((e.wanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.wanPorts = RegExp.$1;
+			else e.wanPorts = RegExp.$1 + "&nbsp;-&nbsp;" + RegExp.$2;
+		if ((e.lanPorts.match(/^(\d+)-(\d+)$/)) && (RegExp.$1 == RegExp.$2)) e.lanPorts = RegExp.$1;
+			else e.lanPorts = RegExp.$1 + "&nbsp;-&nbsp;" + RegExp.$2;
+		data.push(e);
 	}
-	//data.sort(sorter);
 }
 
-//Get rid of sort function for now
-//var sortby = 4;
-//var sortrev = 0;
-
-//function sorter(a, b)
-//{
-//	var aa, bb, ax, bx, i;
-//
-//	if (sortrev) {
-//		bb = b;
-//		b = a;
-//		a = bb;
-//	}
-//	switch (sortby) {
-//	case 0:
-//		aa = parseInt(a.wanPorts);
-//		bb = parseInt(a.wanPorts);
-//		if (aa < bb) return -1;
-//		if (aa > bb) return 1;
-//		break;
-//	case 1:
-//		aa = parseInt(a.lanPorts);
-//		bb = parseInt(a.lanPorts);
-//		if (aa < bb) return -1;
-//		if (aa > bb) return 1;
-//		break;
-//	case 2:
-//		aa = (a.lanIP + '....').split('.');
-//		bb = (b.lanIP + '....').split('.');
-//		for (i = 0; i < 4; ++i) {
-//			ax = parseInt('0' + aa[i]);
-//			bx = parseInt('0' + bb[i]);
-//			if (ax < bx) return -1;
-//			if (ax > bx) return 1;
-//		}
-//		break;
-//	case 3:
-//		if (a.proto < b.proto) return -1;
-//		if (a.proto > b.proto) return 1;
-//		break;
-//	}
-//	if (a.desc < b.desc) return -1;
-//	if (a.desc > b.desc) return 1;
-//	return 0;
-//}
-
-//function resort(by)
-//{
-//	if (sortby == by) sortrev ^= 1; else sortrev = 0;
-//	sortby = by;
-//	data.sort(sorter);
-//	show();
-//}
-
-function show()
-{
-	var c = document.getElementById("theforwards");
-	if (c) c.innerHTML = makeTable();
+function setUPnPTable(forwards) {
+	parseForwards(forwards);
+	var table = document.getElementById("upnp_table");
+	for(var i = table.rows.length - 1; i > 0 ; i--) {
+		table.deleteRow(i);
+	}
+	if(data.length == 0) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 6;
+		cell.align = "center";
+		cell.innerHTML = "- None - ";
+		return;
+	}
+	for(var i = 0; i < data.length; i++) {
+		var row = table.insertRow(-1);
+		row.style.height = "15px";
+		row.className = (data[i].enabled ? '' : 'disabled');
+		row.insertCell(-1).innerHTML = data[i].desc;
+		row.insertCell(-1).innerHTML = data[i].wanPorts;
+		row.insertCell(-1).innerHTML = data[i].lanPorts;
+		row.insertCell(-1).innerHTML = data[i].lanIP;
+		row.insertCell(-1).innerHTML = data[i].proto;
+		var cell = row.insertCell(-1);
+		cell.className = "bin";
+		cell.title = "Click to delete lease";
+		cell.innerHTML = " ";
+		eval("addEvent(cell, 'click', function() { deleteForward(" + i + ") })");
+	}
 }
 
-function makeTable()
-{
-	var s;
-	var dataLen = data.length;
-	var nullCount = 0;
-
-	s = "<table class=\"table center\" width=\"100%\" cellspacing=\"5\">";
-	s += "<tr><th width=\"40%\">Description</th><th width=\"15\" >From&nbsp;(WAN)</th><th width=\"15%\">To&nbsp;(LAN)</th><th width=\"20%\">IP&nbsp;Address</th><th width=\"10%\">Protocol</th><th width=\"5%\">Delete</th></tr>";
-	for (var i=0; i<dataLen; ++i) {
-		var e = data[i];
-		if (e !== 'null') {
-			var c = e.enabled ? "" : "dis";
-			s += "<tr height=\"15\" class='" + c + "'" + "><td valign=\"top\">" + ((e.desc.length > 20) ? ("<small>" + e.desc + "</small>") : e.desc) + "</td><td valign=\"top\">" + e.wanPorts + "</td><td valign=\"top\">" + e.lanPorts + "</td><td valign=\"top\">" + e.lanIP + "</td><td valign=\"top\">" + e.proto + "</td><td class=\"bin\" title=\"Click to delete entry\" onclick='unmap("+i+")'></td></tr>";
-		}
-		else {
-			nullCount++;
-		}
-	}
-	if (dataLen == nullCount) {
- 		 s += "<tr><td height=\"15\" colspan=\"6\" align=\"center\">- None -</td></tr>";
-	}
-	return s + "</table>";
-}
-
-function unmap(x)
-{
+function deleteForward(x) {
 	if (x != 'all') {
 		var e = data[x];
 		if (!confirm("Delete " + e.desc + "? [" + e.wanPorts + "->" + e.lanPorts + " " + e.lanIP + " " + e.proto + "]")) return;
@@ -156,27 +84,24 @@ function unmap(x)
 		if (!confirm("Delete all entries?")) return;
 	}
 	var fupnp = document.getElementById("fupnp");
-
 	fupnp.submit_button.value = "UPnP";
 	fupnp.action.value = "Apply";
-	fupnp.remove.value = x;
+	fupnp.remove.value = (x == 'all' ? 'all' : e.index);
 	fupnp.delete_button.value = "Deleted";
 	fupnp.save_button.disabled = true;
 	fupnp.delete_button.disabled = true;
+	update.stop();
 	fupnp.submit();
-
 }
-
-parseForwards();
 
 var update;
 
 addEvent(window, "load", function() {
+	setUPnPTable(new Array(<% tf_upnp(); %>));
+
 	update = new StatusUpdate("UPnP.live.asp", <% nvram_get("refresh_time"); %>);
 	update.onUpdate("upnp_forwards", function(u) {
-		upnpForwards = eval("new Array(" + u.upnp_forwards + ")");
-		parseForwards();
-		setElementContent("theforwards", makeTable());
+		setUPnPTable(eval("new Array(" + u.upnp_forwards + ")"));
 	});
 	update.start();
 });
@@ -185,10 +110,15 @@ addEvent(window, "unload", function() {
 	update.stop();
 });
 		</script>
+		<style type="text/css">
+tr.disabled td {
+	text-decoration:line-through;
+	color:#999;
+}
+		</style>
 	</head>
 
-	<body class="gui">
-		<% showad(); %>
+	<body class="gui"> <% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -232,9 +162,18 @@ addEvent(window, "unload", function() {
 							<h2>Universal Plug and Play (UPnP)</h2>
 							<fieldset>
 								<legend>Forwards</legend>
-								<span id="theforwards"><script type="text/javascript">document.write(makeTable())</script></span><br />
+								<table class="table center" cellspacing="6" id="upnp_table">
+									<tr>
+										<th width="40%">Description</th>
+										<th width="15%">From&nbsp;(WAN)</th>
+										<th width="15%">To&nbsp;(LAN)</th>
+										<th width="20%">IP&nbsp;Address</th>
+										<th width="10%">Protocol</th>
+										<th>Delete</th>
+									</tr>
+								</table><br />
 								<div class="center">
-									<input type="button" name="delete_button" value="Delete All" onclick="unmap('all')" />
+									<input type="button" name="delete_button" value="Delete All" onclick="deleteForward('all')" />&nbsp;
 									<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh ON"); %>" onclick="window.location.reload()" />
 								</div>
 							</fieldset><br />
@@ -242,18 +181,18 @@ addEvent(window, "unload", function() {
 								<legend>UPnP Configuration</legend>
 								<div class="setting">
 									<div class="label">UPnP Service</div>
-									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> />Enable
+									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> />Enable&nbsp;
 									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> />Disable
 								</div>
 								<% nvram_invmatch("upnp_enable", "1", "<!--"); %>
 								<div class="setting">
 									<div class="label">Clear port forwards at startup</div>
-									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> />Enable
+									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> />Enable&nbsp;
 									<input type="radio" name="upnpcas" value="0" <% nvram_selmatch("upnpcas","0","checked"); %> />Disable
 								</div>
 								<div class="setting">
 									<div class="label">Send presentation URL</div>
-									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> />Enable
+									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> />Enable&nbsp;
 									<input type="radio" name="upnpmnp" value="0" <% nvram_selmatch("upnpmnp","0","checked"); %> />Disable
 								</div>
 								<% nvram_invmatch("upnp_enable", "1", "-->"); %>
@@ -273,8 +212,7 @@ addEvent(window, "unload", function() {
 							<dd class="definition">Click the trash can to delete an individual entry.</dd>
 							<dt class="term">UPnP Service:</dt>
 							<dd class="definition">Allows applications to automatically setup port forwardings.</dd>
-						</dl>
-						<br/>
+						</dl><br />
 						<a href="javascript:openHelpWindow('HUPnP.asp')">More...</a>
 					</div>
 				</div>

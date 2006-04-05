@@ -12,31 +12,28 @@ function deleteLease(val) {
 	document.forms[0].submit();
 }
 
-function setLeasesTable(val) {
+function setDHCPTable() {
+	var val = arguments;
 	var table = document.getElementById("dhcp_leases_table");
-	for(var i = table.rows.length - 1; i > 0 ; i--) {
-		table.deleteRow(i);
-	}
-	if(val == "") {
+	cleanTable(table);
+	if(!val.length) {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 5;
 		cell.align = "center";
 		cell.innerHTML = "- None - ";
 		return;
 	}
-	var leases = val.replace(/'/g, "").split(",");
-	for(var i = 0; i < leases.length; i = i + 5) {
+	for(var i = 0; i < val.length; i = i + 5) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = leases[i];
-		row.insertCell(-1).innerHTML = leases[i + 1];
-		row.insertCell(-1).innerHTML = leases[i + 2];
-		row.insertCell(-1).innerHTML = leases[i + 3];
+		row.style.height = "15px";
+		row.insertCell(-1).innerHTML = val[i];
+		row.insertCell(-1).innerHTML = val[i + 1];
+		row.insertCell(-1).innerHTML = val[i + 2];
+		row.insertCell(-1).innerHTML = val[i + 3];
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
-		cell.height = 15;
 		cell.title = "Click to delete lease";
-		cell.innerHTML = " ";
-		eval("addEvent(cell, 'click', function() { deleteLease(" + leases[i + 4] + ") })");
+		eval("addEvent(cell, 'click', function() { deleteLease(" + val[i + 4] + ") })");
 	}
 }
 
@@ -44,7 +41,7 @@ var update;
 
 addEvent(window, "load", function() {
 	setElementContent("dhcp_end_ip", "<% prefix_ip_get("lan_ipaddr",1); %>" + (parseInt("<% nvram_get("dhcp_start"); %>") + parseInt("<% nvram_get("dhcp_num"); %>") - 1));
-	setLeasesTable("<% dumpleases(0); %>");
+	setDHCPTable(<% dumpleases(0); %>);
 	setElementVisible("dhcp_1", "<% nvram_get("lan_proto"); %>" == "dhcp");
 	setElementVisible("dhcp_2", "<% nvram_get("lan_proto"); %>" == "dhcp");
 
@@ -58,7 +55,7 @@ addEvent(window, "load", function() {
 		setElementContent("dhcp_end_ip", u.lan_ip_prefix + (parseInt(u.dhcp_start) + parseInt(u.dhcp_num) - 1));
 	});
 	update.onUpdate("dhcp_leases", function(u) {
-		setLeasesTable(u.dhcp_leases);
+		eval('setDHCPTable(' + u.dhcp_leases + ')');
 	});
 	update.start();
 });
