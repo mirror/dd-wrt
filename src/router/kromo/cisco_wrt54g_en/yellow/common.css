@@ -179,6 +179,7 @@ color:#000;
 letter-spacing:.09em;
 }
 .setting {
+position:relative;
 margin-bottom:.543em;
 line-height:1.902em;
 }
@@ -191,10 +192,10 @@ width:18.116em;
 }
 .setting span.default {
 display:block;
+position:absolute;
 color:#666;
-float:right;
-width:16.304em;
-margin-top:-1.721em;
+top:0;
+left:34.420em;
 }
 .warning {
 font-weight:bold;
