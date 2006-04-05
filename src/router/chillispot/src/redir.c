@@ -1800,6 +1800,8 @@ redir_accept (struct redir_t *redir)
 
       int KYN_Authenticate (const char *username, const char *password)
       {
+	if (username!=NULL && strlen(username)==0)return 0;
+	if (password!=NULL && strlen(password)==0)return 0;
 
 	FILE *f;
 	int authenticated = 0;	/*Can't authenticate? */
