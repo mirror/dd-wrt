@@ -1897,6 +1897,23 @@ Initnvramtab ()
 			}
 		      tmp->argv[i] = NULL;
 		    }
+#ifdef HAVE_SPUTNIK_APD
+		  if (!stricmp (tmpstr, "MJIDTYPE"))
+		    {
+		      tmp->validate = validate_choice;
+		      free (tmpstr);
+		      tmpstr = getFileString (in);
+		      len = atoi (tmpstr);
+		      tmp->argv =
+			(char **) malloc (sizeof (char **) * (len + 1));
+		      for (i = 0; i < len; i++)
+			{
+			  tmp->argv[i] = getFileString (in);
+			}
+		      tmp->argv[i] = NULL;
+		      nvram_set("sputnik_rereg","1");
+		    }
+#endif
 		  if (!stricmp (tmpstr, "NOACK"))
 		    {
 		      tmp->validate = validate_noack;
