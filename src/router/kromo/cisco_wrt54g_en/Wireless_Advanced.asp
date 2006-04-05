@@ -207,7 +207,7 @@ addEvent(window, "load", function() {
 								</div>
 								<table class="table center" cellspacing="5">
 									<tr>
-										<th colspan="7">EDCA AP Parameters</td>
+										<th colspan="7">EDCA AP Parameters (AP to Client)</td>
 									</tr>
 									<tr>
 										<td>&nbsp;</td>
@@ -219,7 +219,7 @@ addEvent(window, "load", function() {
 										<td align="center">Admin Forced</td>
 									</tr>
 									<tr>
-										<td>AC_BK<input type="hidden" name="wl_wme_ap_bk" value="5" /></td>
+										<td>Background<input type="hidden" name="wl_wme_ap_bk" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_bk0" value="<% nvram_list("wl_wme_ap_bk", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_bk1" value="<% nvram_list("wl_wme_ap_bk", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_bk2" value="<% nvram_list("wl_wme_ap_bk", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
@@ -228,7 +228,7 @@ addEvent(window, "load", function() {
 										<td align="center"><input type="hidden" name="wl_wme_ap_bk5" value="<% nvram_list("wl_wme_ap_bk", 5); %>" /><input type="checkbox" name="_wl_wme_ap_bk5" <% wme_match_op("wl_wme_ap_bk", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_bk5.value = (this.checked ? 'on' : 'off');" /></td>
 									</tr>
 									<tr>
-										<td>AC_BE<input type="hidden" name="wl_wme_ap_be" value="5" /></td>
+										<td>Best&nbsp;Effort<input type="hidden" name="wl_wme_ap_be" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_be0" value="<% nvram_list("wl_wme_ap_be", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_be1" value="<% nvram_list("wl_wme_ap_be", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_be2" value="<% nvram_list("wl_wme_ap_be", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
@@ -237,7 +237,7 @@ addEvent(window, "load", function() {
 										<td align="center"><input type="hidden" name="wl_wme_ap_be5" value="<% nvram_list("wl_wme_ap_be", 5); %>" /><input type="checkbox" name="_wl_wme_ap_be5" <% wme_match_op("wl_wme_ap_be", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_be5.value = (this.checked ? 'on' : 'off');" /></td>
 									</tr>
 									<tr>
-										<td>AC_VI<input type="hidden" name="wl_wme_ap_vi" value="5" /></td>
+										<td>Video<input type="hidden" name="wl_wme_ap_vi" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_vi0" value="<% nvram_list("wl_wme_ap_vi", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_vi1" value="<% nvram_list("wl_wme_ap_vi", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_vi2" value="<% nvram_list("wl_wme_ap_vi", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
@@ -246,7 +246,7 @@ addEvent(window, "load", function() {
 										<td align="center"><input type="hidden" name="wl_wme_ap_vi5" value="<% nvram_list("wl_wme_ap_vi", 5); %>" /><input type="checkbox" name="_wl_wme_ap_vi5" <% wme_match_op("wl_wme_ap_vi", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_vi5.value = (this.checked ? 'on' : 'off');" /></td>
 									</tr>
 									<tr>
-										<td>AC_VO<input type="hidden" name="wl_wme_ap_vo" value="5" /></td>
+										<td>Voice<input type="hidden" name="wl_wme_ap_vo" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_vo0" value="<% nvram_list("wl_wme_ap_vo", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_vo1" value="<% nvram_list("wl_wme_ap_vo", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_ap_vo2" value="<% nvram_list("wl_wme_ap_vo", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
@@ -257,7 +257,7 @@ addEvent(window, "load", function() {
 								</table>
 								<table cellspacing="5">
 									<tr>
-										<th colspan="7">EDCA STA Parameters</td>
+										<th colspan="7">EDCA STA Parameters (Client to AP)</td>
 									</tr>
 									<tr>
 										<td>&nbsp;</td>
@@ -269,7 +269,7 @@ addEvent(window, "load", function() {
 										<td align="center">Admin Forced</td>
 									</tr>
 									<tr>
-										<td>AC_BK<input type="hidden" name="wl_wme_sta_bk" value="5" /></td>
+										<td>Background<input type="hidden" name="wl_wme_sta_bk" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_bk0" value="<% nvram_list("wl_wme_sta_bk", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_bk1" value="<% nvram_list("wl_wme_sta_bk", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_bk2" value="<% nvram_list("wl_wme_sta_bk", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
@@ -278,7 +278,7 @@ addEvent(window, "load", function() {
 										<td align="center"><input type="hidden" name="wl_wme_sta_bk5" value="<% nvram_list("wl_wme_sta_bk", 5); %>" /><input type="checkbox" name="_wl_wme_sta_bk5" <% wme_match_op("wl_wme_sta_bk", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_bk5.value = (this.checked ? 'on' : 'off');" /></td>
 									</tr>
 									<tr>
-										<td>AC_BE<input type="hidden" name="wl_wme_sta_be" value="5" /></td>
+										<td>Best&nbsp;Effort<input type="hidden" name="wl_wme_sta_be" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_be0" value="<% nvram_list("wl_wme_sta_be", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_be1" value="<% nvram_list("wl_wme_sta_be", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_be2" value="<% nvram_list("wl_wme_sta_be", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
@@ -287,7 +287,7 @@ addEvent(window, "load", function() {
 										<td align="center"><input type="hidden" name="wl_wme_sta_be5" value="<% nvram_list("wl_wme_sta_be", 5); %>" /><input type="checkbox" name="_wl_wme_sta_be5" <% wme_match_op("wl_wme_sta_be", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_be5.value = (this.checked ? 'on' : 'off');" /></td>
 									</tr>
 									<tr>
-										<td>AC_VI<input type="hidden" name="wl_wme_sta_vi" value="5" /></td>
+										<td>Video<input type="hidden" name="wl_wme_sta_vi" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_vi0" value="<% nvram_list("wl_wme_sta_vi", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_vi1" value="<% nvram_list("wl_wme_sta_vi", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_vi2" value="<% nvram_list("wl_wme_sta_vi", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
@@ -296,7 +296,7 @@ addEvent(window, "load", function() {
 										<td align="center"><input type="hidden" name="wl_wme_sta_vi5" value="<% nvram_list("wl_wme_sta_vi", 5); %>" /><input type="checkbox" name="_wl_wme_sta_vi5" <% wme_match_op("wl_wme_sta_vi", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_vi5.value = (this.checked ? 'on' : 'off');" /></td>
 									</tr>
 									<tr>
-										<td>AC_VO<input type="hidden" name="wl_wme_sta_vo" value="5" /></td>
+										<td>Voice<input type="hidden" name="wl_wme_sta_vo" value="5" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_vo0" value="<% nvram_list("wl_wme_sta_vo", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmin')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_vo1" value="<% nvram_list("wl_wme_sta_vo", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,'AC CWmax')" /></td>
 										<td align="center"><input class="num" name="wl_wme_sta_vo2" value="<% nvram_list("wl_wme_sta_vo", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,'AC AIFSN')" /></td>
