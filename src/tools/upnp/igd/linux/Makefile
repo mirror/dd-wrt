@@ -44,7 +44,7 @@ vpath %.h $(VPATH.h)
 ifeq ($(DEBUG),1)
 CFLAGS += -g -DDEBUG -UNDEBUG -DBCMDBG
 else
-CFLAGS += -o2 -mips32 -mtune=mips32 -pipe -DNDEBUG
+CFLAGS += -O2 -mips32 -mtune=mips32 -pipe -DNDEBUG
 endif
 CFLAGS += -I$(subst :, -I,$(VPATH.h))
 CFLAGS += -Wall -Wunused 
