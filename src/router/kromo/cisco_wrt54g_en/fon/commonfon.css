@@ -64,6 +64,14 @@ width:32.609em;
 text-align:right;
 color:#ccc;
 }
+#statusInfo a {
+color:#ccc;
+text-decoration:none;
+}
+#statusInfo a:hover {
+color:#fff;
+text-decoration:underline;
+}
 #menu {
 position:relative;
 width:72.464em;
@@ -171,6 +179,7 @@ color:#000;
 letter-spacing:.09em;
 }
 .setting {
+position:relative;
 margin-bottom:.543em;
 line-height:1.902em;
 }
@@ -183,10 +192,10 @@ width:18.116em;
 }
 .setting span.default {
 display:block;
+position:absolute;
 color:#666;
-float:right;
-width:16.304em;
-margin-top:-1.721em;
+top:0;
+left:34.420em;
 }
 .warning {
 font-weight:bold;
@@ -213,7 +222,7 @@ background:#fff;
 }
 table {
 margin:0 auto;
-width:90%;
+width:94%;
 border-spacing:.543em;
 }
 table tr th {

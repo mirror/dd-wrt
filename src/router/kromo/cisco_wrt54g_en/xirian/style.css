@@ -191,6 +191,13 @@ width:400px;
 font-size:10px;
 margin-bottom:2px;
 }
+#statusInfo a {
+font-size:10px;
+text-decoration:none;
+}
+#statusInfo a:hover {
+text-decoration:underline;
+}
 .submitFooter {
 text-align:center;
 }
