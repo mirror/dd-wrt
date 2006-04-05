@@ -353,7 +353,7 @@ function Status(F,I) {
 							<fieldset>
 								<legend>Access Policy</legend>
 								<div class="setting">
-									<div class="label">Policy n&deg;</div>
+									<div class="label">Policy</div>
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
 									<input type="button" value="Delete" onclick="to_delete(this.form)"/>
 									<input type="button" value="Summary" onclick="ViewSummary()"/>
