@@ -849,25 +849,6 @@ start_sysinit (void)
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
   eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 #endif
-#ifdef HAVE_MMC
-  if (nvram_match ("mmc_enable", "1"))
-    {
-      if (!eval ("insmod", "mmc"))
-	{
-	  //device detected
-	  eval ("insmod", "ext2");
-	  if (mount
-	      ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL, NULL))
-	    {
-	      //device not formated
-	      eval ("/sbin/mke2fs", "-F", "-b", "1024",
-		    "/dev/mmc/disc0/part1");
-	      mount ("/dev/mmc/disc0/part1", "/mmc", "ext2", MS_MGC_VAL,
-		     NULL);
-	    }
-	}
-    }
-#endif
   cprintf ("sysinit() var\n");
 
   /* /var */
