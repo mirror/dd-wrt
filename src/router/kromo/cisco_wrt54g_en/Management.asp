@@ -40,9 +40,9 @@ function port_enable_disable(F,I) {
 		F._remote_mgt_https.checked = true;
 		}
 	}
-	if(F._https_enable)        
+	if(F._https_enable)
 	if(F._http_enable.checked == true && F._https_enable.checked == false)
-		choose_disable(F._remote_mgt_https); 
+		choose_disable(F._remote_mgt_https);
 }
 
 function ChangePasswd(F) {
@@ -82,7 +82,7 @@ function to_submit(F) {
 		alert("Password confirmation doesn't match !");
 		return false;
 	}
-	
+
 	valid_password(F);
 
 	if(F.remote_management[0].checked == true){
@@ -96,7 +96,7 @@ function to_submit(F) {
 			F._remote_mgt_https.checked == true;
 		if(F._remote_mgt_https.checked == true) F.remote_mgt_https.value = 1;
 		else 	 F.remote_mgt_https.value = 0;
-	} 
+	}
 	if(F._https_enable){
 		if(F._https_enable.checked == true)
 			F.https_enable.value = 1;
@@ -118,7 +118,7 @@ function to_submit(F) {
 	}
 	F.submit_button.value = "Management";
 	F.save_button.value = "Saved";
-	
+
 	F.action.value="Apply";
 	apply(F);
 }
@@ -132,7 +132,7 @@ function handle_https(F)
 		F._remote_mgt_https.checked = false;
 		choose_disable(F._remote_mgt_https);
 	}
-} 
+}
 
 function init() {
 	port_enable_disable(document.setup, '<% nvram_get("remote_management"); %>');
@@ -140,7 +140,7 @@ function init() {
 
 		</script>
 	</head>
-	
+
 	<body class="gui" onload="init()">
 		<% showad(); %>
 		<div id="wrapper">
@@ -218,7 +218,7 @@ function init() {
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>

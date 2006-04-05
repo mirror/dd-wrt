@@ -1,6 +1,6 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
-	<head>   
+	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %> - Sputnik Agent Status</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
@@ -74,7 +74,7 @@ function init() {
                      <dd class="definition">This screen displays the status of the Sputnik Agent process.</dd>
 
                      <dt class="term">Managed By: </dt>
-                     <dd class="definition">The Sputnik Control Center that this access point is connected to. </dd> 
+                     <dd class="definition">The Sputnik Control Center that this access point is connected to. </dd>
                      <dt class="term">State: </dt>
                      <dd class="definition">The current Agent status.</dd>
                      <dt class="term">SCC License No: </dt>
@@ -85,7 +85,7 @@ function init() {
             </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <% get_firmware_version(); %></div>
+					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
