@@ -518,17 +518,29 @@ function Capture(obj)
 
 
 function defined(val) {
-    return (typeof val != "undefined");
+	return (typeof val != "undefined");
+}
+
+function cleanTable(table) {
+	for(var i = table.rows.length - 1; i > 0; i--) table.deleteRow(i);
 }
 
 // Opens the help window at the right side of the screen.
-// 2DO: Would be nice to use frames it screenwidth > 1000
 function openHelpWindow(url) {
 	var top = 30;
 	var left = Math.floor(screen.availWidth * .66) - 10;
 	var width = Math.floor(screen.availWidth * .33);
 	var height = Math.floor(screen.availHeight * .9) - 30;
 	var win = window.open("help/" + url, 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	win.focus();
+}
+
+function openAboutWindow() {
+	var width = 400;
+	var height = 600;
+	var top = Math.floor((screen.availHeight - height - 10) / 2);
+	var left = Math.floor((screen.availWidth - width) / 2);
+	var win = window.open("About.htm", 'DDWRT_About', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=no,scrollbars=no,statusbar=no");
 	win.focus();
 }
 
@@ -545,14 +557,15 @@ function openWindow(url, width, height) {
 // Renders a nice meter with the percentage value
 function setMeterBar(id, fraq, text) {
 	if(isNaN(fraq)) fraq = 0;
-	fraq = Math.max(0, Math.min(100, Math.round(fraq)));
+	fraq = Math.max(0, Math.min(100, Math.round(fraq))) + "%";
 	var node = (typeof id == "string" ? document.getElementById(id) : id);
 	if(node.firstChild) {
-		node.firstChild.firstChild.style.width = fraq + "%";
-		node.firstChild.firstChild.firstChild.firstChild.data = fraq + "%";
+		node.firstChild.childNodes[0].style.width = fraq;
+		node.firstChild.childNodes[1].firstChild.data = fraq;
 		if(defined(text)) node.lastChild.data = text;
 	} else {
-		node.innerHTML = "<div class=\"meter\"><div class=\"bar\" style=\"width:" + fraq + "%;\"><div class=\"text\">" + fraq + "%</div></div></div>" + text;
+		node.innerHTML = '<div class="meter"><div class="bar" style="width:' + fraq + ';"></div>'
+			+ '<div class="text">' + fraq + '</div></div>' + (defined(text) ? text : "");
 	}
 }
 
@@ -665,8 +678,7 @@ function StatusUpdate(_url, _frequency) {
 	}
 }
 
-// 18/03/06 : Botho - Gray all form when submitting (thanks to Philip) - NOT OK YET !
-// 21/03/06 : Philip - now OK: disable AFTER submit.
+// Gray all form when submitting
 function apply(form) {
 	form.submit();
 	for (i = 0; i < form.elements.length; i++) {

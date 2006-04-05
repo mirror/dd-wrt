@@ -11,33 +11,26 @@ body {
 	font-family:	Verdana,Sans-serif;
 	font-size:		90%;
 }
-
 form {
 	margin:			0;
 	display:		inline;
 }
-
 input, select, option, button {
 	font-weight:	bold;
 }
-
 input.num {
 	width:			auto;
 }
-
 input.ipnum {
 	text-transform:	uppercase;
 	text-align:		center;
 }
-
 h1, h2, h3, h4, h5, h6, legend, label {
 	margin:			1em 0 0.5em 0;
 }
-
 legend, label {
 	 font-weight: bold;
 }
-
 sup {
 	font-size: 70%;
 }
@@ -59,30 +52,11 @@ table {
 }
 /*structure*/
 
-#container {
-	margin: 0;
-	padding: 0;
-}
-
-#mBody {
-	margin: 0;
-	padding: 0;
-}
-#side {
-	position: absolute;
-	left: 0;
-	top: 50px;
-	padding: 10px 15px;
-	width: 206px;
-	width: 176px;
-}
-
 #buttons {
 	padding-bottom:			20px;
 	margin-bottom:			20px;
 	border-bottom:			solid 3px;
 }
-
 #wrapper {
 	position:				absolute;
 	top:					0px;
@@ -91,7 +65,6 @@ table {
 	width:					100%;
 	margin:					0;
 }
-
 #header {
 	position:				absolute;
 	top:					0px;
@@ -101,34 +74,27 @@ table {
 	margin:					0;
 	padding:				0;
 }
-
 #header div.logo  {
 	margin-left:			30px;
 }
-
 #main {
 	height:					100%;
 	margin:					0;
-	margin-top2: 			80px;
 	margin-left: 			200px;
 	padding:				1.5em;
 	padding-top:			90px;
 }
-
 #content, #contentInfo {
 	margin:					0;
 	padding:				0;
 }
-
 #helpContainer {
 	display:				none;
 }
-
 #statusInfo {
 	display:				none;
 }
-
-#main .submitFooter {   /* philip: added #main */
+#main .submitFooter {
 	position:				absolute;
 	top:					85px;
 	left:					0px;
@@ -138,22 +104,21 @@ table {
 	margin:					0;
 	padding:				0;
 }
-
-#main .submitFooter input, /* philip: added #main */
+#main .submitFooter input,
 .submitFooterCmd input {
 	padding:				2px;
 	margin:					2px;	
 	width:					90%;
 }
-
 div.setting {
 	margin:					1px;
+	margin-top:				6px;
 	padding:				1px;	
 	padding-left:			0px;	
-	clear:both; /* philip: added clear:both; */
+	clear:both;
 }
 .label {
-	width:					10em;
+	width:					14em;
 	float:					left;
 }
 #menu {
@@ -162,12 +127,10 @@ div.setting {
 	left:				10px;
 	height:				2em;
 }
-
 #menu,#menuMain {
 	width:				180px;
 	max-width:			180px;
 }
-
 #menu {
 	border-top:			solid 2px;
 	padding-top:		1em;
@@ -175,12 +138,10 @@ div.setting {
 #menuMain {
 	border:				solid 1px;
 }
-
 #menu * {
 	margin:				0px;
 	padding:			0px;
 }
-
 #menuMainList li {
 	list-style:			none;
 	margin:				0;
@@ -216,34 +177,33 @@ div.setting {
 	background-image:	none;
 	border:				0;
 }
-
-/* philip: disabled
-* #contentsInfo {
-position:relative;
-z-index:0;
-padding:.906em;
-} */
-
+.warning {
+	color:#f00;
+	text-align:center;
+}
 .meter {
 	float:right;
 	position:relative;
-	top:-.09em;
-	height: 1.1em;
-	width: 14.49em;
+	height:16px;
+	width:220px;
 	background:#999;
-	border-style:solid;
-	border-width:.09em;
-	border-color:#666 #ccc #ccc #666;
+	border:solid 1px #999;
 }
 .meter .bar {
-	height: 1.1em;
+	height:16px;
 }
 .meter .text {
 	position:absolute;
 	top:0;
-	left:0;
-	width:14.49em;
+	width:100%;
+	height:16px;
 	text-align:center;
+	line-height:15px;
+}
+td .meter {
+	float:none !important;
+	margin-top:0 !important;
+	width:99% !important;
 }
 .progressbar {
 	visibility: visible;
