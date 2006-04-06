@@ -730,3 +730,21 @@ function apply(form) {
 	}
 
 } */
+
+
+// Botho 06/04/2006 : Function to resolve OUI names       TEST IN PROGRESS
+function openOUIWindow(mac_add) {
+	
+	var top = 30;
+	var left = Math.floor(screen.availWidth * .66) - 10;
+	var width = 450
+	var height = 400
+	var tab = new Array();
+	
+	var sep = mac_add.substr(2,1);
+	tab = mac_add.split(sep);
+
+	var win = window.open("http://standards.ieee.org/cgi-bin/ouisearch?" + tab[0] + '-' + tab[1] + '-' + tab[2], 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
+	win.focus();
+}
