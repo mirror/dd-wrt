@@ -1,8 +1,0 @@
-<fieldset>
-	<legend>MAC Masquerading</legend>
-	<div class="setting">
-	  <div class="label">Masquerade MAC Addresses (GUI)</div>
-	  <input type="radio" value="1" name="maskmac" <% nvram_match("maskmac","1","checked"); %> />Enable
-	  <input type="radio" value="0" name="maskmac" <% nvram_match("maskmac","0","checked"); %> />Disable
-	</div>
-</fieldset><br/>
