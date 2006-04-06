@@ -1,17 +1,17 @@
 @import url(../common.css); 
-#menusub, 
-#menumainlist li span, 
+#menuSub, 
+#menuMainList li span, 
 #help h2 { 
 background:#30519c; 
 color:#fff; 
 border-color:#496fc7; 
 } 
-#menusublist li a { 
+#menuSubList li a { 
 background:#496fc7; 
 color:#fff; 
 border-color:#6384cf; 
 } 
-#menusublist li a:hover { 
+#menuSubList li a:hover { 
 background:#6384cf; 
 color:#fff; 
 border-color:#849dd9; 
