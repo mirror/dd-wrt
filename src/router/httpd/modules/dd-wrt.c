@@ -3514,26 +3514,26 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 		ret += websWrite (wp, " checked=\"checked\"");
 	    }
 
-	  if (i < 17) {
-	  	ret += websWrite (wp, " onclick=");
-	    snprintf (buff, sizeof (buff),
-		      "\"SelVLAN(this.form,'port%d')\"", j);
-		ret += websWrite (wp, buff);
-	  }
-	  else if (i == 17) {
-	  	ret += websWrite (wp, " onclick=");
-	    snprintf (buff, sizeof (buff),
-		      "\"SelSpeed(this.form,'port%d')\"", j);
-		ret += websWrite (wp, buff);
-	  }
+	  if (i < 17)
+	    {
+	      ret += websWrite (wp, " onclick=");
+	      snprintf (buff, sizeof (buff),
+			"\"SelVLAN(this.form,'port%d')\"", j);
+	      ret += websWrite (wp, buff);
+	    }
+	  else if (i == 17)
+	    {
+	      ret += websWrite (wp, " onclick=");
+	      snprintf (buff, sizeof (buff),
+			"\"SelSpeed(this.form,'port%d')\"", j);
+	      ret += websWrite (wp, buff);
+	    }
 	  ret += websWrite (wp, " /></div></td>\n");
 	}
 
       if (i < 16)
 	{
-	  ret +=
-	    websWrite (wp,
-		       "			<td><select name=");
+	  ret += websWrite (wp, "			<td><select name=");
 	  snprintf (buff, 31, "\"vlan%d\"", i);
 	  ret += websWrite (wp, buff);
 	  ret += websWrite (wp, "><option value=\"-1\"");
@@ -3573,9 +3573,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   ret += websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 
   ret += websWrite (wp, "<tr>\n");
-  ret +=
-    websWrite (wp,
-	       "<td>Link Aggregation<br>on Ports 3 & 4</td>\n");
+  ret += websWrite (wp, "<td>Link Aggregation<br>on Ports 3 & 4</td>\n");
   ret +=
     websWrite (wp,
 	       "<td colspan=\"6\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
@@ -4730,22 +4728,22 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   int ip_count = 0;
   FILE *fp;
   int c;
-  int ret=0;
+  int ret = 0;
 
   fp = fopen ("/proc/net/ip_conntrack", "rb");
   if (fp == NULL)
     return -1;
   while (!feof (fp))
-  {
-    c = getc (fp);
-    if (c == EOF)
-      break;
-    if (c == 0xa)
-      ip_count++;
-  }
+    {
+      c = getc (fp);
+      if (c == EOF)
+	break;
+      if (c == 0xa)
+	ip_count++;
+    }
 
   ret = websWrite (wp, "%d", ip_count);
-  
+
   fclose (fp);
 
   return ret;

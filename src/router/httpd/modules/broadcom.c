@@ -1911,7 +1911,7 @@ Initnvramtab ()
 			  tmp->argv[i] = getFileString (in);
 			}
 		      tmp->argv[i] = NULL;
-		      nvram_set("sputnik_rereg","1");
+		      nvram_set ("sputnik_rereg", "1");
 		    }
 #endif
 		  if (!stricmp (tmpstr, "NOACK"))
@@ -2930,37 +2930,45 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      FWSHOW2
-	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"<%% port_forward_table(\"name\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+	 i);
+      port_forward_table (wp, "name", i);
+      websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"<%% port_forward_table(\"from\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"",
+	 i);
+      port_forward_table (wp, "from", i);
+      websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"<%% port_forward_table(\"to\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"",
+	 i);
+      port_forward_table (wp, "to", i);
+      websWrite (wp, "\"/></td>\n");
       FWSHOW1 ("<td><select size=\"1\" name=\"pro%d\">\n", i);
-      FWSHOW1
-	("<option value=\"tcp\" <%% port_forward_table(\"sel_tcp\",\"%d\"); %%>>TCP</option>\n",
-	 i);
-      FWSHOW1
-	("<option value=\"udp\" <%% port_forward_table(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
-	 i);
-      FWSHOW1
-	("<option value=\"both\" <%% port_forward_table(\"sel_both\",\"%d\"); %%>>Both</option>\n",
-	//("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%>>\" + share.both + \"</option>\");</script>\n",
-	 i);
+      websWrite (wp, "<option value=\"tcp\" ");
+      port_forward_table (wp, "sel_tcp", i);
+      websWrite (wp, ">TCP</option>\n");
+      websWrite (wp, "<option value=\"udp\" ");
+      port_forward_table (wp, "sel_udp", i);
+      websWrite (wp, ">UDP</option>\n");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" ");
+      port_forward_table (wp, "sel_both", i);
+      websWrite (wp, " >\" + share.both + \"</option>\");</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"<%% port_forward_table(\"ip\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
+	 i);
+      port_forward_table (wp, "ip", i);
+      websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" <%% port_forward_table(\"enable\",\"%d\"); %%> /></td>\n",
-	 i, i);
+      FWSHOW1 ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      port_forward_table (wp, "enable", i);
+      websWrite (wp, "/></td>\n");
       websWrite (wp, "</tr>\n");
     }
   return 1;
@@ -2997,37 +3005,45 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
   for (i = 0; i < c; i++)
     {
       websWrite (wp, "<tr><td>\n");
-      FWSHOW2
-	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"<%% port_forward_spec(\"name\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value=\"",
+	 i);
+      port_forward_spec (wp, "name", i);
+      websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"<%% port_forward_spec(\"from\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"from%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"",
+	 i);
+      port_forward_spec (wp, "from", i);
+      websWrite (wp, "\" /></td>\n");
       FWSHOW1 ("<td><select size=\"1\" name=\"pro%d\">\n", i);
-      FWSHOW1
-	("<option value=\"tcp\" <%% port_forward_spec(\"sel_tcp\",\"%d\"); %%>>TCP</option>\n",
-	 i);
-      FWSHOW1
-	("<option value=\"udp\" <%% port_forward_spec(\"sel_udp\",\"%d\"); %%>>UDP</option>\n",
-	 i);
-      FWSHOW1
-    ("<option value=\"both\" <%% port_forward_spec(\"sel_both\",\"%d\"); %%>>Both</option>\n",
-	//("<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" <%% port_forward_table(\"sel_both\",\"%d\"); %%>>\" + share.both + \"</option>\");</script>\n",
-	 i);
+      websWrite (wp, "<option value=\"tcp\" ");
+      port_forward_spec (wp, "sel_tcp", i);
+      websWrite (wp, ">TCP</option>\n");
+      websWrite (wp, "<option value=\"udp\" ");
+      port_forward_spec (wp, "sel_udp", i);
+      websWrite (wp, ">UDP</option>\n");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">document.write(\"<option value=\\\"both\\\" ");
+      port_forward_spec (wp, "sel_both", i);
+      websWrite (wp, " >\" + share.both + \"</option>\");</script>\n");
       websWrite (wp, "</select></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"<%% port_forward_spec(\"ip\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input class=\"num\" maxlength=\"15\" size=\"15\" name=\"ip%d\" value=\"",
+	 i);
+      port_forward_spec (wp, "ip", i);
+      websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"<%% port_forward_spec(\"to\",\"%d\"); %%>\" /></td>\n",
-	 i, i);
+      FWSHOW1
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"to%d\" onblur=\"valid_range(this,0,65535,'Port')\" value=\"",
+	 i);
+      port_forward_spec (wp, "to", i);
+      websWrite (wp, "\" /></td>\n");
       websWrite (wp, "<td>\n");
-      FWSHOW2
-	("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" <%% port_forward_spec(\"enable\",\"%d\"); %%> /></td>\n",
-	 i, i);
+      FWSHOW1 ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
+      port_forward_spec (wp, "enable", i);
+      websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
     }
   return 1;
@@ -3097,20 +3113,24 @@ static int
 ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 {
 //<option value="blue" <% nvram_selected("router_style", "blue"); %>>Blue</option>
-DIR *directory;
-char buf[256];
-directory = opendir ("/www/style");
-struct dirent *entry;
-while ((entry = readdir (directory)) != NULL)
+  DIR *directory;
+  char buf[256];
+  directory = opendir ("/www/style");
+  struct dirent *entry;
+  while ((entry = readdir (directory)) != NULL)
     {
-    sprintf(buf,"/www/style/%s/style.css",entry->d_name);
-    FILE *test=fopen(buf,"rb");
-    if (test==NULL)continue;
-    fclose(test);
-    websWrite(wp,"<option value=\"%s\" %s>%s</option>\n",entry->d_name,nvram_match("router_style",entry->d_name)?"selected":"",entry->d_name);    
+      sprintf (buf, "/www/style/%s/style.css", entry->d_name);
+      FILE *test = fopen (buf, "rb");
+      if (test == NULL)
+	continue;
+      fclose (test);
+      websWrite (wp, "<option value=\"%s\" %s>%s</option>\n", entry->d_name,
+		 nvram_match ("router_style",
+			      entry->d_name) ? "selected" : "",
+		 entry->d_name);
     }
-closedir (directory);    
-return 0;
+  closedir (directory);
+  return 0;
 }
 
 static int
@@ -3463,7 +3483,8 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");}
+		 websSetRealm ("DD-WRT Router OS Core");
+		 }
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3901,8 +3922,8 @@ struct ej_handler ej_handlers[] = {
   {"filter_web_get", ej_filter_web_get},
   {"filter_port_services_get", ej_filter_port_services_get},
   /* for forward */
-  {"port_forward_table", ej_port_forward_table},
-  {"port_forward_spec", ej_port_forward_spec},
+//  {"port_forward_table", ej_port_forward_table},
+//  {"port_forward_spec", ej_port_forward_spec},
 // changed by steve
   //{"forward_upnp", ej_forward_upnp},
 // end changed by steve

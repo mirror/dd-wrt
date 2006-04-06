@@ -538,22 +538,13 @@ validate_forward_spec (webs_t wp, char *value, struct variable *v)
  */
 
 int
-ej_port_forward_table (int eid, webs_t wp, int argc, char_t ** argv)
+port_forward_table (webs_t wp, char *type, int which)
 {
-  char *type;
-  int which;
-
   static char word[256];
   char *next, *wordlist;
   char *name, *from, *to, *proto, *ip, *enable;
   static char new_name[200];
   int temp;
-
-  if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return -1;
-    }
 
   wordlist = nvram_safe_get ("forward_port");
   temp = which;
@@ -638,8 +629,10 @@ ej_port_forward_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  }
       }
   }
-  if (!strcmp (type, "from") || !strcmp (type, "to") || !strcmp (type, "ip"))
+  if (!strcmp (type, "from") || !strcmp (type, "to"))
     return websWrite (wp, "0");
+  else if (!strcmp (type, "ip"))
+    return websWrite (wp, "0.0.0.0");
   else if (!strcmp (type, "sel_both"))
     return websWrite (wp, "selected");
   else
@@ -648,23 +641,13 @@ ej_port_forward_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 int
-ej_port_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
+port_forward_spec (webs_t wp, char *type, int which)
 {
-  char *type;
-  int which;
-
   static char word[256];
   char *next, *wordlist;
   char *name, *from, *to, *proto, *ip, *enable;
   static char new_name[200];
   int temp;
-
-  if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return -1;
-    }
-
   wordlist = nvram_safe_get ("forward_spec");
   temp = which;
 
@@ -749,8 +732,10 @@ ej_port_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
 	  }
       }
   }
-  if (!strcmp (type, "from") || !strcmp (type, "to") || !strcmp (type, "ip"))
+  if (!strcmp (type, "from") || !strcmp (type, "to"))
     return websWrite (wp, "0");
+  else if (!strcmp (type, "ip"))
+    return websWrite (wp, "0.0.0.0");
   else if (!strcmp (type, "sel_both"))
     return websWrite (wp, "selected");
   else
