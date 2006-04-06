@@ -853,14 +853,14 @@ static struct ipt_match ipp2p_match = {
 
 static int __init init(void)
 {
-//    printk(KERN_INFO "IPP2P v%s loading\n", IPP2P_VERSION);
+    printk(KERN_INFO "IPP2P v%s loading\n", IPP2P_VERSION);
     return ipt_register_match(&ipp2p_match);
 }
 	
 static void __exit fini(void)
 {
     ipt_unregister_match(&ipp2p_match);
-//    printk(KERN_INFO "IPP2P v%s unloaded\n", IPP2P_VERSION);    
+    printk(KERN_INFO "IPP2P v%s unloaded\n", IPP2P_VERSION);    
 }
 	
 module_init(init);
