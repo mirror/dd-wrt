@@ -92,7 +92,7 @@ function upgrade(F,id) {
 								</div>
 								<div class="setting">
 									<div class="label">After flashing, reset to</div>
-									<input type="radio" value="0" name="erase" checked="checked" />No reset&nbsp;
+									<input type="radio" value="0" name="erase" checked />No reset&nbsp;
 									<input type="radio" value="1" name="erase" />Default settings
 								</div>
 							</fieldset><br />
