@@ -169,7 +169,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">LAN MAC</div>
-									<span id="lan_mac"><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+									<span id="lan_mac" style="cursor:pointer" title="OUI search" onclick="openOUIWindow('<% nvram_get("lan_hwaddr"); %>')"><% nvram_get("lan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WAN MAC</div>
