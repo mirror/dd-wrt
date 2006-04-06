@@ -111,7 +111,7 @@ CFLAGS += -DHAVE_MACBIND
 endif
 
 ifeq ($(CONFIG_OMNI),y)
-CFLAGS += -DANTI_OMNI
+CFLAGS += -DHAVE_OMNI
 endif
 
 ifeq ($(CONFIG_ZEROIP),y)
