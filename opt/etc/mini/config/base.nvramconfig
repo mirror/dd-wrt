@@ -218,3 +218,4 @@
  "filter_p2p" "p2p filter" "FILTERP2P" "FALSE" "0"
  "maskmac"  "mac masquerading"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
  "refresh_time" "Auto-Refresh" "NULL" "TRUE" "0"
+ "radius_override" "radius override" "NULL" "FALSE" "0"
