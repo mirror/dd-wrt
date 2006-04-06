@@ -12,7 +12,7 @@
 	</div>
 	<div class="setting">
 		<div class="label">HTTP Destination Port</div>
-		<input size="5" maxlength="5" class="num" name="http_redirect_port" value='<% nvram_get("http_redirect_port"); %>' />
+		<input size="5" maxlength="5" class="num" name="http_redirect_port" onBlur="valid_range(this,1,65535,'HTTP Redirect Port')" value='<% nvram_get("http_redirect_port"); %>' />
 	</div>
 	<div class="setting">
 		<div class="label">HTTP Source Network</div>
