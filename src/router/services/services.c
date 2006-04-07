@@ -2957,7 +2957,7 @@ stop_l2tp (void)
   return ret;
 }
 
-
+#ifdef HAVE_MULTICAST
 int
 start_igmp_proxy (void)
 {
@@ -2984,7 +2984,7 @@ stop_igmp_proxy (void)
   cprintf ("done\n");
   return ret;
 }
-
+#endif
 
 
 

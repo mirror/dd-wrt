@@ -1481,8 +1481,10 @@ start_wan_done (char *wan_ifname)
   /* Start firewall */
   start_firewall ();
   cprintf ("start icmp proxy\n");
+#ifdef HAVE_MULTICAST
   stop_igmp_proxy ();
   start_igmp_proxy ();
+#endif
   cprintf ("ready\n");
 
 
@@ -1694,7 +1696,7 @@ stop_wan (void)
   stop_pptp ();
 #endif
 #ifdef HAVE_SPUTNIK_APD
-  stop_service("apd");
+  stop_sputnik();
 #endif
   stop_ntp ();
   stop_redial ();
