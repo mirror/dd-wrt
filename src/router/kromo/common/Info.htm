@@ -239,6 +239,7 @@ addEvent(window, "unload", function() {
 									<span id="wrt_radauth"><% nvram_invmatch("wl_mode", "ap", "only&nbsp;AP&nbsp;Mode<!--"); %><% nvram_match("wl_radauth","0","Disabled"); %><% nvram_match("wl_radauth","1","Active"); %><% nvram_invmatch("wl_mode", "ap", "-->"); %></span>&nbsp;
 								</div>
 								<% nvram_match("dist_type", "mini", "<!--"); %>
+								<% nvram_match("dist_type", "micro", "<!--"); %>
 								<div class="setting">
 									<div class="label">WRT-rflow</div>
 									<span id="wrt_rflow"><% nvram_match("rflow_enable","0","Disabled"); %><% nvram_match("rflow_enable","1","Enabled"); %></span>&nbsp;
@@ -251,6 +252,7 @@ addEvent(window, "unload", function() {
 									<div class="label">Samba Mount</div>
 									<span id="smb_mount"><% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Enabled"); %></span>&nbsp;
 								</div>
+								<% nvram_match("dist_type", "micro", "-->"); %>
 								<% nvram_match("dist_type", "mini", "-->"); %>
 							</fieldset><br />
 							<fieldset>
