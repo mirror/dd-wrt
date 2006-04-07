@@ -166,7 +166,9 @@ function init() {
 											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
 											<li><a href="ForwardSpec.asp"><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></a></li>
 											<li><a href="Triggering.asp"><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></a></li>
-	  										<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<% nvram_match("dist_type", "micro", "<!--"); %>
+											<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<% nvram_match("dist_type", "micro", "-->"); %>
 											<li><a href="DMZ.asp"><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></a></li>
 											<li><span><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></span></li>
 										</ul>
@@ -227,7 +229,7 @@ function init() {
 									<tr>
 										<td>&nbsp;</td>
 										<td colspan="2"><input type="button" name="add_svc_button" value="Add" onclick="svc_add_submit(this.form)"/>&nbsp;&nbsp;&nbsp;<select name="add_svc">
-										<script language="Javascript">
+										<script type="text/javascript">
 										var i=0;
 										for(i=0;i<services_length;i++)
 										document.write("<option value="+services[i].name+">"+services[i].name+ " [ "+
