@@ -539,7 +539,7 @@ parse_upnp_forward ()
     }
 
   /* Set wan_port0-wan_port1>lan_ipaddr:lan_port0-lan_port1,proto,enable,desc */
-  for (i = 0; i < 15; i++)
+  for (i = 0; i < 50; i++)
     {
       snprintf (name, sizeof (name), "forward_port%d", i);
 
