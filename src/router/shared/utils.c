@@ -181,8 +181,10 @@ internal_getRouterBrand ()
   }
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "bcm94710dev"))
+    {
+    setRouter ("Linksys WRT54G 1.x");
     return ROUTER_WRT54G1X;
-
+    }
   if (nvram_invmatch ("CFEver", ""))
     {
       char *cfe = nvram_safe_get ("CFEver");
