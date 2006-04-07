@@ -47,7 +47,9 @@ addEvent(window, "load", function() {
 											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
 											<li><a href="ForwardSpec.asp"><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></a></li>
 											<li><a href="Triggering.asp"><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></a></li>
-	  										<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<% nvram_match("dist_type", "micro", "<!--"); %>
+											<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<% nvram_match("dist_type", "micro", "-->"); %>
 	  										<li><span><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></span></li>
 	  										<li><a href="QoS.asp"><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></a></li>
 										</ul>
