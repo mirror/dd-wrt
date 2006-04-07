@@ -1297,6 +1297,8 @@ sputnik-clean:
 sputnik-install:
 	mkdir -p $(INSTALLDIR)/sputnik/etc/config
 	cp -fpR sputnik/config/* $(INSTALLDIR)/sputnik/etc/config
+	mkdir -p $(INSTALLDIR)/sputnik/www/images
+	cp -fpR sputnik/images/* $(INSTALLDIR)/sputnik/www/images
 	install -D sputnik/sputnik $(INSTALLDIR)/sputnik/usr/sbin/sputnik
 	install -D sputnik/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
 
