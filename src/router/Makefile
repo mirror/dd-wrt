@@ -253,7 +253,7 @@ endif
 	# quick n dirty - stuff Nikki's module where it belongs
 	#mkdir $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996
 	if [ "$(CONFIG_MMC)" = "y" ] ; then \
-	mkdir $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/mmc ; \
+	mkdir -p $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/mmc ; \
 	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.33-pre2/kernel/fs/mmc ; \
 	fi ; 
 #ifeq ($(CONFIG_MSSID),y)
