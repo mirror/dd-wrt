@@ -44,9 +44,11 @@ endif
 ifeq ($(CONFIG_MADWIFI),y)
 CFLAGS += -DHAVE_MADWIFI
 endif
-ifeq ($(CONFIG_MMC),y)
-CFLAGS += -DHAVE_MMC
+
+ifeq ($(CONFIG_MULTICAST),y)
+CFLAGS += -DHAVE_MULTICAST
 endif
+
 ifeq ($(CONFIG_FON),y)
 CFLAGS += -DHAVE_FON
 endif

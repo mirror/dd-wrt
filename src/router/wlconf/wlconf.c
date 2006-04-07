@@ -637,6 +637,7 @@ wlconf(char *name)
 	if( wl_ap_build ) {	
 		/* Enable MSSID mode if appropriate */
 		WL_IOVAR_SETINT(name, "mssid", (bclist->count > 1));
+		WL_IOVAR_SETINT(name, "mssid_extended", (bclist->count > 1));
 
 		/*
 		 * Set SSID for each BSS Config
@@ -652,6 +653,7 @@ wlconf(char *name)
 			WLCONF_DBG("wlconfig(%s): configuring bsscfg #%d (%s) with SSID \"%.*s\"\n",
 								 name, bsscfg->idx, bsscfg->ifname, ssid.SSID_len, ssid.SSID);
 			WL_BSSIOVAR_SET(name, "ssid", bsscfg->idx, &ssid, sizeof(ssid));
+			sleep(1);
 		}
 	}
 
