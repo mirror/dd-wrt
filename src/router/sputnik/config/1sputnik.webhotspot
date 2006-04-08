@@ -14,7 +14,7 @@
 		<input type="radio" name="sputnik_mjid_type" value="1" <% nvram_selmatch("sputnik_mjid_type", "1", "checked"); %> />Use SputnikNet Express<br />
 	</div>
 	<div class="setting">	
-		<div class="label"><a href="http://www.sputnik.com/products/ddwrt.html">Learn more</a> about Sputnik</div>
+		<div class="label"><a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a> about Sputnik</div>
 		<br />
 		<img src="images/sputnik.gif"/>
 	</div>
