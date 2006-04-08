@@ -30,7 +30,7 @@ RELEASE_DIR:=/tmp
 
 LD=mipsel-linux-uclibc-ld
 CC=mipsel-linux-uclibc-gcc
-COPT_FLAGS:=-Os -mtune=mips32 -pipe -mips32
+COPT_FLAGS:=-Os -mtune=mips32 -pipe -mips32 -funit-at-a-time
 CFLAGS:=$(COPT_FLAGS) -Wall -Wunused -I$(KERNEL_DIR)/include -Iinclude/ -DIPTABLES_VERSION=\"$(IPTABLES_VERSION)\" #-g -DDEBUG #-pg # -DIPTC_DEBUG
 
 ifdef NO_SHARED_LIBS
