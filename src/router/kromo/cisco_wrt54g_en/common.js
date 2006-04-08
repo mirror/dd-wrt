@@ -733,18 +733,42 @@ function apply(form) {
 
 
 // Botho 06/04/2006 : Function to resolve OUI names       TEST IN PROGRESS
-function openOUIWindow(mac_add) {
+function getOUIFromMAC(mac) {
 	
 	var top = 30;
 	var left = Math.floor(screen.availWidth * .66) - 10;
 	var width = 450
 	var height = 400
 	var tab = new Array();
-	
-	var sep = mac_add.substr(2,1);
-	tab = mac_add.split(sep);
 
-	var win = window.open("http://standards.ieee.org/cgi-bin/ouisearch?" + tab[0] + '-' + tab[1] + '-' + tab[2], 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	tab = mac.split(mac.substr(2,1));
+
+	var win = window.open("http://standards.ieee.org/cgi-bin/ouisearch?" + tab[0] + '-' + tab[1] + '-' + tab[2], 'DDWRT_OUI_Search', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
 	addEvent(window, "unload", function() { if(!win.closed) win.close(); });
 	win.focus();
 }
+
+/*
+// Botho 08/04/2006 : Philip's work about OUI search but for testing ONLY
+function getOUIFromMAC1(mac) {
+	var request;
+	var tab = mac.split(mac.substr(2, 1));
+	if(window.XMLHttpRequest) request = new XMLHttpRequest();
+	if(window.ActiveXObject) request = new ActiveXObject("Microsoft.XMLHTTP");
+	var error = false;
+	try {
+		if(typeof netscape != 'undefined') netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
+		request.open("GET", "http://standards.ieee.org/cgi-bin/ouisearch?" + tab[0] + '-' + tab[1] + '-' + tab[2], false);
+		request.send("");
+	} catch(e) {
+		alert("OUI search failed!\nAre you connected to the internet?\nDid you give the right priviliges (please read the help files)?");
+		return;
+	}
+	if(!request.responseText.match(/<pre>([\s\S]*)<\/pre>/)) {
+		alert("OUI search was successful.\nBut " + tab.join(":") + " is not listed in the public section of the IEEE OUI database.\n\n");
+		return;
+	}
+	var orga = RegExp.$1.replace(/.*\t+/g, '').replace(/.*\n/, '');
+	alert("OUI search was successful.\nAccording to the IEEE OUI database, " + tab.join(":") + " belongs to:\n\n" + orga);
+}
+*/
