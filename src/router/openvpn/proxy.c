@@ -38,6 +38,7 @@
 #include "socket.h"
 #include "fdmisc.h"
 #include "proxy.h"
+#include "base64.h"
 #include "ntlm.h"
 
 #include "memdbg.h"
@@ -192,42 +193,12 @@ send_crlf (socket_descriptor_t sd)
 uint8_t *
 make_base64_string2 (const uint8_t *str, int src_len, struct gc_arena *gc)
 {
-  static const char base64_table[] =
-    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-
-  uint8_t *buf;
-  const uint8_t *src;
-  uint8_t *dst;
-  int bits, data, dst_len;
-
-  /* make base64 string */
-  dst_len = (src_len + 2) / 3 * 4;
-  buf = gc_malloc (dst_len + 1, false, gc);
-  bits = data = 0;
-  src = str;
-  dst = buf;
-  while (dst_len--)
-    {
-      if (bits < 6)
-	{
-	  data = (data << 8) | *src;
-	  bits += 8;
-	  src++;
-	}
-      *dst++ = base64_table[0x3F & (data >> (bits - 6))];
-      bits -= 6;
-    }
-  *dst = '\0';
-
-  /* fix-up tail padding */
-  switch (src_len % 3)
-    {
-    case 1:
-      *--dst = '=';
-    case 2:
-      *--dst = '=';
-    }
-  return buf;
+  uint8_t *ret = NULL;
+  char *b64out = NULL;
+  ASSERT (base64_encode ((const void *)str, src_len, &b64out) >= 0);
+  ret = (uint8_t *) string_alloc (b64out, gc);
+  free (b64out);
+  return ret;
 }
 
 uint8_t *

@@ -1564,7 +1564,7 @@ management_io (struct management *man)
 
 #endif
 
-inline bool
+static inline bool
 man_standalone_ok (const struct management *man)
 {
   return !man->settings.management_over_tunnel && man->connection.state != MS_INITIAL;
@@ -1794,6 +1794,16 @@ bool
 management_would_hold (struct management *man)
 {
   return man->settings.hold && !man->persist.hold_release && man_standalone_ok (man);
+}
+
+/*
+ * Return true if (from the management interface's perspective) OpenVPN should
+ * daemonize.
+ */
+bool
+management_should_daemonize (struct management *man)
+{
+  return management_would_hold (man) || man->settings.up_query_passwords;
 }
 
 /*
