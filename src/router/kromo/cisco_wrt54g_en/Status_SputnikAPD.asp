@@ -40,7 +40,7 @@ function init() {
                                  <% nvram_invmatch("status_auth","1","<!--"); %>
 								 <li><a href="Info.htm">Sys-Info</a></li>
 								 <% nvram_invmatch("status_auth","1","-->"); %>
-                                 <li><span>Sputnik&copy; Agent</span></li>
+                                 <li><span>Sputnik Agent</span></li>
                               </ul>
                            </div>
                         </li>
@@ -50,8 +50,9 @@ function init() {
             </div>
             <div id="main">
 	      <div id="contents">
-		  <h2>Sputnik&reg; Agent&trade; Information</h2>
-                     <div>
+		  <h2>Sputnik&reg; Agent&trade;</h2>
+                     <fieldset>
+			<legend>Information</legend>
                         <div class="setting">
                            <div class="label">Managed By</div><% sputnik_apd_status("scc_server"); %>
                         </div>
@@ -61,7 +62,7 @@ function init() {
                         <div class="setting">
                            <div class="label">SCC License No.</div><% sputnik_apd_status("lsk_serial"); %>
                         </div>
-            	    </div>
+            	    </fieldset>
 		</div>
             </div>
             <div id="helpContainer">
@@ -80,7 +81,7 @@ function init() {
                      <dt class="term">SCC License No: </dt>
                      <dd class="definition">The license number of your Sputnik Control Center.</dd>
                   </dl><br />
-                  <a href="javascript:openHelpWindow('HSputnikStatus.asp')">More...</a>
+                  <!--<a href="javascript:openHelpWindow('HSputnikStatus.asp')">More...</a>-->
                </div>
             </div>
 				<div id="floatKiller"></div>
