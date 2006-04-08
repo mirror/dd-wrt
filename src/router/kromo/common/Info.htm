@@ -20,7 +20,18 @@ function setWirelessTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 4) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = val[i];
+		
+		var mac = val[i];
+		if ("<% nvram_get("maskmac"); %>" != "1") {
+		  var cellmac = row.insertCell(-1);
+		  cellmac.title = "OUI search";
+		  cellmac.style.cursor = "pointer";
+		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		  cellmac.innerHTML = mac;
+		} else {
+		  row.insertCell(-1).innerHTML = mac;		 
+		}
+
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
@@ -131,7 +142,8 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content" class="infopage">
 				<div id="header">
@@ -169,15 +181,15 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">LAN MAC</div>
-									<span id="lan_mac" style="cursor:pointer" title="OUI search" onclick="openOUIWindow('<% nvram_get("lan_hwaddr"); %>')"><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+									<span id="lan_mac" style="cursor:pointer" title="OUI search" onclick="getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')"><% nvram_get("lan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WAN MAC</div>
-									<span id="wan_mac"><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									<span id="wan_mac" style="cursor:pointer" title="OUI search" onclick="getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')"><% nvram_get("wan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">Wireless MAC</div>
-									<span id="wl_mac"><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
+									<span id="wl_mac" style="cursor:pointer" title="OUI search" onclick="getOUIFromMAC('<% nvram_get("wl0_hwaddr"); %>')"><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
 							<fieldset>
