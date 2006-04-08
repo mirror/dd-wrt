@@ -202,6 +202,7 @@ helper_client_server (struct options *o)
 	  o->ifconfig_pool_defined = true;
 	  o->ifconfig_pool_start = o->server_network + 4;
 	  o->ifconfig_pool_end = (o->server_network | ~o->server_netmask) - pool_end_reserve;
+	  ifconfig_pool_verify_range (M_USAGE, o->ifconfig_pool_start, o->ifconfig_pool_end);
 	  helper_add_route (o->server_network, o->server_netmask, o);
 	  if (o->enable_c2c)
 	    push_option (o, print_opt_route (o->server_network, o->server_netmask, &o->gc), M_USAGE);
@@ -210,7 +211,7 @@ helper_client_server (struct options *o)
 	}
       else if (dev == DEV_TYPE_TAP)
 	{
-	  if (netbits >= 30)
+	  if (netbits > 30)
 	    msg (M_USAGE, "--server directive when used with --dev tap must define a subnet of %s or lower",
 		 print_netmask (30, &gc));
 
@@ -221,6 +222,7 @@ helper_client_server (struct options *o)
 	  o->ifconfig_pool_defined = true;
 	  o->ifconfig_pool_start = o->server_network + 2;
 	  o->ifconfig_pool_end = (o->server_network | ~o->server_netmask) - 1;
+	  ifconfig_pool_verify_range (M_USAGE, o->ifconfig_pool_start, o->ifconfig_pool_end);	  
 	  o->ifconfig_pool_netmask = o->server_netmask;
 	  push_option (o, print_opt_route_gateway (o->server_network + 1, &o->gc), M_USAGE);
 	}
@@ -269,6 +271,7 @@ helper_client_server (struct options *o)
       o->ifconfig_pool_defined = true;
       o->ifconfig_pool_start = o->server_bridge_pool_start;
       o->ifconfig_pool_end = o->server_bridge_pool_end;
+      ifconfig_pool_verify_range (M_USAGE, o->ifconfig_pool_start, o->ifconfig_pool_end);
       o->ifconfig_pool_netmask = o->server_bridge_netmask;
       push_option (o, print_opt_route_gateway (o->server_bridge_ip, &o->gc), M_USAGE);
 
