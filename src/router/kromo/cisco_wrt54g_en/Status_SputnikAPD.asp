@@ -37,10 +37,10 @@ function init() {
                                  <li><a href="Status_Router.asp">Router</a></li>
                                  <li><a href="Status_Lan.asp">LAN</a></li>
                                  <li><a href="Status_Wireless.asp">Wireless</a></li>
-                                 <% nvram_invmatch("status_auth","1","<!--"); %>
-								 <li><a href="Info.htm">Sys-Info</a></li>
-								 <% nvram_invmatch("status_auth","1","-->"); %>
                                  <li><span>Sputnik Agent</span></li>
+                                 <% nvram_invmatch("status_auth","1","<!--"); %>
+                                 <li><a href="Info.htm">Sys-Info</a></li>
+                                 <% nvram_invmatch("status_auth","1","-->"); %>
                               </ul>
                            </div>
                         </li>
