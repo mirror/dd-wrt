@@ -695,11 +695,6 @@ handle_request (void)
 
     }
 #endif
-  /* extract url args if present */
-  //query = strchr(file, '?');
-  //if (query) {
-  //  *query++ = 0;
-  //}
 
 #ifdef HAVE_MACBIND
 
@@ -800,6 +795,11 @@ handle_request (void)
     }
   else
     {
+  /* extract url args if present */
+  query = strchr(file, '?');
+  if (query) {
+    *query++ = 0;
+  }
       for (handler = &mime_handlers[0]; handler->pattern; handler++)
 	{
 	  if (match (handler->pattern, file))
