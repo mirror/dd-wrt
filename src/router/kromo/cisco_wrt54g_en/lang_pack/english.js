@@ -1,11 +1,11 @@
-/* Not working in IE & Opera ?
+// Not working in IE & Opera ?
 //************ Include the current language file after english.js ************//
-  var Head = document.getElementsByTagName('head')[0];
-  var head_inc = document.createElement('script');
-  head_inc.setAttribute('type','text/javascript');
-  head_inc.setAttribute('src',"lang_pack/language.js");
-  Head.appendChild(head_inc);
-*/
+//  var Head = document.getElementsByTagName('head')[0];
+//  var head_inc = document.createElement('script');
+//  head_inc.setAttribute('type','text/javascript');
+//  head_inc.setAttribute('src',"lang_pack/language.js");
+//  Head.appendChild(head_inc);
+
 
 // ************************************************************ COMMON SHARE LABEL ***************************************************************//
 var lang_charset = new Object();
