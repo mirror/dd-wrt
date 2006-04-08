@@ -881,7 +881,7 @@ show_remote_list (const struct remote_list *l)
 }
 #endif
 
-#if defined(ENABLE_HTTP_PROXY) && defined (ENABLE_DEBUG)
+#if defined(ENABLE_HTTP_PROXY) && defined(ENABLE_DEBUG)
 static void
 show_http_proxy_options (const struct http_proxy_options *o)
 {
@@ -3659,17 +3659,8 @@ add_option (struct options *options,
 	  msg (msglevel, "error parsing --ifconfig-pool parameters");
 	  goto err;
 	}
-      if (start > end)
-	{
-	  msg (msglevel, "--ifconfig-pool start IP is greater than end IP");
-	  goto err;
-	}
-      if (end - start >= IFCONFIG_POOL_MAX)
-	{
-	  msg (msglevel, "--ifconfig-pool address range is too large.  Current maximum is %d addresses.",
-	       IFCONFIG_POOL_MAX);
-	  goto err;
-	}
+      if (!ifconfig_pool_verify_range (msglevel, start, end))
+	goto err;
 
       options->ifconfig_pool_defined = true;
       options->ifconfig_pool_start = start;

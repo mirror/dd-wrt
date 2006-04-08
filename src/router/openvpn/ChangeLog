@@ -1,8 +1,69 @@
 OpenVPN
 Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
 
-$Id: ChangeLog 765 2005-11-03 01:21:44Z james $
+$Id: ChangeLog 873 2006-01-03 09:45:59Z james $
 
+2006.04.05 -- Version 2.0.6
+
+* Security Vulnerability affecting OpenVPN 2.0 through 2.0.5.
+  An OpenVPN client connecting to a
+  malicious or compromised server could potentially receive
+  "setenv" configuration directives from the server which could
+  cause arbitrary code execution on the client via a LD_PRELOAD
+  attack.  A successful attack appears to require that (a) the
+  client has agreed to allow the server to push configuration
+  directives to it by including "pull" or the macro "client" in
+  its configuration file, (b) the client configuration file uses
+  a scripting directive such as "up" or "down", (c) the client
+  succesfully authenticates the server, (d) the server is
+  malicious or has been compromised and is under the control of
+  the attacker, and (e) the attacker has at least some level of
+  pre-existing control over files on the client (this might be
+  accomplished by having the server respond to a client web
+  request with a specially crafted file).
+  The fix is to disallow "setenv" to be pushed to clients from
+  the server.  For those who need this capability, OpenVPN
+  2.1 supports a new "setenv-safe" directive which is free
+  of this vulnerability.
+
+* When deleting routes under Linux, use the route metric
+  as a differentiator to ensure that the route teardown
+  process only deletes the identical route which was originally
+  added via the "route" directive (Roy Marples).
+
+* Fix the t_cltsrv.sh file in FreeBSD 4 jails
+  (Matthias Andree, Dirk Meyer, Vasil Dimov).
+
+* Extended tun device configure code to support ethernet
+  bridging on NetBSD (Emmanuel Kasper).
+
+2006.01.03 -- Version 2.0.6-rc1
+	
+* Fixed bug where "make check" inside a FreeBSD "jail"
+  would never complete (Matthias Andree).
+* Fixed bug where --server directive in --dev tap mode
+  claimed that it would support subnets of /30 or less
+  but actually would only accept /29 or less.
+* Extend byte counters to 64 bits (M. van Cuijk).
+* Fixed bug in acinclude.m4 where capability of compiler
+  to handle zero-length arrays in structs is tested
+  (David Stipp).
+* Fixed typo in manage.c where inline function declaration
+  was declared without the "static" keyword (David Stipp).
+* Removed redundant base64 code.
+* Better sanity checking of --server and --server-bridge
+  IP pool ranges, so as not to hit the assertion at
+  pool.c:119 (2.0.5).
+* Fixed bug where --daemon and --management-query-passwords
+  used together would cause OpenVPN to block prior to
+  daemonization.
+* Fixed client/server race condition which could occur
+  when --auth-retry interact is set and the initially
+  provided auth-user-pass credentials are incorrect,
+  forcing a username/password re-query.
+* Fixed bug where if --daemon and --management-hold are
+  used together, --user or --group options would be ignored.
+	
 2005.11.02 -- Version 2.0.5
 
 * Fixed bug in Linux get_default_gateway function
