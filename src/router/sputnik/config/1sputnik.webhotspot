@@ -1,5 +1,6 @@
 	<fieldset>
 	<legend>Sputnik</legend>
+	<div class="center"><img src="images/sputnik.gif" /></div><br />
 	<div class="setting">
 		<div class="label">Sputnik Agent</div>
 		<input type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> />Enable
@@ -15,11 +16,9 @@
 	</div>
 	<div class="setting">	
 		<div class="label">&nbsp; </div>
-		<input type="radio" name="sputnik_mjid_type" value="2" <% nvram_selmatch("sputnik_mjid_type", "2", "checked"); %> />Use&nbsp; <input class="text" maxLength="100" size="25" name="sputnik_mjid" value='<% nvram_get("sputnik_mjid"); %>' /><br />
+		<input type="radio" name="sputnik_mjid_type" value="2" <% nvram_selmatch("sputnik_mjid_type", "2", "checked"); %> />Use&nbsp; <input class="text" maxLength="100" size="25" name="sputnik_mjid" value='<% nvram_get("sputnik_mjid"); %>' />
 	</div>
-	<div class="setting">	
-		<div class="label"><a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a> about Sputnik</div>
-		<br />
-		<img src="images/sputnik.gif"/>
+	<div class="center">
+		<a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a> about Sputnik
 	</div>
 	</fieldset><br />
