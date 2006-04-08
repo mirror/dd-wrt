@@ -22,10 +22,28 @@ diag_ping_start (webs_t wp)
 
   if (!ip || !times || !strcmp (ip, ""))
     return ret;
-
+  int i;
+  int add=0;
+  for (i=0;i<strlen(ip);i++)
+    {
+    if (ip[i]=='"')add++;
+    }
+  char *n = (char*)malloc(strlen(ip)+add);
+  add=0;
+  for (i=0;i<strlen(ip);i++)
+  {
+  if (ip[i]=='"')
+    {
+    n[add++]='\\';
+    n[add++]='"';
+    }else{
+    n[add++]=ip[i];
+    }
+  }
   unlink (PING_TMP);
-  nvram_set ("ping_ip", ip);
+  nvram_set ("ping_ip", n);
   nvram_set ("ping_times", times);
+  free(n);
 
   // The web will hold, so i move to service.c
   //snprintf(cmd, sizeof(cmd), "ping -c %s %s &", times, ip);

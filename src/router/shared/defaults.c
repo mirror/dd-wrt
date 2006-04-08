@@ -347,8 +347,11 @@ struct nvram_tuple router_defaults[] = {
 
 
   /* Web server parameters */
-
+#ifdef HAVE_POWERNOC
+  {"http_username", "admin", 0},	/* Username */
+#else
   {"http_username", "root", 0},	/* Username */
+#endif
 
 #ifdef HAVE_SKYTRON
   {"skyhttp_username", "skytron", 0},	/* Username */

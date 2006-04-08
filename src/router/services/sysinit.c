@@ -657,7 +657,11 @@ start_restore_defaults (void)
     {
       if (nvram_match ("http_username", ""))
 	{
+#ifdef HAVE_POWERNOC
+	  nvram_set ("http_username", "admin");
+#else
 	  nvram_set ("http_username", "root");
+#endif
 	}
     }
 #ifdef DIST
