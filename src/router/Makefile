@@ -858,7 +858,7 @@ ntpclient-install:
 
 # AhMan March 19 2005
 pppoe pppoe-%:
-	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/ppp
+	$(MAKE) -C ppp/pppoecd $* INSTALLDIR=$(INSTALLDIR)/pppoe
 
 ppp:
 	$(MAKE) -C rp-pppoe-3.5/src

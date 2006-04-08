@@ -120,3 +120,5 @@ USRLIBDIR=$(TOOLCHAIN)/usr/lib
 #
 # Internal Options
 #
+#PPPOE_SUPPORT=1
+#CONFIG_PPPOE=y
