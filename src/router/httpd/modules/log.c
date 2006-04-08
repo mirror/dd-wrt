@@ -28,8 +28,6 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
   struct servent *servp;
   //struct servent *d_servp;
 
-  char skip[10];
-  int debug = 0;
 
   char *wan_if = get_wan_face ();
   char *lan_if = nvram_safe_get ("lan_ifname");
@@ -51,7 +49,6 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
   cprintf ("log: %s\n", buf);
   for (next = buf; (line = strsep (&next, "\n"));)
     {
-      strcpy (skip, "");
       if (!strncmp (line, "<4>DROP", 7))
 	verdict = "denied";
       else if (!strncmp (line, "<4>ACCEPT", 9))
@@ -110,9 +107,6 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 	      if (!strcmp (src, src_old) && !strcmp (dpt, dpt_old))
 		{		// skip same record
-		  if (debug)
-		    strcpy (skip, "(skip) ");
-		  else
 		    continue;
 		}
 	      else
@@ -122,8 +116,8 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 		}
 	      ret +=
 		websWrite (wp,
-			   "<TR bgcolor=cccccc> <TD align=middle height=1>%s%s</TD> <TD align=middle height=1>%s</TD></TR>\n",
-			   skip, src, servp ? servp->s_name : dpt);
+			   "<TR bgcolor=cccccc> <TD align=middle height=1>%s</TD> <TD align=middle height=1>%s</TD></TR>\n",
+			   src, servp ? servp->s_name : dpt);
 	    }
 	}
       else if (!strcmp (type, "outgoing"))
@@ -134,17 +128,11 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 	      if (_dport == 53)
 		{		// skip DNS
-		  if (debug)
-		    strcpy (skip, "(skip) ");
-		  else
 		    continue;
 		}
 	      if (!strcmp (src, src_old) && !strcmp (dpt, dpt_old)
 		  && !strcmp (dst, dst_old))
 		{		// skip same record
-		  if (debug)
-		    strcpy (skip, "(skip) ");
-		  else
 		    continue;
 		}
 	      else
@@ -155,8 +143,8 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 		}
 	      ret +=
 		websWrite (wp,
-			   "<TR bgcolor=cccccc> <TD align=middle>%s%s</TD><TD align=middle>%s</TD><TD align=middle>%s</TD></TR>\n",
-			   skip, src, dst, servp ? servp->s_name : dpt);
+			   "<TR bgcolor=cccccc> <TD align=middle>%s</TD><TD align=middle>%s</TD><TD align=middle>%s</TD></TR>\n",
+			   src, dst, servp ? servp->s_name : dpt);
 	    }
 	}
       else if (!strcmp (type, "all"))
@@ -171,17 +159,11 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  if (_dport == 53)
 	    {			// skip DNS
-	      if (debug)
-		strcpy (skip, "(skip) ");
-	      else
 		continue;
 	    }
 	  if (!strcmp (src, src_old) && !strcmp (dpt, dpt_old)
 	      && !strcmp (dst, dst_old))
 	    {			// skip same record
-	      if (debug)
-		strcpy (skip, "(skip) ");
-	      else
 		continue;
 	    }
 	  else

@@ -305,7 +305,7 @@ CONFIG_RMMOD=y
 #
 # CONFIG_FEATURE_IPV6 is not set
 # CONFIG_ARPING is not set
-# CONFIG_FTPGET is not set
+CONFIG_FTPGET=y
 # CONFIG_FTPPUT is not set
 CONFIG_HOSTNAME=y
 # CONFIG_HTTPD is not set
