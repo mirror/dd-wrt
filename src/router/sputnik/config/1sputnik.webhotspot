@@ -3,8 +3,8 @@
 	<div class="center"><img src="images/sputnik.gif" /></div><br />
 	<div class="setting">
 		<div class="label">Sputnik Agent</div>
-		<input type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> onclick="setElementsActive('sputnik_mjid_type', 'sputnik_mjid', true)" />Enable
-		<input type="radio" name="apd_enable" value="0" <% nvram_selmatch("apd_enable", "0", "checked"); %> onclick="setElementsActive('sputnik_mjid_type', 'sputnik_mjid', false)" />Disable
+		<input type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> onclick="setSputnik(this.value)" />Enable
+		<input type="radio" name="apd_enable" value="0" <% nvram_selmatch("apd_enable", "0", "checked"); %> onclick="setSputnik(this.value)" />Disable
 	</div>
 	<div class="setting">	
 		<div class="label">Sputnik Server ID</div>
