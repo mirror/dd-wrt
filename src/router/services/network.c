@@ -183,6 +183,10 @@ wlconf_up (char *name)
 #ifdef HAVE_MADWIFI
   return -1;
 #endif
+if (!strncmp(name,"vlan",4))
+    return -1;
+if (!strncmp(name,"br",2))
+    return -1;
 #ifndef HAVE_BRANDING
   if (nvram_match ("wl_mode", "ap"))
     {
@@ -697,6 +701,8 @@ start_lan (void)
       sprintf (wdsvarname, "wl_wds%d_enable", s);
       sprintf (wdsdevname, "wl_wds%d_if", s);
       dev = nvram_safe_get (wdsdevname);
+      if (strlen(dev)==0)
+        continue;
 
       eval ("ifconfig", dev, "down");
       if (nvram_match (wdsvarname, "1"))

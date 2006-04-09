@@ -329,7 +329,7 @@ get_single_mac (char *macaddr, int which)
  * get_merge_ipaddr("lan_ipaddr", ipaddr); produces ipaddr="192.168.1.1"
  */
 int
-get_merge_ipaddr (char *name, char *ipaddr)
+get_merge_ipaddr (webs_t wp,char *name, char *ipaddr)
 {
   char ipname[30];
   int i;
@@ -380,7 +380,7 @@ get_merge_ipaddr (char *name, char *ipaddr)
  * get_merge_mac("wan_mac",mac); produces mac="00:11:22:33:44:55"
  */
 int
-get_merge_mac (char *name, char *macaddr)
+get_merge_mac (webs_t wp,char *name, char *macaddr)
 {
   char macname[30];
   char *mac;
@@ -1432,7 +1432,7 @@ validate_merge_ipaddrs (webs_t wp, char *value, struct variable *v)
 {
   char ipaddr[20];
 
-  get_merge_ipaddr (v->name, ipaddr);
+  get_merge_ipaddr (wp,v->name, ipaddr);
 
   if (valid_ipaddr (wp, ipaddr, v))
     nvram_set (v->name, ipaddr);
@@ -1443,7 +1443,7 @@ validate_merge_mac (webs_t wp, char *value, struct variable *v)
 {
   char macaddr[20];
 
-  get_merge_mac (v->name, macaddr);
+  get_merge_mac (wp,v->name, macaddr);
 
   if (valid_hwaddr (wp, macaddr, v))
     nvram_set (v->name, macaddr);
@@ -3226,32 +3226,11 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   else
     browser_method = USE_WAN;
 
-#if 0
-  if (check_hw_type () == BCM4702_CHIP)	/* barry add for 4712 or 4702 RF test */
-    {
-      printf ("\nBoard is 4702 \n");
-      value = websGetVar (wp, "StartContinueTx", NULL);
-      if (value)
-	{
-	  StartContinueTx_4702 (value);
-	  goto footer;
-	}
-
-      value = websGetVar (wp, "StopContinueTx", NULL);
-      if (value)
-	{
-	  StopContinueTx_4702 (value);
-	  goto footer;
-	}
-    }
-  else
-    {
-#endif
       value = websGetVar (wp, "StartContinueTx", NULL);
       // printf("\nBarry StartContinueTx,value=%s\n",value);
       if (value)
 	{
-	  StartContinueTx (value);
+	  StartContinueTx (wp,value);
 	  goto footer;
 	}
 
@@ -3259,7 +3238,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       // printf("\nBarry StopContinueTx,value=%s\n",value);
       if (value)
 	{
-	  StopContinueTx (value);
+	  StopContinueTx (wp,value);
 	  goto footer;
 	}
       /* 1030 */
@@ -3267,7 +3246,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       // printf("\nBarry WL_atten_bb,value=%s\n",value);
       if (value)
 	{
-	  Check_TSSI (value);
+	  Check_TSSI (wp,value);
 	  goto footer;
 	}
       /* 1030 */
@@ -3286,9 +3265,6 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	  Change_Ant (value);
 	  goto footer;
 	}
-#if 0
-    }
-#endif
   value = websGetVar (wp, "skip_amd_check", NULL);
   if (value)
     {

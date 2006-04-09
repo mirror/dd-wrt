@@ -440,8 +440,8 @@ extern int valid_wep_key (webs_t wp, char *value, struct variable *v);
 
 extern int get_dns_ip (char *name, int which, int count);
 extern int get_single_ip (char *ipaddr, int which);
-extern int get_merge_ipaddr (char *name, char *ipaddr);
-extern int get_merge_mac (char *name, char *macaddr);
+extern int get_merge_ipaddr (webs_t wp,char *name, char *ipaddr);
+extern int get_merge_mac (webs_t wp,char *name, char *macaddr);
 extern char *rfctime (const time_t * timep);
 extern int legal_ipaddr (char *value);
 extern int legal_hwaddr (char *value);
@@ -492,9 +492,9 @@ extern int ej_get_backup_name (int eid, webs_t wp, int argc, char_t ** argv);
 extern struct servent *my_getservbyport (int port, const char *proto);
 extern int get_single_mac (char *macaddr, int which);
 
-extern int StopContinueTx (char *value);
-extern int StartContinueTx (char *value);
-extern int Check_TSSI (char *value);
+extern int StopContinueTx (webs_t wp,char *value);
+extern int StartContinueTx (webs_t wp,char *value);
+extern int Check_TSSI (webs_t wp,char *value);
 extern int Get_TSSI (char *value);
 extern int Enable_TSSI (char *value);
 
