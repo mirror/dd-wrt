@@ -8,14 +8,14 @@
 #define	CONFIG_UDHCPD	y
 #define	UDHCPC_SUPPORT	1
 #define	CONFIG_UDHCPC	y
-#define	PPPOE_SUPPORT	1
-#define	CONFIG_PPPOE	y
-#define	PPTP_SUPPORT	1
-#define	CONFIG_PPTP	y
-#define	L2TP_SUPPORT	1
-#define	CONFIG_L2TP	y
-#define	PPPD_SUPPORT	1
-#define	CONFIG_PPPD	y
+//#define	PPPOE_SUPPORT	1
+//#define	CONFIG_PPPOE	y
+//#define	PPTP_SUPPORT	1
+//#define	CONFIG_PPTP	y
+//#define	L2TP_SUPPORT	1
+//#define	CONFIG_L2TP	y
+//#define	PPPD_SUPPORT	1
+//#define	CONFIG_PPPD	y
 
 //#define	ZEBRA_SUPPORT	1
 //#define	CONFIG_ZEBRA	y
