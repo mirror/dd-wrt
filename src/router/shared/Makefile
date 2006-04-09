@@ -34,9 +34,15 @@ endif
 ifeq ($(CONFIG_SILENCE),y)
   CFLAGS += -DHAVE_SILENCE
 endif
+ifeq ($(CONFIG_SAMBA),y)
+  CFLAGS += -DHAVE_SAMBA
+endif
 
 ifeq ($(CONFIG_RAMSKOV),y)
   CFLAGS += -DHAVE_RAMSKOV
+endif
+ifeq ($(CONFIG_SNMP),y)
+  CFLAGS += -DHAVE_SNMP
 endif
 
 ifeq ($(CONFIG_RB500),y)

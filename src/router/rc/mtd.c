@@ -30,7 +30,7 @@
 #include <linux/mtd/mtd.h>
 
 #include <trxhdr.h>
-#include <rts/crc.h>
+#include <crc.h>
 #include <bcmutils.h>
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -295,95 +295,6 @@ fail:
   if (fp)
     fclose (fp);
   return ret;
-}
-
-int
-nvram_restore (const char *path, char *mtd)
-{
-
-  int mtd_fd = -1;
-  mtd_info_t mtd_info;
-  erase_info_t erase_info;
-
-  struct nvram_header header;
-  unsigned long crc = 0;
-
-  FILE *fp, *fp1;
-  char buf[NVRAM_SPACE];
-  long count = 0;
-  int ret = -1;
-
-  /* Examine TRX header */
-  if ((fp = fopen (path, "r")))
-    count = safe_fread (&buf, 1, sizeof (buf), fp);
-
-  if (count < sizeof (struct nvram_header))
-    {
-      fprintf (stderr, "%s: File is too small (%ld bytes)\n", path, count);
-      goto fail;
-    }
-
-  decode (buf, sizeof (buf));
-
-  memcpy (&header, buf, sizeof (struct nvram_header));
-
-  fprintf (stderr,
-	   "count=[%ld] header.len=[%d] header.magic[%x] header.crc[%x]\n",
-	   count, header.len, header.magic, header.crc_ver_init);
-  if (count < header.len || header.magic != NVRAM_MAGIC)
-    {
-      fprintf (stderr, "Invalid nvram header\n");
-      return EINVAL;
-    }
-
-
-  crc = crc8 ((uint8 *) (&buf) + 9, header.len - 9, CRC8_INIT_VALUE);
-
-  if (crc != (header.crc_ver_init & 0xff))
-    {
-      fprintf (stderr, "Bad CRC\n");
-      goto fail;
-    }
-  else
-    fprintf (stderr, "CRC OK\n");
-
-  fprintf (stderr, "Erase old nvram data\n");
-  mtd_erase (mtd);
-
-  /* Open MTD device and get sector size */
-  if ((mtd_fd = mtd_open (mtd, O_RDWR)) < 0 ||
-      ioctl (mtd_fd, MEMGETINFO, &mtd_info) != 0)
-    {
-      printf ("fail1\n");
-      perror (mtd);
-      goto fail;
-    }
-
-  (void) ioctl (mtd_fd, MEMUNLOCK, &erase_info);
-
-  fprintf (stderr, "Write new nvram data\n");
-  if (!(fp1 = fopen ("/dev/mtd/3", "w")))
-    {
-      perror (mtd);
-      goto fail;
-    }
-
-  /* Write NVRAM space */
-  fseek (fp1, -NVRAM_SPACE, SEEK_END);
-  fwrite (buf, count, 1, fp1);
-
-  /* Close NVRAM and regenerate environment file */
-  fclose (fp);
-  fclose (fp1);
-
-  fprintf (stderr, "Done\n");
-
-  ret = 0;
-
-fail:
-
-  return ret;
-
 }
 
 
