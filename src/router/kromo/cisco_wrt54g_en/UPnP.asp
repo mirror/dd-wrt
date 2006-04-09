@@ -14,9 +14,13 @@
 		Intergated to DD-WRT by LawnMowerGuy1
 		-->
 		<script type="text/javascript">
+document.title = '<% nvram_get("router_name"); %>'+upnp.titl;
+
 function to_submit(F) {
 	F.submit_button.value = "UPnP";
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
+	
 	F.action.value = "Apply";
 	update.stop();
 	apply(F);
@@ -56,7 +60,7 @@ function setUPnPTable(forwards) {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 6;
 		cell.align = "center";
-		cell.innerHTML = "- None - ";
+		cell.innerHTML = "- " + share.none + " - ";
 		return;
 	}
 	for(var i = 0; i < data.length; i++) {
@@ -70,7 +74,8 @@ function setUPnPTable(forwards) {
 		row.insertCell(-1).innerHTML = data[i].proto;
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
-		cell.title = "Click to delete lease";
+//		cell.title = errmsg.err48;
+		cell.title = "";
 		cell.innerHTML = " ";
 		eval("addEvent(cell, 'click', function() { deleteForward(" + i + ") })");
 	}
@@ -79,16 +84,17 @@ function setUPnPTable(forwards) {
 function deleteForward(x) {
 	if (x != 'all') {
 		var e = data[x];
-		if (!confirm("Delete " + e.desc + "? [" + e.wanPorts + "->" + e.lanPorts + " " + e.lanIP + " " + e.proto + "]")) return;
+		if (!confirm(share.del + " " + e.desc + "? [" + e.wanPorts + "->" + e.lanPorts + " " + e.lanIP + " " + e.proto + "]")) return;
 	}
 	else {
-		if (!confirm("Delete all entries?")) return;
+		if (!confirm(errmsg.err49)) return;
 	}
 	var fupnp = document.getElementById("fupnp");
 	fupnp.submit_button.value = "UPnP";
 	fupnp.action.value = "Apply";
 	fupnp.remove.value = (x == 'all' ? 'all' : e.index);
-	fupnp.delete_button.value = "Deleted";
+//	fupnp.delete_button.value = "Deleted";
+	fupnp.delete_button.value = sbutton.deleted;
 	fupnp.save_button.disabled = true;
 	fupnp.delete_button.disabled = true;
 	update.stop();
@@ -119,7 +125,8 @@ tr.disabled td {
 		</style>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -160,66 +167,68 @@ tr.disabled td {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="remove" />
-							<h2>Universal Plug and Play (UPnP)</h2>
+							<h2><script type="text/javascript">Capture(upnp.h2)</script></h2>
 							<fieldset>
-								<legend>Forwards</legend>
+								<legend><script type="text/javascript">Capture(upnp.legend)</script></legend>
 								<table class="table center" cellspacing="6" id="upnp_table">
 									<tr>
-										<th width="40%">Description</th>
-										<th width="15%">From&nbsp;(WAN)</th>
-										<th width="15%">To&nbsp;(LAN)</th>
-										<th width="20%">IP&nbsp;Address</th>
-										<th width="10%">Protocol</th>
-										<th>Delete</th>
+										<th width="40%"><script type="text/javascript">Capture(share.descr)</script></th>
+										<th width="15%"><script type="text/javascript">Capture(share.from)</script>&nbsp;(WAN)</th>
+										<th width="15%"><script type="text/javascript">Capture(share.to)</script>&nbsp;(LAN)</th>
+										<th width="20%"><script type="text/javascript">Capture(share.ip)</script></th>
+										<th width="10%"><script type="text/javascript">Capture(share.proto)</script></th>
+										<th><script type="text/javascript">Capture(share.del)</script></th>
 									</tr>
 								</table><br />
 								<div class="center">
-									<input type="button" name="delete_button" value="Delete All" onclick="deleteForward('all')" />&nbsp;
-									<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh ON"); %>" onclick="window.location.reload()" />
+									<script>document.write("<input type=\"button\" name=\"delete_button\" value=\"" + sbutton.delall + "\" onclick=\"deleteForward('all')\">");</script>&nbsp;
+									<script>document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");</script>
 								</div>
 							</fieldset><br />
 							<fieldset>
-								<legend>UPnP Configuration</legend>
+								<legend><script type="text/javascript">Capture(upnp.legend2)</script></legend>
 								<div class="setting">
-									<div class="label">UPnP Service</div>
-									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> />Enable&nbsp;
-									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> />Disable
+									<div class="label"><script type="text/javascript">Capture(upnp.serv)</script></div>
+									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<% nvram_invmatch("upnp_enable", "1", "<!--"); %>
 								<div class="setting">
-									<div class="label">Clear port forwards at startup</div>
-									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> />Enable&nbsp;
-									<input type="radio" name="upnpcas" value="0" <% nvram_selmatch("upnpcas","0","checked"); %> />Disable
+									<div class="label"><script type="text/javascript">Capture(upnp.clear)</script></div>
+									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input type="radio" name="upnpcas" value="0" <% nvram_selmatch("upnpcas","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<div class="setting">
-									<div class="label">Send presentation URL</div>
-									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> />Enable&nbsp;
-									<input type="radio" name="upnpmnp" value="0" <% nvram_selmatch("upnpmnp","0","checked"); %> />Disable
+									<div class="label"><script type="text/javascript">Capture(upnp.url)</script></div>
+									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input type="radio" name="upnpmnp" value="0" <% nvram_selmatch("upnpmnp","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<% nvram_invmatch("upnp_enable", "1", "-->"); %>
 							</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button"  value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
+								<script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
+								<script>document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">Forwards:</dt>
-							<dd class="definition">Click the trash can to delete an individual entry.</dd>
-							<dt class="term">UPnP Service:</dt>
-							<dd class="definition">Allows applications to automatically setup port forwardings.</dd>
+							<dt class="term"><script type="text/javascript">Capture(hupnp.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hupnp.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hupnp.right3)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hupnp.right4)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HUPnP.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HUPnP.asp')"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info">Firmware: <a href="javascript:openAboutWindow()"><% get_firmware_version(); %></a></div>
+					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
 					<div class="info">Time: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
 				</div>
