@@ -15,7 +15,7 @@
 	</div>
 	<div class="setting">
 		<div class="label">Password</div>
-		<input maxLength="100" size="25" name="samba_password" value='<% nvram_get("samba_password"); %>' />
+		<input type="password" maxLength="100" size="25" name="samba_password" value='<% nvram_get("samba_password"); %>' />
 	</div>
 	<div class="setting">
 		<div class="label">Startscript</div>
