@@ -1201,7 +1201,6 @@ advgrp_chain (int seq, unsigned int mark, int urlenable)
 
   /* filter_services=$NAME:006:My ICQ$PROT:002:17$PORT:009:5000:5010<&nbsp;>.. */
   services = fw_get_filter_services ();	//nvram_safe_get("filter_services");
-  cprintf ("services %s\n");
   /* filter_port_grp5=My ICQ<&nbsp;>Game boy */
   sprintf (nvname, "filter_port_grp%d", seq);
   wordlist = nvram_safe_get (nvname);

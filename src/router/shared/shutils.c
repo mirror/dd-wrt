@@ -115,8 +115,17 @@ _eval (char *const argv[], char *path, int timeout, int *ppid)
   int fd;
   int flags;
   int sig;
-  char buf[254] = "";
+//  char buf[254] = "";
   int i;
+#ifndef HAVE_SILENCE
+  cprintf("executing from %s ",path);
+  i=0;
+  while (argv[i]!=NULL)
+  {
+  cprintf("%s ",argv[i++]);
+  }
+  cprintf("\n");
+#endif
 
   switch (pid = fork ())
     {
@@ -176,8 +185,8 @@ _eval (char *const argv[], char *path, int timeout, int *ppid)
 	}
 
       /* execute command */
-      for (i = 0; argv[i]; i++)
-	snprintf (buf + strlen (buf), sizeof (buf), "%s ", argv[i]);
+//      for (i = 0; argv[i]; i++)
+//	snprintf (buf + strlen (buf), sizeof (buf), "%s ", argv[i]);
 //cprintf("cmd=[%s]\n", buf);
       setenv ("PATH", "/sbin:/bin:/usr/sbin:/usr/bin", 1);
       alarm (timeout);
