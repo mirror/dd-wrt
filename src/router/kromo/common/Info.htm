@@ -191,9 +191,17 @@ addEvent(window, "unload", function() {
 									<div class="label">Wireless MAC</div>
 									<span id="wl_mac" style="cursor:pointer" title="OUI search" onclick="getOUIFromMAC('<% nvram_get("wl0_hwaddr"); %>')"><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
 								</div>
+								<div class="setting">
+									<div class="label">WAN IP</div>
+									<span id="wan_ip"><% nvram_match("wan_proto","disabled","Disabled<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">LAN IP</div>
+									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
+								</div>
 							</fieldset><br />
 							<fieldset>
-								<legend>Wireless Info</legend>
+								<legend>Wireless</legend>
 								<div class="setting">
 									<div class="label">Mode</div>
 									<span id="wl_mode"><% nvram_match("wl_mode", "wet", "Client Bridge"); %><% nvram_match("wl_mode", "ap", "AP"); %><% nvram_match("wl_mode", "sta", "Client"); %><% nvram_match("wl_mode", "infra", "Adhoc"); %></span>&nbsp;
@@ -220,7 +228,7 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<fieldset>
-								<legend>Packet Info</legend>
+								<legend>Packet Traffic</legend>
 								<div class="setting">
 									<div class="label">Received (RX)</div>
 									<span id="packet_rx"></span>&nbsp;
@@ -231,17 +239,10 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 						</div>
+
 						<div class="col2r">
 							<fieldset>
-								<legend>IP Info</legend>
-								<div class="setting">
-									<div class="label">WAN IP</div>
-									<span id="wan_ip"><% nvram_match("wan_proto","disabled","Disabled<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></span>&nbsp;
-								</div>
-								<div class="setting">
-									<div class="label">LAN IP</div>
-									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
-								</div>
+								<legend>Services</legend>
 								<div class="setting">
 									<div class="label">DHCP Server</div>
 									<span id="dhcp_enabled"><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %></span>&nbsp;
@@ -264,11 +265,15 @@ addEvent(window, "unload", function() {
 									<div class="label">Samba Mount</div>
 									<span id="smb_mount"><% nvram_match("samba_mount","0","Disabled"); %><% nvram_match("samba_mount","1","Enabled"); %></span>&nbsp;
 								</div>
+								<div class="setting">
+									<div class="label">Sputnik Agent</div>
+									<span id="wl_sputnik"><% nvram_else_match("apd_enable","0","Disabled","Enabled"); %></span>&nbsp;
+								</div>
 								<% nvram_match("dist_type", "micro", "-->"); %>
 								<% nvram_match("dist_type", "mini", "-->"); %>
 							</fieldset><br />
 							<fieldset>
-								<legend>Memory</legend>
+								<legend>Memory Usage</legend>
 								<div class="setting">
 									<div class="label">Total Available</div>
 									<span id="mem_total"></span>&nbsp;
