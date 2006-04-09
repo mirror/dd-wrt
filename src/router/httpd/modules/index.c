@@ -46,8 +46,8 @@ validate_lan_ipaddr (webs_t wp, char *value, struct variable *v)
   //lan_netmask = websGetVar(wp, "lan_netmask", NULL);
   //if(!lan_netmask)      return;
 
-  get_merge_ipaddr ("lan_netmask", lan_netmask);
-  get_merge_ipaddr (v->name, lan_ipaddr);
+  get_merge_ipaddr (wp,"lan_netmask", lan_netmask);
+  get_merge_ipaddr (wp,v->name, lan_ipaddr);
 
   if (!valid_ipaddr (wp, lan_ipaddr, v))
     return;
@@ -100,12 +100,12 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
   if (pppoever)
     nvram_set ("pppoe_ver", pppoever);
 
-  get_merge_ipaddr ("wan_ipaddr", wan_ipaddr);
-  get_merge_ipaddr ("wan_netmask", wan_netmask);
+  get_merge_ipaddr (wp,"wan_ipaddr", wan_ipaddr);
+  get_merge_ipaddr (wp,"wan_netmask", wan_netmask);
   if (!strcmp (wan_proto, "pptp"))
-    get_merge_ipaddr ("pptp_server_ip", wan_gateway);
+    get_merge_ipaddr (wp,"pptp_server_ip", wan_gateway);
   else
-    get_merge_ipaddr ("wan_gateway", wan_gateway);
+    get_merge_ipaddr (wp,"wan_gateway", wan_gateway);
 
   if (!strcmp (wan_proto, "pptp") && !strcmp ("0.0.0.0", wan_ipaddr))
     {				// Sveasoft: allow 0.0.0.0 for pptp IP addr

@@ -103,7 +103,10 @@ typedef char char_t;
 #define websHeader(wp) wfputs("<html lang=\"en\">", wp)
 #define websFooter(wp) wfputs("</html>", wp)
 #define websDone(wp, code) wfflush(wp)
-#define websGetVar(wp, var, default) (get_cgi(var) ? : default)
+
+
+extern char *websGetVar(webs_t wp, char *var, char *d);
+
 #define websSetVar(wp, var, value) set_cgi(var, value)
 #define websDefaultHandler(wp, urlPrefix, webDir, arg, url, path, query) ({ do_ej(path, wp); fflush(wp); 1; })
 #define websWriteData(wp, buf, nChars) ({ int TMPVAR = wfwrite(buf, 1, nChars, wp); wfflush(wp); TMPVAR; })

@@ -1489,3 +1489,10 @@ check_cipher (void)
 	      SSL_CIPHER_get_version (ciph), SSL_CIPHER_get_name (ciph));
 }
 #endif
+
+
+
+char *websGetVar(webs_t wp, char *var, char *d)
+{
+return get_cgi(var) ? : d;
+}

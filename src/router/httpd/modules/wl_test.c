@@ -109,7 +109,7 @@ Inter-|   Receive                                                |  Transmit
 }
 
 int
-StartContinueTx (char *value)
+StartContinueTx (webs_t wp,char *value)
 {
   int ret = 0;
   char buf[80];
@@ -156,7 +156,7 @@ StartContinueTx (char *value)
   switch (atoi (value))
     {
     case 0:
-      StopContinueTx (value);
+      StopContinueTx (wp,value);
       break;
     case 1:
       /* Start Continue TX, EVM */
@@ -251,7 +251,7 @@ StartContinueTx (char *value)
 }
 
 int
-StopContinueTx (char *value)
+StopContinueTx (webs_t wp,char *value)
 {
   int ret = 0;
   char *type;
@@ -282,7 +282,7 @@ StopContinueTx (char *value)
 }
 
 int
-Check_TSSI (char *value)
+Check_TSSI (webs_t wp,char *value)
 {
   int atten_bb;
   int atten_radio;
@@ -474,7 +474,7 @@ Change_Ant (char *value)
 }
 
 int
-StartContinueTx_4702 (char *value)
+StartContinueTx_4702 (webs_t wp,char *value)
 {
   int ret = 0;
   char buf[80];
@@ -534,7 +534,7 @@ StartContinueTx_4702 (char *value)
 }
 
 int
-StopContinueTx_4702 (char *value)
+StopContinueTx_4702 (webs_t wp,char *value)
 {
   int ret = 0;
   char *type;
