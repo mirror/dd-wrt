@@ -41,13 +41,19 @@ function to_submit(F) {
 	return true;
 }
 
-function init() {
-	port_enable_disable(document.password, '<% nvram_get("remote_management"); %>');
+function setSputnik(val) {
+	setElementsActive("sputnik_mjid_type", "sputnik_mjid", val == "1");
 }
+
+addEvent(window, "load", function() {
+	setSputnik("<% nvram_get("apd_enable"); %>");
+});
+
 		</script>
 	</head>
 
-	<body class="gui"><% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
