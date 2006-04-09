@@ -1607,7 +1607,7 @@ validate_macmode (webs_t wp, char *value, struct variable *v)
 }
 
 int
-generate_wep_key (int key, char *prefix)
+generate_wep_key (webs_t wp,int key, char *prefix)
 {
   int i;
   char buf[256];
@@ -1696,9 +1696,9 @@ generate_key_64 (webs_t wp)
   cprintf ("gen wep key 64");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
-  ret = generate_wep_key (64, websGetVar (wp, "security_varname", "ath0"));
+  ret = generate_wep_key (wp,64, websGetVar (wp, "security_varname", "ath0"));
 #else
-  ret = generate_wep_key (64, websGetVar (wp, "security_varname", "wl"));
+  ret = generate_wep_key (wp,64, websGetVar (wp, "security_varname", "wl"));
 #endif
   return ret;
 }
@@ -1710,9 +1710,9 @@ generate_key_128 (webs_t wp)
   cprintf ("gen wep key 128");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
-  ret = generate_wep_key (128, websGetVar (wp, "security_varname", "ath0"));
+  ret = generate_wep_key (wp,128, websGetVar (wp, "security_varname", "ath0"));
 #else
-  ret = generate_wep_key (128, websGetVar (wp, "security_varname", "wl"));
+  ret = generate_wep_key (wp,128, websGetVar (wp, "security_varname", "wl"));
 #endif
   return ret;
 }
