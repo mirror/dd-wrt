@@ -298,6 +298,6 @@ extern int listen_main(int argc, char **argv);
 extern int ddns_success_main(int argc, char **argv);
 extern int process_monitor_main(void);
 void cfe_default(void);
-extern int nvram_restore(const char *path, char *mtd);
+//extern int nvram_restore(const char *path, char *mtd);
 
 #endif /* _rc_h_ */

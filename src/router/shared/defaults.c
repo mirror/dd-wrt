@@ -708,11 +708,13 @@ struct nvram_tuple router_defaults[] = {
 
   {"hb_server_ip", "", 0},	/* heartbeat auth server (IP Address) */
   {"hb_server_domain", "", 0},	/* heartbeat auth server (domain name) */
+#ifdef HAVE_SAMBA
   {"samba_mount", "0", 0},
   {"samba_share", "//yourserverip/yourshare", 0},
   {"samba_user", "username/computer", 0},
   {"samba_password", "iwer573495u7340", 0},
   {"samba_script", "yourscript", 0},
+#endif
   {"rflow_enable", "0", 0},
   {"status_auth", "1", 0},
   {"info_passwd", "0", 0},
@@ -837,6 +839,8 @@ struct nvram_tuple router_defaults[] = {
   {"chilli_additional", "", 0},
 #endif
 #endif
+#ifdef HAVE_SSHD
+
 #ifdef HAVE_SKYTEL
   {"sshd_enable", "0", 0},
 #elif HAVE_GGEW
@@ -857,6 +861,7 @@ struct nvram_tuple router_defaults[] = {
   {"sshd_rsa_host_key", "", 0},
   {"sshd_dss_host_key", "", 0},
   {"sshd_authorized_keys", "", 0},
+#endif
   {"syslogd_enable", "0", 0},
   {"syslogd_rem_ip", "", 0},
 
@@ -1013,6 +1018,7 @@ struct nvram_tuple router_defaults[] = {
   {"svqos_port2prio", "10", 0},
   {"svqos_port3prio", "10", 0},
   {"svqos_port4prio", "10", 0},
+#ifdef HAVE_SNMP
 #ifdef HAVE_SAGAR
   {"snmpd_enable", "1", 0},
 #elif HAVE_GGEW
@@ -1031,7 +1037,7 @@ struct nvram_tuple router_defaults[] = {
   {"snmpd_rwcommunity", "private", 0},
   {"snmpd_conf", "See http://www.net-snmp.org for expert snmpd.conf options",
    0},
-
+#endif
   {"wol_enable", "0", 0},
   {"wol_interval", "86400", 0},
   {"wol_hostname", "", 0},
