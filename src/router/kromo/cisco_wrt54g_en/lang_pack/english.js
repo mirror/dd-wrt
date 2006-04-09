@@ -32,6 +32,11 @@ share.proto="Protocol";
 share.ip="IP Address";
 share.none="None";
 share.both="Both";
+share.del="Delete";
+share.descr="Description";
+share.from="From";
+share.to="To";
+share.about="About";
 
 
 var sbutton = new Object();
@@ -44,6 +49,10 @@ sbutton.del="Delete";
 sbutton.continu="Continue";
 sbutton.add="Add";
 sbutton.remove="Remove";
+sbutton.deleted="Deleted";
+sbutton.delall="Delete All";
+sbutton.refres="Refresh";
+sbutton.autorefresh="Auto-Refresh On";
 
 
 
@@ -100,6 +109,8 @@ errmsg.err44="Keyword";
 errmsg.err45="Name";
 errmsg.err46="Port";
 errmsg.err47="Port number";
+errmsg.err48="Click to delete lease";
+errmsg.err49="Delete all entries?";
 
 
 
@@ -275,7 +286,24 @@ htrforward.right9="End:";
 htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
 
 
+// **************************************************************** UPnP.asp **********************************************************************//
 
+var upnp = new Object();
+upnp.titl=" - UPnP";
+upnp.h2="Universal Plug and Play (UPnP)";
+upnp.legend="Forwards";
+upnp.legend2="UPnP Configuration";
+upnp.serv="UPnP Service";
+upnp.clear="Clear port forwards at startup";
+upnp.url="Send presentation URL";
+
+
+//help container
+var hupnp = new Object();
+hupnp.right1="Forwards:";
+hupnp.right2="Click the trash can to delete an individual entry.";
+hupnp.right3="UPnP Service:";
+hupnp.right4="Allows applications to automatically setup port forwardings.";
 
 
 
