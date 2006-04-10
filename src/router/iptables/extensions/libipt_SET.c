@@ -165,7 +165,7 @@ struct iptables_target ipt_set_target
 	.version	= IPTABLES_VERSION,
 	.size		= IPT_ALIGN(sizeof(struct ipt_set_info_target)),
 	.userspacesize	= IPT_ALIGN(sizeof(struct ipt_set_info_target)),
-	.help		= &help,
+//	.help		= &help,
 	.init		= &init,
 	.parse		= &parse,
 	.final_check	= &final_check,

@@ -325,7 +325,7 @@ static struct iptables_match dstlimit = {
 	.size		= IPT_ALIGN(sizeof(struct ipt_dstlimit_info)),
 	.userspacesize	= IPT_ALIGN(sizeof(struct ipt_dstlimit_info)),
 	//offsetof(struct ipt_dstlimit_info, prev),
-	.help		= &help,
+//	.help		= &help,
 	.init		= &init,
 	.parse		= &parse,
 	.final_check	= &final_check,

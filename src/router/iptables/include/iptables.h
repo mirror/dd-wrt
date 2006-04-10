@@ -50,7 +50,7 @@ struct iptables_match
 	size_t userspacesize;
 
 	/* Function which prints out usage message. */
-	void (*help)(void);
+//	void (*help)(void);
 
 	/* Initialize the match. */
 	void (*init)(struct ipt_entry_match *m, unsigned int *nfcache);
@@ -103,7 +103,7 @@ struct iptables_target
 	size_t userspacesize;
 
 	/* Function which prints out usage message. */
-	void (*help)(void);
+//	void (*help)(void);
 
 	/* Initialize the target. */
 	void (*init)(struct ipt_entry_target *t, unsigned int *nfcache);
