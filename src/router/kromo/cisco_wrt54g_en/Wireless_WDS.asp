@@ -10,27 +10,7 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 function SelSubnet(F,num) {
-	if(num==1){
-		choose_enable(F.wl_br1_ipaddr0);
-		choose_enable(F.wl_br1_ipaddr1);
-		choose_enable(F.wl_br1_ipaddr2);
-		choose_enable(F.wl_br1_ipaddr3);
-		choose_enable(F.wl_br1_netmask0);
-		choose_enable(F.wl_br1_netmask1);
-		choose_enable(F.wl_br1_netmask2);
-		choose_enable(F.wl_br1_netmask3);
-		choose_enable(F.wl_br1_nat);
-	} else{
-		choose_disable(F.wl_br1_ipaddr0);
-		choose_disable(F.wl_br1_ipaddr1);
-		choose_disable(F.wl_br1_ipaddr2);
-		choose_disable(F.wl_br1_ipaddr3);
-		choose_disable(F.wl_br1_netmask0);
-		choose_disable(F.wl_br1_netmask1);
-		choose_disable(F.wl_br1_netmask2);
-		choose_disable(F.wl_br1_netmask3);
-		choose_disable(F.wl_br1_nat);
-	}
+	setElementsActive("wl_br1_nat", "wl_br1_netmask3", num == 1);
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_WDS";
 	F.submit_type.value = "save";
@@ -77,37 +57,30 @@ function to_submit(F) {
 	apply(F);
 }
 
-function init() {
-	if("1" == <% nvram_get("wl_br1_enable"); %>){
-		choose_enable(document.forms[0].wl_br1_ipaddr0);
-		choose_enable(document.forms[0].wl_br1_ipaddr1);
-		choose_enable(document.forms[0].wl_br1_ipaddr2);
-		choose_enable(document.forms[0].wl_br1_ipaddr3);
-		choose_enable(document.forms[0].wl_br1_netmask0);
-		choose_enable(document.forms[0].wl_br1_netmask1);
-		choose_enable(document.forms[0].wl_br1_netmask2);
-		choose_enable(document.forms[0].wl_br1_netmask3);
-		choose_enable(document.forms[0].wl_br1_nat);
+function setWDS(val) {
+	if (val == "0") {
+		setElementsActive("wl_wds1_enable", "wl_br1_netmask3", val == "1");
 	} else {
-		choose_disable(document.forms[0].wl_br1_ipaddr0);
-		choose_disable(document.forms[0].wl_br1_ipaddr1);
-		choose_disable(document.forms[0].wl_br1_ipaddr2);
-		choose_disable(document.forms[0].wl_br1_ipaddr3);
-		choose_disable(document.forms[0].wl_br1_netmask0);
-		choose_disable(document.forms[0].wl_br1_netmask1);
-		choose_disable(document.forms[0].wl_br1_netmask2);
-		choose_disable(document.forms[0].wl_br1_netmask3);
-		choose_disable(document.forms[0].wl_br1_nat);
-	}
-
-	if ("ap" != "<% nvram_get("wl_mode"); %>"){
-	  alert("WDS is only available in AP mode!");
+		setElementsActive("wl_wds1_enable", "wl_br1_enable", val == "1");
+		setElementsActive("wl_br1_nat", "wl_br1_netmask3", <% nvram_get("wl_br1_enable"); %> == "1");
 	}
 }
+
+addEvent(window, "load", function() {
+	var wds = "1";
+	setElementsActive("wl_br1_nat", "wl_br1_netmask3", "<% nvram_get("wl_br1_enable"); %>" == 1);
+	if ("ap" != "<% nvram_get("wl_mode"); %>" || "psk2" == "<% nvram_get("security_mode"); %>" || "wpa2" == "<% nvram_get("security_mode"); %>" || "psk psk2" == "<% nvram_get("security_mode"); %>" || "wpa wpa2" == "<% nvram_get("security_mode"); %>" || "b-only" == "<% nvram_get("wl_net_mode"); %>"){
+		var wds = "0";
+		setWDS(wds);
+		alert("WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS");
+	}
+});
+
 		</script>
 	</head>
 
-  <body class="gui" onload="init()"> <% showad(); %>
+  <body class="gui">
+  	  <% showad(); %>
       <div id="wrapper">
          <div id="content">
             <div id="header">
@@ -130,8 +103,8 @@ function init() {
                               </ul>
                            </div>
                         </li>
-			<% nvram_invmatch("sipgate","1","<!--"); %>
-			<li><a href="Sipath.asp">SIPatH</a></li>
+                        <% nvram_invmatch("sipgate","1","<!--"); %>
+                        <li><a href="Sipath.asp">SIPatH</a></li>
                         <% nvram_invmatch("sipgate","1","-->"); %>
                         <li><a href="Firewall.asp">Security</a></li>
                         <li><a href="Filters.asp">Access Restrictions</a></li>
@@ -145,12 +118,12 @@ function init() {
             <div id="main">
                <div id="contents">
                   <form name="wds" action="apply.cgi" method="<% get_http_method(); %>">
-		  <input type="hidden" name="submit_button" value="Wireless_WDS" />
-		  <input type="hidden" name="change_action">
-		  <input type="hidden" name="submit_type" />
-		  <input type="hidden" name="commit" value="1" />
-		  <input type="hidden" name="action" value="Apply" />
-		  <h2>Wireless Distribution System</h2>
+                  	<input type="hidden" name="submit_button" value="Wireless_WDS" />
+                  	<input type="hidden" name="change_action" />
+                  	<input type="hidden" name="submit_type" />
+                  	<input type="hidden" name="commit" value="1" />
+                  	<input type="hidden" name="action" value="Apply" />
+                  	<h2>Wireless Distribution System</h2>
                      <div>
                       <fieldset>
                         <legend>WDS Settings</legend>
@@ -343,19 +316,32 @@ function init() {
                         <fieldset>
                           <legend>Extra Options</legend>
                         <div class="setting">
-                           <div class="label">Lazy WDS</div><input type="radio" name="wl_lazywds" value="1" <% nvram_match("wl_lazywds", "1", "checked"); %>>Enable</input><input type="radio" name="wl_lazywds" value="0" <% nvram_match("wl_lazywds", "0", "checked"); %>>Disable</input> (Default: Disable)
+                           <div class="label">Lazy WDS</div>
+                           <input type="radio" name="wl_lazywds" value="1" <% nvram_match("wl_lazywds", "1", "checked"); %>>Enable</input>
+                           <input type="radio" name="wl_lazywds" value="0" <% nvram_match("wl_lazywds", "0", "checked"); %>>Disable</input> (Default: Disable)
                         </div>
                         <div class="setting">
-                           <div class="label">WDS Subnet</div><input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_match("wl_br1_enable", "1", "checked"); %>>Enable</input><input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_match("wl_br1_enable", "0", "checked"); %>>Disable</input></div>
+                           <div class="label">WDS Subnet</div>
+                           <input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_match("wl_br1_enable", "1", "checked"); %>>Enable</input>
+                           <input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_match("wl_br1_enable", "0", "checked"); %>>Disable</input>
+                        </div>
                         <div class="setting">
-                           <div class="label">NAT</div><select name="wl_br1_nat">
+                           <div class="label">NAT</div>
+                           <select name="wl_br1_nat">
                               <option value='<% nvram_match("wl_br1_nat", "0", "selected"); %>'>Disable</option>
                               <option value='<% nvram_match("wl_br1_nat", "1", "selected"); %>'>wLAN->WDS</option>
-                              <option value='<% nvram_match("wl_br1_nat", "2", "selected"); %>'>WDS->wLAN</option></select></div>
+                              <option value='<% nvram_match("wl_br1_nat", "2", "selected"); %>'>WDS->wLAN</option>
+                           </select>
+                        </div>
                         <div class="setting">
-                           <div class="label">IP Address</div><input type="hidden" name="wl_br1_ipaddr" value="4" /><input class="num" name="wl_br1_ipaddr0" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("0"); %>' />.<input class="num" name="wl_br1_ipaddr1" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("1"); %>' />.<input class="num" name="wl_br1_ipaddr2" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("2"); %>' />.<input class="num" name="wl_br1_ipaddr3" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("3"); %>' /></div>
+                           <div class="label">IP Address</div>
+                           <input type="hidden" name="wl_br1_ipaddr" value="4" />
+                           <input class="num" name="wl_br1_ipaddr0" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("0"); %>' />.<input class="num" name="wl_br1_ipaddr1" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("1"); %>' />.<input class="num" name="wl_br1_ipaddr2" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("2"); %>' />.<input class="num" name="wl_br1_ipaddr3" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("3"); %>' />
+                        </div>
                         <div class="setting">
-                           <div class="label">Subnet Mask</div><input type="hidden" name="wl_br1_netmask" value="4" /><input class="num" name="wl_br1_netmask0" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("0"); %>' />.<input class="num" name="wl_br1_netmask1" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("1"); %>' />.<input class="num" name="wl_br1_netmask2" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("2"); %>' />.<input class="num" name="wl_br1_netmask3" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("3"); %>' /></div>
+                           <div class="label">Subnet Mask</div>
+                           <input type="hidden" name="wl_br1_netmask" value="4" /><input class="num" name="wl_br1_netmask0" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("0"); %>' />.<input class="num" name="wl_br1_netmask1" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("1"); %>' />.<input class="num" name="wl_br1_netmask2" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("2"); %>' />.<input class="num" name="wl_br1_netmask3" size="3" maxlength="3" onBlur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("3"); %>' />
+                        </div>
                      </fieldset>
                      </div>
                      <br/>
