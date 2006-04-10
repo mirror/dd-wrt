@@ -3,6 +3,10 @@
 	<legend>Router Password</legend>
 	<div class="setting">
 		<div class="label">
+			Router Username</div>
+		<input type="num" maxlength="63" size="20" value="<% nvram_get("http_username"); %>" name="http_username" onblur="valid_name(this,'Username',SPACE_NO)" /></div>
+	<div class="setting">
+		<div class="label">
 			Router Password</div>
 		<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onblur="valid_name(this,'Password',SPACE_NO)" /></div>
 	<div class="setting">
