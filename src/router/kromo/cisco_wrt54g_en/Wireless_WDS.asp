@@ -318,7 +318,8 @@ addEvent(window, "load", function() {
                         <div class="setting">
                            <div class="label">Lazy WDS</div>
                            <input type="radio" name="wl_lazywds" value="1" <% nvram_match("wl_lazywds", "1", "checked"); %>>Enable</input>
-                           <input type="radio" name="wl_lazywds" value="0" <% nvram_match("wl_lazywds", "0", "checked"); %>>Disable</input> (Default: Disable)
+                           <input type="radio" name="wl_lazywds" value="0" <% nvram_match("wl_lazywds", "0", "checked"); %>>Disable</input>
+                           <span class="default">(Default: Disable)</span>
                         </div>
                         <div class="setting">
                            <div class="label">WDS Subnet</div>
