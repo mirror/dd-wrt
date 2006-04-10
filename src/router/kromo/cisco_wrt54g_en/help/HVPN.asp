@@ -14,7 +14,7 @@
 		<div id="content">
 			<h2>VPN Passthrough</h2>
 			<dl>
-				<dd>Virtual Private Networking (VPN) is typically used for work-related networking. For VPN tunnels, the router supports IPSec Passthrough and PPTP Passthrough.</dd>
+				<dd>Virtual Private Networking (VPN) is typically used for work-related networking. For VPN tunnels, the router supports IPSec Passthrough, PPTP Passthrough and L2TP Passthrough.</dd>
 				<dt>IPSec</dt>
 				<dd>Internet Protocol Security (IPSec) is a suite of protocols used to implement secure exchange of packets at the IP layer. To allow IPSec tunnels to pass through the router, IPSec Passthrough is enabled by default. To disable IPSec Passthrough, select <i>Disable</i>. </dd>
 				<dt>PPTP</dt>
