@@ -15,7 +15,7 @@
 #include <broadcom.h>
 #include <support.h>
 /* DD-WRT common web support by BrainSlayer */
-int
+void
 ej_show_sputnik (int eid, webs_t wp, int argc, char_t ** argv)
 {
   if (nvram_match ("apd_enable", "1"))
@@ -23,11 +23,11 @@ ej_show_sputnik (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp,
 		 "<li><a href=\"Status_SputnikAPD.asp\">Sputnik Agent</a></li>\n");
     }
-  return 0;
+  return;
 }
 
 /* end */
-int
+void
 ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *key;
@@ -37,7 +37,6 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &key) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
     }
 
   if ((fh = fopen ("/var/run/apd.status", "r")))
@@ -56,7 +55,7 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 	      if (!strcmp (key, "pid"))
 		{
-		  rc += websWrite (wp, "%d", apd_pid);
+		 websWrite (wp, "%d", apd_pid);
 		}
 	      else
 		{
@@ -82,7 +81,7 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 
 			  if (!strcmp (key, s))
 			    {
-			      rc += websWrite (wp, "%s", v);
+			     websWrite (wp, "%s", v);
 			      break;
 			    }
 			}
@@ -95,5 +94,5 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 
     }				/* End if (fh opened) */
 
-  return rc;
+  return;
 }				/* End ej_sputnik_apd_status() */
