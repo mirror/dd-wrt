@@ -21,10 +21,15 @@
 						<li>Client mode &ndash; This mode turns the router into a wireless client (like a wirless PCI card or PCMCIA card). This in turn connects to a Wireless access point. The client is isolated from other Wireless clients. Also only one ethernet device can be connected though it could be a router in AP mode.</li>
 						<li>Client Bridged mode &ndash; Wireless Bridging is used to connect 2 LAN segments via a wireless link. The 2 segments will be in the same subnet and looks like 2 ethernet switches connected by a cable, to all computers on the subnet. Since the computers are on the same subnet, broadcasts will reach all machines allowing DHCP clients in one segment to get their addresses from a DHCP server in a different segment. You could use a Wireless Bridge to transparently connect computer(s) in one room to computer(s) in a different room when you could not, or did not want to run an ethernet cable between the rooms.</li>
 						<li>Ad-Hoc mode &ndash; This is for peer to peer wireless connections. Clients running in Ad-Hoc mode can connect to each other as required without involving central access points.</li>
-					</ul>
+					</ul><br /><br />
+					<div class="note">
+						<h4>Note</h4>
+						<div>Note that <a href="HWDS.asp">WDS</a> is only available in AP mode.</div>
+					</div>
 				</dd>
 				<dt>Wireless Network Mode</dt>
-				<dd>If you have Wireless-G and 802.11b devices in your network, then keep the default setting, <i>Mixed</i>. If you have only Wireless-G devices, select <i>G-Only</i>. If you would like to limit your network to only 802.11b devices, then select <i>B-Only</i>. If you want to disable wireless networking, select <i>Disable</i>.</dd>
+				<dd>If you have Wireless-G and 802.11b devices in your network, then keep the default setting, <i>Mixed</i>. If you have only Wireless-G devices, select <i>G-Only</i>. If you would like to limit your network to only 802.11b devices, then select <i>B-Only</i>. If you want to disable wireless networking, select <i>Disable</i>. Note that <i>B-Only</i> mode is not supported under WDS. 
+</dd>
 				<dt>Wireless Network Name (SSID)</dt>
 				<dd>The SSID is the network name shared among all devices in a wireless network. The SSID must be identical for all devices in the wireless network. It is case-sensitive and must not exceed 32 alphanumeric characters, which may be any keyboard character. Make sure this setting is the same for all devices in your wireless network.<br /><br />
 					<div class="note">
