@@ -98,10 +98,12 @@ typedef char char_t;
 #define TMPVAR _TMPVAR(__LINE__)
 
 //#define websWrite(wp, fmt, args...) ({ int TMPVAR = wfprintf(wp, fmt, ## args); wfflush(wp); TMPVAR; })
-int websWrite(webs_t wp, char *fmt, ...);
+void websWrite(webs_t wp, char *fmt, ...);
 #define websDebugWrite(wp, fmt, args...)
 //#define websDebugWrite(wp, fmt, args...) ({ error_value = 1; wfputs("<!--", wp); int TMPVAR = wfprintf(wp, fmt, ## args); wfputs("-->", wp); wfflush(wp); TMPVAR; })
-#define websError(wp, code, msg, args...) wfprintf(wp, msg, ## args)
+#define websError(wp, code, msg, args...)
+
+//#define websError(wp, code, msg, args...) wfprintf(wp, msg, ## args)
 #define websHeader(wp) wfputs("<html lang=\"en\">", wp)
 #define websFooter(wp) wfputs("</html>", wp)
 #define websDone(wp, code) wfflush(wp)
@@ -127,7 +129,7 @@ void Initnvramtab (void);
 
 struct ej_handler {
 	char *pattern;
-	int (*output)(int eid, webs_t wp, int argc, char_t **argv);
+	void (*output)(int eid, webs_t wp, int argc, char_t **argv);
 };
 extern struct ej_handler ej_handlers[];
 

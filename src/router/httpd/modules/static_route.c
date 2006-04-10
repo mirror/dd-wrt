@@ -15,7 +15,7 @@
  * <% static_route("ipaddr", 0); %> produces "192.168.2.0"
  * <% static_route("lan", 0); %> produces "selected" if nvram_match("lan_ifname", "br0")
  */
-int
+void
 ej_static_route_setting (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *arg;
@@ -28,7 +28,7 @@ ej_static_route_setting (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &arg, &count) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   page = websGetVar (wp, "route_page", NULL);
@@ -47,7 +47,8 @@ ej_static_route_setting (int eid, webs_t wp, int argc, char_t ** argv)
 	  {
 	    find_match_pattern (name, sizeof (name), word, "$NAME:", "");
 	    httpd_filter_name (name, new_name, sizeof (new_name), GET);
-	    return websWrite (wp, new_name);
+	    websWrite (wp, new_name);
+	    return;
 	  }
 
       }
@@ -75,32 +76,44 @@ ej_static_route_setting (int eid, webs_t wp, int argc, char_t ** argv)
 	  continue;
 	if (!strcmp (arg, "ipaddr"))
 	  {
-	    return websWrite (wp, "%d", get_single_ip (ipaddr, count));
+	    websWrite (wp, "%d", get_single_ip (ipaddr, count));
+	    return;
 	  }
 	else if (!strcmp (arg, "netmask"))
 	  {
-	    return websWrite (wp, "%d", get_single_ip (netmask, count));
+	    websWrite (wp, "%d", get_single_ip (netmask, count));
+	    return;
 	  }
 	else if (!strcmp (arg, "gateway"))
 	  {
-	    return websWrite (wp, "%d", get_single_ip (gateway, count));
+	    websWrite (wp, "%d", get_single_ip (gateway, count));
+	    return;
 	  }
 	else if (!strcmp (arg, "metric"))
-	  return websWrite (wp, metric);
+	  {
+	    websWrite (wp, metric);
+	    return;
+	  }
 	else if (!strcmp (arg, "lan") && nvram_match ("lan_ifname", ifname))
-	  return websWrite (wp, "selected");
+	  {
+	    websWrite (wp, "selected");
+	    return;
+	  }
 	else if (!strcmp (arg, "wan") && nvram_match ("wan_ifname", ifname))
-	  return websWrite (wp, "selected");
+	  {
+	    websWrite (wp, "selected");
+	    return;
+	  }
       }
   }
 
   if (!strcmp (arg, "ipaddr") || !strcmp (arg, "netmask")
       || !strcmp (arg, "gateway"))
-    ret += websWrite (wp, "0");
+    websWrite (wp, "0");
   else if (!strcmp (arg, "metric"))
-    ret += websWrite (wp, "0");
+    websWrite (wp, "0");
 
-  return ret;
+  return;
 }
 
 void
@@ -313,7 +326,7 @@ write_nvram:
 //    free (gateway);
 }
 
-int
+void
 ej_static_route_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i, ret = 0, page;
@@ -324,7 +337,7 @@ ej_static_route_table (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   page = atoi (websGetVar (wp, "route_page", "0"));	// default to 0
@@ -347,13 +360,13 @@ ej_static_route_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  }
 	  snprintf (buf, sizeof (buf), "(%s)", new_name);
 
-	  ret =
-	    websWrite (wp, "\t\t<option value=\"%d\" %s> %d %s</option>\n", i,
-		       (i == page) ? "selected" : "", i + 1, buf);
+
+	  websWrite (wp, "\t\t<option value=\"%d\" %s> %d %s</option>\n", i,
+		     (i == page) ? "selected" : "", i + 1, buf);
 	}
     }
 
-  return ret;
+  return;
 }
 
 int
