@@ -1306,7 +1306,7 @@ openvpn:
 	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"
 	make -C lzo
 	make -C openssl
-	rm openssl/*.so
+	rm -f openssl/*.so*
 ifeq ($(CONFIG_NEWMEDIA),y)
 	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --disable-http CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
 	make -C openvpn clean

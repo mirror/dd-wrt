@@ -2968,7 +2968,7 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "<td>\n");
       FWSHOW1 ("<input type=\"checkbox\" value=\"on\" name=\"enable%d\" ", i);
       port_forward_table (wp, "enable", i);
-      websWrite (wp, "/></td>\n");
+      websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
     }
   return 1;
