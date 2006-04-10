@@ -26,7 +26,7 @@ static void print_help(const char **hn)
 static struct ebt_u_table table =
 {
 	.name		= "filter",
-	.help		= print_help,
+//	.help		= print_help,
 };
 
 void _init(void)

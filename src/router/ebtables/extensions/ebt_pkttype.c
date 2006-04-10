@@ -116,7 +116,7 @@ static struct ebt_u_match pkttype_match =
 {
 	.name		= EBT_PKTTYPE_MATCH,
 	.size		= sizeof(struct ebt_pkttype_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,
