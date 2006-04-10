@@ -2816,6 +2816,15 @@ CONFIG_IP_NF_AMANDA
   If you want to compile it as a module, say M here and read
   Documentation/modules.txt.  If unsure, say `N'.
 
+RTSP protocol support
+CONFIG_IP_NF_RTSP
+  Support the RTSP protocol.  This allows UDP transports to be setup
+  properly, including RTP and RDT.
+
+  If you want to compile it as a module, say 'M' here and read
+  Documentation/modules.txt.  If unsure, say 'Y'.
+
+
 
 IRC Send/Chat protocol support
 CONFIG_IP_NF_IRC
