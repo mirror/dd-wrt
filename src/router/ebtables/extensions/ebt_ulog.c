@@ -171,7 +171,7 @@ static struct ebt_u_watcher ulog_watcher =
 {
 	.name		= EBT_ULOG_WATCHER,
 	.size		= sizeof(struct ebt_ulog_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,

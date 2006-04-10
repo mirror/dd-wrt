@@ -98,7 +98,7 @@ struct ebt_u_table
 {
 	char name[EBT_TABLE_MAXNAMELEN];
 	void (*check)(struct ebt_u_replace *repl);
-	void (*help)(const char **);
+//	void (*help)(const char **);
 	struct ebt_u_table *next;
 };
 
@@ -145,7 +145,7 @@ struct ebt_u_match
 	char name[EBT_FUNCTION_MAXNAMELEN];
 	/* size of the real match data */
 	unsigned int size;
-	void (*help)(void);
+//	void (*help)(void);
 	void (*init)(struct ebt_entry_match *m);
 	int (*parse)(int c, char **argv, int argc,
 	        const struct ebt_u_entry *entry, unsigned int *flags,
@@ -177,7 +177,7 @@ struct ebt_u_watcher
 {
 	char name[EBT_FUNCTION_MAXNAMELEN];
 	unsigned int size;
-	void (*help)(void);
+//	void (*help)(void);
 	void (*init)(struct ebt_entry_watcher *w);
 	int (*parse)(int c, char **argv, int argc,
 	   const struct ebt_u_entry *entry, unsigned int *flags,
@@ -201,7 +201,7 @@ struct ebt_u_target
 {
 	char name[EBT_FUNCTION_MAXNAMELEN];
 	unsigned int size;
-	void (*help)(void);
+//	void (*help)(void);
 	void (*init)(struct ebt_entry_target *t);
 	int (*parse)(int c, char **argv, int argc,
 	   const struct ebt_u_entry *entry, unsigned int *flags,

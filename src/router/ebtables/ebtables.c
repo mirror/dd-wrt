@@ -379,20 +379,20 @@ ATOMIC_ENV_VARIABLE "          : if set <FILE> (see above) will equal its value"
 "\n\n");
 	m_l = new_entry->m_list;
 	while (m_l) {
-		((struct ebt_u_match *)m_l->m)->help();
+//		((struct ebt_u_match *)m_l->m)->help();
 		printf("\n");
 		m_l = m_l->next;
 	}
 	w_l = new_entry->w_list;
 	while (w_l) {
-		((struct ebt_u_watcher *)w_l->w)->help();
+//		((struct ebt_u_watcher *)w_l->w)->help();
 		printf("\n");
 		w_l = w_l->next;
 	}
-	((struct ebt_u_target *)new_entry->t)->help();
+//	((struct ebt_u_target *)new_entry->t)->help();
 	printf("\n");
-	if (table->help)
-		table->help(ebt_hooknames);
+//	if (table->help)
+//		table->help(ebt_hooknames);
 }
 
 /* Execute command L */

@@ -172,7 +172,7 @@ static int compare(const struct ebt_entry_match *vlan1,
 static struct ebt_u_match vlan_match = {
 	.name		= EBT_VLAN_MATCH,
 	.size		= sizeof(struct ebt_vlan_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,

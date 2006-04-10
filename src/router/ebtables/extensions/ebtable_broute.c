@@ -20,7 +20,7 @@ static struct
 ebt_u_table table =
 {
 	.name		= "broute",
-	.help		= print_help,
+//	.help		= print_help,
 };
 
 void _init(void)
