@@ -776,16 +776,17 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 	     selmatch ("security_mode", "psk", "selected"));
   websWrite (wp, "<OPTION value=\"wpa\" %s>WPA RADIUS</OPTION>\n",
 	     selmatch ("security_mode", "wpa", "selected"));
-  websWrite (wp,
-	     "<OPTION value=\"psk2\" %s>WPA2 Pre-Shared Key Only</OPTION>\n",
-	     selmatch ("security_mode", "psk2", "selected"));
-  websWrite (wp, "<OPTION value=\"wpa2\" %s>WPA2 RADIUS Only</OPTION>\n",
-	     selmatch ("security_mode", "wpa2", "selected"));
-  websWrite (wp,
-	     "<OPTION value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</OPTION>\n",
-	     selmatch ("security_mode", "psk psk2", "selected"));
-  websWrite (wp, "<OPTION value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</OPTION>\n",
-	     selmatch ("security_mode", "wpa wpa2", "selected"));
+  if (!nvram_match ("wl_mode", "wet"))		//botho 10/04/06 : if wireless client bridge mode selected => we don't display WPA2 security modes
+  {
+  		websWrite (wp, "<OPTION value=\"psk2\" %s>WPA2 Pre-Shared Key Only</OPTION>\n",
+  			selmatch ("security_mode", "psk2", "selected"));
+  		websWrite (wp, "<OPTION value=\"wpa2\" %s>WPA2 RADIUS Only</OPTION>\n",
+  			selmatch ("security_mode", "wpa2", "selected"));
+  		websWrite (wp, "<OPTION value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</OPTION>\n",
+  			selmatch ("security_mode", "psk psk2", "selected"));
+  		websWrite (wp, "<OPTION value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</OPTION>\n",
+  			selmatch ("security_mode", "wpa wpa2", "selected"));
+  }
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch ("security_mode", "radius", "selected"));
   websWrite (wp, "<option value=\"wep\" %s>WEP</option></select>\n",
