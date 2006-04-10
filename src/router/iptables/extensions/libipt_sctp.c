@@ -557,7 +557,7 @@ struct iptables_match sctp
     .version       = IPTABLES_VERSION,
     .size          = IPT_ALIGN(sizeof(struct ipt_sctp_info)),
     .userspacesize = IPT_ALIGN(sizeof(struct ipt_sctp_info)),
-    .help          = &help,
+//    .help          = &help,
     .init          = &init,
     .parse         = &parse,
     .final_check   = &final_check,

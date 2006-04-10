@@ -48,7 +48,7 @@ struct ip6tables_target trace
 	.version = IPTABLES_VERSION,
 	.size = IP6T_ALIGN(0),
 	.userspacesize = IP6T_ALIGN(0),
-	.help = &help,
+//	.help = &help,
 	.init = &init,
 	.parse = &parse,
 	.final_check = &final_check,

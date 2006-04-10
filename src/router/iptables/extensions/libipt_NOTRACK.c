@@ -48,7 +48,7 @@ struct iptables_target notrack
 	.version = IPTABLES_VERSION,
 	.size = IPT_ALIGN(0),
 	.userspacesize = IPT_ALIGN(0),
-	.help = &help,
+//	.help = &help,
 	.init = &init,
 	.parse = &parse,
 	.final_check = &final_check,

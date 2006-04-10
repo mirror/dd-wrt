@@ -1346,6 +1346,33 @@ wfprintf (FILE * fp, char *fmt, ...)
   return ret;
 }
 
+int websWrite (webs_t wp, char *fmt, ...)
+{
+  va_list args;
+  char buf[1024];
+  int ret;
+  FILE *fp = wp;
+  if (!wp || !fmt)return -1;
+  //buf = (char*)malloc(1024);
+  va_start (args, fmt);
+  vsnprintf (buf, sizeof (buf), fmt, args);
+#ifdef HAVE_HTTPS
+#ifdef HAVE_OPENSSL
+  if (do_ssl)
+    ret = BIO_printf ((BIO *) fp, "%s", buf);
+  else
+#elif defined(HAVE_MATRIXSSL)
+  if (do_ssl)
+    ret = matrixssl_printf (fp, "%s", buf);
+  else
+#endif
+#endif
+    ret = fprintf (fp, "%s", buf);
+  va_end (args);
+  wfflush(wp);
+  return ret;
+}
+
 size_t
 wfwrite (char *buf, int size, int n, FILE * fp)
 {

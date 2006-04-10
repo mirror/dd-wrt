@@ -271,7 +271,7 @@ struct ip6tables_target log
     .version       = IPTABLES_VERSION,
     .size          = IP6T_ALIGN(sizeof(struct ip6t_log_info)),
     .userspacesize = IP6T_ALIGN(sizeof(struct ip6t_log_info)),
-    .help          = &help,
+//    .help          = &help,
     .init          = &init,
     .parse         = &parse,
     .final_check   = &final_check,
