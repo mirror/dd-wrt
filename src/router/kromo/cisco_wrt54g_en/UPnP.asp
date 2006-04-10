@@ -8,11 +8,11 @@
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
-		<!--
+<!--
 		UPnP
 		11.2005	tofu10		init
 		Intergated to DD-WRT by LawnMowerGuy1
-		-->
+-->
 		<script type="text/javascript">
 document.title = '<% nvram_get("router_name"); %>'+upnp.titl;
 
@@ -101,9 +101,15 @@ function deleteForward(x) {
 	fupnp.submit();
 }
 
+function setUPnP(val) {
+	setElementsActive("upnpcas", "upnpmnp", val == "1");
+	setElementActive("upnpmnp", val == "1");
+}
+
 var update;
 
 addEvent(window, "load", function() {
+	setUPnP("<% nvram_get("upnp_enable"); %>");
 	setUPnPTable(new Array(<% tf_upnp(); %>));
 
 	update = new StatusUpdate("UPnP.live.asp", <% nvram_get("refresh_time"); %>);
@@ -189,10 +195,9 @@ tr.disabled td {
 								<legend><script type="text/javascript">Capture(upnp.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(upnp.serv)</script></div>
-									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
-								<% nvram_invmatch("upnp_enable", "1", "<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(upnp.clear)</script></div>
 									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
@@ -203,7 +208,6 @@ tr.disabled td {
 									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 									<input type="radio" name="upnpmnp" value="0" <% nvram_selmatch("upnpmnp","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
-								<% nvram_invmatch("upnp_enable", "1", "-->"); %>
 							</fieldset><br />
 							<div class="submitFooter">
 								<script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
