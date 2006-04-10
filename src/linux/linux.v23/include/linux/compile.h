@@ -1,0 +1,6 @@
+#define UTS_VERSION "#410 Tue Apr 11 00:29:21 CEST 2006"
+#define LINUX_COMPILE_TIME "00:29:21"
+#define LINUX_COMPILE_BY "root"
+#define LINUX_COMPILE_HOST "dbserver"
+#define LINUX_COMPILE_DOMAIN "intranet.fbn-dd.de"
+#define LINUX_COMPILER "gcc version 4.1.0"

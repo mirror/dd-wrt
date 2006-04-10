@@ -68,8 +68,8 @@ union ip_conntrack_expect_proto {
 };
 
 /* Add protocol helper include file here */
+#include <linux/netfilter_ipv4/ip_conntrack_rtsp.h>
 #include <linux/netfilter_ipv4/ip_conntrack_amanda.h>
-
 #include <linux/netfilter_ipv4/ip_conntrack_ftp.h>
 #include <linux/netfilter_ipv4/ip_conntrack_irc.h>
 #include <linux/netfilter_ipv4/ip_conntrack_pptp.h>
@@ -83,6 +83,8 @@ union ip_conntrack_expect_proto {
 /* per expectation: application helper private data */
 union ip_conntrack_expect_help {
 	/* insert conntrack helper private data (expect) here */
+	struct ip_ct_rtsp_expect exp_rtsp_info;
+	struct ip_ct_rtsp_master ct_rtsp_info;
 	struct ip_ct_amanda_expect exp_amanda_info;
 	struct ip_ct_ftp_expect exp_ftp_info;
 	struct ip_ct_irc_expect exp_irc_info;
