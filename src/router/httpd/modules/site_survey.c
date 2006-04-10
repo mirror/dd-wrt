@@ -50,7 +50,7 @@ open_site_survey (void)
 
 #ifdef FBNFW
 
-int
+void
 ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
@@ -80,7 +80,7 @@ ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 #endif
-int
+void
 ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
@@ -135,15 +135,14 @@ ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
       char *open =
 	(site_survey_lists[i].capability & DOT11_CAP_PRIVACY) ? "No" : "Yes";
 
-      ret +=
-	websWrite (wp,
-		   "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
-		   i ? ',' : ' ', site_survey_lists[i].SSID,
-		   site_survey_lists[i].BSSID, site_survey_lists[i].channel,
-		   site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
-		   site_survey_lists[i].beacon_period, open,
-		   site_survey_lists[i].dtim_period, rates);
+      websWrite (wp,
+		 "%c\"%s\",\"%s\",\"%d\",\"%d\",\"%d\",\"%d\",\"%s\",\"%d\",\"%s\"\n",
+		 i ? ',' : ' ', site_survey_lists[i].SSID,
+		 site_survey_lists[i].BSSID, site_survey_lists[i].channel,
+		 site_survey_lists[i].RSSI, site_survey_lists[i].phy_noise,
+		 site_survey_lists[i].beacon_period, open,
+		 site_survey_lists[i].dtim_period, rates);
     }
 
-  return ret;
+  return;
 }

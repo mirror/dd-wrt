@@ -16,7 +16,7 @@
 
 
 /* Dump leases in <tr><td>hostname</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
-int
+void
 ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
@@ -32,7 +32,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
 
@@ -118,21 +118,19 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 
 	      expires_time[strlen (expires_time) - 1] = '\0';
 	    }
-	  ret +=
-	    websWrite (wp, "%c'%s','%s','%s','%s','%d'", count ? ',' : ' ',
-		       !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr,
-		       mac, expires_time, get_single_ip (inet_ntoa (addr),
-							 3));
+	  websWrite (wp, "%c'%s','%s','%s','%s','%d'", count ? ',' : ' ',
+		     !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr,
+		     mac, expires_time, get_single_ip (inet_ntoa (addr), 3));
 	  count++;
 	}
       fclose (fp);
     }
 
-  return ret;
+  return;
 }
 
 /* Delete leases */
-int
+void
 delete_leases (webs_t wp)
 {
   FILE *fp_w;
@@ -175,7 +173,7 @@ delete_leases (webs_t wp)
       if (!(fp_w = fopen ("/var/run/dnsmasq.pid", "r")))
 	{
 	  websError (wp, 400, "Write leases error\n");
-	  return -1;
+	  return;
 	}
       if (ipcount == 0)
 	return 0;
@@ -245,7 +243,7 @@ delete_leases (webs_t wp)
       if (!(fp_w = fopen ("/var/run/udhcpd.pid", "r")))
 	{
 	  websError (wp, 400, "Write leases error\n");
-	  return -1;
+	  return;
 	}
       fgets (buff, sizeof (buff), fp_w);
 
@@ -254,7 +252,7 @@ delete_leases (webs_t wp)
 
     }
 
-  return ret;
+  return;
 }
 
 

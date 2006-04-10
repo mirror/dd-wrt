@@ -108,7 +108,7 @@ httpd_filter_name (char *old_name, char *new_name, size_t size, int type)
   return 1;
 }
 
-int
+void
 ej_compile_date (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char year[4], mon[3], day[2];
@@ -117,41 +117,41 @@ ej_compile_date (int eid, webs_t wp, int argc, char_t ** argv)
   sscanf (__DATE__, "%s %s %s", mon, day, year);
   snprintf (string, sizeof (string), "%s. %s, %s", mon, day, year);
 
-  return websWrite (wp, "%s", string);
+  websWrite (wp, "%s", string);
 }
 
-int
+void
 ej_compile_time (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  return websWrite (wp, "%s", __TIME__);
+  websWrite (wp, "%s", __TIME__);
 }
 
-int
+void
 ej_get_firmware_version (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  return websWrite (wp, "%s%s", CYBERTAN_VERSION, MINOR_VERSION);
+  websWrite (wp, "%s%s", CYBERTAN_VERSION, MINOR_VERSION);
 }
 
-int
+void
 ej_get_firmware_title (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  return websWrite (wp, "Wireless-G Broadband Router");
+  websWrite (wp, "Wireless-G Broadband Router");
 }
 
-int
+void
 ej_get_web_page_name (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  return websWrite (wp, "%s.asp", websGetVar (wp, "submit_button", "index"));
+  websWrite (wp, "%s.asp", websGetVar (wp, "submit_button", "index"));
 }
 
-int
+void
 ej_get_model_name (int eid, webs_t wp, int argc, char_t ** argv)
 {
   //return websWrite(wp,"%s",MODEL_NAME);
-  return websWrite (wp, "%s", nvram_safe_get ("router_name"));
+  websWrite (wp, "%s", nvram_safe_get ("router_name"));
 }
 
-int
+void
 ej_get_url (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
@@ -159,13 +159,13 @@ ej_get_url (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
-  return websWrite (wp, "%s", "Invalid argument\n");
+  websWrite (wp, "%s", "Invalid argument\n");
 }
 
-int
+void
 ej_show_logo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   return 0;

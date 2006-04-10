@@ -577,66 +577,67 @@ port_forward_table (webs_t wp, char *type, int which)
 	if (!strcmp (type, "name"))
 	  {
 	    httpd_filter_name (name, new_name, sizeof (new_name), GET);
-	    return websWrite (wp, "%s", new_name);
+	    websWrite (wp, "%s", new_name);
 	  }
 	else if (!strcmp (type, "from"))
-	  return websWrite (wp, "%s", from);
+	  websWrite (wp, "%s", from);
 	else if (!strcmp (type, "to"))
-	  return websWrite (wp, "%s", to);
+	  websWrite (wp, "%s", to);
 	else if (!strcmp (type, "tcp"))
 	  {			// use checkbox
 	    if (!strcmp (proto, "udp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "checked");
+	      websWrite (wp, "checked");
 	  }
 	else if (!strcmp (type, "udp"))
 	  {			//use checkbox
 	    if (!strcmp (proto, "tcp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "checked");
+	      websWrite (wp, "checked");
 	  }
 	else if (!strcmp (type, "sel_tcp"))
 	  {			// use select
 	    if (!strcmp (proto, "udp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
 	    if (!strcmp (proto, "tcp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	  }
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	    else
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	  }
 	else if (!strcmp (type, "ip"))
-	  return websWrite (wp, "%s", ip);
+	  websWrite (wp, "%s", ip);
 	else if (!strcmp (type, "enable"))
 	  {
 	    if (!strcmp (enable, "on"))
-	      return websWrite (wp, "checked");
+	      websWrite (wp, "checked");
 	    else
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	  }
+	return;
       }
   }
   if (!strcmp (type, "from") || !strcmp (type, "to"))
-    return websWrite (wp, "0");
+    websWrite (wp, "0");
   else if (!strcmp (type, "ip"))
-    return websWrite (wp, "0.0.0.0");
+    websWrite (wp, "0.0.0.0");
   else if (!strcmp (type, "sel_both"))
-    return websWrite (wp, "selected");
+    websWrite (wp, "selected");
   else
-    return websWrite (wp, "");
+    websWrite (wp, "");
 }
 
 
@@ -680,66 +681,67 @@ port_forward_spec (webs_t wp, char *type, int which)
 	if (!strcmp (type, "name"))
 	  {
 	    httpd_filter_name (name, new_name, sizeof (new_name), GET);
-	    return websWrite (wp, "%s", new_name);
+	    websWrite (wp, "%s", new_name);
 	  }
 	else if (!strcmp (type, "from"))
-	  return websWrite (wp, "%s", from);
+	  websWrite (wp, "%s", from);
 	else if (!strcmp (type, "to"))
-	  return websWrite (wp, "%s", to);
+	  websWrite (wp, "%s", to);
 	else if (!strcmp (type, "tcp"))
 	  {			// use checkbox
 	    if (!strcmp (proto, "udp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "checked");
+	      websWrite (wp, "checked");
 	  }
 	else if (!strcmp (type, "udp"))
 	  {			//use checkbox
 	    if (!strcmp (proto, "tcp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "checked");
+	      websWrite (wp, "checked");
 	  }
 	else if (!strcmp (type, "sel_tcp"))
 	  {			// use select
 	    if (!strcmp (proto, "udp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
 	    if (!strcmp (proto, "tcp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	  }
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	    else
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	  }
 	else if (!strcmp (type, "ip"))
-	  return websWrite (wp, "%s", ip);
+	  websWrite (wp, "%s", ip);
 	else if (!strcmp (type, "enable"))
 	  {
 	    if (!strcmp (enable, "on"))
-	      return websWrite (wp, "checked");
+	      websWrite (wp, "checked");
 	    else
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	  }
+	return;
       }
   }
   if (!strcmp (type, "from") || !strcmp (type, "to"))
-    return websWrite (wp, "0");
+    websWrite (wp, "0");
   else if (!strcmp (type, "ip"))
-    return websWrite (wp, "0.0.0.0");
+    websWrite (wp, "0.0.0.0");
   else if (!strcmp (type, "sel_both"))
-    return websWrite (wp, "selected");
+    websWrite (wp, "selected");
   else
-    return websWrite (wp, "");
+    websWrite (wp, "");
 }
 
 
@@ -860,7 +862,7 @@ validate_port_trigger (webs_t wp, char *value, struct variable *v)
  * name:on:both:1000-2000>3000-4000
  */
 
-int
+void
 ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
@@ -876,7 +878,7 @@ ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   wordlist = nvram_safe_get ("port_trigger");
@@ -916,49 +918,51 @@ ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv)
 	    if (strcmp (name, ""))
 	      {
 		httpd_filter_name (name, new_name, sizeof (new_name), GET);
-		return websWrite (wp, "%s", new_name);
+		websWrite (wp, "%s", new_name);
 	      }
 	  }
 	else if (!strcmp (type, "enable"))
 	  {
 	    if (!strcmp (enable, "on"))
-	      return websWrite (wp, "checked");
+	      websWrite (wp, "checked");
 	    else
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	  }
 	else if (!strcmp (type, "sel_tcp"))
 	  {			// use select
 	    if (!strcmp (proto, "udp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
 	    if (!strcmp (proto, "tcp"))
-	      return websWrite (wp, "");
+	      websWrite (wp, "");
 	    else
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	  }
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      return websWrite (wp, "selected");
+	      websWrite (wp, "selected");
 	    else
-	      return websWrite (wp, "");;
+	      websWrite (wp, "");
 	  }
 	else if (!strcmp (type, "i_from"))
-	  return websWrite (wp, "%s", i_from);
+	  websWrite (wp, "%s", i_from);
 	else if (!strcmp (type, "i_to"))
-	  return websWrite (wp, "%s", i_to);
+	  websWrite (wp, "%s", i_to);
 	else if (!strcmp (type, "o_from"))
-	  return websWrite (wp, "%s", o_from);
+	  websWrite (wp, "%s", o_from);
 	else if (!strcmp (type, "o_to"))
-	  return websWrite (wp, "%s", o_to);
+	  websWrite (wp, "%s", o_to);
+	return;
       }
   }
   if (!strcmp (type, "name"))
-    return websWrite (wp, "");
+    websWrite (wp, "");
   else
-    return websWrite (wp, "0");
+    websWrite (wp, "0");
+  return;
 }

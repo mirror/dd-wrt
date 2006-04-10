@@ -10,10 +10,9 @@
 int clone_wan_mac;
 int lan_ip_changed;
 
-int
+void
 ej_show_index_setting (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char *type;
 
   type = GOZILA_GET ("wan_proto");
@@ -31,7 +30,6 @@ ej_show_index_setting (int eid, webs_t wp, int argc, char_t ** argv)
   else if (!strcmp (type, "heartbeat"))
     do_ej ("index_heartbeat.asp", wp);
 
-  return ret;
 }
 
 void
@@ -46,8 +44,8 @@ validate_lan_ipaddr (webs_t wp, char *value, struct variable *v)
   //lan_netmask = websGetVar(wp, "lan_netmask", NULL);
   //if(!lan_netmask)      return;
 
-  get_merge_ipaddr (wp,"lan_netmask", lan_netmask);
-  get_merge_ipaddr (wp,v->name, lan_ipaddr);
+  get_merge_ipaddr (wp, "lan_netmask", lan_netmask);
+  get_merge_ipaddr (wp, v->name, lan_ipaddr);
 
   if (!valid_ipaddr (wp, lan_ipaddr, v))
     return;
@@ -100,12 +98,12 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
   if (pppoever)
     nvram_set ("pppoe_ver", pppoever);
 
-  get_merge_ipaddr (wp,"wan_ipaddr", wan_ipaddr);
-  get_merge_ipaddr (wp,"wan_netmask", wan_netmask);
+  get_merge_ipaddr (wp, "wan_ipaddr", wan_ipaddr);
+  get_merge_ipaddr (wp, "wan_netmask", wan_netmask);
   if (!strcmp (wan_proto, "pptp"))
-    get_merge_ipaddr (wp,"pptp_server_ip", wan_gateway);
+    get_merge_ipaddr (wp, "pptp_server_ip", wan_gateway);
   else
-    get_merge_ipaddr (wp,"wan_gateway", wan_gateway);
+    get_merge_ipaddr (wp, "wan_gateway", wan_gateway);
 
   if (!strcmp (wan_proto, "pptp") && !strcmp ("0.0.0.0", wan_ipaddr))
     {				// Sveasoft: allow 0.0.0.0 for pptp IP addr
@@ -147,30 +145,24 @@ validate_wan_ipaddr (webs_t wp, char *value, struct variable *v)
 
 }
 
-int
+void
 ej_get_wl_max_channel (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
 
-  ret = websWrite (wp, "%s", WL_MAX_CHANNEL);
-
-  return ret;
+  websWrite (wp, "%s", WL_MAX_CHANNEL);
 }
 
-int
+void
 ej_get_wl_domain (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
 
 #if COUNTRY == EUROPE
-  ret += websWrite (wp, "ETSI");
+  websWrite (wp, "ETSI");
 #elif COUNTRY == JAPAN
-  ret += websWrite (wp, "JP");
+  websWrite (wp, "JP");
 #else
-  ret += websWrite (wp, "US");
+  websWrite (wp, "US");
 #endif
-
-  return ret;
 }
 
 int
@@ -183,7 +175,7 @@ clone_mac (webs_t wp)
   return ret;
 }
 
-int
+void
 ej_get_clone_mac (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -194,7 +186,6 @@ ej_get_clone_mac (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &which) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
     }
 
   if (clone_wan_mac)
@@ -217,22 +208,20 @@ ej_get_clone_mac (int eid, webs_t wp, int argc, char_t ** argv)
   if (c)
     {
       mac = get_single_mac (c, which);
-      ret += websWrite (wp, "%02X", mac);
+      websWrite (wp, "%02X", mac);
       if (dofree)
 	free (c);
     }
   else
-    ret += websWrite (wp, "00");
-  return ret;
+    websWrite (wp, "00");
 }
 
 int
 macclone_onload (webs_t wp, char *arg)
 {
-  int ret = 0;
 
   if (clone_wan_mac)
-    ret += websWrite (wp, arg);
+    websWrite (wp, arg);
 
-  return ret;
+  return 0;
 }

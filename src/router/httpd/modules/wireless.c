@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																												    /* channel info structure *///from 11.9
+																																																/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -967,7 +967,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
     }
 }
 
-int
+void
 ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i, ret = 0;
@@ -984,60 +984,58 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
 #ifdef KROMOGUI
   if (!strcmp (type, "input"))
     {
-      ret += websWrite (wp, "<div class=\"col2l\">\n");
-      ret += websWrite (wp, "<fieldset><legend>Table 1</legend>\n");
+      websWrite (wp, "<div class=\"col2l\">\n");
+      websWrite (wp, "<fieldset><legend>Table 1</legend>\n");
       for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
 	{
 
 	  item = 0 * WL_FILTER_MAC_NUM + i + 1;
-	  ret +=
-	    websWrite (wp,
-		       "<div>%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		       mac_mess, item, box_len, item - 1,
-		       wl_filter_mac_get ("mac", item - 1));
-	  ret +=
-	    websWrite (wp,
-		       "%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
-		       mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
-		       item + (WL_FILTER_MAC_NUM / 2) - 1,
-		       wl_filter_mac_get ("mac",
-					  item + (WL_FILTER_MAC_NUM / 2) -
-					  1));
+
+	  websWrite (wp,
+		     "<div>%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+		     mac_mess, item, box_len, item - 1,
+		     wl_filter_mac_get ("mac", item - 1));
+
+	  websWrite (wp,
+		     "%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
+		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
+		     item + (WL_FILTER_MAC_NUM / 2) - 1,
+		     wl_filter_mac_get ("mac",
+					item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
 
-      ret += websWrite (wp, "</fieldset></div>\n");
-      ret += websWrite (wp, "<div class=\"col2r\">\n");
-      ret += websWrite (wp, "<fieldset><legend>Table 2</legend>\n");
+      websWrite (wp, "</fieldset></div>\n");
+      websWrite (wp, "<div class=\"col2r\">\n");
+      websWrite (wp, "<fieldset><legend>Table 2</legend>\n");
 
       for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
 	{
 
 	  item = 1 * WL_FILTER_MAC_NUM + i + 1;
-	  ret +=
-	    websWrite (wp,
-		       "<div/>%s %03d : <INPUT maxLength=\"17\" onBlur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
-		       mac_mess, item, box_len, item - 1,
-		       wl_filter_mac_get ("mac", item - 1));
-	  ret +=
-	    websWrite (wp,
-		       "%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
-		       mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
-		       item + (WL_FILTER_MAC_NUM / 2) - 1,
-		       wl_filter_mac_get ("mac",
-					  item + (WL_FILTER_MAC_NUM / 2) -
-					  1));
+
+	  websWrite (wp,
+		     "<div/>%s %03d : <INPUT maxLength=\"17\" onBlur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/>&nbsp;&nbsp;&nbsp;",
+		     mac_mess, item, box_len, item - 1,
+		     wl_filter_mac_get ("mac", item - 1));
+
+	  websWrite (wp,
+		     "%s %03d : <INPUT maxLength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"/></div>\n",
+		     mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len,
+		     item + (WL_FILTER_MAC_NUM / 2) - 1,
+		     wl_filter_mac_get ("mac",
+					item + (WL_FILTER_MAC_NUM / 2) - 1));
 
 	}
 
-      ret += websWrite (wp, "</fieldset>\n");
-      ret += websWrite (wp, "</div><br clear=\"all\" /><br />\n");
+      websWrite (wp, "</fieldset>\n");
+      websWrite (wp, "</div><br clear=\"all\" /><br />\n");
 
     }
 
@@ -1089,7 +1087,7 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
   //cprintf("%s():set wl_active_add_mac = 0\n",__FUNCTION__);
   nvram_set ("wl_active_add_mac", "0");
-  return ret;
+  return;
 }
 
 int
@@ -1304,7 +1302,7 @@ get_hostname_ip (char *type, char *filename)
   fclose (fp);
 }
 
-int
+void
 ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i, ret = 0, flag = 0;
@@ -1319,7 +1317,7 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (!strcmp (type, "online"))
@@ -1399,7 +1397,7 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  if (wl_client_macs[i].status != 1)
 	    continue;
-	  ret = websWrite (wp, "\
+	  websWrite (wp, "\
  <TR align=middle bgColor=#cccccc> \n\
     <TD height=\"20\" width=\"167\"><FONT face=Arial size=2>%s</FONT></TD> \n\
     <TD height=\"20\" width=\"140\"><FONT face=Arial size=2>%s</FONT></TD> \n\
@@ -1414,7 +1412,7 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  if (wl_client_macs[i].status != 0)
 	    continue;
-	  ret = websWrite (wp, "\
+	  websWrite (wp, "\
  <TR align=middle bgColor=#cccccc> \n\
     <TD height=\"20\" width=\"167\"><FONT face=Arial size=2>%s</FONT></TD> \n\
     <TD height=\"20\" width=\"140\"><FONT face=Arial size=2>%s</FONT></TD> \n\
@@ -1425,7 +1423,7 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 	}
     }
   //if(dhcp_lease_table)  free(dhcp_lease_table);
-  return 0;
+  return;
 }
 
 char *
@@ -1509,7 +1507,7 @@ get_wep_value (char *type, char *_bit, char *prefix)
   return "";
 }
 
-int
+void
 ej_get_wep_value (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type, *bit;
@@ -1518,7 +1516,7 @@ ej_get_wep_value (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   cprintf ("get wep value %s\n", type);
 #ifdef HAVE_MADWIFI
@@ -1534,10 +1532,10 @@ ej_get_wep_value (int eid, webs_t wp, int argc, char_t ** argv)
   httpd_filter_name (value, new_value, sizeof (new_value), GET);
   cprintf ("newvalue = %s\n", new_value);
 
-  return websWrite (wp, "%s", new_value);
+  websWrite (wp, "%s", new_value);
 }
 
-int
+void
 ej_show_wl_wep_setting (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
@@ -1577,7 +1575,7 @@ ret += websWrite(wp," \
                 <TD vAlign=bottom width=435 bgColor=#ffffff height=25>&nbsp;\n\
 			<INPUT size=35 name=wl_key4 value='%s'></TD></TR>\n",get_wep_value("key4",type));
 */
-  return ret;
+  return;
 }
 
 void
@@ -1607,7 +1605,7 @@ validate_macmode (webs_t wp, char *value, struct variable *v)
 }
 
 int
-generate_wep_key (webs_t wp,int key, char *prefix)
+generate_wep_key (webs_t wp, int key, char *prefix)
 {
   int i;
   char buf[256];
@@ -1696,9 +1694,10 @@ generate_key_64 (webs_t wp)
   cprintf ("gen wep key 64");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
-  ret = generate_wep_key (wp,64, websGetVar (wp, "security_varname", "ath0"));
+  ret =
+    generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "ath0"));
 #else
-  ret = generate_wep_key (wp,64, websGetVar (wp, "security_varname", "wl"));
+  ret = generate_wep_key (wp, 64, websGetVar (wp, "security_varname", "wl"));
 #endif
   return ret;
 }
@@ -1710,9 +1709,10 @@ generate_key_128 (webs_t wp)
   cprintf ("gen wep key 128");
   generate_key = 1;
 #ifdef HAVE_MADWIFI
-  ret = generate_wep_key (wp,128, websGetVar (wp, "security_varname", "ath0"));
+  ret =
+    generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "ath0"));
 #else
-  ret = generate_wep_key (wp,128, websGetVar (wp, "security_varname", "wl"));
+  ret = generate_wep_key (wp, 128, websGetVar (wp, "security_varname", "wl"));
 #endif
   return ret;
 }
@@ -1724,7 +1724,7 @@ wl_active_onload (webs_t wp, char *arg)
 
   if (!strcmp (nvram_safe_get ("wl_active_add_mac"), "1"))
     {
-      ret += websWrite (wp, arg);
+      websWrite (wp, arg);
     }
 
   return ret;
@@ -1732,7 +1732,7 @@ wl_active_onload (webs_t wp, char *arg)
 }
 
 // only for nonbrand
-int
+void
 ej_get_wl_active_mac (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char cmd[80], line[80];
@@ -1753,15 +1753,15 @@ ej_get_wl_active_mac (int eid, webs_t wp, int argc, char_t ** argv)
 	    continue;
 	  if (strcmp (list[0], "assoclist"))
 	    continue;
-	  ret += websWrite (wp, "%c'%s'", count ? ',' : ' ', list[1]);
+	  websWrite (wp, "%c'%s'", count ? ',' : ' ', list[1]);
 	  count++;
 	}
     }
 
-  return ret;
+  return;
 }
 
-int
+void
 ej_get_wl_value (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -1770,11 +1770,11 @@ ej_get_wl_value (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   if (!strcmp (type, "default_dtim"))
     {
-      ret = websWrite (wp, "1");	// This is a best value for 11b test
+      websWrite (wp, "1");	// This is a best value for 11b test
     }
   else if (!strcmp (type, "wl_afterburner_override"))
     {
@@ -1783,11 +1783,11 @@ ej_get_wl_value (int eid, webs_t wp, int argc, char_t ** argv)
       if ((fp = popen ("wl afterburner_override", "r")))
 	{
 	  fgets (line, sizeof (line), fp);
-	  ret = websWrite (wp, "%s", chomp (line));
+	  websWrite (wp, "%s", chomp (line));
 	  pclose (fp);
 	}
     }
-  return ret;
+  return;
 
 }
 
@@ -1894,7 +1894,7 @@ security_save (webs_t wp)
 
 #ifdef HAVE_MSSID
 
-int
+void
 ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
 		     char *prefix)
 {
@@ -1906,7 +1906,7 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   rep (var, '.', 'X');
   security_mode = GOZILA_GET (var);
@@ -1939,10 +1939,10 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
     show_wep (wp, prefix);
   //do_ej ("WEP.asp", wp);
 
-  return ret;
+  return;
 }
 #else
-int
+void
 ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -1951,7 +1951,7 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   security_mode = GOZILA_GET ("security_mode");
@@ -1976,13 +1976,13 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv)
   else if (!strcmp (security_mode, "wep"))
     do_ej ("WEP.asp", wp);
 
-  return ret;
+  return;
 }
 
 #endif
 
 
-int
+void
 ej_wl_ioctl (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int unit, val;
@@ -1993,11 +1993,11 @@ ej_wl_ioctl (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s %s", &op, &type, &var) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if ((unit = atoi (nvram_safe_get ("wl_unit"))) < 0)
-    return -1;
+    return;
 
   snprintf (prefix, sizeof (prefix), "wl%d_", unit);
   name = nvram_safe_get (strcat_r (prefix, "ifname", tmp));
@@ -2005,15 +2005,17 @@ ej_wl_ioctl (int eid, webs_t wp, int argc, char_t ** argv)
   if (strcmp (op, "get") == 0)
     {
       if (strcmp (type, "int") == 0)
+	{
 #ifdef HAVE_MSSID
-	return websWrite (wp, "%u",
-			  wl_iovar_getint (name, var, &val) == 0 ? val : 0);
+	  websWrite (wp, "%u",
+		     wl_iovar_getint (name, var, &val) == 0 ? val : 0);
 #else
-	return websWrite (wp, "%u",
-			  wl_get_int (name, var, &val) == 0 ? val : 0);
+	  websWrite (wp, "%u", wl_get_int (name, var, &val) == 0 ? val : 0);
 #endif
+	  return;
+	}
     }
-  return -1;
+  return;
 }
 
 void
@@ -2177,7 +2179,7 @@ validate_wl_net_mode (webs_t wp, char *value, struct variable *v)
   nvram_set (v->name, value);
 }
 
-int
+void
 ej_wme_match_op (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
@@ -2186,16 +2188,19 @@ ej_wme_match_op (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   foreach (word, nvram_safe_get (name), next)
   {
     if (!strcmp (word, match))
-      return websWrite (wp, output);
+      {
+	websWrite (wp, output);
+	return;
+      }
   }
 
-  return 0;
+  return;
 }
 
 void

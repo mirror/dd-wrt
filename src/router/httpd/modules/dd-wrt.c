@@ -36,7 +36,7 @@
 #include <wlutils.h>
 #include <bcmparams.h>
 
-int
+void
 ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<option value=\"gateway\" %s >Gateway</option>\n",
@@ -52,11 +52,11 @@ ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<option value=\"router\" %s >Router</option>\n",
 	     nvram_selmatch (wp, "wk_mode", "router") ? "selected" : "");
 #endif
-  return 0;
+  return;
 
 }
 
-int
+void
 ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
@@ -84,10 +84,10 @@ ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 	     "<option value=\"heartbeat\" %s >HeartBeat Signal</option>\n",
 	     nvram_selmatch (wp, "wan_proto", "heartbeat") ? "selected" : "");
 #endif
-  return 0;
+  return;
 }
 
-int
+void
 ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv)
 {
 /*
@@ -104,17 +104,17 @@ websWrite(wp,"<dd class=\"definition\">In Kooperation mit NewMedia-NET GmbH</dd>
 websWrite(wp,"<dd class=\"definition\"><a href=\"http://www.newmedia-net.de\"/></dd>\n");
 websWrite(wp,"</dl>\n");
 #endif*/
-  return 0;
+  return;
 }
 
 
-int
+void
 ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fcpu = fopen ("/proc/meminfo", "r");
   if (fcpu == NULL)
     {
-      return 0;
+      return;
     }
   char buf[128];
   int n = 0;
@@ -122,7 +122,7 @@ rep:;
   if (n == EOF)
     {
       fclose (fcpu);
-      return 0;
+      return;
     }
   if (n)
     websWrite (wp, "'%s'", buf);
@@ -132,14 +132,14 @@ rep:;
   goto rep;
 }
 
-int
+void
 ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *clk = nvram_get ("clkfreq");
   if (clk == NULL)
     {
       websWrite (wp, "125");
-      return 0;
+      return;
     }
   char buf[64];
   strcpy (buf, clk);
@@ -150,18 +150,18 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 	buf[i] = 0;
     }
   websWrite (wp, buf);
-  return 0;
+  return;
 }
 
 
-int
+void
 ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fcpu = fopen ("/proc/cpuinfo", "r");
   if (fcpu == NULL)
     {
       websWrite (wp, "Not Detected!\n");
-      return 0;
+      return;
     }
   char buf[256];
   int i;
@@ -172,7 +172,7 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  websWrite (wp, "Not Detected!\n");
 	  fclose (fcpu);
-	  return 0;
+	  return;
 	}
       if (c == ':')
 	break;
@@ -185,7 +185,7 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  websWrite (wp, "Not Detected!\n");
 	  fclose (fcpu);
-	  return 0;
+	  return;
 	}
       if (c == 0xa || c == 0xd)
 	break;
@@ -194,7 +194,7 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
   buf[i] = 0;
   websWrite (wp, buf);
   fclose (fcpu);
-  return 0;
+  return;
 }
 
 #define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
@@ -207,28 +207,28 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 
-int
+void
 ej_show_wds_subnet (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int index = -1;
   if (ejArgs (argc, argv, "%d", &index) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   if (nvram_invmatch ("wl_br1_enable", "1"))
-    return 0;
+    return;
   char buf[16];
   sprintf (buf, "wl_wds%d_enable", index);
   websWrite (wp, "<OPTION value=2 %s >Subnet</OPTION>\n",
 	     nvram_selmatch (wp, buf, "2") ? "selected" : "");
-  return 0;
+  return;
 }
 
 
 
 #ifdef HAVE_SKYTRON
-int
+void
 ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int rssi = 0, noise = 0;
@@ -465,7 +465,7 @@ trigger_add (webs_t wp)
   return macro_add ("trigger_entries");
 }
 
-int
+void
 ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef CONFIG_BRANDING
@@ -485,7 +485,7 @@ ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
 	     "<input type=\"image\" src=\"images/paypal.gif\" border=\"0\" name=\"submit\" width=\"62\" height=\"31\" />");
   websWrite (wp, "</form>");
 #endif
-  return 0;
+  return;
 }
 
 void
@@ -548,7 +548,7 @@ user_add (webs_t wp)
   //validate_userlist(wp);
 }
 
-int
+void
 ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *sln = nvram_safe_get ("fon_usernames");
@@ -582,7 +582,7 @@ ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "</td></tr>\n");
     }
   free (o);
-  return 0;
+  return;
 }
 
 
@@ -666,7 +666,7 @@ validate_staticleases (webs_t wp, char *value, struct variable *v)
   free (leases);
 }
 
-int
+void
 ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
@@ -703,11 +703,11 @@ ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
 		 i, sep != NULL ? sep : "");
     }
   free (originalpointer);
-  return 0;
+  return;
 }
 
 
-int
+void
 ej_show_control (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifdef CONFIG_BRANDING
@@ -715,19 +715,19 @@ ej_show_control (int eid, webs_t wp, int argc, char_t ** argv)
 #else
   websWrite (wp, "DD-WRT Control Panel");
 #endif
-  return 0;
+  return;
 }
 
 
 #ifndef HAVE_AQOS
-int
+void
 ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  return 0;
+  return;
 }
 
 #else
-int
+void
 ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<fieldset>\n");
@@ -739,7 +739,7 @@ ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv)
 	     nvram_safe_get ("default_level"));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</fieldset><br />\n");
-  return 0;
+  return;
 }
 #endif
 
@@ -763,7 +763,7 @@ selmatch (char *var, char *is, char *ret)
   return "";
 }
 
-int
+void
 ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
@@ -792,7 +792,7 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 	     selmatch ("security_mode", "wep", "selected"));
   websWrite (wp, "</div>\n");
   ej_show_wpa_setting (eid, wp, argc, argv);
-  return 0;
+  return;
 }
 #else
 #ifdef HAVE_MADWIFI
@@ -880,7 +880,7 @@ show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
 
 }
 
-static int
+static void
 ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
 			 char *prefix)
 {
@@ -915,7 +915,7 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
 
 }
 
-int
+void
 ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
@@ -929,7 +929,7 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
       sprintf (buf, "ath%d", i);
       ej_show_security_single (eid, wp, argc, argv, buf);
     }
-  return 0;
+  return;
 #endif
 }
 
@@ -962,7 +962,7 @@ wan_proto (webs_t wp)
 }
 
 
-int
+void
 ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
@@ -1066,7 +1066,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   websWrite (wp, "</fieldset><br />\n");
-  return 0;
+  return;
 }
 
 
@@ -1365,7 +1365,7 @@ wireless_save (webs_t wp)
   return 0;
 }
 
-int
+void
 ej_showad (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_FON
@@ -1401,7 +1401,7 @@ websWrite(wp,"  src=\"http://pagead2.googlesyndication.com/pagead/show_ads.js\">
 websWrite(wp,"</script>\n");
 }*/
 #endif
-  return 0;
+  return;
 }
 
 
@@ -1453,7 +1453,7 @@ static struct regdomain regdomains[] = {
 
 
 
-int
+void
 ej_show_wireless_single (webs_t wp, char *prefix)
 {
   char wl_mode[16];
@@ -1630,10 +1630,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
   websWrite (wp, "</div>\n");
   websWrite (wp, "<br />\n");
-  return show_virtualssid (wp, prefix);
+  show_virtualssid (wp, prefix);
 }
 
-int
+void
 ej_show_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_MADWIFI
@@ -1648,7 +1648,7 @@ ej_show_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 #else
   ej_show_wireless_single (wp, "wl0");
 #endif
-  return 0;
+  return;
 }
 
 void
@@ -2042,7 +2042,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
   nvram_set ("wl0_wds", wds_list);
 }
 
-int
+void
 ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int mac = -1, wds_idx = -1, mac_idx = -1, ret = 0;
@@ -2052,13 +2052,13 @@ ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &mac_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
-    return -1;
+    return;
   else if (mac_idx < 0 || mac_idx > 5)
-    return -1;
+    return;
 
   snprintf (wds_var, 31, "wl_wds%d_hwaddr", wds_idx);
 
@@ -2067,16 +2067,16 @@ ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv)
   if (c)
     {
       mac = get_single_mac (c, mac_idx);
-      ret += websWrite (wp, "%02X", mac);
+      websWrite (wp, "%02X", mac);
     }
   else
-    ret += websWrite (wp, "00");
+    websWrite (wp, "00");
 
-  return ret;
+  return;
 
 }
 
-int
+void
 ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ip = -1, wds_idx = -1, ip_idx = -1, ret = 0;
@@ -2086,13 +2086,13 @@ ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &ip_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
-    return -1;
+    return;
   else if (ip_idx < 0 || ip_idx > 3)
-    return -1;
+    return;
 
   snprintf (wds_var, 31, "wl_wds%d_ipaddr", wds_idx);
 
@@ -2101,16 +2101,16 @@ ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv)
   if (c)
     {
       ip = get_single_ip (c, ip_idx);
-      ret += websWrite (wp, "%d", ip);
+      websWrite (wp, "%d", ip);
     }
   else
-    ret += websWrite (wp, "0");
+    websWrite (wp, "0");
 
-  return ret;
+  return;
 
 }
 
-int
+void
 ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int nm = -1, wds_idx = -1, nm_idx = -1, ret = 0;
@@ -2120,13 +2120,13 @@ ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &nm_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   else if (wds_idx < 1 || wds_idx > 6)
-    return -1;
+    return;
   else if (nm_idx < 0 || nm_idx > 3)
-    return -1;
+    return;
 
   snprintf (wds_var, 31, "wl_wds%d_netmask", wds_idx);
 
@@ -2135,17 +2135,17 @@ ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv)
   if (c)
     {
       nm = get_single_ip (c, nm_idx);
-      ret += websWrite (wp, "%d", nm);
+      websWrite (wp, "%d", nm);
     }
   else
-    ret += websWrite (wp, "255");
+    websWrite (wp, "255");
 
-  return ret;
+  return;
 
 }
 
 
-int
+void
 ej_get_wds_gw (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int gw = -1, wds_idx = -1, gw_idx = -1, ret = 0;
@@ -2155,13 +2155,13 @@ ej_get_wds_gw (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d %d", &wds_idx, &gw_idx) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   else if (wds_idx < 1 || wds_idx > MAX_WDS_DEVS)
-    return -1;
+    return;
   else if (gw_idx < 0 || gw_idx > 3)
-    return -1;
+    return;
 
   snprintf (wds_var, 31, "wl_wds%d_gw", wds_idx);
 
@@ -2170,16 +2170,16 @@ ej_get_wds_gw (int eid, webs_t wp, int argc, char_t ** argv)
   if (c)
     {
       gw = get_single_ip (c, gw_idx);
-      ret += websWrite (wp, "%d", gw);
+      websWrite (wp, "%d", gw);
     }
   else
-    ret += websWrite (wp, "0");
+    websWrite (wp, "0");
 
-  return ret;
+  return;
 
 }
 
-int
+void
 ej_get_br1_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ip = -1, ip_idx = -1, ret = 0;
@@ -2189,26 +2189,26 @@ ej_get_br1_ip (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &ip_idx) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   else if (ip_idx < 0 || ip_idx > 3)
-    return -1;
+    return;
 
   c = nvram_safe_get ("wl_br1_ipaddr");
 
   if (c)
     {
       ip = get_single_ip (c, ip_idx);
-      ret += websWrite (wp, "%d", ip);
+      websWrite (wp, "%d", ip);
     }
   else
-    ret += websWrite (wp, "0");
+    websWrite (wp, "0");
 
-  return ret;
+  return;
 
 }
 
-int
+void
 ej_get_br1_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int nm = -1, nm_idx = -1, ret = 0;
@@ -2218,26 +2218,26 @@ ej_get_br1_netmask (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &nm_idx) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   else if (nm_idx < 0 || nm_idx > 3)
-    return -1;
+    return;
 
   c = nvram_safe_get ("wl_br1_netmask");
 
   if (c)
     {
       nm = get_single_ip (c, nm_idx);
-      ret += websWrite (wp, "%d", nm);
+      websWrite (wp, "%d", nm);
     }
   else
-    ret += websWrite (wp, "255");
+    websWrite (wp, "255");
 
-  return ret;
+  return;
 
 }
 
-int
+void
 ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
@@ -2252,17 +2252,17 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (rate > 0)
     {
-      ret += websWrite (wp, "%d", rate / 2);
+      websWrite (wp, "%d", rate / 2);
     }
   else
-    ret += websWrite (wp, "unknown");
+    websWrite (wp, "unknown");
 
-  return ret;
+  return;
 
 }
 
 #define UPTIME_TMP	"/tmp/.uptime"
-int
+void
 ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char uptime[200] = { 0 }, cmd[200] =
@@ -2278,24 +2278,24 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
   if ((fp = fopen (UPTIME_TMP, "r")) != NULL)
     fgets (uptime, sizeof (uptime), fp);
   else
-    return -1;
+    return;
   int i = 0;
   while (uptime[i++] != 0 && i < 199)
     {
       if (uptime[i] == 0xa || uptime[i] == 0xd)
 	uptime[i] = 0;
     }
-  ret = websWrite (wp, "%s", uptime);
+  websWrite (wp, "%s", uptime);
 
   fclose (fp);
 
   unlink (UPTIME_TMP);
 
-  return ret;
+  return;
 
 }
 
-int
+void
 ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
@@ -2311,12 +2311,12 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
   wl_ioctl (dev, WLC_GET_CHANNEL, &ci, sizeof (ci));
   if (ci.target_channel > 0)
     {
-      ret += websWrite (wp, "%d", ci.target_channel);
+      websWrite (wp, "%d", ci.target_channel);
     }
   else
-    ret += websWrite (wp, "0");
+    websWrite (wp, "0");
 
-  return ret;
+  return;
 
 }
 
@@ -2326,7 +2326,7 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
 
-int
+void
 ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int rssi = 0, noise = 0;
@@ -2342,7 +2342,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   unlink (ASSOCLIST_TMP);
@@ -2466,7 +2466,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
 
-  return 0;
+  return;
 }
 
 
@@ -2474,7 +2474,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 #define WDS_RSSI_TMP	"/tmp/.rssi"
 #define WDS_CMD	"wl wds"
 
-int
+void
 ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int rssi = 0, i;
@@ -2492,7 +2492,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   unlink (WDS_LIST_TMP);
@@ -2602,11 +2602,11 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
 
-  return 0;
+  return;
 }
 
 
-int
+void
 ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int index = -1, ip[4] = { 0, 0, 0, 0 }, netmask[4] =
@@ -2617,7 +2617,7 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &index) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   if (nvram_selmatch (wp, "wk_mode", "ospf") &&
       nvram_selmatch (wp, "expert_mode", "1") &&
@@ -2722,7 +2722,7 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
     }
 
-  return 0;
+  return;
 
 }
 
@@ -2742,11 +2742,11 @@ save_wds (webs_t wp)
   wds_enable_val = websGetVar (wp, "wl_br1_enable", NULL);
   nvram_set ("wl_br1_enable", wds_enable_val);
 
-  return 0;
+  return;
 }
 
 #ifndef KROMOGUI
-int
+void
 ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_svcs = nvram_safe_get ("svqos_svcs");
@@ -2777,7 +2777,7 @@ ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 	  4)
 	break;
 
-      ret = websWrite (wp, "<TR>\n\
+      websWrite (wp, "<TR>\n\
 			   <TD align=right bgColor=#e7e7e7 height=5></TD>\n\
 			   <TD width=8 background=image/UI_04.gif height=5></TD>\n\
 			   <TD height=5></TD>\n\
@@ -2815,10 +2815,10 @@ ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 
-int
+void
 ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
@@ -2844,7 +2844,7 @@ ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
       if (sscanf (qos_ips, "%31s %31s ", ip, level) < 2)
 	break;
 
-      ret = websWrite (wp, "<TR>\n\
+      websWrite (wp, "<TR>\n\
 			   <TD align=right bgColor=#e7e7e7 height=5></TD>\n\
 			   <TD width=8 background=image/UI_04.gif height=5></TD>\n\
 			   <TD height=5></TD>\n\
@@ -2881,11 +2881,11 @@ ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 
 
-int
+void
 ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
@@ -2912,7 +2912,7 @@ ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
       if (sscanf (qos_macs, "%31s %31s ", mac, level) < 2)
 	break;
 
-      ret = websWrite (wp, "<TR>\n\
+      websWrite (wp, "<TR>\n\
 			   <TD align=right bgColor=#e7e7e7 height=5></TD>\n\
 			   <TD width=8 background=image/UI_04.gif height=5></TD>\n\
 			   <TD height=5></TD>\n\
@@ -2949,7 +2949,7 @@ ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 #endif
 
@@ -2971,7 +2971,7 @@ get_filter_services (void)
   return services;
 }
 
-int
+void
 ej_get_services_options (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -3021,11 +3021,11 @@ ej_get_services_options (int eid, webs_t wp, int argc, char_t ** argv)
     //cprintf("match:: name=%s, protocol=%s, ports=%s\n",
     //      word, protocol, ports);
 
-    ret = websWrite (wp, "<option value=\"%s\">%s</option>", name, name);
+    websWrite (wp, "<option value=\"%s\">%s</option>", name, name);
 
   }
 
-  return ret;
+  return;
 }
 
 int
@@ -3345,7 +3345,7 @@ qos_save (webs_t wp)
   return 0;
 }
 
-int
+void
 ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_RB500
@@ -3359,7 +3359,7 @@ ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%d", &which) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (nvram_match ("def_whwaddr", "00:00:00:00:00:00"))
@@ -3378,14 +3378,14 @@ ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
   if (c)
     {
       mac = get_single_mac (c, which);
-      ret += websWrite (wp, "%02X", mac);
+      websWrite (wp, "%02X", mac);
       if (dofree)
 	free (c);
     }
   else
-    ret += websWrite (wp, "00");
+    websWrite (wp, "00");
 
-  return ret;
+  return;
 #endif
 }
 
@@ -3395,7 +3395,7 @@ ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
 /* lonewolf additions */
 
 // Note that there is no VLAN #16.  It's just a convieniant way of denoting a "Tagged" port
-int
+void
 ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   /*
@@ -3465,130 +3465,130 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 
   for (i = 0; i < 20; i++)
     {
-      ret += websWrite (wp, "              <tr>\n");
-      ret += websWrite (wp, "<td>");
+      websWrite (wp, "              <tr>\n");
+      websWrite (wp, "<td>");
 
       switch (i)
 	{
 	case 16:
-	  ret += websWrite (wp, "Tagged");
+	  websWrite (wp, "Tagged");
 	  break;
 	case 17:
-	  ret += websWrite (wp, "Auto-Negotiate");
+	  websWrite (wp, "Auto-Negotiate");
 	  break;
 	case 18:
-	  ret += websWrite (wp, "100 Mbit");
+	  websWrite (wp, "100 Mbit");
 	  break;
 	case 19:
-	  ret += websWrite (wp, "Full-Duplex");
+	  websWrite (wp, "Full-Duplex");
 	  break;
 	default:
 	  snprintf (buff, 31, "%d", i);
-	  ret += websWrite (wp, buff);
+	  websWrite (wp, buff);
 	  break;
 	}
 
-      ret += websWrite (wp, "</td>\n");
+      websWrite (wp, "</td>\n");
 
       for (j = 0; j < 5; j++)
 	{
 	  snprintf (buff, 31, "\"port%dvlan%d\"", j, i);
-	  ret += websWrite (wp, "<td");
+	  websWrite (wp, "<td");
 
 	  if (j % 2 == 0)
-	    ret += websWrite (wp, " bgcolor=\"#CCCCCC\"");
+	    websWrite (wp, " bgcolor=\"#CCCCCC\"");
 
-	  ret +=
-	    websWrite (wp,
-		       " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
-	  ret += websWrite (wp, buff);
+
+	  websWrite (wp,
+		     " height=\"20\"><div align=\"center\"><input type=\"checkbox\" value=\"on\" name=");
+	  websWrite (wp, buff);
 
 	  if (i < 17 || i > 19)
 	    {
 	      if (vlans[i][j] == 1)
-		ret += websWrite (wp, " checked=\"checked\"");
+		websWrite (wp, " checked=\"checked\"");
 	    }
 	  else
 	    {
 	      if (vlans[i][j] == -1)
-		ret += websWrite (wp, " checked=\"checked\"");
+		websWrite (wp, " checked=\"checked\"");
 	    }
 
 	  if (i < 17)
 	    {
-	      ret += websWrite (wp, " onclick=");
+	      websWrite (wp, " onclick=");
 	      snprintf (buff, sizeof (buff),
 			"\"SelVLAN(this.form,'port%d')\"", j);
-	      ret += websWrite (wp, buff);
+	      websWrite (wp, buff);
 	    }
 	  else if (i == 17)
 	    {
-	      ret += websWrite (wp, " onclick=");
+	      websWrite (wp, " onclick=");
 	      snprintf (buff, sizeof (buff),
 			"\"SelSpeed(this.form,'port%d')\"", j);
-	      ret += websWrite (wp, buff);
+	      websWrite (wp, buff);
 	    }
-	  ret += websWrite (wp, " /></div></td>\n");
+	  websWrite (wp, " /></div></td>\n");
 	}
 
       if (i < 16)
 	{
-	  ret += websWrite (wp, "			<td><select name=");
+	  websWrite (wp, "			<td><select name=");
 	  snprintf (buff, 31, "\"vlan%d\"", i);
-	  ret += websWrite (wp, buff);
-	  ret += websWrite (wp, "><option value=\"-1\"");
+	  websWrite (wp, buff);
+	  websWrite (wp, "><option value=\"-1\"");
 	  if (vlans[i][5] < 0)
-	    ret += websWrite (wp, " selected");
-	  ret += websWrite (wp, ">None</option><option value=\"0\"");
+	    websWrite (wp, " selected");
+	  websWrite (wp, ">None</option><option value=\"0\"");
 	  if (vlans[i][5] == 0)
-	    ret += websWrite (wp, " selected");
-	  ret += websWrite (wp, ">LAN</option></select></td>\n");
+	    websWrite (wp, " selected");
+	  websWrite (wp, ">LAN</option></select></td>\n");
 	}
       else
 	{
-	  ret += websWrite (wp, "<td>&nbsp;</td>\n");
+	  websWrite (wp, "<td>&nbsp;</td>\n");
 	}
 
-      ret += websWrite (wp, "</tr>\n");
+      websWrite (wp, "</tr>\n");
 
       if (i == 16 || i == 19)
 	{
-	  ret += websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
+	  websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 	}
     }
 
-  ret += websWrite (wp, "<tr>\n");
-  ret += websWrite (wp, "<td>Wireless</td>\n");
-  ret +=
-    websWrite (wp,
-	       "<td colspan=\"6\"><select name=\"wireless\"><option value=\"-1\"");
+  websWrite (wp, "<tr>\n");
+  websWrite (wp, "<td>Wireless</td>\n");
+
+  websWrite (wp,
+	     "<td colspan=\"6\"><select name=\"wireless\"><option value=\"-1\"");
   if (wl_br < 0)
-    ret += websWrite (wp, " selected=\"selected\"");
-  ret += websWrite (wp, ">None</option><option value=\"0\"");
+    websWrite (wp, " selected=\"selected\"");
+  websWrite (wp, ">None</option><option value=\"0\"");
   if (wl_br == 0)
-    ret += websWrite (wp, " selected=\"selected\"");
-  ret += websWrite (wp, ">LAN</option></select></td>\n");
-  ret += websWrite (wp, "</tr>\n");
+    websWrite (wp, " selected=\"selected\"");
+  websWrite (wp, ">LAN</option></select></td>\n");
+  websWrite (wp, "</tr>\n");
 
-  ret += websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
+  websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 
-  ret += websWrite (wp, "<tr>\n");
-  ret += websWrite (wp, "<td>Link Aggregation<br>on Ports 3 & 4</td>\n");
-  ret +=
-    websWrite (wp,
-	       "<td colspan=\"6\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
+  websWrite (wp, "<tr>\n");
+  websWrite (wp, "<td>Link Aggregation<br>on Ports 3 & 4</td>\n");
+
+  websWrite (wp,
+	     "<td colspan=\"6\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
 
   c = nvram_safe_get ("trunking");
 
   snprintf (buff, 5, "%s", c);
 
   if (atoi (buff) == 1)
-    ret += websWrite (wp, " selected=\"selected\"");
+    websWrite (wp, " selected=\"selected\"");
 
-  ret += websWrite (wp, ">Trunk</option></select></td>\n");
-  ret += websWrite (wp, "              </tr>");
+  websWrite (wp, ">Trunk</option></select></td>\n");
+  websWrite (wp, "              </tr>");
 
-  return ret;
+  return;
 }
 
 /* Note: VLAN #16 designates tagging.  There is no VLAN #16 (only 0-15) */
@@ -4450,7 +4450,7 @@ int alias_delete_ip(webs_t wp)
 /* end lonewolf additions */
 
 #ifdef KROMOGUI
-int
+void
 ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_svcs = nvram_safe_get ("svqos_svcs");
@@ -4482,7 +4482,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 	  4)
 	break;
 
-      ret = websWrite (wp, "<tr>\n\
+      websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_svcdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_svcname%d\" value=\"%s\" />\n\
@@ -4508,7 +4508,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 #ifndef HAVE_AQOS
-int
+void
 ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
@@ -4537,7 +4537,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
       if (sscanf (qos_ips, "%31s %31s ", ip, level) < 2)
 	break;
 
-      ret = websWrite (wp, "<tr>\n\
+      websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
@@ -4558,10 +4558,10 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 #else
-int
+void
 ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
@@ -4591,7 +4591,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
       if (sscanf (qos_ips, "%31s %31s ", ip, level) < 2)
 	break;
 
-      ret = websWrite (wp, "<tr>\n\
+      websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
@@ -4608,11 +4608,11 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 #endif
 #ifndef HAVE_AQOS
-int
+void
 ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
@@ -4643,7 +4643,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
       if (sscanf (qos_macs, "%31s %31s ", mac, level) < 2)
 	break;
 
-      ret = websWrite (wp, "<tr>\n\
+      websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n\
@@ -4664,11 +4664,11 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 
 #else
-int
+void
 ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
@@ -4698,7 +4698,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
       if (sscanf (qos_macs, "%31s %31s ", mac, level) < 2)
 	break;
 
-      ret = websWrite (wp, "<tr>\n\
+      websWrite (wp, "<tr>\n\
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_macdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_mac%d\" value=\"%s\" />\n\
@@ -4714,7 +4714,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 #endif
 
@@ -4722,7 +4722,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 /* Added by Botho 03.April.06 */
-int
+void
 ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ip_count = 0;
@@ -4732,7 +4732,7 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
 
   fp = fopen ("/proc/net/ip_conntrack", "rb");
   if (fp == NULL)
-    return -1;
+    return;
   while (!feof (fp))
     {
       c = getc (fp);
@@ -4742,9 +4742,9 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
 	ip_count++;
     }
 
-  ret = websWrite (wp, "%d", ip_count);
+  websWrite (wp, "%d", ip_count);
 
   fclose (fp);
 
-  return ret;
+  return;
 }
