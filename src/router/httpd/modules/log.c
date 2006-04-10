@@ -12,7 +12,7 @@
 #define LOG_BUF	16384		// max buf, total have 64 entries
 
 /* Dump firewall log */
-int
+void
 ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char buf[LOG_BUF], *line, *next, *s;
@@ -37,14 +37,14 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   //if (klogctl(3, buf, 4096) < 0) {
   if (klogctl (3, buf, LOG_BUF) < 0)
     {
       websError (wp, 400, "Insufficient memory\n");
-      return -1;
+      return;
     }
   cprintf ("log: %s\n", buf);
   for (next = buf; (line = strsep (&next, "\n"));)
@@ -107,17 +107,16 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 	      if (!strcmp (src, src_old) && !strcmp (dpt, dpt_old))
 		{		// skip same record
-		    continue;
+		  continue;
 		}
 	      else
 		{
 		  strcpy (src_old, src);
 		  strcpy (dpt_old, dpt);
 		}
-	      ret +=
-		websWrite (wp,
-			   "<tr bgcolor=\"cccccc\"> <td align=\"middle\" height=\"1\">%s</td> <td align=\"middle\" height=\"1\">%s</td></tr>\n",
-			   src, servp ? servp->s_name : dpt);
+	      websWrite (wp,
+			 "<tr bgcolor=\"cccccc\"> <td align=\"middle\" height=\"1\">%s</td> <td align=\"middle\" height=\"1\">%s</td></tr>\n",
+			 src, servp ? servp->s_name : dpt);
 	    }
 	}
       else if (!strcmp (type, "outgoing"))
@@ -128,12 +127,12 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 	      if (_dport == 53)
 		{		// skip DNS
-		    continue;
+		  continue;
 		}
 	      if (!strcmp (src, src_old) && !strcmp (dpt, dpt_old)
 		  && !strcmp (dst, dst_old))
 		{		// skip same record
-		    continue;
+		  continue;
 		}
 	      else
 		{
@@ -141,10 +140,9 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 		  strcpy (dpt_old, dpt);
 		  strcpy (dst_old, dst);
 		}
-	      ret +=
-		websWrite (wp,
-			   "<tr bgcolor=\"cccccc\"> <td align=\"middle\">%s</td><td align=\"middle\">%s</td><td align=\"middle\">%s</td></tr>\n",
-			   src, dst, servp ? servp->s_name : dpt);
+	      websWrite (wp,
+			 "<tr bgcolor=\"cccccc\"> <td align=\"middle\">%s</td><td align=\"middle\">%s</td><td align=\"middle\">%s</td></tr>\n",
+			 src, dst, servp ? servp->s_name : dpt);
 	    }
 	}
       else if (!strcmp (type, "all"))
@@ -159,12 +157,12 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 
 	  if (_dport == 53)
 	    {			// skip DNS
-		continue;
+	      continue;
 	    }
 	  if (!strcmp (src, src_old) && !strcmp (dpt, dpt_old)
 	      && !strcmp (dst, dst_old))
 	    {			// skip same record
-		continue;
+	      continue;
 	    }
 	  else
 	    {
@@ -172,9 +170,8 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 	      strcpy (dpt_old, dpt);
 	      strcpy (dst_old, dst);
 	    }
-	  ret +=
-	    websWrite (wp, "%c'%s','%s','%s','%s','%d'\n", count ? ',' : ' ',
-		       proto, src, dst, servp ? servp->s_name : dpt, dir);
+	  websWrite (wp, "%c'%s','%s','%s','%s','%d'\n", count ? ',' : ' ',
+		     proto, src, dst, servp ? servp->s_name : dpt, dir);
 	  count++;
 	}
       //if(s_service) free(s_service);
@@ -182,5 +179,5 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }

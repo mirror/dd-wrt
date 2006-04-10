@@ -11,7 +11,7 @@
 
 
 /* Dump route in <tr><td>IP</td><td>MASK</td><td>GW</td><td>Hop Count</td><td>interface</td></tr> format */
-int
+void
 ej_dump_route_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -30,14 +30,14 @@ ej_dump_route_table (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &format) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   /* open route table */
   if ((fp = fopen ("/proc/net/route", "r")) == NULL)
     {
       websError (wp, 400, "No route table\n");
-      return -1;
+      return;
     }
 
   /* Read the route cache entries. */
@@ -94,12 +94,12 @@ ej_dump_route_table (int eid, webs_t wp, int argc, char_t ** argv)
 		fclose (fp1);
 	    }
 
-	  ret += websWrite (wp, "%s%c'%s','%s','%s','%s'\n",
-			    debug ? "//" : "",
-			    blank ? ' ' : ',',
-			    sdest,
-			    inet_ntoa (netmask_ip),
-			    sgw, (strcmp (line, "br0") ? "WAN" : "LAN"));
+	  websWrite (wp, "%s%c'%s','%s','%s','%s'\n",
+		     debug ? "//" : "",
+		     blank ? ' ' : ',',
+		     sdest,
+		     inet_ntoa (netmask_ip),
+		     sgw, (strcmp (line, "br0") ? "WAN" : "LAN"));
 
 	  if (debug && blank)
 	    blank = 1;
@@ -112,7 +112,7 @@ ej_dump_route_table (int eid, webs_t wp, int argc, char_t ** argv)
       count++;
     }
 
-  return ret;
+  return;
 }
 
 void

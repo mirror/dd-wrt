@@ -75,7 +75,7 @@ int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
 // changed by steve
 static int tf_upnp (webs_t wp);
-static int ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv);
+static void ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv);
 // end changed by steve
 
 /* Example:
@@ -329,7 +329,7 @@ get_single_mac (char *macaddr, int which)
  * get_merge_ipaddr("lan_ipaddr", ipaddr); produces ipaddr="192.168.1.1"
  */
 int
-get_merge_ipaddr (webs_t wp,char *name, char *ipaddr)
+get_merge_ipaddr (webs_t wp, char *name, char *ipaddr)
 {
   char ipname[30];
   int i;
@@ -380,7 +380,7 @@ get_merge_ipaddr (webs_t wp,char *name, char *ipaddr)
  * get_merge_mac("wan_mac",mac); produces mac="00:11:22:33:44:55"
  */
 int
-get_merge_mac (webs_t wp,char *name, char *macaddr)
+get_merge_mac (webs_t wp, char *name, char *macaddr)
 {
   char macname[30];
   char *mac;
@@ -412,7 +412,7 @@ struct onload onloads[] = {
   {"Traceroute", traceroute_onload},
 };
 
-int
+void
 ej_onload (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type, *arg;
@@ -422,7 +422,7 @@ ej_onload (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s", &type, &arg) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   for (v = onloads; v < &onloads[STRUCT_LEN (onloads)]; v++)
@@ -430,31 +430,26 @@ ej_onload (int eid, webs_t wp, int argc, char_t ** argv)
       if (!strcmp (v->name, type))
 	{
 	  ret = v->go (wp, arg);
-	  return ret;
+	  return;
 	}
     }
 
-  return ret;
+  return;
 }
 
 /* Meta tag command that will no allow page cached by browsers.
  * The will force the page to be refreshed when visited.
  */
-int
+void
 ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret;
 
-  ret = websWrite (wp, "<meta http-equiv=\"expires\" content=\"0\">\n");
-  ret +=
-    websWrite (wp,
-	       "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
-  ret +=
-    websWrite (wp, "<meta http-equiv=\"pragma\" content=\"no-cache\">\n");
+  websWrite (wp, "<meta http-equiv=\"expires\" content=\"0\">\n");
+  websWrite (wp,
+	     "<meta http-equiv=\"cache-control\" content=\"no-cache\">\n");
+  websWrite (wp, "<meta http-equiv=\"pragma\" content=\"no-cache\">\n");
 //      ret += websWrite(wp,"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=%s\">", HTTP_CHARSET);
-
-
-  return ret;
+  return;
 }
 
 
@@ -463,7 +458,7 @@ ej_no_cache (int eid, webs_t wp, int argc, char_t ** argv)
  * lan_ipaddr=192.168.1.1
  * <% prefix_ip_get("lan_ipaddr",1); %> produces "192.168.1."
  */
-int
+void
 ej_prefix_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name;
@@ -473,20 +468,19 @@ ej_prefix_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &name, &type) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
 
   if (type == 1)
-    ret =
-      websWrite (wp, "%d.%d.%d.", get_single_ip (nvram_safe_get (name), 0),
-		 get_single_ip (nvram_safe_get (name), 1),
-		 get_single_ip (nvram_safe_get (name), 2));
+    websWrite (wp, "%d.%d.%d.", get_single_ip (nvram_safe_get (name), 0),
+	       get_single_ip (nvram_safe_get (name), 1),
+	       get_single_ip (nvram_safe_get (name), 2));
   if (type == 2)
-    ret = websWrite (wp, "%d.%d.", get_single_ip (nvram_safe_get (name), 0),
-		     get_single_ip (nvram_safe_get (name), 1));
+    websWrite (wp, "%d.%d.", get_single_ip (nvram_safe_get (name), 0),
+	       get_single_ip (nvram_safe_get (name), 1));
 
-  return ret;
+  return;
 }
 
 void
@@ -564,20 +558,19 @@ reltime (unsigned int seconds)
  * lan_ipaddr = 192.168.1.1
  * <% nvram_get("lan_ipaddr"); %> produces "192.168.1.1"
  */
-static int
+static void
 ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name;
-  int ret = 0;
 
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
 #if COUNTRY == JAPAN
-  ret = websWrite (wp, "%s", nvram_safe_get (name));
+  websWrite (wp, "%s", nvram_safe_get (name));
 #else
   /*for (c = nvram_safe_get (name); *c; c++)
      {
@@ -604,7 +597,7 @@ ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
 
 #endif
 
-  return ret;
+  return;
 }
 
 /*
@@ -614,7 +607,7 @@ ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
  * lan_ipaddr = 192.168.1.1, gozila_action = 1, websGetVar(wp, "lan_proto", NULL) = 192.168.1.2;
  * <% nvram_selget("lan_ipaddr"); %> produces "192.168.1.2"
  */
-static int
+static void
 ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name;
@@ -623,13 +616,16 @@ ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   if (gozila_action)
     {
       char *buf = websGetVar (wp, name, NULL);
       if (buf)
-	return websWrite (wp, "%s", buf);
+	{
+	  websWrite (wp, "%s", buf);
+	  return;
+	}
     }
 
 /*  for (c = nvram_safe_get (name); *c; c++)
@@ -642,7 +638,7 @@ ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
     }*/
   return tf_webWriteESCNV (wp, name);	// test: buffered version of above
 
-  return ret;
+  return;
 }
 
 /*
@@ -650,7 +646,7 @@ ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
  * wan_mac = 00:11:22:33:44:55
  * <% nvram_mac_get("wan_mac"); %> produces "00-11-22-33-44-55"
  */
-static int
+static void
 ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
@@ -661,7 +657,7 @@ ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   c = nvram_safe_get (name);
 
@@ -673,11 +669,11 @@ ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (*(mac + i) == ':')
 	    *(mac + i) = '-';
 	}
-      ret = websWrite (wp, "%s", mac);
+      websWrite (wp, "%s", mac);
       free (mac);		// leak, thx tofu
     }
 
-  return ret;
+  return;
 
 }
 
@@ -689,7 +685,7 @@ ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
  * wan_proto = dhcp; gozilla = 1; websGetVar(wp, "wan_proto", NULL) = static;
  * <% nvram_gozila_get("wan_proto"); %> produces "static"
  */
-static int
+static void
 ej_nvram_gozila_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *type;
@@ -697,14 +693,14 @@ ej_nvram_gozila_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   type = GOZILA_GET (name);
 
-  return websWrite (wp, "%s", type);
+  websWrite (wp, "%s", type);
 }
 
-static int
+static void
 ej_webs_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value;
@@ -713,15 +709,15 @@ ej_webs_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   value = websGetVar (wp, name, NULL);
 
   if (value)
-    ret = websWrite (wp, "%s", value);
+    websWrite (wp, "%s", value);
 
-  return ret;
+  return;
 }
 
 /*
@@ -729,7 +725,7 @@ ej_webs_get (int eid, webs_t wp, int argc, char_t ** argv)
  * lan_ipaddr = 192.168.1.1
  * <% get_single_ip("lan_ipaddr","1"); %> produces "168"
  */
-static int
+static void
 ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
@@ -739,7 +735,7 @@ ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   c = nvram_safe_get (name);
@@ -750,12 +746,12 @@ ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
       else if (!strcmp (c, PPP_PSEUDO_NM))
 	c = "255.255.255.0";
 
-      ret += websWrite (wp, "%d", get_single_ip (c, which));
+      websWrite (wp, "%d", get_single_ip (c, which));
     }
   else
-    ret += websWrite (wp, "0");
+    websWrite (wp, "0");
 
-  return ret;
+  return;
 }
 
 /*
@@ -763,7 +759,7 @@ ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
  * wan_mac = 00:11:22:33:44:55
  * <% get_single_mac("wan_mac","1"); %> produces "11"
  */
-static int
+static void
 ej_get_single_mac (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
@@ -774,19 +770,19 @@ ej_get_single_mac (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   c = nvram_safe_get (name);
   if (c)
     {
       mac = get_single_mac (c, which);
-      ret += websWrite (wp, "%02X", mac);
+      websWrite (wp, "%02X", mac);
     }
   else
-    ret += websWrite (wp, "00");
+    websWrite (wp, "00");
 
-  return ret;
+  return;
 }
 
 /*
@@ -819,7 +815,7 @@ nvram_selmatch (webs_t wp, char *name, char *match)
   return 0;
 }
 
-int
+void
 ej_nvram_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
@@ -827,17 +823,17 @@ ej_nvram_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (nvram_selmatch (wp, name, match))
     {
-      return websWrite (wp, output);
+      websWrite (wp, output);
     }
-  return 0;
+  return;
 }
 
-int
+void
 ej_nvram_else_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output1, *output2;
@@ -847,7 +843,7 @@ ej_nvram_else_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
       4)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   type = GOZILA_GET (name);
@@ -856,22 +852,22 @@ ej_nvram_else_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
     {
       if (nvram_match (name, match))
 	{
-	  return websWrite (wp, output1);
+	  websWrite (wp, output1);
 	}
       else
-	return websWrite (wp, output2);
+	websWrite (wp, output2);
     }
   else
     {
       if (!strcmp (type, match))
 	{
-	  return websWrite (wp, output1);
+	  websWrite (wp, output1);
 	}
       else
-	return websWrite (wp, output2);
+	websWrite (wp, output2);
     }
 
-  return 0;
+  return;
 }
 
 /*
@@ -880,7 +876,7 @@ ej_nvram_else_selmatch (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_else_match("wan_proto", "dhcp", "0","1"); %> produces "0"
  * <% nvram_else_match("wan_proto", "static", "0","1"); %> produces "1"
  */
-static int
+static void
 ej_nvram_else_match (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output1, *output2;
@@ -889,15 +885,15 @@ ej_nvram_else_match (int eid, webs_t wp, int argc, char_t ** argv)
       4)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (nvram_match (name, match))
-    return websWrite (wp, output1);
+    websWrite (wp, output1);
   else
-    return websWrite (wp, output2);
+    websWrite (wp, output2);
 
-  return 0;
+  return;
 }
 
 /*
@@ -906,7 +902,7 @@ ej_nvram_else_match (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_match("wan_proto", "dhcp", "selected"); %> produces "selected"
  * <% nvram_match("wan_proto", "static", "selected"); %> does not produce
  */
-static int
+static void
 ej_nvram_match (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
@@ -914,13 +910,13 @@ ej_nvram_match (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s %s", &name, &match, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (nvram_match (name, match))
-    return websWrite (wp, output);
+    websWrite (wp, output);
 
-  return 0;
+  return;
 }
 
 /*
@@ -929,7 +925,7 @@ ej_nvram_match (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_invmatch("wan_proto", "dhcp", "disabled"); %> does not produce
  * <% nvram_invmatch("wan_proto", "static", "disabled"); %> produces "disabled"
  */
-static int
+static void
 ej_nvram_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *invmatch, *output;
@@ -937,13 +933,13 @@ ej_nvram_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s %s", &name, &invmatch, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (nvram_invmatch (name, invmatch))
-    return websWrite (wp, output);
+    websWrite (wp, output);
 
-  return 0;
+  return;
 }
 
 /*
@@ -952,7 +948,7 @@ ej_nvram_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
  * <% support_match("HEARTBEAT_SUPPORT", "0", "selected"); %> does not produce
  * <% support_match("HEARTBEAT_SUPPORT", "1", "selected"); %> produces "selected"
  */
-static int
+static void
 ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output;
@@ -961,7 +957,7 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
 #ifdef HAVE_HTTPS
@@ -969,7 +965,7 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
     {
       if (!strcmp (name, "HTTPS"))
 	{
-	  return 1;
+	  return;
 	}
     }
 #endif
@@ -978,17 +974,18 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
   if (!strcmp (name, "WL_STA_SUPPORT") ||
       !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
       !strcmp (name, "SYSLOG_SUPPORT"))
-    return 1;
+    return;
 
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
 	{
-	  return websWrite (wp, output);
+	  websWrite (wp, output);
+	  return;
 	}
     }
 
-  return 1;
+  return;
 }
 
 
@@ -999,7 +996,7 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
  * HEARTBEAT_SUPPORT = 0
  * <% support_invmatch("HEARTBEAT_SUPPORT", "1", "-->"); %> produces "-->"
  */
-static int
+static void
 ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output;
@@ -1008,21 +1005,24 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s %s", &name, &value, &output) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 #ifdef HAVE_HTTPS
   if (do_ssl)
     {
       if (!strcmp (name, "HTTPS"))
 	{
-	  return 1;
+	  return;
 	}
     }
 #endif
   if (!strcmp (name, "WL_STA_SUPPORT") ||
       !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
       !strcmp (name, "SYSLOG_SUPPORT"))
-    return websWrite (wp, output);
+    {
+      websWrite (wp, output);
+      return;
+    }
 
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
@@ -1030,14 +1030,15 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  if (strcmp (v->supp_value, value))
 	    {
-	      return websWrite (wp, output);
+	      websWrite (wp, output);
+	      return;
 	    }
 	  else
-	    return 1;
+	    return;
 	}
     }
 
-  return websWrite (wp, output);
+  websWrite (wp, output);
 }
 
 /*
@@ -1045,7 +1046,7 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
  * HEARTBEAT_SUPPORT = 1
  * <% support_elsematch("HEARTBEAT_SUPPORT", "1", "black", "red"); %> procude "black"
  */
-static int
+static void
 ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value, *output1, *output2;
@@ -1055,14 +1056,15 @@ ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
       3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 #ifdef HAVE_HTTPS
   if (do_ssl)
     {
       if (!strcmp (name, "HTTPS"))
 	{
-	  return websWrite (wp, output1);
+	  websWrite (wp, output1);
+	  return;
 	}
     }
 #endif
@@ -1071,20 +1073,23 @@ ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
   if (!strcmp (name, "WL_STA_SUPPORT") ||
       !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
       !strcmp (name, "SYSLOG_SUPPORT"))
-    return websWrite (wp, output2);
-
+    {
+      websWrite (wp, output2);
+      return;
+    }
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
 	{
-	  return websWrite (wp, output1);
+	  websWrite (wp, output1);
+	  return;
 	}
     }
 
-  return websWrite (wp, output2);
+  websWrite (wp, output2);
 }
 
-static int
+static void
 ej_scroll (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
@@ -1093,14 +1098,14 @@ ej_scroll (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &type, &y) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   if (gozila_action)
     websWrite (wp, "%d", y);
   else
     websWrite (wp, "0");
 
-  return 0;
+  return;
 }
 
 /*
@@ -1109,7 +1114,7 @@ ej_scroll (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_list("filter_mac", 1); %> produces "00:87:65:43:21:00"
  * <% nvram_list("filter_mac", 100); %> produces ""
  */
-static int
+static void
 ej_nvram_list (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name;
@@ -1120,16 +1125,16 @@ ej_nvram_list (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &name, &which) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   foreach (word, nvram_safe_get (name), next)
   {
     if (which-- == 0)
-      ret += websWrite (wp, word);
+      websWrite (wp, word);
   }
 
-  return ret;
+  return;
 }
 
 /* Example:
@@ -1137,7 +1142,7 @@ ej_nvram_list (int eid, webs_t wp, int argc, char_t ** argv)
  * <% get_dns_ip("wan_dns", "1", "2"); %> produces "161"
  * <% get_dns_ip("wan_dns", "2", "3"); %> produces "1"
  */
-int
+void
 ej_get_dns_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name;
@@ -1147,16 +1152,16 @@ ej_get_dns_ip (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d %d", &name, &which, &count) < 3)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   foreach (word, nvram_safe_get (name), next)
   {
     if (which-- == 0)
-      return websWrite (wp, "%d", get_single_ip (word, count));
+      websWrite (wp, "%d", get_single_ip (word, count));
   }
 
-  return websWrite (wp, "0");	// not find
+  websWrite (wp, "0");		// not find
 }
 
 
@@ -1432,7 +1437,7 @@ validate_merge_ipaddrs (webs_t wp, char *value, struct variable *v)
 {
   char ipaddr[20];
 
-  get_merge_ipaddr (wp,v->name, ipaddr);
+  get_merge_ipaddr (wp, v->name, ipaddr);
 
   if (valid_ipaddr (wp, ipaddr, v))
     nvram_set (v->name, ipaddr);
@@ -1443,7 +1448,7 @@ validate_merge_mac (webs_t wp, char *value, struct variable *v)
 {
   char macaddr[20];
 
-  get_merge_mac (wp,v->name, macaddr);
+  get_merge_mac (wp, v->name, macaddr);
 
   if (valid_hwaddr (wp, macaddr, v))
     nvram_set (v->name, macaddr);
@@ -1637,7 +1642,7 @@ validate_hwaddrs (webs_t wp, char *value, struct variable *v)
   validate_list (wp, value, v, valid_hwaddr);
 }
 
-int
+void
 ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -1710,12 +1715,12 @@ ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
 
-  ret = websWrite (wp, "%s://%s%s/", http, ipaddr, port);
+  websWrite (wp, "%s://%s%s/", http, ipaddr, port);
 
-  return ret;
+  return;
 }
 
-int
+void
 ej_get_mtu (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret;
@@ -1726,17 +1731,17 @@ ej_get_mtu (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   mtu_list = get_mtu (proto);
 
   if (!strcmp (type, "min"))
-    ret = websWrite (wp, "%s", mtu_list->min);
+    websWrite (wp, "%s", mtu_list->min);
   else if (!strcmp (type, "max"))
-    ret = websWrite (wp, "%s", mtu_list->max);
+    websWrite (wp, "%s", mtu_list->max);
 
-  return ret;
+  return;
 }
 
 /*
@@ -2899,7 +2904,7 @@ getFileLen (FILE * in)
 #define FWSHOW2(a,b,c) sprintf(buffer,a,b,c); do_ej_buffer(buffer,wp);
 #define FWSHOW1(a,b) sprintf(buffer,a,b); do_ej_buffer(buffer,wp);
 
-static int
+static void
 ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
 //ej_show_forward(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 //        char_t *url, char_t *path, char_t *query)
@@ -2971,10 +2976,10 @@ ej_show_forward (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
     }
-  return 1;
+  return;
 }
 
-static int
+static void
 ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
 //ej_show_forward(webs_t wp, char_t *urlPrefix, char_t *webDir, int arg,
 //        char_t *url, char_t *path, char_t *query)
@@ -3046,10 +3051,10 @@ ej_show_forward_spec (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, " /></td>\n");
       websWrite (wp, "</tr>\n");
     }
-  return 1;
+  return;
 }
 
-static int
+static void
 ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
@@ -3104,12 +3109,12 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
 	 i, i);
       websWrite (wp, "</td></tr>\n");
     }
-  return 0;
+  return;
 }
 
 
 //SEG DD-WRT addition
-static int
+static void
 ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 {
 //<option value="blue" <% nvram_selected("router_style", "blue"); %>>Blue</option>
@@ -3130,10 +3135,10 @@ ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 		 entry->d_name);
     }
   closedir (directory);
-  return 0;
+  return;
 }
 
-static int
+static void
 ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char buf[256];
@@ -3168,7 +3173,7 @@ ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 	}
       closedir (directory);
     }
-  return 1;
+  return;
 }
 
 
@@ -3226,45 +3231,45 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   else
     browser_method = USE_WAN;
 
-      value = websGetVar (wp, "StartContinueTx", NULL);
-      // printf("\nBarry StartContinueTx,value=%s\n",value);
-      if (value)
-	{
-	  StartContinueTx (wp,value);
-	  goto footer;
-	}
+  value = websGetVar (wp, "StartContinueTx", NULL);
+  // printf("\nBarry StartContinueTx,value=%s\n",value);
+  if (value)
+    {
+      StartContinueTx (wp, value);
+      goto footer;
+    }
 
-      value = websGetVar (wp, "StopContinueTx", NULL);
-      // printf("\nBarry StopContinueTx,value=%s\n",value);
-      if (value)
-	{
-	  StopContinueTx (wp,value);
-	  goto footer;
-	}
-      /* 1030 */
-      value = websGetVar (wp, "WL_atten_bb", NULL);
-      // printf("\nBarry WL_atten_bb,value=%s\n",value);
-      if (value)
-	{
-	  Check_TSSI (wp,value);
-	  goto footer;
-	}
-      /* 1030 */
-      value = websGetVar (wp, "WL_tssi_enable", NULL);
-      // printf("\nBarry WL_tssi_enable,value=%s\n",value);
-      if (value)
-	{
-	  Enable_TSSI (value);
-	  goto footer;
-	}
-      /* 1216 */
-      value = websGetVar (wp, "ChangeANT", NULL);
-      // printf("\nBarry ChangeANT,value=%s\n",value);
-      if (value)
-	{
-	  Change_Ant (value);
-	  goto footer;
-	}
+  value = websGetVar (wp, "StopContinueTx", NULL);
+  // printf("\nBarry StopContinueTx,value=%s\n",value);
+  if (value)
+    {
+      StopContinueTx (wp, value);
+      goto footer;
+    }
+  /* 1030 */
+  value = websGetVar (wp, "WL_atten_bb", NULL);
+  // printf("\nBarry WL_atten_bb,value=%s\n",value);
+  if (value)
+    {
+      Check_TSSI (wp, value);
+      goto footer;
+    }
+  /* 1030 */
+  value = websGetVar (wp, "WL_tssi_enable", NULL);
+  // printf("\nBarry WL_tssi_enable,value=%s\n",value);
+  if (value)
+    {
+      Enable_TSSI (value);
+      goto footer;
+    }
+  /* 1216 */
+  value = websGetVar (wp, "ChangeANT", NULL);
+  // printf("\nBarry ChangeANT,value=%s\n",value);
+  if (value)
+    {
+      Change_Ant (value);
+      goto footer;
+    }
   value = websGetVar (wp, "skip_amd_check", NULL);
   if (value)
     {
@@ -3459,8 +3464,7 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");
-		 }
+		 websSetRealm ("DD-WRT Router OS Core");}
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3648,10 +3652,11 @@ do_apply_cgi (char *url, webs_t stream)
 }
 
 
-int
+void
 ej_get_http_method (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  return websWrite (wp, "%s", "post");
+  websWrite (wp, "%s", "post");
+
 }
 static void
 do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
@@ -3750,7 +3755,7 @@ struct mime_handler mime_handlers[] = {
  * <% nvram_selected("wan_proto", "dhcp"); %> produces: selected="selected"
  * <% nvram_selected("wan_proto", "static"); %> does not produce
  */
-static int
+static void
 ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match;
@@ -3758,13 +3763,13 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (nvram_match (name, match))
-    return websWrite (wp, "selected=\"selected\"");
+    websWrite (wp, "selected=\"selected\"");
 
-  return 0;
+  return;
 }
 
 /*
@@ -3773,7 +3778,7 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
  * <% nvram_checked("wan_proto", "dhcp"); %> produces: checked="checked"
  * <% nvram_checked("wan_proto", "static"); %> does not produce
  */
-static int
+static void
 ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *output;
@@ -3781,13 +3786,13 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (nvram_match (name, match))
-    return websWrite (wp, "checked=\"checked\"");
+    websWrite (wp, "checked=\"checked\"");
 
-  return 0;
+  return;
 }
 
 #endif
@@ -4074,25 +4079,24 @@ tf_upnp (webs_t wp)
 
 //      <% tf_upnp(); %>
 //      returns all "forward_port#" nvram entries containing upnp port forwardings
-static int
+static void
 ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
   int r;
   char s[32];
 
-  r = 0;
   if (nvram_match ("upnp_enable", "1"))
     {
       for (i = 0; i < 50; i++)
 	{
-	  r += websWrite (wp, (i > 0) ? ",'" : "'");
+	  websWrite (wp, (i > 0) ? ",'" : "'");
 	  sprintf (s, "forward_port%d", i);
-	  r += tf_webWriteJS (wp, nvram_safe_get (s));
-	  r += websWrite (wp, "'");
+	  tf_webWriteJS (wp, nvram_safe_get (s));
+	  websWrite (wp, "'");
 	}
     }
-  return r;
+  return;
 }
 
 // end changed by steve
