@@ -196,7 +196,7 @@ static struct ebt_u_target snat_target =
 {
 	.name		= EBT_SNAT_TARGET,
 	.size		= sizeof(struct ebt_nat_info),
-	.help		= print_help_s,
+//	.help		= print_help_s,
 	.init		= init_s,
 	.parse		= parse_s,
 	.final_check	= final_check_s,
@@ -209,7 +209,7 @@ static struct ebt_u_target dnat_target =
 {
 	.name		= EBT_DNAT_TARGET,
 	.size		= sizeof(struct ebt_nat_info),
-	.help		= print_help_d,
+//	.help		= print_help_d,
 	.init		= init_d,
 	.parse		= parse_d,
 	.final_check	= final_check_d,

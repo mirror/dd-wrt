@@ -115,7 +115,7 @@ static struct ebt_u_target mark_target =
 {
 	.name		= EBT_MARK_TARGET,
 	.size		= sizeof(struct ebt_mark_t_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,

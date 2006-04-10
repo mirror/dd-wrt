@@ -132,7 +132,7 @@ static struct ebt_u_match _802_3_match =
 {
 	.name		= EBT_802_3_MATCH,
 	.size		= sizeof(struct ebt_802_3_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,
