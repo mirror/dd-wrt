@@ -271,7 +271,7 @@ struct iptables_target log
     .version       = IPTABLES_VERSION,
     .size          = IPT_ALIGN(sizeof(struct ipt_log_info)),
     .userspacesize = IPT_ALIGN(sizeof(struct ipt_log_info)),
-    .help          = &help,
+//    .help          = &help,
     .init          = &init,
     .parse         = &parse,
     .final_check   = &final_check,

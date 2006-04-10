@@ -157,7 +157,7 @@ struct iptables_match ecn
     .version       = IPTABLES_VERSION,
     .size          = IPT_ALIGN(sizeof(struct ipt_ecn_info)),
     .userspacesize = IPT_ALIGN(sizeof(struct ipt_ecn_info)),
-    .help          = &help,
+//    .help          = &help,
     .parse         = &parse,
     .final_check   = &final_check,
     .print         = &print,

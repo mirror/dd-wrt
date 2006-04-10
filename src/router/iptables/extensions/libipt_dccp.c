@@ -383,7 +383,7 @@ struct iptables_match dccp
     .version       = IPTABLES_VERSION,
     .size          = IPT_ALIGN(sizeof(struct ipt_dccp_info)),
     .userspacesize = IPT_ALIGN(sizeof(struct ipt_dccp_info)),
-    .help          = &help,
+//    .help          = &help,
     .init          = &init,
     .parse         = &parse,
     .final_check   = &final_check,

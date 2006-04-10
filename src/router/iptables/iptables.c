@@ -426,13 +426,13 @@ exit_printhelp(struct iptables_rule_match *matches)
 	   results. So we call help for all specified matches & targets */
 	for (t = iptables_targets; t ;t = t->next) {
 		if (t->used) {
-			printf("\n");
-			t->help();
+			printf("\nNo help available!\n");
+			//t->help();
 		}
 	}
 	for (matchp = matches; matchp; matchp = matchp->next) {
-		printf("\n");
-		matchp->match->help();
+			printf("\nNo help available!\n");
+		//matchp->match->help();
 	}
 	exit(0);
 }
