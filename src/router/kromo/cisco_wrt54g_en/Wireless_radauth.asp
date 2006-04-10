@@ -10,7 +10,6 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 function to_submit(F) {
-	if (F._radius_override)
 	if (F._radius_override.checked == false){
 	    F.radius_override.value = 0;
 	}else{
@@ -22,9 +21,23 @@ function to_submit(F) {
 	F.action.value = "Apply";
 	apply(F);
 }
+
+function setRad(val) {
+	setElementsActive("wl_radmactype", "_radius_override", val == "1");
+}
+
+addEvent(window, "load", function() {
+	setElementsActive("wl_radmactype", "_radius_override", "<% nvram_get("wl_radauth"); %>" == "1");
+	if ("ap" != "<% nvram_get("wl_mode"); %>"){
+		setElementsActive("wl_radauth", "_radius_override", false);
+		alert("Radius is only available in AP mode.");
+	}
+});
+
 		</script>
 	</head>
-   <body class="gui"> <% showad(); %>
+   <body class="gui">
+   	  <% showad(); %>
       <div id="wrapper">
          <div id="content">
             <div id="header">
@@ -47,8 +60,8 @@ function to_submit(F) {
                               </ul>
                            </div>
                         </li>
-			<% nvram_invmatch("sipgate","1","<!--"); %>
-			<li><a href="Sipath.asp">SIPatH</a></li>
+                        <% nvram_invmatch("sipgate","1","<!--"); %>
+                        <li><a href="Sipath.asp">SIPatH</a></li>
                         <% nvram_invmatch("sipgate","1","-->"); %>
                         <li><a href="Firewall.asp">Security</a></li>
                         <li><a href="Filters.asp">Access Restrictions</a></li>
@@ -70,42 +83,53 @@ function to_submit(F) {
                     <h2>Remote Authentication Dial-In User Service</h2>
                     <fieldset>
                       <legend>Radius</legend>
-		  <% nvram_invmatch("wl_mode", "ap", "Works only in AP-mode!"); %>
-		  <% nvram_invmatch("wl_mode", "ap", "<!--"); %>
                      <div>
                         <div class="setting">
-                           <div class="label">MAC Radius Client</div><input type="radio" name="wl_radauth" value="1" <% nvram_match("wl_radauth","1","checked"); %> /> Enable<input type="radio" name="wl_radauth" value="0" <% nvram_match("wl_radauth","0","checked"); %> /> Disable
+                           <div class="label">MAC Radius Client</div>
+                           <input type="radio" name="wl_radauth" value="1" <% nvram_match("wl_radauth","1","checked"); %> onclick="setRad(this.value)" >Enable</input>
+                           <input type="radio" name="wl_radauth" value="0" <% nvram_match("wl_radauth","0","checked"); %> onclick="setRad(this.value)" >Disable</input>
                         </div>
                         <div class="setting">
-                           <div class="label">MAC Format</div><select name="wl_radmactype">
+                           <div class="label">MAC Format</div>
+                           <select name="wl_radmactype">
                               <option value="0" <% nvram_match("wl_radmactype","0","selected"); %>>aabbcc-ddeeff</option>
                               <option value="1" <% nvram_match("wl_radmactype","1","selected"); %>>aabbccddeeff</option>
-                              <option value="2" <% nvram_match("wl_radmactype","2","selected"); %>>aa-bb-cc-dd-ee-ff</option></select>
-			   </div>
+                              <option value="2" <% nvram_match("wl_radmactype","2","selected"); %>>aa-bb-cc-dd-ee-ff</option>
+                           </select>
+                        </div>
                         <div class="setting">
-                           <div class="label">Radius Server IP</div><input type="hidden" name="wl_radius_ipaddr" value="4" /><input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onBlur="valid_range(this,0,255,'IP')" value='<% get_single_ip("wl_radius_ipaddr","0"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onBlur="valid_range(this,0,255,'IP')" value='<% get_single_ip("wl_radius_ipaddr","1"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onBlur="valid_range(this,0,255,'IP')" value='<% get_single_ip("wl_radius_ipaddr","2"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onBlur="valid_range(this,1,254,'IP')" value='<% get_single_ip("wl_radius_ipaddr","3"); %>' /></div>
+                           <div class="label">Radius Server IP</div>
+                           <input type="hidden" name="wl_radius_ipaddr" value="4" />
+                           <input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onBlur="valid_range(this,0,255,'IP')" value='<% get_single_ip("wl_radius_ipaddr","0"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onBlur="valid_range(this,0,255,'IP')" value='<% get_single_ip("wl_radius_ipaddr","1"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onBlur="valid_range(this,0,255,'IP')" value='<% get_single_ip("wl_radius_ipaddr","2"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onBlur="valid_range(this,1,254,'IP')" value='<% get_single_ip("wl_radius_ipaddr","3"); %>' />
+                        </div>
                         <div class="setting">
-                           <div class="label">Radius Server Port</div><input size="5" maxLength="32" name="wl_radius_port" value='<% nvram_get("wl_radius_port"); %>' /></div>
+                           <div class="label">Radius Server Port</div>
+                           <input size="5" maxLength="32" name="wl_radius_port" value='<% nvram_get("wl_radius_port"); %>' />
+                        </div>
                         <div class="setting">
-                           <div class="label">Maximum Unauthenticated Users</div><input size="5" maxLength="32" name="max_unauth_users" value='<% nvram_get("max_unauth_users"); %>' /></div>
+                           <div class="label">Maximum Unauthenticated Users</div>
+                           <input size="5" maxLength="32" name="max_unauth_users" value='<% nvram_get("max_unauth_users"); %>' />
+                        </div>
                         <div class="setting">
-                           <div class="label">Password Format</div><input type="radio" name="wl_radmacpassword" value="1" <% nvram_match("wl_radmacpassword","1","checked"); %> /> Shared Key<input type="radio" name="wl_radmacpassword" value="0" <% nvram_match("wl_radmacpassword","0","checked"); %> /> MAC
+                           <div class="label">Password Format</div>
+                           <input type="radio" name="wl_radmacpassword" value="1" <% nvram_match("wl_radmacpassword","1","checked"); %> >Shared Key</input>
+                           <input type="radio" name="wl_radmacpassword" value="0" <% nvram_match("wl_radmacpassword","0","checked"); %> >MAC</input>
                         </div>
                         <div class="setting">
                            <div class="label">RADIUS Shared Secret</div>
                            <input size="20" maxLength="32" name="wl_radius_key" value='<% nvram_get("wl_radius_key"); %>' />
                         </div>
-			<div class="setting">
-			    <div class="label">Override Radius if Server is unavailable</div>
-  			    <input type="checkbox" name="_radius_override" value="1" <% nvram_match("radius_override", "1", "checked"); %>/>
-			</div>
-
-                     </div>
+                        <div class="setting">
+                        	<div class="label">Override Radius if Server is unavailable</div>
+                        	<input type="checkbox" name="_radius_override" value="1" <% nvram_match("radius_override", "1", "checked"); %>/>
+                        </div>
+                      </div>
                     </fieldset>
-                      <br/>
-		     <% nvram_invmatch("wl_mode", "ap", "-->"); %>
-
-		     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+                    <br/>
+                    <div class="submitFooter">
+                    	<input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" />
+                    	<input type="reset" value="Cancel Changes" />
+                    </div>
                   </form>
                </div>
             </div>
