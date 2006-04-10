@@ -84,7 +84,7 @@ function to_submit(F) {
 					<div id="help">
 						<div id="logo"><h2>Help</h2></div>
 						<dl>
-							<dd class="definition">You may choose to enable PPTP, L2TP of IPSec passthrough to allow your network devices to communicate via VPN.</dd>
+							<dd class="definition">You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.</dd>
 						</dl>
 						<br/>
 						<a href="javascript:openHelpWindow('HVPN.asp')">More...</a>
