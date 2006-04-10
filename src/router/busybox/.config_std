@@ -42,8 +42,9 @@ PREFIX="./_install"
 # CONFIG_CPIO is not set
 # CONFIG_DPKG is not set
 # CONFIG_DPKG_DEB is not set
-# CONFIG_GUNZIP is not set
-# CONFIG_GZIP is not set
+CONFIG_GUNZIP=y
+# CONFIG_FEATURE_GUNZIP_UNCOMPRESS is not set
+CONFIG_GZIP=y
 # CONFIG_RPM2CPIO is not set
 # CONFIG_RPM is not set
 CONFIG_TAR=y
