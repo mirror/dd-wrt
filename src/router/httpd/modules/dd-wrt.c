@@ -472,17 +472,17 @@ ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<a href=\"http://www.dd-wrt.com/\">DD-WRT</a>");
   websWrite (wp,
 	     "<form action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\" target=\"_blank\">");
-  websWrite (wp, "<input type=\"hidden\" name=\"cmd\" value=\"_xclick\">");
+  websWrite (wp, "<input type=\"hidden\" name=\"cmd\" value=\"_xclick\" />");
   websWrite (wp,
-	     "<input type=\"hidden\" name=\"business\" value=\"sebastian.gottschall@advis.de\">");
+	     "<input type=\"hidden\" name=\"business\" value=\"sebastian.gottschall@advis.de\" />");
   websWrite (wp,
-	     "<input type=\"hidden\" name=\"item_name\" value=\"DD-WRT Development Support\">");
-  websWrite (wp, "<input type=\"hidden\" name=\"no_note\" value=\"1\">");
+	     "<input type=\"hidden\" name=\"item_name\" value=\"DD-WRT Development Support\" />");
+  websWrite (wp, "<input type=\"hidden\" name=\"no_note\" value=\"1\" />");
   websWrite (wp,
-	     "<input type=\"hidden\" name=\"currency_code\" value=\"EUR\">");
-  websWrite (wp, "<input type=\"hidden\" name=\"tax\" value=\"0\">");
+	     "<input type=\"hidden\" name=\"currency_code\" value=\"EUR\" />");
+  websWrite (wp, "<input type=\"hidden\" name=\"tax\" value=\"0\" />");
   websWrite (wp,
-	     "<input type=\"image\" src=\"images/paypal.gif\" border=\"0\" name=\"submit\" width=\"62\" height=\"31\">");
+	     "<input type=\"image\" src=\"images/paypal.gif\" border=\"0\" name=\"submit\" width=\"62\" height=\"31\" />");
   websWrite (wp, "</form>");
 #endif
   return 0;
