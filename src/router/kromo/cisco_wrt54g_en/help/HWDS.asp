@@ -24,9 +24,13 @@
 						<li>Take the Wireless MAC from the second router and enter them on the first router.</li>
 						<li>Check for any typing errors and then click <i>Save Settings</i>.</li>
 						<li>Go to the <a href="HStatusWireless.asp">Wireless Status</a> page. You should see <i>WDS Link</i> and the Wireless MAC of the other router listed, with a signal reading. If the signal is "0dBm" then there may be something wrong. Check your antenna connections and configuration settings, and try again.</li>
-						<li>Once you have a good signal (-70dBm to -30dBm, -70dBm being lowest), you can change the <i>Internet Connection Type</i> on the <a href="HSetup.asp">Basic Setup</a> page of the second router to <i>Disabled</i> and set the <i>Gateway</i> to the LAN IP Address of the first router. You can now run normal tests to check if you are connected (like <tt>ping</tt>).</li>
+						<li>Once you have a good signal (-70dBm to -30dBm, -70dBm being lowest), you can change the <i>Internet Connection Type</i> on the <a href="HSetup.asp">Basic Setup</a> page of the second router to <i>Disabled</i> and set the <em>Gateway</em> to the LAN IP Address of the first router. You can now run normal tests to check if you are connected (like <tt>ping</tt>).</li>
 						<li>It is strongly recommended to enable <a href="HWPA.asp">Wireless Security</a>. WPA Pre-shared Key with AES is recommended as it is secure and easy.</li>
-					</ol>
+					</ol><br /><br />
+					<div class="note">
+						<h4>Note</h4>
+						<div>WDS is only available in <em>AP</em> mode. Also Wireless encryption <em>WPA2</em> and Wireless network mode <em>B-Only</em> are not supported under WDS.</div>
+					</div>
 				</dd>
 			</dl>
 		</div>
