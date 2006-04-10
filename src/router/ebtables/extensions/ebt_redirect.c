@@ -99,7 +99,7 @@ static struct ebt_u_target redirect_target =
 {
 	.name		= EBT_REDIRECT_TARGET,
 	.size		= sizeof(struct ebt_redirect_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,

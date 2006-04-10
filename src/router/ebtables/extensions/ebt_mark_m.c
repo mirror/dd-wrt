@@ -112,7 +112,7 @@ static struct ebt_u_match mark_match =
 {
 	.name		= EBT_MARK_MATCH,
 	.size		= sizeof(struct ebt_mark_m_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,

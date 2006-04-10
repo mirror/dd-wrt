@@ -124,7 +124,7 @@ static struct ebt_u_target arpreply_target =
 {
 	.name		= EBT_ARPREPLY_TARGET,
 	.size		= sizeof(struct ebt_arpreply_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,

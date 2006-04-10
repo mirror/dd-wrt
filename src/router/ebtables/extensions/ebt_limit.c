@@ -203,7 +203,7 @@ static struct ebt_u_match limit_match =
 {
 	.name		= EBT_LIMIT_MATCH,
 	.size		= sizeof(struct ebt_limit_info),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,

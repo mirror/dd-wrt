@@ -75,7 +75,7 @@ static struct ebt_u_target standard =
 	.name		= EBT_STANDARD_TARGET,
 	.size		= sizeof(struct ebt_standard_target) -
 			  sizeof(struct ebt_entry_target),
-	.help		= print_help,
+//	.help		= print_help,
 	.init		= init,
 	.parse		= parse,
 	.final_check	= final_check,
