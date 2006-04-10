@@ -20,18 +20,13 @@
 		<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","0"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","1"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","2"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","3"); %>" />
 	</div>
 	<div class="setting">
-		<div class="label">MPPE Encryption</div>
-		<input size="27" name="pptpd_client_srvsec" value="<% nvram_get("pptpd_client_srvsec"); %>" />&nbsp;
-		<span class="default">(WRT2WRT: mppe required)</span>
-	</div>
-	<div class="setting">
 		<div class="label">MTU</div>
-		<input size="27" name="pptpd_client_srvmtu" value="<% nvram_get("pptpd_client_srvmtu"); %>" />&nbsp;
+		<input size="27" name="pptpd_client_mtu" value="<% nvram_get("pptpd_client_mtu"); %>" />&nbsp;
 		<span class="default">(Default: 1450)</span>
 	</div>
 	<div class="setting">
 		<div class="label">MRU</div>
-		<input size="27" name="pptpd_client_srvmru" value="<% nvram_get("pptpd_client_srvmru"); %>" />&nbsp;
+		<input size="27" name="pptpd_client_mru" value="<% nvram_get("pptpd_client_mru"); %>" />&nbsp;
 		<span class="default">(Default: 1450)</span>
 	</div>
 	<div class="setting">
