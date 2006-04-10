@@ -14,6 +14,7 @@ if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
   dep_tristate '  TFTP protocol support' CONFIG_IP_NF_TFTP $CONFIG_IP_NF_CONNTRACK
   dep_tristate '  H.323 (netmeeting) support' CONFIG_IP_NF_H323 $CONFIG_IP_NF_CONNTRACK
   dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
+  dep_tristate '  RTSP protocol support' CONFIG_IP_NF_RTSP $CONFIG_IP_NF_CONNTRACK
   dep_tristate '  GRE protocol support' CONFIG_IP_NF_CT_PROTO_GRE $CONFIG_IP_NF_CONNTRACK
   dep_tristate '   PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CT_PROTO_GRE
   dep_tristate '   SIP protocol support' CONFIG_IP_NF_SIP $CONFIG_IP_NF_CONNTRACK
@@ -144,6 +145,13 @@ if [ "$CONFIG_IP_NF_IPTABLES" != "n" ]; then
           define_tristate CONFIG_IP_NF_NAT_AMANDA $CONFIG_IP_NF_NAT
         fi
       fi
+	if [ "$CONFIG_IP_NF_RTSP" = "m" ]; then
+          define_tristate CONFIG_IP_NF_NAT_RTSP m
+        else
+          if [ "$CONFIG_IP_NF_RTSP" = "y" ]; then
+            define_tristate CONFIG_IP_NF_NAT_RTSP $CONFIG_IP_NF_NAT
+          fi
+        fi
       if [ "$CONFIG_EXPERIMENTAL" = "y" ]; then
         dep_tristate '    Basic SNMP-ALG support (EXPERIMENTAL)' CONFIG_IP_NF_NAT_SNMP_BASIC $CONFIG_IP_NF_NAT
       fi

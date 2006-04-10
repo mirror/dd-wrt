@@ -216,6 +216,15 @@ obj-$(CONFIG_IP_NF_COMPAT_IPFWADM) += ipfwadm.o
 
 obj-$(CONFIG_IP_NF_QUEUE) += ip_queue.o
 
+# rtsp protocol support
+obj-$(CONFIG_IP_NF_RTSP) += ip_conntrack_rtsp.o
+ifdef CONFIG_IP_NF_NAT_RTSP
+       export-objs += ip_conntrack_rtsp.o
+endif
+obj-$(CONFIG_IP_NF_NAT_RTSP) += ip_nat_rtsp.o
+
+
+
 include $(TOPDIR)/Rules.make
 
 ip_conntrack.o: $(ip_conntrack-objs)
