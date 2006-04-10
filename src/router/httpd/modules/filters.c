@@ -490,7 +490,7 @@ filter_dport_get (char *type, int which)
     return "";
 }
 
-int
+void
 ej_filter_dport_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret, which;
@@ -500,14 +500,14 @@ ej_filter_dport_get (int eid, webs_t wp, int argc, char_t ** argv)
     {
       websError (wp, 400, "Insufficient args\n");
       D ("bad value");
-      return -1;
+      return;
     }
 
 
-  ret = websWrite (wp, "%s", filter_dport_get (type, which));
+  websWrite (wp, "%s", filter_dport_get (type, which));
   D ("good value");
 
-  return ret;
+  return;
 
 }
 
@@ -575,7 +575,7 @@ filter_port_get (char *type, int which)
     return "";
 }
 
-int
+void
 ej_filter_port_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret, which;
@@ -585,14 +585,14 @@ ej_filter_port_get (int eid, webs_t wp, int argc, char_t ** argv)
     {
       websError (wp, 400, "Insufficient args\n");
       D ("bad value");
-      return -1;
+      return;
     }
 
 
-  ret = websWrite (wp, "%s", filter_port_get (type, which));
+  websWrite (wp, "%s", filter_port_get (type, which));
 
   D ("good value");
-  return ret;
+  return;
 
 }
 
@@ -632,7 +632,7 @@ filter_mac_get (int which)
 }
 
 
-int
+void
 ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0, which;
@@ -643,18 +643,18 @@ ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
 
       websError (wp, 400, "Insufficient args\n");
       D ("BAD VALUE");
-      return -1;
+      return;
     }
 
 
-  ret = websWrite (wp, "%s", filter_ip_get (type, which));
+  websWrite (wp, "%s", filter_ip_get (type, which));
 
   D ("good value");
-  return ret;
+  return;
 }
 
 
-int
+void
 ej_filter_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret, which;
@@ -663,13 +663,13 @@ ej_filter_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
     {
       websError (wp, 400, "Insufficient args\n");
       D ("bad value");
-      return -1;
+      return;
     }
 
 
-  ret = websWrite (wp, "%s", filter_mac_get (which));
+  websWrite (wp, "%s", filter_mac_get (which));
   D ("good value");
-  return ret;
+  return;
 }
 
 #if 0
@@ -1175,7 +1175,7 @@ validate_catchall (webs_t wp, char *value, struct variable *v)
 }
 
 
-int
+void
 ej_filter_policy_select (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i, ret = 0;
@@ -1192,17 +1192,17 @@ ej_filter_policy_select (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  find_match_pattern (name, sizeof (name), data, "$NAME:", "");	// get name value
 	}
-      ret += websWrite (wp, "<option value=%d %s>%d ( %s ) </option>\n",
-			i,
-			(atoi (nvram_safe_get ("filter_id")) ==
-			 i ? "selected" : ""), i, name);
+      websWrite (wp, "<option value=%d %s>%d ( %s ) </option>\n",
+		 i,
+		 (atoi (nvram_safe_get ("filter_id")) ==
+		  i ? "selected" : ""), i, name);
     }
   D ("okay");
-  return ret;
+  return;
 }
 
 
-int
+void
 ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
@@ -1213,12 +1213,12 @@ ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %s", &type, &part) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (!strcmp (type, "f_id"))
     {
-      ret = websWrite (wp, "%s", nvram_safe_get ("filter_id"));
+      websWrite (wp, "%s", nvram_safe_get ("filter_id"));
     }
   else if (!strcmp (type, "f_name"))
     {
@@ -1231,7 +1231,7 @@ ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv)
       if (strcmp (data, ""))
 	{
 	  find_match_pattern (name, sizeof (name), data, "$NAME:", "");	// get name value
-	  ret = websWrite (wp, "%s", name);
+	  websWrite (wp, "%s", name);
 	}
     }
   else if (!strcmp (type, "f_status"))
@@ -1257,66 +1257,66 @@ ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (!strcmp (part, "disable"))
 	    {
 	      if (!strcmp (status, "1"))
-		ret = websWrite (wp, "checked");
+		websWrite (wp, "checked");
 	    }
 	  else if (!strcmp (part, "enable"))
 	    {
 	      if (!strcmp (status, "2"))
-		ret = websWrite (wp, "checked");
+		websWrite (wp, "checked");
 	    }
 #endif
 	  if (!strcmp (part, "disable"))
 	    {
 	      if (!strcmp (status, "0"))
-		ret = websWrite (wp, "checked");
+		websWrite (wp, "checked");
 	    }
 	  else if (!strcmp (part, "enable"))
 	    {
 	      if (strcmp (status, "0"))
-		ret = websWrite (wp, "checked");
+		websWrite (wp, "checked");
 	    }
 	  else if (!strcmp (part, "deny"))
 	    {
 	      if (!strcmp (deny, "1"))
-		ret = websWrite (wp, "checked");
+		websWrite (wp, "checked");
 	    }
 	  else if (!strcmp (part, "allow"))
 	    {
 	      if (!strcmp (deny, "0"))
-		ret = websWrite (wp, "checked");
+		websWrite (wp, "checked");
 	    }
 	  else if (!strcmp (part, "onload_status"))
 	    {
 	      if (!strcmp (deny, "1"))
-		ret = websWrite (wp, "deny");
+		websWrite (wp, "deny");
 	      else
-		ret = websWrite (wp, "allow");
+		websWrite (wp, "allow");
 
 	    }
 	  else if (!strcmp (part, "init"))
 	    {
 	      if (!strcmp (status, "1"))
-		ret = websWrite (wp, "disable");
+		websWrite (wp, "disable");
 	      else if (!strcmp (status, "2"))
-		ret = websWrite (wp, "enable");
+		websWrite (wp, "enable");
 	      else
-		ret = websWrite (wp, "disable");
+		websWrite (wp, "disable");
 	    }
 	}
       else
 	{			// no data
 	  if (!strcmp (part, "disable"))
-	    ret = websWrite (wp, "checked");
+	    websWrite (wp, "checked");
 	  else if (!strcmp (part, "allow"))	// default policy is allow, 2003-10-21
-	    ret = websWrite (wp, "checked");
+	    websWrite (wp, "checked");
 	  else if (!strcmp (part, "onload_status"))	// default policy is allow, 2003-10-21
-	    ret = websWrite (wp, "allow");
+	    websWrite (wp, "allow");
 	  else if (!strcmp (part, "init"))
-	    ret = websWrite (wp, "disable");
+	    websWrite (wp, "disable");
 	}
     }
   D ("okay");
-  return ret;
+  return;
 }
 
 int
@@ -1399,7 +1399,7 @@ filter_tod_init (int which)
   return 0;
 }
 
-int
+void
 ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
@@ -1408,7 +1408,7 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   filter_tod_init (atoi (nvram_safe_get ("filter_id")));
@@ -1416,104 +1416,103 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (!strcmp (type, "day_all_init"))
     {
       if (day_all == 0)
-	ret = websWrite (wp, "1");
+	websWrite (wp, "1");
       else
-	ret = websWrite (wp, "0");
+	websWrite (wp, "0");
     }
   else if (!strcmp (type, "time_all_init"))
     {
       if (time_all == 0)
-	ret = websWrite (wp, "1");
+	websWrite (wp, "1");
       else
-	ret = websWrite (wp, "0");
+	websWrite (wp, "0");
     }
   else if (!strcmp (type, "day_all"))
     {
-      ret = websWrite (wp, "%s", day_all == 1 ? "checked" : "");
+      websWrite (wp, "%s", day_all == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "start_week"))
     {
-      ret = websWrite (wp, "%d", start_week);
+      websWrite (wp, "%d", start_week);
     }
   else if (!strcmp (type, "end_week"))
     {
-      ret = websWrite (wp, "%d", end_week);
+      websWrite (wp, "%d", end_week);
     }
   else if (!strcmp (type, "week0"))
     {				// Sun
-      ret = websWrite (wp, "%s", week0 == 1 ? "checked" : "");
+      websWrite (wp, "%s", week0 == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "week1"))
     {				// Mon
-      ret = websWrite (wp, "%s", week1 == 1 ? "checked" : "");
+      websWrite (wp, "%s", week1 == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "week2"))
     {				// Tue
-      ret = websWrite (wp, "%s", week2 == 1 ? "checked" : "");
+      websWrite (wp, "%s", week2 == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "week3"))
     {				// Wed
-      ret = websWrite (wp, "%s", week3 == 1 ? "checked" : "");
+      websWrite (wp, "%s", week3 == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "week4"))
     {				// Thu
-      ret = websWrite (wp, "%s", week4 == 1 ? "checked" : "");
+      websWrite (wp, "%s", week4 == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "week5"))
     {				// Fri
-      ret = websWrite (wp, "%s", week5 == 1 ? "checked" : "");
+      websWrite (wp, "%s", week5 == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "week6"))
     {				// Sat
-      ret = websWrite (wp, "%s", week6 == 1 ? "checked" : "");
+      websWrite (wp, "%s", week6 == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "time_all_en"))
     {				// for linksys
-      ret = websWrite (wp, "%s", time_all == 1 ? "checked" : "");
+      websWrite (wp, "%s", time_all == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "time_all_dis"))
     {				// for linksys
-      ret = websWrite (wp, "%s", time_all == 0 ? "checked" : "");
+      websWrite (wp, "%s", time_all == 0 ? "checked" : "");
     }
   else if (!strcmp (type, "time_all"))
     {
-      ret = websWrite (wp, "%s", time_all == 1 ? "checked" : "");
+      websWrite (wp, "%s", time_all == 1 ? "checked" : "");
     }
   else if (!strcmp (type, "start_hour_24"))
     {				// 00 -> 23
       for (i = 0; i < 24; i++)
 	{
-	  ret =
-	    websWrite (wp, "<option value=%d %s>%d</option>\n", i,
-		       i == start_hour + start_time * 12 ? "selected" : "",
-		       i);
+
+	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
+		     i == start_hour + start_time * 12 ? "selected" : "", i);
 	}
     }
   else if (!strcmp (type, "start_min_15"))
     {				// 0 15 30 45
       for (i = 0; i < 4; i++)
 	{
-	  ret =
-	    websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 15,
-		       i * 15 == start_min ? "selected" : "", i * 15);
+
+	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 15,
+		     i * 15 == start_min ? "selected" : "", i * 15);
 	}
     }
   else if (!strcmp (type, "end_hour_24"))
     {				// 00 ->23
       for (i = 0; i < 24; i++)
 	{
-	  ret =
-	    websWrite (wp, "<option value=%d %s>%d</option>\n", i,
-		       i == end_hour + end_time * 12 ? "selected" : "", i);
+
+	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
+		     i == end_hour + end_time * 12 ? "selected" : "", i);
 	}
     }
   else if (!strcmp (type, "end_min_15"))
     {				// 0 15 30 45
       for (i = 0; i < 4; i++)
 	{
-	  ret =
-	    websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 15,
-		       i * 15 == end_min ? "selected" : "", i * 15);
+
+	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 15,
+		     i * 15 == end_min ? "selected" : "", i * 15);
 	}
     }
   else if (!strcmp (type, "start_hour_12"))
@@ -1525,27 +1524,27 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	    j = 0;
 	  else
 	    j = i;
-	  ret =
-	    websWrite (wp, "<option value=%d %s>%d</option>\n", j,
-		       j == start_hour ? "selected" : "", i);
+
+	  websWrite (wp, "<option value=%d %s>%d</option>\n", j,
+		     j == start_hour ? "selected" : "", i);
 	}
     }
   else if (!strcmp (type, "start_min_5"))
     {				// 0 5 10 15 20 25 30 35 40 45 50 55
       for (i = 0; i < 12; i++)
 	{
-	  ret =
-	    websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 5,
-		       i * 5 == start_min ? "selected" : "", i * 5);
+
+	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 5,
+		     i * 5 == start_min ? "selected" : "", i * 5);
 	}
     }
   else if (!strcmp (type, "start_time_am"))
     {
-      ret = websWrite (wp, "%s", start_time == 1 ? "" : "selected");
+      websWrite (wp, "%s", start_time == 1 ? "" : "selected");
     }
   else if (!strcmp (type, "start_time_pm"))
     {
-      ret = websWrite (wp, "%s", start_time == 1 ? "selected" : "");
+      websWrite (wp, "%s", start_time == 1 ? "selected" : "");
     }
   else if (!strcmp (type, "end_hour_12"))
     {				// 1 -> 12
@@ -1556,36 +1555,36 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	    j = 0;
 	  else
 	    j = i;
-	  ret =
-	    websWrite (wp, "<option value=%d %s>%d</option>\n", j,
-		       j == end_hour ? "selected" : "", i);
+
+	  websWrite (wp, "<option value=%d %s>%d</option>\n", j,
+		     j == end_hour ? "selected" : "", i);
 	}
     }
   else if (!strcmp (type, "end_min_5"))
     {				// 0 5 10 15 20 25 30 35 40 45 50 55
       for (i = 0; i < 12; i++)
 	{
-	  ret =
-	    websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 5,
-		       i * 5 == end_min ? "selected" : "", i * 5);
+
+	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 5,
+		     i * 5 == end_min ? "selected" : "", i * 5);
 	}
     }
   else if (!strcmp (type, "end_time_am"))
     {
-      ret = websWrite (wp, "%s", end_time == 1 ? "" : "selected");
+      websWrite (wp, "%s", end_time == 1 ? "" : "selected");
     }
   else if (!strcmp (type, "end_time_pm"))
     {
-      ret = websWrite (wp, "%s", end_time == 1 ? "selected" : "");
+      websWrite (wp, "%s", end_time == 1 ? "selected" : "");
     }
   D ("right");
-  return ret;
+  return;
 }
 
 /*  Format: url0, url1, url2, url3, ....
  *	    keywd0, keywd1, keywd2, keywd3, keywd4, keywd5, ....
  */
-int
+void
 ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
@@ -1596,7 +1595,7 @@ ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &type, &which) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
 
@@ -1609,9 +1608,9 @@ ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 		nvram_safe_get ("filter_id"));
       host_data = nvram_safe_get (filter_host);
       if (!strcmp (host_data, ""))
-	return -1;		// no data
+	return;			// no data
       find_each (host, sizeof (host), host_data, token, which, "");
-      ret = websWrite (wp, "%s", host);
+      websWrite (wp, "%s", host);
     }
   else if (!strcmp (type, "url"))
     {
@@ -1622,15 +1621,15 @@ ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 		nvram_safe_get ("filter_id"));
       url_data = nvram_safe_get (filter_url);
       if (!strcmp (url_data, ""))
-	return -1;		// no data
+	return;			// no data
       find_each (url, sizeof (url), url_data, token, which, "");
-      ret = websWrite (wp, "%s", url);
+      websWrite (wp, "%s", url);
     }
   D ("okay");
-  return ret;
+  return;
 }
 
-int
+void
 ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i, ret;
@@ -1678,11 +1677,11 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 
       filter_tod_init (i + 1);
 
-      ret = websWrite (wp, " \
+      websWrite (wp, " \
 	<tr bgcolor=cccccc align=middle>\n\
         <td width=50><font face=Arial size=2>%d.</font></td>\n\
         <td width=200><font face=Arial size=2>%s</font></td>\n", i + 1, name);
-      ret = websWrite (wp, "\n\
+      websWrite (wp, "\n\
 	 <td height=30 width=150 bordercolor=#000000 bgcolor=#CCCCCC> \n\
               <table border=1 cellspacing=1 bordercolor=#000000 style=\"border-collapse: collapse\" width=124 bgcolor=#FFFFFF>\n\
                 <tr>\n\
@@ -1710,17 +1709,17 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 			end_time == 0 ? am : pm);
 	    }
 	}
-      ret = websWrite (wp, " \
+      websWrite (wp, " \
         <td align=\"center\" width=150><font face=Arial size=2> %s </font> </td>\n\
         <td width=70><input type=checkbox name=sum%d value=1 ></td>\n\
       </tr>\n", time_buf, i + 1);
     }
   D ("okay");
-  return ret;
+  return;
 
 }
 
-int
+void
 ej_filter_init (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -1731,10 +1730,10 @@ ej_filter_init (int eid, webs_t wp, int argc, char_t ** argv)
   else
     nvram_set ("filter_id", "1");
 
-  return ret;
+  return;
 }
 
-int
+void
 ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -1747,7 +1746,7 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   do
@@ -1797,16 +1796,15 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
 	//cprintf("match:: name=%s, protocol=%s, ports=%s\n", 
 	//      word, protocol, ports);
 
-	ret =
-	  websWrite (wp,
-		     "services[%d]=new service(%d, \"%s\", %d, %d, %d);\n",
-		     count, count, name, from, to,
-		     protocol_to_num (protocol));
+
+	websWrite (wp,
+		   "services[%d]=new service(%d, \"%s\", %d, %d, %d);\n",
+		   count, count, name, from, to, protocol_to_num (protocol));
 	count++;
 
       }
 
-      ret += websWrite (wp, "services_length = %d;\n", count);
+      websWrite (wp, "services_length = %d;\n", count);
     }
   else if (!strcmp (type, "service"))
     {
@@ -1819,7 +1817,7 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
       if (!strcmp (port_data, ""))
 	return -1;		// no data
       find_each (name, sizeof (name), port_data, "<&nbsp;>", which, "");
-      ret += websWrite (wp, "%s", name);
+      websWrite (wp, "%s", name);
 
     }
   else if (!strcmp (type, "p2p"))
@@ -1831,11 +1829,11 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
       port_data = nvram_safe_get (filter_port);
       if (!strcmp (port_data, ""))
 	return -1;		// no data
-      ret += websWrite (wp, "%s", port_data);
+      websWrite (wp, "%s", port_data);
 
     }
   D ("okay");
-  return ret;
+  return;
 }
 
 int
@@ -1845,7 +1843,7 @@ filtersummary_onload (webs_t wp, char *arg)
   D ("filter summary unload");
   if (!strcmp (nvram_safe_get ("filter_summary"), "1"))
     {
-      ret += websWrite (wp, arg);
+      websWrite (wp, arg);
     }
   D ("okay");
   return ret;

@@ -22,18 +22,17 @@
 int retry_count = -1;
 int refresh_time = STATUS_REFRESH_TIME2;
 
-int
+void
 ej_show_status_setting (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
 
   do_ej ("Status_Router1.asp", wp);
 
-  return ret;
+  return;
 }
 
 /* Report time in RFC-822 format */
-int
+void
 ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
 {
   time_t tm;
@@ -41,12 +40,12 @@ ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
   time (&tm);
 
   if (time (0) > (unsigned long) 60 * 60 * 24 * 365)
-    return websWrite (wp, rfctime (&tm));
+    websWrite (wp, rfctime (&tm));
   else
-    return websWrite (wp, "Not Available");
+    websWrite (wp, "Not Available");
 }
 
-int
+void
 ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
@@ -60,7 +59,7 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
   FILE *fp;
 
   if (nvram_invmatch ("wan_proto", "dhcp"))
-    return ret;
+    return;
 
   leases_time = atol (nvram_safe_get ("wan_lease"));
 
@@ -72,7 +71,10 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   if (get_leases_time == 0 || leases_time == 0)
-    return websWrite (wp, "0");
+    {
+      websWrite (wp, "0");
+      return;
+    }
 
   sysinfo (&info);
   now_time = info.uptime;
@@ -81,8 +83,10 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
 
 
   if (remain_time < 0)
-    return websWrite (wp, "0");
-
+    {
+      websWrite (wp, "0");
+      return;
+    }
   if (leases_time)
     {
       if (remain_time > 60 * 60 * 24)
@@ -106,13 +110,13 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   if (day)
-    ret += websWrite (wp, "%d days, ", day);
-  ret += websWrite (wp, "%d:%02d:%02d", hour, min, sec);
+    websWrite (wp, "%d days, ", day);
+  websWrite (wp, "%d:%02d:%02d", hour, min, sec);
 
-  return ret;
+  return;
 }
 
-int
+void
 ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
@@ -125,7 +129,7 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
   cdebug ("nvram_status_get proto check");
   if (nvram_match ("wan_proto", "pptp"))
@@ -211,46 +215,46 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
   int retcode = 0;
   if (!strcmp (type, "wan_ipaddr"))
     {
-      retcode = websWrite (wp, "%s", wan_ipaddr);
+      websWrite (wp, "%s", wan_ipaddr);
     }
   else if (!strcmp (type, "wan_netmask"))
-    retcode = websWrite (wp, "%s", wan_netmask);
+    websWrite (wp, "%s", wan_netmask);
   else if (!strcmp (type, "wan_gateway"))
-    retcode = websWrite (wp, "%s", wan_gateway);
+    websWrite (wp, "%s", wan_gateway);
   else if (!strcmp (type, "wan_dns0"))
     {
       if (dns_list)
-	retcode = websWrite (wp, "%s", dns_list->dns_server[0]);
+	websWrite (wp, "%s", dns_list->dns_server[0]);
     }
   else if (!strcmp (type, "wan_dns1"))
     {
       if (dns_list)
-	retcode = websWrite (wp, "%s", dns_list->dns_server[1]);
+	websWrite (wp, "%s", dns_list->dns_server[1]);
     }
 
   else if (!strcmp (type, "wan_dns2"))
     {
       if (dns_list)
-	retcode = websWrite (wp, "%s", dns_list->dns_server[2]);
+	websWrite (wp, "%s", dns_list->dns_server[2]);
     }
   else if (!strcmp (type, "status1"))
-    retcode = websWrite (wp, "%s", status1);
+    websWrite (wp, "%s", status1);
   else if (!strcmp (type, "status2"))
-    retcode = websWrite (wp, "%s", status2);
+    websWrite (wp, "%s", status2);
   else if (!strcmp (type, "button1"))
-    retcode = websWrite (wp, "%s", button1);
+    websWrite (wp, "%s", button1);
   else if (!strcmp (type, "hidden1"))
-    retcode = websWrite (wp, "%s", hidden1);
+    websWrite (wp, "%s", hidden1);
   else if (!strcmp (type, "hidden2"))
-    retcode = websWrite (wp, "%s", hidden2);
+    websWrite (wp, "%s", hidden2);
   if (dns_list)
     free (dns_list);
   cdebug ("nvram_status_get leave");
 
-  return 1;
+  return;
 }
 
-int
+void
 ej_show_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
@@ -268,7 +272,7 @@ ej_show_status (int eid, webs_t wp, int argc, char_t ** argv)
       if (ejArgs (argc, argv, "%s", &type) < 1)
 	{
 	  websError (wp, 400, "Insufficient args\n");
-	  return -1;
+	  return;
 	}
       /* get ppp status , if /tmp/ppp/link exist, the connection is enabled */
       wan_link = check_wan_link (0);
@@ -294,36 +298,36 @@ ej_show_status (int eid, webs_t wp, int argc, char_t ** argv)
       else if (!strcmp (type, "refresh_time"))
 	{
 
-	  ret += websWrite (wp, "%d", refresh_time * 1000);
+	  websWrite (wp, "%d", refresh_time * 1000);
 	}
       else if (!strcmp (type, "onload"))
 	{
 	  if (retry_count == 0
 	      || (!submit_type && !wan_link && gozila_action))
 	    {			//After refresh 2 times, if the status is disconnect, show Alert message.
-	      ret += websWrite (wp, "ShowAlert(\"TIMEOUT\");");
+	      websWrite (wp, "ShowAlert(\"TIMEOUT\");");
 	      retry_count = -1;
 	    }
 	  else if (file_to_buf ("/tmp/ppp/log", buf, sizeof (buf)))
 	    {
-	      ret += websWrite (wp, "ShowAlert(\"%s\");", buf);
+	      websWrite (wp, "ShowAlert(\"%s\");", buf);
 	      retry_count = -1;
 	      unlink ("/tmp/ppp/log");
 	    }
 	  else
 	    {
-	      ret += websWrite (wp, "Refresh();");
+	      websWrite (wp, "Refresh();");
 	    }
 
 	  if (retry_count != -1)
 	    retry_count--;
 	}
     }
-  return ret;
+  return;
 }
 
 //======================== by tallest ============================
-int
+void
 ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *wan_domain;
@@ -396,7 +400,7 @@ ej_link(int eid, webs_t wp, int argc, char_t **argv)
 
 */
 
-int
+void
 ej_show_meminfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
@@ -407,9 +411,9 @@ ej_show_meminfo (int eid, webs_t wp, int argc, char_t ** argv)
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
-	  ret = websWrite (wp, "%s", line);
+	  websWrite (wp, "%s", line);
 	}
       pclose (fp);
     }
-  return ret;
+  return;
 }

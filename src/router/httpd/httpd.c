@@ -1346,7 +1346,7 @@ wfprintf (FILE * fp, char *fmt, ...)
   return ret;
 }
 
-int websWrite (webs_t wp, char *fmt, ...)
+void websWrite (webs_t wp, char *fmt, ...)
 {
   va_list args;
   char buf[1024];

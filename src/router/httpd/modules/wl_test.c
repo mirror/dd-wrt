@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -28,7 +27,7 @@ mysystem (char *cmd)
   return system (cmd);
 }
 
-int
+void
 ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char line[256];
@@ -60,6 +59,7 @@ ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv)
   if ((fp = fopen (PROC_DEV, "r")) == NULL)
     {
       websError (wp, 400, "Cann't open %s\n", PROC_DEV);
+      return;
     }
   else
     {
@@ -105,11 +105,11 @@ Inter-|   Receive                                                |  Transmit
 	     info.tx_errs + info.tx_drops + info.tx_colls);
 
 
-  return 0;
+  return;
 }
 
 int
-StartContinueTx (webs_t wp,char *value)
+StartContinueTx (webs_t wp, char *value)
 {
   int ret = 0;
   char buf[80];
@@ -156,7 +156,7 @@ StartContinueTx (webs_t wp,char *value)
   switch (atoi (value))
     {
     case 0:
-      StopContinueTx (wp,value);
+      StopContinueTx (wp, value);
       break;
     case 1:
       /* Start Continue TX, EVM */
@@ -251,7 +251,7 @@ StartContinueTx (webs_t wp,char *value)
 }
 
 int
-StopContinueTx (webs_t wp,char *value)
+StopContinueTx (webs_t wp, char *value)
 {
   int ret = 0;
   char *type;
@@ -282,7 +282,7 @@ StopContinueTx (webs_t wp,char *value)
 }
 
 int
-Check_TSSI (webs_t wp,char *value)
+Check_TSSI (webs_t wp, char *value)
 {
   int atten_bb;
   int atten_radio;
@@ -474,7 +474,7 @@ Change_Ant (char *value)
 }
 
 int
-StartContinueTx_4702 (webs_t wp,char *value)
+StartContinueTx_4702 (webs_t wp, char *value)
 {
   int ret = 0;
   char buf[80];
@@ -534,7 +534,7 @@ StartContinueTx_4702 (webs_t wp,char *value)
 }
 
 int
-StopContinueTx_4702 (webs_t wp,char *value)
+StopContinueTx_4702 (webs_t wp, char *value)
 {
   int ret = 0;
   char *type;

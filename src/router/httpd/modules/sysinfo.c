@@ -14,13 +14,13 @@ show_default_info (webs_t wp)
 
   websDone (wp, 200);		// Let header in first packet, and bellow information in second packet.
 
-  ret = websWrite (wp, "Vendor:%s\n", VENDOR);
-  ret = websWrite (wp, "ModelName:%s\n", MODEL_NAME);
-  ret =
-    websWrite (wp, "Firmware Version:%s%s , %s\n", CYBERTAN_VERSION,
-	       MINOR_VERSION, __DATE__);
-  ret = websWrite (wp, "#:%s\n", SERIAL_NUMBER);
-  ret = websWrite (wp, "Boot Version:%s\n", nvram_safe_get ("boot_ver"));
+  websWrite (wp, "Vendor:%s\n", VENDOR);
+  websWrite (wp, "ModelName:%s\n", MODEL_NAME);
+
+  websWrite (wp, "Firmware Version:%s%s , %s\n", CYBERTAN_VERSION,
+	     MINOR_VERSION, __DATE__);
+  websWrite (wp, "#:%s\n", SERIAL_NUMBER);
+  websWrite (wp, "Boot Version:%s\n", nvram_safe_get ("boot_ver"));
 /* begin Svbeasoft modifications */
 //      ret = websWrite(wp, "CodePattern:%s\n", CODE_PATTERN);
 //#if LOCALE == EUROPE
@@ -32,13 +32,13 @@ show_default_info (webs_t wp)
 //#endif
 //      ret = websWrite(wp, "\n");
 
-  ret =
-    websWrite (wp, "RF Status:%s\n",
-	       (nvram_match ("wl0_hwaddr", "")
-		|| nvram_match ("wl_gmode", "-1")) ? "disabled" : "enabled");
-  ret =
-    websWrite (wp, "RF Firmware Version:%s%s\n", CYBERTAN_VERSION,
-	       MINOR_VERSION);
+
+  websWrite (wp, "RF Status:%s\n",
+	     (nvram_match ("wl0_hwaddr", "")
+	      || nvram_match ("wl_gmode", "-1")) ? "disabled" : "enabled");
+
+  websWrite (wp, "RF Firmware Version:%s%s\n", CYBERTAN_VERSION,
+	     MINOR_VERSION);
 //#if LOCALE == EUROPE
 //      ret = websWrite(wp, "RF Domain:ETSI (channel 1~%s)\n", WL_MAX_CHANNEL);
 //#elif LOCALE == JAPAN
@@ -46,27 +46,27 @@ show_default_info (webs_t wp)
 //#else
 //      ret = websWrite(wp, "RF Domain:US (channel 1~%s)\n", WL_MAX_CHANNEL);
 //#endif
-  ret =
-    websWrite (wp, "RF Domain:Worldwide (channel 1~%s)\n", WL_MAX_CHANNEL);
 
-  ret = websWrite (wp, "RF Channel:%s\n", nvram_safe_get ("wl_channel"));
-  ret = websWrite (wp, "RF SSID:%s\n", nvram_safe_get ("wl_ssid"));
+  websWrite (wp, "RF Domain:Worldwide (channel 1~%s)\n", WL_MAX_CHANNEL);
 
-  ret = websWrite (wp, "\n-----Dynamic Information\n");
+  websWrite (wp, "RF Channel:%s\n", nvram_safe_get ("wl_channel"));
+  websWrite (wp, "RF SSID:%s\n", nvram_safe_get ("wl_ssid"));
 
-  ret = websWrite (wp, "RF Mac Address:%s\n", nvram_safe_get ("wl0_hwaddr"));
-  ret = websWrite (wp, "LAN Mac Address:%s\n", nvram_safe_get ("lan_hwaddr"));
-  ret = websWrite (wp, "WAN Mac Address:%s\n", nvram_safe_get ("wan_hwaddr"));
+  websWrite (wp, "\n-----Dynamic Information\n");
+
+  websWrite (wp, "RF Mac Address:%s\n", nvram_safe_get ("wl0_hwaddr"));
+  websWrite (wp, "LAN Mac Address:%s\n", nvram_safe_get ("lan_hwaddr"));
+  websWrite (wp, "WAN Mac Address:%s\n", nvram_safe_get ("wan_hwaddr"));
   if (check_hw_type () == BCM4702_CHIP)
-    ret = websWrite (wp, "Hardware Version:1.x\n");
+    websWrite (wp, "Hardware Version:1.x\n");
   else
-    ret = websWrite (wp, "Hardware Version:2.0\n");
+    websWrite (wp, "Hardware Version:2.0\n");
 
-  ret = websWrite (wp, "Device Serial No.:%s\n", nvram_safe_get ("get_sn"));
+  websWrite (wp, "Device Serial No.:%s\n", nvram_safe_get ("get_sn"));
 
-  ret = websWrite (wp, "\n");	// The last char must be '\n'
+  websWrite (wp, "\n");		// The last char must be '\n'
 
-  return ret;
+  return;
 }
 
 static char *
@@ -96,45 +96,45 @@ show_other_info (webs_t wp)
 
   websDone (wp, 200);		// Let header in first packet, and bellow information in second packet.
 
-  ret += websWrite (wp, "language=%s;\n", nvram_safe_get ("language"));
-  ret += websWrite (wp, "Flash Type=%s;\n", nvram_safe_get ("flash_type"));
-  ret +=
-    websWrite (wp, "Write Mac Address=%s;\n", nvram_safe_get ("et0macaddr"));
-  ret += websWrite (wp, "\n");
-  ret += websWrite (wp, "get wl_gmode=%s;\n", nvram_safe_get ("wl_gmode"));
-  ret += websWrite (wp, "wl_gmode=%s;\n", exec_cmd ("wl gmode"));
-  ret +=
-    websWrite (wp, "get wl_afterburner=%s;\n",
-	       nvram_safe_get ("wl_afterburner"));
-  ret += websWrite (wp, "wl afterburner=%s\n", exec_cmd ("wl afterburner"));
-  ret +=
-    websWrite (wp, "wl afterburner_override=%s\n",
-	       exec_cmd ("wl afterburner_override"));
-  ret += websWrite (wp, "\n");
+  websWrite (wp, "language=%s;\n", nvram_safe_get ("language"));
+  websWrite (wp, "Flash Type=%s;\n", nvram_safe_get ("flash_type"));
+
+  websWrite (wp, "Write Mac Address=%s;\n", nvram_safe_get ("et0macaddr"));
+  websWrite (wp, "\n");
+  websWrite (wp, "get wl_gmode=%s;\n", nvram_safe_get ("wl_gmode"));
+  websWrite (wp, "wl_gmode=%s;\n", exec_cmd ("wl gmode"));
+
+  websWrite (wp, "get wl_afterburner=%s;\n",
+	     nvram_safe_get ("wl_afterburner"));
+  websWrite (wp, "wl afterburner=%s\n", exec_cmd ("wl afterburner"));
+
+  websWrite (wp, "wl afterburner_override=%s\n",
+	     exec_cmd ("wl afterburner_override"));
+  websWrite (wp, "\n");
 
   sysinfo (&info);
-  ret +=
-    websWrite (wp, "totalram=%ld, freeram=%ld, bufferram=%ld;\n",
-	       info.totalram, info.freeram, info.bufferram);
-  ret += websWrite (wp, "uptime=%ld;\n", info.uptime);
-  ret += websWrite (wp, "\n");
 
-  ret +=
-    websWrite (wp, "eou_configured=%s;\n", nvram_safe_get ("eou_configured"));
-  ret +=
-    websWrite (wp, "get_eou_index=%s;\n", nvram_safe_get ("get_eou_index"));
-  ret +=
-    websWrite (wp, "get_sn_index=%s;\n", nvram_safe_get ("get_sn_index"));
-  ret += websWrite (wp, "get_sn=%s;\n", nvram_safe_get ("get_sn"));
-  ret += websWrite (wp, "\n");
-  ret +=
-    websWrite (wp, "get_mac_index=%s;\n", nvram_safe_get ("get_mac_index"));
-  ret += websWrite (wp, "get_mac=%s;\n", nvram_safe_get ("get_mac"));
+  websWrite (wp, "totalram=%ld, freeram=%ld, bufferram=%ld;\n",
+	     info.totalram, info.freeram, info.bufferram);
+  websWrite (wp, "uptime=%ld;\n", info.uptime);
+  websWrite (wp, "\n");
+
+
+  websWrite (wp, "eou_configured=%s;\n", nvram_safe_get ("eou_configured"));
+
+  websWrite (wp, "get_eou_index=%s;\n", nvram_safe_get ("get_eou_index"));
+
+  websWrite (wp, "get_sn_index=%s;\n", nvram_safe_get ("get_sn_index"));
+  websWrite (wp, "get_sn=%s;\n", nvram_safe_get ("get_sn"));
+  websWrite (wp, "\n");
+
+  websWrite (wp, "get_mac_index=%s;\n", nvram_safe_get ("get_mac_index"));
+  websWrite (wp, "get_mac=%s;\n", nvram_safe_get ("get_mac"));
 
   return ret;
 }
 
-int
+void
 ej_show_sysinfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret;
@@ -143,95 +143,94 @@ ej_show_sysinfo (int eid, webs_t wp, int argc, char_t ** argv)
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
-      return -1;
+      return;
     }
 
   if (type && !strcmp (type, "other"))
-    ret = show_other_info (wp);
+    show_other_info (wp);
   else
-    ret = show_default_info (wp);
+    show_default_info (wp);
 
-  return ret;
+  return;
 }
 
 // for Setup Wizard and others test
-int
+void
 ej_show_miscinfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0;
 
   websDone (wp, 200);		// Let header in first packet, and bellow information in second packet.
 
-  ret += websWrite (wp, "Module Name=%s;\n", MODEL_NAME);
-  ret +=
-    websWrite (wp, "Firmware Version=%s%s,%s;\n", CYBERTAN_VERSION,
-	       MINOR_VERSION, __DATE__);
-  ret += websWrite (wp, "Firmware Time=%s;\n", __TIME__);
-  ret += websWrite (wp, "Flash Type=%s;\n", nvram_safe_get ("flash_type"));
-  ret += websWrite (wp, "CPU Clock=%s;\n", nvram_safe_get ("clkfreq"));
-  ret += websWrite (wp, "sdram_init=%s;\n", nvram_safe_get ("sdram_init"));
-  ret +=
-    websWrite (wp, "sdram_config=%s;\n", nvram_safe_get ("sdram_config"));
-  ret += websWrite (wp, "sdram_ncdl=%s;\n", nvram_safe_get ("sdram_ncdl"));
-  ret +=
-    websWrite (wp, "Write Mac Address=%s;\n", nvram_safe_get ("et0macaddr"));
-  ret +=
-    websWrite (wp, "SWAOLstatus=%s;\n", nvram_safe_get ("aol_block_traffic"));
-  ret += websWrite (wp, "SWAT&Tstatus=0;\n");
+  websWrite (wp, "Module Name=%s;\n", MODEL_NAME);
+
+  websWrite (wp, "Firmware Version=%s%s,%s;\n", CYBERTAN_VERSION,
+	     MINOR_VERSION, __DATE__);
+  websWrite (wp, "Firmware Time=%s;\n", __TIME__);
+  websWrite (wp, "Flash Type=%s;\n", nvram_safe_get ("flash_type"));
+  websWrite (wp, "CPU Clock=%s;\n", nvram_safe_get ("clkfreq"));
+  websWrite (wp, "sdram_init=%s;\n", nvram_safe_get ("sdram_init"));
+
+  websWrite (wp, "sdram_config=%s;\n", nvram_safe_get ("sdram_config"));
+  websWrite (wp, "sdram_ncdl=%s;\n", nvram_safe_get ("sdram_ncdl"));
+
+  websWrite (wp, "Write Mac Address=%s;\n", nvram_safe_get ("et0macaddr"));
+
+  websWrite (wp, "SWAOLstatus=%s;\n", nvram_safe_get ("aol_block_traffic"));
+  websWrite (wp, "SWAT&Tstatus=0;\n");
 
   if (nvram_match ("wan_proto", "dhcp"))
-    ret += websWrite (wp, "SWWanStatus=0;\n");
+    websWrite (wp, "SWWanStatus=0;\n");
   if (nvram_match ("wan_proto", "static"))
-    ret += websWrite (wp, "SWWanStatus=1;\n");
+    websWrite (wp, "SWWanStatus=1;\n");
   if (nvram_match ("wan_proto", "pppoe"))
-    ret += websWrite (wp, "SWWanStatus=2;\n");
+    websWrite (wp, "SWWanStatus=2;\n");
   if (nvram_match ("wan_proto", "pptp"))
-    ret += websWrite (wp, "SWWanStatus=3;\n");
+    websWrite (wp, "SWWanStatus=3;\n");
 
-  ret += websWrite (wp, "\n");
+  websWrite (wp, "\n");
 
-  ret += websWrite (wp, "SWGetRouterIP=%s;\n", nvram_safe_get ("lan_ipaddr"));
-  ret +=
-    websWrite (wp, "SWGetRouterDomain=%s;\n", nvram_safe_get ("wan_domain"));
-  ret +=
-    websWrite (wp, "SWpppoeUName=%s;\n", nvram_safe_get ("ppp_username"));
+  websWrite (wp, "SWGetRouterIP=%s;\n", nvram_safe_get ("lan_ipaddr"));
 
-  ret += websWrite (wp, "\n");
+  websWrite (wp, "SWGetRouterDomain=%s;\n", nvram_safe_get ("wan_domain"));
 
-  ret += websWrite (wp, "SWGetRouterSSID=%s;\n", nvram_safe_get ("wl_ssid"));
-  ret +=
-    websWrite (wp, "SWGetRouterChannel=%s;\n", nvram_safe_get ("wl_channel"));
-  ret +=
-    websWrite (wp, "SWssidBroadcast=%s;\n", nvram_safe_get ("wl_closed"));
+  websWrite (wp, "SWpppoeUName=%s;\n", nvram_safe_get ("ppp_username"));
 
-  ret += websWrite (wp, "\n");
+  websWrite (wp, "\n");
+
+  websWrite (wp, "SWGetRouterSSID=%s;\n", nvram_safe_get ("wl_ssid"));
+
+  websWrite (wp, "SWGetRouterChannel=%s;\n", nvram_safe_get ("wl_channel"));
+
+  websWrite (wp, "SWssidBroadcast=%s;\n", nvram_safe_get ("wl_closed"));
+
+  websWrite (wp, "\n");
 
   if (nvram_match ("security_mode", "disabled"))
-    ret += websWrite (wp, "SWwirelessStatus=0;\n");
+    websWrite (wp, "SWwirelessStatus=0;\n");
   if (nvram_match ("security_mode", "wep"))
-    ret += websWrite (wp, "SWwirelessStatus=1;\n");
+    websWrite (wp, "SWwirelessStatus=1;\n");
   if (nvram_match ("security_mode", "psk"))
-    ret += websWrite (wp, "SWwirelessStatus=2;\n");
+    websWrite (wp, "SWwirelessStatus=2;\n");
   if (nvram_match ("security_mode", "radius"))
-    ret += websWrite (wp, "SWwirelessStatus=3;\n");
+    websWrite (wp, "SWwirelessStatus=3;\n");
 
   if (nvram_match ("wl_wep", "off"))
-    ret += websWrite (wp, "SWwlEncryption=off;\n");
+    websWrite (wp, "SWwlEncryption=off;\n");
   if (nvram_match ("wl_wep", "on") || nvram_match ("wl_wep", "restricted"))
     {
-      ret += websWrite (wp, "SWwlEncryption=wep;\n");
-      ret +=
-	websWrite (wp, "SWwepEncryption=%s;\n",
-		   nvram_safe_get ("wl_wep_bit"));
+      websWrite (wp, "SWwlEncryption=wep;\n");
+
+      websWrite (wp, "SWwepEncryption=%s;\n", nvram_safe_get ("wl_wep_bit"));
     }
   if (nvram_match ("wl_wep", "tkip"))
-    ret += websWrite (wp, "SWwlEncryption=tkip;\n");
+    websWrite (wp, "SWwlEncryption=tkip;\n");
   if (nvram_match ("wl_wep", "aes"))
-    ret += websWrite (wp, "SWwlEncryption=aes;\n");
+    websWrite (wp, "SWwlEncryption=aes;\n");
 
   /* Below for RF test 2003-10-29 */
-  ret +=
-    websWrite (wp, "WL_tssi_result=%s;\n", nvram_safe_get ("wl_tssi_result"));
 
-  return ret;
+  websWrite (wp, "WL_tssi_result=%s;\n", nvram_safe_get ("wl_tssi_result"));
+
+  return;
 }

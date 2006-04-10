@@ -23,27 +23,30 @@ diag_ping_start (webs_t wp)
   if (!ip || !times || !strcmp (ip, ""))
     return ret;
   int i;
-  int add=0;
-  for (i=0;i<strlen(ip);i++)
+  int add = 0;
+  for (i = 0; i < strlen (ip); i++)
     {
-    if (ip[i]=='"')add++;
+      if (ip[i] == '"')
+	add++;
     }
-  char *n = (char*)malloc(strlen(ip)+add);
-  add=0;
-  for (i=0;i<strlen(ip);i++)
-  {
-  if (ip[i]=='"')
+  char *n = (char *) malloc (strlen (ip) + add);
+  add = 0;
+  for (i = 0; i < strlen (ip); i++)
     {
-    n[add++]='\\';
-    n[add++]='"';
-    }else{
-    n[add++]=ip[i];
+      if (ip[i] == '"')
+	{
+	  n[add++] = '\\';
+	  n[add++] = '"';
+	}
+      else
+	{
+	  n[add++] = ip[i];
+	}
     }
-  }
   unlink (PING_TMP);
   nvram_set ("ping_ip", n);
   nvram_set ("ping_times", times);
-  free(n);
+  free (n);
 
   // The web will hold, so i move to service.c
   //snprintf(cmd, sizeof(cmd), "ping -c %s %s &", times, ip);
@@ -125,7 +128,7 @@ ping_onload (webs_t wp, char *arg)
 
   if (pid > 0 && strncmp (type, "stop", 4))
     {				// pinging
-      ret += websWrite (wp, arg);
+      websWrite (wp, arg);
     }
 
   return ret;
@@ -169,13 +172,13 @@ traceroute_onload (webs_t wp, char *arg)
 
   if (pid > 0 && strncmp (type, "stop", 4))
     {				// tracerouting
-      ret += websWrite (wp, arg);
+      websWrite (wp, arg);
     }
 
   return ret;
 }
 
-int
+void
 ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0, count = 0;
@@ -189,16 +192,16 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 	  line[strlen (line) - 1] = '\0';
 	  if (!strcmp (line, ""))
 	    continue;
-	  ret += websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', line);
+	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', line);
 	  count++;
 	}
       fclose (fp);
     }
 
-  return ret;
+  return;
 }
 
-int
+void
 ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int ret = 0, count = 0;
@@ -212,11 +215,11 @@ ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv)
 	  line[strlen (line) - 1] = '\0';
 	  if (!strcmp (line, ""))
 	    continue;
-	  ret += websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', line);
+	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', line);
 	  count++;
 	}
       fclose (fp);
     }
 
-  return ret;
+  return;
 }

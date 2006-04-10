@@ -148,7 +148,7 @@ convert (char *msg)
   return buf;
 }
 
-int
+void
 ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char string[80] = "";
@@ -159,14 +159,20 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
     enable = nvram_safe_get ("ddns_enable");	// for first time
 
   if (strcmp (nvram_safe_get ("ddns_enable"), enable))	// change service
-    return websWrite (wp, " ");
+    {
+      websWrite (wp, " ");
+    }
 
   if (nvram_match ("ddns_enable", "0"))	// only for no hidden page
-    return websWrite (wp, "%s", convert ("all_disabled"));
-
+    {
+      websWrite (wp, "%s", convert ("all_disabled"));
+      return;
+    }
   if (!check_wan_link (0))
-    return websWrite (wp, "%s", convert ("all_noip"));
-
+    {
+      websWrite (wp, "%s", convert ("all_noip"));
+      return;
+    }
   if (file_to_buf ("/tmp/ddns_msg", string, sizeof (string)))
     {
       if (!strcmp (string, ""))
@@ -174,20 +180,20 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (nvram_match ("ddns_status", "1"))
 	    {
 	      if (nvram_match ("ddns_enable", "1"))
-		ret = websWrite (wp, "%s", convert ("dyn_good"));	// dyndns
+		websWrite (wp, "%s", convert ("dyn_good"));	// dyndns
 	      if (nvram_match ("ddns_enable", "2"))
-		ret = websWrite (wp, "%s", convert ("tzo_good"));	// tzo
+		websWrite (wp, "%s", convert ("tzo_good"));	// tzo
 	      if (nvram_match ("ddns_enable", "3"))
-		ret = websWrite (wp, "%s", convert ("zone_good"));	// zoneedit
+		websWrite (wp, "%s", convert ("zone_good"));	// zoneedit
 	    }
 	  else
-	    ret = websWrite (wp, "%s", convert ("all_closed"));
+	    websWrite (wp, "%s", convert ("all_closed"));
 	}
       else
-	ret = websWrite (wp, "%s", convert (string));
+	websWrite (wp, "%s", convert (string));
     }
 
-  return ret;
+  return;
 }
 
 int
@@ -276,23 +282,23 @@ ddns_update_value (webs_t wp)
   return 1;
 }
 
-int
+void
 ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
   if (check_wan_link (0))
     {
       if (nvram_match ("wan_proto", "pptp"))
-	return websWrite (wp, "%s", nvram_safe_get ("pptp_get_ip"));
+	websWrite (wp, "%s", nvram_safe_get ("pptp_get_ip"));
       else if (nvram_match ("wan_proto", "l2tp"))
-	return websWrite (wp, "%s", nvram_safe_get ("l2tp_get_ip"));
+	websWrite (wp, "%s", nvram_safe_get ("l2tp_get_ip"));
       else if (nvram_match ("pptpd_connected", "1"))
-	return websWrite (wp, "%s",
-			  nvram_safe_get ("pptpd_client_info_localip"));
+	websWrite (wp, "%s", nvram_safe_get ("pptpd_client_info_localip"));
       else
-	return websWrite (wp, "%s", nvram_safe_get ("wan_ipaddr"));
+	websWrite (wp, "%s", nvram_safe_get ("wan_ipaddr"));
     }
   else
-    return websWrite (wp, "0.0.0.0");
+    websWrite (wp, "0.0.0.0");
 
+  return;
 }
