@@ -36,12 +36,12 @@
 				<!--<dt>AP Watchdog</dt>
 				<dd>The AP Watchdog enables a timer that will check to see if any clients are connected in the interval seconds given. If no clients are attached, the watchdog assumes the AP needs to be reset. When clients are connected this reset will not occur. The watchdog is intended for situations where the AP becomes unavailable due to interference or internal chip problems.</dd>-->
 				<dt>Web Access</dt>
-				<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol.<br/>
+				<dd>This feature allows you to manage the router using either HTTP protocol or the HTTPS protocol. If you choose to disable this feature, a manual reboot will be required.<br/>
 				You can also activate or not the router information web page. It's now possible to password protect this page (same username and password than above).<br/>
 				MAC Masquerading allows you to truncate MAC addresses in the Webinterface.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
-						<div>If MAC Masquerading is enabled, all the MAC addresses will be posted as follows: xx:xx:xx:xx:AA:BB. (Only Sys-Info page is concerned).</div>
+						<div>If MAC Masquerading is enabled, all the MAC addresses will be posted in this format: xx:xx:xx:xx:AA:BB. MAC masquerading only applies to the Sys-Info page.</div>
 					</div>
 				</dd>
 				<dt>Boot Wait</dt>
