@@ -129,7 +129,7 @@ ej_compile_time (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_firmware_version (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  websWrite (wp, "%s%s", CYBERTAN_VERSION, MINOR_VERSION);
+  websWrite (wp, "%s%s %s", CYBERTAN_VERSION, MINOR_VERSION, nvram_safe_get ("dist_type"));
 }
 
 void
