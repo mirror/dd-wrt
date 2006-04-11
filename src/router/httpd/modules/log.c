@@ -115,7 +115,7 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 		  strcpy (dpt_old, dpt);
 		}
 	      websWrite (wp,
-			 "<tr bgcolor=\"cccccc\"> <td align=\"middle\" height=\"1\">%s</td> <td align=\"middle\" height=\"1\">%s</td></tr>\n",
+			 "<tr> <td align=\"middle\" height=\"1\">%s</td> <td align=\"middle\" height=\"1\">%s</td></tr>\n",
 			 src, servp ? servp->s_name : dpt);
 	    }
 	}
@@ -141,7 +141,7 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 		  strcpy (dst_old, dst);
 		}
 	      websWrite (wp,
-			 "<tr bgcolor=\"cccccc\"> <td align=\"middle\">%s</td><td align=\"middle\">%s</td><td align=\"middle\">%s</td></tr>\n",
+			 "<tr> <td align=\"middle\">%s</td><td align=\"middle\">%s</td><td align=\"middle\">%s</td></tr>\n",
 			 src, dst, servp ? servp->s_name : dpt);
 	    }
 	}
