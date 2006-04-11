@@ -126,7 +126,7 @@
 		<input type="radio" name="lan_proto" value="static" <% nvram_selmatch("lan_proto", "static", "checked"); %> />Disable
 		</div>
 	<% nvram_invmatch("enable_jffs2","1","<!--"); %><div class="setting">
-		<div class="label">use JFFS2 for client lease DB</div>
+		<div class="label">Use JFFS2 for client lease DB</div>
 		<input type="radio" name="dhcpd_usejffs" value="0" <% nvram_selmatch("dhcpd_usejffs", "0", "checked"); %> />Enable
 		<input type="radio" name="dhcpd_usejffs" value="1" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> />Disable
 		</div>
@@ -226,9 +226,9 @@
 			</script></div>
 	<% nvram_match("pptpd_enable","0","-->"); %></fieldset><br />
 	<fieldset>
-	<legend>Resetbuttond</legend>
+	<legend>Reset Button</legend>
 	<div class="setting">
-		<div class="label">Resetbuttond</div>
+		<div class="label">Reset enable</div>
 		<input type="radio" name="resetbutton_enable" value="1" <% nvram_selmatch("resetbutton_enable", "1", "checked"); %> />Enable
 		<input type="radio" name="resetbutton_enable" value="0" <% nvram_selmatch("resetbutton_enable", "0", "checked"); %> />Disable
 		</div>
@@ -322,7 +322,7 @@
 		<div class="label">Hostname</div>
 		<input maxlength="100" size="25" name="wol_hostname" value="<% nvram_get("wol_hostname"); %>" /></div>
 	<div class="setting">
-		<div class="label">SecureOn Passwd</div>
+		<div class="label">SecureOn Password</div>
 		<input maxlength="63" size="25" name="wol_passwd" value="<% nvram_get("wol_passwd"); %>" /></div>
 	<div class="setting">
 		<div class="label">MAC Addresses</div>
