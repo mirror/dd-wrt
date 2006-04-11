@@ -164,7 +164,8 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
   int ret = 0, count = 0;
   FILE *fp;
   char line[254];
-
+  char newline[300];
+  int i;
   if ((fp = fopen (PING_TMP, "r")) != NULL)
     {				// show result
       while (fgets (line, sizeof (line), fp) != NULL)
@@ -172,7 +173,21 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 	  line[strlen (line) - 1] = '\0';
 	  if (!strcmp (line, ""))
 	    continue;
-	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', line);
+	  int nc=0;
+	  for (i=0;i<strlen(line)+1;i++)
+	    {
+	    if (line[i]=='"')
+		{
+		newline[nc++]='&';
+		newline[nc++]='q';
+		newline[nc++]='u';
+		newline[nc++]='o';
+		newline[nc++]='t';
+		newline[nc++]=';';
+		}else
+		newline[nc++]=line[i];
+	    }
+	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', newline);
 	  count++;
 	}
       fclose (fp);
