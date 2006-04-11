@@ -367,7 +367,7 @@ function Status(F,I) {
 								</div>
 								<div class="setting">
 									<div class="label">Enter Policy Name</div>
-									<input maxlength="30" size="22" name="f_name" value="<% filter_policy_get('f_name',''); %>"/>
+									<input maxlength="30" size="22" name="f_name" value="<% filter_policy_get("f_name",""); %>"/>
 								</div>
 								<div class="setting">
 									<div class="label">PCs</div>

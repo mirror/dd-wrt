@@ -72,8 +72,8 @@
 				<dd>A limited 802.1x server needed to fulfill WPA handshake requirements to allow Windows XP clients to work with WPA.</dd>
 				<dt>NTP Client</dt>
 				<dd>Synchronize the clock of the router with an NTP time server.</dd>
-				<dt>Resetbuttond</dt>
-				<dd>The resetbuttond monitors the reset button and initiates actions depending on how long you press it.
+				<dt>Reset Button</dt>
+				<dd>This feature controls the resetbuttond process. The reset button initiates actions depending on how long you press it.
 					<ul>
 						<li>Short press &ndash; Reset the router (reboot)</li>
 						<li>Long press (&gt;5s) &ndash; Reboot and restore the factory default configuration.</li>
