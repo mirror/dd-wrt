@@ -24,7 +24,7 @@
 				<dd>Check all the values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes.</dd>
 			</dl>
 		</div>
-		<div id="seealso">
+		<div id="also">
 			<b>See also:</b><br />
 			<ul>
 				<li><a href="HForward.asp">Port Forwarding</a></li>
