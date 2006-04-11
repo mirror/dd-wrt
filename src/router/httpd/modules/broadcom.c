@@ -1158,7 +1158,10 @@ ej_get_dns_ip (int eid, webs_t wp, int argc, char_t ** argv)
   foreach (word, nvram_safe_get (name), next)
   {
     if (which-- == 0)
+      {
       websWrite (wp, "%d", get_single_ip (word, count));
+      return;
+      }
   }
 
   websWrite (wp, "0");		// not find
