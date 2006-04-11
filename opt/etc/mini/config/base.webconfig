@@ -116,9 +116,9 @@
 		<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" /></div>
 	<% nvram_match("ntp_enable","0","-->"); %></fieldset><br />
 	<fieldset>
-	<legend>Resetbutton</legend>
+	<legend>Reset Button</legend>
 	<div class="setting">
-		<div class="label">Resetbuttond</div>
+		<div class="label">Reset enable</div>
 		<input type="radio" name="resetbutton_enable" value="1" <% nvram_selmatch("resetbutton_enable", "1", "checked"); %> />Enable
 		<input type="radio" name="resetbutton_enable" value="0" <% nvram_selmatch("resetbutton_enable", "0", "checked"); %> />Disable
 		</div>
