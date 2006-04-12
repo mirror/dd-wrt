@@ -74,7 +74,7 @@ ifeq ($(CONFIG_34TELECOM),y)
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI -I../madwifi-ng -include ../madwifi-ng/include/compat.h
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi -include ../madwifi/madwifi/include/compat.h
 endif
 
 ifeq ($(CONFIG_NEWMEDIA),y)

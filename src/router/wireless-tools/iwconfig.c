@@ -13,36 +13,25 @@
 
 #include "iwlib.h"		/* Header */
 
-/************************* MISC SUBROUTINES **************************/
+/**************************** CONSTANTS ****************************/
 
-/*------------------------------------------------------------------*/
 /*
- * Print usage string
+ * Error codes defined for setting args
  */
-static void
-iw_usage(void)
-{
-  fprintf(stderr,
-	"Usage: iwconfig interface [essid {NN|on|off}]\n"
-	"                          [nwid {NN|on|off}]\n"
-	"                          [mode {managed|ad-hoc|...}\n"
-	"                          [freq N.NNNN[k|M|G]]\n"
-	"                          [channel N]\n"
-	"                          [ap {N|off|auto}]\n"
-	"                          [sens N]\n"
-	"                          [nick N]\n"
-	"                          [rate {N|auto|fixed}]\n"
-	"                          [rts {N|auto|fixed|off}]\n"
-	"                          [frag {N|auto|fixed|off}]\n"
-	"                          [enc {NNNN-NNNN|off}]\n"
-	"                          [power {period N|timeout N}]\n"
-	"                          [retry {limit N|lifetime N}]\n"
-	"                          [txpower N {mW|dBm}]\n"
-	"                          [commit]\n"
-	"       Check man pages for more details.\n\n"
-  );
-}
+#define IWERR_ARG_NUM		-2
+#define IWERR_ARG_TYPE		-3
+#define IWERR_ARG_SIZE		-4
+#define IWERR_ARG_CONFLICT	-5
+#define IWERR_SET_EXT		-6
+#define IWERR_GET_EXT		-7
 
+/**************************** VARIABLES ****************************/
+
+/*
+ * Ugly, but deal with errors in set_info() efficiently...
+ */
+static int	errarg;
+static int	errmax;
 
 /************************* DISPLAY ROUTINES **************************/
 
@@ -79,13 +68,6 @@ get_info(int			skfd,
   if(iw_get_range_info(skfd, ifname, &(info->range)) >= 0)
     info->has_range = 1;
 
-  /* Get sensitivity */
-  if(iw_get_ext(skfd, ifname, SIOCGIWSENS, &wrq) >= 0)
-    {
-      info->has_sens = 1;
-      memcpy(&(info->sens), &(wrq.u.sens), sizeof(iwparam));
-    }
-
   /* Get AP address */
   if(iw_get_ext(skfd, ifname, SIOCGIWAP, &wrq) >= 0)
     {
@@ -93,6 +75,29 @@ get_info(int			skfd,
       memcpy(&(info->ap_addr), &(wrq.u.ap_addr), sizeof (sockaddr));
     }
 
+  /* Get bit rate */
+  if(iw_get_ext(skfd, ifname, SIOCGIWRATE, &wrq) >= 0)
+    {
+      info->has_bitrate = 1;
+      memcpy(&(info->bitrate), &(wrq.u.bitrate), sizeof(iwparam));
+    }
+
+  /* Get Power Management settings */
+  wrq.u.power.flags = 0;
+  if(iw_get_ext(skfd, ifname, SIOCGIWPOWER, &wrq) >= 0)
+    {
+      info->has_power = 1;
+      memcpy(&(info->power), &(wrq.u.power), sizeof(iwparam));
+    }
+
+  /* Get stats */
+  if(iw_get_stats(skfd, ifname, &(info->stats),
+		  &info->range, info->has_range) >= 0)
+    {
+      info->has_stats = 1;
+    }
+
+#ifndef WE_ESSENTIAL
   /* Get NickName */
   wrq.u.essid.pointer = (caddr_t) info->nickname;
   wrq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
@@ -101,11 +106,31 @@ get_info(int			skfd,
     if(wrq.u.data.length > 1)
       info->has_nickname = 1;
 
-  /* Get bit rate */
-  if(iw_get_ext(skfd, ifname, SIOCGIWRATE, &wrq) >= 0)
+  if((info->has_range) && (info->range.we_version_compiled > 9))
     {
-      info->has_bitrate = 1;
-      memcpy(&(info->bitrate), &(wrq.u.bitrate), sizeof(iwparam));
+      /* Get Transmit Power */
+      if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) >= 0)
+	{
+	  info->has_txpower = 1;
+	  memcpy(&(info->txpower), &(wrq.u.txpower), sizeof(iwparam));
+	}
+    }
+
+  /* Get sensitivity */
+  if(iw_get_ext(skfd, ifname, SIOCGIWSENS, &wrq) >= 0)
+    {
+      info->has_sens = 1;
+      memcpy(&(info->sens), &(wrq.u.sens), sizeof(iwparam));
+    }
+
+  if((info->has_range) && (info->range.we_version_compiled > 10))
+    {
+      /* Get retry limit/lifetime */
+      if(iw_get_ext(skfd, ifname, SIOCGIWRETRY, &wrq) >= 0)
+	{
+	  info->has_retry = 1;
+	  memcpy(&(info->retry), &(wrq.u.retry), sizeof(iwparam));
+	}
     }
 
   /* Get RTS threshold */
@@ -121,73 +146,7 @@ get_info(int			skfd,
       info->has_frag = 1;
       memcpy(&(info->frag), &(wrq.u.frag), sizeof(iwparam));
     }
-
-  /* Get Power Management settings */
-  wrq.u.power.flags = 0;
-  if(iw_get_ext(skfd, ifname, SIOCGIWPOWER, &wrq) >= 0)
-    {
-      info->has_power = 1;
-      memcpy(&(info->power), &(wrq.u.power), sizeof(iwparam));
-    }
-
-  if((info->has_range) && (info->range.we_version_compiled > 9))
-    {
-      /* Get Transmit Power */
-      if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) >= 0)
-	{
-	  info->has_txpower = 1;
-	  memcpy(&(info->txpower), &(wrq.u.txpower), sizeof(iwparam));
-	}
-    }
-
-  if((info->has_range) && (info->range.we_version_compiled > 10))
-    {
-      /* Get retry limit/lifetime */
-      if(iw_get_ext(skfd, ifname, SIOCGIWRETRY, &wrq) >= 0)
-	{
-	  info->has_retry = 1;
-	  memcpy(&(info->retry), &(wrq.u.retry), sizeof(iwparam));
-	}
-    }
-
-  /* Get stats */
-  if(iw_get_stats(skfd, ifname, &(info->stats),
-		  &info->range, info->has_range) >= 0)
-    {
-      info->has_stats = 1;
-    }
-
-#ifdef DISPLAY_WPA
-  /* Note : currently disabled to not bloat iwconfig output. Also,
-   * if does not make total sense to display parameters that we
-   * don't allow (yet) to configure.
-   * For now, use iwlist instead... Jean II */
-
-  /* Get WPA/802.1x/802.11i security parameters */
-  if((info->has_range) && (info->range.we_version_compiled > 17))
-    {
-      wrq.u.param.flags = IW_AUTH_KEY_MGMT;
-      if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	{
-	  info->has_auth_key_mgmt = 1;
-	  info->auth_key_mgmt = wrq.u.param.value;
-	}
-
-      wrq.u.param.flags = IW_AUTH_CIPHER_PAIRWISE;
-      if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	{
-	  info->has_auth_cipher_pairwise = 1;
-	  info->auth_cipher_pairwise = wrq.u.param.value;
-	}
-
-      wrq.u.param.flags = IW_AUTH_CIPHER_GROUP;
-      if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	{
-	  info->has_auth_cipher_group = 1;
-	  info->auth_cipher_group = wrq.u.param.value;
-	}
-    }
-#endif
+#endif	/* WE_ESSENTIAL */
 
   return(0);
 }
@@ -225,9 +184,11 @@ display_info(struct wireless_info *	info,
 	printf("ESSID:off/any  ");
     }
 
+#ifndef WE_ESSENTIAL
   /* Display NickName (station name), if any */
   if(info->has_nickname)
     printf("Nickname:\"%s\"", info->nickname);
+#endif	/* WE_ESSENTIAL */
 
   /* Formatting */
   if(info->b.has_essid || info->has_nickname)
@@ -236,6 +197,7 @@ display_info(struct wireless_info *	info,
       tokens = 0;
     }
 
+#ifndef WE_ESSENTIAL
   /* Display Network ID */
   if(info->b.has_nwid)
     {
@@ -247,6 +209,7 @@ display_info(struct wireless_info *	info,
 	printf("NWID:%X  ", info->b.nwid.value);
       tokens +=2;
     }
+#endif	/* WE_ESSENTIAL */
 
   /* Display the current mode of operation */
   if(info->b.has_mode)
@@ -306,6 +269,7 @@ display_info(struct wireless_info *	info,
       printf("Bit Rate%c%s   ", (info->bitrate.fixed ? '=' : ':'), buffer);
     }
 
+#ifndef WE_ESSENTIAL
   /* Display the Transmit Power */
   if(info->has_txpower)
     {
@@ -348,10 +312,12 @@ display_info(struct wireless_info *	info,
       else
 	printf("%d  ", info->sens.value);
     }
+#endif	/* WE_ESSENTIAL */
 
   printf("\n          ");
   tokens = 0;
 
+#ifndef WE_ESSENTIAL
   /* Display retry limit/lifetime information */
   if(info->has_retry)
     { 
@@ -365,7 +331,8 @@ display_info(struct wireless_info *	info,
 	  if(info->retry.flags & IW_RETRY_TYPE)
 	    {
 	      iw_print_retry_value(buffer, sizeof(buffer),
-				   info->retry.value, info->retry.flags);
+				   info->retry.value, info->retry.flags,
+				   info->range.we_version_compiled);
 	      printf("%s", buffer);
 	    }
 
@@ -425,6 +392,7 @@ display_info(struct wireless_info *	info,
   /* Formating */
   if(tokens > 0)
     printf("\n          ");
+#endif	/* WE_ESSENTIAL */
 
   /* Display encryption information */
   /* Note : we display only the "current" key, use iwlist to list all keys */
@@ -451,22 +419,6 @@ display_info(struct wireless_info *	info,
       printf("\n          ");
     }
 
-#ifdef DISPLAY_WPA
-  /* Display WPA/802.1x/802.11i security parameters */
-  if(info->has_auth_key_mgmt || info->has_auth_cipher_pairwise ||
-     info->has_auth_cipher_group)
-    {
-      printf("Auth params:");
-      if(info->has_auth_key_mgmt)
-	printf(" key_mgmt:0x%X ", info->auth_key_mgmt);
-      if(info->has_auth_cipher_pairwise)
-	printf(" cipher_pairwise:0x%X ", info->auth_cipher_pairwise);
-      if(info->has_auth_cipher_group)
-	printf(" cipher_group:0x%X ", info->auth_cipher_group);
-      printf("\n          ");
-    }
-#endif
-
   /* Display Power Management information */
   /* Note : we display only one parameter, period or timeout. If a device
    * (such as HiperLan) has both, the user need to use iwlist... */
@@ -482,7 +434,8 @@ display_info(struct wireless_info *	info,
 	  if(info->power.flags & IW_POWER_TYPE)
 	    {
 	      iw_print_pm_value(buffer, sizeof(buffer),
-				info->power.value, info->power.flags);
+				info->power.value, info->power.flags,
+				info->range.we_version_compiled);
 	      printf("%s  ", buffer);
 	    }
 
@@ -558,74 +511,1265 @@ print_info(int		skfd,
   return(rc);
 }
 
-/************************* SETTING ROUTINES **************************/
+/****************** COMMAND LINE MODIFIERS PARSING ******************/
+/*
+ * Factor out the parsing of command line modifiers.
+ */
 
 /*------------------------------------------------------------------*/
 /*
- * Macro to handle errors when setting WE
- * Print a nice error message and exit...
- * We define them as macro so that "return" do the right thing.
- * The "do {...} while(0)" is a standard trick
+ * Map command line modifiers to the proper flags...
  */
-#define ERR_SET_EXT(rname, request) \
-	fprintf(stderr, "Error for wireless request \"%s\" (%X) :\n", \
-		rname, request)
-
-#define ABORT_ARG_NUM(rname, request) \
-	do { \
-		ERR_SET_EXT(rname, request); \
-		fprintf(stderr, "    too few arguments.\n"); \
-		return(-1); \
-	} while(0)
-
-#define ABORT_ARG_TYPE(rname, request, arg) \
-	do { \
-		ERR_SET_EXT(rname, request); \
-		fprintf(stderr, "    invalid argument \"%s\".\n", arg); \
-		return(-2); \
-	} while(0)
-
-#define ABORT_ARG_SIZE(rname, request, max) \
-	do { \
-		ERR_SET_EXT(rname, request); \
-		fprintf(stderr, "    argument too big (max %d)\n", max); \
-		return(-3); \
-	} while(0)
+typedef struct iwconfig_modifier {
+  const char *		cmd;		/* Command line shorthand */
+  __u16			flag;		/* Flags to add */
+  __u16			exclude;	/* Modifiers to exclude */
+} iwconfig_modifier;
 
 /*------------------------------------------------------------------*/
 /*
- * Wrapper to push some Wireless Parameter in the driver
- * Use standard wrapper and add pretty error message if fail...
+ * Modifiers for Power
  */
-#define IW_SET_EXT_ERR(skfd, ifname, request, wrq, rname) \
-	do { \
-	if(iw_set_ext(skfd, ifname, request, wrq) < 0) { \
-		ERR_SET_EXT(rname, request); \
-		fprintf(stderr, "    SET failed on device %-1.16s ; %s.\n", \
-			ifname, strerror(errno)); \
-		return(-5); \
-	} } while(0)
+static const struct iwconfig_modifier	iwmod_power[] = {
+  { "min",	IW_POWER_MIN,		IW_POWER_MAX },
+  { "max",	IW_POWER_MAX,		IW_POWER_MIN },
+  { "period",	IW_POWER_PERIOD,	IW_POWER_TIMEOUT | IW_POWER_SAVING },
+  { "timeout",	IW_POWER_TIMEOUT,	IW_POWER_PERIOD | IW_POWER_SAVING },
+  { "saving",	IW_POWER_SAVING,	IW_POWER_TIMEOUT | IW_POWER_PERIOD },
+};
+#define IWMOD_POWER_NUM	(sizeof(iwmod_power)/sizeof(iwmod_power[0]))
 
 /*------------------------------------------------------------------*/
 /*
- * Wrapper to extract some Wireless Parameter out of the driver
- * Use standard wrapper and add pretty error message if fail...
+ * Modifiers for Retry
  */
-#define IW_GET_EXT_ERR(skfd, ifname, request, wrq, rname) \
-	do { \
-	if(iw_get_ext(skfd, ifname, request, wrq) < 0) { \
-		ERR_SET_EXT(rname, request); \
-		fprintf(stderr, "    GET failed on device %-1.16s ; %s.\n", \
-			ifname, strerror(errno)); \
-		return(-6); \
-	} } while(0)
+#ifndef WE_ESSENTIAL
+static const struct iwconfig_modifier	iwmod_retry[] = {
+  { "min",	IW_RETRY_MIN,		IW_RETRY_MAX },
+  { "max",	IW_RETRY_MAX,		IW_RETRY_MIN },
+  { "short",	IW_RETRY_SHORT,		IW_RETRY_LONG },
+  { "long",	IW_RETRY_LONG,		IW_RETRY_SHORT },
+  { "limit",	IW_RETRY_LIMIT,		IW_RETRY_LIFETIME },
+  { "lifetime",	IW_RETRY_LIFETIME,	IW_RETRY_LIMIT },
+};
+#define IWMOD_RETRY_NUM	(sizeof(iwmod_retry)/sizeof(iwmod_retry[0]))
+#endif	/* WE_ESSENTIAL */
+
+/*------------------------------------------------------------------*/
+/*
+ * Parse command line modifiers.
+ * Return error or number arg parsed.
+ * Modifiers must be at the beggining of command line.
+ */
+static int
+parse_modifiers(char *		args[],		/* Command line args */
+		int		count,		/* Args count */
+		__u16 *		pout,		/* Flags to write */
+		const struct iwconfig_modifier	modifier[],
+		int		modnum)
+{
+  int		i = 0;
+  int		k = 0;
+  __u16		result = 0;	/* Default : no flag set */
+
+  /* Get all modifiers and value types on the command line */
+  do
+    {
+      for(k = 0; k < modnum; k++)
+	{
+	  /* Check if matches */
+	  if(!strcasecmp(args[i], modifier[k].cmd))
+	    {
+	      /* Check for conflicting flags */
+	      if(result & modifier[k].exclude)
+		{
+		  errarg = i;
+		  return(IWERR_ARG_CONFLICT);
+		}
+	      /* Just add it */
+	      result |= modifier[k].flag;
+	      ++i;
+	      break;
+	    }
+	}
+    }
+  /* For as long as current arg matched and not out of args */
+  while((i < count) && (k < modnum));
+
+  /* Check there remains one arg for value */
+  if(i >= count)
+    return(IWERR_ARG_NUM);
+
+  /* Return result */
+  *pout = result;
+  return(i);
+}
+
+
+/*********************** SETTING SUB-ROUTINES ***********************/
+/*
+ * The following functions are use to set some wireless parameters and
+ * are called by the set dispatcher set_info().
+ * They take as arguments the remaining of the command line, with
+ * arguments processed already removed.
+ * An error is indicated by a negative return value.
+ * 0 and positive return values indicate the number of args consumed.
+ */
+
+/*------------------------------------------------------------------*/
+/*
+ * Set ESSID
+ */
+static int
+set_essid_info(int		skfd,
+	       char *		ifname,
+	       char *		args[],		/* Command line args */
+	       int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 1;
+  char			essid[IW_ESSID_MAX_SIZE + 1];
+  int			we_kernel_version;
+
+  if((!strcasecmp(args[0], "off")) ||
+     (!strcasecmp(args[0], "any")))
+    {
+      wrq.u.essid.flags = 0;
+      essid[0] = '\0';
+    }
+  else
+    if(!strcasecmp(args[0], "on"))
+      {
+	/* Get old essid */
+	memset(essid, '\0', sizeof(essid));
+	wrq.u.essid.pointer = (caddr_t) essid;
+	wrq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
+	wrq.u.essid.flags = 0;
+	if(iw_get_ext(skfd, ifname, SIOCGIWESSID, &wrq) < 0)
+	  return(IWERR_GET_EXT);
+	wrq.u.essid.flags = 1;
+      }
+    else
+      {
+	i = 0;
+
+	/* '-' or '--' allow to escape the ESSID string, allowing
+	 * to set it to the string "any" or "off".
+	 * This is a big ugly, but it will do for now */
+	if((!strcmp(args[0], "-")) || (!strcmp(args[0], "--")))
+	  {
+	    if(++i >= count)
+	      return(IWERR_ARG_NUM);
+	  }
+
+	/* Check the size of what the user passed us to avoid
+	 * buffer overflows */
+	if(strlen(args[i]) > IW_ESSID_MAX_SIZE)
+	  {
+	    errmax = IW_ESSID_MAX_SIZE;
+	    return(IWERR_ARG_SIZE);
+	  }
+	else
+	  {
+	    int		temp;
+
+	    wrq.u.essid.flags = 1;
+	    strcpy(essid, args[i]);	/* Size checked, all clear */
+	    i++;
+
+	    /* Check for ESSID index */
+	    if((i < count) &&
+	       (sscanf(args[i], "[%i]", &temp) == 1) &&
+	       (temp > 0) && (temp < IW_ENCODE_INDEX))
+	      {
+		wrq.u.essid.flags = temp;
+		++i;
+	      }
+	  }
+      }
+
+  /* Get version from kernel, device may not have range... */
+  we_kernel_version = iw_get_kernel_we_version();
+
+  /* Finally set the ESSID value */
+  wrq.u.essid.pointer = (caddr_t) essid;
+  wrq.u.essid.length = strlen(essid);
+  if(we_kernel_version < 21)
+    wrq.u.essid.length++;
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWESSID, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var args */
+  return(i);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Mode
+ */
+static int
+set_mode_info(int		skfd,
+	      char *		ifname,
+	      char *		args[],		/* Command line args */
+	      int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			k;
+
+  /* Avoid "Unused parameter" warning */
+  count = count;
+
+  if(sscanf(args[0], "%i", &k) != 1)
+    {
+      k = 0;
+      while((k < IW_NUM_OPER_MODE) &&
+	    strncasecmp(args[0], iw_operation_mode[k], 3))
+	k++;
+    }
+  if((k >= IW_NUM_OPER_MODE) || (k < 0))
+    {
+      errarg = 0;
+      return(IWERR_ARG_TYPE);
+    }
+
+  wrq.u.mode = k;
+  if(iw_set_ext(skfd, ifname, SIOCSIWMODE, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* 1 arg */
+  return(1);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set frequency/channel
+ */
+static int
+set_freq_info(int		skfd,
+	      char *		ifname,
+	      char *		args[],		/* Command line args */
+	      int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 1;
+  double		freq;
+
+  if(!strcasecmp(args[0], "auto"))
+    {
+      wrq.u.freq.m = -1;
+      wrq.u.freq.e = 0;
+      wrq.u.freq.flags = 0;
+    }
+  else
+    {
+      if(!strcasecmp(args[0], "fixed"))
+	{
+	  /* Get old frequency */
+	  if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) < 0)
+	    return(IWERR_GET_EXT);
+	  wrq.u.freq.flags = IW_FREQ_FIXED;
+	}
+      else			/* Should be a numeric value */
+	{
+	  if(sscanf(args[0], "%lg", &(freq)) != 1)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
+	  if(index(args[0], 'G')) freq *= GIGA;
+	  if(index(args[0], 'M')) freq *= MEGA;
+	  if(index(args[0], 'k')) freq *= KILO;
+
+	  iw_float2freq(freq, &(wrq.u.freq));
+
+	  wrq.u.freq.flags = IW_FREQ_FIXED;
+
+	  /* Check for an additional argument */
+	  if((i < count) && (!strcasecmp(args[i], "auto")))
+	    {
+	      wrq.u.freq.flags = 0;
+	      ++i;
+	    }
+	  if((i < count) && (!strcasecmp(args[i], "fixed")))
+	    {
+	      wrq.u.freq.flags = IW_FREQ_FIXED;
+	      ++i;
+	    }
+	}
+    }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWFREQ, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var args */
+  return(i);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Bit Rate
+ */
+static int
+set_bitrate_info(int		skfd,
+		 char *		ifname,
+		 char *		args[],		/* Command line args */
+		 int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 1;
+
+  wrq.u.bitrate.flags = 0;
+  if(!strcasecmp(args[0], "auto"))
+    {
+      wrq.u.bitrate.value = -1;
+      wrq.u.bitrate.fixed = 0;
+    }
+  else
+    {
+      if(!strcasecmp(args[0], "fixed"))
+	{
+	  /* Get old bitrate */
+	  if(iw_get_ext(skfd, ifname, SIOCGIWRATE, &wrq) < 0)
+	    return(IWERR_GET_EXT);
+	  wrq.u.bitrate.fixed = 1;
+	}
+      else			/* Should be a numeric value */
+	{
+	  double		brate;
+
+	  if(sscanf(args[0], "%lg", &(brate)) != 1)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
+	  if(index(args[i], 'G')) brate *= GIGA;
+	  if(index(args[i], 'M')) brate *= MEGA;
+	  if(index(args[i], 'k')) brate *= KILO;
+	  wrq.u.bitrate.value = (long) brate;
+	  wrq.u.bitrate.fixed = 1;
+
+	  /* Check for an additional argument */
+	  if((i < count) && (!strcasecmp(args[i], "auto")))
+	    {
+	      wrq.u.bitrate.fixed = 0;
+	      ++i;
+	    }
+	  if((i < count) && (!strcasecmp(args[i], "fixed")))
+	    {
+	      wrq.u.bitrate.fixed = 1;
+	      ++i;
+	    }
+	  if((i < count) && (!strcasecmp(args[i], "unicast")))
+	    {
+	      wrq.u.bitrate.flags |= IW_BITRATE_UNICAST;
+	      ++i;
+	    }
+	  if((i < count) && (!strcasecmp(args[i], "broadcast")))
+	    {
+	      wrq.u.bitrate.flags |= IW_BITRATE_BROADCAST;
+	      ++i;
+	    }
+	}
+    }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWRATE, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var args */
+  return(i);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set encryption
+ */
+static int
+set_enc_info(int		skfd,
+	     char *		ifname,
+	     char *		args[],		/* Command line args */
+	     int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 1;
+  unsigned char		key[IW_ENCODING_TOKEN_MAX];
+
+  if(!strcasecmp(args[0], "on"))
+    {
+      /* Get old encryption information */
+      wrq.u.data.pointer = (caddr_t) key;
+      wrq.u.data.length = IW_ENCODING_TOKEN_MAX;
+      wrq.u.data.flags = 0;
+      if(iw_get_ext(skfd, ifname, SIOCGIWENCODE, &wrq) < 0)
+	return(IWERR_GET_EXT);
+      wrq.u.data.flags &= ~IW_ENCODE_DISABLED;	/* Enable */
+    }
+  else
+    {
+      int	gotone = 0;
+      int	oldone;
+      int	keylen;
+      int	temp;
+
+      wrq.u.data.pointer = (caddr_t) NULL;
+      wrq.u.data.flags = 0;
+      wrq.u.data.length = 0;
+      i = 0;
+
+      /* Allow arguments in any order (it's safe) */
+      do
+	{
+	  oldone = gotone;
+
+	  /* -- Check for the key -- */
+	  if(i < count)
+	    {
+	      keylen = iw_in_key_full(skfd, ifname,
+				      args[i], key, &wrq.u.data.flags);
+	      if(keylen > 0)
+		{
+		  wrq.u.data.length = keylen;
+		  wrq.u.data.pointer = (caddr_t) key;
+		  ++i;
+		  gotone++;
+		}
+	    }
+
+	  /* -- Check for token index -- */
+	  if((i < count) &&
+	     (sscanf(args[i], "[%i]", &temp) == 1) &&
+	     (temp > 0) && (temp < IW_ENCODE_INDEX))
+	    {
+	      wrq.u.encoding.flags |= temp;
+	      ++i;
+	      gotone++;
+	    }
+
+	  /* -- Check the various flags -- */
+	  if((i < count) && (!strcasecmp(args[i], "off")))
+	    {
+	      wrq.u.data.flags |= IW_ENCODE_DISABLED;
+	      ++i;
+	      gotone++;
+	    }
+	  if((i < count) && (!strcasecmp(args[i], "open")))
+	    {
+	      wrq.u.data.flags |= IW_ENCODE_OPEN;
+	      ++i;
+	      gotone++;
+	    }
+	  if((i < count) && (!strncasecmp(args[i], "restricted", 5)))
+	    {
+	      wrq.u.data.flags |= IW_ENCODE_RESTRICTED;
+	      ++i;
+	      gotone++;
+	    }
+	  if((i < count) && (!strncasecmp(args[i], "temporary", 4)))
+	    {
+	      wrq.u.data.flags |= IW_ENCODE_TEMP;
+	      ++i;
+	      gotone++;
+	    }
+	}
+      while(gotone != oldone);
+
+      /* Pointer is absent in new API */
+      if(wrq.u.data.pointer == NULL)
+	wrq.u.data.flags |= IW_ENCODE_NOKEY;
+
+      /* Check if we have any invalid argument */
+      if(!gotone)
+	{
+	  errarg = 0;
+	  return(IWERR_ARG_TYPE);
+	}
+    }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWENCODE, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var arg */
+  return(i);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Power Management
+ */
+static int
+set_power_info(int		skfd,
+	       char *		ifname,
+	       char *		args[],		/* Command line args */
+	       int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 1;
+
+  if(!strcasecmp(args[0], "off"))
+    wrq.u.power.disabled = 1;	/* i.e. max size */
+  else
+    if(!strcasecmp(args[0], "on"))
+      {
+	/* Get old Power info */
+	wrq.u.power.flags = 0;
+	if(iw_get_ext(skfd, ifname, SIOCGIWPOWER, &wrq) < 0)
+	  return(IWERR_GET_EXT);
+	wrq.u.power.disabled = 0;
+      }
+    else
+      {
+	double		temp;
+	int		gotone = 0;
+
+	/* Parse modifiers */
+	i = parse_modifiers(args, count, &wrq.u.power.flags,
+			    iwmod_power, IWMOD_POWER_NUM);
+	if(i < 0)
+	  return(i);
+
+	wrq.u.power.disabled = 0;
+
+	/* Is there any value to grab ? */
+	if(sscanf(args[i], "%lg", &(temp)) == 1)
+	  {
+	    struct iw_range	range;
+	    int			flags;
+	    /* Extract range info to handle properly 'relative' */
+	    if(iw_get_range_info(skfd, ifname, &range) < 0)
+	      memset(&range, 0, sizeof(range));
+
+	    /* Get the flags to be able to do the proper conversion */
+	    switch(wrq.u.power.flags & IW_POWER_TYPE)
+	      {
+	      case IW_POWER_SAVING:
+		flags = range.pms_flags;
+		break;
+	      case IW_POWER_TIMEOUT:
+		flags = range.pmt_flags;
+		break;
+	      default:
+		flags = range.pmp_flags;
+		break;
+	      }
+	    /* Check if time or relative */
+	    if(flags & IW_POWER_RELATIVE)
+	      {
+		if(range.we_version_compiled < 21)
+		  temp *= MEGA;
+		else
+		  wrq.u.power.flags |= IW_POWER_RELATIVE;
+	      }
+	    else
+	      {
+		temp *= MEGA;	/* default = s */
+		if(index(args[i], 'u')) temp /= MEGA;
+		if(index(args[i], 'm')) temp /= KILO;
+	      }
+	    wrq.u.power.value = (long) temp;
+	    /* Set some default type if none */
+	    if((wrq.u.power.flags & IW_POWER_TYPE) == 0)
+	      wrq.u.power.flags |= IW_POWER_PERIOD;
+	    ++i;
+	    gotone = 1;
+	  }
+
+	/* Now, check the mode */
+	if(i < count)
+	  {
+	    if(!strcasecmp(args[i], "all"))
+	      wrq.u.power.flags |= IW_POWER_ALL_R;
+	    if(!strncasecmp(args[i], "unicast", 4))
+	      wrq.u.power.flags |= IW_POWER_UNICAST_R;
+	    if(!strncasecmp(args[i], "multicast", 5))
+	      wrq.u.power.flags |= IW_POWER_MULTICAST_R;
+	    if(!strncasecmp(args[i], "force", 5))
+	      wrq.u.power.flags |= IW_POWER_FORCE_S;
+	    if(!strcasecmp(args[i], "repeat"))
+	      wrq.u.power.flags |= IW_POWER_REPEATER;
+	    if(wrq.u.power.flags & IW_POWER_MODE)
+	      {
+		++i;
+		gotone = 1;
+	      }
+	  }
+	if(!gotone)
+	  {
+	    errarg = i;
+	    return(IWERR_ARG_TYPE);
+	  }
+      }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWPOWER, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var args */
+  return(i);
+}
+
+#ifndef WE_ESSENTIAL
+/*------------------------------------------------------------------*/
+/*
+ * Set Nickname
+ */
+static int
+set_nick_info(int		skfd,
+	      char *		ifname,
+	      char *		args[],		/* Command line args */
+	      int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			we_kernel_version;
+
+  /* Avoid "Unused parameter" warning */
+  count = count;
+
+  if(strlen(args[0]) > IW_ESSID_MAX_SIZE)
+    {
+      errmax = IW_ESSID_MAX_SIZE;
+      return(IWERR_ARG_SIZE);
+    }
+
+  we_kernel_version = iw_get_kernel_we_version();
+
+  wrq.u.essid.pointer = (caddr_t) args[0];
+  wrq.u.essid.length = strlen(args[0]);
+  if(we_kernel_version < 21)
+    wrq.u.essid.length++;
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWNICKN, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* 1 args */
+  return(1);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set commit
+ */
+static int
+set_nwid_info(int		skfd,
+	      char *		ifname,
+	      char *		args[],		/* Command line args */
+	      int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+
+  /* Avoid "Unused parameter" warning */
+  count = count;
+
+  if((!strcasecmp(args[0], "off")) ||
+     (!strcasecmp(args[0], "any")))
+    wrq.u.nwid.disabled = 1;
+  else
+    if(!strcasecmp(args[0], "on"))
+      {
+	/* Get old nwid */
+	if(iw_get_ext(skfd, ifname, SIOCGIWNWID, &wrq) < 0)
+	  return(IWERR_GET_EXT);
+	wrq.u.nwid.disabled = 0;
+      }
+    else
+      if(sscanf(args[0], "%lX", (unsigned long *) &(wrq.u.nwid.value)) != 1)
+	{
+	  errarg = 0;
+	  return(IWERR_ARG_TYPE);
+	}
+      else
+	wrq.u.nwid.disabled = 0;
+
+  wrq.u.nwid.fixed = 1;
+
+  /* Set new nwid */
+  if(iw_set_ext(skfd, ifname, SIOCSIWNWID, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* 1 arg */
+  return(1);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set AP Address
+ */
+static int
+set_apaddr_info(int		skfd,
+		char *		ifname,
+		char *		args[],		/* Command line args */
+		int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+
+  /* Avoid "Unused parameter" warning */
+  count = count;
+
+  if((!strcasecmp(args[0], "auto")) ||
+     (!strcasecmp(args[0], "any")))
+    {
+      /* Send a broadcast address */
+      iw_broad_ether(&(wrq.u.ap_addr));
+    }
+  else
+    {
+      if(!strcasecmp(args[0], "off"))
+	{
+	  /* Send a NULL address */
+	  iw_null_ether(&(wrq.u.ap_addr));
+	}
+      else
+	{
+	  /* Get the address and check if the interface supports it */
+	  if(iw_in_addr(skfd, ifname, args[0], &(wrq.u.ap_addr)) < 0)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
+	}
+    }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWAP, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* 1 args */
+  return(1);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Tx Power
+ */
+static int
+set_txpower_info(int		skfd,
+		char *		ifname,
+		char *		args[],		/* Command line args */
+		int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 1;
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Prepare the request */
+  wrq.u.txpower.value = -1;
+  wrq.u.txpower.fixed = 1;
+  wrq.u.txpower.disabled = 0;
+  wrq.u.txpower.flags = IW_TXPOW_DBM;
+
+  if(!strcasecmp(args[0], "off"))
+    wrq.u.txpower.disabled = 1;	/* i.e. turn radio off */
+  else
+    if(!strcasecmp(args[0], "auto"))
+      wrq.u.txpower.fixed = 0;	/* i.e. use power control */
+    else
+      {
+	if(!strcasecmp(args[0], "on"))
+	  {
+	    /* Get old tx-power */
+	    if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) < 0)
+	      return(IWERR_GET_EXT);
+	    wrq.u.txpower.disabled = 0;
+	  }
+	else
+	  {
+	    if(!strcasecmp(args[0], "fixed"))
+	      {
+		/* Get old tx-power */
+		if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) < 0)
+		  return(IWERR_GET_EXT);
+		wrq.u.txpower.fixed = 1;
+		wrq.u.txpower.disabled = 0;
+	      }
+	    else			/* Should be a numeric value */
+	      {
+		int		power;
+		int		ismwatt = 0;
+		struct iw_range	range;
+
+		/* Extract range info to do proper conversion */
+		if(iw_get_range_info(skfd, ifname, &range) < 0)
+		  memset(&range, 0, sizeof(range));
+
+		/* Get the value */
+		if(sscanf(args[0], "%i", &(power)) != 1)
+		  {
+		    errarg = 0;
+		    return(IWERR_ARG_TYPE);
+		  }
+
+		/* Check if milliWatt
+		 * We authorise a single 'm' as a shorthand for 'mW',
+		 * on the other hand a 'd' probably means 'dBm'... */
+		ismwatt = ((index(args[0], 'm') != NULL)
+			   && (index(args[0], 'd') == NULL));
+
+		/* We could check 'W' alone... Another time... */
+
+		/* Convert */
+		if(range.txpower_capa & IW_TXPOW_RELATIVE)
+		  {
+		    /* Can't convert */
+		    if(ismwatt)
+		      {
+			errarg = 0;
+			return(IWERR_ARG_TYPE);
+		      }
+		    wrq.u.txpower.flags = IW_TXPOW_RELATIVE;
+		  }
+		else
+		  if(range.txpower_capa & IW_TXPOW_MWATT)
+		    {
+		      if(!ismwatt)
+			power = iw_dbm2mwatt(power);
+		      wrq.u.txpower.flags = IW_TXPOW_MWATT;
+		    }
+		  else
+		    {
+		      if(ismwatt)
+			power = iw_mwatt2dbm(power);
+		      wrq.u.txpower.flags = IW_TXPOW_DBM;
+		    }
+		wrq.u.txpower.value = power;
+
+		/* Check for an additional argument */
+		if((i < count) && (!strcasecmp(args[i], "auto")))
+		  {
+		    wrq.u.txpower.fixed = 0;
+		    ++i;
+		  }
+		if((i < count) && (!strcasecmp(args[i+1], "fixed")))
+		  {
+		    wrq.u.txpower.fixed = 1;
+		    ++i;
+		  }
+	      }
+	  }
+      }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWTXPOW, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var args */
+  return(i);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Sensitivity
+ */
+static int
+set_sens_info(int		skfd,
+	      char *		ifname,
+	      char *		args[],		/* Command line args */
+	      int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+
+  /* Avoid "Unused parameter" warning */
+  count = count;
+
+  if(sscanf(args[0], "%i", &(wrq.u.sens.value)) != 1)
+    {
+      errarg = 0;
+      return(IWERR_ARG_TYPE);
+    }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWSENS, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* 1 arg */
+  return(1);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Retry Limit
+ */
+static int
+set_retry_info(int		skfd,
+	       char *		ifname,
+	       char *		args[],		/* Command line args */
+	       int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 0;
+  double		temp;
+
+  /* Parse modifiers */
+  i = parse_modifiers(args, count, &wrq.u.retry.flags,
+		      iwmod_retry, IWMOD_RETRY_NUM);
+  if(i < 0)
+    return(i);
+
+  /* Add default type if none */
+  if((wrq.u.retry.flags & IW_RETRY_TYPE) == 0)
+    wrq.u.retry.flags |= IW_RETRY_LIMIT;
+
+  wrq.u.retry.disabled = 0;
+
+  /* Is there any value to grab ? */
+  if(sscanf(args[i], "%lg", &(temp)) != 1)
+    {
+      errarg = i;
+      return(IWERR_ARG_TYPE);
+    }
+
+  /* Limit is absolute, on the other hand lifetime is seconds */
+  if(wrq.u.retry.flags & IW_RETRY_LIFETIME)
+    {
+      struct iw_range	range;
+      /* Extract range info to handle properly 'relative' */
+      if(iw_get_range_info(skfd, ifname, &range) < 0)
+	memset(&range, 0, sizeof(range));
+
+      if(range.r_time_flags & IW_RETRY_RELATIVE)
+	{
+	  if(range.we_version_compiled < 21)
+	    temp *= MEGA;
+	  else
+	    wrq.u.retry.flags |= IW_RETRY_RELATIVE;
+	}
+      else
+	{
+	  /* Normalise lifetime */
+	  temp *= MEGA;	/* default = s */
+	  if(index(args[i], 'u')) temp /= MEGA;
+	  if(index(args[i], 'm')) temp /= KILO;
+	}
+    }
+  wrq.u.retry.value = (long) temp;
+  ++i;
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWRETRY, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var args */
+  return(i);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set RTS Threshold
+ */
+static int
+set_rts_info(int		skfd,
+	     char *		ifname,
+	     char *		args[],		/* Command line args */
+	     int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+
+  /* Avoid "Unused parameter" warning */
+  count = count;
+
+  wrq.u.rts.value = -1;
+  wrq.u.rts.fixed = 1;
+  wrq.u.rts.disabled = 0;
+
+  if(!strcasecmp(args[0], "off"))
+    wrq.u.rts.disabled = 1;	/* i.e. max size */
+  else
+    if(!strcasecmp(args[0], "auto"))
+      wrq.u.rts.fixed = 0;
+    else
+      {
+	if(!strcasecmp(args[0], "fixed"))
+	  {
+	    /* Get old RTS threshold */
+	    if(iw_get_ext(skfd, ifname, SIOCGIWRTS, &wrq) < 0)
+	      return(IWERR_GET_EXT);
+	    wrq.u.rts.fixed = 1;
+	  }
+	else			/* Should be a numeric value */
+	  if(sscanf(args[0], "%li", (unsigned long *) &(wrq.u.rts.value)) != 1)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
+      }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWRTS, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* 1 arg */
+  return(1);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Fragmentation Threshold
+ */
+static int
+set_frag_info(int		skfd,
+	      char *		ifname,
+	      char *		args[],		/* Command line args */
+	      int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+
+  /* Avoid "Unused parameter" warning */
+  count = count;
+
+  wrq.u.frag.value = -1;
+  wrq.u.frag.fixed = 1;
+  wrq.u.frag.disabled = 0;
+
+  if(!strcasecmp(args[0], "off"))
+    wrq.u.frag.disabled = 1;	/* i.e. max size */
+  else
+    if(!strcasecmp(args[0], "auto"))
+      wrq.u.frag.fixed = 0;
+    else
+      {
+	if(!strcasecmp(args[0], "fixed"))
+	  {
+	    /* Get old fragmentation threshold */
+	    if(iw_get_ext(skfd, ifname, SIOCGIWFRAG, &wrq) < 0)
+	      return(IWERR_GET_EXT);
+	    wrq.u.frag.fixed = 1;
+	  }
+	else			/* Should be a numeric value */
+	  if(sscanf(args[0], "%li", (unsigned long *) &(wrq.u.frag.value))
+	     != 1)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
+      }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWFRAG, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* 1 arg */
+  return(1);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Set Modulation
+ */
+static int
+set_modulation_info(int		skfd,
+		    char *	ifname,
+		    char *	args[],		/* Command line args */
+		    int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  int			i = 1;
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  if(!strcasecmp(args[0], "auto"))
+    wrq.u.param.fixed = 0;	/* i.e. use any modulation */
+  else
+    {
+      if(!strcasecmp(args[0], "fixed"))
+	{
+	  /* Get old modulation */
+	  if(iw_get_ext(skfd, ifname, SIOCGIWMODUL, &wrq) < 0)
+	    return(IWERR_GET_EXT);
+	  wrq.u.param.fixed = 1;
+	}
+      else
+	{
+	  int		k;
+
+	  /* Allow multiple modulations, combine them together */
+	  wrq.u.param.value = 0x0;
+	  i = 0;
+	  do
+	    {
+	      for(k = 0; k < IW_SIZE_MODUL_LIST; k++)
+		{
+		  if(!strcasecmp(args[i], iw_modul_list[k].cmd))
+		    {
+		      wrq.u.param.value |= iw_modul_list[k].mask;
+		      ++i;
+		      break;
+		    }
+		}
+	    }
+	  /* For as long as current arg matched and not out of args */
+	  while((i < count) && (k < IW_SIZE_MODUL_LIST));
+
+	  /* Check we got something */
+	  if(i == 0)
+	    {
+	      errarg = 0;
+	      return(IWERR_ARG_TYPE);
+	    }
+
+	  /* Check for an additional argument */
+	  if((i < count) && (!strcasecmp(args[i], "auto")))
+	    {
+	      wrq.u.param.fixed = 0;
+	      ++i;
+	    }
+	  if((i < count) && (!strcasecmp(args[i], "fixed")))
+	    {
+	      wrq.u.param.fixed = 1;
+	      ++i;
+	    }
+	}
+    }
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWMODUL, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* Var args */
+  return(i);
+}
+#endif	/* WE_ESSENTIAL */
+
+/*------------------------------------------------------------------*/
+/*
+ * Set commit
+ */
+static int
+set_commit_info(int		skfd,
+		char *		ifname,
+		char *		args[],		/* Command line args */
+		int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  if(iw_set_ext(skfd, ifname, SIOCSIWCOMMIT, &wrq) < 0)
+    return(IWERR_SET_EXT);
+
+  /* No args */
+  return(0);
+}
+
+/************************** SET DISPATCHER **************************/
+/*
+ * This is a modified version of the dispatcher in iwlist.
+ * The main difference is that here we may have multiple commands per
+ * line. Also, most commands here do take arguments, and most often
+ * a variable number of them.
+ * Therefore, the handler *must* return how many args were consumed...
+ *
+ * Note that the use of multiple commands per line is not advised
+ * in scripts, as it makes error management hard. All commands before
+ * the error are executed, but commands after the error are not
+ * processed.
+ * We also try to give as much clue as possible via stderr to the caller
+ * on which command did fail, but if there are two time the same command,
+ * you don't know which one failed...
+ */
+
+/*------------------------------------------------------------------*/
+/*
+ * Map command line arguments to the proper procedure...
+ */
+typedef struct iwconfig_entry {
+  const char *		cmd;		/* Command line shorthand */
+  iw_enum_handler	fn;		/* Subroutine */
+  int			min_count;
+  int			request;	/* WE numerical ID */
+  const char *		name;		/* Human readable string */
+  const char *		argsname;	/* Args as human readable string */
+} iwconfig_cmd;
+
+static const struct iwconfig_entry iwconfig_cmds[] = {
+  { "essid",		set_essid_info,		1,	SIOCSIWESSID,
+	"Set ESSID",			"{NNN|any|on|off}" },
+  { "mode",		set_mode_info,		1,	SIOCSIWMODE,
+	"Set Mode",			"{managed|ad-hoc|master|...}" },
+  { "freq",		set_freq_info,		1,	SIOCSIWFREQ,
+	"Set Frequency",		"N.NNN[k|M|G]" },
+  { "channel",		set_freq_info,		1,	SIOCSIWFREQ,
+	"Set Frequency",		"N" },
+  { "bit",		set_bitrate_info,	1,	SIOCSIWRATE,
+	"Set Bit Rate",			"{N[k|M|G]|auto|fixed}" },
+  { "rate",		set_bitrate_info,	1,	SIOCSIWRATE,
+	"Set Bit Rate",			"{N[k|M|G]|auto|fixed}" },
+  { "enc",		set_enc_info,		1,	SIOCSIWENCODE,
+	"Set Encode",			"{NNNN-NNNN|off}" },
+  { "key",		set_enc_info,		1,	SIOCSIWENCODE,
+	"Set Encode",			"{NNNN-NNNN|off}"  },
+  { "power",		set_power_info,		1,	SIOCSIWPOWER,
+	"Set Power Management",		"{period N|timeout N|saving N|off}" },
+#ifndef WE_ESSENTIAL
+  { "nick",		set_nick_info,		1,	SIOCSIWNICKN,
+	"Set Nickname",			"NNN" },
+  { "nwid",		set_nwid_info,		1,	SIOCSIWNWID,
+	"Set NWID",			"{NN|on|off}" },
+  { "ap",		set_apaddr_info,	1,	SIOCSIWAP,
+	"Set AP Address",		"{N|off|auto}" },
+  { "txpower",		set_txpower_info,	1,	SIOCSIWTXPOW,
+	"Set Tx Power",			"{NmW|NdBm|off|auto}" },
+  { "sens",		set_sens_info,		1,	SIOCSIWSENS,
+	"Set Sensitivity",		"N" },
+  { "retry",		set_retry_info,		1,	SIOCSIWRETRY,
+	"Set Retry Limit",		"{limit N|lifetime N}" },
+  { "rts",		set_rts_info,		1,	SIOCSIWRTS,
+	"Set RTS Threshold",		"{N|auto|fixed|off}" },
+  { "frag",		set_frag_info,		1,	SIOCSIWFRAG,
+	"Set Fragmentation Threshold",	"{N|auto|fixed|off}" },
+  { "modulation",	set_modulation_info,	1,	SIOCGIWMODUL,
+	"Set Modulation",		"{11g|11a|CCK|OFDMg|...}" },
+#endif	/* WE_ESSENTIAL */
+  { "commit",		set_commit_info,	0,	SIOCSIWCOMMIT,
+	"Commit changes",		"" },
+  { NULL, NULL, 0, 0, NULL, NULL },
+};
+
+/*------------------------------------------------------------------*/
+/*
+ * Find the most appropriate command matching the command line
+ */
+static inline const iwconfig_cmd *
+find_command(const char *	cmd)
+{
+  const iwconfig_cmd *	found = NULL;
+  int			ambig = 0;
+  unsigned int		len = strlen(cmd);
+  int			i;
+
+  /* Go through all commands */
+  for(i = 0; iwconfig_cmds[i].cmd != NULL; ++i)
+    {
+      /* No match -> next one */
+      if(strncasecmp(iwconfig_cmds[i].cmd, cmd, len) != 0)
+	continue;
+
+      /* Exact match -> perfect */
+      if(len == strlen(iwconfig_cmds[i].cmd))
+	return &iwconfig_cmds[i];
+
+      /* Partial match */
+      if(found == NULL)
+	/* First time */
+	found = &iwconfig_cmds[i];
+      else
+	/* Another time */
+	if (iwconfig_cmds[i].fn != found->fn)
+	  ambig = 1;
+    }
+
+  if(found == NULL)
+    {
+      fprintf(stderr, "iwconfig: unknown command \"%s\"\n", cmd);
+      return NULL;
+    }
+
+  if(ambig)
+    {
+      fprintf(stderr, "iwconfig: command \"%s\" is ambiguous\n", cmd);
+      return NULL;
+    }
+
+  return found;
+}
 
 /*------------------------------------------------------------------*/
 /*
  * Set the wireless options requested on command line
- * This function is too long and probably should be split,
- * because it look like the perfect definition of spaghetti code,
- * but I'm way to lazy
+ * Find the individual commands and call the appropriate subroutine
  */
 static int
 set_info(int		skfd,		/* The socket */
@@ -633,788 +1777,106 @@ set_info(int		skfd,		/* The socket */
 	 int		count,		/* Args count */
 	 char *		ifname)		/* Dev name */
 {
-  struct iwreq		wrq;
-  int			i;
+  const iwconfig_cmd *	iwcmd;
+  int			ret;
 
-  /* if nothing after the device name - will never happen */
-  if(count < 1)
+  /* Loop until we run out of args... */
+  while(count > 0)
     {
-      fprintf(stderr, "Error : too few arguments.\n");
-      return(-1);
+      /* find the command matching the keyword */
+      iwcmd = find_command(args[0]);
+      if(iwcmd == NULL)
+	{
+	  /* Here we have an unrecognised arg... Error already printed out. */
+	  return(-1);
+	}
+
+      /* One arg is consumed (the command name) */
+      args++;
+      count--;
+
+      /* Check arg numbers */
+      if(count < iwcmd->min_count)
+	ret = IWERR_ARG_NUM;
+      else
+	ret = 0;
+
+      /* Call the command */
+      if(!ret)
+	ret = (*iwcmd->fn)(skfd, ifname, args, count);
+
+      /* Deal with various errors */
+      if(ret < 0)
+	{
+	  int	request = iwcmd->request;
+	  if(ret == IWERR_GET_EXT)
+	    request++;	/* Transform the SET into GET */
+
+	  fprintf(stderr, "Error for wireless request \"%s\" (%X) :\n",
+		  iwcmd->name, request);
+	  switch(ret)
+	    {
+	    case IWERR_ARG_NUM:
+	      fprintf(stderr, "    too few arguments.\n");
+	      break;
+	    case IWERR_ARG_TYPE:
+	      if(errarg < 0)
+		errarg = 0;
+	      if(errarg >= count)
+		errarg = count - 1;
+	      fprintf(stderr, "    invalid argument \"%s\".\n", args[errarg]);
+	      break;
+	    case IWERR_ARG_SIZE:
+	      fprintf(stderr, "    argument too big (max %d)\n", errmax);
+	      break;
+	    case IWERR_ARG_CONFLICT:
+	      if(errarg < 0)
+		errarg = 0;
+	      if(errarg >= count)
+		errarg = count - 1;
+	      fprintf(stderr, "    conflicting argument \"%s\".\n", args[errarg]);
+	      break;
+	    case IWERR_SET_EXT:
+	      fprintf(stderr, "    SET failed on device %-1.16s ; %s.\n",
+		      ifname, strerror(errno));
+	      break;
+	    case IWERR_GET_EXT:
+	      fprintf(stderr, "    GET failed on device %-1.16s ; %s.\n",
+		      ifname, strerror(errno));
+	      break;
+	    }
+	  /* Stop processing, we don't know if we are in a consistent state
+	   * in reading the command line */
+	  return(ret);
+	}
+
+      /* Substract consumed args from command line */
+      args += ret;
+      count -= ret;
+
+      /* Loop back */
     }
 
-  /* The other args on the line specify options to be set... */
-  for(i = 0; i < count; i++)
-    {
-      /* ---------- Commit changes to driver ---------- */
-      if(!strncmp(args[i], "commit", 6))
-	{
-	  /* No args */
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWCOMMIT, &wrq,
-			 "Commit changes");
-	  continue;
-	}
-
-      /* ---------- Set network ID ---------- */
-      if((!strcasecmp(args[i], "nwid")) ||
-	 (!strcasecmp(args[i], "domain")))
-	{
-	  i++;
-	  if(i >= count)
-	    ABORT_ARG_NUM("Set NWID", SIOCSIWNWID);
-	  if((!strcasecmp(args[i], "off")) ||
-	     (!strcasecmp(args[i], "any")))
-	    wrq.u.nwid.disabled = 1;
-	  else
-	    if(!strcasecmp(args[i], "on"))
-	      {
-		/* Get old nwid */
-		IW_GET_EXT_ERR(skfd, ifname, SIOCGIWNWID, &wrq,
-			       "Set NWID");
-		wrq.u.nwid.disabled = 0;
-	      }
-	    else
-	      if(sscanf(args[i], "%lX", (unsigned long *) &(wrq.u.nwid.value))
-		 != 1)
-		ABORT_ARG_TYPE("Set NWID", SIOCSIWNWID, args[i]);
-	      else
-		wrq.u.nwid.disabled = 0;
-	  wrq.u.nwid.fixed = 1;
-
-	  /* Set new nwid */
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWNWID, &wrq,
-			 "Set NWID");
-	  continue;
-	}
-
-      /* ---------- Set frequency / channel ---------- */
-      if((!strncmp(args[i], "freq", 4)) ||
-	 (!strcmp(args[i], "channel")))
-	{
-	  double		freq;
-
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set Frequency", SIOCSIWFREQ);
-	  if(!strcasecmp(args[i], "auto"))
-	    {
-	      wrq.u.freq.m = -1;
-	      wrq.u.freq.e = 0;
-	      wrq.u.freq.flags = 0;
-	    }
-	  else
-	    {
-	      if(!strcasecmp(args[i], "fixed"))
-		{
-		  /* Get old bitrate */
-		  IW_GET_EXT_ERR(skfd, ifname, SIOCGIWFREQ, &wrq,
-				 "Set Bit Rate");
-		  wrq.u.freq.flags = IW_FREQ_FIXED;
-		}
-	      else			/* Should be a numeric value */
-		{
-		  if(sscanf(args[i], "%lg", &(freq)) != 1)
-		    ABORT_ARG_TYPE("Set Frequency", SIOCSIWFREQ, args[i]);
-		  if(index(args[i], 'G')) freq *= GIGA;
-		  if(index(args[i], 'M')) freq *= MEGA;
-		  if(index(args[i], 'k')) freq *= KILO;
-
-		  iw_float2freq(freq, &(wrq.u.freq));
-
-		  wrq.u.freq.flags = IW_FREQ_FIXED;
-
-		  /* Check for an additional argument */
-		  if(((i+1) < count) &&
-		     (!strcasecmp(args[i+1], "auto")))
-		    {
-		      wrq.u.freq.flags = 0;
-		      ++i;
-		    }
-		  if(((i+1) < count) &&
-		     (!strcasecmp(args[i+1], "fixed")))
-		    {
-		      wrq.u.freq.flags = IW_FREQ_FIXED;
-		      ++i;
-		    }
-		}
-	    }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWFREQ, &wrq,
-			 "Set Frequency");
-	  continue;
-	}
-
-      /* ---------- Set sensitivity ---------- */
-      if(!strncmp(args[i], "sens", 4))
-	{
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set Sensitivity", SIOCSIWSENS);
-	  if(sscanf(args[i], "%i", &(wrq.u.sens.value)) != 1)
-	    ABORT_ARG_TYPE("Set Sensitivity", SIOCSIWSENS, args[i]);
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWSENS, &wrq,
-			 "Set Sensitivity");
-	  continue;
-	}
-
-      /* ---------- Set encryption stuff ---------- */
-      if((!strncmp(args[i], "enc", 3)) ||
-	 (!strcmp(args[i], "key")))
-	{
-	  unsigned char	key[IW_ENCODING_TOKEN_MAX];
-
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set Encode", SIOCSIWENCODE);
-
-	  if(!strcasecmp(args[i], "on"))
-	    {
-	      /* Get old encryption information */
-	      wrq.u.data.pointer = (caddr_t) key;
-	      wrq.u.data.length = IW_ENCODING_TOKEN_MAX;
-	      wrq.u.data.flags = 0;
-	      IW_GET_EXT_ERR(skfd, ifname, SIOCGIWENCODE, &wrq,
-			     "Set Encode");
-	      wrq.u.data.flags &= ~IW_ENCODE_DISABLED;	/* Enable */
-	    }
-	  else
-	    {
-	      int	gotone = 0;
-	      int	oldone;
-	      int	keylen;
-	      int	temp;
-
-	      wrq.u.data.pointer = (caddr_t) NULL;
-	      wrq.u.data.flags = 0;
-	      wrq.u.data.length = 0;
-
-	      /* Allow arguments in any order (it's safe) */
-	      do
-		{
-		  oldone = gotone;
-
-		  /* -- Check for the key -- */
-		  if(i < count)
-		    {
-		      keylen = iw_in_key_full(skfd, ifname,
-					      args[i], key, &wrq.u.data.flags);
-		      if(keylen > 0)
-			{
-			  wrq.u.data.length = keylen;
-			  wrq.u.data.pointer = (caddr_t) key;
-			  ++i;
-			  gotone++;
-			}
-		    }
-
-		  /* -- Check for token index -- */
-		  if((i < count) &&
-		     (sscanf(args[i], "[%i]", &temp) == 1) &&
-		     (temp > 0) && (temp < IW_ENCODE_INDEX))
-		    {
-		      wrq.u.encoding.flags |= temp;
-		      ++i;
-		      gotone++;
-		    }
-
-		  /* -- Check the various flags -- */
-		  if((i < count) && (!strcasecmp(args[i], "off")))
-		    {
-		      wrq.u.data.flags |= IW_ENCODE_DISABLED;
-		      ++i;
-		      gotone++;
-		    }
-		  if((i < count) && (!strcasecmp(args[i], "open")))
-		    {
-		      wrq.u.data.flags |= IW_ENCODE_OPEN;
-		      ++i;
-		      gotone++;
-		    }
-		  if((i < count) && (!strncasecmp(args[i], "restricted", 5)))
-		    {
-		      wrq.u.data.flags |= IW_ENCODE_RESTRICTED;
-		      ++i;
-		      gotone++;
-		    }
-		  if((i < count) && (!strncasecmp(args[i], "temporary", 4)))
-		    {
-		      wrq.u.data.flags |= IW_ENCODE_TEMP;
-		      ++i;
-		      gotone++;
-		    }
-		}
-	      while(gotone != oldone);
-
-	      /* Pointer is absent in new API */
-	      if(wrq.u.data.pointer == NULL)
-		wrq.u.data.flags |= IW_ENCODE_NOKEY;
-
-	      /* Check if we have any invalid argument */
-	      if(!gotone)
-		ABORT_ARG_TYPE("Set Encode", SIOCSIWENCODE, args[i]);
-	      /* Get back to last processed argument */
-	      --i;
-	    }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWENCODE, &wrq,
-			 "Set Encode");
-	  continue;
-  	}
-
-      /* ---------- Set ESSID ---------- */
-      if(!strcasecmp(args[i], "essid"))
-	{
-	  char		essid[IW_ESSID_MAX_SIZE + 1];
-	  int		we_kernel_version;
-
-	  i++;
-	  if(i >= count)
-	    ABORT_ARG_NUM("Set ESSID", SIOCSIWESSID);
-	  if((!strcasecmp(args[i], "off")) ||
-	     (!strcasecmp(args[i], "any")))
-	    {
-	      wrq.u.essid.flags = 0;
-	      essid[0] = '\0';
-	    }
-	  else
-	    if(!strcasecmp(args[i], "on"))
-	      {
-		/* Get old essid */
-		memset(essid, '\0', sizeof(essid));
-		wrq.u.essid.pointer = (caddr_t) essid;
-		wrq.u.essid.length = IW_ESSID_MAX_SIZE + 1;
-		wrq.u.essid.flags = 0;
-		IW_GET_EXT_ERR(skfd, ifname, SIOCGIWESSID, &wrq,
-			       "Set ESSID");
-		wrq.u.essid.flags = 1;
-	      }
-	    else
-	      {
-		/* '-' or '--' allow to escape the ESSID string, allowing
-		 * to set it to the string "any" or "off".
-		 * This is a big ugly, but it will do for now */
-		if((!strcmp(args[i], "-")) || (!strcmp(args[i], "--")))
-		  {
-		    i++;
-		    if(i >= count)
-		      ABORT_ARG_NUM("Set ESSID", SIOCSIWESSID);
-		  }
-
-		/* Check the size of what the user passed us to avoid
-		 * buffer overflows */
-		if(strlen(args[i]) > IW_ESSID_MAX_SIZE)
-		  ABORT_ARG_SIZE("Set ESSID", SIOCSIWESSID, IW_ESSID_MAX_SIZE);
-		else
-		  {
-		    int		temp;
-
-		    wrq.u.essid.flags = 1;
-		    strcpy(essid, args[i]);	/* Size checked, all clear */
-
-		    /* Check for ESSID index */
-		    if(((i+1) < count) &&
-		       (sscanf(args[i+1], "[%i]", &temp) == 1) &&
-		       (temp > 0) && (temp < IW_ENCODE_INDEX))
-		      {
-			wrq.u.essid.flags = temp;
-			++i;
-		      }
-		  }
-	      }
-
-	  /* Get version from kernel, device may not have range... */
-	  we_kernel_version = iw_get_kernel_we_version();
-
-	  /* Finally set the ESSID value */
-	  wrq.u.essid.pointer = (caddr_t) essid;
-	  wrq.u.essid.length = strlen(essid) + 1;
-	  if(we_kernel_version > 20)
-	    wrq.u.essid.length--;
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWESSID, &wrq,
-			 "Set ESSID");
-	  continue;
-	}
-
-      /* ---------- Set AP address ---------- */
-      if(!strcasecmp(args[i], "ap"))
-	{
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set AP Address", SIOCSIWAP);
-
-	  if((!strcasecmp(args[i], "auto")) ||
-	     (!strcasecmp(args[i], "any")))
-	    {
-	      /* Send a broadcast address */
-	      iw_broad_ether(&(wrq.u.ap_addr));
-	    }
-	  else
-	    {
-	      if(!strcasecmp(args[i], "off"))
-		{
-		  /* Send a NULL address */
-		  iw_null_ether(&(wrq.u.ap_addr));
-		}
-	      else
-		{
-		  /* Get the address and check if the interface supports it */
-		  if(iw_in_addr(skfd, ifname, args[i++], &(wrq.u.ap_addr)) < 0)
-		    ABORT_ARG_TYPE("Set AP Address", SIOCSIWAP, args[i-1]);
-		}
-	    }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWAP, &wrq,
-			 "Set AP Address");
-	  continue;
-	}
-
-      /* ---------- Set NickName ---------- */
-      if(!strncmp(args[i], "nick", 4))
-	{
-	  int		we_kernel_version;
-
-	  i++;
-	  if(i >= count)
-	    ABORT_ARG_NUM("Set Nickname", SIOCSIWNICKN);
-	  if(strlen(args[i]) > IW_ESSID_MAX_SIZE)
-	    ABORT_ARG_SIZE("Set Nickname", SIOCSIWNICKN, IW_ESSID_MAX_SIZE);
-
-	  we_kernel_version = iw_get_kernel_we_version();
-
-	  wrq.u.essid.pointer = (caddr_t) args[i];
-	  wrq.u.essid.length = strlen(args[i]) + 1;
-	  if(we_kernel_version > 20)
-	    wrq.u.essid.length--;
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWNICKN, &wrq,
-			 "Set Nickname");
-	  continue;
-	}
-
-      /* ---------- Set Bit-Rate ---------- */
-      if((!strncmp(args[i], "bit", 3)) ||
-	 (!strcmp(args[i], "rate")))
-	{
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set Bit Rate", SIOCSIWRATE);
-	  if(!strcasecmp(args[i], "auto"))
-	    {
-	      wrq.u.bitrate.value = -1;
-	      wrq.u.bitrate.fixed = 0;
-	    }
-	  else
-	    {
-	      if(!strcasecmp(args[i], "fixed"))
-		{
-		  /* Get old bitrate */
-		  IW_GET_EXT_ERR(skfd, ifname, SIOCGIWRATE, &wrq,
-				 "Set Bit Rate");
-		  wrq.u.bitrate.fixed = 1;
-		}
-	      else			/* Should be a numeric value */
-		{
-		  double		brate;
-
-		  if(sscanf(args[i], "%lg", &(brate)) != 1)
-		    ABORT_ARG_TYPE("Set Bit Rate", SIOCSIWRATE, args[i]);
-		  if(index(args[i], 'G')) brate *= GIGA;
-		  if(index(args[i], 'M')) brate *= MEGA;
-		  if(index(args[i], 'k')) brate *= KILO;
-		  wrq.u.bitrate.value = (long) brate;
-		  wrq.u.bitrate.fixed = 1;
-
-		  /* Check for an additional argument */
-		  if(((i+1) < count) &&
-		     (!strcasecmp(args[i+1], "auto")))
-		    {
-		      wrq.u.bitrate.fixed = 0;
-		      ++i;
-		    }
-		  if(((i+1) < count) &&
-		     (!strcasecmp(args[i+1], "fixed")))
-		    {
-		      wrq.u.bitrate.fixed = 1;
-		      ++i;
-		    }
-		}
-	    }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWRATE, &wrq,
-			 "Set Bit Rate");
-	  continue;
-	}
-
-      /* ---------- Set RTS threshold ---------- */
-      if(!strncasecmp(args[i], "rts", 3))
-	{
-	  i++;
-	  if(i >= count)
-	    ABORT_ARG_NUM("Set RTS Threshold", SIOCSIWRTS);
-	  wrq.u.rts.value = -1;
-	  wrq.u.rts.fixed = 1;
-	  wrq.u.rts.disabled = 0;
-	  if(!strcasecmp(args[i], "off"))
-	    wrq.u.rts.disabled = 1;	/* i.e. max size */
-	  else
-	    if(!strcasecmp(args[i], "auto"))
-	      wrq.u.rts.fixed = 0;
-	    else
-	      {
-		if(!strcasecmp(args[i], "fixed"))
-		  {
-		    /* Get old RTS threshold */
-		    IW_GET_EXT_ERR(skfd, ifname, SIOCGIWRTS, &wrq,
-				   "Set RTS Threshold");
-		    wrq.u.rts.fixed = 1;
-		  }
-		else			/* Should be a numeric value */
-		  if(sscanf(args[i], "%li", (unsigned long *) &(wrq.u.rts.value))
-		     != 1)
-		    ABORT_ARG_TYPE("Set RTS Threshold", SIOCSIWRTS, args[i]);
-	    }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWRTS, &wrq,
-			 "Set RTS Threshold");
-	  continue;
-	}
-
-      /* ---------- Set fragmentation threshold ---------- */
-      if(!strncmp(args[i], "frag", 4))
-	{
-	  i++;
-	  if(i >= count)
-	    ABORT_ARG_NUM("Set Fragmentation Threshold", SIOCSIWFRAG);
-	  wrq.u.frag.value = -1;
-	  wrq.u.frag.fixed = 1;
-	  wrq.u.frag.disabled = 0;
-	  if(!strcasecmp(args[i], "off"))
-	    wrq.u.frag.disabled = 1;	/* i.e. max size */
-	  else
-	    if(!strcasecmp(args[i], "auto"))
-	      wrq.u.frag.fixed = 0;
-	    else
-	      {
-		if(!strcasecmp(args[i], "fixed"))
-		  {
-		    /* Get old fragmentation threshold */
-		    IW_GET_EXT_ERR(skfd, ifname, SIOCGIWFRAG, &wrq,
-				   "Set Fragmentation Threshold");
-		    wrq.u.frag.fixed = 1;
-		  }
-		else			/* Should be a numeric value */
-		  if(sscanf(args[i], "%li",
-			    (unsigned long *) &(wrq.u.frag.value))
-		     != 1)
-		    ABORT_ARG_TYPE("Set Fragmentation Threshold", SIOCSIWFRAG,
-				   args[i]);
-	    }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWFRAG, &wrq,
-			 "Set Fragmentation Threshold");
-	  continue;
-	}
-
-      /* ---------- Set operation mode ---------- */
-      if(!strcmp(args[i], "mode"))
-	{
-	  int	k;
-
-	  i++;
-	  if(i >= count)
-	    ABORT_ARG_NUM("Set Mode", SIOCSIWMODE);
-
-	  if(sscanf(args[i], "%i", &k) != 1)
-	    {
-	      k = 0;
-	      while((k < IW_NUM_OPER_MODE) &&
-		    strncasecmp(args[i], iw_operation_mode[k], 3))
-		k++;
-	    }
-	  if((k >= IW_NUM_OPER_MODE) || (k < 0))
-	    ABORT_ARG_TYPE("Set Mode", SIOCSIWMODE, args[i]);
-
-	  wrq.u.mode = k;
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWMODE, &wrq,
-			 "Set Mode");
-	  continue;
-	}
-
-      /* ---------- Set Power Management ---------- */
-      if(!strncmp(args[i], "power", 3))
-	{
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set Power Management", SIOCSIWPOWER);
-
-	  if(!strcasecmp(args[i], "off"))
-	    wrq.u.power.disabled = 1;	/* i.e. max size */
-	  else
-	    if(!strcasecmp(args[i], "on"))
-	      {
-		/* Get old Power info */
-		wrq.u.power.flags = 0;
-		IW_GET_EXT_ERR(skfd, ifname, SIOCGIWPOWER, &wrq,
-			       "Set Power Management");
-		wrq.u.power.disabled = 0;
-	      }
-	    else
-	      {
-		double		temp;
-		int		gotone = 0;
-		/* Default - nope */
-		wrq.u.power.flags = IW_POWER_ON;
-		wrq.u.power.disabled = 0;
-
-		/* Check value modifier */
-		if(!strcasecmp(args[i], "min"))
-		  {
-		    wrq.u.power.flags |= IW_POWER_MIN;
-		    if(++i >= count)
-		      ABORT_ARG_NUM("Set Power Management", SIOCSIWPOWER);
-		  }
-		else
-		  if(!strcasecmp(args[i], "max"))
-		    {
-		      wrq.u.power.flags |= IW_POWER_MAX;
-		      if(++i >= count)
-			ABORT_ARG_NUM("Set Power Management", SIOCSIWPOWER);
-		    }
-
-		/* Check value type */
-		if(!strcasecmp(args[i], "period"))
-		  {
-		    wrq.u.power.flags |= IW_POWER_PERIOD;
-		    if(++i >= count)
-		      ABORT_ARG_NUM("Set Power Management", SIOCSIWPOWER);
-		  }
-		else
-		  if(!strcasecmp(args[i], "timeout"))
-		    {
-		      wrq.u.power.flags |= IW_POWER_TIMEOUT;
-		      if(++i >= count)
-			ABORT_ARG_NUM("Set Power Management", SIOCSIWPOWER);
-		    }
-
-		/* Is there any value to grab ? */
-		if(sscanf(args[i], "%lg", &(temp)) == 1)
-		  {
-		    temp *= MEGA;	/* default = s */
-		    if(index(args[i], 'u')) temp /= MEGA;
-		    if(index(args[i], 'm')) temp /= KILO;
-		    wrq.u.power.value = (long) temp;
-		    if((wrq.u.power.flags & IW_POWER_TYPE) == 0)
-		      wrq.u.power.flags |= IW_POWER_PERIOD;
-		    ++i;
-		    gotone = 1;
-		  }
-
-		/* Now, check the mode */
-		if(i < count)
-		  {
-		    if(!strcasecmp(args[i], "all"))
-		      wrq.u.power.flags |= IW_POWER_ALL_R;
-		    if(!strncasecmp(args[i], "unicast", 4))
-		      wrq.u.power.flags |= IW_POWER_UNICAST_R;
-		    if(!strncasecmp(args[i], "multicast", 5))
-		      wrq.u.power.flags |= IW_POWER_MULTICAST_R;
-		    if(!strncasecmp(args[i], "force", 5))
-		      wrq.u.power.flags |= IW_POWER_FORCE_S;
-		    if(!strcasecmp(args[i], "repeat"))
-		      wrq.u.power.flags |= IW_POWER_REPEATER;
-		    if(wrq.u.power.flags & IW_POWER_MODE)
-		      {
-			++i;
-			gotone = 1;
-		      }
-		  }
-		if(!gotone)
-		  ABORT_ARG_TYPE("Set Power Management", SIOCSIWPOWER,
-				 args[i]);
-		--i;
-	      }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWPOWER, &wrq,
-		       "Set Power Management");
-	  continue;
-  	}
-
-      /* ---------- Set Transmit-Power ---------- */
-      if(!strncmp(args[i], "txpower", 3))
-	{
-	  struct iw_range	range;
-
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set Tx Power", SIOCSIWTXPOW);
-
-	  /* Extract range info */
-	  if(iw_get_range_info(skfd, ifname, &range) < 0)
-	    memset(&range, 0, sizeof(range));
-
-	  /* Prepare the request */
-	  wrq.u.txpower.value = -1;
-	  wrq.u.txpower.fixed = 1;
-	  wrq.u.txpower.disabled = 0;
-	  wrq.u.txpower.flags = IW_TXPOW_DBM;
-	  if(!strcasecmp(args[i], "off"))
-	    wrq.u.txpower.disabled = 1;	/* i.e. turn radio off */
-	  else
-	    if(!strcasecmp(args[i], "auto"))
-	      wrq.u.txpower.fixed = 0;	/* i.e. use power control */
-	    else
-	      {
-		if(!strcasecmp(args[i], "on"))
-		  {
-		    /* Get old tx-power */
-		    IW_GET_EXT_ERR(skfd, ifname, SIOCGIWTXPOW, &wrq,
-				   "Set Tx Power");
-		    wrq.u.txpower.disabled = 0;
-		  }
-		else
-		  {
-		    if(!strcasecmp(args[i], "fixed"))
-		      {
-			/* Get old tx-power */
-			IW_GET_EXT_ERR(skfd, ifname, SIOCGIWTXPOW, &wrq,
-				       "Set Tx Power");
-			wrq.u.txpower.fixed = 1;
-			wrq.u.txpower.disabled = 0;
-		      }
-		    else			/* Should be a numeric value */
-		      {
-			int		power;
-			int		ismwatt = 0;
-
-			/* Get the value */
-			if(sscanf(args[i], "%i", &(power)) != 1)
-			  ABORT_ARG_TYPE("Set Tx Power", SIOCSIWTXPOW,
-					 args[i]);
-
-			/* Check if milliWatt
-			 * We authorise a single 'm' as a shorthand for 'mW',
-			 * on the other hand a 'd' probably means 'dBm'... */
-			ismwatt = ((index(args[i], 'm') != NULL)
-				   && (index(args[i], 'd') == NULL));
-
-			/* We could check 'W' alone... Another time... */
-
-			/* Convert */
-			if(range.txpower_capa & IW_TXPOW_RELATIVE)
-			  {
-			    /* Can't convert */
-			    if(ismwatt)
-			      ABORT_ARG_TYPE("Set Tx Power",
-					     SIOCSIWTXPOW,
-					     args[i]);
-			  }
-			else
-			  if(range.txpower_capa & IW_TXPOW_MWATT)
-			    {
-			      if(!ismwatt)
-				power = iw_dbm2mwatt(power);
-			      wrq.u.txpower.flags = IW_TXPOW_MWATT;
-			    }
-			  else
-			    {
-			      if(ismwatt)
-				power = iw_mwatt2dbm(power);
-			      wrq.u.txpower.flags = IW_TXPOW_DBM;
-			    }
-			wrq.u.txpower.value = power;
-
-			/* Check for an additional argument */
-			if(((i+1) < count) &&
-			   (!strcasecmp(args[i+1], "auto")))
-			  {
-			    wrq.u.txpower.fixed = 0;
-			    ++i;
-			  }
-			if(((i+1) < count) &&
-			   (!strcasecmp(args[i+1], "fixed")))
-			  {
-			    wrq.u.txpower.fixed = 1;
-			    ++i;
-			  }
-		      }
-		  }
-	      }
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWTXPOW, &wrq,
-			 "Set Tx Power");
-	  continue;
-	}
-
-      /* ---------- Set Retry limit ---------- */
-      if(!strncmp(args[i], "retry", 3))
-	{
-	  double		temp;
-	  int		gotone = 0;
-
-	  if(++i >= count)
-	    ABORT_ARG_NUM("Set Retry Limit", SIOCSIWRETRY);
-
-	  /* Default - nope */
-	  wrq.u.retry.flags = IW_RETRY_LIMIT;
-	  wrq.u.retry.disabled = 0;
-
-	  /* Check value modifier */
-	  if(!strcasecmp(args[i], "min"))
-	    {
-	      wrq.u.retry.flags |= IW_RETRY_MIN;
-	      if(++i >= count)
-		ABORT_ARG_NUM("Set Retry Limit", SIOCSIWRETRY);
-	    }
-	  else
-	    if(!strcasecmp(args[i], "max"))
-	      {
-		wrq.u.retry.flags |= IW_RETRY_MAX;
-		if(++i >= count)
-		  ABORT_ARG_NUM("Set Retry Limit", SIOCSIWRETRY);
-	      }
-
-	  /* Check value type */
-	  if(!strcasecmp(args[i], "limit"))
-	    {
-	      wrq.u.retry.flags |= IW_RETRY_LIMIT;
-	      if(++i >= count)
-		ABORT_ARG_NUM("Set Retry Limit", SIOCSIWRETRY);
-	    }
-	  else
-	    if(!strncasecmp(args[i], "lifetime", 4))
-	      {
-		wrq.u.retry.flags &= ~IW_RETRY_LIMIT;
-		wrq.u.retry.flags |= IW_RETRY_LIFETIME;
-		if(++i >= count)
-		  ABORT_ARG_NUM("Set Retry Limit", SIOCSIWRETRY);
-	      }
-
-	  /* Is there any value to grab ? */
-	  if(sscanf(args[i], "%lg", &(temp)) == 1)
-	    {
-	      /* Limit is absolute, on the other hand lifetime is seconds */
-	      if(!(wrq.u.retry.flags & IW_RETRY_LIMIT))
-		{
-		  /* Normalise lifetime */
-		  temp *= MEGA;	/* default = s */
-		  if(index(args[i], 'u')) temp /= MEGA;
-		  if(index(args[i], 'm')) temp /= KILO;
-		}
-	      wrq.u.retry.value = (long) temp;
-	      ++i;
-	      gotone = 1;
-	    }
-
-	  if(!gotone)
-	    ABORT_ARG_TYPE("Set Retry Limit", SIOCSIWRETRY, args[i]);
-	  --i;
-
-	  IW_SET_EXT_ERR(skfd, ifname, SIOCSIWRETRY, &wrq,
-			 "Set Retry Limit");
-	  continue;
-	}
-
-      /* ---------- Other ---------- */
-      /* Here we have an unrecognised arg... */
-      fprintf(stderr, "Error : unrecognised wireless request \"%s\"\n",
-	      args[i]);
-      return(-1);
-    }		/* for(index ... */
+  /* Done, all done */
   return(0);
 }
+
+/*------------------------------------------------------------------*/
+/*
+ * Display help
+ */
+static inline void
+iw_usage(void)
+{
+  int i;
+
+  fprintf(stderr,   "Usage: iwconfig [interface]\n");
+  for(i = 0; iwconfig_cmds[i].cmd != NULL; ++i)
+    fprintf(stderr, "                interface %s %s\n",
+	    iwconfig_cmds[i].cmd, iwconfig_cmds[i].argsname);
+  fprintf(stderr,   "       Check man pages for more details.\n");
+}
+
 
 /******************************* MAIN ********************************/
 

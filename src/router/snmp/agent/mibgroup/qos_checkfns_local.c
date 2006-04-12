@@ -35,7 +35,7 @@
 #include <linux/netlink.h>
 #include <linux/rtnetlink.h>
 #include "libnetlink.h"
-#include "../../../../linux/linux.v23/include/linux/pkt_sched.h"
+#include "../../../../linux/linux.v24/include/linux/pkt_sched.h"
 #include <linux/pkt_cls.h>
 #include <syslog.h>
 #include <fcntl.h>

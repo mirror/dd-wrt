@@ -27,6 +27,8 @@ iwlist \- Get more detailed wireless information from a wireless interface
 .br
 .BI "iwlist " interface " event"
 .br
+.BI "iwlist " interface " modulation"
+.br
 .BI "iwlist --help"
 .br
 .BI "iwlist --version"
@@ -99,6 +101,10 @@ the card. See your driver documentation for details.
 .TP
 .B event
 List the wireless events supported by the device.
+.TP
+.BR modu [lation]
+List the modulations supported by the device and the modulations
+currently enabled.
 .TP
 .B --version
 Display the version of the tools, as well as the recommended and

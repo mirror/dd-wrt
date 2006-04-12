@@ -56,7 +56,10 @@ static int ioctl_set_power(struct net_device *dev,
       /* Set period */
       if(prq->flags & IW_POWER_PERIOD)
 	{
-	  int	period = prq->value/1000000;
+	  int	period = prq->value;
+#if WIRELESS_EXT < 21
+	  period /= 1000000;
+#endif
 	  /* Hum: check if within bounds... */
 
 	  /* Activate PM */
@@ -114,12 +117,18 @@ static int ioctl_get_power(struct net_device *dev,
 	  /* By default, the min */
 	  if(!(inc_flags & IW_POWER_MAX))
 	    {
-	      prq->value = local->pm_min_period * 1000000;
+	      prq->value = local->pm_min_period;
+#if WIRELESS_EXT < 21
+	      prq->value *= 1000000;
+#endif
 	      prq->flags |= IW_POWER_MIN;
 	    }
 	  else
 	    {
-	      prq->value = local->pm_max_period * 1000000;
+	      prq->value = local->pm_max_period;
+#if WIRELESS_EXT < 21
+	      prq->value *= 1000000;
+#endif
 	      prq->flags |= IW_POWER_MAX;
 	    }
 	}
@@ -129,7 +138,12 @@ static int ioctl_get_power(struct net_device *dev,
 	  if(inc_flags & (IW_POWER_MIN | IW_POWER_MAX))
 	    return(-EINVAL);
 	  else
-	    prq->value = local->pm_period * 1000000;
+	    {
+	      prq->value = local->pm_period;
+#if WIRELESS_EXT < 21
+	      prq->value *= 1000000;
+#endif
+	    }
 	}
     }
   else
@@ -165,8 +179,13 @@ static int ioctl_get_range(struct net_device *dev,
 #endif /* WIRELESS_EXT > 10 */
 
 #if WIRELESS_EXT > 9
+#if WIRELESS_EXT < 21
       range.min_pmp = 1000000;	/* 1 units */
       range.max_pmp = 12000000;	/* 12 units */
+#else
+      range.min_pmp = 1;	/* 1 units */
+      range.max_pmp = 12;	/* 12 units */
+#endif
       range.min_pmt = 1000;	/* 1 ms */
       range.max_pmt = 1000000;	/* 1 s */
       range.pmp_flags = IW_POWER_PERIOD | IW_POWER_RELATIVE |
