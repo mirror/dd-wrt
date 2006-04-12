@@ -86,7 +86,7 @@
 	<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
 		<div class="label">Additional DNS Options</div>
 			<textarea cols="60" rows="4" id="dnsmasq_options" name="dnsmasq_options"></textarea>
-			<script language="javascript">
+			<script type="text/javascript">
 				var dnsmasq_options = fix_cr( '<% nvram_get("dnsmasq_options"); %>' );
 				document.getElementById("dnsmasq_options").value = dnsmasq_options;
 			</script>
@@ -156,7 +156,7 @@
 	<div class="setting">
 		<div class="label">MAC Addresses<br/>( Format: XX:XX:XX:XX:XX:XX )</div>
 		<textarea id="wol_macs" name="wol_macs" cols="60" rows="2"></textarea>
-		<script language="javascript">
+		<script type="text/javascript">
 			var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
 			document.getElementById("wol_macs").value = wol_macs;
 		</script>

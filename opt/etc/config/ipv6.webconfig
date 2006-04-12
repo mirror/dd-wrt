@@ -13,7 +13,7 @@
 	<div class="setting">
 		<div class="label">Radvd config</div>
 		<textarea id="radvd_conf" name="radvd_conf" cols="60" rows="4"></textarea>
-		<script language="javascript">
+		<script type="text/javascript">
 			var radvd_conf = fix_cr( '<% nvram_get("radvd_conf"); %>' );
 			document.getElementById("radvd_conf").value = radvd_conf;
 		</script>
