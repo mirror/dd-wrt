@@ -218,7 +218,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">WAN IP</div>
-									<span id="wan_ip"><% nvram_match("wan_proto","disabled","Disabled<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></span>&nbsp;
+									<span id="wan_ip"><% nvram_match("wl_mode","wet","Disabled <!--"); %><% nvram_match("wan_proto","disabled","Disabled<!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">LAN IP</div>
@@ -383,7 +383,7 @@ addEvent(window, "unload", function() {
 				<div id="statusInfo">
 					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
 					<div class="info">Time: <% get_uptime(); %></div>
-					<div class="info">WAN <% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %></div>
+					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
 		</div>
