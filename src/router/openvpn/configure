@@ -4988,6 +4988,26 @@ echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for $ac_header" >&5
@@ -7385,6 +7405,26 @@ echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for $ac_header" >&5
@@ -8353,6 +8393,26 @@ echo "$as_me: WARNING: valgrind/memcheck.h: proceeding with the compiler's resul
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: valgrind/memcheck.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: valgrind/memcheck.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: valgrind/memcheck.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: valgrind/memcheck.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: valgrind/memcheck.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: valgrind/memcheck.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: valgrind/memcheck.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: valgrind/memcheck.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: valgrind/memcheck.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: valgrind/memcheck.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: valgrind/memcheck.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: valgrind/memcheck.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for valgrind/memcheck.h" >&5
@@ -8935,6 +8995,26 @@ echo "$as_me: WARNING: dmalloc.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: dmalloc.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: dmalloc.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmalloc.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: dmalloc.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmalloc.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: dmalloc.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmalloc.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: dmalloc.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmalloc.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: dmalloc.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dmalloc.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: dmalloc.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for dmalloc.h" >&5
@@ -9154,6 +9234,26 @@ echo "$as_me: WARNING: dlfcn.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: dlfcn.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: dlfcn.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dlfcn.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: dlfcn.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dlfcn.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: dlfcn.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dlfcn.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: dlfcn.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dlfcn.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: dlfcn.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: dlfcn.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: dlfcn.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for dlfcn.h" >&5
@@ -9466,6 +9566,26 @@ echo "$as_me: WARNING: lzo/lzo1x.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: lzo/lzo1x.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: lzo/lzo1x.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo/lzo1x.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: lzo/lzo1x.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo/lzo1x.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: lzo/lzo1x.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo/lzo1x.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: lzo/lzo1x.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo/lzo1x.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: lzo/lzo1x.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo/lzo1x.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: lzo/lzo1x.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for lzo/lzo1x.h" >&5
@@ -9593,6 +9713,26 @@ echo "$as_me: WARNING: lzo1x.h: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: lzo1x.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: lzo1x.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo1x.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: lzo1x.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo1x.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: lzo1x.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo1x.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: lzo1x.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo1x.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: lzo1x.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: lzo1x.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: lzo1x.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for lzo1x.h" >&5
@@ -9825,6 +9965,26 @@ echo "$as_me: WARNING: openssl/evp.h: proceeding with the compiler's result" >&2
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: openssl/evp.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: openssl/evp.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/evp.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: openssl/evp.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/evp.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: openssl/evp.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/evp.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: openssl/evp.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/evp.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: openssl/evp.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/evp.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: openssl/evp.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for openssl/evp.h" >&5
@@ -10142,6 +10302,26 @@ echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for $ac_header" >&5
@@ -10604,6 +10784,26 @@ echo "$as_me: WARNING: openssl/ssl.h: proceeding with the compiler's result" >&2
     ac_header_preproc=yes
     ;;
   no:yes:* )
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: present but cannot be compiled" >&5
+echo "$as_me: WARNING: openssl/ssl.h: present but cannot be compiled" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&5
+echo "$as_me: WARNING: openssl/ssl.h:     check for missing prerequisite headers?" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: see the Autoconf documentation" >&5
+echo "$as_me: WARNING: openssl/ssl.h: see the Autoconf documentation" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&5
+echo "$as_me: WARNING: openssl/ssl.h:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&5
+echo "$as_me: WARNING: openssl/ssl.h: proceeding with the preprocessor's result" >&2;}
+    { echo "$as_me:$LINENO: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&5
+echo "$as_me: WARNING: openssl/ssl.h: in the future, the compiler will take precedence" >&2;}
+    (
+      cat <<\_ASBOX
+## -------------------------------------------------- ##
+## Report this to openvpn-users@lists.sourceforge.net ##
+## -------------------------------------------------- ##
+_ASBOX
+    ) |
+      sed "s/^/$as_me: WARNING:     /" >&2
     ;;
 esac
 echo "$as_me:$LINENO: checking for openssl/ssl.h" >&5
