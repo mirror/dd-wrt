@@ -616,7 +616,45 @@
  *	o Check event stream 'point' payload size to avoid overflow [iwlib]
  *	o Make all users of event stream 'point' safe to NULL [iwlist/iwevent]
  *	o 'iwconfig txpower 1dBm' should not be 'mW' [iwconfig]
- *	o Forward compart to WE-21 : essid len is strlen, not +1 [iwconfig]
+ *	o Forward compat. to WE-21 : essid len is strlen, not +1 [iwconfig]
+ *	---
+ *	o Forgot one place where essid len was strlen+1 [iwlib]
+ *	o Update definition of 'ap' and 'sens' to reflect reality [man]
+ *	---
+ *	o Introduce WE_MAX_VERSION to take into account forward compat [iwlib]
+ *	o Add WE-20 headers, compile with that as default
+ *
+ * wireless 29 :
+ * -----------
+ *	o Add new power value : 'power saving' [iwconfig/iwlist/iwlib]
+ *	o Optimise getting iwrange when setting TxPower [iwconfig]
+ *	o Optimise displaying current power values (better loop) [iwlist]
+ *	---
+ *	o Add modulation bitmasks ioctls [iwconfig/iwlist]
+ *	o Add short and long retries [iwconfig/iwlist/iwlib]
+ *	o Fix 'relative' power saving to not be *1000 [iwconfig/iwlib]
+ *	o iw_print_pm_value() require we_version [iwlib]
+ *	o Optimise displaying range power values (subroutine) [iwlist]
+ *	---
+ *	o Fix 'relative' retry to not be *1000 [iwconfig/iwlib]
+ *	o iw_print_retry_value() require we_version [iwlib]
+ *	o Optimise getting iwrange when setting PowerSaving [iwconfig]
+ *	o Optimise displaying current retry values (better loop) [iwlist]
+ *	o Optimise displaying range retry values (subroutine) [iwlist]
+ *	---
+ *	o Fix stupid bug in displaying range retry values [iwlist]
+ *	---
+ *	o Add support for unicast and broadcast bitrates [iwconfig/iwlist]
+ *	---
+ *	o Replace spaghetti code with real dispatcher in set_info() [iwconfig]
+ *		Code is more readable, maintainable, and save 700 bytes...
+ *	o Drop 'domain' alias for 'nwid'. Obsolete. [iwconfig]
+ *	o Make iw_usage() use dispatcher data instead of hardcoded [iwconfig]
+ *	o Factor out modifier parsing for retry/power [iwconfig]
+ *	o Fix iwmulticall to compile with new dispatcher above [iwmulticall]
+ *	o Add WE_ESSENTIAL compile option to drop 10kB [Makefile]
+ *	---
+ *	o Update manpages with new features above [man]
  */
 
 /* ----------------------------- TODO ----------------------------- */

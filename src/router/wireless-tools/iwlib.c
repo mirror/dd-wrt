@@ -101,6 +101,42 @@ const char * const iw_operation_mode[] = { "Auto",
 					"Secondary",
 					"Monitor" };
 
+/* Modulations as human readable strings */
+const struct iw_modul_descr	iw_modul_list[] = {
+  /* Start with aggregate types, so that they display first */
+  { IW_MODUL_11AG, "11ag",
+    "IEEE 802.11a + 802.11g (2.4 & 5 GHz, up to 54 Mb/s)" },
+  { IW_MODUL_11AB, "11ab",
+    "IEEE 802.11a + 802.11b (2.4 & 5 GHz, up to 54 Mb/s)" },
+  { IW_MODUL_11G, "11g", "IEEE 802.11g (2.4 GHz, up to 54 Mb/s)" },
+  { IW_MODUL_11A, "11a", "IEEE 802.11a (5 GHz, up to 54 Mb/s)" },
+  { IW_MODUL_11B, "11b", "IEEE 802.11b (2.4 GHz, up to 11 Mb/s)" },
+
+  /* Proprietary aggregates */
+  { IW_MODUL_TURBO | IW_MODUL_11A, "turboa",
+    "Atheros turbo mode at 5 GHz (up to 108 Mb/s)" },
+  { IW_MODUL_TURBO | IW_MODUL_11G, "turbog",
+    "Atheros turbo mode at 2.4 GHz (up to 108 Mb/s)" },
+  { IW_MODUL_PBCC | IW_MODUL_11B, "11+",
+    "TI 802.11+ (2.4 GHz, up to 22 Mb/s)" },
+
+  /* Individual modulations */
+  { IW_MODUL_OFDM_G, "OFDMg",
+    "802.11g higher rates, OFDM at 2.4 GHz (up to 54 Mb/s)" },
+  { IW_MODUL_OFDM_A, "OFDMa", "802.11a, OFDM at 5 GHz (up to 54 Mb/s)" },
+  { IW_MODUL_CCK, "CCK", "802.11b higher rates (2.4 GHz, up to 11 Mb/s)" },
+  { IW_MODUL_DS, "DS", "802.11 Direct Sequence (2.4 GHz, up to 2 Mb/s)" },
+  { IW_MODUL_FH, "FH", "802.11 Frequency Hopping (2,4 GHz, up to 2 Mb/s)" },
+
+  /* Proprietary modulations */
+  { IW_MODUL_TURBO, "turbo",
+    "Atheros turbo mode, channel bonding (up to 108 Mb/s)" },
+  { IW_MODUL_PBCC, "PBCC",
+    "TI 802.11+ higher rates (2.4 GHz, up to 22 Mb/s)" },
+  { IW_MODUL_CUSTOM, "custom",
+    "Driver specific modulation (check driver documentation)" },
+};
+
 /* Disable runtime version warning in iw_get_range_info() */
 int	iw_ignore_version = 0;
 
@@ -202,7 +238,7 @@ iw_enum_devices(int		skfd,
   int		i;
 
 #ifndef IW_RESTRIC_ENUM
-  /* Check if /proc/net/wireless is available */
+  /* Check if /proc/net/dev is available */
   fh = fopen(PROC_NET_DEV, "r");
 #else
   /* Check if /proc/net/wireless is available */
@@ -518,7 +554,7 @@ iw_get_range_info(int		skfd,
 
       /* We don't like future versions of WE, because we can't cope with
        * the unknown */
-      if(range->we_version_compiled > WE_VERSION)
+      if(range->we_version_compiled > WE_MAX_VERSION)
 	{
 	  fprintf(stderr, "Warning: Driver for device %s has been compiled with version %d\n", ifname, range->we_version_compiled);
 	  fprintf(stderr, "of Wireless Extension, while this program supports up to version %d.\n", WE_VERSION);
@@ -798,9 +834,14 @@ iw_set_basic_config(int			skfd,
    */
   if(info->has_essid)
     {
+      int		we_kernel_version;
+      we_kernel_version = iw_get_kernel_we_version();
+
       wrq.u.essid.pointer = (caddr_t) info->essid;
-      wrq.u.essid.length = strlen(info->essid) + 1;
+      wrq.u.essid.length = strlen(info->essid);
       wrq.u.data.flags = info->essid_on;
+      if(we_kernel_version < 21)
+	wrq.u.essid.length++;
 
       if(iw_set_ext(skfd, ifname, SIOCSIWESSID, &wrq) < 0)
 	{
@@ -1639,7 +1680,8 @@ void
 iw_print_pm_value(char *	buffer,
 		  int		buflen,
 		  int		value,
-		  int		flags)
+		  int		flags,
+		  int		we_version)
 {
   /* Check size */
   if(buflen < 25)
@@ -1669,13 +1711,25 @@ iw_print_pm_value(char *	buffer,
     }
   else
     {
-      strcpy(buffer, " period:");			/* Size checked */
-      buffer += 8;
+      if(flags & IW_POWER_SAVING)
+	{
+	  strcpy(buffer, " saving:");			/* Size checked */
+	  buffer += 8;
+	}
+      else
+	{
+	  strcpy(buffer, " period:");			/* Size checked */
+	  buffer += 8;
+	}
     }
 
   /* Display value without units */
   if(flags & IW_POWER_RELATIVE)
-    snprintf(buffer, buflen, "%g", ((double) value) / MEGA);
+    {
+      if(we_version < 21)
+	value /= MEGA;
+      snprintf(buffer, buflen, "%d", value);
+    }
   else
     {
       /* Display value with units */
@@ -1739,15 +1793,16 @@ void
 iw_print_retry_value(char *	buffer,
 		     int	buflen,
 		     int	value,
-		     int	flags)
+		     int	flags,
+		     int	we_version)
 {
   /* Check buffer size */
-  if(buflen < 18)
+  if(buflen < 20)
     {
       snprintf(buffer, buflen, "<too big>");
       return;
     }
-  buflen -= 18;
+  buflen -= 20;
 
   /* Modifiers */
   if(flags & IW_RETRY_MIN)
@@ -1760,6 +1815,16 @@ iw_print_retry_value(char *	buffer,
       strcpy(buffer, " max");				/* Size checked */
       buffer += 4;
     }
+  if(flags & IW_RETRY_SHORT)
+    {
+      strcpy(buffer, " short");				/* Size checked */
+      buffer += 6;
+    }
+  if(flags & IW_RETRY_LONG)
+    {
+      strcpy(buffer, "  long");				/* Size checked */
+      buffer += 6;
+    }
 
   /* Type lifetime of limit */
   if(flags & IW_RETRY_LIFETIME)
@@ -1769,7 +1834,11 @@ iw_print_retry_value(char *	buffer,
 
       /* Display value without units */
       if(flags & IW_POWER_RELATIVE)
-	snprintf(buffer, buflen, "%g", ((double) value) / MEGA);
+	{
+	  if(we_version < 21)
+	    value /= MEGA;
+	  snprintf(buffer, buflen, "%d", value);
+	}
       else
 	{
 	  /* Display value with units */
@@ -2460,6 +2529,12 @@ static const struct iw_ioctl_description standard_ioctl_descr[] = {
 		.header_type	= IW_HEADER_TYPE_PARAM,
 	},
 	[SIOCGIWPOWER	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCSIWMODUL	- SIOCIWFIRST] = {
+		.header_type	= IW_HEADER_TYPE_PARAM,
+	},
+	[SIOCGIWMODUL	- SIOCIWFIRST] = {
 		.header_type	= IW_HEADER_TYPE_PARAM,
 	},
 	[SIOCSIWGENIE	- SIOCIWFIRST] = {

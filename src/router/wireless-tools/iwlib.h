@@ -119,9 +119,11 @@ extern "C" {
 
 /* Various versions information */
 /* Recommended Wireless Extension version */
-#define WE_VERSION	19
+#define WE_VERSION	21
+/* Maximum forward compatibility built in this version of WT */
+#define WE_MAX_VERSION	21
 /* Version of Wireless Tools */
-#define WT_VERSION	28
+#define WT_VERSION	29
 
 /* Paths */
 #define PROC_NET_WIRELESS	"/proc/net/wireless"
@@ -257,6 +259,14 @@ typedef int (*iw_enum_handler)(int	skfd,
 			       char *	args[],
 			       int	count);
 
+/* Describe a modulation */
+typedef struct iw_modul_descr
+{
+  unsigned int		mask;		/* Modulation bitmask */
+  char			cmd[8];		/* Short name */
+  char *		verbose;	/* Verbose description */
+} iw_modul_descr;
+
 /**************************** PROTOTYPES ****************************/
 /*
  * All the functions in iwcommon.c
@@ -365,7 +375,8 @@ void
 	iw_print_pm_value(char *	buffer,
 			  int		buflen,
 			  int		value,
-			  int		flags);
+			  int		flags,
+			  int		we_version);
 void
 	iw_print_pm_mode(char *		buffer,
 			 int		buflen,
@@ -375,7 +386,8 @@ void
 	iw_print_retry_value(char *	buffer,
 			     int	buflen,
 			     int	value,
-			     int	flags);
+			     int	flags,
+			     int	we_version);
 /* ----------------------- TIME SUBROUTINES ----------------------- */
 void
 	iw_print_timeval(char *				buffer,
@@ -455,6 +467,10 @@ int
 /* Modes as human readable strings */
 extern const char * const	iw_operation_mode[];
 #define IW_NUM_OPER_MODE	7
+
+/* Modulations as human readable strings */
+extern const struct iw_modul_descr	iw_modul_list[];
+#define IW_SIZE_MODUL_LIST	16
 
 /************************* INLINE FUNTIONS *************************/
 /*

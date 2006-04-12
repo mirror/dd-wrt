@@ -27,758 +27,6 @@ typedef struct iwscan_state
 } iwscan_state;
 
 
-/*********************** FREQUENCIES/CHANNELS ***********************/
-
-/*------------------------------------------------------------------*/
-/*
- * Print the number of channels and available frequency for the device
- */
-static int
-print_freq_info(int		skfd,
-		char *		ifname,
-		char *		args[],		/* Command line args */
-		int		count)		/* Args count */
-{
-  struct iwreq		wrq;
-  struct iw_range	range;
-  double		freq;
-  int			k;
-  int			channel;
-  char			buffer[128];	/* Temporary buffer */
-
-  /* Avoid "Unused parameter" warning */
-  args = args; count = count;
-
-  /* Get list of frequencies / channels */
-  if(iw_get_range_info(skfd, ifname, &range) < 0)
-      fprintf(stderr, "%-8.16s  no frequency information.\n\n",
-		      ifname);
-  else
-    {
-      if(range.num_frequency > 0)
-	{
-	  printf("%-8.16s  %d channels in total; available frequencies :\n",
-		 ifname, range.num_channels);
-	  /* Print them all */
-	  for(k = 0; k < range.num_frequency; k++)
-	    {
-	      freq = iw_freq2float(&(range.freq[k]));
-	      iw_print_freq_value(buffer, sizeof(buffer), freq);
-	      printf("          Channel %.2d : %s\n",
-		     range.freq[k].i, buffer);
-	    }
-	}
-      else
-	printf("%-8.16s  %d channels\n",
-	       ifname, range.num_channels);
-
-      /* Get current frequency / channel and display it */
-      if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0)
-	{
-	  freq = iw_freq2float(&(wrq.u.freq));
-	  channel = iw_freq_to_channel(freq, &range);
-	  iw_print_freq(buffer, sizeof(buffer),
-			freq, channel, wrq.u.freq.flags);
-	  printf("          Current %s\n\n", buffer);
-	}
-    }
-  return(0);
-}
-
-/************************ ACCESS POINT LIST ************************/
-/*
- * Note : now that we have scanning support, this is depracted and
- * won't survive long. Actually, next version it's out !
- */
-
-/*------------------------------------------------------------------*/
-/*
- * Display the list of ap addresses and the associated stats
- * Exacly the same as the spy list, only with different IOCTL and messages
- */
-static int
-print_ap_info(int	skfd,
-	      char *	ifname,
-	      char *	args[],		/* Command line args */
-	      int	count)		/* Args count */
-{
-  struct iwreq		wrq;
-  char		buffer[(sizeof(struct iw_quality) +
-			sizeof(struct sockaddr)) * IW_MAX_AP];
-  char		temp[128];
-  struct sockaddr *	hwa;
-  struct iw_quality *	qual;
-  iwrange	range;
-  int		has_range = 0;
-  int		has_qual = 0;
-  int		n;
-  int		i;
-
-  /* Avoid "Unused parameter" warning */
-  args = args; count = count;
-
-  /* Collect stats */
-  wrq.u.data.pointer = (caddr_t) buffer;
-  wrq.u.data.length = IW_MAX_AP;
-  wrq.u.data.flags = 0;
-  if(iw_get_ext(skfd, ifname, SIOCGIWAPLIST, &wrq) < 0)
-    {
-      fprintf(stderr, "%-8.16s  Interface doesn't have a list of Peers/Access-Points\n\n", ifname);
-      return(-1);
-    }
-
-  /* Number of addresses */
-  n = wrq.u.data.length;
-  has_qual = wrq.u.data.flags;
-
-  /* The two lists */
-  hwa = (struct sockaddr *) buffer;
-  qual = (struct iw_quality *) (buffer + (sizeof(struct sockaddr) * n));
-
-  /* Check if we have valid mac address type */
-  if(iw_check_mac_addr_type(skfd, ifname) < 0)
-    {
-      fprintf(stderr, "%-8.16s  Interface doesn't support MAC addresses\n\n", ifname);
-      return(-2);
-    }
-
-  /* Get range info if we can */
-  if(iw_get_range_info(skfd, ifname, &(range)) >= 0)
-    has_range = 1;
-
-  /* Display it */
-  if(n == 0)
-    printf("%-8.16s  No Peers/Access-Point in range\n", ifname);
-  else
-    printf("%-8.16s  Peers/Access-Points in range:\n", ifname);
-  for(i = 0; i < n; i++)
-    {
-      if(has_qual)
-	{
-	  /* Print stats for this address */
-	  printf("    %s : ", iw_saether_ntop(&hwa[i], temp));
-	  iw_print_stats(temp, sizeof(buffer), &qual[i], &range, has_range);
-	  printf("%s\n", temp);
-	}
-      else
-	/* Only print the address */
-	printf("    %s\n", iw_saether_ntop(&hwa[i], temp));
-    }
-  printf("\n");
-  return(0);
-}
-
-/***************************** BITRATES *****************************/
-
-/*------------------------------------------------------------------*/
-/*
- * Print the number of available bitrates for the device
- */
-static int
-print_bitrate_info(int		skfd,
-		   char *	ifname,
-		   char *	args[],		/* Command line args */
-		   int		count)		/* Args count */
-{
-  struct iwreq		wrq;
-  struct iw_range	range;
-  int			k;
-  char			buffer[128];
-
-  /* Avoid "Unused parameter" warning */
-  args = args; count = count;
-
-  /* Extract range info */
-  if(iw_get_range_info(skfd, ifname, &range) < 0)
-      fprintf(stderr, "%-8.16s  no bit-rate information.\n\n",
-		      ifname);
-  else
-    {
-      if((range.num_bitrates > 0) && (range.num_bitrates <= IW_MAX_BITRATES))
-	{
-	  printf("%-8.16s  %d available bit-rates :\n",
-		 ifname, range.num_bitrates);
-	  /* Print them all */
-	  for(k = 0; k < range.num_bitrates; k++)
-	    {
-	      iw_print_bitrate(buffer, sizeof(buffer), range.bitrate[k]);
-	      /* Maybe this should be %10s */
-	      printf("\t  %s\n", buffer);
-	    }
-	}
-      else
-	printf("%-8.16s  unknown bit-rate information.\n", ifname);
-
-      /* Get current bit rate */
-      if(iw_get_ext(skfd, ifname, SIOCGIWRATE, &wrq) >= 0)
-	{
-	  iw_print_bitrate(buffer, sizeof(buffer), wrq.u.bitrate.value);
-	  printf("          Current Bit Rate%c%s\n\n",
-		 (wrq.u.bitrate.fixed ? '=' : ':'), buffer);
-	}
-    }
-  return(0);
-}
-
-/************************* ENCRYPTION KEYS *************************/
-
-/*------------------------------------------------------------------*/
-/*
- * Print the number of available encryption key for the device
- */
-static int
-print_keys_info(int		skfd,
-		char *		ifname,
-		char *		args[],		/* Command line args */
-		int		count)		/* Args count */
-{
-  struct iwreq		wrq;
-  struct iw_range	range;
-  unsigned char		key[IW_ENCODING_TOKEN_MAX];
-  int			k;
-  char			buffer[128];
-
-  /* Avoid "Unused parameter" warning */
-  args = args; count = count;
-
-  /* Extract range info */
-  if(iw_get_range_info(skfd, ifname, &range) < 0)
-      fprintf(stderr, "%-8.16s  no encryption keys information.\n\n",
-		      ifname);
-  else
-    {
-      printf("%-8.16s  ", ifname);
-      /* Print key sizes */
-      if((range.num_encoding_sizes > 0) &&
-	 (range.num_encoding_sizes < IW_MAX_ENCODING_SIZES))
-	{
-	  printf("%d key sizes : %d", range.num_encoding_sizes,
-		 range.encoding_size[0] * 8);
-	  /* Print them all */
-	  for(k = 1; k < range.num_encoding_sizes; k++)
-	    printf(", %d", range.encoding_size[k] * 8);
-	  printf("bits\n          ");
-	}
-      /* Print the keys and associate mode */
-      printf("%d keys available :\n", range.max_encoding_tokens);
-      for(k = 1; k <= range.max_encoding_tokens; k++)
-	{
-	  wrq.u.data.pointer = (caddr_t) key;
-	  wrq.u.data.length = IW_ENCODING_TOKEN_MAX;
-	  wrq.u.data.flags = k;
-	  if(iw_get_ext(skfd, ifname, SIOCGIWENCODE, &wrq) < 0)
-	    {
-	      fprintf(stderr, "Error reading wireless keys (SIOCGIWENCODE): %s\n", strerror(errno));
-	      break;
-	    }
-	  if((wrq.u.data.flags & IW_ENCODE_DISABLED) ||
-	     (wrq.u.data.length == 0))
-	    printf("\t\t[%d]: off\n", k);
-	  else
-	    {
-	      /* Display the key */
-	      iw_print_key(buffer, sizeof(buffer),
-			   key, wrq.u.data.length, wrq.u.data.flags);
-	      printf("\t\t[%d]: %s", k, buffer);
-
-	      /* Other info... */
-	      printf(" (%d bits)", wrq.u.data.length * 8);
-	      printf("\n");
-	    }
-	}
-      /* Print current key and mode */
-      wrq.u.data.pointer = (caddr_t) key;
-      wrq.u.data.length = IW_ENCODING_TOKEN_MAX;
-      wrq.u.data.flags = 0;	/* Set index to zero to get current */
-      if(iw_get_ext(skfd, ifname, SIOCGIWENCODE, &wrq) >= 0)
-	{
-	  /* Note : if above fails, we have already printed an error
-	   * message int the loop above */
-	  printf("          Current Transmit Key: [%d]\n",
-		 wrq.u.data.flags & IW_ENCODE_INDEX);
-	  if(wrq.u.data.flags & IW_ENCODE_RESTRICTED)
-	    printf("          Security mode:restricted\n");
-	  if(wrq.u.data.flags & IW_ENCODE_OPEN)
-	    printf("          Security mode:open\n");
-	}
-
-      /* Print WPA/802.1x/802.11i security parameters */
-      if(range.we_version_compiled > 17)
-	{
-	  /* Display advance encryption capabilities */
-	  if(range.enc_capa)
-	    {
-	      const char *	auth_string[] = { "WPA",
-						  "WPA2",
-						  "CIPHER TKIP",
-						  "CIPHER CCMP" };
-	      const int		auth_num = (sizeof(auth_string) /
-					    sizeof(auth_string[1]));
-	      int		i;
-	      int		mask = 0x1;
-
-	      printf("          Authentication capabilities :\n");
-	      for(i = 0; i < auth_num; i++)
-		{
-		  if(range.enc_capa & mask)
-		    printf("\t\t%s\n", auth_string[i]);
-		  mask <<= 1;
-		}
-	    }
-
-	  /* Current values for authentication */
-	  wrq.u.param.flags = IW_AUTH_KEY_MGMT;
-	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	      printf("          Current key_mgmt:0x%X\n",
-		     wrq.u.param.value);
-
-	  wrq.u.param.flags = IW_AUTH_CIPHER_PAIRWISE;
-	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	      printf("          Current cipher_pairwise:0x%X\n",
-		     wrq.u.param.value);
-
-	  wrq.u.param.flags = IW_AUTH_CIPHER_GROUP;
-	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
-	    printf("          Current cipher_group:0x%X\n",
-		   wrq.u.param.value);
-	}
-
-     printf("\n\n");
-    }
-  return(0);
-}
-
-/************************* POWER MANAGEMENT *************************/
-
-/*------------------------------------------------------------------*/
-/*
- * Print Power Management info for each device
- */
-static inline int
-get_pm_value(int		skfd,
-	     char *		ifname,
-	     struct iwreq *	pwrq,
-	     int		flags,
-	     char *		buffer,
-	     int                buflen)
-{
-  /* Get Another Power Management value */
-  pwrq->u.power.flags = flags;
-  if(iw_get_ext(skfd, ifname, SIOCGIWPOWER, pwrq) >= 0)
-    {
-      /* Let's check the value and its type */
-      if(pwrq->u.power.flags & IW_POWER_TYPE)
-	{
-	  iw_print_pm_value(buffer, buflen,
-			    pwrq->u.power.value, pwrq->u.power.flags);
-	  printf("\n                 %s", buffer);
-	}
-    }
-  return(pwrq->u.power.flags);
-}
-
-/*------------------------------------------------------------------*/
-/*
- * Print Power Management info for each device
- */
-static int
-print_pm_info(int		skfd,
-	      char *		ifname,
-	      char *		args[],		/* Command line args */
-	      int		count)		/* Args count */
-{
-  struct iwreq		wrq;
-  struct iw_range	range;
-  char			buffer[128];
-
-  /* Avoid "Unused parameter" warning */
-  args = args; count = count;
-
-  /* Extract range info */
-  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
-     (range.we_version_compiled < 10))
-      fprintf(stderr, "%-8.16s  no power management information.\n\n",
-		      ifname);
-  else
-    {
-      printf("%-8.16s  ", ifname);
-
-      /* Display modes availables */
-      if(range.pm_capa & IW_POWER_MODE)
-	{
-	  printf("Supported modes :\n          ");
-	  if(range.pm_capa & (IW_POWER_UNICAST_R | IW_POWER_MULTICAST_R))
-	    printf("\t\to Receive all packets (unicast & multicast)\n          ");
-	  if(range.pm_capa & IW_POWER_UNICAST_R)
-	    printf("\t\to Receive Unicast only (discard multicast)\n          ");
-	  if(range.pm_capa & IW_POWER_MULTICAST_R)
-	    printf("\t\to Receive Multicast only (discard unicast)\n          ");
-	  if(range.pm_capa & IW_POWER_FORCE_S)
-	    printf("\t\to Force sending using Power Management\n          ");
-	  if(range.pm_capa & IW_POWER_REPEATER)
-	    printf("\t\to Repeat multicast\n          ");
-	}
-      /* Display min/max period availables */
-      if(range.pmp_flags & IW_POWER_PERIOD)
-	{
-	  int	flags = (range.pmp_flags & ~(IW_POWER_MIN | IW_POWER_MAX));
-	  /* Display if auto or fixed */
-	  if(range.pmp_flags & IW_POWER_MIN)
-	    printf("Auto  period  ; ");
-	  else
-	    printf("Fixed period  ; ");
-	  /* Print the range */
-	  iw_print_pm_value(buffer, sizeof(buffer),
-			    range.min_pmp, flags | IW_POWER_MIN);
-	  printf("%s\n                          ", buffer);
-	  iw_print_pm_value(buffer, sizeof(buffer),
-			    range.max_pmp, flags | IW_POWER_MAX);
-	  printf("%s\n          ", buffer);
-	}
-      /* Display min/max timeout availables */
-      if(range.pmt_flags & IW_POWER_TIMEOUT)
-	{
-	  int	flags = (range.pmt_flags & ~(IW_POWER_MIN | IW_POWER_MAX));
-	  /* Display if auto or fixed */
-	  if(range.pmt_flags & IW_POWER_MIN)
-	    printf("Auto  timeout ; ");
-	  else
-	    printf("Fixed timeout ; ");
-	  /* Print the range */
-	  iw_print_pm_value(buffer, sizeof(buffer),
-			    range.min_pmt, flags | IW_POWER_MIN);
-	  printf("%s\n                          ", buffer);
-	  iw_print_pm_value(buffer, sizeof(buffer),
-			    range.max_pmt, flags | IW_POWER_MAX);
-	  printf("%s\n          ", buffer);
-	}
-
-      /* Get current Power Management settings */
-      wrq.u.power.flags = 0;
-      if(iw_get_ext(skfd, ifname, SIOCGIWPOWER, &wrq) >= 0)
-	{
-	  int	flags = wrq.u.power.flags;
-
-	  /* Is it disabled ? */
-	  if(wrq.u.power.disabled)
-	    printf("Current mode:off\n          ");
-	  else
-	    {
-	      int	pm_mask = 0;
-
-	      /* Let's check the mode */
-	      iw_print_pm_mode(buffer, sizeof(buffer), flags);
-	      printf("Current %s", buffer);
-
-	      /* Let's check if nothing (simply on) */
-	      if((flags & IW_POWER_MODE) == IW_POWER_ON)
-		printf("mode:on");
-	      printf("\n                 ");
-
-	      /* Let's check the value and its type */
-	      if(wrq.u.power.flags & IW_POWER_TYPE)
-		{
-		  iw_print_pm_value(buffer, sizeof(buffer),
-				    wrq.u.power.value, wrq.u.power.flags);
-		  printf("%s", buffer);
-		}
-
-	      /* If we have been returned a MIN value, ask for the MAX */
-	      if(flags & IW_POWER_MIN)
-		pm_mask = IW_POWER_MAX;
-	      /* If we have been returned a MAX value, ask for the MIN */
-	      if(flags & IW_POWER_MAX)
-		pm_mask = IW_POWER_MIN;
-	      /* If we have something to ask for... */
-	      if(pm_mask)
-		get_pm_value(skfd, ifname, &wrq, pm_mask,
-			     buffer, sizeof(buffer));
-
-	      /* And if we have both a period and a timeout, ask the other */
-	      pm_mask = (range.pm_capa & (~(wrq.u.power.flags) &
-					  IW_POWER_TYPE));
-	      if(pm_mask)
-		{
-		  int	base_mask = pm_mask;
-		  flags = get_pm_value(skfd, ifname, &wrq, pm_mask,
-				       buffer, sizeof(buffer));
-		  pm_mask = 0;
-
-		  /* If we have been returned a MIN value, ask for the MAX */
-		  if(flags & IW_POWER_MIN)
-		    pm_mask = IW_POWER_MAX | base_mask;
-		  /* If we have been returned a MAX value, ask for the MIN */
-		  if(flags & IW_POWER_MAX)
-		    pm_mask = IW_POWER_MIN | base_mask;
-		  /* If we have something to ask for... */
-		  if(pm_mask)
-		    get_pm_value(skfd, ifname, &wrq, pm_mask,
-				 buffer, sizeof(buffer));
-		}
-	    }
-	}
-      printf("\n");
-    }
-  return(0);
-}
-
-/************************** TRANSMIT POWER **************************/
-
-/*------------------------------------------------------------------*/
-/*
- * Print the number of available transmit powers for the device
- */
-static int
-print_txpower_info(int		skfd,
-		   char *	ifname,
-		   char *	args[],		/* Command line args */
-		   int		count)		/* Args count */
-{
-  struct iwreq		wrq;
-  struct iw_range	range;
-  int			dbm;
-  int			mwatt;
-  int			k;
-
-  /* Avoid "Unused parameter" warning */
-  args = args; count = count;
-
-  /* Extract range info */
-  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
-     (range.we_version_compiled < 10))
-      fprintf(stderr, "%-8.16s  no transmit-power information.\n\n",
-		      ifname);
-  else
-    {
-      if((range.num_txpower <= 0) || (range.num_txpower > IW_MAX_TXPOWER))
-	printf("%-8.16s  unknown transmit-power information.\n\n", ifname);
-      else
-	{
-	  printf("%-8.16s  %d available transmit-powers :\n",
-		 ifname, range.num_txpower);
-	  /* Print them all */
-	  for(k = 0; k < range.num_txpower; k++)
-	    {
-	      /* Check for relative values */
-	      if(range.txpower_capa & IW_TXPOW_RELATIVE)
-		{
-		  printf("\t  %d (no units)\n", range.txpower[k]);
-		}
-	      else
-		{
-		  if(range.txpower_capa & IW_TXPOW_MWATT)
-		    {
-		      dbm = iw_mwatt2dbm(range.txpower[k]);
-		      mwatt = range.txpower[k];
-		    }
-		  else
-		    {
-		      dbm = range.txpower[k];
-		      mwatt = iw_dbm2mwatt(range.txpower[k]);
-		    }
-		  printf("\t  %d dBm  \t(%d mW)\n", dbm, mwatt);
-		}
-	    }
-	}
-
-      /* Get current Transmit Power */
-      if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) >= 0)
-	{
-	  printf("          Current Tx-Power");
-	  /* Disabled ? */
-	  if(wrq.u.txpower.disabled)
-	    printf(":off\n\n");
-	  else
-	    {
-	      /* Fixed ? */
-	      if(wrq.u.txpower.fixed)
-		printf("=");
-	      else
-		printf(":");
-	      /* Check for relative values */
-	      if(wrq.u.txpower.flags & IW_TXPOW_RELATIVE)
-		{
-		  /* I just hate relative value, because they are
-		   * driver specific, so not very meaningfull to apps.
-		   * But, we have to support that, because
-		   * this is the way hardware is... */
-		  printf("\t  %d (no units)\n", wrq.u.txpower.value);
-		}
-	      else
-		{
-		  if(wrq.u.txpower.flags & IW_TXPOW_MWATT)
-		    {
-		      dbm = iw_mwatt2dbm(wrq.u.txpower.value);
-		      mwatt = wrq.u.txpower.value;
-		    }
-		  else
-		    {
-		      dbm = wrq.u.txpower.value;
-		      mwatt = iw_dbm2mwatt(wrq.u.txpower.value);
-		    }
-		  printf("%d dBm  \t(%d mW)\n\n", dbm, mwatt);
-		}
-	    }
-	}
-    }
-  return(0);
-}
-
-/*********************** RETRY LIMIT/LIFETIME ***********************/
-
-/*------------------------------------------------------------------*/
-/*
- * Print one retry value
- */
-static inline int
-get_retry_value(int		skfd,
-		char *		ifname,
-		struct iwreq *	pwrq,
-		int		flags,
-		char *		buffer,
-		int		buflen)
-{
-  /* Get Another retry value */
-  pwrq->u.retry.flags = flags;
-  if(iw_get_ext(skfd, ifname, SIOCGIWRETRY, pwrq) >= 0)
-    {
-      /* Let's check the value and its type */
-      if(pwrq->u.retry.flags & IW_RETRY_TYPE)
-	{
-	  iw_print_retry_value(buffer, buflen,
-			       pwrq->u.retry.value, pwrq->u.retry.flags);
-	  printf("%s\n                 ", buffer);
-	}
-    }
-  return(pwrq->u.retry.flags);
-}
-
-/*------------------------------------------------------------------*/
-/*
- * Print Retry info for each device
- */
-static int
-print_retry_info(int		skfd,
-		 char *		ifname,
-		 char *		args[],		/* Command line args */
-		 int		count)		/* Args count */
-{
-  struct iwreq		wrq;
-  struct iw_range	range;
-  char			buffer[128];
-
-  /* Avoid "Unused parameter" warning */
-  args = args; count = count;
-
-  /* Extract range info */
-  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
-     (range.we_version_compiled < 11))
-    fprintf(stderr, "%-8.16s  no retry limit/lifetime information.\n\n",
-	    ifname);
-  else
-    {
-      printf("%-8.16s  ", ifname);
-
-      /* Display min/max limit availables */
-      if(range.retry_flags & IW_RETRY_LIMIT)
-	{
-	  int	flags = (range.retry_flags & ~(IW_RETRY_MIN | IW_RETRY_MAX));
-	  /* Display if auto or fixed */
-	  if(range.retry_flags & IW_RETRY_MIN)
-	    printf("Auto  limit    ; ");
-	  else
-	    printf("Fixed limit    ; ");
-	  /* Print the range */
-	  iw_print_retry_value(buffer, sizeof(buffer),
-			       range.min_retry, flags | IW_RETRY_MIN);
-	  printf("%s\n                           ", buffer);
-	  iw_print_retry_value(buffer, sizeof(buffer),
-			       range.max_retry, flags | IW_RETRY_MAX);
-	  printf("%s\n          ", buffer);
-	  
-	}
-      /* Display min/max lifetime availables */
-      if(range.r_time_flags & IW_RETRY_LIFETIME)
-	{
-	  int	flags = (range.r_time_flags & ~(IW_RETRY_MIN | IW_RETRY_MAX));
-	  /* Display if auto or fixed */
-	  if(range.r_time_flags & IW_RETRY_MIN)
-	    printf("Auto  lifetime ; ");
-	  else
-	    printf("Fixed lifetime ; ");
-	  /* Print the range */
-	  iw_print_retry_value(buffer, sizeof(buffer),
-			       range.min_r_time, flags | IW_RETRY_MIN);
-	  printf("%s\n                           ", buffer);
-	  iw_print_retry_value(buffer, sizeof(buffer),
-			       range.max_r_time, flags | IW_RETRY_MAX);
-	  printf("%s\n          ", buffer);
-	  
-	}
-
-      /* Get current retry settings */
-      wrq.u.retry.flags = 0;
-      if(iw_get_ext(skfd, ifname, SIOCGIWRETRY, &wrq) >= 0)
-	{
-	  int	flags = wrq.u.retry.flags;
-
-	  /* Is it disabled ? */
-	  if(wrq.u.retry.disabled)
-	    printf("Current mode:off\n          ");
-	  else
-	    {
-	      int	retry_mask = 0;
-
-	      /* Let's check the mode */
-	      printf("Current mode:on\n                 ");
-
-	      /* Let's check the value and its type */
-	      if(wrq.u.retry.flags & IW_RETRY_TYPE)
-		{
-		  iw_print_retry_value(buffer, sizeof(buffer),
-				       wrq.u.retry.value, wrq.u.retry.flags);
-		  printf("%s\n                 ", buffer);
-		}
-
-	      /* If we have been returned a MIN value, ask for the MAX */
-	      if(flags & IW_RETRY_MIN)
-		retry_mask = IW_RETRY_MAX;
-	      /* If we have been returned a MAX value, ask for the MIN */
-	      if(flags & IW_RETRY_MAX)
-		retry_mask = IW_RETRY_MIN;
-	      /* If we have something to ask for... */
-	      if(retry_mask)
-		get_retry_value(skfd, ifname, &wrq, retry_mask,
-				buffer, sizeof(buffer));
-
-	      /* And if we have both a period and a timeout, ask the other */
-	      retry_mask = (range.retry_capa & (~(wrq.u.retry.flags) &
-					  IW_RETRY_TYPE));
-	      if(retry_mask)
-		{
-		  int	base_mask = retry_mask;
-		  flags = get_retry_value(skfd, ifname, &wrq, retry_mask,
-					  buffer, sizeof(buffer));
-		  retry_mask = 0;
-
-		  /* If we have been returned a MIN value, ask for the MAX */
-		  if(flags & IW_RETRY_MIN)
-		    retry_mask = IW_RETRY_MAX | base_mask;
-		  /* If we have been returned a MAX value, ask for the MIN */
-		  if(flags & IW_RETRY_MAX)
-		    retry_mask = IW_RETRY_MIN | base_mask;
-		  /* If we have something to ask for... */
-		  if(retry_mask)
-		    get_retry_value(skfd, ifname, &wrq, retry_mask,
-				    buffer, sizeof(buffer));
-		}
-	    }
-	}
-      printf("\n");
-    }
-  return(0);
-}
-
 /***************************** SCANNING *****************************/
 /*
  * This one behave quite differently from the others
@@ -1120,7 +368,7 @@ print_scanning_token(struct stream_descr *	stream,	/* Stream of events */
 	      printf("                    ESSID:\"%s\"\n", essid);
 	  }
 	else
-	  printf("                    ESSID:off/any\n");
+	  printf("                    ESSID:off/any/hidden\n");
       }
       break;
     case SIOCGIWENCODE:
@@ -1170,13 +418,31 @@ print_scanning_token(struct stream_descr *	stream,	/* Stream of events */
       else
 	state->val_index++;
       break;
-    case IWEVQUAL:
+    case SIOCGIWMODUL:
       {
-	iw_print_stats(buffer, sizeof(buffer),
-		       &event->u.qual, iw_range, has_range);
-	printf("                    %s\n", buffer);
-	break;
+	unsigned int	modul = event->u.param.value;
+	int		i;
+	int		n = 0;
+	printf("                    Modulations :");
+	for(i = 0; i < IW_SIZE_MODUL_LIST; i++)
+	  {
+	    if((modul & iw_modul_list[i].mask) == iw_modul_list[i].mask)
+	      {
+		if((n++ % 8) == 7)
+		  printf("\n                        ");
+		else
+		  printf(" ; ");
+		printf("%s", iw_modul_list[i].cmd);
+	      }
+	  }
+	printf("\n");
       }
+      break;
+    case IWEVQUAL:
+      iw_print_stats(buffer, sizeof(buffer),
+		     &event->u.qual, iw_range, has_range);
+      printf("                    %s\n", buffer);
+      break;
     case IWEVGENIE:
       /* Informations Elements are complex, let's do only some of them */
       iw_print_gen_ie(event->u.data.pointer, event->u.data.length);
@@ -1391,6 +657,828 @@ print_scanning_info(int		skfd,
   return(0);
 }
 
+/*********************** FREQUENCIES/CHANNELS ***********************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print the number of channels and available frequency for the device
+ */
+static int
+print_freq_info(int		skfd,
+		char *		ifname,
+		char *		args[],		/* Command line args */
+		int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  double		freq;
+  int			k;
+  int			channel;
+  char			buffer[128];	/* Temporary buffer */
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Get list of frequencies / channels */
+  if(iw_get_range_info(skfd, ifname, &range) < 0)
+      fprintf(stderr, "%-8.16s  no frequency information.\n\n",
+		      ifname);
+  else
+    {
+      if(range.num_frequency > 0)
+	{
+	  printf("%-8.16s  %d channels in total; available frequencies :\n",
+		 ifname, range.num_channels);
+	  /* Print them all */
+	  for(k = 0; k < range.num_frequency; k++)
+	    {
+	      freq = iw_freq2float(&(range.freq[k]));
+	      iw_print_freq_value(buffer, sizeof(buffer), freq);
+	      printf("          Channel %.2d : %s\n",
+		     range.freq[k].i, buffer);
+	    }
+	}
+      else
+	printf("%-8.16s  %d channels\n",
+	       ifname, range.num_channels);
+
+      /* Get current frequency / channel and display it */
+      if(iw_get_ext(skfd, ifname, SIOCGIWFREQ, &wrq) >= 0)
+	{
+	  freq = iw_freq2float(&(wrq.u.freq));
+	  channel = iw_freq_to_channel(freq, &range);
+	  iw_print_freq(buffer, sizeof(buffer),
+			freq, channel, wrq.u.freq.flags);
+	  printf("          Current %s\n\n", buffer);
+	}
+    }
+  return(0);
+}
+
+/***************************** BITRATES *****************************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print the number of available bitrates for the device
+ */
+static int
+print_bitrate_info(int		skfd,
+		   char *	ifname,
+		   char *	args[],		/* Command line args */
+		   int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  int			k;
+  char			buffer[128];
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Extract range info */
+  if(iw_get_range_info(skfd, ifname, &range) < 0)
+      fprintf(stderr, "%-8.16s  no bit-rate information.\n\n",
+		      ifname);
+  else
+    {
+      if((range.num_bitrates > 0) && (range.num_bitrates <= IW_MAX_BITRATES))
+	{
+	  printf("%-8.16s  %d available bit-rates :\n",
+		 ifname, range.num_bitrates);
+	  /* Print them all */
+	  for(k = 0; k < range.num_bitrates; k++)
+	    {
+	      iw_print_bitrate(buffer, sizeof(buffer), range.bitrate[k]);
+	      /* Maybe this should be %10s */
+	      printf("\t  %s\n", buffer);
+	    }
+	}
+      else
+	printf("%-8.16s  unknown bit-rate information.\n", ifname);
+
+      /* Get current bit rate */
+      if(iw_get_ext(skfd, ifname, SIOCGIWRATE, &wrq) >= 0)
+	{
+	  iw_print_bitrate(buffer, sizeof(buffer), wrq.u.bitrate.value);
+	  printf("          Current Bit Rate%c%s\n",
+		 (wrq.u.bitrate.fixed ? '=' : ':'), buffer);
+	}
+
+      /* Try to get the broadcast bitrate if it exist... */
+      if(range.bitrate_capa & IW_BITRATE_BROADCAST)
+	{
+	  wrq.u.bitrate.flags = IW_BITRATE_BROADCAST;
+	  if(iw_get_ext(skfd, ifname, SIOCGIWRATE, &wrq) >= 0)
+	    {
+	      iw_print_bitrate(buffer, sizeof(buffer), wrq.u.bitrate.value);
+	      printf("          Broadcast Bit Rate%c%s\n",
+		     (wrq.u.bitrate.fixed ? '=' : ':'), buffer);
+	    }
+	}
+
+      printf("\n");
+    }
+  return(0);
+}
+
+/************************* ENCRYPTION KEYS *************************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print the number of available encryption key for the device
+ */
+static int
+print_keys_info(int		skfd,
+		char *		ifname,
+		char *		args[],		/* Command line args */
+		int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  unsigned char		key[IW_ENCODING_TOKEN_MAX];
+  int			k;
+  char			buffer[128];
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Extract range info */
+  if(iw_get_range_info(skfd, ifname, &range) < 0)
+      fprintf(stderr, "%-8.16s  no encryption keys information.\n\n",
+		      ifname);
+  else
+    {
+      printf("%-8.16s  ", ifname);
+      /* Print key sizes */
+      if((range.num_encoding_sizes > 0) &&
+	 (range.num_encoding_sizes < IW_MAX_ENCODING_SIZES))
+	{
+	  printf("%d key sizes : %d", range.num_encoding_sizes,
+		 range.encoding_size[0] * 8);
+	  /* Print them all */
+	  for(k = 1; k < range.num_encoding_sizes; k++)
+	    printf(", %d", range.encoding_size[k] * 8);
+	  printf("bits\n          ");
+	}
+      /* Print the keys and associate mode */
+      printf("%d keys available :\n", range.max_encoding_tokens);
+      for(k = 1; k <= range.max_encoding_tokens; k++)
+	{
+	  wrq.u.data.pointer = (caddr_t) key;
+	  wrq.u.data.length = IW_ENCODING_TOKEN_MAX;
+	  wrq.u.data.flags = k;
+	  if(iw_get_ext(skfd, ifname, SIOCGIWENCODE, &wrq) < 0)
+	    {
+	      fprintf(stderr, "Error reading wireless keys (SIOCGIWENCODE): %s\n", strerror(errno));
+	      break;
+	    }
+	  if((wrq.u.data.flags & IW_ENCODE_DISABLED) ||
+	     (wrq.u.data.length == 0))
+	    printf("\t\t[%d]: off\n", k);
+	  else
+	    {
+	      /* Display the key */
+	      iw_print_key(buffer, sizeof(buffer),
+			   key, wrq.u.data.length, wrq.u.data.flags);
+	      printf("\t\t[%d]: %s", k, buffer);
+
+	      /* Other info... */
+	      printf(" (%d bits)", wrq.u.data.length * 8);
+	      printf("\n");
+	    }
+	}
+      /* Print current key and mode */
+      wrq.u.data.pointer = (caddr_t) key;
+      wrq.u.data.length = IW_ENCODING_TOKEN_MAX;
+      wrq.u.data.flags = 0;	/* Set index to zero to get current */
+      if(iw_get_ext(skfd, ifname, SIOCGIWENCODE, &wrq) >= 0)
+	{
+	  /* Note : if above fails, we have already printed an error
+	   * message int the loop above */
+	  printf("          Current Transmit Key: [%d]\n",
+		 wrq.u.data.flags & IW_ENCODE_INDEX);
+	  if(wrq.u.data.flags & IW_ENCODE_RESTRICTED)
+	    printf("          Security mode:restricted\n");
+	  if(wrq.u.data.flags & IW_ENCODE_OPEN)
+	    printf("          Security mode:open\n");
+	}
+
+      /* Print WPA/802.1x/802.11i security parameters */
+      if(range.we_version_compiled > 17)
+	{
+	  /* Display advance encryption capabilities */
+	  if(range.enc_capa)
+	    {
+	      const char *	auth_string[] = { "WPA",
+						  "WPA2",
+						  "CIPHER TKIP",
+						  "CIPHER CCMP" };
+	      const int		auth_num = (sizeof(auth_string) /
+					    sizeof(auth_string[1]));
+	      int		i;
+	      int		mask = 0x1;
+
+	      printf("          Authentication capabilities :\n");
+	      for(i = 0; i < auth_num; i++)
+		{
+		  if(range.enc_capa & mask)
+		    printf("\t\t%s\n", auth_string[i]);
+		  mask <<= 1;
+		}
+	    }
+
+	  /* Current values for authentication */
+	  wrq.u.param.flags = IW_AUTH_KEY_MGMT;
+	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
+	      printf("          Current key_mgmt:0x%X\n",
+		     wrq.u.param.value);
+
+	  wrq.u.param.flags = IW_AUTH_CIPHER_PAIRWISE;
+	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
+	      printf("          Current cipher_pairwise:0x%X\n",
+		     wrq.u.param.value);
+
+	  wrq.u.param.flags = IW_AUTH_CIPHER_GROUP;
+	  if(iw_get_ext(skfd, ifname, SIOCGIWAUTH, &wrq) >= 0)
+	    printf("          Current cipher_group:0x%X\n",
+		   wrq.u.param.value);
+	}
+
+     printf("\n\n");
+    }
+  return(0);
+}
+
+/************************* POWER MANAGEMENT *************************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print Power Management info for each device
+ */
+static inline int
+get_pm_value(int		skfd,
+	     char *		ifname,
+	     struct iwreq *	pwrq,
+	     int		flags,
+	     char *		buffer,
+	     int		buflen,
+	     int		we_version_compiled)
+{
+  /* Get Another Power Management value */
+  pwrq->u.power.flags = flags;
+  if(iw_get_ext(skfd, ifname, SIOCGIWPOWER, pwrq) >= 0)
+    {
+      /* Let's check the value and its type */
+      if(pwrq->u.power.flags & IW_POWER_TYPE)
+	{
+	  iw_print_pm_value(buffer, buflen,
+			    pwrq->u.power.value, pwrq->u.power.flags,
+			    we_version_compiled);
+	  printf("\n                 %s", buffer);
+	}
+    }
+  return(pwrq->u.power.flags);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Print Power Management range for each type
+ */
+static void
+print_pm_value_range(char *		name,
+		     int		mask,
+		     int		iwr_flags,
+		     int		iwr_min,
+		     int		iwr_max,
+		     char *		buffer,
+		     int		buflen,
+		     int		we_version_compiled)
+{
+  if(iwr_flags & mask)
+    {
+      int	flags = (iwr_flags & ~(IW_POWER_MIN | IW_POWER_MAX));
+      /* Display if auto or fixed */
+      printf("%s %s ; ",
+	     (iwr_flags & IW_POWER_MIN) ? "Auto " : "Fixed",
+	     name);
+      /* Print the range */
+      iw_print_pm_value(buffer, buflen,
+			iwr_min, flags | IW_POWER_MIN,
+			we_version_compiled);
+      printf("%s\n                          ", buffer);
+      iw_print_pm_value(buffer, buflen,
+			iwr_max, flags | IW_POWER_MAX,
+			we_version_compiled);
+      printf("%s\n          ", buffer);
+    }
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Power Management types of values
+ */
+static const unsigned int pm_type_flags[] = {
+  IW_POWER_PERIOD,
+  IW_POWER_TIMEOUT,
+  IW_POWER_SAVING,
+};
+static const int pm_type_flags_size = (sizeof(pm_type_flags)/sizeof(pm_type_flags[0]));
+
+/*------------------------------------------------------------------*/
+/*
+ * Print Power Management info for each device
+ */
+static int
+print_pm_info(int		skfd,
+	      char *		ifname,
+	      char *		args[],		/* Command line args */
+	      int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  char			buffer[128];
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Extract range info */
+  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
+     (range.we_version_compiled < 10))
+      fprintf(stderr, "%-8.16s  no power management information.\n\n",
+		      ifname);
+  else
+    {
+      printf("%-8.16s  ", ifname);
+
+      /* Display modes availables */
+      if(range.pm_capa & IW_POWER_MODE)
+	{
+	  printf("Supported modes :\n          ");
+	  if(range.pm_capa & (IW_POWER_UNICAST_R | IW_POWER_MULTICAST_R))
+	    printf("\t\to Receive all packets (unicast & multicast)\n          ");
+	  if(range.pm_capa & IW_POWER_UNICAST_R)
+	    printf("\t\to Receive Unicast only (discard multicast)\n          ");
+	  if(range.pm_capa & IW_POWER_MULTICAST_R)
+	    printf("\t\to Receive Multicast only (discard unicast)\n          ");
+	  if(range.pm_capa & IW_POWER_FORCE_S)
+	    printf("\t\to Force sending using Power Management\n          ");
+	  if(range.pm_capa & IW_POWER_REPEATER)
+	    printf("\t\to Repeat multicast\n          ");
+	}
+      /* Display min/max period availables */
+      print_pm_value_range("period ", IW_POWER_PERIOD,
+			   range.pmp_flags, range.min_pmp, range.max_pmp,
+			   buffer, sizeof(buffer), range.we_version_compiled);
+      /* Display min/max timeout availables */
+      print_pm_value_range("timeout", IW_POWER_TIMEOUT,
+			   range.pmt_flags, range.min_pmt, range.max_pmt,
+			   buffer, sizeof(buffer), range.we_version_compiled);
+      /* Display min/max saving availables */
+      print_pm_value_range("saving ", IW_POWER_SAVING,
+			   range.pms_flags, range.min_pms, range.max_pms,
+			   buffer, sizeof(buffer), range.we_version_compiled);
+
+      /* Get current Power Management settings */
+      wrq.u.power.flags = 0;
+      if(iw_get_ext(skfd, ifname, SIOCGIWPOWER, &wrq) >= 0)
+	{
+	  int	flags = wrq.u.power.flags;
+
+	  /* Is it disabled ? */
+	  if(wrq.u.power.disabled)
+	    printf("Current mode:off\n");
+	  else
+	    {
+	      unsigned int	pm_type = 0;
+	      unsigned int	pm_mask = 0;
+	      unsigned int	remain_mask = range.pm_capa & IW_POWER_TYPE;
+	      int		i = 0;
+
+	      /* Let's check the mode */
+	      iw_print_pm_mode(buffer, sizeof(buffer), flags);
+	      printf("Current %s", buffer);
+
+	      /* Let's check if nothing (simply on) */
+	      if((flags & IW_POWER_MODE) == IW_POWER_ON)
+		printf("mode:on");
+
+	      /* Let's check the value and its type */
+	      if(wrq.u.power.flags & IW_POWER_TYPE)
+		{
+		  iw_print_pm_value(buffer, sizeof(buffer),
+				    wrq.u.power.value, wrq.u.power.flags,
+				    range.we_version_compiled);
+		  printf("\n                 %s", buffer);
+		}
+
+	      while(1)
+		{
+		  /* Deal with min/max for the current value */
+		  pm_mask = 0;
+		  /* If we have been returned a MIN value, ask for the MAX */
+		  if(flags & IW_POWER_MIN)
+		    pm_mask = IW_POWER_MAX;
+		  /* If we have been returned a MAX value, ask for the MIN */
+		  if(flags & IW_POWER_MAX)
+		    pm_mask = IW_POWER_MIN;
+		  /* If we have something to ask for... */
+		  if(pm_mask)
+		    {
+		      pm_mask |= pm_type;
+		      get_pm_value(skfd, ifname, &wrq, pm_mask,
+				   buffer, sizeof(buffer),
+				   range.we_version_compiled);
+		    }
+
+		  /* Remove current type from mask */
+		  remain_mask &= ~(wrq.u.power.flags);
+
+		  /* Check what other types we still have to read */
+		  while(i < pm_type_flags_size)
+		    {
+		      pm_type = remain_mask & pm_type_flags[i];
+		      if(pm_type)
+			break;
+		      i++;
+		    }
+		  /* Nothing anymore : exit the loop */
+		  if(!pm_type)
+		    break;
+
+		  /* Ask for this other type of value */
+		  flags = get_pm_value(skfd, ifname, &wrq, pm_type,
+				       buffer, sizeof(buffer),
+				       range.we_version_compiled);
+		  /* Loop back for min/max */
+		}
+	      printf("\n");
+	    }
+	}
+      printf("\n");
+    }
+  return(0);
+}
+
+#ifndef WE_ESSENTIAL
+/************************** TRANSMIT POWER **************************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print the number of available transmit powers for the device
+ */
+static int
+print_txpower_info(int		skfd,
+		   char *	ifname,
+		   char *	args[],		/* Command line args */
+		   int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  int			dbm;
+  int			mwatt;
+  int			k;
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Extract range info */
+  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
+     (range.we_version_compiled < 10))
+      fprintf(stderr, "%-8.16s  no transmit-power information.\n\n",
+		      ifname);
+  else
+    {
+      if((range.num_txpower <= 0) || (range.num_txpower > IW_MAX_TXPOWER))
+	printf("%-8.16s  unknown transmit-power information.\n\n", ifname);
+      else
+	{
+	  printf("%-8.16s  %d available transmit-powers :\n",
+		 ifname, range.num_txpower);
+	  /* Print them all */
+	  for(k = 0; k < range.num_txpower; k++)
+	    {
+	      /* Check for relative values */
+	      if(range.txpower_capa & IW_TXPOW_RELATIVE)
+		{
+		  printf("\t  %d (no units)\n", range.txpower[k]);
+		}
+	      else
+		{
+		  if(range.txpower_capa & IW_TXPOW_MWATT)
+		    {
+		      dbm = iw_mwatt2dbm(range.txpower[k]);
+		      mwatt = range.txpower[k];
+		    }
+		  else
+		    {
+		      dbm = range.txpower[k];
+		      mwatt = iw_dbm2mwatt(range.txpower[k]);
+		    }
+		  printf("\t  %d dBm  \t(%d mW)\n", dbm, mwatt);
+		}
+	    }
+	}
+
+      /* Get current Transmit Power */
+      if(iw_get_ext(skfd, ifname, SIOCGIWTXPOW, &wrq) >= 0)
+	{
+	  printf("          Current Tx-Power");
+	  /* Disabled ? */
+	  if(wrq.u.txpower.disabled)
+	    printf(":off\n\n");
+	  else
+	    {
+	      /* Fixed ? */
+	      if(wrq.u.txpower.fixed)
+		printf("=");
+	      else
+		printf(":");
+	      /* Check for relative values */
+	      if(wrq.u.txpower.flags & IW_TXPOW_RELATIVE)
+		{
+		  /* I just hate relative value, because they are
+		   * driver specific, so not very meaningfull to apps.
+		   * But, we have to support that, because
+		   * this is the way hardware is... */
+		  printf("\t  %d (no units)\n", wrq.u.txpower.value);
+		}
+	      else
+		{
+		  if(wrq.u.txpower.flags & IW_TXPOW_MWATT)
+		    {
+		      dbm = iw_mwatt2dbm(wrq.u.txpower.value);
+		      mwatt = wrq.u.txpower.value;
+		    }
+		  else
+		    {
+		      dbm = wrq.u.txpower.value;
+		      mwatt = iw_dbm2mwatt(wrq.u.txpower.value);
+		    }
+		  printf("%d dBm  \t(%d mW)\n\n", dbm, mwatt);
+		}
+	    }
+	}
+    }
+  return(0);
+}
+
+/*********************** RETRY LIMIT/LIFETIME ***********************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print one retry value
+ */
+static inline int
+get_retry_value(int		skfd,
+		char *		ifname,
+		struct iwreq *	pwrq,
+		int		flags,
+		char *		buffer,
+		int		buflen,
+		int		we_version_compiled)
+{
+  /* Get Another retry value */
+  pwrq->u.retry.flags = flags;
+  if(iw_get_ext(skfd, ifname, SIOCGIWRETRY, pwrq) >= 0)
+    {
+      /* Let's check the value and its type */
+      if(pwrq->u.retry.flags & IW_RETRY_TYPE)
+	{
+	  iw_print_retry_value(buffer, buflen,
+			       pwrq->u.retry.value, pwrq->u.retry.flags,
+			       we_version_compiled);
+	  printf("%s\n                 ", buffer);
+	}
+    }
+  return(pwrq->u.retry.flags);
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Print Power Management range for each type
+ */
+static void
+print_retry_value_range(char *		name,
+			int		mask,
+			int		iwr_flags,
+			int		iwr_min,
+			int		iwr_max,
+			char *		buffer,
+			int		buflen,
+			int		we_version_compiled)
+{
+  if(iwr_flags & mask)
+    {
+      int	flags = (iwr_flags & ~(IW_RETRY_MIN | IW_RETRY_MAX));
+      /* Display if auto or fixed */
+      printf("%s %s ; ",
+	     (iwr_flags & IW_POWER_MIN) ? "Auto " : "Fixed",
+	     name);
+      /* Print the range */
+      iw_print_retry_value(buffer, buflen,
+			   iwr_min, flags | IW_POWER_MIN,
+			   we_version_compiled);
+      printf("%s\n                           ", buffer);
+      iw_print_retry_value(buffer, buflen,
+			   iwr_max, flags | IW_POWER_MAX,
+			   we_version_compiled);
+      printf("%s\n          ", buffer);
+    }
+}
+
+/*------------------------------------------------------------------*/
+/*
+ * Print Retry info for each device
+ */
+static int
+print_retry_info(int		skfd,
+		 char *		ifname,
+		 char *		args[],		/* Command line args */
+		 int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+  char			buffer[128];
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Extract range info */
+  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
+     (range.we_version_compiled < 11))
+    fprintf(stderr, "%-8.16s  no retry limit/lifetime information.\n\n",
+	    ifname);
+  else
+    {
+      printf("%-8.16s  ", ifname);
+
+      /* Display min/max limit availables */
+      print_retry_value_range("limit   ", IW_RETRY_LIMIT, range.retry_flags,
+			      range.min_retry, range.max_retry,
+			      buffer, sizeof(buffer),
+			      range.we_version_compiled);
+      /* Display min/max lifetime availables */
+      print_retry_value_range("lifetime", IW_RETRY_LIFETIME, 
+			      range.r_time_flags,
+			      range.min_r_time, range.max_r_time,
+			      buffer, sizeof(buffer),
+			      range.we_version_compiled);
+
+      /* Get current retry settings */
+      wrq.u.retry.flags = 0;
+      if(iw_get_ext(skfd, ifname, SIOCGIWRETRY, &wrq) >= 0)
+	{
+	  int	flags = wrq.u.retry.flags;
+
+	  /* Is it disabled ? */
+	  if(wrq.u.retry.disabled)
+	    printf("Current mode:off\n          ");
+	  else
+	    {
+	      unsigned int	retry_type = 0;
+	      unsigned int	retry_mask = 0;
+	      unsigned int	remain_mask = range.retry_capa & IW_RETRY_TYPE;
+
+	      /* Let's check the mode */
+	      printf("Current mode:on\n                 ");
+
+	      /* Let's check the value and its type */
+	      if(wrq.u.retry.flags & IW_RETRY_TYPE)
+		{
+		  iw_print_retry_value(buffer, sizeof(buffer),
+				       wrq.u.retry.value, wrq.u.retry.flags,
+				       range.we_version_compiled);
+		  printf("%s\n                 ", buffer);
+		}
+
+	      while(1)
+		{
+		  /* Deal with min/max/short/long for the current value */
+		  retry_mask = 0;
+		  /* If we have been returned a MIN value, ask for the MAX */
+		  if(flags & IW_RETRY_MIN)
+		    retry_mask = IW_RETRY_MAX;
+		  /* If we have been returned a MAX value, ask for the MIN */
+		  if(flags & IW_RETRY_MAX)
+		    retry_mask = IW_RETRY_MIN;
+		  /* Same for SHORT and LONG */
+		  if(flags & IW_RETRY_SHORT)
+		    retry_mask = IW_RETRY_LONG;
+		  if(flags & IW_RETRY_LONG)
+		    retry_mask = IW_RETRY_SHORT;
+		  /* If we have something to ask for... */
+		  if(retry_mask)
+		    {
+		      retry_mask |= retry_type;
+		      get_retry_value(skfd, ifname, &wrq, retry_mask,
+				      buffer, sizeof(buffer),
+				      range.we_version_compiled);
+		    }
+
+		  /* And if we have both a limit and a lifetime,
+		   * ask the other one */
+		  remain_mask &= ~(wrq.u.retry.flags);
+		  retry_type = remain_mask;
+		  /* Nothing anymore : exit the loop */
+		  if(!retry_type)
+		    break;
+
+		  /* Ask for this other type of value */
+		  flags = get_retry_value(skfd, ifname, &wrq, retry_type,
+					  buffer, sizeof(buffer),
+					  range.we_version_compiled);
+		  /* Loop back for min/max/short/long */
+		}
+	    }
+	}
+      printf("\n");
+    }
+  return(0);
+}
+
+/************************ ACCESS POINT LIST ************************/
+/*
+ * Note : now that we have scanning support, this is depracted and
+ * won't survive long. Actually, next version it's out !
+ */
+
+/*------------------------------------------------------------------*/
+/*
+ * Display the list of ap addresses and the associated stats
+ * Exacly the same as the spy list, only with different IOCTL and messages
+ */
+static int
+print_ap_info(int	skfd,
+	      char *	ifname,
+	      char *	args[],		/* Command line args */
+	      int	count)		/* Args count */
+{
+  struct iwreq		wrq;
+  char		buffer[(sizeof(struct iw_quality) +
+			sizeof(struct sockaddr)) * IW_MAX_AP];
+  char		temp[128];
+  struct sockaddr *	hwa;
+  struct iw_quality *	qual;
+  iwrange	range;
+  int		has_range = 0;
+  int		has_qual = 0;
+  int		n;
+  int		i;
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Collect stats */
+  wrq.u.data.pointer = (caddr_t) buffer;
+  wrq.u.data.length = IW_MAX_AP;
+  wrq.u.data.flags = 0;
+  if(iw_get_ext(skfd, ifname, SIOCGIWAPLIST, &wrq) < 0)
+    {
+      fprintf(stderr, "%-8.16s  Interface doesn't have a list of Peers/Access-Points\n\n", ifname);
+      return(-1);
+    }
+
+  /* Number of addresses */
+  n = wrq.u.data.length;
+  has_qual = wrq.u.data.flags;
+
+  /* The two lists */
+  hwa = (struct sockaddr *) buffer;
+  qual = (struct iw_quality *) (buffer + (sizeof(struct sockaddr) * n));
+
+  /* Check if we have valid mac address type */
+  if(iw_check_mac_addr_type(skfd, ifname) < 0)
+    {
+      fprintf(stderr, "%-8.16s  Interface doesn't support MAC addresses\n\n", ifname);
+      return(-2);
+    }
+
+  /* Get range info if we can */
+  if(iw_get_range_info(skfd, ifname, &(range)) >= 0)
+    has_range = 1;
+
+  /* Display it */
+  if(n == 0)
+    printf("%-8.16s  No Peers/Access-Point in range\n", ifname);
+  else
+    printf("%-8.16s  Peers/Access-Points in range:\n", ifname);
+  for(i = 0; i < n; i++)
+    {
+      if(has_qual)
+	{
+	  /* Print stats for this address */
+	  printf("    %s : ", iw_saether_ntop(&hwa[i], temp));
+	  iw_print_stats(temp, sizeof(buffer), &qual[i], &range, has_range);
+	  printf("%s\n", temp);
+	}
+      else
+	/* Only print the address */
+	printf("    %s\n", iw_saether_ntop(&hwa[i], temp));
+    }
+  printf("\n");
+  return(0);
+}
+
 /******************** WIRELESS EVENT CAPABILITY ********************/
 
 static const char *	event_capa_req[] =
@@ -1419,7 +1507,7 @@ static const char *	event_capa_evt[] =
 
 /*------------------------------------------------------------------*/
 /*
- * Print the number of available transmit powers for the device
+ * Print the event capability for the device
  */
 static int
 print_event_capa_info(int		skfd,
@@ -1473,6 +1561,79 @@ print_event_capa_info(int		skfd,
   return(0);
 }
 
+/**************************** MODULATION ****************************/
+
+/*------------------------------------------------------------------*/
+/*
+ * Print Modulation info for each device
+ */
+static int
+print_modul_info(int		skfd,
+		 char *		ifname,
+		 char *		args[],		/* Command line args */
+		 int		count)		/* Args count */
+{
+  struct iwreq		wrq;
+  struct iw_range	range;
+
+  /* Avoid "Unused parameter" warning */
+  args = args; count = count;
+
+  /* Extract range info */
+  if((iw_get_range_info(skfd, ifname, &range) < 0) ||
+     (range.we_version_compiled < 11))
+    fprintf(stderr, "%-8.16s  no modulation information.\n\n",
+	    ifname);
+  else
+    {
+      if(range.modul_capa == 0x0)
+	printf("%-8.16s  unknown modulation information.\n\n", ifname);
+      else
+	{
+	  int i;
+	  printf("%-8.16s  Modulations available :\n", ifname);
+
+	  /* Display each modulation available */
+	  for(i = 0; i < IW_SIZE_MODUL_LIST; i++)
+	    {
+	      if((range.modul_capa & iw_modul_list[i].mask)
+		 == iw_modul_list[i].mask)
+		printf("              %-8s: %s\n",
+		       iw_modul_list[i].cmd, iw_modul_list[i].verbose);
+	    }
+
+	  /* Get current modulations settings */
+	  wrq.u.param.flags = 0;
+	  if(iw_get_ext(skfd, ifname, SIOCGIWMODUL, &wrq) >= 0)
+	    {
+	      unsigned int	modul = wrq.u.param.value;
+	      int		n = 0;
+
+	      printf("          Current modulations %c",
+		     wrq.u.param.fixed ? '=' : ':');
+
+	      /* Display each modulation enabled */
+	      for(i = 0; i < IW_SIZE_MODUL_LIST; i++)
+		{
+		  if((modul & iw_modul_list[i].mask) == iw_modul_list[i].mask)
+		    {
+		      if((n++ % 8) == 0)
+			printf("\n              ");
+		      else
+			printf(" ; ");
+		      printf("%s", iw_modul_list[i].cmd);
+		    }
+		}
+
+	      printf("\n");
+	    }
+	  printf("\n");
+	}
+    }
+  return(0);
+}
+#endif	/* WE_ESSENTIAL */
+
 /************************* COMMON UTILITIES *************************/
 /*
  * This section was initially written by Michael Tokarev <mjt@tls.msk.ru>
@@ -1484,10 +1645,10 @@ print_event_capa_info(int		skfd,
  * Map command line arguments to the proper procedure...
  */
 typedef struct iwlist_entry {
-  const char *cmd;
-  iw_enum_handler fn;
-  int min_count;
-  int max_count;
+  const char *		cmd;
+  iw_enum_handler	fn;
+  int			min_count;
+  int			max_count;
 } iwlist_cmd;
 
 static const struct iwlist_entry iwlist_cmds[] = {
@@ -1499,12 +1660,15 @@ static const struct iwlist_entry iwlist_cmds[] = {
   { "encryption",	print_keys_info,	0, 0 },
   { "key",		print_keys_info,	0, 0 },
   { "power",		print_pm_info,		0, 0 },
+#ifndef WE_ESSENTIAL
   { "txpower",		print_txpower_info,	0, 0 },
   { "retry",		print_retry_info,	0, 0 },
   { "ap",		print_ap_info,		0, 0 },
   { "accesspoints",	print_ap_info,		0, 0 },
   { "peers",		print_ap_info,		0, 0 },
   { "event",		print_event_capa_info,	0, 0 },
+  { "modulation",	print_modul_info,	0, 0 },
+#endif	/* WE_ESSENTIAL */
   { NULL, NULL, 0, 0 },
 };
 
@@ -1620,12 +1784,14 @@ main(int	argc,
   /* Check arg numbers */
   if(count < iwcmd->min_count)
     {
-      fprintf(stderr, "iwlist: command `%s' needs more arguments\n", cmd);
+      fprintf(stderr, "iwlist: command `%s' needs more arguments\n",
+	      iwcmd->cmd);
       return 1;
     }
   if(count > iwcmd->max_count)
     {
-      fprintf(stderr, "iwlist: command `%s' needs fewer arguments\n", cmd);
+      fprintf(stderr, "iwlist: command `%s' needs fewer arguments\n",
+	      iwcmd->cmd);
       return 1;
     }
 
