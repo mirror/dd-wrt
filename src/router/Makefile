@@ -473,6 +473,9 @@ ifeq ($(KROMOGUI),y)
 else
 	$(MAKE) -C www/$(WEB_PAGE) clean
 endif
+
+bridge:
+	$(MAKE) -C bridge brctl/brctl
 bridge:
 	$(MAKE) -C bridge brctl/brctl
 
@@ -1265,27 +1268,33 @@ else
 endif
 
 madwifi:
-	make -C madwifi-ng KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf ATH_RATE=ath_rate/sample
+	cd $(HAL)/linux && make TARGET=mips-le-elf clean \
+	&&  make TARGET=mips-le-elf \
+	&& make TARGET=mips-le-elf release)
+	
+	make -C madwifi/madwifi KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf ATH_RATE=ath_rate/sample
 
 madwifi-clean:
-	make -C madwifi-ng clean KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf ATH_RATE=ath_rate/sample
+	make -C madwifi/madwifi clean KERNELPATH=$(LINUXDIR) TARGET=mips-le-elf ATH_RATE=ath_rate/sample
 
 madwifi-install:
-	mkdir -p $(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre2
-	cp -fpR ./madwifi-ng/net80211/wlan*.o \
-		./madwifi-ng/openhal/ath_hal.o \
-		./madwifi-ng/ath_rate/sample/ath_rate_sample.o \
-		./madwifi-ng/ath/ath_pci.o \
-		$(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre2/
-	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
-	cp -fpR madwifi-ng/tools/athstats \
-		madwifi-ng/tools/athdebug \
-		madwifi-ng/tools/80211stats \
-		madwifi-ng/tools/80211debug \
-		madwifi-ng/tools/athctrl \
-		madwifi-ng/tools/athkey \
-		madwifi-ng/tools/wlanconfig \
-		$(INSTALLDIR)/madwifi/usr/sbin
+	make -C madwifi/madwifi/tools BINDIR=$(INSTALLDIR)/madwifi/bin install
+
+#	mkdir -p $(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre2
+#	cp -fpR ./madwifi-ng/net80211/wlan*.o \
+#		./madwifi-ng/openhal/ath_hal.o \
+#		./madwifi-ng/ath_rate/sample/ath_rate_sample.o \
+#		./madwifi-ng/ath/ath_pci.o \
+#		$(INSTALLDIR)/madwifi/lib/modules/2.4.33-pre2/
+#	mkdir -p $(INSTALLDIR)/madwifi/usr/sbin
+#	cp -fpR madwifi-ng/tools/athstats \
+#		madwifi-ng/tools/athdebug \
+#		madwifi-ng/tools/80211stats \
+#		madwifi-ng/tools/80211debug \
+#		madwifi-ng/tools/athctrl \
+#		madwifi-ng/tools/athkey \
+#		madwifi-ng/tools/wlanconfig \
+#		$(INSTALLDIR)/madwifi/usr/sbin
 
 
 sputnik:

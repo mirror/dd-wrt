@@ -2,30 +2,35 @@
 ## Please check the configurion parameters below
 ##
 
-## Installation directory. By default, go in /usr/local
+## Installation directory. By default, go in /usr/local.
 ## Distributions should probably use /, but they probably know better...
 ifndef PREFIX
   PREFIX = /usr/local
 endif
 
-## Compiler to use (modify this for cross compile)
+## Compiler to use (modify this for cross compile).
 CC = gcc
-## Other tools you need to modify for cross compile (static lib only)
+## Other tools you need to modify for cross compile (static lib only).
 AR = ar
 RANLIB = ranlib
 
-## Uncomment this to build tools using static version of the library
+## Uncomment this to build tools using static version of the library.
 ## Mostly useful for embedded platforms without ldd, or to create
 ## a local version (non-root).
 # BUILD_STATIC = y
 
-## Uncomment this to build without using libm (less efficient)
+## Uncomment this to build without using libm (less efficient).
 ## This is mostly useful for embedded platforms without maths.
 # BUILD_NOLIBM = y
 
-## Uncomment this to strip binary from symbols. This reduce binary size
+## Uncomment this to strip binary from symbols. This reduce binary size.
 ## by a few percent but make debug worse...
 # BUILD_STRIPPING = y
+
+## Uncomment this to build with only essential functionality.
+## This leaves out the less used features and cut in half the tools.
+## This is mostly useful for embedded platforms without limited feature needs.
+# BUILD_WE_ESSENTIAL = y
 
 # ***************************************************************************
 # ***** Most users should not need to change anything beyond this point *****
@@ -91,12 +96,17 @@ else
   STRIPFLAGS=
 endif
 
+# Do we want to build with only essential functionality ?
+ifdef BUILD_WE_ESSENTIAL
+  WEDEF_FLAG= -DWE_ESSENTIAL=y
+endif
+
 # Other flags
 CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
 	-Wpointer-arith -Wcast-qual -Winline -I.
 #CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
 DEPFLAGS=-MMD
-XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG)
+XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)
 PICFLAG=-fPIC
 
 # Standard compilation targets

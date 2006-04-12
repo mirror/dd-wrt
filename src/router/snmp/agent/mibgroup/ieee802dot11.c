@@ -25,7 +25,7 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 #include <net-snmp/agent/net-snmp-agent-includes.h>
-#include "../../../linux/linux.v23/include/linux/wireless.h"
+#include "../../../linux/linux.v24/include/linux/wireless.h"
 #include "ieee802dot11.h"
 #include "iwlib.h"
 
