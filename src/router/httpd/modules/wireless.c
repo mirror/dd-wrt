@@ -1812,7 +1812,7 @@ save_prefix (webs_t wp, char *prefix)
 
   sprintf (n, "%s_radius_ipaddr", prefix);
   //copytonv (wp,n);
-  if (get_merge_ipaddr (n, radius))
+  if (get_merge_ipaddr (wp, n, radius))
     nvram_set (n, radius);
   sprintf (n, "%s_radius_port", prefix);
   copytonv (wp, n);
