@@ -1,8 +1,9 @@
-<h2>Chillispot Local Usermanagement</h2>
+<fieldset>
+<legend>Chillispot Local User Management</legend>
 <input type="hidden" name="fon_userlist" value="13" />
 <table class="table center">
                         <tr>
-                           <th colspan="6">Userlist</th>
+                           <th colspan="2">User List</th>
                         </tr>
                         <tr>
                            <th>Username</th>
@@ -10,10 +11,10 @@
                         </tr>
 			<% show_userlist(); %>
 			    <tr>
-                              <td>&nbsp;</td>
                               <td colspan="2">
-			      <input type="button" value="Add" onClick=user_add_submit(this.form) />
-			      <input type="button" value="Remove" onClick=user_remove_submit(this.form) />
+			      <div class="center"><input type="button" value="Add" onclick="user_add_submit(this.form)" />
+			      <input type="button" value="Remove" onclick="user_remove_submit(this.form)" /></div> 
 			      </td>
                            </tr>
-</table>		
+</table>
+</fieldset><br />	
