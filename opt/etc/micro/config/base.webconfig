@@ -119,7 +119,7 @@
 		</div>
 	</fieldset><br />
 	<fieldset>
-	<legend>DHCPd</legend>
+	<legend>DHCP Server</legend>
 	<div class="setting">
 		<div class="label">DHCPd</div>
 		<input type="radio" name="lan_proto" value="dhcp" <% nvram_selmatch("lan_proto", "dhcp", "checked"); %> />Enable
@@ -142,14 +142,14 @@
 	<div class="setting">
 		<div class="label">Static Allocations</div>
 		( Format: IP&nbsp; MAC&nbsp; Hostname )<br />
-		<textarea cols="40" rows="2" id="dhcpd_statics" name="dhcpd_statics">	</textarea><script language="javascript">
+		<textarea cols="40" rows="2" id="dhcpd_statics" name="dhcpd_statics">	</textarea><script type="text/javascript">
 		
 				var dhcpd_statics = fix_cr( '<% nvram_get("dhcpd_statics"); %>' );
 				document.getElementById("dhcpd_statics").value = dhcpd_statics;
 			</script></div>
 	<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
-		<div class="label">Additional DHCPD Options</div>
-		<textarea cols="40" rows="2" id="dhcpd_options" name="dhcpd_options">	</textarea><script language="javascript">
+		<div class="label">Additional DHCPd Options</div>
+		<textarea cols="40" rows="2" id="dhcpd_options" name="dhcpd_options">	</textarea><script type="text/javascript">
 		
 				var dhcpd_options = fix_cr( '<% nvram_get("dhcpd_options"); %>' );
 				document.getElementById("dhcpd_options").value = dhcpd_options;
@@ -170,7 +170,7 @@
 	<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
 		<div class="label">Additional DNS Options</div>
 			<textarea cols="60" rows="2" id="dnsmasq_options" name="dnsmasq_options"></textarea>
-			<script language="javascript">
+			<script type="text/javascript">
 				var dnsmasq_options = fix_cr( '<% nvram_get("dnsmasq_options"); %>' );
 				document.getElementById("dnsmasq_options").value = dnsmasq_options;
 			</script>
@@ -219,7 +219,7 @@
 		<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" /></div>
 	<div class="setting">
 		<div class="label">CHAP-Secrets</div>
-		<textarea id="pptpd_auth" cols="35" rows="4" name="pptpd_auth">	</textarea><script language="javascript">
+		<textarea id="pptpd_auth" cols="35" rows="4" name="pptpd_auth">	</textarea><script type="text/javascript">
 		
 				var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
 				document.getElementById("pptpd_auth").value = var_pptpd_auth;
@@ -228,7 +228,7 @@
 	<fieldset>
 	<legend>Reset Button</legend>
 	<div class="setting">
-		<div class="label">Reset enable</div>
+		<div class="label">Reset enabled</div>
 		<input type="radio" name="resetbutton_enable" value="1" <% nvram_selmatch("resetbutton_enable", "1", "checked"); %> />Enable
 		<input type="radio" name="resetbutton_enable" value="0" <% nvram_selmatch("resetbutton_enable", "0", "checked"); %> />Disable
 		</div>
@@ -290,9 +290,9 @@
 			</script></div>
 	<% nvram_match("sshd_enable","0","-->"); %></fieldset><br />
 	<% nvram_match("sshd_web","0","-->"); %><fieldset>
-	<legend>Syslogd</legend>
+	<legend>System Log</legend>
 	<div class="setting">
-		<div class="label">Syslogd</div>
+		<div class="label">System Log</div>
 		<input type="radio" name="syslogd_enable" value="1" <% nvram_selmatch("syslogd_enable", "1", "checked"); %> /> 
 		Enable<input type="radio" name="syslogd_enable" value="0" <% nvram_selmatch("syslogd_enable", "0", "checked"); %> /> 
 		Disable</div>
@@ -327,7 +327,7 @@
 	<div class="setting">
 		<div class="label">MAC Addresses</div>
 		( Format: XX:XX:XX:XX:XX:XX )<br />
-		<textarea id="wol_macs" name="wol_macs" cols="40" rows="2">	</textarea><script language="javascript">
+		<textarea id="wol_macs" name="wol_macs" cols="40" rows="2">	</textarea><script type="text/javascript">
 		
 				var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
 				document.getElementById("wol_macs").value = wol_macs;
