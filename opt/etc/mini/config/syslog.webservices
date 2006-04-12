@@ -1,5 +1,5 @@
 <fieldset>	
-	<legend>Syslogd</legend>
+	<legend>System Log</legend>
 	<div class="setting">
 		<div class="label">Syslogd</div>
 		<input type="radio" name="syslogd_enable" value="1" <% nvram_selmatch("syslogd_enable", "1", "checked"); %> />Enable
