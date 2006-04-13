@@ -22,7 +22,6 @@ diag_ping_start (webs_t wp)
 
   if (!ip || !times || !strcmp (ip, ""))
     return ret;
-  int i;
   unlink (PING_TMP);
   nvram_set ("ping_ip", ip);
   nvram_set ("ping_times", times);
@@ -55,7 +54,6 @@ int
 ping_startup (webs_t wp)
 {
   char *startup = websGetVar (wp, "ping_ip", NULL);
-  char *p = startup;
 
   // filter Windows <cr>ud
   removeLineBreak (startup);
@@ -73,7 +71,6 @@ int
 ping_firewall (webs_t wp)
 {
   char *firewall = websGetVar (wp, "ping_ip", NULL);
-  char *p = firewall;
 
   // filter Windows <cr>ud
   removeLineBreak (firewall);
@@ -161,7 +158,7 @@ traceroute_onload (webs_t wp, char *arg)
 void
 ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0, count = 0;
+  int count = 0;
   FILE *fp;
   char line[254];
   char newline[300];
@@ -199,7 +196,7 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0, count = 0;
+  int count = 0;
   FILE *fp;
   char line[254];
 

@@ -25,7 +25,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
   struct in_addr addr;
   unsigned long expires;
   char sigusr1[] = "-XX";
-  int ret = 0;
   int count = 0;
   char *ipaddr, mac[20] = "", expires_time[50] = "";
   int macmask;
@@ -136,19 +135,18 @@ delete_leases (webs_t wp)
   FILE *fp_w;
   char sigusr1[] = "-XX";
   int i;
-  int ret = 0;
   char buff[8];
   char **ipbuf;
 
   if (nvram_match ("lan_proto", "static"))
-    return ret;
+    return;
 
   unlink ("/tmp/.delete_leases");
 
   if (!(fp_w = fopen ("/tmp/.delete_leases", "w")))
     {
       websError (wp, 400, "Write leases error\n");
-      return -1;
+      return;
     }
   int ipcount = 0;
   for (i = 0; i < DHCP_MAX_COUNT; i++)
@@ -176,7 +174,7 @@ delete_leases (webs_t wp)
 	  return;
 	}
       if (ipcount == 0)
-	return 0;
+	return;
       fgets (buff, sizeof (buff), fp_w);
       sprintf (sigusr1, "-%d", SIGUSR2);
       eval ("kill", sigusr1, buff);	// call udhcpd to delete ip from lease table
@@ -192,7 +190,7 @@ delete_leases (webs_t wp)
 	  if (!(fp = fopen ("/jffs/udhcpd.leases", "r")))
 	    {
 	      perror ("could not open input file");
-	      return 0;
+	      return;
 	    }
 	}
       FILE *nfp = fopen ("/tmp/newdhcp.leases", "wb");

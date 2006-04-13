@@ -22,7 +22,7 @@ ej_static_route_setting (int eid, webs_t wp, int argc, char_t ** argv)
   int which, count;
   char word[256], *next, *page;
   char name[50] = "", *ipaddr, *netmask, *gateway, *metric, *ifname;
-  int ret = 0, temp;
+  int temp;
   char new_name[200];
 
   if (ejArgs (argc, argv, "%s %d", &arg, &count) < 2)
@@ -329,7 +329,7 @@ write_nvram:
 void
 ej_static_route_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int i, ret = 0, page;
+  int i, page;
   int which;
   char *type;
   char word[256], *next;
