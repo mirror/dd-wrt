@@ -553,10 +553,10 @@ ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *sln = nvram_safe_get ("fon_usernames");
   if (sln == NULL || strlen (sln) == 0)
-    return 0;
+    return;
   int leasenum = atoi (sln);
   if (leasenum == 0)
-    return 0;
+    return;
   int i;
   char username[32];
   char password[32];
@@ -592,7 +592,6 @@ validate_userlist (webs_t wp, char *value, struct variable *v)
   char username[32] = "fon_userxxx_name";
   char password[32] = "fon_userxxx_password";
   char *sln = nvram_safe_get ("fon_usernames");
-  char *uname;
   if (sln == NULL || strlen (sln) == 0)
     return;
   int leasenum = atoi (sln);
@@ -675,13 +674,13 @@ ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
   char *sln = nvram_safe_get ("static_leasenum");
 //cprintf("check null");
   if (sln == NULL || strlen (sln) == 0)
-    return 0;
+    return;
 //cprintf("atoi");
 
   int leasenum = atoi (sln);
 //cprintf("leasenum==0");
   if (leasenum == 0)
-    return 0;
+    return;
 //cprintf("get leases");
   char *nvleases = nvram_safe_get ("static_leases");
   char *leases = (char *) malloc (strlen (nvleases) + 1);
@@ -978,7 +977,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
   if (nvram_match ("wl_mode", "wet"))	//dhcpd settings disabled in client bridge mode, so we wont display it
-    return 0;
+    return;
   websWrite (wp,
 	     "<fieldset><legend>Network Address Server Settings (DHCP)</legend>\n");
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2056,7 +2055,7 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 void
 ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int mac = -1, wds_idx = -1, mac_idx = -1, ret = 0;
+  int mac = -1, wds_idx = -1, mac_idx = -1;
   char *c, wds_var[32] = "";
 
 
@@ -2090,7 +2089,7 @@ ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ip = -1, wds_idx = -1, ip_idx = -1, ret = 0;
+  int ip = -1, wds_idx = -1, ip_idx = -1;
   char *c, wds_var[32] = "";
 
 
@@ -2124,7 +2123,7 @@ ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int nm = -1, wds_idx = -1, nm_idx = -1, ret = 0;
+  int nm = -1, wds_idx = -1, nm_idx = -1;
   char *c, wds_var[32] = "";
 
 
@@ -2159,7 +2158,7 @@ ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_wds_gw (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int gw = -1, wds_idx = -1, gw_idx = -1, ret = 0;
+  int gw = -1, wds_idx = -1, gw_idx = -1;
   char *c, wds_var[32] = "";
 
 
@@ -2193,7 +2192,7 @@ ej_get_wds_gw (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_br1_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ip = -1, ip_idx = -1, ret = 0;
+  int ip = -1, ip_idx = -1;
   char *c;
 
 
@@ -2222,7 +2221,7 @@ ej_get_br1_ip (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_br1_netmask (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int nm = -1, nm_idx = -1, ret = 0;
+  int nm = -1, nm_idx = -1;
   char *c;
 
 
@@ -2252,7 +2251,7 @@ void
 ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
-  int ret = 0, rate = 0;
+  int rate = 0;
 
   if (wl_probe ("eth2"))
     dev = "eth1";
@@ -2280,7 +2279,6 @@ ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv)
   {
   0};
   FILE *fp;
-  int ret = -1;
   unlink (UPTIME_TMP);
 
   snprintf (cmd, 254, "uptime 2>&1 > %s", UPTIME_TMP);
@@ -2310,7 +2308,6 @@ void
 ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *dev = NULL;
-  int ret = 0;
   channel_info_t ci;
 
   if (wl_probe ("eth2"))
@@ -2514,7 +2511,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   system (cmd);			// get active wireless mac
 
   if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
-    return -1;
+    return;
 
 
   if ((fp = fopen (WDS_LIST_TMP, "r")))
@@ -2641,10 +2638,6 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 		 buf, nvram_safe_get (buf));
     }
 
-
-
-
-
   snprintf (nvramvar, 31, "wl_wds%d_ipaddr", index);
   sscanf (nvram_safe_get (nvramvar), "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2],
 	  &ip[3]);
@@ -2683,8 +2676,7 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
 	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
-
-
+          
 #else
 
       websWrite (wp, "\
@@ -2737,7 +2729,7 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 
 }
 
-int
+void
 save_wds (webs_t wp)
 {
   char *wds_enable_val, wds_enable_var[32] = { 0 };
@@ -2754,6 +2746,7 @@ save_wds (webs_t wp)
   nvram_set ("wl_br1_enable", wds_enable_val);
 
   return;
+  
 }
 
 #ifndef KROMOGUI
@@ -2985,11 +2978,10 @@ get_filter_services (void)
 void
 ej_get_services_options (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char word[1024], *next, *services;
   char delim[] = "<&nbsp;>";
 
-//      services = nvram_safe_get("filter_services");
+//services = nvram_safe_get("filter_services");
   services = get_filter_services ();
 
   split (word, services, next, delim)
@@ -3363,7 +3355,6 @@ ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv)
   return 0;
 #else
 
-  int ret = 0;
   char *c;
   int mac, which;
   int dofree = 0;
@@ -3417,7 +3408,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
      y 5 it the bridge device (x 16 dosn't apply)
    */
 
-  int ret = 0, i, j, vlans[20][6], tmp, wl_br;
+  int i, j, vlans[20][6], tmp, wl_br;
   char *c, *next, buff[32], portvlan[32];
 
   for (i = 0; i < 20; i++)
@@ -4466,11 +4457,10 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_svcs = nvram_safe_get ("svqos_svcs");
   char name[32], type[32], data[32], level[32];
-  int no_svcs = 0, i = 0, ret = -1;
+  int no_svcs = 0, i = 0;
 
-
-  // calc # of services
-//      no_svcs = strspn(qos_svcs,"|");
+// calc # of services
+// no_svcs = strspn(qos_svcs,"|");
 
   while ((qos_svcs = strpbrk (qos_svcs, "|")))
     {
@@ -4478,7 +4468,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
       qos_svcs++;
     }
 
-  // write HTML data
+// write HTML data
 
   websWrite (wp,
 	     "<input type=\"hidden\" name=\"svqos_nosvcs\" value=\"%d\" />",
@@ -4515,7 +4505,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 
     }
 
-  return ret;
+  return;
 }
 
 #ifndef HAVE_AQOS
@@ -4524,7 +4514,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
   char ip[32], level[32];
-  int no_ips = 0, i = 0, ret = -1;
+  int no_ips = 0, i = 0;
 
   // calc # of ips
   while ((qos_ips = strpbrk (qos_ips, "|")))
@@ -4577,9 +4567,9 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_ips = nvram_safe_get ("svqos_ips");
   char ip[32], level[32];
-  int no_ips = 0, i = 0, ret = -1;
+  int no_ips = 0, i = 0;
 
-  // calc # of ips
+// calc # of ips
   while ((qos_ips = strpbrk (qos_ips, "|")))
     {
       no_ips++;
@@ -4588,7 +4578,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<tr><th>Delete</th><th>IP/Mask</th><th>Max Kbits</th></tr>");
 
-  // write HTML data
+// write HTML data
 
   websWrite (wp,
 	     "<input type=\"hidden\" name=\"svqos_noips\" value=\"%d\" />",
@@ -4628,7 +4618,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
   char mac[32], level[32];
-  int no_macs = 0, i = 0, ret = -1;
+  int no_macs = 0, i = 0;
 
 
   // calc # of ips
@@ -4684,7 +4674,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *qos_macs = nvram_safe_get ("svqos_macs");
   char mac[32], level[32];
-  int no_macs = 0, i = 0, ret = -1;
+  int no_macs = 0, i = 0;
 
 
   // calc # of ips
@@ -4739,7 +4729,6 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   int ip_count = 0;
   FILE *fp;
   int c;
-  int ret = 0;
 
   fp = fopen ("/proc/net/ip_conntrack", "rb");
   if (fp == NULL)
