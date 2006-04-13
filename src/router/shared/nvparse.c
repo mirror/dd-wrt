@@ -311,7 +311,6 @@ get_forward_port (int which, netconf_nat_t * nat)
   char name[] = "forward_portXXXXXXXXXX", value[1000];
   char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
   char *enable, *desc;
-  struct in_addr dstaddr;
 
   memset (nat, 0, sizeof (netconf_nat_t));
 
