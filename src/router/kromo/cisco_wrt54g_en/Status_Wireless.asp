@@ -197,7 +197,7 @@ addEvent(window, "unload", function() {
 									<table class="table center" cellspacing="6" id="wds_table">
 										<tr>
 											<th width="20%">MAC Address</th>
-											<th width="30%">Description</th>
+											<th width="31%">Description</th>
 											<th width="8%">Signal</th>
 											<th width="8%">Noise</th>
 											<th width="8%">SNR</th>
