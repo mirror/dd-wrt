@@ -2497,7 +2497,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
   char cmd[80];
 //  char title[30];
   char wdsvar[30];
-  char desc[40];
+  char desc[30];
   int cnt = 0;
   int macmask;
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
@@ -2539,7 +2539,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 //                snprintf (title, sizeof (title), "WDS Signal (%s) :", desc);
 //                if (!strcmp (nvram_get (wdsvar), ""))
 //                  strcpy (title, "WDS Signal :");
-		  snprintf (wdsvar, 40, "wl_wds%d_desc", i);
+		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
 		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
 //                snprintf (title, sizeof (title), "%s", desc);
 		  if (!strcmp (nvram_get (wdsvar), ""))
