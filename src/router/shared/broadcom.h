@@ -360,7 +360,7 @@ extern void ej_get_firmware_title (int eid, webs_t wp, int argc,
 
 /* Sveasoft additions */
 
-extern int save_wds (webs_t wp);
+extern void save_wds (webs_t wp);
 extern void validate_wds (webs_t wp, char *value, struct variable *v);
 extern void validate_statics (webs_t wp, char *value, struct variable *v);
 extern void ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv);
