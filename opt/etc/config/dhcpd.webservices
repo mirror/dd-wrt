@@ -46,9 +46,9 @@
 				<th colspan="3">Static Leases</th>
 			</tr>
 			<tr>
-				<th>MAC</th>
-				<th>HOST</th>
-				<th>IP</th>
+				<th width="33%">MAC</th>
+				<th width="34%">HOST</th>
+				<th width="33%">IP</th>
 			</tr>
                         <% show_staticleases(); %>
 			<tr>
