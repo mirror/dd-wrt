@@ -53,7 +53,8 @@ function init() {
 		</script>
 	</head>
 
-  <body class="gui" onload="init()"> <% showad(); %>
+  <body class="gui" onload="init()">
+  	<% showad(); %>
     <div id="wrapper">
       <div id="content">
         <div id="header">
@@ -111,7 +112,22 @@ function init() {
                     <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
                       <option value="disabled" <% nvram_match("wl_net_mode", "disabled", "selected"); %>>Disabled</option>
                       <option value="mixed" <% nvram_match("wl_net_mode", "mixed", "selected"); %>>Mixed</option>
-                      <option value="b-only" <% nvram_match("wl_net_mode", "b-only", "selected"); %>>B-Only</option>
+                      <script type="text/javascript">
+                      	if( <% nvram_get("wl_wds1_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds2_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds3_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds4_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds5_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds6_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds7_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds8_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds9_enable"); %> == "0" &&
+                            <% nvram_get("wl_wds10_enable"); %> == "0") {
+ 
+                      		document.write("<option value=\"b-only\" <% nvram_match("wl_net_mode", "b-only", "selected"); %>>B-Only</option>");
+
+                      	}
+                      </script>
                       <option value="g-only" <% nvram_match("wl_net_mode", "g-only", "selected"); %>>G-Only</option>
                     </select>
                   </div>
@@ -123,7 +139,7 @@ function init() {
                   <div class="setting">
                     <div class="label">Wireless Channel</div>
                     <select name="wl_channel" onfocus="check_action(this,0)">
-                      <script language="javascript">
+                      <script type="text/javascript">
                         var max_channel = 14;
                         var wl_channel = '<% nvram_get("wl_channel"); %>';
                         var buf = "";
