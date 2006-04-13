@@ -184,9 +184,9 @@ addEvent(window, "unload", function() {
 								<table class="table center" cellspacing="6" id="wireless_table">
 									<tr>
 										<th width="54%">MAC Address</th>
-										<th width="8%">Signal</th>
-										<th width="8%">Noise</th>
-										<th width="8%">SNR</th>
+										<th class="num" width="8%">Signal</th>
+										<th class="num" width="8%">Noise</th>
+										<th class="num" width="8%">SNR</th>
 										<th width="22%">Signal Quality</th>
 									</tr>
 								</table>
@@ -197,10 +197,10 @@ addEvent(window, "unload", function() {
 									<table class="table center" cellspacing="6" id="wds_table">
 										<tr>
 											<th width="22%">MAC Address</th>
-											<th width="28%">Description</th>
-											<th width="8%">Signal</th>
-											<th width="8%">Noise</th>
-											<th width="8%">SNR</th>
+											<th width="32%">Description</th>
+											<th class="num" width="8%">Signal</th>
+											<th class="num" width="8%">Noise</th>
+											<th class="num" width="8%">SNR</th>
 											<th width="22%">Signal Quality</th>
 										</tr>
 									</table>
