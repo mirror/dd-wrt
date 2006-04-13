@@ -178,7 +178,6 @@ clone_mac (webs_t wp)
 void
 ej_get_clone_mac (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char *c;
   int mac, which;
   int dofree = 0;

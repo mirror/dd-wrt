@@ -20,25 +20,25 @@ struct ddns_message
 #if LANGUAGE == JAPANESE
 struct ddns_message ddns_messages[] = {
   // Below is DynDNS error code
-  {"dyn_good", "DDNS ‚ÌXV‚ÍŠ®—¹‚µ‚Ü‚µ‚½"},
-  {"dyn_noupdate", "DDNS ‚ÌXV‚ÍŠ®—¹‚µ‚Ü‚µ‚½"},
-  {"dyn_nohost", "ƒzƒXƒg–¼‚ª‘¶İ‚µ‚Ü‚¹‚ñ"},
-  {"dyn_notfqdn", "ƒhƒƒCƒ“–¼‚ª³‚µ‚­‚ ‚è‚Ü‚¹‚ñ"},
-  {"dyn_!yours", "ƒ†[ƒU[–¼‚ª³‚µ‚­‚ ‚è‚Ü‚¹‚ñ"},
-  {"dyn_abuse", "ƒzƒXƒg–¼‚Í DDNS ƒT[ƒo‚É‚æ‚èƒuƒƒbƒN‚³‚ê‚Ä‚¢‚Ü‚·"},
-  {"dyn_nochg", "DDNS ‚ÌXV‚ÍŠ®—¹‚µ‚Ü‚µ‚½"},
-  {"dyn_badauth", "”FØ‚É¸”s‚µ‚Ü‚µ‚½ (ƒ†[ƒU[–¼‚Ü‚½‚ÍƒpƒXƒ[ƒh)"},
-  {"dyn_badsys", "ƒVƒXƒeƒ€ ƒpƒ‰ƒ[ƒ^‚ª•s³‚Å‚·"},
-  {"dyn_badagent", "‚±‚Ìƒ†[ƒU[ ƒG[ƒWƒFƒ“ƒg‚ÍƒuƒƒbƒN‚³‚ê‚Ä‚¢‚Ü‚·"},
-  {"dyn_numhost", "ƒzƒXƒg‚ª‘½‚·‚¬‚é‚©­‚È‚·‚¬‚Ü‚·"},
-  {"dyn_dnserr", "DNS ƒGƒ‰[”­¶"},
-  -{"dyn_911", "—\Šú‚¹‚ÊƒGƒ‰[‚Å‚·B (1)"},
-  -{"dyn_999", "—\Šú‚¹‚ÊƒGƒ‰[‚Å‚·B (2)"},
+  {"dyn_good", "DDNS ‚Ì?X?V‚ÍŠ®—¹‚µ‚Ü‚µ‚½"},
+  {"dyn_noupdate", "DDNS ‚Ì?X?V‚ÍŠ®—¹‚µ‚Ü‚µ‚½"},
+  {"dyn_nohost", "ƒzƒXƒg–¼‚ª‘¶?İ‚µ‚Ü‚¹‚ñ"},
+  {"dyn_notfqdn", "ƒhƒ?ƒCƒ“–¼‚ª?³‚µ‚­‚ ‚è‚Ü‚¹‚ñ"},
+  {"dyn_!yours", "ƒ†?[ƒU?[–¼‚ª?³‚µ‚­‚ ‚è‚Ü‚¹‚ñ"},
+  {"dyn_abuse", "ƒzƒXƒg–¼‚Í DDNS ƒT?[ƒo‚É‚æ‚èƒuƒ?ƒbƒN‚³‚ê‚Ä‚¢‚Ü‚·"},
+  {"dyn_nochg", "DDNS ‚Ì?X?V‚ÍŠ®—¹‚µ‚Ü‚µ‚½"},
+  {"dyn_badauth", "”F?Ø‚É¸”s‚µ‚Ü‚µ‚½ (ƒ†?[ƒU?[–¼‚Ü‚½‚ÍƒpƒXƒ??[ƒh)"},
+  {"dyn_badsys", "ƒVƒXƒeƒ€ ƒpƒ‰ƒ??[ƒ^‚ª•s?³‚Å‚·"},
+  {"dyn_badagent", "‚±‚Ìƒ†?[ƒU?[ ƒG?[ƒWƒFƒ“ƒg‚Íƒuƒ?ƒbƒN‚³‚ê‚Ä‚¢‚Ü‚·"},
+  {"dyn_numhost", "ƒzƒXƒg‚ª‘½‚·‚¬‚é‚©?­‚È‚·‚¬‚Ü‚·"},
+  {"dyn_dnserr", "DNS ƒGƒ‰?[”­?¶"},
+  -{"dyn_911", "—\Šú‚¹‚ÊƒGƒ‰?[‚Å‚·?B (1)"},
+  -{"dyn_999", "—\Šú‚¹‚ÊƒGƒ‰?[‚Å‚·?B (2)"},
   {"dyn_!donator",
-   "ƒŠƒNƒGƒXƒg‚³‚ê‚½‹@”\‚ÍŠñ•t‚µ‚½ê‡‚É‚Ì‚İ—LŒø‚Å‚·BŠñ•t‚ğ‚µ‚Ä‚­‚¾‚³‚¢B"},
+   "ƒŠƒNƒGƒXƒg‚³‚ê‚½‹@”\‚ÍŠñ•t‚µ‚½?ê?‡‚É‚Ì‚İ—LŒø‚Å‚·?BŠñ•t‚ğ‚µ‚Ä‚­‚¾‚³‚¢?B"},
   -{"dyn_strange",
-    "‰“š‚ª•s³‚Å‚·BÚ‘±æƒT[ƒo‚ª³‚µ‚¢‚©‚Ç‚¤‚©AŠm”F‚­‚¾‚³‚¢B"},
-  {"dyn_uncode", "DynDns ‚©‚ç‚Ì•s–¾‚ÈƒŠƒ^[ƒ“ ƒR[ƒh"},
+    "‰“š‚ª•s?³‚Å‚·?B?Ú‘±?æƒT?[ƒo‚ª?³‚µ‚¢‚©‚Ç‚¤‚©?AŠm”F‚­‚¾‚³‚¢?B"},
+  {"dyn_uncode", "DynDns ‚©‚ç‚Ì•s–¾‚ÈƒŠƒ^?[ƒ“ ƒR?[ƒh"},
 
   // Below is TZO error code
   {"tzo_good", "Operation Complete"},
@@ -55,13 +55,13 @@ struct ddns_message ddns_messages[] = {
   {"tzo_error", "An unexpected server error"},
 
   // Below is for all
-  {"all_closed", "DDNS ƒT[ƒo‚ÍŒ»İƒNƒ[ƒY‚µ‚Ä‚¢‚Ü‚·"},
-  -{"all_resolving", "ƒhƒƒCƒ“–¼‚ğ‰ğŒˆ’†"},
-  -{"all_errresolv", "ƒhƒƒCƒ“–¼‚Ì‰ğŒˆ‚É¸”s‚µ‚Ü‚µ‚½B"},
-  -{"all_connecting", "ƒT[ƒo‚ÖÚ‘±’†"},
-  -{"all_connectfail", "ƒT[ƒo‚Ö‚ÌÚ‘±‚É¸”s‚µ‚Ü‚µ‚½B"},
+  {"all_closed", "DDNS ƒT?[ƒo‚ÍŒ»?İƒNƒ??[ƒY‚µ‚Ä‚¢‚Ü‚·"},
+  -{"all_resolving", "ƒhƒ?ƒCƒ“–¼‚ğ‰ğŒˆ’†"},
+  -{"all_errresolv", "ƒhƒ?ƒCƒ“–¼‚Ì‰ğŒˆ‚É¸”s‚µ‚Ü‚µ‚½?B"},
+  -{"all_connecting", "ƒT?[ƒo‚Ö?Ú‘±’†"},
+  -{"all_connectfail", "ƒT?[ƒo‚Ö‚Ì?Ú‘±‚É¸”s‚µ‚Ü‚µ‚½?B"},
   -{"all_disabled", "DDNS ‚Í–³Œø‚Å‚·"},
-  -{"all_noip", "ƒCƒ“ƒ^[ƒlƒbƒgÚ‘±‚ª‚ ‚è‚Ü‚¹‚ñ"},
+  -{"all_noip", "ƒCƒ“ƒ^?[ƒlƒbƒg?Ú‘±‚ª‚ ‚è‚Ü‚¹‚ñ"},
 };
 #else
 struct ddns_message ddns_messages[] = {
@@ -152,7 +152,6 @@ void
 ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char string[80] = "";
-  int ret = 0;
   char *enable = websGetVar (wp, "ddns_enable", NULL);
 
   if (!enable)

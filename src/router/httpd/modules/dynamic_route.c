@@ -14,7 +14,6 @@
 void
 ej_dump_route_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   int count = 0;
   char *format;
   FILE *fp, *fp1;

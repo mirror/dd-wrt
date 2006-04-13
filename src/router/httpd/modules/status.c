@@ -48,7 +48,6 @@ ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   unsigned long now_time = 0L;
   unsigned long get_leases_time = 0L;
   unsigned long leases_time = 0L;
@@ -80,7 +79,6 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
   now_time = info.uptime;
 
   remain_time = leases_time - (now_time - get_leases_time);
-
 
   if (remain_time < 0)
     {
@@ -212,7 +210,7 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   cdebug ("nvram_status_get wan ip addr");
-  int retcode = 0;
+
   if (!strcmp (type, "wan_ipaddr"))
     {
       websWrite (wp, "%s", wan_ipaddr);
@@ -231,7 +229,6 @@ ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv)
       if (dns_list)
 	websWrite (wp, "%s", dns_list->dns_server[1]);
     }
-
   else if (!strcmp (type, "wan_dns2"))
     {
       if (dns_list)
@@ -258,7 +255,6 @@ void
 ej_show_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
-  int ret = 0;
   char *wan_proto = nvram_safe_get ("wan_proto");
   char *submit_type = websGetVar (wp, "submit_type", NULL);
   int wan_link = 0;
@@ -405,7 +401,6 @@ ej_show_meminfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   char line[254];
-  int ret;
 
   if ((fp = popen ("free -simple", "r")))
     {
