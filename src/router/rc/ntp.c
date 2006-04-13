@@ -125,7 +125,7 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 	}
       settimeofday (&tv, NULL);
 
-//              time_t now = time(0);
+              time_t now = time(0);
               syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
     }
 
