@@ -493,7 +493,7 @@ filter_dport_get (char *type, int which)
 void
 ej_filter_dport_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret, which;
+  int which;
   char *type;
   D ("ej filter dport get");
   if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
@@ -578,7 +578,7 @@ filter_port_get (char *type, int which)
 void
 ej_filter_port_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret, which;
+  int which;
   char *type;
   D ("ej filter port get");
   if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
@@ -635,7 +635,7 @@ filter_mac_get (int which)
 void
 ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0, which;
+  int which;
   char *type;
   D ("ej-filter ip get");
   if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
@@ -657,7 +657,7 @@ ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_filter_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret, which;
+  int which;
   D ("ej filter mac get");
   if (ejArgs (argc, argv, "%d", &which) < 1)
     {
@@ -1057,7 +1057,7 @@ validate_services_port (webs_t wp)
 {
   char buf[8192] = "", services[8192] = "", *cur = buf, *svcs = NULL;
   char *services_array = websGetVar (wp, "services_array0", NULL);
-  char *services_length = websGetVar (wp, "services_length0", NULL);
+//  char *services_length = websGetVar (wp, "services_length0", NULL);
   char word[1025], *next;
   char delim[] = "(&nbsp;)";
   char var[32] = "";
@@ -1162,7 +1162,6 @@ validates the p2p catchall filter
 void
 validate_catchall (webs_t wp, char *value, struct variable *v)
 {
-  int i;
   char *p2p;
   char port_grp[] = "filter_p2p_grpXXX";
   p2p = websGetVar (wp, "filter_p2p", NULL);
@@ -1172,13 +1171,15 @@ validate_catchall (webs_t wp, char *value, struct variable *v)
 		nvram_safe_get ("filter_id"));
       nvram_set (port_grp, p2p);
     }
+	
+	return;
 }
 
 
 void
 ej_filter_policy_select (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int i, ret = 0;
+  int i;
   D ("ej policy select");
   for (i = 1; i <= 10; i++)
     {
@@ -1207,7 +1208,6 @@ ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
   char *type, *part;
-  int ret = 0;
 
   D ("ej filter policy get");
   if (ejArgs (argc, argv, "%s %s", &type, &part) < 2)
@@ -1326,7 +1326,6 @@ filter_tod_init (int which)
   char filter_tod[] = "filter_todXXX";
   char filter_tod_buf[] = "filter_tod_bufXXX";
   char temp[3][20];
-  int ret;
 
   tod_data_null = 0;
   day_all = week0 = week1 = week2 = week3 = week4 = week5 = week6 = 0;
@@ -1588,7 +1587,6 @@ void
 ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
-  int ret = 0;
   int which;
   char *token = "<&nbsp;>";
   D ("filter-web-get");
@@ -1632,30 +1630,16 @@ ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int i, ret;
 #if LANGUAGE == JAPANESE
-  char w[7][10] = { "“ú", "ŒŽ", "‰Î", "?…", "–Ø", "‹à", "“y" }
-  char week_d[7][10] =
-    { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-    "Saturday"
-  };
-  char week_s[7][10] =
-    { "“ú—j", "ŒŽ—j", "‰Î—j", "?…—j", "–Ø—j", "‹à—j", "“y—j" }
+  char w[7][10] = { "“ú", "ŒŽ", "‰Î", "?…", "–Ø", "‹à", "“y" };
   char am[] = "Œß‘O";
   char pm[] = "ŒßŒã";
   char _24h[] = "24 ŽžŠÔ";
-  char everyday[] = "–ˆ“ú";
 #else
   char w[7][2] = { "S", "M", "T", "W", "T", "F", "S" };
-  char week_d[7][10] =
-    { "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday",
-    "Saturday"
-  };
-  char week_s[7][10] = { "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" };
   char am[] = "AM";
   char pm[] = "PM";
   char _24h[] = "24 Hours.";
-  char everyday[] = "Everyday";
 #endif
   D ("filter summary show");
   for (i = 0; i < 10; i++)
@@ -1664,8 +1648,6 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
       char status[5] = "---";
       char filter[] = "filter_ruleXXX";
       char *data = "";
-      char status_buf[50] = "---";
-      char day_buf[50] = "---";
       char time_buf[50] = "---";
       snprintf (filter, sizeof (filter), "filter_rule%d", i + 1);
       data = nvram_safe_get (filter);
@@ -1711,7 +1693,7 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 	}
       websWrite (wp, " \
         <td align=\"center\" width=150><font face=Arial size=2> %s </font> </td>\n\
-        <td width=70><input type=checkbox name=sum%d value=1 ></td>\n\
+        <td width=70><input type=\"checkbox\" name=sum%d value=1 ></td>\n\
       </tr>\n", time_buf, i + 1);
     }
   D ("okay");
@@ -1722,7 +1704,6 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_filter_init (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char *f_id = websGetVar (wp, "f_id", NULL);
   D ("ej_filter-init");
   if (f_id)			// for first time enter this page and don't press apply.
@@ -1736,7 +1717,6 @@ ej_filter_init (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char *type;
   int which;
   char word[1024], *next, services[8192] = "", svcs_var[32] = "";
@@ -1815,7 +1795,7 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
 		nvram_safe_get ("filter_id"));
       port_data = nvram_safe_get (filter_port);
       if (!strcmp (port_data, ""))
-	return -1;		// no data
+	return;		// no data
       find_each (name, sizeof (name), port_data, "<&nbsp;>", which, "");
       websWrite (wp, "%s", name);
 
@@ -1828,7 +1808,7 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
 		nvram_safe_get ("filter_id"));
       port_data = nvram_safe_get (filter_port);
       if (!strcmp (port_data, ""))
-	return -1;		// no data
+	return;		// no data
       websWrite (wp, "%s", port_data);
 
     }

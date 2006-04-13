@@ -463,14 +463,12 @@ ej_prefix_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name;
   int type;
-  int ret = 0;
 
   if (ejArgs (argc, argv, "%s %d", &name, &type) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-
 
   if (type == 1)
     websWrite (wp, "%d.%d.%d.", get_single_ip (nvram_safe_get (name), 0),
@@ -650,7 +648,6 @@ static void
 ej_nvram_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
-  int ret = 0;
   char *mac;
   int i;
 
@@ -704,7 +701,6 @@ static void
 ej_webs_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *value;
-  int ret = 0;
 
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
@@ -729,7 +725,6 @@ static void
 ej_get_single_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
-  int ret = 0;
   int which;
 
   if (ejArgs (argc, argv, "%s %d", &name, &which) < 1)
@@ -763,7 +758,6 @@ static void
 ej_get_single_mac (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *c;
-  int ret = 0;
   int which;
   int mac;
 
@@ -1120,7 +1114,6 @@ ej_nvram_list (int eid, webs_t wp, int argc, char_t ** argv)
   char *name;
   int which;
   char word[256], *next;
-  int ret = 0;
 
   if (ejArgs (argc, argv, "%s %d", &name, &which) < 2)
     {
@@ -1648,7 +1641,6 @@ validate_hwaddrs (webs_t wp, char *value, struct variable *v)
 void
 ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char http[10];
   char ipaddr[20];
   char port[10];
@@ -1717,7 +1709,6 @@ ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
       sprintf (port, ":%s", nvram_safe_get ("http_wanport"));
     }
 
-
   websWrite (wp, "%s://%s%s/", http, ipaddr, port);
 
   return;
@@ -1726,7 +1717,6 @@ ej_get_http_prefix (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_mtu (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret;
   struct mtu_lists *mtu_list;
   char *type;
   char *proto = GOZILA_GET ("wan_proto");
@@ -3597,7 +3587,6 @@ do_show_forward (char *url, webs_t stream)
 static void
 do_fon_cgi (char *url, webs_t wp)
 {
-  char path[128], *query;
 
   nvram_set ("router_style", "fon");
   nvram_set ("wl_ssid", "FON_HotSpot");
@@ -3784,7 +3773,7 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 static void
 ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *output;
+  char *name, *match;
 
   if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
     {
@@ -4086,20 +4075,19 @@ static void
 ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  int r;
   char s[32];
 
   if (nvram_match ("upnp_enable", "1"))
     {
-      for (i = 0; i < 50; i++)
-	{
-	  websWrite (wp, (i > 0) ? ",'" : "'");
-	  sprintf (s, "forward_port%d", i);
-	  tf_webWriteJS (wp, nvram_safe_get (s));
-	  websWrite (wp, "'");
-	}
-    }
+      for (i = 0; i < 50; i++) {
+      	websWrite (wp, (i > 0) ? ",'" : "'");
+      	sprintf (s, "forward_port%d", i);
+      	tf_webWriteJS (wp, nvram_safe_get (s));
+      	websWrite (wp, "'");
+      }
+     }
+     
   return;
+  
 }
-
 // end changed by steve
