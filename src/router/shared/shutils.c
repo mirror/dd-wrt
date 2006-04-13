@@ -116,10 +116,9 @@ _eval (char *const argv[], char *path, int timeout, int *ppid)
   int flags;
   int sig;
 //  char buf[254] = "";
-  int i;
+  int i=0;
 #ifndef HAVE_SILENCE
   cprintf("executing from %s ",path);
-  i=0;
   while (argv[i]!=NULL)
   {
   cprintf("%s ",argv[i++]);

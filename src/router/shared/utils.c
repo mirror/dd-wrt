@@ -205,13 +205,14 @@ internal_getRouterBrand ()
       return ROUTER_LINKSYS_WRT55AG;
     }
 
-//      [  "$(nvram get boardtype)" = "bcm95365r" \
-//-a "$(nvram get boardnum)" = "45" ] && {
-//  debug "### wl-500g deluxe hacks ###"
-//  nvram set vlan0hwname="et0"
-//  nvram set vlan1hwname="et0"
-//  remap eth0.1 vlan0
-//  remap eth0 vlan1
+/* [  "$(nvram get boardtype)" = "bcm95365r" \
+  -a "$(nvram get boardnum)" = "45" ] && {
+  debug "### wl-500g deluxe hacks ###"
+  nvram set vlan0hwname="et0"
+  nvram set vlan1hwname="et0"
+  remap eth0.1 vlan0
+  remap eth0 vlan1
+ */
   setRouter ("Linksys WRT54G/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
@@ -751,7 +752,6 @@ int
 check_wan_link (int num)
 {
   int wan_link = 0;
-  char wan_if[2][20] = { "wan_iface", "wan_iface_1" };
 
   if (nvram_match ("wan_proto", "pptp")
       || nvram_match ("wan_proto", "l2tp")
@@ -763,23 +763,23 @@ check_wan_link (int num)
       char *name;
 
       if (num == 0)
-	strcpy (filename, "/tmp/ppp/link");
-      if ((fp = fopen (filename, "r")))
-	{
-	  int pid = -1;
-	  fclose (fp);
-	  if (nvram_match ("wan_proto", "heartbeat"))
-	    {
-	      char buf[20];
-	      file_to_buf ("/tmp/ppp/link", buf, sizeof (buf));
-	      pid = atoi (buf);
-	    }
-	  else
-	    pid = get_ppp_pid (filename);
+      	strcpy (filename, "/tmp/ppp/link");
+      	if ((fp = fopen (filename, "r")))
+      	{
+	  		int pid = -1;
+	  		fclose (fp);
+	  		if (nvram_match ("wan_proto", "heartbeat"))
+	    	{
+	      		char buf[20];
+	      		file_to_buf ("/tmp/ppp/link", buf, sizeof (buf));
+	      		pid = atoi (buf);
+	    	}
+	    	else
+	    	    pid = get_ppp_pid (filename);
 
 	  name = find_name_by_proc (pid);
 	  if (!strncmp (name, "pppoecd", 7) ||	// for PPPoE
-	      !strncmp (name, "pppd", 4) ||	// for PPTP
+	      !strncmp (name, "pppd", 4) ||		// for PPTP
 	      !strncmp (name, "bpalogin", 8))	// for HeartBeat
 	    wan_link = 1;	//connect
 	  else
@@ -796,10 +796,6 @@ check_wan_link (int num)
       if (nvram_invmatch ("wan_ipaddr", "0.0.0.0"))
 	wan_link = 1;
     }
-
-  /* Check interface status */
-  //if(!(osl_ifflags(nvram_safe_get(wan_if[num])) & IFF_UP))
-  //      wan_link = 0;
 
   return wan_link;
 }
