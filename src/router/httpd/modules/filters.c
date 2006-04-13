@@ -1630,6 +1630,7 @@ ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 {
+  int i;	
 #if LANGUAGE == JAPANESE
   char w[7][10] = { "“ú", "ŒŽ", "‰Î", "?…", "–Ø", "‹à", "“y" };
   char am[] = "Œß‘O";
