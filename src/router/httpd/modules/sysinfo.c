@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,10 +8,10 @@
 #include <sys/sysinfo.h>
 
 // for test
-int
+void
 show_default_info (webs_t wp)
 {
-  int ret;
+//  int ret=0;
 
   websDone (wp, 200);		// Let header in first packet, and bellow information in second packet.
 
@@ -137,7 +138,6 @@ show_other_info (webs_t wp)
 void
 ej_show_sysinfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret;
   char *type;
 
   if (ejArgs (argc, argv, "%s", &type) < 1)
@@ -158,7 +158,6 @@ ej_show_sysinfo (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_show_miscinfo (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
 
   websDone (wp, 200);		// Let header in first packet, and bellow information in second packet.
 

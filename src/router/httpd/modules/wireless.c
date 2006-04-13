@@ -970,7 +970,7 @@ validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v)
 void
 ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int i, ret = 0;
+  int i;
   char *type;
   int item;
 #if LANGUAGE == JAPANESE
@@ -1305,7 +1305,7 @@ get_hostname_ip (char *type, char *filename)
 void
 ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int i, ret = 0, flag = 0;
+  int i, flag = 0;
   char *type;
   char word[256], *next;
   FILE *fp;
@@ -1539,7 +1539,6 @@ void
 ej_show_wl_wep_setting (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
-  int ret = 0;
 /*
 	char *type;
 
@@ -1738,7 +1737,7 @@ ej_get_wl_active_mac (int eid, webs_t wp, int argc, char_t ** argv)
   char cmd[80], line[80];
   char list[2][20];
   FILE *fp;
-  int ret = 0, count = 0;
+  int count = 0;
 
   snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
   system (cmd);			// get active wireless mac
@@ -1764,7 +1763,6 @@ ej_get_wl_active_mac (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_wl_value (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char *type;
 
   if (ejArgs (argc, argv, "%s", &type) < 1)
@@ -1781,11 +1779,11 @@ ej_get_wl_value (int eid, webs_t wp, int argc, char_t ** argv)
       FILE *fp;
       char line[254];
       if ((fp = popen ("wl afterburner_override", "r")))
-	{
-	  fgets (line, sizeof (line), fp);
-	  websWrite (wp, "%s", chomp (line));
-	  pclose (fp);
-	}
+		{
+		  fgets (line, sizeof (line), fp);
+		  websWrite (wp, "%s", chomp (line));
+		  pclose (fp);
+		}
     }
   return;
 
@@ -1945,7 +1943,6 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
 void
 ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int ret = 0;
   char *type, *security_mode;
 
   if (ejArgs (argc, argv, "%s", &type) < 1)
@@ -2169,7 +2166,6 @@ convert_wl_gmode (char *value)
 void
 validate_wl_net_mode (webs_t wp, char *value, struct variable *v)
 {
-  char *net_mode = nvram_safe_get ("wl_net_mode");
 
   if (!valid_choice (wp, value, v))
     return;

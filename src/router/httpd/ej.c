@@ -338,7 +338,6 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
   int c;
   char *pattern, *asp = NULL, *func = NULL, *end = NULL;
   int len = 0;
-  int trans = 0;
   char *filebuffer;
   int filecount = 0;
 
@@ -354,7 +353,6 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
     }
   else
     {
-      trans = 1;
       LOG ("translate");
       filebuffer = translatePage (buffer);
       if (filebuffer == NULL)

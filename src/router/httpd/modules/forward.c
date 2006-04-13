@@ -537,7 +537,7 @@ validate_forward_spec (webs_t wp, char *value, struct variable *v)
  * name:[on|off]:[tcp|udp|both]:8000:80>100
  */
 
-int
+void
 port_forward_table (webs_t wp, char *type, int which)
 {
   static char word[256];
@@ -641,7 +641,7 @@ port_forward_table (webs_t wp, char *type, int which)
 }
 
 
-int
+void
 port_forward_spec (webs_t wp, char *type, int which)
 {
   static char word[256];

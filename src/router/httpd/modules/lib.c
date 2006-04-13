@@ -168,7 +168,7 @@ ej_get_url (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_show_logo (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  return 0;
+  return;
 }
 
 
