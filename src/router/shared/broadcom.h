@@ -231,8 +231,8 @@ extern int save_services_port (webs_t wp);
 /* for forward */
 extern void ej_show_default_level (int eid, webs_t wp, int argc,
 				  char_t ** argv);
-extern int port_forward_table (webs_t wp, char *type, int which);
-extern int port_forward_spec (webs_t wp, char *type, int which);
+extern void port_forward_table (webs_t wp, char *type, int which);
+extern void port_forward_spec (webs_t wp, char *type, int which);
 extern void ej_show_staticleases (int eid, webs_t wp, int argc,
 				 char_t ** argv);
 
