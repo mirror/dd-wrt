@@ -1322,6 +1322,7 @@ ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv)
 int
 filter_tod_init (int which)
 {
+  int ret;
   char *tod_data, *tod_buf_data;
   char filter_tod[] = "filter_todXXX";
   char filter_tod_buf[] = "filter_tod_bufXXX";
@@ -1402,7 +1403,7 @@ void
 ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *type;
-  int ret = 0, i;
+  int i;
   D ("ej-filter-tod_get");
   if (ejArgs (argc, argv, "%s", &type) < 1)
     {
