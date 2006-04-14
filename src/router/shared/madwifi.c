@@ -46,6 +46,8 @@ i
 #include <fcntl.h>
 
 #define AR5K_PCICFG 0x4010
+
+#define AR5K_EEPROM_PROTECT_OFFSET 0x3F
 #define AR5K_PCICFG_EEAE 0x00000001
 #define AR5K_PCICFG_CLKRUNEN 0x00000004
 #define AR5K_PCICFG_LED_PEND 0x00000020
@@ -250,10 +252,10 @@ set_regdomain (unsigned long int base_addr, int code)
       return -3;
     }
 
-#if 0
+//#if 0
   (void) vt_ar5211_eeprom_write ((unsigned char *) membase,
 				 AR5K_EEPROM_PROTECT_OFFSET, 0);
-#endif /* #if 0 */
+//#endif /* #if 0 */
   int errcode = 0;
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
@@ -793,7 +795,7 @@ configure_single (int count)
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
-	eval ("iwconfig", dev, "channel", "auto");
+//	eval ("iwconfig", dev, "channel", "auto");
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
@@ -830,12 +832,16 @@ configure_single (int count)
       //create device
       if (strlen (mode) > 0)
 	{
+	char newmode[16];
+	strcpy(newmode,var);
+	newmode[strlen(newmode)-1]=0;
 	  if (!strcmp (m, "wet") || !strcmp (m, "sta"))
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
+	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
 	  else
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode", m);
+	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode", m);
 	}
+      sleep(1);
       sprintf (ssid, "%s_ssid", var);
       sprintf (channel, "%s_channel", var);
 
@@ -844,13 +850,16 @@ configure_single (int count)
 	  eval ("iwconfig", var, "channel", default_get (channel, "6"));
 	}
       eval ("iwconfig", var, "essid", default_get (ssid, "default"));
+      cprintf ("set broadcast flag vif\n",var);	//hide ssid
+      sprintf (broadcast, "%s_closed", var);
+      eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
 
       cprintf ("setup encryption");
       setupEncryption (var);
 
       eval ("ifconfig", var, "0.0.0.0", "up");
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
-      eval ("brctl", "addif", "br0", var);
+//      eval ("brctl", "addif", "br0", var);
 
       //add to bridge
 //                  eval ("brctl", "addif", lan_ifname, var);
@@ -899,8 +908,9 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 
   eval ("modprobe", "ath_pci");
 #else
-  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor,
-	"autocreate=none");
+  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);
+  
+//	"autocreate=none");
 #endif
 //  sleep(1);
 //  eval ("modprobe", "-r", "ath_pci");
