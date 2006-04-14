@@ -56,15 +56,18 @@ function init() {
                      <fieldset>
 			<legend>Information</legend>
                         <div class="setting">
-                           <div class="label">Managed By</div><% sputnik_apd_status("scc_server"); %>
+                           <div class="label">Managed By</div><% sputnik_apd_status("scc_server"); %>&nbsp;
                         </div>
                         <div class="setting">
-                           <div class="label">State</div><% sputnik_apd_status("phase"); %>
+                           <div class="label">State</div><% sputnik_apd_status("phase"); %>&nbsp;
                         </div>
                         <div class="setting">
-                           <div class="label">SCC License No.</div><% sputnik_apd_status("lsk_serial"); %>
+                           <div class="label">SCC License No.</div><% sputnik_apd_status("lsk_serial"); %>&nbsp;
                         </div>
             	    </fieldset>
+			<div class="submitFooter">
+			<input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/>
+			</div>
 		</div>
             </div>
             <div id="helpContainer">
