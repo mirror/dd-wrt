@@ -1234,6 +1234,8 @@ add_vifs_single (char *prefix, int device)
     sprintf (n, "%s %s", vifs, v);
   sprintf (v2, "%s_closed", v);
   nvram_set (v2, "0");
+  sprintf (v2, "%s_mode", v);
+  nvram_set (v2, "ap");
   sprintf (v2, "%s_ap_isolate", v);
   nvram_set (v2, "0");
   sprintf (v2, "%s_ssid", v);
@@ -1259,6 +1261,7 @@ int
 remove_vifs_single (char *prefix)
 {
   char *next;
+  
   char var[80];
   char wif[16];
   sprintf (wif, "%s_vifs", prefix);
