@@ -191,7 +191,7 @@ addEvent(window, "unload", function() {
 									</tr>
 								</table>
 							</fieldset><br />
-							<span id="wds">
+							<span id="wds" style="display:none">
 								<fieldset>
 									<legend>WDS</legend>
 									<table class="table center" cellspacing="6" id="wds_table">
