@@ -52,7 +52,7 @@ sbutton.remove="Remove";
 sbutton.deleted="Deleted";
 sbutton.delall="Delete All";
 sbutton.refres="Refresh";
-sbutton.autorefresh="Auto-Refresh On";
+sbutton.autorefresh="Auto-Refresh ON";
 
 
 

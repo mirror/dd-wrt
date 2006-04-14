@@ -229,9 +229,9 @@ function onChange_Prot(F,I) {
    <body onload="setValue()" onunload="top.opener.window.location.href='Filters.asp'">
       <form name="PortServices" method="<% get_http_method(); %>" action="apply.cgi"><input type="hidden" name="submit_button" value="Port_Services" /><input type="hidden" name="change_action" value="gozila_cgi" /><input type="hidden" name="submit_type" value="save_services" /><input type="hidden" name="services_array" /><input type="hidden" name="services_array0" /><input type="hidden" name="services_array1" /><input type="hidden" name="services_array2" /><input type="hidden" name="services_array3" /><input type="hidden" name="services_array4" /><input type="hidden" name="services_array5" /><input type="hidden" name="services_array6" /><input type="hidden" name="services_array7" /><input type="hidden" name="services_length" /><input type="hidden" name="services_length0" /><input type="hidden" name="services_length1" /><input type="hidden" name="services_length2" /><input type="hidden" name="services_length3" /><input type="hidden" name="services_length4" /><input type="hidden" name="services_length5" /><input type="hidden" name="services_length6" /><input type="hidden" name="services_length7" /><div>
             <div class="setting">
-               <div class="label">Service Name</div><input name="Add_Service_Name" size="12" maxlength="18" onblur="valid_name(this,'Service Name');" /></div>
+               <div class="label">Service Name</div><input name="Add_Service_Name" size="12" maxlength="18" onblur="valid_name(this,'Service Name')" /></div>
             <div class="setting">
-               <div class="label">Protocol</div><select name="Add_Service_Protocol" onchange="onChange_Prot(this.form,Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value);">
+               <div class="label">Protocol</div><select name="Add_Service_Protocol" onchange="onChange_Prot(this.form,Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value)">
                   <option value="1">ICMP</option>
                   <option value="6">TCP</option>
                   <option value="17">UDP</option>
@@ -240,16 +240,16 @@ function onChange_Prot(F,I) {
                   <option value="100">P2P</option></select></div>
             <div class="setting">
                <div class="label">Port Range</div>
-	       <input name="Add_Service_Port_S" size="5" maxlength="5" onblur="valid_range(this,0,65535,'Port');" class="num" value="0" /> ~
-	       <input name="Add_Service_Port_E" size="5" maxlength="5" onblur="valid_range(this,0,65535,'Port');" class="num" value="0" />
+	       <input name="Add_Service_Port_S" size="5" maxlength="5" onblur="valid_range(this,0,65535,'Port')" class="num" value="0" /> ~
+	       <input name="Add_Service_Port_E" size="5" maxlength="5" onblur="valid_range(this,0,65535,'Port')" class="num" value="0" />
 	    </div>
             <div class="setting">
-	    <input type="button" value="  Add  " onclick="onClick_Add();" />
-	    <input type="button" value="Modify" onclick="onClick_Modify();" />
-	    <input type="button" value="Delete" onclick="onClick_Delete();" />
+	    <input type="button" value="  Add  " onclick="onClick_Add()" />
+	    <input type="button" value="Modify" onclick="onClick_Modify()" />
+	    <input type="button" value="Delete" onclick="onClick_Delete()" />
 	    </div>
             <div class="setting">
-	    <select name="ServiceTable" size="12" onchange="onChange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E);">
+	    <select name="ServiceTable" size="12" onchange="onChange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E)">
 	    <script type="text/javascript">
         var i=0;
 	for(i=0;i<services_length;i++)
@@ -260,9 +260,9 @@ function onChange_Prot(F,I) {
 	  </select></div>
          </div><br />
 	 <div class="submitFooter">
-	 <input type="button" value="Apply" name="Submit" onclick="onClick_Apply(this.form);" />
-	 <input type="button" value="Cancel" name="cancel" onclick="window.location.reload();" />
-	 <input type="button" value="Close" onclick="self.close();" /></div>
+	 <input type="button" value="Apply" name="Submit" onclick="onClick_Apply(this.form)" />
+	 <input type="button" value="Cancel" name="cancel" onclick="window.location.reload()" />
+	 <input type="button" value="Close" onclick="self.close()" /></div>
       </form>
    </body>
 </html>
