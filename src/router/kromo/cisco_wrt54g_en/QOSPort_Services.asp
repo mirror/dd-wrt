@@ -258,7 +258,7 @@ function onChange_Prot(F,I)
             <div class="setting">
                <div class="label">Service Name</div><input name="Add_Service_Name" size="12" maxlength="18" onBlur="valid_name(this,'Service Name')" /></div>
             <div class="setting">
-               <div class="label">Protocol</div><select name="Add_Service_Protocol" onchange="onChange_Prot(this.form,Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value);">
+               <div class="label">Protocol</div><select name="Add_Service_Protocol" onchange="onChange_Prot(this.form,Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value)">
                   <option value="1">ICMP</option>
                   <option value="6">TCP</option>
                   <option value="17">UDP</option>
@@ -268,9 +268,9 @@ function onChange_Prot(F,I)
             <div class="setting">
                <div class="label">Port Range</div><input name="Add_Service_Port_S" size="5" maxlength="5" onblur="valid_range(this,0,65535,'Port')" class="num" value="0" /> ~<input name="Add_Service_Port_E" size="5" maxlength="5" onblur="valid_range(this,0,65535,'Port')" class="num" value="0" /></div>
             <div class="setting">
-	    <input type="button" value="  Add  " onclick="onClick_Add();" /><input type="button" value="Modify" onclick="onClick_Modify();" /><input type="button" value="Delete" onclick="onClick_Delete();" /></div>
+	    <input type="button" value="  Add  " onclick="onClick_Add()" /><input type="button" value="Modify" onclick="onClick_Modify();" /><input type="button" value="Delete" onclick="onClick_Delete()" /></div>
             <div class="setting">
-	    <select name="ServiceTable" size="12" onchange="onChange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E);">
+	    <select name="ServiceTable" size="12" onchange="onChange_ServiceTable(ServiceTable.options[ServiceTable.selectedIndex].value,Add_Service_Name, Add_Service_Protocol, Add_Service_Port_S, Add_Service_Port_E)">
 	    <script type="text/javascript">
         var i=0;
 	for(i=0;i<services_length;i++)
@@ -279,7 +279,7 @@ function onChange_Prot(F,I)
 			services[i].end + " ]" + "</option>");
     	    </script>
 </select></div>
-         </div><br /><div class="submitFooter"><input type="button" value="Apply" name="Submit" onclick="onClick_Apply(this.form);" /><input type="button" value="Cancel" name="cancel" onclick="window.location.reload();" /><input type="button" value="Close" onclick="self.close()" /></div>
+         </div><br /><div class="submitFooter"><input type="button" value="Apply" name="Submit" onclick="onClick_Apply(this.form)" /><input type="button" value="Cancel" name="cancel" onclick="window.location.reload()" /><input type="button" value="Close" onclick="self.close()" /></div>
       </form>
    </body>
 </html>
