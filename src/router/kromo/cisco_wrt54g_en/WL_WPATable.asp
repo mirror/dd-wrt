@@ -41,9 +41,6 @@ function valid_radius(F) {
 			F.wl_radius_key.focus();
 			return false;
 		}
-		if(!valid_ip(F,'F.wl_radius_ipaddr','Radius Server Address',ZERO_NO|MASK_NO)){
-			return false;
-		}
 	}
 
 	return true;
