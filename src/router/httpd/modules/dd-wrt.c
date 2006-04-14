@@ -768,12 +768,12 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">Security Mode</div>\n");
   websWrite (wp,
-	     "<select name=\"security_mode\" onChange=SelMode(\"security_mode\",this.form.security_mode.selectedIndex,this.form)>\n");
-  websWrite (wp, "<OPTION value=\"disabled\" %s>Disable</OPTION>\n",
+	     "<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form\")>\n");
+  websWrite (wp, "<option value=\"disabled\" %s>Disable</OPTION>\n",
 	     selmatch ("security_mode", "disabled", "selected"));
-  websWrite (wp, "<OPTION value=\"psk\" %s>WPA Pre-Shared Key</OPTION>\n",
+  websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
 	     selmatch ("security_mode", "psk", "selected"));
-  websWrite (wp, "<OPTION value=\"wpa\" %s>WPA RADIUS</OPTION>\n",
+  websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
 	     selmatch ("security_mode", "wpa", "selected"));
   if (!nvram_match ("wl_mode", "wet") && 
        nvram_match ("wl_wds1_enable", "0") && 
@@ -787,14 +787,14 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
        nvram_match ("wl_wds9_enable", "0") && 
        nvram_match ("wl_wds10_enable", "0"))		//botho 10/04/06 : if wireless client bridge mode selected or WDS activated => we don't display WPA2 security modes
   {
-  		websWrite (wp, "<OPTION value=\"psk2\" %s>WPA2 Pre-Shared Key Only</OPTION>\n",
+  		websWrite (wp, "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
   			selmatch ("security_mode", "psk2", "selected"));
-  		websWrite (wp, "<OPTION value=\"wpa2\" %s>WPA2 RADIUS Only</OPTION>\n",
+  		websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
   			selmatch ("security_mode", "wpa2", "selected"));
   }
-  		websWrite (wp, "<OPTION value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</OPTION>\n",
+  		websWrite (wp, "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
   			selmatch ("security_mode", "psk psk2", "selected"));
-  		websWrite (wp, "<OPTION value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</OPTION>\n",
+  		websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
   			selmatch ("security_mode", "wpa wpa2", "selected"));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch ("security_mode", "radius", "selected"));
@@ -861,23 +861,23 @@ show_security_prefix (int eid, webs_t wp, int argc, char_t ** argv,
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">Security Mode</div>\n");
   websWrite (wp,
-	     "<select name=\"%s_security_mode\" onChange=SelMode(\"%s_security_mode\",this.form.%s_security_mode.selectedIndex,this.form)>\n",
+	     "<select name=\"%s_security_mode\" onchange=\"SelMode('%s_security_mode',this.form.%s_security_mode.selectedIndex,this.form)\">\n",
 	     prefix, prefix, prefix);
-  websWrite (wp, "<OPTION value=\"disabled\" %s>Disable</OPTION>\n",
+  websWrite (wp, "<option value=\"disabled\" %s>Disable</option>\n",
 	     selmatch (var, "disabled", "selected"));
-  websWrite (wp, "<OPTION value=\"psk\" %s>WPA Pre-Shared Key</OPTION>\n",
+  websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
 	     selmatch (var, "psk", "selected"));
-  websWrite (wp, "<OPTION value=\"wpa\" %s>WPA RADIUS</OPTION>\n",
+  websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
 	     selmatch (var, "wpa", "selected"));
   websWrite (wp,
-	     "<OPTION value=\"psk2\" %s>WPA2 Pre-Shared Key Only</OPTION>\n",
+	     "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
 	     selmatch (var, "psk2", "selected"));
-  websWrite (wp, "<OPTION value=\"wpa2\" %s>WPA2 RADIUS Only</OPTION>\n",
+  websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
 	     selmatch (var, "wpa2", "selected"));
   websWrite (wp,
-	     "<OPTION value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</OPTION>\n",
+	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
 	     selmatch (var, "psk psk2", "selected"));
-  websWrite (wp, "<OPTION value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</OPTION>\n",
+  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
 	     selmatch (var, "wpa wpa2", "selected"));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch (var, "radius", "selected"));
@@ -1582,7 +1582,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     {
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
-		 "<div class=\"label\">Wireless Channel</div><select name=\"%s\" onFocus=\"check_action(this,0)\"><script language=\"javascript\">\n",
+		 "<div class=\"label\">Wireless Channel</div><select name=\"%s\" onFocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n",
 		 wl_channel);
 #ifdef HAVE_MADWIFI
       struct wifi_channels *chan;
