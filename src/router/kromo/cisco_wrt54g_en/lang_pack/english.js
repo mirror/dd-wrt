@@ -37,6 +37,14 @@ share.descr="Description";
 share.from="From";
 share.to="To";
 share.about="About";
+share.everyday="Everyday";
+share.sun="Sunday";
+share.mon="Monday";
+share.tue="Tuesday";
+share.wed="Wednesday";
+share.thu="Thursday";
+share.fri="Friday";
+share.sat="Saturday";
 
 
 var sbutton = new Object();
@@ -144,6 +152,15 @@ bmenu.sipath="SIPatH";
 
 
 bmenu.admin="Administration";
+bmenu.adminManagement="Management";
+bmenu.adminHotspot="Hotspot";
+bmenu.adminServices="Services";
+bmenu.adminAlive="Keep Alive";
+bmenu.adminLog="Log";
+bmenu.adminDiag="Diagnostics";
+bmenu.adminFactory="Factory Defaults";
+bmenu.adminUpgrade="Firmware Upgrade";
+bmenu.adminBackup="Backup";
 
 
 bmenu.statu="Status";
@@ -305,5 +322,23 @@ hupnp.right2="Click the trash can to delete an individual entry.";
 hupnp.right3="UPnP Service:";
 hupnp.right4="Allows applications to automatically setup port forwardings.";
 
+// **************************************************************** Alive.asp **********************************************************************//
 
+var alive = new Object();
+alive.titl=" - Keep Alive";
+alive.h2="Keep Alive";
+alive.legend="Schedule Reboot";
+alive.sevr1="Schedule Reboot";
+alive.time="Time (in seconds)";
+alive.hour="At a set Time";
+alive.legend2="WDS/Connection Watchdog";
+alive.sevr2="Enable Watchdog";
+alive.inter="Interval (in seconds)";
+alive.IP="IP Addresses";
 
+//help container
+var halive = new Object();
+halive.right1="At a set Time:";
+halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
+halive.right3="IP Addresses:";
+halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
