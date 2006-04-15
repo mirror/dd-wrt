@@ -720,7 +720,7 @@ setupEncryption (char *prefix)
   else
     {
       eval ("iwconfig", prefix, "key", "off");
-      eval ("iwpriv", prefix, "authmode", "0");
+//      eval ("iwpriv", prefix, "authmode", "0");
     }
 
 
@@ -766,6 +766,30 @@ configure_single (int count)
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
   else
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", m);
+  char *vifs = nvram_safe_get (wifivifs);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      //create device
+      sprintf (mode, "%s_mode", var);
+      m = default_get (mode, "ap");
+      //create device
+      if (strlen (mode) > 0)
+	{
+	char newmode[16];
+	strcpy(newmode,var);
+	newmode[strlen(newmode)-1]=0;
+	  if (!strcmp (m, "wet") || !strcmp (m, "sta"))
+	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
+		  "sta", "nosbeacon");
+	  else
+	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode", m);
+	}
+      sleep(1);
+    }
+
+
+
   //confige net mode
   char *netmode = default_get (net, "mixed");
 
@@ -795,7 +819,9 @@ configure_single (int count)
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
+      {
 //	eval ("iwconfig", dev, "channel", "auto");
+      }
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
@@ -822,25 +848,10 @@ configure_single (int count)
 
   eval ("brctl", "addif", "br0", dev);
 
-  char *vifs = nvram_safe_get (wifivifs);
+  vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      //create device
-      sprintf (mode, "%s_mode", var);
-      m = default_get (mode, "ap");
-      //create device
-      if (strlen (mode) > 0)
-	{
-	char newmode[16];
-	strcpy(newmode,var);
-	newmode[strlen(newmode)-1]=0;
-	  if (!strcmp (m, "wet") || !strcmp (m, "sta"))
-	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
-		  "sta", "nosbeacon");
-	  else
-	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode", m);
-	}
       sleep(1);
       sprintf (ssid, "%s_ssid", var);
       sprintf (channel, "%s_channel", var);
@@ -859,7 +870,7 @@ configure_single (int count)
 
       eval ("ifconfig", var, "0.0.0.0", "up");
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
-//      eval ("brctl", "addif", "br0", var);
+      eval ("brctl", "addif", "br0", var);
 
       //add to bridge
 //                  eval ("brctl", "addif", lan_ifname, var);
@@ -908,7 +919,11 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 
   eval ("modprobe", "ath_pci");
 #else
-  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);
+  eval ("insmod","ath_hal");
+  eval ("insmod","ath_rate_atheros");
+  eval ("insmod","ath_pci",countrycode,xchanmode,outdoor);
+  
+//  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
   
 //	"autocreate=none");
 #endif
