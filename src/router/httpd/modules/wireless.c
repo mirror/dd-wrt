@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																/* channel info structure *///from 11.9
+																																																			    /* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -1779,11 +1779,11 @@ ej_get_wl_value (int eid, webs_t wp, int argc, char_t ** argv)
       FILE *fp;
       char line[254];
       if ((fp = popen ("wl afterburner_override", "r")))
-		{
-		  fgets (line, sizeof (line), fp);
-		  websWrite (wp, "%s", chomp (line));
-		  pclose (fp);
-		}
+	{
+	  fgets (line, sizeof (line), fp);
+	  websWrite (wp, "%s", chomp (line));
+	  pclose (fp);
+	}
     }
   return;
 
