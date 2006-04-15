@@ -65,7 +65,7 @@
 #define TXPWR_MAX 251
 #define TXPWR_DEFAULT 28
 
-static void start_restore_defaults (void);
+void start_restore_defaults (void);
 int start_sysinit (void);
 static void rc_signal (int sig);
 static void overclock (void);
@@ -377,7 +377,7 @@ ses_restore_defaults (void)
     }
 }
 
-static void
+void
 start_restore_defaults (void)
 {
 #ifdef HAVE_RB500
