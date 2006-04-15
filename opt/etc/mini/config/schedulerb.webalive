@@ -1,17 +1,17 @@
 <fieldset>
-	<legend>Schedule Reboot</legend>
+	<legend><script type="text/javascript">Capture(alive.legend)</script></legend>
 	<div class="setting">
-		<div class="label">Schedule Reboot</div>
-		<input type="radio" value="1" name="schedule_enable" <% nvram_match("schedule_enable","1","checked"); %> onclick="alive_enable_disable(<% nvram_get("schedule_hour_time"); %>)" />Enable
-		<input type="radio" value="0" name="schedule_enable" <% nvram_match("schedule_enable","0","checked"); %> onclick="alive_enable_disable(this.value)" />Disable
+		<div class="label"><script type="text/javascript">Capture(alive.sevr1)</script></div>
+		<input type="radio" value="1" name="schedule_enable" <% nvram_match("schedule_enable","1","checked"); %> onclick="alive_enable_disable(<% nvram_get("schedule_hour_time"); %>)" /><script type="text/javascript">Capture(share.enabled)</script>
+		<input type="radio" value="0" name="schedule_enable" <% nvram_match("schedule_enable","0","checked"); %> onclick="alive_enable_disable(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
-		<div class="label">Time (in seconds)</div>
+		<div class="label"><script type="text/javascript">Capture(alive.time)</script></div>
 		<input type="radio" value="1" name="schedule_hour_time" <% nvram_match("schedule_hour_time","1","checked"); %> onclick="alive_enable_disable(this.value)" />
 		<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvram_get("schedule_time"); %>" />
 	</div>
 	<div class="setting">
-		<div class="label">At a set Time</div>
+		<div class="label"><script type="text/javascript">Capture(alive.hour)</script></div>
 		<input type="radio" value="2" name="schedule_hour_time" <% nvram_match("schedule_hour_time","2","checked"); %> onclick="alive_enable_disable(this.value)" />
 		<select name="schedule_hours">
 			<option value="00" <% nvram_selmatch("schedule_hours","00","selected"); %>>00</option>
@@ -100,14 +100,14 @@
 			<option value="58" <% nvram_selmatch("schedule_minutes","58","selected"); %>>58</option>
 			<option value="59" <% nvram_selmatch("schedule_minutes","59","selected"); %>>59</option>
 		</select>&nbsp;<select name="schedule_weekdays">
-			<option value="*" <% nvram_selmatch("schedule_weekdays","*","selected"); %>>Everyday</option>
-			<option value="00" <% nvram_selmatch("schedule_weekdays","00","selected"); %>>Sunday</option>
-			<option value="01" <% nvram_selmatch("schedule_weekdays","01","selected"); %>>Monday</option>
-			<option value="02" <% nvram_selmatch("schedule_weekdays","02","selected"); %>>Tuesday</option>
-			<option value="03" <% nvram_selmatch("schedule_weekdays","03","selected"); %>>Wednesday</option>
-			<option value="04" <% nvram_selmatch("schedule_weekdays","04","selected"); %>>Thursday</option>
-			<option value="05" <% nvram_selmatch("schedule_weekdays","05","selected"); %>>Friday</option>
-			<option value="06" <% nvram_selmatch("schedule_weekdays","06","selected"); %>>Saturday</option>
+			<option value="*" <% nvram_selmatch("schedule_weekdays","*","selected"); %>><script type="text/javascript">Capture(share.everyday)</script></option>
+			<option value="00" <% nvram_selmatch("schedule_weekdays","00","selected"); %>><script type="text/javascript">Capture(share.sun)</script></option>
+			<option value="01" <% nvram_selmatch("schedule_weekdays","01","selected"); %>><script type="text/javascript">Capture(share.mon)</script></option>
+			<option value="02" <% nvram_selmatch("schedule_weekdays","02","selected"); %>><script type="text/javascript">Capture(share.tue)</script></option>
+			<option value="03" <% nvram_selmatch("schedule_weekdays","03","selected"); %>><script type="text/javascript">Capture(share.wed)</script></option>
+			<option value="04" <% nvram_selmatch("schedule_weekdays","04","selected"); %>><script type="text/javascript">Capture(share.thu)</script></option>
+			<option value="05" <% nvram_selmatch("schedule_weekdays","05","selected"); %>><script type="text/javascript">Capture(share.fri)</script></option>
+			<option value="06" <% nvram_selmatch("schedule_weekdays","06","selected"); %>><script type="text/javascript">Capture(share.sat)</script></option>
 		</select>
 	</div>
 </fieldset><br/>
