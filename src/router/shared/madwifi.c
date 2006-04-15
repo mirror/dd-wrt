@@ -407,10 +407,13 @@ deconfigure_single (int count)
 void
 deconfigure_wifi (void)
 {
-  eval("killall","hostapd");
-  sleep(2);
-  eval("killall","-9","hostapd");
- 
+  eval ("killall", "hostapd");
+  eval ("killall", "wpa_supplicant");
+  sleep (2);
+  eval ("killall", "-9", "hostapd");
+  eval ("killall", "-9", "wpa_supplicant");
+
+
   int c = getdevicecount ();
   int i;
   for (i = 0; i < c; i++)
@@ -684,7 +687,7 @@ default_get (char *var, char *def)
   return nvram_safe_get (var);
 }
 
-char *
+int
 default_match (char *var, char *match, char *def)
 {
   char *v = nvram_get (var);
@@ -696,11 +699,99 @@ default_match (char *var, char *match, char *def)
   return nvram_match (var, match);
 }
 
+
+
+
 /*
 MADWIFI Encryption Setup
 */
 void
-setupEncryption (char *prefix)
+setupSupplicant (char *prefix)
+{
+  char akm[16];
+  sprintf (akm, "%s_akm", prefix);
+  if (nvram_match (akm, "wep"))
+    {
+      char key[16];
+      int cnt = 1;
+      int i;
+      char bul[8];
+      for (i = 1; i < 5; i++)
+	{
+	  sprintf (key, "%s_key%d", prefix, i);
+	  char *athkey = nvram_safe_get (key);
+	  if (athkey != NULL && strlen (athkey) > 0)
+	    {
+	      sprintf (bul, "[%d]", cnt++);
+	      eval ("iwconfig", prefix, "key", bul, athkey);	// setup wep encryption key
+	    }
+	}
+      sprintf (key, "%s_key", prefix);
+      sprintf (bul, "[%s]", nvram_safe_get (key));
+      eval ("iwconfig", prefix, "key", bul);
+      eval ("iwpriv", prefix, "authmode", "2");
+    }
+  else
+    if (nvram_match (akm, "psk") ||
+	nvram_match (akm, "psk2") || nvram_match (akm, "psk psk2"))
+    {
+      char fstr[32];
+      char psk[16];
+      sprintf (fstr, "/tmp/%s_wpa_supplicant.conf", prefix);
+      FILE *fp = fopen (fstr, "wb");
+      fprintf (fp, "ap_scan=1\n");
+      fprintf (fp, "fast_reauth=1\n");
+      fprintf (fp, "eapol_version=1\n");
+      fprintf (fp, "ctrl_interface_group=0\n");
+      fprintf (fp, "ctrl_interface=/var/run/wpa_supplicant\n");
+
+      fprintf (fp, "network={\n");
+      sprintf (psk, "%s_ssid", prefix);
+      fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
+      fprintf (fp, "\tmode=0\n");
+      fprintf (fp, "\tscan_ssid=1\n");
+      fprintf (fp, "\tkey_mgmt=WPA-PSK\n");
+
+      sprintf (psk, "%s_crypto", prefix);
+      if (nvram_match (psk, "aes"))
+	{
+	  fprintf (fp, "\tpairwise=CCMP\n");
+	  fprintf (fp, "\tgroup=CCMP\n");
+	}
+      if (nvram_match (psk, "tkip"))
+	{
+	  fprintf (fp, "\tpairwise=TKIP\n");
+	  fprintf (fp, "\tgroup=TKIP\n");
+	}
+      if (nvram_match (psk, "tkip+aes"))
+	{
+	  fprintf (fp, "\tpairwise=CCMP TKIP\n");
+	  fprintf (fp, "\tgroup=CCMP TKIP\n");
+	}
+      if (nvram_match (akm, "psk"))
+	fprintf (fp, "\tproto=WPA\n");
+      if (nvram_match (akm, "psk2"))
+	fprintf (fp, "\tproto=WPA2\n");
+      if (nvram_match (akm, "psk psk2"))
+	fprintf (fp, "\tproto=WPA WPA2\n");
+
+      sprintf (psk, "%s_wpa_psk", prefix);
+      fprintf (fp, "\tpsk=\"%s\"\n", nvram_safe_get (psk));
+      fprintf (fp, "}\n");
+      fclose (fp);
+      sprintf (psk, "-i%s", prefix);
+      eval ("wpa_supplicant", "-B", "-Dmadwifi", psk, "-c", fstr);
+    }
+  else
+    {
+      eval ("iwconfig", prefix, "key", "off");
+//      eval ("iwpriv", prefix, "authmode", "0");
+    }
+
+
+}
+void
+setupHostAP (char *prefix)
 {
   char akm[16];
   sprintf (akm, "%s_akm", prefix);
@@ -734,7 +825,7 @@ setupEncryption (char *prefix)
 	nvram_match (akm, "wpa2") || nvram_match (akm, "wpa wpa2"))
     {
       char fstr[32];
-      sprintf(fstr,"/tmp/%s_hostap.conf",prefix);
+      sprintf (fstr, "/tmp/%s_hostap.conf", prefix);
       FILE *fp = fopen (fstr, "wb");
       fprintf (fp, "interface=%s\n", prefix);
       fprintf (fp, "bridge=%s\n", nvram_safe_get ("lan_ifname"));
@@ -787,8 +878,8 @@ setupEncryption (char *prefix)
       sprintf (psk, "%s_wpa_gtk_rekey", prefix);
       fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
 //      fprintf (fp, "jumpstart_p1=1\n");
-      fclose(fp);
-      eval("hostapd","-B",fstr);
+      fclose (fp);
+      eval ("hostapd", "-B", fstr);
     }
   else
     {
@@ -906,7 +997,7 @@ configure_single (int count)
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
 
   cprintf ("adjust power\n");
-  sprintf (var, "%dmW", default_get (power, "28"));
+  sprintf (var, "%smW", default_get (power, "28"));
   eval ("iwconfig", dev, "txpower", var);
 
   cprintf ("adjust sensitivity\n");
@@ -916,7 +1007,11 @@ configure_single (int count)
   memset (var, 0, 80);
 
   cprintf ("setup encryption");
-  setupEncryption (dev);
+  if (strcmp (m, "sta"))
+    setupHostAP (dev);
+  else
+    setupSupplicant (dev);
+
 //@todo ifup
   eval ("ifconfig", dev, "0.0.0.0", "up");
 
@@ -929,6 +1024,8 @@ configure_single (int count)
       sleep (1);
       sprintf (ssid, "%s_ssid", var);
       sprintf (channel, "%s_channel", var);
+      sprintf (mode, "%s_mode", var);
+      m = default_get (mode, "ap");
 
       if (strcmp (m, "sta"))
 	{
@@ -940,7 +1037,10 @@ configure_single (int count)
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
 
       cprintf ("setup encryption");
-      setupEncryption (var);
+      if (strcmp (m, "sta"))
+	setupHostAP (dev);
+      else
+	setupSupplicant (dev);
 
       eval ("ifconfig", var, "0.0.0.0", "up");
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
