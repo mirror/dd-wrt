@@ -57,7 +57,7 @@ struct nvram_tuple router_defaults[] = {
 
   /* Miscellaneous parameters */
   {"timer_interval", "3600", 0},	/* Timer interval in seconds */
-  {"time_zone", "+01 1 3", 0 },        /* Time zone (GNU TZ format) */
+  {"time_zone", "+01 1 3", 0},	/* Time zone (GNU TZ format) */
   {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
 
 #ifdef HAVE_SKYTRON
@@ -69,14 +69,14 @@ struct nvram_tuple router_defaults[] = {
 
 // changed by Eko
 // #if COUNTRY == JAPAN
-//  {"time_zone", "+09 1 0", 0},	/* Time zone (GNU TZ format) Japan */
-//  {"daylight_time", "0", 0},	/* Automatically adjust clock for daylight */
+//  {"time_zone", "+09 1 0", 0},        /* Time zone (GNU TZ format) Japan */
+//  {"daylight_time", "0", 0},  /* Automatically adjust clock for daylight */
 // #else
-//  {"time_zone", "-08 1 1", 0},	/* Time zone (GNU TZ format) USA */
-//  {"daylight_time", "1", 0},	/* Automatically adjust clock for daylight */
+//  {"time_zone", "-08 1 1", 0},        /* Time zone (GNU TZ format) USA */
+//  {"daylight_time", "1", 0},  /* Automatically adjust clock for daylight */
 
 // added 26.03.
-  {"refresh_time", "3", 0},		/* GUI Auto-Refresh interval */
+  {"refresh_time", "3", 0},	/* GUI Auto-Refresh interval */
 
 #endif
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
@@ -531,7 +531,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef HAVE_SAGAR
   {"wl_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
 #elif HAVE_GGEW
-  {"wl_gmode", 0, 0},	/* 54g mode */
+  {"wl_gmode", 0, 0},		/* 54g mode */
 #elif HAVE_NEWMEDIA
   {"wl_gmode", "-1", 0},	/* 54g mode */
 #else
@@ -567,7 +567,7 @@ struct nvram_tuple router_defaults[] = {
   {"wl_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"wl_radius_key", "", 0},	/* RADIUS shared secret */
   {"wl_radius_port", "1812", 0},	/* RADIUS server UDP port */
-  {"radius_override","1",0}, //overrides radius if server is unavailable
+  {"radius_override", "1", 0},	//overrides radius if server is unavailable
 #ifdef HAVE_SKYTEL
   {"wl_afterburner", "auto", 0},	/* Afterburner/Speedbooster */
 #else
@@ -1108,7 +1108,7 @@ struct nvram_tuple router_defaults[] = {
   {"rflow_if", "br0", 0},
   {"pppoe_ver", "0", 0},
 #ifdef HAVE_PPPOERELAY
-  {"pppoerelay_enable","0",0},
+  {"pppoerelay_enable", "0", 0},
 #endif
   {"schedule_enable", "0", 0},
   {"schedule_time", "3600", 0},
@@ -1254,24 +1254,24 @@ struct nvram_tuple router_defaults[] = {
 
 #endif
 #ifdef HAVE_SPUTNIK_APD
- {"sputnik_mjid_type","2",0},
- {"sputnik_mjid","",0},
- {"apd_enable","0",0},
+  {"sputnik_mjid_type", "2", 0},
+  {"sputnik_mjid", "", 0},
+  {"apd_enable", "0", 0},
 #endif
 #ifdef HAVE_CHILLILOCAL
   {"fon_usernames", "0", 0},
   {"fon_userlist", "", 0},
 #endif
- {"fon_enable","0",0},
- {"pptpd_client_enable","",0},
- {"pptpd_client_srvip","",0},
- {"pptpd_client_srvsub","",0},
- {"pptpd_client_srvsubmsk","",0},
- {"pptpd_client_srvuser","",0},
- {"pptpd_client_srvpass","",0},
- {"pptpd_client_ipparam","",0},
- {"pptpd_client_mtu" "1450",0},
- {"pptpd_client_mru","1450",0},
+  {"fon_enable", "0", 0},
+  {"pptpd_client_enable", "", 0},
+  {"pptpd_client_srvip", "", 0},
+  {"pptpd_client_srvsub", "", 0},
+  {"pptpd_client_srvsubmsk", "", 0},
+  {"pptpd_client_srvuser", "", 0},
+  {"pptpd_client_srvpass", "", 0},
+  {"pptpd_client_ipparam", "", 0},
+  {"pptpd_client_mtu" "1450", 0},
+  {"pptpd_client_mru", "1450", 0},
   {0, 0, 0}
 };
 

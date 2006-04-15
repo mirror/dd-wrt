@@ -89,19 +89,18 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WBR-G54 / WLA-G54");
       return ROUTER_BUFFALO_WBR54G;
     }
-    
-  if (nvram_match ("boardnum", "100") &&		//added by Eko - experimental
+
+  if (nvram_match ("boardnum", "100") &&	//added by Eko - experimental
       nvram_match ("boardtype", "bcm94710dev"))	//detect WLA-G54C 
     {
       cprintf ("router is buffalo\n");
-      setRouter ("Buffalo WLA-G54C");			//set nice name
-      return ROUTER_BUFFALO_WBR54G;				//should work as WBR54G
+      setRouter ("Buffalo WLA-G54C");	//set nice name
+      return ROUTER_BUFFALO_WBR54G;	//should work as WBR54G
     }
-      
+
   if (nvram_match ("product_name", "Product_name") &&
       nvram_match ("boardrev", "0x10") &&
-      nvram_match ("boardtype", "0x0101") && 
-      nvram_match ("boardnum", "00"))
+      nvram_match ("boardtype", "0x0101") && nvram_match ("boardnum", "00"))
     {
       cprintf ("router is buffalo WLA2");
       setRouter ("Buffalo WLA2-G54L");
@@ -118,8 +117,7 @@ internal_getRouterBrand ()
     }
 
   if (nvram_match ("boardnum", "00") &&
-      nvram_match ("boardtype", "0x0101") && 
-      nvram_match ("boardrev", "0x10"))
+      nvram_match ("boardtype", "0x0101") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is buffalo wbr2\n");
       setRouter ("Buffalo WBR2-G54S");
@@ -182,8 +180,8 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
-    setRouter ("Linksys WRT54G 1.x");
-    return ROUTER_WRT54G1X;
+      setRouter ("Linksys WRT54G 1.x");
+      return ROUTER_WRT54G1X;
     }
   if (nvram_invmatch ("CFEver", ""))
     {
@@ -763,23 +761,23 @@ check_wan_link (int num)
       char *name;
 
       if (num == 0)
-      	strcpy (filename, "/tmp/ppp/link");
-      	if ((fp = fopen (filename, "r")))
-      	{
-	  		int pid = -1;
-	  		fclose (fp);
-	  		if (nvram_match ("wan_proto", "heartbeat"))
-	    	{
-	      		char buf[20];
-	      		file_to_buf ("/tmp/ppp/link", buf, sizeof (buf));
-	      		pid = atoi (buf);
-	    	}
-	    	else
-	    	    pid = get_ppp_pid (filename);
+	strcpy (filename, "/tmp/ppp/link");
+      if ((fp = fopen (filename, "r")))
+	{
+	  int pid = -1;
+	  fclose (fp);
+	  if (nvram_match ("wan_proto", "heartbeat"))
+	    {
+	      char buf[20];
+	      file_to_buf ("/tmp/ppp/link", buf, sizeof (buf));
+	      pid = atoi (buf);
+	    }
+	  else
+	    pid = get_ppp_pid (filename);
 
 	  name = find_name_by_proc (pid);
 	  if (!strncmp (name, "pppoecd", 7) ||	// for PPPoE
-	      !strncmp (name, "pppd", 4) ||		// for PPTP
+	      !strncmp (name, "pppd", 4) ||	// for PPTP
 	      !strncmp (name, "bpalogin", 8))	// for HeartBeat
 	    wan_link = 1;	//connect
 	  else
@@ -1488,7 +1486,7 @@ check_vlan_support (void)
 
 //  if ((nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
 //  && nvram_invmatch ("boardnum", "2"))
-  if (getRouterBrand() == ROUTER_LINKSYS_WRT55AG)
+  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG)
     return 0;
 
   if (nvram_match ("boardtype", "bcm94710dev")
@@ -1553,8 +1551,8 @@ wds_dev_config (int dev, int up)
   if ((wds = nvram_safe_get (wds_enable_var)) == NULL ||
       strcmp (wds, "0") == 0)
     return -1;
- 
-  snprintf (wds_dev, 31, "wds0.491%d", 50+dev+1);
+
+  snprintf (wds_dev, 31, "wds0.491%d", 50 + dev + 1);
 
   snprintf (ifr.ifr_name, IFNAMSIZ, wds_dev);
 #ifdef WDS_DEBUG

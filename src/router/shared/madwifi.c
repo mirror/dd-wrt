@@ -459,57 +459,62 @@ getsocket (void)
 
 
 static int
-do80211priv(struct iwreq *iwr, const char *ifname, int op, void *data, size_t len)
+do80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
+	     size_t len)
 {
 #define	N(a)	(sizeof(a)/sizeof(a[0]))
 
-	memset(iwr, 0, sizeof(iwr));
-	strncpy(iwr->ifr_name, ifname, IFNAMSIZ);
-	if (len < IFNAMSIZ) {
-		/*
-		 * Argument data fits inline; put it there.
-		 */
-		memcpy(iwr->u.name, data, len);
-	} else {
-		/*
-		 * Argument data too big for inline transfer; setup a
-		 * parameter block instead; the kernel will transfer
-		 * the data for the driver.
-		 */
-		iwr->u.data.pointer = data;
-		iwr->u.data.length = len;
-	}
+  memset (iwr, 0, sizeof (iwr));
+  strncpy (iwr->ifr_name, ifname, IFNAMSIZ);
+  if (len < IFNAMSIZ)
+    {
+      /*
+       * Argument data fits inline; put it there.
+       */
+      memcpy (iwr->u.name, data, len);
+    }
+  else
+    {
+      /*
+       * Argument data too big for inline transfer; setup a
+       * parameter block instead; the kernel will transfer
+       * the data for the driver.
+       */
+      iwr->u.data.pointer = data;
+      iwr->u.data.length = len;
+    }
 
-	if (ioctl(getsocket(), op, iwr) < 0) {
-		static const char *opnames[] = {
-			"ioctl[IEEE80211_IOCTL_SETPARAM]",
-			"ioctl[IEEE80211_IOCTL_GETPARAM]",
-			"ioctl[IEEE80211_IOCTL_SETKEY]",
-			"ioctl[SIOCIWFIRSTPRIV+3]",
-			"ioctl[IEEE80211_IOCTL_DELKEY]",
-			"ioctl[SIOCIWFIRSTPRIV+5]",
-			"ioctl[IEEE80211_IOCTL_SETMLME]",
-			"ioctl[SIOCIWFIRSTPRIV+7]",
-			"ioctl[IEEE80211_IOCTL_SETOPTIE]",
-			"ioctl[IEEE80211_IOCTL_GETOPTIE]",
-			"ioctl[IEEE80211_IOCTL_ADDMAC]",
-			"ioctl[SIOCIWFIRSTPRIV+11]",
-			"ioctl[IEEE80211_IOCTL_DELMAC]",
-			"ioctl[SIOCIWFIRSTPRIV+13]",
-			"ioctl[IEEE80211_IOCTL_CHANLIST]",
-			"ioctl[SIOCIWFIRSTPRIV+15]",
-			"ioctl[IEEE80211_IOCTL_GETRSN]",
-			"ioctl[SIOCIWFIRSTPRIV+17]",
-			"ioctl[IEEE80211_IOCTL_GETKEY]",
-		};
-		op -= SIOCIWFIRSTPRIV;
-		if (0 <= op && op < N(opnames))
-			perror(opnames[op]);
-		else
-			perror("ioctl[unknown???]");
-		return -1;
-	}
-	return 0;
+  if (ioctl (getsocket (), op, iwr) < 0)
+    {
+      static const char *opnames[] = {
+	"ioctl[IEEE80211_IOCTL_SETPARAM]",
+	"ioctl[IEEE80211_IOCTL_GETPARAM]",
+	"ioctl[IEEE80211_IOCTL_SETKEY]",
+	"ioctl[SIOCIWFIRSTPRIV+3]",
+	"ioctl[IEEE80211_IOCTL_DELKEY]",
+	"ioctl[SIOCIWFIRSTPRIV+5]",
+	"ioctl[IEEE80211_IOCTL_SETMLME]",
+	"ioctl[SIOCIWFIRSTPRIV+7]",
+	"ioctl[IEEE80211_IOCTL_SETOPTIE]",
+	"ioctl[IEEE80211_IOCTL_GETOPTIE]",
+	"ioctl[IEEE80211_IOCTL_ADDMAC]",
+	"ioctl[SIOCIWFIRSTPRIV+11]",
+	"ioctl[IEEE80211_IOCTL_DELMAC]",
+	"ioctl[SIOCIWFIRSTPRIV+13]",
+	"ioctl[IEEE80211_IOCTL_CHANLIST]",
+	"ioctl[SIOCIWFIRSTPRIV+15]",
+	"ioctl[IEEE80211_IOCTL_GETRSN]",
+	"ioctl[SIOCIWFIRSTPRIV+17]",
+	"ioctl[IEEE80211_IOCTL_GETKEY]",
+      };
+      op -= SIOCIWFIRSTPRIV;
+      if (0 <= op && op < N (opnames))
+	perror (opnames[op]);
+      else
+	perror ("ioctl[unknown???]");
+      return -1;
+    }
+  return 0;
 #undef N
 }
 
@@ -718,6 +723,72 @@ setupEncryption (char *prefix)
       eval ("iwpriv", prefix, "authmode", "2");
     }
   else
+    if (nvram_match (akm, "psk") ||
+	nvram_match (akm, "psk2") ||
+	nvram_match (akm, "psk psk2") ||
+	nvram_match (akm, "wpa") ||
+	nvram_match (akm, "wpa2") || nvram_match (akm, "wpa wpa2"))
+    {
+      FILE *fp = fopen ("/tmp/hostap.conf", "wb");
+      fprintf (fp, "interface=%s\n", prefix);
+      fprintf (fp, "bridge=%s\n", nvram_safe_get ("lan_ifname"));
+      fprintf (fp, "driver=madwifi\n");
+      fprintf (fp, "logger_syslog=-1\n");
+      fprintf (fp, "logger_syslog_level=2\n");
+      fprintf (fp, "logger_stdout=-1\n");
+      fprintf (fp, "logger_stdout_level=2\n");
+      fprintf (fp, "debug=0\n");
+      fprintf (fp, "dump_file=/tmp/hostapd.dump\n");
+      fprintf (fp, "eapol_key_index_workaround=0\n");
+      if (nvram_match (akm, "psk") || nvram_match (akm, "wpa"))
+	fprintf (fp, "wpa=1\n");
+      if (nvram_match (akm, "psk2") || nvram_match (akm, "wpa2"))
+	fprintf (fp, "wpa=2\n");
+      if (nvram_match (akm, "psk psk2") || nvram_match (akm, "wpa wpa2"))
+	fprintf (fp, "wpa=3\n");
+
+      char psk[16];
+      sprintf (psk, "%s_wpa_psk", prefix);
+      fprintf (fp, "wpa_passphrase=%s\n", nvram_safe_get (psk));
+
+      if (nvram_match (akm, "psk") ||
+	  nvram_match (akm, "psk2") || nvram_match (akm, "psk psk2"))
+	{
+	  sprintf (psk, "%s_wpa_psk", prefix);
+	  fprintf (fp, "wpa_passphrase=%s\n", nvram_safe_get (psk));
+	  fprintf (fp, "wpa_key_mgmt=WPA-PSK\n");
+	}
+      else
+	{
+//#auth_server_addr=127.0.0.1
+//#auth_server_port=1812
+//#auth_server_shared_secret=secret
+	  fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
+	  sprintf (psk, "%s_radius_ipaddr", prefix);
+	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
+
+	  sprintf (psk, "%s_radius_port", prefix);
+	  fprintf (fp, "auth_server_port=%s\n", nvram_safe_get (psk));
+
+	  sprintf (psk, "%s_radius_key", prefix);
+	  fprintf (fp, "auth_sserver_shared_secret=%s\n",
+		   nvram_safe_get (psk));
+
+	}
+
+      sprintf (psk, "%s_crypto", prefix);
+      if (nvram_match (psk, "aes"))
+	fprintf (fp, "wpa_pairwise=CCMP\n");
+      if (nvram_match (psk, "tkip"))
+	fprintf (fp, "wpa_pairwise=TKIP\n");
+      if (nvram_match (psk, "tkip+aes"))
+	fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
+      sprintf (psk, "%s_wpa_gtk_rekey", prefix);
+      fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
+      fprintf (fp, "jumpstart_p1=1\n");
+
+    }
+  else
     {
       eval ("iwconfig", prefix, "key", "off");
 //      eval ("iwpriv", prefix, "authmode", "0");
@@ -776,16 +847,17 @@ configure_single (int count)
       //create device
       if (strlen (mode) > 0)
 	{
-	char newmode[16];
-	strcpy(newmode,var);
-	newmode[strlen(newmode)-1]=0;
+	  char newmode[16];
+	  strcpy (newmode, var);
+	  newmode[strlen (newmode) - 1] = 0;
 	  if (!strcmp (m, "wet") || !strcmp (m, "sta"))
 	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
 	  else
-	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode", m);
+	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
+		  m);
 	}
-      sleep(1);
+      sleep (1);
     }
 
 
@@ -819,9 +891,9 @@ configure_single (int count)
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
       if (strcmp (ch, "0") == 0)
-      {
-//	eval ("iwconfig", dev, "channel", "auto");
-      }
+	{
+//      eval ("iwconfig", dev, "channel", "auto");
+	}
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
@@ -852,7 +924,7 @@ configure_single (int count)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      sleep(1);
+      sleep (1);
       sprintf (ssid, "%s_ssid", var);
       sprintf (channel, "%s_channel", var);
 
@@ -861,7 +933,7 @@ configure_single (int count)
 	  eval ("iwconfig", var, "channel", default_get (channel, "6"));
 	}
       eval ("iwconfig", var, "essid", default_get (ssid, "default"));
-      cprintf ("set broadcast flag vif\n",var);	//hide ssid
+      cprintf ("set broadcast flag vif\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
 
@@ -919,13 +991,14 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 
   eval ("modprobe", "ath_pci");
 #else
-  eval ("insmod","ath_hal");
-  eval ("insmod","ath_rate_atheros");
-  eval ("insmod","ath_pci",countrycode,xchanmode,outdoor);
-  
+  eval ("insmod", "ath_hal");
+  eval ("insmod", "wlan");
+  eval ("insmod", "ath_rate_atheros");
+  eval ("insmod", "ath_pci", countrycode, xchanmode, outdoor);
+
 //  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
-  
-//	"autocreate=none");
+
+//      "autocreate=none");
 #endif
 //  sleep(1);
 //  eval ("modprobe", "-r", "ath_pci");
