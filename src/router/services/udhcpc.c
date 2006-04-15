@@ -86,7 +86,6 @@ update_value (void)
 {
 
   char *value;
-  FILE *fp;
   int changed = 0;
 
   if ((value = getenv ("ip")))

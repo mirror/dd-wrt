@@ -65,7 +65,7 @@ serrGPIOOpen ( /*IP*/ unsigned char *pc01DevName)
 *     -2: *pc01DevName interface does not exist.
 *******************************************************/
 {
-  int serrCode, sintFile;
+  int sintFile;
 
   if (sintIOCTLDescriptor != -1)
     {
@@ -169,9 +169,6 @@ serrTurnOffLED ( /*IP*/ int sintLEDName)
 int
 led_ctrl (int on)
 {
-  pid_t pid;
-  int found = 0;
-  char tmp[128], ifunit;
   int wan_gpio = 0;
    /*********************************
    *  Open the device file for IOCTL:
@@ -223,9 +220,6 @@ led_ctrl (int on)
 int
 powerled_ctrl (int on)
 {
-  pid_t pid;
-  int found = 0;
-  char tmp[128], ifunit;
   int power_gpio = BELKIN_POWER_LED;
    /*********************************
    *  Open the device file for IOCTL:
