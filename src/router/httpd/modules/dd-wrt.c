@@ -1716,18 +1716,19 @@ show_radius (webs_t wp, char *prefix)
 	     "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",
 	     prefix);
   sprintf (var, "%s_radius_ipaddr", prefix);
+  char *rad=nvram_safe_get(var);
   websWrite (wp,
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=valid_range(this,0,255,'IP') class=\"num\" value=\"%d\" />.",
-	     prefix, get_single_ip (var, 0));
+	     prefix, get_single_ip (rad, 0));
   websWrite (wp,
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=valid_range(this,0,255,'IP') class=\"num\" value=\"%d\" />.",
-	     prefix, get_single_ip (var, 1));
+	     prefix, get_single_ip (rad, 1));
   websWrite (wp,
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=valid_range(this,0,255,'IP') class=\"num\" value=\"%d\" />.",
-	     prefix, get_single_ip (var, 2));
+	     prefix, get_single_ip (rad, 2));
   websWrite (wp,
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=valid_range(this,1,254,'IP') class=\"num\" value=\"%d\" />\n",
-	     prefix, get_single_ip (var, 3));
+	     prefix, get_single_ip (rad, 3));
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">RADIUS Port</div>\n");
