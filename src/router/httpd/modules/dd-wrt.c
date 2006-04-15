@@ -153,9 +153,9 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 	  getc (fp);
 	  char cpuclk[4];
-	  cpuclk[0] = getc (in);
-	  cpuclk[1] = getc (in);
-	  cpuclk[2] = getc (in);
+	  cpuclk[0] = getc (fp);
+	  cpuclk[1] = getc (fp);
+	  cpuclk[2] = getc (fp);
 	  cpuclk[3] = 0;
 	  websWrite (wp, cpuclk);
 	  fclose (fp);
