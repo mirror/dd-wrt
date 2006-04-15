@@ -1171,8 +1171,8 @@ validate_catchall (webs_t wp, char *value, struct variable *v)
 		nvram_safe_get ("filter_id"));
       nvram_set (port_grp, p2p);
     }
-	
-	return;
+
+  return;
 }
 
 
@@ -1631,7 +1631,7 @@ ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int i;	
+  int i;
 #if LANGUAGE == JAPANESE
   char w[7][10] = { "“ú", "ŒŽ", "‰Î", "?…", "–Ø", "‹à", "“y" };
   char am[] = "Œß‘O";
@@ -1797,7 +1797,7 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
 		nvram_safe_get ("filter_id"));
       port_data = nvram_safe_get (filter_port);
       if (!strcmp (port_data, ""))
-	return;		// no data
+	return;			// no data
       find_each (name, sizeof (name), port_data, "<&nbsp;>", which, "");
       websWrite (wp, "%s", name);
 
@@ -1810,7 +1810,7 @@ ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv)
 		nvram_safe_get ("filter_id"));
       port_data = nvram_safe_get (filter_port);
       if (!strcmp (port_data, ""))
-	return;		// no data
+	return;			// no data
       websWrite (wp, "%s", port_data);
 
     }
