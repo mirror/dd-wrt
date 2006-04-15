@@ -118,12 +118,9 @@ do_timer (void)
 void
 main_loop (void)
 {
-  int ret;
   sigset_t sigset;
   pid_t shell_pid = 0;
   uint boardflags;
-  int val;
-  char tmp[200];
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
@@ -194,9 +191,6 @@ main_loop (void)
   set_ip_forward ('1');
   system ("/etc/preinit");	//sets default values for ip_conntrack
 
-
-
-
 #ifndef HAVE_RB500
   char *rwpart = "mtd4";
   int itworked = 0;
@@ -221,8 +215,6 @@ main_loop (void)
 	      nvram_set ("jffs_mounted", "1");
 	    }
 
-
-
 	}
       else
 	{
@@ -240,9 +232,9 @@ main_loop (void)
 	      nvram_set ("jffs_mounted", "1");
 	    }
 
-
 	}
     }
+    
 #endif
 #ifdef HAVE_MMC
   if (nvram_match ("mmc_enable", "1"))
