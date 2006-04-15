@@ -40,6 +40,9 @@ endif
 ifeq ($(CONFIG_NOAD),y)
 CFLAGS += -DHAVE_NOAD
 endif
+ifeq ($(CONFIG_RB500),y)
+CFLAGS += -DHAVE_RB500
+endif
 
 ifeq ($(CONFIG_34TELECOM),y)
 CFLAGS += -DHAVE_34TELECOM
