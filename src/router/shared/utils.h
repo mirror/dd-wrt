@@ -4,10 +4,8 @@
 #ifdef CDEBUG
 #include <shutils.h>
 #include <malloc.h>
+#include <cy_conf.h>
 #endif
-
-#include "../../cy_conf.h"
-
 
 
 #define ROUTER_WRT54G 1
