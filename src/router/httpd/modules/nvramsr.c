@@ -27,10 +27,7 @@ static int restore_ret;
 void
 nv_file_in (char *url, webs_t wp, int len, char *boundary)
 {
-  struct nvram_tuple *v;
-  char buf[1024], *var;
-  int nvrtotal = 0;
-  FILE *fp = NULL;
+  char buf[1024];
   restore_ret = EINVAL;
   char sign[7];
   sign[6] = 0;
@@ -58,7 +55,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	break;
     }
 
-  // fprintf (stderr, "file wirte");
+  // fprintf (stderr, "file write");
   unsigned short count;
   wfread (sign, 6, 1, wp);
   len -= 6;
@@ -168,13 +165,7 @@ sr_config_cgi (char *path, webs_t wp)
 void
 nv_file_out (char *path, webs_t wp)
 {
-  FILE *fp = NULL;
-  int ret = 0;
-  char *var, *vertag;
-  pid_t pid;
   struct nvram_tuple *v;
-  char *backup_argv[5];
-  struct sysinfo info;
   int backupcount = 0;
 #ifdef HAVE_NEWMEDIA
   char sign[7] = { "XX-WRT" };
