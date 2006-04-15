@@ -132,6 +132,43 @@ rep:;
   goto rep;
 }
 
+#ifdef HAVE_RB500
+void
+ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      websWrite (wp, "unknown");
+      return;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 4)
+	{
+	  getc (fp);
+	  char cpuclk[4];
+	  cpuclk[0] = getc (in);
+	  cpuclk[1] = getc (in);
+	  cpuclk[2] = getc (in);
+	  cpuclk[3] = 0;
+	  websWrite (wp, cpuclk);
+	  fclose (fp);
+	  return;
+	}
+    }
+
+  fclose (fp);
+  websWrite (wp, "unknown");
+  return;
+}
+
+#else
 void
 ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -152,7 +189,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, buf);
   return;
 }
-
+#endif
 
 void
 ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
@@ -775,27 +812,19 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 	     selmatch ("security_mode", "psk", "selected"));
   websWrite (wp, "<option value=\"wpa\" %s>WPA RADIUS</option>\n",
 	     selmatch ("security_mode", "wpa", "selected"));
-  if (!nvram_match ("wl_mode", "wet") && 
-       nvram_match ("wl_wds1_enable", "0") && 
-       nvram_match ("wl_wds2_enable", "0") && 
-       nvram_match ("wl_wds3_enable", "0") && 
-       nvram_match ("wl_wds4_enable", "0") && 
-       nvram_match ("wl_wds5_enable", "0") && 
-       nvram_match ("wl_wds6_enable", "0") && 
-       nvram_match ("wl_wds7_enable", "0") && 
-       nvram_match ("wl_wds8_enable", "0") && 
-       nvram_match ("wl_wds9_enable", "0") && 
-       nvram_match ("wl_wds10_enable", "0"))		//botho 10/04/06 : if wireless client bridge mode selected or WDS activated => we don't display WPA2 security modes
-  {
-  		websWrite (wp, "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
-  			selmatch ("security_mode", "psk2", "selected"));
-  		websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
-  			selmatch ("security_mode", "wpa2", "selected"));
-  }
-  		websWrite (wp, "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
-  			selmatch ("security_mode", "psk psk2", "selected"));
-  		websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
-  			selmatch ("security_mode", "wpa wpa2", "selected"));
+  if (!nvram_match ("wl_mode", "wet") && nvram_match ("wl_wds1_enable", "0") && nvram_match ("wl_wds2_enable", "0") && nvram_match ("wl_wds3_enable", "0") && nvram_match ("wl_wds4_enable", "0") && nvram_match ("wl_wds5_enable", "0") && nvram_match ("wl_wds6_enable", "0") && nvram_match ("wl_wds7_enable", "0") && nvram_match ("wl_wds8_enable", "0") && nvram_match ("wl_wds9_enable", "0") && nvram_match ("wl_wds10_enable", "0"))	//botho 10/04/06 : if wireless client bridge mode selected or WDS activated => we don't display WPA2 security modes
+    {
+      websWrite (wp,
+		 "<option value=\"psk2\" %s>WPA2 Pre-Shared Key Only</option>\n",
+		 selmatch ("security_mode", "psk2", "selected"));
+      websWrite (wp, "<option value=\"wpa2\" %s>WPA2 RADIUS Only</option>\n",
+		 selmatch ("security_mode", "wpa2", "selected"));
+    }
+  websWrite (wp,
+	     "<option value=\"psk psk2\" %s>WPA2 Pre-Shared Key Mixed</option>\n",
+	     selmatch ("security_mode", "psk psk2", "selected"));
+  websWrite (wp, "<option value=\"wpa wpa2\" %s>WPA2 RADIUS Mixed</option>\n",
+	     selmatch ("security_mode", "wpa wpa2", "selected"));
   websWrite (wp, "<option value=\"radius\" %s>RADIUS</option>\n",
 	     selmatch ("security_mode", "radius", "selected"));
   websWrite (wp, "<option value=\"wep\" %s>WEP</option></select>\n",
@@ -1261,7 +1290,7 @@ int
 remove_vifs_single (char *prefix)
 {
   char *next;
-  
+
   char var[80];
   char wif[16];
   sprintf (wif, "%s_vifs", prefix);
@@ -1716,7 +1745,7 @@ show_radius (webs_t wp, char *prefix)
 	     "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",
 	     prefix);
   sprintf (var, "%s_radius_ipaddr", prefix);
-  char *rad=nvram_safe_get(var);
+  char *rad = nvram_safe_get (var);
   websWrite (wp,
 	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=valid_range(this,0,255,'IP') class=\"num\" value=\"%d\" />.",
 	     prefix, get_single_ip (rad, 0));
@@ -2680,7 +2709,7 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
 	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
-          
+
 #else
 
       websWrite (wp, "\
@@ -2750,7 +2779,7 @@ save_wds (webs_t wp)
   nvram_set ("wl_br1_enable", wds_enable_val);
 
   return;
-  
+
 }
 
 #ifndef KROMOGUI
