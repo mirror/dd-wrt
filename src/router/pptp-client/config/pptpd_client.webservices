@@ -4,42 +4,37 @@
 		<div class="label">PPTP Client Options</div>
 		<input type="radio" name="pptpd_client_enable" value="1" <% nvram_selmatch("pptpd_client_enable", "1", "checked"); %> />Enable
 		<input type="radio" name="pptpd_client_enable" value="0" <% nvram_selmatch("pptpd_client_enable", "0", "checked"); %> />Disable
-	</div>
+		</div>
 	<div class="setting">
 		<div class="label">Server IP or DNS Name</div>
-		<input size="27" name="pptpd_client_srvip" value="<% nvram_get("pptpd_client_srvip"); %>" />
-	</div>
+		<input size="27" name="pptpd_client_srvip" value="<% nvram_get("pptpd_client_srvip"); %>" /></div>
 	<div class="setting">
-        <div class="label">Remote Subnet</div>
+                <div class="label">Remote Subnet</div>
 		<input type="hidden" name="pptpd_client_srvsub" value="0.0.0.0" />
-		<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","0"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","1"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","2"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","3"); %>" />
-	</div>
+		<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","0"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","1"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","2"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsub_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsub","3"); %>" /></div>
 	<div class="setting">
 		<div class="label">Remote Subnet Mask</div>
 		<input type="hidden" name="pptpd_client_srvsubmsk" value="0.0.0.0" />
-		<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","0"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","1"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","2"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","3"); %>" />
-	</div>
+		<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","0"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","1"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","2"); %>" />.<input size="3" maxlength="3" class="num" name="pptpd_client_srvsubmsk_3" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("pptpd_client_srvsubmsk","3"); %>" /></div>
 	<div class="setting">
 		<div class="label">MPPE Encryption</div>
-		<input size="27" name="pptpd_client_srvsec" value="<% nvram_get("pptpd_client_srvsec"); %>" />
-	</div>
+		<input size="27" name="pptpd_client_srvsec" value="<% nvram_get("pptpd_client_srvsec"); %>" />(WRT2WRT: mppe required)</div>
 	<div class="setting">
 		<div class="label">MTU</div>
-		<input class="num" maxlength="4" size="5" name="pptpd_client_srvmtu" onblur="valid_range(this,0,1500,'MTU')" value="<% nvram_get("pptpd_client_srvmtu"); %>" />&nbsp;
-		<span class="default">(Default: 1450)</span>
-	</div>
+		<input class="num" size="5" maxLength="4" name="pptpd_client_srvmtu" onblur="valid_range(this,0,1500,'MTU')" value="<% nvram_get("pptpd_client_srvmtu"); %>" />(Default: 1450)</div>
 	<div class="setting">
 		<div class="label">MRU</div>
-		<input class="num" maxlength="4" size="5" name="pptpd_client_srvmru" onblur="valid_range(this,0,1500,'MRU')" value="<% nvram_get("pptpd_client_srvmru"); %>" />&nbsp;
-		<span class="default">(Default: 1450)</span>
-	</div>
+		<input class="num" size="5" maxLength="4" name="pptpd_client_srvmru" onblur="valid_range(this,0,1500,'MRU')" value="<% nvram_get("pptpd_client_srvmru"); %>" />(Default: 1450)</div>
+	<div class="setting">
+		<div class="label">NAT</div>
+		<input type="radio" name="pptpd_client_nat" value="1" <% nvram_selmatch("pptpd_client_nat", "1", "checked"); %> />Enable
+		<input type="radio" name="pptpd_client_nat" value="0" <% nvram_selmatch("pptpd_client_nat", "0", "checked"); %> />Disable
+		</div>
 	<div class="setting">
 		<div class="label">User Name</div>
-		<input size="27" name="pptpd_client_srvuser" value="<% nvram_get("pptpd_client_srvuser"); %>" />
-	</div>		
+		<input size="27" name="pptpd_client_srvuser" value="<% nvram_get("pptpd_client_srvuser"); %>" />(ForWinUse: DOMAIN\\UserName)</div>
 	<div class="setting">
 		<div class="label">Password</div>
-		<input size="27" name="pptpd_client_srvpass" type="password" value="<% nvram_get("pptpd_client_srvpass"); %>" />
-	</div>
-</fieldset><br />
+		<input size="27" name="pptpd_client_srvpass" type="password" value="<% nvram_get("pptpd_client_srvpass"); %>" /></div>
+</fieldset>	<br /> 
 	
