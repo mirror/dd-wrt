@@ -16,18 +16,12 @@ int
 wol_run (void)
 {
   int ret = 0;
-  pid_t pid;
-
   char *macs = NULL;
   char passwd_param[32] = { 0 };
   char *passwd = NULL;
   char hostname_param[32] = { 0 };
   char *hostname = NULL;
-  char *wol_argv[] =
-    { "/usr/sbin/wol", passwd_param, passwd, hostname_param, hostname, macs,
-    NULL
-  };
-
+  
   if (nvram_match ("wol_enable", "0"))
     return 0;
 
