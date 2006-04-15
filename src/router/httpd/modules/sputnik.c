@@ -32,7 +32,6 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *key;
   FILE *fh;
-  int rc = 0;
 
   if (ejArgs (argc, argv, "%s", &key) < 1)
     {
