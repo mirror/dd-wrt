@@ -25,12 +25,12 @@
 	</div>
 	<div class="setting">
 		<div class="label">MTU</div>
-		<input size="27" maxLength="4" name="pptpd_client_srvmtu" onblur="valid_range(this,0,1500,'MTU')" value="<% nvram_get("pptpd_client_srvmtu"); %>" />&nbsp;
+		<input class="num" maxlength="4" size="5" name="pptpd_client_srvmtu" onblur="valid_range(this,0,1500,'MTU')" value="<% nvram_get("pptpd_client_srvmtu"); %>" />&nbsp;
 		<span class="default">(Default: 1450)</span>
 	</div>
 	<div class="setting">
 		<div class="label">MRU</div>
-		<input size="27" maxLength="4" name="pptpd_client_srvmru" onblur="valid_range(this,0,1500,'MRU')" value="<% nvram_get("pptpd_client_srvmru"); %>" />&nbsp;
+		<input class="num" maxlength="4" size="5" name="pptpd_client_srvmru" onblur="valid_range(this,0,1500,'MRU')" value="<% nvram_get("pptpd_client_srvmru"); %>" />&nbsp;
 		<span class="default">(Default: 1450)</span>
 	</div>
 	<div class="setting">
