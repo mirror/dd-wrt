@@ -65,7 +65,7 @@
 #define TXPWR_MAX 251
 #define TXPWR_DEFAULT 28
 
-int start_restore_defaults (void);
+static void start_restore_defaults (void);
 int start_sysinit (void);
 static void rc_signal (int sig);
 static void overclock (void);
@@ -377,7 +377,7 @@ ses_restore_defaults (void)
     }
 }
 
-int
+static void
 start_restore_defaults (void)
 {
 #ifdef HAVE_RB500
@@ -425,6 +425,7 @@ start_restore_defaults (void)
   int brand = getRouterBrand ();
 #else
   int brand = getRouterBrand ();
+
   switch (brand)
     {
     case ROUTER_LINKSYS_WRT55AG:
@@ -447,8 +448,9 @@ start_restore_defaults (void)
       if (restore_defaults)
 	cprintf ("Restoring defaults...");
       break;
-
+      
     }
+    
 /* Delete dynamically generated variables */
   /* Choose default lan/wan i/f list. */
   char *ds;
@@ -489,11 +491,11 @@ start_restore_defaults (void)
       break;
     }
 #endif
-  int i;
-//  for (i=0;i<4;i++)
-//      nvram_set(linux_overrides[i].name,linux_overrides[i].value);
-
-
+/*  int i;
+ *  for (i=0;i<4;i++)
+ * 		nvram_set(linux_overrides[i].name,linux_overrides[i].value);
+ */
+ 
   /* Restore defaults */
 #ifdef HAVE_FON
   int reset = 0;
@@ -1398,7 +1400,7 @@ overclock (void)
     }
 }
 
-int
+static void
 start_overclocking (void)
 {
   overclock ();

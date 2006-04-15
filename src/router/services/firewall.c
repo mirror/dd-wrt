@@ -10,7 +10,7 @@
  */
 
 //#define DEVELOPE_ENV
-#define XBOX_SUPPORT		/* Define Microsoft XBox, game machine, support */
+//#define XBOX_SUPPORT		/* Define Microsoft XBox, game machine, support */
 #define AOL_SUPPORT		/* Define AOL support */
 //#define FLOOD_PROTECT         /* Define flooding protection */
 //#define REVERSE_RULE_ORDER    /* If it needs to reverse the rule's sequential. It is used
@@ -2265,9 +2265,10 @@ app_udp_settable (void)
   if (!strcmp (nvram_safe_get ("QoS"), "1"))
     {
       int i = 0;
-      char *port = NULL;
-      struct application_based_qos_t app_item;
-/*	
+      
+/*	char *port = NULL;
+    struct application_based_qos_t app_item;
+	
 	for (i = 0; i<STRUCT_LEN(application_based_qos); i++)
 	{
 	    int app_prio = 0;

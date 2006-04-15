@@ -37,7 +37,7 @@ int
 start_sshd (void)
 {
   int ret = 0;
-  pid_t pid;
+//  pid_t pid;
 //  char buf[255] = { 0 };
   cprintf ("check for ssh\n");
   if (!nvram_invmatch ("sshd_enable", "0"))

@@ -762,10 +762,9 @@ start_udhcpd (void)
 int
 stop_udhcpd (void)
 {
-  int ret;
   softkill ("udhcpd");
   cprintf ("done\n");
-  return ret;
+  return 0;
 }
 
 
@@ -774,7 +773,6 @@ int
 start_dnsmasq (void)
 {
   FILE *fp;
-  FILE *test;
   int ret;
   int i;
   char name[100];
@@ -844,8 +842,6 @@ start_dnsmasq (void)
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
-
-
 	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
 	fprintf (fp, "dhcp-range=");
 	fprintf (fp, "%d.%d.%d.%s,",
@@ -949,7 +945,7 @@ stop_dns_clear_resolv (void)
 int
 start_httpd (void)
 {
-  int ret;
+  int ret=0;
   if (nvram_invmatch ("http_enable", "0") && !is_exist ("/var/run/httpd.pid"))
     {
       chdir ("/www");
@@ -1786,7 +1782,6 @@ bird_init (void)
 		     nvram_safe_get ("lan_ifname"));
 	  if (nvram_match ("routing_wan", "on"))
 	    {
-	      char *wanif = nvram_safe_get ("wan_ifname");
 	      if (nvram_match ("wl_mode", "sta")
 		  || nvram_match ("wl_mode", "apsta"))
 		fprintf (fp, "	interface \"%s\" { };\n", getwlif ());
@@ -1877,12 +1872,9 @@ stop_zebra (void)
   int ret1, ret2, ret3;
 
 #ifdef HAVE_ZEBRA
-//      printf("Stop zebra !\n");
   ret1 = eval ("killall", "zebra");
   ret2 = eval ("killall", "ripd");
   ret3 = eval ("killall", "ospfd");
-//      printf("Stop RET=%d, %d\n",ret1,ret2);
-//      printf("Stop zebra done!\n");
 
   while (!
 	 (eval ("killall", "zebra") && eval ("killall", "ripd")
@@ -1894,7 +1886,6 @@ stop_zebra (void)
 
 #elif defined(HAVE_BIRD)
 
-  //ret1 = killps("bird",NULL);
   ret1 = eval ("killall", "bird");
 
   cprintf ("done\n");
@@ -1930,8 +1921,6 @@ stop_syslog (void)
 {
   int ret;
 
-  //ret = killps("klogd","-9");
-  //ret += killps("syslogd","-9");
   ret = eval ("killall", "-9", "klogd");
   ret += eval ("killall", "-9", "syslogd");
 
@@ -2255,7 +2244,6 @@ start_pptp (int status)
 {
   int ret;
   FILE *fp;
-  pid_t pid;
   char *pptp_argv[] = { "pppd",
     NULL
   };
@@ -2396,13 +2384,13 @@ start_pptp (int status)
   /* Bring up  WAN interface */
   if (nvram_match ("pptp_use_dhcp", "1"))
     {
-      pid_t pid;
+//      pid_t pid;
       char *wan_ipaddr;
       char *wan_netmask;
       char *wan_gateway;
 
       char *pptp_server_ip = nvram_safe_get ("pptp_server_ip");
-      char *wan_hostname = nvram_safe_get ("wan_hostname");
+//      char *wan_hostname = nvram_safe_get ("wan_hostname");
       char *wan_ifname = nvram_safe_get ("wan_ifname");
 
 
@@ -2524,7 +2512,7 @@ stop_pptp (void)
 //=========================================tallest============================================
 /* AhMan  March 18 2005   Start the Original Linksys PPPoE */
 /*
- * This functin build the pppoe instuction & execute it.
+ * This function build the pppoe instuction & execute it.
  */
 #ifdef HAVE_PPPOE
 int
@@ -3138,7 +3126,6 @@ start_force_to_dial (void)
 //force_to_dial( char *whichone){
   int ret = 0;
   char dst[50];
-  pid_t pid;
 
   {
     //sprintf(&dst,"1.1.1.1");
