@@ -54,7 +54,7 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 	    {
 	      if (!strcmp (key, "pid"))
 		{
-		 websWrite (wp, "%d", apd_pid);
+		  websWrite (wp, "%d", apd_pid);
 		}
 	      else
 		{
@@ -80,7 +80,7 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 
 			  if (!strcmp (key, s))
 			    {
-			     websWrite (wp, "%s", v);
+			      websWrite (wp, "%s", v);
 			      break;
 			    }
 			}

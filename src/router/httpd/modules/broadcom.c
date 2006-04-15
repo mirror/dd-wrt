@@ -1152,8 +1152,8 @@ ej_get_dns_ip (int eid, webs_t wp, int argc, char_t ** argv)
   {
     if (which-- == 0)
       {
-      websWrite (wp, "%d", get_single_ip (word, count));
-      return;
+	websWrite (wp, "%d", get_single_ip (word, count));
+	return;
       }
   }
 
@@ -3457,7 +3457,8 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");}
+		 websSetRealm ("DD-WRT Router OS Core");
+		 }
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -4079,15 +4080,17 @@ ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match ("upnp_enable", "1"))
     {
-      for (i = 0; i < 50; i++) {
-      	websWrite (wp, (i > 0) ? ",'" : "'");
-      	sprintf (s, "forward_port%d", i);
-      	tf_webWriteJS (wp, nvram_safe_get (s));
-      	websWrite (wp, "'");
-      }
-     }
-     
+      for (i = 0; i < 50; i++)
+	{
+	  websWrite (wp, (i > 0) ? ",'" : "'");
+	  sprintf (s, "forward_port%d", i);
+	  tf_webWriteJS (wp, nvram_safe_get (s));
+	  websWrite (wp, "'");
+	}
+    }
+
   return;
-  
+
 }
+
 // end changed by steve
