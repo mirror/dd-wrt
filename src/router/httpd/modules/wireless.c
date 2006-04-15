@@ -1398,12 +1398,12 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (wl_client_macs[i].status != 1)
 	    continue;
 	  websWrite (wp, "\
- <TR align=middle bgColor=#cccccc> \n\
-    <TD height=\"20\" width=\"167\"><FONT face=Arial size=2>%s</FONT></TD> \n\
-    <TD height=\"20\" width=\"140\"><FONT face=Arial size=2>%s</FONT></TD> \n\
-    <TD height=\"20\" width=\"156\"><FONT face=Arial size=2>%s</FONT></TD> \n\
-    <TD height=\"20\" width=\"141\"><input type=checkbox name=on%d value=%d %s></TD> \n\
- </TR>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked" : "");
+ <tr align=\"middle\"> \n\
+    <td height=\"20\" width=\"167\">%s</td> \n\
+    <td height=\"20\" width=\"140\">%s</td> \n\
+    <td height=\"20\" width=\"156\">%s</td> \n\
+    <td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"on%d\" value=\"%d\" %s></td> \n\
+ </tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked" : "");
 	}
     }
   else if (!strcmp (type, "offline"))
@@ -1413,12 +1413,12 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (wl_client_macs[i].status != 0)
 	    continue;
 	  websWrite (wp, "\
- <TR align=middle bgColor=#cccccc> \n\
-    <TD height=\"20\" width=\"167\"><FONT face=Arial size=2>%s</FONT></TD> \n\
-    <TD height=\"20\" width=\"140\"><FONT face=Arial size=2>%s</FONT></TD> \n\
-    <TD height=\"20\" width=\"156\"><FONT face=Arial size=2>%s</FONT></TD> \n\
-    <TD height=\"20\" width=\"141\"><input type=checkbox name=off%d value=%d %s></TD> \n\
- </TR>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked" : "");
+ <tr align=\"middle\"> \n\
+    <td height=\"20\" width=\"167\">%s</td> \n\
+    <td height=\"20\" width=\"140\">%s</td> \n\
+    <td height=\"20\" width=\"156\">%s</td> \n\
+    <td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"off%d\" value=\"%d\" %s></td> \n\
+ </tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked" : "");
 
 	}
     }
