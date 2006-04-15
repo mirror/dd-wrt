@@ -84,10 +84,8 @@ void
 ej_dump_site_survey (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int i;
-  int ret;
   char buf[10] = { 0 };
   char *rates = NULL;
-  char cmd[256];
   char *name;
   name = websGetVar (wp, "hidden_scan", NULL);
   if (name == NULL || strlen (name) == 0)
