@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -216,7 +217,7 @@ do_ap_watchdog (void)
 {
 
   /* AP Watchdog - experimental check and fix for hung AP */
-  int val;
+  int val = 0;
   struct stat s;
   static time_t last;
   int interval =
@@ -233,9 +234,6 @@ do_ap_watchdog (void)
       nvram_match ("apwatchdog_enable", "1") &&
       nvram_invmatch ("wl_net_mode", "disabled"))
     {
-
-      int val = 0;
-
       time (&last);
       cprintf ("resetting ap radio\n");
       eval ("/usr/sbin/wlconf", get_wdev (), "down");
@@ -456,7 +454,7 @@ do_client_check (void)
 {
   FILE *fp = NULL;
   char buf[1024];
-  char mac[512];
+//  char mac[512];
   int len;
 
   system ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
