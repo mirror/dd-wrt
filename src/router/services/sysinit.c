@@ -1400,7 +1400,7 @@ overclock (void)
     }
 }
 
-static void
+void
 start_overclocking (void)
 {
   overclock ();
