@@ -407,6 +407,10 @@ deconfigure_single (int count)
 void
 deconfigure_wifi (void)
 {
+  eval("killall","hostapd");
+  sleep(2);
+  eval("killall","-9","hostapd");
+ 
   int c = getdevicecount ();
   int i;
   for (i = 0; i < c; i++)
@@ -729,7 +733,9 @@ setupEncryption (char *prefix)
 	nvram_match (akm, "wpa") ||
 	nvram_match (akm, "wpa2") || nvram_match (akm, "wpa wpa2"))
     {
-      FILE *fp = fopen ("/tmp/hostap.conf", "wb");
+      char fstr[32];
+      sprintf(fstr,"/tmp/%s_hostap.conf",prefix);
+      FILE *fp = fopen (fstr, "wb");
       fprintf (fp, "interface=%s\n", prefix);
       fprintf (fp, "bridge=%s\n", nvram_safe_get ("lan_ifname"));
       fprintf (fp, "driver=madwifi\n");
@@ -748,8 +754,6 @@ setupEncryption (char *prefix)
 	fprintf (fp, "wpa=3\n");
 
       char psk[16];
-      sprintf (psk, "%s_wpa_psk", prefix);
-      fprintf (fp, "wpa_passphrase=%s\n", nvram_safe_get (psk));
 
       if (nvram_match (akm, "psk") ||
 	  nvram_match (akm, "psk2") || nvram_match (akm, "psk psk2"))
@@ -782,8 +786,9 @@ setupEncryption (char *prefix)
 	fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
       sprintf (psk, "%s_wpa_gtk_rekey", prefix);
       fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
-      fprintf (fp, "jumpstart_p1=1\n");
-      eval("hostapd","-B","/tmp/hostap.conf");
+//      fprintf (fp, "jumpstart_p1=1\n");
+      fclose(fp);
+      eval("hostapd","-B",fstr);
     }
   else
     {
