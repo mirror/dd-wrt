@@ -35,7 +35,7 @@ function valid_value(F) {
 	}
 }
 function valid_radius(F) {
-	if(F.security_mode.value == "radius" || F.security_mode.value == "wpa"){
+	if(F.security_mode.value == "radius" || F.security_mode.value == "wpa" || F.security_mode.value == "wpa2" || F.security_mode.value == "wpa wpa2"){
 		if(F.wl_radius_key.value == "") {
 			alert("Please enter a Shared Key!");
 			F.wl_radius_key.focus();
@@ -46,7 +46,7 @@ function valid_radius(F) {
 	return true;
 }
 function valid_wpa_psk(F) {
-	if(F.security_mode.value == "psk" || F.security_mode.value == "wpa" || F.security_mode.value == "psk2" || F.security_mode.value == "wpa2" || F.security_mode.value == "psk psk2" || F.security_mode.value == "wpa wpa2"){
+	if(F.security_mode.value == "psk" || F.security_mode.value == "psk2" || F.security_mode.value == "psk psk2"){
 		if(F.wl_wpa_psk.value.length == 64){
 			if(!isxdigit(F.wl_wpa_psk, F.wl_wpa_psk.value)) {
 				return false;

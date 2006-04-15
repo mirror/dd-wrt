@@ -115,7 +115,7 @@ function init() {
 		  <input type="hidden" name="interface" />
 		  <input type="hidden" name="action" value="Apply" />
 		        <% show_wireless(); %>
-		    <br /><div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+		    <br /><div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
                   </form>
                </div>
             </div>
