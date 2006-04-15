@@ -15,9 +15,6 @@
 #ifndef _rc_h_
 #define _rc_h_
 
-#define __CONFIG_NETCONF__
-
-//#include <bcmconfig.h>
 //#include <code_pattern.h>
 #include <bcmconfig.h>
 #include <netinet/in.h>
