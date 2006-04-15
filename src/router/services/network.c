@@ -174,11 +174,9 @@ enable_dhcprelay (char *ifname)
 static int
 wlconf_up (char *name)
 {
-
-  wl_rateset_t rs;
+	
   char tmp[100];
-  int phytype, gmode, val, ret, i;
-  char var[80], *next, phy[] = "a", *str;
+  int phytype, gmode, val, ret;
   char *afterburner;
 #ifdef HAVE_MADWIFI
   return -1;
@@ -274,7 +272,8 @@ if (!strncmp(name,"br",2))
 
 
 /*
-	WL_IOCTL(name, WLC_GET_CURR_RATESET, &rs, sizeof (wl_rateset_t));
+    wl_rateset_t rs;
+  	WL_IOCTL(name, WLC_GET_CURR_RATESET, &rs, sizeof (wl_rateset_t));
 cprintf("is all?\n");
 	if (nvram_match("wl0_rateset", "all"))  {
 		// For WiFi, we must do some modify. 20040625 by honor
@@ -304,7 +303,7 @@ cprintf("is all?\n");
 
   // Set ACK Timing. Thx to Nbd
   char *v;
-  if (v = nvram_get ("wl0_distance"))
+  if ( (v = nvram_get ("wl0_distance")) )
     {
       rw_reg_t reg;
       uint32 shm;
@@ -360,7 +359,6 @@ start_lan (void)
   char name[80], *next, *svbuf;
   char realname[80];
   int s;
-  int val;
   struct ifreq ifr;
   char wl_face[10];
 

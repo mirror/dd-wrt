@@ -61,7 +61,6 @@ site_survey_main (int argc, char *argv[])
   wl_bss_info_t *bss_info;
   unsigned char mac[20];
   int i;
-  int ret;
   char *dev = name;
   unlink (SITE_SURVEY_DB);
   int ap = 0, oldap = 0;
