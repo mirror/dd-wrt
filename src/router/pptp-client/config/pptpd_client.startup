@@ -3,8 +3,9 @@ if [ -z "$(nvram get pptpd_client_enable)" ]; then
     nvram set pptpd_client_enable=0
     nvram set pptpd_client_srvuser="DOMAIN\\\\Username"
     nvram set pptpd_client_srvsec="mppe required"
-    nvram set pptpd_client_srvmtu_mtu="1450"
-    nvram set pptpd_client_srvmtu_mru="1450"    
+    nvram set pptpd_client_srvmtu="1450"
+    nvram set pptpd_client_srvmru="1450"
+    nvram set pptpd_client_nat="1"  
     nvram commit
 fi
 
