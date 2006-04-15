@@ -45,7 +45,7 @@
 						<li>Server IP or DNS Name &ndash; The IP address or DNS Name of the VPN server that you would like to connect to (Example: www.MyServer.com). </li>
 						<li>Remote Subnet &ndash; Remote Subnet of the network you are connecting to (Example: 192.168.2.0). </li>
 						<li>Remote Subnet Mask &ndash; Remote Subnet Mask of the network you are connecting to (Example: 255.255.255.0). </li>
-						<li>MPPE Encryption  &ndash; The type of security to use for the connection. If you are connecting to another DD-WRT route you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li>
+						<li>MPPE Encryption  &ndash; The type of security to use for the connection. If you are connecting to another DD-WRT router you need (Example: mppe required). But if you are connecting to a Windows VPN server you need (Example: mppe required,no40,no56,stateless) or (Example: mppe required,no40,no56,stateful) </li>
 						<li>MTU &ndash; Default Maximum Transmission Unit (Default: 1450) </li>
 						<li>MRU &ndash; Default Maximum Receiving Unit (Default: 1450) </li>
 						<li>User Name &ndash; Enter the UserName that you will use to connect to the VPN server. If you are connecting to another Linux base PPTP server you just need to enter the UserName (Example: root). But if you are connecting to a Windows VPN server you need to enter the servername and username (Example: DOMAIN\\UserName). </li>

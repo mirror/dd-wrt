@@ -46,7 +46,8 @@ function to_submit(F) {
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -84,19 +85,19 @@ function to_submit(F) {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="applyuser.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="change_action"/>
-							<input type="hidden" name="submit_type"/>
-							<input type="hidden" name="action"/>
-							<input type="hidden" name="reboot_button"/>
-							<input type="hidden" name="commit" value="1"/>
-							<input type="hidden" name="static_leases" value="13"/>
+							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="action" />
+							<input type="hidden" name="reboot_button" />
+							<input type="hidden" name="commit" value="1" />
+							<input type="hidden" name="static_leases" value="13" />
 							<h2>Services Management</h2>
 							<% show_modules(".webservices"); %>
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
-								<input type="reset" value="Cancel Changes"/>
-								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)"/>
+								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
+								<input type="reset" value="Cancel Changes" />
+								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)" />
 							</div>
 						</form>
 					</div>
