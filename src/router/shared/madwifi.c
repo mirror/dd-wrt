@@ -771,9 +771,9 @@ setupSupplicant (char *prefix)
       if (nvram_match (akm, "psk"))
 	fprintf (fp, "\tproto=WPA\n");
       if (nvram_match (akm, "psk2"))
-	fprintf (fp, "\tproto=WPA2\n");
+	fprintf (fp, "\tproto=RSN\n");
       if (nvram_match (akm, "psk psk2"))
-	fprintf (fp, "\tproto=WPA WPA2\n");
+	fprintf (fp, "\tproto=WPA RSN\n");
 
       sprintf (psk, "%s_wpa_psk", prefix);
       fprintf (fp, "\tpsk=\"%s\"\n", nvram_safe_get (psk));
