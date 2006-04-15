@@ -760,9 +760,6 @@ setupEncryption (char *prefix)
 	}
       else
 	{
-//#auth_server_addr=127.0.0.1
-//#auth_server_port=1812
-//#auth_server_shared_secret=secret
 	  fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
 	  sprintf (psk, "%s_radius_ipaddr", prefix);
 	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
@@ -786,7 +783,7 @@ setupEncryption (char *prefix)
       sprintf (psk, "%s_wpa_gtk_rekey", prefix);
       fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
       fprintf (fp, "jumpstart_p1=1\n");
-
+      eval("hostapd","-B","/tmp/hostap.conf");
     }
   else
     {
