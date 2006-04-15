@@ -212,7 +212,6 @@ stop_services (void)
 int
 start_single_service (void)
 {
-  int val;
   char *service;
 
   service = nvram_get ("action_service");
@@ -463,7 +462,7 @@ start_single_service (void)
   return 0;
 }
 
-
+int
 is_running (char *process_name)
 {
   DIR *dir;
