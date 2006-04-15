@@ -1,16 +1,16 @@
 <fieldset>
-	<legend>WDS/Connection Watchdog</legend>
+	<legend><script type="text/javascript">Capture(alive.legend2)</script></legend>
 	<div class="setting">
-		<div class="label">Enable Watchdog</div>
-		<input type="radio" value="1" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","1","checked"); %> onclick="setWDS(this.value)" />Enable
-		<input type="radio" value="0" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","0","checked"); %> onclick="setWDS(this.value)" />Disable
+		<div class="label"><script type="text/javascript">Capture(alive.sevr2)</script></div>
+		<input type="radio" value="1" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","1","checked"); %> onclick="setWDS(this.value)" /><script type="text/javascript">Capture(share.enable)</script>
+		<input type="radio" value="0" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","0","checked"); %> onclick="setWDS(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
-		<div class="label">Interval (in seconds)</div>
+		<div class="label"><script type="text/javascript">Capture(alive.inter)</script></div>
 		<input size="4" maxLength="4" class="num" name="wds_watchdog_interval_sec" value="<% nvram_get("wds_watchdog_interval_sec"); %>" />
 	</div>
 	<div class="setting">
-		<div class="label">IP Addresses</div>
+		<div class="label"><script type="text/javascript">Capture(alive.IP)</script></div>
 		<input size="40" maxLength="47" class="text" name="wds_watchdog_ips" value="<% nvram_get("wds_watchdog_ips"); %>" />
 	</div>
 </fieldset><br/>
