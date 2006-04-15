@@ -1,0 +1,5 @@
+*.d
+.config
+driver_conf.c
+hostapd
+hostapd_cli
