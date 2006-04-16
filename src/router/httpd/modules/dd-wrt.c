@@ -1187,7 +1187,7 @@ static struct regdomain regdomains[] = {
 #endif
 
 void
-show_channel (webs_t wp, char *prefix)
+show_channel (webs_t wp, char *dev,char *prefix)
 {
   char wl_mode[16];
   sprintf (wl_mode, "%s_mode", prefix);
@@ -1202,7 +1202,9 @@ show_channel (webs_t wp, char *prefix)
 #ifdef HAVE_MADWIFI
       struct wifi_channels *chan;
       char cn[32];
-      chan = list_channels (prefix);
+      chan = list_channels (dev);
+      if (chan!=NULL)
+      {
       //int cnt = getchannelcount ();
       websWrite (wp,
 		 "document.write(\"<option value=0 %s>Auto</option>\");\n",
@@ -1222,6 +1224,7 @@ show_channel (webs_t wp, char *prefix)
 	  i++;
 	}
       free (chan);
+      }
 #else
       websWrite (wp, "var max_channel = 14;\n");
       websWrite (wp, "var wl_channel = '%s';\n", nvram_safe_get (wl_channel));
@@ -1241,6 +1244,7 @@ show_channel (webs_t wp, char *prefix)
       websWrite (wp, "}\n");
 
 #endif
+      websWrite (wp, "</script></select></div>\n");
     }
 
 }
@@ -1326,8 +1330,8 @@ show_virtualssid (webs_t wp, char *prefix)
 	       nvram_match (ssid, "sta") ? "selected" : "");
     websWrite (wp, "</div>\n");
 #endif
-    show_netmode (wp, prefix);
-    show_channel (wp, prefix);
+    show_netmode (wp, var);
+    show_channel (wp, prefix,var);
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "AP Isolation", ssid);
     websWrite (wp, "</fieldset>\n");
@@ -1688,12 +1692,11 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta"))
     {
-      show_channel (wp, prefix);
+      show_channel (wp, prefix, prefix);
 
 
       char wl_closed[16];
       sprintf (wl_closed, "%s_closed", prefix);
-      websWrite (wp, "</script></select></div>\n");
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp, "<div class=\"label\">Wireless SSID Broadcast</div>\n");
       websWrite (wp,
