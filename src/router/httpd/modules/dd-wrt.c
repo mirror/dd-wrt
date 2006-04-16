@@ -805,8 +805,8 @@ ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">Security Mode</div>\n");
   websWrite (wp,
-	     "<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form\")>\n");
-  websWrite (wp, "<option value=\"disabled\" %s>Disable</OPTION>\n",
+	     "<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form)\">\n");
+  websWrite (wp, "<option value=\"disabled\" %s>Disable</option>\n",
 	     selmatch ("security_mode", "disabled", "selected"));
   websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
 	     selmatch ("security_mode", "psk", "selected"));
