@@ -935,12 +935,17 @@ configure_single (int count)
   sprintf (turbo, "ath%d_turbo", count);
   sprintf (channel, "ath%d_channel", count);
   sprintf (ssid, "ath%d_ssid", count);
-  sprintf (net, "ath%d_net_mode", count);
   sprintf (broadcast, "ath%d_closed", count);
   sprintf (power, "ath%d_txpwr", count);
   sprintf (sens, "ath%d_distance", count);
   //create base device
   cprintf ("configure base interface %d\n", count);
+
+  sprintf (net, "%s_net_mode", dev);
+  if (nvram_match(net,"disabled"))
+    return;
+    
+ 
 
   char *m = default_get (wl, "ap");
   cprintf ("mode %s\n", m);
@@ -953,6 +958,9 @@ configure_single (int count)
     foreach (var, vifs, next)
     {
       //create device
+    sprintf (net, "%s_net_mode", var);
+    if (nvram_match(net,"disabled"))
+	continue;
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
       //create device
@@ -1030,7 +1038,9 @@ configure_single (int count)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      sleep (1);
+    sprintf (net, "%s_net_mode", var);
+    if (nvram_match(net,"disabled"))
+	continue;
       sprintf (ssid, "%s_ssid", var);
       sprintf (channel, "%s_channel", var);
       sprintf (mode, "%s_mode", var);
