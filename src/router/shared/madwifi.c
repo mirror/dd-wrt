@@ -892,6 +892,24 @@ setupHostAP (char *prefix)
 
 
 static void
+set_netmode (char *dev)
+{
+  char net[16];
+  sprintf (net, "%s_net_mode", dev);
+  char *netmode = default_get (net, "mixed");
+  cprintf ("configure net mode %s\n", netmode);
+  if (!strcmp (netmode, "mixed"))
+    eval ("iwpriv", dev, "mode", "0");
+  if (!strcmp (netmode, "b-only"))
+    eval ("iwpriv", dev, "mode", "2");
+  if (!strcmp (netmode, "g-only"))
+    eval ("iwpriv", dev, "mode", "3");
+  if (!strcmp (netmode, "a-only"))
+    eval ("iwpriv", dev, "mode", "1");
+
+}
+
+static void
 configure_single (int count)
 {
   char *next;
@@ -953,22 +971,13 @@ configure_single (int count)
       sleep (1);
     }
 
+  m = default_get (wl, "ap");
 
 
   //confige net mode
-  char *netmode = default_get (net, "mixed");
 
 
-  cprintf ("configure net mode %s\n", netmode);
-
-  if (!strcmp (netmode, "mixed"))
-    eval ("iwpriv", dev, "mode", "0");
-  if (!strcmp (netmode, "b-only"))
-    eval ("iwpriv", dev, "mode", "2");
-  if (!strcmp (netmode, "g-only"))
-    eval ("iwpriv", dev, "mode", "3");
-  if (!strcmp (netmode, "a-only"))
-    eval ("iwpriv", dev, "mode", "1");
+  set_netmode (dev);
 
   cprintf ("configure turbo\n");
   if (default_match (turbo, "1", "0"))
@@ -1035,12 +1044,15 @@ configure_single (int count)
       cprintf ("set broadcast flag vif\n", var);	//hide ssid
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
+      // net mode
+      set_netmode (var);
+
 
       cprintf ("setup encryption");
       if (strcmp (m, "sta"))
-	setupHostAP (dev);
+	setupHostAP (var);
       else
-	setupSupplicant (dev);
+	setupSupplicant (var);
 
       eval ("ifconfig", var, "0.0.0.0", "up");
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
