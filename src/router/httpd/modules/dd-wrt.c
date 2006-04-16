@@ -1317,33 +1317,6 @@ show_virtualssid (webs_t wp, char *prefix)
 	       var, nvram_match (ssid, "1") ? "checked" : "");
     websWrite (wp, "</div>\n");
 //mode
-#ifdef HAVE_MADWIFI
-    char wl_turbo[16];
-    char wl_xchanmode[16];
-    char wl_outdoor[16];
-    sprintf (wl_turbo, "%s_turbo", prefix);
-    sprintf (wl_xchanmode, "%s_xchanmode", prefix);
-    sprintf (wl_outdoor, "%s_outdoor", prefix);
-    showOption (wp, "Turbo Mode", wl_turbo);
-    showOption (wp, "Extended Channel Mode", wl_xchanmode);
-    showOption (wp, "Outdoor Band", wl_outdoor);
-    websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp,
-	       "<div class=\"label\">Wireless Mode</div><select name=\"%s_mode\">\n",
-	       var);
-
-
-
-    sprintf (ssid, "%s_mode", var);
-
-    websWrite (wp,
-	       "<option value=\"ap\" %s>AP</option>\n",
-	       nvram_match (ssid, "ap") ? "selected" : "");
-    websWrite (wp,
-	       "<option value=\"sta\" %s>Client</option></select>\n",
-	       nvram_match (ssid, "sta") ? "selected" : "");
-    websWrite (wp, "</div>\n");
-#endif
     show_netmode (wp, var);
     show_channel (wp, prefix, var);
     sprintf (ssid, "%s_ap_isolate", var);
