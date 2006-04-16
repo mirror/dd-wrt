@@ -1147,6 +1147,134 @@ showDynOption (webs_t wp, char *propname, char *nvname, char *options[],
 }
 
 #ifdef HAVE_MSSID
+
+#ifdef HAVE_MADWIFI
+
+
+/*
+0x10 (FCC)
+0x20 (DOC)
+0x30 (ETSI)
+0x31 (Spain)
+0x32 (France)
+0x40 (MKK-Japan)
+0xFF (debug)
+
+*/
+struct regdomain
+{
+  char *name;
+  int code;
+};
+
+static struct regdomain regdomains[] = {
+  {"UNDEFINED", 0x00},
+  {"USA1 (FCC)", 0x10},		//FCC
+  {"USA2", 0x3A},
+  {"DOC", 0x20},
+  {"ETSI", 0x30},
+  {"SPAIN", 0x31},
+  {"FRANCE", 0x32},
+  {"JAPAN", 0x40},
+  {"WORLD0", 0x60},
+  {"WORLD1", 0x61},
+  {"WORLD2", 0x62},
+  {"WORLD3", 0x63},
+  {"WORLD4", 0x64},
+  {"WORLD5", 0x65},
+  {NULL, 0}
+};
+#endif
+
+void
+show_channel (webs_t wp, char *prefix)
+{
+  char wl_mode[16];
+  sprintf (wl_mode, "%s_mode", prefix);
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta"))
+    {
+      char wl_channel[16];
+      sprintf (wl_channel, "%s_channel", prefix);
+      websWrite (wp, "<div class=\"setting\">\n");
+      websWrite (wp,
+		 "<div class=\"label\">Wireless Channel</div><select name=\"%s\" onFocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n",
+		 wl_channel);
+#ifdef HAVE_MADWIFI
+      struct wifi_channels *chan;
+      char cn[32];
+      chan = list_channels (prefix);
+      //int cnt = getchannelcount ();
+      websWrite (wp,
+		 "document.write(\"<option value=0 %s>Auto</option>\");\n",
+		 nvram_match (wl_channel, "0") ? "selected" : "");
+      int i = 0;
+      while (chan[i].freq != -1)
+	{
+	  cprintf ("%d\n", chan[i].channel);
+	  cprintf ("%d\n", chan[i].freq);
+
+	  sprintf (cn, "%d", chan[i].channel);
+	  websWrite (wp,
+		     "document.write(\"<option value=%s %s>%s - %dMhz</option>\");\n",
+		     cn, nvram_match (wl_channel, cn) ? "selected" : "",
+		     cn, chan[i].freq);
+	  //free (chan[i].freq);
+	  i++;
+	}
+      free (chan);
+#else
+      websWrite (wp, "var max_channel = 14;\n");
+      websWrite (wp, "var wl_channel = '%s';\n", nvram_safe_get (wl_channel));
+      websWrite (wp, "var buf = \"\";");
+      websWrite (wp,
+		 "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
+      websWrite (wp, "	for(i=0; i<=max_channel ; i++){\n");
+      websWrite (wp,
+		 "		if(i == wl_channel)	buf = \"selected\";\n");
+      websWrite (wp, "		else			buf = \"\";\n");
+      websWrite (wp, "		if(i==0)\n");
+      websWrite (wp,
+		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">Auto</option>\");\n");
+      websWrite (wp, "		else\n");
+      websWrite (wp,
+		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+i+\" - \"+freq[i]+\"GHz</option>\");\n");
+      websWrite (wp, "}\n");
+
+#endif
+    }
+
+}
+
+void
+show_netmode (webs_t wp, char *prefix)
+{
+  char wl_net_mode[16];
+  sprintf (wl_net_mode, "%s_net_mode", prefix);
+
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp,
+	     "<div class=\"label\">Wireless Network Mode</div><select name=\"%s\" onChange=\"SelWL(this.form.%s.selectedIndex,this.form)\">\n",
+	     wl_net_mode, wl_net_mode);
+  websWrite (wp, "<option value=\"disabled\" %s>Disabled</option>\n",
+	     nvram_match (wl_net_mode, "disabled") ? "selected" : "");
+  websWrite (wp, "<option value=\"mixed\" %s>Mixed</option>\n",
+	     nvram_match (wl_net_mode, "mixed") ? "selected" : "");
+  websWrite (wp, "<option value=\"b-only\" %s>B-Only</option>\n",
+	     nvram_match (wl_net_mode, "b-only") ? "selected" : "");
+  websWrite (wp, "<option value=\"g-only\" %s>G-Only</option>\n",
+	     nvram_match (wl_net_mode, "g-only") ? "selected" : "");
+#ifdef HAVE_MADWIFI
+  websWrite (wp, "<option value=\"a-only\" %s>A-Only</option>\n",
+	     nvram_match (wl_net_mode, "a-only") ? "selected" : "");
+#endif
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
+
+
+}
+
+
+
 int
 show_virtualssid (webs_t wp, char *prefix)
 {
@@ -1198,6 +1326,8 @@ show_virtualssid (webs_t wp, char *prefix)
 	       nvram_match (ssid, "sta") ? "selected" : "");
     websWrite (wp, "</div>\n");
 #endif
+    show_netmode (wp, prefix);
+    show_channel (wp, prefix);
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "AP Isolation", ssid);
     websWrite (wp, "</fieldset>\n");
@@ -1271,6 +1401,17 @@ add_vifs_single (char *prefix, int device)
   nvram_set (v2, "default");
   sprintf (v2, "%s_vifs", prefix);
   nvram_set (v2, n);
+
+  sprintf (v2, "%s_gtk_rekey", prefix);
+  nvram_set (v2, "3600");
+
+  sprintf (v2, "%s_radius_port", prefix);
+  nvram_set (v2, "1812");
+
+  sprintf (v2, "%s_radius_ipaddr", prefix);
+  nvram_set (v2, "0.0.0.0");
+
+
   //nvram_commit ();
   free (n);
   return 0;
@@ -1454,54 +1595,12 @@ websWrite(wp,"</script>\n");
 
 
 
-#ifdef HAVE_MADWIFI
-
-
-/*
-0x10 (FCC)
-0x20 (DOC)
-0x30 (ETSI)
-0x31 (Spain)
-0x32 (France)
-0x40 (MKK-Japan)
-0xFF (debug)
-
-*/
-struct regdomain
-{
-  char *name;
-  int code;
-};
-
-static struct regdomain regdomains[] = {
-  {"UNDEFINED", 0x00},
-  {"USA1 (FCC)", 0x10},		//FCC
-  {"USA2", 0x3A},
-  {"DOC", 0x20},
-  {"ETSI", 0x30},
-  {"SPAIN", 0x31},
-  {"FRANCE", 0x32},
-  {"JAPAN", 0x40},
-  {"WORLD0", 0x60},
-  {"WORLD1", 0x61},
-  {"WORLD2", 0x62},
-  {"WORLD3", 0x63},
-  {"WORLD4", 0x64},
-  {"WORLD5", 0x65},
-  {NULL, 0}
-};
-#endif
-
-
-
 
 void
 ej_show_wireless_single (webs_t wp, char *prefix)
 {
   char wl_mode[16];
-  char wl_net_mode[16];
   sprintf (wl_mode, "%s_mode", prefix);
-  sprintf (wl_net_mode, "%s_net_mode", prefix);
 
 //wireless mode
   websWrite (wp, "<h2>Wireless Physical Interface %s</h2>\n", prefix);
@@ -1565,26 +1664,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 //writeless net mode
-
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\">Wireless Network Mode</div><select name=\"%s\" onChange=\"SelWL(this.form.%s.selectedIndex,this.form)\">\n",
-	     wl_net_mode, wl_net_mode);
-  websWrite (wp, "<option value=\"disabled\" %s>Disabled</option>\n",
-	     nvram_match (wl_net_mode, "disabled") ? "selected" : "");
-  websWrite (wp, "<option value=\"mixed\" %s>Mixed</option>\n",
-	     nvram_match (wl_net_mode, "mixed") ? "selected" : "");
-  websWrite (wp, "<option value=\"b-only\" %s>B-Only</option>\n",
-	     nvram_match (wl_net_mode, "b-only") ? "selected" : "");
-  websWrite (wp, "<option value=\"g-only\" %s>G-Only</option>\n",
-	     nvram_match (wl_net_mode, "g-only") ? "selected" : "");
-#ifdef HAVE_MADWIFI
-  websWrite (wp, "<option value=\"a-only\" %s>A-Only</option>\n",
-	     nvram_match (wl_net_mode, "a-only") ? "selected" : "");
-#endif
-  websWrite (wp, "</select>\n");
-  websWrite (wp, "</div>\n");
-//turbo options
+  show_netmode (wp, prefix);
+  //turbo options
 #ifdef HAVE_MADWIFI
   char wl_turbo[16];
   char wl_xchanmode[16];
@@ -1604,57 +1685,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\">Wireless Network Name (SSID)</div><input name=\"%s\" size=\"20\" maxLength=\"32\" onBlur=\"valid_name(this,'SSID')\" value='%s' /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
-  char wl_channel[16];
-  sprintf (wl_channel, "%s_channel", prefix);
 
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta"))
     {
-      websWrite (wp, "<div class=\"setting\">\n");
-      websWrite (wp,
-		 "<div class=\"label\">Wireless Channel</div><select name=\"%s\" onFocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n",
-		 wl_channel);
-#ifdef HAVE_MADWIFI
-      struct wifi_channels *chan;
-      char cn[32];
-      chan = list_channels (prefix);
-      //int cnt = getchannelcount ();
-      websWrite (wp,
-		 "document.write(\"<option value=0 %s>Auto</option>\");\n",
-		 nvram_match (wl_channel, "0") ? "selected" : "");
-      int i = 0;
-      while (chan[i].freq != -1)
-	{
-	  cprintf ("%d\n", chan[i].channel);
-	  cprintf ("%d\n", chan[i].freq);
-
-	  sprintf (cn, "%d", chan[i].channel);
-	  websWrite (wp,
-		     "document.write(\"<option value=%s %s>%s - %dMhz</option>\");\n",
-		     cn, nvram_match (wl_channel, cn) ? "selected" : "",
-		     cn, chan[i].freq);
-	  //free (chan[i].freq);
-	  i++;
-	}
-      free (chan);
-#else
-      websWrite (wp, "var max_channel = 14;\n");
-      websWrite (wp, "var wl_channel = '%s';\n", nvram_safe_get (wl_channel));
-      websWrite (wp, "var buf = \"\";");
-      websWrite (wp,
-		 "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
-      websWrite (wp, "	for(i=0; i<=max_channel ; i++){\n");
-      websWrite (wp,
-		 "		if(i == wl_channel)	buf = \"selected\";\n");
-      websWrite (wp, "		else			buf = \"\";\n");
-      websWrite (wp, "		if(i==0)\n");
-      websWrite (wp,
-		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">Auto</option>\");\n");
-      websWrite (wp, "		else\n");
-      websWrite (wp,
-		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+i+\" - \"+freq[i]+\"GHz</option>\");\n");
-      websWrite (wp, "}\n");
-
-#endif
+      show_channel (wp, prefix);
 
 
       char wl_closed[16];
