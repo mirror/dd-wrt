@@ -548,9 +548,12 @@ list_channelsext (const char *ifname, int allchans)
   const struct ieee80211_channel *c;
   int i, half;
   cprintf ("get priv\n");
-  if (get80211priv
-      (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
-    errx (1, "unable to get channel information");
+  fprintf(stderr,"list channels for %s\n",ifname);
+  if (get80211priv(ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
+  {
+//    errx (1, "unable to get channel information");
+    return NULL;
+  }
   if (!allchans)
     {
       uint8_t active[32];
@@ -558,7 +561,10 @@ list_channelsext (const char *ifname, int allchans)
 
       if (get80211priv
 	  (ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof (active)) < 0)
-	errx (1, "unable to get active channel list");
+	  {
+//	errx (1, "unable to get active channel list");
+	return NULL;
+	}
       cprintf ("clear achans\n");
       memset (&achans, 0, sizeof (achans));
       for (i = 0; i < chans.ic_nchans; i++)
@@ -897,6 +903,7 @@ set_netmode (char *dev)
   char net[16];
   sprintf (net, "%s_net_mode", dev);
   char *netmode = default_get (net, "mixed");
+  fprintf(stderr,"set netmode of %s to %s\n",net,netmode);
   cprintf ("configure net mode %s\n", netmode);
   if (!strcmp (netmode, "mixed"))
     eval ("iwpriv", dev, "mode", "0");
@@ -1050,13 +1057,16 @@ configure_single (int count)
 	{
 	  eval ("iwconfig", var, "channel", default_get (channel, "6"));
 	}
+      fprintf(stderr,"set ssid for %s\n",var);
       eval ("iwconfig", var, "essid", default_get (ssid, "default"));
       cprintf ("set broadcast flag vif\n", var);	//hide ssid
+      fprintf(stderr,"set broadcast for %s\n",var);
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
       // net mode
-      set_netmode (var);
+//      set_netmode (var);
 
+      fprintf(stderr,"encryption %s\n",var);
 
       cprintf ("setup encryption");
       if (strcmp (m, "sta"))
