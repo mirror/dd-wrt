@@ -1202,7 +1202,9 @@ show_channel (webs_t wp, char *dev,char *prefix)
 #ifdef HAVE_MADWIFI
       struct wifi_channels *chan;
       char cn[32];
-      chan = list_channels (dev);
+      chan = list_channels(prefix);
+      if (chan==NULL)
+      chan = list_channels(dev);
       if (chan!=NULL)
       {
       //int cnt = getchannelcount ();
@@ -1316,10 +1318,22 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp, "</div>\n");
 //mode
 #ifdef HAVE_MADWIFI
+  char wl_turbo[16];
+  char wl_xchanmode[16];
+  char wl_outdoor[16];
+  sprintf (wl_turbo, "%s_turbo", prefix);
+  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
+  sprintf (wl_outdoor, "%s_outdoor", prefix);
+  showOption (wp, "Turbo Mode", wl_turbo);
+  showOption (wp, "Extended Channel Mode", wl_xchanmode);
+  showOption (wp, "Outdoor Band", wl_outdoor);
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\">Wireless Mode</div><select name=\"%s_mode\">\n",
 	       var);
+
+
+
     sprintf (ssid, "%s_mode", var);
 
     websWrite (wp,
