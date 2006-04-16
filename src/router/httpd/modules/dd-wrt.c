@@ -1187,7 +1187,7 @@ static struct regdomain regdomains[] = {
 #endif
 
 void
-show_channel (webs_t wp, char *dev,char *prefix)
+show_channel (webs_t wp, char *dev, char *prefix)
 {
   char wl_mode[16];
   sprintf (wl_mode, "%s_mode", prefix);
@@ -1202,31 +1202,31 @@ show_channel (webs_t wp, char *dev,char *prefix)
 #ifdef HAVE_MADWIFI
       struct wifi_channels *chan;
       char cn[32];
-      chan = list_channels(prefix);
-      if (chan==NULL)
-      chan = list_channels(dev);
-      if (chan!=NULL)
-      {
-      //int cnt = getchannelcount ();
-      websWrite (wp,
-		 "document.write(\"<option value=0 %s>Auto</option>\");\n",
-		 nvram_match (wl_channel, "0") ? "selected" : "");
-      int i = 0;
-      while (chan[i].freq != -1)
+      chan = list_channels (prefix);
+      if (chan == NULL)
+	chan = list_channels (dev);
+      if (chan != NULL)
 	{
-	  cprintf ("%d\n", chan[i].channel);
-	  cprintf ("%d\n", chan[i].freq);
-
-	  sprintf (cn, "%d", chan[i].channel);
+	  //int cnt = getchannelcount ();
 	  websWrite (wp,
-		     "document.write(\"<option value=%s %s>%s - %dMhz</option>\");\n",
-		     cn, nvram_match (wl_channel, cn) ? "selected" : "",
-		     cn, chan[i].freq);
-	  //free (chan[i].freq);
-	  i++;
+		     "document.write(\"<option value=0 %s>Auto</option>\");\n",
+		     nvram_match (wl_channel, "0") ? "selected" : "");
+	  int i = 0;
+	  while (chan[i].freq != -1)
+	    {
+	      cprintf ("%d\n", chan[i].channel);
+	      cprintf ("%d\n", chan[i].freq);
+
+	      sprintf (cn, "%d", chan[i].channel);
+	      websWrite (wp,
+			 "document.write(\"<option value=%s %s>%s - %dMhz</option>\");\n",
+			 cn, nvram_match (wl_channel, cn) ? "selected" : "",
+			 cn, chan[i].freq);
+	      //free (chan[i].freq);
+	      i++;
+	    }
+	  free (chan);
 	}
-      free (chan);
-      }
 #else
       websWrite (wp, "var max_channel = 14;\n");
       websWrite (wp, "var wl_channel = '%s';\n", nvram_safe_get (wl_channel));
@@ -1318,15 +1318,15 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp, "</div>\n");
 //mode
 #ifdef HAVE_MADWIFI
-  char wl_turbo[16];
-  char wl_xchanmode[16];
-  char wl_outdoor[16];
-  sprintf (wl_turbo, "%s_turbo", prefix);
-  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
-  sprintf (wl_outdoor, "%s_outdoor", prefix);
-  showOption (wp, "Turbo Mode", wl_turbo);
-  showOption (wp, "Extended Channel Mode", wl_xchanmode);
-  showOption (wp, "Outdoor Band", wl_outdoor);
+    char wl_turbo[16];
+    char wl_xchanmode[16];
+    char wl_outdoor[16];
+    sprintf (wl_turbo, "%s_turbo", prefix);
+    sprintf (wl_xchanmode, "%s_xchanmode", prefix);
+    sprintf (wl_outdoor, "%s_outdoor", prefix);
+    showOption (wp, "Turbo Mode", wl_turbo);
+    showOption (wp, "Extended Channel Mode", wl_xchanmode);
+    showOption (wp, "Outdoor Band", wl_outdoor);
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\">Wireless Mode</div><select name=\"%s_mode\">\n",
@@ -1345,7 +1345,7 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp, "</div>\n");
 #endif
     show_netmode (wp, var);
-    show_channel (wp, prefix,var);
+    show_channel (wp, prefix, var);
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "AP Isolation", ssid);
     websWrite (wp, "</fieldset>\n");
