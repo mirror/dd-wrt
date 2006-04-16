@@ -563,20 +563,7 @@ struct nvram_tuple router_defaults[] = {
   {"wl_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
   {"wl_akm", "", 0},
   {"wl_wpa_psk", "", 0},	/* WPA pre-shared key */
-#ifdef HAVE_MADWIFI
-  {"ath0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
-  {"ath1_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
-  {"ath2_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
-  {"ath3_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
-  {"ath4_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
-  {"ath5_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
-  {"ath0_radius_port", "1812", 0},	/* RADIUS server UDP port */
-  {"ath1_radius_port", "1812", 0},	/* RADIUS server UDP port */
-  {"ath2_radius_port", "1812", 0},	/* RADIUS server UDP port */
-  {"ath3_radius_port", "1812", 0},	/* RADIUS server UDP port */
-  {"ath4_radius_port", "1812", 0},	/* RADIUS server UDP port */
-  {"ath5_radius_port", "1812", 0},	/* RADIUS server UDP port */
-#else
+#ifndef HAVE_MADWIFI
   {"wl_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
   {"wl_radius_port", "1812", 0},	/* RADIUS server UDP port */
 #endif
