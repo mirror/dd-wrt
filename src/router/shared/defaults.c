@@ -1102,7 +1102,11 @@ struct nvram_tuple router_defaults[] = {
   {"macupd_interval", "10", 0},
   {"mmc_enable", "0", 0},
   {"mmc_enable0", "0", 0},
+#ifdef HAVE_RB500
+  {"ip_conntrack_max", "32768", 0},
+#else
   {"ip_conntrack_max", "512", 0},
+#endif
   {"ip_conntrack_tcp_timeouts", "3600", 0},
   {"ip_conntrack_udp_timeouts", "3600", 0},
   {"rflow_ip", "0.0.0.0", 0},
