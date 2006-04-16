@@ -117,9 +117,7 @@ do_mon (void)
 
 	  cprintf ("Maybe %s had died, we need to re-exec it\n", v->name);
 	  stop_service(v->name);
-	  sleep (1);	  
 	  eval ("/usr/bin/killall", "-SIGKILL", v->name);	// try to remove any zombies
-	  sleep (1);
 	  start_service(v->name);
 	}
 	cprintf("checking for %s done\n",v->name);
