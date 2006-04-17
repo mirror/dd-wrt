@@ -105,10 +105,12 @@ show_other_info (webs_t wp)
   websWrite (wp, "get wl_gmode = %s\n", nvram_safe_get ("wl_gmode"));
   websWrite (wp, "wl_gmode = %s\n", exec_cmd ("wl gmode"));
 
-  websWrite (wp, "get wl_afterburner = %s\n", nvram_safe_get ("wl_afterburner"));
+  websWrite (wp, "get wl_afterburner = %s\n",
+	     nvram_safe_get ("wl_afterburner"));
   websWrite (wp, "wl afterburner = %s\n", exec_cmd ("wl afterburner"));
 
-  websWrite (wp, "wl afterburner_override = %s\n", exec_cmd ("wl afterburner_override"));
+  websWrite (wp, "wl afterburner_override = %s\n",
+	     exec_cmd ("wl afterburner_override"));
   websWrite (wp, "\n");
 
   sysinfo (&info);
