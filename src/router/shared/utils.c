@@ -605,7 +605,10 @@ dns_to_resolv (void)
     {
       fprintf (fp_w, "search %s\n", nvram_safe_get ("wan_domain"));
     }
-
+  if (!nvram_match ("lan_domain", ""))
+    {
+      fprintf (fp_w, "search %s\n", nvram_safe_get ("lan_domain"));
+    }
   if (nvram_match ("dnsmasq_enable", "1"))
     {
       fprintf (fp_w, "nameserver %s\n", nvram_get ("lan_ipaddr"));
