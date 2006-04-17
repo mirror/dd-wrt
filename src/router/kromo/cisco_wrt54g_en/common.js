@@ -223,7 +223,7 @@ function check_space(I,M1){
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch == ' ') {
-			alert(M +' is not allow space!');
+			alert(M +' is not allowed to contain a space!');
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -240,11 +240,11 @@ function valid_key(I,l){
 				break;		
 		}		
 		if( i!=l*2 ){		
-			alert('The key value is not correct!!');			
+			alert('The key value is not correct!');			
 			I.value = I.defaultValue;		
 		}	
 	} else{		
-		alert('The key length is not correct!!');		
+		alert('The key length is not correct!');		
 		I.value = I.defaultValue;	
 	}
 }
