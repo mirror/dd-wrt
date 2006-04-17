@@ -30,6 +30,7 @@ share.start="Start";
 share.end="End";
 share.proto="Protocol";
 share.ip="IP Address";
+share.mac="MAC Address";
 share.none="None";
 share.both="Both";
 share.del="Delete";
@@ -45,6 +46,7 @@ share.wed="Wednesday";
 share.thu="Thursday";
 share.fri="Friday";
 share.sat="Saturday";
+share.expires="Expires";
 
 
 var sbutton = new Object();
@@ -364,3 +366,12 @@ hconfig.right1="Backup:";
 hconfig.right2="You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to backup your current configuration.";
 hconfig.right3="Restore:";
 hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
+
+// **************************************************************** DHCPTable.asp **********************************************************************//
+
+var dhcp = new Object();
+dhcp.titl=" - DHCP Active IP Table";
+dhcp.h2="DHCP Active IP Table";
+dhcp.server="DHCP Server IP Address :";
+dhcp.tclient="Client Host Name";
+
