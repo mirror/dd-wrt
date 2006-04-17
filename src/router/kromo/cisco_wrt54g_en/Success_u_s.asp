@@ -6,7 +6,10 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+
 var submit_button = '<% get_web_page_name(); %>';
 
 function to_submit()
@@ -24,8 +27,9 @@ function to_submit()
 	<body>
 		<div class="message">
 			<div>
-				<form>Upgrade successful.<br/>Unit is rebooting now....<br />
-					<input type="button" name="action" value="Continue" onclick="to_submit()"/>
+				<form>
+					<script type="text/javascript">Capture(success.mess2)</script><br />
+					<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script>
 				</form>
 			</div>
 		</div>

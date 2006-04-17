@@ -387,11 +387,42 @@ hdiag.right1="Commands:";
 hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
 
 
+// **************************************************************** Diagnostics.asp **********************************************************************//
+
+var diag = new Object();
+diag.titl=" - Diagnostics";
+diag.h2="Diagnostics";
+diag.legend="Command Shell";
+diag.cmd="Commands";
+diag.startup="Startup";
+diag.firewall="Firewall";
+
+
+//help container
+var hdiag = new Object();
+hdiag.right1="Commands:";
+hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
+
+
+
+
+
+
 // **************************************************************** Fail_s.asp & Fail_u_s.asp **********************************************************************//
 
 var fail = new Object();
 fail.mess1="The values you entered are invalid. Please try again.";
 fail.mess2="Upgrade failed.";
+
+// **************************************************************** Success*.asp **********************************************************************//
+
+var success = new Object();
+success.mess1="Settings saved.";
+success.mess2="Upgrade successful.<br/>Unit is rebooting now....";
+success.mess3="Settings are successful.";
+
+
+
 
 
 
