@@ -102,7 +102,7 @@ if(table.length > 0 && location.href.indexOf("Diagnostics.asp") == -1) {
 								<legend><script type="text/javascript">Capture(diag.firewall)</script></legend>
 								<pre id="firewall" style="margin:0"><% nvram_get("rc_firewall"); %></pre><br />
 								<div class="center">
-									<script type="text/javascript">document.write("<input type=\"button\" name=\"button_start\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('firewall').firstChild.data\" />")</script>
+									<script type="text/javascript">document.write("<input type=\"button\" name=\"button_firewall\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('firewall').firstChild.data\" />")</script>
 								</div>
 							</fieldset><br /><% nvram_match("rc_firewall", "", "-->"); %>
 							<div class="submitFooter">

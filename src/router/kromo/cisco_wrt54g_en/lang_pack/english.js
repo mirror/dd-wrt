@@ -387,10 +387,11 @@ hdiag.right1="Commands:";
 hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
 
 
+// **************************************************************** Fail_s.asp & Fail_u_s.asp **********************************************************************//
 
-
-
-
+var fail = new Object();
+fail.mess1="The values you entered are invalid. Please try again.";
+fail.mess2="Upgrade failed.";
 
 
 
