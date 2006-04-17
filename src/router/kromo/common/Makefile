@@ -27,9 +27,9 @@ endif
 all:
 
 install:
-	-cp -a Cysaja.asp $(INSTALLDIR)/www/
-	-cp -a SysInfo.htm $(INSTALLDIR)/www/
-	-cp -a SysInfo1.htm $(INSTALLDIR)/www/
+#	-cp -a Cysaja.asp $(INSTALLDIR)/www/
+#	-cp -a SysInfo.htm $(INSTALLDIR)/www/
+#	-cp -a SysInfo1.htm $(INSTALLDIR)/www/
 	-cp -a Info.htm $(INSTALLDIR)/www/
 	-cp -a Info.live.htm $(INSTALLDIR)/www/
 	
