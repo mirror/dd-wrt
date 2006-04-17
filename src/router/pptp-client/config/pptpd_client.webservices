@@ -34,6 +34,11 @@
 		<span class="default">(Default: 1450)</span>
 	</div>
 	<div class="setting">
+		<div class="label">NAT</div>
+		<input type="radio" name="pptpd_client_nat" value="1" <% nvram_selmatch("pptpd_client_nat", "1", "checked"); %> />Enable
+		<input type="radio" name="pptpd_client_nat" value="0" <% nvram_selmatch("pptpd_client_nat", "0", "checked"); %> />Disable
+	</div>
+	<div class="setting">
 		<div class="label">User Name</div>
 		<input size="27" name="pptpd_client_srvuser" value="<% nvram_get("pptpd_client_srvuser"); %>" />
 	</div>		
