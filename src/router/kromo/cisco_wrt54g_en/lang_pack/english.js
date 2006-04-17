@@ -61,6 +61,8 @@ sbutton.deleted="Deleted";
 sbutton.delall="Delete All";
 sbutton.refres="Refresh";
 sbutton.autorefresh="Auto-Refresh ON";
+sbutton.backup="Backup";
+sbutton.restore="Restore";
 
 
 
@@ -342,3 +344,23 @@ halive.right1="At a set Time:";
 halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
 halive.right3="IP Addresses:";
 halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
+
+// **************************************************************** config.asp **********************************************************************//
+
+var config = new Object();
+config.titl=" - Backup &amp; Restore";
+config.h2="Backup Configuration";
+config.legend="Backup Settings";
+config.mess1="Click the \"" + sbutton.backup + "\" button to download the configuration backup file to your computer.";
+config.h22="Restore Configuration";
+config.legend2="Restore Settings";
+config.mess2="Please select a file to restore";
+config.mess3="W A R N I N G";
+config.mess4="Only upload files backed up using this firmware and from the same model of router.<br />Do not upload any files that were not created by this interface!";
+
+//help container
+var hconfig = new Object();
+hconfig.right1="Backup:";
+hconfig.right2="You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to backup your current configuration.";
+hconfig.right3="Restore:";
+hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
