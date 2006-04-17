@@ -2,11 +2,11 @@
 	<legend>IP Filter Settings (adjust these for P2P)</legend>
 	<div class="setting">
 		<div class="label">Maximum Ports</div>
-		<input size="5" maxlength="32" name="ip_conntrack_max" value="<% nvram_get("ip_conntrack_max"); %>" /> (4096 max)</div>
+		<input size="5" maxlength="32" name="ip_conntrack_max" onbur="valid_range(this,0,4096,'Maximum Ports')" value="<% nvram_get("ip_conntrack_max"); %>" /> (4096 max)</div>
 	<div class="setting">
 			<div class="label">TCP Timeout (s)</div>
-			<input size="4" maxlength="4" name="ip_conntrack_tcp_timeouts" value="<% nvram_get("ip_conntrack_tcp_timeouts"); %>" />&nbsp;s;&nbsp;(3600 max)</div>
+			<input size="4" maxlength="4" name="ip_conntrack_tcp_timeouts" onbur="valid_range(this,0,3600,'TCP Timeout')" value="<% nvram_get("ip_conntrack_tcp_timeouts"); %>" />&nbsp;s;&nbsp;(3600 max)</div>
 	<div class="setting">
 		<div class="label">UDP Timeout (s)</div>
-		<input size="4" maxlength="4" name="ip_conntrack_udp_timeouts" value="<% nvram_get("ip_conntrack_udp_timeouts"); %>" />&nbsp;s;&nbsp;(3600 max)</div>
+		<input size="4" maxlength="4" name="ip_conntrack_udp_timeouts" onbur="valid_range(this,0,3600,'UDP Timeout')" value="<% nvram_get("ip_conntrack_udp_timeouts"); %>" />&nbsp;s;&nbsp;(3600 max)</div>
 </fieldset><br/>
