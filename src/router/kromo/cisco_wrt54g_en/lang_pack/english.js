@@ -65,6 +65,10 @@ sbutton.refres="Refresh";
 sbutton.autorefresh="Auto-Refresh ON";
 sbutton.backup="Backup";
 sbutton.restore="Restore";
+sbutton.cptotext="Copy to text area";
+sbutton.runcmd="Run Commands";
+sbutton.startup="Save Startup";
+sbutton.firewall="Save Firewall";
 
 
 
@@ -82,10 +86,9 @@ errmsg.err8="You must input an IP Address or Domain Name.";
 errmsg.err9="Illegal DMZ IP Address.";
 errmsg.err10="Confirmed password did not match Entered Password. Please re-enter password.";
 errmsg.err11="No spaces are allowed in Password";
-
-errmsg.err12="Confirmed password did not match Entered Password.  Please re-enter password";
-
+errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade are failed.";
+
 //common.js error message
 errmsg.err14=" value is out of range ";
 errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
@@ -367,6 +370,31 @@ hconfig.right2="You may backup your current configuration in case you need to re
 hconfig.right3="Restore:";
 hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
 
+// **************************************************************** Diagnostics.asp **********************************************************************//
+
+var diag = new Object();
+diag.titl=" - Diagnostics";
+diag.h2="Diagnostics";
+diag.legend="Command Shell";
+diag.cmd="Commands";
+diag.startup="Startup";
+diag.firewall="Firewall";
+
+
+//help container
+var hdiag = new Object();
+hdiag.right1="Commands:";
+hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
+
+
+
+
+
+
+
+
+
+// *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
 var dhcp = new Object();
