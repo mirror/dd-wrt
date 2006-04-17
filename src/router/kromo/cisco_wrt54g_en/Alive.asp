@@ -106,8 +106,8 @@ function init() {
 							<h2><script type="text/javascript">Capture(alive.h2)</script></h2>
 							<% show_modules(".webalive"); %>
 							<div class="submitFooter">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"init()\">");</script>
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"init()\" />")</script>
 							</div>
 						</form>
 					</div>
