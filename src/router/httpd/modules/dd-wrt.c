@@ -2384,6 +2384,7 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 
 }
+
 #ifdef HAVE_MADWIFI
 #include <sys/types.h>
 #include <sys/file.h>
@@ -2403,127 +2404,96 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 static const char *
-ieee80211_ntoa(const uint8_t mac[IEEE80211_ADDR_LEN])
+ieee80211_ntoa (const uint8_t mac[IEEE80211_ADDR_LEN])
 {
-	static char a[18];
-	int i;
+  static char a[18];
+  int i;
 
-	i = snprintf(a, sizeof(a), "%02x:%02x:%02x:%02x:%02x:%02x",
+  i = snprintf (a, sizeof (a), "%02x:%02x:%02x:%02x:%02x:%02x",
 		mac[0], mac[1], mac[2], mac[3], mac[4], mac[5]);
-	return (i < 17 ? NULL : a);
+  return (i < 17 ? NULL : a);
 }
 
 static u_int
-rssi2dbm(u_int rssi)
+rssi2dbm (u_int rssi)
 {
-	return rssi - 95;
+  return rssi - 95;
 }
 
 void
-ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,char *ifname)
+ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
+		       char *ifname)
 {
-unsigned char buf[24*1024];
-unsigned char *cp;
-int s, len;
-struct iwreq iwr;
-s = socket(AF_INET, SOCK_DGRAM, 0);
-    if (s < 0)
-	{
-	fprintf(stderr,"socket(SOCK_DRAGM)\n");
-	return;
-	}
-(void) memset(&iwr, 0, sizeof(iwr));
-(void) strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
-iwr.u.data.pointer = (void *) buf;
-iwr.u.data.length = sizeof(buf);
-if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
+  unsigned char buf[24 * 1024];
+  unsigned char *cp;
+  int s, len;
+  struct iwreq iwr;
+  s = socket (AF_INET, SOCK_DGRAM, 0);
+  if (s < 0)
     {
-    return;
+      fprintf (stderr, "socket(SOCK_DRAGM)\n");
+      return;
     }
-len = iwr.u.data.length;
-if (len < sizeof(struct ieee80211req_sta_info))
-	return;
-int cnt=0;
-cp = buf;
-	do {
-		struct ieee80211req_sta_info *si;
-		uint8_t *vp;
+  (void) memset (&iwr, 0, sizeof (iwr));
+  (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
+  iwr.u.data.pointer = (void *) buf;
+  iwr.u.data.length = sizeof (buf);
+  if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
+    {
+      return;
+    }
+  len = iwr.u.data.length;
+  if (len < sizeof (struct ieee80211req_sta_info))
+    return;
+  int cnt = 0;
+  cp = buf;
+  do
+    {
+      struct ieee80211req_sta_info *si;
+      uint8_t *vp;
 
-		si = (struct ieee80211req_sta_info *) cp;
-		vp = (u_int8_t *)(si+1);
+      si = (struct ieee80211req_sta_info *) cp;
+      vp = (u_int8_t *) (si + 1);
 
-             // sprintf(a_time,"%02d:%02d:%02d",
-	     // HRS(si->isi_assoc_time),
-	    //  MINS(si->isi_assoc_time),
-	    //  SECS(si->isi_assoc_time));
-	       if (cnt)
-	       websWrite (wp, ",");
-	       cnt++;
-	      websWrite (wp, "'%s','%d','%d','%d'",ieee80211_ntoa(si->isi_macaddr), rssi2dbm(si->isi_rssi), -100, rssi2dbm(si->isi_rssi) - (-100));
+      if (cnt)
+	websWrite (wp, ",");
+      cnt++;
+      websWrite (wp, "'%s','%d','%d','%d'", ieee80211_ntoa (si->isi_macaddr),
+		 rssi2dbm (si->isi_rssi), -100,
+		 rssi2dbm (si->isi_rssi) - (-100));
 
-/*		printf("%s %4u %4d %3dM %4d %4d %6d %6d %-4.4s %-5.5s %3x %8x %6s %7s %6s %s"
-			, ieee80211_ntoa(si->isi_macaddr)
-			, IEEE80211_AID(si->isi_associd)
-			, ieee80211_mhz2ieee(si->isi_freq)
-			, (si->isi_rates[si->isi_txrate] & IEEE80211_RATE_VAL)/2
-			, si->isi_rssi
-			, si->isi_inact
-			, si->isi_txseqs[0]
-			, si->isi_rxseqs[0]
-		        , getcaps(si->isi_capinfo)
-		        , getathcaps(si->isi_athflags)
-			   , si->isi_erp
-			, si->isi_state
-			, authmodes[si->isi_authmode]
-			, cipher[si->isi_cipher]
-			, getstamode(si->isi_opmode)
-			, a_time
-		);
-		printies(vp, si->isi_ie_len, 24);
-		printf("\n");
-		if (si->isi_uapsd) {
-			printf("                   UAPSD QoSInfo: 0x%02x, ", si->isi_uapsd);
-			printf("(VO,VI,BE,BK) = (%d,%d,%d,%d), MaxSpLimit = %s\n",
-				   WME_UAPSD_AC_ENABLED(WME_AC_VO, si->isi_uapsd) ? 1 : 0,
-				   WME_UAPSD_AC_ENABLED(WME_AC_VI, si->isi_uapsd) ? 1 : 0,
-				   WME_UAPSD_AC_ENABLED(WME_AC_BE, si->isi_uapsd) ? 1 : 0,
-				   WME_UAPSD_AC_ENABLED(WME_AC_BK, si->isi_uapsd) ? 1 : 0,
-				   WME_UAPSD_MAXSP(si->isi_uapsd) == 1 ? "2" :
-				   WME_UAPSD_MAXSP(si->isi_uapsd) == 2 ? "4" :
-				   WME_UAPSD_MAXSP(si->isi_uapsd) == 3 ? "6" : "NoLimit"
-				   );
-		}*/
-		cp += si->isi_len, len -= si->isi_len;
-	} while (len >= sizeof(struct ieee80211req_sta_info));
+      cp += si->isi_len, len -= si->isi_len;
+    }
+  while (len >= sizeof (struct ieee80211req_sta_info));
 
 
 
 }
-extern char *getiflist(void);
+extern char *getiflist (void);
 
 
 void
 ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 {
-int c = getdevicecount();
-char devs[32];
-int i;
-for (i=0;i<c;i++)
-{
-sprintf(devs,"ath%d",i);
-fprintf(stderr,"show ifname %s\n",devs);
-ej_active_wireless_if(eid,wp,argc,argv,devs);
-char vif[32];
-sprintf(vif,"%s_vifs",devs);
-char var[80], *next;
-char *vifs=nvram_safe_get(vif);
-  if (vifs != NULL)
-    foreach (var, vifs, next)
+  int c = getdevicecount ();
+  char devs[32];
+  int i;
+  for (i = 0; i < c; i++)
     {
-    fprintf(stderr,"show ifname %s\n",var);
-    ej_active_wireless_if(eid,wp,argc,argv,var);
+      sprintf (devs, "ath%d", i);
+//fprintf(stderr,"show ifname %s\n",devs);
+      ej_active_wireless_if (eid, wp, argc, argv, devs);
+      char vif[32];
+      sprintf (vif, "%s_vifs", devs);
+      char var[80], *next;
+      char *vifs = nvram_safe_get (vif);
+      if (vifs != NULL)
+	foreach (var, vifs, next)
+	{
+//    fprintf(stderr,"show ifname %s\n",var);
+	  ej_active_wireless_if (eid, wp, argc, argv, var);
+	}
     }
-}
 }
 
 #else
