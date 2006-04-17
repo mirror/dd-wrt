@@ -1020,13 +1020,13 @@ stop_upnp (void)
 {
   //int ret = killps("upnp","-USR1");
 
-  int ret = eval ("killall", "-USR1", "upnp");
+  eval ("killall", "-USR1", "upnp");
 
   //killps("upnp",NULL);
   eval ("killall", "upnp");
 
   cprintf ("done\n");
-  return ret;
+  return 0;
 }
 #endif
 /*int
