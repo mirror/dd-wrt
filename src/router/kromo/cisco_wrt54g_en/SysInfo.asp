@@ -1,1 +1,0 @@
-<div><% show_sysinfo(); %></div>
