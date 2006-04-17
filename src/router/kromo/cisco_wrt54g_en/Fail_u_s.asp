@@ -6,19 +6,24 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 function to_submit()
 {
 	document.location.href =  "Upgrade.asp";
-
 }
+
 		</script>
 	</head>
 
    <body>
       <div class="message">
          <div>
-            <form>Upgrade failed.<br /><input type="button" name="action" value="Continue" OnClick=to_submit() /></form>
+            <form>
+            <script type="text/javascript">Capture(fail.mess2)</script><br />
+			<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script>
          </div>
       </div>
    </body>
