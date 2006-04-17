@@ -126,7 +126,7 @@ ifeq ($(CONFIG_MSSID),y)
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi -include ../madwifi/madwifi/include/compat.h
 endif
 
 ifeq ($(CONFIG_CDEBUG),y)
