@@ -380,6 +380,12 @@ getdevicecount (void)
   return 0;
 }
 
+static char iflist[1024];
+
+char *getiflist(void)
+{
+return iflist;
+}
 
 static void
 deconfigure_single (int count)
@@ -407,6 +413,7 @@ deconfigure_single (int count)
 void
 deconfigure_wifi (void)
 {
+  memset(iflist,0,1024);
   eval ("killall", "hostapd");
   eval ("killall", "wpa_supplicant");
   sleep (2);
@@ -951,7 +958,8 @@ configure_single (int count)
   sprintf (net, "%s_net_mode", dev);
   if (nvram_match(net,"disabled"))
     return;
-    
+  if (!count)
+  strcpy(iflist,dev);
  
 
   char *m = default_get (wl, "ap");
@@ -982,6 +990,8 @@ configure_single (int count)
 	  else
 	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
 		  m);
+	strcat(iflist," ");
+        strcat(iflist,var);
 	}
       sleep (1);
     }
@@ -1089,6 +1099,7 @@ void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   //bridge the virtual interfaces too
+memset(iflist,0,1024);
   char countrycode[64];
   char xchanmode[64];
   char outdoor[64];
