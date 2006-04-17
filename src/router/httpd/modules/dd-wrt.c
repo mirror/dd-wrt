@@ -2420,19 +2420,26 @@ rssi2dbm(u_int rssi)
 }
 
 void
-ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
+ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,char *ifname)
 {
 unsigned char buf[24*1024];
 unsigned char *cp;
 int s, len;
 struct iwreq iwr;
-char *ifname="ath0";
+s = socket(AF_INET, SOCK_DGRAM, 0);
+    if (s < 0)
+	{
+	fprintf(stderr,"socket(SOCK_DRAGM)\n");
+	return;
+	}
 (void) memset(&iwr, 0, sizeof(iwr));
 (void) strncpy(iwr.ifr_name, ifname, sizeof(iwr.ifr_name));
 iwr.u.data.pointer = (void *) buf;
 iwr.u.data.length = sizeof(buf);
 if (ioctl(s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
-	errx(1, "unable to get station information");
+    {
+    return;
+    }
 len = iwr.u.data.length;
 if (len < sizeof(struct ieee80211req_sta_info))
 	return;
@@ -2491,6 +2498,32 @@ cp = buf;
 
 
 
+}
+extern char *getiflist(void);
+
+
+void
+ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
+{
+int c = getdevicecount();
+char devs[32];
+int i;
+for (i=0;i<c;i++)
+{
+sprintf(devs,"ath%d",i);
+fprintf(stderr,"show ifname %s\n",devs);
+ej_active_wireless_if(eid,wp,argc,argv,devs);
+char vif[32];
+sprintf(vif,"%s_vifs",devs);
+char var[80], *next;
+char *vifs=nvram_safe_get(vif);
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+    fprintf(stderr,"show ifname %s\n",var);
+    ej_active_wireless_if(eid,wp,argc,argv,var);
+    }
+}
 }
 
 #else
