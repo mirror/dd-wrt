@@ -387,21 +387,20 @@ hdiag.right1="Commands:";
 hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
 
 
-// **************************************************************** Diagnostics.asp **********************************************************************//
+// **************************************************************** DMZ.asp **********************************************************************//
 
-var diag = new Object();
-diag.titl=" - Diagnostics";
-diag.h2="Diagnostics";
-diag.legend="Command Shell";
-diag.cmd="Commands";
-diag.startup="Startup";
-diag.firewall="Firewall";
+var dmz = new Object();
+dmz.titl=" - DMZ";
+dmz.h2="Demilitarized Zone (DMZ)";
+dmz.legend="DMZ";
+dmz.serv="Use DMZ";
+dmz.host="DMZ Host IP Address";
 
 
 //help container
-var hdiag = new Object();
-hdiag.right1="Commands:";
-hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
+var hdmz = new Object();
+hdmz.right1="DMZ:";
+hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
 
 
 

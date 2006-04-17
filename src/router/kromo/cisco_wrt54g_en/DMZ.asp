@@ -9,6 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+document.title = '<% nvram_get("router_name"); %>' + dmz.titl;
+
 function to_submit(F) {
 	F.submit_button.value = "DMZ";
 
@@ -64,39 +66,41 @@ addEvent(window, "load", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="dmz" action="apply.cgi" method="<% get_http_method(); %>">
+						<form name="dmz" action="apply.cgi" method="<% get_http_method(); %>" >
 							<input type="hidden" name="submit_button" value="DMZ" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" value="Apply" />
-							<h2>Demilitarized Zone (DMZ)</h2>
+							<h2><script type="text/javascript">Capture(dmz.h2)</script></h2>
 							<fieldset>
-								<legend>DMZ</legend>
+								<legend><script type="text/javascript">Capture(dmz.legend)</script></legend>
 	                			<div class="setting">
-	                				<div class="label">Use DMZ</div>
-	                				<input type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "1"); %> />Enable
-	                				<input type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "0"); %> />Disable
+	                				<div class="label"><script type="text/javascript">Capture(dmz.serv)</script></div>
+	                				<input type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "1"); %> /><script type="text/javascript">Capture(share.enable)</script>
+	                				<input type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	                			</div>
 	                			<div class="setting">
-	                				<div class="label">DMZ Host IP Address</div>
+	                				<div class="label"><script type="text/javascript">Capture(dmz.host)</script></div>
 	                				<% prefix_ip_get("lan_ipaddr",1); %>
-	                				<input class="num" maxLength="3" onblur="valid_range(this,1,254,'IP')" size="3" name="dmz_ipaddr" value='<% nvram_get("dmz_ipaddr"); %>' />
+	                				<input class="num" maxLength="3" size="3" name="dmz_ipaddr" value="<% nvram_get("dmz_ipaddr"); %>" onblur="valid_range(this,1,254,'IP')" />
 	                			</div>
 	                		</fieldset><br />
 	                		<div class="submitFooter">
-	                			<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-	                			<input type="reset" value="Cancel Changes" />
+	                			<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+	                			<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
 	                		</div>
 	                	</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">DMZ: </dt>
-							<dd class="definition">Enabling this option will expose your router to the Internet. All ports will be accessible from the Internet.</dd>
+							<dt class="term"><script type="text/javascript">Capture(hdmz.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hdmz.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HDMZ.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HDMZ.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
