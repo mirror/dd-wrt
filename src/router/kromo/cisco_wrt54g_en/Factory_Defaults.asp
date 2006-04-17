@@ -15,19 +15,11 @@ function to_submit(F) {
 			return false;
 		}
 		F.submit_button.value = "Factory_Defaults";
-
+		F.save_button.value = "Saved";
 		F.action.value="Restore";
 		apply(F);
-
-       	return true;
+			return true;
 	}
-	F.submit_button.value = "Factory_Defaults";
-	F.save_button.value = "Saved";
-
-	F.action.value="Apply";
-	apply(F);
-
-	return true;
 }
 		</script>
 	</head>
