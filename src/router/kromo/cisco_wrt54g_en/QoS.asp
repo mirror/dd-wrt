@@ -215,7 +215,7 @@ function init() {
 								</div>
 								<div class="setting">
 									<div class="label">Optimize for Gaming</div>
-									<input type="checkbox" name="_enable_game" value="1" <% nvram_match("enable_game", "1", "checked"); %>/>
+									<input type="checkbox" name="_enable_game" value="1" <% nvram_checked("enable_game", "1"); %> />
 								</div>
 							</fieldset><br />
 							<fieldset>
