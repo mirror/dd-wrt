@@ -30,29 +30,25 @@ function setWDS(val) {
 	setElementsActive("wds_watchdog_interval_sec", "wds_watchdog_ips", val == 1);
 }
 
-function alive_enable_disable(val) {
-  if (val == 1) {
-	  setElementsActive("schedule_hours", "schedule_weekdays", val == 2);
-	  setElementActive("schedule_hour_time", val == 1);
-	  setElementActive("schedule_time", val == 1);
+function setAlive(val) {
+	if (val == 1) {	// enable
+		time = document.getElementsByName('schedule_hour_time');
+		if (time[0].checked) { // Time
+			setElementsActive("schedule_hour_time", "schedule_time", true);
+			setElementActive("schedule_hour_time", true);
+			setElementsActive("schedule_hours", "schedule_weekdays", false);
+		} else { //At a set Time
+			setElementsActive("schedule_hour_time", "schedule_weekdays", true);
+			setElementActive("schedule_time", false);
+		}
+	} else { // disable
+		setElementsActive("schedule_hour_time", "schedule_weekdays", false);
   }
-  else if (val == 2) {
-  	setElementsActive("schedule_hours", "schedule_weekdays", val == 2);
-  	setElementActive("schedule_hour_time", val == 2);
-  	setElementActive("schedule_time", val == 1);
-  }
-  else {
-    setElementsActive("schedule_hour_time", "schedule_weekdays", val == 9);
-  }
-}
+
 
 function init() {
 	setWDS(<% nvram_get("wds_watchdog_enable"); %>);
-	if (<% nvram_get("schedule_enable"); %> == 1) {
-	  alive_enable_disable(<% nvram_get("schedule_hour_time"); %>);
-	} else {
-	  alive_enable_disable(0)
-	}
+	setAlive(<% nvram_get("schedule_enable"); %>);
 }
 		</script>
 	</head>
