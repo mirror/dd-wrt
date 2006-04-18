@@ -121,7 +121,7 @@ addEvent(window, "load", function() {
                         </div>
                         <div class="setting">
                         	<div class="label">Override Radius if Server is unavailable</div>
-                        	<input type="checkbox" name="_radius_override" value="1" <% nvram_match("radius_override", "1", "checked"); %>/>
+                        	<input type="checkbox" name="_radius_override" value="1" <% nvram_checked("radius_override", "1"); %> />
                         </div>
                       </div>
                     </fieldset>
