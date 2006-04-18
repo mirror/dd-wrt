@@ -1317,8 +1317,8 @@ show_virtualssid (webs_t wp, char *prefix)
 	       var, nvram_match (ssid, "1") ? "checked" : "");
     websWrite (wp, "</div>\n");
 //mode
-    show_netmode (wp, var);
-    show_channel (wp, prefix, var);
+//    show_netmode (wp, var);
+//    show_channel (wp, prefix, var);
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "AP Isolation", ssid);
     websWrite (wp, "</fieldset>\n");
@@ -1635,10 +1635,12 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     power, nvram_safe_get (power));
   websWrite (wp, "</div>\n");
 
-
-
+#ifdef HAVE_MADWIFI
+if (!strcmp(prefix,"ath0")) //show client only on first interface
+#endif
+{
   websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\">\n",
+	     "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
 	     wl_mode);
   websWrite (wp, "<option value=\"ap\" %s>AP</option>\n",
 	     nvram_match (wl_mode, "ap") ? "selected" : "");
@@ -1654,6 +1656,17 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
+}else
+{
+ websWrite (wp,
+	     "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" disabled=\"disabled\" >\n",
+	     wl_mode);
+  websWrite (wp, "<option value=\"ap\" selected>AP</option>\n");
+#endif
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
+}
+}
 //writeless net mode
   show_netmode (wp, prefix);
   //turbo options
