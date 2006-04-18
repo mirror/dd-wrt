@@ -30,8 +30,8 @@
 	</div>
 	<div class="setting">
 		<div class="label">Protocol</div>
-		<input type="checkbox" value="1" name="http_enable" <% nvram_match("http_enable","1","checked"); %> />HTTP
-		<input type="checkbox" value="1" name="https_enable" <% nvram_match("https_enable","1","checked"); %> />HTTPS
+		<input type="checkbox" value="1" name="http_enable" <% nvram_checked("http_enable", "1"); %> />HTTP
+		<input type="checkbox" value="1" name="https_enable" <% nvram_checked("https_enable", "1"); %> />HTTPS
 		</div>
 	<div class="setting">
 		<div class="label">Enable Status Site</div>
