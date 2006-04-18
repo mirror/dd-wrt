@@ -830,6 +830,15 @@ start_dnsmasq (void)
     {
       fprintf (fp, "dhcp-leasefile=/jffs/udhcpd.leases\n");
     }
+
+   if (nvram_match ("dhcp_domain", "wan"))
+    {
+      if (nvram_match ("wan_domain", ""))
+       {
+	 char *domain = nvram_safe_get ("wan_get_domain");
+         nvram_set ("wan_domain", domain);
+       }
+    }
   /* DHCP domain */
   snprintf (name, sizeof (name), "%s_domain", nvram_safe_get ("dhcp_domain"));
   if (nvram_invmatch (name, ""))
