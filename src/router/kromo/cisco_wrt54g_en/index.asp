@@ -409,7 +409,7 @@ function init() {
 								<legend>WAN Port</legend>
 								<div class="setting">
 									<div class="label">Assign WAN Port to Switch</div>
-									<input type="checkbox" name="_fullswitch" value="1" <% nvram_match("fullswitch","1","checked"); %>/>
+									<input type="checkbox" name="_fullswitch" value="1" <% nvram_checked("fullswitch", "1"); %> />
 								</div>
 							</fieldset><br />
 							<% nvram_match("wl_mode", "ap", "-->"); %>
@@ -571,7 +571,7 @@ function init() {
 								</div>
 								<div class="setting">
 									<div class="label">Use local time</div>
-									<input type="checkbox" value="1" name="_daylight_time" <% nvram_match("daylight_time","1","checked"); %>/>
+									<input type="checkbox" value="1" name="_daylight_time" <% nvram_checked("daylight_time", "1"); %> />
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
