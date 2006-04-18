@@ -686,6 +686,7 @@ get_wan_face (void)
       else
 	strncpy (localwanface, nvram_safe_get ("pppd_pppifname"), IFNAMSIZ);
     }
+#ifndef HAVE_MADWIFI
   else if (nvram_invmatch ("wl_mode", "ap"))
     {
 
@@ -695,6 +696,12 @@ get_wan_face (void)
 	strcpy (localwanface, "eth1");
 
     }
+#else
+  else if (nvram_invmatch ("ath0_mode", "ap"))
+    {
+      strcpy (localwanface, "ath0");
+    }
+#endif
   else
     strncpy (localwanface, nvram_safe_get ("wan_ifname"), IFNAMSIZ);
 
