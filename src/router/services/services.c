@@ -457,8 +457,47 @@ start_dhcpfwd (void)
       fprintf (fp, "ulimit as	0\n");
       fprintf (fp, "if	%s	true	false	true\n",
 	       nvram_safe_get ("lan_ifname"));
-      fprintf (fp, "if	%s	false	true	true\n",
-	       nvram_safe_get ("wan_ifname"));
+	       
+char *wan_proto=nvram_get("wan_proto");
+#ifdef HAVE_PPPOE
+
+  if (strcmp (wan_proto, "pppoe") == 0)
+    {
+      fprintf (fp, "if	ppp0	false	true	true\n");
+
+    }
+#else
+if (0)
+{
+}
+#endif
+  else if (strcmp (wan_proto, "dhcp") == 0 || strcmp (wan_proto, "static")==0)
+    {
+      fprintf (fp, "if	%s	false	true	true\n",nvram_safe_get ("wan_ifname"));
+    }
+#ifdef HAVE_PPTP
+  else if (strcmp (wan_proto, "pptp") == 0)
+    {
+      fprintf (fp, "if	ppp0	false	true	true\n");
+    }
+#endif
+#ifdef HAVE_L2TP
+  else if (strcmp (wan_proto, "l2tp") == 0)
+    {
+      fprintf (fp, "if	ppp0	false	true	true\n");
+    }
+#endif
+#ifdef HAVE_HEARTBEAT
+  else if (strcmp (wan_proto, "heartbeat") == 0)
+    {
+      fprintf (fp, "if	ppp0	false	true	true\n");
+    }
+#endif
+  else
+    {
+      fprintf (fp, "if	%s	false	true	true\n",nvram_safe_get ("wan_ifname"));
+    }
+	       
       fprintf (fp, "name	%s	ws-c\n",
 	       nvram_safe_get ("lan_ifname"));
       fprintf (fp, "server	ip	%s\n", nvram_safe_get ("dhcpfwd_ip"));
