@@ -1636,37 +1636,38 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 
 #ifdef HAVE_MADWIFI
-if (!strcmp(prefix,"ath0")) //show client only on first interface
+  if (!strcmp (prefix, "ath0"))	//show client only on first interface
 #endif
-{
-  websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
-	     wl_mode);
-  websWrite (wp, "<option value=\"ap\" %s>AP</option>\n",
-	     nvram_match (wl_mode, "ap") ? "selected" : "");
-  websWrite (wp, "<option value=\"sta\" %s>Client</option>\n",
-	     nvram_match (wl_mode, "sta") ? "selected" : "");
+    {
+      websWrite (wp,
+		 "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
+		 wl_mode);
+      websWrite (wp, "<option value=\"ap\" %s>AP</option>\n",
+		 nvram_match (wl_mode, "ap") ? "selected" : "");
+      websWrite (wp, "<option value=\"sta\" %s>Client</option>\n",
+		 nvram_match (wl_mode, "sta") ? "selected" : "");
 #ifndef HAVE_MADWIFI
-  websWrite (wp, "<option value=\"wet\" %s>Client Bridge</option>\n",
-	     nvram_match (wl_mode, "wet") ? "selected" : "");
-  websWrite (wp, "<option value=\"infra\" %s>Adhoc</option>\n",
-	     nvram_match (wl_mode, "infra") ? "selected" : "");
-  websWrite (wp, "<option value=\"apsta\" %s>Repeater</option>\n",
-	     nvram_match (wl_mode, "apsta") ? "selected" : "");
+      websWrite (wp, "<option value=\"wet\" %s>Client Bridge</option>\n",
+		 nvram_match (wl_mode, "wet") ? "selected" : "");
+      websWrite (wp, "<option value=\"infra\" %s>Adhoc</option>\n",
+		 nvram_match (wl_mode, "infra") ? "selected" : "");
+      websWrite (wp, "<option value=\"apsta\" %s>Repeater</option>\n",
+		 nvram_match (wl_mode, "apsta") ? "selected" : "");
 #endif
-  websWrite (wp, "</select>\n");
-  websWrite (wp, "</div>\n");
-}else
-{
- websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" disabled=\"disabled\" >\n",
-	     wl_mode);
-  websWrite (wp, "<option value=\"ap\" selected>AP</option>\n");
+      websWrite (wp, "</select>\n");
+      websWrite (wp, "</div>\n");
+    }
+#ifdef HAVE_MADWIFI
+  else
+    {
+      websWrite (wp,
+		 "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" disabled=\"disabled\" >\n",
+		 wl_mode);
+      websWrite (wp, "<option value=\"ap\" selected>AP</option>\n");
+      websWrite (wp, "</select>\n");
+      websWrite (wp, "</div>\n");
+    }
 #endif
-  websWrite (wp, "</select>\n");
-  websWrite (wp, "</div>\n");
-}
-}
 //writeless net mode
   show_netmode (wp, prefix);
   //turbo options

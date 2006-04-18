@@ -1485,7 +1485,9 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
-		     i == start_hour + start_time * 12 ? "selected=\"selected\"" : "", i);
+		     i ==
+		     start_hour +
+		     start_time * 12 ? "selected=\"selected\"" : "", i);
 	}
     }
   else if (!strcmp (type, "start_min_15"))
@@ -1494,7 +1496,8 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 15,
-		     i * 15 == start_min ? "selected=\"selected\"" : "", i * 15);
+		     i * 15 == start_min ? "selected=\"selected\"" : "",
+		     i * 15);
 	}
     }
   else if (!strcmp (type, "end_hour_24"))
@@ -1503,7 +1506,9 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%d %s>%d</option>\n", i,
-		     i == end_hour + end_time * 12 ? "selected=\"selected\"" : "", i);
+		     i ==
+		     end_hour + end_time * 12 ? "selected=\"selected\"" : "",
+		     i);
 	}
     }
   else if (!strcmp (type, "end_min_15"))
@@ -1512,7 +1517,8 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 15,
-		     i * 15 == end_min ? "selected=\"selected\"" : "", i * 15);
+		     i * 15 == end_min ? "selected=\"selected\"" : "",
+		     i * 15);
 	}
     }
   else if (!strcmp (type, "start_hour_12"))
@@ -1535,7 +1541,8 @@ ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv)
 	{
 
 	  websWrite (wp, "<option value=%02d %s>%02d</option>\n", i * 5,
-		     i * 5 == start_min ? "selected=\"selected\"" : "", i * 5);
+		     i * 5 == start_min ? "selected=\"selected\"" : "",
+		     i * 5);
 	}
     }
   else if (!strcmp (type, "start_time_am"))
