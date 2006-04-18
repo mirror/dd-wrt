@@ -675,12 +675,26 @@ start_udhcpd (void)
   if (dns_list)
     free (dns_list);
 
+   if (nvram_match ("dhcp_domain", "wan"))
+    {
+      if (nvram_match ("wan_domain", ""))
+       {
+	 char *domain = nvram_safe_get ("wan_get_domain");
+         nvram_set ("wan_domain", domain);
+       }
+    }
   snprintf (name, sizeof (name), "%s_domain", nvram_safe_get ("dhcp_domain"));
+  if (nvram_invmatch (name, ""))
+    {
+      fprintf (fp, "option domain %s\n", nvram_safe_get (name));
+    }
+
+  /*snprintf (name, sizeof (name), "%s_domain", nvram_safe_get ("dhcp_domain"));
 
   if (nvram_invmatch ("wan_domain", ""))
     fprintf (fp, "option domain %s\n", nvram_safe_get (name));
   else if (nvram_invmatch ("wan_get_domain", ""))
-    fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));
+    fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));*/
 
   /* Sveasoft addition - additional options */
   if (nvram_invmatch ("dhcpd_options", ""))
