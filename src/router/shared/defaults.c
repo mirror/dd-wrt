@@ -518,7 +518,7 @@ struct nvram_tuple router_defaults[] = {
 #endif
   {"wl_dtim", "1", 0},		/* DTIM period (3.11.5) *//* It is best value for WiFi test */
   {"wl_bcn", "100", 0},		/* Beacon interval */
-  {"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
+  {"wl_plcphdr", "auto", 0},	/* 802.11b PLCP preamble type */
 
 #ifdef HAVE_GGEW
   {"wl_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
