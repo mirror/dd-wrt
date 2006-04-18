@@ -382,9 +382,10 @@ getdevicecount (void)
 
 static char iflist[1024];
 
-char *getiflist(void)
+char *
+getiflist (void)
 {
-return iflist;
+  return iflist;
 }
 
 static void
@@ -413,7 +414,7 @@ deconfigure_single (int count)
 void
 deconfigure_wifi (void)
 {
-  memset(iflist,0,1024);
+  memset (iflist, 0, 1024);
   eval ("killall", "hostapd");
   eval ("killall", "wpa_supplicant");
   sleep (2);
@@ -555,12 +556,13 @@ list_channelsext (const char *ifname, int allchans)
   const struct ieee80211_channel *c;
   int i, half;
   cprintf ("get priv\n");
-  fprintf(stderr,"list channels for %s\n",ifname);
-  if (get80211priv(ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
-  {
+  fprintf (stderr, "list channels for %s\n", ifname);
+  if (get80211priv
+      (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
+    {
 //    errx (1, "unable to get channel information");
-    return NULL;
-  }
+      return NULL;
+    }
   if (!allchans)
     {
       uint8_t active[32];
@@ -568,9 +570,9 @@ list_channelsext (const char *ifname, int allchans)
 
       if (get80211priv
 	  (ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof (active)) < 0)
-	  {
-//	errx (1, "unable to get active channel list");
-	return NULL;
+	{
+//      errx (1, "unable to get active channel list");
+	  return NULL;
 	}
       cprintf ("clear achans\n");
       memset (&achans, 0, sizeof (achans));
@@ -908,19 +910,30 @@ static void
 set_netmode (char *dev)
 {
   char net[16];
+  char turbo[16];
   sprintf (net, "%s_net_mode", dev);
+  sprintf (turbo, "%s_turbo", dev);
   char *netmode = default_get (net, "mixed");
-  fprintf(stderr,"set netmode of %s to %s\n",net,netmode);
+  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
-  if (!strcmp (netmode, "mixed"))
-    eval ("iwpriv", dev, "mode", "0");
-  if (!strcmp (netmode, "b-only"))
-    eval ("iwpriv", dev, "mode", "2");
-  if (!strcmp (netmode, "g-only"))
-    eval ("iwpriv", dev, "mode", "3");
-  if (!strcmp (netmode, "a-only"))
-    eval ("iwpriv", dev, "mode", "1");
 
+  if (default_match (turbo, "1", "0"))
+    {
+      eval ("iwpriv", dev, "mode", "5");
+      eval ("iwpriv", dev, "turbo", "1");
+    }
+  else
+    {
+      eval ("iwpriv", dev, "turbo", "0");
+      if (!strcmp (netmode, "mixed"))
+	eval ("iwpriv", dev, "mode", "0");
+      if (!strcmp (netmode, "b-only"))
+	eval ("iwpriv", dev, "mode", "2");
+      if (!strcmp (netmode, "g-only"))
+	eval ("iwpriv", dev, "mode", "3");
+      if (!strcmp (netmode, "a-only"))
+	eval ("iwpriv", dev, "mode", "1");
+    }
 }
 
 static void
@@ -933,7 +946,6 @@ configure_single (int count)
   char dev[10];
   char wif[10];
   char wl[16];
-  char turbo[16];
   char channel[16];
   char ssid[16];
   char net[16];
@@ -946,7 +958,6 @@ configure_single (int count)
   sprintf (dev, "ath%d", count);
   sprintf (wif, "wifi%d", count);
   sprintf (wl, "ath%d_mode", count);
-  sprintf (turbo, "ath%d_turbo", count);
   sprintf (channel, "ath%d_channel", count);
   sprintf (ssid, "ath%d_ssid", count);
   sprintf (broadcast, "ath%d_closed", count);
@@ -956,11 +967,11 @@ configure_single (int count)
   cprintf ("configure base interface %d\n", count);
 
   sprintf (net, "%s_net_mode", dev);
-  if (nvram_match(net,"disabled"))
+  if (nvram_match (net, "disabled"))
     return;
   if (!count)
-  strcpy(iflist,dev);
- 
+    strcpy (iflist, dev);
+
 
   char *m = default_get (wl, "ap");
   cprintf ("mode %s\n", m);
@@ -973,8 +984,8 @@ configure_single (int count)
     foreach (var, vifs, next)
     {
       //create device
-    sprintf (net, "%s_net_mode", var);
-    if (nvram_match(net,"disabled"))
+      sprintf (net, "%s_net_mode", var);
+      if (nvram_match (net, "disabled"))
 	continue;
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
@@ -990,8 +1001,8 @@ configure_single (int count)
 	  else
 	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
 		  m);
-	strcat(iflist," ");
-        strcat(iflist,var);
+	  strcat (iflist, " ");
+	  strcat (iflist, var);
 	}
       sleep (1);
     }
@@ -1004,14 +1015,6 @@ configure_single (int count)
 
   set_netmode (dev);
 
-  cprintf ("configure turbo\n");
-  if (default_match (turbo, "1", "0"))
-    {
-      eval ("iwpriv", dev, "mode", "5");
-      eval ("iwpriv", dev, "turbo", "1");
-    }
-  else
-    eval ("iwpriv", dev, "turbo", "0");
 
   if (strcmp (m, "sta"))
     {
@@ -1048,35 +1051,36 @@ configure_single (int count)
 
 //@todo ifup
   eval ("ifconfig", dev, "0.0.0.0", "up");
-
-  eval ("brctl", "addif", "br0", dev);
-
+  if (strcmp (m, "sta"))
+    {
+      eval ("brctl", "addif", "br0", dev);
+    }
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-    sprintf (net, "%s_net_mode", var);
-    if (nvram_match(net,"disabled"))
+      sprintf (net, "%s_net_mode", var);
+      if (nvram_match (net, "disabled"))
 	continue;
       sprintf (ssid, "%s_ssid", var);
-      sprintf (channel, "%s_channel", var);
+//      sprintf (channel, "%s_channel", var);
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
 
-      if (strcmp (m, "sta"))
-	{
-	  eval ("iwconfig", var, "channel", default_get (channel, "6"));
-	}
-      fprintf(stderr,"set ssid for %s\n",var);
+//      if (strcmp (m, "sta"))
+//      {
+//        eval ("iwconfig", var, "channel", default_get (channel, "6"));
+//      }
+      fprintf (stderr, "set ssid for %s\n", var);
       eval ("iwconfig", var, "essid", default_get (ssid, "default"));
       cprintf ("set broadcast flag vif\n", var);	//hide ssid
-      fprintf(stderr,"set broadcast for %s\n",var);
+      fprintf (stderr, "set broadcast for %s\n", var);
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
       // net mode
 //      set_netmode (var);
 
-      fprintf(stderr,"encryption %s\n",var);
+      fprintf (stderr, "encryption %s\n", var);
 
       cprintf ("setup encryption");
       if (strcmp (m, "sta"))
@@ -1086,8 +1090,10 @@ configure_single (int count)
 
       eval ("ifconfig", var, "0.0.0.0", "up");
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
-      eval ("brctl", "addif", "br0", var);
-
+      if (strcmp (m, "sta"))
+	{
+	  eval ("brctl", "addif", "br0", var);
+	}
       //add to bridge
 //                  eval ("brctl", "addif", lan_ifname, var);
       cnt++;
@@ -1099,7 +1105,7 @@ void
 configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   //bridge the virtual interfaces too
-memset(iflist,0,1024);
+  memset (iflist, 0, 1024);
   char countrycode[64];
   char xchanmode[64];
   char outdoor[64];
