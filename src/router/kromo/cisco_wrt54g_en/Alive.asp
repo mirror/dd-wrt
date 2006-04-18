@@ -30,8 +30,9 @@ function setWDS(val) {
 	setElementsActive("wds_watchdog_interval_sec", "wds_watchdog_ips", val == 1);
 }
 
-function setAlive(val) {
-	if (val == 1) {	// enable
+function setAlive() {
+	alive = document.getElementsByName('schedule_enable');
+	if (alive[0].checked) {	// enable
 		time = document.getElementsByName('schedule_hour_time');
 		if (time[0].checked) { // Time
 			setElementsActive("schedule_hour_time", "schedule_time", true);
@@ -48,7 +49,7 @@ function setAlive(val) {
 
 function init() {
 	setWDS(<% nvram_get("wds_watchdog_enable"); %>);
-	setAlive(<% nvram_get("schedule_enable"); %>);
+	setAlive();
 }
 		</script>
 	</head>
