@@ -29,7 +29,7 @@
 	<legend>Web Access</legend>
 	<div class="setting">
 		<div class="label">Protocol</div>
-		<input type="checkbox" value="1" name="_http_enable" <% nvram_match("http_enable","1","checked"); %> />HTTP
+		<input type="checkbox" value="1" name="_http_enable" <% nvram_checked("http_enable", "1"); %> />HTTP
 	</div>
 	<div class="setting">
 		<div class="label">Auto-Refresh (in seconds)</div>
@@ -42,7 +42,7 @@
 		</div>
 	<div class="setting">
 		<div class="label">Info Site Password Protection</div>
-		<input type="checkbox" value="1" name="_info_passwd" <% nvram_match("info_passwd","1","checked"); %> />Enabled
+		<input type="checkbox" value="1" name="_info_passwd" <% nvram_checked("info_passwd", "1"); %> />Enabled
 	</div>
 	<div class="setting">
 	  <div class="label">Info Site MAC Masquerading</div>
