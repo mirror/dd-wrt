@@ -438,7 +438,7 @@ function Status(F,I) {
 								<legend>Blocked Services</legend>
 								<div class="setting">
 									<div class="label">Catch all P2P Protocols</div>
-  									<input type="checkbox" name="_filter_p2p" value="1" <% nvram_match("filter_p2p", "1", "checked"); %>/>
+  									<input type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onChange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
