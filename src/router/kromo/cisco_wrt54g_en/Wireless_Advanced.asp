@@ -184,7 +184,6 @@ addEvent(window, "load", function() {
 										<option value="on" <% nvram_selected("wl_afterburner", "on"); %>>Enable</option>
 										<option value="auto" <% nvram_selected("wl_afterburner", "auto"); %>>Auto</option>
 									</select>&nbsp;
-									<span class="default">(Default: Auto)</span>
 								</div>
 								<div class="setting">
 									<div class="label">Wireless GUI Access</div>
