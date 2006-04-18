@@ -21,7 +21,7 @@ function setWMM(val) {
 }
 
 addEvent(window, "load", function() {
-	setWMM("<% nvram_get("wl_wme"); %>" == "on");
+	setWMM("<% nvram_get("wl_wme"); %>");
 });
 		</script>
 	</head>
