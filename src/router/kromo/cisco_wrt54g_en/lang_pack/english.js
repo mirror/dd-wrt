@@ -47,7 +47,8 @@ share.thu="Thursday";
 share.fri="Friday";
 share.sat="Saturday";
 share.expires="Expires";
-
+share.yes="Yes";
+share.no="No";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -402,8 +403,20 @@ var hdmz = new Object();
 hdmz.right1="DMZ:";
 hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
 
+// **************************************************************** Factory_Defaults.asp **********************************************************************//
+
+var factdef = new Object();
+factdef.titl=" - Factory Defaults";
+factdef.h2="Factory Defaults";
+factdef.legend="Reset router settings";
+factdef.restore="Restore Factory Defaults";
+
+factdef.mess1="Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.";
 
 
+//help container
+var hfactdef = new Object();
+hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
 
 
 
