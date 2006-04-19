@@ -1316,6 +1316,8 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input type=\"radio\" value=\"1\" name=\"%s_closed\" %s>Disable</input>\n",
 	       var, nvram_match (ssid, "1") ? "checked" : "");
     websWrite (wp, "</div>\n");
+    char wl_mode[16];
+    sprintf (wl_mode, "%s_mode", prefix);
 
       websWrite (wp,
 		 "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
