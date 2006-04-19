@@ -44,7 +44,8 @@ function setAlive() {
 		}
 	} else { // disable
 		setElementsActive("schedule_hour_time", "schedule_weekdays", false);
-  }
+	}
+}
 
 
 function init() {
