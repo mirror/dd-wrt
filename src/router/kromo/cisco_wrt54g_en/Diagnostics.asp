@@ -59,7 +59,7 @@ function valid(F,I) {
 											<li><span><script type="text/javascript">Capture(bmenu.adminDiag)</script></span></li>
 											<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
 											<li><a href="Upgrade.asp"><script type="text/javascript">Capture(bmenu.adminUpgrade)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.adminBackup)</script></span></li>
+											<li><a href="config.asp"><script type="text/javascript">Capture(bmenu.adminBackup)</script></a></li>
 										</ul>
 									</div>
 								</li>
