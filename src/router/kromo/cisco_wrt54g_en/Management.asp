@@ -27,11 +27,13 @@ function port_enable_disable(F,I) {
 		choose_disable(F.http_wanport);
 		if (F._remote_mgt_https)
 		choose_disable(F._remote_mgt_https);
+		choose_disable(F._remote_mgt_ssh);
 	} else {
 		if (F.http_wanport)
 		choose_enable(F.http_wanport);
 		if (F._remote_mgt_https)
 		choose_enable(F._remote_mgt_https);
+		choose_disable(F._remote_mgt_ssh);
 	}
 	if(F._http_enable.checked == false)
 	if(F._https_enable)
@@ -98,6 +100,8 @@ function to_submit(F) {
 			F._remote_mgt_https.checked == true;
 		if(F._remote_mgt_https.checked == true) F.remote_mgt_https.value = 1;
 		else 	 F.remote_mgt_https.value = 0;
+		if(F._remote_mgt_ssh.checked == true) F.remote_mgt_ssh.value = 1;
+		else 	 F.remote_mgt_ssh.value = 0;
 	}
 	if(F._https_enable){
 		if(F._https_enable.checked == true)
@@ -138,6 +142,10 @@ function handle_https(F)
 
 function init() {
 	port_enable_disable(document.setup, '<% nvram_get("remote_management"); %>');
+	if (<% nvram_get("sshd_enable"); %> == "0") {
+		F.remote_mgt_ssh.value = 0;
+		choose_disable(F._remote_mgt_ssh);
+	}
 }
 
 		</script>
@@ -195,6 +203,7 @@ function init() {
 							<input type="hidden" name="http_enable"/>
 							<input type="hidden" name="info_passwd"/>
 							<input type="hidden" name="https_enable"/>
+							<input type="hidden" name="remote_mgt_ssh"/>
 							<h2>Router Management</h2>
 							<% show_modules(".webconfig"); %>
 							<% show_modules(".webconfig_release"); %>
