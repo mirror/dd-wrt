@@ -1183,7 +1183,7 @@ check_hw_type (void)
 
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
 
-  if (nvram_match ("boardtype", "bcm94710dev"))
+  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("boardtype", "bcm94710ap")) //Eko 19.apr.06
     return BCM4702_CHIP;
   else if (nvram_match ("boardtype", "0x0708") && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
