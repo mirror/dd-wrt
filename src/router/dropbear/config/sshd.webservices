@@ -1,24 +1,28 @@
-<% nvram_match("sshd_web","0","<!--"); %><fieldset>
+<% nvram_match("sshd_web","0","<!--"); %>
+<fieldset>
 	<legend>Secure Shell</legend>
 	<div class="setting">
 		<div class="label">SSHd</div>
 		<input type="radio" name="sshd_enable" value="1" <% nvram_selmatch("sshd_enable", "1", "checked"); %> />Enable
 		<input type="radio" name="sshd_enable" value="0" <% nvram_selmatch("sshd_enable", "0", "checked"); %> />Disable
-		</div>
-	<% nvram_match("sshd_enable","0","<!--"); %><div class="setting">
+	</div>
+	<% nvram_match("sshd_enable","0","<!--"); %>
+	<div class="setting">
 		<div class="label">Password Login</div>
-		<input type="radio" name="sshd_passwd_auth" value="1" <% nvram_selmatch("sshd_passwd_auth", "1", "checked"); %> /> 
-		Enable<input type="radio" name="sshd_passwd_auth" value="0" <% nvram_selmatch("sshd_passwd_auth", "0", "checked"); %> /> 
-		Disable</div>
+		<input type="radio" name="sshd_passwd_auth" value="1" <% nvram_selmatch("sshd_passwd_auth", "1", "checked"); %> />Enable
+		<input type="radio" name="sshd_passwd_auth" value="0" <% nvram_selmatch("sshd_passwd_auth", "0", "checked"); %> />Disable
+	</div>
 	<div class="setting">
 		<div class="label">SSHd Port</div>
 		<input type="text" class="num" maxlength="100" size="3" name="sshd_port" value="<% nvram_get("sshd_port"); %>" /></div>
 	<div class="setting">
 		<div class="label">Authorized Keys</div>
-		<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2">	</textarea><script type="text/javascript">
-		
-				var var_authorized_keys = fix_cr( '<% nvram_get("sshd_authorized_keys"); %>' );
-				document.getElementById("sshd_authorized_keys").value = var_authorized_keys;
-			</script></div>
-	<% nvram_match("sshd_enable","0","-->"); %></fieldset><br />
-	<% nvram_match("sshd_web","0","-->"); %>
+		<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2">	</textarea>
+		<script type="text/javascript">
+			var var_authorized_keys = fix_cr( '<% nvram_get("sshd_authorized_keys"); %>' );
+			document.getElementById("sshd_authorized_keys").value = var_authorized_keys;
+		</script>
+	</div>
+	<% nvram_match("sshd_enable","0","-->"); %>
+</fieldset><br />
+<% nvram_match("sshd_web","0","-->"); %>
