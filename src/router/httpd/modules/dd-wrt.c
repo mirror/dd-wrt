@@ -2692,6 +2692,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 {
+#ifndef HAVE_MADWIFI
   int rssi = 0, i;
   FILE *fp, *fp2;
   char *mode;
@@ -2816,7 +2817,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 
   unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
-
+#endif
   return;
 }
 
