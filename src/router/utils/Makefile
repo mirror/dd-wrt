@@ -39,13 +39,13 @@ install: all
 	install $(UTILS) $(INSTALLDIR)/usr/sbin
 	#install $(LIBS) $(INSTALLDIR)/usr/lib
 #	$(STRIP) $(foreach file,$(UTILS),$(INSTALLDIR)/usr/sbin/$(file))
+
+
+ifneq ($(CONFIG_RB500),y)
 ifeq ($(CONFIG_MSSID),y)
 	install wl $(INSTALLDIR)/usr/sbin
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/wl
 else
 	install -D wl.v23 $(INSTALLDIR)/usr/sbin/wl
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/wl
 endif
-#	install et $(INSTALLDIR)/usr/sbin
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/et
+endif
 	@true
