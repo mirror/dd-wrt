@@ -365,7 +365,7 @@ int main(int argc, char *argv[])
 			/* timeout dropped to zero */
 			switch (state) {
 			case INIT_SELECTING:
-				if (packet_num < 2) {
+				if (packet_num < 1) {
 					if (packet_num == 0)
 						xid = random_xid();
 
