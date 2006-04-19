@@ -27,9 +27,9 @@ OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o wland.o sendud
 CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 #endif
 
-ifneq ($(CONFIG_RB500),y)
+#ifneq ($(CONFIG_RB500),y)
 OBJS += mtd.o
-endif
+#endif
 
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
