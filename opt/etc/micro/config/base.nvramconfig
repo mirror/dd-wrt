@@ -71,7 +71,6 @@
  "sshd_authorized_keys"  "SSHD"  "NULL"  "TRUE"  "0"  
  "syslogd_enable"  "Syslog"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "syslogd_rem_ip"  "Syslog"  "IPADDR"  "TRUE" "0"  
-
  "wshaper_enable"  "Bandwidth Mgmt"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "wshaper_dev"  "Bandwidth Mgmt"  "CHOICE" "3" "WAN"  "LAN"  "wLAN"  "FALSE" "0"  
  "wshaper_downlink"  "Bandwidth Mgmt"  "NULL"  "TRUE" "0"  
@@ -186,4 +185,5 @@
  "stats_server"  "Stats Server"  "NULL"  "TRUE" "0"  EZC_SUPPORT
  "ezc_enable"  "EZConfig"  "CHOICE" "2"  "0"  "1"  "FALSE" "3"  
  "wl_afterburner"  "AfterBurner Technology"  "CHOICE" "3"  "on"  "off"  "auto"  "FALSE" "3"
-  "refresh_time" "Auto-Refresh" "NULL" "TRUE" "0"
+ "refresh_time" "Auto-Refresh" "NULL" "TRUE" "0"
+ "remote_mgt_ssh"  "Remote Management enable SSH" "CHOICE" "2" "0"  "1"  "FALSE" "0"

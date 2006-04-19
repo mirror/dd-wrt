@@ -1,336 +1,352 @@
 <div>
 	<fieldset>
-	<legend>Router Password</legend>
-	<div class="setting">
-		<div class="label">
-			Router Password</div>
-		<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onblur="valid_name(this,'Password',SPACE_NO)" /></div>
-	<div class="setting">
-		<div class="label">
-			Re-enter to confirm</div>
-		<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onblur="valid_name(this,'Password',SPACE_NO)" /></div>
+		<legend>Router Password</legend>
+		<div class="setting">
+			<div class="label">Router Password</div>
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwd" onblur="valid_name(this,'Password',SPACE_NO)" />
+		</div>
+		<div class="setting">
+			<div class="label">Re-enter to confirm</div>
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_passwdConfirm" onblur="valid_name(this,'Password',SPACE_NO)" />
+		</div>
 	</fieldset><br />
 	<fieldset>
-	<legend>Remote Router Access</legend>
-	<div class="setting">
-		<div class="label">Remote Management</div>
-		<input type="radio" value="1" name="remote_management" onclick="SelPort(1,this.form)" <% nvram_match("remote_management","1","checked"); %> />Enable
-		<input type="radio" value="0" name="remote_management" onclick="SelPort(0,this.form)" <% nvram_match("remote_management","0","checked"); %> /> Disable
+		<legend>Remote Router Access</legend>
+		<div class="setting">
+			<div class="label">Remote Management</div>
+			<input type="radio" value="1" name="remote_management" onclick="SelPort(1,this.form)" <% nvram_match("remote_management","1","checked"); %> />Enable
+			<input type="radio" value="0" name="remote_management" onclick="SelPort(0,this.form)" <% nvram_match("remote_management","0","checked"); %> />Disable
 		</div>
-	<div class="setting">
-		<div class="label">
-			Management Port</div>
-		<input class="num" maxlength="5" size="5" name="http_wanport" onblur="valid_range(this,1,65535,'Port number')" value="<% nvram_get("http_wanport"); %>" /></div>
+		<div class="setting">
+			<div class="label">Management Port</div>
+			<input class="num" maxlength="5" size="5" name="http_wanport" onblur="valid_range(this,1,65535,'Port number')" value="<% nvram_get("http_wanport"); %>" />
+		</div>
+		<% nvram_match("sshd_web","0","<!--"); %>
+		<div class="setting">
+			<div class="label">Allow SSH</div>
+			<input type="checkbox" value="1" name="_remote_mgt_ssh" <% nvram_checked("remote_mgt_ssh", "1"); %> />
+		</div>
+		<% nvram_match("sshd_web","0","-->"); %>
 	</fieldset><br />
 	<fieldset>
-	<legend>Web Access</legend>
-	<div class="setting">
-		<div class="label">Auto-Refresh (in seconds)</div>
-		<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label">Protocol</div>
-		<input type="checkbox" value="1" name="http_enable" <% nvram_checked("http_enable", "1"); %> />HTTP
-		<input type="checkbox" value="1" name="https_enable" <% nvram_checked("https_enable", "1"); %> />HTTPS
+		<legend>Web Access</legend>
+		<div class="setting">
+			<div class="label">Auto-Refresh (in seconds)</div>
+			<input class="num" name="refresh_time" size="2" maxlength="2" value="<% nvram_get("refresh_time"); %>" />
 		</div>
-	<div class="setting">
-		<div class="label">Enable Status Site</div>
-		<input type="radio" value="1" name="status_auth" <% nvram_match("status_auth","1","checked"); %> />Enable
-		<input type="radio" value="0" name="status_auth" <% nvram_match("status_auth","0","checked"); %> />Disable
+		<div class="setting">
+			<div class="label">Protocol</div>
+			<input type="checkbox" value="1" name="http_enable" <% nvram_checked("http_enable", "1"); %> />HTTP
+			<input type="checkbox" value="1" name="https_enable" <% nvram_checked("https_enable", "1"); %> />HTTPS
 		</div>
-	</fieldset><br />
+		<div class="setting">
+			<div class="label">Enable Status Site</div>
+			<input type="radio" value="1" name="status_auth" <% nvram_match("status_auth","1","checked"); %> />Enable
+			<input type="radio" value="0" name="status_auth" <% nvram_match("status_auth","0","checked"); %> />Disable
+		</div>
 	</fieldset><br />
 	<fieldset>
-	<legend>AP Watchdog</legend>
-	<div class="setting">
-		<div class="label">AP Watchdog</div>
-		<input type="radio" value="1" name="apwatchdog_enable" <% nvram_match("apwatchdog_enable","1","checked"); %> />Enable
-		<input type="radio" value="0" name="apwatchdog_enable" <% nvram_match("apwatchdog_enable","0","checked"); %> />Disable
+		<legend>AP Watchdog</legend>
+		<div class="setting">
+			<div class="label">AP Watchdog</div>
+			<input type="radio" value="1" name="apwatchdog_enable" <% nvram_match("apwatchdog_enable","1","checked"); %> />Enable
+			<input type="radio" value="0" name="apwatchdog_enable" <% nvram_match("apwatchdog_enable","0","checked"); %> />Disable
 		</div>
-	<div class="setting">
-		<div class="label">Interval</div>
-		<input class="num" maxlength="6" size="6" name="apwatchdog_interval" value="<% nvram_get("apwatchdog_interval"); %>" /> 
-		sec</div>
+		<div class="setting">
+			<div class="label">Interval</div>
+			<input class="num" maxlength="6" size="6" name="apwatchdog_interval" value="<% nvram_get("apwatchdog_interval"); %>" />sec
+		</div>
 	</fieldset><br />
 	<noop><fieldset>
 	<legend>Bandwidth Management</legend>
-	<div class="setting">
-		<div class="label">
-			Bandwidth Managment</div>
-		<input type="radio" value="1" name="wshaper_enable" <% nvram_match("wshaper_enable","1","checked"); %> /> 
-		Enable<input type="radio" value="0" name="wshaper_enable" <% nvram_match("wshaper_enable","0","checked"); %> /> 
-		Disable</div>
-	<% nvram_match("wshaper_enable","0","<!--"); %><div class="setting">
-		<div class="label">Bandwidth Managment</div>
-		<input type="radio" value="1" name="wshaper_enable" <% nvram_match("wshaper_enable","1","checked"); %> />Enable
-		<input type="radio" value="0" name="wshaper_enable" <% nvram_match("wshaper_enable","0","checked"); %> />Disable
+		<div class="setting">
+			<div class="label">Bandwidth Managment</div>
+			<input type="radio" value="1" name="wshaper_enable" <% nvram_match("wshaper_enable","1","checked"); %> />Enable
+			<input type="radio" value="0" name="wshaper_enable" <% nvram_match("wshaper_enable","0","checked"); %> />Disable
 		</div>
-	<div class="setting">
-		<div class="label">�nbsp;</div>
-		<input type="radio" value="WAN" name="wshaper_dev" <% nvram_match("wshaper_dev","wan","checked"); %> />WAN
-		<input type="radio" value="LAN" name="wshaper_dev" <% nvram_match("wshaper_dev","lan","checked"); %> />LAN &amp; wLAN
+		<% nvram_match("wshaper_enable","0","<!--"); %>
+		<div class="setting">
+			<div class="label">Bandwidth Managment</div>
+			<input type="radio" value="1" name="wshaper_enable" <% nvram_match("wshaper_enable","1","checked"); %> />Enable
+			<input type="radio" value="0" name="wshaper_enable" <% nvram_match("wshaper_enable","0","checked"); %> />Disable
 		</div>
-	<div class="setting">
-		<div class="label">�nbsp;</div>
-		<input type="text" size="16" name="wshaper_uplink" value="<% nvram_get("wshaper_uplink"); %>" />kbps Uplink
+		<div class="setting">
+			<div class="label">�nbsp;</div>
+			<input type="radio" value="WAN" name="wshaper_dev" <% nvram_match("wshaper_dev","wan","checked"); %> />WAN
+			<input type="radio" value="LAN" name="wshaper_dev" <% nvram_match("wshaper_dev","lan","checked"); %> />LAN &amp; wLAN
 		</div>
-	<div class="setting">
-		<div class="label">�nbsp;</div>
-		<input type="text" size="16" name="wshaper_downlink" value="<% nvram_get("wshaper_downlink"); %>" />kbps Downlink
+		<div class="setting">
+			<div class="label">�nbsp;</div>
+			<input type="text" size="16" name="wshaper_uplink" value="<% nvram_get("wshaper_uplink"); %>" />kbps Uplink
 		</div>
-	<div class="setting">
-		<div class="label">Low Priority Source Netmasks</div>
-		<textarea cols="40" rows="2" id="wshaper_nopriohostsrc" name="wshaper_nopriohostsrc">	</textarea></div>
-	<div class="setting">
-		<div class="label">Low Priority Destination Netmasks</div>
-		<textarea cols="40" rows="2" id="wshaper_nopriohostdst" name="wshaper_nopriohostdst">	</textarea></div>
-	<div class="setting">
-		<div class="label">Low Priority Source Ports</div>
-		<textarea cols="40" rows="1" id="wshaper_noprioportsrc" name="wshaper_noprioportsrc">	</textarea></div>
-	<div class="setting">
-		<div class="label">Low Priority Destination Ports</div>
-		<textarea cols="40" rows="1" id="wshaper_noprioportdst" name="wshaper_noprioportdst">	</textarea></div>
-	<script language="javascript">
-			var wshaper_nopriohostsrc = fix_cr( '<% nvram_get("wshaper_nopriohostsrc"); %>' );
-			var wshaper_nopriohostdst = fix_cr( '<% nvram_get("wshaper_nopriohostdst"); %>' );
-			var wshaper_noprioportsrc = fix_cr( '<% nvram_get("wshaper_noprioportsrc"); %>' );
-			var wshaper_noprioportdst = fix_cr( '<% nvram_get("wshaper_noprioportdst"); %>' );
-			
-			document.getElementById("wshaper_nopriohostsrc").value = wshaper_nopriohostsrc;
-			document.getElementById("wshaper_nopriohostdst").value = wshaper_nopriohostdst;
-			document.getElementById("wshaper_noprioportsrc").value = wshaper_noprioportsrc;
-			document.getElementById("wshaper_noprioportdst").value = wshaper_noprioportdst;
+		<div class="setting">
+			<div class="label">�nbsp;</div>
+			<input type="text" size="16" name="wshaper_downlink" value="<% nvram_get("wshaper_downlink"); %>" />kbps Downlink
+		</div>
+		<div class="setting">
+			<div class="label">Low Priority Source Netmasks</div>
+			<textarea cols="40" rows="2" id="wshaper_nopriohostsrc" name="wshaper_nopriohostsrc">	</textarea>
+		</div>
+		<div class="setting">
+			<div class="label">Low Priority Destination Netmasks</div>
+			<textarea cols="40" rows="2" id="wshaper_nopriohostdst" name="wshaper_nopriohostdst">	</textarea>
+		</div>
+		<div class="setting">
+			<div class="label">Low Priority Source Ports</div>
+			<textarea cols="40" rows="1" id="wshaper_noprioportsrc" name="wshaper_noprioportsrc">	</textarea>
+		</div>
+		<div class="setting">
+			<div class="label">Low Priority Destination Ports</div>
+			<textarea cols="40" rows="1" id="wshaper_noprioportdst" name="wshaper_noprioportdst">	</textarea>
+		</div>
+		<script language="javascript">
+				var wshaper_nopriohostsrc = fix_cr( '<% nvram_get("wshaper_nopriohostsrc"); %>' );
+				var wshaper_nopriohostdst = fix_cr( '<% nvram_get("wshaper_nopriohostdst"); %>' );
+				var wshaper_noprioportsrc = fix_cr( '<% nvram_get("wshaper_noprioportsrc"); %>' );
+				var wshaper_noprioportdst = fix_cr( '<% nvram_get("wshaper_noprioportdst"); %>' );
+				
+				document.getElementById("wshaper_nopriohostsrc").value = wshaper_nopriohostsrc;
+				document.getElementById("wshaper_nopriohostdst").value = wshaper_nopriohostdst;
+				document.getElementById("wshaper_noprioportsrc").value = wshaper_noprioportsrc;
+				document.getElementById("wshaper_noprioportdst").value = wshaper_noprioportdst;
 		</script>
-	<% nvram_match("wshaper_enable","0","-->"); %></fieldset><br />
-	</noop><% nvram_match("boot_wait_web","0","<!--"); %><fieldset>
-	<legend>Boot Wait</legend>
-	<div class="setting">
-		<div class="label">Boot Wait</div>
-		<input type="radio" value="on" name="boot_wait" <% nvram_match("boot_wait","on","checked"); %> />On
-		<input type="radio" value="off" name="boot_wait" <% nvram_match("boot_wait","off","checked"); %> />Off
+		<% nvram_match("wshaper_enable","0","-->"); %>
+	</fieldset><br />
+	</noop>
+	<% nvram_match("boot_wait_web","0","<!--"); %>
+	<fieldset>
+		<legend>Boot Wait</legend>
+		<div class="setting">
+			<div class="label">Boot Wait</div>
+			<input type="radio" value="on" name="boot_wait" <% nvram_match("boot_wait","on","checked"); %> />On
+			<input type="radio" value="off" name="boot_wait" <% nvram_match("boot_wait","off","checked"); %> />Off
 		</div>
 	</fieldset><br />
-	<% nvram_match("boot_wait_web","0","-->"); %><fieldset>
-	<legend>Cron</legend>
-	<div class="setting">
-		<div class="label">Cron</div>
-		<input type="radio" value="1" name="cron_enable" <% nvram_match("cron_enable","1","checked"); %> />Enable
-		<input type="radio" value="0" name="cron_enable" <% nvram_match("cron_enable","0","checked"); %> />Disable
-		</div>
-	</fieldset><br />
+	<% nvram_match("boot_wait_web","0","-->"); %>
 	<fieldset>
-	<legend>DHCP Server</legend>
-	<div class="setting">
-		<div class="label">DHCPd</div>
-		<input type="radio" name="lan_proto" value="dhcp" <% nvram_selmatch("lan_proto", "dhcp", "checked"); %> />Enable
-		<input type="radio" name="lan_proto" value="static" <% nvram_selmatch("lan_proto", "static", "checked"); %> />Disable
-		</div>
-	<% nvram_invmatch("enable_jffs2","1","<!--"); %><div class="setting">
-		<div class="label">Use JFFS2 for client lease DB</div>
-		<input type="radio" name="dhcpd_usejffs" value="0" <% nvram_selmatch("dhcpd_usejffs", "0", "checked"); %> />Enable
-		<input type="radio" name="dhcpd_usejffs" value="1" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> />Disable
-		</div>
-	<% nvram_invmatch("enable_jffs2","1","-->"); %><div class="setting">
-		<div class="label">Used Domain</div>
-		<select name="dhcp_domain">
-		<option value="wan" <% nvram_match("dhcp_domain","wan","selected"); %>>WAN</option>
-		<option value="lan" <% nvram_match("dhcp_domain","lan","selected"); %>>LAN &amp; WLAN</option>
-		</select></div>
-	<div class="setting">
-		<div class="label">LAN Domain</div>
-		<input maxlength="79" size="20" name="lan_domain" onblur="valid_name(this,'Domain name',SPACE_NO)" value="<% nvram_get("lan_domain"); %>" /></div>
-	<div class="setting">
-		<div class="label">Static Allocations</div>
-		( Format: IP&nbsp; MAC&nbsp; Hostname )<br />
-		<textarea cols="40" rows="2" id="dhcpd_statics" name="dhcpd_statics">	</textarea><script type="text/javascript">
-		
-				var dhcpd_statics = fix_cr( '<% nvram_get("dhcpd_statics"); %>' );
-				document.getElementById("dhcpd_statics").value = dhcpd_statics;
-			</script></div>
-	<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
-		<div class="label">Additional DHCPd Options</div>
-		<textarea cols="40" rows="2" id="dhcpd_options" name="dhcpd_options">	</textarea><script type="text/javascript">
-		
-				var dhcpd_options = fix_cr( '<% nvram_get("dhcpd_options"); %>' );
-				document.getElementById("dhcpd_options").value = dhcpd_options;
-			</script></div>
-	<% nvram_invmatch("expert_mode","1","-->"); %></fieldset><br />
-	<fieldset>
-	<legend>DNS Masq</legend>
-	<div class="setting">
-		<div class="label">DNS Masq</div>
-		<input type="radio" name="dnsmasq_enable" value="1" <% nvram_selmatch("dnsmasq_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="dnsmasq_enable" value="0" <% nvram_selmatch("dnsmasq_enable", "0", "checked"); %> />Disable
-		</div>
-	<div class="setting">
-		<div class="label">Local DNS</div>
-		<input type="radio" name="local_dns" value="1" <% nvram_selmatch("local_dns", "1", "checked"); %> />Enable
-		<input type="radio" name="local_dns" value="0" <% nvram_selmatch("local_dns", "0", "checked"); %> />Disable
-		</div>
-	<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
-		<div class="label">Additional DNS Options</div>
-			<textarea cols="60" rows="2" id="dnsmasq_options" name="dnsmasq_options"></textarea>
-			<script type="text/javascript">
-				var dnsmasq_options = fix_cr( '<% nvram_get("dnsmasq_options"); %>' );
-				document.getElementById("dnsmasq_options").value = dnsmasq_options;
-			</script>
-		</div>
-	<% nvram_invmatch("expert_mode","1","-->"); %></fieldset><br />
-	<fieldset>
-	<legend>Loopback</legend>
-	<div class="setting">
-		<div class="label">Loopback</div>
-		<input type="radio" name="loopback_enable" value="1" <% nvram_selmatch("loopback_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="loopback_enable" value="0" <% nvram_selmatch("loopback_enable", "0", "checked"); %> />Disable
+		<legend>Cron</legend>
+		<div class="setting">
+			<div class="label">Cron</div>
+			<input type="radio" value="1" name="cron_enable" <% nvram_match("cron_enable","1","checked"); %> />Enable
+			<input type="radio" value="0" name="cron_enable" <% nvram_match("cron_enable","0","checked"); %> />Disable
 		</div>
 	</fieldset><br />
 	<fieldset>
-	<legend>802.1x</legend>
-	<div class="setting">
-		<div class="label">
-			802.1x</div>
-		<input type="radio" name="nas_enable" value="1" <% nvram_selmatch("nas_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="nas_enable" value="0" <% nvram_selmatch("nas_enable", "0", "checked"); %> />Disable
+		<legend>DHCP Server</legend>
+		<div class="setting">
+			<div class="label">DHCPd</div>
+			<input type="radio" name="lan_proto" value="dhcp" <% nvram_selmatch("lan_proto", "dhcp", "checked"); %> />Enable
+			<input type="radio" name="lan_proto" value="static" <% nvram_selmatch("lan_proto", "static", "checked"); %> />Disable
 		</div>
-	</fieldset><br />
-	<fieldset>
-	<legend>NTP Client</legend>
-	<div class="setting">
-		<div class="label">NTP Client</div>
-		<input type="radio" name="ntp_enable" value="1" <% nvram_selmatch("ntp_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="ntp_enable" value="0" <% nvram_selmatch("ntp_enable", "0", "checked"); %> />Disable
+		<% nvram_invmatch("enable_jffs2","1","<!--"); %>
+		<div class="setting">
+			<div class="label">Use JFFS2 for client lease DB</div>
+			<input type="radio" name="dhcpd_usejffs" value="0" <% nvram_selmatch("dhcpd_usejffs", "0", "checked"); %> />Enable
+			<input type="radio" name="dhcpd_usejffs" value="1" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> />Disable
 		</div>
-	<% nvram_match("ntp_enable","0","<!--"); %><div class="setting">
-		<div class="label">Server IP</div>
-		<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" /></div>
-	<% nvram_match("ntp_enable","0","-->"); %></fieldset><br />
-	<fieldset>
-	<legend>PPTP</legend>
-	<div class="setting">
-		<div class="label">PPTP Server</div>
-		<input type="radio" name="pptpd_enable" value="1" <% nvram_selmatch("pptpd_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="pptpd_enable" value="0" <% nvram_selmatch("pptpd_enable", "0", "checked"); %> />Disable
+		<% nvram_invmatch("enable_jffs2","1","-->"); %>
+		<div class="setting">
+			<div class="label">Used Domain</div>
+			<select name="dhcp_domain">
+			<option value="wan" <% nvram_match("dhcp_domain","wan","selected"); %>>WAN</option>
+			<option value="lan" <% nvram_match("dhcp_domain","lan","selected"); %>>LAN &amp; WLAN</option>
+			</select>
 		</div>
-	<% nvram_match("pptpd_enable","0","<!--"); %><div class="setting">
-		<div class="label">Server IP</div>
-		<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" /></div>
-	<div class="setting">
-		<div class="label">Client IP(s)</div>
-		<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" /></div>
-	<div class="setting">
-		<div class="label">CHAP-Secrets</div>
-		<textarea id="pptpd_auth" cols="35" rows="4" name="pptpd_auth">	</textarea><script type="text/javascript">
-		
-				var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
-				document.getElementById("pptpd_auth").value = var_pptpd_auth;
-			</script></div>
-	<% nvram_match("pptpd_enable","0","-->"); %></fieldset><br />
-	<fieldset>
-	<legend>Reset Button</legend>
-	<div class="setting">
-		<div class="label">Reset enabled</div>
-		<input type="radio" name="resetbutton_enable" value="1" <% nvram_selmatch("resetbutton_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="resetbutton_enable" value="0" <% nvram_selmatch("resetbutton_enable", "0", "checked"); %> />Disable
-		</div>
-	</fieldset><br />
-	<fieldset>
-	<legend>Routing</legend>
-	<div class="setting">
-		<div class="label">
-			Routing</div>
-		<input type="radio" name="zebra_enable" value="1" <% nvram_selmatch("zebra_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="zebra_enable" value="0" <% nvram_selmatch("zebra_enable", "0", "checked"); %> />Disable
-		</div>
-	</fieldset><br />
-	<fieldset>
-	<legend>SNMP</legend>
-	<div class="setting">
-		<div class="label">
-			SNMP</div>
-		<input type="radio" name="snmpd_enable" value="1" <% nvram_selmatch("snmpd_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="snmpd_enable" value="0" <% nvram_selmatch("snmpd_enable", "0", "checked"); %> />Disable
-		</div>
-	<% nvram_invmatch("snmpd_enable", "1", "<!--"); %><div class="setting">
-		<div class="label">Location</div>
-		<input class="num" maxlength="100" size="25" name="snmpd_syslocation" value="<% nvram_get("snmpd_syslocation"); %>" /></div>
-	<div class="setting">
-		<div class="label">Contact</div>
-		<input class="num" maxlength="100" size="25" name="snmpd_syscontact" value="<% nvram_get("snmpd_syscontact"); %>" /></div>
-	<div class="setting">
-		<div class="label">Name</div>
-		<input class="num" maxlength="100" size="25" name="snmpd_sysname" value="<% nvram_get("snmpd_sysname"); %>" /></div>
-	<div class="setting">
-		<div class="label">RO Community</div>
-		<input class="num" maxlength="100" size="25" name="snmpd_rocommunity" value="<% nvram_get("snmpd_rocommunity"); %>" /></div>
-	<div class="setting">
-		<div class="label">RW Community</div>
-		<input class="num" maxlength="100" size="25" name="snmpd_rwcommunity" value="<% nvram_get("snmpd_rwcommunity"); %>" /></div>
-	<% nvram_invmatch("snmpd_enable", "1", "-->"); %></fieldset><br />
-	<% nvram_match("sshd_web","0","<!--"); %><fieldset>
-	<legend>SSHD</legend>
-	<div class="setting">
-		<div class="label">SSHD</div>
-		<input type="radio" name="sshd_enable" value="1" <% nvram_selmatch("sshd_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="sshd_enable" value="0" <% nvram_selmatch("sshd_enable", "0", "checked"); %> />Disable
-		</div>
-	<% nvram_match("sshd_enable","0","<!--"); %><div class="setting">
-		<div class="label">Password Login</div>
-		<input type="radio" name="sshd_passwd_auth" value="1" <% nvram_selmatch("sshd_passwd_auth", "1", "checked"); %> /> 
-		Enable<input type="radio" name="sshd_passwd_auth" value="0" <% nvram_selmatch("sshd_passwd_auth", "0", "checked"); %> /> 
-		Disable</div>
-	<div class="setting">
-		<div class="label">SSHD Port</div>
-		<input type="text" class="num" maxlength="100" size="3" name="sshd_port" value="<% nvram_get("sshd_port"); %>" /></div>
-	<div class="setting">
-		<div class="label">Authorized Keys</div>
-		<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="40" rows="4">	</textarea><script language="javascript">
-		
-				var var_authorized_keys = fix_cr( '<% nvram_get("sshd_authorized_keys"); %>' );
-				document.getElementById("sshd_authorized_keys").value = var_authorized_keys;
-			</script></div>
-	<% nvram_match("sshd_enable","0","-->"); %></fieldset><br />
-	<% nvram_match("sshd_web","0","-->"); %><fieldset>
-	<legend>System Log</legend>
-	<div class="setting">
-		<div class="label">System Log</div>
-		<input type="radio" name="syslogd_enable" value="1" <% nvram_selmatch("syslogd_enable", "1", "checked"); %> /> 
-		Enable<input type="radio" name="syslogd_enable" value="0" <% nvram_selmatch("syslogd_enable", "0", "checked"); %> /> 
-		Disable</div>
-	<% nvram_match("syslogd_enable","0","<!--"); %><div class="setting">
-		<div class="label">Remote Server</div>
-		<input class="num" maxlength="16" size="16" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" /></div>
-	<% nvram_match("syslogd_enable","0","-->"); %></fieldset><br />
-	<fieldset>
-	<legend>Telnet</legend>
-	<div class="setting">
-		<div class="label">Telnet</div>
-		<input type="radio" name="telnetd_enable" value="1" <% nvram_selmatch("telnetd_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="telnetd_enable" value="0" <% nvram_selmatch("telnetd_enable", "0", "checked"); %> />Disable
-		</div>
-	</fieldset><br />
-	<fieldset>
-	<legend>WOL</legend>
-	<div class="setting">
-		<div class="label">Wake-On-LAN</div>
-		<input type="radio" name="wol_enable" value="1" <% nvram_selmatch("wol_enable", "1", "checked"); %> />Enable
-		<input type="radio" name="wol_enable" value="0" <% nvram_selmatch("wol_enable", "0", "checked"); %> />Disable
-		</div>
-	<% nvram_invmatch("wol_enable", "1", "<!--"); %><div class="setting">
-		<div class="label">Interval</div>
-		<input class="num" maxlength="100" size="25" name="wol_interval" value="<% nvram_get("wol_interval"); %>" /></div>
-	<div class="setting">
-		<div class="label">Hostname</div>
-		<input maxlength="100" size="25" name="wol_hostname" value="<% nvram_get("wol_hostname"); %>" /></div>
-	<div class="setting">
-		<div class="label">SecureOn Password</div>
-		<input maxlength="63" size="25" name="wol_passwd" value="<% nvram_get("wol_passwd"); %>" /></div>
-	<div class="setting">
-		<div class="label">MAC Addresses</div>
-		( Format: XX:XX:XX:XX:XX:XX )<br />
-		<textarea id="wol_macs" name="wol_macs" cols="40" rows="2">	</textarea><script type="text/javascript">
-		
-				var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
-				document.getElementById("wol_macs").value = wol_macs;
-			</script></div>
-	<% nvram_invmatch("wol_enable", "1", "-->"); %></fieldset><br />
-</div>
+		<div class="setting">
+			<div class="label">LAN Domain</div>
+			<input maxlength="79" size="20" name="lan_domain" onblur="valid_name(this,'Domain name',SPACE_NO)" value="<% nvram_get("lan_domain"); %>" /></div>
+		<div class="setting">
+			<div class="label">Static Allocations</div>
+			( Format: IP&nbsp; MAC&nbsp; Hostname )<br />
+			<textarea cols="40" rows="2" id="dhcpd_statics" name="dhcpd_statics">	</textarea><script type="text/javascript">
+			
+					var dhcpd_statics = fix_cr( '<% nvram_get("dhcpd_statics"); %>' );
+					document.getElementById("dhcpd_statics").value = dhcpd_statics;
+				</script></div>
+		<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
+			<div class="label">Additional DHCPd Options</div>
+			<textarea cols="40" rows="2" id="dhcpd_options" name="dhcpd_options">	</textarea><script type="text/javascript">
+			
+					var dhcpd_options = fix_cr( '<% nvram_get("dhcpd_options"); %>' );
+					document.getElementById("dhcpd_options").value = dhcpd_options;
+				</script></div>
+		<% nvram_invmatch("expert_mode","1","-->"); %></fieldset><br />
+		<fieldset>
+		<legend>DNS Masq</legend>
+		<div class="setting">
+			<div class="label">DNS Masq</div>
+			<input type="radio" name="dnsmasq_enable" value="1" <% nvram_selmatch("dnsmasq_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="dnsmasq_enable" value="0" <% nvram_selmatch("dnsmasq_enable", "0", "checked"); %> />Disable
+			</div>
+		<div class="setting">
+			<div class="label">Local DNS</div>
+			<input type="radio" name="local_dns" value="1" <% nvram_selmatch("local_dns", "1", "checked"); %> />Enable
+			<input type="radio" name="local_dns" value="0" <% nvram_selmatch("local_dns", "0", "checked"); %> />Disable
+			</div>
+		<% nvram_invmatch("expert_mode","1","<!--"); %><div class="setting">
+			<div class="label">Additional DNS Options</div>
+				<textarea cols="60" rows="2" id="dnsmasq_options" name="dnsmasq_options"></textarea>
+				<script type="text/javascript">
+					var dnsmasq_options = fix_cr( '<% nvram_get("dnsmasq_options"); %>' );
+					document.getElementById("dnsmasq_options").value = dnsmasq_options;
+				</script>
+			</div>
+		<% nvram_invmatch("expert_mode","1","-->"); %></fieldset><br />
+		<fieldset>
+		<legend>Loopback</legend>
+		<div class="setting">
+			<div class="label">Loopback</div>
+			<input type="radio" name="loopback_enable" value="1" <% nvram_selmatch("loopback_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="loopback_enable" value="0" <% nvram_selmatch("loopback_enable", "0", "checked"); %> />Disable
+			</div>
+		</fieldset><br />
+		<fieldset>
+		<legend>802.1x</legend>
+		<div class="setting">
+			<div class="label">
+				802.1x</div>
+			<input type="radio" name="nas_enable" value="1" <% nvram_selmatch("nas_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="nas_enable" value="0" <% nvram_selmatch("nas_enable", "0", "checked"); %> />Disable
+			</div>
+		</fieldset><br />
+		<fieldset>
+		<legend>NTP Client</legend>
+		<div class="setting">
+			<div class="label">NTP Client</div>
+			<input type="radio" name="ntp_enable" value="1" <% nvram_selmatch("ntp_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="ntp_enable" value="0" <% nvram_selmatch("ntp_enable", "0", "checked"); %> />Disable
+			</div>
+		<% nvram_match("ntp_enable","0","<!--"); %><div class="setting">
+			<div class="label">Server IP</div>
+			<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" /></div>
+		<% nvram_match("ntp_enable","0","-->"); %></fieldset><br />
+		<fieldset>
+		<legend>PPTP</legend>
+		<div class="setting">
+			<div class="label">PPTP Server</div>
+			<input type="radio" name="pptpd_enable" value="1" <% nvram_selmatch("pptpd_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="pptpd_enable" value="0" <% nvram_selmatch("pptpd_enable", "0", "checked"); %> />Disable
+			</div>
+		<% nvram_match("pptpd_enable","0","<!--"); %><div class="setting">
+			<div class="label">Server IP</div>
+			<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" /></div>
+		<div class="setting">
+			<div class="label">Client IP(s)</div>
+			<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" /></div>
+		<div class="setting">
+			<div class="label">CHAP-Secrets</div>
+			<textarea id="pptpd_auth" cols="35" rows="4" name="pptpd_auth">	</textarea><script type="text/javascript">
+			
+					var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
+					document.getElementById("pptpd_auth").value = var_pptpd_auth;
+				</script></div>
+		<% nvram_match("pptpd_enable","0","-->"); %></fieldset><br />
+		<fieldset>
+		<legend>Reset Button</legend>
+		<div class="setting">
+			<div class="label">Reset enabled</div>
+			<input type="radio" name="resetbutton_enable" value="1" <% nvram_selmatch("resetbutton_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="resetbutton_enable" value="0" <% nvram_selmatch("resetbutton_enable", "0", "checked"); %> />Disable
+			</div>
+		</fieldset><br />
+		<fieldset>
+		<legend>Routing</legend>
+		<div class="setting">
+			<div class="label">
+				Routing</div>
+			<input type="radio" name="zebra_enable" value="1" <% nvram_selmatch("zebra_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="zebra_enable" value="0" <% nvram_selmatch("zebra_enable", "0", "checked"); %> />Disable
+			</div>
+		</fieldset><br />
+		<fieldset>
+		<legend>SNMP</legend>
+		<div class="setting">
+			<div class="label">
+				SNMP</div>
+			<input type="radio" name="snmpd_enable" value="1" <% nvram_selmatch("snmpd_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="snmpd_enable" value="0" <% nvram_selmatch("snmpd_enable", "0", "checked"); %> />Disable
+			</div>
+		<% nvram_invmatch("snmpd_enable", "1", "<!--"); %><div class="setting">
+			<div class="label">Location</div>
+			<input class="num" maxlength="100" size="25" name="snmpd_syslocation" value="<% nvram_get("snmpd_syslocation"); %>" /></div>
+		<div class="setting">
+			<div class="label">Contact</div>
+			<input class="num" maxlength="100" size="25" name="snmpd_syscontact" value="<% nvram_get("snmpd_syscontact"); %>" /></div>
+		<div class="setting">
+			<div class="label">Name</div>
+			<input class="num" maxlength="100" size="25" name="snmpd_sysname" value="<% nvram_get("snmpd_sysname"); %>" /></div>
+		<div class="setting">
+			<div class="label">RO Community</div>
+			<input class="num" maxlength="100" size="25" name="snmpd_rocommunity" value="<% nvram_get("snmpd_rocommunity"); %>" /></div>
+		<div class="setting">
+			<div class="label">RW Community</div>
+			<input class="num" maxlength="100" size="25" name="snmpd_rwcommunity" value="<% nvram_get("snmpd_rwcommunity"); %>" /></div>
+		<% nvram_invmatch("snmpd_enable", "1", "-->"); %></fieldset><br />
+		<% nvram_match("sshd_web","0","<!--"); %><fieldset>
+		<legend>SSHD</legend>
+		<div class="setting">
+			<div class="label">SSHD</div>
+			<input type="radio" name="sshd_enable" value="1" <% nvram_selmatch("sshd_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="sshd_enable" value="0" <% nvram_selmatch("sshd_enable", "0", "checked"); %> />Disable
+			</div>
+		<% nvram_match("sshd_enable","0","<!--"); %><div class="setting">
+			<div class="label">Password Login</div>
+			<input type="radio" name="sshd_passwd_auth" value="1" <% nvram_selmatch("sshd_passwd_auth", "1", "checked"); %> /> 
+			Enable<input type="radio" name="sshd_passwd_auth" value="0" <% nvram_selmatch("sshd_passwd_auth", "0", "checked"); %> /> 
+			Disable</div>
+		<div class="setting">
+			<div class="label">SSHD Port</div>
+			<input type="text" class="num" maxlength="100" size="3" name="sshd_port" value="<% nvram_get("sshd_port"); %>" /></div>
+		<div class="setting">
+			<div class="label">Authorized Keys</div>
+			<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="40" rows="4">	</textarea><script language="javascript">
+			
+					var var_authorized_keys = fix_cr( '<% nvram_get("sshd_authorized_keys"); %>' );
+					document.getElementById("sshd_authorized_keys").value = var_authorized_keys;
+				</script></div>
+		<% nvram_match("sshd_enable","0","-->"); %></fieldset><br />
+		<% nvram_match("sshd_web","0","-->"); %><fieldset>
+		<legend>System Log</legend>
+		<div class="setting">
+			<div class="label">System Log</div>
+			<input type="radio" name="syslogd_enable" value="1" <% nvram_selmatch("syslogd_enable", "1", "checked"); %> /> 
+			Enable<input type="radio" name="syslogd_enable" value="0" <% nvram_selmatch("syslogd_enable", "0", "checked"); %> /> 
+			Disable</div>
+		<% nvram_match("syslogd_enable","0","<!--"); %><div class="setting">
+			<div class="label">Remote Server</div>
+			<input class="num" maxlength="16" size="16" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" /></div>
+		<% nvram_match("syslogd_enable","0","-->"); %></fieldset><br />
+		<fieldset>
+		<legend>Telnet</legend>
+		<div class="setting">
+			<div class="label">Telnet</div>
+			<input type="radio" name="telnetd_enable" value="1" <% nvram_selmatch("telnetd_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="telnetd_enable" value="0" <% nvram_selmatch("telnetd_enable", "0", "checked"); %> />Disable
+			</div>
+		</fieldset><br />
+		<fieldset>
+		<legend>WOL</legend>
+		<div class="setting">
+			<div class="label">Wake-On-LAN</div>
+			<input type="radio" name="wol_enable" value="1" <% nvram_selmatch("wol_enable", "1", "checked"); %> />Enable
+			<input type="radio" name="wol_enable" value="0" <% nvram_selmatch("wol_enable", "0", "checked"); %> />Disable
+			</div>
+		<% nvram_invmatch("wol_enable", "1", "<!--"); %><div class="setting">
+			<div class="label">Interval</div>
+			<input class="num" maxlength="100" size="25" name="wol_interval" value="<% nvram_get("wol_interval"); %>" /></div>
+		<div class="setting">
+			<div class="label">Hostname</div>
+			<input maxlength="100" size="25" name="wol_hostname" value="<% nvram_get("wol_hostname"); %>" /></div>
+		<div class="setting">
+			<div class="label">SecureOn Password</div>
+			<input maxlength="63" size="25" name="wol_passwd" value="<% nvram_get("wol_passwd"); %>" /></div>
+		<div class="setting">
+			<div class="label">MAC Addresses</div>
+			( Format: XX:XX:XX:XX:XX:XX )<br />
+			<textarea id="wol_macs" name="wol_macs" cols="40" rows="2">	</textarea><script type="text/javascript">
+			
+					var wol_macs = fix_cr( '<% nvram_get("wol_macs"); %>' );
+					document.getElementById("wol_macs").value = wol_macs;
+				</script></div>
+		<% nvram_invmatch("wol_enable", "1", "-->"); %></fieldset><br />
+	</div>
