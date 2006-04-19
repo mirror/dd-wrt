@@ -502,7 +502,7 @@ main (int argc, char **argv)
   else if (strstr (base, "poptop"))
     return pptpd_main (argc, argv);
 #endif
-#ifndef HAVE_RB500
+//#ifndef HAVE_RB500
   /* erase [device] */
   else if (strstr (base, "erase"))
     {
@@ -539,7 +539,7 @@ main (int argc, char **argv)
 	  return EINVAL;
 	}
     }
-#endif
+//#endif
   /* hotplug [event] */
   else if (strstr (base, "hotplug"))
     {
