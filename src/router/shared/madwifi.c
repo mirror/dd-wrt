@@ -919,7 +919,7 @@ set_netmode (char *dev)
 
   if (default_match (turbo, "1", "0"))
     {
-      eval ("iwpriv", dev, "mode", "5");
+      eval ("iwpriv", dev, "mode", "1");
       eval ("iwpriv", dev, "turbo", "1");
     }
   else
