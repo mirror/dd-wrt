@@ -262,7 +262,7 @@ get_wan_face (void)
 	strcpy (localwanface, "eth2");
     }
 #else
-  else if (nvram_invmatch ("ath0_mode", "ap"))
+  else if (nvram_match ("ath0_mode", "sta"))
     {
 	strcpy (localwanface, "ath0");
     }

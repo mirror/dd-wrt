@@ -198,8 +198,12 @@ int
 start_modules (void)
 {
   runStartup ("/etc/config", ".startup");
+#ifdef HAVE_RB500
+  runStartup ("/usr/local/etc/config", ".startup");	//if available
+#else
   runStartup ("/jffs/etc/config", ".startup");	//if available
   runStartup ("/mmc/etc/config", ".startup");	//if available
+#endif
   return 0;
 }
 
@@ -207,8 +211,12 @@ int
 start_wanup (void)
 {
   runStartup ("/etc/config", ".wanup");
+#ifdef HAVE_RB500
+  runStartup ("/usr/local/etc/config", ".wanup");	//if available
+#else
   runStartup ("/jffs/etc/config", ".wanup");	//if available
   runStartup ("/mmc/etc/config", ".wanup");	//if available
+#endif
   return 0;
 }
 

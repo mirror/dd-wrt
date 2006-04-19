@@ -871,7 +871,7 @@ wan_valid (char *ifname)
     if (ifname && !strcmp (ifname, name))
     return 1;
 
-  if (nvram_invmatch ("wl_mode", "ap"))
+  if (nvram_match ("wl_mode", "sta"))
     {
       return nvram_match ("wl0_ifname", ifname);
     }
@@ -1587,8 +1587,12 @@ start_wan_done (char *wan_ifname)
   //      system("/usr/sbin/brctl stp br0 off");
   cprintf ("running custom DD-WRT ipup scripts\n");
   runStartup ("/etc/config", ".ipup");
+#ifdef HAVE_RB500
+  runStartup ("/usr/local/etc/config", ".ipup");
+#else
   runStartup ("/jffs/etc/config", ".ipup");
   runStartup ("/mmc/etc/config", ".ipup");
+#endif
   cprintf ("trigger gpio");
   int brand = getRouterBrand ();
   switch (brand)
