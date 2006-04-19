@@ -219,3 +219,4 @@
  "maskmac"  "mac masquerading"  "CHOICE"  "2" "0" "1"  "TRUE" "0"
  "refresh_time" "Auto-Refresh" "NULL" "TRUE" "0"
  "radius_override" "radius override" "NULL" "FALSE" "0"
+ "remote_mgt_ssh"  "Remote Management enable SSH" "CHOICE" "2" "0"  "1"  "FALSE" "0"
