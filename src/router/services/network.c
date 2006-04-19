@@ -643,7 +643,18 @@ start_lan (void)
     {
       char eabuf[32];
       nvram_set ("lan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+#ifdef HAVE_RB500
+      nvram_set ("et0macaddr",nvram_safe_get("lan_hwaddr"));
+#endif      
     }
+#ifdef HAVE_RB500
+  strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
+  if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+    {
+      char eabuf[32];
+      nvram_set ("wl0_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    }
+#endif
 
   close (s);
   cprintf ("%s %s\n",
