@@ -1316,6 +1316,18 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input type=\"radio\" value=\"1\" name=\"%s_closed\" %s>Disable</input>\n",
 	       var, nvram_match (ssid, "1") ? "checked" : "");
     websWrite (wp, "</div>\n");
+
+      websWrite (wp,
+		 "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
+		 wl_mode);
+      websWrite (wp, "<option value=\"ap\" %s>AP</option>\n",
+		 nvram_match (wl_mode, "ap") ? "selected" : "");
+      websWrite (wp, "<option value=\"wdssta\" %s>WDS Station</option>\n",
+		 nvram_match (wl_mode, "wdssta") ? "selected" : "");
+      websWrite (wp, "<option value=\"wdsap\" %s>WDS AP</option>\n",
+		 nvram_match (wl_mode, "wdsap") ? "selected" : "");
+      websWrite (wp, "</select>\n");
+      websWrite (wp, "</div>\n");
 //mode
 //    show_netmode (wp, var);
 //    show_channel (wp, prefix, var);
@@ -1653,6 +1665,11 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 nvram_match (wl_mode, "infra") ? "selected" : "");
       websWrite (wp, "<option value=\"apsta\" %s>Repeater</option>\n",
 		 nvram_match (wl_mode, "apsta") ? "selected" : "");
+#else
+      websWrite (wp, "<option value=\"wdssta\" %s>WDS Station</option>\n",
+		 nvram_match (wl_mode, "wdssta") ? "selected" : "");
+      websWrite (wp, "<option value=\"wdsap\" %s>WDS AP</option>\n",
+		 nvram_match (wl_mode, "wdsap") ? "selected" : "");
 #endif
       websWrite (wp, "</select>\n");
       websWrite (wp, "</div>\n");
@@ -1661,9 +1678,14 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   else
     {
       websWrite (wp,
-		 "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" disabled=\"disabled\" >\n",
+		 "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
 		 wl_mode);
-      websWrite (wp, "<option value=\"ap\" selected>AP</option>\n");
+      websWrite (wp, "<option value=\"ap\" %s>AP</option>\n",
+		 nvram_match (wl_mode, "ap") ? "selected" : "");
+      websWrite (wp, "<option value=\"wdssta\" %s>WDS Station</option>\n",
+		 nvram_match (wl_mode, "wdssta") ? "selected" : "");
+      websWrite (wp, "<option value=\"wdsap\" %s>WDS AP</option>\n",
+		 nvram_match (wl_mode, "wdsap") ? "selected" : "");
       websWrite (wp, "</select>\n");
       websWrite (wp, "</div>\n");
     }

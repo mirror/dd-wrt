@@ -917,12 +917,7 @@ set_netmode (char *dev)
   fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
 
-  if (default_match (turbo, "1", "0"))
-    {
-      eval ("iwpriv", dev, "mode", "1");
-      eval ("iwpriv", dev, "turbo", "1");
-    }
-  else
+//  else
     {
       eval ("iwpriv", dev, "turbo", "0");
       if (!strcmp (netmode, "mixed"))
@@ -933,6 +928,11 @@ set_netmode (char *dev)
 	eval ("iwpriv", dev, "mode", "3");
       if (!strcmp (netmode, "a-only"))
 	eval ("iwpriv", dev, "mode", "1");
+    }
+  if (default_match (turbo, "1", "0"))
+    {
+//      eval ("iwpriv", dev, "mode", "1");
+      eval ("iwpriv", dev, "turbo", "1");
     }
 }
 
@@ -975,10 +975,10 @@ configure_single (int count)
 
   char *m = default_get (wl, "ap");
   cprintf ("mode %s\n", m);
-  if (!strcmp (m, "wet"))
+  if (!strcmp (m, "wet") || !strcmp(m,"wdssta") || !strcmp(m,"sta"))
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
   else
-    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", m);
+    eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
   char *vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
     foreach (var, vifs, next)
@@ -995,7 +995,7 @@ configure_single (int count)
 	  char newmode[16];
 	  strcpy (newmode, var);
 	  newmode[strlen (newmode) - 1] = 0;
-	  if (!strcmp (m, "wet") || !strcmp (m, "sta"))
+	  if (!strcmp (m, "wet") || !strcmp (m, "sta") || !strcmp(m,"wdssta"))
 	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
 	  else
@@ -1016,7 +1016,7 @@ configure_single (int count)
   set_netmode (dev);
 
 
-  if (strcmp (m, "sta"))
+  if (strcmp (m, "sta") && strcmp(m, "wdssta"))
     {
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
@@ -1041,10 +1041,15 @@ configure_single (int count)
 
   int distance = atoi (default_get (sens, "20000"));	//to meter
   setdistance (wif, distance);	//sets the receiver sensitivity
+ 
+  if (!strcmp(m,"wdssta") || !strcmp(m,"wdsap"))
+  eval("iwpriv",dev,"wds","1");
+  
+  
   memset (var, 0, 80);
-
+  
   cprintf ("setup encryption");
-  if (strcmp (m, "sta"))
+  if (strcmp (m, "sta") && strcmp(m,"wdssta"))
     setupHostAP (dev);
   else
     setupSupplicant (dev);
@@ -1077,13 +1082,17 @@ configure_single (int count)
       fprintf (stderr, "set broadcast for %s\n", var);
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
+
+      if (!strcmp(m,"wdssta") || !strcmp(m,"wdsap"))
+      eval("iwpriv",dev,"wds","1");
+      
       // net mode
 //      set_netmode (var);
 
       fprintf (stderr, "encryption %s\n", var);
 
       cprintf ("setup encryption");
-      if (strcmp (m, "sta"))
+      if (strcmp (m, "sta") && strcmp(m,"wdssta"))
 	setupHostAP (var);
       else
 	setupSupplicant (var);
