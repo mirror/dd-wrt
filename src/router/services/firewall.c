@@ -1646,8 +1646,10 @@ filter_input (void)
       save2file ("-A INPUT -p tcp -m tcp -d %s --dport %d -j %s\n",
 		 nvram_safe_get ("lan_ipaddr"), web_lanport, TARG_PASS);
 #ifdef HAVE_SSHD
+	if (nvram_match ("remote_mgt_ssh", "1")) {
       save2file ("-A INPUT -p tcp --dport %s -j logaccept\n",
 		 nvram_safe_get ("sshd_port"));
+	}
 #endif
     }
 
@@ -1933,8 +1935,10 @@ filter_table (void)
 	  save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
 	  save2file ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n", wanface);
 #ifdef HAVE_SSHD
+	if (nvram_match ("remote_mgt_ssh", "1")) {
 	  save2file ("-A INPUT -p tcp --dport %s -i %s -j DROP\n",
 		     nvram_safe_get ("sshd_port"), wanface);
+	}
 #endif
 	}
 
