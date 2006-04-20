@@ -91,7 +91,7 @@ errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade are failed.";
 
 //common.js error message
-errmsg.err14=" value is out of range ";
+errmsg.err14=" value is out of range [";
 errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
 errmsg.err16="The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="The MAC Address is not correct.";
@@ -111,22 +111,8 @@ errmsg.err30=" have illegal hexadecimal digits.";
 errmsg.err31=" value is illegal.";
 errmsg.err32="IP address and gateway is not at same subnet mask.";
 errmsg.err33="IP address and gateway can't be same.";
-errmsg.err34="IP";
-errmsg.err35="Gateway";
-errmsg.err36="DNS";
-errmsg.err37="netmask";
-errmsg.err38="Idle time";
-errmsg.err39="Redial period";
-errmsg.err40="DHCP starting IP";
-errmsg.err41="Number of DHCP users";
-errmsg.err42="DHCP Lease Time";
-errmsg.err43="URL";
-errmsg.err44="Keyword";
-errmsg.err45="Name";
-errmsg.err46="Port";
-errmsg.err47="Port number";
-errmsg.err48="Click to delete lease";
-errmsg.err49="Delete all entries?";
+errmsg.err34=" is not allowed to contain a space.";
+
 
 
 
@@ -321,6 +307,8 @@ upnp.legend2="UPnP Configuration";
 upnp.serv="UPnP Service";
 upnp.clear="Clear port forwards at startup";
 upnp.url="Send presentation URL";
+upnp.msg1="Click to delete lease";
+upnp.msg2="Delete all entries?";
 
 
 //help container
