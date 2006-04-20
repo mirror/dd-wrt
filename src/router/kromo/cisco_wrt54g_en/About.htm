@@ -1,24 +1,30 @@
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title>About DD-WRT</title>
 		<style type="text/css">
 * {
 font-family:Tahoma, Arial, Helvetica, sans-serif;
 font-size:1em;
 text-align:center;
-line-height:1.8em;
+line-height:1.7em;
 }
 body {
 margin:.906em;
 font-size:69%;
 }
-
+a {
+text-decoration:none;
+}
+a:hover {
+text-decoration:underline;
+}
 		</style>
 	</head>
 	<body>
-		<p><img src="images/logo.png" width="230" height="100" /></p>
-		<p>There are several different distributions of the DD-WRT firmware. The mini contains all the features of the standard distribution, with the exception of chillispot, nocat, rflow, kaid, samba client, SNMP, IPv6, and MMC/SD card support. The standard (std) distribution includes all features, with the exception of VOIP. The VOIP distribution includes all features, with kaid removed to make room for SiPath. The VPN edition includes OpenVPN but does not include IPv6, samba client, or kaid. The micro edition is a stripped down version designed for the WRT54G v5 and other 2MB Router models.</p>
+		<p><img src="/images/logo.png" width="160" height="70" /><br /><b><% get_firmware_version(); %></b></p>
+		<p>There are several different distributions of the DD-WRT firmware. The <b>mini</b> contains all the features of the standard distribution, with the exception of chillispot, nocat, rflow, kaid, samba client, SNMP, IPv6, and MMC/SD card support. The <b>standard</b> (std) distribution includes all features, with the exception of VOIP. The <b>VOIP</b> distribution includes all features, with kaid removed to make room for SiPath. The <b>VPN</b> edition includes OpenVPN but does not include IPv6, samba client, or kaid. The <b>micro</b> edition is a stripped down version designed for the WRT54G v5 and other 2MB Router models.</p>
+		<p><a href="http://www.dd-wrt.com" target="_new">DD-WRT Homepage</a> - <a href="http://forum.bsr-clan.de/viewforum.php?f=15" target="_new">Forum</a> - <a href="http://wrt-wiki.bsr-clan.de" target="_new">Wiki</a> - <a href="http://www.dd-wrt.com/bugtracker" target="_new">Bugtracker</a></p>
 	</body>
 </html>
