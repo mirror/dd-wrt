@@ -36,11 +36,12 @@ var SPACE_OK = 2;
 
 function choose_enable(en_object) {
 	if(!en_object)	return;
-	en_object.disabled = false;			// netscape 4.x can not work, but 6.x can work
+	en_object.disabled = false;					// netscape 4.x can not work, but 6.x can work
 
 	if(!ns4)
 		en_object.style.backgroundColor = "";	// netscape 4.x have error
 }
+
 function choose_disable(dis_object) {
 	if(!dis_object)	return;
 	dis_object.disabled = true;
@@ -48,8 +49,9 @@ function choose_disable(dis_object) {
 	if(!ns4)
 		dis_object.style.backgroundColor = "#e0e0e0";
 }
+
 function check_action(I,N) {
-	if(ns4){	//ie.  will not need and will have question in "select"
+	if(ns4){									//ie.  will not need and will have question in "select"
 		if(N == 0){
 			if(EN_DIS == 1) 
 				I.focus();
@@ -74,8 +76,9 @@ function check_action(I,N) {
 			
 	}
 }
+
 function check_action1(I,T,N) {
-	if(ns4){	//ie.  will not need and will have question in "select"
+	if(ns4){									//ie.  will not need and will have question in "select"
 		if(N == 0){
 			if(EN_DIS == 1) 
 				I.focus();
@@ -100,7 +103,8 @@ function valid_range(I,start,end,M) {
 
 	d = parseInt(I.value, 10);	
 	if ( !(d<=end && d>=start) ) {		
-		alert(M1 +' value is out of range ['+ start + ' - ' + end +']');
+//		alert(M1 +" value is out of range ["+ start + " - " + end +"]");
+		alert(M1 + errmsg.err14 + start + " - " + end +"].");
 		I.value = I.defaultValue;		
 	} else 
 		I.value = d;	// strip 0
@@ -115,13 +119,15 @@ function valid_mac(I,T) {
 	m1 =parseInt(I.value.charAt(0), 16);
 	m2 =parseInt(I.value.charAt(1), 16);
 	if( isNaN(m1) || isNaN(m2) ) {
-		alert('The WAN MAC Address is out of range [00 - ff]');	
+//		alert("The WAN MAC Address is out of range [00 - ff].");	
+		alert(errmsg.err15);
 		I.value = I.defaultValue;
 	}
 	I.value = I.value.toUpperCase();
 	if(T == 0) {                                                                       
 		if((m2 & 1) == 1){                               
-			alert('The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E]');
+//			alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
+			alert(errmsg.err16);
 			I.value = I.defaultValue;                       
 		}                                                       
 	}                       
@@ -139,36 +145,43 @@ function valid_macs_12(I){
 				break;		
 		}		
 		if( i!=12 ){
-			alert('The MAC Address is not correct!!');
+//			alert("The MAC Address is not correct.");
+			alert(errmsg.err17);
 			I.value = I.defaultValue;		
 		}	
 	} else{		
-		alert('The MAC Address length is not correct!!');
+//		alert("The MAC Address length is not correct.");
+		alert(errmsg.err18);
 		I.value = I.defaultValue;	
 	}
 	I.value = I.value.toUpperCase();
 	if(I.value == "FFFFFFFFFFFF"){
-		alert('The MAC Address cannot be the broadcast address!!');
+//		alert("The MAC Address cannot be the broadcast address.");
+		alert(errmsg.err19);
 		I.value = I.defaultValue;	
 	}
 	m3 = I.value.charAt(1);
 	if((m3 & 1) == 1){                               
-		alert('The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E]');
+//		alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
+		alert(errmsg.err16);
 		I.value = I.defaultValue;                       
 	}                                                       
 }
+
 function valid_macs_17(I)
 {
 	oldmac = I.value;
 	var mac = ignoreSpaces(oldmac);
 	if (mac == "") {
 		return true;
-		//alert("Enter MAC Address in (xx:xx:xx:xx:xx:xx) format");
+		////alert("Enter MAC Address in (xx:xx:xx:xx:xx:xx) format.");
+		//alert(errmsg.err20);
 		//return false;
 	}
 	var m = mac.split(":");
 	if (m.length != 6) {
-		alert("Invalid MAC address format");
+//		alert("Invalid MAC address format");
+		alert(errmsg.err21);
 		I.value = I.defaultValue;		
 		return false;
 	}
@@ -179,7 +192,8 @@ function valid_macs_17(I)
 			nameVal = pairs[i];
 			len = nameVal.length;
 			if (len < 1 || len > 2) {
-				alert ("The WAN MAC Address is not correct!!");
+//				alert ("The WAN MAC Address is not correct.");
+				alert(errmsg.err22);
 				I.value = I.defaultValue;		
 				return false;
 			}
@@ -188,7 +202,8 @@ function valid_macs_17(I)
 				if (ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
 					// nothing to do here
 				} else {
-					alert ("Invalid hex value " + nameVal + " found in MAC address " + oldmac);
+//					alert ("Invalid hex value " + nameVal + " found in MAC address " + oldmac);
+					alert (errmsg.err23 + nameVal + errmsg.err24 + oldmac + ".");
 					I.value = I.defaultValue;		
 					return false;
 				}
@@ -197,16 +212,19 @@ function valid_macs_17(I)
 	}
 	I.value = I.value.toUpperCase();
 	if(I.value == "FF:FF:FF:FF:FF:FF"){
-		alert('The MAC Address cannot be the broadcast address!');
+//		alert("The MAC Address cannot be the broadcast address.");
+		alert(errmsg.err19);
 		I.value = I.defaultValue;	
 	}
 	m3 = I.value.charAt(1);
 	if((m3 & 1) == 1){                               
-		alert('The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E]');
+//		alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
+		alert(errmsg.err16);
 		I.value = I.defaultValue;                       
 	}                                                       
 	return true;
 }
+
 function ignoreSpaces(string) {
 	var temp = "";
 
@@ -218,12 +236,14 @@ function ignoreSpaces(string) {
 
 	return temp;
 }
+
 function check_space(I,M1){
 	M = unescape(M1);
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch == ' ') {
-			alert(M +' is not allowed to contain a space!');
+//			alert(M +" is not allowed to contain a space.");
+			alert(errmsg.err34);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -231,6 +251,7 @@ function check_space(I,M1){
 
 	return true;
 }
+
 function valid_key(I,l){	
 	var m;	
 	if(I.value.length==l*2)	{		
@@ -240,14 +261,17 @@ function valid_key(I,l){
 				break;		
 		}		
 		if( i!=l*2 ){		
-			alert('The key value is not correct!');			
+//			alert("The key value is not correct.");	
+			alert(errmsg.err25);
 			I.value = I.defaultValue;		
 		}	
 	} else{		
-		alert('The key length is not correct!');		
+//		alert("The key length is not correct");
+		alert(errmsg.err26);
 		I.value = I.defaultValue;	
 	}
 }
+
 function valid_name(I,M,flag) {
 	isascii(I,M);
 
@@ -261,6 +285,7 @@ function valid_name(I,M,flag) {
 	}
 
 }
+
 function valid_mask(F,N,flag){
 	var match0 = -1;
 	var match1 = -1;
@@ -271,7 +296,8 @@ function valid_mask(F,N,flag){
 
 	if(m[0] == "0" && m[1] == "0" && m[2] == "0" && m[3] == "0"){
 		if(flag & ZERO_NO){
-			alert("Illegal subnet mask!");
+//			alert("Illegal subnet mask.");
+			alert(errmsg.err27);
 			return false;
 		} else if(flag & ZERO_OK){
 			return true;
@@ -280,7 +306,8 @@ function valid_mask(F,N,flag){
 
 	if(m[0] == "255" && m[1] == "255" && m[2] == "255" && m[3] == "255"){
 		if(flag & BCST_NO){
-			alert("Illegal subnet mask!");
+//			alert("Illegal subnet mask.");
+			alert(errmsg.err27);
 			return false;
 		} else if(flag & BCST_OK){
 			return true;
@@ -295,17 +322,20 @@ function valid_mask(F,N,flag){
 		}
 	}
 	if(match0 > match1){
-		alert("Illegal subnet mask!");
+//		alert("Illegal subnet mask.");
+		alert(errmsg.err27);
 		return false;
 	}
 
 	return true;
 }
+
 function isdigit(I,M) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch < '0' || ch > '9') {
-			alert(M +' have illegal characters, must be [ 0 - 9 ]');
+//			alert(M +" have illegal characters, must be [ 0 - 9 ].");
+			alert(errmsg.err28);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -318,7 +348,8 @@ function isascii(I,M) {
 	for(i=0 ; i<I.value.length; i++){
 		ch = I.value.charAt(i);
 		if(ch < ' ' || ch > '~'){
-			alert(M +' have illegal ascii code!');
+//			alert(M +" have illegal ascii code.");
+			alert(errmsg.err29);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -333,7 +364,8 @@ function isxdigit(I,M) {
 		if(ch >= '0' && ch <= '9' || ch >= 'a' && ch <= 'f') {
 				
 		} else {
-			alert(M +' have illegal hexadecimal digits!');
+//			alert(M +" have illegal hexadecimal digits.");
+			alert(errmsg.err30);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -355,20 +387,23 @@ function valid_ip(F,N,M1,flag){
 		m[i] = eval(N+"_"+i).value
 
 	if(m[0] == 127 || m[0] == 224){
-		alert(M+" value is illegal!");
+//		alert(M+" value is illegal.");
+		alert(errmsg.err31);
 		return false;
 	}
 
 	if(m[0] == "0" && m[1] == "0" && m[2] == "0" && m[3] == "0"){
 		if(flag & ZERO_NO){
-			alert(M+' value is illegal!');
+//			alert(M+" value is illegal.");
+			alert(errmsg.err31);
 			return false;
 		}
 	}
 
 	if((m[0] != "0" || m[1] != "0" || m[2] != "0") && m[3] == "0"){
 		if(flag & MASK_NO){
-			alert(M+' value is illegal!');
+//			alert(M+" value is illegal.");
+			alert(errmsg.err31);
 			return false;
 		}
 	}
@@ -390,12 +425,14 @@ function valid_ip_gw(F,I,N,G) {
 
 	for(i=0;i<4;i++){
 		if((IP[i] & NM[i]) != (GW[i] & NM[i])){
-			alert("IP address and gateway is not at same subnet mask!");
+//			alert("IP address and gateway is not at same subnet mask.");
+			alert(errmsg.err32);
 			return false;
 		}
 	}
 	if((IP[0] == GW[0]) && (IP[1] == GW[1]) && (IP[2] == GW[2]) && (IP[3] == GW[3])){
-		alert("IP address and gateway can't be same!");
+//		alert("IP address and gateway can't be same.");
+		alert(errmsg.err33);
 		return false;
 	}
 	
@@ -732,7 +769,7 @@ function apply(form) {
 } */
 
 
-// Botho 06/04/2006 : Function to resolve OUI names       TEST IN PROGRESS
+// Botho 06/04/2006 : Function to resolve OUI names
 function getOUIFromMAC(mac) {
 	
 	var top = 30;
