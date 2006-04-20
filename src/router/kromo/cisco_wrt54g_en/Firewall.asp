@@ -106,10 +106,10 @@ function init() {
                         <legend>Block WAN Requests</legend>
                         <div class="setting"><input type="checkbox" value="1" name="_block_wan" onclick=wan_enable_disable(this.form) <% nvram_checked("block_wan", "1"); %> >Block Anonymous Internet Requests</input></div>
                         <% support_invmatch("MULTICAST_SUPPORT", "1", "<!--"); %>
-                        <div class="setting"><input type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "1"); %> >Filter Multicast</input></div>
+                        <div class="setting"><input type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "0"); %> >Filter Multicast</input></div>
                         <% support_invmatch("MULTICAST_SUPPORT", "1", "-->"); %>
                         <div class="setting"><input type="checkbox" value="0" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> >Filter Internet NAT Redirection</input></div>
-                        <div class="setting"><input type="checkbox" value="1" name="_ident_pass" <% nvram_checked("ident_pass", "1"); %> >Filter IDENT (Port 113)</input></div>
+                        <div class="setting"><input type="checkbox" value="1" name="_ident_pass" <% nvram_checked("ident_pass", "0"); %> >Filter IDENT (Port 113)</input></div>
                      </fieldset><br />
                      <div class="submitFooter">
                      	<input type="button" name="save_button" value="Save Settings" onClick=to_submit(this.form) />
