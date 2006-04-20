@@ -6,12 +6,12 @@
 		<span class="default">(Default: 512, Range: 0 - 4096)</span>
 	</div>
 	<div class="setting">
-		<div class="label">TCP Timeout (s)</div>
+		<div class="label">TCP Timeout (in seconds)</div>
 		<input class="num" size="4" maxlength="4" name="ip_conntrack_tcp_timeouts" onbur="valid_range(this,0,3600,'TCP Timeout')" value="<% nvram_get("ip_conntrack_tcp_timeouts"); %>" />&nbsp;
 		<span class="default">(Default: 3600, Range: 0 - 3600)</span>
 	</div>
 	<div class="setting">
-		<div class="label">UDP Timeout (s)</div>
+		<div class="label">UDP Timeout (in seconds)</div>
 		<input class="num" size="4" maxlength="4" name="ip_conntrack_udp_timeouts" onbur="valid_range(this,0,3600,'UDP Timeout')" value="<% nvram_get("ip_conntrack_udp_timeouts"); %>" />&nbsp;
 		<span class="default">(Default: 3600, Range: 0 - 3600)</span>
 	</div>
