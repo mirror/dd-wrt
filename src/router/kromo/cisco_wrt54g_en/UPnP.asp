@@ -74,7 +74,7 @@ function setUPnPTable(forwards) {
 		row.insertCell(-1).innerHTML = data[i].proto;
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
-//		cell.title = errmsg.err48;
+//		cell.title = upnp.msg1;
 		cell.title = "";
 		cell.innerHTML = " ";
 		eval("addEvent(cell, 'click', function() { deleteForward(" + i + ") })");
@@ -87,7 +87,7 @@ function deleteForward(x) {
 		if (!confirm(share.del + " " + e.desc + "? [" + e.wanPorts + "->" + e.lanPorts + " " + e.lanIP + " " + e.proto + "]")) return;
 	}
 	else {
-		if (!confirm(errmsg.err49)) return;
+		if (!confirm(upnp.msg2)) return;
 	}
 	var fupnp = document.getElementById("fupnp");
 	fupnp.submit_button.value = "UPnP";
