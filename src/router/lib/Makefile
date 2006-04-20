@@ -125,7 +125,7 @@ endif
 install: $(wildcard $(foreach lib,$(LINKER) $(lib-y),$(LIBDIR)/$(lib) $(LIBDIR)/$(lib).so.?))
 	install -d $(TARGETDIR)/lib
 	install $^ $(TARGETDIR)/lib/
-	$(STRIP) $(TARGETDIR)/lib/*.so.*
+	#$(STRIP) $(TARGETDIR)/lib/*.so.*
 
 clean:
 	rm -f $(LIBC) $(MAP) .symbols
