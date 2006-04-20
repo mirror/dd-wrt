@@ -31,7 +31,7 @@ iks_filter_new (void)
 {
 	iksfilter *f;
 
-	f = iks_malloc (sizeof (iksfilter));
+	f = (iksfilter*)malloc (sizeof (iksfilter));
 	if (!f) return NULL;
 	memset (f, 0, sizeof (iksfilter));
 
@@ -177,5 +177,5 @@ iks_filter_delete (iksfilter *f)
 		iks_stack_delete (rule->s);
 		rule = tmp;
 	}
-	iks_free (f);
+	free (f);
 }

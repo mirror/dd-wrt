@@ -1,4 +1,4 @@
-CFLAGS += -O2 -mips32 -mtune=mips32
+CFLAGS += -O2 -Wall
 CC = mipsel-linux-uclibc-gcc
 CFLAGS += -I iksemel
 CFLAGS += -I zlib
@@ -61,6 +61,7 @@ all: sputnik sputnik.static
 
 clean:
 	rm -f $(OBJS) apd
+	rm -f $(IOBJS) apd
 
 install: all
 	install -d $(INSTALLDIR)/sbin
