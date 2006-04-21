@@ -3997,6 +3997,8 @@ struct ej_handler ej_handlers[] = {
 
 /* Added by Botho 03.April.06 */
   {"dumpip_conntrack", ej_dumpip_conntrack},
+/* Added by Botho 21.April.06 */
+  {"js_include", ej_js_include},
 
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
