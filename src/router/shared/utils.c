@@ -172,9 +172,9 @@ internal_getRouterBrand ()
 	  }
 	if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
 	  {
-	    cprintf ("router is Belkin\n");
-	    setRouter ("Belkin");
-	    return ROUTER_BELKIN;
+	    cprintf ("router is Belkin 7230-4 v1444\n");
+	    setRouter ("Belkin 7230-4 v1444");
+	    return ROUTER_BELKIN_72304v1444;
 	  }
 //      if (startswith (et0, "00:90:96") && startswith (et1, "00:90:96"))
 //        {
