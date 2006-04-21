@@ -4969,6 +4969,7 @@ ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
 		do_ej("lang_pack/english.js", wp);
 	}
 	else {
+		char l[60];
 		sprintf (l, "lang_pack/%s.js", lang);
 		do_ej(l, wp);
 	}
