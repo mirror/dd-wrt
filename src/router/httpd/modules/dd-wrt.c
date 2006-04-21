@@ -4962,9 +4962,17 @@ int
 ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
 {
 	int ret = 0;
-	do_ej("common.js",wp);
-	do_ej("lang_pack/english.js",wp);
-	do_ej("lang_pack/language.js",wp);
-	cprintf("ej_langpack\r\n");
+	char *lang = nvram_get ("language");
+
+	do_ej("common.js",wp);	
+	if (lang == NULL) {
+		do_ej("lang_pack/english.js", wp);
+	}
+	else {
+		sprintf (l, "lang_pack/%s.js", lang);
+		do_ej(l, wp);
+	}
+	
+	cprintf("ej_js_include\r\n");
 	return ret;
 }
