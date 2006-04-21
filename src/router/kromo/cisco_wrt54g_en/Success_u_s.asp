@@ -5,9 +5,11 @@
 		<title><% nvram_get("router_name"); %></title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
-//		<script type="text/javascript" src="common.js"></script>
-//		<script type="text/javascript" src="lang_pack/english.js"></script>
-//		<script type="text/javascript" src="lang_pack/language.js"></script>
+<!--
+		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
+-->
 		<script type="text/javascript">
 <% js_include(); %>
 var submit_button = "<% get_web_page_name(); %>";
