@@ -121,7 +121,8 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -180,7 +181,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">MAC Address</div>
-									<span id="wan_mac"><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									<span id="wan_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')" ><% nvram_get("wan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">Host Name</div>
