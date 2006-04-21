@@ -407,12 +407,25 @@ var hfactdef = new Object();
 hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
 
 
+// **************************************************************** FilterIP%AC.asp **********************************************************************//
 
-// **************************************************************** Fail_s.asp & Fail_u_s.asp **********************************************************************//
+var filterIP = new Object();
+filterIP.titl=" - List of PCs";
+filterIP.h2="List of PCs";
+filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
+filterIP.h32="Enter the IP Address of the PCs";
+filterIP.h33="Enter the IP Range of the PCs";
+
+
+
+
+
+// **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
 var fail = new Object();
 fail.mess1="The values you entered are invalid. Please try again.";
 fail.mess2="Upgrade failed.";
+
 
 // **************************************************************** Success*.asp **********************************************************************//
 
