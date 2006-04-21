@@ -169,7 +169,8 @@ function init() {
                   <br/>
                   <div class="setting">
                     <div class="label">Sensitivity Range (ACK Timing)</div>
-                    <input name="wl_distance" size="8" maxlength="8" value='<% nvram_get("wl_distance"); %>' /> Meter
+                    <input name="wl_distance" size="8" maxlength="8" value='<% nvram_get("wl_distance"); %>' />
+                    <span class="default">(Default: 20000 meters)</span>
                   </div>
                 </fieldset>
                 <br/>
