@@ -10,7 +10,7 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 
-var submit_button = '<% get_web_page_name(); %>';
+var submit_button = "<% get_web_page_name(); %>";
 
 function to_submit()
 {

@@ -10,15 +10,15 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 		
-var submit_button = '<% get_web_page_name(); %>';
+var submit_button = "<% get_web_page_name(); %>";
 
 function to_submit()
 {
 	if(submit_button == "")
 		history.go(-1);
-	else if(submit_button == 'WL_WEPTable.asp')
+	else if(submit_button == "WL_WEPTable.asp")
 		self.close();
-	else if(submit_button == 'Register_ok.asp'){
+	else if(submit_button == "Register_ok.asp"){
 		document.location.href =  "HotSpot_Admin.asp";
 	}
 	else
