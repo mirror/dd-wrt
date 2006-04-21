@@ -34,8 +34,6 @@
 				</dd>
 				<dt>Summary</dt>
 				<dd>To see a summary of all the policies, click the <i>Summary</i> button. The Internet Policy Summary screen will show each policy's number, Policy Name, Days, and Time of Day. To delete a policy, click its box, and then click the <i>Delete</i> button. Click the <i>Close</i> button to return to the Filters screen.</dd>
-				<dt>Filtered Internet Port Range </dt>
-				<dd>To filter PCs by network port number, select <i>Both</i>, <i>TCP</i>, or <i>UDP</i>, depending on which protocols you want to filter. Then enter the port numbers you want to filter into the port number fields. PCs connected to the router will no longer be able to access any port number listed here. To disable a filter, select <i>Disable</i>.</dd>
 			</dl>
 		</div>
 	</body>
