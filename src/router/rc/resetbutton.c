@@ -277,7 +277,7 @@ resetbutton_main (int argc, char *argv[])
 //#define ROUTER_BUFFALO_WBR2G54S 5
 //#define ROUTER_SIEMENS 6
 
-  if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN_72304v1444 || brand == ROUTER_MOTOROLA
+  if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN || brand == ROUTER_MOTOROLA
       || brand == ROUTER_BUFFALO_WBR2G54S || brand == ROUTER_BUFFALO_WBR54G)
     {
       puts ("sorry, Buffalo-WBR54G units do not support this feature");
