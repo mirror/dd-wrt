@@ -62,8 +62,8 @@
 		<legend>Boot Wait</legend>
 		<div class="setting">
 			<div class="label">Boot Wait</div>
-			<input type="radio" value="on" name="boot_wait" <% nvram_match("boot_wait","on","checked"); %> />On
-			<input type="radio" value="off" name="boot_wait" <% nvram_match("boot_wait","off","checked"); %> />Off
+			<input type="radio" value="on" name="boot_wait" <% nvram_match("boot_wait","on","checked"); %> />Enable
+			<input type="radio" value="off" name="boot_wait" <% nvram_match("boot_wait","off","checked"); %> />Disable
 		</div>
 	</fieldset><br />
 	<% nvram_match("boot_wait_web","0","-->"); %>
@@ -154,6 +154,7 @@
 		<div class="setting">
 			<div class="label">Interval</div>
 			<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvram_get("wol_interval"); %>" />
+			<span class="default">(Default: 86400, Range: 1 - 86400)</span>
 		</div>
 		<div class="setting">
 			<div class="label">Hostname</div>
