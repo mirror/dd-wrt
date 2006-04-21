@@ -11,10 +11,10 @@ var active_win = null;
 
 function to_submit_mac(F) {
 	F.submit_button.value = "WL_FilterTable";
-	F.action.value = "Apply";
 	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
-	F.submit();
+
+	F.action.value = "Apply";
+	apply(F);
 }
 
 function SelPage(num,F) {
