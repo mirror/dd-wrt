@@ -158,7 +158,7 @@
 		<% nvram_invmatch("wol_enable", "1", "<!--"); %>
 		<div class="setting">
 			<div class="label">Interval</div>
-			<input class="num" maxlength="100" size="25" name="wol_interval" value="<% nvram_get("wol_interval"); %>" />
+			<input class="num" maxlength="5" size="5" name="wol_interval" onblur="valid_range(this,1,86400,'WOL Interval')" value="<% nvram_get("wol_interval"); %>" />
 		</div>
 		<div class="setting">
 			<div class="label">Hostname</div>
