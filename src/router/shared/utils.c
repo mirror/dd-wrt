@@ -170,6 +170,12 @@ internal_getRouterBrand ()
 	    setRouter ("Siemens SE505");
 	    return ROUTER_SIEMENS;
 	  }
+	if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
+	  {
+	    cprintf ("router is Belkin\n");
+	    setRouter ("Belkin");
+	    return ROUTER_BELKIN;
+	  }
 //      if (startswith (et0, "00:90:96") && startswith (et1, "00:90:96"))
 //        {
 //          return ROUTER_SIEMENS;
