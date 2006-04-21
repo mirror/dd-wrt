@@ -26,7 +26,7 @@ function setWirelessTable() {
 		var mac = val[i];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
-		  cellmac.title = "OUI search";
+		  cellmac.title = "OUI Search";
 		  cellmac.style.cursor = "pointer";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		  cellmac.innerHTML = mac;
@@ -55,7 +55,7 @@ function setWDSTable() {
 		var mac = val[i];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
-		  cellmac.title = "OUI search";
+		  cellmac.title = "OUI Search";
 		  cellmac.style.cursor = "pointer";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		  cellmac.innerHTML = mac;
@@ -92,7 +92,7 @@ function setDHCPTable() {
 		var mac = val[i + 2];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
-		  cellmac.title = "OUI search";
+		  cellmac.title = "OUI Search";
 		  cellmac.style.cursor = "pointer";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		  cellmac.innerHTML = mac;
@@ -206,15 +206,15 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label">LAN MAC</div>
-									<span id="lan_mac" style="cursor:pointer" title="OUI search" onclick="getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')"><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+									<span id="lan_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')" ><% nvram_get("lan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WAN MAC</div>
-									<span id="wan_mac" style="cursor:pointer" title="OUI search" onclick="getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')"><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									<span id="wan_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')" ><% nvram_get("wan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">Wireless MAC</div>
-									<span id="wl_mac" style="cursor:pointer" title="OUI search" onclick="getOUIFromMAC('<% nvram_get("wl0_hwaddr"); %>')"><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
+									<span id="wl_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("wl0_hwaddr"); %>')" ><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WAN IP</div>
