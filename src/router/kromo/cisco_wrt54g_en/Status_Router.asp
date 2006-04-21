@@ -301,7 +301,7 @@ addEvent(window, "unload", function() {
 								</span>
 							</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh ON"); %>" onclick="window.location.reload()" />
+								<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh is On"); %>" onclick="window.location.reload()" />
 							</div>
 						</form>
 					</div>
