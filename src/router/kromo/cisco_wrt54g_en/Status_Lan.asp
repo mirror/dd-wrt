@@ -26,11 +26,23 @@ function setDHCPTable() {
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 5) {
+	
 		var row = table.insertRow(-1);
 		row.style.height = "15px";
 		row.insertCell(-1).innerHTML = val[i];
 		row.insertCell(-1).innerHTML = val[i + 1];
-		row.insertCell(-1).innerHTML = val[i + 2];
+		
+		var mac = val[i + 2];
+		if ("<% nvram_get("maskmac"); %>" != "1") {
+		  var cellmac = row.insertCell(-1);
+		  cellmac.title = "OUI Search";
+		  cellmac.style.cursor = "pointer";
+		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		  cellmac.innerHTML = mac;
+		} else {
+		  row.insertCell(-1).innerHTML = mac;		 
+		}
+		
 		row.insertCell(-1).innerHTML = val[i + 3];
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
@@ -68,7 +80,8 @@ addEvent(window, "unload", function() {
 		</script>
 	 </head>
 
-	 <body class="gui"> <% showad(); %>
+	 <body class="gui">
+	 	<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -115,7 +128,7 @@ addEvent(window, "unload", function() {
 								<legend>LAN Status</legend>
 								<div class="setting">
 									<div class="label">MAC Address</div>
-									<span id="lan_mac"><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+									<span id="lan_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')" ><% nvram_get("lan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">IP Address</div>
@@ -192,6 +205,8 @@ addEvent(window, "unload", function() {
 							<dd class="definition">When the Router is using a Subnet Mask, it is shown here.</dd>
 							<dt class="term">DHCP Server: </dt>
 							<dd class="definition">If you are using the Router as a DHCP server, that will be displayed here.</dd>
+							<dt class="term">OUI Search: </dt>
+							<dd class="definition">By clicking on any MAC address, you obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HStatusLan.asp')">More...</a></div>
 				</div>
