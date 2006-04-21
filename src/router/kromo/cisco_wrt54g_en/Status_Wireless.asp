@@ -246,7 +246,7 @@ addEvent(window, "unload", function() {
 							<dt class="term">Network: </dt>
 							<dd class="definition">As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.</dd>
 							<dt class="term">OUI Search: </dt>
-							<dd class="definition">By clicking on any MAC address, you obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
+							<dd class="definition">By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HStatusWireless.asp')">More...</a>
 					</div>
