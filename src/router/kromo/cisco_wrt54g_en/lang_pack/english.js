@@ -427,12 +427,13 @@ fail.mess1="The values you entered are invalid. Please try again.";
 fail.mess2="Upgrade failed.";
 
 
-// **************************************************************** Success*.asp **********************************************************************//
+// **************************************************************** Success*.asp & Reboot.asp  **********************************************************************//
 
 var success = new Object();
 success.mess1="Settings saved.";
 success.mess2="Upgrade successful.<br/>Unit is rebooting now....";
 success.mess3="Settings are successful.";
+success.mess4=success.mess3"<br />Unit is rebooting now....";
 
 
 
