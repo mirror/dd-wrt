@@ -174,7 +174,7 @@ internal_getRouterBrand ()
 	  {
 	    cprintf ("router is Belkin 7230-4 v1444\n");
 	    setRouter ("Belkin 7230-4 v1444");
-	    return ROUTER_BELKIN_72304v1444;
+	    return ROUTER_BELKIN;
 	  }
 //      if (startswith (et0, "00:90:96") && startswith (et1, "00:90:96"))
 //        {
