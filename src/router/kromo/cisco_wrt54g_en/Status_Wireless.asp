@@ -22,7 +22,18 @@ function setWirelessTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 4) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = val[i];
+		
+		var mac = val[i];
+		if ("<% nvram_get("maskmac"); %>" != "1") {
+		  var cellmac = row.insertCell(-1);
+		  cellmac.title = "OUI Search";
+		  cellmac.style.cursor = "pointer";
+		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		  cellmac.innerHTML = mac;
+		} else {
+		  row.insertCell(-1).innerHTML = mac;		 
+		}
+		
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
@@ -40,7 +51,17 @@ function setWDSTable() {
 	}
 	for(var i = 0; i < val.length; i = i + 5) {
 		var row = table.insertRow(-1);
-		row.insertCell(-1).innerHTML = val[i];
+		
+		if ("<% nvram_get("maskmac"); %>" != "1") {
+		  var cellmac = row.insertCell(-1);
+		  cellmac.title = "OUI Search";
+		  cellmac.style.cursor = "pointer";
+		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		  cellmac.innerHTML = mac;
+		} else {
+		  row.insertCell(-1).innerHTML = mac;		 
+		}
+
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
@@ -89,7 +110,8 @@ addEvent(window, "unload", function() {
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -132,7 +154,7 @@ addEvent(window, "unload", function() {
 								<legend>Wireless Status</legend>
 								<div class="setting">
 									<div class="label">MAC Address</div>
-									<span id="wl_mac"><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
+									<span id="wl_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("wl0_hwaddr"); %>')" ><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">Mode</div>
@@ -223,6 +245,8 @@ addEvent(window, "unload", function() {
 							<dd class="definition">This is the Router's MAC Address, as seen on your local, wireless network.</dd>
 							<dt class="term">Network: </dt>
 							<dd class="definition">As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.</dd>
+							<dt class="term">OUI Search: </dt>
+							<dd class="definition">By clicking on any MAC address, you obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HStatusWireless.asp')">More...</a>
 					</div>
