@@ -722,7 +722,7 @@ function apply(form) {
 		if(defined(form.elements[i].disabled)) 
 			form.elements[i].disabled = true;
 	}
-	document.getElementById('contents').style.color = '#999999';
+	if (form.contents) document.getElementById("contents").style.color = '#999999';
 }
 
 // Class for sending a request using ajax
