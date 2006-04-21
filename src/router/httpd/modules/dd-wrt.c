@@ -4956,3 +4956,15 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+
+/* Added by Botho 21.April.06 */
+int
+ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
+{
+	int ret = 0;
+	do_ej("common.js",wp);
+	do_ej("lang_pack/english.js",wp);
+	do_ej("lang_pack/language.js",wp);
+	cprintf("ej_langpack\r\n");
+	return ret;
+}
