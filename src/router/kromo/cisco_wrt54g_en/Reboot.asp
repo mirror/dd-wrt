@@ -5,8 +5,11 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-var submit_button = '<% get_web_page_name(); %>';
+		
+var submit_button = "<% get_web_page_name(); %>";
 function to_submit()
 {
 	history.go(-1);
@@ -16,7 +19,10 @@ function to_submit()
    <body>
       <div class="message">
          <div>
-            <form>Settings are successful.<br />Unit is rebooting now....<br /><input type="button" name="action" value="Continue" OnClick="to_submit()" /></form>
+            <form>
+            	<script type="text/javascript">Capture(success.mess4)</script><br />
+				<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script>
+            </form>
          </div>
       </div>
    </body>
