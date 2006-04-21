@@ -206,7 +206,7 @@ addEvent(window, "unload", function() {
 							<dt class="term">DHCP Server: </dt>
 							<dd class="definition">If you are using the Router as a DHCP server, that will be displayed here.</dd>
 							<dt class="term">OUI Search: </dt>
-							<dd class="definition">By clicking on any MAC address, you obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
+							<dd class="definition">By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HStatusLan.asp')">More...</a></div>
 				</div>
