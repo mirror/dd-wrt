@@ -336,6 +336,9 @@ struct nvram_tuple router_defaults[] = {
   {"dhcp_start", "100", 0},	/* First assignable DHCP address */
   //{ "dhcp_end", "150", 0 },             /* Last assignable DHCP address */      /* Remove */
   {"dhcp_num", "50", 0},	/* Number of DHCP Users *//* Add */
+
+  /* Progress Bar scroll count */
+  {"scroll_count", "2", 0},	/* Number of progressbar scroll before to_submit() */     /* ADDED by botho 21/04/2006 */
 #ifdef HAVE_SKYTRON
   {"dhcp_lease", "10", 0},	/* LAN lease time in minutes */
 #else
