@@ -433,7 +433,7 @@ var success = new Object();
 success.mess1="Settings saved.";
 success.mess2="Upgrade successful.<br/>Unit is rebooting now....";
 success.mess3="Settings are successful.";
-success.mess4=success.mess3 + "<br />Unit is rebooting now....";
+success.mess4=success.mess3 + "<br />Unit is rebooting now... Please wait a few moment ...";
 
 
 
