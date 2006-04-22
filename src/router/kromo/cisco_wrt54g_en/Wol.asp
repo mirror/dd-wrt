@@ -144,10 +144,10 @@
         				document.write("<br /><pre style=\"margin:0\">" + table.join("\n") + "</pre>"); 
         				} 
     					</script> 
-					<% nvram_selmatch("static_leases","","-->"); %> 
-    				</div> 
+				</div> 
     			    </fieldset><br /> 
-    			    <fieldset> 
+			    <% nvram_selmatch("static_leases","","-->"); %> 
+    	    		    <fieldset> 
     				<legend>WOL</legend> 
     				<div class="setting"> 
     				    <div class="label">MAC Address(es)</div> 
