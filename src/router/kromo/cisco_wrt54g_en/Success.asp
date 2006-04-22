@@ -3,11 +3,13 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %></title>
-<!--	<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+<!--	<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />	-->
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
-		<script type="text/javascript" src="common.js"></script>
+<!--	<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript" src="lang_pack/english.js"></script>
-		<script type="text/javascript" src="lang_pack/language.js"></script>		--><!-- Botho 22/04 : css_include() and js_include() correct in a temporary way the loss of style and javascript includes -->
+		<script type="text/javascript" src="lang_pack/language.js"></script>		-->
+
+<!-- Botho 22/04 : css_include() and js_include() correct in a temporary way the loss of style and javascript includes -->
 		<style type="text/css">
 <% css_include(); %>
 		</style>
