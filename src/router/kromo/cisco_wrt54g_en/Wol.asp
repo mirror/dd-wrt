@@ -85,119 +85,115 @@
 
   <body class="gui"> <% showad(); %> 
     <div id="wrapper"> 
-    <div id="content"> 
-    <div id="header"> 
-    <div id="logo"><h1><% show_control(); %></h1></div> 
-    <div id="menu"> 
-    <div id="menuMain"> 
-      <ul id="menuMainList"> 
-      <li><a href="index.asp">Setup</a></li> 
-      <li><a href="Wireless_Basic.asp">Wireless</a></li> 
-      <% nvram_invmatch("sipgate","1","<!--"); %> 
-      <li><a href="Sipath.asp">SIPatH</a></li> 
-      <% nvram_invmatch("sipgate","1","-->"); %> 
-      <li><a href="Firewall.asp">Security</a></li> 
-      <li><a href="Filters.asp">Access Restrictions</a></li> 
-      <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li> 
-      <li class="current"><span>Administration</span> 
-        <div id="menuSub"> 
-          <ul id="menuSubList"> 
-            <li><a href="Management.asp">Management</a></li> 
-            <li><a href="Hotspot.asp">Hotspot</a></li> 
-            <li><a href="Services.asp">Services</a></li> 
-            <li><a href="Alive.asp">Keep Alive</a></li> 
-            <li><a href="Log.asp">Log</a></li> 
-            <li><a href="Diagnostics.asp">Diagnostics</a></li> 
-            <li><span>WOL</span></li> 
-            <li><a href="Factory_Defaults.asp">Factory Defaults</a></li> 
-            <li><a href="Upgrade.asp">Firmware Upgrade</a></li> 
-            <li><a href="config.asp">Backup</a></li> 
-          </ul> 
-        </div> 
-        </li> 
-        <li><a href="Status_Router.asp">Status</a></li> 
-      </ul> 
-    </div> 
-    </div> 
-    </div> 
-    <div id="main"> 
-    <div id="contents"> 
-      <form name="ping" action="apply.cgi" method="post"> 
-      <input type="hidden" name="action" value="Apply" /> 
-      <input type="hidden" name="submit_button" value="Ping" /> 
-      <input type="hidden" name="submit_type" value="start" /> 
-      <input type="hidden" name="change_action" value="gozila_cgi" /> 
-      <input type="hidden" name="ping_times" value="1" /> 
-      <input type="hidden" name="next_page" value="user/Wol.asp" /> 
-      <input type="hidden" name="ping_ip" value="/usr/sbin/wol -v -i " /> 
-      <h2>Wake-On-LAN</h2> 
-    <% nvram_selmatch("static_leases","","<!--"); %> 
-      <fieldset> 
-        <legend>Static Leases</legend> 
-        <div class="setting"> 
-        <table cellspacing=0 cellpadding=0> 
-        <script type="text/javascript"> 
-      display_static_leases(); 
-        </script> 
-        </table> 
-        <script type="text/javascript"> 
-          var table = new Array(<% dump_ping_log(""); %>); 
-          if(table.length > 0 && location.href.indexOf("user/Wol.asp") == -1) { 
-            document.write("<br /><pre style=\"margin:0\">" + table.join("\n") + "</pre>"); 
-          } 
-        </script> 
-    <% nvram_selmatch("static_leases","","-->"); %> 
-      </div> 
-      </fieldset><br /> 
-      <fieldset> 
-        <legend>WOL</legend> 
-        <div class="setting"> 
-        <div class="label">MAC Address(es)</div> 
-          <textarea id="local_wol_mac" name="local_wol_mac" rows="3"  cols="20"><% nvram_get("local_wol_mac"); nvram_selmatch("local_wol_mac","","00:00:00:00:00:00"); %></textarea><br> 
-        <div class="label">Network Broadcast</div> 
-          <input maxlength=15 id="local_wol_network" name="local_wol_network" size="20" value='<% nvram_get("local_wol_network"); nvram_selmatch("local_wol_network","","192.168.1.255"); %>'/><br> 
-        <div class="label">UDP Port</div> 
-          <input maxlength=15 id="local_wol_port" name="local_wol_port" size="20" value='<% nvram_get("local_wol_port"); nvram_selmatch("local_wol_port","","7"); %>'/> 
-        </div> 
-        <script type="text/javascript"> 
-          var table = new Array(<% dump_ping_log(""); %>); 
-          if(table.length == 0 && location.href.indexOf("user/Wol.asp") == -1) { 
-            table = document.forms[0].local_wol_mac.value.split(" "); 
-            document.write("<br /><pre style=\"margin:0\">"); 
-            while(table.length > 0) { 
-              document.write("Waking up "+table.shift()+" with "+document.forms[0].local_wol_network.value+":"+document.forms[0].local_wol_port.value+"...\n"); 
-            } 
-            document.write("</pre>"); 
-          } 
-        </script> 
-      </fieldset><br /> 
-
-   <div class="submitFooter"> 
-     <input type="button" value="Wake Up" name="ping" onclick="to_submit(this.form, 'start');"/> 
-   </div> 
-      </form> 
-    </div> 
-    </div> 
-    <div id="helpContainer"> 
-      <div id="help"> 
-      <div id="logo"><h2>Help</h2>
-     </div> 
-      <dl> 
-   <dt class="term">Local Wake-on-LAN: </dt> 
-   <dd class="definition">This page allows you to <i>Wake Up</i> hosts on your local network (i.e. locally connected to your WRT).</dd> 
-      </dl><br /> 
-      <a href="javascript:openHelpWindow('help/HWol.asp');">More...</a> 
-      </div> 
-      </div> 
-      <div id="floatKiller"></div> 
-      <div id="statusInfo"> 
-      <div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div> 
-      <div class="info">Time: <% get_uptime(); %></div> 
-      <div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div> 
-      </div> 
-    </div> 
-    </div> 
-  </body> 
+	<div id="content"> 
+	    <div id="header"> 
+		<div id="logo"><h1><% show_control(); %></h1></div> 
+		    <div id="menu"> 
+			<div id="menuMain"> 
+    			    <ul id="menuMainList"> 
+    				<li><a href="index.asp">Setup</a></li> 
+    				<li><a href="Wireless_Basic.asp">Wireless</a></li> 
+    				<% nvram_invmatch("sipgate","1","<!--"); %> 
+    				<li><a href="Sipath.asp">SIPatH</a></li> 
+    				<% nvram_invmatch("sipgate","1","-->"); %> 
+    				<li><a href="Firewall.asp">Security</a></li> 
+    				<li><a href="Filters.asp">Access Restrictions</a></li> 
+    				<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li> 
+    				<li class="current"><span>Administration</span> 
+    				    <div id="menuSub"> 
+        			        <ul id="menuSubList"> 
+        			    	    <li><a href="Management.asp">Management</a></li> 
+        			    	    <li><a href="Hotspot.asp">Hotspot</a></li> 
+        				<li><a href="Services.asp">Services</a></li> 
+        				<li><a href="Alive.asp">Keep Alive</a></li> 
+        				<li><a href="Log.asp">Log</a></li> 
+        				<li><a href="Diagnostics.asp">Diagnostics</a></li> 
+        				<li><span>WOL</span></li> 
+        				<li><a href="Factory_Defaults.asp">Factory Defaults</a></li> 
+        				<li><a href="Upgrade.asp">Firmware Upgrade</a></li> 
+        				<li><a href="config.asp">Backup</a></li> 
+        				</ul> 
+    				    </div> 
+    				</li> 
+    				<li><a href="Status_Router.asp">Status</a></li> 
+    			    </ul> 
+			</div> 
+		    </div> 
+		</div> 
+		<div id="main"> 
+		    <div id="contents"> 
+    			<form name="ping" action="apply.cgi" method="post"> 
+    			    <input type="hidden" name="action" value="Apply" /> 
+    			    <input type="hidden" name="submit_button" value="Ping" /> 
+    			    <input type="hidden" name="submit_type" value="start" /> 
+    			    <input type="hidden" name="change_action" value="gozila_cgi" /> 
+    			    <input type="hidden" name="ping_times" value="1" /> 
+    			    <input type="hidden" name="next_page" value="user/Wol.asp" /> 
+    			    <input type="hidden" name="ping_ip" value="/usr/sbin/wol -v -i " /> 
+    			    <h2>Wake-On-LAN</h2> 
+			    <% nvram_selmatch("static_leases","","<!--"); %> 
+    			    <fieldset> 
+    				<legend>Static Leases</legend> 
+    				<div class="setting"> 
+    				    <table cellspacing=0 cellpadding=0> 
+    					<script type="text/javascript"> display_static_leases(); </script> 
+    				    </table> 
+    					<script type="text/javascript"> 
+        				var table = new Array(<% dump_ping_log(""); %>); 
+        				if(table.length > 0 && location.href.indexOf("user/Wol.asp") == -1) { 
+        				document.write("<br /><pre style=\"margin:0\">" + table.join("\n") + "</pre>"); 
+        				} 
+    					</script> 
+					<% nvram_selmatch("static_leases","","-->"); %> 
+    				</div> 
+    			    </fieldset><br /> 
+    			    <fieldset> 
+    				<legend>WOL</legend> 
+    				<div class="setting"> 
+    				    <div class="label">MAC Address(es)</div> 
+        			    <textarea id="local_wol_mac" name="local_wol_mac" rows="3"  cols="20"><% nvram_get("local_wol_mac"); nvram_selmatch("local_wol_mac","","00:00:00:00:00:00"); %></textarea><br> 
+    				    <div class="label">Network Broadcast</div> 
+        			    <input maxlength=15 id="local_wol_network" name="local_wol_network" size="20" value='<% nvram_get("local_wol_network"); nvram_selmatch("local_wol_network","","192.168.1.255"); %>'/><br> 
+    				    <div class="label">UDP Port</div> 
+        			    <input maxlength=15 id="local_wol_port" name="local_wol_port" size="20" value='<% nvram_get("local_wol_port"); nvram_selmatch("local_wol_port","","7"); %>'/> 
+    				</div> 
+    				<script type="text/javascript"> 
+        			var table = new Array(<% dump_ping_log(""); %>); 
+        			if(table.length == 0 && location.href.indexOf("user/Wol.asp") == -1) { 
+        			table = document.forms[0].local_wol_mac.value.split(" "); 
+        			document.write("<br /><pre style=\"margin:0\">"); 
+        			while(table.length > 0) { 
+            			document.write("Waking up "+table.shift()+" with "+document.forms[0].local_wol_network.value+":"+document.forms[0].local_wol_port.value+"...\n"); 
+        			} 
+        			document.write("</pre>"); 
+        			} 
+    				</script> 
+    			    </fieldset><br /> 
+			    <div class="submitFooter"> 
+    				<input type="button" value="Wake Up" name="ping" onclick="to_submit(this.form, 'start');"/> 
+			    </div> 
+    			</form> 
+		    </div> 
+		</div> 
+		<div id="helpContainer"> 
+    		    <div id="help"> 
+    			<div id="logo"><h2>Help</h2></div> 
+    			<dl> 
+			    <dt class="term">Local Wake-on-LAN: </dt> 
+			    <dd class="definition">This page allows you to <i>Wake Up</i> hosts on your local network (i.e. locally connected to your WRT).</dd> 
+    			</dl><br /> 
+    			<a href="javascript:openHelpWindow('help/HWol.asp');">More...</a> 
+    		    </div> 
+    		</div> 
+    		<div id="floatKiller"></div> 
+    		<div id="statusInfo"> 
+    		    <div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div> 
+    		    <div class="info">Time: <% get_uptime(); %></div> 
+    		    <div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div> 
+    		</div> 
+	    </div> 
+	</div> 
+    </body> 
 </html> 
 
 
