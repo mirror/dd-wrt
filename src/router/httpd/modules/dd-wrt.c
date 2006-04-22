@@ -4973,8 +4973,6 @@ ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
 		do_file(l, wp);
 	}
 	
-	cprintf("ej_js_include\r\n");
-	
 	return;
 }
 
