@@ -53,6 +53,7 @@ share.no="No";
 var sbutton = new Object();
 sbutton.save="Save Settings";
 sbutton.saving="Saved";
+sbutton.cmd="Executing";
 sbutton.cancel="Cancel Changes";
 sbutton.refres="Refresh";
 sbutton.clos="Close";
