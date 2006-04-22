@@ -4958,10 +4958,9 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 /* Added by Botho 21.April.06 */
-int
+void
 ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
 {
-	int ret = 0;
 	char *lang = nvram_get ("language");
 
 	do_ej("common.js",wp);	
@@ -4975,5 +4974,24 @@ ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
 	}
 	
 	cprintf("ej_js_include\r\n");
-	return ret;
+	
+	return;
+}
+
+void
+ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
+{
+
+	char *style = nvram_get ("router_style");
+	
+	if (style == NULL || strlen (style) == 0)
+		do_ej ("style/kromo/style.css", wp);
+	else {
+		char l[60];
+  		sprintf (l, "style/%s/style.css", style);
+  		do_ej (l, wp);
+  	}
+
+	return;
+	
 }
