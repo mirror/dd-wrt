@@ -182,7 +182,7 @@
 			    <dt class="term">Local Wake-on-LAN: </dt> 
 			    <dd class="definition">This page allows you to <i>Wake Up</i> hosts on your local network (i.e. locally connected to your WRT).</dd> 
     			</dl><br /> 
-    			<a href="javascript:openHelpWindow('help/HWol.asp');">More...</a> 
+    			<a href="javascript:openHelpWindow('HWol.asp');">More...</a> 
     		    </div> 
     		</div> 
     		<div id="floatKiller"></div> 
