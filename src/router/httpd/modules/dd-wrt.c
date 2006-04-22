@@ -5005,7 +5005,7 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 			if (!strcmp (entry->d_name, ".."))
 				continue; 
 			
-			sprintf(file, "style/cyan/%s", entry->d_name);
+			sprintf(file, "style/%s/%s",style, entry->d_name);
 			do_file (file, wp);
 		}
 		closedir (dir);
