@@ -67,6 +67,7 @@
 						<li><a href="HAlive.asp">Keep Alive</a></li>
 						<li><a href="HLog.asp">Log</a></li>
 						<li><a href="HDiagnostics.asp">Diagnostics</a></li>
+						<li><a href="HWol.asp">Wake On LAN</a></li>
 						<li><a href="HDefault.asp">Factory Defaults</a></li>
 						<li><a href="HUpgrade.asp">Firmware Upgrade</a></li>
 						<li><a href="HBackup.asp">Backup</a></li>
