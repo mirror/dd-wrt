@@ -13,7 +13,9 @@ document.title = '<% nvram_get("router_name"); %>' + dmz.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "DMZ";
-
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
+		
 	F.action.value = "Apply";
 	apply(F);
 }
