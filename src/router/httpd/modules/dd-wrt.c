@@ -4985,10 +4985,10 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 	char *style = nvram_get ("router_style");
 	
 	if (style == NULL || strlen (style) == 0)
-		do_ej ("style/kromo/*.css", wp);
+		do_ej ("style/kromo/style.css", wp);
 	else {
 		char l[60];
-  		sprintf (l, "style/%s/*.css", style);
+  		sprintf (l, "style/%s/style.css", style);
   		do_ej (l, wp);
   	}
 
