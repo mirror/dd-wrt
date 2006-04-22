@@ -35,6 +35,7 @@
 #include <cymac.h>
 #include <wlutils.h>
 #include <bcmparams.h>
+#include <dirent.h>
 
 void
 ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
