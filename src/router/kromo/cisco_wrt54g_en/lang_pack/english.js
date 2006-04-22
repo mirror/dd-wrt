@@ -153,6 +153,7 @@ bmenu.adminServices="Services";
 bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Log";
 bmenu.adminDiag="Diagnostics";
+bmenu.adminWol="WOL";
 bmenu.adminFactory="Factory Defaults";
 bmenu.adminUpgrade="Firmware Upgrade";
 bmenu.adminBackup="Backup";
