@@ -5006,6 +5006,7 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 				continue; 
 			
 			sprintf(filename, "style/%s/%s",style, entry->d_name);
+			websWrite (wp, "\n/* %s */\n\n", filename);
 			do_file (filename, wp);
 		}
 		closedir (dir);
@@ -5015,4 +5016,3 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 	return;
 
 }
-
