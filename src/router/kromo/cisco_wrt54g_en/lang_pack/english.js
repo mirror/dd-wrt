@@ -71,6 +71,7 @@ sbutton.cptotext="Copy to text area";
 sbutton.runcmd="Run Commands";
 sbutton.startup="Save Startup";
 sbutton.firewall="Save Firewall";
+sbutton.wol="Wake Up";
 
 
 
@@ -90,6 +91,9 @@ errmsg.err10="Confirmed password did not match Entered Password. Please re-enter
 errmsg.err11="No spaces are allowed in Password";
 errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade are failed.";
+errmsg.err35="You must input a MAC address to run.";
+errmsg.err36="You must input a network broadcast address to run.";
+errmsg.err37="You must input a UDP port to run.";
 
 //common.js error message
 errmsg.err14=" value is out of range [";
@@ -407,6 +411,25 @@ factdef.mess1="Warning! If you click OK, the device will reset to factory defaul
 //help container
 var hfactdef = new Object();
 hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
+
+// **************************************************************** WOL.asp **********************************************************************//
+
+var wol = new Object();
+wol.titl=" - Factory Defaults";
+wol.h2="Wake-On-LAN";
+wol.legend="Static Leases";
+wol.legend2="WOL";
+wol.restore="Restore Factory Defaults";
+wol.mac="MAC Address(es)";
+wol.broadcast="Network Broadcast";
+wol.udp="UDP Port";
+wol.msg1="Waking up";
+wol.msg2="with";
+
+//help container
+var hwol = new Object();
+hwol.right1="Local Wake-on-LAN:";
+hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).";
 
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
