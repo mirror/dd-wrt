@@ -4963,14 +4963,14 @@ ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
 {
 	char *lang = nvram_get ("language");
 
-	do_ej("common.js",wp);	
+	do_file("common.js",wp);	
 	if (lang == NULL) {
-		do_ej("lang_pack/english.js", wp);
+		do_file("lang_pack/english.js", wp);
 	}
 	else {
 		char l[60];
 		sprintf (l, "lang_pack/%s.js", lang);
-		do_ej(l, wp);
+		do_file(l, wp);
 	}
 	
 	cprintf("ej_js_include\r\n");
@@ -4985,11 +4985,11 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 	char *style = nvram_get ("router_style");
 	
 	if (style == NULL || strlen (style) == 0)
-		do_ej ("style/kromo/style.css", wp);
+		do_file ("style/cyan/style.css", wp);
 	else {
 		char l[60];
   		sprintf (l, "style/%s/style.css", style);
-  		do_ej (l, wp);
+  		do_file (l, wp);
   	}
 
 	return;
