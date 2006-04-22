@@ -10,7 +10,12 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 document.title = '<% nvram_get("router_name"); %>'+config.titl;
-		
+
+function to_submit(F) {
+	F.save_button.value = sbutton.saving;
+	apply(F);
+}
+
 		</script>
 	</head>
 
@@ -75,7 +80,7 @@ document.title = '<% nvram_get("router_name"); %>'+config.titl;
 							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"B1\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/nvrambak.bin'\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"submit\" value=\"" + sbutton.restore + "\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.restore + "\" onclick=\"to_submit(this.form)\" />")</script>
 							</div>
 						</form>
 					</div>

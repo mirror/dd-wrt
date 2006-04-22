@@ -343,7 +343,7 @@ halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<
 // **************************************************************** config.asp **********************************************************************//
 
 var config = new Object();
-config.titl=" - Backup &amp; Restore";
+config.titl=" - Backup & Restore";
 config.h2="Backup Configuration";
 config.legend="Backup Settings";
 config.mess1="Click the \"" + sbutton.backup + "\" button to download the configuration backup file to your computer.";
