@@ -727,15 +727,15 @@ ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
     {
       char *sep = strsep (&leases, "=");
       websWrite (wp,
-		 "<tr><td><input name=\"lease%d_hwaddr\" value=\"%s\" size=\"18\" maxlength=\"18\" /></td>",
+		 "<tr><td><input name=\"lease%d_hwaddr\" value=\"%s\" size=\"18\" maxlength=\"18\" onblur=\"valid_name(this,'MAC',SPACE_NO)\" /></td>",
 		 i, sep != NULL ? sep : "");
       sep = strsep (&leases, "=");
       websWrite (wp,
-		 "<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"24\" maxlength=\"24\" /></td>",
+		 "<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"24\" maxlength=\"24\" onblur=\"valid_name(this,'HOSTNAME',SPACE_NO)\" /></td>",
 		 i, sep != NULL ? sep : "");
       sep = strsep (&leases, " ");
       websWrite (wp,
-		 "<td><input name=\"lease%d_ip\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" /></td></tr>\n",
+		 "<td><input name=\"lease%d_ip\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" onblur=\"valid_name(this,'IP',SPACE_NO)\" /></td></tr>\n",
 		 i, sep != NULL ? sep : "");
     }
   free (originalpointer);
