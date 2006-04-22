@@ -3,15 +3,23 @@
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
 		<title><% nvram_get("router_name"); %></title>
-		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
+<!--	<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
-<!--
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript" src="lang_pack/english.js"></script>
-		<script type="text/javascript" src="lang_pack/language.js"></script>
--->
+		<script type="text/javascript" src="lang_pack/language.js"></script>		--><!-- Botho 22/04 : css_include() and js_include() correct in a temporary way the loss of style and javascript includes -->
+		<style type="text/css">
+<% css_include(); %>
+		</style>
 		<script type="text/javascript">
 <% js_include(); %>
+
+function init()
+{
+	bar1.togglePause();
+}
+
+var scroll_count = <% nvram_get("scroll_count"); %>;
 var submit_button = "<% get_web_page_name(); %>";
 
 function to_submit()
@@ -26,12 +34,19 @@ function to_submit()
 		</script>
 	</head>
 	
-	<body>
+	<body onload="init()">
 		<div class="message">
 			<div>
 				<form>
-					<script type="text/javascript">Capture(success.mess2)</script><br />
-					<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script>
+					<script type="text/javascript">Capture(success.mess2)</script><br /><br />
+					<div align="center">
+            		<script type="text/javascript">
+            			
+            			var bar1 = createBar(500,15,100,15,scroll_count,"to_submit()");
+            			bar1.togglePause();
+            		</script>
+            	</div>
+<!--			<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script> -->
 				</form>
 			</div>
 		</div>
