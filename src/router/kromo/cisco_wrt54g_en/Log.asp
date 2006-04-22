@@ -11,6 +11,9 @@
 		<script type="text/javascript">
 function to_submit(F) {
 	F.submit_button.value = "Log";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
+
 	F.action.value = "Apply";
 	apply(F);
 }
