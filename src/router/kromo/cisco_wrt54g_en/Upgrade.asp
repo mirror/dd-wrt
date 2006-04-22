@@ -90,13 +90,13 @@ function upgrade(F,id) {
 							<fieldset>
 								<legend>Firmware Upgrade</legend>
 								<div class="setting">
-									<div class="label">Please select a file to upgrade</div>
-									<input type="file" name="file" size="40"/>
-								</div>
-								<div class="setting">
 									<div class="label">After flashing, reset to</div>
 									<input type="radio" value="0" name="erase" checked />No reset&nbsp;
 									<input type="radio" value="1" name="erase" />Default settings
+								</div>
+								<div class="setting">
+									<div class="label">Please select a file to upgrade</div>
+									<input type="file" name="file" size="40"/>
 								</div>
 							</fieldset><br />
 							<div class="warning">
