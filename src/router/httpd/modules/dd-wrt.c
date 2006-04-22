@@ -4991,7 +4991,7 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 	{
 		
 		char l[60];
-		char file[60];
+		char filename[60];
   		sprintf (l, "/www/style/%s", style);
 		
 		struct dirent *entry;
@@ -5005,8 +5005,8 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 			if (!strcmp (entry->d_name, ".."))
 				continue; 
 			
-			sprintf(file, "style/%s/%s",style, entry->d_name);
-			do_file (file, wp);
+			sprintf(filename, "style/%s/%s",style, entry->d_name);
+			do_file (filename, wp);
 		}
 		closedir (dir);
 
@@ -5015,7 +5015,4 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 	return;
 
 }
-
-
-
 
