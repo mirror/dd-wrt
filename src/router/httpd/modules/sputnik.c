@@ -86,6 +86,9 @@ ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv)
 			}
 		    }		/* End while */
 		}
+	    }else
+	    {
+	    websWrite(wp,"Not Running");
 	    }
 	}
 
