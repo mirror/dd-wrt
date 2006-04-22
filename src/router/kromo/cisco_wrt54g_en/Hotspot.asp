@@ -80,6 +80,7 @@ addEvent(window, "load", function() {
 											<li><a href="Alive.asp">Keep Alive</a></li>
 											<li><a href="Log.asp">Log</a></li>
 											<li><a href="Diagnostics.asp">Diagnostics</a></li>
+											<li><a href="Wol.asp">Capture(bmenu.adminWol)</a></li>
 											<li><a href="Factory_Defaults.asp">Factory Defaults</a></li>
 											<li><a href="Upgrade.asp">Firmware Upgrade</a></li>
 											<li><a href="config.asp">Backup</a></li>
