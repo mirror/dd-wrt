@@ -308,10 +308,6 @@ extern int ddns_update_value (webs_t wp);
 extern void ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv);
 
-/* for nvram save-restore */
-extern void nv_file_in (char *url, webs_t stream, int len, char *boundary);
-extern void nv_file_out (char *path, webs_t wp);
-extern void sr_config_cgi (char *path, webs_t wp);
 
 extern void validate_macmode (webs_t wp, char *value, struct variable *v);
 extern void validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v);
