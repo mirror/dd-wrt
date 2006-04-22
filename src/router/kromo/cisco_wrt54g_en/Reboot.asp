@@ -5,7 +5,7 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<style type="text/css">
-<% css_include(); %>
+//<% css_include(); %>
 		</style>
 		<script type="text/javascript">
 <% js_include(); %>
