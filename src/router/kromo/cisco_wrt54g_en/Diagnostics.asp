@@ -16,6 +16,14 @@ function to_submit(F, I) {
 	F.submit_type.value = I;
 	F.submit_button.value = "Ping";
 	F.change_action.value = "gozila_cgi";
+	
+	if (I == "start") 
+		F.ping.value = sbutton.cmd;
+	else if (I == "startup")
+		F.startup.value = sbutton.saving;
+	else if (I == "firewall")
+		F.startup.value = sbutton.saving;
+	
 	apply(F);
 }
 
