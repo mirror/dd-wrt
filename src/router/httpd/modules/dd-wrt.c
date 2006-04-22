@@ -4982,14 +4982,39 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 
 	char *style = nvram_get ("router_style");
 	
+	do_file ("style/common.css", wp);
+	
 	if (style == NULL || strlen (style) == 0)
 		do_file ("style/cyan/style.css", wp);
-	else {
+	else 
+	{
+		
 		char l[60];
-  		sprintf (l, "style/%s/style.css", style);
-  		do_file (l, wp);
+		char file[60];
+  		sprintf (l, "/www/style/%s", style);
+		
+		struct dirent *entry;
+		DIR *dir;
+		dir = opendir (l);
+		if (dir == NULL)
+			return;
+		while ((entry = readdir(dir))) {
+			if (!strcmp (entry->d_name, "."))
+				continue;
+			if (!strcmp (entry->d_name, ".."))
+				continue; 
+			
+			sprintf(file, "style/cyan/%sn", entry->d_name);
+			do_file (file, wp);
+		}
+		closedir (dir);
+
   	}
 
 	return;
 
 }
+
+
+
+
