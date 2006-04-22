@@ -3,11 +3,11 @@
   <head> 
     <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/> 
     <title><% nvram_get("router_name"); %> - WOL</title> 
-    <link type="text/css" rel="stylesheet" href="../style/<% nvram_get("router_style"); %>/style.css" /> 
+    <link type="text/css" rel="stylesheet" href="/style/<% nvram_get("router_style"); %>/style.css" /> 
     <!--[if IE]> <link type="text/css" rel="stylesheet" href="../style/<% nvram_get("router_style"); %>/style_ie.css" /> <![endif]--> 
-    <script type="text/javascript" src="../common.js"></script> 
-    <script type="text/javascript" src="../lang_pack/english.js"></script> 
-    <script type="text/javascript" src="../lang_pack/language.js"></script> 
+    <script type="text/javascript" src="common.js"></script> 
+    <script type="text/javascript" src="lang_pack/english.js"></script> 
+    <script type="text/javascript" src="lang_pack/language.js"></script> 
 
     <script type="text/javascript"> 
       function submit_static(mac, ip) { 
@@ -115,7 +115,7 @@
           </ul> 
         </div> 
         </li> 
-        <li><a href="../Status_Router.asp">Status</a></li> 
+        <li><a href="Status_Router.asp">Status</a></li> 
       </ul> 
     </div> 
     </div> 
@@ -180,12 +180,13 @@
     </div> 
     <div id="helpContainer"> 
       <div id="help"> 
-      <div id="logo"><h2>Help</h2></div> 
+      <div id="logo"><h2>Help</h2>
+     </div> 
       <dl> 
    <dt class="term">Local Wake-on-LAN: </dt> 
    <dd class="definition">This page allows you to <i>Wake Up</i> hosts on your local network (i.e. locally connected to your WRT).</dd> 
       </dl><br /> 
-      <a href="javascript:openHelpWindow('../../user/HWol.asp');">More...</a> 
+      <a href="javascript:openHelpWindow('help/HWol.asp');">More...</a> 
       </div> 
       </div> 
       <div id="floatKiller"></div> 
