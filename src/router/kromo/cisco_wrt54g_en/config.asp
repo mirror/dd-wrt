@@ -45,7 +45,7 @@ function to_submit(F) {
 												<li><a href="Alive.asp"><script type="text/javascript">Capture(bmenu.adminAlive)</script></a></li>
 												<li><a href="Log.asp"><script type="text/javascript">Capture(bmenu.adminLog)</script></a></li>
 												<li><a href="Diagnostics.asp"><script type="text/javascript">Capture(bmenu.adminDiag)</script></a></li>
-												<li><a href="Wol.asp">Capture(bmenu.adminWol)</a></li>
+												<li><a href="Wol.asp"><script type="text/javascript">Capture(bmenu.adminWol)</script></a></li>
 												<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
 												<li><a href="Upgrade.asp"><script type="text/javascript">Capture(bmenu.adminUpgrade)</script></a></li>
 											    <li><span><script type="text/javascript">Capture(bmenu.adminBackup)</script></span></li>
