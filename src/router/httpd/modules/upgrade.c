@@ -283,28 +283,28 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 	return;
       len -= strlen (buf);
       if (!strncasecmp (buf, "Content-Disposition:", 20))
-	{
-	  if (strstr (buf, "name=\"file\""))
-	    {			// upgrade image
-	      type = 0;
-	      break;
-	    }
-	  else if (strstr (buf, "name=\"erase\""))
-	    {
-	      while (len > 0 && strcmp (buf, "\n") && strcmp (buf, "\r\n"))
 		{
-		  if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
-		    return;
-		  len -= strlen (buf);
+		  if (strstr (buf, "name=\"erase\""))
+		  	{
+		      while (len > 0 && strcmp (buf, "\n") && strcmp (buf, "\r\n"))
+			{
+			  if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
+			    return;
+			  len -= strlen (buf);
+			}
+		      if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
+			return;
+		      len -= strlen (buf);
+		      buf[1] = '\0';							// we only want the 1st digit
+		      nvram_set ("sv_restore_defaults", buf);
+		      nvram_commit ();
+		    }
+		  else if (strstr (buf, "name=\"file\""))		// upgrade image
+		  	{			
+		      type = 0;
+		      break;
+		    }
 		}
-	      if (!wfgets (buf, MIN (len + 1, sizeof (buf)), stream))
-		return;
-	      len -= strlen (buf);
-	      buf[1] = '\0';	// we only want the 1st digit
-	      nvram_set ("sv_restore_defaults", buf);
-	      nvram_commit ();
-	    }
-	}
     }
 
   /* Skip boundary and headers */
@@ -322,7 +322,7 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
      This will also cause a restore defaults on reboot
      of a Sveasoft firmware.
    */
-  if (nvram_match ("sv_restore_defaults", "2"))
+  if (nvram_match ("sv_restore_defaults", "1"))
     {
       system ("/sbin/erase nvram");
     }
