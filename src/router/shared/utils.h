@@ -22,6 +22,7 @@
 #define ROUTER_BUFFALO_HP_WHRG54S 11	//no differences between these models. so we leave it
 #define ROUTER_BUFFALO_WLA2G54L 5	//should work like a WBR2
 #define ROUTER_LINKSYS_WRT55AG 12
+#define ROUTER_BELKIN_F5D7230 13
 
 
 #define NVROUTER "DD_BOARD"
