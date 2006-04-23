@@ -190,7 +190,7 @@ function display_static_leases() {
 							<dt class="term"><script type="text/javascript">Capture(hwol.right1)</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hwol.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HWol.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('help/HWol.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
