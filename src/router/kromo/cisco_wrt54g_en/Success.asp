@@ -16,13 +16,12 @@
 		<script type="text/javascript">
 <% js_include(); %>
 
-function init()
-{
-	bar1.togglePause();
-}
-
-var scroll_count = <% nvram_get("scroll_count"); %>;
+//var wait_time = <% webs_get("wait_time"); %> * 1000;		//milliseconds => seconds
+//var scroll_count = <% nvram_get("scroll_count"); %>;
+var wait_time = 30 * 1000;
+var scroll_count = 4;
 var submit_button = "<% get_web_page_name(); %>";
+var timer = setTimeout("message()", wait_time);
 
 function to_submit()
 {
@@ -33,10 +32,25 @@ function to_submit()
 	else
 		document.location.href =  submit_button;
 }
+
+function message()
+{
+	clearTimeout(timer);
+	bar1.togglePause();
+	setElementVisible("mess", true);
+	window.stop();
+}
+
+function init()
+{
+	setElementVisible("mess", false);
+	bar1.togglePause();
+}
+
 		</script>
 	</head>
 	
-	<body onload="init()">
+	<body onload="init()" onunload="clearTimeout(timer)">
 		<div class="message">
 			<div>
 				<form>
@@ -47,6 +61,10 @@ function to_submit()
 	            				bar1.togglePause();
 	            			</script>
 	            		</div>
+	            		<div id="mess">
+            				<br /><br /><script type="text/javascript">Capture(success.mess5)</script><br /><br />
+            				<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />")</script>
+            		</div>
 <!--				<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script>	-->
 				</form>
 			</div>

@@ -61,7 +61,8 @@ function init()
 	            		</script>
 	            	</div>
 	            	<div id="mess">
-            			<br /><br /><script type="text/javascript">Capture(success.mess5)</script>
+            			<br /><br /><script type="text/javascript">Capture(success.mess5)</script><br /><br />
+            			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />")</script>
             		</div>
 <!--			<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script> -->
             </form>
