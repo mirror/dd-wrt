@@ -18,8 +18,8 @@
 
 //var wait_time = <% webs_get("wait_time"); %> * 1000;		//milliseconds => seconds
 //var scroll_count = <% nvram_get("scroll_count"); %>;
-var wait_time = 20 * 1000;
-var scroll_count = 5;
+var wait_time = 30 * 1000;
+var scroll_count = 4;
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", wait_time);
 
@@ -62,7 +62,6 @@ function init()
 	            	</div>
 	            	<div id="mess">
             			<br /><br /><script type="text/javascript">Capture(success.mess5)</script>
-            			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />")</script>
             		</div>
 <!--			<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script> -->
             </form>
