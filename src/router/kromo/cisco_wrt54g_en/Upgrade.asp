@@ -87,8 +87,6 @@ function upgrade(F,id) {
 							<input type="hidden" name="submit_button" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
-							<input type="hidden" name="scroll_count" value=5 />
-							<input type="hidden" name="wait_time" value=20 />
 							<h2>Firmware Management</h2>
 							<fieldset>
 								<legend>Firmware Upgrade</legend>
