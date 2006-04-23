@@ -459,6 +459,7 @@ success.mess1="Settings saved.";
 success.mess2="Upgrade successful.<br/>Unit is rebooting now. Please wait a few moments...";
 success.mess3="Settings are successful.";
 success.mess4=success.mess3 + "<br />Unit is rebooting now. Please wait a few moments...";
+success.mess5="The router IP Address seems to be modified. Please change your computer IP address to join the network and then connect again.";
 
 
 
