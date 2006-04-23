@@ -38,7 +38,11 @@ function message()
 	clearTimeout(timer);
 	bar1.togglePause();
 	setElementVisible("mess", true);
-	window.stop();
+	var browserName=navigator.appName;
+	if (browserName == "Microsoft Internet explorer")
+		document.execCommand("Stop");
+	else 
+		window.stop();
 }
 
 function init()
