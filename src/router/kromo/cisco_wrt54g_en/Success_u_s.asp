@@ -49,7 +49,6 @@ function message()
 
 function init()
 {
-	setElementVisible("mess", false);
 	bar1.togglePause();
 }
 
@@ -67,9 +66,12 @@ function init()
 	            			bar1.togglePause();
 	            		</script>
 	            	</div>
-            		<div id="mess">
+            		<div id="mess" style="display: none">
             			<br /><br /><script type="text/javascript">Capture(success.mess5)</script><br /><br />
-            			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />")</script>
+            			<script type="text/javascript">
+            				if (browserName == "Microsoft Internet Explorer")
+            					document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
+           				</script>
             		</div>
 <!--			<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script> -->
 				</form>
