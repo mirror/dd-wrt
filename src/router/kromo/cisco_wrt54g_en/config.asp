@@ -64,7 +64,6 @@ function to_submit(F) {
 				    <div id="main">
 					<div id="contents">
 						<form name="nvramrestore" action="nvram.cgi" method="POST" encType="multipart/form-data">
-							<input type="hidden" name="scroll_count" value="5" />
 							<h2><script type="text/javascript">Capture(config.h2)</script></h2>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(config.legend)</script></legend>
