@@ -9,24 +9,25 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+
 function process_aborted(F) {
 	bar1.togglePause();
-	alert("Upgrade failed !");
-	window.location.replace('Upgrade.asp')
+	alert("Upgrade failed.");
+	window.location.replace("Upgrade.asp")
 	return false;
 }
 
 function upgrade(F,id) {
-	var len = F.file.value.length;
-	var ext = new Array('.','b','i','n');
-	if (F.file.value == '')	{
-		alert("Please select a file to upgrade !");
+	if (F.file.value == "")	{
+		alert("Please select a file to upgrade.");
 		return false;
 	}
+	var len = F.file.value.length;
+	var ext = new Array('.','b','i','n');
 	var IMAGE = F.file.value.toLowerCase();
 	for (i=0; i < 4; i++)	{
 		if (ext[i] != IMAGE.charAt(len-4+i)){
-			alert("Incorrect image file !");
+			alert("Incorrect image file.");
 			return false;
 		}
 	}
@@ -86,6 +87,7 @@ function upgrade(F,id) {
 							<input type="hidden" name="submit_button" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
+							<input type="hidden" name="scroll_count" value="5" />
 							<h2>Firmware Management</h2>
 							<fieldset>
 								<legend>Firmware Upgrade</legend>
