@@ -142,8 +142,8 @@ function handle_https(F)
 function init() {
 	port_enable_disable(document.setup, '<% nvram_get("remote_management"); %>');
 	if (<% nvram_get("sshd_enable"); %> == 0) {
-		F.remote_mgt_ssh.value = 0;
-		choose_disable(F._remote_mgt_ssh);
+		document.setup.remote_mgt_ssh.value = 0;
+		choose_disable(document.setup._remote_mgt_ssh);
 	}
 }
 
