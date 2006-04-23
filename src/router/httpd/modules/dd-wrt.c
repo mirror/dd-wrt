@@ -1790,7 +1790,7 @@ show_preshared (webs_t wp, char *prefix)
   websWrite (wp, "<div class=\"label\">Group Key Renewal</div>\n");
   sprintf (var, "%s_wpa_gtk_rekey", prefix);
   websWrite (wp,
-	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=valid_range(this,0,99999,'rekey interval') value=\"%s\"/> seconds\n",
+	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=valid_range(this,0,99999,'rekey interval') value=\"%s\" /> seconds\n",
 	     prefix, nvram_safe_get (var));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
