@@ -456,9 +456,9 @@ fail.mess2="Upgrade failed.";
 
 var success = new Object();
 success.mess1="Settings saved.";
-success.mess2="Upgrade successful.<br/>Unit is rebooting now... Please wait a few moment ...";
+success.mess2="Upgrade successful.<br/>Unit is rebooting now. Please wait a few moments...";
 success.mess3="Settings are successful.";
-success.mess4=success.mess3 + "<br />Unit is rebooting now... Please wait a few moment ...";
+success.mess4=success.mess3 + "<br />Unit is rebooting now. Please wait a few moments...";
 
 
 

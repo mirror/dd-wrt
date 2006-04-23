@@ -243,7 +243,7 @@ function check_space(I,M1){
 		ch = I.value.charAt(i);
 		if(ch == ' ') {
 //			alert(M +" is not allowed to contain a space.");
-			alert(errmsg.err34);
+			alert(M+errmsg.err34);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -335,7 +335,7 @@ function isdigit(I,M) {
 		ch = I.value.charAt(i);
 		if(ch < '0' || ch > '9') {
 //			alert(M +" have illegal characters, must be [ 0 - 9 ].");
-			alert(errmsg.err28);
+			alert(M+errmsg.err28);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -349,7 +349,7 @@ function isascii(I,M) {
 		ch = I.value.charAt(i);
 		if(ch < ' ' || ch > '~'){
 //			alert(M +" have illegal ascii code.");
-			alert(errmsg.err29);
+			alert(M+errmsg.err29);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -365,7 +365,7 @@ function isxdigit(I,M) {
 				
 		} else {
 //			alert(M +" have illegal hexadecimal digits.");
-			alert(errmsg.err30);
+			alert(M+errmsg.err30);
 			I.value = I.defaultValue;	
 			return false;
 		}
@@ -388,14 +388,14 @@ function valid_ip(F,N,M1,flag){
 
 	if(m[0] == 127 || m[0] == 224){
 //		alert(M+" value is illegal.");
-		alert(errmsg.err31);
+		alert(M+errmsg.err31);
 		return false;
 	}
 
 	if(m[0] == "0" && m[1] == "0" && m[2] == "0" && m[3] == "0"){
 		if(flag & ZERO_NO){
 //			alert(M+" value is illegal.");
-			alert(errmsg.err31);
+			alert(M+errmsg.err31);
 			return false;
 		}
 	}
@@ -403,7 +403,7 @@ function valid_ip(F,N,M1,flag){
 	if((m[0] != "0" || m[1] != "0" || m[2] != "0") && m[3] == "0"){
 		if(flag & MASK_NO){
 //			alert(M+" value is illegal.");
-			alert(errmsg.err31);
+			alert(M+errmsg.err31);
 			return false;
 		}
 	}
