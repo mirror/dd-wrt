@@ -14,19 +14,19 @@
       <div id="content"> 
          <h2>Local WOL</h2> 
          <dl> 
-            <dd>This page allows you to <i>Wake Up</i> hosts on your local network (i.e. locally connected to your WRT).</dd> 
+            <dd>This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).</dd> 
                <dt class="term">Static Leases: </dt> 
-               <dd class="definition">The Static Leases section attempts to <i>Wake Up</i> any host that you have a static DHCP lease for. 
+               <dd class="definition">The Static Leases section attempts to <em>Wake Up</em> any host that you have a static DHCP lease for. 
                <div class="note"> 
                   <h4>Note</h4> 
                      <div>The attempt uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has a 255.255.255.0 netmask, and uses the UDP port specified in the UDP Port box.</div> 
                </div> 
             </dd> 
                <dt class="term">Mac Address: </dt> 
-               <dd class="definition">Fill the MAC address(es) of the computer you would like to wake up and click <i>Wake Up</i> to send it the WOL <i>magic packet</i>. 
+               <dd class="definition">Fill the MAC address(es) of the computer you would like to wake up and click <em>Wake Up</em> to send it the WOL <i>magic packet</i>. 
                <div class="note"> 
                   <h4>Note</h4> 
-                     <div>Each MAC-ADDRESS is written as x:x:x:x:x:x, where x is a hexadecimal number between 0 and ff which represents one byte of the address, which is in network byte order (big endian).</div> 
+                     <div>Each MAC-ADDRESS is written as xx:xx:xx:xx:xx:xx, where xx is a hexadecimal number between 00 and ff which represents one byte of the address, which is in network byte order (big endian).</div> 
                   </div> 
                </dd> 
                <dt class="term">Network Broadcast: </dt> 
