@@ -3,8 +3,7 @@
 	<head> 
 		<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
 		<title><% nvram_get("router_name"); %> - WOL</title>
-		<link type="text/css" rel="stylesheet" href="/style/<% nvram_get("router_style"); %>/style.css" />
-		<!--[if IE]> <link type="text/css" rel="stylesheet" href="../style/<% nvram_get("router_style"); %>/style_ie.css" /> <![endif]-->
+		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
