@@ -16,10 +16,10 @@
 		<script type="text/javascript">
 <% js_include(); %>
 
-var wait_time = <% webs_get("wait_time"); %> * 1000;		//milliseconds => seconds
-var scroll_count = <% webs_get("scroll_count"); %>;
-//var wait_time = 5 * 1000;
-//var scroll_count = 2;
+//var wait_time = <% webs_get("wait_time"); %> * 1000;		//milliseconds => seconds
+//var scroll_count = <% nvram_get("scroll_count"); %>;
+var wait_time = 20 * 1000;
+var scroll_count = 5;
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", wait_time);
 
