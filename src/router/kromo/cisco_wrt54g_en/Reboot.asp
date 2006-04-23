@@ -39,10 +39,12 @@ function message()
 	bar1.togglePause();
 	setElementVisible("mess", true);
 	var browserName=navigator.appName;
-	if (browserName == "Microsoft Internet explorer")
+	if (browserName == "Microsoft Internet Explorer") {
 		document.execCommand("Stop");
-	else 
+	}
+	else {
 		window.stop();
+	}
 }
 
 function init()

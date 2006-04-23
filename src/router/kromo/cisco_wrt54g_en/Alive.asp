@@ -9,7 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>'+alive.titl;
+document.title = '<% nvram_get("router_name"); %>' + alive.titl;
 
 function to_reboot(F) {
 	F.action.value='Reboot';
@@ -32,17 +32,17 @@ function setWDS(val) {
 
 function setAlive() {
 	alive = document.getElementsByName('schedule_enable');
-	if (alive[0].checked) {	// enable
+	if (alive[0].checked) {			// enable
 		time = document.getElementsByName('schedule_hour_time');
-		if (time[0].checked) { // Time
+		if (time[0].checked) { 		// Time
 			setElementsActive("schedule_hour_time", "schedule_time", true);
 			setElementActive("schedule_hour_time", true);
 			setElementsActive("schedule_hours", "schedule_weekdays", false);
-		} else { //At a set Time
+		} else { 					//At a set Time
 			setElementsActive("schedule_hour_time", "schedule_weekdays", true);
 			setElementActive("schedule_time", false);
 		}
-	} else { // disable
+	} else { 						// disable
 		setElementsActive("schedule_hour_time", "schedule_weekdays", false);
 	}
 }
