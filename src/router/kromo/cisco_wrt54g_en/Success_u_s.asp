@@ -22,6 +22,7 @@ var wait_time = 40 * 1000;
 var scroll_count = 5;
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", wait_time);
+var browserName=navigator.appName;
 
 function to_submit()
 {
@@ -38,7 +39,6 @@ function message()
 	clearTimeout(timer);
 	bar1.togglePause();
 	setElementVisible("mess", true);
-	var browserName=navigator.appName;
 	if (browserName == "Microsoft Internet Explorer") {
 		document.execCommand("Stop");
 	}
