@@ -429,7 +429,7 @@ wol.msg2="with";
 //help container
 var hwol = new Object();
 hwol.right1="Local Wake-on-LAN:";
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).";
+hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
 
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
@@ -459,7 +459,7 @@ success.mess1="Settings saved.";
 success.mess2="Upgrade successful.<br/>Unit is rebooting now. Please wait a few moments...";
 success.mess3="Settings are successful.";
 success.mess4=success.mess3 + "<br />Unit is rebooting now. Please wait a few moments...";
-success.mess5="If you have changed your router's IP address, please note that you must release/renew your client(s) address(s) on the network before connect again";
+success.mess5="If you have changed your router&apos;s IP address, please note that you must release/renew your client(s) address(s) on the network before connecting again.";
 
 
 

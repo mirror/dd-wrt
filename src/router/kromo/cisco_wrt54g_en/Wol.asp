@@ -162,9 +162,13 @@ function display_static_leases() {
 								<legend><script type="text/javascript">Capture(wol.legend2)</script></legend>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.mac)</script></div>
-										<textarea id="local_wol_mac" name="local_wol_mac" rows="3"  cols="20"><% nvram_get("local_wol_mac"); nvram_selmatch("local_wol_mac","","00:00:00:00:00:00"); %></textarea><br />
+										<textarea id="local_wol_mac" name="local_wol_mac" rows="3"  cols="20"><% nvram_get("local_wol_mac"); nvram_selmatch("local_wol_mac","","00:00:00:00:00:00"); %></textarea>
+									</div>
+									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.broadcast)</script></div>
-										<input maxlength=15 id="local_wol_network" name="local_wol_network" size="20" value='<% nvram_get("local_wol_network"); nvram_selmatch("local_wol_network","","192.168.1.255"); %>'/><br>
+										<input maxlength="15" size="15" id="local_wol_network" name="local_wol_network" size="20" value='<% nvram_get("local_wol_network"); nvram_selmatch("local_wol_network","","192.168.1.255"); %>'/>
+									</div>
+									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
 										<input class="num" maxlength="5" size="5" id="local_wol_port" name="local_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value='<% nvram_get("local_wol_port"); nvram_selmatch("local_wol_port","","7"); %>'/>
 									</div>
@@ -178,7 +182,7 @@ function display_static_leases() {
 										}
 										document.write("</pre>");
 									}
-								</script>
+									</script>
 							</fieldset><br />
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.wol + "\" onclick=\"to_submit(this.form, 'start')\" />")</script>
