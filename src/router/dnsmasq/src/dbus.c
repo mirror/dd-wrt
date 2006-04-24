@@ -113,13 +113,14 @@ static void dbus_read_servers(struct daemon *daemon, DBusMessage *message)
 #else
 	  if (i == sizeof(struct in6_addr)-1)
 	    {
-	      memcpy(&addr.in6.sin6_addr, p, sizeof(struct in6_addr));
+	      memcpy(&addr.in6.sin6_addr, p, sizeof(addr.in6));
 #ifdef HAVE_SOCKADDR_SA_LEN
-              source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+              source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(addr.in6);
 #endif
               source_addr.in6.sin6_family = addr.in6.sin6_family = AF_INET6;
               addr.in6.sin6_port = htons(NAMESERVER_PORT);
-              source_addr.in6.sin6_flowinfo = addr.in6.sin6_flowinfo = htonl(0);
+              source_addr.in6.sin6_flowinfo = addr.in6.sin6_flowinfo = 0;
+	      source_addr.in6.sin6_scope_id = addr.in6.sin6_scope_id = 0;
               source_addr.in6.sin6_addr = in6addr_any;
               source_addr.in6.sin6_port = htons(daemon->query_port);
 	      skip = 0;
@@ -211,14 +212,14 @@ static void dbus_read_servers(struct daemon *daemon, DBusMessage *message)
 	  free(serv);
 	}
       else 
-	    up = &serv->next;
+	up = &serv->next;
     }
 
 }
 
-DBusHandlerResult message_handler (DBusConnection *connection, 
-				   DBusMessage *message, 
-				   void *user_data)
+DBusHandlerResult message_handler(DBusConnection *connection, 
+				  DBusMessage *message, 
+				  void *user_data)
 {
   char *method = (char *)dbus_message_get_member(message);
   struct daemon *daemon = (struct daemon *)user_data;
@@ -239,7 +240,7 @@ DBusHandlerResult message_handler (DBusConnection *connection,
       check_servers(daemon);
     }
   else if (strcmp(method, "ClearCache") == 0)
-    clear_cache_and_reload(daemon, dnsmasq_time(daemon->uptime_fd));
+    clear_cache_and_reload(daemon);
   else
     return (DBUS_HANDLER_RESULT_NOT_YET_HANDLED);
   
