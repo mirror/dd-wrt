@@ -1182,7 +1182,7 @@ struct nvram_tuple router_defaults[] = {
   {"shat_range", "192.168.2.96/27", 0},
   {"shat_shield", "NO", 0},
 #endif
-#ifdef HAVE_SKYTROM
+#ifdef HAVE_SKYTRON
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "1", 0},
 #elif HAVE_POWERNOC
