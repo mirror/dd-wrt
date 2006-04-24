@@ -170,11 +170,12 @@ internal_getRouterBrand ()
 	    setRouter ("Siemens SE505");
 	    return ROUTER_SIEMENS;
 	  }
-	if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
+	if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50") &&
+		nvram_match ("boardtype", "0x0101"))
 	  {
-	    cprintf ("router is Belkin F5D7230\n");
-	    setRouter ("Belkin F5D7230");
-	    return ROUTER_BELKIN_F5D7230;
+	    cprintf ("router is Belkin F5D7230-4 v1444\n");
+	    setRouter ("Belkin F5D7230-4 v1444");
+	    return ROUTER_SIEMENS;
 	  }
 //      if (startswith (et0, "00:90:96") && startswith (et1, "00:90:96"))
 //        {
