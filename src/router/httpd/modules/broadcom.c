@@ -4000,6 +4000,8 @@ struct ej_handler ej_handlers[] = {
 /* Added by Botho 21.April.06 */
   {"js_include", ej_js_include},
   {"css_include", ej_css_include},
+ /* Added by Botho 25.April.06 */
+  {"time_out", ej_time_out},
 
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
