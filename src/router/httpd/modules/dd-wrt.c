@@ -5037,7 +5037,7 @@ ej_time_out (int eid, webs_t wp, int argc, char_t **argv)
 		websWrite (wp, "var scroll_count = %d;", scroll_count);
     }
 	else {
-		wait_time = wait_time / (clk / 125);
+		wait_time = wait_time / clk * 125;
 		scroll_count = wait_time / 5 - 3;
 		websWrite (wp, "var wait_time = %d * 1000;", wait_time);
 		websWrite (wp, "var scroll_count = %d;", scroll_count);
