@@ -17,11 +17,11 @@
 		<script type="text/javascript">
 <% js_include(); %>
 
-var submit_button = '<% get_web_page_name(); %>';
+var submit_button = "<% get_web_page_name(); %>";
 
 function to_submit()
 {
-	if(submit_button == "")
+	if(submit_button == ".aps")
 		history.go(-1);
 	else if(submit_button == "WL_WEPTable.asp")
 		self.close();
