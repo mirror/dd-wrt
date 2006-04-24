@@ -10,8 +10,6 @@
    GNU General Public License for more details.
 */
 
-/* Author's email: simon@thekelleys.org.uk */
-
 #include "dnsmasq.h"
 
 struct myoption {
@@ -21,7 +19,7 @@ struct myoption {
   int val;
 };
 
-#define OPTSTRING "31yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:"
+#define OPTSTRING "531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:"
 
 static const struct myoption opts[] = { 
   {"version", 0, 0, 'v'},
@@ -83,6 +81,7 @@ static const struct myoption opts[] = {
   {"enable-dbus", 0, 0, '1'},
   {"bootp-dynamic", 0, 0, '3'},
   {"dhcp-mac", 1, 0, '4'},
+  {"no-ping", 0, 0, '5'},
   {0, 0, 0, 0}
 };
 
@@ -112,6 +111,7 @@ static const struct optflags optmap[] = {
   { 'y', OPT_LOCALISE },
   { '1', OPT_DBUS },
   { '3', OPT_BOOTP_DYNAMIC },
+  { '5', OPT_NO_PING },
   { 'v', 0},
   { 'w', 0},
   { 0, 0 }
@@ -179,6 +179,7 @@ static const struct {
   { "-2, --no-dhcp-interface=interface", gettext_noop("Do not provide DHCP on this interface, only provide DNS."), NULL },
   { "-3, --bootp-dynamic", gettext_noop("Enable dynamic address allocation for bootp."), NULL },
   { "-4, --dhcp-mac=<id>,<mac address>", gettext_noop("Map MAC address (with wildcards) to option set."), NULL },
+  { "-5, --no-ping", gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
   { NULL, NULL, NULL }
 }; 
 
@@ -300,7 +301,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
   daemon->namebuff = buff;
 
   /* Set defaults - everything else is zero or NULL */
-  daemon->min_leasetime = UINT_MAX;
   daemon->cachesize = CACHESIZ;
   daemon->port = NAMESERVER_PORT;
   daemon->default_resolv.is_default = 1;
@@ -648,8 +648,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		   "interface=" to disable all interfaces except loop. */
 		new->name = safe_string_alloc(arg);
 		new->isloop = new->used = 0;
-		if (safe_strchr(new->name, ':'))
-		  daemon->options |= OPT_NOWILD;
 		arg = comma;
 	      } while (arg);
 	      break;
@@ -665,8 +663,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		  {
 		    new->next = daemon->if_except;
 		    daemon->if_except = new;
-		    if (safe_strchr(new->name, ':'))
-		      daemon->options |= OPT_NOWILD;
 		  }
 		else
 		  {
@@ -704,16 +700,17 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		  {
 		    new->addr.sa.sa_family = AF_INET;
 #ifdef HAVE_SOCKADDR_SA_LEN
-		    new->addr.in.sin_len = sizeof(struct sockaddr_in);
+		    new->addr.in.sin_len = sizeof(new->addr.in);
 #endif
 		  }
 #ifdef HAVE_IPV6
 		else if (arg && inet_pton(AF_INET6, arg, &new->addr.in6.sin6_addr) > 0)
 		  {
 		    new->addr.sa.sa_family = AF_INET6;
-		    new->addr.in6.sin6_flowinfo = htonl(0);
+		    new->addr.in6.sin6_flowinfo = 0;
+		    new->addr.in6.sin6_scope_id = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
-		    new->addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+		    new->addr.in6.sin6_len = sizeof(new->addr.in6);
 #endif
 		  }
 #endif
@@ -841,9 +838,10 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			newlist->addr.in6.sin6_port = htons(serv_port);
 			newlist->source_addr.in6.sin6_port = htons(source_port);
 			newlist->addr.sa.sa_family = newlist->source_addr.sa.sa_family = AF_INET6;
-			newlist->addr.in6.sin6_flowinfo = newlist->source_addr.in6.sin6_flowinfo = htonl(0);
+			newlist->addr.in6.sin6_flowinfo = newlist->source_addr.in6.sin6_flowinfo = 0;
+			newlist->addr.in6.sin6_scope_id = newlist->source_addr.in6.sin6_scope_id = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
-			newlist->addr.in6.sin6_len = newlist->source_addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+			newlist->addr.in6.sin6_len = newlist->source_addr.in6.sin6_len = sizeof(newlist->addr.in6);
 #endif
 			if (source)
 			  {
@@ -1084,9 +1082,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			  }
 		      }
 		  }
-				
-		if (new->lease_time < daemon->min_leasetime)
-		  daemon->min_leasetime = new->lease_time;
 		break;
 	      }
 
@@ -1226,11 +1221,8 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		    free(new);
 		  }
 		else
-		  {
-		    if ((new->flags & CONFIG_TIME) && new->lease_time < daemon->min_leasetime)
-		      daemon->min_leasetime = new->lease_time;
-		    daemon->dhcp_conf = new;
-		  }
+		  daemon->dhcp_conf = new;
+		  
 		break;
 	      }
 	      
@@ -1808,9 +1800,9 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 	  else
 	    die2(_("bad command line options: %s."),
 #ifdef HAVE_GETOPT_LONG
-		problem ? problem : "try --help"
+		problem ? problem : _("try --help")
 #else
-		problem ? problem : "try -w"
+		problem ? problem : _("try -w")
 #endif
 		);
 	}

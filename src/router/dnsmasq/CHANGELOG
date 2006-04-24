@@ -1694,3 +1694,119 @@ version 2.27
 	    Generalised the DHCP code to cope with any hardware
 	    address type, at least on Linux. *BSD is still limited to
 	    ethernet only.
+
+version 2.28
+            Eliminated all raw network access when running on
+            Linux. All DHCP network activity now goes through the IP
+            stack. Packet sockets are no longer required. Apart from
+            being a neat hack, this should also allow DHCP over IPsec
+            to work better. On *BSD and OS X, the old method of raw net
+            access through BPF is retained.
+
+	    Simplified build options. Networking is now slimmed down
+	    to a choice of "linux" or "other". Netlink is always used
+	    under Linux. Since netlink has been available since 2.2
+	    and non-optional in an IPv4-configured  kernel since 2.4,
+	    and the dnsmasq netlink code is now well tested, this 
+	    should work out fine. 
+
+	    Removed decayed build support for libc5 and Solaris.
+	    
+	    Removed pselect code: use a pipe for race-free signal
+	    handling instead, as this works everywhere.
+
+	    No longer enable the ISC leasefile reading code in the
+	    distributed sources. I doubt there are many people left
+	    using this 1.x compatibility code. Those that are will
+	    have to explicitly enable it in src/config.h.
+
+	    Don't send the "DHCP maximum message size" option, even if 
+	    requested. RFC2131 says this is a "MUST NOT".
+
+	    Support larger-than-minimum DHCP message. Dnsmasq is now
+	    happy to get larger than 576-byte DHCP messages, and will
+	    return large messages, if permitted by the "maximum
+	    message size" option of the message to which it is
+	    replying. There's now an arbitrary sanity limit of 16384
+	    bytes.
+
+	    Added --no-ping option. This fixes an RFC2131 "SHOULD".
+
+	    Building on the 2.27 MAC-address changes, allow clients to 
+	    provide no MAC address at all, relying on the client-id as
+	    a unique identifier. This should make things like DHCP for
+	    USB come easier.
+
+	    Fixed regression in netlink code under 2.2.x kernels which 
+	    occurred in 2.27. Erik Jan Tromp is the vintage kernel fan 
+	    who found this. P.S. It looks like this "netlink bind:
+	    permission denied" problem occured in kernels at least as
+	    late a 2.4.18. Good information from Alain Richoux.
+
+	    Added a warning when it's impossible to give a host its
+	    configured address because the address is leased
+	    elsewhere.  A sensible suggestion from Mircea Bardac.
+
+	    Added minimal support for RFC 3046 DHCP relay agent-id
+	    options. The DHCP server now echoes these back to the
+	    relay, as required by the RFC. Also, RFC 3527 link selection 
+	    sub-options are honoured.
+
+	    Set the process "dumpable" flag when running in debug
+	    mode: this makes getting core dumps from root processes
+	    much easier.
+	    
+	    Fixed one-byte buffer overflow which seems to only cause
+	    problems when dnsmasq is linked with uclibc. Thanks to
+	    Eric House and Eric Spakman for help in chasing this down.
+
+	    Tolerate configuration screwups which lead to the DHCP
+	    server attemping to allocate its own address to a
+	    client; eg setting the whole subnet range as a DHCP
+	    range. Addresses in use by the server are now excluded
+	    from use by clients.
+
+	    Did some thinking about HAVE_BROKEN_RTC mode, and made it
+	    much simpler and better. The key is to just keep lease
+	    lengths in the lease file. Since these normally never
+	    change, even as the lease is renewed, the lease file never
+	    needs to change except when machines arrive on the network
+	    or leave. This eliminates the code for timed writes, and
+	    reduces the amount of wear on a flash filesystem to the
+	    absolute minimum. Also re-did the basic time function in
+	    this mode to use the portable times(), rather than parsing
+	    /proc/uptime.
+
+	    Believe the source port number when replying to unicast 
+	    DHCP requests and DHCP requests via a relay, instead of always 
+            using the standard ports.  This will allow relays on 
+            non-standard ports and DHCPINFORM from unprivileged ports
+            to work. The source port sent by unconfigured clients is still 
+            ignored, since this may be unreliable. This means that a DHCP 
+            client must use the standard port to do full configuration.
+ 
+version 2.29
+	    Fixed compilation on OpenBSD (thanks to Tom Hensel for the
+	    report). 
+
+	    Fixed false "no interface" errors when --bind-interfaces is
+	    set along with --interface=lo or --listen-address. Thanks
+	    to Paul Wise for the report.
+
+	    Updated patch for SuSE rpm. Thanks to Steven Springl.
+
+	    It turns out that there are some Linux kernel
+	    configurations which make using the capability system
+	    impossible. If this situation occurs then continue, running
+	    as root, and log a warning. Thanks to Scott Wehrenberg
+	    for help tracking this down.
+
+version 2.30
+            Fixed crash when a DHCP client requested a broadcast
+            reply. This problem was introduced in version 2.29.
+	    Thanks to Sandra Dekkers for the bug report.
+
+
+
+
+
