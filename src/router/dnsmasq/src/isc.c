@@ -28,6 +28,8 @@ struct lease_t {
 };
 #define EXPIRES_NEVER 0xFFFFFFFF
 
+#define MAXTOK 50
+
 struct isc_lease {
   char *name, *fqdn;
   time_t expires;

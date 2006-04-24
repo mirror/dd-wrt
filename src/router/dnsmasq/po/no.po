@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dnsmasq 2.25\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-03-16 20:04+0000\n"
+"POT-Creation-Date: 2006-04-23 19:58+0100\n"
 "PO-Revision-Date: 2006-01-11 17:39+0000\n"
 "Last-Translator: Jan Erik Askildt <jeaskildt@gmail.com>\n"
 "Language-Team: Norwegian <i18n-nb@lister.ping.uio.no>\n"
@@ -17,31 +17,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: cache.c:565
+#: cache.c:570
 #, c-format
 msgid "failed to load names from %s: %m"
 msgstr "feilet å laste navn fra %s: %m"
 
-#: cache.c:601 dhcp.c:754
+#: cache.c:606 dhcp.c:655
 #, c-format
 msgid "bad address at %s line %d"
 msgstr "dårlig adresse ved %s linje %d"
 
-#: cache.c:628 dhcp.c:768
+#: cache.c:633 dhcp.c:669
 #, c-format
 msgid "bad name at %s line %d"
 msgstr "dårlig navn ved %s linje %d"
 
-#: cache.c:634 dhcp.c:822
+#: cache.c:639 dhcp.c:723
 #, c-format
 msgid "read %s - %d addresses"
 msgstr "les %s - %d adresser"
 
-#: cache.c:670
+#: cache.c:675
 msgid "cleared cache"
 msgstr "mellomlager tømt"
 
-#: cache.c:723
+#: cache.c:728
 #, c-format
 msgid ""
 "not giving name %s to the DHCP lease of %s because the name exists in %s "
@@ -50,27 +50,29 @@ msgstr ""
 "gir ikke navnet %s til DHCP leien for %s fordi navnet eksisterer i %s med "
 "adressen %s"
 
-#: cache.c:767
-#, c-format
-msgid "cache size %d, %d/%d cache insertions re-used unexpired cache entries."
+#: cache.c:772
+#, fuzzy, c-format
+msgid ""
+"time %lu, cache size %d, %d/%d cache insertions re-used unexpired cache "
+"entries."
 msgstr ""
 "mellomlager størrelse %d, %d/%d mellomlager innsettinger re-bruker "
 "mellomlager plasser som ikke er utløpt"
 
-#: util.c:149 option.c:1302
+#: util.c:153 option.c:1294
 msgid "could not get memory"
 msgstr "kunne ikke få minne"
 
-#: util.c:172
+#: util.c:176
 #, c-format
 msgid "%s at line %d of %%s"
 msgstr "%s på linje %d av %%s"
 
-#: util.c:179
+#: util.c:183
 msgid "FAILED to start up"
 msgstr "FEILET å starte opp"
 
-#: util.c:305
+#: util.c:304
 #, c-format
 msgid "infinite"
 msgstr "uendelig"
@@ -318,6 +320,10 @@ msgstr "Aktiver dynamisk adresse allokering for bootp."
 msgid "Map MAC address (with wildcards) to option set."
 msgstr "Map DHCP produsent klasse til opsjon sett."
 
+#: option.c:182
+msgid "Disable ICMP echo address checking in the DHCP server."
+msgstr ""
+
 #: option.c:396
 msgid "missing \""
 msgstr "mangler \""
@@ -403,471 +409,498 @@ msgstr "dårlig MX navn"
 msgid "bad MX target"
 msgstr "dårlig MX mål"
 
-#: option.c:805 option.c:816
+#: option.c:802 option.c:813
 msgid "bad port"
 msgstr "dårlig port"
 
-#: option.c:957
+#: option.c:955
 msgid "bad dhcp-range"
 msgstr "dårlig dhcp-område"
 
-#: option.c:986
+#: option.c:984
 msgid "only one netid tag allowed"
 msgstr ""
 
-#: option.c:1031
+#: option.c:1029
 msgid "inconsistent DHCP range"
 msgstr "ikke konsistent DHCP område"
 
-#: option.c:1219
+#: option.c:1214
 msgid "bad dhcp-host"
 msgstr "dårlig dhcp-vert"
 
-#: option.c:1279
+#: option.c:1271
 msgid "bad dhcp-option"
 msgstr "dårlig dhcp-opsjon"
 
-#: option.c:1297
+#: option.c:1289
 msgid "bad domain in dhcp-option"
 msgstr "dårlig domene i dhcp-opsjon"
 
-#: option.c:1467
+#: option.c:1459
 msgid "dhcp-option too long"
 msgstr "dhcp-opsjon for lang"
 
-#: option.c:1664
+#: option.c:1656
 msgid "bad TXT record"
 msgstr "dårlig TXT post"
 
-#: option.c:1696
+#: option.c:1688
 msgid "TXT record string too long"
 msgstr "TXT post streng for lang"
 
-#: option.c:1735
+#: option.c:1727
 msgid "bad SRV record"
 msgstr "dårlig SRV post"
 
-#: option.c:1748
+#: option.c:1740
 msgid "bad SRV target"
 msgstr "dårlig SRV mål"
 
-#: option.c:1760
+#: option.c:1752
 msgid "invalid port number"
 msgstr "ugyldig portnummer"
 
-#: option.c:1771
+#: option.c:1763
 msgid "invalid priority"
 msgstr "ugyldig prioritet"
 
-#: option.c:1782
+#: option.c:1774
 msgid "invalid weight"
 msgstr "ugyldig vekt"
 
-#: option.c:1807
+#: option.c:1799
 msgid "error"
 msgstr "feil"
 
-#: option.c:1809
+#: option.c:1801
 #, c-format
 msgid "bad command line options: %s."
 msgstr "dårlige kommandlinje opsjoner: %s."
 
-#: option.c:1853
+#: option.c:1803
+msgid "try --help"
+msgstr ""
+
+#: option.c:1805
+msgid "try -w"
+msgstr ""
+
+#: option.c:1845
 #, c-format
 msgid "cannot get host-name: %s"
 msgstr "klarer ikke å få vertsnavn: %s"
 
-#: option.c:1882
+#: option.c:1874
 msgid "only one resolv.conf file allowed in no-poll mode."
 msgstr "kun en resolv.conf fil tillat i no-poll modus."
 
-#: option.c:1889
+#: option.c:1881
 msgid "must have exactly one resolv.conf to read domain from."
 msgstr "må ha nøyaktig en resolv.conf å lese domene fra."
 
-#: option.c:1892 network.c:591
+#: option.c:1884 network.c:481
 #, c-format
 msgid "failed to read %s: %m"
 msgstr "feilet å lese %s: %m"
 
-#: option.c:1910
+#: option.c:1902
 #, c-format
 msgid "no search directive found in %s"
 msgstr "intet søke direktiv funnet i %s"
 
-#: forward.c:383
+#: forward.c:381
 #, c-format
 msgid "nameserver %s refused to do a recursive query"
 msgstr "navnetjener %s nektet å gjøre et rekursivt oppslag"
 
-#: forward.c:914
+#: forward.c:888
 msgid "forwarding table overflow: check for server loops."
 msgstr "fremsendelse (forwarding) tabell overflyt: sjekk etter tjener løkker."
 
-#: isc.c:71 dnsmasq.c:482
+#: isc.c:73 dnsmasq.c:460
 #, c-format
 msgid "failed to access %s: %m"
 msgstr "feilet å få tilgang til %s: %m"
 
-#: isc.c:87
+#: isc.c:89
 #, c-format
 msgid "failed to load %s: %m"
 msgstr "feilet å laste %s: %m"
 
-#: isc.c:91 network.c:595
+#: isc.c:93 network.c:485
 #, c-format
 msgid "reading %s"
 msgstr "leser %s"
 
-#: isc.c:113
+#: isc.c:115
 #, c-format
 msgid "bad name in %s"
 msgstr "dårlig navn i %s"
 
-#: isc.c:175
+#: isc.c:177
 #, c-format
 msgid "Ignoring DHCP lease for %s because it has an illegal domain part"
 msgstr "Ignorerer DHCP leie for %s siden den har en ulovlig domene del"
 
-#: network.c:418
+#: network.c:308 dnsmasq.c:129
 #, c-format
 msgid "failed to create listening socket: %s"
 msgstr "feilet å lage lytte socket: %s"
 
-#: network.c:425
+#: network.c:315
 #, c-format
 msgid "failed to set IPV6 options on listening socket: %s"
 msgstr "feilet å sette IPv6 opsjoner på lytte socket: %s"
 
-#: network.c:444
+#: network.c:333
 #, c-format
 msgid "failed to bind listening socket for %s: %s"
 msgstr "feilet å binde lytte socket for %s: %s"
 
-#: network.c:451
+#: network.c:341
 #, c-format
 msgid "failed to listen on socket: %s"
 msgstr "feilet å lytte på socket: %s"
 
-#: network.c:521
+#: network.c:411
 #, c-format
 msgid "ignoring nameserver %s - local interface"
 msgstr "ignorerer navnetjener %s - lokal tilknytning"
 
-#: network.c:530
+#: network.c:420
 #, c-format
 msgid "ignoring nameserver %s - cannot make/bind socket: %m"
 msgstr "ignorerer navnetjener %s - kan ikke lage/dinde socket: %m"
 
-#: network.c:544
+#: network.c:434
 msgid "domain"
 msgstr "domene"
 
-#: network.c:546
+#: network.c:436
 msgid "unqualified"
 msgstr "ikke kvalifisert"
 
-#: network.c:546
+#: network.c:436
 msgid "domains"
 msgstr "domener"
 
-#: network.c:549
+#: network.c:439
 #, c-format
 msgid "using local addresses only for %s %s"
 msgstr "benytter lokale adresser kun for %s %s"
 
-#: network.c:551
+#: network.c:441
 #, c-format
 msgid "using nameserver %s#%d for %s %s"
 msgstr "benytter navnetjener %s#%d for %s %s"
 
-#: network.c:554
+#: network.c:444
 #, c-format
 msgid "using nameserver %s#%d"
 msgstr "benytter navnetjener %s#%d"
 
-#: dnsmasq.c:115
+#: dnsmasq.c:94
 msgid ""
 "ISC dhcpd integration not available: set HAVE_ISC_READER in src/config.h"
 msgstr ""
 "ISC dhcpf integrasjon ikke tilgjengelig: sett HAVE_ISC_READER i src/config.h"
 
-#: dnsmasq.c:119
+#: dnsmasq.c:111
 #, c-format
 msgid "failed to find list of interfaces: %s"
 msgstr "feilet å finne liste av tilknytninger (interfaces): %s"
 
-#: dnsmasq.c:134
+#: dnsmasq.c:119
 #, c-format
 msgid "unknown interface %s"
 msgstr "ukjent tilknytning (interface) %s"
 
-#: dnsmasq.c:140
+#: dnsmasq.c:125
 #, c-format
 msgid "no interface with address %s"
 msgstr "ingen tilknytning (interface) med adresse %s"
 
-#: dnsmasq.c:149
-#, c-format
-msgid "cannot open %s:%s"
-msgstr "kan ikke åpne %s:%s"
-
-#: dnsmasq.c:163
+#: dnsmasq.c:145
 msgid "must set exactly one interface on broken systems without IP_RECVIF"
 msgstr "må sette nøyaktig et interface på ødelagte systemer uten IP_RECVIF"
 
-#: dnsmasq.c:176 dnsmasq.c:520
+#: dnsmasq.c:158 dnsmasq.c:536
 #, c-format
 msgid "DBus error: %s"
 msgstr "DBus feil: %s"
 
-#: dnsmasq.c:179
+#: dnsmasq.c:161
 msgid "DBus not available: set HAVE_DBUS in src/config.h"
 msgstr "DBus ikke tilgjengelig: sett HAVE_DBUS i src/config.h"
 
-#: dnsmasq.c:292
+#: dnsmasq.c:196
+#, fuzzy, c-format
+msgid "cannot create pipe: %s"
+msgstr "kan ikke lese %s: %s"
+
+#: dnsmasq.c:331
 #, c-format
 msgid "started, version %s cachesize %d"
 msgstr "startet, versjon %s mellomlager størrelse %d"
 
-#: dnsmasq.c:294
+#: dnsmasq.c:333
 #, c-format
 msgid "started, version %s cache disabled"
 msgstr "startet, versjon %s mellomlager deaktivert"
 
-#: dnsmasq.c:296
+#: dnsmasq.c:335
 #, c-format
 msgid "compile time options: %s"
 msgstr "kompilerings opsjoner: %s"
 
-#: dnsmasq.c:302
+#: dnsmasq.c:341
 msgid "DBus support enabled: connected to system bus"
 msgstr "DBus støtte aktivert: koblet til system buss"
 
-#: dnsmasq.c:304
+#: dnsmasq.c:343
 msgid "DBus support enabled: bus connection pending"
 msgstr "DBus støtte aktivert: avventer buss tilkobling"
 
-#: dnsmasq.c:309
+#: dnsmasq.c:348
 msgid "setting --bind-interfaces option because of OS limitations"
 msgstr "setter --bind-interfaces opsjon på grunn av OS begrensninger"
 
-#: dnsmasq.c:314
+#: dnsmasq.c:353
 #, c-format
 msgid "warning: interface %s does not currently exist"
 msgstr "advarsel: nettverkskort %s eksisterer ikke for tiden"
 
-#: dnsmasq.c:331
+#: dnsmasq.c:365
 #, c-format
 msgid "DHCP, static leases only on %.0s%s, lease time %s"
 msgstr "DHCP, statisk leie kun på %.0s%s, leie tid %s"
 
-#: dnsmasq.c:332
+#: dnsmasq.c:366
 #, c-format
 msgid "DHCP, IP range %s -- %s, lease time %s"
 msgstr "DHCP, IP område %s -- %s, leie tid %s"
 
-#: dnsmasq.c:343
+#: dnsmasq.c:376
 #, c-format
-msgid "DHCP, %s will be written every %s"
-msgstr "DHCP, %s vil bli skrevet hver %s"
+msgid "warning: setting capabilities failed: %m"
+msgstr ""
 
-#: dnsmasq.c:348
+#: dnsmasq.c:378
 msgid "running as root"
 msgstr "kjører som rot (root)"
 
-#: dnsmasq.c:522
-msgid "connected to system DBus"
-msgstr "tilkoblet til system DBus"
-
-#: dnsmasq.c:533
+#: dnsmasq.c:511
 msgid "exiting on receipt of SIGTERM"
 msgstr "avslutter etter mottak av SIGTERM"
 
-#: dhcp.c:25
+#: dnsmasq.c:538
+msgid "connected to system DBus"
+msgstr "tilkoblet til system DBus"
+
+#: dhcp.c:32
 #, c-format
 msgid "cannot create DHCP socket : %s"
 msgstr "kan ikke lage DHCP socket : %s"
 
-#: dhcp.c:35
+#: dhcp.c:42
 #, c-format
 msgid "failed to set options on DHCP socket: %s"
 msgstr "feilet å sette opsjoner på DHCP socket: %s"
 
-#: dhcp.c:42
+#: dhcp.c:49
 #, c-format
 msgid "failed to set SO_REUSEADDR on DHCP socket: %s"
 msgstr "feilet å sette SO_REUSEADDR på DHCP socket: %s"
 
-#: dhcp.c:52
+#: dhcp.c:59
 #, c-format
 msgid "failed to bind DHCP server socket: %s"
 msgstr "feilet å binde DHCP tjener socket: %s"
 
-#: dhcp.c:61
+#: dhcp.c:72
 #, c-format
 msgid "cannot create ICMP raw socket: %s."
 msgstr "kan ikke lage ICMP raw socket: %s"
 
-#: dhcp.c:75
-#, c-format
-msgid "cannot create DHCP BPF socket: %s"
-msgstr "kan ikke lage DHCP BPF socket: %s"
-
-#: dhcp.c:86
-#, c-format
-msgid ""
-"cannot create DHCP packet socket: %s. Is CONFIG_PACKET enabled in your "
-"kernel?"
-msgstr ""
-"kan ikke lage DHCP pakke socket: %s. Er CONFIG_PACKET aktivert i din kjerne?"
-
-#: dhcp.c:98
+#: dhcp.c:84
 #, c-format
 msgid "duplicate IP address %s in dhcp-config directive."
 msgstr "dubliserte IP adresser i %s dhcp-config direktiv."
 
-#: dhcp.c:234
-msgid "Cannot use RTnetlink socket, falling back to ioctl API"
-msgstr "Kan ikke benytte RTnetlink socket, faller tilbake til ioctl API"
-
-#: dhcp.c:345
-#, c-format
-msgid "DHCP request for unsupported hardware type (%d) recieved on %s"
-msgstr "DHCP krav for ikke støttet maskinvare type (%d) mottatt på %s"
-
-#: dhcp.c:413
+#: dhcp.c:307
 #, c-format
 msgid "DHCP range %s -- %s is not consistent with netmask %s"
 msgstr "DHCP område %s -- %s er ikke konsistent med nettmaske %s"
 
-#: dhcp.c:722
+#: dhcp.c:623
 #, c-format
 msgid "failed to read %s:%m"
 msgstr "feilet å lese %s:%m"
 
-#: dhcp.c:741
+#: dhcp.c:642
 #, c-format
 msgid "bad line at %s line %d"
 msgstr "dårlig linje ved %s linje %d"
 
-#: dhcp.c:845
+#: dhcp.c:746
 #, c-format
 msgid "duplicate IP address %s (%s) in dhcp-config directive"
 msgstr "dubliserte IP adresser i %s (%s) i dhcp-config direktiv"
 
-#: dhcp.c:881
+#: dhcp.c:782
 #, c-format
 msgid "Ignoring DHCP host name %s because it has an illegal domain part"
 msgstr "Ignorerer DHCP verts navn %s på grunn av ulovlig domene del"
 
-#: lease.c:38
+#: lease.c:34
 #, c-format
 msgid "cannot open or create leases file: %s"
 msgstr "kan ikke åpne eller lage leie fil: %s"
 
-#: lease.c:80
+#: lease.c:71
 msgid "too many stored leases"
 msgstr "for mange lagrede leier"
 
-#: lease.c:179
-#, fuzzy
-msgid "failed to write"
-msgstr "feilet å lese %s:%m"
+#: lease.c:118
+#, fuzzy, c-format
+msgid "failed to write %s: %m (retry in %ds)"
+msgstr "feilet å lese %s: %m"
 
-#: rfc2131.c:218
+#: rfc2131.c:247
 #, c-format
 msgid "no address range available for DHCP request %s %s"
 msgstr "ingen adresse område tilgjengelig for DHCP krav %s %s"
 
-#: rfc2131.c:219
+#: rfc2131.c:248
 msgid "with subnet selector"
 msgstr "med subnet velger"
 
-#: rfc2131.c:219
+#: rfc2131.c:248
 msgid "via"
 msgstr "via"
 
-#: rfc2131.c:240 rfc2131.c:264
+#: rfc2131.c:274 rfc2131.c:298
 msgid "disabled"
 msgstr "deaktivert"
 
-#: rfc2131.c:275 rfc2131.c:674
+#: rfc2131.c:310 rfc2131.c:731
 msgid "address in use"
 msgstr "adresse i bruk"
 
-#: rfc2131.c:278
+#: rfc2131.c:313
 msgid "no address configured"
 msgstr "ingen adresse konfigurert"
 
-#: rfc2131.c:291 rfc2131.c:546
+#: rfc2131.c:326 rfc2131.c:605
 msgid "no address available"
 msgstr "ingen adresse tilgjengelig"
 
-#: rfc2131.c:298 rfc2131.c:677
+#: rfc2131.c:333 rfc2131.c:734
 msgid "no leases left"
 msgstr "ingen leier igjen"
 
-#: rfc2131.c:301 rfc2131.c:650
+#: rfc2131.c:336 rfc2131.c:707
 msgid "wrong network"
 msgstr "galt nettverk"
 
-#: rfc2131.c:505
+#: rfc2131.c:540
 #, c-format
 msgid "disabling DHCP static address %s"
 msgstr "deaktiverer DHCP statisk adresse %s"
 
-#: rfc2131.c:523
+#: rfc2131.c:558
 msgid "unknown lease"
 msgstr "ukjent leie"
 
-#: rfc2131.c:536 rfc2131.c:749
+#: rfc2131.c:567 rfc2131.c:799
 msgid "ignored"
 msgstr "oversett"
 
-#: rfc2131.c:619
+#: rfc2131.c:581
+#, c-format
+msgid "not using configured address %s because it is leased to %s"
+msgstr ""
+
+#: rfc2131.c:590
+#, c-format
+msgid "not using configured address %s because it is in use by the server"
+msgstr ""
+
+#: rfc2131.c:670
 msgid "wrong address"
 msgstr "gal adresse"
 
-#: rfc2131.c:632
+#: rfc2131.c:683
 msgid "lease not found"
 msgstr "leie ikke funnet"
 
-#: rfc2131.c:658
+#: rfc2131.c:715
 msgid "address not available"
 msgstr "adresse ikke tilgjengelig"
 
-#: rfc2131.c:667
+#: rfc2131.c:724
 msgid "static lease available"
 msgstr "statisk leie tilgjengelig"
 
-#: rfc2131.c:671
+#: rfc2131.c:728
 msgid "address reserved"
 msgstr "adresse reservert"
 
-#: rfc2131.c:871
+#: rfc2131.c:946
 #, c-format
 msgid "cannot send DHCP option %d: no space left in packet"
 msgstr "kan ikke sende DHCP opsjon %d: ikke mer plass i pakken"
 
-#: rfc2131.c:1174
+#: rfc2131.c:1247
 #, c-format
 msgid "More than one vendor class matches, using %s"
 msgstr "Mer enn en produsent klasse som passer, bruker %s"
 
-#: netlink.c:41
-#, c-format
-msgid "cannot bind netlink socket: %s"
+#: netlink.c:51
+#, fuzzy, c-format
+msgid "cannot create RTnetlink socket: %s"
 msgstr "kan ikke binde netlink socket: %s"
+
+#: netlink.c:218
+#, c-format
+msgid "RTnetlink returns error: %s"
+msgstr ""
 
 #: dbus.c:112
 msgid "attempt to set an IPv6 server address via DBus - no IPv6 support"
 msgstr "forsøk på å sette en IPv6 tjener adresse via DBus - ingen IPv6 støtte"
 
-#: dbus.c:237
+#: dbus.c:238
 msgid "setting upstream servers from DBus"
 msgstr "setter oppstrøms tjener fra DBus"
 
-#: dbus.c:273
+#: dbus.c:274
 msgid "could not register a DBus message handler"
 msgstr "kunne ikke registrere en DBus meldingshåndterer"
+
+#: bpf.c:54
+#, c-format
+msgid "cannot create DHCP BPF socket: %s"
+msgstr "kan ikke lage DHCP BPF socket: %s"
+
+#: bpf.c:74
+#, fuzzy, c-format
+msgid "DHCP request for unsupported hardware type (%d) received on %s"
+msgstr "DHCP krav for ikke støttet maskinvare type (%d) mottatt på %s"
+
+#~ msgid "cannot open %s:%s"
+#~ msgstr "kan ikke åpne %s:%s"
+
+#~ msgid "DHCP, %s will be written every %s"
+#~ msgstr "DHCP, %s vil bli skrevet hver %s"
+
+#~ msgid ""
+#~ "cannot create DHCP packet socket: %s. Is CONFIG_PACKET enabled in your "
+#~ "kernel?"
+#~ msgstr ""
+#~ "kan ikke lage DHCP pakke socket: %s. Er CONFIG_PACKET aktivert i din "
+#~ "kjerne?"
+
+#~ msgid "Cannot use RTnetlink socket, falling back to ioctl API"
+#~ msgstr "Kan ikke benytte RTnetlink socket, faller tilbake til ioctl API"
