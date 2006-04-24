@@ -5031,19 +5031,13 @@ ej_time_out (int eid, webs_t wp, int argc, char_t **argv)
 	float scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
 	float coef = 1;
 	
-	if (nvram_match ("sv_restore_defaults", "1"))	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
+	if (nvram_match ("sv_restore_defaults", "1"))		// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
 		coef = 1,5;
 	
-	if (clk == 0) { //does never happen 								// consider that speed = 125
-		websWrite (wp, "var wait_time = %d * 1000;", wait_time * coef);
-		websWrite (wp, "var scroll_count = %d;", scroll_count);
-    }
-	else {
-		wait_time = wait_time / clk  * 125;
-		scroll_count = wait_time / 5 - 3;
-		websWrite (wp, "var wait_time = %d * 1000;", wait_time);
-		websWrite (wp, "var scroll_count = %d;", scroll_count);
-	}
-	
+	wait_time = wait_time / clk  * 125;
+	scroll_count = wait_time / 5 - 3;
+	websWrite (wp, "var wait_time = %d * 1000;", wait_time);
+	websWrite (wp, "var scroll_count = %d;", scroll_count);
+		
 	return;
 }
