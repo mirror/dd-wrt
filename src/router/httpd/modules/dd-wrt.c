@@ -4958,7 +4958,7 @@ ej_dumpip_conntrack (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-/* Added by Botho 21.April.06 */
+/* BEGIN  Added by Botho 21.April.06 */
 void
 ej_js_include (int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -5015,4 +5015,33 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 
 	return;
 
+}
+/* END  Added by Botho 21.April.06 */
+
+/* Added by Botho 25.April.06 */
+/* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
+/* reference values (125 Mhz cpu): 60 sec for a reboot or restore config file, 90 for a reset nvram + reboot */
+void
+ej_time_out (int eid, webs_t wp, int argc, char_t **argv)
+{
+	char *clk = nvram_get ("clkfreq");
+	int wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
+	int scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
+	int coef = 1;
+	
+	if (nvram_match ("sv_restore_defaults", "1"))	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
+		coef = 1,5;
+	
+	if (clk == NULL) { 								// consider that speed = 125
+		websWrite (wp, "var wait_time = %d * 1000;", wait_time * coef);
+		websWrite (wp, "var scroll_count = %d;", scroll_count);
+    }
+	else {
+		wait_time = wait_time / (clk / 125);
+		scroll_count = wait_time / 5 - 3;
+		websWrite (wp, "var wait_time = %d * 1000;", wait_time);
+		websWrite (wp, "var scroll_count = %d;", scroll_count);
+	}
+	
+	return;
 }
