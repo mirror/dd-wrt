@@ -1,4 +1,4 @@
-/* dnsmasq is Copyright (c) 2000 - 2005 Simon Kelley
+/* dnsmasq is Copyright (c) 2000 - 2006 Simon Kelley
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -10,275 +10,191 @@
    GNU General Public License for more details.
 */
 
-/* Author's email: simon@thekelleys.org.uk */
-
 #include "dnsmasq.h"
 
-static int iface_allowed(struct daemon *daemon, struct irec *iface, 
-			 char *name, int is_loopback, union mysockaddr *addr) 
+int iface_check(struct daemon *daemon, int family, struct all_addr *addr, char *name)
 {
   struct iname *tmp;
+  int ret = 1;
+
+  /* Note: have to check all and not bail out early, so that we set the
+     "used" flags. */
+
+  if (daemon->if_names || daemon->if_addrs)
+    {
+      ret = 0;
+
+      for (tmp = daemon->if_names; tmp; tmp = tmp->next)
+	if (tmp->name && (strcmp(tmp->name, name) == 0))
+	  ret = tmp->used = 1;
+	        
+      for (tmp = daemon->if_addrs; tmp; tmp = tmp->next)
+	if (tmp->addr.sa.sa_family == family)
+	  {
+	    if (family == AF_INET &&
+		tmp->addr.in.sin_addr.s_addr == addr->addr.addr4.s_addr)
+	      ret = tmp->used = 1;
+#ifdef HAVE_IPV6
+	    else if (family == AF_INET6 &&
+		     IN6_ARE_ADDR_EQUAL(&tmp->addr.in6.sin6_addr, 
+					&addr->addr.addr6))
+	      ret = tmp->used = 1;
+#endif
+	  }          
+    }
+  
+  for (tmp = daemon->if_except; tmp; tmp = tmp->next)
+    if (tmp->name && (strcmp(tmp->name, name) == 0))
+      ret = 0;
+  
+  return ret; 
+}
+      
+static int iface_allowed(struct daemon *daemon, struct irec **irecp, int if_index, 
+			 union mysockaddr *addr, struct in_addr netmask) 
+{
+  struct irec *iface;
+  int fd;
+  struct ifreq ifr;
+  
+  /* check whether the interface IP has been added already 
+     we call this routine multiple times. */
+  for (iface = *irecp; iface; iface = iface->next) 
+    if (sockaddr_isequal(&iface->addr, addr))
+      return 1;
+  
+#ifdef HAVE_LINUX_NETWORK
+  ifr.ifr_ifindex = if_index;
+#endif
+  
+  if ((fd = socket(PF_INET, SOCK_DGRAM, 0)) == -1 ||
+#ifdef HAVE_LINUX_NETWORK
+      ioctl(fd, SIOCGIFNAME, &ifr) == -1 ||
+#else
+      !if_indextoname(if_index, ifr.ifr_name) ||
+#endif
+      ioctl(fd, SIOCGIFFLAGS, &ifr) == -1)
+    {
+      if (fd != -1)
+	{
+	  int errsave = errno;
+	  close(fd);
+	  errno = errsave;
+	}
+      return 0;
+    }
+  
+  close(fd);
   
   /* If we are restricting the set of interfaces to use, make
      sure that loopback interfaces are in that set. */
-  if (daemon->if_names && is_loopback)
+  if (daemon->if_names && (ifr.ifr_flags & IFF_LOOPBACK))
     {
       struct iname *lo;
       for (lo = daemon->if_names; lo; lo = lo->next)
-	if (lo->name && strcmp(lo->name, name) == 0)
+	if (lo->name && strcmp(lo->name, ifr.ifr_name) == 0)
 	  {
 	    lo->isloop = 1;
 	    break;
 	  }
-      if (!lo)
+      
+      if (!lo && (lo = malloc(sizeof(struct iname))))
 	{
-	  lo = safe_malloc(sizeof(struct iname));
-	  lo->name = safe_malloc(strlen(name)+1);
-	  strcpy(lo->name, name);
+	  lo->name = safe_malloc(strlen(ifr.ifr_name)+1);
+	  strcpy(lo->name, ifr.ifr_name);
 	  lo->isloop = lo->used = 1;
 	  lo->next = daemon->if_names;
 	  daemon->if_names = lo;
 	}
     }
   
-  /* check blacklist */
-  if (daemon->if_except)
-    for (tmp = daemon->if_except; tmp; tmp = tmp->next)
-      if (tmp->name && strcmp(tmp->name, name) == 0)
-	return 0;
-	
-  /* we may need to check the whitelist */
-  if (daemon->if_names || daemon->if_addrs)
-    { 
-      int found = 0;
+  if (addr->sa.sa_family == AF_INET &&
+      !iface_check(daemon, AF_INET, (struct all_addr *)&addr->in.sin_addr, ifr.ifr_name))
+    return 1;
 
-      for (tmp = daemon->if_names; tmp; tmp = tmp->next)
-	if (tmp->name && (strcmp(tmp->name, name) == 0))
-	  found = tmp->used = 1;
-	  
-      for (tmp = daemon->if_addrs; tmp; tmp = tmp->next)
-	if (sockaddr_isequal(&tmp->addr, addr))
-	  found = tmp->used = 1;
-      
-      if (!found) 
-	return 0;
+#ifdef HAVE_IPV6
+  if (addr->sa.sa_family == AF_INET6 &&
+      !iface_check(daemon, AF_INET6, (struct all_addr *)&addr->in6.sin6_addr, ifr.ifr_name))
+    return 1;
+#endif
+
+  /* add to list */
+  if ((iface = malloc(sizeof(struct irec))))
+    {
+      iface->addr = *addr;
+      iface->netmask = netmask;
+      iface->next = *irecp;
+      *irecp = iface; 
+      return 1;
     }
   
-  /* check whether the interface IP has been added already 
-     it is possible to have multiple interfaces with the same address */
-  for (; iface; iface = iface->next) 
-    if (sockaddr_isequal(&iface->addr, addr))
-      break;
-  if (iface)
-    return 0;
-  
-  return 1;
+  errno = ENOMEM; 
+  return 0;
 }
 
-/* This does two different jobs: if chainp is non-NULL, it puts
-   a list of all the interfaces allowed by config into *chainp.
-   If chainp is NULL, it returns 1 if addr is  an address of an interface
-   allowed by config and if that address is IPv4, it fills in the
-   netmask of the interface. 
-   
-   If chainp is non-NULL, a zero return indicates a fatal error.
-
-   If chainp is NULL, errors result in a match failure and zero return.
-*/
-int enumerate_interfaces(struct daemon *daemon, struct irec **chainp,
-			 union mysockaddr *test_addrp, struct in_addr *netmaskp)
+#ifdef HAVE_IPV6
+static int iface_allowed_v6(struct daemon *daemon, struct in6_addr *local, 
+			    int scope, int if_index, void *vparam)
 {
-#if defined(HAVE_LINUX_IPV6_PROC) && defined(HAVE_IPV6)
-  FILE *f;
-#endif
   union mysockaddr addr;
-  struct irec *iface = NULL;
-  char *buf, *ptr;
-  struct ifreq *ifr = NULL;
-  struct ifconf ifc;
-  int lastlen = 0;
-  int len = 20 * sizeof(struct ifreq);
-  int fd = socket(PF_INET, SOCK_DGRAM, 0);
-  struct in_addr netmask;
-  int ret = 0;
+  struct in_addr netmask; /* dummy */
   
-  netmask.s_addr = 0; /* eliminate warning */
-
-  if (fd == -1)
-    return 0;
-
-#ifdef HAVE_IPV6
-  if (test_addrp && test_addrp->sa.sa_family == AF_INET6)
-    test_addrp->in6.sin6_flowinfo = htonl(0);
-#endif
-        
-  while (1)
-     {
-       buf = safe_malloc(len);
-
-       ifc.ifc_len = len;
-       ifc.ifc_buf = buf;
-       if (ioctl(fd, SIOCGIFCONF, &ifc) < 0)
-	 {
-	   if (errno != EINVAL || lastlen != 0)
-	     goto exit;
-	 }
-       else
-	 {
-	   if (ifc.ifc_len == lastlen)
-	     break; /* got a big enough buffer now */
-	   lastlen = ifc.ifc_len;
-	 }
-       len += 10*sizeof(struct ifreq);
-       free(buf);
-     }
+  netmask.s_addr = 0;
   
-  for (ptr = buf; ptr < buf + ifc.ifc_len; )
-    {
 #ifdef HAVE_SOCKADDR_SA_LEN
-      /* subsequent entries may not be aligned, so copy into
-	 an aligned buffer to avoid nasty complaints about 
-	 unaligned accesses. */
-      int ifr_len = ((struct ifreq *)ptr)->ifr_addr.sa_len + IF_NAMESIZE;
-      if (!(ifr = realloc(ifr, ifr_len)))
-	goto exit;
-      
-      memcpy(ifr, ptr, ifr_len);
-      ptr += ifr_len;
-#else
-      ifr = (struct ifreq *)ptr;
-      ptr += sizeof(struct ifreq);
+  addr.in6.sin6_len = sizeof(addr.in6);
 #endif
-      
-      /* copy address since getting flags overwrites */
-      if (ifr->ifr_addr.sa_family == AF_INET)
-	{
-	  addr.in = *((struct sockaddr_in *) &ifr->ifr_addr);
-	  addr.in.sin_port = htons(daemon->port);
-	  if (ioctl(fd, SIOCGIFNETMASK, ifr) == -1)
-	    goto exit;
-	  netmask = ((struct sockaddr_in *) &ifr->ifr_addr)->sin_addr;
-	}
-#ifdef HAVE_IPV6
-      else if (ifr->ifr_addr.sa_family == AF_INET6)
-	{
-#ifdef HAVE_BROKEN_SOCKADDR_IN6
-	  addr.in6 = *((struct my_sockaddr_in6 *) &ifr->ifr_addr);
-#else
-	  addr.in6 = *((struct sockaddr_in6 *) &ifr->ifr_addr);
-#endif
-	  addr.in6.sin6_port = htons(daemon->port);
-	  addr.in6.sin6_flowinfo = htonl(0);
-	}
-#endif
-      else
-	continue; /* unknown address family */
-      
-      if (ioctl(fd, SIOCGIFFLAGS, ifr) < 0)
-	goto exit;
+  addr.in6.sin6_family = AF_INET6;
+  addr.in6.sin6_addr = *local;
+  addr.in6.sin6_port = htons(daemon->port);
+  addr.in6.sin6_scope_id = scope;
+  addr.in6.sin6_flowinfo = 0;
 
-      if (iface_allowed(daemon, iface, ifr->ifr_name, ifr->ifr_flags & IFF_LOOPBACK, &addr))
-	{
-	  if (chainp)
-	    {
-	      struct irec *new = safe_malloc(sizeof(struct irec));
-	      new->addr = addr;
-	      new->netmask = netmask;
-	      new->next = iface;
-	      iface = new;
-	    }
-	  else if (sockaddr_isequal(&addr, test_addrp))
-	    {
-	      *netmaskp = netmask;
-	      ret = 1;
-	      goto exit;
-	    }
-	}
-    }
+  return iface_allowed(daemon, (struct irec **)vparam, if_index, &addr, netmask);
+}
+#endif
 
-#if defined(HAVE_LINUX_IPV6_PROC) && defined(HAVE_IPV6)
-  /* IPv6 addresses don't seem to work with SIOCGIFCONF. Barf */
-  /* This code snarfed from net-tools 1.60 and certainly linux specific, though
-     it shouldn't break on other Unices, and their SIOGIFCONF might work. */
-  if ((f = fopen(IP6INTERFACES, "r")))
-    {
-      unsigned int plen, scope, flags, if_idx;
-      char devname[21], addrstring[33];
-      
-      while (fscanf(f, "%32s %x %x %x %x %20s\n",
-		    addrstring, &if_idx, &plen, &scope, &flags, devname) != EOF) 
-	{
-	  int i;
-	  struct ifreq sifr;
-	  unsigned char *addr6p = (unsigned char *) &addr.in6.sin6_addr;
-	  memset(&addr, 0, sizeof(addr));
-	  addr.sa.sa_family = AF_INET6;
-	  for (i=0; i<16; i++)
-	    {
-	      unsigned int byte;
-	      sscanf(addrstring+i+i, "%02x", &byte);
-	      addr6p[i] = byte;
-	    }
-	  addr.in6.sin6_port = htons(daemon->port);
-	  addr.in6.sin6_flowinfo = htonl(0);
-	  addr.in6.sin6_scope_id = htonl(scope);
-	  
-	  strncpy(sifr.ifr_name, devname, IF_NAMESIZE);
-	  if (ioctl(fd, SIOCGIFFLAGS, &sifr) < 0)
-	    goto exit;
-	  
-	  if (iface_allowed(daemon, iface, sifr.ifr_name, sifr.ifr_flags & IFF_LOOPBACK, &addr))
-	    {
-	      if (chainp)
-		{
-		  struct irec *new = safe_malloc(sizeof(struct irec));
-		  new->addr = addr;
-		  new->next = iface;
-		  iface = new;
-		}
-	      else if (sockaddr_isequal(&addr, test_addrp))
-		{
-		  ret = 1;
-		  goto exit;
-		}
-	    }
-	}	    
-      fclose(f);
-    }
-#endif /* LINUX */
+static int iface_allowed_v4(struct daemon *daemon, struct in_addr local, int if_index, 
+			    struct in_addr netmask, struct in_addr broadcast, void *vparam)
+{
+  union mysockaddr addr;
   
-  if (chainp)
-    {
-      *chainp = iface;
-      ret = 1;
-    }
- 
- exit:  
-  if (buf)
-    free(buf);
 #ifdef HAVE_SOCKADDR_SA_LEN
-  if (ifr)
-    free(ifr);
+  addr.in.sin_len = sizeof(addr.in);
 #endif
-  close(fd);
+  addr.in.sin_family = AF_INET;
+  addr.in.sin_addr = broadcast; /* warning */
+  addr.in.sin_addr = local;
+  addr.in.sin_port = htons(daemon->port);
 
-  return ret;
+  return iface_allowed(daemon, (struct irec **)vparam, if_index, &addr, netmask);
+}
+   
+
+int enumerate_interfaces(struct daemon *daemon)
+{
+#ifdef HAVE_IPV6
+  return iface_enumerate(daemon, &daemon->interfaces, iface_allowed_v4, iface_allowed_v6);
+#else
+  return iface_enumerate(daemon, &daemon->interfaces, iface_allowed_v4, NULL);
+#endif
 }
 
-#if defined(HAVE_IPV6) && (defined(IP_PKTINFO) || (defined(IP_RECVDSTADDR) && defined(IP_RECVIF) && defined(IP_SENDSRCADDR)))
+#if defined(HAVE_IPV6)
 static int create_ipv6_listener(struct listener **link, int port)
 {
   union mysockaddr addr;
-  int tcpfd, fd, flags, save;
+  int tcpfd, fd, flags;
   struct listener *l;
   int opt = 1;
 
   addr.in6.sin6_family = AF_INET6;
   addr.in6.sin6_addr = in6addr_any;
   addr.in6.sin6_port = htons(port);
-  addr.in6.sin6_flowinfo = htonl(0);
+  addr.in6.sin6_flowinfo = 0;
+  addr.in6.sin6_scope_id = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
-  addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+  addr.in6.sin6_len = sizeof(addr.in6);
 #endif
 
   /* No error of the kernel doesn't support IPv6 */
@@ -288,13 +204,8 @@ static int create_ipv6_listener(struct listener **link, int port)
 	    errno == EINVAL);
   
   if ((tcpfd = socket(AF_INET6, SOCK_STREAM, 0)) == -1)
-    {
-      save = errno;
-      close(fd);
-      errno = save;
-      return 0;
-    }
-  
+    return 0;
+      
   if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
       setsockopt(tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
       setsockopt(fd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1 ||
@@ -311,14 +222,8 @@ static int create_ipv6_listener(struct listener **link, int port)
       bind(tcpfd, (struct sockaddr *)&addr, sa_len(&addr)) == -1 ||
       listen(tcpfd, 5) == -1 ||
       bind(fd, (struct sockaddr *)&addr, sa_len(&addr)) == -1) 
-    {
-      save = errno;
-      close(fd);
-      close(tcpfd);
-      errno = save;
-      return 0;
-    }
-  
+    return 0;
+      
   l = safe_malloc(sizeof(struct listener));
   l->fd = fd;
   l->tcpfd = tcpfd;
@@ -332,10 +237,6 @@ static int create_ipv6_listener(struct listener **link, int port)
 
 struct listener *create_wildcard_listeners(int port)
 {
-#if !(defined(IP_PKTINFO) || (defined(IP_RECVDSTADDR) && defined(IP_RECVIF) && defined(IP_SENDSRCADDR)))
-  port = 0; /* eliminate warning */
-  return NULL;
-#else
   union mysockaddr addr;
   int opt = 1;
   struct listener *l, *l6 = NULL;
@@ -349,14 +250,9 @@ struct listener *create_wildcard_listeners(int port)
   addr.in.sin_len = sizeof(struct sockaddr_in);
 #endif
 
-  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+  if ((fd = socket(AF_INET, SOCK_DGRAM, 0)) == -1 ||
+      (tcpfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
     return NULL;
-  
-  if ((tcpfd = socket(AF_INET, SOCK_STREAM, 0)) == -1)
-    {
-      close (fd);
-      return NULL;
-    }
   
   if (setsockopt(tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
       bind(tcpfd, (struct sockaddr *)&addr, sa_len(&addr)) == -1 ||
@@ -369,19 +265,15 @@ struct listener *create_wildcard_listeners(int port)
       setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
       (flags = fcntl(fd, F_GETFL, 0)) == -1 ||
       fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1 ||
-#if defined(IP_PKTINFO) 
+#if defined(HAVE_LINUX_NETWORK) 
       setsockopt(fd, SOL_IP, IP_PKTINFO, &opt, sizeof(opt)) == -1 ||
 #elif defined(IP_RECVDSTADDR) && defined(IP_RECVIF)
       setsockopt(fd, IPPROTO_IP, IP_RECVDSTADDR, &opt, sizeof(opt)) == -1 ||
       setsockopt(fd, IPPROTO_IP, IP_RECVIF, &opt, sizeof(opt)) == -1 ||
 #endif 
       bind(fd, (struct sockaddr *)&addr, sa_len(&addr)) == -1)
-    {
-      close(fd);
-      close(tcpfd);
-      return NULL;
-    }
-  
+    return NULL;
+      
   l = safe_malloc(sizeof(struct listener));
   l->family = AF_INET;
   l->fd = fd;
@@ -389,18 +281,16 @@ struct listener *create_wildcard_listeners(int port)
   l->next = l6;
 
   return l;
-
-#endif
 }
 
-struct listener *create_bound_listeners(struct irec *interfaces, int port)
+struct listener *create_bound_listeners(struct daemon *daemon)
 {
 
   struct listener *listeners = NULL;
   struct irec *iface;
-  int flags = port, opt = 1;
+  int flags, opt = 1;
   
-  for (iface = interfaces ;iface; iface = iface->next)
+  for (iface = daemon->interfaces; iface; iface = iface->next)
     {
       struct listener *new = safe_malloc(sizeof(struct listener));
       new->family = iface->addr.sa.sa_family;
@@ -415,14 +305,14 @@ struct listener *create_bound_listeners(struct irec *interfaces, int port)
 	  fcntl(new->tcpfd, F_SETFL, flags | O_NONBLOCK) == -1 ||
 	  (flags = fcntl(new->fd, F_GETFL, 0)) == -1 ||
 	  fcntl(new->fd, F_SETFL, flags | O_NONBLOCK) == -1)
-	die2(_("failed to create listening socket: %s"), NULL);
+	die(_("failed to create listening socket: %s"), NULL);
       
 #ifdef HAVE_IPV6
       if (iface->addr.sa.sa_family == AF_INET6)
 	{
 	  if (setsockopt(new->fd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1 ||
 	      setsockopt(new->tcpfd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1)
-	    die2(_("failed to set IPV6 options on listening socket: %s"), NULL);
+	    die(_("failed to set IPV6 options on listening socket: %s"), NULL);
 	}
 #endif
       
@@ -439,16 +329,16 @@ struct listener *create_bound_listeners(struct irec *interfaces, int port)
 	  else
 #endif
 	    {
-	      char addrbuff[ADDRSTRLEN];
-	      prettyprint_addr(&iface->addr, addrbuff);
-	      die2(_("failed to bind listening socket for %s: %s"), addrbuff);
+	      prettyprint_addr(&iface->addr, daemon->namebuff);
+	      die(_("failed to bind listening socket for %s: %s"), 
+		  daemon->namebuff);
 	    }
 	}
       else
 	 {
 	   listeners = new;     
 	   if (listen(new->tcpfd, 5) == -1)
-	     die2(_("failed to listen on socket: %s"), NULL);
+	     die(_("failed to listen on socket: %s"), NULL);
 	 }
     }
   
@@ -611,7 +501,7 @@ void reload_servers(char *fname, struct daemon *daemon)
 #endif
 	    {
 #ifdef HAVE_SOCKADDR_SA_LEN
-	      source_addr.in.sin_len = addr.in.sin_len = sizeof(struct sockaddr_in);
+	      source_addr.in.sin_len = addr.in.sin_len = sizeof(source_addr.in);
 #endif
 	      source_addr.in.sin_family = addr.in.sin_family = AF_INET;
 	      addr.in.sin_port = htons(NAMESERVER_PORT);
@@ -622,11 +512,12 @@ void reload_servers(char *fname, struct daemon *daemon)
 	  else if (inet_pton(AF_INET6, token, &addr.in6.sin6_addr) > 0)
 	    {
 #ifdef HAVE_SOCKADDR_SA_LEN
-	      source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+	      source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(source_addr.in6);
 #endif
 	      source_addr.in6.sin6_family = addr.in6.sin6_family = AF_INET6;
 	      addr.in6.sin6_port = htons(NAMESERVER_PORT);
-	      source_addr.in6.sin6_flowinfo = addr.in6.sin6_flowinfo = htonl(0);
+	      source_addr.in6.sin6_flowinfo = addr.in6.sin6_flowinfo = 0;
+	      source_addr.in6.sin6_scope_id = addr.in6.sin6_scope_id = 0;
 	      source_addr.in6.sin6_addr = in6addr_any;
 	      source_addr.in6.sin6_port = htons(daemon->query_port);
 	    }

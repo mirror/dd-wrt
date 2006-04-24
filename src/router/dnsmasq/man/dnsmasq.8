@@ -102,14 +102,11 @@ or
 options are given dnsmasq listens on all available interfaces except any
 given in
 .B \--except-interface
-options. If IP alias interfaces (eg "eth1:0") are used with
+options. IP alias interfaces (eg "eth1:0") cannot be used with
 .B --interface
 or
 .B --except-interface
-options, then the 
-.B --bind-interfaces 
-option will be automatically set. This is required for deeply boring
-sockets-API reasons. 
+options, use --listen-address instead. 
 .TP
 .B \-I, --except-interface=<interface name>
 Do not listen on the specified interface. Note that the order of
@@ -148,9 +145,7 @@ working even when interfaces come and go and change address. This
 option forces dnsmasq to really bind only the interfaces it is
 listening on. About the only time when this is useful is when 
 running another nameserver (or another instance of dnsmasq) on the
-same machine or when using IP
-alias. Specifying interfaces with IP alias automatically turns this
-option on. Setting this option also enables multiple instances of
+same machine. Setting this option also enables multiple instances of
 dnsmasq which provide DHCP service to run in the same machine.
 .TP
 .B \-y, --localise-queries
@@ -524,6 +519,13 @@ Enable dynamic allocation of IP addresses to BOOTP clients. Use this
 with care, since each address allocated to a BOOTP client is leased
 forever, and therefore becomes permanently unavailable for re-use by
 other hosts.
+.TP
+.B \-5, --no-ping
+By default, the DHCP server will attempt to ensure that an address in
+not in use before allocating it to a host. It does this by sending an
+ICMP echo request (aka "ping") to the address in question. If it gets
+a reply, then the address must already be in use, and another is
+tried. This flag disables this check. Use with caution.
 .TP
 .B \-l, --dhcp-leasefile=<path>
 Use the specified file to store DHCP lease information. If this option
