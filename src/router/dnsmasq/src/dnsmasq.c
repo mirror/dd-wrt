@@ -44,7 +44,7 @@ static int set_dns_listeners(struct daemon *daemon, fd_set *set, int maxfd);
 static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now);
 static void sig_handler(int sig);
 
-int main (int argc, char **argv)
+int dnsmasq_main (int argc, char **argv)
 {
   struct daemon *daemon;
   int bind_fallback = 0;
