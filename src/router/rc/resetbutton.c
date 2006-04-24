@@ -280,7 +280,7 @@ resetbutton_main (int argc, char *argv[])
   if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN_F5D7230 || brand == ROUTER_MOTOROLA
       || brand == ROUTER_BUFFALO_WBR2G54S || brand == ROUTER_BUFFALO_WBR54G)
     {
-      puts ("sorry, Buffalo-WBR54G units do not support this feature");
+      puts ("sorry, your unit does not support resetbutton feature");
       nvram_set ("resetbutton_enable", "0");
       return 0;
     }
