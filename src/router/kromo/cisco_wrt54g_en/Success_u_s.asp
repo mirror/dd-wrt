@@ -15,18 +15,15 @@
 		</style>
 		<script type="text/javascript">
 <% js_include(); %>
+<% time_out(); %>
 
-//var wait_time = <% webs_get("wait_time"); %> * 1000;		//milliseconds => seconds
-//var scroll_count = <% nvram_get("scroll_count"); %>;
-var wait_time = 40 * 1000;
-var scroll_count = 5;
 var submit_button = "<% get_web_page_name(); %>";
 var timer = setTimeout("message()", wait_time);
 var browserName=navigator.appName;
 
 function to_submit()
 {
-	if(submit_button == "")
+	if(submit_button == ".asp")
 		history.go(-1);
 	else if(submit_button == "WL_WEPTable.asp")
 		self.close();
