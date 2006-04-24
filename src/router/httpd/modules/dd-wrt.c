@@ -134,14 +134,14 @@ rep:;
 }
 
 #ifdef HAVE_RB500
-
-
-int get_clkfreq ()
+void
+ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp = fopen ("/proc/cpuinfo", "rb");
   if (fp == NULL)
     {
-      return 200;
+      websWrite (wp, "unknown");
+      return;
     }
   int cnt = 0;
   int b = 0;
@@ -158,23 +158,26 @@ int get_clkfreq ()
 	  cpuclk[1] = getc (fp);
 	  cpuclk[2] = getc (fp);
 	  cpuclk[3] = 0;
-	  return atoi(cpuclk);
+	  websWrite (wp, cpuclk);
 	  fclose (fp);
 	  return;
 	}
     }
 
   fclose (fp);
-  return 200;
+  websWrite (wp, "unknown");
+  return;
 }
 
 #else
-int get_clkfreq ()
+void
+ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *clk = nvram_get ("clkfreq");
   if (clk == NULL)
     {
-      return 125;
+      websWrite (wp, "125");
+      return;
     }
   char buf[64];
   strcpy (buf, clk);
@@ -184,15 +187,10 @@ int get_clkfreq ()
       if (buf[i] == ',')
 	buf[i] = 0;
     }
-
-  return atoi(buf);
+  websWrite (wp, buf);
+  return;
 }
 #endif
-void
-ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
-{
-websWrite(wp,"%d",get_clkfreq());
-}
 
 void
 ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
@@ -5019,25 +5017,3 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 
 }
 /* END  Added by Botho 21.April.06 */
-
-/* Added by Botho 25.April.06 */
-/* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
-/* reference values (125 Mhz cpu): 60 sec for a reboot or restore config file, 90 for a reset nvram + reboot */
-void
-ej_time_out (int eid, webs_t wp, int argc, char_t **argv)
-{
-	int clk = get_clkfreq();
-	float wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
-	float scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
-	float coef = 1;
-	
-	if (nvram_match ("sv_restore_defaults", "1"))		// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
-		coef = 1,5;
-	
-	wait_time = wait_time / clk  * 125;
-	scroll_count = wait_time / 5 - 3;
-	websWrite (wp, "var wait_time = %d * 1000;", wait_time);
-	websWrite (wp, "var scroll_count = %d;", scroll_count);
-		
-	return;
-}
