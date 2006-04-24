@@ -456,9 +456,9 @@ fail.mess2="Upgrade failed.";
 
 var success = new Object();
 success.mess1="Settings saved.";
-success.mess2="Upgrade successful.<br/>Unit is rebooting now. Please wait a few moments...";
+success.mess2="Upgrade successful.<br/>Unit is rebooting now. Please wait a moment...";
 success.mess3="Settings are successful.";
-success.mess4=success.mess3 + "<br />Unit is rebooting now. Please wait a few moments...";
+success.mess4=success.mess3 + "<br />Unit is rebooting now. Please wait a moment...";
 success.mess5="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network before connecting again.";
 
 
