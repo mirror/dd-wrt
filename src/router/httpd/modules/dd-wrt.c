@@ -5027,7 +5027,7 @@ ej_time_out (int eid, webs_t wp, int argc, char_t **argv)
 	char *clk = nvram_get ("clkfreq");
 	float wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
 	float scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
-	int coef = 1;
+	float coef = 1;
 	
 	if (nvram_match ("sv_restore_defaults", "1"))	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
 		coef = 1,5;
