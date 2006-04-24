@@ -121,7 +121,6 @@ function to_submit(F) {
 		else 	 F.remote_mgt_ssh.value = 0;
 	}
 	
-	F.submit_button.value = "Management";
 	F.save_button.value = "Saved";
 
 	F.action.value="Apply";
@@ -192,25 +191,25 @@ function init() {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="change_action"/>
-							<input type="hidden" name="submit_type"/>
-							<input type="hidden" name="action"/>
-							<input type="hidden" name="reboot_button"/>
-							<input type="hidden" name="commit" value="1"/>
-							<input type="hidden" name="PasswdModify" value='<% nvram_else_match("http_passwd", "admin", "1", "0"); %>'/>
-							<input type="hidden" name="remote_mgt_https"/>
-							<input type="hidden" name="http_enable"/>
-							<input type="hidden" name="info_passwd"/>
-							<input type="hidden" name="https_enable"/>
-							<input type="hidden" name="remote_mgt_ssh"/>
+							<input type="hidden" name="submit_button" value="Management" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="action" />
+							<input type="hidden" name="reboot_button" />
+							<input type="hidden" name="commit" value="1" />
+							<input type="hidden" name="PasswdModify" value="<% nvram_else_match("http_passwd", "admin", "1", "0"); %>" />
+							<input type="hidden" name="remote_mgt_https" />
+							<input type="hidden" name="http_enable" />
+							<input type="hidden" name="info_passwd" />
+							<input type="hidden" name="https_enable" />
+							<input type="hidden" name="remote_mgt_ssh" />
 							<h2>Router Management</h2>
 							<% show_modules(".webconfig"); %>
 							<% show_modules(".webconfig_release"); %>
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
-								<input type="reset" value="Cancel Changes"/>
-								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)"/>
+								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
+								<input type="reset" value="Cancel Changes" />
+								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)" />
 							</div>
 						</form>
 					</div>
