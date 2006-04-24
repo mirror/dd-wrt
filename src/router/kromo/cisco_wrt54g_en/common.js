@@ -809,3 +809,24 @@ function getOUIFromMAC1(mac) {
 	alert("OUI search was successful.\nAccording to the IEEE OUI database, " + tab.join(":") + " belongs to:\n\n" + orga);
 }
 */
+
+/* Added by Botho 25.April.06 */
+/* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
+/* reference values (125 Mhz cpu): 60 sec for a reboot or restore config file, 90 for a reset nvram + reboot */ 
+function getTimeOut(clk, restore) {
+
+	var wait_time = 60;								// 60 seconds without rest to factory default ==> need to be tested
+	var scroll_count = (wait_time / 5) - 3;			// a scroll is during about 5 seconds
+	var coef = 1;
+	
+	if (restore == 1) {	// if restore default is ask (in upgrade process or restore default process) then timeout is doubled
+		coef = 1.5;
+	}
+	
+	this.wait_time = wait_time * (125 / clk);
+	this.scroll_count = this.wait_time / 5 - 3;
+
+}
+
+
+
