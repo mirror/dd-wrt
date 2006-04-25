@@ -2613,90 +2613,88 @@ enum
 };
 
 struct gozila_action gozila_actions[] = {
-  /* bellow for setup page */
-  {"index", "wan_proto", "", 1, REFRESH, wan_proto},
-  {"index", "dhcpfwd", "", 1, REFRESH, dhcpfwd},
-  {"index", "clone_mac", "", 1, REFRESH, clone_mac},
+/* bellow for setup page */
+	{"index", "wan_proto", "", 1, REFRESH, wan_proto},
+	{"index", "dhcpfwd", "", 1, REFRESH, dhcpfwd},
+	{"index", "clone_mac", "", 1, REFRESH, clone_mac},
 #ifdef HAVE_CCONTROL
-  {"ccontrol", "execute", "", 1, REFRESH, execute},
+	{"ccontrol", "execute", "", 1, REFRESH, execute},
 #endif
-  {"WanMAC", "clone_mac", "", 1, REFRESH, clone_mac},	// for cisco style
-  {"DHCPTable", "delete", "", 2, REFRESH, delete_leases},
-  {"Status", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},
-  {"Status", "renew", "", 3, REFRESH, dhcp_renew},
-  {"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
-  {"Status_Router", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},	// for cisco style
-  {"Status_Router", "renew", "", 3, REFRESH, dhcp_renew},	// for cisco style
-  {"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
-  {"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
-  {"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
-  {"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
-  {"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},
-  {"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
-  {"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,
-   stop_ppp},
-  {"Status_Router", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
-  {"Status_Router", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for cisco style
-  {"Status_Router", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
-  {"Status_Router", "Connect_pptp", "start_pptp", 1, RESTART, NULL},	// for cisco style
-  {"Status_Router", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},	// for cisco style
-  {"Status_Router", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL},	// for cisco style
-  {"Status_Router", "Disconnect_l2tp", "stop_l2tp", 2, SYS_RESTART, stop_ppp},	// for cisco style{ "Status_Router",    "Connect_heartbeat",    "start_heartbeat",      1,      RESTART,                NULL},  // for cisco style
-  {"Status_Router", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, stop_ppp},	// for cisco style
-  {"Filters", "save", "filters", 1, SYS_RESTART, save_policy},
-  {"Filters", "delete", "filters", 1, SYS_RESTART, single_delete_policy},
-  {"FilterSummary", "delete", "filters", 1, SYS_RESTART,
-   summary_delete_policy},
-  {"Routing", "del", "static_route_del", 1, SYS_RESTART, delete_static_route},
-  {"RouteStatic", "del", "static_route_del", 1, SYS_RESTART,
-   delete_static_route},
-  {"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64},
-  {"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128},
-  {"WL_WPATable", "key_64", "", 1, REFRESH, generate_key_64},
-  {"WL_WPATable", "key_128", "", 1, REFRESH, generate_key_128},
-  {"WL_WPATable", "security", "", 1, REFRESH, set_security},
+	{"WanMAC", "clone_mac", "", 1, REFRESH, clone_mac},	// for cisco style
+	{"DHCPTable", "delete", "", 2, REFRESH, delete_leases},
+	{"Status", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},
+	{"Status", "renew", "", 3, REFRESH, dhcp_renew},
+	{"Status", "Connect", "start_pppoe", 1, RESTART, NULL},
+	{"Status_Router", "release", "dhcp_release", 0, SYS_RESTART, dhcp_release},	// for cisco style
+	{"Status_Router", "renew", "", 3, REFRESH, dhcp_renew},	// for cisco style
+	{"Status", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
+	{"Status", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},
+	{"Status", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},
+	{"Status", "Connect_pptp", "start_pptp", 1, RESTART, NULL},
+	{"Status", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},
+	{"Status", "Connect_heartbeat", "start_heartbeat", 1, RESTART, NULL},
+	{"Status", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART,
+		stop_ppp},
+	{"Status_Router", "Disconnect", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
+	{"Status_Router", "Connect_pppoe", "start_pppoe", 1, RESTART, NULL},	// for cisco style
+	{"Status_Router", "Disconnect_pppoe", "stop_pppoe", 2, SYS_RESTART, stop_ppp},	// for cisco style
+	{"Status_Router", "Connect_pptp", "start_pptp", 1, RESTART, NULL},	// for cisco style
+	{"Status_Router", "Disconnect_pptp", "stop_pptp", 2, SYS_RESTART, stop_ppp},	// for cisco style
+	{"Status_Router", "Connect_l2tp", "start_l2tp", 1, RESTART, NULL},	// for cisco style
+	{"Status_Router", "Disconnect_l2tp", "stop_l2tp", 2, SYS_RESTART, stop_ppp},	// for cisco style{ "Status_Router",    "Connect_heartbeat",    "start_heartbeat",      1,      RESTART,                NULL},  // for cisco style
+	{"Status_Router", "Disconnect_heartbeat", "stop_heartbeat", 2, SYS_RESTART, stop_ppp},	// for cisco style
+	{"Filters", "save", "filters", 1, SYS_RESTART, save_policy},
+	{"Filters", "delete", "filters", 1, SYS_RESTART, single_delete_policy},
+	{"FilterSummary", "delete", "filters", 1, SYS_RESTART,
+		summary_delete_policy},
+	{"Routing", "del", "static_route_del", 1, SYS_RESTART, delete_static_route},
+	{"RouteStatic", "del", "static_route_del", 1, SYS_RESTART,
+		delete_static_route},
+	{"WL_WEPTable", "key_64", "", 1, REFRESH, generate_key_64},
+	{"WL_WEPTable", "key_128", "", 1, REFRESH, generate_key_128},
+	{"WL_WPATable", "key_64", "", 1, REFRESH, generate_key_64},
+	{"WL_WPATable", "key_128", "", 1, REFRESH, generate_key_128},
+	{"WL_WPATable", "security", "", 1, REFRESH, set_security},
 #ifdef HAVE_MSSID
-  {"WL_WPATable", "save", "", 1, RESTART, security_save},
-  {"WL_WPATable", "keysize", "", 1, REFRESH, security_save},
+	{"WL_WPATable", "save", "", 1, RESTART, security_save},
+	{"WL_WPATable", "keysize", "", 1, REFRESH, security_save},
 #endif
-  {"WL_ActiveTable", "add_mac", "", 1, REFRESH, add_active_mac},
-  /* Sveasoft addition */
-  {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
-  {"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
-  {"Ping", "firewall", "", 1, SYS_RESTART, ping_firewall},
-  {"QoS", "add_svc", "", 1, REFRESH, qos_add_svc},
-  {"QoS", "add_ip", "", 1, REFRESH, qos_add_ip},
-  {"QoS", "add_mac", "", 1, REFRESH, qos_add_mac},
-  {"QoS", "save", "filters", 1, SYS_RESTART, qos_save},
-  /* end Sveasoft addition */
-  {"Forward", "add_forward", "", 1, REFRESH, forward_add},
-  {"Forward", "remove_forward", "", 1, REFRESH, forward_remove},
+	{"WL_ActiveTable", "add_mac", "", 1, REFRESH, add_active_mac},
+	{"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
+	{"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
+	{"Ping", "firewall", "", 1, SYS_RESTART, ping_firewall},
+	{"QoS", "add_svc", "", 1, REFRESH, qos_add_svc},
+	{"QoS", "add_ip", "", 1, REFRESH, qos_add_ip},
+	{"QoS", "add_mac", "", 1, REFRESH, qos_add_mac},
+	{"QoS", "save", "filters", 1, SYS_RESTART, qos_save},
+	{"Forward", "add_forward", "", 1, REFRESH, forward_add},
+	{"Forward", "remove_forward", "", 1, REFRESH, forward_remove},
 #ifdef HAVE_MSSID
-  {"Wireless_Basic", "add_vifs", "", 1, REFRESH, add_vifs},
-  {"Wireless_Basic", "remove_vifs", "", 1, REFRESH, remove_vifs},
+	{"Wireless_Basic", "add_vifs", "", 1, REFRESH, add_vifs},
+	{"Wireless_Basic", "remove_vifs", "", 1, REFRESH, remove_vifs},
 #endif
-  {"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
-  {"Services", "add_lease", "", 1, REFRESH, lease_add},
-  {"Services", "remove_lease", "", 1, REFRESH, lease_remove},
+	{"Wireless_Basic", "save", "", 1, RESTART, wireless_save},
+	{"Services", "add_lease", "", 1, REFRESH, lease_add},
+	{"Services", "remove_lease", "", 1, REFRESH, lease_remove},
 #ifdef HAVE_CHILLILOCAL
-  {"Hotspot", "add_user", "", 1, REFRESH, user_add},
-  {"Hotspot", "remove_user", "", 1, REFRESH, user_remove},
+	{"Hotspot", "add_user", "", 1, REFRESH, user_add},
+	{"Hotspot", "remove_user", "", 1, REFRESH, user_remove},
 #endif
-  {"ForwardSpec", "add_forward_spec", "", 1, REFRESH, forwardspec_add},
-  {"ForwardSpec", "remove_forward_spec", "", 1, REFRESH, forwardspec_remove},
-  {"Triggering", "add_trigger", "", 1, REFRESH, trigger_add},
-  {"Triggering", "remove_trigger", "", 1, REFRESH, trigger_remove},
-  {"Port_Services", "save_services", "filters", 2, SYS_RESTART,
-   save_services_port},
-  {"QOSPort_Services", "save_qosservices", "filters", 2, SYS_RESTART,
-   save_services_port},
-  {"Ping", "start", "start_ping", 1, SERVICE_RESTART, diag_ping_start},
-  {"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
-  {"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
-  {"Traceroute", "start", "start_traceroute", 1, SYS_RESTART,
-   diag_traceroute_start},
-  {"Traceroute", "stop", "", 0, REFRESH, diag_traceroute_stop},
-  {"Traceroute", "clear", "", 0, REFRESH, diag_traceroute_clear},
+	{"ForwardSpec", "add_forward_spec", "", 1, REFRESH, forwardspec_add},
+	{"ForwardSpec", "remove_forward_spec", "", 1, REFRESH, forwardspec_remove},
+	{"Triggering", "add_trigger", "", 1, REFRESH, trigger_add},
+	{"Triggering", "remove_trigger", "", 1, REFRESH, trigger_remove},
+	{"Port_Services", "save_services", "filters", 2, SYS_RESTART,
+		save_services_port},
+	{"QOSPort_Services", "save_qosservices", "filters", 2, SYS_RESTART,
+		save_services_port},
+	{"Ping", "start", "start_ping", 1, SERVICE_RESTART, diag_ping_start},
+	{"Ping", "stop", "", 0, REFRESH, diag_ping_stop},
+	{"Ping", "clear", "", 0, REFRESH, diag_ping_clear},
+	{"Traceroute", "start", "start_traceroute", 1, SYS_RESTART,
+		diag_traceroute_start},
+	{"Traceroute", "stop", "", 0, REFRESH, diag_traceroute_stop},
+	{"Traceroute", "clear", "", 0, REFRESH, diag_traceroute_clear},
 };
 
 struct gozila_action *
@@ -2801,54 +2799,54 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 }
 
 struct apply_action apply_actions[] = {
-  /* bellow for setup page */
+/* bellow for setup page */
 //#ifdef OEM == LINKSYS
-  {"index", "index", 0, RESTART, NULL},
+	{"index", "index", 0, RESTART, NULL},
 //#else
-  {"OnePage", "", 0, RESTART, NULL},	// same as index
-  {"Expose", "filters", 0, SYS_RESTART, NULL},	// same as DMZ
-  {"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
+	{"OnePage", "", 0, RESTART, NULL},	// same as index
+	{"Expose", "filters", 0, SYS_RESTART, NULL},	// same as DMZ
+	{"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
 // changed by steve
-  {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added
+	{"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added
 // end changed by steve
 //#endif
-  {"Security", "", 1, RESTART, NULL},
-  {"System", "", 0, RESTART, NULL},
-  {"DHCP", "dhcp", 0, SYS_RESTART, NULL},
-  {"WL_WEPTable", "", 0, RESTART, NULL},
-  {"WL_WPATable", "wireless", 0, SYS_RESTART, NULL},
-  /* bellow for advanced page */
-  {"DMZ", "filters", 0, SYS_RESTART, NULL},	// for cisco style
-  {"Filters", "filters", 0, SYS_RESTART, NULL},
-  {"FilterIPMAC", "filters", 0, SYS_RESTART, NULL},
-  {"FilterIP", "filters", 0, SYS_RESTART, NULL},
-  {"FilterMAC", "filters", 0, SYS_RESTART, NULL},
-  {"FilterPort", "filters", 0, SYS_RESTART, NULL},
-  {"VPN", "filters", 0, SYS_RESTART, NULL},	// for cisco style
-  {"Firewall", "filters", 0, SYS_RESTART, NULL},	// for cisco style
-  {"Forward", "forward", 0, SERVICE_RESTART, NULL},
-  {"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
-  {"Routing", "", 0, RESTART, NULL},
-  {"DDNS", "ddns", 4, SYS_RESTART, ddns_save_value},
-  /* Sveasoft additions */
-  {"Management", "management", 4, SYS_RESTART, NULL},
-  {"Alive", "alive", 4, SYS_RESTART, NULL},
-  {"Hotspot", "hotspot", 4, SYS_RESTART, NULL},
-  {"Services", "services", 4, SYS_RESTART, NULL},
-  {"Triggering", "filters", 0, SERVICE_RESTART, NULL},
-  {"Wireless_WDS", "", 4, RESTART, NULL},
-  {"QoS", "filters", 0, SYS_RESTART, NULL},
-  {"Log", "logging", 0, SERVICE_RESTART, NULL},
-  /* end Sveasoft additions */
-  {"Wireless", "wireless", 0, SYS_RESTART, NULL},
-  {"Wireless_Basic", "wireless", 0, RESTART, NULL},
-  {"Wireless_Advanced", "wireless", 0, SYS_RESTART, NULL},
-  {"Wireless_MAC", "wireless", 0, SYS_RESTART, NULL},
-  {"WL_FilterTable", "macfilter", 0, SYS_RESTART, NULL},
+	{"Security", "", 1, RESTART, NULL},
+	{"System", "", 0, RESTART, NULL},
+	{"DHCP", "dhcp", 0, SYS_RESTART, NULL},
+	{"WL_WEPTable", "", 0, RESTART, NULL},
+	{"WL_WPATable", "wireless", 0, SYS_RESTART, NULL},
+/* bellow for advanced page */
+	{"DMZ", "filters", 0, SYS_RESTART, NULL},	// for cisco style
+	{"Filters", "filters", 0, SYS_RESTART, NULL},
+	{"FilterIPMAC", "filters", 0, SYS_RESTART, NULL},
+	{"FilterIP", "filters", 0, SYS_RESTART, NULL},
+	{"FilterMAC", "filters", 0, SYS_RESTART, NULL},
+	{"FilterPort", "filters", 0, SYS_RESTART, NULL},
+	{"VPN", "filters", 0, SYS_RESTART, NULL},	// for cisco style
+	{"Firewall", "filters", 0, SYS_RESTART, NULL},	// for cisco style
+	{"Forward", "forward", 0, SERVICE_RESTART, NULL},
+	{"ForwardSpec", "forward", 0, SERVICE_RESTART, NULL},
+	{"Routing", "", 0, RESTART, NULL},
+	{"DDNS", "ddns", 4, SYS_RESTART, ddns_save_value},
+/* Sveasoft additions */
+	{"Management", "management", 4, SYS_RESTART, NULL},
+	{"Alive", "alive", 4, SYS_RESTART, NULL},
+	{"Hotspot", "hotspot", 4, SYS_RESTART, NULL},
+	{"Services", "services", 4, SYS_RESTART, NULL},
+	{"Triggering", "filters", 0, SERVICE_RESTART, NULL},
+	{"Wireless_WDS", "", 4, RESTART, NULL},
+	{"QoS", "filters", 0, SYS_RESTART, NULL},
+	{"Log", "logging", 0, SERVICE_RESTART, NULL},
+/* end Sveasoft additions */
+	{"Wireless", "wireless", 0, SYS_RESTART, NULL},
+	{"Wireless_Basic", "wireless", 0, RESTART, NULL},
+	{"Wireless_Advanced", "wireless", 0, SYS_RESTART, NULL},
+	{"Wireless_MAC", "wireless", 0, SYS_RESTART, NULL},
+	{"WL_FilterTable", "macfilter", 0, SYS_RESTART, NULL},
 
-  /* begin lonewolf additions */
-  {"Vlan", "", 0, REFRESH, port_vlan_table_save},
-  /* end lonewolf additions */
+/* begin lonewolf additions */
+	{"Vlan", "", 0, REFRESH, port_vlan_table_save},
+/* end lonewolf additions */
 };
 
 struct apply_action *
@@ -3197,9 +3195,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   cprintf ("apply");
   error_value = 0;
   ret_code = -1;
-
-	/********************/
-
+  
   cprintf ("get change action\n");
   value = websGetVar (wp, "change_action", "");
   cprintf ("action = %s\n", value);
@@ -3211,7 +3207,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       return 1;
     }
   cprintf ("get submit button");
-	/********************/
+
   submit_button = websGetVar (wp, "submit_button", "");
 
   if (!query)
@@ -3278,7 +3274,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   cprintf ("get action\n");
   value = websGetVar (wp, "action", "");
   cprintf ("action = %s\n", value);
-  /* Apply values */
+/* Apply values */
   if (!strcmp (value, "Apply"))
     {
       struct apply_action *act;
@@ -3287,45 +3283,44 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       cprintf ("handle apply action\n");
       act = handle_apply_action (submit_button);
       cprintf ("done\n");
-      //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
+//If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
       nvram_set ("is_default", "0");
       nvram_set ("is_modified", "1");
 
       if (act)
-	{
-	  cprintf
-	    ("submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
-	     act->name, act->service, act->sleep_time, act->action);
-	  if ((act->action == SYS_RESTART)
-	      || (act->action == SERVICE_RESTART))
-	    nvram_set ("action_service", act->service);
-	  else
-	    nvram_set ("action_service", "");
-	  sleep_time = act->sleep_time;
-	  action = act->action;
+      {
+	  	cprintf ("submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
+	  		act->name, act->service, act->sleep_time, act->action);
+	  	if ((act->action == SYS_RESTART) || (act->action == SERVICE_RESTART))
+	  		nvram_set ("action_service", act->service);
+	  	else
+	  		nvram_set ("action_service", "");
+	  	sleep_time = act->sleep_time;
+	  	action = act->action;
 
-	  if (act->go)
-	    ret_code = act->go (wp);
-	}
+	  	if (act->go)
+	  		ret_code = act->go (wp);
+	  }
       else
-	{
-	  nvram_set ("action_service", "");
-	  sleep_time = 1;
-	  action = RESTART;
-	}
+      {
+		    nvram_set ("action_service", "");
+		    sleep_time = 1;
+		    action = RESTART;
+	  }
 
       if (need_commit)
-	{
-	  //If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
+      {
+//If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
 //        nvram_set ("eou_configured", "1");
 //        eval ("wl", "custom_ie", "0");
-	  diag_led (DIAG, STOP_LED);
-	  //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
-	  //nvram_set("is_default", "0");
-	  //nvram_set("is_modified", "1");
-	  sys_commit ();
-	}
+      	diag_led (DIAG, STOP_LED);
+//If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
+//nvram_set("is_default", "0");
+//nvram_set("is_modified", "1");
+		sys_commit ();
+	  }
     }
+    
   /* Restore defaults */
   else if (!strncmp (value, "Restore", 7))
     {
@@ -3379,21 +3374,27 @@ footer:
 		sprintf (path, "%s.asp", submit_button);
 	    }
 	  cprintf ("refresh to %s\n", path);
-	  do_ej (path, wp);	//refresh
+	  do_ej (path, wp);			//refresh
 	  websDone (wp, 200);
 /*
 	  if (websGetVar (wp, "small_screen", NULL))
 	    do_ej ("Success_s.asp", wp);
 	  else
-	    do_ej ("Success.asp", wp);*/
+	    do_ej ("Success.asp", wp);
+*/
 	}
       else
 	{
 	  if (websGetVar (wp, "small_screen", NULL))
-	    do_ej ("Fail_s.asp", wp);
+	  	{
+	    	do_ej ("Fail_s.asp", wp);
+	    	websDone (wp, 200);
+	  	}
 	  else
-	    do_ej ("Fail.asp", wp);
-	}
+	  	{
+	  		do_ej ("Fail.asp", wp);
+	  		websDone (wp, 200);
+	  	}
 
     }
   else
@@ -3404,7 +3405,7 @@ footer:
       sys_reboot ();
       return 1;
     }
-  websDone (wp, 200);
+  
 
   nvram_set ("upnp_wan_proto", "");
 
