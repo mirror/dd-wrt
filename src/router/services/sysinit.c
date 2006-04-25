@@ -919,8 +919,9 @@ start_sysinit (void)
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
-	    case ROUTER_BUFFALO_WBR54G:
+//	    case ROUTER_BUFFALO_WBR54G:
 	    case ROUTER_MOTOROLA:
+	    case ROUTER_BUFFALO_WBR2G54S:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
