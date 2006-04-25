@@ -2,7 +2,7 @@ CFLAGS += -O2 -Wall
 CC = mipsel-linux-uclibc-gcc
 CFLAGS += -I iksemel
 CFLAGS += -I zlib
-CFLAGS += -I ../../include.v23
+CFLAGS += -I ../../include.v23 -I../shared
 CFLAGS += -DIPTABLES=\"/usr/sbin/iptables\"
 
 # LDFLAGS += -L$(INSTALLDIR)/nvram/usr/lib -lnvram -lshared
