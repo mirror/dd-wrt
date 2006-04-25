@@ -19,7 +19,7 @@ LDFLAGS	+= -s -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shar
 endif
 
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
-OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o wland.o sendudp.o 
+OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o sendudp.o 
 
 
 
@@ -62,6 +62,10 @@ endif
 
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
+endif
+
+ifneq ($(CONFIG_RB500),y)
+OBJS += wland.o
 endif
 ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS += -DHAVE_OPENVPN
@@ -248,7 +252,9 @@ install: all
 	cd $(INSTALLDIR)/sbin && ln -sf rc misc	
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
 	cd $(INSTALLDIR)/sbin && ln -sf rc setpasswd
+ifneq ($(CONFIG_RB500),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc wland
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns

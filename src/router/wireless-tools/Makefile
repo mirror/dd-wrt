@@ -102,7 +102,7 @@ ifdef BUILD_WE_ESSENTIAL
 endif
 
 # Other flags
-CFLAGS=-Os -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
+CFLAGS=$(COPTS) -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
 	-Wpointer-arith -Wcast-qual -Winline -I.
 #CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
 DEPFLAGS=-MMD
