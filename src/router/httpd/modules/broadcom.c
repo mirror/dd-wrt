@@ -3407,8 +3407,6 @@ footer:
 	
 	if (action == RESTART)
 		sys_restart ();
-	else if (action == REBOOT)
-		sys_reboot ();
 	else if (action == SERVICE_RESTART)
 		service_restart ();
 	else if (action == SYS_RESTART)
