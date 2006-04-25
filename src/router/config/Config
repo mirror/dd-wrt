@@ -506,7 +506,7 @@ menu "Options"
 
 config CONFIG_VENDOR
        string "Vendor"
-       default "Blueline AG"
+       default "New Media NET GmbH"
        help
        Answer Y for vendor-specific customization.
 
