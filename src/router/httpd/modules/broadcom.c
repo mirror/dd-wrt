@@ -2831,7 +2831,7 @@ struct apply_action apply_actions[] = {
   {"Routing", "", 0, RESTART, NULL},
   {"DDNS", "ddns", 4, SYS_RESTART, ddns_save_value},
   /* Sveasoft additions */
-  {"Management", "management", 4, SYS_RESTART, NULL},
+  {"Management", "management", 5, SYS_RESTART, NULL},
   {"Alive", "alive", 4, SYS_RESTART, NULL},
   {"Hotspot", "hotspot", 4, SYS_RESTART, NULL},
   {"Services", "services", 4, SYS_RESTART, NULL},
@@ -3409,7 +3409,6 @@ footer:
 	}
 
 	nvram_set ("upnp_wan_proto", "");
-	sleep (sleep_time);
 	
 	if (action == RESTART)
 		sys_restart ();
@@ -3420,6 +3419,7 @@ footer:
 	else if (action == SYS_RESTART)
 		sys_restart ();
 	
+	sleep (sleep_time);
 	return 1;
 
 }
