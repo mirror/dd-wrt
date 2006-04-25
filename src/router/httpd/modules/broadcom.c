@@ -3405,12 +3405,16 @@ footer:
 	websDone (wp, 200);
 	nvram_set ("upnp_wan_proto", "");
 	
-	if (action == RESTART)
+	if ((action == RESTART) || (action == SYS_RESTART))
+	{
+		do_ej ("Reboot.asp", wp);
+		websDone (wp, 200);
+		sleep (3);
 		sys_restart ();
+		return 1;
+	}
 	else if (action == SERVICE_RESTART)
 		service_restart ();
-	else if (action == SYS_RESTART)
-		sys_restart ();
 	
 	sleep (sleep_time);
 	return 1;
