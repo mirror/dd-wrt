@@ -2831,7 +2831,7 @@ struct apply_action apply_actions[] = {
   {"Routing", "", 0, RESTART, NULL},
   {"DDNS", "ddns", 4, SYS_RESTART, ddns_save_value},
   /* Sveasoft additions */
-  {"Management", "management", 5, SYS_RESTART, NULL},
+  {"Management", "management", 4, SYS_RESTART, NULL},
   {"Alive", "alive", 4, SYS_RESTART, NULL},
   {"Hotspot", "hotspot", 4, SYS_RESTART, NULL},
   {"Services", "services", 4, SYS_RESTART, NULL},
@@ -3354,74 +3354,73 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 
 footer:
-	if (do_reboot)
-		action = REBOOT;
 
-/* The will let PC to re-get a new IP Address automatically */
-	if (lan_ip_changed || need_reboot)
-		action = REBOOT;
 
-	if (action != REBOOT)
+  if (do_reboot)
+    action = REBOOT;
+  /* The will let PC to re-get a new IP Address automatically */
+  if (lan_ip_changed || need_reboot)
+    action = REBOOT;
+  if (action != REBOOT)
+    {
+      if (!error_value)
 	{
-		if (!error_value)
-		{
-			if (my_next_page[0] != '\0')
-			{
-				sprintf (path, "%s", my_next_page);
-			}
-			else
-			{
-				next_page = websGetVar (wp, "next_page", NULL);
-				if (next_page)
-					sprintf (path, "%s", next_page);
-				else
-					sprintf (path, "%s.asp", submit_button);
-			}
-		cprintf ("refresh to %s\n", path);
-		do_ej (path, wp);			//refresh
-		websDone (wp, 200);
 
+	  if (my_next_page[0] != '\0')
+	    {
+	      sprintf (path, "%s", my_next_page);
+	    }
+	  else
+	    {
+	      next_page = websGetVar (wp, "next_page", NULL);
+	      if (next_page)
+		sprintf (path, "%s", next_page);
+	      else
+		sprintf (path, "%s.asp", submit_button);
+	    }
+	  cprintf ("refresh to %s\n", path);
+	  do_ej (path, wp);	//refresh
+	  websDone (wp, 200);
 /*
 	  if (websGetVar (wp, "small_screen", NULL))
 	    do_ej ("Success_s.asp", wp);
 	  else
-	    do_ej ("Success.asp", wp);
-*/
-		}
-		else
-		{
-			if (websGetVar (wp, "small_screen", NULL))
-				do_ej ("Fail_s.asp", wp);
-			else
-				do_ej ("Fail.asp", wp);
-			
-			websDone (wp, 200);
-		}
-		
+	    do_ej ("Success.asp", wp);*/
 	}
-	else
+      else
 	{
-		do_ej ("Reboot.asp", wp);
-		websDone (wp, 200);
-		sleep (3);
-		sys_reboot ();
-		return 1;
+	  if (websGetVar (wp, "small_screen", NULL))
+	    do_ej ("Fail_s.asp", wp);
+	  else
+	    do_ej ("Fail.asp", wp);
 	}
 
-	nvram_set ("upnp_wan_proto", "");
-	
-	if (action == RESTART)
-		sys_restart ();
-	else if (action == REBOOT)
-		sys_reboot ();
-	else if (action == SERVICE_RESTART)
-		service_restart ();
-	else if (action == SYS_RESTART)
-		sys_restart ();
-	
-	sleep (sleep_time);
-	return 1;
+    }
+  else
+    {
+      do_ej ("Reboot.asp", wp);
+      websDone (wp, 200);
+      sleep (3);
+      sys_reboot ();
+      return 1;
+    }
+  websDone (wp, 200);
 
+  nvram_set ("upnp_wan_proto", "");
+
+
+  if (action == RESTART)
+    sys_restart ();
+  else if (action == REBOOT)
+    sys_reboot ();
+  else if (action == SERVICE_RESTART)
+    service_restart ();
+  else if (action == SYS_RESTART)
+    sys_restart ();
+
+  sleep (sleep_time);
+
+  return 1;
 }
 
 #ifdef WEBS
