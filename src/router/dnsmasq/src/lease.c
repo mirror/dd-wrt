@@ -10,10 +10,15 @@
    GNU General Public License for more details.
 */
 
+/* Author's email: simon@thekelleys.org.uk */
+
 #include "dnsmasq.h"
 
 static struct dhcp_lease *leases;
-static int dns_dirty, file_dirty, leases_left;
+static int dns_dirty;
+enum
+{ no, yes, force } file_dirty;
+static int leases_left;
 
 void
 lease_init (struct daemon *daemon, time_t now)
@@ -26,13 +31,11 @@ leases_left = daemon->dhcp_max;
 FILE *lease_file=load_dhcp(daemon,now);
 rewind(lease_file);
 //printf("done"); 
-file_dirty=0;
+file_dirty=no;
 dns_dirty=1;
 daemon->lease_stream = lease_file;
 
 }
-
-
 void lease_update_from_configs(struct daemon *daemon)
 {
   /* changes to the config may change current leases. */
@@ -52,141 +55,6 @@ void lease_update_from_configs(struct daemon *daemon)
 }
 
 
-struct lease_t
-{
-  unsigned char chaddr[16];
-  unsigned int yiaddr;
-  unsigned int expires;
-  char hostname[64];
-};
-#define EXPIRES_NEVER 0xFFFFFFFF	/* static lease */
-
-void
-lease_update_file (struct daemon *daemon)
-{
-  struct dhcp_lease *lease;
-//  int i = always;		/* avoid warning */
-  unsigned long expires;
-  struct lease_t l;
-  int a;
-/* DD-WRT udhcpd lease file compatibility */
-fprintf(stderr,"update lease file\n");
-
-  if (file_dirty != 0)
-    {
-      rewind (daemon->lease_stream);
-      ftruncate (fileno (daemon->lease_stream), 0);
-fprintf(stderr,"rewindet\n");
-
-      for (lease = leases; lease; lease = lease->next)
-	{
-	 if (lease->expires) 
-	  expires = (unsigned long) lease->expires;
-	  
-	  memset (&l, 0, sizeof (l));
-	  if (lease->hwaddr != NULL)
-	    {
-	      for (a = 0; a < 6; a++)
-		l.chaddr[a] = lease->hwaddr[a];
-	    }
-
-	  l.yiaddr = lease->addr.s_addr;	//ip
-	  if (!lease->expires)
-	    expires = EXPIRES_NEVER;
-	  
-	  l.expires = htonl (expires);
-	  if (lease->hostname != NULL)
-	    {
-	      strcpy (l.hostname, lease->hostname);
-	    }
-	  else
-	    {
-	      if (lease->fqdn != NULL)
-		strcpy (l.hostname, lease->fqdn);
-	    }
-fprintf(stderr,"write lease\n");
-
-
-	  fwrite (&l, sizeof (l), 1, daemon->lease_stream);
-	}
-fprintf(stderr,"done()\n");
-
-      fflush (daemon->lease_stream);
-      fsync (fileno (daemon->lease_stream));
-fprintf(stderr,"sync()\n");
-
-      file_dirty = 0;
-/* DD-WRT end */
-
-    }
-}
-
-
-
-/*
-void lease_update_file(struct daemon *daemon)
-{
-  struct dhcp_lease *lease;
-  int i;
-  
-  if (file_dirty != 0)
-    {
-      errno = 0;
-      rewind(daemon->lease_stream);
-      if (errno != 0 || ftruncate(fileno(daemon->lease_stream), 0) != 0)
-	{
-	write_err:
-	  syslog(LOG_ERR, _("failed to write %s: %m (retry in %ds)"), daemon->lease_file, LEASE_RETRY);
-	  alarm(LEASE_RETRY);
-	  return;
-	}
-      
-      for (lease = leases; lease; lease = lease->next)
-	{
-#ifdef HAVE_BROKEN_RTC
-	  if (fprintf(daemon->lease_stream, "%u ", lease->length) < 0)
-	    goto write_err;
-#else
-	  if (fprintf(daemon->lease_stream, "%lu ", (unsigned long)lease->expires) < 0)
-	    goto write_err;
-#endif
-	  if ((lease->hwaddr_type != ARPHRD_ETHER || lease->hwaddr_len == 0) && 
-	      fprintf(daemon->lease_stream, "%.2x-", lease->hwaddr_type) < 0)
-	    goto write_err;
-	  for (i = 0; i < lease->hwaddr_len; i++)
-	    {
-	      if (fprintf(daemon->lease_stream, "%.2x", lease->hwaddr[i]) < 0)
-		goto write_err;
-	      if (i != lease->hwaddr_len - 1 &&
-		  fprintf(daemon->lease_stream, ":") < 0)
-		goto write_err;
-	    }
-	  if (fprintf(daemon->lease_stream, " %s %s ", inet_ntoa(lease->addr),
-		      lease->hostname && strlen(lease->hostname) != 0 ? lease->hostname : "*") < 0)
-	    goto write_err;
-	  
-	  if (lease->clid && lease->clid_len != 0)
-	    {
-	      for (i = 0; i < lease->clid_len - 1; i++)
-		if (fprintf(daemon->lease_stream, "%.2x:", lease->clid[i]) < 0)
-		  goto write_err;
-	      if (fprintf(daemon->lease_stream, "%.2x\n", lease->clid[i]) < 0)
-		goto write_err;
-	    }
-	  else
-	    if (fprintf(daemon->lease_stream, "*\n") < 0)
-	      goto write_err;
-	  
-	}
-
-      if (fflush(daemon->lease_stream) != 0)
-	goto write_err;
-      if (fsync(fileno(daemon->lease_stream)) < 0)
-	goto write_err;
-      file_dirty = 0;
-    }
-}
-*/
 void lease_update_dns(struct daemon *daemon)
 {
   struct dhcp_lease *lease;
@@ -214,7 +82,7 @@ void lease_prune(struct dhcp_lease *target, time_t now)
       tmp = lease->next;
       if ((lease->expires != 0 && difftime(now, lease->expires) > 0) || lease == target)
 	{
-	  file_dirty = 1;
+	  file_dirty = yes;
 
 	  *up = lease->next; /* unlink */
 	  if (lease->hostname)
@@ -248,7 +116,6 @@ struct dhcp_lease *lease_find_by_client(unsigned char *hwaddr, int hw_len, int h
   
   for (lease = leases; lease; lease = lease->next)	
     if ((!lease->clid || !clid) && 
-	hw_len != 0 && 
 	lease->hwaddr_len == hw_len &&
 	lease->hwaddr_type == hw_type &&
 	memcmp(hwaddr, lease->hwaddr, hw_len) == 0)
@@ -280,12 +147,7 @@ struct dhcp_lease *lease_allocate(unsigned char *hwaddr, unsigned char *clid,
   lease->hostname = lease->fqdn = NULL;  
   lease->addr = addr;
   memset(lease->hwaddr, 0, DHCP_CHADDR_MAX);
-  lease->hwaddr_len = 0;
-  lease->hwaddr_type = 0;
   lease->expires = 1;
-#ifdef HAVE_BROKEN_RTC
-  lease->length = 0xffffffff; /* illegal value */
-#endif
   
   if (!lease_set_hwaddr(lease, hwaddr, clid, hw_len, hw_type, clid_len))
     {
@@ -296,53 +158,30 @@ struct dhcp_lease *lease_allocate(unsigned char *hwaddr, unsigned char *clid,
   lease->next = leases;
   leases = lease;
   
-  file_dirty = 1;
+  file_dirty = force;
   leases_left--;
 
   return lease;
 }
 
-void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now)
+void lease_set_expires(struct dhcp_lease *lease, time_t exp)
 {
-  time_t exp = now + (time_t)len;
-  
-  if (len == 0xffffffff)
-    {
-      exp = 0;
-      len = 0;
-    }
-  
   if (exp != lease->expires)
     {
+      file_dirty = yes;
       dns_dirty = 1;
-      lease->expires = exp;
-#ifndef HAVE_BROKEN_RTC
-      file_dirty = 1;
-#endif
     }
-  
-#ifdef HAVE_BROKEN_RTC
-  if (len != lease->length)
-    {
-      lease->length = len;
-      file_dirty = 1;
-    }
-#endif
-} 
+  lease->expires = exp;
+}
 
 int lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
 		      unsigned char *clid, int hw_len, int hw_type, int clid_len)
 {
-  /* must have some sort of unique-id */
-  if (hw_len == 0 && (clid_len == 0 || !clid))
-    return 0;
-
   if (hw_len != lease->hwaddr_len ||
       hw_type != lease->hwaddr_type || 
-      hw_len == 0 ||
       memcmp(lease->hwaddr, hwaddr, hw_len) != 0)
     {
-      file_dirty = 1;
+      file_dirty = force;
       memcpy(lease->hwaddr, hwaddr, hw_len);
       lease->hwaddr_len = hw_len;
       lease->hwaddr_type = hw_type;
@@ -358,15 +197,15 @@ int lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
 
       if (lease->clid_len != clid_len)
 	{
-	  file_dirty = 1;
+	  file_dirty = force;
 	  if (lease->clid)
 	    free(lease->clid);
 	  if (!(lease->clid = malloc(clid_len)))
 	    return 0;
 	}
       else if (memcmp(lease->clid, clid, clid_len) != 0)
-	file_dirty = 1;
-      
+	file_dirty = force;
+
       lease->clid_len = clid_len;
       memcpy(lease->clid, clid, clid_len);
     }
@@ -430,9 +269,79 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
   lease->fqdn = new_fqdn;
   lease->auth_name = auth;
   
-  file_dirty = 1;
+  file_dirty = force;
   dns_dirty = 1;
 }
 
 
+
+
+struct lease_t
+{
+  unsigned char chaddr[16];
+  unsigned int yiaddr;
+  unsigned int expires;
+  char hostname[64];
+};
+#define EXPIRES_NEVER 0xFFFFFFFF	/* static lease */
+
+void
+lease_update_file (struct daemon *daemon, int always, time_t now)
+{
+  struct dhcp_lease *lease;
+  int i = always;		/* avoid warning */
+  unsigned long expires;
+  struct lease_t l;
+  int a;
+/* DD-WRT udhcpd lease file compatibility */
+fprintf(stderr,"update lease file\n");
+
+//  if (file_dirty != no)
+    {
+      rewind (daemon->lease_stream);
+      ftruncate (fileno (daemon->lease_file), 0);
+fprintf(stderr,"rewindet\n");
+
+      for (lease = leases; lease; lease = lease->next)
+	{
+	 if (lease->expires) 
+	  expires = (unsigned long) lease->expires - now;
+	  
+	  memset (&l, 0, sizeof (l));
+	  if (lease->hwaddr != NULL)
+	    {
+	      for (a = 0; a < 6; a++)
+		l.chaddr[a] = lease->hwaddr[a];
+	    }
+
+	  l.yiaddr = lease->addr.s_addr;	//ip
+	  if (!lease->expires)
+	    expires = EXPIRES_NEVER;
+	  
+	  l.expires = htonl (expires);
+	  if (lease->hostname != NULL)
+	    {
+	      strcpy (l.hostname, lease->hostname);
+	    }
+	  else
+	    {
+	      if (lease->fqdn != NULL)
+		strcpy (l.hostname, lease->fqdn);
+	    }
+fprintf(stderr,"write lease\n");
+
+
+	  fwrite (&l, sizeof (l), 1, daemon->lease_stream);
+	}
+fprintf(stderr,"done()\n");
+
+      fflush (daemon->lease_stream);
+      fsync (fileno (daemon->lease_stream));
+fprintf(stderr,"sync()\n");
+
+      file_dirty = no;
+/* DD-WRT end */
+
+    }
+}
 

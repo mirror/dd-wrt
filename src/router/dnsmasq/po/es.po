@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: dnsmasq 2.24\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2006-04-23 19:58+0100\n"
+"POT-Creation-Date: 2006-03-16 20:04+0000\n"
 "PO-Revision-Date: 2005-10-07 11:04+0100\n"
 "Last-Translator: Christopher Chatham <chrislinux@gmail.com>\n"
 "Language-Team: Spanish <es@li.org>\n"
@@ -15,31 +15,31 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: cache.c:570
+#: cache.c:565
 #, c-format
 msgid "failed to load names from %s: %m"
 msgstr "no se pudo cargar nombres desde %s: %m"
 
-#: cache.c:606 dhcp.c:655
+#: cache.c:601 dhcp.c:754
 #, fuzzy, c-format
 msgid "bad address at %s line %d"
 msgstr "nombre erróneo en %s línea %d"
 
-#: cache.c:633 dhcp.c:669
+#: cache.c:628 dhcp.c:768
 #, c-format
 msgid "bad name at %s line %d"
 msgstr "nombre erróneo en %s línea %d"
 
-#: cache.c:639 dhcp.c:723
+#: cache.c:634 dhcp.c:822
 #, c-format
 msgid "read %s - %d addresses"
 msgstr "direcciónes %s - %d leídas"
 
-#: cache.c:675
+#: cache.c:670
 msgid "cleared cache"
 msgstr "el caché fue limpiado"
 
-#: cache.c:728
+#: cache.c:723
 #, c-format
 msgid ""
 "not giving name %s to the DHCP lease of %s because the name exists in %s "
@@ -48,29 +48,27 @@ msgstr ""
 "no otorgando nombre %s al arriendo DHCP de %s porque el nombre existe en %s "
 "con dirección %s"
 
-#: cache.c:772
-#, fuzzy, c-format
-msgid ""
-"time %lu, cache size %d, %d/%d cache insertions re-used unexpired cache "
-"entries."
+#: cache.c:767
+#, c-format
+msgid "cache size %d, %d/%d cache insertions re-used unexpired cache entries."
 msgstr ""
 "tamaño de caché %d, %d/%d inserciónes de caché reutilizaron entradas no "
 "vencidas."
 
-#: util.c:153 option.c:1294
+#: util.c:149 option.c:1302
 msgid "could not get memory"
 msgstr "no se pudo conseguir memoria"
 
-#: util.c:176
+#: util.c:172
 #, c-format
 msgid "%s at line %d of %%s"
 msgstr "%s en línea %d de %%s"
 
-#: util.c:183
+#: util.c:179
 msgid "FAILED to start up"
 msgstr "el intento de inicio ha FALLADO"
 
-#: util.c:304
+#: util.c:305
 #, c-format
 msgid "infinite"
 msgstr "infinito"
@@ -328,10 +326,6 @@ msgstr "Habilitar alocación dinámica de direcciónes para BOOTP."
 msgid "Map MAC address (with wildcards) to option set."
 msgstr "Trazar clase de vendedor DHCP a opción fijada."
 
-#: option.c:182
-msgid "Disable ICMP echo address checking in the DHCP server."
-msgstr ""
-
 #: option.c:396
 msgid "missing \""
 msgstr "falta \""
@@ -417,500 +411,477 @@ msgstr "nombre MX erróneo"
 msgid "bad MX target"
 msgstr "destino MX erróneo"
 
-#: option.c:802 option.c:813
+#: option.c:805 option.c:816
 msgid "bad port"
 msgstr "puerto erróneo"
 
-#: option.c:955
+#: option.c:957
 msgid "bad dhcp-range"
 msgstr "dhcp-range (rango DHCP) erróneo"
 
-#: option.c:984
+#: option.c:986
 msgid "only one netid tag allowed"
 msgstr ""
 
-#: option.c:1029
+#: option.c:1031
 msgid "inconsistent DHCP range"
 msgstr "rango DHCP inconsistente"
 
-#: option.c:1214
+#: option.c:1219
 msgid "bad dhcp-host"
 msgstr "dhcp-host erróneo"
 
-#: option.c:1271
+#: option.c:1279
 msgid "bad dhcp-option"
 msgstr "dhcp-option erróneo"
 
-#: option.c:1289
+#: option.c:1297
 msgid "bad domain in dhcp-option"
 msgstr "dominio erróneo en dhcp-option"
 
-#: option.c:1459
+#: option.c:1467
 msgid "dhcp-option too long"
 msgstr "opción dhcp-option demasiado larga"
 
-#: option.c:1656
+#: option.c:1664
 msgid "bad TXT record"
 msgstr "récord TXT erróneo"
 
-#: option.c:1688
+#: option.c:1696
 msgid "TXT record string too long"
 msgstr "récord TXT demasiado largo"
 
-#: option.c:1727
+#: option.c:1735
 msgid "bad SRV record"
 msgstr "récord SRV erróneo"
 
-#: option.c:1740
+#: option.c:1748
 msgid "bad SRV target"
 msgstr "destino SRV erróneo"
 
-#: option.c:1752
+#: option.c:1760
 msgid "invalid port number"
 msgstr "número de puerto inválido"
 
-#: option.c:1763
+#: option.c:1771
 msgid "invalid priority"
 msgstr "prioridad inválida"
 
-#: option.c:1774
+#: option.c:1782
 msgid "invalid weight"
 msgstr "peso inválido"
 
-#: option.c:1799
+#: option.c:1807
 msgid "error"
 msgstr "error"
 
-#: option.c:1801
+#: option.c:1809
 #, c-format
 msgid "bad command line options: %s."
 msgstr "opciones de línea de comandos erróneas: %s."
 
-#: option.c:1803
-msgid "try --help"
-msgstr ""
-
-#: option.c:1805
-msgid "try -w"
-msgstr ""
-
-#: option.c:1845
+#: option.c:1853
 #, c-format
 msgid "cannot get host-name: %s"
 msgstr "no se puede obtener host-name (nombre de host): %s"
 
-#: option.c:1874
+#: option.c:1882
 msgid "only one resolv.conf file allowed in no-poll mode."
 msgstr "solo un archivo resolv.conf permitido en modo no-poll."
 
-#: option.c:1881
+#: option.c:1889
 msgid "must have exactly one resolv.conf to read domain from."
 msgstr "debe haber exactamente un resolv.conf desde donde leer dominio."
 
-#: option.c:1884 network.c:481
+#: option.c:1892 network.c:591
 #, c-format
 msgid "failed to read %s: %m"
 msgstr "no se pudo leer %s: %m"
 
-#: option.c:1902
+#: option.c:1910
 #, c-format
 msgid "no search directive found in %s"
 msgstr "ninguna directiva de búsqueda encontrada en %s"
 
-#: forward.c:381
+#: forward.c:383
 #, c-format
 msgid "nameserver %s refused to do a recursive query"
 msgstr "servidor DNS %s se reuso a hacer una búsqueda recursiva"
 
-#: forward.c:888
+#: forward.c:914
 msgid "forwarding table overflow: check for server loops."
 msgstr ""
 "desbordamiento en la tabla de reenvio: revisar si hay loops de servidor."
 
-#: isc.c:73 dnsmasq.c:460
+#: isc.c:71 dnsmasq.c:482
 #, c-format
 msgid "failed to access %s: %m"
 msgstr "no se pudo accesar %s: %m"
 
-#: isc.c:89
+#: isc.c:87
 #, c-format
 msgid "failed to load %s: %m"
 msgstr "no se pudo cargar %s: %m"
 
-#: isc.c:93 network.c:485
+#: isc.c:91 network.c:595
 #, c-format
 msgid "reading %s"
 msgstr "leyendo %s"
 
-#: isc.c:115
+#: isc.c:113
 #, c-format
 msgid "bad name in %s"
 msgstr "nombre erróneo en %s"
 
-#: isc.c:177
+#: isc.c:175
 #, c-format
 msgid "Ignoring DHCP lease for %s because it has an illegal domain part"
 msgstr ""
 "Ignorando arriendo DHCP para %s porque tiene una parte ilegal de dominio"
 
-#: network.c:308 dnsmasq.c:129
+#: network.c:418
 #, c-format
 msgid "failed to create listening socket: %s"
 msgstr "no se pudo crear un socket escuchador: %s"
 
-#: network.c:315
+#: network.c:425
 #, c-format
 msgid "failed to set IPV6 options on listening socket: %s"
 msgstr "no se pudo fijar opciones IPv6 sobre el socket escuchador: %s"
 
-#: network.c:333
+#: network.c:444
 #, c-format
 msgid "failed to bind listening socket for %s: %s"
 msgstr "no se pudo acoplar socket escuchador para %s: %s"
 
-#: network.c:341
+#: network.c:451
 #, c-format
 msgid "failed to listen on socket: %s"
 msgstr "no se pudo escuchar en el socket: %s"
 
-#: network.c:411
+#: network.c:521
 #, c-format
 msgid "ignoring nameserver %s - local interface"
 msgstr "ignorando servidor DNS %s - interface local"
 
-#: network.c:420
+#: network.c:530
 #, c-format
 msgid "ignoring nameserver %s - cannot make/bind socket: %m"
 msgstr "ignorando servidor DNS %s - no se pudo crear/acoplar socket: %m"
 
-#: network.c:434
+#: network.c:544
 msgid "domain"
 msgstr "dominio"
 
-#: network.c:436
+#: network.c:546
 msgid "unqualified"
 msgstr "no calificado"
 
-#: network.c:436
+#: network.c:546
 msgid "domains"
 msgstr "dominios"
 
-#: network.c:439
+#: network.c:549
 #, c-format
 msgid "using local addresses only for %s %s"
 msgstr "usando direcciones locales solo para %s %s"
 
-#: network.c:441
+#: network.c:551
 #, c-format
 msgid "using nameserver %s#%d for %s %s"
 msgstr "usando servidor DNS %s#%d para %s %s"
 
-#: network.c:444
+#: network.c:554
 #, c-format
 msgid "using nameserver %s#%d"
 msgstr "usando servidor DNS %s#%d"
 
-#: dnsmasq.c:94
+#: dnsmasq.c:115
 msgid ""
 "ISC dhcpd integration not available: set HAVE_ISC_READER in src/config.h"
 msgstr ""
 "Integración dhcpd ISC no disponible: fijar HAVE_ISC_READER en src/config.h"
 
-#: dnsmasq.c:111
+#: dnsmasq.c:119
 #, c-format
 msgid "failed to find list of interfaces: %s"
 msgstr "no se pudo encontrar lista de interfaces: %s"
 
-#: dnsmasq.c:119
+#: dnsmasq.c:134
 #, c-format
 msgid "unknown interface %s"
 msgstr "interface desconocida %s"
 
-#: dnsmasq.c:125
+#: dnsmasq.c:140
 #, c-format
 msgid "no interface with address %s"
 msgstr "ninguna interface con dirección %s"
 
-#: dnsmasq.c:145
+#: dnsmasq.c:149
+#, c-format
+msgid "cannot open %s:%s"
+msgstr "no se puede abrir %s:%s"
+
+#: dnsmasq.c:163
 msgid "must set exactly one interface on broken systems without IP_RECVIF"
 msgstr "debe fijarse exactamente una interface en sistemas rotos sin IP_RECVIF"
 
-#: dnsmasq.c:158 dnsmasq.c:536
+#: dnsmasq.c:176 dnsmasq.c:520
 #, c-format
 msgid "DBus error: %s"
 msgstr "error DBus: %s"
 
-#: dnsmasq.c:161
+#: dnsmasq.c:179
 msgid "DBus not available: set HAVE_DBUS in src/config.h"
 msgstr "DBus no disponible: fijar HAVE_DBUS en src/config.h"
 
-#: dnsmasq.c:196
-#, fuzzy, c-format
-msgid "cannot create pipe: %s"
-msgstr "no se puede leer %s: %s"
-
-#: dnsmasq.c:331
+#: dnsmasq.c:292
 #, c-format
 msgid "started, version %s cachesize %d"
 msgstr "versión %s iniciada, tamaño de caché %d"
 
-#: dnsmasq.c:333
+#: dnsmasq.c:294
 #, c-format
 msgid "started, version %s cache disabled"
 msgstr "versión %s iniciada, caché deshabilitado"
 
-#: dnsmasq.c:335
+#: dnsmasq.c:296
 #, c-format
 msgid "compile time options: %s"
 msgstr "opciones de compilación: %s"
 
-#: dnsmasq.c:341
+#: dnsmasq.c:302
 msgid "DBus support enabled: connected to system bus"
 msgstr "soporte DBus habilitado: conectado a bus de sistema"
 
-#: dnsmasq.c:343
+#: dnsmasq.c:304
 msgid "DBus support enabled: bus connection pending"
 msgstr "soporte DBus habilitado: conección a bus pendiente"
 
-#: dnsmasq.c:348
+#: dnsmasq.c:309
 msgid "setting --bind-interfaces option because of OS limitations"
 msgstr ""
 "fijando opción --bind-interfaces debido a limitaciones de sistema operativo"
 
-#: dnsmasq.c:353
+#: dnsmasq.c:314
 #, c-format
 msgid "warning: interface %s does not currently exist"
 msgstr "advertencia: interface %s no existe actualmente"
 
-#: dnsmasq.c:365
+#: dnsmasq.c:331
 #, c-format
 msgid "DHCP, static leases only on %.0s%s, lease time %s"
 msgstr "DHCP, arriendos estáticos solo en %.0s%s, tiempo de arriendo %s"
 
-#: dnsmasq.c:366
+#: dnsmasq.c:332
 #, c-format
 msgid "DHCP, IP range %s -- %s, lease time %s"
 msgstr "DHCP, rango de IP %s -- %s, tiempo de arriendo %s"
 
-#: dnsmasq.c:376
+#: dnsmasq.c:343
 #, c-format
-msgid "warning: setting capabilities failed: %m"
-msgstr ""
+msgid "DHCP, %s will be written every %s"
+msgstr "DHCP, %s será escrito cada %s"
 
-#: dnsmasq.c:378
+#: dnsmasq.c:348
 msgid "running as root"
 msgstr "corriendo como root"
 
-#: dnsmasq.c:511
-msgid "exiting on receipt of SIGTERM"
-msgstr "haciendo exit al haber recibido SIGTERM"
-
-#: dnsmasq.c:538
+#: dnsmasq.c:522
 msgid "connected to system DBus"
 msgstr "conectado a DBus de sistema"
 
-#: dhcp.c:32
+#: dnsmasq.c:533
+msgid "exiting on receipt of SIGTERM"
+msgstr "haciendo exit al haber recibido SIGTERM"
+
+#: dhcp.c:25
 #, c-format
 msgid "cannot create DHCP socket : %s"
 msgstr "no se puede crear socket DHCP: %s"
 
-#: dhcp.c:42
+#: dhcp.c:35
 #, c-format
 msgid "failed to set options on DHCP socket: %s"
 msgstr "no se pudo fijar opciones en socket DHCP: %s"
 
-#: dhcp.c:49
+#: dhcp.c:42
 #, c-format
 msgid "failed to set SO_REUSEADDR on DHCP socket: %s"
 msgstr "no se pudo fijar SO_REUSEADDR en socket DHCP: %s"
 
-#: dhcp.c:59
+#: dhcp.c:52
 #, c-format
 msgid "failed to bind DHCP server socket: %s"
 msgstr "no se pudo acoplar socket de servidor DHCP: %s"
 
-#: dhcp.c:72
+#: dhcp.c:61
 #, c-format
 msgid "cannot create ICMP raw socket: %s."
 msgstr "no se puede crear socket crudo ICMP: %s."
 
-#: dhcp.c:84
+#: dhcp.c:75
+#, c-format
+msgid "cannot create DHCP BPF socket: %s"
+msgstr "no se puede crear socket BPF DHCP: %s"
+
+#: dhcp.c:86
+#, c-format
+msgid ""
+"cannot create DHCP packet socket: %s. Is CONFIG_PACKET enabled in your "
+"kernel?"
+msgstr ""
+"no se puede crear socket para paquetes DHCP: %s. Está CONFIG_PACKET "
+"habilitado en el kernel?"
+
+#: dhcp.c:98
 #, c-format
 msgid "duplicate IP address %s in dhcp-config directive."
 msgstr "dirección IP duplicada en directiva dhcp-config."
 
-#: dhcp.c:307
+#: dhcp.c:234
+msgid "Cannot use RTnetlink socket, falling back to ioctl API"
+msgstr ""
+
+#: dhcp.c:345
+#, c-format
+msgid "DHCP request for unsupported hardware type (%d) recieved on %s"
+msgstr "pedido DHCP por hardware no soportado tipo (%d) recibido en %s"
+
+#: dhcp.c:413
 #, c-format
 msgid "DHCP range %s -- %s is not consistent with netmask %s"
 msgstr "rango DHCP %s -- %s no coincide con máscara de red %s"
 
-#: dhcp.c:623
+#: dhcp.c:722
 #, c-format
 msgid "failed to read %s:%m"
 msgstr "no se pudo leer %s:%m"
 
-#: dhcp.c:642
+#: dhcp.c:741
 #, fuzzy, c-format
 msgid "bad line at %s line %d"
 msgstr "nombre erróneo en %s línea %d"
 
-#: dhcp.c:746
+#: dhcp.c:845
 #, c-format
 msgid "duplicate IP address %s (%s) in dhcp-config directive"
 msgstr "dirección IP %s (%s) duplicada en directiva dhcp-config"
 
-#: dhcp.c:782
+#: dhcp.c:881
 #, c-format
 msgid "Ignoring DHCP host name %s because it has an illegal domain part"
 msgstr ""
 "Ignorando nombre de host DHCP %s porque contiene una parte ilegal de dominio."
 
-#: lease.c:34
+#: lease.c:38
 #, c-format
 msgid "cannot open or create leases file: %s"
 msgstr "no se puede abrir o crear archivo de arriendos: %s"
 
-#: lease.c:71
+#: lease.c:80
 msgid "too many stored leases"
 msgstr "demasiados arriendos almacenados"
 
-#: lease.c:118
-#, fuzzy, c-format
-msgid "failed to write %s: %m (retry in %ds)"
-msgstr "no se pudo leer %s: %m"
+#: lease.c:179
+#, fuzzy
+msgid "failed to write"
+msgstr "no se pudo leer %s:%m"
 
-#: rfc2131.c:247
+#: rfc2131.c:218
 #, c-format
 msgid "no address range available for DHCP request %s %s"
 msgstr "ningún rango de direcciónes disponible para pedido DHCP %s %s"
 
-#: rfc2131.c:248
+#: rfc2131.c:219
 msgid "with subnet selector"
 msgstr "con selector de subred"
 
-#: rfc2131.c:248
+#: rfc2131.c:219
 msgid "via"
 msgstr "vía"
 
-#: rfc2131.c:274 rfc2131.c:298
+#: rfc2131.c:240 rfc2131.c:264
 msgid "disabled"
 msgstr "deshabilitado"
 
-#: rfc2131.c:310 rfc2131.c:731
+#: rfc2131.c:275 rfc2131.c:674
 msgid "address in use"
 msgstr "dirección en uso"
 
-#: rfc2131.c:313
+#: rfc2131.c:278
 msgid "no address configured"
 msgstr "ninguna dirección configurada"
 
-#: rfc2131.c:326 rfc2131.c:605
+#: rfc2131.c:291 rfc2131.c:546
 msgid "no address available"
 msgstr "ninguna dirección disponible"
 
-#: rfc2131.c:333 rfc2131.c:734
+#: rfc2131.c:298 rfc2131.c:677
 msgid "no leases left"
 msgstr "no queda ningún arriendo"
 
-#: rfc2131.c:336 rfc2131.c:707
+#: rfc2131.c:301 rfc2131.c:650
 msgid "wrong network"
 msgstr "red equivocada"
 
-#: rfc2131.c:540
+#: rfc2131.c:505
 #, c-format
 msgid "disabling DHCP static address %s"
 msgstr "deshabilitando dirección DHCP estática %s"
 
-#: rfc2131.c:558
+#: rfc2131.c:523
 msgid "unknown lease"
 msgstr "arriendo desconocido"
 
-#: rfc2131.c:567 rfc2131.c:799
+#: rfc2131.c:536 rfc2131.c:749
 msgid "ignored"
 msgstr "ignorado"
 
-#: rfc2131.c:581
-#, c-format
-msgid "not using configured address %s because it is leased to %s"
-msgstr ""
-
-#: rfc2131.c:590
-#, c-format
-msgid "not using configured address %s because it is in use by the server"
-msgstr ""
-
-#: rfc2131.c:670
+#: rfc2131.c:619
 msgid "wrong address"
 msgstr "dirección equivocada"
 
-#: rfc2131.c:683
+#: rfc2131.c:632
 msgid "lease not found"
 msgstr "arriendo no encontrado"
 
-#: rfc2131.c:715
+#: rfc2131.c:658
 msgid "address not available"
 msgstr "dirección no disponible"
 
-#: rfc2131.c:724
+#: rfc2131.c:667
 msgid "static lease available"
 msgstr "arriendo estático disponible"
 
-#: rfc2131.c:728
+#: rfc2131.c:671
 msgid "address reserved"
 msgstr "dirección reservada"
 
-#: rfc2131.c:946
+#: rfc2131.c:871
 #, c-format
 msgid "cannot send DHCP option %d: no space left in packet"
 msgstr "no se puede enviar opción DHCP %d: no queda espacio en el paquete"
 
-#: rfc2131.c:1247
+#: rfc2131.c:1174
 #, c-format
 msgid "More than one vendor class matches, using %s"
 msgstr "Más de una clase de vendedor coincide, usando %s"
 
-#: netlink.c:51
-#, fuzzy, c-format
-msgid "cannot create RTnetlink socket: %s"
-msgstr "no se puede acoplar socket netlink: %s"
-
-#: netlink.c:218
+#: netlink.c:41
 #, c-format
-msgid "RTnetlink returns error: %s"
-msgstr ""
+msgid "cannot bind netlink socket: %s"
+msgstr "no se puede acoplar socket netlink: %s"
 
 #: dbus.c:112
 msgid "attempt to set an IPv6 server address via DBus - no IPv6 support"
 msgstr ""
 "intento de fijar dirección IPv6 a servidor vía DBus - no hay soporte IPv6"
 
-#: dbus.c:238
+#: dbus.c:237
 msgid "setting upstream servers from DBus"
 msgstr "fijando servidores upstream desde DBus"
 
-#: dbus.c:274
+#: dbus.c:273
 msgid "could not register a DBus message handler"
 msgstr "no se pudo registrar un manejador de mensajes DBus"
-
-#: bpf.c:54
-#, c-format
-msgid "cannot create DHCP BPF socket: %s"
-msgstr "no se puede crear socket BPF DHCP: %s"
-
-#: bpf.c:74
-#, fuzzy, c-format
-msgid "DHCP request for unsupported hardware type (%d) received on %s"
-msgstr "pedido DHCP por hardware no soportado tipo (%d) recibido en %s"
-
-#~ msgid "cannot open %s:%s"
-#~ msgstr "no se puede abrir %s:%s"
-
-#~ msgid "DHCP, %s will be written every %s"
-#~ msgstr "DHCP, %s será escrito cada %s"
-
-#~ msgid ""
-#~ "cannot create DHCP packet socket: %s. Is CONFIG_PACKET enabled in your "
-#~ "kernel?"
-#~ msgstr ""
-#~ "no se puede crear socket para paquetes DHCP: %s. Está CONFIG_PACKET "
-#~ "habilitado en el kernel?"
