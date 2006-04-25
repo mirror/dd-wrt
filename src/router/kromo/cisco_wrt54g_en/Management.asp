@@ -69,6 +69,7 @@ function valid_password(F) {
 }
 
 function to_reboot(F) {
+	F.submit_button.value = "Management";
 	F.action.value="Reboot";
 	F.submit();
 	return true;
@@ -117,7 +118,8 @@ function to_submit(F) {
 		if(F._remote_mgt_ssh.checked == true) F.remote_mgt_ssh.value = 1;
 		else 	 F.remote_mgt_ssh.value = 0;
 	}
-	
+
+	F.submit_button.value = "Management";
 	F.save_button.value = "Saved";
 
 	F.action.value="Apply";
@@ -188,7 +190,7 @@ function init() {
 				<div id="main">
 					<div id="contents">
 						<form name="setup" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button" value="Management" />
+							<input type="hidden" name="submit_button" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="action" />
