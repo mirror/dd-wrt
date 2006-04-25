@@ -9,8 +9,6 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-var EN_DIS1 = '<% nvram_get("remote_management"); %>'
-var wan_proto = '<% nvram_get("wan_proto"); %>'
 
 function SelPort(num,F)	{
 	if(num == 1 && F.PasswdModify.value == 1){
@@ -21,7 +19,6 @@ function SelPort(num,F)	{
 }
 
 function port_enable_disable(F,I) {
-	EN_DIS2 = I;
 	if ( I == "0" ){
 		if (F.http_wanport) choose_disable(F.http_wanport);
 		if (F._remote_mgt_https) choose_disable(F._remote_mgt_https);
@@ -195,7 +192,6 @@ function init() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="action" />
-							<input type="hidden" name="reboot_button" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="PasswdModify" value="<% nvram_else_match("http_passwd", "admin", "1", "0"); %>" />
 							<input type="hidden" name="remote_mgt_https" />
