@@ -52,6 +52,7 @@ function setWDSTable() {
 	for(var i = 0; i < val.length; i = i + 5) {
 		var row = table.insertRow(-1);
 		
+		var mac = val[i];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
 		  cellmac.title = "OUI Search";
