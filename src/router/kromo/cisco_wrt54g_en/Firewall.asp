@@ -9,13 +9,6 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-function wan_enable_disable(F) {
-	if(F._block_wan.checked == true)
-		choose_enable(F._ident_pass);
-	else {
-		choose_disable(F._ident_pass);
-	}
-}
 
 function to_submit(F) {
 	F.submit_button.value = "Firewall";
@@ -47,15 +40,9 @@ function to_submit(F) {
 	F.action.value = "Apply";
 	apply(F);
 }
-function init() {
-	if(document.firewall._block_wan.checked == true) {
-		choose_enable(document.firewall._ident_pass);
-	} else {
-		choose_disable(document.firewall._ident_pass);
-	}
-}
+
 </script></head>
-   <body class="gui" onload="init()"> <% showad(); %>
+   <body class="gui"> <% showad(); %>
       <div id="wrapper">
          <div id="content">
             <div id="header">
@@ -104,7 +91,7 @@ function init() {
                      </fieldset><br />
                      <fieldset>
                         <legend>Block WAN Requests</legend>
-                        <div class="setting"><input type="checkbox" value="1" name="_block_wan" onclick=wan_enable_disable(this.form) <% nvram_checked("block_wan", "1"); %> >Block Anonymous Internet Requests</input></div>
+                        <div class="setting"><input type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> >Block Anonymous Internet Requests</input></div>
                         <% support_invmatch("MULTICAST_SUPPORT", "1", "<!--"); %>
                         <div class="setting"><input type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "0"); %> >Filter Multicast</input></div>
                         <% support_invmatch("MULTICAST_SUPPORT", "1", "-->"); %>
