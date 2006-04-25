@@ -120,7 +120,7 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "0x0101") && nvram_match ("boardrev", "0x10"))
     {
       cprintf ("router is buffalo wbr2\n");
-      setRouter ("Buffalo WBR2-G54S");
+      setRouter ("Buffalo WBR2-G54 / WBR2-G54S");
       return ROUTER_BUFFALO_WBR2G54S;
     }
   if (nvram_match ("boardnum", "00") &&
