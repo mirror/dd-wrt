@@ -3267,10 +3267,10 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
   if (value)
     {
       if (atoi (value) == 0 || atoi (value) == 1)
-	{
-	  nvram_set ("skip_amd_check", value);
-	  sys_commit ();
-	}
+      {
+      	nvram_set ("skip_amd_check", value);
+      	sys_commit ();
+      }
       goto footer;
     }
 
@@ -3291,67 +3291,66 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       nvram_set ("is_default", "0");
       nvram_set ("is_modified", "1");
 
-      if (act)
-	{
-	  cprintf
-	    ("submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n",
-	     act->name, act->service, act->sleep_time, act->action);
-	  if ((act->action == SYS_RESTART)
-	      || (act->action == SERVICE_RESTART))
-	    nvram_set ("action_service", act->service);
-	  else
-	    nvram_set ("action_service", "");
-	  sleep_time = act->sleep_time;
-	  action = act->action;
-
-	  if (act->go)
-	    ret_code = act->go (wp);
+		if (act)
+		{
+			cprintf ("submit_button=[%s] service=[%s] sleep_time=[%d] action=[%d]\n", act->name, act->service, act->sleep_time, act->action);
+			if ((act->action == SYS_RESTART) || (act->action == SERVICE_RESTART))
+				nvram_set ("action_service", act->service);
+			else
+				nvram_set ("action_service", "");
+		
+			sleep_time = act->sleep_time;
+			action = act->action;
+		
+			if (act->go)
+				ret_code = act->go (wp);
+		}
+		else
+		{
+			nvram_set ("action_service", "");
+			sleep_time = 1;
+			action = RESTART;
+		}
+		
+		if (need_commit)
+		{
+			//If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
+			//	nvram_set ("eou_configured", "1");
+			//	eval ("wl", "custom_ie", "0");
+			diag_led (DIAG, STOP_LED);
+			//If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
+			//nvram_set("is_default", "0");
+			//nvram_set("is_modified", "1");
+			sys_commit ();
+		}
 	}
-      else
+	
+	/* Restore defaults */
+	else if (!strncmp (value, "Restore", 7))
 	{
-	  nvram_set ("action_service", "");
-	  sleep_time = 1;
-	  action = RESTART;
+		ACTION ("ACT_SW_RESTORE");
+		//eval("erase","nvram");
+		//nvram_set ("sv_restore_defaults", "1");
+		eval ("killall", "-9", "udhcpc");
+		sys_commit ();
+		eval ("erase", "nvram");
+		action = REBOOT;
 	}
-
-      if (need_commit)
-	{
-	  //If web page configuration is changed, the EoU function should be disabled.(2004-05-06)
-//        nvram_set ("eou_configured", "1");
-//        eval ("wl", "custom_ie", "0");
-	  diag_led (DIAG, STOP_LED);
-	  //If web page configuration is changed, the EZC configuration function should be disabled.(2004-07-29)
-	  //nvram_set("is_default", "0");
-	  //nvram_set("is_modified", "1");
-	  sys_commit ();
-	}
-    }
-  /* Restore defaults */
-  else if (!strncmp (value, "Restore", 7))
+	
+	/* Reboot */
+	else if (!strncmp (value, "Reboot", 7))
     {
-      ACTION ("ACT_SW_RESTORE");
-      //eval("erase","nvram");
-      //nvram_set ("sv_restore_defaults", "1");
-      eval ("killall", "-9", "udhcpc");
-      sys_commit ();
-      eval ("erase", "nvram");
-      action = REBOOT;
+    	action = REBOOT;
+    	do_ej ("Reboot.asp", wp);
+    	websDone (wp, 200);
+    	sleep (3);
+    	sys_reboot ();
+    	return 1;
     }
-
-  /* Reboot */
-  else if (!strncmp (value, "Reboot", 7))
-    {
-      action = REBOOT;
-      do_ej ("Reboot.asp", wp);
-      websDone (wp, 200);
-      sleep (3);
-      sys_reboot ();
-      return 1;
-    }
-  /* Invalid action */
-  else
-    websDebugWrite (wp, "Invalid action %s<br>", value);
-
+    
+    /* Invalid action */
+    else
+    	websDebugWrite (wp, "Invalid action %s<br>", value);
 
 footer:
 	if (do_reboot)
