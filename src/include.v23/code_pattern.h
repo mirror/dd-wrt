@@ -57,7 +57,7 @@
 #endif
 
 
-#define	VENDOR		"BLUELINE-AG"
+#define	VENDOR		"New Media NET GmbH"
 
 
 #define COUNTRY		LOCALE
