@@ -473,78 +473,74 @@ getsocket (void)
 }
 
 
+
+#define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
 static int
-do80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
-	     size_t len)
+do80211priv(struct iwreq *iwr, const char *ifname, int op, void *data, size_t len)
 {
 #define	N(a)	(sizeof(a)/sizeof(a[0]))
 
-  memset (iwr, 0, sizeof (iwr));
-  strncpy (iwr->ifr_name, ifname, IFNAMSIZ);
-  if (len < IFNAMSIZ)
-    {
-      /*
-       * Argument data fits inline; put it there.
-       */
-      memcpy (iwr->u.name, data, len);
-    }
-  else
-    {
-      /*
-       * Argument data too big for inline transfer; setup a
-       * parameter block instead; the kernel will transfer
-       * the data for the driver.
-       */
-      iwr->u.data.pointer = data;
-      iwr->u.data.length = len;
-    }
+	memset(iwr, 0, sizeof(struct iwreq));
+	strncpy(iwr->ifr_name, ifname, IFNAMSIZ);
+	if (len < IFNAMSIZ) {
+		/*
+		 * Argument data fits inline; put it there.
+		 */
+		memcpy(iwr->u.name, data, len);
+	} else {
+		/*
+		 * Argument data too big for inline transfer; setup a
+		 * parameter block instead; the kernel will transfer
+		 * the data for the driver.
+		 */
+		iwr->u.data.pointer = data;
+		iwr->u.data.length = len;
+	}
 
-  if (ioctl (getsocket (), op, iwr) < 0)
-    {
-      static const char *opnames[] = {
-	"ioctl[IEEE80211_IOCTL_SETPARAM]",
-	"ioctl[IEEE80211_IOCTL_GETPARAM]",
-	"ioctl[IEEE80211_IOCTL_SETKEY]",
-	"ioctl[SIOCIWFIRSTPRIV+3]",
-	"ioctl[IEEE80211_IOCTL_DELKEY]",
-	"ioctl[SIOCIWFIRSTPRIV+5]",
-	"ioctl[IEEE80211_IOCTL_SETMLME]",
-	"ioctl[SIOCIWFIRSTPRIV+7]",
-	"ioctl[IEEE80211_IOCTL_SETOPTIE]",
-	"ioctl[IEEE80211_IOCTL_GETOPTIE]",
-	"ioctl[IEEE80211_IOCTL_ADDMAC]",
-	"ioctl[SIOCIWFIRSTPRIV+11]",
-	"ioctl[IEEE80211_IOCTL_DELMAC]",
-	"ioctl[SIOCIWFIRSTPRIV+13]",
-	"ioctl[IEEE80211_IOCTL_CHANLIST]",
-	"ioctl[SIOCIWFIRSTPRIV+15]",
-	"ioctl[IEEE80211_IOCTL_GETRSN]",
-	"ioctl[SIOCIWFIRSTPRIV+17]",
-	"ioctl[IEEE80211_IOCTL_GETKEY]",
-      };
-      op -= SIOCIWFIRSTPRIV;
-      if (0 <= op && op < N (opnames))
-	perror (opnames[op]);
-      else
-	perror ("ioctl[unknown???]");
-      return -1;
-    }
-  return 0;
+	if (ioctl(getsocket(), op, iwr) < 0) {
+		static const char *opnames[] = {
+			IOCTL_ERR(IEEE80211_IOCTL_SETPARAM),
+			IOCTL_ERR(IEEE80211_IOCTL_GETPARAM),
+			IOCTL_ERR(IEEE80211_IOCTL_SETMODE),
+			IOCTL_ERR(IEEE80211_IOCTL_GETMODE),
+			IOCTL_ERR(IEEE80211_IOCTL_SETWMMPARAMS),
+			IOCTL_ERR(IEEE80211_IOCTL_GETWMMPARAMS),
+			IOCTL_ERR(IEEE80211_IOCTL_SETCHANLIST),
+			IOCTL_ERR(IEEE80211_IOCTL_GETCHANLIST),
+			IOCTL_ERR(IEEE80211_IOCTL_CHANSWITCH),
+			IOCTL_ERR(IEEE80211_IOCTL_GETCHANINFO),
+			IOCTL_ERR(IEEE80211_IOCTL_SETOPTIE),
+			IOCTL_ERR(IEEE80211_IOCTL_GETOPTIE),
+			IOCTL_ERR(IEEE80211_IOCTL_SETMLME),
+			IOCTL_ERR(IEEE80211_IOCTL_SETKEY),
+			IOCTL_ERR(IEEE80211_IOCTL_DELKEY),
+			IOCTL_ERR(IEEE80211_IOCTL_ADDMAC),
+			IOCTL_ERR(IEEE80211_IOCTL_DELMAC),
+			IOCTL_ERR(IEEE80211_IOCTL_WDSADDMAC),
+			IOCTL_ERR(IEEE80211_IOCTL_WDSDELMAC),
+		};
+		op -= SIOCIWFIRSTPRIV;
+		if (0 <= op && op < N(opnames))
+			perror(opnames[op]);
+		else
+			perror("ioctl[unknown???]");
+		return -1;
+	}
+	return 0;
 #undef N
 }
 
-
-
 static int
-get80211priv (const char *ifname, int op, void *data, size_t len)
+get80211priv(const char *ifname, int op, void *data, size_t len)
 {
-  struct iwreq iwr;
+	struct iwreq iwr;
+  fprintf(stderr,"get80211priv %s op %X", ifname,op);
 
-  if (do80211priv (&iwr, ifname, op, data, len) < 0)
-    return -1;
-  if (len < IFNAMSIZ)
-    memcpy (data, iwr.u.name, len);
-  return iwr.u.data.length;
+	if (do80211priv(&iwr, ifname, op, data, len) < 0)
+		return -1;
+	if (len < IFNAMSIZ)
+		memcpy(data, iwr.u.name, len);
+	return iwr.u.data.length;
 }
 
 
@@ -588,6 +584,7 @@ list_channelsext (const char *ifname, int allchans)
 
   cprintf ("malloc list\n");
 
+  fprintf(stderr,"channel number %d\n", achans.ic_nchans);
   struct wifi_channels *list =
     (struct wifi_channels *) malloc (sizeof (struct wifi_channels) *
 				     (achans.ic_nchans + 1));
@@ -1078,7 +1075,7 @@ configure_single (int count)
 //      }
       fprintf (stderr, "set ssid for %s\n", var);
       eval ("iwconfig", var, "essid", default_get (ssid, "default"));
-      cprintf ("set broadcast flag vif\n", var);	//hide ssid
+      cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
       fprintf (stderr, "set broadcast for %s\n", var);
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
@@ -1153,8 +1150,8 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 #else
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
-  eval ("insmod", "ath_rate_atheros");
-  eval ("insmod", "ath_pci", countrycode, xchanmode, outdoor);
+  eval ("insmod", "ath_rate_onoe");
+  eval ("insmod", "ath_pci","autocreate=none", countrycode, xchanmode, outdoor);
 
 //  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
 
