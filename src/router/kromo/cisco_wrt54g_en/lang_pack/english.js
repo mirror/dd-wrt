@@ -421,6 +421,7 @@ wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Available Hosts";
 wol.legend2="WOL Addresses";
+wol.legend3="Output";
 wol.enable="Enable WOL?";
 wol.add_wol="Add WOL Host";
 wol.restore="Restore Factory Defaults";
