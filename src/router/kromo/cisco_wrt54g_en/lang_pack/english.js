@@ -460,12 +460,16 @@ fail.mess2="Upgrade failed.";
 // **************************************************************** Success*.asp & Reboot.asp  **********************************************************************//
 
 var success = new Object();
-success.mess1="Settings saved.";
-success.mess2="Upgrade successful.<br/>Unit is rebooting now. Please wait a moment...";
-success.mess3="Settings are successful.";
-success.mess4=success.mess3 + "<br />Unit is rebooting now. Please wait a moment...";
-success.mess5="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network before connecting again.";
+success.saved="Settings saved.";
+success.restore="Settings restored.<br/>Unit is rebooting now. Please wait a moment...";
+success.upgrade="Upgrade successful.<br/>Unit is rebooting now. Please wait a moment...";
+success.success_noreboot="Settings are successful.";
+success.success_reboot=success.success_noreboot + "<br />Unit is rebooting now. Please wait a moment...";
 
+success.alert_reset="All configuration settings have been restored to their default values.<br /><br />";
+success.alert1="Please check the followings before connecting again:";
+success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
+success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
 
 
 
