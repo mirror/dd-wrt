@@ -2,34 +2,34 @@
 #menuSub,
 #menuMainList li span, 
 #help h2 {
-background:#c00;
-color:#fff;
-border-color:#e33 #800 #800 #e33;
+background:#cc0;
+color:#000;
+border-color:#ee3 #880 #880 #ee3;
 }
 #menuSubList li a {
-background:#d55;
-color:#fcc;
-border-color:#e77 #c44 #c44 #e77;
+background:#dd5;
+color:#660;
+border-color:#ee7 #bb4 #bb4 #ee7;
 }
 #menuSubList li a:hover {
-background:#e77;
-color:#fff;
-border-color:#f99 #d55 #d55 #f99;
+background:#ee7;
+color:#000;
+border-color:#ff9 #cc5 #cc5 #ff9;
 }
 fieldset legend {
-color:#c00;
+color:#990;
 }
 #help a {
-color:#fcc;
+color:#660;
 }
 #help a:hover {
-color:#fff;
+color:#000;
 }
 .meter .bar {
-background-color: #d55;
+background-color: #dd5;
 }
 .meter .text {
-color:#fff;
+color:#000;
 }
 .progressbar {
 background-color: #fff;
@@ -38,6 +38,6 @@ font-size:.09em;
 border-width:.09em;
 }
 .progressbarblock {
-background-color: #d55;
+background-color: #dd5;
 font-size:.09em;
 }
