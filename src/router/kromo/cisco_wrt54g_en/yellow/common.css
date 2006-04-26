@@ -180,7 +180,7 @@ letter-spacing:.09em;
 }
 .setting {
 position:relative;
-margin-bottom:.272em;
+margin-bottom:.453em;
 line-height:1.993em;
 width:100%;
 }
@@ -208,7 +208,6 @@ text-align:center;
 fieldset {
 border:solid .09em #ccc;
 padding:.725em;
-padding-top:.634em;
 margin:0;
 }
 fieldset legend {
@@ -358,7 +357,7 @@ padding-top:0;
 fieldset legend {
 position:relative;
 left:-1.268em;
-margin-bottom:.634em;
+margin-bottom:.723em;
 }
 .setting {
 line-height:1.812em;
