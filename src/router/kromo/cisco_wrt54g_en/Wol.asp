@@ -10,7 +10,7 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript"> 
 
-document.title = '<% nvram_get("router_name"); %>' + wol.titl;
+document.title = "<% nvram_get("router_name"); %>" + wol.titl;
 
 function guess_broadcast(ip) {
 	var netmask = "<% nvram_get("lan_netmask"); %>".split(".");
@@ -161,7 +161,7 @@ function display_manual_wol_hosts() {
 			if(get_wol_hosts().indexOf(mac) == -1) {
 				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
 			} else {
-				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked/>");
+				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked=\"checked\"/>");
 			}
 			document.write("\t</td>");
 			document.write("</tr>");
@@ -285,7 +285,7 @@ function display_wol_hosts() {
 								var table = new Array(<% dump_ping_log(""); %>);
 								if(table.length > 0 && location.href.indexOf("Wol.asp") == -1) {
 									document.write("<fieldset>");
-									document.write("<legend>Output</legend>");
+									document.write("<legend>" + wol.legend3 + "</legend>");
 									document.write("<br /><pre style=\"margin: 0\">" + table.join("\n") + "</pre>");
 									document.write("</fieldset><br />");
 								}
@@ -305,7 +305,8 @@ function display_wol_hosts() {
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
 										<input class="num" maxlength="5" size="5" id="local_wol_port" name="local_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value='<% nvram_get("local_wol_port"); nvram_selmatch("local_wol_port","","7"); %>'/>
 									</div>
-									<!--script type="text/javascript">
+							<!--		
+									<script type="text/javascript">
 										var table = new Array(<% dump_ping_log(""); %>);
 										if(table.length == 0 && location.href.indexOf("Wol.asp") == -1) {
 											table = document.forms[0].local_wol_mac.value.split(" ");
@@ -315,12 +316,12 @@ function display_wol_hosts() {
 										}
 										document.write("</pre>");
 									}
-									</script-->
+									</script>
+							-->
 								<div class="submitFooter">
 									<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"to_submit(this.form, 'start')\" />")</script>
 								</div>
 							</fieldset><br />
-
 
 						</form>
 					</div>
