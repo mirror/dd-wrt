@@ -149,7 +149,7 @@ sr_config_cgi (char *path, webs_t wp)
   if (restore_ret != 0)
     do_ej ("Fail.asp", wp);
   else
-    do_ej ("Success.asp", wp);
+    do_ej ("Success_rest.asp", wp);
 
   websDone (wp, 200);
 
