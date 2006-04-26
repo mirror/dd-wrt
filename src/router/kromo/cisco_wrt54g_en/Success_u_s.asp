@@ -27,8 +27,6 @@ function to_submit()
 {
 	if(submit_button == ".asp")
 		history.go(-1);
-	else if(submit_button == "WL_WEPTable.asp")
-		self.close();
 	else
 		document.location.href =  submit_button;
 }
@@ -58,21 +56,32 @@ function init()
 		<div class="message">
 			<div>
 				<form name="success">
-					<script type="text/javascript">Capture(success.mess2)</script><br /><br />
+					<script type="text/javascript">Capture(success.upgrade)</script><br /><br />
 					<div align="center">
-	            		<script type="text/javascript">
-	            			var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
-	            			bar1.togglePause();
-	            		</script>
+						<script type="text/javascript">
+							var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
+							bar1.togglePause();
+						</script>
 	            	</div>
-            		<div id="mess" style="display: none">
-            			<br /><br /><script type="text/javascript">Capture(success.mess5)</script><br /><br />
-            			<script type="text/javascript">
-            				if (browserName == "Microsoft Internet Explorer")
-            					document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
-           				</script>
-            		</div>
-<!--			<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script> -->
+            		<div id="mess" style="display:none"><br /><br />
+	            		<div style="text-align:left">
+	            			<script type="text/javascript">
+	            				if (rest_default == 1) {
+	            					Capture(success.alert_reset);
+	            				}
+	            				Capture(success.alert1)
+	            			</script>
+	            			<ul>
+	            				<li><script type="text/javascript">Capture(success.alert2)</script></li>
+	            				<li><script type="text/javascript">Capture(success.alert3)</script></li>
+	            			</ul>
+	            		</div>
+		            	<script type="text/javascript">
+							document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
+							if (browserName == "Microsoft Internet Explorer")
+								document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
+						</script>
+	            	</div>
 				</form>
 			</div>
 		</div>
