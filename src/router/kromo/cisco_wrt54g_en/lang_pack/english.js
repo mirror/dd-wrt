@@ -72,6 +72,8 @@ sbutton.runcmd="Run Commands";
 sbutton.startup="Save Startup";
 sbutton.firewall="Save Firewall";
 sbutton.wol="Wake Up";
+sbutton.add_wol="Add WOL Host";
+sbutton.manual_wol="Manual Wake Up";
 
 
 
@@ -415,10 +417,12 @@ hfactdef.right1="This will reset all settings back to factory defaults. All of y
 // **************************************************************** WOL.asp **********************************************************************//
 
 var wol = new Object();
-wol.titl=" - Factory Defaults";
+wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
-wol.legend="Static Leases";
-wol.legend2="WOL";
+wol.legend="Available Hosts";
+wol.legend2="WOL Addresses";
+wol.enable="Enable WOL?";
+wol.add_wol="Add WOL Host";
 wol.restore="Restore Factory Defaults";
 wol.mac="MAC Address(es)";
 wol.broadcast="Network Broadcast";
