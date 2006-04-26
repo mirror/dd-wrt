@@ -10,7 +10,7 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 
-document.title = '<% nvram_get("router_name"); %>' + factdef.titl;
+document.title = "<% nvram_get("router_name"); %>" + factdef.titl;
 
 function to_submit(F) {
 	if( F.FactoryDefaults[0].checked == 1 ) {
