@@ -32,19 +32,6 @@ function get_static_leases() {
 	return "<% nvram_get("static_leases"); %>";
 }
 
-function submit_wol(mac, ip) {
-	F = document.forms["ping"];
-	cmd = F.ping_ip.value;
-	cmd = cmd + ip + " -p ";
-	cmd = cmd + F.local_wol_port.value + " ";
-	cmd = cmd + mac;
-	F.ping_ip.value = cmd;
-	F.submit_type.value = "start";
-	F.submit_button.value = "Ping";
-	F.change_action.value = "gozila_cgi";
-	apply(F);
-}
-
 function add_wol_host(F) {
 	edit_wol_hosts(F.wol_hosts_mac.value, F.wol_hosts_hostname.value, F.wol_hosts_ip.value, "true");
 }
@@ -69,51 +56,59 @@ function edit_wol_hosts(mac, host, ip, add) {
 	if (wol_hosts.indexOf(" ") == 0) {
 		wol_hosts = wol_hosts.substr(1);
 	}
-	var cmd = "nvram set wol_hosts=\"" + wol_hosts + "\"";
-	F.ping_ip.value = cmd;
-	F.submit_type.value = "start";
-	F.submit_button.value = "Ping";
-	F.change_action.value = "gozila_cgi";
+	//var cmd = "nvram set wol_hosts=\"" + wol_hosts + "\"";
+    F.ping_ip.value = "";
+	F.wol_type.value = "update";
+	F.wol_hosts.value = wol_hosts;
 	apply(F);
 }
 
-function to_submit(F, I) {
-	if(!valid(F, I)) return;
-	
-	F.local_wol_mac.value = F.local_wol_mac.value.replace("\n", " ");
+function submit_wol(mac, ip) {
+	F = document.forms["ping"];
 	cmd = F.ping_ip.value;
-	cmd = cmd + F.local_wol_network.value + " -p ";
-	cmd = cmd + F.local_wol_port.value + " ";
-	cmd = cmd + F.local_wol_mac.value + ";";
-	cmd = cmd + "nvram set local_wol_mac=\"" + F.local_wol_mac.value + "\";";
-	cmd = cmd + "nvram set local_wol_network=" + F.local_wol_network.value + ";";
-	cmd = cmd + "nvram set local_wol_port=" + F.local_wol_port.value + ";";
-	cmd = cmd + "nvram commit;";
-	
+	cmd = cmd + ip + " -p ";
+	cmd = cmd + F.manual_wol_port.value + " ";
+	cmd = cmd + mac;
 	F.ping_ip.value = cmd;
-	F.submit_type.value = I;
-	F.submit_button.value = "Ping";
-	F.change_action.value = "gozila_cgi";
+	F.wol_type.value = "wol";
 	apply(F);
 }
 
-function valid(F,I) {
-	if(I == "start" && F.local_wol_mac.value == ""){
+function submit_manual_wol(F) {
+	if(!valid(F)) return;
+	
+	F.manual_wol_mac.value = F.manual_wol_mac.value.replace("\n", " ");
+	cmd = F.ping_ip.value;
+	cmd = cmd + F.manual_wol_network.value + " -p ";
+	cmd = cmd + F.manual_wol_port.value + " ";
+	cmd = cmd + F.manual_wol_mac.value;
+//	cmd = cmd + "nvram set manual_wol_mac=\"" + F.manual_wol_mac.value + "\";";
+//	cmd = cmd + "nvram set manual_wol_network=" + F.manual_wol_network.value + ";";
+//	cmd = cmd + "nvram set manual_wol_port=" + F.manual_wol_port.value + ";";
+//	cmd = cmd + "nvram commit;";
+	
+	F.ping_ip.value = cmd;
+	F.wol_type.value = "manual";
+	apply(F);
+}
+
+function valid(F) {
+	if(F.manual_wol_mac.value == ""){
 //		alert("You must input a MAC address to run.");
 		alert(errmsg.err35);
-		F.local_wol_mac.focus();
+		F.manual_wol_mac.focus();
 		return false;
 	}
-	if(I == "start" && F.local_wol_network.value == ""){
+	if(F.manual_wol_network.value == ""){
 //		alert("You must input a network broadcast address to run.");
 		alert(errmsg.err36);
-		F.local_wol_network.focus();
+		F.manual_wol_network.focus();
 		return false;
 	}
-	if(I == "start" && F.local_wol_port.value == ""){
+	if(F.manual_wol_port.value == ""){
 //		alert("You must input a UDP port to run.");
 		alert(errmsg.err37);
-		F.local_wol_port.focus();
+		F.manual_wol_port.focus();
 		return false;
 	}
 	return true;
@@ -237,7 +232,9 @@ function display_wol_hosts() {
 						<form name="ping" action="apply.cgi" method="post">
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="submit_button" value="Ping" />
-							<input type="hidden" name="submit_type" value="start" />
+							<input type="hidden" name="submit_type" value="wol" />
+							<input type="hidden" name="wol_hosts" value="" />
+							<input type="hidden" name="wol_type" value="wol" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="ping_times" value="1" />
 							<input type="hidden" name="next_page" value="Wol.asp" />
@@ -292,34 +289,34 @@ function display_wol_hosts() {
 							</script>
 
 							<fieldset> 
-								<legend>Manual <script type="text/javascript">Capture(wol.legend2)</script></legend>
+								<legend><script type="text/javascript">Capture(wol.legend4)</script></legend>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.mac)</script></div>
-										<textarea id="local_wol_mac" name="local_wol_mac" rows="3"  cols="20"><% nvram_get("local_wol_mac"); nvram_selmatch("local_wol_mac","","00:00:00:00:00:00"); %></textarea>
+										<textarea id="manual_wol_mac" name="manual_wol_mac" rows="3"  cols="20"><% nvram_get("manual_wol_mac"); nvram_selmatch("manual_wol_mac","","00:00:00:00:00:00"); %></textarea>
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.broadcast)</script></div>
-										<input maxlength="15" size="15" id="local_wol_network" name="local_wol_network" size="20" value='<% nvram_get("local_wol_network"); nvram_selmatch("local_wol_network","","192.168.1.255"); %>'/>
+										<input maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" size="20" value='<% nvram_get("manual_wol_network"); nvram_selmatch("manual_wol_network","","192.168.1.255"); %>'/>
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
-										<input class="num" maxlength="5" size="5" id="local_wol_port" name="local_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value='<% nvram_get("local_wol_port"); nvram_selmatch("local_wol_port","","7"); %>'/>
+										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value='<% nvram_get("manual_wol_port"); nvram_selmatch("manual_wol_port","","7"); %>'/>
 									</div>
 							<!--		
 									<script type="text/javascript">
 										var table = new Array(<% dump_ping_log(""); %>);
 										if(table.length == 0 && location.href.indexOf("Wol.asp") == -1) {
-											table = document.forms[0].local_wol_mac.value.split(" ");
+											table = document.forms[0].manual_wol_mac.value.split(" ");
 											document.write("<br /><pre style=\"margin:0\">");
 											while(table.length > 0) {
-											document.write(wol.msg1 + " " + table.shift() + " " + wol.msg2 + " " + document.forms[0].local_wol_network.value + ":" + document.forms[0].local_wol_port.value + " ...\n");
+											document.write(wol.msg1 + " " + table.shift() + " " + wol.msg2 + " " + document.forms[0].manual_wol_network.value + ":" + document.forms[0].manual_wol_port.value + " ...\n");
 										}
 										document.write("</pre>");
 									}
 									</script>
 							-->
 								<div class="submitFooter">
-									<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"to_submit(this.form, 'start')\" />")</script>
+									<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"submit_manual_wol(this.form)\" />")</script>
 								</div>
 							</fieldset><br />
 
