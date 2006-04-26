@@ -72,7 +72,7 @@ sbutton.runcmd="Run Commands";
 sbutton.startup="Save Startup";
 sbutton.firewall="Save Firewall";
 sbutton.wol="Wake Up";
-sbutton.add_wol="Add WOL Host";
+sbutton.add_wol="Add Host";
 sbutton.manual_wol="Manual Wake Up";
 
 
@@ -425,7 +425,7 @@ wol.enable="Enable WOL?";
 wol.add_wol="Add WOL Host";
 wol.restore="Restore Factory Defaults";
 wol.mac="MAC Address(es)";
-wol.broadcast="Network Broadcast";
+wol.broadcast="Net Broadcast";
 wol.udp="UDP Port";
 wol.msg1="Waking up";
 wol.msg2="with";
