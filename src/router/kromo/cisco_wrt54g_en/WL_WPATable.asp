@@ -9,6 +9,9 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
+document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
+		
 function SelMode(varname,num,F)	{
 	F.submit_button.value = "WL_WPATable";
 	F.change_action.value = "gozila_cgi";
@@ -37,7 +40,8 @@ function valid_value(F) {
 function valid_radius(F) {
 	if(F.security_mode.value == "radius" || F.security_mode.value == "wpa" || F.security_mode.value == "wpa2" || F.security_mode.value == "wpa wpa2"){
 		if(F.wl_radius_key.value == "") {
-			alert("Please enter a Shared Key!");
+//			alert("Please enter a Shared Key!");
+			alert(errmsg.err38);
 			F.wl_radius_key.focus();
 			return false;
 		}
@@ -56,7 +60,8 @@ function valid_wpa_psk(F) {
 				return false;
 			}
 		} else{
-			alert("Invalid Key, must be between 8 and 63 ASCII characters");
+//			alert("Invalid Key, must be between 8 and 63 ASCII characters");
+			alert(errmsg.err39);
 			return false;
 		}
 	}
@@ -85,7 +90,8 @@ function valid_wep(F) {
 			aaa = eval("F.wl_key"+i).value;
 			//if(aaa == "" && F.security_mode.value == "wep"){
 			if(aaa == ""){
-				alert('You have to enter a key for Key '+i);
+//				alert('You have to enter a key for Key '+i);
+				alert(errmsg.err40 + i);
 				return false;
 			}
 			break;
@@ -105,7 +111,8 @@ function ValidateKey(key, bit, index) {
 				}
 				break;
 			default:
-				alert("Invalid Length in key " + key.value);
+//				alert("Invalid Length in key " + key.value);
+				alert(errmsg.err41 + key.value);
 				return false;
 		}
 	} else {
@@ -118,7 +125,8 @@ function ValidateKey(key, bit, index) {
 				}
 				break;
 			default:
-				alert("Invalid Length in key " + key.value);
+//				alert("Invalid Length in key " + key.value);
+				alert(errmsg.err41 + key.value);
 				return false;
 		}
 	}
@@ -181,27 +189,27 @@ function init(){
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li class="current"><span>Wireless</span>
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.wireless)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Wireless_Basic.asp">Basic Settings</a></li>
-											<li><a href="Wireless_radauth.asp">Radius</a></li>
-											<li><span>Wireless Security</span></li>
-											<li><a href="Wireless_MAC.asp">MAC Filter</a></li>
-											<li><a href="Wireless_Advanced.asp">Advanced Settings</a></li>
-											<li><a href="Wireless_WDS.asp">WDS</a></li>
+											<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wirelessBasic)</script></a></li>
+											<li><a href="Wireless_radauth.asp"><script type="text/javascript">Capture(bmenu.wirelessRadius)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.wirelessSecurity)</script></span></li>
+											<li><a href="Wireless_MAC.asp"><script type="text/javascript">Capture(bmenu.wirelessMac)</script></a></li>
+											<li><a href="Wireless_Advanced.asp"><script type="text/javascript">Capture(bmenu.wirelessAdvanced)</script></a></li>
+											<li><a href="Wireless_WDS.asp"><script type="text/javascript">Capture(bmenu.wirelessWds)</script></a></li>
 										</ul>
 									</div>
 								</li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li><a href="Status_Router.asp">Status</a></li>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
@@ -217,24 +225,23 @@ function init(){
 							<input type="hidden" name="security_mode_last" />
 							<input type="hidden" name="wl_wep_last" />
 							<input type="hidden" name="filter_mac_value" />
-							<h2>Wireless Security</h2>
+							<h2><script type="text/javascript">Capture(wpa.h2)</script></h2>
 							<% show_security(); %><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo"><h2><script type="text/javascript">Capture(share.help)</script></h2></div>
 						<dl>
-							<dt class="term">Security Mode: </dt>
-							<dd class="definition">You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same
-							security mode.</dd>
+							<dt class="term"><script type="text/javascript">Capture(hwpa.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hwpa.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HWPA.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HWPA.asp')"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

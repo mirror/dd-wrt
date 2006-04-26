@@ -120,8 +120,16 @@ errmsg.err32="IP address and gateway is not at same subnet mask.";
 errmsg.err33="IP address and gateway can't be same.";
 errmsg.err34=" is not allowed to contain a space.";
 
+//Wol.asp error message
+errmsg.err35="You must input a MAC address to run."
+errmsg.err36="You must input a network broadcast address to run.";
+errmsg.err37="You must input a UDP port to run.";
 
-
+//WL_WPATable.asp error message
+errmsg.err38="Please enter a Shared Key!";
+errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters"
+errmsg.err40="You have to enter a key for Key ";
+errmsg.err41="Invalid Length in key ";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -133,7 +141,12 @@ bmenu.setuprouting="Advanced Routing";
 bmenu.setupvlan="VLANs";
 
 bmenu.wireless="Wireless";
-
+bmenu.wirelessBasic="Basic Settings";
+bmenu.wirelessRadius="Radius";
+bmenu.wirelessSecurity="Wireless Security";
+bmenu.wirelessMac="MAC Filter";
+bmenu.wirelessAdvanced="Advanced Settings";
+bmenu.wirelessWds="WDS";
 
 bmenu.security="Security";
 
@@ -422,6 +435,7 @@ wol.h2="Wake-On-LAN";
 wol.legend="Available Hosts";
 wol.legend2="WOL Addresses";
 wol.legend3="Output";
+wol.legend4="Manual WOL";
 wol.enable="Enable WOL?";
 wol.add_wol="Add WOL Host";
 wol.restore="Restore Factory Defaults";
@@ -435,6 +449,17 @@ wol.msg2="with";
 var hwol = new Object();
 hwol.right1="Local Wake-on-LAN:";
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
+
+// **************************************************************** WL_WPATable.asp **********************************************************************//
+
+var wpa = new Object();
+wpa.titl=" - WPA";
+wpa.h2="Wireless Security";
+
+//help container
+var hwpa = new Object();
+hwpa.right1="Security Mode:";
+hwpa.right2="You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same security mode.";
 
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
