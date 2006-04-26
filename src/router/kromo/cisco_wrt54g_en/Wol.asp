@@ -10,12 +10,66 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript"> 
 
-function submit_static(mac, ip) {
+document.title = '<% nvram_get("router_name"); %>' + wol.titl;
+
+function guess_broadcast(ip) {
+	var netmask = "<% nvram_get("lan_netmask"); %>".split(".");
+	var ipaddr = ip.split(".");	
+	var network = new Array();
+	var broadcast = new Array();
+	for (var x=0; x<4; x++) {
+		network[x] = eval(netmask[x] & ipaddr[x]);
+		broadcast[x] = ((network[x]) ^ (~ netmask[x]) & 255);
+	}
+	return broadcast.join(".");
+}
+
+function get_wol_hosts() {
+	return "<% nvram_get("wol_hosts"); %>";
+}
+
+function get_static_leases() {
+	return "<% nvram_get("static_leases"); %>";
+}
+
+function submit_wol(mac, ip) {
 	F = document.forms["ping"];
 	cmd = F.ping_ip.value;
 	cmd = cmd + ip + " -p ";
 	cmd = cmd + F.local_wol_port.value + " ";
 	cmd = cmd + mac;
+	F.ping_ip.value = cmd;
+	F.submit_type.value = "start";
+	F.submit_button.value = "Ping";
+	F.change_action.value = "gozila_cgi";
+	apply(F);
+}
+
+function add_wol_host(F) {
+	edit_wol_hosts(F.wol_hosts_mac.value, F.wol_hosts_hostname.value, F.wol_hosts_ip.value, "true");
+}
+
+function edit_wol_hosts(mac, host, ip, add) {
+	F = document.forms["ping"];
+	var wol_hosts = get_wol_hosts();
+	
+	if(add == "true") {
+		wol_hosts = wol_hosts + " " + mac + "=" + host + "=" + ip;
+	} else {
+		var current_hosts = wol_hosts.split(" ");
+		var wol_hosts = '';
+		while (current_hosts.length > 0) {
+			var host = current_hosts.shift();
+			if (host.indexOf(mac) == -1) {
+				wol_hosts = wol_hosts + host + " ";
+			}
+		}
+	}
+	
+	if (wol_hosts.indexOf(" ") == 0) {
+		wol_hosts = wol_hosts.substr(1);
+	}
+	var cmd = "nvram set wol_hosts=\"" + wol_hosts + "\"";
 	F.ping_ip.value = cmd;
 	F.submit_type.value = "start";
 	F.submit_button.value = "Ping";
@@ -66,7 +120,7 @@ function valid(F,I) {
 }
 
 function display_static_leases() {
-	var static_leases = "<% nvram_get("static_leases"); %>".split(" ");
+	var static_leases = get_static_leases().split(" ");
 	while (static_leases.length > 0) {
 		var lease = static_leases.shift().split("=")
 		var mac = lease[0];
@@ -77,9 +131,59 @@ function display_static_leases() {
 			document.write("\t<td>" + mac + "</td>");
 			document.write("\t<td >" + host + "</td>");
 			document.write("\t<td>" + ip + "</td>");
+			ip = guess_broadcast(ip);
+			document.write("\t<td align=\"center\">");
+			if(get_wol_hosts().indexOf(mac) == -1) {
+				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
+			} else {
+				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked/>");
+			}
+			document.write("\t</td>");
+			document.write("</tr>");
+		} 
+	}
+}
+
+function display_manual_wol_hosts() {
+	var wol_hosts = get_wol_hosts().split(" ");
+	while (wol_hosts.length > 0) {
+		var host = wol_hosts.shift().split("=")
+		var mac = host[0];
+		var hostname = host[1];
+		var ip = host[2];
+		if(get_static_leases().indexOf(mac) == -1 && mac!=undefined && host!=undefined && ip!=undefined) {
+			document.write("<tr>");
+			document.write("\t<td>" + mac + "</td>");
+			document.write("\t<td >" + hostname + "</td>");
+			document.write("\t<td>" + ip + "</td>");
 			ip = ip.substring(0,ip.lastIndexOf(".")) + ".255";
+			document.write("\t<td align=\"center\">");
+			if(get_wol_hosts().indexOf(mac) == -1) {
+				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
+			} else {
+				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked/>");
+			}
+			document.write("\t</td>");
+			document.write("</tr>");
+		} 
+	}
+}
+
+function display_wol_hosts() {
+	var wol_hosts = get_wol_hosts().split(" ");
+	while (wol_hosts.length > 0) {
+		var host = wol_hosts.shift().split("=")
+		var mac = host[0];
+		var hostname = host[1];
+		var ip = host[2];
+		if(mac!=undefined && hostname!=undefined && ip!=undefined) {
+			document.write("<tr>");
+			document.write("\t<td>" + mac + "</td>");
+			document.write("\t<td >" + hostname + "</td>");
+			document.write("\t<td>" + ip + "</td>");
+			//ip = ip.substring(0,ip.lastIndexOf(".")) + ".255";
 			document.write("\t<td>");
-			document.write("\t\t<input type=button value=\"" + sbutton.wol + "\" onclick=\"submit_static('" + mac + "','" + ip + "');\" />");
+			document.write("\t\t<input type=button value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />");
 			document.write("\t</td>");
 			document.write("</tr>");
 		} 
@@ -138,8 +242,8 @@ function display_static_leases() {
 							<input type="hidden" name="ping_times" value="1" />
 							<input type="hidden" name="next_page" value="Wol.asp" />
 							<input type="hidden" name="ping_ip" value="/usr/sbin/wol -v -i " />
+
 							<h2><script type="text/javascript">Capture(wol.h2)</script></h2>
-							<% nvram_selmatch("static_leases","","<!--"); %>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(wol.legend)</script></legend>
 								<table class="table center" cellspacing="5" id="static_lease_table">
@@ -147,19 +251,48 @@ function display_static_leases() {
 										<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
 										<th width="35%"><script type="text/javascript">Capture(share.hostname)</script></th>
 										<th width="20%"><script type="text/javascript">Capture(share.ip)</script></th>
+										<th width="30%"><script type="text/javascript">Capture(wol.enable)</script></th>
 									</tr>
+									<% nvram_selmatch("static_leases","","<!--"); %>
 									<script type="text/javascript">	display_static_leases(); </script>
+									<% nvram_selmatch("static_leases","","-->"); %>
+									<script type="text/javascript">	display_manual_wol_hosts(); </script>
 								</table>
-								<script type="text/javascript">
+							</fieldset><br />
+
+							<fieldset>
+								<legend><script type="text/javascript">Capture(wol.legend2)</script></legend>
+								<table class="table center" cellspacing="5" id="wol_hosts_table">
+									<tr>
+										<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
+										<th width="35%"><script type="text/javascript">Capture(share.hostname)</script></th>
+										<th width="20%"><script type="text/javascript">Capture(wol.broadcast)</script></th>
+									</tr>
+									<% nvram_selmatch("wol_hosts","","<!--"); %>
+									<script type="text/javascript">	display_wol_hosts(); </script>
+									<% nvram_selmatch("wol_hosts","","-->"); %>
+									<tr></tr>
+									<tr>
+										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" value="00:00:00:00:00:00"/></td>
+										<td><input maxlength="17" size="17" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
+										<td><input maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value="192.168.1.255"/></td>
+										<td><script type="text/javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />")</script></td>
+									</tr>
+								</table>
+							</fieldset><br />
+
+							<script type="text/javascript">
 								var table = new Array(<% dump_ping_log(""); %>);
 								if(table.length > 0 && location.href.indexOf("Wol.asp") == -1) {
+									document.write("<fieldset>");
+									document.write("<legend>Output</legend>");
 									document.write("<br /><pre style=\"margin: 0\">" + table.join("\n") + "</pre>");
+									document.write("</fieldset><br />");
 								}
 							</script>
-							</fieldset><br />
-							<% nvram_selmatch("static_leases","","-->"); %>
+
 							<fieldset> 
-								<legend><script type="text/javascript">Capture(wol.legend2)</script></legend>
+								<legend>Manual <script type="text/javascript">Capture(wol.legend2)</script></legend>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.mac)</script></div>
 										<textarea id="local_wol_mac" name="local_wol_mac" rows="3"  cols="20"><% nvram_get("local_wol_mac"); nvram_selmatch("local_wol_mac","","00:00:00:00:00:00"); %></textarea>
@@ -172,7 +305,7 @@ function display_static_leases() {
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
 										<input class="num" maxlength="5" size="5" id="local_wol_port" name="local_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value='<% nvram_get("local_wol_port"); nvram_selmatch("local_wol_port","","7"); %>'/>
 									</div>
-									<script type="text/javascript">
+									<!--script type="text/javascript">
 										var table = new Array(<% dump_ping_log(""); %>);
 										if(table.length == 0 && location.href.indexOf("Wol.asp") == -1) {
 											table = document.forms[0].local_wol_mac.value.split(" ");
@@ -182,11 +315,13 @@ function display_static_leases() {
 										}
 										document.write("</pre>");
 									}
-									</script>
+									</script-->
+								<div class="submitFooter">
+									<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.manual_wol + "\" onclick=\"to_submit(this.form, 'start')\" />")</script>
+								</div>
 							</fieldset><br />
-							<div class="submitFooter">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"ping\" value=\"" + sbutton.wol + "\" onclick=\"to_submit(this.form, 'start')\" />")</script>
-							</div>
+
+
 						</form>
 					</div>
 				</div>
