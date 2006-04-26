@@ -101,7 +101,7 @@ list-style-type:none;
 #menuMainList li a, 
 #menuSubList li a {
 display:block;
-margin-left:.369em;
+margin-left:.362em;
 border-style:solid solid none solid;
 border-width:.09em;
 padding:.453em .906em;
@@ -180,8 +180,9 @@ letter-spacing:.09em;
 }
 .setting {
 position:relative;
-margin-bottom:.543em;
-line-height:1.902em;
+margin-bottom:.272em;
+line-height:1.993em;
+width:100%;
 }
 .setting .label {
 float:left;
@@ -190,28 +191,24 @@ width:18.931em;
 fieldset .setting .label {
 width:18.116em;
 }
-.setting span.default {
+.setting .default {
 display:block;
 position:absolute;
 color:#666;
 top:0;
-left:34.420em;
+right:0;
+width:16.304em;
 }
 .warning {
 font-weight:bold;
 padding:.725em;
-border:solid .09em #f99;
+border:solid .181em #f99;
 text-align:center;
-}
-.comment {
-display:block;
-margin-bottom:.725em;
-font-style:italic;
-color:#999;
 }
 fieldset {
 border:solid .09em #ccc;
 padding:.725em;
+padding-top:.634em;
 margin:0;
 }
 fieldset legend {
@@ -364,9 +361,6 @@ left:-1.268em;
 margin-bottom:.634em;
 }
 .setting {
-margin-bottom:.362em;
-}
-.setting span.default {
-margin-top:0;
+line-height:1.812em;
 }
 }
