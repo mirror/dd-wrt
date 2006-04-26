@@ -53,27 +53,34 @@ function init()
 
 		</script>
 	</head>
-   <body onload="init()" onunload="clearTimeout(timer)">
-      <div class="message">
-         <div>
-            <form>
-            	<script type="text/javascript">Capture(success.mess4)</script><br /><br />
+	
+	<body onload="init()" onunload="clearTimeout(timer)">
+		<div class="message">
+			<div>
+			<form>
+            	<script type="text/javascript">Capture(success.success_reboot)</script><br /><br />
 	            	<div align="center">
 	            		<script type="text/javascript">
 	            			var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
 	            			bar1.togglePause();
 	            		</script>
 	            	</div>
-	            	<div id="mess" style="display: none">
-            			<br /><br /><script type="text/javascript">Capture(success.mess5)</script><br /><br />
-            			<script type="text/javascript">
-            				if (browserName == "Microsoft Internet Explorer")
-            					document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
-           				</script>
-            		</div>
-<!--			<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script> -->
-            </form>
-         </div>
-      </div>
+	            	<div id="mess" style="display:none"><br /><br />
+	            		<div style="text-align:left">
+							<script type="text/javascript">Capture(success.alert1)</script>
+	            			<ul>
+	            				<li><script type="text/javascript">Capture(success.alert2)</script></li>
+	            				<li><script type="text/javascript">Capture(success.alert3)</script></li>
+	            			</ul>
+	            		</div>
+		            	<script type="text/javascript">
+							document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />");
+							if (browserName == "Microsoft Internet Explorer")
+								document.write("<input type=\"button\" value=\"" + sbutton.clos + "\" onclick=\"opener=self;self.close();\" />");
+						</script>
+	            	</div>
+				</form>
+			</div>
+		</div>
    </body>
 </html>
