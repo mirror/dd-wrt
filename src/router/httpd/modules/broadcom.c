@@ -3327,15 +3327,13 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	}
     }
   /* Restore defaults */
-  else if (!strncmp (value, "Restore", 7))
-    {
-      ACTION ("ACT_SW_RESTORE");
-      //eval("erase","nvram");
-      //nvram_set ("sv_restore_defaults", "1");
-      eval ("killall", "-9", "udhcpc");
-      sys_commit ();
-      eval ("erase", "nvram");
-      action = REBOOT;
+	else if (!strncmp (value, "Restore", 7)) {
+		ACTION ("ACT_SW_RESTORE");
+		nvram_set ("sv_restore_defaults", "1");
+		eval ("killall", "-9", "udhcpc");
+		sys_commit ();
+		eval ("erase", "nvram");
+		action = REBOOT;
     }
 
   /* Reboot */
@@ -3344,7 +3342,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       action = REBOOT;
       do_ej ("Reboot.asp", wp);
       websDone (wp, 200);
-      sleep (3);
+      sleep (1);
       sys_reboot ();
       return 1;
     }
@@ -3404,7 +3402,7 @@ footer:
 	{
 		do_ej ("Reboot.asp", wp);
 		websDone (wp, 200);
-		sleep (3);
+		sleep (1);
 		sys_reboot ();
 		return 1;
 	}
