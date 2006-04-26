@@ -2660,6 +2660,8 @@ struct gozila_action gozila_actions[] = {
   {"WL_WPATable", "keysize", "", 1, REFRESH, security_save},
 #endif
   {"WL_ActiveTable", "add_mac", "", 1, REFRESH, add_active_mac},
+  /* Siafu addition */
+  {"Ping", "wol", "", 1, SYS_RESTART, ping_wol},
   /* Sveasoft addition */
   {"Wireless_WDS", "save", "", 0, REFRESH, save_wds},
   {"Ping", "startup", "", 1, SYS_RESTART, ping_startup},
