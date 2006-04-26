@@ -3359,13 +3359,6 @@ footer:
 	if (lan_ip_changed || need_reboot)
 		action = REBOOT;
 	
-	if ((action == RESTART) || (action == SYS_RESTART))
-		sys_restart ();
-	else if (action == SERVICE_RESTART)
-		service_restart ();
-	
-	sleep (5);
-	
 	if (action != REBOOT)
     {
     	if (!error_value)
@@ -3415,7 +3408,13 @@ footer:
 	}
 	
 	nvram_set ("upnp_wan_proto", "");
+	sleep (sleep_time);
 	
+	if ((action == RESTART) || (action == SYS_RESTART))
+		sys_restart ();
+	else if (action == SERVICE_RESTART)
+		service_restart ();
+
 	return 1;
 
 }
