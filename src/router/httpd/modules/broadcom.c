@@ -2790,7 +2790,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	sprintf (path, "%s.asp", submit_button);
     }
   cprintf ("refresh to %s\n", path);
-  do_ej (path, wp);		//refresh
+  do_ej (path, wp);			//refresh
   websDone (wp, 200);
 
   gozila_action = 0;		//reset gozila_action
@@ -3359,6 +3359,11 @@ footer:
 	if (lan_ip_changed || need_reboot)
 		action = REBOOT;
 	
+	if ((action == RESTART) || (action == SYS_RESTART))
+		sys_restart ();
+	else if (action == SERVICE_RESTART)
+		service_restart ();
+	
 	if (action != REBOOT)
     {
     	if (!error_value)
@@ -3408,11 +3413,6 @@ footer:
 	}
 	
 	nvram_set ("upnp_wan_proto", "");
-	
-	if ((action == RESTART) || (action == SYS_RESTART))
-		sys_restart ();
-	else if (action == SERVICE_RESTART)
-		service_restart ();
 	
 	sleep (sleep_time);
 	return 1;
