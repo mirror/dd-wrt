@@ -3364,6 +3364,8 @@ footer:
 	else if (action == SERVICE_RESTART)
 		service_restart ();
 	
+	sleep (5);
+	
 	if (action != REBOOT)
     {
     	if (!error_value)
@@ -3414,7 +3416,6 @@ footer:
 	
 	nvram_set ("upnp_wan_proto", "");
 	
-	sleep (sleep_time);
 	return 1;
 
 }
