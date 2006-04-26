@@ -3376,14 +3376,14 @@ footer:
     				sprintf (path, "%s.asp", submit_button);
     		}
     		cprintf ("refresh to %s\n", path);
-    		do_ej (path, wp);					//refresh
+    		do_ej (path, wp);						//refresh
     		websDone (wp, 200);
     		
-/*    		if (websGetVar (wp, "small_screen", NULL))
-    			do_ej ("Success_s.asp", wp);
-    		else
-    			do_ej ("Success.asp", wp);
-*/
+/* if (websGetVar (wp, "small_screen", NULL))		// this was replaced by the "saved" button value and all controls are now grey out
+ * 	do_ej ("Success_s.asp", wp);
+ * else
+ * 	do_ej ("Success.asp", wp);
+ */
 		}
 		else
 		{
