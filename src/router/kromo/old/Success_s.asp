@@ -38,7 +38,7 @@ function to_submit()
 		<div class="message">
 			<div>
 				<form>
-					<script type="text/javascript">Capture(success.mess1)</script><br />
+					<script type="text/javascript">Capture(success.saved)</script><br />
 					<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"to_submit()\" />")</script>
 				</form>
 			</div>
