@@ -3358,6 +3358,7 @@ footer:
 	/* The will let PC to re-get a new IP Address automatically */
 	if (lan_ip_changed || need_reboot)
 		action = REBOOT;
+	
 	if (action != REBOOT)
     {
     	if (!error_value)
@@ -3375,7 +3376,7 @@ footer:
     				sprintf (path, "%s.asp", submit_button);
     		}
     		cprintf ("refresh to %s\n", path);
-    		do_ej (path, wp);	//refresh
+    		do_ej (path, wp);					//refresh
     		websDone (wp, 200);
     		
 /*    		if (websGetVar (wp, "small_screen", NULL))
@@ -3389,13 +3390,12 @@ footer:
 			if (websGetVar (wp, "small_screen", NULL))
 			{
 				do_ej ("Fail_s.asp", wp);
-				websDone (wp, 200);
 			}
 			else
 			{
 				do_ej ("Fail.asp", wp);
-				websDone (wp, 200);
 			}
+			websDone (wp, 200);
 		}
 	}
 	else
