@@ -116,13 +116,12 @@ ping_wol (webs_t wp)
     nvram_set ("manual_wol_port", manual_wol_port);
   }
 
-//  sprintf (cmd, "%s > /tmp/.wol_test");
-  nvram_set ("wol_cmd", cmd);
-
   char *ip = websGetVar (wp, "ping_ip", NULL);
 
   if (!ip || !strcmp (ip, ""))
     return ret;
+
+  nvram_set ("wol_cmd", ip);
 
   unlink (PING_TMP);
   // use Wol.asp as a debugging console
