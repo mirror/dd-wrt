@@ -229,7 +229,7 @@ mk_nocat_conf (void)
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
 	   nvram_safe_get ("NC_AllowedWebHosts"));
   fprintf (fp, "LoginTimeout\t%s\n", nvram_safe_get ("NC_LoginTimeout"));
-  if (nvram_match ("NC_SplashURL", ""))
+  if (nvram_invmatch ("NC_DocumentRoot", ""))
     {
       fprintf (fp, "DocumentRoot\t%s\n", nvram_safe_get ("NC_DocumentRoot"));
     }
