@@ -121,13 +121,14 @@ ping_wol (webs_t wp)
 //    return ret;
 
 //  char *wol_cmd;
-  char *ip;
-  sprintf (ip, "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
+//  char *ip;
+  char wol_cmd[256] = { 0 };
+  sprintf (wol_cmd, "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
   nvram_set ("wol_cmd", ip);
 
   // use Wol.asp as a debugging console
   char cmd[256] = { 0 };
-  snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", ip, PING_TMP);
+  snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", wol_cmd, PING_TMP);
   system (cmd);
 
   return ret;
