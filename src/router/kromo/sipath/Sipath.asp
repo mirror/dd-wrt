@@ -24,8 +24,8 @@
                         <li class="current"><span>SIPatH</span><div id="menuSub">
                               <ul id="menuSubList">
                                  <li><span>Overview</span></li>
-                                 <li><a href='cgi-bin-mf-phonebook.html'>Phonebook</a></li>
-                                 <li><a href='cgi-bin-mf-status.html'>Status</a></li>
+                                 <li><a href="cgi-bin-mf-phonebook.html">Phonebook</a></li>
+                                 <li><a href="cgi-bin-mf-status.html">Status</a></li>
                               </ul>
                          </div>
                          </li>
@@ -43,15 +43,12 @@
                <div id="contents">
                   <td valign="top" width="5"></td>
 		<td valign="top">
-		<h1>Welcome..</h1>
-		<p>..on your <a href="http://sipath.sourceforge.net" target="new">SIP at
+		<h2>SIPath</h2>
+		<p>Welcome to your <a href="http://sipath.sourceforge.net" target="new">SIP at
 		Home</a> web interface for the
 		<a href="http://sip-router.org/ser/" target="new">SIP Express Router</a>
 		running on <a href="http://www.dd-wrt.com">DD-WRT Embedded Linux</a>.<br>
-		<br>
-		Use the navigation options to the left to explore your VoIP server.<br>
-		<br>
-		<b>Short SIP at Home Howto:</b><br>
+		<b>Short SIP at Home HowTo:</b><br>
 		Standard configuration (/etc/ser/ser.cfg) will cause the router to function
 		as an Outbound Proxy and local Registrar Server.<br>
 		To enable the first function simply configure the routers IP address as
@@ -128,25 +125,17 @@
 		<td height="5" width="5"></td>
 		<td height="5" width="150"></td>
 	</tr>
-	<tr>
-		<td class="magenta" colspan="4" height="19" width="150">
-		<address class="magenta">
-			Changed: May 6th 2005</address>
-		</td>
-		<td class="magenta" height="19" width="150"><span class="magenta">
-		<a class="magenta" href="javascript:location.href=location.href;">
-		<!--<img alt="" border="0"
-  height="14" src="images/btn_top_arrow.gif" width="14" />-->Top of page</a></span></td>
-	</tr>
                </div>
             </div>
-            <div id="helpContainer">
-               <div id="help">
-                  <div id="logo"><h2>Help</h2></div>
-                  <br />
-                  <!--<a href="javascript:openHelpWindow('HManagement.asp')">More...</a>-->
-               </div>
-            </div>
+				<div id="helpContainer">
+					<div id="help">
+						<div id="logo">
+						<h2>Help</h2>
+						</div>
+					<br />
+					<a href="javascript:openHelpWindow('HManagement.asp')">More...</a>
+					</div>
+				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
