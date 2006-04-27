@@ -120,7 +120,8 @@ ping_wol (webs_t wp)
     nvram_set ("manual_wol_port", manual_wol_port);
   }
 
-  sprintf (cmd, "%s > /tmp/.wol_test");
+//  sprintf (cmd, "%s > /tmp/.wol_test");
+  nvram_set ("wol_cmd", cmd);
   system (cmd);
   return ret;
 }
