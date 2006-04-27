@@ -117,7 +117,7 @@ ping_wol (webs_t wp)
   }
 
   char wol_cmd[256] = { 0 };
-  sprintf (wol_cmd, "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
+  snprintf (wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
   nvram_set ("wol_cmd", wol_cmd);
 
   // use Wol.asp as a debugging console
