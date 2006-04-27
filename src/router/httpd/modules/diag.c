@@ -92,14 +92,14 @@ ping_wol (webs_t wp)
   if (!wol_type || !strcmp (wol_type, ""))
     return ret;
 
-  if (strcmp (wol_type, "update")) {
+  if (!strcmp (wol_type, "update")) {
     char *wol_hosts = websGetVar (wp, "wol_hosts", NULL);
 
     if (!wol_hosts || !strcmp (wol_hosts, ""))
       return ret;
   
     // filter Windows <cr>ud
-    removeLineBreak (wol_hosts);
+    // removeLineBreak (wol_hosts);
     nvram_set ("wol_hosts", wol_hosts);
     return ret;
   }
@@ -108,9 +108,9 @@ ping_wol (webs_t wp)
     return ret;
 
   // filter Windows <cr>ud
-  removeLineBreak (cmd);
+  // removeLineBreak (cmd);
 
-  if (strcmp (wol_type, "manual")) {
+  if (!strcmp (wol_type, "manual")) {
     char *manual_wol_mac = websGetVar (wp, "manual_wol_mac", NULL);
     char *manual_wol_network = websGetVar (wp, "manual_wol_network", NULL);
     char *manual_wol_port = websGetVar (wp, "manual_wol_port", NULL);
@@ -118,9 +118,10 @@ ping_wol (webs_t wp)
     nvram_set ("manual_wol_mac", manual_wol_mac);
     nvram_set ("manual_wol_network", manual_wol_network);
     nvram_set ("manual_wol_port", manual_wol_port);
-    return ret;
   }
 
+  sprintf (cmd, "%s > /tmp/.wol_test");
+  system (cmd);
   return ret;
 }
 
