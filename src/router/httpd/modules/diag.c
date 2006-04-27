@@ -116,11 +116,12 @@ ping_wol (webs_t wp)
     nvram_set ("manual_wol_port", manual_wol_port);
   }
 
-  char *ip = websGetVar (wp, "ping_ip", NULL);
+//  char *ip = websGetVar (wp, "ping_ip", NULL);
 //  if (!ip || !strcmp (ip, ""))
 //    return ret;
 
 //  char *wol_cmd;
+  char *ip;
   sprintf (ip, "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
   nvram_set ("wol_cmd", ip);
 
