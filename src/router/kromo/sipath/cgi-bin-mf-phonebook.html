@@ -69,23 +69,23 @@ function ini() {
                         <li><a href='Wireless_Basic.asp'>Wireless</a></li>
                         <li class="current"><span>SIPatH</span><div id="menuSub">
                               <ul id="menuSubList">
-                                 <li><a href='Sipath.asp'>Overview</a></li>
+                                 <li><a href="Sipath.asp">Overview</a></li>
                                  <li><span>Phonebook</span></li>
-                                 <li><a href='cgi-bin-mf-status.html'>Status</a></li>
+                                 <li><a href="cgi-bin-mf-status.html">Status</a></li>
                               </ul>
                          </div>
                          </li>
-                        <li><a href='Firewall.asp'>Security</a></li>
-			<li><a href='Filters.asp'>Access Restrictions</a></li>
-                        <li><a href='Forward.asp'>Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                        <li><a href='Management.asp'>Administration</a></li>
-                        <li><a href='Status_Router.asp'>Status</a></li>
+                        <li><a href="Firewall.asp">Security</a></li>
+			<li><a href="Filters.asp">Access Restrictions</a></li>
+                        <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
+                        <li><a href="Management.asp">Administration</a></li>
+                        <li><a href="Status_Router.asp">Status</a></li>
                      </ul>
                   </div>
                </div>
             </div>
 
-		<script language="JavaScript" type="text/javascript"><!--
+		<script type="text/javascript"><!--
 function help(e) {
   if (!e) e = event;
   // (virt)KeyVal is Konqueror, charCode is Moz/Firefox, else MSIE, Netscape, Opera
@@ -112,17 +112,6 @@ else {
 }
 //--></script>
 
-
-            <div id="helpContainer">
-               <div id="help">
-                  <div id="logo">
-                     <h2>Help</h2>
-                  </div>
-		  <br />
-		  <a href="javascript:openHelpWindow('HManagement.asp')">More...</a>
-		</div>
-            </div>
-
 EOF
 
 if [ "$REQUEST_METHOD" = "POST" ]; then
@@ -138,7 +127,7 @@ if [ -n "$post_savedb" ]; then
 cat<<EOF
 <div id="main">
 <div id="contents">
-<h1>Phonebook: Save Database</h1>
+<h2>Phonebook: Save Database</h2>
   <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1"
   cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
 EOF
@@ -194,7 +183,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-</td></tr><tr><td> </td></tr><tr><td><input
+</td></tr><tr><td></td></tr><tr><td><input
   name="post_contacts"
   title="Contacts"
   type="submit" value="Contacts" />
@@ -218,7 +207,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-<h1>Phonebook: Flush Database</h1>
+<h2>Phonebook: Flush Database</h2>
   <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1"
   cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
 EOF
@@ -243,7 +232,7 @@ serctl start ser|awk 'sub("", "<br>") {print}'; sleep 3s;
 echo "Done <br>";
 
 cat<<EOF
-</td></tr><tr><td> </td></tr><tr><td><input
+</td></tr><tr><td></td></tr><tr><td><input
   name="post_contacts"
   title="Contacts"
   type="submit" value="Contacts" />
@@ -270,7 +259,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-<h1>Phonebook: Details</h1>
+<h2>Phonebook: Details</h2>
   <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
   cellspacing="0" class="form" width="548"><tbody><tr><td>SER Userlist:</td>
   <td>Contact Details$(if [ $(nvram get sip_domain) ];
@@ -407,7 +396,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-<h1>Phonebook: Alias addition</h1>
+<h2>Phonebook: Alias addition</h2>
 <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
 cellspacing="0" class="form" width="548"><tbody><tr><td>
 EOF
@@ -445,7 +434,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-<h1>Phonebook: Alias removal</h1>
+<h2>Phonebook: Alias removal</h2>
 <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
 cellspacing="0" class="form" width="548"><tbody><tr><td>
 EOF
@@ -483,7 +472,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-<h1>Phonebook: URI removal</h1>
+<h2>Phonebook: URI removal</h2>
 <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
 cellspacing="0" class="form" width="548"><tbody><tr><td>
 EOF
@@ -522,7 +511,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-<h1>Phonebook: SIP Messaging</h1>
+<h2>Phonebook: SIP Messaging</h2>
 <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
 cellspacing="0" class="form" width="548"><tbody><tr><td>
 EOF
@@ -597,7 +586,7 @@ cat<<EOF
 <div id="main">
 <div id="contents">
 
-<h1>Phonebook: Contacts</h1>
+<h2>Phonebook: Contacts</h2>
   <form action="cgi-bin-mf-phonebook.html" method="post"><table border="1" cellpadding="0"
   cellspacing="0" class="form" width="548"><tbody><tr><td>Active URIs</td><td>
   Phone URI / Alias $(if [ $(nvram get sip_domain) ];
@@ -674,6 +663,15 @@ fi
 cat<<EOF
 	    </div>
 	    </div>
+				<div id="helpContainer">
+					<div id="help">
+						<div id="logo">
+						<h2>Help</h2>
+						</div>
+					<br />
+					<a href="javascript:openHelpWindow('HManagement.asp')">More...</a>
+					</div>
+				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
