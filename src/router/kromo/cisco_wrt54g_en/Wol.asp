@@ -57,7 +57,7 @@ function edit_wol_hosts(mac, host, ip, add) {
 		wol_hosts = wol_hosts.substr(1);
 	}
 
-    F.ping_ip.value = "";
+//    F.ping_ip.value = "";
 	F.wol_type.value = "update";
 	F.wol_hosts.value = wol_hosts;
 	apply(F);
@@ -65,11 +65,15 @@ function edit_wol_hosts(mac, host, ip, add) {
 
 function submit_wol(mac, ip) {
 	F = document.forms["ping"];
+/*
 	cmd = F.ping_ip.value;
 	cmd = cmd + ip + " -p ";
 	cmd = cmd + F.manual_wol_port.value + " ";
 	cmd = cmd + mac;
 	F.ping_ip.value = cmd;
+*/
+    F.manual_wol_mac.value = mac;
+    F.manual_wol_network.value = ip;
 	F.wol_type.value = "wol";
 	apply(F);
 }
@@ -78,12 +82,13 @@ function submit_manual_wol(F) {
 	if(!valid(F)) return;
 	
 	F.manual_wol_mac.value = F.manual_wol_mac.value.replace("\n", " ");
+/*
 	cmd = F.ping_ip.value;
 	cmd = cmd + F.manual_wol_network.value + " -p ";
 	cmd = cmd + F.manual_wol_port.value + " ";
 	cmd = cmd + F.manual_wol_mac.value;
-	
 	F.ping_ip.value = cmd;
+*/
 	F.wol_type.value = "manual";
 	apply(F);
 }
@@ -233,7 +238,7 @@ function display_wol_hosts() {
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="ping_times" value="1" />
 							<input type="hidden" name="next_page" value="Wol.asp" />
-							<input type="hidden" name="ping_ip" value="/usr/sbin/wol -v -i " />
+							<!--input type="hidden" name="ping_ip" value="/usr/sbin/wol -v -i " /-->
 
 							<h2><script type="text/javascript">Capture(wol.h2)</script></h2>
 							<fieldset>
