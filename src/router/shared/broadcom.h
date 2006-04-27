@@ -328,7 +328,6 @@ extern void ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_traceroute_log (int eid, webs_t wp, int argc,
 				   char_t ** argv);
-extern int diag_ping_wol (webs_t wp);
 extern int diag_ping_start (webs_t wp);
 extern int diag_ping_stop (webs_t wp);
 extern int diag_ping_clear (webs_t wp);
@@ -395,6 +394,7 @@ extern int qos_add_svc (webs_t wp);
 extern int qos_add_ip (webs_t wp);
 extern int qos_add_mac (webs_t wp);
 extern int qos_save (webs_t wp);
+extern int ping_wol (webs_t wp);
 extern int ping_startup (webs_t wp);
 extern int ping_firewall (webs_t wp);
 /* end Sveasoft additions */
