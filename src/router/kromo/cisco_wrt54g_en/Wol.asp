@@ -238,7 +238,7 @@ function display_wol_hosts() {
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="ping_times" value="1" />
 							<input type="hidden" name="next_page" value="Wol.asp" />
-							<!--input type="hidden" name="ping_ip" value="/usr/sbin/wol -v -i " /-->
+							<input type="hidden" name="ping_ip" value="/usr/sbin/wol -v -i " />
 
 							<h2><script type="text/javascript">Capture(wol.h2)</script></h2>
 							<fieldset>
