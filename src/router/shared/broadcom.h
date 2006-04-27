@@ -328,6 +328,7 @@ extern void ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_dump_traceroute_log (int eid, webs_t wp, int argc,
 				   char_t ** argv);
+extern int diag_ping_wol (webs_t wp);
 extern int diag_ping_start (webs_t wp);
 extern int diag_ping_stop (webs_t wp);
 extern int diag_ping_clear (webs_t wp);
