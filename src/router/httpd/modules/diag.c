@@ -86,7 +86,6 @@ int
 ping_wol (webs_t wp)
 {
   int ret = 0;
-  char *cmd = websGetVar (wp, "ping_ip", NULL);
   char *wol_type = websGetVar (wp, "wol_type", NULL);
 
   if (!wol_type || !strcmp (wol_type, ""))
@@ -104,9 +103,6 @@ ping_wol (webs_t wp)
     return ret;
   }
   
-  if (!cmd || !strcmp (cmd, ""))
-    return ret;
-
   // filter Windows <cr>ud
   // removeLineBreak (cmd);
 
@@ -122,7 +118,18 @@ ping_wol (webs_t wp)
 
 //  sprintf (cmd, "%s > /tmp/.wol_test");
   nvram_set ("wol_cmd", cmd);
+
+  char *ip = websGetVar (wp, "ping_ip", NULL);
+
+  if (!ip || !strcmp (ip, ""))
+    return ret;
+
+  unlink (PING_TMP);
+  // use Wol.asp as a debugging console
+  char cmd[256] = { 0 };
+  snprintf (cmd, sizeof (cmd), "%s > %s 2>&1 &", ip, PING_TMP);
   system (cmd);
+
   return ret;
 }
 
