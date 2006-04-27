@@ -9,7 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>'+ddns.titl;
+document.title = "<% nvram_get("router_name"); %>" + ddns.titl;
 
 function ddns_check(F,T) {
 	if(F.ddns_enable.value == 0) {
@@ -136,15 +136,15 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.usrname)</script></div>
-									<input name="ddns_username" size="30" maxlength="32" onfocus="check_action(this,0)" onblur="valid_name(this,'User Name')" value='<% nvram_get("ddns_username"); %>'/>
+									<input name="ddns_username" size="30" maxlength="32" onblur="valid_name(this,'User Name')" value='<% nvram_get("ddns_username"); %>'/>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-									<input type="password" name="ddns_passwd" size="30" maxlength="32" onfocus="check_action(this,0)" onblur="valid_name(this,'Password')" value='<% nvram_invmatch("ddns_passwd","","d6nw5v1x2pc7st9m"); %>'/>
+									<input type="password" name="ddns_passwd" size="30" maxlength="32" onblur="valid_name(this,'Password')" value='<% nvram_invmatch("ddns_passwd","","d6nw5v1x2pc7st9m"); %>'/>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
-									<input name="ddns_hostname" size="42" maxlength="48" onfocus="check_action(this,0)" onblur="valid_name(this,'Host Name')" value='<% nvram_get("ddns_hostname"); %>'/>
+									<input name="ddns_hostname" size="42" maxlength="48" onblur="valid_name(this,'Host Name')" value='<% nvram_get("ddns_hostname"); %>'/>
 								</div>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
@@ -152,15 +152,15 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(ddns.emailaddr)</script></div>
-									<input name="ddns_username_2" size="30" maxlength="32" onfocus="check_action(this,0)" onblur="valid_name(this,'E-mail Address')" value='<% nvram_get("ddns_username_2"); %>'/>
+									<input name="ddns_username_2" size="30" maxlength="32" onblur="valid_name(this,'E-mail Address')" value='<% nvram_get("ddns_username_2"); %>'/>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-									<input type="password" name="ddns_passwd_2" size="30" maxlength="32" onfocus="check_action(this,0)" onblur="valid_name(this,'Password')" value='<% nvram_invmatch("ddns_passwd_2","","d6nw5v1x2pc7st9m"); %>'/>
+									<input type="password" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,'Password')" value='<% nvram_invmatch("ddns_passwd_2","","d6nw5v1x2pc7st9m"); %>'/>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.domainname)</script></div>
-									<input name="ddns_hostname_2" size="42" maxlength="48" onfocus="check_action(this,0)" onblur="valid_name(this,'Domain%20Name')" value='<% nvram_get("ddns_hostname_2"); %>'/>
+									<input name="ddns_hostname_2" size="42" maxlength="48" onblur="valid_name(this,'Domain%20Name')" value='<% nvram_get("ddns_hostname_2"); %>'/>
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
@@ -168,15 +168,15 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.usrname)</script></div>
-									<input name="ddns_username_3" size="30" maxlength="32" onfocus="check_action(this,0)" onblur="valid_name(this,'User Name')" value='<% nvram_get("ddns_username_3"); %>'/>
+									<input name="ddns_username_3" size="30" maxlength="32" onblur="valid_name(this,'User Name')" value='<% nvram_get("ddns_username_3"); %>'/>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-									<input type="password" name="ddns_passwd_3" size="30" maxlength="32" onfocus="check_action(this,0)" onblur="valid_name(this,'Password')" value='<% nvram_invmatch("ddns_passwd_3","","d6nw5v1x2pc7st9m"); %>'/>
+									<input type="password" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,'Password')" value='<% nvram_invmatch("ddns_passwd_3","","d6nw5v1x2pc7st9m"); %>'/>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
-									<input name="ddns_hostname_3" size="42" maxlength="48" onfocus="check_action(this,0)" onblur="valid_name(this,'Host Name')" value='<% nvram_get("ddns_hostname_3"); %>'/>
+									<input name="ddns_hostname_3" size="42" maxlength="48" onblur="valid_name(this,'Host Name')" value='<% nvram_get("ddns_hostname_3"); %>'/>
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
