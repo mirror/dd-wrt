@@ -92,7 +92,7 @@ ping_wol (webs_t wp)
   if (!wol_type || !strcmp (wol_type, ""))
     return ret;
 
-  if (wol_type.equals("update")) {
+  if (strcmp (wol_type, "update")) {
     char *wol_hosts = websGetVar (wp, "wol_hosts", NULL);
 
     if (!wol_hosts || !strcmp (wol_hosts, ""))
@@ -110,7 +110,7 @@ ping_wol (webs_t wp)
   // filter Windows <cr>ud
   removeLineBreak (cmd);
 
-  if (wol_type.equals("manual")) {
+  if (strcmp (wol_type, "manual")) {
     char *manual_wol_mac = websGetVar (wp, "manual_wol_mac", NULL);
     char *manual_wol_network = websGetVar (wp, "manual_wol_network", NULL);
     char *manual_wol_port = websGetVar (wp, "manual_wol_port", NULL);
@@ -122,12 +122,6 @@ ping_wol (webs_t wp)
   }
 
   return ret;
-}
-
-//  diag_ping_start(wp);
-
-  return ret;
-
 }
 
 int
