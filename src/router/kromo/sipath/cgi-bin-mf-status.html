@@ -65,26 +65,26 @@ function ini() {
                <div id="menu">
                   <div id="menuMain">
                      <ul id="menuMainList">
-                        <li><a href='index.asp'>Setup</a></li>
-                        <li><a href='Wireless_Basic.asp'>Wireless</a></li>
+                        <li><a href="index.asp">Setup</a></li>
+                        <li><a href="Wireless_Basic.asp">Wireless</a></li>
                         <li class="current"><span>SIPatH</span><div id="menuSub">
                               <ul id="menuSubList">
-                                 <li><a href='Sipath.asp'>Overview</a></li>
-                                 <li><a href='cgi-bin-mf-phonebook.html'>Phonebook</a></li>
+                                 <li><a href="Sipath.asp">Overview</a></li>
+                                 <li><a href="cgi-bin-mf-phonebook.html">Phonebook</a></li>
                                  <li><span>Status</span></li>
                               </ul>
                          </div>
                          </li>
-                        <li><a href='Firewall.asp'>Security</a></li>
-			<li><a href='Filters.asp'>Access Restrictions</a></li>
-                        <li><a href='Forward.asp'>Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                        <li><a href='Management.asp'>Administration</a></li>
-                        <li><a href='Status_Router.asp'>Status</a></li>
+                        <li><a href="Firewall.asp">Security</a></li>
+			<li><a href="Filters.asp">Access Restrictions</a></li>
+                        <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
+                        <li><a href="Management.asp">Administration</a></li>
+                        <li><a href="Status_Router.asp">Status</a></li>
                      </ul>
                   </div>
                </div>
             </div>
-               <script language="JavaScript" type="text/javascript"><!--
+               <script type="text/javascript"><!--
 function help(e) {
   if (!e) e = event;
   // (virt)KeyVal is Konqueror, charCode is Moz/Firefox, else MSIE, Netscape, Opera
@@ -109,15 +109,9 @@ if (document.all) {
 else {
   document.onkeypress = help;
 }
-//--></script>
-            <div id="helpContainer">
-               <div id="help">
-                  <div id="logo">
-                     <h2>Help</h2>
-                  </div><br />
-                  <a href="javascript:openHelpWindow('HManagement.asp')">More...</a>
-               </div>
-            </div>
+//-->
+</script>
+
 EOF
 
 if [ "$REQUEST_METHOD" = "POST" ]; then
@@ -134,7 +128,7 @@ cat<<EOF
             <div id="main">
                <div id="contents">
 
-<h1>Status: Rebooting...</h1>
+<h2>Status: Rebooting...</h2>
   <form action="cgi-bin-mf-status.html" method="post"><table border="1"
   cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
 EOF
@@ -143,16 +137,16 @@ echo "Your router is now rebooting.<br>If you reload this page another reboot wi
 sh -c "sleep 2;reboot">/dev/null 2>&1 &
 
 cat<<EOF
-</td></tr><tr><td> </td></tr><tr><td><input
+</td></tr><tr><td></td></tr><tr><td><input
   name="post_overview"
   title="Overview"
-  type="submit" value="Overview" />   <input
+  type="submit" value="Overview" /><input
   name="post_route"
   title="Routing Table"
-  type="submit" value="Routing Table" />   <input
+  type="submit" value="Routing Table" /><input
   name="post_restart"
   title="SER Restart"
-  type="submit" value="Restart SER" />   <input
+  type="submit" value="Restart SER" /><input
   name="post_reboot"
   title="Reboot Router"
   type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
@@ -165,7 +159,7 @@ cat<<EOF
             <div id="main">
                <div id="contents">
 
-<h1>Status: Routing Table</h1>
+<h2>Status: Routing Table</h2>
   <form action="cgi-bin-mf-status.html" method="post"><table border="1"
   cellpadding="0" cellspacing="0" class="form"><tbody><tr><td>
 EOF
@@ -202,16 +196,16 @@ END {
 }'
 
 cat<<EOF
-</td></tr><tr><td> </td></tr><tr><td><input
+</td></tr><tr><td></td></tr><tr><td><input
   name="post_overview"
   title="Overview"
-  type="submit" value="Overview" />   <input
+  type="submit" value="Overview" /><input
   name="post_route"
   title="Routing Table"
-  type="submit" value="Routing Table" />   <input
+  type="submit" value="Routing Table" /><input
   name="post_restart"
   title="SER Restart"
-  type="submit" value="Restart SER" />   <input
+  type="submit" value="Restart SER" /><input
   name="post_reboot"
   title="Reboot Router"
   type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
@@ -223,7 +217,7 @@ cat<<EOF
             <div id="main">
                <div id="contents">
 
-<h1>Status: SER Restart</h1>
+<h2>Status: SER Restart</h2>
   <form action="cgi-bin-mf-status.html" method="post"><table border="1"
   cellpadding="0" cellspacing="0" class="form"><tbody><!--<tr><th>SSID</th><th>Channel</th><th>Ad
   Hoc</th><th>Signal</th><th>WEP</th><th>Max.</th><th>BSSID</th></tr><tr>--><td
@@ -238,13 +232,13 @@ serctl restart ser|awk 'sub("", "<br>") {print}'; sleep 3s;
 cat<<EOF
 </td></tr><tr><td colspan="7"><input name="post_overview"
   title="Overview"
-  type="submit" value="Overview" />   <input
+  type="submit" value="Overview" /><input
   name="post_route"
   title="Routing Table"
-  type="submit" value="Routing Table" />   <input
+  type="submit" value="Routing Table" /><input
   name="post_restart"
   title="Restart SER"
-  type="submit" value="Restart SER" />   <input
+  type="submit" value="Restart SER" /><input
   name="post_reboot"
   title="Reboot Router"
   type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
@@ -256,7 +250,7 @@ cat<<EOF
             <div id="main">
                <div id="contents">
 
-<h1>Status: Overview</h1> <form
+<h2>Status: Overview</h2> <form
   action="cgi-bin-mf-status.html" method="post"><table border="1" cellpadding="0"
   cellspacing="0" class="form" width="548"><tbody>
   <tr><td>SER Stats:</td><td>$(if [ $(nvram get sip_domain) ];
@@ -299,17 +293,17 @@ cat<<EOF
   echo "Please note: Automatic SER restarts may be due to changing network interface addresses";
   serctl fifo uptime | awk 'sub("", "<br>") {print}';)</td></tr>
   <tr><td>Router Uptime:</td><td>$(uptime)</td></tr>
-  <tr><td colspan="2"> </td></tr>
+  <tr><td colspan="2"></td></tr>
   <tr><td colspan="2"><input
   name="post_overview"
   title="Overview"
-  type="submit" value="Reload" />   <input
+  type="submit" value="Reload" /><input
   name="post_route"
   title="Routing Table"
-  type="submit" value="Routing Table" />   <input
+  type="submit" value="Routing Table" /><input
   name="post_restart"
   title="SER Restart"
-  type="submit" value="Restart SER" />   <input
+  type="submit" value="Restart SER" /><input
   name="post_reboot"
   title="Reboot Router"
   type="submit" value="Reboot Router" /></td></tr></tbody></table></form>
@@ -320,6 +314,15 @@ fi
 cat<<EOF
 	</div>
 	</div>
+				<div id="helpContainer">
+					<div id="help">
+						<div id="logo">
+						<h2>Help</h2>
+						</div>
+					<br />
+					<a href="javascript:openHelpWindow('HManagement.asp')">More...</a>
+					</div>
+				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
