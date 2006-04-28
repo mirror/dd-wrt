@@ -280,7 +280,7 @@ function display_wol_hosts() {
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.broadcast)</script></div>
-										<input maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" size="20" value='<% nvram_get("manual_wol_network"); nvram_selmatch("manual_wol_network","","192.168.1.255"); %>'/>
+										<input maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" value='<% nvram_get("manual_wol_network"); nvram_selmatch("manual_wol_network","","192.168.1.255"); %>'/>
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>

@@ -14,7 +14,7 @@
 		<div id="content">
 			<h2>Services</h2>
 			<dl>
-				<dt>DHCPd</dt>
+				<dt>DHCP Server</dt>
 				<dd>DHCPd assigns IP addresses to your local devices. While the main configuration is on the setup page you can program some nifty special functions here.
 					<ul class="wide">
 						<li>DHCPd &ndash; Disabling here will disable DHCPd on this router irrespective of the settings on the Setup screen.</li>
@@ -66,7 +66,7 @@
 						<div>For each RFlow and MACupd server IP : enter the IP address of the listening server (win32 PC with RFlow Collector).</div>
 					</div>
 				 </dd>
-				<dt>SSH</dt>
+				<dt>Secure Shell</dt>
 				<dd>Enabling SSHd allows you to access the Linux OS of your router with an SSH client (Putty works well on Windows, for example).
 					<ul class="wide">
 						<li>Password login &ndash; allow login with the router password (username is <tt>root</tt>)</li>
@@ -74,7 +74,7 @@
 						<li>Authorized Keys &ndash; here you paste your public keys to enable key-based login (more secure than a simple password)</li>
 					</ul>
 				</dd>
-				<dt>Syslogd</dt>
+				<dt>System Log</dt>
 				<dd>Enable Syslogd to capture and forward all messages to another system. Enter the IP-address of the server for the syslog messages.</dd>
 				<dt>Telnet</dt>
 				<dd>Enable a telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the router password.<br/><br/>

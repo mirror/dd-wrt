@@ -64,7 +64,7 @@ function init() {
                         <div class="setting">
                            <div class="label">SCC License No.</div><% sputnik_apd_status("lsk_serial"); %>&nbsp;
                         </div>
-            	    </fieldset>
+            	    </fieldset><br />
 			<div class="submitFooter">
 			<input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/>
 			</div>

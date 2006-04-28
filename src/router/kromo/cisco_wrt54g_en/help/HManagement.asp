@@ -83,7 +83,7 @@
 				<dt>Routing</dt>
 				<dd>Routing enables the OSPF and RIP routing daemons if you have set up OSPF or RIP routing in the Advanced Routing page.</dd>
 				<dt>IP Filter Settings</dt>
-				<dd>If you have any peer-to-peer (P2P) applications on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary maintain router stability because peer-to-peer applications open many connections and don't close them properly. Consider using:
+				<dd>If you have any peer-to-peer (P2P) applications running on your network please increase the maximum ports and lower the TCP/UDP timeouts. This is necessary to maintain router stability because peer-to-peer applications open many connections and don't close them properly. Consider using these:
 					<ul>
 						<li>Maximum Ports: 4096</li>
 						<li>TCP Timeout: 120 sec</li>
