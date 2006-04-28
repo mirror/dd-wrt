@@ -55,7 +55,7 @@ bool 'Appletalk DDP protocol family' HAVE_AFATALK n
 bool 'AX25 (packet radio) protocol family' HAVE_AFAX25 n
 bool 'NET/ROM (packet radio) protocol family' HAVE_AFNETROM n
 bool 'Rose (packet radio) protocol family' HAVE_AFROSE n
-bool 'X.25 (CCITT) protocol family' HAVE_AFX25 y
+bool 'X.25 (CCITT) protocol family' HAVE_AFX25 n
 bool 'Econet protocol family' HAVE_AFECONET n
 bool 'DECnet protocol family' HAVE_AFDECnet n
 bool 'Ash protocol family' HAVE_AFASH n
