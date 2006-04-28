@@ -845,8 +845,11 @@ start_sysinit (void)
   //load ext2 
   // eval("insmod","jbd");
   eval ("insmod", "ext2");
-  if (mount
-      ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+#ifndef KERNEL_24
+  if (mount("/dev/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+#else  
+  if (mount("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+#endif
     {
       //not created yet, create ext2 partition
       eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/discs/disc0/part3");
