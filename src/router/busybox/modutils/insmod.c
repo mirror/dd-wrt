@@ -90,9 +90,6 @@
 #define CONFIG_FEATURE_2_4_MODULES
 #endif
 
-#if !defined(CONFIG_FEATURE_2_4_MODULES)
-#define insmod_ng_main insmod_main
-#endif
 
 #if defined(CONFIG_FEATURE_2_6_MODULES)
 extern int insmod_ng_main( int argc, char **argv);
@@ -3758,10 +3755,12 @@ extern int insmod_main( int argc, char **argv)
 			 * follow symlinks, but we do want to follow the
 			 * /lib/modules/`uname -r` dir, So resolve it ourselves
 			 * if it is a link... */
+		//	fprintf(stderr,"%s\n",tmdn);
 			if (realpath (tmdn, real_module_dir) == NULL)
 				module_dir = tmdn;
 			else
 				module_dir = real_module_dir;
+		//	fprintf(stderr,"%s\n",module_dir);
 			recursive_action(module_dir, TRUE, FALSE, FALSE,
 					check_module_name_match, 0, m_fullName);
 			free(tmdn);
