@@ -41,8 +41,6 @@
             </div>
             <div id="main">
                <div id="contents">
-                  <td valign="top" width="5"></td>
-		<td valign="top">
 		<h2>SIPath</h2>
 		<p>Welcome to your <a href="http://sipath.sourceforge.net" target="new">SIP at
 		Home</a> web interface for the
@@ -114,17 +112,7 @@
 		the Providers PSTN-Gateway over the PSTN to Marilyns phone.<br>
 		<br>
 		Please note that this software is under development and comes with no warranty.
-		</p>
-		</td>
-		<td valign="top" width="5"></td>
-	</tr>
-	<tr>
-		<td height="5" width="150"></td>
-		<td height="5" width="5"></td>
-		<td height="5"></td>
-		<td height="5" width="5"></td>
-		<td height="5" width="150"></td>
-	</tr>
+		</p><br />
                </div>
             </div>
 				<div id="helpContainer">
