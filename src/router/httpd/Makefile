@@ -30,8 +30,6 @@ CFLAGS += -I$(TOP)/vfs -DHAVE_VFS
 LDFLAGS += -L$(TOP)/vfs
 endif
 
-#CFLAGS	+= -I$(SRCBASE)/linux/linux/include
-#CFLAGS	+= -g -DDEBUG
 LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared
 
 ifeq ($(CONFIG_ANTIFLASH),y)
