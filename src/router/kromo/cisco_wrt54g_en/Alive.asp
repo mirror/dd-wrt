@@ -9,7 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>' + alive.titl;
+document.title = "<% nvram_get("router_name"); %>" + alive.titl;
 
 function to_reboot(F) {
 	F.action.value='Reboot';
