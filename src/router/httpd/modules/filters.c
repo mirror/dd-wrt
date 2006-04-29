@@ -1670,8 +1670,8 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 
       websWrite (wp, " \
 	<tr align=\"center\" bgcolor=\"#CCCCCC\" >\n\
-        <td width=\"50\"><font face=\"Arial\" size=\"2\">%d.</font></td>\n\
-        <td width=\"200\"><font face=\"Arial\" size=\"2\">%s</font></td>\n", i + 1, name);
+        <td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n\
+        <td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n", i + 1, name);
       websWrite (wp, "\n\
 	 <td height=\"30\" width=\"150\" > \n\
               <table border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" style=\"border-collapse: collapse\" width=\"124\" bgcolor=\"#FFFFFF\" >\n\
@@ -1685,7 +1685,13 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
                   <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
                 </tr>\n\
               </table>\n\
-      </td>\n", tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3], tod_data_null == 0 && (day_all == 1 || week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], tod_data_null == 0 && (day_all == 1 || week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5], tod_data_null == 0 && (day_all == 1 || week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
+      </td>\n", tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], 
+      			tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], 
+      			tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], 
+      			tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3], 
+      			tod_data_null == 0 && (day_all == 1 || week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], 
+      			tod_data_null == 0 && (day_all == 1 || week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5], 
+      			tod_data_null == 0 && (day_all == 1 || week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6] );
       if (tod_data_null == 0)
 	{
 	  if (time_all == 1)
@@ -1701,8 +1707,8 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 	    }
 	}
       websWrite (wp, " \
-        <td width=\"150\"><font face=\"Arial\" size=\"2\" > %s </font></td>\n\
-        <td width=\"70\"><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n\
+        <td width=\"150\" ><font face=\"Arial\" size=\"2\" > %s </font></td>\n\
+        <td width=\"70\" ><input type=\"checkbox\" name=\"sum%d\" value=\"1\" ></td>\n\
       </tr>\n", time_buf, i + 1);
     }
   D ("okay");
