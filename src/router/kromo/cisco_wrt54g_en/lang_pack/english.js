@@ -40,31 +40,15 @@ share.to="To";
 share.about="About";
 share.everyday="Everyday";
 share.sun="Sunday";
-share.sun_s="Sun";
-share.sun_s1="S";
 share.mon="Monday";
-share.mon_s="Mon";
-share.mon_s1="M";
 share.tue="Tuesday";
-share.tue_s="Tue";
-share.tue_s1="T";
 share.wed="Wednesday";
-share.wed_s="Wed";
-share.wed_s1="W";
 share.thu="Thursday";
-share.thu_s="Thu";
-share.thu_s1="T";
 share.fri="Friday";
-share.fri_s="Fri";
-share.fri_s1="F";
 share.sat="Saturday";
-share.sat_s="Sat";
-share.sat_s1="S";
 share.expires="Expires";
 share.yes="Yes";
 share.no="No";
-share.allow="Allow";
-share.deny="Deny";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -88,11 +72,6 @@ sbutton.runcmd="Run Commands";
 sbutton.startup="Save Startup";
 sbutton.firewall="Save Firewall";
 sbutton.wol="Wake Up";
-sbutton.add_wol="Add Host";
-sbutton.manual_wol="Manual Wake Up";
-sbutton.summary="Summary";
-sbutton.filterIP="Edit List of PCs";
-sbutton.filterSer="Add/Edit Service";
 
 
 
@@ -139,16 +118,8 @@ errmsg.err32="IP address and gateway is not at same subnet mask.";
 errmsg.err33="IP address and gateway can't be same.";
 errmsg.err34=" is not allowed to contain a space.";
 
-//Wol.asp error message
-errmsg.err35="You must input a MAC address to run."
-errmsg.err36="You must input a network broadcast address to run.";
-errmsg.err37="You must input a UDP port to run.";
 
-//WL_WPATable.asp error message
-errmsg.err38="Please enter a Shared Key!";
-errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters"
-errmsg.err40="You have to enter a key for Key ";
-errmsg.err41="Invalid Length in key ";
+
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -160,18 +131,12 @@ bmenu.setuprouting="Advanced Routing";
 bmenu.setupvlan="VLANs";
 
 bmenu.wireless="Wireless";
-bmenu.wirelessBasic="Basic Settings";
-bmenu.wirelessRadius="Radius";
-bmenu.wirelessSecurity="Wireless Security";
-bmenu.wirelessMac="MAC Filter";
-bmenu.wirelessAdvanced="Advanced Settings";
-bmenu.wirelessWds="WDS";
+
 
 bmenu.security="Security";
 
 
 bmenu.accrestriction="Access Restrictions";
-bmenu.webaccess="Internet Access";
 
 
 bmenu.applications="Applications &amp; Gaming";
@@ -372,6 +337,10 @@ alive.legend2="WDS/Connection Watchdog";
 alive.sevr2="Enable Watchdog";
 alive.inter="Interval (in seconds)";
 alive.IP="IP Addresses";
+alive.legend3="Proxy/Connection Watchdog";
+alive.sevr3="Enable Proxy Watchdog";
+alive.IP2="Proxy IP Address";
+alive.port="Proxy Port";
 
 //help container
 var halive = new Object();
@@ -447,65 +416,16 @@ factdef.mess1="Warning! If you click OK, the device will reset to factory defaul
 var hfactdef = new Object();
 hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
 
-
-
-// **************************************************************** Filter.asp **********************************************************************//
-
-var filter = new Object();
-filter.titl=" - Access Restrictions";
-filter.h2="Internet Access";
-filter.legend="Access Policy";
-filter.restore="Restore Factory Defaults";
-filter.pol="Policy";
-filter.polname="Enter Policy Name";
-filter.pcs="PCs";
-filter.legend2="Days";
-filter.time="Times";
-filter.h24="24 Hours";
-filter.legend3="Blocked Services";
-filter.catchall="Catch all P2P Protocols";
-filter.legend4="Website Blocking by URL Address";
-filter.legend5="Website Blocking by Keyword";
-
-filter.mess1="Delete the Policy?";
-filter.mess2="You must at least select a day.";
-filter.mess3="The end time must be bigger than start time.";
-
-//help container
-var hfilter = new Object();
-hfilter.right1="Internet Access Policy:";
-hfilter.right2="You may define up to 10 access policies. Click <em>" + sbutton.del + "</em> to delete a policy or <em>" + sbutton.summary + "</em> to see a summary of the policy.";
-hfilter.right3="Status:";
-hfilter.right4="Enable or disable a policy.";
-hfilter.right5="Policy Name:";
-hfilter.right6="You may assign a name to your policy.";
-hfilter.right7="Days:";
-hfilter.right8="Choose the day of the week you would like your policy to be applied.";
-hfilter.right9="Times:";
-hfilter.right10="Enter the time of the day you would like your policy to apply.";
-hfilter.right11="Blocked Services:";
-hfilter.right12="You may choose to block access to certain services. Click <em>" + sbutton.filterSer + "</em> to modify these settings.";
-hfilter.right13="Website Blocking by URL:";
-hfilter.right14="You can block access to certain websites by entering their URL.";
-hfilter.right15="Website Blocking by Keyword:";
-hfilter.right16="You can block access to certain website by the keywords contained in their webpage.";
-
-
-
 // **************************************************************** WOL.asp **********************************************************************//
 
 var wol = new Object();
-wol.titl=" - WOL";
+wol.titl=" - Factory Defaults";
 wol.h2="Wake-On-LAN";
-wol.legend="Available Hosts";
-wol.legend2="WOL Addresses";
-wol.legend3="Output";
-wol.legend4="Manual WOL";
-wol.enable="Enable WOL?";
-wol.add_wol="Add WOL Host";
+wol.legend="Static Leases";
+wol.legend2="WOL";
 wol.restore="Restore Factory Defaults";
 wol.mac="MAC Address(es)";
-wol.broadcast="Net Broadcast";
+wol.broadcast="Network Broadcast";
 wol.udp="UDP Port";
 wol.msg1="Waking up";
 wol.msg2="with";
@@ -514,21 +434,6 @@ wol.msg2="with";
 var hwol = new Object();
 hwol.right1="Local Wake-on-LAN:";
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
-hwol.right3="MAC Address(es):";
-hwol.right4="MAC Addresses are entered in the format XX:XX:XX:XX:XX:XX (i.e. 01:23:45:67:89:AB)";
-hwol.right5="IP Address:";
-hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
-
-// **************************************************************** WL_WPATable.asp **********************************************************************//
-
-var wpa = new Object();
-wpa.titl=" - WPA";
-wpa.h2="Wireless Security";
-
-//help container
-var hwpa = new Object();
-hwpa.right1="Security Mode:";
-hwpa.right2="You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same security mode.";
 
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
@@ -554,16 +459,12 @@ fail.mess2="Upgrade failed.";
 // **************************************************************** Success*.asp & Reboot.asp  **********************************************************************//
 
 var success = new Object();
-success.saved="Settings saved.";
-success.restore="Settings restored.<br/>Unit is rebooting now. Please wait a moment...";
-success.upgrade="Upgrade successful.<br/>Unit is rebooting now. Please wait a moment...";
-success.success_noreboot="Settings are successful.";
-success.success_reboot=success.success_noreboot + "<br />Unit is rebooting now. Please wait a moment...";
+success.mess1="Settings saved.";
+success.mess2="Upgrade successful.<br/>Unit is rebooting now. Please wait a moment...";
+success.mess3="Settings are successful.";
+success.mess4=success.mess3 + "<br />Unit is rebooting now. Please wait a moment...";
+success.mess5="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network before connecting again.";
 
-success.alert_reset="All configuration settings have been restored to their default values.<br /><br />";
-success.alert1="Please check the followings before connecting again:";
-success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
-success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
 
 
 
