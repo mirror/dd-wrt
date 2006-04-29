@@ -1645,7 +1645,7 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
   char pm[] = "ŒßŒã";
   char _24h[] = "24 ŠÔ";
 #else
-  char w[7] = { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1", "share.thu_s1", "share.fri_s1", "share.sat_s1" };
+  char w[7][] = { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1", "share.thu_s1", "share.fri_s1", "share.sat_s1" };
   char am[] = "AM";
   char pm[] = "PM";
   char _24h[] = "24 Hours.";
