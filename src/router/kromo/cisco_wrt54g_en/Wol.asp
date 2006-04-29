@@ -32,6 +32,28 @@ function get_static_leases() {
 	return "<% nvram_get("static_leases"); %>";
 }
 
+function get_dhcp_hosts() {
+	return parse_dhcp_hosts(<% dumpleases(0); %>);
+}
+
+function parse_dhcp_hosts() {
+	var val = arguments;
+	var dhcp_hosts = '';
+	
+	if (!val.length)
+		return dhcp_hosts;
+	
+	for(var i = 0; i < val.length; i = i + 5) {
+		dhcp_hosts = dhcp_hosts + val[i+2] + "=" + val[i] + "=" + val[i+1] + " ";
+	}
+	
+	if (dhcp_hosts.indexOf(" ") == 0) {
+		dhcp_hosts = dhcp_hosts.substr(1);
+	}
+
+	return dhcp_hosts;
+}
+
 function add_wol_host(F) {
 	edit_wol_hosts(F.wol_hosts_mac.value, F.wol_hosts_hostname.value, F.wol_hosts_ip.value, "true");
 }
@@ -66,6 +88,8 @@ function submit_wol(mac, ip) {
 	F = document.forms["ping"];
     F.manual_wol_mac.value = mac;
     F.manual_wol_network.value = ip;
+	if(F.manual_wol_port.value == "")
+		F.manual_wol_port.value = 7;
 	F.wol_type.value = "wol";
 	apply(F);
 }
@@ -137,12 +161,37 @@ function display_manual_wol_hosts() {
 			document.write("\t<td>" + mac + "</td>");
 			document.write("\t<td >" + hostname + "</td>");
 			document.write("\t<td align=\"right\">" + ip + "</td>");
-			ip = ip.substring(0,ip.lastIndexOf(".")) + ".255";
+//			ip = guess_broadcast(ip);
 			document.write("\t<td align=\"center\">");
 			if(get_wol_hosts().indexOf(mac) == -1) {
 				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
 			} else {
 				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked=\"checked\" />");
+			}
+			document.write("\t</td>");
+			document.write("</tr>");
+		} 
+	}
+}
+
+function display_dhcp_hosts() {
+	var dhcp_hosts = get_dhcp_hosts().split(" ");
+	while (dhcp_hosts.length > 0) {
+		var host = dhcp_hosts.shift().split("=")
+		var mac = host[0];
+		var hostname = host[1];
+		var ip = host[2];
+		if(get_static_leases().indexOf(mac) == -1 && mac!=undefined && hostname!=undefined && ip!=undefined) {
+			document.write("<tr>");
+			document.write("\t<td>" + mac + "</td>");
+			document.write("\t<td >" + hostname + "</td>");
+			document.write("\t<td align=\"right\">" + ip + "</td>");
+			ip = guess_broadcast(ip);
+			document.write("\t<td align=\"center\">");
+			if(get_wol_hosts().indexOf(mac) == -1) {
+				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','true');\" />");
+			} else {
+				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','false');\" checked=\"checked\"/>");
 			}
 			document.write("\t</td>");
 			document.write("</tr>");
@@ -221,7 +270,6 @@ function display_wol_hosts() {
 							<input type="hidden" name="wol_hosts" value="" />
 							<input type="hidden" name="wol_type" value="wol" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
-							<input type="hidden" name="ping_times" value="1" />
 							<input type="hidden" name="next_page" value="Wol.asp" />
 
 							<h2><script type="text/javascript">Capture(wol.h2)</script></h2>
@@ -238,6 +286,14 @@ function display_wol_hosts() {
 									<script type="text/javascript">	display_static_leases(); </script>
 									<% nvram_selmatch("static_leases","","-->"); %>
 									<script type="text/javascript">	display_manual_wol_hosts(); </script>
+									<script type="text/javascript">	display_dhcp_hosts(); </script>
+									<tr></tr>
+									<tr>
+										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" value=""/></td>
+										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
+										<td align="right"><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value=""/></td>
+										<td align="center"><script type="text/javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />")</script></td>
+									</tr>
 								</table>
 							</fieldset><br />
 
@@ -250,13 +306,6 @@ function display_wol_hosts() {
 										<th width="20%"><script type="text/javascript">Capture(wol.broadcast)</script></th>
 									</tr>
 									<script type="text/javascript">	display_wol_hosts(); </script>
-									<tr></tr>
-									<tr>
-										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" value="00:00:00:00:00:00"/></td>
-										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
-										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value="192.168.1.255"/></td>
-										<td><script type="text/javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />")</script></td>
-									</tr>
 								</table>
 							</fieldset><br />
 
@@ -276,15 +325,15 @@ function display_wol_hosts() {
 								<legend><script type="text/javascript">Capture(wol.legend4)</script></legend>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.mac)</script></div>
-										<textarea id="manual_wol_mac" name="manual_wol_mac" rows="3" cols="20"><% nvram_get("manual_wol_mac"); nvram_selmatch("manual_wol_mac","","00:00:00:00:00:00"); %></textarea>
+										<textarea id="manual_wol_mac" name="manual_wol_mac" rows="3" cols="20"><% nvram_get("manual_wol_mac"); %></textarea>
 									</div>
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(wol.broadcast)</script></div>
-										<input class="num" maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); nvram_selmatch("manual_wol_network","","192.168.1.255"); %>" />
+										<div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
+										<input class="num" maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
-										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value="<% nvram_get("manual_wol_port"); nvram_selmatch("manual_wol_port","","7"); %>" />
+										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value="<% nvram_get("manual_wol_port"); %>" />
 									</div>
 
 								<div class="submitFooter">
@@ -303,6 +352,10 @@ function display_wol_hosts() {
 						<dl> 
 							<dt class="term"><script type="text/javascript">Capture(hwol.right1)</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hwol.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hwol.right3)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hwol.right4)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hwol.right5)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hwol.right6)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HWol.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
