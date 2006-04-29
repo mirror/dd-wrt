@@ -111,13 +111,13 @@ function display_static_leases() {
 			document.write("<tr>");
 			document.write("\t<td>" + mac + "</td>");
 			document.write("\t<td >" + host + "</td>");
-			document.write("\t<td>" + ip + "</td>");
+			document.write("\t<td align=\"right\">" + ip + "</td>");
 			ip = guess_broadcast(ip);
 			document.write("\t<td align=\"center\">");
 			if(get_wol_hosts().indexOf(mac) == -1) {
 				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
 			} else {
-				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked/>");
+				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked=\"checked\" />");
 			}
 			document.write("\t</td>");
 			document.write("</tr>");
@@ -136,13 +136,13 @@ function display_manual_wol_hosts() {
 			document.write("<tr>");
 			document.write("\t<td>" + mac + "</td>");
 			document.write("\t<td >" + hostname + "</td>");
-			document.write("\t<td>" + ip + "</td>");
+			document.write("\t<td align=\"right\">" + ip + "</td>");
 			ip = ip.substring(0,ip.lastIndexOf(".")) + ".255";
 			document.write("\t<td align=\"center\">");
 			if(get_wol_hosts().indexOf(mac) == -1) {
 				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
 			} else {
-				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked=\"checked\"/>");
+				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked=\"checked\" />");
 			}
 			document.write("\t</td>");
 			document.write("</tr>");
@@ -161,7 +161,7 @@ function display_wol_hosts() {
 			document.write("<tr>");
 			document.write("\t<td>" + mac + "</td>");
 			document.write("\t<td >" + hostname + "</td>");
-			document.write("\t<td>" + ip + "</td>");
+			document.write("\t<td align=\"right\">" + ip + "</td>");
 			document.write("\t<td>");
 			document.write("\t\t<input type=button value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />");
 			document.write("\t</td>");
@@ -253,8 +253,8 @@ function display_wol_hosts() {
 									<tr></tr>
 									<tr>
 										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" value="00:00:00:00:00:00"/></td>
-										<td><input maxlength="17" size="17" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
-										<td><input maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value="192.168.1.255"/></td>
+										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
+										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value="192.168.1.255"/></td>
 										<td><script type="text/javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />")</script></td>
 									</tr>
 								</table>
@@ -276,15 +276,15 @@ function display_wol_hosts() {
 								<legend><script type="text/javascript">Capture(wol.legend4)</script></legend>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.mac)</script></div>
-										<textarea id="manual_wol_mac" name="manual_wol_mac" rows="3"  cols="20"><% nvram_get("manual_wol_mac"); nvram_selmatch("manual_wol_mac","","00:00:00:00:00:00"); %></textarea>
+										<textarea id="manual_wol_mac" name="manual_wol_mac" rows="3" cols="20"><% nvram_get("manual_wol_mac"); nvram_selmatch("manual_wol_mac","","00:00:00:00:00:00"); %></textarea>
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.broadcast)</script></div>
-										<input maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" value='<% nvram_get("manual_wol_network"); nvram_selmatch("manual_wol_network","","192.168.1.255"); %>'/>
+										<input class="num" maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); nvram_selmatch("manual_wol_network","","192.168.1.255"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
-										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value='<% nvram_get("manual_wol_port"); nvram_selmatch("manual_wol_port","","7"); %>'/>
+										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value="<% nvram_get("manual_wol_port"); nvram_selmatch("manual_wol_port","","7"); %>" />
 									</div>
 
 								<div class="submitFooter">
