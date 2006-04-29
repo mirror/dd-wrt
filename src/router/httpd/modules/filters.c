@@ -1679,16 +1679,17 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
 					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
 					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n",
+				tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], 
+      			tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], 
+      			tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], 
+      			tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3]);
+    websWrite (wp, "<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
 					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
 					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
 				</tr>\n\
 			</table>\n\
-		</td>\n", tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], 
-      			tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], 
-      			tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], 
-      			tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3], 
+		</td>\n", 
       			tod_data_null == 0 && (day_all == 1 || week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], 
       			tod_data_null == 0 && (day_all == 1 || week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5], 
       			tod_data_null == 0 && (day_all == 1 || week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
