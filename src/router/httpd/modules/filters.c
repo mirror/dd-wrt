@@ -1645,9 +1645,7 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
   char pm[] = "ŒßŒã";
   char _24h[] = "24 ŽžŠÔ";
 #else
-/*  char w[7][15] = { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1", "share.thu_s1", "share.fri_s1", "share.sat_s1" };
- */
-  char w[7][2] = { "S", "M", "T", "W", "T", "F", "S" };
+  char w[7][15] = { "share.sun_s1", "share.mon_s1", "share.tue_s1", "share.wed_s1", "share.thu_s1", "share.fri_s1", "share.sat_s1" };
   char am[] = "AM";
   char pm[] = "PM";
   char _24h[] = "24 Hours.";
@@ -1671,29 +1669,31 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
       filter_tod_init (i + 1);
 
       websWrite (wp, " \
-	<tr align=\"center\" bgcolor=\"#CCCCCC\" >\n\
-        <td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n\
-        <td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n", i + 1, name);
-      websWrite (wp, "\n\
-      	<td height=\"30\" width=\"150\" > \n\
-      		<table border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" style=\"border-collapse: collapse\" width=\"124\" bgcolor=\"#FFFFFF\" >\n\
-                <tr>\n\
-                  <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\">%s</td>\n\
-                  <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\">%s</td>\n\
-                  <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\">%s</td>\n\
-                  <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\">%s</td>\n\
-                  <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\">%s</td>\n\
-                  <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\">%s</td>\n\
-                  <td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\">%s</td>\n\
-                </tr>\n\
-            </table>\n\
+      <tr align=\"center\" bgcolor=\"#CCCCCC\" >\n\
+      	<td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n\
+        <td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n\
+        <td height=\"30\" width=\"150\" >\n\
+        	<table border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" style=\"border-collapse: collapse\" width=\"124\" bgcolor=\"#FFFFFF\" >\n\
+                <tr>\n", i + 1, name);
+        
+      websWrite (wp, " \
+      				<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+				</tr>\n\
+			</table>\n\
 		</td>\n", tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], 
       			tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], 
       			tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], 
       			tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3], 
       			tod_data_null == 0 && (day_all == 1 || week4 == 1) ? "#C0C0C0" : "#FFFFFF", w[4], 
       			tod_data_null == 0 && (day_all == 1 || week5 == 1) ? "#C0C0C0" : "#FFFFFF", w[5], 
-      			tod_data_null == 0 && (day_all == 1 || week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6] );
+      			tod_data_null == 0 && (day_all == 1 || week6 == 1) ? "#C0C0C0" : "#FFFFFF", w[6]);
+
       if (tod_data_null == 0)
 	{
 	  if (time_all == 1)
