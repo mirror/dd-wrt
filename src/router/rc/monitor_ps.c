@@ -87,7 +87,7 @@ do_mon (void)
 	    {
 	      if (v->stop)
 		v->stop ();
-	      sleed (1);
+	      sleep (1);
 	      if (v->start);
 	      v->start ();
 	    }
