@@ -38,7 +38,7 @@ void netlink_init(struct daemon *daemon)
 #endif
   
   if (bind(daemon->netlinkfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
-    die(_("cannot bind netlink socket: %s"), NULL);
+    die2(_("cannot bind netlink socket: %s"), NULL);
 
   iov[0].iov_len = 200;
   iov[0].iov_base = safe_malloc(iov[0].iov_len);

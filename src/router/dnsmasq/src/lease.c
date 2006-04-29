@@ -299,7 +299,7 @@ fprintf(stderr,"update lease file\n");
 //  if (file_dirty != no)
     {
       rewind (daemon->lease_stream);
-      ftruncate (fileno (daemon->lease_file), 0);
+      ftruncate (fileno (daemon->lease_stream), 0);
 fprintf(stderr,"rewindet\n");
 
       for (lease = leases; lease; lease = lease->next)
