@@ -8,6 +8,7 @@ cd router
 cp .config_micro .config
 #cp Makefile.standard Makefile
 rm -rf mipsel-uclibc/install
+make clean
 make rc-clean
 make services-clean
 make shared-clean
@@ -26,7 +27,7 @@ mkdir ../src/router/mipsel-uclibc/target/etc/config
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/sbin/rc
 ./sstrip/sstrip ../src/router/mipsel-uclibc/target/usr/sbin/*
 
-cp ./bin/ipkg ../src/router/mipsel-uclibc/target/bin
+#cp ./bin/ipkg ../src/router/mipsel-uclibc/target/bin
 
 cp ./libgcc/* ../src/router/mipsel-uclibc/target/lib
 cd ../src/router/mipsel-uclibc/target/lib
@@ -34,7 +35,7 @@ ln -s libgcc_s.so.1 libgcc_s.so
 cd ../../../../../opt
 cp ./etc/preinit ../src/router/mipsel-uclibc/target/etc
 cp ./etc/postinit ../src/router/mipsel-uclibc/target/etc
-cp ./etc/ipkg.conf ../src/router/mipsel-uclibc/target/etc
+#cp ./etc/ipkg.conf ../src/router/mipsel-uclibc/target/etc
 cp ./etc/mini/config/* ../src/router/mipsel-uclibc/target/etc/config
 cd ../src/router/mipsel-uclibc/target/www
 

@@ -8,6 +8,7 @@ cp .config_voip.v24 .config
 #cp Makefile.standard Makefile
 #copy config.normal .config
 rm -rf mipsel-uclibc/install
+make clean
 make rc-clean
 make services-clean
 make shared-clean

@@ -72,8 +72,8 @@ rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/ipv6.o
 
 
 ./make_kernel.sh
-trx -o dd-wrt.v23_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs -a 1024
-trx -o dd-wrt.v23_jffs2_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.jffs2 -a 0x10000
+../tools/trx -o dd-wrt.v23_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
+../tools/trx -o dd-wrt.v23_jffs2_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.jffs2
 
 
 ../tools/trx_gs -o dd-wrt.v23_gs_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
