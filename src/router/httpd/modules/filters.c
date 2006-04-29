@@ -1669,21 +1669,20 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
       filter_tod_init (i + 1);
 
       websWrite (wp, " \
-      <tr align=\"center\" bgcolor=\"#CCCCCC\" >\n\
-      	<td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n\
-        <td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n\
-        <td height=\"30\" width=\"150\" >\n\
-        	<table border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" style=\"border-collapse: collapse\" width=\"124\" bgcolor=\"#FFFFFF\" >\n\
-                <tr>\n", i + 1, name);
-        
-      websWrite (wp, " \
-      				<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-					<td width=\"17\" bgcolor=\"%s\" style=\"border-style: solid;\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+		<tr align=\"center\" bgcolor=\"#CCCCCC\" >\n\
+			<td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n\
+			<td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n\
+			<td height=\"30\" width=\"150\" >\n\
+			<table border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" style=\"border-collapse: collapse\" width=\"124\" bgcolor=\"#FFFFFF\" >\n\
+				<tr>\n", i + 1, name);
+	websWrite (wp, " \
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+					<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid; border-width:1\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
 				</tr>\n\
 			</table>\n\
 		</td>\n", tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], 
