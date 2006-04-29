@@ -3344,7 +3344,7 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       action = REBOOT;
       do_ej ("Reboot.asp", wp);
       websDone (wp, 200);
-      sleep (1);
+      sleep (4);
       sys_reboot ();
       return 1;
     }
@@ -3404,7 +3404,7 @@ footer:
 	{
 		do_ej ("Reboot.asp", wp);
 		websDone (wp, 200);
-		sleep (1);
+		sleep (4);
 		sys_reboot ();
 		return 1;
 	}
@@ -3610,7 +3610,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_commit ();
   do_ej ("Reboot.asp", wp);
   websDone (wp, 200);
-  sleep (3);
+  sleep (4);
   sys_reboot ();
   init_cgi (NULL);
 
