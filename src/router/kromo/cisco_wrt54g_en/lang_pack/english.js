@@ -514,6 +514,10 @@ wol.msg2="with";
 var hwol = new Object();
 hwol.right1="Local Wake-on-LAN:";
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
+hwol.right3="MAC Address(es):";
+hwol.right4="MAC Addresses are entered in the format XX:XX:XX:XX:XX:XX (i.e. 01:23:45:67:89:AB)";
+hwol.right5="IP Address:";
+hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
 
 // **************************************************************** WL_WPATable.asp **********************************************************************//
 

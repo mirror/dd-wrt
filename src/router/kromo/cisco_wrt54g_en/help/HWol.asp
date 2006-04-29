@@ -16,10 +16,10 @@
          <dl> 
             <dd>This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).</dd> 
                <dt class="term">Available Hosts:</dt> 
-               <dd class="definition">The Available Hosts section provides a list of hosts to add/remove from the WOL Addresses list. The list is derived from any defined static hosts and manually added wol hosts.
+               <dd class="definition">The Available Hosts section provides a list of hosts to add/remove from the WOL Addresses list. The list is derived from any defined static hosts, automatically discovered DHCP clients, and manually added wol hosts.
                <div class="note"> 
                   <h4>Note</h4> 
-                     <div>Adding a static host uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has the same netmask as the local router (lan_netmask), and uses the UDP port specified in the UDP Port box (in the Manual WOL section).</div> 
+                     <div>This table uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has the same netmask as the local router (lan_netmask), and uses the UDP port specified in the UDP Port box (in the Manual WOL section).</div> 
                </div> 
             </dd> 
                <dt class="term">WOL Addresses:</dt> 
