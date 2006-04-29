@@ -9,6 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+document.title = "<% nvram_get("router_name"); %>" + filter.titl;
+
 <% filter_init(); %>
 var summary_win = null;
 var ipmac_win = null;
@@ -64,21 +66,13 @@ function time_enable_disable(F,I){
 	}
 }
 
-function ViewSummary() {
-	summary_win = self.open('FilterSummary.asp','FilterSummary','alwaysRaised,resizable,scrollbars,width=700,height=480');
-	summary_win.focus();
-}
-
-function ViewFilter() {
-	ipmac_win = self.open('FilterIPMAC.asp','FilterTable','alwaysRaised,resizable,scrollbars,width=590,height=700');
-	ipmac_win.focus();
-}
 
 function to_submit(F) {
 	if(valid(F) == true) {
 		F.submit_type.value = "save";
 		F.submit_button.value = "Filters";
-		F.save_button.value = "Saved";
+		F.save_button.value = sbutton.saving;
+		
 		F.action.value = "Apply";
 		apply(F);
 
@@ -96,7 +90,7 @@ function to_save(F) {
 }
 
 function to_delete(F) {
-	if(confirm("Delete the Policy?")){
+	if(confirm(filter.mess1)) {
 		F.submit_button.value = "Filters";
 		F.change_action.value = "gozila_cgi";
 		F.submit_type.value = "delete";
@@ -116,23 +110,25 @@ function valid(F) {
 		F.week5.checked == false &&
 		F.week6.checked == false
 	){
-		alert("You must at least select a day.");
+//		alert("You must at least select a day.");
+		alert(filter.mess2);
 		return false;
 	}
 	if(F.time_all[1].checked == true){
 		start = (parseInt(F.start_time.value, 10)*12 + parseInt(F.start_hour.value, 10)) * 60 + parseInt(F.start_min.value, 10);
 		end = (parseInt(F.end_time.value, 10)*12 + parseInt(F.end_hour.value, 10)) * 60 + parseInt(F.end_min.value, 10);
 		if(end <= start){
-			alert("The end time must be bigger than start time!");
+//			alert("The end time must be bigger than start time.");
+			alert(filter.mess3);
 			return false;
 		}
 	}
-	if(F.f_status1[1].checked == true) {	// Disable
+	if(F.f_status1[1].checked == true) {		// Disable
 		F.f_status.value = "0";
-	} else {					// Enable
+	} else {									// Enable
 		if(F.f_status2[1].checked == true) {	// Allow
 			F.f_status.value = "2";
-		} else {					// deny
+		} else {								// deny
 			F.f_status.value = "1";
 		}
 	}
@@ -142,7 +138,6 @@ function valid(F) {
 	}else{
 	    F.filter_p2p.value = 1;
 	}
-
 
 	return true;
 }
@@ -154,16 +149,11 @@ function SelFilter(num,F) {
 	F.submit();
 }
 
-function exit() {
-	closeWin(summary_win);
-	closeWin(ipmac_win);
-}
-
 function init() {
-	day_enable_disable(document.filters,'<% filter_tod_get("day_all_init"); %>');
-	time_enable_disable(document.filters,'<% filter_tod_get("time_all_init"); %>');
+	day_enable_disable(document.filters, "<% filter_tod_get("day_all_init"); %>");
+	time_enable_disable(document.filters, "<% filter_tod_get("time_all_init"); %>");
 	setBlockedServicesValue();
-	Status(document.filters, '<% filter_policy_get("f_status","onload_status"); %>');
+	Status(document.filters, "<% filter_policy_get("f_status","onload_status"); %>");
 	choose_disable(document.filters.port0_start);
 	choose_disable(document.filters.port0_end);
 	choose_disable(document.filters.port1_start);
@@ -309,7 +299,8 @@ function Status(F,I) {
 		</script>
 	</head>
 
-	<body class="gui" onunload="exit()" onload="init()"> <% showad(); %>
+	<body class="gui" onload="init()">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -319,77 +310,88 @@ function Status(F,I) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li class="current"><span>Access Restrictions</span>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.accrestriction)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><span>Internet Access</span></li>
+											<li><span><script type="text/javascript">Capture(bmenu.webaccess)</script></span></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li><a href="Status_Router.asp">Status</a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form name="filters" action="apply.cgi" method="<% get_http_method(); %>">
-							<input type="hidden" name="submit_button"/>
-							<input type="hidden" name="action"/>
-							<input type="hidden" name="change_action"/>
-							<input type="hidden" name="submit_type"/>
-							<input type="hidden" name="blocked_service"/>
-							<input type="hidden" name="filter_web"/>
-							<input type="hidden" name="filter_policy"/>
-							<input type="hidden" name="filter_p2p"/>
-							<input type="hidden" name="f_status"/>
-							<h2>Internet Access</h2>
+						<form name="filters" action="apply.cgi" method="<% get_http_method(); %>" >
+							<input type="hidden" name="submit_button" />
+							<input type="hidden" name="action" />
+							<input type="hidden" name="change_action" />
+							<input type="hidden" name="submit_type" />
+							<input type="hidden" name="blocked_service" />
+							<input type="hidden" name="filter_web" />
+							<input type="hidden" name="filter_policy" />
+							<input type="hidden" name="filter_p2p" />
+							<input type="hidden" name="f_status" />
+							<h2><script type="text/javascript">Capture(filter.h2)</script></h2>
 							<fieldset>
-								<legend>Access Policy</legend>
+								<legend><script type="text/javascript">Capture(filter.legend)</script></legend>
 								<div class="setting">
-									<div class="label">Policy</div>
+									<div class="label"><script type="text/javascript">Capture(filter.pol)</script></div>
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
-									<input type="button" value="Delete" onclick="to_delete(this.form)"/>
-									<input type="button" value="Summary" onclick="ViewSummary()"/>
+									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form)\" />")</script>
+									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480)\" />")</script>
 								</div>
 								<div class="setting">
-									<div class="label">Status</div>
-									<input type="radio" value="enable" name="f_status1" <% filter_policy_get("f_status","enable"); %>/>Enable
-									<input type="radio" value="disable" name="f_status1" <% filter_policy_get("f_status","disable"); %>/>Disable
+									<div class="label"><script type="text/javascript">Capture(share.statu)</script></div>
+									<input type="radio" value="enable" name="f_status1" <% filter_policy_get("f_status","enable"); %>/><script type="text/javascript">Capture(share.enable)</script>
+									<input type="radio" value="disable" name="f_status1" <% filter_policy_get("f_status","disable"); %>/><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<div class="setting">
-									<div class="label">Enter Policy Name</div>
+									<div class="label"><script type="text/javascript">Capture(filter.polname)</script></div>
 									<input maxlength="30" size="22" name="f_name" value="<% filter_policy_get("f_name",""); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label">PCs</div>
-									<input type="button" value="Edit List of PCs" onclick="ViewFilter()"/>
+									<div class="label"><script type="text/javascript">Capture(filter.pcs)</script></div>
+									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />")</script>
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /> Deny
+										<input type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /><script type="text/javascript">Capture(share.deny)</script>
 									</div>
 									Internet access during selected days and hours.
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /> Allow
+										<input type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><script type="text/javascript">Capture(share.allow)</script>
 									</div>
 								</div>
 								<br />
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Days</legend>
+								<legend><script type="text/javascript">Capture(filter.legend2)</script></legend>
 								<div class="setting">
 									<table>
+										<tr>
+											<td align="center"><script type="text/javascript">Capture(share.everyday)</script></td>
+											<td align="center"><script type="text/javascript">Capture(share.sun_s)</script></td>
+											<td align="center"><script type="text/javascript">Capture(share.mon_s)</script></td>
+											<td align="center"><script type="text/javascript">Capture(share.tue_s)</script></td>
+											<td align="center"><script type="text/javascript">Capture(share.wed_s)</script></td>
+											<td align="center"><script type="text/javascript">Capture(share.thu_s)</script></td>
+											<td align="center"><script type="text/javascript">Capture(share.fri_s)</script></td>
+											<td align="center"><script type="text/javascript">Capture(share.sat_s)</script></td>
+										</tr>
 										<tr>
 											<td align="center"><input type="checkbox" value="1" name="day_all" onClick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
 											<td align="center"><input type="checkbox" value="1" name="week0" <% filter_tod_get("week0"); %> /></td>
@@ -400,27 +402,18 @@ function Status(F,I) {
 											<td align="center"><input type="checkbox" value="1" name="week5" <% filter_tod_get("week5"); %> /></td>
 											<td align="center"><input type="checkbox" value="1" name="week6" <% filter_tod_get("week6"); %> /></td>
 										</tr>
-										<tr>
-											<td>Everyday</td>
-											<td>Sun</td>
-											<td>Mon</td>
-											<td>Tue</td>
-											<td>Wed</td>
-											<td>Thu</td>
-											<td>Fri</td>
-											<td>Sat</td>
-										</tr>
 									</table>
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Times</legend>
+								<legend><script type="text/javascript">Capture(filter.time)</script></legend>
 								<div class="setting">
-									<div class="label">24 Hours</div>
+									<div class="label"><script type="text/javascript">Capture(filter.h24)</script></div>
 									<input type="radio" value="1" name="time_all" onclick="timeall(this.form,'0')" <% filter_tod_get("time_all_en"); %> />
 								</div>
 								<div class="setting">
-									<div class="label">From</div>
+									<div class="label"><script type="text/javascript">Capture(share.from)</script></div>
 									<input type="hidden" name="allday" />
 									<input type="radio" value="0" name="time_all" onclick="timeall(this.form,'1')" <% filter_tod_get("time_all_dis"); %> />
 									<select name="start_hour"><% filter_tod_get("start_hour_12"); %></select>:<select name="start_min"><% filter_tod_get("start_min_5"); %></select>
@@ -434,10 +427,11 @@ function Status(F,I) {
 									</select>
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Blocked Services</legend>
+								<legend><script type="text/javascript">Capture(filter.legend3)</script></legend>
 								<div class="setting">
-									<div class="label">Catch all P2P Protocols</div>
+									<div class="label"><script type="text/javascript">Capture(filter.catchall)</script></div>
   									<input type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
 								</div>
 								<div class="setting">
@@ -445,35 +439,36 @@ function Status(F,I) {
 										<option value="None" selected="selected">None</option>
 										<script>write_service_options(servport_name0);</script>
 									</select>
-									<input maxLength="5" size="5" name="port0_start" class="num" readonly="readonly" /> ~<input maxLength="5" size="5" name="port0_end" class="num" readonly="readonly" />
+									<input maxLength="5" size="5" name="port0_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port0_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service1" onchange="onChange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
 										<option value="None" selected="selected">None</option>
 										<script>write_service_options(servport_name1);</script>
 									</select>
-									<input maxLength="5" size="5" name="port1_start" class="num" readonly="readonly" /> ~<input maxLength="5" size="5" name="port1_end" class="num" readonly="readonly" />
+									<input maxLength="5" size="5" name="port1_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port1_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service2" onchange="onChange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
 										<option value="None" selected="selected">None</option>
 										<script>write_service_options(servport_name2);</script>
 									</select>
-										<input maxLength="5" size="5" name="port2_start" class="num" readonly="readonly" /> ~<input maxLength="5" size="5" name="port2_end" class="num" readonly="readonly" />
+										<input maxLength="5" size="5" name="port2_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port2_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service3" onchange="onChange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
 										<option value="None" selected="selected">None</option>
 										<script>write_service_options(servport_name3);</script>
 									</select>
-									<input maxLength="5" size="5" name="port3_start" class="num" readonly="readonly" /> ~<input maxLength="5" size="5" name="port3_end" class="num" readonly="readonly" />
+									<input maxLength="5" size="5" name="port3_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port3_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
-									<input type="button" value="Add/Edit Service" onclick="self.open('Port_Services.asp','Port_Services','alwaysRised,resizable,scrollbars,width=630,height=360').focus()" />
+									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 400)\" />")</script>
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Website Blocking by URL Address</legend>
+								<legend><script type="text/javascript">Capture(filter.legend4)</script></legend>
 								<div class="setting center">
 									<input class="num" size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />&nbsp;&nbsp;&nbsp;
 									<input class="num" size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />
@@ -483,8 +478,9 @@ function Status(F,I) {
 									<input class="num" size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Website Blocking by Keyword</legend>
+								<legend><script type="text/javascript">Capture(filter.legend5)</script></legend>
 								<div class="setting center">
 									<input class="num" size="18" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />&nbsp;&nbsp;&nbsp;
 									<input class="num" size="18" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />&nbsp;&nbsp;&nbsp;
@@ -496,36 +492,39 @@ function Status(F,I) {
 									<input class="num" size="18" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />
 								</div>
 							</fieldset><br />
+							
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">Internet Access Policy: </dt>
-							<dd class="definition">You may define up to 10 access policies. Click <em>Delete</em> to delete a policy or <em>Summary</em> to see a summary of the policy.</dd>
-							<dt class="term">Status: </dt>
-							<dd class="definition">Enable or disable a policy.</dd>
-							<dt class="term">Policy Name: </dt>
-							<dd class="definition">You may assign a name to your policy.</dd>
-							<dt class="term">Days: </dt>
-							<dd class="definition">Choose the day of the week you would like your policy to be applied.</dd>
-							<dt class="term">Times: </dt>
-							<dd class="definition">Enter the time of the day you would like your policy to apply.</dd>
-							<dt class="term">Blocked Services: </dt>
-							<dd class="definition">You may choose to block access to certain services. Click <em>Add/Edit</em> Services to modify these settings.</dd>
-							<dt class="term">Website Blocking by URL: </dt>
-							<dd class="definition">You can block access to certain websites by entering their URL.</dd>
-							<dt class="term">Website Blocking by Keyword: </dt>
-							<dd class="definition">You can block access to certain website by the keywords contained in their webpage.</dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right3)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right4)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right5)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right6)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right7)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right8)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right9)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right10)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right11)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right12)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right13)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right14)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hfilter.right15)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hfilter.right16)</script></dd>
 						</dl>
 						<br />
-						<a href="javascript:openHelpWindow('HFilters.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HFilters.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

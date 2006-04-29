@@ -40,15 +40,31 @@ share.to="To";
 share.about="About";
 share.everyday="Everyday";
 share.sun="Sunday";
+share.sun_s="Sun";
+share.sun_s1="S";
 share.mon="Monday";
+share.mon_s="Mon";
+share.mon_s1="M";
 share.tue="Tuesday";
+share.tue_s="Tue";
+share.tue_s1="T";
 share.wed="Wednesday";
+share.wed_s="Wed";
+share.wed_s1="W";
 share.thu="Thursday";
+share.thu_s="Thu";
+share.thu_s1="T";
 share.fri="Friday";
+share.fri_s="Fri";
+share.fri_s1="F";
 share.sat="Saturday";
+share.sat_s="Sat";
+share.sat_s1="S";
 share.expires="Expires";
 share.yes="Yes";
 share.no="No";
+share.allow="Allow";
+share.deny="Deny";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -74,6 +90,9 @@ sbutton.firewall="Save Firewall";
 sbutton.wol="Wake Up";
 sbutton.add_wol="Add Host";
 sbutton.manual_wol="Manual Wake Up";
+sbutton.summary="Summary";
+sbutton.filterIP="Edit List of PCs";
+sbutton.filterSer="Add/Edit Service";
 
 
 
@@ -152,6 +171,7 @@ bmenu.security="Security";
 
 
 bmenu.accrestriction="Access Restrictions";
+bmenu.webaccess="Internet Access";
 
 
 bmenu.applications="Applications &amp; Gaming";
@@ -426,6 +446,51 @@ factdef.mess1="Warning! If you click OK, the device will reset to factory defaul
 //help container
 var hfactdef = new Object();
 hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
+
+
+
+// **************************************************************** Filter.asp **********************************************************************//
+
+var filter = new Object();
+filter.titl=" - Access Restrictions";
+filter.h2="Internet Access";
+filter.legend="Access Policy";
+filter.restore="Restore Factory Defaults";
+filter.pol="Policy";
+filter.polname="Enter Policy Name";
+filter.pcs="PCs";
+filter.legend2="Days";
+filter.time="Times";
+filter.h24="24 Hours";
+filter.legend3="Blocked Services";
+filter.catchall="Catch all P2P Protocols";
+filter.legend4="Website Blocking by URL Address";
+filter.legend5="Website Blocking by Keyword";
+
+filter.mess1="Delete the Policy?";
+filter.mess2="You must at least select a day.";
+filter.mess3="The end time must be bigger than start time.";
+
+//help container
+var hfilter = new Object();
+hfilter.right1="Internet Access Policy:";
+hfilter.right2="You may define up to 10 access policies. Click <em>" + sbutton.del + "</em> to delete a policy or <em>" + sbutton.summary + "</em> to see a summary of the policy.";
+hfilter.right3="Status:";
+hfilter.right4="Enable or disable a policy.";
+hfilter.right5="Policy Name:";
+hfilter.right6="You may assign a name to your policy.";
+hfilter.right7="Days:";
+hfilter.right8="Choose the day of the week you would like your policy to be applied.";
+hfilter.right9="Times:";
+hfilter.right10="Enter the time of the day you would like your policy to apply.";
+hfilter.right11="Blocked Services:";
+hfilter.right12="You may choose to block access to certain services. Click <em>" + sbutton.filterSer + "</em> to modify these settings.";
+hfilter.right13="Website Blocking by URL:";
+hfilter.right14="You can block access to certain websites by entering their URL.";
+hfilter.right15="Website Blocking by Keyword:";
+hfilter.right16="You can block access to certain website by the keywords contained in their webpage.";
+
+
 
 // **************************************************************** WOL.asp **********************************************************************//
 
