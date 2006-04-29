@@ -3,7 +3,8 @@
 /*
  * Squashfs
  *
- * Copyright (c) 2002, 2003, 2004, 2005 Phillip Lougher <phillip@lougher.demon.co.uk>
+ * Copyright (c) 2002, 2003, 2004, 2005, 2006
+ * Phillip Lougher <phillip@lougher.org.uk>
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -24,42 +25,50 @@
 
 #include <linux/squashfs_fs.h>
 
-typedef struct {
-	unsigned int	block;
+struct squashfs_cache {
+	long long	block;
 	int		length;
-	unsigned int	next_index;
+	long long	next_index;
 	char		*data;
-	} squashfs_cache;
+};
 
 struct squashfs_fragment_cache {
-	unsigned int	block;
+	long long	block;
 	int		length;
 	unsigned int	locked;
 	char		*data;
-	};
+};
 
-typedef struct squashfs_sb_info {
-	squashfs_super_block	sBlk;
+struct squashfs_sb_info {
+	struct squashfs_super_block	sblk;
 	int			devblksize;
 	int			devblksize_log2;
 	int			swap;
-	squashfs_cache		*block_cache;
+	struct squashfs_cache	*block_cache;
 	struct squashfs_fragment_cache	*fragment;
 	int			next_cache;
 	int			next_fragment;
-	squashfs_uid		*uid;
-	squashfs_uid		*guid;
-	squashfs_fragment_index		*fragment_index;
+	int			next_meta_index;
+	unsigned int		*uid;
+	unsigned int		*guid;
+	long long		*fragment_index;
+	unsigned int		*fragment_index_2;
 	unsigned int		read_size;
 	char			*read_data;
 	char			*read_page;
+	struct semaphore	read_data_mutex;
 	struct semaphore	read_page_mutex;
 	struct semaphore	block_cache_mutex;
 	struct semaphore	fragment_mutex;
+	struct semaphore	meta_index_mutex;
 	wait_queue_head_t	waitq;
 	wait_queue_head_t	fragment_wait_queue;
-	struct inode		*(*iget)(struct super_block *s, squashfs_inode inode);
-	unsigned int		(*read_blocklist)(struct inode *inode, int index, int readahead_blks,
-					char *block_list, unsigned short **block_p, unsigned int *bsize);
-	} squashfs_sb_info;
+	struct meta_index	*meta_index;
+	struct inode		*(*iget)(struct super_block *s,  squashfs_inode_t \
+				inode);
+	long long		(*read_blocklist)(struct inode *inode, int \
+				index, int readahead_blks, char *block_list, \
+				unsigned short **block_p, unsigned int *bsize);
+	int			(*read_fragment_index_table)(struct super_block *s);
+};
 #endif
