@@ -139,7 +139,7 @@ function handle_https(F)
 
 function init() {
 	port_enable_disable(document.setup, '<% nvram_get("remote_management"); %>');
-	if (F._remote_mgt_ssh) {
+	if (document.setup._remote_mgt_ssh) {
 		if (<% nvram_get("sshd_enable"); %> == 0) {
 			document.setup.remote_mgt_ssh.value = 0;
 			choose_disable(document.setup._remote_mgt_ssh);
