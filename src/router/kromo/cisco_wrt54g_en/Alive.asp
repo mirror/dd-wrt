@@ -9,7 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = "<% nvram_get("router_name"); %>" + alive.titl;
+document.title = '<% nvram_get("router_name"); %>' + alive.titl;
 
 function to_reboot(F) {
 	F.action.value='Reboot';
@@ -28,6 +28,11 @@ function to_submit(F) {
 
 function setWDS(val) {
 	setElementsActive("wds_watchdog_interval_sec", "wds_watchdog_ips", val == 1);
+}
+
+function setPXY(val) {
+	setElementsActive("squid_watchdog_interval_sec", "squid_proxy_server_ip", val == 1);
+	setElementsActive("squid_proxy_server_port", val == 1);
 }
 
 function setAlive() {
@@ -50,6 +55,7 @@ function setAlive() {
 
 function init() {
 	setWDS(<% nvram_get("wds_watchdog_enable"); %>);
+	setPXY(<% nvram_get("squid_watchdog_enable"); %>);
 	setAlive();
 }
 		</script>
