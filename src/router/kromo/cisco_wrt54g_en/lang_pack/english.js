@@ -34,6 +34,7 @@ share.mac="MAC Address";
 share.none="None";
 share.both="Both";
 share.del="Delete";
+share.remove="Remove";
 share.descr="Description";
 share.from="From";
 share.to="To";
@@ -511,8 +512,7 @@ wol.restore="Restore Factory Defaults";
 wol.mac="MAC Address(es)";
 wol.broadcast="Net Broadcast";
 wol.udp="UDP Port";
-wol.msg1="Waking up";
-wol.msg2="with";
+wol.msg1="Click to remove WOL host";
 
 //help container
 var hwol = new Object();
