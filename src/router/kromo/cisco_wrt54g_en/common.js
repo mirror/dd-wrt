@@ -110,6 +110,21 @@ function valid_range(I,start,end,M) {
 		I.value = d;	// strip 0
 
 }
+
+function valid_macs_all(I) {
+	if(I.value == "") {
+		return true;
+	} else if (I.value.length == 12) {
+		valid_macs_12(I);
+	} else if (I.value.length == 17) {
+		valid_macs_17(I);
+	} else {
+//		alert("The MAC Address length is not correct.");
+		alert(errmsg.err5);
+		I.value = I.defaultValue;
+	}
+}
+
 function valid_mac(I,T) {
 	var m1,m2=0;
 
@@ -136,8 +151,6 @@ function valid_macs_12(I){
 	var m,m3;	
 	if(I.value == "")
 		return true;
-//	if(I.value.length<2)		
-//		I.value=0;	
 	else if(I.value.length==12){
 		for(i=0;i<12;i++){			
 			m=parseInt(I.value.charAt(i), 16);			
@@ -149,7 +162,7 @@ function valid_macs_12(I){
 			alert(errmsg.err17);
 			I.value = I.defaultValue;		
 		}	
-	} else{		
+	} else {		
 //		alert("The MAC Address length is not correct.");
 		alert(errmsg.err18);
 		I.value = I.defaultValue;	
@@ -165,7 +178,7 @@ function valid_macs_12(I){
 //		alert("The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].");
 		alert(errmsg.err16);
 		I.value = I.defaultValue;                       
-	}                                                       
+	}                                                      
 }
 
 function valid_macs_17(I)
