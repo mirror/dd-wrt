@@ -113,6 +113,7 @@ addHost (char *host, char *ip)
 void
 start_vpn_modules (void)
 {
+#ifndef HAVE_RB500
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1"))
       && nvram_invmatch ("pptpd_enable", "1"))
@@ -120,7 +121,7 @@ start_vpn_modules (void)
       eval ("/sbin/insmod", "ip_conntrack_proto_gre");
       eval ("/sbin/insmod", "ip_nat_proto_gre");
     }
-
+#endif
   if (nvram_match ("pptp_pass", "1") && nvram_invmatch ("pptpd_enable", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_pptp");
@@ -132,10 +133,14 @@ start_vpn_modules (void)
 void
 stop_vpn_modules (void)
 {
+#ifndef HAVE_RB500
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
+#endif
   eval ("/sbin/rmmod", "ip_nat_pptp");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
+#ifndef HAVE_RB500
   eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
+#endif
 }
 
 #ifdef HAVE_PPTPD
