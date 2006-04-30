@@ -730,7 +730,7 @@ validate_filter_web (webs_t wp, char *value, struct variable *v)
   char filter_url[] = "filter_web_urlXXX";
   D ("validate_filter_web");
   /* Handle Website Blocking by URL Address */
-  for (i = 0; i < 4; i++)
+  for (i = 0; i < 6; i++)
     {
       char filter_host[] = "urlXXX";
       char *host;
@@ -753,7 +753,7 @@ validate_filter_web (webs_t wp, char *value, struct variable *v)
   nvram_set (filter_host, buf);
 
   /* Handle Website Blocking by Keyword */
-  for (i = 0; i < 6; i++)
+  for (i = 0; i < 8; i++)
     {
       char filter_url[] = "urlXXX";
       char *url;
