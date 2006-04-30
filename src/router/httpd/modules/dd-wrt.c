@@ -2359,7 +2359,7 @@ ej_get_currate (int eid, webs_t wp, int argc, char_t ** argv)
   if (rate > 0)
     {
       if (rate == 11)
-	    websWrite (wp, "%f", 5.5);
+	    websWrite (wp, "5.5");
 	  else
 	    websWrite (wp, "%d", rate / 2);
     }
