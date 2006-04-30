@@ -272,7 +272,7 @@ function Status(F,I) {
 	for(i=0 ; i < total ; i++){
 		if(F.elements[i].name == "blocked_service0")
 			start = i;
-		if(F.elements[i].name == "url5")
+		if(F.elements[i].name == "url7")
 			end = i;
 	}
 	if(start == '' || end == '')
@@ -471,11 +471,13 @@ function Status(F,I) {
 								<legend><script type="text/javascript">Capture(filter.legend4)</script></legend>
 								<div class="setting center">
 									<input class="num" size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />
+									<input class="num" size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />
 								</div>
 								<div class="setting center">
-									<input class="num" size="30" maxlength="79" name="host2" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","2"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />
+									<input class="num" size="30" maxlength="79" name="host3" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","3"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="30" maxlength="79" name="host4" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","4"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="30" maxlength="79" name="host5" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","5"); %>" />
 								</div>
 							</fieldset><br />
 							
@@ -484,12 +486,14 @@ function Status(F,I) {
 								<div class="setting center">
 									<input class="num" size="18" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />&nbsp;&nbsp;&nbsp;
 									<input class="num" size="18" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" />
+									<input class="num" size="18" maxlength="79" name="url2" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","2"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="18" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />
 								</div>
 								<div class="setting center">
-									<input class="num" size="18" maxlength="79" name="url3" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","3"); %>" />&nbsp;&nbsp;&nbsp;
 									<input class="num" size="18" maxlength="79" name="url4" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","4"); %>" />&nbsp;&nbsp;&nbsp;
-									<input class="num" size="18" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />
+									<input class="num" size="18" maxlength="79" name="url5" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","5"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="18" maxlength="79" name="url6" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","6"); %>" />&nbsp;&nbsp;&nbsp;
+									<input class="num" size="18" maxlength="79" name="url7" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","7"); %>" />
 								</div>
 							</fieldset><br />
 							
