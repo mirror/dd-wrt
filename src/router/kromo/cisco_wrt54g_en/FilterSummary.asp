@@ -9,6 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+
 function filter_del(F) {
 	F.submit_button.value = "FilterSummary";
 	F.change_action.value = "gozila_cgi";
@@ -16,13 +17,10 @@ function filter_del(F) {
 	F.submit();
 }
 
-function init() {
-	window.focus();
-}
 		</script>
 	</head>
 
-	<body onload="init()" onUnload="top.opener.window.location.href='Filters.asp'">
+	<body onUnload="top.opener.window.location.href='Filters.asp'">
 		<form action="apply.cgi" method="<% get_http_method(); %>">
 			<input type="hidden" name="submit_button" />
 			<input type="hidden" name="submit_type" />
@@ -35,7 +33,7 @@ function init() {
 					<th>Policy Name</th>
 					<th>Days</th>
 					<th>Time of Day</th>
-					<th>&nbsp;</th>
+					<th><script type="text/javascript">Capture(share.del)</script></th>
 				</tr>
 				<% filter_summary_show(); %>
 				<tr>
