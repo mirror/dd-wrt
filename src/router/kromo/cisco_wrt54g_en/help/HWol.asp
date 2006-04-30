@@ -16,14 +16,14 @@
          <dl> 
             <dd>This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your WRT).</dd> 
                <dt class="term">Available Hosts:</dt> 
-               <dd class="definition">The Available Hosts section provides a list of hosts to add/remove from the WOL Addresses list. The list is derived from any defined static hosts, automatically discovered DHCP clients, and manually added wol hosts.
+               <dd class="definition">The Available Hosts section provides a list of hosts to add/remove from the WOL Addresses list. The list is a combination of any defined static hosts or automatically discovered DHCP clients.
                <div class="note"> 
                   <h4>Note</h4> 
-                     <div>This table uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has the same netmask as the local router (lan_netmask), and uses the UDP port specified in the UDP Port box (in the Manual WOL section).</div> 
+                     <div>This table uses the MAC address, &quot;guesses&quot; the network broadcast address by assuming the host's IP address has the same netmask as the local router (lan_netmask), and uses the UDP port specified in the UDP Port box (in the Manual WOL section -- default is 7 if nothing is specified).</div> 
                </div> 
             </dd> 
                <dt class="term">WOL Addresses:</dt> 
-               <dd class="definition">The WOL Addresses section allows individual hosts in the WOL list (stored in the <b>wol_hosts</b> nvram variable) to be <em>Woken Up</em>. 
+               <dd class="definition">The WOL Addresses section allows individual hosts in the WOL list (stored in the <b>wol_hosts</b> nvram variable) to be <em>Woken Up</em>.  The list is a combination of selected (enabled) Available Hosts and manually added WOL hosts. 
 
                <dt class="term">Manual WOL: </dt> 
                <dd class="definition">The Manual WOL section allows individual or a list of hosts to be woken up by clicking <em>Wake Up</em> to send it the WOL <i>magic packet</i>. 
