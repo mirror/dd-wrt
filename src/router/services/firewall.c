@@ -2500,6 +2500,15 @@ start_firewall (void)
     diag_led (DMZ, STOP_LED);
   cprintf ("done");
 #ifdef XBOX_SUPPORT
+#ifdef HAVE_RB500
+  if ((fp = fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
+    {
+      fprintf (fp, "%d", 65);
+      fclose (fp);
+    }
+  else
+    perror ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout");
+#else
   if ((fp = fopen ("/proc/sys/net/ipv4/ip_conntrack_udp_timeouts", "r+")))
     {
       fprintf (fp, "%d %d", 65, 180);
@@ -2507,6 +2516,7 @@ start_firewall (void)
     }
   else
     perror ("/proc/sys/net/ipv4/ip_conntrack_udp_timeouts");
+#endif
 #endif
   cprintf ("Start firewall\n");
   /* We don't forward packet until those policies are set. */
