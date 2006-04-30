@@ -14,6 +14,7 @@ function to_submit(F) {
 	F.submit_button.value = "Wireless_MAC";
 	F.change_action.value = "apply_cgi";
 	F.action.value = "Apply";
+	
 	F.save_button.value = "Saved";
 	apply(F);
 }
