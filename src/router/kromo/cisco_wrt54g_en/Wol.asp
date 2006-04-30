@@ -24,6 +24,24 @@ function guess_broadcast(ip) {
 	return broadcast.join(".");
 }
 
+function get_available_hosts() {
+	var available_hosts = get_static_leases();
+
+	var dhcp_hosts = get_dhcp_hosts().split(" ");
+	while (dhcp_hosts.length > 0) {
+		var host = dhcp_hosts.shift();
+		if (available_hosts.indexOf(host[0]) == -1) {
+			available_hosts = available_hosts + " " + host;
+		}
+	}
+
+	while (available_hosts.indexOf(" ") == 0) {
+		available_hosts = available_hosts.substr(1);
+	}
+
+	return available_hosts;
+}
+
 function get_wol_hosts() {
 	return "<% nvram_get("wol_hosts"); %>";
 }
@@ -58,6 +76,10 @@ function add_wol_host(F) {
 	edit_wol_hosts(F.wol_hosts_mac.value, F.wol_hosts_hostname.value, F.wol_hosts_ip.value, "true");
 }
 
+function del_wol_host(mac) {
+	edit_wol_hosts(mac, "", "", "false");
+}
+
 function edit_wol_hosts(mac, host, ip, add) {
 	F = document.forms["ping"];
 	var wol_hosts = get_wol_hosts();
@@ -66,7 +88,7 @@ function edit_wol_hosts(mac, host, ip, add) {
 		wol_hosts = wol_hosts + " " + mac + "=" + host + "=" + ip;
 	} else {
 		var current_hosts = wol_hosts.split(" ");
-		var wol_hosts = '';
+		wol_hosts = ' ';
 		while (current_hosts.length > 0) {
 			var host = current_hosts.shift();
 			if (host.indexOf(mac) == -1) {
@@ -75,9 +97,12 @@ function edit_wol_hosts(mac, host, ip, add) {
 		}
 	}
 	
-	if (wol_hosts.indexOf(" ") == 0) {
+	while (wol_hosts.indexOf(" ") == 0) {
 		wol_hosts = wol_hosts.substr(1);
 	}
+
+	if (wol_hosts.length == 0)
+		wol_hosts = " ";
 
 	F.wol_type.value = "update";
 	F.wol_hosts.value = wol_hosts;
@@ -86,8 +111,8 @@ function edit_wol_hosts(mac, host, ip, add) {
 
 function submit_wol(mac, ip) {
 	F = document.forms["ping"];
-    F.manual_wol_mac.value = mac;
-    F.manual_wol_network.value = ip;
+	F.manual_wol_mac.value = mac;
+	F.manual_wol_network.value = ip;
 	if(F.manual_wol_port.value == "")
 		F.manual_wol_port.value = 7;
 	F.wol_type.value = "wol";
@@ -124,100 +149,86 @@ function valid(F) {
 	return true;
 }
 
-function display_static_leases() {
-	var static_leases = get_static_leases().split(" ");
-	while (static_leases.length > 0) {
-		var lease = static_leases.shift().split("=")
-		var mac = lease[0];
-		var host = lease[1];
-		var ip = lease[2];
-		if(mac!=undefined && host!=undefined && ip!=undefined) {
-			document.write("<tr>");
-			document.write("\t<td>" + mac + "</td>");
-			document.write("\t<td >" + host + "</td>");
-			document.write("\t<td align=\"right\">" + ip + "</td>");
+function setAvailableHostsTable() {
+	var available_hosts = get_available_hosts().split(" ");
+	
+	var table = document.getElementById("available_hosts_table");
+	cleanTable(table);
+
+	if(!available_hosts || available_hosts == "," || available_hosts == "") {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 4;
+		cell.align = "center";
+		cell.innerHTML = "- None - ";
+		return;
+	}
+
+	while(available_hosts.length > 0) {
+		var host = available_hosts.shift().split("=");
+		var mac = host[0];
+		var hostname = host[1];
+		var ip = host[2];
+		if (mac!=undefined && hostname!=undefined && ip!=undefined) {
+			var row = table.insertRow(-1);
+			row.style.height = "15px";
+			row.insertCell(-1).innerHTML = mac;
+			row.insertCell(-1).innerHTML = hostname;
+			var cell = row.insertCell(-1);
+			cell.align = "right";
+			cell.innerHTML = ip;
 			ip = guess_broadcast(ip);
-			document.write("\t<td align=\"center\">");
+			cell = row.insertCell(-1);
+			cell.align = "center";	
 			if(get_wol_hosts().indexOf(mac) == -1) {
-				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
+				cell.innerHTML = "\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','true');\" />";
 			} else {
-				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked=\"checked\" />");
+				cell.innerHTML = "\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','false');\" checked=\"checked\" />";
 			}
-			document.write("\t</td>");
-			document.write("</tr>");
-		} 
+		}
 	}
 }
 
-function display_manual_wol_hosts() {
+function setWolHostsTable() {
 	var wol_hosts = get_wol_hosts().split(" ");
-	while (wol_hosts.length > 0) {
-		var host = wol_hosts.shift().split("=")
+	
+	var table = document.getElementById("wol_hosts_table");
+
+	table.insertRow(1).insertCell(-1);
+
+	if(!wol_hosts || wol_hosts == "," || wol_hosts == "") {
+		var cell = table.insertRow(1).insertCell(-1);
+		cell.colSpan = 4;
+		cell.align = "center";
+		cell.innerHTML = "- None - ";
+	}
+
+	while(wol_hosts.length > 0) {
+		var host = wol_hosts.shift().split("=");
 		var mac = host[0];
 		var hostname = host[1];
 		var ip = host[2];
-		if(get_static_leases().indexOf(mac) == -1 && mac!=undefined && host!=undefined && ip!=undefined) {
-			document.write("<tr>");
-			document.write("\t<td>" + mac + "</td>");
-			document.write("\t<td >" + hostname + "</td>");
-			document.write("\t<td align=\"right\">" + ip + "</td>");
-//			ip = guess_broadcast(ip);
-			document.write("\t<td align=\"center\">");
-			if(get_wol_hosts().indexOf(mac) == -1) {
-				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','true');\" />");
-			} else {
-				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + host + "','" + ip + "','false');\" checked=\"checked\" />");
-			}
-			document.write("\t</td>");
-			document.write("</tr>");
-		} 
+		if (mac!=undefined && hostname!=undefined && ip!=undefined) {
+			var row = table.insertRow(1);
+			row.style.height = "15px";
+			row.insertCell(-1).innerHTML = mac;
+			row.insertCell(-1).innerHTML = hostname;
+			var cell = row.insertCell(-1);
+			cell.align = "right";
+			cell.innerHTML = ip;
+			cell = row.insertCell(-1);
+			cell.className = "bin";
+			cell.title = wol.msg1;
+			eval("addEvent(cell, 'click', function() { del_wol_host('" + mac + "') })");
+			row.insertCell(-1).innerHTML = "\t\t<input type=button value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
+		}
 	}
+
 }
 
-function display_dhcp_hosts() {
-	var dhcp_hosts = get_dhcp_hosts().split(" ");
-	while (dhcp_hosts.length > 0) {
-		var host = dhcp_hosts.shift().split("=")
-		var mac = host[0];
-		var hostname = host[1];
-		var ip = host[2];
-		if(get_static_leases().indexOf(mac) == -1 && mac!=undefined && hostname!=undefined && ip!=undefined) {
-			document.write("<tr>");
-			document.write("\t<td>" + mac + "</td>");
-			document.write("\t<td >" + hostname + "</td>");
-			document.write("\t<td align=\"right\">" + ip + "</td>");
-			ip = guess_broadcast(ip);
-			document.write("\t<td align=\"center\">");
-			if(get_wol_hosts().indexOf(mac) == -1) {
-				document.write("\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','true');\" />");
-			} else {
-				document.write("\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','false');\" checked=\"checked\"/>");
-			}
-			document.write("\t</td>");
-			document.write("</tr>");
-		} 
-	}
-}
-
-function display_wol_hosts() {
-	var wol_hosts = get_wol_hosts().split(" ");
-	while (wol_hosts.length > 0) {
-		var host = wol_hosts.shift().split("=")
-		var mac = host[0];
-		var hostname = host[1];
-		var ip = host[2];
-		if(mac!=undefined && hostname!=undefined && ip!=undefined) {
-			document.write("<tr>");
-			document.write("\t<td>" + mac + "</td>");
-			document.write("\t<td >" + hostname + "</td>");
-			document.write("\t<td align=\"right\">" + ip + "</td>");
-			document.write("\t<td>");
-			document.write("\t\t<input type=button value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />");
-			document.write("\t</td>");
-			document.write("</tr>");
-		} 
-	}
-}
+addEvent(window, "load", function() {
+	setAvailableHostsTable();
+	setWolHostsTable();
+});
 
 	</script>
 
@@ -275,24 +286,12 @@ function display_wol_hosts() {
 							<h2><script type="text/javascript">Capture(wol.h2)</script></h2>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(wol.legend)</script></legend>
-								<table class="table center" cellspacing="5" id="static_lease_table">
+								<table class="table center" cellspacing="5" id="available_hosts_table">
 									<tr>
 										<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
 										<th width="35%"><script type="text/javascript">Capture(share.hostname)</script></th>
 										<th width="20%"><script type="text/javascript">Capture(share.ip)</script></th>
 										<th width="30%"><script type="text/javascript">Capture(wol.enable)</script></th>
-									</tr>
-									<% nvram_selmatch("static_leases","","<!--"); %>
-									<script type="text/javascript">	display_static_leases(); </script>
-									<% nvram_selmatch("static_leases","","-->"); %>
-									<script type="text/javascript">	display_manual_wol_hosts(); </script>
-									<script type="text/javascript">	display_dhcp_hosts(); </script>
-									<tr></tr>
-									<tr>
-										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" value=""/></td>
-										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
-										<td align="right"><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value=""/></td>
-										<td align="center"><script type="text/javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />")</script></td>
 									</tr>
 								</table>
 							</fieldset><br />
@@ -304,8 +303,15 @@ function display_wol_hosts() {
 										<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
 										<th width="35%"><script type="text/javascript">Capture(share.hostname)</script></th>
 										<th width="20%"><script type="text/javascript">Capture(wol.broadcast)</script></th>
+										<th><script type="text/javascript">Capture(share.remove)</script></th>
 									</tr>
-									<script type="text/javascript">	display_wol_hosts(); </script>
+									<tr>
+										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" value=""/></td>
+										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
+										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value=""/></td>
+										<td></td>
+										<td><script language="javascript">document.write('<input type="button" name="add" value="' + sbutton.add_wol + '" onclick="add_wol_host(this.form)" />');</script></td>
+									</tr>
 								</table>
 							</fieldset><br />
 
