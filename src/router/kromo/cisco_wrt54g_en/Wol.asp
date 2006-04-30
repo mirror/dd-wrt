@@ -115,12 +115,14 @@ function submit_wol(mac, ip) {
 	F.manual_wol_network.value = ip;
 	if(F.manual_wol_port.value == "")
 		F.manual_wol_port.value = 7;
+		
 	F.wol_type.value = "wol";
 	apply(F);
 }
 
 function submit_manual_wol(F) {
-	if(!valid(F)) return;
+	if(!valid(F))
+		return;
 	
 	F.manual_wol_mac.value = F.manual_wol_mac.value.replace("\n", " ");
 	F.wol_type.value = "manual";
@@ -159,7 +161,7 @@ function setAvailableHostsTable() {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 4;
 		cell.align = "center";
-		cell.innerHTML = "- None - ";
+		cell.innerHTML = "- " + share.none +" -";
 		return;
 	}
 
@@ -180,9 +182,9 @@ function setAvailableHostsTable() {
 			cell = row.insertCell(-1);
 			cell.align = "center";	
 			if(get_wol_hosts().indexOf(mac) == -1) {
-				cell.innerHTML = "\t\t<input type=checkbox value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','true');\" />";
+				cell.innerHTML = "\t\t<input type=\"checkbox\" value=\"0\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','true');\" />";
 			} else {
-				cell.innerHTML = "\t\t<input type=checkbox value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','false');\" checked=\"checked\" />";
+				cell.innerHTML = "\t\t<input type=\"checkbox\" value=\"1\" onclick=\"edit_wol_hosts('" + mac + "','" + hostname + "','" + ip + "','false');\" checked=\"checked\" />";
 			}
 		}
 	}
@@ -199,7 +201,7 @@ function setWolHostsTable() {
 		var cell = table.insertRow(1).insertCell(-1);
 		cell.colSpan = 4;
 		cell.align = "center";
-		cell.innerHTML = "- None - ";
+		cell.innerHTML = "- " + share.none +" -";
 	}
 
 	while(wol_hosts.length > 0) {
@@ -219,7 +221,7 @@ function setWolHostsTable() {
 			cell.className = "bin";
 			cell.title = wol.msg1;
 			eval("addEvent(cell, 'click', function() { del_wol_host('" + mac + "') })");
-			row.insertCell(-1).innerHTML = "\t\t<input type=button value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
+			row.insertCell(-1).innerHTML = "\t\t<input type=\"button\" value=\"" + sbutton.wol + "\" onclick=\"submit_wol('" + mac + "','" + ip + "');\" />";
 		}
 	}
 
