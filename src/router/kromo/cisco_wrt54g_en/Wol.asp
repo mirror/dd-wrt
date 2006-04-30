@@ -310,7 +310,7 @@ addEvent(window, "load", function() {
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
 										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value=""/></td>
 										<td></td>
-										<td><script language="javascript">document.write('<input type="button" name="add" value="' + sbutton.add_wol + '" onclick="add_wol_host(this.form)" />');</script></td>
+										<td><script language="javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />");</script></td>
 									</tr>
 								</table>
 							</fieldset><br />
