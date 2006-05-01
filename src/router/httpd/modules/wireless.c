@@ -1634,7 +1634,7 @@ generate_wep_key (webs_t wp, int key, char *prefix)
         sprintf(key1+strlen(key1),"%02X",key64[0][i]);
       for (i = 0; i < 5; i++)
 	//sprintf (key2 + (i << 1), "%02X", key64[1][i]);
-        sprintf(key2+strlen(key2),"%02X",key64[1][i])
+        sprintf(key2+strlen(key2),"%02X",key64[1][i]);
       for (i = 0; i < 5; i++)
 	//sprintf (key3 + (i << 1), "%02X", key64[2][i]);
         sprintf(key3+strlen(key3),"%02X",key64[2][i]);
