@@ -221,3 +221,6 @@ td .meter {
 input.btn {
 	padding:.0em .5em;
 }
+input.spaceradio {
+	margin-right: .7em;
+}
