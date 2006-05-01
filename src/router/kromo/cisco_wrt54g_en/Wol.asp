@@ -30,7 +30,7 @@ function get_available_hosts() {
 	var dhcp_hosts = get_dhcp_hosts().split(" ");
 	while (dhcp_hosts.length > 0) {
 		var host = dhcp_hosts.shift();
-		if (available_hosts.indexOf(host[0]) == -1) {
+		if (available_hosts.indexOf(host) == -1) {
 			available_hosts = available_hosts + " " + host;
 		}
 	}
@@ -149,6 +149,11 @@ function valid(F) {
 		return false;
 	}
 	return true;
+}
+
+function valid_port(I) {
+	if(I.value == "") return true;
+	return valid_range(I, 1, 65535, wol.udp);
 }
 
 function setAvailableHostsTable() {
@@ -308,9 +313,9 @@ addEvent(window, "load", function() {
 										<th><script type="text/javascript">Capture(share.remove)</script></th>
 									</tr>
 									<tr>
-										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" value=""/></td>
+										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value=""/></td>
 										<td><input maxlength="24" size="24" id="wol_hosts_hostname" name="wol_hosts_hostname" value=""/></td>
-										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" value=""/></td>
+										<td><input class="num" maxlength="15" size="15" id="wol_hosts_ip" name="wol_hosts_ip" onblur="valid_ip_str(this, wol.broadcast)" value=""/></td>
 										<td></td>
 										<td><script language="javascript">document.write("<input type=\"button\" name=\"add\" value=\"" + sbutton.add_wol + "\" onclick=\"add_wol_host(this.form)\" />");</script></td>
 									</tr>
@@ -333,15 +338,15 @@ addEvent(window, "load", function() {
 								<legend><script type="text/javascript">Capture(wol.legend4)</script></legend>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.mac)</script></div>
-										<textarea id="manual_wol_mac" name="manual_wol_mac" rows="3" cols="20"><% nvram_get("manual_wol_mac"); %></textarea>
+										<textarea id="manual_wol_mac" name="manual_wol_mac" onblur="valid_macs_list(this)" rows="3" cols="20"><% nvram_get("manual_wol_mac"); %></textarea>
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
-										<input class="num" maxlength="15" size="15" id="manual_wol_network" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); %>" />
+										<input class="num" maxlength="15" size="15" id="manual_wol_network" onblur="valid_ip_str(this, share.ip)" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); %>" />
 									</div>
 									<div class="setting">
 										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
-										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_range(this,1,65535,'Port number')"  value="<% nvram_get("manual_wol_port"); %>" />
+										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_port(this)"  value="<% nvram_get("manual_wol_port"); %>" />
 									</div>
 
 								<div class="submitFooter">
