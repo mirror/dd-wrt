@@ -3743,23 +3743,28 @@ struct mime_handler mime_handlers[] = {
 /*
  * Example:
  * wan_proto=dhcp
- * <% nvram_selected("wan_proto", "dhcp"); %> produces: selected="selected"
+ * <% nvram_selected("wan_proto", "dhcp",); %> produces: selected="selected"
+ * <% nvram_selected("wan_proto", "dhcp", "js"); %> produces: selected=\"selected\"
  * <% nvram_selected("wan_proto", "static"); %> does not produce
  */
 static void
 ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match;
+  char *name, *match, *javascript;
 
-  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
+  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 
   if (nvram_match (name, match))
-    websWrite (wp, "selected=\"selected\"");
-
+  {  	
+  	if (javascript == "js")
+  		websWrite (wp, "selected=\\\"selected\\\"");
+  	else
+  		websWrite (wp, "selected=\"selected\"");
+  }
   return;
 }
 
@@ -3767,22 +3772,28 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
  * Example:
  * wan_proto=dhcp
  * <% nvram_checked("wan_proto", "dhcp"); %> produces: checked="checked"
+ * <% nvram_checked("wan_proto", "dhcp", "js"); %> produces: checked=\"checked\"
  * <% nvram_checked("wan_proto", "static"); %> does not produce
  */
 static void
 ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match;
+  char *name, *match, *javascript;;
 
-  if (ejArgs (argc, argv, "%s %s", &name, &match) < 2)
+  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript) < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-
+  
   if (nvram_match (name, match))
-    websWrite (wp, "checked=\"checked\"");
-
+  {  	
+  	if (javascript == "js")
+  		websWrite (wp, "checked=\\\"checked\\\"");
+  	else
+  		websWrite (wp, "checked=\"checked\"");
+  }
+  
   return;
 }
 
