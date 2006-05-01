@@ -226,7 +226,7 @@ enableAfterBurner (void)
 {
 
   int boardflags;
-  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG)
+  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG || getRouterBrand () == ROUTER_MOTOROLA_V1)
     return;
   if (nvram_get ("boardflags") == NULL)
     return;
@@ -437,6 +437,7 @@ start_restore_defaults (void)
   switch (brand)
     {
     case ROUTER_LINKSYS_WRT55AG:
+    case ROUTER_MOTOROLA_V1:
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
     case ROUTER_SIEMENS:
@@ -589,6 +590,7 @@ start_restore_defaults (void)
 	  nvram_set ("vlan0ports", "1 2 3 4 5*");
 	  break;
 	case ROUTER_LINKSYS_WRT55AG:
+	case ROUTER_MOTOROLA_V1:
 	case ROUTER_SIEMENS:
 	  nvram_set ("vlan0ports", "0 1 2 3 5*");
 	  break;
@@ -610,6 +612,7 @@ start_restore_defaults (void)
 	      nvram_set ("vlan1ports", "0 5u");
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
+	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_SIEMENS:
 	      nvram_set ("vlan1ports", "4 5");
 	      break;
@@ -629,7 +632,7 @@ start_restore_defaults (void)
 
 	}*/
   if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
-      || brand == ROUTER_LINKSYS_WRT55AG)
+      || brand == ROUTER_LINKSYS_WRT55AG || brand == ROUTER_MOTOROLA_V1)
     {
       if (!nvram_get ("aa0"))
 	nvram_set ("aa0", "3");
@@ -913,6 +916,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_LINKSYS_WRT55AG:
+	    case ROUTER_MOTOROLA_V1:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
@@ -947,6 +951,7 @@ start_sysinit (void)
 	  switch (brand)
 	    {
 	    case ROUTER_LINKSYS_WRT55AG:
+	    case ROUTER_MOTOROLA_V1:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
@@ -1484,6 +1489,7 @@ check_cfe_nv (void)
       ret += check_nv ("ccode", "0");
       break;
     case ROUTER_LINKSYS_WRT55AG:
+    case ROUTER_MOTOROLA_V1:
     case ROUTER_WRT54G1X:
       break;
 
