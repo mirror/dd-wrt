@@ -158,7 +158,8 @@ internal_getRouterBrand ()
     et1 = nvram_safe_get ("et1macaddr");
     if (et0 != NULL && et1 != NULL)
       {
-	if (startswith (et0, "00:01") && startswith (et1, "00:01"))
+	if (startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3") || 
+		startswith (et0, "00:01:e3") && startswith (et1, "00:01:e3"))
 	  {
 	    cprintf ("router is siemens\n");
 	    setRouter ("Siemens SE505");
@@ -177,6 +178,24 @@ internal_getRouterBrand ()
 	    setRouter ("Belkin F5D7230-4 v1444");
 	    return ROUTER_SIEMENS;
 	  }
+	if (nvram_match ("boardnum", "2") &&
+      nvram_match ("clkfreq", "125") &&
+      nvram_match ("boardtype", "bcm94710dev"))
+    {
+		if (startswith (et0, "00:0C:E5") && startswith (et1, "00:0C:E5") && nvram_match ("GemtekPmonVer", "9") || 
+			startswith (et0, "00:0c:e5") && startswith (et1, "00:0c:e5") && nvram_match ("GemtekPmonVer", "9"))
+		  {
+		    cprintf ("router Motorola WR850G v1\n");
+		    setRouter ("Motorola WR850G v1");
+		    return ROUTER_MOTOROLA_V1;
+		  }
+		else
+		  {
+		  	cprintf ("router is linksys WRT55AG\n");
+	      	setRouter ("Linksys WRT55AG");
+	      	return ROUTER_LINKSYS_WRT55AG;
+  	  	  }
+    }
 //      if (startswith (et0, "00:90:96") && startswith (et1, "00:90:96"))
 //        {
 //          return ROUTER_SIEMENS;
@@ -201,14 +220,7 @@ internal_getRouterBrand ()
 	}
     }
 
-  if (nvram_match ("boardnum", "2") &&
-      nvram_match ("clkfreq", "125") &&
-      nvram_match ("boardtype", "bcm94710dev"))
-    {
-      cprintf ("router is linksys WRT55AG\n");
-      setRouter ("Linksys WRT55AG");
-      return ROUTER_LINKSYS_WRT55AG;
-    }
+
 
 /* [  "$(nvram get boardtype)" = "bcm95365r" \
   -a "$(nvram get boardnum)" = "45" ] && {
@@ -1503,7 +1515,7 @@ check_vlan_support (void)
 
 //  if ((nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
 //  && nvram_invmatch ("boardnum", "2"))
-  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG)
+  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG || getRouterBrand () == ROUTER_MOTOROLA_V1)
     return 0;
 
   if (nvram_match ("boardtype", "bcm94710dev")
