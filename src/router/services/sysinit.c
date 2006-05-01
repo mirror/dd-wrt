@@ -842,6 +842,10 @@ start_sysinit (void)
 
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
+#ifdef HAVE_RB500  
+    // fix for linux kernel 2.6
+  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+#endif
   eval ("mkdir", "/tmp/www");
 
 #ifdef HAVE_RB500
