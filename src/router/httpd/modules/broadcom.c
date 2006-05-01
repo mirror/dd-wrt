@@ -3760,7 +3760,7 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match (name, match))
   {  	
-  	if (javascript == "js")
+  	if (!strcmp (javascript, "js"))
   		websWrite (wp, "selected=\\\"selected\\\"");
   	else
   		websWrite (wp, "selected=\"selected\"");
@@ -3788,7 +3788,7 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
   
   if (nvram_match (name, match))
   {  	
-  	if (javascript == "js")
+  	if (!strcmp (javascript, "js"))
   		websWrite (wp, "checked=\\\"checked\\\"");
   	else
   		websWrite (wp, "checked=\"checked\"");
