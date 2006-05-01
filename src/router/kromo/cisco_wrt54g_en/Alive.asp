@@ -31,8 +31,7 @@ function setWDS(val) {
 }
 
 function setPXY(val) {
-	setElementsActive("squid_watchdog_interval_sec", "squid_proxy_server_ip", val == 1);
-	setElementsActive("squid_proxy_server_port", val == 1);
+	setElementsActive("squid_watchdog_interval_sec", "squid_proxy_server_port", val == 1);
 }
 
 function setAlive() {
