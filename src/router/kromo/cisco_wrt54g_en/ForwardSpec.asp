@@ -9,12 +9,13 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>'+pforward.titl;
+document.title = "<% nvram_get("router_name"); %>" + pforward.titl;
 
 function forward_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "ForwardSpec";
 	F.submit_type.value = "add_forward_spec";
+	
  	F.action.value = "Apply";
 	F.submit();
 }
@@ -23,6 +24,7 @@ function forward_remove_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "ForwardSpec";
 	F.submit_type.value = "remove_forward_spec";
+	
  	F.action.value = "Apply";
 	F.submit();
 }
@@ -97,13 +99,13 @@ function to_submit(F) {
 									<% show_forward_spec(); %>
 								</table><br />
 								<div class="center">
-									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form)\">");</script>
-									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form)\">");</script>
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.add + "\" onclick=\"forward_add_submit(this.form)\">")</script>
+									<script>document.write("<input class=\"btn\" type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"forward_remove_submit(this.form)\">")</script>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
-								<script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">");</script>
-								<script>document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">");</script>
+								<script>document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\">")</script>
+								<script>document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\">")</script>
 							</div>
 						</form>
 					</div>
