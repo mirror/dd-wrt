@@ -169,7 +169,8 @@ bmenu.wirelessAdvanced="Advanced Settings";
 bmenu.wirelessWds="WDS";
 
 bmenu.security="Security";
-
+bmenu.firwall="Firewall";
+bmenu.vpn="VPN";
 
 bmenu.accrestriction="Access Restrictions";
 bmenu.webaccess="Internet Access";
@@ -504,6 +505,30 @@ filterSum.h2="Internet Policy Summary";
 filterSum.polnum="No.";
 filterSum.polday="Time of Day";
 
+// **************************************************************** Firewall.asp **********************************************************************//
+
+var firewall = new Object();
+firewall.titl=" - Firewall";
+firewall.h2="Security";
+firewall.legend="Firewall Protection";
+firewall.firewall="SPI Firewall";
+firewall.legend2="Additional Filters";
+firewall.proxy="Filter Proxy";
+firewall.cookies="Filter Cookies";
+firewall.applet="Filter Java Applets";
+firewall.activex="Filter ActiveX";
+firewall.legend3="Block WAN Requests";
+firewall.ping="Block Anonymous Internet Requests";
+firewall.muticast="Filter Multicast";
+filter.nat="Filter Internet NAT Redirection";
+filter.port113="Filter IDENT (Port 113)";
+
+//help container
+var hfirewall = new Object();
+hfirewall.right1="Firewall Protection:";
+hfirewall.right2="Enable or disable the SPI firewall.";
+
+
 
 // **************************************************************** WOL.asp **********************************************************************//
 
@@ -527,7 +552,7 @@ var hwol = new Object();
 hwol.right1="Local Wake-on-LAN:";
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
 hwol.right3="MAC Address(es):";
-hwol.right4="MAC Addresses are entered in the format XX:XX:XX:XX:XX:XX (i.e. 01:23:45:67:89:AB)";
+hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB)";
 hwol.right5="IP Address:";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
 
