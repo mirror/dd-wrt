@@ -2849,7 +2849,7 @@ struct apply_action apply_actions[] = {
   {"WL_FilterTable", "macfilter", 0, SYS_RESTART, NULL},
 
   /* begin lonewolf additions */
-  {"Vlan", "", 0, REFRESH, port_vlan_table_save},
+  {"Vlan", "", 0, SYS_RESTART, port_vlan_table_save},
   /* end lonewolf additions */
 };
 
