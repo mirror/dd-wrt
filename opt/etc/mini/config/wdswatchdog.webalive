@@ -2,8 +2,8 @@
 	<legend><script type="text/javascript">Capture(alive.legend2)</script></legend>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(alive.sevr2)</script></div>
-		<input type="radio" value="1" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","1","checked"); %> onclick="setWDS(this.value)" /><script type="text/javascript">Capture(share.enable)</script>
-		<input type="radio" value="0" name="wds_watchdog_enable" <% nvram_match("wds_watchdog_enable","0","checked"); %> onclick="setWDS(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
+		<input class="spaceradio" type="radio" value="1" name="wds_watchdog_enable" <% nvram_checked("wds_watchdog_enable","1"); %> onclick="setWDS(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="wds_watchdog_enable" <% nvram_checked("wds_watchdog_enable","0"); %> onclick="setWDS(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(alive.inter)</script></div>
