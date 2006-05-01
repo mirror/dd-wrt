@@ -1202,7 +1202,7 @@ start_nvram (void)
       nvram_set ("ag0", "0x02");
     }
 // end Sveasoft addition
-// Fix for newer stylesheet settings, BrainSlayer
+// Fix for newer stylesheet settings, BrainSlayer, Eko
  char style[32];
  strcpy(style,nvram_safe_get("router_style"));
 
@@ -1213,6 +1213,14 @@ start_nvram (void)
 	if (style[i]=='.')style[i]=0;
     }
    nvram_set("router_style",style);
+
+  if (nvram_match ("router_style", "") || (nvram_get ("router_style") == NULL))  //if still not set, force to cyan
+	nvram_set ("router_style", "cyan");
+
+#ifdef DIST
+  if (nvram_match ("dist_type", "micro"))  //if dist_type micro, force to cyan
+	nvram_set("router_style", "cyan");
+#endif	
 }  
 
   /* Let HW1.x users can communicate with WAP54G without setting to factory default */
