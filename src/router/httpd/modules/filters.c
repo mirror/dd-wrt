@@ -1673,21 +1673,21 @@ ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv)
 			<td width=\"50\" ><font face=\"Arial\" size=\"2\" >%d.</font></td>\n\
 			<td width=\"200\" ><font face=\"Arial\" size=\"2\" >%s</font></td>\n\
 			<td height=\"30\" width=\"150\" >\n\
-			<table width=\"150\" height=\"30\" border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\" >\n\
+			<table width=\"150\" height=\"30\" border=\"1\" cellspacing=\"1\" bordercolor=\"#000000\" bgcolor=\"#FFFFFF\" style=\"border-collapse:collapse\" >\n\
 				<tr>\n", i + 1, name);
 	websWrite (wp, " \
-			<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-			<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-			<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-			<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n",
+			<td align=\"center\" width=\"14%\" bgcolor=\"%s\" ><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+			<td align=\"center\" width=\"14%\" bgcolor=\"%s\" ><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+			<td align=\"center\" width=\"14%\" bgcolor=\"%s\" ><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+			<td align=\"center\" width=\"14%\" bgcolor=\"%s\" ><script type=\"text/javascript\">Capture(%s)</script></td>\n",
 				tod_data_null == 0 && (day_all == 1 || week0 == 1) ? "#C0C0C0" : "#FFFFFF", w[0], 
       			tod_data_null == 0 && (day_all == 1 || week1 == 1) ? "#C0C0C0" : "#FFFFFF", w[1], 
       			tod_data_null == 0 && (day_all == 1 || week2 == 1) ? "#C0C0C0" : "#FFFFFF", w[2], 
       			tod_data_null == 0 && (day_all == 1 || week3 == 1) ? "#C0C0C0" : "#FFFFFF", w[3]);
     websWrite (wp, " \
-    		<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-			<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
-			<td align=\"center\" width=\"17\" bgcolor=\"%s\" style=\"border-style: solid\"><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+    		<td align=\"center\" width=\"14%\" bgcolor=\"%s\" ><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+			<td align=\"center\" width=\"14%\" bgcolor=\"%s\" ><script type=\"text/javascript\">Capture(%s)</script></td>\n\
+			<td align=\"center\" width=\"14%\" bgcolor=\"%s\" ><script type=\"text/javascript\">Capture(%s)</script></td>\n\
 		</tr>\n\
 		</table>\n\
 		</td>\n", 
