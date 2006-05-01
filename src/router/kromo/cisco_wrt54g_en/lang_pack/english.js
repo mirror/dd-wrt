@@ -462,7 +462,7 @@ filter.h2="Internet Access";
 filter.legend="Access Policy";
 filter.restore="Restore Factory Defaults";
 filter.pol="Policy";
-filter.polname="Enter Policy Name";
+filter.polname="Policy Name";
 filter.pcs="PCs";
 filter.legend2="Days";
 filter.time="Times";
@@ -495,6 +495,14 @@ hfilter.right14="You can block access to certain websites by entering their URL.
 hfilter.right15="Website Blocking by Keyword:";
 hfilter.right16="You can block access to certain website by the keywords contained in their webpage.";
 
+
+// **************************************************************** FilterSummary.asp **********************************************************************//
+
+var filterSum = new Object();
+filterSum.titl=" - Access Restrictions Summary";
+filterSum.h2="Internet Policy Summary";
+filterSum.polnum="No.";
+filterSum.polday="Time of Day";
 
 
 // **************************************************************** WOL.asp **********************************************************************//
