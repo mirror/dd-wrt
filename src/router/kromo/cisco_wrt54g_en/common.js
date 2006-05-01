@@ -125,6 +125,34 @@ function valid_macs_all(I) {
 	}
 }
 
+function valid_macs_list(I) {
+	if(I.value == "") return true;
+	I.value = I.value.replace("\n", " ");
+	var macs = I.value.split(" ");
+	var ret = true;
+	var good_macs = "";
+	
+	while (macs.length > 0) {
+		var mac = new Object;
+		mac.value = macs.shift();
+		if(!valid_macs_17(mac)) {
+//			alert("The MAC Address length is not correct.");
+//			alert(errmsg.err5 + "(" + mac + ")");
+			ret = false;
+		} else {
+			good_macs = good_macs + " " + mac.value;
+		}
+	}
+
+	while (good_macs.indexOf(" ") == 0) {
+		good_macs = good_macs.substr(1);
+	}
+
+	I.value = good_macs;
+
+	return ret;
+}
+
 function valid_mac(I,T) {
 	var m1,m2=0;
 
@@ -419,6 +447,39 @@ function valid_ip(F,N,M1,flag){
 			alert(M+errmsg.err31);
 			return false;
 		}
+	}
+
+	return true;
+}
+
+function valid_ip_str(I, M){
+	if(I.value == "" || I.value == " ") return true;
+	
+	var m = new Array(4);
+	var ip_str = I.value.split(".");
+
+	for(i=0;i<4;i++) {
+		m[i] = parseInt(ip_str[i], 10);
+		if( isNaN(m[i]) ) {
+//			alert(M+" value is illegal.");
+			alert(M+errmsg.err31);
+			I.value = I.defaultValue;
+			return false;
+		}
+	}
+	
+	if(m[0] == 127 || m[0] == 224){
+//		alert(M+" value is illegal.");
+		alert(M+errmsg.err31);
+		I.value = I.defaultValue;
+		return false;
+	}
+
+	if((m[0] > "255" || m[1] > "255" || m[2] > "255") && m[3] > "255"){
+//		alert(M+" value is illegal.");
+		alert(M+errmsg.err31);
+		I.value = I.defaultValue;
+		return false;
 	}
 
 	return true;
