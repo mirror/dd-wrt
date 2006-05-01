@@ -1610,6 +1610,11 @@ generate_wep_key (webs_t wp, int key, char *prefix)
   char buf[256];
   char *passphrase, *bit, *tx;
   char var[80];
+  char key1[26] = "";
+  char key2[26] = "";
+  char key3[26] = "";
+  char key4[26] = "";
+
   sprintf (var, "%s_wep_bit", prefix);
   bit = websGetVar (wp, var, NULL);
   sprintf (var, "%s_passphrase", prefix);
@@ -1624,18 +1629,18 @@ generate_wep_key (webs_t wp, int key, char *prefix)
 
   if (atoi (bit) == 64)
     {
-      char key1[27] = "";
-      char key2[27] = "";
-      char key3[27] = "";
-      char key4[27] = "";
       for (i = 0; i < 5; i++)
-	sprintf (key1 + (i << 1), "%02X", key64[0][i]);
+	//sprintf (key1 + (i << 1), "%02X", key64[0][i]);
+        sprintf(key1+strlen(key1),"%02X",key64[0][i]);
       for (i = 0; i < 5; i++)
-	sprintf (key2 + (i << 1), "%02X", key64[1][i]);
+	//sprintf (key2 + (i << 1), "%02X", key64[1][i]);
+        sprintf(key2+strlen(key2),"%02X",key64[1][i])
       for (i = 0; i < 5; i++)
-	sprintf (key3 + (i << 1), "%02X", key64[2][i]);
+	//sprintf (key3 + (i << 1), "%02X", key64[2][i]);
+        sprintf(key3+strlen(key3),"%02X",key64[2][i]);
       for (i = 0; i < 5; i++)
-	sprintf (key4 + (i << 1), "%02X", key64[3][i]);
+	//sprintf (key4 + (i << 1), "%02X", key64[3][i]);
+        sprintf(key4+strlen(key4),"%02X",key64[3][i]);
 
       snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", passphrase, key1,
 		key2, key3, key4, tx);
@@ -1647,26 +1652,30 @@ generate_wep_key (webs_t wp, int key, char *prefix)
     }
   else if (atoi (bit) == 128)
     {
-      char key1[27] = "";
-      char key2[27] = "";
-      char key3[27] = "";
-      char key4[27] = "";
+      //char key1[27] = "";
+      //char key2[27] = "";
+      //char key3[27] = "";
+      //char key4[27] = "";
 
       for (i = 0; i < 13; i++)
-	sprintf (key1 + (i << 1), "%02X", key128[0][i]);
-      key1[26] = 0;
+	//sprintf (key1 + (i << 1), "%02X", key128[0][i]);
+        sprintf(key1+strlen(key1),"%02X",key128[0][i]);
+      //key1[26] = 0;
 
       for (i = 0; i < 13; i++)
-	sprintf (key2 + (i << 1), "%02X", key128[1][i]);
-      key2[26] = 0;
+	//sprintf (key2 + (i << 1), "%02X", key128[1][i]);
+        sprintf(key2+strlen(key2),"%02X",key128[1][i]);
+     //key2[26] = 0;
 
       for (i = 0; i < 13; i++)
-	sprintf (key3 + (i << 1), "%02X", key128[2][i]);
-      key3[26] = 0;
+	//sprintf (key3 + (i << 1), "%02X", key128[2][i]);
+        sprintf(key3+strlen(key3),"%02X",key128[2][i]);
+     //key3[26] = 0;
 
       for (i = 0; i < 13; i++)
-	sprintf (key4 + (i << 1), "%02X", key128[3][i]);
-      key4[26] = 0;
+	//sprintf (key4 + (i << 1), "%02X", key128[3][i]);
+        sprintf(key4+strlen(key4),"%02X",key128[3][i]);
+      //key4[26] = 0;
       //cprintf("passphrase[%s]\n", passphrase);
       //filter_name(passphrase, new_passphrase, sizeof(new_passphrase), SET);
       //cprintf("new_passphrase[%s]\n", new_passphrase);
