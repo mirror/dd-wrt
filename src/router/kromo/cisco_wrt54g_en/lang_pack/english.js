@@ -292,7 +292,7 @@ hprforward.right2="Certain applications may require to open specific ports in or
 	Examples of these applications include servers and certain online games. \
 	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
 	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
-	and uncheck the <em>Enable</em> checkbox after you are finished.";
+	and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
 
 
 
@@ -529,6 +529,28 @@ hfirewall.right1="Firewall Protection:";
 hfirewall.right2="Enable or disable the SPI firewall.";
 
 
+// **************************************************************** Forward.asp **********************************************************************//
+
+var firewall = new Object();
+firewall.titl=" - Firewall";
+firewall.h2="Security";
+firewall.legend="Firewall Protection";
+firewall.firewall="SPI Firewall";
+firewall.legend2="Additional Filters";
+firewall.proxy="Filter Proxy";
+firewall.cookies="Filter Cookies";
+firewall.applet="Filter Java Applets";
+firewall.activex="Filter ActiveX";
+firewall.legend3="Block WAN Requests";
+firewall.ping="Block Anonymous Internet Requests";
+firewall.muticast="Filter Multicast";
+filter.nat="Filter Internet NAT Redirection";
+filter.port113="Filter IDENT (Port 113)";
+
+//help container
+var hfirewall = new Object();
+hfirewall.right1="Firewall Protection:";
+hfirewall.right2="Enable or disable the SPI firewall.";
 
 // **************************************************************** WOL.asp **********************************************************************//
 
