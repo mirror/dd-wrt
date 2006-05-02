@@ -176,7 +176,7 @@ internal_getRouterBrand ()
 	  {
 	    cprintf ("router is Belkin F5D7230-4 v1444\n");
 	    setRouter ("Belkin F5D7230-4 v1444");
-	    return ROUTER_SIEMENS;
+	    return ROUTER_BELKIN_F5D7230;
 	  }
 	if (nvram_match ("boardnum", "2") &&
       nvram_match ("clkfreq", "125") &&
