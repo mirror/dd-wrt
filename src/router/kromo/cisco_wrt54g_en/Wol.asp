@@ -83,8 +83,23 @@ function del_wol_host(mac) {
 function edit_wol_hosts(mac, host, ip, add) {
 	F = document.forms["ping"];
 	var wol_hosts = get_wol_hosts();
-	
+
+	var validate = new Object;
+	validate.value = mac;
+
+	if(!valid_macs_17(validate) || mac == ""){
+		if (mac == "") alert(errmsg.err35);
+		F.wol_hosts_mac.focus();
+		return false;
+	}
+
 	if(add == "true") {
+		validate.value = ip;
+		if(!valid_ip_str(validate) || ip == ""){
+		if (mac == "") alert(errmsg.err36);
+			F.wol_hosts_ip.focus();
+			return false;
+		}
 		wol_hosts = wol_hosts + " " + mac + "=" + host + "=" + ip;
 	} else {
 		var current_hosts = wol_hosts.split(" ");
@@ -200,7 +215,7 @@ function setWolHostsTable() {
 	
 	var table = document.getElementById("wol_hosts_table");
 
-	table.insertRow(1).insertCell(-1);
+	table.insertRow(1).style.height = "8px";
 
 	if(!wol_hosts || wol_hosts == "," || wol_hosts == "") {
 		var cell = table.insertRow(1).insertCell(-1);
