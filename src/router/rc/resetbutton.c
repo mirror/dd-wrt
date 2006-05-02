@@ -37,7 +37,7 @@
 #define BCM47XX_SOFTWARE_RESET  0x40	/* GPIO 6 */
 #define BCM47XX_SW_PUSH         0x10	/* GPIO 4 */
 
-#define WHR_SOFTWARE_RESET 0x10	//GPIO 4
+#define WHR_SOFTWARE_RESET 0x10	//GPIO 4  , should work with Buffalo WBR-G54 too
 #define WHR_SW_PUSH 0		//GPIO 0, code unknown
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
@@ -146,6 +146,7 @@ period_check (int sig)
   switch (brand)
     {
     case ROUTER_BUFFALO_WHRG54S:
+    case ROUTER_BUFFALO_WBR54G:
       gpio = WHR_SOFTWARE_RESET;
       state = (val & gpio);
       break;
@@ -278,7 +279,7 @@ resetbutton_main (int argc, char *argv[])
 //#define ROUTER_SIEMENS 6
 
   if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN_F5D7230 || brand == ROUTER_MOTOROLA
-      || brand == ROUTER_BUFFALO_WBR2G54S || brand == ROUTER_BUFFALO_WBR54G)
+      || brand == ROUTER_BUFFALO_WBR2G54S)
     {
       puts ("sorry, your unit does not support resetbutton feature");
       nvram_set ("resetbutton_enable", "0");
