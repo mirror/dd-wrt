@@ -60,8 +60,8 @@ function SelVLAN(F,I) {
 
 function init() {
 	for(k=0;k<5;k++) {
-		SelSpeed(document.static, "port"+k);
-		SelVLAN(document.static, "port"+k);
+		SelSpeed(document.vlan, "port"+k);
+		SelVLAN(document.vlan, "port"+k);
 	}
 }
 </script>
@@ -105,7 +105,7 @@ function init() {
 					</div>
 					<div id="main">
 					<div id="contents">
-						<form name="static" action="apply.cgi" method="<% get_http_method(); %>">
+						<form name="vlan" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="Vlan" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="commit" value="1" />
