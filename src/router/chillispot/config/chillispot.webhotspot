@@ -7,11 +7,11 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.pserver)</script></div>
-		<input class="num" maxlength="15" size="15" name="chilli_radius" value="<% nvram_get("chilli_radius"); %>" />
+		<input class="num" maxLength="100" size="25" name="chilli_radius" value="<% nvram_get("chilli_radius"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.bserver)</script></div>
-		<input class="num" maxlength="15" size="15" name="chilli_backup" value="<% nvram_get("chilli_backup"); %>" />
+		<input class="num" maxLength="100" size="25" name="chilli_backup" value="<% nvram_get("chilli_backup"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.dns)</script></div>
