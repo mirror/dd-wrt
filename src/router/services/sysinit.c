@@ -441,6 +441,7 @@ start_restore_defaults (void)
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
     case ROUTER_SIEMENS:
+    case ROUTER_BELKIN_F5D7230:
     case ROUTER_ASUS:
     case ROUTER_MOTOROLA:
     case ROUTER_BUFFALO_WHRG54S:
@@ -469,6 +470,7 @@ start_restore_defaults (void)
       linux_overrides = vlan;
       break;
     case ROUTER_SIEMENS:
+    case ROUTER_BELKIN_F5D7230:
     case ROUTER_BUFFALO_WZRRSG54:
       ds = nvram_safe_get ("dhcp_start");
       if (ds != NULL && strlen (ds) > 3)
@@ -592,6 +594,7 @@ start_restore_defaults (void)
 	case ROUTER_LINKSYS_WRT55AG:
 	case ROUTER_MOTOROLA_V1:
 	case ROUTER_SIEMENS:
+	case ROUTER_BELKIN_F5D7230:
 	  nvram_set ("vlan0ports", "0 1 2 3 5*");
 	  break;
 	default:
@@ -614,6 +617,7 @@ start_restore_defaults (void)
 	    case ROUTER_LINKSYS_WRT55AG:
 	    case ROUTER_MOTOROLA_V1:
 	    case ROUTER_SIEMENS:
+	    case ROUTER_BELKIN_F5D7230:
 	      nvram_set ("vlan1ports", "4 5");
 	      break;
 	    default:
@@ -899,7 +903,7 @@ start_sysinit (void)
     nvram_set ("cpu_type", "BCM4712");
 
   if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA
-      || brand == ROUTER_BUFFALO_WZRRSG54)
+      || brand == ROUTER_BUFFALO_WZRRSG54 || brand == ROUTER_BELKIN_F5D7230)
     {
       setup_4712 ();
     }
@@ -930,6 +934,7 @@ start_sysinit (void)
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
+	    case ROUTER_BELKIN_F5D7230:
 //	    case ROUTER_BUFFALO_WBR54G:
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_BUFFALO_WBR2G54S:
@@ -1455,6 +1460,7 @@ check_cfe_nv (void)
       return 0;
       break;
     case ROUTER_SIEMENS:
+    case ROUTER_BELKIN_F5D7230:
 //      check_nv("wl0_hwaddr",nvram_safe_get("wan_hwaddr"));
 //      ret += check_nv("lan_ifname","br0");
 //      ret += check_nv("lan_hwnames","et0 il0 wl0 wl1");
