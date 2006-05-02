@@ -25,12 +25,14 @@
 			<div class="label">Management Port</div>
 			<input class="num" maxlength="5" size="5" name="http_wanport" onblur="valid_range(this,1,65535,'Port number')" value="<% nvram_get("http_wanport"); %>" />
 		</div>
+		<% nvram_match("dist_type", "micro", "<!--"); %>
 		<% nvram_match("sshd_web","0","<!--"); %>
 		<div class="setting">
 			<div class="label">Allow SSH</div>
 			<input type="checkbox" value="1" name="_remote_mgt_ssh" <% nvram_checked("remote_mgt_ssh", "1"); %> />
 		</div>
 		<% nvram_match("sshd_web","0","-->"); %>
+		<% nvram_match("dist_type", "micro", "-->"); %>
 	</fieldset><br />
 	<fieldset>
 		<legend>Web Access</legend>
