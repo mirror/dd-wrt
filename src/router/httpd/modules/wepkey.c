@@ -63,24 +63,20 @@ gen_key (char *genstr, int weptype)
   // 2001/04/02 Edison: calling to generate 128-bit WEP key
   if (weptype == 128)
     {
-      strcpy (str, genstr);
-      wep128_passphase (str, key);
-      memcpy ((unsigned char *) &key128[0], (unsigned char *) &key[0], 13);
-      key128[0][13] = 0;
-      strcat (str, "#$%");
-      wep128_passphase (str, key);
-      memcpy ((unsigned char *) &key128[1], (unsigned char *) &key[1], 13);
-      key128[1][13] = 0;
-      strcat (str, "!@#");
-      wep128_passphase (str, key);
-      memcpy ((unsigned char *) &key128[2], (unsigned char *) &key[2], 13);
-      key128[2][13] = 0;
-      strcat (str, "%&^");
-      wep128_passphase (str, key);
-      memcpy ((unsigned char *) &key128[3], (unsigned char *) &key[3], 13);
-      key128[3][13] = 0;
+      strcpy(str,genstr);
+      wep128_passphase(str,key);
+      memcpy((unsigned char *)&key128[0], (unsigned char *)&key[0], 13);
+      strcat(str,"#$%");
+      wep128_passphase(str,key);
+      memcpy((unsigned char *)&key128[1], (unsigned char *)&key[1], 13);
+      strcat(str,"!@#");
+      wep128_passphase(str,key);
+      memcpy((unsigned char *)&key128[2], (unsigned char *)&key[2], 13);
+      strcat(str,"%&^");
+      wep128_passphase(str,key);
+      memcpy((unsigned char *)&key128[3], (unsigned char *)&key[3], 13);
       //for(i = 0;i<13;i++)
-      //      printf("[%x]\n",key128[i]);
+      //printf("[%x]\n",key128[i]);
       return;
     }
   // 64 bit       
