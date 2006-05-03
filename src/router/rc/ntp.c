@@ -165,7 +165,7 @@ ntp_main (timer_t t, int arg)
 {
   if (check_action () != ACT_IDLE)
     return;			// don't execute while upgrading
-  if (!check_wan_link (0))
+  if (!check_wan_link (0) && nvram_invmatch ("wan_proto", "disabled"))
     return;			// don't execute if not online
 #ifdef HAVE_SNMP
   struct timeval now;
@@ -188,7 +188,7 @@ ntp_main (timer_t t, int arg)
   struct timeval then;
   gettimeofday (&then, NULL);
 
-  if (abs (now.tv_sec - then.tv_sec) > 10)
+  if (abs (now - then) > 100000000)
     {
       startstop("snmp");
     }
