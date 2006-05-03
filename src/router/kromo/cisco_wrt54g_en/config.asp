@@ -13,7 +13,8 @@ document.title = '<% nvram_get("router_name"); %>'+config.titl;
 
 function to_submit(F) {
 	if (F.file.value == "")	{
-		alert("Please select a configuration file to restore.");
+//		alert("Please select a configuration file to restore.");
+		alert(errmsg.err42);
 		return false;
 	}
 	F.save_button.value = sbutton.saving;
