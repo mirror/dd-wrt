@@ -30,8 +30,8 @@
 		<% nvram_match("sshd_web","0","<!--"); %>
 		<div class="setting">
 			<div class="label">SSH Management</div>
-			<input type="radio" value="1" name="remote_mgt_ssh" onclick="selSSH(this.value, "0")" <% nvram_checked("remote_mgt_ssh","1"); %> />Enable
-			<input type="radio" value="0" name="remote_mgt_ssh" onclick="selSSH(this.value, "0")" <% nvram_checked("remote_mgt_ssh","0"); %> />Disable
+			<input type="radio" value="1" name="remote_mgt_ssh" onclick="selSSH(this.value, 0)" <% nvram_checked("remote_mgt_ssh","1"); %> />Enable
+			<input type="radio" value="0" name="remote_mgt_ssh" onclick="selSSH(this.value, 0)" <% nvram_checked("remote_mgt_ssh","0"); %> />Disable
 		</div>
 		<div class="setting">
 			<div class="label">SSH Port</div>
