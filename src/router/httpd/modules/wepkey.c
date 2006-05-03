@@ -19,7 +19,7 @@ int
 wep128_passphase (char *buffer, unsigned char *keybyte)
 {
   MD5_CTX MD;
-  char *cp;
+  char* cp;
   char password_buf[65];
   int i, Length;
 
@@ -89,7 +89,8 @@ gen_key (char *genstr, int weptype)
       /* init PRN generator... note that this is equivalent to the Microsoft srand() function. */
       randNumber = (long) pseed[0] |
 	((long) pseed[1]) << 8 |
-	((long) pseed[2]) << 16 | ((long) pseed[3]) << 24;
+	((long) pseed[2]) << 16 | 
+	((long) pseed[3]) << 24;
       /* generate keys. */
       for (i = 0; i < 4; i++)
 	{
