@@ -11,8 +11,8 @@
 #include <stdio.h>
 #include "md5.h"
 
-unsigned char key128[4][14] = { "", "", "", "" };
-unsigned char key64[4][6] = { "", "", "", "" };
+unsigned char key128[4][13] = { "", "", "", "" };
+unsigned char key64[4][5] = { "", "", "", "" };
 
 //void nwepgen(char *genstr, int weptype)
 int
