@@ -224,7 +224,7 @@ do_ntp (void)
       return 1;
     }
 
-  if (!check_wan_link (0))
+  if (!check_wan_link (0) && nvram_invmatch ("wan_proto", "disabled"))
     {
       cprintf ("Don't exec ntp\n");
       return 1;
