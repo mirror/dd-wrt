@@ -1658,7 +1658,7 @@ filter_input (void)
 	 * Botho 03-05-2006 : remote ssh & remote GUI management are not linked anymore */
 	if (remotessh)
 	{
-      save2file ("-A INPUT -p tcp -m tcp-d %s --dport %s -j logaccept\n",
+      save2file ("-A INPUT -p tcp -m tcp -d %s --dport %s -j logaccept\n",
       	nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("sshd_port"));
 	}
 #endif
