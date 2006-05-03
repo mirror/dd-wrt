@@ -16,7 +16,7 @@ unsigned char key64[4][5] = { "", "", "", "" };
 
 //void nwepgen(char *genstr, int weptype)
 int
-wep128_passphase (char *buffer, unsigned char *keybyte)
+wep128_passphase (char* buffer, unsigned char* keybyte)
 {
   MD5_CTX MD;
   char* cp;
