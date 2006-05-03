@@ -129,7 +129,7 @@
  "l2tp_pass"  "L2TP Pass Through"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "remote_management"  "Remote Management"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
  "remote_mgt_https"  "Remote Management use https" "CHOICE" "2" "0"  "1"  "FALSE" "0"
- "http_wanport"  "Router WAN Port"  "RANGE"  "0"  "65535"  "TRUE" "0"  
+ "http_wanport"  "Router WAN Port"  "RANGE"  "0"  "65535"  "TRUE" "0"
  "remote_upgrade"  "Remote Upgrade"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "mtu_enable"  "MTU enable"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "wan_mtu"  "WAN MTU"  "RANGE"  "576" "1500"  "FALSE" "0"  
@@ -221,5 +221,5 @@
  "radius_override" "radius override" "NULL" "FALSE" "0"
  "sputnik_mjid" "sputnik" "NULL" "TRUE" "0"
  "sputnik_mjid_type" "sputnik type" "CHOICE" "3" "0" "1" "2" "FALSE" "0"
- "remote_mgt_ssh"  "Remote Management enable SSH" "CHOICE" "2" "0"  "1"  "FALSE" "0"
- 
+ "remote_mgt_ssh"  "Remote Management by SSH" "CHOICE" "2" "0"  "1"  "FALSE" "0"
+ "sshd_wanport"  "SSH WAN Port"  "RANGE"  "1"  "65535"  "TRUE" "0"
