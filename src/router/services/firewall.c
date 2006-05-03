@@ -10,8 +10,8 @@
  */
 
 //#define DEVELOPE_ENV
-//#define XBOX_SUPPORT		/* Define Microsoft XBox, game machine, support */
-#define AOL_SUPPORT		/* Define AOL support */
+//#define XBOX_SUPPORT			/* Define Microsoft XBox, game machine, support */
+#define AOL_SUPPORT				/* Define AOL support */
 //#define FLOOD_PROTECT         /* Define flooding protection */
 //#define REVERSE_RULE_ORDER    /* If it needs to reverse the rule's sequential. It is used
 //                                 when the MARK match/target be using. */
@@ -48,36 +48,36 @@
 #define BLK_PROXY               0x08
 
 /* possible files path */
-#define IPTABLES_SAVE_FILE	"/tmp/.ipt"
-#define CRONTAB			"/tmp/crontab"
-#define IPTABLES_RULE_STAT	"/tmp/.rule"
+#define IPTABLES_SAVE_FILE		"/tmp/.ipt"
+#define CRONTAB					"/tmp/crontab"
+#define IPTABLES_RULE_STAT		"/tmp/.rule"
 
 /* Known port */
-#define DNS_PORT		53	/* UDP */
-#define TFTP_PORT		69	/* UDP */
-#define ISAKMP_PORT		500	/* UDP */
-#define RIP_PORT		520	/* UDP */
-#define L2TP_PORT               1701	/* UDP */
+#define DNS_PORT		53		/* UDP */
+#define TFTP_PORT		69		/* UDP */
+#define ISAKMP_PORT		500		/* UDP */
+#define RIP_PORT		520		/* UDP */
+#define L2TP_PORT		1701	/* UDP */
 
-#define HTTP_PORT		80	/* TCP */
-#define IDENT_PORT		113	/* TCP */
-#define HTTPS_PORT		443	/* TCP */
+#define HTTP_PORT		80		/* TCP */
+#define IDENT_PORT		113		/* TCP */
+#define HTTPS_PORT		443		/* TCP */
 #define PPTP_PORT		1723	/* TCP */
 
-#define IP_MULTICAST		"224.0.0.0/4"
+#define IP_MULTICAST			"224.0.0.0/4"
 
 /* Limitation definition */
 #define NR_RULES		10
 #define NR_IPGROUPS		5
-#define NR_MACGROUPS		5
+#define NR_MACGROUPS	5
 
 /* MARK number in mangle table */
 #define MARK_OFFSET		0x10
-//#define MARK_MASK             0xf0
+//#define MARK_MASK     0xf0
 #define MARK_DROP		0x1e
-//#define MARK_ACCEPT           0x1f
-//#define MARK_HTTP             0x30
-#define MARK_LAN2WAN		0x100	/* For HotSpot */
+//#define MARK_ACCEPT   0x1f
+//#define MARK_HTTP     0x30
+#define MARK_LAN2WAN	0x100	/* For HotSpot */
 
 
 #ifdef FLOOD_PROTECT
@@ -114,6 +114,7 @@ static unsigned int now_wday, now_hrmin;
 static int webfilter = 0;
 static int dmzenable = 0;
 static int remotemanage = 0;
+static int remotessh = 0;		/* Botho 03-05-2006 */
 
 /******************************* DEVELOPE_ENV ***********************************************/
 #ifdef DEVELOPE_ENV
@@ -709,12 +710,19 @@ parse_spec_forward (char *wordlist)
 static void
 nat_prerouting (void)
 {
-  /* Enable remote management */
+  /* Enable remote Web GUI management */
   if (remotemanage)
     save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 	       "-j DNAT --to-destination %s:%d\n", wanaddr,
 	       nvram_safe_get ("http_wanport"), nvram_safe_get ("lan_ipaddr"),
 	       web_lanport);
+
+	/* Enable remote ssh management : Botho 03-05-2006*/
+  if (remotessh)
+    save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
+	       "-j DNAT --to-destination %s:%d\n", wanaddr,
+	       nvram_safe_get ("sshd_wanport"), nvram_safe_get ("lan_ipaddr"),
+	       nvram_safe_get ("sshd_port"));
 
   /* ICMP packets are always redirected to INPUT chains */
   save2file ("-A PREROUTING -p icmp -d %s -j DNAT --to-destination %s\n",
@@ -1638,20 +1646,24 @@ filter_input (void)
       && nvram_invmatch ("wl_br1_nat", "2"))
     save2file ("-A INPUT -i br1 -j ACCEPT\n");
 
-  /* Remote Management
+  /* Remote Web GUI Management
    * Use interface name, destination address, and port to make sure
    * that it's redirected from WAN */
   if (remotemanage)
-    {
-      save2file ("-A INPUT -p tcp -m tcp -d %s --dport %d -j %s\n",
-		 nvram_safe_get ("lan_ipaddr"), web_lanport, TARG_PASS);
+  {
+  	save2file ("-A INPUT -p tcp -m tcp -d %s --dport %d -j %s\n",
+  		nvram_safe_get ("lan_ipaddr"), web_lanport, TARG_PASS);
+  }
+
 #ifdef HAVE_SSHD
-	if (nvram_match ("remote_mgt_ssh", "1")) {
+	/* Remote Web GUI Management 
+	 * Botho 03-05-2006 : remote ssh & remote GUI management are not linked anymore */
+	if (remotessh)
+	{
       save2file ("-A INPUT -p tcp --dport %s -j logaccept\n",
-		 nvram_safe_get ("sshd_port"));
+		 nvram_safe_get ("sshd_wanport"));
 	}
 #endif
-    }
 
   /* ICMP request from WAN interface */
   save2file ("-A INPUT -i %s -p icmp -j %s\n", wanface,
@@ -1666,27 +1678,6 @@ filter_input (void)
     save2file ("-A INPUT -p udp -m udp --dport %d -j %s\n", TFTP_PORT,
 	       TARG_PASS);
 
-  /* Make sure remote management ports are filtered if it is disabled */
-/*	if (!remotemanage) {
-		save2file("-A INPUT -p tcp -i %s --dport %s -j DROP\n"
-			, wanface
-			, nvram_safe_get("http_wanport"));
-		save2file("-A INPUT -p tcp -i %s --dport 80 -j DROP\n"
-			, wanface);
-		save2file("-A INPUT -p tcp -i %s --dport 443 -j DROP\n"
-			, wanface);
-		save2file("-A INPUT -p tcp -i %s --dport 22 -j DROP\n"
-			, wanface);
-		save2file("-A INPUT -p tcp -i %s --dport 23 -j DROP\n"
-			, wanface);
-		save2file("-A INPUT -p tcp -i %s --dport 69 -j DROP\n"
-			, wanface);
-
-#ifdef HAVE_SSHD
-		save2file("-A INPUT -p tcp --dport %s -i %s -j DROP\n", nvram_safe_get("sshd_port"), wanface);
-#endif
-	}
-*/
   /* Ident request backs by telnet or IRC server */
   if (nvram_match ("ident_pass", "1"))
     save2file ("-A INPUT -p tcp -m tcp --dport %d -j %s\n", IDENT_PORT,
@@ -1733,7 +1724,7 @@ filter_forward (void)
     save2file ("-A FORWARD -i %s -j DROP\n", lanface);
 
   /* Drop the wrong state, INVALID, packets */
-  //save2file("-A FORWARD -m state --state INVALID -j DROP\n");
+//save2file("-A FORWARD -m state --state INVALID -j DROP\n");
   /* Sveasoft add - log invalid packets */
   save2file ("-A FORWARD -m state --state INVALID -j logdrop\n");
 
@@ -1924,23 +1915,25 @@ filter_table (void)
   if (nvram_match ("filter", "off") || nvram_match ("wk_mode", "router"))
     {
 
-      /* Make sure remote management ports are filtered if it is disabled */
+  /* Make sure remote management ports are filtered if it is disabled */
       if (!remotemanage)
-	{
-	  save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n", wanface,
-		     nvram_safe_get ("http_wanport"));
-	  save2file ("-A INPUT -p tcp -i %s --dport 80 -j DROP\n", wanface);
-	  save2file ("-A INPUT -p tcp -i %s --dport 443 -j DROP\n", wanface);
-	  save2file ("-A INPUT -p tcp -i %s --dport 22 -j DROP\n", wanface);
-	  save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
-	  save2file ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n", wanface);
+      {
+      	save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n", wanface,
+      		nvram_safe_get ("http_wanport"));
+      	save2file ("-A INPUT -p tcp -i %s --dport 80 -j DROP\n", wanface);
+      	save2file ("-A INPUT -p tcp -i %s --dport 443 -j DROP\n", wanface);
+      	save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
+      	save2file ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n", wanface);
+      }
+	/* Make sure remote ssh ports is filtered if it is disabled : Botho 03-05-2006*/
 #ifdef HAVE_SSHD
-	if (nvram_match ("remote_mgt_ssh", "1")) {
-	  save2file ("-A INPUT -p tcp --dport %s -i %s -j DROP\n",
-		     nvram_safe_get ("sshd_port"), wanface);
-	}
+		if (!remotessh)
+		{
+			save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
+				wanface, nvram_safe_get ("sshd_wanport"));
+			save2file ("-A INPUT -p tcp -i %s --dport 22 -j DROP\n", wanface);
+		}
 #endif
-	}
 
       filter_forward ();
 
@@ -2000,7 +1993,6 @@ filter_table (void)
     ("-A limaccept -i %s -m state --state NEW -m limit --limit %d -j DROP\n"
      "-A limaccept -j ACCEPT\n", wanface, FLOOD_RATE, wanface, FLOOD_RATE);
 #endif
-
 
   save2file ("COMMIT\n");
 }
@@ -2432,13 +2424,23 @@ start_firewall (void)
   else
     dmzenable = 0;
 
-  /* Remote management */
+  /* Remote Web GUI management */
   if (nvram_match ("remote_management", "1") &&
-      nvram_invmatch ("http_wanport", "")
-      && nvram_invmatch ("http_wanport", "0"))
+      nvram_invmatch ("http_wanport", "") &&
+      nvram_invmatch ("http_wanport", "0"))
     remotemanage = 1;
   else
     remotemanage = 0;
+
+#ifdef HAVE_SSHD    
+    /* Remote Web GUI management : Botho 03-05-2006 */
+  if (nvram_match ("remote_mgt_ssh", "1") &&
+      nvram_invmatch ("sshd_wanport", "") &&
+      nvram_invmatch ("sshd_wanport", "0"))
+    remotessh = 1;
+  else
+    remotessh = 0;
+#endif
 
 #ifdef HAVE_HTTPS
   if (nvram_match ("remote_mgt_https", "1"))
@@ -2586,11 +2588,6 @@ stop_firewall (void)
   cprintf ("done\n");
   return 0;
 }
-
-
-
-
-
 
 
 /*
