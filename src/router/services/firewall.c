@@ -720,7 +720,7 @@ nat_prerouting (void)
 	/* Enable remote ssh management : Botho 03-05-2006*/
   if (remotessh)
     save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
-	       "-j DNAT --to-destination %s:%d\n", wanaddr,
+	       "-j DNAT --to-destination %s:%s\n", wanaddr,
 	       nvram_safe_get ("sshd_wanport"), nvram_safe_get ("lan_ipaddr"),
 	       nvram_safe_get ("sshd_port"));
 
