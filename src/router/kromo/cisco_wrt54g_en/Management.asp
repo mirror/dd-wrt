@@ -22,11 +22,9 @@ function port_enable_disable(F,I) {
 	if ( I == "0" ){
 		if (F.http_wanport) choose_disable(F.http_wanport);
 		if (F._remote_mgt_https) choose_disable(F._remote_mgt_https);
-		if (F._remote_mgt_ssh) choose_disable(F._remote_mgt_ssh);
 	} else {
 		if (F.http_wanport) choose_enable(F.http_wanport);
 		if (F._remote_mgt_https) choose_enable(F._remote_mgt_https);
-		if (F._remote_mgt_ssh) choose_enable(F._remote_mgt_ssh);
 	}
 	if(F._http_enable.checked == false)
 	if(F._https_enable)
@@ -83,11 +81,12 @@ function to_submit(F) {
 
 	valid_password(F);
 
-	if(F.remote_management[0].checked == true){
+	if(F.remote_management[0].checked == true) {
 		if(!ChangePasswd(F))
 			return false;
 	}
-	if(F._remote_mgt_https){
+	
+	if(F._remote_mgt_https) {
 		if(F.http_enable.checked == true && F.https_enable.checked == false)
 			F._remote_mgt_https.checked == false;
 		if(F.http_enable.checked == false && F.https_enable.checked == true)
@@ -95,28 +94,26 @@ function to_submit(F) {
 		if(F._remote_mgt_https.checked == true) F.remote_mgt_https.value = 1;
 		else 	 F.remote_mgt_https.value = 0;
 	}
-	if(F._https_enable){
+	
+	if(F._https_enable) {
 		if(F._https_enable.checked == true)
 			F.https_enable.value = 1;
 		else
 			F.https_enable.value = 0;
 	}
 
-	if(F._http_enable){
+	if(F._http_enable) {
 		if(F._http_enable.checked == true)
 			F.http_enable.value = 1;
 		else
 			F.http_enable.value = 0;
 	}
-	if(F._info_passwd){
+	
+	if(F._info_passwd) {
 		if(F._info_passwd.checked == true)
 			F.info_passwd.value = 1;
 		else
 			F.info_passwd.value = 0;
-	}
-	if (F._remote_mgt_ssh) {
-		if(F._remote_mgt_ssh.checked == true) F.remote_mgt_ssh.value = 1;
-		else 	 F.remote_mgt_ssh.value = 0;
 	}
 
 	F.submit_button.value = "Management";
@@ -137,20 +134,27 @@ function handle_https(F)
 	}
 }
 
-function init() {
-	port_enable_disable(document.setup, '<% nvram_get("remote_management"); %>');
-	if (document.setup._remote_mgt_ssh) {
-		if (<% nvram_get("sshd_enable"); %> == 0) {
-			document.setup.remote_mgt_ssh.value = 0;
-			choose_disable(document.setup._remote_mgt_ssh);
-		}
+function selSSH(val, load) {
+	if (load == "1") {
+		sshd = document.getElementsByName('remote_mgt_ssh');
+		setElementActive("remote_mgt_ssh", val == "1");
+		setElementActive("sshd_wanport", val == "1" && sshd[0].checked);
+	} else {
+		setElementActive("sshd_wanport", val == "1");
 	}
 }
+
+addEvent(window, "load", function() {
+	port_enable_disable(document.setup, "<% nvram_get("remote_management"); %>");
+	if (document.setup.remote_mgt_ssh)
+		selSSH("<% nvram_get("sshd_enable"); %>", "1");
+
+});
 
 		</script>
 	</head>
 
-	<body class="gui" onload="init()">
+	<body class="gui">
 		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
@@ -202,7 +206,6 @@ function init() {
 							<input type="hidden" name="http_enable" />
 							<input type="hidden" name="info_passwd" />
 							<input type="hidden" name="https_enable" />
-							<input type="hidden" name="remote_mgt_ssh" />
 							<h2>Router Management</h2>
 							<% show_modules(".webconfig"); %>
 							<% show_modules(".webconfig_release"); %>
