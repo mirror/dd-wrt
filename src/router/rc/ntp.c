@@ -188,7 +188,7 @@ ntp_main (timer_t t, int arg)
   struct timeval then;
   gettimeofday (&then, NULL);
 
-  if (abs (now.tv_sec - then.tv_sec) > 1000)
+  if (abs (now.tv_sec - then.tv_sec) > 100000000)
     {
       startstop("snmp");
     }
