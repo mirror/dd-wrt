@@ -38,7 +38,7 @@
 		</div>
 		<div class="setting">
 			<div class="label">SSH Port</div>
-			<input class="num" maxlength="5" size="5" name="sshd_wanport" onblur="valid_range(this,1,65535,'Wan ssh Port')" value="<% nvram_get("sshd_wanport"); %>" />
+			<input class="num" maxlength="5" size="5" name="sshd_wanport" onblur="valid_range(this,1,65535,'Port number')" value="<% nvram_get("sshd_wanport"); %>" />
 			<span class="default">(Default: 22, Range: 1 - 65535)</span>
 		</div>
 		<% nvram_match("sshd_web","0","-->"); %>
