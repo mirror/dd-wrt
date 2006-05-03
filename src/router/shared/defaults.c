@@ -865,6 +865,7 @@ struct nvram_tuple router_defaults[] = {
   {"sshd_dss_host_key", "", 0},
   {"sshd_authorized_keys", "", 0},
   {"remote_mgt_ssh", "0", 0},
+  {"sshd_wanport", "22", 0},		/* Botho 03-05-2006 : WAN port to listen on */
 #endif
   {"syslogd_enable", "0", 0},
   {"syslogd_rem_ip", "", 0},
