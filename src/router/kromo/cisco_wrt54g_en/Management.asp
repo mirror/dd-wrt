@@ -135,7 +135,7 @@ function handle_https(F)
 }
 
 function selSSH(val, load) {
-	if (load == "1") {
+	if (load == 1) {
 		sshd = document.getElementsByName('remote_mgt_ssh');
 		setElementActive("remote_mgt_ssh", val == "1");
 		setElementActive("sshd_wanport", val == "1" && sshd[0].checked);
@@ -147,7 +147,7 @@ function selSSH(val, load) {
 addEvent(window, "load", function() {
 	port_enable_disable(document.setup, "<% nvram_get("remote_management"); %>");
 	if (document.setup.remote_mgt_ssh)
-		selSSH("<% nvram_get("sshd_enable"); %>", "1");
+		selSSH("<% nvram_get("sshd_enable"); %>", 1);
 
 });
 
