@@ -96,7 +96,7 @@ function edit_wol_hosts(mac, host, ip, add) {
 	if(add == "true") {
 		validate.value = ip;
 		if(!valid_ip_str(validate) || ip == ""){
-		if (mac == "") alert(errmsg.err36);
+		if (ip == "") alert(errmsg.err36);
 			F.wol_hosts_ip.focus();
 			return false;
 		}
