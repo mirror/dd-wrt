@@ -167,10 +167,10 @@ ntp_main (timer_t t, int arg)
     return;			// don't execute while upgrading
   if (!check_wan_link (0) && nvram_invmatch ("wan_proto", "disabled"))
     return;			// don't execute if not online
-#ifdef HAVE_SNMP
+/* #ifdef HAVE_SNMP
   struct timeval now;
   gettimeofday (&now, NULL);
-#endif
+#endif */
 //              syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
   stop_service("ntp");
   if (do_ntp () == 0)
@@ -184,7 +184,7 @@ ntp_main (timer_t t, int arg)
     {
       nvram_set ("timer_interval", NTP_N_TIMER);
     }
-#ifdef HAVE_SNMP
+/* #ifdef HAVE_SNMP
   struct timeval then;
   gettimeofday (&then, NULL);
 
@@ -192,7 +192,7 @@ ntp_main (timer_t t, int arg)
     {
       startstop("snmp");
     }
-#endif
+#endif */
 }
 
 //tofu>>
