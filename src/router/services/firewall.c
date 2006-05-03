@@ -1514,8 +1514,6 @@ start_filtersync (void)
 	ret = start_filter_del (seq);
       DEBUG ("seq=%d, ret=%d\n", seq, ret);
     }
-
-  return 1;
 }
 
 static void
