@@ -68,10 +68,7 @@ share.allow="Allow";
 share.deny="Deny";
 share.range="Range";
 share.use="Use";
-share.mins="Min.";
-share.secs="Sec.";
-share.routername="Router Name";
-share.manual="Manual";
+share.port="Port";
 
 
 var sbutton = new Object();
@@ -121,7 +118,9 @@ errmsg.err10="Confirmed password did not match Entered Password. Please re-enter
 errmsg.err11="No spaces are allowed in Password";
 errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade are failed.";
-
+errmsg.err35="You must input a MAC address to run.";
+errmsg.err36="You must input a network broadcast address to run.";
+errmsg.err37="You must input a UDP port to run.";
 
 //common.js error message
 errmsg.err14=" value is out of range [";
@@ -156,9 +155,6 @@ errmsg.err38="Please enter a Shared Key!";
 errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters"
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
-
-//config.asp error message
-errmsg.err42="Please select a configuration file to restore.";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -588,83 +584,16 @@ hotspot.sputnik_id="Sputnik Server ID";
 hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
 
-// **************************************************************** index_heartbeat.asp *********************************************************//
 
-var idx_h = new Object();
-idx_h.srv="Heart Beat Server";
-idx_h.con_strgy="Connection Strategy";
-idx_h.max_idle="Connect on Demand: Max Idle Time";
-idx_h.alive="Keep Alive: Redial Period";
+// **************************************************************** Services.asp **********************************************************************//
 
-// **************************************************************** index_l2tp.asp *********************************************************//
+var service = new Object();
 
-var idx_l = new Object();
-idx_l.srv="L2TP Server";
-
-// **************************************************************** index_pppoe.asp *********************************************************//
-
-var idx_pppoe = new Object();
-idx_pppoe.srv="Service Name";
-idx_pppoe.use_rp="Use RP PPPoE";
-
-// **************************************************************** index_pptp.asp *********************************************************//
-
-var idx_pptp = new Object();
-idx_pptp.srv="Use DHCP";
-idx_pptp.wan_ip="Internet IP Address";
-idx_pptp.subnet="Subnet Mask";
-idx_pptp.gateway="Gateway (PPTP Server)";
-idx_pptp.encrypt="PPTP Encyption";
-
-// **************************************************************** index_static.asp *********************************************************//
-
-var idx_static = new Object();
-idx_static.gateway="Gateway";
-idx_static.dns="Static DNS";
-
-// **************************************************************** index.asp *********************************************************//
-
-var idx = new Object();
-idx.titl=" - Setup";
-idx.h2="Internet Setup";
-idx.h22="Wireless Setup";
-idx.legend="Internet Connection Type";
-idx.conn_type="Connection Type";
-idx.stp="STP";
-idx.stp_mess="(disable for COMCAST ISP)";
-idx.optional="Optional Settings (required by some ISPs)";
-idx.mtu="MTU";
-idx.h23="Network Setup";
-idx.routerip="Router IP";
-idx.lanip="Local IP Address";
-idx.localdns="Local DNS";
-idx.legend2="WAN Port";
-idx.wantoswitch="Assign WAN Port to Switch";
-idx.legend3="Time Settings";
-idx.timeset="Time Zone / Summer Time (DST)";
-idx.localtime="Use local time";
-
-
-//help container
-var hidx = new Object();
-hidx.right1="Automatic Configuration - DHCP:";
-hidx.right2="This setting is most commonly used by Cable operators.";
-hidx.right3="Host Name:";
-hidx.right4="Enter the host name provided by your ISP.";
-hidx.right5="Domain Name:";
-hidx.right6="Enter the domain name provided by your ISP.";
-hidx.right7="Local IP Address:";
-hidx.right8="This is the address of the router.";
-hidx.right9="Subnet Mask:";
-hidx.right10="This is the subnet mask of the router.";
-hidx.right11="DHCP Server:";
-hidx.right12="Allows the router to manage your IP addresses.";
-hidx.right13="Starting IP Address:";
-hidx.right14="The address you would like to start with.";
-hidx.right15="Maximum number of DHCP Users:";
-hidx.right16="You may limit the number of addresses your router hands out.";
-hidx.right17="Time Setting:";
-hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
+//sshd.webservices
+service.ssh_legend="Secure Shell";
+service.ssh_srv="SSHd";
+service.ssh_password="Password Login";
+service.ssh_key="Authorized Keys";
 
 
 // **************************************************************** WOL.asp **********************************************************************//
