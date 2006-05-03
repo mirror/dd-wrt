@@ -14,7 +14,7 @@
 	</div>
 	<div class="setting">
 		<div class="label">SSHd Port</div>
-		<input type="text" class="num" maxlength="100" size="3" name="sshd_port" value="<% nvram_get("sshd_port"); %>" /></div>
+		<input type="text" class="num" maxlength="5" size="5" name="sshd_port" onblur="valid_range(this,1,65535,'SHHd Port')" value="<% nvram_get("sshd_port"); %>" /></div>
 	<div class="setting">
 		<div class="label">Authorized Keys</div>
 		<textarea id="sshd_authorized_keys" name="sshd_authorized_keys" cols="60" rows="2">	</textarea>
