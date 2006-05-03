@@ -17,19 +17,26 @@
 	<fieldset>
 		<legend>Remote Access</legend>
 		<div class="setting">
-			<div class="label">Remote Management</div>
+			<div class="label">Web GUI Management</div>
 			<input type="radio" value="1" name="remote_management" onclick="SelPort(1,this.form)" <% nvram_match("remote_management","1","checked"); %> />Enable
 			<input type="radio" value="0" name="remote_management" onclick="SelPort(0,this.form)" <% nvram_match("remote_management","0","checked"); %> />Disable
 		</div>
 		<div class="setting">
-			<div class="label">Management Port</div>
+			<div class="label">Web GUI Port</div>
 			<input class="num" maxlength="5" size="5" name="http_wanport" onblur="valid_range(this,1,65535,'Port number')" value="<% nvram_get("http_wanport"); %>" />
+			<span class="default">(Default: 8080, Range: 1 - 65535)</span>
 		</div>
 		<% nvram_match("dist_type", "micro", "<!--"); %>
 		<% nvram_match("sshd_web","0","<!--"); %>
 		<div class="setting">
-			<div class="label">Allow SSH</div>
-			<input type="checkbox" value="1" name="_remote_mgt_ssh" <% nvram_checked("remote_mgt_ssh", "1"); %> />
+			<div class="label">SSH Management</div>
+			<input type="radio" value="1" name="remote_mgt_ssh" onclick="selSSH(this.value, "0")" <% nvram_checked("remote_mgt_ssh","1"); %> />Enable
+			<input type="radio" value="0" name="remote_mgt_ssh" onclick="selSSH(this.value, "0")" <% nvram_checked("remote_mgt_ssh","0"); %> />Disable
+		</div>
+		<div class="setting">
+			<div class="label">SSH Port</div>
+			<input class="num" maxlength="5" size="5" name="sshd_wanport" onblur="valid_range(this,1,65535,'Wan ssh Port')" value="<% nvram_get("sshd_wanport"); %>" />
+			<span class="default">(Default: 22, Range: 1 - 65535)</span>
 		</div>
 		<% nvram_match("sshd_web","0","-->"); %>
 		<% nvram_match("dist_type", "micro", "-->"); %>
