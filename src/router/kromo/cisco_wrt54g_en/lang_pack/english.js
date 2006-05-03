@@ -121,9 +121,7 @@ errmsg.err10="Confirmed password did not match Entered Password. Please re-enter
 errmsg.err11="No spaces are allowed in Password";
 errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade are failed.";
-errmsg.err35="You must input a MAC address to run.";
-errmsg.err36="You must input a network broadcast address to run.";
-errmsg.err37="You must input a UDP port to run.";
+
 
 //common.js error message
 errmsg.err14=" value is out of range [";
@@ -158,6 +156,9 @@ errmsg.err38="Please enter a Shared Key!";
 errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters"
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
+
+//config.asp error message
+errmsg.err42="Please select a configuration file to restore.";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
