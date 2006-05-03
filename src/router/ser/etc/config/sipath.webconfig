@@ -1,10 +1,8 @@
 <fieldset>
 <legend>SIPatH</legend>
 	<div class="setting"><div class="label">SIP Port</div>
-	<input type="text" class="num" maxlength="5" size="5" name="sip_port" value="<% nvram_get("sip_port"); %>" onblur="valid_range(this,1,65535,'SIP Port')" />
+	<input type="text" class="num" maxlength="5" size="5" name="sip_port" value="<% nvram_get("sip_port"); %>" onblur="valid_range(this,1,65535,'SIP Port')" /></div>
 	<div class="setting"><div class="label">SIP Domain</div>
 	<input maxlength="79" size="20" name="sip_domain" value="<% nvram_get("sip_domain"); %>" /></div>
-
-</div>
 </fieldset><br />
 
