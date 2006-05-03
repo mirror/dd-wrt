@@ -835,12 +835,13 @@ start_dnsmasq (void)
   int i;
   char name[100];
 
-  if (nvram_match ("dhcp_dnsmasq", "1")
+  if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
       && nvram_match ("dnsmasq_enable", "0"))
     {
       nvram_set ("dnsmasq_enable", "1");
       nvram_commit ();
     }
+
   // Sveasoft 2003-12-15 only start if enabled
   if (!nvram_invmatch ("dnsmasq_enable", "0"))
     {
