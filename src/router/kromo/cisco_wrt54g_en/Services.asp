@@ -73,8 +73,19 @@ function to_submit(F) {
 											<li><a href="Diagnostics.asp">Diagnostics</a></li>
 											<li><a href="Wol.asp">WOL</a></li>
 											<li><a href="Factory_Defaults.asp">Factory Defaults</a></li>
-											<li><a href="Upgrade.asp">Firmware Upgrade</a></li>
+								<script type="text/javascript">
+										https_visit = <% support_elsematch("HTTPS","1","1","0"); %>;
+										if (https_visit =="1") {
+											document.write("<li><a style=\"cursor:pointer\" title=\"" + errmsg.err46 + "\" onclick=\"alert(errmsg.err45)\" ><em>" + bmenu.adminUpgrade + "</em></a></li>");
+											document.write("<li><a style=\"cursor:pointer\" title=\"" + errmsg.err46 + "\" onclick=\"alert(errmsg.err45)\" ><em>" + bmenu.adminBackup + "</em></a></li>");
+										} else {
+											document.write("<li><a href=\"Upgrade.asp\">" + bmenu.adminUpgrade + "</a></li>");
+											document.write("<li><a href=\"Upgrade.asp\">" + bmenu.adminBackup + "</a></li>");
+										}											
+								</script>
+<!--										<li><a href="Upgrade.asp">Firmware Upgrade</a></li>
 											<li><a href="config.asp">Backup</a></li>
+ -->
 										</ul>
 									</div>
 								</li>

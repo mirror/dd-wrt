@@ -123,6 +123,8 @@ errmsg.err10="Confirmed password did not match Entered Password. Please re-enter
 errmsg.err11="No spaces are allowed in Password";
 errmsg.err12="You must input a command to run.";
 errmsg.err13="Upgrade are failed.";
+errmsg.err45="Not available in HTTPS! Please connect in HTTP mode.";
+errmsg.err46="Not available in HTTPS";
 
 
 //common.js error message
