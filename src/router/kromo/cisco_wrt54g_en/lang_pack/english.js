@@ -104,7 +104,7 @@ sbutton.filterIP="Edit List of PCs";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
 sbutton.help="   Help  ";
-
+sbutton.wl_client_mac="Wireless Client MAC List";
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
 var errmsg = new Object();
@@ -729,6 +729,12 @@ var hwpa = new Object();
 hwpa.right1="Security Mode:";
 hwpa.right2="You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same security mode.";
 
+// **************************************************************** WL_FilterTable.asp **************************************************************//
+
+var wl_filter = new Object();
+wl_filter.titl=" - MAC Address Filter List";
+wl_filter.h2="MAC Address Filter List";
+wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
 

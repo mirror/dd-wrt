@@ -6,7 +6,11 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+
+document.title = "<% nvram_get("router_name"); %>" + wl_filter.titl;
 
 function SelPage(num,F) {
 	F.submit_button.value = "WL_FilterTable";
@@ -36,18 +40,18 @@ function to_submit_mac(F) {
 			<input type="hidden" name="small_screen" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2>MAC Address Filter List</h2>
+					<h2><script type="text/javascript">Capture(wl_filter.h2)</script></h2>
 					<table width="100%" >
 						<tr>
-							<TD align="left">Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx</TD>
-							<TD align="right" ><input type="button" id="button4" name="button5" value="Wireless Client MAC List" onclick="openWindow('WL_ActiveTable.asp', 650, 450)" /></TD>
+							<TD align="left"><script type="text/javascript">Capture(wl_filter.h3)</script></TD>
+							<TD align="right"><script type="text/javascript">document.write("<input type=\"button\" id=\"button4\" name=\"button5\" value=\"" + sbutton.wl_client_mac + "\" onclick=\"openWindow('WL_ActiveTable.asp', 650, 450)\" />")</script></TD>
 						</tr>
 					</table><br/>
 					<% wireless_filter_table("input"); %>
 					<div class="submitFooter">
-						<input type="button" name="save_button" value="Save Settings" onclick="to_submit_mac(this.form)" />
-						<input type="reset" value="Cancel Changes" />
-						<input onclick="self.close()" type="reset" value="Close" />
+						<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit_mac(this.form)\" />")</script>
+						<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+						<script type="text/javascript">document.write("<input onclick=\"self.close()\" type=\"reset\" value=\"" + sbutton.clos + "\" />")</script>
 					</div>
 				</div>
 			</div>
