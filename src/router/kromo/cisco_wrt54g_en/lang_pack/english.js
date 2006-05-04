@@ -105,6 +105,7 @@ sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
 sbutton.help="   Help  ";
 sbutton.wl_client_mac="Wireless Client MAC List";
+sbutton.update_filter="Update Filter List";
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
 var errmsg = new Object();
@@ -162,6 +163,10 @@ errmsg.err43="rekey interval";
 
 //config.asp error message
 errmsg.err42="Please select a configuration file to restore.";
+
+//WL_ActiveTable.asp error message
+errmsg.err44="The total checks exceed 128 counts !";
+
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -735,6 +740,15 @@ var wl_filter = new Object();
 wl_filter.titl=" - MAC Address Filter List";
 wl_filter.h2="MAC Address Filter List";
 wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+
+// **************************************************************** WL_ActiveTable.asp **************************************************************//
+
+var wl_active = new Object();
+wl_active.titl=" - Wireless Active Client MAC List";
+wl_active.h2="Wireless Client MAC List";
+wl_active.h3="Enable MAC Filter";
+wl_active.active="Active PC";
+wl_active.inactive="Active PC";
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
 
