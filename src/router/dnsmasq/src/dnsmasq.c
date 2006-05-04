@@ -24,8 +24,9 @@ static char *compile_opts =
 #endif
 "GNU-getopt "
 #ifdef HAVE_BROKEN_RTC
-"no-RTC "
+"no-"
 #endif
+"RTC "
 #ifdef HAVE_RTNETLINK
 "RTNetlink "
 #endif
