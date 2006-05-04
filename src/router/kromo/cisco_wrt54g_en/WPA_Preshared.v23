@@ -1,5 +1,5 @@
 <div class="setting">
-	<div class="label">WPA Algorithms</div>
+	<div class="label"><script type="text/javascript">Capture(wpa.algorithms)</script></div>
 	<select name="wl_crypto">
 		<option value="tkip" <% nvram_selmatch("wl_crypto","tkip","selected"); %>>TKIP</option>
 		<option value="aes" <% nvram_selmatch("wl_crypto","aes","selected"); %>>AES</option>
@@ -7,11 +7,11 @@
 	</select>
 </div>
 <div class="setting">
-	<div class="label">WPA Shared Key</div>
+	<div class="label"><script type="text/javascript">Capture(wpa.shared_key)</script></div>
 	<input name="wl_wpa_psk" maxlength="64" size="32" value='<% nvram_get("wl_wpa_psk"); %>' />
 </div>
 <div class="setting">
-	<div class="label">Group Key Renewal (in seconds)</div>
-	<input name="wl_wpa_gtk_rekey" maxlength="5" size="10" onblur="valid_range(this,0,99999,'rekey interval')" value='<% nvram_get("wl_wpa_gtk_rekey"); %>' />
+	<div class="label"><script type="text/javascript">Capture(wpa.rekey)</script></div>
+	<input name="wl_wpa_gtk_rekey" maxlength="5" size="10" onblur="valid_range(this,0,99999,errmsg.err43)" value='<% nvram_get("wl_wpa_gtk_rekey"); %>' />
 	<span class="default">(Default: 3600, Range: 0 - 99999)</span>
 </div>
