@@ -153,10 +153,12 @@ errmsg.err36="You must input a network broadcast address to run.";
 errmsg.err37="You must input a UDP port to run.";
 
 //WL_WPATable.asp error message
+//WPA.asp error message
 errmsg.err38="Please enter a Shared Key!";
 errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits"
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
+errmsg.err43="rekey interval";
 
 //config.asp error message
 errmsg.err42="Please select a configuration file to restore.";
@@ -708,15 +710,19 @@ hwol.right6="IP Address is typically the broadcast address for the local network
 // **************************************************************** WPA.asp **********************************************************************//
 
 var wpa = new Object();
-wpa.titl=" - WPA";
+wpa.titl=" - Wireless Security";
 wpa.h2="Wireless Security";
+wpa.h3="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
 wpa.psk="WPA Pre-Shared Key";
 wpa.gtk_rekey="WPA Group Rekey Interval";
+wpa.rekey="Key Renewal Interval (in seconds)";
 wpa.radius_ipaddr="RADIUS Server IP";
 wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
+wpa.shared_key="WPA Shared Key";
+
 
 //help container
 var hwpa = new Object();
