@@ -184,8 +184,8 @@ NOTES:
 */
 
 /* platform independent options. */
-#undef HAVE_BROKEN_RTC
-#define HAVE_ISC_READER
+#define HAVE_BROKEN_RTC
+#undef HAVE_ISC_READER
 #undef HAVE_DBUS
 
 #if defined(HAVE_BROKEN_RTC) && defined(HAVE_ISC_READER)
