@@ -172,6 +172,9 @@ start_pptpd (void)
 	     nvram_get ("pptpd_radavpair") ? nvram_get ("pptpd_radavpair") :
 	     "");
 
+  if (nvram_match ("wan_wins", "0.0.0.0"))
+    nvram_set ("wan_wins", "");
+
   fprintf (fp, "lock\n"
 	   "name *\n"
 	   "proxyarp\n"
@@ -198,12 +201,12 @@ start_pptpd (void)
 	   nvram_get ("pptpd_dns2") ? "ms-dns " : "",
 	   nvram_get ("pptpd_dns2") ? nvram_get ("pptpd_dns2") : "",
 	   nvram_get ("pptpd_dns2") ? "\n" : "",
-	   nvram_get ("pptpd_wins1") ? "ms-wins " : "",
-	   nvram_get ("pptpd_wins1") ? nvram_get ("pptpd_wins1") : "",
-	   nvram_get ("pptpd_wins1") ? "\n" : "",
-	   nvram_get ("pptpd_wins2") ? "ms-wins " : "",
-	   nvram_get ("pptpd_wins2") ? nvram_get ("pptpd_wins2") : "",
-	   nvram_get ("pptpd_wins2") ? "\n" : "",
+	   nvram_get ("wan_wins") ? "ms-wins " : "",
+	   nvram_get ("wan_wins") ? nvram_get ("wan_wins") : "",
+	   nvram_get ("wan_wins") ? "\n" : "",
+//	   nvram_get ("pptpd_wins2") ? "ms-wins " : "",
+//	   nvram_get ("pptpd_wins2") ? nvram_get ("pptpd_wins2") : "",
+//	   nvram_get ("pptpd_wins2") ? "\n" : "",
 	   nvram_get ("pptpd_mtu") ? nvram_get ("pptpd_mtu") : "1450",
 	   nvram_get ("pptpd_mru") ? nvram_get ("pptpd_mru") : "1450");
 
@@ -578,7 +581,6 @@ start_udhcpd (void)
 
   usejffs = 0;
 
-
   if (nvram_match ("dhcpd_usejffs", "1"))
     {
       if (!(fp = fopen ("/jffs/udhcpd.leases", "a")))
@@ -848,6 +850,9 @@ start_dnsmasq (void)
       stop_dnsmasq ();
       return 0;
     }
+
+  usejffs = 0;
+
   if (nvram_match ("dhcpd_usejffs", "1"))
     {
       if (!(fp = fopen ("/jffs/udhcpd.leases", "a")))
@@ -881,15 +886,16 @@ start_dnsmasq (void)
     }
 
   fprintf (fp, "resolv-file=/tmp/resolv.dnsmasq\n");
-  if (!usejffs)
-    {
-      fprintf (fp, "dhcp-leasefile=/tmp/udhcpd.leases\n");
+  if (usejffs)
+    { 
+      fprintf (fp, "dhcp-leasefile=/jffs/udhcpd.leases\n");
     }
   else
     {
-      fprintf (fp, "dhcp-leasefile=/jffs/udhcpd.leases\n");
+      fprintf (fp, "dhcp-leasefile=/tmp/udhcpd.leases\n");
     }
 
+  /* DHCP domain */
    if (nvram_match ("dhcp_domain", "wan"))
     {
       if (nvram_match ("wan_domain", ""))
@@ -898,7 +904,6 @@ start_dnsmasq (void)
          nvram_set ("wan_domain", domain);
        }
     }
-  /* DHCP domain */
   snprintf (name, sizeof (name), "%s_domain", nvram_safe_get ("dhcp_domain"));
   if (nvram_invmatch (name, ""))
     {
