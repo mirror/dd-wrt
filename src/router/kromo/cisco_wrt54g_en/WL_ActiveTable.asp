@@ -6,7 +6,12 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+
+document.title = "<% nvram_get("router_name"); %>" + wl_filter.titl;
+
 function MACAct(F)
 {
 	if(valid_value(F)){
@@ -29,7 +34,8 @@ function valid_value(F)
 		}
 	}
 	if(count > 128){
-		alert("The total checks exceed 128 counts !");
+//		alert("The total checks exceed 128 counts !");
+		alert(errmsg.err44);
 		return false;
 	}
 	return true;
@@ -47,40 +53,40 @@ function init() {
 			<input type="hidden" name="submit_button"/>
 			<input type="hidden" name="submit_type"/>
 			<input type="hidden" name="change_action"/>
-			<h2>Wireless Client MAC List</h2>
+			<h2><script type="text/javascript">Capture(wl_active.h2)</script></h2>
 			<table>
 				<tbody>
 					<tr>
-						<td><strong>Active PC</strong></td>
+						<td><strong><script type="text/javascript">Capture(wl_active.active)</script></strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
-						<th>Client Host Name</th>
-						<th>IP Address</th>
-						<th>MAC Address</th>
-						<th>Enable MAC Filter</th>
+						<th><script type="text/javascript">Capture(dhcp.tclient)</script></th>
+						<th><script type="text/javascript">Capture(share.ip)</script></th>
+						<th><script type="text/javascript">Capture(share.mac)</script></th>
+						<th><script type="text/javascript">Capture(wl_active.h3)</script></th>
 					</tr>
 					<% wireless_active_table("online"); %>
 					<tr>
 						<td colspan="4">&nbsp;</td>
 					</tr>
 					<tr>
-						<td><strong>Inactive PC</strong></td>
+						<td><strong><script type="text/javascript">Capture(wl_active.inactive)</script></strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
-						<th>Client Host Name</th>
-						<th>IP Address</th>
-						<th>MAC Address</th>
-						<th>Enable MAC Filter</th>
+						<th><script type="text/javascript">Capture(dhcp.tclient)</script></th>
+						<th><script type="text/javascript">Capture(share.ip)</script></th>
+						<th><script type="text/javascript">Capture(share.mac)</script></th>
+						<th><script type="text/javascript">Capture(wl_active.h3)</script></th>
 					</tr>
 					<% wireless_active_table("offline"); %>
 					<tr>
 						<td colspan="4">&nbsp;</td>
 					</tr>
 					<tr>
-						<td ><input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/></td>
-						<td align="right" colspan="3"><input type="button" name="action" value="Update Filter List" onclick="MACAct(this.form)"/>&nbsp;<input onclick="self.close()" type="reset" value="Close"/></td>
+						<td><script type="text/javascript">document.write("<input name=\"button\" type=\"button\" onclick=\"window.location.reload()\" value=\"" + sbutton.refres + "\"/>")</script></td>
+						<td align="right" colspan="3"><script type="text/javascript"><input type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form)\"/>&nbsp;<input onclick=\"self.close()\" type=\"reset\" value=\"" + sbutton.clos + "\"/>")</script></td>
 					</tr>
 				</tbody>
 			</table>
