@@ -57,7 +57,7 @@ static int next_token (char *token, int buffsize, FILE * fp)
   return count ? 1 : 0;
 }
 
-void load_dhcp(struct daemon *daemon, time_t now)
+FILE *load_dhcp(struct daemon *daemon, time_t now)
 {
   char *hostname = daemon->namebuff;
   char token[MAXTOK], *dot;
@@ -242,6 +242,7 @@ void load_dhcp(struct daemon *daemon, time_t now)
       cache_add_dhcp_entry(daemon, lease->fqdn, &lease->addr, lease->expires);
       cache_add_dhcp_entry(daemon, lease->name, &lease->addr, lease->expires);
     }
+return fp;
 }
 
 #endif
