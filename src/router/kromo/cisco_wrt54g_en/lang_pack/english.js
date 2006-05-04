@@ -103,7 +103,7 @@ sbutton.summary="Summary";
 sbutton.filterIP="Edit List of PCs";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
-
+sbutton.help="   Help  ";
 
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
@@ -154,7 +154,7 @@ errmsg.err37="You must input a UDP port to run.";
 
 //WL_WPATable.asp error message
 errmsg.err38="Please enter a Shared Key!";
-errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters"
+errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits"
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
 
@@ -704,11 +704,19 @@ hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:
 hwol.right5="IP Address:";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
 
-// **************************************************************** WL_WPATable.asp **********************************************************************//
+// **************************************************************** WL_WPATable.asp **************************************************************//
+// **************************************************************** WPA.asp **********************************************************************//
 
 var wpa = new Object();
 wpa.titl=" - WPA";
 wpa.h2="Wireless Security";
+wpa.auth_mode="Network Authentication";
+wpa.psk="WPA Pre-Shared Key";
+wpa.gtk_rekey="WPA Group Rekey Interval";
+wpa.radius_ipaddr="RADIUS Server IP";
+wpa.radius_port="RADIUS Server Port";
+wpa.radius_key="RADIUS Key";
+wpa.algorithms="WPA Algorithms";
 
 //help container
 var hwpa = new Object();
