@@ -280,11 +280,11 @@ main_loop (void)
 FILE *fp=fopen("/tmp/loginprompt","wb");
 #ifdef DIST
 if (strlen(DIST)>0)
-fprintf(fp,"DD-WRT v23 SP1 %s Date: " BUILD_DATE " (c) 2006 New Media NET GmbH\n",DIST);
+fprintf(fp,"DD-WRT v23 SP1 %s Date: " BUILD_DATE " (c) 2006 NewMedia-NET GmbH\n",DIST);
 else
-fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 New Media NET GmbH\n");
+fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 NewMedia-NET GmbH\n");
 #else
-fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 New Media NET GmbH\n");
+fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 NewMedia-NET GmbH\n");
 #endif
 fclose(fp);
 
