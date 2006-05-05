@@ -117,16 +117,16 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 				
 				websWrite (wp, "<tr height=\"1\">\n");
 			    websWrite (wp,
-			    	"<td align=\"right\">%s</td>\n",
+			    	"<td>%s</td>\n",
 			    	src);
 			    websWrite (wp,
-			    	"<td align=\"middle\">%s</td>\n",
+			    	"<td align=\"center\">%s</td>\n",
 			    	proto);
 			    websWrite (wp,
-			    	"<td align=\"right\">%s</td>\n",
+			    	"<td align=\"center\">%s</td>\n",
 			    	servp ? servp->s_name : dpt);
 			    websWrite (wp,
-			    	"<td align=\"left\">%s</td>\n",
+			    	"<td align=\"center\">%s</td>\n",
 			    	verdict);
 			    websWrite (wp, "</tr>\n");
 			}
@@ -134,29 +134,45 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 		else if (!strcmp (type, "outgoing"))
 		{
 			if (!strncmp (in, lan_if, 3) &&
-				((!strncmp (out, "ppp", 3) && !strncmp (out, wan_if, 3)) ||
-				(!strcmp (out, wan_if))))
+				((!strncmp (out, "ppp", 3) && !strncmp (out, wan_if, 3)) || (!strcmp (out, wan_if))))
 			{
 				if (_dport == 53)
 				{
 					continue;		// skip DNS
 				}
 				
-				if (!strcmp (src, src_old) && !strcmp (dpt, dpt_old)
-					&& !strcmp (dst, dst_old))
+				if (!strcmp (src, src_old)
+					&& !strcmp (dst, dst_old)
+					&& !strcmp (proto, proto_old)
+					&& !strcmp (dpt, dpt_old))
 				{
 					continue;		// skip same record
 				}
 				else
 				{
 					strcpy (src_old, src);
-					strcpy (dpt_old, dpt);
 					strcpy (dst_old, dst);
+					strcpy (proto_old, proto);
+					strcpy (dpt_old, dpt);
 				}
 				
+				websWrite (wp, "<tr height=\"1\">\n");
 				websWrite (wp,
-					"<tr> <td align=\"right\">%s</td><td align=\"right\">%s</td><td align=\"right\">%s</td></tr>\n",
-					src, dst, servp ? servp->s_name : dpt);
+			    	"<td>%s</td>\n",
+			    	src);
+			    websWrite (wp,
+			    	"<td>%s</td>\n",
+			    	dst);
+			    websWrite (wp,
+			    	"<td align=\"center\">%s</td>\n",
+			    	proto);
+				websWrite (wp,
+			    	"<td>%s</td>\n",
+			    	servp ? servp->s_name : dpt);
+				websWrite (wp,
+			    	"<td align=\"center\">%s</td>\n",
+			    	verdict);				
+				websWrite (wp, "</tr>\n");
 			}
 		}
 		else if (!strcmp (type, "all"))
