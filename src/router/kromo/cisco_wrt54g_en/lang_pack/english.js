@@ -73,7 +73,19 @@ share.secs="Sec.";
 share.routername="Router Name";
 share.manual="Manual";
 share.port="Port";
-
+share.ssid="SSID";
+share.channel="Channel";
+share.rssi="Rssi";
+share.noise="Noise";
+share.beacon="beacon";
+share.openn="Open";
+share.dtim="dtim";
+share.rates="Rate";
+share.low="Low";
+share.medium="Medium";
+share.high="High";
+share.option="Options";
+share.rule="Rule";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -106,12 +118,16 @@ sbutton.reboot="Reboot Router";
 sbutton.help="   Help  ";
 sbutton.wl_client_mac="Wireless Client MAC List";
 sbutton.update_filter="Update Filter List";
+sbutton.join="Join";
+sbutton.log_in="Incoming Log";
+sbutton.log_out="Outgoing Log";
+sbutton.log_sys="System Log";
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
 var errmsg = new Object();
 errmsg.err0="You must input a username.";
 errmsg.err1="You must input a Router Name.";
-errmsg.err2="Out of range, please adjust start IP address or user's numbers.";
+errmsg.err2="Out of range, please adjust start IP address or user&#39;s numbers.";
 errmsg.err3="You must at least select a day."
 errmsg.err4="The end time must be bigger than start time.";
 errmsg.err5="The MAC Address length is not correct.";
@@ -169,6 +185,8 @@ errmsg.err42="Please select a configuration file to restore.";
 //WL_ActiveTable.asp error message
 errmsg.err44="The total checks exceed 128 counts !";
 
+//Site_Survey.asp error message
+errmsg.err47=("invalid SSID");
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -516,6 +534,16 @@ hfilter.right15="Website Blocking by Keyword:";
 hfilter.right16="You can block access to certain website by the keywords contained in their webpage.";
 
 
+// **************************************************************** FilterIP%AC.asp **********************************************************************//
+
+var filterIP = new Object();
+filterIP.titl=" - List of PCs";
+filterIP.h2="List of PCs";
+filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
+filterIP.h32="Enter the IP Address of the PCs";
+filterIP.h33="Enter the IP Range of the PCs";
+
+
 // **************************************************************** FilterSummary.asp **********************************************************************//
 
 var filterSum = new Object();
@@ -676,6 +704,58 @@ hidx.right16="You may limit the number of addresses your router hands out.";
 hidx.right17="Time Setting:";
 hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
 
+
+// **************************************************************** Join.asp **********************************************************************//
+
+var join = new Object();
+
+//sshd.webservices
+join.titl=" - Join";
+join.mess1="Successfully joined the following network as a client: ";
+
+
+// **************************************************************** Log_incoming.asp **********************************************************************//
+
+var log_in = new Object();
+log_in.titl=" - Incoming Log Table";
+log_in.h2="Incoming Log Table";
+log_in.th_ip="Source IP";
+log_in.th_port="Destination Port Number";
+
+
+// **************************************************************** Log_outgoing.asp **********************************************************************//
+
+var log_out = new Object();
+log_out.titl=" - Outgoing Log Table";
+log_out.h2="Outgoing Log Table";
+log_out.th_lanip="LAN IP";
+log_out.th_wanip="Destination URL/IP";
+log_out.th_port="Service/Port Number";
+
+
+// **************************************************************** Log.asp **********************************************************************//
+
+var log = new Object();
+log.titl=" - Log";
+log.h2="Log Management";
+log.legend="Log";
+log.lvl="Log Level";
+log.drop="Dropped";
+log.reject="Rejected";
+log.accept="Accepted";
+
+
+
+
+
+// **************************************************************** Site_Survey.asp **********************************************************************//
+
+var survey = new Object();
+survey.titl=" - Site Survey";
+survey.h2="Neighbor&#39;s Wireless Networks";
+survey.thjoin="Join Site";
+
+
 // **************************************************************** Services.asp **********************************************************************//
 
 var service = new Object();
@@ -752,14 +832,6 @@ wl_active.h3="Enable MAC Filter";
 wl_active.active="Active PC";
 wl_active.inactive="Active PC";
 
-// **************************************************************** FilterIP%AC.asp **********************************************************************//
-
-var filterIP = new Object();
-filterIP.titl=" - List of PCs";
-filterIP.h2="List of PCs";
-filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Enter the IP Address of the PCs";
-filterIP.h33="Enter the IP Range of the PCs";
 
 
 

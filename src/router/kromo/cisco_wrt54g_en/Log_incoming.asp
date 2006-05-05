@@ -6,21 +6,30 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
+		<script type="text/javascript">
+		
+document.title = "<% nvram_get("router_name"); %>" + log_in.titl;
+
+		</script>
 	</head>
 	<body>
 		<div class="popup">
 			<form>
-				<h2>Incoming Log Table</h2>
+				<h2><script type="text/javascript">Capture(log_in.h2)</script></h2>
 				<table class="table">
 					<tr>
-						<th>Source IP</th>
-						<th>Destination Port Number</th>
+						<th><script type="text/javascript">Capture(log_in.th_ip)</script></th>
+						<th><script type="text/javascript">Capture(share.proto)</script></th>
+						<th><script type="text/javascript">Capture(log_in.th_port)</script></th>
+						<th><script type="text/javascript">Capture(share.rule)</script></th>
 					</tr>
 					<% dumplog("incoming"); %>
 				</table><br />
 				<div class="submitFooter">
-					<input type="button" value="Close" onclick="self.close()" />
-					<input type="button" value="Refresh" onclick="window.location.reload()" />
+					<script type="text/javascript">document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />")</script>
+					<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />")</script>
 				</div>
 			</form>
 		</div>
