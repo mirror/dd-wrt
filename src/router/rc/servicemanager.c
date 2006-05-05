@@ -44,7 +44,7 @@ static void *load_service(char *name)
 cprintf("load service %s\n",name);
 void *handle = dlopen(SERVICE_MODULE,RTLD_LAZY);
 cprintf("done()\n");
-if (handle==NULL)
+if (handle==NULL && name!=NULL)
     {
     cprintf("not found, try to load alternate\n");
     char dl[64];
