@@ -1649,8 +1649,8 @@ filter_input (void)
    * that it's redirected from WAN */
   if (remotemanage)
   {
-  	save2file ("-A INPUT -p tcp -m tcp -d %s --dport %d -j %s\n",
-  		nvram_safe_get ("lan_ipaddr"), web_lanport, TARG_PASS);
+  	save2file ("-A INPUT -p tcp -m tcp -d %s --dport %d -j logaccept\n",
+  		nvram_safe_get ("lan_ipaddr"), web_lanport);
   }
 
 #ifdef HAVE_SSHD
