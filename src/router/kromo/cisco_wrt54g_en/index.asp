@@ -224,7 +224,7 @@ function valid_dhcp_server(F)
 	if (a1 + a2 > 255)
 	{
 //		alert("Out of range, please adjust start IP address or user's numbers.");
-		alert();
+		alert(errmsg.err2);
 		return false;
 	}
 
@@ -388,7 +388,7 @@ function init()
 							<input type="hidden" name="daylight_time" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
 							<% nvram_selmatch("wl_mode", "wet", "<!--"); %>
-							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript">Capture(idx.h2)</script>", "<script type=\"text/javascript\">Capture(idx.h22)</script>"); %></h2>
+							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript">Capture(idx.h2)</script>", "<script type="text/javascript">Capture(idx.h22)</script>"); %></h2>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(idx.legend)</script></legend>
 								<div class="setting">
