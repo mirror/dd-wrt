@@ -22,7 +22,9 @@ document.title = "<% nvram_get("router_name"); %>" + log_out.titl;
 					<tr>
 						<th><script type="text/javascript">Capture(log_out.th_lanip)</script></th>
 						<th><script type="text/javascript">Capture(log_out.th_wanip)</script></th>
+						<th><script type="text/javascript">Capture(share.proto)</script></th>
 						<th><script type="text/javascript">Capture(log_out.th_port)</script></th>
+						<th><script type="text/javascript">Capture(share.rule)</script></th>
 					</tr>
 					<% dumplog("outgoing"); %>
 				</table><br />
