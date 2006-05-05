@@ -2,12 +2,16 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-		<title><% nvram_get("router_name"); %></title>
+		<title><% nvram_get("router_name"); %> - Join</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-var submit_button = '<% get_web_page_name(); %>';
+document.title = "<% nvram_get("router_name"); %>" + join.titl;
+
+var SSID = "<% nvram_get("wl_ssid"); %>";
 
 function to_send(url)
 {
@@ -20,8 +24,9 @@ function to_send(url)
     <body onunload="to_send('Wireless_Basic.asp')">
       <div class="message">
          <div>
-            <form>Successfully joined the network as a client.<br/>
-              <input type="button" name="action" value="Continue" OnClick="self.close()"/>
+            <form>
+            	<script type="text/javascript">document.write(join.mess1 + "&nbsp;" + SSID)</script><br/>
+            	<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.continu + "\" onclick=\"self.close()\" />")</script>
             </form>
          </div>
       </div>
