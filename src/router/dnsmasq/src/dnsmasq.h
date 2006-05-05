@@ -600,7 +600,7 @@ void clear_cache_and_reload(struct daemon *daemon, time_t now);
 
 /* isc.c */
 #ifdef HAVE_ISC_READER
-void load_dhcp(struct daemon *daemon, time_t now);
+FILE *load_dhcp(struct daemon *daemon, time_t now);
 //void load_dhcp(struct daemon *daemon, time_t now);
 #endif
 
