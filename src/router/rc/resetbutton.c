@@ -180,7 +180,7 @@ period_check (int sig)
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || ROUTER_LINKSYS_WRT55AG
+	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG
 		  || brand == ROUTER_BUFFALO_WHRG54S)
 		{
 		  printf ("resetbutton: factory default.\n");
