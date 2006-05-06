@@ -9,7 +9,6 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-
 document.title = "<% nvram_get("router_name"); %>" + radius.titl;
 
 function to_submit(F) {
@@ -20,7 +19,9 @@ function to_submit(F) {
 	}
 
 	F.submit_button.value = "Wireless_radauth";
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
+	
 	F.action.value = "Apply";
 	apply(F);
 }
@@ -85,51 +86,52 @@ addEvent(window, "load", function() {
                     <input type="hidden" name="action" value="Apply" />
                     <input type="hidden" name="commit" value="1" />
                     <h2><script type="text/javascript">Capture(radius.h2)</script></h2>
+                    
                     <fieldset>
                       <legend><script type="text/javascript">Capture(radius.legend)</script></legend>
                      <div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label)</script></div>
-                           <input type="radio" name="wl_radauth" value="1" <% nvram_match("wl_radauth","1","checked"); %> onclick="setRad(this.value)" ><script type="text/javascript">Capture(share.enable)</script></input>
-                           <input type="radio" name="wl_radauth" value="0" <% nvram_match("wl_radauth","0","checked"); %> onclick="setRad(this.value)" ><script type="text/javascript">Capture(share.disable)</script></input>
+                           <input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;&nbsp;
+                           <input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvram_checked("wl_radauth","0"); %> onclick="setRad(this.value)" ><script type="text/javascript">Capture(share.disable)</script></input>
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label2)</script></div>
                            <select name="wl_radmactype">
-                              <option value="0" <% nvram_match("wl_radmactype","0","selected"); %>>aabbcc-ddeeff</option>
-                              <option value="1" <% nvram_match("wl_radmactype","1","selected"); %>>aabbccddeeff</option>
-                              <option value="2" <% nvram_match("wl_radmactype","2","selected"); %>>aa-bb-cc-dd-ee-ff</option>
+                              <option value="0" <% nvram_selected("wl_radmactype","0"); %>>aabbcc-ddeeff</option>
+                              <option value="1" <% nvram_selected("wl_radmactype","1"); %>>aabbccddeeff</option>
+                              <option value="2" <% nvram_selected("wl_radmactype","2"); %>>aa-bb-cc-dd-ee-ff</option>
                            </select>
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label3)</script></div>
                            <input type="hidden" name="wl_radius_ipaddr" value="4" />
-                           <input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onBlur="valid_range(this,0,255,share.ip)" value='<% get_single_ip("wl_radius_ipaddr","0"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onBlur="valid_range(this,0,255,share.ip)" value='<% get_single_ip("wl_radius_ipaddr","1"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onBlur="valid_range(this,0,255,share.ip)" value='<% get_single_ip("wl_radius_ipaddr","2"); %>' />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onBlur="valid_range(this,1,254,share.ip)" value='<% get_single_ip("wl_radius_ipaddr","3"); %>' />
+                           <input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","0"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","1"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","2"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onblur="valid_range(this,1,254,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","3"); %>" />
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label4)</script></div>
-                           <input size="5" maxLength="32" name="wl_radius_port" value='<% nvram_get("wl_radius_port"); %>' />
+                           <input class="num" size="5" maxlength="5" name="wl_radius_port" onblur="valid_range(this,1,65535,'Port')" value="<% nvram_get("wl_radius_port"); %>" />
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label5)</script></div>
-                           <input size="5" maxLength="32" name="max_unauth_users" value='<% nvram_get("max_unauth_users"); %>' />
+                           <input class="num" size="5" maxlength="5" name="max_unauth_users" value="<% nvram_get("max_unauth_users"); %>" />
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label6)</script></div>
-                           <input type="radio" name="wl_radmacpassword" value="1" <% nvram_match("wl_radmacpassword","1","checked"); %> ><script type="text/javascript">Capture(radius.key)</script></input>
-                           <input type="radio" name="wl_radmacpassword" value="0" <% nvram_match("wl_radmacpassword","0","checked"); %> ><script type="text/javascript">Capture(radius.mac)</script></input>
+                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> ><script type="text/javascript">Capture(radius.key)</script></input>&nbsp;&nbsp;
+                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> ><script type="text/javascript">Capture(radius.mac)</script></input>
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label7)</script></div>
-                           <input size="20" maxLength="32" name="wl_radius_key" value='<% nvram_get("wl_radius_key"); %>' />
+                           <input size="20" maxlength="32" name="wl_radius_key" value="<% nvram_get("wl_radius_key"); %>" />
                         </div>
                         <div class="setting">
                         	<div class="label"><script type="text/javascript">Capture(radius.label8)</script></div>
                         	<input type="checkbox" name="_radius_override" value="1" <% nvram_checked("radius_override", "1"); %> />
                         </div>
                       </div>
-                    </fieldset>
-                    <br/>
+                    </fieldset><br/>
+                    
                     <div class="submitFooter">
                     	<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onClick=\"to_submit(this.form)\" />")</script>
                     	<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
