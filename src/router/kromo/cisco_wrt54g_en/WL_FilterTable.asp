@@ -21,7 +21,8 @@ function SelPage(num,F) {
 
 function to_submit_mac(F) {
 	F.submit_button.value = "WL_FilterTable";
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
 	apply(F);
