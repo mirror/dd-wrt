@@ -113,7 +113,7 @@ function valid_wpa_psk(I) {
       <input type="hidden" name="change_action" />
       <input type="hidden" name="action" />
       <input type="hidden" name="small_screen" />
-      <div>
+      <div> 
             <div class="setting">
                <div class="label"><script type="text/javascript">Capture(wpa.auth_mode)</script></div>
                  <select name="auth_mode" onChange=SelMode(this.form.auth_mode.selectedIndex,this.form)>
