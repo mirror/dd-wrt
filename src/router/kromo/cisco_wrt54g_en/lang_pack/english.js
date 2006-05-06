@@ -86,6 +86,10 @@ share.medium="Medium";
 share.high="High";
 share.option="Options";
 share.rule="Rule";
+share.lan="LAN";
+share.point2point="Point to Point";
+share.nat="NAT";
+share.subnet="Subnet Mask";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -187,6 +191,9 @@ errmsg.err44="The total checks exceed 128 counts !";
 
 //Site_Survey.asp error message
 errmsg.err47=("invalid SSID");
+
+//Wireless_WDS.asp error message
+errmsg.err48=("WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS");
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -650,7 +657,7 @@ idx_pppoe.use_rp="Use RP PPPoE";
 var idx_pptp = new Object();
 idx_pptp.srv="Use DHCP";
 idx_pptp.wan_ip="Internet IP Address";
-idx_pptp.subnet="Subnet Mask";
+idx_pptp.subnet=share.subnet;
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Encyption";
 
@@ -693,7 +700,7 @@ hidx.right5="Domain Name:";
 hidx.right6="Enter the domain name provided by your ISP.";
 hidx.right7="Local IP Address:";
 hidx.right8="This is the address of the router.";
-hidx.right9="Subnet Mask:";
+hidx.right9=share.subnet + ":";
 hidx.right10="This is the subnet mask of the router.";
 hidx.right11="DHCP Server:";
 hidx.right12="Allows the router to manage your IP addresses.";
@@ -831,6 +838,24 @@ wl_active.h2="Wireless Client MAC List";
 wl_active.h3="Enable MAC Filter";
 wl_active.active="Active PC";
 wl_active.inactive="Active PC";
+
+// **************************************************************** Wireless_WDS.asp ***************************************************************//
+
+var wds = new Object();
+wds.titl=" - WDS";
+wds.h2="Wireless Distribution System";
+wds.legend="WDS Settings";
+wds.label="Lazy WDS";
+wds.label2="WDS Subnet";
+wds.wl_mac="Wireless MAC";
+wds.lazy_default="Default: Disable";
+wds.nat1="wLAN->WDS";
+wds.nat2="WDS->wLAN";
+
+//help container
+var hwds = new Object();
+hwds.right1=":";
+hwds.right2="";
 
 
 

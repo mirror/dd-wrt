@@ -9,6 +9,9 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+
+document.title = "<% nvram_get("router_name"); %>" + wds.titl;
+
 function SelSubnet(F,num) {
 	setElementsActive("wl_br1_nat", "wl_br1_netmask3", num == 1);
 	F.change_action.value = "gozila_cgi";
@@ -72,7 +75,8 @@ addEvent(window, "load", function() {
 	if ("ap" != "<% nvram_get("wl_mode"); %>" || "psk2" == "<% nvram_get("security_mode"); %>" || "wpa2" == "<% nvram_get("security_mode"); %>" || "b-only" == "<% nvram_get("wl_net_mode"); %>"){
 		var wds = "0";
 		setWDS(wds);
-		alert("WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS");
+//		alert("WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS");
+		alert(errmsg.err48);
 	}
 });
 
@@ -90,8 +94,8 @@ addEvent(window, "load", function() {
                <div id="menu">
                   <div id="menuMain">
                      <ul id="menuMainList">
-                        <li><a href="index.asp">Setup</a></li>
-                        <li class="current"><span>Wireless</span>
+                        <li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+                        <li class="current"><span><script type="text/javascript">Capture(bmenu.wireless)</script></span>
                           <div id="menuSub">
                               <ul id="menuSubList">
                                  <li><a href="Wireless_Basic.asp">Basic Settings</a></li>
@@ -104,13 +108,13 @@ addEvent(window, "load", function() {
                            </div>
                         </li>
                         <% nvram_invmatch("sipgate","1","<!--"); %>
-                        <li><a href="Sipath.asp">SIPatH</a></li>
+                        <li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
                         <% nvram_invmatch("sipgate","1","-->"); %>
-                        <li><a href="Firewall.asp">Security</a></li>
-                        <li><a href="Filters.asp">Access Restrictions</a></li>
-                        <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                        <li><a href="Management.asp">Administration</a></li>
-                        <li><a href="Status_Router.asp">Status</a></li>
+                        <li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+                        <li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+                        <li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+                        <li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+                        <li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
                      </ul>
                   </div>
                </div>
@@ -123,20 +127,20 @@ addEvent(window, "load", function() {
                   	<input type="hidden" name="submit_type" />
                   	<input type="hidden" name="commit" value="1" />
                   	<input type="hidden" name="action" value="Apply" />
-                  	<h2>Wireless Distribution System</h2>
+                  	<h2><script type="text/javascript">Capture(wds.h2)</script></h2>
                      <div>
                       <fieldset>
-                        <legend>WDS Settings</legend>
+                        <legend><script type="text/javascript">Capture(wds.legend)</script></legend>
                         <div class="setting">
-                           <div class="label">Wireless MAC</div><% nvram_get("wl0_hwaddr"); %>
+                           <div class="label"><script type="text/javascript">Capture(wds.wl_mac)</script></div><% nvram_get("wl0_hwaddr"); %>
                         </div>
 
                         <div class="setting">
                           <select name="wl_wds1_enable" size="1" onChange="SelWDS(1,this.form.wl_wds1_enable.selectedIndex,this.form)">
-                            <option value="0" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>>Disable</option>
-                            <option value="1" <% nvram_selmatch("wl_wds1_enable", "1", "selected"); %>>Point to Point</option>
+                            <option value="0" <% nvram_selmatch("wl_wds1_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                            <option value="1" <% nvram_selmatch("wl_wds1_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                             <% show_wds_subnet(1); %>
-                            <option value="3" <% nvram_selmatch("wl_wds1_enable", "3", "selected"); %>>LAN</option>
+                            <option value="3" <% nvram_selmatch("wl_wds1_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                           </select>
                           <input type="hidden" name="wl_wds1_hwaddr" value="6" />
                           <input class="num" name="wl_wds1_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("1", "0"); %>' />:<input class="num" name="wl_wds1_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "1"); %>' />:<input class="num" name="wl_wds1_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "2"); %>' />:<input class="num" name="wl_wds1_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "3"); %>' />:<input class="num" name="wl_wds1_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "4"); %>' />:<input class="num" name="wl_wds1_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("1", "5"); %>' />&nbsp;&nbsp;
@@ -146,10 +150,10 @@ addEvent(window, "load", function() {
 
                         <div class="setting">
                           <select name="wl_wds2_enable" size="1" onChange="SelWDS(2,this.form.wl_wds2_enable.selectedIndex,this.form)">
-                            <option value="0" <% nvram_selmatch("wl_wds2_enable", "0", "selected"); %>>Disable</option>
-                            <option value="1" <% nvram_selmatch("wl_wds2_enable", "1", "selected"); %>>Point to Point</option>
+                            <option value="0" <% nvram_selmatch("wl_wds2_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                            <option value="1" <% nvram_selmatch("wl_wds2_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                             <% show_wds_subnet(2); %>
-                            <option value="3" <% nvram_selmatch("wl_wds2_enable", "3", "selected"); %>>LAN</option>
+                            <option value="3" <% nvram_selmatch("wl_wds2_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option></option>
                           </select>
                           <input type="hidden" name="wl_wds2_hwaddr" value="6" />
                           <input class="num" name="wl_wds2_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("2", "0"); %>' />:<input class="num" name="wl_wds2_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "1"); %>' />:<input class="num" name="wl_wds2_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "2"); %>' />:<input class="num" name="wl_wds2_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "3"); %>' />:<input class="num" name="wl_wds2_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "4"); %>' />:<input class="num" name="wl_wds2_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("2", "5"); %>' />&nbsp;&nbsp;
@@ -159,10 +163,10 @@ addEvent(window, "load", function() {
                           </div>
                           <div class="setting">
                             <select name="wl_wds3_enable" size="1" onChange="SelWDS(3,this.form.wl_wds3_enable.selectedIndex,this.form)">
-                              <option value="0" <% nvram_selmatch("wl_wds3_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds3_enable", "1", "selected"); %>>Point to Point</option>
+                              <option value="0" <% nvram_selmatch("wl_wds3_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                              <option value="1" <% nvram_selmatch("wl_wds3_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                               <% show_wds_subnet(3); %>
-                              <option value="3" <% nvram_selmatch("wl_wds3_enable", "3", "selected"); %>>LAN</option>
+                              <option value="3" <% nvram_selmatch("wl_wds3_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                             </select>
                             <input type="hidden" name="wl_wds3_hwaddr" value="6" />
                             <input class="num" name="wl_wds3_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("3", "0"); %>' />:<input class="num" name="wl_wds3_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "1"); %>' />:<input class="num" name="wl_wds3_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "2"); %>' />:<input class="num" name="wl_wds3_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "3"); %>' />:<input class="num" name="wl_wds3_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "4"); %>' />:<input class="num" name="wl_wds3_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("3", "5"); %>' />&nbsp;&nbsp;
@@ -172,10 +176,10 @@ addEvent(window, "load", function() {
 
                           <div class="setting">
                             <select name="wl_wds4_enable" size="1" onChange="SelWDS(4,this.form.wl_wds4_enable.selectedIndex,this.form)">
-                              <option value="0" <% nvram_selmatch("wl_wds4_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds4_enable", "1", "selected"); %>>Point to Point</option>
+                              <option value="0" <% nvram_selmatch("wl_wds4_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                              <option value="1" <% nvram_selmatch("wl_wds4_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                               <% show_wds_subnet(4); %>
-                              <option value="3" <% nvram_selmatch("wl_wds4_enable", "3", "selected"); %>>LAN</option>
+                              <option value="3" <% nvram_selmatch("wl_wds4_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option></option>
                             </select>
                             <input type="hidden" name="wl_wds4_hwaddr" value="6" />
                             <input class="num" name="wl_wds4_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("4", "0"); %>' />:<input class="num" name="wl_wds4_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "1"); %>' />:<input class="num" name="wl_wds4_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "2"); %>' />:<input class="num" name="wl_wds4_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "3"); %>' />:<input class="num" name="wl_wds4_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "4"); %>' />:<input class="num" name="wl_wds4_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("4", "5"); %>' />&nbsp;&nbsp;
@@ -185,10 +189,10 @@ addEvent(window, "load", function() {
                             </div>
                             <div class="setting">
                               <select name="wl_wds5_enable" size="1" onChange="SelWDS(5,this.form.wl_wds5_enable.selectedIndex,this.form)">
-                                <option value="0" <% nvram_selmatch("wl_wds5_enable", "0", "selected"); %>>Disable</option>
-                                <option value="1" <% nvram_selmatch("wl_wds5_enable", "1", "selected"); %>>Point to Point</option>
+                                <option value="0" <% nvram_selmatch("wl_wds5_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                                <option value="1" <% nvram_selmatch("wl_wds5_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                                 <% show_wds_subnet(5); %>
-                                <option value="3" <% nvram_selmatch("wl_wds5_enable", "3", "selected"); %>>LAN</option>
+                                <option value="3" <% nvram_selmatch("wl_wds5_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                               </select>
                               <input type="hidden" name="wl_wds5_hwaddr" value="6" />
                               <input class="num" name="wl_wds5_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("5", "0"); %>' />:<input class="num" name="wl_wds5_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "1"); %>' />:<input class="num" name="wl_wds5_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "2"); %>' />:<input class="num" name="wl_wds5_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "3"); %>' />:<input class="num" name="wl_wds5_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "4"); %>' />:<input class="num" name="wl_wds5_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("5", "5"); %>' />&nbsp;&nbsp;
@@ -198,10 +202,10 @@ addEvent(window, "load", function() {
 
                             <div class="setting">
                               <select name="wl_wds6_enable" size="1" onChange="SelWDS(6,this.form.wl_wds6_enable.selectedIndex,this.form)">
-                                <option value="0" <% nvram_selmatch("wl_wds6_enable", "0", "selected"); %>>Disable</option>
-                                <option value="1" <% nvram_selmatch("wl_wds6_enable", "1", "selected"); %>>Point to Point</option>
+                                <option value="0" <% nvram_selmatch("wl_wds6_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                                <option value="1" <% nvram_selmatch("wl_wds6_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                                 <% show_wds_subnet(6); %>
-                                <option value="3" <% nvram_selmatch("wl_wds6_enable", "3", "selected"); %>>LAN</option>
+                                <option value="3" <% nvram_selmatch("wl_wds6_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                               </select>
                               <input type="hidden" name="wl_wds6_hwaddr" value="6" />
                               <input class="num" name="wl_wds6_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("6", "0"); %>' />:<input class="num" name="wl_wds6_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "1"); %>' />:<input class="num" name="wl_wds6_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "2"); %>' />:<input class="num" name="wl_wds6_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "3"); %>' />:<input class="num" name="wl_wds6_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "4"); %>' />:<input class="num" name="wl_wds6_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("6", "5"); %>' />&nbsp;&nbsp;
@@ -211,10 +215,10 @@ addEvent(window, "load", function() {
 
                             <div class="setting">
                               <select name="wl_wds7_enable" size="1" onChange="SelWDS(7,this.form.wl_wds7_enable.selectedIndex,this.form)">
-                                <option value="0" <% nvram_selmatch("wl_wds7_enable", "0", "selected"); %>>Disable</option>
-                                <option value="1" <% nvram_selmatch("wl_wds7_enable", "1", "selected"); %>>Point to Point</option>
+                                <option value="0" <% nvram_selmatch("wl_wds7_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                                <option value="1" <% nvram_selmatch("wl_wds7_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                                 <% show_wds_subnet(7); %>
-                                <option value="3" <% nvram_selmatch("wl_wds7_enable", "3", "selected"); %>>LAN</option>
+                                <option value="3" <% nvram_selmatch("wl_wds7_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                               </select>
                               <input type="hidden" name="wl_wds7_hwaddr" value="6" />
  	          			      <input class="num" name="wl_wds7_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("7", "0"); %>' />:<input class="num" name="wl_wds7_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "1"); %>' />:<input class="num" name="wl_wds7_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "2"); %>' />:<input class="num" name="wl_wds7_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "3"); %>' />:<input class="num" name="wl_wds7_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "4"); %>' />:<input class="num" name="wl_wds7_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("7", "5"); %>' />&nbsp;&nbsp;
@@ -224,10 +228,10 @@ addEvent(window, "load", function() {
                			    
                			    <div class="setting">
                    				<select name="wl_wds8_enable" size="1" onChange="SelWDS(8,this.form.wl_wds8_enable.selectedIndex,this.form)">
-                   			    	<option value="0" <% nvram_selmatch("wl_wds8_enable", "0", "selected"); %>>Disable</option>
-                   			        <option value="1" <% nvram_selmatch("wl_wds8_enable", "1", "selected"); %>>Point to Point</option>
+                   			    	<option value="0" <% nvram_selmatch("wl_wds8_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                   			        <option value="1" <% nvram_selmatch("wl_wds8_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                    			        <% show_wds_subnet(8); %>
-                   			        <option value="3" <% nvram_selmatch("wl_wds8_enable", "3", "selected"); %>>LAN</option>
+                   			        <option value="3" <% nvram_selmatch("wl_wds8_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                    			     </select>
                    			     <input type="hidden" name="wl_wds8_hwaddr" value="6" />
                    			     <input class="num" name="wl_wds8_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("8", "0"); %>' />:<input class="num" name="wl_wds8_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "1"); %>' />:<input class="num" name="wl_wds8_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "2"); %>' />:<input class="num" name="wl_wds8_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "3"); %>' />:<input class="num" name="wl_wds8_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "4"); %>' />:<input class="num" name="wl_wds8_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("8", "5"); %>' />&nbsp;&nbsp;
@@ -237,10 +241,10 @@ addEvent(window, "load", function() {
 
                             <div class="setting">
                               <select name="wl_wds9_enable" size="1" onChange="SelWDS(9,this.form.wl_wds9_enable.selectedIndex,this.form)">
-                                <option value="0" <% nvram_selmatch("wl_wds9_enable", "0", "selected"); %>>Disable</option>
-                                <option value="1" <% nvram_selmatch("wl_wds9_enable", "1", "selected"); %>>Point to Point</option>
+                                <option value="0" <% nvram_selmatch("wl_wds9_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                                <option value="1" <% nvram_selmatch("wl_wds9_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                                 <% show_wds_subnet(9); %>
-                                <option value="3" <% nvram_selmatch("wl_wds9_enable", "3", "selected"); %>>LAN</option>
+                                <option value="3" <% nvram_selmatch("wl_wds9_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                               </select>
 			                        <input type="hidden" name="wl_wds9_hwaddr" value="6" />
 			                        <input class="num" name="wl_wds9_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("9", "0"); %>' />:<input class="num" name="wl_wds9_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "1"); %>' />:<input class="num" name="wl_wds9_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "2"); %>' />:<input class="num" name="wl_wds9_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "3"); %>' />:<input class="num" name="wl_wds9_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "4"); %>' />:<input class="num" name="wl_wds9_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("9", "5"); %>' />&nbsp;&nbsp;
@@ -250,10 +254,10 @@ addEvent(window, "load", function() {
 
                           <div class="setting">
                             <select name="wl_wds10_enable" size="1" onChange="SelWDS(10,this.form.wl_wds10_enable.selectedIndex,this.form)">
-                              <option value="0" <% nvram_selmatch("wl_wds10_enable", "0", "selected"); %>>Disable</option>
-                              <option value="1" <% nvram_selmatch("wl_wds10_enable", "1", "selected"); %>>Point to Point</option>
+                              <option value="0" <% nvram_selmatch("wl_wds10_enable", "0", "selected"); %>><script type="text/javascript">Capture(share.disable)</script></option>
+                              <option value="1" <% nvram_selmatch("wl_wds10_enable", "1", "selected"); %>><script type="text/javascript">Capture(share.point2point)</script></option>
                               <% show_wds_subnet(10); %>
-                              <option value="3" <% nvram_selmatch("wl_wds10_enable", "3", "selected"); %>>LAN</option>
+                              <option value="3" <% nvram_selmatch("wl_wds10_enable", "3", "selected"); %>><script type="text/javascript">Capture(share.lan)</script></option>
                             </select>
 			                      <input type="hidden" name="wl_wds10_hwaddr" value="6" />
 			                      <input class="num" name="wl_wds10_hwaddr0" size="2" maxlength="2" onBlur="valid_mac(this,0)" value='<% get_wds_mac("10", "0"); %>' />:<input class="num" name="wl_wds10_hwaddr1" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "1"); %>' />:<input class="num" name="wl_wds10_hwaddr2" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "2"); %>' />:<input class="num" name="wl_wds10_hwaddr3" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "3"); %>' />:<input class="num" name="wl_wds10_hwaddr4" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "4"); %>' />:<input class="num" name="wl_wds10_hwaddr5" size="2" maxlength="2" onBlur="valid_mac(this,1)" value='<% get_wds_mac("10", "5"); %>' />&nbsp;&nbsp;
@@ -266,45 +270,48 @@ addEvent(window, "load", function() {
                         <fieldset>
                           <legend>Extra Options</legend>
                         <div class="setting">
-                           <div class="label">Lazy WDS</div>
-                           <input type="radio" name="wl_lazywds" value="1" <% nvram_match("wl_lazywds", "1", "checked"); %>>Enable</input>
-                           <input type="radio" name="wl_lazywds" value="0" <% nvram_match("wl_lazywds", "0", "checked"); %>>Disable</input>
-                           <span class="default">(Default: Disable)</span>
+                           <div class="label"><script type="text/javascript">Capture(wds.label)</script></div>
+                           <input type="radio" name="wl_lazywds" value="1" <% nvram_match("wl_lazywds", "1", "checked"); %>><script type="text/javascript">Capture(share.enable)</script></input>
+                           <input type="radio" name="wl_lazywds" value="0" <% nvram_match("wl_lazywds", "0", "checked"); %>><script type="text/javascript">Capture(share.disable)</script></input>
+                           <span class="default">(<script type="text/javascript">Capture(wds.lazy_default)</script>)</span>
                         </div>
                         <div class="setting">
-                           <div class="label">WDS Subnet</div>
-                           <input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_match("wl_br1_enable", "1", "checked"); %>>Enable</input>
-                           <input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_match("wl_br1_enable", "0", "checked"); %>>Disable</input>
+                           <div class="label"><script type="text/javascript">Capture(wds.label2)</script></div>
+                           <input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_match("wl_br1_enable", "1", "checked"); %>><script type="text/javascript">Capture(share.enable)</script></input>
+                           <input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_match("wl_br1_enable", "0", "checked"); %>><script type="text/javascript">Capture(share.disable)</script></input>
                         </div>
                         <div class="setting">
-                           <div class="label">NAT</div>
+                           <div class="label"><script type="text/javascript">Capture(share.nat)</script></div>
                            <select name="wl_br1_nat">
-                              <option value='<% nvram_match("wl_br1_nat", "0", "selected"); %>'>Disable</option>
-                              <option value='<% nvram_match("wl_br1_nat", "1", "selected"); %>'>wLAN->WDS</option>
-                              <option value='<% nvram_match("wl_br1_nat", "2", "selected"); %>'>WDS->wLAN</option>
+                              <option value='<% nvram_match("wl_br1_nat", "0", "selected"); %>'><script type="text/javascript">Capture(share.disable)</script></option>
+                              <option value='<% nvram_match("wl_br1_nat", "1", "selected"); %>'><script type="text/javascript">Capture(wds.nat1)</script></option>
+                              <option value='<% nvram_match("wl_br1_nat", "2", "selected"); %>'><script type="text/javascript">Capture(wds.nat2)</script></option>
                            </select>
                         </div>
                         <div class="setting">
-                           <div class="label">IP Address</div>
+                           <div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
                            <input type="hidden" name="wl_br1_ipaddr" value="4" />
-                           <input class="num" name="wl_br1_ipaddr0" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("0"); %>' />.<input class="num" name="wl_br1_ipaddr1" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("1"); %>' />.<input class="num" name="wl_br1_ipaddr2" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("2"); %>' />.<input class="num" name="wl_br1_ipaddr3" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_ip("3"); %>' />
+                           <input class="num" name="wl_br1_ipaddr0" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value='<% get_br1_ip("0"); %>' />.<input class="num" name="wl_br1_ipaddr1" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value='<% get_br1_ip("1"); %>' />.<input class="num" name="wl_br1_ipaddr2" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value='<% get_br1_ip("2"); %>' />.<input class="num" name="wl_br1_ipaddr3" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value='<% get_br1_ip("3"); %>' />
                         </div>
                         <div class="setting">
-                           <div class="label">Subnet Mask</div>
-                           <input type="hidden" name="wl_br1_netmask" value="4" /><input class="num" name="wl_br1_netmask0" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("0"); %>' />.<input class="num" name="wl_br1_netmask1" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("1"); %>' />.<input class="num" name="wl_br1_netmask2" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("2"); %>' />.<input class="num" name="wl_br1_netmask3" size="3" maxlength="3" onblur="valid_range(this,0,255,'IP')" value='<% get_br1_netmask("3"); %>' />
+                           <div class="label"><script type="text/javascript">Capture(share.subnet)</script></div>
+                           <input type="hidden" name="wl_br1_netmask" value="4" /><input class="num" name="wl_br1_netmask0" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value='<% get_br1_netmask("0"); %>' />.<input class="num" name="wl_br1_netmask1" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value='<% get_br1_netmask("1"); %>' />.<input class="num" name="wl_br1_netmask2" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value='<% get_br1_netmask("2"); %>' />.<input class="num" name="wl_br1_netmask3" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value='<% get_br1_netmask("3"); %>' />
                         </div>
                      </fieldset>
                      </div>
                      <br/>
-                     <div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onClick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
+                     <div class="submitFooter">
+                     	<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onClick=\"to_submit(this.form)\" />")</script>
+                     	<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+                     </div>
                   </form>
                </div>
             </div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo"><h2><script type="text/javascript">Capture(share.help)</script></h2></div>
 						<br />
-						<a href="javascript:openHelpWindow('HWDS.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HWDS.asp')"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
