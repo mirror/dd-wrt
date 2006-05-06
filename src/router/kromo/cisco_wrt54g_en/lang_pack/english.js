@@ -200,6 +200,8 @@ errmsg.err48="WDS is not compatible with the current configuration of the router
 //Wireless_radauth.asp error message
 errmsg.err49="Radius is only available in AP mode.";
 
+//Wireless_Basic.asp error message
+errmsg.err50="You must input a SSID!";
 
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
@@ -932,6 +934,36 @@ wl_mac.label="Use Filter";
 wl_mac.label2="Filter Mode";
 wl_mac.deny="Prevent PCs listed from accessing the wireless network";
 wl_mac.allow="Permit only PCs listed to access the wireless network";
+
+
+
+// **************************************************************** Wireless_Basic.asp ***************************************************************//
+
+var wl_basic = new Object();
+wl_basic.titl=" - Wireless";
+wl_basic.h2="Wireless";
+wl_basic.legend="Basic Settings";
+wl_basic.label="Wireless Mode";
+wl_basic.label2="Wireless Network Mode";
+wl_basic.label3="Wireless Network Name (SSID)";
+wl_basic.label4="Wireless Channel";
+wl_basic.label5="Wireless SSID Broadcast";
+wl_basic.label6="Sensitivity Range (ACK Timing)";
+wl_basic.ap="AP";
+wl_basic.client="Client";
+wl_basic.clientBridge="Client Bridge";
+wl_basic.adhoc="Adhoc";
+wl_basic.mixed="Mixed";
+wl_basic.b="B-Only";
+wl_basic.g="G-Only";
+wl_basic.sensitivity="Default: 20000 meters";
+
+//help container
+var hwl_basic = new Object();
+hwl_basic.right1="Wireless Network Mode: ";
+hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.";
+hwl_basic.right3="Sensitivity Range: ";
+hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
 
 
 
