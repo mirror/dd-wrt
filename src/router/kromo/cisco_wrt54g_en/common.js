@@ -914,5 +914,6 @@ function setElementMask(maskname, state) {
 		else
 			elements[i].type = "password";
 	}
+	elements[0].focus();
 }
 
