@@ -57,17 +57,18 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 
   if (!(fp = fopen (file, "r+b")))
     {
-fprintf(stderr,"opening %s\n",file);
+      fprintf(stderr,"opening %s\n",file);
       if (!(fp = fopen (file, "wb")))
       {
-fprintf(stderr,"error while opening %s\n",file);
+      fprintf(stderr,"error while opening %s\n",file);
       syslog (LOG_ERR, "failed to load %s: %m", file);
       return NULL;
       }
     }
 
-fprintf(stderr,"done()\n");
-  
+  fprintf(stderr,"opening %s\n",file);
+  fprintf(stderr,"done()\n");
+
   syslog (LOG_INFO, "reading %s", file);
 
   while (fread(&binlease, sizeof(binlease), 1, fp))
