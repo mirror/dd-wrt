@@ -117,6 +117,7 @@ sbutton.add_wol="Add Host";
 sbutton.manual_wol="Manual Wake Up";
 sbutton.summary="Summary";
 sbutton.filterIP="Edit List of PCs";
+sbutton.filterMac="Edit MAC Filter List";
 sbutton.filterSer="Add/Edit Service";
 sbutton.reboot="Reboot Router";
 sbutton.help="   Help  ";
@@ -812,6 +813,8 @@ wpa.h2="Wireless Security";
 wpa.h3="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
 wpa.psk="WPA Pre-Shared Key";
+wpa.wpa="WPA";
+wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (in seconds)";
 wpa.radius_ipaddr="RADIUS Server IP";
@@ -819,7 +822,7 @@ wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
-
+wpa.rekeyInt="rekey interval";
 
 //help container
 var hwpa = new Object();
@@ -872,6 +875,16 @@ radius.label8="Override Radius if Server is unavailable";
 radius.key="Shared Key";
 radius.mac="MAC";
 
+// **************************************************************** Wireless_MAC.asp ***************************************************************//
+
+var wl_mac = new Object();
+wl_mac.titl=" - MAC Filter";
+wl_mac.h2="Wireless MAC Filter";
+wl_mac.legend="MAC Filter";
+wl_mac.label="Use Filter";
+wl_mac.label2="Filter Mode";
+wl_mac.deny="Prevent PCs listed from accessing the wireless network";
+wl_mac.allow="Permit only PCs listed to access the wireless network";
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 

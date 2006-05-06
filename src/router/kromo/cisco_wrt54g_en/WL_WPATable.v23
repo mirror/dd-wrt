@@ -24,7 +24,8 @@ function to_submit(F) {
 		F.submit_button.value = "WL_WPATable";
 		//F.security_mode_last.value = F.security_mode.value;
 		//F.wl_wep_last.value = F.wl_wep.value;
-		F.save_button.value = "Saved";
+//		F.save_button.value = "Saved";
+		F.save_button.value = sbutton.saving;
 		F.action.value = "Apply";
        	apply(F);
 	}
