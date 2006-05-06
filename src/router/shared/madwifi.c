@@ -73,6 +73,7 @@ i
 #define VT_WLAN_IN32(a)  (*((volatile unsigned long int *)(mem + (a))))
 #define VT_WLAN_OUT32(v,a) (*((volatile unsigned long int *)(mem + (a))) = (v))
 
+#ifdef REGDOMAIN_OVERRIDE
 static int
 vt_ar5211_eeprom_read (unsigned char *mem,
 		       unsigned long int offset, unsigned short int *data)
@@ -292,7 +293,7 @@ set_regdomain (unsigned long int base_addr, int code)
   return errcode;
 }
 
-
+#endif
 
 
 
@@ -616,8 +617,7 @@ list_channelsext (const char *ifname, int allchans)
 	}
       cprintf ("filter turbo\n");
       //filter out channels which are not supporting turbo mode if turbo is enabled
-      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i])
-	  && !IEEE80211_IS_CHAN_DTURBO (&achans.ic_chans[i]))
+      if (!IEEE80211_IS_CHAN_STURBO (&achans.ic_chans[i]))
 	{
 	  if (nvram_match (wl_turbo, "1"))
 	    continue;
@@ -908,6 +908,8 @@ set_netmode (char *dev)
 {
   char net[16];
   char turbo[16];
+  char mode[16];
+  sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
   char *netmode = default_get (net, "mixed");
@@ -928,8 +930,10 @@ set_netmode (char *dev)
     }
   if (default_match (turbo, "1", "0"))
     {
+  if (nvram_match(mode,"sta"))
+      eval ("iwpriv", dev, "mode", "5");
 //      eval ("iwpriv", dev, "mode", "1");
-      eval ("iwpriv", dev, "turbo", "1");
+//      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
     }
 }
 
@@ -1024,11 +1028,7 @@ configure_single (int count)
       else
 	eval ("iwconfig", dev, "channel", ch);
     }
-  cprintf ("set ssid\n");
-  eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
 
-  cprintf ("set broadcast flag\n");	//hide ssid
-  eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
 
   cprintf ("adjust power\n");
   sprintf (var, "%smW", default_get (power, "28"));
@@ -1044,6 +1044,11 @@ configure_single (int count)
   
   
   memset (var, 0, 80);
+
+  cprintf ("set ssid\n");
+  eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
+  cprintf ("set broadcast flag\n");	//hide ssid
+  eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
   
   cprintf ("setup encryption");
   if (strcmp (m, "sta") && strcmp(m,"wdssta"))
@@ -1056,6 +1061,11 @@ configure_single (int count)
   if (strcmp (m, "sta"))
     {
       eval ("brctl", "addif", "br0", dev);
+    }
+    else
+    {
+  cprintf ("set ssid\n");
+  eval ("iwconfig", dev, "essid", default_get (ssid, "default"));    
     }
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -1176,7 +1186,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 
   for (i = 0; i < c; i++)
     {
-
+#ifdef REGDOMAIN_OVERRIDE
       // SeG's dirty hack to make everything possible without any channel restrictions. regdomain 0x60 seems to be the best way
       char regdomain[16];
       sprintf (regdomain, "ath%d_regdomain", i);
@@ -1184,6 +1194,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
       // read current reg domain from atheros card
       // the base io 0x50010000 is hardcoded here and can be different on non RB500 ports
       // @fixme: detect io by reading pci data
+
       cprintf ("get reg domain()\n");
       int reg_domain = get_regdomain ((0x50010000) + (0x10000 * i));
       if (reg_domain > -1)	//reg domain was successfully readed 
@@ -1201,6 +1212,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 	}
       cprintf ("configure next\n");
       if (!changed)		// if regdomain not changed, configure it
+#endif
 	configure_single (i);
     }
 
