@@ -34,7 +34,7 @@ function valid_value(F)
 		}
 	}
 	if(count > 128){
-//		alert("The total checks exceed 128 counts !");
+//		alert("The total checks exceed 128 counts.");
 		alert(errmsg.err44);
 		return false;
 	}
@@ -84,12 +84,12 @@ function init() {
 					<tr>
 						<td colspan="4">&nbsp;</td>
 					</tr>
-					<tr>
-						<td><script type="text/javascript">document.write("<input name=\"button\" type=\"button\" onclick=\"window.location.reload()\" value=\"" + sbutton.refres + "\"/>")</script></td>
-						<td align="right" colspan="3"><script type="text/javascript"><input type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form)\"/>&nbsp;<input onclick=\"self.close()\" type=\"reset\" value=\"" + sbutton.clos + "\"/>")</script></td>
-					</tr>
 				</tbody>
-			</table>
+			</table></br />
+			<div class="submitFooter">
+					<script type="text/javascript">document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />")</script>
+					<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />")</script>
+			</div>
 		</form>
 	</body>
 </html>
