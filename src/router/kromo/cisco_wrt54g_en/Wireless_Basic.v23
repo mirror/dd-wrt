@@ -10,6 +10,8 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 
+document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
+
 var EN_DIS = '<% nvram_else_match("wl_gmode","-1","0","1"); %>';
 
 function SelWL(num,F) {
@@ -37,12 +39,14 @@ function wl_enable_disable(F,I) {
 
 function to_submit(F) {
   if(F.wl_ssid.value == ""){
-    alert("You must input a SSID!");
+//    alert("You must input a SSID!");
+	alert(errmsg.err50);
     F.wl_ssid.focus();
     return false;
   }
   F.submit_button.value = "Wireless_Basic";
-  F.save_button.value = "Saved";
+//  F.save_button.value = "Saved";
+  F.save_button.value = sbutton.saving;
   F.action.value = "Apply";
   apply(F);
 }
@@ -64,27 +68,27 @@ function init() {
           <div id="menu">
             <div id="menuMain">
               <ul id="menuMainList">
-                <li><a href="index.asp">Setup</a></li>
-                <li class="current"><span>Wireless</span>
+                <li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+                <li class="current"><span><script type="text/javascript">Capture(bmenu.wireless)</script></span>
                   <div id="menuSub">
-                    <ul id="menuSubList">
-                      <li><span>Basic Settings</span></li>
-                      <li><a href="Wireless_radauth.asp">Radius</a></li>
-                      <li><a href="WL_WPATable.asp">Wireless Security</a></li>
-                      <li><a href="Wireless_MAC.asp">MAC Filter</a></li>
-                      <li><a href="Wireless_Advanced.asp">Advanced Settings</a></li>
-                      <li><a href="Wireless_WDS.asp">WDS</a></li>
+                      <ul id="menuSubList">
+                      <li><span><script type="text/javascript">Capture(bmenu.wirelessBasic)</script></span></li>
+                      <li><a href="Wireless_radauth.asp"><script type="text/javascript">Capture(bmenu.wirelessRadius)</script></a></li>
+                      <li><a href="WL_WPATable.asp"><script type="text/javascript">Capture(bmenu.wirelessSecurity)</script></a></li>
+                      <li><a href="Wireless_MAC.asp"><script type="text/javascript">Capture(bmenu.wirelessMac)</script></a></li>
+                      <li><a href="Wireless_Advanced.asp"><script type="text/javascript">Capture(bmenu.wirelessAdvanced)</script></a></li>
+                      <li><a href="Wireless_WDS.asp"><script type="text/javascript">Capture(bmenu.wirelessWds)</script></a></li>
                     </ul>
                   </div>
                 </li>
                 <% nvram_invmatch("sipgate","1","<!--"); %>
-                <li><a href="Sipath.asp">SIPatH</a></li>
+                <li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
                 <% nvram_invmatch("sipgate","1","-->"); %>
-                <li><a href="Firewall.asp">Security</a></li>
-                <li><a href="Filters.asp">Access Restrictions</a></li>
-                <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                <li><a href="Management.asp">Administration</a></li>
-                <li><a href="Status_Router.asp">Status</a></li>
+                <li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+                <li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+                <li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+                <li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+                <li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
               </ul>
             </div>
           </div>
@@ -95,23 +99,23 @@ function init() {
                 <input type="hidden" name="submit_button" value="Wireless_Basic" />
                 <input type="hidden" name="commit" value="1" />
                 <input type="hidden" name="action" value="Apply" />
-                <h2>Wireless</h2>
+                <h2><script type="text/javascript">Capture(wl_basic.h2)</script></h2>
                 <fieldset>
-                  <legend>Basic Settings</legend>
+                  <legend><script type="text/javascript">Capture(wl_basic.legend)</script></legend>
                   <div class="setting">
-                    <div class="label">Wireless Mode</div>
+                    <div class="label"><script type="text/javascript">Capture(wl_basic.label)</script></div>
                     <select name="wl_mode">
-                      <option value="ap" <% nvram_match("wl_mode", "ap", "selected"); %>>AP</option>
-                      <option value="sta" <% nvram_match("wl_mode", "sta", "selected"); %>>Client</option>
-                      <option value="wet" <% nvram_match("wl_mode", "wet", "selected"); %>>Client Bridged</option>
-                      <option value="infra" <% nvram_match("wl_mode", "infra", "selected"); %>>Adhoc</option>
+                      <script type="text/javascript">document.write("<option value=\"ap\" <% nvram_selected("wl_mode", "ap", "js"); %>>" + wl_basic.ap + "</option>");</script>
+                      <script type="text/javascript">document.write("<option value=\"sta\" <% nvram_selected("wl_mode", "sta", "js"); %>>" + wl_basic.client + "</option>");</script>
+                      <script type="text/javascript">document.write("<option value=\"wet\" <% nvram_selected("wl_mode", "wet", "js"); %>>" + wl_basic.clientBridge + "</option>");</script>
+                      <script type="text/javascript">document.write("<option value=\"infra\" <% nvram_selected("wl_mode", "infra", "js"); %>>" + wl_basic.adhoc + "</option>");</script>
                     </select>
                   </div>
                   <div class="setting">
-                    <div class="label">Wireless Network Mode</div>
+                    <div class="label"><script type="text/javascript">Capture(wl_basic.label2)</script></div>
                     <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
-                      <option value="disabled" <% nvram_match("wl_net_mode", "disabled", "selected"); %>>Disabled</option>
-                      <option value="mixed" <% nvram_match("wl_net_mode", "mixed", "selected"); %>>Mixed</option>
+                      <script type="text/javascript">document.write("<option value=\"disabled\" <% nvram_selected("wl_net_mode", "disabled", "js"); %>>" + share.disable +"</option>");</script>
+                      <script type="text/javascript">document.write("<option value=\"mixed\" <% nvram_selected("wl_net_mode", "mixed", "js"); %>>" + wl_basic.mixed + "</option>");</script>
                       <script type="text/javascript">
                       	if( <% nvram_get("wl_wds1_enable"); %> == "0" &&
                             <% nvram_get("wl_wds2_enable"); %> == "0" &&
@@ -124,20 +128,20 @@ function init() {
                             <% nvram_get("wl_wds9_enable"); %> == "0" &&
                             <% nvram_get("wl_wds10_enable"); %> == "0") {
  
-                      		document.write("<option value=\"b-only\" <% nvram_match("wl_net_mode", "b-only", "selected"); %>>B-Only</option>");
+                      		document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");
 
                       	}
                       </script>
-                      <option value="g-only" <% nvram_match("wl_net_mode", "g-only", "selected"); %>>G-Only</option>
+                      <script type="text/javascript">document.write("<option value=\"g-only\" <% nvram_selected("wl_net_mode", "g-only", "js"); %>>" + wl_basic.g + "</option>");</script>
                     </select>
                   </div>
                   <div class="setting">
-                    <div class="label">Wireless Network Name (SSID)</div>
+                    <div class="label"><script type="text/javascript">Capture(wl_basic.label3)</script></div>
                     <input name="wl_ssid" size="20" maxlength="32" onblur="valid_name(this,'SSID')" value='<% nvram_get("wl_ssid"); %>' />
                   </div>
                   <% nvram_invmatch("wl_mode", "ap", "<!--"); %>
                   <div class="setting">
-                    <div class="label">Wireless Channel</div>
+                    <div class="label"><script type="text/javascript">Capture(wl_basic.label4)</script></div>
                     <select name="wl_channel" onfocus="check_action(this,0)">
                       <script type="text/javascript">
                         var max_channel = 14;
@@ -161,36 +165,36 @@ function init() {
                     </select>
                   </div>
                   <div class="setting">
-                    <div class="label">Wireless SSID Broadcast</div>
-                    <input type="radio" value="0" name="wl_closed" <% nvram_match("wl_closed","0","checked"); %>>Enable</input>
-                    <input type="radio" value="1" name="wl_closed" <% nvram_match("wl_closed","1","checked"); %>>Disable</input>
+                    <div class="label"><script type="text/javascript">Capture(wl_basic.label5)</script></div>
+                    <input type="radio" value="0" name="wl_closed" <% nvram_checked("wl_closed","0"); %>><script type="text/javascript">Capture(share.enable)</script></input>
+                    <input type="radio" value="1" name="wl_closed" <% nvram_checked("wl_closed","1"); %>><script type="text/javascript">Capture(share.disable)</script></input>
                   </div>
                   <% nvram_invmatch("wl_mode", "ap", "-->"); %>
                   <br/>
                   <div class="setting">
-                    <div class="label">Sensitivity Range (ACK Timing)</div>
+                    <div class="label"><script type="text/javascript">Capture(wl_basic.label6)</script></div>
                     <input name="wl_distance" size="8" maxlength="8" value='<% nvram_get("wl_distance"); %>' />
-                    <span class="default">(Default: 20000 meters)</span>
+                    <span class="default">(<script type="text/javascript">Capture(wl_basic.sensitivity)</script>)</span>
                   </div>
                 </fieldset>
                 <br/>
                   <div class="submitFooter">
-                    <input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-                    <input type="reset" value="Cancel Changes" />
+                    <script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
+                    <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel +"\" />");</script>
                 </div>
               </form>
           </div>
         </div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo"><h2><script type="text/javascript">Capture(share.help)</script></h2></div>
 						<dl>
-							<dt class="term">Wireless Network Mode: </dt>
-							<dd class="definition">If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.</dd>
-							<dt class="term">Sensitivity Range: </dt>
-							<dd class="definition">Adjusts the ack timing. 0 disables ack timing completely.</dt>
+							<dt class="term"><script type="text/javascript">Capture(hwl_basic.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hwl_basic.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(hwl_basic.right3)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hwl_basic.right4)</script></dt>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HWireless.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HWireless.asp')"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
