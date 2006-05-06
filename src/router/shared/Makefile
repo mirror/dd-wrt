@@ -45,6 +45,10 @@ ifeq ($(CONFIG_SNMP),y)
   CFLAGS += -DHAVE_SNMP
 endif
 
+ifeq ($(REGDOMAIN_OVERRIDE),y)
+CFLAGS += -DREGDOMAIN_OVERRIDE
+endif
+
 ifeq ($(CONFIG_RB500),y)
   CFLAGS += -DHAVE_RB500
 endif
@@ -74,7 +78,7 @@ ifeq ($(CONFIG_34TELECOM),y)
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi -include ../madwifi/madwifi/include/compat.h
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h
 endif
 
 ifeq ($(CONFIG_NEWMEDIA),y)
