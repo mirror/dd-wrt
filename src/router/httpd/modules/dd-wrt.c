@@ -1162,6 +1162,9 @@ showDynOption (webs_t wp, char *propname, char *nvname, char *options[],
 0xFF (debug)
 
 */
+
+#ifdef REGDOMAIN_OVERRIDE
+
 struct regdomain
 {
   char *name;
@@ -1185,6 +1188,8 @@ static struct regdomain regdomains[] = {
   {"WORLD5", 0x65},
   {NULL, 0}
 };
+#endif
+
 #endif
 
 void
@@ -1616,7 +1621,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
 
-
+#ifdef REGDOMAIN_OVERRIDE
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\">Regulatory Domain</div><select name=\"%s\">\n",
 	     wl_regdomain);
@@ -1633,6 +1638,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     }
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
+#endif
 //power adjustment
   sprintf (power, "%s_txpwr", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
