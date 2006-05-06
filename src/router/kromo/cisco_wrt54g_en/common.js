@@ -906,7 +906,6 @@ function getTimeOut(clk, rest_default) {
 // Unmask or Mask an input type (for password or key)
 function setElementMask(maskname, state) {
 	var elements = document.getElementsByName(maskname);
-	var 
 	if(!elements) return;
 	for(var i = 0; i < elements.length; i++) {
 		if (state == true)
