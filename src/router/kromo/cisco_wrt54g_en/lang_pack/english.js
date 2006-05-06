@@ -90,6 +90,7 @@ share.lan="LAN";
 share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Subnet Mask";
+share.unmask="Unmask";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
