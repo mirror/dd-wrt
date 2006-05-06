@@ -59,7 +59,7 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 //  if (!(fp = fopen (file, "r+b")))
 //    {
 fprintf(stderr,"opening %s\n",file);
-      if (!(fp = fopen (file, "wb")))
+      if (!(fp = fopen (file, "r")))
       {
 fprintf(stderr,"error while opening %s\n",file);
       syslog (LOG_ERR, "failed to load %s: %m", file);
@@ -169,13 +169,13 @@ fprintf(stderr,"done()\n");
 
   for (lease = leases; lease; lease = lease->next)
     {
-//      if (lease->fqdn)
-//	{
+      if (lease->fqdn)
+	{
 	  cache_add_dhcp_entry(daemon,lease->fqdn, &lease->addr, lease->expires);
 	  cache_add_dhcp_entry(daemon,lease->name, &lease->addr, lease->expires);
-//	}
-//      else 
-//	cache_add_dhcp_entry(daemon,lease->name, &lease->addr, lease->expires);
+	}
+      else 
+	cache_add_dhcp_entry(daemon,lease->name, &lease->addr, lease->expires);
 
       syslog(LOG_INFO, "stored lease for %s", lease->name); 
 
