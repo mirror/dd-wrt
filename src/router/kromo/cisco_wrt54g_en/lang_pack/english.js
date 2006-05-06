@@ -126,7 +126,8 @@ sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
 sbutton.log_in="Incoming Log";
 sbutton.log_out="Outgoing Log";
-sbutton.log_sys="System Log";
+
+
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
 var errmsg = new Object();
@@ -182,22 +183,24 @@ errmsg.err38="Please enter a Shared Key!";
 errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits"
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
-errmsg.err43="rekey interval";
+errmsg.err43="Rekey interval";
 
 //config.asp error message
 errmsg.err42="Please select a configuration file to restore.";
 
 //WL_ActiveTable.asp error message
-errmsg.err44="The total checks exceed 128 counts !";
+errmsg.err44="The total checks exceed 128 counts.";
 
 //Site_Survey.asp error message
-errmsg.err47=("invalid SSID");
+errmsg.err47=("invalid SSID.");
 
 //Wireless_WDS.asp error message
 errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
 
 //Wireless_radauth.asp error message
 errmsg.err49="Radius is only available in AP mode.";
+
+
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -249,6 +252,7 @@ bmenu.adminBackup="Backup";
 
 
 bmenu.statu="Status";
+
 
 
 // **************************************************************** DDNS.asp **********************************************************************//
@@ -325,6 +329,7 @@ hddns.right2="DDNS allows you to access your network using domain names instead 
 	You must sign up for service through TZO.com or DynDNS.org.";
 
 
+
 // **************************************************************** Forward.asp **********************************************************************//
 
 var prforward = new Object();
@@ -364,6 +369,8 @@ hpforward.right2="Certain applications may require to open specific ports in ord
 	and uncheck the <em>Enable</em> checkbox after you are finished.";
 
 
+
+
 // **************************************************************** Triggering.asp **********************************************************************//
 
 var trforward = new Object();
@@ -388,6 +395,7 @@ htrforward.right9="End:";
 htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
 
 
+
 // **************************************************************** UPnP.asp **********************************************************************//
 
 var upnp = new Object();
@@ -408,6 +416,8 @@ hupnp.right1="Forwards:";
 hupnp.right2="Click the trash can to delete an individual entry.";
 hupnp.right3="UPnP Service:";
 hupnp.right4="Allows applications to automatically setup port forwardings.";
+
+
 
 // **************************************************************** Alive.asp **********************************************************************//
 
@@ -434,6 +444,8 @@ halive.right2="Choose when reboot the router. Cron must be enabled in the managm
 halive.right3="IP Addresses:";
 halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
 
+
+
 // **************************************************************** config.asp **********************************************************************//
 
 var config = new Object();
@@ -454,6 +466,8 @@ hconfig.right2="You may backup your current configuration in case you need to re
 hconfig.right3="Restore:";
 hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
 
+
+
 // **************************************************************** Diagnostics.asp **********************************************************************//
 
 var diag = new Object();
@@ -464,11 +478,11 @@ diag.cmd="Commands";
 diag.startup="Startup";
 diag.firewall="Firewall";
 
-
 //help container
 var hdiag = new Object();
 hdiag.right1="Commands:";
 hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
+
 
 
 // **************************************************************** DMZ.asp **********************************************************************//
@@ -486,6 +500,8 @@ var hdmz = new Object();
 hdmz.right1="DMZ:";
 hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
 
+
+
 // **************************************************************** Factory_Defaults.asp **********************************************************************//
 
 var factdef = new Object();
@@ -495,7 +511,6 @@ factdef.legend="Reset router settings";
 factdef.restore="Restore Factory Defaults";
 
 factdef.mess1="Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.";
-
 
 //help container
 var hfactdef = new Object();
@@ -545,6 +560,7 @@ hfilter.right15="Website Blocking by Keyword:";
 hfilter.right16="You can block access to certain website by the keywords contained in their webpage.";
 
 
+
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
 
 var filterIP = new Object();
@@ -555,6 +571,7 @@ filterIP.h32="Enter the IP Address of the PCs";
 filterIP.h33="Enter the IP Range of the PCs";
 
 
+
 // **************************************************************** FilterSummary.asp **********************************************************************//
 
 var filterSum = new Object();
@@ -562,6 +579,8 @@ filterSum.titl=" - Access Restrictions Summary";
 filterSum.h2="Internet Policy Summary";
 filterSum.polnum="No.";
 filterSum.polday="Time of Day";
+
+
 
 // **************************************************************** Firewall.asp **********************************************************************//
 
@@ -585,6 +604,7 @@ filter.port113="Filter IDENT (Port 113)";
 var hfirewall = new Object();
 hfirewall.right1="Firewall Protection:";
 hfirewall.right2="Enable or disable the SPI firewall.";
+
 
 
 // **************************************************************** Hotspot.asp **********************************************************************//
@@ -637,6 +657,8 @@ hotspot.sputnik_id="Sputnik Server ID";
 hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
 
+
+
 // **************************************************************** index_heartbeat.asp *********************************************************//
 
 var idx_h = new Object();
@@ -645,16 +667,22 @@ idx_h.con_strgy="Connection Strategy";
 idx_h.max_idle="Connect on Demand: Max Idle Time";
 idx_h.alive="Keep Alive: Redial Period";
 
+
+
 // **************************************************************** index_l2tp.asp *********************************************************//
 
 var idx_l = new Object();
 idx_l.srv="L2TP Server";
+
+
 
 // **************************************************************** index_pppoe.asp *********************************************************//
 
 var idx_pppoe = new Object();
 idx_pppoe.srv="Service Name";
 idx_pppoe.use_rp="Use RP PPPoE";
+
+
 
 // **************************************************************** index_pptp.asp *********************************************************//
 
@@ -665,11 +693,15 @@ idx_pptp.subnet=share.subnet;
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Encyption";
 
+
+
 // **************************************************************** index_static.asp *********************************************************//
 
 var idx_static = new Object();
 idx_static.gateway="Gateway";
 idx_static.dns="Static DNS";
+
+
 
 // **************************************************************** index.asp *********************************************************//
 
@@ -693,7 +725,6 @@ idx.legend3="Time Settings";
 idx.timeset="Time Zone / Summer Time (DST)";
 idx.localtime="Use local time";
 
-
 //help container
 var hidx = new Object();
 hidx.right1="Automatic Configuration - DHCP:";
@@ -716,6 +747,7 @@ hidx.right17="Time Setting:";
 hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
 
 
+
 // **************************************************************** Join.asp **********************************************************************//
 
 var join = new Object();
@@ -723,6 +755,7 @@ var join = new Object();
 //sshd.webservices
 join.titl=" - Join";
 join.mess1="Successfully joined the following network as a client: ";
+
 
 
 // **************************************************************** Log_incoming.asp **********************************************************************//
@@ -734,6 +767,7 @@ log_in.th_ip="Source IP";
 log_in.th_port="Destination Port Number";
 
 
+
 // **************************************************************** Log_outgoing.asp **********************************************************************//
 
 var log_out = new Object();
@@ -742,6 +776,7 @@ log_out.h2="Outgoing Log Table";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="Destination URL/IP";
 log_out.th_port="Service/Port Number";
+
 
 
 // **************************************************************** Log.asp **********************************************************************//
@@ -757,14 +792,13 @@ log.accept="Accepted";
 
 
 
-
-
 // **************************************************************** Site_Survey.asp **********************************************************************//
 
 var survey = new Object();
 survey.titl=" - Site Survey";
 survey.h2="Neighbor&#39;s Wireless Networks";
 survey.thjoin="Join Site";
+
 
 
 // **************************************************************** Services.asp **********************************************************************//
@@ -776,6 +810,7 @@ service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
+
 
 
 // **************************************************************** WOL.asp **********************************************************************//
@@ -804,6 +839,8 @@ hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:
 hwol.right5="IP Address:";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
 
+
+
 // **************************************************************** WL_WPATable.asp **************************************************************//
 // **************************************************************** WPA.asp **********************************************************************//
 
@@ -829,12 +866,16 @@ var hwpa = new Object();
 hwpa.right1="Security Mode:";
 hwpa.right2="You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same security mode.";
 
+
+
 // **************************************************************** WL_FilterTable.asp **************************************************************//
 
 var wl_filter = new Object();
 wl_filter.titl=" - MAC Address Filter List";
 wl_filter.h2="MAC Address Filter List";
 wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+
+
 
 // **************************************************************** WL_ActiveTable.asp **************************************************************//
 
@@ -844,6 +885,8 @@ wl_active.h2="Wireless Client MAC List";
 wl_active.h3="Enable MAC Filter";
 wl_active.active="Active PC";
 wl_active.inactive="Active PC";
+
+
 
 // **************************************************************** Wireless_WDS.asp ***************************************************************//
 
@@ -857,6 +900,8 @@ wds.wl_mac="Wireless MAC";
 wds.lazy_default="Default: Disable";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
+
+
 
 // **************************************************************** Wireless_radauth.asp ***************************************************************//
 
@@ -875,6 +920,8 @@ radius.label8="Override Radius if Server is unavailable";
 radius.key="Shared Key";
 radius.mac="MAC";
 
+
+
 // **************************************************************** Wireless_MAC.asp ***************************************************************//
 
 var wl_mac = new Object();
@@ -886,11 +933,14 @@ wl_mac.label2="Filter Mode";
 wl_mac.deny="Prevent PCs listed from accessing the wireless network";
 wl_mac.allow="Permit only PCs listed to access the wireless network";
 
+
+
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
 var fail = new Object();
 fail.mess1="The values you entered are invalid. Please try again.";
 fail.mess2="Upgrade failed.";
+
 
 
 // **************************************************************** Success*.asp & Reboot.asp  **********************************************************************//
@@ -906,6 +956,8 @@ success.alert_reset="All configuration settings have been restored to their defa
 success.alert1="Please check the followings before connecting again:";
 success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
 success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
+
+
 
 
 
