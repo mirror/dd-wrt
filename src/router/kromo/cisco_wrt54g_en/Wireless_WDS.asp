@@ -98,12 +98,12 @@ addEvent(window, "load", function() {
                         <li class="current"><span><script type="text/javascript">Capture(bmenu.wireless)</script></span>
                           <div id="menuSub">
                               <ul id="menuSubList">
-                                 <li><a href="Wireless_Basic.asp">Basic Settings</a></li>
-                                 <li><a href="Wireless_radauth.asp">Radius</a></li>
-                                 <li><a href="WL_WPATable.asp">Wireless Security</a></li>
-                                 <li><a href="Wireless_MAC.asp">MAC Filter</a></li>
-                                 <li><a href="Wireless_Advanced.asp">Advanced Settings</a></li>
-                                 <li><span>WDS</span></li>
+                                 <li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wirelessBasic)</script></a></li>
+                                 <li><a href="Wireless_radauth.asp"><script type="text/javascript">Capture(bmenu.wirelessRadius)</script></a></li>
+                                 <li><a href="WL_WPATable.asp"><script type="text/javascript">Capture(bmenu.wirelessSecurity)</script></a></li>
+                                 <li><a href="Wireless_MAC.asp"><script type="text/javascript">Capture(bmenu.wirelessMac)</script></a></li>
+                                 <li><a href="Wireless_Advanced.asp"><script type="text/javascript">Capture(bmenu.wirelessAdvanced)</script></a></li>
+                                 <li><span><script type="text/javascript">Capture(bmenu.wirelessWds)</script></span></li>
                               </ul>
                            </div>
                         </li>

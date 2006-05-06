@@ -193,7 +193,10 @@ errmsg.err44="The total checks exceed 128 counts !";
 errmsg.err47=("invalid SSID");
 
 //Wireless_WDS.asp error message
-errmsg.err48=("WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS");
+errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
+
+//Wireless_radauth.asp error message
+errmsg.err49="Radius is only available in AP mode.";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -852,14 +855,22 @@ wds.lazy_default="Default: Disable";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 
-//help container
-var hwds = new Object();
-hwds.right1=":";
-hwds.right2="";
+// **************************************************************** Wireless_radauth.asp ***************************************************************//
 
-
-
-
+var radius = new Object();
+radius.titl=" - Radius";
+radius.h2="Remote Authentication Dial-In User Service";
+radius.legend="Radius";
+radius.label="MAC Radius Client";
+radius.label2="MAC Format";
+radius.label3="Radius Server IP";
+radius.label4="Radius Server Port";
+radius.label5="Maximum Unauthenticated Users";
+radius.label6="Password Format";
+radius.label7="RADIUS Shared Secret";
+radius.label8="Override Radius if Server is unavailable";
+radius.key="Shared Key";
+radius.mac="MAC";
 
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
