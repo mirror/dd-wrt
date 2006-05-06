@@ -380,7 +380,7 @@ fclose(fp);
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
-	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand == ROUTER_BELKIN_F5D7230))	//belkin doesnt like that
+	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_BELKIN_F5D7230))	//belkin doesnt like that
 	    {
 	      start_service ("resetbutton");
 	    }
