@@ -54,8 +54,7 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
   struct stat statbuf;
 
   logged_lease = 0;
-  
-  
+
   if (!(fp = fopen (file, "r+b")))
     {
 fprintf(stderr,"opening %s\n",file);
@@ -66,8 +65,6 @@ fprintf(stderr,"error while opening %s\n",file);
       return NULL;
       }
     }
-  else 
-    fp = fopen (file, "r+b");
 
 fprintf(stderr,"done()\n");
   
