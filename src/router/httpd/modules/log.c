@@ -49,11 +49,11 @@ ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv)
 	for (next = buf; (line = strsep (&next, "\n"));)
 	{
 		if (!strncmp (line, "<4>DROP", 7))
-			verdict = "Denied";
+			verdict = "Dropped";
 		else if (!strncmp (line, "<4>ACCEPT", 9))
 			verdict = "Accepted";
 		else if (!strncmp (line, "<4>REJECT", 9))
-			verdict = "Reject";
+			verdict = "Rejected";
 		else
 			continue;
 		
