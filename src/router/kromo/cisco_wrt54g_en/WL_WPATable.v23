@@ -20,12 +20,11 @@ function SelMode(varname,num,F)	{
 	F.submit();
 }
 function to_submit(F) {
-	if(valid_value(F)){
+	if (valid_value(F)) {
 		F.submit_button.value = "WL_WPATable";
-		//F.security_mode_last.value = F.security_mode.value;
-		//F.wl_wep_last.value = F.wl_wep.value;
 //		F.save_button.value = "Saved";
 		F.save_button.value = sbutton.saving;
+		
 		F.action.value = "Apply";
        	apply(F);
 	}
@@ -189,19 +188,21 @@ function generateKey128(F,PREFIX) {
 
 	F.submit();
 }
-function init(){
+
+addEvent(window, "unload", function() {
 	var F = document.forms[0];
 	if(F.security_mode)
 	if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
 		//keyMode(<% nvram_gozila_get("wl_wep_bit"); %>);
 		keyMode(document.wpa.wl_wep_bit.value, F);
 	}
+});
 
-}
 		</script>
 	</head>
 
-   <body class="gui" onload="init()"> <% showad(); %>
+   <body class="gui">
+   	<% showad(); %>
       <div id="wrapper">
          <div id="content">
             <div id="header">
