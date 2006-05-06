@@ -13,6 +13,6 @@
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(wpa.rekey)</script></div>
-	<input name="wl_wpa_gtk_rekey" maxlength="5" size="10" onblur="valid_range(this,0,99999,errmsg.err43)" value="<% nvram_get("wl_wpa_gtk_rekey"); %>" />
+	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,errmsg.err43)" value="<% nvram_get("wl_wpa_gtk_rekey"); %>" />
 	<span class="default">(Default: 3600, Range: 0 - 99999)</span>
 </div>
