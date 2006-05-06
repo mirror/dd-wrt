@@ -9,6 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 document.title = "<% nvram_get("router_name"); %>" + log.titl;
 
 function to_submit(F) {
@@ -127,23 +128,11 @@ addEvent(window, "load", function() {
 										<option value="1" <% nvram_selected("log_accepted", "1"); %>>On</option>
 									</select>
 								</div>
-								<% support_invmatch("SYSLOG_SUPPORT", "1", "<!--"); %>
-								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
-									<% prefix_ip_get("lan_ipaddr",1); %>
-									<input class="num" size="3" maxlength="3" name="log_ipaddr" onblur="valid_range(this,0,254,'IP')" value="<% nvram_get("log_ipaddr"); %>" />
-								</div>
-								<% support_invmatch("SYSLOG_SUPPORT", "1", "-->"); %>
 							</fieldset><br />
 							
 							<div class="center">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"log_incoming\" value=\"" + sbutton.log_in + "\" onclick=\"openWindow('Log_incoming.asp', 580, 600)\" />")</script>
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600)\" />")</script>
-								
-								<% support_invmatch("SYSLOG_SUPPORT", "1", "<!--"); %>
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"log_all\" value=\"" + sbutton.log_sys + "\" onclick=\"openWindow('Log_all.asp', 580, 600)\" />")</script>
-								<% support_invmatch("SYSLOG_SUPPORT", "1", "-->"); %>
-
 							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
