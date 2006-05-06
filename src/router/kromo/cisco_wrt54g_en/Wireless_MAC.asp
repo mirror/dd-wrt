@@ -10,12 +10,15 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 
+document.title = "<% nvram_get("router_name"); %>" + wl_mac.titl;
+
 function to_submit(F) {
 	F.submit_button.value = "Wireless_MAC";
 	F.change_action.value = "apply_cgi";
 	F.action.value = "Apply";
 	
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
 	apply(F);
 }
 
@@ -37,29 +40,29 @@ addEvent(window, "load", function() {
 					<div id="logo"><h1><% show_control(); %></h1></div>
 					<div id="menu">
 						<div id="menuMain">
-							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li class="current"><span>Wireless</span>
-								  <div id="menuSub">
-										<ul id="menuSubList">
-											<li><a href="Wireless_Basic.asp">Basic Settings</a></li>
-											<li><a href="Wireless_radauth.asp">Radius</a></li>
-											<li><a href="WL_WPATable.asp">Wireless Security</a></li>
-											<li><span>MAC Filter</span></li>
-											<li><a href="Wireless_Advanced.asp">Advanced Settings</a></li>
-											<li><a href="Wireless_WDS.asp">WDS</a></li>
-										</ul>
-									</div>
-								</li>
-								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
-								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li><a href="Status_Router.asp">Status</a></li>
-							</ul>
+						  <ul id="menuMainList">
+							<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+        		            <li class="current"><span><script type="text/javascript">Capture(bmenu.wireless)</script></span>
+                		    <div id="menuSub">
+                        	  <ul id="menuSubList">
+                              	<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wirelessBasic)</script></a></li>
+                                <li><a href="Wireless_radauth.asp"><script type="text/javascript">Capture(bmenu.wirelessRadius)</script></a></li>
+                                <li><a href="WL_WPATable.asp"><script type="text/javascript">Capture(bmenu.wirelessSecurity)</script></a></li>
+                                <li><span><script type="text/javascript">Capture(bmenu.wirelessMac)</script></span></li>
+                                <li><a href="Wireless_Advanced.asp"><script type="text/javascript">Capture(bmenu.wirelessAdvanced)</script></a></li>
+                                <li><a href="Wireless_WDS.asp"><script type="text/javascript">Capture(bmenu.wirelessWds)</script></a></li>
+                              </ul>
+                            </div>
+                            </li>
+                        	<% nvram_invmatch("sipgate","1","<!--"); %>
+                        	<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+                        	<% nvram_invmatch("sipgate","1","-->"); %>
+                        	<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+                        	<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+                        	<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+                        	<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+                        	<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+						  </ul>
 						</div>
 					</div>
 				</div>
@@ -69,26 +72,28 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="submit_button" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" />
-							<h2>Wireless MAC Filter</h2>
+							<h2><script type="text/javascript">Capture(wl_mac.h2)</script></h2>
 							<fieldset>
-								<legend>MAC Filter</legend>
+								<legend><script type="text/javascript">Capture(wl_mac.legend)</script></legend>
 								<div class="setting">
-									<div class="label">Use Filter</div>
-									<input type="radio" value="other" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_match("wl_macmode1","other","checked"); %> />Enable&nbsp;
-									<input type="radio" value="disabled" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_match("wl_macmode1","disabled","checked"); %> />Disable
+									<div class="label"><script type="text/javascript">Capture(wl_mac.label)</script></div>
+									<input type="radio" value="other" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","other"); %> /><script type="text/javascript">Capture(share.enable)</script>
+									&nbsp;
+									<input type="radio" value="disabled" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","disabled"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<div class="setting">
-									<div class="label">Filter Mode<br />&nbsp;</div>
-									<input type="radio" value="deny" name="wl_macmode" <% nvram_invmatch("wl_macmode","allow","checked"); %> />Prevent PCs listed from accessing the wireless network<br />
-									<input type="radio" value="allow" name="wl_macmode" <% nvram_match("wl_macmode","allow","checked"); %> />Permit only PCs listed to access the wireless network
+									<div class="label"><script type="text/javascript">Capture(wl_mac.label2)</script><br />&nbsp;</div>
+									<input type="radio" value="deny" name="wl_macmode" <% nvram_invmatch("wl_macmode","allow","checked"); %> /><script type="text/javascript">Capture(wl_mac.deny)</script>
+									<br />
+									<input type="radio" value="allow" name="wl_macmode" <% nvram_checked("wl_macmode","allow"); %> /><script type="text/javascript">Capture(wl_mac.allow)</script>
 								</div><br />
 								<div class="center">
-									<input type="button" name="mac_filter_button" value="Edit MAC Filter List" onclick="openWindow('WL_FilterTable.asp', 880, 730)" />
+									<script type="text/javascript">document.write("<input type=\"button\" name=\"mac_filter_button\" value=\"" + sbutton.filterMac + "\" onclick=\"openWindow('WL_FilterTable.asp', 880, 730)\" />");</script>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="button" value="Cancel Changes" name="cancel" onclick="window.location.reload()" />
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"cancel\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.reload()\" />");</script>
 							</div>
 						</form>
 					</div>
@@ -96,9 +101,9 @@ addEvent(window, "load", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2>Help</h2>
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div><br />
-						<a href="javascript:openHelpWindow('HWirelessMAC.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HWirelessMAC.asp')"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
