@@ -41,6 +41,9 @@ endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 endif
+ifeq ($(REGDOMAIN_OVERRIDE),y)
+CFLAGS += -DREGDOMAIN_OVERRIDE
+endif
 
 ifeq ($(CONFIG_34TELECOM),y)
 CFLAGS += -DHAVE_34TELECOM
@@ -124,7 +127,7 @@ ifeq ($(CONFIG_MSSID),y)
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi -include ../madwifi/madwifi/include/compat.h
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h
 endif
 
 ifeq ($(CONFIG_CDEBUG),y)
