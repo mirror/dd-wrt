@@ -192,7 +192,7 @@ addEvent(window, "load", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label17)</script></div>
-									<input class="spaceradio" type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+									<input class="spaceradio" type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 									<input class="spaceradio" type="radio" name="web_wl_filter" value="1" <% nvram_checked("web_wl_filter", "1"); %> /><script type="text/javascript">Capture(share.disable)</script>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.enable + ")")</script></span>
 								</div>
@@ -202,13 +202,13 @@ addEvent(window, "load", function() {
 								<legend><script type="text/javascript">Capture(wl_adv.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label18)</script></div>
-									<input class="spaceradio" type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="setWMM(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+									<input class="spaceradio" type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="setWMM(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="setWMM(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label19)</script></div>
-									<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+									<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 									<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> /><script type="text/javascript">Capture(share.disable)</script>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
 								</div>
@@ -336,7 +336,7 @@ addEvent(window, "load", function() {
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
