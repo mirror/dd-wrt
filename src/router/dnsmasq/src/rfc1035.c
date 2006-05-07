@@ -32,7 +32,7 @@ static int extract_name(HEADER *header, size_t plen, unsigned char **pp,
       unsigned int label_type = l & 0xc0;
       if (label_type == 0xc0) /* pointer */
 	{ 
-	  if (p - (unsigned char *)header + 1u >= plen)
+	  if ((size_t)(p - (unsigned char *)header + 1) >= plen)
 	    return 0;
 	      
 	  /* get offset */
@@ -70,7 +70,7 @@ static int extract_name(HEADER *header, size_t plen, unsigned char **pp,
 	  /* output is \[x<hex>/siz]. which is digs+9 chars */
 	  if (cp - (unsigned char *)name + digs + 9 >= MAXDNAME)
 	    return 0;
-	  if (p - (unsigned char *)header + ((count-1)>>3) + 1u >= plen)
+	  if ((size_t)(p - (unsigned char *)header + ((count-1)>>3) + 1) >= plen)
 	    return 0;
 
 	  *cp++ = '\\';
@@ -94,7 +94,7 @@ static int extract_name(HEADER *header, size_t plen, unsigned char **pp,
 	{ /* label_type = 0 -> label. */
 	  if (cp - (unsigned char *)name + l + 1 >= MAXDNAME)
 	    return 0;
-	  if (p - (unsigned char *)header + 1u >= plen)
+	  if ((size_t)(p - (unsigned char *)header + 1) >= plen)
 	    return 0;
 	  for(j=0; j<l; j++, p++)
 	    if (isExtract)
@@ -134,7 +134,11 @@ static int extract_name(HEADER *header, size_t plen, unsigned char **pp,
     }
 
   if (isExtract)
-    *--cp = 0; /* terminate: lose final period */
+    {
+      if (cp != (unsigned char *)name)
+	cp--;
+      *cp = 0; /* terminate: lose final period */
+    }
   else if (*cp != 0)
     retvalue = 2;
     
