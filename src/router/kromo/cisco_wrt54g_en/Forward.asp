@@ -9,6 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 document.title = "<% nvram_get("router_name"); %>" + prforward.titl;
 
 function forward_add_submit(F) {
@@ -85,6 +86,7 @@ function to_submit(F) {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="forward_port" value="13" />
 							<h2><script type="text/javascript">Capture(prforward.h2)</script></h2>
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(prforward.legend)</script></legend>
 								<table class="table center" cellspacing="5">
