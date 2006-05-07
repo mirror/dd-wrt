@@ -9,7 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>'+config.titl;
+		
+document.title = "<% nvram_get("router_name"); %>" + config.titl;
 
 function to_submit(F) {
 	if (F.file.value == "")	{
@@ -66,12 +67,14 @@ function to_submit(F) {
 					<div id="contents">
 						<form name="nvramrestore" action="nvram.cgi" method="POST" encType="multipart/form-data">
 							<h2><script type="text/javascript">Capture(config.h2)</script></h2>
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(config.legend)</script></legend>
 								<div class="setting">
 									<script type="text/javascript">Capture(config.mess1)</script>
 								</div>
 							</fieldset><br />
+							
 							<h2><script type="text/javascript">Capture(config.h22)</script></h2>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(config.legend2)</script></legend>
@@ -80,6 +83,7 @@ function to_submit(F) {
 									<input type="file" name="file" size="40" />
 								</div>
 							</fieldset><br />
+							
 							<div class="warning">
 								<p><b><script type="text/javascript">Capture(config.mess3)</script></b></p>
 								<p><script type="text/javascript">Capture(config.mess4)</script></p>
