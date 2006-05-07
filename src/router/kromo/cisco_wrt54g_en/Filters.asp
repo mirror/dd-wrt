@@ -9,6 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 document.title = "<% nvram_get("router_name"); %>" + filter.titl;
 
 <% filter_init(); %>
@@ -343,6 +344,7 @@ function Status(F,I) {
 							<input type="hidden" name="filter_p2p" />
 							<input type="hidden" name="f_status" />
 							<h2><script type="text/javascript">Capture(filter.h2)</script></h2>
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(filter.legend)</script></legend>
 								<div class="setting">
@@ -353,8 +355,8 @@ function Status(F,I) {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.statu)</script></div>
-									<input type="radio" value="enable" name="f_status1" <% filter_policy_get("f_status","enable"); %>/><script type="text/javascript">Capture(share.enable)</script>
-									<input type="radio" value="disable" name="f_status1" <% filter_policy_get("f_status","disable"); %>/><script type="text/javascript">Capture(share.disable)</script>
+									<input class="spaceradio" type="radio" value="enable" name="f_status1" <% filter_policy_get("f_status","enable"); %>/><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input class="spaceradio" type="radio" value="disable" name="f_status1" <% filter_policy_get("f_status","disable"); %>/><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(filter.polname)</script></div>
@@ -366,13 +368,13 @@ function Status(F,I) {
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /><script type="text/javascript">Capture(share.deny)</script>
+										<input class="spaceradio" type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /><script type="text/javascript">Capture(share.deny)</script>
 									</div>
-									Internet access during selected days and hours.
+									<script type="text/javascript">Capture(filter.polallow)</script>
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><script type="text/javascript">Capture(share.allow)</script>
+										<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><script type="text/javascript">Capture(share.allow)</script>
 									</div>
 								</div>
 								<br />
@@ -410,17 +412,17 @@ function Status(F,I) {
 								<legend><script type="text/javascript">Capture(filter.time)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(filter.h24)</script></div>
-									<input type="radio" value="1" name="time_all" onclick="timeall(this.form,'0')" <% filter_tod_get("time_all_en"); %> />
+									<input class="spaceradio" type="radio" value="1" name="time_all" onclick="timeall(this.form,'0')" <% filter_tod_get("time_all_en"); %> />
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.from)</script></div>
 									<input type="hidden" name="allday" />
-									<input type="radio" value="0" name="time_all" onclick="timeall(this.form,'1')" <% filter_tod_get("time_all_dis"); %> />
+									<input class="spaceradio" type="radio" value="0" name="time_all" onclick="timeall(this.form,'1')" <% filter_tod_get("time_all_dis"); %> />
 									<select name="start_hour"><% filter_tod_get("start_hour_12"); %></select>:<select name="start_min"><% filter_tod_get("start_min_5"); %></select>
 									<select name="start_time">
 										<option value="0" <% filter_tod_get("start_time_am"); %>>AM</option>
 										<option value="1" <% filter_tod_get("start_time_pm"); %>>PM</option>
-									</select> To <select name="end_hour"><% filter_tod_get("end_hour_12"); %></select>:<select name="end_min"><% filter_tod_get("end_min_5"); %></select>
+									</select>&nbsp;<script type="text/javascript">Capture(share.to)</script>&nbsp;<select name="end_hour"><% filter_tod_get("end_hour_12"); %></select>:<select name="end_min"><% filter_tod_get("end_min_5"); %></select>
 									<select name="end_time">
 										<option value="0" <% filter_tod_get("end_time_am"); %>>AM</option>
 										<option value="1" <% filter_tod_get("end_time_pm"); %>>PM</option>
@@ -432,33 +434,33 @@ function Status(F,I) {
 								<legend><script type="text/javascript">Capture(filter.legend3)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(filter.catchall)</script></div>
-  									<input type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
+  									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service0" onchange="onChange_blockedServices(blocked_service0.selectedIndex, port0_start, port0_end)">
 										<option value="None" selected="selected">None</option>
-										<script>write_service_options(servport_name0);</script>
+										<script type="text/javascript">write_service_options(servport_name0);</script>
 									</select>
 									<input maxLength="5" size="5" name="port0_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port0_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service1" onchange="onChange_blockedServices(blocked_service1.selectedIndex, port1_start, port1_end)">
 										<option value="None" selected="selected">None</option>
-										<script>write_service_options(servport_name1);</script>
+										<script type="text/javascript">write_service_options(servport_name1);</script>
 									</select>
 									<input maxLength="5" size="5" name="port1_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port1_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service2" onchange="onChange_blockedServices(blocked_service2.selectedIndex, port2_start, port2_end)">
 										<option value="None" selected="selected">None</option>
-										<script>write_service_options(servport_name2);</script>
+										<script type="text/javascript">write_service_options(servport_name2);</script>
 									</select>
 										<input maxLength="5" size="5" name="port2_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port2_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
 									<select size="1" name="blocked_service3" onchange="onChange_blockedServices(blocked_service3.selectedIndex, port3_start, port3_end)">
 										<option value="None" selected="selected">None</option>
-										<script>write_service_options(servport_name3);</script>
+										<script type="text/javascript">write_service_options(servport_name3);</script>
 									</select>
 									<input maxLength="5" size="5" name="port3_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port3_end" class="num" readonly="readonly" />
 								</div>
