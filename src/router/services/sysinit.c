@@ -1460,7 +1460,6 @@ check_cfe_nv (void)
       return 0;
       break;
     case ROUTER_SIEMENS:
-    case ROUTER_BELKIN_F5D7230:
 //      check_nv("wl0_hwaddr",nvram_safe_get("wan_hwaddr"));
 //      ret += check_nv("lan_ifname","br0");
 //      ret += check_nv("lan_hwnames","et0 il0 wl0 wl1");
@@ -1560,6 +1559,7 @@ check_cfe_nv (void)
       ret += check_nv ("ccode", "0");
       break;
     case ROUTER_BELKIN:
+    case ROUTER_BELKIN_F5D7230:
       ret += check_nv ("aa0", "3");
       if (check_hw_type () == BCM5352E_CHIP)
 	ret += check_nv ("ag0", "0x02");
