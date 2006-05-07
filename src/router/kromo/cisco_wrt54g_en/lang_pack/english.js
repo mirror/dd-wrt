@@ -540,6 +540,7 @@ filter.restore="Restore Factory Defaults";
 filter.pol="Policy";
 filter.polname="Policy Name";
 filter.pcs="PCs";
+filter.polallow="Internet access during selected days and hours.";
 filter.legend2="Days";
 filter.time="Times";
 filter.h24="24 Hours";
