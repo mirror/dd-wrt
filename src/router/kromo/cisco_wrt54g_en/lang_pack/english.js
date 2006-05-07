@@ -91,6 +91,8 @@ share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Subnet Mask";
 share.unmask="Unmask";
+share.default="Default";
+share.all="All";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -965,6 +967,71 @@ hwl_basic.right1="Wireless Network Mode: ";
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
+
+
+
+// **************************************************************** Wireless_Advanced.asp ***************************************************************//
+
+var wl_adv = new Object();
+wl_adv.titl=" - Advanced Wireless Settings";
+wl_adv.h2="Advanced Wireless Settings";
+wl_adv.legend="Advanced Settings";
+wl_adv.legend2="Wireless Multimedia Support Settings";
+wl_adv.label="Authentication Type";
+wl_adv.label2="Basic Rate";
+wl_adv.label3="Transmission Rate";
+wl_adv.label4="CTS Protection Mode";
+wl_adv.label5="Frame Burst";
+wl_adv.label6="Beacon Interval";
+wl_adv.label7="DTIM Interval";
+wl_adv.label8="Fragmentation Threshold";
+wl_adv.label9="RTS Threshold";
+wl_adv.label10="Max Associated Clients";
+wl_adv.label11="AP Isolation";
+wl_adv.label12="TX Antenna";
+wl_adv.label13="RX Antenna";
+wl_adv.label14="Preamble";
+wl_adv.label15="Xmit Power";
+wl_adv.label16="Afterburner";
+wl_adv.label17="Wireless GUI Access";
+wl_adv.label18="WMM Support";
+wl_adv.label19="No-Acknowledgement";
+wl_adv.label20="";
+wl_adv.table1="EDCA AP Parameters (AP to Client)";
+wl_adv.col1="CWmin";
+wl_adv.col2="CWmax";
+wl_adv.col3="AIFSN";
+wl_adv.col4="TXOP(b)";
+wl_adv.col5="TXOP(a/g)";
+wl_adv.col6="Admin Forced";
+wl_adv.row1="Background";
+wl_adv.row2="Best Effort";
+wl_adv.row3="Video";
+wl_adv.row4="Voice";
+wl_adv.table2="EDCA STA Parameters (Client to AP)";
+wl_adv.auto="Auto";
+wl_adv.right="Right";
+wl_adv.left="Left";
+wl_adv.long="Long";
+wl_adv.short="Short";
+wl_adv.key="Shared Key";
+wl_adv.default="Default: Default";
+wl_adv.defaultAuto="Default: Auto";
+wl_adv.defaultEnable="Default: Enable";
+wl_adv.defaultDisable="Default: Disable";
+wl_adv.defaultBcn="Default: 100ms, Range: 1 - 65535";
+wl_adv.defaultDtim="Default: <% get_wl_value("default_dtim"); %>, Range: 1 - 255";
+wl_adv.defaultFrag="Default: 2346, Range: 256 - 2346";
+wl_adv.defaultRts="Default: 2347, Range: 0 - 2347";
+wl_adv.defaultClients="Default: 128, Range: 1 - 256";
+wl_adv.defaultTxpwr="Default: 28, Range: 0 - 251mW";
+
+//help container
+var hwl_adv = new Object();
+hwl_adv.right1="";
+hwl_adv.right2="";
+hwl_adv.right3="";
+hwl_adv.right4="";
 
 
 
