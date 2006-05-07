@@ -300,7 +300,7 @@ fprintf(stderr,"update lease file\n");
     {
       rewind (daemon->lease_stream);
       ftruncate (fileno (daemon->lease_stream), 0);
-fprintf(stderr,"rewindet\n");
+fprintf(stderr,"rewinding\n");
 
       for (lease = leases; lease; lease = lease->next)
 	{
