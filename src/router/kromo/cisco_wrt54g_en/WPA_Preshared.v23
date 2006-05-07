@@ -8,7 +8,7 @@
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(wpa.shared_key)</script></div>
-	<input type="password" name="wl_wpa_psk" maxlength="64" size="32" value="<% nvram_get("wl_wpa_psk"); %>" />&nbsp;&nbsp;&nbsp;
+	<input type="password" id="wl_wpa_psk" name="wl_wpa_psk" maxlength="64" size="32" value="<% nvram_get("wl_wpa_psk"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_wl_unmask" value="0" onclick="setElementMask('wl_wpa_psk', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 </div>
 <div class="setting">
