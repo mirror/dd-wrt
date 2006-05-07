@@ -1,15 +1,15 @@
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(share.usrname)</script></div>
-	<input name="ppp_username" size="40" maxlength="63" onblur="valid_name(this,'User Name')" value="<% nvram_get("ppp_username"); %>" />
+	<input name="ppp_username" size="40" maxlength="63" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ppp_username"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-	<input name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,'Password')" type="password" value="<% nvram_invmatch("ppp_passwd","","d6nw5v1x2pc7st9m"); %>" />&nbsp;&nbsp;&nbsp;
+	<input name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" value="<% nvram_invmatch("ppp_passwd","","d6nw5v1x2pc7st9m"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(idx_pppoe.srv)</script></div>
-	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,'Service Name')" value="<% nvram_get("ppp_service"); %>" />
+	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,idx_pppoe.srv)" value="<% nvram_get("ppp_service"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(idx_h.con_strgy)</script><br />&nbsp;</div>
@@ -18,6 +18,6 @@
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(idx_pppoe.use_rp)</script></div>
-	<input class="spaceradio" type="radio" value="1" name="pppoe_ver" <% nvram_checked("pppoe_ver","1",""); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
-	<input class="spaceradio" type="radio" value="0" name="pppoe_ver" <% nvram_checked("pppoe_ver","0",""); %> /><script type="text/javascript">Capture(share.disable)</script>
+	<input class="spaceradio" type="radio" value="1" name="pppoe_ver" <% nvram_checked("pppoe_ver","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+	<input class="spaceradio" type="radio" value="0" name="pppoe_ver" <% nvram_checked("pppoe_ver","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 </div>
