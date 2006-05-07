@@ -13,7 +13,7 @@ lang_charset.set="iso-8859-1";
 
 var share = new Object();
 share.firmwarever="Firmware";
-share.time="Time ";
+share.time="Time";
 share.interipaddr="Internet IP Address";
 share.more="More...";
 share.help="Help";
@@ -97,6 +97,7 @@ share.auto="Auto";
 share.right="Right";
 share.left="Left";
 share.share_key="Shared Key";
+share.inter="Interval (in seconds)";
 
 
 
@@ -138,7 +139,6 @@ sbutton.log_out="Outgoing Log";
 
 
 
-
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
 var errmsg = new Object();
 errmsg.err0="You must input a username.";
@@ -159,7 +159,7 @@ errmsg.err45="Not available in HTTPS! Please connect in HTTP mode.";
 errmsg.err46="Not available in HTTPS";
 
 
-//common.js error message
+//common.js error messages
 errmsg.err14=" value is out of range [";
 errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
 errmsg.err16="The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].";
@@ -182,36 +182,42 @@ errmsg.err32="IP address and gateway is not at same subnet mask.";
 errmsg.err33="IP address and gateway can't be same.";
 errmsg.err34=" is not allowed to contain a space.";
 
-//Wol.asp error message
+//Wol.asp error messages
 errmsg.err35="You must input a MAC address to run."
 errmsg.err36="You must input a network broadcast address to run.";
 errmsg.err37="You must input a UDP port to run.";
 
-//WL_WPATable.asp error message
-//WPA.asp error message
+//WL_WPATable.asp error messages
+//WPA.asp error messages
 errmsg.err38="Please enter a Shared Key!";
 errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits"
 errmsg.err40="You have to enter a key for Key ";
 errmsg.err41="Invalid Length in key ";
 errmsg.err43="Rekey interval";
 
-//config.asp error message
+//config.asp error messages
 errmsg.err42="Please select a configuration file to restore.";
 
-//WL_ActiveTable.asp error message
+//WL_ActiveTable.asp error messages
 errmsg.err44="The total checks exceed 128 counts.";
 
-//Site_Survey.asp error message
+//Site_Survey.asp error messages
 errmsg.err47=("invalid SSID.");
 
-//Wireless_WDS.asp error message
+//Wireless_WDS.asp error messages
 errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
 
-//Wireless_radauth.asp error message
+//Wireless_radauth.asp error messages
 errmsg.err49="Radius is only available in AP mode.";
 
-//Wireless_Basic.asp error message
+//Wireless_Basic.asp error messages
 errmsg.err50="You must input a SSID.";
+
+// Management.asp error messages
+errmsg.err51="The Router is currently set to its default password. \
+			As a security measure, you must change the password before the Remote Management feature can be enabled. \
+			Click the OK button to change your password. Click the Cancel button to leave the Remote Management feature disabled.";
+errmsg.err52="Password confirmation doesn't match.";
 
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
@@ -442,7 +448,6 @@ alive.time="Time (in seconds)";
 alive.hour="At a set Time";
 alive.legend2="WDS/Connection Watchdog";
 alive.sevr2="Enable Watchdog";
-alive.inter="Interval (in seconds)";
 alive.IP="IP Addresses";
 alive.legend3="Proxy/Connection Watchdog";
 alive.sevr3="Enable Proxy Watchdog";
@@ -702,7 +707,6 @@ idx_pppoe.use_rp="Use RP PPPoE";
 var idx_pptp = new Object();
 idx_pptp.srv="Use DHCP";
 idx_pptp.wan_ip="Internet IP Address";
-idx_pptp.subnet=share.subnet;
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Encyption";
 
@@ -802,6 +806,117 @@ log.lvl="Log Level";
 log.drop="Dropped";
 log.reject="Rejected";
 log.accept="Accepted";
+
+
+
+// **************************************************************** Management.asp **********************************************************************//
+
+var management = new Object();
+management.titl=" - Administration";
+management.h2="Router Management";
+
+management.psswd_legend="Router Password";
+management.psswd_user="Router Username";
+management.psswd_pass="Router Password";
+management.pass_conf="Re-enter to confirm";
+
+management.remote_legend="Remote Access";
+management.remote_gui="Web GUI Management";
+management.remote_https="Use HTTPS";
+management.remote_guiport="Web GUI Port";
+management.remote_ssh="SSH Management";
+management.remote_sshport="SSH Port";
+
+management.web_legend="Web Access";
+management.web_proto="Protocol";
+management.web_refresh="Auto-Refresh (in seconds)";
+management.web_sysinfo="Enable Info Site";
+management.web_sysinfopass="Info Site Password Protection";
+management.web_sysinfomasq="Info Site MAC Masquerading";
+
+management.boot_legend="Boot Wait";
+management.boot_srv="Boot Wait";
+
+management.cron_legend="Cron";
+management.cron_srvd="Cron";
+
+management.dsn_legend="DNS Masq";
+management.dsn_srv="DNS Masq";
+management.dsn_loc="Local DNS";
+management.dsn_opt="Additional DNS Options";
+
+management.loop_legend="Loopback";
+management.loop_srv="Loopback";
+
+management.wifi_legend="802.1x";
+management.wifi_srv="802.1x";
+
+management.ntp_legend="NTP Client";
+management.ntp_srv="NTP";
+management.ntp_server="Server IP";
+
+management.rst_legend="Reset Button";
+management.rst_srv="Reset Button";
+
+management.routing_legend="Routing";
+management.routing_srv="Routing";
+
+management.wol_legend="Wake-On-LAN";
+management.wol_srv="WOL";
+management.wol_pass="SecureOn Password";
+management.wol_mac="MAC Addresses<br/>( Format: xx:xx:xx:xx:xx:xx )";
+
+management.ipv6_legend="IPv6 Support";
+management.ipv6_srv="IPv6";
+management.ipv6_rad="Radvd enabled";
+management.ipv6_radconf="Radvd config";
+
+management.jffs_legend="JFFS2 Support";
+management.jffs_srv="JFFS2";
+management.jffs_clean="Clean JFFS2";
+
+management.lang_legend="Language Selection";
+management.lang_srv="Language";
+management.lang_bulgarian="bulgarian";
+management.lang_tradchinese="tradchinese";
+management.lang_croatian="croatian";
+management.lang_czech="czech";
+management.lang_dutch="dutch";
+management.lang_english="english";
+management.lang_french="french";
+management.lang_german="german";
+management.lang_italian="italian";
+management.lang_brazilian="brazilian";
+management.lang_slovenian="slovenian";
+management.lang_spanish="spanish";
+management.lang_swedish="swedish";
+
+management.net_legend="IP Filter Settings (adjust these for P2P)";
+management.net_port="Maximum Ports";
+management.net_tcptimeout="TCP Timeout (in seconds)";
+management.net_udptimeout="UDP Timeout (in seconds)";
+
+management.clock_legend="Overclocking";
+management.clock_frq="Frequency";
+management.clock_support="Not Supported";
+
+management.mmc_legend="MMC/SD Card Support";
+management.mmc_srv="MMC Device";
+
+management.samba_legend="Samba FS Automount";
+management.samba_srv="SMB Filesystem";
+management.samba_share="Share";
+management.samba_stscript="Startscript";
+
+management.SIPatH_srv="SIPatH";
+management.SIPatH_port="SIP Port";
+management.SIPatH_domain="SIP Domain";
+
+
+//help container
+var hmanagement = new Object();
+hmanagement.right1="Auto-Refresh:";
+hmanagement.right2="Adjusts the Web GUI automatic refresh interval. 0 disables this feature completely.";
 
 
 
