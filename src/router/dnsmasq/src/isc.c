@@ -144,7 +144,7 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 		}
 	    }
 	}
-    fprintf(stderr,"done()\n");
+    fprintf(stderr,"lease read finished\n");
     }
 
   
