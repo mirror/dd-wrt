@@ -581,6 +581,7 @@ filterIP.h2="List of PCs";
 filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
 filterIP.h32="Enter the IP Address of the PCs";
 filterIP.h33="Enter the IP Range of the PCs";
+filterIP.ip_range="IP Range";
 
 
 
