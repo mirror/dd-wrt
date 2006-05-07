@@ -3,13 +3,13 @@
 	<legend><script type="text/javascript">Capture(service.ssh_legend)</script></legend>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(service.ssh_srv)</script></div>
-		<input class="spaceradio" type="radio" name="sshd_enable" value="1" <% nvram_checked("sshd_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+		<input class="spaceradio" type="radio" name="sshd_enable" value="1" <% nvram_checked("sshd_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 		<input class="spaceradio" type="radio" name="sshd_enable" value="0" <% nvram_checked("sshd_enable","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<% nvram_match("sshd_enable","0","<!--"); %>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(service.ssh_password)</script></div>
-		<input class="spaceradio" type="radio" name="sshd_passwd_auth" value="1" <% nvram_checked("sshd_passwd_auth","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+		<input class="spaceradio" type="radio" name="sshd_passwd_auth" value="1" <% nvram_checked("sshd_passwd_auth","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 		<input class="spaceradio" type="radio" name="sshd_passwd_auth" value="0" <% nvram_checked("sshd_passwd_auth","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
