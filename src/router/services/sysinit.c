@@ -1468,7 +1468,10 @@ check_cfe_nv (void)
 //      ret += check_nv("wan_ifname","vlan1");
 //      ret += check_nv("pppoe_ifname","vlan1");
       break;
-    case ROUTER_MOTOROLA:
+	case ROUTER_BELKIN_F5D7230:
+// nothing for now
+	  break;
+	case ROUTER_MOTOROLA:
 //nothign
       break;
     case ROUTER_BUFFALO_WBR54G:
@@ -1559,7 +1562,6 @@ check_cfe_nv (void)
       ret += check_nv ("ccode", "0");
       break;
     case ROUTER_BELKIN:
-//    case ROUTER_BELKIN_F5D7230:
       ret += check_nv ("aa0", "3");
       if (check_hw_type () == BCM5352E_CHIP)
 	ret += check_nv ("ag0", "0x02");
