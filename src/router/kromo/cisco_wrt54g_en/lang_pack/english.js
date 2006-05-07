@@ -96,6 +96,9 @@ share.all="All";
 share.auto="Auto";
 share.right="Right";
 share.left="Left";
+share.share_key="Shared Key";
+
+
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -627,7 +630,6 @@ hotspot.pserver="Primary Radius Server IP/DNS";
 hotspot.bserver="Backup Radius Server IP/DNS";
 hotspot.dns="DNS IP";
 hotspot.url="Redirect URL";
-hotspot.key="Shared Key";
 hotspot.dhcp="DHCP Interface";
 hotspot.radnas="Radius NAS ID";
 hotspot.uam="UAM Secret";
@@ -926,7 +928,6 @@ radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
 radius.label8="Override Radius if Server is unavailable";
-radius.key="Shared Key";
 radius.mac="MAC";
 
 
@@ -1014,18 +1015,6 @@ wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
 wl_adv.lng="Long"; 					//************* don't use .long ! *************
 wl_adv.shrt="Short"; 				//************* don't use .short ! **************
-wl_adv.key="Shared Key";
-wl_adv.deflt="Default: Default"; 	//************* don't use .default ! ****************
-wl_adv.defltAuto="Default: Auto";
-wl_adv.defltEnable="Default: Enable";
-wl_adv.defltDisable="Default: Disable";
-wl_adv.defltBcn="Default: 100ms, Range: 1 - 65535";
-wl_adv.defaultDtim="Default: <% get_wl_value(\"default_dtim\"); %>, Range: 1 - 255";
-wl_adv.defltFrag="Default: 2346, Range: 256 - 2346";
-wl_adv.defltRts="Default: 2347, Range: 0 - 2347";
-wl_adv.defltClients="Default: 128, Range: 1 - 256";
-wl_adv.defltTxpwr="Default: 28, Range: 0 - 251mW";
-
 
 //help container
 var hwl_adv = new Object();
