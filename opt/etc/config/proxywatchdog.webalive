@@ -1,8 +1,9 @@
+
 <fieldset>
 	<legend><script type="text/javascript">Capture(alive.legend3)</script></legend>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(alive.sevr3)</script></div>
-		<input class="spaceradio" type="radio" value="1" name="squid_watchdog_enable" <% nvram_match("squid_watchdog_enable","1","checked"); %> onclick="setPXY(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="squid_watchdog_enable" <% nvram_match("squid_watchdog_enable","1","checked"); %> onclick="setPXY(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="squid_watchdog_enable" <% nvram_match("squid_watchdog_enable","0","checked"); %> onclick="setPXY(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
