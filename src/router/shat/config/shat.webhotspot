@@ -3,7 +3,7 @@
 	<span class="comment"><script type="text/javascript">Capture(hotspot.shat_srv)</script></span>
 		<div class="setting">
 			<div class="label"><script type="text/javascript">Capture(hotspot.shat_srv2)</script></div>
-			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvram_checked("shat_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvram_checked("shat_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 			<input class="spaceradio" type="radio" value="0" name="shat_enable" <% nvram_checked("shat_enable","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 		</div>
 		<div class="setting">
