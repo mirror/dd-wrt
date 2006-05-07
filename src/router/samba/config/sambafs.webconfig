@@ -16,7 +16,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-		<input type="password" maxlength="100" size="25" name="samba_password" value="<% nvram_get("samba_password"); %>" />&nbsp;&nbsp;&nbsp;
+		<input type="password" id="samba_password" maxlength="100" size="25" name="samba_password" value="<% nvram_get("samba_password"); %>" />&nbsp;&nbsp;&nbsp;
 		<input type="checkbox" name="_samba_password_unmask" value="0" onclick="setElementMask('samba_password', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 	</div>
 	<div class="setting">
