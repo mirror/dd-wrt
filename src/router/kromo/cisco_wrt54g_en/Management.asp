@@ -9,6 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
+document.title = "<% nvram_get("router_name"); %>" + management.titl;
 
 function SelPort(num,F)	{
 	if(num == 1 && F.PasswdModify.value == 1){
@@ -42,8 +44,7 @@ function port_enable_disable(F,I) {
 
 function ChangePasswd(F) {
 	if((F.PasswdModify.value==1 && F.http_passwd.value == "d6nw5v1x2pc7st9m") || F.http_passwd.value == "admin") {
-		if(confirm("The Router is currently set to its default password. As a security measure, you must change the password before the Remote Management feature can be enabled. Click the OK button to change your password.  Click the Cancel button to leave the Remote Management feature disabled.")) {
-			//window.location.replace('Management.asp');
+		if(confirm(errmsg.err51)) {
 			F.remote_management[1].checked = true;
 			return false;
 		} else {
@@ -57,7 +58,7 @@ function ChangePasswd(F) {
 
 function valid_password(F) {
 	if (F.http_passwd.value != F.http_passwdConfirm.value) {
-		alert("Confirmed password did not match Entered Password. Please re-enter password");
+		alert(errmsg.err10);
 		F.http_passwdConfirm.focus();
 		F.http_passwdConfirm.select();
 		return false;
@@ -75,7 +76,9 @@ function to_reboot(F) {
 
 function to_submit(F) {
 	if( F.http_passwd.value != F.http_passwdConfirm.value ) {
-		alert("Password confirmation doesn't match !");
+//		alert("Password confirmation doesn't match.");
+		alert(errmsg.err52);
+		F.http_passwd.focus();
 		return false;
 	}
 
@@ -217,13 +220,13 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="http_enable" />
 							<input type="hidden" name="info_passwd" />
 							<input type="hidden" name="https_enable" />
-							<h2>Router Management</h2>
+							<h2><script type="text/javascript">Capture(management.h2)</script></h2>
 							<% show_modules(".webconfig"); %>
 							<% show_modules(".webconfig_release"); %>
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
-								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)" />
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />")</script>
 							</div>
 						</form>
 					</div>
@@ -231,19 +234,19 @@ addEvent(window, "load", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2>Help</h2>
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term">Auto-Refresh:</dt>
-							<dd class="definition">Adjusts the Web GUI automatic refresh interval. 0 disables this feature completely.</dd>
+							<dt class="term"><script type="text/javascript">Capture(hmanagement.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hmanagement.right1)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HManagement.asp');">More...</a>
+						<a href="javascript:openHelpWindow('HManagement.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
