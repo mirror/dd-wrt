@@ -9,7 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>' + filterIP.titl;
+		
+document.title = "<% nvram_get("router_name"); %>" + filterIP.titl;
 		
 function to_submit(F) {
 	F.submit_button.value = "FilterIPMAC";
@@ -114,11 +115,11 @@ function valid_macs_all(I) {
 			<div>
 				<h3><script type="text/javascript">Capture(filterIP.h33)</script></h3>
 				<div class="setting">
-					<div class="label">IP Range 01</div>
+					<div class="label"><script type="text/javascript">Capture(filterIP.ip_range)</script> 01</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip_range0_0" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range0_0",6); %>" />~<input class="num" size="3" maxlength="3" name="ip_range0_1" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range0_1",6); %>" />
 				</div>
 				<div class="setting">
-					<div class="label">IP Range 02</div>
+					<div class="label"><script type="text/javascript">Capture(filterIP.ip_range)</script> 02</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip_range1_0" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range1_0",7); %>" />~<input class="num" size="3" maxlength="3" name="ip_range1_1" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range1_1",7); %>" />
 				</div>
 			</div>
