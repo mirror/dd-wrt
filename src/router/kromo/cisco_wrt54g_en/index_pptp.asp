@@ -24,7 +24,7 @@
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-	<input name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" value="<% nvram_invmatch("ppp_passwd","","d6nw5v1x2pc7st9m"); %>" />&nbsp;&nbsp;&nbsp;
+	<input id="ppp_passwd" name="ppp_passwd" size="40" maxlength="63" onblur="valid_name(this,share.passwd)" type="password" value="<% nvram_invmatch("ppp_passwd","","d6nw5v1x2pc7st9m"); %>" />&nbsp;&nbsp;&nbsp;
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 </div>
 <div class="setting">
