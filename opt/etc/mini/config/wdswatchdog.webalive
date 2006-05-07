@@ -7,7 +7,7 @@
 		<input class="spaceradio" type="radio" value="0" name="wds_watchdog_enable" <% nvram_checked("wds_watchdog_enable","0"); %> onclick="setWDS(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(alive.inter)</script></div>
+		<div class="label"><script type="text/javascript">Capture(share.inter)</script></div>
 		<input size="4" maxLength="4" class="num" name="wds_watchdog_interval_sec" value="<% nvram_get("wds_watchdog_interval_sec"); %>" />
 	</div>
 	<div class="setting">
