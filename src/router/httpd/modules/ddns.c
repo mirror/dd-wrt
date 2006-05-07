@@ -66,7 +66,7 @@ struct ddns_message ddns_messages[] = {
 #else
 struct ddns_message ddns_messages[] = {
   // Below is DynDNS error code
-  {"dyn_good", "DDNS is updated successfully"},
+  {"dyn_good", "ddnsm.dyn_good"},
   {"dyn_noupdate", "DDNS is updated successfully"},
   {"dyn_nohost", "The hostname does not exist"},
   {"dyn_notfqdn", "Domain Name is not correct"},
@@ -155,14 +155,14 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
   char *enable = websGetVar (wp, "ddns_enable", NULL);
 
   if (!enable)
-    enable = nvram_safe_get ("ddns_enable");	// for first time
+    enable = nvram_safe_get ("ddns_enable");			// for first time
 
   if (strcmp (nvram_safe_get ("ddns_enable"), enable))	// change service
     {
       websWrite (wp, " ");
     }
 
-  if (nvram_match ("ddns_enable", "0"))	// only for no hidden page
+  if (nvram_match ("ddns_enable", "0"))					// only for no hidden page
     {
       websWrite (wp, "%s", convert ("all_disabled"));
       return;
@@ -179,9 +179,9 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 	  if (nvram_match ("ddns_status", "1"))
 	    {
 	      if (nvram_match ("ddns_enable", "1"))
-		websWrite (wp, "%s", convert ("dyn_good"));	// dyndns
+		websWrite (wp, "%s", convert ("dyn_good"));		// dyndns
 	      if (nvram_match ("ddns_enable", "2"))
-		websWrite (wp, "%s", convert ("tzo_good"));	// tzo
+		websWrite (wp, "%s", convert ("tzo_good"));		// tzo
 	      if (nvram_match ("ddns_enable", "3"))
 		websWrite (wp, "%s", convert ("zone_good"));	// zoneedit
 	    }
