@@ -1559,7 +1559,7 @@ check_cfe_nv (void)
       ret += check_nv ("ccode", "0");
       break;
     case ROUTER_BELKIN:
-    case ROUTER_BELKIN_F5D7230:
+//    case ROUTER_BELKIN_F5D7230:
       ret += check_nv ("aa0", "3");
       if (check_hw_type () == BCM5352E_CHIP)
 	ret += check_nv ("ag0", "0x02");
