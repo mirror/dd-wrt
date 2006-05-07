@@ -81,10 +81,10 @@ addEvent(window, "load", function() {
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label2)</script></div>
 									<select name="wl_rateset">
 										<option value="12" <% nvram_selected("wl_rateset", "12"); %> />1-2 Mbps</option>
-										<script type="text/javascript">document.write("<option value=\"default\" <% nvram_selected("wl_rateset", "default", "js"); %>>" + share.default + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"default\" <% nvram_selected("wl_rateset", "default", "js"); %>>" + share.deflt + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"all\" <% nvram_selected("wl_rateset", "all", "js"); %>>" + share.all + "</option>");</script>
 									</select>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.default)</script>)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.deflt)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label3)</script></div>
