@@ -84,15 +84,16 @@ function to_submit(F) {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
 							<h2><script type="text/javascript">Capture(factdef.h2)</script></h2>
+							
 							<fieldset>
 							<legend><script type="text/javascript">Capture(factdef.legend)</script></legend>
 							<div class="setting">
 								<div class="label"><script type="text/javascript">Capture(factdef.restore)</script></div>
-								<input type="radio" name="FactoryDefaults" value="1" /><script type="text/javascript">Capture(share.yes)</script>
-								<input type="radio" name="FactoryDefaults" value="0" checked="checked" /><script type="text/javascript">Capture(share.no)</script>
+								<input class="spaceradio" type="radio" name="FactoryDefaults" value="1" /><script type="text/javascript">Capture(share.yes)</script>&nbsp;
+								<input class="spaceradio" type="radio" name="FactoryDefaults" value="0" checked="checked" /><script type="text/javascript">Capture(share.no)</script>
 							</div>
-							</fieldset>
-							<br/>
+							</fieldset><br/>
+							
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
 								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
