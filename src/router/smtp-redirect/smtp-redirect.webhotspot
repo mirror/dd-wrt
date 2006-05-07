@@ -2,7 +2,7 @@
 	<legend><script type="text/javascript">Capture(hotspot.smtp_legend)</script></legend>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.smtp_srv)</script></div>
-		<input class="spaceradio" type="radio" value="1" name="smtp_redirect_enable" <% nvram_checked("smtp_redirect_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="smtp_redirect_enable" <% nvram_checked("smtp_redirect_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="smtp_redirect_enable" <% nvram_checked("smtp_redirect_enable","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
