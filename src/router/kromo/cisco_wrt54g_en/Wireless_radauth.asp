@@ -92,7 +92,7 @@ addEvent(window, "load", function() {
                      <div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label)</script></div>
-                           <input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;&nbsp;
+                           <input class="spaceradio" type="radio" name="wl_radauth" value="1" <% nvram_checked("wl_radauth","1"); %> onclick="setRad(this.value)" ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
                            <input class="spaceradio" type="radio" name="wl_radauth" value="0" <% nvram_checked("wl_radauth","0"); %> onclick="setRad(this.value)" ><script type="text/javascript">Capture(share.disable)</script></input>
                         </div>
                         <div class="setting">
@@ -118,7 +118,7 @@ addEvent(window, "load", function() {
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label6)</script></div>
-                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> ><script type="text/javascript">Capture(radius.key)</script></input>&nbsp;&nbsp;
+                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> ><script type="text/javascript">Capture(share.share_key)</script></input>&nbsp;
                            <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> ><script type="text/javascript">Capture(radius.mac)</script></input>
                         </div>
                         <div class="setting">
