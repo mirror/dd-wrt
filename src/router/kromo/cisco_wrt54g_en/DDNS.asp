@@ -200,7 +200,7 @@ function SelDDNS(num,F) {
 								<legend><script type="text/javascript">Capture(ddns.statu)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.statu)</script></div>
-									<% show_ddns_status(); %>&nbsp;
+									<script type="text/javascript">Capture(<% show_ddns_status(); %>)</script>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.interipaddr)</script></div>
