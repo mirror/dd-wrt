@@ -166,7 +166,7 @@ function init() {
                   </div>
                   <div class="setting">
                     <div class="label"><script type="text/javascript">Capture(wl_basic.label5)</script></div>
-                    <input class="spaceradio" type="radio" value="0" name="wl_closed" <% nvram_checked("wl_closed","0"); %>><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;&nbsp;
+                    <input class="spaceradio" type="radio" value="0" name="wl_closed" <% nvram_checked("wl_closed","0"); %>><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
                     <input class="spaceradio" type="radio" value="1" name="wl_closed" <% nvram_checked("wl_closed","1"); %>><script type="text/javascript">Capture(share.disable)</script></input>
                   </div>
                   <% nvram_invmatch("wl_mode", "ap", "-->"); %>
