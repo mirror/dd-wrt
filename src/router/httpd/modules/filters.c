@@ -503,7 +503,6 @@ ej_filter_dport_get (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-
   websWrite (wp, "%s", filter_dport_get (type, which));
   D ("good value");
 
@@ -646,7 +645,6 @@ ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-
   websWrite (wp, "%s", filter_ip_get (type, which));
 
   D ("good value");
@@ -665,7 +663,6 @@ ej_filter_mac_get (int eid, webs_t wp, int argc, char_t ** argv)
       D ("bad value");
       return;
     }
-
 
   websWrite (wp, "%s", filter_mac_get (which));
   D ("good value");
