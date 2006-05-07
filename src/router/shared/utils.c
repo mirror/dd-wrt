@@ -183,7 +183,8 @@ internal_getRouterBrand ()
       nvram_match ("boardtype", "bcm94710dev"))
     {
 		if (startswith (et0, "00:0C:E5") && startswith (et1, "00:0C:E5") && nvram_match ("GemtekPmonVer", "9") || 
-			startswith (et0, "00:0c:e5") && startswith (et1, "00:0c:e5") && nvram_match ("GemtekPmonVer", "9"))
+			startswith (et0, "00:0c:e5") && startswith (et1, "00:0c:e5") && nvram_match ("GemtekPmonVer", "9") ||
+			startswith (et0, "00:0C:10") && startswith (et1, "00:0C:10") && nvram_match ("GemtekPmonVer", "9"))
 		  {
 		    cprintf ("router Motorola WR850G v1\n");
 		    setRouter ("Motorola WR850G v1");
