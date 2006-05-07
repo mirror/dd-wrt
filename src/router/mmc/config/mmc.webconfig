@@ -1,6 +1,6 @@
 
 <fieldset>
-	<legend><script type="text/javascript">Capture(managment.mmc_legend)</script></legend>
+	<legend><script type="text/javascript">Capture(management.mmc_legend)</script></legend>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(management.mmc_srv)</script></div>
 		<input class="spaceradio" type="radio" value="1" name="mmc_enable0" <% nvram_checked("mmc_enable0","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
