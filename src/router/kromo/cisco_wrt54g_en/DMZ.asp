@@ -9,7 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>' + dmz.titl;
+		
+document.title = "<% nvram_get("router_name"); %>" + dmz.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "DMZ";
@@ -73,19 +74,21 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" value="Apply" />
 							<h2><script type="text/javascript">Capture(dmz.h2)</script></h2>
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(dmz.legend)</script></legend>
 	                			<div class="setting">
 	                				<div class="label"><script type="text/javascript">Capture(dmz.serv)</script></div>
-	                				<input type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "1"); %> /><script type="text/javascript">Capture(share.enable)</script>
-	                				<input type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	                				<input class="spaceradio" type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+	                				<input class="spaceradio" type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	                			</div>
 	                			<div class="setting">
 	                				<div class="label"><script type="text/javascript">Capture(dmz.host)</script></div>
 	                				<% prefix_ip_get("lan_ipaddr",1); %>
-	                				<input class="num" maxLength="3" size="3" name="dmz_ipaddr" value="<% nvram_get("dmz_ipaddr"); %>" onblur="valid_range(this,1,254,'IP')" />
+	                				<input class="num" maxLength="3" size="3" name="dmz_ipaddr" value="<% nvram_get("dmz_ipaddr"); %>" onblur="valid_range(this,1,254,dmz.host)" />
 	                			</div>
 	                		</fieldset><br />
+	                		
 	                		<div class="submitFooter">
 	                			<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
 	                			<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
