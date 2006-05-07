@@ -93,6 +93,9 @@ share.subnet="Subnet Mask";
 share.unmask="Unmask";
 share.deflt="Default";  //don't use share.default !!!
 share.all="All";
+share.auto="Auto";
+share.right="Right";
+share.left="Left";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -129,6 +132,7 @@ sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
 sbutton.log_in="Incoming Log";
 sbutton.log_out="Outgoing Log";
+
 
 
 
@@ -204,7 +208,7 @@ errmsg.err48="WDS is not compatible with the current configuration of the router
 errmsg.err49="Radius is only available in AP mode.";
 
 //Wireless_Basic.asp error message
-errmsg.err50="You must input a SSID!";
+errmsg.err50="You must input a SSID.";
 
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
@@ -996,7 +1000,6 @@ wl_adv.label16="Afterburner";
 wl_adv.label17="Wireless GUI Access";
 wl_adv.label18="WMM Support";
 wl_adv.label19="No-Acknowledgement";
-wl_adv.label20="";
 wl_adv.table1="EDCA AP Parameters (AP to Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
@@ -1009,29 +1012,25 @@ wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
 wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.auto="Auto";
-wl_adv.right="Right";
-wl_adv.left="Left";
-wl_adv.lng="Long"; //don't use .long !
-wl_adv.shrt="Short"; //don't use .short !
+wl_adv.lng="Long"; 					//************* don't use .long ! *************
+wl_adv.shrt="Short"; 				//************* don't use .short ! **************
 wl_adv.key="Shared Key";
-wl_adv.deflt="Default: Default"; //don't use .default !
-wl_adv.defaultAuto="Default: Auto";
-wl_adv.defaultEnable="Default: Enable";
-wl_adv.defaultDisable="Default: Disable";
-wl_adv.defaultBcn="Default: 100ms, Range: 1 - 65535";
+wl_adv.deflt="Default: Default"; 	//************* don't use .default ! ****************
+wl_adv.defltAuto="Default: Auto";
+wl_adv.defltEnable="Default: Enable";
+wl_adv.defltDisable="Default: Disable";
+wl_adv.defltBcn="Default: 100ms, Range: 1 - 65535";
 wl_adv.defaultDtim="Default: <% get_wl_value(\"default_dtim\"); %>, Range: 1 - 255";
-wl_adv.defaultFrag="Default: 2346, Range: 256 - 2346";
-wl_adv.defaultRts="Default: 2347, Range: 0 - 2347";
-wl_adv.defaultClients="Default: 128, Range: 1 - 256";
-wl_adv.defaultTxpwr="Default: 28, Range: 0 - 251mW";
+wl_adv.defltFrag="Default: 2346, Range: 256 - 2346";
+wl_adv.defltRts="Default: 2347, Range: 0 - 2347";
+wl_adv.defltClients="Default: 128, Range: 1 - 256";
+wl_adv.defltTxpwr="Default: 28, Range: 0 - 251mW";
+
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="";
-hwl_adv.right2="";
-hwl_adv.right3="";
-hwl_adv.right4="";
+hwl_adv.right1="Authentication Type:";
+hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
 
 
 
