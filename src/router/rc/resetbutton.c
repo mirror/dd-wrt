@@ -278,7 +278,7 @@ resetbutton_main (int argc, char *argv[])
 //#define ROUTER_BUFFALO_WBR2G54S 5
 //#define ROUTER_SIEMENS 6
 
-  if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN_F5D7230 || brand == ROUTER_MOTOROLA
+  if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN || brand == ROUTER_MOTOROLA
       || brand == ROUTER_BUFFALO_WBR2G54S || brand == ROUTER_BELKIN_F5D7230)
     {
       puts ("sorry, your unit does not support resetbutton feature");
