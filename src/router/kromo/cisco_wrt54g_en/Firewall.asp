@@ -9,6 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 document.title = "<% nvram_get("router_name"); %>" + firewall.titl;
 
 function to_submit(F) {
@@ -91,6 +92,7 @@ function to_submit(F) {
 						<input type="hidden" name="block_proxy" value="0" />
 						<input type="hidden" name="block_activex" value="0" />
 						<h2><script type="text/javascript">Capture(firewall.h2)</script></h2>
+						
 						<fieldset>
 							<legend><script type="text/javascript">Capture(firewall.legend)</script></legend>
 							<div class="setting">
