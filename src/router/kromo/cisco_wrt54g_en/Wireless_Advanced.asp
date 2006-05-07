@@ -173,12 +173,12 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">document.write("<option value=\"short\" <% nvram_selected("wl_plcphdr", "short", "js"); %>>" + wl_adv.shrt + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_plcphdr", "auto", "js"); %>>" + wl_adv.auto + "</option>");</script>
 									</select>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultAuto)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultAuto)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label15)</script></div>
 									<input class="num" name="txpwr" size="6" maxlength="3" onblur="valid_range(this,0,251,wl_adv.label15)" value='<% nvram_selget("txpwr"); %>' />
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultTxpwr)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultTxpwr)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label16)</script></div>
