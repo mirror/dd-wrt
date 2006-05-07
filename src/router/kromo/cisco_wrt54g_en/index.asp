@@ -400,7 +400,7 @@ function init()
 								<% show_index_setting(); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(idx.stp)</script></div>
-									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_checked("lan_stp","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 									<span class="default"><script type="text/javascript">Capture(idx.stp_mess)</script></span>
 								</div>
@@ -666,7 +666,7 @@ function init()
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
 					<div class="info">Firmware: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info">Time: <% get_uptime(); %></div>
+					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
