@@ -29,7 +29,8 @@ addEvent(window, "load", function() {
 		</script>
 	</head>
 
-	<body class="gui"> <% showad(); %>
+	<body class="gui">
+		<% showad(); %>
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
@@ -69,13 +70,14 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="submit_button" value="Wireless_Advanced" />
 							<input type="hidden" name="commit" value="1" />
 							<h2><script type="text/javascript">Capture(wl_adv.h2)</script></h2>
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(wl_adv.legend)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label)</script></div>
-									<input type="radio" name="wl_auth" value="0" <% nvram_checked("wl_auth", "0"); %>><script type="text/javascript">Capture(wl_adv.auto)</script></input>
-									<input type="radio" name="wl_auth" value="1" <% nvram_checked("wl_auth", "1"); %>><script type="text/javascript">Capture(wl_adv.key)</script></input>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultAuto)</script>)</span>
+									<input class="spaceradio" type="radio" name="wl_auth" value="0" <% nvram_checked("wl_auth", "0"); %> ><script type="text/javascript">Capture(share.auto)</script></input>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_auth" value="1" <% nvram_checked("wl_auth", "1"); %> ><script type="text/javascript">Capture(wl_adv.key)</script></input>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltAuto)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label2)</script></div>
@@ -101,113 +103,114 @@ addEvent(window, "load", function() {
 										<option value="36000000" <% nvram_selected("wl_rate", "36000000"); %>>36 Mbps</option>
 										<option value="48000000" <% nvram_selected("wl_rate", "48000000"); %>>48 Mbps</option>
 										<option value="54000000" <% nvram_selected("wl_rate", "54000000"); %>>54 Mbps</option>
-										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("wl_rate", "0", "js"); %>>" + wl_adv.auto + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("wl_rate", "0", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultAuto)</script>)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltAuto)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label4)</script></div>
-									<input type="radio" name="wl_gmode_protection" value="auto" <% nvram_checked("wl_gmode_protection", "auto"); %>><script type="text/javascript">Capture(wl_adv.auto)</script></input>
-									<input type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %>><script type="text/javascript">Capture(share.disable)</script></input>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultDisable)</script>)</span>
+									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="auto" <% nvram_checked("wl_gmode_protection", "auto"); %>><script type="text/javascript">Capture(share.auto)</script></input>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_gmode_protection" value="off" <% nvram_checked("wl_gmode_protection", "off"); %>><script type="text/javascript">Capture(share.disable)</script></input>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltDisable)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label5)</script></div>
-									<input type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %>><script type="text/javascript">Capture(share.enable)</script></input>
-									<input type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %>><script type="text/javascript">Capture(share.disable)</script></input>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultDisable)</script>)</span>
+									<input class="spaceradio" type="radio" name="wl_frameburst" value="on" <% nvram_checked("wl_frameburst", "on"); %>><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_frameburst" value="off" <% nvram_checked("wl_frameburst", "off"); %>><script type="text/javascript">Capture(share.disable)</script></input>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltDisable)</script>)</span>
 								</div><br />
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label6)</script></div>
-									<input class="num" name="wl_bcn" size="6" maxlength="5" onblur="valid_range(this,1,65535,wl_adv.label6)" value='<% nvram_selget("wl_bcn"); %>' />&nbsp;
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultBcn)</script>)</span>
+									<input class="num" name="wl_bcn" size="6" maxlength="5" onblur="valid_range(this,1,65535,wl_adv.label6)" value="<% nvram_selget("wl_bcn"); %>" />&nbsp;
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltBcn)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label7)</script></div>
-									<input class="num" name="wl_dtim" size="6" maxlength="3" onblur="valid_range(this,1,255,wl_adv.label7)" value='<% nvram_selget("wl_dtim"); %>' />&nbsp;
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultDtim)</script>)</span>
+									<input class="num" name="wl_dtim" size="6" maxlength="3" onblur="valid_range(this,1,255,wl_adv.label7)" value="<% nvram_selget("wl_dtim"); %>" />&nbsp;
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltDtim)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label8)</script></div>
-									<input class="num" name="wl_frag" size="6" maxlength="4" onblur="valid_range(this,256,2346,wl_adv.label8)" value='<% nvram_selget("wl_frag"); %>' />&nbsp;
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultFrag)</script>)</span>
+									<input class="num" name="wl_frag" size="6" maxlength="4" onblur="valid_range(this,256,2346,wl_adv.label8)" value="<% nvram_selget("wl_frag"); %>" />&nbsp;
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltFrag)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label9)</script></div>
-									<input class="num" name="wl_rts" size="6" maxlength="4" onblur="valid_range(this,0,2347,wl_adv.label9)" value='<% nvram_selget("wl_rts"); %>' />&nbsp;
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultRts)</script>)</span>
+									<input class="num" name="wl_rts" size="6" maxlength="4" onblur="valid_range(this,0,2347,wl_adv.label9)" value="<% nvram_selget("wl_rts"); %>" />&nbsp;
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltRts)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label10)</script></div>
-									<input class="num" name="wl_maxassoc" size="6" maxlength="4" onblur="valid_range(this,1,256,wl_adv.label10)" value='<% nvram_selget("wl_maxassoc"); %>' />&nbsp;
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultClients)</script>)</span>
+									<input class="num" name="wl_maxassoc" size="6" maxlength="4" onblur="valid_range(this,1,256,wl_adv.label10)" value="<% nvram_selget("wl_maxassoc"); %>" />&nbsp;
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltClients)</script>)</span>
 							 	</div><br />
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label11)</script></div>
-									<input type="radio" name="wl_ap_isolate" value="1" <% nvram_checked("wl_ap_isolate", "1"); %>><script type="text/javascript">Capture(share.enable)</script></input>
-									<input type="radio" name="wl_ap_isolate" value="0" <% nvram_checked("wl_ap_isolate", "0"); %>><script type="text/javascript">Capture(share.disable)</script></input>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultDisable)</script>)</span>
+									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="1" <% nvram_checked("wl_ap_isolate", "1"); %>><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_ap_isolate" value="0" <% nvram_checked("wl_ap_isolate", "0"); %>><script type="text/javascript">Capture(share.disable)</script></input>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltDisable)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label12)</script></div>
 									<select name="txant">
-										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("txant", "0", "js"); %>>" + wl_adv.right + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selected("txant", "1", "js"); %>>" + wl_adv.left + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selected("txant", "3", "js"); %>>" + wl_adv.auto + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("txant", "0", "js"); %>>" + share.right + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selected("txant", "1", "js"); %>>" + share.left + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selected("txant", "3", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultAuto)</script>)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltAuto)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label13)</script></div>
 									<select name="wl_antdiv">
-										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("wl_antdiv", "0", "js"); %>>" + wl_adv.right + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selected("wl_antdiv", "1", "js"); %>>" + wl_adv.left + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selected("wl_antdiv", "3", "js"); %>>" + wl_adv.auto + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("wl_antdiv", "0", "js"); %>>" + share.right + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selected("wl_antdiv", "1", "js"); %>>" + share.left + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selected("wl_antdiv", "3", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultAuto)</script>)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltAuto)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label14)</script></div>
 									<select name="wl_plcphdr">
 										<script type="text/javascript">document.write("<option value=\"long\" <% nvram_selected("wl_plcphdr", "long", "js"); %>>" + wl_adv.lng + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"short\" <% nvram_selected("wl_plcphdr", "short", "js"); %>>" + wl_adv.shrt + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_plcphdr", "auto", "js"); %>>" + wl_adv.auto + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_plcphdr", "auto", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultAuto)</script>)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltAuto)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label15)</script></div>
 									<input class="num" name="txpwr" size="6" maxlength="3" onblur="valid_range(this,0,251,wl_adv.label15)" value='<% nvram_selget("txpwr"); %>' />
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultTxpwr)</script>)</span>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltTxpwr)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label16)</script></div>
 									<select name="wl_afterburner">
 										<script type="text/javascript">document.write("<option value=\"off\" <% nvram_selected("wl_afterburner", "off", "js"); %>>" + share.disable + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"on\" <% nvram_selected("wl_afterburner", "on", "js"); %>>" + share.enable + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_afterburner", "auto", "js"); %>>" + wl_adv.auto + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_afterburner", "auto", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label17)</script></div>
-									<input type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> /><script type="text/javascript">Capture(share.enable)</script>
-									<input type="radio" name="web_wl_filter" value="1" <% nvram_checked("web_wl_filter", "1"); %> /><script type="text/javascript">Capture(share.disable)</script>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultEnable)</script>)</span>
+									<input class="spaceradio" type="radio" name="web_wl_filter" value="0" <% nvram_checked("web_wl_filter", "0"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+									<input class="spaceradio" type="radio" name="web_wl_filter" value="1" <% nvram_checked("web_wl_filter", "1"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltEnable)</script>)</span>
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(wl_adv.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label18)</script></div>
-									<input type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="setWMM(this.value)" /><script type="text/javascript">Capture(share.enable)</script>
-									<input type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="setWMM(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultDisable)</script>)</span>
+									<input class="spaceradio" type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="setWMM(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+									<input class="spaceradio" type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="setWMM(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltDisable)</script>)</span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label19)</script></div>
-									<input type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %>  /><script type="text/javascript">Capture(share.enable)</script>
-									<input type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> /><script type="text/javascript">Capture(share.disable)</script>
-									<span class="default">(<script type="text/javascript">Capture(wl_adv.defaultDisable)</script>)</span>
+									<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;&nbsp;
+									<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<span class="default">(<script type="text/javascript">Capture(wl_adv.defltDisable)</script>)</span>
 								</div>
 								<table class="table center" cellspacing="5">
 									<tr>
@@ -310,21 +313,24 @@ addEvent(window, "load", function() {
 									</tr>
 								</table>
 							</fieldset><br />
+							
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">Authentication Type: </dt>
-							<dd class="definition">You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.</dd>
+							<dt class="term"><script type="text/javascript">Capture(hwl_adv.right1)</script></dt>
+							<dd class="definition"><script type="text/javascript">Capture(hwl_adv.right2)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HWirelessAdvanced.asp');">More...</a>
+						<a href="javascript:openHelpWindow('HWirelessAdvanced.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
