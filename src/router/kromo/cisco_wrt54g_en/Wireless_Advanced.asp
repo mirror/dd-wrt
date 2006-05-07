@@ -169,7 +169,7 @@ addEvent(window, "load", function() {
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label14)</script></div>
 									<select name="wl_plcphdr">
-										<script type="text/javascript">document.write("<option value=\"long\" <% nvram_selected("wl_plcphdr", "long", "js"); %>>" + wl_adv.long + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"long\" <% nvram_selected("wl_plcphdr", "long", "js"); %>>" + wl_adv.lng + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"short\" <% nvram_selected("wl_plcphdr", "short", "js"); %>>" + wl_adv.short + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_plcphdr", "auto", "js"); %>>" + wl_adv.auto + "</option>");</script>
 									</select>
