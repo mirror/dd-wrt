@@ -95,7 +95,7 @@ function to_submit(F) {
 							<legend><script type="text/javascript">Capture(firewall.legend)</script></legend>
 							<div class="setting">
 								<div class="label"><script type="text/javascript">Capture(firewall.firewall)</script></div>
-								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;&nbsp;
+								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
 								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> ><script type="text/javascript">Capture(share.disable)</script></input>
 							</div>
 						</fieldset><br />
