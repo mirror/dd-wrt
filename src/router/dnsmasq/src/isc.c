@@ -55,9 +55,9 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 
   logged_lease = 0;
 
-  if (!(fp = fopen (file, "r+b")))
+  if (!(fp = fopen (file, "r")))
     {
-      fprintf(stderr,"opening %s\n",file);
+      fprintf(stderr,"creating new lease file %s\n",file);
       if (!(fp = fopen (file, "wb")))
       {
       fprintf(stderr,"error while opening %s\n",file);
