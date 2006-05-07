@@ -91,7 +91,7 @@ share.point2point="Point to Point";
 share.nat="NAT";
 share.subnet="Subnet Mask";
 share.unmask="Unmask";
-share.default="Default";
+share.deflt="Default";  //don't use share.default !!!
 share.all="All";
 
 var sbutton = new Object();
