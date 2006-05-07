@@ -135,11 +135,11 @@
 	</fieldset><br />
 	
 	<fieldset>
-		<legend><script type="text/javascript">Capture(NTP Client)</script></legend>
+		<legend><script type="text/javascript">Capture(management.ntp_legend)</script></legend>
 		<div class="setting">
 			<div class="label"><script type="text/javascript">Capture(management.ntp_srv)</script></div>
 			<input class="spaceradio" type="radio" name="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-			<input class="spaceradio" type="radio" name="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0""); %> /><script type="text/javascript">Capture(share.disable)</script>
+			<input class="spaceradio" type="radio" name="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 		</div>
 		<% nvram_match("ntp_enable","0","<!--"); %>
 		<div class="setting">
