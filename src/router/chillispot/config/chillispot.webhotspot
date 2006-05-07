@@ -22,7 +22,7 @@
 		<input class="text" maxLength="100" size="25" name="chilli_url" value="<% nvram_get("chilli_url"); %>" />
 	</div>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(hotspot.key)</script></div>
+		<div class="label"><script type="text/javascript">Capture(share.share_key)</script></div>
 		<input class="text" maxLength="100" size="25" name="chilli_pass" value="<% nvram_get("chilli_pass"); %>" />
 	</div>
 	<div class="setting">
