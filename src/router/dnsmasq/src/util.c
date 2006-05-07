@@ -15,10 +15,6 @@
 
 #include "dnsmasq.h"
 
-#ifdef HAVE_BROKEN_RTC
-#include <sys/times.h>
-#endif
-
 /* Prefer arc4random(3) over random(3) over rand(3) */
 /* Also prefer /dev/urandom over /dev/random, to preserve the entropy pool */
 #ifdef HAVE_ARC4RANDOM
@@ -150,7 +146,7 @@ void *safe_malloc(size_t size)
   void *ret = malloc(size);
   
   if (!ret)
-    die(_("could not get memory"), NULL);
+    die2(_("could not get memory"), NULL);
      
   return ret;
 }    
@@ -177,7 +173,7 @@ void complain(char *message, int lineno, char *file)
   log_err(buff, file);
 }
 
-void die(char *message, char *arg1)
+void die2(char *message, char *arg1)
 {
   log_err(message, arg1);
   syslog(LOG_CRIT, _("FAILED to start up"));
@@ -190,12 +186,13 @@ int sockaddr_isequal(union mysockaddr *s1, union mysockaddr *s2)
     { 
       if (s1->sa.sa_family == AF_INET &&
 	  s1->in.sin_port == s2->in.sin_port &&
-	  s1->in.sin_addr.s_addr == s2->in.sin_addr.s_addr)
+	  memcmp(&s1->in.sin_addr, &s2->in.sin_addr, sizeof(struct in_addr)) == 0)
 	return 1;
 #ifdef HAVE_IPV6      
       if (s1->sa.sa_family == AF_INET6 &&
 	  s1->in6.sin6_port == s2->in6.sin6_port &&
-	  IN6_ARE_ADDR_EQUAL(&s1->in6.sin6_addr, &s2->in6.sin6_addr))
+	  s1->in6.sin6_flowinfo == s2->in6.sin6_flowinfo &&
+	  memcmp(&s1->in6.sin6_addr, &s2->in6.sin6_addr, sizeof(struct in6_addr)) == 0)
 	return 1;
 #endif
     }
@@ -237,17 +234,21 @@ int hostname_isequal(char *a, char *b)
   return 1;
 }
     
-time_t dnsmasq_time(void)
+time_t dnsmasq_time(int fd)
 {
 #ifdef HAVE_BROKEN_RTC
-  struct tms dummy;
-  static long tps = 0;
-
-  if (tps == 0)
-    tps = sysconf(_SC_CLK_TCK);
-
-  return (time_t)(times(&dummy)/tps);
+  /* we use uptime as a time-base, rather than epoch time
+     because epoch time can break when a machine contacts
+     a nameserver and updates it. */
+  char buf[30];
+  lseek(fd, 0, SEEK_SET);
+  read(fd, buf, 30);
+  /* ensure the time is terminated even if /proc/uptime sends something unexpected */
+  buf[29] = 0;  
+  read(fd, buf, 30);
+  return (time_t)atol(buf);
 #else
+  fd = 0; /* stop warning */
   return time(NULL);
 #endif
 }
@@ -359,54 +360,4 @@ int parse_hex(char *in, unsigned char *out, int maxlen,
     *wildcard_mask = mask;
 
   return i;
-}
-
-int memcmp_masked(unsigned char *a, unsigned char *b, int len, unsigned int mask)
-{
-  int i;
-  for (i = len - 1; i >= 0; i--, mask = mask >> 1)
-    if (!(mask & 1) && a[i] != b[i])
-      return 0;
-
-  return 1;
-}
-
-/* _note_ may copy buffer */
-int expand_buf(struct iovec *iov, size_t size)
-{
-  void *new;
-
-  if (size <= iov->iov_len)
-    return 1;
-
-  if (!(new = malloc(size)))
-    {
-      errno = ENOMEM;
-      return 0;
-    }
-
-  if (iov->iov_base)
-    {
-      memcpy(new, iov->iov_base, iov->iov_len);
-      free(iov->iov_base);
-    }
-
-  iov->iov_base = new;
-  iov->iov_len = size;
-
-  return 1;
-}
-
-char *print_mac(struct daemon *daemon, unsigned char *mac, int len)
-{
-  char *p = daemon->namebuff;
-  int i;
-   
-  if (len == 0)
-    sprintf(p, "<null>");
-  else
-    for (i = 0; i < len; i++)
-      p += sprintf(p, "%.2x%s", mac[i], (i == len - 1) ? "" : ":");
-  
-  return daemon->namebuff;
 }
