@@ -9,10 +9,11 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 document.title = "<% nvram_get("router_name"); %>" + alive.titl;
 
 function to_reboot(F) {
-	F.action.value='Reboot';
+	F.action.value = "Reboot";
 	F.submit();
 	return true;
 }
@@ -50,7 +51,6 @@ function setAlive() {
 		setElementsActive("schedule_hour_time", "schedule_weekdays", false);
 	}
 }
-
 
 function init() {
 	setWDS(<% nvram_get("wds_watchdog_enable"); %>);
