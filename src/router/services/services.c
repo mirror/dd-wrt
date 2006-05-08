@@ -916,7 +916,7 @@ start_dnsmasq (void)
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
 	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
-	fprintf (fp, "dhcp-authoritative\n");
+	//fprintf (fp, "dhcp-authoritative\n"); pptpd doesnt like this
 	fprintf (fp, "dhcp-range=");
 	fprintf (fp, "%d.%d.%d.%s,",
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
