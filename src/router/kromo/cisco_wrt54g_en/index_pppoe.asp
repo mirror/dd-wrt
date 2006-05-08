@@ -8,8 +8,8 @@
 	<input type="checkbox" name="_ppp_passwd_unmask" value="0" onclick="setElementMask('ppp_passwd', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 </div>
 <div class="setting">
-	<div class="label"><script type="text/javascript">Capture(idx_pppoe.srv)</script></div>
-	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,idx_pppoe.srv)" value="<% nvram_get("ppp_service"); %>" />
+	<div class="label"><script type="text/javascript">Capture(share.srv)</script></div>
+	<input name="ppp_service" size="40" maxlength="63" onblur="valid_name(this,share.srv)" value="<% nvram_get("ppp_service"); %>" />
 </div>
 <div class="setting">
 	<div class="label"><script type="text/javascript">Capture(idx_h.con_strgy)</script><br />&nbsp;</div>
