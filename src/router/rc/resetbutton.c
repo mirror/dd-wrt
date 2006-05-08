@@ -181,9 +181,13 @@ period_check (int sig)
 		  return;
 		}
 	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG
-		  || brand == ROUTER_BUFFALO_WHRG54S)
+		  || brand == ROUTER_BUFFALO_WHRG54S || brand == ROUTER_BUFFALO_WBR54G)
 		{
 		  printf ("resetbutton: factory default.\n");
+		  	if (brand == ROUTER_BUFFALO_WBR54G)
+		  	{
+			  	eval ("gpio", "disable", "7"); //turn on DIAG led on WBR-G54/WLA-G54
+			}
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  nvram_set ("sv_restore_defaults", "1");
