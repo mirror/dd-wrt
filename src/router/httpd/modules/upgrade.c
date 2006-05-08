@@ -31,6 +31,20 @@
 #define CODE_PATTERN_ERROR 9999
 static int upgrade_ret;
 
+// test
+#include <time.h>
+static void timer (double sec);
+void timer (double sec)
+  {
+  	time_t start; /* time when sort begins */
+    start = time( NULL );
+    
+     while ( difftime( time(NULL), start ) < sec)
+     {
+     	NULL;
+     }    
+  }
+//test
 
 
 void
@@ -44,6 +58,12 @@ do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
     do_ej ("Success_u_s.asp", stream);
 
   websDone (stream, 200);
+  
+  
+  //test 
+  timer(10);
+  
+   
 
   /* Reboot if successful */
   if (upgrade_ret == 0)
