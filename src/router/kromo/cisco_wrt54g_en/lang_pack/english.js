@@ -98,6 +98,8 @@ share.right="Right";
 share.left="Left";
 share.share_key="Shared Key";
 share.inter="Interval (in seconds)";
+share.srv="Service Name";
+share.port_range="Port Range";
 
 
 
@@ -112,6 +114,7 @@ sbutton.del="Delete";
 sbutton.continu="Continue";
 sbutton.add="Add";
 sbutton.remove="Remove";
+sbutton.modify="Modify";
 sbutton.deleted="Deleted";
 sbutton.delall="Delete All";
 sbutton.refres="Refresh";
@@ -136,6 +139,7 @@ sbutton.update_filter="Update Filter List";
 sbutton.join="Join";
 sbutton.log_in="Incoming Log";
 sbutton.log_out="Outgoing Log";
+sbutton.apply="Apply";
 
 
 
@@ -218,6 +222,11 @@ errmsg.err51="The Router is currently set to its default password. \
 			As a security measure, you must change the password before the Remote Management feature can be enabled. \
 			Click the OK button to change your password. Click the Cancel button to leave the Remote Management feature disabled.";
 errmsg.err52="Password confirmation doesn't match.";
+
+// Port_Services.asp error messages
+errmsg.err53="After finished all actions, click the Apply button to save the settings.";
+errmsg.err54="You must input a Service Name.";
+errmsg.err55="The Service Name exists.";
 
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
@@ -697,7 +706,6 @@ idx_l.srv="L2TP Server";
 // **************************************************************** index_pppoe.asp *********************************************************//
 
 var idx_pppoe = new Object();
-idx_pppoe.srv="Service Name";
 idx_pppoe.use_rp="Use RP PPPoE";
 
 
@@ -917,6 +925,13 @@ management.SIPatH_domain="SIP Domain";
 var hmanagement = new Object();
 hmanagement.right1="Auto-Refresh:";
 hmanagement.right2="Adjusts the Web GUI automatic refresh interval. 0 disables this feature completely.";
+
+
+
+// **************************************************************** Port_Services.asp **********************************************************************//
+
+var portserv = new Object();
+portserv.titl=" - Port Services";
 
 
 
