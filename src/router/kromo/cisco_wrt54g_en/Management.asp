@@ -238,7 +238,7 @@ addEvent(window, "load", function() {
 						</div>
 						<dl>
 							<dt class="term"><script type="text/javascript">Capture(hmanagement.right1)</script></dt>
-							<dd class="definition"><script type="text/javascript">Capture(hmanagement.right1)</script></dd>
+							<dd class="definition"><script type="text/javascript">Capture(hmanagement.right2)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HManagement.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
