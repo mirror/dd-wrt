@@ -2753,7 +2753,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       sleep_time = act->sleep_time;
       action = act->action;
       if (act->go)
-      	ret = act->go (wp);
+	ret = act->go (wp);
     }
   else
     {
@@ -2767,21 +2767,18 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
     {
       sys_commit ();
       service_restart ();
-	  sleep (sleep_time);
+      sleep (sleep_time);
     }
   else if (action == SYS_RESTART)
     {
       sys_commit ();
       sys_restart ();
-      sleep (sleep_time);   //botho test 08/05/06
     }
   else if (action == RESTART)
     {
       sys_commit ();
       sys_restart ();
-      sleep (sleep_time);   //botho test 08/05/06
     }
-
   if (my_next_page[0] != '\0')
     {
       sprintf (path, "%s", my_next_page);
@@ -2794,7 +2791,6 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
       else
 	sprintf (path, "%s.asp", submit_button);
     }
-    
   cprintf ("refresh to %s\n", path);
   do_ej (path, wp);			//refresh
   websDone (wp, 200);
@@ -3414,7 +3410,7 @@ footer:
 	}
 	
 	nvram_set ("upnp_wan_proto", "");
-//	sleep (sleep_time);
+	sleep (sleep_time);
 	
 	if ((action == RESTART) || (action == SYS_RESTART))
 		sys_restart ();
