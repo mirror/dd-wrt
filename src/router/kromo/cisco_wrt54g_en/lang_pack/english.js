@@ -1027,7 +1027,7 @@ wl_active.titl=" - Wireless Active Client MAC List";
 wl_active.h2="Wireless Client MAC List";
 wl_active.h3="Enable MAC Filter";
 wl_active.active="Active PC";
-wl_active.inactive="Active PC";
+wl_active.inactive="Inactive PC";
 
 
 
