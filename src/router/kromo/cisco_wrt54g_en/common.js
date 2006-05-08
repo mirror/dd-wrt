@@ -905,9 +905,10 @@ function getTimeOut(clk, rest_default) {
 /* Added by Botho 06.May.06 */
 // Unmask or Mask an input type (for password or key)
 function setElementMask(id, state) {
-	
+
 	var OldInput = document.getElementById(id);
 	if(!OldInput) return;
+	
 	var val = OldInput.value;
 	var val_maxlength = OldInput.maxlength;
 	var val_size = OldInput.size;
@@ -921,13 +922,14 @@ function setElementMask(id, state) {
 	newInput.setAttribute('maxlength', val_maxlength);
 	newInput.setAttribute('size', val_size);
 	newInput.setAttribute('onblur', val_onblur);
-	
+
 	if (state == true)
-				newInput.setAttribute('type', 'text');
+		newInput.setAttribute('type', 'text');
 	else
-				newInput.setAttribute('type', 'password');
-				
+		newInput.setAttribute('type', 'password');
+	
 	parent.removeChild(OldInput);
-  parent.insertBefore(newInput, sibling);
+	parent.insertBefore(newInput, sibling);
+	newInput.focus();
 	
 }
