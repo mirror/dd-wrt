@@ -249,7 +249,7 @@ void dhcp_packet(struct daemon *daemon, time_t now)
     }
 
   lease_prune(NULL, now); /* lose any expired leases */
-  newlen = dhcp_reply(daemon, context, ifr.ifr_name, (size_t)sz, now, unicast_dest);
+  newlen = dhcp_reply(daemon, context, ifr.ifr_name, sz, now, unicast_dest);
   lease_update_file(daemon, 0, now);
   lease_update_dns(daemon);
   
