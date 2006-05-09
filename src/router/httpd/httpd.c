@@ -245,7 +245,7 @@ send_authenticate (char *realm)
 
   (void) snprintf (header, sizeof (header),
 		   "WWW-Authenticate: Basic realm=\"%s\"", realm);
-  send_error (401, "Unauthorized", header, "Authorization required.");
+  send_error (401, "Unauthorized", header, "Authorization required. please note that the default username is \"root\" in all newer releases");
 }
 
 
