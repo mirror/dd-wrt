@@ -175,7 +175,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">document.write("<option value=\"short\" <% nvram_selected("wl_plcphdr", "short", "js"); %>>" + wl_adv.shrt + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_plcphdr", "auto", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.auto + ")")</script></span>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + wl_adv.lng + ")")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label15)</script></div>
