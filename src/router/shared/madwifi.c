@@ -760,7 +760,7 @@ setupSupplicant (char *prefix)
       fprintf (fp, "network={\n");
       sprintf (psk, "%s_ssid", prefix);
       fprintf (fp, "\tssid=\"%s\"\n", nvram_safe_get (psk));
-      fprintf (fp, "\tmode=0\n");
+//      fprintf (fp, "\tmode=0\n");
       fprintf (fp, "\tscan_ssid=1\n");
       fprintf (fp, "\tkey_mgmt=WPA-PSK\n");
 
@@ -840,6 +840,7 @@ setupHostAP (char *prefix)
       sprintf (fstr, "/tmp/%s_hostap.conf", prefix);
       FILE *fp = fopen (fstr, "wb");
       fprintf (fp, "interface=%s\n", prefix);
+      //sprintf(buf, "rsn_preauth_interfaces=%s\n", "br0");
       fprintf (fp, "bridge=%s\n", nvram_safe_get ("lan_ifname"));
       fprintf (fp, "driver=madwifi\n");
       fprintf (fp, "logger_syslog=-1\n");
@@ -1160,7 +1161,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 #else
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
-  eval ("insmod", "ath_rate_onoe");
+  eval ("insmod", "ath_rate_sample");
   eval ("insmod", "ath_pci","autocreate=none", countrycode, xchanmode, outdoor);
 
 //  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
