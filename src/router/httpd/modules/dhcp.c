@@ -117,7 +117,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 
 	      expires_time[strlen (expires_time) - 1] = '\0';
 	    }
-	  websWrite (wp, "%c'%s','%s','%s','%s','%d'", count ? ',' : ' ',
+	  websWrite (wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"", count ? ',' : ' ',
 		     !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr,
 		     mac, expires_time, get_single_ip (inet_ntoa (addr), 3));
 	  count++;
