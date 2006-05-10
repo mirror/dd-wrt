@@ -84,7 +84,7 @@ void lease_prune(struct dhcp_lease *target, time_t now)
       if ((lease->expires != 0 && difftime(now, lease->expires) > 0) || lease == target)
 	{
 	  file_dirty = yes;
-          syslog(LOG_INFO, "expired lease for %s", lease->name);
+          syslog(LOG_INFO, "expired lease");
 
 	  *up = lease->next; /* unlink */
 	  if (lease->hostname)

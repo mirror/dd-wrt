@@ -51,7 +51,7 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
   FILE *fp;
   struct lease_t binlease;
   struct isc_lease *lease, *tmp, **up;
-  struct stat statbuf;
+//struct stat statbuf;
 
   logged_lease = 0;
 
