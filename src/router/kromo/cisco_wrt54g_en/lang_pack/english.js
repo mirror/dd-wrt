@@ -100,7 +100,10 @@ share.share_key="Shared Key";
 share.inter="Interval (in seconds)";
 share.srv="Service Name";
 share.port_range="Port Range";
-
+share.priority="Priority";
+share.gateway="Gateway";
+share.interface="Interface";
+share.router="Router";
 
 
 var sbutton = new Object();
@@ -140,6 +143,8 @@ sbutton.join="Join";
 sbutton.log_in="Incoming Log";
 sbutton.log_out="Outgoing Log";
 sbutton.apply="Apply";
+sbutton.edit_srv="Add/Edit Service";
+
 
 
 
@@ -228,6 +233,11 @@ errmsg.err53="After finished all actions, click the Apply button to save the set
 errmsg.err54="You must input a Service Name.";
 errmsg.err55="The Service Name exists.";
 
+// QoS.asp error messages
+errmsg.err56="Port value is out of range [0 - 65535]";
+
+// Routing.asp error messages
+errmsg.err57="Delete the Entry ?";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -723,7 +733,6 @@ idx_pptp.encrypt="PPTP Encyption";
 // **************************************************************** index_static.asp *********************************************************//
 
 var idx_static = new Object();
-idx_static.gateway="Gateway";
 idx_static.dns="Static DNS";
 
 
@@ -928,10 +937,80 @@ hmanagement.right2="Adjusts the Web GUI automatic refresh interval. 0 disables t
 
 
 
-// **************************************************************** Port_Services.asp **********************************************************************//
+// ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
 var portserv = new Object();
 portserv.titl=" - Port Services";
+portserv.h2="Port Services";
+
+
+
+// **************************************************************** QoS.asp **********************************************************************//
+
+var qos = new Object();
+qos.titl=" - Quality of Service";
+qos.h2="Quality Of Service (QoS )";
+qos.legend="QoS Settings";
+qos.srv="Start QoS";
+qos.uplink="Uplink (kbps)";
+qos.dnlink="Downlink (kbps)";
+qos.gaming="Optimize for Gaming";
+qos.legend2="Services Priority";
+qos.prio_p="Premium";
+qos.prio_e="Express";
+qos.prio_s="Standard";
+qos.prio_b="Bulk";
+qos.legend3="Netmask Priority";
+qos.ipmask="IP/Mask";
+qos.maxrate_b="Max Kbits";
+qos.maxrate_o="Max Rate";
+qos.legend4="MAC Priority";
+qos.legend5="Ethernet Port Priority";
+qos.legend6="Default Bandwith Level";
+qos.bandwith="Bandwith in Kbits";
+
+//help container
+var hqos = new Object();
+hqos.right1="Uplink:";
+hqos.right2="Set this to 80%-95% (max) of your total upload limit.";
+hqos.right3="Downlink:";
+hqos.right4="Set this to 80%-100% (max) of your total download limit.";
+hqos.right5="Application Priority:";
+hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
+hqos.right7="Netmask Priority:";
+hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
+hqos.right9="MAC Priority:";
+hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, \
+			specifying priority and entering its MAC address.";
+hqos.right11="Ethernet Port Priority:";
+hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. \
+			You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
+
+
+
+// **************************************************************** RouteTable.asp **********************************************************************//
+
+var routetbl = new Object();
+routetbl.titl=" - Routing Table";
+routetbl.h2="Routing Table Entry List";
+routetbl.th1="Destination LAN IP";
+routetbl.eth_lan="LAN &amp; Wireless";
+routetbl.eth_wan="WAN (Internet)";
+
+
+
+// **************************************************************** Routing.asp **********************************************************************//
+
+var route = new Object();
+route.titl=" - Routing";
+route.h2="Advanced Routing";
+route.mod="Operating Mode";
+route.bgp_legend="BGP Settings";
+route.bgp_ip="Neighbor IP";
+route.bgp_as="Neighbor AS#";
+route.rip2_mod="RIP2 Router";
+route.ospf_mod="OSPF Router";
+route.gateway_legend="Dynamic Routing";
 
 
 
@@ -985,7 +1064,7 @@ hwol.right6="IP Address is typically the broadcast address for the local network
 
 
 // **************************************************************** WL_WPATable.asp **************************************************************//
-// **************************************************************** WPA.asp **********************************************************************//
+// **************************************************************** WPA.asp / Radius.asp *********************************************************//
 
 var wpa = new Object();
 wpa.titl=" - Wireless Security";
@@ -997,7 +1076,7 @@ wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
 wpa.rekey="Key Renewal Interval (in seconds)";
-wpa.radius_ipaddr="RADIUS Server IP";
+wpa.radius_ipaddr="RADIUS Server Address";
 wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
