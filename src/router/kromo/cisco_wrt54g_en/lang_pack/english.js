@@ -144,6 +144,7 @@ sbutton.log_in="Incoming Log";
 sbutton.log_out="Outgoing Log";
 sbutton.apply="Apply";
 sbutton.edit_srv="Add/Edit Service";
+sbutton.routingtab="Show Routing Table";
 
 
 
@@ -1011,7 +1012,23 @@ route.bgp_as="Neighbor AS#";
 route.rip2_mod="RIP2 Router";
 route.ospf_mod="OSPF Router";
 route.gateway_legend="Dynamic Routing";
+route.static_legend="Static Routing";
+route.static_setno="Select set number";
+route.static_name="Route Name";
+route.static_ip="Destination LAN IP";
 
+//help container
+var hroute = new Object();
+hroute.right1="Operating Mode:";
+hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select <em>Router</em> mode.";
+hroute.right3="Select Set Number:";
+hroute.right4="This is the unique route number, you may set up to 20 routes.";
+hroute.right5="Route Name:";
+hroute.right6="Enter the name you would like to assign to this route.";
+hroute.right7="Destination LAN IP:";
+hroute.right8="This is the remote host to which you would like to assign the static route.";
+hroute.right9="Subnet Mask:";
+hroute.right10="Determines the host and the network portion.";
 
 
 // **************************************************************** Site_Survey.asp **********************************************************************//
