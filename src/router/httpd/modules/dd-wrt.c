@@ -4764,7 +4764,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
-					<</td>\n\
+					</td>\n\
 					<td><em>%s</em></td>\n\
 					<td>\n\
 						<select name=\"svqos_ipprio%d\"> \n\
@@ -4821,7 +4821,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td>\n\
 						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
 						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
-					<</td>\n\
+					</td>\n\
 					<td><em>%s</em></td>\n\
 					<td>\n\
 						<input name=\"svqos_ipprio%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
