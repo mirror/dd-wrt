@@ -465,7 +465,7 @@ function Status(F,I) {
 									<input maxLength="5" size="5" name="port3_start" class="num" readonly="readonly" /> ~ <input maxLength="5" size="5" name="port3_end" class="num" readonly="readonly" />
 								</div>
 								<div class="setting">
-									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 400)\" />")</script>
+									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.filterSer + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />")</script>
 								</div>
 							</fieldset><br />
 							
