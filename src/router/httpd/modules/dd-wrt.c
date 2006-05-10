@@ -5057,6 +5057,6 @@ ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)
 							</fieldset><br />\n", nvram_match ("fullswitch", "1") ? "checked=\"checked\"" : "");
 	}
 	
-	return
+	return;
 }
 /* END  Added by Botho 10.May.06 */
