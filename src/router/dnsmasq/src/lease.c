@@ -16,6 +16,7 @@
 
 static struct dhcp_lease *leases;
 static int dns_dirty;
+static FILE *lease_file;
 enum
 { no, yes, force } file_dirty;
 static int leases_left;
@@ -28,7 +29,7 @@ lease_init (struct daemon *daemon, time_t now)
 leases = NULL;
 leases_left = daemon->dhcp_max;
 //printf("load dhcp leases"); 
-FILE *lease_file=load_dhcp(daemon,now);
+lease_file=load_dhcp(daemon,now);
 rewind(lease_file);
 //printf("done"); 
 file_dirty=no;
