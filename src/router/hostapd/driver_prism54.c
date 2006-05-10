@@ -1,5 +1,5 @@
 /*
- * Host AP - driver interaction with Prism54 PIMFOR interface
+ * hostapd / Driver interaction with Prism54 PIMFOR interface
  * Copyright (c) 2004, Bell Kin <bell_kin@pek.com.tw>
  * based on hostap driver.c, ieee802_11.c
  *
@@ -13,20 +13,9 @@
  * See README and COPYING for more details.
  */
 
-
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
+#include "includes.h"
 #include <sys/ioctl.h>
-#include <netinet/in.h>
-
-/* for select */
 #include <sys/select.h>
-#include <sys/time.h>
-#include <sys/types.h>
-#include <unistd.h>
 
 #ifdef USE_KERNEL_HEADERS
 #include <asm/types.h>
@@ -138,8 +127,8 @@ static int prism54_waitpim(void *priv, unsigned long oid, void *buf, int len,
 
 
 /* send an eapol packet */
-static int prism54_send_eapol(void *priv, u8 *addr,
-			      u8 *data, size_t data_len, int encrypt)
+static int prism54_send_eapol(void *priv, const u8 *addr,
+			      const u8 *data, size_t data_len, int encrypt)
 {
 	struct prism54_driver_data *drv = priv;
 	ieee802_3_hdr *hdr;
@@ -148,14 +137,12 @@ static int prism54_send_eapol(void *priv, u8 *addr,
 	int res;
 
 	len = sizeof(*hdr) + data_len;
-	hdr = malloc(len);
+	hdr = wpa_zalloc(len);
 	if (hdr == NULL) {
-		printf("malloc() failed for hostapd_send_data(len=%lu)\n",
+		printf("malloc() failed for prism54_send_data(len=%lu)\n",
 		       (unsigned long) len);
 		return -1;
 	}
-
-	memset(hdr, 0, len);
 
 	memcpy(&hdr->da[0], addr, ETH_ALEN);
 	memcpy(&hdr->sa[0], drv->hapd->own_addr, ETH_ALEN);
@@ -177,7 +164,8 @@ static int prism54_send_eapol(void *priv, u8 *addr,
 
 
 /* open data channel(auth-1) or eapol only(unauth-0) */
-static int prism54_set_sta_authorized(void *priv, u8 *addr, int authorized)
+static int prism54_set_sta_authorized(void *priv, const u8 *addr,
+				      int authorized)
 {
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
@@ -201,9 +189,23 @@ static int prism54_set_sta_authorized(void *priv, u8 *addr, int authorized)
 }
 
 
+static int
+prism54_sta_set_flags(void *priv, const u8 *addr, int flags_or, int flags_and)
+{
+	/* For now, only support setting Authorized flag */
+	if (flags_or & WLAN_STA_AUTHORIZED)
+		return prism54_set_sta_authorized(priv, addr, 1);
+	if (flags_and & WLAN_STA_AUTHORIZED)
+		return prism54_set_sta_authorized(priv, addr, 0);
+	return 0;
+}
+
+
 /* set per station key */
-static int prism54_set_encryption(void *priv, const char *alg, u8 *addr,
-				  int idx, u8 *key, size_t key_len)
+static int prism54_set_encryption(const char *ifname, void *priv,
+				  const char *alg, const u8 *addr,
+				  int idx, const u8 *key, size_t key_len,
+				  int txkey)
 {
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
@@ -236,7 +238,7 @@ static int prism54_set_encryption(void *priv, const char *alg, u8 *addr,
 	} else {
 		printf("bad auth type: %s\n", alg);
 	}
-	buf = &keys->key[0];
+	buf = (u8 *) &keys->key[0];
 	keys->length = key_len;
 	keys->keyid = idx;
 	keys->options = htons(DOT11_STAKEY_OPTION_DEFAULTKEY);
@@ -259,7 +261,8 @@ static int prism54_set_encryption(void *priv, const char *alg, u8 *addr,
 
 
 /* get TKIP station sequence counter, prism54 is only 6 bytes */
-static int prism54_get_seqnum(void *priv, u8 *addr, int idx, u8 *seq)
+static int prism54_get_seqnum(const char *ifname, void *priv, const u8 *addr,
+			      int idx, u8 *seq)
 {
 	struct prism54_driver_data *drv = priv;
 	struct obj_stasc *stasc;
@@ -369,7 +372,7 @@ static int prism54_set_privacy_invoked(void *priv, int flag)
 }
 
  
-static int prism54_ioctl_setiwessid(void *priv, u8 *buf, int len)
+static int prism54_ioctl_setiwessid(void *priv, const u8 *buf, int len)
 {
 #if 0
 	struct prism54_driver_data *drv = priv;
@@ -446,7 +449,7 @@ static int prism54_flush(void *priv)
 }
 
 
-static int prism54_sta_deauth(void *priv, u8 *addr, int reason)
+static int prism54_sta_deauth(void *priv, const u8 *addr, int reason)
 {
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
@@ -471,7 +474,7 @@ static int prism54_sta_deauth(void *priv, u8 *addr, int reason)
 }
 
 
-static int prism54_sta_disassoc(void *priv, u8 *addr, int reason)
+static int prism54_sta_disassoc(void *priv, const u8 *addr, int reason)
 {
 	struct prism54_driver_data *drv = priv;
         pimdev_hdr *hdr;
@@ -496,7 +499,7 @@ static int prism54_sta_disassoc(void *priv, u8 *addr, int reason)
 }
 
 
-static int prism54_get_inact_sec(void *priv, u8 *addr)
+static int prism54_get_inact_sec(void *priv, const u8 *addr)
 {
 	struct prism54_driver_data *drv = priv;
 	pimdev_hdr *hdr;
@@ -538,12 +541,11 @@ static int prism54_set_generic_elem(void *priv,
 	char *pos;
 	struct obj_attachment_hdr *attach;
 	size_t blen = sizeof(*hdr) + sizeof(*attach) + elem_len;
-	hdr = malloc(blen);
+	hdr = wpa_zalloc(blen);
 	if (hdr == NULL) {
 		printf("%s: memory low\n", __func__);
 		return -1;
 	}
-	memset(hdr, 0, blen);
 	hdr->op = htonl(PIMOP_SET);
 	hdr->oid = htonl(DOT11_OID_ATTACHMENT);
 	attach = (struct obj_attachment_hdr *)&hdr[1];
@@ -570,7 +572,7 @@ static void prism54_handle_probe(struct prism54_driver_data *drv,
 	struct sta_info *sta;
 	hdr = (pimdev_hdr *)buf;
 	mlme = (struct obj_mlmeex *) &hdr[1];
-	sta = ap_get_sta(drv->hapd, &mlme->address[0]);
+	sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 	if (sta != NULL) {
 		if (sta->flags & (WLAN_STA_AUTH | WLAN_STA_ASSOC))
 			return;
@@ -596,15 +598,15 @@ static void prism54_handle_deauth(struct prism54_driver_data *drv,
 	struct sta_info *sta;
 	hdr = (pimdev_hdr *) buf;
 	mlme = (struct obj_mlme *) &hdr[1];
-	sta = ap_get_sta(drv->hapd, &mlme->address[0]);
+	sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 	memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
 	if (sta == NULL) {
 		return;
 	}
 	sta->flags &= ~(WLAN_STA_AUTH | WLAN_STA_ASSOC);
-	wpa_sm_event(drv->hapd, sta, WPA_DEAUTH);
+	wpa_auth_sm_event(sta->wpa_sm, WPA_DEAUTH);
 	sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
-	ieee802_1x_set_port_enabled(drv->hapd, sta, 0);
+	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 	ap_free_sta(drv->hapd, sta);
 }
 
@@ -618,14 +620,14 @@ static void prism54_handle_disassoc(struct prism54_driver_data *drv,
 	hdr = (pimdev_hdr *) buf;
 	mlme = (struct obj_mlme *) &hdr[1];
 	memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
-	sta = ap_get_sta(drv->hapd, &mlme->address[0]);
+	sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 	if (sta == NULL) {
 		return;
 	}
 	sta->flags &= ~WLAN_STA_ASSOC;
-	wpa_sm_event(drv->hapd, sta, WPA_DISASSOC);
+	wpa_auth_sm_event(sta->wpa_sm, WPA_DISASSOC);
 	sta->acct_terminate_cause = RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
-	ieee802_1x_set_port_enabled(drv->hapd, sta, 0);
+	ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 	accounting_sta_stop(drv->hapd, sta);
 	ieee802_1x_free_station(sta);
 }
@@ -648,7 +650,7 @@ static void prism54_handle_auth(struct prism54_driver_data *drv,
 	}
 
 	if (mlme->state == htons(DOT11_STATE_AUTHING)) {
-		sta = ap_sta_add(drv->hapd, &mlme->address[0]);
+		sta = ap_sta_add(drv->hapd, (u8 *) &mlme->address[0]);
 		if (drv->hapd->tkip_countermeasures) {
 			resp = WLAN_REASON_MICHAEL_MIC_FAILURE;
 			goto fail;
@@ -662,7 +664,7 @@ static void prism54_handle_auth(struct prism54_driver_data *drv,
 		
 		ieee802_1x_notify_pre_auth(sta->eapol_sm, 0);
 		sta->flags |= WLAN_STA_AUTH;
-		wpa_sm_event(drv->hapd, sta, WPA_AUTH);
+		wpa_auth_sm_event(sta->wpa_sm, WPA_AUTH);
 		mlme->code = 0;
 		mlme->state=htons(DOT11_STATE_AUTH);
 		hdr->op = htonl(PIMOP_SET);
@@ -714,12 +716,12 @@ static void prism54_handle_assoc(struct prism54_driver_data *drv,
 			return;
 		}
 		memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
-		sta = ap_get_sta(drv->hapd, &mlme->address[0]);
+		sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 		if (sta == NULL) {
 			printf("cannot get sta\n");
 			return;
 		}
-		cb = &mlme->data[0];
+		cb = (u8 *) &mlme->data[0];
 		if (hdr->oid == htonl(DOT11_OID_ASSOCIATEEX)) {
 			ieofs = 4;
 		} else if (hdr->oid == htonl(DOT11_OID_REASSOCIATEEX)) {
@@ -760,29 +762,30 @@ static void prism54_handle_assoc(struct prism54_driver_data *drv,
 			int res;
 			wpa_ie -= 2;
 			wpa_ie_len += 2;
-			res = wpa_validate_wpa_ie(drv->hapd, sta, wpa_ie,
-						  wpa_ie_len, elems.rsn_ie ?
-						  HOSTAPD_WPA_VERSION_WPA2 :
-						  HOSTAPD_WPA_VERSION_WPA);
+			if (sta->wpa_sm == NULL)
+				sta->wpa_sm = wpa_auth_sta_init(
+					drv->hapd->wpa_auth, sta->addr);
+			if (sta->wpa_sm == NULL) {
+				printf("Failed to initialize WPA state "
+				       "machine\n");
+				resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
+				goto fail;
+			}
+			res = wpa_validate_wpa_ie(drv->hapd->wpa_auth,
+						  sta->wpa_sm,
+						  wpa_ie, wpa_ie_len);
 			if (res == WPA_INVALID_GROUP)
 				resp = WLAN_STATUS_GROUP_CIPHER_NOT_VALID;
 			else if (res == WPA_INVALID_PAIRWISE)
 				resp = WLAN_STATUS_PAIRWISE_CIPHER_NOT_VALID;
 			else if (res == WPA_INVALID_AKMP)
 				resp = WLAN_STATUS_AKMP_NOT_VALID;
+			else if (res == WPA_ALLOC_FAIL)
+				resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
 			else if (res != WPA_IE_OK)
 				resp = WLAN_STATUS_INVALID_IE;
 			if (resp != WLAN_STATUS_SUCCESS)
 				goto fail;
-			if (sta->wpa_ie != NULL)
-				free(sta->wpa_ie);
-			sta->wpa_ie = malloc(wpa_ie_len);
-			if (sta->wpa_ie == NULL) {
-				resp = WLAN_STATUS_UNSPECIFIED_FAILURE;
-				goto fail;
-			}
-			sta->wpa_ie_len = wpa_ie_len;
-			memcpy(sta->wpa_ie, wpa_ie, wpa_ie_len);
 		}
 		hdr->oid = (hdr->oid == htonl(DOT11_OID_ASSOCIATEEX)) ?
 			htonl(DOT11_OID_ASSOCIATEEX) :
@@ -799,14 +802,14 @@ static void prism54_handle_assoc(struct prism54_driver_data *drv,
 			return;
 		}
 		memcpy(&mlme->address[0], mac_id_get(drv, mlme->id), ETH_ALEN);
-		sta = ap_get_sta(drv->hapd, &mlme->address[0]);
+		sta = ap_get_sta(drv->hapd, (u8 *) &mlme->address[0]);
 		if (sta == NULL) {
 			printf("cannot get sta\n");
 			return;
 		}
 		new_assoc = (sta->flags & WLAN_STA_ASSOC) == 0;
 		sta->flags |= WLAN_STA_ASSOC;
-		wpa_sm_event(drv->hapd, sta, WPA_ASSOC);
+		wpa_auth_sm_event(sta->wpa_sm, WPA_ASSOC);
 		hostapd_new_assoc_sta(drv->hapd, sta, !new_assoc);
 		ieee802_1x_notify_port_enabled(sta->eapol_sm, 1);
 		sta->timeout_next = STA_NULLFUNC;
@@ -1000,14 +1003,13 @@ static int prism54_driver_init(struct hostapd_data *hapd)
 {
 	struct prism54_driver_data *drv;
 
-	drv = malloc(sizeof(struct prism54_driver_data));
+	drv = wpa_zalloc(sizeof(struct prism54_driver_data));
 	if (drv == NULL) {
 		printf("Could not allocate memory for hostapd Prism54 driver "
 		       "data\n");
 		return -1;
 	}
 
-	memset(drv, 0, sizeof(*drv));
 	drv->ops = prism54_driver_ops;
 	drv->hapd = hapd;
 	drv->pim_sock = drv->sock = -1;
@@ -1051,7 +1053,7 @@ static const struct driver_ops prism54_driver_ops = {
 	.flush = prism54_flush,
 	.set_generic_elem = prism54_set_generic_elem,
 	.send_eapol = prism54_send_eapol,
-	.set_sta_authorized = prism54_set_sta_authorized,
+	.sta_set_flags = prism54_sta_set_flags,
 	.sta_deauth = prism54_sta_deauth,
 	.sta_disassoc = prism54_sta_disassoc,
 	.set_ssid = prism54_ioctl_setiwessid,

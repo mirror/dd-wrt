@@ -21,6 +21,8 @@
  * See README and COPYING for more details.
  */
 
+#include "includes.h"
+
 /*
  * rijndael-alg-fst.c
  *

@@ -22,6 +22,9 @@ CONFIG_DRIVER_HOSTAP=y
 # Driver interface for Prism54 driver
 #CONFIG_DRIVER_PRISM54=y
 
+# Driver interface for drivers using Devicescape IEEE 802.11 stack
+#CONFIG_DRIVER_DEVICESCAPE=y
+
 # Driver interface for FreeBSD net80211 layer (e.g., Atheros driver)
 #CONFIG_DRIVER_BSD=y
 #CFLAGS += -I/usr/local/include
@@ -32,6 +35,9 @@ CONFIG_IAPP=y
 
 # WPA2/IEEE 802.11i RSN pre-authentication
 CONFIG_RSN_PREAUTH=y
+
+# IEEE 802.11i/IEEE 802.11e STAKey negotiation for direct link connection
+#CONFIG_STAKEY=y
 
 # Integrated EAP server
 CONFIG_EAP=y
@@ -57,11 +63,17 @@ CONFIG_EAP_TTLS=y
 # EAP-SIM for the integrated EAP server
 #CONFIG_EAP_SIM=y
 
+# EAP-AKA for the integrated EAP server
+#CONFIG_EAP_AKA=y
+
 # EAP-PAX for the integrated EAP server
 #CONFIG_EAP_PAX=y
 
 # EAP-PSK for the integrated EAP server (this is _not_ needed for WPA-PSK)
 #CONFIG_EAP_PSK=y
+
+# EAP-SAKE for the integrated EAP server
+#CONFIG_EAP_SAKE=y
 
 # PKCS#12 (PFX) support (used to read private key and certificate file from
 # a file that usually has extension .p12 or .pfx)

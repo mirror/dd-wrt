@@ -12,7 +12,8 @@
  * See README and COPYING for more details.
  */
 
-#include <stdio.h>
+#include "includes.h"
+
 #include "common.h"
 #include "rc4.h"
 
@@ -35,7 +36,7 @@ void rc4_skip(const u8 *key, size_t keylen, size_t skip,
 {
 	u32 i, j, k;
 	u8 S[256], *pos;
-	int kpos;
+	size_t kpos;
 
 	/* Setup RC4 state */
 	for (i = 0; i < 256; i++)

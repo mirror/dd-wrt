@@ -1,6 +1,5 @@
 /*
- * Host AP (software wireless LAN access point) user space daemon for
- * Host AP kernel driver / Station table
+ * hostapd / Station table
  * Copyright (c) 2002-2004, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -13,12 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "sta_info.h"
@@ -29,9 +23,15 @@
 #include "radius.h"
 #include "eapol_sm.h"
 #include "wpa.h"
+#include "preauth.h"
 #include "radius_client.h"
 #include "driver.h"
+#ifndef CONFIG_NATIVE_WINDOWS
 #include "hostap_common.h"
+#else /* CONFIG_NATIVE_WINDOWS */
+#define WLAN_REASON_PREV_AUTH_NOT_VALID 2
+#define WLAN_REASON_DISASSOC_DUE_TO_INACTIVITY 4
+#endif /* CONFIG_NATIVE_WINDOWS */
 
 
 int ap_for_each_sta(struct hostapd_data *hapd,
@@ -61,7 +61,7 @@ struct sta_info * ap_get_sta(struct hostapd_data *hapd, const u8 *sta)
 }
 
 
-static void ap_sta_list_del(hostapd *hapd, struct sta_info *sta)
+static void ap_sta_list_del(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	struct sta_info *tmp;
 
@@ -81,14 +81,14 @@ static void ap_sta_list_del(hostapd *hapd, struct sta_info *sta)
 }
 
 
-void ap_sta_hash_add(hostapd *hapd, struct sta_info *sta)
+void ap_sta_hash_add(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	sta->hnext = hapd->sta_hash[STA_HASH(sta->addr)];
 	hapd->sta_hash[STA_HASH(sta->addr)] = sta;
 }
 
 
-static void ap_sta_hash_del(hostapd *hapd, struct sta_info *sta)
+static void ap_sta_hash_del(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	struct sta_info *s;
 
@@ -109,7 +109,7 @@ static void ap_sta_hash_del(hostapd *hapd, struct sta_info *sta)
 }
 
 
-void ap_free_sta(hostapd *hapd, struct sta_info *sta)
+void ap_free_sta(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	accounting_sta_stop(hapd, sta);
 	if (!(sta->flags & WLAN_STA_PREAUTH))
@@ -125,20 +125,20 @@ void ap_free_sta(hostapd *hapd, struct sta_info *sta)
 	eloop_cancel_timeout(ap_handle_timer, hapd, sta);
 
 	ieee802_1x_free_station(sta);
-	wpa_free_station(sta);
+	wpa_auth_sta_deinit(sta->wpa_sm);
+	rsn_preauth_free_station(hapd, sta);
 	radius_client_flush_auth(hapd->radius, sta->addr);
 
 	if (sta->last_assoc_req)
 		free(sta->last_assoc_req);
 
 	free(sta->challenge);
-	free(sta->wpa_ie);
 
 	free(sta);
 }
 
 
-void hostapd_free_stas(hostapd *hapd)
+void hostapd_free_stas(struct hostapd_data *hapd)
 {
 	struct sta_info *sta, *prev;
 
@@ -155,7 +155,7 @@ void hostapd_free_stas(hostapd *hapd)
 
 void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 {
-	hostapd *hapd = eloop_ctx;
+	struct hostapd_data *hapd = eloop_ctx;
 	struct sta_info *sta = timeout_ctx;
 	unsigned long next_time = 0;
 
@@ -179,13 +179,14 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 			printf("  Could not get station info from kernel "
 			       "driver for " MACSTR ".\n",
 			       MAC2STR(sta->addr));
-		} else if (inactive_sec < AP_MAX_INACTIVITY &&
+		} else if (inactive_sec < hapd->conf->ap_max_inactivity &&
 			   sta->flags & WLAN_STA_ASSOC) {
 			/* station activity detected; reset timeout state */
 			HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,
 				      "  Station has been active\n");
 			sta->timeout_next = STA_NULLFUNC;
-			next_time = AP_MAX_INACTIVITY - inactive_sec;
+			next_time = hapd->conf->ap_max_inactivity -
+				inactive_sec;
 		}
 	}
 
@@ -197,7 +198,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		/* data nullfunc frame poll did not produce TX errors; assume
 		 * station ACKed it */
 		sta->timeout_next = STA_NULLFUNC;
-		next_time = AP_MAX_INACTIVITY;
+		next_time = hapd->conf->ap_max_inactivity;
 	}
 
 	if (next_time) {
@@ -216,6 +217,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 			      "  Polling STA with data frame\n");
 		sta->flags |= WLAN_STA_PENDING_POLL;
 
+#ifndef CONFIG_NATIVE_WINDOWS
 		/* FIX: WLAN_FC_STYPE_NULLFUNC would be more appropriate, but
 		 * it is apparently not retried so TX Exc events are not
 		 * received for it */
@@ -230,6 +232,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 
 		if (hostapd_send_mgmt_frame(hapd, &hdr, sizeof(hdr), 0) < 0)
 			perror("ap_handle_timer: send");
+#endif /* CONFIG_NATIVE_WINDOWS */
 	} else if (sta->timeout_next != STA_REMOVE) {
 		int deauth = sta->timeout_next == STA_DEAUTH;
 
@@ -255,7 +258,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 		break;
 	case STA_DISASSOC:
 		sta->flags &= ~WLAN_STA_ASSOC;
-		ieee802_1x_set_port_enabled(hapd, sta, 0);
+		ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 		if (!sta->acct_terminate_cause)
 			sta->acct_terminate_cause =
 				RADIUS_ACCT_TERMINATE_CAUSE_IDLE_TIMEOUT;
@@ -284,7 +287,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 
 void ap_handle_session_timer(void *eloop_ctx, void *timeout_ctx)
 {
-	hostapd *hapd = eloop_ctx;
+	struct hostapd_data *hapd = eloop_ctx;
 	struct sta_info *sta = timeout_ctx;
 
 	if (!(sta->flags & WLAN_STA_AUTH))
@@ -300,7 +303,7 @@ void ap_handle_session_timer(void *eloop_ctx, void *timeout_ctx)
 }
 
 
-void ap_sta_session_timeout(hostapd *hapd, struct sta_info *sta,
+void ap_sta_session_timeout(struct hostapd_data *hapd, struct sta_info *sta,
 			    u32 session_timeout)
 {
 	hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_IEEE80211,
@@ -312,7 +315,7 @@ void ap_sta_session_timeout(hostapd *hapd, struct sta_info *sta,
 }
 
 
-void ap_sta_no_session_timeout(hostapd *hapd, struct sta_info *sta)
+void ap_sta_no_session_timeout(struct hostapd_data *hapd, struct sta_info *sta)
 {
 	eloop_cancel_timeout(ap_handle_session_timer, hapd, sta);
 }
@@ -334,22 +337,22 @@ struct sta_info * ap_sta_add(struct hostapd_data *hapd, const u8 *addr)
 		return NULL;
 	}
 
-	sta = (struct sta_info *) malloc(sizeof(struct sta_info));
+	sta = wpa_zalloc(sizeof(struct sta_info));
 	if (sta == NULL) {
 		printf("  malloc failed\n");
 		return NULL;
 	}
-	memset(sta, 0, sizeof(struct sta_info));
 	sta->acct_interim_interval = hapd->conf->radius->acct_interim_interval;
 
 	/* initialize STA info data */
-	eloop_register_timeout(AP_MAX_INACTIVITY, 0, ap_handle_timer,
-			       hapd, sta);
+	eloop_register_timeout(hapd->conf->ap_max_inactivity, 0,
+			       ap_handle_timer, hapd, sta);
 	memcpy(sta->addr, addr, ETH_ALEN);
 	sta->next = hapd->sta_list;
 	hapd->sta_list = sta;
 	hapd->num_sta++;
 	ap_sta_hash_add(hapd, sta);
+	sta->ssid = &hapd->conf->ssid;
 
 	return sta;
 }
