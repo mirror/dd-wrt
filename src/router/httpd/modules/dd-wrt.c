@@ -5039,3 +5039,24 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 
 }
 /* END  Added by Botho 21.April.06 */
+
+/* BEGIN  Added by Botho 10.May.06 */
+void
+ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)
+{
+	if ( nvram_match("wan_proto", "disabled") || 									//WAN is disable OR
+		(!nvram_match("wan_proto", "disabled") && !nvram_match("wl_mode", "ap"))	//WAN active AND Wirelles is not AP
+		)
+	{
+		websWrite (wp, "<fieldset>\n\
+							<legend><script type=\"text/javascript\">Capture(idx.legend2)</script></legend>\n\
+								<div class=\"setting\">\n\
+									<div class=\"label\"><script type=\"text/javascript\">Capture(idx.wantoswitch)</script></div>\n\
+									<input class=\"spaceradio\" type=\"checkbox\" name=\"_fullswitch\" value=\"1\" %s />\n\
+								</div>\n\
+							</fieldset><br />\n", nvram_match ("fullswitch", "1") ? "checked=\"checked\"" : "");
+	}
+	
+	return
+}
+/* END  Added by Botho 10.May.06 */
