@@ -175,11 +175,10 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 	{
 	  cache_add_dhcp_entry(daemon,lease->fqdn, &lease->addr, lease->expires);
 	  cache_add_dhcp_entry(daemon,lease->name, &lease->addr, lease->expires);
+          syslog(LOG_INFO, "stored lease for %s", lease->name);
 	}
       else 
 	cache_add_dhcp_entry(daemon,lease->name, &lease->addr, lease->expires);
-
-      syslog(LOG_INFO, "stored lease for %s", lease->name); 
 
     }
 return fp;

@@ -344,6 +344,6 @@ fprintf(stderr,"sync()\n");
       file_dirty = no;
 /* DD-WRT end */
 
-//    }
+    }
 }
 
