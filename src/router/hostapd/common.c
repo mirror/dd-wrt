@@ -1,6 +1,6 @@
 /*
  * wpa_supplicant/hostapd / common helper functions, etc.
- * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -12,19 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
-#include <stdarg.h>
-#include <ctype.h>
-#include <time.h>
-#include <sys/time.h>
-#ifdef CONFIG_NATIVE_WINDOWS
-#include <winsock2.h>
-#include <wincrypt.h>
-#endif /* CONFIG_NATIVE_WINDOWS */
+#include "includes.h"
 
 #include "common.h"
 
@@ -32,48 +20,6 @@
 int wpa_debug_level = MSG_INFO;
 int wpa_debug_show_keys = 0;
 int wpa_debug_timestamp = 0;
-
-
-int hostapd_get_rand(u8 *buf, size_t len)
-{
-#ifdef CONFIG_NATIVE_WINDOWS
-	HCRYPTPROV prov;
-	BOOL ret;
-
-	if (!CryptAcquireContext(&prov, NULL, NULL, PROV_RSA_FULL,
-				 CRYPT_VERIFYCONTEXT))
-		return -1;
-
-	ret = CryptGenRandom(prov, len, buf);
-	CryptReleaseContext(prov, 0);
-
-	return ret ? 0 : -1;
-#else /* CONFIG_NATIVE_WINDOWS */
-	FILE *f;
-	size_t rc;
-
-	f = fopen("/dev/urandom", "r");
-	if (f == NULL) {
-		printf("Could not open /dev/urandom.\n");
-		return -1;
-	}
-
-	rc = fread(buf, 1, len, f);
-	fclose(f);
-
-	return rc != len ? -1 : 0;
-#endif /* CONFIG_NATIVE_WINDOWS */
-}
-
-
-void hostapd_hexdump(const char *title, const u8 *buf, size_t len)
-{
-	size_t i;
-	printf("%s - hexdump(len=%lu):", title, (unsigned long) len);
-	for (i = 0; i < len; i++)
-		printf(" %02x", buf[i]);
-	printf("\n");
-}
 
 
 static int hex2num(char c)
@@ -139,7 +85,8 @@ int hwaddr_aton(const char *txt, u8 *addr)
  */
 int hexstr2bin(const char *hex, u8 *buf, size_t len)
 {
-	int i, a;
+	size_t i;
+	int a;
 	const char *ipos = hex;
 	u8 *opos = buf;
 
@@ -151,45 +98,6 @@ int hexstr2bin(const char *hex, u8 *buf, size_t len)
 		ipos += 2;
 	}
 	return 0;
-}
-
-
-char * rel2abs_path(const char *rel_path)
-{
-	char *buf = NULL, *cwd, *ret;
-	size_t len = 128, cwd_len, rel_len, ret_len;
-
-	if (rel_path[0] == '/')
-		return strdup(rel_path);
-
-	for (;;) {
-		buf = malloc(len);
-		if (buf == NULL)
-			return NULL;
-		cwd = getcwd(buf, len);
-		if (cwd == NULL) {
-			free(buf);
-			if (errno != ERANGE) {
-				return NULL;
-			}
-			len *= 2;
-		} else {
-			break;
-		}
-	}
-
-	cwd_len = strlen(cwd);
-	rel_len = strlen(rel_path);
-	ret_len = cwd_len + 1 + rel_len + 1;
-	ret = malloc(ret_len);
-	if (ret) {
-		memcpy(ret, cwd, cwd_len);
-		ret[cwd_len] = '/';
-		memcpy(ret + cwd_len + 1, rel_path, rel_len);
-		ret[ret_len - 1] = '\0';
-	}
-	free(buf);
-	return ret;
 }
 
 
@@ -214,40 +122,34 @@ void inc_byte_array(u8 *counter, size_t len)
 }
 
 
-void print_char(char c)
+void wpa_get_ntp_timestamp(u8 *buf)
 {
-	if (c >= 32 && c < 127)
-		printf("%c", c);
-	else
-		printf("<%02x>", c);
+	struct os_time now;
+	u32 sec, usec;
+
+	/* 64-bit NTP timestamp (time from 1900-01-01 00:00:00) */
+	os_get_time(&now);
+	sec = host_to_be32(now.sec + 2208988800U); /* Epoch to 1900 */
+	/* Estimate 2^32/10^6 = 4295 - 1/32 - 1/512 */
+	usec = now.usec;
+	usec = host_to_be32(4295 * usec - (usec >> 5) - (usec >> 9));
+	memcpy(buf, (u8 *) &sec, 4);
+	memcpy(buf + 4, (u8 *) &usec, 4);
 }
 
-
-void fprint_char(FILE *f, char c)
-{
-	if (c >= 32 && c < 127)
-		fprintf(f, "%c", c);
-	else
-		fprintf(f, "<%02x>", c);
-}
 
 
 #ifndef CONFIG_NO_STDOUT_DEBUG
 
 void wpa_debug_print_timestamp(void)
 {
-	struct timeval tv;
-	char buf[16];
+	struct os_time tv;
 
 	if (!wpa_debug_timestamp)
 		return;
 
-	gettimeofday(&tv, NULL);
-	if (strftime(buf, sizeof(buf), "%b %d %H:%M:%S",
-		     localtime((const time_t *) &tv.tv_sec)) <= 0) {
-		snprintf(buf, sizeof(buf), "%u", (int) tv.tv_sec);
-	}
-	printf("%s.%06u: ", buf, (unsigned int) tv.tv_usec);
+	os_get_time(&tv);
+	printf("%ld.%06u: ", (long) tv.sec, (unsigned int) tv.usec);
 }
 
 
@@ -310,9 +212,9 @@ void wpa_hexdump_key(int level, const char *title, const u8 *buf, size_t len)
 static void _wpa_hexdump_ascii(int level, const char *title, const u8 *buf,
 			       size_t len, int show)
 {
-	int i, llen;
+	size_t i, llen;
 	const u8 *pos = buf;
-	const int line_len = 16;
+	const size_t line_len = 16;
 
 	if (level < wpa_debug_level)
 		return;
@@ -366,23 +268,317 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
-#ifdef CONFIG_NATIVE_WINDOWS
-
-#define EPOCHFILETIME (116444736000000000ULL)
-
-int gettimeofday(struct timeval *tv, struct timezone *tz)
+static inline int _wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data,
+				    size_t len, int uppercase)
 {
-	FILETIME ft;
-	LARGE_INTEGER li;
-	ULONGLONG t;
-
-	GetSystemTimeAsFileTime(&ft);
-	li.LowPart = ft.dwLowDateTime;
-	li.HighPart = ft.dwHighDateTime;
-	t = (li.QuadPart - EPOCHFILETIME) / 10;
-	tv->tv_sec = (long) (t / 1000000);
-	tv->tv_usec = (long) (t % 1000000);
-
-	return 0;
+	size_t i;
+	char *pos = buf, *end = buf + buf_size;
+	for (i = 0; i < len; i++) {
+		pos += snprintf(pos, end - pos, uppercase ? "%02X" : "%02x",
+				data[i]);
+	}
+	return pos - buf;
 }
-#endif /* CONFIG_NATIVE_WINDOWS */
+
+/**
+ * wpa_snprintf_hex - Print data as a hex string into a buffer
+ * @buf: Memory area to use as the output buffer
+ * @buf_size: Maximum buffer size in bytes (should be at least 2 * len + 1)
+ * @data: Data to be printed
+ * @len: Length of data in bytes
+ */
+int wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len)
+{
+	return _wpa_snprintf_hex(buf, buf_size, data, len, 0);
+}
+
+
+/**
+ * wpa_snprintf_hex_uppercase - Print data as a upper case hex string into buf
+ * @buf: Memory area to use as the output buffer
+ * @buf_size: Maximum buffer size in bytes (should be at least 2 * len + 1)
+ * @data: Data to be printed
+ * @len: Length of data in bytes
+ */
+int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
+			       size_t len)
+{
+	return _wpa_snprintf_hex(buf, buf_size, data, len, 1);
+}
+
+
+#ifdef CONFIG_ANSI_C_EXTRA
+/*
+ * Extremely simple (and likely inefficient) example implementation of some C
+ * library functions
+ */
+
+#ifndef _MSC_VER
+#undef memcpy
+void *memcpy(void *dest, const void *src, size_t n)
+{
+	unsigned char *d = dest;
+	const unsigned char *s = src;
+	while (n--)
+		*d++ = *s++;
+	return dest;
+}
+#endif
+
+
+#undef memmove
+void *memmove(void *dest, const void *src, size_t n)
+{
+	if (dest < src)
+		memcpy(dest, src, n);
+	else {
+		/* overlapping areas */
+		unsigned char *d = (unsigned char *) dest + n;
+		const unsigned char *s = (const unsigned char *) src + n;
+		while (n--)
+			*--d = *--s;
+	}
+	return dest;
+}
+
+
+#ifndef _MSC_VER
+#undef memset
+void *memset(void *s, int c, size_t n)
+{
+	unsigned char *p = s;
+	while (n--)
+		*p++ = c;
+	return s;
+}
+#endif
+
+
+#ifndef _MSC_VER
+#undef memcmp
+int memcmp(const void *s1, const void *s2, size_t n)
+{
+	const unsigned char *p1 = s1, *p2 = s2;
+
+	if (n == 0)
+		return 0;
+
+	while (*p1 == *p2) {
+		p1++;
+		p2++;
+		n--;
+		if (n == 0)
+			return 0;
+	}
+
+	return *p1 - *p2;
+}
+#endif
+
+
+#undef strchr
+char *strchr(const char *s, int c)
+{
+	while (*s) {
+		if (*s == c)
+			return (char *) s;
+		s++;
+	}
+	return NULL;
+}
+
+
+#undef strrchr
+char *strrchr(const char *s, int c)
+{
+	const char *p = s;
+	while (*p)
+		p++;
+	p--;
+	while (p >= s) {
+		if (*p == c)
+			return (char *) p;
+		p--;
+	}
+	return NULL;
+}
+
+
+#ifndef _MSC_VER
+#undef strcmp
+int strcmp(const char *s1, const char *s2)
+{
+	while (*s1 == *s2) {
+		if (*s1 == '\0')
+			break;
+		s1++;
+		s2++;
+	}
+
+	return *s1 - *s2;
+}
+#endif
+
+
+#undef strncmp
+int strncmp(const char *s1, const char *s2, size_t n)
+{
+	if (n == 0)
+		return 0;
+
+	while (*s1 == *s2) {
+		if (*s1 == '\0')
+			break;
+		s1++;
+		s2++;
+		n--;
+		if (n == 0)
+			return 0;
+	}
+
+	return *s1 - *s2;
+}
+
+
+#ifndef _MSC_VER
+#undef strlen
+size_t strlen(const char *s)
+{
+	const char *p = s;
+	while (*p)
+		p++;
+	return p - s;
+}
+#endif
+
+
+#undef strncpy
+char *strncpy(char *dest, const char *src, size_t n)
+{
+	char *d = dest;
+
+	while (n--) {
+		*d = *src;
+		if (*src == '\0')
+			break;
+		d++;
+		src++;
+	}
+
+	return dest;
+}
+
+
+#undef strstr
+char *strstr(const char *haystack, const char *needle)
+{
+	size_t len = strlen(needle);
+	while (*haystack) {
+		if (strncmp(haystack, needle, len) == 0)
+			return (char *) haystack;
+		haystack++;
+	}
+
+	return NULL;
+}
+
+
+#undef strdup
+char * strdup(const char *s)
+{
+	char *res;
+	size_t len;
+	if (s == NULL)
+		return NULL;
+	len = strlen(s);
+	res = malloc(len + 1);
+	if (res)
+		memcpy(res, s, len + 1);
+	return res;
+}
+
+
+#ifdef _WIN32_WCE
+void perror(const char *s)
+{
+	wpa_printf(MSG_ERROR, "%s: GetLastError: %d",
+		   s, (int) GetLastError());
+}
+#endif /* _WIN32_WCE */
+
+
+int optind = 1;
+int optopt;
+char *optarg;
+
+int getopt(int argc, char *const argv[], const char *optstring)
+{
+	static int optchr = 1;
+	char *cp;
+
+	if (optchr == 1) {
+		if (optind >= argc) {
+			/* all arguments processed */
+			return EOF;
+		}
+
+		if (argv[optind][0] != '-' || argv[optind][1] == '\0') {
+			/* no option characters */
+			return EOF;
+		}
+	}
+
+	if (strcmp(argv[optind], "--") == 0) {
+		/* no more options */
+		optind++;
+		return EOF;
+	}
+
+	optopt = argv[optind][optchr];
+	cp = strchr(optstring, optopt);
+	if (cp == NULL || optopt == ':') {
+		if (argv[optind][++optchr] == '\0') {
+			optchr = 1;
+			optind++;
+		}
+		return '?';
+	}
+
+	if (cp[1] == ':') {
+		/* Argument required */
+		optchr = 1;
+		if (argv[optind][optchr + 1]) {
+			/* No space between option and argument */
+			optarg = &argv[optind++][optchr + 1];
+		} else if (++optind >= argc) {
+			/* option requires an argument */
+			return '?';
+		} else {
+			/* Argument in the next argv */
+			optarg = argv[optind++];
+		}
+	} else {
+		/* No argument */
+		if (argv[optind][++optchr] == '\0') {
+			optchr = 1;
+			optind++;
+		}
+		optarg = NULL;
+	}
+	return *cp;
+}
+#endif /* CONFIG_ANSI_C_EXTRA */
+
+
+/**
+ * wpa_zalloc - Allocate and zero memory
+ * @size: Number of bytes to allocate
+ * Returns: Pointer to allocated and zeroed memory or %NULL on failure
+ */
+void *wpa_zalloc(size_t size)
+{
+	void *b = malloc(size);
+	if (b)
+		memset(b, 0, size);
+	return b;
+}

@@ -1,9 +1,71 @@
 ChangeLog for hostapd
 
-2006-02-08 - v0.4.8
+????-??-?? - v0.5.4
+	* fixed nt_password_hash build [Bug 144]
+
+2006-04-27 - v0.5.3
+	* do not build nt_password_hash and hlr_auc_gw by default to avoid
+	  requiring a TLS library for a successful build; these programs can be
+	  build with 'make nt_password_hash' and 'make hlr_auc_gw'
+	* added a new configuration option, eapol_version, that can be used to
+	  set EAPOL version to 1 (default is 2) to work around broken client
+	  implementations that drop EAPOL frames which use version number 2
+	  [Bug 89]
+	* added support for EAP-SAKE (no EAP method number allocated yet, so
+	  this is using the same experimental type 255 as EAP-PSK)
+	* fixed EAP-MSCHAPv2 message length validation
+
+2006-03-19 - v0.5.2
 	* fixed stdarg use in hostapd_logger(): if both stdout and syslog
 	  logging was enabled, hostapd could trigger a segmentation fault in
 	  vsyslog on some CPU -- C library combinations
+	* moved HLR/AuC gateway implementation for EAP-SIM/AKA into an external
+	  program to make it easier to use for implementing real SS7 gateway;
+	  eap_sim_db is not anymore used as a file name for GSM authentication
+	  triplets; instead, it is path to UNIX domain socket that will be used
+	  to communicate with the external gateway program (e.g., hlr_auc_gw)
+	* added example HLR/AuC gateway implementation, hlr_auc_gw, that uses
+	  local information (GSM authentication triplets from a text file and
+	  hardcoded AKA authentication data); this can be used to test EAP-SIM
+	  and EAP-AKA
+	* added Milenage algorithm (example 3GPP AKA algorithm) to hlr_auc_gw
+	  to make it possible to test EAP-AKA with real USIM cards (this is
+	  disabled by default; define AKA_USE_MILENAGE when building hlr_auc_gw
+	  to enable this)
+	* driver_madwifi: added support for getting station RSN IE from
+	  madwifi-ng svn r1453 and newer; this fixes RSN that was apparently
+	  broken with earlier change (r1357) in the driver
+	* changed EAP method registration to use a dynamic list of methods
+	  instead of a static list generated at build time
+	* fixed WPA message 3/4 not to encrypt Key Data field (WPA IE)
+	  [Bug 125]
+	* added ap_max_inactivity configuration parameter
+
+2006-01-29 - v0.5.1
+	* driver_test: added better support for multiple APs and STAs by using
+	  a directory with sockets that include MAC address for each device in
+	  the name (test_socket=DIR:/tmp/test)
+	* added support for EAP expanded type (vendor specific EAP methods)
+
+2005-12-18 - v0.5.0 (beginning of 0.5.x development releases)
+	* added experimental STAKey handshake implementation for IEEE 802.11e
+	  direct link setup (DLS); note: this is disabled by default in both
+	  build and runtime configuration (can be enabled with CONFIG_STAKEY=y
+	  and stakey=1)
+	* added support for EAP methods to use callbacks to external programs
+	  by buffering a pending request and processing it after the EAP method
+	  is ready to continue
+	* improved EAP-SIM database interface to allow external request to GSM
+	  HLR/AuC without blocking hostapd process
+	* added support for using EAP-SIM pseudonyms and fast re-authentication
+	* added support for EAP-AKA in the integrated EAP authenticator
+	* added support for matching EAP identity prefixes (e.g., "1"*) in EAP
+	  user database to allow EAP-SIM/AKA selection without extra roundtrip
+	  for EAP-Nak negotiation
+	* added support for storing EAP user password as NtPasswordHash instead
+	  of plaintext password when using MSCHAP or MSCHAPv2 for
+	  authentication (hash:<16-octet hex value>); added nt_password_hash
+	  tool for hashing password to generate NtPasswordHash
 
 2005-11-20 - v0.4.7 (beginning of 0.4.x stable releases)
 	* driver_wired: fixed EAPOL sending to optionally use PAE group address

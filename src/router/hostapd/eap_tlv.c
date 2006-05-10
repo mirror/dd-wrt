@@ -12,10 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "common.h"
@@ -45,10 +42,9 @@ static void * eap_tlv_init(struct eap_sm *sm)
 {
 	struct eap_tlv_data *data;
 
-	data = malloc(sizeof(*data));
+	data = wpa_zalloc(sizeof(*data));
 	if (data == NULL)
-		return data;
-	memset(data, 0, sizeof(*data));
+		return NULL;
 	data->state = CONTINUE;
 
 	return data;
@@ -234,15 +230,26 @@ static Boolean eap_tlv_isSuccess(struct eap_sm *sm, void *priv)
 }
 
 
-const struct eap_method eap_method_tlv =
+int eap_server_tlv_register(void)
 {
-	.method = EAP_TYPE_TLV,
-	.name = "TLV",
-	.init = eap_tlv_init,
-	.reset = eap_tlv_reset,
-	.buildReq = eap_tlv_buildReq,
-	.check = eap_tlv_check,
-	.process = eap_tlv_process,
-	.isDone = eap_tlv_isDone,
-	.isSuccess = eap_tlv_isSuccess,
-};
+	struct eap_method *eap;
+	int ret;
+
+	eap = eap_server_method_alloc(EAP_SERVER_METHOD_INTERFACE_VERSION,
+				      EAP_VENDOR_IETF, EAP_TYPE_TLV, "TLV");
+	if (eap == NULL)
+		return -1;
+
+	eap->init = eap_tlv_init;
+	eap->reset = eap_tlv_reset;
+	eap->buildReq = eap_tlv_buildReq;
+	eap->check = eap_tlv_check;
+	eap->process = eap_tlv_process;
+	eap->isDone = eap_tlv_isDone;
+	eap->isSuccess = eap_tlv_isSuccess;
+
+	ret = eap_server_method_register(eap);
+	if (ret)
+		eap_server_method_free(eap);
+	return ret;
+}

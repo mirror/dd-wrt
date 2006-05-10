@@ -1,6 +1,5 @@
 /*
- * Host AP (software wireless LAN access point) user space daemon for
- * Host AP kernel driver / IEEE 802.11F-2003 Inter-Access Point Protocol (IAPP)
+ * hostapd / IEEE 802.11F-2003 Inter-Access Point Protocol (IAPP)
  * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -11,6 +10,11 @@
  * license.
  *
  * See README and COPYING for more details.
+ *
+ * Note: IEEE 802.11F-2003 was a experimental use specification. It has expired
+ * and IEEE has withdrawn it. In other words, it is likely better to look at
+ * using some other mechanism for AP-to-AP communication than extenting the
+ * implementation here.
  */
 
 /* TODO:
@@ -33,15 +37,9 @@
  * - IEEE 802.11 context transfer
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <netinet/in.h>
+#include "includes.h"
 #include <net/if.h>
 #include <sys/ioctl.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
 #ifdef USE_KERNEL_HEADERS
 #include <linux/if_packet.h>
 #else /* USE_KERNEL_HEADERS */
@@ -387,10 +385,9 @@ struct iapp_data * iapp_init(struct hostapd_data *hapd, const char *iface)
 	struct iapp_data *iapp;
 	struct ip_mreqn mreq;
 
-	iapp = malloc(sizeof(*iapp));
+	iapp = wpa_zalloc(sizeof(*iapp));
 	if (iapp == NULL)
 		return NULL;
-	memset(iapp, 0, sizeof(*iapp));
 	iapp->hapd = hapd;
 	iapp->udp_sock = iapp->packet_sock = -1;
 

@@ -12,13 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <unistd.h>
-#include <string.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
+#include "includes.h"
 #include <net/if.h>
 
 #include "common.h"
@@ -47,6 +41,12 @@ struct radius_session {
 	size_t eapKeyDataLen, eapReqDataLen;
 	Boolean eapSuccess, eapRestart, eapFail, eapResp, eapReq, eapNoReq;
 	Boolean portEnabled, eapTimeout;
+
+	struct radius_msg *last_msg;
+	char *last_from_addr;
+	int last_from_port;
+	struct sockaddr_storage last_from;
+	socklen_t last_fromlen;
 };
 
 struct radius_client {
@@ -65,7 +65,6 @@ struct radius_client {
 struct radius_server_data {
 	int auth_sock;
 	struct radius_client *clients;
-	struct radius_server_session *sessions;
 	unsigned int next_sess_id;
 	void *hostapd_conf;
 	int num_sess;
@@ -153,6 +152,11 @@ static void radius_server_session_free(struct radius_server_data *data,
 	free(sess->eapKeyData);
 	free(sess->eapReqData);
 	eap_sm_deinit(sess->eap);
+	if (sess->last_msg) {
+		radius_msg_free(sess->last_msg);
+		free(sess->last_msg);
+	}
+	free(sess->last_from_addr);
 	free(sess);
 	data->num_sess--;
 }
@@ -204,11 +208,10 @@ radius_server_new_session(struct radius_server_data *data,
 		return NULL;
 	}
 
-	sess = malloc(sizeof(*sess));
-	if (sess == NULL) {
+	sess = wpa_zalloc(sizeof(*sess));
+	if (sess == NULL)
 		return NULL;
-	}
-	memset(sess, 0, sizeof(*sess));
+
 	sess->server = data;
 	sess->client = client;
 	sess->sess_id = data->next_sess_id++;
@@ -400,11 +403,12 @@ static int radius_server_request(struct radius_server_data *data,
 				 struct radius_msg *msg,
 				 struct sockaddr *from, socklen_t fromlen,
 				 struct radius_client *client,
-				 const char *from_addr, int from_port)
+				 const char *from_addr, int from_port,
+				 struct radius_session *force_sess)
 {
 	u8 *eap = NULL;
 	size_t eap_len;
-	int res, state_included;
+	int res, state_included = 0;
 	u8 statebuf[4], resp_id;
 	unsigned int state;
 	struct radius_session *sess;
@@ -413,15 +417,19 @@ static int radius_server_request(struct radius_server_data *data,
 
 	/* TODO: Implement duplicate packet processing */
 
-	res = radius_msg_get_attr(msg, RADIUS_ATTR_STATE, statebuf,
-				  sizeof(statebuf));
-	state_included = res >= 0;
-	if (res == sizeof(statebuf)) {
-		state = (statebuf[0] << 24) | (statebuf[1] << 16) |
-			(statebuf[2] << 8) | statebuf[3];
-		sess = radius_server_get_session(client, state);
-	} else {
-		sess = NULL;
+	if (force_sess)
+		sess = force_sess;
+	else {
+		res = radius_msg_get_attr(msg, RADIUS_ATTR_STATE, statebuf,
+					  sizeof(statebuf));
+		state_included = res >= 0;
+		if (res == sizeof(statebuf)) {
+			state = (statebuf[0] << 24) | (statebuf[1] << 16) |
+				(statebuf[2] << 8) | statebuf[3];
+			sess = radius_server_get_session(client, state);
+		} else {
+			sess = NULL;
+		}
 	}
 
 	if (sess) {
@@ -475,14 +483,25 @@ static int radius_server_request(struct radius_server_data *data,
 	} else if (sess->eapFail) {
 		RADIUS_DEBUG("No EAP data from the state machine, but eapFail "
 			     "set - generate EAP-Failure");
-		hdr = malloc(sizeof(*hdr));
+		hdr = wpa_zalloc(sizeof(*hdr));
 		if (hdr) {
-			memset(hdr, 0, sizeof(*hdr));
 			hdr->identifier = resp_id;
 			hdr->length = htons(sizeof(*hdr));
 			sess->eapReqData = (u8 *) hdr;
 			sess->eapReqDataLen = sizeof(*hdr);
 		}
+	} else if (eap_sm_method_pending(sess->eap)) {
+		if (sess->last_msg) {
+			radius_msg_free(sess->last_msg);
+			free(sess->last_msg);
+		}
+		sess->last_msg = msg;
+		sess->last_from_port = from_port;
+		free(sess->last_from_addr);
+		sess->last_from_addr = strdup(from_addr);
+		sess->last_fromlen = fromlen;
+		memcpy(&sess->last_from, from, fromlen);
+		return -2;
 	} else {
 		RADIUS_DEBUG("No EAP data from the state machine - ignore this"
 			     " Access-Request silently (assuming it was a "
@@ -603,8 +622,10 @@ static void radius_server_receive_auth(int sock, void *eloop_ctx,
 		goto fail;
 	}
 
-	radius_server_request(data, msg, (struct sockaddr *) &from, fromlen,
-			      client, abuf, from_port);
+	if (radius_server_request(data, msg, (struct sockaddr *) &from,
+				  fromlen, client, abuf, from_port, NULL) ==
+	    -2)
+		return; /* msg was stored with the session */
 
 fail:
 	if (msg) {
@@ -796,12 +817,11 @@ radius_server_read_clients(const char *client_file, int ipv6)
 			break;
 		}
 
-		entry = malloc(sizeof(*entry));
+		entry = wpa_zalloc(sizeof(*entry));
 		if (entry == NULL) {
 			failed = 1;
 			break;
 		}
-		memset(entry, 0, sizeof(*entry));
 		entry->shared_secret = strdup(pos);
 		if (entry->shared_secret == NULL) {
 			failed = 1;
@@ -864,11 +884,10 @@ radius_server_init(struct radius_server_conf *conf)
 	}
 #endif /* CONFIG_IPV6 */
 
-	data = malloc(sizeof(*data));
-	if (data == NULL) {
+	data = wpa_zalloc(sizeof(*data));
+	if (data == NULL)
 		return NULL;
-	}
-	memset(data, 0, sizeof(*data));
+
 	data->hostapd_conf = conf->hostapd_conf;
 	data->eap_sim_db_priv = conf->eap_sim_db_priv;
 	data->ssl_ctx = conf->ssl_ctx;
@@ -1039,6 +1058,7 @@ static int radius_server_get_eap_user(void *ctx, const u8 *identity,
 {
 	struct radius_session *sess = ctx;
 	const struct hostapd_eap_user *eap_user;
+	int i, count;
 
 	eap_user = hostapd_get_eap_user(sess->server->hostapd_conf, identity,
 					identity_len, phase2);
@@ -1046,9 +1066,13 @@ static int radius_server_get_eap_user(void *ctx, const u8 *identity,
 		return -1;
 
 	memset(user, 0, sizeof(*user));
-	memcpy(user->methods, eap_user->methods,
-	       EAP_USER_MAX_METHODS > EAP_MAX_METHODS ?
-	       EAP_USER_MAX_METHODS : EAP_MAX_METHODS);
+	count = EAP_USER_MAX_METHODS;
+	if (count > EAP_MAX_METHODS)
+		count = EAP_MAX_METHODS;
+	for (i = 0; i < count; i++) {
+		user->methods[i].vendor = eap_user->methods[i].vendor;
+		user->methods[i].method = eap_user->methods[i].method;
+	}
 
 	if (eap_user->password) {
 		user->password = malloc(eap_user->password_len);
@@ -1057,6 +1081,7 @@ static int radius_server_get_eap_user(void *ctx, const u8 *identity,
 		memcpy(user->password, eap_user->password,
 		       eap_user->password_len);
 		user->password_len = eap_user->password_len;
+		user->password_hash = eap_user->password_hash;
 	}
 	user->force_version = eap_user->force_version;
 
@@ -1072,3 +1097,45 @@ static struct eapol_callbacks radius_server_eapol_cb =
 	.set_eapKeyData = radius_server_set_eapKeyData,
 	.get_eap_user = radius_server_get_eap_user,
 };
+
+
+void radius_server_eap_pending_cb(struct radius_server_data *data, void *ctx)
+{
+	struct radius_client *cli;
+	struct radius_session *s, *sess = NULL;
+	struct radius_msg *msg;
+
+	if (data == NULL)
+		return;
+
+	for (cli = data->clients; cli; cli = cli->next) {
+		for (s = cli->sessions; s; s = s->next) {
+			if (s->eap == ctx && s->last_msg) {
+				sess = s;
+				break;
+			}
+			if (sess)
+				break;
+		}
+		if (sess)
+			break;
+	}
+
+	if (sess == NULL) {
+		RADIUS_DEBUG("No session matched callback ctx");
+		return;
+	}
+
+	msg = sess->last_msg;
+	sess->last_msg = NULL;
+	eap_sm_pending_cb(sess->eap);
+	if (radius_server_request(data, msg,
+				  (struct sockaddr *) &sess->last_from,
+				  sess->last_fromlen, cli,
+				  sess->last_from_addr,
+				  sess->last_from_port, sess) == -2)
+		return; /* msg was stored with the session */
+
+	radius_msg_free(msg);
+	free(msg);
+}

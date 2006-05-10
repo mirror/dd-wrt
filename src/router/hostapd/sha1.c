@@ -12,9 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "includes.h"
 
 #include "common.h"
 #include "sha1.h"
@@ -36,9 +34,8 @@ void hmac_sha1_vector(const u8 *key, size_t key_len, size_t num_elem,
 {
 	unsigned char k_pad[64]; /* padding - key XORd with ipad/opad */
 	unsigned char tk[20];
-	int i;
 	const u8 *_addr[6];
-	size_t _len[6];
+	size_t _len[6], i;
 
 	if (num_elem > 5) {
 		/*
@@ -231,11 +228,11 @@ void sha1_t_prf(const u8 *key, size_t key_len, const char *label,
 int tls_prf(const u8 *secret, size_t secret_len, const char *label,
 	    const u8 *seed, size_t seed_len, u8 *out, size_t outlen)
 {
-	size_t L_S1, L_S2;
+	size_t L_S1, L_S2, i;
 	const u8 *S1, *S2;
 	u8 A_MD5[MD5_MAC_LEN], A_SHA1[SHA1_MAC_LEN];
 	u8 P_MD5[MD5_MAC_LEN], P_SHA1[SHA1_MAC_LEN];
-	int i, MD5_pos, SHA1_pos;
+	int MD5_pos, SHA1_pos;
 	const u8 *MD5_addr[3];
 	size_t MD5_len[3];
 	const unsigned char *SHA1_addr[3];
@@ -368,7 +365,7 @@ void pbkdf2_sha1(const char *passphrase, const char *ssid, size_t ssid_len,
 }
 
 
-#ifndef EAP_TLS_FUNCS
+#if !defined(EAP_TLS_FUNCS) || defined(EAP_TLS_NONE)
 
 typedef struct {
 	u32 state[5];
@@ -393,7 +390,7 @@ void sha1_vector(size_t num_elem, const u8 *addr[], const size_t *len,
 		 u8 *mac)
 {
 	SHA1_CTX ctx;
-	int i;
+	size_t i;
 
 	SHA1Init(&ctx);
 	for (i = 0; i < num_elem; i++)
@@ -679,7 +676,7 @@ static void SHA1Final(unsigned char digest[20], SHA1_CTX* context)
 
 /* ===== end - public domain SHA1 implementation ===== */
 
-#endif /* EAP_TLS_FUNCS */
+#endif /* !EAP_TLS_FUNCS || EAP_TLS_NONE */
 
 
 #ifdef TEST_MAIN

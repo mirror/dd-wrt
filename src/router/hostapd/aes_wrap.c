@@ -19,17 +19,18 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "includes.h"
+
 #include "common.h"
 #include "aes_wrap.h"
 #include "crypto.h"
 
-#ifndef EAP_TLS_FUNCS
+#if !defined(EAP_TLS_FUNCS) || defined(EAP_TLS_NONE)
 #include "aes.c"
-#endif /* EAP_TLS_FUNCS */
+#endif /* !EAP_TLS_FUNCS || EAP_TLS_NONE */
 
+
+#ifndef CONFIG_NO_AES_WRAP
 
 /**
  * aes_wrap - Wrap keys with AES Key Wrap Algorithm (128-bit KEK) (RFC3394)
@@ -85,6 +86,8 @@ int aes_wrap(const u8 *kek, int n, const u8 *plain, u8 *cipher)
 
 	return 0;
 }
+
+#endif /* CONFIG_NO_AES_WRAP */
 
 
 /**
@@ -148,6 +151,8 @@ int aes_unwrap(const u8 *kek, int n, const u8 *cipher, u8 *plain)
 
 #define BLOCK_SIZE 16
 
+#ifndef CONFIG_NO_AES_OMAC1
+
 static void gf_mulx(u8 *pad)
 {
 	int i, carry;
@@ -174,8 +179,7 @@ int omac1_aes_128(const u8 *key, const u8 *data, size_t data_len, u8 *mac)
 	void *ctx;
 	u8 cbc[BLOCK_SIZE], pad[BLOCK_SIZE];
 	const u8 *pos = data;
-	int i;
-	size_t left = data_len;
+	size_t i, left = data_len;
 
 	ctx = aes_encrypt_init(key, 16);
 	if (ctx == NULL)
@@ -208,6 +212,8 @@ int omac1_aes_128(const u8 *key, const u8 *data, size_t data_len, u8 *mac)
 	return 0;
 }
 
+#endif /* CONFIG_NO_AES_OMAC1 */
+
 
 /**
  * aes_128_encrypt_block - Perform one AES 128-bit block operation
@@ -228,6 +234,8 @@ int aes_128_encrypt_block(const u8 *key, const u8 *in, u8 *out)
 }
 
 
+#ifndef CONFIG_NO_AES_CTR
+
 /**
  * aes_128_ctr_encrypt - AES-128 CTR mode encryption
  * @key: Key for encryption (16 bytes)
@@ -240,7 +248,7 @@ int aes_128_ctr_encrypt(const u8 *key, const u8 *nonce,
 			u8 *data, size_t data_len)
 {
 	void *ctx;
-	size_t len, left = data_len;
+	size_t j, len, left = data_len;
 	int i;
 	u8 *pos = data;
 	u8 counter[BLOCK_SIZE], buf[BLOCK_SIZE];
@@ -254,8 +262,8 @@ int aes_128_ctr_encrypt(const u8 *key, const u8 *nonce,
 		aes_encrypt(ctx, counter, buf);
 
 		len = (left < BLOCK_SIZE) ? left : BLOCK_SIZE;
-		for (i = 0; i < len; i++)
-			pos[i] ^= buf[i];
+		for (j = 0; j < len; j++)
+			pos[j] ^= buf[j];
 		pos += len;
 		left -= len;
 
@@ -269,6 +277,10 @@ int aes_128_ctr_encrypt(const u8 *key, const u8 *nonce,
 	return 0;
 }
 
+#endif /* CONFIG_NO_AES_CTR */
+
+
+#ifndef CONFIG_NO_AES_EAX
 
 /**
  * aes_128_eax_encrypt - AES-128 EAX mode encryption
@@ -386,6 +398,10 @@ int aes_128_eax_decrypt(const u8 *key, const u8 *nonce, size_t nonce_len,
 	return 0;
 }
 
+#endif /* CONFIG_NO_AES_EAX */
+
+
+#ifndef CONFIG_NO_AES_CBC
 
 /**
  * aes_128_cbc_encrypt - AES-128 CBC encryption
@@ -452,6 +468,8 @@ int aes_128_cbc_decrypt(const u8 *key, const u8 *iv, u8 *data, size_t data_len)
 	aes_decrypt_deinit(ctx);
 	return 0;
 }
+
+#endif /* CONFIG_NO_AES_CBC */
 
 
 #ifdef TEST_MAIN
