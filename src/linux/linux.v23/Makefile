@@ -103,6 +103,8 @@ endif
 AFLAGS := -D__ASSEMBLY__ $(CPPFLAGS)
 
 CFLAGS += $(call check_gcc, -funit-at-a-time,)
+CFLAGS += -fno-delayed-branch
+#CFLAGS += $(call check_gcc, -fno-delayed-branch)
 
 
 
