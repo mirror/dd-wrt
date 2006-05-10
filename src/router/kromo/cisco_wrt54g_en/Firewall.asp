@@ -36,7 +36,8 @@ function to_submit(F) {
 	if(F._block_multicast) {
 		F.multicast_pass.value = (F._block_multicast.checked == true) ? 0 : 1;
 	}
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
 	F.save_button.disabled = true;
 
 	F.action.value = "Apply";
