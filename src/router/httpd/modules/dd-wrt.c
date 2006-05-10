@@ -40,18 +40,18 @@
 void
 ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  websWrite (wp, "<option value=\"gateway\" %s >Gateway</option>\n",
-	     nvram_selmatch (wp, "wk_mode", "gateway") ? "selected" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"gateway\\\" %s >\" + share.gateway + \"</option>\");</script>\n",
+	     nvram_selmatch (wp, "wk_mode", "gateway") ? "selected=\"selected\"" : "");
 #ifdef HAVE_BIRD
   websWrite (wp, "<option value=\"bgp\" %s >BGP</option>\n",
-	     nvram_selmatch (wp, "wk_mode", "bgp") ? "selected" : "");
-  websWrite (wp, "<option value=\"router\" %s >RIP2 Router</option>\n",
-	     nvram_selmatch (wp, "wk_mode", "router") ? "selected" : "");
-  websWrite (wp, "<option value=\"ospf\" %s >OSPF Router</option>\n",
-	     nvram_selmatch (wp, "wk_mode", "ospf") ? "selected" : "");
+	     nvram_selmatch (wp, "wk_mode", "bgp") ? "selected=\"selected\"" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");</script>\n,
+	     nvram_selmatch (wp, "wk_mode", "router") ? "selected=\"selected\"" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");</script>\n,
+	     nvram_selmatch (wp, "wk_mode", "ospf") ? "selected=\"selected\"" : "");
 #else
-  websWrite (wp, "<option value=\"router\" %s >Router</option>\n",
-	     nvram_selmatch (wp, "wk_mode", "router") ? "selected" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"router\\\" %s >\" + share.router + \"</option>\");</script>\n,
+	     nvram_selmatch (wp, "wk_mode", "router") ? "selected=\"selected\"" : "");
 #endif
   return;
 
@@ -62,28 +62,28 @@ ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
   websWrite (wp, "<option value=\"disabled\" %s >Disable</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "disabled") ? "selected" : "");
+	     nvram_selmatch (wp, "wan_proto", "disabled") ? "selected=\"selected\"" : "");
   websWrite (wp, "<option value=\"static\" %s >Static IP</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "static") ? "selected" : "");
+	     nvram_selmatch (wp, "wan_proto", "static") ? "selected=\"selected\"" : "");
   websWrite (wp,
 	     "<option value=\"dhcp\" %s >Automatic Configuration - DHCP</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "dhcp") ? "selected" : "");
+	     nvram_selmatch (wp, "wan_proto", "dhcp") ? "selected=\"selected\"" : "");
 #ifdef HAVE_PPPOE
   websWrite (wp, "<option value=\"pppoe\" %s >PPPoE</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "pppoe") ? "selected" : "");
+	     nvram_selmatch (wp, "wan_proto", "pppoe") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_PPTP
   websWrite (wp, "<option value=\"pptp\" %s >PPTP</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "pptp") ? "selected" : "");
+	     nvram_selmatch (wp, "wan_proto", "pptp") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_L2TP
   websWrite (wp, "<option value=\"l2tp\" %s >L2TP</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "l2tp") ? "selected" : "");
+	     nvram_selmatch (wp, "wan_proto", "l2tp") ? "selected=\"selected\"" : "");
 #endif
 #ifdef HAVE_HEARTBEAT
   websWrite (wp,
 	     "<option value=\"heartbeat\" %s >HeartBeat Signal</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "heartbeat") ? "selected" : "");
+	     nvram_selmatch (wp, "wan_proto", "heartbeat") ? "selected=\"selected\"" : "");
 #endif
   return;
 }
@@ -768,9 +768,9 @@ void
 ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<fieldset>\n");
-  websWrite (wp, "<legend>Default Bandwith Level</legend>\n");
+  websWrite (wp, "<legend><script type=\"text/javascript\">Capture(qos.legend6)</script></legend>\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Bandwith in Kbits</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(qos.bandwith)</script></div>\n");
   websWrite (wp,
 	     "<input type=\"num\" name=\"default_level\" size=\"6\" value=\"%s\" />\n",
 	     nvram_safe_get ("default_level"));
@@ -2987,7 +2987,7 @@ ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 
   // write HTML data
 
-  websWrite (wp, "<input type=hidden name='svqos_nosvcs' value='%d'>",
+  websWrite (wp, "<input type=hidden name=\"svqos_nosvcs\" value=\"%d\">",
 	     no_svcs);
 
   qos_svcs = nvram_safe_get ("svqos_svcs");
@@ -3016,10 +3016,10 @@ ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 			   <TD align=middle width=80><B>%s</B></TD>\n\
 			   <TD align=middle width=80>\n\
 			   <SELECT name=\"svqos_svcprio%d\"> \n\
-			   <option value=\"10\" %s>Premium</option>\n\
-		           <option value=\"20\" %s>Express</option>\n\
-			   <option value=\"30\" %s>Standard</option>\n\
-		           <option value=\"40\" %s>Bulk</option>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 			   </SELECT>\n\
 		           </TD>\n\
 			   <TD align=middle width=80><B>&nbsp;</B></TD>\n\
@@ -3030,7 +3030,7 @@ ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 			   </TR>\n\
 		           </TABLE>\n\
 			   </TD>\n\
-			   </TR>\n", i, i, name, i, type, name, i, strcmp (level, "10") == 0 ? "selected" : "", strcmp (level, "20") == 0 ? "selected" : "", strcmp (level, "30") == 0 ? "selected" : "", strcmp (level, "40") == 0 ? "selected" : "");
+			   </TR>\n", i, i, name, i, type, name, i, strcmp (level, "10") == 0 ? "selected=\"selected\"" : "", strcmp (level, "20") == 0 ? "selected=\"selected\"" : "", strcmp (level, "30") == 0 ? "selected=\"selected\"" : "", strcmp (level, "40") == 0 ? "selected=\"selected\"" : "");
 
       qos_svcs = strpbrk (++qos_svcs, "|");
       qos_svcs++;
@@ -3056,7 +3056,7 @@ ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
 
   // write HTML data
 
-  websWrite (wp, "<input type=hidden name='svqos_noips' value='%d'>", no_ips);
+  websWrite (wp, "<input type=hidden name=\"svqos_noips\" value=\"%d\">", no_ips);
 
   qos_ips = nvram_safe_get ("svqos_ips");
 
@@ -3082,10 +3082,10 @@ ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
 			   <TD align=middle width=90><B>%s</B></TD>\n\
 			   <TD align=middle width=80>\n\
 			   <SELECT name=\"svqos_ipprio%d\"> \n\
-			   <option value=\"10\" %s>Premium</option>\n\
-		           <option value=\"20\" %s>Express</option>\n\
-			   <option value=\"30\" %s>Standard</option>\n\
-		           <option value=\"40\" %s>Bulk</option>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 			   </SELECT>\n\
 		           </TD>\n\
 			   <TD align=middle width=80><B>&nbsp;</B></TD>\n\
@@ -3096,7 +3096,7 @@ ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
 			   </TR>\n\
 		           </TABLE>\n\
 			   </TD>\n\
-			   </TR>\n", i, i, ip, ip, i, strcmp (level, "10") == 0 ? "selected" : "", strcmp (level, "20") == 0 ? "selected" : "", strcmp (level, "30") == 0 ? "selected" : "", strcmp (level, "40") == 0 ? "selected" : "");
+			   </TR>\n", i, i, ip, ip, i, strcmp (level, "10") == 0 ? "selected=\"selected\"" : "", strcmp (level, "20") == 0 ? "selected=\"selected\"" : "", strcmp (level, "30") == 0 ? "selected=\"selected\"" : "", strcmp (level, "40") == 0 ? "selected=\"selected\"" : "");
 
       qos_ips = strpbrk (++qos_ips, "|");
       qos_ips++;
@@ -3123,7 +3123,7 @@ ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   // write HTML data
-  websWrite (wp, "<input type=hidden name='svqos_nomacs' value='%d'>",
+  websWrite (wp, "<input type=hidden name=\"svqos_nomacs\" value=\"%d\">",
 	     no_macs);
 
   qos_macs = nvram_safe_get ("svqos_macs");
@@ -3150,10 +3150,10 @@ ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
 			   <TD align=middle width=80><B>%s</B></TD>\n\
 			   <TD align=middle width=80>\n\
 			   <SELECT name=\"svqos_macprio%d\"> \n\
-			   <option value=\"10\" %s>Premium</option>\n\
-		           <option value=\"20\" %s>Express</option>\n\
-			   <option value=\"30\" %s>Standard</option>\n\
-		           <option value=\"40\" %s>Bulk</option>\n\
+			   		<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
+					<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
+					<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
+					<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 			   </SELECT>\n\
 		           </TD>\n\
 			   <TD align=middle width=80><B>&nbsp;</B></TD>\n\
@@ -3164,7 +3164,7 @@ ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
 			   </TR>\n\
 		           </TABLE>\n\
 			   </TD>\n\
-			   </TR>\n", i, i, mac, mac, i, strcmp (level, "10") == 0 ? "selected" : "", strcmp (level, "20") == 0 ? "selected" : "", strcmp (level, "30") == 0 ? "selected" : "", strcmp (level, "40") == 0 ? "selected" : "");
+			   </TR>\n", i, i, mac, mac, i, strcmp (level, "10") == 0 ? "selected=\"selected\"" : "", strcmp (level, "20") == 0 ? "selected=\"selected\"" : "", strcmp (level, "30") == 0 ? "selected=\"selected\"" : "", strcmp (level, "40") == 0 ? "selected=\"selected\"" : "");
 
       qos_macs = strpbrk (++qos_macs, "|");
       qos_macs++;
@@ -4710,13 +4710,13 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td><em>%s</em></td>\n\
 					<td >\n\
 						<select name=\"svqos_svcprio%d\"> \n\
-							<option value=\"10\" %s>Premium</option>\n\
-							<option value=\"20\" %s>Express</option>\n\
-							<option value=\"30\" %s>Standard</option>\n\
-							<option value=\"40\" %s>Bulk</option>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 						</select>\n\
 		           </td>\n\
-				</tr>\n", i, i, name, i, type, name, i, strcmp (level, "10") == 0 ? "selected" : "", strcmp (level, "20") == 0 ? "selected" : "", strcmp (level, "30") == 0 ? "selected" : "", strcmp (level, "40") == 0 ? "selected" : "");
+				</tr>\n", i, i, name, i, type, name, i, strcmp (level, "10") == 0 ? "selected=\"selected\"" : "", strcmp (level, "20") == 0 ? "selected=\"selected\"" : "", strcmp (level, "30") == 0 ? "selected=\"selected\"" : "", strcmp (level, "40") == 0 ? "selected=\"selected\"" : "");
 
       qos_svcs = strpbrk (++qos_svcs, "|");
       qos_svcs++;
@@ -4740,8 +4740,12 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
       no_ips++;
       qos_ips++;
     }
-  websWrite (wp, "<tr><th>Delete</th><th>IP/Mask</th><th>Priority</th></tr>");
-
+  websWrite (wp, "<tr>\n\
+  					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n\
+  				</tr>\n");
+							
   // write HTML data
 
   websWrite (wp,
@@ -4764,13 +4768,13 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td><em>%s</em></td>\n\
 					<td>\n\
 						<select name=\"svqos_ipprio%d\"> \n\
-							<option value=\"10\" %s>Premium</option>\n\
-							<option value=\"20\" %s>Express</option>\n\
-							<option value=\"30\" %s>Standard</option>\n\
-							<option value=\"40\" %s>Bulk</option>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 						</select>\n\
 					</td>\n\
-				</tr>\n", i, i, ip, ip, i, strcmp (level, "10") == 0 ? "selected" : "", strcmp (level, "20") == 0 ? "selected" : "", strcmp (level, "30") == 0 ? "selected" : "", strcmp (level, "40") == 0 ? "selected" : "");
+				</tr>\n", i, i, ip, ip, i, strcmp (level, "10") == 0 ? "selected=\"selected\"" : "", strcmp (level, "20") == 0 ? "selected=\"selected\"" : "", strcmp (level, "30") == 0 ? "selected=\"selected\"" : "", strcmp (level, "40") == 0 ? "selected=\"selected\"" : "");
 
       qos_ips = strpbrk (++qos_ips, "|");
       qos_ips++;
@@ -4793,8 +4797,11 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
       no_ips++;
       qos_ips++;
     }
-  websWrite (wp,
-	     "<tr><th>Delete</th><th>IP/Mask</th><th>Max Kbits</th></tr>");
+   websWrite (wp, "<tr>\n\
+  					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxrate_b)</script></th>\n\
+  				</tr>\n");
 
 // write HTML data
 
@@ -4846,8 +4853,11 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
       qos_macs++;
     }
 
-  websWrite (wp,
-	     "<tr><th>Delete</th><th>MAC Address</th><th>Priority</th></tr>");
+	websWrite (wp, "<tr>\n\
+  					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(share.priority)</script></th>\n\
+  				</tr>\n");
 
   // write HTML data
   websWrite (wp,
@@ -4870,13 +4880,13 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td><em>%s</em></td>\n\
 					<td>\n\
 						<select name=\"svqos_macprio%d\"> \n\
-							<option value=\"10\" %s>Premium</option>\n\
-							<option value=\"20\" %s>Express</option>\n\
-							<option value=\"30\" %s>Standard</option>\n\
-							<option value=\"40\" %s>Bulk</option>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 						</select>\n\
 					</td>\n\
-				</tr>\n", i, i, mac, mac, i, strcmp (level, "10") == 0 ? "selected" : "", strcmp (level, "20") == 0 ? "selected" : "", strcmp (level, "30") == 0 ? "selected" : "", strcmp (level, "40") == 0 ? "selected" : "");
+				</tr>\n", i, i, mac, mac, i, strcmp (level, "10") == 0 ? "selected=\"selected\"" : "", strcmp (level, "20") == 0 ? "selected=\"selected\"" : "", strcmp (level, "30") == 0 ? "selected=\"selected\"" : "", strcmp (level, "40") == 0 ? "selected=\"selected\"" : "");
 
       qos_macs = strpbrk (++qos_macs, "|");
       qos_macs++;
@@ -4901,8 +4911,11 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
       no_macs++;
       qos_macs++;
     }
-  websWrite (wp,
-	     "<tr><th>Delete</th><th>Mac Address</th><th>Max Kbits</th></tr>");
+  websWrite (wp, "<tr>\n\
+  					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(share.mac)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxrate_b)</script></th>\n\
+  				</tr>\n");
 
   // write HTML data
   websWrite (wp,
