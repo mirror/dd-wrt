@@ -45,12 +45,12 @@ ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef HAVE_BIRD
   websWrite (wp, "<option value=\"bgp\" %s >BGP</option>\n",
 	     nvram_selmatch (wp, "wk_mode", "bgp") ? "selected=\"selected\"" : "");
-  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");</script>\n,
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"router\\\" %s >\" + route.rip2_mod + \"</option>\");</script>\n",
 	     nvram_selmatch (wp, "wk_mode", "router") ? "selected=\"selected\"" : "");
-  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");</script>\n,
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"ospf\\\" %s >\" + route.ospf_mod + \"</option>\");</script>\n",
 	     nvram_selmatch (wp, "wk_mode", "ospf") ? "selected=\"selected\"" : "");
 #else
-  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"router\\\" %s >\" + share.router + \"</option>\");</script>\n,
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"router\\\" %s >\" + share.router + \"</option>\");</script>\n",
 	     nvram_selmatch (wp, "wk_mode", "router") ? "selected=\"selected\"" : "");
 #endif
   return;
