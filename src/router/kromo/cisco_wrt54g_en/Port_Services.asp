@@ -11,6 +11,7 @@
 		<script type="text/javascript">
 		
 document.title = "<% nvram_get("router_name"); %>" + portserv.titl;
+var ref_page = window.opener.location;
 
 function service(id, name, port_start, port_end, protocol) {
 	this.id = id;
@@ -63,6 +64,7 @@ function setValue() {
 		services[document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value].start;
 	document.PortServices.Add_Service_Port_E.value =
 		services[document.PortServices.ServiceTable.options[document.PortServices.ServiceTable.selectedIndex].value].end;
+	onChange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
 }
 
 function onChange_ServiceTable(index, name, protocol, start, end){
@@ -72,7 +74,7 @@ function onChange_ServiceTable(index, name, protocol, start, end){
 	 case 1:
 	 case "1":
 		protocol.selectedIndex = 0;
-                break;
+      break;
 	 case "tcp":
 	 case 6:
 	 case "6":
@@ -103,9 +105,9 @@ function onChange_ServiceTable(index, name, protocol, start, end){
 	if(services[index].protocol == 1){
 		choose_disable(start);
 		choose_disable(end);
-	} else{
+	} else {
 		choose_enable(start);
-                choose_enable(end);
+      choose_enable(end);
 	}
 
 	start.value = services[index].start;
@@ -220,25 +222,40 @@ function onClick_Apply(F) {
  	
  	F.Submit.value = sbutton.saving;
 	apply(F);
+	
 }
 
-function onChange_Prot(F,I) {
-	if(I == "1") {
-		choose_disable(F.Add_Service_Port_S);
-		choose_disable(F.Add_Service_Port_E);
+function onChange_Prot(I) {
+	if(I == "1" || I == "99" || I == "100") {
+		setElementsActive("Add_Service_Port_S", "Add_Service_Port_E", false);
 	} else {
-		choose_enable(F.Add_Service_Port_S);
-		choose_enable(F.Add_Service_Port_E);
+		setElementsActive("Add_Service_Port_S", "Add_Service_Port_E", true);
 	}
 }
+
+addEvent(window, "load", function() {
+
+   setValue();
+   
+   if (ref_page == "Filters.asp") {
+      document.PortServices.submit_button.value = "Port_Services";
+      document.PortServices.submit_type.value = "save_services";
+   } else {
+      document.PortServices.submit_button.value = "QOSPort_Services";
+      document.PortServices.submit_type.value = "save_qosservices";
+   }
+});
+
+addEvent(window, "unload", function() {
+	top.opener.window.location.href =  ref_page;
+});
 		</script>
 	</head>
-	
-	<body onload="setValue()" onunload="top.opener.window.location.href='Filters.asp'">
+	<body>
 		<form name="PortServices" method="<% get_http_method(); %>" action="apply.cgi" >
-		<input type="hidden" name="submit_button" value="Port_Services" />
+		<input type="hidden" name="submit_button" />
 		<input type="hidden" name="change_action" value="gozila_cgi" />
-		<input type="hidden" name="submit_type" value="save_services" />
+		<input type="hidden" name="submit_type" />
 		<input type="hidden" name="services_array" />
 		<input type="hidden" name="services_array0" />
 		<input type="hidden" name="services_array1" />
@@ -258,13 +275,14 @@ function onChange_Prot(F,I) {
 		<input type="hidden" name="services_length6" />
 		<input type="hidden" name="services_length7" />
 		<div>
+		    <h2><script type="text/javascript">Capture(portserv.h2)</script></h2>
 			<div class="setting">
 				<div class="label"><script type="text/javascript">Capture(share.srv)</script></div>
 				<input name="Add_Service_Name" size="12" maxlength="18" onblur="valid_name(this,share.srv)" />
 			</div>
 			<div class="setting">
 				<div class="label"><script type="text/javascript">Capture(share.proto)</script></div>
-				<select name="Add_Service_Protocol" onchange="onChange_Prot(this.form,Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value)" >
+				<select name="Add_Service_Protocol" onchange="onChange_Prot(Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value)" >
 					<option value="1">ICMP</option>
 					<option value="6">TCP</option>
 					<option value="17">UDP</option>

@@ -12,16 +12,6 @@
 		
 document.title = "<% nvram_get("router_name"); %>" + qos.titl;
 		
-/*
-function PortCheck(I) {
-	d = parseInt(I.value, 10);
-	if ( !( d<65536 && d>=0) ) {
-		alert("Port value is out of range [0 - 65535].");
-		I.value = I.defaultValue;
-	}
-}
-*/
-
 function svcs_grey(sw_disabled,F) {
 	F.add_svc.disabled = sw_disabled;
 	for (i=0; i<F.svqos_nosvcs.value; i++) {
@@ -253,7 +243,7 @@ function init() {
 									<tr>
 										<td>&nbsp;</td>
 										<td colspan="2">
-											<script type="text/javascript">document.write("<input type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('QOSPort_Services.asp', 630, 390)\" />")</script>&nbsp;&nbsp;&nbsp;
+											<script type="text/javascript">document.write("<input type=\"button\" name=\"edit_svc_button\" value=\"" + sbutton.edit_srv + "\" onclick=\"openWindow('Port_Services.asp', 630, 420)\" />")</script>&nbsp;&nbsp;&nbsp;
 										</td>
 									</tr>
 								</table>
