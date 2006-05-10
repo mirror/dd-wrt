@@ -1,3 +1,17 @@
+/*
+ * hostapd / Configuration file
+ * Copyright (c) 2003-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * Alternatively, this software may be distributed under the terms of BSD
+ * license.
+ *
+ * See README and COPYING for more details.
+ */
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -6,6 +20,46 @@
 typedef u8 macaddr[ETH_ALEN];
 
 struct hostapd_radius_servers;
+
+#define HOSTAPD_MAX_SSID_LEN 32
+
+#define NUM_WEP_KEYS 4
+struct hostapd_wep_keys {
+	u8 idx;
+	u8 *key[NUM_WEP_KEYS];
+	size_t len[NUM_WEP_KEYS];
+	int keys_set;
+	size_t default_len; /* key length used for dynamic key generation */
+};
+
+typedef enum hostap_security_policy {
+	SECURITY_PLAINTEXT = 0,
+	SECURITY_STATIC_WEP = 1,
+	SECURITY_IEEE_802_1X = 2,
+	SECURITY_WPA_PSK = 3,
+	SECURITY_WPA = 4
+} secpolicy;
+
+struct hostapd_ssid {
+	char ssid[HOSTAPD_MAX_SSID_LEN + 1];
+	size_t ssid_len;
+	int ssid_set;
+
+	char vlan[IFNAMSIZ + 1];
+	secpolicy security_policy;
+
+	struct hostapd_wpa_psk *wpa_psk;
+	char *wpa_passphrase;
+	char *wpa_psk_file;
+
+	struct hostapd_wep_keys wep;
+
+#define DYNAMIC_VLAN_DISABLED 0
+#define DYNAMIC_VLAN_OPTIONAL 1
+#define DYNAMIC_VLAN_REQUIRED 2
+	int dynamic_vlan;
+};
+
 
 #define PMK_LEN 32
 struct hostapd_wpa_psk {
@@ -20,18 +74,25 @@ struct hostapd_eap_user {
 	struct hostapd_eap_user *next;
 	u8 *identity;
 	size_t identity_len;
-	u8 methods[EAP_USER_MAX_METHODS];
+	struct {
+		int vendor;
+		u32 method;
+	} methods[EAP_USER_MAX_METHODS];
 	u8 *password;
 	size_t password_len;
 	int phase2;
 	int force_version;
+	unsigned int wildcard_prefix:1;
+	unsigned int password_hash:1; /* whether password is hashed with
+				       * nt_password_hash() */
 };
 
-struct hostapd_config {
+/**
+ * struct hostapd_bss_config - Per-BSS configuration
+ */
+struct hostapd_bss_config {
 	char iface[IFNAMSIZ + 1];
 	char bridge[IFNAMSIZ + 1];
-
-	const struct driver_ops *driver;
 
 	enum {
 		HOSTAPD_LEVEL_DEBUG_VERBOSE = 0,
@@ -57,6 +118,7 @@ struct hostapd_config {
 	char *dump_log_name; /* file name for state dump (SIGUSR1) */
 
 	int ieee802_1x; /* use IEEE 802.1X */
+	int eapol_version;
 	int eap_server; /* Use internal EAP server instead of external
 			 * RADIUS server */
 	struct hostapd_eap_user *eap_user;
@@ -65,10 +127,8 @@ struct hostapd_config {
 	char *nas_identifier;
 	struct hostapd_radius_servers *radius;
 
-#define HOSTAPD_SSID_LEN 32
-	char ssid[HOSTAPD_SSID_LEN + 1];
-	size_t ssid_len;
-	int ssid_set;
+	struct hostapd_ssid ssid;
+
 	char *eap_req_id_text; /* optional displayable message sent with
 				* EAP Request-Identity */
 	size_t eap_req_id_text_len;
@@ -104,9 +164,6 @@ struct hostapd_config {
 #define HOSTAPD_WPA_VERSION_WPA BIT(0)
 #define HOSTAPD_WPA_VERSION_WPA2 BIT(1)
 	int wpa;
-	struct hostapd_wpa_psk *wpa_psk;
-	char *wpa_passphrase;
-	char *wpa_psk_file;
 #define WPA_KEY_MGMT_IEEE8021X BIT(0)
 #define WPA_KEY_MGMT_PSK BIT(1)
 	int wpa_key_mgmt;
@@ -122,6 +179,7 @@ struct hostapd_config {
 	int wpa_gmk_rekey;
 	int rsn_preauth;
 	char *rsn_preauth_interfaces;
+	int stakey;
 
 	char *ctrl_interface; /* directory for UNIX domain sockets */
 	gid_t ctrl_interface_gid;
@@ -143,17 +201,48 @@ struct hostapd_config {
 				 * address instead of individual address
 				 * (for driver_wired.c).
 				 */
+
+	int ap_max_inactivity;
+	int ignore_broadcast_ssid;
+};
+
+
+typedef enum {
+	HOSTAPD_MODE_IEEE80211B,
+	HOSTAPD_MODE_IEEE80211G,
+	HOSTAPD_MODE_IEEE80211A,
+	NUM_HOSTAPD_MODES
+} hostapd_hw_mode;
+
+
+/**
+ * struct hostapd_config - Per-radio interface configuration
+ */
+struct hostapd_config {
+	struct hostapd_bss_config *bss, *last_bss;
+	size_t num_bss;
+
+	u16 beacon_int;
+	u8 send_probe_response;
+	u8 channel;
+	hostapd_hw_mode hw_mode; /* HOSTAPD_MODE_IEEE80211A, .. */
+
+	int *supported_rates;
+	int *basic_rates;
+
+	const struct driver_ops *driver;
 };
 
 
 struct hostapd_config * hostapd_config_read(const char *fname);
 void hostapd_config_free(struct hostapd_config *conf);
-int hostapd_maclist_found(macaddr *list, int num_entries, u8 *addr);
-const u8 * hostapd_get_psk(const struct hostapd_config *conf, const u8 *addr,
-			   const u8 *prev_psk);
-int hostapd_setup_wpa_psk(struct hostapd_config *conf);
+int hostapd_maclist_found(macaddr *list, int num_entries, const u8 *addr);
+int hostapd_rate_found(int *list, int rate);
+const u8 * hostapd_get_psk(const struct hostapd_bss_config *conf,
+			   const u8 *addr, const u8 *prev_psk);
+int hostapd_setup_wpa_psk(struct hostapd_bss_config *conf);
 const struct hostapd_eap_user *
-hostapd_get_eap_user(const struct hostapd_config *conf, const u8 *identity,
+hostapd_get_eap_user(const struct hostapd_bss_config *conf, const u8 *identity,
 		     size_t identity_len, int phase2);
 
 #endif /* CONFIG_H */

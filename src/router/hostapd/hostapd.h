@@ -1,3 +1,18 @@
+/*
+ * hostapd / Initialization and configuration
+ * Host AP kernel driver
+ * Copyright (c) 2002-2006, Jouni Malinen <jkmaline@cc.hut.fi>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * Alternatively, this software may be distributed under the terms of BSD
+ * license.
+ *
+ * See README and COPYING for more details.
+ */
+
 #ifndef HOSTAPD_H
 #define HOSTAPD_H
 
@@ -28,11 +43,15 @@
 
 #include "config.h"
 
+#ifdef _MSC_VER
+#pragma pack(push, 1)
+#endif /* _MSC_VER */
+
 struct ieee8023_hdr {
 	u8 dest[6];
 	u8 src[6];
 	u16 ethertype;
-} __attribute__ ((packed));
+} STRUCT_PACKED;
 
 
 struct ieee80211_hdr {
@@ -44,7 +63,11 @@ struct ieee80211_hdr {
 	u16 seq_ctrl;
 	/* followed by 'u8 addr4[6];' if ToDS and FromDS is set in data frame
 	 */
-} __attribute__ ((packed));
+} STRUCT_PACKED;
+
+#ifdef _MSC_VER
+#pragma pack(pop)
+#endif /* _MSC_VER */
 
 #define IEEE80211_DA_FROMDS addr1
 #define IEEE80211_BSSID_FROMDS addr2
@@ -61,21 +84,31 @@ struct ieee80211_hdr {
 
 extern unsigned char rfc1042_header[6];
 
-typedef struct hostapd_data hostapd;
-
 struct hostap_sta_driver_data {
 	unsigned long rx_packets, tx_packets, rx_bytes, tx_bytes;
+	unsigned long current_tx_rate;
+	unsigned long inactive_msec;
+	unsigned long flags;
+	unsigned long num_ps_buf_frames;
+	unsigned long tx_retry_failed;
+	unsigned long tx_retry_count;
+	int last_rssi;
+	int last_ack_rssi;
 };
 
 struct driver_ops;
 struct wpa_ctrl_dst;
 struct radius_server_data;
 
+/**
+ * struct hostapd_data - hostapd per-BSS data structure
+ */
 struct hostapd_data {
-	struct hostapd_config *conf;
-	char *config_fname;
+	struct hostapd_iface *iface;
+	struct hostapd_config *iconf;
+	struct hostapd_bss_config *conf;
 
-	u8 own_addr[6];
+	u8 own_addr[ETH_ALEN];
 
 	int num_sta; /* number of entries in sta_list */
 	struct sta_info *sta_list; /* STA info list head */
@@ -106,15 +139,7 @@ struct hostapd_data {
 	struct hostapd_cached_radius_acl *acl_cache;
 	struct hostapd_acl_query_data *acl_queries;
 
-	u8 *wpa_ie;
-	size_t wpa_ie_len;
 	struct wpa_authenticator *wpa_auth;
-
-#define PMKID_HASH_SIZE 128
-#define PMKID_HASH(pmkid) (unsigned int) ((pmkid)[0] & 0x7f)
-	struct rsn_pmksa_cache *pmkid[PMKID_HASH_SIZE];
-	struct rsn_pmksa_cache *pmksa;
-	int pmksa_count;
 
 	struct rsn_preauth_interface *preauth_iface;
 	time_t michael_mic_failure;
@@ -129,17 +154,42 @@ struct hostapd_data {
 	struct radius_server_data *radius_srv;
 };
 
-void hostapd_new_assoc_sta(hostapd *hapd, struct sta_info *sta, int reassoc);
+
+/**
+ * struct hostapd_iface - hostapd per-interface data structure
+ */
+struct hostapd_iface {
+	char *config_fname;
+	struct hostapd_config *conf;
+
+	int num_bss;
+	struct hostapd_data **bss;
+
+	struct hostapd_hw_modes *hw_features;
+	int num_hw_features;
+	struct hostapd_hw_modes *current_mode;
+	/* Rates that are currently used (i.e., filtered copy of
+	 * current_mode->channels */
+	int num_rates;
+	struct hostapd_rate_data *current_rates;
+
+	u16 hw_flags;
+};
+
+void hostapd_new_assoc_sta(struct hostapd_data *hapd, struct sta_info *sta,
+			   int reassoc);
 void hostapd_logger(struct hostapd_data *hapd, const u8 *addr,
 		    unsigned int module, int level, const char *fmt,
-		    ...) __attribute__ ((format (printf, 5, 6)));
+		    ...) PRINTF_FORMAT(5, 6);
 
 
+#ifndef _MSC_VER
 #define HOSTAPD_DEBUG(level, args...) \
 do { \
 	if (hapd->conf == NULL || hapd->conf->debug >= (level)) \
 		printf(args); \
 } while (0)
+#endif /* _MSC_VER */
 
 #define HOSTAPD_DEBUG_COND(level) (hapd->conf->debug >= (level))
 

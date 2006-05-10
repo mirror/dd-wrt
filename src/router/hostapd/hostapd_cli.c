@@ -12,11 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <unistd.h>
+#include "includes.h"
 #include <dirent.h>
 
 #include "wpa_ctrl.h"
@@ -47,7 +43,7 @@ static const char *hostapd_cli_full_license =
 "\n"
 "You should have received a copy of the GNU General Public License\n"
 "along with this program; if not, write to the Free Software\n"
-"Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA\n"
+"Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA\n"
 "\n"
 "Alternatively, this software may be distributed under the terms of the\n"
 "BSD license.\n"

@@ -12,9 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
+#include "includes.h"
 
 #include "common.h"
 #include "md5.h"
@@ -35,9 +33,8 @@ void hmac_md5_vector(const u8 *key, size_t key_len, size_t num_elem,
 {
 	u8 k_pad[64]; /* padding - key XORd with ipad/opad */
 	u8 tk[16];
-	int i;
 	const u8 *_addr[6];
-	size_t _len[6];
+	size_t i, _len[6];
 
 	if (num_elem > 5) {
 		/*
@@ -110,7 +107,7 @@ void hmac_md5(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
 }
 
 
-#ifndef EAP_TLS_FUNCS
+#if !defined(EAP_TLS_FUNCS) || defined(EAP_TLS_NONE)
 
 struct MD5Context {
 	u32 buf[4];
@@ -137,7 +134,7 @@ typedef struct MD5Context MD5_CTX;
 void md5_vector(size_t num_elem, const u8 *addr[], const size_t *len, u8 *mac)
 {
 	MD5_CTX ctx;
-	int i;
+	size_t i;
 
 	MD5Init(&ctx);
 	for (i = 0; i < num_elem; i++)
@@ -392,4 +389,4 @@ static void MD5Transform(u32 buf[4], u32 const in[16])
 }
 /* ===== end - public domain MD5 implementation ===== */
 
-#endif /* !EAP_TLS_FUNCS */
+#endif /* !EAP_TLS_FUNCS || EAP_TLS_NONE */

@@ -1,6 +1,5 @@
 /*
- * Host AP (software wireless LAN access point) user space daemon for
- * Host AP kernel driver / UNIX domain socket -based control interface
+ * hostapd / UNIX domain socket -based control interface
  * Copyright (c) 2004, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
@@ -13,17 +12,12 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
+#include "includes.h"
+
+#ifndef CONFIG_NATIVE_WINDOWS
+
 #include <sys/un.h>
-#include <sys/uio.h>
 #include <sys/stat.h>
-#include <errno.h>
-#include <netinet/in.h>
 
 #include "hostapd.h"
 #include "eloop.h"
@@ -52,10 +46,9 @@ static int hostapd_ctrl_iface_attach(struct hostapd_data *hapd,
 {
 	struct wpa_ctrl_dst *dst;
 
-	dst = malloc(sizeof(*dst));
+	dst = wpa_zalloc(sizeof(*dst));
 	if (dst == NULL)
 		return -1;
-	memset(dst, 0, sizeof(*dst));
 	memcpy(&dst->addr, from, sizeof(struct sockaddr_un));
 	dst->addrlen = fromlen;
 	dst->debug_level = MSG_INFO;
@@ -135,7 +128,7 @@ static int hostapd_ctrl_iface_sta_mib(struct hostapd_data *hapd,
 	res = ieee802_11_get_mib_sta(hapd, sta, buf + len, buflen - len);
 	if (res >= 0)
 		len += res;
-	res = wpa_get_mib_sta(hapd, sta, buf + len, buflen - len);
+	res = wpa_get_mib_sta(sta->wpa_sm, buf + len, buflen - len);
 	if (res >= 0)
 		len += res;
 	res = ieee802_1x_get_mib_sta(hapd, sta, buf + len, buflen - len);
@@ -217,7 +210,7 @@ static void hostapd_ctrl_iface_receive(int sock, void *eloop_ctx,
 	} else if (strcmp(buf, "MIB") == 0) {
 		reply_len = ieee802_11_get_mib(hapd, reply, reply_size);
 		if (reply_len >= 0) {
-			res = wpa_get_mib(hapd, reply + reply_len,
+			res = wpa_get_mib(hapd->wpa_auth, reply + reply_len,
 					  reply_size - reply_len);
 			if (res < 0)
 				reply_len = -1;
@@ -454,3 +447,5 @@ void hostapd_ctrl_iface_send(struct hostapd_data *hapd, int level,
 		dst = next;
 	}
 }
+
+#endif /* CONFIG_NATIVE_WINDOWS */

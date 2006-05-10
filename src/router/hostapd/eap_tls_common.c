@@ -12,10 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "common.h"
@@ -71,31 +68,42 @@ u8 * eap_tls_derive_key(struct eap_sm *sm, struct eap_ssl_data *data,
 			char *label, size_t len)
 {
 	struct tls_keys keys;
-	u8 *random;
-	u8 *out;
+	u8 *rnd = NULL, *out;
+
+	out = malloc(len);
+	if (out == NULL)
+		return NULL;
+
+	if (tls_connection_prf(sm->ssl_ctx, data->conn, label, 0, out, len) ==
+	    0)
+		return out;
 
 	if (tls_connection_get_keys(sm->ssl_ctx, data->conn, &keys))
-		return NULL;
-	out = malloc(len);
-	random = malloc(keys.client_random_len + keys.server_random_len);
-	if (out == NULL || random == NULL) {
-		free(out);
-		free(random);
-		return NULL;
-	}
-	memcpy(random, keys.client_random, keys.client_random_len);
-	memcpy(random + keys.client_random_len, keys.server_random,
+		goto fail;
+
+	if (keys.client_random == NULL || keys.server_random == NULL ||
+	    keys.master_key == NULL)
+		goto fail;
+
+	rnd = malloc(keys.client_random_len + keys.server_random_len);
+	if (rnd == NULL)
+		goto fail;
+	memcpy(rnd, keys.client_random, keys.client_random_len);
+	memcpy(rnd + keys.client_random_len, keys.server_random,
 	       keys.server_random_len);
 
 	if (tls_prf(keys.master_key, keys.master_key_len,
-		    label, random, keys.client_random_len +
-		    keys.server_random_len, out, len)) {
-		free(random);
-		free(out);
-		return NULL;
-	}
-	free(random);
+		    label, rnd, keys.client_random_len +
+		    keys.server_random_len, out, len))
+		goto fail;
+
+	free(rnd);
 	return out;
+
+fail:
+	free(out);
+	free(rnd);
+	return NULL;
 }
 
 

@@ -1,7 +1,6 @@
 /*
- * Host AP (software wireless LAN access point) user space daemon for
- * Host AP kernel driver / Driver interface for development testing
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * hostapd / Driver interface for development testing
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -13,18 +12,9 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <unistd.h>
-#include <errno.h>
+#include "includes.h"
 #include <sys/ioctl.h>
-#include <netinet/in.h>
-#include <signal.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/un.h>
-#include <sys/uio.h>
 
 #include "hostapd.h"
 #include "driver.h"
@@ -54,9 +44,21 @@ struct test_driver_data {
 	int test_socket;
 	u8 *ie;
 	size_t ielen;
+	char *own_socket_path;
 };
 
 static const struct driver_ops test_driver_ops;
+
+
+static void test_driver_free_priv(struct test_driver_data *drv)
+{
+	if (drv == NULL)
+		return;
+
+	free(drv->ie);
+	free(drv->own_socket_path);
+	free(drv);
+}
 
 
 static struct test_client_socket *
@@ -67,7 +69,8 @@ test_driver_get_cli(struct test_driver_data *drv, struct sockaddr_un *from,
 
 	while (cli) {
 		if (cli->unlen == fromlen &&
-		    strncmp(cli->un.sun_path, from->sun_path, fromlen) == 0)
+		    strncmp(cli->un.sun_path, from->sun_path,
+			    fromlen - sizeof(cli->un.sun_family)) == 0)
 			return cli;
 		cli = cli->next;
 	}
@@ -76,7 +79,7 @@ test_driver_get_cli(struct test_driver_data *drv, struct sockaddr_un *from,
 }
 
 
-static int test_driver_send_eapol(void *priv, u8 *addr, u8 *data,
+static int test_driver_send_eapol(void *priv, const u8 *addr, const u8 *data,
 				  size_t data_len, int encrypt)
 {
 	struct test_driver_data *drv = priv;
@@ -106,7 +109,7 @@ static int test_driver_send_eapol(void *priv, u8 *addr, u8 *data,
 	io[0].iov_len = 6;
 	io[1].iov_base = &eth;
 	io[1].iov_len = sizeof(eth);
-	io[2].iov_base = data;
+	io[2].iov_base = (u8 *) data;
 	io[2].iov_len = data_len;
 
 	memset(&msg, 0, sizeof(msg));
@@ -122,7 +125,6 @@ static void test_driver_scan(struct test_driver_data *drv,
 			     struct sockaddr_un *from, socklen_t fromlen)
 {
 	char buf[512], *pos, *end;
-	int i;
 
 	pos = buf;
 	end = buf + sizeof(buf);
@@ -132,15 +134,10 @@ static void test_driver_scan(struct test_driver_data *drv,
 	/* reply: SCANRESP BSSID SSID IEs */
 	pos += snprintf(pos, end - pos, "SCANRESP " MACSTR " ",
 			MAC2STR(drv->hapd->own_addr));
-	for (i = 0; i < drv->hapd->conf->ssid_len; i++) {
-		pos += snprintf(pos, end - pos, "%02x",
-				drv->hapd->conf->ssid[i]);
-	}
+	pos += wpa_snprintf_hex(pos, end - pos, drv->hapd->conf->ssid.ssid,
+				drv->hapd->conf->ssid.ssid_len);
 	pos += snprintf(pos, end - pos, " ");
-	for (i = 0; i < drv->ielen; i++) {
-		pos += snprintf(pos, end - pos, "%02x",
-				drv->ie[i]);
-	}
+	pos += wpa_snprintf_hex(pos, end - pos, drv->ie, drv->ielen);
 
 	sendto(drv->test_socket, buf, pos - buf, 0,
 	       (struct sockaddr *) from, fromlen);
@@ -172,30 +169,26 @@ static int test_driver_new_sta(struct test_driver_data *drv, const u8 *addr,
 			printf("test_driver: no IE from STA\n");
 			return -1;
 		}
-		res = wpa_validate_wpa_ie(hapd, sta, ie, ielen,
-					  ie[0] == WLAN_EID_RSN ?
-					  HOSTAPD_WPA_VERSION_WPA2 :
-					  HOSTAPD_WPA_VERSION_WPA);
+		if (sta->wpa_sm == NULL)
+			sta->wpa_sm = wpa_auth_sta_init(hapd->wpa_auth,
+							sta->addr);
+		if (sta->wpa_sm == NULL) {
+			printf("test_driver: Failed to initialize WPA state "
+			       "machine\n");
+			return -1;
+		}
+		res = wpa_validate_wpa_ie(hapd->wpa_auth, sta->wpa_sm,
+					  ie, ielen);
 		if (res != WPA_IE_OK) {
 			printf("WPA/RSN information element rejected? "
 			       "(res %u)\n", res);
 			return -1;
 		}
-		free(sta->wpa_ie);
-		sta->wpa_ie = malloc(ielen);
-		if (sta->wpa_ie == NULL)
-			return -1;
-		memcpy(sta->wpa_ie, ie, ielen);
-		sta->wpa_ie_len = ielen;
-	} else {
-		free(sta->wpa_ie);
-		sta->wpa_ie = NULL;
-		sta->wpa_ie_len = 0;
 	}
 
 	new_assoc = (sta->flags & WLAN_STA_ASSOC) == 0;
 	sta->flags |= WLAN_STA_ASSOC;
-	wpa_sm_event(hapd, sta, WPA_ASSOC);
+	wpa_auth_sm_event(sta->wpa_sm, WPA_ASSOC);
 
 	hostapd_new_assoc_sta(hapd, sta, !new_assoc);
 
@@ -216,11 +209,10 @@ static void test_driver_assoc(struct test_driver_data *drv,
 
 	/* data: STA-addr SSID(hex) IEs(hex) */
 
-	cli = malloc(sizeof(*cli));
+	cli = wpa_zalloc(sizeof(*cli));
 	if (cli == NULL)
 		return;
 
-	memset(cli, 0, sizeof(*cli));
 	if (hwaddr_aton(data, cli->addr)) {
 		printf("test_socket: Invalid MAC address '%s' in ASSOC\n",
 		       data);
@@ -248,7 +240,8 @@ static void test_driver_assoc(struct test_driver_data *drv,
 	cli->next = drv->cli;
 	drv->cli = cli;
 	wpa_hexdump_ascii(MSG_DEBUG, "test_socket: ASSOC sun_path",
-			  cli->un.sun_path, cli->unlen);
+			  cli->un.sun_path,
+			  cli->unlen - sizeof(cli->un.sun_family));
 
 	snprintf(cmd, sizeof(cmd), "ASSOCRESP " MACSTR " 0",
 		 MAC2STR(drv->hapd->own_addr));
@@ -277,10 +270,10 @@ static void test_driver_disassoc(struct test_driver_data *drv,
 	sta = ap_get_sta(drv->hapd, cli->addr);
 	if (sta != NULL) {
 		sta->flags &= ~WLAN_STA_ASSOC;
-		wpa_sm_event(drv->hapd, sta, WPA_DISASSOC);
+		wpa_auth_sm_event(sta->wpa_sm, WPA_DISASSOC);
 		sta->acct_terminate_cause =
 			RADIUS_ACCT_TERMINATE_CAUSE_USER_REQUEST;
-		ieee802_1x_set_port_enabled(drv->hapd, sta, 0);
+		ieee802_1x_notify_port_enabled(sta->eapol_sm, 0);
 		ap_free_sta(drv->hapd, sta);
 	}
 }
@@ -357,7 +350,7 @@ static int test_driver_set_generic_elem(void *priv,
 }
 
 
-static int test_driver_sta_deauth(void *priv, u8 *addr, int reason)
+static int test_driver_sta_deauth(void *priv, const u8 *addr, int reason)
 {
 	struct test_driver_data *drv = priv;
 	struct test_client_socket *cli;
@@ -380,7 +373,7 @@ static int test_driver_sta_deauth(void *priv, u8 *addr, int reason)
 }
 
 
-static int test_driver_sta_disassoc(void *priv, u8 *addr, int reason)
+static int test_driver_sta_disassoc(void *priv, const u8 *addr, int reason)
 {
 	struct test_driver_data *drv = priv;
 	struct test_client_socket *cli;
@@ -408,13 +401,12 @@ static int test_driver_init(struct hostapd_data *hapd)
 	struct test_driver_data *drv;
 	struct sockaddr_un addr;
 
-	drv = malloc(sizeof(struct test_driver_data));
+	drv = wpa_zalloc(sizeof(struct test_driver_data));
 	if (drv == NULL) {
 		printf("Could not allocate memory for test driver data\n");
 		return -1;
 	}
 
-	memset(drv, 0, sizeof(*drv));
 	drv->ops = test_driver_ops;
 	drv->hapd = hapd;
 
@@ -422,32 +414,49 @@ static int test_driver_init(struct hostapd_data *hapd)
 	hapd->own_addr[0] = 0x02; /* locally administered */
 	sha1_prf(hapd->conf->iface, strlen(hapd->conf->iface),
 		 "hostapd test bssid generation",
-		 hapd->conf->ssid, hapd->conf->ssid_len,
+		 hapd->conf->ssid.ssid, hapd->conf->ssid.ssid_len,
 		 hapd->own_addr + 1, ETH_ALEN - 1);
 
 	if (hapd->conf->test_socket) {
 		if (strlen(hapd->conf->test_socket) >= sizeof(addr.sun_path)) {
 			printf("Too long test_socket path\n");
-			free(drv);
+			test_driver_free_priv(drv);
 			return -1;
 		}
+		if (strncmp(hapd->conf->test_socket, "DIR:", 4) == 0) {
+			size_t len = strlen(hapd->conf->test_socket) + 30;
+			drv->own_socket_path = malloc(len);
+			if (drv->own_socket_path) {
+				snprintf(drv->own_socket_path, len,
+					 "%s/AP-" MACSTR,
+					 hapd->conf->test_socket + 4,
+					 MAC2STR(hapd->own_addr));
+			}
+		} else {
+			drv->own_socket_path = strdup(hapd->conf->test_socket);
+		}
+		if (drv->own_socket_path == NULL) {
+			test_driver_free_priv(drv);
+			return -1;
+		}
+
 		drv->test_socket = socket(PF_UNIX, SOCK_DGRAM, 0);
 		if (drv->test_socket < 0) {
 			perror("socket(PF_UNIX)");
-			free(drv);
+			test_driver_free_priv(drv);
 			return -1;
 		}
 
 		memset(&addr, 0, sizeof(addr));
 		addr.sun_family = AF_UNIX;
-		strncpy(addr.sun_path, hapd->conf->test_socket,
+		strncpy(addr.sun_path, drv->own_socket_path,
 			sizeof(addr.sun_path));
 		if (bind(drv->test_socket, (struct sockaddr *) &addr,
 			 sizeof(addr)) < 0) {
 			perror("bind(PF_UNIX)");
 			close(drv->test_socket);
-			unlink(hapd->conf->test_socket);
-			free(drv);
+			unlink(drv->own_socket_path);
+			test_driver_free_priv(drv);
 			return -1;
 		}
 		eloop_register_read_sock(drv->test_socket,
@@ -475,13 +484,12 @@ static void test_driver_deinit(void *priv)
 	if (drv->test_socket >= 0) {
 		eloop_unregister_read_sock(drv->test_socket);
 		close(drv->test_socket);
-		unlink(drv->hapd->conf->test_socket);
+		unlink(drv->own_socket_path);
 	}
 
 	drv->hapd->driver = NULL;
 
-	free(drv->ie);
-	free(drv);
+	test_driver_free_priv(drv);
 }
 
 

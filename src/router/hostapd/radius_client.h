@@ -1,3 +1,17 @@
+/*
+ * hostapd / RADIUS client
+ * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * Alternatively, this software may be distributed under the terms of BSD
+ * license.
+ *
+ * See README and COPYING for more details.
+ */
+
 #ifndef RADIUS_CLIENT_H
 #define RADIUS_CLIENT_H
 
@@ -73,10 +87,10 @@ int radius_client_register(struct radius_client_data *radius,
 			   void *data);
 int radius_client_send(struct radius_client_data *radius,
 		       struct radius_msg *msg,
-		       RadiusType msg_type, u8 *addr);
+		       RadiusType msg_type, const u8 *addr);
 u8 radius_client_get_id(struct radius_client_data *radius);
 
-void radius_client_flush(struct radius_client_data *radius);
+void radius_client_flush(struct radius_client_data *radius, int only_auth);
 struct radius_client_data *
 radius_client_init(void *ctx, struct hostapd_radius_servers *conf);
 void radius_client_deinit(struct radius_client_data *radius);
