@@ -297,11 +297,11 @@ lease_update_file (struct daemon *daemon, int always, time_t now)
 /* DD-WRT udhcpd lease file compatibility */
 fprintf(stderr,"update lease file\n");
 
-  if (file_dirty != no)
-    {
-      rewind (daemon->lease_stream);
+//  if (file_dirty != no)
+//    {
+//      rewind (daemon->lease_stream);
 //      ftruncate (fileno (daemon->lease_stream), 0);
-fprintf(stderr,"rewinding\n");
+//fprintf(stderr,"rewinding\n");
 
       for (lease = leases; lease; lease = lease->next)
 	{
@@ -343,6 +343,6 @@ fprintf(stderr,"sync()\n");
       file_dirty = no;
 /* DD-WRT end */
 
-    }
+//    }
 }
 
