@@ -12,10 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "common.h"
@@ -132,10 +129,9 @@ static void * eap_peap_init(struct eap_sm *sm)
 {
 	struct eap_peap_data *data;
 
-	data = malloc(sizeof(*data));
+	data = wpa_zalloc(sizeof(*data));
 	if (data == NULL)
-		return data;
-	memset(data, 0, sizeof(*data));
+		return NULL;
 	data->peap_version = EAP_PEAP_VERSION;
 	data->force_version = -1;
 	if (sm->user && sm->user->force_version >= 0) {
@@ -293,12 +289,10 @@ static u8 * eap_peap_build_phase2_term(struct eap_sm *sm,
 	struct eap_hdr *hdr;
 
 	req_len = sizeof(*hdr);
-	hdr = malloc(req_len);
-	if (hdr == NULL) {
+	hdr = wpa_zalloc(req_len);
+	if (hdr == NULL)
 		return NULL;
-	}
 
-	memset(hdr, 0, req_len);
 	hdr->code = success ? EAP_CODE_SUCCESS : EAP_CODE_FAILURE;
 	hdr->identifier = id;
 	hdr->length = htons(req_len);
@@ -360,14 +354,15 @@ static Boolean eap_peap_check(struct eap_sm *sm, void *priv,
 
 
 static int eap_peap_phase2_init(struct eap_sm *sm, struct eap_peap_data *data,
-				u8 eap_type)
+				EapType eap_type)
 {
 	if (data->phase2_priv && data->phase2_method) {
 		data->phase2_method->reset(sm, data->phase2_priv);
 		data->phase2_method = NULL;
 		data->phase2_priv = NULL;
 	}
-	data->phase2_method = eap_sm_get_eap_methods(eap_type);
+	data->phase2_method = eap_sm_get_eap_methods(EAP_VENDOR_IETF,
+						     eap_type);
 	if (!data->phase2_method)
 		return -1;
 
@@ -402,10 +397,10 @@ static void eap_peap_process_phase2_response(struct eap_sm *sm,
 			    "allowed types", pos + 1, left - 1);
 		eap_sm_process_nak(sm, pos + 1, left - 1);
 		if (sm->user && sm->user_eap_method_index < EAP_MAX_METHODS &&
-		    sm->user->methods[sm->user_eap_method_index] !=
+		    sm->user->methods[sm->user_eap_method_index].method !=
 		    EAP_TYPE_NONE) {
-			next_type =
-				sm->user->methods[sm->user_eap_method_index++];
+			next_type = sm->user->methods[
+				sm->user_eap_method_index++].method;
 			wpa_printf(MSG_DEBUG, "EAP-PEAP: try EAP type %d",
 				   next_type);
 		} else {
@@ -447,7 +442,7 @@ static void eap_peap_process_phase2_response(struct eap_sm *sm,
 		}
 
 		eap_peap_state(data, PHASE2_METHOD);
-		next_type = sm->user->methods[0];
+		next_type = sm->user->methods[0].method;
 		sm->user_eap_method_index = 1;
 		wpa_printf(MSG_DEBUG, "EAP-PEAP: try EAP type %d", next_type);
 		break;
@@ -612,7 +607,6 @@ static void eap_peap_process(struct eap_sm *sm, void *priv,
 			   "use version %d",
 			   peer_version, data->peap_version, peer_version);
 		data->peap_version = peer_version;
-			   
 	}
 	if (flags & EAP_TLS_FLAGS_LENGTH_INCLUDED) {
 		if (left < 4) {
@@ -711,16 +705,27 @@ static Boolean eap_peap_isSuccess(struct eap_sm *sm, void *priv)
 }
 
 
-const struct eap_method eap_method_peap =
+int eap_server_peap_register(void)
 {
-	.method = EAP_TYPE_PEAP,
-	.name = "PEAP",
-	.init = eap_peap_init,
-	.reset = eap_peap_reset,
-	.buildReq = eap_peap_buildReq,
-	.check = eap_peap_check,
-	.process = eap_peap_process,
-	.isDone = eap_peap_isDone,
-	.getKey = eap_peap_getKey,
-	.isSuccess = eap_peap_isSuccess,
-};
+	struct eap_method *eap;
+	int ret;
+
+	eap = eap_server_method_alloc(EAP_SERVER_METHOD_INTERFACE_VERSION,
+				      EAP_VENDOR_IETF, EAP_TYPE_PEAP, "PEAP");
+	if (eap == NULL)
+		return -1;
+
+	eap->init = eap_peap_init;
+	eap->reset = eap_peap_reset;
+	eap->buildReq = eap_peap_buildReq;
+	eap->check = eap_peap_check;
+	eap->process = eap_peap_process;
+	eap->isDone = eap_peap_isDone;
+	eap->getKey = eap_peap_getKey;
+	eap->isSuccess = eap_peap_isSuccess;
+
+	ret = eap_server_method_register(eap);
+	if (ret)
+		eap_server_method_free(eap);
+	return ret;
+}

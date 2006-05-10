@@ -12,10 +12,7 @@
  * See README and COPYING for more details.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "common.h"
@@ -37,10 +34,9 @@ static void * eap_tls_init(struct eap_sm *sm)
 {
 	struct eap_tls_data *data;
 
-	data = malloc(sizeof(*data));
+	data = wpa_zalloc(sizeof(*data));
 	if (data == NULL)
-		return data;
-	memset(data, 0, sizeof(*data));
+		return NULL;
 	data->state = START;
 
 	if (eap_tls_ssl_init(sm, &data->ssl, 1)) {
@@ -238,16 +234,27 @@ static Boolean eap_tls_isSuccess(struct eap_sm *sm, void *priv)
 }
 
 
-const struct eap_method eap_method_tls =
+int eap_server_tls_register(void)
 {
-	.method = EAP_TYPE_TLS,
-	.name = "TLS",
-	.init = eap_tls_init,
-	.reset = eap_tls_reset,
-	.buildReq = eap_tls_buildReq,
-	.check = eap_tls_check,
-	.process = eap_tls_process,
-	.isDone = eap_tls_isDone,
-	.getKey = eap_tls_getKey,
-	.isSuccess = eap_tls_isSuccess,
-};
+	struct eap_method *eap;
+	int ret;
+
+	eap = eap_server_method_alloc(EAP_SERVER_METHOD_INTERFACE_VERSION,
+				      EAP_VENDOR_IETF, EAP_TYPE_TLS, "TLS");
+	if (eap == NULL)
+		return -1;
+
+	eap->init = eap_tls_init;
+	eap->reset = eap_tls_reset;
+	eap->buildReq = eap_tls_buildReq;
+	eap->check = eap_tls_check;
+	eap->process = eap_tls_process;
+	eap->isDone = eap_tls_isDone;
+	eap->getKey = eap_tls_getKey;
+	eap->isSuccess = eap_tls_isSuccess;
+
+	ret = eap_server_method_register(eap);
+	if (ret)
+		eap_server_method_free(eap);
+	return ret;
+}

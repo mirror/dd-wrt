@@ -15,10 +15,7 @@
  * different from WPA-PSK. This file is not needed for WPA-PSK functionality.
  */
 
-#include <stdlib.h>
-#include <stdio.h>
-#include <string.h>
-#include <netinet/in.h>
+#include "includes.h"
 
 #include "hostapd.h"
 #include "common.h"
@@ -42,10 +39,9 @@ static void * eap_psk_init(struct eap_sm *sm)
 {
 	struct eap_psk_data *data;
 
-	data = malloc(sizeof(*data));
+	data = wpa_zalloc(sizeof(*data));
 	if (data == NULL)
-		return data;
-	memset(data, 0, sizeof(*data));
+		return NULL;
 	data->state = PSK_1;
 	data->id_s = "hostapd";
 	data->id_s_len = 7;
@@ -254,13 +250,17 @@ static void eap_psk_process_2(struct eap_sm *sm,
 	}
 
 	for (i = 0;
-	     i < EAP_MAX_METHODS && sm->user->methods[i] != EAP_TYPE_NONE;
+	     i < EAP_MAX_METHODS &&
+		     (sm->user->methods[i].vendor != EAP_VENDOR_IETF ||
+		      sm->user->methods[i].method != EAP_TYPE_NONE);
 	     i++) {
-		if (sm->user->methods[i] == EAP_TYPE_PSK)
+		if (sm->user->methods[i].vendor == EAP_VENDOR_IETF &&
+		    sm->user->methods[i].method == EAP_TYPE_PSK)
 			break;
 	}
 
-	if (sm->user->methods[i] != EAP_TYPE_PSK) {
+	if (sm->user->methods[i].vendor != EAP_VENDOR_IETF ||
+	    sm->user->methods[i].method != EAP_TYPE_PSK) {
 		wpa_hexdump_ascii(MSG_DEBUG,
 				  "EAP-PSK: EAP-PSK not enabled for ID_P",
 				  data->id_p, data->id_p_len);
@@ -393,7 +393,8 @@ static void eap_psk_process(struct eap_sm *sm, void *priv,
 	struct eap_psk_hdr *resp;
 
 	if (sm->user == NULL || sm->user->password == NULL) {
-		wpa_printf(MSG_INFO, "EAP-MSCHAPV2: Password not configured");
+		wpa_printf(MSG_INFO, "EAP-PSK: Plaintext password not "
+			   "configured");
 		data->state = FAILURE;
 		return;
 	}
@@ -443,16 +444,27 @@ static Boolean eap_psk_isSuccess(struct eap_sm *sm, void *priv)
 }
 
 
-const struct eap_method eap_method_psk =
+int eap_server_psk_register(void)
 {
-	.method = EAP_TYPE_PSK,
-	.name = "PSK",
-	.init = eap_psk_init,
-	.reset = eap_psk_reset,
-	.buildReq = eap_psk_buildReq,
-	.check = eap_psk_check,
-	.process = eap_psk_process,
-	.isDone = eap_psk_isDone,
-	.getKey = eap_psk_getKey,
-	.isSuccess = eap_psk_isSuccess,
-};
+	struct eap_method *eap;
+	int ret;
+
+	eap = eap_server_method_alloc(EAP_SERVER_METHOD_INTERFACE_VERSION,
+				      EAP_VENDOR_IETF, EAP_TYPE_PSK, "PSK");
+	if (eap == NULL)
+		return -1;
+
+	eap->init = eap_psk_init;
+	eap->reset = eap_psk_reset;
+	eap->buildReq = eap_psk_buildReq;
+	eap->check = eap_psk_check;
+	eap->process = eap_psk_process;
+	eap->isDone = eap_psk_isDone;
+	eap->getKey = eap_psk_getKey;
+	eap->isSuccess = eap_psk_isSuccess;
+
+	ret = eap_server_method_register(eap);
+	if (ret)
+		eap_server_method_free(eap);
+	return ret;
+}

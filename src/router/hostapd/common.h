@@ -1,6 +1,6 @@
 /*
  * wpa_supplicant/hostapd / common helper functions, etc.
- * Copyright (c) 2002-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2002-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -14,6 +14,8 @@
 
 #ifndef COMMON_H
 #define COMMON_H
+
+#include "os.h"
 
 #ifdef __linux__
 #include <endian.h>
@@ -32,46 +34,7 @@
 #endif /* defined(__FreeBSD__) || defined(__NetBSD__) */
 
 #ifdef CONFIG_NATIVE_WINDOWS
-#include <winsock2.h>
-
-static inline int daemon(int nochdir, int noclose)
-{
-	printf("Windows - daemon() not supported yet\n");
-	return -1;
-}
-
-static inline void sleep(int seconds)
-{
-	Sleep(seconds * 1000);
-}
-
-static inline void usleep(unsigned long usec)
-{
-	Sleep(usec / 1000);
-}
-
-#ifndef timersub
-#define timersub(a, b, res) do { \
-	(res)->tv_sec = (a)->tv_sec - (b)->tv_sec; \
-	(res)->tv_usec = (a)->tv_usec - (b)->tv_usec; \
-	if ((res)->tv_usec < 0) { \
-		(res)->tv_sec--; \
-		(res)->tv_usec += 1000000; \
-	} \
-} while (0)
-#endif
-
-struct timezone {
-	int  tz_minuteswest;
-	int  tz_dsttime;
-};
-
-int gettimeofday(struct timeval *tv, struct timezone *tz);
-
-static inline long int random(void)
-{
-	return rand();
-}
+#include <winsock.h>
 
 typedef int gid_t;
 typedef int socklen_t;
@@ -83,6 +46,10 @@ typedef int socklen_t;
 #endif /* CONFIG_NATIVE_WINDOWS */
 
 #if defined(__CYGWIN__) || defined(CONFIG_NATIVE_WINDOWS)
+
+#ifdef _MSC_VER
+#define inline __inline
+#endif /* _MSC_VER */
 
 static inline unsigned short wpa_swap_16(unsigned short v)
 {
@@ -105,6 +72,18 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 
 #else /* __CYGWIN__ */
 
+#ifndef __BYTE_ORDER
+#ifndef __LITTLE_ENDIAN
+#ifndef __BIG_ENDIAN
+#define __LITTLE_ENDIAN 1234
+#define __BIG_ENDIAN 4321
+#if defined(sparc)
+#define __BYTE_ORDER __BIG_ENDIAN
+#endif
+#endif /* __BIG_ENDIAN */
+#endif /* __LITTLE_ENDIAN */
+#endif /* __BYTE_ORDER */
+
 #if __BYTE_ORDER == __LITTLE_ENDIAN
 #define le_to_host16(n) (n)
 #define host_to_le16(n) (n)
@@ -113,6 +92,10 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #define le_to_host32(n) (n)
 #define be_to_host32(n) bswap_32(n)
 #define host_to_be32(n) bswap_32(n)
+#define le_to_host64(n) (n)
+#define host_to_le64(n) (n)
+#define be_to_host64(n) bswap_64(n)
+#define host_to_be64(n) bswap_64(n)
 #elif __BYTE_ORDER == __BIG_ENDIAN
 #define le_to_host16(n) bswap_16(n)
 #define host_to_le16(n) bswap_16(n)
@@ -121,6 +104,10 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 #define le_to_host32(n) bswap_32(n)
 #define be_to_host32(n) (n)
 #define host_to_be32(n) (n)
+#define le_to_host64(n) bswap_64(n)
+#define host_to_le64(n) bswap_64(n)
+#define be_to_host64(n) (n)
+#define host_to_be64(n) (n)
 #ifndef WORDS_BIGENDIAN
 #define WORDS_BIGENDIAN
 #endif
@@ -145,12 +132,60 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 		(a)[0] = ((u16) (val)) & 0xff;	\
 	} while (0)
 
+#define WPA_GET_BE24(a) ((((u32) (a)[0]) << 16) | (((u32) (a)[1]) << 8) | \
+			 ((u32) (a)[2]))
+#define WPA_PUT_BE24(a, val)				\
+	do {						\
+		(a)[0] = (u8) (((u32) (val)) >> 16);	\
+		(a)[1] = (u8) (((u32) (val)) >> 8);	\
+		(a)[2] = (u8) (((u32) (val)) & 0xff);	\
+	} while (0)
+
+#define WPA_GET_BE32(a) ((((u32) (a)[0]) << 24) | (((u32) (a)[1]) << 16) | \
+			 (((u32) (a)[2]) << 8) | ((u32) (a)[3]))
+#define WPA_PUT_BE32(a, val)				\
+	do {						\
+		(a)[0] = (u8) (((u32) (val)) >> 24);	\
+		(a)[1] = (u8) (((u32) (val)) >> 16);	\
+		(a)[2] = (u8) (((u32) (val)) >> 8);	\
+		(a)[3] = (u8) (((u32) (val)) & 0xff);	\
+	} while (0)
+
 
 #ifndef ETH_ALEN
 #define ETH_ALEN 6
 #endif
 
+#ifdef _MSC_VER
+typedef UINT64 u64;
+typedef UINT32 u32;
+typedef UINT16 u16;
+typedef UINT8 u8;
+typedef INT64 s64;
+typedef INT32 s32;
+typedef INT16 s16;
+typedef INT8 s8;
+#define WPA_TYPES_DEFINED
+#endif /* _MSC_VER */
+
+#ifdef __vxworks
+typedef unsigned long long u64;
+typedef UINT32 u32;
+typedef UINT16 u16;
+typedef UINT8 u8;
+typedef long long s64;
+typedef INT32 s32;
+typedef INT16 s16;
+typedef INT8 s8;
+#define WPA_TYPES_DEFINED
+#endif /* __vxworks */
+
+#ifndef WPA_TYPES_DEFINED
+#ifdef CONFIG_USE_INTTYPES_H
+#include <inttypes.h>
+#else
 #include <stdint.h>
+#endif
 typedef uint64_t u64;
 typedef uint32_t u32;
 typedef uint16_t u16;
@@ -159,15 +194,23 @@ typedef int64_t s64;
 typedef int32_t s32;
 typedef int16_t s16;
 typedef int8_t s8;
+#define WPA_TYPES_DEFINED
+#endif /* !WPA_TYPES_DEFINED */
 
-int hostapd_get_rand(u8 *buf, size_t len);
-void hostapd_hexdump(const char *title, const u8 *buf, size_t len);
+#define hostapd_get_rand os_get_random
 int hwaddr_aton(const char *txt, u8 *addr);
 int hexstr2bin(const char *hex, u8 *buf, size_t len);
-char * rel2abs_path(const char *rel_path);
 void inc_byte_array(u8 *counter, size_t len);
-void print_char(char c);
-void fprint_char(FILE *f, char c);
+void wpa_get_ntp_timestamp(u8 *buf);
+
+
+#ifdef __GNUC__
+#define PRINTF_FORMAT(a,b) __attribute__ ((format (printf, (a), (b))))
+#define STRUCT_PACKED __attribute__ ((packed))
+#else
+#define PRINTF_FORMAT(a,b)
+#define STRUCT_PACKED
+#endif
 
 
 /* Debugging function - conditional printf and hex dump. Driver wrappers can
@@ -179,10 +222,10 @@ enum { MSG_MSGDUMP, MSG_DEBUG, MSG_INFO, MSG_WARNING, MSG_ERROR };
 
 #define wpa_debug_print_timestamp() do { } while (0)
 #define wpa_printf(args...) do { } while (0)
-#define wpa_hexdump(args...) do { } while (0)
-#define wpa_hexdump_key(args...) do { } while (0)
-#define wpa_hexdump_ascii(args...) do { } while (0)
-#define wpa_hexdump_ascii_key(args...) do { } while (0)
+#define wpa_hexdump(l,t,b,le) do { } while (0)
+#define wpa_hexdump_key(l,t,b,le) do { } while (0)
+#define wpa_hexdump_ascii(l,t,b,le) do { } while (0)
+#define wpa_hexdump_ascii_key(l,t,b,le) do { } while (0)
 
 #else /* CONFIG_NO_STDOUT_DEBUG */
 
@@ -207,7 +250,7 @@ void wpa_debug_print_timestamp(void);
  * Note: New line '\n' is added to the end of the text when printing to stdout.
  */
 void wpa_printf(int level, char *fmt, ...)
-__attribute__ ((format (printf, 2, 3)));
+PRINTF_FORMAT(2, 3);
 
 /**
  * wpa_hexdump - conditional hex dump
@@ -273,6 +316,11 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #endif /* CONFIG_NO_STDOUT_DEBUG */
 
 
+int wpa_snprintf_hex(char *buf, size_t buf_size, const u8 *data, size_t len);
+int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
+			       size_t len);
+
+
 #ifdef EAPOL_TEST
 #define WPA_ASSERT(a)						       \
 	do {							       \
@@ -286,5 +334,146 @@ void wpa_hexdump_ascii_key(int level, const char *title, const u8 *buf,
 #else
 #define WPA_ASSERT(a) do { } while (0)
 #endif
+
+
+#ifdef _MSC_VER
+#undef snprintf
+#define snprintf _snprintf
+#undef vsnprintf
+#define vsnprintf _vsnprintf
+#undef close
+#define close closesocket
+#undef strdup
+#define strdup _strdup
+#endif /* _MSC_VER */
+
+
+#ifdef CONFIG_ANSI_C_EXTRA
+
+/*
+ * Following non-ANSI C functions may need to be defined either as a macro to
+ * native function with identical behavior or as a separate implementation,
+ * e.g., in common.c or in a new OS / C library specific file, if needed.
+ */
+
+#if 0
+/* List of used C library functions */
+
+/* Memory allocation */
+void free(void *ptr);
+void *malloc(size_t size);
+void *realloc(void *ptr, size_t size);
+
+/* Memory/string processing */
+void *memcpy(void *dest, const void *src, size_t n);
+void *memmove(void *dest, const void *src, size_t n);
+void *memset(void *s, int c, size_t n);
+int memcmp(const void *s1, const void *s2, size_t n);
+
+char *strchr(const char *s, int c);
+char *strrchr(const char *s, int c);
+int strcmp(const char *s1, const char *s2);
+size_t strlen(const char *s);
+char *strncpy(char *dest, const char *src, size_t n);
+char *strstr(const char *haystack, const char *needle);
+char *strdup(const char *s);
+
+/* printf like functions for writing to memory buffer */
+int snprintf(char *str, size_t size, const char *format, ...);
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+/* vsnprintf is only used for wpa_msg(); not needed if ctrl_iface is not used
+ * and stdout debugging is disabled
+ */
+#endif
+
+/* strdup - used in number of places - simple example implementation in
+ * common.c */
+char * strdup(const char *s);
+
+/* strcasecmp - used in couple of places; not critical, so can be defined to
+ * use strcmp instead */
+#if 0
+int strcasecmp(const char *s1, const char *s2);
+#else
+#define strcasecmp strcmp
+#endif
+
+/* strncasecmp - used only in wpa_cli.c; not critical, so can be defined to
+ * use strncmp instead */
+#if 0
+int strncasecmp(const char *s1, const char *s2, size_t n);
+#else
+#define strncasecmp strncmp
+#endif
+
+/* snprintf - used in number of places; sprintf() is _not_ a good replacement
+ * due to possible buffer overflow; see, e.g.,
+ * http://www.ijs.si/software/snprintf/ for portable implementation of
+ * snprintf. */
+int snprintf(char *str, size_t size, const char *format, ...);
+
+/* vsnprintf - only used for wpa_msg() in wpa_supplicant.c */
+int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+
+/* getopt - only used in main.c */
+int getopt(int argc, char *const argv[], const char *optstring);
+extern char *optarg;
+extern int optind;
+
+/* gid_t - used in config.h, just typedef it to int here */
+
+#ifndef CONFIG_NO_GID_T_TYPEDEF
+#ifdef CONFIG_CTRL_IFACE
+#ifndef CONFIG_CTRL_IFACE_UDP
+#ifndef __gid_t_defined
+#ifndef _GID_T
+typedef int gid_t;
+#endif
+#endif
+#endif
+#endif
+#endif
+
+#ifndef CONFIG_NO_SOCKLEN_T_TYPEDEF
+#ifndef __socklen_t_defined
+typedef int socklen_t;
+#endif
+#endif
+
+/* inline - define as __inline or just define it to be empty, if needed */
+#ifdef CONFIG_NO_INLINE
+#define inline
+#else
+#define inline __inline
+#endif
+
+#ifndef __func__
+#define __func__ "__func__ not defined"
+#endif
+
+#ifndef bswap_16
+#define bswap_16(a) ((((u16) (a) << 8) & 0xff00) | (((u16) (a) >> 8) & 0xff))
+#endif
+
+#ifndef bswap_32
+#define bswap_16(a) ((((u16) (a) << 8) & 0xff00) | (((u16) (a) >> 8) & 0xff))
+#define bswap_16(a) ((((u16) (a) << 8) & 0xff00) | (((u16) (a) >> 8) & 0xff))
+#define bswap_32(a) ((((u32) (a) << 24) & 0xff000000) | \
+		     (((u32) (a) << 8) & 0xff0000) | \
+     		     (((u32) (a) >> 8) & 0xff00) | \
+     		     (((u32) (a) >> 24) & 0xff))
+#endif
+
+#ifndef MSG_DONTWAIT
+#define MSG_DONTWAIT 0
+#endif
+
+#ifdef _WIN32_WCE
+void perror(const char *s);
+#endif /* _WIN32_WCE */
+
+#endif /* CONFIG_ANSI_C_EXTRA */
+
+void *wpa_zalloc(size_t size);
 
 #endif /* COMMON_H */
