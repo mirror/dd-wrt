@@ -6,38 +6,44 @@
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
+		<script type="text/javascript" src="lang_pack/english.js"></script>
+		<script type="text/javascript" src="lang_pack/language.js"></script>
+		<script type="text/javascript">
+
+document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
+
+		</script>
 	</head>
 
 	<body>
 		<form>
-			<h2>Routing Table Entry List</h2>
+			<h2><script type="text/javascript">Capture(routetbl.h2)</script></h2>
 			<table>
 				<tr>
-					<th>Destination LAN IP</th>
-					<th>Subnet Mask</th>
-					<th>Gateway</th>
-					<th>Interface</th>
+					<th><script type="text/javascript">Capture(routetbl.th1)</script></th>
+					<th><script type="text/javascript">Capture(share.subnet)</script></th>
+					<th><script type="text/javascript">Capture(share.gateway)</script></th>
+					<th><script type="text/javascript">Capture(share.interface)</script></th>
 				</tr>
-<script language="JavaScript">
-
-var table = new Array(<% dump_route_table(""); %>);
-
-if(table.length == 0) {
-	document.write("<tr><td align=\"center\" colspan=\"4\">- None -</td></tr>");
-} else {
-	for(var i = 0; i < table.length; i = i+4) {
-		if(table[i+3] == "LAN")
-			table[i+3] = "LAN &amp; Wireless";
-		else if(table[i+3] == "WAN")
-			table[i+3] = "WAN (Internet)";
-		document.write("<tr><td>"+table[i]+"</td><td>"+table[i+1]+"</td><td>"+table[i+2]+"</td><td>"+table[i+3]+"</td></tr>");
-	}
-}
-</script>
+				<script language="JavaScript">
+					var table = new Array(<% dump_route_table(""); %>);
+					
+					if(table.length == 0) {
+						document.write("<tr><td align=\"center\" colspan=\"4\">- " + share.none + " -</td></tr>");
+					} else {
+						for(var i = 0; i < table.length; i = i+4) {
+							if(table[i+3] == "LAN")
+								table[i+3] = routetbl.eth_lan;
+							else if(table[i+3] == "WAN")
+								table[i+3] = routetbl.eth_wan;
+							document.write("<tr><td>"+table[i]+"</td><td>"+table[i+1]+"</td><td>"+table[i+2]+"</td><td>"+table[i+3]+"</td></tr>");
+						}
+					}
+				</script>
 			</table><br />
 			<div class="submitFooter">
-				<input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/>
-				<input onclick="self.close()" type="reset" value="Close"/>
+				<script type="text/javascript">document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />")</script>
+				<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />")</script>
 			</div>
 		</form>
 	</body>
