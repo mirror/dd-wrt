@@ -456,17 +456,9 @@ function init()
 								</div>
 							</fieldset><br />
 							
-							<% nvram_else_selmatch("wan_proto", "disabled", "", "<!--"); %>
-							<fieldset>
-								<legend><script type="text/javascript">Capture(idx.legend2)</script></legend>
-								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx.wantoswitch)</script></div>
-									<input class="spaceradio" type="checkbox" name="_fullswitch" value="1" <% nvram_checked("fullswitch", "1"); %> />
-								</div>
-							</fieldset><br />
-							<% nvram_else_selmatch("wan_proto", "disabled", "", "-->"); %>
-
+							<% show_wan_to_switch(); %>
 							<% show_dhcpd_settings(); %>
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(idx.legend3)</script></legend>
 								<div class="setting">
