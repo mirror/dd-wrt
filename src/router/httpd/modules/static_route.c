@@ -362,7 +362,7 @@ ej_static_route_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 	  websWrite (wp, "\t\t<option value=\"%d\" %s> %d %s</option>\n", i,
-		     (i == page) ? "selected" : "", i + 1, buf);
+		     (i == page) ? "selected=\\\"selected\\\"" : "", i + 1, buf);
 	}
     }
 
