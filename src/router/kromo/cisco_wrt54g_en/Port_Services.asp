@@ -102,14 +102,8 @@ function onChange_ServiceTable(index, name, protocol, start, end){
 		break;
 	}
 	
-	if(services[index].protocol == 1){
-		choose_disable(start);
-		choose_disable(end);
-	} else {
-		choose_enable(start);
-      choose_enable(end);
-	}
-
+	onChange_Prot(document.PortServices.Add_Service_Protocol.options[document.PortServices.Add_Service_Protocol.selectedIndex].value);
+	
 	start.value = services[index].start;
 	end.value = services[index].end;
 }
@@ -136,7 +130,7 @@ function onClick_Modify(){
 	services[index1].start = document.PortServices.Add_Service_Port_S.value;
 	services[index1].end = document.PortServices.Add_Service_Port_E.value;
 
-	document.PortServices.ServiceTable.options[index2].text = services[index1].name + "[ "+
+	document.PortServices.ServiceTable.options[index2].text = services[index1].name + " [ "+
 				services[index1].start+" ~ "+services[index1].end+" ]";
 
 }
