@@ -34,7 +34,7 @@ rewind(lease_file);
 //printf("done"); 
 file_dirty=no;
 dns_dirty=1;
-daemon->lease_stream = lease_file;
+//daemon->lease_stream = lease_file;
 
 }
 void lease_update_from_configs(struct daemon *daemon)
@@ -299,8 +299,8 @@ fprintf(stderr,"update lease file\n");
 
 //  if (file_dirty != no)
 //    {
-      rewind (daemon->lease_stream);
-      ftruncate (fileno (daemon->lease_stream), 0);
+      rewind (lease_file);
+      ftruncate (fileno (lease_file), 0);
 fprintf(stderr,"rewinding\n");
 
       for (lease = leases; lease; lease = lease->next)
@@ -332,12 +332,12 @@ fprintf(stderr,"rewinding\n");
 fprintf(stderr,"write lease\n");
 
 
-	  fwrite (&l, sizeof (l), 1, daemon->lease_stream);
+	  fwrite (&l, sizeof (l), 1, lease_file);
 	}
 fprintf(stderr,"done()\n");
 
-      fflush (daemon->lease_stream);
-      fsync (fileno (daemon->lease_stream));
+      fflush (lease_file);
+      fsync (fileno (lease_file));
 fprintf(stderr,"sync()\n");
 
       file_dirty = no;
