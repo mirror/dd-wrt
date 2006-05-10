@@ -901,6 +901,7 @@ start_sysinit (void)
     }
   if (brand == ROUTER_MOTOROLA)
     nvram_set ("cpu_type", "BCM4712");
+    nvram_set ("wl0gpio0", "2"); //Fix for wireless led, Eko.10.may.06
 
   if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA
       || brand == ROUTER_BUFFALO_WZRRSG54 || brand == ROUTER_BELKIN_F5D7230)
