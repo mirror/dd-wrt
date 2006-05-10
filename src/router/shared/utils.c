@@ -171,6 +171,15 @@ internal_getRouterBrand ()
 	    setRouter ("Siemens SE505");
 	    return ROUTER_SIEMENS;
 	  }
+	if (startswith (et0, "00:11:50") && //Eko: detect Belkin 7130/7330, try to run as WBR-G54
+		nvram_match ("clkfreq", "125") &&
+		nvram_match ("boardnum", "100") &&
+		nvram_match ("boardtype", "bcm94710r4"))
+	  {
+	    cprintf ("router is Belkin F5D7130 / F5D7330\n"); 
+	    setRouter ("Belkin F5D7130 / F5D7330");
+	    return ROUTER_BUFFALO_WBR54G;
+	  }	
 	if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50") &&
 		nvram_match ("boardtype", "0x0101"))
 	  {
@@ -1203,7 +1212,9 @@ check_hw_type (void)
 
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
 
-  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("boardtype", "bcm94710ap")) //Eko 19.apr.06
+  if (nvram_match ("boardtype", "bcm94710dev")
+  	 || nvram_match ("boardtype", "bcm94710ap")
+  	 || nvram_match ("boardtype", "bcm94710r4")) //Eko 19.apr.06, 10.may.06
     return BCM4702_CHIP;
   else if (nvram_match ("boardtype", "0x0708") && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
