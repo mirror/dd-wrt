@@ -9,6 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 document.title = "<% nvram_get("router_name"); %>" + idx.titl;
 
 var wan_proto = "<% nvram_get("wan_proto"); %>";
@@ -387,7 +388,7 @@ function init()
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="daylight_time" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
-							<% nvram_selmatch("wl_mode", "wet", "<!--"); %>
+							<% nvram_match("wl_mode", "wet", "<!--"); %>
 							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript">Capture(idx.h2)</script>", "<script type="text/javascript">Capture(idx.h22)</script>"); %></h2>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(idx.legend)</script></legend>
@@ -423,14 +424,14 @@ function init()
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(idx.mtu)</script></div>
 									<select name="mtu_enable" onchange="SelMTU(this.form.mtu_enable.selectedIndex,this.form)">
-										<option value="0" <% nvram_selected("mtu_enable", "0"); %>>Auto</option>
-										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selected("mtu_enable", "1", "js"); %> >" + share.manual + "</option>");</script>
+										<option value="0" <% nvram_selmatch("mtu_enable", "0", "selected"); %>>Auto</option>
+										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("mtu_enable", "1", "selected"); %> >" + share.manual + "</option>");</script>
 									</select>&nbsp;
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
 								</div>
 							</fieldset><br />
 
-							<% nvram_selmatch("wl_mode", "wet", "-->"); %>
+							<% nvram_match("wl_mode", "wet", "-->"); %>
 							<h2><script type="text/javascript">Capture(idx.h23)</script></h2>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(idx.routerip)</script></legend>
@@ -444,7 +445,7 @@ function init()
 									<input class="num" maxlength="3" size="3" name="lan_netmask_0" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_1" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_2" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_3" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","3"); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx_static.gateway)</script></div>
+									<div class="label"><script type="text/javascript">Capture(share.gateway)</script></div>
 									<input type="hidden" name="lan_gateway" value="4" />
 									<input class="num" maxlength="3" size="3" name="lan_gateway_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("lan_gateway","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("lan_gateway","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("lan_gateway","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_3" onblur="valid_range(this,0,254,'IP')" value="<% get_single_ip("lan_gateway","3"); %>"/>
 								</div>
@@ -460,7 +461,7 @@ function init()
 								<legend><script type="text/javascript">Capture(idx.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(idx.wantoswitch)</script></div>
-									<input class="spaceradio" type="checkbox" name="_fullswitch" value="1" <% nvram_checked("fullswitch", "1"); %> />
+									<input class="spaceradio" type="checkbox" name="_fullswitch" value="1" <% nvram_selmatch("fullswitch", "1", "checked"); %> />
 								</div>
 							</fieldset><br />
 							
@@ -471,154 +472,154 @@ function init()
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(idx.timeset)</script></div>
 									<select name="time_zone" onchange="SelTime(this.form.time_zone.selectedIndex,this.form)">
-										<option value="-12 1 1" <% nvram_match("time_zone", "-12 1 1", "selected"); %>>UTC-12:00 / none</option>
-										<option value="-12 1 2" <% nvram_match("time_zone", "-12 1 2", "selected"); %>>UTC-12:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-12 1 3" <% nvram_match("time_zone", "-12 1 3", "selected"); %>>UTC-12:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-12 1 4" <% nvram_match("time_zone", "-12 1 4", "selected"); %>>UTC-12:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-11 1 1" <% nvram_match("time_zone", "-11 1 1", "selected"); %>>UTC-11:00 / none</option>
-										<option value="-11 1 2" <% nvram_match("time_zone", "-11 1 2", "selected"); %>>UTC-11:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-11 1 3" <% nvram_match("time_zone", "-11 1 3", "selected"); %>>UTC-11:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-11 1 4" <% nvram_match("time_zone", "-11 1 3", "selected"); %>>UTC-11:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-10 1 1" <% nvram_match("time_zone", "-10 1 1", "selected"); %>>UTC-10:00 / none</option>
-										<option value="-10 1 2" <% nvram_match("time_zone", "-10 1 2", "selected"); %>>UTC-10:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-10 1 3" <% nvram_match("time_zone", "-10 1 3", "selected"); %>>UTC-10:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-10 1 4" <% nvram_match("time_zone", "-10 1 4", "selected"); %>>UTC-10:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-09.5 1 1" <% nvram_match("time_zone", "-09.5 1 1", "selected"); %>>UTC-09:30 / none</option>
-										<option value="-09.5 1 2" <% nvram_match("time_zone", "-09.5 1 2", "selected"); %>>UTC-09:30 / first Sun Apr - last Sun Oct</option>
-										<option value="-09.5 1 3" <% nvram_match("time_zone", "-09.5 1 3", "selected"); %>>UTC-09:30 / last Sun Mar - last Sun Oct</option>
-										<option value="-09.5 1 4" <% nvram_match("time_zone", "-09.5 1 4", "selected"); %>>UTC-09:30 / last Sun Oct - last Sun Mar</option>
-										<option value="-09 1 1" <% nvram_match("time_zone", "-09 1 1", "selected"); %>>UTC-09:00 / none</option>
-										<option value="-09 1 2" <% nvram_match("time_zone", "-09 1 2", "selected"); %>>UTC-09:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-09 1 3" <% nvram_match("time_zone", "-09 1 3", "selected"); %>>UTC-09:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-09 1 4" <% nvram_match("time_zone", "-09 1 4", "selected"); %>>UTC-09:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-08 1 1" <% nvram_match("time_zone", "-08 1 1", "selected"); %>>UTC-08:00 / none</option>
-										<option value="-08 1 2" <% nvram_match("time_zone", "-08 1 2", "selected"); %>>UTC-08:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-08 1 3" <% nvram_match("time_zone", "-08 1 3", "selected"); %>>UTC-08:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-08 1 4" <% nvram_match("time_zone", "-08 1 4", "selected"); %>>UTC-08:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-07 1 1" <% nvram_match("time_zone", "-07 1 1", "selected"); %>>UTC-07:00 / none</option>
-										<option value="-07 1 2" <% nvram_match("time_zone", "-07 1 2", "selected"); %>>UTC-07:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-07 1 3" <% nvram_match("time_zone", "-07 1 3", "selected"); %>>UTC-07:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-07 1 4" <% nvram_match("time_zone", "-07 1 4", "selected"); %>>UTC-07:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-06 1 1" <% nvram_match("time_zone", "-06 1 1", "selected"); %>>UTC-06:00 / none</option>
-										<option value="-06 1 2" <% nvram_match("time_zone", "-06 1 2", "selected"); %>>UTC-06:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-06 1 3" <% nvram_match("time_zone", "-06 1 3", "selected"); %>>UTC-06:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-06 1 4" <% nvram_match("time_zone", "-06 1 4", "selected"); %>>UTC-06:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-05 1 1" <% nvram_match("time_zone", "-05 1 1", "selected"); %>>UTC-05:00 / none</option>
-										<option value="-05 1 2" <% nvram_match("time_zone", "-05 1 2", "selected"); %>>UTC-05:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-05 1 3" <% nvram_match("time_zone", "-05 1 3", "selected"); %>>UTC-05:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-05 1 4" <% nvram_match("time_zone", "-05 1 4", "selected"); %>>UTC-05:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-04 1 1" <% nvram_match("time_zone", "-04 1 1", "selected"); %>>UTC-04:00 / none</option>
-										<option value="-04 1 2" <% nvram_match("time_zone", "-04 1 2", "selected"); %>>UTC-04:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-04 1 3" <% nvram_match("time_zone", "-04 1 3", "selected"); %>>UTC-04:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-04 1 4" <% nvram_match("time_zone", "-04 1 4", "selected"); %>>UTC-04:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-03.5 1 1" <% nvram_match("time_zone", "-03.5 1 1", "selected"); %>>UTC-03:30 / none</option>
-										<option value="-03.5 1 2" <% nvram_match("time_zone", "-03.5 1 2", "selected"); %>>UTC-03:30 / first Sun Apr - last Sun Oct</option>
-										<option value="-03.5 1 3" <% nvram_match("time_zone", "-03.5 1 3", "selected"); %>>UTC-03:30 / last Sun Mar - last Sun Oct</option>
-										<option value="-03.5 1 4" <% nvram_match("time_zone", "-03.5 1 4", "selected"); %>>UTC-03:30 / last Sun Oct - last Sun Mar</option>
-										<option value="-03 1 1" <% nvram_match("time_zone", "-03 1 1", "selected"); %>>UTC-03:00 / none</option>
-										<option value="-03 1 2" <% nvram_match("time_zone", "-03 1 2", "selected"); %>>UTC-03:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-03 1 3" <% nvram_match("time_zone", "-03 1 3", "selected"); %>>UTC-03:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-03 1 4" <% nvram_match("time_zone", "-03 1 4", "selected"); %>>UTC-03:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-02 1 1" <% nvram_match("time_zone", "-02 1 1", "selected"); %>>UTC-02:00 / none</option>
-										<option value="-02 1 2" <% nvram_match("time_zone", "-02 1 2", "selected"); %>>UTC-02:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-02 1 3" <% nvram_match("time_zone", "-02 1 3", "selected"); %>>UTC-02:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-02 1 4" <% nvram_match("time_zone", "-02 1 4", "selected"); %>>UTC-02:00 / last Sun Oct - last Sun Mar</option>
-										<option value="-01 1 1" <% nvram_match("time_zone", "-01 1 1", "selected"); %>>UTC-01:00 / none</option>
-										<option value="-01 1 2" <% nvram_match("time_zone", "-01 1 2", "selected"); %>>UTC-01:00 / first Sun Apr - last Sun Oct</option>
-										<option value="-01 1 3" <% nvram_match("time_zone", "-01 1 3", "selected"); %>>UTC-01:00 / last Sun Mar - last Sun Oct</option>
-										<option value="-01 1 4" <% nvram_match("time_zone", "-01 1 4", "selected"); %>>UTC-01:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+00 1 1" <% nvram_match("time_zone", "+00 1 1", "selected"); %>>UTC / none</option>
-										<option value="+00 1 2" <% nvram_match("time_zone", "+00 1 2", "selected"); %>>UTC / first Sun Apr - last Sun Oct</option>
-										<option value="+00 1 3" <% nvram_match("time_zone", "+00 1 3", "selected"); %>>UTC / last Sun Mar - last Sun Oct</option>
-										<option value="+00 1 4" <% nvram_match("time_zone", "+00 1 4", "selected"); %>>UTC / last Sun Oct - last Sun Mar</option>
-										<option value="+01 1 1" <% nvram_match("time_zone", "+01 1 1", "selected"); %>>UTC+01:00 / none</option>
-										<option value="+01 1 2" <% nvram_match("time_zone", "+01 1 2", "selected"); %>>UTC+01:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+01 1 3" <% nvram_match("time_zone", "+01 1 3", "selected"); %>>UTC+01:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+01 1 4" <% nvram_match("time_zone", "+01 1 4", "selected"); %>>UTC+01:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+02 1 1" <% nvram_match("time_zone", "+02 1 1", "selected"); %>>UTC+02:00 / none</option>
-										<option value="+02 1 2" <% nvram_match("time_zone", "+02 1 2", "selected"); %>>UTC+02:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+02 1 3" <% nvram_match("time_zone", "+02 1 3", "selected"); %>>UTC+02:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+02 1 4" <% nvram_match("time_zone", "+02 1 4", "selected"); %>>UTC+02:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+03 1 1" <% nvram_match("time_zone", "+03 1 1", "selected"); %>>UTC+03:00 / none</option>
-										<option value="+03 1 2" <% nvram_match("time_zone", "+03 1 2", "selected"); %>>UTC+03:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+03 1 3" <% nvram_match("time_zone", "+03 1 3", "selected"); %>>UTC+03:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+03 1 4" <% nvram_match("time_zone", "+03 1 4", "selected"); %>>UTC+03:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+03.5 1 1" <% nvram_match("time_zone", "+03.5 1 1", "selected"); %>>UTC+03:30 / none</option>
-										<option value="+03.5 1 2" <% nvram_match("time_zone", "+03.5 1 2", "selected"); %>>UTC+03:30 / first Sun Apr - last Sun Oct</option>
-										<option value="+03.5 1 3" <% nvram_match("time_zone", "+03.5 1 3", "selected"); %>>UTC+03:30 / last Sun Mar - last Sun Oct</option>
-										<option value="+03.5 1 4" <% nvram_match("time_zone", "+03.5 1 3", "selected"); %>>UTC+03:30 / last Sun Oct - last Sun Mar</option>
-										<option value="+04 1 1" <% nvram_match("time_zone", "+04 1 1", "selected"); %>>UTC+04:00 / none</option>
-										<option value="+04 1 2" <% nvram_match("time_zone", "+04 1 2", "selected"); %>>UTC+04:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+04 1 3" <% nvram_match("time_zone", "+04 1 3", "selected"); %>>UTC+04:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+04 1 4" <% nvram_match("time_zone", "+04 1 4", "selected"); %>>UTC+04:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+05 1 1" <% nvram_match("time_zone", "+05 1 1", "selected"); %>>UTC+05:00 / none</option>
-										<option value="+05 1 2" <% nvram_match("time_zone", "+05 1 2", "selected"); %>>UTC+05:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+05 1 3" <% nvram_match("time_zone", "+05 1 3", "selected"); %>>UTC+05:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+05 1 4" <% nvram_match("time_zone", "+05 1 4", "selected"); %>>UTC+05:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+05.5 1 1" <% nvram_match("time_zone", "+05.5 1 1", "selected"); %>>UTC+05:30 / none</option>
-										<option value="+05.5 1 2" <% nvram_match("time_zone", "+05.5 1 2", "selected"); %>>UTC+05:30 / first Sun Apr - last Sun Oct</option>
-										<option value="+05.5 1 3" <% nvram_match("time_zone", "+05.5 1 3", "selected"); %>>UTC+05:30 / last Sun Mar - last Sun Oct</option>
-										<option value="+05.5 1 4" <% nvram_match("time_zone", "+05.5 1 4", "selected"); %>>UTC+05:30 / last Sun Oct - last Sun Mar</option>
-										<option value="+05.75 1 1" <% nvram_match("time_zone", "+05.75 1 1", "selected"); %>>UTC+05:45 / none</option>
-										<option value="+05.75 1 2" <% nvram_match("time_zone", "+05.75 1 2", "selected"); %>>UTC+05:45 / first Sun Apr - last Sun Oct</option>
-										<option value="+05.75 1 3" <% nvram_match("time_zone", "+05.75 1 3", "selected"); %>>UTC+05:45 / last Sun Mar - last Sun Oct</option>
-										<option value="+05.75 1 4" <% nvram_match("time_zone", "+05.75 1 4", "selected"); %>>UTC+05:45 / last Sun Oct - last Sun Mar</option>
-										<option value="+06 1 1" <% nvram_match("time_zone", "+06 1 1", "selected"); %>>UTC+06:00 / none</option>
-										<option value="+06 1 2" <% nvram_match("time_zone", "+06 1 2", "selected"); %>>UTC+06:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+06 1 3" <% nvram_match("time_zone", "+06 1 3", "selected"); %>>UTC+06:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+06 1 4" <% nvram_match("time_zone", "+06 1 4", "selected"); %>>UTC+06:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+06.5 1 1" <% nvram_match("time_zone", "+06.5 1 1", "selected"); %>>UTC+06:30 / none</option>
-										<option value="+06.5 1 2" <% nvram_match("time_zone", "+06.5 1 2", "selected"); %>>UTC+06:30 / first Sun Apr - last Sun Oct</option>
-										<option value="+06.5 1 3" <% nvram_match("time_zone", "+06.5 1 3", "selected"); %>>UTC+06:30 / last Sun Mar - last Sun Oct</option>
-										<option value="+06.5 1 4" <% nvram_match("time_zone", "+06.5 1 4", "selected"); %>>UTC+06:30 / last Sun Oct - last Sun Mar</option>
-										<option value="+07 1 1" <% nvram_match("time_zone", "+07 1 1", "selected"); %>>UTC+07:00 / none</option>
-										<option value="+07 1 2" <% nvram_match("time_zone", "+07 1 2", "selected"); %>>UTC+07:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+07 1 3" <% nvram_match("time_zone", "+07 1 3", "selected"); %>>UTC+07:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+07 1 4" <% nvram_match("time_zone", "+07 1 4", "selected"); %>>UTC+07:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+08 1 1" <% nvram_match("time_zone", "+08 1 1", "selected"); %>>UTC+08:00 / none</option>
-										<option value="+08 1 2" <% nvram_match("time_zone", "+08 1 2", "selected"); %>>UTC+08:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+08 1 3" <% nvram_match("time_zone", "+08 1 3", "selected"); %>>UTC+08:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+08 1 4" <% nvram_match("time_zone", "+08 1 4", "selected"); %>>UTC+08:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+09 1 1" <% nvram_match("time_zone", "+09 1 1", "selected"); %>>UTC+09:00 / none</option>
-										<option value="+09 1 2" <% nvram_match("time_zone", "+09 1 2", "selected"); %>>UTC+09:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+09 1 3" <% nvram_match("time_zone", "+09 1 3", "selected"); %>>UTC+09:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+09 1 4" <% nvram_match("time_zone", "+09 1 4", "selected"); %>>UTC+09:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+09.5 1 1" <% nvram_match("time_zone", "+09.5 1 1", "selected"); %>>UTC+09:30 / none</option>
-										<option value="+09.5 1 2" <% nvram_match("time_zone", "+09.5 1 2", "selected"); %>>UTC+09:30 / first Sun Apr - last Sun Oct</option>
-										<option value="+09.5 1 3" <% nvram_match("time_zone", "+09.5 1 3", "selected"); %>>UTC+09:30 / last Sun Mar - last Sun Oct</option>
-										<option value="+09.5 1 4" <% nvram_match("time_zone", "+09.5 1 4", "selected"); %>>UTC+09:30 / last Sun Oct - last Sun Mar</option>
-										<option value="+10 1 1" <% nvram_match("time_zone", "+10 1 1", "selected"); %>>UTC+10:00 / none</option>
-										<option value="+10 1 2" <% nvram_match("time_zone", "+10 1 2", "selected"); %>>UTC+10:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+10 1 3" <% nvram_match("time_zone", "+10 1 3", "selected"); %>>UTC+10:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+10 1 4" <% nvram_match("time_zone", "+10 1 4", "selected"); %>>UTC+10:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+10.5 1 1" <% nvram_match("time_zone", "+10.5 1 1", "selected"); %>>UTC+10:30 / none</option>
-										<option value="+10.5 1 2" <% nvram_match("time_zone", "+10.5 1 2", "selected"); %>>UTC+10:30 / first Sun Apr - last Sun Oct</option>
-										<option value="+10.5 1 3" <% nvram_match("time_zone", "+10.5 1 3", "selected"); %>>UTC+10:30 / last Sun Mar - last Sun Oct</option>
-										<option value="+10.5 1 4" <% nvram_match("time_zone", "+10.5 1 4", "selected"); %>>UTC+10:30 / last Sun Oct - last Sun Mar</option>
-										<option value="+11 1 1" <% nvram_match("time_zone", "+11 1 1", "selected"); %>>UTC+11:00 / none</option>
-										<option value="+11 1 2" <% nvram_match("time_zone", "+11 1 2", "selected"); %>>UTC+11:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+11 1 3" <% nvram_match("time_zone", "+11 1 3", "selected"); %>>UTC+11:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+11 1 4" <% nvram_match("time_zone", "+11 1 4", "selected"); %>>UTC+11:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+11.5 1 1" <% nvram_match("time_zone", "+11.5 1 1", "selected"); %>>UTC+11:30 / none</option>
-										<option value="+11.5 1 2" <% nvram_match("time_zone", "+11.5 1 2", "selected"); %>>UTC+11:30 / first Sun Apr - last Sun Oct</option>
-										<option value="+11.5 1 3" <% nvram_match("time_zone", "+11.5 1 3", "selected"); %>>UTC+11:30 / last Sun Mar - last Sun Oct</option>
-										<option value="+11.5 1 4" <% nvram_match("time_zone", "+11.5 1 4", "selected"); %>>UTC+11:30 / last Sun Oct - last Sun Mar</option>
-										<option value="+12 1 1" <% nvram_match("time_zone", "+12 1 1", "selected"); %>>UTC+12:00 / none</option>
-										<option value="+12 1 2" <% nvram_match("time_zone", "+12 1 2", "selected"); %>>UTC+12:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+12 1 3" <% nvram_match("time_zone", "+12 1 3", "selected"); %>>UTC+12:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+12 1 4" <% nvram_match("time_zone", "+12 1 4", "selected"); %>>UTC+12:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+12.75 1 1" <% nvram_match("time_zone", "+12.75 1 1", "selected"); %>>UTC+12:45 / none</option>
-										<option value="+12.75 1 2" <% nvram_match("time_zone", "+12.75 1 2", "selected"); %>>UTC+12:45 / first Sun Apr - last Sun Oct</option>
-										<option value="+12.75 1 3" <% nvram_match("time_zone", "+12.75 1 3", "selected"); %>>UTC+12:45 / last Sun Mar - last Sun Oct</option>
-										<option value="+12.75 1 4" <% nvram_match("time_zone", "+12.75 1 4", "selected"); %>>UTC+12:45 / last Sun Oct - last Sun Mar</option>
-										<option value="+13 1 1" <% nvram_match("time_zone", "+13 1 1", "selected"); %>>UTC+13:00 / none</option>
-										<option value="+13 1 2" <% nvram_match("time_zone", "+13 1 2", "selected"); %>>UTC+13:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+13 1 3" <% nvram_match("time_zone", "+13 1 3", "selected"); %>>UTC+13:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+13 1 4" <% nvram_match("time_zone", "+13 1 4", "selected"); %>>UTC+13:00 / last Sun Oct - last Sun Mar</option>
-										<option value="+14 1 1" <% nvram_match("time_zone", "+14 1 1", "selected"); %>>UTC+14:00 / none</option>
-										<option value="+14 1 2" <% nvram_match("time_zone", "+14 1 2", "selected"); %>>UTC+14:00 / first Sun Apr - last Sun Oct</option>
-										<option value="+14 1 3" <% nvram_match("time_zone", "+14 1 3", "selected"); %>>UTC+14:00 / last Sun Mar - last Sun Oct</option>
-										<option value="+14 1 4" <% nvram_match("time_zone", "+14 1 4", "selected"); %>>UTC+14:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-12 1 1" <% nvram_selmatch("time_zone", "-12 1 1", "selected"); %>>UTC-12:00 / none</option>
+										<option value="-12 1 2" <% nvram_selmatch("time_zone", "-12 1 2", "selected"); %>>UTC-12:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-12 1 3" <% nvram_selmatch("time_zone", "-12 1 3", "selected"); %>>UTC-12:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-12 1 4" <% nvram_selmatch("time_zone", "-12 1 4", "selected"); %>>UTC-12:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-11 1 1" <% nvram_selmatch("time_zone", "-11 1 1", "selected"); %>>UTC-11:00 / none</option>
+										<option value="-11 1 2" <% nvram_selmatch("time_zone", "-11 1 2", "selected"); %>>UTC-11:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-11 1 3" <% nvram_selmatch("time_zone", "-11 1 3", "selected"); %>>UTC-11:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-11 1 4" <% nvram_selmatch("time_zone", "-11 1 3", "selected"); %>>UTC-11:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-10 1 1" <% nvram_selmatch("time_zone", "-10 1 1", "selected"); %>>UTC-10:00 / none</option>
+										<option value="-10 1 2" <% nvram_selmatch("time_zone", "-10 1 2", "selected"); %>>UTC-10:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-10 1 3" <% nvram_selmatch("time_zone", "-10 1 3", "selected"); %>>UTC-10:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-10 1 4" <% nvram_selmatch("time_zone", "-10 1 4", "selected"); %>>UTC-10:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-09.5 1 1" <% nvram_selmatch("time_zone", "-09.5 1 1", "selected"); %>>UTC-09:30 / none</option>
+										<option value="-09.5 1 2" <% nvram_selmatch("time_zone", "-09.5 1 2", "selected"); %>>UTC-09:30 / first Sun Apr - last Sun Oct</option>
+										<option value="-09.5 1 3" <% nvram_selmatch("time_zone", "-09.5 1 3", "selected"); %>>UTC-09:30 / last Sun Mar - last Sun Oct</option>
+										<option value="-09.5 1 4" <% nvram_selmatch("time_zone", "-09.5 1 4", "selected"); %>>UTC-09:30 / last Sun Oct - last Sun Mar</option>
+										<option value="-09 1 1" <% nvram_selmatch("time_zone", "-09 1 1", "selected"); %>>UTC-09:00 / none</option>
+										<option value="-09 1 2" <% nvram_selmatch("time_zone", "-09 1 2", "selected"); %>>UTC-09:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-09 1 3" <% nvram_selmatch("time_zone", "-09 1 3", "selected"); %>>UTC-09:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-09 1 4" <% nvram_selmatch("time_zone", "-09 1 4", "selected"); %>>UTC-09:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-08 1 1" <% nvram_selmatch("time_zone", "-08 1 1", "selected"); %>>UTC-08:00 / none</option>
+										<option value="-08 1 2" <% nvram_selmatch("time_zone", "-08 1 2", "selected"); %>>UTC-08:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-08 1 3" <% nvram_selmatch("time_zone", "-08 1 3", "selected"); %>>UTC-08:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-08 1 4" <% nvram_selmatch("time_zone", "-08 1 4", "selected"); %>>UTC-08:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-07 1 1" <% nvram_selmatch("time_zone", "-07 1 1", "selected"); %>>UTC-07:00 / none</option>
+										<option value="-07 1 2" <% nvram_selmatch("time_zone", "-07 1 2", "selected"); %>>UTC-07:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-07 1 3" <% nvram_selmatch("time_zone", "-07 1 3", "selected"); %>>UTC-07:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-07 1 4" <% nvram_selmatch("time_zone", "-07 1 4", "selected"); %>>UTC-07:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-06 1 1" <% nvram_selmatch("time_zone", "-06 1 1", "selected"); %>>UTC-06:00 / none</option>
+										<option value="-06 1 2" <% nvram_selmatch("time_zone", "-06 1 2", "selected"); %>>UTC-06:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-06 1 3" <% nvram_selmatch("time_zone", "-06 1 3", "selected"); %>>UTC-06:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-06 1 4" <% nvram_selmatch("time_zone", "-06 1 4", "selected"); %>>UTC-06:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-05 1 1" <% nvram_selmatch("time_zone", "-05 1 1", "selected"); %>>UTC-05:00 / none</option>
+										<option value="-05 1 2" <% nvram_selmatch("time_zone", "-05 1 2", "selected"); %>>UTC-05:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-05 1 3" <% nvram_selmatch("time_zone", "-05 1 3", "selected"); %>>UTC-05:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-05 1 4" <% nvram_selmatch("time_zone", "-05 1 4", "selected"); %>>UTC-05:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-04 1 1" <% nvram_selmatch("time_zone", "-04 1 1", "selected"); %>>UTC-04:00 / none</option>
+										<option value="-04 1 2" <% nvram_selmatch("time_zone", "-04 1 2", "selected"); %>>UTC-04:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-04 1 3" <% nvram_selmatch("time_zone", "-04 1 3", "selected"); %>>UTC-04:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-04 1 4" <% nvram_selmatch("time_zone", "-04 1 4", "selected"); %>>UTC-04:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-03.5 1 1" <% nvram_selmatch("time_zone", "-03.5 1 1", "selected"); %>>UTC-03:30 / none</option>
+										<option value="-03.5 1 2" <% nvram_selmatch("time_zone", "-03.5 1 2", "selected"); %>>UTC-03:30 / first Sun Apr - last Sun Oct</option>
+										<option value="-03.5 1 3" <% nvram_selmatch("time_zone", "-03.5 1 3", "selected"); %>>UTC-03:30 / last Sun Mar - last Sun Oct</option>
+										<option value="-03.5 1 4" <% nvram_selmatch("time_zone", "-03.5 1 4", "selected"); %>>UTC-03:30 / last Sun Oct - last Sun Mar</option>
+										<option value="-03 1 1" <% nvram_selmatch("time_zone", "-03 1 1", "selected"); %>>UTC-03:00 / none</option>
+										<option value="-03 1 2" <% nvram_selmatch("time_zone", "-03 1 2", "selected"); %>>UTC-03:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-03 1 3" <% nvram_selmatch("time_zone", "-03 1 3", "selected"); %>>UTC-03:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-03 1 4" <% nvram_selmatch("time_zone", "-03 1 4", "selected"); %>>UTC-03:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-02 1 1" <% nvram_selmatch("time_zone", "-02 1 1", "selected"); %>>UTC-02:00 / none</option>
+										<option value="-02 1 2" <% nvram_selmatch("time_zone", "-02 1 2", "selected"); %>>UTC-02:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-02 1 3" <% nvram_selmatch("time_zone", "-02 1 3", "selected"); %>>UTC-02:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-02 1 4" <% nvram_selmatch("time_zone", "-02 1 4", "selected"); %>>UTC-02:00 / last Sun Oct - last Sun Mar</option>
+										<option value="-01 1 1" <% nvram_selmatch("time_zone", "-01 1 1", "selected"); %>>UTC-01:00 / none</option>
+										<option value="-01 1 2" <% nvram_selmatch("time_zone", "-01 1 2", "selected"); %>>UTC-01:00 / first Sun Apr - last Sun Oct</option>
+										<option value="-01 1 3" <% nvram_selmatch("time_zone", "-01 1 3", "selected"); %>>UTC-01:00 / last Sun Mar - last Sun Oct</option>
+										<option value="-01 1 4" <% nvram_selmatch("time_zone", "-01 1 4", "selected"); %>>UTC-01:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+00 1 1" <% nvram_selmatch("time_zone", "+00 1 1", "selected"); %>>UTC / none</option>
+										<option value="+00 1 2" <% nvram_selmatch("time_zone", "+00 1 2", "selected"); %>>UTC / first Sun Apr - last Sun Oct</option>
+										<option value="+00 1 3" <% nvram_selmatch("time_zone", "+00 1 3", "selected"); %>>UTC / last Sun Mar - last Sun Oct</option>
+										<option value="+00 1 4" <% nvram_selmatch("time_zone", "+00 1 4", "selected"); %>>UTC / last Sun Oct - last Sun Mar</option>
+										<option value="+01 1 1" <% nvram_selmatch("time_zone", "+01 1 1", "selected"); %>>UTC+01:00 / none</option>
+										<option value="+01 1 2" <% nvram_selmatch("time_zone", "+01 1 2", "selected"); %>>UTC+01:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+01 1 3" <% nvram_selmatch("time_zone", "+01 1 3", "selected"); %>>UTC+01:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+01 1 4" <% nvram_selmatch("time_zone", "+01 1 4", "selected"); %>>UTC+01:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+02 1 1" <% nvram_selmatch("time_zone", "+02 1 1", "selected"); %>>UTC+02:00 / none</option>
+										<option value="+02 1 2" <% nvram_selmatch("time_zone", "+02 1 2", "selected"); %>>UTC+02:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+02 1 3" <% nvram_selmatch("time_zone", "+02 1 3", "selected"); %>>UTC+02:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+02 1 4" <% nvram_selmatch("time_zone", "+02 1 4", "selected"); %>>UTC+02:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+03 1 1" <% nvram_selmatch("time_zone", "+03 1 1", "selected"); %>>UTC+03:00 / none</option>
+										<option value="+03 1 2" <% nvram_selmatch("time_zone", "+03 1 2", "selected"); %>>UTC+03:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+03 1 3" <% nvram_selmatch("time_zone", "+03 1 3", "selected"); %>>UTC+03:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+03 1 4" <% nvram_selmatch("time_zone", "+03 1 4", "selected"); %>>UTC+03:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+03.5 1 1" <% nvram_selmatch("time_zone", "+03.5 1 1", "selected"); %>>UTC+03:30 / none</option>
+										<option value="+03.5 1 2" <% nvram_selmatch("time_zone", "+03.5 1 2", "selected"); %>>UTC+03:30 / first Sun Apr - last Sun Oct</option>
+										<option value="+03.5 1 3" <% nvram_selmatch("time_zone", "+03.5 1 3", "selected"); %>>UTC+03:30 / last Sun Mar - last Sun Oct</option>
+										<option value="+03.5 1 4" <% nvram_selmatch("time_zone", "+03.5 1 3", "selected"); %>>UTC+03:30 / last Sun Oct - last Sun Mar</option>
+										<option value="+04 1 1" <% nvram_selmatch("time_zone", "+04 1 1", "selected"); %>>UTC+04:00 / none</option>
+										<option value="+04 1 2" <% nvram_selmatch("time_zone", "+04 1 2", "selected"); %>>UTC+04:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+04 1 3" <% nvram_selmatch("time_zone", "+04 1 3", "selected"); %>>UTC+04:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+04 1 4" <% nvram_selmatch("time_zone", "+04 1 4", "selected"); %>>UTC+04:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+05 1 1" <% nvram_selmatch("time_zone", "+05 1 1", "selected"); %>>UTC+05:00 / none</option>
+										<option value="+05 1 2" <% nvram_selmatch("time_zone", "+05 1 2", "selected"); %>>UTC+05:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+05 1 3" <% nvram_selmatch("time_zone", "+05 1 3", "selected"); %>>UTC+05:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+05 1 4" <% nvram_selmatch("time_zone", "+05 1 4", "selected"); %>>UTC+05:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+05.5 1 1" <% nvram_selmatch("time_zone", "+05.5 1 1", "selected"); %>>UTC+05:30 / none</option>
+										<option value="+05.5 1 2" <% nvram_selmatch("time_zone", "+05.5 1 2", "selected"); %>>UTC+05:30 / first Sun Apr - last Sun Oct</option>
+										<option value="+05.5 1 3" <% nvram_selmatch("time_zone", "+05.5 1 3", "selected"); %>>UTC+05:30 / last Sun Mar - last Sun Oct</option>
+										<option value="+05.5 1 4" <% nvram_selmatch("time_zone", "+05.5 1 4", "selected"); %>>UTC+05:30 / last Sun Oct - last Sun Mar</option>
+										<option value="+05.75 1 1" <% nvram_selmatch("time_zone", "+05.75 1 1", "selected"); %>>UTC+05:45 / none</option>
+										<option value="+05.75 1 2" <% nvram_selmatch("time_zone", "+05.75 1 2", "selected"); %>>UTC+05:45 / first Sun Apr - last Sun Oct</option>
+										<option value="+05.75 1 3" <% nvram_selmatch("time_zone", "+05.75 1 3", "selected"); %>>UTC+05:45 / last Sun Mar - last Sun Oct</option>
+										<option value="+05.75 1 4" <% nvram_selmatch("time_zone", "+05.75 1 4", "selected"); %>>UTC+05:45 / last Sun Oct - last Sun Mar</option>
+										<option value="+06 1 1" <% nvram_selmatch("time_zone", "+06 1 1", "selected"); %>>UTC+06:00 / none</option>
+										<option value="+06 1 2" <% nvram_selmatch("time_zone", "+06 1 2", "selected"); %>>UTC+06:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+06 1 3" <% nvram_selmatch("time_zone", "+06 1 3", "selected"); %>>UTC+06:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+06 1 4" <% nvram_selmatch("time_zone", "+06 1 4", "selected"); %>>UTC+06:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+06.5 1 1" <% nvram_selmatch("time_zone", "+06.5 1 1", "selected"); %>>UTC+06:30 / none</option>
+										<option value="+06.5 1 2" <% nvram_selmatch("time_zone", "+06.5 1 2", "selected"); %>>UTC+06:30 / first Sun Apr - last Sun Oct</option>
+										<option value="+06.5 1 3" <% nvram_selmatch("time_zone", "+06.5 1 3", "selected"); %>>UTC+06:30 / last Sun Mar - last Sun Oct</option>
+										<option value="+06.5 1 4" <% nvram_selmatch("time_zone", "+06.5 1 4", "selected"); %>>UTC+06:30 / last Sun Oct - last Sun Mar</option>
+										<option value="+07 1 1" <% nvram_selmatch("time_zone", "+07 1 1", "selected"); %>>UTC+07:00 / none</option>
+										<option value="+07 1 2" <% nvram_selmatch("time_zone", "+07 1 2", "selected"); %>>UTC+07:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+07 1 3" <% nvram_selmatch("time_zone", "+07 1 3", "selected"); %>>UTC+07:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+07 1 4" <% nvram_selmatch("time_zone", "+07 1 4", "selected"); %>>UTC+07:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+08 1 1" <% nvram_selmatch("time_zone", "+08 1 1", "selected"); %>>UTC+08:00 / none</option>
+										<option value="+08 1 2" <% nvram_selmatch("time_zone", "+08 1 2", "selected"); %>>UTC+08:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+08 1 3" <% nvram_selmatch("time_zone", "+08 1 3", "selected"); %>>UTC+08:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+08 1 4" <% nvram_selmatch("time_zone", "+08 1 4", "selected"); %>>UTC+08:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+09 1 1" <% nvram_selmatch("time_zone", "+09 1 1", "selected"); %>>UTC+09:00 / none</option>
+										<option value="+09 1 2" <% nvram_selmatch("time_zone", "+09 1 2", "selected"); %>>UTC+09:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+09 1 3" <% nvram_selmatch("time_zone", "+09 1 3", "selected"); %>>UTC+09:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+09 1 4" <% nvram_selmatch("time_zone", "+09 1 4", "selected"); %>>UTC+09:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+09.5 1 1" <% nvram_selmatch("time_zone", "+09.5 1 1", "selected"); %>>UTC+09:30 / none</option>
+										<option value="+09.5 1 2" <% nvram_selmatch("time_zone", "+09.5 1 2", "selected"); %>>UTC+09:30 / first Sun Apr - last Sun Oct</option>
+										<option value="+09.5 1 3" <% nvram_selmatch("time_zone", "+09.5 1 3", "selected"); %>>UTC+09:30 / last Sun Mar - last Sun Oct</option>
+										<option value="+09.5 1 4" <% nvram_selmatch("time_zone", "+09.5 1 4", "selected"); %>>UTC+09:30 / last Sun Oct - last Sun Mar</option>
+										<option value="+10 1 1" <% nvram_selmatch("time_zone", "+10 1 1", "selected"); %>>UTC+10:00 / none</option>
+										<option value="+10 1 2" <% nvram_selmatch("time_zone", "+10 1 2", "selected"); %>>UTC+10:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+10 1 3" <% nvram_selmatch("time_zone", "+10 1 3", "selected"); %>>UTC+10:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+10 1 4" <% nvram_selmatch("time_zone", "+10 1 4", "selected"); %>>UTC+10:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+10.5 1 1" <% nvram_selmatch("time_zone", "+10.5 1 1", "selected"); %>>UTC+10:30 / none</option>
+										<option value="+10.5 1 2" <% nvram_selmatch("time_zone", "+10.5 1 2", "selected"); %>>UTC+10:30 / first Sun Apr - last Sun Oct</option>
+										<option value="+10.5 1 3" <% nvram_selmatch("time_zone", "+10.5 1 3", "selected"); %>>UTC+10:30 / last Sun Mar - last Sun Oct</option>
+										<option value="+10.5 1 4" <% nvram_selmatch("time_zone", "+10.5 1 4", "selected"); %>>UTC+10:30 / last Sun Oct - last Sun Mar</option>
+										<option value="+11 1 1" <% nvram_selmatch("time_zone", "+11 1 1", "selected"); %>>UTC+11:00 / none</option>
+										<option value="+11 1 2" <% nvram_selmatch("time_zone", "+11 1 2", "selected"); %>>UTC+11:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+11 1 3" <% nvram_selmatch("time_zone", "+11 1 3", "selected"); %>>UTC+11:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+11 1 4" <% nvram_selmatch("time_zone", "+11 1 4", "selected"); %>>UTC+11:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+11.5 1 1" <% nvram_selmatch("time_zone", "+11.5 1 1", "selected"); %>>UTC+11:30 / none</option>
+										<option value="+11.5 1 2" <% nvram_selmatch("time_zone", "+11.5 1 2", "selected"); %>>UTC+11:30 / first Sun Apr - last Sun Oct</option>
+										<option value="+11.5 1 3" <% nvram_selmatch("time_zone", "+11.5 1 3", "selected"); %>>UTC+11:30 / last Sun Mar - last Sun Oct</option>
+										<option value="+11.5 1 4" <% nvram_selmatch("time_zone", "+11.5 1 4", "selected"); %>>UTC+11:30 / last Sun Oct - last Sun Mar</option>
+										<option value="+12 1 1" <% nvram_selmatch("time_zone", "+12 1 1", "selected"); %>>UTC+12:00 / none</option>
+										<option value="+12 1 2" <% nvram_selmatch("time_zone", "+12 1 2", "selected"); %>>UTC+12:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+12 1 3" <% nvram_selmatch("time_zone", "+12 1 3", "selected"); %>>UTC+12:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+12 1 4" <% nvram_selmatch("time_zone", "+12 1 4", "selected"); %>>UTC+12:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+12.75 1 1" <% nvram_selmatch("time_zone", "+12.75 1 1", "selected"); %>>UTC+12:45 / none</option>
+										<option value="+12.75 1 2" <% nvram_selmatch("time_zone", "+12.75 1 2", "selected"); %>>UTC+12:45 / first Sun Apr - last Sun Oct</option>
+										<option value="+12.75 1 3" <% nvram_selmatch("time_zone", "+12.75 1 3", "selected"); %>>UTC+12:45 / last Sun Mar - last Sun Oct</option>
+										<option value="+12.75 1 4" <% nvram_selmatch("time_zone", "+12.75 1 4", "selected"); %>>UTC+12:45 / last Sun Oct - last Sun Mar</option>
+										<option value="+13 1 1" <% nvram_selmatch("time_zone", "+13 1 1", "selected"); %>>UTC+13:00 / none</option>
+										<option value="+13 1 2" <% nvram_selmatch("time_zone", "+13 1 2", "selected"); %>>UTC+13:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+13 1 3" <% nvram_selmatch("time_zone", "+13 1 3", "selected"); %>>UTC+13:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+13 1 4" <% nvram_selmatch("time_zone", "+13 1 4", "selected"); %>>UTC+13:00 / last Sun Oct - last Sun Mar</option>
+										<option value="+14 1 1" <% nvram_selmatch("time_zone", "+14 1 1", "selected"); %>>UTC+14:00 / none</option>
+										<option value="+14 1 2" <% nvram_selmatch("time_zone", "+14 1 2", "selected"); %>>UTC+14:00 / first Sun Apr - last Sun Oct</option>
+										<option value="+14 1 3" <% nvram_selmatch("time_zone", "+14 1 3", "selected"); %>>UTC+14:00 / last Sun Mar - last Sun Oct</option>
+										<option value="+14 1 4" <% nvram_selmatch("time_zone", "+14 1 4", "selected"); %>>UTC+14:00 / last Sun Oct - last Sun Mar</option>
 									</select>
 								</div>
 								<div class="setting">
