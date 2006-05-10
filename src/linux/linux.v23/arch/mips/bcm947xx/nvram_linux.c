@@ -1,7 +1,7 @@
 /*
  * NVRAM variable manipulation (Linux kernel half)
  *
- * Copyright 2004, Broadcom Corporation
+ * Copyright 2005, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -37,6 +37,7 @@
 #include <sbchipc.h>
 #include <sbutils.h>
 #include <sbmips.h>
+#include <sflash.h>
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
@@ -63,8 +64,10 @@ early_nvram_init(void)
 {
 	struct nvram_header *header;
 	chipcregs_t *cc;
+	struct sflash *info = NULL;
 	int i;
 	uint32 base, off, lim;
+	u32 *src, *dst;
 
 	if ((cc = sb_setcore(sbh, SB_CC, 0)) != NULL) {
 		base = KSEG1ADDR(SB_FLASH2);
@@ -75,6 +78,11 @@ early_nvram_init(void)
 
 		case SFLASH_ST:
 		case SFLASH_AT:
+			if ((info = sflash_init(cc)) == NULL)
+				return;
+			lim = info->size;
+			break;
+
 		case FLASH_NONE:
 		default:
 			return;
@@ -89,26 +97,30 @@ early_nvram_init(void)
 	while (off <= lim) {
 		/* Windowed flash access */
 		header = (struct nvram_header *) KSEG1ADDR(base + off - NVRAM_SPACE);
-		if (header->magic == NVRAM_MAGIC) {
-			u32 *src = (u32 *) header;
-			u32 *dst = (u32 *) nvram_buf;
-			for (i = 0; i < sizeof(struct nvram_header); i += 4)
-				*dst++ = *src++;
-			for (; i < header->len && i < NVRAM_SPACE; i += 4)
-				*dst++ = ltoh32(*src++);
-			return;
-		}
-
-		/* Try embedded NVRAM at 4 KB and 1 KB as last resorts */
-		if (off == 1 KB)
-			break;
-		else if (off == 4 KB)
-			off = 1 KB;
-		else if (off == lim)
-			off = 4 KB;
-		else
-			off <<= 1;
+		if (header->magic == NVRAM_MAGIC)
+			goto found;
+		off <<= 1;
 	}
+
+	/* Try embedded NVRAM at 4 KB and 1 KB as last resorts */
+	header = (struct nvram_header *) KSEG1ADDR(base + 4 KB);
+	if (header->magic == NVRAM_MAGIC)
+		goto found;
+	
+	header = (struct nvram_header *) KSEG1ADDR(base + 1 KB);
+	if (header->magic == NVRAM_MAGIC)
+		goto found;
+	
+	printk("early_nvram_init: NVRAM not found\n");
+	return;
+
+found:
+	src = (u32 *) header;
+	dst = (u32 *) nvram_buf;
+	for (i = 0; i < sizeof(struct nvram_header); i += 4)
+		*dst++ = *src++;
+	for (; i < header->len && i < NVRAM_SPACE; i += 4)
+		*dst++ = ltoh32(*src++);
 }
 
 /* Early (before mm or mtd) read-only access to NVRAM */
@@ -118,6 +130,10 @@ early_nvram_get(const char *name)
 	char *var, *value, *end, *eq;
 
 	if (!name)
+		return NULL;
+
+	/* Too early? */
+	if (sbh == NULL)
 		return NULL;
 
 	if (!nvram_buf[0])
