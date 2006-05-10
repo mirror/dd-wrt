@@ -299,9 +299,9 @@ fprintf(stderr,"update lease file\n");
 
 //  if (file_dirty != no)
 //    {
-//      rewind (daemon->lease_stream);
-//      ftruncate (fileno (daemon->lease_stream), 0);
-//fprintf(stderr,"rewinding\n");
+      rewind (daemon->lease_stream);
+      ftruncate (fileno (daemon->lease_stream), 0);
+fprintf(stderr,"rewinding\n");
 
       for (lease = leases; lease; lease = lease->next)
 	{
@@ -319,7 +319,7 @@ fprintf(stderr,"update lease file\n");
 	  if (!lease->expires)
 	    expires = EXPIRES_NEVER;
 	  
-	  l.expires = htonl (expires);
+         //l.expires = htonl (expires);
 	  if (lease->hostname != NULL)
 	    {
 	      strcpy (l.hostname, lease->hostname);
