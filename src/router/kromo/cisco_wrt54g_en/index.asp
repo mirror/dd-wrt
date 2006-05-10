@@ -430,8 +430,8 @@ function init()
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
 								</div>
 							</fieldset><br />
-
 							<% nvram_match("wl_mode", "wet", "-->"); %>
+							
 							<h2><script type="text/javascript">Capture(idx.h23)</script></h2>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(idx.routerip)</script></legend>
@@ -456,16 +456,16 @@ function init()
 								</div>
 							</fieldset><br />
 							
-							<% nvram_match("wl_mode", "ap", "<!--"); %>
+							<% nvram_else_selmatch("wan_proto", "disabled", "", "<!--"); %>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(idx.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(idx.wantoswitch)</script></div>
-									<input class="spaceradio" type="checkbox" name="_fullswitch" value="1" <% nvram_selmatch("fullswitch", "1", "checked"); %> />
+									<input class="spaceradio" type="checkbox" name="_fullswitch" value="1" <% nvram_checked("fullswitch", "1"); %> />
 								</div>
 							</fieldset><br />
-							
-							<% nvram_match("wl_mode", "ap", "-->"); %>
+							<% nvram_else_selmatch("wan_proto", "disabled", "", "-->"); %>
+
 							<% show_dhcpd_settings(); %>
 							<fieldset>
 								<legend><script type="text/javascript">Capture(idx.legend3)</script></legend>
