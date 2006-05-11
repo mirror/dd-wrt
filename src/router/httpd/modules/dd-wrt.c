@@ -61,13 +61,12 @@ void
 ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv)
 {
 
-  websWrite (wp, "<option value=\"disabled\" %s >Disable</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "disabled") ? "selected=\"selected\"" : "");
-  websWrite (wp, "<option value=\"static\" %s >Static IP</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "static") ? "selected=\"selected\"" : "");
-  websWrite (wp,
-	     "<option value=\"dhcp\" %s >Automatic Configuration - DHCP</option>\n",
-	     nvram_selmatch (wp, "wan_proto", "dhcp") ? "selected=\"selected\"" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disable + \"</option>\");</script>\n",
+	     nvram_selmatch (wp, "wan_proto", "disabled") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"static\\\" %s >\" + idx.static_ip + \"</option>\");</script>\n",
+	     nvram_selmatch (wp, "wan_proto", "static") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"dhcp\\\" %s >\" + idx.dhcp + \"</option>\");</script>\n",
+	     nvram_selmatch (wp, "wan_proto", "dhcp") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_PPPOE
   websWrite (wp, "<option value=\"pppoe\" %s >PPPoE</option>\n",
 	     nvram_selmatch (wp, "wan_proto", "pppoe") ? "selected=\"selected\"" : "");
