@@ -156,25 +156,26 @@ start_pptpd (void)
       stop_pptpd ();
       return 0;
     }
-
+cprintf("stop vpn modules\n");
   stop_vpn_modules ();
-
+  
+  
   // Create directory for use by pptpd daemon and its supporting files
   mkdir ("/tmp/pptpd", 0744);
-
+cprintf("open options file\n");
   // Create options file that will be unique to pptpd to avoid interference with pppoe and pptp
   fp = fopen ("/tmp/pptpd/options.pptpd", "w");
-
+cprintf("adding radius plugin\n");
   if (nvram_match ("pptpd_radius", "1"))
     fprintf (fp, "plugin /usr/lib/pppd/radius.so\n"
 	     "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n"
 	     "%s%s\n", nvram_get ("pptpd_radavpair") ? "avpair " : "",
 	     nvram_get ("pptpd_radavpair") ? nvram_get ("pptpd_radavpair") :
 	     "");
-
+cprintf("check if wan_wins = zero\n");
   if (nvram_match ("wan_wins", "0.0.0.0"))
     nvram_set ("wan_wins", "");
-
+cprintf("write config\n");
   fprintf (fp, "lock\n"
 	   "name *\n"
 	   "proxyarp\n"
@@ -193,11 +194,10 @@ start_pptpd (void)
 	   "chap-secrets /tmp/pptpd/chap-secrets\n"
 	   "ip-up-script /tmp/pptpd/ip-up\n"
 	   "ip-down-script /tmp/pptpd/ip-down\n"
-	   "ms-dns %s\n" "%s%s%s" "%s%s%s" "%s%s%s" "mtu %s\n" "mru %s\n",
+	   "ms-dns %s\n" "%s%s%s" "%s%s%s" "mtu %s\n" "mru %s\n",
 	   // Crude but very effective one-liners. Speed is not an issue as this is only run at startup.
 	   // Since we need NULL's returned by nvram_get's we cant use nvram_safe_get
-	   nvram_get ("pptpd_dns1") ? nvram_get ("pptpd_dns1") :
-	   nvram_safe_get ("lan_ipaddr"),
+	   nvram_get ("pptpd_dns1") ? nvram_get ("pptpd_dns1") : nvram_safe_get ("lan_ipaddr"),
 	   nvram_get ("pptpd_dns2") ? "ms-dns " : "",
 	   nvram_get ("pptpd_dns2") ? nvram_get ("pptpd_dns2") : "",
 	   nvram_get ("pptpd_dns2") ? "\n" : "",
