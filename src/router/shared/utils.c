@@ -178,7 +178,7 @@ internal_getRouterBrand ()
 	  {
 	    cprintf ("router is Belkin F5D7130 / F5D7330\n"); 
 	    setRouter ("Belkin F5D7130 / F5D7330");
-	    return ROUTER_BUFFALO_WBR54G;
+	    return ROUTER_ROUTER_WRT54G;
 	  }	
 	if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50") &&
 		nvram_match ("boardtype", "0x0101"))
