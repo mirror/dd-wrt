@@ -70,8 +70,8 @@ ddrun_shell (int timeout, int nowait)
 	signal (sig, SIG_DFL);
 
       /* Reopen console */
-      start_service("console_init");
-      
+      start_service ("console_init");
+
       /* Pass on TZ */
       snprintf (tz, sizeof (tz), "TZ=%s", getenv ("TZ"));
 

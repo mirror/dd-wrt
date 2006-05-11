@@ -50,9 +50,9 @@ check_udhcpd (timer_t t, int arg)
 	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
 	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
 	      sleep (1);
-	      start_service("udhcpd");
+	      start_service ("udhcpd");
 	      sleep (1);
-	      start_service("dnsmasq");
+	      start_service ("dnsmasq");
 	    }
 	}
       else
@@ -62,13 +62,14 @@ check_udhcpd (timer_t t, int arg)
 	      system ("/usr/bin/killall -9 dnsmasq 2>&1 > /dev/null");
 	      system ("/usr/bin/killall -9 udhcpd 2>&1 > /dev/null");
 	      sleep (1);
-	      start_service("udhcpd");
+	      start_service ("udhcpd");
 	      sleep (1);
-	      start_service("dnsmasq");
+	      start_service ("dnsmasq");
 	    }
 	}
     }
 }
+
 //<<tofu
 int
 do_ntp (void)			// called from ntp_main and process_monitor_main; called every hour!
@@ -172,7 +173,7 @@ ntp_main (timer_t t, int arg)
   gettimeofday (&now, NULL);
 #endif */
 //              syslog(LOG_INFO, "time updated: %s\n", ctime(&now));
-  stop_service("ntp");
+  stop_service ("ntp");
   if (do_ntp () == 0)
     {
       if (arg == FIRST)
@@ -332,7 +333,7 @@ ntp_main (timer_t t, int arg)
 
   if (check_action () == ACT_IDLE && check_wan_link (0))
     {				// Don't execute during upgrading
-      stop_service("ntp");
+      stop_service ("ntp");
       ret = do_ntp ();
       if (ret == 0 && arg == FIRST)
 	{
