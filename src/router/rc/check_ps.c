@@ -49,6 +49,7 @@ struct mon mons[] = {
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik", 1, M_WAN},
 #endif
+  {NULL,0,0}
 };
 
 int
@@ -57,15 +58,15 @@ search_process (char *name, int count)
   int c = 0;
 
 
-  c = check_process (name);
+  c = count_processes (name);
   if (!c)
     {
-      cprintf ("Can't find %s\n", name);
+      printf ("Can't find %s\n", name);
       return 0;
     }
   else
     {
-      cprintf ("Find %s which count is %d\n", name, c);
+      printf ("Find %s which count is %d\n", name, c);
       //if(count && c != count){
       //      cprintf("%s count is not match\n", name);
       //      return 0;
@@ -76,52 +77,41 @@ search_process (char *name, int count)
 }
 
 int
-check_process (char *name)
-{
-  int *pidList = NULL;
-  int c = 0;
-
-  pidList = find_all_pid_by_ps (name);
-  if (pidList && *pidList > 0)
-    {
-      for (; pidList && *pidList != 0; pidList++)
-	{
-	  cprintf ("Find %s which pid is %d\n", name, *pidList);
-	  c++;
-	}
-    }
-  cprintf("interation done\n");
-//  if (pidList)
-//    free (pidList);
-  cprintf("memory freed\n");
-
-  return c;
-}
-
-int
 do_mon (void)
 {
   struct mon *v;
+  void *handle = load_service(NULL);
+  if (!handle)return 1;
+  char service[64];
+  void (*fptr)(void);
 
   for (v = mons; v < &mons[sizeof (mons) / sizeof (*v)]; v++)
     {
-      cprintf("checking %s\n",v->name);
+      if (v->name==NULL)
+        break;
+      printf("checking %s\n",v->name);
       if (v->type == M_WAN)
 	if (!check_wan_link (0))
 	  {
-	  cprintf("process is wan, but wan is not up\n");
+	  printf("process is wan, but wan is not up\n");
 	  continue;
 	  }
       if (!search_process (v->name, v->count))
 	{
 
-	  cprintf ("Maybe %s had died, we need to re-exec it\n", v->name);
-	  stop_service(v->name);
+	  printf ("Maybe %s had died, we need to re-exec it\n", v->name);
+          sprintf(service,"stop_%s",v->name);
+	  fptr = (void (*)(void))dlsym(handle,service);
+	  if (fptr)fptr(); 
 	  eval ("/usr/bin/killall", "-SIGKILL", v->name);	// try to remove any zombies
-	  start_service(v->name);
+          sprintf(service,"start_%s",v->name);
+	  fptr = (void (*)(void))dlsym(handle,service);
+	  if (fptr)fptr();
 	}
-	cprintf("checking for %s done\n",v->name);
+	printf("checking for %s done\n",v->name);
     }
+ if (handle);
+ dlclose(handle);
 
   return 1;
 }

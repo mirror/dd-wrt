@@ -39,7 +39,7 @@
 */
 
 
-static void *load_service(char *name)
+void *load_service(char *name)
 {
 cprintf("load service %s\n",name);
 void *handle = dlopen(SERVICE_MODULE,RTLD_LAZY);
@@ -90,6 +90,7 @@ else
     fprintf(stderr,"function %s not found \n",service);
 dlclose(handle);
 return 0;
+cprintf("start_sevice done()\n");
 }
 
 int start_servicep(char *name,char *param)
@@ -110,12 +111,13 @@ if (fptr)
 else
     fprintf(stderr,"function %s not found \n",service);
 dlclose(handle);
+cprintf("start_sevicep done()\n");
 return 0;
 }
 
 int start_servicei(char *name,int param)
 {
-cprintf("start_servicep\n");
+cprintf("start_servicei\n");
 void *handle = load_service(name);
 if (handle==NULL)
     {
@@ -131,6 +133,7 @@ if (fptr)
 else
     fprintf(stderr,"function %s not found \n",service);
 dlclose(handle);
+cprintf("start_sevicei done()\n");
 return 0;
 }
 
@@ -153,6 +156,7 @@ if (fptr)
 else
     fprintf(stderr,"function %s not found \n",service);
 dlclose(handle);
+cprintf("start_main done()\n");
 return 0;
 }
 
@@ -174,6 +178,8 @@ if (fptr)
 else
     fprintf(stderr,"function %s not found \n",service);
 dlclose(handle);
+cprintf("stop_service done()\n");
+
 return 0;
 }
 
