@@ -237,13 +237,13 @@ get_wan_face (void)
 {
   static char localwanface[IFNAMSIZ];
 
-#ifdef HAVE_NEWMEDIA
+//#ifdef HAVE_NEWMEDIA
   if (nvram_match ("pptpd_client_enable", "1"))
     {
       strncpy (localwanface, "ppp0", IFNAMSIZ);
       return localwanface;
     }
-#endif
+//#endif
 
 
   if (nvram_match ("wan_proto", "pptp") || nvram_match ("wan_proto", "l2tp")
