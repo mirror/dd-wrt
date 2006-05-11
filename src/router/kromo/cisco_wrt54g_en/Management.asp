@@ -166,7 +166,8 @@ addEvent(window, "load", function() {
 					</div>
 					<div id="menu">
 						<div id="menuMain">
-							<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+							<ul id="menuMainList">
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
 								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
 								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
