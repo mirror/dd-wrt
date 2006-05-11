@@ -9,8 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-var EN_DIS1 = '<% nvram_get("remote_management"); %>'
-var wan_proto = '<% nvram_get("wan_proto"); %>'
+
+document.title = "<% nvram_get("router_name"); %>" + service.titl;
 
 function lease_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
@@ -31,17 +31,15 @@ function lease_remove_submit(F) {
 function to_reboot(F) {
 	F.action.value = "Reboot";
 	F.submit();
-	return true;
 }
 
 function to_submit(F) {
 	F.submit_button.value = "Services";
-	F.save_button.value = "Saved";
-	F.save_button.disabled = true;
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
 	apply(F);
-	return true;
 }
 		</script>
 	</head>
@@ -54,25 +52,26 @@ function to_submit(F) {
 					<div id="logo"><h1><% show_control(); %></h1></div>
 						<div id="menu">
 							<div id="menuMain">
-								<ul id="menuMainList">
-									<li><a href="index.asp">Setup</a></li>
-									<li><a href="Wireless_Basic.asp">Wireless</a></li>
-									<% nvram_invmatch("sipgate","1","<!--"); %>
-									<li><a href="Sipath.asp">SIPatH</a></li>
-									<% nvram_invmatch("sipgate","1","-->"); %>
-									<li><a href="Firewall.asp">Security</a></li>
-									<li><a href="Filters.asp">Access Restrictions</a></li>
-									<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-									<li class="current"><span>Administration</span><div id="menuSub">
+							<ul id="menuMainList">
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.admin)</script></span>
+									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Management.asp">Management</a></li>
-											<li><a href="Hotspot.asp">Hotspot</a></li>
-											<li><span>Services</span></li>
-											<li><a href="Alive.asp">Keep Alive</a></li>
-											<li><a href="Log.asp">Log</a></li>
-											<li><a href="Diagnostics.asp">Diagnostics</a></li>
-											<li><a href="Wol.asp">WOL</a></li>
-											<li><a href="Factory_Defaults.asp">Factory Defaults</a></li>
+											<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.adminManagement)</script></a></li>
+											<li><a href="Hotspot.asp"><script type="text/javascript">Capture(bmenu.adminHotspot)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.adminServices)</script></span></li>
+											<li><a href="Alive.asp"><script type="text/javascript">Capture(bmenu.adminAlive)</script></a></li>
+											<li><a href="Log.asp"><script type="text/javascript">Capture(bmenu.adminLog)</script></a></li>
+											<li><a href="Diagnostics.asp"><script type="text/javascript">Capture(bmenu.adminDiag)</script></a></li>
+											<li><a href="Wol.asp"><script type="text/javascript">Capture(bmenu.adminWol)</script></a></li>
+											<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
 								<script type="text/javascript">
 										https_visit = <% support_elsematch("HTTPS","1","1","0"); %>;
 										if (https_visit =="1") {
@@ -89,7 +88,7 @@ function to_submit(F) {
 										</ul>
 									</div>
 								</li>
-								<li><a href="Status_Router.asp">Status</a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
@@ -104,21 +103,23 @@ function to_submit(F) {
 							<input type="hidden" name="reboot_button" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="static_leases" value="13" />
-							<h2>Services Management</h2>
+							<h2><script type="text/javascript">Capture(service.h2)</script></h2>
 							<% show_modules(".webservices"); %>
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" />
-								<input type="reset" value="Cancel Changes" />
-								<input type="button" value="Reboot Router" onclick="to_reboot(this.form)" />
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"reboot_button\" value=\"" + sbutton.reboot + "\" onclick=\"to_reboot(this.form)\" />")</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<br/>
-						<a href="javascript:openHelpWindow('HServices.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HServices.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
