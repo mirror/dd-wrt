@@ -969,6 +969,7 @@ start_sysinit (void)
 
 	      break;
 	    case ROUTER_ASUS:
+	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
