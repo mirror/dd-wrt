@@ -31,12 +31,12 @@ pptpd_main (int argc, char **argv)
       return EINVAL;
     }
   else if (strstr (argv[1], "start"))
-    return start_service("pptpd");
+    return start_service ("pptpd");
   else if (strstr (argv[1], "stop"))
-    return stop_service("pptpd");
+    return stop_service ("pptpd");
   else if (strstr (argv[1], "restart"))
     {
-      startstop("pptpd");
+      startstop ("pptpd");
       return 0;
     }
   else

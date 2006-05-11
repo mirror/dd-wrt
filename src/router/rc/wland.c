@@ -40,7 +40,8 @@
 
 #define sin_addr(s) (((struct sockaddr_in *)(s))->sin_addr)
 
-char * get_wdev ()
+char *
+get_wdev ()
 {
   if (check_hw_type () == BCM4702_CHIP)
     return "eth2";
@@ -468,7 +469,7 @@ do_client_check (void)
   if (len > 0 && strstr (buf, "Not associated."))
     {
 #ifdef HAVE_DDLAN
-    nvram_set("cur_state","Nicht Verbunden");
+      nvram_set ("cur_state", "Nicht Verbunden");
 #endif
       /*if (nvram_match("wl_mode", "wet"))
          {
@@ -483,15 +484,16 @@ do_client_check (void)
       /* let wl do this for us (no use in reinventing the wheel) */
       //eval("/usr/sbin/wlconf", get_wdev(), "down");
       //eval("/usr/sbin/wlconf", get_wdev(), "up"); 
-      eval("wl","join",nvram_safe_get("wl_ssid"));
-      
+      eval ("wl", "join", nvram_safe_get ("wl_ssid"));
+
 //      join(nvram_get("wl_ssid"));
       fclose (fp);
-    }else
+    }
+  else
     {
 #ifdef HAVE_DDLAN
-    nvram_set("cur_state","Verbunden");
-    eval("/sbin/check.sh");
+      nvram_set ("cur_state", "Verbunden");
+      eval ("/sbin/check.sh");
 #endif
     }				/*else if (nvram_match("wl_mode","bridge"))
 				   {
