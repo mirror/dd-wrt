@@ -173,8 +173,15 @@ cprintf("adding radius plugin\n");
 	     nvram_get ("pptpd_radavpair") ? nvram_get ("pptpd_radavpair") :
 	     "");
 cprintf("check if wan_wins = zero\n");
+int nowins=0;
   if (nvram_match ("wan_wins", "0.0.0.0"))
+    {
     nvram_set ("wan_wins", "");
+    nowins=1;
+    }
+  if (strlen(nvram_safe_get("wan_wins"))==0)
+    nowins=1;
+    
 cprintf("write config\n");
   fprintf (fp, "lock\n"
 	   "name *\n"
@@ -201,9 +208,9 @@ cprintf("write config\n");
 	   nvram_get ("pptpd_dns2") ? "ms-dns " : "",
 	   nvram_get ("pptpd_dns2") ? nvram_get ("pptpd_dns2") : "",
 	   nvram_get ("pptpd_dns2") ? "\n" : "",
-	   nvram_get ("wan_wins") ? "ms-wins " : "",
-	   nvram_get ("wan_wins") ? nvram_get ("wan_wins") : "",
-	   nvram_get ("wan_wins") ? "\n" : "",
+	   !nowins ? "ms-wins " : "",
+	   !nowins ? nvram_get ("wan_wins") : "",
+	   !nowins ? "\n" : "",
 //	   nvram_get ("pptpd_wins2") ? "ms-wins " : "",
 //	   nvram_get ("pptpd_wins2") ? nvram_get ("pptpd_wins2") : "",
 //	   nvram_get ("pptpd_wins2") ? "\n" : "",
