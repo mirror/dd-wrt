@@ -43,9 +43,18 @@ function to_submit(F) {
 	F.action.value = "Apply";
 	apply(F);
 }
+
+function setFirewall(val) {
+	setElementsActive("_block_proxy", "_ident_pass", val == "on");
+}
+
+addEvent(window, "load", function() {
+	setFirewall("<% nvram_get("filter"); %>");
+});
+
 		</script>
 	</head>
-	
+
 	<body class="gui">
 	<% showad(); %>
 		<div id="wrapper">
@@ -98,8 +107,8 @@ function to_submit(F) {
 							<legend><script type="text/javascript">Capture(firewall.legend)</script></legend>
 							<div class="setting">
 								<div class="label"><script type="text/javascript">Capture(firewall.firewall)</script></div>
-								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
-								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> ><script type="text/javascript">Capture(share.disable)</script></input>
+								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value)" ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
+								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value)" ><script type="text/javascript">Capture(share.disable)</script></input>
 							</div>
 						</fieldset><br />
 						
@@ -138,7 +147,7 @@ function to_submit(F) {
 								</fieldset><br />
 								<div class="submitFooter">
 									<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-									<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+									<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setFirewall('<% nvram_get("filter"); %>')\" />")</script>
 								</div>
 							</form>
 						</div>
