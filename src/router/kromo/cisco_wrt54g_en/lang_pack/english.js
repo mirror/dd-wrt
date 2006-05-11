@@ -145,6 +145,7 @@ sbutton.log_out="Outgoing Log";
 sbutton.apply="Apply";
 sbutton.edit_srv="Add/Edit Service";
 sbutton.routingtab="Show Routing Table";
+sbutton.wanmac="Get Current PC MAC Address";
 
 
 
@@ -1077,6 +1078,23 @@ hwol.right3="MAC Address(es):";
 hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB)";
 hwol.right5="IP Address:";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
+
+
+
+// **************************************************************** WanMAC.asp **********************************************************************//
+
+var wanmac = new Object();
+wanmac.titl=" - MAC Address Clone";
+wanmac.h2="MAC Address Clone";
+wanmac.legend="MAC Clone";
+wanmac.wan="Clone WAN MAC";
+wanmac.wlan="Clone Wireless MAC";
+
+//help container
+var hwanmac = new Object();
+hwanmac.right1="MAC Address Clone:";
+hwanmac.right2="Some ISP will require you to register your MAC address. \
+			If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
 
 
 
