@@ -166,26 +166,25 @@ addEvent(window, "load", function() {
 					</div>
 					<div id="menu">
 						<div id="menuMain">
-							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+							<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-								<li class="current"><span>Administration</span>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.admin)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><span>Management</span></li>
-											<li><a href="Hotspot.asp">Hotspot</a></li>
-											<li><a href="Services.asp">Services</a></li>
-											<li><a href="Alive.asp">Keep Alive</a></li>
-											<li><a href="Log.asp">Log</a></li>
-											<li><a href="Diagnostics.asp">Diagnostics</a></li>
-											<li><a href="Wol.asp">WOL</a></li>
-											<li><a href="Factory_Defaults.asp">Factory Defaults</a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.adminManagement)</script></span></li>
+											<li><a href="Hotspot.asp"><script type="text/javascript">Capture(bmenu.adminHotspot)</script></a></li>
+											<li><a href="Services.asp"><script type="text/javascript">Capture(bmenu.adminServices)</script></a></li>
+											<li><a href="Alive.asp"><script type="text/javascript">Capture(bmenu.adminAlive)</script></a></li>
+											<li><a href="Log.asp"><script type="text/javascript">Capture(bmenu.adminLog)</script></a></li>
+											<li><a href="Diagnostics.asp"><script type="text/javascript">Capture(bmenu.adminDiag)</script></a></li>
+											<li><a href="Wol.asp"><script type="text/javascript">Capture(bmenu.adminWol)</script></a></li>
+											<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
 								<script type="text/javascript">
 										https_visit = <% support_elsematch("HTTPS","1","1","0"); %>;
 										if (https_visit =="1") {
@@ -202,7 +201,7 @@ addEvent(window, "load", function() {
 										</ul>
 									</div>
 								</li>
-								<li><a href="Status_Router.asp">Status</a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
 							</ul>
 						</div>
 					</div>
