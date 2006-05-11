@@ -706,7 +706,11 @@ char *
 get_wan_face (void)
 {
   static char localwanface[IFNAMSIZ];
-
+  if (nvram_match ("pptpd_client_enable", "1"))
+    {
+	strncpy (localwanface, "ppp0", IFNAMSIZ);
+	return localwanface;
+    }
   if (nvram_match ("wan_proto", "pptp") || nvram_match ("wan_proto", "l2tp")
       || nvram_match ("wan_proto", "pppoe"))
     {
@@ -997,7 +1001,7 @@ find_all_pid_by_ps (char *pidName)
   char line[254];
   int *pidList = NULL;
   int i = 0;
-
+  printf("Search for %s\n",pidName);
   if ((fp = popen ("ps -ax", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
@@ -1019,8 +1023,33 @@ find_all_pid_by_ps (char *pidName)
       pidList = realloc (pidList, sizeof (int));
       pidList[0] = -1;
     }
+  printf("Search done...\n");
 
   return pidList;
+}
+
+
+int 
+count_processes (char *pidName)
+{
+  FILE *fp;
+  char line[254];
+  int i = 0;
+  printf("Search for %s\n",pidName);
+  if ((fp = popen ("ps -ax", "r")))
+    {
+      while (fgets (line, sizeof (line), fp) != NULL)
+	{
+	  if (strstr (line, pidName))
+	    {
+	      i++;
+	    }
+	}
+      pclose (fp);
+    }
+  printf("Search done... %d\n",i);
+
+  return i;
 }
 
 void

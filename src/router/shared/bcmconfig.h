@@ -16,14 +16,13 @@
 #define __CONFIG_HTTPD__ 1
 #define __CONFIG_WWW__ 1
 #undef __CONFIG_OPENSSL__
-#define __CONFIG_MATRIXSSL__ 1
-#undef __CONFIG_NOSSL__
-#undef __CONFIG_EBTABLES__
+#undef __CONFIG_MATRIXSSL__
+#define __CONFIG_NOSSL__ 1
+#define __CONFIG_EBTABLES__ 1
 #undef __CONFIG_NOCAT__
-#define __CONFIG_HOTSPOT__ 1
-#undef __CONFIG_SVEASPOT__
+#undef __CONFIG_HOTSPOT__
 #define __CONFIG_VPND__ 1
-//#define __CONFIG_PPTPD__ 1
+#define __CONFIG_PPTPD__ 1
 
 /*
  * IPSec
@@ -39,9 +38,9 @@
 #undef __CONFIG_FROTTLE__
 #undef __CONFIG_PARPROUTED__
 #define __CONFIG_WOL__ 1
-#define __CONFIG_SNMP__ 1
+#undef __CONFIG_SNMP__
 #undef __CONFIG_RADVD__
-#define __CONFIG_RFLOW__ 1
+#undef __CONFIG_RFLOW__
 #define __CONFIG_NETCONF__ 1
 #undef __CONFIG_IPTABLES__
 #define __CONFIG_LIBIPT__ 1
@@ -66,31 +65,38 @@
 /*
  * Special DD-WRT Features
  */
-#define __CONFIG_NOTRANS__ 1
+#undef __CONFIG_MSSID__
+#undef __CONFIG_MADWIFI__
+#undef __CONFIG_E2FSPROGS__
+#undef __CONFIG_NOTRANS__
 #undef __CONFIG_AQOS__
 #undef __CONFIG_ROBOCFG__
+#undef __CONFIG_OPENVPN__
+#define __CONFIG_TELNET__ 1
 #undef __CONFIG_MASKMAC__
 #undef __CONFIG_MMC__
 #undef __CONFIG_SAMBA__
 #undef __CONFIG_KAID__
 #undef __CONFIG_ZEROIP__
-#undef __CONFIG_RADAUTH__
-#undef __CONFIG_CHILLISPOT__
-#undef __CONFIG_DHCPFORWARD__
-#define __CONFIG_DHCPRELAY__ 1
+#define __CONFIG_RADAUTH__ 1
+#define __CONFIG_DHCPFORWARD__ 1
+#undef __CONFIG_DHCPRELAY__
 
 /*
  * SIPATH
  */
-#define __CONFIG_RTPPROXY__ 1
-#define __CONFIG_SER__ 1
+#undef __CONFIG_RTPPROXY__
+#undef __CONFIG_SER__
 
 /*
  * Options
  */
 #define __CONFIG_VENDOR__ "broadcom"
 #define __CONFIG_UDHCPD__ 1
-#undef __CONFIG_PPP__
+#define __CONFIG_PPP__ 1
+#undef __CONFIG_PPPOESERVER__
+#define __CONFIG_PPPOERELAY__ 1
+#undef __CONFIG_PPPOESNIFF__
 #define __CONFIG_UPNP__ 1
 #define __CONFIG_NAS__ 1
 #undef __CONFIG_SES__
@@ -101,17 +107,14 @@
 #define __CONFIG_DNSMASQ__ 1
 #define __CONFIG_UTILS__ 1
 #undef __CONFIG_ETC__
-#ifdef HAVE_SPUTNIK_APD
 #define __CONFIG_SPUTNIK_APD__ 1
-#endif
 #define __CONFIG_BCMWPA2__ 1
-#undef __CONFIG_KISMETDRONE__
 
 /*
  * Additional C libraries
  */
 #define __CONFIG_LIBCRYPT__ 1
-#define __CONFIG_LIBPCAP__ 1
+#undef __CONFIG_LIBPCAP__
 #define __CONFIG_LIBDL__ 1
 #define __CONFIG_LIBM__ 1
 #define __CONFIG_LIBNSL__ 1
