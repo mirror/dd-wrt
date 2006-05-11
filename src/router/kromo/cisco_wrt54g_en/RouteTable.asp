@@ -23,7 +23,7 @@ document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
 					<th><script type="text/javascript">Capture(routetbl.th1)</script></th>
 					<th><script type="text/javascript">Capture(share.subnet)</script></th>
 					<th><script type="text/javascript">Capture(share.gateway)</script></th>
-					<th><script type="text/javascript">Capture(share.interface)</script></th>
+					<th><script type="text/javascript">Capture(share.intrface)</script></th>
 				</tr>
 				<script language="JavaScript">
 					var table = new Array(<% dump_route_table(""); %>);
