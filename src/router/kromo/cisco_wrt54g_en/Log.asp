@@ -136,7 +136,7 @@ addEvent(window, "load", function() {
 							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"window.location.replace('Log.asp')\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setLog('<% nvram_get("log_enable"); %>')\" />")</script>
 							</div>
 						</form>
 					</div>
