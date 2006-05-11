@@ -133,7 +133,7 @@ function SelMode(num,F) {
 							<fieldset>
 								<legend><script type="text/javascript">Capture(route.gateway_legend)</script></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.interface)</script></div>
+									<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
 									<select size="1" name="dr_setting">
 										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("dr_setting", "0", "js"); %> >" + share.disable + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selected("dr_setting", "1", "js"); %> >" + routetbl.eth_lan + "</option>");</script>
@@ -173,7 +173,7 @@ function SelMode(num,F) {
 									<input size="3" maxlength="3" name="route_gateway_0" onblur="valid_range(this,0,255,share.gateway)" class="num" value="<% static_route_setting("gateway","0"); %>" />.<input size="3" maxlength="3" name="route_gateway_1" onblur="valid_range(this,0,255,share.gateway)" class="num" value="<% static_route_setting("gateway","1"); %>" />.<input size="3" maxlength="3" name="route_gateway_2" onblur="valid_range(this,0,255,share.gateway)" class="num" value="<% static_route_setting("gateway","2"); %>" />.<input size="3" maxlength="3" name="route_gateway_3" onblur="valid_range(this,0,254,share.gateway)" class="num" value="<% static_route_setting("gateway","3"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.interface)</script></div>
+									<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
 									<select name="route_ifname">
 										<option value="lan" <% static_route_setting("lan","0"); %>>LAN & Wireless</option>
 										<option value="wan" <% static_route_setting("wan","0"); %>>WAN (Internet)</option>
