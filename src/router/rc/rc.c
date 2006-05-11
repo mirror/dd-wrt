@@ -147,7 +147,9 @@ main_loop (void)
   nvram_set ("vlan1ports", "");
 #else
 
-  if (nvram_match ("fullswitch", "1") && (nvram_invmatch ("wl_mode", "ap") || nvram_match ("wan_proto", "disabled")))
+  if (nvram_match ("fullswitch", "1")
+      && (nvram_invmatch ("wl_mode", "ap")
+	  || nvram_match ("wan_proto", "disabled")))
     {
       nvram_set ("vlan0ports", "0 1 2 3 4 5*");
       nvram_set ("vlan1ports", "");
@@ -235,7 +237,7 @@ main_loop (void)
 
 	}
     }
-    
+
 #endif
 #ifdef HAVE_MMC
   if (nvram_match ("mmc_enable", "1"))
@@ -277,16 +279,22 @@ main_loop (void)
       start_service ("powerled_ctrl_1");
     }
 //create loginprompt
-FILE *fp=fopen("/tmp/loginprompt","wb");
+  FILE *fp = fopen ("/tmp/loginprompt", "wb");
 #ifdef DIST
-if (strlen(DIST)>0)
-fprintf(fp,"DD-WRT v23 SP1 %s Date: " BUILD_DATE " (c) 2006 NewMedia-NET GmbH\n",DIST);
-else
-fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 NewMedia-NET GmbH\n");
+  if (strlen (DIST) > 0)
+    fprintf (fp,
+	     "DD-WRT v23 SP1 %s Date: " BUILD_DATE
+	     " (c) 2006 NewMedia-NET GmbH\n", DIST);
+  else
+    fprintf (fp,
+	     "DD-WRT v23 SP1 custom Date: " BUILD_DATE
+	     " (c) 2006 NewMedia-NET GmbH\n");
 #else
-fprintf(fp,"DD-WRT v23 SP1 custom Date: " BUILD_DATE " (c) 2006 NewMedia-NET GmbH\n");
+  fprintf (fp,
+	   "DD-WRT v23 SP1 custom Date: " BUILD_DATE
+	   " (c) 2006 NewMedia-NET GmbH\n");
 #endif
-fclose(fp);
+  fclose (fp);
 
   /* Loop forever */
   for (;;)
@@ -303,7 +311,7 @@ fclose(fp);
 	  state = IDLE;
 	  break;
 	case RESTART:
-	  start_service("overclocking");
+	  start_service ("overclocking");
 	  cprintf ("RESET NVRAM VARS\n");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
@@ -416,7 +424,7 @@ fclose(fp);
 	  cprintf ("start modules\n");
 	  start_service ("modules");
 #ifdef HAVE_CHILLI
- 	  start_service ("chilli");
+	  start_service ("chilli");
 #endif
 	  cprintf ("start syslog\n");
 	  startstop ("syslog");
@@ -472,21 +480,21 @@ main (int argc, char **argv)
 
   if (strstr (base, "startservice"))
     {
-    if (argc<2)
+      if (argc < 2)
 	{
-	puts("try to be professional\n");
-	return 0;
+	  puts ("try to be professional\n");
+	  return 0;
 	}
-    return start_service(argv[1]);
+      return start_service (argv[1]);
     }
   if (strstr (base, "stopservice"))
     {
-    if (argc<2)
+      if (argc < 2)
 	{
-	puts("try to be professional\n");
-	return 0;
+	  puts ("try to be professional\n");
+	  return 0;
 	}
-    return stop_service(argv[1]);
+      return stop_service (argv[1]);
     }
 
   /* ppp */

@@ -25,8 +25,8 @@ struct mon
   char *name;			// Process name
   int count;			// Process count, 0 means don't check
   int type;			// LAN or WAN
-//  int (*stop) (void);		// stop function
-//  int (*start) (void);		// start function
+//  int (*stop) (void);         // stop function
+//  int (*start) (void);                // start function
 };
 
 enum
@@ -39,7 +39,7 @@ struct mon mons[] = {
   {"udhcpd", 1, M_LAN},
   {"dnsmasq", 1, M_LAN},
   {"upnp", 1, M_LAN},
-  {"dhcpfwd",1, M_LAN},
+  {"dhcpfwd", 1, M_LAN},
 #ifdef HAVE_NOCAT
   {"splashd", 1, M_LAN},
 #endif
@@ -49,7 +49,7 @@ struct mon mons[] = {
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik", 1, M_WAN},
 #endif
-  {NULL,0,0}
+  {NULL, 0, 0}
 };
 
 int
@@ -80,38 +80,41 @@ int
 do_mon (void)
 {
   struct mon *v;
-  void *handle = load_service(NULL);
-  if (!handle)return 1;
+  void *handle = load_service (NULL);
+  if (!handle)
+    return 1;
   char service[64];
-  void (*fptr)(void);
+  void (*fptr) (void);
 
   for (v = mons; v < &mons[sizeof (mons) / sizeof (*v)]; v++)
     {
-      if (v->name==NULL)
-        break;
-      printf("checking %s\n",v->name);
+      if (v->name == NULL)
+	break;
+      printf ("checking %s\n", v->name);
       if (v->type == M_WAN)
 	if (!check_wan_link (0))
 	  {
-	  printf("process is wan, but wan is not up\n");
-	  continue;
+	    printf ("process is wan, but wan is not up\n");
+	    continue;
 	  }
       if (!search_process (v->name, v->count))
 	{
 
 	  printf ("Maybe %s had died, we need to re-exec it\n", v->name);
-          sprintf(service,"stop_%s",v->name);
-	  fptr = (void (*)(void))dlsym(handle,service);
-	  if (fptr)fptr(); 
+	  sprintf (service, "stop_%s", v->name);
+	  fptr = (void (*)(void)) dlsym (handle, service);
+	  if (fptr)
+	    fptr ();
 	  eval ("/usr/bin/killall", "-SIGKILL", v->name);	// try to remove any zombies
-          sprintf(service,"start_%s",v->name);
-	  fptr = (void (*)(void))dlsym(handle,service);
-	  if (fptr)fptr();
+	  sprintf (service, "start_%s", v->name);
+	  fptr = (void (*)(void)) dlsym (handle, service);
+	  if (fptr)
+	    fptr ();
 	}
-	printf("checking for %s done\n",v->name);
+      printf ("checking for %s done\n", v->name);
     }
- if (handle);
- dlclose(handle);
+  if (handle);
+  dlclose (handle);
 
   return 1;
 }
