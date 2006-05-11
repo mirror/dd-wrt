@@ -63,6 +63,11 @@ int authmac(unsigned char *mac)
 		mac[0],mac[1],mac[2],mac[3],\
 		mac[4],mac[5]);
 	break;
+	case 3: //00:00:00:00:00:00
+	sprintf(macstr,"%2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x",\
+		mac[0],mac[1],mac[2],mac[3],\
+		mac[4],mac[5]);
+	break;
 	default: //00-00-00-00-00-00
 	sprintf(macstr,"%2.2X-%2.2X-%2.2X-%2.2X-%2.2X-%2.2X",\
 			mac[0],mac[1],mac[2],mac[3],\
@@ -123,6 +128,11 @@ int main(int argc, char** argv)
 	if (argc>2 && (strcmp(argv[1],"-n2") == 0))
 	{
 		macfmt=2;
+		iface=argv[2];
+	}else
+	if (argc>2 && (strcmp(argv[1],"-n3") == 0))
+	{
+		macfmt=3;
 		iface=argv[2];
 	}
 	else {
