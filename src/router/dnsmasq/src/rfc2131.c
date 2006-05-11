@@ -773,10 +773,6 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
       log_packet("ACK", &mess->ciaddr, mess->chaddr, mess->hlen, iface_name, hostname);
       return p - (unsigned char *)mess; 
     }
-
-fprintf(stderr,"update lease file\n");
-
-      lease_update_file(daemon, 1, now);
   
   return 0;
 }
