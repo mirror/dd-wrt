@@ -28,8 +28,9 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(share.port)</script></div>
-		<input size="5" maxlength="5" class="num" name="macupd_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("macupd_port"); %>" /></div>
+		<input size="5" maxlength="5" class="num" name="macupd_port" onblur="valid_range(this,1,65535,share.port)" value="<% nvram_get("macupd_port"); %>" />
 		<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 2056)")</script></span>
+	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
 		<select name="rflow_if">
