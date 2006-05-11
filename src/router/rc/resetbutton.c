@@ -153,7 +153,7 @@ period_check (int sig)
     case ROUTER_ASUS:
       gpio = BCM47XX_SOFTWARE_RESET;
       state = (val & gpio);
-      break;      
+      break;
     default:
       gpio = BCM47XX_SOFTWARE_RESET;
       state = !(val & gpio);
@@ -180,14 +180,16 @@ period_check (int sig)
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X || brand == ROUTER_LINKSYS_WRT55AG
-		  || brand == ROUTER_BUFFALO_WHRG54S || brand == ROUTER_BUFFALO_WBR54G)
+	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
+		  || brand == ROUTER_LINKSYS_WRT55AG
+		  || brand == ROUTER_BUFFALO_WHRG54S
+		  || brand == ROUTER_BUFFALO_WBR54G)
 		{
 		  printf ("resetbutton: factory default.\n");
-		  	if (brand == ROUTER_BUFFALO_WBR54G)
-		  	{
-			  	eval ("gpio", "disable", "7"); //turn on DIAG led on WBR-G54/WLA-G54
-			}
+		  if (brand == ROUTER_BUFFALO_WBR54G)
+		    {
+		      eval ("gpio", "disable", "7");	//turn on DIAG led on WBR-G54/WLA-G54
+		    }
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  nvram_set ("sv_restore_defaults", "1");
@@ -282,8 +284,9 @@ resetbutton_main (int argc, char *argv[])
 //#define ROUTER_BUFFALO_WBR2G54S 5
 //#define ROUTER_SIEMENS 6
 
-  if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN || brand == ROUTER_MOTOROLA
-      || brand == ROUTER_BUFFALO_WBR2G54S || brand == ROUTER_BELKIN_F5D7230)
+  if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN
+      || brand == ROUTER_MOTOROLA || brand == ROUTER_BUFFALO_WBR2G54S
+      || brand == ROUTER_BELKIN_F5D7230)
     {
       puts ("sorry, your unit does not support resetbutton feature");
       nvram_set ("resetbutton_enable", "0");

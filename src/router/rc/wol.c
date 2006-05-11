@@ -21,7 +21,7 @@ wol_run (void)
   char *passwd = NULL;
   char hostname_param[32] = { 0 };
   char *hostname = NULL;
-  
+
   if (nvram_match ("wol_enable", "0"))
     return 0;
 

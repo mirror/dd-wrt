@@ -65,7 +65,7 @@ process_monitor_main (void)
 /* #ifdef HAVE_SNMP
   struct timeval now;
   gettimeofday (&now, NULL);
-#endif */      
+#endif */
       if (do_ntp () != 0)
 	{
 	  syslog (LOG_ERR,

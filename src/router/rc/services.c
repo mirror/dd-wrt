@@ -88,56 +88,56 @@ start_services (void)
 #endif
 
 #ifdef HAVE_TELNET
-  start_service("telnetd");
+  start_service ("telnetd");
 #endif
-  start_service("syslog");
+  start_service ("syslog");
 #ifdef HAVE_TFTP
-  start_service("tftpd");
+  start_service ("tftpd");
 #endif
-  start_service("httpd");
-  start_service("udhcpd");
-  start_service("dnsmasq");
-  start_service("nas_lan");
+  start_service ("httpd");
+  start_service ("udhcpd");
+  start_service ("dnsmasq");
+  start_service ("nas_lan");
 #ifdef HAVE_MSSID
-  start_service("guest_nas");
+  start_service ("guest_nas");
 #endif
 #ifdef HAVE_BIRD
-  start_service("zebra");
+  start_service ("zebra");
 #endif
-  start_service("wland");
-  start_service("wshaper");
-  start_service("cron");
-  
+  start_service ("wland");
+  start_service ("wshaper");
+  start_service ("cron");
+
 #ifdef HAVE_PPTP
-  start_service("pptpd");
+  start_service ("pptpd");
 #endif
 
 #ifdef HAVE_SSHD
-  start_service("sshd");
+  start_service ("sshd");
 #endif
 
 #ifdef HAVE_RADVD
-  start_service("radvd");
+  start_service ("radvd");
 #endif
 
 #ifdef HAVE_SNMP
-  start_service("snmp");
+  start_service ("snmp");
 #endif
 
 #ifdef HAVE_WOL
-  start_service("wol");
+  start_service ("wol");
 #endif
 
 #ifdef HAVE_NOCAT
-  start_service("splashd");
+  start_service ("splashd");
 #endif
 
 #ifdef HAVE_UPNP
-  start_service("upnp");
+  start_service ("upnp");
 #endif
 
 #ifdef HAVE_NEWMEDIA
-  start_service("openvpnserversys");
+  start_service ("openvpnserversys");
 #endif
 
 
@@ -150,54 +150,54 @@ int
 stop_services (void)
 {
   //stop_ses();
-  stop_service("nas");
+  stop_service ("nas");
 #ifdef HAVE_UPNP
-  stop_service("upnp");
+  stop_service ("upnp");
 #endif
-  stop_service("udhcpd");
-  stop_service("dns_clear_resolv");
-  stop_service("cron");
- 
+  stop_service ("udhcpd");
+  stop_service ("dns_clear_resolv");
+  stop_service ("cron");
+
 #ifdef HAVE_TFTP
-  stop_service("tftpd");
+  stop_service ("tftpd");
 #endif
-  stop_service("syslog");
+  stop_service ("syslog");
 #ifdef HAVE_BIRD
-  stop_service("zebra");
+  stop_service ("zebra");
 #endif
-  stop_service("wland");
+  stop_service ("wland");
 #ifdef HAVE_TELNET
-  stop_service("telnetd");
+  stop_service ("telnetd");
 #endif
 #ifdef HAVE_SSHD
-  stop_service("sshd");
+  stop_service ("sshd");
 #endif
 
 #ifdef HAVE_RADVD
-  stop_service("radvd");
+  stop_service ("radvd");
 #endif
 
 #ifdef HAVE_CHILLI
-  stop_service("chilli");
+  stop_service ("chilli");
 #endif
 
 #ifdef HAVE_SNMP
-  stop_service("snmp");
+  stop_service ("snmp");
 #endif
 
 #ifdef HAVE_WOL
-  stop_service("wol");
+  stop_service ("wol");
 #endif
-  stop_service("wshaper");
+  stop_service ("wshaper");
 
 #ifdef HAVE_PPTP
-  stop_service("pptpd");
+  stop_service ("pptpd");
 #endif
 #ifdef HAVE_NOCAT
-  stop_service("splashd");
+  stop_service ("splashd");
 #endif
 #ifdef HAVE_NEWMEDIA
-  stop_service("openvpnserversys");
+  stop_service ("openvpnserversys");
 #endif
 
 // end Sveasoft additions
@@ -220,84 +220,86 @@ start_single_service (void)
     kill (1, SIGHUP);
 
   cprintf ("Restart service=[%s]\n", service);
-  start_service("overclocking");
+  start_service ("overclocking");
 
   if (!strcmp (service, "dhcp") || !strcmp (service, "services"))
     {
-      startstop("udhcpd");
+      startstop ("udhcpd");
     }
   else if (!strcmp (service, "logging"))
     {
-      startstop("firewall");
-      startstop("syslog");
+      startstop ("firewall");
+      startstop ("syslog");
     }
 /* Sveasoft addition */
   else if (!strcmp (service, "router"))
     {
 #ifdef HAVE_BIRD
-      startstop("zebra");
+      startstop ("zebra");
 #endif
     }
   else if (!strcmp (service, "hotspot"))
     {
 #ifdef HAVE_NOCAT
-      startstop("splashd");
+      startstop ("splashd");
 #endif
 #ifdef HAVE_CHILLI
-      startstop("chilli");
+      startstop ("chilli");
 #endif
 #ifdef HAVE_SPUTNIK_APD
-      startstop("sputnik");
+      startstop ("sputnik");
 #endif
     }
   else if (!strcmp (service, "services"))
     {
-      startstop("udhcpd");
+      startstop ("udhcpd");
 #ifdef HAVE_TELNET
-      startstop("telnetd");
+      startstop ("telnetd");
 #endif
 #ifdef HAVE_SNMP
-      startstop("snmp");
+      startstop ("snmp");
 #endif
 #ifdef HAVE_SSHD
-      startstop("sshd");
+      startstop ("sshd");
 #endif
-      startstop("firewall");
-      startstop("syslog");
+      startstop ("firewall");
+      startstop ("syslog");
 #ifdef HAVE_NEWMEDIA
-      startstop("openvpnserversys");
+      startstop ("openvpnserversys");
 #endif
     }
   else if (!strcmp (service, "management"))
     {
-      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
-        stop_service("nas");
+      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "apsta"))
+	stop_service ("nas");
 #ifdef HAVE_BIRD
-      stop_service("zebra");
+      stop_service ("zebra");
 #endif
-      stop_service("cron");
-      stop_service("udhcpd");
-      start_service("udhcpd");
-      start_service("cron");
-      start_service("ipv6");
+      stop_service ("cron");
+      stop_service ("udhcpd");
+      start_service ("udhcpd");
+      start_service ("cron");
+      start_service ("ipv6");
 #ifdef HAVE_RADVD
-      startstop("radvd");
+      startstop ("radvd");
 #endif
 #ifdef HAVE_PPTP
-      startstop("pptpd");
+      startstop ("pptpd");
 #endif
 #ifdef HAVE_BIRD
-      start_service("zebra");
+      start_service ("zebra");
 #endif
-      startstop("firewall");
-      startstop("wshaper");
-      startstop("httpd");
+      startstop ("firewall");
+      startstop ("wshaper");
+      startstop ("httpd");
 
 #ifdef HAVE_WOL
-      startstop("wol");
+      startstop ("wol");
 #endif
-      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta") || nvram_match("wl0_mode","apsta"))
-        start_service("nas_lan");
+      if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
+	  || nvram_match ("wl0_mode", "apsta"))
+	start_service ("nas_lan");
 
     }
 
@@ -307,40 +309,40 @@ start_single_service (void)
 	   || !strcmp (service, "start_heartbeat"))
     {
       unlink ("/tmp/ppp/log");
-      stop_service("lan");
-      stop_service("wan");
-      start_service("lan");
-      start_service("wan_boot");
+      stop_service ("lan");
+      stop_service ("wan");
+      start_service ("lan");
+      start_service ("wan_boot");
     }
   else if (!strcmp (service, "stop_pppoe") || !strcmp (service, "stop_pptp")
 	   || !strcmp (service, "stop_l2tp")
 	   || !strcmp (service, "stop_heartbeat"))
     {
-      stop_service("wan");
+      stop_service ("wan");
     }
   else if (!strcmp (service, "filters"))
     {
-      stop_service("cron");
-      startstop("firewall");
-      startstop("wshaper");
-      start_service("cron");
+      stop_service ("cron");
+      startstop ("firewall");
+      startstop ("wshaper");
+      start_service ("cron");
     }
   else if (!strcmp (service, "forward"))
     {
-      startstop("firewall");
-      startstop("wshaper");
+      startstop ("firewall");
+      startstop ("wshaper");
     }
   else if (!strcmp (service, "forward_upnp"))
     {
 #ifdef HAVE_UPNP
-      stop_service("upnp");
+      stop_service ("upnp");
 #endif
-      stop_service("firewall");
+      stop_service ("firewall");
 #ifdef HAVE_UPNP
-      start_service("upnp");
+      start_service ("upnp");
 #endif
-      start_service("firewall");
-      startstop("wshaper");
+      start_service ("firewall");
+      startstop ("wshaper");
     }
   else if (!strcmp (service, "static_route_del"))
     {
@@ -351,7 +353,7 @@ start_single_service (void)
     }
   else if (!strcmp (service, "ddns"))
     {
-      startstop("ddns");
+      startstop ("ddns");
       nvram_set ("ddns_change", "update");
     }
   else if (!strcmp (service, "start_ping"))
@@ -403,32 +405,32 @@ start_single_service (void)
     }
   else if (!strcmp (service, "tftp_upgrade"))
     {
-      stop_service("wan");
-      stop_service("httpd");
+      stop_service ("wan");
+      stop_service ("httpd");
 #ifdef HAVE_BIRD
-      stop_service("zebra");
+      stop_service ("zebra");
 #endif
 #ifdef HAVE_UPNP
-      stop_service("upnp");
+      stop_service ("upnp");
 #endif
-      stop_service("cron");
+      stop_service ("cron");
     }
   else if (!strcmp (service, "http_upgrade"))
     {
-      stop_service("wan");
+      stop_service ("wan");
 #ifdef HAVE_BIRD
-      stop_service("zebra");
+      stop_service ("zebra");
 #endif
 #ifdef HAVE_UPNP
-      stop_service("upnp");
+      stop_service ("upnp");
 #endif
-      stop_service("cron");
+      stop_service ("cron");
     }
   else if (!strcmp (service, "wireless"))
     {
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
       stop_services ();
-      stop_service("lan");
+      stop_service ("lan");
       if (nvram_match ("wl_akm", "wpa") ||
 	  nvram_match ("wl_akm", "psk") ||
 	  nvram_match ("wl_akm", "psk2") ||
@@ -437,8 +439,8 @@ start_single_service (void)
 	  nvram_match ("wl_akm", "wpa wpa2") ||
 	  nvram_match ("wl_akm", "radius"))
 	sleep (4);
-      start_service("wlconf");
-      start_service("lan");
+      start_service ("wlconf");
+      start_service ("lan");
       start_services ();
     }
   else if (!strcmp (service, "dhcp_release"))
@@ -573,23 +575,23 @@ redial_main (int argc, char **argv)
 	    case 0:
 	      if (nvram_match ("wan_proto", "pppoe"))
 		{
-		  stop_service("pppoe");
+		  stop_service ("pppoe");
 		  //killps("pppoecd","-9");
 		  eval ("killall", "-9", "pppoecd");
 		  sleep (1);
-		  start_service("wan_redial");
+		  start_service ("wan_redial");
 		}
 	      else if (nvram_match ("wan_proto", "pptp"))
 		{
-		  stop_service("pptp");
+		  stop_service ("pptp");
 		  sleep (1);
-		  start_service("wan_redial");
+		  start_service ("wan_redial");
 		}
 	      else if (nvram_match ("wan_proto", "l2tp"))
 		{
-		  stop_service("l2tp");
+		  stop_service ("l2tp");
 		  sleep (1);
-		  start_service("l2tp_redial");
+		  start_service ("l2tp_redial");
 		}
 //      Moded by Boris Bakchiev
 //      We dont need this at all.
@@ -599,9 +601,9 @@ redial_main (int argc, char **argv)
 		{
 		  if (is_running ("bpalogin") == 0)
 		    {
-		      stop_service("heartbeat");
+		      stop_service ("heartbeat");
 		      sleep (1);
-		      start_service("heartbeat_redial");
+		      start_service ("heartbeat_redial");
 		    }
 
 		}
@@ -616,4 +618,3 @@ redial_main (int argc, char **argv)
 	}			// end if
     }				// end while
 }				// end main
-

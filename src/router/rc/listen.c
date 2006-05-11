@@ -358,17 +358,17 @@ listen_interface (char *interface)
 	  DEBUG ("oooooh!!! got some!\n");
 
 	  if (nvram_match ("wan_proto", "pptp"))
-	  	{
-	    inet_aton (nvram_safe_get ("pptp_server_ip"), &ipaddr);
-	  	}
+	    {
+	      inet_aton (nvram_safe_get ("pptp_server_ip"), &ipaddr);
+	    }
 	  else if (nvram_match ("wan_proto", "l2tp"))
-	  	{
-	    inet_aton (nvram_safe_get ("lan_ipaddr"), &ipaddr);
-	  	}
+	    {
+	      inet_aton (nvram_safe_get ("lan_ipaddr"), &ipaddr);
+	    }
 	  else
-	  	{
-	    inet_aton (nvram_safe_get ("wan_ipaddr"), &ipaddr);
-	  	}
+	    {
+	      inet_aton (nvram_safe_get ("wan_ipaddr"), &ipaddr);
+	    }
 
 	  inet_aton (nvram_safe_get ("wan_netmask"), &netmask);
 	  DEBUG ("gateway=%08x", ipaddr.s_addr);
@@ -377,21 +377,21 @@ listen_interface (char *interface)
 	  if ((ipaddr.s_addr & netmask.s_addr) !=
 	      (*(u_int32_t *) & (packet.daddr) & netmask.s_addr))
 	    {
-	    if (nvram_match ("wan_proto", "l2tp"))
-	      {
-		ret = L_SUCCESS;
-		goto Exit;
-	      }
-	    else if (nvram_match ("wan_proto", "heartbeat"))
-	      {
-		ret = L_SUCCESS;
-		goto Exit;
-	      }
-	    else
-	      {
-		ret = L_FAIL;
-		goto Exit;
-	      }
+	      if (nvram_match ("wan_proto", "l2tp"))
+		{
+		  ret = L_SUCCESS;
+		  goto Exit;
+		}
+	      else if (nvram_match ("wan_proto", "heartbeat"))
+		{
+		  ret = L_SUCCESS;
+		  goto Exit;
+		}
+	      else
+		{
+		  ret = L_FAIL;
+		  goto Exit;
+		}
 	    }
 
 	  break;
@@ -439,8 +439,8 @@ listen_main (int argc, char *argv[])
 	    {
 	    case L_SUCCESS:
 	      DEBUG1
-	    	("**************** received an lan to wan packet **************\n\n");
-	      start_service("force_to_dial");
+		("**************** received an lan to wan packet **************\n\n");
+	      start_service ("force_to_dial");
 	      if (nvram_match ("wan_proto", "heartbeat"))
 		exit (0);
 
