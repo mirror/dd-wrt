@@ -75,7 +75,7 @@
 					</ul>
 				</dd>
 				<dt>System Log</dt>
-				<dd>Enable Syslogd to capture and forward all messages to another system. Enter the IP-address of the server for the syslog messages.</dd>
+				<dd>Enable Syslogd to capture system messages. By default they will be collected in the local file /var/log/messages. To send them to another system, enter the IP address of a remote syslog server.</dd>
 				<dt>Telnet</dt>
 				<dd>Enable a telnet server to connect to the router with telnet. The username is <tt>root</tt> and the password is the router password.<br/><br/>
 					<div class="note">
