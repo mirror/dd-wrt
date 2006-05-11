@@ -102,7 +102,7 @@ share.srv="Service Name";
 share.port_range="Port Range";
 share.priority="Priority";
 share.gateway="Gateway";
-share.interface="Interface";
+share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
 share.router="Router";
 
 
