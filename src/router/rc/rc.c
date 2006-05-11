@@ -147,7 +147,7 @@ main_loop (void)
   nvram_set ("vlan1ports", "");
 #else
 
-  if (nvram_match ("fullswitch", "1") && nvram_invmatch ("wl_mode", "ap"))
+  if (nvram_match ("fullswitch", "1") && (nvram_invmatch ("wl_mode", "ap") || nvram_match ("wan_proto", "disabled")))
     {
       nvram_set ("vlan0ports", "0 1 2 3 4 5*");
       nvram_set ("vlan1ports", "");
