@@ -5044,9 +5044,7 @@ ej_css_include (int eid, webs_t wp, int argc, char_t **argv)
 void
 ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv)
 {
-	if ( nvram_match("wan_proto", "disabled") || 									//WAN is disable OR
-		(!nvram_match("wan_proto", "disabled") && !nvram_match("wl_mode", "ap"))	//WAN active AND Wirelles is not AP
-		)
+	if ( nvram_match("wan_proto", "disabled") || !nvram_match("wl_mode", "ap"))	//WAN disabled OR Wirelles is not AP
 	{
 		websWrite (wp, "<fieldset>\n\
 							<legend><script type=\"text/javascript\">Capture(idx.legend2)</script></legend>\n\
