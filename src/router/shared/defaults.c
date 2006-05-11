@@ -121,6 +121,8 @@ struct nvram_tuple router_defaults[] = {
 #endif
 #ifdef HAVE_SKYTRON
   {"lan_ipaddr", "192.168.0.1", 0},	/* LAN IP address */
+#elif HAVE_DDLAN
+  {"lan_ipaddr", "192.168.11.1", 0},	/* LAN IP address */
 #elif HAVE_GGEW
   {"lan_ipaddr", "192.168.1.1", 0},	/* LAN IP address */
 #elif HAVE_NEWMEDIA
@@ -162,6 +164,13 @@ struct nvram_tuple router_defaults[] = {
   {"wan_netmask", "255.0.0.0", 0},	/* WAN netmask */
   {"wan_gateway", "10.0.0.1", 0},	/* WAN gateway */
   {"wan_dns", "213.146.232.2 213.146.230.2", 0},	/* x.x.x.x x.x.x.x ... */
+#elif HAVE_DDLAN
+  {"wan_proto", "disabled", 0},	/* [static|dhcp|pppoe|disabled] */
+
+  {"wan_ipaddr", "0.0.0.0", 0},	/* WAN IP address */
+  {"wan_netmask", "0.0.0.0", 0},	/* WAN netmask */
+  {"wan_gateway", "0.0.0.0", 0},	/* WAN gateway */
+  {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
 #else
   {"wan_proto", "dhcp", 0},	/* [static|dhcp|pppoe|disabled] */
 
@@ -398,7 +407,11 @@ struct nvram_tuple router_defaults[] = {
   {"ppp_get_srv", "", 0},	/* PPPoE Server service name */
 
   /* Wireless parameters */
+#ifdef HAVE_DDLAN
+  {"wl_distance", "2000", 0},	/* ack timing, distance in meters */
+#else
   {"wl_distance", "20000", 0},	/* ack timing, distance in meters */
+#endif
   {"wl_ifname", "", 0},		/* Interface name */
   {"wl_hwaddr", "", 0},		/* MAC address */
   {"wl_phytype", "g", 0},	/* Current wireless band ("a" (5 GHz), "b" (2.4 GHz), or "g" (2.4 GHz)) *//* Modify */
@@ -407,6 +420,8 @@ struct nvram_tuple router_defaults[] = {
   {"wl_radioids", "", 0},	/* List of radio IDs */
 #ifdef HAVE_WTS
   {"wl_ssid", "www.wts.com.ve", 0},	/* Service set ID (network name) */
+#elif HAVE_DDLAN
+  {"wl_ssid", "www.dd-lan.de", 0},	/* Service set ID (network name) */
 #elif HAVE_SKYTEL
   {"wl_ssid", "skytel", 0},	/* Service set ID (network name) */
 #elif HAVE_POWERNOC
@@ -642,7 +657,11 @@ struct nvram_tuple router_defaults[] = {
   {"ipsec_pass", "1", 0},	/* IPSec Pass Through [1|0] */
   {"pptp_pass", "1", 0},	/* PPTP Pass Through [1|0] */
   {"l2tp_pass", "1", 0},	/* L2TP Pass Through [1|0] */
+#ifdef HAVE_DDLAN
+  {"remote_management", "1", 0},	/* Remote Management [1|0] */
+#else
   {"remote_management", "0", 0},	/* Remote Management [1|0] */
+#endif
 #endif
 #ifdef HAVE_SAGAR
   {"remote_mgt_https", "1", 0},	/* Remote Management use https [1|0] */// add
@@ -730,6 +749,8 @@ struct nvram_tuple router_defaults[] = {
   {"rc_shutdown", "", 0},
 #ifdef HAVE_POWERNOC
   {"txpwr", "200", 0},
+#elif HAVE_DDLAN
+  {"txpwr", "100", 0},
 #elif HAVE_SKYTRON
   {"txpwr", "251", 0},
 #elif HAVE_SAGAR
@@ -776,7 +797,11 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"nas_enable", "1", 0},
 #endif
+#ifdef HAVE_DDLAN
+  {"ntp_enable", "0", 0},
+#else
   {"ntp_enable", "1", 0},
+#endif
   {"pptpd_enable", "0", 0},
   {"pptpd_lip", "", 0},
   {"pptpd_rip", "", 0},
@@ -1117,7 +1142,11 @@ struct nvram_tuple router_defaults[] = {
   {"rflow_if", "br0", 0},
   {"pppoe_ver", "0", 0},
 #ifdef HAVE_PPPOERELAY
+#ifdef HAVE_DDLAN
+  {"pppoerelay_enable", "1", 0},
+#else
   {"pppoerelay_enable", "0", 0},
+#endif
 #endif
   {"schedule_enable", "0", 0},
   {"schedule_time", "3600", 0},
