@@ -401,8 +401,8 @@ function init()
 								<% show_index_setting(); %>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(idx.stp)</script></div>
-									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_checked("lan_stp","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_checked("lan_stp","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_selmatch("lan_stp", "1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_selmatch("lan_stp", "0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 									<span class="default"><script type="text/javascript">Capture(idx.stp_mess)</script></span>
 								</div>
 							</fieldset><br />
