@@ -12,7 +12,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(share.port)</script></div>
-		<input size="5" maxlength="32" class="num" name="openvpn_remoteport" value="<% nvram_get("openvpn_remoteport"); %>" />
+		<input size="5" maxlength="32" class="num" name="openvpn_remoteport" onblur="valid_range(this,1,65535,share.port)"  value="<% nvram_get("openvpn_remoteport"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(service.vpn_mtu)</script></div>
