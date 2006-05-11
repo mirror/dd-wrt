@@ -1,12 +1,13 @@
+
 <fieldset>
-	<legend>XBOX Kaid</legend>
+	<legend><script type="text/javascript">Capture(service.kaid_legend)</script></legend>
 	<div class="setting">
-		<div class="label">Kaid enabled</div>
-		<input type="radio" value="1" name="kaid_enable" <% nvram_match("kaid_enable","1","checked"); %> />Enable
-		<input type="radio" value="0" name="kaid_enable" <% nvram_match("kaid_enable","0","checked"); %> />Disable
+		<div class="label"><script type="text/javascript">Capture(service.kaid_srv)</script></div>
+		<input class="spaceradio" type="radio" value="1" name="kaid_enable" <% nvram_selmatch("kaid_enable", "1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="kaid_enable" <% nvram_selmatch("kaid_enable", "0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
-		<div class="label">Console Macs: (must end with;)</div>
+		<div class="label"><script type="text/javascript">Capture(service.kaid_mac)</script></div>
 		<textarea id="kaid_macs" name="kaid_macs" cols="60" rows="4"></textarea>
 		<script language="javascript">
 			var kaid_macs = fix_cr( '<% nvram_get("kaid_macs"); %>' );
