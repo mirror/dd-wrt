@@ -143,7 +143,7 @@
 		</div>
 		<% nvram_match("ntp_enable","0","<!--"); %>
 		<div class="setting">
-			<div class="label"><script type="text/javascript">Capture(management.ntp_server)</script></div>
+			<div class="label"><script type="text/javascript">Capture(share.srvip)</script></div>
 			<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" /></div>
 		<% nvram_match("ntp_enable","0","-->"); %>
 	</fieldset><br />
