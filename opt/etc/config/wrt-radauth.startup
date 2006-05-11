@@ -42,6 +42,9 @@ if [ "$(nvram get wl_mode)" = "ap" ]; then
 	wrt-radauth -n2 $IFNAME &
 	fi
 	if [ "$(nvram get wl_radmactype)" = "2" ]; then
+	wrt-radauth -n3 $IFNAME &
+	fi
+	if [ "$(nvram get wl_radmactype)" = "3" ]; then
 	wrt-radauth $IFNAME &
 	fi
 	
