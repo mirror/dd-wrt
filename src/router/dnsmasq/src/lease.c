@@ -16,7 +16,6 @@
 
 static struct dhcp_lease *leases;
 static int dns_dirty;
-static FILE *lease_file;
 enum
 { no, yes, force } file_dirty;
 static int leases_left;
@@ -29,7 +28,7 @@ lease_init (struct daemon *daemon, time_t now)
 leases = NULL;
 leases_left = daemon->dhcp_max;
 //printf("load dhcp leases"); 
-lease_file=load_dhcp(daemon,now);
+FILE *lease_file=load_dhcp(daemon,now);
 rewind(lease_file);
 //printf("done"); 
 file_dirty=no;
@@ -84,7 +83,6 @@ void lease_prune(struct dhcp_lease *target, time_t now)
       if ((lease->expires != 0 && difftime(now, lease->expires) > 0) || lease == target)
 	{
 	  file_dirty = yes;
-          syslog(LOG_INFO, "expired lease");
 
 	  *up = lease->next; /* unlink */
 	  if (lease->hostname)
@@ -298,11 +296,11 @@ lease_update_file (struct daemon *daemon, int always, time_t now)
 /* DD-WRT udhcpd lease file compatibility */
 fprintf(stderr,"update lease file\n");
 
-  if (file_dirty != no)
+//  if (file_dirty != no)
     {
       rewind (daemon->lease_stream);
       ftruncate (fileno (daemon->lease_stream), 0);
-fprintf(stderr,"rewinding\n");
+fprintf(stderr,"rewindet\n");
 
       for (lease = leases; lease; lease = lease->next)
 	{
@@ -320,7 +318,7 @@ fprintf(stderr,"rewinding\n");
 	  if (!lease->expires)
 	    expires = EXPIRES_NEVER;
 	  
-          l.expires = htonl (expires);
+	  l.expires = htonl (expires);
 	  if (lease->hostname != NULL)
 	    {
 	      strcpy (l.hostname, lease->hostname);
