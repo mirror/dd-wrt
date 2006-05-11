@@ -51,24 +51,23 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
   FILE *fp;
   struct lease_t binlease;
   struct isc_lease *lease, *tmp, **up;
-//struct stat statbuf;
+  struct stat statbuf;
 
   logged_lease = 0;
-
-  if (!(fp = fopen (file, "r+b")))
-    {
-      fprintf(stderr,"creating %s\n",file);
+  
+  
+//  if (!(fp = fopen (file, "r+b")))
+//    {
+fprintf(stderr,"opening %s\n",file);
       if (!(fp = fopen (file, "wb")))
       {
-      fprintf(stderr,"error while opening %s\n",file);
+fprintf(stderr,"error while opening %s\n",file);
       syslog (LOG_ERR, "failed to load %s: %m", file);
       return NULL;
       }
-    }
-
-  fprintf(stderr,"opening %s\n",file);
-  fprintf(stderr,"done()\n");
-
+//    }
+fprintf(stderr,"done()\n");
+  
   syslog (LOG_INFO, "reading %s", file);
 
   while (fread(&binlease, sizeof(binlease), 1, fp))
@@ -144,7 +143,6 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 		}
 	    }
 	}
-    fprintf(stderr,"lease read finished\n");
     }
 
   
@@ -175,10 +173,11 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 	{
 	  cache_add_dhcp_entry(daemon,lease->fqdn, &lease->addr, lease->expires);
 	  cache_add_dhcp_entry(daemon,lease->name, &lease->addr, lease->expires);
-          syslog(LOG_INFO, "stored lease for %s", lease->name);
 	}
       else 
 	cache_add_dhcp_entry(daemon,lease->name, &lease->addr, lease->expires);
+
+      syslog(LOG_INFO, "stored lease for %s", lease->name); 
 
     }
 return fp;
