@@ -104,6 +104,8 @@ share.priority="Priority";
 share.gateway="Gateway";
 share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
 share.router="Router";
+share.static_lease="Static Leases";
+share.srvip="Server IP";
 
 
 var sbutton = new Object();
@@ -874,7 +876,6 @@ management.wifi_srv="802.1x";
 
 management.ntp_legend="NTP Client";
 management.ntp_srv="NTP";
-management.ntp_server="Server IP";
 
 management.rst_legend="Reset Button";
 management.rst_srv="Reset Button";
@@ -1046,6 +1047,81 @@ survey.thjoin="Join Site";
 // **************************************************************** Services.asp **********************************************************************//
 
 var service = new Object();
+
+service.titl=" - Services";
+service.h2="Services Management";
+
+//kaid
+service.kaid_legend="XBOX Kaid";
+service.kaid_srv="Start Kaid";
+service.kaid_mac="Console Macs: (must end with;)";
+
+//DHCPd
+service.dhcp_legend="DHCP Client";
+service.dhcp_vendor="Set Vendorclass";
+service.dhcp_legend2="DHCP Server";
+service.dhcp_srv="DHCP Daemon";
+service.dhcp_jffs2="Use JFFS2 for client lease DB";
+service.dhcp_domain="Used Domain";
+sercice.dhcp_landomain="LAN Domain";
+service.dhcp_option="Additional DHCPd Options";
+
+//pptp.webservices
+service.pptp_legend="PPTP";
+service.pptp_srv="PPTP Server";
+service.pptp_client="Client IP(s)";
+service.pptp_chap="CHAP-Secrets";
+
+//syslog.webservices
+service.syslog_legend="System Log";
+service.syslog_srv="Syslogd";
+service.syslog_ip="Remote Server";
+
+//telnet.webservices
+service.telnet_legend="Telnet";
+service.telnet_srv="Telnet";
+
+//pptpd_client.webservices
+service.pptpd_legend="PPTP Client";
+service.pptpd_option="PPTP Client Options";
+service.pptpd_ipdns="Server IP or DNS Name";
+service.pptpd_subnet="Remote Subnet";
+service.pptpd_subnetmask="Remote Subnet Mask";
+service.pptpd_encry="MPPE Encryption";
+service.pptpd_mtu="MTU";
+service.pptpd_mru="MRU";
+service.pptpd_nat="NAT";
+
+//rflow.webservices
+service.rflow_legend="RFlow / MACupd";
+service.rflow_srv1="RFlow";
+service.rflow_srv2="MACupd";
+
+//pppoe-relay.webservices
+service.pppoe_legend="PPPOE Relay";
+service.pppoe_srv="Relay";
+
+//snmp.webservices
+service.snmp_legend="SNMP";
+service.snmp_srv="SNMP";
+service.snmp_loc="Location";
+service.snmp_contact="Contact";
+service.snmp_name="Name";
+service.snmp_read="RO Community";
+service.snmp_write="RW Community";
+
+//openvpn.webservices
+service.vpn_legend="OpenVPN Client";
+service.vpn_srv="Start OpenVPN";
+service.vpn_ipname="Server IP/Name";
+service.vpn_mtu="TUN MTU Setting";
+service.vpn_mru="TUN MTU Extra";
+service.vpn_mss="TCP MSS";
+service.vpn_compress="Use LZO Compression";
+service.vpn_tunnel="Tunnel Protocol";
+service.vpn_srvcert="Public Server Cert";
+service.vpn_clicert="Public Client Cert";
+service.vpn_clikey="Private Client Key";
 
 //sshd.webservices
 service.ssh_legend="Secure Shell";
