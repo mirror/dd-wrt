@@ -760,10 +760,12 @@ idx.wantoswitch="Assign WAN Port to Switch";
 idx.legend3="Time Settings";
 idx.timeset="Time Zone / Summer Time (DST)";
 idx.localtime="Use local time";
+idx.static_ip="Static IP";
+idx.dhcp="Automatic Configuration - DHCP";
 
 //help container
 var hidx = new Object();
-hidx.right1="Automatic Configuration - DHCP:";
+hidx.right1=idx.dhcp + ":";
 hidx.right2="This setting is most commonly used by Cable operators.";
 hidx.right3="Host Name:";
 hidx.right4="Enter the host name provided by your ISP.";
