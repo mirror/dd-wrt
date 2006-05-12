@@ -33,9 +33,9 @@ document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
 					} else {
 						for(var i = 0; i < table.length; i = i+4) {
 							if(table[i+3] == "LAN")
-								table[i+3] = routetbl.eth_lan;
+								table[i+3] = "LAN &amp; WLAN";
 							else if(table[i+3] == "WAN")
-								table[i+3] = routetbl.eth_wan;
+								table[i+3] = "WAN";
 							document.write("<tr><td>"+table[i]+"</td><td>"+table[i+1]+"</td><td>"+table[i+2]+"</td><td>"+table[i+3]+"</td></tr>");
 						}
 					}
