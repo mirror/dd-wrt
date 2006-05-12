@@ -34,7 +34,7 @@
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
 		<select name="rflow_if">
-		    <option value="br0" <% nvram_selmatch("rflow_if","br0","selected"); %>>LAN+WLAN</option>
+		    <option value="br0" <% nvram_selmatch("rflow_if","br0","selected"); %>>LAN &amp; WLAN</option>
 		    <option value="vlan1" <% nvram_selmatch("rflow_if","vlan1","selected"); %>>WAN</option>
 		    <option value="eth1" <% nvram_selmatch("rflow_if","eth1","selected"); %>>WLAN</option>
 		    <option value="vlan0" <% nvram_selmatch("rflow_if","vlan0","selected"); %>>LAN</option>
