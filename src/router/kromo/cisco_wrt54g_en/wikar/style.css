@@ -282,10 +282,10 @@ width:99% !important;
 }
 
 .bin {
-background:url(../images/bin_bt.gif) center no-repeat;
-cursor: pointer;
+background:url(/images/bin_bt.gif) center no-repeat;
+cursor:pointer;
 }
 
 input.spaceradio {
-	margin-right: .4em;
+margin-right:.4em;
 }
