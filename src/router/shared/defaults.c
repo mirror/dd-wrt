@@ -1308,7 +1308,7 @@ struct nvram_tuple router_defaults[] = {
   {"pptpd_client_srvuser", "", 0},
   {"pptpd_client_srvpass", "", 0},
   {"pptpd_client_ipparam", "", 0},
-  {"pptpd_client_mtu" "1450", 0},
+  {"pptpd_client_mtu", "1450", 0},
   {"pptpd_client_mru", "1450", 0},
   {0, 0, 0}
 };
