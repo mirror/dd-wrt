@@ -136,8 +136,8 @@ function SelMode(num,F) {
 									<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
 									<select size="1" name="dr_setting">
 										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("dr_setting", "0", "js"); %> >" + share.disable + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selected("dr_setting", "1", "js"); %> >" + routetbl.eth_lan + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selected("dr_setting", "2", "js"); %> >" + routetbl.eth_wan + "</option>");</script>
+										<option value="1" <% nvram_selected("dr_setting", "1"); %> >LAN &amp; WLAN</option>
+										<option value="2" <% nvram_selected("dr_setting", "2"); %> >WAN</option>
 										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selected("dr_setting", "3", "js"); %> >" + share.both + "</option>");</script>
 									</select>
 								</div>
@@ -175,8 +175,8 @@ function SelMode(num,F) {
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
 									<select name="route_ifname">
-										<option value="lan" <% static_route_setting("lan","0"); %>>LAN & Wireless</option>
-										<option value="wan" <% static_route_setting("wan","0"); %>>WAN (Internet)</option>
+										<option value="lan" <% static_route_setting("lan","0"); %> >LAN &amp; WLAN</option>
+										<option value="wan" <% static_route_setting("wan","0"); %> >WAN</option>
 									</select>
 								</div>
 								<div class="center">
