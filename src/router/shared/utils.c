@@ -706,11 +706,11 @@ char *
 get_wan_face (void)
 {
   static char localwanface[IFNAMSIZ];
-  if (nvram_match ("pptpd_client_enable", "1"))
+/*  if (nvram_match ("pptpd_client_enable", "1"))
     {
 	strncpy (localwanface, "ppp0", IFNAMSIZ);
 	return localwanface;
-    }
+    }*/
   if (nvram_match ("wan_proto", "pptp") || nvram_match ("wan_proto", "l2tp")
       || nvram_match ("wan_proto", "pppoe"))
     {
