@@ -30,7 +30,7 @@
 		<select name="chilli_interface">
 			<option value="wan" <% nvram_selected("chilli_interface","wan"); %> >WAN</option>
 			<option value="lan" <% nvram_selected("chilli_interface","lan"); %> >LAN</option>
-			<option value="lanwan" <% nvram_selected("chilli_interface","lanwan"); %> >LAN+WLAN</option>
+			<option value="lanwan" <% nvram_selected("chilli_interface","lanwan"); %> >LAN &amp; WLAN</option>
 		</select>
 	</div>
 	<div class="setting">
