@@ -2611,7 +2611,12 @@ start_pppoe (int pppoe_num)
   char wanmask[2][15] = { "wan_netmask", "wan_netmask_1" };
   char wangw[2][15] = { "wan_gateway", "wan_gateway_1" };
   char pppoeifname[15];
-
+  char *wan_ifname = nvram_safe_get("wan_ifname");
+   if (isClient ())
+    {
+      wan_ifname = getwlif ();
+    }
+ 
   pid_t pid;
 
   sprintf (pppoeifname, "pppoe_ifname%d", pppoe_num);
@@ -2650,7 +2655,7 @@ start_pppoe (int pppoe_num)
   sprintf (param, "%d", pppoe_num);
   /* add here */
   char *pppoe_argv[] = { "pppoecd",
-    nvram_safe_get ("wan_ifname"),
+    wan_ifname,
     "-u", username,
     "-p", passwd,
     "-r", nvram_safe_get ("wan_mtu"),	//del by honor, add by tallest.
