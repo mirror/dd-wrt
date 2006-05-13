@@ -106,7 +106,9 @@ share.intrface="Interface";  //don't use share.interface, Mozilla problem!!!
 share.router="Router";
 share.static_lease="Static Leases";
 share.srvip="Server IP";
-
+share.localdns="Local DNS";
+share.minutes="minutes";
+share.oui="OUI Search";
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -243,6 +245,9 @@ errmsg.err56="Port value is out of range [0 - 65535]";
 // Routing.asp error messages
 errmsg.err57="Delete the Entry ?";
 
+// Status_Lan.asp error messages
+errmsg.err58="Click to delete lease";
+
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
 bmenu.setup="Setup";
@@ -293,6 +298,10 @@ bmenu.adminBackup="Backup";
 
 
 bmenu.statu="Status";
+bmenu.statuRouter="Router";
+bmenu.statuLAN="LAN";
+bmenu.statuWLAN="Wireless";
+bmenu.statuSysInfo="Sys-Info";
 
 
 
@@ -756,7 +765,6 @@ idx.mtu="MTU";
 idx.h23="Network Setup";
 idx.routerip="Router IP";
 idx.lanip="Local IP Address";
-idx.localdns="Local DNS";
 idx.legend2="WAN Port";
 idx.wantoswitch="Assign WAN Port to Switch";
 idx.legend3="Time Settings";
@@ -764,6 +772,18 @@ idx.timeset="Time Zone / Summer Time (DST)";
 idx.localtime="Use local time";
 idx.static_ip="Static IP";
 idx.dhcp="Automatic Configuration - DHCP";
+idx.dhcp_legend="Network Address Server Settings (DHCP)";
+idx.dhcp_type="DHCP Type";
+idx.dhcp_srv="DHCP Server";
+idx.dhcp_fwd="DHCP Forwarder";
+idx.dhcp_start="Start IP Address";
+idx.dhcp_end="End IP Address";		//used in Status_Lan.asp
+idx.dhcp_maxusers="Maximum DHCP Users";
+idx.dhcp_lease="Client Lease Time";
+idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
+
+
+
 
 //help container
 var hidx = new Object();
@@ -779,7 +799,7 @@ hidx.right9=share.subnet + ":";
 hidx.right10="This is the subnet mask of the router.";
 hidx.right11="DHCP Server:";
 hidx.right12="Allows the router to manage your IP addresses.";
-hidx.right13="Starting IP Address:";
+hidx.right13="Start IP Address:";
 hidx.right14="The address you would like to start with.";
 hidx.right15="Maximum number of DHCP Users:";
 hidx.right16="You may limit the number of addresses your router hands out.";
@@ -1127,6 +1147,26 @@ service.ssh_legend="Secure Shell";
 service.ssh_srv="SSHd";
 service.ssh_password="Password Login";
 service.ssh_key="Authorized Keys";
+
+
+
+// **************************************************************** Status_Lan.asp **********************************************************************//
+
+var status_lan = new Object();
+status_lan.titl=" - LAN Status";
+status_lan.h2="Local Network";
+status_lan.legend="LAN Status";
+status_lan.h22="Dynamic Host Configuration Protocol";
+status_lan.legend2="DHCP Status";
+status_lan.legend3="DHCP Clients";
+
+//help container
+var hstatus_lan = new Object();
+hstatus_lan.right2="This is the Router's MAC Address, as seen on your local, Ethernet network.";
+hstatus_lan.right4="This shows the Router's IP Address, as it appears on your local, Ethernet network.";
+hstatus_lan.right6="When the Router is using a Subnet Mask, it is shown here.";
+hstatus_lan.right8="If you are using the Router as a DHCP server, that will be displayed here.";
+hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).";
 
 
 

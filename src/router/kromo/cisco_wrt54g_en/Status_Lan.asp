@@ -9,6 +9,9 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
+document.title = "<% nvram_get("router_name"); %>" + status_lan.titl;
+
 function deleteLease(val) {
 	document.forms[0].d_0.value = val;
 	document.forms[0].submit();
@@ -22,7 +25,7 @@ function setDHCPTable() {
 		var cell = table.insertRow(-1).insertCell(-1);
 		cell.colSpan = 5;
 		cell.align = "center";
-		cell.innerHTML = "- None - ";
+		cell.innerHTML = "- " + share.none + " -";
 		return;
 	}
 	for(var i = 0; i < val.length; i = i + 5) {
@@ -35,7 +38,7 @@ function setDHCPTable() {
 		var mac = val[i + 2];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
-		  cellmac.title = "OUI Search";
+		  cellmac.title = share.oui;
 		  cellmac.style.cursor = "pointer";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		  cellmac.innerHTML = mac;
@@ -46,7 +49,7 @@ function setDHCPTable() {
 		row.insertCell(-1).innerHTML = val[i + 3];
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
-		cell.title = "Click to delete lease";
+		cell.title = errmsg.err58;
 		eval("addEvent(cell, 'click', function() { deleteLease(" + val[i + 4] + ") })");
 	}
 }
@@ -89,24 +92,24 @@ addEvent(window, "unload", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li class="current"><span>Status</span>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.statu)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Status_Router.asp">Router</a></li>
-											<li><span>LAN</span></li>
-											<li><a href="Status_Wireless.asp">Wireless</a></li>
+											<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statuRouter)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.statuLAN)</script></span></li>
+											<li><a href="Status_Wireless.asp"><script type="text/javascript">Capture(bmenu.statuWLAN)</script></a></li>
 											<% show_sputnik(); %>
 											<% nvram_invmatch("status_auth","1","<!--"); %>
-											<li><a href="Info.htm">Sys-Info</a></li>
+											<li><a href="Info.htm"><script type="text/javascript">Capture(bmenu.statuSysInfo)</script></a></li>
 											<% nvram_invmatch("status_auth","1","-->"); %>
 										</ul>
 									</div>
@@ -123,92 +126,95 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" value="delete" />
 							<input type="hidden" name="d_0" />
 							<input type="hidden" name="next_page" value="Status_Lan.asp" />
-							<h2>Local Network</h2>
+							<h2><script type="text/javascript">Capture(status_lan.h2)</script></h2>
 							<fieldset>
-								<legend>LAN Status</legend>
+								<legend><script type="text/javascript">Capture(status_lan.legend)</script></legend>
 								<div class="setting">
-									<div class="label">MAC Address</div>
-									<span id="lan_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')" ><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+									<div class="label"><script type="text/javascript">Capture(share.mac)</script></div>
+									<script>document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");</script><% nvram_get("lan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">IP Address</div>
+									<div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
 									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Subnet Mask</div>
+									<div class="label"><script type="text/javascript">Capture(share.subnet)</script></div>
 									<span id="lan_netmask"><% nvram_get("lan_netmask"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Gateway</div>
+									<div class="label"><script type="text/javascript">Capture(share.gateway)</script></div>
 									<span id="lan_gateway"><% nvram_get("lan_gateway"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Local DNS</div>
+									<div class="label"><script type="text/javascript">Capture(share.localdns)</script></div>
 									<span id="lan_dns"><% nvram_get("sv_localdns"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
-							<h2>Dynamic Host Configuration Protocol</h2>
+							<h2><script type="text/javascript">Capture(status_lan.h22)</script></h2>
 							<fieldset>
-								<legend>DHCP Status</legend>
+								<legend><script type="text/javascript">Capture(status_lan.legend2)</script></legend>
 								<div class="setting">
-									<div class="label">DHCP Server</div>
+									<div class="label"><script type="text/javascript">Capture(service.dhcp_legend2)</script></div>
 									<span id="dhcp_enabled"><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %></span>&nbsp;
 								</div>
 								<span id="dhcp_1" style="display:none">
 									<div class="setting">
-										<div class="label">DHCP Daemon</div>
+										<div class="label"><script type="text/javascript">Capture(service.dhcp_srv)</script></div>
 										<span id="dhcp_daemon"><% nvram_else_match("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label">Start IP Address</div>
+										<div class="label"><script type="text/javascript">Capture(idx.dhcp_start)</script></div>
 										<span id="dhcp_start_ip"><% prefix_ip_get("lan_ipaddr", "1"); %><% nvram_get("dhcp_start"); %></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label">End IP Address</div>
+										<div class="label"><script type="text/javascript">Capture(idx.dhcp_end)</script></div>
 										<span id="dhcp_end_ip"></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label">Client Lease Time</div>
-										<span id="dhcp_lease_time"><% nvram_get("dhcp_lease"); %> minutes</span>&nbsp;
+										<div class="label"><script type="text/javascript">Capture(idx.dhcp_lease)</script></div>
+										<span id="dhcp_lease_time"><% nvram_get("dhcp_lease"); %></span> <script type="text/javascript">Capture(share.minutes)</script>&nbsp;
 									</div>
 								</span>
 							</fieldset><br />
 							<span id="dhcp_2" style="display:none">
 								<fieldset>
-									<legend>DHCP Clients</legend>
+									<legend><script type="text/javascript">Capture(status_lan.legend3)</script></legend>
 									<table class="table center" cellspacing="6" id="dhcp_leases_table">
 										<tr>
-											<th width="25%">Host&nbsp;Name</th>
-											<th width="25%">IP&nbsp;Address</th>
-											<th width="25%">MAC&nbsp;Address</th>
-											<th width="25%">Expires</th>
+											<th width="25%"><script type="text/javascript">Capture(share.hostname)</script></th>
+											<th width="25%"><script type="text/javascript">Capture(share.ip)</script></th>
+											<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
+											<th width="25%"><script type="text/javascript">Capture(share.expires)</script></th>
 											<th>Delete</th>
 										</tr>
 									</table>
 								</fieldset><br />
 							</span>
 							<div class="submitFooter">
-								<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh is On"); %>" onclick="window.location.reload()" />
+								<script>document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">MAC Address: </dt>
-							<dd class="definition">This is the Router's MAC Address, as seen on your local, Ethernet network.</dd>
-							<dt class="term">IP Address: </dt>
-							<dd class="definition">This shows the Router's IP Address, as it appears on your local, Ethernet network.</dd>
-							<dt class="term">Subnet Mask: </dt>
-							<dd class="definition">When the Router is using a Subnet Mask, it is shown here.</dd>
-							<dt class="term">DHCP Server: </dt>
-							<dd class="definition">If you are using the Router as a DHCP server, that will be displayed here.</dd>
-							<dt class="term">OUI Search: </dt>
-							<dd class="definition">By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
+							<dt class="term"><script type="text/javascript">Capture(share.mac)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(share.ip)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right4)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(share.subnet)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right6)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_srv)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right8)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(share.oui)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right10)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HStatusLan.asp')">More...</a></div>
+						<a href="javascript:openHelpWindow('HStatusLan.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">

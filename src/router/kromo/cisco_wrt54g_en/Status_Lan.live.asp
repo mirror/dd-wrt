@@ -9,5 +9,5 @@
 {dhcp_daemon::<% nvram_else_match("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %>}
 {dhcp_start::<% nvram_get("dhcp_start"); %>}
 {dhcp_num::<% nvram_get("dhcp_num"); %>}
-{dhcp_lease_time::<% nvram_get("dhcp_lease"); %> minutes}
+{dhcp_lease_time::<% nvram_get("dhcp_lease"); %>}
 {dhcp_leases::<% dumpleases(0); %>}
