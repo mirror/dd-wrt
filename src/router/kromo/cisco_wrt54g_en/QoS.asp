@@ -67,6 +67,7 @@ function qos_grey(num,F) {
 	F.wshaper_uplink.disabled = sw_disabled;
 	F.wshaper_downlink.disabled = sw_disabled;
 	F.wshaper_dev.disabled = sw_disabled;
+	F.qos_type.disabled = sw_disabled;
 	F.add_svc_button.disabled = sw_disabled;
 	F.edit_svc_button.disabled = sw_disabled;
 	port_grey(sw_disabled, F);
@@ -200,6 +201,13 @@ function init() {
 									<select name="wshaper_dev">
 										<option value="WAN" <% nvram_selmatch("wshaper_dev", "WAN", "selected"); %>>WAN</option>
 										<option value="LAN" <% nvram_selmatch("wshaper_dev", "LAN", "selected"); %>>LAN &amp; WLAN</option>
+									</select>
+								</div>
+								<div class="setting">
+									<div class="label"><script type="text/javascript">Capture(qos.type)</script></div>
+									<select name="qos_type">
+										<option value="0" <% nvram_selmatch("qos_type", "0", "selected"); %>>HTB</option>
+										<option value="1" <% nvram_selmatch("qos_type", "1", "selected"); %>>HFSC</option>
 									</select>
 								</div>
 								<div class="setting">
