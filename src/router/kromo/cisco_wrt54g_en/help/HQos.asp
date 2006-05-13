@@ -23,6 +23,7 @@
 				<dt>Classification</td>
 				<dd>Bandwidth classification based on the four categories will be enabled first on the hardware ports, then on MAC addresses, then netmasks and finally services. For example, if you enable classification based on a MAC address, this will override netmask and service classifications. However, the LAN port based classification will work together with MAC, netmask and service classifications, and will not override them.
 					<ul class="wide">
+						<li>Exempt - This class tries to keep the bandwith and packet flow untouched.</li>
 						<li>Premium - The top bandwidth class. By default handshaking and icmp packets fall into this class. This class should be used sparingly. Occasionally VoIP service may be placed in this class so that voice receives top priority.</li>
 						<li>Express - The Express class is for interactive applications that require bandwidth above standard services so that interactive apps run smoothly.</li>
 						<li>Standard - All services that are not specifically classed will fall under the standard class.</li>
