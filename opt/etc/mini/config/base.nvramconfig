@@ -80,6 +80,7 @@
  "syslogd_rem_ip"  "Syslog"  "IPADDR"  "TRUE" "0"  
  "wshaper_enable"  "Bandwidth Mgmt"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "wshaper_dev"  "Bandwidth Mgmt"  "CHOICE" "3" "WAN"  "LAN"  "wLAN"  "FALSE" "0"  
+ "qos_type"  "Bandwidth Mgmt"  "CHOICE" "2" "0"  "1" "FALSE" "0"  
  "wshaper_downlink"  "Bandwidth Mgmt"  "NULL"  "TRUE" "0"  
  "wshaper_uplink"  "Bandwidth Mgmt"  "NULL"  "TRUE" "0"  
  "wshaper_nopriohostsrc"  "Bandwidth Mgmt"  "NULL"  "TRUE" "0"  
