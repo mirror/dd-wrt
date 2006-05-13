@@ -1013,9 +1013,9 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_type)</script></div>\n");
   websWrite (wp,
 	     "<select class=\"num\" size=\"1\" name=\"dhcpfwd_enable\" onchange=SelDHCPFWD(this.form.dhcpfwd_enable.selectedIndex,this.form)>\n");
-  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s >\" + idx.dhcp_srv + \"</option>\");</script>",
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s >\" + idx.dhcp_srv + \"</option>\");</script>\n",
 	     nvram_match ("dhcpfwd_enable", "0") ? "selected=\"selected\"" : "");
-  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"1\\\" %s >\" + idx.dhcp_fwd + \"</option>\");</script>",
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"1\\\" %s >\" + idx.dhcp_fwd + \"</option>\");</script>\n",
 	     nvram_match ("dhcpfwd_enable", "1") ? "selected=\"selected\"" : "");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
@@ -1062,7 +1062,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 		     "<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
 	  for (i = 0; i < 4; i++)
 	    websWrite (wp,
-		       "<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,idx_static.dns)\" value=\"%d\" />%s",
+		       "<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
 		       i, i == 3 ? 254 : 255, get_dns_ip ("wan_dns", 0, i),
 		       i < 3 ? "." : "");
 
@@ -1070,7 +1070,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 2</div>");
 	  for (i = 0; i < 4; i++)
 	    websWrite (wp,
-		       "<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,idx_static.dns)\" value=\"%d\" />%s",
+		       "<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
 		       i, i == 3 ? 254 : 255, get_dns_ip ("wan_dns", 1, i),
 		       i < 3 ? "." : "");
 
@@ -1078,7 +1078,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 3</div>");
 	  for (i = 0; i < 4; i++)
 	    websWrite (wp,
-		       "<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,idx_static.dns)\" value=\"%d\" />%s",
+		       "<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,idx_static.dns)\" value=\"%d\" />%s",
 		       i, i == 3 ? 254 : 255, get_dns_ip ("wan_dns", 2, i),
 		       i < 3 ? "." : "");
 	  websWrite (wp, "\n</div>");
