@@ -3015,6 +3015,7 @@ ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 			   <TD align=middle width=80><B>%s</B></TD>\n\
 			   <TD align=middle width=80>\n\
 			   <SELECT name=\"svqos_svcprio%d\"> \n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
 			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
 			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
 			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
@@ -3081,6 +3082,7 @@ ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
 			   <TD align=middle width=90><B>%s</B></TD>\n\
 			   <TD align=middle width=80>\n\
 			   <SELECT name=\"svqos_ipprio%d\"> \n\
+			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
 			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
 			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
 			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
@@ -3149,6 +3151,7 @@ ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
 			   <TD align=middle width=80><B>%s</B></TD>\n\
 			   <TD align=middle width=80>\n\
 			   <SELECT name=\"svqos_macprio%d\"> \n\
+			   		<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
 			   		<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
 					<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
 					<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
@@ -4709,6 +4712,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td><em>%s</em></td>\n\
 					<td >\n\
 						<select name=\"svqos_svcprio%d\"> \n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
@@ -4767,6 +4771,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td><em>%s</em></td>\n\
 					<td>\n\
 						<select name=\"svqos_ipprio%d\"> \n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
@@ -4879,6 +4884,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 					<td><em>%s</em></td>\n\
 					<td>\n\
 						<select name=\"svqos_macprio%d\"> \n\
+							<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\

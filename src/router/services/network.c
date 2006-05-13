@@ -1817,6 +1817,14 @@ notify_nas (char *type, char *ifname, char *action)
       nvram_match (strcat_r (prefix, "auth_mode", tmp), "none"))
     return 0;
 
+  while (retries-- > 0 && !(str = file2str ("/tmp/nas.lan.pid")))
+    sleep (1);
+  if (!str)
+    {
+    return -1;
+    }
+  free(str);
+  sleep(3);
   /* find WDS link configuration */
   wl_ioctl (ifname, WLC_WDS_GET_REMOTE_HWADDR, remote, ETHER_ADDR_LEN);
   for (i = 0; i < MAX_NVPARSE; i++)
@@ -1850,17 +1858,8 @@ notify_nas (char *type, char *ifname, char *action)
       /* ssid */
       argv[8] = nvram_safe_get (strcat_r (prefix, "ssid", tmp));
     }
-
-  /* wait till nas is started */
-  while (retries-- > 0 && !(str = file2str ("/tmp/nas.lan.pid")))
-    sleep (1);
-  if (str)
-    {
-      int pid;
-      free (str);
-      return _eval (argv, ">/dev/console", 0, &pid);
-    }
-  return -1;
+   int pid;
+   return _eval (argv, ">/dev/console", 0, &pid);
 }
 #endif
 /*
