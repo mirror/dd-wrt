@@ -447,12 +447,12 @@ function init()
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.gateway)</script></div>
 									<input type="hidden" name="lan_gateway" value="4" />
-									<input class="num" maxlength="3" size="3" name="lan_gateway_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("lan_gateway","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("lan_gateway","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("lan_gateway","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_3" onblur="valid_range(this,0,254,'IP')" value="<% get_single_ip("lan_gateway","3"); %>"/>
+									<input class="num" maxlength="3" size="3" name="lan_gateway_0" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("lan_gateway","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_1" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("lan_gateway","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_2" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("lan_gateway","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_3" onblur="valid_range(this,0,254,share.gateway)" value="<% get_single_ip("lan_gateway","3"); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx.localdns)</script></div>
+									<div class="label"><script type="text/javascript">Capture(share.localdns)</script></div>
 									<input type="hidden" name="sv_localdns" value="4" />
-									<input class="num" maxlength="3" size="3" name="sv_localdns_0" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("sv_localdns","0"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_1" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("sv_localdns","1"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_2" onblur="valid_range(this,0,255,'IP')" value="<% get_single_ip("sv_localdns","2"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_3" onblur="valid_range(this,0,254,'IP')" value="<% get_single_ip("sv_localdns","3"); %>"/>
+									<input class="num" maxlength="3" size="3" name="sv_localdns_0" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","0"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_1" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","1"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_2" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","2"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_3" onblur="valid_range(this,0,254,share.localdns)" value="<% get_single_ip("sv_localdns","3"); %>"/>
 								</div>
 							</fieldset><br />
 							
