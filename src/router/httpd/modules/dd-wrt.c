@@ -1014,9 +1014,9 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<select class=\"num\" size=\"1\" name=\"dhcpfwd_enable\" onchange=SelDHCPFWD(this.form.dhcpfwd_enable.selectedIndex,this.form)>\n");
   websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s >\" + idx.dhcp_srv + \"</option>\");</script>\n",
-	     nvram_match ("dhcpfwd_enable", "0") ? "selected=\"selected\"" : "");
+	     nvram_match ("dhcpfwd_enable", "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"1\\\" %s >\" + idx.dhcp_fwd + \"</option>\");</script>\n",
-	     nvram_match ("dhcpfwd_enable", "1") ? "selected=\"selected\"" : "");
+	     nvram_match ("dhcpfwd_enable", "1") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
   if (nvram_match ("dhcpfwd_enable", "1"))
