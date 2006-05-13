@@ -977,6 +977,7 @@ qos.titl=" - Quality of Service";
 qos.h2="Quality Of Service (QoS )";
 qos.legend="QoS Settings";
 qos.srv="Start QoS";
+qos.type="Packet Scheduler";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
 qos.gaming="Optimize for Gaming";

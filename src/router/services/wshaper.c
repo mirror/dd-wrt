@@ -565,7 +565,11 @@ start_wshaper (void)
 	  noprioportsrc_val, noprioportdst_val);
 #elif defined(HAVE_SVQOS)
   svqos_iptables ();
-  ret = eval ("/usr/sbin/svqos", dl_val, ul_val, dev_val, mtu_val);
+  if (nvram_match("qos_type","0"))
+  ret = eval ("/usr/sbin/svqos", dl_val, ul_val, dev_val, mtu_val,"0");
+  else
+  ret = eval ("/usr/sbin/svqos2", dl_val, ul_val, dev_val, mtu_val,"0");
+  
 #endif
   return ret;
 }
@@ -578,7 +582,11 @@ stop_wshaper (void)
 #ifdef HAVE_WSHAPER
   char script_name[] = "/usr/sbin/wshaper";
 #elif defined(HAVE_SVQOS)
-  char script_name[] = "/usr/sbin/svqos";
+ char *script_name;
+   if (nvram_match("qos_type","0"))
+  script_name = "/usr/sbin/svqos";
+   else
+  script_name = "/usr/sbin/svqos2";
 #endif
 
   ret = eval (script_name, "stop", "XX", "br0");
