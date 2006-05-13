@@ -21,7 +21,7 @@ ej_show_sputnik (int eid, webs_t wp, int argc, char_t ** argv)
   if (nvram_match ("apd_enable", "1"))
     {
       websWrite (wp,
-		 "<li><a href=\"Status_SputnikAPD.asp\">Sputnik Agent</a></li>\n");
+		 "<li><a href=\"Status_SputnikAPD.asp\"><script type=\"text/javascript\">Capture(bmenu.statuSysInfo)</script></a></li>\n");
     }
   return;
 }
