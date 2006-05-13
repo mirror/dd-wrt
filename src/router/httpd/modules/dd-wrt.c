@@ -3030,7 +3030,7 @@ ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
 			   </TR>\n\
 		           </TABLE>\n\
 			   </TD>\n\
-			   </TR>\n", i, i, name, i, type, name, i, strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+			   </TR>\n", i, i, name, i, type, name, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "",strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_svcs = strpbrk (++qos_svcs, "|");
       qos_svcs++;
@@ -3097,7 +3097,7 @@ ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
 			   </TR>\n\
 		           </TABLE>\n\
 			   </TD>\n\
-			   </TR>\n", i, i, ip, ip, i, strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+			   </TR>\n", i, i, ip, ip, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_ips = strpbrk (++qos_ips, "|");
       qos_ips++;
@@ -3166,7 +3166,7 @@ ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
 			   </TR>\n\
 		           </TABLE>\n\
 			   </TD>\n\
-			   </TR>\n", i, i, mac, mac, i, strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+			   </TR>\n", i, i, mac, mac, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_macs = strpbrk (++qos_macs, "|");
       qos_macs++;
@@ -3451,6 +3451,10 @@ qos_save (webs_t wp)
   snprintf (field, 31, "wshaper_dev");
   data = websGetVar (wp, field, NULL);
   nvram_set ("wshaper_dev", data);
+
+  snprintf (field, 31, "qos_type");
+  data = websGetVar (wp, field, NULL);
+  nvram_set ("qos_type", data);
 
   nvram_commit ();
 
@@ -4719,7 +4723,7 @@ ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 						</select>\n\
 		           </td>\n\
-				</tr>\n", i, i, name, i, type, name, i, strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+				</tr>\n", i, i, name, i, type, name, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_svcs = strpbrk (++qos_svcs, "|");
       qos_svcs++;
@@ -4778,7 +4782,7 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 						</select>\n\
 					</td>\n\
-				</tr>\n", i, i, ip, ip, i, strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+				</tr>\n", i, i, ip, ip, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_ips = strpbrk (++qos_ips, "|");
       qos_ips++;
@@ -4891,7 +4895,7 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 							<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
 						</select>\n\
 					</td>\n\
-				</tr>\n", i, i, mac, mac, i, strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
+				</tr>\n", i, i, mac, mac, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
 
       qos_macs = strpbrk (++qos_macs, "|");
       qos_macs++;
