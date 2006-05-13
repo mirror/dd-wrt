@@ -226,7 +226,8 @@ enableAfterBurner (void)
 {
 
   int boardflags;
-  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG || getRouterBrand () == ROUTER_MOTOROLA_V1)
+  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG
+      || getRouterBrand () == ROUTER_MOTOROLA_V1)
     return;
   if (nvram_get ("boardflags") == NULL)
     return;
@@ -458,9 +459,9 @@ start_restore_defaults (void)
       if (restore_defaults)
 	cprintf ("Restoring defaults...");
       break;
-      
+
     }
-    
+
 /* Delete dynamically generated variables */
   /* Choose default lan/wan i/f list. */
   char *ds;
@@ -506,7 +507,7 @@ start_restore_defaults (void)
  *  for (i=0;i<4;i++)
  * 		nvram_set(linux_overrides[i].name,linux_overrides[i].value);
  */
- 
+
   /* Restore defaults */
 #ifdef HAVE_FON
   int reset = 0;
@@ -560,10 +561,10 @@ start_restore_defaults (void)
 #ifndef HAVE_FON
   if (restore_defaults)		//fix for belkin std ip
     {
-      if(nvram_match("boardnum","WAP54GV3_8M_0614"))
-        {
-	nvram_set("vlan0ports","3 2 1 0 5*");
-	nvram_set("vlan1ports","4 5");
+      if (nvram_match ("boardnum", "WAP54GV3_8M_0614"))
+	{
+	  nvram_set ("vlan0ports", "3 2 1 0 5*");
+	  nvram_set ("vlan1ports", "4 5");
 	}
       nvram_set ("lan_ipaddr", "192.168.1.1");
     }
@@ -598,7 +599,8 @@ start_restore_defaults (void)
 	  nvram_set ("vlan0ports", "0 1 2 3 5*");
 	  break;
 	default:
-	  if (nvram_match ("bootnv_ver", "4") || nvram_match("boardnum","WAP54GV3_8M_0614"))
+	  if (nvram_match ("bootnv_ver", "4")
+	      || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 	    nvram_set ("vlan0ports", "3 2 1 0 5*");
 	  else
 	    nvram_set ("vlan0ports", "1 2 3 4 5*");
@@ -621,7 +623,8 @@ start_restore_defaults (void)
 	      nvram_set ("vlan1ports", "4 5");
 	      break;
 	    default:
-	      if (nvram_match ("bootnv_ver", "4") || nvram_match("boardnum","WAP54GV3_8M_0614"))
+	      if (nvram_match ("bootnv_ver", "4")
+		  || nvram_match ("boardnum", "WAP54GV3_8M_0614"))
 		nvram_set ("vlan1ports", "4 5");
 	      else
 		nvram_set ("vlan1ports", "0 5");
@@ -846,8 +849,8 @@ start_sysinit (void)
 
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
-#ifdef HAVE_RB500  
-    // fix for linux kernel 2.6
+#ifdef HAVE_RB500
+  // fix for linux kernel 2.6
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 #endif
   eval ("mkdir", "/tmp/www");
@@ -857,9 +860,10 @@ start_sysinit (void)
   // eval("insmod","jbd");
   eval ("insmod", "ext2");
 #ifndef KERNEL_24
-  if (mount("/dev/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
-#else  
-  if (mount("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+  if (mount ("/dev/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+#else
+  if (mount
+      ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
 #endif
     {
       //not created yet, create ext2 partition
@@ -901,7 +905,7 @@ start_sysinit (void)
     }
   if (brand == ROUTER_MOTOROLA)
     nvram_set ("cpu_type", "BCM4712");
-    nvram_set ("wl0gpio0", "2"); //Fix for wireless led, Eko.10.may.06
+  nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
 
   if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA
       || brand == ROUTER_BUFFALO_WZRRSG54 || brand == ROUTER_BELKIN_F5D7230)
@@ -936,7 +940,16 @@ start_sysinit (void)
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
 	    case ROUTER_BELKIN_F5D7230:
-//	    case ROUTER_BUFFALO_WBR54G:
+	      modules =
+		nvram_invmatch ("ct_modules",
+				"") ? nvram_safe_get ("ct_modules") :
+		"diag wl";
+	      eval("insmod","switch-core");
+	      if (eval("insmod","switch-robo"))
+		  eval("insmod","switch-adm");
+
+	      break;
+//          case ROUTER_BUFFALO_WBR54G:
 	    case ROUTER_MOTOROLA:
 	    case ROUTER_BUFFALO_WBR2G54S:
 	      modules =
@@ -973,7 +986,10 @@ start_sysinit (void)
 	      modules =
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
-		"diag wl switch-core switch-robo";
+		"diag wl";
+	      eval("insmod","switch-core");
+	      if (eval("insmod","switch-robo"))
+		  eval("insmod","switch-adm");
 	      break;
 	    case ROUTER_BUFFALO_WZRRSG54:
 	      modules =
@@ -1003,6 +1019,15 @@ start_sysinit (void)
 	if (nvram_match ("et0macaddr", MACBRAND))
 	  eval ("insmod", module);
 #else
+/*insmod("diag");
+insmod("wl");
+if (check_vlan_support())
+    {
+    insmod("switch-core");
+    if (insmod("switch-robo"))
+	insmod("switch-adm");
+    }
+*/
 	cprintf ("loading %s\n", module);
 	eval ("insmod", module);
 	cprintf ("done\n");
@@ -1219,25 +1244,26 @@ start_nvram (void)
     }
 // end Sveasoft addition
 // Fix for newer stylesheet settings, BrainSlayer, Eko
- char style[32];
- strcpy(style,nvram_safe_get("router_style"));
+  char style[32];
+  strcpy (style, nvram_safe_get ("router_style"));
 
-{
-  if (endswith(style,".css"))
-    {
-    for (i=0;i<strlen(style);i++)
-	if (style[i]=='.')style[i]=0;
-    }
-   nvram_set("router_style",style);
+  {
+    if (endswith (style, ".css"))
+      {
+	for (i = 0; i < strlen (style); i++)
+	  if (style[i] == '.')
+	    style[i] = 0;
+      }
+    nvram_set ("router_style", style);
 
-  if (nvram_match ("router_style", "") || (nvram_get ("router_style") == NULL))  //if still not set, force to cyan
-	nvram_set ("router_style", "cyan");
+    if (nvram_match ("router_style", "") || (nvram_get ("router_style") == NULL))	//if still not set, force to cyan
+      nvram_set ("router_style", "cyan");
 
 #ifdef DIST
-  if (nvram_match ("dist_type", "micro"))  //if dist_type micro, force to cyan
-	nvram_set("router_style", "cyan");
-#endif	
-}  
+    if (nvram_match ("dist_type", "micro"))	//if dist_type micro, force to cyan
+      nvram_set ("router_style", "cyan");
+#endif
+  }
 
   /* Let HW1.x users can communicate with WAP54G without setting to factory default */
 //      nvram_safe_set("wl_lazywds", "1");
@@ -1470,11 +1496,11 @@ check_cfe_nv (void)
 //      ret += check_nv("wan_ifname","vlan1");
 //      ret += check_nv("pppoe_ifname","vlan1");
       break;
-	case ROUTER_BELKIN_F5D7230:
+    case ROUTER_BELKIN_F5D7230:
 // nothing for now
-	  break;
-	case ROUTER_MOTOROLA:
-	  ret += check_nv ("wl0gpio0", "2");  //fix for wlan led, Eko
+      break;
+    case ROUTER_MOTOROLA:
+      ret += check_nv ("wl0gpio0", "2");	//fix for wlan led, Eko
       break;
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WZRRSG54:

@@ -291,6 +291,7 @@ function init() {
 										<td><script type="text/javascript">Capture(share.port)</script> 1</td>
 										<td>
 											<select name="svqos_port1prio">
+												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port1prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port1prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port1prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port1prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
@@ -316,6 +317,7 @@ function init() {
 										<td><script type="text/javascript">Capture(share.port)</script> 2</td>
 										<td>
 											<select name="svqos_port2prio">
+												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port2prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port2prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port2prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port2prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
@@ -341,6 +343,7 @@ function init() {
 										<td><script type="text/javascript">Capture(share.port)</script> 3</td>
 										<td>
 											<select name="svqos_port3prio">
+												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port3prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port3prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port3prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port3prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
@@ -366,6 +369,7 @@ function init() {
 										<td><script type="text/javascript">Capture(share.port)</script> 4</td>
 										<td>
 											<select name="svqos_port4prio">
+												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port4prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"10\" <% nvram_selmatch("svqos_port4prio", "10", "selected"); %> >" + qos.prio_p + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"20\" <% nvram_selmatch("svqos_port4prio", "20", "selected"); %> >" + qos.prio_e + "</option>");</script>
 												<script type="text/javascript">document.write("<option value=\"30\" <% nvram_selmatch("svqos_port4prio", "30", "selected"); %> >" + qos.prio_s + "</option>");</script>
