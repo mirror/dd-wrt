@@ -1008,21 +1008,21 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
   if (nvram_match ("wl_mode", "wet"))	//dhcpd settings disabled in client bridge mode, so we wont display it
     return;
   websWrite (wp,
-	     "<fieldset><legend>Network Address Server Settings (DHCP)</legend>\n");
+	     "<fieldset><legend><script type=\"text/javascript\">Capture(idx.dhcp_legend)</script></legend>\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">DHCP Type</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_type)</script></div>\n");
   websWrite (wp,
 	     "<select class=\"num\" size=\"1\" name=\"dhcpfwd_enable\" onchange=SelDHCPFWD(this.form.dhcpfwd_enable.selectedIndex,this.form)>\n");
-  websWrite (wp, "<option value=\"0\" %s>DHCP Server</option>",
-	     nvram_match ("dhcpfwd_enable", "0") ? "selected" : "");
-  websWrite (wp, "<option value=\"1\" %s>DHCP Forwarder</option>",
-	     nvram_match ("dhcpfwd_enable", "1") ? "selected" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s >\" + idx.dhcp_srv + \"</option>\");</script>",
+	     nvram_match ("dhcpfwd_enable", "0") ? "selected=\"selected\"" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"1\\\" %s >\" + idx.dhcp_fwd + \"</option>\");</script>",
+	     nvram_match ("dhcpfwd_enable", "1") ? "selected=\"selected\"" : "");
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
   if (nvram_match ("dhcpfwd_enable", "1"))
     {
       websWrite (wp, "<div class=\"setting\">\n");
-      websWrite (wp, "<div class=\"label\">DHCP Server</div>\n");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div>\n");
       char *ipfwd = nvram_safe_get ("dhcpfwd_ip");
       websWrite (wp,
 		 "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" /><input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_0\" onblur=\"valid_range(this,0,255,'IP')\" value='%d' />.<input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_1\" onblur=\"valid_range(this,0,255,'IP')\" value='%d' />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_2\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" value='%d' />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_3\" size=\"3\" onblur=\"valid_range(this,0,254,'IP')\" value='%d' /></div>\n",
@@ -1036,49 +1036,49 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "<div class=\"setting\">\n");
 //      char *nv = nvram_safe_get ("wan_wins");
       websWrite (wp,
-		 "<div class=\"label\">DHCP Server</div><input type=\"radio\" name=\"lan_proto\" value=\"dhcp\" onclick=SelDHCP('dhcp',this.form) %s>Enable</input>\n",
-		 nvram_match ("lan_proto", "dhcp") ? "checked" : "");
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div><input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"dhcp\" onclick=SelDHCP('dhcp',this.form) %s /><script type=\"text/javascript\">Capture(share.enable)</script>&nbsp;\n",
+		 nvram_match ("lan_proto", "dhcp") ? "checked=\"checked\"" : "");
       websWrite (wp,
-		 "<input type=\"radio\" name=\"lan_proto\" value=\"static\" onclick=\"SelDHCP('static',this.form)\" %s>Disable</input></div><input type=\"hidden\" name=\"dhcp_check\" /><div class=\"setting\">\n",
-		 nvram_match ("lan_proto", "static") ? "checked" : "");
-      websWrite (wp, "<div class=\"label\">Starting IP Address</div>%s", buf);
+		 "<input class=\"spaceradio\" type=\"radio\" name=\"lan_proto\" value=\"static\" onclick=\"SelDHCP('static',this.form)\" %s /><script type=\"text/javascript\">Capture(share.disable)</script></div><input type=\"hidden\" name=\"dhcp_check\" /><div class=\"setting\">\n",
+		 nvram_match ("lan_proto", "static") ? "checked=\"checked\"" : "");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_start)</script></div>%s", buf);
       websWrite (wp,
-		 "<input class=\"num\" name=\"dhcp_start\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,254,&#34;DHCP starting IP&#34;)\" value='%s' />",
+		 "<input class=\"num\" name=\"dhcp_start\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,254,idx.dhcp_start)\" value=\"%s\" />",
 		 nvram_safe_get ("dhcp_start"));
       websWrite (wp, "</div>\n");
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
-		 "<div class=\"label\">Maximum DHCP Users</div><input class=\"num\" name=\"dhcp_num\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,253,'Number of DHCP users')\" value='%s' /></div>\n",
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_maxusers)</script></div><input class=\"num\" name=\"dhcp_num\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,1,253,idx.dhcp_maxusers)\" value=\"%s\" /></div>\n",
 		 nvram_safe_get ("dhcp_num"));
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
-		 "<div class=\"label\">Client Lease Time</div><input class=\"num\" name=\"dhcp_lease\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,9999,'DHCP Lease Time')\" value='%s'> minutes</input></div>\n",
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_lease)</script></div><input class=\"num\" name=\"dhcp_lease\" size=\"4\" maxlength=\"4\" onblur=\"valid_range(this,0,9999,idx.dhcp_lease)\" value=\"%s\" > <script type=\"text/javascript\">Capture(share.minutes)</script></input></div>\n",
 		 nvram_safe_get ("dhcp_lease"));
       if (nvram_invmatch ("wan_proto", "static"))
 	{
 	  websWrite (wp, "<div class=\"setting\">\n");
-	  websWrite (wp, "<div class=\"label\">Static DNS 1</div>");
+	  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 1</div>");
 	  websWrite (wp,
 		     "<input type=\"hidden\" name=\"wan_dns\" value=\"4\" />");
 	  for (i = 0; i < 4; i++)
 	    websWrite (wp,
-		       "<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,&#34;DNS&#34;)\" value='%d' />%s",
+		       "<input class=\"num\" name=\"wan_dns0_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,idx_static.dns)\" value=\"%d\" />%s",
 		       i, i == 3 ? 254 : 255, get_dns_ip ("wan_dns", 0, i),
 		       i < 3 ? "." : "");
 
 	  websWrite (wp, "\n</div>\n<div class=\"setting\">\n");
-	  websWrite (wp, "<div class=\"label\">Static DNS 2</div>");
+	  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 2</div>");
 	  for (i = 0; i < 4; i++)
 	    websWrite (wp,
-		       "<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,&#34;DNS&#34;)\" value='%d' />%s",
+		       "<input class=\"num\" name=\"wan_dns1_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,idx_static.dns)\" value=\"%d\" />%s",
 		       i, i == 3 ? 254 : 255, get_dns_ip ("wan_dns", 1, i),
 		       i < 3 ? "." : "");
 
 	  websWrite (wp, "\n</div>\n<div class=\"setting\">\n");
-	  websWrite (wp, "<div class=\"label\">Static DNS 3</div>");
+	  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx_static.dns)</script> 3</div>");
 	  for (i = 0; i < 4; i++)
 	    websWrite (wp,
-		       "<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,&#34;DNS&#34;)\" value='%d' />%s",
+		       "<input class=\"num\" name=\"wan_dns2_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,idx_static.dns)\" value=\"%d\" />%s",
 		       i, i == 3 ? 254 : 255, get_dns_ip ("wan_dns", 2, i),
 		       i < 3 ? "." : "");
 	  websWrite (wp, "\n</div>");
@@ -1097,10 +1097,10 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 	}
 
       websWrite (wp, "</div>\n<div class=\"setting\">\n");
-      websWrite (wp, "<div class=\"label\">Use DNSMasq for DHCP</div>\n");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_dnsmasq)</script></div>\n");
       websWrite (wp,
 		 "<input type=\"checkbox\" name=\"_dhcp_dnsmasq\" value=\"1\" %s />\n",
-		 nvram_match ("dhcp_dnsmasq", "1") ? "checked" : "");
+		 nvram_match ("dhcp_dnsmasq", "1") ? "checked=\"checked\"" : "");
       websWrite (wp, "</div>\n");
     }
 
@@ -1118,10 +1118,10 @@ showOption (webs_t wp, char *propname, char *nvname)
 	     propname, nvname);
   websWrite (wp,
 	     "<option value=\"0\" %s>Off</option>\n",
-	     nvram_match (nvname, "0") ? "selected" : "");
+	     nvram_match (nvname, "0") ? "selected=\"selected\"" : "");
   websWrite (wp,
 	     "<option value=\"1\" %s>On</option></select>\n",
-	     nvram_match (nvname, "1") ? "selected" : "");
+	     nvram_match (nvname, "1") ? "selected=\"selected\"" : "");
   websWrite (wp, "</div>\n");
 
 }
@@ -1140,7 +1140,7 @@ showDynOption (webs_t wp, char *propname, char *nvname, char *options[],
       websWrite (wp,
 		 "<option value=\"%s\" %s>Off</option>\n",
 		 names[i], nvram_match (nvname,
-					options[i]) ? "selected" : "");
+					options[i]) ? "selected=\"selected\"" : "");
     }
   websWrite (wp, "</div>\n");
 
