@@ -102,7 +102,7 @@ addEvent(window, "load", function() {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(dmz.legend):</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(dmz.legend)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hdmz.right2)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HDMZ.asp');"><script type="text/javascript">Capture(share.more)</script></a>
