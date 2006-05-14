@@ -566,9 +566,9 @@ start_wshaper (void)
 #elif defined(HAVE_SVQOS)
   svqos_iptables ();
   if (nvram_match("qos_type","0"))
-  ret = eval ("/usr/sbin/svqos", dl_val, ul_val, dev_val, mtu_val,"0");
+  ret = eval ("/usr/sbin/svqos", ul_val, dl_val, dev_val, mtu_val,"0");
   else
-  ret = eval ("/usr/sbin/svqos2", dl_val, ul_val, dev_val, mtu_val,"0");
+  ret = eval ("/usr/sbin/svqos2", ul_val, dl_val, dev_val, mtu_val,"0");
   
 #endif
   return ret;
