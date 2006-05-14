@@ -9,6 +9,9 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+
+document.title = "<% nvram_get("router_name"); %>" + status_router.titl;
+
 function DHCPAction(F,I) {
 	F.submit_type.value = I;
 	F.submit_button.value = "Status_Router";
@@ -130,24 +133,24 @@ addEvent(window, "unload", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li class="current"><span>Status</span>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.statu)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><span>Router</span></li>
-											<li><a href="Status_Lan.asp">LAN</a></li>
-											<li><a href="Status_Wireless.asp">Wireless</a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.statuRouter)</script></span></li>
+											<li><a href="Status_Lan.asp"><script type="text/javascript">Capture(bmenu.statuLAN)</script></a></li>
+											<li><a href="Status_Wireless.asp"><script type="text/javascript">Capture(bmenu.statuWLAN)</script></a></li>
 											<% show_sputnik(); %>
 											<% nvram_invmatch("status_auth","1","<!--"); %>
-											<li><a href="Info.htm">Sys-Info</a></li>
+											<li><a href="Info.htm"><script type="text/javascript">Capture(bmenu.statuSysInfo)</script></a></li>
 											<% nvram_invmatch("status_auth","1","-->"); %>
 										</ul>
 									</div>
@@ -163,123 +166,127 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" value="Apply" />
-							<!-- <input type="hidden" name="wan_proto" value='<% nvram_get("wan_proto"); %>' /> -->
-							<h2>Router Information</h2>
+							<h2><script type="text/javascript">Capture(status_router.h2)</script></h2>
+							
 							<fieldset>
-							<legend>System</legend>
+							<legend><script type="text/javascript">Capture(status_router.legend)</script></legend>
 								<div class="setting">
-									<div class="label">Router Name</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.sys_name)</script></div>
 									<span id="router_name"><% nvram_get("router_name"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Router Model</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.sys_model)</script></div>
 									<span id="router_model"><% nvram_get("DD_BOARD"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Firmware Version</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.sys_firmver)</script></div>
 									<span id="router_firmware"><% get_firmware_version(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">MAC Address</div>
-									<span id="wan_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')" ><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+									<div class="label"><script type="text/javascript">Capture(share.mac)</script></div>
+									<script>document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");</script><% nvram_get("wan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Host Name</div>
+									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
 									<span id="wan_host"><% nvram_get("wan_hostname"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Domain Name</div>
+									<div class="label"><script type="text/javascript">Capture(share.domainname)</script></div>
 									<span id="wan_name"><% nvram_get("wan_domain"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Current Time</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.sys_time)</script></div>
 									<span id="router_time"><% localtime(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Uptime</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.sys_up)</script></div>
 									<span id="uptime_up"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Load Average</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.sys_load)</script></div>
 									<span id="uptime_load"></span>&nbsp;
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>CPU</legend>
+								<legend><script type="text/javascript">Capture(status_router.legend2)</script></legend>
 								<div class="setting">
-									<div class="label">CPU Model</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.cpu)</script></div>
 									<span id="cpu_info"><% show_cpuinfo(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">CPU Clock</div>
-									<span id="cpu_clock"><% get_clkfreq(); %> MHz</span>&nbsp;
+									<div class="label"><script type="text/javascript">Capture(status_router.clock)</script></div>
+									<span id="cpu_clock"><% get_clkfreq(); %></span>&nbsp;MHz
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Memory</legend>
+								<legend><script type="text/javascript">Capture(status_router.legend3)</script></legend>
 								<div class="setting">
-									<div class="label">Total Available</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.mem_tot)</script></div>
 									<span id="mem_total"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Free</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.mem_free)</script></div>
 									<span id="mem_free"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Used</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.mem_used)</script></div>
 									<span id="mem_used"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Buffers</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.mem_buf)</script></div>
 									<span id="mem_buffer"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Cached</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.mem_cached)</script></div>
 									<span id="mem_cached"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Active</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.mem_active)</script></div>
 									<span id="mem_active"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Inactive</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.mem_inactive)</script></div>
 									<span id="mem_inactive"></span>&nbsp;
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Network</legend>
+								<legend><script type="text/javascript">Capture(status_router.legend4)</script></legend>
 								<div class="setting">
-									<div class="label">IP Filter Maximum Ports</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.net_maxports)</script></div>
 									<span id="ip_conntrack_max"><% nvram_get("ip_conntrack_max"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Active IP Connections</div>
+									<div class="label"><script type="text/javascript">Capture(status_router.net_conntrack)</script></div>
 									<span id="ip_count"></span>&nbsp;
 								</div>
 							</fieldset><br />
-							<h2>Internet</h2>
+							
+							<h2><script type="text/javascript">Capture(status_router.h22)</script></h2>
 							<fieldset>
-								<legend>Configuration Type</legend>
+								<legend><script type="text/javascript">Capture(status_router.legend5)</script></legend>
 								<div class="setting">
-									<div class="label">Login Type</div>
-									<span id="wan_proto"><% nvram_match("wan_proto", "dhcp", "Automatic Configuration - DHCP"); %><% nvram_match("wan_proto", "static", "Static"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "Disabled"); %></span>&nbsp;
+									<div class="label"><script type="text/javascript">Capture(status_router.www_login)</script></div>
+									<span id="wan_proto"><% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disable)</script>"); %></span>&nbsp;
 								</div>
 								<span id="wan_info" style="display:none">
 									<div class="setting" id="wan_connection">
-										<div class="label">Login Status</div>
+										<div class="label"><script type="text/javascript">Capture(status_router.www_loginstatus)</script></div>
 										<span id="wan_status"><% nvram_status_get("status2"); %>&nbsp;
 										<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" /></span>
 									</div>
 									<div class="setting">
-										<div class="label">IP Address</div>
+										<div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
 										<span id="wan_ipaddr"><% nvram_status_get("wan_ipaddr"); %></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label">Subnet Mask</div>
+										<div class="label"><script type="text/javascript">Capture(share.subnet)</script></div>
 										<span id="wan_netmask"><% nvram_status_get("wan_netmask"); %></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label">Default Gateway</div>
+										<div class="label"><script type="text/javascript">Capture(share.gateway)</script></div>
 										<span id="wan_gateway"><% nvram_status_get("wan_gateway"); %></span>&nbsp;
 									</div>
 									<div class="setting">
@@ -295,37 +302,39 @@ addEvent(window, "unload", function() {
 										<span id="wan_dns2"><% nvram_status_get("wan_dns2"); %></span>&nbsp;
 									</div>
 									<div class="center" id="wan_dhcp">
-										<input onclick="DHCPAction(this.form,'release')" type="button" value="DHCP Release" />&nbsp;
-										<input onclick="DHCPAction(this.form,'renew')" type="button" value="DHCP Renew" />
+										<script>document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");</script>&nbsp;
+										<script>document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");</script>
 									</div>
 								</span>
 							</fieldset><br />
 							<div class="submitFooter">
-								<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh is On"); %>" onclick="window.location.reload()" />
+								<script>document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">Router Name: </dt>
-							<dd class="definition">This is the specific name for the router, which you set on the <i>Setup</i> tab.</dd>
-							<dt class="term">MAC Address: </dt>
-							<dd class="definition">This is the router's MAC Address, as seen by your ISP.</dd>
-							<dt class="term">Firmware Version: </dt>
-							<dd class="definition">This is the router's current firmware.</dd>
-							<dt class="term">Current Time: </dt>
-							<dd class="definition">This is the time, as you set on the Setup Tab.</dd>
-							<dt class="term">Uptime: </dt>
-							<dd class="definition">This is a measure of the time the router has been "up" and running.</dd>
-							<dt class="term">Load Average: </dt>
-							<dd class="definition">This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.</dd>
-							<dt class="term">Configuration Type: </dt>
-							<dd class="definition">This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.</dd>
+							<dt class="term"><script type="text/javascript">Capture(status_router.sys_name)</script>: </dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(share.mac)</script>: </dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right4)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(status_router.sys_firmver)</script>: </dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right6)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(status_router.sys_time)</script>: </dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right8)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(status_router.sys_up)</script>: </dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right10)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(status_router.sys_load)</script>: </dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right12)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(status_router.legend5)</script>: </dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right14)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HStatus.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HStatus.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
