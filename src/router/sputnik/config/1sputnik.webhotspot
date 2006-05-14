@@ -4,20 +4,20 @@
 	<div class="center"><img src="images/sputnik.gif" /></div><br />
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.sputnik_srv)</script></div>
-		<input class="spaceradio" type="radio" name="apd_enable" value="1" <% nvram_checked("apd_enable", "1"); %> onclick="setSputnik(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-		<input class="spaceradio" type="radio" name="apd_enable" value="0" <% nvram_checked("apd_enable", "0"); %> onclick="setSputnik(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
+		<input class="spaceradio" type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> onclick="setSputnik(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" name="apd_enable" value="0" <% nvram_selmatch("apd_enable", "0", "checked"); %> onclick="setSputnik(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">	
 		<div class="label"><script type="text/javascript">Capture(hotspot.sputnik_id)</script></div>
-		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="0" <% nvram_checked("sputnik_mjid_type", "0"); %> /><script type="text/javascript">Capture(hotspot.sputnik_instant)</script>
+		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="0" <% nvram_selmatch("sputnik_mjid_type", "0", "checked"); %> /><script type="text/javascript">Capture(hotspot.sputnik_instant)</script>
 	</div>
 	<div class="setting">	
 		<div class="label">&nbsp;</div>
-		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="1" <% nvram_checked("sputnik_mjid_type", "1"); %> /><script type="text/javascript">Capture(hotspot.sputnik_express)</script>
+		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="1" <% nvram_selmatch("sputnik_mjid_type", "1", "checked"); %> /><script type="text/javascript">Capture(hotspot.sputnik_express)</script>
 	</div>
 	<div class="setting">	
 		<div class="label">&nbsp;</div>
-		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="2" <% nvram_checked("sputnik_mjid_type", "2"); %> /><script type="text/javascript">Capture(share.use)</script>&nbsp;
+		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="2" <% nvram_selmatch("sputnik_mjid_type", "2", "checked"); %> /><script type="text/javascript">Capture(share.use)</script>&nbsp;
 		<input class="text" maxLength="100" size="35" name="sputnik_mjid" value="<% nvram_get("sputnik_mjid"); %>" />
 	</div>
 	<div class="center">
