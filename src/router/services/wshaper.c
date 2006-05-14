@@ -56,11 +56,15 @@ get_mtu_val (void)
 int
 svqos_reset_ports (void)
 {
-
-  system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
+/*
+system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
   system ("echo 1 > /proc/sys/dev/adm6996/port2/enable 2>&1 > /dev/null");
   system ("echo 1 > /proc/sys/dev/adm6996/port3/enable 2>&1 > /dev/null");
   system ("echo 1 > /proc/sys/dev/adm6996/port4/enable 2>&1 > /dev/null");
+  system ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
+  system ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
+  system ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
+  system ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
 
   system
     ("echo 0 > /proc/sys/dev/adm6996/port1/port-prio-enable 2>&1 > /dev/null");
@@ -84,8 +88,28 @@ svqos_reset_ports (void)
     ("echo full > /proc/sys/dev/adm6996/port3/bandwidth 2>&1 > /dev/null");
   system
     ("echo full > /proc/sys/dev/adm6996/port4/bandwidth 2>&1 > /dev/null");
+*/
+  system ("echo 1 > /proc/switch/eth0/port/1/enable 2>&1 > /dev/null");
+  system ("echo 1 > /proc/switch/eth0/port/2/enable 2>&1 > /dev/null");
+  system ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
+  system ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
 
-  return 0;
+  system("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
+  system("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
+  system("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
+  system("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
+
+
+  system ("echo AUTO > /proc/switch/eth0/port/1/media 2>&1 > /dev/null");
+  system ("echo AUTO > /proc/switch/eth0/port/2/media 2>&1 > /dev/null");
+  system ("echo AUTO > /proc/switch/eth0/port/3/media 2>&1 > /dev/null");
+  system ("echo AUTO > /proc/switch/eth0/port/4/media 2>&1 > /dev/null");
+
+  system ("echo FULL > /proc/switch/eth0/port/1/bandwidth 2>&1 > /dev/null");
+  system ("echo FULL > /proc/switch/eth0/port/2/bandwidth 2>&1 > /dev/null");
+  system ("echo FULL > /proc/switch/eth0/port/3/bandwidth 2>&1 > /dev/null");
+  system ("echo FULL > /proc/switch/eth0/port/4/bandwidth 2>&1 > /dev/null");
+
 }
 
 int
@@ -104,22 +128,22 @@ svqos_set_ports (void)
 
       if (strcmp ("0", nvram_safe_get (nvram_var)))
 	snprintf (cmd, 254,
-		  "echo %s > /proc/sys/dev/adm6996/port%d/bandwidth 2>&1 > /dev/null",
+		  "echo %s > /proc/switch/eth0/port/%d/bandwidth 2>&1 > /dev/null",
 		  nvram_safe_get (nvram_var), loop);
       else
-	snprintf (cmd, 254, "echo 0 > /proc/sys/dev/adm6996/port%d/enable",
+	snprintf (cmd, 254, "echo 0 > /proc/switch/eth0/port/%d/enable",
 		  loop);
       system (cmd);
 
       snprintf (cmd, 254,
-		"echo 1 > /proc/sys/dev/adm6996/port%d/port-prio-enable 2>&1 > /dev/null",
+		"echo 1 > /proc/switch/eth0/port/%d/prio-enable 2>&1 > /dev/null",
 		loop);
       system (cmd);
 
       snprintf (nvram_var, 31, "svqos_port%dprio", loop);
       level = nvram_safe_get (nvram_var);
       snprintf (cmd, 254,
-		"echo %d > /proc/sys/dev/adm6996/port%d/port-prio 2>&1 > /dev/null",
+		"echo %d > /proc/switch/eth0/port/%d/prio 2>&1 > /dev/null",
 		atoi (level) / 10 - 1, loop);
       system (cmd);
     }
@@ -566,7 +590,7 @@ start_wshaper (void)
 #elif defined(HAVE_SVQOS)
   svqos_iptables ();
   if (nvram_match("qos_type","0"))
-  ret = eval ("/usr/sbin/svqos", ul_val, dl_val, dev_val, mtu_val,"0");
+  ret = eval ("/usr/sbin/svqos", dl_val, ul_val, dev_val, mtu_val,"0");
   else
   ret = eval ("/usr/sbin/svqos2", ul_val, dl_val, dev_val, mtu_val,"0");
   
