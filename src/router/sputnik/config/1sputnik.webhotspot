@@ -1,3 +1,4 @@
+
 <fieldset>
 	<legend><script type="text/javascript">Capture(hotspot.sputnik_legend)</script></legend>
 	<div class="center"><img src="images/sputnik.gif" /></div><br />
@@ -17,9 +18,9 @@
 	<div class="setting">	
 		<div class="label">&nbsp;</div>
 		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="2" <% nvram_checked("sputnik_mjid_type", "2"); %> /><script type="text/javascript">Capture(share.use)</script>&nbsp;
-		<input class="text" maxLength="100" size="25" name="sputnik_mjid" value="<% nvram_get("sputnik_mjid"); %>" />
+		<input class="text" maxLength="100" size="35" name="sputnik_mjid" value="<% nvram_get("sputnik_mjid"); %>" />
 	</div>
 	<div class="center">
-		<a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a> about Sputnik
+		<a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a>&nbsp;<script type="text/javascript">Capture(hotspot.sputnik_about)</script>
 	</div>
 </fieldset><br />
