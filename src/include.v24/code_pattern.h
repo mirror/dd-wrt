@@ -53,7 +53,7 @@
 #else
 #define MODEL_NAME	"DD-WRT"
 #endif
-#define	VENDOR		"New-Media NET GmbH"
+#define	VENDOR		"NewMedia-NET GmbH"
 
 
 

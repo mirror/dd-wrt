@@ -7,7 +7,7 @@
 *
 * Copyright (C) 2001 Roaring Penguin Software Inc.
 *
-* $Id: event_tcp.h,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $
+* $Id: event_tcp.h,v 1.3 2002/04/09 20:52:03 dfs Exp $
 *
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.

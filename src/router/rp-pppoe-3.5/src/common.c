@@ -16,9 +16,12 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: common.c,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $";
+"$Id: common.c,v 1.21 2006/01/03 03:20:38 dfs Exp $";
 /* For vsnprintf prototype */
 #define _ISOC99_SOURCE 1
+
+/* For seteuid prototype */
+#define _BSD_SOURCE 1
 
 #include "pppoe.h"
 
@@ -35,6 +38,15 @@ static char const RCSID[] =
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
 #endif
+
+#include <sys/types.h>
+#include <pwd.h>
+
+/* Are we running SUID or SGID? */
+int IsSetID = 0;
+
+static uid_t saved_uid = -2;
+static uid_t saved_gid = -2;
 
 /**********************************************************************
 *%FUNCTION: parsePacket
@@ -150,6 +162,82 @@ findTag(PPPoEPacket *packet, UINT16_t type, PPPoETag *tag)
 }
 
 /**********************************************************************
+*%FUNCTION: switchToRealID
+*%ARGUMENTS:
+* None
+*%RETURNS:
+* Nothing
+*%DESCRIPTION:
+* Sets effective user-ID and group-ID to real ones.  Aborts on failure
+***********************************************************************/
+void
+switchToRealID (void) {
+    if (IsSetID) {
+	if (saved_uid < 0) saved_uid = geteuid();
+	if (saved_gid < 0) saved_gid = getegid();
+	if (setegid(getgid()) < 0) {
+	    printErr("setgid failed");
+	    exit(EXIT_FAILURE);
+	}
+	if (seteuid(getuid()) < 0) {
+	    printErr("seteuid failed");
+	    exit(EXIT_FAILURE);
+	}
+    }
+}
+
+/**********************************************************************
+*%FUNCTION: switchToEffectiveID
+*%ARGUMENTS:
+* None
+*%RETURNS:
+* Nothing
+*%DESCRIPTION:
+* Sets effective user-ID and group-ID back to saved gid/uid
+***********************************************************************/
+void
+switchToEffectiveID (void) {
+    if (IsSetID) {
+	if (setegid(saved_gid) < 0) {
+	    printErr("setgid failed");
+	    exit(EXIT_FAILURE);
+	}
+	if (seteuid(saved_uid) < 0) {
+	    printErr("seteuid failed");
+	    exit(EXIT_FAILURE);
+	}
+    }
+}
+
+/**********************************************************************
+*%FUNCTION: dropPrivs
+*%ARGUMENTS:
+* None
+*%RETURNS:
+* Nothing
+*%DESCRIPTION:
+* If effective ID is root, try to become "nobody".  If that fails and
+* we're SUID, switch to real user-ID
+***********************************************************************/
+void
+dropPrivs(void)
+{
+    struct passwd *pw = NULL;
+    int ok = 0;
+    if (geteuid() == 0) {
+	pw = getpwnam("nobody");
+	if (pw) {
+	    if (setgid(pw->pw_gid) < 0) ok++;
+	    if (setuid(pw->pw_uid) < 0) ok++;
+	}
+    }
+    if (ok < 2 && IsSetID) {
+	setegid(getgid());
+	seteuid(getuid());
+    }
+}
+
+/**********************************************************************
 *%FUNCTION: printErr
 *%ARGUMENTS:
 * str -- error message
@@ -197,6 +285,8 @@ computeTCPChecksum(unsigned char *ipHdr, unsigned char *tcpHdr)
 {
     UINT32_t sum = 0;
     UINT16_t count = ipHdr[2] * 256 + ipHdr[3];
+    UINT16_t tmp;
+
     unsigned char *addr = tcpHdr;
     unsigned char pseudoHeader[12];
 
@@ -219,18 +309,19 @@ computeTCPChecksum(unsigned char *ipHdr, unsigned char *tcpHdr)
 
     /* Checksum the TCP header and data */
     while (count > 1) {
-	sum += * (UINT16_t *) addr;
-	addr += 2;
-	count -= 2;
+	memcpy(&tmp, addr, sizeof(tmp));
+	sum += (UINT32_t) tmp;
+	addr += sizeof(tmp);
+	count -= sizeof(tmp);
     }
     if (count > 0) {
-	sum += *addr;
+	sum += (unsigned char) *addr;
     }
 
     while(sum >> 16) {
 	sum = (sum & 0xffff) + (sum >> 16);
     }
-    return (UINT16_t) (~sum & 0xFFFF);
+    return (UINT16_t) ((~sum) & 0xFFFF);
 }
 
 /**********************************************************************
@@ -441,7 +532,7 @@ sendPADT(PPPoEConnection *conn, char const *msg)
 	size_t elen = strlen(msg);
 	err.type = htons(TAG_GENERIC_ERROR);
 	err.length = htons(elen);
-	strcpy(err.payload, msg);
+	strcpy((char *) err.payload, msg);
 	memcpy(cursor, &err, elen + TAG_HDR_SIZE);
 	cursor += elen + TAG_HDR_SIZE;
 	plen += elen + TAG_HDR_SIZE;
@@ -466,11 +557,13 @@ sendPADT(PPPoEConnection *conn, char const *msg)
 
     packet.length = htons(plen);
     sendPacket(conn, conn->discoverySocket, &packet, (int) (plen + HDR_SIZE));
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "SENT");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
+#endif
     syslog(LOG_INFO,"Sent PADT");
 }
 
@@ -500,6 +593,42 @@ sendPADTf(PPPoEConnection *conn, char const *fmt, ...)
 }
 
 /**********************************************************************
+*%FUNCTION: pktLogErrs
+*%ARGUMENTS:
+* pkt -- packet type (a string)
+* type -- tag type
+* len -- tag length
+* data -- tag data
+* extra -- extra user data
+*%RETURNS:
+* Nothing
+*%DESCRIPTION:
+* Logs error tags
+***********************************************************************/
+void
+pktLogErrs(char const *pkt,
+	   UINT16_t type, UINT16_t len, unsigned char *data,
+	   void *extra)
+{
+    char const *str;
+    char const *fmt = "%s: %s: %.*s";
+    switch(type) {
+    case TAG_SERVICE_NAME_ERROR:
+	str = "Service-Name-Error";
+	break;
+    case TAG_AC_SYSTEM_ERROR:
+	str = "System-Error";
+	break;
+    default:
+	str = "Generic-Error";
+    }
+
+    syslog(LOG_ERR, fmt, pkt, str, (int) len, data);
+    fprintf(stderr, fmt, pkt, str, (int) len, data);
+    fprintf(stderr, "\n");
+}
+
+/**********************************************************************
 *%FUNCTION: parseLogErrs
 *%ARGUMENTS:
 * type -- tag type
@@ -515,18 +644,5 @@ void
 parseLogErrs(UINT16_t type, UINT16_t len, unsigned char *data,
 	     void *extra)
 {
-    switch(type) {
-    case TAG_SERVICE_NAME_ERROR:
-	syslog(LOG_ERR, "PADT: Service-Name-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADT: Service-Name-Error: %.*s\n", (int) len, data);
-	break;
-    case TAG_AC_SYSTEM_ERROR:
-	syslog(LOG_ERR, "PADT: System-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADT: System-Error: %.*s\n", (int) len, data);
-	break;
-    case TAG_GENERIC_ERROR:
-	syslog(LOG_ERR, "PADT: Generic-Error: %.*s", (int) len, data);
-	fprintf(stderr, "PADT: Generic-Error: %.*s\n", (int) len, data);
-	break;
-    }
+    pktLogErrs("PADT", type, len, data, extra);
 }

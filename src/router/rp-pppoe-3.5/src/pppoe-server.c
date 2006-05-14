@@ -9,14 +9,14 @@
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
 *
-* $Id: pppoe-server.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $
+* $Id: pppoe-server.c,v 1.96 2006/02/23 15:40:42 dfs Exp $
 *
 * LIC: GPL
 *
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: pppoe-server.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: pppoe-server.c,v 1.96 2006/02/23 15:40:42 dfs Exp $";
 
 #include "config.h"
 
@@ -129,6 +129,9 @@ EventSelector *event_selector;
 /* Use Linux kernel-mode PPPoE? */
 static int UseLinuxKernelModePPPoE = 0;
 
+/* File with PPPD options */
+static char *pppoptfile = NULL;
+
 static int Debug = 0;
 static int CheckPoolSyntax = 0;
 
@@ -196,9 +199,9 @@ childHandler(pid_t pid, int status, void *s)
     /* We're acting as LAC, so when child exits, become a PPPoE <-> L2TP
        relay */
     if (session->flags & FLAG_ACT_AS_LAC) {
-	syslog(LOG_INFO, "Session %d for client "
+	syslog(LOG_INFO, "Session %u for client "
 	       "%02x:%02x:%02x:%02x:%02x:%02x handed off to LNS %s",
-	       ntohs(session->sess),
+	       (unsigned int) ntohs(session->sess),
 	       session->eth[0], session->eth[1], session->eth[2],
 	       session->eth[3], session->eth[4], session->eth[5],
 	       inet_ntoa(session->tunnel_endpoint.sin_addr));
@@ -212,9 +215,9 @@ childHandler(pid_t pid, int status, void *s)
     conn.useHostUniq = 0;
 
     syslog(LOG_INFO,
-	   "Session %d closed for client "
+	   "Session %u closed for client "
 	   "%02x:%02x:%02x:%02x:%02x:%02x (%d.%d.%d.%d) on %s",
-	   ntohs(session->sess),
+	   (unsigned int) ntohs(session->sess),
 	   session->eth[0], session->eth[1], session->eth[2],
 	   session->eth[3], session->eth[4], session->eth[5],
 	   (int) session->realpeerip[0], (int) session->realpeerip[1],
@@ -996,6 +999,8 @@ usage(char const *argv0)
     fprintf(stderr, "   -l             -- Increment local IP address for each session.\n");
     fprintf(stderr, "   -R ip          -- Set start address of remote IP pool.\n");
     fprintf(stderr, "   -S name        -- Advertise specified service-name.\n");
+    fprintf(stderr, "   -O fname       -- Use PPPD options from specified file\n");
+    fprintf(stderr, "                     (default %s).\n", PPPOE_SERVER_OPTIONS);
     fprintf(stderr, "   -p fname       -- Optain IP address pool from specified file.\n");
     fprintf(stderr, "   -N num         -- Allow 'num' concurrent sessions.\n");
     fprintf(stderr, "   -o offset      -- Assign session numbers starting at offset+1.\n");
@@ -1014,7 +1019,7 @@ usage(char const *argv0)
 #endif
 
     fprintf(stderr, "   -h             -- Print usage information.\n\n");
-    fprintf(stderr, "PPPoE-Server Version %s, Copyright (C) 2001 Roaring Penguin Software Inc.\n", VERSION);
+    fprintf(stderr, "PPPoE-Server Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n", VERSION);
 
 #ifndef HAVE_LICENSE
     fprintf(stderr, "PPPoE-Server comes with ABSOLUTELY NO WARRANTY.\n");
@@ -1051,10 +1056,16 @@ main(int argc, char **argv)
 #endif
 
 #ifndef HAVE_LINUX_KERNEL_PPPOE
-    char *options = "hI:C:L:R:T:m:FN:f:o:sp:lrudPc:S:1";
+    char *options = "hI:C:L:R:T:m:FN:f:O:o:sp:lrudPc:S:1";
 #else
-    char *options = "hI:C:L:R:T:m:FN:f:o:skp:lrudPc:S:1";
+    char *options = "hI:C:L:R:T:m:FN:f:O:o:skp:lrudPc:S:1";
 #endif
+
+    if (getuid() != geteuid() ||
+	getgid() != getegid()) {
+	fprintf(stderr, "SECURITY WARNING: pppoe-server will NOT run suid or sgid.  Fix your installation.\n");
+	exit(1);
+    }
 
     memset(interfaces, 0, sizeof(interfaces));
 
@@ -1115,7 +1126,7 @@ main(int argc, char **argv)
 	    break;
 
 	case 'p':
-	    addressPoolFname = optarg;
+	    SET_STRING(addressPoolFname, optarg);
 	    break;
 
 	case 's':
@@ -1153,6 +1164,10 @@ main(int argc, char **argv)
 		exit(EXIT_FAILURE);
 	    }
 	    NumSessionSlots = opt;
+	    break;
+
+	case 'O':
+	    SET_STRING(pppoptfile, optarg);
 	    break;
 
 	case 'o':
@@ -1232,6 +1247,10 @@ main(int argc, char **argv)
 	}
     }
 
+    if (!pppoptfile) {
+	pppoptfile = PPPOE_SERVER_OPTIONS;
+    }
+
 #ifdef HAVE_LICENSE
     License_SetVersion(SERVPOET_VERSION);
     License_ReadBundleFile("/etc/rp/bundle.txt");
@@ -1267,7 +1286,7 @@ main(int argc, char **argv)
     if (addressPoolFname) {
 	NumSessionSlots = parseAddressPool(addressPoolFname, 0);
 	if (CheckPoolSyntax) {
-	    printf("%d\n", NumSessionSlots);
+	    printf("%lu\n", (unsigned long) NumSessionSlots);
 	    exit(0);
 	}
     }
@@ -1371,8 +1390,8 @@ main(int argc, char **argv)
 	/* Dump session array and exit */
 	ClientSession *ses = FreeSessions;
 	while(ses) {
-	    printf("Session %d local %d.%d.%d.%d remote %d.%d.%d.%d\n",
-		   ntohs(ses->sess),
+	    printf("Session %u local %d.%d.%d.%d remote %d.%d.%d.%d\n",
+		   (unsigned int) (ntohs(ses->sess)),
 		   ses->myip[0], ses->myip[1],
 		   ses->myip[2], ses->myip[3],
 		   ses->peerip[0], ses->peerip[1],
@@ -1627,13 +1646,12 @@ startPPPDUserMode(ClientSession *session)
     argv[c++] = "pty";
 
     /* Let's hope service-name does not have ' in it... */
-    snprintf(buffer, SMALLBUF, "%s -n -I %s -e %d:%02x:%02x:%02x:%02x:%02x:%02x%s -S '%s'",
+    snprintf(buffer, SMALLBUF, "%s -n -I %s -e %u:%02x:%02x:%02x:%02x:%02x:%02x%s -S '%s'",
 	     PPPOE_PATH, session->ethif->name,
-	     ntohs(session->sess),
+	     (unsigned int) ntohs(session->sess),
 	     session->eth[0], session->eth[1], session->eth[2],
 	     session->eth[3], session->eth[4], session->eth[5],
-	     session->serviceName,
-	     PppoeOptions);
+	     PppoeOptions, session->serviceName);
     argv[c++] = strdup(buffer);
     if (!argv[c-1]) {
 	/* TODO: Send a PADT */
@@ -1641,7 +1659,7 @@ startPPPDUserMode(ClientSession *session)
     }
 
     argv[c++] = "file";
-    argv[c++] = PPPOE_SERVER_OPTIONS;
+    argv[c++] = pppoptfile;
 
     snprintf(buffer, SMALLBUF, "%d.%d.%d.%d:%d.%d.%d.%d",
 	    (int) session->myip[0], (int) session->myip[1],
@@ -1649,8 +1667,8 @@ startPPPDUserMode(ClientSession *session)
 	    (int) session->peerip[0], (int) session->peerip[1],
 	    (int) session->peerip[2], (int) session->peerip[3]);
     syslog(LOG_INFO,
-	   "Session %d created for client %02x:%02x:%02x:%02x:%02x:%02x (%d.%d.%d.%d) on %s using Service-Name '%s'",
-	   ntohs(session->sess),
+	   "Session %u created for client %02x:%02x:%02x:%02x:%02x:%02x (%d.%d.%d.%d) on %s using Service-Name '%s'",
+	   (unsigned int) ntohs(session->sess),
 	   session->eth[0], session->eth[1], session->eth[2],
 	   session->eth[3], session->eth[4], session->eth[5],
 	   (int) session->peerip[0], (int) session->peerip[1],
@@ -1675,7 +1693,7 @@ startPPPDUserMode(ClientSession *session)
     }
     if (PassUnitOptionToPPPD) {
 	argv[c++] = "unit";
-	sprintf(buffer, "%d", ntohs(session->sess) - 1 - SessOffset);
+	sprintf(buffer, "%u", (unsigned int) (ntohs(session->sess) - 1 - SessOffset));
 	argv[c++] = buffer;
     }
     argv[c++] = NULL;
@@ -1706,9 +1724,16 @@ startPPPDLinuxKernelMode(ClientSession *session)
     argv[c++] = "pppd";
     argv[c++] = "plugin";
     argv[c++] = PLUGIN_PATH;
-    argv[c++] = session->ethif->name;
-    snprintf(buffer, SMALLBUF, "%d:%02x:%02x:%02x:%02x:%02x:%02x",
-	     ntohs(session->sess),
+
+    /* Add "nic-" to interface name */
+    snprintf(buffer, SMALLBUF, "nic-%s", session->ethif->name);
+    argv[c++] = strdup(buffer);
+    if (!argv[c-1]) {
+	exit(EXIT_FAILURE);
+    }
+
+    snprintf(buffer, SMALLBUF, "%u:%02x:%02x:%02x:%02x:%02x:%02x",
+	     (unsigned int) ntohs(session->sess),
 	     session->eth[0], session->eth[1], session->eth[2],
 	     session->eth[3], session->eth[4], session->eth[5]);
     argv[c++] = "rp_pppoe_sess";
@@ -1720,7 +1745,7 @@ startPPPDLinuxKernelMode(ClientSession *session)
     argv[c++] = "rp_pppoe_service";
     argv[c++] = (char *) session->serviceName;
     argv[c++] = "file";
-    argv[c++] = PPPOE_SERVER_OPTIONS;
+    argv[c++] = pppoptfile;
 
     snprintf(buffer, SMALLBUF, "%d.%d.%d.%d:%d.%d.%d.%d",
 	    (int) session->myip[0], (int) session->myip[1],
@@ -1728,8 +1753,8 @@ startPPPDLinuxKernelMode(ClientSession *session)
 	    (int) session->peerip[0], (int) session->peerip[1],
 	    (int) session->peerip[2], (int) session->peerip[3]);
     syslog(LOG_INFO,
-	   "Session %d created for client %02x:%02x:%02x:%02x:%02x:%02x (%d.%d.%d.%d) on %s using Service-Name '%s'",
-	   ntohs(session->sess),
+	   "Session %u created for client %02x:%02x:%02x:%02x:%02x:%02x (%d.%d.%d.%d) on %s using Service-Name '%s'",
+	   (unsigned int) ntohs(session->sess),
 	   session->eth[0], session->eth[1], session->eth[2],
 	   session->eth[3], session->eth[4], session->eth[5],
 	   (int) session->peerip[0], (int) session->peerip[1],
@@ -1751,7 +1776,7 @@ startPPPDLinuxKernelMode(ClientSession *session)
     argv[c++] = "default-asyncmap";
     if (PassUnitOptionToPPPD) {
 	argv[c++] = "unit";
-	sprintf(buffer, "%d", ntohs(session->sess) - 1 - SessOffset);
+	sprintf(buffer, "%u", (unsigned int) (ntohs(session->sess) - 1 - SessOffset));
 	argv[c++] = buffer;
     }
     argv[c++] = NULL;
@@ -2036,7 +2061,7 @@ sendHURLorMOTM(PPPoEConnection *conn, char const *url, UINT16_t tag)
 
     hurl.type = htons(tag);
     hurl.length = htons(elen);
-    strcpy(hurl.payload, url);
+    strcpy((char *) hurl.payload, url);
     memcpy(cursor, &hurl, elen + TAG_HDR_SIZE);
     cursor += elen + TAG_HDR_SIZE;
     plen += elen + TAG_HDR_SIZE;
@@ -2044,9 +2069,11 @@ sendHURLorMOTM(PPPoEConnection *conn, char const *url, UINT16_t tag)
     packet.length = htons(plen);
 
     sendPacket(conn, conn->discoverySocket, &packet, (int) (plen + HDR_SIZE));
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "SENT");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
+#endif
 }

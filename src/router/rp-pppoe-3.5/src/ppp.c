@@ -16,7 +16,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: ppp.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: ppp.c,v 1.7 2006/01/03 03:05:06 dfs Exp $";
 
 #include "pppoe.h"
 
@@ -42,11 +42,11 @@ static char const RCSID[] =
 #endif
 #endif
 
-int PPPState;
-int PPPPacketSize;
-unsigned char PPPXorValue;
+static int PPPState;
+static int PPPPacketSize;
+static unsigned char PPPXorValue;
 
-UINT16_t fcstab[256] = {
+static UINT16_t const fcstab[256] = {
     0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad, 0x6536, 0x74bf,
     0x8c48, 0x9dc1, 0xaf5a, 0xbed3, 0xca6c, 0xdbe5, 0xe97e, 0xf8f7,
     0x1081, 0x0108, 0x3393, 0x221a, 0x56a5, 0x472c, 0x75b7, 0x643e,

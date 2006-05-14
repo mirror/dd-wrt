@@ -12,17 +12,17 @@
 #
 # LIC: GPL
 #
-# $Id: Makefile.in,v 1.1.8.1 2004/08/01 13:08:03 boris Exp $
+# $Id: Makefile.in,v 1.90 2006/02/23 15:38:45 dfs Exp $
 #***********************************************************************
 
 # Version is set ONLY IN THE MAKEFILE!  Don't delete this!
-VERSION=3.5
+VERSION=3.8
 
 DEFINES=
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 mandir=@mandir@
-docdir=@prefix@/doc/rp-pppoe-$(VERSION)
+docdir=@prefix@/share/doc/rp-pppoe-$(VERSION)
 install=@INSTALL@
 install_dir=@INSTALL@ -d
 sbindir=@sbindir@
@@ -135,16 +135,16 @@ plugin/common.o: common.c
 
 install: all
 	-mkdir -p $(RPM_INSTALL_ROOT)$(sbindir)
-	$(install) -m 755 -s pppoe $(RPM_INSTALL_ROOT)$(sbindir)
-	$(install) -m 755 -s pppoe-server $(RPM_INSTALL_ROOT)$(sbindir)
-	if test -x licensed-only/pppoe-server-control ; then $(install) -m 755 -s licensed-only/pppoe-server-control $(RPM_INSTALL_ROOT)$(sbindir); fi
-	if test -x pppoe-relay ; then $(install) -m 755 -s pppoe-relay $(RPM_INSTALL_ROOT)$(sbindir); fi
-	if test -x pppoe-sniff; then $(install) -m 755 -s pppoe-sniff $(RPM_INSTALL_ROOT)$(sbindir); fi
-	$(install) -m 755 ../scripts/adsl-connect $(RPM_INSTALL_ROOT)$(sbindir)
-	$(install) -m 755 ../scripts/adsl-start $(RPM_INSTALL_ROOT)$(sbindir)
-	$(install) -m 755 ../scripts/adsl-status $(RPM_INSTALL_ROOT)$(sbindir)
-	$(install) -m 755 ../scripts/adsl-stop $(RPM_INSTALL_ROOT)$(sbindir)
-	$(install) -m 755 ../scripts/adsl-setup $(RPM_INSTALL_ROOT)$(sbindir)
+	$(install) -m 755 pppoe $(RPM_INSTALL_ROOT)$(sbindir)
+	$(install) -m 755 pppoe-server $(RPM_INSTALL_ROOT)$(sbindir)
+	if test -x licensed-only/pppoe-server-control ; then $(install) -m 755 licensed-only/pppoe-server-control $(RPM_INSTALL_ROOT)$(sbindir); fi
+	if test -x pppoe-relay ; then $(install) -m 755 pppoe-relay $(RPM_INSTALL_ROOT)$(sbindir); fi
+	if test -x pppoe-sniff; then $(install) -m 755 pppoe-sniff $(RPM_INSTALL_ROOT)$(sbindir); fi
+	$(install) -m 755 ../scripts/pppoe-connect $(RPM_INSTALL_ROOT)$(sbindir)
+	$(install) -m 755 ../scripts/pppoe-start $(RPM_INSTALL_ROOT)$(sbindir)
+	$(install) -m 755 ../scripts/pppoe-status $(RPM_INSTALL_ROOT)$(sbindir)
+	$(install) -m 755 ../scripts/pppoe-stop $(RPM_INSTALL_ROOT)$(sbindir)
+	$(install) -m 755 ../scripts/pppoe-setup $(RPM_INSTALL_ROOT)$(sbindir)
 	-mkdir -p $(RPM_INSTALL_ROOT)$(docdir)
 	$(install) -m 644 ../doc/CHANGES $(RPM_INSTALL_ROOT)$(docdir)
 	$(install) -m 644 ../doc/KERNEL-MODE-PPPOE $(RPM_INSTALL_ROOT)$(docdir)
@@ -159,11 +159,11 @@ install: all
 			$(install) -m 644 ../man/$$i.8 $(RPM_INSTALL_ROOT)$(mandir)/man8 || exit 1; \
 		fi; \
 	done
-	$(install) -m 644 ../man/adsl-start.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
-	$(install) -m 644 ../man/adsl-stop.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
-	$(install) -m 644 ../man/adsl-status.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
-	$(install) -m 644 ../man/adsl-connect.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
-	$(install) -m 644 ../man/adsl-setup.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
+	$(install) -m 644 ../man/pppoe-start.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
+	$(install) -m 644 ../man/pppoe-stop.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
+	$(install) -m 644 ../man/pppoe-status.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
+	$(install) -m 644 ../man/pppoe-connect.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
+	$(install) -m 644 ../man/pppoe-setup.8 $(RPM_INSTALL_ROOT)$(mandir)/man8
 	-mkdir -p $(RPM_INSTALL_ROOT)$(mandir)/man5
 	$(install) -m 644 ../man/pppoe.conf.5 $(RPM_INSTALL_ROOT)$(mandir)/man5
 	-mkdir -p $(RPM_INSTALL_ROOT)/etc/ppp
@@ -185,19 +185,19 @@ install: all
 		$(install) -m 644 ../configs/pppoe-server-options $(RPM_INSTALL_ROOT)$(PPPOESERVER_PPPD_OPTIONS)-example ; \
 	fi
 	@if [ -f /etc/redhat-release ] ; then \
-		echo "Looks like a Red Hat system; installing $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/adsl" ; \
+		echo "Looks like a Red Hat system; installing $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/pppoe" ; \
 		mkdir -p $(RPM_INSTALL_ROOT)/etc/rc.d/init.d ;\
-		$(install) -m 755 ../scripts/adsl-init $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/adsl ; \
+		$(install) -m 755 ../scripts/pppoe-init $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/pppoe ; \
 	fi
 	@if [ -f /etc/turbolinux-release ] ; then \
-		echo "Looks like a TurboLinux system; installing $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/adsl" ; \
+		echo "Looks like a TurboLinux system; installing $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/pppoe" ; \
 		mkdir -p $(RPM_INSTALL_ROOT)/etc/rc.d/init.d ;\
-		$(install) -m 755 ../scripts/adsl-init-turbolinux $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/adsl ; \
+		$(install) -m 755 ../scripts/pppoe-init-turbolinux $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/pppoe ; \
 	fi
 	@if [ -f /etc/SuSE-release ] ; then \
-		echo "Looks like a SuSE Linux system; installing $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/adsl" ; \
+		echo "Looks like a SuSE Linux system; installing $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/pppoe" ; \
 		mkdir -p $(RPM_INSTALL_ROOT)/etc/rc.d/init.d ;\
-		$(install) -m 755 ../scripts/adsl-init-suse $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/adsl ; \
+		$(install) -m 755 ../scripts/pppoe-init-suse $(RPM_INSTALL_ROOT)/etc/rc.d/init.d/pppoe ; \
 	fi
 
 	# L2TP
@@ -208,7 +208,7 @@ install: all
 		$(install) -m 600 l2tp/l2tp.conf $(RPM_INSTALL_ROOT)/etc/l2tp/l2tp.conf.example ; \
 	fi
 	@echo ""
-	@echo "Type 'adsl-setup' to configure the software."
+	@echo "Type 'pppoe-setup' to configure the software."
 
 servpoet-tgz: distro-servpoet
 	cd .. && tar cvf servpoet-$(VERSION)$(BETA).tar servpoet-$(VERSION)$(BETA)
@@ -248,11 +248,11 @@ distro:
 		cp ../doc/$$i ../rp-pppoe-$(VERSION)$(BETA)/doc || exit 1; \
 	done
 	mkdir ../rp-pppoe-$(VERSION)$(BETA)/man
-	for i in adsl-connect.8 adsl-setup.8 adsl-start.8 adsl-status.8 adsl-stop.8 pppoe-server.8 pppoe-sniff.8 pppoe.8 pppoe-relay.8 pppoe.conf.5 ; do \
+	for i in pppoe-connect.8 pppoe-setup.8 pppoe-start.8 pppoe-status.8 pppoe-stop.8 pppoe-server.8 pppoe-sniff.8 pppoe.8 pppoe-relay.8 pppoe.conf.5 ; do \
 		cp ../man/$$i ../rp-pppoe-$(VERSION)$(BETA)/man || exit 1; \
 	done
 	mkdir ../rp-pppoe-$(VERSION)$(BETA)/scripts
-	for i in adsl-connect.in adsl-init-suse.in adsl-init-turbolinux.in adsl-init.in adsl-setup.in adsl-start.in adsl-stop.in adsl-status ; do \
+	for i in pppoe-connect.in pppoe-init-suse.in pppoe-init-turbolinux.in pppoe-init.in pppoe-setup.in pppoe-start.in pppoe-stop.in pppoe-status ; do \
 		cp ../scripts/$$i ../rp-pppoe-$(VERSION)$(BETA)/scripts || exit 1; \
 	done
 	mkdir ../rp-pppoe-$(VERSION)$(BETA)/src
@@ -296,7 +296,7 @@ clean:
 distclean: clean
 	rm -f Makefile config.h config.cache config.log config.status
 	rm -f libevent/Makefile
-	rm -f ../scripts/adsl-connect ../scripts/adsl-start ../scripts/adsl-stop ../scripts/adsl-init ../scripts/adsl-setup ../scripts/adsl-init-suse ../scripts/adsl-init-turbolinux
+	rm -f ../scripts/pppoe-connect ../scripts/pppoe-start ../scripts/pppoe-stop ../scripts/pppoe-init ../scripts/pppoe-setup ../scripts/pppoe-init-suse ../scripts/pppoe-init-turbolinux
 
 update-version:
 	sed -e 's/^Version: .*$$/Version: $(VERSION)/' ../rp-pppoe.spec > ../rp-pppoe.spec.new && mv ../rp-pppoe.spec.new ../rp-pppoe.spec
