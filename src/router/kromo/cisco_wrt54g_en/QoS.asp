@@ -309,15 +309,15 @@ function init() {
 										<td>
 											<select name="svqos_port1bw">
 												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_match("svqos_port1bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
-												<option value="256k" <% nvram_match("svqos_port1bw", "256k", "selected"); %>>256k</option>
-												<option value="512k" <% nvram_match("svqos_port1bw", "512k", "selected"); %>>512k</option>
-												<option value="1m" <% nvram_match("svqos_port1bw", "1m", "selected"); %>>1M</option>
-												<option value="2m" <% nvram_match("svqos_port1bw", "2m", "selected"); %>>2M</option>
-												<option value="5m" <% nvram_match("svqos_port1bw", "5m", "selected"); %>>5M</option>
-												<option value="10m" <% nvram_match("svqos_port1bw", "10m", "selected"); %>>10M</option>
-												<option value="20m" <% nvram_match("svqos_port1bw", "20m", "selected"); %>>20M</option>
-												<option value="50m" <% nvram_match("svqos_port1bw", "50m", "selected"); %>>50M</option>
-												<option value="full" <% nvram_match("svqos_port1bw", "full", "selected"); %>>100M</option>
+												<option value="256K" <% nvram_match("svqos_port1bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvram_match("svqos_port1bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvram_match("svqos_port1bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvram_match("svqos_port1bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvram_match("svqos_port1bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvram_match("svqos_port1bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvram_match("svqos_port1bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvram_match("svqos_port1bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvram_match("svqos_port1bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
@@ -335,15 +335,15 @@ function init() {
 										<td>
 											<select name="svqos_port2bw">
 												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("svqos_port2bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
-												<option value="256k" <% nvram_selmatch("svqos_port2bw", "256k", "selected"); %>>256k</option>
-												<option value="512k" <% nvram_selmatch("svqos_port2bw", "512k", "selected"); %>>512k</option>
-												<option value="1m" <% nvram_selmatch("svqos_port2bw", "1m", "selected"); %>>1M</option>
-												<option value="2m" <% nvram_selmatch("svqos_port2bw", "2m", "selected"); %>>2M</option>
-												<option value="5m" <% nvram_selmatch("svqos_port2bw", "5m", "selected"); %>>5M</option>
-												<option value="10m" <% nvram_selmatch("svqos_port2bw", "10m", "selected"); %>>10M</option>
-												<option value="20m" <% nvram_selmatch("svqos_port2bw", "20m", "selected"); %>>20M</option>
-												<option value="50m" <% nvram_selmatch("svqos_port2bw", "50m", "selected"); %>>50M</option>
-												<option value="full" <% nvram_selmatch("svqos_port2bw", "full", "selected"); %>>100M</option>
+												<option value="256K" <% nvram_selmatch("svqos_port2bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvram_selmatch("svqos_port2bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvram_selmatch("svqos_port2bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvram_selmatch("svqos_port2bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvram_selmatch("svqos_port2bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvram_selmatch("svqos_port2bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvram_selmatch("svqos_port2bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvram_selmatch("svqos_port2bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvram_selmatch("svqos_port2bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
@@ -361,15 +361,15 @@ function init() {
 										<td>
 											<select name="svqos_port3bw">
 												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("svqos_port3bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
-												<option value="256k" <% nvram_selmatch("svqos_port3bw", "256k", "selected"); %>>256k</option>
-												<option value="512k" <% nvram_selmatch("svqos_port3bw", "512k", "selected"); %>>512k</option>
-												<option value="1m" <% nvram_selmatch("svqos_port3bw", "1m", "selected"); %>>1M</option>
-												<option value="2m" <% nvram_selmatch("svqos_port3bw", "2m", "selected"); %>>2M</option>
-												<option value="5m" <% nvram_selmatch("svqos_port3bw", "5m", "selected"); %>>5M</option>
-												<option value="10m" <% nvram_selmatch("svqos_port3bw", "10m", "selected"); %>>10M</option>
-												<option value="20m" <% nvram_selmatch("svqos_port3bw", "20m", "selected"); %>>20M</option>
-												<option value="50m" <% nvram_selmatch("svqos_port3bw", "50m", "selected"); %>>50M</option>
-												<option value="full" <% nvram_selmatch("svqos_port3bw", "full", "selected"); %>>100M</option>
+												<option value="256K" <% nvram_selmatch("svqos_port3bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvram_selmatch("svqos_port3bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvram_selmatch("svqos_port3bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvram_selmatch("svqos_port3bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvram_selmatch("svqos_port3bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvram_selmatch("svqos_port3bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvram_selmatch("svqos_port3bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvram_selmatch("svqos_port3bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvram_selmatch("svqos_port3bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
@@ -387,15 +387,15 @@ function init() {
 										<td>
 											<select name="svqos_port4bw">
 												<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("svqos_port4bw", "0", "selected"); %> >" + share.disable + "</option>");</script>
-												<option value="256k" <% nvram_selmatch("svqos_port4bw", "256k", "selected"); %>>256k</option>
-												<option value="512k" <% nvram_selmatch("svqos_port4bw", "512k", "selected"); %>>512k</option>
-												<option value="1m" <% nvram_selmatch("svqos_port4bw", "1m", "selected"); %>>1M</option>
-												<option value="2m" <% nvram_selmatch("svqos_port4bw", "2m", "selected"); %>>2M</option>
-												<option value="5m" <% nvram_selmatch("svqos_port4bw", "5m", "selected"); %>>5M</option>
-												<option value="10m" <% nvram_selmatch("svqos_port4bw", "10m", "selected"); %>>10M</option>
-												<option value="20m" <% nvram_selmatch("svqos_port4bw", "20m", "selected"); %>>20M</option>
-												<option value="50m" <% nvram_selmatch("svqos_port4bw", "50m", "selected"); %>>50M</option>
-												<option value="full" <% nvram_selmatch("svqos_port4bw", "full", "selected"); %>>100M</option>
+												<option value="256K" <% nvram_selmatch("svqos_port4bw", "256K", "selected"); %>>256k</option>
+												<option value="512K" <% nvram_selmatch("svqos_port4bw", "512K", "selected"); %>>512k</option>
+												<option value="1M" <% nvram_selmatch("svqos_port4bw", "1M", "selected"); %>>1M</option>
+												<option value="2M" <% nvram_selmatch("svqos_port4bw", "2M", "selected"); %>>2M</option>
+												<option value="5M" <% nvram_selmatch("svqos_port4bw", "5M", "selected"); %>>5M</option>
+												<option value="10M" <% nvram_selmatch("svqos_port4bw", "10M", "selected"); %>>10M</option>
+												<option value="20M" <% nvram_selmatch("svqos_port4bw", "20M", "selected"); %>>20M</option>
+												<option value="50M" <% nvram_selmatch("svqos_port4bw", "50M", "selected"); %>>50M</option>
+												<option value="FULL" <% nvram_selmatch("svqos_port4bw", "FULL", "selected"); %>>100M</option>
 											</select>
 										</td>
 									</tr>
