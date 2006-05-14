@@ -607,15 +607,17 @@ ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv)
       char *sep = strsep (&userlist, "=");
       websWrite (wp, "<tr><td>\n");
       websWrite (wp,
-		 "<input class=\"num\" name=\"%s\" value=\"%s\" size=\"18\" maxlength=\"63\" />\n",
+		 "<input name=\"%s\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n",
 		 username, sep != NULL ? sep : "");
       websWrite (wp, "</td>\n");
       sep = strsep (&userlist, " ");
       snprintf (password, 31, "fon_user%d_password", i);
       websWrite (wp, "<td>\n");
       websWrite (wp,
-		 "<input type=\"password\" name=\"%s\" value=\"blahblahblah\" size=\"18\" maxlength=\"63\" />\n",
-		 password);
+		 "<input type=\"password\" id=\"%s\" name=\"%s\" value=\"\" size=\"25\" maxlength=\"63\" />\n&nbsp;&nbsp;&nbsp;\n\
+			<input type=\"checkbox\" name=\"_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s', this.checked)\" >&nbsp;\n\
+			<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
+		 password, password, password);
       websWrite (wp, "</td></tr>\n");
     }
   free (o);
