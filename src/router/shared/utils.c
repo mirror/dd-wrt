@@ -151,66 +151,76 @@ internal_getRouterBrand ()
     }
 
 
-//      if (nvram_match("boardtype","0x0101") &&
-//            nvram_match("boardrev","0x10"))
   {
     et0 = nvram_safe_get ("et0macaddr");
     et1 = nvram_safe_get ("et1macaddr");
     if (et0 != NULL && et1 != NULL)
       {
-	if (startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3") || 
-		startswith (et0, "00:01:e3") && startswith (et1, "00:01:e3"))
-	  {
-	    cprintf ("router is siemens\n");
-	    setRouter ("Siemens SE505");
-	    return ROUTER_SIEMENS;
-	  }
-	if (startswith (et0, "00:90:96") && startswith (et1, "00:90:96"))
-	  {
-	    cprintf ("router is askey\n");
-	    setRouter ("Siemens SE505");
-	    return ROUTER_SIEMENS;
-	  }
-	if (startswith (et0, "00:11:50") && //Eko: detect Belkin 7130/7330, try to run as WBR-G54
-		nvram_match ("clkfreq", "125") &&
-		nvram_match ("boardnum", "100") &&
-		nvram_match ("boardtype", "bcm94710r4"))
-	  {
-	    cprintf ("router is Belkin F5D7130 / F5D7330\n"); 
-	    setRouter ("Belkin F5D7130 / F5D7330");
-	    return ROUTER_WRT54G;
-	  }	
-	if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50") &&
-		nvram_match ("boardtype", "0x0101"))
-	  {
-	    cprintf ("router is Belkin F5D7230-4 v1444\n");
-	    setRouter ("Belkin F5D7230-4 v1444");
-	    return ROUTER_BELKIN_F5D7230;
-	  }
-	if (nvram_match ("boardnum", "2") &&
-      nvram_match ("clkfreq", "125") &&
-      nvram_match ("boardtype", "bcm94710dev"))
-    {
-		if (startswith (et0, "00:0C:E5") && startswith (et1, "00:0C:E5") && nvram_match ("GemtekPmonVer", "9") || 
-			startswith (et0, "00:0c:e5") && startswith (et1, "00:0c:e5") && nvram_match ("GemtekPmonVer", "9") ||
-			startswith (et0, "00:0C:10") && startswith (et1, "00:0C:10") && nvram_match ("GemtekPmonVer", "9"))
-		  {
-		    cprintf ("router Motorola WR850G v1\n");
-		    setRouter ("Motorola WR850G v1");
-		    return ROUTER_MOTOROLA_V1;
-		  }
-		else
-		  {
-		  	cprintf ("router is linksys WRT55AG\n");
-	      	setRouter ("Linksys WRT55AG");
-	      	return ROUTER_LINKSYS_WRT55AG;
-  	  	  }
-    }
-//      if (startswith (et0, "00:90:96") && startswith (et1, "00:90:96"))
-//        {
-//          return ROUTER_SIEMENS;
-//        }
+		if (nvram_match ("clkfreq", "125") &&
+			nvram_match ("boardnum", "100") &&
+			nvram_match ("boardtype", "bcm94710r4"))
+			{
+	     	if (startswith (et0, "00:11:50"))
+	  			{
+	    		cprintf ("router is Belkin F5D7130 / F5D7330\n"); 
+	    		setRouter ("Belkin F5D7130 / F5D7330");
+	    		return ROUTER_WRT54G;
+	  			}
+	  		if (startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd")
+	  			{
+	    		cprintf ("router is Belkin F5D7230 v1000\n"); 
+	    		setRouter ("Belkin F5D7230 v1000");
+	    		return ROUTER_SIEMENS;
+	  			}
+	      	if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3")) || 
+				(startswith (et0, "00:01:e3") && startswith (et1, "00:01:e3")) ||
+				(startswith (et0, "00:90:96") && startswith (et1, "00:90:96")))
+	  			{
+	    		cprintf ("router is Siemens / Askey\n");
+	    		setRouter ("Siemens SE505 v1");
+	    		return ROUTER_SIEMENS;
+	  			}	      
+			}
 
+		if (nvram_match ("boardtype", "0x0101")
+				{ 
+				if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
+	  				{
+	    			cprintf ("router is Belkin F5D7230-4 v1444\n");
+	    			setRouter ("Belkin F5D7230-4 v1444");
+	    			return ROUTER_BELKIN_F5D7230;
+	  				}	
+				if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3")) || 
+					(startswith (et0, "00:01:e3") && startswith (et1, "00:01:e3")) ||
+					(startswith (et0, "00:90:96") && startswith (et1, "00:90:96")))
+	  				{
+	    			cprintf ("router is Siemens / Askey\n");
+	    			setRouter ("Siemens SE505 v2");
+	    			return ROUTER_SIEMENS;
+	  				}	      
+				}
+						
+		if (nvram_match ("boardnum", "2") &&
+      		nvram_match ("clkfreq", "125") &&
+      		nvram_match ("boardtype", "bcm94710dev"))
+    			{
+				if (nvram_match ("GemtekPmonVer", "9") && 
+					((startswith (et0, "00:0C:E5") && startswith (et1, "00:0C:E5")) || 
+					(startswith (et0, "00:0c:e5") && startswith (et1, "00:0c:e5")) ||
+					(startswith (et0, "00:0C:10") && startswith (et1, "00:0C:10"))))
+		  			{
+		    		cprintf ("router Motorola WR850G v1\n");
+		    		setRouter ("Motorola WR850G v1");
+		    		return ROUTER_MOTOROLA_V1;
+		  			}
+				else
+		  			{
+		  			cprintf ("router is linksys WRT55AG\n");
+	      			setRouter ("Linksys WRT55AG v1");
+	      			return ROUTER_LINKSYS_WRT55AG;
+  	  	  			}
+    			}	
+    						  
       }
   }
   if (nvram_match ("boardnum", "42") &&
@@ -230,16 +240,6 @@ internal_getRouterBrand ()
 	}
     }
 
-
-
-/* [  "$(nvram get boardtype)" = "bcm95365r" \
-  -a "$(nvram get boardnum)" = "45" ] && {
-  debug "### wl-500g deluxe hacks ###"
-  nvram set vlan0hwname="et0"
-  nvram set vlan1hwname="et0"
-  remap eth0.1 vlan0
-  remap eth0 vlan1
- */
   setRouter ("Linksys WRT54G/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
