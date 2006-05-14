@@ -14,7 +14,8 @@
 		Intergated to DD-WRT by LawnMowerGuy1
 -->
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>'+upnp.titl;
+		
+document.title = "<% nvram_get("router_name"); %>" + upnp.titl;
 
 function to_submit(F) {
 	F.submit_button.value = "UPnP";
@@ -124,10 +125,7 @@ addEvent(window, "unload", function() {
 });
 		</script>
 		<style type="text/css">
-tr.disabled td {
-	text-decoration:line-through;
-	color:#999;
-}
+			tr.disabled td {text-decoration:line-through; color:#999;}
 		</style>
 	</head>
 
@@ -222,9 +220,9 @@ tr.disabled td {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hupnp.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(upnp.legend)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hupnp.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hupnp.right3)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(upnp.serv)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hupnp.right4)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HUPnP.asp')"><script type="text/javascript">Capture(share.more)</script></a>
