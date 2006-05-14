@@ -717,6 +717,7 @@ hotspot.sputnik_srv="Sputnik Agent";
 hotspot.sputnik_id="Sputnik Server ID";
 hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
+hotspot.sputnik_about="about Sputnik";
 
 
 
