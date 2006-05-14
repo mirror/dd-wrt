@@ -297,7 +297,7 @@ lease_update_file (struct daemon *daemon, int always, time_t now)
 fprintf(stderr,"update lease file\n");
 
 //  if (file_dirty != no)
-//    {
+    {
       rewind (daemon->lease_stream);
       ftruncate (fileno (daemon->lease_stream), 0);
 fprintf(stderr,"rewindet\n");
@@ -342,6 +342,6 @@ fprintf(stderr,"sync()\n");
       file_dirty = no;
 /* DD-WRT end */
 
-//    }
+    }
 }
 
