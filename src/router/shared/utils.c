@@ -169,7 +169,7 @@ internal_getRouterBrand ()
 	  		if (startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
 	  			{
 	    		cprintf ("router is Belkin F5D7230 v1000\n"); 
-	    		setRouter ("Belkin F5D7230 v1000");
+	    		setRouter ("Belkin F5D7230-4 v1000");
 	    		return ROUTER_SIEMENS;
 	  			}
 	      	if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3")) || 
