@@ -10,6 +10,8 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 
+document.title = "<% nvram_get("router_name"); %>" + status_wireless.titl;
+
 function setWirelessTable() {
 	var table = document.getElementById("wireless_table");
 	var val = arguments;
@@ -27,7 +29,7 @@ function setWirelessTable() {
 		var mac = val[i];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
-		  cellmac.title = "OUI Search";
+		  cellmac.title = share.oui;
 		  cellmac.style.cursor = "pointer";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		  cellmac.innerHTML = mac;
@@ -56,7 +58,7 @@ function setWDSTable() {
 		var mac = val[i];
 		if ("<% nvram_get("maskmac"); %>" != "1") {
 		  var cellmac = row.insertCell(-1);
-		  cellmac.title = "OUI Search";
+		  cellmac.title = share.oui;
 		  cellmac.style.cursor = "pointer";
 		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
 		  cellmac.innerHTML = mac;
@@ -121,24 +123,24 @@ addEvent(window, "unload", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp">Setup</a></li>
-								<li><a href="Wireless_Basic.asp">Wireless</a></li>
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp">SIPatH</a></li>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp">Security</a></li>
-								<li><a href="Filters.asp">Access Restrictions</a></li>
-								<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-								<li><a href="Management.asp">Administration</a></li>
-								<li class="current"><span>Status</span>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.statu)</script></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Status_Router.asp">Router</a></li>
-											<li><a href="Status_Lan.asp">LAN</a></li>
-											<li><span>Wireless</span></li>
+											<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statuRouter)</script></a></li>
+											<li><a href="Status_Lan.asp"><script type="text/javascript">Capture(bmenu.statuLAN)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.statuWLAN)</script></span></li>
 											<% show_sputnik(); %>
 											<% nvram_invmatch("status_auth","1","<!--"); %>
-											<li><a href="Info.htm">Sys-Info</a></li>
+											<li><a href="Info.htm"><script type="text/javascript">Capture(bmenu.statuSysInfo)</script></a></li>
 											<% nvram_invmatch("status_auth","1","-->"); %>
 										</ul>
 									</div>
@@ -151,27 +153,28 @@ addEvent(window, "unload", function() {
 				<div id="main">
 					<div id="contents">
 						<form>
-							<h2>Wireless</h2>
+							<h2><script type="text/javascript">Capture(status_wireless.h2)</script></h2>
+							
 							<fieldset>
-								<legend>Wireless Status</legend>
+								<legend><script type="text/javascript">Capture(status_wireless.legend)</script></legend>
 								<div class="setting">
-									<div class="label">MAC Address</div>
-									<span id="wl_mac" style="cursor:pointer" title="OUI Search" onclick="getOUIFromMAC('<% nvram_get("wl0_hwaddr"); %>')" ><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
+									<div class="label"><script type="text/javascript">Capture(share.mac)</script></div>
+									<script>document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wl0_hwaddr"); %>')\" >");</script><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Mode</div>
+									<div class="label"><script type="text/javascript">Capture(share.mode)</script></div>
 									<span id="wl_mode"><% nvram_match("wl_mode", "wet", "Client Bridge"); %><% nvram_match("wl_mode", "ap", "AP"); %><% nvram_match("wl_mode", "sta", "Client"); %><% nvram_match("wl_mode", "infra", "Adhoc"); %><% nvram_match("wl_mode", "apsta", "Repeater"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Network</div>
+									<div class="label"><script type="text/javascript">Capture(status_wireless.net)</script></div>
 									<span id="wl_net_mode"><% nvram_match("wl_net_mode", "disabled", "Disabled"); %><% nvram_match("wl_net_mode", "mixed", "Mixed"); %><% nvram_match("wl_net_mode", "g-only", "G-Only"); %><% nvram_match("wl_net_mode", "b-only", "B-Only"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">SSID</div>
+									<div class="label"><script type="text/javascript">Capture(share.ssid)</script></div>
 									<span id="wl_ssid"><% nvram_get("wl_ssid"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Channel</div>
+									<div class="label"><script type="text/javascript">Capture(share.channel)</script></div>
 									<span id="wl_channel"><% get_curchannel(); %></span>&nbsp;
 								</div>
 								<div class="setting">
@@ -179,78 +182,84 @@ addEvent(window, "unload", function() {
 									<span id="wl_xmit"><% nvram_get("txpwr"); %> mW</span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Rate</div>
+									<div class="label"><script type="text/javascript">Capture(share.rates)</script></div>
 									<span id="wl_rate"><% get_currate(); %> Mbps</span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Encryption</div>
+									<div class="label"><script type="text/javascript">Capture(status_wireless.encrypt)</script></div>
 									<span id="wl_security"><% nvram_match("security_mode", "disabled", "Disabled"); %><% nvram_invmatch("security_mode", "disabled", "Enabled,&nbsp;"); %><% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %><% nvram_match("security_mode", "wpa", "WPA RADIUS"); %><% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %><% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %><% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %><% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %><% nvram_match("security_mode", "radius", "RADIUS"); %><% nvram_match("security_mode", "wep", "WEP"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">PPTP Status</div>
+									<div class="label"><script type="text/javascript">Capture(status_wireless.pptp)</script></div>
 									<span id="pptp"><% nvram_else_match("pptpd_connected", "1", "Connected", "Disconnected"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
+							
 							<fieldset>
-								<legend>Packet Info</legend>
+								<legend><script type="text/javascript">Capture(status_wireless.legend2)</script></legend>
 								<div class="setting">
-									<div class="label">Received (RX)</div>
+									<div class="label"><script type="text/javascript">Capture(status_wireless.rx)</script></div>
 									<span id="packet_rx"></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label">Transmitted (TX)</div>
+									<div class="label"><script type="text/javascript">Capture(status_wireless.tx)</script></div>
 									<span id="packet_tx"></span>&nbsp;
 								</div>
 							</fieldset><br />
-							<h2>Wireless Nodes</h2>
+							
+							<h2><script type="text/javascript">Capture(status_wireless.h22)</script></h2>
 							<fieldset>
-								<legend id="wireless_table_legend">Clients</legend>
+								<legend id="wireless_table_legend"><script type="text/javascript">Capture(status_wireless.legend3)</script></legend>
 								<table class="table center" cellspacing="6" id="wireless_table">
 									<tr>
-										<th width="54%">MAC Address</th>
-										<th width="8%">Signal</th>
-										<th width="8%">Noise</th>
+										<th width="54%"><script type="text/javascript">Capture(share.mac)</script></th>
+										<th width="8%"><script type="text/javascript">Capture(share.signal)</script></th>
+										<th width="8%"><script type="text/javascript">Capture(share.noise)</script></th>
 										<th width="8%">SNR</th>
-										<th width="22%">Signal Quality</th>
+										<th width="22%"><script type="text/javascript">Capture(status_wireless.signal_qual)</script></th>
 									</tr>
 								</table>
 							</fieldset><br />
+							
 							<span id="wds" style="display:none">
 								<fieldset>
 									<legend>WDS</legend>
 									<table class="table center" cellspacing="6" id="wds_table">
 										<tr>
-											<th width="20%">MAC Address</th>
-											<th width="31%">Description</th>
-											<th width="8%">Signal</th>
-											<th width="8%">Noise</th>
+											<th width="20%"><script type="text/javascript">Capture(share.mac)</script></th>
+											<th width="31%"><script type="text/javascript">Capture(share.descr)</script></th>
+											<th width="8%"><script type="text/javascript">Capture(share.signal)</script></th>
+											<th width="8%"><script type="text/javascript">Capture(share.noise)</script></th>
 											<th width="8%">SNR</th>
-											<th width="22%">Signal Quality</th>
+											<th width="22%"><script type="text/javascript">Capture(status_wireless.signal_qual)</script></th>
 										</tr>
 									</table>
 								</fieldset><br />
+								
 							</span>
 							<div class="center">
-								<input type="button" name="site_survey" value="Site Survey" onClick="<% nvram_else_match("wl_net_mode", "disabled", "alert('Not&nbsp;available!&nbsp;Please&nbsp;enable&nbsp;wireless&nbsp;network.')", "openWindow('Site_Survey.asp', 760, 700)"); %>" />
+								<script>document.write("<input type=\"button\" name=\"site_survey\" value=\"" + sbutton.survey + "\" onclick=\"<% nvram_else_match("wl_net_mode", "disabled", "alert(errmsg.err59)", "openWindow('Site_Survey.asp', 760, 700)"); %>\" />");</script>
 							</div><br />
 							<div class="submitFooter">
-								<input type="button" name="refresh_button" value="<% nvram_else_match("refresh_time","0","Refresh","Auto-Refresh is On"); %>" onclick="window.location.reload()" />
+								<script>document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\" />");</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<dl>
-							<dt class="term">MAC Address: </dt>
-							<dd class="definition">This is the Router's MAC Address, as seen on your local, wireless network.</dd>
-							<dt class="term">Network: </dt>
-							<dd class="definition">As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.</dd>
-							<dt class="term">OUI Search: </dt>
-							<dd class="definition">By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).</dd>
+							<dt class="term"><script type="text/javascript">Capture(share.mac)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_wireless.right2)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(status_wireless.net)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_wireless.right4)</script></dd>
+							<dt class="term"><script type="text/javascript">Capture(share.oui)</script>:</dt>
+							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right10)</script></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HStatusWireless.asp')">More...</a>
+						<a href="javascript:openHelpWindow('HStatusWireless.asp');"><script type="text/javascript">Capture(share.more)</script></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

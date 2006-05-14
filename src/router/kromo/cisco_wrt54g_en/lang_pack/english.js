@@ -76,6 +76,7 @@ share.port="Port";
 share.ssid="SSID";
 share.channel="Channel";
 share.rssi="Rssi";
+share.signal="Signal";
 share.noise="Noise";
 share.beacon="beacon";
 share.openn="Open";
@@ -118,6 +119,7 @@ share.disconnect="Disconnect";
 share.disconnected="Disconnected";
 share.info="Information";
 share.state="State";
+share.mode="Mode";
 
 
 var sbutton = new Object();
@@ -162,7 +164,7 @@ sbutton.routingtab="Show Routing Table";
 sbutton.wanmac="Get Current PC MAC Address";
 sbutton.dhcprel="DHCP Release";
 sbutton.dhcpren="DHCP Renew";
-
+sbutton.survey="Site Survey";
 
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
@@ -258,6 +260,9 @@ errmsg.err57="Delete the Entry ?";
 
 // Status_Lan.asp error messages
 errmsg.err58="Click to delete lease";
+
+//Status_Wireless.asp error messages
+errmsg.err59="Not available! Please enable Wireless Network.";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -1242,6 +1247,29 @@ hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent pro
 hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
 hstatus_sputnik.right6="The current Agent status.";
 hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
+
+
+
+// **************************************************************** Status_Wireless.asp **********************************************************************//
+
+var status_wireless = new Object();
+status_wireless.titl=" - Wireless Status";
+status_wireless.h2="Wireless";
+status_wireless.legend="Wireless Status";
+status_wireless.net="Network";
+status_wireless.encrypt="Encryption";
+status_wireless.pptp="PPTP Status";
+status_wireless.legend2="Packet Info";
+status_wireless.rx="Received (RX)";
+status_wireless.tx="Transmitted (TX)";
+status_wireless.h22="Wireless Nodes";
+status_wireless.legend3="Clients";
+status_wireless.signal_qual="Signal Quality";
+
+//help container
+var hstatus_wireless = new Object();
+hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
+hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.";
 
 
 

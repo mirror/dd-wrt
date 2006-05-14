@@ -848,7 +848,7 @@ function getOUIFromMAC(mac) {
 	
 	var top = 30;
 	var left = Math.floor(screen.availWidth * .66) - 10;
-	var width = 600
+	var width = 700
 	var height = 400
 	var tab = new Array();
 
