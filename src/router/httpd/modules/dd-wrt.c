@@ -1025,7 +1025,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_srv)</script></div>\n");
       char *ipfwd = nvram_safe_get ("dhcpfwd_ip");
       websWrite (wp,
-		 "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" /><input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_0\" onblur=\"valid_range(this,0,255,'IP')\" value='%d' />.<input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_1\" onblur=\"valid_range(this,0,255,'IP')\" value='%d' />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_2\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" value='%d' />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_3\" size=\"3\" onblur=\"valid_range(this,0,254,'IP')\" value='%d' /></div>\n",
+		 "<input type=\"hidden\" name=\"dhcpfwd_ip\" value=\"4\" /><input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_0\" onblur=\"valid_range(this,0,255,idx.dhcp_srv)\" value=\"%d\" />.<input class=\"num\" maxlength=\"3\" size=\"3\" name=\"dhcpfwd_ip_1\" onblur=\"valid_range(this,0,255,idx.dhcp_srv)\" value=\"%d\" />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_2\" size=\"3\" onblur=\"valid_range(this,0,255,idx.dhcp_srv)\" value=\"%d\" />.<input class=\"num\" maxlength=\"3\" name=\"dhcpfwd_ip_3\" size=\"3\" onblur=\"valid_range(this,0,254,idx.dhcp_srv)\" value=\"%d\"\" /></div>\n",
 		 get_single_ip (ipfwd, 0), get_single_ip (ipfwd, 1),
 		 get_single_ip (ipfwd, 2), get_single_ip (ipfwd, 3));
     }
@@ -1091,7 +1091,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
       for (i = 0; i < 4; i++)
 	{
 	  websWrite (wp,
-		     "<input class=\"num\" name=\"wan_wins_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,&#34;WINS&#34;)\" value='%d' />%s",
+		     "<input class=\"num\" name=\"wan_wins_%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,%d,&#34;WINS&#34;)\" value=\"%d\" />%s",
 		     i, i == 3 ? 254 : 255, get_single_ip (wins, i),
 		     i < 3 ? "." : "");
 	}
