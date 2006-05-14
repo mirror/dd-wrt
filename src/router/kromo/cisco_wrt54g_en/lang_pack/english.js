@@ -109,6 +109,14 @@ share.srvip="Server IP";
 share.localdns="Local DNS";
 share.minutes="minutes";
 share.oui="OUI Search";
+share.sttic="Static";
+share.status="Status";
+share.connecting="Connecting";
+share.connect="Connect";
+share.connected="Connected";
+share.disconnect="Disconnect";
+share.disconnected="Disconnected";
+
 
 var sbutton = new Object();
 sbutton.save="Save Settings";
@@ -150,7 +158,8 @@ sbutton.apply="Apply";
 sbutton.edit_srv="Add/Edit Service";
 sbutton.routingtab="Show Routing Table";
 sbutton.wanmac="Get Current PC MAC Address";
-
+sbutton.dhcprel="DHCP Release";
+sbutton.dhcpren="DHCP Renew";
 
 
 
@@ -316,7 +325,6 @@ ddns.emailaddr="E-mail Address";
 ddns.typ="Type";
 ddns.dynamic="Dynamic";
 // ddns.static="Static"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
-ddns.sttic="Static";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
@@ -1168,6 +1176,51 @@ hstatus_lan.right4="This shows the Router's IP Address, as it appears on your lo
 hstatus_lan.right6="When the Router is using a Subnet Mask, it is shown here.";
 hstatus_lan.right8="If you are using the Router as a DHCP server, that will be displayed here.";
 hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).";
+
+
+
+// **************************************************************** Status_Router.asp **********************************************************************//
+
+var status_router = new Object();
+status_router.titl=" - Router Status";
+status_router.h2="Router Information";
+status_router.legend="System";
+status_router.sys_name="Router Name";
+status_router.sys_model="Router Model";
+status_router.sys_firmver="Firmware Version";
+status_router.sys_time="Current Time";
+status_router.sys_up="Uptime";
+status_router.sys_load="Load Average";
+status_router.legend2="CPU";
+status_router.cpu="CPU Model";
+status_router.clock="CPU Clock";
+status_router.legend3="Memory";
+status_router.mem_tot="Total Available";
+status_router.mem_free="Free";
+status_router.mem_used="Used";
+status_router.mem_buf="Buffers";
+status_router.mem_cached="Cached";
+status_router.mem_active="Active";
+status_router.mem_inactive="Inactive";
+status_router.legend4="Network";
+status_router.net_maxports="IP Filter Maximum Ports";
+status_router.net_conntrack="Active IP Connections";
+status_router.h22="Internet";
+status_router.legend5="Configuration Type";
+status_router.www_login="Login Type";
+status_router.www_loginstatus="Login Status";
+
+//help container
+var hstatus_router = new Object();
+hstatus_router.right2="This is the specific name for the router, which you set on the <i>Setup</i> tab.";
+hstatus_router.right4="This is the router's MAC Address, as seen by your ISP.";
+hstatus_router.right6="This is the router's current firmware.";
+hstatus_router.right8="This is the time, as you set on the Setup Tab.";
+hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
+hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
+hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. \
+				This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
+
 
 
 
