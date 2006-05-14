@@ -1,7 +1,7 @@
-/* A Bison parser, made by GNU Bison 2.0.  */
+/* A Bison parser, made by GNU Bison 1.875.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
-   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -45,7 +45,8 @@
 /* Using locations.  */
 #define YYLSP_NEEDED 0
 
-/* Substitute the variable and function names.  */
+/* If NAME_PREFIX is specified substitute the variables and functions
+   names.  */
 #define yyparse cf_parse
 #define yylex   cf_lex
 #define yyerror cf_error
@@ -622,7 +623,7 @@ typedef union YYSTYPE {
   bird_clock_t time;
   struct prefix px;
 } YYSTYPE;
-/* Line 190 of yacc.c.  */
+/* Line 191 of yacc.c.  */
 #line 627 "cf-parse.tab.c"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
@@ -634,26 +635,23 @@ typedef union YYSTYPE {
 /* Copy the second part of user declarations.  */
 
 
-/* Line 213 of yacc.c.  */
+/* Line 214 of yacc.c.  */
 #line 639 "cf-parse.tab.c"
 
 #if ! defined (yyoverflow) || YYERROR_VERBOSE
 
-# ifndef YYFREE
-#  define YYFREE free
-# endif
-# ifndef YYMALLOC
-#  define YYMALLOC malloc
-# endif
-
 /* The parser invokes alloca or malloc; define the necessary symbols.  */
 
-# ifdef YYSTACK_USE_ALLOCA
-#  if YYSTACK_USE_ALLOCA
-#   ifdef __GNUC__
-#    define YYSTACK_ALLOC __builtin_alloca
-#   else
+# if YYSTACK_USE_ALLOCA
+#  define YYSTACK_ALLOC alloca
+# else
+#  ifndef YYSTACK_USE_ALLOCA
+#   if defined (alloca) || defined (_ALLOCA_H)
 #    define YYSTACK_ALLOC alloca
+#   else
+#    ifdef __GNUC__
+#     define YYSTACK_ALLOC __builtin_alloca
+#    endif
 #   endif
 #  endif
 # endif
@@ -666,20 +664,20 @@ typedef union YYSTYPE {
 #   include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
 #   define YYSIZE_T size_t
 #  endif
-#  define YYSTACK_ALLOC YYMALLOC
-#  define YYSTACK_FREE YYFREE
+#  define YYSTACK_ALLOC malloc
+#  define YYSTACK_FREE free
 # endif
 #endif /* ! defined (yyoverflow) || YYERROR_VERBOSE */
 
 
 #if (! defined (yyoverflow) \
      && (! defined (__cplusplus) \
-	 || (defined (YYSTYPE_IS_TRIVIAL) && YYSTYPE_IS_TRIVIAL)))
+	 || (YYSTYPE_IS_TRIVIAL)))
 
 /* A type that is properly aligned for any stack member.  */
 union yyalloc
 {
-  short int yyss;
+  short yyss;
   YYSTYPE yyvs;
   };
 
@@ -689,13 +687,13 @@ union yyalloc
 /* The size of an array large to enough to hold all stacks, each with
    N elements.  */
 # define YYSTACK_BYTES(N) \
-     ((N) * (sizeof (short int) + sizeof (YYSTYPE))			\
+     ((N) * (sizeof (short) + sizeof (YYSTYPE))				\
       + YYSTACK_GAP_MAXIMUM)
 
 /* Copy COUNT objects from FROM to TO.  The source and destination do
    not overlap.  */
 # ifndef YYCOPY
-#  if defined (__GNUC__) && 1 < __GNUC__
+#  if 1 < __GNUC__
 #   define YYCOPY(To, From, Count) \
       __builtin_memcpy (To, From, (Count) * sizeof (*(From)))
 #  else
@@ -731,7 +729,7 @@ union yyalloc
 #if defined (__STDC__) || defined (__cplusplus)
    typedef signed char yysigned_char;
 #else
-   typedef short int yysigned_char;
+   typedef short yysigned_char;
 #endif
 
 /* YYFINAL -- State number of the termination state. */
@@ -810,7 +808,7 @@ static const unsigned char yytranslate[] =
 #if YYDEBUG
 /* YYPRHS[YYN] -- Index of the first RHS symbol of rule number YYN in
    YYRHS.  */
-static const unsigned short int yyprhs[] =
+static const unsigned short yyprhs[] =
 {
        0,     0,     3,     6,     9,    10,    13,    15,    19,    21,
       27,    33,    35,    37,    39,    41,    43,    44,    46,    48,
@@ -865,7 +863,7 @@ static const unsigned short int yyprhs[] =
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS. */
-static const short int yyrhs[] =
+static const short yyrhs[] =
 {
      236,     0,    -1,   237,     3,    -1,     4,   395,    -1,    -1,
      237,   394,    -1,    11,    -1,   225,   339,   226,    -1,    15,
@@ -1027,7 +1025,7 @@ static const short int yyrhs[] =
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
-static const unsigned short int yyrline[] =
+static const unsigned short yyrline[] =
 {
        0,   242,   242,   243,   246,   248,   255,   256,   257,   261,
      265,   274,   275,   276,   277,   278,   279,   285,   286,   293,
@@ -1087,83 +1085,85 @@ static const unsigned short int yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals. */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "END", "CLI_MARKER", "INVALID_TOKEN",
-  "GEQ", "LEQ", "NEQ", "AND", "OR", "NUM", "ENUM", "RTRID", "IPA", "SYM",
-  "TEXT", "PREFIX_DUMMY", "'='", "'<'", "'>'", "'~'", "'.'", "'+'", "'-'",
-  "'*'", "'/'", "'%'", "'!'", "DEFINE", "ON", "OFF", "YES", "NO", "LOG",
-  "SYSLOG", "ALL", "DEBUG", "TRACE", "INFO", "REMOTE", "WARNING", "ERROR",
-  "AUTH", "FATAL", "BUG", "STDERR", "CONFIGURE", "DOWN", "KERNEL",
-  "PERSIST", "SCAN", "TIME", "LEARN", "DEVICE", "ASYNC", "TABLE", "ROUTER",
-  "ID", "PROTOCOL", "PREFERENCE", "DISABLED", "DIRECT", "INTERFACE",
-  "IMPORT", "EXPORT", "FILTER", "NONE", "STATES", "ROUTES", "FILTERS",
-  "PASSWORD", "FROM", "PASSIVE", "TO", "EVENTS", "PACKETS", "PROTOCOLS",
-  "INTERFACES", "PRIMARY", "STATS", "COUNT", "FOR", "COMMANDS",
-  "PREIMPORT", "GENERATE", "SHOW", "STATUS", "SUMMARY", "ROUTE", "SYMBOLS",
-  "DUMP", "RESOURCES", "SOCKETS", "NEIGHBORS", "ATTRIBUTES", "ECHO",
-  "DISABLE", "ENABLE", "RESTART", "FUNCTION", "PRINT", "PRINTN", "UNSET",
-  "RETURN", "ACCEPT", "REJECT", "QUITBIRD", "INT", "BOOL", "IP", "PREFIX",
-  "PAIR", "SET", "STRING", "BGPMASK", "BGPPATH", "CLIST", "IF", "THEN",
-  "ELSE", "CASE", "TRUE", "FALSE", "GW", "NET", "MASK", "SOURCE", "SCOPE",
-  "CAST", "DEST", "LEN", "DEFINED", "ADD", "DELETE", "CONTAINS", "RESET",
-  "PREPEND", "MATCH", "EMPTY", "WHERE", "EVAL", "BGP", "LOCAL", "NEIGHBOR",
-  "AS", "HOLD", "CONNECT", "RETRY", "KEEPALIVE", "MULTIHOP", "STARTUP",
-  "VIA", "NEXT", "HOP", "SELF", "DEFAULT", "PATH", "METRIC", "START",
-  "DELAY", "FORGET", "WAIT", "AFTER", "BGP_PATH", "BGP_LOCAL_PREF",
-  "BGP_MED", "BGP_ORIGIN", "BGP_NEXT_HOP", "BGP_ATOMIC_AGGR",
-  "BGP_AGGREGATOR", "BGP_COMMUNITY", "ADDRESS", "OSPF", "AREA",
-  "OSPF_METRIC1", "OSPF_METRIC2", "OSPF_TAG", "RFC1583COMPAT", "STUB",
-  "TICK", "COST", "RETRANSMIT", "HELLO", "TRANSMIT", "PRIORITY", "DEAD",
-  "NONBROADCAST", "POINTOPOINT", "TYPE", "SIMPLE", "AUTHENTICATION",
-  "STRICT", "CRYPTOGRAPHIC", "ELIGIBLE", "POLL", "NETWORKS", "HIDDEN",
-  "VIRTUAL", "LINK", "PIPE", "PEER", "RIP", "INFINITY", "PORT", "PERIOD",
-  "GARBAGE", "TIMEOUT", "PASSWORDS", "MODE", "BROADCAST", "MULTICAST",
-  "QUIET", "NOLISTEN", "VERSION1", "PLAINTEXT", "MD5", "HONOR", "NEVER",
-  "ALWAYS", "RIP_METRIC", "RIP_TAG", "STATIC", "DROP", "PROHIBIT", "'('",
-  "')'", "';'", "':'", "'{'", "'}'", "','", "'?'", "'['", "']'", "$accept",
-  "config", "conf_entries", "expr", "definition", "bool", "ipa", "prefix",
-  "prefix_or_ipa", "pxlen", "datetime", "log_config", "log_file",
-  "log_mask", "log_mask_list", "log_cat", "cmd_CONFIGURE", "cmd_DOWN",
-  "cfg_name", "kern_proto_start", "kern_item", "kif_proto_start",
-  "kif_item", "nl_item", "rtrid", "idval", "newtab", "proto_start",
-  "proto_name", "proto_item", "imexport", "rtable", "debug_default",
-  "iface_patt", "dev_proto_start", "dev_proto", "dev_iface_entry_init",
-  "dev_iface_entry", "dev_iface_list", "debug_mask", "debug_list",
-  "debug_flag", "password_items", "password_item", "password_item_begin",
-  "password_item_params", "password_list", "password_begin_list",
-  "password_begin", "cmd_SHOW_STATUS", "cmd_SHOW_PROTOCOLS",
-  "cmd_SHOW_PROTOCOLS_ALL", "optsym", "cmd_SHOW_INTERFACES",
-  "cmd_SHOW_INTERFACES_SUMMARY", "cmd_SHOW_ROUTE", "r_args",
-  "import_or_proto", "cmd_SHOW_SYMBOLS", "cmd_DUMP_RESOURCES",
-  "cmd_DUMP_SOCKETS", "cmd_DUMP_INTERFACES", "cmd_DUMP_NEIGHBORS",
-  "cmd_DUMP_ATTRIBUTES", "cmd_DUMP_ROUTES", "cmd_DUMP_PROTOCOLS",
-  "cmd_ECHO", "echo_mask", "echo_size", "cmd_DISABLE", "cmd_ENABLE",
-  "cmd_RESTART", "cmd_DEBUG", "proto_patt", "filter_def", "@1",
-  "filter_eval", "type", "one_decl", "decls", "declsn", "filter_body",
-  "filter", "where_filter", "function_params", "function_body",
-  "function_def", "@2", "cmds", "block", "pair", "fprefix_s", "fprefix",
-  "fipa", "set_atom", "set_item", "set_items", "switch_body", "bgp_one",
-  "bgp_path", "constant", "rtadot", "function_call", "static_attr", "term",
-  "break_command", "print_one", "print_list", "var_listn", "var_list",
-  "cmd", "bgp_proto_start", "bgp_proto", "ospf_proto_start", "ospf_proto",
-  "ospf_proto_item", "ospf_area_start", "ospf_area", "ospf_area_opts",
-  "ospf_area_item", "ospf_vlink", "ospf_vlink_opts", "ospf_vlink_item",
-  "ospf_vlink_start", "ospf_iface_item", "pref_list", "pref_item",
-  "pref_el", "pref_hid", "ipa_list", "ipa_item", "ipa_el", "ipa_ne",
-  "ospf_iface_start", "ospf_iface_opts", "ospf_iface_opt_list",
-  "ospf_iface", "ospf_iface_list", "opttext", "cmd_SHOW_OSPF",
-  "cmd_SHOW_OSPF_NEIGHBORS", "cmd_SHOW_OSPF_INTERFACE", "pipe_proto_start",
-  "pipe_proto", "rip_cfg_start", "rip_cfg", "rip_auth", "rip_mode",
-  "rip_iface_item", "rip_iface_opts", "rip_iface_opt_list",
-  "rip_iface_init", "rip_iface", "rip_iface_list", "static_proto_start",
-  "static_proto", "stat_route0", "stat_route", "cmd_SHOW_STATIC", "conf",
-  "cli_cmd", "proto", "kern_proto", "kif_proto", "dynamic_attr", 0
+  "$end", "error", "$undefined", "END", "CLI_MARKER", "INVALID_TOKEN", 
+  "GEQ", "LEQ", "NEQ", "AND", "OR", "NUM", "ENUM", "RTRID", "IPA", "SYM", 
+  "TEXT", "PREFIX_DUMMY", "'='", "'<'", "'>'", "'~'", "'.'", "'+'", "'-'", 
+  "'*'", "'/'", "'%'", "'!'", "DEFINE", "ON", "OFF", "YES", "NO", "LOG", 
+  "SYSLOG", "ALL", "DEBUG", "TRACE", "INFO", "REMOTE", "WARNING", "ERROR", 
+  "AUTH", "FATAL", "BUG", "STDERR", "CONFIGURE", "DOWN", "KERNEL", 
+  "PERSIST", "SCAN", "TIME", "LEARN", "DEVICE", "ASYNC", "TABLE", 
+  "ROUTER", "ID", "PROTOCOL", "PREFERENCE", "DISABLED", "DIRECT", 
+  "INTERFACE", "IMPORT", "EXPORT", "FILTER", "NONE", "STATES", "ROUTES", 
+  "FILTERS", "PASSWORD", "FROM", "PASSIVE", "TO", "EVENTS", "PACKETS", 
+  "PROTOCOLS", "INTERFACES", "PRIMARY", "STATS", "COUNT", "FOR", 
+  "COMMANDS", "PREIMPORT", "GENERATE", "SHOW", "STATUS", "SUMMARY", 
+  "ROUTE", "SYMBOLS", "DUMP", "RESOURCES", "SOCKETS", "NEIGHBORS", 
+  "ATTRIBUTES", "ECHO", "DISABLE", "ENABLE", "RESTART", "FUNCTION", 
+  "PRINT", "PRINTN", "UNSET", "RETURN", "ACCEPT", "REJECT", "QUITBIRD", 
+  "INT", "BOOL", "IP", "PREFIX", "PAIR", "SET", "STRING", "BGPMASK", 
+  "BGPPATH", "CLIST", "IF", "THEN", "ELSE", "CASE", "TRUE", "FALSE", "GW", 
+  "NET", "MASK", "SOURCE", "SCOPE", "CAST", "DEST", "LEN", "DEFINED", 
+  "ADD", "DELETE", "CONTAINS", "RESET", "PREPEND", "MATCH", "EMPTY", 
+  "WHERE", "EVAL", "BGP", "LOCAL", "NEIGHBOR", "AS", "HOLD", "CONNECT", 
+  "RETRY", "KEEPALIVE", "MULTIHOP", "STARTUP", "VIA", "NEXT", "HOP", 
+  "SELF", "DEFAULT", "PATH", "METRIC", "START", "DELAY", "FORGET", "WAIT", 
+  "AFTER", "BGP_PATH", "BGP_LOCAL_PREF", "BGP_MED", "BGP_ORIGIN", 
+  "BGP_NEXT_HOP", "BGP_ATOMIC_AGGR", "BGP_AGGREGATOR", "BGP_COMMUNITY", 
+  "ADDRESS", "OSPF", "AREA", "OSPF_METRIC1", "OSPF_METRIC2", "OSPF_TAG", 
+  "RFC1583COMPAT", "STUB", "TICK", "COST", "RETRANSMIT", "HELLO", 
+  "TRANSMIT", "PRIORITY", "DEAD", "NONBROADCAST", "POINTOPOINT", "TYPE", 
+  "SIMPLE", "AUTHENTICATION", "STRICT", "CRYPTOGRAPHIC", "ELIGIBLE", 
+  "POLL", "NETWORKS", "HIDDEN", "VIRTUAL", "LINK", "PIPE", "PEER", "RIP", 
+  "INFINITY", "PORT", "PERIOD", "GARBAGE", "TIMEOUT", "PASSWORDS", "MODE", 
+  "BROADCAST", "MULTICAST", "QUIET", "NOLISTEN", "VERSION1", "PLAINTEXT", 
+  "MD5", "HONOR", "NEVER", "ALWAYS", "RIP_METRIC", "RIP_TAG", "STATIC", 
+  "DROP", "PROHIBIT", "'('", "')'", "';'", "':'", "'{'", "'}'", "','", 
+  "'?'", "'['", "']'", "$accept", "config", "conf_entries", "expr", 
+  "definition", "bool", "ipa", "prefix", "prefix_or_ipa", "pxlen", 
+  "datetime", "log_config", "log_file", "log_mask", "log_mask_list", 
+  "log_cat", "cmd_CONFIGURE", "cmd_DOWN", "cfg_name", "kern_proto_start", 
+  "kern_item", "kif_proto_start", "kif_item", "nl_item", "rtrid", "idval", 
+  "newtab", "proto_start", "proto_name", "proto_item", "imexport", 
+  "rtable", "debug_default", "iface_patt", "dev_proto_start", "dev_proto", 
+  "dev_iface_entry_init", "dev_iface_entry", "dev_iface_list", 
+  "debug_mask", "debug_list", "debug_flag", "password_items", 
+  "password_item", "password_item_begin", "password_item_params", 
+  "password_list", "password_begin_list", "password_begin", 
+  "cmd_SHOW_STATUS", "cmd_SHOW_PROTOCOLS", "cmd_SHOW_PROTOCOLS_ALL", 
+  "optsym", "cmd_SHOW_INTERFACES", "cmd_SHOW_INTERFACES_SUMMARY", 
+  "cmd_SHOW_ROUTE", "r_args", "import_or_proto", "cmd_SHOW_SYMBOLS", 
+  "cmd_DUMP_RESOURCES", "cmd_DUMP_SOCKETS", "cmd_DUMP_INTERFACES", 
+  "cmd_DUMP_NEIGHBORS", "cmd_DUMP_ATTRIBUTES", "cmd_DUMP_ROUTES", 
+  "cmd_DUMP_PROTOCOLS", "cmd_ECHO", "echo_mask", "echo_size", 
+  "cmd_DISABLE", "cmd_ENABLE", "cmd_RESTART", "cmd_DEBUG", "proto_patt", 
+  "filter_def", "@1", "filter_eval", "type", "one_decl", "decls", 
+  "declsn", "filter_body", "filter", "where_filter", "function_params", 
+  "function_body", "function_def", "@2", "cmds", "block", "pair", 
+  "fprefix_s", "fprefix", "fipa", "set_atom", "set_item", "set_items", 
+  "switch_body", "bgp_one", "bgp_path", "constant", "rtadot", 
+  "function_call", "static_attr", "term", "break_command", "print_one", 
+  "print_list", "var_listn", "var_list", "cmd", "bgp_proto_start", 
+  "bgp_proto", "ospf_proto_start", "ospf_proto", "ospf_proto_item", 
+  "ospf_area_start", "ospf_area", "ospf_area_opts", "ospf_area_item", 
+  "ospf_vlink", "ospf_vlink_opts", "ospf_vlink_item", "ospf_vlink_start", 
+  "ospf_iface_item", "pref_list", "pref_item", "pref_el", "pref_hid", 
+  "ipa_list", "ipa_item", "ipa_el", "ipa_ne", "ospf_iface_start", 
+  "ospf_iface_opts", "ospf_iface_opt_list", "ospf_iface", 
+  "ospf_iface_list", "opttext", "cmd_SHOW_OSPF", 
+  "cmd_SHOW_OSPF_NEIGHBORS", "cmd_SHOW_OSPF_INTERFACE", 
+  "pipe_proto_start", "pipe_proto", "rip_cfg_start", "rip_cfg", 
+  "rip_auth", "rip_mode", "rip_iface_item", "rip_iface_opts", 
+  "rip_iface_opt_list", "rip_iface_init", "rip_iface", "rip_iface_list", 
+  "static_proto_start", "static_proto", "stat_route0", "stat_route", 
+  "cmd_SHOW_STATIC", "conf", "cli_cmd", "proto", "kern_proto", 
+  "kif_proto", "dynamic_attr", 0
 };
 #endif
 
 # ifdef YYPRINT
 /* YYTOKNUM[YYLEX-NUM] -- Internal token number corresponding to
    token YYLEX-NUM.  */
-static const unsigned short int yytoknum[] =
+static const unsigned short yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,    61,    60,
@@ -1193,7 +1193,7 @@ static const unsigned short int yytoknum[] =
 # endif
 
 /* YYR1[YYN] -- Symbol number of symbol that rule YYN derives.  */
-static const unsigned short int yyr1[] =
+static const unsigned short yyr1[] =
 {
        0,   235,   236,   236,   237,   237,   238,   238,   238,   239,
      239,   240,   240,   240,   240,   240,   240,   241,   241,   242,
@@ -1305,7 +1305,7 @@ static const unsigned char yyr2[] =
 /* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
    STATE-NUM when YYTABLE doesn't specify something else to do.  Zero
    means the default is an error.  */
-static const unsigned short int yydefact[] =
+static const unsigned short yydefact[] =
 {
        4,     0,     0,     0,     0,    44,     0,     0,     0,     0,
        0,     0,     0,   439,   440,   441,   442,   443,   444,   445,
@@ -1401,7 +1401,7 @@ static const unsigned short int yydefact[] =
 };
 
 /* YYDEFGOTO[NTERM-NUM]. */
-static const short int yydefgoto[] =
+static const short yydefgoto[] =
 {
       -1,     2,     3,   345,    51,   346,   411,   530,   592,   579,
      796,    52,   110,   260,   471,   472,    13,    14,    83,    53,
@@ -1425,7 +1425,7 @@ static const short int yydefgoto[] =
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
 #define YYPACT_NINF -661
-static const short int yypact[] =
+static const short yypact[] =
 {
       41,  1254,    83,   154,   192,    89,   223,   551,  1131,   257,
      192,   192,   192,  -661,  -661,  -661,  -661,  -661,  -661,  -661,
@@ -1521,7 +1521,7 @@ static const short int yypact[] =
 };
 
 /* YYPGOTO[NTERM-NUM].  */
-static const short int yypgoto[] =
+static const short yypgoto[] =
 {
     -661,  -661,  -661,  -111,  -661,  -180,  -157,  -207,  -661,  -661,
     -259,  -661,  -661,  -661,  -661,   382,  -661,  -661,  -661,  -661,
@@ -1547,7 +1547,7 @@ static const short int yypgoto[] =
    number is the opposite.  If zero, do what YYDEFACT says.
    If YYTABLE_NINF, syntax error.  */
 #define YYTABLE_NINF -270
-static const short int yytable[] =
+static const short yytable[] =
 {
      140,   265,   381,   290,   412,   291,   293,   380,   295,   276,
      677,   367,   562,   365,   366,   892,   507,   508,   714,   258,
@@ -1694,7 +1694,7 @@ static const short int yytable[] =
        0,     0,   352,     0,   772
 };
 
-static const short int yycheck[] =
+static const short yycheck[] =
 {
       49,   112,   182,   134,   211,   134,   134,   181,   134,    11,
      605,   168,   390,    14,    15,    14,    23,    24,    18,    36,
@@ -1843,7 +1843,7 @@ static const short int yycheck[] =
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
    symbol of state STATE-NUM.  */
-static const unsigned short int yystos[] =
+static const unsigned short yystos[] =
 {
        0,     4,   236,   237,    37,    47,    48,    86,    91,    96,
       97,    98,    99,   251,   252,   284,   285,   286,   288,   289,
@@ -1961,8 +1961,7 @@ static const unsigned short int yystos[] =
 
 #define YYACCEPT	goto yyacceptlab
 #define YYABORT		goto yyabortlab
-#define YYERROR		goto yyerrorlab
-
+#define YYERROR		goto yyerrlab1
 
 /* Like YYERROR except do call yyerror.  This remains here temporarily
    to ease the transition to the new meaning of YYERROR, for GCC.
@@ -1989,52 +1988,19 @@ do								\
     }								\
 while (0)
 
-
 #define YYTERROR	1
 #define YYERRCODE	256
 
+/* YYLLOC_DEFAULT -- Compute the default location (before the actions
+   are run).  */
 
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-#define YYRHSLOC(Rhs, K) ((Rhs)[K])
 #ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)				\
-    do									\
-      if (N)								\
-	{								\
-	  (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;	\
-	  (Current).first_column = YYRHSLOC (Rhs, 1).first_column;	\
-	  (Current).last_line    = YYRHSLOC (Rhs, N).last_line;		\
-	  (Current).last_column  = YYRHSLOC (Rhs, N).last_column;	\
-	}								\
-      else								\
-	{								\
-	  (Current).first_line   = (Current).last_line   =		\
-	    YYRHSLOC (Rhs, 0).last_line;				\
-	  (Current).first_column = (Current).last_column =		\
-	    YYRHSLOC (Rhs, 0).last_column;				\
-	}								\
-    while (0)
+# define YYLLOC_DEFAULT(Current, Rhs, N)         \
+  Current.first_line   = Rhs[1].first_line;      \
+  Current.first_column = Rhs[1].first_column;    \
+  Current.last_line    = Rhs[N].last_line;       \
+  Current.last_column  = Rhs[N].last_column;
 #endif
-
-
-/* YY_LOCATION_PRINT -- Print the location on the stream.
-   This macro was not mandated originally: define only if we know
-   we won't break user code: when these are the locations we know.  */
-
-#ifndef YY_LOCATION_PRINT
-# if YYLTYPE_IS_TRIVIAL
-#  define YY_LOCATION_PRINT(File, Loc)			\
-     fprintf (File, "%d.%d-%d.%d",			\
-              (Loc).first_line, (Loc).first_column,	\
-              (Loc).last_line,  (Loc).last_column)
-# else
-#  define YY_LOCATION_PRINT(File, Loc) ((void) 0)
-# endif
-#endif
-
 
 /* YYLEX -- calling `yylex' with the right arguments.  */
 
@@ -2058,30 +2024,36 @@ do {						\
     YYFPRINTF Args;				\
 } while (0)
 
-# define YY_SYMBOL_PRINT(Title, Type, Value, Location)		\
+# define YYDSYMPRINT(Args)			\
+do {						\
+  if (yydebug)					\
+    yysymprint Args;				\
+} while (0)
+
+# define YYDSYMPRINTF(Title, Token, Value, Location)		\
 do {								\
   if (yydebug)							\
     {								\
       YYFPRINTF (stderr, "%s ", Title);				\
       yysymprint (stderr, 					\
-                  Type, Value);	\
+                  Token, Value);	\
       YYFPRINTF (stderr, "\n");					\
     }								\
 } while (0)
 
 /*------------------------------------------------------------------.
 | yy_stack_print -- Print the state stack from its BOTTOM up to its |
-| TOP (included).                                                   |
+| TOP (cinluded).                                                   |
 `------------------------------------------------------------------*/
 
 #if defined (__STDC__) || defined (__cplusplus)
 static void
-yy_stack_print (short int *bottom, short int *top)
+yy_stack_print (short *bottom, short *top)
 #else
 static void
 yy_stack_print (bottom, top)
-    short int *bottom;
-    short int *top;
+    short *bottom;
+    short *top;
 #endif
 {
   YYFPRINTF (stderr, "Stack now");
@@ -2111,9 +2083,9 @@ yy_reduce_print (yyrule)
 #endif
 {
   int yyi;
-  unsigned int yylno = yyrline[yyrule];
+  unsigned int yylineno = yyrline[yyrule];
   YYFPRINTF (stderr, "Reducing stack by rule %d (line %u), ",
-             yyrule - 1, yylno);
+             yyrule - 1, yylineno);
   /* Print the symbols being reduced, and their result.  */
   for (yyi = yyprhs[yyrule]; 0 <= yyrhs[yyi]; yyi++)
     YYFPRINTF (stderr, "%s ", yytname [yyrhs[yyi]]);
@@ -2131,7 +2103,8 @@ do {					\
 int yydebug;
 #else /* !YYDEBUG */
 # define YYDPRINTF(Args)
-# define YY_SYMBOL_PRINT(Title, Type, Value, Location)
+# define YYDSYMPRINT(Args)
+# define YYDSYMPRINTF(Title, Token, Value, Location)
 # define YY_STACK_PRINT(Bottom, Top)
 # define YY_REDUCE_PRINT(Rule)
 #endif /* !YYDEBUG */
@@ -2148,6 +2121,10 @@ int yydebug;
    Do not make this value too large; the results are undefined if
    SIZE_MAX < YYSTACK_BYTES (YYMAXDEPTH)
    evaluated with infinite-precision integer arithmetic.  */
+
+#if YYMAXDEPTH == 0
+# undef YYMAXDEPTH
+#endif
 
 #ifndef YYMAXDEPTH
 # define YYMAXDEPTH 10000
@@ -2230,15 +2207,15 @@ yysymprint (yyoutput, yytype, yyvaluep)
   (void) yyvaluep;
 
   if (yytype < YYNTOKENS)
-    YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
+    {
+      YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
+# ifdef YYPRINT
+      YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
+# endif
+    }
   else
     YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
 
-
-# ifdef YYPRINT
-  if (yytype < YYNTOKENS)
-    YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
-# endif
   switch (yytype)
     {
       default:
@@ -2254,21 +2231,16 @@ yysymprint (yyoutput, yytype, yyvaluep)
 
 #if defined (__STDC__) || defined (__cplusplus)
 static void
-yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
+yydestruct (int yytype, YYSTYPE *yyvaluep)
 #else
 static void
-yydestruct (yymsg, yytype, yyvaluep)
-    const char *yymsg;
+yydestruct (yytype, yyvaluep)
     int yytype;
     YYSTYPE *yyvaluep;
 #endif
 {
   /* Pacify ``unused variable'' warnings.  */
   (void) yyvaluep;
-
-  if (!yymsg)
-    yymsg = "Deleting";
-  YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
   switch (yytype)
     {
@@ -2297,10 +2269,10 @@ int yyparse ();
 
 
 
-/* The look-ahead symbol.  */
+/* The lookahead symbol.  */
 int yychar;
 
-/* The semantic value of the look-ahead symbol.  */
+/* The semantic value of the lookahead symbol.  */
 YYSTYPE yylval;
 
 /* Number of syntax errors so far.  */
@@ -2336,7 +2308,7 @@ yyparse ()
   int yyresult;
   /* Number of tokens to shift before error messages enabled.  */
   int yyerrstatus;
-  /* Look-ahead token as an internal (translated) token number.  */
+  /* Lookahead token as an internal (translated) token number.  */
   int yytoken = 0;
 
   /* Three stacks and their tools:
@@ -2348,9 +2320,9 @@ yyparse ()
      to reallocate them elsewhere.  */
 
   /* The state stack.  */
-  short int yyssa[YYINITDEPTH];
-  short int *yyss = yyssa;
-  register short int *yyssp;
+  short	yyssa[YYINITDEPTH];
+  short *yyss = yyssa;
+  register short *yyssp;
 
   /* The semantic value stack.  */
   YYSTYPE yyvsa[YYINITDEPTH];
@@ -2387,9 +2359,6 @@ yyparse ()
   yyssp = yyss;
   yyvsp = yyvs;
 
-
-  yyvsp[0] = yylval;
-
   goto yysetstate;
 
 /*------------------------------------------------------------.
@@ -2415,7 +2384,7 @@ yyparse ()
 	   these so that the &'s don't force the real ones into
 	   memory.  */
 	YYSTYPE *yyvs1 = yyvs;
-	short int *yyss1 = yyss;
+	short *yyss1 = yyss;
 
 
 	/* Each stack pointer address is followed by the size of the
@@ -2443,7 +2412,7 @@ yyparse ()
 	yystacksize = YYMAXDEPTH;
 
       {
-	short int *yyss1 = yyss;
+	short *yyss1 = yyss;
 	union yyalloc *yyptr =
 	  (union yyalloc *) YYSTACK_ALLOC (YYSTACK_BYTES (yystacksize));
 	if (! yyptr)
@@ -2479,18 +2448,18 @@ yyparse ()
 yybackup:
 
 /* Do appropriate processing given the current state.  */
-/* Read a look-ahead token if we need one and don't already have one.  */
+/* Read a lookahead token if we need one and don't already have one.  */
 /* yyresume: */
 
-  /* First try to decide what to do without reference to look-ahead token.  */
+  /* First try to decide what to do without reference to lookahead token.  */
 
   yyn = yypact[yystate];
   if (yyn == YYPACT_NINF)
     goto yydefault;
 
-  /* Not known => get a look-ahead token if don't already have one.  */
+  /* Not known => get a lookahead token if don't already have one.  */
 
-  /* YYCHAR is either YYEMPTY or YYEOF or a valid look-ahead symbol.  */
+  /* YYCHAR is either YYEMPTY or YYEOF or a valid lookahead symbol.  */
   if (yychar == YYEMPTY)
     {
       YYDPRINTF ((stderr, "Reading a token: "));
@@ -2505,7 +2474,7 @@ yybackup:
   else
     {
       yytoken = YYTRANSLATE (yychar);
-      YY_SYMBOL_PRINT ("Next token is", yytoken, &yylval, &yylloc);
+      YYDSYMPRINTF ("Next token is", yytoken, &yylval, &yylloc);
     }
 
   /* If the proper action on seeing token YYTOKEN is to reduce or to
@@ -2525,8 +2494,8 @@ yybackup:
   if (yyn == YYFINAL)
     YYACCEPT;
 
-  /* Shift the look-ahead token.  */
-  YY_SYMBOL_PRINT ("Shifting", yytoken, &yylval, &yylloc);
+  /* Shift the lookahead token.  */
+  YYDPRINTF ((stderr, "Shifting token %s, ", yytname[yytoken]));
 
   /* Discard the token being shifted unless it is eof.  */
   if (yychar != YYEOF)
@@ -2587,102 +2556,102 @@ yyreduce:
 
   case 7:
 #line 256 "cf-parse.y"
-    { (yyval.i) = f_eval_int((yyvsp[-1].x)); ;}
+    { yyval.i = f_eval_int(yyvsp[-1].x); ;}
     break;
 
   case 8:
 #line 257 "cf-parse.y"
-    { if ((yyvsp[0].s)->class != SYM_NUMBER) cf_error("Number expected"); else (yyval.i) = (yyvsp[0].s)->aux; ;}
+    { if (yyvsp[0].s->class != SYM_NUMBER) cf_error("Number expected"); else yyval.i = yyvsp[0].s->aux; ;}
     break;
 
   case 9:
 #line 261 "cf-parse.y"
     {
-     cf_define_symbol((yyvsp[-3].s), SYM_NUMBER, NULL);
-     (yyvsp[-3].s)->aux = (yyvsp[-1].i);
+     cf_define_symbol(yyvsp[-3].s, SYM_NUMBER, NULL);
+     yyvsp[-3].s->aux = yyvsp[-1].i;
    ;}
     break;
 
   case 10:
 #line 265 "cf-parse.y"
     {
-     cf_define_symbol((yyvsp[-3].s), SYM_IPA, cfg_alloc(sizeof(ip_addr)));
-     *(ip_addr *)(yyvsp[-3].s)->def = (yyvsp[-1].a);
+     cf_define_symbol(yyvsp[-3].s, SYM_IPA, cfg_alloc(sizeof(ip_addr)));
+     *(ip_addr *)yyvsp[-3].s->def = yyvsp[-1].a;
    ;}
     break;
 
   case 11:
 #line 274 "cf-parse.y"
-    {(yyval.i) = !!(yyvsp[0].i); ;}
+    {yyval.i = !!yyvsp[0].i; ;}
     break;
 
   case 12:
 #line 275 "cf-parse.y"
-    { (yyval.i) = 1; ;}
+    { yyval.i = 1; ;}
     break;
 
   case 13:
 #line 276 "cf-parse.y"
-    { (yyval.i) = 1; ;}
+    { yyval.i = 1; ;}
     break;
 
   case 14:
 #line 277 "cf-parse.y"
-    { (yyval.i) = 0; ;}
+    { yyval.i = 0; ;}
     break;
 
   case 15:
 #line 278 "cf-parse.y"
-    { (yyval.i) = 0; ;}
+    { yyval.i = 0; ;}
     break;
 
   case 16:
 #line 279 "cf-parse.y"
-    { (yyval.i) = 1; ;}
+    { yyval.i = 1; ;}
     break;
 
   case 18:
 #line 286 "cf-parse.y"
     {
-     if ((yyvsp[0].s)->class != SYM_IPA) cf_error("IP address expected");
-     (yyval.a) = *(ip_addr *)(yyvsp[0].s)->def;
+     if (yyvsp[0].s->class != SYM_IPA) cf_error("IP address expected");
+     yyval.a = *(ip_addr *)yyvsp[0].s->def;
    ;}
     break;
 
   case 19:
 #line 293 "cf-parse.y"
     {
-     if (!ip_is_prefix((yyvsp[-1].a), (yyvsp[0].i))) cf_error("Invalid prefix");
-     (yyval.px).addr = (yyvsp[-1].a); (yyval.px).len = (yyvsp[0].i);
+     if (!ip_is_prefix(yyvsp[-1].a, yyvsp[0].i)) cf_error("Invalid prefix");
+     yyval.px.addr = yyvsp[-1].a; yyval.px.len = yyvsp[0].i;
    ;}
     break;
 
   case 21:
 #line 301 "cf-parse.y"
-    { (yyval.px).addr = (yyvsp[0].a); (yyval.px).len = BITS_PER_IP_ADDRESS; ;}
+    { yyval.px.addr = yyvsp[0].a; yyval.px.len = BITS_PER_IP_ADDRESS; ;}
     break;
 
   case 22:
 #line 305 "cf-parse.y"
     {
-     if ((yyvsp[0].i) < 0 || (yyvsp[0].i) > BITS_PER_IP_ADDRESS) cf_error("Invalid prefix length %d", (yyvsp[0].i));
-     (yyval.i) = (yyvsp[0].i);
+     if (yyvsp[0].i < 0 || yyvsp[0].i > BITS_PER_IP_ADDRESS) cf_error("Invalid prefix length %d", yyvsp[0].i);
+     yyval.i = yyvsp[0].i;
    ;}
     break;
 
   case 23:
 #line 309 "cf-parse.y"
     {
-     (yyval.i) = ipa_mklen((yyvsp[0].a));
-     if ((yyval.i) < 0) cf_error("Invalid netmask %I", (yyvsp[0].a));
+     yyval.i = ipa_mklen(yyvsp[0].a);
+     if (yyval.i < 0) cf_error("Invalid netmask %I", yyvsp[0].a);
    ;}
     break;
 
   case 24:
 #line 316 "cf-parse.y"
     {
-     (yyval.time) = tm_parse_datetime((yyvsp[0].t));
-     if (!(yyval.time))
+     yyval.time = tm_parse_datetime(yyvsp[0].t);
+     if (!yyval.time)
        cf_error("Invalid date and time");
    ;}
     break;
@@ -2691,8 +2660,8 @@ yyreduce:
 #line 326 "cf-parse.y"
     {
     struct log_config *c = cfg_allocz(sizeof(struct log_config));
-    c->fh = (yyvsp[-2].g);
-    c->mask = (yyvsp[-1].i);
+    c->fh = yyvsp[-2].g;
+    c->mask = yyvsp[-1].i;
     add_tail(&new_config->logfiles, &c->n);
   ;}
     break;
@@ -2700,90 +2669,90 @@ yyreduce:
   case 26:
 #line 335 "cf-parse.y"
     {
-     FILE *f = tracked_fopen(new_config->pool, (yyvsp[0].t), "a");
-     if (!f) cf_error("Unable to open log file `%s': %m", (yyvsp[0].t));
-     (yyval.g) = f;
+     FILE *f = tracked_fopen(new_config->pool, yyvsp[0].t, "a");
+     if (!f) cf_error("Unable to open log file `%s': %m", yyvsp[0].t);
+     yyval.g = f;
    ;}
     break;
 
   case 27:
 #line 340 "cf-parse.y"
-    { (yyval.g) = NULL; ;}
+    { yyval.g = NULL; ;}
     break;
 
   case 28:
 #line 341 "cf-parse.y"
-    { (yyval.g) = stderr; ;}
+    { yyval.g = stderr; ;}
     break;
 
   case 29:
 #line 345 "cf-parse.y"
-    { (yyval.i) = ~0; ;}
+    { yyval.i = ~0; ;}
     break;
 
   case 30:
 #line 346 "cf-parse.y"
-    { (yyval.i) = (yyvsp[-1].i); ;}
+    { yyval.i = yyvsp[-1].i; ;}
     break;
 
   case 31:
 #line 350 "cf-parse.y"
-    { (yyval.i) = 1 << (yyvsp[0].i); ;}
+    { yyval.i = 1 << yyvsp[0].i; ;}
     break;
 
   case 32:
 #line 351 "cf-parse.y"
-    { (yyval.i) = (yyvsp[-2].i) | (1 << (yyvsp[0].i)); ;}
+    { yyval.i = yyvsp[-2].i | (1 << yyvsp[0].i); ;}
     break;
 
   case 33:
 #line 355 "cf-parse.y"
-    { (yyval.i) = L_DEBUG[0]; ;}
+    { yyval.i = L_DEBUG[0]; ;}
     break;
 
   case 34:
 #line 356 "cf-parse.y"
-    { (yyval.i) = L_TRACE[0]; ;}
+    { yyval.i = L_TRACE[0]; ;}
     break;
 
   case 35:
 #line 357 "cf-parse.y"
-    { (yyval.i) = L_INFO[0]; ;}
+    { yyval.i = L_INFO[0]; ;}
     break;
 
   case 36:
 #line 358 "cf-parse.y"
-    { (yyval.i) = L_REMOTE[0]; ;}
+    { yyval.i = L_REMOTE[0]; ;}
     break;
 
   case 37:
 #line 359 "cf-parse.y"
-    { (yyval.i) = L_WARN[0]; ;}
+    { yyval.i = L_WARN[0]; ;}
     break;
 
   case 38:
 #line 360 "cf-parse.y"
-    { (yyval.i) = L_ERR[0]; ;}
+    { yyval.i = L_ERR[0]; ;}
     break;
 
   case 39:
 #line 361 "cf-parse.y"
-    { (yyval.i) = L_AUTH[0]; ;}
+    { yyval.i = L_AUTH[0]; ;}
     break;
 
   case 40:
 #line 362 "cf-parse.y"
-    { (yyval.i) = L_FATAL[0]; ;}
+    { yyval.i = L_FATAL[0]; ;}
     break;
 
   case 41:
 #line 363 "cf-parse.y"
-    { (yyval.i) = L_BUG[0]; ;}
+    { yyval.i = L_BUG[0]; ;}
     break;
 
   case 42:
 #line 369 "cf-parse.y"
-    { cmd_reconfig((yyvsp[-1].t)); ;}
+    { cmd_reconfig(yyvsp[-1].t); ;}
     break;
 
   case 43:
@@ -2793,7 +2762,7 @@ yyreduce:
 
   case 44:
 #line 375 "cf-parse.y"
-    { (yyval.t) = NULL; ;}
+    { yyval.t = NULL; ;}
     break;
 
   case 46:
@@ -2814,23 +2783,23 @@ yyreduce:
 
   case 47:
 #line 400 "cf-parse.y"
-    { THIS_KRT->persist = (yyvsp[0].i); ;}
+    { THIS_KRT->persist = yyvsp[0].i; ;}
     break;
 
   case 48:
 #line 401 "cf-parse.y"
     {
       /* Scan time of 0 means scan on startup only */
-      THIS_KRT->scan_time = (yyvsp[0].i);
+      THIS_KRT->scan_time = yyvsp[0].i;
    ;}
     break;
 
   case 49:
 #line 405 "cf-parse.y"
     {
-      THIS_KRT->learn = (yyvsp[0].i);
+      THIS_KRT->learn = yyvsp[0].i;
 #ifndef KRT_ALLOW_LEARN
-      if ((yyvsp[0].i))
+      if (yyvsp[0].i)
 	cf_error("Learning of kernel routes not supported in this configuration");
 #endif
    ;}
@@ -2852,7 +2821,7 @@ yyreduce:
 #line 429 "cf-parse.y"
     {
       /* Scan time of 0 means scan on startup only */
-      THIS_KIF->scan_time = (yyvsp[0].i);
+      THIS_KIF->scan_time = yyvsp[0].i;
    ;}
     break;
 
@@ -2860,33 +2829,33 @@ yyreduce:
 #line 439 "cf-parse.y"
     {
 #ifndef IPV6
-	if ((yyvsp[0].i) <= 0 || (yyvsp[0].i) >= NL_NUM_TABLES)
+	if (yyvsp[0].i <= 0 || yyvsp[0].i >= NL_NUM_TABLES)
 	  cf_error("Kernel routing table number out of range");
 #else
-	if ((yyvsp[0].i) != 254)
+	if (yyvsp[0].i != 254)
 	  cf_error("Linux implementation of IPv6 doesn't support multiple routing tables");
 #endif
-	THIS_KRT->scan.table_id = (yyvsp[0].i);
+	THIS_KRT->scan.table_id = yyvsp[0].i;
    ;}
     break;
 
   case 53:
 #line 456 "cf-parse.y"
     {
-   new_config->router_id = (yyvsp[-1].i32);
+   new_config->router_id = yyvsp[-1].i32;
    ;}
     break;
 
   case 54:
 #line 462 "cf-parse.y"
-    { (yyval.i32) = (yyvsp[0].i); ;}
+    { yyval.i32 = yyvsp[0].i; ;}
     break;
 
   case 56:
 #line 464 "cf-parse.y"
     {
 #ifndef IPV6
-     (yyval.i32) = ipa_to_u32((yyvsp[0].a));
+     yyval.i32 = ipa_to_u32(yyvsp[0].a);
 #else
      cf_error("Router IDs must be entered as hexadecimal numbers or IPv4 addresses in IPv6 version");
 #endif
@@ -2896,7 +2865,7 @@ yyreduce:
   case 57:
 #line 476 "cf-parse.y"
     {
-   rt_new_table((yyvsp[0].s));
+   rt_new_table(yyvsp[0].s);
    ;}
     break;
 
@@ -2913,90 +2882,90 @@ yyreduce:
   case 60:
 #line 494 "cf-parse.y"
     {
-     cf_define_symbol((yyvsp[0].s), SYM_PROTO, this_proto);
-     this_proto->name = (yyvsp[0].s)->name;
+     cf_define_symbol(yyvsp[0].s, SYM_PROTO, this_proto);
+     this_proto->name = yyvsp[0].s->name;
    ;}
     break;
 
   case 62:
 #line 502 "cf-parse.y"
     {
-     if ((yyvsp[0].i) < 0 || (yyvsp[0].i) > 255) cf_error("Invalid preference");
-     this_proto->preference = (yyvsp[0].i);
+     if (yyvsp[0].i < 0 || yyvsp[0].i > 255) cf_error("Invalid preference");
+     this_proto->preference = yyvsp[0].i;
    ;}
     break;
 
   case 63:
 #line 506 "cf-parse.y"
-    { this_proto->disabled = (yyvsp[0].i); ;}
+    { this_proto->disabled = yyvsp[0].i; ;}
     break;
 
   case 64:
 #line 507 "cf-parse.y"
-    { this_proto->debug = (yyvsp[0].i); ;}
+    { this_proto->debug = yyvsp[0].i; ;}
     break;
 
   case 65:
 #line 508 "cf-parse.y"
-    { this_proto->in_filter = (yyvsp[0].f); ;}
+    { this_proto->in_filter = yyvsp[0].f; ;}
     break;
 
   case 66:
 #line 509 "cf-parse.y"
-    { this_proto->out_filter = (yyvsp[0].f); ;}
+    { this_proto->out_filter = yyvsp[0].f; ;}
     break;
 
   case 67:
 #line 510 "cf-parse.y"
-    { this_proto->table = (yyvsp[0].r); ;}
+    { this_proto->table = yyvsp[0].r; ;}
     break;
 
   case 68:
 #line 514 "cf-parse.y"
-    { (yyval.f) = (yyvsp[0].f); ;}
+    { yyval.f = yyvsp[0].f; ;}
     break;
 
   case 70:
 #line 516 "cf-parse.y"
-    { (yyval.f) = FILTER_ACCEPT; ;}
+    { yyval.f = FILTER_ACCEPT; ;}
     break;
 
   case 71:
 #line 517 "cf-parse.y"
-    { (yyval.f) = FILTER_REJECT; ;}
+    { yyval.f = FILTER_REJECT; ;}
     break;
 
   case 72:
 #line 521 "cf-parse.y"
     {
-     if ((yyvsp[0].s)->class != SYM_TABLE) cf_error("Table name expected");
-     (yyval.r) = (yyvsp[0].s)->def;
+     if (yyvsp[0].s->class != SYM_TABLE) cf_error("Table name expected");
+     yyval.r = yyvsp[0].s->def;
    ;}
     break;
 
   case 73:
 #line 529 "cf-parse.y"
-    { new_config->proto_default_debug = (yyvsp[0].i); ;}
+    { new_config->proto_default_debug = yyvsp[0].i; ;}
     break;
 
   case 74:
 #line 530 "cf-parse.y"
-    { new_config->cli_debug = (yyvsp[0].i); ;}
+    { new_config->cli_debug = yyvsp[0].i; ;}
     break;
 
   case 75:
 #line 536 "cf-parse.y"
-    { this_ipatt->pattern = (yyvsp[0].t); this_ipatt->prefix = IPA_NONE; this_ipatt->pxlen = 0; ;}
+    { this_ipatt->pattern = yyvsp[0].t; this_ipatt->prefix = IPA_NONE; this_ipatt->pxlen = 0; ;}
     break;
 
   case 76:
 #line 537 "cf-parse.y"
-    { this_ipatt->pattern = NULL; this_ipatt->prefix = (yyvsp[0].px).addr; this_ipatt->pxlen = (yyvsp[0].px).len; ;}
+    { this_ipatt->pattern = NULL; this_ipatt->prefix = yyvsp[0].px.addr; this_ipatt->pxlen = yyvsp[0].px.len; ;}
     break;
 
   case 77:
 #line 538 "cf-parse.y"
-    { this_ipatt->pattern = (yyvsp[-1].t); this_ipatt->prefix = (yyvsp[0].px).addr; this_ipatt->pxlen = (yyvsp[0].px).len; ;}
+    { this_ipatt->pattern = yyvsp[-1].t; this_ipatt->prefix = yyvsp[0].px.addr; this_ipatt->pxlen = yyvsp[0].px.len; ;}
     break;
 
   case 78:
@@ -3021,52 +2990,52 @@ yyreduce:
 
   case 86:
 #line 579 "cf-parse.y"
-    { (yyval.i) = ~0; ;}
+    { yyval.i = ~0; ;}
     break;
 
   case 87:
 #line 580 "cf-parse.y"
-    { (yyval.i) = 0; ;}
+    { yyval.i = 0; ;}
     break;
 
   case 88:
 #line 581 "cf-parse.y"
-    { (yyval.i) = (yyvsp[-1].i); ;}
+    { yyval.i = yyvsp[-1].i; ;}
     break;
 
   case 90:
 #line 586 "cf-parse.y"
-    { (yyval.i) = (yyvsp[-2].i) | (yyvsp[0].i); ;}
+    { yyval.i = yyvsp[-2].i | yyvsp[0].i; ;}
     break;
 
   case 91:
 #line 590 "cf-parse.y"
-    { (yyval.i) = D_STATES; ;}
+    { yyval.i = D_STATES; ;}
     break;
 
   case 92:
 #line 591 "cf-parse.y"
-    { (yyval.i) = D_ROUTES; ;}
+    { yyval.i = D_ROUTES; ;}
     break;
 
   case 93:
 #line 592 "cf-parse.y"
-    { (yyval.i) = D_FILTERS; ;}
+    { yyval.i = D_FILTERS; ;}
     break;
 
   case 94:
 #line 593 "cf-parse.y"
-    { (yyval.i) = D_IFACES; ;}
+    { yyval.i = D_IFACES; ;}
     break;
 
   case 95:
 #line 594 "cf-parse.y"
-    { (yyval.i) = D_EVENTS; ;}
+    { yyval.i = D_EVENTS; ;}
     break;
 
   case 96:
 #line 595 "cf-parse.y"
-    { (yyval.i) = D_PACKETS; ;}
+    { yyval.i = D_PACKETS; ;}
     break;
 
   case 101:
@@ -3074,7 +3043,7 @@ yyreduce:
     {
      static int id = 1;
      this_p_item = cfg_alloc(sizeof (struct password_item));
-     this_p_item->password = (yyvsp[0].t);
+     this_p_item->password = yyvsp[0].t;
      this_p_item->genfrom = 0;
      this_p_item->gento = TIME_INFINITY;
      this_p_item->accfrom = 0;
@@ -3091,33 +3060,33 @@ yyreduce:
 
   case 103:
 #line 626 "cf-parse.y"
-    { this_p_item->genfrom = (yyvsp[-2].time); ;}
+    { this_p_item->genfrom = yyvsp[-2].time; ;}
     break;
 
   case 104:
 #line 627 "cf-parse.y"
-    { this_p_item->gento = (yyvsp[-2].time); ;}
+    { this_p_item->gento = yyvsp[-2].time; ;}
     break;
 
   case 105:
 #line 628 "cf-parse.y"
-    { this_p_item->accfrom = (yyvsp[-2].time); ;}
+    { this_p_item->accfrom = yyvsp[-2].time; ;}
     break;
 
   case 106:
 #line 629 "cf-parse.y"
-    { this_p_item->accto = (yyvsp[-2].time); ;}
+    { this_p_item->accto = yyvsp[-2].time; ;}
     break;
 
   case 107:
 #line 630 "cf-parse.y"
-    { this_p_item->id = (yyvsp[-2].i); if ((yyvsp[-2].i) <= 0) cf_error("Password ID has to be greated than zero."); ;}
+    { this_p_item->id = yyvsp[-2].i; if (yyvsp[-2].i <= 0) cf_error("Password ID has to be greated than zero."); ;}
     break;
 
   case 108:
 #line 634 "cf-parse.y"
     {
-     (yyval.p) = (yyvsp[-3].p);
+     yyval.p = yyvsp[-3].p;
    ;}
     break;
 
@@ -3126,7 +3095,7 @@ yyreduce:
     {
      this_p_list = cfg_alloc(sizeof(list));
      init_list(this_p_list);
-     (yyval.p) = (void *) this_p_list;
+     yyval.p = (void *) this_p_list;
   ;}
     break;
 
@@ -3136,14 +3105,14 @@ yyreduce:
      this_p_list = cfg_alloc(sizeof(list));
      init_list(this_p_list);
      this_p_item = cfg_alloc(sizeof (struct password_item));
-     this_p_item->password = (yyvsp[0].t);
+     this_p_item->password = yyvsp[0].t;
      this_p_item->genfrom = 0;
      this_p_item->gento = TIME_INFINITY;
      this_p_item->accfrom = 0;
      this_p_item->accto = TIME_INFINITY;
      this_p_item->id = 1;
      add_tail(this_p_list, &this_p_item->n);
-     (yyval.p) = (void *) this_p_list;
+     yyval.p = (void *) this_p_list;
   ;}
     break;
 
@@ -3154,17 +3123,17 @@ yyreduce:
 
   case 113:
 #line 671 "cf-parse.y"
-    { proto_show((yyvsp[-1].s), 0); ;}
+    { proto_show(yyvsp[-1].s, 0); ;}
     break;
 
   case 114:
 #line 674 "cf-parse.y"
-    { proto_show((yyvsp[-1].s), 1); ;}
+    { proto_show(yyvsp[-1].s, 1); ;}
     break;
 
   case 116:
 #line 678 "cf-parse.y"
-    { (yyval.s) = NULL; ;}
+    { yyval.s = NULL; ;}
     break;
 
   case 117:
@@ -3179,126 +3148,126 @@ yyreduce:
 
   case 119:
 #line 688 "cf-parse.y"
-    { rt_show((yyvsp[-1].ra)); ;}
+    { rt_show(yyvsp[-1].ra); ;}
     break;
 
   case 120:
 #line 691 "cf-parse.y"
     {
-     (yyval.ra) = cfg_allocz(sizeof(struct rt_show_data));
-     (yyval.ra)->pxlen = 256;
-     (yyval.ra)->filter = FILTER_ACCEPT;
-     (yyval.ra)->table = config->master_rtc->table;
+     yyval.ra = cfg_allocz(sizeof(struct rt_show_data));
+     yyval.ra->pxlen = 256;
+     yyval.ra->filter = FILTER_ACCEPT;
+     yyval.ra->table = config->master_rtc->table;
    ;}
     break;
 
   case 121:
 #line 697 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-1].ra);
-     if ((yyval.ra)->pxlen != 256) cf_error("Only one prefix expected");
-     (yyval.ra)->prefix = (yyvsp[0].px).addr;
-     (yyval.ra)->pxlen = (yyvsp[0].px).len;
+     yyval.ra = yyvsp[-1].ra;
+     if (yyval.ra->pxlen != 256) cf_error("Only one prefix expected");
+     yyval.ra->prefix = yyvsp[0].px.addr;
+     yyval.ra->pxlen = yyvsp[0].px.len;
    ;}
     break;
 
   case 122:
 #line 703 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-2].ra);
-     if ((yyval.ra)->pxlen != 256) cf_error("Only one prefix expected");
-     (yyval.ra)->prefix = (yyvsp[0].px).addr;
-     (yyval.ra)->pxlen = (yyvsp[0].px).len;
-     (yyval.ra)->show_for = 1;
+     yyval.ra = yyvsp[-2].ra;
+     if (yyval.ra->pxlen != 256) cf_error("Only one prefix expected");
+     yyval.ra->prefix = yyvsp[0].px.addr;
+     yyval.ra->pxlen = yyvsp[0].px.len;
+     yyval.ra->show_for = 1;
    ;}
     break;
 
   case 123:
 #line 710 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-2].ra);
-     if ((yyvsp[0].s)->class != SYM_TABLE) cf_error("%s is not a table", (yyvsp[0].s)->name);
-     (yyval.ra)->table = ((struct rtable_config *)(yyvsp[0].s)->def)->table;
+     yyval.ra = yyvsp[-2].ra;
+     if (yyvsp[0].s->class != SYM_TABLE) cf_error("%s is not a table", yyvsp[0].s->name);
+     yyval.ra->table = ((struct rtable_config *)yyvsp[0].s->def)->table;
    ;}
     break;
 
   case 124:
 #line 715 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-2].ra);
-     if ((yyval.ra)->filter != FILTER_ACCEPT) cf_error("Filter specified twice");
-     (yyval.ra)->filter = (yyvsp[0].f);
+     yyval.ra = yyvsp[-2].ra;
+     if (yyval.ra->filter != FILTER_ACCEPT) cf_error("Filter specified twice");
+     yyval.ra->filter = yyvsp[0].f;
    ;}
     break;
 
   case 125:
 #line 720 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-1].ra);
-     if ((yyval.ra)->filter != FILTER_ACCEPT) cf_error("Filter specified twice");
-     (yyval.ra)->filter = (yyvsp[0].f);
+     yyval.ra = yyvsp[-1].ra;
+     if (yyval.ra->filter != FILTER_ACCEPT) cf_error("Filter specified twice");
+     yyval.ra->filter = yyvsp[0].f;
    ;}
     break;
 
   case 126:
 #line 725 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-1].ra);
-     (yyval.ra)->verbose = 1;
+     yyval.ra = yyvsp[-1].ra;
+     yyval.ra->verbose = 1;
    ;}
     break;
 
   case 127:
 #line 729 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-1].ra);
-     (yyval.ra)->primary_only = 1;
+     yyval.ra = yyvsp[-1].ra;
+     yyval.ra->primary_only = 1;
    ;}
     break;
 
   case 128:
 #line 733 "cf-parse.y"
     {
-     struct proto_config *c = (struct proto_config *) (yyvsp[0].s)->def;
-     (yyval.ra) = (yyvsp[-2].ra);
-     if ((yyval.ra)->import_mode) cf_error("Protocol specified twice");
-     if ((yyvsp[0].s)->class != SYM_PROTO || !c->proto) cf_error("%s is not a protocol", (yyvsp[0].s)->name);
-     (yyval.ra)->import_mode = (yyvsp[-1].i);
-     (yyval.ra)->primary_only = 1;
-     (yyval.ra)->import_protocol = c->proto;
-     (yyval.ra)->running_on_config = c->proto->cf->global;
+     struct proto_config *c = (struct proto_config *) yyvsp[0].s->def;
+     yyval.ra = yyvsp[-2].ra;
+     if (yyval.ra->import_mode) cf_error("Protocol specified twice");
+     if (yyvsp[0].s->class != SYM_PROTO || !c->proto) cf_error("%s is not a protocol", yyvsp[0].s->name);
+     yyval.ra->import_mode = yyvsp[-1].i;
+     yyval.ra->primary_only = 1;
+     yyval.ra->import_protocol = c->proto;
+     yyval.ra->running_on_config = c->proto->cf->global;
    ;}
     break;
 
   case 129:
 #line 743 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-1].ra);
-     (yyval.ra)->stats = 1;
+     yyval.ra = yyvsp[-1].ra;
+     yyval.ra->stats = 1;
    ;}
     break;
 
   case 130:
 #line 747 "cf-parse.y"
     {
-     (yyval.ra) = (yyvsp[-1].ra);
-     (yyval.ra)->stats = 2;
+     yyval.ra = yyvsp[-1].ra;
+     yyval.ra->stats = 2;
    ;}
     break;
 
   case 131:
 #line 754 "cf-parse.y"
-    { (yyval.i) = 1; ;}
+    { yyval.i = 1; ;}
     break;
 
   case 132:
 #line 755 "cf-parse.y"
-    { (yyval.i) = 2; ;}
+    { yyval.i = 2; ;}
     break;
 
   case 133:
 #line 759 "cf-parse.y"
-    { cmd_show_symbols((yyvsp[-1].s)); ;}
+    { cmd_show_symbols(yyvsp[-1].s); ;}
     break;
 
   case 134:
@@ -3339,180 +3308,180 @@ yyreduce:
   case 141:
 #line 777 "cf-parse.y"
     {
-  cli_set_log_echo(this_cli, (yyvsp[-2].i), (yyvsp[-1].i));
+  cli_set_log_echo(this_cli, yyvsp[-2].i, yyvsp[-1].i);
   cli_msg(0, "");
 ;}
     break;
 
   case 142:
 #line 783 "cf-parse.y"
-    { (yyval.i) = ~0; ;}
+    { yyval.i = ~0; ;}
     break;
 
   case 143:
 #line 784 "cf-parse.y"
-    { (yyval.i) = 0; ;}
+    { yyval.i = 0; ;}
     break;
 
   case 145:
 #line 789 "cf-parse.y"
-    { (yyval.i) = 4096; ;}
+    { yyval.i = 4096; ;}
     break;
 
   case 146:
 #line 790 "cf-parse.y"
     {
-     if ((yyvsp[0].i) < 256 || (yyvsp[0].i) > 65536) cf_error("Invalid log buffer size");
-     (yyval.i) = (yyvsp[0].i);
+     if (yyvsp[0].i < 256 || yyvsp[0].i > 65536) cf_error("Invalid log buffer size");
+     yyval.i = yyvsp[0].i;
    ;}
     break;
 
   case 147:
 #line 797 "cf-parse.y"
-    { proto_xxable((yyvsp[-1].t), 0); ;}
+    { proto_xxable(yyvsp[-1].t, 0); ;}
     break;
 
   case 148:
 #line 799 "cf-parse.y"
-    { proto_xxable((yyvsp[-1].t), 1); ;}
+    { proto_xxable(yyvsp[-1].t, 1); ;}
     break;
 
   case 149:
 #line 801 "cf-parse.y"
-    { proto_xxable((yyvsp[-1].t), 2); ;}
+    { proto_xxable(yyvsp[-1].t, 2); ;}
     break;
 
   case 150:
 #line 805 "cf-parse.y"
-    { proto_debug((yyvsp[-2].t), (yyvsp[-1].i)); ;}
+    { proto_debug(yyvsp[-2].t, yyvsp[-1].i); ;}
     break;
 
   case 151:
 #line 809 "cf-parse.y"
-    { (yyval.t) = (yyvsp[0].s)->name; ;}
+    { yyval.t = yyvsp[0].s->name; ;}
     break;
 
   case 152:
 #line 810 "cf-parse.y"
-    { (yyval.t) = "*"; ;}
+    { yyval.t = "*"; ;}
     break;
 
   case 154:
 #line 817 "cf-parse.y"
-    { cf_push_scope( (yyvsp[0].s) ); ;}
+    { cf_push_scope( yyvsp[0].s ); ;}
     break;
 
   case 155:
 #line 817 "cf-parse.y"
     {
-     (yyvsp[-2].s) = cf_define_symbol((yyvsp[-2].s), SYM_FILTER, (yyvsp[0].f));
-     (yyvsp[0].f)->name = (yyvsp[-2].s)->name;
-     DBG( "We have new filter defined (%s)\n", (yyvsp[-2].s)->name );
+     yyvsp[-2].s = cf_define_symbol(yyvsp[-2].s, SYM_FILTER, yyvsp[0].f);
+     yyvsp[0].f->name = yyvsp[-2].s->name;
+     DBG( "We have new filter defined (%s)\n", yyvsp[-2].s->name );
      cf_pop_scope();
    ;}
     break;
 
   case 156:
 #line 826 "cf-parse.y"
-    { f_eval_int((yyvsp[0].x)); ;}
+    { f_eval_int(yyvsp[0].x); ;}
     break;
 
   case 157:
 #line 830 "cf-parse.y"
-    { (yyval.i) = T_INT; ;}
+    { yyval.i = T_INT; ;}
     break;
 
   case 158:
 #line 831 "cf-parse.y"
-    { (yyval.i) = T_BOOL; ;}
+    { yyval.i = T_BOOL; ;}
     break;
 
   case 159:
 #line 832 "cf-parse.y"
-    { (yyval.i) = T_IP; ;}
+    { yyval.i = T_IP; ;}
     break;
 
   case 160:
 #line 833 "cf-parse.y"
-    { (yyval.i) = T_PREFIX; ;}
+    { yyval.i = T_PREFIX; ;}
     break;
 
   case 161:
 #line 834 "cf-parse.y"
-    { (yyval.i) = T_PAIR; ;}
+    { yyval.i = T_PAIR; ;}
     break;
 
   case 162:
 #line 835 "cf-parse.y"
-    { (yyval.i) = T_STRING; ;}
+    { yyval.i = T_STRING; ;}
     break;
 
   case 163:
 #line 836 "cf-parse.y"
-    { (yyval.i) = T_PATH_MASK; ;}
+    { yyval.i = T_PATH_MASK; ;}
     break;
 
   case 164:
 #line 837 "cf-parse.y"
-    { (yyval.i) = T_PATH; ;}
+    { yyval.i = T_PATH; ;}
     break;
 
   case 165:
 #line 838 "cf-parse.y"
-    { (yyval.i) = T_CLIST; ;}
+    { yyval.i = T_CLIST; ;}
     break;
 
   case 166:
 #line 839 "cf-parse.y"
     { 
-	switch ((yyvsp[-1].i)) {
+	switch (yyvsp[-1].i) {
 	  default:
 		cf_error( "You can't create sets of this type." );
 	  case T_INT: case T_IP: case T_PREFIX: case T_PAIR: ;
 	}
-	(yyval.i) = (yyvsp[-1].i) | T_SET;
+	yyval.i = yyvsp[-1].i | T_SET;
 	;}
     break;
 
   case 167:
 #line 850 "cf-parse.y"
     {
-     (yyvsp[0].s) = cf_define_symbol((yyvsp[0].s), SYM_VARIABLE | (yyvsp[-1].i), NULL);
-     DBG( "New variable %s type %x\n", (yyvsp[0].s)->name, (yyvsp[-1].i) );
-     (yyvsp[0].s)->aux = 0;
+     yyvsp[0].s = cf_define_symbol(yyvsp[0].s, SYM_VARIABLE | yyvsp[-1].i, NULL);
+     DBG( "New variable %s type %x\n", yyvsp[0].s->name, yyvsp[-1].i );
+     yyvsp[0].s->aux = 0;
      {
        struct f_val * val; 
        val = cfg_alloc(sizeof(struct f_val)); 
-       val->type = (yyvsp[-1].i); 
-       (yyvsp[0].s)->aux2 = val;
+       val->type = yyvsp[-1].i; 
+       yyvsp[0].s->aux2 = val;
      }
-     (yyval.s)=(yyvsp[0].s);
+     yyval.s=yyvsp[0].s;
    ;}
     break;
 
   case 168:
 #line 865 "cf-parse.y"
-    { (yyval.s) = NULL; ;}
+    { yyval.s = NULL; ;}
     break;
 
   case 169:
 #line 866 "cf-parse.y"
     {
-     (yyval.s) = (yyvsp[-2].s);
-     (yyval.s)->aux = (int) (yyvsp[0].s);
+     yyval.s = yyvsp[-2].s;
+     yyval.s->aux = (int) yyvsp[0].s;
    ;}
     break;
 
   case 170:
 #line 873 "cf-parse.y"
-    { (yyval.s) = (yyvsp[0].s); ;}
+    { yyval.s = yyvsp[0].s; ;}
     break;
 
   case 171:
 #line 874 "cf-parse.y"
     {
-     (yyval.s) = (yyvsp[-2].s);
-     (yyval.s)->aux = (int) (yyvsp[0].s);
+     yyval.s = yyvsp[-2].s;
+     yyval.s->aux = (int) yyvsp[0].s;
    ;}
     break;
 
@@ -3521,16 +3490,16 @@ yyreduce:
     {
      struct filter *f = cfg_alloc(sizeof(struct filter));
      f->name = NULL;
-     f->root = (yyvsp[0].x);
-     (yyval.f) = f;
+     f->root = yyvsp[0].x;
+     yyval.f = f;
    ;}
     break;
 
   case 173:
 #line 890 "cf-parse.y"
     {
-     if ((yyvsp[0].s)->class != SYM_FILTER) cf_error("No such filter.");
-     (yyval.f) = (yyvsp[0].s)->def;
+     if (yyvsp[0].s->class != SYM_FILTER) cf_error("No such filter.");
+     yyval.f = yyvsp[0].s->def;
    ;}
     break;
 
@@ -3550,155 +3519,155 @@ yyreduce:
      rej->a2.i = F_REJECT;
      i = f_new_inst();			/* IF */
      i->code = '?';
-     i->a1.p = (yyvsp[0].x);
+     i->a1.p = yyvsp[0].x;
      i->a2.p = acc;
      i->next = rej;
      f->name = NULL;
      f->root = i;
-     (yyval.f) = f;
+     yyval.f = f;
   ;}
     break;
 
   case 176:
 #line 922 "cf-parse.y"
-    { DBG( "Have function parameters\n" ); (yyval.s)=(yyvsp[-1].s); ;}
+    { DBG( "Have function parameters\n" ); yyval.s=yyvsp[-1].s; ;}
     break;
 
   case 177:
 #line 923 "cf-parse.y"
-    { (yyval.s)=NULL; ;}
+    { yyval.s=NULL; ;}
     break;
 
   case 178:
 #line 927 "cf-parse.y"
     {
-     (yyval.x) = (yyvsp[-1].x);
+     yyval.x = yyvsp[-1].x;
    ;}
     break;
 
   case 179:
 #line 933 "cf-parse.y"
-    { DBG( "Beginning of function %s\n", (yyvsp[0].s)->name );
-     (yyvsp[0].s) = cf_define_symbol((yyvsp[0].s), SYM_FUNCTION, NULL);
-     cf_push_scope((yyvsp[0].s));
+    { DBG( "Beginning of function %s\n", yyvsp[0].s->name );
+     yyvsp[0].s = cf_define_symbol(yyvsp[0].s, SYM_FUNCTION, NULL);
+     cf_push_scope(yyvsp[0].s);
    ;}
     break;
 
   case 180:
 #line 936 "cf-parse.y"
     {
-     (yyvsp[-3].s)->def = (yyvsp[0].x);
-     (yyvsp[-3].s)->aux = (int) (yyvsp[-1].s);
-     (yyvsp[-3].s)->aux2 = (yyvsp[0].x);
-     DBG("Hmm, we've got one function here - %s\n", (yyvsp[-3].s)->name); 
+     yyvsp[-3].s->def = yyvsp[0].x;
+     yyvsp[-3].s->aux = (int) yyvsp[-1].s;
+     yyvsp[-3].s->aux2 = yyvsp[0].x;
+     DBG("Hmm, we've got one function here - %s\n", yyvsp[-3].s->name); 
      cf_pop_scope();
    ;}
     break;
 
   case 181:
 #line 947 "cf-parse.y"
-    { (yyval.x) = NULL; ;}
+    { yyval.x = NULL; ;}
     break;
 
   case 182:
 #line 948 "cf-parse.y"
     {
-     if ((yyvsp[-1].x)) {
-       if ((yyvsp[-1].x)->next)
+     if (yyvsp[-1].x) {
+       if (yyvsp[-1].x->next)
 	 bug("Command has next already set");
-       (yyvsp[-1].x)->next = (yyvsp[0].x);
-       (yyval.x) = (yyvsp[-1].x);
-     } else (yyval.x) = (yyvsp[0].x);
+       yyvsp[-1].x->next = yyvsp[0].x;
+       yyval.x = yyvsp[-1].x;
+     } else yyval.x = yyvsp[0].x;
    ;}
     break;
 
   case 183:
 #line 959 "cf-parse.y"
     {
-     (yyval.x)=(yyvsp[0].x);
+     yyval.x=yyvsp[0].x;
    ;}
     break;
 
   case 184:
 #line 962 "cf-parse.y"
     {
-     (yyval.x)=(yyvsp[-1].x);
+     yyval.x=yyvsp[-1].x;
    ;}
     break;
 
   case 185:
 #line 971 "cf-parse.y"
-    { (yyval.i) = (yyvsp[-3].i) << 16 | (yyvsp[-1].i); ;}
+    { yyval.i = yyvsp[-3].i << 16 | yyvsp[-1].i; ;}
     break;
 
   case 186:
 #line 978 "cf-parse.y"
     {
-     if (!ip_is_prefix((yyvsp[-2].a), (yyvsp[0].i))) cf_error("Invalid network prefix: %I/%d.", (yyvsp[-2].a), (yyvsp[0].i));
-     (yyval.v).type = T_PREFIX; (yyval.v).val.px.ip = (yyvsp[-2].a); (yyval.v).val.px.len = (yyvsp[0].i);
+     if (!ip_is_prefix(yyvsp[-2].a, yyvsp[0].i)) cf_error("Invalid network prefix: %I/%d.", yyvsp[-2].a, yyvsp[0].i);
+     yyval.v.type = T_PREFIX; yyval.v.val.px.ip = yyvsp[-2].a; yyval.v.val.px.len = yyvsp[0].i;
    ;}
     break;
 
   case 187:
 #line 985 "cf-parse.y"
-    { (yyval.v) = (yyvsp[0].v); ;}
+    { yyval.v = yyvsp[0].v; ;}
     break;
 
   case 188:
 #line 986 "cf-parse.y"
-    { (yyval.v) = (yyvsp[-1].v); (yyval.v).val.px.len |= LEN_PLUS; ;}
+    { yyval.v = yyvsp[-1].v; yyval.v.val.px.len |= LEN_PLUS; ;}
     break;
 
   case 189:
 #line 987 "cf-parse.y"
-    { (yyval.v) = (yyvsp[-1].v); (yyval.v).val.px.len |= LEN_MINUS; ;}
+    { yyval.v = yyvsp[-1].v; yyval.v.val.px.len |= LEN_MINUS; ;}
     break;
 
   case 190:
 #line 988 "cf-parse.y"
-    { (yyval.v) = (yyvsp[-5].v); (yyval.v).val.px.len |= LEN_RANGE | ((yyvsp[-3].i) << 16) | ((yyvsp[-1].i) << 8); ;}
+    { yyval.v = yyvsp[-5].v; yyval.v.val.px.len |= LEN_RANGE | (yyvsp[-3].i << 16) | (yyvsp[-1].i << 8); ;}
     break;
 
   case 191:
 #line 992 "cf-parse.y"
-    { (yyval.v).type = T_IP; (yyval.v).val.px.ip = (yyvsp[0].a); ;}
+    { yyval.v.type = T_IP; yyval.v.val.px.ip = yyvsp[0].a; ;}
     break;
 
   case 192:
 #line 996 "cf-parse.y"
-    { (yyval.v).type = T_INT; (yyval.v).val.i = (yyvsp[0].i); ;}
+    { yyval.v.type = T_INT; yyval.v.val.i = yyvsp[0].i; ;}
     break;
 
   case 193:
 #line 997 "cf-parse.y"
-    { (yyval.v).type = T_PAIR; (yyval.v).val.i = (yyvsp[0].i); ;}
+    { yyval.v.type = T_PAIR; yyval.v.val.i = yyvsp[0].i; ;}
     break;
 
   case 194:
 #line 998 "cf-parse.y"
-    { (yyval.v) = (yyvsp[0].v); ;}
+    { yyval.v = yyvsp[0].v; ;}
     break;
 
   case 195:
 #line 999 "cf-parse.y"
-    { (yyval.v) = (yyvsp[0].v); ;}
+    { yyval.v = yyvsp[0].v; ;}
     break;
 
   case 196:
 #line 1000 "cf-parse.y"
-    {  (yyval.v).type = (yyvsp[0].i) >> 16; (yyval.v).val.i = (yyvsp[0].i) & 0xffff; ;}
+    {  yyval.v.type = yyvsp[0].i >> 16; yyval.v.val.i = yyvsp[0].i & 0xffff; ;}
     break;
 
   case 197:
 #line 1004 "cf-parse.y"
     { 
-	(yyval.e) = f_new_tree(); 
-	(yyval.e)->from = (yyvsp[0].v); 
-	if ((yyvsp[0].v).type != T_PREFIX)
-		(yyval.e)->to = (yyvsp[0].v);
+	yyval.e = f_new_tree(); 
+	yyval.e->from = yyvsp[0].v; 
+	if (yyvsp[0].v.type != T_PREFIX)
+		yyval.e->to = yyvsp[0].v;
 	else {
-		(yyval.e)->to = (yyvsp[0].v);
-		(yyval.e)->to.val.px.ip = ipa_or( (yyval.e)->to.val.px.ip, ipa_not( ipa_mkmask( (yyval.e)->to.val.px.len ) ));
+		yyval.e->to = yyvsp[0].v;
+		yyval.e->to.val.px.ip = ipa_or( yyval.e->to.val.px.ip, ipa_not( ipa_mkmask( yyval.e->to.val.px.len ) ));
 	}
    ;}
     break;
@@ -3706,133 +3675,133 @@ yyreduce:
   case 198:
 #line 1014 "cf-parse.y"
     { 
-	(yyval.e) = f_new_tree(); 
-	(yyval.e)->from = (yyvsp[-3].v); 
-	(yyval.e)->to = (yyvsp[0].v); 
-	if (((yyvsp[-3].v).type == T_PREFIX) || ((yyvsp[0].v).type == T_PREFIX)) cf_error( "You can't use prefixes for range." ); 
+	yyval.e = f_new_tree(); 
+	yyval.e->from = yyvsp[-3].v; 
+	yyval.e->to = yyvsp[0].v; 
+	if ((yyvsp[-3].v.type == T_PREFIX) || (yyvsp[0].v.type == T_PREFIX)) cf_error( "You can't use prefixes for range." ); 
    ;}
     break;
 
   case 199:
 #line 1023 "cf-parse.y"
-    { (yyval.e) = (yyvsp[0].e); ;}
+    { yyval.e = yyvsp[0].e; ;}
     break;
 
   case 200:
 #line 1024 "cf-parse.y"
-    { (yyval.e) = (yyvsp[0].e); (yyval.e)->left = (yyvsp[-2].e); ;}
+    { yyval.e = yyvsp[0].e; yyval.e->left = yyvsp[-2].e; ;}
     break;
 
   case 201:
 #line 1027 "cf-parse.y"
-    { (yyval.e) = NULL; ;}
+    { yyval.e = NULL; ;}
     break;
 
   case 202:
 #line 1028 "cf-parse.y"
     {
-     (yyval.e) = (yyvsp[-3].e);
-     (yyval.e)->data = (yyvsp[-1].x);
-     (yyval.e)->left = (yyvsp[0].e);
+     yyval.e = yyvsp[-3].e;
+     yyval.e->data = yyvsp[-1].x;
+     yyval.e->left = yyvsp[0].e;
    ;}
     break;
 
   case 203:
 #line 1033 "cf-parse.y"
     {
-     (yyval.e) = f_new_tree(); 
-     (yyval.e)->from.type = T_VOID; 
-     (yyval.e)->to.type = T_VOID;
-     (yyval.e)->data = (yyvsp[0].x);
+     yyval.e = f_new_tree(); 
+     yyval.e->from.type = T_VOID; 
+     yyval.e->to.type = T_VOID;
+     yyval.e->data = yyvsp[0].x;
    ;}
     break;
 
   case 204:
 #line 1044 "cf-parse.y"
-    { (yyval.i) = (yyvsp[0].i); ;}
+    { yyval.i = yyvsp[0].i; ;}
     break;
 
   case 205:
 #line 1045 "cf-parse.y"
-    { (yyval.i) = PM_ANY; ;}
+    { yyval.i = PM_ANY; ;}
     break;
 
   case 206:
 #line 1049 "cf-parse.y"
-    { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = NULL; (yyval.h)->val  = (yyvsp[0].i); ;}
+    { yyval.h = cfg_alloc(sizeof(struct f_path_mask)); yyval.h->next = NULL; yyval.h->val  = yyvsp[0].i; ;}
     break;
 
   case 207:
 #line 1050 "cf-parse.y"
-    { (yyval.h) = cfg_alloc(sizeof(struct f_path_mask)); (yyval.h)->next = (yyvsp[0].h);   (yyval.h)->val  = (yyvsp[-1].i); ;}
+    { yyval.h = cfg_alloc(sizeof(struct f_path_mask)); yyval.h->next = yyvsp[0].h;   yyval.h->val  = yyvsp[-1].i; ;}
     break;
 
   case 208:
 #line 1054 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_INT;  (yyval.x)->a2.i = (yyvsp[0].i); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'c'; yyval.x->aux = T_INT;  yyval.x->a2.i = yyvsp[0].i; ;}
     break;
 
   case 209:
 #line 1055 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_BOOL; (yyval.x)->a2.i = 1;  ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'c'; yyval.x->aux = T_BOOL; yyval.x->a2.i = 1;  ;}
     break;
 
   case 210:
 #line 1056 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_BOOL; (yyval.x)->a2.i = 0;  ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'c'; yyval.x->aux = T_BOOL; yyval.x->a2.i = 0;  ;}
     break;
 
   case 211:
 #line 1057 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_STRING; (yyval.x)->a2.p = (yyvsp[0].t); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'c'; yyval.x->aux = T_STRING; yyval.x->a2.p = yyvsp[0].t; ;}
     break;
 
   case 212:
 #line 1058 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_PAIR;  (yyval.x)->a2.i = (yyvsp[0].i); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'c'; yyval.x->aux = T_PAIR;  yyval.x->a2.i = yyvsp[0].i; ;}
     break;
 
   case 213:
 #line 1059 "cf-parse.y"
-    { NEW_F_VAL; (yyval.x) = f_new_inst(); (yyval.x)->code = 'C'; (yyval.x)->a1.p = val; *val = (yyvsp[0].v); ;}
+    { NEW_F_VAL; yyval.x = f_new_inst(); yyval.x->code = 'C'; yyval.x->a1.p = val; *val = yyvsp[0].v; ;}
     break;
 
   case 214:
 #line 1060 "cf-parse.y"
-    {NEW_F_VAL; (yyval.x) = f_new_inst(); (yyval.x)->code = 'C'; (yyval.x)->a1.p = val; *val = (yyvsp[0].v); ;}
+    {NEW_F_VAL; yyval.x = f_new_inst(); yyval.x->code = 'C'; yyval.x->a1.p = val; *val = yyvsp[0].v; ;}
     break;
 
   case 215:
 #line 1061 "cf-parse.y"
-    { DBG( "We've got a set here..." ); (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = T_SET; (yyval.x)->a2.p = build_tree((yyvsp[-1].e)); DBG( "ook\n" ); ;}
+    { DBG( "We've got a set here..." ); yyval.x = f_new_inst(); yyval.x->code = 'c'; yyval.x->aux = T_SET; yyval.x->a2.p = build_tree(yyvsp[-1].e); DBG( "ook\n" ); ;}
     break;
 
   case 216:
 #line 1062 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'c'; (yyval.x)->aux = (yyvsp[0].i) >> 16; (yyval.x)->a2.i = (yyvsp[0].i) & 0xffff; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'c'; yyval.x->aux = yyvsp[0].i >> 16; yyval.x->a2.i = yyvsp[0].i & 0xffff; ;}
     break;
 
   case 217:
 #line 1063 "cf-parse.y"
-    { NEW_F_VAL; (yyval.x) = f_new_inst(); (yyval.x)->code = 'C'; val->type = T_PATH_MASK; val->val.path_mask = (yyvsp[-1].h); (yyval.x)->a1.p = val; ;}
+    { NEW_F_VAL; yyval.x = f_new_inst(); yyval.x->code = 'C'; val->type = T_PATH_MASK; val->val.path_mask = yyvsp[-1].h; yyval.x->a1.p = val; ;}
     break;
 
   case 219:
 #line 1076 "cf-parse.y"
     {
      struct symbol *sym;
-     struct f_inst *inst = (yyvsp[-1].x);
-     if ((yyvsp[-3].s)->class != SYM_FUNCTION)
+     struct f_inst *inst = yyvsp[-1].x;
+     if (yyvsp[-3].s->class != SYM_FUNCTION)
        cf_error("You can't call something which is not a function. Really.");
-     DBG("You are calling function %s\n", (yyvsp[-3].s)->name);
-     (yyval.x) = f_new_inst();
-     (yyval.x)->code = P('c','a');
-     (yyval.x)->a1.p = inst;
-     (yyval.x)->a2.p = (yyvsp[-3].s)->aux2;
-     sym = (void *) (yyvsp[-3].s)->aux;
+     DBG("You are calling function %s\n", yyvsp[-3].s->name);
+     yyval.x = f_new_inst();
+     yyval.x->code = P('c','a');
+     yyval.x->a1.p = inst;
+     yyval.x->a2.p = yyvsp[-3].s->aux2;
+     sym = (void *) yyvsp[-3].s->aux;
      while (sym || inst) {
        if (!sym || !inst)
-	 cf_error("Wrong number of arguments for function %s.", (yyvsp[-3].s)->name);
+	 cf_error("Wrong number of arguments for function %s.", yyvsp[-3].s->name);
        DBG( "You should pass parameter called %s\n", sym->name);
        inst->a1.p = sym;
        sym = (void *) sym->aux;
@@ -3843,137 +3812,137 @@ yyreduce:
 
   case 220:
 #line 1099 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_IP;         (yyval.x)->a2.i = OFFSETOF(struct rta, from);   (yyval.x)->a1.i = 1; ;}
+    { yyval.x = f_new_inst(); yyval.x->aux = T_IP;         yyval.x->a2.i = OFFSETOF(struct rta, from);   yyval.x->a1.i = 1; ;}
     break;
 
   case 221:
 #line 1101 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_IP;         (yyval.x)->a2.i = OFFSETOF(struct rta, gw);     (yyval.x)->a1.i = 1; ;}
+    { yyval.x = f_new_inst(); yyval.x->aux = T_IP;         yyval.x->a2.i = OFFSETOF(struct rta, gw);     yyval.x->a1.i = 1; ;}
     break;
 
   case 222:
 #line 1102 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_PREFIX;     (yyval.x)->a2.i = 0x12345678; /* This is actually ok - T_PREFIX is special-cased. */ ;}
+    { yyval.x = f_new_inst(); yyval.x->aux = T_PREFIX;     yyval.x->a2.i = 0x12345678; /* This is actually ok - T_PREFIX is special-cased. */ ;}
     break;
 
   case 223:
 #line 1103 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_RTS;   (yyval.x)->a2.i = OFFSETOF(struct rta, source); ;}
+    { yyval.x = f_new_inst(); yyval.x->aux = T_ENUM_RTS;   yyval.x->a2.i = OFFSETOF(struct rta, source); ;}
     break;
 
   case 224:
 #line 1104 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_SCOPE; (yyval.x)->a2.i = OFFSETOF(struct rta, scope);  (yyval.x)->a1.i = 1; ;}
+    { yyval.x = f_new_inst(); yyval.x->aux = T_ENUM_SCOPE; yyval.x->a2.i = OFFSETOF(struct rta, scope);  yyval.x->a1.i = 1; ;}
     break;
 
   case 225:
 #line 1105 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_RTC;   (yyval.x)->a2.i = OFFSETOF(struct rta, cast); ;}
+    { yyval.x = f_new_inst(); yyval.x->aux = T_ENUM_RTC;   yyval.x->a2.i = OFFSETOF(struct rta, cast); ;}
     break;
 
   case 226:
 #line 1106 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->aux = T_ENUM_RTD;   (yyval.x)->a2.i = OFFSETOF(struct rta, dest); ;}
+    { yyval.x = f_new_inst(); yyval.x->aux = T_ENUM_RTD;   yyval.x->a2.i = OFFSETOF(struct rta, dest); ;}
     break;
 
   case 227:
 #line 1110 "cf-parse.y"
-    { (yyval.x) = (yyvsp[-1].x); ;}
+    { yyval.x = yyvsp[-1].x; ;}
     break;
 
   case 228:
 #line 1111 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '+';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '+';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 229:
 #line 1112 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '-';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '-';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 230:
 #line 1113 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '*';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '*';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 231:
 #line 1114 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '/';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '/';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 232:
 #line 1115 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '&';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '&';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 233:
 #line 1116 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '|';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '|';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 234:
 #line 1117 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('=','='); (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('=','='); yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 235:
 #line 1118 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('!','=');     (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('!','=');     yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 236:
 #line 1119 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '<';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '<';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 237:
 #line 1120 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('<','=');     (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('<','=');     yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 238:
 #line 1121 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '<';        (yyval.x)->a1.p = (yyvsp[0].x); (yyval.x)->a2.p = (yyvsp[-2].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '<';        yyval.x->a1.p = yyvsp[0].x; yyval.x->a2.p = yyvsp[-2].x; ;}
     break;
 
   case 239:
 #line 1122 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('<','=');     (yyval.x)->a1.p = (yyvsp[0].x); (yyval.x)->a2.p = (yyvsp[-2].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('<','=');     yyval.x->a1.p = yyvsp[0].x; yyval.x->a2.p = yyvsp[-2].x; ;}
     break;
 
   case 240:
 #line 1123 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '~';        (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->a2.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '~';        yyval.x->a1.p = yyvsp[-2].x; yyval.x->a2.p = yyvsp[0].x; ;}
     break;
 
   case 241:
 #line 1124 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = '!'; (yyval.x)->a1.p = (yyvsp[0].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = '!'; yyval.x->a1.p = yyvsp[0].x; ;}
     break;
 
   case 242:
 #line 1125 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('d','e');  (yyval.x)->a1.p = (yyvsp[-1].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('d','e');  yyval.x->a1.p = yyvsp[-1].x; ;}
     break;
 
   case 243:
 #line 1127 "cf-parse.y"
-    { (yyval.x) = (yyvsp[0].x); ;}
+    { yyval.x = yyvsp[0].x; ;}
     break;
 
   case 244:
 #line 1128 "cf-parse.y"
     {
-     (yyval.x) = f_new_inst();
-     switch ((yyvsp[0].s)->class) {
+     yyval.x = f_new_inst();
+     switch (yyvsp[0].s->class) {
        case SYM_NUMBER:
-	(yyval.x) = f_new_inst();
-	(yyval.x)->code = 'c'; 
-	(yyval.x)->aux = T_INT; 
-	(yyval.x)->a2.i = (yyvsp[0].s)->aux;
+	yyval.x = f_new_inst();
+	yyval.x->code = 'c'; 
+	yyval.x->aux = T_INT; 
+	yyval.x->a2.i = yyvsp[0].s->aux;
 	break;
        case SYM_IPA:
-	{ NEW_F_VAL; (yyval.x) = f_new_inst(); (yyval.x)->code = 'C'; (yyval.x)->a1.p = val; val->type = T_IP; val->val.px.ip = * (ip_addr *) ((yyvsp[0].s)->def); }
+	{ NEW_F_VAL; yyval.x = f_new_inst(); yyval.x->code = 'C'; yyval.x->a1.p = val; val->type = T_IP; val->val.px.ip = * (ip_addr *) (yyvsp[0].s->def); }
 	break;
        case SYM_VARIABLE | T_INT:
        case SYM_VARIABLE | T_PAIR:
@@ -3982,86 +3951,86 @@ yyreduce:
        case SYM_VARIABLE | T_PATH_MASK:
        case SYM_VARIABLE | T_PATH:
        case SYM_VARIABLE | T_CLIST:
-	 (yyval.x)->code = 'C';
-	 (yyval.x)->a1.p = (yyvsp[0].s)->aux2;
+	 yyval.x->code = 'C';
+	 yyval.x->a1.p = yyvsp[0].s->aux2;
 	 break;
        default:
-	 cf_error("%s: variable expected.", (yyvsp[0].s)->name );
+	 cf_error("%s: variable expected.", yyvsp[0].s->name );
      }
    ;}
     break;
 
   case 245:
 #line 1155 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'P'; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'P'; ;}
     break;
 
   case 246:
 #line 1157 "cf-parse.y"
-    { (yyval.x) = (yyvsp[0].x); (yyval.x)->code = 'a'; ;}
+    { yyval.x = yyvsp[0].x; yyval.x->code = 'a'; ;}
     break;
 
   case 247:
 #line 1159 "cf-parse.y"
-    { (yyval.x) = (yyvsp[0].x); (yyval.x)->code = P('e','a'); ;}
+    { yyval.x = yyvsp[0].x; yyval.x->code = P('e','a'); ;}
     break;
 
   case 248:
 #line 1161 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('c','p'); (yyval.x)->a1.p = (yyvsp[-2].x); (yyval.x)->aux = T_IP; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('c','p'); yyval.x->a1.p = yyvsp[-2].x; yyval.x->aux = T_IP; ;}
     break;
 
   case 249:
 #line 1162 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'L'; (yyval.x)->a1.p = (yyvsp[-2].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'L'; yyval.x->a1.p = yyvsp[-2].x; ;}
     break;
 
   case 250:
 #line 1163 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('i','M'); (yyval.x)->a1.p = (yyvsp[-5].x); (yyval.x)->a2.p = (yyvsp[-1].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('i','M'); yyval.x->a1.p = yyvsp[-5].x; yyval.x->a2.p = yyvsp[-1].x; ;}
     break;
 
   case 251:
 #line 1173 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'E'; (yyval.x)->aux = T_PATH; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'E'; yyval.x->aux = T_PATH; ;}
     break;
 
   case 252:
 #line 1174 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'E'; (yyval.x)->aux = T_CLIST; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'E'; yyval.x->aux = T_CLIST; ;}
     break;
 
   case 253:
 #line 1175 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('A','p'); (yyval.x)->a1.p = (yyvsp[-3].x); (yyval.x)->a2.p = (yyvsp[-1].x); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('A','p'); yyval.x->a1.p = yyvsp[-3].x; yyval.x->a2.p = yyvsp[-1].x; ;}
     break;
 
   case 254:
 #line 1176 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('C','a'); (yyval.x)->a1.p = (yyvsp[-3].x); (yyval.x)->a2.p = (yyvsp[-1].x); (yyval.x)->aux = 'a'; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('C','a'); yyval.x->a1.p = yyvsp[-3].x; yyval.x->a2.p = yyvsp[-1].x; yyval.x->aux = 'a'; ;}
     break;
 
   case 255:
 #line 1177 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('C','a'); (yyval.x)->a1.p = (yyvsp[-3].x); (yyval.x)->a2.p = (yyvsp[-1].x); (yyval.x)->aux = 'd'; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('C','a'); yyval.x->a1.p = yyvsp[-3].x; yyval.x->a2.p = yyvsp[-1].x; yyval.x->aux = 'd'; ;}
     break;
 
   case 256:
 #line 1182 "cf-parse.y"
     {
      struct symbol *sym;
-     struct f_inst *inst = (yyvsp[-1].x);
-     if ((yyvsp[-3].s)->class != SYM_FUNCTION)
+     struct f_inst *inst = yyvsp[-1].x;
+     if (yyvsp[-3].s->class != SYM_FUNCTION)
        cf_error("You can't call something which is not a function. Really.");
-     DBG("You are calling function %s\n", (yyvsp[-3].s)->name);
-     (yyval.x) = f_new_inst();
-     (yyval.x)->code = P('c','a');
-     (yyval.x)->a1.p = inst;
-     (yyval.x)->a2.p = (yyvsp[-3].s)->aux2;
-     sym = (void *) (yyvsp[-3].s)->aux;
+     DBG("You are calling function %s\n", yyvsp[-3].s->name);
+     yyval.x = f_new_inst();
+     yyval.x->code = P('c','a');
+     yyval.x->a1.p = inst;
+     yyval.x->a2.p = yyvsp[-3].s->aux2;
+     sym = (void *) yyvsp[-3].s->aux;
      while (sym || inst) {
        if (!sym || !inst)
-	 cf_error("Wrong number of arguments for function %s.", (yyvsp[-3].s)->name);
+	 cf_error("Wrong number of arguments for function %s.", yyvsp[-3].s->name);
        DBG( "You should pass parameter called %s\n", sym->name);
        inst->a1.p = sym;
        sym = (void *) sym->aux;
@@ -4072,98 +4041,98 @@ yyreduce:
 
   case 257:
 #line 1205 "cf-parse.y"
-    { (yyval.i) = F_QUITBIRD; ;}
+    { yyval.i = F_QUITBIRD; ;}
     break;
 
   case 258:
 #line 1206 "cf-parse.y"
-    { (yyval.i) = F_ACCEPT; ;}
+    { yyval.i = F_ACCEPT; ;}
     break;
 
   case 259:
 #line 1207 "cf-parse.y"
-    { (yyval.i) = F_REJECT; ;}
+    { yyval.i = F_REJECT; ;}
     break;
 
   case 260:
 #line 1208 "cf-parse.y"
-    { (yyval.i) = F_ERROR; ;}
+    { yyval.i = F_ERROR; ;}
     break;
 
   case 261:
 #line 1209 "cf-parse.y"
-    { (yyval.i) = F_NOP; ;}
+    { yyval.i = F_NOP; ;}
     break;
 
   case 262:
 #line 1210 "cf-parse.y"
-    { (yyval.i) = F_NONL; ;}
+    { yyval.i = F_NONL; ;}
     break;
 
   case 263:
 #line 1214 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = 'p'; (yyval.x)->a1.p = (yyvsp[0].x); (yyval.x)->a2.p = NULL; ;}
+    { yyval.x = f_new_inst(); yyval.x->code = 'p'; yyval.x->a1.p = yyvsp[0].x; yyval.x->a2.p = NULL; ;}
     break;
 
   case 264:
 #line 1217 "cf-parse.y"
-    { (yyval.x) = NULL; ;}
+    { yyval.x = NULL; ;}
     break;
 
   case 265:
 #line 1218 "cf-parse.y"
-    { (yyval.x) = (yyvsp[0].x); ;}
+    { yyval.x = yyvsp[0].x; ;}
     break;
 
   case 266:
 #line 1219 "cf-parse.y"
     {
-     if ((yyvsp[-2].x)) {
-       (yyvsp[-2].x)->next = (yyvsp[0].x);
-       (yyval.x) = (yyvsp[-2].x);
-     } else (yyval.x) = (yyvsp[0].x);
+     if (yyvsp[-2].x) {
+       yyvsp[-2].x->next = yyvsp[0].x;
+       yyval.x = yyvsp[-2].x;
+     } else yyval.x = yyvsp[0].x;
    ;}
     break;
 
   case 267:
 #line 1228 "cf-parse.y"
     { 
-     (yyval.x) = f_new_inst();
-     (yyval.x)->code = 's';
-     (yyval.x)->a1.p = NULL;
-     (yyval.x)->a2.p = (yyvsp[0].x);
-     (yyval.x)->next = NULL;
+     yyval.x = f_new_inst();
+     yyval.x->code = 's';
+     yyval.x->a1.p = NULL;
+     yyval.x->a2.p = yyvsp[0].x;
+     yyval.x->next = NULL;
    ;}
     break;
 
   case 268:
 #line 1235 "cf-parse.y"
     {
-     (yyval.x) = f_new_inst();
-     (yyval.x)->code = 's';
-     (yyval.x)->a1.p = NULL;
-     (yyval.x)->a2.p = (yyvsp[-2].x);
-     (yyval.x)->next = (yyvsp[0].x);
+     yyval.x = f_new_inst();
+     yyval.x->code = 's';
+     yyval.x->a1.p = NULL;
+     yyval.x->a2.p = yyvsp[-2].x;
+     yyval.x->next = yyvsp[0].x;
    ;}
     break;
 
   case 269:
 #line 1244 "cf-parse.y"
-    { (yyval.x) = NULL; ;}
+    { yyval.x = NULL; ;}
     break;
 
   case 270:
 #line 1245 "cf-parse.y"
-    { (yyval.x) = (yyvsp[0].x); ;}
+    { yyval.x = yyvsp[0].x; ;}
     break;
 
   case 271:
 #line 1249 "cf-parse.y"
     {
-     (yyval.x) = f_new_inst();
-     (yyval.x)->code = '?';
-     (yyval.x)->a1.p = (yyvsp[-2].x);
-     (yyval.x)->a2.p = (yyvsp[0].x);
+     yyval.x = f_new_inst();
+     yyval.x->code = '?';
+     yyval.x->a1.p = yyvsp[-2].x;
+     yyval.x->a2.p = yyvsp[0].x;
    ;}
     break;
 
@@ -4172,115 +4141,115 @@ yyreduce:
     {
      struct f_inst *i = f_new_inst();
      i->code = '?';
-     i->a1.p = (yyvsp[-4].x);
-     i->a2.p = (yyvsp[-2].x);
-     (yyval.x) = f_new_inst();
-     (yyval.x)->code = '?';
-     (yyval.x)->a1.p = i;
-     (yyval.x)->a2.p = (yyvsp[0].x);
+     i->a1.p = yyvsp[-4].x;
+     i->a2.p = yyvsp[-2].x;
+     yyval.x = f_new_inst();
+     yyval.x->code = '?';
+     yyval.x->a1.p = i;
+     yyval.x->a2.p = yyvsp[0].x;
    ;}
     break;
 
   case 273:
 #line 1265 "cf-parse.y"
     {
-     (yyval.x) = f_new_inst();
+     yyval.x = f_new_inst();
      DBG( "Ook, we'll set value\n" );
-     if (((yyvsp[-3].s)->class & ~T_MASK) != SYM_VARIABLE)
+     if ((yyvsp[-3].s->class & ~T_MASK) != SYM_VARIABLE)
        cf_error( "You may set only variables." );
-     (yyval.x)->code = 's';
-     (yyval.x)->a1.p = (yyvsp[-3].s);
-     (yyval.x)->a2.p = (yyvsp[-1].x);
+     yyval.x->code = 's';
+     yyval.x->a1.p = yyvsp[-3].s;
+     yyval.x->a2.p = yyvsp[-1].x;
    ;}
     break;
 
   case 274:
 #line 1274 "cf-parse.y"
     {
-     (yyval.x) = f_new_inst();
+     yyval.x = f_new_inst();
      DBG( "Ook, we'll return the value\n" );
-     (yyval.x)->code = 'r';
-     (yyval.x)->a1.p = (yyvsp[-1].x);
+     yyval.x->code = 'r';
+     yyval.x->a1.p = yyvsp[-1].x;
    ;}
     break;
 
   case 275:
 #line 1280 "cf-parse.y"
     {
-     (yyval.x) = (yyvsp[-3].x);
-     (yyval.x)->code = P('e','S');
-     (yyval.x)->a1.p = (yyvsp[-1].x);
+     yyval.x = yyvsp[-3].x;
+     yyval.x->code = P('e','S');
+     yyval.x->a1.p = yyvsp[-1].x;
    ;}
     break;
 
   case 276:
 #line 1285 "cf-parse.y"
     {
-     (yyval.x) = (yyvsp[-3].x);
-     if (!(yyval.x)->a1.i)
+     yyval.x = yyvsp[-3].x;
+     if (!yyval.x->a1.i)
        cf_error( "This static attribute is read-only.");
-     (yyval.x)->code = P('a','S');
-     (yyval.x)->a1.p = (yyvsp[-1].x);
+     yyval.x->code = P('a','S');
+     yyval.x->a1.p = yyvsp[-1].x;
    ;}
     break;
 
   case 277:
 #line 1292 "cf-parse.y"
     {
-     (yyval.x) = f_new_inst();
-     (yyval.x)->code = P('P','S');
-     (yyval.x)->a1.p = (yyvsp[-1].x);
+     yyval.x = f_new_inst();
+     yyval.x->code = P('P','S');
+     yyval.x->a1.p = yyvsp[-1].x;
    ;}
     break;
 
   case 278:
 #line 1297 "cf-parse.y"
     {
-     (yyval.x) = (yyvsp[-2].x);
-     (yyval.x)->aux = EAF_TYPE_UNDEF | EAF_TEMP;
-     (yyval.x)->code = P('e','S');
-     (yyval.x)->a1.p = NULL;
+     yyval.x = yyvsp[-2].x;
+     yyval.x->aux = EAF_TYPE_UNDEF | EAF_TEMP;
+     yyval.x->code = P('e','S');
+     yyval.x->a1.p = NULL;
    ;}
     break;
 
   case 279:
 #line 1303 "cf-parse.y"
-    { (yyval.x) = f_new_inst(); (yyval.x)->code = P('p',','); (yyval.x)->a1.p = (yyvsp[-1].x); (yyval.x)->a2.i = (yyvsp[-2].i); ;}
+    { yyval.x = f_new_inst(); yyval.x->code = P('p',','); yyval.x->a1.p = yyvsp[-1].x; yyval.x->a2.i = yyvsp[-2].i; ;}
     break;
 
   case 280:
 #line 1304 "cf-parse.y"
-    { (yyval.x) = (yyvsp[-1].x); ;}
+    { yyval.x = yyvsp[-1].x; ;}
     break;
 
   case 281:
 #line 1305 "cf-parse.y"
     {
-      (yyval.x) = f_new_inst();
-      (yyval.x)->code = P('S','W');
-      (yyval.x)->a1.p = (yyvsp[-3].x);
-      (yyval.x)->a2.p = build_tree( (yyvsp[-1].e) );
+      yyval.x = f_new_inst();
+      yyval.x->code = P('S','W');
+      yyval.x->a1.p = yyvsp[-3].x;
+      yyval.x->a2.p = build_tree( yyvsp[-1].e );
    ;}
     break;
 
   case 282:
 #line 1314 "cf-parse.y"
-    { struct f_inst *i = f_new_inst(); i->code = 'E'; i->aux = T_CLIST; (yyval.x) = (yyvsp[-3].x); (yyval.x)->code = P('e','S'); (yyval.x)->a1.p = i; ;}
+    { struct f_inst *i = f_new_inst(); i->code = 'E'; i->aux = T_CLIST; yyval.x = yyvsp[-3].x; yyval.x->code = P('e','S'); yyval.x->a1.p = i; ;}
     break;
 
   case 283:
 #line 1315 "cf-parse.y"
-    { (yyval.x) = f_generate_complex( P('A','p'), 'x', (yyvsp[-6].x), (yyvsp[-2].x) ); ;}
+    { yyval.x = f_generate_complex( P('A','p'), 'x', yyvsp[-6].x, yyvsp[-2].x ); ;}
     break;
 
   case 284:
 #line 1316 "cf-parse.y"
-    { (yyval.x) = f_generate_complex( P('C','a'), 'a', (yyvsp[-6].x), (yyvsp[-2].x) ); ;}
+    { yyval.x = f_generate_complex( P('C','a'), 'a', yyvsp[-6].x, yyvsp[-2].x ); ;}
     break;
 
   case 285:
 #line 1317 "cf-parse.y"
-    { (yyval.x) = f_generate_complex( P('C','a'), 'd', (yyvsp[-6].x), (yyvsp[-2].x) ); ;}
+    { yyval.x = f_generate_complex( P('C','a'), 'd', yyvsp[-6].x, yyvsp[-2].x ); ;}
     break;
 
   case 286:
@@ -4303,43 +4272,43 @@ yyreduce:
   case 289:
 #line 1341 "cf-parse.y"
     {
-     if ((yyvsp[-1].i) < 0 || (yyvsp[-1].i) > 65535) cf_error("AS number out of range");
-     BGP_CFG->local_as = (yyvsp[-1].i);
+     if (yyvsp[-1].i < 0 || yyvsp[-1].i > 65535) cf_error("AS number out of range");
+     BGP_CFG->local_as = yyvsp[-1].i;
    ;}
     break;
 
   case 290:
 #line 1345 "cf-parse.y"
     {
-     if ((yyvsp[-1].i) < 0 || (yyvsp[-1].i) > 65535) cf_error("AS number out of range");
-     BGP_CFG->remote_ip = (yyvsp[-3].a);
-     BGP_CFG->remote_as = (yyvsp[-1].i);
+     if (yyvsp[-1].i < 0 || yyvsp[-1].i > 65535) cf_error("AS number out of range");
+     BGP_CFG->remote_ip = yyvsp[-3].a;
+     BGP_CFG->remote_as = yyvsp[-1].i;
    ;}
     break;
 
   case 291:
 #line 1350 "cf-parse.y"
-    { BGP_CFG->hold_time = (yyvsp[-1].i); ;}
+    { BGP_CFG->hold_time = yyvsp[-1].i; ;}
     break;
 
   case 292:
 #line 1351 "cf-parse.y"
-    { BGP_CFG->initial_hold_time = (yyvsp[-1].i); ;}
+    { BGP_CFG->initial_hold_time = yyvsp[-1].i; ;}
     break;
 
   case 293:
 #line 1352 "cf-parse.y"
-    { BGP_CFG->connect_retry_time = (yyvsp[-1].i); ;}
+    { BGP_CFG->connect_retry_time = yyvsp[-1].i; ;}
     break;
 
   case 294:
 #line 1353 "cf-parse.y"
-    { BGP_CFG->keepalive_time = (yyvsp[-1].i); ;}
+    { BGP_CFG->keepalive_time = yyvsp[-1].i; ;}
     break;
 
   case 295:
 #line 1354 "cf-parse.y"
-    { BGP_CFG->multihop = (yyvsp[-3].i); BGP_CFG->multihop_via = (yyvsp[-1].a); ;}
+    { BGP_CFG->multihop = yyvsp[-3].i; BGP_CFG->multihop_via = yyvsp[-1].a; ;}
     break;
 
   case 296:
@@ -4349,42 +4318,42 @@ yyreduce:
 
   case 297:
 #line 1356 "cf-parse.y"
-    { BGP_CFG->compare_path_lengths = (yyvsp[-1].i); ;}
+    { BGP_CFG->compare_path_lengths = yyvsp[-1].i; ;}
     break;
 
   case 298:
 #line 1357 "cf-parse.y"
-    { BGP_CFG->default_med = (yyvsp[-1].i); ;}
+    { BGP_CFG->default_med = yyvsp[-1].i; ;}
     break;
 
   case 299:
 #line 1358 "cf-parse.y"
-    { BGP_CFG->default_local_pref = (yyvsp[-1].i); ;}
+    { BGP_CFG->default_local_pref = yyvsp[-1].i; ;}
     break;
 
   case 300:
 #line 1359 "cf-parse.y"
-    { BGP_CFG->source_addr = (yyvsp[-1].a); ;}
+    { BGP_CFG->source_addr = yyvsp[-1].a; ;}
     break;
 
   case 301:
 #line 1360 "cf-parse.y"
-    { BGP_CFG->start_delay_time = (yyvsp[-1].i); ;}
+    { BGP_CFG->start_delay_time = yyvsp[-1].i; ;}
     break;
 
   case 302:
 #line 1361 "cf-parse.y"
-    { BGP_CFG->error_amnesia_time = (yyvsp[-1].i); ;}
+    { BGP_CFG->error_amnesia_time = yyvsp[-1].i; ;}
     break;
 
   case 303:
 #line 1362 "cf-parse.y"
-    { BGP_CFG->error_delay_time_min = (yyvsp[-3].i); BGP_CFG->error_delay_time_max = (yyvsp[-1].i); ;}
+    { BGP_CFG->error_delay_time_min = yyvsp[-3].i; BGP_CFG->error_delay_time_max = yyvsp[-1].i; ;}
     break;
 
   case 304:
 #line 1363 "cf-parse.y"
-    { BGP_CFG->disable_after_error = (yyvsp[-1].i); ;}
+    { BGP_CFG->disable_after_error = yyvsp[-1].i; ;}
     break;
 
   case 305:
@@ -4400,12 +4369,12 @@ yyreduce:
 
   case 309:
 #line 1388 "cf-parse.y"
-    { OSPF_CFG->rfc1583 = (yyvsp[0].i); ;}
+    { OSPF_CFG->rfc1583 = yyvsp[0].i; ;}
     break;
 
   case 310:
 #line 1389 "cf-parse.y"
-    { OSPF_CFG->tick = (yyvsp[0].i) ; if((yyvsp[0].i)<=0) cf_error("Tick must be greater than zero"); ;}
+    { OSPF_CFG->tick = yyvsp[0].i ; if(yyvsp[0].i<=0) cf_error("Tick must be greater than zero"); ;}
     break;
 
   case 312:
@@ -4413,7 +4382,7 @@ yyreduce:
     {
   this_area = cfg_allocz(sizeof(struct ospf_area_config));
   add_tail(&OSPF_CFG->area_list, NODE this_area);
-  this_area->areaid = (yyvsp[-1].i32);
+  this_area->areaid = yyvsp[-1].i32;
   this_area->stub = 0;
   init_list(&this_area->patt_list);
   init_list(&this_area->vlink_list);
@@ -4423,42 +4392,42 @@ yyreduce:
 
   case 316:
 #line 1413 "cf-parse.y"
-    { this_area->stub = (yyvsp[0].i) ; if((yyvsp[0].i)<=0) cf_error("Stub cost must be greater than zero"); ;}
+    { this_area->stub = yyvsp[0].i ; if(yyvsp[0].i<=0) cf_error("Stub cost must be greater than zero"); ;}
     break;
 
   case 317:
 #line 1414 "cf-parse.y"
-    {if((yyvsp[0].i)) { if(!this_area->stub) this_area->stub=DEFAULT_STUB_COST;}else{ this_area->stub=0;};}
+    {if(yyvsp[0].i) { if(!this_area->stub) this_area->stub=DEFAULT_STUB_COST;}else{ this_area->stub=0;};}
     break;
 
   case 326:
 #line 1431 "cf-parse.y"
-    { OSPF_PATT->helloint = (yyvsp[0].i) ; if (((yyvsp[0].i)<=0) || ((yyvsp[0].i)>65535)) cf_error("Hello interval must be in range 1-65535"); ;}
+    { OSPF_PATT->helloint = yyvsp[0].i ; if ((yyvsp[0].i<=0) || (yyvsp[0].i>65535)) cf_error("Hello interval must be in range 1-65535"); ;}
     break;
 
   case 327:
 #line 1432 "cf-parse.y"
-    { OSPF_PATT->rxmtint = (yyvsp[0].i) ; if ((yyvsp[0].i)<=0) cf_error("Retransmit int must be greater than zero"); ;}
+    { OSPF_PATT->rxmtint = yyvsp[0].i ; if (yyvsp[0].i<=0) cf_error("Retransmit int must be greater than zero"); ;}
     break;
 
   case 328:
 #line 1433 "cf-parse.y"
-    { OSPF_PATT->inftransdelay = (yyvsp[0].i) ; if (((yyvsp[0].i)<=0) || ((yyvsp[0].i)>65535)) cf_error("Transmit delay must be in range 1-65535"); ;}
+    { OSPF_PATT->inftransdelay = yyvsp[0].i ; if ((yyvsp[0].i<=0) || (yyvsp[0].i>65535)) cf_error("Transmit delay must be in range 1-65535"); ;}
     break;
 
   case 329:
 #line 1434 "cf-parse.y"
-    { OSPF_PATT->waitint = (yyvsp[0].i) ; ;}
+    { OSPF_PATT->waitint = yyvsp[0].i ; ;}
     break;
 
   case 330:
 #line 1435 "cf-parse.y"
-    { OSPF_PATT->dead = (yyvsp[0].i) ; if ((yyvsp[0].i)<=1) cf_error("Dead interval must be greater than one"); ;}
+    { OSPF_PATT->dead = yyvsp[0].i ; if (yyvsp[0].i<=1) cf_error("Dead interval must be greater than one"); ;}
     break;
 
   case 331:
 #line 1436 "cf-parse.y"
-    { OSPF_PATT->deadc = (yyvsp[0].i) ; if ((yyvsp[0].i)<=1) cf_error("Dead count must be greater than one"); ;}
+    { OSPF_PATT->deadc = yyvsp[0].i ; if (yyvsp[0].i<=1) cf_error("Dead count must be greater than one"); ;}
     break;
 
   case 332:
@@ -4478,7 +4447,7 @@ yyreduce:
 
   case 335:
 #line 1440 "cf-parse.y"
-    {OSPF_PATT->passwords = (list *) (yyvsp[0].p); ;}
+    {OSPF_PATT->passwords = (list *) yyvsp[0].p; ;}
     break;
 
   case 336:
@@ -4487,7 +4456,7 @@ yyreduce:
   if (this_area->areaid == 0) cf_error("Virtual link cannot be in backbone");
   this_ipatt = cfg_allocz(sizeof(struct ospf_iface_patt));
   add_tail(&this_area->vlink_list, NODE this_ipatt);
-  OSPF_PATT->vid = (yyvsp[0].i32);
+  OSPF_PATT->vid = yyvsp[0].i32;
   OSPF_PATT->cost = COST_D;
   OSPF_PATT->helloint = HELLOINT_D;
   OSPF_PATT->rxmtint = RXMTINT_D;
@@ -4503,47 +4472,47 @@ yyreduce:
 
   case 337:
 #line 1463 "cf-parse.y"
-    { OSPF_PATT->cost = (yyvsp[0].i) ; if (((yyvsp[0].i)<=0) || ((yyvsp[0].i)>65535)) cf_error("Cost must be in range 1-65535"); ;}
+    { OSPF_PATT->cost = yyvsp[0].i ; if ((yyvsp[0].i<=0) || (yyvsp[0].i>65535)) cf_error("Cost must be in range 1-65535"); ;}
     break;
 
   case 338:
 #line 1464 "cf-parse.y"
-    { OSPF_PATT->helloint = (yyvsp[0].i) ; if (((yyvsp[0].i)<=0) || ((yyvsp[0].i)>65535)) cf_error("Hello interval must be in range 1-65535"); ;}
+    { OSPF_PATT->helloint = yyvsp[0].i ; if ((yyvsp[0].i<=0) || (yyvsp[0].i>65535)) cf_error("Hello interval must be in range 1-65535"); ;}
     break;
 
   case 339:
 #line 1465 "cf-parse.y"
-    { OSPF_PATT->pollint = (yyvsp[0].i) ; if ((yyvsp[0].i)<=0) cf_error("Poll int must be greater than zero"); ;}
+    { OSPF_PATT->pollint = yyvsp[0].i ; if (yyvsp[0].i<=0) cf_error("Poll int must be greater than zero"); ;}
     break;
 
   case 340:
 #line 1466 "cf-parse.y"
-    { OSPF_PATT->rxmtint = (yyvsp[0].i) ; if ((yyvsp[0].i)<=0) cf_error("Retransmit int must be greater than zero"); ;}
+    { OSPF_PATT->rxmtint = yyvsp[0].i ; if (yyvsp[0].i<=0) cf_error("Retransmit int must be greater than zero"); ;}
     break;
 
   case 341:
 #line 1467 "cf-parse.y"
-    { OSPF_PATT->inftransdelay = (yyvsp[0].i) ; if (((yyvsp[0].i)<=0) || ((yyvsp[0].i)>65535)) cf_error("Transmit delay must be in range 1-65535"); ;}
+    { OSPF_PATT->inftransdelay = yyvsp[0].i ; if ((yyvsp[0].i<=0) || (yyvsp[0].i>65535)) cf_error("Transmit delay must be in range 1-65535"); ;}
     break;
 
   case 342:
 #line 1468 "cf-parse.y"
-    { OSPF_PATT->priority = (yyvsp[0].i) ; if (((yyvsp[0].i)<0) || ((yyvsp[0].i)>255)) cf_error("Priority must be in range 0-255"); ;}
+    { OSPF_PATT->priority = yyvsp[0].i ; if ((yyvsp[0].i<0) || (yyvsp[0].i>255)) cf_error("Priority must be in range 0-255"); ;}
     break;
 
   case 343:
 #line 1469 "cf-parse.y"
-    { OSPF_PATT->waitint = (yyvsp[0].i) ; ;}
+    { OSPF_PATT->waitint = yyvsp[0].i ; ;}
     break;
 
   case 344:
 #line 1470 "cf-parse.y"
-    { OSPF_PATT->dead = (yyvsp[0].i) ; if ((yyvsp[0].i)<=1) cf_error("Dead interval must be greater than one"); ;}
+    { OSPF_PATT->dead = yyvsp[0].i ; if (yyvsp[0].i<=1) cf_error("Dead interval must be greater than one"); ;}
     break;
 
   case 345:
 #line 1471 "cf-parse.y"
-    { OSPF_PATT->deadc = (yyvsp[0].i) ; if ((yyvsp[0].i)<=1) cf_error("Dead count must be greater than one"); ;}
+    { OSPF_PATT->deadc = yyvsp[0].i ; if (yyvsp[0].i<=1) cf_error("Dead count must be greater than one"); ;}
     break;
 
   case 346:
@@ -4563,12 +4532,12 @@ yyreduce:
 
   case 349:
 #line 1475 "cf-parse.y"
-    { OSPF_PATT->strictnbma = (yyvsp[0].i) ; ;}
+    { OSPF_PATT->strictnbma = yyvsp[0].i ; ;}
     break;
 
   case 350:
 #line 1476 "cf-parse.y"
-    { OSPF_PATT->stub = (yyvsp[0].i) ; ;}
+    { OSPF_PATT->stub = yyvsp[0].i ; ;}
     break;
 
   case 352:
@@ -4588,7 +4557,7 @@ yyreduce:
 
   case 355:
 #line 1481 "cf-parse.y"
-    {OSPF_PATT->passwords = (list *) (yyvsp[0].p); ;}
+    {OSPF_PATT->passwords = (list *) yyvsp[0].p; ;}
     break;
 
   case 360:
@@ -4596,8 +4565,8 @@ yyreduce:
     {
    this_pref = cfg_allocz(sizeof(struct area_net_config));
    add_tail(&this_area->net_list, NODE this_pref);
-   this_pref->px.addr = (yyvsp[-1].px).addr;
-   this_pref->px.len = (yyvsp[-1].px).len;
+   this_pref->px.addr = yyvsp[-1].px.addr;
+   this_pref->px.len = yyvsp[-1].px.len;
  ;}
     break;
 
@@ -4606,8 +4575,8 @@ yyreduce:
     {
    this_pref = cfg_allocz(sizeof(struct area_net_config));
    add_tail(&this_area->net_list, NODE this_pref);
-   this_pref->px.addr = (yyvsp[-2].px).addr;
-   this_pref->px.len = (yyvsp[-2].px).len;
+   this_pref->px.addr = yyvsp[-2].px.addr;
+   this_pref->px.len = yyvsp[-2].px.len;
    this_pref->hidden = 1;
  ;}
     break;
@@ -4617,7 +4586,7 @@ yyreduce:
     {
    this_nbma = cfg_allocz(sizeof(struct nbma_node));
    add_tail(&OSPF_PATT->nbma_list, NODE this_nbma);
-   this_nbma->ip=(yyvsp[-1].a);
+   this_nbma->ip=yyvsp[-1].a;
    this_nbma->eligible=0;
  ;}
     break;
@@ -4627,7 +4596,7 @@ yyreduce:
     {
    this_nbma = cfg_allocz(sizeof(struct nbma_node));
    add_tail(&OSPF_PATT->nbma_list, NODE this_nbma);
-   this_nbma->ip=(yyvsp[-2].a);
+   this_nbma->ip=yyvsp[-2].a;
    this_nbma->eligible=1;
  ;}
     break;
@@ -4656,22 +4625,22 @@ yyreduce:
 
   case 377:
 #line 1582 "cf-parse.y"
-    { (yyval.t) = NULL; ;}
+    { yyval.t = NULL; ;}
     break;
 
   case 378:
 #line 1587 "cf-parse.y"
-    { ospf_sh(proto_get_named((yyvsp[-1].s), &proto_ospf)); ;}
+    { ospf_sh(proto_get_named(yyvsp[-1].s, &proto_ospf)); ;}
     break;
 
   case 379:
 #line 1590 "cf-parse.y"
-    { ospf_sh_neigh(proto_get_named((yyvsp[-2].s), &proto_ospf), (yyvsp[-1].t)); ;}
+    { ospf_sh_neigh(proto_get_named(yyvsp[-2].s, &proto_ospf), yyvsp[-1].t); ;}
     break;
 
   case 380:
 #line 1593 "cf-parse.y"
-    { ospf_sh_iface(proto_get_named((yyvsp[-2].s), &proto_ospf), (yyvsp[-1].t)); ;}
+    { ospf_sh_iface(proto_get_named(yyvsp[-2].s, &proto_ospf), yyvsp[-1].t); ;}
     break;
 
   case 381:
@@ -4685,9 +4654,9 @@ yyreduce:
   case 384:
 #line 1607 "cf-parse.y"
     {
-     if ((yyvsp[-1].s)->class != SYM_TABLE)
+     if (yyvsp[-1].s->class != SYM_TABLE)
        cf_error("Routing table name expected");
-     ((struct pipe_config *) this_proto)->peer = (yyvsp[-1].s)->def;
+     ((struct pipe_config *) this_proto)->peer = yyvsp[-1].s->def;
    ;}
     break;
 
@@ -4701,37 +4670,37 @@ yyreduce:
 
   case 388:
 #line 1626 "cf-parse.y"
-    { RIP_CFG->infinity = (yyvsp[-1].i); ;}
+    { RIP_CFG->infinity = yyvsp[-1].i; ;}
     break;
 
   case 389:
 #line 1627 "cf-parse.y"
-    { RIP_CFG->port = (yyvsp[-1].i); ;}
+    { RIP_CFG->port = yyvsp[-1].i; ;}
     break;
 
   case 390:
 #line 1628 "cf-parse.y"
-    { RIP_CFG->period = (yyvsp[-1].i); ;}
+    { RIP_CFG->period = yyvsp[-1].i; ;}
     break;
 
   case 391:
 #line 1629 "cf-parse.y"
-    { RIP_CFG->garbage_time = (yyvsp[-1].i); ;}
+    { RIP_CFG->garbage_time = yyvsp[-1].i; ;}
     break;
 
   case 392:
 #line 1630 "cf-parse.y"
-    { RIP_CFG->timeout_time = (yyvsp[-1].i); ;}
+    { RIP_CFG->timeout_time = yyvsp[-1].i; ;}
     break;
 
   case 393:
 #line 1631 "cf-parse.y"
-    {RIP_CFG->authtype = (yyvsp[-1].i); ;}
+    {RIP_CFG->authtype = yyvsp[-1].i; ;}
     break;
 
   case 394:
 #line 1632 "cf-parse.y"
-    {RIP_CFG->passwords = (list *)(yyvsp[-1].p); ;}
+    {RIP_CFG->passwords = (list *)yyvsp[-1].p; ;}
     break;
 
   case 395:
@@ -4751,52 +4720,52 @@ yyreduce:
 
   case 399:
 #line 1640 "cf-parse.y"
-    { (yyval.i)=AT_PLAINTEXT; ;}
+    { yyval.i=AT_PLAINTEXT; ;}
     break;
 
   case 400:
 #line 1641 "cf-parse.y"
-    { (yyval.i)=AT_MD5; ;}
+    { yyval.i=AT_MD5; ;}
     break;
 
   case 401:
 #line 1642 "cf-parse.y"
-    { (yyval.i)=AT_NONE; ;}
+    { yyval.i=AT_NONE; ;}
     break;
 
   case 402:
 #line 1646 "cf-parse.y"
-    { (yyval.i)=IM_BROADCAST; ;}
+    { yyval.i=IM_BROADCAST; ;}
     break;
 
   case 403:
 #line 1647 "cf-parse.y"
-    { (yyval.i)=0; ;}
+    { yyval.i=0; ;}
     break;
 
   case 404:
 #line 1648 "cf-parse.y"
-    { (yyval.i)=IM_QUIET; ;}
+    { yyval.i=IM_QUIET; ;}
     break;
 
   case 405:
 #line 1649 "cf-parse.y"
-    { (yyval.i)=IM_NOLISTEN; ;}
+    { yyval.i=IM_NOLISTEN; ;}
     break;
 
   case 406:
 #line 1650 "cf-parse.y"
-    { (yyval.i)=IM_VERSION1 | IM_BROADCAST; ;}
+    { yyval.i=IM_VERSION1 | IM_BROADCAST; ;}
     break;
 
   case 408:
 #line 1654 "cf-parse.y"
-    { RIP_IPATT->metric = (yyvsp[0].i); ;}
+    { RIP_IPATT->metric = yyvsp[0].i; ;}
     break;
 
   case 409:
 #line 1655 "cf-parse.y"
-    { RIP_IPATT->mode |= (yyvsp[0].i); ;}
+    { RIP_IPATT->mode |= yyvsp[0].i; ;}
     break;
 
   case 414:
@@ -4822,8 +4791,8 @@ yyreduce:
     {
      this_srt = cfg_allocz(sizeof(struct static_route));
      add_tail(&((struct static_config *) this_proto)->other_routes, &this_srt->n);
-     this_srt->net = (yyvsp[0].px).addr;
-     this_srt->masklen = (yyvsp[0].px).len;
+     this_srt->net = yyvsp[0].px.addr;
+     this_srt->masklen = yyvsp[0].px.len;
   ;}
     break;
 
@@ -4831,7 +4800,7 @@ yyreduce:
 #line 1708 "cf-parse.y"
     {
       this_srt->dest = RTD_ROUTER;
-      this_srt->via = (yyvsp[0].a);
+      this_srt->via = yyvsp[0].a;
    ;}
     break;
 
@@ -4839,7 +4808,7 @@ yyreduce:
 #line 1712 "cf-parse.y"
     {
       this_srt->dest = RTD_DEVICE;
-      this_srt->if_name = (yyvsp[0].t);
+      this_srt->if_name = yyvsp[0].t;
       rem_node(&this_srt->n);
       add_tail(&((struct static_config *) this_proto)->iface_routes, &this_srt->n);
    ;}
@@ -4862,7 +4831,7 @@ yyreduce:
 
   case 428:
 #line 1724 "cf-parse.y"
-    { static_show(proto_get_named((yyvsp[-1].s), &proto_static)); ;}
+    { static_show(proto_get_named(yyvsp[-1].s, &proto_static)); ;}
     break;
 
   case 467:
@@ -4872,79 +4841,79 @@ yyreduce:
 
   case 479:
 #line 1735 "cf-parse.y"
-    { (yyval.x) = NULL; ;}
+    { yyval.x = NULL; ;}
     break;
 
   case 480:
 #line 1736 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_AS_PATH, T_PATH, EA_CODE(EAP_BGP, BA_AS_PATH)); ;}
     break;
 
   case 481:
 #line 1737 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_LOCAL_PREF)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_LOCAL_PREF)); ;}
     break;
 
   case 482:
 #line 1738 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_MULTI_EXIT_DISC)); ;}
     break;
 
   case 483:
 #line 1739 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT, T_ENUM_BGP_ORIGIN, EA_CODE(EAP_BGP, BA_ORIGIN)); ;}
     break;
 
   case 484:
 #line 1740 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_IP_ADDRESS, T_IP, EA_CODE(EAP_BGP, BA_NEXT_HOP)); ;}
     break;
 
   case 485:
 #line 1741 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_OPAQUE, T_ENUM_EMPTY, EA_CODE(EAP_BGP, BA_ATOMIC_AGGR)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_OPAQUE, T_ENUM_EMPTY, EA_CODE(EAP_BGP, BA_ATOMIC_AGGR)); ;}
     break;
 
   case 486:
 #line 1742 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_AGGREGATOR)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT, T_INT, EA_CODE(EAP_BGP, BA_AGGREGATOR)); ;}
     break;
 
   case 487:
 #line 1743 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT_SET, T_CLIST, EA_CODE(EAP_BGP, BA_COMMUNITY)); ;}
     break;
 
   case 488:
 #line 1743 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC1); ;}
     break;
 
   case 489:
 #line 1743 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_METRIC2); ;}
     break;
 
   case 490:
 #line 1743 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_OSPF_TAG); ;}
     break;
 
   case 491:
 #line 1743 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_METRIC); ;}
     break;
 
   case 492:
 #line 1743 "cf-parse.y"
-    { (yyval.x) = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); ;}
+    { yyval.x = f_new_dynamic_attr(EAF_TYPE_INT | EAF_TEMP, T_INT, EA_RIP_TAG); ;}
     break;
 
 
     }
 
-/* Line 1037 of yacc.c.  */
-#line 4948 "cf-parse.tab.c"
+/* Line 991 of yacc.c.  */
+#line 4916 "cf-parse.tab.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -4985,33 +4954,18 @@ yyerrlab:
 	{
 	  YYSIZE_T yysize = 0;
 	  int yytype = YYTRANSLATE (yychar);
-	  const char* yyprefix;
 	  char *yymsg;
-	  int yyx;
+	  int yyx, yycount;
 
+	  yycount = 0;
 	  /* Start YYX at -YYN if negative to avoid negative indexes in
 	     YYCHECK.  */
-	  int yyxbegin = yyn < 0 ? -yyn : 0;
-
-	  /* Stay within bounds of both yycheck and yytname.  */
-	  int yychecklim = YYLAST - yyn;
-	  int yyxend = yychecklim < YYNTOKENS ? yychecklim : YYNTOKENS;
-	  int yycount = 0;
-
-	  yyprefix = ", expecting ";
-	  for (yyx = yyxbegin; yyx < yyxend; ++yyx)
+	  for (yyx = yyn < 0 ? -yyn : 0;
+	       yyx < (int) (sizeof (yytname) / sizeof (char *)); yyx++)
 	    if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
-	      {
-		yysize += yystrlen (yyprefix) + yystrlen (yytname [yyx]);
-		yycount += 1;
-		if (yycount == 5)
-		  {
-		    yysize = 0;
-		    break;
-		  }
-	      }
-	  yysize += (sizeof ("syntax error, unexpected ")
-		     + yystrlen (yytname[yytype]));
+	      yysize += yystrlen (yytname[yyx]) + 15, yycount++;
+	  yysize += yystrlen ("syntax error, unexpected ") + 1;
+	  yysize += yystrlen (yytname[yytype]);
 	  yymsg = (char *) YYSTACK_ALLOC (yysize);
 	  if (yymsg != 0)
 	    {
@@ -5020,13 +4974,16 @@ yyerrlab:
 
 	      if (yycount < 5)
 		{
-		  yyprefix = ", expecting ";
-		  for (yyx = yyxbegin; yyx < yyxend; ++yyx)
+		  yycount = 0;
+		  for (yyx = yyn < 0 ? -yyn : 0;
+		       yyx < (int) (sizeof (yytname) / sizeof (char *));
+		       yyx++)
 		    if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
 		      {
-			yyp = yystpcpy (yyp, yyprefix);
+			const char *yyq = ! yycount ? ", expecting " : " or ";
+			yyp = yystpcpy (yyp, yyq);
 			yyp = yystpcpy (yyp, yytname[yyx]);
-			yyprefix = " or ";
+			yycount++;
 		      }
 		}
 	      yyerror (yymsg);
@@ -5044,58 +5001,55 @@ yyerrlab:
 
   if (yyerrstatus == 3)
     {
-      /* If just tried and failed to reuse look-ahead token after an
+      /* If just tried and failed to reuse lookahead token after an
 	 error, discard it.  */
 
-      if (yychar <= YYEOF)
+      /* Return failure if at end of input.  */
+      if (yychar == YYEOF)
         {
-          /* If at end of input, pop the error token,
-	     then the rest of the stack, then return failure.  */
-	  if (yychar == YYEOF)
-	     for (;;)
-	       {
-
-		 YYPOPSTACK;
-		 if (yyssp == yyss)
-		   YYABORT;
-		 yydestruct ("Error: popping",
-                             yystos[*yyssp], yyvsp);
-	       }
+	  /* Pop the error token.  */
+          YYPOPSTACK;
+	  /* Pop the rest of the stack.  */
+	  while (yyss < yyssp)
+	    {
+	      YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+	      yydestruct (yystos[*yyssp], yyvsp);
+	      YYPOPSTACK;
+	    }
+	  YYABORT;
         }
-      else
-	{
-	  yydestruct ("Error: discarding", yytoken, &yylval);
-	  yychar = YYEMPTY;
-	}
+
+      YYDSYMPRINTF ("Error: discarding", yytoken, &yylval, &yylloc);
+      yydestruct (yytoken, &yylval);
+      yychar = YYEMPTY;
+
     }
 
-  /* Else will try to reuse look-ahead token after shifting the error
+  /* Else will try to reuse lookahead token after shifting the error
      token.  */
-  goto yyerrlab1;
+  goto yyerrlab2;
 
 
-/*---------------------------------------------------.
-| yyerrorlab -- error raised explicitly by YYERROR.  |
-`---------------------------------------------------*/
-yyerrorlab:
+/*----------------------------------------------------.
+| yyerrlab1 -- error raised explicitly by an action.  |
+`----------------------------------------------------*/
+yyerrlab1:
 
-#ifdef __GNUC__
-  /* Pacify GCC when the user code never invokes YYERROR and the label
-     yyerrorlab therefore never appears in user code.  */
-  if (0)
-     goto yyerrorlab;
+  /* Suppress GCC warning that yyerrlab1 is unused when no action
+     invokes YYERROR.  */
+#if defined (__GNUC_MINOR__) && 2093 <= (__GNUC__ * 1000 + __GNUC_MINOR__) \
+    && !defined __cplusplus
+  __attribute__ ((__unused__))
 #endif
 
-yyvsp -= yylen;
-  yyssp -= yylen;
-  yystate = *yyssp;
-  goto yyerrlab1;
+
+  goto yyerrlab2;
 
 
-/*-------------------------------------------------------------.
-| yyerrlab1 -- common code for both syntax error and YYERROR.  |
-`-------------------------------------------------------------*/
-yyerrlab1:
+/*---------------------------------------------------------------.
+| yyerrlab2 -- pop states until the error token can be shifted.  |
+`---------------------------------------------------------------*/
+yyerrlab2:
   yyerrstatus = 3;	/* Each real token shifted decrements this.  */
 
   for (;;)
@@ -5116,21 +5070,21 @@ yyerrlab1:
       if (yyssp == yyss)
 	YYABORT;
 
+      YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+      yydestruct (yystos[yystate], yyvsp);
+      yyvsp--;
+      yystate = *--yyssp;
 
-      yydestruct ("Error: popping", yystos[yystate], yyvsp);
-      YYPOPSTACK;
-      yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
     }
 
   if (yyn == YYFINAL)
     YYACCEPT;
 
+  YYDPRINTF ((stderr, "Shifting error token, "));
+
   *++yyvsp = yylval;
 
-
-  /* Shift the error token. */
-  YY_SYMBOL_PRINT ("Shifting", yystos[yyn], yyvsp, yylsp);
 
   yystate = yyn;
   goto yynewstate;
@@ -5147,9 +5101,6 @@ yyacceptlab:
 | yyabortlab -- YYABORT comes here.  |
 `-----------------------------------*/
 yyabortlab:
-  yydestruct ("Error: discarding lookahead",
-              yytoken, &yylval);
-  yychar = YYEMPTY;
   yyresult = 1;
   goto yyreturn;
 
