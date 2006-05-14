@@ -414,7 +414,6 @@ prforward.app="Application";
 
 //help container
 var hprforward = new Object();
-hprforward.right1="Port Range Forward:";
 hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
 	Examples of these applications include servers and certain online games. \
 	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
@@ -435,7 +434,6 @@ pforward.to="Port to";
 
 //help container
 var hpforward = new Object();
-hpforward.right1="Port Forward:";
 hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
 	Examples of these applications include servers and certain online games. \
 	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
@@ -486,9 +484,7 @@ upnp.msg2="Delete all entries?";
 
 //help container
 var hupnp = new Object();
-hupnp.right1="Forwards:";
 hupnp.right2="Click the trash can to delete an individual entry.";
-hupnp.right3="UPnP Service:";
 hupnp.right4="Allows applications to automatically setup port forwardings.";
 
 
@@ -570,7 +566,6 @@ dmz.host="DMZ Host IP Address";
 
 //help container
 var hdmz = new Object();
-hdmz.right1="DMZ:";
 hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
 
 
@@ -812,23 +807,14 @@ idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
 
 //help container
 var hidx = new Object();
-hidx.right1=idx.dhcp + ":";
 hidx.right2="This setting is most commonly used by Cable operators.";
-hidx.right3="Host Name:";
 hidx.right4="Enter the host name provided by your ISP.";
-hidx.right5="Domain Name:";
 hidx.right6="Enter the domain name provided by your ISP.";
-hidx.right7="Local IP Address:";
 hidx.right8="This is the address of the router.";
-hidx.right9=share.subnet + ":";
 hidx.right10="This is the subnet mask of the router.";
-hidx.right11="DHCP Server:";
 hidx.right12="Allows the router to manage your IP addresses.";
-hidx.right13="Start IP Address:";
 hidx.right14="The address you would like to start with.";
-hidx.right15="Maximum number of DHCP Users:";
 hidx.right16="You may limit the number of addresses your router hands out.";
-hidx.right17="Time Setting:";
 hidx.right18="Choose the time zone you are in and Summer Time (DST) period. The router can use local time or UTC time.";
 
 
@@ -1027,14 +1013,10 @@ hqos.right1="Uplink:";
 hqos.right2="Set this to 80%-95% (max) of your total upload limit.";
 hqos.right3="Downlink:";
 hqos.right4="Set this to 80%-100% (max) of your total download limit.";
-hqos.right5="Application Priority:";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
-hqos.right7="Netmask Priority:";
 hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
-hqos.right9="MAC Priority:";
 hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, \
 			specifying priority and entering its MAC address.";
-hqos.right11="Ethernet Port Priority:";
 hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. \
 			You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
 
