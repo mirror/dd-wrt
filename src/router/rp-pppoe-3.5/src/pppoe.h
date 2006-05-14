@@ -11,11 +11,13 @@
 *
 * LIC: GPL
 *
-* $Id: pppoe.h,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $
+* $Id: pppoe.h,v 1.31 2006/02/21 00:13:14 dfs Exp $
 *
 ***********************************************************************/
 
 #include "config.h"
+
+extern int IsSetID;
 
 #if defined(HAVE_NETPACKET_PACKET_H) || defined(HAVE_LINUX_IF_PACKET_H)
 #define _POSIX_SOURCE 1 /* For sigaction defines */
@@ -122,7 +124,7 @@ typedef unsigned int UINT32_t;
 #elif SIZEOF_UNSIGNED_LONG == 4
 typedef unsigned long UINT32_t;
 #else
-#error Could not find a 16-bit integer type
+#error Could not find a 32-bit integer type
 #endif
 
 #ifdef HAVE_LINUX_IF_ETHER_H
@@ -151,6 +153,10 @@ typedef unsigned long UINT32_t;
 /* But some brain-dead peers disobey the RFC, so frame types are variables */
 extern UINT16_t Eth_PPPOE_Discovery;
 extern UINT16_t Eth_PPPOE_Session;
+
+extern void switchToRealID(void);
+extern void switchToEffectiveID(void);
+extern void dropPrivs(void);
 
 /* PPPoE codes */
 #define CODE_PADI           0x09
@@ -278,6 +284,8 @@ typedef struct PPPoEConnectionStruct {
     int numPADOs;		/* Number of PADO packets received */
     PPPoETag cookie;		/* We have to send this if we get it */
     PPPoETag relayId;		/* Ditto */
+    int PADSHadError;           /* If PADS had an error tag */
+    int discoveryTimeout;       /* Timeout for discovery packets */
 } PPPoEConnection;
 
 /* Structure used to determine acceptable PADO or PADS packet */
@@ -298,10 +306,13 @@ void fatalSys(char const *str);
 void rp_fatal(char const *str);
 void printErr(char const *str);
 void sysErr(char const *str);
+#ifdef DEBUGGING_ENABLED
 void dumpPacket(FILE *fp, PPPoEPacket *packet, char const *dir);
 void dumpHex(FILE *fp, unsigned char const *buf, int len);
+#endif
 int parsePacket(PPPoEPacket *packet, ParseFunc *func, void *extra);
 void parseLogErrs(UINT16_t typ, UINT16_t len, unsigned char *data, void *xtra);
+void pktLogErrs(char const *pkt, UINT16_t typ, UINT16_t len, unsigned char *data, void *xtra);
 void syncReadFromPPP(PPPoEConnection *conn, PPPoEPacket *packet);
 void asyncReadFromPPP(PPPoEConnection *conn, PPPoEPacket *packet);
 void asyncReadFromEth(PPPoEConnection *conn, int sock, int clampMss);

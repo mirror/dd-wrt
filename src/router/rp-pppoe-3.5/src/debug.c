@@ -16,9 +16,12 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: debug.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: debug.c,v 1.6 2006/01/03 03:05:06 dfs Exp $";
 
 #include "pppoe.h"
+
+#ifdef DEBUGGING_ENABLED
+
 #include <sys/time.h>
 #include <time.h>
 #include <unistd.h>
@@ -145,3 +148,5 @@ dumpPacket(FILE *fp, PPPoEPacket *packet, char const *dir)
 	    (unsigned) packet->ethHdr.h_dest[5]);
     dumpHex(fp, packet->payload, ntohs(packet->length));
 }
+
+#endif /* DEBUGGING_ENABLED */

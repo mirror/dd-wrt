@@ -57,7 +57,7 @@
 #endif
 
 
-#define	VENDOR		"New Media NET GmbH"
+#define	VENDOR		"NewMedia-NET GmbH"
 
 
 #define COUNTRY		LOCALE

@@ -4,10 +4,14 @@
  * LIC: GPL
  */
 
-#ifdef __alpha
+#include "config.h"
+
+#if SIZEOF_UNSIGNED_INT == 4
 typedef unsigned int uint32;
-#else
+#elif SIZEOF_UNSIGNED_LONG == 4
 typedef unsigned long uint32;
+#else
+# error Could not find a 32-bit integer type
 #endif
 
 struct MD5Context {
