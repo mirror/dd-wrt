@@ -56,17 +56,16 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
   logged_lease = 0;
   
   
-  if (!(fp = fopen (file, "r+b")))
-    {
+//  if (!(fp = fopen (file, "r+b")))
+//    {
 	fprintf(stderr,"opening %s\n",file);
-      syslog (LOG_ERR, "failed to open %s(r+b): %m", file);
-      if (!(fp = fopen (file, "wb")))
+      if (!(fp = fopen (file, "w+b")))
       {
 	fprintf(stderr,"error while creating %s\n",file);
       syslog (LOG_ERR, "failed to load %s(wb): %m", file);
       return NULL;
       }
-    }
+//    }
 fprintf(stderr,"done()\n");
   
   syslog (LOG_INFO, "reading %s", file);
