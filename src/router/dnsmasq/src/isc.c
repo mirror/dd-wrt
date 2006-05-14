@@ -59,7 +59,7 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
 //  if (!(fp = fopen (file, "r+b")))
 //    {
 	fprintf(stderr,"opening %s\n",file);
-      if (!(fp = fopen (file, "w+b")))
+      if (!(fp = fopen (file, "wb")))
       {
 	fprintf(stderr,"error while creating %s\n",file);
       syslog (LOG_ERR, "failed to load %s(wb): %m", file);
