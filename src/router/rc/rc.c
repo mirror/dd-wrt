@@ -134,7 +134,7 @@ main_loop (void)
   signal (SIGINT, rc_signal);
   signal (SIGALRM, rc_signal);
   sigemptyset (&sigset);
-
+ 
   /* Give user a chance to run a shell before bringing up the rest of the system */
 //  if (!noconsole)
 //    ddrun_shell (1, 0);
@@ -440,13 +440,19 @@ main_loop (void)
 	case IDLE:
 	  cprintf ("IDLE\n");
 	  state = IDLE;
+	  int con = console_init();
 	  /* Wait for user input or state change */
 	  while (signalled == -1)
+	    {
+	    if (!con)
 	    {
 	      if ((!shell_pid || kill (shell_pid, 0) != 0))
 		shell_pid = ddrun_shell (0, 1);
 	      else
 		sigsuspend (&sigset);
+	    }else
+		sigsuspend (&sigset);
+	    
 	    }
 	  state = signalled;
 	  signalled = -1;
