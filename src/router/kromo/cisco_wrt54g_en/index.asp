@@ -633,23 +633,23 @@ function init()
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(idx.dhcp):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right3)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.hostname):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right5)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.domainname):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right7)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(idx.lanip):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right9)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.subnet):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right10)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right11)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_srv):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right12)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right13)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_start):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right14)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right15)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_maxusers):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right16)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hidx.right17)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(idx.legend3):</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hidx.right18)</script></dd>
 						</dl>
 						<br/>
