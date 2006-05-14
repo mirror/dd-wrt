@@ -187,7 +187,7 @@ function SelDDNS(num,F) {
 									<div class="label"><script type="text/javascript">Capture(ddns.typ)</script></div>
 									<select name="ddns_dyndnstype">
 										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype", "1", "selected"); %> >" + ddns.dynamic + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + ddns.sttic + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");</script>
 									</select>
 								</div>
