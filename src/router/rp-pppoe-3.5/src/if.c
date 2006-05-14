@@ -16,7 +16,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: if.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: if.c,v 1.18 2006/01/03 03:05:06 dfs Exp $";
 
 #include "pppoe.h"
 
@@ -71,7 +71,7 @@ static char const RCSID[] =
 
 /* function declarations */
 
-void dlpromisconreq( int fd, u_long  level);
+static void dlpromisconreq( int fd, u_long  level);
 void dlinforeq(int fd);
 void dlunitdatareq(int fd, u_char *addrp, int addrlen, u_long minpri, u_long maxpri, u_char *datap, int datalen);
 void dlinfoack(int fd, char *bufp);
@@ -83,7 +83,7 @@ int strioctl(int fd, int cmd, int timout, int len, char *dp);
 void strgetmsg(int fd, struct strbuf *ctlp, struct strbuf *datap, int *flagsp, char *caller);
 void sigalrm(int sig);
 void expecting(int prim, union DL_primitives *dlp);
-char *dlprim(u_long prim);
+static char *dlprim(u_long prim);
 
 /* #define DL_DEBUG */
 
@@ -97,10 +97,10 @@ static	int	dl_addrlen;
 #include <net/bpf.h>
 #include <fcntl.h>
 
-unsigned char *bpfBuffer;	/* Packet filter buffer */
-int bpfLength = 0;		/* Packet filter buffer length */
-int bpfSize = 0;		/* Number of unread bytes in buffer */
-int bpfOffset = 0;		/* Current offset in bpfBuffer */
+static unsigned char *bpfBuffer;	/* Packet filter buffer */
+static int bpfLength = 0;		/* Packet filter buffer length */
+static int bpfSize = 0;		        /* Number of unread bytes in buffer */
+static int bpfOffset = 0;		/* Current offset in bpfBuffer */
 #endif
 
 /* Initialize frame types to RFC 2516 values.  Some broken peers apparently
@@ -329,7 +329,7 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
     }
     if ((ifr.ifr_flags & IFF_UP) == 0) {
 	char buffer[256];
-	sprintf(buffer, "Interface %.16s is not up\n", ifname);
+	sprintf(buffer, "Interface %.16s is not up", ifname);
 	rp_fatal(buffer);
     }
 
@@ -533,7 +533,7 @@ sendPacket(PPPoEConnection *conn, int sock, PPPoEPacket *pkt, int size)
 	return -1;
     }
 #elif defined(HAVE_STRUCT_SOCKADDR_LL)
-    if (send(sock, pkt, size, 0) < 0) {
+    if (send(sock, pkt, size, 0) < 0 && (errno != ENOBUFS)) {
 	sysErr("send (sendPacket)");
 	return -1;
     }
@@ -782,7 +782,8 @@ openInterface(char const *ifname, UINT16_t type, unsigned char *hwaddr)
 
 /* cloned from dlcommon.c */
 
-void dlpromisconreq(int fd, u_long level)
+static void
+dlpromisconreq(int fd, u_long level)
 {
 	dl_promiscon_req_t      promiscon_req;
 	struct  strbuf  ctl;
@@ -1074,7 +1075,8 @@ void expecting(int prim, union DL_primitives *dlp)
 	}
 }
 
-char *dlprim(u_long prim)
+static char *
+dlprim(u_long prim)
 {
 	static  char    primbuf[80];
 

@@ -410,6 +410,120 @@ static int handle_vlan_enable_write(void *driver, char *buf, int nr)
 	return 0;
 }
 
+
+static int handle_port_bandwidth_read(void *driver, char *buf, int nr)
+{
+	int reg = adm_rreg(0, 0x33);
+	int len = 0;
+
+	if((reg & (1<<nr)))
+		return sprintf(buf, "FULL\n");
+
+	if(nr <= 3){
+		reg = adm_rreg(0, 0x31);
+		reg = (reg >> (4*nr)) & 7;
+	}
+	else{
+		reg = adm_rreg(0, 0x32);
+		reg = (reg >> (4*(nr-4))) & 7;
+	}
+
+	len = switch_print_bandwidth(buf, reg);
+	return len + sprintf(buf + len, "\n");
+}
+
+static int handle_port_bandwidth_write(void *driver, char *buf, int nr)
+{
+	int bw = switch_parse_bandwidth(buf);
+	int reg = adm_rreg(0, 0x33);
+	
+	if (bw == SWITCH_BANDWIDTH_FULL || bw <0){
+		reg &= ~(1 << nr);
+		adm_wreg(0x33, reg);
+		return 0;
+	}
+
+	reg &= (1 << nr);
+	adm_wreg(0x33, reg);
+
+	if (nr <= 3){
+		reg = adm_rreg(0, 0x31);
+		reg &= ((bw & 7) << (nr*4));
+		adm_wreg(0x31, reg);
+	}
+	else{
+		reg = adm_rreg(0, 0x31);
+		reg &= ((bw & 7) << ((nr-4)*4));
+		adm_wreg(0x32, reg);
+	}
+
+	return 0;
+}
+
+static int handle_port_prio_enable_read(void *driver, char *buf, int nr)
+{
+	return sprintf(buf, "%d\n", ((adm_rreg(0, port_conf[nr]) & (1 << 7)) ? 0 : 1));
+}
+
+static int handle_port_prio_enable_write(void *driver, char *buf, int nr)
+{
+	int reg = adm_rreg(0, port_conf[nr]);
+	
+	if (buf[0] == '0')
+		reg |= (1 << 7);
+	else if (buf[0] == '1')
+		reg &= ~(1 << 7);
+	else return -1;
+
+	adm_wreg(port_conf[nr], (__u16) reg);
+	return 0;
+}
+
+static int handle_port_prio_read(void *driver, char *buf, int nr)
+{
+	int reg = adm_rreg(0, port_conf[nr]);
+
+	return sprintf(buf, "%d\n", ((reg >> 8) & 3));
+}
+
+static int handle_port_prio_write(void *driver, char *buf, int nr)
+{
+	int reg = adm_rreg(0, port_conf[nr]);
+
+	reg &= ~(3 << 8);
+
+	if (buf[0] == '1')
+		reg |= (1 << 8);
+	else if (buf[0] == '2')
+		reg |= (2 << 8);
+	else if (buf[0] == '3')
+		reg |= (3 << 8);
+	else if (buf[0] != '0')
+		return -1;
+
+	adm_wreg(port_conf[nr], (__u16) reg);
+	return 0;
+}
+
+static int handle_port_flow_enable_read(void *driver, char *buf, int nr)
+{
+	return sprintf(buf, "%d\n", ((adm_rreg(0, port_conf[nr]) & (1 << 0)) ? 0 : 1));
+}
+
+static int handle_port_flow_enable_write(void *driver, char *buf, int nr)
+{
+	int reg = adm_rreg(0, port_conf[nr]);
+	
+	if (buf[0] == '0')
+		reg |= (1 << 0);
+	else if (buf[0] == '1')
+		reg &= ~(1 << 0);
+	else return -1;
+
+	adm_wreg(port_conf[nr], (__u16) reg);
+	return 0;
+}
+
 static int handle_reset(void *driver, char *buf, int nr)
 {
 	int i;
@@ -477,7 +591,7 @@ static int handle_counters(void *driver, char *buf, int nr)
 	return len;
 }
 
-static int detect_adm()
+static int detect_adm(void)
 {
 	int ret = 0;
 
@@ -498,10 +612,12 @@ static int detect_adm()
 		eecs = 2;
 		eesk = 3;
 		eedi = 5;
-
+		eerc = 6; //fix by BrainSlayer
+		
 		ret = 1;
 	} else
-		printk("BFL_ENETADM not set in boardflags. Use force=1 to ignore.\n");
+		;
+//		printk("BFL_ENETADM not set in boardflags. Use force=1 to ignore.\n");
 		
 	if (eecs)
 		eecs = (1 << eecs);
@@ -518,7 +634,7 @@ static int detect_adm()
 	return ret;
 }
 
-static int __init adm_init()
+static int __init adm_init(void)
 {
 	switch_config cfg[] = {
 		{"registers", handle_registers, NULL},
@@ -530,6 +646,10 @@ static int __init adm_init()
 	switch_config port[] = {
 		{"enable", handle_port_enable_read, handle_port_enable_write},
 		{"media", handle_port_media_read, handle_port_media_write},
+		{"bandwidth", handle_port_bandwidth_read, handle_port_bandwidth_write},
+		{"prio-enable", handle_port_prio_enable_read, handle_port_prio_enable_write},
+		{"prio", handle_port_prio_read, handle_port_prio_write},
+		{"flow", handle_port_flow_enable_read, handle_port_flow_enable_write},
 		{NULL, NULL, NULL}
 	};
 	switch_config vlan[] = {
@@ -542,7 +662,7 @@ static int __init adm_init()
 		interface: "eth0",
 		ports: 6,
 		cpuport: 5,
-		vlans: 256,
+		vlans: 16,
 		driver_handlers: cfg,
 		port_handlers: port,
 		vlan_handlers: vlan,
@@ -554,7 +674,7 @@ static int __init adm_init()
 	return switch_register_driver(&driver);
 }
 
-static void __exit adm_exit()
+static void __exit adm_exit(void)
 {
 	switch_unregister_driver(DRIVER_NAME);
 }

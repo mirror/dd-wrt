@@ -4,18 +4,18 @@
 *
 * Implementation of PPPoE relay
 *
-* Copyright (C) 2001 Roaring Penguin Software Inc.
+* Copyright (C) 2001-2006 Roaring Penguin Software Inc.
 *
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
 *
 * LIC: GPL
 *
-* $Id: relay.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $
+* $Id: relay.c,v 1.28 2006/02/23 15:40:42 dfs Exp $
 *
 ***********************************************************************/
 static char const RCSID[] =
-"$Id: relay.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: relay.c,v 1.28 2006/02/23 15:40:42 dfs Exp $";
 
 #define _GNU_SOURCE 1 /* For SA_RESTART */
 
@@ -208,7 +208,7 @@ usage(char const *argv0)
     fprintf(stderr, "   -F             -- Do not fork into background\n");
     fprintf(stderr, "   -h             -- Print this help message\n");
 
-    fprintf(stderr, "\nPPPoE Version %s, Copyright (C) 2001 Roaring Penguin Software Inc.\n", VERSION);
+    fprintf(stderr, "\nPPPoE Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n", VERSION);
     fprintf(stderr, "PPPoE comes with ABSOLUTELY NO WARRANTY.\n");
     fprintf(stderr, "This is free software, and you are welcome to redistribute it under the terms\n");
     fprintf(stderr, "of the GNU General Public License, version 2 or any later version.\n");
@@ -236,6 +236,14 @@ main(int argc, char *argv[])
     int nsess = DEFAULT_SESSIONS;
     struct sigaction sa;
     int beDaemon = 1;
+
+    if (getuid() != geteuid() ||
+	getgid() != getegid()) {
+	fprintf(stderr, "SECURITY WARNING: pppoe-relay will NOT run suid or sgid.  Fix your installation.\n");
+	exit(1);
+    }
+
+
     openlog("pppoe-relay", LOG_PID, LOG_DAEMON);
 
     while((opt = getopt(argc, argv, "hC:S:B:n:i:F")) != -1) {
@@ -1487,7 +1495,7 @@ relaySendError(unsigned char code,
     }
     errTag.type = htons(TAG_GENERIC_ERROR);
     errTag.length = htons(strlen(errMsg));
-    strcpy(errTag.payload, errMsg);
+    strcpy((char *) errTag.payload, errMsg);
     if (addTag(&packet, &errTag) < 0) return;
     size = ntohs(packet.length) + HDR_SIZE;
     if (code == CODE_PADT) {

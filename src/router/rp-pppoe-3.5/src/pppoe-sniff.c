@@ -15,7 +15,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: pppoe-sniff.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: pppoe-sniff.c,v 1.8 2004/10/04 15:08:29 dfs Exp $";
 
 #include "pppoe.h"
 
@@ -162,6 +162,12 @@ main(int argc, char *argv[])
 #ifdef USE_DLPI
     long buf[MAXDLBUF];
 #endif
+
+    if (getuid() != geteuid() ||
+	getgid() != getegid()) {
+	fprintf(stderr, "SECURITY WARNING: pppoe-sniff will NOT run suid or sgid.  Fix your installation.\n");
+	exit(1);
+    }
 
     while((opt = getopt(argc, argv, "I:V")) != -1) {
 	switch(opt) {
