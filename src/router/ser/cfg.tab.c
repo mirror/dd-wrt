@@ -1,7 +1,7 @@
-/* A Bison parser, made by GNU Bison 2.0.  */
+/* A Bison parser, made by GNU Bison 1.875.  */
 
 /* Skeleton parser for Yacc-like parsing with Bison,
-   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002, 2003, 2004 Free Software Foundation, Inc.
+   Copyright (C) 1984, 1989, 1990, 2000, 2001, 2002 Free Software Foundation, Inc.
 
    This program is free software; you can redistribute it and/or modify
    it under the terms of the GNU General Public License as published by
@@ -380,8 +380,8 @@ typedef union YYSTYPE {
 	struct ip_addr* ipaddr;
 	struct id_list* idlst;
 } YYSTYPE;
-/* Line 190 of yacc.c.  */
-#line 385 "cfg.tab.c"
+/* Line 191 of yacc.c.  */
+#line 384 "cfg.tab.c"
 # define yystype YYSTYPE /* obsolescent; will be withdrawn */
 # define YYSTYPE_IS_DECLARED 1
 # define YYSTYPE_IS_TRIVIAL 1
@@ -392,26 +392,23 @@ typedef union YYSTYPE {
 /* Copy the second part of user declarations.  */
 
 
-/* Line 213 of yacc.c.  */
-#line 397 "cfg.tab.c"
+/* Line 214 of yacc.c.  */
+#line 396 "cfg.tab.c"
 
 #if ! defined (yyoverflow) || YYERROR_VERBOSE
 
-# ifndef YYFREE
-#  define YYFREE free
-# endif
-# ifndef YYMALLOC
-#  define YYMALLOC malloc
-# endif
-
 /* The parser invokes alloca or malloc; define the necessary symbols.  */
 
-# ifdef YYSTACK_USE_ALLOCA
-#  if YYSTACK_USE_ALLOCA
-#   ifdef __GNUC__
-#    define YYSTACK_ALLOC __builtin_alloca
-#   else
+# if YYSTACK_USE_ALLOCA
+#  define YYSTACK_ALLOC alloca
+# else
+#  ifndef YYSTACK_USE_ALLOCA
+#   if defined (alloca) || defined (_ALLOCA_H)
 #    define YYSTACK_ALLOC alloca
+#   else
+#    ifdef __GNUC__
+#     define YYSTACK_ALLOC __builtin_alloca
+#    endif
 #   endif
 #  endif
 # endif
@@ -424,20 +421,20 @@ typedef union YYSTYPE {
 #   include <stdlib.h> /* INFRINGES ON USER NAME SPACE */
 #   define YYSIZE_T size_t
 #  endif
-#  define YYSTACK_ALLOC YYMALLOC
-#  define YYSTACK_FREE YYFREE
+#  define YYSTACK_ALLOC malloc
+#  define YYSTACK_FREE free
 # endif
 #endif /* ! defined (yyoverflow) || YYERROR_VERBOSE */
 
 
 #if (! defined (yyoverflow) \
      && (! defined (__cplusplus) \
-	 || (defined (YYSTYPE_IS_TRIVIAL) && YYSTYPE_IS_TRIVIAL)))
+	 || (YYSTYPE_IS_TRIVIAL)))
 
 /* A type that is properly aligned for any stack member.  */
 union yyalloc
 {
-  short int yyss;
+  short yyss;
   YYSTYPE yyvs;
   };
 
@@ -447,13 +444,13 @@ union yyalloc
 /* The size of an array large to enough to hold all stacks, each with
    N elements.  */
 # define YYSTACK_BYTES(N) \
-     ((N) * (sizeof (short int) + sizeof (YYSTYPE))			\
+     ((N) * (sizeof (short) + sizeof (YYSTYPE))				\
       + YYSTACK_GAP_MAXIMUM)
 
 /* Copy COUNT objects from FROM to TO.  The source and destination do
    not overlap.  */
 # ifndef YYCOPY
-#  if defined (__GNUC__) && 1 < __GNUC__
+#  if 1 < __GNUC__
 #   define YYCOPY(To, From, Count) \
       __builtin_memcpy (To, From, (Count) * sizeof (*(From)))
 #  else
@@ -489,7 +486,7 @@ union yyalloc
 #if defined (__STDC__) || defined (__cplusplus)
    typedef signed char yysigned_char;
 #else
-   typedef short int yysigned_char;
+   typedef short yysigned_char;
 #endif
 
 /* YYFINAL -- State number of the termination state. */
@@ -559,7 +556,7 @@ static const unsigned char yytranslate[] =
 #if YYDEBUG
 /* YYPRHS[YYN] -- Index of the first RHS symbol of rule number YYN in
    YYRHS.  */
-static const unsigned short int yyprhs[] =
+static const unsigned short yyprhs[] =
 {
        0,     0,     3,     5,     8,    10,    13,    15,    17,    18,
       21,    22,    25,    26,    29,    31,    33,    35,    37,    39,
@@ -597,7 +594,7 @@ static const unsigned short int yyprhs[] =
 };
 
 /* YYRHS -- A `-1'-separated list of the rules' RHS. */
-static const short int yyrhs[] =
+static const short yyrhs[] =
 {
      123,     0,    -1,   124,    -1,   124,   125,    -1,   125,    -1,
      124,     1,    -1,   131,    -1,   132,    -1,    -1,   126,   136,
@@ -738,7 +735,7 @@ static const short int yyrhs[] =
 };
 
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
-static const unsigned short int yyrline[] =
+static const unsigned short yyrline[] =
 {
        0,   277,   277,   280,   281,   282,   285,   286,   287,   287,
      288,   288,   289,   289,   291,   294,   309,   317,   327,   335,
@@ -781,39 +778,39 @@ static const unsigned short int yyrline[] =
    First, the terminals, then, starting at YYNTOKENS, nonterminals. */
 static const char *const yytname[] =
 {
-  "$end", "error", "$undefined", "FORWARD", "FORWARD_TCP", "FORWARD_TLS",
-  "FORWARD_UDP", "SEND", "SEND_TCP", "DROP", "LOG_TOK", "ERROR", "ROUTE",
-  "ROUTE_FAILURE", "ROUTE_ONREPLY", "EXEC", "SET_HOST", "SET_HOSTPORT",
-  "PREFIX", "STRIP", "STRIP_TAIL", "APPEND_BRANCH", "SET_USER",
-  "SET_USERPASS", "SET_PORT", "SET_URI", "REVERT_URI", "FORCE_RPORT", "IF",
-  "ELSE", "SET_ADV_ADDRESS", "SET_ADV_PORT", "URIHOST", "URIPORT",
-  "MAX_LEN", "SETFLAG", "RESETFLAG", "ISFLAGSET", "METHOD", "URI", "SRCIP",
-  "SRCPORT", "DSTIP", "DSTPORT", "PROTO", "AF", "MYSELF", "MSGLEN",
-  "DEBUG", "FORK", "LOGSTDERROR", "LOGFACILITY", "LISTEN", "ALIAS", "DNS",
-  "REV_DNS", "PORT", "STAT", "CHILDREN", "CHECK_VIA", "SYN_BRANCH",
-  "MEMLOG", "SIP_WARNING", "FIFO", "FIFO_MODE", "SERVER_SIGNATURE",
-  "REPLY_TO_VIA", "LOADMODULE", "MODPARAM", "MAXBUFFER", "USER", "GROUP",
-  "CHROOT", "WDIR", "MHOMED", "DISABLE_TCP", "TCP_CHILDREN",
-  "TCP_CONNECT_TIMEOUT", "TCP_SEND_TIMEOUT", "DISABLE_TLS", "TLSLOG",
-  "TLS_PORT_NO", "TLS_METHOD", "TLS_HANDSHAKE_TIMEOUT", "TLS_SEND_TIMEOUT",
-  "SSLv23", "SSLv2", "SSLv3", "TLSv1", "TLS_VERIFY",
-  "TLS_REQUIRE_CERTIFICATE", "TLS_CERTIFICATE", "TLS_PRIVATE_KEY",
-  "TLS_CA_LIST", "ADVERTISED_ADDRESS", "ADVERTISED_PORT", "EQUAL",
-  "EQUAL_T", "GT", "LT", "GTE", "LTE", "DIFF", "MATCH", "OR", "AND", "NOT",
-  "NUMBER", "ID", "STRING", "IPV6ADDR", "COMMA", "SEMICOLON", "RPAREN",
-  "LPAREN", "LBRACE", "RBRACE", "LBRACK", "RBRACK", "SLASH", "DOT", "CR",
-  "$accept", "cfg", "statements", "statement", "@1", "@2", "@3",
-  "listen_id", "id_lst", "assign_stm", "module_stm", "ip", "ipv4", "ipv6",
-  "route_stm", "failure_route_stm", "onreply_route_stm", "exp", "equalop",
-  "intop", "strop", "exp_elem", "ipnet", "host", "stm", "actions",
-  "action", "if_cmd", "cmd", 0
+  "$end", "error", "$undefined", "FORWARD", "FORWARD_TCP", "FORWARD_TLS", 
+  "FORWARD_UDP", "SEND", "SEND_TCP", "DROP", "LOG_TOK", "ERROR", "ROUTE", 
+  "ROUTE_FAILURE", "ROUTE_ONREPLY", "EXEC", "SET_HOST", "SET_HOSTPORT", 
+  "PREFIX", "STRIP", "STRIP_TAIL", "APPEND_BRANCH", "SET_USER", 
+  "SET_USERPASS", "SET_PORT", "SET_URI", "REVERT_URI", "FORCE_RPORT", 
+  "IF", "ELSE", "SET_ADV_ADDRESS", "SET_ADV_PORT", "URIHOST", "URIPORT", 
+  "MAX_LEN", "SETFLAG", "RESETFLAG", "ISFLAGSET", "METHOD", "URI", 
+  "SRCIP", "SRCPORT", "DSTIP", "DSTPORT", "PROTO", "AF", "MYSELF", 
+  "MSGLEN", "DEBUG", "FORK", "LOGSTDERROR", "LOGFACILITY", "LISTEN", 
+  "ALIAS", "DNS", "REV_DNS", "PORT", "STAT", "CHILDREN", "CHECK_VIA", 
+  "SYN_BRANCH", "MEMLOG", "SIP_WARNING", "FIFO", "FIFO_MODE", 
+  "SERVER_SIGNATURE", "REPLY_TO_VIA", "LOADMODULE", "MODPARAM", 
+  "MAXBUFFER", "USER", "GROUP", "CHROOT", "WDIR", "MHOMED", "DISABLE_TCP", 
+  "TCP_CHILDREN", "TCP_CONNECT_TIMEOUT", "TCP_SEND_TIMEOUT", 
+  "DISABLE_TLS", "TLSLOG", "TLS_PORT_NO", "TLS_METHOD", 
+  "TLS_HANDSHAKE_TIMEOUT", "TLS_SEND_TIMEOUT", "SSLv23", "SSLv2", "SSLv3", 
+  "TLSv1", "TLS_VERIFY", "TLS_REQUIRE_CERTIFICATE", "TLS_CERTIFICATE", 
+  "TLS_PRIVATE_KEY", "TLS_CA_LIST", "ADVERTISED_ADDRESS", 
+  "ADVERTISED_PORT", "EQUAL", "EQUAL_T", "GT", "LT", "GTE", "LTE", "DIFF", 
+  "MATCH", "OR", "AND", "NOT", "NUMBER", "ID", "STRING", "IPV6ADDR", 
+  "COMMA", "SEMICOLON", "RPAREN", "LPAREN", "LBRACE", "RBRACE", "LBRACK", 
+  "RBRACK", "SLASH", "DOT", "CR", "$accept", "cfg", "statements", 
+  "statement", "@1", "@2", "@3", "listen_id", "id_lst", "assign_stm", 
+  "module_stm", "ip", "ipv4", "ipv6", "route_stm", "failure_route_stm", 
+  "onreply_route_stm", "exp", "equalop", "intop", "strop", "exp_elem", 
+  "ipnet", "host", "stm", "actions", "action", "if_cmd", "cmd", 0
 };
 #endif
 
 # ifdef YYPRINT
 /* YYTOKNUM[YYLEX-NUM] -- Internal token number corresponding to
    token YYLEX-NUM.  */
-static const unsigned short int yytoknum[] =
+static const unsigned short yytoknum[] =
 {
        0,   256,   257,   258,   259,   260,   261,   262,   263,   264,
      265,   266,   267,   268,   269,   270,   271,   272,   273,   274,
@@ -910,7 +907,7 @@ static const unsigned char yyr2[] =
 /* YYDEFACT[STATE-NAME] -- Default rule to reduce with in state
    STATE-NUM when YYTABLE doesn't specify something else to do.  Zero
    means the default is an error.  */
-static const unsigned short int yydefact[] =
+static const unsigned short yydefact[] =
 {
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
        0,     0,     0,     0,     0,     0,     0,     0,     0,     0,
@@ -981,7 +978,7 @@ static const unsigned short int yydefact[] =
 };
 
 /* YYDEFGOTO[NTERM-NUM]. */
-static const short int yydefgoto[] =
+static const short yydefgoto[] =
 {
       -1,    47,    48,    49,    50,    51,    52,   124,   125,    53,
       54,   126,   127,   128,   106,   108,   110,   319,   421,   422,
@@ -991,7 +988,7 @@ static const short int yydefgoto[] =
 /* YYPACT[STATE-NUM] -- Index in YYTABLE of the portion describing
    STATE-NUM.  */
 #define YYPACT_NINF -315
-static const short int yypact[] =
+static const short yypact[] =
 {
      213,   -73,   -62,   -51,   -38,   -33,   -32,   -27,   -24,   -18,
      103,   126,   137,   139,   146,   154,   159,   242,   329,   330,
@@ -1062,7 +1059,7 @@ static const short int yypact[] =
 };
 
 /* YYPGOTO[NTERM-NUM].  */
-static const short int yypgoto[] =
+static const short yypgoto[] =
 {
     -315,  -315,  -315,   945,  -315,  -315,  -315,   -93,   567,  -315,
     -315,  -265,  -315,  -315,  -315,  -315,  -315,  -301,   473,  -244,
@@ -1074,7 +1071,7 @@ static const short int yypgoto[] =
    number is the opposite.  If zero, do what YYDEFACT says.
    If YYTABLE_NINF, syntax error.  */
 #define YYTABLE_NINF -13
-static const short int yytable[] =
+static const short yytable[] =
 {
      348,   337,   353,   322,   358,   441,   363,   208,   367,   323,
      371,   349,   438,   354,   436,   359,   437,   364,   211,   368,
@@ -1183,7 +1180,7 @@ static const short int yytable[] =
      650,   651,   655
 };
 
-static const short int yycheck[] =
+static const short yycheck[] =
 {
      265,   253,   267,   245,   269,   319,   271,   100,   273,   245,
      275,   265,   318,   267,   315,   269,   317,   271,     1,   273,
@@ -1387,8 +1384,7 @@ static const unsigned char yystos[] =
 
 #define YYACCEPT	goto yyacceptlab
 #define YYABORT		goto yyabortlab
-#define YYERROR		goto yyerrorlab
-
+#define YYERROR		goto yyerrlab1
 
 /* Like YYERROR except do call yyerror.  This remains here temporarily
    to ease the transition to the new meaning of YYERROR, for GCC.
@@ -1415,52 +1411,19 @@ do								\
     }								\
 while (0)
 
-
 #define YYTERROR	1
 #define YYERRCODE	256
 
+/* YYLLOC_DEFAULT -- Compute the default location (before the actions
+   are run).  */
 
-/* YYLLOC_DEFAULT -- Set CURRENT to span from RHS[1] to RHS[N].
-   If N is 0, then set CURRENT to the empty location which ends
-   the previous symbol: RHS[0] (always defined).  */
-
-#define YYRHSLOC(Rhs, K) ((Rhs)[K])
 #ifndef YYLLOC_DEFAULT
-# define YYLLOC_DEFAULT(Current, Rhs, N)				\
-    do									\
-      if (N)								\
-	{								\
-	  (Current).first_line   = YYRHSLOC (Rhs, 1).first_line;	\
-	  (Current).first_column = YYRHSLOC (Rhs, 1).first_column;	\
-	  (Current).last_line    = YYRHSLOC (Rhs, N).last_line;		\
-	  (Current).last_column  = YYRHSLOC (Rhs, N).last_column;	\
-	}								\
-      else								\
-	{								\
-	  (Current).first_line   = (Current).last_line   =		\
-	    YYRHSLOC (Rhs, 0).last_line;				\
-	  (Current).first_column = (Current).last_column =		\
-	    YYRHSLOC (Rhs, 0).last_column;				\
-	}								\
-    while (0)
+# define YYLLOC_DEFAULT(Current, Rhs, N)         \
+  Current.first_line   = Rhs[1].first_line;      \
+  Current.first_column = Rhs[1].first_column;    \
+  Current.last_line    = Rhs[N].last_line;       \
+  Current.last_column  = Rhs[N].last_column;
 #endif
-
-
-/* YY_LOCATION_PRINT -- Print the location on the stream.
-   This macro was not mandated originally: define only if we know
-   we won't break user code: when these are the locations we know.  */
-
-#ifndef YY_LOCATION_PRINT
-# if YYLTYPE_IS_TRIVIAL
-#  define YY_LOCATION_PRINT(File, Loc)			\
-     fprintf (File, "%d.%d-%d.%d",			\
-              (Loc).first_line, (Loc).first_column,	\
-              (Loc).last_line,  (Loc).last_column)
-# else
-#  define YY_LOCATION_PRINT(File, Loc) ((void) 0)
-# endif
-#endif
-
 
 /* YYLEX -- calling `yylex' with the right arguments.  */
 
@@ -1484,30 +1447,36 @@ do {						\
     YYFPRINTF Args;				\
 } while (0)
 
-# define YY_SYMBOL_PRINT(Title, Type, Value, Location)		\
+# define YYDSYMPRINT(Args)			\
+do {						\
+  if (yydebug)					\
+    yysymprint Args;				\
+} while (0)
+
+# define YYDSYMPRINTF(Title, Token, Value, Location)		\
 do {								\
   if (yydebug)							\
     {								\
       YYFPRINTF (stderr, "%s ", Title);				\
       yysymprint (stderr, 					\
-                  Type, Value);	\
+                  Token, Value);	\
       YYFPRINTF (stderr, "\n");					\
     }								\
 } while (0)
 
 /*------------------------------------------------------------------.
 | yy_stack_print -- Print the state stack from its BOTTOM up to its |
-| TOP (included).                                                   |
+| TOP (cinluded).                                                   |
 `------------------------------------------------------------------*/
 
 #if defined (__STDC__) || defined (__cplusplus)
 static void
-yy_stack_print (short int *bottom, short int *top)
+yy_stack_print (short *bottom, short *top)
 #else
 static void
 yy_stack_print (bottom, top)
-    short int *bottom;
-    short int *top;
+    short *bottom;
+    short *top;
 #endif
 {
   YYFPRINTF (stderr, "Stack now");
@@ -1537,9 +1506,9 @@ yy_reduce_print (yyrule)
 #endif
 {
   int yyi;
-  unsigned int yylno = yyrline[yyrule];
+  unsigned int yylineno = yyrline[yyrule];
   YYFPRINTF (stderr, "Reducing stack by rule %d (line %u), ",
-             yyrule - 1, yylno);
+             yyrule - 1, yylineno);
   /* Print the symbols being reduced, and their result.  */
   for (yyi = yyprhs[yyrule]; 0 <= yyrhs[yyi]; yyi++)
     YYFPRINTF (stderr, "%s ", yytname [yyrhs[yyi]]);
@@ -1557,7 +1526,8 @@ do {					\
 int yydebug;
 #else /* !YYDEBUG */
 # define YYDPRINTF(Args)
-# define YY_SYMBOL_PRINT(Title, Type, Value, Location)
+# define YYDSYMPRINT(Args)
+# define YYDSYMPRINTF(Title, Token, Value, Location)
 # define YY_STACK_PRINT(Bottom, Top)
 # define YY_REDUCE_PRINT(Rule)
 #endif /* !YYDEBUG */
@@ -1574,6 +1544,10 @@ int yydebug;
    Do not make this value too large; the results are undefined if
    SIZE_MAX < YYSTACK_BYTES (YYMAXDEPTH)
    evaluated with infinite-precision integer arithmetic.  */
+
+#if YYMAXDEPTH == 0
+# undef YYMAXDEPTH
+#endif
 
 #ifndef YYMAXDEPTH
 # define YYMAXDEPTH 10000
@@ -1656,15 +1630,15 @@ yysymprint (yyoutput, yytype, yyvaluep)
   (void) yyvaluep;
 
   if (yytype < YYNTOKENS)
-    YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
+    {
+      YYFPRINTF (yyoutput, "token %s (", yytname[yytype]);
+# ifdef YYPRINT
+      YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
+# endif
+    }
   else
     YYFPRINTF (yyoutput, "nterm %s (", yytname[yytype]);
 
-
-# ifdef YYPRINT
-  if (yytype < YYNTOKENS)
-    YYPRINT (yyoutput, yytoknum[yytype], *yyvaluep);
-# endif
   switch (yytype)
     {
       default:
@@ -1680,21 +1654,16 @@ yysymprint (yyoutput, yytype, yyvaluep)
 
 #if defined (__STDC__) || defined (__cplusplus)
 static void
-yydestruct (const char *yymsg, int yytype, YYSTYPE *yyvaluep)
+yydestruct (int yytype, YYSTYPE *yyvaluep)
 #else
 static void
-yydestruct (yymsg, yytype, yyvaluep)
-    const char *yymsg;
+yydestruct (yytype, yyvaluep)
     int yytype;
     YYSTYPE *yyvaluep;
 #endif
 {
   /* Pacify ``unused variable'' warnings.  */
   (void) yyvaluep;
-
-  if (!yymsg)
-    yymsg = "Deleting";
-  YY_SYMBOL_PRINT (yymsg, yytype, yyvaluep, yylocationp);
 
   switch (yytype)
     {
@@ -1723,10 +1692,10 @@ int yyparse ();
 
 
 
-/* The look-ahead symbol.  */
+/* The lookahead symbol.  */
 int yychar;
 
-/* The semantic value of the look-ahead symbol.  */
+/* The semantic value of the lookahead symbol.  */
 YYSTYPE yylval;
 
 /* Number of syntax errors so far.  */
@@ -1762,7 +1731,7 @@ yyparse ()
   int yyresult;
   /* Number of tokens to shift before error messages enabled.  */
   int yyerrstatus;
-  /* Look-ahead token as an internal (translated) token number.  */
+  /* Lookahead token as an internal (translated) token number.  */
   int yytoken = 0;
 
   /* Three stacks and their tools:
@@ -1774,9 +1743,9 @@ yyparse ()
      to reallocate them elsewhere.  */
 
   /* The state stack.  */
-  short int yyssa[YYINITDEPTH];
-  short int *yyss = yyssa;
-  register short int *yyssp;
+  short	yyssa[YYINITDEPTH];
+  short *yyss = yyssa;
+  register short *yyssp;
 
   /* The semantic value stack.  */
   YYSTYPE yyvsa[YYINITDEPTH];
@@ -1813,9 +1782,6 @@ yyparse ()
   yyssp = yyss;
   yyvsp = yyvs;
 
-
-  yyvsp[0] = yylval;
-
   goto yysetstate;
 
 /*------------------------------------------------------------.
@@ -1841,7 +1807,7 @@ yyparse ()
 	   these so that the &'s don't force the real ones into
 	   memory.  */
 	YYSTYPE *yyvs1 = yyvs;
-	short int *yyss1 = yyss;
+	short *yyss1 = yyss;
 
 
 	/* Each stack pointer address is followed by the size of the
@@ -1869,7 +1835,7 @@ yyparse ()
 	yystacksize = YYMAXDEPTH;
 
       {
-	short int *yyss1 = yyss;
+	short *yyss1 = yyss;
 	union yyalloc *yyptr =
 	  (union yyalloc *) YYSTACK_ALLOC (YYSTACK_BYTES (yystacksize));
 	if (! yyptr)
@@ -1905,18 +1871,18 @@ yyparse ()
 yybackup:
 
 /* Do appropriate processing given the current state.  */
-/* Read a look-ahead token if we need one and don't already have one.  */
+/* Read a lookahead token if we need one and don't already have one.  */
 /* yyresume: */
 
-  /* First try to decide what to do without reference to look-ahead token.  */
+  /* First try to decide what to do without reference to lookahead token.  */
 
   yyn = yypact[yystate];
   if (yyn == YYPACT_NINF)
     goto yydefault;
 
-  /* Not known => get a look-ahead token if don't already have one.  */
+  /* Not known => get a lookahead token if don't already have one.  */
 
-  /* YYCHAR is either YYEMPTY or YYEOF or a valid look-ahead symbol.  */
+  /* YYCHAR is either YYEMPTY or YYEOF or a valid lookahead symbol.  */
   if (yychar == YYEMPTY)
     {
       YYDPRINTF ((stderr, "Reading a token: "));
@@ -1931,7 +1897,7 @@ yybackup:
   else
     {
       yytoken = YYTRANSLATE (yychar);
-      YY_SYMBOL_PRINT ("Next token is", yytoken, &yylval, &yylloc);
+      YYDSYMPRINTF ("Next token is", yytoken, &yylval, &yylloc);
     }
 
   /* If the proper action on seeing token YYTOKEN is to reduce or to
@@ -1951,8 +1917,8 @@ yybackup:
   if (yyn == YYFINAL)
     YYACCEPT;
 
-  /* Shift the look-ahead token.  */
-  YY_SYMBOL_PRINT ("Shifting", yytoken, &yylval, &yylloc);
+  /* Shift the lookahead token.  */
+  YYDPRINTF ((stderr, "Shifting token %s, ", yytname[yytoken]));
 
   /* Discard the token being shifted unless it is eof.  */
   if (yychar != YYEOF)
@@ -2033,18 +1999,18 @@ yyreduce:
 
   case 15:
 #line 294 "cfg.y"
-    {	tmp=ip_addr2a((yyvsp[0].ipaddr));
+    {	tmp=ip_addr2a(yyvsp[0].ipaddr);
 		 					if(tmp==0){
 								LOG(L_CRIT, "ERROR: cfg. parser: bad ip "
 										"addresss.\n");
-								(yyval.strval)=0;
+								yyval.strval=0;
 							}else{
-								(yyval.strval)=pkg_malloc(strlen(tmp)+1);
-								if ((yyval.strval)==0){
+								yyval.strval=pkg_malloc(strlen(tmp)+1);
+								if (yyval.strval==0){
 									LOG(L_CRIT, "ERROR: cfg. parser: out of "
 											"memory.\n");
 								}else{
-									strncpy((yyval.strval), tmp, strlen(tmp)+1);
+									strncpy(yyval.strval, tmp, strlen(tmp)+1);
 								}
 							}
 						;}
@@ -2052,36 +2018,36 @@ yyreduce:
 
   case 16:
 #line 309 "cfg.y"
-    {	(yyval.strval)=pkg_malloc(strlen((yyvsp[0].strval))+1);
-		 					if ((yyval.strval)==0){
+    {	yyval.strval=pkg_malloc(strlen(yyvsp[0].strval)+1);
+		 					if (yyval.strval==0){
 									LOG(L_CRIT, "ERROR: cfg. parser: out of "
 											"memory.\n");
 							}else{
-									strncpy((yyval.strval), (yyvsp[0].strval), strlen((yyvsp[0].strval))+1);
+									strncpy(yyval.strval, yyvsp[0].strval, strlen(yyvsp[0].strval)+1);
 							}
 						;}
     break;
 
   case 17:
 #line 317 "cfg.y"
-    {	(yyval.strval)=pkg_malloc(strlen((yyvsp[0].strval))+1);
-		 					if ((yyval.strval)==0){
+    {	yyval.strval=pkg_malloc(strlen(yyvsp[0].strval)+1);
+		 					if (yyval.strval==0){
 									LOG(L_CRIT, "ERROR: cfg. parser: out of "
 											"memory.\n");
 							}else{
-									strncpy((yyval.strval), (yyvsp[0].strval), strlen((yyvsp[0].strval))+1);
+									strncpy(yyval.strval, yyvsp[0].strval, strlen(yyvsp[0].strval)+1);
 							}
 						;}
     break;
 
   case 18:
 #line 327 "cfg.y"
-    {	(yyval.idlst)=pkg_malloc(sizeof(struct id_list));
-						if ((yyval.idlst)==0){
+    {	yyval.idlst=pkg_malloc(sizeof(struct id_list));
+						if (yyval.idlst==0){
 							LOG(L_CRIT,"ERROR: cfg. parser: out of memory.\n");
 						}else{
-							(yyval.idlst)->s=(yyvsp[0].strval);
-							(yyval.idlst)->next=0;
+							yyval.idlst->s=yyvsp[0].strval;
+							yyval.idlst->next=0;
 						}
 					;}
     break;
@@ -2089,19 +2055,19 @@ yyreduce:
   case 19:
 #line 335 "cfg.y"
     {
-						(yyval.idlst)=pkg_malloc(sizeof(struct id_list));
-						if ((yyval.idlst)==0){
+						yyval.idlst=pkg_malloc(sizeof(struct id_list));
+						if (yyval.idlst==0){
 							LOG(L_CRIT,"ERROR: cfg. parser: out of memory.\n");
 						}else{
-							(yyval.idlst)->s=(yyvsp[-1].strval);
-							(yyval.idlst)->next=(yyvsp[0].idlst);
+							yyval.idlst->s=yyvsp[-1].strval;
+							yyval.idlst->next=yyvsp[0].idlst;
 						}
 							;}
     break;
 
   case 20:
 #line 347 "cfg.y"
-    { debug=(yyvsp[0].intval); ;}
+    { debug=yyvsp[0].intval; ;}
     break;
 
   case 21:
@@ -2111,7 +2077,7 @@ yyreduce:
 
   case 22:
 #line 349 "cfg.y"
-    { dont_fork= ! (yyvsp[0].intval); ;}
+    { dont_fork= ! yyvsp[0].intval; ;}
     break;
 
   case 23:
@@ -2121,7 +2087,7 @@ yyreduce:
 
   case 24:
 #line 351 "cfg.y"
-    { if (!config_check) log_stderr=(yyvsp[0].intval); ;}
+    { if (!config_check) log_stderr=yyvsp[0].intval; ;}
     break;
 
   case 25:
@@ -2132,7 +2098,7 @@ yyreduce:
   case 26:
 #line 353 "cfg.y"
     {
-					if ( (i_tmp=str2facility((yyvsp[0].strval)))==-1)
+					if ( (i_tmp=str2facility(yyvsp[0].strval))==-1)
 						yyerror("bad facility (see syslog(3) man page)");
 					if (!config_check)
 						log_facility=i_tmp;
@@ -2146,7 +2112,7 @@ yyreduce:
 
   case 28:
 #line 360 "cfg.y"
-    { received_dns|= ((yyvsp[0].intval))?DO_DNS:0; ;}
+    { received_dns|= (yyvsp[0].intval)?DO_DNS:0; ;}
     break;
 
   case 29:
@@ -2156,7 +2122,7 @@ yyreduce:
 
   case 30:
 #line 362 "cfg.y"
-    { received_dns|= ((yyvsp[0].intval))?DO_REV_DNS:0; ;}
+    { received_dns|= (yyvsp[0].intval)?DO_REV_DNS:0; ;}
     break;
 
   case 31:
@@ -2166,7 +2132,7 @@ yyreduce:
 
   case 32:
 #line 364 "cfg.y"
-    { port_no=(yyvsp[0].intval); 
+    { port_no=yyvsp[0].intval; 
 								if (sock_no>0) 
 									sock_info[sock_no-1].port_no=port_no;
 							  ;}
@@ -2176,14 +2142,14 @@ yyreduce:
 #line 368 "cfg.y"
     {
 					#ifdef STATS
-							stat_file=(yyvsp[0].strval);
+							stat_file=yyvsp[0].strval;
 					#endif
 							;}
     break;
 
   case 34:
 #line 373 "cfg.y"
-    { maxbuffer=(yyvsp[0].intval); ;}
+    { maxbuffer=yyvsp[0].intval; ;}
     break;
 
   case 35:
@@ -2198,7 +2164,7 @@ yyreduce:
 
   case 37:
 #line 376 "cfg.y"
-    { children_no=(yyvsp[0].intval); ;}
+    { children_no=yyvsp[0].intval; ;}
     break;
 
   case 38:
@@ -2208,7 +2174,7 @@ yyreduce:
 
   case 39:
 #line 378 "cfg.y"
-    { check_via=(yyvsp[0].intval); ;}
+    { check_via=yyvsp[0].intval; ;}
     break;
 
   case 40:
@@ -2218,7 +2184,7 @@ yyreduce:
 
   case 41:
 #line 380 "cfg.y"
-    { syn_branch=(yyvsp[0].intval); ;}
+    { syn_branch=yyvsp[0].intval; ;}
     break;
 
   case 42:
@@ -2228,7 +2194,7 @@ yyreduce:
 
   case 43:
 #line 382 "cfg.y"
-    { memlog=(yyvsp[0].intval); ;}
+    { memlog=yyvsp[0].intval; ;}
     break;
 
   case 44:
@@ -2238,7 +2204,7 @@ yyreduce:
 
   case 45:
 #line 384 "cfg.y"
-    { sip_warning=(yyvsp[0].intval); ;}
+    { sip_warning=yyvsp[0].intval; ;}
     break;
 
   case 46:
@@ -2248,7 +2214,7 @@ yyreduce:
 
   case 47:
 #line 386 "cfg.y"
-    { fifo=(yyvsp[0].strval); ;}
+    { fifo=yyvsp[0].strval; ;}
     break;
 
   case 48:
@@ -2258,7 +2224,7 @@ yyreduce:
 
   case 49:
 #line 388 "cfg.y"
-    { fifo_mode=(yyvsp[0].intval); ;}
+    { fifo_mode=yyvsp[0].intval; ;}
     break;
 
   case 50:
@@ -2268,12 +2234,12 @@ yyreduce:
 
   case 51:
 #line 390 "cfg.y"
-    { user=(yyvsp[0].strval); ;}
+    { user=yyvsp[0].strval; ;}
     break;
 
   case 52:
 #line 391 "cfg.y"
-    { user=(yyvsp[0].strval); ;}
+    { user=yyvsp[0].strval; ;}
     break;
 
   case 53:
@@ -2283,12 +2249,12 @@ yyreduce:
 
   case 54:
 #line 393 "cfg.y"
-    { group=(yyvsp[0].strval); ;}
+    { group=yyvsp[0].strval; ;}
     break;
 
   case 55:
 #line 394 "cfg.y"
-    { group=(yyvsp[0].strval); ;}
+    { group=yyvsp[0].strval; ;}
     break;
 
   case 56:
@@ -2298,12 +2264,12 @@ yyreduce:
 
   case 57:
 #line 396 "cfg.y"
-    { chroot_dir=(yyvsp[0].strval); ;}
+    { chroot_dir=yyvsp[0].strval; ;}
     break;
 
   case 58:
 #line 397 "cfg.y"
-    { chroot_dir=(yyvsp[0].strval); ;}
+    { chroot_dir=yyvsp[0].strval; ;}
     break;
 
   case 59:
@@ -2313,12 +2279,12 @@ yyreduce:
 
   case 60:
 #line 399 "cfg.y"
-    { working_dir=(yyvsp[0].strval); ;}
+    { working_dir=yyvsp[0].strval; ;}
     break;
 
   case 61:
 #line 400 "cfg.y"
-    { working_dir=(yyvsp[0].strval); ;}
+    { working_dir=yyvsp[0].strval; ;}
     break;
 
   case 62:
@@ -2328,7 +2294,7 @@ yyreduce:
 
   case 63:
 #line 402 "cfg.y"
-    { mhomed=(yyvsp[0].intval); ;}
+    { mhomed=yyvsp[0].intval; ;}
     break;
 
   case 64:
@@ -2340,7 +2306,7 @@ yyreduce:
 #line 404 "cfg.y"
     {
 									#ifdef USE_TCP
-										tcp_disable=(yyvsp[0].intval);
+										tcp_disable=yyvsp[0].intval;
 									#else
 										warn("tcp support not compiled in");
 									#endif
@@ -2356,7 +2322,7 @@ yyreduce:
 #line 412 "cfg.y"
     {
 									#ifdef USE_TCP
-										tcp_children_no=(yyvsp[0].intval);
+										tcp_children_no=yyvsp[0].intval;
 									#else
 										warn("tcp support not compiled in");
 									#endif
@@ -2372,7 +2338,7 @@ yyreduce:
 #line 420 "cfg.y"
     {
 									#ifdef USE_TCP
-										tcp_connect_timeout=(yyvsp[0].intval);
+										tcp_connect_timeout=yyvsp[0].intval;
 									#else
 										warn("tcp support not compiled in");
 									#endif
@@ -2388,7 +2354,7 @@ yyreduce:
 #line 428 "cfg.y"
     {
 									#ifdef USE_TCP
-										tcp_send_timeout=(yyvsp[0].intval);
+										tcp_send_timeout=yyvsp[0].intval;
 									#else
 										warn("tcp support not compiled in");
 									#endif
@@ -2404,7 +2370,7 @@ yyreduce:
 #line 436 "cfg.y"
     {
 									#ifdef USE_TLS
-										tls_disable=(yyvsp[0].intval);
+										tls_disable=yyvsp[0].intval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2420,7 +2386,7 @@ yyreduce:
 #line 444 "cfg.y"
     { 
 									#ifdef USE_TLS
-										tls_log=(yyvsp[0].intval);
+										tls_log=yyvsp[0].intval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2436,7 +2402,7 @@ yyreduce:
 #line 452 "cfg.y"
     {
 									#ifdef USE_TLS
-										tls_port_no=(yyvsp[0].intval);
+										tls_port_no=yyvsp[0].intval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2508,7 +2474,7 @@ yyreduce:
 #line 497 "cfg.y"
     {
 									#ifdef USE_TLS
-										tls_verify_cert=(yyvsp[0].intval);
+										tls_verify_cert=yyvsp[0].intval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2524,7 +2490,7 @@ yyreduce:
 #line 505 "cfg.y"
     {
 									#ifdef USE_TLS
-										tls_require_cert=(yyvsp[0].intval);
+										tls_require_cert=yyvsp[0].intval;
 									#else
 										warn( "tls support not compiled in");
 									#endif
@@ -2541,7 +2507,7 @@ yyreduce:
 #line 514 "cfg.y"
     { 
 									#ifdef USE_TLS
-											tls_cert_file=(yyvsp[0].strval);
+											tls_cert_file=yyvsp[0].strval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2557,7 +2523,7 @@ yyreduce:
 #line 522 "cfg.y"
     { 
 									#ifdef USE_TLS
-											tls_pkey_file=(yyvsp[0].strval);
+											tls_pkey_file=yyvsp[0].strval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2573,7 +2539,7 @@ yyreduce:
 #line 530 "cfg.y"
     { 
 									#ifdef USE_TLS
-											tls_ca_file=(yyvsp[0].strval);
+											tls_ca_file=yyvsp[0].strval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2589,7 +2555,7 @@ yyreduce:
 #line 538 "cfg.y"
     {
 									#ifdef USE_TLS
-										tls_handshake_timeout=(yyvsp[0].intval);
+										tls_handshake_timeout=yyvsp[0].intval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2605,7 +2571,7 @@ yyreduce:
 #line 546 "cfg.y"
     {
 									#ifdef USE_TLS
-										tls_send_timeout=(yyvsp[0].intval);
+										tls_send_timeout=yyvsp[0].intval;
 									#else
 										warn("tls support not compiled in");
 									#endif
@@ -2619,7 +2585,7 @@ yyreduce:
 
   case 98:
 #line 554 "cfg.y"
-    { server_signature=(yyvsp[0].intval); ;}
+    { server_signature=yyvsp[0].intval; ;}
     break;
 
   case 99:
@@ -2629,7 +2595,7 @@ yyreduce:
 
   case 100:
 #line 556 "cfg.y"
-    { reply_to_via=(yyvsp[0].intval); ;}
+    { reply_to_via=yyvsp[0].intval; ;}
     break;
 
   case 101:
@@ -2640,7 +2606,7 @@ yyreduce:
   case 102:
 #line 558 "cfg.y"
     {
-							for(lst_tmp=(yyvsp[0].idlst); lst_tmp; lst_tmp=lst_tmp->next){
+							for(lst_tmp=yyvsp[0].idlst; lst_tmp; lst_tmp=lst_tmp->next){
 								if (sock_no < MAX_LISTEN){
 									sock_info[sock_no].name.s=(char*)
 											pkg_malloc(strlen(lst_tmp->s)+1);
@@ -2676,7 +2642,7 @@ yyreduce:
   case 104:
 #line 586 "cfg.y"
     { 
-							for(lst_tmp=(yyvsp[0].idlst); lst_tmp; lst_tmp=lst_tmp->next)
+							for(lst_tmp=yyvsp[0].idlst; lst_tmp; lst_tmp=lst_tmp->next)
 								add_alias(lst_tmp->s, strlen(lst_tmp->s), 0);
 							  ;}
     break;
@@ -2689,8 +2655,8 @@ yyreduce:
   case 106:
 #line 591 "cfg.y"
     {
-								default_global_address.s=(yyvsp[0].strval);
-								default_global_address.len=strlen((yyvsp[0].strval));
+								default_global_address.s=yyvsp[0].strval;
+								default_global_address.len=strlen(yyvsp[0].strval);
 								;}
     break;
 
@@ -2703,7 +2669,7 @@ yyreduce:
   case 108:
 #line 597 "cfg.y"
     {
-								tmp=int2str((yyvsp[0].intval), &i_tmp);
+								tmp=int2str(yyvsp[0].intval, &i_tmp);
 								if ((default_global_port.s=pkg_malloc(i_tmp))
 										==0){
 										LOG(L_CRIT, "ERROR: cfg. parser:"
@@ -2730,8 +2696,8 @@ yyreduce:
 
   case 111:
 #line 615 "cfg.y"
-    { DBG("loading module %s\n", (yyvsp[0].strval));
-		  						  if (load_module((yyvsp[0].strval))!=0){
+    { DBG("loading module %s\n", yyvsp[0].strval);
+		  						  if (load_module(yyvsp[0].strval)!=0){
 								  		yyerror("failed to load module");
 								  }
 								;}
@@ -2745,7 +2711,7 @@ yyreduce:
   case 113:
 #line 621 "cfg.y"
     {
-			 if (set_mod_param_regex((yyvsp[-5].strval), (yyvsp[-3].strval), STR_PARAM, (yyvsp[-1].strval)) != 0) {
+			 if (set_mod_param_regex(yyvsp[-5].strval, yyvsp[-3].strval, STR_PARAM, yyvsp[-1].strval) != 0) {
 				 yyerror("Can't set module parameter");
 			 }
 		   ;}
@@ -2754,7 +2720,7 @@ yyreduce:
   case 114:
 #line 626 "cfg.y"
     {
-			 if (set_mod_param_regex((yyvsp[-5].strval), (yyvsp[-3].strval), INT_PARAM, (void*)(yyvsp[-1].intval)) != 0) {
+			 if (set_mod_param_regex(yyvsp[-5].strval, yyvsp[-3].strval, INT_PARAM, (void*)yyvsp[-1].intval) != 0) {
 				 yyerror("Can't set module parameter");
 			 }
 		   ;}
@@ -2767,41 +2733,41 @@ yyreduce:
 
   case 116:
 #line 635 "cfg.y"
-    { (yyval.ipaddr)=(yyvsp[0].ipaddr); ;}
+    { yyval.ipaddr=yyvsp[0].ipaddr; ;}
     break;
 
   case 117:
 #line 636 "cfg.y"
-    { (yyval.ipaddr)=(yyvsp[0].ipaddr); ;}
+    { yyval.ipaddr=yyvsp[0].ipaddr; ;}
     break;
 
   case 118:
 #line 639 "cfg.y"
     { 
-											(yyval.ipaddr)=pkg_malloc(
+											yyval.ipaddr=pkg_malloc(
 													sizeof(struct ip_addr));
-											if ((yyval.ipaddr)==0){
+											if (yyval.ipaddr==0){
 												LOG(L_CRIT, "ERROR: cfg. "
 													"parser: out of memory.\n"
 													);
 											}else{
-												memset((yyval.ipaddr), 0, 
+												memset(yyval.ipaddr, 0, 
 													sizeof(struct ip_addr));
-												(yyval.ipaddr)->af=AF_INET;
-												(yyval.ipaddr)->len=4;
-												if (((yyvsp[-6].intval)>255) || ((yyvsp[-6].intval)<0) ||
-													((yyvsp[-4].intval)>255) || ((yyvsp[-4].intval)<0) ||
-													((yyvsp[-2].intval)>255) || ((yyvsp[-2].intval)<0) ||
-													((yyvsp[0].intval)>255) || ((yyvsp[0].intval)<0)){
+												yyval.ipaddr->af=AF_INET;
+												yyval.ipaddr->len=4;
+												if ((yyvsp[-6].intval>255) || (yyvsp[-6].intval<0) ||
+													(yyvsp[-4].intval>255) || (yyvsp[-4].intval<0) ||
+													(yyvsp[-2].intval>255) || (yyvsp[-2].intval<0) ||
+													(yyvsp[0].intval>255) || (yyvsp[0].intval<0)){
 													yyerror("invalid ipv4"
 															"address");
-													(yyval.ipaddr)->u.addr32[0]=0;
+													yyval.ipaddr->u.addr32[0]=0;
 													/* $$=0; */
 												}else{
-													(yyval.ipaddr)->u.addr[0]=(yyvsp[-6].intval);
-													(yyval.ipaddr)->u.addr[1]=(yyvsp[-4].intval);
-													(yyval.ipaddr)->u.addr[2]=(yyvsp[-2].intval);
-													(yyval.ipaddr)->u.addr[3]=(yyvsp[0].intval);
+													yyval.ipaddr->u.addr[0]=yyvsp[-6].intval;
+													yyval.ipaddr->u.addr[1]=yyvsp[-4].intval;
+													yyval.ipaddr->u.addr[2]=yyvsp[-2].intval;
+													yyval.ipaddr->u.addr[3]=yyvsp[0].intval;
 													/*
 													$$=htonl( ($1<<24)|
 													($3<<16)| ($5<<8)|$7 );
@@ -2814,15 +2780,15 @@ yyreduce:
   case 119:
 #line 673 "cfg.y"
     {
-					(yyval.ipaddr)=pkg_malloc(sizeof(struct ip_addr));
-					if ((yyval.ipaddr)==0){
+					yyval.ipaddr=pkg_malloc(sizeof(struct ip_addr));
+					if (yyval.ipaddr==0){
 						LOG(L_CRIT, "ERROR: cfg. parser: out of memory.\n");
 					}else{
-						memset((yyval.ipaddr), 0, sizeof(struct ip_addr));
-						(yyval.ipaddr)->af=AF_INET6;
-						(yyval.ipaddr)->len=16;
+						memset(yyval.ipaddr, 0, sizeof(struct ip_addr));
+						yyval.ipaddr->af=AF_INET6;
+						yyval.ipaddr->len=16;
 					#ifdef USE_IPV6
-						if (inet_pton(AF_INET6, (yyvsp[0].strval), (yyval.ipaddr)->u.addr)<=0){
+						if (inet_pton(AF_INET6, yyvsp[0].strval, yyval.ipaddr->u.addr)<=0){
 							yyerror("bad ipv6 address");
 						}
 					#else
@@ -2835,14 +2801,14 @@ yyreduce:
 
   case 120:
 #line 694 "cfg.y"
-    { push((yyvsp[-1].action), &rlist[DEFAULT_RT]); ;}
+    { push(yyvsp[-1].action, &rlist[DEFAULT_RT]); ;}
     break;
 
   case 121:
 #line 696 "cfg.y"
     { 
-										if (((yyvsp[-4].intval)<RT_NO) && ((yyvsp[-4].intval)>=0)){
-											push((yyvsp[-1].action), &rlist[(yyvsp[-4].intval)]);
+										if ((yyvsp[-4].intval<RT_NO) && (yyvsp[-4].intval>=0)){
+											push(yyvsp[-1].action, &rlist[yyvsp[-4].intval]);
 										}else{
 											yyerror("invalid routing"
 													"table number");
@@ -2858,8 +2824,8 @@ yyreduce:
   case 123:
 #line 707 "cfg.y"
     {
-										if (((yyvsp[-4].intval)<FAILURE_RT_NO)&&((yyvsp[-4].intval)>=1)){
-											push((yyvsp[-1].action), &failure_rlist[(yyvsp[-4].intval)]);
+										if ((yyvsp[-4].intval<FAILURE_RT_NO)&&(yyvsp[-4].intval>=1)){
+											push(yyvsp[-1].action, &failure_rlist[yyvsp[-4].intval]);
 										} else {
 											yyerror("invalid reply routing"
 												"table number");
@@ -2875,8 +2841,8 @@ yyreduce:
   case 125:
 #line 718 "cfg.y"
     {
-										if (((yyvsp[-4].intval)<ONREPLY_RT_NO)&&((yyvsp[-4].intval)>=1)){
-											push((yyvsp[-1].action), &onreply_rlist[(yyvsp[-4].intval)]);
+										if ((yyvsp[-4].intval<ONREPLY_RT_NO)&&(yyvsp[-4].intval>=1)){
+											push(yyvsp[-1].action, &onreply_rlist[yyvsp[-4].intval]);
 										} else {
 											yyerror("invalid reply routing"
 												"table number");
@@ -2891,377 +2857,377 @@ yyreduce:
 
   case 127:
 #line 748 "cfg.y"
-    { (yyval.expr)=mk_exp(AND_OP, (yyvsp[-2].expr), (yyvsp[0].expr)); ;}
+    { yyval.expr=mk_exp(AND_OP, yyvsp[-2].expr, yyvsp[0].expr); ;}
     break;
 
   case 128:
 #line 749 "cfg.y"
-    { (yyval.expr)=mk_exp(OR_OP, (yyvsp[-2].expr), (yyvsp[0].expr));  ;}
+    { yyval.expr=mk_exp(OR_OP, yyvsp[-2].expr, yyvsp[0].expr);  ;}
     break;
 
   case 129:
 #line 750 "cfg.y"
-    { (yyval.expr)=mk_exp(NOT_OP, (yyvsp[0].expr), 0);  ;}
+    { yyval.expr=mk_exp(NOT_OP, yyvsp[0].expr, 0);  ;}
     break;
 
   case 130:
 #line 751 "cfg.y"
-    { (yyval.expr)=(yyvsp[-1].expr); ;}
+    { yyval.expr=yyvsp[-1].expr; ;}
     break;
 
   case 131:
 #line 752 "cfg.y"
-    { (yyval.expr)=(yyvsp[0].expr); ;}
+    { yyval.expr=yyvsp[0].expr; ;}
     break;
 
   case 132:
 #line 755 "cfg.y"
-    {(yyval.intval)=EQUAL_OP; ;}
+    {yyval.intval=EQUAL_OP; ;}
     break;
 
   case 133:
 #line 756 "cfg.y"
-    {(yyval.intval)=DIFF_OP; ;}
+    {yyval.intval=DIFF_OP; ;}
     break;
 
   case 134:
 #line 759 "cfg.y"
-    {(yyval.intval)=(yyvsp[0].intval); ;}
+    {yyval.intval=yyvsp[0].intval; ;}
     break;
 
   case 135:
 #line 760 "cfg.y"
-    {(yyval.intval)=GT_OP; ;}
+    {yyval.intval=GT_OP; ;}
     break;
 
   case 136:
 #line 761 "cfg.y"
-    {(yyval.intval)=LT_OP; ;}
+    {yyval.intval=LT_OP; ;}
     break;
 
   case 137:
 #line 762 "cfg.y"
-    {(yyval.intval)=GTE_OP; ;}
+    {yyval.intval=GTE_OP; ;}
     break;
 
   case 138:
 #line 763 "cfg.y"
-    {(yyval.intval)=LTE_OP; ;}
+    {yyval.intval=LTE_OP; ;}
     break;
 
   case 139:
 #line 766 "cfg.y"
-    {(yyval.intval)=(yyvsp[0].intval); ;}
+    {yyval.intval=yyvsp[0].intval; ;}
     break;
 
   case 140:
 #line 767 "cfg.y"
-    {(yyval.intval)=MATCH_OP; ;}
+    {yyval.intval=MATCH_OP; ;}
     break;
 
   case 141:
 #line 770 "cfg.y"
-    {(yyval.expr)= mk_elem(	(yyvsp[-1].intval), STRING_ST, 
-													METHOD_O, (yyvsp[0].strval));
+    {yyval.expr= mk_elem(	yyvsp[-1].intval, STRING_ST, 
+													METHOD_O, yyvsp[0].strval);
 									;}
     break;
 
   case 142:
 #line 773 "cfg.y"
-    {(yyval.expr) = mk_elem(	(yyvsp[-1].intval), STRING_ST,
-											METHOD_O, (yyvsp[0].strval)); 
+    {yyval.expr = mk_elem(	yyvsp[-1].intval, STRING_ST,
+											METHOD_O, yyvsp[0].strval); 
 				 			;}
     break;
 
   case 143:
 #line 776 "cfg.y"
-    { (yyval.expr)=0; yyerror("string expected"); ;}
+    { yyval.expr=0; yyerror("string expected"); ;}
     break;
 
   case 144:
 #line 777 "cfg.y"
-    { (yyval.expr)=0; yyerror("invalid operator,"
+    { yyval.expr=0; yyerror("invalid operator,"
 										"== , !=, or =~ expected");
 						;}
     break;
 
   case 145:
 #line 780 "cfg.y"
-    {(yyval.expr) = mk_elem(	(yyvsp[-1].intval), STRING_ST,
-												URI_O, (yyvsp[0].strval)); 
+    {yyval.expr = mk_elem(	yyvsp[-1].intval, STRING_ST,
+												URI_O, yyvsp[0].strval); 
 				 				;}
     break;
 
   case 146:
 #line 783 "cfg.y"
-    {(yyval.expr) = mk_elem(	(yyvsp[-1].intval), STRING_ST,
-											URI_O, (yyvsp[0].strval)); 
+    {yyval.expr = mk_elem(	yyvsp[-1].intval, STRING_ST,
+											URI_O, yyvsp[0].strval); 
 				 			;}
     break;
 
   case 147:
 #line 786 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), MYSELF_ST,
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, MYSELF_ST,
 												URI_O, 0);
 								;}
     break;
 
   case 148:
 #line 789 "cfg.y"
-    { (yyval.expr)=0; yyerror("string or MYSELF expected"); ;}
+    { yyval.expr=0; yyerror("string or MYSELF expected"); ;}
     break;
 
   case 149:
 #line 790 "cfg.y"
-    { (yyval.expr)=0; yyerror("invalid operator,"
+    { yyval.expr=0; yyerror("invalid operator,"
 									" == , != or =~ expected");
 					;}
     break;
 
   case 150:
 #line 793 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NUMBER_ST,
-												SRCPORT_O, (void *) (yyvsp[0].intval) ); ;}
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NUMBER_ST,
+												SRCPORT_O, (void *) yyvsp[0].intval ); ;}
     break;
 
   case 151:
 #line 795 "cfg.y"
-    { (yyval.expr)=0; yyerror("number expected"); ;}
+    { yyval.expr=0; yyerror("number expected"); ;}
     break;
 
   case 152:
 #line 796 "cfg.y"
-    { (yyval.expr)=0; yyerror("==, !=, <,>, >= or <=  expected"); ;}
+    { yyval.expr=0; yyerror("==, !=, <,>, >= or <=  expected"); ;}
     break;
 
   case 153:
 #line 797 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NUMBER_ST,
-												DSTPORT_O, (void *) (yyvsp[0].intval) ); ;}
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NUMBER_ST,
+												DSTPORT_O, (void *) yyvsp[0].intval ); ;}
     break;
 
   case 154:
 #line 799 "cfg.y"
-    { (yyval.expr)=0; yyerror("number expected"); ;}
+    { yyval.expr=0; yyerror("number expected"); ;}
     break;
 
   case 155:
 #line 800 "cfg.y"
-    { (yyval.expr)=0; yyerror("==, !=, <,>, >= or <=  expected"); ;}
+    { yyval.expr=0; yyerror("==, !=, <,>, >= or <=  expected"); ;}
     break;
 
   case 156:
 #line 801 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NUMBER_ST,
-												PROTO_O, (void *) (yyvsp[0].intval) ); ;}
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NUMBER_ST,
+												PROTO_O, (void *) yyvsp[0].intval ); ;}
     break;
 
   case 157:
 #line 803 "cfg.y"
-    { (yyval.expr)=0; yyerror("number expected"); ;}
+    { yyval.expr=0; yyerror("number expected"); ;}
     break;
 
   case 158:
 #line 804 "cfg.y"
-    { (yyval.expr)=0; yyerror("equal/!= operator expected"); ;}
+    { yyval.expr=0; yyerror("equal/!= operator expected"); ;}
     break;
 
   case 159:
 #line 805 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NUMBER_ST,
-												AF_O, (void *) (yyvsp[0].intval) ); ;}
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NUMBER_ST,
+												AF_O, (void *) yyvsp[0].intval ); ;}
     break;
 
   case 160:
 #line 807 "cfg.y"
-    { (yyval.expr)=0; yyerror("number expected"); ;}
+    { yyval.expr=0; yyerror("number expected"); ;}
     break;
 
   case 161:
 #line 808 "cfg.y"
-    { (yyval.expr)=0; yyerror("equal/!= operator expected"); ;}
+    { yyval.expr=0; yyerror("equal/!= operator expected"); ;}
     break;
 
   case 162:
 #line 809 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NUMBER_ST,
-												MSGLEN_O, (void *) (yyvsp[0].intval) ); ;}
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NUMBER_ST,
+												MSGLEN_O, (void *) yyvsp[0].intval ); ;}
     break;
 
   case 163:
 #line 811 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NUMBER_ST,
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NUMBER_ST,
 												MSGLEN_O, (void *) BUF_SIZE); ;}
     break;
 
   case 164:
 #line 813 "cfg.y"
-    { (yyval.expr)=0; yyerror("number expected"); ;}
+    { yyval.expr=0; yyerror("number expected"); ;}
     break;
 
   case 165:
 #line 814 "cfg.y"
-    { (yyval.expr)=0; yyerror("equal/!= operator expected"); ;}
+    { yyval.expr=0; yyerror("equal/!= operator expected"); ;}
     break;
 
   case 166:
 #line 815 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NET_ST,
-												SRCIP_O, (yyvsp[0].ipnet));
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NET_ST,
+												SRCIP_O, yyvsp[0].ipnet);
 								;}
     break;
 
   case 167:
 #line 818 "cfg.y"
-    {	s_tmp.s=(yyvsp[0].strval);
-									s_tmp.len=strlen((yyvsp[0].strval));
+    {	s_tmp.s=yyvsp[0].strval;
+									s_tmp.len=strlen(yyvsp[0].strval);
 									ip_tmp=str2ip(&s_tmp);
 									if (ip_tmp==0)
 										ip_tmp=str2ip6(&s_tmp);
 									if (ip_tmp){
-										(yyval.expr)=mk_elem(	(yyvsp[-1].intval), NET_ST, SRCIP_O,
+										yyval.expr=mk_elem(	yyvsp[-1].intval, NET_ST, SRCIP_O,
 												mk_net_bitlen(ip_tmp, 
 														ip_tmp->len*8) );
 									}else{
-										(yyval.expr)=mk_elem(	(yyvsp[-1].intval), STRING_ST,
-												SRCIP_O, (yyvsp[0].strval));
+										yyval.expr=mk_elem(	yyvsp[-1].intval, STRING_ST,
+												SRCIP_O, yyvsp[0].strval);
 									}
 								;}
     break;
 
   case 168:
 #line 832 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), STRING_ST,
-												SRCIP_O, (yyvsp[0].strval));
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, STRING_ST,
+												SRCIP_O, yyvsp[0].strval);
 								;}
     break;
 
   case 169:
 #line 835 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), MYSELF_ST,
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, MYSELF_ST,
 												SRCIP_O, 0);
 								;}
     break;
 
   case 170:
 #line 838 "cfg.y"
-    { (yyval.expr)=0; yyerror( "ip address or hostname"
+    { yyval.expr=0; yyerror( "ip address or hostname"
 						 "expected" ); ;}
     break;
 
   case 171:
 #line 840 "cfg.y"
-    { (yyval.expr)=0; 
+    { yyval.expr=0; 
 						 yyerror("invalid operator, ==, != or =~ expected");;}
     break;
 
   case 172:
 #line 842 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), NET_ST,
-												DSTIP_O, (yyvsp[0].ipnet));
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, NET_ST,
+												DSTIP_O, yyvsp[0].ipnet);
 								;}
     break;
 
   case 173:
 #line 845 "cfg.y"
-    {	s_tmp.s=(yyvsp[0].strval);
-									s_tmp.len=strlen((yyvsp[0].strval));
+    {	s_tmp.s=yyvsp[0].strval;
+									s_tmp.len=strlen(yyvsp[0].strval);
 									ip_tmp=str2ip(&s_tmp);
 									if (ip_tmp==0)
 										ip_tmp=str2ip6(&s_tmp);
 									if (ip_tmp){
-										(yyval.expr)=mk_elem(	(yyvsp[-1].intval), NET_ST, DSTIP_O,
+										yyval.expr=mk_elem(	yyvsp[-1].intval, NET_ST, DSTIP_O,
 												mk_net_bitlen(ip_tmp, 
 														ip_tmp->len*8) );
 									}else{
-										(yyval.expr)=mk_elem(	(yyvsp[-1].intval), STRING_ST,
-												DSTIP_O, (yyvsp[0].strval));
+										yyval.expr=mk_elem(	yyvsp[-1].intval, STRING_ST,
+												DSTIP_O, yyvsp[0].strval);
 									}
 								;}
     break;
 
   case 174:
 #line 859 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), STRING_ST,
-												DSTIP_O, (yyvsp[0].strval));
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, STRING_ST,
+												DSTIP_O, yyvsp[0].strval);
 								;}
     break;
 
   case 175:
 #line 862 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), MYSELF_ST,
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, MYSELF_ST,
 												DSTIP_O, 0);
 								;}
     break;
 
   case 176:
 #line 865 "cfg.y"
-    { (yyval.expr)=0; yyerror( "ip address or hostname"
+    { yyval.expr=0; yyerror( "ip address or hostname"
 						 			"expected" ); ;}
     break;
 
   case 177:
 #line 867 "cfg.y"
-    { (yyval.expr)=0; 
+    { yyval.expr=0; 
 						yyerror("invalid operator, ==, != or =~ expected");;}
     break;
 
   case 178:
 #line 869 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), MYSELF_ST,
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, MYSELF_ST,
 												URI_O, 0);
 								;}
     break;
 
   case 179:
 #line 872 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), MYSELF_ST,
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, MYSELF_ST,
 												SRCIP_O, 0);
 								;}
     break;
 
   case 180:
 #line 875 "cfg.y"
-    { (yyval.expr)=mk_elem(	(yyvsp[-1].intval), MYSELF_ST,
+    { yyval.expr=mk_elem(	yyvsp[-1].intval, MYSELF_ST,
 												DSTIP_O, 0);
 								;}
     break;
 
   case 181:
 #line 878 "cfg.y"
-    {	(yyval.expr)=0; 
+    {	yyval.expr=0; 
 									yyerror(" URI, SRCIP or DSTIP expected"); ;}
     break;
 
   case 182:
 #line 880 "cfg.y"
-    { (yyval.expr)=0; 
+    { yyval.expr=0; 
 							yyerror ("invalid operator, == or != expected");
 						;}
     break;
 
   case 183:
 #line 883 "cfg.y"
-    { (yyval.expr)=mk_elem( NO_OP, ACTIONS_ST, ACTION_O, (yyvsp[0].action) ); ;}
+    { yyval.expr=mk_elem( NO_OP, ACTIONS_ST, ACTION_O, yyvsp[0].action ); ;}
     break;
 
   case 184:
 #line 884 "cfg.y"
-    {(yyval.expr)=mk_elem( NO_OP, NUMBER_ST, NUMBER_O, (void*)(yyvsp[0].intval) ); ;}
+    {yyval.expr=mk_elem( NO_OP, NUMBER_ST, NUMBER_O, (void*)yyvsp[0].intval ); ;}
     break;
 
   case 185:
 #line 887 "cfg.y"
-    { (yyval.ipnet)=mk_net((yyvsp[-2].ipaddr), (yyvsp[0].ipaddr)); ;}
+    { yyval.ipnet=mk_net(yyvsp[-2].ipaddr, yyvsp[0].ipaddr); ;}
     break;
 
   case 186:
 #line 888 "cfg.y"
-    {	if (((yyvsp[0].intval)<0) || ((yyvsp[0].intval)>(yyvsp[-2].ipaddr)->len*8)){
+    {	if ((yyvsp[0].intval<0) || (yyvsp[0].intval>yyvsp[-2].ipaddr->len*8)){
 								yyerror("invalid bit number in netmask");
-								(yyval.ipnet)=0;
+								yyval.ipnet=0;
 							}else{
-								(yyval.ipnet)=mk_net_bitlen((yyvsp[-2].ipaddr), (yyvsp[0].intval));
+								yyval.ipnet=mk_net_bitlen(yyvsp[-2].ipaddr, yyvsp[0].intval);
 							/*
 								$$=mk_net($1, 
 										htonl( ($3)?~( (1<<(32-$3))-1 ):0 ) );
@@ -3272,180 +3238,180 @@ yyreduce:
 
   case 187:
 #line 899 "cfg.y"
-    { (yyval.ipnet)=mk_net_bitlen((yyvsp[0].ipaddr), (yyvsp[0].ipaddr)->len*8); ;}
+    { yyval.ipnet=mk_net_bitlen(yyvsp[0].ipaddr, yyvsp[0].ipaddr->len*8); ;}
     break;
 
   case 188:
 #line 900 "cfg.y"
-    { (yyval.ipnet)=0;
+    { yyval.ipnet=0;
 						 yyerror("netmask (eg:255.0.0.0 or 8) expected");
 						;}
     break;
 
   case 189:
 #line 905 "cfg.y"
-    { (yyval.strval)=(yyvsp[0].strval); ;}
+    { yyval.strval=yyvsp[0].strval; ;}
     break;
 
   case 190:
 #line 906 "cfg.y"
-    { (yyval.strval)=(char*)pkg_malloc(strlen((yyvsp[-2].strval))+1+strlen((yyvsp[0].strval))+1);
-						  if ((yyval.strval)==0){
+    { yyval.strval=(char*)pkg_malloc(strlen(yyvsp[-2].strval)+1+strlen(yyvsp[0].strval)+1);
+						  if (yyval.strval==0){
 						  	LOG(L_CRIT, "ERROR: cfg. parser: memory allocation"
 										" failure while parsing host\n");
 						  }else{
-						  	memcpy((yyval.strval), (yyvsp[-2].strval), strlen((yyvsp[-2].strval)));
-						  	(yyval.strval)[strlen((yyvsp[-2].strval))]='.';
-						  	memcpy((yyval.strval)+strlen((yyvsp[-2].strval))+1, (yyvsp[0].strval), strlen((yyvsp[0].strval)));
-						  	(yyval.strval)[strlen((yyvsp[-2].strval))+1+strlen((yyvsp[0].strval))]=0;
+						  	memcpy(yyval.strval, yyvsp[-2].strval, strlen(yyvsp[-2].strval));
+						  	yyval.strval[strlen(yyvsp[-2].strval)]='.';
+						  	memcpy(yyval.strval+strlen(yyvsp[-2].strval)+1, yyvsp[0].strval, strlen(yyvsp[0].strval));
+						  	yyval.strval[strlen(yyvsp[-2].strval)+1+strlen(yyvsp[0].strval)]=0;
 						  }
-						  pkg_free((yyvsp[-2].strval)); pkg_free((yyvsp[0].strval));
+						  pkg_free(yyvsp[-2].strval); pkg_free(yyvsp[0].strval);
 						;}
     break;
 
   case 191:
 #line 918 "cfg.y"
-    { (yyval.strval)=0; pkg_free((yyvsp[-2].strval)); yyerror("invalid hostname"); ;}
+    { yyval.strval=0; pkg_free(yyvsp[-2].strval); yyerror("invalid hostname"); ;}
     break;
 
   case 192:
 #line 922 "cfg.y"
-    { (yyval.action)=(yyvsp[0].action); ;}
+    { yyval.action=yyvsp[0].action; ;}
     break;
 
   case 193:
 #line 923 "cfg.y"
-    { (yyval.action)=(yyvsp[0].action); ;}
+    { yyval.action=yyvsp[0].action; ;}
     break;
 
   case 194:
 #line 924 "cfg.y"
-    { (yyval.action)=(yyvsp[-1].action); ;}
+    { yyval.action=yyvsp[-1].action; ;}
     break;
 
   case 195:
 #line 927 "cfg.y"
-    {(yyval.action)=append_action((yyvsp[-1].action), (yyvsp[0].action)); ;}
+    {yyval.action=append_action(yyvsp[-1].action, yyvsp[0].action); ;}
     break;
 
   case 196:
 #line 928 "cfg.y"
-    {(yyval.action)=(yyvsp[0].action);;}
+    {yyval.action=yyvsp[0].action;;}
     break;
 
   case 197:
 #line 929 "cfg.y"
-    { (yyval.action)=0; yyerror("bad command"); ;}
+    { yyval.action=0; yyerror("bad command"); ;}
     break;
 
   case 198:
 #line 932 "cfg.y"
-    {(yyval.action)=(yyvsp[-1].action);;}
+    {yyval.action=yyvsp[-1].action;;}
     break;
 
   case 199:
 #line 933 "cfg.y"
-    {(yyval.action)=(yyvsp[0].action);;}
+    {yyval.action=yyvsp[0].action;;}
     break;
 
   case 200:
 #line 934 "cfg.y"
-    {(yyval.action)=0;;}
+    {yyval.action=0;;}
     break;
 
   case 201:
 #line 935 "cfg.y"
-    { (yyval.action)=0; yyerror("bad command: missing ';'?"); ;}
+    { yyval.action=0; yyerror("bad command: missing ';'?"); ;}
     break;
 
   case 202:
 #line 938 "cfg.y"
-    { (yyval.action)=mk_action3( IF_T,
+    { yyval.action=mk_action3( IF_T,
 													 EXPR_ST,
 													 ACTIONS_ST,
 													 NOSUBTYPE,
-													 (yyvsp[-1].expr),
-													 (yyvsp[0].action),
+													 yyvsp[-1].expr,
+													 yyvsp[0].action,
 													 0);
 									;}
     break;
 
   case 203:
 #line 946 "cfg.y"
-    { (yyval.action)=mk_action3( IF_T,
+    { yyval.action=mk_action3( IF_T,
 													 EXPR_ST,
 													 ACTIONS_ST,
 													 ACTIONS_ST,
-													 (yyvsp[-3].expr),
-													 (yyvsp[-2].action),
-													 (yyvsp[0].action));
+													 yyvsp[-3].expr,
+													 yyvsp[-2].action,
+													 yyvsp[0].action);
 									;}
     break;
 
   case 204:
 #line 956 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_T,
+    { yyval.action=mk_action(	FORWARD_T,
 														STRING_ST,
 														NUMBER_ST,
-														(yyvsp[-1].strval),
+														yyvsp[-1].strval,
 														0);
 										;}
     break;
 
   case 205:
 #line 962 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_T,
+    { yyval.action=mk_action(	FORWARD_T,
 														STRING_ST,
 														NUMBER_ST,
-														(yyvsp[-1].strval),
+														yyvsp[-1].strval,
 														0);
 										;}
     break;
 
   case 206:
 #line 968 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_T,
+    { yyval.action=mk_action(	FORWARD_T,
 														IP_ST,
 														NUMBER_ST,
-														(void*)(yyvsp[-1].ipaddr),
+														(void*)yyvsp[-1].ipaddr,
 														0);
 										;}
     break;
 
   case 207:
 #line 974 "cfg.y"
-    { (yyval.action)=mk_action(FORWARD_T,
+    { yyval.action=mk_action(FORWARD_T,
 																 STRING_ST,
 																 NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 												 ;}
     break;
 
   case 208:
 #line 980 "cfg.y"
-    {(yyval.action)=mk_action(FORWARD_T,
+    {yyval.action=mk_action(FORWARD_T,
 																 STRING_ST,
 																 NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 													;}
     break;
 
   case 209:
 #line 986 "cfg.y"
-    { (yyval.action)=mk_action(FORWARD_T,
+    { yyval.action=mk_action(FORWARD_T,
 																 IP_ST,
 																 NUMBER_ST,
-																 (void*)(yyvsp[-3].ipaddr),
-																(void*)(yyvsp[-1].intval));
+																 (void*)yyvsp[-3].ipaddr,
+																(void*)yyvsp[-1].intval);
 												  ;}
     break;
 
   case 210:
 #line 992 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_T,
+													yyval.action=mk_action(FORWARD_T,
 																 URIHOST_ST,
 																 URIPORT_ST,
 																0,
@@ -3456,18 +3422,18 @@ yyreduce:
   case 211:
 #line 1001 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_T,
+													yyval.action=mk_action(FORWARD_T,
 																 URIHOST_ST,
 																 NUMBER_ST,
 																0,
-																(void*)(yyvsp[-1].intval));
+																(void*)yyvsp[-1].intval);
 													;}
     break;
 
   case 212:
 #line 1008 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_T,
+													yyval.action=mk_action(FORWARD_T,
 																 URIHOST_ST,
 																 NUMBER_ST,
 																0,
@@ -3477,82 +3443,82 @@ yyreduce:
 
   case 213:
 #line 1015 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 214:
 #line 1016 "cfg.y"
-    { (yyval.action)=0; yyerror("bad forward"
+    { yyval.action=0; yyerror("bad forward"
 										"argument"); ;}
     break;
 
   case 215:
 #line 1018 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_UDP_T,
+    { yyval.action=mk_action(	FORWARD_UDP_T,
 														STRING_ST,
 														NUMBER_ST,
-														(yyvsp[-1].strval),
+														yyvsp[-1].strval,
 														0);
 										;}
     break;
 
   case 216:
 #line 1024 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_UDP_T,
+    { yyval.action=mk_action(	FORWARD_UDP_T,
 														STRING_ST,
 														NUMBER_ST,
-														(yyvsp[-1].strval),
+														yyvsp[-1].strval,
 														0);
 										;}
     break;
 
   case 217:
 #line 1030 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_UDP_T,
+    { yyval.action=mk_action(	FORWARD_UDP_T,
 														IP_ST,
 														NUMBER_ST,
-														(void*)(yyvsp[-1].ipaddr),
+														(void*)yyvsp[-1].ipaddr,
 														0);
 										;}
     break;
 
   case 218:
 #line 1036 "cfg.y"
-    { (yyval.action)=mk_action(
+    { yyval.action=mk_action(
 																FORWARD_UDP_T,
 																 STRING_ST,
 																 NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 												 ;}
     break;
 
   case 219:
 #line 1043 "cfg.y"
-    {(yyval.action)=mk_action(
+    {yyval.action=mk_action(
 																FORWARD_UDP_T,
 																 STRING_ST,
 																 NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 													;}
     break;
 
   case 220:
 #line 1050 "cfg.y"
-    { (yyval.action)=mk_action(
+    { yyval.action=mk_action(
 																FORWARD_UDP_T,
 																 IP_ST,
 																 NUMBER_ST,
-																 (void*)(yyvsp[-3].ipaddr),
-																(void*)(yyvsp[-1].intval));
+																 (void*)yyvsp[-3].ipaddr,
+																(void*)yyvsp[-1].intval);
 												  ;}
     break;
 
   case 221:
 #line 1057 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_UDP_T,
+													yyval.action=mk_action(FORWARD_UDP_T,
 																 URIHOST_ST,
 																 URIPORT_ST,
 																0,
@@ -3563,18 +3529,18 @@ yyreduce:
   case 222:
 #line 1066 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_UDP_T,
+													yyval.action=mk_action(FORWARD_UDP_T,
 																 URIHOST_ST,
 																 NUMBER_ST,
 																0,
-																(void*)(yyvsp[-1].intval));
+																(void*)yyvsp[-1].intval);
 													;}
     break;
 
   case 223:
 #line 1073 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_UDP_T,
+													yyval.action=mk_action(FORWARD_UDP_T,
 																 URIHOST_ST,
 																 NUMBER_ST,
 																0,
@@ -3584,81 +3550,81 @@ yyreduce:
 
   case 224:
 #line 1080 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 225:
 #line 1081 "cfg.y"
-    { (yyval.action)=0; yyerror("bad forward_udp"
+    { yyval.action=0; yyerror("bad forward_udp"
 										"argument"); ;}
     break;
 
   case 226:
 #line 1083 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_TCP_T,
+    { yyval.action=mk_action(	FORWARD_TCP_T,
 														STRING_ST,
 														NUMBER_ST,
-														(yyvsp[-1].strval),
+														yyvsp[-1].strval,
 														0);
 										;}
     break;
 
   case 227:
 #line 1089 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_TCP_T,
+    { yyval.action=mk_action(	FORWARD_TCP_T,
 														STRING_ST,
 														NUMBER_ST,
-														(yyvsp[-1].strval),
+														yyvsp[-1].strval,
 														0);
 										;}
     break;
 
   case 228:
 #line 1095 "cfg.y"
-    { (yyval.action)=mk_action(	FORWARD_TCP_T,
+    { yyval.action=mk_action(	FORWARD_TCP_T,
 														IP_ST,
 														NUMBER_ST,
-														(void*)(yyvsp[-1].ipaddr),
+														(void*)yyvsp[-1].ipaddr,
 														0);
 										;}
     break;
 
   case 229:
 #line 1101 "cfg.y"
-    { (yyval.action)=mk_action(
+    { yyval.action=mk_action(
 																FORWARD_TCP_T,
 																 STRING_ST,
 																 NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 												 ;}
     break;
 
   case 230:
 #line 1108 "cfg.y"
-    {(yyval.action)=mk_action(
+    {yyval.action=mk_action(
 																FORWARD_TCP_T,
 																 STRING_ST,
 																 NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 													;}
     break;
 
   case 231:
 #line 1115 "cfg.y"
-    { (yyval.action)=mk_action(FORWARD_TCP_T,
+    { yyval.action=mk_action(FORWARD_TCP_T,
 																 IP_ST,
 																 NUMBER_ST,
-																 (void*)(yyvsp[-3].ipaddr),
-																(void*)(yyvsp[-1].intval));
+																 (void*)yyvsp[-3].ipaddr,
+																(void*)yyvsp[-1].intval);
 												  ;}
     break;
 
   case 232:
 #line 1121 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_TCP_T,
+													yyval.action=mk_action(FORWARD_TCP_T,
 																 URIHOST_ST,
 																 URIPORT_ST,
 																0,
@@ -3669,18 +3635,18 @@ yyreduce:
   case 233:
 #line 1130 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_TCP_T,
+													yyval.action=mk_action(FORWARD_TCP_T,
 																 URIHOST_ST,
 																 NUMBER_ST,
 																0,
-																(void*)(yyvsp[-1].intval));
+																(void*)yyvsp[-1].intval);
 													;}
     break;
 
   case 234:
 #line 1137 "cfg.y"
     {
-													(yyval.action)=mk_action(FORWARD_TCP_T,
+													yyval.action=mk_action(FORWARD_TCP_T,
 																 URIHOST_ST,
 																 NUMBER_ST,
 																0,
@@ -3690,12 +3656,12 @@ yyreduce:
 
   case 235:
 #line 1144 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 236:
 #line 1145 "cfg.y"
-    { (yyval.action)=0; yyerror("bad forward_tcp"
+    { yyval.action=0; yyerror("bad forward_tcp"
 										"argument"); ;}
     break;
 
@@ -3703,13 +3669,13 @@ yyreduce:
 #line 1147 "cfg.y"
     {
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 														STRING_ST,
 														NUMBER_ST,
-														(yyvsp[-1].strval),
+														yyvsp[-1].strval,
 														0);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3720,13 +3686,13 @@ yyreduce:
 #line 1160 "cfg.y"
     {
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															STRING_ST,
 															NUMBER_ST,
-															(yyvsp[-1].strval),
+															yyvsp[-1].strval,
 															0);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3737,13 +3703,13 @@ yyreduce:
 #line 1173 "cfg.y"
     { 
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															IP_ST,
 															NUMBER_ST,
-															(void*)(yyvsp[-1].ipaddr),
+															(void*)yyvsp[-1].ipaddr,
 															0);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3754,13 +3720,13 @@ yyreduce:
 #line 1186 "cfg.y"
     { 
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															 STRING_ST,
 															 NUMBER_ST,
-															(yyvsp[-3].strval),
-															(void*)(yyvsp[-1].intval));
+															yyvsp[-3].strval,
+															(void*)yyvsp[-1].intval);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3771,13 +3737,13 @@ yyreduce:
 #line 1199 "cfg.y"
     {
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															 STRING_ST,
 															 NUMBER_ST,
-															(yyvsp[-3].strval),
-															(void*)(yyvsp[-1].intval));
+															yyvsp[-3].strval,
+															(void*)yyvsp[-1].intval);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3788,13 +3754,13 @@ yyreduce:
 #line 1212 "cfg.y"
     {
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															 IP_ST,
 															 NUMBER_ST,
-															 (void*)(yyvsp[-3].ipaddr),
-															(void*)(yyvsp[-1].intval));
+															 (void*)yyvsp[-3].ipaddr,
+															(void*)yyvsp[-1].intval);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3805,13 +3771,13 @@ yyreduce:
 #line 1225 "cfg.y"
     {
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															 URIHOST_ST,
 															 URIPORT_ST,
 															0,
 															0);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3822,13 +3788,13 @@ yyreduce:
 #line 1240 "cfg.y"
     {
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															 URIHOST_ST,
 															 NUMBER_ST,
 															0,
-															(void*)(yyvsp[-1].intval));
+															(void*)yyvsp[-1].intval);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3839,13 +3805,13 @@ yyreduce:
 #line 1253 "cfg.y"
     {
 										#ifdef USE_TLS
-											(yyval.action)=mk_action(	FORWARD_TLS_T,
+											yyval.action=mk_action(	FORWARD_TLS_T,
 															 URIHOST_ST,
 															 NUMBER_ST,
 															0,
 															0);
 										#else
-											(yyval.action)=0;
+											yyval.action=0;
 											yyerror("tls support not "
 													"compiled in");
 										#endif
@@ -3854,475 +3820,475 @@ yyreduce:
 
   case 246:
 #line 1266 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 247:
 #line 1267 "cfg.y"
-    { (yyval.action)=0; yyerror("bad forward_tls"
+    { yyval.action=0; yyerror("bad forward_tls"
 										"argument"); ;}
     break;
 
   case 248:
 #line 1270 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_T,
+    { yyval.action=mk_action(	SEND_T,
 													STRING_ST,
 													NUMBER_ST,
-													(yyvsp[-1].strval),
+													yyvsp[-1].strval,
 													0);
 									;}
     break;
 
   case 249:
 #line 1276 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_T,
+    { yyval.action=mk_action(	SEND_T,
 													STRING_ST,
 													NUMBER_ST,
-													(yyvsp[-1].strval),
+													yyvsp[-1].strval,
 													0);
 									;}
     break;
 
   case 250:
 #line 1282 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_T,
+    { yyval.action=mk_action(	SEND_T,
 													IP_ST,
 													NUMBER_ST,
-													(void*)(yyvsp[-1].ipaddr),
+													(void*)yyvsp[-1].ipaddr,
 													0);
 									;}
     break;
 
   case 251:
 #line 1288 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_T,
+    { yyval.action=mk_action(	SEND_T,
 																STRING_ST,
 																NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 												;}
     break;
 
   case 252:
 #line 1294 "cfg.y"
-    {(yyval.action)=mk_action(	SEND_T,
+    {yyval.action=mk_action(	SEND_T,
 																STRING_ST,
 																NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 												;}
     break;
 
   case 253:
 #line 1300 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_T,
+    { yyval.action=mk_action(	SEND_T,
 																IP_ST,
 																NUMBER_ST,
-																(void*)(yyvsp[-3].ipaddr),
-																(void*)(yyvsp[-1].intval));
+																(void*)yyvsp[-3].ipaddr,
+																(void*)yyvsp[-1].intval);
 											   ;}
     break;
 
   case 254:
 #line 1306 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 255:
 #line 1307 "cfg.y"
-    { (yyval.action)=0; yyerror("bad send"
+    { yyval.action=0; yyerror("bad send"
 													"argument"); ;}
     break;
 
   case 256:
 #line 1309 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_TCP_T,
+    { yyval.action=mk_action(	SEND_TCP_T,
 													STRING_ST,
 													NUMBER_ST,
-													(yyvsp[-1].strval),
+													yyvsp[-1].strval,
 													0);
 									;}
     break;
 
   case 257:
 #line 1315 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_TCP_T,
+    { yyval.action=mk_action(	SEND_TCP_T,
 													STRING_ST,
 													NUMBER_ST,
-													(yyvsp[-1].strval),
+													yyvsp[-1].strval,
 													0);
 									;}
     break;
 
   case 258:
 #line 1321 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_TCP_T,
+    { yyval.action=mk_action(	SEND_TCP_T,
 													IP_ST,
 													NUMBER_ST,
-													(void*)(yyvsp[-1].ipaddr),
+													(void*)yyvsp[-1].ipaddr,
 													0);
 									;}
     break;
 
   case 259:
 #line 1327 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_TCP_T,
+    { yyval.action=mk_action(	SEND_TCP_T,
 																STRING_ST,
 																NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 												;}
     break;
 
   case 260:
 #line 1333 "cfg.y"
-    {(yyval.action)=mk_action(	SEND_TCP_T,
+    {yyval.action=mk_action(	SEND_TCP_T,
 																STRING_ST,
 																NUMBER_ST,
-																(yyvsp[-3].strval),
-																(void*)(yyvsp[-1].intval));
+																yyvsp[-3].strval,
+																(void*)yyvsp[-1].intval);
 												;}
     break;
 
   case 261:
 #line 1339 "cfg.y"
-    { (yyval.action)=mk_action(	SEND_TCP_T,
+    { yyval.action=mk_action(	SEND_TCP_T,
 																IP_ST,
 																NUMBER_ST,
-																(void*)(yyvsp[-3].ipaddr),
-																(void*)(yyvsp[-1].intval));
+																(void*)yyvsp[-3].ipaddr,
+																(void*)yyvsp[-1].intval);
 											   ;}
     break;
 
   case 262:
 #line 1345 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 263:
 #line 1346 "cfg.y"
-    { (yyval.action)=0; yyerror("bad send_tcp"
+    { yyval.action=0; yyerror("bad send_tcp"
 													"argument"); ;}
     break;
 
   case 264:
 #line 1348 "cfg.y"
-    {(yyval.action)=mk_action(DROP_T,0, 0, 0, 0); ;}
+    {yyval.action=mk_action(DROP_T,0, 0, 0, 0); ;}
     break;
 
   case 265:
 #line 1349 "cfg.y"
-    {(yyval.action)=mk_action(DROP_T,0, 0, 0, 0); ;}
+    {yyval.action=mk_action(DROP_T,0, 0, 0, 0); ;}
     break;
 
   case 266:
 #line 1350 "cfg.y"
-    {(yyval.action)=mk_action(	LOG_T, NUMBER_ST, 
-													STRING_ST,(void*)4,(yyvsp[-1].strval));
+    {yyval.action=mk_action(	LOG_T, NUMBER_ST, 
+													STRING_ST,(void*)4,yyvsp[-1].strval);
 									;}
     break;
 
   case 267:
 #line 1353 "cfg.y"
-    {(yyval.action)=mk_action(	LOG_T,
+    {yyval.action=mk_action(	LOG_T,
 																NUMBER_ST, 
 																STRING_ST,
-																(void*)(yyvsp[-3].intval),
-																(yyvsp[-1].strval));
+																(void*)yyvsp[-3].intval,
+																yyvsp[-1].strval);
 												;}
     break;
 
   case 268:
 #line 1359 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 269:
 #line 1360 "cfg.y"
-    { (yyval.action)=0; yyerror("bad log"
+    { yyval.action=0; yyerror("bad log"
 									"argument"); ;}
     break;
 
   case 270:
 #line 1362 "cfg.y"
-    {(yyval.action)=mk_action( SETFLAG_T, NUMBER_ST, 0,
-													(void *)(yyvsp[-1].intval), 0 ); ;}
+    {yyval.action=mk_action( SETFLAG_T, NUMBER_ST, 0,
+													(void *)yyvsp[-1].intval, 0 ); ;}
     break;
 
   case 271:
 #line 1364 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')'?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')'?"); ;}
     break;
 
   case 272:
 #line 1365 "cfg.y"
-    {(yyval.action)=mk_action(	RESETFLAG_T, NUMBER_ST, 0,
-													(void *)(yyvsp[-1].intval), 0 ); ;}
+    {yyval.action=mk_action(	RESETFLAG_T, NUMBER_ST, 0,
+													(void *)yyvsp[-1].intval, 0 ); ;}
     break;
 
   case 273:
 #line 1367 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')'?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')'?"); ;}
     break;
 
   case 274:
 #line 1368 "cfg.y"
-    {(yyval.action)=mk_action(	ISFLAGSET_T, NUMBER_ST, 0,
-													(void *)(yyvsp[-1].intval), 0 ); ;}
+    {yyval.action=mk_action(	ISFLAGSET_T, NUMBER_ST, 0,
+													(void *)yyvsp[-1].intval, 0 ); ;}
     break;
 
   case 275:
 #line 1370 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')'?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')'?"); ;}
     break;
 
   case 276:
 #line 1371 "cfg.y"
-    {(yyval.action)=mk_action(ERROR_T,
+    {yyval.action=mk_action(ERROR_T,
 																STRING_ST, 
 																STRING_ST,
-																(yyvsp[-3].strval),
-																(yyvsp[-1].strval));
+																yyvsp[-3].strval,
+																yyvsp[-1].strval);
 												  ;}
     break;
 
   case 277:
 #line 1377 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 278:
 #line 1378 "cfg.y"
-    { (yyval.action)=0; yyerror("bad error"
+    { yyval.action=0; yyerror("bad error"
 														"argument"); ;}
     break;
 
   case 279:
 #line 1380 "cfg.y"
-    { (yyval.action)=mk_action(ROUTE_T, NUMBER_ST,
-														0, (void*)(yyvsp[-1].intval), 0);
+    { yyval.action=mk_action(ROUTE_T, NUMBER_ST,
+														0, (void*)yyvsp[-1].intval, 0);
 										;}
     break;
 
   case 280:
 #line 1383 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 281:
 #line 1384 "cfg.y"
-    { (yyval.action)=0; yyerror("bad route"
+    { yyval.action=0; yyerror("bad route"
 						"argument"); ;}
     break;
 
   case 282:
 #line 1386 "cfg.y"
-    { (yyval.action)=mk_action(	EXEC_T, STRING_ST, 0,
-													(yyvsp[-1].strval), 0);
+    { yyval.action=mk_action(	EXEC_T, STRING_ST, 0,
+													yyvsp[-1].strval, 0);
 									;}
     break;
 
   case 283:
 #line 1389 "cfg.y"
-    { (yyval.action)=mk_action(SET_HOST_T, STRING_ST,
-														0, (yyvsp[-1].strval), 0); ;}
+    { yyval.action=mk_action(SET_HOST_T, STRING_ST,
+														0, yyvsp[-1].strval, 0); ;}
     break;
 
   case 284:
 #line 1391 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 285:
 #line 1392 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"string expected"); ;}
     break;
 
   case 286:
 #line 1395 "cfg.y"
-    { (yyval.action)=mk_action(PREFIX_T, STRING_ST,
-														0, (yyvsp[-1].strval), 0); ;}
+    { yyval.action=mk_action(PREFIX_T, STRING_ST,
+														0, yyvsp[-1].strval, 0); ;}
     break;
 
   case 287:
 #line 1397 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 288:
 #line 1398 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"string expected"); ;}
     break;
 
   case 289:
 #line 1400 "cfg.y"
-    { (yyval.action)=mk_action(STRIP_TAIL_T, 
-									NUMBER_ST, 0, (void *) (yyvsp[-1].intval), 0); ;}
+    { yyval.action=mk_action(STRIP_TAIL_T, 
+									NUMBER_ST, 0, (void *) yyvsp[-1].intval, 0); ;}
     break;
 
   case 290:
 #line 1402 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 291:
 #line 1403 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"number expected"); ;}
     break;
 
   case 292:
 #line 1406 "cfg.y"
-    { (yyval.action)=mk_action(STRIP_T, NUMBER_ST,
-														0, (void *) (yyvsp[-1].intval), 0); ;}
+    { yyval.action=mk_action(STRIP_T, NUMBER_ST,
+														0, (void *) yyvsp[-1].intval, 0); ;}
     break;
 
   case 293:
 #line 1408 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 294:
 #line 1409 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"number expected"); ;}
     break;
 
   case 295:
 #line 1412 "cfg.y"
-    { (yyval.action)=mk_action( APPEND_BRANCH_T,
-													STRING_ST, 0, (yyvsp[-1].strval), 0) ; ;}
+    { yyval.action=mk_action( APPEND_BRANCH_T,
+													STRING_ST, 0, yyvsp[-1].strval, 0) ; ;}
     break;
 
   case 296:
 #line 1414 "cfg.y"
-    { (yyval.action)=mk_action( APPEND_BRANCH_T,
+    { yyval.action=mk_action( APPEND_BRANCH_T,
 													STRING_ST, 0, 0, 0 ) ; ;}
     break;
 
   case 297:
 #line 1416 "cfg.y"
-    {  (yyval.action)=mk_action( APPEND_BRANCH_T, STRING_ST, 0, 0, 0 ) ; ;}
+    {  yyval.action=mk_action( APPEND_BRANCH_T, STRING_ST, 0, 0, 0 ) ; ;}
     break;
 
   case 298:
 #line 1418 "cfg.y"
-    { (yyval.action)=mk_action( SET_HOSTPORT_T, 
-														STRING_ST, 0, (yyvsp[-1].strval), 0); ;}
+    { yyval.action=mk_action( SET_HOSTPORT_T, 
+														STRING_ST, 0, yyvsp[-1].strval, 0); ;}
     break;
 
   case 299:
 #line 1420 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 300:
 #line 1421 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument,"
+    { yyval.action=0; yyerror("bad argument,"
 												" string expected"); ;}
     break;
 
   case 301:
 #line 1423 "cfg.y"
-    { (yyval.action)=mk_action( SET_PORT_T, STRING_ST,
-														0, (yyvsp[-1].strval), 0); ;}
+    { yyval.action=mk_action( SET_PORT_T, STRING_ST,
+														0, yyvsp[-1].strval, 0); ;}
     break;
 
   case 302:
 #line 1425 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 303:
 #line 1426 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"string expected"); ;}
     break;
 
   case 304:
 #line 1428 "cfg.y"
-    { (yyval.action)=mk_action( SET_USER_T, STRING_ST,
-														0, (yyvsp[-1].strval), 0); ;}
+    { yyval.action=mk_action( SET_USER_T, STRING_ST,
+														0, yyvsp[-1].strval, 0); ;}
     break;
 
   case 305:
 #line 1430 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 306:
 #line 1431 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"string expected"); ;}
     break;
 
   case 307:
 #line 1433 "cfg.y"
-    { (yyval.action)=mk_action( SET_USERPASS_T, 
-														STRING_ST, 0, (yyvsp[-1].strval), 0); ;}
+    { yyval.action=mk_action( SET_USERPASS_T, 
+														STRING_ST, 0, yyvsp[-1].strval, 0); ;}
     break;
 
   case 308:
 #line 1435 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 309:
 #line 1436 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"string expected"); ;}
     break;
 
   case 310:
 #line 1438 "cfg.y"
-    { (yyval.action)=mk_action( SET_URI_T, STRING_ST, 
-														0, (yyvsp[-1].strval), 0); ;}
+    { yyval.action=mk_action( SET_URI_T, STRING_ST, 
+														0, yyvsp[-1].strval, 0); ;}
     break;
 
   case 311:
 #line 1440 "cfg.y"
-    { (yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    { yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 312:
 #line 1441 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 										"string expected"); ;}
     break;
 
   case 313:
 #line 1443 "cfg.y"
-    { (yyval.action)=mk_action( REVERT_URI_T, 0,0,0,0); ;}
+    { yyval.action=mk_action( REVERT_URI_T, 0,0,0,0); ;}
     break;
 
   case 314:
 #line 1444 "cfg.y"
-    { (yyval.action)=mk_action( REVERT_URI_T, 0,0,0,0); ;}
+    { yyval.action=mk_action( REVERT_URI_T, 0,0,0,0); ;}
     break;
 
   case 315:
 #line 1445 "cfg.y"
-    {(yyval.action)=mk_action(FORCE_RPORT_T,0, 0, 0, 0); ;}
+    {yyval.action=mk_action(FORCE_RPORT_T,0, 0, 0, 0); ;}
     break;
 
   case 316:
 #line 1446 "cfg.y"
-    {(yyval.action)=mk_action(FORCE_RPORT_T,0, 0, 0, 0); ;}
+    {yyval.action=mk_action(FORCE_RPORT_T,0, 0, 0, 0); ;}
     break;
 
   case 317:
 #line 1447 "cfg.y"
     {
-								(yyval.action)=0;
+								yyval.action=0;
 								if ((str_tmp=pkg_malloc(sizeof(str)))==0){
 										LOG(L_CRIT, "ERROR: cfg. parser:"
 													" out of memory.\n");
 								}else{
-										str_tmp->s=(yyvsp[-1].strval);
-										str_tmp->len=strlen((yyvsp[-1].strval));
-										(yyval.action)=mk_action(SET_ADV_ADDR_T, STR_ST,
+										str_tmp->s=yyvsp[-1].strval;
+										str_tmp->len=strlen(yyvsp[-1].strval);
+										yyval.action=mk_action(SET_ADV_ADDR_T, STR_ST,
 										             0, str_tmp, 0);
 								}
 												  ;}
@@ -4330,20 +4296,20 @@ yyreduce:
 
   case 318:
 #line 1459 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"string expected"); ;}
     break;
 
   case 319:
 #line 1461 "cfg.y"
-    {(yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    {yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 320:
 #line 1462 "cfg.y"
     {
-								(yyval.action)=0;
-								tmp=int2str((yyvsp[-1].intval), &i_tmp);
+								yyval.action=0;
+								tmp=int2str(yyvsp[-1].intval, &i_tmp);
 								if ((str_tmp=pkg_malloc(sizeof(str)))==0){
 										LOG(L_CRIT, "ERROR: cfg. parser:"
 													" out of memory.\n");
@@ -4354,7 +4320,7 @@ yyreduce:
 									}else{
 										memcpy(str_tmp->s, tmp, i_tmp);
 										str_tmp->len=i_tmp;
-										(yyval.action)=mk_action(SET_ADV_PORT_T, STR_ST,
+										yyval.action=mk_action(SET_ADV_PORT_T, STR_ST,
 													0, str_tmp, 0);
 									}
 								}
@@ -4363,28 +4329,28 @@ yyreduce:
 
   case 321:
 #line 1480 "cfg.y"
-    { (yyval.action)=0; yyerror("bad argument, "
+    { yyval.action=0; yyerror("bad argument, "
 														"string expected"); ;}
     break;
 
   case 322:
 #line 1482 "cfg.y"
-    {(yyval.action)=0; yyerror("missing '(' or ')' ?"); ;}
+    {yyval.action=0; yyerror("missing '(' or ')' ?"); ;}
     break;
 
   case 323:
 #line 1483 "cfg.y"
-    { f_tmp=(void*)find_export((yyvsp[-2].strval), 0, rt);
+    { f_tmp=(void*)find_export(yyvsp[-2].strval, 0, rt);
 									   if (f_tmp==0){
-										   if (find_export((yyvsp[-2].strval), 0, 0)) {
+										   if (find_export(yyvsp[-2].strval, 0, 0)) {
 											   yyerror("Command cannot be used in the block\n");
 										   } else {
 											   yyerror("unknown command, missing"
 												   " loadmodule?\n");
 										   }
-										(yyval.action)=0;
+										yyval.action=0;
 									   }else{
-										(yyval.action)=mk_action(	MODULE_T,
+										yyval.action=mk_action(	MODULE_T,
 														CMDF_ST,
 														0,
 														f_tmp,
@@ -4396,21 +4362,21 @@ yyreduce:
 
   case 324:
 #line 1501 "cfg.y"
-    { f_tmp=(void*)find_export((yyvsp[-3].strval), 1, rt);
+    { f_tmp=(void*)find_export(yyvsp[-3].strval, 1, rt);
 									if (f_tmp==0){
-										if (find_export((yyvsp[-3].strval), 1, 0)) {
+										if (find_export(yyvsp[-3].strval, 1, 0)) {
 											yyerror("Command cannot be used in the block\n");
 										} else {
 											yyerror("unknown command, missing"
 												" loadmodule?\n");
 										}
-										(yyval.action)=0;
+										yyval.action=0;
 									}else{
-										(yyval.action)=mk_action(	MODULE_T,
+										yyval.action=mk_action(	MODULE_T,
 														CMDF_ST,
 														STRING_ST,
 														f_tmp,
-														(yyvsp[-1].strval)
+														yyvsp[-1].strval
 													);
 									}
 								  ;}
@@ -4418,23 +4384,23 @@ yyreduce:
 
   case 325:
 #line 1520 "cfg.y"
-    { f_tmp=(void*)find_export((yyvsp[-5].strval), 2, rt);
+    { f_tmp=(void*)find_export(yyvsp[-5].strval, 2, rt);
 									if (f_tmp==0){
-										if (find_export((yyvsp[-5].strval), 2, 0)) {
+										if (find_export(yyvsp[-5].strval, 2, 0)) {
 											yyerror("Command cannot be used in the block\n");
 										} else {
 											yyerror("unknown command, missing"
 												" loadmodule?\n");
 										}
-										(yyval.action)=0;
+										yyval.action=0;
 									}else{
-										(yyval.action)=mk_action3(	MODULE_T,
+										yyval.action=mk_action3(	MODULE_T,
 														CMDF_ST,
 														STRING_ST,
 														STRING_ST,
 														f_tmp,
-														(yyvsp[-3].strval),
-														(yyvsp[-1].strval)
+														yyvsp[-3].strval,
+														yyvsp[-1].strval
 													);
 									}
 								  ;}
@@ -4442,14 +4408,14 @@ yyreduce:
 
   case 326:
 #line 1540 "cfg.y"
-    { (yyval.action)=0; yyerror("bad arguments"); ;}
+    { yyval.action=0; yyerror("bad arguments"); ;}
     break;
 
 
     }
 
-/* Line 1037 of yacc.c.  */
-#line 4453 "cfg.tab.c"
+/* Line 991 of yacc.c.  */
+#line 4418 "cfg.tab.c"
 
   yyvsp -= yylen;
   yyssp -= yylen;
@@ -4490,33 +4456,18 @@ yyerrlab:
 	{
 	  YYSIZE_T yysize = 0;
 	  int yytype = YYTRANSLATE (yychar);
-	  const char* yyprefix;
 	  char *yymsg;
-	  int yyx;
+	  int yyx, yycount;
 
+	  yycount = 0;
 	  /* Start YYX at -YYN if negative to avoid negative indexes in
 	     YYCHECK.  */
-	  int yyxbegin = yyn < 0 ? -yyn : 0;
-
-	  /* Stay within bounds of both yycheck and yytname.  */
-	  int yychecklim = YYLAST - yyn;
-	  int yyxend = yychecklim < YYNTOKENS ? yychecklim : YYNTOKENS;
-	  int yycount = 0;
-
-	  yyprefix = ", expecting ";
-	  for (yyx = yyxbegin; yyx < yyxend; ++yyx)
+	  for (yyx = yyn < 0 ? -yyn : 0;
+	       yyx < (int) (sizeof (yytname) / sizeof (char *)); yyx++)
 	    if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
-	      {
-		yysize += yystrlen (yyprefix) + yystrlen (yytname [yyx]);
-		yycount += 1;
-		if (yycount == 5)
-		  {
-		    yysize = 0;
-		    break;
-		  }
-	      }
-	  yysize += (sizeof ("syntax error, unexpected ")
-		     + yystrlen (yytname[yytype]));
+	      yysize += yystrlen (yytname[yyx]) + 15, yycount++;
+	  yysize += yystrlen ("syntax error, unexpected ") + 1;
+	  yysize += yystrlen (yytname[yytype]);
 	  yymsg = (char *) YYSTACK_ALLOC (yysize);
 	  if (yymsg != 0)
 	    {
@@ -4525,13 +4476,16 @@ yyerrlab:
 
 	      if (yycount < 5)
 		{
-		  yyprefix = ", expecting ";
-		  for (yyx = yyxbegin; yyx < yyxend; ++yyx)
+		  yycount = 0;
+		  for (yyx = yyn < 0 ? -yyn : 0;
+		       yyx < (int) (sizeof (yytname) / sizeof (char *));
+		       yyx++)
 		    if (yycheck[yyx + yyn] == yyx && yyx != YYTERROR)
 		      {
-			yyp = yystpcpy (yyp, yyprefix);
+			const char *yyq = ! yycount ? ", expecting " : " or ";
+			yyp = yystpcpy (yyp, yyq);
 			yyp = yystpcpy (yyp, yytname[yyx]);
-			yyprefix = " or ";
+			yycount++;
 		      }
 		}
 	      yyerror (yymsg);
@@ -4549,58 +4503,55 @@ yyerrlab:
 
   if (yyerrstatus == 3)
     {
-      /* If just tried and failed to reuse look-ahead token after an
+      /* If just tried and failed to reuse lookahead token after an
 	 error, discard it.  */
 
-      if (yychar <= YYEOF)
+      /* Return failure if at end of input.  */
+      if (yychar == YYEOF)
         {
-          /* If at end of input, pop the error token,
-	     then the rest of the stack, then return failure.  */
-	  if (yychar == YYEOF)
-	     for (;;)
-	       {
-
-		 YYPOPSTACK;
-		 if (yyssp == yyss)
-		   YYABORT;
-		 yydestruct ("Error: popping",
-                             yystos[*yyssp], yyvsp);
-	       }
+	  /* Pop the error token.  */
+          YYPOPSTACK;
+	  /* Pop the rest of the stack.  */
+	  while (yyss < yyssp)
+	    {
+	      YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+	      yydestruct (yystos[*yyssp], yyvsp);
+	      YYPOPSTACK;
+	    }
+	  YYABORT;
         }
-      else
-	{
-	  yydestruct ("Error: discarding", yytoken, &yylval);
-	  yychar = YYEMPTY;
-	}
+
+      YYDSYMPRINTF ("Error: discarding", yytoken, &yylval, &yylloc);
+      yydestruct (yytoken, &yylval);
+      yychar = YYEMPTY;
+
     }
 
-  /* Else will try to reuse look-ahead token after shifting the error
+  /* Else will try to reuse lookahead token after shifting the error
      token.  */
-  goto yyerrlab1;
+  goto yyerrlab2;
 
 
-/*---------------------------------------------------.
-| yyerrorlab -- error raised explicitly by YYERROR.  |
-`---------------------------------------------------*/
-yyerrorlab:
+/*----------------------------------------------------.
+| yyerrlab1 -- error raised explicitly by an action.  |
+`----------------------------------------------------*/
+yyerrlab1:
 
-#ifdef __GNUC__
-  /* Pacify GCC when the user code never invokes YYERROR and the label
-     yyerrorlab therefore never appears in user code.  */
-  if (0)
-     goto yyerrorlab;
+  /* Suppress GCC warning that yyerrlab1 is unused when no action
+     invokes YYERROR.  */
+#if defined (__GNUC_MINOR__) && 2093 <= (__GNUC__ * 1000 + __GNUC_MINOR__) \
+    && !defined __cplusplus
+  __attribute__ ((__unused__))
 #endif
 
-yyvsp -= yylen;
-  yyssp -= yylen;
-  yystate = *yyssp;
-  goto yyerrlab1;
+
+  goto yyerrlab2;
 
 
-/*-------------------------------------------------------------.
-| yyerrlab1 -- common code for both syntax error and YYERROR.  |
-`-------------------------------------------------------------*/
-yyerrlab1:
+/*---------------------------------------------------------------.
+| yyerrlab2 -- pop states until the error token can be shifted.  |
+`---------------------------------------------------------------*/
+yyerrlab2:
   yyerrstatus = 3;	/* Each real token shifted decrements this.  */
 
   for (;;)
@@ -4621,21 +4572,21 @@ yyerrlab1:
       if (yyssp == yyss)
 	YYABORT;
 
+      YYDSYMPRINTF ("Error: popping", yystos[*yyssp], yyvsp, yylsp);
+      yydestruct (yystos[yystate], yyvsp);
+      yyvsp--;
+      yystate = *--yyssp;
 
-      yydestruct ("Error: popping", yystos[yystate], yyvsp);
-      YYPOPSTACK;
-      yystate = *yyssp;
       YY_STACK_PRINT (yyss, yyssp);
     }
 
   if (yyn == YYFINAL)
     YYACCEPT;
 
+  YYDPRINTF ((stderr, "Shifting error token, "));
+
   *++yyvsp = yylval;
 
-
-  /* Shift the error token. */
-  YY_SYMBOL_PRINT ("Shifting", yystos[yyn], yyvsp, yylsp);
 
   yystate = yyn;
   goto yynewstate;
@@ -4652,9 +4603,6 @@ yyacceptlab:
 | yyabortlab -- YYABORT comes here.  |
 `-----------------------------------*/
 yyabortlab:
-  yydestruct ("Error: discarding lookahead",
-              yytoken, &yylval);
-  yychar = YYEMPTY;
   yyresult = 1;
   goto yyreturn;
 

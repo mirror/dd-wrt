@@ -41,14 +41,7 @@ srcdir = .
 # You shouldn't need to edit anything below.
 #
 
-#CC = mipsel-uclibc-gcc -pipe
-include $(TOP)/.config
-
-ifeq ($(CONFIG_MSSID),y)
-CCOPT = $(COPTS) -fomit-frame-pointer -fpic -fPIC -I../../linux/linux.v24/include 
-else
-CCOPT = $(COPTS) -fomit-frame-pointer -fpic -fPIC -I../../linux/linux.v23/include 
-endif
+CCOPT = $(COPTS) -fomit-frame-pointer -fpic -fPIC -I../../linux/linux.v23/include
 INCLS = -I. 
 DEFS = -DHAVE_CONFIG_H  -D_U_="__attribute__((unused))"
 LIBS = 
@@ -60,7 +53,7 @@ CFLAGS = $(CCOPT) $(INCLS) $(DEFS)
 INSTALL = /usr/bin/install -c
 INSTALL_PROGRAM = ${INSTALL}
 INSTALL_DATA = ${INSTALL} -m 644
-#RANLIB = mipsel-linux-ranlib
+RANLIB = mipsel-linux-ranlib
 
 #
 # Flex and bison allow you to specify the prefixes of the global symbols
@@ -107,7 +100,7 @@ all: libpcap.a
 
 libpcap.a: $(OBJ)
 	@rm -f $@
-	mipsel-linux-uclibc-ar rc $@ $(OBJ) $(LIBS)
+	ar rc $@ $(OBJ) $(LIBS)
 	$(RANLIB) $@
 
 shared: libpcap.$(DYEXT)
@@ -118,7 +111,7 @@ shared: libpcap.$(DYEXT)
 #
 libpcap.so: $(OBJ)
 	@rm -f $@
-	$(LD) -shared -o $@ $(OBJ)
+	$(LD) -shared -o $@.`cat VERSION` $(OBJ)
 
 # the following rule succeeds, but the result is untested.
 libpcap.dylib: $(OBJ)
