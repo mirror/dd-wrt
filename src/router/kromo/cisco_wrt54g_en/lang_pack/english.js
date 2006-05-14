@@ -120,6 +120,8 @@ share.disconnected="Disconnected";
 share.info="Information";
 share.state="State";
 share.mode="Mode";
+share.encrypt="Encryption";
+share.key="Key";
 
 
 var sbutton = new Object();
@@ -1257,7 +1259,6 @@ status_wireless.titl=" - Wireless Status";
 status_wireless.h2="Wireless";
 status_wireless.legend="Wireless Status";
 status_wireless.net="Network";
-status_wireless.encrypt="Encryption";
 status_wireless.pptp="PPTP Status";
 status_wireless.legend2="Packet Info";
 status_wireless.rx="Received (RX)";
@@ -1270,6 +1271,14 @@ status_wireless.signal_qual="Signal Quality";
 var hstatus_wireless = new Object();
 hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
 hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.";
+
+
+
+// **************************************************************** WEP.asp **********************************************************************//
+
+var wep = new Object();
+wep.defkey="Default Transmit Key";
+wep.passphrase="Passphrase";
 
 
 
@@ -1324,7 +1333,7 @@ hwanmac.right2="Some ISP will require you to register your MAC address. \
 var wpa = new Object();
 wpa.titl=" - Wireless Security";
 wpa.h2="Wireless Security";
-wpa.h3="Wireless Encryption";
+wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
 wpa.psk="WPA Pre-Shared Key";
 wpa.wpa="WPA";
