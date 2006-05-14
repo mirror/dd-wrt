@@ -19,10 +19,12 @@
 				<dt>Port</dt>
 				<dd>You must choose whether to apply bandwidth limits to the WAN device or the LAN &amp; wireless LAN device. (The LAN and wireless LAN ports are bonded internally into a single virtual device).</dd>
 				<dt>Packet Scheduler</dt>
+				<dd>
 					<ul class="wide">
 						<li>HFSC - Hierarchical Fair Service Curve. Queues attached to an interface build a tree, thus each queue can have further child queues. Each queue can have a priority and a bandwidth assigned. Priority mainly controls the time packets take to get sent out, while bandwidth has primarily effects on throughput. </li>
 						<li>HTB - Hierarchical Token Bucket, it is a faster replacement for the CBQ qdisc in Linux. HTB's helps in controlling the use of the outbound bandwidth on a given link. HTB allows you to use one physical link to simulate several slower links and to send different kinds of traffic on different simulated links. In both cases, you have to specify how to divide the physical link into simulated links and how to decide which simulated link to use for a given packet to be sent. In other words, HTB it's very useful to limit the client's download/upload rate, therefor the limited client can't take the whole bandwidth for himself.</li>
 					</ul>
+				</dd>
 				<dt>Uplink / Downlink</dt>
 				<dd>In order to use bandwidth management (QoS) you must enter bandwidth values for your uplink and downlink. These are generally 80% to 90% of your maximum bandwidth. </dd>
 				<dt>Classification</td>
