@@ -418,13 +418,13 @@ function init() {
 							<dd class="definition"><script type="text/javascript">Capture(hqos.right2)</script></dd>
 							<dt class="term"><script type="text/javascript">Capture(hqos.right3)</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hqos.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend2):</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(qos.legend2)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hqos.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend3):</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(qos.legend3)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hqos.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend4):</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(qos.legend4)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hqos.right10)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend5):</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(qos.legend5)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hqos.right12)</script></dd>
 						</dl>
 						<br/>

@@ -118,7 +118,7 @@ function to_submit(F) {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(prforward.h2):</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(prforward.h2)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hprforward.right2)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HForwardRange.asp')"><script type="text/javascript">Capture(share.more)</script></a>
