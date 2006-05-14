@@ -167,6 +167,8 @@ sbutton.wanmac="Get Current PC MAC Address";
 sbutton.dhcprel="DHCP Release";
 sbutton.dhcpren="DHCP Renew";
 sbutton.survey="Site Survey";
+sbutton.upgrading="Upgrading";
+sbutton.upgrade="Upgrade";
 
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
@@ -265,6 +267,10 @@ errmsg.err58="Click to delete lease";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Not available! Please enable Wireless Network.";
+
+//Upgrade.asp error messages
+errmsg.err60="Please select a file to upgrade.";
+errmsg.err61="Incorrect image file.";
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
 var bmenu= new Object();
@@ -1271,6 +1277,26 @@ status_wireless.signal_qual="Signal Quality";
 var hstatus_wireless = new Object();
 hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
 hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.";
+
+
+
+// **************************************************************** Upgrade.asp **********************************************************************//
+
+var upgrad = new Object();
+upgrad.titl=" - Firmware Upgrade";
+upgrad.h2="Firmware Management";
+upgrad.legend="Firmware Upgrade";
+upgrad.info1="After flashing, reset to";
+upgrad.resetOff="No reset";
+upgrad.resetOn="Default settings";
+upgrad.file="Please select a file to upgrade";
+upgrad.warning="W A R N I N G";
+upgrad.mess1="Upgrading firmware may take a few minutes.<br />Do not turn off the power or press the reset button!";
+
+//help container
+var hupgrad = new Object();
+hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> \
+			Click the <em>Upgrade</em> button to begin the upgrade process. Upgrade must not be interrupted.";
 
 
 
