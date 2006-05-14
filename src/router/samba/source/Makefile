@@ -18,7 +18,7 @@ AWK=mawk
 INSTALLCMD=/usr/bin/install -c
 
 srcdir=.
-builddir=/home/openwrt/DD-WRT/opt/samba-2.0.7/source
+builddir=/home/dd-wrt/DEV/src/router/samba/source
 SHELL=/bin/sh
 
 BASEDIR= /usr
