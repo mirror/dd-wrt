@@ -166,7 +166,7 @@ internal_getRouterBrand ()
 	    		setRouter ("Belkin F5D7130 / F5D7330");
 	    		return ROUTER_WRT54G;
 	  			}
-	  		if (startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd")
+	  		if (startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
 	  			{
 	    		cprintf ("router is Belkin F5D7230 v1000\n"); 
 	    		setRouter ("Belkin F5D7230 v1000");
