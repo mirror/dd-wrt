@@ -3,7 +3,7 @@
 {router_firmware::<% get_firmware_version(); %>}
 {router_time::<% localtime(); %>}
 {cpu_info::<% show_cpuinfo(); %>}
-{cpu_clock::<% get_clkfreq(); %> MHz}
+{cpu_clock::<% get_clkfreq(); %>}
 {wan_shortproto::<% nvram_get("wan_proto"); %>}
 {wan_proto::<% nvram_match("wan_proto", "dhcp", "Automatic Configuration - DHCP"); %><% nvram_match("wan_proto", "static", "Static"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "Disabled"); %>}
 {wan_status::<% nvram_status_get("status2"); %>&nbsp;&nbsp;<input type="button" value="<% nvram_status_get("button1"); %>" onclick="connect(this.form, '<% nvram_status_get("button1"); %>_<% nvram_get("wan_proto"); %>')" />}
