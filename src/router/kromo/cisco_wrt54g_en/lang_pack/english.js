@@ -116,6 +116,8 @@ share.connect="Connect";
 share.connected="Connected";
 share.disconnect="Disconnect";
 share.disconnected="Disconnected";
+share.info="Information";
+share.state="State";
 
 
 var sbutton = new Object();
@@ -309,6 +311,7 @@ bmenu.adminBackup="Backup";
 bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
+bmenu.statuSputnik="Sputnik Agent";
 bmenu.statuWLAN="Wireless";
 bmenu.statuSysInfo="Sys-Info";
 
@@ -1221,6 +1224,23 @@ hstatus_router.right12="This is given as three numbers that represent the system
 hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. \
 				This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
 
+
+
+// **************************************************************** Status_SputnikAPD.asp **********************************************************************//
+
+var status_sputnik = new Object();
+status_sputnik.titl=" - Sputnik Agent Status";
+status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.manage="Managed By";
+status_sputnik.license="SCC License No.";
+
+//help container
+var hstatus_sputnik = new Object();
+hstatus_sputnik.right1="Sputnik Agent Status";
+hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent process.";
+hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
+hstatus_sputnik.right6="The current Agent status.";
+hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
 
 
 

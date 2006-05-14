@@ -9,84 +9,102 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-function init() {
+		
+document.title = "<% nvram_get("router_name"); %>" + status_sputnik.titl;
+
+var update;
+
+addEvent(window, "load", function() {
 	<% show_status("onload");%>
-}
+	
+	update = new StatusUpdate("Status_SputnikAPD.live.asp", <% nvram_get("refresh_time"); %>);
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+});
+
 		</script>
 	</head>
-   <body class="gui" onload="init()">
-      <div id="wrapper">
-         <div id="content">
-            <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-               <div id="menu">
-                  <div id="menuMain">
-                     <ul id="menuMainList">
-                        <li><a href="index.asp">Setup</a></li>
-                        <li><a href="Wireless_Basic.asp">Wireless</a></li>
-			<% nvram_invmatch("sipgate","1","<!--"); %>
-			<li><a href="Sipath.asp">SIPatH</a></li>
-                        <% nvram_invmatch("sipgate","1","-->"); %>
-                        <li><a href="Firewall.asp">Security</a></li>
-                        <li><a href="Filters.asp">Access Restrictions</a></li>
-                        <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                        <li><a href="Management.asp">Administration</a></li>
-                        <li class="current"><span>Status</span>
-			    <div id="menuSub">
-                              <ul id="menuSubList">
-                                 <li><a href="Status_Router.asp">Router</a></li>
-                                 <li><a href="Status_Lan.asp">LAN</a></li>
-                                 <li><a href="Status_Wireless.asp">Wireless</a></li>
-                                 <li><span>Sputnik Agent</span></li>
-                                 <% nvram_invmatch("status_auth","1","<!--"); %>
-                                 <li><a href="Info.htm">Sys-Info</a></li>
-                                 <% nvram_invmatch("status_auth","1","-->"); %>
-                              </ul>
-                           </div>
-                        </li>
-                     </ul>
-                  </div>
-               </div>
-            </div>
-            <div id="main">
-	      <div id="contents">
-		  <h2>Sputnik&reg; Agent&trade;</h2>
-                     <fieldset>
-			<legend>Information</legend>
+	<body class="gui">
+		<% showad(); %>
+		<div id="wrapper">
+			<div id="content">
+				<div id="header">
+					<div id="logo"><h1><% show_control(); %></h1></div>
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.statu)</script></span>
+									<div id="menuSub">
+										<ul id="menuSubList">
+											<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statuRouter)</script></a></li>
+											<li><a href="Status_Lan.asp"><script type="text/javascript">Capture(bmenu.statuLAN)</script></a></li>
+											<li><a href="Status_Wireless.asp"><script type="text/javascript">Capture(bmenu.statuWLAN)</script></a></li>
+											<li><span><script type="text/javascript">Capture(bmenu.statuSputnik)</script></span></li>
+											<% nvram_invmatch("status_auth","1","<!--"); %>
+											<li><a href="Info.htm"><script type="text/javascript">Capture(bmenu.statuSysInfo)</script></a></li>
+											<% nvram_invmatch("status_auth","1","-->"); %>
+										</ul>
+									</div>
+								</li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div id="main">
+					<div id="contents">
+					<h2><script type="text/javascript">Capture(status_sputnik.h2)</script></h2>
+					
+					<fieldset>
+						<legend><script type="text/javascript">Capture(share.info)</script></legend>
                         <div class="setting">
-                           <div class="label">Managed By</div><% sputnik_apd_status("scc_server"); %>&nbsp;
+                        	<div class="label"><script type="text/javascript">Capture(status_sputnik.manage)</script></div>
+                        	<span id="sputnik_status"><% sputnik_apd_status("scc_server"); %></span>&nbsp;
                         </div>
                         <div class="setting">
-                           <div class="label">State</div><% sputnik_apd_status("phase"); %>&nbsp;
+                        	<div class="label"><script type="text/javascript">Capture(share.state)</script></div>
+                        	<span id="sputnik_state"><% sputnik_apd_status("phase"); %></span>&nbsp;
                         </div>
                         <div class="setting">
-                           <div class="label">SCC License No.</div><% sputnik_apd_status("lsk_serial"); %>&nbsp;
+                        	<div class="label"><script type="text/javascript">Capture(status_sputnik.license)</script></div>
+                        	<span id="sputnik_serial"><% sputnik_apd_status("lsk_serial"); %></span>&nbsp;
                         </div>
-            	    </fieldset><br />
-			<div class="submitFooter">
-			<input name="button" type="button" onclick="window.location.reload()" value=" Refresh "/>
-			</div>
-		</div>
+                    
+                    </fieldset><br />
+                    
+                    <div class="submitFooter">
+                    	<script>document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");</script>
+                    </div>
+                </div>
             </div>
             <div id="helpContainer">
                <div id="help">
                   <div id="logo">
-                     <h2>Help</h2>
+                  	<h2><script type="text/javascript">Capture(share.help)</script></h2>
                   </div>
                   <dl>
-                     <dt class="term">Sputnik Agent Status: </dt>
-                     <dd class="definition">This screen displays the status of the Sputnik Agent process.</dd>
-
-                     <dt class="term">Managed By: </dt>
-                     <dd class="definition">The Sputnik Control Center that this access point is connected to. </dd>
-                     <dt class="term">State: </dt>
-                     <dd class="definition">The current Agent status.</dd>
-                     <dt class="term">SCC License No: </dt>
-                     <dd class="definition">The license number of your Sputnik Control Center.</dd>
+                     <dt class="term"><script type="text/javascript">Capture(hstatus_sputnik.right1)</script>:</dt>
+                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right2)</script></dd>
+                     <dt class="term"><script type="text/javascript">Capture(status_sputnik.manage)</script>:</dt>
+                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right4)</script></dd>
+                     <dt class="term"><script type="text/javascript">Capture(share.state)</script>:</dt>
+                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right6)</script></dd>
+                     <dt class="term"><script type="text/javascript">Capture(status_sputnik.license)</script>:</dt>
+                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right8)</script></dd>
                   </dl><br />
-                  <!--<a href="javascript:openHelpWindow('HSputnikStatus.asp')">More...</a>-->
+                  
+                  <!--<a href="javascript:openHelpWindow('HSputnikStatus.asp');"><script type="text/javascript">Capture(share.more)</script></a>-->
                </div>
             </div>
 				<div id="floatKiller"></div>
