@@ -3,8 +3,8 @@
 	<legend><script type="text/javascript">Capture(hotspot.legend)</script></legend>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.hotspot)</script></div>
-		<input class="spaceradio" type="radio" value="1" name="chilli_enable" <% nvram_checked("chilli_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="chilli_enable" <% nvram_checked("chilli_enable","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+		<input class="spaceradio" type="radio" value="1" name="chilli_enable" <% nvram_selmatch("chilli_enable","1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="chilli_enable" <% nvram_selmatch("chilli_enable","0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.pserver)</script></div>
@@ -29,9 +29,9 @@
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.dhcp)</script></div>
 		<select name="chilli_interface">
-			<option value="wan" <% nvram_selected("chilli_interface","wan"); %> >WAN</option>
-			<option value="lan" <% nvram_selected("chilli_interface","lan"); %> >LAN</option>
-			<option value="lanwan" <% nvram_selected("chilli_interface","lanwan"); %> >LAN &amp; WLAN</option>
+			<option value="wan" <% nvram_selmatch("chilli_interface","wan","selected"); %> >WAN</option>
+			<option value="lan" <% nvram_selmatch("chilli_interface","lan","selected"); %> >LAN</option>
+			<option value="lanwan" <% nvram_selmatch("chilli_interface","lanwan","selected"); %> >LAN &amp; WLAN</option>
 		</select>
 	</div>
 	<div class="setting">
@@ -52,8 +52,8 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.macauth)</script></div>
-		<input class="spaceradio" type="radio" value="1" name="chilli_macauth" <% nvram_checked("chilli_macauth","1"); %> /><script type="text/javascript">Capture(share.enable)</script>
-		<input class="spaceradio" type="radio" value="0" name="chilli_macauth" <% nvram_checked("chilli_macauth","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+		<input class="spaceradio" type="radio" value="1" name="chilli_macauth" <% nvram_selmatch("chilli_macauth","1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="chilli_macauth" <% nvram_selmatch("chilli_macauth","0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.option)</script></div>
