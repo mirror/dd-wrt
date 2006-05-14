@@ -1,8 +1,9 @@
+
 <fieldset>
 	<legend><script type="text/javascript">Capture(hotspot.legend)</script></legend>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.hotspot)</script></div>
-		<input class="spaceradio" type="radio" value="1" name="chilli_enable" <% nvram_checked("chilli_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>
+		<input class="spaceradio" type="radio" value="1" name="chilli_enable" <% nvram_checked("chilli_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="chilli_enable" <% nvram_checked("chilli_enable","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
