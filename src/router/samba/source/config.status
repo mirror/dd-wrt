@@ -2,7 +2,7 @@
 # Generated automatically by configure.
 # Run this file to recreate the current configuration.
 # This directory was configured as follows,
-# on host colinux:
+# on host linux:
 #
 # ./configure  --prefix=/usr --host=mipsel
 #
@@ -36,7 +36,7 @@ sed 's/%@/@@/; s/@%/@@/; s/%g$/@g/; /@g$/s/[\\&%]/\\&/g;
 /^[ 	]*VPATH[ 	]*=[^:]*$/d
 
 s%@SHELL@%/bin/sh%g
-s%@CFLAGS@%-O%g
+s%@CFLAGS@%-Os -mips32 -mtune=mips32 -pipe -funit-at-a-time%g
 s%@CPPFLAGS@%%g
 s%@CXXFLAGS@%%g
 s%@FFLAGS@%%g
@@ -98,7 +98,7 @@ s%@privatedir@%${prefix}/private%g
 s%@lockdir@%$(VARDIR)/locks%g
 s%@swatdir@%${prefix}/swat%g
 s%@sambabook@%${prefix}/swat/using_samba%g
-s%@builddir@%/home/openwrt/DD-WRT/opt/samba-2.0.7/source%g
+s%@builddir@%/home/dd-wrt/DEV/src/router/samba/source%g
 
 CEOF
 

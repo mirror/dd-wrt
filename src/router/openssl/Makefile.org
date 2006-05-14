@@ -1,19 +1,21 @@
+### Generated automatically from Makefile.org by Configure.
+
 ##
 ## Makefile for OpenSSL
 ##
 
-VERSION=
-MAJOR=
-MINOR=
-SHLIB_VERSION_NUMBER=
+VERSION=0.9.7g
+MAJOR=0
+MINOR=9.7
+SHLIB_VERSION_NUMBER=0.9.7
 SHLIB_VERSION_HISTORY=
-SHLIB_MAJOR=
-SHLIB_MINOR=
-SHLIB_EXT=
-PLATFORM=dist
-OPTIONS=
-CONFIGURE_ARGS=
-SHLIB_TARGET=
+SHLIB_MAJOR=0
+SHLIB_MINOR=9.7
+SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
+PLATFORM=linux-mipsel
+OPTIONS=no-asm no-ec no-engine no-err no-fips no-hw no-krb5 no-threads
+CONFIGURE_ARGS=linux-mipsel no-asm no-ec no-engine no-err no-fips no-hw no-krb5 no-threads
+SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
 # where sub-Makefiles are expected to be.  Currently has very limited usage,
@@ -57,20 +59,20 @@ OPENSSLDIR=/usr/local/ssl
 # equal 4.
 # PKCS1_CHECK - pkcs1 tests.
 
-CC= gcc
+CC= mipsel-linux-uclibc-gcc
 #CFLAG= -DL_ENDIAN -DTERMIO -O3 -fomit-frame-pointer -m486 -Wall -Wuninitialized -DSHA1_ASM -DMD5_ASM -DRMD160_ASM
-CFLAG= -DTERMIOS -DL_ENDIAN -fomit-frame-pointer -O3 -m486 -Wall -DSHA1_ASM -DMD5_ASM -DRMD160_ASM
-DEPFLAG= 
+CFLAG= $(COPTS) -DDSO_DLFCN -DHAVE_DLFCN_H -DOPENSSL_NO_KRB5 -DOPENSSL_NO_ASM -DOPENSSL_NO_EC -DOPENSSL_NO_ENGINE -DOPENSSL_NO_ERR -DOPENSSL_NO_HW -DL_ENDIAN -DTERMIO $(CCOPTS) -Wall
+DEPFLAG= -DOPENSSL_NO_EC -DOPENSSL_NO_ENGINE 
 PEX_LIBS= 
-EX_LIBS= 
+EX_LIBS= -ldl
 EXE_EXT= 
-ARFLAGS=
+ARFLAGS= 
 AR=ar $(ARFLAGS) r
-RANLIB= ranlib
-PERL= perl
+RANLIB= /usr/bin/ranlib
+PERL= /usr/bin/perl
 TAR= tar
 TARFLAGS= --no-recursion
-MAKEDEPPROG=makedepend
+MAKEDEPPROG= gcc
 
 # We let the C compiler driver to take care of .s files. This is done in
 # order to be excused from maintaining a separate set of architecture
@@ -97,12 +99,12 @@ BN_ASM= bn_asm.o
 
 # For x86 assembler: Set PROCESSOR to 386 if you want to support
 # the 80386.
-PROCESSOR=
+PROCESSOR= 
 
 # Set DES_ENC to des_enc.o if you want to use the C version
 #There are 4 x86 assember options.
-FIPS_DES_ENC= des_enc.o fcrypt_b.o
-DES_ENC= asm/dx86-out.o asm/yx86-out.o
+FIPS_DES_ENC= 
+DES_ENC= des_enc.o fcrypt_b.o
 #DES_ENC= des_enc.o fcrypt_b.o          # C
 #DES_ENC= asm/dx86-elf.o asm/yx86-elf.o # elf
 #DES_ENC= asm/dx86-sol.o asm/yx86-sol.o # solaris
@@ -111,7 +113,7 @@ DES_ENC= asm/dx86-out.o asm/yx86-out.o
 
 # Set BF_ENC to bf_enc.o if you want to use the C version
 #There are 4 x86 assember options.
-BF_ENC= asm/bx86-out.o
+BF_ENC= bf_enc.o
 #BF_ENC= bf_enc.o
 #BF_ENC= asm/bx86-elf.o # elf
 #BF_ENC= asm/bx86-sol.o # solaris
@@ -120,7 +122,7 @@ BF_ENC= asm/bx86-out.o
 
 # Set CAST_ENC to c_enc.o if you want to use the C version
 #There are 4 x86 assember options.
-CAST_ENC= asm/cx86-out.o
+CAST_ENC= c_enc.o
 #CAST_ENC= c_enc.o
 #CAST_ENC= asm/cx86-elf.o # elf
 #CAST_ENC= asm/cx86-sol.o # solaris
@@ -129,7 +131,7 @@ CAST_ENC= asm/cx86-out.o
 
 # Set RC4_ENC to rc4_enc.o if you want to use the C version
 #There are 4 x86 assember options.
-RC4_ENC= asm/rx86-out.o
+RC4_ENC= rc4_enc.o
 #RC4_ENC= rc4_enc.o
 #RC4_ENC= asm/rx86-elf.o # elf
 #RC4_ENC= asm/rx86-sol.o # solaris
@@ -138,7 +140,7 @@ RC4_ENC= asm/rx86-out.o
 
 # Set RC5_ENC to rc5_enc.o if you want to use the C version
 #There are 4 x86 assember options.
-RC5_ENC= asm/r586-out.o
+RC5_ENC= rc5_enc.o
 #RC5_ENC= rc5_enc.o
 #RC5_ENC= asm/r586-elf.o # elf
 #RC5_ENC= asm/r586-sol.o # solaris
@@ -146,22 +148,22 @@ RC5_ENC= asm/r586-out.o
 #RC5_ENC= asm/r586bsdi.o # bsdi
 
 # Also need MD5_ASM defined
-MD5_ASM_OBJ= asm/mx86-out.o
+MD5_ASM_OBJ= 
 #MD5_ASM_OBJ= asm/mx86-elf.o        # elf
 #MD5_ASM_OBJ= asm/mx86-sol.o        # solaris
 #MD5_ASM_OBJ= asm/mx86-out.o        # a.out, FreeBSD
 #MD5_ASM_OBJ= asm/mx86bsdi.o        # bsdi
 
 # Also need SHA1_ASM defined
-SHA1_ASM_OBJ= asm/sx86-out.o
-FIPS_SHA1_ASM_OBJ= asm/sx86-out.o
+SHA1_ASM_OBJ= 
+FIPS_SHA1_ASM_OBJ= 
 #SHA1_ASM_OBJ= asm/sx86-elf.o       # elf
 #SHA1_ASM_OBJ= asm/sx86-sol.o       # solaris
 #SHA1_ASM_OBJ= asm/sx86-out.o       # a.out, FreeBSD
 #SHA1_ASM_OBJ= asm/sx86bsdi.o       # bsdi
 
 # Also need RMD160_ASM defined
-RMD160_ASM_OBJ= asm/rm86-out.o
+RMD160_ASM_OBJ= 
 #RMD160_ASM_OBJ= asm/rm86-elf.o       # elf
 #RMD160_ASM_OBJ= asm/rm86-sol.o       # solaris
 #RMD160_ASM_OBJ= asm/rm86-out.o       # a.out, FreeBSD
@@ -182,7 +184,7 @@ SHLIBDIRS= crypto ssl
 SDIRS=  objects \
 	md2 md4 md5 sha mdc2 hmac ripemd \
 	des rc2 rc4 rc5 idea bf cast \
-	bn ec rsa dsa dh dso engine aes \
+	bn rsa dsa dh dso aes \
 	buffer bio stack lhash rand err \
 	evp asn1 pem x509 x509v3 conf txt_db pkcs7 pkcs12 comp ocsp ui krb5
 
@@ -209,7 +211,7 @@ SIGS=	libcrypto.a.sha1
 SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
 SHARED_SSL=libssl$(SHLIB_EXT)
 SHARED_LIBS=
-SHARED_LIBS_LINK_EXTS=
+SHARED_LIBS_LINK_EXTS=.so.$(SHLIB_MAJOR) .so
 SHARED_LDFLAGS=
 
 GENERAL=        Makefile
