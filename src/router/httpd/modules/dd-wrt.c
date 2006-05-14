@@ -614,10 +614,8 @@ ej_show_userlist (int eid, webs_t wp, int argc, char_t ** argv)
       snprintf (password, 31, "fon_user%d_password", i);
       websWrite (wp, "<td>\n");
       websWrite (wp,
-		 "<input type=\"password\" id=\"%s\" name=\"%s\" value=\"\" size=\"25\" maxlength=\"63\" />\n&nbsp;&nbsp;&nbsp;\n\
-			<input type=\"checkbox\" name=\"_wl_unmask\" value=\"0\" onclick=\"setElementMask('%s', this.checked)\" >&nbsp;\n\
-			<script type=\"text/javascript\">Capture(share.unmask)</script></input>\n",
-		 password, password, password);
+		 "<input type=\"password\" name=\"%s\" value=\"blahblahblah\" size=\"25\" maxlength=\"63\" />\n",
+		 password);
       websWrite (wp, "</td></tr>\n");
     }
   free (o);
