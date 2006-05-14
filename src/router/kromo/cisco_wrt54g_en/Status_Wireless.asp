@@ -186,7 +186,7 @@ addEvent(window, "unload", function() {
 									<span id="wl_rate"><% get_currate(); %> Mbps</span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(status_wireless.encrypt)</script></div>
+									<div class="label"><script type="text/javascript">Capture(share.encrypt)</script></div>
 									<span id="wl_security"><% nvram_match("security_mode", "disabled", "Disabled"); %><% nvram_invmatch("security_mode", "disabled", "Enabled,&nbsp;"); %><% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %><% nvram_match("security_mode", "wpa", "WPA RADIUS"); %><% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %><% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %><% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %><% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %><% nvram_match("security_mode", "radius", "RADIUS"); %><% nvram_match("security_mode", "wep", "WEP"); %></span>&nbsp;
 								</div>
 								<div class="setting">
