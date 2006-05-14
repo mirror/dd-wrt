@@ -162,8 +162,7 @@ addEvent(window, "load", function() {
 		<div id="wrapper">
 			<div id="content">
 				<div id="header">
-					<div id="logo"><h1><% show_control(); %></h1>
-					</div>
+					<div id="logo"><h1><% show_control(); %></h1></div>
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
