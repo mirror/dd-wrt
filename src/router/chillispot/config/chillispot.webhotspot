@@ -7,15 +7,15 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.pserver)</script></div>
-		<input class="num" maxLength="100" size="25" name="chilli_radius" value="<% nvram_get("chilli_radius"); %>" />
+		<input class="text" maxLength="100" size="25" name="chilli_radius" value="<% nvram_get("chilli_radius"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.bserver)</script></div>
-		<input class="num" maxLength="100" size="25" name="chilli_backup" value="<% nvram_get("chilli_backup"); %>" />
+		<input class="text" maxLength="100" size="25" name="chilli_backup" value="<% nvram_get("chilli_backup"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.dns)</script></div>
-		<input class="num" maxLength="15" size="15" name="chilli_dns1" value="<% nvram_get("chilli_dns1"); %>" />
+		<input class="text" maxLength="15" size="15" name="chilli_dns1" value="<% nvram_get("chilli_dns1"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.url)</script></div>
@@ -51,7 +51,8 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.macauth)</script></div>
-		<input class="text" maxLength="100" size="25" name="chilli_macauth" value="<% nvram_get("chilli_macauth"); %>" />
+		<input class="spaceradio" type="radio" value="1" name="chilli_macauth" <% nvram_checked("chilli_macauth","1"); %> /><script type="text/javascript">Capture(share.enable)</script>
+		<input class="spaceradio" type="radio" value="0" name="chilli_macauth" <% nvram_checked("chilli_macauth","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.option)</script></div>
