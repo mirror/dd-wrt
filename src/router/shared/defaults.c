@@ -1034,15 +1034,15 @@ struct nvram_tuple router_defaults[] = {
   {"wshaper_noprioportsrc", "", 0},
   {"wshaper_noprioportdst", "", 0},
   {"zebra_enable", "1", 0},
-
+  {"qos_type","0",0},
   {"svqos_svcs", "", 0},
   {"svqos_ips", "", 0},
   {"svqos_macs", "", 0},
 
-  {"svqos_port1bw", "full", 0},
-  {"svqos_port2bw", "full", 0},
-  {"svqos_port3bw", "full", 0},
-  {"svqos_port4bw", "full", 0},
+  {"svqos_port1bw", "FULL", 0},
+  {"svqos_port2bw", "FULL", 0},
+  {"svqos_port3bw", "FULL", 0},
+  {"svqos_port4bw", "FULL", 0},
 
   {"svqos_port1prio", "10", 0},
   {"svqos_port2prio", "10", 0},

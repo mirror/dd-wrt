@@ -15,7 +15,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: event_sig.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: event_sig.c,v 1.5 2002/07/05 19:37:26 dfs Exp $";
 
 #define _POSIX_SOURCE 1 /* For sigaction defines */
 #define _BSD_SOURCE   1 /* For SA_RESTART */

@@ -15,7 +15,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: event.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
+"$Id: event.c,v 1.3 2006/02/23 15:38:08 dfs Exp $";
 
 #include "event.h"
 #include <stdlib.h>
@@ -85,6 +85,10 @@ Event_HandleEvent(EventSelector *es)
     unsigned int flags;
 
     struct timeval abs_timeout, now;
+
+    /* Avoid compiler warning */
+    abs_timeout.tv_sec = 0;
+    abs_timeout.tv_usec = 0;
     struct timeval timeout;
     struct timeval *tm;
     EventHandler *eh;

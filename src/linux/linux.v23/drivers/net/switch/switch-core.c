@@ -17,7 +17,32 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
  *
+ ************************************************************
+ * Copyright (C) 2006 James Ewing <james.ewing@sveasoft.com>
+ * 
+ * Added code for bandwidth, prio, flow for ROBO/ADM6996
+ * Added code for enable, media for ROBO
+ *
+ * See switch-robo.c, switch-adm.c for specifics
+ ************************************************************
+ *
  * $Id: $
+ *
+ * Basic doc of driver's /proc interface:
+ * /proc/switch/<interface>/
+ *   registers:              read-only
+ *   counters:               read-only
+ *   reset:                  write causes hardware reset
+ *   enable_vlan:            "0", "1"
+ *   port/<port-number>/
+ *     enabled:              "0", "1"
+ *     media:                "AUTO", "100FD", "100HD", "10FD", "10HD"
+ *     bandwidth:            "FULL", "50M", "20M", "10M", "5M", "2M", "1M", "512K", "256K"
+ *     prio-enable:           "0", "1"
+ *     prio:                  "1", "2", "4", "8"
+ *     flow:                  "0", "1"
+ *   vlan/<port-number>/
+ *     ports: same syntax as for nvram's vlan*ports (eg. "1 2 3 4 5*")
  */
 
 #include <linux/config.h>
@@ -285,7 +310,65 @@ static inline int isspace(char c) {
 
 #define toupper(c) (islower(c) ? ((c) ^ 0x20) : (c))
 #define islower(c) (((unsigned char)((c) - 'a')) < 26)
-														 
+
+int switch_parse_bandwidth(char *buf)
+{
+	char *str = buf;
+	while (*buf != 0) {
+		*buf = toupper(*buf);
+		buf++;
+	}
+
+	if (strncmp(str, "FULL", 4) == 0)
+		return SWITCH_BANDWIDTH_FULL;
+	else if (strncmp(str, "50M", 3) == 0)
+		return SWITCH_BANDWIDTH_50M;
+	else if (strncmp(str, "20M", 3) == 0)
+		return SWITCH_BANDWIDTH_20M;
+	else if (strncmp(str, "10M", 3) == 0)
+		return SWITCH_BANDWIDTH_10M;
+	else if (strncmp(str, "5M", 2) == 0)
+		return SWITCH_BANDWIDTH_5M;
+	else if (strncmp(str, "2M", 2) == 0)
+		return SWITCH_BANDWIDTH_2M;
+	else if (strncmp(str, "1M", 2) == 0)
+		return SWITCH_BANDWIDTH_1M;
+	else if (strncmp(str, "512K", 4) == 0)
+		return SWITCH_BANDWIDTH_512K;
+	else if (strncmp(str, "256K", 4) == 0)
+		return SWITCH_BANDWIDTH_256K;
+	else
+		return SWITCH_BANDWIDTH_FULL;
+}
+
+int switch_print_bandwidth(char *buf, int media)
+{
+	int len = 0;
+
+	if (media & SWITCH_BANDWIDTH_FULL)
+		len = sprintf(buf, "FULL");
+	else if (media == SWITCH_BANDWIDTH_50M)
+		len = sprintf(buf, "50M");
+	else if (media == SWITCH_BANDWIDTH_20M)
+		len = sprintf(buf, "20M");
+	else if (media == SWITCH_BANDWIDTH_10M)
+		len = sprintf(buf, "10M");
+	else if (media == SWITCH_BANDWIDTH_5M)
+		len = sprintf(buf, "5M");
+	else if (media == SWITCH_BANDWIDTH_2M)
+		len = sprintf(buf, "2M");
+	else if (media == SWITCH_BANDWIDTH_1M)
+		len = sprintf(buf, "1M");
+	else if (media == SWITCH_BANDWIDTH_512K)
+		len = sprintf(buf, "512K");
+	else if (media == SWITCH_BANDWIDTH_256K)
+		len = sprintf(buf, "256K");
+	else
+		len = sprintf(buf, "FULL");
+
+	return len;
+}
+
 int switch_parse_media(char *buf)
 {
 	char *str = buf;
@@ -389,11 +472,11 @@ int switch_register_driver(switch_driver *driver)
 	
 	list_for_each(pos, &drivers.list) {
 		if (strcmp(list_entry(pos, switch_driver, list)->name, driver->name) == 0) {
-			printk("Switch driver '%s' already exists in the kernel\n", driver->name);
+//			printk("Switch driver '%s' already exists in the kernel\n", driver->name);
 			return -EINVAL;
 		}
 		if (strcmp(list_entry(pos, switch_driver, list)->interface, driver->interface) == 0) {
-			printk("There is already a switch registered on the device '%s'\n", driver->interface);
+//			printk("There is already a switch registered on the device '%s'\n", driver->interface);
 			return -EINVAL;
 		}
 	}
@@ -431,7 +514,7 @@ void switch_unregister_driver(char *name) {
 	}
 }
 
-static int __init switch_init()
+static int __init switch_init(void)
 {
 	if ((switch_root = proc_mkdir("switch", NULL)) == NULL) {
 		printk("%s: proc_mkdir failed.\n", __FILE__);
@@ -443,7 +526,7 @@ static int __init switch_init()
 	return 0;
 }
 
-static void __exit switch_exit()
+static void __exit switch_exit(void)
 {
 	remove_proc_entry("switch", NULL);
 }

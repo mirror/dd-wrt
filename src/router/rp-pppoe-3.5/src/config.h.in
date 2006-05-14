@@ -134,6 +134,9 @@
 /* Define if bitfields are packed in reverse order */
 #undef PACK_BITFIELDS_REVERSED
 
+/* Define to include debugging code */
+#undef DEBUGGING_ENABLED
+
 /* Solaris moans if we don't do this... */
 #ifdef __sun
 #define __EXTENSIONS__ 1

@@ -4,7 +4,7 @@
 *
 * Implementation of user-space PPPoE redirector for Linux.
 *
-* Copyright (C) 2000-2001 by Roaring Penguin Software Inc.
+* Copyright (C) 2000-2006 by Roaring Penguin Software Inc.
 *
 * This program may be distributed according to the terms of the GNU
 * General Public License, version 2 or (at your option) any later version.
@@ -14,9 +14,7 @@
 ***********************************************************************/
 
 static char const RCSID[] =
-"$Id: pppoe.c,v 1.1.8.1 2004/08/01 13:08:04 boris Exp $";
-
-#define tIOC    ('t' << 8)
+"$Id: pppoe.c,v 1.43 2006/02/23 15:40:42 dfs Exp $";
 
 #include "pppoe.h"
 
@@ -71,6 +69,8 @@ int optFloodDiscovery    = 0;   /* Flood server with discovery requests.
 
 PPPoEConnection *Connection = NULL; /* Must be global -- used
 				       in signal handler */
+
+int persist = 0; 		/* We are not a pppd plugin */
 /***********************************************************************
 *%FUNCTION: sendSessionPacket
 *%ARGUMENTS:
@@ -96,11 +96,14 @@ sendSessionPacket(PPPoEConnection *conn, PPPoEPacket *packet, int len)
 	}
 	exit(EXIT_FAILURE);
     }
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, packet, "SENT");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
+#endif
+
 }
 
 #ifdef USE_BPF
@@ -120,7 +123,7 @@ sendSessionPacket(PPPoEConnection *conn, PPPoEPacket *packet, int len)
 * have already read the packet and determined it to be a discovery
 * packet before passing it here.
 ***********************************************************************/
-void
+static void
 sessionDiscoveryPacket(PPPoEPacket *packet)
 {
     /* Sanity check */
@@ -159,7 +162,7 @@ sessionDiscoveryPacket(PPPoEPacket *packet)
 * We got a discovery packet during the session stage.  This most likely
 * means a PADT.
 ***********************************************************************/
-void
+static void
 sessionDiscoveryPacket(PPPoEConnection *conn)
 {
     PPPoEPacket packet;
@@ -194,13 +197,13 @@ sessionDiscoveryPacket(PPPoEConnection *conn)
     if (memcmp(packet.ethHdr.h_source, conn->peerEth, ETH_ALEN)) {
 	return;
     }
-
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "RCVD");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
-
+#endif
     syslog(LOG_INFO,
 	   "Session %d terminated -- received PADT from peer",
 	   (int) ntohs(packet.session));
@@ -231,6 +234,9 @@ session(PPPoEConnection *conn)
 
     /* Open a session socket */
     conn->sessionSocket = openInterface(conn->ifName, Eth_PPPOE_Session, conn->myEth);
+
+    /* Drop privileges */
+    dropPrivs();
 
     /* Prepare for select() */
     if (conn->sessionSocket > maxFD)   maxFD = conn->sessionSocket;
@@ -328,7 +334,7 @@ session(PPPoEConnection *conn)
 * If an established session exists send PADT to terminate from session
 *  from our end
 ***********************************************************************/
-void
+static void
 sigPADT(int src)
 {
   syslog(LOG_DEBUG,"Received signal %d on session %d.",
@@ -357,27 +363,31 @@ usage(char const *argv0)
     fprintf(stderr, "   -I if_name     -- Specify interface (default %s.)\n",
 	    DEFAULT_IF);
 #endif
-    fprintf(stderr, "   -T timeout     -- Specify inactivity timeout in seconds.\n");
+#ifdef DEBUGGING_ENABLED
     fprintf(stderr, "   -D filename    -- Log debugging information in filename.\n");
-    fprintf(stderr, "   -V             -- Print version and exit.\n");
-    fprintf(stderr, "   -A             -- Print access concentrator names and exit.\n");
-    fprintf(stderr, "   -S name        -- Set desired service name.\n");
-    fprintf(stderr, "   -C name        -- Set desired access concentrator name.\n");
-    fprintf(stderr, "   -U             -- Use Host-Unique to allow multiple PPPoE sessions.\n");
-    fprintf(stderr, "   -s             -- Use synchronous PPP encapsulation.\n");
-    fprintf(stderr, "   -m MSS         -- Clamp incoming and outgoing MSS options.\n");
-    fprintf(stderr, "   -p pidfile     -- Write process-ID to pidfile.\n");
-    fprintf(stderr, "   -e sess:mac    -- Skip discovery phase; use existing session.\n");
-    fprintf(stderr, "   -n             -- Do not open discovery socket.\n");
-    fprintf(stderr, "   -k             -- Kill a session with PADT (requires -e)\n");
-    fprintf(stderr, "   -d             -- Perform discovery, print session info and exit.\n");
-    fprintf(stderr, "   -f disc:sess   -- Set Ethernet frame types (hex).\n");
-    fprintf(stderr, "   -h             -- Print usage information.\n\n");
-    fprintf(stderr, "PPPoE Version %s, Copyright (C) 2001 Roaring Penguin Software Inc.\n", VERSION);
-    fprintf(stderr, "PPPoE comes with ABSOLUTELY NO WARRANTY.\n");
-    fprintf(stderr, "This is free software, and you are welcome to redistribute it under the terms\n");
-    fprintf(stderr, "of the GNU General Public License, version 2 or any later version.\n");
-    fprintf(stderr, "http://www.roaringpenguin.com\n");
+#endif
+    fprintf(stderr,
+	    "   -T timeout     -- Specify inactivity timeout in seconds.\n"
+	    "   -t timeout     -- Initial timeout for discovery packets in seconds\n"
+	    "   -V             -- Print version and exit.\n"
+	    "   -A             -- Print access concentrator names and exit.\n"
+	    "   -S name        -- Set desired service name.\n"
+	    "   -C name        -- Set desired access concentrator name.\n"
+	    "   -U             -- Use Host-Unique to allow multiple PPPoE sessions.\n"
+	    "   -s             -- Use synchronous PPP encapsulation.\n"
+	    "   -m MSS         -- Clamp incoming and outgoing MSS options.\n"
+	    "   -p pidfile     -- Write process-ID to pidfile.\n"
+	    "   -e sess:mac    -- Skip discovery phase; use existing session.\n"
+	    "   -n             -- Do not open discovery socket.\n"
+	    "   -k             -- Kill a session with PADT (requires -e)\n"
+	    "   -d             -- Perform discovery, print session info and exit.\n"
+	    "   -f disc:sess   -- Set Ethernet frame types (hex).\n"
+	    "   -h             -- Print usage information.\n\n"
+	    "PPPoE Version %s, Copyright (C) 2001-2006 Roaring Penguin Software Inc.\n"
+	    "PPPoE comes with ABSOLUTELY NO WARRANTY.\n"
+	    "This is free software, and you are welcome to redistribute it under the terms\n"
+	    "of the GNU General Public License, version 2 or any later version.\n"
+	    "http://www.roaringpenguin.com\n", VERSION);
     exit(EXIT_SUCCESS);
 }
 
@@ -407,10 +417,16 @@ main(int argc, char *argv[])
     long flags;
 #endif
 
+    if (getuid() != geteuid() ||
+	getgid() != getegid()) {
+	IsSetID = 1;
+    }
+
     /* Initialize connection info */
     memset(&conn, 0, sizeof(conn));
     conn.discoverySocket = -1;
     conn.sessionSocket = -1;
+    conn.discoveryTimeout = PADI_TIMEOUT;
 
     /* For signal handler */
     Connection = &conn;
@@ -418,17 +434,33 @@ main(int argc, char *argv[])
     /* Initialize syslog */
     openlog("pppoe", LOG_PID, LOG_DAEMON);
 
-    while((opt = getopt(argc, argv, "I:VAT:D:hS:C:Usm:np:e:kdf:F:")) != -1) {
+    char const *options;
+#ifdef DEBUGGING_ENABLED
+    options = "I:VAT:D:hS:C:Usm:np:e:kdf:F:t:";
+#else
+    options = "I:VAT:hS:C:Usm:np:e:kdf:F:t:";
+#endif
+    while((opt = getopt(argc, argv, options)) != -1) {
 	switch(opt) {
+	case 't':
+	    if (sscanf(optarg, "%d", &conn.discoveryTimeout) != 1) {
+		fprintf(stderr, "Illegal argument to -t: Should be -t timeout\n");
+		exit(EXIT_FAILURE);
+	    }
+	    if (conn.discoveryTimeout < 1) {
+		conn.discoveryTimeout = 1;
+	    }
+	    break;
 	case 'F':
 	    if (sscanf(optarg, "%d", &optFloodDiscovery) != 1) {
 		fprintf(stderr, "Illegal argument to -F: Should be -F numFloods\n");
 		exit(EXIT_FAILURE);
 	    }
 	    if (optFloodDiscovery < 1) optFloodDiscovery = 1;
-	    fprintf(stderr, "WARNING: DISCOVERY FLOOD IS MEANT FOR STRESS-TESTING\n");
-	    fprintf(stderr, "A PPPOE SERVER WHICH YOU OWN.  DO NOT USE IT AGAINST\n");
-	    fprintf(stderr, "A REAL ISP.  YOU HAVE 5 SECONDS TO ABORT.\n");
+	    fprintf(stderr,
+		    "WARNING: DISCOVERY FLOOD IS MEANT FOR STRESS-TESTING\n"
+		    "A PPPOE SERVER WHICH YOU OWN.  DO NOT USE IT AGAINST\n"
+		    "A REAL ISP.  YOU HAVE 5 SECONDS TO ABORT.\n");
 	    sleep(5);
 	    break;
 	case 'f':
@@ -476,11 +508,13 @@ main(int argc, char *argv[])
 	    break;
 
 	case 'p':
+	    switchToRealID();
 	    pidfile = fopen(optarg, "w");
 	    if (pidfile) {
 		fprintf(pidfile, "%lu\n", (unsigned long) getpid());
 		fclose(pidfile);
 	    }
+	    switchToEffectiveID();
 	    break;
 	case 'S':
 	    SET_STRING(conn.serviceName, optarg);
@@ -494,8 +528,11 @@ main(int argc, char *argv[])
 	case 'U':
 	    conn.useHostUniq = 1;
 	    break;
+#ifdef DEBUGGING_ENABLED
 	case 'D':
+	    switchToRealID();
 	    conn.debugFile = fopen(optarg, "w");
+	    switchToEffectiveID();
 	    if (!conn.debugFile) {
 		fprintf(stderr, "Could not open %s: %s\n",
 			optarg, strerror(errno));
@@ -504,6 +541,7 @@ main(int argc, char *argv[])
 	    fprintf(conn.debugFile, "rp-pppoe-%s\n", VERSION);
 	    fflush(conn.debugFile);
 	    break;
+#endif
 	case 'T':
 	    optInactivityTimeout = (int) strtol(optarg, NULL, 10);
 	    if (optInactivityTimeout < 0) {
@@ -548,11 +586,7 @@ main(int argc, char *argv[])
 #endif
     }
 
-    /* Set signal handlers: send PADT on HUP; ignore TERM and INT */
     if (!conn.printACNames) {
-	signal(SIGTERM, SIG_IGN);
-	signal(SIGINT, SIG_IGN);
-	signal(SIGHUP, sigPADT);
 
 #ifdef HAVE_N_HDLC
 	if (conn.synchronous) {
@@ -602,6 +636,11 @@ main(int argc, char *argv[])
 	       conn.peerEth[5]);
 	exit(EXIT_SUCCESS);
     }
+
+    /* Set signal handlers: send PADT on HUP; ignore TERM and INT */
+    signal(SIGTERM, SIG_IGN);
+    signal(SIGINT, SIG_IGN);
+    signal(SIGHUP, sigPADT);
     session(&conn);
     return 0;
 }
@@ -701,11 +740,13 @@ asyncReadFromEth(PPPoEConnection *conn, int sock, int clampMss)
 	       (unsigned int) ntohs(packet.length));
 	return;
     }
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "RCVD");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
+#endif
 
 #ifdef USE_BPF
     /* Make sure this is a session packet before processing further */
@@ -828,11 +869,13 @@ syncReadFromEth(PPPoEConnection *conn, int sock, int clampMss)
 	       (unsigned int) ntohs(packet.length));
 	return;
     }
+#ifdef DEBUGGING_ENABLED
     if (conn->debugFile) {
 	dumpPacket(conn->debugFile, &packet, "RCVD");
 	fprintf(conn->debugFile, "\n");
 	fflush(conn->debugFile);
     }
+#endif
 
 #ifdef USE_BPF
     /* Make sure this is a session packet before processing further */
