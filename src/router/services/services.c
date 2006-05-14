@@ -2208,8 +2208,8 @@ start_chilli (void)
     fprintf (fp, "uamanydns\n");
   if (nvram_invmatch ("chilli_uamallowed", ""))
     fprintf (fp, "uamallowed %s\n", nvram_get ("chilli_uamallowed"));
-  if (nvram_invmatch ("chilli_macauth", ""))
-    fprintf (fp, "macauth %s\n", nvram_get ("chilli_macauth"));
+  if (nvram_match ("chilli_macauth", "1"))
+    fprintf (fp, "macauth\n");
 #ifndef HAVE_FON
   if (nvram_match ("fon_enable", "1"))
     {
