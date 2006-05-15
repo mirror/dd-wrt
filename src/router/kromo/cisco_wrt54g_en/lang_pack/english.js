@@ -1479,6 +1479,7 @@ wl_adv.label11="AP Isolation";
 wl_adv.label12="TX Antenna";
 wl_adv.label13="RX Antenna";
 wl_adv.label14="Preamble";
+wl_adv.reference="Noise Reference";
 wl_adv.label15="Xmit Power";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Wireless GUI Access";

@@ -183,6 +183,11 @@ addEvent(window, "load", function() {
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 28, " + share.range + ": 0 - 251mW)")</script></span>
 								</div>
 								<div class="setting">
+									<div class="label"><script type="text/javascript">Capture(wl_adv.reference)</script></div>
+									<input class="num" name="noise_reference" size="6" maxlength="3" value='<% nvram_selget("noise_reference"); %>' />
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": -98, " + share.range + ": 0 - -100db)")</script></span>
+								</div>
+								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_adv.label16)</script></div>
 									<select name="wl_afterburner">
 										<script type="text/javascript">document.write("<option value=\"off\" <% nvram_selected("wl_afterburner", "off", "js"); %>>" + share.disable + "</option>");</script>
