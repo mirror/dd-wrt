@@ -21,11 +21,12 @@ function SelMode(varname,num,F)	{
 }
 function to_submit(F) {
 	F.submit_button.value = "WL_WPATable";
-	F.change_action.value = "gozila_cgi";
 	F.submit_type.value = "save";
-	F.save_button.value = "Saved";
-
-       	apply(F);
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
+	
+	F.change_action.value = "gozila_cgi";
+	apply(F);
 }
 function valid_value(F) {
 	if(F.security_mode.value == "disabled")
