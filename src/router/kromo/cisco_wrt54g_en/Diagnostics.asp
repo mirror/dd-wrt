@@ -147,7 +147,7 @@ function valid(F,I) {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hdiag.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(diag.cmd)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hdiag.right2)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HDiagnostics.asp');"><script type="text/javascript">Capture(share.more)</script></a>
