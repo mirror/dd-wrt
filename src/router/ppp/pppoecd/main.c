@@ -17,7 +17,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define RCSID	"$Id: main.c,v 1.5 2003/10/16 13:08:25 honor Exp $"
+#define RCSID	"$Id: main.c,v 1.7 2004/08/12 02:56:55 tallest Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -169,11 +169,6 @@ static void handle_events __P((void));
 
 extern	char	*ttyname __P((int));
 extern	char	*getlogin __P((void));
-
-#ifdef LOCAL_LOG
-int check_transferred_size(unsigned int, float *);
-#endif
-
 int main __P((int, char *[]));
 
 #ifdef ultrix
@@ -220,12 +215,6 @@ main(argc, argv)
     struct passwd *pw;
     struct protent *protp;
     char numbuf[16];
-
-#ifdef LOCAL_LOG
-    int size;
-    float bytes;
-    FILE *fp;
-#endif
 
     new_phase(PHASE_INITIALIZE);
 
@@ -439,21 +428,7 @@ main(argc, argv)
 	 * incoming events (reply, timeout, etc.).
 	 */
 	notice("Connect: %s <--> %s", ifname, ppp_devnam);
-
-#ifdef LOCAL_LOG
-    /*
-     * Initialize local logging
-     * Local logging support added by ice-man
-     */
-	fp = fopen("/tmp/ppp/connect-log", "a+");
-	
-	if (fp) fprintf(fp, "\tPPP Session details:\n");
-	if (fp) fprintf(fp, "pppd %s started by %s, uid %d\n", VERSION, p, uid);
-	
-	if (fp) fprintf(fp, "Connect: %s <--> %s\n", ifname, ppp_devnam);
-#endif
-	
-	gettimeofday(&start_time, NULL);
+	my_gettimeofday(&start_time, NULL);
 	link_stats_valid = 0;
 	script_unsetenv("CONNECT_TIME");
 	script_unsetenv("BYTES_SENT");
@@ -487,49 +462,6 @@ main(argc, argv)
 	    info("Connect time %d.%d minutes.", t/10, t%10);
 	    info("Sent %u bytes, received %u bytes.",
 		 link_stats.bytes_out, link_stats.bytes_in);
-
-#ifdef LOCAL_LOG
-	    if (fp) fprintf(fp, "Connect time %d.%d minutes.\n", t/10, t%10);
-	    //if (fp) fprintf(fp, "Sent %u bytes, received %u bytes.\n\n",link_stats.bytes_out, link_stats.bytes_in);
-	    if (fp){
-		    fprintf(fp, "Received ");
-		    size = check_transferred_size(link_stats.bytes_in, &bytes);
-		    fprintf(fp, "%.1f ", bytes);
-		    switch (size){
-			    case 0:
-				    fprintf(fp, "bytes, ");
-				    break;
-			    case 1:
-				    fprintf(fp, "Kbytes, ");
-				    break;
-			    case 2:
-				    fprintf(fp, "Mbytes, ");
-				    break;
-			    case 3:
-				    fprintf(fp, "Gbytes, ");
-				    break;
-		    }
-		    fprintf(fp, "Sent ");
-		    size = check_transferred_size(link_stats.bytes_out, &bytes);
-		    fprintf(fp, "%.1f ", bytes);
-		    switch (size){
-			    case 0:
-				    fprintf(fp, "bytes");
-				    break;
-			    case 1:
-				    fprintf(fp, "Kbytes");
-				    break;
-                            case 2:
-				    fprintf(fp, "Mbytes");
-				    break;
-                            case 3:
-                                    fprintf(fp, "Gbytes");
-                                    break;
-		    }
-		    fprintf(fp, "\n\n");
-	    }
-#endif
-	    
 	}
 
 	/*
@@ -606,37 +538,9 @@ main(argc, argv)
 	    break;
     }
 
-#ifdef LOCAL_LOG
-    /* fix for unopened log file by SeG*/
-    if (fp) fclose(fp);
-#endif
-    
     die(status);
     return 0;
 }
-
-#ifdef LOCAL_LOG
-int check_transferred_size(unsigned int bytes_transferred,float *bytes){
-        int i;
-        unsigned int size;
-
-        // Check for correct size
-        for( i = 3; i > 0; i--){
-                if (i == 3) size = 1073741824;   // Gbyte
-                else if (i == 2) size = 1048576; // Mbyte
-                else size = 1024;                // Kbyte
-                if ( bytes_transferred > size ){
-                        (*bytes) = (float) (bytes_transferred  / size);
-                        return i;
-                }
-        }
-
-        //If we arrive here it was transferred less than 1K
-        (*bytes) = (float) bytes_transferred;
-        return 0;
-}
-#endif
-
 
 /*
  * handle_events - wait for something to happen and respond to it.
@@ -777,6 +681,10 @@ set_ifunit(iskey)
     info("Using interface %s%d", PPP_DRV_NAME, ifunit);
     slprintf(ifname, sizeof(ifname), "%s%d", PPP_DRV_NAME, ifunit);
     script_setenv("IFNAME", ifname, iskey);
+
+    char *arg[3]={_PATH_SETPPPOEPID, ipparam, NULL};  // tallest 1219
+    run_program(_PATH_SETPPPOEPID,arg,0,0,0);
+
     if (iskey) {
 	create_pidfile();	/* write pid to file */
 	create_linkpidfile();
@@ -1026,7 +934,7 @@ update_link_stats(u)
     char numbuf[32];
 
     if (!get_ppp_stats(u, &link_stats)
-	|| gettimeofday(&now, NULL) < 0)
+	|| my_gettimeofday(&now, NULL) < 0)
 	return;
     link_connect_time = now.tv_sec - start_time.tv_sec;
     link_stats_valid = 1;
@@ -1075,7 +983,7 @@ timeout(func, arg, secs, usecs)
 	fatal("Out of memory in timeout()!");
     newp->c_arg = arg;
     newp->c_func = func;
-    gettimeofday(&timenow, NULL);
+    my_gettimeofday(&timenow, NULL);
     newp->c_time.tv_sec = timenow.tv_sec + secs;
     newp->c_time.tv_usec = timenow.tv_usec + usecs;
     if (newp->c_time.tv_usec >= 1000000) {
@@ -1131,7 +1039,7 @@ calltimeout()
     while (callout != NULL) {
 	p = callout;
 
-	if (gettimeofday(&timenow, NULL) < 0)
+	if (my_gettimeofday(&timenow, NULL) < 0)
 	    fatal("Failed to get time of day: %m");
 	if (!(p->c_time.tv_sec < timenow.tv_sec
 	      || (p->c_time.tv_sec == timenow.tv_sec
@@ -1156,7 +1064,7 @@ timeleft(tvp)
     if (callout == NULL)
 	return NULL;
 
-    gettimeofday(&timenow, NULL);
+    my_gettimeofday(&timenow, NULL);
     tvp->tv_sec = callout->c_time.tv_sec - timenow.tv_sec;
     tvp->tv_usec = callout->c_time.tv_usec - timenow.tv_usec;
     if (tvp->tv_usec < 0) {

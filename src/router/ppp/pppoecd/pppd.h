@@ -16,7 +16,7 @@
  * IMPLIED WARRANTIES, INCLUDING, WITHOUT LIMITATION, THE IMPLIED
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  *
- * $Id: pppd.h,v 1.3 2003/10/04 10:06:01 sparq Exp $
+ * $Id: pppd.h,v 1.6 2004/08/12 02:56:55 tallest Exp $
  */
 
 /*
@@ -289,6 +289,13 @@ extern int  privileged_option;	/* set iff the current option came from root */
 extern char *option_source;	/* string saying where the option came from */
 extern int  option_priority;	/* priority of current options */
 
+#ifdef UNNUMBERIP_SUPPORT
+extern char    is_unnumber_ip;  /* This parameter use for unnumber IP. by tallest */
+#endif
+
+#define MAXFUNCLEN	256 //by tallest 0407
+extern char	ppp_disconnect_func[MAXFUNCLEN];	//by tallest 0407
+
 /*
  * Values for phase.
  */
@@ -546,7 +553,7 @@ int  sifaddr __P((int, u_int32_t, u_int32_t, u_int32_t));
 				/* Configure IPv4 addresses for i/f */
 int  cifaddr __P((int, u_int32_t, u_int32_t));
 				/* Reset i/f IP addresses */
-#define sifdefaultroute(a,b,c) (0)
+// remove by tallest #define sifdefaultroute(a,b,c) (0)
 #define cifdefaultroute(a,b,c) (0)
 #define sifproxyarp(a,b) (0)
 #define cifproxyarp(a,b) (0)
@@ -772,3 +779,4 @@ extern void (*ip_choose_hook) __P((u_int32_t *));
 #endif /* __PPP_H__ */
 
 extern int log_to_file(char *buf);
+extern int my_gettimeofday(struct timeval *timenow, struct timezone *tz);

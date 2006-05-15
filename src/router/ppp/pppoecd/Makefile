@@ -1,7 +1,7 @@
 #
 # PPPoEcd Makefile
 #
-# Copyright 2001-2003, Broadcom Corporation
+# Copyright 2006, Broadcom Corporation
 # All Rights Reserved.
 # 
 # THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,10 +9,8 @@
 # SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 # FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
 #
-# $Id: Makefile,v 1.8 2003/12/03 10:13:25 honor Exp $
+# $Id: Makefile,v 1.11 2006/03/02 12:33:44 honor Exp $
 # 
-include $(TOP)/.config
-
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
@@ -35,8 +33,6 @@ endif
 ifeq ($(MPPPOE_SUPPORT),1)
 DFLAGS += -DMPPPOE_SUPPORT
 endif
-
-DFLAGS += -DLOCAL_LOG
 
 CFLAGS	:= -D_linux_=1 -DHAVE_PATHS_H -DHAVE_MMAP
 CFLAGS	+= -I. -I../pppd $(COPTS) -Wall

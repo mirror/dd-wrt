@@ -17,7 +17,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define RCSID	"$Id: upap.c,v 1.3 2003/10/04 10:06:00 sparq Exp $"
+#define RCSID	"$Id: upap.c,v 1.4 2004/10/06 10:22:21 honor Exp $"
 
 /*
  * TODO:
@@ -497,7 +497,10 @@ upap_rauthnak(u, inp, id, len)
     u->us_clientstate = UPAPCS_BADAUTH;
 
     error("PAP authentication failed");
-    log_to_file("PAP_AUTH_FAIL");	// add by honor
+   	
+    //log_to_file("PAP_AUTH_FAIL");	// add by honor
+    system("ppp_event -t PAP_AUTH_FAIL &");
+
     auth_withpeer_fail(u->us_unit, PPP_PAP);
 }
 

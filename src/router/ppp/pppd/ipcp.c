@@ -17,7 +17,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define RCSID	"$Id: ipcp.c,v 1.1.1.4 2003/10/14 08:09:53 sparq Exp $"
+#define RCSID	"$Id: ipcp.c,v 1.2 2004/08/12 02:56:55 tallest Exp $"
 
 /*
  * TODO:
@@ -29,6 +29,12 @@
 #include <netdb.h>
 #include <sys/param.h>
 #include <sys/types.h>
+
+#ifdef UNNUMBERIP_SUPPORT
+#include <sys/ioctl.h>
+#include <linux/if.h>
+#endif
+
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
@@ -48,6 +54,7 @@ ipcp_options ipcp_hisoptions[NUM_PPP];	/* Options that we ack'd */
 
 u_int32_t netmask = 0;		/* IP netmask to set on interface */
 
+//bool	disable_defaultip = 0;	/* Don't use hostname for default IP adrs */
 bool	disable_defaultip = 1;	/* Don't use hostname for default IP adrs */
 
 /* Hook for a plugin to know when IP protocol has come up */
@@ -231,6 +238,13 @@ struct protent ipcp_protent = {
 static void ipcp_clear_addrs __P((int, u_int32_t, u_int32_t));
 static void ipcp_script __P((char *));		/* Run an up/down script */
 static void ipcp_script_done __P((void *));
+
+#ifdef UNNUMBERIP_SUPPORT
+/*
+ * get_lan_ip - get LAN IP for unnumber ip use.
+ */
+static unsigned int get_lan_ip(void); // tallest 0129
+#endif
 
 /*
  * Lengths of configuration options.
@@ -1581,6 +1595,11 @@ ipcp_up(f)
 	warn("Could not determine remote IP address: defaulting to %I",
 	     ho->hisaddr);
     }
+#ifdef UNNUMBERIP_SUPPORT
+    if(is_unnumber_ip == 1){
+	go->ouraddr = get_lan_ip(); // tallest 0129
+    }
+#endif
     script_setenv("IPLOCAL", ip_ntoa(go->ouraddr), 0);
     script_setenv("IPREMOTE", ip_ntoa(ho->hisaddr), 1);
 
@@ -1718,6 +1737,23 @@ ipcp_up(f)
     }
 }
 
+//=============================================================================
+//by tallest 0407
+static void
+kill_ppp(int  ppp_num)
+{
+#ifdef MPPPOE_SUPPORT
+        char buf[500];
+
+	if(demand)
+	{
+        	sprintf(buf,"%.500s %d",ppp_disconnect_func,ppp_num);
+        	info("tallest:=====(Executing external command - %s)=====\n",buf);
+        	system(buf);
+	}
+#endif
+}
+//=============================================================================
 
 /*
  * ipcp_down - IPCP has gone DOWN.
@@ -1756,6 +1792,9 @@ ipcp_down(f)
     if (ipcp_script_state == s_up && ipcp_script_pid == 0) {
 	ipcp_script_state = s_down;
 	ipcp_script(_PATH_IPDOWN);
+#ifdef MPPPOE_SUPPORT
+	kill_ppp(atoi(ipparam)); // by tallest 0407
+#endif
     }
 }
 
@@ -1844,6 +1883,31 @@ ipcp_script(script)
     argv[7] = NULL;
     ipcp_script_pid = run_program(script, argv, 0, ipcp_script_done, NULL);
 }
+
+#ifdef UNNUMBERIP_SUPPORT
+/*
+ * get_lan_ip - get LAN IP for unnumber ip use.
+ */
+#define s_addr(s) ( (((struct sockaddr_in *)(s))->sin_addr).s_addr )
+static unsigned int 
+get_lan_ip( void ) // tallest 0129
+{
+	struct ifreq ifr;
+	int timeout, s;
+
+	if ((s = socket(AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
+                return;
+	strncpy(ifr.ifr_name, "br0", IFNAMSIZ);
+
+	timeout = 3;
+	while (ioctl(s, SIOCGIFADDR, &ifr) && timeout--)
+	{
+		info("Wait br0 inteface to init (%d) ...\n",timeout);
+	};
+	info("tallest:Using Unnumber IP ==> ifr.ifr_addr = %x <==\n", s_addr(&(ifr.ifr_addr)));
+	return s_addr( &(ifr.ifr_addr) );
+}
+#endif
 
 /*
  * create_resolv - create the replacement resolv.conf file

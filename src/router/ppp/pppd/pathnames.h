@@ -1,7 +1,7 @@
 /*
  * define path names
  *
- * $Id: pathnames.h,v 1.1.1.4 2003/10/14 08:09:53 sparq Exp $
+ * $Id: pathnames.h,v 1.2 2004/08/12 02:56:55 tallest Exp $
  */
 
 #ifdef HAVE_PATHS_H
@@ -29,6 +29,7 @@
 #define _PATH_CONNERRS	 _ROOT_PATH "/tmp/ppp/connect-errors"
 #define _PATH_PEERFILES	 _ROOT_PATH "/tmp/ppp/peers/"
 #define _PATH_RESOLV	 _ROOT_PATH "/tmp/ppp/resolv.conf"
+#define _PATH_SETPPPOEPID     _ROOT_PATH "/tmp/ppp/set-pppoepid" // tallest 1219
 
 #define _PATH_USEROPT	 ".ppprc"
 

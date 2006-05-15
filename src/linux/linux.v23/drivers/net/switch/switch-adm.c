@@ -612,7 +612,7 @@ static int detect_adm(void)
 		eecs = 2;
 		eesk = 3;
 		eedi = 5;
-		eerc = 6; //fix by BrainSlayer
+//		eerc = 6; //fix by BrainSlayer
 		
 		ret = 1;
 	} else

@@ -282,12 +282,12 @@ extern int ppp_connect(struct session *ses);
 #define poe_error(ses,a,b...) error(a, ## b)
 #define poe_fatal(ses,a,b...) fatal(a, ## b)
 #else
-#define poe_dbglog(a,b...)
-#define poe_info(a,b...)
-#define poe_notice(a,b...)
-#define poe_warn(a,b...)
-#define poe_error(a,b...)
-#define poe_fatal(a,b...)
+#define poe_dbglog(a, b...)
+#define poe_info(a, b...)
+#define poe_notice(a, b...)
+#define poe_warn(a, b...)
+#define poe_error(a, b...)
+#define poe_fatal(a, b...)
 #endif
 
 #endif
