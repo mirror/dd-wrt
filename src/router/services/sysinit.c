@@ -375,6 +375,7 @@ start_restore_defaults (void)
     case ROUTER_ASUS:
     case ROUTER_MOTOROLA:
     case ROUTER_BUFFALO_WHRG54S:
+    case ROUTER_BUFFALO_WBR54G:
       if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
 	restore_defaults = 1;
       if (nvram_match ("product_name", "INSPECTION"))
