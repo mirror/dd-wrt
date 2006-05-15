@@ -371,6 +371,7 @@ start_restore_defaults (void)
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
     case ROUTER_SIEMENS:
+    case ROUTER_RT210W:
     case ROUTER_BELKIN_F5D7230:
     case ROUTER_ASUS:
     case ROUTER_MOTOROLA:
@@ -401,6 +402,7 @@ start_restore_defaults (void)
       linux_overrides = vlan;
       break;
     case ROUTER_SIEMENS:
+    case ROUTER_RT210W:
     case ROUTER_BELKIN_F5D7230:
     case ROUTER_BUFFALO_WZRRSG54:
       ds = nvram_safe_get ("dhcp_start");
@@ -835,7 +837,10 @@ start_sysinit (void)
     nvram_set ("cpu_type", "BCM4712");
   nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
 
-  if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA
+  if (brand == ROUTER_RT210W)
+    nvram_set ("cpu_type", "BCM4702");
+      
+    if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA || brand == ROUTER_RT210W
       || brand == ROUTER_BUFFALO_WZRRSG54 || brand == ROUTER_BELKIN_F5D7230)
     {
       setup_4712 ();
@@ -867,6 +872,7 @@ start_sysinit (void)
 	    case ROUTER_WRT54G1X:
 	    case ROUTER_WRT54G:
 	    case ROUTER_SIEMENS:
+	    case ROUTER_RT210W:
 	    case ROUTER_BELKIN_F5D7230:
 	      modules =
 		nvram_invmatch ("ct_modules",
