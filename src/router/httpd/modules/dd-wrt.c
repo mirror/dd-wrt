@@ -2667,18 +2667,15 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 //            websWrite (wp, "</tr>\n");
 //          }
 //        websWrite (wp, "<tr>\n");
-	  if (strcmp (mode, "ap") != 0)
-	    {
-//            websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
+	if (strcmp("mode","ap"))
+	{
+	  char *ref = nvram_get("noise_reference");
+	  noise=-98;
+	  if (ref)
+	    noise = atoi(ref);
+	 } 
 	      websWrite (wp, "'%s','%d','%d','%d'",
 			 mac, rssi, noise, rssi - noise);
-	    }
-	  else
-	    {
-//            websWrite (wp, "<td>%s</td><td>%d</td><td>%d</td><td>%d</td>\n",
-	      websWrite (wp, "'%s','%d','%d','%d'",
-			 mac, rssi, -100, rssi - (-100));
-	    }
 //        websWrite (wp, "</tr>\n");
 	}
       // One less Top10-Wanted leak (belanger[AT]pobox.com)
@@ -2812,10 +2809,14 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 //        websWrite (wp,
 //                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 //                   title, mac, rssi, -100, rssi - (-100));
+	  char *ref = nvram_get("noise_reference");
+	  int noise=-98;
+	  if (ref)
+	    noise = atoi(ref);
 	  websWrite (wp,
 //                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 		     "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
-		     mac, desc, rssi, -100, rssi - (-100));
+		     mac, desc, rssi, -noise, rssi - (-noise));
 	}
       // One less Top10-Wanted leak (belanger[AT]pobox.com)
       fclose (fp);
