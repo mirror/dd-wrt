@@ -9,12 +9,14 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-document.title = '<% nvram_get("router_name"); %>'+trforward.titl;
+		
+document.title = "<% nvram_get("router_name"); %>" + trforward.titl;
 
 function trigger_add_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Triggering";
 	F.submit_type.value = "add_trigger";
+	
 	F.action.value = "Apply";
 	F.submit();
 }
@@ -23,6 +25,7 @@ function trigger_remove_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Triggering";
 	F.submit_type.value = "remove_trigger";
+	
 	F.action.value = "Apply";
 	F.submit();
 }
@@ -121,15 +124,15 @@ function to_submit(F)
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(htrforward.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(trforward.app)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(htrforward.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(htrforward.right3)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(trforward.trrange)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(htrforward.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(htrforward.right5)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(trforward.fwdrange)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(htrforward.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(htrforward.right7)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.start)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(htrforward.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(htrforward.right9)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.end)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(htrforward.right10)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HTrigger.asp')"><script type="text/javascript">Capture(share.more)</script></a>
