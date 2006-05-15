@@ -20,9 +20,9 @@ function to_submit(F) {
 		F.submit_button.value = "Factory_Defaults";
 //		F.save_button.value = "Saved";
 		F.save_button.value = sbutton.saving;
+		
 		F.action.value="Restore";
 		apply(F);
-			return true;
 	}
 }
 		</script>
