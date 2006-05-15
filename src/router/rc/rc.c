@@ -113,6 +113,7 @@ do_timer (void)
   //do_ntp();
   return 0;
 }
+static int noconsole = 0;
 
 /* Main loop */
 void
@@ -124,6 +125,9 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
+  if (console_init())
+    noconsole=1;
+  
   start_service ("sysinit");
 
   /* Setup signal handlers */
@@ -136,8 +140,9 @@ main_loop (void)
   sigemptyset (&sigset);
  
   /* Give user a chance to run a shell before bringing up the rest of the system */
-//  if (!noconsole)
-//    ddrun_shell (1, 0);
+  
+  if (!noconsole)
+    ddrun_shell (1, 0);
 
   start_service ("nvram");
 
@@ -440,17 +445,12 @@ main_loop (void)
 	case IDLE:
 	  cprintf ("IDLE\n");
 	  state = IDLE;
-	  int con = console_init();
 	  /* Wait for user input or state change */
 	  while (signalled == -1)
 	    {
-	    if (!con)
-	    {
-	      if ((!shell_pid || kill (shell_pid, 0) != 0))
+	      if (!noconsole && (!shell_pid || kill (shell_pid, 0) != 0))
 		shell_pid = ddrun_shell (0, 1);
 	      else
-		sigsuspend (&sigset);
-	    }else
 		sigsuspend (&sigset);
 	    
 	    }

@@ -142,8 +142,8 @@ ddrun_shell (int timeout, int nowait)
 	signal (sig, SIG_DFL);
 
       /* Reopen console */
-      int ret = console_init();
-      if (ret) exit(0); //no console running
+      console_init();
+//      if (ret) exit(0); //no console running
       /* Pass on TZ */
       snprintf (tz, sizeof (tz), "TZ=%s", getenv ("TZ"));
 
