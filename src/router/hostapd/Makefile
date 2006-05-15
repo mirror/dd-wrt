@@ -206,7 +206,7 @@ CFLAGS += -DEAP_TLS_FUNCS
 OBJS += eap_tls_common.o
 ifeq ($(CONFIG_TLS), openssl)
 OBJS += $(DIR_WPA_SUPPLICANT)/tls_openssl.o
-LIBS += -lssl -lcrypto
+LIBS += -L../openssl -lssl -lcrypto
 LIBS_p += -lcrypto
 LIBS_h += -lcrypto
 endif

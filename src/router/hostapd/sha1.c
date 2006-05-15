@@ -221,7 +221,8 @@ void sha1_t_prf(const u8 *key, size_t key_len, const char *label,
  * @seed_len: Length of the seed
  * @out: Buffer for the generated pseudo-random key
  * @outlen: Number of bytes of key to generate
-*
+ * Returns: 0 on success, -1 on failure.
+ *
  * This function is used to derive new, cryptographically separate keys from a
  * given key in TLS. This PRF is defined in RFC 2246, Chapter 5.
  */
