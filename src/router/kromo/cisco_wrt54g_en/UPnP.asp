@@ -193,18 +193,18 @@ addEvent(window, "unload", function() {
 								<legend><script type="text/javascript">Capture(upnp.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(upnp.serv)</script></div>
-									<input type="radio" name="upnp_enable" value="1" <% nvram_selmatch("upnp_enable","1","checked"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input type="radio" name="upnp_enable" value="0" <% nvram_selmatch("upnp_enable","0","checked"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
+									<input class="spaceradio" type="radio" name="upnp_enable" value="1" <% nvram_checked("upnp_enable","1"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input class="spaceradio" type="radio" name="upnp_enable" value="0" <% nvram_checked("upnp_enable","0"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(upnp.clear)</script></div>
-									<input type="radio" name="upnpcas" value="1" <% nvram_selmatch("upnpcas","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input type="radio" name="upnpcas" value="0" <% nvram_selmatch("upnpcas","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<input class="spaceradio" type="radio" name="upnpcas" value="1" <% nvram_checked("upnpcas","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvram_checked("upnpcas","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(upnp.url)</script></div>
-									<input type="radio" name="upnpmnp" value="1" <% nvram_selmatch("upnpmnp","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input type="radio" name="upnpmnp" value="0" <% nvram_selmatch("upnpmnp","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<input class="spaceradio" type="radio" name="upnpmnp" value="1" <% nvram_checked("upnpmnp","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input class="spaceradio" type="radio" name="upnpmnp" value="0" <% nvram_checked("upnpmnp","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
