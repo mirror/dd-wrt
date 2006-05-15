@@ -1409,6 +1409,8 @@ wds.wl_mac="Wireless MAC";
 wds.lazy_default="Default: Disable";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
+wds.subnet="Subnet";
+wds.legend2="Extra Options";
 
 
 
@@ -1466,7 +1468,6 @@ wl_basic.sensitivity="Default: 20000 meters";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right1="Wireless Network Mode: ";
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";

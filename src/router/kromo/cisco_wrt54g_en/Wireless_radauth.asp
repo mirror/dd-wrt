@@ -9,6 +9,7 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
 document.title = "<% nvram_get("router_name"); %>" + radius.titl;
 
 function to_submit(F) {
@@ -107,11 +108,11 @@ addEvent(window, "load", function() {
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label3)</script></div>
                            <input type="hidden" name="wl_radius_ipaddr" value="4" />
-                           <input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","0"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","1"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onblur="valid_range(this,0,255,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","2"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onblur="valid_range(this,1,254,share.ip)" value="<% get_single_ip("wl_radius_ipaddr","3"); %>" />
+                           <input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_0" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","0"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_1" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","1"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_2" onblur="valid_range(this,0,255,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","2"); %>" />.<input class="num" size="3" maxlength="3" name="wl_radius_ipaddr_3" onblur="valid_range(this,1,254,radius.label3)" value="<% get_single_ip("wl_radius_ipaddr","3"); %>" />
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label4)</script></div>
-                           <input class="num" size="5" maxlength="5" name="wl_radius_port" onblur="valid_range(this,1,65535,'Port')" value="<% nvram_get("wl_radius_port"); %>" />
+                           <input class="num" size="5" maxlength="5" name="wl_radius_port" onblur="valid_range(this,1,65535,radius.label4)" value="<% nvram_get("wl_radius_port"); %>" />
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(radius.label5)</script></div>
