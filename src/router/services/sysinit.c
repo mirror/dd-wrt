@@ -834,9 +834,10 @@ start_sysinit (void)
       check_brcm_cpu_type ();
     }
   if (brand == ROUTER_MOTOROLA)
+ 	 {
     nvram_set ("cpu_type", "BCM4712");
 	nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
-
+	 }
       
     if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA || brand == ROUTER_RT210W
       || brand == ROUTER_BUFFALO_WZRRSG54 || brand == ROUTER_BELKIN_F5D7230)
@@ -845,9 +846,11 @@ start_sysinit (void)
     }
 
   if (brand == ROUTER_RT210W)
-    nvram_set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
+	{
+  	nvram_set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
 	nvram_set ("wan_ifnames", "eth1");
-    
+	}
+	
   /* Modules */
   uname (&name);
 
