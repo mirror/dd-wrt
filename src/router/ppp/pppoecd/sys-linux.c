@@ -1033,6 +1033,197 @@ int cifaddr (int unit, u_int32_t our_adr, u_int32_t his_adr)
     return 1;
 }
 
+//===================================================================
+
+#if 1
+/*
+ * /proc/net/route parsing stuff.
+ */
+
+#define ROUTE_MAX_COLS  12
+FILE *route_fd = (FILE *) 0;
+static char route_buffer[512];
+static int route_dev_col, route_dest_col, route_gw_col;
+static int route_flags_col, route_mask_col;
+static int route_num_cols;
+                                                                                                                             
+static int open_route_table (void);
+static void close_route_table (void);
+static int read_route_table (struct rtentry *rt);
+static char route_delims[] = " \t\n";
+
+/********************************************************************
+ *
+ * close_route_table - close the interface to the route table
+ */
+// copy from pppd/sys-linux.c by tallest                                                                                     
+static void close_route_table (void)
+{
+    if (route_fd != (FILE *) 0) {
+        fclose (route_fd);
+        route_fd = (FILE *) 0;
+    }
+}
+
+/********************************************************************
+ *
+ * read_route_table - read the next entry from the route table
+ */
+// copy from pppd/sys-linux.c by tallest
+static int read_route_table(struct rtentry *rt)
+{
+    char *cols[ROUTE_MAX_COLS], *p;
+    int col;
+                                                                                                                             
+    memset (rt, '\0', sizeof (struct rtentry));
+                                                                                                                             
+    if (fgets (route_buffer, sizeof (route_buffer), route_fd) == (char *) 0)
+        return 0;
+                                                                                                                             
+    p = route_buffer;
+    for (col = 0; col < route_num_cols; ++col) {
+        cols[col] = strtok(p, route_delims);
+        if (cols[col] == NULL)
+            return 0;           /* didn't get enough columns */
+        p = NULL;
+    }
+                                                                                                                             
+    SIN_ADDR(rt->rt_dst) = strtoul(cols[route_dest_col], NULL, 16);
+    SIN_ADDR(rt->rt_gateway) = strtoul(cols[route_gw_col], NULL, 16);
+    SIN_ADDR(rt->rt_genmask) = strtoul(cols[route_mask_col], NULL, 16);
+                                                                                                                             
+    rt->rt_flags = (short) strtoul(cols[route_flags_col], NULL, 16);
+    rt->rt_dev   = cols[route_dev_col];
+                                                                                                                             
+    return 1;
+}
+
+/********************************************************************
+ *
+ * open_route_table - open the interface to the route table
+ */
+// copy from pppd/sys-linux.c by tallest
+                                                                                                                             
+static int open_route_table (void)
+{
+    char *path;
+                                                                                                                             
+    close_route_table();
+                                                                                                                             
+    //path = path_to_procfs("/net/route");
+    //route_fd = fopen (path, "r");
+    route_fd = fopen ("proc/net/route", "r");
+    if (route_fd == NULL) {
+        error("can't open routing table");
+        return 0;
+    }
+                                                                                                                             
+    route_dev_col = 0;          /* default to usual columns */
+    route_dest_col = 1;
+    route_gw_col = 2;
+    route_flags_col = 3;
+    route_mask_col = 7;
+    route_num_cols = 8;
+                                                                                                                             
+    /* parse header line */
+    if (fgets(route_buffer, sizeof(route_buffer), route_fd) != 0) {
+        char *p = route_buffer, *q;
+        int col;
+        for (col = 0; col < ROUTE_MAX_COLS; ++col) {
+            int used = 1;
+            if ((q = strtok(p, route_delims)) == 0)
+                break;
+            if (strcasecmp(q, "iface") == 0)
+                route_dev_col = col;
+            else if (strcasecmp(q, "destination") == 0)
+                route_dest_col = col;
+            else if (strcasecmp(q, "gateway") == 0)
+                route_gw_col = col;
+            else if (strcasecmp(q, "flags") == 0)
+                route_mask_col = col;
+            else
+                used = 0;
+            if (used && col >= route_num_cols)
+                route_num_cols = col + 1;
+            p = NULL;
+        }
+    }
+                                                                                                                             
+    return 1;
+}
+
+/********************************************************************
+ *
+ * defaultroute_exists - determine if there is a default route
+ */
+// copy from pppd/sys-linux.c by tallest
+static int defaultroute_exists (struct rtentry *rt)
+{
+    int result = 0;
+                                                                                                                             
+    if (!open_route_table())
+        return 0;
+                                                                                                                             
+    while (read_route_table(rt) != 0) {
+        if ((rt->rt_flags & RTF_UP) == 0)
+            continue;
+                                                                                                                             
+        if (kernel_version > KVERSION(2,1,0) && SIN_ADDR(rt->rt_genmask) != 0)
+            continue;
+        if (SIN_ADDR(rt->rt_dst) == 0L) {
+            result = 1;
+            break;
+        }
+    }
+                                                                                                                             
+    close_route_table();
+    return result;
+}
+
+/********************************************************************
+ *
+ * sifdefaultroute - assign a default route through the address given.
+ */
+// copy from pppd/sys_linux.c by tallest                                                                            
+int 
+sifdefaultroute (int unit, u_int32_t ouraddr, u_int32_t gateway)
+{
+    struct rtentry rt;
+                                                                                                                             
+    if (defaultroute_exists(&rt) && strcmp(rt.rt_dev, ifname) != 0) {
+        u_int32_t old_gateway = SIN_ADDR(rt.rt_gateway);
+                                                                                                                             
+        if (old_gateway != gateway)
+            error("not replacing existing default route to %s [%I]",
+                  rt.rt_dev, old_gateway);
+        return 0;
+    }
+                                                                                                                             
+    memset (&rt, '\0', sizeof (rt));
+    SET_SA_FAMILY (rt.rt_dst,     AF_INET);
+    SET_SA_FAMILY (rt.rt_gateway, AF_INET);
+                                                                                                                             
+    if (kernel_version > KVERSION(2,1,0)) {
+        SET_SA_FAMILY (rt.rt_genmask, AF_INET);
+        SIN_ADDR(rt.rt_genmask) = 0L;
+    }
+                                                                                                                             
+    SIN_ADDR(rt.rt_gateway) = gateway;
+                                                                                                                             
+    rt.rt_flags = RTF_UP | RTF_GATEWAY;
+    if (ioctl(sock_fd, SIOCADDRT, &rt) < 0) {
+        if ( ! ok_error ( errno ))
+            error("default route ioctl(SIOCADDRT): %m(%d)", errno);
+        return 0;
+    }
+                                                                                                                             
+    //default_route_gateway = gateway;
+    return 1;
+}
+#endif
+//===================================================================
+
+
 /********************************************************************
  *
  * open_loopback - open the device we use for getting packets

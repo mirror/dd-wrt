@@ -2682,11 +2682,11 @@ start_pppoe (int pppoe_num)
   for (arg = pppoe_argv; *arg; arg++);
 
   /* Removed by AhMan */
-/*
+
         if (pppoe_num == PPPOE0) { // PPPOE0 must set default route.
                 *arg++ = "-R";
         }
-*/
+
   if (nvram_invmatch (ppp_service[pppoe_num], ""))
     {
       *arg++ = "-s";
