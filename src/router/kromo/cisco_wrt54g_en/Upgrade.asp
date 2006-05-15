@@ -10,7 +10,7 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 		
-document.title = "<% nvram_get("router_name"); %>" + upgrade.titl;
+document.title = "<% nvram_get("router_name"); %>" + upgrad.titl;
 
 function process_aborted(F) {
 	bar1.togglePause();
