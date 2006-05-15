@@ -8,22 +8,55 @@
 #endif
 
 
+// Linksys WRT54G, WRT54GS and WRT54GL all models except WRT54G v1.0, v1.1
 #define ROUTER_WRT54G 1
-#define ROUTER_BELKIN 2
-#define ROUTER_BUFFALO_WBR54G 3
+
+// Linksys WRT54G v1.0 and v1.1 (4702 cpu)
+#define ROUTER_WRT54G1X 2
+
+// Linksys WRT55AG v1 (4702 cpu)
+#define ROUTER_LINKSYS_WRT55AG 3
+
+// Asus WL-550G-Deluxe
 #define ROUTER_ASUS 4
-#define ROUTER_BUFFALO_WBR2G54S 5
-#define ROUTER_SIEMENS 6
-#define ROUTER_MOTOROLA 7
-#define ROUTER_WRT54G1X 8
-#define ROUTER_BUFFALO_WZRRSG54 9
-#define ROUTER_BOARD_500 10
-#define ROUTER_BUFFALO_WHRG54S 11
-#define ROUTER_BUFFALO_HP_WHRG54S 11	//no differences between these models. so we leave it
-#define ROUTER_BUFFALO_WLA2G54L 5	//should work like a WBR2
-#define ROUTER_LINKSYS_WRT55AG 12
-#define ROUTER_BELKIN_F5D7230 13
-#define ROUTER_MOTOROLA_V1 14
+
+// Buffalo WBR-G54, WLA-G54 and WLA-G54C (4702 cpu)
+#define ROUTER_BUFFALO_WBR54G 5
+
+// Buffalo WBR2-G54, WBR2-G54S and Buffalo WLA2-G54L
+#define ROUTER_BUFFALO_WBR2G54S 6
+#define ROUTER_BUFFALO_WLA2G54L 6	//should work like a WBR2
+
+// Buffalo WHR-G54S and WHR-HP-G54
+#define ROUTER_BUFFALO_WHRG54S 7
+#define ROUTER_BUFFALO_HP_WHRG54S 7	//no differences between these models. so we leave it
+
+// Buffalo WZR-RS-G54 (4704 cpu)
+#define ROUTER_BUFFALO_WZRRSG54 8
+
+// Motorola WR850G v1 (4702 cpu)
+#define ROUTER_MOTOROLA_V1 9
+
+// Motorola WR850G v2
+#define ROUTER_MOTOROLA 10
+
+// RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
+// Siemens se505 v1, Belkin F5D7230-4 v1000
+#define ROUTER_RT210W 11  //NOT USED YET
+
+// RT480W generic and branded (fccid: Askey H8N-RT480W), (4712 cpu + ADM6996)
+// Siemens se505 v2
+#define ROUTER_SIEMENS 12
+
+// Microtik RouterBOARD 500
+#define ROUTER_BOARD_500 13
+
+// ??? 
+#define ROUTER_BELKIN 14
+
+// Belkin F5D7230-4 v1444 (4712 cpu, 2MB flash) (fccid: Belkin K7S-F5D72304)
+#define ROUTER_BELKIN_F5D7230 15
+
 
 
 #define NVROUTER "DD_BOARD"
