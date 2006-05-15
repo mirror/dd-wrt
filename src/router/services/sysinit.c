@@ -845,8 +845,8 @@ start_sysinit (void)
     }
 
   if (brand == ROUTER_RT210W)
-    nvram set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
-	nvram set ("wan_ifnames", "eth1");
+    nvram_set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
+	nvram_set ("wan_ifnames", "eth1");
     
   /* Modules */
   uname (&name);
