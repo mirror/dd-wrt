@@ -558,15 +558,10 @@ trforward.app="Application";
 
 //help container
 var htrforward = new Object();
-htrforward.right1="Application:";
 htrforward.right2="Enter the application name of the trigger.";
-htrforward.right3="Triggered Range:";
 htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right5="Forwarded Range:";
 htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right7="Start:";
 htrforward.right8="Enter the starting port number of the Triggered and Forwarded Range.";
-htrforward.right9="End:";
 htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
 
 
