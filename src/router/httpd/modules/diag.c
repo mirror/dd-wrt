@@ -231,7 +231,7 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 	      else
 		newline[nc++] = line[i];
 	    }
-	    newline[nc++]=0;
+	  newline[nc++]=0;
 	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', newline);
 	  count++;
 	}
