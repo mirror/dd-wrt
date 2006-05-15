@@ -840,7 +840,7 @@ start_sysinit (void)
   if (brand == ROUTER_RT210W)
     nvram_set ("cpu_type", "BCM4702");
       
-    if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA
+    if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA || brand == ROUTER_RT210W
       || brand == ROUTER_BUFFALO_WZRRSG54 || brand == ROUTER_BELKIN_F5D7230)
     {
       setup_4712 ();
@@ -1453,7 +1453,6 @@ check_cfe_nv (void)
       break;
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WZRRSG54:
-    case ROUTER_RT210W:
 
       ret += check_nv ("lan_hwnames", "et0 wl0");
       ret += check_nv ("lan_ifnames", "eth0 eth2");
