@@ -12,8 +12,6 @@
 
 document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
-var EN_DIS = '<% nvram_else_match("wl_gmode","-1","0","1"); %>';
-
 function SelWL(num,F) {
   if ( num == 0)
     I = "0";
@@ -23,7 +21,7 @@ function SelWL(num,F) {
 }
 
 function wl_enable_disable(F,I) {
-  EN_DIS = I;
+
   if( I == "0"){
     choose_disable(F.wl_ssid);
     choose_disable(F.wl_channel);
@@ -47,6 +45,7 @@ function to_submit(F) {
   F.submit_button.value = "Wireless_Basic";
 //  F.save_button.value = "Saved";
   F.save_button.value = sbutton.saving;
+  
   F.action.value = "Apply";
   apply(F);
 }
@@ -189,7 +188,7 @@ function init() {
 					<div id="help">
 						<div id="logo"><h2><script type="text/javascript">Capture(share.help)</script></h2></div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hwl_basic.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(wl_basic.label2)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hwl_basic.right2)</script></dd>
 							<dt class="term"><script type="text/javascript">Capture(hwl_basic.right3)</script></dt>
 							<dd class="definition"><script type="text/javascript">Capture(hwl_basic.right4)</script></dt>
