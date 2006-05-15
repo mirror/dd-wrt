@@ -758,6 +758,7 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"txpwr", "28", 0},
 #endif
+  {"noise_reference","-98",0},
 #ifdef HAVE_GGEW
   {"txant", "0", 0},
   {"wl_antdiv", "0", 0},
