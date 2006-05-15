@@ -88,6 +88,7 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" />
 							<h2><script type="text/javascript">Capture(log.h2)</script></h2>
+							
 							<fieldset>
 								<legend><script type="text/javascript">Capture(log.legend)</script></legend>
 								<div class="setting">
