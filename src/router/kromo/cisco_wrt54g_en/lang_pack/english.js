@@ -329,6 +329,49 @@ bmenu.statuWLAN="Wireless";
 bmenu.statuSysInfo="Sys-Info";
 
 
+// **************************************************************** Alive.asp **********************************************************************//
+
+var alive = new Object();
+alive.titl=" - Keep Alive";
+alive.h2="Keep Alive";
+alive.legend="Schedule Reboot";
+alive.sevr1="Schedule Reboot";
+alive.time="Time (in seconds)";
+alive.hour="At a set Time";
+alive.legend2="WDS/Connection Watchdog";
+alive.sevr2="Enable Watchdog";
+alive.IP="IP Addresses";
+alive.legend3="Proxy/Connection Watchdog";
+alive.sevr3="Enable Proxy Watchdog";
+alive.IP2="Proxy IP Address";
+alive.port="Proxy Port";
+
+//help container
+var halive = new Object();
+halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
+halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
+
+
+
+// **************************************************************** config.asp **********************************************************************//
+
+var config = new Object();
+config.titl=" - Backup & Restore";
+config.h2="Backup Configuration";
+config.legend="Backup Settings";
+config.mess1="Click the \"" + sbutton.backup + "\" button to download the configuration backup file to your computer.";
+config.h22="Restore Configuration";
+config.legend2="Restore Settings";
+config.mess2="Please select a file to restore";
+config.mess3="W A R N I N G";
+config.mess4="Only upload files backed up using this firmware and from the same model of router.<br />Do not upload any files that were not created by this interface!";
+
+//help container
+var hconfig = new Object();
+hconfig.right2="You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to backup your current configuration.";
+hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
+
+
 
 // **************************************************************** DDNS.asp **********************************************************************//
 
@@ -397,10 +440,70 @@ ddnsm.all_noip="No Internet connection";
 
 //help container
 var hddns = new Object();
-hddns.right1="DDNS Service:";
 hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. \
 	The service manages changing IP address and updates your domain information dynamically. \
 	You must sign up for service through TZO.com or DynDNS.org.";
+
+
+
+// **************************************************************** Diagnostics.asp **********************************************************************//
+
+var diag = new Object();
+diag.titl=" - Diagnostics";
+diag.h2="Diagnostics";
+diag.legend="Command Shell";
+diag.cmd="Commands";
+diag.startup="Startup";
+diag.firewall="Firewall";
+
+//help container
+var hdiag = new Object();
+hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
+
+
+
+// **************************************************************** DMZ.asp **********************************************************************//
+
+var dmz = new Object();
+dmz.titl=" - DMZ";
+dmz.h2="Demilitarized Zone (DMZ)";
+dmz.legend="DMZ";
+dmz.serv="Use DMZ";
+dmz.host="DMZ Host IP Address";
+
+
+//help container
+var hdmz = new Object();
+hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
+
+
+
+// **************************************************************** Factory_Defaults.asp **********************************************************************//
+
+var factdef = new Object();
+factdef.titl=" - Factory Defaults";
+factdef.h2="Factory Defaults";
+factdef.legend="Reset router settings";
+factdef.restore="Restore Factory Defaults";
+
+factdef.mess1="Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.";
+
+//help container
+var hfactdef = new Object();
+hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -489,100 +592,18 @@ hupnp.right4="Allows applications to automatically setup port forwardings.";
 
 
 
-// **************************************************************** Alive.asp **********************************************************************//
-
-var alive = new Object();
-alive.titl=" - Keep Alive";
-alive.h2="Keep Alive";
-alive.legend="Schedule Reboot";
-alive.sevr1="Schedule Reboot";
-alive.time="Time (in seconds)";
-alive.hour="At a set Time";
-alive.legend2="WDS/Connection Watchdog";
-alive.sevr2="Enable Watchdog";
-alive.IP="IP Addresses";
-alive.legend3="Proxy/Connection Watchdog";
-alive.sevr3="Enable Proxy Watchdog";
-alive.IP2="Proxy IP Address";
-alive.port="Proxy Port";
-
-//help container
-var halive = new Object();
-halive.right1="At a set Time:";
-halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
-halive.right3="IP Addresses:";
-halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
 
 
 
-// **************************************************************** config.asp **********************************************************************//
-
-var config = new Object();
-config.titl=" - Backup & Restore";
-config.h2="Backup Configuration";
-config.legend="Backup Settings";
-config.mess1="Click the \"" + sbutton.backup + "\" button to download the configuration backup file to your computer.";
-config.h22="Restore Configuration";
-config.legend2="Restore Settings";
-config.mess2="Please select a file to restore";
-config.mess3="W A R N I N G";
-config.mess4="Only upload files backed up using this firmware and from the same model of router.<br />Do not upload any files that were not created by this interface!";
-
-//help container
-var hconfig = new Object();
-hconfig.right1="Backup:";
-hconfig.right2="You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to backup your current configuration.";
-hconfig.right3="Restore:";
-hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
 
 
 
-// **************************************************************** Diagnostics.asp **********************************************************************//
-
-var diag = new Object();
-diag.titl=" - Diagnostics";
-diag.h2="Diagnostics";
-diag.legend="Command Shell";
-diag.cmd="Commands";
-diag.startup="Startup";
-diag.firewall="Firewall";
-
-//help container
-var hdiag = new Object();
-hdiag.right1="Commands:";
-hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
 
 
 
-// **************************************************************** DMZ.asp **********************************************************************//
-
-var dmz = new Object();
-dmz.titl=" - DMZ";
-dmz.h2="Demilitarized Zone (DMZ)";
-dmz.legend="DMZ";
-dmz.serv="Use DMZ";
-dmz.host="DMZ Host IP Address";
-
-
-//help container
-var hdmz = new Object();
-hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
 
 
 
-// **************************************************************** Factory_Defaults.asp **********************************************************************//
-
-var factdef = new Object();
-factdef.titl=" - Factory Defaults";
-factdef.h2="Factory Defaults";
-factdef.legend="Reset router settings";
-factdef.restore="Restore Factory Defaults";
-
-factdef.mess1="Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.";
-
-//help container
-var hfactdef = new Object();
-hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
 
 
 
