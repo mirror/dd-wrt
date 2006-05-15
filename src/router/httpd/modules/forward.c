@@ -7,207 +7,6 @@
 #include <cy_conf.h>
 
 
-/*
-void
-validate_forward_upnp (webs_t wp, char *value, struct variable *v)
-{
-  int i, error = 0;
-  char buf[1000] = "";
-  struct variable forward_upnp_variables[] = {
-  {longname: "UPnP Forward Application name", argv:ARGV ("25")},
-  {longname: "UPnP Forward from WAN Ports", argv:ARGV ("0", "65535")},
-  {longname: "UPnP Forward to LAN Ports", argv:ARGV ("0", "65535")},
-  {longname:"UPnP Forward Protocol", NULL},
-  {longname: "UPnP Forward LAN IP Address", argv:ARGV ("0", "254")},
-  }, *which;
-
-  for (i = 0; i < UPNP_FORWARDING_NUM; i++)
-    {
-
-      char upnp_name[] = "nameXXX";
-      char upnp_from[] = "fromXXX";
-      char upnp_to[] = "toXXX";
-      char upnp_ip[] = "ipXXX";
-      char upnp_pro[] = "proXXX";
-      char upnp_enable[] = "enableXXX";
-      char *name = "", new_name[200], *from = "", *to = "", *ip =
-	"", *enable = "", *pro = "";
-      char forward_name[] = "forward_portXXXXXXXXXX";
-
-      snprintf (upnp_name, sizeof (upnp_name), "name%d", i);
-      snprintf (upnp_from, sizeof (upnp_from), "from%d", i);
-      snprintf (upnp_to, sizeof (upnp_to), "to%d", i);
-      snprintf (upnp_ip, sizeof (upnp_ip), "ip%d", i);
-      snprintf (upnp_pro, sizeof (upnp_pro), "pro%d", i);
-      snprintf (upnp_enable, sizeof (upnp_enable), "enable%d", i);
-
-
-      name = websGetVar (wp, upnp_name, "");
-      from = websGetVar (wp, upnp_from, "0");
-      to = websGetVar (wp, upnp_to, "0");
-      ip = websGetVar (wp, upnp_ip, "0");
-      pro = websGetVar (wp, upnp_pro, "");
-      enable = websGetVar (wp, upnp_enable, "off");
-
-      which = &forward_upnp_variables[0];
-
-
-      if ((!strcmp (from, "0") || !strcmp (from, "")) &&
-	  (!strcmp (to, "0") || !strcmp (to, "")) &&
-	  (!strcmp (ip, "0") || !strcmp (ip, "")))
-	continue;
-
-      if (strcmp (name, ""))
-	{
-	  if (!valid_name (wp, name, &which[0]))
-	    {
-	      error = 1;
-	      continue;
-	    }
-	  else
-	    {
-	      httpd_filter_name (name, new_name, sizeof (new_name), SET);
-	    }
-	}
-
-
-      if (!valid_range (wp, from, &which[1])
-	  || !valid_range (wp, to, &which[2]))
-	{
-	  error = 1;
-	  continue;
-	}
-
-
-      if (!valid_range (wp, ip, &which[4]))
-	{
-	  error = 1;
-	  continue;
-	}
-
-      snprintf (buf, sizeof (buf), "%s-%s>%s:%s-%s,%s,%s,%s", from, from,
-		get_complete_lan_ip (ip), to, to, pro, enable, name);
-      //cprintf("buf=[%s]\n", buf); 
-
-      snprintf (forward_name, sizeof (forward_name), "forward_port%d", i);
-      nvram_set (forward_name, buf);
-    }
-}
-
-int
-ej_forward_upnp (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  char name[] = "forward_portXXXXXXXXXX", value[1000];
-  char *wan_port0, *wan_port1, *lan_ipaddr, *lan_port0, *lan_port1, *proto;
-  char *enable, *desc;
-
-  char *type;
-  int which;
-
-  if (ejArgs (argc, argv, "%s %d", &type, &which) < 2)
-    {
-      websError (wp, 400, "Insufficient args\n");
-      return -1;
-    }
-
-  snprintf (name, sizeof (name), "forward_port%d", which);
-  if (!nvram_invmatch (name, ""))
-    goto def;
-  strncpy (value, nvram_get (name), sizeof (value));
-
-  lan_ipaddr = value;
-  wan_port0 = strsep (&lan_ipaddr, ">");
-  if (!lan_ipaddr)
-    return FALSE;
-
-  lan_port0 = lan_ipaddr;
-  lan_ipaddr = strsep (&lan_port0, ":");
-  if (!lan_port0)
-    return FALSE;
-
-  proto = lan_port0;
-  lan_port0 = strsep (&proto, ":,");
-  if (!proto)
-    return FALSE;
-
-  enable = proto;
-  proto = strsep (&enable, ":,");
-  if (!enable)
-    return FALSE;
-
-  desc = enable;
-  enable = strsep (&desc, ":,");
-
-  wan_port1 = wan_port0;
-  wan_port0 = strsep (&wan_port1, "-");
-  if (!wan_port1)
-    wan_port1 = wan_port0;
-
-  lan_port1 = lan_port0;
-  lan_port0 = strsep (&lan_port1, "-");
-  if (!lan_port1)
-    lan_port1 = lan_port0;
-
-  if (!strcmp (type, "name"))
-    return websWrite (wp, "%s", desc);
-  else if (!strcmp (type, "from"))
-    return websWrite (wp, "%s", wan_port0);
-  else if (!strcmp (type, "to"))
-    return websWrite (wp, "%s", lan_port0);
-
-  else if (!strcmp (type, "tcp"))
-    {				// use checkbox 
-      if (!strcmp (proto, "udp"))
-	return websWrite (wp, "");
-      else
-	return websWrite (wp, "checked");
-    }
-  else if (!strcmp (type, "udp"))
-    {				//use checkbox 
-      if (!strcmp (proto, "tcp"))
-	return websWrite (wp, "");
-      else
-	return websWrite (wp, "checked");
-    }
-  else if (!strcmp (type, "sel_tcp"))
-    {				// use select 
-      if (!strcmp (proto, "udp"))
-	return websWrite (wp, "");
-      else
-	return websWrite (wp, "selected");
-    }
-  else if (!strcmp (type, "sel_udp"))
-    {				//use select 
-      if (!strcmp (proto, "tcp"))
-	return websWrite (wp, "");
-      else
-	return websWrite (wp, "selected");
-    }
-  else if (!strcmp (type, "sel_both"))
-    {				//use select 
-      if (!strcmp (proto, "both"))
-	return websWrite (wp, "selected");
-      else
-	return websWrite (wp, "");
-    }
-  else if (!strcmp (type, "ip"))
-    return websWrite (wp, "%d", get_single_ip (lan_ipaddr, 3));
-  else if (!strcmp (type, "enable"))
-    if (!strcmp (enable, "on"))
-      return websWrite (wp, "checked");
-  return websWrite (wp, " ");
-
-def:
-  if (!strcmp (type, "from") || !strcmp (type, "to") || !strcmp (type, "ip"))
-    return websWrite (wp, "0");
-  else if (!strcmp (type, "udp"))
-    return websWrite (wp, "checked");
-  else
-    return 1;
-
-}
-
-*/
 /* Example:
  * name:[on|off]:[tcp|udp|both]:8000:80>100
  */
@@ -588,33 +387,33 @@ port_forward_table (webs_t wp, char *type, int which)
 	    if (!strcmp (proto, "udp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "checked");
+	      websWrite (wp, "checked=\"checked\"");
 	  }
 	else if (!strcmp (type, "udp"))
 	  {			//use checkbox
 	    if (!strcmp (proto, "tcp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "checked");
+	      websWrite (wp, "checked=\"checked\"");
 	  }
 	else if (!strcmp (type, "sel_tcp"))
 	  {			// use select
 	    if (!strcmp (proto, "udp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
 	    if (!strcmp (proto, "tcp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	    else
 	      websWrite (wp, "");
 	  }
@@ -623,7 +422,7 @@ port_forward_table (webs_t wp, char *type, int which)
 	else if (!strcmp (type, "enable"))
 	  {
 	    if (!strcmp (enable, "on"))
-	      websWrite (wp, "checked");
+	      websWrite (wp, "checked=\"checked\"");
 	    else
 	      websWrite (wp, "");
 	  }
@@ -635,7 +434,7 @@ port_forward_table (webs_t wp, char *type, int which)
   else if (!strcmp (type, "ip"))
     websWrite (wp, "0.0.0.0");
   else if (!strcmp (type, "sel_both"))
-    websWrite (wp, "selected");
+    websWrite (wp, "selected=\"selected\"");
   else
     websWrite (wp, "");
 }
@@ -692,33 +491,33 @@ port_forward_spec (webs_t wp, char *type, int which)
 	    if (!strcmp (proto, "udp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "checked");
+	      websWrite (wp, "checked=\"checked\"");
 	  }
 	else if (!strcmp (type, "udp"))
 	  {			//use checkbox
 	    if (!strcmp (proto, "tcp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "checked");
+	      websWrite (wp, "checked=\"checked\"");
 	  }
 	else if (!strcmp (type, "sel_tcp"))
 	  {			// use select
 	    if (!strcmp (proto, "udp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
 	    if (!strcmp (proto, "tcp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	    else
 	      websWrite (wp, "");
 	  }
@@ -727,7 +526,7 @@ port_forward_spec (webs_t wp, char *type, int which)
 	else if (!strcmp (type, "enable"))
 	  {
 	    if (!strcmp (enable, "on"))
-	      websWrite (wp, "checked");
+	      websWrite (wp, "checked=\"checked\"");
 	    else
 	      websWrite (wp, "");
 	  }
@@ -739,7 +538,7 @@ port_forward_spec (webs_t wp, char *type, int which)
   else if (!strcmp (type, "ip"))
     websWrite (wp, "0.0.0.0");
   else if (!strcmp (type, "sel_both"))
-    websWrite (wp, "selected");
+    websWrite (wp, "selected=\"selected\"");
   else
     websWrite (wp, "");
 }
@@ -924,7 +723,7 @@ ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp (type, "enable"))
 	  {
 	    if (!strcmp (enable, "on"))
-	      websWrite (wp, "checked");
+	      websWrite (wp, "checked=\"checked\"");
 	    else
 	      websWrite (wp, "");
 	  }
@@ -933,19 +732,19 @@ ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv)
 	    if (!strcmp (proto, "udp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_udp"))
 	  {			//use select
 	    if (!strcmp (proto, "tcp"))
 	      websWrite (wp, "");
 	    else
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	  }
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      websWrite (wp, "selected");
+	      websWrite (wp, "selected=\"selected\"");
 	    else
 	      websWrite (wp, "");
 	  }
