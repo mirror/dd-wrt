@@ -50,9 +50,9 @@ function init() {
 	
 	<body onload="init()">
 		<form action="apply.cgi" method="<% get_http_method(); %>">
-			<input type="hidden" name="submit_button"/>
-			<input type="hidden" name="submit_type"/>
-			<input type="hidden" name="change_action"/>
+			<input type="hidden" name="submit_button" />
+			<input type="hidden" name="submit_type" />
+			<input type="hidden" name="change_action" />
 			<h2><script type="text/javascript">Capture(wl_active.h2)</script></h2>
 			<table>
 				<tbody>
