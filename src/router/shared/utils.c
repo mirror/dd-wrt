@@ -170,7 +170,7 @@ internal_getRouterBrand ()
 	  			{
 	    		cprintf ("router is Belkin F5D7230 v1000\n"); 
 	    		setRouter ("Belkin F5D7230-4 v1000");
-	    		return ROUTER_SIEMENS;
+	    		return ROUTER_RT210W;
 	  			}
 	      	if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3")) || 
 				(startswith (et0, "00:01:e3") && startswith (et1, "00:01:e3")) ||
@@ -178,7 +178,7 @@ internal_getRouterBrand ()
 	  			{
 	    		cprintf ("router is Siemens / Askey\n");
 	    		setRouter ("Siemens SE505 v1");
-	    		return ROUTER_SIEMENS;
+	    		return ROUTER_RT210W;
 	  			}	      
 			}
 
