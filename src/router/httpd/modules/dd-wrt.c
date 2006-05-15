@@ -257,8 +257,8 @@ ej_show_wds_subnet (int eid, webs_t wp, int argc, char_t ** argv)
     return;
   char buf[16];
   sprintf (buf, "wl_wds%d_enable", index);
-  websWrite (wp, "<OPTION value=2 %s >Subnet</OPTION>\n",
-	     nvram_selmatch (wp, buf, "2") ? "selected" : "");
+  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"2\\\" %s >\" + wds.subnet + \"</option>\");</script>\n",
+	     nvram_selmatch (wp, buf, "2") ? "selected=\\\"selected\\\"" : "");
   return;
 }
 
@@ -1309,7 +1309,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<div class=\"label\">Wireless Network Name (SSID)</div>\n");
 
     websWrite (wp,
-	       "<input name=\"%s_ssid\" size=\"20\" maxLength=\"32\" onBlur=\"valid_name(this,'SSID')\" value=\"%s\" /></div>\n",
+	       "<input name=\"%s_ssid\" size=\"20\" maxLength=\"32\" onblur=\"valid_name(this,'SSID')\" value=\"%s\" /></div>\n",
 	       var, nvram_safe_get (ssid));
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp, "<div class=\"label\">Wireless SSID Broadcast</div>");
@@ -1717,7 +1717,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_ssid, "%s_ssid", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\">Wireless Network Name (SSID)</div><input name=\"%s\" size=\"20\" maxLength=\"32\" onBlur=\"valid_name(this,'SSID')\" value='%s' /></div>\n",
+	     "<div class=\"label\">Wireless Network Name (SSID)</div><input name=\"%s\" size=\"20\" maxLength=\"32\" onblur=\"valid_name(this,'SSID')\" value='%s' /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
 
@@ -2880,19 +2880,19 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "\
 	<div class=\"setting\">\n\
 	          <input type=hidden name=wl_wds%d_ipaddr value=4>\n\
-	          <input size=3 maxlength=3 name=wl_wds%d_ipaddr0 value=\"%d\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr1 value=\"%d\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr2 value=\"%d\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr3 value=\"%d\" onBlur=valid_range(this,1,254,\"IP\") class=num>\n\
+	          <input size=3 maxlength=3 name=wl_wds%d_ipaddr0 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr1 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr2 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr3 value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=num>\n\
        </div>\n", index, index, ip[0], index, ip[1], index, ip[2], index, ip[3], index);
 
       websWrite (wp, "\
        	  <div class=\"setting\">\n\
 	  <input type=\"hidden\" name=\"wl_wds%d_netmask\" value=\"4\">\n\
-	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
 
 #else
@@ -2905,10 +2905,10 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
           <td width=101 height=25>&nbsp;IP Address:</td>\n\
           <td width=296 height=25>&nbsp;\n\
 	          <input type=hidden name=wl_wds%d_ipaddr value=4>\n\
-	          <input size=3 maxlength=3 name=wl_wds%d_ipaddr0 value=\"%d\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr1 value=\"%d\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr2 value=\"%d\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr3 value=\"%d\" onBlur=valid_range(this,1,254,\"IP\") class=num></td>\n\
+	          <input size=3 maxlength=3 name=wl_wds%d_ipaddr0 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr1 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr2 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr3 value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=num></td>\n\
           <td width=13 height=25>&nbsp;</td>\n\
           <td width=15 background=image/UI_05.gif height=25>&nbsp;</td>\n\
        </tr>\n", index, index, ip[0], index, ip[1], index, ip[2], index, ip[3], index);
@@ -2921,10 +2921,10 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
           <TD width=101 height=24><FONT style=\"FONT-SIZE: 8pt\"><SPAN>Subnet Mask:</SPAN></FONT></TD>\n\
           <TD width=296 height=24>&nbsp;\n\
 	  <input type=\"hidden\" name=\"wl_wds%d_netmask\" value=\"4\">\n\
-	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onBlur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
 	  </TD>\n\
           <TD width=13 height=24>&nbsp;</TD>\n\
           <TD width=15 background=image/UI_05.gif height=24>&nbsp;</TD>\n\
@@ -4191,9 +4191,9 @@ int ej_if_config_table(int eid, webs_t wp)
 			if(ip[i] < 0 || ip[i] > 255)
 				ip[i] = 0;
 
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_ip1 value=%d size=2 maxlength=3 onBlur=valid_range(this,0,223,\"IP\")>.<input type=text name=%s_ip2 value=%d size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>.", buff2, ip[0], buff2, ip[1]);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_ip1 value=%d size=2 maxlength=3 onblur=valid_range(this,0,223,\"IP\")>.<input type=text name=%s_ip2 value=%d size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>.", buff2, ip[0], buff2, ip[1]);
 		ret += websWrite(wp, buff);
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_ip3 value=%d size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>.<input type=text name=%s_ip4 value=%d size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>", buff2, ip[2], buff2, ip[3]);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_ip3 value=%d size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>.<input type=text name=%s_ip4 value=%d size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>", buff2, ip[2], buff2, ip[3]);
 		ret += websWrite(wp, buff);
 		ret += websWrite(wp, "</TD>\n");
 		ret += websWrite(wp, "				<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF height=30 colspan=2>Netmask<br>");
@@ -4229,9 +4229,9 @@ int ej_if_config_table(int eid, webs_t wp)
 			nm[3] = 0;
 		}
 
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_nm1 value=%d size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_nm2 value=%d size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>.", buff2, nm[0], buff2, nm[1]);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_nm1 value=%d size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_nm2 value=%d size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>.", buff2, nm[0], buff2, nm[1]);
 		ret += websWrite(wp, buff);
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_nm3 value=%d size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_nm4 value=%d size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>", buff2, nm[2], buff2, nm[3]);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_nm3 value=%d size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_nm4 value=%d size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>", buff2, nm[2], buff2, nm[3]);
 		ret += websWrite(wp, buff);
 		ret += websWrite(wp, "</TD>\n");
 		ret += websWrite(wp, "				<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=center valign=middle bgColor=#FFFFFF height=30><input type=checkbox value=on name=");
@@ -4268,16 +4268,16 @@ int ej_if_config_table(int eid, webs_t wp)
 		ret += websWrite(wp, "			<TR>\n");
 		ret += websWrite(wp, "				<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF height=30 colspan=2>Alias IP Address<br>");
 
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_ip1 size=2 maxlength=3 onBlur=valid_range(this,0,223,\"IP\")>.<input type=text name=%s_add_ip2 size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>.", buff2, buff2);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_ip1 size=2 maxlength=3 onblur=valid_range(this,0,223,\"IP\")>.<input type=text name=%s_add_ip2 size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>.", buff2, buff2);
 		ret += websWrite(wp, buff);
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_ip3 size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>.<input type=text name=%s_add_ip4 size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>", buff2, buff2);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_ip3 size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>.<input type=text name=%s_add_ip4 size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>", buff2, buff2);
 		ret += websWrite(wp, buff);
 		ret += websWrite(wp, "</TD>\n");
 		ret += websWrite(wp, "				<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF height=30 colspan=2>Alias Netmask<br>");
 
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_nm1 size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_add_nm2 size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>.", buff2, buff2);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_nm1 size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_add_nm2 size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>.", buff2, buff2);
 		ret += websWrite(wp, buff);
-		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_nm3 size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_add_nm4 size=2 maxlength=3 onBlur=valid_range(this,128,255,\"Netmask\")>", buff2, buff2);
+		snprintf(buff, sizeof(buff), "<input type=text name=%s_add_nm3 size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>.<input type=text name=%s_add_nm4 size=2 maxlength=3 onblur=valid_range(this,128,255,\"Netmask\")>", buff2, buff2);
 		ret += websWrite(wp, buff);
 		ret += websWrite(wp, "</TD>\n");
 		ret += websWrite(wp, "				<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=center valign=middle bgColor=#FFFFFF height=30><input type=Button value=\"Add\" onclick=AddIP(this.form)></TD>\n");
@@ -4307,23 +4307,23 @@ int ej_if_config_table(int eid, webs_t wp)
 		}
 
 		if(nm[0] < 255)
-			snprintf(buff, sizeof(buff), "<input type=text name=%s_dhcpd_ip1 value=%d size=2 maxlength=3 onBlur=valid_range(this,0,223,\"IP\")>.", buff2, ip[0]);
+			snprintf(buff, sizeof(buff), "<input type=text name=%s_dhcpd_ip1 value=%d size=2 maxlength=3 onblur=valid_range(this,0,223,\"IP\")>.", buff2, ip[0]);
 		else
 			snprintf(buff, sizeof(buff), "%d.", ip[0]);
 		ret += websWrite(wp, buff);
 		if(nm[1] < 255)
-			snprintf(buff, sizeof(buff), "<input type=text name=%s_dhcpd_ip2 value=%d size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>.", buff2, ip[1]);
+			snprintf(buff, sizeof(buff), "<input type=text name=%s_dhcpd_ip2 value=%d size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>.", buff2, ip[1]);
 		else
 			snprintf(buff, sizeof(buff), "%d.", ip[1]);
 		ret += websWrite(wp, buff);
 		if(nm[2] < 255)
-			snprintf(buff, sizeof(buff), "<input type=text name=%s_dhcpd_ip3 value=%d size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")>.", buff2, ip[2]);
+			snprintf(buff, sizeof(buff), "<input type=text name=%s_dhcpd_ip3 value=%d size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")>.", buff2, ip[2]);
 		else
 			snprintf(buff, sizeof(buff), "%d.", ip[2]);
 		ret += websWrite(wp, buff);
 		snprintf(buff, sizeof(buff), "<input type=text name=%s_dhcpd_ip4 value=%d", buff2, ip[3]);
 		ret += websWrite(wp, buff);
-		ret += websWrite(wp, " size=2 maxlength=3 onBlur=valid_range(this,0,255,\"IP\")></TD>\n");
+		ret += websWrite(wp, " size=2 maxlength=3 onblur=valid_range(this,0,255,\"IP\")></TD>\n");
 		ret += websWrite(wp, "				<TD style=\"BORDER-RIGHT: 1px solid; BORDER-TOP: 1px solid; BORDER-LEFT: 1px solid; BORDER-BOTTOM: 1px solid\" align=center valign=middle bgColor=#FFFFFF height=30>Max Clients<br><input type=text size=2 maxlength=3 name=");
 		snprintf(buff, sizeof(buff), "%s_dhcpd_max value=", buff2);
 		ret += websWrite(wp, buff);
