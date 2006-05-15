@@ -363,7 +363,7 @@ main_loop (void)
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
-	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_BELKIN_F5D7230))	//belkin doesnt like that
+	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_BELKIN_F5D7230) && (brand != ROUTER_RT210W))	//belkin doesnt like that
 	    {
 	      stop_service ("resetbutton");
 	    }
@@ -388,7 +388,7 @@ main_loop (void)
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
-	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_BELKIN_F5D7230))	//belkin doesnt like that
+	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_BELKIN_F5D7230) && (brand != ROUTER_RT210W))	//belkin doesnt like that
 	    {
 	      start_service ("resetbutton");
 	    }
@@ -619,7 +619,7 @@ main (int argc, char **argv)
     {
 #ifndef HAVE_RB500
       int brand = getRouterBrand ();
-      if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BELKIN_F5D7230))	//belkin doesnt like that
+      if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BELKIN_F5D7230) && (brand != ROUTER_RT210W))	//belkin doesnt like that
 	{
 	  return resetbutton_main (argc, argv);
 	}
