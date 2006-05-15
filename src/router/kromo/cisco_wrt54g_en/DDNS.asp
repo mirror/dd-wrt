@@ -44,7 +44,7 @@ function ddns_check(F,T) {
 	}
 	if(hostname.value == ""){
 //	alert("You must input a hostname.");
-    alert(errmsg.err7);
+    	alert(errmsg.err7);
 		hostname.focus();
 		return false;
 	}
@@ -143,7 +143,8 @@ function SelDDNS(num,F) {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-									<input type="password" name="ddns_passwd" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd" name="ddns_passwd" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="_ddns_passwd_unmask" value="0" onclick="setElementMask('ddns_passwd', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
@@ -159,7 +160,8 @@ function SelDDNS(num,F) {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-									<input type="password" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_2","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_2" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_2"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="_ddns_passwd_2_unmask" value="0" onclick="setElementMask('ddns_passwd_2', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.domainname)</script></div>
@@ -175,7 +177,8 @@ function SelDDNS(num,F) {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
-									<input type="password" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_3","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" id="ddns_passwd_3" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_get("ddns_passwd_3"); %>" />&nbsp;&nbsp;&nbsp;
+									<input type="checkbox" name="_ddns_passwd_3_unmask" value="0" onclick="setElementMask('ddns_passwd_3', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
@@ -221,7 +224,7 @@ function SelDDNS(num,F) {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hddns.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(ddns.srv)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hddns.right2)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HDDNS.asp');"><script type="text/javascript">Capture(share.more)</script></a>
