@@ -77,15 +77,14 @@ addEvent(window, "load", function() {
 								<legend><script type="text/javascript">Capture(wl_mac.legend)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_mac.label)</script></div>
-									<input type="radio" value="other" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","other"); %> /><script type="text/javascript">Capture(share.enable)</script>
-									&nbsp;
-									<input type="radio" value="disabled" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","disabled"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<input class="spaceradio" type="radio" value="other" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","other"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+									<input class="spaceradio" type="radio" value="disabled" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","disabled"); %> /><script type="text/javascript">Capture(share.disable)</script>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(wl_mac.label2)</script><br />&nbsp;</div>
-									<input type="radio" value="deny" name="wl_macmode" <% nvram_invmatch("wl_macmode","allow","checked"); %> /><script type="text/javascript">Capture(wl_mac.deny)</script>
+									<input class="spaceradio" type="radio" value="deny" name="wl_macmode" <% nvram_invmatch("wl_macmode","allow","checked"); %> /><script type="text/javascript">Capture(wl_mac.deny)</script>
 									<br />
-									<input type="radio" value="allow" name="wl_macmode" <% nvram_checked("wl_macmode","allow"); %> /><script type="text/javascript">Capture(wl_mac.allow)</script>
+									<input class="spaceradio" type="radio" value="allow" name="wl_macmode" <% nvram_checked("wl_macmode","allow"); %> /><script type="text/javascript">Capture(wl_mac.allow)</script>
 								</div><br />
 								<div class="center">
 									<script type="text/javascript">document.write("<input type=\"button\" name=\"mac_filter_button\" value=\"" + sbutton.filterMac + "\" onclick=\"openWindow('WL_FilterTable.asp', 880, 730)\" />");</script>
