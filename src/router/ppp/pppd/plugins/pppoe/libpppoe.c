@@ -12,6 +12,7 @@
 #include <pppoe.h>
 
 int disc_sock=-1;
+int retransmit_time=5;
 
 int verify_packet( struct session *ses, struct pppoe_packet *p);
 
@@ -482,7 +483,7 @@ int session_connect(struct session *ses)
 	else {
 	    ++ses->retransmits;
 	    //tv.tv_sec = 1 << ses->retransmits;
-	    tv.tv_sec = 5;
+	    tv.tv_sec = retransmit_time;
 	    tv.tv_usec = 0;
 again:
 	    ret = select(disc_sock+1, &in, NULL, NULL, &tv);

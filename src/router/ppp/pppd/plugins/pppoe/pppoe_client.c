@@ -43,13 +43,13 @@ static int std_rcv_pado(struct session* ses,
     if (ses->filt->ntag) {
     	ses->curr_pkt.tags[TAG_AC_NAME]=NULL;
     }
-
+    
     ac_name = get_tag(p_in->hdr,PTT_AC_NAME);
     srv_name = get_tag(p_in->hdr,PTT_SRV_NAME);
 
-    memset(ac, 0, sizeof(ac));
-    memset(srv, 0, sizeof(srv));
-
+    memset(ac, 0, sizeof(ac)); 	 
+    memset(srv, 0, sizeof(srv)); 	 
+    
     strncpy(ac, ac_name->tag_data, ntohs(ac_name->tag_len));
     strncpy(srv, srv_name->tag_data, ntohs(srv_name->tag_len));
 

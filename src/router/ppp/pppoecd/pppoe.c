@@ -248,7 +248,9 @@ int setdevname_pppoe(const char *cp)
 	ipcp_wantoptions[0].neg_vj=0;
 
 	ipcp_allowoptions[0].default_route=1;
-	ipcp_wantoptions[0].default_route=1;
+	
+	/* remove for add -R parameter set default route. by tallest.*/
+	//ipcp_wantoptions[0].default_route=0;
 	
 	for (opt = ipcp_protent.options; opt->name != NULL; ++opt) {
 		if (!strncmp(opt->name, "usepeerdns", 10)) {

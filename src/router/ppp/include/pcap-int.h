@@ -30,7 +30,7 @@
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
  * SUCH DAMAGE.
  *
- * @(#) $Header: /home/cvsroot/bcm4712/src/router/ppp/include/pcap-int.h,v 1.1.1.2 2003/10/14 08:09:53 sparq Exp $ (LBL)
+ * @(#) $Header: /home/cvsroot/wrt54g/src/router/ppp/include/pcap-int.h,v 1.1.1.2 2003/10/14 08:09:53 sparq Exp $ (LBL)
  */
 
 #ifndef pcap_int_h

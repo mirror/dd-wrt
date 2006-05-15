@@ -17,7 +17,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define RCSID	"$Id: utils.c,v 1.3 2003/10/04 10:06:01 sparq Exp $"
+#define RCSID	"$Id: utils.c,v 1.6 2004/09/23 06:42:31 tallest Exp $"
 
 #include <stdio.h>
 #include <ctype.h>
@@ -45,6 +45,8 @@
 #endif
 
 #include "pppd.h"
+
+#include <sys/sysinfo.h>
 
 static const char rcsid[] = RCSID;
 
@@ -776,6 +778,23 @@ dbglog __V((char *fmt, ...))
 
 #endif /* DEBUG */
 
+//==================================================
+#include <fcntl.h>
+#define GOT_IP                  0x01
+#define RELEASE_IP              0x02
+#define GET_IP_ERROR            0x03
+#define RELEASE_WAN_CONTROL     0x04
+#define SET_LED(val) \
+{ \
+        int filep; \
+        if ((filep = open("/dev/extio", O_RDWR,0))) \
+        { \
+                ioctl(filep, val, 0); \
+                close(filep); \
+        } \
+}
+//==================================================
+
 int
 log_to_file(char *buf)	// add by honor
 {	
@@ -784,7 +803,22 @@ log_to_file(char *buf)	// add by honor
 	if ((fp = fopen("/tmp/ppp/log", "w"))) {
 		fprintf(fp, "%s", buf);
 		fclose(fp);
+		SET_LED(GET_IP_ERROR)
 		return 1;
 	}	
 	return 0;
 }
+
+int
+my_gettimeofday(struct timeval *timenow, struct timezone *tz)
+{
+	struct sysinfo info;
+
+        sysinfo(&info);
+
+	timenow->tv_sec = info.uptime;
+	timenow->tv_usec = 0;
+
+	return 0;
+}
+

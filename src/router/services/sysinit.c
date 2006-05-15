@@ -1179,6 +1179,21 @@ start_nvram (void)
 // end Sveasoft addition
 // Fix for newer stylesheet settings, BrainSlayer, Eko
   char style[32];
+
+//  {"svqos_port1bw", "FULL", 0},
+//  {"svqos_port2bw", "FULL", 0},
+//  {"svqos_port3bw", "FULL", 0},
+//  {"svqos_port4bw", "FULL", 0},
+
+if (nvram_match("svqos_port1bw","full"))
+    nvram_set("svqos_port1bw","FULL");
+if (nvram_match("svqos_port2bw","full"))
+    nvram_set("svqos_port2bw","FULL");
+if (nvram_match("svqos_port3bw","full"))
+    nvram_set("svqos_port3bw","FULL");
+if (nvram_match("svqos_port4bw","full"))
+    nvram_set("svqos_port4bw","FULL");
+    
   strcpy (style, nvram_safe_get ("router_style"));
 
   {

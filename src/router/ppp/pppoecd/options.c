@@ -17,7 +17,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define RCSID	"$Id: options.c,v 1.9 2003/10/16 13:08:25 honor Exp $"
+#define RCSID	"$Id: options.c,v 1.11 2004/10/08 07:34:34 tallest Exp $"
 
 #include <getopt.h>
 #include <stdlib.h>
@@ -59,6 +59,10 @@ bool	dump_options;		/* print out option values */
 bool	dryrun;			/* print out option values and exit */
 char	*domain;		/* domain name set by domain option */
 int	baud_rate;		/* Actual bits/second for serial device */
+#ifdef UNNUMBERIP_SUPPORT
+char	is_unnumber_ip = 0;	/* This parameter use for unnumber IP. by tallest */
+#endif
+char	ppp_disconnect_func[MAXFUNCLEN]; /* This is a function for dial on demand disconnection using. by tallest 0407 */
 
 char *current_option;		/* the name of the option being parsed */
 int  privileged_option;		/* set iff the current option came from root */
@@ -71,10 +75,11 @@ extern char *pppoe_srv_name;
 extern int lcp_echo_interval;  /* Interval between LCP echo-requests */
 extern int lcp_echo_fails;     /* Tolerance to unanswered echo-requests */
 extern int retry_num;	       /* interval of send disc */
+extern int retransmit_time;
 
 extern int setdevname_pppoe(const char *cp);
 
-static char *usage_string = "usage: %s interface -d -k [-i idle] [-u username] [-p passwd] [-a acname] [-s srvname] [-r mru] [-t mtu] [-I lcp_echo_interval] [-T lcp_echo_fails] [-P ipparam] [-L Local IP] [-N retry_num]\n";
+static char *usage_string = "usage: %s interface -d -k [-i idle] [-u username] [-p passwd] [-a acname] [-s srvname] [-r mru] [-t mtu] [-I lcp_echo_interval] [-T lcp_echo_fails] [-P ipparam] [-L Local IP] [-N retry_num] [-R set default route] [-n use unnumber ip] [-C disconnected function]\n";
 
 /*
  * parse_args - parse a string of arguments from the command line.
@@ -87,7 +92,7 @@ parse_args(argc, argv)
     int opt;
     struct in_addr Laddr, Naddr;
 
-    while ((opt = getopt(argc, argv, "dki:u:p:a:s:r:t:U:I:T:P:L:N:")) != -1) {
+    while ((opt = getopt(argc, argv, "dki:u:p:a:s:r:t:U:I:T:P:L:N:RnC:v:")) != -1) {
 	    switch (opt) {
 	    case 'd':
 		    debug = nodetach = 1;
@@ -139,6 +144,20 @@ parse_args(argc, argv)
 	    case 'U':
 		    req_unit = atoi(optarg);
 		    break;
+	    case 'R':	//by tallest set default route
+		    	ipcp_wantoptions[0].default_route = 1;
+		    break;
+	    case 'n':   //by tallest for unnumber ip use. 
+#ifdef UNNUMBERIP_SUPPORT
+                        is_unnumber_ip = 1;
+#endif
+		    break;
+	    case 'C': //by tallest 0407
+			strncpy(ppp_disconnect_func, optarg, MAXFUNCLEN);
+                    break;
+	    case 'v': //by tallest 0407
+			retransmit_time = atoi(optarg);
+                    break;
 	    default:
 		    fprintf(stderr, usage_string, argv[0]);
 		    return 0;
