@@ -33,7 +33,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define RCSID	"$Id: chap.c,v 1.4 2003/10/04 10:06:00 sparq Exp $"
+#define RCSID	"$Id: chap.c,v 1.5 2004/10/06 10:21:52 honor Exp $"
 
 /*
  * TODO:
@@ -659,7 +659,10 @@ ChapReceiveFailure(cstate, inp, id, len)
 	PRINTMSG(inp, len);
 
     error("CHAP authentication failed");
-    log_to_file("CHAP_AUTH_FAIL");
+
+    //log_to_file("CHAP_AUTH_FAIL");
+    system("ppp_event -t CHAP_AUTH_FAIL &");
+
     auth_withpeer_fail(cstate->unit, PPP_CHAP);
 }
 

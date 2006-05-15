@@ -17,7 +17,7 @@
  * WARRANTIES OF MERCHANTIBILITY AND FITNESS FOR A PARTICULAR PURPOSE.
  */
 
-#define RCSID	"$Id: lcp.c,v 1.2 2003/11/12 07:09:29 honor Exp $"
+#define RCSID	"$Id: lcp.c,v 1.4 2004/08/12 02:56:55 tallest Exp $"
 
 /*
  * TODO:
@@ -1762,6 +1762,7 @@ lcp_up(f)
     lcp_options *go = &lcp_gotoptions[f->unit];
     lcp_options *ao = &lcp_allowoptions[f->unit];
     int mtu;
+    char runmtu[10];
 
     if (!go->neg_magicnumber)
 	go->magicnumber = 0;
@@ -1778,6 +1779,8 @@ lcp_up(f)
      * MTU we want to use.
      */
     mtu = MIN(ho->neg_mru? ho->mru: PPP_MRU, ao->mru);
+    sprintf(runmtu, "%d", mtu);	// by honor 20040618
+    script_setenv("MTU", runmtu, 1);
 #ifdef HAVE_MULTILINK
     if (!(multilink && go->neg_mrru && ho->neg_mrru))
 #endif /* HAVE_MULTILINK */
@@ -1874,7 +1877,7 @@ lcp_printpkt(p, plen, printer, arg)
 	return 0;
 
     if (code >= 1 && code <= sizeof(lcp_codenames) / sizeof(char *))
-	printer(arg, " %s", lcp_codenames[code-1]);
+	printer(arg, " pid=(%d) %s", getpid(), lcp_codenames[code-1]);
     else
 	printer(arg, " code=0x%x", code);
     printer(arg, " id=0x%x", id);
