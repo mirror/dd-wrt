@@ -2883,16 +2883,16 @@ getFileLen (FILE * in)
 
 /*
               <TR align=middle>
-                <TD width=76 height=30><FONT size=2><INPUT  maxLength=12 size=7 name=name12 onBlur=valid_name(this,"Name") value='<% port_forward_table("name","12"); %>' class=num></FONT></TD>
-                <TD width=70 height=30 valign=middle valign=middle><FONT face="Arial, Helvetica, sans-serif"><INPUT  maxLength=5 size=5 value='<% port_forward_table("from","12"); %>' name=from12 onBlur=valid_range(this,1,65535,"Port") class=num><span >&nbsp;</span></FONT></TD>
-                <TD width=58 height=30><INPUT  maxLength=5 size=5 value='<% port_forward_table("to","12"); %>' name=to12 onBlur=valid_range(this,1,65535,"Port") class=num></TD>
+                <TD width=76 height=30><FONT size=2><INPUT  maxlength=12 size=7 name=name12 onblur=valid_name(this,"Name") value='<% port_forward_table("name","12"); %>' class=num></FONT></TD>
+                <TD width=70 height=30 valign=middle valign=middle><FONT face="Arial, Helvetica, sans-serif"><INPUT  maxlength=5 size=5 value='<% port_forward_table("from","12"); %>' name=from12 onblur=valid_range(this,1,65535,"Port") class=num><span >&nbsp;</span></FONT></TD>
+                <TD width=58 height=30><INPUT  maxlength=5 size=5 value='<% port_forward_table("to","12"); %>' name=to12 onblur=valid_range(this,1,65535,"Port") class=num></TD>
                 <TD align=middle width=78 height=30><FONT face=Arial color=blue>
 			<SELECT size=1 name=pro12>
 				<OPTION value=tcp <% port_forward_table("sel_tcp","12"); %>>TCP</OPTION>
 				<OPTION value=udp <% port_forward_table("sel_udp","12"); %>>UDP</OPTION>
 				<OPTION value=both <% port_forward_table("sel_both","12"); %>>Both</OPTION>
 			</SELECT></FONT></TD>
-                <TD width=96 height=30><FONT style="FONT-SIZE: 8pt" face=Arial><INPUT  maxLength=15 size=11 value='<% port_forward_table("ip","12"); %>' name=ip12  class=num></FONT></TD>
+                <TD width=96 height=30><FONT style="FONT-SIZE: 8pt" face=Arial><INPUT  maxlength=15 size=11 value='<% port_forward_table("ip","12"); %>' name=ip12  class=num></FONT></TD>
                 <TD width=47 height=30><INPUT type=checkbox value=on name=enable12 <% port_forward_table("enable","12"); %>></TD></TR>
 
 */
@@ -3080,23 +3080,23 @@ ej_show_triggering (int eid, webs_t wp, int argc, char_t ** argv)
     {
       websWrite (wp, "<tr><td>\n");
       FWSHOW2
-	("<input maxLength=\"12\" size=\"12\" name=\"name%d\" onBlur=\"valid_name(this,'Name')\" value='<%% port_trigger_table(\"name\",\"%d\"); %%>' />\n",
+	("<input maxlength=\"12\" size=\"12\" name=\"name%d\" onblur=\"valid_name(this,'Name')\" value='<%% port_trigger_table(\"name\",\"%d\"); %%>' />\n",
 	 i, i);
       websWrite (wp, "</td><td>\n");
       FWSHOW2
-	("<input class=\"num\" maxLength=\"5\" size=\"5\" name=\"i_from%d\" onBlur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_from\",\"%d\"); %%>' /> to\n",
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_from\",\"%d\"); %%>' /> to\n",
 	 i, i);
       websWrite (wp, "</td><td>\n");
       FWSHOW2
-	("<input class=\"num\" maxLength=\"5\" size=\"5\" name=\"i_to%d\" onBlur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_to\",\"%d\"); %%>' />\n",
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"i_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"i_to\",\"%d\"); %%>' />\n",
 	 i, i);
       websWrite (wp, "</td><td>\n");
       FWSHOW2
-	("<input class=\"num\" maxLength=\"5\" size=\"5\" name=\"o_from%d\" onBlur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_from\",\"%d\"); %%>' /> to\n",
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_from%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_from\",\"%d\"); %%>' /> to\n",
 	 i, i);
       websWrite (wp, "</td><td>\n");
       FWSHOW2
-	("<input class=\"num\" maxLength=\"5\" size=\"5\" name=\"o_to%d\" onBlur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_to\",\"%d\"); %%>' />\n",
+	("<input class=\"num\" maxlength=\"5\" size=\"5\" name=\"o_to%d\" onblur=\"valid_range(this,1,65535,'Port')\" value='<%% port_trigger_table(\"o_to\",\"%d\"); %%>' />\n",
 	 i, i);
       websWrite (wp, "</td><td>\n");
       FWSHOW2
