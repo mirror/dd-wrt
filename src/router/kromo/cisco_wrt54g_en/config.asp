@@ -101,9 +101,9 @@ function to_submit(F) {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hconfig.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(config.legend)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hconfig.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hconfig.right3)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(config.legend2)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hconfig.right4)</script></dd>
 						</dl>
 						<br />
