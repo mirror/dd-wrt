@@ -115,14 +115,13 @@ start_vpn_modules (void)
 {
 #ifndef HAVE_RB500
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
-       || nvram_match ("ipsec_pass", "1"))
-      && nvram_invmatch ("pptpd_enable", "1"))
+       || nvram_match ("ipsec_pass", "1")))
     {
       eval ("/sbin/insmod", "ip_conntrack_proto_gre");
       eval ("/sbin/insmod", "ip_nat_proto_gre");
     }
 #endif
-  if (nvram_match ("pptp_pass", "1") && nvram_invmatch ("pptpd_enable", "1"))
+  if (nvram_match ("pptp_pass", "1"))
     {
       eval ("/sbin/insmod", "ip_conntrack_pptp");
       eval ("/sbin/insmod", "ip_nat_pptp");
@@ -156,8 +155,8 @@ start_pptpd (void)
       stop_pptpd ();
       return 0;
     }
-cprintf("stop vpn modules\n");
-  stop_vpn_modules ();
+//cprintf("stop vpn modules\n");
+//  stop_vpn_modules ();
   
   
   // Create directory for use by pptpd daemon and its supporting files
