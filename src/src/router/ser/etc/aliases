@@ -1,1 +1,0 @@
-username(str) domain(str,null) contact(str,null) expires(int,null) q(double,null) callid(str,null) cseq(int,null) last_modified(str,null) replicate(int,null) state(int,null) flags(int) user_agent(str) received(str,null)

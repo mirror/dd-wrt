@@ -1,2 +1,0 @@
-./configure --host=mipsel-linux --libdir=/opt/openwrt/mipsel-linux-uclibc/lib --includedir=/opt/openwrt/mipsel-linux-uclibc --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC=mipsel-linux-uclibc-gcc CFLAGS="-I../zlib -Os -mips32 -pipe -mtune=mips32 -L../zlib" LDFLAGS="-L../zlib -Wl,--gc-sections" host_alias=mipsel-linux
-

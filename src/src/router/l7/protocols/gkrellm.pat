@@ -1,2 +1,0 @@
-gkrellm
-^<gkrellmd_setup>
