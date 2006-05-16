@@ -3698,10 +3698,10 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
       switch (i)
 	{
 	case 16:
-	  websWrite (wp, "Tagged");
+	  websWrite (wp, "<script type=\"text/javascript\">Capture(vlan.tagged)</script>");
 	  break;
 	case 17:
-	  websWrite (wp, "Auto-Negotiate");
+	  websWrite (wp, "<script type=\"text/javascript\">Capture(vlan.negociate)</script>");
 	  break;
 	case 18:
 	  websWrite (wp, "100 Mbit");
@@ -3763,12 +3763,12 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp, "			<td><select name=");
 	  snprintf (buff, 31, "\"vlan%d\"", i);
 	  websWrite (wp, buff);
-	  websWrite (wp, "><option value=\"-1\"");
+	  websWrite (wp, "><script type=\"text/javascript\">document.write(\"<option value=\\\"-1\\\"");
 	  if (vlans[i][5] < 0)
-	    websWrite (wp, " selected");
-	  websWrite (wp, ">None</option><option value=\"0\"");
+	    websWrite (wp, " selected=\\\"selected\\\"");
+	  websWrite (wp, ">\" + share.none + \"</option>\");</script><option value=\"0\"");
 	  if (vlans[i][5] == 0)
-	    websWrite (wp, " selected");
+	    websWrite (wp, " selected=\"selected\"");
 	  websWrite (wp, ">LAN</option></select></td>\n");
 	}
       else
@@ -3785,13 +3785,13 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   websWrite (wp, "<tr>\n");
-  websWrite (wp, "<td>Wireless</td>\n");
+  websWrite (wp, "<td><script type=\"text/javascript\">Capture(share.wireless)</script></td>\n");
 
   websWrite (wp,
-	     "<td colspan=\"6\"><select name=\"wireless\"><option value=\"-1\"");
+	     "<td colspan=\"6\"><select name=\"wireless\"><script type=\"text/javascript\">document.write(\"<option value=\\\"-1\\\"");
   if (wl_br < 0)
-    websWrite (wp, " selected=\"selected\"");
-  websWrite (wp, ">None</option><option value=\"0\"");
+    websWrite (wp, " selected=\\\"selected\\\"");
+  websWrite (wp, ">\" + share.none + \"</option>\");</script><option value=\"0\"");
   if (wl_br == 0)
     websWrite (wp, " selected=\"selected\"");
   websWrite (wp, ">LAN</option></select></td>\n");
@@ -3800,19 +3800,19 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 
   websWrite (wp, "<tr>\n");
-  websWrite (wp, "<td>Link Aggregation<br>on Ports 3 & 4</td>\n");
+  websWrite (wp, "<td>vlan.aggregation</td>\n");
 
   websWrite (wp,
-	     "<td colspan=\"6\"><select name=\"trunking\"><option value=\"0\">No</option><option value=\"1\"");
+	     "<td colspan=\"6\"><select name=\"trunking\"><script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\">\" + share.no + \"</option>\");</script><script type=\"text/javascript\">document.write(\"<option value=\\\"1\\\"");
 
   c = nvram_safe_get ("trunking");
 
   snprintf (buff, 5, "%s", c);
 
   if (atoi (buff) == 1)
-    websWrite (wp, " selected=\"selected\"");
+    websWrite (wp, " selected=\\\"selected\\\"");
 
-  websWrite (wp, ">Trunk</option></select></td>\n");
+  websWrite (wp, ">\" + vlan.trunk + \"</option>\");</script></select></td>\n");
   websWrite (wp, "              </tr>");
 
   return;
