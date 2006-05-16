@@ -1,0 +1,8 @@
+TODOs:
+	- Write key/signature algorithm drafts
+	- More interesting/comprehensive testsuite
+	- Make X509 support be non-RSA specific
+	- Recursive parser
+	- PGPlib support
+	- ElGamal support
+	- Some sort of tcl/tk GUI

@@ -1,0 +1,79 @@
+
+=pod
+
+=head1 NAME
+
+B<parprouted> - Proxy ARP IP bridging daemon
+
+=head1 SYNOPSIS
+
+B<parprouted> [B<-d>] [B<-p>] B<interface> [B<interface>]
+
+=head1 DESCRIPTION
+
+parprouted is a daemon for transparent IP (Layer 3) proxy ARP bridging. 
+Unlike standard bridging, proxy ARP bridging allows to bridge Ethernet 
+networks behind wireless nodes. Normal L2 bridging does not work between 
+wireless nodes because wireless does not know about MAC addresses used 
+in the wired Ethernet networks. Also this daemon is useful
+for making transparent firewalls.
+
+The daemon listens for incoming ARP requests, and in case the location 
+of the requested IP address is unknown, forwards them to other interfaces, 
+as well as updates kernel ARP table with the received replies. When 
+necessary, the daemon generates an ARP reply itself, which causes the 
+stations to send traffic to the host daemon is running on. By 
+automatically adding appropriate /32 routes to Linux kernel IP routing 
+table for the hosts learned via ARP, daemon ensures that the Linux kernel 
+will be able to route the packets to the destination host when it receives 
+them without any need routing/subnetting manually.  
+
+All routes entered by the daemon have a metric of 50. 
+
+Unless you use B<-p> switch, all entries in the ARP table will be
+refreshed (rechecked by sending ARP requests) every 50 seconds. This
+keeps them from being expired by kernel.
+
+Normally it takes about 60 ms for a bridge to update all its tables and
+start sending packets to the destination.
+
+=head1 REQUIREMENTS
+
+This daemon can be used for unicast traffic only. I.e., DHCP is not supported.
+Use software such as dhcrelay to "bridge" DHCP.
+
+You should have an IP address assigned on all of your interfaces that you do 
+bridging on. There is no need for this address to be from the same networks as 
+the bridged networks. Any dummy address will do.
+
+The system should have correct default route.
+
+parprouted requires "ip" program from iproute2 tools to be installed in 
+/sbin. If it is installed in another location, please replace "/sbin/ip" 
+occurances in the source with the correct path. As well you should have
+proc filesystem mounted in /proc because the daemon uses /proc/net/arp.
+
+parprouted is designed for and tested only with Linux 2.4.x kernels.
+
+=head1 OPTIONS
+
+The list of interfaces to do bridging on should be given via the command
+line.
+
+The daemon accepts the following switches:
+
+B<-d>, which stands for debugging. If you run it in debugging mode the daemon 
+will not go to background and will print additional debugging information to 
+stdout/stderr.
+
+B<-p>, which makes all ARP entries to be permanent. This will also
+result in that ARP tables will not be refreshed by ARP pings.
+
+=head1 EXAMPLE
+
+To bridge between wlan0 and eth0: B<parprouted eth0 wlan0>
+
+=head1 AUTHOR
+
+ (C) 2004, Vladimir Ivaschenko <vi@maks.net>
+ http://www.hazard.maks.net

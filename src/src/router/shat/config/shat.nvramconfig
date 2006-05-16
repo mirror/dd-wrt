@@ -1,0 +1,2 @@
+"shat_enable" "zero ip config support" "CHOICE" "2" "0" "1"  "FALSE" "0"
+"shat_range" "shat range" "NULL" "FALSE" "0"

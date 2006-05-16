@@ -1,0 +1,53 @@
+diff -Nru linux-2.4.10-vanilla/net/ipv4/netfilter/ip_conntrack_ftp.c linux-fxp/net/ipv4/netfilter/ip_conntrack_ftp.c
+--- linux-2.4.10-vanilla/net/ipv4/netfilter/ip_conntrack_ftp.c	Tue Sep 25 10:04:12 2001
++++ linux-fxp/net/ipv4/netfilter/ip_conntrack_ftp.c	Tue Sep 25 10:04:12 2001
+@@ -16,8 +16,10 @@
+ #define MAX_PORTS 8
+ static int ports[MAX_PORTS];
+ static int ports_c;
++static int fxp;
+ #ifdef MODULE_PARM
+ MODULE_PARM(ports, "1-" __MODULE_STRING(MAX_PORTS) "i");
++MODULE_PARM(fxp, "1i");
+ #endif
+ 
+ static int loose = 0;
+@@ -335,7 +337,7 @@
+ 	LOCK_BH(&ip_ftp_lock);
+ 	if (htonl((array[0] << 24) | (array[1] << 16) | (array[2] << 8) | array[3])
+ 	    == ct->tuplehash[dir].tuple.src.ip) {
+-		info->is_ftp = 1;
++		info->is_ftp = 21;
+ 		info->seq = ntohl(tcph->seq) + matchoff;
+ 		info->len = matchlen;
+ 		info->ftptype = search[i].ftptype;
+@@ -363,9 +365,26 @@
+ 			  | (array[2] << 8) | array[3]),
+ 		    { htons(array[4] << 8 | array[5]) },
+ 		    IPPROTO_TCP }});
+-	mask = ((struct ip_conntrack_tuple)
+-		{ { 0xFFFFFFFF, { 0 } },
+-		  { 0xFFFFFFFF, { 0xFFFF }, 0xFFFF }});
++        /* FTP server FXP patch by Magnus Sandin */
++        if (fxp && dir) {
++                mask = ((struct ip_conntrack_tuple)
++                        { { 0, { 0 } },
++                          { 0xFFFFFFFF, { 0xFFFF }, 0xFFFF }});
++
++                DEBUGP("conntrack_ftp: FXP Mode, relate from: anywhere to: %u.%u.%u.%u:%u\n",
++		array[0], array[1], array[2], array[3],
++		(array[4] << 8 | array[5]));
++	} else {
++		mask = ((struct ip_conntrack_tuple)
++			{ { 0xFFFFFFFF, { 0 } },
++			  { 0xFFFFFFFF, { 0xFFFF }, 0xFFFF }});
++
++		DEBUGP("conntrack_ftp: relate from: %u.%u.%u.%u to %u.%u.%u.%u:%u\n",
++		NIPQUAD(ct->tuplehash[!dir].tuple.src.ip),
++		array[0], array[1], array[2], array[3],
++		(array[4] << 8 | array[5]));
++	}
++
+ 	/* Ignore failure; should only happen with NAT */
+ 	ip_conntrack_expect_related(ct, &t, &mask, NULL);
+  out:

@@ -1,0 +1,11 @@
+Author: Fabrice MARIE <fabrice@netfilter.org>
+Status: Works For Me.
+
+This option adds CONFIG_IP_NF_MATCH_RANDOM,
+which allow you to match packets randomly
+following a given probability. 
+
+Suppported options are:
+
+[--average] 	percent	will match randomly packets with a probability of 'percent'
+		default is 50%

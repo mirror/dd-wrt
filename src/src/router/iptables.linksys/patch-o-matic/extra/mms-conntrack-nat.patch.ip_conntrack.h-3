@@ -1,0 +1,2 @@
+	/* insert conntrack helper private data (master) here */
+	struct ip_ct_mms_master ct_mms_info;

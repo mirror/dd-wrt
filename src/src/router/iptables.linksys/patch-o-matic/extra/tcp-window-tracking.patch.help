@@ -1,0 +1,50 @@
+Author: Jozsef Kadlecsik
+Status: proven to be quite stable, but still experimental
+Status: ported to newnat, needs testing.
+
+This patch is an implementation of TCP connection tracking according
+to the article 'Real Stateful TCP Packet Filtering in IP Filter' by
+Guido van Rooij [1]. It contains the new TCP connection tracking code 
+with support to handle already established connections.  It supports 
+TCP window scaling too.
+
+Other differences compared to the vanilla TCP connection tracking in
+netfilter:
+
+- the default timeout value for the CLOSE_WAIT state is raised to 3 days
+- the engine can be fine-tuned by a lot of parameters in 
+  /proc/sys/net/ipv4/netfilter/:
+
+ 	ip_conntrack_*_timeout*
+		conntrack timeout parameters in seconds
+	ip_conntrack_max		
+		the maximal number of conntrack entries
+	ip_conntrack_tcp_be_liberal	
+		when enabled, only out of window reset (RST) segments 
+		are marked as INVALID; when disabled (default), all 
+		out of window packets are marked as INVALID.
+	ip_conntrack_tcp_log_invalid_scale 
+		log packets with invalid window scaling value (default 
+		enabled)
+	ip_conntrack_tcp_log_out_of_window 
+		log out of window packets (default enabled)
+	ip_conntrack_tcp_loose
+		when a connection is picked up from the middle, how many 
+		packets are required to pass in each direction when the 
+		system may assume to be in sync and window tracking can be
+		started (default 3).
+   		If it is set to zero, picking up already esteblished 
+		connections is disabled.
+	ip_conntrack_max_retrans
+		The number of the retransmitted packets without receiving
+		an ACK from the destination. If this number is reached
+		(default 3), the ip_conntrack_timeout_max_retrans.
+	ip_conntrack_timeout_max_retrans
+		The timeout value when we have been seeing only 
+		retransmissions. Default value is 5 minutes.		
+
+- Beware!!! /proc/sys/net/ipv4/ip_conntrack_max is moved to
+  /proc/sys/net/ipv4/netfilter/ip_conntrack_max. Update your scripts
+  which uses this parameter!!!
+
+[1] http://www.iae.nl/users/guido/papers/tcp_filtering.ps.gz

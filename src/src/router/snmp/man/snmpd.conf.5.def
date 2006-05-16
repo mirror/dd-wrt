@@ -1,0 +1,858 @@
+.TH SNMPD.CONF 5 "28 Feb 2003" VVERSIONINFO "Net-SNMP"
+.UC 4
+.SH NAME
+SYSCONFDIR/snmp/snmpd.conf - configuration file for the Net-SNMP SNMP agent.
+.SH DESCRIPTION
+.B snmpd.conf
+is the configuration file which defines how the Net-SNMP SNMP agent
+operates.  These files may contain any of the directives found in the
+.B DIRECTIVES
+section below.  This file is not required for the agent to
+operate and respond to requests.
+.SH PLEASE READ FIRST
+First, make sure you have read the
+.I snmp_config(5) 
+manual page that describes how the Net-SNMP configuration files
+operate, where they are located and how they all work together.
+.PP
+Also, you might consider looking into the
+.B snmpconf
+application (perl script) which can help you build an snmpd.conf file
+by prompting you for information.  You should try it.  Really.  Go
+ahead.  Right now.  Run:
+.RS
+.IP "snmpconf -g basic_setup"
+.RE
+.PP
+to get you started. See the
+.I snmpconf(1)
+manual page for more information.
+.SH EXTENSIBLE-MIB
+.PP
+The Net-SNMP SNMP agent reports much of its information through
+queries to the EXTENSIBLEDOTMIB section of the MIB tree.  Every MIB in
+this section has the following table entries in it.
+.IP ".MIBINDEX -- index"
+This is the table's index numbers for each of the DIRECTIVES listed below.
+.IP ".ERRORNAME -- name"
+The name of the given table entry.  This should be unique, but is not
+required to be.
+.IP ".ERRORFLAG -- errorFlag"
+This is a flag returning either the integer value 1 or 0 if an error
+is detected for this table entry.
+.IP ".ERRORMSG -- errorMsg"
+This is a DISPLAY-STRING describing any error triggering the errorFlag above.
+.IP ".ERRORFIX -- errorFix"
+If this entry is set to the integer value of 1 AND the errorFlag
+defined above is indeed a 1, a program or script will get executed
+with the table entry name from above as the argument.  The program to
+be executed is configured in the config.h file at compile time.
+.SS Directives
+.IP "proc NAME"
+.IP "proc NAME MAX"
+.IP "proc NAME MAX MIN"
+.IP
+Checks to see if processes called NAME are running on the agent
+machine.  An error flag (1) and a description message are then passed
+to the EXTENSIBLEDOTMIB.PROCMIBNUM.1.ERRORFLAG and
+EXTENSIBLEDOTMIB.PROCMIBNUM.1.ERRORMSG MIB columns (respectively) if
+the NAME'd program is not found in the process table as reported by
+PSCMD.
+.IP
+If MAX and MIN are not specified, MAX is assumed to be 
+.B infinity
+and MIN is assumed to be 1.
+.IP
+If MAX is specified but MIN is not specified, MIN is assumed to be 0.
+.IP "procfix NAME PROG ARGS"
+This registers a command that knows how to fix errors with the given
+process NAME.  When EXTENSIBLEDOTMIB.PROCMIBNUM.1.ERRORFIX for a given
+NAMEd program is set to the integer value of 1, this command will be
+called.  It defaults to a compiled value set using the PROCFIXCMD
+definition in the config.h file.
+.IP "exec NAME PROG ARGS"
+.IP "exec MIBNUM NAME PROG ARGS"
+.IP
+If MIBNUM is not specified, the agent executes the named PROG with
+arguments of ARGS and returns the exit status and the first line of
+the STDOUT output of the PROG program to queries of the
+EXTENSIBLEDOTMIB.SHELLMIBNUM.1.ERRORFLAG and
+EXTENSIBLEDOTMIB.SHELLMIBNUM.1.ERRORMSG mib columns (respectively).  All
+STDOUT output beyond the first line is silently truncated.
+.IP
+If MIBNUM is specified, it acts as above but returns the exit status
+to MIBNUM.ERRORFLAG.0 and the entire STDOUT output to the table
+MIBNUM.ERRORMSG in a MIB table.  In this case, the MIBNUM.ERRORMSG mib
+contains the entire STDOUT output, one MIB table entry per line of
+output (ie, the first line is output as MIBNUM.ERRORMSG.1, the second
+at MIBNUM.ERRORMSG.2, etc...).
+.RS
+.IP Note:
+The MIBNUM must be specified in dotted-integer notation and can
+not be specified as ".iso.org.dod.internet..." (should instead
+be .1.3.6.1...).
+.IP Note: 
+The agent caches the exit status and STDOUT of the executed program
+for 30 seconds after the initial query.  This is to increase speed and
+maintain consistency of information for consecutive table queries.
+The cache can be flushed by a snmp-set request of integer(1) to
+EXTENSIBLEDOTMIB.VERSIONMIBNUM.VERCLEARCACHE.
+.RE
+.IP "execfix NAME PROG ARGS"
+This registers a command that knows how to fix errors with the given
+exec or sh NAME.  When EXTENSIBLEDOTMIB.SHELLMIBNUM.1.ERRORFIX for a
+given NAMEd entry is set to the integer value of 1, this command will
+be called.  It defaults to a compiled value set using the EXECFIXCMD
+definition in the config.h file.
+.IP "disk PATH"
+.IP "disk PATH [ MINSPACE | MINPERCENT% ]"
+.IP
+Checks the named disks mounted at PATH for available disk space.  If
+the disk space is less than MINSPACE (kB) if specified or less than
+MINPERCENT (%) if a % sign is specified, or DEFDISKMINIMUMSPACE (kB)
+if not specified, the associated entry in the
+EXTENSIBLEDOTMIB.DISKMIBNUM.1.ERRORFLAG MIB table will be set to (1) and
+a descriptive error message will be returned to queries of
+EXTENSIBLEDOTMIB.DISKMIBNUM.1.ERRORMSG.
+.IP "load MAX1"
+.IP "load MAX1 MAX5"
+.IP "load MAX1 MAX5 MAX15"
+.IP
+Checks the load average of the machine and returns an error flag (1),
+and an text-string error message
+to queries of EXTENSIBLEDOTMIB.LOADAVEMIBNUM.1.ERRORFLAG and
+EXTENSIBLEDOTMIB.LOADAVEMIBNUM.1.ERRORMSG (respectively) when the
+1-minute, 5-minute, or 15-minute averages exceed the associated
+maximum values.  If any of the MAX1, MAX5, or MAX15 values are
+unspecified, they default to a value of DEFMAXLOADAVE.
+.IP "file FILE [MAXSIZE]"
+Monitors file sizes and makes sure they don't grow beyond a certain
+size (in kilobytes).  MAXSIZE defaults to infinite if not specified,
+and only monitors the size without reporting errors about it.
+A maximum of 20 files can be monitored.
+.SS "Errors"
+.PP
+Any errors in obtaining the above information are reported via the
+EXTENSIBLEDOTMIB.ERRORMIBNUM.1.ERRORFLAG flag and the
+EXTENSIBLEDOTMIB.ERRORMIBNUM.1.ERRORMSG text-string description.
+.SH AGENTX SUB-AGENTS
+To enable AgentX support in the SNMP master agent, put the following
+line in your snmpd.conf file:
+.IP "master agentx"
+See README.agentx for further details.
+.IP "AgentXSocket addr"
+This defines the address the master agent listens at.
+The default is /var/agentx/master. Another possibility is localhost:705
+.IP "AgentXTimeout addr"
+Defines the timeout period for an AgentX request.
+Default is 1 second.
+.IP "AgentXRetries addr"
+Defines the number of retries for an AgentX request.
+Default is 5 retries.
+.P
+You can also put the following in your subagent.conf file (where
+"subagent" is the name you used in your init_snmp("subagent") api call:
+.IP "agentPingInterval NUM"
+This makes the subagent try and reconnect every NUM seconds to the
+master if it ever becomes (or starts) disconnected.
+>>>>>>> 5.4.2.3
+.SH SMUX SUB-AGENTS
+To enable and SMUX based sub-agent, such as
+.IR gated ,
+use the
+.I smuxpeer
+configuration entry
+.IP "smuxpeer OID PASS"
+For 
+.I gated
+a sensible entry might be
+.I smuxpeer .1.3.6.1.4.1.4.1.3 secret
+.SH DYNAMICALLY LOADABLE MODULES
+If the agent is built with support for the UCD-DLMOD-MIB it is capable
+of loading agent MIB modules dynamically at startup through
+the \fIdlmod\fR directive and during runtime through use of the UCD-DLMOD-MIB.
+The following directive loads the shared object module file PATH which
+uses the module name prefix NAME.
+.IP "dlmod NAME PATH"
+.IP
+.SH ACCESS CONTROL
+.B snmpd
+supports the View-Based Access Control Model (VACM) as defined in RFC
+2575.  To this end, it recognizes the following keywords in the
+configuration file: \fIcom2sec\fR, \fIgroup\fR, \fIaccess\fR, and
+\fIview\fR as well as some easier-to-use wrapper directives:
+\fIrocommunity\fR, \fIrwcommunity\fR, \fIrouser\fR, \fIrwuser\fR.  If
+IPv6 support has been enabled, the \fIrocommunity6\fR and
+\fIrwcommunity6\fR tokens will also be available.  This section
+defines how to configure the snmpd program to accept various types and
+levels of access.
+.IP "rouser USER [noauth|auth|priv] [OID]"
+.IP "rwuser USER [noauth|auth|priv] [OID]"
+Creates a SNMPv3 USM user in the VACM access configuration tables.  It
+is more efficient (and powerful) to use the combined \fIgroup\fR,
+\fIaccess\fR, and \fIview\fR directives instead, but these wrapper
+directives are much simpler.
+.IP
+The minimum level of authentication and privacy the user must use is
+specified by the first token (which defaults to "auth").  The OID
+parameter restricts access for that user to everything below the given
+OID.
+.IP "rocommunity COMMUNITY [SOURCE] [OID]"
+.IP "rwcommunity COMMUNITY [SOURCE] [OID]"
+These create read-only and read-write communities that can be used to
+access the agent.  They are a quick wrapper around the more complex
+and powerful \fIcom2sec\fR, \fIgroup\fR, \fIaccess\fR, and \fIview\fR
+directive lines.  They are not as efficient either, as groups aren't
+created so the tables are possibly larger.  In other words: don't use
+these if you have complex situations to set up.  If your setup is
+simple or you don't mind a small performance hit, use these
+directives.
+.IP
+The format of the SOURCE is token is described in the \fIcom2sec\fR
+directive section below.  The OID token restricts access for that
+community to everything below that given OID.
+.IP "rocommunity6 COMMUNITY [SOURCE] [OID]"
+.IP "rwcommunity6 COMMUNITY [SOURCE] [OID]"
+They are the alternative directives to the \fIrocommunity\fR,
+\fIrwcommunity\fR for the transport domain UDPIPv6. They are only
+valid in specifing \fIUDPIPv6\fR as transport domain.
+.IP
+The format of the SOURCE is token is described in the \fIcom2sec6\fR
+directive section below.  The OID token restricts access for that
+community to everything below that given OID.
+.IP "com2sec NAME SOURCE COMMUNITY"
+This directive specifies the mapping from a source/community pair to
+a security name. SOURCE can be a hostname, a subnet, or the word
+\fI"default"\fR.
+A subnet can be specified as IP/MASK or IP/BITS.
+The first source/community combination that matches the incoming packet
+is selected.
+.IP "com2sec6 NAME SOURCE COMMUNITY"
+This directive is the IPv6 version of \fIcom2sec\fR.
+A subnet can be specified as IPv6/IPv6MASK or IPv6/BITS.
+It is only valid in specifing \fIUDPIPv6\fR as transport domain.
+.IP "group NAME MODEL SECURITY"
+This directive defines the mapping from securitymodel/securityname to group.
+MODEL is one of \fIv1\fR, \fIv2c\fR, or \fIusm\fR.
+.IP "access NAME CONTEXT MODEL LEVEL PREFX READ WRITE NOTIFY"
+The access directive maps from group/security model/security level to
+a view. 
+MODEL is one of \fIany\fR, \fIv1\fR, \fIv2c\fR, or \fIusm\fR.
+LEVEL is one of \fInoauth\fR, \fIauth\fR, or \fIpriv\fR.
+PREFX specifies how CONTEXT should be matched against the context of
+the incoming pdu, either \fIexact\fR or \fIprefix\fR.
+READ, WRITE and NOTIFY specifies the view to be used for the corresponding 
+access.
+For v1 or v2c access, LEVEL will be noauth, and CONTEXT will be empty.
+.IP "view NAME TYPE SUBTREE [MASK]"
+This defines the named view. TYPE is either \fIincluded\fR or \fIexcluded\fR.
+MASK is a list of hex octets, separated by '.' or ':'.  The MASK
+defaults to "ff" if not specified.
+.IP
+The reason for the mask is, that it allows you to control access to
+one row in a table, in a relatively simple way. As an example, as an ISP
+you might consider giving each customer access to his or her own interface:
+.IP
+.nf
+view cust1 included interfaces.ifTable.ifEntry.ifIndex.1 ff.a0
+view cust2 included interfaces.ifTable.ifEntry.ifIndex.2 ff.a0
+.IP
+(interfaces.ifTable.ifEntry.ifIndex.1 == .1.3.6.1.2.1.2.2.1.1.1,
+ff.a0 == 11111111.10100000. which nicely covers up and including
+the row index, but lets the user vary the field of the row)
+.IP "VACM Examples:"
+.nf
+#        sec.name  source          community
+com2sec  local     localhost       private
+com2sec  mynet     10.10.10.0/24   public
+com2sec  public    default         public
+com2sec6 mynet     fec0::/64       public
+
+#             sec.model  sec.name
+group mygroup v1         mynet
+group mygroup v2c        mynet
+group mygroup usm        mynet
+group local   v1         local
+group local   v2c        local
+group local   usm        local
+group public  v1         public
+group public  v2c        public
+group public  usm        public
+
+#           incl/excl subtree                          mask
+view all    included  .1                               80
+view system included  system                           fe
+view mib2   included  .iso.org.dod.internet.mgmt.mib-2 fc
+
+#              context sec.model sec.level prefix read   write notify
+access mygroup ""      any       noauth    exact  mib2   none  none
+access public  ""      any       noauth    exact  system none  none
+access local   ""      any       noauth    exact  all    all   all
+.IP "Default VACM model"
+The default configuration of the agent, as shipped, is functionally
+equivalent to the following entries:
+.nf
+com2sec	public	default	public
+group	public	v1	public
+group	public	v2c	public
+group	public	usm	public
+view 	all	included	.1
+access	public	""	any	noauth	exact	all	none	none
+.SH SNMPv3 CONFIGURATION
+.PP
+.IP "engineID STRING"
+The snmpd agent needs to be configured with an engineID to be able to
+respond to SNMPv3 messages.  With this configuration file line, the
+engineID will be configured from STRING.  The default value of the
+engineID is configured with the first IP address found for the
+hostname of the machine.
+.IP "createUser username (MD5|SHA) authpassphrase [DES] [privpassphrase]"
+.IP
+MD5 and SHA are the authentication types to use, but you must have
+built the package with openssl installed in order to use SHA.  The
+only privacy protocol currently supported is DES.  If the privacy
+passphrase is not specified, it is assumed to be the same as the
+authentication passphrase.  Note that the users created will be
+useless unless they are also added to the VACM access control tables
+described above.
+.IP
+Warning: the minimum pass phrase length is 8 characters.
+.IP
+SNMPv3 users can be created at runtime using the
+.I snmpusm(1)
+command.
+.IP
+Instead of figuring out how to use this directive and where to put it
+(see below), just run "net-snmp-config --create-snmpv3-user" instead,
+which will add one of these lines to the right place.
+.IP
+This directive should be placed into the
+PERSISTENT_DIRECTORY/snmpd.conf file instead of the other normal
+locations.  The reason is that the information is read from the file
+and then the line is removed (eliminating the storage of the master
+password for that user) and replaced with the key that is derived from
+it.  This key is a localized key, so that if it is stolen it can not
+be used to access other agents.  If the password is stolen, however,
+it can be.
+.IP
+.SH SETTING SYSTEM INFORMATION
+.IP "syslocation STRING"
+.IP "syscontact STRING"
+.IP "sysname STRING"
+Sets the system location, system contact or system name for the agent.
+This information is reported in the 'system' group the mibII tree.
+Ordinarily these objects (sysLocation.0, sysContact.0 and sysName.0)
+are read-write.  However, specifying the value for one of these
+objects by giving the appropriate token makes the corresponding object
+read-only, and attempts to set the value of the object will result in
+a notWritable error response.
+.IP "sysservices NUMBER"
+Sets the value of the system.sysServices.0 object.
+For a host, a good value is 72.
+.IP "sysdescr STRING"
+.IP "sysobjectid OID"
+Sets the system description or object ID for the agent.
+Although these values are not SNMP-writable, it is conceivable
+that a network administrator may wish to configure them to something
+other than the default values.
+.IP "agentaddress [<transport-specifier>:]<transport-address>[,...]"
+Makes the agent list on the specified comma-separated list of
+listening addresses instead of the default behaviour, which is to
+listen on UDP port 161 on all IPv4 interfaces.  See the section 
+.B LISTENING ADDRESSES
+in the
+.I snmpd(8)
+manual page for more information about the format of listening
+addresses.  For example, specifying
+.I "agentaddress 161,tcp:161,localhost:9161"
+will make the agent listen on UDP port 161 on all IPv4 interfaces, TCP
+port 161 on all IPv4 interfaces and UDP port 9161 only on the interface
+associated with the localhost address.
+.IP "agentgroup groupid"
+Change to this gid after opening port. The groupid may refer to a group
+by name or a number if the group number starts with '#'. For example,
+specifying
+.I agentgroup snmp
+will cause the agent to run as the snmp group or
+.I agentgroup #10
+will cause the agent to run as the group with groupid 10.
+.IP "agentuser uid"
+Change to this uid after opening port. The userid may refer to a user
+by name or a number if the user number starts with '#'. For example,
+specifying
+.I agentuser snmp
+will cause the agent to run as the snmp user or
+.I agentuser #10
+will cause the agent to run as the user with userid 10.
+.IP "interface NAME TYPE SPEED"
+For interfaces where the agent fails to guess correctly on the type and
+speed, this directive can supply additional information.
+TYPE is a type value as given in the IANAifType-MIB.
+.IP "ignoredisk STRING"
+When scanning for available disk devices the agent might block in trying
+to open all possible disk devices. This might lead to a timeout when
+walking the device tree. Sometimes the next walk will run without timeout,
+sometimes it will timeout every time you try it.
+.IP
+If you experience such behaviour you might add this directive and give all
+device names not to be checked (i.e. opened). You might have more than one
+such directive in your configuration file stating all devices not to be
+opened. You might also specify those devices using wildcards similar to
+the syntax you can use in a bourne shell (see examples below).
+.IP
+.B Note:
+For a list of devices scanned for every system please consult the sources
+(host/hr_disk.c) and check for the Add_HR_Disk_entry() calls relevant for
+your type of OS.
+.IP
+Examples:
+.IP
+ignoredisk /dev/rdsk/c0t2d0
+.IP
+This directive prevents the device /dev/rdsk/c0t2d0 from being scanned.
+.IP
+ignoredisk /dev/rdsk/c0t[!6]d0
+.IP
+This directive prevents all devices /dev/rdsk/c0tXd0 except .../c0t6d0
+from being scanned. For most systems similar is the following directive:
+.IP
+ignoredisk /dev/rdsk/c0t[0-57-9a-f]d0
+.IP
+ignoredisk /dev/rdsk/c1*
+.IP
+This directive prevents all devices whose device names start with /dev/rdsk/c1
+from being scanned.
+.IP
+ignoredisk /dev/rdsk/c?t0d0
+.IP
+This directive prevents all devices /dev/rdsk/cXt0d0 ('X' might be any char)
+from being scanned.
+.IP
+You might use more than one such wildcard expression in any such directive.
+.IP "storageUseNFS NUMBER"
+Setting storageUseNFS to 1 causes all NFS and NFS-like file systems to be
+marked as 'Network Disks' in the hrStorageTable. This is according to RFC 2790.
+Not setting storageUseNFS or setting it to 2 causes NFS and NFS-like file
+systems to be marked as 'Fixed Disks' as it has been in previous versions of
+the ucd-snmp SNMP agent.
+.IP "authtrapenable NUMBER"
+Setting authtrapenable to 1 enables generation of authentication failure
+traps.  The default value is disabled(2).  Ordinarily the corresponding
+object (snmpEnableAuthenTraps.0) is read-write, but setting its value
+via this token makes the object read-only, and attempts to set the
+value of the object will result in a notWritable error response.
+.IP "override OID TYPE VALUE"
+This directive allows you to override a particular OID with a
+different value (and possibly a different type of value).
+.\" The -rw flag will allow snmp SETs to modify it's value as well.
+An example:
+.IP
+override sysDescr.0 octet_str "my own sysDescr"
+.IP
+That line will set the sysDescr.0 value to "my own sysDescr" as well
+as make it modifiable with SNMP SETs as well (which is actually
+illegal according to the MIB specifications).
+.IP
+Note that care must be taken when using this.  For example, if you try
+to override a property of the 3rd interface in the ifTable with a new
+value and later the numbering within the ifTable changes it's index
+ordering you'll end up with problems and your modified value won't
+appear in the right place in the table.
+.IP
+Valid TYPEs are: integer, uinteger, octet_str, bit_str, object_id,
+counter, gauge, null.  Note that setting an object to "null"
+effectively delete's it as being accessible.  No VALUE needs to be
+given if the object type is null.
+.IP
+More types should be available in the future, as well as writable
+object support.
+.SH "SETTING UP TRAP AND/OR INFORM DESTINATIONS"
+.IP "trapcommunity STRING"
+This defines the default community string to be used when sending traps.
+Note that this command must be used prior to any of the following three
+commands that are intended use this community string.
+.IP "trapsink HOST [COMMUNITY [PORT]]"
+.IP "trap2sink HOST [COMMUNITY [PORT]]"
+.IP "informsink HOST [COMMUNITY [PORT]]"
+These commands define
+the hosts to receive traps (and/or inform notifications). The
+daemon sends a Cold Start trap when it starts up. If enabled, it also sends
+traps on authentication failures.  Multiple \fItrapsink\fR, \fItrap2sink\fR
+and \fIinformsink\fR lines may be specified to specify multiple destinations.
+Use \fItrap2sink\fR to send SNMPv2 traps and \fIinformsink\fR to send
+inform notifications.
+If COMMUNITY is not specified, the string from a preceding \fItrapcommunity\fR
+directive will be used. If PORT is not specified, the well known SNMP trap
+port (162) will be used.
+.IP "trapsess [SNMPCMD_ARGS] HOST"
+This is a more generic trap configuration token that allows any type
+of trap destination to be specified with any version of SNMP.  See the 
+.I snmpcmd(1)
+manual page for further details on the arguments that can be passed as
+.I "SNMPCMD ARGS".
+In addition to the arguments listed there, the special argument
+\fI-Ci\fR specifies that you want inform notifications to be used
+instead of unacknowledged traps (this requires that you also specify a 
+version number of v2c or v3 as well).
+.SH "PROXY SUPPORT"
+.IP "proxy [-Cn CONTEXTNAME] [SNMPCMD ARGS] HOST OID [REMOTEOID]"
+.IP
+This token specifies that any incoming requests under OID should be
+proxied on to another HOST instead.  If a CONTEXTNAME is specified, it
+assigns the proxied tree to a particular context name within the local
+agent.  This is the proper way to query multiple agents through a
+single proxy.  Assign each remote agent to a different context name.
+Then you can use "snmpwalk -n contextname1" to walk one remote proxied
+agent and "snmpwalk -n contextname2" to walk another, assuming you are
+using SNMPv3 to talk to the proxy (snmpv1 and snmpv2c context mappings
+aren't currently supported but might be in the future).  Optionally,
+relocate the local OID tree to the new location at the REMOTEOID.  To
+authenticate to HOST you should use the appropriate set of
+.I "SNMPCMD ARGS."
+See the
+.I snmpcmd(1)
+manual page for details.
+.IP
+Examples:
+.RS
+.IP
+.nf
+# assigns the entire mib tree on remotehost1 to the context of the
+# same name:
+proxy -Cn remotehost1 -v 1 -c public remotehost1 .1.3
+# ditto, but for remotehost 2
+proxy -Cn remotehost2 -v 1 -c public remotehost2 .1.3
+# proxies only the ucdavis enterprises tree to the remote host using snmpv1
+proxy -v 1 -c public remotehost .1.3.6.1.4.1.2021
+# uses v3 to access remotehost and converts the remote .1.3.6.1.2.1.1
+# oid to local .1.3.6.1.3.10 oid (another way to access mulitple hosts
+# without using contexts)
+proxy -v 3 -l noAuthNoPriv -u user remotehost .1.3.6.1.3.10 .1.3.6.1.2.1.1
+.SH "PASS-THROUGH CONTROL"
+.IP "pass MIBOID EXEC"
+(If you're writing perl scripts, please see the embedded perl support
+information later in this manual page).  Passes entire control of
+MIBOID to the EXEC program.  The EXEC program is called in one of the
+following three ways:
+.RS
+.IP "EXEC -g MIBOID"
+.IP "EXEC -n MIBOID"
+.IP
+These call lines match to SNMP get and getnext requests.  It is
+expected that the EXEC program will take the arguments passed to it
+and return the appropriate response through it's stdout.  
+.IP
+The first line of stdout should be the MIB OID of the returning value.
+The second line should be the TYPE of value returned, where TYPE is
+one of the text strings:
+.B string, integer, unsigned, objectid, timeticks, ipaddress, counter, 
+or
+.B gauge.
+The third line of stdout should be the VALUE corresponding with the
+returned TYPE.
+.IP
+For instance, if a script was to return the value integer value "42"
+when a request for .1.3.6.1.4.100 was requested, the script should
+return the following 3 lines:
+.br
+.RS
+  .1.3.6.1.4.100
+.br
+  integer
+.br
+  42
+.RE
+.IP
+To indicate that the script is unable to comply with the request due
+to an end-of-mib condition or an invalid request, simple exit and
+return no output to stdout at all.  An SNMP error will be generated
+corresponding to the SNMP noSuchName response.
+.IP "EXEC -s MIBOID TYPE VALUE"
+.IP 
+For SNMP set requests, the above call method is used.  The TYPE passed
+to the EXEC program is one of the text strings:
+.B integer, counter, gauge, timeticks, ipaddress, objid,
+or 
+.B string,
+indicating the type of value passed in the next argument.
+.IP
+Return nothing to stdout, and the set will assumed to have been
+successful.  Otherwise, return one of the following error strings to
+signal an error:
+.B not-writable, 
+or 
+.B wrong-type
+and the appropriate error response will be generated instead.
+.RS
+.IP Note:
+By default, the only community allowed to write (ie snmpset) to your
+script will be the "private" community,or community #2 if defined
+differently by the "community" token discussed above.  Which
+communities are allowed write access are controlled by the RWRITE
+definition in the snmplib/snmp_impl.h source file.
+.RE
+.RE
+.IP
+Example (in snmpd.conf):
+.IP
+pass .1.3.6.1.4.1.2021.255 /path/to/local/passtest
+.RE
+.IP "pass_persist MIBOID EXEC"
+Passes entire control of MIBOID to the EXEC program.  
+Similar to pass, but the EXEC program continues to run after the initial
+request is answered.
+.IP
+Upon initialization, EXEC is passed the string "PING\\n" in stdin,
+and it should respond by printing "PONG\\n" to stdout.
+.IP
+For get and getnext requests, EXEC program is passed two lines,
+the command (get or getnext) and the MIB OID.  It should return
+three lines, the MIB OID, the TYPE of value returned,
+the VALUE corresponding with the returned TYPE.
+.IP
+For example, if the value for .1.3.6.1.4.100 was requested, the following
+2 lines would be passed in to stdin:
+.br
+.RS
+  get
+.br
+  .1.3.6.1.4.100  
+.RE
+.IP
+To return the value, say, 42, the script would write to stdout:
+.br
+.RS
+  .1.3.6.1.4.100
+.br
+  integer
+.br
+  42
+.RE
+.IP
+To indicate that the script is unable to comply with the request due
+to an end-of-mib condition or an invalid request, print "NONE\\n" to
+stdout.
+.IP
+Example (in snmpd.conf):
+.IP
+pass_persist .1.3.6.1.4.1.2021.255 /path/to/local/pass_persisttest
+.RE
+.SH "EMBEDDED PERL SUPPORT"
+.PP
+Warning: though embedded perl is working, not much functionality has
+been implemented yet and thus writing mib module pieces for the agent
+within perl is not trivial at this point.  It should get better in
+future releases.
+.PP
+The net-snmp package has ability to call perl scripts directly inside
+the agent through embedded perl technology (similar to mod_perl for
+the apache web server).  This must be turned on at compile time by
+passing --enable-embedded-perl to the configure script when the
+package is built.  To see if your package was built with embedded
+perl, run "net-snmp-config --configure-options" and see if that flag
+was used.
+.PP
+If compiled in, it defines the following snmpd.conf configuration
+directives:
+.IP "disablePerl true"
+This will turn off perl support entirely.  If the embedded perl
+support stops working due to a change in perl, etc, this will stop any
+calls to the perl core.
+
+.IP "perlInitFile FILE"
+Use FILE as the initialization file.  This file is normally
+DATADIR/snmp/snmp_perl.pl but this token can override that default.
+This file performs any in-perl initialization that is needed before
+the rest of the perl directives (below) are called.  It is sourced
+once just before the first perl directive is parsed.  See the default
+file for an example of the initialization it performs.
+.IP "perl EXPRESSION"
+Calls perl to evaluate an expression.  Normally you'd want to do
+something like register a function to call when an OID is requested,
+but you can really do anything perl related you want.  For example:
+.IP
+.RS
+perl print "hello world\\n";
+.RE
+.IP
+is the most basic hello world example.
+.IP
+The init script by default initializes a $agent variable which
+is a pointer to a NetSnmp::agent object through which you can register
+callbacks when a section of the OID tree is hit:
+.IP
+.RS
+.nf
+perl use Data::Dumper;
+perl sub myroutine  { print "got called: ",Dumper(@_),"\\n"; }
+perl $agent->register('mylink', '.1.3.6.1.8765', \\&myroutine);
+.fi
+.RE
+.IP
+Sourcing an external file:
+.IP
+.RS
+.nf
+perl 'do /path/to/file.pl';
+.fi
+.RE
+.IP
+No better examples exist at the moment, unfortunately.  Look for
+improved support in future releases.  Comments on how this looks as an
+architecture are certainly appreciated now.
+.SH "DISMAN-EVENT-MIB SUPPORT (READ: SENDING TRAPS ON ERRORS)"
+.PP
+Warning: this implementation has not been extensively tested and is
+additionally not known to be entirely complete.  The concepts defined
+here should function appropriately, however, but no promises are made
+at this time.
+.PP
+If your agent was compiled with support for the DISMAN-EVENT-MIB (you
+can enable this by running the net-snmp configure script with the
+--with-mib-modules=disman/event-mib argument) you have support for
+having the agent check its own data at regular intervals and to send
+out traps when certain conditions occur.  Traps are sent when
+expressions are first noticed, not once per evaluation.  Once a test
+expression fires a trap, the test will have to fail again before a new
+trap is sent.  See the DISMAN-EVENT-MIB documentation for more
+details. This can be configured either using the MIB tables themselves
+or by using these special key words:
+.IP "agentSecName NAME"
+The DISMAN-EVENT-MIB support requires a valid user name for which to
+scan your agent with.  This can either be specified using the
+agentSecName token or by explicitly list one on the "monitor" lines
+described below using the -u switch.  Either way, a "rouser" line (or
+equivalent access control settings) must also be specified with the
+same security name name.  If you need an example, just do something
+like this:
+.RS
+.IP
+.nf
+agentSecName internal
+rouser internal
+.fi
+.RE
+.IP
+And everything below should work just fine.
+.IP "monitor [OPTIONS] NAME EXPRESSION"
+This token tells the agent to monitor itself for problems based on
+EXPRESSION.  Expression is a simple expression based on an oid, a
+comparison operator (!=, ==, <, <=, >, >=) and an integer value (see
+the examples below).  NAME is merely an arbitrary name of your
+choosing for administrative purposes only.  OPTIONS include the
+following possibilities:
+.RS
+.IP "-r FREQUENCY"
+Monitors the given expression every FREQUENCY seconds.  The default is
+600 (10 minutes). 
+.IP "-u SECNAME"
+Use the SECNAME security name for scanning the local host.
+Specifically, this SECNAME must then be given access control rights
+via something like the "rouser" snmpd.conf token for this expression
+to be valid at all.  If not specified, it uses the default security
+name specified by the agentsecname snmpd.conf token.  Either the -u
+flag or a valid agentsecname token must be specified (and that name
+must be given proper access control rights via a "rouser" token).
+.IP "-o OID"
+Specifies additional object values to be delivered with in the
+resulting trap in addition to the normal trap objects.  This is useful
+for obtaining other columns in the table for the row that triggered
+the expression.  See the examples below for more details.
+.RE
+.IP
+The following example configuration checks the hrSWRunPerfTable table
+(listing running processes) for any process which is consuming > 10Mb
+of memory.  It performs this check every 600 seconds (the default).
+For every process it finds exceeding the limit, it will end out
+exactly one notification.  In addition to the normal hrSWRunPerfMem
+oid and value sent in the trap, the hrSWRunName object will also be
+sent.  Note that the hrSWRunName object actually occurs in a different
+table, but since the indexes to the two tables are the same this works
+out alright.
+.RS
+.IP
+.nf
+rouser me
+monitor -u me -o sysUpTime.0 -o hrSWRunName "high process memory" hrSWRunPerfMem > 10000
+.RE
+.fi
+.IP
+The above line would produce a trap which, when formated by snmptrapd, would
+look like:
+.RS
+.IP
+.nf
+2002-04-05 13:33:53 localhost.localdomain [udp:127.0.0.1:32931]:
+        sysUpTimeInstance = Timeticks: (1629) 0:00:16.29        snmpTrapOID.0 = OID: mteTriggerFired    mteHotTrigger = high process memory     mteHotTargetName =      mteHotContextName =     mteHotOID = OID: hrSWRunPerfMem.1968    mteHotValue = 28564     hrSWRunName.1968 = "xemacs"
+.RE
+.fi
+.IP
+This shows my xemacs process using 28Mb of resident memory.  Which,
+considering it's xemacs, is not that surprising.
+.IP "defaultMonitors yes"
+By default, the agent and the DISMAN-EVENT-MIB support do nothing
+until configured.  Typically people wish to watch a bunch of tables
+within the UCD-SNMP-MIB which are designed specifically for reporting
+problems.  If the "defaultMonitors yes" line is put into the
+snmpd.conf file (which must be accompanied by an appropriate
+agentSecName line and a rouser line), the following monitoring
+conditions will be installed:
+.RS
+.IP
+.nf
+monitor	-o prNames -o prErrMessage "process table" prErrorFlag != 0
+monitor	-o memErrorName -o memSwapErrorMsg "memory" memSwapError != 0
+monitor	-o extNames -o extOutput "extTable" extResult != 0
+monitor	-o dskPath -o dskErrorMsg "dskTable" dskErrorFlag != 0
+monitor	-o laNames -o laErrMessage  "laTable" laErrorFlag != 0
+monitor	-o fileName -o fileErrorMsg  "fileTable" fileErrorFlag != 0
+.fi
+.RE
+.SH "DEBUGGING AND OTHER EXTENSIBILITY NOTES"
+If you're trying to figure out aspects of the various mib modules
+(possibly some that you've added yourself), the following may help you
+spit out some useful debugging information.  First off, please read
+the snmpd manual page on the -D flag.  Then the following
+configuration snmpd.conf token, combined with the -D flag, can produce
+useful output:
+.IP "injectHandler HANDLER modulename"
+This will insert new handlers into the section of the mib tree
+referenced by "modulename".  The types of handlers available for
+insertion are:
+.RS
+.nf
+debug        - Prints out lots of debugging information when -Dhelper:debug
+               is passed to the snmpd application.
+read_only    - Forces turning off write support for the given module.
+serialize    - If a module is failing to handle multiple requests
+               properly (using the new 5.0 module API), this will force
+               the module to only receive one request at a time.
+bulk_to_next - If a module registers to handle getbulk support, but
+               for some reason is failing to implement it properly,
+               this module will convert all getbulk requests to
+               getnext requests before the final module receives it.
+.fi
+.RE
+.IP "Figuring out module names"
+To figure out which modules you can inject things into, snmpwalk the
+nsModuleTable which will give you a list of all named modules
+registered within the agent.
+.SH "EXAMPLE CONFIGURATION FILE"
+See the EXAMPLE.CONF file in the top level source directory for a more
+detailed example of how the above information is used in real
+examples.
+.SH "RE-READING snmpd.conf AND snmpd.local.conf"
+The Net-SNMP agent can be forced to re-read its configuration files.
+It can be told to do so by one of two ways:
+.IP 1.
+An snmpset of integer(1) to UCD-SNMP-MIB::versionUpdateConfig.0
+(.1.3.6.1.4.1.2021.100.11.0)
+.IP 2.
+A "kill -HUP" signal sent to the snmpd agent process.
+.SH "FILES"
+SYSCONFDIR/snmp/snmpd.conf
+.SH "SEE ALSO"
+snmpconf(1), snmpusm(1), snmp.conf(5), snmp_config(5), snmpd(8), EXAMPLE.conf, read_config(3).
+.\" Local Variables:
+.\"  mode: nroff
+.\" End:

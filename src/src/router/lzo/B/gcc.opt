@@ -1,0 +1,5 @@
+-Iinclude
+-Wall
+-Wcast-align
+-Wwrite-strings
+-O2

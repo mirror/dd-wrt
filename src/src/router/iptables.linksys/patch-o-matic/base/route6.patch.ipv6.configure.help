@@ -1,0 +1,9 @@
+CONFIG_IP6_NF_MATCH_MAC
+Fragmentation header match support (EXPERIMENTAL)
+CONFIG_IP6_NF_MATCH_RT
+  This match extension (`rt') allow you to select the packet based on the
+  fileds of the routing header of the IPv6 packets.
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

@@ -1,0 +1,15 @@
+#! /bin/sh
+
+: ${srcdir:=.}
+
+set -- `echo "$0"."$@" | sed -e 's!\.! !g'`
+
+base=${srcdir}/data/${2%%Test}
+
+test "$3" && base="${base}-$3"
+
+inp=${base}.in
+out=${base}.out
+
+set -e
+./$2 ${inp} | cmp ${out}

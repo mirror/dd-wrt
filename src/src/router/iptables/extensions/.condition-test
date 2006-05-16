@@ -1,0 +1,3 @@
+#!/bin/sh
+# True if condition is applied.
+[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ipt_condition.h ] && echo condition

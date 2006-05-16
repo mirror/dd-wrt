@@ -1,0 +1,23 @@
+CONFIG_IP_NF_MATCH_TOS
+Nth match support
+CONFIG_IP_NF_MATCH_NTH
+  This option adds a `Nth' match, which allow you to make
+  rules that match every Nth packet.  By default there are 
+  16 different counters.
+
+[options]
+   --every     Nth              Match every Nth packet
+  [--counter]  num              Use counter 0-15 (default:0)
+  [--start]    num              Initialize the counter at the number 'num'
+                                instead of 0. Must be between 0 and Nth-1
+  [--packet]   num              Match on 'num' packet. Must be between 0
+                                and Nth-1.
+
+                                If --packet is used for a counter than
+                                there must be Nth number of --packet
+                                rules, covering all values between 0 and
+                                Nth-1 inclusively.
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

@@ -1,0 +1,44 @@
+\input mjmac
+
+\language=\czech
+\chyph
+\nopagenumbers
+
+\centerline{\Big Projekt BIRD}
+\bigskip
+\centerline{\Big\ss (Basic Internet Routing Daemon)}
+
+\vskip 1in
+
+\large\fixfont
+
+\parindent=0pt
+
+\halign{\quad \hfil # & \quad # \hfil \cr
+Vedoucí projektu:	& RNDr. Libor Forst \cr
+\noalign{\medskip}
+Úèastníci:		& Leo¹ Bitto \cr
+			& Ondøej Filip \cr
+			& Pavel Machek \cr
+			& Martin Mare¹ \cr
+			& {\I (tímto je projekt obsazen)} \cr
+\noalign{\medskip}
+Cíl projektu:		& \vtop{\hsize=0.6\hsize
+   Cílem projektu je vyvinout kompletní podporu dynamického routingu
+Internetovských protokolù (IP a IPv6) pro operaèní systémy kompatibilní
+s~UNIXem, zejména pak pro Linux. Základní rysy programu:
+\itemize\ibull
+\:Podpora pou¾ití obou verzí IP souèasnì na~té¾e síti.
+\:Komunikace s~okolními routery prostøednictvím protokolù RIPv2, OSPFv2 a BGP4.
+\:Filtrace routovacích tabulek.
+\:Mo¾nost re-exportu informací získaných jedním protokolem do~protokolù
+  jiných.
+\:Vyu¾ití vymo¾eností Linuxového jádra (vícenásobné routovací tabulky,
+  netlink apod.).
+\:Dynamická rekonfigurovatelnost za bìhu.
+\:TOS-based routing.
+\endlist
+}\cr
+}
+
+\bye

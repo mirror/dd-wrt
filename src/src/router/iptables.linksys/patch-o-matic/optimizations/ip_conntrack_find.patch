@@ -1,0 +1,14 @@
+--- linux-2.4.19-pre10/net/ipv4/netfilter/ip_conntrack_core.c.orig	Sat Jun  8 00:48:59 2002
++++ linux-2.4.19-pre10/net/ipv4/netfilter/ip_conntrack_core.c	Sat Jun  8 00:49:56 2002
+@@ -292,9 +292,10 @@
+ 		    const struct ip_conntrack *ignored_conntrack)
+ {
+ 	struct ip_conntrack_tuple_hash *h;
++	size_t hash = hash_conntrack(tuple);
+ 
+ 	MUST_BE_READ_LOCKED(&ip_conntrack_lock);
+-	h = LIST_FIND(&ip_conntrack_hash[hash_conntrack(tuple)],
++	h = LIST_FIND(&ip_conntrack_hash[hash],
+ 		      conntrack_tuple_cmp,
+ 		      struct ip_conntrack_tuple_hash *,
+ 		      tuple, ignored_conntrack);

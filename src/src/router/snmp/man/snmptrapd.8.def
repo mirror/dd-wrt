@@ -1,0 +1,293 @@
+.\" /***********************************************************
+.\" 	Copyright 1989 by Carnegie Mellon University
+.\" 
+.\"                       All Rights Reserved
+.\" 
+.\" Permission to use, copy, modify, and distribute this software and its 
+.\" documentation for any purpose and without fee is hereby granted, 
+.\" provided that the above copyright notice appear in all copies and that
+.\" both that copyright notice and this permission notice appear in 
+.\" supporting documentation, and that the name of CMU not be
+.\" used in advertising or publicity pertaining to distribution of the
+.\" software without specific, written prior permission.  
+.\" 
+.\" CMU DISCLAIMS ALL WARRANTIES WITH REGARD TO THIS SOFTWARE, INCLUDING
+.\" ALL IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS, IN NO EVENT SHALL
+.\" CMU BE LIABLE FOR ANY SPECIAL, INDIRECT OR CONSEQUENTIAL DAMAGES OR
+.\" ANY DAMAGES WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS,
+.\" WHETHER IN AN ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION,
+.\" ARISING OUT OF OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS
+.\" SOFTWARE.
+.\" ******************************************************************/
+.TH SNMPTRAPD 8 "07 Feb 2002" VVERSIONINFO "Net-SNMP"
+.UC 4
+.SH NAME
+snmptrapd - Receive and log SNMP trap messages.
+.SH SYNOPSIS
+.BR snmptrapd " [OPTIONS] [LISTENING ADDRESSES]"
+.SH DESCRIPTION
+.B snmptrapd
+is an SNMP application that receives and logs SNMP TRAP and INFORM
+messages.
+.PP
+Note: the default is to listen on UDP port 162 on all IPv4 interfaces.
+Since 162 is a privileged port,
+.B snmptrapd
+must be typically be run as root.
+.SH OPTIONS
+.TP 8
+.B -a
+Ignore authenticationFailure traps.
+.TP
+.BI "-c" " FILE"
+Read 
+.I FILE
+as a configuration file.
+.TP
+.B -C
+Do not read any configuration files except the one optionally specified by the 
+.B -c 
+option.
+.TP
+.B -d
+Dump (in hexadecimal) the sent and received SNMP packets.
+.TP
+.BI -D " TOKEN[,...]"
+Turn on debugging output for the given
+.IR "TOKEN" "(s)."
+Try
+.IR ALL
+for extremely verbose output.
+.TP
+.B -e
+Print event numbers (rising/falling alarm etc.).
+.TP
+.B -f
+Do not fork() from the calling shell.
+.TP
+.BI -F " FORMAT"
+When logging to standard output, use the format in the string
+.IR FORMAT .
+See the section
+.B FORMAT SPECIFICATIONS
+below for more details.
+.TP
+.B -h, --help
+Display a brief usage message and then exit.
+.TP
+.B -H
+Display a list of configuration file directives understood by the
+trap daemon and then exit.
+.TP
+.BR -l " d|0-7"
+Specifies the syslog facility to use when logging to syslog.  'd' means
+.B LOG_DAEMON
+and 0 through 7 mean 
+.BR LOG_LOCAL0 " through " LOG_LOCAL7 ".  " LOG_LOCAL0 " is the default."
+.TP
+.BR -m " \fIMIBLIST"
+Specifies a colon separated list of MIB modules to load for this
+application.  This overrides the environment variable MIBS.
+.TP
+.BR -M " \fIDIRLIST"
+Specifies a colon separated list of directories to search for MIBs.
+This overrides the environment variable MIBDIRS.
+.TP
+.BR -n
+Do not attempt to translate source addresses of incoming packets into
+hostnames.
+.TP
+.BI -o " FILE"
+Log formatted incoming traps to 
+.IR FILE .
+Upon receipt of a SIGHUP, the daemon will close and re-open
+the log file.  This feature is useful when rotating the log file with
+other utilities such as logrotate.
+.TP
+.B -P
+Print formatted incoming traps to stderr.
+.TP
+.B -s
+Log formatted incoming traps to syslog.  These syslog messages are
+sent with a level of 
+.B LOG_WARNING
+and facility as determined by the
+.BR -l " flag (" LOG_LOCAL0 
+by default).  This is the default unless the
+.BR -o " or " -P
+flag is used.
+.TP
+.BI -u " FILE"
+Save the process ID of the trap daemon in
+.IR FILE "."
+.TP
+.B -v, --version
+Print version information for the trap daemon and then exit.
+.PP
+In addition,
+.B snmptrapd
+takes the same output formatting 
+.BR "" ( -O ) 
+options as the other Net-SNMP commands.  See the section
+.B OUTPUT OPTIONS
+in the
+.I snmpcmd(1)
+manual page.
+.SH FORMAT SPECIFICATIONS
+.PP
+.B snmptrapd
+interprets format strings similarly to
+.IR printf(3) .
+It understands the following formatting sequences:
+.RS 4
+.TP 4
+.B %%
+a literal %
+.TP
+.B %t
+decimal number of seconds since the operating system's epoch (as
+returned by
+.IR time(2) )
+.TP
+.B %y
+current year on the local system
+.TP
+.B %m
+current (numeric) month on the local system
+.TP
+.B %l
+current day of month on the local system
+.TP
+.B %h
+current hour on the local system
+.TP
+.B %j
+current minute on the local system
+.TP
+.B %k
+current second on the local system
+.TP
+.B %T
+the value of the sysUpTime.0 varbind in seconds
+.TP
+.B %Y
+the year field from the sysUpTime.0 varbind
+.TP
+.B %M
+the numeric month field from the sysUpTime.0 varbind
+.TP
+.B %L
+the day of month field from the sysUpTime.0 varbind
+.TP
+.B %H
+the hour field from the sysUpTime.0 varbind
+.TP
+.B %J
+the minute field from the sysUpTime.0 varbind
+.TP
+.B %K
+the seconds field from the sysUpTime.0 varbind
+.TP
+.B %a
+the contents of the agent-addr field of the PDU (v1 TRAPs only)
+.TP
+.B %A
+the hostname corresponding to the contents of the agent-addr field of
+the PDU, if available, otherwise the contents of the agent-addr field
+of the PDU (v1 TRAPs only).
+.TP
+.B %b
+PDU source address (Note: this is not necessarily an IPv4
+address)
+.TP
+.B %B
+PDU source hostname if available, otherwise PDU source address (see
+note above) 
+.TP
+.B %N
+enterprise string
+.TP
+.B %w
+trap type (numeric, in decimal)
+.TP
+.B %W
+trap description
+.TP
+.B %q
+trap sub-type (numeric, in decimal)
+.TP
+.B %P
+security information from the PDU (community name for v1/v2c,
+user and context for v3)
+.TP
+.B %v
+list of trap's variable-bindings
+.RE
+.PP
+In addition to these values, you may also specify an optional field
+width and precision, just as in 
+.IR printf(3) ,
+and a flag value. The following flags are legal:
+.RS 4 
+.TP 4
+.B -
+left justify
+.TP
+.B 0
+use leading zeros
+.TP
+.B #
+use alternate form
+.RE
+.PP
+The "use alternate form" flag changes the behavior of some format
+flags. Normally, the fields that display time information base it on
+the local timezone, but this flag tells them to use GMT instead.
+Also, the variable-binding list is normally a tab-separated list, but
+this flag changes it to a comma-separated one. The alternate form for
+the uptime is similar to "3 days, 0:14:34.65"
+.SS Examples:
+.PP
+To get a message like "14:03 TRAP3.1 from humpty.ucd.edu" you 
+could use something like this:
+.PP
+.RS
+.nf
+snmptrapd -P -F "%02.2h:%02.2j TRAP%w.%q from %A\en"
+.fi
+.RE
+.PP
+If you want the same thing but in GMT rather than local time, use
+.PP
+.RS
+.nf
+snmptrapd -P -F "%#02.2h:%#02.2j TRAP%w.%q from %A\en"
+.fi
+.RE
+.SH LISTENING ADDRESSES
+By default,
+.B snmptrapd
+listens for incoming SNMP TRAP and INFORM packets on UDP port 162 on
+all IPv4 interfaces.  However, it is possible to modify this behaviour
+by specifying one or more listening addresses as arguments to
+.BR snmptrapd .
+See the
+.I snmpd(8)
+manual page for more information about the format of listening
+addresses.
+.SH NOTIFICATION-LOG-MIB SUPPORT
+As of net-snmp 5.0, the snmptrapd application supports the
+NOTIFICATION-LOG-MIB.  It does this by opening an AgentX subagent
+connection to the master snmpd agent and registering the notification
+log tables.  As long as the snmpd application is started first, it
+will attach itself to it and thus you should be able to view the last
+recorded notifications via the nlmLogTable and nlmLogVariableTable.
+See the snmptrapd.conf file and the "dontRetainLogs" token for turning
+off this support.  See the NOTIFICATION-LOG-MIB for more details about
+the MIB itself.
+.SH EXTENSIBILITY AND CONFIGURATION
+See the
+.I snmptrapd.conf(5)
+manual page.
+.SH "SEE ALSO"
+snmpcmd(1), snmpd(8), printf(3), snmptrapd.conf(5), syslog(8), variables(5)

@@ -1,0 +1,97 @@
+#!/bin/sh
+#
+# This script is used to generate the distribution tarball
+#
+srcdir=@srcdir@
+top_srcdir=@top_srcdir@
+top_dir=`cd $top_srcdir; pwd`
+base_ver=`echo @E2FSPROGS_VERSION@ | sed -e 's/-WIP//' -e 's/pre-//' -e 's/-PLUS//'`
+base_e2fsprogs=`basename $top_dir`
+exclude=/tmp/exclude
+
+case @E2FSPROGS_MONTH@ in 
+    January)
+	mon=01
+	;;
+    February)
+	mon=02
+	;;
+    March)
+	mon=03
+	;;
+    April)
+	mon=04
+	;;
+    May)
+	mon=05
+	;;
+    June)
+	mon=06
+	;;
+    July)
+	mon=07
+	;;
+    August)
+	mon=08
+	;;
+    September)
+	mon=09
+	;;
+    October)
+	mon=10
+	;;
+    November)
+	mon=11
+	;;
+    December)
+	mon=12
+	;;
+esac
+    
+case $1 in
+    debian)
+	date_spec="@E2FSPROGS_YEAR@.$mon.@E2FSPROGS_DAY@"
+	case @E2FSPROGS_VERSION@ in
+	*-WIP|pre-*)
+		deb_vers=`echo $base_ver 0.01 - p | dc`
+		SRCROOT="e2fsprogs-$deb_vers+$base_ver-WIP-$date_spec"
+		;;
+	*-rc*)
+		deb_vers=`echo @E2FSPROGS_VERSION@ | sed -e 's/-rc/rc/'`
+		SRCROOT="e2fsprogs-$deb_vers"
+		;;
+	*-PLUS)
+		SRCROOT="e2fsprogs-$base_ver+$date_spec"
+		;;
+	*)
+		SRCROOT="e2fsprogs-$base_ver"
+		;;
+        esac
+	list=all
+	;;
+    subset)
+	SRCROOT="e2fsprogs-libs-$base_ver"
+	list=subset
+	;;
+   all|*)
+	SRCROOT="e2fsprogs-$base_ver"
+	list=all
+	;;
+esac
+
+mv ../e2fsprogs.spec $top_srcdir/e2fsprogs.spec
+(cd $top_srcdir/.. ; find $base_e2fsprogs \( -name \*~ -o -name \*.orig \
+		-o -name CVS -o -name \*.rej -o -name Makefile.pq \
+		-o -name TAGS -o -name \*.old -o -name SCCS \
+		-o -name changed-files -o -name .#\* -o -name \*.tar.gz \
+		-o -name autom4te.cache \) \
+		-print) | sed -e "s/^$base_e2fsprogs/$SRCROOT/" > $exclude
+sed -e "s;^;$SRCROOT/;" < $srcdir/$list.exclude >> $exclude
+
+(cd $top_srcdir/.. ; rm -f $SRCROOT ; ln -sf e2fsprogs $SRCROOT)
+
+(cd $top_srcdir/.. ; tar -c -h -v -f - -X $exclude $SRCROOT) \
+	 | gzip -9 > $SRCROOT.tar.gz
+
+(cd $top_srcdir/.. ; rm -f $SRCROOT)
+mv $top_srcdir/e2fsprogs.spec ../e2fsprogs.spec 

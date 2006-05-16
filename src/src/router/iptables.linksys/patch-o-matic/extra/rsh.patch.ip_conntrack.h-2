@@ -1,0 +1,2 @@
+	/* insert conntrack helper private data (expect) here */
+	struct ip_ct_rsh_expect exp_rsh_info;

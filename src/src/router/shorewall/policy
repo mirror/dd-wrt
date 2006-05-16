@@ -1,0 +1,84 @@
+#
+# Shorewall 1.4 -- Policy File
+#
+# /etc/shorewall/policy
+#
+#	             THE ORDER OF ENTRIES IN THIS FILE IS IMPORTANT
+#
+#	This file determines what to do with a new connection request if we
+#	don't get a match from the /etc/shorewall/rules file or from the
+#	/etc/shorewall/common[.def] file. For each source/destination pair, the
+#	file is processed in order until a match is found ("all" will match
+#	any client or server).
+#
+# Columns are:
+#
+#	SOURCE		Source zone. Must be the name of a zone defined
+#			in /etc/shorewall/zones, $FW or "all".
+#
+#	DEST		Destination zone. Must be the name of a zone defined
+#			in /etc/shorewall/zones, $FW or "all"
+#
+#		WARNING: Firewall->Firewall policies are not allowed; if
+#			 you have a policy where both SOURCE and DEST are $FW,
+#			 Shorewall will not start!
+#
+#	POLICY		Policy if no match from the rules file is found. Must
+#			be "ACCEPT", "DROP", "REJECT", "CONTINUE" or "NONE".
+#
+#			ACCEPT		- Accept the connection
+#			DROP		- Ignore the connection request
+#			REJECT		- For TCP, send RST. For all other, send
+#					  "port unreachable" ICMP.
+#			CONTINUE	- Pass the connection request past
+#					  any other rules that it might also
+#					  match (where the source or destination
+#					  zone in those rules is a superset of
+#					  the SOURCE or DEST in this policy).
+#			NONE		- Assume that there will never be any
+#					  packets from this SOURCE
+#					  to this DEST. Shorewall will not set up
+#					  any infrastructure to handle such
+#				 	  packets and you may not have any rules
+#					  with this SOURCE and DEST in the
+#					  /etc/shorewall/rules file. If such a
+#					  packet _is_ received, the result is
+#					  undefined. NONE may not be used if the 
+#					  SOURCE or DEST columns contain the
+#					  firewall zone ($FW) or "all".
+#
+#	LOG LEVEL	If supplied, each connection handled under the default
+#			POLICY is logged at that level. If not supplied, no
+#			log message is generated. See syslog.conf(5) for a
+#			description of log levels.
+#
+#			Beginning with Shorewall version 1.3.12, you may
+#			also specify ULOG (must be in upper case). This will
+#			log to the ULOG target and sent to a separate log
+#			through use of ulogd
+#			(http://www.gnumonks.org/projects/ulogd).
+#
+#			If you don't want to log but need to specify the
+#			following column, place "_" here.
+#
+#	LIMIT:BURST	If passed, specifies the maximum TCP connection rate
+#			and the size of an acceptable burst. If not specified,
+#			TCP connections are not limited.
+#
+#	As shipped, the default policies are:
+#
+#	a) All connections from the local network to the internet are allowed
+#	b) All connections from the internet are ignored but logged at syslog
+#	   level KERNEL.INFO.
+#	d) All other connection requests are rejected and logged at level
+#	   KERNEL.INFO.
+###############################################################################
+#SOURCE		DEST		POLICY		LOG		LIMIT:BURST
+#						LEVEL
+loc		net		ACCEPT
+net		all		DROP		info
+#
+# THE FOLLOWING POLICY MUST BE LAST
+#	
+all		all		REJECT		info 
+#LAST LINE -- DO NOT REMOVE

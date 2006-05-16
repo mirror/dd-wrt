@@ -1,0 +1,9 @@
+CONFIG_IP6_NF_MATCH_MAC
+AH/ESP match support (EXPERIMENTAL)
+CONFIG_IP6_NF_MATCH_AHESP
+  These two match extensions (`ah' and `esp') allow you to match a
+  range of SPIs inside AH or ESP headers of IPv6 packets.
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

@@ -1,0 +1,14 @@
+CONFIG_IP_NF_TARGET_LOG
+ROUTE target support
+CONFIG_IP_NF_TARGET_ROUTE
+  This option adds a `ROUTE' target, which allows you to directly route
+  a received packet through a specified interface or towards a host, even
+  if the regular destination of the packet is the router itself.
+  This target never modifies packets but allows a different routing scheme
+  than the one provided by the standard kernel routing table.
+  
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  The module will be called ipt_ROUTE.o.
+  If unsure, say `N'.
+
+ 

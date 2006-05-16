@@ -1,0 +1,37 @@
+Features supported by the different versions of olsrd.
+
+    X   supported
+    !   support planned
+    -   support not planned
+    ?   unsure
+
+                                   Linux  Windows  FreeBSD  OSX
+
+IPv6                                 X       !        !      !
+
+automatically enable IP              X       X        X      X 
+forwarding
+
+automatically disable ICMP           X       !        X      X 
+redirect messages
+
+automatically disable                X       ?        ?      ?
+anti-spoofing
+
+use 255.255.255.255 as broadcast     X       ?        X      !
+address on a single interface
+
+use 255.255.255.255 as broadcast     X       ?        X      !
+address on multiple interfaces
+
+use the same subnet broadcast        X       -        X      -
+address on multiple interfaces
+
+initially delete default routes      X       !        !      !
+
+recognize WLAN interfaces            X       X        X      !
+
+willingness based on                 X       X        ?      ?
+battery power
+
+TOS                                  X       -        -      -

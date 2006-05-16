@@ -1,0 +1,2 @@
+obj-$(CONFIG_IP_NF_NAT_FTP) += ip_nat_ftp.o
+obj-$(CONFIG_IP_NF_NAT_TFTP) += ip_nat_tftp.o

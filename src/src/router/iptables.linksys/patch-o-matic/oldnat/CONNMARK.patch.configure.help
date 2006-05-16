@@ -1,0 +1,22 @@
+CONFIG_IP_NF_FTP
+Per connection mark support
+CONFIG_IP_NF_CONNTRACK_MARK
+  This option enables support for connection marks, used by the
+  `CONNMARK' target and `connmark' match. Similar to the mark value
+  of packets, but this mark value is kept in the conntrack session
+  instead of the individual packets.
+
+CONNMARK target support
+CONFIG_IP_NF_TARGET_CONNMARK
+  This option adds a `CONNMARK' target, which allows one to manipulate
+  the connection mark value.  Similar to the MARK target, but
+  affects the connection mark value rather than the packet mark value.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  The module will be called
+  ipt_CONNMARK.o.  If unsure, say `N'.
+
+connmark match support
+CONFIP_IP_NF_MATCH_CONNMARK
+  This option adds a `connmark' match, which allows you to match the
+  connection mark value previously set for the session by `CONNMARK'. 

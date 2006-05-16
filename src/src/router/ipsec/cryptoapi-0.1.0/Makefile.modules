@@ -1,0 +1,34 @@
+# Makefile to be called by master Makefile 
+
+TARGET = 
+TARGETMODDIR = crypto
+
+default: 
+	@echo "no target given"
+
+version: $(KDIR)/Makefile
+	@echo "$(KERNELRELEASE)" > version
+
+Makefile.version: $(KDIR)/Makefile
+	@echo "VERSION = $(VERSION)" > Makefile.version
+	@echo "PATCHLEVEL = $(PATCHLEVEL)" >> Makefile.version
+	@echo "SUBLEVEL = $(SUBLEVEL)" >> Makefile.version
+	@echo "EXTRAVERSION = $(EXTRAVERSION)" >> Makefile.version
+
+TOPDIR := $(KDIR)
+include $(KDIR)/.config
+include $(KDIR)/Makefile
+TOPDIR := $(KDIR)
+
+CFLAGS := -I ./kernel/include $(CFLAGS) -DMODULE -DEXPORT_SYMTAB -mlong-calls 
+
+ifdef CONFIG_MODVERSIONS
+CFLAGS += -DMODVERSIONS -include $(KDIR)/include/linux/modversions.h
+endif
+
+ifeq ($(PATCHLEVEL),4)
+MODLIB := $(DESTDIR)$(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)/kernel/drivers
+else
+MODLIB := $(DESTDIR)$(INSTALL_MOD_PATH)/lib/modules/$(KERNELRELEASE)
+endif
+

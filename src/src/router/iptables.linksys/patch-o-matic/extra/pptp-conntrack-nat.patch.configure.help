@@ -1,0 +1,25 @@
+CONFIG_IP_NF_FTP
+PPTP conntrack and NAT support
+CONFIG_IP_NF_PPTP
+  This module adds support for PPTP (Point to Point Tunnelling Protocol, 
+  RFC2637) conncection tracking and NAT. 
+
+  If you are running PPTP sessions over a stateful firewall or NAT box,
+  you may want to enable this feature.  
+
+  Please note that not all PPTP modes of operation are supported yet.
+  For more info, read top of the file net/ipv4/netfilter/ip_conntrack_pptp.c
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+
+GRE protocol conntrack and NAT support
+CONFIG_IP_NF_CT_PROTO_GRE
+  This module adds generic support for connection tracking and NAT of the
+  GRE protocol (RFC1701, RFC2784).  Please note that this will only work
+  with GRE connections using the key field of the GRE header.
+
+  You will need GRE support to enable PPTP support.
+
+  If you want to compile it as a module, say `M' here and read
+  Documentation/modules.txt.  If unsire, say `N'.

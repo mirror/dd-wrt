@@ -1,0 +1,82 @@
+# chilli - ChilliSpot.org. A Wireless LAN Access Point Controller
+# Copyright (C) 2003, 2004, 2005 Mondru AB.
+#
+# The contents of this file may be used under the terms of the GNU
+# General Public License Version 2, provided that the above copyright
+# notice and this permission notice is included in all copies or
+# substantial portions of the software.
+# 
+
+purpose "Copyright 2002-2005 Mondru AB
+ChilliSpot is an Open Source captive portal or wireless LAN access point
+controller developed by the community at chillispot.org and licensed under
+the GPL. ChilliSpot acknowledges all community members, especially
+those mentioned at http://www.chillispot.org/credits.html."
+
+option  "fg"          f "Run in foreground"             flag   off
+option  "debug"       d "Run in debug mode"             flag   off
+option  "debugfacility" - "Which modules to print debug messages for" int default="1" no
+
+option  "conf"        c "Read configuration file"       string default="/etc/chilli.conf" no
+option  "interval"    - "Re-read configuration file at this interval"  int default="3600" no
+option  "pidfile"     - "Filename of process id file"   string default="/var/run/chilli.pid" no
+option  "statedir"    - "Directory of nonvolatile data" string default="/var/lib/chilli/" no
+
+#TUN parameters
+option "net"         n "Network"           string default="192.168.182.0/24" no
+option "dynip"       - "Dynamic IP address pool"       string no
+option "statip"      - "Static IP address pool"        string no
+option "dns1"        - "Primary DNS server IP address" string no
+option "dns2"        - "Secondary DNS server IP address" string no
+option "domain"      - "Domain to use for DNS lookups" string default="key.chillispot.org" no
+option "ipup"        - "Script to run after link-up"   string no
+option "ipdown"      - "Script to run after link-down" string no
+
+
+# Radius parameters
+option "radiuslisten"  - "IP address to send from"       string no
+option "radiusserver1" - "IP address of radius server 1" string default="rad01.hotradius.com" no
+option "radiusserver2" - "IP address of radius server 2" string default="rad02.hotradius.com" no
+option "radiusauthport" - "Authentication UDP port of radius server" int default="1812" no
+option "radiusacctport" - "Accounting UDP port of radius server" int default="1813" no
+option "radiussecret"  - "Radius shared secret"          string no
+option "radiusnasid"   - "Radius NAS-Identifier"         string default="nas01" no
+option "radiuslocationid" - "WISPr Location ID"            string no
+option "radiuslocationname" - "WISPr Location Name"        string no
+option "radiusnasporttype" - "Radius NAS-Port-Type"        int default="19" no
+option "coaport"       - "Radius disconnect port to listen to" int default="0" no
+option "coanoipcheck"  - "Allow radius disconnect from any IP" flag   off
+
+
+# Radius proxy parameters
+option "proxylisten"   - "IP address to listen to"       string no
+option "proxyport"     - "UDP port to listen to"         int default="0" no
+option "proxyclient"   - "IP address of proxy client(s)" string no
+option "proxysecret"   - "Radius proxy shared secret"    string no
+
+
+# DHCP parameters
+option "dhcpif"      - "Local Ethernet interface"    string no
+option "dhcpmac"     - "Interface MAC address"       string no
+option "lease"       - "Lease time to allocate to clients" int default="600" no
+
+
+# EAPOL parameters
+option "eapolenable" - "Enable IEEE 802.1x authentication" flag   off
+
+
+# UAM parameters
+option "uamserver"   - "URL of authentication web server" string default="https://login.hotradius.com" no
+option "uamhomepage"  - "URL of homepage to redirect unauthenticated users to" string no
+option "uamsecret"   - "Shared secret between uamserver and chilli" string no
+option "uamlisten"   - "IP address to listen to for authentication requests" string no
+option "uamport"     - "TCP port to bind to for authentication requests" int default="3990" no
+option "uamallowed"  - "Domain names exempt from access check " string no multiple
+option "uamanydns"   - "Allow client to use any DNS server" flag   off
+
+# MAC authentication
+option "macauth"     - "Authenticate based on MAC address" flag   off
+option "macallowed"  - "List of allowed MAC addresses" string no multiple
+option "macsuffix"   - "Suffix to add to the MAC address" string no
+option "macpasswd"   - "Password used when performing MAC authentication" string default="password" no
+

@@ -1,0 +1,117 @@
+.TH SNMPUSM 1 "08 Feb 2002" VVERSIONINFO "Net-SNMP"
+.UC 4
+.SH NAME
+snmpusm - creates and maintains SNMPv3 users on a remote entity.
+.SH SYNOPSIS
+.B snmpusm
+[COMMON OPTIONS] 
+.B create
+USER [CLONEFROM-USER]
+.br
+.B snmpusm
+[COMMON OPTIONS] 
+.B delete
+USER
+.br
+.B snmpusm
+[COMMON OPTIONS]
+.B cloneFrom
+USER CLONEFROM-USER
+.br
+.B snmpusm
+[COMMON OPTIONS] [-Co] [-Ca] [-Cx]
+.B passwd
+OLD-PASSPHRASE NEW-PASSPHRASE
+
+.SH DESCRIPTION
+.B snmpusm
+is an SNMP application that can be used to do simple maintenance on a
+SNMP agent's User-based Security Module (USM) table.  You can create,
+delete, clone, and change the passphrase of users configured on a
+running SNMP agent.
+.PP
+The SNMPv3 USM specifications (see RFC2574) dictate that users are
+created and maintained by adding and modifying rows to the
+usmUserTable MIB table.  To create a new user you simply create the
+row using
+.BR snmpset .
+User's profiles contain private keys that are never
+transmitted over the wire in clear text (regardless of whether the
+administration requests are encrypted or not).  
+.PP
+The secret key for a user is initially set by cloning another user in
+the table, so that a new user inherits the cloned user's secret key.
+A user can only be cloned once, however, after which they must be
+deleted and re-created to be re-cloned.  The authentication and
+privacy security types are also inherited during this cloning (e.g.,
+MD5 vs. SHA1).  To change the secret key for a user, you must know the
+user's old passphrase as well as the new one.  The
+.B passwd
+sub-command of the 
+.B snmpusm
+command, therefore, requires both the new and the old
+pass-phrases to be supplied.  After cloning from the appropriate
+template, you should immediately change the new users passphrase.
+.PP
+The Net-SNMP agent must first be initialized so that at least one user
+is setup in it before you can use this command to clone new ones.  See the
+.I snmpd.conf(5)
+manual page on the
+.B createUser
+configuration parameter.
+.SH EXAMPLES
+.PP
+Let's assume for our examples that the following VACM and USM
+configurations lines were in the snmpd.conf file for a Net-SNMP agent.
+These lines set up a default user called "initial" with the
+authentication passphrase "setup_passphrase" so that we can perform
+the initial setup of an agent:
+.PP
+.RS
+.nf
+# VACM configuration entries
+rwuser initial
+# lets add the new user we'll create too:
+rwuser wes
+# USM configuration entries
+createUser initial MD5 setup_passphrase DES
+.fi
+.RE
+.PP
+Note: the "initial" user's setup should be removed after creating a
+real user that you grant administrative privileges to (like the user
+"wes" we'll be creating in this example.
+.PP
+Note: passphrases must be 8 characters
+.I minimum
+in length.
+.SS Create a new user
+.PP
+snmpusm -v3 -u initial -n "" -l authNoPriv -a MD5 -A setup_passphrase
+localhost create wes initial
+.IP
+Creates a new user, here named "wes" using the user "initial" to do
+it.  "wes" is cloned from "initial" in the process, so he inherits
+that user's passphrase ("setup_passphrase").
+.SS Change the user's passphrase
+.PP
+snmpusm -v 3 -u wes -n "" -l authNoPriv -a MD5 -A setup_passphrase
+localhost passwd setup_passphrase new_passphrase
+.IP
+After creating the user "wes" with the same passphrase as the
+"initial" user, we need to change his passphrase for him.  The above
+command changes it from "setup_passphrase", which was inherited from
+the initial user, to "new_passphrase".
+.SS Test the new user
+.PP
+snmpget -v 3 -u wes -n "" -l authNoPriv -a MD5 -A new_passphrase
+localhost sysUpTime.0
+.IP
+If the above commands were successful, this command should have
+properly performed an authenticated SNMPv3 GET request to the agent.
+.PP
+Now, go remove the vacm "group" snmpd.conf entry for the "initial"
+user and you have a valid user 'wes' that you can use for future
+transactions instead of initial.
+.SH "SEE ALSO"
+snmpd.conf(5), snmp.conf(5), RFC 2574

@@ -1,0 +1,79 @@
+$Id: README,v 1.8 2002/09/12 19:32:12 mardan Exp $
+
+
+Description:
+-------------------------------------------------------------------------------
+Netstat-nat is a small program written in C. It displays NAT connections, 
+managed by netfilter/iptables which comes with the > 2.4.x linux kernels. The 
+program reads its information from '/proc/net/ip_conntrack', which is the 
+temporary conntrack-storage of netfilter. (http://netfilter.samba.org/)
+For any program options see sector 'Usage' section below.
+
+-------------------------------------------------------------------------------
+
+
+Compiling:
+-------------------------------------------------------------------------------
+Type the following in your favorite console: 
+'make'
+'make install'
+If all goes well you should now be able to run the program.
+'netstat-nat'
+
+-------------------------------------------------------------------------------
+
+
+Usage:
+-------------------------------------------------------------------------------
+netstat-nat -h			: displays help
+netstat-nat -n			: displays NAT connections without 
+				  host/portname-resolving.
+netstat-nat -p tcp | udp | icmp	: diplays NAT connections with protocol 
+				  selection.
+netstat-nat -s <source-host>	: display connections by source IP/hostname
+netstat-nat -d <dest-host>	: display connections by destination IP/hostname
+netstat-nat -S			: display SNAT connections
+netstat-nat -D			: display DNAT connections
+				  (default: both) 
+netstat-nat -L			: display only connections to NAT box self 
+				  (disables SNAT & DNAT) 
+netstat-nat -x 			: extend the view of the hostnames
+netstat-nat -r src|dst|src-port|dst-port|state : sort connections 
+netstat-nat -o			: strip output header
+-------------------------------------------------------------------------------
+
+
+Homepage:
+-------------------------------------------------------------------------------
+http://tweegy.demon.nl/projects/netstat-nat/
+
+-------------------------------------------------------------------------------
+
+
+Files:
+-------------------------------------------------------------------------------
+netstat-nat.c
+netstat-nat.h
+netstat-nat.1
+COPYING
+Makefile
+README
+
+-------------------------------------------------------------------------------
+
+
+Thanks:
+-------------------------------------------------------------------------------
+Marceln for writing the man-page and making the v1.2 .rpm and src.rpm, which can 
+be downloaded at his page.
+http://http://www.xs4all.nl/~marceln/rpm/
+
+-------------------------------------------------------------------------------
+
+
+Contact:
+-------------------------------------------------------------------------------
+D.Wijsman mardan@tweegy.demon.nl
+
+-------------------------------------------------------------------------------
+

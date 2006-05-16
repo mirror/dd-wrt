@@ -1,0 +1,18 @@
+CONFIG_IP_NF_TARGET_TOS
+FTOS target support
+CONFIG_IP_NF_TARGET_FTOS
+  This option adds a `FTOS' target, which allows you to create rules in
+  the iptables mangle table. The selected packet has the TOS field set
+  to the hex value provided on the command line; unlike the TOS target
+  which will only set the legal values within ip.h.
+
+  The TOS field can be set to any value between 0x0 and 0xff. It does
+  not take account of the DiffServ field split nor does it account for
+  the ECN bit states. The whole TOS filed is overwritten.
+
+  Basically you can use it to set the TOS field to whatever value you want.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+
+ 

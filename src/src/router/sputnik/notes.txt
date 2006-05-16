@@ -1,0 +1,5 @@
+Please note that this sputnik agend is current under development. The source isnt available for public
+due a NDA agreement with Sputnik LTD. all GPL parts will be released soon so far this daemon gets his place in the official distribution.
+
+
+29.04.06, Sebastian Gottschall

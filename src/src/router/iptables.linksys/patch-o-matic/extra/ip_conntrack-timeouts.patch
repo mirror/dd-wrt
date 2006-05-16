@@ -1,0 +1,161 @@
+diff -urN -x '*~' -x '*.orig' -x '*.rej' linux-2.4.20-pre7.orig/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.20-pre7/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.4.20-pre7.orig/include/linux/netfilter_ipv4/ip_conntrack.h	2002-09-14 20:08:14.000000000 +0200
++++ linux-2.4.20-pre7/include/linux/netfilter_ipv4/ip_conntrack.h	2002-09-19 21:57:47.000000000 +0200
+@@ -258,5 +258,9 @@
+ }
+ 
+ extern unsigned int ip_conntrack_htable_size;
++
++/* connection tracking time out variables. */
++extern int sysctl_ip_conntrack_tcp_timeouts[10];
++extern int sysctl_ip_conntrack_udp_timeouts[2];
+ #endif /* __KERNEL__ */
+ #endif /* _IP_CONNTRACK_H */
+diff -urN -x '*~' -x '*.orig' -x '*.rej' linux-2.4.20-pre7.orig/include/linux/netfilter_ipv4/ip_conntrack_udp.h linux-2.4.20-pre7/include/linux/netfilter_ipv4/ip_conntrack_udp.h
+--- linux-2.4.20-pre7.orig/include/linux/netfilter_ipv4/ip_conntrack_udp.h	1970-01-01 01:00:00.000000000 +0100
++++ linux-2.4.20-pre7/include/linux/netfilter_ipv4/ip_conntrack_udp.h	2002-09-19 21:57:47.000000000 +0200
+@@ -0,0 +1,6 @@
++#ifndef _IP_CONNTRACK_UDP_H
++#define _IP_CONNTRACK_UDP_H
++
++#define UDP_TIMEOUT            0
++#define UDP_STREAM_TIMEOUT     1 
++#endif /* _IP_CONNTRACK_UDP_H */
+diff -urN -x '*~' -x '*.orig' -x '*.rej' linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_core.c	2002-09-14 20:08:16.000000000 +0200
++++ linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_core.c	2002-09-19 21:57:47.000000000 +0200
+@@ -66,6 +66,29 @@
+ struct list_head *ip_conntrack_hash;
+ static kmem_cache_t *ip_conntrack_cachep;
+ 
++#define SECS  * HZ
++#define MINS  * 60 SECS
++#define HOURS * 60 MINS
++#define DAYS  * 24 HOURS
++
++int sysctl_ip_conntrack_tcp_timeouts[10] = {
++       30 MINS,        /*      TCP_CONNTRACK_NONE,             */
++       5 DAYS,         /*      TCP_CONNTRACK_ESTABLISHED,      */
++       2 MINS,         /*      TCP_CONNTRACK_SYN_SENT,         */
++       60 SECS,        /*      TCP_CONNTRACK_SYN_RECV,         */
++       2 MINS,         /*      TCP_CONNTRACK_FIN_WAIT,         */
++       2 MINS,         /*      TCP_CONNTRACK_TIME_WAIT,        */
++       10 SECS,        /*      TCP_CONNTRACK_CLOSE,            */
++       60 SECS,        /*      TCP_CONNTRACK_CLOSE_WAIT,       */
++       30 SECS,        /*      TCP_CONNTRACK_LAST_ACK,         */
++       2 MINS,         /*      TCP_CONNTRACK_LISTEN,           */
++};
++
++int sysctl_ip_conntrack_udp_timeouts[2] = { 
++       30 SECS,        /*      UNREPLIED                       */ 
++       180 SECS        /*      ASSURED                         */
++};
++
+ extern struct ip_conntrack_protocol ip_conntrack_generic_protocol;
+ 
+ static inline int proto_cmpfn(const struct ip_conntrack_protocol *curr,
+@@ -1344,6 +1367,8 @@
+     0, NULL };
+ 
+ #define NET_IP_CONNTRACK_MAX 2089
++#define NET_IP_CONNTRACK_TCP_TIMEOUTS  2090
++#define NET_IP_CONNTRACK_UDP_TIMEOUTS  2091
+ #define NET_IP_CONNTRACK_MAX_NAME "ip_conntrack_max"
+ 
+ #ifdef CONFIG_SYSCTL
+@@ -1352,6 +1377,14 @@
+ static ctl_table ip_conntrack_table[] = {
+ 	{ NET_IP_CONNTRACK_MAX, NET_IP_CONNTRACK_MAX_NAME, &ip_conntrack_max,
+ 	  sizeof(ip_conntrack_max), 0644,  NULL, proc_dointvec },
++	{ NET_IP_CONNTRACK_TCP_TIMEOUTS, "ip_conntrack_tcp_timeouts",
++          &sysctl_ip_conntrack_tcp_timeouts,
++          sizeof(sysctl_ip_conntrack_tcp_timeouts),
++          0644, NULL, &proc_dointvec_jiffies, &sysctl_jiffies },
++	{ NET_IP_CONNTRACK_UDP_TIMEOUTS, "ip_conntrack_udp_timeouts",
++          &sysctl_ip_conntrack_udp_timeouts,
++          sizeof(sysctl_ip_conntrack_udp_timeouts),
++          0644, NULL, &proc_dointvec_jiffies, &sysctl_jiffies },
+  	{ 0 }
+ };
+ 
+diff -urN -x '*~' -x '*.orig' -x '*.rej' linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_proto_tcp.c linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
+--- linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2002-09-14 20:08:16.000000000 +0200
++++ linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2002-09-19 21:57:47.000000000 +0200
+@@ -44,25 +44,6 @@
+ 	"LISTEN"
+ };
+ 
+-#define SECS *HZ
+-#define MINS * 60 SECS
+-#define HOURS * 60 MINS
+-#define DAYS * 24 HOURS
+-
+-
+-static unsigned long tcp_timeouts[]
+-= { 30 MINS, 	/*	TCP_CONNTRACK_NONE,	*/
+-    5 DAYS,	/*	TCP_CONNTRACK_ESTABLISHED,	*/
+-    2 MINS,	/*	TCP_CONNTRACK_SYN_SENT,	*/
+-    60 SECS,	/*	TCP_CONNTRACK_SYN_RECV,	*/
+-    2 MINS,	/*	TCP_CONNTRACK_FIN_WAIT,	*/
+-    2 MINS,	/*	TCP_CONNTRACK_TIME_WAIT,	*/
+-    10 SECS,	/*	TCP_CONNTRACK_CLOSE,	*/
+-    60 SECS,	/*	TCP_CONNTRACK_CLOSE_WAIT,	*/
+-    30 SECS,	/*	TCP_CONNTRACK_LAST_ACK,	*/
+-    2 MINS,	/*	TCP_CONNTRACK_LISTEN,	*/
+-};
+-
+ #define sNO TCP_CONNTRACK_NONE
+ #define sES TCP_CONNTRACK_ESTABLISHED
+ #define sSS TCP_CONNTRACK_SYN_SENT
+@@ -202,7 +183,8 @@
+ 		    && tcph->ack_seq == conntrack->proto.tcp.handshake_ack)
+ 			set_bit(IPS_ASSURED_BIT, &conntrack->status);
+ 
+-		ip_ct_refresh(conntrack, tcp_timeouts[newconntrack]);
++		ip_ct_refresh(conntrack, 
++			sysctl_ip_conntrack_tcp_timeouts[newconntrack]);
+ 	}
+ 
+ 	return NF_ACCEPT;
+diff -urN -x '*~' -x '*.orig' -x '*.rej' linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_proto_udp.c linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_proto_udp.c
+--- linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2002-09-14 20:08:16.000000000 +0200
++++ linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_proto_udp.c	2002-09-19 21:57:47.000000000 +0200
+@@ -5,9 +5,7 @@
+ #include <linux/in.h>
+ #include <linux/udp.h>
+ #include <linux/netfilter_ipv4/ip_conntrack_protocol.h>
+-
+-#define UDP_TIMEOUT (30*HZ)
+-#define UDP_STREAM_TIMEOUT (180*HZ)
++#include <linux/netfilter_ipv4/ip_conntrack_udp.h>
+ 
+ static int udp_pkt_to_tuple(const void *datah, size_t datalen,
+ 			    struct ip_conntrack_tuple *tuple)
+@@ -52,11 +50,13 @@
+ 	/* If we've seen traffic both ways, this is some kind of UDP
+ 	   stream.  Extend timeout. */
+ 	if (conntrack->status & IPS_SEEN_REPLY) {
+-		ip_ct_refresh(conntrack, UDP_STREAM_TIMEOUT);
++		ip_ct_refresh(conntrack, 
++			sysctl_ip_conntrack_udp_timeouts[UDP_STREAM_TIMEOUT]);
+ 		/* Also, more likely to be important, and not a probe */
+ 		set_bit(IPS_ASSURED_BIT, &conntrack->status);
+ 	} else
+-		ip_ct_refresh(conntrack, UDP_TIMEOUT);
++		ip_ct_refresh(conntrack, 
++			sysctl_ip_conntrack_udp_timeouts[UDP_TIMEOUT]);
+ 
+ 	return NF_ACCEPT;
+ }
+diff -urN -x '*~' -x '*.orig' -x '*.rej' linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux-2.4.20-pre7.orig/net/ipv4/netfilter/ip_conntrack_standalone.c	2002-09-14 20:08:16.000000000 +0200
++++ linux-2.4.20-pre7/net/ipv4/netfilter/ip_conntrack_standalone.c	2002-09-19 21:58:47.000000000 +0200
+@@ -362,6 +362,8 @@
+ EXPORT_SYMBOL(ip_ct_refresh);
+ EXPORT_SYMBOL(ip_ct_find_proto);
+ EXPORT_SYMBOL(ip_ct_find_helper);
++EXPORT_SYMBOL(sysctl_ip_conntrack_tcp_timeouts);
++EXPORT_SYMBOL(sysctl_ip_conntrack_udp_timeouts);
+ EXPORT_SYMBOL(ip_conntrack_expect_related);
+ EXPORT_SYMBOL(ip_conntrack_change_expect);
+ EXPORT_SYMBOL(ip_conntrack_unexpect_related);

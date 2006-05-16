@@ -1,0 +1,152 @@
+NET-SNMP-EXAMPLES-MIB DEFINITIONS ::= BEGIN
+
+--
+-- Example MIB objects for agent module example implementations
+--
+
+IMPORTS
+    MODULE-IDENTITY, OBJECT-TYPE, Integer32 FROM SNMPv2-SMI
+    netSnmp                                 FROM NET-SNMP-MIB;
+
+netSnmpExamples MODULE-IDENTITY
+    LAST-UPDATED "200202060000Z"
+    ORGANIZATION "www.net-snmp.org"
+    CONTACT-INFO    
+	 "postal:   Wes Hardaker
+                    P.O. Box 382
+                    Davis CA  95617
+
+          email:    net-snmp-coders@lists.sourceforge.net"
+    DESCRIPTION
+	"Example MIB objects for agent module example implementations"
+    REVISION     "200202060000Z"
+    DESCRIPTION
+	"First draft"
+    ::= { netSnmp 2 }
+
+--
+-- top level structure
+--
+netSnmpExampleScalars       OBJECT IDENTIFIER ::= { netSnmpExamples 1 }
+netSnmpExampleTables        OBJECT IDENTIFIER ::= { netSnmpExamples 2 }
+netSnmpExampleNotifications OBJECT IDENTIFIER ::= { netSnmpExamples 3 }
+-- netSnmpTutorial          OBJECT IDENTIFIER ::= { netSnmpExamples 4 }
+
+--
+-- Example scalars
+--
+
+netSnmpExampleInteger OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"This is a simple object which merely houses a writable
+	 integer.  It's only purposes is to hold the value of a single
+	 integer.  Writing to it will simply change the value for
+	 subsequent GET/GETNEXT/GETBULK retrievals.
+
+	 This example object is implemented in the
+	 agent/mibgroup/examples/scalar_int.c file."
+    DEFVAL { 42 }
+    ::= { netSnmpExampleScalars 1 }
+
+netSnmpExampleSleeper OBJECT-TYPE
+    SYNTAX      Integer32
+    MAX-ACCESS  read-write
+    STATUS      current
+    DESCRIPTION
+	"This is a simple object which is a basic integer.  It's value
+	 indicates the number of seconds that the agent will take in
+	 responding to requests of this object.  This is implemented
+	 in a way which will allow the agent to keep responding to
+	 other requests while access to this object is blocked.  It is
+	 writable, and changing it's value will change the amount of
+	 time the agent will effectively wait for before returning a
+	 response when this object is manipulated.  Note that SET
+	 requests through this object will take longer, since the
+	 delay is applied to each internal transaction phase, which
+	 could result in delays of up to 4 times the value of this
+	 object.
+
+	 This example object is implemented in the
+	 agent/mibgroup/examples/delayed_instance.c file."
+    DEFVAL { 1 }
+    ::= { netSnmpExampleScalars 2 }
+
+
+--
+--  Example Tables
+--
+
+netSnmpIETFWGTable OBJECT-TYPE
+    SYNTAX      SEQUENCE OF NetSnmpIETFWGEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"This table merely contains a set of data which is otherwise
+	 useless for true network management.  It is a table which
+	 describes properies about a IETF Working Group, such as the
+	 names of the two working group chairs.
+
+	 This example table is implemented in the
+	 agent/mibgroup/examples/data_set.c file."
+    ::= { netSnmpExampleTables 1 }
+
+netSnmpIETFWGEntry OBJECT-TYPE
+    SYNTAX      NetSnmpIETFWGEntry
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"A rowm describing a given working group"
+    INDEX   { nsIETFWGName }
+    ::= {netSnmpIETFWGTable 1 }
+
+NetSnmpIETFWGEntry ::= SEQUENCE {
+	nsIETFWGName	OCTET STRING,
+	nsIETFWGChair1	OCTET STRING,
+	nsIETFWGChair2	OCTET STRING
+}
+
+nsIETFWGName OBJECT-TYPE
+    SYNTAX      OCTET STRING (SIZE(1..32))
+    MAX-ACCESS  not-accessible
+    STATUS      current
+    DESCRIPTION
+	"The name of the IETF Working Group this table describes."
+    ::= { netSnmpIETFWGEntry 1 }
+
+nsIETFWGChair1 OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+	"One of the names of the chairs for the IETF working group."
+    ::= { netSnmpIETFWGEntry 2 }
+
+nsIETFWGChair2 OBJECT-TYPE
+    SYNTAX      OCTET STRING
+    MAX-ACCESS  read-create
+    STATUS      current
+    DESCRIPTION
+	"The other name, if one exists, of the chairs for the IETF
+	working group."
+    ::= { netSnmpIETFWGEntry 3 }
+
+--
+--  Example Notifications
+--
+
+netSnmpExampleNotification OBJECT-TYPE
+    SYNTAX      SnmpAdminString
+    MAX-ACCESS  accessible-for-notify
+    STATUS      current
+    DESCRIPTION
+        "This is a boring example that is used in the
+         agent/mibgroup/examples/notification.c to send out a
+         notification every 30 seconds.  The actual notification means
+         nothing other than 30 seconds has elapsed since the last time
+         one was sent."
+::= { netSnmpExampleNotifications 1 }
+
+END

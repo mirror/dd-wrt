@@ -1,0 +1,28 @@
+Author: Sampsa Ranta <sampsa@netsonic.fi>
+Status: Experimental
+
+realm match: uses realm key from routing as match criteria similiar to
+             one in packet classifier
+
+/** snip from packet classifier documentation */
+Routing tables based classifier
+CONFIG_NET_CLS_ROUTE4
+  If you say Y here, you will be able to classify outgoing packets
+  according to the route table entry they matched. If unsure, say Y.
+/** end snip **/
+
+
+# Example
+# add route
+/sbin/ip route add 194.29.194.0/24 via 194.29.192.1 realm 10
+
+# source realm is in realm with mask 0xFFFF0000,
+# destination is in realm with mask 0x0000FFFF
+
+# match destination realm
+/usr/local/sbin/iptables -A OUTPUT -m realm --realm 10 -j LOG
+
+# match realm of source, this is also determinated by routing,
+/usr/local/sbin/iptables -A INPUT -m realm --realm 655360 -j LOG
+
+THIS PATCH REQUIRES CONFIG_NET_CLS_ROUTE TO BE SET

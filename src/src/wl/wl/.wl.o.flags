@@ -1,0 +1,3 @@
+ifeq (-s apsta_aeskeywrap.o apsta_aes.o apsta_bcmwpa.o apsta_d11ucode.o apsta_hmac.o apsta_md5.o apsta_passhash.o apsta_prf.o apsta_rc4.o apsta_rijndael-alg-fst.o apsta_sha1.o apsta_tkhash.o apsta_wlc_led.o apsta_wlc_phy.o apsta_wlc_rate.o apsta_wlc_security.o apsta_wlc_sup.o apsta_wlc_wet.o apsta_wl_linux.o apsta_wlc.o,$(strip $(subst $(comma),:,$(LDFLAGS) $(EXTRA_LDFLAGS) $(obj-y))))
+FILES_FLAGS_UP_TO_DATE += wl.o
+endif

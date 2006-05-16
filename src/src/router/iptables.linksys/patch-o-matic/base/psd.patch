@@ -1,0 +1,406 @@
+--- /dev/null	Tue May  5 22:32:27 1998
++++ linux/include/linux/netfilter_ipv4/ipt_psd.h	Sun Feb  4 19:04:06 2001
+@@ -0,0 +1,40 @@
++#ifndef _IPT_PSD_H
++#define _IPT_PSD_H
++
++#include <linux/param.h>
++#include <linux/types.h>
++
++/*
++ * High port numbers have a lower weight to reduce the frequency of false
++ * positives, such as from passive mode FTP transfers.
++ */
++#define PORT_WEIGHT_PRIV		3
++#define PORT_WEIGHT_HIGH		1
++
++/*
++ * Port scan detection thresholds: at least COUNT ports need to be scanned
++ * from the same source, with no longer than DELAY ticks between ports.
++ */
++#define SCAN_MIN_COUNT			7
++#define SCAN_MAX_COUNT			(SCAN_MIN_COUNT * PORT_WEIGHT_PRIV)
++#define SCAN_WEIGHT_THRESHOLD		SCAN_MAX_COUNT
++#define SCAN_DELAY_THRESHOLD		(HZ * 3)
++
++/*
++ * Keep track of up to LIST_SIZE source addresses, using a hash table of
++ * HASH_SIZE entries for faster lookups, but limiting hash collisions to
++ * HASH_MAX source addresses per the same hash value.
++ */
++#define LIST_SIZE			0x100
++#define HASH_LOG			9
++#define HASH_SIZE			(1 << HASH_LOG)
++#define HASH_MAX			0x10
++
++struct ipt_psd_info {
++	unsigned int weight_threshold;
++	unsigned int delay_threshold;
++	unsigned short lo_ports_weight;
++	unsigned short hi_ports_weight;
++};
++
++#endif /*_IPT_PSD_H*/
+--- /dev/null	Tue May  5 22:32:27 1998
++++ linux/net/ipv4/netfilter/ipt_psd.c	Sun Feb  4 19:39:13 2001
+@@ -0,0 +1,360 @@
++/*
++  This is a module which is used for PSD (portscan detection)
++  Derived from scanlogd v2.1 written by Solar Designer <solar@false.com>
++  and LOG target module.
++
++  Copyright (C) 2000,2001 astaro AG
++
++  This file is distributed under the terms of the GNU General Public
++  License (GPL). Copies of the GPL can be obtained from:
++     ftp://prep.ai.mit.edu/pub/gnu/GPL
++
++  2000-05-04 Markus Hennig <hennig@astaro.de> : initial
++  2000-08-18 Dennis Koslowski <koslowski@astaro.de> : first release
++  2000-12-01 Dennis Koslowski <koslowski@astaro.de> : UDP scans detection added
++  2001-01-02 Dennis Koslowski <koslowski@astaro.de> : output modified
++  2001-02-04 Jan Rekorajski <baggins@pld.org.pl> : converted from target to match
++*/
++
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <net/tcp.h>
++#include <linux/spinlock.h>
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_psd.h>
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++MODULE_LICENSE("GPL");
++
++#define HF_DADDR_CHANGING   0x01
++#define HF_SPORT_CHANGING   0x02
++#define HF_TOS_CHANGING	    0x04
++#define HF_TTL_CHANGING	    0x08
++            
++/*
++ * Information we keep per each target port
++ */
++struct port {
++	u_int16_t number;      /* port number */ 
++	u_int8_t proto;        /* protocol number */
++	u_int8_t and_flags;    /* tcp ANDed flags */
++	u_int8_t or_flags;     /* tcp ORed flags */
++};
++
++/*
++ * Information we keep per each source address.
++ */
++struct host {
++	struct host *next;		/* Next entry with the same hash */
++	clock_t timestamp;		/* Last update time */
++	struct in_addr src_addr;	/* Source address */
++	struct in_addr dest_addr;	/* Destination address */
++	unsigned short src_port;	/* Source port */
++	int count;			/* Number of ports in the list */
++	int weight;			/* Total weight of ports in the list */
++	struct port ports[SCAN_MAX_COUNT - 1];	/* List of ports */
++	unsigned char tos;		/* TOS */
++	unsigned char ttl;		/* TTL */
++	unsigned char flags;		/* HF_ flags bitmask */
++};
++
++/*
++ * State information.
++ */
++static struct {
++	spinlock_t lock;
++	struct host list[LIST_SIZE];	/* List of source addresses */
++	struct host *hash[HASH_SIZE];	/* Hash: pointers into the list */
++	int index;			/* Oldest entry to be replaced */
++} state;
++
++/*
++ * Convert an IP address into a hash table index.
++ */
++static inline int hashfunc(struct in_addr addr)
++{
++	unsigned int value;
++	int hash;
++
++	value = addr.s_addr;
++	hash = 0;
++	do {
++		hash ^= value;
++	} while ((value >>= HASH_LOG));
++
++	return hash & (HASH_SIZE - 1);
++}
++
++static int
++ipt_psd_match(const struct sk_buff *pskb,
++	      const struct net_device *in,
++	      const struct net_device *out,
++	      const void *matchinfo,
++	      int offset,
++	      const void *hdr,
++	      u_int16_t datalen,
++	      int *hotdrop)
++{
++	struct iphdr *ip_hdr;
++	struct tcphdr *tcp_hdr;
++	struct in_addr addr;
++	u_int16_t src_port,dest_port;
++  	u_int8_t tcp_flags, proto;
++	clock_t now;
++	struct host *curr, *last, **head;
++	int hash, index, count;
++
++	/* Parameters from userspace */
++	const struct ipt_psd_info *psdinfo = matchinfo;
++
++	/* IP header */
++	ip_hdr = pskb->nh.iph;
++
++	/* Sanity check */
++	if (ntohs(ip_hdr->frag_off) & IP_OFFSET) {
++		DEBUGP("PSD: sanity check failed\n");
++		return 0;
++	}
++
++	/* TCP or UDP ? */
++	proto = ip_hdr->protocol;
++
++	if (proto != IPPROTO_TCP && proto != IPPROTO_UDP) {
++		DEBUGP("PSD: protocol not supported\n");
++		return 0;
++	}
++
++	/* Get the source address, source & destination ports, and TCP flags */
++
++	addr.s_addr = ip_hdr->saddr;
++
++	tcp_hdr = (struct tcphdr*)((u_int32_t *)ip_hdr + ip_hdr->ihl);
++
++	/* Yep, it´s dirty */
++	src_port = tcp_hdr->source;
++	dest_port = tcp_hdr->dest;
++
++	if (proto == IPPROTO_TCP) {
++		tcp_flags = *((u_int8_t*)tcp_hdr + 13);
++	}
++	else {
++		tcp_flags = 0x00;
++	}
++
++	/* We're using IP address 0.0.0.0 for a special purpose here, so don't let
++	 * them spoof us. [DHCP needs this feature - HW] */
++	if (!addr.s_addr) {
++		DEBUGP("PSD: spoofed source address (0.0.0.0)\n");
++		return 0;
++	}
++
++	/* Use jiffies here not to depend on someone setting the time while we're
++	 * running; we need to be careful with possible return value overflows. */
++	now = jiffies;
++
++	spin_lock(&state.lock);
++
++	/* Do we know this source address already? */
++	count = 0;
++	last = NULL;
++	if ((curr = *(head = &state.hash[hash = hashfunc(addr)])))
++		do {
++			if (curr->src_addr.s_addr == addr.s_addr) break;
++			count++;
++			if (curr->next) last = curr;
++		} while ((curr = curr->next));
++
++	if (curr) {
++
++		/* We know this address, and the entry isn't too old. Update it. */
++		if (now - curr->timestamp <= (psdinfo->delay_threshold*HZ)/100 &&
++		    time_after_eq(now, curr->timestamp)) {
++
++			/* Just update the appropriate list entry if we've seen this port already */
++			for (index = 0; index < curr->count; index++) {
++				if (curr->ports[index].number == dest_port) {
++					curr->ports[index].proto = proto;
++					curr->ports[index].and_flags &= tcp_flags;
++					curr->ports[index].or_flags |= tcp_flags;
++					goto out_no_match;
++				}
++			}
++
++			/* TCP/ACK and/or TCP/RST to a new port? This could be an outgoing connection. */
++			if (proto == IPPROTO_TCP && (tcp_hdr->ack || tcp_hdr->rst))
++				goto out_no_match;
++
++			/* Packet to a new port, and not TCP/ACK: update the timestamp */
++			curr->timestamp = now;
++
++			/* Logged this scan already? Then drop the packet. */
++			if (curr->weight >= psdinfo->weight_threshold)
++				goto out_match;
++
++			/* Specify if destination address, source port, TOS or TTL are not fixed */
++			if (curr->dest_addr.s_addr != ip_hdr->daddr)
++				curr->flags |= HF_DADDR_CHANGING;
++			if (curr->src_port != src_port)
++				curr->flags |= HF_SPORT_CHANGING;
++			if (curr->tos != ip_hdr->tos)
++				curr->flags |= HF_TOS_CHANGING;
++			if (curr->ttl != ip_hdr->ttl)
++				curr->flags |= HF_TTL_CHANGING;
++
++			/* Update the total weight */
++			curr->weight += (ntohs(dest_port) < 1024) ?
++				psdinfo->lo_ports_weight : psdinfo->hi_ports_weight;
++
++			/* Got enough destination ports to decide that this is a scan? */
++			/* Then log it and drop the packet. */
++			if (curr->weight >= psdinfo->weight_threshold)
++				goto out_match;
++
++			/* Remember the new port */
++			if (curr->count < SCAN_MAX_COUNT) {
++				curr->ports[curr->count].number = dest_port;
++				curr->ports[curr->count].proto = proto;
++				curr->ports[curr->count].and_flags = tcp_flags;
++				curr->ports[curr->count].or_flags = tcp_flags;
++				curr->count++;
++			}
++
++			goto out_no_match;
++		}
++
++		/* We know this address, but the entry is outdated. Mark it unused, and
++		 * remove from the hash table. We'll allocate a new entry instead since
++		 * this one might get re-used too soon. */
++		curr->src_addr.s_addr = 0;
++		if (last)
++			last->next = last->next->next;
++		else if (*head)
++			*head = (*head)->next;
++		last = NULL;
++	}
++
++	/* We don't need an ACK from a new source address */
++	if (proto == IPPROTO_TCP && tcp_hdr->ack)
++		goto out_no_match;
++
++	/* Got too many source addresses with the same hash value? Then remove the
++	 * oldest one from the hash table, so that they can't take too much of our
++	 * CPU time even with carefully chosen spoofed IP addresses. */
++	if (count >= HASH_MAX && last) last->next = NULL;
++
++	/* We're going to re-use the oldest list entry, so remove it from the hash
++	 * table first (if it is really already in use, and isn't removed from the
++	 * hash table already because of the HASH_MAX check above). */
++
++	/* First, find it */
++	if (state.list[state.index].src_addr.s_addr)
++		head = &state.hash[hashfunc(state.list[state.index].src_addr)];
++	else
++		head = &last;
++	last = NULL;
++	if ((curr = *head))
++	do {
++		if (curr == &state.list[state.index]) break;
++		last = curr;
++	} while ((curr = curr->next));
++
++	/* Then, remove it */
++	if (curr) {
++		if (last)
++			last->next = last->next->next;
++		else if (*head)
++			*head = (*head)->next;
++	}
++
++	/* Get our list entry */
++	curr = &state.list[state.index++];
++	if (state.index >= LIST_SIZE) state.index = 0;
++
++	/* Link it into the hash table */
++	head = &state.hash[hash];
++	curr->next = *head;
++	*head = curr;
++
++	/* And fill in the fields */
++	curr->timestamp = now;
++	curr->src_addr = addr;
++	curr->dest_addr.s_addr = ip_hdr->daddr;
++	curr->src_port = src_port;
++	curr->count = 1;
++	curr->weight = (ntohs(dest_port) < 1024) ?
++		psdinfo->lo_ports_weight : psdinfo->hi_ports_weight;
++	curr->ports[0].number = dest_port;
++	curr->ports[0].proto = proto;
++	curr->ports[0].and_flags = tcp_flags;
++	curr->ports[0].or_flags = tcp_flags;
++	curr->tos = ip_hdr->tos;
++	curr->ttl = ip_hdr->ttl;
++
++out_no_match:
++	spin_unlock(&state.lock);
++	return 0;
++
++out_match:
++	spin_unlock(&state.lock);
++	return 1;
++}
++
++static int ipt_psd_checkentry(const char *tablename,
++			      const struct ipt_ip *e,
++			      void *matchinfo,
++			      unsigned int matchsize,
++			      unsigned int hook_mask)
++{
++/*	const struct ipt_psd_info *psdinfo = targinfo;*/
++
++	/* we accept TCP only */
++/*  	if (e->ip.proto != IPPROTO_TCP) { */
++/*  		DEBUGP("PSD: specified protocol may be TCP only\n"); */
++/*  		return 0; */
++/*  	} */
++
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_psd_info))) {
++		DEBUGP("PSD: matchsize %u != %u\n",
++		       matchsize,
++		       IPT_ALIGN(sizeof(struct ipt_psd_info)));
++		return 0;
++	}
++
++	return 1;
++}
++
++static struct ipt_match ipt_psd_reg = { 
++	{NULL, NULL},
++	"psd",
++	ipt_psd_match,
++	ipt_psd_checkentry,
++	NULL,
++	THIS_MODULE };
++
++static int __init init(void)
++{
++	if (ipt_register_match(&ipt_psd_reg))
++		return -EINVAL;
++
++	memset(&state, 0, sizeof(state));
++
++	spin_lock_init(&(state.lock));
++
++	printk("netfilter PSD loaded - (c) astaro AG\n");
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&ipt_psd_reg);
++	printk("netfilter PSD unloaded - (c) astaro AG\n");
++}
++
++module_init(init);
++module_exit(fini);

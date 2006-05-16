@@ -1,0 +1,10 @@
+make -C adm6996
+make[1]: Entering directory `/home/dev/workspace/DD-WRT/src/router/adm6996'
+make -C ../../linux/linux SUBDIRS=`pwd` EXTRA_CFLAGS="-I/opt/openwrt/usr/include -I. -I../../linux/linux/include -I../../linux/linux/drivers/media/video " modules
+make[2]: Entering directory `/home/dev/workspace/DD-WRT/src/linux/linux'
+make -C  /home/dev/workspace/DD-WRT/src/router/adm6996 CFLAGS="-D__KERNEL__ -I/home/dev/workspace/DD-WRT/src/linux/linux/include -Wall -Wstrict-prototypes -Wno-trigraphs -Os -fno-strict-aliasing -fno-common -fomit-frame-pointer -I /home/dev/workspace/DD-WRT/src/linux/linux/include/asm/gcc -G 0 -mno-abicalls -fno-pic -pipe  -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap -DMODULE -mlong-calls -fno-common" MAKING_MODULES=1 modules
+make[3]: Entering directory `/home/dev/workspace/DD-WRT/src/router/adm6996'
+mipsel-linux-uclibc-gcc -D__KERNEL__ -I/home/dev/workspace/DD-WRT/src/linux/linux/include -Wall -Wstrict-prototypes -Wno-trigraphs -Os -fno-strict-aliasing -fno-common -fomit-frame-pointer -I /home/dev/workspace/DD-WRT/src/linux/linux/include/asm/gcc -G 0 -mno-abicalls -fno-pic -pipe  -finline-limit=100000 -mabi=32 -march=mips32 -Wa,-32 -Wa,-march=mips32 -Wa,-mips32 -Wa,--trap -DMODULE -mlong-calls -fno-common -I/opt/openwrt/usr/include -I. -I../../linux/linux/include -I../../linux/linux/drivers/media/video  -nostdinc -iwithprefix include -DKBUILD_BASENAME=adm_hw  -c -o adm_hw.o adm_hw.c
+make[3]: Leaving directory `/home/dev/workspace/DD-WRT/src/router/adm6996'
+make[2]: Leaving directory `/home/dev/workspace/DD-WRT/src/linux/linux'
+make[1]: Leaving directory `/home/dev/workspace/DD-WRT/src/router/adm6996'

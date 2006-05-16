@@ -1,0 +1,449 @@
+.\"
+.\" netstat.8 
+.\"
+.\" Original: (mdw@tc.cornell.edu & dc6iq@insu1.etec.uni-karlsruhe.de)
+.\"
+.\" Modified: Bernd.Eckenfels@inka.de
+.\" Modified: Andi Kleen ak@muc.de 
+.\" Modified: Tuan Hoang tqhoang@bigfoot.com 
+.\"
+.\"
+.TH NETSTAT 8 "19 December 2000" "net-tools" "Linux Programmer's Manual"
+
+.SH NAME
+netstat \- Print network connections, routing tables, interface statistics, masquerade connections, and multicast memberships
+
+.SH SYNOPSIS
+
+.B netstat 
+.RI [ address_family_options ]
+.RB [ \-\-tcp | \-t ]
+.RB [ \-\-udp | \-u ]
+.RB [ \-\-raw | \-w ]
+.RB [ \-\-listening | \-l ]
+.RB [ \-\-all | \-a ]
+.RB [ \-\-numeric | \-n ]
+.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
+.RB [ \-\-symbolic | \-N ]
+.RB [ \-\-extend | \-e  [ \-\-extend | \-e] ]
+.RB [ \-\-timers | \-o ]
+.RB [ \-\-program | \-p ]
+.RB [ \-\-verbose | \-v ]
+.RB [ \-\-continuous | \-c]
+.P
+.B netstat 
+.RB { \-\-route | \-r }
+.RI [ address_family_options ]
+.RB [ \-\-extend | \-e  [ \-\-extend | \-e] ]
+.RB [ \-\-verbose | \-v ]
+.RB [ \-\-numeric | \-n ]
+.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
+.RB [ \-\-continuous | \-c]
+.P
+.B netstat
+.RB { \-\-interfaces | \-i }
+.RI [ iface ]
+.RB [ \-\-all | \-a ]
+.RB [ \-\-extend | \-e  [ \-\-extend | \-e] ]
+.RB [ \-\-verbose | \-v ]
+.RB [ \-\-program | \-p ]
+.RB [ \-\-numeric | \-n ]
+.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
+.RB [ \-\-continuous | \-c]
+.P
+.B netstat
+.RB { \-\-groups | \-g }
+.RB [ \-\-numeric | \-n ]
+.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
+.RB [ \-\-continuous | \-c]
+.P
+.B netstat
+.RB { \-\-masquerade | \-M }
+.RB [ \-\-extend | \-e ]
+.RB [ \-\-numeric | \-n ]
+.RB [ \-\-numeric-hosts ] [ \-\-numeric-ports ] [ \-\-numeric-ports ]
+.RB [ \-\-continuous | \-c]
+.P
+.B netstat
+.RB { \-\-statistics | -s }
+.RB [ \-\-tcp | \-t ]
+.RB [ \-\-udp | \-u ]
+.RB [ \-\-raw | \-w ]
+.P
+.B netstat 
+.RB { \-\-version | \-V }
+.P
+.B netstat 
+.RB { \-\-help | \-h }
+.P
+.IR address_family_options :
+.PP
+.RB [ \-\-protocol= { inet , unix , ipx , ax25 , netrom , ddp }[, ...] ]
+.RB [ \-\-unix | \-x ] 
+.RB [ \-\-inet | \-\-ip ]
+.RB [ \-\-ax25 ]
+.RB [ \-\-ipx ] 
+.RB [ \-\-netrom ]
+.RB [ \-\-ddp ]
+
+.SH DESCRIPTION
+.B Netstat
+prints information about the Linux networking subsystem.  The type of
+information printed is controlled by the first argument, as follows:
+.SS (none)
+By default,
+.B
+netstat 
+displays a list of open sockets.  If you don't specify any
+address families, then the active sockets of all configured address
+families will be printed.
+.SS "\-\-route , \-r"
+Display the kernel routing tables.
+.SS "\-\-groups , \-g"
+Display multicast group membership information for IPv4 and IPv6.
+.SS "\-\-interface=\fIiface \fR, \fB\-i"
+Display a table of all network interfaces, or the specified
+.IR iface ) .
+.SS "\-\-masquerade , \-M"
+Display a list of masqueraded connections.
+.SS "\-\-statistics , \-s"
+Display summary statistics for each protocol.
+.SH OPTIONS
+.SS "\-\-verbose , \-v"
+Tell the user what is going on by being verbose. Especially print some
+useful information about unconfigured address families.
+.SS "\-\-numeric , \-n"
+Show numerical addresses instead of trying to determine symbolic host, port
+or user names.
+.SS "\-\-numeric-hosts"
+shows numerical host addresses but does not affect the resolution of
+port or user names.
+.SS "\-\-numeric-ports"
+shows numerical port numbers but does not affect the resolution of
+host or user names.
+.SS "\-\-numeric-users"
+shows numerical user IDs but does not affect the resolution of host or
+port names.
+
+.SS "\-\-protocol=\fIfamily \fR, \fB\-A"
+Specifies the address families (perhaps better described as low level
+protocols) for which connections are to be shown.
+.I family 
+is a comma (',') separated list of address family keywords like
+.BR inet , 
+.BR unix , 
+.BR ipx , 
+.BR ax25 , 
+.BR netrom ,
+and
+.BR ddp .
+This has the same effect as using the 
+.BR \-\-inet ,
+.BR \-\-unix " (" \-x ),
+.BR \-\-ipx ,
+.BR \-\-ax25 ,
+.BR \-\-netrom ,
+and
+.B \-\-ddp 
+options.
+.P
+The address family
+.B inet
+includes raw, udp and tcp protocol sockets.
+.SS "\-c, \-\-continuous"
+This will cause
+.B netstat
+to print the selected information every second continuously.
+.SS "\-e, \-\-extend"
+Display additional information.  Use this option twice for maximum detail.
+.SS "\-o, \-\-timers"
+Include information related to networking timers.
+.SS "\-p, \-\-program"
+Show the PID and name of the program to which each socket belongs.
+.SS "\-l, \-\-listening"
+Show only listening sockets.  (These are omitted by default.)
+.SS "\-a, \-\-all"
+Show both listening and non-listening sockets.  With the
+.B --interfaces
+option, show interfaces that are not marked 
+.SS "\-F"
+Print routing information from the FIB.  (This is the default.)
+.SS "\-C"
+Print routing information from the route cache.
+.IR UP .
+.P
+.SH OUTPUT
+.P
+.SS Active Internet connections \fR(TCP, UDP, raw)\fR
+.SS "Proto" 
+The protocol (tcp, udp, raw) used by the socket. 
+.SS "Recv-Q"
+The count of bytes not copied by the user program connected to this socket.
+.SS "Send-Q"
+The count of bytes not acknowledged by the remote host.
+.SS "Local Address" 
+Address and port number of the local end of the socket.  Unless the
+.BR \-\-numeric " (" \-n )
+option is specified, the socket address is resolved to its canonical
+host name (FQDN), and the port number is translated into the
+corresponding service name.
+.SS "Foreign Address"
+Address and port number of the remote end of the socket.
+Analogous to "Local Address."
+.SS "State"
+The state of the socket. Since there are no states in raw mode and usually no
+states used in UDP, this column may be left blank. Normally this can be one
+of several values:
+.TP
+.I
+ESTABLISHED
+The socket has an established connection.
+.TP
+.I
+SYN_SENT
+The socket is actively attempting to establish a connection.
+.TP
+.I
+SYN_RECV
+A connection request has been received from the network.
+.TP
+.I
+FIN_WAIT1
+The socket is closed, and the connection is shutting down.
+.TP
+.I
+FIN_WAIT2
+Connection is closed, and the socket is waiting for a shutdown from the
+remote end.
+.TP
+.I
+TIME_WAIT
+The socket is waiting after close to handle packets still in the network.
+.TP
+.I
+CLOSED
+The socket is not being used.
+.TP
+.I
+CLOSE_WAIT
+The remote end has shut down, waiting for the socket to close.
+.TP
+.I
+LAST_ACK
+The remote end has shut down, and the socket is closed. Waiting for
+acknowledgement.
+.TP
+.I
+LISTEN
+The socket is listening for incoming connections.  Such sockets are 
+not included in the output unless you specify the 
+.BR \-\-listening " (" \-l )
+or 
+.BR \-\-all " (" \-a )
+option.
+.TP
+.I
+CLOSING
+Both sockets are shut down but we still don't have all our data
+sent.
+.TP
+.I
+UNKNOWN
+The state of the socket is unknown.
+.SS "User"
+The username or the user id (UID) of the owner of the socket.
+.SS "PID/Program name"
+Slash-separated pair of the process id (PID) and process name of the 
+process that owns the socket.
+.B --program
+causes this column to be included.  You will also need
+.I superuser
+privileges to see this information on sockets you don't own.  This
+identification information is not yet available for IPX sockets.
+.SS "Timer"
+(this needs to be written)
+.P
+.SS Active UNIX domain Sockets
+.SS "Proto" 
+The protocol (usually unix) used by the socket.
+.SS "RefCnt"
+The reference count (i.e. attached processes via this socket).
+.SS "Flags"
+The flags displayed is SO_ACCEPTON (displayed as 
+.BR ACC ),
+SO_WAITDATA 
+.RB ( W )
+or SO_NOSPACE 
+.RB ( N ). 
+SO_ACCECPTON 
+is used on unconnected sockets if their corresponding
+processes are waiting for a connect request. The other flags are not
+of normal interest.
+.SS "Type"
+There are several types of socket access:
+.TP
+.I
+SOCK_DGRAM
+The socket is used in Datagram (connectionless) mode.
+.TP
+.I
+SOCK_STREAM
+This is a stream (connection) socket.
+.TP
+.I
+SOCK_RAW
+The socket is used as a raw socket.
+.TP
+.I
+SOCK_RDM
+This one serves reliably-delivered messages.
+.TP
+.I
+SOCK_SEQPACKET
+This is a sequential packet socket.
+.TP
+.I
+SOCK_PACKET
+Raw interface access socket.
+.TP
+.I
+UNKNOWN
+Who ever knows what the future will bring us - just fill in here :-)
+.PP
+.SS "State"
+This field will contain one of the following Keywords:
+.TP
+.I FREE
+The socket is not allocated
+.TP
+.I LISTENING 
+The socket is listening for a connection request.  Such
+sockets are only included in the output if you specify the
+.BR \-\-listening " (" \-l )
+or
+.BR \-\-all " (" \-a )
+option.
+.TP
+.I CONNECTING
+The socket is about to establish a connection.
+.TP
+.I CONNECTED
+The socket is connected.
+.TP
+.I DISCONNECTING
+The socket is disconnecting.
+.TP
+.I (empty)
+The socket is not connected to another one.
+.TP
+.I UNKNOWN
+This state should never happen.
+.SS "PID/Program name"
+Process ID (PID) and process name of the process that has the socket open. 
+More info available in
+.B "Active Internet connections"
+section written above.
+.SS "Path"
+This is the path name as which the corresponding processes attached
+to the socket.
+.P
+.SS Active IPX sockets
+(this needs to be done by somebody who knows it)
+.P
+.SS Active NET/ROM sockets
+(this needs to be done by somebody who knows it)
+.P
+.SS Active AX.25 sockets
+(this needs to be done by somebody who knows it)
+.PP
+.SH NOTES
+Starting with Linux release 2.2 
+.B netstat -i 
+does not show interface statistics for alias interfaces. To get per
+alias interface counters you need to setup explicit rules using the
+.BR ipchains(8) 
+command.  
+
+.SH FILES
+.ta
+.I /etc/services
+-- The services translation file
+
+.I /proc
+-- Mount point for the proc filesystem, which gives access to kernel 
+status information via the following files.
+
+.I /proc/net/dev
+-- device information
+
+.I /proc/net/raw
+-- raw socket information
+
+.I /proc/net/tcp
+-- TCP socket information
+
+.I /proc/net/udp
+-- UDP socket information
+
+.I /proc/net/igmp
+-- IGMP multicast information
+
+.I /proc/net/unix
+-- Unix domain socket information
+
+.I /proc/net/ipx
+-- IPX socket information
+
+.I /proc/net/ax25
+-- AX25 socket information
+
+.I /proc/net/appletalk
+-- DDP (appletalk) socket information
+
+.I /proc/net/nr
+-- NET/ROM socket information
+
+.I /proc/net/route
+-- IP routing information
+
+.I /proc/net/ax25_route
+-- AX25 routing information
+
+.I /proc/net/ipx_route
+-- IPX routing information
+
+.I /proc/net/nr_nodes
+-- NET/ROM nodelist
+
+.I /proc/net/nr_neigh
+-- NET/ROM neighbours
+
+.I /proc/net/ip_masquerade
+-- masqueraded connections
+
+.I /proc/net/snmp
+-- statistics
+.fi
+.P
+.SH SEE ALSO
+.BR route (8), 
+.BR ifconfig (8), 
+.BR ipchains (8),
+.BR iptables (8),
+.BR proc (5)
+.P
+.SH BUGS
+Occasionally strange information may appear if a socket changes
+as it is viewed. This is unlikely to occur.
+.P
+.SH AUTHORS
+The netstat user interface was written by Fred Baumgarten
+<dc6iq@insu1.etec.uni-karlsruhe.de> the man page basically
+by Matt Welsh <mdw@tc.cornell.edu>. It was updated by
+Alan Cox <Alan.Cox@linux.org> but could do with a bit more
+work.  It was updated again by Tuan Hoang
+<tqhoang@bigfoot.com>.
+.br
+The man page and the command included in the net-tools
+package is totally rewritten by Bernd Eckenfels 
+<ecki@linux.de>.

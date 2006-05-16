@@ -1,0 +1,51 @@
+#
+# This is a Makefile stub which handles the creation of Darwin BSD shared
+# libraries.
+#
+# In order to use this stub, the following makefile variables must be defined.
+#
+# BSDLIB_VERSION = 1.0
+# BSDLIB_IMAGE = libce
+# BSDLIB_MYDIR = et
+# BSDLIB_INSTALL_DIR = $(SHLIBDIR)
+#
+
+all:: pic image
+
+subdirs:: pic
+
+pic:
+	mkdir pic
+
+BSD_LIB = $(BSDLIB_IMAGE).$(BSDLIB_VERSION).dylib
+BSDLIB_PIC_FLAG = -fPIC
+
+image:		$(BSD_LIB)
+
+$(BSD_LIB): $(OBJS)
+	@echo "	GEN_BSD_SOLIB $(BSD_LIB)"
+	@(cd pic; $(CC) -dynamiclib -compatibility_version 1.0 -current_version $(BSDLIB_VERSION) \
+		-flat_namespace -undefined warning -o $(BSD_LIB) $(OBJS))
+	@$(MV) pic/$(BSD_LIB) .
+	@$(RM) -f ../$(BSD_LIB)
+	@$(LN) $(BSD_LIB) ../$(BSD_LIB)
+	@$(LN) ../$(BSD_LIB) ../$(BSDLIB_IMAGE).dylib
+
+install-shlibs install:: $(BSD_LIB)
+	@echo "	INSTALL_PROGRAM $(BSDLIB_INSTALL_DIR)/$(BSD_LIB)"
+	@$(INSTALL_PROGRAM) $(BSD_LIB) \
+		$(DESTDIR)$(BSDLIB_INSTALL_DIR)/$(BSD_LIB)
+	@-$(LDCONFIG)
+
+install-strip: install
+
+install-shlibs-strip: install-shlibs
+
+uninstall-shlibs uninstall::
+	$(RM) -f $(DESTDIR)$(BSDLIB_INSTALL_DIR)/$(BSD_LIB)
+
+clean::
+	$(RM) -rf pic
+	$(RM) -f $(BSD_LIB)
+	$(RM) -f ../$(BSD_LIB)
+	$(RM) -f ../$(BSDLIB_IMAGE).dylib

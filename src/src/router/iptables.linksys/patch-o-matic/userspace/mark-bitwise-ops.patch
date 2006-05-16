@@ -1,0 +1,39 @@
+--- linux/include/linux/netfilter_ipv4/ipt_mark.h.old	Mon Mar 25 16:20:48 2002
++++ linux/include/linux/netfilter_ipv4/ipt_mark.h	Fri Mar 22 14:03:48 2002
+@@ -1,9 +1,16 @@
+ #ifndef _IPT_MARK_H
+ #define _IPT_MARK_H
+ 
++enum {
++        IPT_MARK_BIT_OP_NONE,
++        IPT_MARK_BIT_OP_AND,
++        IPT_MARK_BIT_OP_OR
++};
++
+ struct ipt_mark_info {
+     unsigned long mark, mask;
+     u_int8_t invert;
++    u_int8_t bit_op;
+ };
+ 
+ #endif /*_IPT_MARK_H*/
+--- linux/net/ipv4/netfilter/ipt_mark.c.old	Mon Mar 25 16:20:48 2002
++++ linux/net/ipv4/netfilter/ipt_mark.c	Mon Mar 25 15:32:27 2002
+@@ -15,9 +15,15 @@
+       u_int16_t datalen,
+       int *hotdrop)
+ {
+-	const struct ipt_mark_info *info = matchinfo;
++	const struct ipt_mark_info *info = (struct ipt_mark_info *)matchinfo;
+ 
+-	return ((skb->nfmark & info->mask) == info->mark) ^ info->invert;
++	if (info->bit_op == IPT_MARK_BIT_OP_NONE)
++		return (skb->nfmark == info->mark) ^ info->invert;
++	else
++		if (info->bit_op == IPT_MARK_BIT_OP_AND)
++			return ((skb->nfmark & info->mask) == info->mark) ^ info->invert;
++		else
++			return ((skb->nfmark | info->mask) == info->mark) ^ info->invert;
+ }
+ 
+ static int

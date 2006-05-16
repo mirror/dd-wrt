@@ -1,0 +1,56 @@
+802.11 MIB Support for NetSNMP
+
+The 802.11 MIB support for NetSNMP 5.0.8 found here uses Wireless Extension information 
+to populate the 802.11 MIB. See 
+http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html for more details about 
+Wireless Extensions.
+
+Drivers vary in what funtions and data they do and do not support in terms of Wireless 
+Extensions, so the 802.11 MIB is populated based on what the particular driver makes 
+available. Future releases will include special case data that is available in the HostAP and 
+MadWiFi drivers only.
+
+See http://hostap.epitest.fi/ for information on the HostAP driver for the 
+Prism 2/2.5/3 chipsets and http://sourceforge.net/projects/madwifi/ for more 
+information on the MadWiFi driver for the Atheros chipsets.
+
+This release assumes you already have a working build for NetSNMP in place. See 
+http://www.net-snmp.org/ for details about installing NetSNMP on a Linux or other
+Unix oriented OS. To add 802.11 MIB support, unzip the files in this release to 
+the following directory:
+
+.../net-snmp-5.0.8/agent/mibgroup 
+
+Reconfigure NetSNMP by adding the following parameter to the configuration step 
+(from the .../net-snmp-5.0.8 directory):
+
+--with-mib-modules="ieee802dot11"
+
+Your configuration command may look a bit different than mine which is:
+
+./configure --with-cflags="-g -O0 -Dlinux" --with-mib-modules="ieee802dot11"
+
+Now rebuild NetSNMP using the make clean, make, make install commands.
+
+That's it, assuming you already had a NetSNMP build that was responding to SNMP
+requests.
+
+Keep in mind this is a beta release and only GETs are supported at
+the moment. Please send feedback about problems and/or enhancements 
+to lsimmons@avantcom.com.
+
+
+ieee802do11-0.0.2 - 09/24/2003
+
+Wouldn't build after fresh ./configure
+
+
+ieee802do11-0.0.1 - 09/15/2003
+
+Initial BETA release. 
+
+
+Larry Simmons
+AvantCom Corporation
+www.avantcom.com
+lsimmons@avantcom.com

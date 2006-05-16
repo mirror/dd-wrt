@@ -1,0 +1,84 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+1.0 @ Tue Oct 26 13:40:34 PDT 1999:
+
+    None.
+
+0.99h:
+
+ Type   Name                Notes
+-------------------------------------------------------------------------------
+| M | libnet_open_raw_sock | For linux, added socket option SO_BROADCAST
+-------------------------------------------------------------------------------
+
+0.99g:
+
+ Type   Name                Notes
+-------------------------------------------------------------------------------
+| N | libnet_build_ospf  | OSPF packet builder (many new functions here --
+|   |                    | see the manpage)
+-------------------------------------------------------------------------------
+
+
+0.99e:
+
+    None.
+
+0.99d:
+
+ Type   Name                Notes
+-------------------------------------------------------------------------------
+| N | libnet_build_icmp_redirect | I should really write one large build_icmp
+|   |                            | function.
+|---|--------------------------------------------------------------------------
+| M |libnet_init_packet          | Changed parameter 1. s/size_t/u_short/.
+|---|--------------------------------------------------------------------------
+| M |libnet_select_device | See CHANGELOG.
+|---|--------------------------------------------------------------------------
+| N |libnet_error         | Generic error handler.
+|---|--------------------------------------------------------------------------
+| N |libnet_plist_chain_new | See manpage.
+|---|--------------------------------------------------------------------------
+| N |libnet_plist_next_pair | See manpage.
+|---|--------------------------------------------------------------------------
+| N |libnet_plist_chain_dump| See manpage.
+|---|--------------------------------------------------------------------------
+| N |libnet_plist_chain_dump_string | See manpage.
+|---|--------------------------------------------------------------------------
+| N |libnet_plist_chain_free| See manpage.
+-------------------------------------------------------------------------------
+
+
+0.99c:
+
+ Type   Name             Notes
+-------------------------------------------------------------------------------
+| D | libnet_tcp_check  | Internal library function, not used by the programmer.
+|   |                   | Shouldn't affect legacy code.
+-------------------------------------------------------------------------------
+| M | libnet_ip_check   | Removed archictecture specific assembly code.
+|   |                   | Internal library function, not used by the programmer.
+|   |                   | Shouldn't affect legacy code.
+-------------------------------------------------------------------------------
+
+Key:
+
+Type
+
+    N       New function to the library
+    M       Modified existing function
+    D       Deleted function
+
+Name
+
+    Function name
+
+Notes
+
+    Additional details
+
+
+EOF

@@ -1,0 +1,2 @@
+  dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
+  bool '  Conservative TCP tracking' CONFIG_IP_NF_CONNTRACK_CONSERVATIVE

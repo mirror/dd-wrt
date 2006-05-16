@@ -1,0 +1,53 @@
+#!/bin/sh
+#
+# pom2patch - create a normal unified diff (patch) from patch-o-matic
+#
+# (C) 2002 by Harald Welte <laforge@gnumonks.org>
+#
+# Released under the terms of GNU GPLv2
+
+POMDIR=`pwd`
+
+PLAINKERNEL=$1
+PATCH=$2
+
+if [ "$1" = "" -o "$2" = "" ]; then
+	echo Please specify kernel and patch as parameters
+	exit 1
+fi
+
+
+WORKDIR=`dirname $PLAINKERNEL`
+KERNEL=`basename $PLAINKERNEL`
+KERNEL_OUT=$KERNEL-pom2patch
+
+
+if [ ! -d $WORKDIR ]; then
+	echo Workdir $WORKDIR doesnt exist 
+	exit 1
+fi
+
+cd $WORKDIR
+
+if [ ! -d $KERNEL ]; then
+	echo Input directory $KERNEL doesnt exist
+	exit 1
+fi
+
+if [ -d $KERNEL_OUT ]; then
+	echo Output directory $KERNEL_OUT already exists
+	exit 1
+fi
+
+# need this to work around symlink
+cp -al $KERNEL $KERNEL_OUT
+
+OLDPWD=`pwd`
+cd $POMDIR
+export KERNEL_DIR=$WORKDIR/$KERNEL_OUT
+echo "y" | ./runme $PATCH > /dev/null 2>&1
+cd $OLDPWD
+diff -Nru $KERNEL $KERNEL_OUT
+
+rm -rf $KERNEL_OUT
+

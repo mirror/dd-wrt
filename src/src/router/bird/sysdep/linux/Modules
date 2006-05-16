@@ -1,0 +1,5 @@
+#ifdef CONFIG_LINUX_SCAN
+krt-scan.c
+krt-scan.h
+#endif
+sysio.h

@@ -1,0 +1,309 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="Mike Schiffman">
+   <meta name="GENERATOR" content="Mozilla/4.6 [en] (Win98; I) [Netscape]">
+   <title>Introduction</title>
+</head>
+<body text="#000000" bgcolor="#CCCCCC" link="#0000EE" vlink="#551A8B" alink="#FF0000">
+<a href="5.html">Next</a> <a href="3.html">Previous</a> <a href="lrm.html">Top</a>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><b><font size=+2>4. A Means to an Ends</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>This section covers operational issues including how
+to employ the library in a useful manner as well noting some of its quirks.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.1"></a><b><font size=+2>4.1 The Order of Operations</font></b>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>In order to build and inject an arbitrary network packet,
+there is a standard order of operations to be followed.&nbsp; There are
+five easy steps to packet injection happiness:</font>
+<br>&nbsp;
+<ol>
+<li>
+<font size=-1>Memory Initialization</font></li>
+
+<li>
+<font size=-1>Network Initialization</font></li>
+
+<li>
+<font size=-1>Packet Construction</font></li>
+
+<li>
+<font size=-1>Packet Checksums</font></li>
+
+<li>
+<font size=-1>Packet Injection</font></li>
+</ol>
+<font size=-1>Each one of these is an important topic and is covered below.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.1.1"></a><b><font size=+2>4.1.1 Memory Allocation and Initialization</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>The first step in employing libnet in your application
+is to allocate memory for a packet.&nbsp; The conventional way to do this
+is via a call to libnet_init_packet().&nbsp; You just need to make sure
+you specify enough memory for whatever packet you're going to build.&nbsp;
+This will also require some forethought as to which injection method you're
+going to use (see below for more information).&nbsp; If you're going to
+build a simple TCP packet (sans options) with a 30 byte payload using the
+IP-layer interface, you'll need 70 bytes (IP header + TCP header + payload).&nbsp;
+If you're going to build the same packet using the link-layer interface,
+you'll need 84 bytes (ethernet header + IP header + TCP header + payload).&nbsp;
+To be safe you could just allocate IP_MAXPACKET + ETH_H bytes (65549) and
+not worry about overwriting buffer boundaries.&nbsp; When finished with
+the memory, it should be released with a call to libnet_destroy_packet()
+(this can either be in a garbage collection function or at the end of the
+program).</font>
+<p><font size=-1>Another method of memory allocation is via the arena interface.&nbsp;
+Arenas are basically memory pools that allocate large chunks of memory
+in one call, divvy out chunks as needed, then deallocate the whole pool
+when done.&nbsp; The libnet arena interface is useful when you want to
+preload different kinds of packets that you're potentially going to be
+writing in rapid succession.&nbsp; It is initialized with a call to libnet_init_packet_arena()
+and chunks are retrieved with libnet_next_packet_from_arena().&nbsp; When
+finished with the memory it should be released with a call to libnet_destroy_packet_arena()
+(this can either be in a garbage collection function or at the end of the
+program).</font>
+<p><font size=-1>An important note regarding memory management and packet
+construction:&nbsp; If you do not allocate enough memory for the type of
+packet you're building, your program will probably segfault on you.&nbsp;
+Libnet can detect when you haven't passed <i>any</i> memory, but not when
+you haven't passed enough.&nbsp; Take heed.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.1.2"></a><b><font size=+2>4.1.2 Network Initialization</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>The next step is to bring up the network injection interface.&nbsp;
+With the IP-layer interface, this is with a call to libnet_open_raw_sock()
+with the appropriate protocol (usually IPPROTO_RAW).&nbsp; This call will
+return a raw socket with IP_HDRINCL set on the socket telling the kernel
+you're going to build the IP header.</font>
+<p><font size=-1>The link-layer interface is brought up with a call to
+libnet_open_link_interface() with the proper device argument.&nbsp; This
+will return a pointer to a ready to go link interface structure.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.1.3"></a><b><font size=+2>4.1.3 Packet Construction</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>Packets are constructed modularly.&nbsp; For each protocol
+layer, there should be a corresponding call to a libnet_build function.&nbsp;
+Depending on your end goal, different things may happen here.&nbsp; For
+the above IP-layer example, calls to libnet_build_ip() and libnet_build_tcp()
+will be made.&nbsp; For the link-layer example, an additional call to libnet_build_ethernet()
+will be made.&nbsp; It is important to note that the ordering of the packet
+constructor function calls is not significant, it is only necessary that
+the correct memory locations be passed to these functions.&nbsp; The functions
+need to build the packet headers inside the buffer as they would appear
+on the wire and be demultiplexed by the recipient, and this can be done
+in any order (figure 2).</font>
+<center>
+<p><img SRC="figure-2.gif" ALT="figure 2" height=642 width=507 align=TEXTTOP></center>
+<font size=-1>libnet_build_ethernet() would be passed the beginning of
+the buffer with an offset of 0 (as it needs to build an ethernet header
+at the front of the packet).&nbsp; libnet_build_ip() would get the buffer
+at a 14 byte (ETH_H) offset to construct the IP header in the correct location,
+while libnet_build_tcp() would get the buffer 20 bytes beyond this (or
+at a 34 bytes offset from the beginning (ETH_H + IP_H)).&nbsp; This is
+easily apparent in the <a href="7.html">example code</a>.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.1.4"></a><b><font size=+2>4.1.4 Packet Checksums</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>The next-to-last step is computing the packet checksums
+(assuming the packet is an IP packet of some sort).&nbsp; For the raw IP
+interface, we need only compute a transport layer checksum (assuming our
+packet has a transport layer protocol) as the kernel will handle our IP
+checksum.&nbsp; For the link-layer interface, the IP checksum must be explicitly
+computed.&nbsp; Checksums are calculated via libnet_do_checksum(), which
+will be expecting the buffer passed to point to the IP header of the packet.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.1.5"></a><b><font size=+2>4.1.5 Packet Injection</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>The last step is to write the packet to the network.&nbsp;
+Using the IP-layer interface this is accomplished with libnet_write_ip(),
+and with the link-layer interface it is accomplished with libnet_write_link_layer().&nbsp;
+The functions return the number of bytes written (which should jive with
+the size of your packet) or a -1 on error.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.2"></a><b><font size=+2>4.2 Using the Configure Script</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>There has been some confusion on how to correctly implement
+the libnet-configure shell script.&nbsp; Since 0.99e, it has become mandatory
+to use this script.&nbsp; The library will not compile code without it.&nbsp;
+This is to avoid potential problems when user code is compiled with improper
+or missing CPP macros.&nbsp; The script also has provisions for specifying
+libraries and cflags.&nbsp; The library switch is useful on architectures
+that require additional libraries to compile network code (such as Solaris).&nbsp;
+The script is very simple to use.&nbsp; The following examples should dispell
+any confusion:</font>
+<ul>
+<li>
+<font size=-1>&nbsp;At the command line you can run the script to see what
+defines are used for that system:</font></li>
+</ul>
+<font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>shattered:~>
+libnet-config --defines</tt></font>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; -D_BSD_SOURCE -D__BSD_SOURCE
+-D__FAVOR_BSD -DHAVE_NET_ETHERNET_H</font></tt>
+<br><tt><font size=-1>&nbsp;&nbsp;&nbsp;&nbsp; -DLIBNET_LIL_ENDIAN</font></tt>
+<br>&nbsp;
+<ul>
+<li>
+<font size=-1>&nbsp;At the command line to compile a simple program:</font></li>
+</ul>
+
+<p><br><tt><font size=-1>&nbsp;&nbsp;&nbsp; shattered:~> gcc -Wall `libnet-config
+--defines` foo.c -o foo `libnet-config --libs`</font></tt>
+<br>&nbsp;
+<ul>
+<li>
+<font size=-1>In a Makefile:</font></li>
+</ul>
+<font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>DEFINES =&nbsp;&nbsp;
+`libnet-config --defines`</tt></font>
+<br>&nbsp;
+<ul>
+<li>
+<font size=-1>In a Makefile.in (also employing autoheader):</font></li>
+</ul>
+<font size=-1>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; <tt>DEFINES =&nbsp;&nbsp;
+`libnet-config --defines` @DEFS@</tt></font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.3"></a><b><font size=+2>4.3 IP-layer vs. Link-layer</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>People often wonder when to use the link-layer interface
+in place of the IP-layer interface.&nbsp; It's mainly trading of power
+and complexity for ease of use.&nbsp; The link-layer interface is slightly
+more complex and requires a bit more coding.&nbsp; A standard invocation
+of either interface might include the following:</font>
+<br>&nbsp;
+<table BORDER WIDTH="42%" >
+<tr VALIGN=TOP>
+<td VALIGN=TOP><b>Raw IP</b></td>
+
+<td><b>Link-layer</b></td>
+</tr>
+
+<tr>
+<td><font size=-1>libnet_init_packet</font>
+<br><font size=-1>libnet_open_raw_sock</font>
+<br><font size=-1>libnet_build_ip</font>
+<br><font size=-1>libnet_build_icmp</font>
+<br><font size=-1>libnet_do_checksum</font>
+<br><font size=-1>libnet_write_ip</font></td>
+
+<td><font size=-1>libnet_init_packet</font>
+<br><font size=-1>libnet_open_link_interface</font>
+<br><font size=-1>libnet_build_ethernet</font>
+<br><font size=-1>libnet_build_ip</font>
+<br><font size=-1>libnet_build_icmp</font>
+<br><font size=-1>libnet_do_checksum&nbsp;&nbsp;&nbsp; (IP header checksum)</font>
+<br><font size=-1>libnet_do_checksum&nbsp;&nbsp;&nbsp; (transport layer
+header checksum)&nbsp;</font>
+<br><font size=-1>libnet_write_link_layer</font></td>
+</tr>
+</table>
+
+<p><font size=-1>Visually:</font>
+<center><img SRC="figure-3.gif" ALT="figure-3" height=1016 width=805></center>
+<font size=-1>The link-layer interface is also considerably more powerful
+and portable (if you want to build ARP/RARP/ethernet frames it's the only
+way to go) than the raw IP interface (see below).</font>
+<p><font size=-1>One major issue with the link-layer interface, however,
+is that in order to send packets to arbitrary remote Internet hosts, it
+needs to know the MAC address of the first hop router.&nbsp; This is accomplished
+via ARP packets, but if proxy ARP isn't being done, you run into all kinds
+of problems determining whose MAC address to request.&nbsp; Code to portably
+alleviate this problem is being developed.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.4"></a><b><font size=+2>4.4 Spoofing Ethernet Addresses</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>Certain operating systems (specifically ones that use
+the Berkeley Packet Filter for link-layer access) do not allow for arbitrary
+specification of source ethernet addresses.&nbsp; This is not so much a
+bug as it is an oversight in the protocol.&nbsp; The way around this is
+to patch the kernel.&nbsp; There are two ways to patch a kernel, either
+statically, with kernel diffs (which requires the individual to have the
+kernel sources, and know how to rebuild and install a new kernel) or dynamically,
+with loadable kernel modules (lkms).&nbsp; Since it's a bit overzealous
+to assume people will want to patch their kernel for a library, included
+with the libnet distribution is lkm code to seamlessly bypass the bpf restriction.</font>
+<p><font size=-1>In order to spoof ethernet packets on bpf-based systems
+(currently supported are FreeBSD and OpenBSD) do the following: cd to the
+proper support/bpf-lkm/ directory, build the module, and modload it.</font>
+<p><font size=-1>The module works as per the following description:</font>
+<p><font size=-1>The 4.4BSD machine-independent ethernet driver does not
+allow upper layers to forge the ethernet source address; all ethernet outputs
+cause the output routine to build a new ethernet header, and the process
+that does this explicitly copies the MAC address registered to the interface
+into this header.</font>
+<p><font size=-1>This is odd, because the bpf writing convention asserts
+that writes to bpf must include a link-layer header; it's intuitive to
+assume that this header is, along with the rest of the packet data, written
+to the wire.</font>
+<p><font size=-1>This is not the case. The link-layer header is used solely
+by the bpf code in order to build a sockaddr structure that is passed to
+the generic ethernet output routine; the header is then effectively stripped
+off the</font>
+<br><font size=-1>packet. The ethernet output routine consults this sockaddr
+to obtain the ethernet type and destination address, but not the source
+address.</font>
+<p><font size=-1>The Libnet lkm simply replaces the standard ethernet output
+routine with a slightly modified one.&nbsp; This modified version retrieves
+the source ethernet address from the sockaddr and uses it as the source
+address for the header written the wire. This allows bpf to be used to
+seamlessly forge ethernet packets in their entirety, which has applications
+in address management.</font>
+<p><font size=-1>The modload glue provided traverses the global list of
+system interfaces, and replaces any pointer to the original ethernet output
+routine with the new one we've provided. The unload glue undoes this. The
+effect of loading this module will be that all ethernet interfaces on the
+system will support source address forging.</font>
+<p><font size=-1>Thomas H. Ptacek wrote the first version of this lkm in
+1997.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s4.5"></a><b><font size=+2>4.5 Raw Sockets Limitations</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>Raw sockets are horribly non-standard across different
+platforms.</font>
+<ul>
+<li>
+<font size=-1>Under some x86 BSD implementations the IP header length and
+fragmentation bits need to be in host byte order, and under others, network
+byte order.</font></li>
+
+<li>
+<font size=-1>Solaris does not allow you to set many IP header related
+bits including the length, fragmentation flags, or IP options.</font></li>
+
+<li>
+<font size=-1>Linux requires SO_BROADCAST to be set on the raw socket for
+the injection of broadcast IP datagrams (which libnet now does).</font></li>
+</ul>
+<font size=-1>Because of these quirks, unless your code isn't designed
+to be multi-platform, you might want to consider employing libnet's link-layer
+interface instead.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a href="5.html">Next</a> <a href="3.html">Previous</a> <a href="lrm.html">Top</a>
+</body>
+</html>

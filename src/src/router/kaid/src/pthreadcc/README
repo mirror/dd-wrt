@@ -1,0 +1,95 @@
+pthreadcc Library Version 1.01
+------------------------------
+
+Author: Jason But
+
+
+--------------------------------------------------------------------------------
+Project Summary:
+
+This project will compile to a dynamically loaded library that can be used when
+developing multi-threaded applications in C++.  The pthreadcc library is based
+on the existing pthread library available in most UNIX installations.  The
+library defines a series of classes that can be used to implement a range of
+thread based tools as well as a class that represents an extra thread.  This
+class library was developed by Jason But at Monash University
+
+
+--------------------------------------------------------------------------------
+Purpose:
+
+For those wishing to develop multi-threaded applications in a C++ class oriented
+environment.  This library allows creation of threads as classes as well as
+access to multi-threaded programming tools as class abstractions.  Even if the
+basic programming paradigm is non class oriented, the availability of the MutEx,
+Semaphore and Condition tools in a class instance can still be used.
+
+
+--------------------------------------------------------------------------------
+Version History
+
+Version 1.00 - Original Version of library
+
+Version 1.01 - Support for compilation on Solaris Platform
+             - Tidied up Makefile implementations
+
+Version 1.10 - Support for compilation on MacOS X Platform (Original release
+               and Jaguar)
+             - Fixed up multi-platform support in Makefile
+
+Version 1.11 - Support for FreeBSD Platforms
+
+--------------------------------------------------------------------------------
+Files:
+
+README                      : this file.
+Makefile                    : make file for the pthreadcc library.
+src/pthreadcc.h             : header file defining classes supported by the
+                              library and available to users of the library.
+src/threadexception.cpp     : implementation of the ThreadException class.
+src/mutualexclusion.cpp     : implementation of the MutualExclusion class.
+src/semaphore.cpp           : implementation of the Semaphore class.
+src/condition.cpp           : implementation of the Condition class.
+src/threadbase.cpp          : implementation of the ThreadBase class.
+
+
+--------------------------------------------------------------------------------
+Installation:
+
+Running 'make', 'make all' or 'make library' will compile and link together the
+components of the library to create libpthreadcc.so.1.0
+Running 'make objects' will compile the source code files to their respective
+object files.
+Running 'make install' will make the dynamic library and then install the
+libpthreadcc.so.1.0 to /usr/lib and copy pthreadcc.h to /usr/include.
+Running 'make remove' will remove the dynamic library and header file from
+/usr/lib and /usr/include.
+
+NOTE: 'make install' and 'make remove' should be run as root.
+
+
+--------------------------------------------------------------------------------
+Usage:
+
+Once the library has been compiled and installed, it can be used within any
+other application program as follows:
+
+1.) Include the pthreadcc library header file.
+
+#include <pthreadcc.h>
+
+2.) Create and program class instances as required and use as defined in the
+    pthreadcc header file.
+
+3.) Link the application together using the '-lpthreadcc' flag to ensure that
+    the dynamic library is linked into the final application.
+
+
+--------------------------------------------------------------------------------
+Information:
+
+This library was originally developed for use in a multi-threaded, class based
+application for Monash University.  While every effort will be made to update
+it, this will only be done as time permits.  You can email the author at:
+
+jason.but@eng.monash.edu.au

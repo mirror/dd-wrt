@@ -1,0 +1,298 @@
+#
+# Shorewall version 1.4 - Rules File
+#
+# /etc/shorewall/rules
+#
+#	Rules in this file govern connection establishment. Requests and
+#	responses are automatically allowed using connection tracking.
+#
+#	In most places where an IP address or subnet is allowed, you
+#	can preceed the address/subnet with "!" (e.g., !192.168.1.0/24) to
+#	indicate that the rule matches all addresses except the address/subnet
+#	given. Notice that no white space is permitted between "!" and the
+#	address/subnet.
+#
+# Columns are:
+#
+#
+#	ACTION		ACCEPT, DROP, REJECT, DNAT, DNAT-, REDIRECT, CONTINUE,
+#			LOG or an <action>.
+#
+#				ACCEPT   -- allow the connection request
+#				DROP     -- ignore the request
+#				REJECT   -- disallow the request and return an
+#					    icmp-unreachable or an RST packet.
+#				DNAT     -- Forward the request to another
+#					    system (and optionally another
+#					    port).
+#				DNAT-    -- Advanced users only.
+#					    Like DNAT but only generates the
+#					    DNAT iptables rule and not
+#					    the companion ACCEPT rule.
+#				REDIRECT -- Redirect the request to a local
+#					    port on the firewall.
+#				REDIRECT-
+#					 -- Advanced users only.
+#					    Like REDIRET but only generates the
+#					    REDIRECT iptables rule and not
+#					    the companion ACCEPT rule.
+#				CONTINUE -- (For experts only). Do not process
+#					    any of the following rules for this
+#					    (source zone,destination zone). If
+#					    The source and/or destination IP
+#					    address falls into a zone defined
+#					    later in /etc/shorewall/zones, this
+#					    connection request will be passed
+#					    to the rules defined for that
+#					    (those) zone(s).
+#				LOG      -- Simply log the packet and continue.
+#				QUEUE	 -- Queue the packet to a user-space
+#					    application such as p2pwall.
+#				<action> -- The name of an action defined in
+#					    /etc/shorewall/actions.
+#
+#			You may rate-limit the rule by optionally
+#			following ACCEPT, DNAT[-], REDIRECT[-] or LOG with
+# 
+#				< <rate>/<interval>[:<burst>] >
+#
+#			where <rate> is the number of connections per 
+#			<interval> ("sec" or "min") and <burst> is the
+#			largest burst permitted. If no <burst> is given,
+#			a value of 5 is assumed. There may be no
+#			no whitespace embedded in the specification.
+#
+#				Example: ACCEPT<10/sec:20>
+#
+#			The ACTION (and rate limit) may optionally be followed
+#			by ":" and a syslog log level (e.g, REJECT:info or
+#			DNAT<4/sec:8>:debugging). This causes the packet to be
+#			logged at the specified level.
+#
+#			NOTE: For those of you who prefer to place the
+#			rate limit in a separate column, see the RATE LIMIT
+#			column below. If you specify a value in that column,
+#			you must not include a rate limit in the ACTION column
+#
+#			You may also specify ULOG (must be in upper case) as a
+#			log level.This will log to the ULOG target for routing
+#			to a separate log through use of ulogd
+#			(http://www.gnumonks.org/projects/ulogd).
+#
+#	SOURCE		Source hosts to which the rule applies. May be a zone
+#                       defined in /etc/shorewall/zones, $FW to indicate the
+#			firewall itself, or "all" If the ACTION is DNAT or
+#			REDIRECT, sub-zones of the specified zone may be
+#			excluded from the rule by following the zone name with
+#			"!' and a comma-separated list of sub-zone names.
+#
+#			Except when "all" is specified, clients may be further
+#			restricted to a list of subnets and/or hosts by
+#			appending ":" and a comma-separated list of subnets
+#			and/or hosts. Hosts may be specified by IP or MAC
+#			address; mac addresses must begin with "~" and must use
+#			"-" as a separator.
+#
+#			dmz:192.168.2.2		Host 192.168.2.2 in the DMZ
+#
+#			net:155.186.235.0/24	Subnet 155.186.235.0/24 on the
+#						Internet
+#
+#			loc:192.168.1.1,192.168.1.2
+#						Hosts 192.168.1.1 and
+#						192.168.1.2 in the local zone.
+#			loc:~00-A0-C9-15-39-78  Host in the local zone with
+#                                               MAC address 00:A0:C9:15:39:78.
+#
+#			Alternatively, clients may be specified by interface
+#			by appending ":" to the zone name followed by the
+#			interface name. For example, loc:eth1 specifies a
+#			client that communicates with the firewall system
+#			through eth1. This may be optionally followed by
+#			another colon (":") and an IP/MAC/subnet address
+#			as described above (e.g., loc:eth1:192.168.1.5).
+#
+#	DEST		Location of Server. May be a zone defined in
+#			/etc/shorewall/zones, $FW to indicate the firewall
+#			itself or "all"
+#
+#			Except when "all" is specified, the server may be
+#			further restricted to a particular subnet, host or
+#			interface by appending ":" and the subnet, host or
+#			interface. See above.
+#
+#				Restrictions:
+#
+#				1. MAC addresses are not allowed.
+#				2. In DNAT rules, only IP addresses are
+#				   allowed; no FQDNs or subnet addresses
+#				   are permitted.
+#				3. You may not specify both an interface and
+#				   an address.
+#
+#			Unlike in the SOURCE column, you may specify a range of
+#			up to 256 IP addresses using the syntax
+#			<first ip>-<last ip>. When the ACTION is DNAT or DNAT-,
+#			the connections will be assigned to addresses in the
+#			range in a round-robin fashion.
+#
+#			The port that the server is listening on may be
+#			included and separated from the server's IP address by
+#			":". If omitted, the firewall will not modifiy the
+#			destination port. A destination port may only be
+#			included if the ACTION is DNAT or REDIRECT.
+#
+#			Example: loc:192.168.1.3:3128 specifies a local
+#			server at IP address 192.168.1.3 and listening on port
+#			3128. The port number MUST be specified as an integer
+#			and not as a name from /etc/services.
+#
+#			if the ACTION is REDIRECT, this column needs only to
+#			contain the port number on the firewall that the
+#			request should be redirected to.
+#
+#	PROTO		Protocol - Must be "tcp", "udp", "icmp", a number, or
+#			"all".
+#
+#	DEST PORT(S)    Destination Ports. A comma-separated list of Port
+#			names (from /etc/services), port numbers or port
+#			ranges; if the protocol is "icmp", this column is
+#			interpreted as the destination icmp-type(s).
+#
+#			A port range is expressed as <low port>:<high port>.
+#
+#			This column is ignored if PROTOCOL = all but must be
+#			entered if any of the following ields are supplied.
+#			In that case, it is suggested that this field contain
+#			 "-"
+#
+#			If your kernel contains multi-port match support, then
+#			only a single Netfilter rule will be generated if in
+#			this list and the CLIENT PORT(S) list below:
+#			1. There are 15 or less ports listed.
+#			2. No port ranges are included.
+#			Otherwise, a separate rule will be generated for each
+#			port.
+#
+#	CLIENT PORT(S)	(Optional) Port(s) used by the client. If omitted,
+#			any source port is acceptable. Specified as a comma-
+#			separated list of port names, port numbers or port
+#			ranges.
+#
+#			If you don't want to restrict client ports but need to
+#			specify an ADDRESS in the next column, then place "-"
+#			in this column.
+#
+#			If your kernel contains multi-port match support, then
+#			only a single Netfilter rule will be generated if in
+#			this list and the DEST PORT(S) list above:
+#			1. There are 15 or less ports listed.
+#			2. No port ranges are included.
+#			Otherwise, a separate rule will be generated for each
+#			port.
+#
+#	ORIGINAL DEST	(0ptional -- only allowed if ACTION is DNAT[-] or
+#                       REDIRECT[-]) If included and different from the IP
+#			address given in the SERVER column, this is an address
+#			on some interface on the firewall and connections to
+#			that address will be forwarded to the IP and port
+#			specified in the DEST column.
+#
+#			A comma-separated list of addresses may also be used. 
+#			This is usually most useful with the REDIRECT target 
+#			where you want to redirect traffic destined for
+#			particular set of hosts.
+#
+#			Finally, if the list of addresses begins with "!" then
+#			the rule will be followed only if the original 
+#			destination address in the connection request does not
+#			match any of the addresses listed.
+#
+#			The address (list) may optionally be followed by
+#			a colon (":") and a second IP address. This causes
+#			Shorewall to use the second IP address as the source
+#			address in forwarded packets. See the Shorewall
+#			documentation for restrictions concerning this feature.
+#			If no source IP address is given, the original source
+#			address is not altered.
+#
+#	RATE LIMIT	You may rate-limit the rule by placing a value in 
+#			this colume:
+# 
+#				<rate>/<interval>[:<burst>]
+#
+#			where <rate> is the number of connections per 
+#			<interval> ("sec" or "min") and <burst> is the
+#			largest burst permitted. If no <burst> is given,
+#			a value of 5 is assumed. There may be no
+#			no whitespace embedded in the specification.
+#
+#				Example: 10/sec:20
+#
+#			If you place a rate limit in this column, you may not
+#			place a similar limit in the ACTION column.
+#
+#	USER SET	This column may only be non-empty if the SOURCE is
+#			the firewall itself and the ACTION is ACCEPT, DROP or
+#			REJECT.
+#			
+#			The column may contain a user set name defined in the
+#			/etc/shorewall/usersets file or it may contain:
+#
+#			   [<user name or number>]:[<group name or number>]
+#
+#			When this column is non-empty, the rule applies only
+#			if the program generating the output is running under
+#			the effective <user>(s) and/or <group>(s) specified.
+#			When a user set name is given, a log level may not be
+#			present in the ACTION column; logging for such rules is
+#			controlled by the user set's entry in 
+#			/etc/shorewall/usersets.
+#
+#	Example: Accept SMTP requests from the DMZ to the internet
+#
+#	#ACTION SOURCE	DEST PROTO	DEST    SOURCE	ORIGINAL
+#	#                               PORT    PORT(S) DEST
+#	ACCEPT	dmz	net	  tcp	smtp
+#
+#	Example: Forward all ssh and http connection requests from the internet
+#		 to local system 192.168.1.3
+#
+#	#ACTION SOURCE	DEST            PROTO	DEST    SOURCE	ORIGINAL
+#	#                                       PORT    PORT(S) DEST
+#	DNAT	net	loc:192.168.1.3 tcp	ssh,http
+#
+#	Example: Forward all http connection requests from the internet
+#		 to local system 192.168.1.3 with a limit of 3 per second and
+#		 a maximum burst of 10
+#
+#	#ACTION 	SOURCE	DEST            PROTO	DEST    SOURCE	ORIGINAL
+#	#                                       	PORT    PORT(S) DEST
+#	DNAT<3/sec:10>	net	loc:192.168.1.3 tcp	http
+#
+#	Example: Redirect all locally-originating www connection requests to
+#		 port 3128 on the firewall (Squid running on the firewall
+#		 system) except when the destination address is 192.168.2.2
+#
+#	#ACTION  SOURCE	DEST      PROTO	DEST    SOURCE	ORIGINAL
+#	#                               PORT    PORT(S) DEST
+#	REDIRECT loc	3128      tcp	www	 -	!192.168.2.2
+#
+#	Example: All http requests from the internet to address
+#                130.252.100.69 are to be forwarded to 192.168.1.3
+#
+#	#ACTION  SOURCE	DEST      	PROTO	DEST    SOURCE	ORIGINAL
+#	#                               	PORT    PORT(S) DEST
+#	DNAT      net	loc:192.168.1.3 tcp     80      -       130.252.100.69
+#
+#       Example: You want to accept SSH connections to your firewall only 
+#		 from internet IP addresses 130.252.100.69 and 130.252.100.70
+#
+#	#ACTION  SOURCE	DEST      	PROTO	DEST    SOURCE	ORIGINAL
+#	#                               	PORT    PORT(S) DEST
+#	ACCEPT	 net:130.252.100.69,130.252.100.70 fw \
+#					tcp	22
+####################################################################################################
+#ACTION  SOURCE		DEST      	PROTO	DEST    SOURCE	   ORIGINAL	RATE		USER
+#                       	        	PORT    PORT(S)    DEST		LIMIT
+#LAST LINE -- ADD YOUR ENTRIES BEFORE THIS ONE -- DO NOT REMOVE

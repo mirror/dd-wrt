@@ -1,0 +1,122 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* ext2ed.h: Use the ext2_fs.h header file from libext2fs, instead
+		from the kernel header files.
+
+	* Makefile.in: Update the modtime even if subst doesn't need to
+		update the ext2ed man page and conbfiguration, to avoid
+		always re-running subst, especially since there are no
+		dependencies on these generated files.
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2002-09-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* dir_com.c (search_dir_entries): If there is a directory entry of
+		length 0, go to the next block, so we don't end up looping
+		forever.
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-05-12    <tytso@mit.edu>
+
+	* README: Add warning about shortcomings in ext2ed.  Please don't
+		include this in distributions --- it's too buggy for that.
+
+	* init.c (signal_SIGWINCH_handler): Reinstall signal handler after
+		it is activated.
+
+	* main.c: Make use of readline library optional (currently
+		disabled).  Allow the filesystem/device which is to be
+		examined/edited to be specified on the command line, with
+		the -w option indicating that the filesystem should be
+		opened read/write.  Use the ncurses functions to read from
+		the keyboard, and use the pgdn and pgup keys to activate
+		the relavant commands.  Also poll the keyboard with a
+		timeout of .1 second, so that window-size changes can be
+		dealt with automatically.
+
+	* Makefile.in: Remove ncurses library from link line.
+
+	* win.c: Rewrite redraw function so that it changes the all of the
+		ncurses's windows, instead of destroying all of the
+		windows and recreating them all.  (This assumes requires
+		some ncurses-specific functions, and isn't quite as
+		portable, but that's OK.)  Create two new windows and
+		force the lines above and below the showpad area to be
+		empty.
+
+	* general_com.c: Remove e-mail address for Gadi Oxman, since it
+		doesn't work anymore, and I've made enough changes that
+		Gadi shouldn't get any complaints or bug reports for this
+		version.
+	
+2002-05-11    <tytso@mit.edu>
+
+	* win.c, main.c, general_com.c: Use e2fsprogs's version
+		information for the program banner.
+
+	* ext2ed.h, init.c, general_com.c: Add a field_type parameter, and
+		use specialized routines for showing and setting ints, uints,
+		and characeter strings.
+
+	* ext2.descriptors: Updated with newer superblock descriptor; use
+		__u32 and __u16 instead of unsigned long and unsigned
+		short.  Add data structures for direcctory indexing code.
+
+	* Makefile.in: Added make depend logic.
+
+2002-05-11    <tytso@mit.edu>
+
+	* ext2ed.h: Remove VAR_DIR, and replace it with ETC_DIR.
+		(/var/lib is no longer a politically correct location for
+		application files according to the FHS).  Change include
+		file location of ncurses.h to be /usr/include/ncurses.h.
+
+	* init.c: Look for the configuration file in ETC_DIR/ext2ed.conf
+
+	* Makefile.in: Integrate into the e2fsprogs makefile structure
+
+	* ext2ed.conf.in, ext2ed.8.in: Change to be generated files, so
+		that the pathnames in the man page and config file match
+		the values chosen by the configure script.

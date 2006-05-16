@@ -1,0 +1,5 @@
+7	ktest -a
+13	stest -a		
+3	#test_keychange.sh
+2	test_kul.sh
+3	etest -a

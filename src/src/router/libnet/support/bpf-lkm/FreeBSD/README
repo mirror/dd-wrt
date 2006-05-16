@@ -1,0 +1,48 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    route|daemon9 <route@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+    etherspoof lkm module
+    FreeBSD 3.0
+
+    Etherspoof is an lkm module that allows a bpf device to specify (forge)
+    arbitrary ethernet MAC addresses.  FreeBSD 3.0-19980804-SNAP port by
+    route; originally written by Thomas Ptacek.  His original readme
+    contents follow.
+
+
+    1997 Thomas H. Ptacek
+
+    The 4.4BSD machine-independant ethernet driver does not allow upper layers
+    to forge the ethernet source address; all ethernet outputs cause the
+    output routine to build a new ethernet header, and the process that does
+    this explicitly copies the MAC address registered to the interface into
+    this header.
+
+    This is odd, because the bpf writing convention asserts that writes to bpf
+    must include a link-level header; it's intuitive to assume that this
+    header is, along with the rest of the packet data, written to the wire.
+
+    This is not the case, though. The link-layer header is used solely by the
+    bpf code, in order to build a sockaddr structure that is passed to the
+    generic ethernet output routine; the header is then effectively stripped
+    off the packet. The ethernet output routine consults this sockaddr to
+    obtain the ethernet type and destination address, but not the source
+    address.
+
+    This code is a slightly modified version of FreeBSD 3.0's original
+    ethernet output routine. The sole difference is that this output routine
+    retrieves the source ethernet address from the sockaddr, and uses it as
+    the source address for the header written the wire. This allows bpf to be
+    used to seamlessly forge ethernet packets in their entirety, which has
+    applications in address management. 
+
+    The modload glue provided traverses the global list of system interfaces,
+    and replaces any pointer to the original ethernet output routine with the
+    new one we've provided. The unload glue undoes this. The effect of
+    loading this module will be that all ethernet interfaces on the system
+    will support source address forging.
+
+EOF
