@@ -413,7 +413,7 @@ port_forward_table (webs_t wp, char *type, int which)
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      websWrite (wp, "selected=\"selected\"");
+	      websWrite (wp, "selected\\\"selected\\\"");
 	    else
 	      websWrite (wp, "");
 	  }
@@ -517,7 +517,7 @@ port_forward_spec (webs_t wp, char *type, int which)
 	else if (!strcmp (type, "sel_both"))
 	  {			//use select
 	    if (!strcmp (proto, "both"))
-	      websWrite (wp, "selected=\"selected\"");
+	      websWrite (wp, "selected=\\\"selected\\\"");
 	    else
 	      websWrite (wp, "");
 	  }
@@ -723,7 +723,7 @@ ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv)
 	else if (!strcmp (type, "enable"))
 	  {
 	    if (!strcmp (enable, "on"))
-	      websWrite (wp, "checked=\"checked\"");
+	      websWrite (wp, "checked=\\\"checked\\\"");
 	    else
 	      websWrite (wp, "");
 	  }
