@@ -3800,7 +3800,7 @@ ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<tr height=\"5\"><td>&nbsp;</td></tr>\n");
 
   websWrite (wp, "<tr>\n");
-  websWrite (wp, "<td>vlan.aggregation</td>\n");
+  websWrite (wp, "<td><script type="text/javascript">Capture(vlan.aggregation)</script></td>\n");
 
   websWrite (wp,
 	     "<td colspan=\"6\"><select name=\"trunking\"><script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\">\" + share.no + \"</option>\");</script><script type=\"text/javascript\">document.write(\"<option value=\\\"1\\\"");
