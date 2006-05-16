@@ -223,7 +223,7 @@ addEvent(window, "unload", function() {
 							
 							<span id="wds" style="display:none">
 								<fieldset>
-									<legend>WDS</legend>
+									<legend><script type="text/javascript">Capture(status_wireless.wds)</script></legend>
 									<table class="table center" cellspacing="6" id="wds_table">
 										<tr>
 											<th width="20%"><script type="text/javascript">Capture(share.mac)</script></th>
