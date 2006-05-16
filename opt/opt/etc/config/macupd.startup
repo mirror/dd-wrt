@@ -1,9 +1,0 @@
-#!/bin/sh
-MACUPD_IP=$(nvram get macupd_ip)
-MACUPD_PORT=$(nvram get macupd_port)
-MACUPD_INTERVAL=$(nvram get macupd_interval)
-killall -q -9 macupd
-if [ "$(nvram get macupd_enable)" = "1" ]; then
-    macupd $MACUPD_IP $MACUPD_PORT $MACUPD_INTERVAL&
-fi
-
