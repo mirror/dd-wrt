@@ -1,2 +1,0 @@
-#! /bin/sh
-[ -f $KERNEL_DIR/include/linux/netfilter_ipv4/ip_set.h ] && echo set SET

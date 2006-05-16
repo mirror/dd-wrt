@@ -1,1 +1,0 @@
-../../lib/resource.c
