@@ -1,2 +1,0 @@
-rdp
-rdpdr.*cliprdr.*rdpsnd

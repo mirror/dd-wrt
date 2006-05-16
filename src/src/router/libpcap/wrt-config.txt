@@ -1,2 +1,0 @@
-1. ac_cv_linux_vers=2 CC='mipsel-uclibc-gcc -pipe' CFLAGS="-Os -fomit-frame-pointer" ./configure --host=mipsel-linux --with-pcap=linux --enable-ipv6
-2. add -I../../linux/linux/include to the INCL in Makefile

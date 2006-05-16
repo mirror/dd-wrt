@@ -1,2 +1,0 @@
-uucp
-^\x10here=

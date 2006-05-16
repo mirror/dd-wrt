@@ -1,2 +1,0 @@
-# NAT helpers 
-obj-$(CONFIG_IP_NF_NAT_PPTP) += ip_nat_pptp.o

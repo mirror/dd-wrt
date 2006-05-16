@@ -1,2 +1,0 @@
-skypetoskype
-^..\x02
