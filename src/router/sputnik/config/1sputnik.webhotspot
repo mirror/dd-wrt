@@ -14,7 +14,7 @@
 	<div class="setting">	
 		<div class="label">&nbsp;</div>
 		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="1" <% nvram_selmatch("sputnik_mjid_type", "1", "checked"); %> /><script type="text/javascript">Capture(hotspot.sputnik_express)</script>
-^	</div>
+	</div>
 	<% nvram_invmatch("sputnik_done","1","<!--"); %>
 	<div class="setting">	
 		<div class="label">&nbsp;</div>
