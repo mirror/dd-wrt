@@ -1,2 +1,0 @@
-aimwebcontent
-user-agent:aim/

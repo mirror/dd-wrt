@@ -1,1 +1,0 @@
-./configure --host=mipsel-linux CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -funit-at-a-time -mips32 -mtune=mips32 -pipe" --libdir=/opt/openwrt/lib/ --includedir=/opt/openwrt/include/ --disable-libutil --disable-shared --disable-threads

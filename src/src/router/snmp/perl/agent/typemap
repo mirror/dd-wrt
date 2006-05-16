@@ -1,5 +1,0 @@
-TYPEMAP
-netsnmp_handler_registration *				T_PTROBJ
-netsnmp_request_info *					T_PTROBJ
-const char *						T_PV
-netsnmp_oid *						T_PTROBJ

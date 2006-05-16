@@ -1,3 +1,0 @@
-#! /bin/sh
-
-exec ip -4 ro flush  scope global  type unicast

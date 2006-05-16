@@ -1,4 +1,0 @@
-#
-# kHTTPd
-#
-tristate '  Kernel httpd acceleration (EXPERIMENTAL)' CONFIG_KHTTPD

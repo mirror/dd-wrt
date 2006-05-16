@@ -1,2 +1,0 @@
-	/* insert expect proto private data here */
-	struct ip_ct_gre_expect gre;

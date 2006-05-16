@@ -1,2 +1,0 @@
-#!/bin/sh
-[ -f $KERNEL_DIR/net/ipv6/netfilter/ip6t_ah.c -a -f $KERNEL_DIR/include/linux/netfilter_ipv6/ip6t_ah.h ] && echo ah
