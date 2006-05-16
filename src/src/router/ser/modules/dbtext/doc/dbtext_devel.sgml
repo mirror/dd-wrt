@@ -1,0 +1,23 @@
+<!-- Module Developer's Guide -->
+
+<chapter>
+    <chapterinfo>
+	<revhistory>
+	    <revision>
+		<revnumber>$Revision: 1.1 $</revnumber>
+		<date>$Date: 2003/06/24 13:39:19 $</date>
+	    </revision>
+	</revhistory>
+    </chapterinfo>
+    <title>Developer's Guide</title>
+    <para>
+	Once you have the module loaded, you can use the API specified by SER DB
+	interface. Take a look at SER Developer's Guide for more information.
+    </para>
+</chapter>
+
+<!-- Keep this element at the end of the file
+Local Variables:
+sgml-parent-document: ("&parentsgml;" "book" "chapter")
+End:
+-->

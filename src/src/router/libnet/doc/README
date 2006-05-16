@@ -1,0 +1,34 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+    "libpwrite"
+    A C library for portable packet creation.
+
+    Libnet is an API to help with the construction and handling of network
+    packets.  It provides a portable framework for low-level network
+    packet writing and handling (use libnet in conjunction with libpcap and
+    you can write some really cool stuff).  Libnet includes packet creation
+    at the IP layer and at the link layer as well as a host of supplementary
+    and complementary functionality.  Libnet is very handy with which to
+    write network tools and network test code.  See the manpage and sample
+    test code for more detailed information.
+
+
+Real world use:
+---------------
+
+    People ARE using libnet.  Some of the noteworthy applications written
+    on top of libnet (please submit more):
+
+    Tracerx:    http://www.packetfactory.net/tracerx/
+    Firewalk:   http://www.packetfactory.net/firewalk/
+    Bane:       http://www.packetfactory.net/bane/
+    libnids:    http://www.packetfactory.net/libnids/
+    Rarpd:      ftp://ftp.dementia.org/pub/linux/src/rarpd-1.0.tar.gz
+    J++:        http://www.infonexus.com/~daemon9/Projects/J++
+    IDS tests:  http://www.anzen.com/research/nidsbench/
+    Divine:     http://www.fefe.de/divine/
+
+EOF

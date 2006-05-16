@@ -1,0 +1,12 @@
+CONFIG_IP_NF_MATCH_TOS
+IPV4OPTIONS patch support
+CONFIG_IP_NF_MATCH_IPV4OPTIONS
+  This option adds a IPV4OPTIONS match.
+  It allows you to filter options like source routing,
+  record route, timestamp and router-altert.
+
+  If you say Y here, try iptables -m ipv4options --help for more information.
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

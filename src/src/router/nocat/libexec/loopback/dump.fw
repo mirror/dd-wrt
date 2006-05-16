@@ -1,0 +1,20 @@
+#!/bin/sh
+##
+# dump.fw: show the status of all iptables.
+##
+
+# Note: your PATH is inherited from the gateway process
+#
+
+# echo ">>>>> Filter table: <<<<<"
+# iptables -t filter -L NoCat -n
+# echo
+echo ">>>>> NAT table: <<<<<"
+iptables -t nat -L -n
+# echo
+# echo ">>>>> Mangle table: <<<<<"
+# iptables -t mangle -L NoCat -n
+
+#
+# Ende
+#

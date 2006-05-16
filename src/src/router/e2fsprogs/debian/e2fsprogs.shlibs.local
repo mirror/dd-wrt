@@ -1,0 +1,6 @@
+libcom_err 2 libcomerr2 (>= 1.34-1)
+libss 2 libss2 (>= 1.34-1)
+libuuid 1 libuuid1 (>= 1.34-1)
+libext2fs 2 e2fslibs (= ${Source-Version})
+libe2p 2 e2fslibs (= ${Source-Version})
+libblkid 1 libblkid1 (>= 1.34-1)

@@ -1,0 +1,928 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD User's Guide: Protocols</TITLE>
+ <LINK HREF="bird-7.html" REL=next>
+ <LINK HREF="bird-5.html" REL=previous>
+ <LINK HREF="bird.html#toc6" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="bird-7.html">Next</A>
+<A HREF="bird-5.html">Previous</A>
+<A HREF="bird.html#toc6">Contents</A>
+<HR>
+<H2><A NAME="s6">6.</A> <A HREF="bird.html#toc6">Protocols</A></H2>
+
+<H2><A NAME="ss6.1">6.1</A> <A HREF="bird.html#toc6.1">BGP</A>
+</H2>
+
+<P>The Border Gateway Protocol is the routing protocol used for backbone
+level routing in the today's Internet. Contrary to the other protocols, its convergence
+doesn't rely on all routers following the same rules for route selection,
+making it possible to implement any routing policy at any router in the
+network, the only restriction being that if a router advertises a route,
+it must accept and forward packets according to it.
+<P>
+<P>BGP works in terms of autonomous systems (often abbreviated as AS). Each
+AS is a part of the network with common management and common routing policy. It is identified by a unique 16-bit number.
+Routers within each AS usually communicate with each other using either a interior routing
+protocol (such as OSPF or RIP) or an interior variant of BGP (called iBGP).
+Boundary routers at the border of the AS communicate with their peers
+in the neighboring AS'es via exterior BGP (eBGP).
+<P>
+<P>Each BGP router sends to its neighbors updates of the parts of its
+routing table it wishes to export along with complete path information
+(a list of AS'es the packet will travel through if it uses the particular
+route) in order to avoid routing loops.
+<P>
+<P>BIRD supports all requirements of the BGP4 standard as defined in
+RFC 1771
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc1771.txt">ftp://ftp.rfc-editor.org/in-notes/rfc1771.txt</A>
+including several enhancements from the
+latest draft
+<A HREF="ftp://ftp.rfc-editor.org/internet-drafts/draft-ietf-idr-bgp4-09.txt">ftp://ftp.rfc-editor.org/internet-drafts/draft-ietf-idr-bgp4-09.txt</A>.
+It also supports the community attributes as per
+RFC 1997
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc1997.txt">ftp://ftp.rfc-editor.org/in-notes/rfc1997.txt</A>,
+capability negotiation defined in
+RFC 2842
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2842.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2842.txt</A>.
+For IPv6, it uses the standard multiprotocol extensions defined in
+RFC 2283
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2283.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2283.txt</A>
+including changes described in the
+latest draft
+<A HREF="ftp://ftp.rfc-editor.org/internet-drafts/draft-ietf-idr-bgp4-multiprotocol-v2-05.txt">ftp://ftp.rfc-editor.org/internet-drafts/draft-ietf-idr-bgp4-multiprotocol-v2-05.txt</A>
+and applied to IPv6 according to
+RFC 2545
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2545.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2545.txt</A>.
+<P>
+<H3>Route selection rules</H3>
+
+<P>BGP doesn't have any simple metric, so the rules for selection of an optimal
+route among multiple BGP routes with the same preference are a bit more complex
+and they are implemented according to the following algorithm. It starts the first
+rule, if there are more "best" routes, then it uses the second rule to choose
+among them and so on.
+<P>
+<UL>
+<LI>Prefer route with the highest Local Preference attribute.</LI>
+<LI>Prefer route with the shortest AS path.</LI>
+<LI>Prefer IGP origin over EGP and EGP over incomplete.</LI>
+<LI>Prefer the lowest value of the Multiple Exit Discriminator.</LI>
+<LI>Prefer internal routes over external ones.</LI>
+<LI>Prefer the route with the lowest value of router ID of the
+advertising router.</LI>
+</UL>
+<P>
+<H3>Configuration</H3>
+
+<P>Each instance of the BGP corresponds to one neighboring router.
+This allows to set routing policy and all the other parameters differently
+for each neighbor using the following configuration parameters:
+<P>
+<DL>
+<DT><CODE>local as <I>number</I></CODE><DD><P>Define which AS we are part of. (Note that
+contrary to other IP routers, BIRD is able to act as a router located
+in multiple AS'es simultaneously, but in such cases you need to tweak
+the BGP paths manually in the filters to get consistent behavior.)
+This parameter is mandatory.
+<P>
+<DT><CODE>neighbor <I>ip</I> as <I>number</I></CODE><DD><P>Define neighboring router
+this instance will be talking to and what AS it's located in. Unless
+you use the <CODE>multihop</CODE> clause, it must be directly connected to one
+of your router's interfaces. In case the neighbor is in the same AS
+as we are, we automatically switch to iBGP. This parameter is mandatory.
+<P>
+<DT><CODE>multihop <I>number</I> via <I>ip</I></CODE><DD><P>Configure multihop BGP to a
+neighbor which is connected at most <I>number</I> hops far and to which
+we should route via our direct neighbor with address <I>ip</I>.
+Default: switched off.
+<P>
+<DT><CODE>next hop self</CODE><DD><P>Avoid calculation of the Next Hop attribute
+and always advertise our own source address (see below) as a next hop.
+This needs to be used only
+occasionally to circumvent misconfigurations of other routers.
+Default: disabled.
+<P>
+<DT><CODE>source address <I>ip</I></CODE><DD><P>Define local address we should use
+for next hop calculation. Default: the address of the local end
+of the interface our neighbor is connected to.
+<P>
+<DT><CODE>disable after error <I>switch</I></CODE><DD><P>When an error is encountered (either
+locally or by the other side), disable the instance automatically
+and wait for an administrator to fix the problem manually. Default: off.
+<P>
+<DT><CODE>hold time <I>number</I></CODE><DD><P>Time in seconds to wait for a Keepalive
+message from the other side before considering the connection stale.
+Default: depends on agreement with the neighboring router, we prefer
+240 seconds if the other side is willing to accept it.
+<P>
+<DT><CODE>startup hold time <I>number</I></CODE><DD><P>Value of the hold timer used
+before the routers have a chance to exchange open messages and agree
+on the real value. Default: 240 seconds.
+<P>
+<DT><CODE>keepalive time <I>number</I></CODE><DD><P>Delay in seconds between sending
+of two consecutive Keepalive messages. Default: One third of the hold time.
+<P>
+<DT><CODE>connect retry time <I>number</I></CODE><DD><P>Time in seconds to wait before
+retrying a failed attempt to connect. Default: 120 seconds.
+<P>
+<DT><CODE>start delay time <I>number</I></CODE><DD><P>Delay in seconds between protocol
+startup and the first attempt to connect. Default: 5 seconds.
+<P>
+<DT><CODE>error wait time <I>number</I>,<I>number</I></CODE><DD><P>Minimum and maximum delay in seconds between a protocol
+failure (either local or reported by the peer) and automatic restart.
+Doesn't apply when <CODE>disable after error</CODE> is configured. If consecutive
+errors happen, the delay is increased exponentially until it reaches the maximum. Default: 60, 300.
+<P>
+<DT><CODE>error forget time <I>number</I></CODE><DD><P>Maximum time in seconds between two protocol
+failures to treat them as a error sequence which makes the <CODE>error wait time</CODE>
+increase exponentially. Default: 300 seconds.
+<P>
+<DT><CODE>path metric <I>switch</I></CODE><DD><P>Enable comparison of path lengths
+when deciding which BGP route is the best one. Default: on.
+<P>
+<DT><CODE>default bgp_med <I>number</I></CODE><DD><P>Value of the Multiple Exit
+Discriminator to be used during route selection when the MED attribute
+is missing. Default: infinite.
+<P>
+<DT><CODE>default bgp_local_pref <I>number</I></CODE><DD><P>Value of the Local Preference
+to be used during route selection when the Local Preference attribute
+is missing. Default: 0.
+</DL>
+<P>
+<H3>Attributes</H3>
+
+<P>BGP defines several route attributes. Some of them (those marked with `<CODE>I</CODE>' in the
+table below) are available on internal BGP connections only, some of them (marked
+with `<CODE>O</CODE>') are optional.
+<P>
+<DL>
+<DT><CODE>bgppath <CODE>bgp_path</CODE></CODE><DD><P>Sequence of AS numbers describing the AS path
+the packet will travel through when forwarded according to the particular route. In case of 
+internal BGP it doesn't contain the number of the local AS.
+<P>
+<DT><CODE>int <CODE>bgp_local_pref</CODE> [I]</CODE><DD><P>Local preference value used for
+selection among multiple BGP routes (see the selection rules above). It's
+used as an additional metric which is propagated through the whole local AS.
+<P>
+<DT><CODE>int <CODE>bgp_med</CODE> [IO]</CODE><DD><P>The Multiple Exit Discriminator of the route
+is an optional attribute which is often used within the local AS to
+reflect interior distances to various boundary routers. See the route selection
+rules above for exact semantics.
+<P>
+<DT><CODE>enum <CODE>bgp_origin</CODE></CODE><DD><P>Origin of the route: either <CODE>ORIGIN_IGP</CODE>
+if the route has originated in an interior routing protocol or
+<CODE>ORIGIN_EGP</CODE> if it's been imported from the <CODE>EGP</CODE> protocol
+(nowadays it seems to be obsolete) or <CODE>ORIGIN_INCOMPLETE</CODE> if the origin
+is unknown.
+<P>
+<DT><CODE>ip <CODE>bgp_next_hop</CODE></CODE><DD><P>Next hop to be used for forwarding of packets
+to this destination. On internal BGP connections, it's an address of the
+originating router if it's inside the local AS or a boundary router the
+packet will leave the AS through if it's an exterior route, so each BGP
+speaker within the AS has a chance to use the shortest interior path
+possible to this point.
+<P>
+<DT><CODE>void <CODE>bgp_atomic_aggr</CODE> [O]</CODE><DD><P>This is an optional attribute
+which carries no value, but the sole presence of which indicates that the route
+has been aggregated from multiple routes by some router on the path from
+the originator.
+<P>
+<DT><CODE>clist <CODE>bgp_community</CODE> [O]</CODE><DD><P>List of community values associated
+with the route. Each such value is a pair (represented as a <CODE>pair</CODE> data
+type inside the filters) of 16-bit integers, the first of them containing the number of the AS which defines
+the community and the second one being a per-AS identifier. There are lots
+of uses of the community mechanism, but generally they are used to carry
+policy information like "don't export to USA peers". As each AS can define
+its own routing policy, it also has a complete freedom about which community
+attributes it defines and what will their semantics be.
+</DL>
+<P>
+<H3>Example</H3>
+
+<P>
+<HR>
+<PRE>
+protocol bgp {
+        local as 65000;                      # Use a private AS number
+        neighbor 62.168.0.130 as 5588;       # Our neighbor ...
+        multihop 20 via 62.168.0.13;         # ... which is connected indirectly
+        export filter {                      # We use non-trivial export rules
+                if source = RTS_STATIC then { # Export only static routes
+                        # Assign our community
+                        bgp_community.add((65000,5678));
+                        # Artificially increase path length
+                        # by advertising local AS number twice
+                        if bgp_path ~ / 65000 / then      
+                                bgp_path.prepend(65000);  
+                        accept;
+                }
+                reject;
+        };
+        import all;
+        source address 62.168.0.1;      # Use a non-standard source address
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.2">6.2</A> <A HREF="bird.html#toc6.2">Device</A>
+</H2>
+
+<P>The Device protocol is not a real routing protocol.  It doesn't generate
+any routes and it only serves as a module for getting information about network
+interfaces from the kernel.
+<P>
+<P>Except for very unusual circumstances, you probably should include
+this protocol in the configuration since almost all other protocols
+require network interfaces to be defined for them to work with.
+<P>
+<P>The only configurable thing is interface scan time:
+<P>
+<P>
+<DL>
+<DT><CODE>scan time <I>number</I></CODE><DD><P>Time in seconds between two scans
+of the network interface list. On systems where we are notified about
+interface status changes asynchronously (such as newer versions of
+Linux), we need to scan the list only in order to avoid confusion by lost
+notification messages, so the default time is set to a large value.
+</DL>
+<P>
+<P>As the Device protocol doesn't generate any routes, it cannot have
+any attributes. Example configuration looks really simple:
+<P>
+<P>
+<HR>
+<PRE>
+protocol device {
+        scan time 10;           # Scan the interfaces often
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.3">6.3</A> <A HREF="bird.html#toc6.3">Direct</A>
+</H2>
+
+<P>The Direct protocol is a simple generator of device routes for all the
+directly connected networks according to the list of interfaces provided
+by the kernel via the Device protocol.
+<P>
+<P>It's highly recommended to include this protocol in your configuration
+unless you want to use BIRD as a route server or a route reflector, that is
+on a machine which doesn't forward packets itself and only participates in
+distribution of routing information.
+<P>
+<P>The only configurable thing about direct is what interfaces it watches:
+<P>
+<P>
+<DL>
+<DT><CODE>interface <I>pattern [, ...]</I></CODE><DD><P>By default, the Direct
+protocol will generate device routes for all the interfaces
+available. If you want to restrict it to some subset of interfaces
+(for example if you're using multiple routing tables for policy
+routing and some of the policy domains don't contain all interfaces),
+just use this clause.
+</DL>
+<P>
+<P>Direct device routes don't contain any specific attributes.
+<P>
+<P>Example config might look like this:
+<P>
+<P>
+<HR>
+<PRE>
+protocol direct {
+        interface "-arc*", "*";         # Exclude the ARCnets
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.4">6.4</A> <A HREF="bird.html#toc6.4">Kernel</A>
+</H2>
+
+<P>The Kernel protocol is not a real routing protocol. Instead of communicating
+the with other routers in the network, it performs synchronization of BIRD's routing
+tables with the OS kernel. Basically, it sends all routing table updates to the kernel
+and from time to time it scans the kernel tables to see whether some routes have
+disappeared (for example due to unnoticed up/down transition of an interface)
+or whether an `alien' route has been added by someone else (depending on the
+<CODE>learn</CODE> switch, such routes are either deleted or accepted to our
+table).
+<P>
+<P>If your OS supports only a single routing table, you can configure only one
+instance of the Kernel protocol. If it supports multiple tables (in order to
+allow policy routing; such an OS is for example Linux 2.2), you can run as many instances as you want, but each of
+them must be connected to a different BIRD routing table and to a different
+kernel table.
+<P>
+<H3>Configuration</H3>
+
+<P>
+<DL>
+<DT><CODE>persist <I>switch</I></CODE><DD><P>Tell BIRD to leave all its routes in the
+routing tables when it exits (instead of cleaning them up).
+<DT><CODE>scan time <I>number</I></CODE><DD><P>Time in seconds between two consecutive scans of the
+kernel routing table.
+<DT><CODE>learn <I>switch</I></CODE><DD><P>Enable learning of routes added to the kernel
+routing tables by other routing daemons or by the system administrator.
+This is possible only on systems which support identification of route
+authorship.
+<DT><CODE>kernel table <I>number</I></CODE><DD><P>Select which kernel table should
+this particular instance of the Kernel protocol work with. Available
+only on systems supporting multiple routing tables.
+</DL>
+<P>
+<P>The Kernel protocol doesn't define any route attributes.
+<P>A simple configuration can look this way:
+<P>
+<P>
+<HR>
+<PRE>
+protocol kernel {
+        import all;
+        export all;
+}
+</PRE>
+<HR>
+<P>
+<P>Or for a system with two routing tables:
+<P>
+<P>
+<HR>
+<PRE>
+protocol kernel {               # Primary routing table
+        learn;                  # Learn alien routes from the kernel
+        persist;                # Don't remove routes on bird shutdown
+        scan time 10;           # Scan kernel routing table every 10 seconds
+        import all;
+        export all;
+}
+
+protocol kernel {               # Secondary routing table
+        table auxtable;
+        kernel table 100;
+        export all;
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.5">6.5</A> <A HREF="bird.html#toc6.5">OSPF</A>
+</H2>
+
+<H3>Introduction</H3>
+
+<P>Open Shortest Path First (OSPF) is a quite complex interior gateway
+protocol. The current IPv4 version (OSPFv2) is defined in RFC 2328
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2328.txt</A>. It's a link
+state (a.k.a. shortest path first) protocol -- each router maintains a database
+describing the autonomous system's topology. Each participating router
+has an identical copy of the database and all routers run the same algorithm
+calculating a shortest path tree with themselves as a root.
+OSPF chooses the least cost path as the best path.
+(OSPFv3 - OSPF for IPv6 is not supported yet.)
+<P>
+<P>In OSPF, the autonomous system can be split to several areas in order
+to reduce the amount of resources consumed for exchanging the routing
+information and to protect the other areas from incorrect routing data.
+Topology of the area is hidden to the rest of the autonomous system.
+<P>
+<P>Another very important feature of OSPF is that
+it can keep routing information from other protocols (like Static or BGP)
+in its link state database as external routes. Each external route can
+be tagged by the advertising router, making it possible to pass additional
+information between routers on the boundary of the autonomous system.
+<P>
+<P>OSPF quickly detects topological changes in the autonomous system (such
+as router interface failures) and calculates new loop-free routes after a short
+period of convergence. Only a minimal amount of 
+routing traffic is involved.
+<P>
+<P>Each router participating in OSPF routing periodically sends Hello messages
+to all its interfaces. This allows neighbors to be discovered dynamically.
+Then the neighbors exchange theirs parts of the link state database and keep it
+identical by flooding updates. The flooding process is reliable and ensures
+that each router detects all changes.
+<P>
+<H3>Configuration</H3>
+
+<P>In the main part of configuration, there can be multiple definitions of
+OSPF area witch different id included. These definitions includes many other
+switches and multiple definitions of interfaces. Definition of interface
+may contain many switches and constant definitions and list of neighbors
+on nonbroadcast networks.
+<P>
+<HR>
+<PRE>
+protocol ospf &lt;name&gt; {
+        rfc1583compat &lt;switch&gt;;
+        tick &lt;num&gt;;
+        area &lt;id&gt; {
+                stub cost &lt;num&gt;;
+                networks {
+                        &lt;prefix&gt;;
+                        &lt;prefix&gt; hidden;
+                }
+                interface &lt;interface pattern&gt;
+                {
+                        cost &lt;num&gt;;
+                        stub &lt;switch&gt;;
+                        hello &lt;num&gt;;
+                        poll &lt;num&gt;;
+                        retransmit &lt;num&gt;;
+                        priority &lt;num&gt;;
+                        wait &lt;num&gt;;
+                        dead count &lt;num&gt;;
+                        dead &lt;num&gt;;
+                        type [broadcast|nonbroadcast|pointopoint];
+                        strict nonbroadcast &lt;switch&gt;;
+                        authentication [none|simple];
+                        password "&lt;text&gt;";
+                        passwords {
+                                password "&lt;text&gt;" {
+                                        id &lt;num&gt;;
+                                        generate from &lt;date&gt;;
+                                        generate to &lt;date&gt;;
+                                        accept from &lt;date&gt;;
+                                        accept to &lt;date&gt;;
+                                };
+                        };
+                        neighbors {
+                                &lt;ip&gt;;
+                                &lt;ip&gt; eligible;
+                        };
+                };
+                virtual link &lt;id&gt;
+                {
+                        hello &lt;num&gt;;
+                        retransmit &lt;num&gt;;
+                        wait &lt;num&gt;;
+                        dead count &lt;num&gt;;
+                        dead &lt;num&gt;;
+                        authentication [none|simple];
+                        password "&lt;text&gt;";
+                };
+        };
+}
+</PRE>
+<HR>
+<P>
+<DL>
+<DT><CODE>rfc1583compat <I>switch</I></CODE><DD><P>This option controls compatibility of routing table
+calculation with RFC 1583
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc1583.txt">ftp://ftp.rfc-editor.org/in-notes/rfc1583.txt</A>. Default
+value is no.
+<P>
+<DT><CODE>area <I>id</I></CODE><DD><P>This defines an OSPF area with given area ID (an integer or an IPv4
+address, similarly to a router ID).
+The most important area is
+the backbone (ID 0) to which every other area must be connected.
+<P>
+<DT><CODE>stub cost <I>num</I></CODE><DD><P>No external (except default) routes are flooded into stub areas.
+Setting this value marks area stub with defined cost of default route.
+Default value is no. (Area is not stub.)
+<P>
+<DT><CODE>tick <I>num</I></CODE><DD><P>The routing table calculation and clean-up of areas' databases
+is not performed when a single link state
+change arrives. To lower the CPU utilization, it's processed later
+at periodical intervals of <I>num</I> seconds. The default value is 1.
+<P>
+<DT><CODE>networks { <I>set</I> }</CODE><DD><P>Definition of area IP ranges. This is used in summary lsa origination.
+Hidden networks are not propagated into other areas.
+<P>
+<DT><CODE>interface <I>pattern</I></CODE><DD><P>Defines that the specified interfaces belong to the area being defined.
+<P>
+<DT><CODE>virtual link <I>id</I></CODE><DD><P>Virtual link to router with the router id. Virtual link acts as a
+point-to-point interface belonging to backbone. The actual area is
+used as transport area. This item cannot be in the backbone.
+<P>
+<DT><CODE>cost <I>num</I></CODE><DD><P>Specifies output cost (metric) of an interface. Default value is 10.
+<P>
+<DT><CODE>stub <I>switch</I></CODE><DD><P>If set to interface it does not listen to any packet and does not send
+any hello. Default value is no.
+<P>
+<DT><CODE>hello <I>num</I></CODE><DD><P>Specifies interval in seconds between sending of Hello messages. Beware, all
+routers on the same network need to have the same hello interval.
+Default value is 10.
+<P>
+<DT><CODE>poll <I>num</I></CODE><DD><P>Specifies interval in seconds between sending of Hello messages for
+some neighbors on NBMA network. Default value is 20.
+<P>
+<DT><CODE>retransmit <I>num</I></CODE><DD><P>Specifies interval in seconds between retransmissions of unacknowledged updates.
+Default value is 5.
+<P>
+<DT><CODE>priority <I>num</I></CODE><DD><P>On every multiple access network (e.g., the Ethernet) Designed Router
+and Backup Designed router are elected. These routers have some
+special functions in the flooding process. Higher priority increases
+preferences in this election. Routers with priority 0 are not
+eligible. Default value is 1.
+<P>
+<DT><CODE>wait <I>num</I></CODE><DD><P>After start, router waits for the specified number of seconds between starting
+election and building adjacency. Default value is 40.
+<P>
+<DT><CODE>dead count <I>num</I></CODE><DD><P>When the router does not receive any messages from a neighbor in
+<I>dead count</I>*<I>hello</I> seconds, it will consider the neighbor down.
+<P>
+<DT><CODE>dead <I>num</I></CODE><DD><P>When the router does not receive any messages from a neighbor in
+<I>dead</I> seconds, it will consider the neighbor down. If both directives
+<I>dead count</I> and <I>dead</I> are used, <I>dead</I> has precendence.
+<P>
+<DT><CODE>type broadcast</CODE><DD><P>BIRD detects a type of a connected network automatically, but sometimes it's
+convenient to force use of a different type manually.
+On broadcast networks, flooding and Hello messages are sent using multicasts
+(a single packet for all the neighbors).
+<P>
+<DT><CODE>type pointopoint</CODE><DD><P>Point-to-point networks connect just 2 routers together. No election
+is performed there which reduces the number of messages sent.
+<P>
+<DT><CODE>type nonbroadcast</CODE><DD><P>On nonbroadcast networks, the packets are sent to each neighbor
+separately because of lack of multicast capabilities.
+<P>
+<DT><CODE>strict nonbroadcast <I>switch</I></CODE><DD><P>If set, don't send hello to any undefined neighbor. This switch
+is ignored on on any non-NBMA network. Default is No.
+<P>
+<DT><CODE>authentication none</CODE><DD><P>No passwords are sent in OSPF packets. This is the default value.
+<P>
+<DT><CODE>authentication simple</CODE><DD><P>Every packet carries 8 bytes of password. Received packets
+lacking this password are ignored. This authentication mechanism is
+very weak.
+<P>
+<DT><CODE>authentication cryptographic</CODE><DD><P>16-byte long md5 digest is appended to every packet. For the digest
+generation 16-byte long passwords are used. Those passwords are 
+not sent via network, so this mechanismus is quite secure.
+Packets can still be read by an attacker.
+<P>
+<DT><CODE>password "<I>text</I>"</CODE><DD><P>An 8-byte or 16-byte password used for authentication.
+<P>
+<DT><CODE>id <I>num</I></CODE><DD><P>ID of the password, (0-255). If it's not used, BIRD will choose
+some automatically.
+<P>
+<DT><CODE>generate from <I>date</I></CODE><DD><P>The start time of the usage of the password for packet signing.
+<P>
+<DT><CODE>generate to <I>date</I></CODE><DD><P>The last time of the usage of the password for packet signing.
+<P>
+<DT><CODE>accept from <I>date</I></CODE><DD><P>The start time of the usage of the password for packet verification.
+<P>
+<DT><CODE>accept to <I>date</I></CODE><DD><P>The last time of the usage of the password for packet verification.
+<P>
+<DT><CODE>neighbors { <I>set</I> } </CODE><DD><P>A set of neighbors to which Hello messages on nonbroadcast networks
+are to be sent. Some of them could be marked as eligible.
+<P>
+</DL>
+<P>
+<H3>Attributes</H3>
+
+<P>OSPF defines three route attributes. Each internal route has a <CODE>metric</CODE>
+Metric is ranging from 1 to infinity (65535).
+External routes use <CODE>metric type 1</CODE> or <CODE>metric type 2</CODE>.
+A <CODE>metric of type 1</CODE> is comparable with internal <CODE>metric</CODE>, a
+<CODE>metric of type 2</CODE> is always longer
+than any <CODE>metric of type 1</CODE> or any <CODE>internal metric</CODE>.
+If you specify both metrics only metric1 is used.
+Each external route can also carry a <CODE>tag</CODE> which is a 32-bit
+integer which is used when exporting routes to other protocols;
+otherwise, it doesn't affect routing inside the OSPF domain at all.
+Default is <CODE>metric of type 2 = 10000</CODE> and <CODE>tag = 0</CODE>.
+<P>
+<H3>Example</H3>
+
+<P>
+<P>
+<HR>
+<PRE>
+protocol ospf MyOSPF {
+        rfc1583compatibility yes;
+        tick 2;
+        export filter {
+                if source = RTS_BGP then {
+                        ospf_metric1 = 100;
+                        accept;
+                }
+                reject;
+        };                                                                      
+        area 0.0.0.0 {
+                interface "eth*" {
+                        cost 11;
+                        hello 15;
+                        priority 100;
+                        retransmit 7;
+                        authentication simple;
+                        password "aaa";
+                };
+                interface "ppp*" {
+                        cost 100;
+                        authentication cryptographic;
+                        passwords {
+                                password "abc" {
+                                        id 1;
+                                        generate to 22-04-2003 11:00:06;
+                                        accept from 17-01-2001 12:01:05;
+                                };
+                                password "def" {
+                                        id 2;
+                                        generate to 22-07-2005 17:03:21;
+                                        accept from 22-02-2001 11:34:06;
+                                };
+                        };
+                };
+                interface "arc0" {
+                        cost 10;
+                        stub yes;
+                };
+                interface "arc1";
+        };
+        area 120 {
+                stub yes;
+                networks {
+                        172.16.1.0/24;
+                        172.16.2.0/24 hidden;
+                }
+                interface "-arc0" , "arc*" {
+                        type nonbroadcast;
+                        authentication none;
+                        strict nonbroadcast yes;
+                        wait 120;
+                        poll 40;
+                        dead count 8;
+                        neighbors {
+                                192.168.120.1 eligible;
+                                192.168.120.2;
+                                192.168.120.10;
+                        };
+                };
+        };
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.6">6.6</A> <A HREF="bird.html#toc6.6">Pipe</A>
+</H2>
+
+<H3>Introduction</H3>
+
+<P>The Pipe protocol serves as a link between two routing tables, allowing routes to be
+passed from a table declared as primary (i.e., the one the pipe is connected to using the
+<CODE>table</CODE> configuration keyword) to the secondary one (declared using <CODE>peer table</CODE>)
+and vice versa, depending on what's allowed by the filters. Export filters control export
+of routes from the primary table to the secondary one, import filters control the opposite
+direction.
+<P>
+<P>The primary use of multiple routing tables and the Pipe protocol is for policy routing,
+where handling of a single packet doesn't depend only on its destination address, but also
+on its source address, source interface, protocol type and other similar parameters.
+In many systems (Linux 2.2 being a good example), the kernel allows to enforce routing policies
+by defining routing rules which choose one of several routing tables to be used for a packet
+according to its parameters. Setting of these rules is outside the scope of BIRD's work
+(on Linux, you can use the <CODE>ip</CODE> command), but you can create several routing tables in BIRD,
+connect them to the kernel ones, use filters to control which routes appear in which tables
+and also you can employ the Pipe protocol for exporting a selected subset of one table to
+another one.
+<P>
+<H3>Configuration</H3>
+
+<P>
+<DL>
+<DT><CODE>peer table <I>table</I></CODE><DD><P>Define secondary routing table to connect to. The
+primary one is selected by the <CODE>table</CODE> keyword.
+</DL>
+<P>
+<H3>Attributes</H3>
+
+<P>The Pipe protocol doesn't define any route attributes.
+<P>
+<H3>Example</H3>
+
+<P>Let's consider a router which serves as a boundary router of two different autonomous
+systems, each of them connected to a subset of interfaces of the router, having its own
+exterior connectivity and wishing to use the other AS as a backup connectivity in case
+of outage of its own exterior line.
+<P>
+<P>Probably the simplest solution to this situation is to use two routing tables (we'll
+call them <CODE>as1</CODE> and <CODE>as2</CODE>) and set up kernel routing rules, so that packets having
+arrived from interfaces belonging to the first AS will be routed according to <CODE>as1</CODE>
+and similarly for the second AS. Thus we have split our router to two logical routers,
+each one acting on its own routing table, having its own routing protocols on its own
+interfaces. In order to use the other AS's routes for backup purposes, we can pass
+the routes between the tables through a Pipe protocol while decreasing their preferences
+and correcting their BGP paths to reflect the AS boundary crossing.
+<P>
+<HR>
+<PRE>
+table as1;                              # Define the tables
+table as2;
+
+protocol kernel kern1 {                 # Synchronize them with the kernel
+        table as1;
+        kernel table 1;
+}
+
+protocol kernel kern2 {
+        table as2;
+        kernel table 2;
+}
+
+protocol bgp bgp1 {                     # The outside connections
+        table as1;
+        local as 1;
+        neighbor 192.168.0.1 as 1001;
+        export all;
+        import all;
+}
+
+protocol bgp bgp2 {
+        table as2;
+        local as 2;
+        neighbor 10.0.0.1 as 1002;
+        export all;
+        import all;
+}
+
+protocol pipe {                         # The Pipe
+        table as1;
+        peer table as2;
+        export filter {
+                if net ~ [ 1.0.0.0/8+] then {   # Only AS1 networks
+                        if preference>10 then preference = preference-10;
+                        if source=RTS_BGP then bgp_path.prepend(1);
+                        accept;
+                }
+                reject;
+        };
+        import filter {
+                if net ~ [ 2.0.0.0/8+] then {   # Only AS2 networks
+                        if preference>10 then preference = preference-10;
+                        if source=RTS_BGP then bgp_path.prepend(2);
+                        accept;
+                }
+                reject;
+        };
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.7">6.7</A> <A HREF="bird.html#toc6.7">RIP</A>
+</H2>
+
+<H3>Introduction</H3>
+
+<P>The RIP protocol (also sometimes called Rest In Pieces) is a simple protocol, where each router broadcasts (to all its neighbors)
+distances to all networks it can reach. When a router hears distance to another network, it increments
+it and broadcasts it back. Broadcasts are done in regular intervals. Therefore, if some network goes
+unreachable, routers keep telling each other that its distance is the original distance plus 1 (actually, plus
+interface metric, which is usually one). After some time, the distance reaches infinity (that's 15 in
+RIP) and all routers know that network is unreachable. RIP tries to minimize situations where
+counting to infinity is necessary, because it is slow. Due to infinity being 16, you can't use
+RIP on networks where maximal distance is higher than 15 hosts. You can read more about RIP at 
+<A HREF="http://www.ietf.org/html.charters/rip-charter.html">http://www.ietf.org/html.charters/rip-charter.html</A>. Both IPv4  
+(RFC 1723
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc1723.txt">ftp://ftp.rfc-editor.org/in-notes/rfc1723.txt</A>)
+and IPv6 (RFC 2080
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2080.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2080.txt</A>) versions of RIP are supported by BIRD, historical RIPv1 (RFC 1058
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc1058.txt">ftp://ftp.rfc-editor.org/in-notes/rfc1058.txt</A>)is
+not currently supported. RIPv4 md5 authentication (RFC 2082
+<A HREF="ftp://ftp.rfc-editor.org/in-notes/rfc2082.txt">ftp://ftp.rfc-editor.org/in-notes/rfc2082.txt</A>) is supported.
+<P>
+<P>RIP is a very simple protocol, and it has a lot of shortcomings. Slow
+convergence, big network load and inability to handle larger networks
+makes it pretty much obsolete in IPv4 world. (It is still usable on
+very small networks.) It is widely used in IPv6 networks,
+because there are no good implementations of OSPFv3.
+<P>
+<H3>Configuration</H3>
+
+<P>In addition to options common for all to other protocols, RIP supports the following ones:
+<P>
+<DL>
+<DT><CODE>authentication none|plaintext|md5</CODE><DD><P>selects authentication method to be used. <CODE>none</CODE> means that
+packets are not authenticated at all, <CODE>plaintext</CODE> means that a plaintext password is embedded
+into each packet, and <CODE>md5</CODE> means that packets are authenticated using a md5 cryptographic
+hash. If you set authentication to not-none, it is a good idea to add <CODE>passwords { }</CODE>
+section. Default: none.
+<P>
+<DT><CODE>honor always|neighbor|never </CODE><DD><P>specifies when should requests for dumping routing table
+be honored. (Always, when sent from a  host on a directly connected
+network or never.) Routing table updates are honored only from
+neighbors, that is not configurable. Default: never.
+</DL>
+<P>
+<P>There are two options that can be specified per-interface. First is <CODE>metric</CODE>, with
+default one.  Second is <CODE>mode multicast|broadcast|quiet|nolisten|version1</CODE>, it selects mode for
+rip to work in. If nothing is specified, rip runs in multicast mode. <CODE>version1</CODE> is
+currently equivalent to <CODE>broadcast</CODE>, and it makes RIP talk to a broadcast address even
+through multicast mode is possible. <CODE>quiet</CODE> option means that RIP will not transmit
+any periodic messages to this interface and <CODE>nolisten</CODE> means that RIP will send to this
+interface but not listen to it.
+<P>
+<P>The following options generally override behavior specified in RFC. If you use any of these
+options, BIRD will no longer be RFC-compliant, which means it will not be able to talk to anything
+other than equally configured BIRD. I have warned you.
+<P>
+<DL>
+<DT><CODE>port <I>number</I></CODE><DD><P>selects IP port to operate on, default 520. (This is useful when testing BIRD, if you
+set this to an address &gt;1024, you will not need to run bird with UID==0).
+<P>
+<DT><CODE>infinity <I>number</I></CODE><DD><P>selects the value of infinity, default is 16. Bigger values will make protocol convergence
+even slower.
+<P>
+<DT><CODE>period <I>number</I></CODE><DD><P>specifies the number of seconds between periodic updates. Default is 30 seconds. A lower
+number will mean faster convergence but bigger network
+load. Do not use values lower than 10.
+<P>
+<DT><CODE>timeout time <I>number</I></CODE><DD><P>specifies how old route has to be to be considered unreachable. Default is 4*<CODE>period</CODE>.
+<P>
+<DT><CODE>garbage time <I>number</I></CODE><DD><P>specifies how old route has to be to be discarded. Default is 10*<CODE>period</CODE>.
+</DL>
+<P>
+<H3>Attributes</H3>
+
+<P>RIP defines two route attributes:
+<P>
+<DL>
+<DT><CODE>int <CODE>rip_metric</CODE></CODE><DD><P>RIP metric of the route (ranging from 0 to <CODE>infinity</CODE>).
+When routes from different RIP instances are available and all of them have the same
+preference, BIRD prefers the route with lowest <CODE>rip_metric</CODE>.
+When importing a non-RIP route, the metric defaults to 5.
+<P>
+<DT><CODE>int <CODE>rip_tag</CODE></CODE><DD><P>RIP route tag: a 16-bit number which can be used
+to carry additional information with the route (for example, an originating AS number
+in case of external routes). When importing a non-RIP route, the tag defaults to 0.
+</DL>
+<P>
+<H3>Example</H3>
+
+<P>
+<HR>
+<PRE>
+protocol rip MyRIP_test {
+        debug all;
+        port 1520;
+        period 10;
+        garbage time 60;
+        interface "eth0" { metric 3; mode multicast; }
+                  "eth1" { metric 2; mode broadcast; };
+        honor neighbor;
+        authentication none;
+        import filter { print "importing"; accept; };
+        export filter { print "exporting"; accept; };
+}
+</PRE>
+<HR>
+<P>
+<H2><A NAME="ss6.8">6.8</A> <A HREF="bird.html#toc6.8">Static</A>
+</H2>
+
+<P>The Static protocol doesn't communicate with other routers in the network,
+but instead it allows you to define routes manually. This is often used for
+specifying how to forward packets to parts of the network which don't use
+dynamic routing at all and also for defining sink routes (i.e., those
+telling to return packets as undeliverable if they are in your IP block,
+you don't have any specific destination for them and you don't want to send
+them out through the default route to prevent routing loops).
+<P>
+<P>There are three types of static routes: `classical' routes telling to
+forward packets to a neighboring router, device routes specifying forwarding
+to hosts on a directly connected network and special routes (sink, blackhole
+etc.) which specify a special action to be done instead of forwarding the
+packet.
+<P>
+<P>When the particular destination is not available (the interface is down or
+the next hop of the route is not a neighbor at the moment), Static just
+uninstalls the route from the table it is connected to and adds it again as soon
+as the destination becomes adjacent again.
+<P>
+<P>The Static protocol has no configuration options. Instead, the
+definition of the protocol contains a list of static routes:
+<P>
+<DL>
+<DT><CODE>route <I>prefix</I> via <I>ip</I></CODE><DD><P>Static route through
+a neighboring router.
+<DT><CODE>route <I>prefix</I> via <I>"interface"</I></CODE><DD><P>Static device
+route through an interface to hosts on a directly connected network.
+<DT><CODE>route <I>prefix</I> drop|reject|prohibit</CODE><DD><P>Special routes
+specifying to drop the packet, return it as unreachable or return
+it as administratively prohibited.
+</DL>
+<P>
+<P>Static routes have no specific attributes.
+<P>
+<P>Example static config might look like this:
+<P>
+<P>
+<HR>
+<PRE>
+protocol static {
+        table testable;                  # Connect to a non-default routing table
+        route 0.0.0.0/0 via 62.168.0.13; # Default route
+        route 62.168.0.0/25 reject;      # Sink route
+        route 10.2.0.0/24 via "arc0";    # Secondary network
+}
+</PRE>
+<HR>
+<P>
+<HR>
+<A HREF="bird-7.html">Next</A>
+<A HREF="bird-5.html">Previous</A>
+<A HREF="bird.html#toc6">Contents</A>
+</BODY>
+</HTML>

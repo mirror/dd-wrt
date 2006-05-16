@@ -1,0 +1,2 @@
+  dep_tristate '  TOS match support' CONFIG_IP_NF_MATCH_TOS $CONFIG_IP_NF_IPTABLES
+  dep_tristate '  TIME match support (EXPERIMENTAL)' CONFIG_IP_NF_MATCH_TIME $CONFIG_IP_NF_IPTABLES

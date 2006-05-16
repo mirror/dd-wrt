@@ -1,0 +1,85 @@
+--- userspace/extensions/libipt_REJECT.c.original	2002-06-24 13:34:59.000000000 +0800
++++ userspace/extensions/libipt_REJECT.c	2002-06-21 18:16:29.000000000 +0800
+@@ -6,6 +6,7 @@
+ #include <string.h>
+ #include <stdlib.h>
+ #include <getopt.h>
++#include <netdb.h>
+ #include <iptables.h>
+ #include <linux/netfilter_ipv4/ip_tables.h>
+ #include <linux/netfilter_ipv4/ipt_REJECT.h>
+@@ -52,7 +53,7 @@
+ 	printf("\n");
+ }
+ 
+-/* Saves the union ipt_targinfo in parsable form to stdout. */
++/* Saves the struct ipt_targinfo in parsable form to stdout. */
+ 
+ /* Function which prints out usage message. */
+ static void
+@@ -62,12 +63,16 @@
+ "REJECT options:\n"
+ "--reject-with type              drop input packet and send back\n"
+ "                                a reply packet according to type:\n");
+-
+ 	print_reject_types();
++	printf(
++"--fake-source                   fake the source address with the destination\n"
++"                                address of the matched packet (useful for\n"
++"                                port unreachable ICMP message).\n");
+ }
+ 
+ static struct option opts[] = {
+ 	{ "reject-with", 1, 0, '1' },
++	{ "fake-source", 0, 0, '2' },
+ 	{ 0 }
+ };
+ 
+@@ -79,6 +84,7 @@
+ 
+ 	/* default */
+ 	reject->with = IPT_ICMP_PORT_UNREACHABLE;
++	reject->fake_source_address = 0;  /* by default we don't fake */
+ 
+ 	/* Can't cache this */
+ 	*nfcache |= NFC_UNKNOWN;
+@@ -113,6 +119,21 @@
+ 			fprintf(stderr, "--reject-with echo-reply no longer"
+ 				" supported\n");
+ 		exit_error(PARAMETER_PROBLEM, "unknown reject type `%s'",optarg);
++		if ((reject->fake_source_address != 0) && (reject->with == IPT_TCP_RESET))
++			exit_error(PARAMETER_PROBLEM,
++				"Cannot use fake source address with TCP_RESET for REJECT");
++
++		break;
++	case '2':
++		if (invert)
++			exit_error(PARAMETER_PROBLEM,
++				"unexpected '!' with --fake-source");
++		if (reject->with == IPT_TCP_RESET)
++                        exit_error(PARAMETER_PROBLEM,
++                                "Cannot use fake source address with TCP_RESET for REJECT");
++		reject->fake_source_address = 1;
++		return 1;
++		break;
+ 	default:
+ 		/* Fall through */
+ 		break;
+@@ -140,6 +161,8 @@
+ 			break;
+ 	}
+ 	printf("reject-with %s ", reject_table[i].name);
++	if (reject->fake_source_address != 0)
++                        printf("faked-source ");
+ }
+ 
+ /* Saves ipt_reject in parsable form to stdout. */
+@@ -154,6 +177,8 @@
+ 			break;
+ 
+ 	printf("--reject-with %s ", reject_table[i].name);
++	if (reject->fake_source_address != 0)
++	        printf("--fake-source ");
+ }
+ 
+ static

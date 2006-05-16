@@ -1,0 +1,4 @@
+  if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
+    if [ "$CONFIG_IP_NF_RAW" != "n" ]; then
+      dep_tristate '    NOTRACK target support' CONFIG_IP_NF_TARGET_NOTRACK $CONFIG_IP_NF_FILTER
+    fi

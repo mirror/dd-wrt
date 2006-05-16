@@ -1,0 +1,8 @@
+CONFIG_IP_NF_MATCH_UNCLEAN
+String match support (EXPERIMENTAL)
+CONFIG_IP_NF_MATCH_STRING
+  String matching alows you to match packets which contain a
+  specified string of characters.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

@@ -1,0 +1,20 @@
+#!/bin/sh
+killall -q -9 kaid
+if [ -z "$(nvram get kaid_enable)" ]; then
+    nvram set kaid_enable=0
+    nvram commit
+fi
+if [ "$(nvram get kaid_enable)" = "1" ]; then
+    cp /etc/kaid/kaid.conf /tmp/kaid.conf
+    MACS="ConsoleMacs = $(nvram get kaid_macs)"
+    echo $MACS >> /tmp/kaid.conf
+    if [ "$(nvram get jffs_enable)" = "1" ]; then
+	echo ConfigCache = /jffs/kaiSystemConfig.txt >> /tmp/kaid.conf
+	echo CacheFile = /jffs/kaiEnginePersist.txt >> /tmp/kaid.conf
+    else
+	echo ConfigCache = /tmp/kaiSystemConfig.txt >> /tmp/kaid.conf
+	echo CacheFile = /tmp/kaiEnginePersist.txt >> /tmp/kaid.conf    
+    fi
+    kaid -s -d -c /tmp/kaid.conf
+fi
+

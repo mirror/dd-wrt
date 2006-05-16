@@ -1,0 +1,51 @@
+.TH PLIPCONFIG 8 "6. M\(:arz 1999" "net-tools" "Handbuch f\(:ur Linuxprogrammierer"
+.SH NAME
+plipconfig \- Einstellung von PLIP Schnittstellen-Parametern
+.SH SYNOPSIS
+.B "plipconfig Schnittstelle"
+.br
+.B "plipconfig Schnittstelle [nibble NN] [trigger NN] [unit NN]"
+.SH BESCHREIBUNG
+.B Plipconfig
+wird dazu benutzt um (hoffentlich) durch die Einstellung von Zeitparametern
+des PLIP-Protokolls die Leistung von PLIP zu verbessern.  Die Ergebnisse
+h\(:angen von der verwendeten Parallelporttechnik, dem Kabel und der
+Geschwindigkeit der Rechner auf beiden Seiten der PLIP-Verbindung ab.
+.LP
+Wenn eine einzelne
+.B Schnittstelle
+als Argument gegeben wird, dann zeigt
+.B plipconfig
+nur den Zustand einer bestimmten Schnittstelle an.  Ansonsten wird versucht
+Optionen zu setzen.
+.SH OPTIONEN
+.TP
+.B "nibble NN"
+Setzt die Wartezeit pro Nibble in Microsekunden.  Die Voreinstellung ist
+3000.
+.TP
+.B "trigger NN"
+Setzt die Dauer der Triggerwartezeit in Mikrosekunden.  Voreinstellung ist 500.
+.LP
+Der PLIP-Durchsatz kann in einigen F\(:allen durch die Absenkung der
+voreingestellten Werte verbessert werden.  Zu niedrige Werte k\(:onnen in
+\(:uberh\(:ohter Prozessorbelastung, schlechten Interruptantwortzeit, dem
+dem Verlust von Zeichen auf seriellen Schnittstellen oder PLIP-Paketen
+resultieren.  The \(:Anderung der PLIP MTU kann ebenfalls Auswirkungen auf
+den Durchsatz.
+.SH ANKERKUNG
+Kommen \(:uberhaupt keine Antworten an, so ist es wahrscheinlicher, da\(ss
+der Interrupt falsch eingestellt ist und mit
+.BR ifconfig (8)
+eingestellt werden mu\(ss.  F\(:ur den Fall sehr langer Kabel sind die
+Voreinstellungen zu langsam.  Dies sollte immer vermieden werden, da die
+parallele Schnittstelle zum Treiben von langen Kabeln weder spezifiziert
+noch geeignet ist.
+.SH SIEHE AUCH
+.I ifconfig(8)
+.SH FEHLER
+Keine.
+.SH AUTOREN
+John Paul Morrison, <jmorriso@bogomips.ee.ubc.ca>, <ve7jpm@ve7jpm.ampr.org>
+.SH \(:Ubersetzung
+Ralf B\(:achle <ralf@gnu.org>

@@ -1,0 +1,79 @@
+$Id: INSTALL,v 1.8 2005/03/06 16:58:42 jordan Exp $
+
+Quick start:
+------------
+Type
+
+   make install
+
+which will compile/install the program /usr/local/sbin/shatd.
+Next, run
+
+  shatd --help 2>&1  | less
+
+and read about the options you can use.
+
+By default, the program runs in the foreground and reports
+to the STDERR, ready for running under djb/daemontools.
+
+You can run the program in the foreground while logging
+to syslog. This needed when running the program under init.
+
+At your choice, you may alternatively run the program in
+server mode in the background.
+
+
+Run time control:
+-----------------
+Unless you compiled the source with the DISCARD_CMD_SOCKET
+flag, the shat server can be queried by a command line
+client.  There are several examples available, either
+as binary
+
+    shatc
+
+or as perl script
+
+    shatc.pl, shatooc.pl.
+
+They will not be installed by default. Run
+
+    shatc help
+
+in order to find out what you can do with the command
+line client.
+
+
+TCP/IP port scan protection:
+----------------------------
+Run
+
+   shatd
+
+and shatd will send to nowhere any address request on your local
+address range/collision domain.  Only connnections to the local
+machine where shatd runs are not intercepted.  So, even if a port
+scan may work to some extend, connecting from a machine of your
+local network to another machine is made hard.
+
+Notice: Using static arp settings on your client, the scan
+        protection does not work at all.  This is not really
+        a problem on a site with casual clients.  Usually,
+        you do not register anybody elses MAC address (so you
+        will not set up static arp rules).
+
+
+TCP/IP outside your collision domain:
+-------------------------------------
+Run
+
+  shatd --shat-ip-pool=192.168.10.101+49
+
+and shatd will accept any IP address outside your collision
+domain.  There is room for at most 40 clients.  You will see
+them with the configured pool addresses on the TUN interface
+shat0 (using tcpdump).
+
+--
+Jordan Hrycaj <jordan@mjh.teddy.net.com>
+

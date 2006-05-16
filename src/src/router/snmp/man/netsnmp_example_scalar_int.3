@@ -1,0 +1,26 @@
+.TH "example_scalar_int: instantiates a few example scalars." 3 "6 Mar 2002" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+example_scalar_int: instantiates a few example scalars. \- This example merely creates some scalar registrations that allows some simple variables to be accessed via SNMP. 
+More...
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "void \fBinit_scalar_int\fP (void)"
+.br
+.in -1c
+.SH "DETAILED DESCRIPTION"
+.PP 
+This example merely creates some scalar registrations that allows some simple variables to be accessed via SNMP.
+.PP
+In a more realistic example, it is likely that these variables would also be manipulated in other ways outside of SNMP gets/sets.
+.PP
+If this module is compiled into an agent, you should be able to issue snmp commands that look something like (authentication information not shown in these commands):
+.PP
+snmpget localhost netSnmpExampleInteger.0 netSnmpExampleScalars = 42
+.PP
+snmpset localhost netSnmpExampleInteger.0 = 1234 netSnmpExampleScalars = 1234
+.PP
+snmpget localhost netSnmpExampleInteger.0 netSnmpExampleScalars = 1234 

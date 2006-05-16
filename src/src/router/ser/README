@@ -1,0 +1,114 @@
+$Id: README,v 1.10 2003/01/05 20:14:56 jiri Exp $
+
+
+             iptel.org SIP Express Router (ser)
+                http://www.iptel.org/ser/
+               
+
+
+I.   About SIP Express Router (ser)
+II.  Feature List
+III. About iptel.org
+IV.  Obtaining Help
+V.   Contact, Licencing and More Information
+
+
+ SIP Express Router (SER) is an industrial-strength, free VoIP 
+server based on the session initiation protocol (SIP RFC2543-bis). 
+It is engineered to power IP telephony infrastructures up to large 
+scale. The server keeps track of users, sets up VoIP sessions, 
+relays instant messages and creates space for new plug-in 
+applications. Its proven interoperability guarantees seamless 
+integration with components from other vendors, eliminating the 
+risk of a single-vendor trap. It has successfully participated in 
+various interoperability tests in which it worked with the products 
+of other leading SIP vendors.
+
+The SIP Express Router enables a flexible plug-in model for new 
+applications: Third parties can easily link their plug-ins with 
+the server code and provide thereby advanced and customized 
+services.  In this way, plug-ins such as SNMP support, RADIUS 
+accounting, or SMS gateway have already been developed and are 
+provided as advanced features. Other modules are underway: 
+Presence server, firewall control, and more.
+
+Its performance and robustness allows it to serve millions of users 
+and accommodate needs of very large operators. With a $3000 dual-CPU, 
+the SIP Express Router is able to power IP telephony services in an 
+area as large as the Bay Area during peak hours. Even on an IPAQ PDA, 
+the server withstands 150 calls per second (CPS)! The server has been 
+powering our iptel.org free SIP site withstanding heavy daily load 
+that is further increasing with the popularity of Microsoft's 
+Messenger.  
+
+The SIP Express Router is extremely configurable to allow the creation
+of various routing and admission policies as well as setting up new 
+and customized services. Its configurability allows it to serve many 
+roles: network security barrier, application server, or PSTN gateway 
+guard for example.
+
+
+II. Feature List
+
+Based on the latest standards, the SIP Express Router (SER) includes 
+support for registrar, proxy and redirect mode. Further it acts as 
+an application server with support for CPL, instant messaging and 
+presence (IM&P) including a 2G/SMS gateway, a call control policy 
+language, call number translation, private dial plans and accounting, 
+authorization and authentication (AAA) services. SER runs on Sun/
+Solaris, PC/Linux, IPAQ/Linux platforms and supports  both IPv4 and 
+IPv6.
+
+Most of SER features are implemented as plug-in modules. See
+README-MODULES for a description of modules available in
+ser distribution.
+
+
+III. About iptel.org
+
+iptel.org is a know-how organization spun off from Germany's national 
+research company FhG Fokus. One of the first SIP implementations ever, 
+low-QoS enhancements, interoperability tests and VoIP-capable firewall 
+control concepts are examples of well-known FhG's work.
+
+iptel.org continues to keep this know-how leadership in SIP. 
+The access rate of the company's site, a well-known source of 
+technological information, is a best proof of interest. Thousands 
+of hits come every day from the whole Internet.
+
+IV. Obtaining Help
+
+We offer best-effort free support for ser. "best-effort" means 
+that we try to solve your problems via email as soon as we can, 
+subject to available manpower. If you need commercial support, 
+contact info@iptel.org.
+
+To receive feedback to your inquiries, we recommend you to subscribe 
+to the serusers mailing list and post your queries there. This mailing 
+list is set up for mutual help by the community of ser users and developers. 
+To participate in the mailing list, subscribe at the following web address: 
+         http://mail.iptel.org/mailman/listinfo/serusers.
+Send your questions to 
+         serusers@iptel.org. 
+
+If you are concerned about your privacy and do not wish your queries 
+to be posted and archived publicly, you may post to 
+                  serhelp@iptel.org. 
+E-mails to this address are only forwarded to iptel.org's ser development 
+team. However, as the team is quite busy you should not be surprised to 
+get replies with considerable delay. 
+
+V. Contact, Licensing and More Information
+
+For any additional information, send an inquiry to info@iptel.org. 
+Licensing conditions other than GPL are available on request. 
+
+Most up-to-date information is always available at our website,
+                 http://www.iptel.org/ser/
+
+Particularly, it includes:
+- administrator's guide
+- installation guidelines (INSTALL)
+- download links
+- list of known issues (ISSUES)
+- etc.

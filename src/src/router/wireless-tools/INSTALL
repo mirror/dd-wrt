@@ -1,0 +1,93 @@
+Very important note :
+-------------------
+	This release of the Wireless Tools is not compatible with
+Wireless Extensions earlier than 9. Version 9 and 10 should work fine
+but are not recommended. Version 8 and earlier will not work.
+	Kernels that support this version of the Wireless Tools are
+listed below. For all kernels before that, see at the end.
+
+You need :
+--------
+	o Compiler and development environment
+	o A kernel supporting wireless extensions version 11 or higher
+		-> from 2.4.4 onward (including 2.6.X)
+		Note : CONFIG_NET_RADIO must be enabled
+	o (Optional) A Pcmcia package supporting Wireless Extension
+	o A driver supporting wireless extensions
+		-> Check my web pages for status of various drivers.
+	Note : more recent kernels and drivers are likely to support
+		more wireless extension features...
+
+Compile wireless tools :
+----------------------
+	In theory, a "make" should suffice to create the tools.
+
+Installation :
+------------
+	"make install" should do the right thing for you, and install
+the tools, their library and the man pages. You can also uninstall the
+tools via "make uninstall".
+	Note that the default installation is in the directory
+'/usr/local/sbin'. This may not be in your path. Also, other version
+of the tools may exist on the system, so double check which version is
+the default and adjust your path as necessary.
+
+Create a local copy of the tools :
+--------------------------------
+	By default, the package is built with iwlib as a dynamic
+library, and the tool will expect to use the default version of libiw
+on the system.
+	If you just want to experiment with a "local" version of the
+tools, you may want to pass the BUILD_STATIC flag to Makefile. It will
+create a self contained version of the tools.
+-------------
+make clean
+make BUILD_STATIC='y'
+-------------
+	The resulting binary can be used in the compilation directory
+or installed in any place you like.
+
+Wireless headers (past history) :
+-------------------------------
+	Previous version of the Wireless Tools had to be compiled with
+the same version of Wireless Extension that the kernel was using, and
+that was a major source of troubles.
+	Starting with version 27, Wireless Tools include all the ugly
+code to deal with any version of Wireless Extensions, so now you can
+compile a single "generic" version of the tools for any kernel.
+	Well, there are some limits, Wireless Extensions earlier than
+v11 are not supported (v9 and v10 should work fine), and versions
+later than the latest definition in the package are not
+supported. Once compile, the command "iwconfig --version" should tell
+you that.
+	Note that the previous option to make versioned installed of
+the tools no longer make sense and therefore is gone.
+
+Other useful Makefile options :
+-----------------------------
+	PREFIX : where the tools will be installed (default : /usr/local)
+	BUILD_STATIC : build tools with a static version of the wireless lib
+	BUILD_NOLIBM : build tools without mathematical lib (slower)
+	Note that you should pass the same command line options for
+all invocations of make ("make" and "make install").
+
+	If you want the absolute minimal footprint, you may want to
+look into the multicall version of the tools. You can build it with
+"make iwmulticall" and install it with "make install-iwmulticall".
+
+Old kernel with older Wireless Extensions :
+-----------------------------------------
+	Kernel prior to 2.2.14 : Those kernels include Wireless
+Extensions v8 or earlier. Those versions don't have proper support for
+802.11b, so are not very useful. You may want to consider upgrading.
+	Kernel 2.2.19 to 2.2.25 : Those kernels include Wireless
+Extensions v10. The tools should mostly work with it, but many drivers
+won't. You can upgrade those kernel to WE v15 with a patch on my web
+page.
+	Kernel 2.2.14 to 2.2.18 : Those kernels include Wireless
+Extensions v9. Same as above, you may want to upgrade to a later 2.2.X
+kernel and then apply the patch.
+	Kernel 2.0.X : Those kernels include very old version of
+Wireless Extensions. Same deal as old 2.2.X kernels.
+
+	Jean <jt@hpl.hp.com>

@@ -1,0 +1,17 @@
+Release Notes for the Linux Kernel CryptoAPI
+--------------------------------------------
+
+  - If you were using an old version of the cipher-blowfish module, it
+    could have been an old mutated endianness version, in which case you'll
+    also need to build the cipher-blowfish_old module and transitition to
+    the new version of the cipher.
+
+  - 'des_ede3' has been renamed to '3des'.
+
+  - cryptoloop has been separated into its own package
+
+  - 2.5.x kernels require manual patching (see README about how to 
+    accomplish that)
+
+--
+$Id: RELEASE.NOTES,v 1.1.2.1 2004/05/23 12:29:03 nikki Exp $

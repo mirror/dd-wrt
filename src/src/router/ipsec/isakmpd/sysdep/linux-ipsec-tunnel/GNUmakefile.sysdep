@@ -1,0 +1,69 @@
+ifndef KERNEL_SOURCE
+KERNEL_SOURCE=	`pwd`/../../../linux/linux
+endif
+
+ifndef IPSEC_TUNNEL_SOURCE
+IPSEC_TUNNEL_SOURCE=`pwd`/../ipsec_tunnel-0.9
+endif
+
+PREFIX=		/tmp
+BINDIR=		$(PREFIX)/sbin
+INSTALL=	/usr/bin/install
+# Partly good for RedHat 5.2, but man(1) does not find them so I have it
+# disabled for now.
+MANDIR=		$(PREFIX)/man
+MAN5=		isakmpd.conf.5
+MAN8=		isakmpd.8
+NOMAN=
+
+LDSTATIC=
+#LDFLAGS+= -s
+LIBCRYPTO= # -L/mnt/video/sveasoft/src/router/openssl -lcrypto
+LIBGMP= # /usr/lib/libgmp.a
+LIBSYSDEPDIR=	${.CURDIR}/sysdep/common/libsysdep
+LIBSYSDEP=	${LIBSYSDEPDIR}/libsysdep.a
+
+#FEATURES=	aes tripledes blowfish twofish ec aggressive debug x509 policy
+FEATURES=	tripledes ec aggressive 
+
+SRCS+=		ipsec_tunnel.c strlcpy.c strlcat.c
+
+LDADD+=		${LIBSYSDEP} ${LIBGMP} ${LIBCRYPTO} -ldl 
+DPADD+=		${LIBSYSDEP} ${LIBGMP} ${LIBCRYPTO}
+
+CFLAGS+=	-I${KERNEL_SOURCE}/include -DUSE_OLD_SOCKADDR -DNEED_SYSDEP_APP \
+		-I${.CURDIR}/sysdep/common -DSYMBOL_PREFIX='"_"' \
+		-I${IPSEC_TUNNEL_SOURCE}/util/ipsecadm -I${.CURDIR}/sysdep/linux-ipsec-tunnel \
+		-I`pwd`/../../openssl/include/openssl \
+		-I`pwd`/../../openssl/include 
+
+#CFLAGS+=        -DMP_FLAVOUR=MP_FLAVOUR_GMP
+CFLAGS+=  -DMP_FLAVOUR=MP_FLAVOUR_OPENSSL
+CFLAGS+=	-DHAVE_PCAP
+
+# old cryptoapi versions define des_ede3 instead of 3des
+#CFLAGS+=	-DIPSEC_CRYPTOAPI_DES_EDE3_CBC='"des_ede3"' 
+
+USE_LIBCRYPTO=	defined
+#USE_GMP=	defined
+HAVE_DLOPEN=	defined
+#USE_KEYNOTE=	defined
+
+${LIBSYSDEP}:
+	${MAKE} -C ${LIBSYSDEPDIR} CFLAGS="${CFLAGS}" MKDEP="${MKDEP}"
+#
+#	cd ${LIBSYSDEPDIR}; \
+#		${MAKE} --no-print-directory ${MAKEFLAGS} CFLAGS="${CFLAGS}" MKDEP="${MKDEP}"
+
+ifneq ($(findstring install,$(MAKECMDGOALS)),install)
+SUBDIR+=	sysdep/common/libsysdep
+# The regress/ subdir is completely broken in the linux environment
+SUBDIR:=	$(filter-out regress,${SUBDIR})
+endif
+
+# linux don't support the obj target, so let's provide an install option ;) 	
+install:
+	mkdir -p $(BINDIR) $(MANDIR)/man5 $(MANDIR)/man8
+	$(INSTALL) -s $(PROG) $(BINDIR)
+	$(INSTALL) $(MAN5) $(MANDIR)/man5/
+	$(INSTALL) $(MAN8) $(MANDIR)/man8/

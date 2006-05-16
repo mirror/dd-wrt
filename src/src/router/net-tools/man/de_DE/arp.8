@@ -1,0 +1,185 @@
+.TH ARP 8 "6. M\(:arz 1999" "net-tools" "Handbuch f\(:ur Linuxprogrammierer"
+.SH NAME
+arp \- Manipulation des ARP-Caches
+.SH SYNOPSIS
+.B arp 
+.RB [ \-vn ] 
+.RB [ "\-H Typ" ] 
+.RB [ "-i Schnittstelle" ] 
+.B -a 
+.RB [ Rechnername ]
+.PP
+.B arp 
+.RB [ \-v ]
+.RB [ "\-i if" ] 
+.B "\-d Rechnername"
+.RB [ pub ]
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H Typ" ] 
+.RB [ "\-i Schnittstelle" ] 
+.B -s Rechnername hw_adr
+.RB [ temp ] 
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H Typ" ] 
+.RB [ "\-i Interface" ] 
+.B -s Rechnername hw_adr
+.RB [ "netmask nm" ] 
+.B pub
+.PP
+.B arp 
+.RB [ \-v ] 
+.RB [ "\-H Typ" ] 
+.RB [ "\-i Schnittstelle" ] 
+.B -Ds Rechnername ifa
+.RB [ "netmask nm" ] 
+.B pub
+.PP
+.B arp 
+.RB [ \-vnD ]
+.RB [ "\-H Typ" ] 
+.RB [ "-i Schnittstelle" ]
+.B -f [Dateiname]
+
+.SH BESCHREIBUNG
+.B Arp
+kann den ARP-Cache des Kernels auf verschiedene Arten manipulieren.  Die
+haupts\(:achliche Verwendung ist es Adresszuordnungseintr\(:age zu
+l\(:oschen und von Hand neue zu erzeugen.  Zum Zweck der Fehlersuche ist
+moeglich mit dem
+.B arp
+Programm den Inhalt des ARP-Caches vollst\(:andig auszugeben.
+.SH OPTIONEN
+.TP
+.B "\-v, \-\-verbose"
+Ausf\(:uhrlichere Ausgaben.
+.TP
+.B "\-n, \-\-numeric"
+macht numerische Adressausgaben anstatt zu versuche, den symbolischen Rechner-,
+Port- oder Benutzernamen zu ermitteln.
+.TP
+.B "\-H type, \-\-hw-type type"
+Beim Setzen oder Auslesen des ARP-Caches schr\(:ankt diese Option
+ein, auf welcher Klasse von Eintr\(:agen 
+.B arp
+operieren soll.  Der Standardwert dieses Arguments ist
+.B ether
+(d.h. Hardwarecode 0x01 f\(:ur IEEE 802.3 10Mbps Ethernet).
+Andere m\(:ogliche Werte sind Netzwerkstechnologien so wie z.B.
+.RB "ARCnet (" arcnet ")"
+,
+.RB "PROnet (" pronet ")"
+,
+.RB "AX.25 (" ax25 ")"
+and
+.RB "NET/ROM (" netrom ")."
+.TP
+.B "\-a [Rechnername], \-\-display [Rechnername]"
+Zeigt die Eintr\(:age der angegebenen Rechner an.  Wird kein
+.B hostname
+Argument verwendet, so werden alle Eintr\(:age aufgelistet.
+.TP
+.B "\-d Rechnername, \-\-delete Rechnername"
+Alle Eintr\(:age f\(:ur den angegebenen Host entfernen.  Dies kann z.B.
+benutzt werden, wenn ein System angehalten wird.
+.TP
+.B "\-D, \-\-use-device"
+Die Hardwareadresse der Netzwerksschnittstelle
+.B ifa
+verwenden.
+.TP
+.B "\-i If, \-\-device Schnittstelle"
+Eine Netzwerksschnittstelle ausw\(:ahlen.  Es werden nur Eintr\(:age
+f\(:ur die angegebene Schnittstelle ausgedruckt.  Beim Setzen von von
+permanenten oder tempor\(:aren Eintr\(:agen wird diese Schnittstelle mit
+dem Eintrag assoziiert.  Wird diese Option nicht verwendet, so versucht der
+Kernel auf Basis der Routentabelle eine Schnittstelle auszuw\(:ahlen.  F\(:ur
+.B pub
+Eintr\(:age ist die angegebene Schnittstelle diejenige, auf der ARP-Anfragen
+beantwortet werden.
+.br
+.B ANMERKUNG:
+Diese Schnittstelle mu\(ss eine andere sein als die, auf die die IP-Datagramme
+weitergeleitet werden.
+.TP
+.B "\-s Rechnername hw_addr, \-\-set Rechnername"
+Erzeugt manuel einen ARP Adresseintrag f\(:ur den Rechner
+.B Rechnername
+in dem die Hardwareadresse auf
+.B hw_addr
+gesetzt ist.  Das genaue Format der Hardwareadresse ist abh\(:angig von der
+Hardwareklasse aber f\(:ur die meisten Klassen kann man davon ausgehen, da\(ss
+die \(:ubliche Darstellung verwendet wird.  F\(:ur die Ethernetklasse sind
+dies sechs hexadezimale, von Doppelpunkten getrennte Bytes.  Beim Zuf\(:ugen
+von Proxy-ARP-Entr\(:agen (das sind die mit der gesetzten
+.BR pub lizieren
+Flagge) kann
+.B Netmaske
+f\(:ur ARP-Eintr\(:age f\(:ur ganze Subnetze angegeben werde.  Von dieser
+Praxis wird abgeraten.  Sie wird von \(:alteren Kerneln unterst\(:utzt, da
+sie gelegentlich n\(:utzlich ist.  Wird die
+If the
+.B temp
+Flagge nicht angegeben, so werden die erzeugten Eintr\(:age nicht dauerhaft
+in den ARP-Cache eingetragen.
+.br
+.B ANMERKUNG:
+Ab der Kernelversion 2.2.0 ist es nicht mehr m\(:oglich ARP-Eintr\(:age f\(:ur
+ganze Teilnetze zu erzeugen. Statt dessen wird automatisches Proxy ARP
+durchgef\(:uhrt, d.h. wenn eine Route existiert und Forwarding eingeschaltet
+ist wird automatisch ein tempor\(:arer Proxyarpeintrag erzeugt. 
+Siehe auch
+.BR arp (7)
+f\(:ur mehr Details.
+.TP
+.B "\-f Dateiname, \-\-file Dateiname"
+\(:Ahnlich der
+.B \-s
+Option, au\(sser, da\(ss diesmal die Adressinformation aus der Datei
+.B Dateiname
+verwendet wird.  Dies kann verwendet werden, wenn ARP-Eintr\(:age f\(:ur
+etliche Rechner erzeugt werden m\(:ussen.  Der Name dieser Datei ist oft
+.IR /etc/ethers , 
+aber dies ist nicht offizieil standardisiert. Wenn kein Dateinamen 
+angeben ist wird /etc/ethers benutzt.
+.sp 1
+Das Format der Datei ist einfach; es enth\(:alt nur ASCII-Textzeilen, die
+aus einem Rechnernamen und einer Hardwareadresse getrennt von einem
+Zwischenraum bestehen.  Zus\(:atzlich k\(:onnen die Flaggen
+.BR "pub" , " temp" " and" " netmask"
+angegeben werden.
+.LP
+\(:Uberall, wo
+.B Rechnername
+erwartet wird, kann auch eine
+.B "IP-Adresse"
+in Form eines durch Punkte getrennten Dezimalquadrupels angegeben werden.
+.P
+Aus Kompatiblit\(:atsgr\(:unden k\(:onnen Rechnername und die 
+Hardwareadresse auch vertauscht werden.
+.LP 
+Jeder vollst\(:andige Eintrag wird im ARP-Cache mit der
+.B C
+Flagge markiert. Permanente Eintr\(:age werden mit
+.B M
+und zu publizierende Eintr\(:age mit der 
+.B P
+Flagge.
+.SH DATEIEN
+.I /proc/net/arp,
+.br
+.I /etc/networks
+.br
+.I /etc/hosts
+.br
+.I /etc/ethers
+.SH SIEHE AUCH
+ethers(5), rarp(8), route(8), ifconfig(8), netstat(8)
+.SH AUTOREN
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org> mit vielen Verbesserungen vom
+Verwalter der Net-Tools Bernd Eckenfels <net-tools@lina.inka.de>.
+.SH \(:Ubersetzung
+Ralf B\(:achle <ralf@gnu.org>

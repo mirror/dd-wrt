@@ -1,0 +1,93 @@
+#!/bin/sh
+#
+# Startup script for the DNS caching server
+#
+# chkconfig: 2345 99 01
+# description: This script starts your DNS caching server
+# processname: dnsmasq
+# pidfile: /var/run/dnsmasq.pid
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+dnsmasq=/usr/sbin/dnsmasq
+[ -f $dnsmasq ] || exit 0
+
+# change this line if you want dnsmasq to serve an MX record for 
+# the host it is running on. 
+MAILHOSTNAME=""
+# change this line if you want dns to get its upstream servers from
+# somewhere other that /etc/resolv.conf 
+RESOLV_CONF=""
+# change this if you want dnsmasq to cache any "hostname" or "client-hostname" from
+# a dhcpd's lease file
+DHCP_LEASE="/var/lib/dhcp/dhcpd.leases"
+DOMAIN_SUFFIX=`dnsdomainname`
+
+OPTIONS=""
+
+if [ ! -z "${MAILHOSTNAME}" ]; then
+  OPTIONS="$OPTIONS -m $MAILHOSTNAME"
+fi
+
+if [ ! -z "${RESOLV_CONF}" ]; then
+  OPTIONS="$OPTIONS -r $RESOLV_CONF"
+fi
+
+if [ ! -z "${DHCP_LEASE}" ]; then
+  OPTIONS="$OPTIONS -l $DHCP_LEASE"
+fi
+
+if [ ! -z "${DOMAIN_SUFFIX}" ]; then
+  OPTIONS="$OPTIONS -s $DOMAIN_SUFFIX"
+fi
+
+RETVAL=0
+
+# See how we were called.
+case "$1" in
+  start)
+        echo -n "Starting dnsmasq: "
+        daemon $dnsmasq $OPTIONS
+	RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && touch /var/lock/subsys/dnsmasq
+        ;;
+  stop)
+        if test "x`pidof dnsmasq`" != x; then
+            echo -n "Shutting down dnsmasq: "
+            killproc dnsmasq
+        fi
+	RETVAL=$?
+        echo
+        [ $RETVAL -eq 0 ] && rm -f /var/lock/subsys/dnsmasq /var/run/dnsmasq.pid
+        ;;
+  status)
+	status dnsmasq
+	RETVAL=$?
+	;;
+  restart|reload)
+	$0 stop
+	$0 start
+	RETVAL=$?
+	;;
+  condrestart)
+	    if test "x`/sbin/pidof dnsmasq`" != x; then
+		$0 stop
+		$0 start
+		RETVAL=$?
+	    fi
+	    ;;
+  *)
+        echo "Usage: $0 {start|stop|restart|reload|condrestart|status}"
+        exit 1
+esac
+
+exit $RETVAL
+

@@ -1,0 +1,3 @@
+lib/libuuid*
+usr/bin/uuidgen
+usr/share/man/man1/uuidgen.1*

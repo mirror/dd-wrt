@@ -1,0 +1,18 @@
+--- linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_pptp.c.orig	Mon Jun  3 21:34:19 2002
++++ linux-2.4.19-pre9/net/ipv4/netfilter/ip_conntrack_pptp.c	Mon Jun  3 21:48:38 2002
+@@ -107,11 +107,13 @@
+ 		if (!exp->sibling)
+ 			continue;
+ 
+-		DEBUGP("setting timeout of conntrack %p to 0\n",
++		DEBUGP("killing conntrack %p\n",
+ 			exp->sibling);
+ 		exp->sibling->proto.gre.timeout = 0;
+ 		exp->sibling->proto.gre.stream_timeout = 0;
+-		ip_ct_refresh(exp->sibling, 0);
++
++		if (del_timer(&exp->sibling->timeout))
++			ip_ct_death_by_timeout((unsigned long)exp->sibling);
+ 	}
+ 
+ 	return 0;

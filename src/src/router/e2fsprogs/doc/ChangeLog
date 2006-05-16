@@ -1,0 +1,188 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-01-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Fix the kernel compile-time echo commands to be
+		consistent and portable
+
+2005-01-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* libblkid.txt: Fix minor typo's --- thanks to Mike Castle
+		(dalgoda at ix.netcom.com) for pointing them out --- and
+		clarify the text describing blkid_put_cache().
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in (install-doc-libs): Use $(MKINSTALLDIRS) macro
+		Use Linux-kernel-style makefile output for "make install"
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-07-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* libblkid.txt: Clarify documentation file
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-03-06  Theodore Tso  <tytso@mit.edu>
+
+	* Makefile.in: Don't bomb out if makeinfo or texinfo aren't
+		present.  They aren't on all systems.
+
+2003-03-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* libblkid.txt (token): New file which gives basic
+		documentation to the libblkid library.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2002-10-13  Theodore Ts'o  <tytso@mit.edu>
+
+	* libext2fs.texinfo: Add extra spaceing so that the info directory
+		looks OK on Openwall. 
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-12-11  Theodore Tso  <tytso@valinux.com>
+
+	* Add new descriptions for the following functions: 
+		ext2fs_block_iterate, ext2fs_block_iterate2,
+		ext2fs_read_dir_block, ext2fs_write_dir_block,
+		ext2fs_new_dir_block, ext2fs_dir_iterate, ext2fs_mkdir, 
+		ext2fs_expand_dir, ext2fs_link, ext2fs_unlink,
+		ext2fs_clear_block_bitmap, ext2fs_set_block_bitmap,
+		ext2fs_group_of_blk, ext2fs_group_of_ino.
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-30  Theodore Tso  <tytso@valinux.com>
+
+	* libext2fs.texinfo: Remove texinfo warnings by adding white space
+		after the function name and before the open parenthesis.
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-06-27  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in: Don't predefine RM; it's defined by MCONFIG
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-05-20  Theodore Tso  <tytso@valinux.com>
+
+	* libext2fs.texinfo: Added @dircategory line so that Debian
+		programs know which section to list the .info file.
+
+2001-01-11    <tytso@snap.thunk.org>
+
+	* libext2fs.texinfo: Change ino_t to ext2_ino_t
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-07-18  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.15
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-07-04  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* libext2fs.texinfo: Update definition of ext2fs_block_iterate2.
+
+1998-03-30  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (install-doc-libs): Remove libext2fs.info*, not just
+		libext2fs.info*.gz.  Add an uninstall-doc-libs target.

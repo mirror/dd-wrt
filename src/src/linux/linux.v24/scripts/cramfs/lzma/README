@@ -1,0 +1,33 @@
+This directory contains some source files from the
+7z archive utility. (www.7-zip.org)
+
+All the files in this directory was originally released
+with the LGPL license.
+
+Modifications
+Copyright (C) 2002 Andrea Mazzoleni
+Copyright (C) 2003 Martin Ankerl
+
+
+1. build it:
+    g++ -O3 *.cc -o lzma
+
+2. compress:
+   to compress an existing file:
+
+     lzma <file >file.lzma
+
+   to create a tar and compress it:
+
+     tar c ~/testdir | lzma > out.tar.lzma
+
+
+3. decompress:
+   to decompress an existing file:
+
+     lzma d <file.lzma >file
+
+   to extract a lzma tar file:
+
+     lzma d <out.tar.lzma | tar x
+

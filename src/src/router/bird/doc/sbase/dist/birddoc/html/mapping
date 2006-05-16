@@ -1,0 +1,454 @@
+
+% Converts qwertz files to html files ready for fixref and html2html.
+%
+% This file is R-Rated because of uglyness.
+%
+% -Magnus <magnus@ii.uib.no>
+
+<qwertz>
+</qwertz>	+	"<@@enddoc>"		+
+
+<article>
+</article>	+	"<@@enddoc>"		+
+
+<report>
+</report>	+	"<@@enddoc>"		+
+
+<book>
+</book>		+	"<@@enddoc>"		+
+
+<notes>
+</notes>	+	"<@@enddoc>"		+
+
+% Manual Pages are expected to be formatted using nroff (or groff), unless
+% they are included  as sections of other qwertz documents.  
+
+<manpage>
+</manpage>
+
+<progdoc>
+</progdoc>
+
+<titlepag>
+</titlepag>
+
+<title>		+	"<@@title>"
+</title>
+
+<subtitle>	+	"<H2>"	
+</subtitle>		"</H2>"			+
+
+<author>
+</author>
+
+<name>		+	"<H2>"
+</name>			"</H2>"
+
+<and>			" and "
+</and>
+
+<thanks>	+	"Thanks "
+</thanks>		
+
+<inst>		+	"<H3>"
+</inst>			"</H3>"			+
+
+<newline>		"<BR>"
+	
+<label>		+	"<@@label>[ID]"		+
+	
+<header>	
+</header>	
+
+<lhead>		+	"<!-- "
+</lhead>		" -->"			+			
+
+<rhead>		+	"<!-- "
+</rhead>		" -->"			+
+
+<comment>	+	"<H4>Comment</H4>"	+
+</comment>		
+
+<abstract>	+	"<P><HR>\n<EM>"
+</abstract>		"</EM>\n<HR>"		+
+
+<appendix>	+	"<H2>Appendix</H2>"	+
+</appendix>
+
+<toc>
+</toc>
+
+<lof>
+</lof>
+
+<lot>
+</lot>
+
+<chapt>		+	"<@@chapt>"
+</chapt>	+	"<@@endchapt>"		+
+
+<sect>		+	"<@@sect>"
+</sect>		+	"<@@endsect>"		+
+
+<sect1>		+	"<@@ssect>"
+</sect1> 	+	"<@@endssect>"		+
+
+<sect2>		+	"<@@head>"
+</sect2>
+
+<sect3>		+	"<@@head>"
+</sect3>
+
+<sect4>		+	"<@@head>"		
+</sect4>
+
+<heading>
+</heading>	+	"<@@endhead>" 		+
+
+<p>			"<P>"
+</p>			""			+
+
+<hrule>			"<HR>"
+
+<itemize>	+	"<UL>"		+
+</itemize>	+	"</UL>"		+
+
+<enum>		+	"<OL>"		+
+</enum>		+	"</OL>"		+
+
+<descrip>	+	"<DL>"		+
+</descrip>	+	"</DL>"		+
+
+<item>		+	"<LI>"
+</item>			"</LI>"		+
+
+<tag>			"<DT><CODE>"
+</tag>			"</CODE><DD>"
+
+<tagp>			"<DT>"
+</tagp>			"<DD>"
+
+<cite>			"[<I>[ID]</I>]"
+</cite>
+
+<ncite>			"[<I>[NOTE] ([ID])</I>]"
+</ncite>
+
+<footnote>	+	"<BLOCKQUOTE>"
+</footnote>		"</BLOCKQUOTE>"		+
+
+<sq>			"\""
+</sq>			"\""
+
+<lq>		+	"<LQ>"			+
+</lq>		+	"</LQ>"			+
+
+<em>		 	"<EM>"
+</em>			"</EM>"
+
+<bf>			"<B>"
+</bf>			"</B>"
+
+<it>			"<I>"
+</it>			"</I>"
+
+<sf>			"<SF>"
+</sf>			"</SF>"
+
+<sl>			"<I>"
+</sl>			"</I>"
+
+<tt>			"<CODE>"
+</tt>			"</CODE>"
+
+<cf>			"<CODE>"
+</cf>			"</CODE>"
+
+<m>			"<I>"
+</m>			"</I>"
+
+<const>			"<I>"
+</const>		"</I>"
+
+<func>			"<B>"
+</func>			"</B>"
+
+<struct>		"<I>"
+</struct>		"</I>"
+
+<param>			"<B>"
+</param>		"</B>"
+
+<type>			"<I>"
+</type>			"</I>"
+
+<funcdef>		"<B>"
+</funcdef>		"</B>"
+
+<function>		"<HR><H3>Function</H3>\n"
+</function>		"\n"
+
+<funcsect>		"<H3>"
+</funcsect>		"</H3>\n"
+
+% url support by HG
+
+<url>		+	"<@@url>[URL]\n"
+			"[NAME]</A>\n"
+			"<@@endurl>"		+
+</url>
+
+<htmlurl>	+	"<@@url>[URL]\n"
+			"[NAME]</A>\n"
+			"<@@endurl>"		+
+</htmlurl>
+
+% ref modified to have an optional name field 
+<ref>		+	"<@@ref>[ID]\n"
+			"[NAME]</A>\n"
+			"<@@endref>"		+
+</ref>
+
+<href>		+	"<@@ref>[ID]"		+
+</href>
+
+<pageref>	+	"<@@ref>[ID]"		+
+</pageref>
+
+<nidx>		+	"<!--" +
+</nidx>		+	"-->"  +
+
+<ncdx>		+	"<!--" +
+</ncdx>		+	"-->"  +
+
+<x>
+</x>
+
+<mc>			"<MC>"
+</mc>			"</MC>"
+
+<biblio>	+	"<BIBLIO STYLE=\"[STYLE]\" FILES=\"[FILES]\">" +
+</biblio>	
+
+<code>		+	"<HR>\n<PRE>"		+
+</code>		+	"</PRE>\n<HR>"		+
+
+<verb>		+	"<PRE>"		+
+</verb>		+	"</PRE>"		+
+
+<tscreen>	+	"<BLOCKQUOTE><CODE>"	+
+</tscreen>	+	"</CODE></BLOCKQUOTE>"	+
+
+<quote>         +       "<BLOCKQUOTE>"  +
+</quote>        +       "</BLOCKQUOTE>" +
+
+% theorems and such
+
+<def>		+	"<DEF>"			
+</def>		+	"</DEF>"		+
+
+<prop>		+	"<PROP>"		
+</prop>		+	"</PROP>"		+
+
+<lemma>		+	"<LEMMA>"		
+</lemma>	+	"</LEMMA>"		+
+
+<coroll>	+	"<COROLL>"		
+</coroll>	+	"</COROLL>"		+
+
+<proof>		+	"<PROOF>"		
+</proof>	+	"</PROOF>"		+
+
+<theorem>	+	"<THEOREM>"		
+</theorem>	+	"</THEOREM>"		+
+
+<thtag>			"<THTAG>"
+</thtag>		"</THTAG>"
+
+% mathematics 
+
+<f>
+</f>
+
+<dm>		+	"<DM>"			+
+</dm>		+	"</DM>"  +
+
+<eq>		+	"<EQ>"			+
+</eq>		+	"</EQ>"			+
+
+<fr>			"<FR>"
+</fr>			"</FR>"
+
+<nu>			"<NU>"
+</nu>			"</NU>"
+
+<de>			"<DE>"
+</de>			"</DE>"
+
+<lim>			"<LIM>"
+</lim>			"</LIM>"
+
+<op>			"<OP>"
+</op>			"</OP>"
+
+<ll>			"<LL>"
+</ll>			"</LL>"
+
+<ul>			"<UL>"
+</ul>			"</UL>"
+
+<opd>			"<OPD>"
+</opd>			"</OPD>"
+
+<pr>			"<PR>"
+</pr>			"</PR>"
+
+<in>			"<INT>"
+</in>			"</INT>"
+
+<sum>			"<SUM>"
+</sum>			"</SUM>"
+
+<root>			"<ROOT>"
+</root>			"</ROOT>"
+
+<ar>			"<AR>"
+</ar>			"</AR>"
+
+<arr>                   "<ARR>" 
+</arr>			
+
+<arc>                   "<ARC>"
+</arc>		
+
+<sup>			"<SUP>"
+</sup>			"</SUP>"
+
+<inf>			"<SUB>"
+</inf>			"</SUB>"
+
+<unl>			"<UNL>"
+</unl>			"</UNL>"
+
+<ovl>			"<OVL>"
+</ovl>			"</OVL>"
+
+<rf>			"<RF>"
+</rf>			"</RF>"
+
+<v>			"<V>"
+</v>			"</V>"
+
+<fi>			"<FI>"
+</fi>			"</FI>"
+
+<phr>			"<PHR>"
+</phr>			"</PHR>"
+
+<tu>			"<TU>"
+</tu>
+
+% figures
+
+<figure>	+	"<FIGURE>"			+
+</figure>	+	"</FIGURE>"			+
+
+<eps>		+   	"<EPS FILE=\"[FILE]\">"  +
+</eps>                	
+            	
+<img>		+	"<IMG SRC=\"[SRC]\">"	+
+</img>
+
+<ph>		+	"<PH VSPACE=\"[VSPACE]\">"	+
+</ph>	
+
+<caption>	+	"<CAPTION>"
+</caption>		"</CAPTION>" 	+
+
+% tables
+
+<table>		+ 	"<CENTER><TABLE BORDER><TR><TD>\n"	+
+</table>	+	"</TD></TR></TABLE></CENTER>\n"		+
+
+<tabular>	+	"<BR>\n"		+
+</tabular>	+	"\n"			+
+
+<rowsep>		"</TD></TR><TR><TD>"		+
+</rowsep>
+
+<colsep>		"</TD><TD>"
+</colsep>
+
+<hline>		+	""	+
+</hline>
+
+% slides
+
+<slides>	+ 	"<SLIDES>"	+
+</slides>	+	"</SLIDES>"	+
+
+<slide>		+	"<SLIDE>"	+
+</slide>	+	"</SLIDE>"	+
+
+% letters
+
+
+<letter>	+	"<LETTER OPTS=\"[OPTS]\">"	+
+</letter>	+	"</LETTER>"		+
+
+<telefax>	+	"<TELEFAX OPTS=\"[OPTS]\">"	+
+</telefax>	+	"</TELEFAX>"			+
+
+<opening>	+  	"<OPENING>"
+</opening>		"</OPENING>"		+
+
+
+<from>		+	"<FROM>"			
+</from>		+	"</FROM>"	+
+
+
+<to>		+	"<TO>"
+
+</to>		+	"</TO>"		+
+
+% first end definition of name
+
+<address>	+	"<ADDRESS>"	+
+</address>	+	"</ADDRESS>"	+
+
+<email>		+	"<EMAIL>"
+</email>		"</EMAIL>"	+
+
+<phone>		+	"<PHONE>"	
+</phone>		"</PHONE>"	+
+
+
+<fax>		+	"<FAX>"
+</fax>			"</FAX>"	+
+
+<subject>	+	"<SUBJECT>"
+</subject>		"</SUBJECT>"	+
+
+
+<sref>		+	"<SREF>"	
+</sref>			"</SREF>"	+
+
+<rref>		+	"<RREF>"	
+</rref>			"</RREF>"	+
+
+<rdate>		+	"<RDATE>"
+</rdate>		"</RDATE>"	+
+
+<closing>	+	"<CLOSING>"	
+</closing>		"</CLOSING>"	+
+
+<cc>		+	"<CC>"
+</cc>			"</CC>"		+
+
+<encl>		+	"<ENCL>"
+</encl>			"</ENCL>"	+
+
+<ps>		+	"<PS>"		+
+</ps>		+	"</PS>"		+
+
+% end of html replacement file

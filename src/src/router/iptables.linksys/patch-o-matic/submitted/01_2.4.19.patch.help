@@ -1,0 +1,35 @@
+Authors: Various
+Status: Included in stock 2.4.19 kernel
+
+This big patch contains all netfilter/iptables changes between stock kernel
+versions 2.4.18 and 2.4.19.
+
+submitted/REJECT-dont_fragment
+	+ No DF bit allowed in REJECT-generated ICMP (David Miller)
+submitted/arptables
+submitted/netfilter-arp
+	+ New netfilter-arp + arptables support (David Miller)
+submitted/config-cleanup
+	+ cleaning up the Config.in and Configure.help files (Harald Welte)
+submitted/ip_conntrack_protocol_destroy
+	+ Adding ip_conntrack_protocol_destroy() function (Harald Welte)
+submitted/ip_conntrack_protocol_unregister
+	+ Adding ip_conntrack_protocol_unregister() function (Harald Welte)
+submitted/local-nat
+	+ Add DNAT support on locally-originated connections
+	  (Henrik Nordstrom, Harald Welte)
+submitted/macro-trailing-semicolon-fix
+	+ Fix macros declared (and used) with trailing ; (David Miller)
+submitted/nat-export_symbols
+	+ Add missing EXPORT_SYMBOL() statements in the NAT code (Harald Welte)
+submitted/ulog-module-unload
+	+ Fix potential oops at ulog module unload (Harald Welte)
+Further changes, not previously in patch-o-matic:
+	+ change in early_drop
+	+ Use GFP_ATOMIC instead of GFP_KERNEL in ipchains emulation layer
+	+ Fix memoryleak in ipchains emulation layer
+	+ Implement ipt_REJECT without xchg()
+	+ ip6tables smp fixes
+	+ Make ip6t_mac also valid in FORWARD chain
+	+ Add missing GPL MODULE_LICENSE() in ip6t_mac
+	+ simplification of overlap() function in netfilter.c

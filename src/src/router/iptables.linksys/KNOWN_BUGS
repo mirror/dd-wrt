@@ -1,0 +1,14 @@
+Known bugs:
+
+1) NAT in the OUTPUT chain only works since kernel 2.4.18.  However,
+   there is a patch for previous kernels in patch-o-matic, called the
+   'local-nat.patch'.  This patch adds a CONFIG_NF_IP_NAT_LOCAL kernel config
+   option.
+
+2) tcpdump traffic is corrupted by OUTPUT NAT.
+
+3) Connection tracking doesn't wait very long for reply FIN, meaning
+   that half-closed pipes can time out early (seen frequently with squid).
+
+4) When you use ip6tables packet mangling on IPv6 packets, the packet will
+   not be re-routed in case e.g. you insert a routing header.

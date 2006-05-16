@@ -1,0 +1,6 @@
+Author: Stephane Ouellette <ouellettes@videotron.ca>
+Status: ItWorksForMe(tm)
+
+This patch adds CONFIG_IP_NF_MATCH_CONDITION which allows you to
+match firewall rules against condition variables stored in /proc files.
+

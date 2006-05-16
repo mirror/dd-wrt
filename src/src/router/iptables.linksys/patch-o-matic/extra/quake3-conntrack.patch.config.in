@@ -1,0 +1,2 @@
+  dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
+  dep_tristate '  Quake III protocol support' CONFIG_IP_NF_QUAKE3 $CONFIG_IP_NF_CONNTRACK

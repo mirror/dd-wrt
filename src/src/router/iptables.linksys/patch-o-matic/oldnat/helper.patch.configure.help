@@ -1,0 +1,8 @@
+CONFIG_IP_NF_MATCH_UNCLEAN
+Helper match support (EXPERIMENTAL)
+CONFIG_IP_NF_MATCH_HELPER
+  Helper matching allows you to match packets in dynamic connections
+  tracked by a conntrack-helper, ie. ip_conntrack_ftp
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

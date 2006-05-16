@@ -1,0 +1,27 @@
+Author: Jozsef Kadlecsik <kadlec@blackhole.kfki.hu>
+Status: Alpha
+
+This adds CONFIG_IP_NF_H323: H.323/netmeeting support module for netfilter
+connection tracking and NAT. H.323 uses/relies on the following data streams:
+
+	Port		Description
+	389 		Internet Locator Server (TCP)
+	522		User Location Server (TCP)
+	1503 		T.120 Protocol (TCP)
+	1720		H.323 (H.225 call setup, TCP)
+	1731		Audio call control (TCP)
+	Dynamic		H.245 call control (TCP)
+	Dynamic		RTCP/RTP streaming (UDP)
+
+The H.323 conntrack/NAT modules support the connection tracking/NATing of 
+the data streams requested on the dynamic ports. The helpers use the
+search/replace hack from the ip_masq_h323.c module for the 2.2 kernel
+series.
+
+At the very minimum, H.323/netmeeting (video/audio) is functional by letting 
+trough the 1720 port and loading these H.323 module(s).
+
+The H.323 conntrack/NAT modules do not support
+
+- H.245 tunnelling
+- H.225 RAS (gatekeepers)

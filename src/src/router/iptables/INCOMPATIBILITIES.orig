@@ -1,0 +1,6 @@
+INCOMPATIBILITIES:
+
+- The REJECT target has an '--reject-with admin-prohib' option which used
+  with kernels that do not support it, will result in a plain DROP instead
+  of REJECT.  Use with caution.
+  Kernels that do support it:

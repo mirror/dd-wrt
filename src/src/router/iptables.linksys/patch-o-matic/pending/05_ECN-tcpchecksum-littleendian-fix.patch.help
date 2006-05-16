@@ -1,0 +1,9 @@
+Author: Patrick McHardy <kaber@trash.net>
+Status: Pending for kernel inclusion
+
+The 2.4.20 kernel included the new iptables 'ECN' target, enabling a selective
+ECN disable mechanism.   Unfortunately there was a bug in the incremental TCP
+checksum update, resulting in broken TCP checksums on little endian machines.
+
+This patch fixes the Bug.
+

@@ -1,0 +1,5 @@
+This matches the routing realm.  Routing realms are used in complex routing
+setups involving dynamic routing protocols like BGP.
+.TP
+.BI "--realm " "[!]" "value[/mask]"
+Matches a given realm number (and optionally mask).

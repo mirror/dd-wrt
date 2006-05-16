@@ -1,0 +1,18 @@
+# $Id: Config.in,v 1.1.2.1 2004/05/23 12:29:03 nikki Exp $
+
+mainmenu_option next_comment
+comment 'Cryptography support (CryptoAPI)'
+
+tristate 'CryptoAPI support' CONFIG_CRYPTO
+
+dep_mbool 'Cipher Algorithms' CONFIG_CIPHERS $CONFIG_CRYPTO
+source crypto/ciphers/Config.in
+
+dep_mbool 'Digest Algorithms' CONFIG_DIGESTS $CONFIG_CRYPTO
+source crypto/digests/Config.in
+
+dep_mbool 'Crypto Devices' CONFIG_CRYPTODEV $CONFIG_CRYPTO
+source crypto/drivers/Config.in
+
+endmenu
+

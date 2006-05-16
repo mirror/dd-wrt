@@ -1,0 +1,11 @@
+diff -Nur openssl-0.9.7f/Makefile.org openssl-0.9.7f.new/Makefile.org
+--- openssl-0.9.7f/Makefile.org	2005-03-15 10:46:13.000000000 +0100
++++ openssl-0.9.7f.new/Makefile.org	2005-04-03 20:15:26.000000000 +0200
+@@ -229,7 +229,6 @@
+ libcrypto.a.sha1: libcrypto.a
+ 	@if egrep 'define OPENSSL_FIPS' $(TOP)/include/openssl/opensslconf.h > /dev/null; then \
+ 		$(RANLIB) libcrypto.a; \
+-		fips/sha1/fips_standalone_sha1 libcrypto.a > libcrypto.a.sha1; \
+ 	fi
+ 
+ sub_all:

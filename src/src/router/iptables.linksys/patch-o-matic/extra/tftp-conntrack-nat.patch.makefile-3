@@ -1,0 +1,2 @@
+# NAT helpers 
+obj-$(CONFIG_IP_NF_NAT_TFTP) += ip_nat_tftp.o

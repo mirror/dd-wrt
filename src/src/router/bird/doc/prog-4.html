@@ -1,0 +1,178 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<HTML>
+<HEAD>
+ <META NAME="GENERATOR" CONTENT="LinuxDoc-Tools 1.0.9">
+ <TITLE>BIRD Programmer's Documentation: Filters</TITLE>
+ <LINK HREF="prog-5.html" REL=next>
+ <LINK HREF="prog-3.html" REL=previous>
+ <LINK HREF="prog.html#toc4" REL=contents>
+</HEAD>
+<BODY>
+<A HREF="prog-5.html">Next</A>
+<A HREF="prog-3.html">Previous</A>
+<A HREF="prog.html#toc4">Contents</A>
+<HR>
+<H2><A NAME="s4">4.</A> <A HREF="prog.html#toc4">Filters</A></H2>
+
+<H2><A NAME="ss4.1">4.1</A> <A HREF="prog.html#toc4.1">Filters</A>
+</H2>
+
+<P>
+<P>You can find sources of the filter language in <CODE>filter/</CODE>
+directory. File <CODE>filter/config.Y</CODE> contains filter grammar and basically translates
+the source from user into a tree of <I>f_inst</I> structures. These trees are
+later interpreted using code in <CODE>filter/filter.c</CODE>.
+<P>A filter is represented by a tree of <I>f_inst</I> structures, one structure per
+"instruction". Each <I>f_inst</I> contains <B>code</B>, <B>aux</B> value which is
+usually the data type this instruction operates on and two generic
+arguments (<B>a1</B>, <B>a2</B>). Some instructions contain pointer(s) to other
+instructions in their (<B>a1</B>, <B>a2</B>) fields.
+<P>Filters use a <I>f_val</I> structure for their data. Each <I>f_val</I>
+contains type and value (types are constants prefixed with <I>T_</I>). Few
+of the types are special; <I>T_RETURN</I> can be or-ed with a type to indicate
+that return from a function or from the whole filter should be
+forced. Important thing about <I>f_val</I>'s is that they may be copied
+with a simple <CODE>=</CODE>. That's fine for all currently defined types: strings
+are read-only (and therefore okay), paths are copied for each
+operation (okay too).
+<P>
+<P><HR><H3>Function</H3>
+<P><I>int</I>
+<B>val_compare</B>
+(<I>struct f_val</I> <B>v1</B>, <I>struct f_val</I> <B>v2</B>) --     compare two values
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_val</I> <B>v1</B><DD><P>first value
+<DT><I>struct f_val</I> <B>v2</B><DD><P>second value
+</DL>
+<H3>Description</H3>
+<P>Compares two values and returns -1, 0, 1 on &lt;, =, &gt; or 999 on error.
+Tree module relies on this giving consistent results so that it can
+build balanced trees.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>val_in_range</B>
+(<I>struct f_val</I> <B>v1</B>, <I>struct f_val</I> <B>v2</B>) --     implement <CODE>~</CODE> operator
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_val</I> <B>v1</B><DD><P>element
+<DT><I>struct f_val</I> <B>v2</B><DD><P>set
+</DL>
+<H3>Description</H3>
+<P>Checks if <B>v1</B> is element (<CODE>~</CODE> operator) of <B>v2</B>. Sets are internally represented as balanced trees, see
+<CODE>tree.c</CODE> module (this is not limited to sets, but for non-set cases, <B>val_simple_in_range()</B> is called early).
+
+
+<HR><H3>Function</H3>
+<P><I>struct f_val</I>
+<B>interpret</B>
+(<I>struct f_inst *</I> <B>what</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_inst *</I> <B>what</B><DD><P>filter to interpret
+</DL>
+<H3>Description</H3>
+<P>Interpret given tree of filter instructions. This is core function
+of filter system and does all the hard work.
+<H3>Each instruction has 4 fields</H3>
+<P>code (which is instruction code),
+aux (which is extension to instruction code, typically type),
+arg1 and arg2 - arguments. Depending on instruction, arguments
+are either integers, or pointers to instruction trees. Common 
+instructions like +, that have two expressions as arguments use
+TWOARGS macro to get both of them evaluated.
+<P><I>f_val</I> structures are copied around, so there are no problems with
+memory managment.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>f_run</B>
+(<I>struct filter *</I> <B>filter</B>, <I>struct rte **</I> <B>rte</B>, <I>struct ea_list **</I> <B>tmp_attrs</B>, <I>struct linpool *</I> <B>tmp_pool</B>, <I>int</I> <B>flags</B>) --     external entry point to filters
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct filter *</I> <B>filter</B><DD><P>pointer to filter to run
+<DT><I>struct rte **</I> <B>rte</B><DD><P>pointer to pointer to <I>rte</I> being filtered. When route is modified, this is changed with <B>rte_cow()</B>.
+<DT><I>struct ea_list **</I> <B>tmp_attrs</B><DD><P>where to store newly generated temporary attributes
+<DT><I>struct linpool *</I> <B>tmp_pool</B><DD><P>all filter allocations go from this pool
+<DT><I>int</I> <B>flags</B><DD><P>flags
+</DL>
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>filter_same</B>
+(<I>struct filter *</I> <B>new</B>, <I>struct filter *</I> <B>old</B>) --     compare two filters
+<P>
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct filter *</I> <B>new</B><DD><P>first filter to be compared
+<DT><I>struct filter *</I> <B>old</B><DD><P>second filter to be compared, notice that this filter is
+damaged while comparing.
+</DL>
+<H3>Description</H3>
+<P>Returns 1 in case filters are same, otherwise 0. If there are
+underlying bugs, it will rather say 0 on same filters than say
+1 on different.
+
+
+<HR><H3>Function</H3>
+<P><I>struct f_tree *</I>
+<B>find_tree</B>
+(<I>struct f_tree *</I> <B>t</B>, <I>struct f_val</I> <B>val</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_tree *</I> <B>t</B><DD><P>tree to search in
+<DT><I>struct f_val</I> <B>val</B><DD><P>value to find
+</DL>
+<H3>Description</H3>
+<P>Search for given value in the tree. I relies on fact that sorted tree is populated
+by <I>f_val</I> structures (that can be compared by <B>val_compare()</B>). In each node of tree, 
+either single value (then t-&gt;from==t-&gt;to) or range is present.
+<P>Both set matching and <CODE><B>switch()</B> { }</CODE> construction is implemented using this function,
+thus both are as fast as they can be.
+
+
+<HR><H3>Function</H3>
+<P><I>struct f_tree *</I>
+<B>build_tree</B>
+(<I>struct f_tree *</I> <B>from</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_tree *</I> <B>from</B><DD><P>degenerated tree (linked by <B>tree</B>-&gt;left) to be transformed into form suitable for <B>find_tree()</B>
+</DL>
+<H3>Description</H3>
+<P>Transforms denerated tree into balanced tree.
+
+
+<HR><H3>Function</H3>
+<P><I>int</I>
+<B>same_tree</B>
+(<I>struct f_tree *</I> <B>t1</B>, <I>struct f_tree *</I> <B>t2</B>)
+<H3>Arguments</H3>
+<P>
+<DL>
+<DT><I>struct f_tree *</I> <B>t1</B><DD><P>first tree to be compared
+<DT><I>struct f_tree *</I> <B>t2</B><DD><P>second one
+</DL>
+<H3>Description</H3>
+<P>Compares two trees and returns 1 if they are same
+
+<HR>
+<A HREF="prog-5.html">Next</A>
+<A HREF="prog-3.html">Previous</A>
+<A HREF="prog.html#toc4">Contents</A>
+</BODY>
+</HTML>

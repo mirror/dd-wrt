@@ -1,0 +1,9 @@
+CONFIG_IP_NF_TARGET_LOG
+TTL target support
+CONFIG_IP_NF_TARGET_TTL
+  This option adds a `TTL' target, which enables the user to set
+  the TTL value or increment / decrement the TTL value by a given
+  amount.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

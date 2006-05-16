@@ -1,0 +1,53 @@
+.TH "multiplexer: splits mode requests into calls to different handlers." 3 "5 Sep 2003" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+multiplexer: splits mode requests into calls to different handlers. \- The multiplexer helper lets you split the calling chain depending on the calling mode (get vs getnext vs set). 
+More...
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "netsnmp_mib_handler * \fBnetsnmp_get_multiplexer_handler\fP (netsnmp_mib_handler_methods *req)"
+.br
+.RI "\fIreturns a multiplixer handler given a netsnmp_mib_handler_methods structure of subhandlers.\fP"
+.ti -1c
+.RI "int \fBnetsnmp_multiplexer_helper_handler\fP (netsnmp_mib_handler *handler, netsnmp_handler_registration *reginfo, netsnmp_agent_request_info *reqinfo, netsnmp_request_info *requests)"
+.br
+.RI "\fIimplements the multiplexer helper\fP"
+.in -1c
+.SH "DETAILED DESCRIPTION"
+.PP 
+The multiplexer helper lets you split the calling chain depending on the calling mode (get vs getnext vs set).
+.PP
+Useful if you want different routines to handle different aspects of SNMP requests, which is very common for GET vs SET type actions.
+.PP
+Functionally:
+.PP
+.TP
+GET requests call the get_method
+.TP
+GETNEXT requests call the getnext_method, or if not present, the get_method.
+.TP
+GETBULK requests call the getbulk_method, or if not present, the getnext_method, or if even that isn't present the get_method.
+.TP
+SET requests call the set_method, or if not present return a SNMP_ERR_NOTWRITABLE error. 
+.PP
+.SH "FUNCTION DOCUMENTATION"
+.PP 
+.SS "netsnmp_mib_handler* netsnmp_get_multiplexer_handler (netsnmp_mib_handler_methods * req)"
+.PP
+returns a multiplixer handler given a netsnmp_mib_handler_methods structure of subhandlers.
+.PP
+Definition at line 36 of file multiplexer.c.
+.PP
+References netsnmp_create_handler(), and netsnmp_multiplexer_helper_handler().
+.SS "int netsnmp_multiplexer_helper_handler (netsnmp_mib_handler * handler, netsnmp_handler_registration * reginfo, netsnmp_agent_request_info * reqinfo, netsnmp_request_info * requests)"
+.PP
+implements the multiplexer helper
+.PP
+Definition at line 57 of file multiplexer.c.
+.PP
+References netsnmp_call_handler().
+.PP
+Referenced by netsnmp_get_multiplexer_handler().

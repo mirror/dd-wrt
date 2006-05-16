@@ -1,0 +1,10 @@
+CONFIG_IP_NF_MATCH_TOS
+Nth match support
+CONFIG_IP_NF_MATCH_RANDOM
+  This option adds a `random' match,
+  which allow you to match packets randomly
+  following a given probability.
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

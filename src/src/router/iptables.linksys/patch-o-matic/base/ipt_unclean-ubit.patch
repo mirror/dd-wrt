@@ -1,0 +1,20 @@
+diff -Nru linux.orig/net/ipv4/netfilter/ipt_unclean.c linux/net/ipv4/netfilter/ipt_unclean.c
+--- linux.orig/net/ipv4/netfilter/ipt_unclean.c	Thu Jan  1 01:00:00 1970
++++ linux/net/ipv4/netfilter/ipt_unclean.c	Tue Jun 11 19:26:11 2002
+@@ -522,6 +522,16 @@
+ 		return 0;
+ 	}
+ 
++	/* CHECK: Do not use what is unused.
++	 * First bit of fragmentation flags should be unused.
++	 * May be used by OS fingerprinting tools.
++	 * 04 Jun 2002, Maciej Soltysiak, solt@dns.toxicfilms.tv
++	 */
++	if (ntohs(iph->frag_off)>>15) {
++		limpk("IP unused bit set\n");
++		return 0;
++	}
++
+ 	/* Per-protocol checks. */
+ 	switch (iph->protocol) {
+ 	case IPPROTO_ICMP:

@@ -1,0 +1,13 @@
+#!/bin/sh
+
+# set default route
+/sbin/route add default gw $IPREMOTE
+kill `cat /var/run/ser.pid`
+rm /var/run/ser.pid
+killall rtpproxy
+sleep 10
+/usr/bin/rtpproxy -l $(ifconfig br0|awk 'sub("inet addr:","") {print $1}')/$IPLOCAL
+sleep 10
+/bin/cp /etc/ser/ser.cfg /var/ser.cfg.SRC
+/bin/sed "s/fix_nated_contact(\"*[0-9]*\.*[0-9]*\.*[0-9]*\.*[0-9]*\"*/fix_nated_contact(\"$IPLOCAL\"/g" /var/ser.cfg.SRC > /etc/ser/ser.cfg
+/usr/sbin/ser -P /var/run/ser.pid -m 5

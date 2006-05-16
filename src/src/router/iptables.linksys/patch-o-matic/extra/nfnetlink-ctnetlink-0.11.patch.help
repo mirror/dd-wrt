@@ -1,0 +1,9 @@
+Author: Harald Welte <laforge@gnumonks.org>, Jay Schulist <jschlst@samba.org>
+Status: Under development, but stabilizing now.
+
+I've finally managed to get the redesign of nfnetlink/ctnetlink done.
+There is now the testing version 0.11 in patch-o-matic, it can be found
+at patch-o-matic/extra/nfnetlink-ctnetlink.patch. 
+										The next step will be the new iptables kernel<->userspace interface based on
+nfnetlink, I'll be concentrating on this during the next week(s).
+

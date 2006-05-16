@@ -1,0 +1,9 @@
+CONFIG_IP_NF_TARGET_REJECT
+IPV4OPTSSTRIP target support
+CONFIG_IP_NF_TARGET_IPV4OPTSSTRIP
+  This option adds an IPV4OPTSSTRIP target.
+  This target allows you to strip all IP options in a packet.
+ 
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

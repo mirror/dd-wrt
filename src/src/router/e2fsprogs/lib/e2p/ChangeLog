@@ -1,0 +1,655 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-06-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Add an include path specifier when building
+		tst_ostype so that "make check" will build correctly on
+		systems without the include files from e2fsprogs installed
+		in the system include directory.
+
+2005-05-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in (tst_ostype): Add $(ALL_CFLAGS) to the tst_ostype
+		rule so it can find the header files.  (Addresses
+		Sourceforge Bug: #1180572)
+
+2005-04-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c: Add stdlib.h header file since list_super2() uses the
+		free() function.
+
+2005-03-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* ostype.c (e2p_os2string): Check to make sure malloc() is
+		successful before attempting to copy into it.  Add
+		#include of stdlib.h to fix a core dump bug on the IA64
+		architecture.  (Addresses Debian Bug #302200)
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2005-03-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c (list_super2): Use the new e2p_os2string() function
+
+	* ostype.c: New file which converts between an integer os_type and
+		a string.
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Remove e2p.pc on a "make distclean"
+
+2005-01-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2p.pc.in: Add pkg-config files.
+
+2005-01-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c (list_super2): Interpret OS Creator values for FreeBSD and
+		Lites.
+	
+2005-01-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* parse_num.c (parse_num_blocks): New file which adds a standard
+		function for parsing the number of blocks by programs such
+		as mke2fs and resize2fs.
+
+2004-12-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c (list_super2): Print the s_reserved_gdt_blocks field if it
+		is non-zero.
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output for "make
+		install"
+
+	* Makefile.in (installdirs): Use $(MKINSTALLDIRS) macro
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-11-29  Theodore Ts'o  <tytso@mit.edu>
+
+	* feature.c: Add support for the extents filesystem feature.
+
+2004-06-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* setflags.c, fsetflags.c: On linux systems, undefine HAVE_CHFLAGS
+		to deal with lame glibc's that define this function
+		without actually implementing it.  Can you say "attractive
+		nuisance", boys and girls?   I knew you could!  (Thanks to
+		Pavel Troller for reporting this braindamage.)
+
+2004-02-29  Brian Bergstrand  <brian@bergstrand.org>
+
+	* Makefile.in: Use $(BSDLIB_PIC_FLAG) to determine whether to use
+		-fpic or -fPIC
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2004-01-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* fgetflags.c, fgetversion.c, fsetflags.c, fsetversion.c: Apply
+		patch from Brian Bergstrand to support ext2_ioctl() in
+		Darwin.  This is implemented via the fsctl system call.
+
+2003-08-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c (list_super2): Display the journal backup type.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-07-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* iod.c: Fix gcc -Wall nitpicks (missing #include <string.h>)
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-04-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* fgetflags.c (fgetflags), fsetflags.c (fsetflags): Remove unused
+		and useless close(fd).
+
+	* hashstr.c (e2p_hash2string): Remove unused variables.
+
+	* iod.c: Fix gcc -Wall warnings by including stdlib.h.
+
+2003-04-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* iod.c (iterate_on_dir): Support systems that don't have d_reclen
+		in struct dirent.
+
+2003-04-11  Theodore Ts'o  <tytso@mit.edu>
+
+	* feature.c: Remove support for EXT2_FEATURE_RO_COMPAT_BTREE_DIR,
+		since it's not actually used, and may confuse people who
+		are looking for EXT2_FEATURE_COMPAT_DIR_INDEX, which is in
+		use.
+
+2003-03-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c (list_super2): Display the superblock fields even if the
+		journal or the dir index feature is not enabled.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* pf.c: Print the indexed directory flag if present.  Don't
+		display all of the compression flags unless compression 
+		is enabled.
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2002-11-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* pf.c: Add support for a new inode flag, which is to be used for
+		indicating the top of directory hierarchies for the Orlov
+		block allocator.
+
+2002-10-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c (list_super2): Print the s_mkfs_time field if it is
+		present.  If the last mount time (s_mtime) is zero, print
+		"n/a".
+
+2002-10-20  Theodore Ts'o  <tytso@valinux.com>
+
+	* e2p.h (e2p_string2mntopt), mntopts.c, ls.c (print_mntopts):
+		Remove unneeded "compat" argument to e2p_string2mntopt().
+		Add mount options for the journal data mode (journaled,
+		ordered, writeback).
+
+	* feature.c, ls.c (list_super2): Add support for the
+		meta_blockgroup filesystem format.
+
+2002-10-15    <tytso@snap.thunk.org>
+
+	* ls.c (print_mntopts, list_super2): Print any default mount
+		options which the filesystem might have.
+
+	* e2p.h, mntopts.c: New function which converts back and forth
+		between strings and default mount options.
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-08-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* ls.c (list_super2): Print the default hash version and the hash
+		seed for the directory indexing.  Use the new e2p_uuid2str
+		function to factor out common code.
+		
+	* uuid.c (e2p_uuid2str), e2p.h: New utility function which factors
+		out some common code.
+
+	* hashstr.c (e2p_hash2string, e2p_string2hash): New functions
+		which convert the hash algorithm name to and from a string.
+	
+2002-08-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* fsetflags.c (fsetflags), fgetflags.c (fgetflags.c), setflags.c
+		(setflags), getflags.c (getflags): Check to make sure the
+		file is a regular file or a directory before attempting to
+		use the ext2 ioctls.  Otherwise, return EOPNOTSUPP.
+		(Addresses Debian Bug #152029).
+
+2002-07-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* fsetflags.c (fsetflags), fgetflags.c (fgetflags,
+		fsetversion.c (fsetversion), fgetversion.c,
+		fgetversion.c: Save errno if the ioctl fails, and
+		restore it just before we return.
+
+	* iod.c (iterate_on_dir): Rewrite function to make it more
+		portable.  We now make much fewer assumptions about nature
+		and layout of struct dirent, which will hopefully help
+		things on the Hurd.
+
+2002-06-15  Theodore Ts'o  <tytso@mit.edu>
+
+	* pf.c: Changed "compressed dirty flag" from 'D' to 'Z'.  Add
+		dirsync flag and assign it 'D'.
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-12-16  Theodore Tso  <tytso@mit.edu>
+
+	* pf.c: Add const to struct flags_name to avoid -Wall complaints.
+
+2001-11-05  Theodore Tso  <tytso@mit.edu>
+
+	* pf.c: Add a new file attribute, EXT2_NOTAIL_FL
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* feature.c: Add entry in feature table to interpret
+		EXT2_FEATURE_COMPAT_EXT_ATTR.
+
+	* Release of E2fsprogs 1.22
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in, uuid.c: Move include/asm/types.h.in to
+		lib/ext2fs/ext2_types.h.in.
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-05-20  Theodore Tso  <tytso@valinux.com>
+
+	* e2p.h: #include <> instead of "" for ext2fs and et header files,
+		since they will be installed in /usr/include
+
+2001-05-14  Theodore Tso  <tytso@valinux.com>
+
+	* e2p.h: Change location of ext2_fs.h to be ext2fs/ext2_fs.h
+
+2001-05-11  Andreas Dilger  <adilger@turbolinux.com>
+
+	* feature.c: Add COMPAT_DIR_INDEX and RESIZE_INODE known features
+
+2001-05-13  Theodore Tso  <tytso@valinux.com>
+
+	* ls.c (print_features): Added missing space when printing (none)
+		as the filesystem feature.
+		(list_super2): If the filesystem revision is unknown, say so.
+
+2001-01-15  Theodore Ts'o  <tytso@valinux.com>
+
+	* ls.c (list_super2): Fix bug where we were printing the
+		filesystem UUID instead of journal UUID when trying to
+		display the journal UUID.
+
+2001-01-14  Theodore Ts'o  <tytso@valinux.com>
+
+	* feature.c: Remove backward compatibility #ifdef's for old
+		ext2_fs.h header files.
+
+	* feature.c: Add definition for EXT3_FEATURE_INCOMPAT_JOURNAL_DEV
+
+2001-01-11  Theodore Ts'o  <tytso@valinux.com>
+
+	* pf.c: Clarified name of the Compression_Raw_Access flag, and
+		capitalized Journaled_Data.
+
+2001-01-01    <tytso@snap.thunk.org>
+
+	* ls.c: Remove our own internal definition of struct ext2fs_sb.
+		We can assume that ext2_super_block is always up to date.
+
+2000-12-31    <tytso@snap.thunk.org>
+
+	* pf.c: Add code to print out the journalled data flag.
+
+2000-12-02    <tytso@snap.thunk.org>
+
+	* fgetflags.c (fgetflags):
+	* fgetversion.c (fgetversion):
+	* fsetflags.c (fsetflags):
+	* fsetversion.c (fsetversion): Use the LFS API if available so
+		that the files are opened with O_LARGEFILE.  Addresses
+		Debian bug #72690.
+
+2000-08-14    <tytso@valinux.com>
+
+	* ls.c (list_super): Use better description of s_last_orphan
+
+	* ls.c (list_super, list_super2): Added new API function which
+		takes a FILE * so that the output can be redirected to a
+		stream. 
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-07-06  Theodore Ts'o  <tytso@valinux.com>
+
+	* ls.c (list_super): Display the journal information fields in the
+		superblock if the filesystem has a journal.
+
+2000-07-04  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Remove explicit link of -lc in the shared library.
+		(It shouldn't be necessary, and is harmful in some cases).
+
+2000-05-08  Theodore Ts'o  <tytso@valinux.com>
+
+	* ls.c (list_super): Change the string displayed for the Hurd to
+		be GNU/Hurd, instead of just "GNU".
+
+Thu Apr  6 17:38:00 2000  Theodore Y. Ts'o  <tytso@signal.thunk.org>
+
+	* feature.c: Make feature_list static; it shouldn't be exported.
+
+	* dll/jump.funcs: Update a.out shared library control file.
+
+2000-04-03  Theodore Ts'o  <tytso@valinux.com>
+
+	* pf.c (print_flags): Rename EXT2_NOCOMP_FL to 	EXT2_NOCOMPR_FL.
+
+	* Makefile.in: Add "set -e" so that any errors in installing
+		header files causes an immediate exit.
+
+2000-02-10  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Install the e2p.h header.
+	
+	* e2p.h, pf.c (print_flags): Change the third parameter of
+		print_flags() to be an option parameter, although we only
+		support one option at this point.
+
+	* pf.c (print_flags): Updated to use a more generic structure for
+		storing the ext2 inode flags.  Add support for the
+		(current) set of compression flags.  
+	
+1999-11-19    <tytso@valinux.com>
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-26    <tytso@valinux.com>
+
+	* feature.c: Fix GCC warnings; add const to the char * types in
+		the function prototypes for e2p_feature2string and
+		e2p_edit_feature.
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-10-22    <tytso@valinux.com>
+
+	* feature.c (e2p_edit_feature), e2p.h: Add a new argument which
+		allows the calling application to limit what features the
+		user is allowed to set or clear using this function.
+		Also add support for comma separated lists.
+
+1999-09-07    <tytso@valinux.com>
+
+	* Makefile.in, feature.c, e2p.h: New file which is used for
+		displaying and editing superblock feature sets.
+
+	* ls.c (print_features, list_super): Add new function
+		print_features which is used to display the feature
+		bits in the superblock.
+
+1999-07-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.15
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+Mon Jan  4 02:34:53 1999  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* uuid.c: Use asm/types.h instead of linux/types.h, to be
+		consistent with other locations where we've had to do this
+		to work around glibc.
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-12-02  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Updated dependencies.
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-03-30  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Change to use new installation directory variables
+		convention.  Fix uninstall rules to take $(DESTDIR) into
+		account.
+
+1998-03-29  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* getversion.c (getversion): Return 0 if there's no error.
+
+	* fgetversion.c (fgetversion): Pass the address of the temporary
+		variable instead of the unitialized variable to the
+		EXT2_IOC_GETVERSION ioctl.
+
+Mon Mar  9 08:05:30 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* fgetflags.c, fgetversion.c, fsetflags.c, fsetversion.c,
+		getflags.c, getversion.c, setflags.c, setversion.c:
+		The ext2 version and flags ioctl's take an int *, not a
+		long *.  Fix library to use the correct type, so we don't
+		have problems on the Alpha.
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Wed Apr 23 22:41:55 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* ls.c (list_super): Add #ifdef's so it will compile under 1.2.13
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Sat Apr  5 11:48:03 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* ls.c (list_super): Display the filesystem revision and any
+		features that might be implemented.
+
+Wed Mar 12 13:32:05 1997  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs version 1.07
+
+Thu Jan  2 00:06:29 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* uuid.c: Include string.h, since we use memcpy().
+
+Wed Jan  1 23:47:22 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* ls.c (list_super): Copy times from the superblock to a time_t
+ 		variable.  (The alpha has different sizes for time_t and
+ 		the time in the superblock.)
+
+Tue Oct  8 02:02:03 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.06
+
+Sun Sep 22 16:20:12 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pf.c: Add support for the 'A' (no atime) flag.
+
+Thu Sep 12 15:23:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.05
+
+Sat Sep  7 14:48:35 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* ls.c (interval_string): Pretty print the check interval.
+
+Tue Aug  6 14:12:36 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* ls.c (list_super): Display the OS, volume label, last mounted,
+ 		and UUID field if present.
+
+Mon Jun 24 09:55:58 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* ps.c, pf.c, pe.c, ls.c, setversion.c, setflags.c, getversion.c, 
+		fsetversion.c, fsetflags.c, fgetversion.c, fgetflags.c,
+		getflags.c: Remove include of ext2_fs.h, since it's
+		included by e2p.h; this also solves a sys/types.h vs
+		linux/types.h inclusion ordering problem with the GNU libc.
+
+Thu May 16 11:12:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.04
+
+Wed Mar 27 00:33:40 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.03
+
+Wed Jan 31 11:06:08 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.02
+
+Tue Jan  2 20:50:44 1996    <tytso@rsts-11.mit.edu>
+
+	* fgetflags.c (fgetflags): 
+	* fsetflags.c (fsetflags):
+	* fgetversion.c (fgetversion):
+	* fsetversion.c (fsetversion): Add the O_NONBLOCK flag to open
+		call, so that we don't hang trying to open things like
+		named pipes.
+
+Mon Oct 30 17:44:07 1995    <tytso@rsts-11.mit.edu>
+
+	* ls.c (list_super): Use the correct field (s_def_resgid) when
+		printing the reserved group gid.
+
+Fri Oct 27 18:07:48 1995    <tytso@rsts-11.mit.edu>
+
+	* iod.c (iterate_on_dir): Don't assume that d->reclen is the size
+		of the dirent structure; it isn't under Linux.
+
+Mon Sep  4 21:43:53 1995  Remy Card  <card@bbj>
+
+	* Makefile.in: Added support for BSD shared libraries.
+
+Fri Aug 11 08:36:40 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* setflags.c: #include <sys/types.h> before including <sys/stat.h>
+
+Sat Aug 12 03:11:45 1995  Remy Card  <card@bbj>
+
+	* Makefile.in (install): Install static libraries in $(ulibdir)
+		(/usr/lib on Linux) instead of $(libdir) (/lib on Linux).
+
+Sat Aug  5 11:43:36 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* Makefile.in (DLL_INSTALL_DIR, ELF_INSTALL_DIR): Set the
+		installation directories correctly.
+
+Thu Jun 15 23:41:20 1995  Remy Card  <card@bbj>
+
+	* Makefile.in: Added support for ELF shared libraries.
+
+Mon Jun 12 08:34:44 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* e2p.h: Move <direct.h> after <stdio.h>
+
+Thu Jun  8 12:47:04 1995  Miles Bader  <miles@churchy.gnu.ai.mit.edu>
+
+	* iod.c (iterate_on_dir): If struct dirent has a d_namlen field,
+	assume that actual dirent entries may be larger than the structure
+	(by the name field), and take extra care deal with this case.
+	This code assumes that d_reclen is a valid dirent field.
+	Also, don't include <dirent.h>, as e2p.h already does.
+
+	* fgetversion.c (fgetversion): Only use the ext2 ioctl if it
+	doesn't cause a compile-time barf, otherwise just return EOPNOTSUPP.
+	* getversion.c (getversion): Ditto.
+	* fsetversion.c (fsetversion): Ditto.
+	* setversion.c (setversion): Ditto.
+	* fsetflags.c (fsetflags): Use chflags instead of the ext2 ioctl
+	if possible, and otherwise only use the ioctl if it doesn't barf.
+	* setflags.c (setflags): Ditto (with fchflags).
+	* fgetflags.c (fgetflags): Use the stat st_flags field instead of
+	the ext2 ioctl if possible, and otherwise only use the ioctl if it
+	doesn't barf.
+	* getflags.c (getflags): Ditto.
+
+	* e2p.h: Include <sys/types.h>, as some <dirent.h>s need it.
+	* ls.c: Move the include of <sys/types.h> to where <grp.h> can see it.
+
+	* Makefile.in: Rewritten to conform to GNU coding standards and
+	support separate compilation directories.
+
+Mon Nov  7 21:59:12 1994  Remy Card  <card@bbj>
+
+	* ls.c (list_super): List the new fields s_def_resuid and
+	s_def_resgid.
+
+	(print_user): New function which prints the uid and the user name.
+
+	(print_group): New function which prints the gid and the group name.
+
+Wed Aug 17 21:50:39 1994  Remy Card  (card@bbj)
+
+	* pf.c (print_flags): New attributes are recognized and a long
+	format can be used.
+
+

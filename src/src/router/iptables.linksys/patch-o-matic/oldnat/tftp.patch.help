@@ -1,0 +1,11 @@
+Author: Magnus Boden <mb@ozaba.mine.nu>
+
+TFTP connections will not work with NAT and this module makes
+that work.
+
+modprobe ip_conntrack_tftp ports=69,70 has the effect of
+helping tftp connections on port 69 and 70.
+If the ports argument is not supplied to modprobe it defaults
+to 69.
+
+If you have trouble please drop me a mail and I will help you.

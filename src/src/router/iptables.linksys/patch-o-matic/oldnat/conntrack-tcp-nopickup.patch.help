@@ -1,0 +1,17 @@
+Author: Harald Welte <laforge@gnumonks.org>
+Status: Highly Experimental
+
+This patch affects the TCP state tracking machine.
+
+It alters it in a way, that it will only track TCP connections which are
+established _after_ loading ip_conntrack.o on the firewall.
+
+This means, after reloading ip_conntrack.o or a firewall reboot, all TCP 
+connections are gone.  No connection pickup is working anymore.
+
+So what's the advantage of this patch?  It can help in certain setups,
+where you get ACK-flooded and the machine which is ACK-scanned is not
+up or in some other way unable to send RST's.
+
+Please give me feedback if you use this patch.
+

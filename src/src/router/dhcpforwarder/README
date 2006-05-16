@@ -1,0 +1,139 @@
+Release notes for dhcp-forwarder, version 0.4
+=============================================
+
+This program is used to forward DHCP and BOOTP messages between two
+networks with different broadcast domains.
+
+
+FEATURES
+========
+- runs as non-root in a chroot-environment
+
+- uses AF_INET sockets to listen for DHCP messages. Thus, packetfilters
+  like iptables can be used to filter incoming messages
+
+- supports DHCP agent IDs as described in RFC 3046. These IDs can be
+  defined freely.
+
+- small memory-footprint:
+  | $ ./dhcp-fwd -v; ls -l dhcp-fwd; file dhcp-fwd
+  | dhcp-forwarder 0.3.3
+  | -rwxrwxr-x    1 ensc     ensc        29368 Aug 29 15:59 dhcp-fwd
+  | dhcp-fwd: ELF 32-bit LSB executable, Intel 80386, version 1 (SYSV), statically linked, stripped
+
+  | # ps hu `pidof dhcp-fwd`
+  | dhcp-fwd  3227  0.0  0.1    64   64 ?        S    15:58   0:00 ./dhcp-fwd -c etc/dhcp-fwd.cfg
+
+  These numbers are the result of:
+  | $ ./configure --enable-release --enable-dietlibc --disable-logging
+  | $ make DIET='diet -Os' && strip dhcp-fwd  ## dietlibc-0.20, gcc-3.2
+
+
+INSTALLATION
+============
+- build with the usual './configure && make && make install'. When
+  not having an actual dietlibc, you will need to call ./configure
+  with a '--disable-dietlibc' option. *NOT* using this flag results
+  in significantly smaller binaries and memory consumption.
+
+  Old dietlibc versions (<0.17) are causing strange warnings while
+  compiling and I am not not sure if they are harmful or not. I am
+  running dhcp-fwd with dietlibc-0.17 successfully.
+
+- create an user the daemon will setuid() to. Do not use 'nobody'; it
+  makes no sense to have running all important services as the 'nobody'
+  user...
+
+- create a directory where the daemon will chroot to. This directory
+  should be created in the most secure manner; the daemon does not
+  access this directory so I suggest to make it unreadable, unwritable
+  and unaccessible for the user created before
+
+- install contrib/dhcp-fwd.conf in $(sysconfdir)/ and adapt it to your
+  needs; the possible settings are described in this file.
+
+  An alternative cfg-file can be given on the commandline with the
+  '-c' option.
+
+- start '$(sbindir)/dhcp-fwd'
+
+
+If you are a RH 7.3 user, I suggest to build an RPM with
+
+|     rpm -tb dhcp-forwarder-0.1.tar.bz2 --without dietlibc'
+
+and install the resulting binary. The '--without dietlibc' is neccessary
+since RH ships an elder dietlibc. After installation, the daemon can be
+started with
+
+|     service dhcp-fwd start
+
+and enabled permanently with
+
+|     chkconfig dhcp-fwd on
+
+
+BUGS
+====
+- bad behavior when serverside-interface has a smaller MTU than the
+  MTU on the server itself. An example is
+
+         [Server]-- Ethernet --[Router]-- PPP --[Forwarder]
+
+  (example is not completely correct since the program assumes an MTU
+  of 1500 or greater; but when server is on a special device (IPSec
+  VLAN??) a similar situation can occur)
+
+- on client-side only ethernet supported; same holds on server-side if
+  server is a broadcast-address
+
+- works with Linux only; the device-binding stuff is not specified by
+  SUSv3 and I do not know enough about other systems to provide a
+  better solution
+
+- it does not set the agent-id on large DHCP-messages although it
+  would be possible to enlarge the package or to use the
+  bootfile/sname header-fields
+
+- untested; particularly, I would like to get feedback about success
+  or failures in the following areas:
+  * cooperation within an IPv6 network or
+  * running on a big-endian host (will probably fail)
+  * IP fragmentation
+
+
+SAMPLE CONFIGURATIONS
+=====================
+
+The contributed configfile contrib/dhcp-fwd.conf contains a sample
+configuration for the real-world scenario described in its header:
+
+ --------------              ----------              -------------
+|  DHCP Server |            |          |            |             |
+| 192.168.8.66 |------<eth1>| dhcp-fwd |<eth2>------|   Clients   |
+|              |            |          |            |             |
+ --------------              ----------              -------------
+
+
+
+Additionally it has been tested successfully when running in the
+following environment:
+
+
+ --------------              ----------              -------------
+|  DHCP Server |            |          |            |             |
+| 192.168.8.66 |------<eth1>| Firewall |<eth2>------|   Clients   |
+|              |            |          |            |             |
+ --------------              ----------             |   ~~~~~~    |
+						    |  |dhcp- |   |
+                                                    |  | fwd  |   |
+                                                    |   ~~~~~~    |
+                                                     -------------
+
+The clients have a netmask of 192.168.0.0/255.255.248.0; the dhcp-fwd
+itself has one interface with an IP of 192.168.0.6. Then I am using
+the following core-configuration:
+
+| if              eth0    true true true
+| name            eth0    ws-c
+| server          ip      192.168.8.66

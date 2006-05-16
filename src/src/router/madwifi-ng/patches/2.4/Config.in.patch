@@ -1,0 +1,18 @@
+--- Config.in.orig	Tue Sep 28 12:59:52 2004
++++ Config.in	Tue Sep 28 13:04:07 2004
+@@ -26,6 +26,15 @@
+    tristate '  Cisco/Aironet 34X/35X/4500/4800 PCMCIA cards' CONFIG_AIRO_CS
+ fi
+ 
++if [ "$CONFIG_PCI" = "y" ]; then
++   tristate '   Atheros 802.11(a/b/g) PCI/Cardbus support' CONFIG_ATHEROS
++fi
++if [ "$CONFIG_ATHEROS" = "y" ]; then
++   define_bool CONFIG_ATHEROS_HAL y
++   define_bool CONFIG_ATHEROS_RATE y
++   define_bool CONFIG_NET80211 y
++fi
++
+ # yes, this works even when no drivers are selected
+ if [ "$CONFIG_ISA" = "y" -o "$CONFIG_PCI" = "y" -o \
+      "$CONFIG_ALL_PPC" = "y" -o "$CONFIG_PCMCIA" != "n" -o \

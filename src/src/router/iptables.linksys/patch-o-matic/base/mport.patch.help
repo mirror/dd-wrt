@@ -1,0 +1,11 @@
+Author: Andreas Ferber <af@devcon.net>
+Status: It works for me.
+
+This module is an enhanced multiport match. It has support for byte
+ranges as well as for single ports.
+
+Examples:
+
+# iptables -A FORWARD -p tcp -m mport --ports 23:42,65
+
+Up to 15 ports are allowed. Note that a portrange uses up 2 port values.

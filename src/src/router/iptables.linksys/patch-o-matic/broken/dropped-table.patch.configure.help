@@ -1,0 +1,10 @@
+CONFIG_IP_NF_TARGET_LOG
+CONFIG_IP_NF_DROPTABLE
+Packet `drop' table
+
+  The `drop; table is traversed by `interesting' packets which
+  are going to be dropped.  This is mainly useful for logging packet
+  drops.  See the man page for iptables(8).
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

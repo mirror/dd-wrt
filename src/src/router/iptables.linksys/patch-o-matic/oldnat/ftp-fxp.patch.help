@@ -1,0 +1,12 @@
+Author: Magnus Sandin <magnus@sandin.cx>
+Status: Development
+
+Attached patch adds FXP support to ftp connectiontracking. FXP'ing to NAT'ed 
+ftp daemons does not work yet. 
+
+Load ip_conntrack_ftp.o with modprobe ip_conntrack_ftp fxp=1 to enable FXP
+functionality to connectiontracking of ftpsessions.
+
+WARNING: Applying this patch and enabling the feature _WILL_ reduce security
+	 offered by FTP connection tracking significantly.  Use with extreme
+	 care - and only if you know what you are doing.

@@ -1,0 +1,39 @@
+Author: Fabrice MARIE <fabrice@netfilter.org>
+Status: Works For Me.
+
+This option adds CONFIG_IP_NF_MATCH_NTH, which supplies a match
+module that will allow you to match every Nth packet encountered.
+By default there are 16 different counters that can be used.
+
+This match functions in one of two ways
+1) Match ever Nth packet, and only the Nth packet.
+   example:
+    iptables -t mangle -A PREROUTING -m nth --every 10 -j DROP
+   This rule will drop every 10th packet.
+2) Unique rule for every packet.  This is an easy and quick
+   method to produce load-balancing for both inbound and outbound.
+   example:
+    iptables -t nat -A POSTROUTING -o eth0 -m nth --counter 7 \
+             --every 3 --packet 0 -j SNAT --to-source 10.0.0.5
+    iptables -t nat -A POSTROUTING -o eth0 -m nth --counter 7 \
+             --every 3 --packet 1 -j SNAT --to-source 10.0.0.6
+    iptables -t nat -A POSTROUTING -o eth0 -m nth --counter 7 \
+             --every 3 --packet 2 -j SNAT --to-source 10.0.0.7
+   This example evenly splits connections between the three SNAT
+   addresses.
+
+   By using the mangle table and iproute2, you can setup complex
+   load-balanced routing.  There's lot of other uses.  Be creative!
+
+Suppported options are:
+   --every     Nth         Match every Nth packet
+  [--counter]  num         Use counter 0-15 (default:0)
+  [--start]    num         Initialize the counter at the number 'num'
+                           instead of 0. Must be between 0 and Nth-1
+  [--packet]   num         Match on 'num' packet. Must be between 0
+                           and Nth-1.
+                           If --packet is used for a counter than
+                           there must be Nth number of --packet
+                           rules, covering all values between 0 and
+                           Nth-1 inclusively.
+

@@ -1,0 +1,261 @@
+dnl     $Id: configure.in,v 1.1 2004/04/27 01:35:00 dyang Exp $
+dnl
+dnl     Libnet autoconfiguration information file
+dnl     Copyright (c) 1998, 1999 Mike D. Schiffman <mike@infonexus.com>
+dnl     All rights reserved.
+dnl
+dnl     Process this file with autoconf to produce a configure script.
+
+AC_INIT(src/libnet_build_ip.c)
+
+VER=`cat VERSION`
+AC_MSG_RESULT(Begining autoconfiguration process for libnet-$VER...)
+
+AC_SUBST(LL_INT_TYPE_UC)
+AC_SUBST(LL_INT_TYPE)
+AC_SUBST(LIB_PREFIX)
+AC_SUBST(INC_PREFIX)
+AC_SUBST(MAN_PREFIX)
+AC_SUBST(BIN_PREFIX)
+AC_SUBST(RANLIB)
+AC_SUBST(AR)
+AC_SUBST(LN)
+AC_SUBST(ADDITIONAL_LIBS)
+AC_SUBST(LIBNET_CONFIG_DEFINES)
+AC_SUBST(LIBNET_CONFIG_LIBS)
+AC_SUBST(LIBNET_CONFIG_CFLAGS)
+
+dnl
+dnl Determine hosttype and set the root install directory.
+dnl
+AC_CANONICAL_SYSTEM
+AC_PREFIX_DEFAULT(/usr)
+
+if test "$prefix" = "NONE"; then
+    prefix="/usr"
+fi
+
+dnl
+dnl Check compiler type.
+dnl
+AC_PROG_CC
+
+dnl
+dnl Check for typedefs, structures, and compiler characteristics.
+dnl
+AC_C_CONST
+
+
+dnl
+dnl Use these compiler flags if we have gcc.
+dnl
+if test $ac_cv_prog_gcc = yes; then
+    CCOPTS='-O3 -funroll-loops -fomit-frame-pointer -Wall'
+    CFLAGS="$CCOPTS"
+fi
+
+dnl
+dnl Check for package inclusion/exclusion
+dnl
+AC_ARG_WITH(pf_packet, [ --with-pf_packet=[yes,no] override defaults], \
+    with_pf_packet=yes, with_pf_packet=no)
+
+dnl
+dnl Check for programs.
+dnl
+AC_PROG_INSTALL
+AC_PROG_MAKE_SET
+AC_CHECK_PROGS(RANLIB, ranlib, @true)
+AC_CHECK_PROGS(AR, ar, @true)
+AC_CHECK_PROGS(LN, ln, @true)
+
+dnl
+dnl Check for library functions.
+dnl
+AC_CHECK_FUNCS(strerror)
+
+dnl
+dnl Check for libaries
+dnl
+AC_CHECK_LIB(pcap, pcap_open_live, AC_DEFINE(HAVE_LIB_PCAP))
+
+dnl
+dnl Get lowlevel packet writing interface type
+dnl
+AC_MSG_CHECKING(low-level packet interface type)
+
+if test -r /dev/bpf0 ; then
+    LL_INT_TYPE=bpf
+    AC_MSG_RESULT(found bpf)
+elif test -r /usr/include/net/pfilt.h ; then
+    LL_INT_TYPE=pf
+    AC_MSG_RESULT(found pf)
+elif test -r /dev/nit ; then
+    LL_INT_TYPE=snit
+    AC_MSG_RESULT(found snit)
+elif test -r /usr/include/sys/net/nit.h ; then
+    LL_INT_TYPE=nit
+    AC_MSG_RESULT(found nit)
+elif test -r /usr/include/net/raw.h ; then
+    LL_INT_TYPE=snoop
+    AC_MSG_RESULT(found snoop)
+elif test -r /usr/include/sys/dlpi.h ; then
+    LL_INT_TYPE=dlpi
+    AC_MSG_RESULT(found dlpi)
+    AC_DEFINE(HAVE_DLPI)
+elif test -r /usr/include/linux/socket.h ; then
+    LL_INT_TYPE=sockpacket
+    AC_MSG_RESULT(found SOCK_PACKET)
+    if test $with_pf_packet = yes; then
+         AC_LIBNET_CHECK_PF_PACKET
+    fi
+elif test -c /dev/bpf0 ; then           # check again in case not readable
+    LL_INT_TYPE=bpf
+    AC_MSG_RESULT(found bpf)
+elif test -c /dev/enet ; then           # check again in case not readable
+    LL_INT_TYPE=enet
+    AC_MSG_RESULT(found enet)
+elif test -c /dev/nit ; then            # check again in case not readable
+    LL_INT_TYPE=snit
+    AC_MSG_RESULT(found snit)
+else
+    LL_INT_TYPE=null
+    AC_MSG_WARN(could not find a low level packet interface)
+    AC_MSG_WARN(low level packet creation API will not be added to the library)
+fi
+
+dnl
+dnl Convert link layer type to uppercase.
+dnl
+LL_INT_TYPE_UC=`echo $LL_INT_TYPE | tr a-z A-Z`
+
+dnl
+dnl Check and set OS specific parameters.
+dnl
+
+case "$target_os" in
+
+*linux*)
+    AC_DEFINE(_BSD_SOURCE)
+    AC_DEFINE(__BSD_SOURCE)
+    AC_DEFINE(__FAVOR_BSD)
+    LIBNET_CONFIG_DEFINES="-D_BSD_SOURCE -D__BSD_SOURCE -D__FAVOR_BSD"
+    AC_CHECK_HEADERS(net/ethernet.h, \
+        LIBNET_CONFIG_DEFINES="$LIBNET_CONFIG_DEFINES -DHAVE_NET_ETHERNET_H")
+    MAN_PREFIX="$prefix/man/man3/"
+    LIB_PREFIX="$prefix/lib/"
+    INC_PREFIX="$prefix/include/"
+    BIN_PREFIX="$prefix/bin/"
+    ;;
+
+*freebsd*)
+    AC_DEFINE(LIBNET_BSDISH_OS)
+    AC_DEFINE(LIBNET_BSD_BYTE_SWAP)
+    AC_DEFINE(HAVE_SOCKADDR_SA_LEN)
+    LIBNET_CONFIG_DEFINES="-DLIBNET_BSDISH_OS -DLIBNET_BSD_BYTE_SWAP \
+        -DHAVE_SOCKADDR_SA_LEN"
+    MAN_PREFIX="$prefix/man/man3/"
+    LIB_PREFIX="$prefix/lib/aout"
+    INC_PREFIX="$prefix/include/"
+    BIN_PREFIX="$prefix/bin/"
+    AC_MSG_RESULT(Note: support/bpf-lkm/etherspoof contains the lkm source \
+required to spoof ethernet frames)
+    ln -sf FreeBSD support/bpf-lkm/etherspoof
+    ;;
+
+*netbsd*)
+    AC_DEFINE(LIBNET_BSDISH_OS)
+    AC_DEFINE(LIBNET_BSD_BYTE_SWAP)
+    LIBNET_CONFIG_DEFINES="-DLIBNET_BSDISH_OS -DLIBNET_BSD_BYTE_SWAP"
+    MAN_PREFIX="$prefix/man/man3/"
+    LIB_PREFIX="$prefix/lib/aout"
+    INC_PREFIX="$prefix/include/"
+    BIN_PREFIX="$prefix/bin/"
+    ;;
+
+*openbsd*)
+    AC_DEFINE(LIBNET_BSDISH_OS)
+    AC_DEFINE(HAVE_SOCKADDR_SA_LEN)
+    LIBNET_CONFIG_DEFINES="-DLIBNET_BSDISH_OS"
+    MAN_PREFIX="$prefix/local/man/man3/"
+    LIB_PREFIX="$prefix/lib/"
+    INC_PREFIX="$prefix/include/"
+    BIN_PREFIX="$prefix/bin/"
+    AC_MSG_RESULT(Note: support/bpf-lkm/etherspoof contains the lkm required \
+to spoof ethernet frames)
+    ln -sf OpenBSD support/bpf-lkm/etherspoof
+    ;;
+
+*bsdi*)
+    AC_DEFINE(LIBNET_BSDISH_OS)
+    AC_DEFINE(LIBNET_BSD_BYTE_SWAP)
+    LIBNET_CONFIG_DEFINES="-DLIBNET_BSDISH_OS -DLIBNET_BSD_BYTE_SWAP"
+    MAN_PREFIX="$prefix/man/man3/"
+    LIB_PREFIX="$prefix/lib/"
+    INC_PREFIX="$prefix/include/"
+    BIN_PREFIX="$prefix/bin/"
+    ;;
+
+*solaris*)
+    AC_DEFINE(HAVE_SOLARIS)
+    AC_CHECK_HEADERS(sys/bufmod.h sys/dlpi_ext.h)
+    AC_MSG_CHECKING(for /dev/dlpi device)
+    if test -c /dev/dlpi; then
+        AC_MSG_RESULT(yes)
+        AC_DEFINE(HAVE_DEV_DLPI)
+    else
+        AC_MSG_RESULT(no)
+        dir="/dev/dlpi"
+        AC_MSG_CHECKING(for $dir directory)
+        if test -d $dir ; then
+            AC_MSG_RESULT(yes)
+            AC_DEFINE_UNQUOTED(DLPI_DEV_PREFIX, "$dir")
+        else
+            AC_MSG_RESULT(no)
+        fi
+    fi
+    AC_CHECK_LIB(socket, socket, ,AC_MSG_ERROR(libsocket not found.))
+    AC_CHECK_LIB(nsl, gethostbyname, ,AC_MSG_ERROR(libnsl not found.))
+
+dnl 
+dnl Broken checksums?
+dnl
+    case "`uname -r`" in
+    5.4)
+        AC_DEFINE(STUPID_SOLARIS_CHECKSUM_BUG)
+        ;;
+    5.5*)
+        AC_DEFINE(STUPID_SOLARIS_CHECKSUM_BUG)
+        ;;
+
+    esac
+
+    ADDITIONAL_LIBS='-lsocket -lnsl'
+    LIBNET_CONFIG_LIBS="-lsocket -lnsl"
+    MAN_PREFIX="$prefix/man/man3/"
+    LIB_PREFIX="$prefix/lib/"
+    INC_PREFIX="$prefix/include/"
+    BIN_PREFIX="$prefix/bin/"
+    ;;
+
+*)
+    AC_MSG_WARN(apparently your OS is not officially supported yet)
+    AC_MSG_WARN(this may not work)
+    AC_MSG_RESULT(you'll have to edit the makefile by hand)
+    AC_MSG_RESULT(please send diffs to mike@infonexus.com)
+    ;;
+
+esac
+
+AC_LIBNET_CHECK_LIBNET_VER
+AC_LIBNET_ENDIAN_CHECK
+AC_LBL_UNALIGNED_ACCESS
+
+AC_CHECK_HEADERS(sys/sockio.h)
+AC_CONFIG_HEADER(include/config.h)
+AC_OUTPUT(Makefile test/Makefile test/TCP/Makefile test/Ethernet/Makefile \
+    test/UDP/Makefile test/ICMP/Makefile test/Random/Makefile \
+    test/OSPF/Makefile util/Makefile util/Get-mac/Makefile example/Makefile \
+    libnet-config, chmod +x libnet-config)
+
+dnl EOF

@@ -1,0 +1,128 @@
+2005-05-29  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* shatd.c: fixed several core dump bugs bugs related to the
+	command	line interface (with option --shat-ip-pool=NO)
+
+2005-05-25  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* shatd.c: fixed '-P 192.168.0.0/32' thanks to Georg Lukas
+
+2005-04-30  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* Makefile,*.c,*.h: using -Wall as standard option, fixed several
+	initialisation problems and undefined return values
+
+2005-04-28  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* shatd.c,comhandler.c,ctrl.c: the verbosity communication handler
+	has been moved to ctrl.c
+
+2005-04-03  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* shatd.c (main): don'l show the the arp slots when the scan
+	protection is disabled (causes segfault, otherwise)
+
+2005-03-21  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* comhandler.{c,h}: extracted the communication stuff from the
+	cleanup module into the comhandler module
+
+2005-03-20  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* arp.c: quering the arp registry for detecting gratious arps
+
+	* ip2ether.c: now registering outgoing dhcp replies in order to
+	keep track of dhcp clinets - at the moment the dhcp reply is not
+	checked by options, only ip/mac pairs are extracted
+
+	* lookup.c: mac-ip register added, it will be used in order to
+	keep track of used ip-mac addresses by the port scan preventer;
+	this is needed to detect gratious arps which should not be cought
+
+2005-03-19  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* shatd.c: always using the inbound interface network as local
+	network by default for the exclude range, even when the local-ip
+	is set NO or NULL
+
+2005-03-17  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* device.c: wait for a while before exiting after a configuration
+	error, retry opening the tun device when it failes for the first
+	time
+
+2005-03-09  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* lookup.c: arp refresh handling removed, became obsolete since
+	the device index bug was fixed
+
+	* device.c (inbound_arp): redundant function removed
+
+	* ip2ether.c (ip2ether_ping): added echo request function which
+	is available on the command line interface for testing (using
+	tcpdump for seeing the response, for instance)
+
+	* ip2ether.c (ip2ether_xtractor): bugfix, interface index was
+	missing when sending on the ethernet/lan interface
+
+2005-03-08  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* cleanup.c: info query: shows the current pool range, as well
+
+	* shatd.c: bugfix: the merged list local+exclude was not set up
+	properly in most cases
+
+2005-03-07  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* cleanup.c: info and noiseness query/setup added
+
+2005-03-06  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* ctrl.c: support for chgrp/chmod so that group members can
+	access the command socket
+
+	* shatooc.pl: example for a communication package added
+
+	* cleanup.c: list and status query added
+
+2005-03-05  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* cleanup.c, ctrl.[ch]: added communication interface that can
+	be compiled in with -DINFO_SOCKET
+
+2005-03-01  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* arp.c: default initialisation for the arp spoof mac is now
+	<private-prefix> + <ramdom-tail> rather than the interface mac
+
+2005-02-28  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* lookup.c: reuse client data registered earlier when present
+
+	* shatd.c (main): chroot option added, rather sleep forever than
+	exiting when everything is deconfigured
+
+2005-02-26  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* shatd.c (main): set the arp spoof scheduler by command
+	line options
+
+	* arp.c: implemented queue that allows to repeat sending
+	arp reply packets several times
+
+	* do.c (do_loop): enhanced scheduler to allow resizing the idle
+	loop timeout
+
+	* shatd.c: tuned option settings for arp-spoof-only mode
+
+2005-02-24  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* shatd.c: tuned option settings
+
+2005-02-23  Jordan Hrycaj  <jordan@128gw.maxina>
+
+	* device.c (tunnel_route): (local) routing setup support added
+
+	* Makefile: reorganised, collected and recycled the old arpcatch
+	code using a tun device instead of a divert socket
+
