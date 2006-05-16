@@ -8,39 +8,43 @@
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
-	</head>
-   <body class="gui">
-      <div id="wrapper">
-         <div id="content">
-            <div id="header">
-               <div id="logo">
-                  <h1><% show_control(); %></h1>
-               </div>
-               <div id="menu">
-                  <div id="menuMain">
-                     <ul id="menuMainList">
-                        <li><a href="index.asp">Setup</a></li>
-                        <li><a href="Wireless_Basic.asp">Wireless</a></li>
-                        <li class="current"><span>SIPatH</span><div id="menuSub">
-                              <ul id="menuSubList">
-                                 <li><span>Overview</span></li>
-                                 <li><a href="cgi-bin-mf-phonebook.html">Phonebook</a></li>
-                                 <li><a href="cgi-bin-mf-status.html">Status</a></li>
-                              </ul>
-                         </div>
-                         </li>
-                        <li><a href="Firewall.asp">Security</a></li>
+		<script type="text/javascript">
 
-                        <li><a href="Filters.asp">Access Restrictions</a></li>
-                        <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                        <li><a href="Management.asp">Administration</a></li>
-                        <li><a href="Status_Router.asp">Status</a></li>
-                     </ul>
-                  </div>
-               </div>
-            </div>
-            <div id="main">
-               <div id="contents">
+document.title = "<% nvram_get("router_name"); %>" + sipath.titl;
+
+		</script>
+	</head>
+	
+	<body class="gui">
+		<div id="wrapper">
+			<div id="content">
+				<div id="header">
+					<div id="logo"><h1><% show_control(); %></h1></div>
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.sipath)</script></span>
+									<div id="menuSub">
+										<ul id="menuSubList">
+											<li><span><script type="text/javascript">Capture(bmenu.sipathoverview)</script></span></li>
+											<li><a href="cgi-bin-mf-phonebook.html"><script type="text/javascript">Capture(bmenu.sipathphone)</script></a></li>
+											<li><a href="cgi-bin-mf-status.html"><script type="text/javascript">Capture(bmenu.sipathstatus)</script></a></li>
+										</ul>
+									</div>
+								</li>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div id="main">
+					<div id="contents">
 		<h2>SIPath</h2>
 		<p>Welcome to your <a href="http://sipath.sourceforge.net" target="new">SIP at
 		Home</a> web interface for the
@@ -121,7 +125,7 @@
 						<h2>Help</h2>
 						</div>
 					<br />
-					<!--<a href="javascript:openHelpWindow('HManagement.asp')">More...</a>-->
+					<!--<a href="javascript:openHelpWindow('HSipath.asp')">More...</a>-->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
