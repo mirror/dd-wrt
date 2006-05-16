@@ -280,13 +280,13 @@ addEvent(window, "load", function() {
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(wds.label2)</script></div>
-                           <input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_checked("wl_br1_enable", "1"); %>><script type="text/javascript">Capture(share.enable)</script></input>
-                           <input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_checked("wl_br1_enable", "0"); %>><script type="text/javascript">Capture(share.disable)</script></input>
+                           <input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_checked("wl_br1_enable", "1"); %> ><script type="text/javascript">Capture(share.enable)</script></input>
+                           <input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_checked("wl_br1_enable", "0"); %> ><script type="text/javascript">Capture(share.disable)</script></input>
                         </div>
                         <div class="setting">
                            <div class="label"><script type="text/javascript">Capture(share.nat)</script></div>
                            <select name="wl_br1_nat">
-                              <script type="text/javascript">document.write("<option value="<% nvram_match("wl_br1_nat", "0", "selected"); %>'>" + share.disable + "</option>");</script>
+                              <script type="text/javascript">document.write("<option value='<% nvram_match("wl_br1_nat", "0", "selected"); %>'>" + share.disable + "</option>");</script>
                               <script type="text/javascript">document.write("<option value='<% nvram_match("wl_br1_nat", "1", "selected"); %>'>" + wds.nat1 + "</option>");</script>
                               <script type="text/javascript">document.write("<option value='<% nvram_match("wl_br1_nat", "2", "selected"); %>'>" + wds.nat2 + "</option>");</script>
                            </select>
