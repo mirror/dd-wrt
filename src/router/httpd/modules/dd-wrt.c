@@ -2816,7 +2816,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	  websWrite (wp,
 //                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 		     "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
-		     mac, desc, rssi, -noise, rssi - (-noise));
+		     mac, desc, rssi, noise, rssi - noise);
 	}
       // One less Top10-Wanted leak (belanger[AT]pobox.com)
       fclose (fp);
