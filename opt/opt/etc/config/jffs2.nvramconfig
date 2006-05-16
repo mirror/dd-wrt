@@ -1,2 +1,0 @@
- "enable_jffs2" "enable JFFS2 Device" "CHOICE" "2" "0" "1"  "FALSE" "0"
- "clean_jffs2" "clean jffs2 device" "CHOICE" "2" "0" "1"  "FALSE" "0"
