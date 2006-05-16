@@ -1,0 +1,14 @@
+
+<fieldset>
+	<legend><script type="text/javascript">Capture(management.jffs_legend)</script></legend>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(management.jffs_srv)</script></div>
+		<input class="spaceradio" type="radio" value="1" name="enable_jffs2" <% nvram_checked("enable_jffs2","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="enable_jffs2" <% nvram_checked("enable_jffs2","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(management.jffs_clean)</script></div>
+		<input class="spaceradio" type="radio" value="1" name="clean_jffs2" <% nvram_checked("clean_jffs2","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="clean_jffs2" <% nvram_checked("clean_jffs2","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+</fieldset><br/>

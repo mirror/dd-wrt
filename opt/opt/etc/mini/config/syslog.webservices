@@ -1,0 +1,14 @@
+<fieldset>	
+	<legend><script type="text/javascript">Capture(service.syslog_legend)</script></legend>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.syslog_srv)</script></div>
+		<input class="spaceradio" type="radio" name="syslogd_enable" value="1" <% nvram_selmatch("syslogd_enable", "1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" name="syslogd_enable" value="0" <% nvram_selmatch("syslogd_enable", "0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<% nvram_match("syslogd_enable","0","<!--"); %>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.syslog_ip)</script></div>
+		<input class="num" maxlength="16" size="16" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" />
+	</div>
+	<% nvram_match("syslogd_enable","0","-->"); %>
+</fieldset><br/>
