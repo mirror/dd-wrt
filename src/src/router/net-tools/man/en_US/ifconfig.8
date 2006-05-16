@@ -1,0 +1,200 @@
+.TH IFCONFIG 8 "14 August 2000" "net-tools" "Linux Programmer's Manual"
+.SH NAME
+ifconfig \- configure a network interface
+.SH SYNOPSIS
+.B "ifconfig [interface]"
+.br
+.B "ifconfig interface [aftype] options | address ..."
+.SH DESCRIPTION
+.B Ifconfig
+is used to configure the kernel-resident network interfaces.  It is
+used at boot time to set up interfaces as necessary.  After that, it
+is usually only needed when debugging or when system tuning is needed.
+.LP
+If no arguments are given,
+.B ifconfig
+displays the status of the currently active interfaces.  If
+a single
+.B interface
+argument is given, it displays the status of the given interface
+only; if a single
+.B -a
+argument is given, it displays the status of all interfaces, even
+those that are down.  Otherwise, it configures an interface.
+
+.SH Address Families
+If the first argument after the interface name is recognized as
+the name of a supported address family, that address family is
+used for decoding and displaying all protocol addresses.  Currently
+supported address families include
+.B inet
+(TCP/IP, default), 
+.B inet6
+(IPv6),
+.B ax25
+(AMPR Packet Radio),
+.B ddp
+(Appletalk Phase 2),
+.B ipx
+(Novell IPX) and
+.B netrom
+(AMPR Packet radio).
+.SH OPTIONS
+.TP
+.B interface
+The name of the interface.  This is usually a driver name followed by
+a unit number, for example
+.B eth0
+for the first Ethernet interface.
+.TP
+.B up
+This flag causes the interface to be activated.  It is implicitly
+specified if an address is assigned to the interface.
+.TP
+.B down
+This flag causes the driver for this interface to be shut down.
+.TP
+.B "[\-]arp"
+Enable or disable the use of the ARP protocol on this interface.
+.TP
+.B "[\-]promisc"
+Enable or disable the
+.B promiscuous
+mode of the interface.  If selected, all packets on the network will
+be received by the interface.
+.TP
+.B "[\-]allmulti"
+Enable or disable 
+.B all-multicast
+mode.  If selected, all multicast packets on the network will be
+received by the interface.
+.TP
+.B "metric N"
+This parameter sets the interface metric.
+.TP
+.B "mtu N"
+This parameter sets the Maximum Transfer Unit (MTU) of an interface.
+.TP
+.B "dstaddr addr"
+Set the remote IP address for a point-to-point link (such as
+PPP).  This keyword is now obsolete; use the
+.B pointopoint
+keyword instead.
+.TP
+.B "netmask addr"
+Set the IP network mask for this interface.  This value defaults to the
+usual class A, B or C network mask (as derived from the interface IP
+address), but it can be set to any value.
+.TP
+.B "add addr/prefixlen"
+Add an IPv6 address to an interface. 
+.TP
+.B "del addr/prefixlen"
+Remove an IPv6 address from an interface.
+.TP
+.B "tunnel aa.bb.cc.dd"
+Create a new SIT (IPv6-in-IPv4) device, tunnelling to the given destination.
+.TP
+.B "irq addr"
+Set the interrupt line used by this device.  Not all devices can
+dynamically change their IRQ setting.
+.TP
+.B "io_addr addr"
+Set the start address in I/O space for this device. 
+.TP
+.B "mem_start addr"
+Set the start address for shared memory used by this device.  Only a
+few devices need this.
+.TP
+.B "media type"
+Set the physical port or medium type to be used by the device.  Not
+all devices can change this setting, and those that can vary in what
+values they support.  Typical values for
+.B type
+are 
+.B 10base2
+(thin Ethernet),
+.B 10baseT
+(twisted-pair 10Mbps Ethernet),
+.B AUI 
+(external transceiver) and so on.  The special medium type of
+.B auto
+can be used to tell the driver to auto-sense the media.  Again, not
+all drivers can do this.
+.TP
+.B "[-]broadcast [addr]"
+If the address argument is given, set the protocol broadcast
+address for this interface.  Otherwise, set (or clear) the
+.B IFF_BROADCAST
+flag for the interface.
+.TP
+.B "[-]pointopoint [addr]"
+This keyword enables the
+.B point-to-point
+mode of an interface, meaning that it is a direct link between two
+machines with nobody else listening on it.
+.br
+If the address argument is also given, set the protocol address of
+the other side of the link, just like the obsolete
+.B dstaddr
+keyword does.  Otherwise, set or clear the
+.B IFF_POINTOPOINT
+flag for the interface. 
+.TP
+.B hw class address
+Set the hardware address of this interface, if the device driver
+supports this operation.  The keyword must be followed by the
+name of the hardware class and the printable ASCII equivalent of
+the hardware address.  Hardware classes currently supported include
+.B ether
+(Ethernet),
+.B ax25
+(AMPR AX.25),
+.B ARCnet
+and
+.B netrom
+(AMPR NET/ROM).
+.TP
+.B multicast
+Set the multicast flag on the interface. This should not normally be needed
+as the drivers set the flag correctly themselves.
+.TP
+.B address
+The IP address to be assigned to this interface.
+.TP
+.B txqueuelen length
+Set the length of the transmit queue of the device. It is useful to set this
+to small values for slower devices with a high latency (modem links, ISDN)
+to prevent fast bulk transfers from disturbing interactive traffic like
+telnet too much. 
+.SH NOTES
+Since kernel release 2.2 there are no explicit interface statistics for
+alias interfaces anymore. The statistics printed for the original address
+are shared with all alias addresses on the same device. If you want per-address
+statistics you should add explicit accounting
+rules for the address using the 
+.BR ipchains(8)
+command.
+.LP
+Interrupt problems with Ethernet device drivers fail with EAGAIN. See
+.I http://cesdis.gsfc.nasa.gov/linux/misc/irq-conflict.html
+for more information.
+.SH FILES
+.I /proc/net/socket 
+.br
+.I /proc/net/dev
+.br
+.I /proc/net/if_inet6
+.SH BUGS
+While appletalk DDP and IPX addresses will be displayed they cannot be
+altered by this command.
+.SH SEE ALSO
+route(8), netstat(8), arp(8), rarp(8), ipchains(8)
+.SH AUTHORS
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Alan Cox, <Alan.Cox@linux.org>
+.br
+Phil Blundell, <Philip.Blundell@pobox.com>
+.br
+Andi Kleen

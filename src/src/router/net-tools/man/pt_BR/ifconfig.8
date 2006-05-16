@@ -1,0 +1,180 @@
+.TH IFCONFIG 8 "10 de fevereiro de 1996" "net-tools" "Manual do Programador Linux"
+.SH NOME
+ifconfig \- configura uma interface de rede
+.SH SINOPSE
+.B "ifconfig [interface]"
+.br
+.B "ifconfig interface [aftype] opções | endereços ..."
+.SH DESCRIÇÃO
+.B ifconfig
+é usado para configurar (e posteriormente manter) as interfaces de
+rede. É usado durante o boot para configurar a maioria delas para
+um estado usável. Depois disto, é normalmente somente necessário
+durante depurações ou quando for necessária uma configuração fina
+do sistema.
+.LP
+Se nenhum argumento for informado,
+.B ifconfig
+somente mostra o estado das interfaces correntemente definidas. Se
+um argumento
+.B interface
+for informado, ele mostra somente o estado da interface informada. De
+outra forma ele assume que os parâmetros devem ser configurados.
+.SH Famílias de Endereçamento
+Se o primeiro argumento após o nome da interface for reconhecido
+como um nome de uma família de endereçamento suportada, esta família
+de endereçamento é usada na decodificação e apresentação de todos
+os endereços de protocolos. Atualmente as famílias de endereçamento
+suportadas incluem
+.B inet
+(TCP/IP, default) 
+.B ax25
+(AMPR Packet Radio),
+.B ddp
+(Appletalk Phase 2),
+.B ipx
+(Novell IPX) and
+.B netrom
+(AMPR Packet radio).
+.SH OPÇÕES
+.TP
+.B interface
+O nome da interface de rede. Usualmente é um nome como
+.B eth0
+,
+.B sl3
+ou algo parecido: um nome de driver de dispositivo seguido por um
+número.
+.TP
+.B up 
+Esta flag causa a ativação da interface. É especificada
+implicitamente se a interface receber um novo endereço (veja
+abaixo).
+.TP
+.B down 
+Esta flag desativa o driver desta interface, é útil quando alguma
+coisa começar a ter problemas.
+.TP
+.B "[\-]arp" 
+Habilita ou desabilita o uso do protocolo ARP para esta interface. Se
+o sinal de menos (\-) estiver presente a opção é desligada.
+.TP
+.B "[\-]trailers" 
+Habilita ou desabilita o uso de trailer em frames Ethernet. Não é
+utilizada na implementação atual do pacote net-tools.
+.TP
+.B "[\-]allmulti" 
+Habilita ou desabilita o modo
+.B promiscuous
+da interface. Isto significa que todos os frames passarão pela camada
+de rede do kernel, permitindo monitoração da rede.
+.TP
+.B "metric N" 
+Este parâmetro configura a métrica da interface. Não é usado atualmente,
+mas será implementado no futuro.
+.TP
+.B "mtu N" 
+Este parâmetro configura a Unidade Máxima de Transferência (MTU) de uma
+interface. Para Ethernet é um número entre 1000-2000 (o padrão é
+1500). Para SLIP, use algo entre 200 e 4096. Note que a implementação
+atual não manipula fragmentação IP ainda, então é melhor configurar
+a MTU com um tamanho adequado!
+.TP
+.B "dstaddr addr"
+Configura o endereço IP do "outro lado" no caso de um link Ponto-A-Ponto,
+como PPP. Esta palavra-chave tornou-se obsoleta e deve ser usada a nova 
+palavra-chave
+.BR pointopoint .
+.TP
+.B "netmask addr"
+Configura a máscara de rede IP para esta interface. Este valor assume o
+padrão usual das classes A, B ou C (deduzindo-o a partir do endereço
+IP da interface), mas pode ser configurado para qualquer valor para o
+uso de sub-redes.
+
+.TP
+.B "irq addr"
+Configura a linha de interrupção (IRQ) usada por este dispositivo. Muitos
+dispositivos não suportam configuração dinâmica de IRQ.
+.TP
+.B "[-]broadcast [endereço]"
+Se o argumento endereço for informado, configura o endereço de protocolo
+broadcast para esta interface. De outra forma ele somente configura a flag
+.B IFF_BROADCAST
+da interface.  Se a palavra-chave for precedida por um sinal de menos
+.B (-)
+, então a flag é removida.
+.TP
+.B "[-]pointopoint [endereço]"
+Esta palavra-chave habilita o modo
+.B ponto-a-ponto
+da interface, significando que ela é um link direto entre duas máquinas
+sem ninguém ouvindo (ou, pelo menos nós esperamos que este seja o caso
+:-)
+.BR
+Se o argumento endereço for informado, configura o endereço de protocolo
+do outro lado do link, exatamente como a palavra-chave obsoleta
+.B dstaddr
+faz. De outra forma, ela somente configura a flag
+.B IFF_POINTOPOINT
+da interface. Se a palavra-chave for precedida por um sinal de menos
+.B (-)
+, então a flag é removida.
+.TP
+.B "hw"
+Configura o endereço de hardware para esta interface, se o driver do
+dispositivo suportar esta operação. A palavra-chave deve ser seguida
+pelo nome da classe do hardware e o equivalente em ASCII do endereço
+de hardware. As classes de hardware atualmente suportadas incluem
+.B ether
+(Ethernet),
+.B ax25
+(AMPR AX.25),
+.B ARCnet
+e
+.B netrom
+(AMPR NET/ROM).
+.TP
+.B multicast
+Inicializa a flag de multicast para a interface. Normalmente, isto não será
+necessário já que os drivers ajustam as flags corretas por si só.
+.TP
+.B endereço
+O nome ou endereço IP da máquina (um nome de máquina será traduzido para
+um  endereço IP) da interface. Este parâmetro é necessário, apesar
+da sintaxe atualmente não requisitá-lo.
+.SH NOTAS
+
++Since kernel release 2.2 there are no explicit interface statistics for
++alias interfaces anymore. The statistics printed for the original address
++are shared with all alias addresses on the same device. If you want per-address
++statistics you should add explicit accounting
++rules for the address using the
++.BR ipchains(8)
++command.
+
+Deste o kernel 2.2 não existem mais estatísticas explícitas para os apelidos (aliases)
+de interfaces. As estatísticas mostradas para o endereço original são compartilhadas
+como todos os endereços associados ao mesmo dispositivo. Se desejar estatísticas
+por endereço você deve explicitamente adicionar regras de contabilização para os
+endereços usando o comando
+.BR ipchains(8)
+.
+
+.SH ARQUIVOS
+.I /proc/net/socket 
+.br
+.I /proc/net/dev
+.SH BUGS
+Os endereços appletalk DDP e IPX serão mostrados, mas não podem ser alterados
+com este comando.
+.SH VEJA TAMBÉM
+route(8), netstat(8), arp(8), rarp(8), ipchains(8)
+.SH AUTORES
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+Alan Cox, <Alan.Cox@linux.org>
+.SH TRADUÇÃO E REVISÃO PARA A LÍNGUA PORTUGUESA
+Arnaldo Carvalho de Melo <acme@conectiva.com.br> (tradução)
+.BR
+Jorge Luiz Godoy Filho <jorge@bestway.com.br> (revisão)
+

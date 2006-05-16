@@ -1,0 +1,2 @@
+    dep_tristate '    REJECT target support' CONFIG_IP_NF_TARGET_REJECT $CONFIG_IP_NF_FILTER
+dep_tristate '    NETLINK target support' CONFIG_IP_NF_TARGET_NETLINK $CONFIG_IP_NF_FILTER

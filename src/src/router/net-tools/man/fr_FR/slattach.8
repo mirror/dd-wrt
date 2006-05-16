@@ -1,0 +1,103 @@
+.TH SLATTACH 8 "12 Feb 1994" "" ""
+.SH NOM
+slattach \- attache une interface réseau à une ligne série
+.SH SYNOPSIS
+.B "slattach [-dehlLmnqv] [-c commande] [-p proto] [-s vitesse] [tty]"
+.br
+.SH DESCRIPTION
+.B Slattach
+est un minuscule programme qui peut être utilisé pour attacher
+un terminal normal ("série") dans un des différents modes "réseau",
+ceci vous permettant de l'utiliser pour des liaisons point-à-point
+vers d'autres systèmes.
+.SH OPTIONS
+.TP
+.B "[-c commande]"
+Exécute
+.B `commande'
+lorsque la ligne est suspendue. Ceci peut être utilisé pour lancer
+des scripts ou réétablir des connexions quand un lien tombe.
+.TP
+.B "[-d]"
+Valide le débogage.  Utile pour déterminer pourquoi une configuration
+ne fonctionne pas.
+.TP
+.B "[-h]"
+Termine lorsque la porteuse est perdue. Ceci fonctionne à la fois sur
+les périphériques /dev/tty et /dev/cua en contrôlant directement
+l'état de la porteuse toutes les 15 secondes.
+.TP
+.B "[-v]"
+Valide le mode verbeux.  Utile pour les shell scripts.
+.TP
+.B "[-q]"
+Opère en mode silencieux - pas de messages du tout.
+.TP
+.B "[-l]"
+Crée un fichier de vérouillage pour le périphérique comme
+pour UUCP dans /var/lock.
+.TP
+.B "[-n]"
+Equivalent à la commande "mesg n".
+.TP
+.B "[-m]"
+\fBn'\fPinitialise \fBpas\fP la ligne en mode raw 8 bits.
+.TP
+.B "[-e]"
+Termine correctement après l'initialisation du périphérique,
+au lieu d'attendre que la ligne soit suspendue.
+.TP
+.B "[-L]"
+Valide les opérations 3 lignes. Le terminal est mis en mode CLOCAL, 
+la surveillance de porteuse est invalidée.
+.TP
+.B "[-p proto]"
+Définit le protocole spécifique à utiliser sur la ligne.
+La valeur par défaut est 
+.B "cslip"
+, c'est-à-dire SLIP compressé.  Les autres valeurs possibles sont :
+.B "slip"
+(SLIP normal), 
+.B "adaptive"
+(CSLIP/SLIP adaptatifs),
+.B "ppp"
+(Protocole Point-à-Point)
+et
+.B "kiss"
+(un protocole utilisé pour communiquer avec des controleurs AX.25 paquets radios).
+L'argument spécifique
+.B "tty"
+peut être utilisé pour refaire passer le périphérique en
+fonctionnement série normal. L'utilisation du mode 'ppp' n'est en
+principe pas utile puisque ppp nécessite le démon additionnel
+.B pppd
+pour être actif sur la ligne. Pour les connexions `kiss', le programme 
+.B axattach
+doit être utilisé.
+.TP
+.B "[-s vitesse]"
+Définit la vitesse de la ligne, différente de la valeur par défaut.
+.PP
+Si aucun argument n'est donné, la ligne courante du terminal
+(habituellement liée au login) est utilisée. Autrement, une tentative
+est effectuée pour obtenir le port du terminal indiqué, puis il est
+vérouillé et ouvert.
+.SH FICHIERS
+.I /dev/cua* /var/lock/LCK.*
+.SH BUGS
+Aucun connu.
+.SH VOIR AUSSI
+axattach(8), dip(8) pppd(8), sliplogin(8).
+.SH AUTEURS
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Alan Cox, <Alan.Cox@linux.org>
+.br
+Miquel van Smoorenburg, <miquels@drinkel.ow.org>
+.br
+George Shearer, <gshearer@one.net>
+.br
+Yossi Gottlieb, <yogo@math.tau.ac.il>
+.br
+.SH TRADUCTION
+Jean-Michel VANSTEENE (vanstee@worldnet.fr)

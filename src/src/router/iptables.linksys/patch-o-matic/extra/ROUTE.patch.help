@@ -1,0 +1,28 @@
+Author: Cédric de Launois <delaunois@info.ucl.ac.be>
+Status: In Development/Works for me
+  
+  This option adds a `ROUTE' target, which allows you to directly route
+  a received packet through a specified interface or towards a host, even
+  if the regular destination of the packet is the router itself.
+  This target never modifies packets but allows a different routing scheme
+  than the one provided by the standard kernel routing table.
+	   
+  This target is to be used inside the mangle table, in the PREROUTING,
+  POSTROUTING or FORWARD hooks.
+
+  ROUTE target options:
+    --iface name      Send the packet directly through this interface.
+    --to    ip        Route the packet as if its destination address was ip.
+
+  Examples :
+
+  To redirect all outgoing icmp packet to the eth1 interface :
+  # iptables -A POSTROUTING -t mangle -p icmp -j ROUTE --iface eth1
+
+  To tunnel all incoming http packets
+  # iptables -A PREROUTING -t mangle -p tcp --dport 80 -j ROUTE --iface tunl1
+
+  To force the next-hop used for ssh packets
+  # iptables -A PREROUTING -t mangle -p tcp --dport 22 -j ROUTE --to w.x.y.z
+
+ 

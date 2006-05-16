@@ -1,0 +1,26 @@
+/AUTHORS/1.1/Thu Dec 15 00:09:15 2005//
+/COPYING/1.1/Thu Dec 15 00:09:15 2005//
+/COPYING.LIB/1.1/Thu Dec 15 00:09:15 2005//
+/Makefile/1.1/Thu Dec 15 00:09:15 2005//
+/Makefile.am/1.1/Thu Dec 15 00:09:15 2005//
+/Makefile.in/1.1/Thu Dec 15 00:09:15 2005//
+/ghttp.c/1.1/Thu Dec 15 00:09:15 2005//
+/ghttp.h/1.1/Thu Dec 15 00:09:15 2005//
+/ghttpConf.sh.in/1.1/Thu Dec 15 00:09:15 2005//
+/ghttp_constants.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_base64.c/1.1/Thu Dec 15 00:09:16 2005//
+/http_base64.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_date.c/1.1/Thu Dec 15 00:09:16 2005//
+/http_date.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_global.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_hdrs.c/1.1/Thu Dec 15 00:09:16 2005//
+/http_hdrs.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_req.c/1.1/Thu Dec 15 00:09:16 2005//
+/http_req.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_resp.c/1.1/Thu Dec 15 00:09:16 2005//
+/http_resp.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_trans.c/1.1/Thu Dec 15 00:09:16 2005//
+/http_trans.h/1.1/Thu Dec 15 00:09:16 2005//
+/http_uri.c/1.1/Thu Dec 15 00:09:16 2005//
+/http_uri.h/1.1/Thu Dec 15 00:09:16 2005//
+D

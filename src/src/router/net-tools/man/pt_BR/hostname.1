@@ -1,0 +1,191 @@
+.TH HOSTNAME 1 "28 de janeiro de 1996" "net-tools" "Manual do Programador Linux"
+
+.SH NOME
+hostname \- mostra ou configura o nome da máquina 
+.BR
+domainname \- mostra ou configura o nome do domínio NIS/YP
+.BR
+dnsdomainname \- mostra o nome do domínio DNS
+.BR
+nisdomainname \- mostra ou configura o nome do domínio NIS/YP
+.BR
+ypdomainname \- mostra ou configura o nome do domínio NIS/YP
+
+.SH SINOPSE
+.B hostname
+.RB [ \-v ]
+.RB [ \-a ]
+.RB [ \-\-alias ]
+.RB [ \-d ]
+.RB [ \-\-domain ]
+.RB [ \-f ]
+.RB [ \-\-fqdn ]
+.RB [ \-i ]
+.RB [ \-\-ip-address ]
+.RB [ \-\-long ]
+.RB [ \-s ]
+.RB [ \-\-short ]
+.RB [ \-y ]
+.RB [ \-\-yp ]
+.RB [ \-\-nis ]
+
+.PP
+.B hostname 
+.RB [ \-v ]
+.RB [ \-F\ arquivo ]
+.RB [ \-\-file\ arquivo ]
+.RB [ máquina ]
+
+.PP
+.B domainname
+.RB [ \-v ]
+.RB [ \-F\ filename ]
+.RB [ \-\-file\ nome_arquivo ]
+.RB [ nome ]
+
+.PP
+.B hostname
+.RB [ \-v ]
+.RB [ \-h ]
+.RB [ \-\-help ]
+.RB [ \-V ]
+.RB [ \-\-version ]
+
+.PP
+.B dnsdomainname
+.RB [ \-v ]
+.LP
+.B nisdomainname
+.RB [ \-v ]
+.LP
+.B ypdomainname
+.RB [ \-v ]
+
+.SH DESCRIÇÃO
+.B hostname
+é o programa usado para configurar ou mostrar o nome corrente da máquina
+ou o domínio do sistema. Este nome é usado por muitos dos programas de
+rede para identificar a máquina. O nome do domínio também é usado pelo
+NIS/YP.
+
+.SS "OBTER NOME"
+Quando chamado sem argumentos o programa mostra os nomes correntes:
+
+.LP
+.B hostname
+mostrará o nome do sistema conforme retornado pela função
+.BR gethostname (2).
+
+
+.LP
+.B "domainname, nisdomainname, ypdomainname"
+mostrará o nome do sistema conforme retornado pela função
+.BR getdomainname (2).
+Isto também é conhecido como o nome de domínio YP/NIS do sistema.
+
+.LP
+.B dnsdomainname
+mostrara a parte do domínio do FQDN (Nome de domínio completamente qualificado).
+O FQDN do sistema é retornado pelo comando
+.BR "hostname \-\-fqdn" .
+
+.SS "CONFIGURAR NOME"
+Quando chamado com um argumento ou com a opção
+.B \-\-file
+, o comando configura o nome da máquina ou do domínio NIS/YP.
+
+.LP
+Note que somente o super usuário pode mudar os nomes.
+
+.LP
+Nao é possível configurar o FQDN ou o nome do domínio DNS com o comando
+.B dnsdomainname 
+(veja 
+.B "O FQDN"
+abaixo).
+
+.LP
+O nome da máquina é normalmente configurado durante a inicialização do sistema,
+em
+.I /etc/rc.d/rc.inet1
+ou
+.I /etc/init.d/boot
+(normalmente lendo o conteúdo de um arquivo que contém o nome da máquina, ex.:
+.IR /etc/hostname ).
+
+.SS O FQDN
+Você não pode mudar o FQDN (conforme retornado por
+.BR "hostname \-\-fqdn" ) 
+ou o nome do domínio DNS (conforme retornado por
+.BR "dnsdomainname" ) 
+com este comando. O FQDN do sistema é o nome que o
+.BR resolver (3)
+retorna para o nome da máquina.
+
+.LP
+Tecnicamente: O FQDN é o nome retornado pelo
+.BR gethostbyname (2)
+para o nome retornado pelo
+.BR gethostname (2).
+O nome do domínio DNS é a parte após o primeiro ponto.
+.LP
+Portanto isto depende da configuração (normalmente em
+.IR /etc/host.conf )
+para que você possa mudá-lo. Normalmente (se o arquivo hosts for lido antes 
+do DNS ou NIS) você pode mudá-lo em
+.IR /etc/hosts .
+
+
+.SH OPÇÕES
+.TP
+.I "\-a, \-\-alias"
+Mostra o alias da máquina (se usado).
+.TP
+.I "\-d, \-\-domain"
+Mostra o nome do domínio DNS. Não use o comando
+.B domainname
+para obter o nome do domínio DNS porque ele mostrará o nome do domínio NIS e
+não o nome do domínio DNS. Use 
+.BR dnsdomainname .
+.TP
+.I "\-F, \-\-file arquivo"
+Leia o nome da máquina a partir do arquivo especificado. Comentários (linhas
+começando com um `#') são ignorados.
+.TP
+.I "\-f, \-\-fqdn, \-\-long"
+Mostra o FQDN (Nome de Domínio Completamente Qualificado). Um FQDN consiste de
+um nome curto de máquina e do nome do domínio DNS. A menos que você esteja
+usando bind ou NIS para resolução de nomes você pode mudar o FQDN e o nome
+do domínio DNS (que é parte do FQDN) no arquivo \fI/etc/hosts\fR.
+.TP
+.I "\-h, \-\-help"
+Mostra uma mensagem sobre como utilizar o comando e termina.
+.TP
+.I "\-i, \-\-ip-address"
+Mostra o(s) endereço(s) IP da máquina.
+.TP
+.I "\-s, \-\-short"
+Mostra o nome curto da máquina. É o nome da máquina até o primeiro ponto.
+.TP
+.I "\-V, \-\-version"
+Mostra informação de versão na saída padrão e termina com sucesso.
+.TP
+.I "\-v, \-\-verbose"
+Mostra uma saída detalhada do que está acontecendo.
+.TP
+.I "\-y, \-\-yp, \-\-nis"
+Mostra o nome do domínio NIS. Se um parâmetro for especificado (ou
+.B \-\-file arquivo
+) então o root também pode configurar um novo domínio NIS.
+.SH ARQUIVOS
+.B /etc/hosts
+.SH AUTOR
+Peter Tobias, <tobias@et-inf.fho-emden.de>
+.BR
+Bernd Eckenfels, <net-tools@lina.inka.de> (NIS e página man).
+.BR
+Arnaldo Carvalho de Melo, <acme@conectiva.com.br> Tradução para a língua
+portuguesa.
+.BR
+Jorge Luiz Godoy Filho, <jorge@bestway.com.br> Revisão.
+.BR

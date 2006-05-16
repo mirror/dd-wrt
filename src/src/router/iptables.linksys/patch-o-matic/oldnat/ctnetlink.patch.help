@@ -1,0 +1,11 @@
+Author: Jay Schulist <jschlst@samba.org>
+Status: Experimental
+
+This adds CONFIG_IP_NF_CTNETLINK option, which enables connection
+tracking via NETLINK. Netfilter has the ability to communicate connection 
+tracking information to user space. This feature allows the user to
+receive connection tracking event notification and provides the
+ability to change connection states from user space.
+
+Please not that this is an experimental package which will break other 
+patch-o-matic patches

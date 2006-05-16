@@ -1,0 +1,34 @@
+Author: Fabrice MARIE <fabrice@netfilter.org>
+Status: experimental
+
+This option adds CONFIG_IP_NF_MATCH_IPV4OPTIONS, 
+which supplies ip options match.
+
+Suppported options are:
+--ssrr
+  To match packets with the flag strict source routing.
+--lsrr
+  To match packets with the flag loose source routing.
+--no-srr
+  To match packets with no flag for source routing.
+[!] --rr
+  To match packets with the RR flag.
+[!] --ts
+  To match packets with the TS flag.
+[!] --ra
+  To match packets with the router-alert option.
+[!] --any-opt
+  To match a packet with at least one IP option, or no IP option
+  at all if ! is chosen.
+
+Example:
+  $ iptables -A input -m ipv4options --rr -j DROP
+  will drop packets with the record-route flag.
+
+  $ iptables -A input -m ipv4options --ts -j DROP
+  will drop packets with the timestamp flag.
+
+Bug ?
+  I tested --ts and --rr, but not source routing issues, nor the router-alert
+  since I don't know enough about them. So please let me know if it works or
+  doesn't work :)

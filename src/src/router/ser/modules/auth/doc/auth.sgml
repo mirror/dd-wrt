@@ -1,0 +1,55 @@
+<!DOCTYPE Book PUBLIC "-//OASIS//DTD DocBook V4.2//EN" [
+
+<!ENTITY ser "SIP Express Router">
+<!ENTITY user SYSTEM "auth_user.sgml">
+<!ENTITY devel SYSTEM "auth_devel.sgml">
+<!ENTITY faq SYSTEM "auth_faq.sgml">
+
+<!-- Include general SER documentation entities -->
+<!ENTITY % serentities SYSTEM "../../../doc/ser_entities.sgml">
+%serentities;
+
+]>
+
+<book>
+    <bookinfo>
+	<title>Auth Module</title>
+	<productname class="trade">&ser;</productname>
+	<authorgroup>
+	    <author>
+		<firstname>Jan</firstname>
+		<surname>Janak</surname>
+		<affiliation><orgname>FhG Fokus</orgname></affiliation>
+		<email>jan@iptel.org</email>
+	    </author>
+	    <author>
+		<firstname>Juha</firstname>
+		<surname>Heinanen</surname>
+		<affiliation><orgname>Song Networks</orgname></affiliation>
+		<email>jh@song.fi</email>
+	    </author>
+	    <editor>
+		<firstname>Jan</firstname>
+		<surname>Janak</surname>
+		<email>jan@iptel.org</email>
+	    </editor>
+	</authorgroup>
+	<copyright>
+	    <year>2002</year>
+	    <year>2003</year>
+	    <holder>FhG FOKUS</holder>
+	</copyright>
+	<revhistory>
+	    <revision>
+		<revnumber>$Revision: 1.3.2.1 $</revnumber>
+		<date>$Date: 2003/11/15 10:08:57 $</date>
+	    </revision>
+	</revhistory>
+    </bookinfo>
+    <toc></toc>
+    
+    &user;
+    &devel;
+    &faq;
+
+</book>

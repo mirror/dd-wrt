@@ -1,0 +1,19 @@
+Author: Filip Sneppe <filip.sneppe@cronos.be>
+Status: WorksForMe(tm)
+
+This adds CONFIG_IP_NF_MMS: support for Microsoft Streaming Media 
+Services. This allows client (Windows Media Player) and server
+to negotiate protocol (UDP, TCP) and port for the media stream.
+
+A partially reverse engineered protocol analysis is available 
+from http://get.to/sdp, together with a link to a Linux client.
+
+By default, the helper module tracks TCP traffic over port 1755
+and adds the necessary UPD or TCP expectation. It is recommended 
+to also open UDP port 1755 to the server, as this port is used 
+for retransmission requests.
+
+This helper has been tested in SNAT and DNAT setups.
+
+Note that this helper has *nothing* to do with ip_masq_mms for 
+2.2 kernels!

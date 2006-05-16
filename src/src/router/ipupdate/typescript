@@ -1,0 +1,407 @@
+Script started on Tue Oct 22 13:31:35 2002
+]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# minicoms
+bash: minicoms: command not found
+]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# minicoms        scripts
+bash: scripts: command not found
+]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# scripts       strip
+Usage: strip <switches> in-file(s)
+ The switches are:
+  -I --input-target <bfdname>      Assume input file is in format <bfdname>
+  -O --output-target <bfdname>     Create an output file in format <bfdname>
+  -F --target <bfdname>            Set both input and output format to <bfdname>
+  -p --preserve-dates              Copy modified/access timestamps to the output
+  -R --remove-section <name>       Remove section <name> from the output
+  -s --strip-all                   Remove all symbol and relocation information
+  -g -S --strip-debug              Remove all debugging symbols
+     --strip-unneeded              Remove all symbols not needed by relocations
+  -N --strip-symbol <name>         Do not copy symbol <name>
+  -K --keep-symbol <name>          Only copy symbol <name>
+  -x --discard-all                 Remove all non-global symbols
+  -X --discard-locals              Remove any compiler-generated symbols
+  -v --verbose                     List all object files modified
+  -V --version                     Display this program's version number
+  -h --help                        Display this output
+  -o <file>                        Place stripped output into <file>
+strip: supported targets: elf32-i386 a.out-i386-linux efi-app-ia32 elf32-little elf32-big srec symbolsrec tekhex binary ihex trad-core
+]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# strip       ls -lrt
+[00mtotal 948
+-rwxr-xr-x    1 barry    users         734 Aug  7  2000 [01;32mmkinstalldirs[00m
+-rw-r--r--    1 barry    users          40 Aug  7  2000 [00mmissing[00m
+-rw-r--r--    1 barry    barry        5071 Aug  7  2000 [00mmd5.h[00m
+-rw-r--r--    1 barry    barry       12578 Aug  7  2000 [00mmd5.c[00m
+-rwxr-xr-x    1 barry    users        5584 Aug  7  2000 [01;32minstall-sh[00m
+-rw-r--r--    1 barry    users        7832 Aug  7  2000 [00mINSTALL[00m
+-rw-r--r--    1 barry    users        4045 Aug  7  2000 [00mgetpass.c[00m
+-rw-r--r--    1 barry    users       17996 Aug  7  2000 [00mCOPYING[00m
+-rwxr-xr-x    1 barry    users       19762 Aug  7  2000 [01;32mconfig.sub[00m
+-rwxr-xr-x    1 barry    users       24549 Aug  7  2000 [01;32mconfig.guess[00m
+-rw-r--r--    1 barry    users        1568 Aug  7  2000 [00mconf_file.h[00m
+-rw-r--r--    1 barry    users         132 Aug  7  2000 [00macconfig.h[00m
+-rw-r--r--    1 barry    users         645 Aug 30  2000 [00mez-ipupdate.lsm[00m
+-rw-r--r--    1 barry    users        4544 Oct 22  2000 [00mconf_file.c[00m
+-rw-r--r--    1 barry    users         975 Nov 18  2000 [00mREADME[00m
+-rwxr-xr-x    1 barry    barry         525 Nov 18  2000 [01;32mexample-easydns.conf[00m
+-rwxr-xr-x    1 barry    barry         521 Nov 18  2000 [01;32mexample-dhs.conf[00m
+-rwxr-xr-x    1 barry    barry         915 Nov 18  2000 [01;32mexample-dyndns.conf[00m
+-rwxrwxr-x    1 barry    barry         630 Nov 18  2000 [01;32mexample-gnudip.conf[00m
+-rwxr-xr-x    1 barry    barry         533 Nov 18  2000 [01;32mexample-justlinux.conf[00m
+-rwxr-xr-x    1 barry    users         516 Nov 18  2000 [01;32mexample-ods.conf[00m
+-rwxr-xr-x    1 barry    users         529 Nov 18  2000 [01;32mexample-pgpow.conf[00m
+-rwxrwxr-x    1 barry    barry         663 Nov 18  2000 [01;32mexample-tzo.conf[00m
+-rw-rw-r--    1 barry    barry         123 Nov 24  2000 [00mpid_file.h[00m
+-rw-rw-r--    1 barry    barry         305 Nov 24  2000 [00merror.h[00m
+-rw-rw-r--    1 barry    barry         295 Nov 24  2000 [00mdprintf.h[00m
+-rw-rw-r--    1 barry    barry        1463 Nov 29  2000 [00mcache_file.h[00m
+-rw-r--r--    1 barry    barry         509 Nov 29  2000 [00mexample-dyns.conf[00m
+-rwxr-xr-x    1 barry    users         694 Mar 17  2001 [01;32mmkbinary[00m
+-rw-rw-r--    1 barry    barry        3521 Apr  4  2001 [00mcache_file.c[00m
+-rw-rw-r--    1 barry    barry        2167 Jul  4  2001 [00mpid_file.c[00m
+-rw-rw-r--    1 barry    barry        4020 Jul  4  2001 [00mconfig.h.in[00m
+-rw-r--r--    1 barry    users        9348 Jul  4  2001 [00mCHANGELOG[00m
+-rwxr-xr-x    1 barry    users         647 Jul  7  2001 [01;32mexample.conf[00m
+-rw-r--r--    1 barry    barry        1007 Jul  7  2001 [00mexample-heipv6tb.conf[00m
+-rw-r--r--    1 barry    users         500 Jul  7  2001 [00mMakefile.am[00m
+-rw-r--r--    1 barry    users      121097 Mar 11  2002 [00mez-ipupdate.c[00m
+-rw-r--r--    1 barry    users        4151 Mar 11  2002 [00mconfigure.in[00m
+-rw-r--r--    1 barry    users        4396 Mar 11  2002 [00maclocal.m4[00m
+-rwxr-xr-x    1 barry    users       70871 Mar 11  2002 [01;32mconfigure[00m
+-rw-r--r--    1 barry    users          10 Mar 11  2002 [00mstamp-h.in[00m
+-rw-r--r--    1 barry    users       10634 Mar 11  2002 [00mMakefile.in[00m
+-rw-r--r--    1 root     root           10 Oct 22 13:05 [00mstamp-h[00m
+-rw-r--r--    1 root     root        10656 Oct 22 13:05 [00mMakefile[00m
+-rwxr-xr-x    1 root     root        18954 Oct 22 13:05 [01;32mconfig.status[00m
+-rw-r--r--    1 root     root         6586 Oct 22 13:05 [00mconfig.log[00m
+-rw-r--r--    1 root     root         4339 Oct 22 13:05 [00mconfig.h[00m
+-rw-r--r--    1 root     root         3695 Oct 22 13:05 [00mconfig.cache[00m
+-rw-r--r--    1 root     root        22316 Oct 22 13:05 [00mmd5.o[00m
+-rw-r--r--    1 root     root       157388 Oct 22 13:05 [00mez-ipupdate.o[00m
+-rw-r--r--    1 root     root        17840 Oct 22 13:05 [00mconf_file.o[00m
+-rw-r--r--    1 root     root        23068 Oct 22 13:05 [00mcache_file.o[00m
+-rw-r--r--    1 root     root        26904 Oct 22 13:05 [00mpid_file.o[00m
+-rwxr-xr-x    1 root     root       167432 Oct 22 13:05 [01;32mez-ipupdate[00m
+-rw-r--r--    1 root     root           39 Oct 22 13:22 [00mkkk[00m
+-rw-r--r--    1 root     root            0 Oct 22 13:31 [00mtypescript[00m
+[m]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# file ez-ipdate[1@u[1@p
+ez-ipupdate: ELF 32-bit LSB executable, Intel 80386, version 1, dynamically linked (uses shared libs), not stripped
+]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# ez  file ez-ipupdate
+ez-ipupdate: ELF 32-bit LSB executable, Intel 80386, version 1, dynamically linked (uses shared libs), not stripped
+]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# rm -rf kkk
+]0;root@zeus: /tools/ez-ipupdate-3.0.11b7[root@zeus ez-ipupdate-3.0.11b7]# rm    cd ../ddns*
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ls
+[00m[00mauth.c[00m  [00mCHANGES[00m   [00mcrypto.h[00m  [00mctx.h[00m  [00mddns3.c[00m     [00mmd5.c[00m  [00msockio.c[00m
+[00mauth.h[00m  [00mCOPYING[00m   [00mcrypto.o[00m  [00mctx.o[00m  [00mlibddns3.a[00m  [00mmd5.h[00m  [00msockio.h[00m
+[00mauth.o[00m  [00mcrypto.c[00m  [00mctx.c[00m     [01;32mddns3[00m  [00mMakefile[00m    [00mmd5.o[00m  [00msockio.o[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# file ddns3
+ddns3: ELF 32-bit LSB executable, Intel 80386, version 1, dynamically linked (uses shared libs), stripped
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# id ddns3
+id: ddns3: No such user
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# d ls -lrt
+[00mtotal 148
+-rw-------    1 tester   users       18321 Aug 27  2000 [00mCOPYING[00m
+-rw-------    1 tester   users         448 Jan 24  2001 [00mmd5.h[00m
+-rw-------    1 tester   users        9026 Jan 24  2001 [00mmd5.c[00m
+-rw-------    1 tester   users         243 Jan 24  2001 [00mcrypto.h[00m
+-rw-------    1 tester   users        1044 Jan 24  2001 [00mcrypto.c[00m
+-rw-------    1 tester   users         356 Jan 24  2001 [00mauth.h[00m
+-rw-------    1 tester   users        3149 Jan 24  2001 [00mauth.c[00m
+-rw-------    1 tester   users         491 Apr  8  2001 [00msockio.h[00m
+-rw-------    1 tester   users        3302 Apr  8  2001 [00msockio.c[00m
+-rw-------    1 tester   users         879 Apr 25  2001 [00mctx.h[00m
+-rw-------    1 tester   users        5820 Apr 25  2001 [00mddns3.c[00m
+-rw-------    1 tester   users        4891 Apr 25  2001 [00mctx.c[00m
+-rw-------    1 tester   users         562 Apr 25  2001 [00mMakefile[00m
+-rw-------    1 tester   users         260 Apr 25  2001 [00mCHANGES[00m
+-rw-r--r--    1 root     root         2812 Oct 21 17:05 [00msockio.o[00m
+-rw-r--r--    1 root     root         3600 Oct 21 17:05 [00mmd5.o[00m
+-rw-r--r--    1 root     root        16318 Oct 21 17:05 [00mlibddns3.a[00m
+-rw-r--r--    1 root     root         4108 Oct 21 17:05 [00mctx.o[00m
+-rw-r--r--    1 root     root         1440 Oct 21 17:05 [00mcrypto.o[00m
+-rw-r--r--    1 root     root         3472 Oct 21 17:05 [00mauth.o[00m
+-rwxr-xr-x    1 root     root        17376 Oct 21 17:05 [01;32mddns3[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# make
+make: Nothing to be done for `all'.
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# touch *
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# make
+make: Nothing to be done for `all'.
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# maketouch *[3Pmakels -lrtid ddns3[2@file ddns3ls[Kcd ../ddns*[1Prm -rf kkkfile ez-ipupdate[9Pls -lrt[2Pstripcripts[1@minicoms[Kls[Kclear[3Plsclearroute del default gw 192.168.1.1[root@zeus ddns3-client]# [16Pping 192.168.3.1[8Pifconfig[2Parp -a[1Prouter[2Phaltexit[2Plsclear[3Plscd pmon[2P..vi tftpd.c[2Pcd tftpdls[Kcd tftp*ls[Kcd router[3Psrc[4Plscd *3.6ls[Kcd /project[7Pexit[2Plsvi tftpd.c[Kcd tftpdls[Kcd tftp*ls[Kcd router[4Pls -lclearls -l- l[Kcleargrep -i -r iorem *[1P *ls[Kcd ..grep -i -r iore *cd ..[K[3Plscd ..vi remap.cls[Kvi tftpd.c[2Pcd tftpdgrep -i -r pmon *ls[Kcd tf*[1P..[3Plscd ../rc[2Ptf*[4Plscd router[4P..[3Plscd ..[2Ppwd[1Plscd pmon_lg[5Pls -lclear[3Plsvi loados.c[2P.c[2@os.cls[Kclearls -lclearls -l[K[7@vi mips.sgrep -i -r monmain *[11Pvi main.c[2Pcd pmongrep -i -r monmain *cd ..[Kvi cli.cgrep -i -r monmain *[12Pvi cli.cls[Kcd mongrep -i -r start_os *[14Pcd pmonls[Kgrep -i -r start_os *cd ..[K[3Plscd ..[3Plsvi loados.c[4Pcd pmonls[Kgrep -i -r start_os *cd ..[Kvi load.c[2@os.c[6@grep start_os *.c[6Pvi loados.cls[Kgrep load_os.c[7Pcd pmongrep -i -r tftpGet *cd ..[Kgrep -i -r tftpGet *[10Pvi ether.c[4Pcd libvi ether.cgrep -i -r tftpGet *cd ..[K[2Ppwdgrep -i -r tftpGet *[6PtftpGet *[5Pvi load.c         clear
+[H[2J]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ls
+[00m[00mauth.c[00m  [00mCHANGES[00m   [00mcrypto.h[00m  [00mctx.h[00m  [00mddns3.c[00m     [00mmd5.c[00m  [00msockio.c[00m
+[00mauth.h[00m  [00mCOPYING[00m   [00mcrypto.o[00m  [00mctx.o[00m  [00mlibddns3.a[00m  [00mmd5.h[00m  [00msockio.h[00m
+[00mauth.o[00m  [00mcrypto.c[00m  [00mctx.c[00m     [01;32mddns3[00m  [00mMakefile[00m    [00mmd5.o[00m  [00msockio.o[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ls -l
+[00mtotal 148
+-rw-------    1 tester   users        3149 Oct 22 13:39 [00mauth.c[00m
+-rw-------    1 tester   users         356 Oct 22 13:39 [00mauth.h[00m
+-rw-r--r--    1 root     root         3472 Oct 22 13:39 [00mauth.o[00m
+-rw-------    1 tester   users         260 Oct 22 13:39 [00mCHANGES[00m
+-rw-------    1 tester   users       18321 Oct 22 13:39 [00mCOPYING[00m
+-rw-------    1 tester   users        1044 Oct 22 13:39 [00mcrypto.c[00m
+-rw-------    1 tester   users         243 Oct 22 13:39 [00mcrypto.h[00m
+-rw-r--r--    1 root     root         1440 Oct 22 13:39 [00mcrypto.o[00m
+-rw-------    1 tester   users        4891 Oct 22 13:39 [00mctx.c[00m
+-rw-------    1 tester   users         879 Oct 22 13:39 [00mctx.h[00m
+-rw-r--r--    1 root     root         4108 Oct 22 13:39 [00mctx.o[00m
+-rwxr-xr-x    1 root     root        17376 Oct 22 13:39 [01;32mddns3[00m
+-rw-------    1 tester   users        5820 Oct 22 13:39 [00mddns3.c[00m
+-rw-r--r--    1 root     root        16318 Oct 22 13:39 [00mlibddns3.a[00m
+-rw-------    1 tester   users         562 Oct 22 13:39 [00mMakefile[00m
+-rw-------    1 tester   users        9026 Oct 22 13:39 [00mmd5.c[00m
+-rw-------    1 tester   users         448 Oct 22 13:39 [00mmd5.h[00m
+-rw-r--r--    1 root     root         3600 Oct 22 13:39 [00mmd5.o[00m
+-rw-------    1 tester   users        3302 Oct 22 13:39 [00msockio.c[00m
+-rw-------    1 tester   users         491 Oct 22 13:39 [00msockio.h[00m
+-rw-r--r--    1 root     root         2812 Oct 22 13:39 [00msockio.o[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ls
+[00m[00mauth.c[00m  [00mCHANGES[00m   [00mcrypto.h[00m  [00mctx.h[00m  [00mddns3.c[00m     [00mmd5.c[00m  [00msockio.c[00m
+[00mauth.h[00m  [00mCOPYING[00m   [00mcrypto.o[00m  [00mctx.o[00m  [00mlibddns3.a[00m  [00mmd5.h[00m  [00msockio.h[00m
+[00mauth.o[00m  [00mcrypto.c[00m  [00mctx.c[00m     [01;32mddns3[00m  [00mMakefile[00m    [00mmd5.o[00m  [00msockio.o[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# more ddns3/ .c
+/*
+ *	DDNS v3 Client
+ *
+ *		By:	Alan Yates <alany@ay.com.au>
+ *		Date:	27-08-2000
+ *
+ *		Win32 compatability by Kieron Briggs (kieron@kieron.nu)
+ */
+#include <stdio.h>
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+#include <string.h>
+#include <stdlib.h>
+#include "ctx.h"
+
+struct client_vars {
+	char *host;
+	char *port;
+	char *auth;
+[7m--More--(6%)[27m[K	char *user;
+	char *pass;
+	int debug;
+} CV;
+
+static void
+help(void) {
+	fprintf(stderr, "\n");
+	fprintf(stderr, "DDNS Client v3 (c) :: http://www.ddns.nu/\n");
+	fprintf(stderr, "(c) 2001 Alan Yates <alany@alanyates.com>\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Usage: ddns3 <required args> [optional args] <action li
+st>\n");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Required args\n");
+	fprintf(stderr, "	--user	username\n");
+	fprintf(stderr, "	--pass	password\n");
+	fprintf(stderr, "Optional args\n");
+	fprintf(stderr, "	--host	server-hostname		specify server h
+ost\n");
+	fprintf(stderr, "	--port	server-tcp-port		specify server p
+ort\n");
+[7m--More--(17%)[27m[K	fprintf(stderr, "	--debug				activate debug m
+ode\n");
+	fprintf(stderr, "	--auth	auth-name		specify authenti
+cation type\n");
+	fprintf(stderr, "Authentication types:\n");
+#ifdef WIN32
+	fprintf(stderr, "	plaintext, md5, ddns (default), strong\n");
+#else
+	fprintf(stderr, "	plaintext, crypt, md5, ddns (default), strong\n"
+);
+#endif
+	fprintf(stderr, "Actions:\n");
+	fprintf(stderr, "	list				lists IP-Handles
+\n");
+	fprintf(stderr, "	set <handle> <ip>		sets an IP-Handl
+e's value\n");
+	fprintf(stderr, "	guess <handle> <source>		sets an IP-Handl
+e's value\n");
+	fprintf(stderr, "					guessing the IP 
+from the <source>\n");
+	fprintf(stderr, "					end of the conne
+ction, ends are\n");
+[7m--More--(28%)[27m[K	fprintf(stderr, "					named 'remote' o
+r 'local'\n");
+	fprintf(stderr, "\n");
+}
+
+static int
+parse_args(int argc, char **argv, char **env) {
+	int i;
+
+	if(argc == 1) {
+		help();
+		exit(1);
+	}
+
+	for(i = 1; i < argc; i++) {
+		if(!strcmp("--user", argv[i]) && i+1 < argc) {
+			CV.user = argv[++i];
+		} else if(!strcmp("--pass", argv[i]) && i+1 < argc) {
+			CV.pass = argv[++i];
+		} else if(!strcmp("--host", argv[i]) && i+1 < argc) {
+			CV.host = argv[++i];
+		} else if(!strcmp("--port", argv[i]) && i+1 < argc) {
+[7m--More--(37%)[27m[K			CV.port = argv[++i];
+		} else if(!strcmp("--auth", argv[i]) && i+1 < argc) {
+			CV.auth = argv[++i];
+		} else if(!strcmp("--debug", argv[i])) {
+			CV.debug = -1;
+		}
+		else if(!strcmp("list", argv[i])) break;
+		else if(!strcmp("set", argv[i])) break;
+		else if(!strcmp("guess", argv[i])) break;
+		else {
+			fprintf(stderr, "unknown or malformed argument: %s\n", a
+rgv[i]);
+			exit(1);
+		}
+	}
+	return i;
+}
+
+static void
+defaults(void) {
+	CV.host = "ns.ddns.nu";
+	CV.port = "5000";
+[7m--More--(45%)[27m[K	CV.auth = "ddns";
+	CV.debug = 0;
+}
+
+static void
+check_args(void) {
+	int err = 0;
+
+	if(!CV.user) {
+		fprintf(stderr, "client_error: you must specify a username\n");
+		err ++;
+	}
+
+	if(!CV.pass) {
+		fprintf(stderr, "client_error: you must specify a password\n");
+		err ++;
+	}
+
+	if(err > 0) {
+		fprintf(stderr, "client_exit: argument parsing; %d errors\n", er
+r);
+		exit(1);
+[7m--More--(52%)[27m[K	}
+}
+
+static void
+actions(struct ddns3_ctx *c, int argc, char **argv, int start) {
+	int i;
+	for(i = start; i < argc; i++) {
+		if(!strcmp("list", argv[i])) {
+			if(ddns3_ctx_list(c) < 0) {
+				fprintf(stderr, "server_message: %s", c->buf);
+				fprintf(stderr, "client_error: could not get han
+dle list\n");
+			} else {
+				int j;
+				for(j = 0; c->list[j]; j += 2) {
+					printf("%-20s %s\n", c->list[j], c->list
+[j+1]);
+				}
+			}
+		} else if(!strcmp("set", argv[i]) && i+2 < argc) {
+			if(ddns3_ctx_set(c, argv[i+1], argv[i+2]) < 0) {
+				fprintf(stderr, "server_message: %s", c->buf);
+[7m--More--(62%)[27m[K				fprintf(stderr, "client_error: could not set han
+dle %s to ip %s, closing\n", argv[i+1], argv[i+2]);
+			} else printf("server_message: %s", c->buf);
+			
+			i += 2;
+		} else if(!strcmp("guess", argv[i]) && i+2 < argc) {
+			int type = -1;
+			if(!strcasecmp("remote", argv[i+2])) type = GUESS_REMOTE
+;
+			else if(!strcasecmp("local", argv[i+2])) type = GUESS_LO
+CAL;
+			else {
+				fprintf(stderr, "client_error: invalid guess typ
+e: %s\n", argv[i+2]);
+				return;
+			}
+			if(ddns3_ctx_guess(c, argv[i+1], type) < 0) {
+				fprintf(stderr, "server_message: %s", c->buf);
+				fprintf(stderr, "client_error: could not set han
+dle %s by guessing IP, closing\n", argv[i+1]);
+			} else printf("server_message: %s", c->buf);
+
+[7m--More--(74%)[27m[K]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ping 192.168.3.1
+PING 192.168.3.1 (192.168.3.1) from 192.168.3.142 : 56(84) bytes of data.
+Warning: time of day goes back, taking countermeasures.
+64 bytes from 192.168.3.1: icmp_seq=0 ttl=150 time=1.788 msec
+64 bytes from 192.168.3.1: icmp_seq=1 ttl=150 time=1.497 msec
+
+--- 192.168.3.1 ping statistics ---
+2 packets transmitted, 2 packets received, 0% packet loss
+round-trip min/avg/max/mdev = 1.497/1.642/1.788/0.151 ms
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ping 192.168.        140.113.23.3
+PING 140.113.23.3 (140.113.23.3) from 192.168.3.142 : 56(84) bytes of data.
+64 bytes from 140.113.23.3: icmp_seq=0 ttl=247 time=45.073 msec
+
+--- 140.113.23.3 ping statistics ---
+1 packets transmitted, 1 packets received, 0% packet loss
+round-trip min/avg/max/mdev = 45.073/45.073/45.073/0.000 ms
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# clear
+[H[2J]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ls
+[00m[00mauth.c[00m  [00mCHANGES[00m   [00mcrypto.h[00m  [00mctx.h[00m  [00mddns3.c[00m     [00mmd5.c[00m  [00msockio.c[00m
+[00mauth.h[00m  [00mCOPYING[00m   [00mcrypto.o[00m  [00mctx.o[00m  [00mlibddns3.a[00m  [00mmd5.h[00m  [00msockio.h[00m
+[00mauth.o[00m  [00mcrypto.c[00m  [00mctx.c[00m     [01;32mddns3[00m  [00mMakefile[00m    [00mmd5.o[00m  [00msockio.o[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# mail
+Mail version 8.1 6/6/93.  Type ? for help.
+"/var/spool/mail/root": 4 messages 4 new
+>N  1 root@localhost.local  Fri Oct 18 14:17  16/580   "Anacron job 'cron.dai"
+ N  2 root@localhost.local  Mon Oct 21 10:44  16/580   "Anacron job 'cron.dai"
+ N  3 root@localhost.local  Tue Oct 22 09:39  16/580   "Anacron job 'cron.dai"
+ N  4 root@localhost.local  Tue Oct 22 12:49  16/517   "status report from dd"
+& d 1 - 4
+& q
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ls
+[00m[00mauth.c[00m  [00mCHANGES[00m   [00mcrypto.h[00m  [00mctx.h[00m  [00mddns3.c[00m     [00mmd5.c[00m  [00msockio.c[00m
+[00mauth.h[00m  [00mCOPYING[00m   [00mcrypto.o[00m  [00mctx.o[00m  [00mlibddns3.a[00m  [00mmd5.h[00m  [00msockio.h[00m
+[00mauth.o[00m  [00mcrypto.c[00m  [00mctx.c[00m     [01;32mddns3[00m  [00mMakefile[00m    [00mmd5.o[00m  [00msockio.o[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# clear
+[H[2J]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# ls -l
+[00mtotal 148
+-rw-------    1 tester   users        3149 Oct 22 13:39 [00mauth.c[00m
+-rw-------    1 tester   users         356 Oct 22 13:39 [00mauth.h[00m
+-rw-r--r--    1 root     root         3472 Oct 22 13:39 [00mauth.o[00m
+-rw-------    1 tester   users         260 Oct 22 13:39 [00mCHANGES[00m
+-rw-------    1 tester   users       18321 Oct 22 13:39 [00mCOPYING[00m
+-rw-------    1 tester   users        1044 Oct 22 13:39 [00mcrypto.c[00m
+-rw-------    1 tester   users         243 Oct 22 13:39 [00mcrypto.h[00m
+-rw-r--r--    1 root     root         1440 Oct 22 13:39 [00mcrypto.o[00m
+-rw-------    1 tester   users        4891 Oct 22 13:39 [00mctx.c[00m
+-rw-------    1 tester   users         879 Oct 22 13:39 [00mctx.h[00m
+-rw-r--r--    1 root     root         4108 Oct 22 13:39 [00mctx.o[00m
+-rwxr-xr-x    1 root     root        17376 Oct 22 13:39 [01;32mddns3[00m
+-rw-------    1 tester   users        5820 Oct 22 13:39 [00mddns3.c[00m
+-rw-r--r--    1 root     root        16318 Oct 22 13:39 [00mlibddns3.a[00m
+-rw-------    1 tester   users         562 Oct 22 13:39 [00mMakefile[00m
+-rw-------    1 tester   users        9026 Oct 22 13:39 [00mmd5.c[00m
+-rw-------    1 tester   users         448 Oct 22 13:39 [00mmd5.h[00m
+-rw-r--r--    1 root     root         3600 Oct 22 13:39 [00mmd5.o[00m
+-rw-------    1 tester   users        3302 Oct 22 13:39 [00msockio.c[00m
+-rw-------    1 tester   users         491 Oct 22 13:39 [00msockio.h[00m
+-rw-r--r--    1 root     root         2812 Oct 22 13:39 [00msockio.o[00m
+[m]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# mail
+No mail for root
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-client]# 
+]0;root@zeus: /tools/ddns3-client[root@zeus ddns3-cli

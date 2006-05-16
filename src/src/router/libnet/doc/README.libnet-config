@@ -1,0 +1,18 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+    As of version .99c, libnet gcc options should be handled via the
+    libnet-config script.  This script, created during the GNU configure
+    process will ensure that future libnet compilations contain the correct
+    CPP and CFLAG options as well as libraries for the targeted architecture.
+    A sample invocation might be:
+
+host:~> gcc -Wall `libnet-config --defines` foo.c `libnet-config --libs`
+
+    As of version 0.99e, it is mandatory that it be invoked, if for no
+    other reason than to specify byte-ordering.  See README.legacy-applications
+    for more information.
+
+EOF

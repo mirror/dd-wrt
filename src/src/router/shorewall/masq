@@ -1,0 +1,99 @@
+#
+# Shorewall 1.4 - Masquerade file
+#
+# /etc/shorewall/masq
+#
+# Use this file to define dynamic NAT (Masquerading) and to define Source NAT
+# (SNAT).
+#
+# Columns are:
+#
+#	INTERFACE -- Outgoing interface. This is usually your internet
+#		     interface. If ADD_SNAT_ALIASES=Yes in
+#		     /etc/shorewall/shorewall.conf, you may add ":" and
+#		     a digit to indicate that you want the alias added with
+#                    that name (e.g., eth0:0). This will allow the alias to
+#		     be displayed with ifconfig. THAT IS THE ONLY USE FOR
+#		     THE ALIAS NAME AND IT MAY NOT APPEAR IN ANY OTHER
+#		     PLACE IN YOUR SHOREWALL CONFIGURATION.
+#
+#		     This may be qualified by adding the character
+#                    ":" followed by a destination host or subnet.
+#
+#
+#	SUBNET -- Subnet that you wish to masquerade. You can specify this as
+#		  a subnet or as an interface. If you give the name of an
+#		  interface, you must have iproute installed and the interface
+#		  must be up before you start the firewall.
+#
+#		  In order to exclude a subset of the specified SUBNET, you
+#		  may append "!" and a comma-separated list of IP addresses
+#		  and/or subnets that you wish to exclude.
+#
+#		  Example: eth1!192.168.1.4,192.168.32.0/27
+#
+#		  In that example traffic from eth1 would be masqueraded unless
+#		  it came from 192.168.1.4 or 196.168.32.0/27
+#
+#	ADDRESS -- (Optional).  If you specify an address here, SNAT will be
+#				used and this will be the source address. If
+#				ADD_SNAT_ALIASES is set to Yes or yes in
+#				/etc/shorewall/shorewall.conf then Shorewall
+#				will automatically add this address to the
+#				INTERFACE named in the first column.
+#
+#				You may also specify a range of up to 256
+#				IP addresses if you want the SNAT address to
+#				be assigned from that range in a round-robin
+#				range by connection. The range is specified by
+#				<first ip in range>-<last ip in range>.
+#
+#				Example: 206.124.146.177-206.124.146.180
+#
+#				Finally, you may also specify a comma-separated
+#				list of ranges and/or addresses in this column.
+#				
+#				This column may not contain DNS Names.
+#
+#	Example 1:
+#
+#		  You have a simple masquerading setup where eth0 connects to
+#		  a DSL or cable modem and eth1 connects to your local network
+#		  with subnet 192.168.0.0/24.
+#
+#		  Your entry in the file can be either:
+#
+#			eth0	eth1
+#
+#		  or
+#
+#			eth0	192.168.0.0/24
+#
+#	Example 2:
+#
+#		  You add a router to your local network to connect subnet
+#		  192.168.1.0/24 which you also want to masquerade. You then
+#		  add a second entry for eth0 to this file:
+#
+#			eth0	192.168.1.0/24
+#
+#       Example 3:
+#
+#                 You have an IPSEC tunnel through ipsec0 and you want to
+#                 masquerade packets coming from 192.168.1.0/24 but only if
+#                 these packets are destined for hosts in 10.1.1.0/24:
+#
+#                       ipsec0:10.1.1.0/24      196.168.1.0/24
+#
+#	Example 4:
+#
+#		  You want all outgoing traffic from 192.168.1.0/24 through
+#		  eth0 to use source address 206.124.146.176 which is NOT the
+#		  primary address of eth0. You want 206.124.146.176 added to
+#		  be added to eth0 with name eth0:0.
+#
+#			eth0:0	192.168.1.0/24	206.124.146.176
+#
+##############################################################################
+#INTERFACE	        SUBNET		ADDRESS
+#LAST LINE -- ADD YOUR ENTRIES ABOVE THIS LINE -- DO NOT REMOVE

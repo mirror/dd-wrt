@@ -1,0 +1,556 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Remove uuid.pc on a "make distclean"
+
+2005-01-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* uuid.pc.in: Add pkg-config files.
+
+2005-01-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Fix the kernel compile-time echo commands to be
+		consistent and portable
+
+2005-01-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* uuidP.h: Use inttypes.h in preference to stdint.h for
+		compatibility with older FreeBSD and Solaris systems.
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output for "make
+		install"
+
+	* Makefile.in (installdirs): Use $(MKINSTALLDIRS) macro.
+		Update dependencies.
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-09-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen_uuid.c (get_node_id): glibc always defines AF_LINK, so only
+		try to use struct sockaddr_dl if HAVE_NET_IF_DL_H is
+		defined.  (Addresses Debian Bug #256669)
+
+2004-05-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* uuid.h (UUID_DEFINE): Make the UUID defined as a static
+		variable, with __attribute__ ((unused)) if we are using GCC.
+
+2004-05-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* Update and clean up uuid man pages
+
+	* gen_uuid.c (uuid_generate_time): Mask off the timestamp to avoid
+		a Y8.8888K problem.
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Update the modtime even if subst doesn't need to
+		update the libuuid man pages, to avoid always re-running
+		subst, especially since there are no dependencies on the
+		man page.
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* libuuid.3.in, uuid_clear.3.in, uuid_compare.3.in, uuid_copy.3.in,
+		uuid_generate.3.in, uuid_is_null.3.in, uuid_parse.3.in,
+		uuid_time.3.in, uuid_unparse.3.in: Change licensing of man
+		pages from GPL to 3-clause BSD-style.
+
+	* uuid_parse.3.in, uuid_unparse.3.in: Change the use of the term
+		"internal format" to "binary representation".
+
+	* gen_uuid.c, pack.c, unpack.c, uuid_time.c, uuidP.h,
+		uuid_types.h.in: Use ANSI C99 types if stdint.h exists.
+
+2004-03-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen_uuid.c (get_node_id): Clean up AF_LINK #ifdef's for Darwin.
+
+2004-03-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* unparse.c (uuid_unparse_lower, uuid_unparse_upper),
+		uuid_unparse.3.in, uuid.h: Add new functions.
+
+2004-03-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* Change the license to be the 3-clause BSD-style license
+
+	* uuid.h (UUID_DEFINE): Add UUID type #define's, and add an CPP
+		macro to define UUID constants.
+
+	* gen_uuid.c (get_clock): Use 14 bits for the clock sequence,
+		instead of just 13 bits.
+
+	* gen_uuid.c (get_node_id): Fix so that Darwin will actually get
+		the ethernet address correctly.
+
+2004-02-29  Brian Bergstrand  <brian@bergstrand.org>
+
+	* Makefile.in: Use $(BSDLIB_PIC_FLAG) to determine whether to use
+		-fpic or -fPIC
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2004-01-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen_uuid.c (uuid_generate_time): Fix bug pointed out by Ralf
+		S. Engelshall; when generating a random ethernet address
+		because one is not available, set the least significant
+		bit of the first byte of the MAC address, since it is the
+		first bit to be transmitted, and is therefore the
+		multicast bit.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use DYLD_LIBRAY_PATH so that "make check" works on
+		Darwin systems when building with shared libraries.
+
+2003-04-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen_uuid.c: Add #ifdef checks around #include <sys/ioctl.h> and
+		<sys/socket.h>.
+
+2003-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen_uuid.c (get_random_bytes): Always xor in a stream of bytes
+		from the system PRNG (i.e., random/srandom, seeded from
+		the time, pid, and uid) in case /dev/random isn't doing
+		the right thing on a particular system.  It doesn't hurt,
+		and it can help, in the case of a buggy /dev/random.
+
+2003-03-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Add support for Apple Darwin
+
+2003-03-06  Theodore Tso  <tytso@mit.edu>
+
+	* uuid_types.h.in: Don't redefine types if other e2fsprogs
+		*_types.h files have been included already.
+
+	* Makefile.in (tst_uuid): Link against the static library instead
+		of all of the object files, so that we automatically pick
+		up -lsocket under Solaris.
+
+2003-03-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in, uuidP.h, uuid_types.h.in: Use uuid_types.h instead
+		of ext2_types.h
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen_uuid.c (get_random_bytes): Don't spin forever if read()
+		returns EINTR or EAGAIN, so that when /dev/random is
+		opened O_NONBLOCK, we don't end up spinning forever.
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-07-15  Theodore Ts'o  <tytso@mit.edu>
+
+	* parse.c (uuid_parse): Fix uuid parsing bug which didn't complain
+		for certain types of invalid input text.  (Addresses
+		Debian bug #152891).
+
+	* tst_uuid.c: Add test cases for invalid text strings passed to
+		uuid_parse.
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-02-24  Theodore Tso  <tytso@mit.edu>
+
+	* Makefile.in (install): Install hard links to man pages for
+		uuid_generate_random and uuid_generate_time.  Remove
+		any compressed man pages before installing the man pages.
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-10  Theodore Tso  <tytso@mit.edu>
+
+	* compare.c (uuid_compare), copy.c (uuid_copy), 
+		isnull.c (uuid_is_null), pack.c (uuid_pack), 
+		parse.c (uuid_parse), unpack.c (uuid_unpack),
+		unparse.c (uuid_unparse), uuid.h, uuidP.h, 
+		uuid_time.c (uuid_time, uuid_type, uuid_variant):
+		Use const for pointer variables that we don't modify.  Add
+		the appropriate ifdef's in uuid.h to make it be C++ friendly.
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-21  Theodore Tso  <tytso@valinux.com>
+
+	* uuid.h: Add protection against multiple inclusion
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in, uuidP.h: Move include/asm/types.h.in to
+		lib/ext2fs/ext2_types.h.in.
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* unpack.c, unparse.c, uuid_time.c: Update files to be under the
+		LGPL (that somehow were missed when libuuid was converted
+		to use the LGPL).  Whoops.
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-05-14  Theodore Tso  <tytso@valinux.com>
+
+	* tst_uuid.c, uuid_time.c: Remove unneeded #include of ext2_fs.h
+
+2001-05-12  Theodore Tso  <tytso@valinux.com>
+
+	* libuuid.3.in, uuid_clear.3.in, uuid_compare.3.in, uuid_copy.3.in,
+		uuid_generate.3.in, uuid_is_null.3.in, uuid_parse.3.in,
+		uuid_time.3.in, uuid_unparse.3.in: Update URL location of
+		e2fsprogs package.
+
+2001-05-01  Theodore Tso  <tytso@valinux.com>
+
+	* parse.c, compare.c: Include string.h to fix gcc -Wall
+		complaints.
+
+	* gen_uuid.c: Define _SVID_SOURCE to avoid gcc -Wall errors
+		because some required structures wouldn't be otherwise
+		defined.  Fix a minor gcc -Wall nit in the declaration of
+		get_random_fd().
+
+2001-01-12  Theodore Ts'o  <tytso@valinux.com>
+
+	* uuid_time.c (main), tst_uuid.c (main): Fix gcc -Wall complaints.
+
+	* uuid.h, copy.c (uuid_copy): Change arguments to make it
+		clear which argument is the source and which is the
+		destination.
+
+	* gen_uuid.c (get_random_fd): Use gettimeofday to seed the PRNG,
+		so we can take advantage of tv_usec to do (slightly)
+		better at seeding it.
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-07-07  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in (uuid_time): Fix compilation rule so that
+		uuid_time.o doesn't get bashed in order to build the
+		command-line version of uuid_time.
+
+2000-07-04  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Remove explicit link of -lc in the shared library.
+		(It shouldn't be necessary, and is harmful in some cases).
+
+2000-06-12  Theodore Ts'o  <tytso@valinux.com>
+
+	* gen_uuid.c (get_random_bytes): Use O_NONBLOCK when trying to
+		open /dev/random.  Break out the /dev/random
+		initialization code into a get_random_fd() function, and
+		use that function in uuid_generate() to determine whether
+		to use uuid_generate_random()  or uuid_generate_time().
+
+2000-05-25    <tytso@snap.thunk.org>
+
+	* Makefile: Add hack dependency rule so that parallel makes work
+		correctly. 
+
+2000-04-07  Theodore Ts'o  <tytso@valinux.com>
+
+	* clear.c, compare.c, copy.c, gen_uuid.c, isnull.c, pack.c,
+		parse.c, uuid.h, uuidP.h: Changed copyright to be the
+		LGPL. 
+
+Thu Apr  6 17:38:58 2000  Theodore Y. Ts'o  <tytso@signal.thunk.org>
+
+	* Makefile.in (uuid_time): Compile uuid_time in two steps (first
+		create .o, then link it against the libraries) to work
+		around bug in a.out linker.
+
+	* dll/jump.funcs, dll/jump.import, dll/jump.params: Update a.out
+		shared library control files to reflect new added files.
+
+2000-04-03  Theodore Ts'o  <tytso@valinux.com>
+
+	* gen_uuid.c (get_clock): Fix bug where the last timeval wasn't
+		getting set, causing potentially duplicate UUID's to be
+		generated.
+
+2000-03-12  Theodore Ts'o  <tytso@valinux.com>
+
+	* gen_uuid.c (get_random_bytes): Make more paranoid about
+		misbehaving /dev/urandom.  If we get a return of zero
+		without an error more than 8 times in a row, we break out
+		and return an error.  Also, if /dev/urandom doesn't exist,
+		try /dev/random.
+
+2000-01-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Since LIBUUID can sometimes include
+		"-lsocket" we need a separate DEPLIBUUID that can be used
+		in Makefile's dependency rules.
+
+1999-11-19    <tytso@valinux.com>
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-26    <tytso@valinux.com>
+
+	* uuid_time.c (variant_string): Declare to be static to avoid gcc
+		warnings.
+
+	* uuid.h: Add function prototypes for uuid_generate_random() and
+		uuid_generate_time().
+
+1999-10-25    <tytso@valinux.com>
+
+	* gen_uuid_nt.c (uuid_generate): W2K strikes again!  An
+		incompatible interface change means we need to detect
+		whether the code is running on an NT4 or NT5 system.
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-10-21    <tytso@valinux.com>
+
+	* uuid_generate.8.in: Update man page to use a more standard
+		format (bold option flags and italicized variables), as
+		suggested by Andreas Dilger (adilger@enel.ucalgary.ca)
+
+1999-09-24    <tytso@valinux.com>
+
+	* gen_uuid_nt.c: New file which creates a UUID under Windows NT.
+
+1999-07-18  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.15
+
+1999-05-17    <tytso@rsts-11.mit.edu>
+
+	* gen_uuid.c (get_random_bytes): Use a while loop when reading
+		from /dev/urandom so that if we get interrupted while
+		reading the right thing happens.
+		(uuid_generate_random): Add new function which uses the
+		new UUID format which uses 122 random bits to form the
+		128-bit UUID. 
+		(uuid_generate): Rename the old uuid_generate to be
+		uuid_generate_time, and create a new uuid_generate
+		function which calls either uuid_generate_random or
+		uuid_genereate_time depending on whether /dev/urandom is
+		present. 
+
+	* uuid_generate.3.in: Update to reflect changesin uuid_generate
+		and its two new variants.
+
+	* tst_uuid.c: Updated to test new uuid_generate functions, and to
+		reflect new semantics of uuid_compare.  Added tests to
+		make sure the UUID type and variant created by UUID
+		generate is correct.
+
+	* uuid_time.c (uuid_variant, uuid_type): Added new functions to 
+		return the UUID variant and type information.  The
+		debugging program now prints the UUID variant and type, 
+		and warns if the unparsed time information is likely to be
+		incorrect.
+
+	* uuid_parse.3.in, libuuid.3.in: Miscellaneous text cleanups.
+
+1999-05-03    <tytso@rsts-11.mit.edu>
+
+	* compare.c (uuid_compare): Change sense of uuid_compare so that
+		its return values match that of memcpy and the
+		uuid_compare() found in Paul Leach's internet-draft.
+
+1999-03-11  Andreas Dilger <adilger@enel.ucalgary.ca>
+
+	* Created man pages for libuuid functions.
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-12-04  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Update version numbers of the UUID shared library,
+		since we've added a new function (uuid_time()).
+
+	* uuid_time.c: New file which returns the time field of a UUID.
+		(Good for debugging purposes)
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-06-25  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* tst_uuid.c (main): Fixed bogus declaration of the main's argv
+		parameter.
+
+1998-04-26  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* uuidP.h: Use asm/types.h instead of linux/types.h to avoid a
+		problem caused by glibc hack to prevent linux/types.h from
+		being included.
+
+1998-03-30  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Change to use new installation directory variables
+		convention.  Fix uninstall rules to take $(DESTDIR) into
+		account.
+
+Sun Mar  8 22:17:59 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* gen_uuid.c (get_node_id): Use char * instead of caddr_t, which
+		doesn't always exist for glibc.
+
+Tue Oct 14 21:48:16 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* gen_uuid.c: Use clock_reg instead of clock, since clock
+		conflicts with a header file declaration.
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Wed Mar 12 13:32:05 1997  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs version 1.07
+
+Sun Mar  2 16:45:36 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (ELF_VERSION): Change version to be 1.1
+
+Thu Feb  6 23:08:07 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* gen_uuid.c (uuid_generate): Set Multicast bit when picking a
+		random node_id, to prevent conflicts with IEEE 802
+		addresses obtained from network cards.
+
+Wed Jan  1 23:51:09 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unpack.c, pack.c: Include string.h, since we use memcpy().
+
+Tue Dec  3 13:05:11 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* parse.c: Add #include of ctype.h and stdlib.h, to pull in the
+		required prototypes.
+
+Fri Oct 11 17:15:10 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (DLL_ADDRESS): Updated DLL address for libuuid.
+
+Tue Oct  8 02:02:03 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.06
+
+Thu Sep 12 15:23:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.05
+
+Tue Aug 27 16:50:43 1996  Miles Bader  <miles@gnu.ai.mit.edu>
+
+	* uuid/gen_uuid.c [HAVE_NET_IF_H] <net/if.h>: Include guarded.
+	[HAVE_NETINET_IN_H] <netinet/in.h>: Include guarded.
+	(get_node_id): Surround bulk of function with #ifdef HAVE_NET_IF_H.
+
+Tue Aug 27 16:50:16 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* gen_uuid.c (get_node_id): Add a specific ifdef for the HURD,
+		since it is broken w.r.t getting hardware addresses.

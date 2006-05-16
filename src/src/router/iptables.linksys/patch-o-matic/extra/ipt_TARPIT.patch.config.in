@@ -1,0 +1,2 @@
+      dep_tristate '    MIRROR target support (EXPERIMENTAL)' CONFIG_IP_NF_TARGET_MIRROR $CONFIG_IP_NF_FILTER
+      dep_tristate '    TARPIT target support (EXPERIMENTAL)' CONFIG_IP_NF_TARGET_TARPIT $CONFIG_IP_NF_FILTER

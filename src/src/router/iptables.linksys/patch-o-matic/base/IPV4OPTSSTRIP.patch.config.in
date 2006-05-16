@@ -1,0 +1,2 @@
+    dep_tristate '    REJECT target support' CONFIG_IP_NF_TARGET_REJECT $CONFIG_IP_NF_FILTER
+    dep_tristate '    IPV4OPTSSTRIP target support' CONFIG_IP_NF_TARGET_IPV4OPTSSTRIP $CONFIG_IP_NF_FILTER

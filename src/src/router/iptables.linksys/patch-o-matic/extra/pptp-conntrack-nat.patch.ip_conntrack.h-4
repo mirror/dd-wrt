@@ -1,0 +1,2 @@
+	/* insert conntrack proto private data here */
+	struct ip_ct_gre gre;

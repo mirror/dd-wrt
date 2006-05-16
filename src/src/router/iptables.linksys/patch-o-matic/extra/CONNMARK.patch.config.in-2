@@ -1,0 +1,4 @@
+  dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
+  if [ "$CONFIG_IP_NF_CONNTRACK_MARK" != "n" ]; then
+    dep_tristate '  CONNMARK target support' CONFIG_IP_NF_TARGET_CONNMARK $CONFIG_IP_NF_IPTABLES
+  fi

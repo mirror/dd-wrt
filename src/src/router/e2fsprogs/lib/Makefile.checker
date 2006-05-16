@@ -1,0 +1,18 @@
+all:: checker $(LIBRARY)_chk.a
+
+subdirs:: checker
+
+checker:
+	@echo "	MKDIR $@"
+	@mkdir checker
+
+clean::
+	$(RM) -rf checker
+
+$(LIBRARY)_chk.a: $(OBJS)
+	@echo "	GEN_CHECKER_LIB $@"
+	@(test -r $@ && $(RM) -f $@.bak && $(MV) $@ $@.bak)
+	(cd checker; $(ARGEN) $@ $(OBJS))
+	-@$(RANLIB) $@
+	@$(RM) -f ../$@
+	@$(LN) $@ ../$@

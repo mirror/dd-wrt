@@ -1,0 +1,194 @@
+/*
+ *	BIRD -- The Border Gateway Protocol
+ *
+ *	(c) 2000 Martin Mares <mj@ucw.cz>
+ *
+ *	Can be freely distributed and used under the terms of the GNU GPL.
+ */
+
+#ifndef _BIRD_BGP_H_
+#define _BIRD_BGP_H_
+
+#include "nest/route.h"
+
+struct linpool;
+struct eattr;
+
+struct bgp_config {
+  struct proto_config c;
+  unsigned int local_as, remote_as;
+  ip_addr remote_ip;
+  int multihop;				/* Number of hops if multihop */
+  ip_addr multihop_via;			/* Multihop: address to route to */
+  ip_addr source_addr;			/* Source address to use */
+  int next_hop_self;			/* Always set next hop to local IP address */
+  int compare_path_lengths;		/* Use path lengths when selecting best route */
+  u32 default_local_pref;		/* Default value for LOCAL_PREF attribute */
+  u32 default_med;			/* Default value for MULTI_EXIT_DISC attribute */
+  unsigned connect_retry_time;
+  unsigned hold_time, initial_hold_time;
+  unsigned keepalive_time;
+  unsigned start_delay_time;		/* Minimum delay between connects */
+  unsigned error_amnesia_time;		/* Errors are forgotten after */
+  unsigned error_delay_time_min;	/* Time to wait after an error is detected */
+  unsigned error_delay_time_max;
+  unsigned disable_after_error;		/* Disable the protocol when error is detected */
+};
+
+struct bgp_conn {
+  struct bgp_proto *bgp;
+  struct birdsock *sk;
+  unsigned int state;			/* State of connection state machine */
+  struct timer *connect_retry_timer;
+  struct timer *hold_timer;
+  struct timer *keepalive_timer;
+  int packets_to_send;			/* Bitmap of packet types to be sent */
+  int notify_code, notify_subcode, notify_size;
+  byte *notify_data;
+  int error_flag;			/* Error state, ignore all input */
+  int primary;				/* This connection is primary */
+  unsigned hold_time, keepalive_time;	/* Times calculated from my and neighbor's requirements */
+};
+
+struct bgp_proto {
+  struct proto p;
+  struct bgp_config *cf;		/* Shortcut to BGP configuration */
+  unsigned local_as, remote_as;
+  int is_internal;			/* Internal BGP connection (local_as == remote_as) */
+  u32 local_id;				/* BGP identifier of this router */
+  u32 remote_id;			/* BGP identifier of the neighbor */
+  struct bgp_conn *conn;		/* Connection we have established */
+  struct bgp_conn outgoing_conn;	/* Outgoing connection we're working with */
+  struct bgp_conn incoming_conn;	/* Incoming connection we have neither accepted nor rejected yet */
+  struct object_lock *lock;		/* Lock for neighbor connection */
+  ip_addr next_hop;			/* Either the peer or multihop_via */
+  struct neighbor *neigh;		/* Neighbor entry corresponding to next_hop */
+  ip_addr local_addr;			/* Address of the local end of the link to next_hop */
+  struct bgp_bucket **bucket_hash;	/* Hash table of attribute buckets */
+  unsigned int hash_size, hash_count, hash_limit;
+  struct fib prefix_fib;		/* Prefixes to be sent */
+  list bucket_queue;			/* Queue of buckets to send */
+  struct bgp_bucket *withdraw_bucket;	/* Withdrawn routes */
+  unsigned startup_delay;		/* Time to delay protocol startup by due to errors */
+  bird_clock_t last_connect;		/* Time of last connect attempt */
+#ifdef IPV6
+  byte *mp_reach_start, *mp_unreach_start; /* Multiprotocol BGP attribute notes */
+  unsigned mp_reach_len, mp_unreach_len;
+  ip_addr local_link;			/* Link-level version of local_addr */
+#endif
+};
+
+struct bgp_prefix {
+  struct fib_node n;			/* Node in prefix fib */
+  node bucket_node;			/* Node in per-bucket list */
+};
+
+struct bgp_bucket {
+  node send_node;			/* Node in send queue */
+  struct bgp_bucket *hash_next, *hash_prev;	/* Node in bucket hash table */
+  unsigned hash;			/* Hash over extended attributes */
+  list prefixes;			/* Prefixes in this buckets */
+  ea_list eattrs[0];			/* Per-bucket extended attributes */
+};
+
+#define BGP_PORT		179
+#define BGP_VERSION		4
+#define BGP_HEADER_LENGTH	19
+#define BGP_MAX_PACKET_LENGTH	4096
+#define BGP_RX_BUFFER_SIZE	4096
+#define BGP_TX_BUFFER_SIZE	BGP_MAX_PACKET_LENGTH
+
+extern struct linpool *bgp_linpool;
+
+void bgp_start_timer(struct timer *t, int value);
+void bgp_check(struct bgp_config *c);
+void bgp_error(struct bgp_conn *c, unsigned code, unsigned subcode, byte *data, int len);
+void bgp_close_conn(struct bgp_conn *c);
+
+#ifdef LOCAL_DEBUG
+#define BGP_FORCE_DEBUG 1
+#else
+#define BGP_FORCE_DEBUG 0
+#endif
+#define BGP_TRACE(flags, msg, args...) do { if ((p->p.debug & flags) || BGP_FORCE_DEBUG) \
+	log(L_TRACE "%s: " msg, p->p.name , ## args ); } while(0)
+
+/* attrs.c */
+
+byte *bgp_attach_attr(struct ea_list **to, struct linpool *, unsigned attr, unsigned val);
+struct rta *bgp_decode_attrs(struct bgp_conn *conn, byte *a, unsigned int len, struct linpool *pool, int mandatory);
+int bgp_get_attr(struct eattr *e, byte *buf);
+int bgp_rte_better(struct rte *, struct rte *);
+void bgp_rt_notify(struct proto *, struct network *, struct rte *, struct rte *, struct ea_list *);
+int bgp_import_control(struct proto *, struct rte **, struct ea_list **, struct linpool *);
+void bgp_attr_init(struct bgp_proto *);
+unsigned int bgp_encode_attrs(byte *w, struct ea_list *attrs, int remains);
+void bgp_free_bucket(struct bgp_proto *p, struct bgp_bucket *buck);
+void bgp_get_route_info(struct rte *, byte *buf, struct ea_list *attrs);
+
+/* packets.c */
+
+void bgp_schedule_packet(struct bgp_conn *conn, int type);
+void bgp_tx(struct birdsock *sk);
+int bgp_rx(struct birdsock *sk, int size);
+void bgp_log_error(struct bgp_proto *p, char *msg, unsigned code, unsigned subcode, byte *data, unsigned len);
+
+/* Packet types */
+
+#define PKT_OPEN		0x01
+#define PKT_UPDATE		0x02
+#define PKT_NOTIFICATION	0x03
+#define PKT_KEEPALIVE		0x04
+#define PKT_SCHEDULE_CLOSE	0x1f	/* Used internally to schedule socket close */
+
+/* Attributes */
+
+#define BAF_OPTIONAL		0x80
+#define BAF_TRANSITIVE		0x40
+#define BAF_PARTIAL		0x20
+#define BAF_EXT_LEN		0x10
+
+#define BA_ORIGIN		0x01	/* [RFC1771] */		/* WM */
+#define BA_AS_PATH		0x02				/* WM */
+#define BA_NEXT_HOP		0x03				/* WM */
+#define BA_MULTI_EXIT_DISC	0x04				/* ON */
+#define BA_LOCAL_PREF		0x05				/* WD */
+#define BA_ATOMIC_AGGR		0x06				/* WD */
+#define BA_AGGREGATOR		0x07				/* OT */
+#define BA_COMMUNITY		0x08	/* [RFC1997] */		/* OT */
+#define BA_ORIGINATOR_ID	0x09	/* [RFC1966] */		/* ON */
+#define BA_CLUSTER_LIST		0x0a				/* ON */
+/* We don't support these: */
+#define BA_DPA			0x0b	/* ??? */
+#define BA_ADVERTISER		0x0c	/* [RFC1863] */
+#define BA_RCID_PATH		0x0d
+#define BA_MP_REACH_NLRI	0x0e	/* [RFC2283] */
+#define BA_MP_UNREACH_NLRI	0x0f
+#define BA_EXTENDED_COMM	0x10	/* draft-ramachandra-bgp-ext-communities */
+
+/* BGP states */
+
+#define BS_IDLE			0
+#define BS_CONNECT		1	/* Attempting to connect */
+#define BS_ACTIVE		2	/* Waiting for connection retry & listening */
+#define BS_OPENSENT		3
+#define BS_OPENCONFIRM		4
+#define BS_ESTABLISHED		5
+
+/* Well-known communities */
+
+#define BGP_COMM_NO_EXPORT		0xffffff01	/* Don't export outside local AS / confed. */
+#define BGP_COMM_NO_ADVERTISE		0xffffff02	/* Don't export at all */
+#define BGP_COMM_NO_EXPORT_SUBCONFED	0xffffff03	/* NO_EXPORT even in local confederation */
+
+/* Origins */
+
+#define ORIGIN_IGP		0
+#define ORIGIN_EGP		1
+#define ORIGIN_INCOMPLETE	2
+
+/* Address families */
+
+#define BGP_AF_IPV6		2
+
+#endif

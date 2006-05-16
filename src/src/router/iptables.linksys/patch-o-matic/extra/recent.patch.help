@@ -1,0 +1,137 @@
+Author: Stephen Frost <sfrost@snowman.net>
+Status: Tested locally, no problems so far.
+
+This module is used for creating one or many list(s) of recently seen IP 
+addresses and then matching against that/those list(s).
+
+ --name     Specify the list to use for the commands.  If no name is given
+            then 'DEFAULT' will be used.
+
+ --set      followed by an optional `!'
+	    This will add the source address of the packet to the list.
+	    If the source address is already in the list, this will update
+	    the existing entry.  This will always return success.
+
+ --rcheck   followed by an optional `!'
+	    This will check if the source address of the packet is currently
+	    in the list and return true if it is, and false otherwise.
+
+ --update   followed by an optional `!'
+            This will check if the source address of the packet is currently
+	    in the list.  If it is then that entry will be updated and the
+	    rule will return true.  If the source address is not in the list
+	    then the rule will return false.
+
+ --remove   followed by an optional `!'
+	    This will check if the source address of the packet is currently
+	    in the list and if so that address will be removed from the list.
+
+ --seconds  followed by an optional `!', then the value
+	    This option must be used in conjunction with one of 'rcheck' or
+	    'update'.  When used, this will narrow the match to only happen
+	    when the address is in the list and was seen within the last
+	    given number of seconds.
+
+ --hitcount followed by an optional `!', then the value
+	    This option must be used in conjunction with one of 'rcheck' or
+	    'update'.  When used, this will narrow the match to only happen
+	    when the address is in the list and packets had been received
+	    greater than or equal to the given value.  This option may be
+	    used along with 'seconds' to create an even narrower match 
+	    requiring a certain number of hits within a specific time frame.
+
+ --rttl     This option must be used in conjunction with one of 'rcheck' or
+	    'update'.  When used, this will narrow the match to only happen
+	    when the address is in the list and the TTL of the current packet
+	    matches that of the packet which hit the --set rule.  This may be
+	    useful if you have problems with people faking their source 
+	    address in order to DoS you via this module by disallowing others
+	    access to your site by sending bogus packets to you.
+
+  --rsource Save the source address of each packet in the recent list 
+            table (default).\n",
+
+  --rdest   Save the destination address of each packet in the recent list 
+            table.\n",
+
+/proc/net/ipt_recent is a directory which contains the currently active lists.
+
+/proc/net/ipt_recent/* are the current lists of addresses and information 
+about each entry of each list.
+
+Each file in /proc/net/ipt_recent/ can be read from to see the current list
+or written two using the following commands to modify the list:
+'echo xx.xx.xx.xx > /proc/net/ipt_recent/DEFAULT' to Add to the DEFAULT list
+or 'echo +xx.xx.xx.xx > /proc/net/ipt_recent/DEFAULT' for the same result.
+'echo -xx.xx.xx.xx > /proc/net/ipt_recent/DEFAULT' to Remove from the DEFAULT list
+'echo clear > /proc/net/ipt_recent/DEFAULT' to empty the DEFAULT list.
+
+The module itself accepts two parameters:
+ip_list_tot=100
+ip_pkt_list_tot=10
+ip_list_hash_size=0
+debug=0
+
+Shown are the defaults.
+ip_list_tot is the total number of addresses which will be remembered, note
+that the list is searched in-order for every attempted match and so you do
+not want to increase this value too much or alot of time will be spent
+traversing the list.
+
+ip_pkt_list_tot is the total number of packets which will be remembered for
+each address.  This list is only used by '--hitcount' and so the default
+will probably suffice unless you make extensive use of that option.
+
+ip_list_hash_size is the size of the hash table (positions in the table,
+not bytes).  If it's '0' then it will be calculated as ip_list_tot*3 and
+then rounded up to the next power of 2.  So, by default, it's rounded up
+to 512 entries or 1k of memory on your normal 4-byte-int machine.
+
+debug is a setting to display debugging messages.  No levels yet, just 0
+for nothing and 1 for everything.  Don't use 1 on production machines,
+you'll end up with very full logs before long.  Aside from that it
+doesn't actually change any way the code works, just adds printk's.
+
+Example #1:
+
+# iptables -A FORWARD -m recent --rcheck --seconds 60 -j DROP
+# iptables -A FORWARD -i eth0 -d 127.0.0.0/8 -m recent --set -j DROP
+
+Here we are making a 'bad guy' out of anyone who tries to send data to 
+127.0.0.0/8 on our eth0 interface (which should never legitimately
+happen).  The first packet will make it past the first rule and then
+be caught by the second rule and that address will be put into the
+recent list and the packet dropped.
+
+Any subsequent packets for the next 60 seconds that show up from that 
+address will be dropped, regardless of destination address, destiation
+port, etc.
+
+Example #2:
+
+# iptables -A FORWARD -m recent --update --seconds 60 -j DROP
+# iptables -A FORWARD -i eth0 -d 127.0.0.0/8 -m recent --set -j DROP
+
+(The author's favorite method)
+
+This is identical to example #1 except that for every subsequent packet
+received from this source address the 'last seen' status will be updated
+in the table.  Therefore there must be a 'quiet time' of 60 seconds
+before another packet from this address will even be considered.
+
+It is the author's intent that all 'DROP' rules be replaced by:
+
+'-m recent --set -j DROP'
+
+and that a:
+
+'-m recent --update --seconds 60 -j DROP'
+
+rule be added very early on in the rule set, though following any:
+
+'--match state --state ! NEW,INVALID -j ACCEPT'
+
+rules.  If the '--update' rule is before this check for ! NEW,INVALID
+packets then ESTABLISHED connection or those in the process of becoming
+ESTABLISHED could be disrupted by a malicious person who can modify
+his/her source address.

@@ -1,0 +1,23 @@
+#!/bin/sh
+killall -9 shatd
+if [ "$(nvram get shat_enable)" = "1" ]; then
+
+range=$(nvram get shat_range)
+shield=$(nvram get shat_shield)
+lan=$(nvram get lan_ifname)
+wan=$(nvram get wan_ifname)
+
+# when shat_range is not set, we don't start anything
+[ "$range" = "" ] && exit 0
+
+shatd -d -i $lan -P $range ${shield:+-L $shield} >/dev/null 2>&1
+
+# redirect dns traffic to dnsmasq
+#iptables -t nat -p udp -A PREROUTING -i br0 --dport 53 -j REDIRECT --to-ports 53
+iptables -t nat -p udp -A PREROUTING -i shat0 --dport 53 -j DNAT --to $(nvram get wan_dns)
+
+# block incoming lan traffic from unknown IP addresses
+# iptables -A input_rule -i $lan -s \! $(nvram get lan_ipaddr)/$(nvram get lan_netmask) -j DROP
+
+
+fi

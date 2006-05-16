@@ -1,0 +1,29 @@
+--- linux-2.4.20-pre11-plain/net/ipv4/netfilter/ipt_ULOG.c	Wed Oct 30 10:09:41 2002
++++ linux-2.4.20-pre11-ulogfix/net/ipv4/netfilter//ipt_ULOG.c	Wed Oct 30 10:07:31 2002
+@@ -12,6 +12,7 @@
+  * 	      module loadtime -HW
+  * 2002/07/07 remove broken nflog_rcv() function -HW
+  * 2002/08/29 fix shifted/unshifted nlgroup bug -HW
++ * 2002/10/30 fix uninitialized mac_len field - <Anders K. Pedersen>
+  *
+  * Released under the terms of the GPL
+  *
+@@ -31,7 +32,7 @@
+  *   Specify, after how many clock ticks (intel: 100 per second) the queue
+  * should be flushed even if it is not full yet.
+  *
+- * ipt_ULOG.c,v 1.21 2002/08/29 10:54:34 laforge Exp
++ * ipt_ULOG.c,v 1.22 2002/10/30 09:07:31 laforge Exp
+  */
+ 
+ #include <linux/module.h>
+@@ -224,7 +225,8 @@
+ 	    && in->hard_header_len <= ULOG_MAC_LEN) {
+ 		memcpy(pm->mac, (*pskb)->mac.raw, in->hard_header_len);
+ 		pm->mac_len = in->hard_header_len;
+-	}
++	} else
++		pm->mac_len = 0;
+ 
+ 	if (in)
+ 		strncpy(pm->indev_name, in->name, sizeof(pm->indev_name));

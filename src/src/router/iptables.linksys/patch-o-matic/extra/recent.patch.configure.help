@@ -1,0 +1,11 @@
+CONFIG_IP_NF_MATCH_TOS
+recent match support
+CONFIG_IP_NF_MATCH_RECENT
+  This option allows you to create lists of recently seen source
+  addresses and then match against that list based on number of
+  times seen and the time since last seen.  An option is also
+  availible to require a match against TTL in addition to source
+  address.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

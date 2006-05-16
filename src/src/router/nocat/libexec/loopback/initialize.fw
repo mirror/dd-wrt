@@ -1,0 +1,30 @@
+#!/bin/sh
+
+# Note: your PATH is inherited from the gateway process
+
+# Enable IP forwarding.
+#
+# echo "1" > /proc/sys/net/ipv4/ip_forward
+#
+# iptables -t filter -P OUTPUT ACCEPT
+
+# Flush all user-defined chains
+#
+for chain in NoCat_OK NoCat_Cap; do
+    iptables -t nat -N $chain 2>/dev/null
+    iptables -t nat -F $chain
+    iptables -t nat -D OUTPUT -j $chain 2>/dev/null
+    iptables -t nat -A OUTPUT -j $chain
+done
+
+
+#
+# Redirect outbound non-auth web traffic to the local gateway process
+#
+# iptables -t nat -A NoCat_OK -j LOG --log-level info
+iptables -t nat -A NoCat_Cap -p tcp --dport 80 \
+		    -j REDIRECT --to-port $GatewayPort
+iptables -t nat -A NoCat_Cap -p tcp --dport 443 \
+		    -j REDIRECT --to-port $GatewayPort
+
+

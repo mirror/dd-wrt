@@ -1,0 +1,12 @@
+BPALogin v2.0
+-------------
+
+Installing
+
+1. Check the Makefile and set the correct locations for the executable, the config file, and the init script.  There is no man page...what do you expect for nothing? :)
+
+2. Type make install 
+
+3. Edit the /etc/bpalogin.conf file and set any relevant details.
+
+4. Start BPALogin using either the init script, or using /usr/sbin/bpalogin -c /etc/bpalogin.conf  

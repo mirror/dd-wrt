@@ -1,0 +1,66 @@
+
+<fieldset>
+	<legend><script type="text/javascript">Capture(hotspot.legend)</script></legend>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.hotspot)</script></div>
+		<input class="spaceradio" type="radio" value="1" name="chilli_enable" <% nvram_selmatch("chilli_enable","1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="chilli_enable" <% nvram_selmatch("chilli_enable","0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.pserver)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_radius" value="<% nvram_get("chilli_radius"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.bserver)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_backup" value="<% nvram_get("chilli_backup"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.dns)</script></div>
+		<input class="text" maxLength="15" size="15" name="chilli_dns1" value="<% nvram_get("chilli_dns1"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.url)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_url" value="<% nvram_get("chilli_url"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(share.share_key)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_pass" value="<% nvram_get("chilli_pass"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.dhcp)</script></div>
+		<select name="chilli_interface">
+			<option value="wan" <% nvram_selmatch("chilli_interface","wan","selected"); %> >WAN</option>
+			<option value="lan" <% nvram_selmatch("chilli_interface","lan","selected"); %> >LAN</option>
+			<option value="lanwan" <% nvram_selmatch("chilli_interface","lanwan","selected"); %> >LAN &amp; WLAN</option>
+		</select>
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.radnas)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_radiusnasid" value="<% nvram_get("chilli_radiusnasid"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.uam)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_uamsecret" value="<% nvram_get("chilli_uamsecret"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.uamdns)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_uamanydns" value="<% nvram_get("chilli_uamanydns"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.allowuam)</script></div>
+		<input class="text" maxLength="100" size="25" name="chilli_uamallowed" value="<% nvram_get("chilli_uamallowed"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.macauth)</script></div>
+		<input class="spaceradio" type="radio" value="1" name="chilli_macauth" <% nvram_selmatch("chilli_macauth","1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="chilli_macauth" <% nvram_selmatch("chilli_macauth","0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.option)</script></div>
+		<textarea id="chilli_additional" name="chilli_additional" cols="60" rows="4"></textarea>
+        <script type="text/javascript">
+        	var chilli_additional = fix_cr( '<% nvram_get("chilli_additional"); %>' );
+        	document.getElementById("chilli_additional").value = chilli_additional;
+        </script>
+    </div>
+</fieldset><br />

@@ -1,0 +1,48 @@
+
+<fieldset>
+	<legend><script type="text/javascript">Capture(hotspot.nocat_legend)</script></legend>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_srv)</script></div>
+		<input class="spaceradio" type="radio" value="1" name="NC_enable" <% nvram_selmatch("NC_enable","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="NC_enable" <% nvram_selmatch("NC_enable","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<% nvram_match("NC_enable","0","<!--"); %>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_gateway)</script></div>
+		<input maxlength="39" name="NC_GatewayName" size="39" value="<% nvram_get("NC_GatewayName"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_home)</script></div>
+		<input maxlength="80" name="NC_HomePage" size="39" value="<% nvram_get("NC_HomePage"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_allowweb)</script></div>
+		<input maxlength="80" name="NC_AllowedWebHosts" size="39" value="<% nvram_get("NC_AllowedWebHosts"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_docroot)</script></div>
+		<input maxlength="80" name="NC_DocumentRoot" size="39" value="<% nvram_get("NC_DocumentRoot"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_splash)</script></div>
+		<input maxlength="80" name="NC_SplashURL" size="39" value="<% nvram_get("NC_SplashURL"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_port)</script></div>
+		<input maxlength="39" name="NC_ExcludePorts" size="39" value="<% nvram_get("NC_ExcludePorts"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_timeout)</script></div>
+		<input class="num" type="text" size="6" name="NC_LoginTimeout" value="<% nvram_get("NC_LoginTimeout"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_verbose)</script></div>
+		<input class="num" type="text" size="3" name="NC_Verbosity" onblur="valid_range(this,0,255,hotspot.smtp_ip)" value="<% nvram_get("NC_Verbosity"); %>" />
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_route)</script></div>
+		<input class="spaceradio" type="radio" value="1" name="NC_RouteOnly" <% nvram_selmatch("NC_RouteOnly","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="NC_RouteOnly" <% nvram_selmatch("NC_RouteOnly","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<% nvram_match("NC_enable","0","-->"); %>
+</fieldset><br/>

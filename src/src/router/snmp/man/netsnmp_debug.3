@@ -1,0 +1,105 @@
+.TH "debug: print out debugging information about the handler chain being called." 3 "5 Sep 2003" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+debug: print out debugging information about the handler chain being called. \- This is a useful module for run-time debugging of requests as the pass this handler in a calling chain. 
+More...
+.SS "handler"
+
+.in +1c
+.ti -1c
+.RI "void \fBnetsnmp_init_debug_helper\fP (void)"
+.br
+.RI "\fIinitializes the debug helper which then registers a debug handler as a run-time injectable handler for configuration file use.\fP"
+.ti -1c
+.RI "void \fBnetsnmp_init_serialize\fP (void)"
+.br
+.RI "\fIinitializes the serialize helper which then registers a serialize handler as a run-time injectable handler for configuration file use.\fP"
+.ti -1c
+.RI "void \fBnetsnmp_init_read_only_helper\fP (void)"
+.br
+.RI "\fIinitializes the read_only helper which then registers a read_only handler as a run-time injectable handler for configuration file use.\fP"
+.ti -1c
+.RI "void \fBnetsnmp_init_bulk_to_next_helper\fP (void)"
+.br
+.RI "\fIinitializes the bulk_to_next helper which then registers a bulk_to_next handler as a run-time injectable handler for configuration file use.\fP"
+.ti -1c
+.RI "void \fBnetsnmp_init_helpers\fP (void)"
+.br
+.RI "\fIcall the initialization sequence for all handlers with init_ routines.\fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "netsnmp_mib_handler * \fBnetsnmp_get_debug_handler\fP (void)"
+.br
+.RI "\fIreturns a debug handler that can be injected into a given handler chain.\fP"
+.in -1c
+.SH "DETAILED DESCRIPTION"
+.PP 
+This is a useful module for run-time debugging of requests as the pass this handler in a calling chain.
+.PP
+All debugging output is done via the standard debugging routines with a token name of 'helper:debug', so use the -Dhelper:debug command line flag to see the output when running the snmpd demon. It's not recommended you compile this into a handler chain during compile time, but instead use the 'injectHandler' token in the snmpd.conf file (or similar) to add it to the chain later:
+.PP
+injectHandler debug my_module_name
+.PP
+to see an example output, try:
+.PP
+injectHandler debug mibII/system
+.PP
+and then run snmpwalk on the 'system' group. 
+.SH "FUNCTION DOCUMENTATION"
+.PP 
+.SS "netsnmp_mib_handler* netsnmp_get_debug_handler (void)"
+.PP
+returns a debug handler that can be injected into a given handler chain.
+.PP
+Definition at line 44 of file debug_handler.c.
+.PP
+References netsnmp_create_handler().
+.PP
+Referenced by netsnmp_init_debug_helper().
+.SS "void netsnmp_init_bulk_to_next_helper (void)"
+.PP
+initializes the bulk_to_next helper which then registers a bulk_to_next handler as a run-time injectable handler for configuration file use.
+.PP
+Definition at line 95 of file bulk_to_next.c.
+.PP
+References netsnmp_get_bulk_to_next_handler(), and netsnmp_register_handler_by_name().
+.PP
+Referenced by netsnmp_init_helpers().
+.SS "void netsnmp_init_debug_helper (void)"
+.PP
+initializes the debug helper which then registers a debug handler as a run-time injectable handler for configuration file use.
+.PP
+Definition at line 147 of file debug_handler.c.
+.PP
+References netsnmp_get_debug_handler(), and netsnmp_register_handler_by_name().
+.PP
+Referenced by netsnmp_init_helpers().
+.SS "void netsnmp_init_helpers (void)"
+.PP
+call the initialization sequence for all handlers with init_ routines.
+.PP
+Definition at line 31 of file all_helpers.c.
+.PP
+References netsnmp_init_bulk_to_next_helper(), netsnmp_init_debug_helper(), netsnmp_init_read_only_helper(), and netsnmp_init_serialize().
+.SS "void netsnmp_init_read_only_helper (void)"
+.PP
+initializes the read_only helper which then registers a read_only handler as a run-time injectable handler for configuration file use.
+.PP
+Definition at line 71 of file read_only.c.
+.PP
+References netsnmp_get_read_only_handler(), and netsnmp_register_handler_by_name().
+.PP
+Referenced by netsnmp_init_helpers().
+.SS "void netsnmp_init_serialize (void)"
+.PP
+initializes the serialize helper which then registers a serialize handler as a run-time injectable handler for configuration file use.
+.PP
+Definition at line 96 of file serialize.c.
+.PP
+References netsnmp_get_serialize_handler(), and netsnmp_register_handler_by_name().
+.PP
+Referenced by netsnmp_init_helpers().

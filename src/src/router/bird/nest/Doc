@@ -1,0 +1,12 @@
+H Core
+S rt-fib.c
+S rt-table.c
+S rt-attr.c
+D proto.sgml
+S proto.c
+S proto-hooks.c
+S iface.c
+S neighbor.c
+S cli.c
+S locks.c
+# rt-dev.c documented in Protocols chapter

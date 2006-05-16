@@ -1,0 +1,232 @@
+diff -Nru linux-not-patched/net/ipv4/netfilter/ip_conntrack_egg.c linux/net/ipv4/netfilter/ip_conntrack_egg.c
+--- linux-not-patched/net/ipv4/netfilter/ip_conntrack_egg.c	Thu Jan  1 01:00:00 1970
++++ linux/net/ipv4/netfilter/ip_conntrack_egg.c	Mon Jan 28 21:35:10 2002
+@@ -0,0 +1,228 @@
++/* Eggdrop extension for IP connection tracking, Version 0.0.3
++ * based on ip_conntrack_irc.c	
++ *
++ *      This module only supports the share userfile-send command,
++ *      used by eggdrops to share it's userfile.
++ *
++ *      There are no support for NAT at the moment.
++ *
++ *      This program is free software; you can redistribute it and/or
++ *      modify it under the terms of the GNU General Public License
++ *      as published by the Free Software Foundation; either version
++ *      2 of the License, or (at your option) any later version.
++ *
++ *	Module load syntax:
++ *	
++ * 	please give the ports of all Eggdrops You have running
++ *      on your system, the default port is 3333.
++ *
++ *      2001-04-19: Security update. IP addresses are now compared
++ *                  to prevent unauthorized "related" access.
++ */
++
++#include <linux/module.h>
++#include <linux/netfilter.h>
++#include <linux/ip.h>
++#include <net/checksum.h>
++#include <net/tcp.h>
++
++#include <linux/netfilter_ipv4/lockhelp.h>
++#include <linux/netfilter_ipv4/ip_conntrack_helper.h>
++
++#define MAX_PORTS 8
++static int ports[MAX_PORTS];
++static int ports_n_c = 0;
++
++MODULE_AUTHOR("Magnus Sandin <magnus@sandin.cx>");
++MODULE_DESCRIPTION("Eggdrop (userfile-sharing) connection tracking module");
++MODULE_LICENSE("GPL");
++#ifdef MODULE_PARM
++MODULE_PARM(ports, "1-" __MODULE_STRING(MAX_PORTS) "i");
++MODULE_PARM_DESC(ports, "port numbers of eggdrop servers");
++#endif
++
++DECLARE_LOCK(ip_egg_lock);
++struct module *ip_conntrack_egg = THIS_MODULE;
++
++#if 0
++#define DEBUGP printk
++#else
++#define DEBUGP(format, args...)
++#endif
++
++int parse_command(char *data, char *data_end, u_int32_t * ip, u_int16_t * port)
++/* tries to get the ip_addr and port out of a eggdrop command
++   return value: -1 on failure, 0 on success 
++   data		pointer to first byte of DCC command data
++   data_end	pointer to last byte of dcc command data
++   ip		returns parsed ip of dcc command
++   port		returns parsed port of dcc command */
++{
++	if (data > data_end)
++		return -1;
++	
++	*ip = simple_strtoul(data, &data, 10);
++
++	/* skip blanks between ip and port */
++	while (*data == ' ' && data < data_end)
++		data++;
++
++	*port = simple_strtoul(data, &data, 10);
++	return 0;
++}
++
++
++
++static int help(const struct iphdr *iph, size_t len,
++		struct ip_conntrack *ct, enum ip_conntrack_info ctinfo)
++{
++	/* tcplen not negative guarenteed by ip_conntrack_tcp.c */
++	struct tcphdr *tcph = (void *) iph + iph->ihl * 4;
++	char *data = (char *) tcph + tcph->doff * 4;
++	char *data_limit;
++	u_int32_t tcplen = len - iph->ihl * 4;
++	u_int32_t datalen = tcplen - tcph->doff * 4;
++	int dir = CTINFO2DIR(ctinfo);
++	int bytes_scanned = 0;
++	struct ip_conntrack_tuple t, mask;
++
++	u_int32_t egg_ip;
++	u_int16_t egg_port;
++
++	memset(&mask, 0, sizeof(struct ip_conntrack_tuple));
++	mask.dst.u.tcp.port = 0xFFFF;
++	mask.dst.protonum = 0xFFFF;
++
++	DEBUGP("ip_ct_egg: help entered\n");
++
++	/* If packet is coming from IRC server */
++	if (dir != IP_CT_DIR_REPLY)
++		return NF_ACCEPT;
++
++	/* Until there's been traffic both ways, don't look in packets. */
++	if (ctinfo != IP_CT_ESTABLISHED
++	    && ctinfo != IP_CT_ESTABLISHED + IP_CT_IS_REPLY) {
++		DEBUGP("ip_ct_egg: Conntrackinfo = %u\n", ctinfo);
++		return NF_ACCEPT;
++	}
++
++	/* Not whole TCP header? */
++	if (tcplen < sizeof(struct tcphdr) || tcplen < tcph->doff * 4) {
++		DEBUGP("ip_ct_egg: tcplen = %u\n", (unsigned) tcplen);
++		return NF_ACCEPT;
++	}
++
++	/* Checksum invalid?  Ignore. */
++	
++	if (tcp_v4_check(tcph, tcplen, iph->saddr, iph->daddr,
++			 csum_partial((char *) tcph, tcplen, 0))) {
++		DEBUGP ("ip_ct_egg: bad csum: %p %u %u.%u.%u.%u %u.%u.%u.%u\n",
++			tcph, tcplen, NIPQUAD(iph->saddr),
++			NIPQUAD(iph->daddr));
++		return NF_ACCEPT;
++	}
++
++	data_limit = (char *) data + datalen;
++	while (datalen > 5 && bytes_scanned < 128) {
++		if (memcmp(data, "s us ", 5)) {
++			data++;
++			datalen--;
++			bytes_scanned++;
++			continue;
++		}
++
++		data += 5;
++
++		DEBUGP ("ip_ct_egg: Userfile-share found in connection %u.%u.%u.%u %u.%u.%u.%u\n",
++			NIPQUAD(iph->saddr),
++			NIPQUAD(iph->daddr));
++
++		if (parse_command
++		    ((char *) data, data_limit, &egg_ip,
++		     &egg_port)) {
++			DEBUGP ("ip_ct_egg: Didn't find any data in the Userfile-share packet\n");
++			return NF_ACCEPT;
++		}
++
++		memset(&t, 0, sizeof(t));
++		t.src.ip = iph->daddr;
++		t.src.u.tcp.port = 0;
++		t.dst.ip = htonl(egg_ip);
++		t.dst.u.tcp.port = htons(egg_port);
++		t.dst.protonum = IPPROTO_TCP;
++
++		if (ct->tuplehash[dir].tuple.src.ip != htonl(egg_ip)) {
++			if (net_ratelimit())
++				printk("Forged Eggdrop command from "
++				       "%u.%u.%u.%u: %u.%u.%u.%u:%u\n",
++				       NIPQUAD(ct->tuplehash[dir].tuple.src.ip),
++				       HIPQUAD(egg_ip), egg_port);
++			return NF_ACCEPT;
++		}
++
++		DEBUGP ("ip_ct_egg: expect_related %u.%u.%u.%u:%u - %u.%u.%u.%u:%u\n",
++			NIPQUAD(t.src.ip),
++			ntohs(t.src.u.tcp.port),
++			NIPQUAD(t.dst.ip),
++			ntohs(t.dst.u.tcp.port));
++
++		ip_conntrack_expect_related(ct, &t,
++					    &mask,
++					    NULL);
++		break;
++	}
++	return NF_ACCEPT;
++}
++
++static struct ip_conntrack_helper egg_helpers[MAX_PORTS];
++
++static void __exit fini(void);
++
++static int __init init(void)
++{
++	int i, ret;
++
++	/* If no port given, default to standard eggdrop port */
++	if (ports[0] == 0)
++		ports[0] = 3333;
++
++	for (i = 0; (i < MAX_PORTS) && ports[i]; i++) {
++		memset(&egg_helpers[i], 0,
++		       sizeof(struct ip_conntrack_helper));
++		egg_helpers[i].tuple.src.u.tcp.port = htons(ports[i]);
++		egg_helpers[i].tuple.dst.protonum = IPPROTO_TCP;
++		egg_helpers[i].mask.src.u.tcp.port = 0xFFFF;
++		egg_helpers[i].mask.dst.protonum = 0xFFFF;
++		egg_helpers[i].help = help;
++
++		DEBUGP("ip_ct_egg: port #%d: %d\n", i, ports[i]);
++
++		ret = ip_conntrack_helper_register(&egg_helpers[i]);
++
++		if (ret) {
++			printk("ip_ct_egg: ERROR registering port %d\n",
++				ports[i]);
++			fini();
++			return 1;
++		}
++		ports_n_c++;
++	}
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	int i;
++	for (i = 0; (i < MAX_PORTS) && ports[i]; i++) {
++		DEBUGP("ip_ct_egg: unregistering port %d\n",
++		       ports[i]);
++		ip_conntrack_helper_unregister(&egg_helpers[i]);
++	}
++}
++
++module_init(init);
++module_exit(fini);
++
++
++
++

@@ -1,0 +1,14 @@
+--- linux.old/net/ipv4/netfilter/ipt_ECN.c.orig	2002-12-09 23:14:20.000000000 +0100
++++ linux/net/ipv4/netfilter/ipt_ECN.c	2002-12-09 23:13:27.000000000 +0100
+@@ -88,8 +88,8 @@
+ 	}
+ 	
+ 	if (diffs[0] != *tcpflags) {
+-		diffs[0] = htons(diffs[0]) ^ 0xFFFF;
+-		diffs[1] = htons(*tcpflags);
++		diffs[0] = diffs[0] ^ 0xFFFF;
++		diffs[1] = *tcpflags;
+ 		tcph->check = csum_fold(csum_partial((char *)diffs,
+ 		                                    sizeof(diffs),
+ 		                                    tcph->check^0xFFFF));
+

@@ -1,0 +1,2 @@
+  dep_tristate '  LOG target support' CONFIG_IP_NF_TARGET_LOG $CONFIG_IP_NF_IPTABLES
+  dep_tristate '  Packet drop table' CONFIG_IP_NF_DROPTABLE $CONFIG_IP_NF_IPTABLES 

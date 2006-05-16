@@ -1,0 +1,8 @@
+      dep_tristate '    REDIRECT target support' CONFIG_IP_NF_TARGET_REDIRECT $CONFIG_IP_NF_NAT
+      if [ "$CONFIG_IP_NF_H323" = "m" ]; then
+       define_tristate CONFIG_IP_NF_NAT_H323 m
+      else
+        if [ "$CONFIG_IP_NF_H323" = "y" ]; then
+          define_tristate CONFIG_IP_NF_NAT_H323 $CONFIG_IP_NF_NAT
+        fi
+      fi

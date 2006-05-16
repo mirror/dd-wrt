@@ -1,0 +1,3 @@
+lib/libblkid*
+sbin/blkid
+usr/share/man/man8/blkid.8

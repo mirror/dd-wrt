@@ -1,0 +1,50 @@
+Author: Ian (Larry) Latter <Ian.Latter@mq.edu.au>
+Status: request for inclusion
+
+This adds the CONFIG_IP_NF_RSH option, which is the RSH connection
+tracker.
+
+An RSH connection tracker is required if the dynamic stderr "Server
+to Client" connection is to occur during a normal RSH session.  This
+typically operates as follows;
+
+    Client 0:1023 --> Server 514    (stream 1 - stdin/stdout)
+    Client 0:1023 <-- Server 0:1023 (stream 2 - stderr)
+
+This connection tracker will identify new RSH sessions, extract the
+outbound session details, and notify netfilter of pending "related"
+sessions.
+
+
+Usage:
+
+The intended usage of this modules would be with a ruleset such as;
+
+    # New session from client to server (stream 1)
+    -A PREROUTING -t nat -m state -i eth0 -p tcp -s ${client}
+           --sport 0:1023 -d ${server} --dport 514 --state 
+           NEW,ESTABLISHED -j ACCEPT
+
+    # Continued session from server to client (stream 1)
+    -A PREROUTING -t nat -m state -i eth1 -p tcp -s ${server}
+           --sport 514 -d ${client} --dport 0:1023 ! --syn
+           --state ESTABLISHED -j ACCEPT
+
+    # New session from server to client (stream 2)
+    -A PREROUTING -t nat -m state -i eth1 -p tcp -s ${server}
+           --sport 0:1023 -d ${client} --dport 0:1023 --state
+           RELATED,ESTABLISHED -j ACCEPT
+
+    # Continued session from client to server (stream 2)
+    -A PREROUTING -t nat -m state -i eth0 -p tcp -s ${client}
+           --sport 0:1023 -d ${server} --dport 0:1023 ! --syn
+           --state ESTABLISHED -j ACCEPT
+
+
+
+Warning:
+
+  This module could be dangerous. It is not "best practice" to use
+RSH, use SSH in all instances.  (rfc1244, rfc1948, rfc2179, etc
+ad-nauseum)
+

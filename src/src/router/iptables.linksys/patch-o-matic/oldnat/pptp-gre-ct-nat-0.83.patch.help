@@ -1,0 +1,17 @@
+Author: Harald Welte <laforge@gnumonks.org>
+Status: Beta
+
+This patch adds support for real connection tracking
+and NAT of GRE and PPTP connecitons.
+
+However, there are some limitations on what this patch
+can do in the current netfilter framework:
+
+- can't track multiple calls within one control session
+- can't DNAT incoming PAC connections
+- only covers the common case, where PNS->PAC connection
+  is SNAT'ed
+- GRE version 0 checksum mangling not tested yet
+- incoming call conntrack+NAT testing not supported yet
+- assumes all connections are made from PNS->PAC
+

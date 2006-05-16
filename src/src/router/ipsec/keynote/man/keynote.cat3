@@ -1,0 +1,500 @@
+KEYNOTE(3)                OpenBSD Programmer's Manual               KEYNOTE(3)
+
+NNAAMMEE
+     kkeeyynnoottee - a trust-management system library
+
+SSYYNNOOPPSSIISS
+     ##iinncclluuddee <<ssyyss//ttyyppeess..hh>>
+     ##iinncclluuddee <<rreeggeexx..hh>>
+     ##iinncclluuddee <<kkeeyynnoottee..hh>>
+
+     struct environment
+     {
+         char               *env_name;
+         char               *env_value;
+         int                 env_flags;
+         regex_t             env_regex;
+         struct environment *env_next;
+     };
+
+     struct keynote_deckey
+     {
+         int   dec_algorithm;
+         void *dec_key;
+     };
+
+     struct keynote_binary
+     {
+         int   bn_len;
+         char *bn_key;
+     };
+
+     struct keynote_keylist
+     {
+         int                     key_alg;
+         void                   *key_key;
+         char                   *key_stringkey;
+         struct keynote_keylist *key_next;
+     };
+
+     _i_n_t kkeeyynnoottee__eerrrrnnoo ;;
+
+     _i_n_t
+     kknn__iinniitt(_v_o_i_d);
+
+     _i_n_t
+     kknn__aadddd__aasssseerrttiioonn(_i_n_t _s_e_s_s_i_d, _c_h_a_r _*_a_s_s_e_r_t_i_o_n, _i_n_t _l_e_n, _i_n_t _f_l_a_g_s);
+
+     _i_n_t
+     kknn__rreemmoovvee__aasssseerrttiioonn(_i_n_t _s_e_s_s_i_d, _i_n_t _a_s_s_e_r_t_i_d);
+
+     _i_n_t
+     kknn__aadddd__aaccttiioonn(_i_n_t _s_e_s_s_i_d, _c_h_a_r _*_n_a_m_e, _c_h_a_r _*_v_a_l_u_e, _i_n_t _f_l_a_g_s);
+
+     _i_n_t
+     kknn__rreemmoovvee__aaccttiioonn(_i_n_t _s_e_s_s_i_d, _c_h_a_r _*_n_a_m_e);
+
+     _i_n_t
+     kknn__aadddd__aauutthhoorriizzeerr(_i_n_t _s_e_s_s_i_d, _c_h_a_r _*_p_r_i_n_c_i_p_a_l);
+
+     _i_n_t
+     kknn__rreemmoovvee__aauutthhoorriizzeerr(_i_n_t _s_e_s_s_i_d, _c_h_a_r _*_p_r_i_n_c_i_p_a_l);
+
+     _i_n_t
+     kknn__ddoo__qquueerryy(_i_n_t _s_e_s_s_i_d, _c_h_a_r _*_*_r_e_t_u_r_n_v_a_l_u_e_s, _i_n_t _n_u_m_v_a_l_u_e_s);
+
+     _i_n_t
+     kknn__ggeett__ffaaiilleedd(_i_n_t _s_e_s_s_i_d, _i_n_t _t_y_p_e, _i_n_t _s_e_q);
+
+     _i_n_t
+     kknn__cclleeaannuupp__aaccttiioonn__eennvviirroonnmmeenntt(_i_n_t _s_e_s_s_i_d);
+
+     _i_n_t
+     kknn__cclloossee(_i_n_t _s_e_s_s_i_d);
+
+     _i_n_t
+     kknn__qquueerryy(_s_t_r_u_c_t _e_n_v_i_r_o_n_m_e_n_t _*_e_n_v, _c_h_a_r _*_*_r_e_t_u_r_n_v_a_l_u_e_s_, _i_n_t _n_u_m_v_a_l_u_e_s,
+             _c_h_a_r _*_*_t_r_u_s_t_e_d_, _i_n_t _*_t_r_u_s_t_e_d_l_e_n_, _i_n_t _n_u_m_t_r_u_s_t_e_d,
+             _c_h_a_r _*_*_u_n_t_r_u_s_t_e_d_, _i_n_t _*_u_n_t_r_u_s_t_e_d_l_e_n_, _i_n_t _n_u_m_u_n_t_r_u_s_t_e_d,
+             _c_h_a_r _*_*_a_u_t_h_o_r_i_z_e_r_s_, _i_n_t _n_u_m_a_u_t_h_a_u_t_h_o_r_i_z_e_r_s);
+
+     _c_h_a_r _*_*
+     kknn__rreeaadd__aasssseerrttss(_c_h_a_r _*_a_r_r_a_y, _i_n_t _a_r_r_a_y_l_e_n, _i_n_t _*_n_u_m_a_s_s_e_r_t_i_o_n_s);
+
+     _i_n_t
+     kknn__kkeeyyccoommppaarree(_v_o_i_d _*_k_e_y_1, _v_o_i_d _*_k_e_y_2, _i_n_t _a_l_g_o_r_i_t_h_m);
+
+     _v_o_i_d _*
+     kknn__ggeett__aauutthhoorriizzeerr(_i_n_t _s_e_s_s_i_d, _i_n_t _a_s_s_e_r_t_i_d, _i_n_t _*_a_l_g_o_r_i_t_h_m);
+
+     _s_t_r_u_c_t _k_e_y_n_o_t_e___k_e_y_l_i_s_t _*
+     kknn__ggeett__lliicceennsseeeess(_i_n_t _s_e_s_s_i_d, _i_n_t _a_s_s_e_r_t_i_d);
+
+     _i_n_t
+     kknn__eennccooddee__bbaassee6644(_u_n_s_i_g_n_e_d _c_h_a_r _c_o_n_s_t _*_s_r_c, _u_n_s_i_g_n_e_d _i_n_t _s_r_c_l_e_n,
+             _c_h_a_r _*_d_s_t, _u_n_s_i_g_n_e_d _i_n_t _d_s_t_l_e_n);
+
+     _i_n_t
+     kknn__ddeeccooddee__bbaassee6644(_c_h_a_r _c_o_n_s_t _*_s_r_c, _u_n_s_i_g_n_e_d _c_h_a_r _*_d_s_t,
+             _u_n_s_i_g_n_e_d _i_n_t _d_s_t_l_e_n);
+
+     _i_n_t
+     kknn__eennccooddee__hheexx(_u_n_s_i_g_n_e_d _c_h_a_r _*_s_r_c, _c_h_a_r _*_*_d_s_t, _i_n_t _s_r_c_l_e_n);
+
+     _i_n_t
+     kknn__ddeeccooddee__hheexx(_c_h_a_r _*_s_r_c, _c_h_a_r _*_*_d_s_t);
+
+     _c_h_a_r _*
+     kknn__eennccooddee__kkeeyy(_s_t_r_u_c_t _k_e_y_n_o_t_e___d_e_c_k_e_y _*_d_c, _i_n_t _i_e_n_c_o_d_i_n_g, _i_n_t _e_n_c_o_d_i_n_g,
+             _i_n_t _k_e_y_t_y_p_e);
+
+     _i_n_t
+     kknn__ddeeccooddee__kkeeyy(_s_t_r_u_c_t _k_e_y_n_o_t_e___d_e_c_k_e_y _*_d_c, _c_h_a_r _*_k_e_y, _i_n_t _k_e_y_t_y_p_e);
+
+     _c_h_a_r _*
+     kknn__ssiiggnn__aasssseerrttiioonn(_c_h_a_r _*_a_s_s_e_r_t_i_o_n, _i_n_t _l_e_n, _c_h_a_r _*_k_e_y, _c_h_a_r _*_a_l_g_o_r_i_t_h_m,
+             _i_n_t _v_f_l_a_g);
+
+     _i_n_t
+     kknn__vveerriiffyy__aasssseerrttiioonn(_c_h_a_r _*_a_s_s_e_r_t_i_o_n, _i_n_t _l_e_n);
+
+     _v_o_i_d
+     kknn__ffrreeee__kkeeyy(_s_t_r_u_c_t _k_e_y_n_o_t_e___d_e_c_k_e_y _*);
+
+     _c_h_a_r _*
+     kknn__ggeett__ssttrriinngg(_c_h_a_r _*);
+
+     LLiinnkk ooppttiioonnss:: --llkkeeyynnoottee --llmm --llccrryyppttoo
+
+DDEESSCCRRIIPPTTIIOONN
+     For more details on KKeeyyNNoottee, see RFC 2704.
+
+     _k_e_y_n_o_t_e___e_r_r_n_o contains an error code if some library call failed. Failed
+     calls return -1 (if their return value is integer), or NULL (if their re-
+     turn value is a pointer) and set _k_e_y_n_o_t_e___e_r_r_n_o. The defined error codes
+     are:
+
+           ERROR_MEMORY    Some memory allocation or usage error was encoun-
+                           tered.
+
+           ERROR_SYNTAX    Some syntactic or logical error was encountered.
+
+           ERROR_NOTFOUND  One of the arguments referred to a nonexistent
+                           structure or entry.
+
+     If no errors were encountered, _k_e_y_n_o_t_e___e_r_r_n_o will be set to 0. This vari-
+     able should be reset to 0 if an error was encountered, prior to calling
+     other library routines.
+
+     The main interface to KKeeyyNNoottee is centered around the concept of a ses-
+     sion. A session describes a collection of policies, assertions, action
+     authorizers, return values, and action attributes that the KKeeyyNNoottee system
+     uses to evaluate a query. Information is not shared between sessions.
+     Policies, credentials, action authorizers, and action attributes can be
+     added or deleted at any point during the lifetime of a session. Further-
+     more, an application can discover which assertions failed to be evaluat-
+     ed, and in what way, during a query.
+
+     For those applications that only need to do a simple query, there exists
+     a single call that takes as arguments all the necessary information and
+     performs all the necessary steps. This is essentially a wrapper that
+     calls the session API functions as necessary.
+
+     Finally, there exist functions for doing ASCII to hexadecimal and Base64
+     encoding (and vice versa), for encoding/decoding keys between ASCII and
+     binary formats, and for signing and verifying assertions.
+
+     The description of all KKeeyyNNoottee library functions follows.
+
+     kknn__iinniitt() creates a new KKeeyyNNoottee session, and performs any necessary ini-
+     tializations. On success, this function returns the new session ID, which
+     is used by all subsequent calls with a _s_e_s_s_i_d argument.  On failure, it
+     returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_MEMORY.
+
+     kknn__aadddd__aasssseerrttiioonn() adds the assertion pointed to by the array _a_s_s_e_r_t_i_o_n,
+     of length _l_e_n in the session identified by _s_e_s_s_i_d. The first argument can
+     be discarded after the call to this function.  The following flags are
+     defined:
+
+           ASSERT_FLAG_LOCAL  Mark this assertion as ultimately trusted.
+                              Trusted assertions need not be signed, and the
+                              _A_u_t_h_o_r_i_z_e_r and _L_i_c_e_n_s_e_e_s fields can have non-key
+                              entries.
+
+     At least one (trusted) assertion should have POLICY as the _A_u_t_h_o_r_i_z_e_r. On
+     success, this function will return an assertion ID which can be used to
+     remove the assertion from the session, by using kn_remove_assertion(3).
+     On failure, -1 is returned, and _k_e_y_n_o_t_e___e_r_r_n_o is set to ERROR_NOTFOUND if
+     the session was not found, ERROR_SYNTAX if the assertion was syntactical-
+     ly incorrect, or ERROR_MEMORY if necessary memory could not be allocated.
+
+     kknn__rreemmoovvee__aasssseerrttiioonn() removes the assertion identified by _a_s_s_e_r_t_i_d from
+     the session identified by _s_e_s_s_i_d. On success, this function returns 0. On
+     failure, it returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND.
+
+     kknn__aadddd__aaccttiioonn() inserts the variable _n_a_m_e in the action environment of
+     session _s_e_s_s_i_d, with the value _v_a_l_u_e. The same attribute may be added
+     more than once, but only the last instance will be used (memory resources
+     are consumed however).
+
+     The _f_l_a_g_s specified are formed by or'ing the following values:
+
+           ENVIRONMENT_FLAG_FUNC   In this case, _v_a_l_u_e is a pointer to a func-
+                                   tion that takes as argument a string and
+                                   returns a string. This is used to implement
+                                   callbacks for getting action attribute val-
+                                   ues. The argument passed to such a callback
+                                   function is a string identifying the action
+                                   attribute whose value is requested, and
+                                   should return a pointer to string contain-
+                                   ing that value (this pointer will not be
+                                   freed by the library), the empty string if
+                                   the value was not found, or a NULL to indi-
+                                   cate an error (and may set _k_e_y_n_o_t_e___e_r_r_n_o
+                                   appropriately). Prior to first use (cur-
+                                   rently, at the time the attribute is added
+                                   to the session environment), such functions
+                                   are called with KEYNOTE_CALLBACK_INITIALIZE
+                                   as the argument (defined in keynote.h) so
+                                   that they can perform any special initial-
+                                   izations. Furthermore, when the session is
+                                   deleted, all such functions will be called
+                                   with KEYNOTE_CALLBACK_CLEANUP to perform
+                                   any special cleanup (such as free any allo-
+                                   cated memory). A function may be called
+                                   with either of these arguments more than
+                                   once, if it has been defined as the call-
+                                   back function for more than one attribute.
+
+           ENVIRONMENT_FLAG_REGEX  In this case, _n_a_m_e is a regular expression
+                                   that may match more than one attribute.  In
+                                   case of conflict between a regular expres-
+                                   sion and a ``simple'' attribute, the latter
+                                   will be given priority. In case of conflict
+                                   between two regular expression attributes,
+                                   the one added later will be given priority.
+                                   A callback function should never change the
+                                   current KKeeyyNNoottee session, start/invoke/oper-
+                                   ate on another session, or call one of the
+                                   session-API functions.
+
+     The combination of the two flags may be used to specify callback func-
+     tions that handle large sets of attributes (even to the extent of having
+     one callback function handling all attribute references). This is partic-
+     ularly useful when the action attribute set is particularly large.
+
+     On success, keynote_add_action(3) returns 0. On failure, it returns -1
+     and sets _k_e_y_n_o_t_e___e_r_r_n_o _t_o ERROR_NOTFOUND if the session was not found,
+     ERROR_SYNTAX if the _n_a_m_e was invalid (e.g., started with an underscore
+     character) or was NULL, or ERROR_MEMORY if necessary memory could not be
+     allocated.
+
+     kknn__rreemmoovvee__aaccttiioonn() removes action attribute _n_a_m_e from the environment of
+     session _s_e_s_s_i_d. Notice that if more than one instances of _n_a_m_e exist, on-
+     ly the one added last will be deleted.  On success, this function returns
+     0. On failure, it returns -1 and _k_e_y_n_o_t_e___e_r_r_n_o is set to ERROR_NOTFOUND
+     if the session or the attribute were not found, or ERROR_SYNTAX if the
+     name was invalid. If the attribute value was a callback, that function
+     will be called with the define KEYNOTE_CALLBACK_CLEANUP as the argument.
+
+     kknn__aadddd__aauutthhoorriizzeerr() adds the principal pointed to by _p_r_i_n_c_i_p_a_l to the ac-
+     tion authorizers list of session _s_e_s_s_i_d. The principal is typically an
+     ASCII-encoded key. On success, this function will return 0. On failure,
+     it returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND if the session was
+     not found, ERROR_SYNTAX if the encoding was invalid, or ERROR_MEMORY if
+     necessary memory could not be allocated.
+
+     kknn__rreemmoovvee__aauutthhoorriizzeerr() removes _p_r_i_n_c_i_p_a_l from the action authorizer list
+     of session _s_e_s_s_i_d. On success, this function returns 0. On failure, it
+     returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND if the session was
+     not found.
+
+     kknn__ddoo__qquueerryy() evaluates the request based on the assertions, action at-
+     tributes, and action authorizers added to session _s_e_s_s_i_d. _r_e_t_u_r_n_v_a_l_u_e_s is
+     an ordered array of strings that contain the return values. The lowest-
+     ordered return value is contained in _r_e_t_u_r_n_v_a_l_u_e_s_[_0_], and the highest-or-
+     dered value is _r_e_t_u_r_n_v_a_l_u_e_s_[_n_u_m_v_a_l_u_e_s _- _1_]. If _r_e_t_u_r_n_v_a_l_u_e_s is NULL, the
+     _r_e_t_u_r_n_v_a_l_u_e_s from the previous call to kn_do_query(3) will be used. The
+     programmer SHOULD NOT free _r_e_t_u_r_n_v_a_l_u_e_s after the call to kn_do_query(3)
+     if this feature is used, as the array is not replicated internally.  On
+     success, this function returns an index into the _r_e_t_u_r_n_v_a_l_u_e_s array. On
+     failure, it returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND if the
+     session was not found or the authorizers list was empty, ERROR_SYNTAX if
+     no _r_e_t_u_r_n_v_a_l_u_e_s have been specified, or ERROR_MEMORY if necessary memory
+     could not be allocated.
+
+     kknn__ggeett__ffaaiilleedd() returns the assertion ID of the _n_u_m_'_t_h assertion (start-
+     ing from zero) in session _s_e_s_s_i_d that was somehow invalid during evalua-
+     tion. This function is typically called after kn_do_query(3) is used to
+     evaluate a request.  _t_y_p_e specifies the type of failure the application
+     is interested in. It can be set to:
+
+           KEYNOTE_ERROR_ANY        to indicate interest in any error.
+
+           KEYNOTE_ERROR_SYNTAX     for syntactic or semantic errors.
+
+           KEYNOTE_ERROR_MEMORY     for memory-related problems.
+
+           KEYNOTE_ERROR_SIGNATURE  if the assertion could not be cryptograph-
+                                    ically verified.
+
+     These values are defined in keynote.h. An application can then delete the
+     offending assertion using kn_remove_assertion(3). For example, to remove
+     all assertion whose signature failed, an application could do something
+     like:
+
+       while ((assertid = kn_get_failed(sessid, KEYNOTE_ERROR_SIGNATURE, 0)
+              != -1)
+         kn_remove_assertion(sessid, assertid);
+
+     On success, kn_get_failed(3) returns an assertion ID. On failure, or when
+     no assertion matching the given criteria is found, it returns -1 and set
+     _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND.
+
+     kknn__cclleeaannuupp__aaccttiioonn__eennvviirroonnmmeenntt() removes all action attributes from the
+     action environment of session _s_e_s_s_i_d. It returns 0 on success.
+
+     kknn__cclloossee() closes session _s_e_s_s_i_d and frees all related resources, delet-
+     ing action attributes, action authorizers, and assertions. On success,
+     this function returns 0. On failure, it returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o
+     to ERROR_NOTFOUND if the session was not found.
+
+     kknn__rreeaadd__aasssseerrttss() parses the string _a_r_r_a_y of length _a_r_r_a_y_l_e_n and returns
+     an array of pointers to strings containing copies of the assertions found
+     in _a_r_r_a_y. Both the array of pointers and the strings are allocated by
+     kknn__rreeaadd__aasssseerrttss() dynamically, and thus should be freed by the programmer
+     when they are no longer needed.  _n_u_m_a_s_s_e_r_t_i_o_n_s contains the number of as-
+     sertions (and thus strings in the returned array) found in _a_r_r_a_y. On
+     failure, this function returns NULL and sets _k_e_y_n_o_t_e___e_r_r_n_o to
+     ERROR_MEMORY if necessary memory could not be allocated, or ERROR_SYNTAX
+     if _a_r_r_a_y was NULL. Note that if there were no assertions found in _a_r_r_a_y,
+     a valid pointer will be returned, but _n_u_m_a_s_s_e_r_t_i_o_n_s will contain the val-
+     ue zero on return. The returned pointer should be freed by the program-
+     mer.
+
+     kknn__kkeeyyccoommppaarree() compares _k_e_y_1 and _k_e_y_2 (which must be of the same
+     _a_l_g_o_r_i_t_h_m) and returns 1 if equal and 0 otherwise.
+
+     kknn__ggeett__aauutthhoorriizzeerr() returns the authorizer key (in binary format) for as-
+     sertion _a_s_s_e_r_t_i_d in session _s_e_s_s_i_d. It also sets the _a_l_g_o_r_i_t_h_m argument
+     to the algorithm of the authorizer key.  On failure, kknn__ggeett__aauutthhoorriizzeerr()
+     returns NULL, and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND.
+
+     kknn__ggeett__lliicceennsseeeess() returns the licensee key(s) for assertion _a_s_s_e_r_t_i_d in
+     session _s_e_s_s_i_d. The keys are returned in a linked list of _s_t_r_u_c_t
+     _k_e_y_n_o_t_e___k_e_y_l_i_s_t structures.  On failure, kknn__ggeett__lliicceennsseeeess() returns NULL.
+     and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND.
+
+     kknn__qquueerryy() takes as arguments a list of action attributes in _e_n_v, a list
+     of return values in _r_e_t_u_r_n_v_a_l_u_e_s (the number of returnvalues in indicated
+     by _n_u_m_v_a_l_u_e_s), a number (_n_u_m_t_r_u_s_t_e_d) of locally-trusted assertions in
+     _t_r_u_s_t_e_d (the length of each assertion is given by the respective element
+     of _t_r_u_s_t_e_d_l_e_n), a number (_n_u_m_u_n_t_r_u_s_t_e_d) of assertions that need to be
+     cryptographically verified in _u_n_t_r_u_s_t_e_d (the length of each assertion is
+     given by the respective element of _u_n_t_r_u_s_t_e_d_l_e_n), and a number
+     (_n_u_m_a_u_t_h_o_r_i_z_e_r_s) of action authorizers in _a_u_t_h_o_r_i_z_e_r_s. _e_n_v is a linked
+     list of _s_t_r_u_c_t _e_n_v_i_r_o_n_m_e_n_t structures. The _e_n_v___n_a_m_e, _e_n_v___v_a_l_u_e, and
+     _e_n_v___f_l_a_g_s fields correspond to the _n_a_m_e, _v_a_l_u_e, and _f_l_a_g_s arguments to
+     kn_add_assertion(3) respectively.  _e_n_v___r_e_g_e_x is not used. On success,
+     this function returns an index in _r_e_t_u_r_n_v_a_l_u_e_s indicating the returned
+     value to the query. On failure, it returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to
+     the same values as kn_do_query(3), or to ERROR_MEMORY if a trusted or un-
+     trusted assertion could not be added to the session due to lack of memory
+     resources. Syntax errors in assertions will not be reported by
+     kknn__qquueerryy().
+
+     kknn__eennccooddee__bbaassee6644() converts the data of length _s_r_c_l_e_n contained in _s_r_c in
+     Base64 encoding and stores them in _d_s_t which is of length _d_s_t_l_e_n. The ac-
+     tual length of the encoding stored in _d_s_t is returned.  _d_s_t _s_h_o_u_l_d _b_e
+     _l_o_n_g _e_n_o_u_g_h _t_o _a_l_s_o _c_o_n_t_a_i_n _t_h_e dst0 string terminator. If _s_r_c_l_e_n is not
+     a multiple of 4, or _d_s_t is not long enough to contain the encoded data,
+     this function returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_SYNTAX.
+
+     kknn__ddeeccooddee__bbaassee6644() decodes the Base64-encoded data stored in _s_r_c and
+     stores the result in _d_s_t, which is of length _d_s_t_l_e_n. The actual length of
+     the decoded data is returned on success. On failure, this function re-
+     turns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_SYNTAX, denoting either an in-
+     valid Base64 encoding or insufficient space in _d_s_t.
+
+     kknn__eennccooddee__hheexx() encodes in ASCII-hexadecimal format the data of length
+     _s_r_c_l_e_n contained in _s_r_c. This function allocates a chunk of memory to
+     store the result, which is returned in _d_s_t. Thus, this function should be
+     used as follows:
+
+       char *dst;
+
+       kn_encode_hex(src, &dst, srclen);
+
+     The length of the allocated buffer will be (2 * srclen + 1). On success,
+     this function returns 0. On failure, it returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o
+     to ERROR_MEMORY if it failed to allocate enough memory, ERROR_SYNTAX if
+     _d_s_t was NULL.
+
+     kknn__ddeeccooddee__hheexx() decodes the ASCII hex-encoded string in _s_r_c and stores
+     the result in a memory chunk allocated by the function. A pointer to that
+     memory is stored in _d_s_t. The length of the allocated memory will be
+     (strlen(src) / 2). On success, this function returns 0. On failure, it
+     returns -1 and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_MEMORY if it could not allo-
+     cate enough memory, or ERROR_SYNTAX if _d_s_t was NULL, or the length of _s_r_c
+     is not even.
+
+     kknn__eennccooddee__kkeeyy() ASCII-encodes a cryptographic key. The binary representa-
+     tion of the key is contained in _d_c. The field _d_e_c___k_e_y in that structure
+     is a pointer to some cryptographic algorithm dependent information de-
+     scribing the key. In this implementation, this pointer should be a _D_S_A _*
+     or _R_S_A _* for DSA or RSA keys respectively, as used in the SSL library, or
+     a _k_e_y_n_o_t_e___b_i_n_a_r_y _* for cryptographic keys whose algorithm KKeeyyNNoottee does
+     not know about but the application wishes to include in the action autho-
+     rizers (and thus need to be canonicalized). The field _d_e_c___a_l_g_o_r_i_t_h_m de-
+     scribes the cryptographic algorithm, and may be one of
+     KEYNOTE_ALGORITHM_DSA, KEYNOTE_ALGORITHM_RSA, or KEYNOTE_ALGORITHM_BINARY
+     in this implementation.
+
+     _i_e_n_c_o_d_i_n_g describes how the key should be binary-encoded. This implemen-
+     tation supports INTERNAL_ENC_PKCS1 for RSA keys, INTERNAL_ENC_ASN1 for
+     DSA keys, and INTERNAL_ENC_NONE for BINARY keys.  _e_n_c_o_d_i_n_g describes what
+     ASCII encoding should be applied to the key. Valid values are
+     ENCODING_HEX and ENCODING_BASE64, for hexadecimal and Base64 encoding re-
+     spectively.  _k_e_y_t_y_p_e is one of KEYNOTE_PUBLIC_KEY or KEYNOTE_PRIVATE_KEY
+     to indicate whether the key is public or private. Private keys have the
+     string KEYNOTE_PRIVATE_KEY_PREFIX (defined in keynote.h) prefixed to the
+     algorithm name. On success, this function returns a string containing the
+     encoded key. On failure, it returns NULL and sets _k_e_y_n_o_t_e___e_r_r_n_o to
+     ERROR_NOTFOUND if the _d_c argument was invalid, ERROR_MEMORY if it failed
+     to allocate the necessary memory, or ERROR_SYNTAX if the key to be con-
+     verted was invalid.
+
+     kknn__ddeeccooddee__kkeeyy() decodes the ASCII-encoded string contained in _k_e_y. The
+     result is placed in _d_c, with _d_e_c___a_l_g_o_r_i_t_h_m describing the algorithm (see
+     kn_encode_key(3)), and _d_e_c___k_e_y pointing to an algorithm-dependent struc-
+     ture. In this implementation, this is an SSLeay/OpenSSL-defined _D_S_A _* for
+     DSA keys, _R_S_A _* for RSA and X509-based keys, and a _k_e_y_n_o_t_e___b_i_n_a_r_y _* for
+     BINARY keys.  _k_e_y_t_y_p_e takes the values KEYNOTE_PUBLIC_KEY or
+     KEYNOTE_PRIVATE_KEY to specify a public or private key, where applicable.
+     On success, this function returns 0. On failure, it returns -1 and sets
+     _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_MEMORY if necessary memory could not be allocated,
+     or ERROR_SYNTAX if the key or the ASCII encoding was malformed.
+
+     kknn__ssiiggnn__aasssseerrttiioonn() produces the cryptographic signature for the asser-
+     tion of length _l_e_n stored in _a_s_s_e_r_t_i_o_n, using the ASCII-encoded crypto-
+     graphic key contained in _k_e_y. The type of signature to be produced is de-
+     scribed by the string _a_l_g_o_r_i_t_h_m. Possible values for this string are
+     SIG_RSA_SHA1_HEX SIG_RSA_SHA1_BASE64, SIG_RSA_MD5_HEX, and
+     SIG_RSA_MD5_HEX for RSA keys, SIG_DSA_SHA1_HEX and SIG_DSA_SHA1_BASE64
+     for DSA keys, SIG_X509_SHA1_HEX, and SIG_X509_SHA1_BASE64 for X509-based
+     keys.  No other cryptographic signatures are currently supported by this
+     implementation. If _v_f_l_a_g is set to 1, then the generated signature will
+     also be verified. On success, this function returns a string containing
+     the ASCII-encoded signature, without modifying the _a_s_s_e_r_t_i_o_n. On failure,
+     it returns NULL and sets _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_NOTFOUND if one of the
+     arguments was NULL, ERROR_MEMORY if necessary memory could not be allo-
+     cated, or ERROR_SYNTAX if the _a_l_g_o_r_i_t_h_m, the _k_e_y, or the _a_s_s_e_r_t_i_o_n (if
+     signature verification was requested) was invalid.
+
+     kknn__vveerriiffyy__aasssseerrttiioonn() verifies the cryptographic signature on the asser-
+     tion of length _l_e_n contained in string _a_s_s_e_r_t_i_o_n. On success, this func-
+     tion returns SIGRESULT_TRUE if the signature could be verified, or
+     SIGRESULT_FALSE otherwise. On failure, this function returns -1 and sets
+     _k_e_y_n_o_t_e___e_r_r_n_o to ERROR_MEMORY if necessary memory could not be allocated,
+     or ERROR_SYNTAX if the assertion contained a syntactic error, or the
+     cryptographic algorithm was not supported.
+
+     kknn__ffrreeee__kkeeyy() frees a cryptographic key.
+
+     kknn__ggeett__ssttrriinngg() parses the argument, treating it as a keynote(4) (quoted)
+     string. This is useful for parsing key files.
+
+FFIILLEESS
+     keynote.h
+     libkeynote.a
+
+SSEEEE AALLSSOO
+     keynote(1), keynote(4), keynote(5)
+
+     ``The KeyNote Trust-Management System, Version 2''
+              M. Blaze, J. Feigenbaum, A. D. Keromytis, Internet Drafts, RFC
+              2704.
+
+     ``Decentralized Trust Management''
+              M. Blaze, J. Feigenbaum, J. Lacy, 1996 IEEE Conference on Priva-
+              cy and Security
+
+     ``Compliance-Checking in the PolicyMaker Trust Management System''
+              M. Blaze, J. Feigenbaum, M. Strauss, 1998 Financial Crypto Con-
+              ference
+
+     Web Page
+              http://www.cis.upenn.edu/~keynote
+
+AAUUTTHHOORR
+     Angelos D. Keromytis (angelos@dsl.cis.upenn.edu)
+
+DDIIAAGGNNOOSSTTIICCSS
+     The return values of all the functions have been given along with the
+     function description above.
+
+BBUUGGSS
+     None that we know of.  If you find any, please report them to
+           keynote@research.att.com
+
+OpenBSD 2.7                     April 29, 1999                               8

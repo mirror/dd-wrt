@@ -1,0 +1,220 @@
+diff -uN linux-2.4.3-pre3/include/linux/netfilter_ipv4/ip_conntrack.h linux-2.4.3-pre3-uml/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.4.3-pre3/include/linux/netfilter_ipv4/ip_conntrack.h	Fri Mar  9 21:43:28 2001
++++ linux-2.4.3-pre3-uml/include/linux/netfilter_ipv4/ip_conntrack.h	Wed Mar 21 13:20:37 2001
+@@ -147,6 +147,9 @@
+ 	} nat;
+ #endif /* CONFIG_IP_NF_NAT_NEEDED */
+ 
++#if defined(CONFIG_IP_NF_CONNTRACK_MARK)
++	unsigned long mark;
++#endif
+ };
+ 
+ /* Alter reply tuple (maybe alter helper).  If it's already taken,
+diff -uN --exclude .* --exclude *.o linux-2.4.3-pre3/net/ipv4/netfilter/ip_conntrack_standalone.c linux-2.4.3-pre3-uml/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux-2.4.3-pre3/net/ipv4/netfilter/ip_conntrack_standalone.c	Thu Aug 10 21:35:15 2000
++++ linux-2.4.3-pre3-uml/net/ipv4/netfilter/ip_conntrack_standalone.c	Wed Mar 21 13:04:19 2001
+@@ -92,6 +92,9 @@
+ 		len += sprintf(buffer + len, "[UNCONFIRMED] ");
+ 	len += sprintf(buffer + len, "use=%u ",
+ 		       atomic_read(&conntrack->ct_general.use));
++#if defined(CONFIG_IP_NF_CONNTRACK_MARK)
++	len += sprintf(buffer + len, "mark=%d ", conntrack->mark);
++#endif
+ 	len += sprintf(buffer + len, "\n");
+ 
+ 	return len;
+--- linux-2.4.4-pre1-hno/net/ipv4/netfilter/ip_conntrack_core.c	Tue Apr 10 22:33:21 2001
++++ linux-2.4.4-pre1-uml/net/ipv4/netfilter/ip_conntrack_core.c	Mon Apr 16 00:23:00 2001
+@@ -523,6 +523,9 @@
+ 		conntrack->status = IPS_EXPECTED;
+ 		conntrack->master.master = &expected->expectant->ct_general;
+ 		IP_NF_ASSERT(conntrack->master.master);
++#if CONFIG_IP_NF_CONNTRACK_MARK
++		conntrack->mark = expected->expectant->mark;
++#endif
+ 		LIST_DELETE(&expect_list, expected);
+ 		expected->expectant = NULL;
+ 		nf_conntrack_get(&conntrack->master);
+diff -uN linux-2.4.3-pre3/include/linux/netfilter_ipv4/ipt_connmark.h linux-2.4.3-pre3-uml/include/linux/netfilter_ipv4/ipt_connmark.h
+--- linux-2.4.3-pre3/include/linux/netfilter_ipv4/ipt_connmark.h	Thu Jan  1 01:00:00 1970
++++ linux-2.4.3-pre3-uml/include/linux/netfilter_ipv4/ipt_connmark.h	Wed Mar 21 11:38:46 2001
+@@ -0,0 +1,9 @@
++#ifndef _IPT_CONNMARK_H
++#define _IPT_CONNMARK_H
++
++struct ipt_connmark_info {
++    unsigned long mark, mask;
++    u_int8_t invert;
++};
++
++#endif /*_IPT_CONNMARK_H*/
+diff -uN --exclude .* --exclude *.o linux-2.4.3-pre3/net/ipv4/netfilter/ipt_connmark.c linux-2.4.3-pre3-uml/net/ipv4/netfilter/ipt_connmark.c
+--- linux-2.4.3-pre3/net/ipv4/netfilter/ipt_connmark.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.3-pre3-uml/net/ipv4/netfilter/ipt_connmark.c	Wed Mar 21 13:23:33 2001
+@@ -0,0 +1,55 @@
++/* Kernel module to match connection mark values. */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_connmark.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++
++static int
++match(const struct sk_buff *skb,
++      const struct net_device *in,
++      const struct net_device *out,
++      const void *matchinfo,
++      int offset,
++      const void *hdr,
++      u_int16_t datalen,
++      int *hotdrop)
++{
++	const struct ipt_connmark_info *info = matchinfo;
++	enum ip_conntrack_info ctinfo;
++	struct ip_conntrack *ct = ip_conntrack_get((struct sk_buff *)skb, &ctinfo);
++	if (!ct)
++	    return 0;
++
++	return ((ct->mark & info->mask) == info->mark) ^ info->invert;
++}
++
++static int
++checkentry(const char *tablename,
++           const struct ipt_ip *ip,
++           void *matchinfo,
++           unsigned int matchsize,
++           unsigned int hook_mask)
++{
++	if (matchsize != IPT_ALIGN(sizeof(struct ipt_connmark_info)))
++		return 0;
++
++	return 1;
++}
++
++static struct ipt_match connmark_match
++= { { NULL, NULL }, "connmark", &match, &checkentry, NULL, THIS_MODULE };
++
++static int __init init(void)
++{
++	return ipt_register_match(&connmark_match);
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_match(&connmark_match);
++}
++
++module_init(init);
++module_exit(fini);
+diff -uN linux-2.4.3-pre3/include/linux/netfilter_ipv4/ipt_CONNMARK.h linux-2.4.3-pre3-uml/include/linux/netfilter_ipv4/ipt_CONNMARK.h
+--- linux-2.4.3-pre3/include/linux/netfilter_ipv4/ipt_CONNMARK.h	Thu Jan  1 01:00:00 1970
++++ linux-2.4.3-pre3-uml/include/linux/netfilter_ipv4/ipt_CONNMARK.h	Wed Mar 21 12:25:20 2001
+@@ -0,0 +1,15 @@
++#ifndef _IPT_CONNMARK_H_target
++#define _IPT_CONNMARK_H_target
++
++enum {
++    IPT_CONNMARK_SET = 0,
++    IPT_CONNMARK_SAVE,
++    IPT_CONNMARK_RESTORE
++};
++
++struct ipt_connmark_target_info {
++	unsigned long mark;
++	u_int8_t mode;
++};
++
++#endif /*_IPT_CONNMARK_H_target*/
+diff -uN --exclude .* --exclude *.o linux-2.4.3-pre3/net/ipv4/netfilter/ipt_CONNMARK.c linux-2.4.3-pre3-uml/net/ipv4/netfilter/ipt_CONNMARK.c
+--- linux-2.4.3-pre3/net/ipv4/netfilter/ipt_CONNMARK.c	Thu Jan  1 01:00:00 1970
++++ linux-2.4.3-pre3-uml/net/ipv4/netfilter/ipt_CONNMARK.c	Wed May 20 17:49:10 2001
+@@ -0,0 +1,87 @@
++/* This is a module which is used for setting/remembering the mark field of
++ * an connection, or optionally restore it to the skb
++ */
++#include <linux/module.h>
++#include <linux/skbuff.h>
++#include <linux/ip.h>
++#include <net/checksum.h>
++
++#include <linux/netfilter_ipv4/ip_tables.h>
++#include <linux/netfilter_ipv4/ipt_CONNMARK.h>
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++
++static unsigned int
++target(struct sk_buff **pskb,
++       unsigned int hooknum,
++       const struct net_device *in,
++       const struct net_device *out,
++       const void *targinfo,
++       void *userinfo)
++{
++	const struct ipt_connmark_target_info *markinfo = targinfo;
++
++	enum ip_conntrack_info ctinfo;
++	struct ip_conntrack *ct = ip_conntrack_get((*pskb), &ctinfo);
++	if (ct) {
++	    switch(markinfo->mode) {
++	    case IPT_CONNMARK_SET:
++		ct->mark = markinfo->mark;
++		break;
++	    case IPT_CONNMARK_SAVE:
++		ct->mark = (*pskb)->nfmark;
++		break;
++	    case IPT_CONNMARK_RESTORE:
++		if (ct->mark != (*pskb)->nfmark) {
++		    (*pskb)->nfmark = ct->mark;
++		    (*pskb)->nfcache |= NFC_ALTERED;
++		}
++		break;
++	    }
++	}
++
++	return IPT_CONTINUE;
++}
++
++static int
++checkentry(const char *tablename,
++	   const struct ipt_entry *e,
++           void *targinfo,
++           unsigned int targinfosize,
++           unsigned int hook_mask)
++{
++	struct ipt_connmark_target_info *matchinfo = targinfo;
++	if (targinfosize != IPT_ALIGN(sizeof(struct ipt_connmark_target_info))) {
++		printk(KERN_WARNING "CONNMARK: targinfosize %u != %Zu\n",
++		       targinfosize,
++		       IPT_ALIGN(sizeof(struct ipt_connmark_target_info)));
++		return 0;
++	}
++
++	if (matchinfo->mode == IPT_CONNMARK_RESTORE) {
++	    if (strcmp(tablename, "mangle") != 0) {
++		    printk(KERN_WARNING "CONNMARK: restore can only be called from \"mangle\" table, not \"%s\"\n", tablename);
++		    return 0;
++	    }
++	}
++
++	return 1;
++}
++
++static struct ipt_target ipt_connmark_reg
++= { { NULL, NULL }, "CONNMARK", target, checkentry, NULL, THIS_MODULE };
++
++static int __init init(void)
++{
++	if (ipt_register_target(&ipt_connmark_reg))
++		return -EINVAL;
++
++	return 0;
++}
++
++static void __exit fini(void)
++{
++	ipt_unregister_target(&ipt_connmark_reg);
++}
++
++module_init(init);
++module_exit(fini);

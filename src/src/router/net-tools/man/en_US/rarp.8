@@ -1,0 +1,83 @@
+.TH RARP 8 "4 August 1997" "net-tools" "Linux Programmer's Manual"
+.SH NAME
+rarp \- manipulate the system RARP table
+.SH SYNOPSIS
+.B "rarp [-V] [--version] [-h] [--help]"
+.br
+.B "rarp -a"
+.br
+.B "rarp [-v] -d hostname ..."
+.br
+.B "rarp [-v] [-t type] -s hostname hw_addr"
+.SH NOTE
+.P
+This program is obsolete.  From version 2.3, the Linux kernel 
+no longer contains RARP support.  For a replacement RARP daemon, see
+.I
+ftp://ftp.dementia.org/pub/net-tools
+.SH DESCRIPTION
+.B Rarp
+manipulates the kernel's RARP table in various ways.  The primary options
+are clearing an address mapping entry and manually setting up one.  For
+debugging purposes, the
+.B rarp
+program also allows a complete dump of the RARP table.
+.SH OPTIONS
+.TP
+.B \-V
+Display the version of RARP in use.
+.TP
+.B \-v
+Tell the user what is going on by being verbose.
+.TP
+.B "\-t type"
+When setting or reading the RARP table, this optional parameter tells
+.B rarp
+which class of entries it should check for.  The default value of
+this parameter is
+.B ether
+(i.e. hardware code
+.B 0x01
+for
+.B "IEEE 802.3 10Mbps Ethernet".
+Other values might include network technologies such as
+.B AX.25 (ax25)
+and
+.B NET/ROM (netrom).
+.TP
+.B "\-a"
+.TP
+.B "\-\-list"
+Lists the entries in the RARP table.
+.TP
+.B "\-d hostname"
+.TP
+.B "\-\-delete hostname"
+Remove all RARP entries for the specified host.
+.TP
+.B "\-s hostname hw_addr"
+.TP
+.B "\-\-set hostname hw_addr"
+Create a RARP address mapping entry for host
+.B hostname
+with hardware address set to
+.B hw_addr
+.  The format of the hardware address is dependent on the hardware
+class, but for most classes one can assume that the usual presentation
+can be used.  For the Ethernet class, this is 6 bytes in hexadecimal,
+separated by colons.
+.SH WARNING
+Some systems (notably older Suns) assume that the host replying to
+a RARP query can also provide other remote boot services. Therefore 
+never gratuitously add rarp entries unless you wish to meet the wrath
+of the network administrator.
+.SH FILES
+.I /proc/net/rarp,
+.SH SEE ALSO
+arp(8), route(8), ifconfig(8), netstat(8)
+.SH AUTHORS
+Ross D. Martin, <martin@trcsun3.eas.asu.edu>
+.br
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.br
+Phil Blundell, <Philip.Blundell@pobox.com>

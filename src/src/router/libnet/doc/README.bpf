@@ -1,0 +1,33 @@
+===============================================================================
+    LIBNET          (c) 1998, 1999  Mike D. Schiffman <mike@infonexus.com>
+                                    http://www.packetfactory.net/libnet
+===============================================================================
+
+    The Berkeley Packet Filter does not allow a user to arbitrarily specify
+    a source ethernet address.  This is not intuitively obvious.  In fact
+    it's downright daffy.  A filled in sockaddr structure containing the
+    user designated source and destination addresses is passed to the generic
+    ethernet output routine.  However, the ether_output routine
+    (in /usr/src/sys/net/if_ethersubr.c) ignores the supplied value and grabs
+    the source address directly from the interface.
+
+    To fix this, we of course, have to modify the kernel.  The easiest way
+    to do this is via the loadable kernel module interface.  Included in the
+    support dir is lkm code for FreeBSD and OpenBSD.
+
+    Keep in mind that in order to load modules, your securelevel needs to
+    be 0 or lower.
+
+    cd support/bpf-lkm/etherspoof
+    make
+    modload ether_spoof.o
+
+
+    Thomas Ptacek wrote the original FreeBSD 3.0 lkm code (I had to modify
+    it a wee bit to get it to work on 3.0-19980804-SNAP).  Check out his
+    stuff at http://www.enteract.com/~tqbf/goodies.html.  Tom's very smart.
+
+    Also included is a kernel patch for more recent 3.0 releases.  Written
+    by Nick Brawn.
+
+EOF

@@ -1,0 +1,121 @@
+diff -Nur --exclude CVS linux-2.2.20/Makefile linux-int-2.2.20/Makefile
+--- linux-2.2.20/Makefile	Fri Nov  2 17:39:05 2001
++++ linux-int-2.2.20/Makefile	Thu Mar  7 19:48:01 2002
+@@ -118,11 +118,12 @@
+ CORE_FILES	=kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o
+ FILESYSTEMS	=fs/filesystems.a
+ NETWORKS	=net/network.a
++CRYPTO		=crypto/crypto.o
+ DRIVERS		=drivers/block/block.a \
+ 		 drivers/char/char.o \
+ 	         drivers/misc/misc.a
+ LIBS		=$(TOPDIR)/lib/lib.a
+-SUBDIRS		=kernel drivers mm fs net ipc lib
++SUBDIRS		=kernel drivers mm fs net ipc lib crypto
+ 
+ ifdef CONFIG_NUBUS
+ DRIVERS := $(DRIVERS) drivers/nubus/nubus.a
+@@ -242,6 +243,7 @@
+ 		$(FILESYSTEMS) \
+ 		$(NETWORKS) \
+ 		$(DRIVERS) \
++		$(CRYPTO) \
+ 		$(LIBS) \
+ 		--end-group \
+ 		-o vmlinux
+diff -Nur --exclude CVS linux-2.2.20/arch/alpha/config.in linux-int-2.2.20/arch/alpha/config.in
+--- linux-2.2.20/arch/alpha/config.in	Sun Mar 25 18:37:29 2001
++++ linux-int-2.2.20/arch/alpha/config.in	Thu Mar  7 19:39:50 2002
+@@ -236,6 +236,8 @@
+ fi
+ endmenu
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   mainmenu_option next_comment
+   comment 'Network device support'
+diff -Nur --exclude CVS linux-2.2.20/arch/arm/config.in linux-int-2.2.20/arch/arm/config.in
+--- linux-2.2.20/arch/arm/config.in	Sun Mar 25 18:31:54 2001
++++ linux-int-2.2.20/arch/arm/config.in	Thu Mar  7 19:45:18 2002
+@@ -180,6 +180,8 @@
+ 
+ source drivers/block/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_ARCH_ACORN" = "y" ]; then
+    source drivers/acorn/block/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.2.20/arch/i386/config.in linux-int-2.2.20/arch/i386/config.in
+--- linux-2.2.20/arch/i386/config.in	Fri Nov  2 17:39:05 2001
++++ linux-int-2.2.20/arch/i386/config.in	Thu Mar  7 19:39:59 2002
+@@ -145,6 +145,8 @@
+ 
+ source drivers/i2o/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   mainmenu_option next_comment
+   comment 'Network device support'
+diff -Nur --exclude CVS linux-2.2.20/arch/m68k/config.in linux-int-2.2.20/arch/m68k/config.in
+--- linux-2.2.20/arch/m68k/config.in	Sun Mar 25 18:31:50 2001
++++ linux-int-2.2.20/arch/m68k/config.in	Thu Mar  7 19:40:02 2002
+@@ -132,6 +132,8 @@
+ 
+ source drivers/block/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.2.20/arch/mips/config.in linux-int-2.2.20/arch/mips/config.in
+--- linux-2.2.20/arch/mips/config.in	Sun Mar 25 18:31:47 2001
++++ linux-int-2.2.20/arch/mips/config.in	Thu Mar  7 19:40:02 2002
+@@ -166,6 +166,8 @@
+ fi
+ endmenu
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   mainmenu_option next_comment
+   comment 'Network device support'
+diff -Nur --exclude CVS linux-2.2.20/arch/ppc/config.in linux-int-2.2.20/arch/ppc/config.in
+--- linux-2.2.20/arch/ppc/config.in	Fri Nov  2 17:39:05 2001
++++ linux-int-2.2.20/arch/ppc/config.in	Thu Mar  7 19:41:52 2002
+@@ -121,6 +121,8 @@
+ source drivers/block/Config.in
+ #source drivers.new/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.2.20/arch/sparc/config.in linux-int-2.2.20/arch/sparc/config.in
+--- linux-2.2.20/arch/sparc/config.in	Sun Mar 25 18:37:30 2001
++++ linux-int-2.2.20/arch/sparc/config.in	Thu Mar  7 19:41:05 2002
+@@ -94,6 +94,8 @@
+   tristate '   RAID-4/RAID-5 mode' CONFIG_MD_RAID5
+ fi
+ 
++source crypto/Config.in
++
+ tristate 'RAM disk support' CONFIG_BLK_DEV_RAM
+ if [ "$CONFIG_BLK_DEV_RAM" = "y" -o "$CONFIG_BLK_DEV_RAM" = "m" ]; then
+   int '   Default RAM disk size' CONFIG_BLK_DEV_RAM_SIZE 4096
+diff -Nur --exclude CVS linux-2.2.20/arch/sparc64/config.in linux-int-2.2.20/arch/sparc64/config.in
+--- linux-2.2.20/arch/sparc64/config.in	Sun Mar 25 18:37:30 2001
++++ linux-int-2.2.20/arch/sparc64/config.in	Thu Mar  7 19:42:19 2002
+@@ -109,6 +109,8 @@
+   tristate '   RAID-4/RAID-5 mode' CONFIG_MD_RAID5
+ fi
+ 
++source crypto/Config.in
++
+ tristate 'RAM disk support' CONFIG_BLK_DEV_RAM
+ if [ "$CONFIG_BLK_DEV_RAM" = "y" -o "$CONFIG_BLK_DEV_RAM" = "m" ]; then
+   int '   Default RAM disk size' CONFIG_BLK_DEV_RAM_SIZE 4096

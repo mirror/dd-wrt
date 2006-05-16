@@ -1,0 +1,924 @@
+2001-01-17  Robey Pointer  <robey@eazel.com>
+
+	reviewed by: J Shane Culpepper  <pepper@eazel.com>
+
+	* ghttp.c: (ghttp_get_status), (ghttp_flush_response_buffer):
+	* ghttp.h:
+	* http_resp.c: (flush_response_body), (http_resp_flush),
+	(read_body_content_length), (read_body_standard):
+	* http_resp.h:
+
+	Add ghttp_flush_reponse_buffer API call to gnome-http, so that
+	apps who don't want to buffer the entire HTTP response can fetch
+	chunks of it at a time.
+
+2000-12-05  Christopher Blizzard  <blizzard@redhat.com>
+
+	* configure.in: Bump version to 1.0.9.
+
+2000-12-02 Christopher Blizzard <blizzard@redhat.com>
+
+	* ghttp.h/ghttp.c: New function ghttp_get_header_names() that
+	allows you to get a list of the headers that a server returned
+	with its response.
+
+	* http_hdrs.h/http_hdrs.c: New function http_hdr_get_headers() to
+	support the api in ghttp.c.
+
+2000-12-02 Christopher Blizzard <blizzard@redhat.com>
+
+	* http_req.c (http_req_send): Back out the patch from John
+	Trowbridge since it doesn't look right to me and I can't reproduce
+	the problem.  It's a bad thing to blast out a \0 to a http server
+	at the end of ther request headers.  The body just might not make
+	it there.
+
+2000-10-31  J Shane Culpepper  <pepper@eazel.com>
+
+	* MAINTAINERS:
+
+	Putting myself in the maintainer list since
+	blizzard has been forwarding all the patches
+	over.
+
+	* http_req.c: (http_req_send): Minor fix that
+	John Trowbridge contributed.
+
+2000-10-27  Miguel de Icaza  <miguel@helixcode.com>
+
+	* http_date.c (month_from_string_short): Use strncmp instead of
+	memcmp when comparing strings to avoid reading memory we do not
+	own.  Thanks Purify!
+	(http_date_to_time): ditto.
+
+	* http_uri.c (http_uri_parse): ditto
+
+2000-10-01  J Shane Culpepper  <pepper@eazel.com>
+
+	* configure.in:
+	Bumping up minor revision number to 1.0.8
+
+2000-10-01  J Shane Culpepper  <pepper@eazel.com>
+
+	* configure.in:
+	Checking in Ben Taylor's Solaris patch for
+	lib configuration.
+
+2000-07-11  Robin Slomkowski  <rslomkow@eazel.com>
+
+	* libghttp.spec.in: cleaned up so includes
+
+2000-06-10  J Shane Culpepper  <pepper@eazel.com>
+
+	* Makefile.am:
+	* configure.in:
+	* ghttp-config.in:
+	* libghttp.spec.in:
+
+	Removed ghttp-config and replaced it with ghttpConf.sh so that configure
+	information can be queried from gnome-config per Migeul's suggestion.
+
+2000-05-19 Ali Abdin <aliabdin@aucegypt.edu>
+
+	* libghttp.spec.in: Added gnet-config to the 'devel' package
+
+2000-05-13 J Shane Culpepper <pepper@eazel.com>
+
+	*configure.in : Increased version to 1.0.7.  Added a few rules to create
+	a ghttp-config script for easier usage.
+	*Makefile.am : Added build rules to generate ghttp-config from
+	http-config.in
+	*ghttp-config.in : taken mostly from the gnet-config.in.  Allows
+	applications to query ghttp cflags, version, and libs on the fly
+	instead of hardcoding -lghttp, etc into Makefile.am.
+
+2000-04-15 Christopher Blizzard <blizzard@redhat.com>
+
+	* configure.in: Increase to version 1.0.6
+
+2000-04-15 Christopher Blizzard   <blizzard@redhat.com>
+
+	* http_resp.c (http_resp_read_headers): Fix bug in cases where
+	servers return a 100 continue with headers.  If the 100 continue
+	contained headers ( as they seem to do with IIS 4.0 ) it would
+	confuse the http response header parser.
+	
+2000-03-03 Christopher Blizzard <blizzard@redhat.com>
+
+	* configure.in: Increase to version 1.0.5
+
+2000-03-03 Christopher Blizzard <blizzard@redhat.com>	
+
+	* ghttp.c (ghttp_set_authinfo, ghttp_set_proxy_authinfo): Patch
+	from Tom Anheyer <tom.anheyer@BerlinOnline.de> to fix memory
+	leaks.
+
+1999-08-20 Elliot Lee <sopwith@redhat.com>
+	
+	* ghttp.h, http_req.h, http_resp.h: Remove comma from after last
+	enum item.
+
+1999-08-19  Kjartan Maraas  <kmaraas@online.no>
+
+	* ghttp.h: Move __cplusplus into a comment to avoid
+	warning: text following `#endif' violates ANSI standard.
+	
+1999-06-05  Christopher Blizzard  <blizzard@redhat.com>
+
+	* http_uri.c (http_uri_destroy): Make sure to set the members to
+ 	NULL after free() so that no one tries to free() them again.
+
+	* ghttp.c (ghttp_prepare): Check the value of
+ 	a_request->uri->proto before actually using it in a call to
+ 	strcmp() in an attempt to prevent dereferencing null pointers.
+
+	* http_uri.c (http_uri_parse): If the parse fails, don't destroy
+ 	the structure that was passed in becuase http_uri_parse() didn't
+ 	allocate it.  On a failure, it's up to the caller to destroy it.
+
+1999-05-26  Christopher Blizzard  <blizzard@redhat.com>
+
+	* http_resp.c (http_resp_read_headers): Make sure to free() the
+ 	old reason phrase if it's already been allocated.
+
+1999-05-25  Christopher Blizzard  <blizzard@redhat.com>
+
+	* configure.in: Bump up the version number.
+
+	* http_req.c (http_req_send): Plug memory leak reported by Dmitry
+ 	Solodovnick <dima@ukraina.net>.
+
+1999-05-05  Christopher Blizzard  <blizzard@redhat.com>
+
+	* AUTHORS: Add Tue to the authors list.  Fix my email address.
+
+	* configure.in: Bump the version number.
+
+	* ghttp.c (ghttp_set_proxy_authinfo): Impl of function.  See
+ 	below.
+	(ghttp_request_destroy): Make sure that you clean up proxy auth
+ 	information.
+
+	* ghttp.h: New function ghttp_set_proxy_authinfo() that will set
+ 	proxy authentication for a http request.  Patch from Tue
+ 	Wennerberg <tue@nybro.dk>
+
+1999-03-18  Christopher Blizzard  <blizzard@redhat.com>
+
+	* autogen.sh: Revert to old autogen.sh since we aren't using the
+ 	macros anymore.
+
+	* Makefile.am: Don't include the macros directory.
+
+	* configure.in: Don't use the GNOME_INIT macro.  Bump version to
+ 	1.0.2.
+
+1999-03-17  Christopher Blizzard  <blizzard@redhat.com>
+
+	* Makefile.std: update so that an old style makefile will build
+ 	it.
+
+	* libghttp.spec.in: Fix my email address.  I don't work at that
+ 	other place anymore.
+
+	* configure.in: Bump to version 1.0.1
+
+	* http_uri.c (http_uri_parse): Only dereference a_uri if it's not
+ 	null.  Thanks to Heath Martin <martinh@pegasus.cc.ucf.edu> for
+ 	pointing this out.
+
+1999-03-14  Christopher Blizzard  <blizzard@redhat.com>
+
+	* autogen.sh: Use the autogen.sh that calls the macros/ autogen.
+
+	* configure.in: Change to get to work with a recent copy of the
+ 	macros.
+
+1999-03-03  Christopher Blizzard  <blizzard@redhat.com>
+
+	* Apply patches from James Henstridge <james@daa.com.au> that
+ 	allow you to use other protocols over an http proxy.
+
+	* configure.in: Bump to version 1.0.0
+
+	* Makefile.am (libghttp_la_LDFLAGS): Bump to version 1.0.0
+
+1999-01-19  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_set_body): allow entity bodies for WebDAV
+ 	methods, too.  Patch from Joe Orton <jeo101@york.ac.uk>
+
+1999-01-12  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* libghttp.spec: up version to 0.99.2
+
+	* configure.in: up version to 0.99.2
+
+	* Makefile.am: up version to 0.99.2
+
+	* ghttp_constants.h: Add c++ safety.
+
+	* ghttp.h: Add c++ safety.
+
+1998-12-16  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* configure.in: update to version 0.99
+
+	* libghttp.spec: update to version 0.99
+
+	* Makefile.am: update to version 0.99
+
+	* TODO: update TODO - we support basic auth now.
+
+1998-12-09  Herbert Valerio Riedel  <hvr@hvrlab.ml.org>
+
+	* http_base64.c: added #include <string.h> for strlen proto
+
+1998-12-07  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* libghttp.spec: Update to version 0.35 for bugfix.
+
+	* configure.in: Update to version 0.35 for bugfix.
+
+	* Makefile.am (libghttp_la_LDFLAGS): Update to version 0.35 for
+ 	bugfix.
+
+	* http_trans.c (http_trans_connect): Make sure that you only set
+ 	the saddr information in the connection structure if you actually
+ 	reset the host information.  If you do another hostname lookup
+ 	call from another request object, the hostinfo pointer in the
+ 	connection object would more than likely be replaced with the host
+ 	information from the other request object creating some
+ 	interesting behavior for the second use of the first request
+ 	object - it would connect to the wrong host.  Fix from Heath
+ 	Martin <martinh@pegasus.cc.ucf.edu>.
+
+1998-11-23  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_prepare): Set the header Authorization not
+ 	WWW-Authenticate.
+	(ghttp_set_authinfo): Build the authorization string properly.
+	
+1998-11-21  Nuno Ferreira  <nmrf@rnl.ist.utl.pt>
+
+	* Makefile.am (libghttp_la_SOURCES): Removed backslash after the
+	last file.
+
+1998-11-20  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_request_destroy): Clear auth information on
+ 	destroy()
+	(ghttp_prepare): Set auth information if its available.
+	(ghttp_set_authinfo): Build the whole auth header string.
+
+	* ghttp.h: New public function.
+
+	* ghttp.c (ghttp_set_authinfo): New function to add auth info to
+ 	the request structure.
+
+	* http_base64.c: New support for base64 encoding strings.  Code
+ 	from Joe Orton <jeo101@york.ac.uk>, cleaned up by me.
+
+	* http_base64.h: New header file for base64 support.
+
+	* Makefile.am: Add http_base64.[ch] to library target.
+
+	* http_req.c (http_req_send): Fix from Robert Richardson
+ 	<robert.richardson@edgeint.com.au> to fix trailing slash appended
+ 	to http proxy requests.
+
+	* libghttp.spec: Bump library version to 0.34
+
+	* Makefile.am: Bump library version to 0.34
+
+1998-11-14  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_get_body_len): Make this return something sane
+ 	for a transfer in progress.  It makes its best guess now.
+	(ghttp_get_body): This will return the pointer to the body, even
+ 	for a transfer in progress.
+
+	* Makefile.am (libghttp_la_LDFLAGS): Bump version to 0.34.
+
+	* configure.in: Bump to version 0.34 - there's just too many bug
+ 	fixes here not to.
+
+	* ghttp.c (ghttp_clean): Reset the trans buffer, don't delete it
+ 	entirely.
+	(ghttp_prepare): Make sure that http_req_prepare() is called, no
+ 	matter what.
+	(ghttp_prepare): Make sure that the req->host is set any time that
+ 	the req->resource has to be reset.  This generally happens
+ 	whenever you call ghttp_clean().
+	
+	* http_trans.c (http_trans_conn_destroy): Make sure that the
+ 	socket is closed before destroying the associated object.
+
+	* ghttp.c (ghttp_set_uri): Fix memory leak here.  Make sure that
+ 	you destroy the old uri before you create a new one.
+	(ghttp_process): Make sure that the connected flag is set to zero
+ 	when the socket has been closed by a connection: closed header or
+ 	some other fun.
+
+	* http_trans.c (http_trans_conn_new): Default to 1K chunks instead
+ 	of 100 byte chunks.  This should perform a _lot_ better.
+
+	* http_resp.c (http_resp_read_body): Return HTTP_TRANS_DONE for
+ 	content length of zero.  This is the case for a HEAD request.
+	(read_body_content_length): Make sure that you return
+ 	HTTP_TRANS_DONE after a full read of the content length.
+  	Otherwise, the http state machine wasn't being reset properly.
+
+1998-11-13  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_close): Make sure that the connected flag is
+ 	always reset to 0.
+	(ghttp_clean): Make sure to reset the http state machine.
+
+1998-11-11  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_resp.c (read_body_standard): Check and see if the last read
+	is greater than zero, not not equal to zero since that doesn't
+	catch a -1.
+
+	* ghttp.c (ghttp_request_new): Don't set the uri based on the
+	environment.  That's a policy decision that belongs in a higher
+	level user agent library.  Applications that depend on this should
+	set it themselves or wait until there's a user agent library
+	available.
+
+1998-11-10  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* AUTHORS: Update AUTHORS file.
+
+	* Makefile.am: Update library version number.
+
+	* configure.in: Update library version number.
+
+	* ghttp.c (ghttp_request_new): If the env variable "http_proxy" is
+	set, set the proxy automatically when creating the new request
+	object.
+
+	* http_req.c (http_req_send): Fix buffer overrun where the memet()
+	was running past the length of the allocated buffer in the proxy
+	code.  Fix from Frederic Devernay <devernay@istar.fr>
+
+1998-11-09  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_req.h: Add cases for WebDAV
+
+	* ghttp.c (ghttp_set_type): Add cases for WebDAV
+
+1998-11-08  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_req.h: Add WebDAV methods.
+
+	* http_req.c: Add WebDAV methods.
+
+	* http_hdrs.c: Add WebDAV and Cookie headers.
+
+	* ghttp_constants.h: Add WebDAV and Cookie headers.
+
+1998-11-03  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* libghttp.spec: Bump version to 0.32.0
+
+	* Makefile.am (libghttp_la_LDFLAGS): Bump version to 0.32.0
+
+	* http_trans.h: Add proxy support.
+
+	* http_trans.c: Add proxy support.
+	
+	* http_req.c: Add proxy support.
+
+	* ghttp.h: Add proxy support.
+
+	* ghttp.c: Add proxy support.
+
+1998-10-31  Justin Maurer  <justin@openprojects.net>
+
+	* having a boring halloween. fixed a spelling error in ghttp.c
+
+1998-09-25  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* libghttp.spec: New spec file.
+
+	* Makefile.am: Fixes to get make distcheck working.
+
+	* configure.in: Change to 0.30 version.
+
+1998-08-31  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_trans.h: Add an "errstr" member to the conn function that
+ 	will allow you to give back a useable error string.
+
+	* http_resp.c (http_resp_read_headers): Add error strings all over
+ 	the place so you might be able to find out what the hell is wrong.
+	(http_resp_read_headers): In the event that there's 100 continue
+ 	line make sure that the "done" flag is set back to zero so you can
+ 	make the run again.  This only showed up on sync use because async
+ 	would reset the flag; it was a local variable.
+
+	* http_req.h: Change the void * to a char *, it's really char
+ 	data.
+
+	* http_req.c (http_req_new): Allocate a header struct on creation.
+	(http_req_destroy): Destroy said header struct.  This may have
+ 	been the memory leak that I was seeing.
+
+1998-08-30  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_set_body): Fix bug that was keeping bodies from
+ 	getting posted.
+
+1998-08-27  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_get_body): New function to get the returned
+ 	entity body.
+	(ghttp_get_body_len): New funciton to get the length of the
+ 	returned entity body.
+
+1998-08-26  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c: Quick, rewrite the whole api before someone else uses
+ 	it.  No, really...the function names were quite clunky.  Remove
+ 	the extranious _request_ from most of them...
+
+1998-08-25  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_request_get_socket): New function that will
+ 	return you the socket from a connection.  This way you can add it
+ 	to another select() loop like, say, gdk_input_add() ( *hint*
+ 	*hint* )
+	(ghttp_request_get_status): Improve the logic on what was being
+ 	returned.  When a request was complete it was showing 0 bytes
+ 	read.
+
+1998-08-23  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c (ghttp_request_clean): New function that will "clean" a
+ 	request.
+
+	* ghttp.h: Change ghttp_request_abort to ghttp_request_close since
+ 	that's what it really does...
+
+	* ghttp.c (ghttp_request_parse_date): New function that parses a
+ 	time.
+	(ghttp_request_status_code): New function to return the status
+ 	code.
+	(ghttp_request_reason_phrase): New function to return the reason
+ 	phrase.
+
+	* ghttp_constants.h: New file.
+
+	* http_resp.c (read_body_content_length): Make sure you only read
+ 	if there's stuff left to read.  If your chunksize is huge you may
+ 	have already read in the whole entity body.
+
+	* Makefile (CFLAGS): Add the current directory to the list of
+ 	includes.
+
+	* http_req.c (http_req_prepare): Set a default user agent.
+
+	* http_resp.c (http_resp_destroy): Be free() shamoo.
+
+1998-08-22  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.c: api still being flushed out.  It works though, you can
+ 	actually process requests now.
+	(ghttp_request_process): Move the connection routine into the
+ 	process.
+
+	* http_resp.c (http_resp_read_headers): Make sure you return done
+ 	if you're done.
+
+	* http_req.c (http_req_send): Make sure you return done if you're
+ 	actually done.
+
+	* ghttp.c: More api flushed out.
+
+	* http_resp.c (http_resp_read_body): Mark the socket as closed by
+ 	setting it to -1.
+
+	* http_uri.c (http_uri_parse): Make sure the scoping is right in
+	here...
+
+1998-08-21  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* ghttp.h: public API is flushing out.
+
+	* http_uri.c (http_uri_parse): Support not passing in a uri so you
+ 	can just validate.
+
+	* Makefile (SHARED_OBJS): Add ghttp.o
+
+	* ghttp.h: New file.  The public interface.
+
+	* ghttp.c: New file.  The public interface.
+
+	* http_resp.c (http_resp_read_headers): Now understands the "100
+ 	Continue" from http 1.1 servers ( like apache ) when you do a
+ 	post.
+	(http_resp_read_headers): Make sure that the minor part of the
+ 	http version doesn't get cast to an int accidentally.
+
+	* test_post_client.c: New file.
+
+	* Makefile: add test_post_client
+
+	* http_req.c (http_req_send): Initial stab at getting posting
+ 	entity bodies working.
+
+	* http_trans.c (http_trans_write_buf): If it was a 0 length write
+ 	return done.  Also store the last write in the connection
+ 	structure.
+
+	* http_resp.c (read_body_chunked): Make sure there's data to be
+ 	clipped before doing it.
+	(http_resp_read_headers): Return an error if there was a zero
+ 	length read.  This means that the server hung up.
+	(read_chunk): Same.
+	(read_body_content_length): Same.
+	(read_body_chunked): On the first pass make sure that the body is
+ 	actually copied from the buffer into the response.
+
+1998-08-20  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_resp.c (read_body_standard): Add in async support.
+	(read_body_content_length): Add in async support.
+	(read_body_chunked): Add in async support.
+	(http_resp_read_body): Reset the state when you are done.
+	(http_resp_read_body): Reset the state.
+	(http_resp_read_headers): Fix problems related to having a chunk
+ 	size bigger than the entire buffer.  It would get caught in a
+ 	read()
+	(read_chunk): Fix some subtle problems related to fiding the end
+ 	of a chunk when there was a chunk that was 1 byte followed by
+	the 0 length ( end of message ) chunk.
+
+	* test_client.c (main): Updates for async.
+
+	* http_req.c (http_req_send): Add in async support.
+
+	* http_trans.h: Add stuff to check whether or not we're doing this
+ 	sync or async.
+
+1998-08-18  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_resp.c (read_chunk): Clean up warning.
+
+	* http_req.c (http_req_send): Clean up warning.
+
+	* http_resp.c (read_body_chunked): Fix an obscure bug.  Make sure
+ 	there there are at least 5 bytes in the queue.  This would show up
+ 	when a read() on the socket would return exactly 3 bytes which
+ 	always left the other two read at the beginning of the next
+ 	request.  The trailing \r\n left over from the previous response
+ 	would be picked up before the headers on the next request.
+
+	* http_trans.c (http_trans_read_into_buf): Set the last read in
+ 	the connection structure so the app has a little more information.
+
+	* http_resp.c (read_body_chunked): Rewritten for new buffers.
+	(read_chunk): New buffers.
+	(http_resp_read_body): A connection gets marked as closed if it's
+ 	a "standard" connection.
+
+	* http_trans.c (http_trans_read_into_buf): The bytes to be read
+ 	into the buffer should the the size left to read or the chunk size
+ 	whichever is less.
+
+1998-08-17  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_resp.c (read_body_standard): Updated to the new buffer
+ 	system.  Works now for sites that don't have a content length
+	or use transfer encoding.
+
+	* There's so much here re-written I don't know where to start.
+  	Almost all of the buffer code has been redone which resulted in
+ 	about 300 less lines of code.  This is the groundwork for the
+ 	async code.  The test stub will now download pages again as long
+ 	as they have a content length.
+	
+	* http_trans.c (http_trans_write_buf): Don't check the socket
+ 	before writing ( why doesn't this work? )
+	(http_trans_conn_new): Allocate a new buffer when allocating a
+ 	connection object.
+
+	* http_resp.c (http_resp_read_headers): Don't allocate a buffer,
+ 	it's already allocated now.
+
+	* http_req.c (http_req_send): Use the new async buffer stuff.
+
+	* http_trans.h: Tons of new stuff in here for async.
+
+	* http_trans.c: Tons of new stuff in here for async.  The package
+ 	still builds and runs amazingly enough.
+
+1998-08-16  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_resp.h (http_resp_tag): Getting ready for async.  More
+ 	state information.
+
+	* http_resp.c (http_resp_read_body): Break out each type of read
+ 	body out to its own function.  Getting ready for async.
+
+	* http_req.c (http_req_send): Add in state information throughout
+ 	function for async mode.
+
+	* http_req.h: Start adding state information for http async
+	mode.
+
+	* http_trans.c (http_trans_data_readable): Check to see if
+ 	there's data available on a socket.	
+	(http_trans_data_writeable): Check to see if a socket's writeable.
+
+	* TODO: New file.  Guess what it's for.
+
+	* http_req.c (http_req_prepare): Remove some cruft.
+
+	* http_global.h: New file that contains definitions that are
+	used in the public and private parts of the library.
+
+	* test_client.c (main): Test stub should start testing http stuff
+ 	again.
+
+	* http_date.c (http_date_to_time): Parsing now works for RFC
+ 	850/1036 dates including checking for y2k dates.
+
+	* test_client.c (main): Add some more date parsing including
+	y2k testing.
+
+	* http_date.c (http_date_to_time): Parsing now works for RFC
+ 	822/1123 dates now.
+	(http_date_to_time): Parsing how works for actime() formats.
+
+	* Makefile (SHARED_OBJS): Add http_date stuff to build.
+
+	* http_date.c: New file
+
+	* http_date.h: New file
+
+	* Makefile (libghttp.a): ranlib the library
+
+	* http_resp.c (http_resp_read_body): Support servers that don't
+ 	return a content-length header or chunked transfer encoding.
+
+1998-08-15  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* Makefile: Change "test.c" to "test_client.c"
+	
+	* Makefile: Create a library libghttp.a
+
+1998-08-14  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* test.c (main): Get the length of the body from the struct, not
+ 	by doing a strlen.  I love it when you find the bug in your test
+ 	stub, not the code. :)
+
+	* Makefile (clean): Oops.  Clean up shared_objs too.
+
+	* test.c (main): Warning fixes ( shaddap! )
+
+	* Makefile (test): Reorganized for two executables.
+
+	* test_server.c (main): New file.  Basically an echo server for
+ 	testing header parsing in an attempt to make this library more
+ 	resistant to bad servers and even "evil" servers.
+
+	* http_hdrs.c (http_hdr_set_value): A break in the wrong place
+ 	causes problems.
+	(http_hdr_set_value): Change the string that's returned to ref
+ 	semantics, not copy.
+	(http_hdr_get_value): Return a pointer into the struct, don't copy
+ 	it.
+
+	* http_resp.c (http_resp_read_headers): Fix bug in the multi line
+ 	value checking.  Use the length of the old header, not the current
+ 	one which is, of course, 0, ( duh. )
+
+	* test.c (main): Test stub doesn't test every module now unless
+ 	you uncomment the #if.  It does take a command line arg uri now.
+
+	* http_resp.c (read_chunk): Bug fix.  Normalize all hex chars in a
+ 	header chunk to lower case before calculating the size of a chunk.
+  	Some servers are upper case, some are lower case.
+
+	* http_uri.c (http_uri_parse): Fix silly bug in the uri parser
+ 	where the "/" was being chopped off of the front of the resource
+ 	when a port was included.
+
+	* http_resp.c (http_resp_read_headers): Comments everywhere so
+ 	someone else might be able to read my parser.
+	(http_resp_read_headers): Start support for multi line values.
+  	Although I can't find a server that actually _does_ this I still
+ 	need to support it.
+
+1998-08-13  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_trans.c (http_trans_buf_active_len): Removed this function
+ 	since it was the same as http_trans_buf_unread()
+
+	* http_resp.c (read_chunk): Use the new patt functions below and
+ 	chunking _works_! Cool beans.
+	(http_resp_read_body): Close the socket if there's a connection:
+ 	close header
+
+	* http_trans.c (http_trans_buf_unread): Return the number of bytes
+ 	not yet read in a buffer.
+	(http_trans_buf_append): A bit better.
+	(http_trans_buf_has_patt): New public function.
+	(http_trans_read_patt): New function that will read until either
+ 	the target buffer is full or it sees a specific pattern in that
+ 	read data.
+	(http_trans_buf_append_patt): New function that will read into a
+ 	buffer by size or by pattern, as above.
+
+	* http_resp.c (http_resp_read_body): Well, it sort of does chunked
+ 	transfer encoding now.  It still needs a lot of debugging though.
+	(read_chunk): If you're using chunked encoding and you see the end
+ 	of all of the chunks ( 0\r\n\r\n ) make sure you advance the
+ 	pointer properly.  This seems to help somewhat.
+
+1998-08-12  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_trans.c (http_trans_conn_destroy): Make sure that the
+ 	connection struct is properly destroyed.
+
+	* test.c (main): Update test stub to do 10 requests on the same
+ 	connection.  Works well.
+
+	* http_resp.c (http_resp_read_body): Mark the connection as
+ 	"closed" if there's a connection: close header
+
+	* http_req.c (http_req_prepare): Make the default to support
+ 	"keepalives"
+
+	* http_trans.c (http_trans_buf_clean): New function that will
+ 	clean transport buffers.
+
+	* http_resp.c (http_resp_read_body): Make sure that the buffer
+ 	will be cleared at the next realloc.
+
+	* http_trans.c (http_trans_buf_realloc): Catch instance where the
+ 	buffer is in fact empty.  Don't bother copying anything then.
+
+	* http_resp.c (http_resp_read_headers): Read headers converted to
+ 	new buffer management.  Only about a dozen lines of code saved but
+ 	boy is it much more readable.
+
+	* http_resp.c (http_resp_read_headers): Uses new buffer
+ 	management.  Also easier to read.
+
+	* http_trans.c (http_trans_buf_active_len): New function to return
+ 	the length of the active part of the buffer.
+
+	* http_resp.c (http_resp_read_body): updated to new function
+ 	naming.
+
+	* http_trans.c (http_trans_buf_new): New function for allocating a
+ 	new buffer in a connection descriptor.
+	(http_trans_buf_append): New function for reading from a socket in
+ 	a connection description buffer.
+	(http_trans_buf_free_space): New function that tells you how many
+ 	bytes are free in a buffer.
+	(http_trans_buf_realloc): Renamed from http_trans_realloc_buf for
+ 	consistency.
+
+1998-08-12  Christopher Blizzard  <blizzard@odin.appliedtheory.com>
+
+	* http_resp.c (patt_in_buf): Should be an <= not a <.  If the
+	\r\n\r\n was on the end of the buffer ( as in a HEAD request )
+	then the pattern was never found.  I love off by one errors.
+	(http_resp_read_body): Improve the handling of detection of when
+	an entity body is returned in a response.  If it's a head request
+	it looks like it should contain a body but the web server is just
+	trying to fake you out.  Really.
+	
+	* http_resp.h: Update to new function call sig.
+
+	* test.c (main): Update to new function call sig.
+
+	* http_resp.c (http_resp_read_body): Damn.  The response really
+	needs to know about the request since the request may dictate that
+	the entity body is empty, eg in a HEAD request.  This makes it a
+	good bit less modular.
+
+1998-08-11  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* test.c (main): Add some more test functionality to download the
+	entity body.  It downloads entity bodies now and displays them. :)
+
+	* http_trans.h: Add allocated field to the connection struct so we
+ 	know how much we've used.
+
+	* http_resp.h (http_resp_tag): Change the void body to a char
+ 	body, it's character data.
+
+	* http_resp.c (http_resp_read_body): New function that reads the
+ 	body of the message.  Currently doesn't do chunked transfer
+	encodings but does use the content length.
+	
+	* http_trans.c (http_trans_realloc_buf): new function that will
+ 	realloc a buffer on the fly, using the current pointer as the new
+ 	start point.
+
+	* http_resp.c (http_resp_read_headers): Save the state of the
+ 	buffer in the connection structure.  There are certianly going to
+	be chunks of the entity header in the buffer.
+
+	* http_trans.h: Add buffer information to the connection
+ 	description structure.
+	
+1998-08-10  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* test.c (main): Change to new function.
+
+	* http_resp.h: Same.
+
+	* http_resp.c (http_resp_read_headers): Renamed from
+ 	http_resp_read since this will only read headers, not the entity
+ 	body.
+
+1998-08-09  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_resp.c (http_resp_read): Lots new code here.  Now parses
+ 	out the response version, status code, reason phrase and
+	all of the headers.  Body next... Whee!!
+
+	* test.c (main): Add new testing code.
+
+	* http_resp.h (http_resp_new): New function
+	(http_resp_destroy): New function
+
+	* Makefile (OBJS): Add http_resp.o
+
+	* http_resp.c: New file
+
+	* http_resp.h: New file
+
+	* test.c (main): Add stuff to use the new http_req interface.
+
+	* http_req.h: Make that char def extern
+	(http_req_type): default to http_get
+	(http_req): remove a lot of stuff that's not really part of the
+ 	request, it's part of the connection.
+	(http_req_prepare): New function
+	(http_req_send): New function
+
+	* http_req.c: YSFM: static char's should be defined in a .c file,
+ 	not a header file.
+	(http_req_new): default to HTTP 1.1
+	(http_req_prepare): New function
+	(http_req_send): New function
+
+	* http_hdrs.h: Put #ifdef's around this header file.
+
+	* http_req.h (http_req_destroy): New func.
+	(http_req_new): New func.
+
+1998-08-06  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* Makefile (OBJS): Add http_req.o to the build
+
+	* http_req.h: New file
+
+	* http_req.c: New file
+
+1998-08-05  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* Makefile (.deps): Add dependencies until I can automake this.
+
+	* test.c: Added more test code to check out some of the network
+ 	functions.  It will now connect to a remote web server and send a
+ 	simple request without parsing the response.
+
+	* http_trans.c: Filled out initial socket connection and functions
+	to read and write blocks of data.
+
+	* http_trans.c: New file.
+
+	* http_trans.h: New file.
+
+	* Makefile (OBJS): Add http_trans.o
+
+1998-08-04  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* test.c (main): Add code to test the 400 lines of
+ 	untested header code.
+
+	* http_hdrs.c (http_hdr_list_destroy): YSFM: Free the value, not
+ 	the header.
+	(http_hdr_clear_value): Check to make sure that the header isn't
+ 	NULL before you deref it.
+
+1998-08-04  Christopher Blizzard  <blizzard@odin.appliedtheory.com>
+
+	* .cvsignore: Added .cvsignore file
+
+1998-08-04  Christopher Blizzard  <blizzard@appliedtheory.com>
+
+	* http_uri.c (http_uri_parse): Don't advance the end ptr if you
+	are reading the resource.  The / is part of the resource.
+	
+

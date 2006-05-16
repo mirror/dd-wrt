@@ -1,0 +1,10 @@
+Author: Harald Welte <laforge@gnumonks.org>
+Status: Beta
+
+This adds CONFIG_IP_NF_PPTP:
+Connection tracking and NAT support for PPTP.
+
+Note that this code currently has limitations
+- can only NAT connections from PNS to PAC
+- doesnt' support multiple calls within one session
+

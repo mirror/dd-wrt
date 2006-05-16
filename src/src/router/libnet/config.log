@@ -1,0 +1,27 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:590: checking host system type
+configure:611: checking target system type
+configure:629: checking build system type
+configure:660: checking for gcc
+configure:737: checking whether the C compiler (gcc  ) works
+configure:751: gcc -o conftest    conftest.c  1>&5
+configure:771: checking whether the C compiler (gcc  ) is a cross-compiler
+configure:776: checking whether we are using GNU C
+configure:800: checking whether gcc accepts -g
+configure:829: checking for working const
+configure:931: checking for a BSD compatible install
+configure:981: checking whether make sets ${MAKE}
+configure:1012: checking for ranlib
+configure:1046: checking for ar
+configure:1080: checking for ln
+configure:1113: checking for strerror
+configure:1167: checking for pcap_open_live in -lpcap
+configure:1211: checking low-level packet interface type
+configure:1379: checking how to run the C preprocessor
+configure:1443: checking for net/ethernet.h
+configure:1761: checking for libnet_build_ip in -lnet
+configure:1817: checking machine endianess
+configure:1887: checking if unaligned accesses fail
+configure:1961: checking for sys/sockio.h

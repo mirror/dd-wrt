@@ -1,0 +1,2 @@
+#include <linux/netfilter_ipv4/ip_nat.h>
+#include <linux/netfilter_ipv4/ip_nat_pptp.h>

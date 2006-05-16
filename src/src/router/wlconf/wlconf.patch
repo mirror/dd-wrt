@@ -1,0 +1,40 @@
+175c175,177
+< 	    nvram_match(strcat_r(prefix, "auth_mode", tmp), "psk")) {
+---
+> 	    nvram_match(strcat_r(prefix, "auth_mode", tmp), "psk") ||
+> 	    nvram_match(strcat_r(prefix, "auth_mode", tmp), "wpa2") ||
+> 	    nvram_match(strcat_r(prefix, "auth_mode", tmp), "psk2")) {
+681,683c683,689
+< 	if (nvram_match(strcat_r(prefix, "auth_mode", tmp), "wpa"))
+< 		val = WPA_AUTH_UNSPECIFIED;
+< 	else if (nvram_match(strcat_r(prefix, "auth_mode", tmp), "psk")) {
+---
+> 	if (nvram_match(strcat_r(prefix, "auth_mode", tmp), "wpa")) 
+> 	    val = WPA_AUTH_UNSPECIFIED;
+> 	else
+> 	if (nvram_match(strcat_r(prefix, "auth_mode", tmp), "wpa2")) 
+> 	    val = WPA2_AUTH_UNSPECIFIED;
+> 	else if (nvram_match(strcat_r(prefix, "auth_mode", tmp), "psk"))
+> 	        {
+698a705,722
+> 	}else
+> 	if (nvram_match(strcat_r(prefix, "auth_mode", tmp), "psk2"))
+> 	        {
+> 		val = WPA2_AUTH_PSK;
+> 		/* In wet mode enable in driver wpa supplicant */
+> 		if (wet) {
+> 			wsec_pmk_t psk;
+> 			char *key;
+> 
+> 			if (((key = nvram_get(strcat_r(prefix, "wpa_psk", tmp))) != NULL)
+> 					&& (strlen(key) < WSEC_MAX_PSK_LEN)) {
+> 				psk.key_len = (ushort) strlen(key);
+> 				psk.flags = WSEC_PASSPHRASE;
+> 				strcpy(psk.key, key);
+> 				WL_IOCTL(name, WLC_SET_WSEC_PMK, &psk, sizeof(psk));
+> 			}
+> 			wlconf_set_var(name, "sup_wpa", 1);
+> 		}
+707a732,733
+> 		nvram_match(strcat_r(prefix, "auth_mode", tmp), "wpa2") ||
+> 		nvram_match(strcat_r(prefix, "auth_mode", tmp), "psk2") ||

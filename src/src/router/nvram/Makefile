@@ -1,0 +1,50 @@
+#
+# Linux NVRAM Makefile
+#
+# Copyright 2001-2003, Broadcom Corporation
+# All Rights Reserved.
+#
+# THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+# KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+# SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+# FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+#
+# $Id: Makefile,v 1.5 2003/10/29 03:43:55 honor Exp $
+#
+
+
+include $(TOP)/.config
+
+ifeq ($(CONFIG_MSSID),y)
+CFLAGS	+= -I. -I$(SRCBASE)/include.v24 -Wall
+else
+CFLAGS	+= -I. -I$(SRCBASE)/include.v23 -Wall
+endif
+#CFLAGS	+= -g -DDEBUG
+CFLAGS	+= -s $(COPTS)
+LDFLAGS += -L.
+
+
+
+vpath %.c $(SRCBASE)/shared/nvram
+
+all: libnvram.so nvram
+
+install: all
+	install -D libnvram.so $(INSTALLDIR)/usr/lib/libnvram.so
+	$(STRIP) $(INSTALLDIR)/usr/lib/libnvram.so
+	install -D nvram $(INSTALLDIR)/usr/sbin/nvram
+	$(STRIP) $(INSTALLDIR)/usr/sbin/nvram
+
+clean:
+	rm -f *.o *.a *.so nvram
+
+ifeq ($(ARCH),i386)
+libnvram.so: nvram_linux_gen.o nvram_convert.o
+	$(LD) -shared -o $@ $^
+else
+libnvram.so: nvram_linux.o nvram_convert.o
+	$(LD) -shared -o $@ $^
+endif
+nvram: main.o
+	$(CC) $(CFLAGS) -o $@ $< $(LDFLAGS) -lnvram

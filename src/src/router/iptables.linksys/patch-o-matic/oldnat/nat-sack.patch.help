@@ -1,0 +1,19 @@
+Author: Harald Welte <laforge@gnumonks.org
+State: Experimental, seems to work, needs testing.
+
+The current code doesn't deal with SACK in the case of NAT at all, it
+deletes SACKPERM from all TCP connections with a nat helper.
+
+This is quite reasonable, people who know about the sequence number             
+adjustments needed for the no-SACK case will understand how ugly it             
+becomes if we want to handle SACK.                                              
+                                                                                
+Nonetheless, for 'quality of implementation' reasons, I think we should         
+have code to handle SACK correctly.  It will add significant overhead for each  
+TCP packet in a NAT'ed TCP connection, so making it optional might be a good    
+idea.                                                                           
+                                                                                
+btw: This does (of course) NOT fix the case where we have multiple sequence     
+number adjustments per tcp window.  This is stuff to be implemented on top of   
+newnat.                                      
+

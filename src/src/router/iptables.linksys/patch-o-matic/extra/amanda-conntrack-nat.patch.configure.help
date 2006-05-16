@@ -1,0 +1,13 @@
+CONFIG_IP_NF_IRC
+Amanda protocol support
+CONFIG_IP_NF_AMANDA
+  If you are running the Amanda backup package (http://www.amanda.org/)
+  on this machine or machines that will be MASQUERADED through this
+  machine, then you may want to enable this feature.  This allows the
+  connection tracking and natting code to allow the sub-channels that
+  Amanda requires for communication of the backup data, messages and
+  index.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.
+

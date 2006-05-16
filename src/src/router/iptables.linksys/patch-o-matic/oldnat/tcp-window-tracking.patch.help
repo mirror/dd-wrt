@@ -1,0 +1,24 @@
+Author: Jozsef Kadlecsik
+Status: proven to be quite stable, but still experimental
+
+This patch is an implementation of TCP connection tracking according
+to the article 'Real Stateful TCP Packet Filtering in IP Filter' by
+Guido van Rooij [1].  It contains the new TCP connection tracking with
+support to handle already established connections.  It supports TCP 
+window scaling.
+
+[1] http://www.iae.nl/users/guido/papers/tcp_filtering.ps.gz
+
+- the default timeout value for the CLOSE_WAIT state is raised to 12 hours
+- sysctl support added (/proc/sys/net/ipv4/netfilter/), which means:
+        - all conntrack timeout values can be adjusted via sysctl
+        - logging of out of window packets and packets with invalid
+          window scale value can be disabled/enabled via sysctl
+        - a new flag ip_ct_tcp_be_liberal added: when ip_ct_tcp_be_liberal 
+	  is set to 0, all out of window packets are marked as INVALID, 
+	  while if it's set to 1, only out of window *RST* segments are 
+	  marked as INVALID.
+- Beware!!! /proc/sys/net/ipv4/ip_conntrack_max is renamed as 
+  /proc/sys/net/ipv4/netfilter/ip_conntrack_max. Update your scripts
+  which uses this parameter!!!
+- logging of out of window packets are made more verbose

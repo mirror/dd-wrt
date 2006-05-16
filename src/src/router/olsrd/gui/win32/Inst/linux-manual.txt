@@ -1,0 +1,134 @@
+olsrd(8)                                                              olsrd(8)
+
+
+
+NAME
+       olsrd - Optimized Link State Routing protocol daemon
+
+SYNOPSIS
+       olsrd  [  -i   interface1  [interface2  ...]  ] [ -f  configfile ] [ -d
+       debuglevel ] [ -ipv6 ] [ -ipc ] [ -dispin ] [ -dispout ]  [  -tnl  ]  [
+       -bcast  broadcastaddress ] [ -delgw ] [ -hint  HELLO interval for wire-
+       less interfaces ] [ -tcint  TC interval ] [ -midint  MID interval  ]  [
+       -hnaint   HNA  interval  ] [ -hhold  HELLO validity time ] [ -thold  TC
+       validity time ] [ -tos  TOS value ] [ -nhint  HELLO interval non WLAN ]
+       [ -nhhold  HELLO validity time non WLAN ] [ -T  scheduler poll rate ]
+
+
+
+DESCRIPTION
+       olsrd is an implementation of the Optimized Link State Routing protocol
+       for  Mobile  Ad-Hoc  networks(MANET).  The  protocol  is  described  in
+       RFC3626.  It is designed to be run as a standalone server process - but
+       as it is still in an experimental stage most users will prefer  running
+       it with some debug output which is directed to STDOUT.
+
+
+       This  manual page only lists the command line arguments. For details of
+       the configuration file see the comments  included  in  /etc/olsrd.conf.
+       Note  that  none  of these options need to be set at the command line -
+       all these options and others can be set in the configuration file.
+
+
+       The homepage of olsrd is http://www.olsr.org
+
+
+OPTIONS
+       -i interface1 ... interfaceN
+                   This option specifies  on  what  network  interfaces  olsrd
+                   should  run.  These interfaces cannot be aliased interfaces
+                   such as eth0:1.
+
+       -f configfile
+                   This option overrides the default configuration  file  path
+                   used by olsrd - /etc/olsrd.conf
+
+       -d debuglevel
+                   This option specifies the amount of debug information olsrd
+                   should write to STDOUT. If set to 0 olsrd will run  in  the
+                   background.
+
+       -ipv6       This  option  instructs  olsrd to use the Internet Protocol
+                   version 6. The default is version 4.
+
+       -ipc        This option allows the GUI front-end created fro  olsrd  to
+                   connect to olsrd at runtime.
+
+       -dispin     This option, when set, causes olsrd to display all incoming
+                   packet data on STDOUT. When using IPv4  the  data  is  dis-
+                   played  in decimal format, when using IPv6 the data is dis-
+                   played in hexadecimal format.
+
+       -dispout    This option, when set, causes olsrd to display all outgoing
+                   packet  data  on  STDOUT.  When using IPv4 the data is dis-
+                   played in decimal format, when using IPv6 the data is  dis-
+                   played in hexadecimal format.
+
+       -tnl        When  this  option is set olsrd will use IP-in-IP tunneling
+                   to Internet gateways. This is very experimental code and it
+                   should not be used as of yet.
+
+       -delgw      If  this option is set olsrd will remove any default routes
+                   set prior to adding an Internet route based on  OLSR  rout-
+                   ing.
+
+       -bcast broadcastaddress
+                   This option specifies what IPv4 broadcastaddress to use for
+                   OLSR control traffic. The only value that  currently  makes
+                   sense   when   setting   broadcast   address  mannually  is
+                   255.255.255.255.  The default action is to use  the  broad-
+                   castaddres  that  the  network  interface  is preconfigured
+                   with(per interface).
+
+       -hint seconds
+                   This value sets the interval on which HELLO messages should
+                   be  generated.  The value is a floating point number repre-
+                   senting seconds.
+
+       -nhint seconds
+                   This value sets the interval on which HELLO messages should
+                   be  generated  on  interfaces  that  are not detected to be
+                   wireless.  The value is a floating point number  represent-
+                   ing seconds.
+
+       -tcint seconds
+                   This value sets the interval on which TC messages should be
+                   generated. The value is a floating point number  represent-
+                   ing seconds.
+
+       -midint seconds
+                   This  value  sets the interval on which MID messages should
+                   be generated. The value is a floating point  number  repre-
+                   senting seconds.
+
+       -hnaint seconds
+                   This  value  sets the interval on which HNA messages should
+                   be generated. The value is a floating point  number  repre-
+                   senting seconds.
+
+       -hhold multiplier
+                   This  option  sets  the  announced HELLO validity time as a
+                   multiplier of the HELLO interval.
+
+       -nhhold multiplier
+                   This option sets the announced HELLO validity time on  non-
+                   WLAN interfaces, as a multiplier of the HELLO interval.
+
+       -thold multiplier
+                   This option sets the announced TC validity time as a multi-
+                   plier of the TC interval.
+
+       -tos TOS-value
+                   This option sets the type of service value that  should  be
+                   set in the OLSR control traffic packet IP headers.
+
+       -T seconds  This  option  sets  the polling intervall of the scheduler.
+                   The default is 0.1 seconds. This option should only be con-
+                   sidered if running with really low emission intervals.
+
+
+
+       FILES  /etc/olsrd.conf
+
+SEE ALSO
+       iwconfig(8) route(8).

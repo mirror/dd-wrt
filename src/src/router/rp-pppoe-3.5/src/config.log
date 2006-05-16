@@ -1,0 +1,127 @@
+This file contains any messages produced by compilers while
+running configure, to aid debugging if configure makes a mistake.
+
+configure:540: checking for gcc
+configure:653: checking whether the C compiler (mipsel-uclibc-gcc  ) works
+configure:669: mipsel-uclibc-gcc -o conftest    conftest.c  1>&5
+configure:695: checking whether the C compiler (mipsel-uclibc-gcc  ) is a cross-compiler
+configure:700: checking whether we are using GNU C
+configure:709: mipsel-uclibc-gcc -E conftest.c
+configure:728: checking whether mipsel-uclibc-gcc accepts -g
+configure:762: checking for ranlib
+configure:792: checking how to run the C preprocessor
+configure:813: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:872: checking for ANSI C header files
+configure:885: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:976: checking for sys/wait.h that is POSIX.1 compatible
+configure:997: mipsel-uclibc-gcc -c -g -O2  conftest.c 1>&5
+configure:1021: checking for fcntl.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for sys/dlpi.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1027:22: sys/dlpi.h: No such file or directory
+configure: failed program was:
+#line 1026 "configure"
+#include "confdefs.h"
+#include <sys/dlpi.h>
+configure:1021: checking for sys/ioctl.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for sys/time.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for syslog.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for unistd.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for net/if_arp.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for netinet/if_ether.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for getopt.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for sys/uio.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for sys/param.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for fcntl.h
+configure:1021: checking for net/bpf.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1027:21: net/bpf.h: No such file or directory
+configure: failed program was:
+#line 1026 "configure"
+#include "confdefs.h"
+#include <net/bpf.h>
+configure:1021: checking for netpacket/packet.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for net/ethernet.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for asm/types.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for linux/if_packet.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for linux/if_ether.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for linux/if_pppox.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for sys/socket.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for sys/cdefs.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for linux/if.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for net/if.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1021: checking for net/if_dl.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1027:23: net/if_dl.h: No such file or directory
+configure: failed program was:
+#line 1026 "configure"
+#include "confdefs.h"
+#include <net/if_dl.h>
+configure:1021: checking for net/if_ether.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1027:26: net/if_ether.h: No such file or directory
+configure: failed program was:
+#line 1026 "configure"
+#include "confdefs.h"
+#include <net/if_ether.h>
+configure:1021: checking for net/if_types.h
+configure:1031: mipsel-uclibc-gcc -E  conftest.c >/dev/null 2>conftest.out
+configure:1027:26: net/if_types.h: No such file or directory
+configure: failed program was:
+#line 1026 "configure"
+#include "confdefs.h"
+#include <net/if_types.h>
+configure:1021: checking for netinet/if_ether.h
+configure:1021: checking for net/if_types.h
+configure:1021: checking for net/if_dl.h
+configure:1059: checking for working const
+configure:1113: mipsel-uclibc-gcc -c -g -O2  conftest.c 1>&5
+configure:1134: checking for pid_t
+configure:1167: checking whether time.h and sys/time.h may both be included
+configure:1181: mipsel-uclibc-gcc -c -g -O2  conftest.c 1>&5
+configure:1202: checking whether struct tm is in sys/time.h or time.h
+configure:1215: mipsel-uclibc-gcc -c -g -O2  conftest.c 1>&5
+configure:1239: checking for echo
+configure:1274: checking for struct sockaddr_ll
+configure:1286: mipsel-uclibc-gcc -c -g -O2  conftest.c 1>&5
+configure:1305: checking for N_HDLC line discipline
+configure:1314: mipsel-uclibc-gcc -c -g -O2  conftest.c 1>&5
+configure:1438: checking for 8-bit clean memcmp
+configure:1474: checking whether setvbuf arguments are reversed
+configure:1520: checking return type of signal handlers
+configure:1542: mipsel-uclibc-gcc -c -g -O2  conftest.c 1>&5
+configure:1563: checking for select
+configure:1591: mipsel-uclibc-gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1563: checking for socket
+configure:1591: mipsel-uclibc-gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1563: checking for strerror
+configure:1591: mipsel-uclibc-gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1563: checking for strtol
+configure:1591: mipsel-uclibc-gcc -o conftest -g -O2   conftest.c  1>&5
+configure:1646: checking for a BSD compatible install
+configure:1700: checking size of unsigned short
+configure:1739: checking size of unsigned int
+configure:1778: checking size of unsigned long
+configure:1820: checking for pppd
+configure:1857: checking for setsid
+configure:1894: checking for id

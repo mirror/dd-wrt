@@ -1,0 +1,42 @@
+#!/bin/sh
+
+case "$1" in
+  start)
+        echo -n "Starting Sipath Environment"
+        #dbtext module setup
+        mkdir -p /var/dbtext/ser
+        cp /etc/ser/aliases /var/dbtext/ser/
+        cp /etc/ser/location /var/dbtext/ser/
+        cp /etc/ser/subscriber /var/dbtext/ser/
+        cp /etc/ser/version /var/dbtext/ser/
+        #Start SER via serctl
+        if [ $(nvram get sip_domain) ] ; then  
+        export SIP_DOMAIN=$(nvram get sip_domain)
+        else
+        export SIP_DOMAIN=$(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}')
+        fi
+        /bin/cp /etc/ser/ser.cfg /var/ser.cfg.SRC
+        if [ $(nvram get wan_proto) = pppoe ] ; then 
+        /usr/bin/rtpproxy
+        /bin/sed "s/fix_nated_contact(\"*[0-9]*\.*[0-9]*\.*[0-9]*\.*[0-9]*\"*/fix_nated_contact(/g" /var/ser.cfg.SRC > /etc/ser/ser.cfg
+        else
+        /usr/bin/rtpproxy -l $(ifconfig $(nvram get lan_ifname)|awk 'sub("inet addr:","") {print $1}')/$(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print $1}')
+        /bin/sed "s/fix_nated_contact(\"*[0-9]*\.*[0-9]*\.*[0-9]*\.*[0-9]*\"*/fix_nated_contact(\"$(ifconfig $(nvram get wan_ifname)|awk 'sub("inet addr:","") {print $1}')\"/g" /var/ser.cfg.SRC > /etc/ser/ser.cfg
+        fi
+        sleep 10
+        /usr/sbin/serctl start
+        ;;
+   stop)
+        echo -n "Stopping Sipath Environment"
+        killall rtpproxy
+        /usr/sbin/serctl stop
+        ;; 
+   restart)
+        echo -n "Restarting Sipath Environment"
+        /usr/sbin/serctl restart        
+        ;;
+    *)
+  
+esac
+
+exit 0

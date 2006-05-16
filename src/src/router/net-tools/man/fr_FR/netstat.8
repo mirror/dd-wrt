@@ -1,0 +1,501 @@
+.\"
+.\" netstat.8 
+.\"
+.\" Original: (mdw@tc.cornell.edu & dc6iq@insu1.etec.uni-karlsruhe.de)
+.\"
+.\" Modified: Bernd.Eckenfels@inka.de
+.\" Modified: Andi Kleen ak@muc.de 
+.\" Modified: Tuan Hoang tuan@optimus.mitre.org 
+.\"
+.\"
+.TH NETSTAT 8 "25 Fév 1999" "net-tools" "Linux Programmer's Manual"
+
+.SH NAME
+netstat \- Affiche les connexions réseau, les tables de routage, les
+statistiques des interfaces, les connexions masquées, les messages netlink,
+et les membres multicast.
+
+.SH SYNOPSIS
+
+.B netstat 
+.RB [ \-venaoc ]
+.RB [ \-\-tcp | \-t ]
+.RB [ \-\-udp | \-u ]
+.RB [ \-\-raw | \-w ]
+.RB [ \-\-groups | \-g ]
+.RB [ \-\-unix | \-x ] 
+.RB [ \-\-inet | \-\-ip ]
+.RB [ \-\-ax25 ]
+.RB [ \-\-ipx ] 
+.RB [ \-\-netrom ]
+
+.PP
+
+.B netstat 
+.RB [ \-veenc ]
+.RB [ \-\-inet ] 
+.RB [ \-\-ipx ]
+.RB [ \-\-netrom ] 
+.RB [ \-\-ddp ]
+.RB [ \-\-ax25 ]
+.RB { \-\-route | \-r }
+
+.PP
+
+.B netstat
+.RB [ \-veenpac ]
+.RB { \-\-interfaces | \-i }
+.RI [ iface ]
+
+.PP
+
+.B netstat
+.RB [ \-enc ]
+.RB { \-\-masquerade | \-M }
+
+.PP
+
+.B netstat 
+.RB [ \-cn ]
+.RB { \-\-netlink | \-N }
+
+.PP
+
+.B netstat 
+.RB { \-V | \-\-version }
+.RB { \-h | \-\-help }
+
+.PP
+.SH DESCRIPTION
+.B Netstat
+affiche les informations du sous-système réseau de Linux
+
+.SS "(no option)"
+Vous pouvez voir l'état des connexions réseau en listant les sockets
+ouvertes. C'est l'option par défaut : si vous ne spécifiez aucune famille
+d'adresses, les sockets actives de toutes les familles d'adresses seront
+affichées.
+Avec le paramètre
+.B -e
+vous obtenez quelques informations supplémentaires (userid). Avec le paramètre
+.B -v
+vous pouvez demander à netstat de signaler des familles d'adresses connues
+non supportées par le noyau. Le paramètre
+.B -o
+affiche des informations supplémentaires sur les timers réseau. En donnant
+le paramètre
+.B -p
+vous verrez le PID et le nom du processus à qui appartient la socket. Le paramètre
+.B -a
+affiche toutes les sockets, y compris les sockets d'écoute des serveurs. La famille
+d'adresses
+.B inet
+affiche les sockets raw, udp et tcp.
+
+.SS "\-r, \-\-route"
+Avec le paramètre
+.BR \-r ", " \-\-route
+vous pouvez visualiser les tables de routage dans le même format qu'avec la
+commande
+.B "route -e" 
+.
+.B "netstat -er" 
+utilisera le format de la commande
+.BR route .
+Veuillez consulter
+.BR route (8)
+pour plus de détails.
+
+.SS "\-i, \-\-interface \fIiface\fI"
+Si vous utilisez l'option
+.BR -i ", " --interfaces
+, une table de toutes (ou de l'interface
+.IR iface 
+spécifiée) les interfaces réseau sera affichée. Le format de sortie est le
+même que celui de la commande
+.B "ifconfig -e"
+, et est décrit dans
+.BR ifconfig (8).
+.B "netstat -ei"
+affiche une table ou une seule entrée d'interface comme la commande 
+.B ifconfig
+. Avec le paramètre
+.B -a
+, vous pouvez inclure les interfaces qui ne sont pas configurées (c.a.d qui
+n'ont pas l'indicateur
+.BR U = UP
+armé).
+
+.SS "\-M, \-\-masquerade"
+
+Permet de voir les sessions ayant de l'IP-masquerade. Avec le paramètre
+.B -e 
+vous pouvez inclure quelques informations concernant les numéros de
+séquence et les deltas causés par des réécritures de données sur des
+sessions FTP (commande PORT). Le support de l'IP-Masquerade est utilisé
+pour cacher au monde extérieur des hôtes appartenant à un réseau (et ayant
+des adresses) non officiel, tel que décrit dans
+.BR ipfw (4), ipfwadm "(8) et " ipfw (8).
+
+.SS "\-N, \-\-netlink"
+
+Les noyaux récents supportent une communication avec l'utilisateur appelée
+netlink. Vous pouvez obtenir des messages relatifs à la création, la
+suppression d'interfaces ou de routes à partir de 
+.I /dev/route
+(36,0).
+
+.PP
+.SH OPTIONS
+.SS "\-v, \-\-verbose"
+active le mode verbeux. Affiche quelques informations utiles concernant les
+familles d'adresses non configurées.
+
+.SS "\-n, \-\-numeric"
+affiche les adresses en format numérique au lieu d'essayer de déterminer le
+nom symbolique d'hôte, de port ou d'utilisateur.
+
+.SS "\-p, \-\-programs"
+affiche le nom et le PID des processus propriétaires de chaque socket
+décrite. Vous devez être le propriétaire d'un processus pour visualiser les
+sockets qui lui appartiennent ou être l'utilisateur
+.B root
+pour disposer de toutes les informations.
+
+.SS "\-A, \-\-af \fIfamille\fI"
+utilise une méthode différente pour affecter les familles d'adresses.
+.I famille 
+est une liste de familles d'adresses séparées par des (',') telles que
+.BR inet , 
+.BR unix , 
+.BR ipx , 
+.BR ax25 , 
+.B netrom 
+et
+.BR ddp .
+L'utilisation des options longues suivantes a le même effet
+.BR \-\-inet ,
+.BR \-\-unix ,
+.BR \-\-ipx ,
+.BR \-\-ax25 ,
+.B \-\-netrom
+et
+.BR \-\-ddp.
+
+.SS "\-c, \-\-continous"
+Demandera à 
+.B netstat
+d'afficher la table sélectionnée chaque seconde jusqu'à ce que vous
+l'interrompiez.
+
+.PP
+.SH RESULTATS
+
+.PP
+.SS Connexions Internet actives \fR(TCP, UDP, RAW)\fR
+
+.SS "Proto" 
+Le protocole (TCP, UDP, RAW) utilisé par la socket. 
+
+.SS "Recv-Q"
+Le nombre d'octets non encore lus par le programme utilisateur connecté
+à cette socket.
+
+.SS "Send-Q"
+Le nombre d'octets non encore acquittés par l'hôte distant.
+
+.SS "Local Address (Adresse locale)" 
+L'adresse locale (nom d'hôte local) et numéro de port de la
+socket. Sauf si l'option
+.B -n
+est donnée, l'adresse de la prise est traduite en nom d'hôte,
+et le numéro de port est traduit en nom de service correspondant.
+
+.SS "Foreign Address (Adresse distante)"
+L'adresse distante (nom d'hôte distant) et le numéro de port de
+la prise. Comme pour l'adresse locale et le numéro de port, l'option
+.B -n
+invalide la traduction du nom d'hôte et de service.
+
+.SS "State (Etat)"
+L'état de la socket. Puisqu'il n'y a pas d'état dans le mode RAW
+et généralement pas d'état utilisé en UDP, cette colonne
+peut se trouver vierge. Normalement, on trouvera une des valeur suivante:
+
+.TP
+.I
+ESTABLISHED
+La socket a une connexion établie.
+.TP
+.I
+SYN_SENT
+La socket attend activement d'établir une connexion.
+.TP
+.I
+SYN_RECV
+Une requête de connexion a été reçue du réseau.
+.TP
+.I
+FIN_WAIT1
+La socket est fermée, et la connexion est en cours de terminaison.
+.TP
+.I
+FIN_WAIT2
+La connexion est fermée, et la socket attend une terminaison du distant.
+.TP
+.I
+TIME_WAIT
+La socket attend le traitement de tous les paquets encore sur le réseau
+avant d'entreprendre la fermeture.
+.TP
+.I
+CLOSED
+La socket n'est pas utilisée.
+.TP
+.I
+CLOSE_WAIT
+Le distant a arrêté, attendant la fermeture de la socket.
+.TP
+.I
+LAST_ACK
+Le distant termine, et la socket est fermée. Attente d'acquittement.
+.TP
+.I
+LISTEN
+La socket est à l'écoute de connexions entrantes. Ces sockets ne sont
+affichées que si le paramètre
+.BR -a , --listening
+est fourni.
+.TP
+.I
+CLOSING
+Les deux prises sont arrêtées mais toutes les données locales n'ont
+pas encore été envoyées.
+.TP
+.I
+UNKNOWN
+L'état de la prise est inconnu.
+
+.SS "User (Utilisateur)"
+Le nom d'utilisateur ou l'UID du propriétaire de la socket.
+
+.SS "PID/Program name (PID/Nom de Programme)"
+Le PID et le nom du programme (séparés par un slash) propriétaire de la
+socket. Le paramètre
+.B -p
+active l'affichage de cette colonne. Vous devez avoir les droits de
+.B root
+puisque vous devez avoir les droits d'accès aux processus pour visualiser
+les sockets qui lui correspondent. Ces informations ne sont pas disponibles
+avec les sockets IPX.
+
+.SS "Timer"
+(Ceci doit être rédigé)
+
+
+.PP
+.SS Sockets actives du domaine UNIX
+
+
+.SS "Proto" 
+Le protocole (habituellement UNIX) utilisé par la socket.
+
+.SS "RefCnt"
+Le nombre de références (i.e. processus attachés via cette socket).
+
+.SS "Flags (indicateurs)"
+Les indicateurs affichée sont SO_ACCEPTON (affiché  
+.BR ACC ),
+SO_WAITDATA 
+.RB ( W )
+ou SO_NOSPACE 
+.RB ( N ). 
+SO_ACCECPTON est utilisé pour les sockets
+non-connectées si les processus correspondant sont en attente de
+demande de connexion. Les autres indicateurs sont d'un intérêt limité.
+
+.SS "Type"
+Il y a différents types d'accès aux sockets :
+.TP
+.I
+SOCK_DGRAM
+La prise est utilisée en mode Datagram (sans connexion).
+.TP
+.I
+SOCK_STREAM
+C'est une socket `stream' (connexion).
+.TP
+.I
+SOCK_RAW
+La prise est utilisée en mode `raw'.
+.TP
+.I
+SOCK_RDM
+Celle-ci est utilisée pour les messages délivrée de manière fiable.
+.TP
+.I
+SOCK_SEQPACKET
+C'est une socket en mode paquets séquentiels.
+.TP
+.I
+SOCK_PACKET
+Prise d'accès à l'interface RAW.
+.TP
+.I
+UNKNOWN
+Qui sait ce que l'avenir nous réserve - Juste à remplir ici :-)
+
+.PP
+.SS "State (Etat)"
+Ce champ contient un des mots clés suivants :
+.TP
+.I
+FREE
+La socket n'est pas allouée
+.TP
+.I
+LISTENING
+La socket est à l'écoute de demandes de connexions. Ces sockets ne sont
+affichées que si le paramètre
+.BR -a , --listening
+est fourni.
+.TP
+.I
+CONNECTING
+La prise est en cours d'établissement de connexion.
+.TP
+.I
+CONNECTED
+La socket est connectée.
+.TP
+.I
+DISCONNECTING
+La socket est en cours de déconnexion.
+.TP
+.I
+(empty)
+La socket n'est connectée à aucune autre.
+.TP
+.I
+UNKNOWN
+Cet état ne devrait pas apparaître.
+
+.SS "PID/Program name (PID/Nom de programme"
+Le PID et le nom du programme propriétaire de la socket. Plus
+d'informations sont disponibles dans la section
+.B "Connexions Internet actives"
+ci-dessus.
+
+.SS "Path (chemin)"
+Affiche le chemin correspondant à l'attachement des processus à la socket.
+
+.PP
+.SS Sockets IPX actives
+
+(à faire par quelqu'un qui connaît)
+
+.PP
+.SS Sockets NET/ROM actives
+
+(à faire par quelqu'un qui connaît)
+
+.PP
+.SS Sockets AX.25 actives
+
+(à faire par quelqu'un qui connaît)
+
+.PP
+.SH NOTES
+Depuis la version 2.2 du noyau, netstat -i n'affiche plus les statistiques
+des interfaces alias. Pour obtenir les compteurs par interface alias, vous
+devez définir des règles spécifiques à l'aide de la commande
+.BR ipchains(8) 
+.  
+
+.SH FICHIERS
+.ta
+.I /etc/services
+-- Le fichier de correspondance des services
+
+.I /proc/net/dev
+-- informations périphériques
+
+.I /proc/net/raw
+-- informations sockets RAW
+
+.I /proc/net/tcp
+-- informations sockets TCP
+
+.I /proc/net/udp
+-- informations sockets UDP
+
+.I /proc/net/igmp
+-- informations multicast IGMP
+
+.I /proc/net/unix
+-- informations sockets domaine UNIX
+
+.I /proc/net/ipx
+-- informations sockets IPX
+
+.I /proc/net/ax25
+-- informations sockets AX25
+
+.I /proc/net/appeltalk
+-- informations sockets DDP (appeltalk)
+
+.I /proc/net/nr
+-- informations sockets NET/ROM
+
+.I /proc/net/route
+-- informations routage IP du noyau
+
+.I /proc/net/ax25_route
+-- informations routage AX25 du noyau
+
+.I /proc/net/ipx_route
+-- informations routage IPX du noyau
+
+.I /proc/net/nr_nodes
+-- informations routage NET/ROM du noyau
+
+.I /proc/net/nr_neigh
+-- Voisinage NET/ROM noyau
+
+.I /proc/net/ip_masquerade
+-- Connexion avec masquerade noyau
+
+.fi
+
+.PP
+.SH VOIR AUSSI
+.BR route (8), 
+.BR ifconfig (8), 
+.BR ipfw (4), 
+.BR ipfw (8), 
+.BR ipfwadm (8)
+.BR ipchains (8)
+
+.PP
+.SH BUGS
+Des informations étranges peuvent apparaitre occasionnellement
+si une socket change d'état au moment ou elle est visualisée.
+Ceci est peut probable.
+.br
+Le paramètre
+.B netstat -i
+est décrit tel qu'il fonctionnera lorsque le code de la version BETA du
+paquetage net-tools aura été nettoyé.
+
+.PP
+.SH AUTEURS
+L'interface utilisateur de netstat a été développée par
+Fred Baumgarten <dc6iq@insu1.etec.uni-karlsruhe.de>. Les pages du
+manuel essentiellement écrites par Matt Welsh
+<mdw@tc.cornell.edu>. Mis à jour par Alan Cox <Alan.Cox@linux.org>.
+.br
+La page de manuel et la commande incluse dans le paquetage net-tools
+a été totallement réécrite par Bernd Eckenfels 
+<ecki@linux.de>.
+.SH TRADUCTION
+Jean Michel VANSTEENE (vanstee@worldnet.fr)

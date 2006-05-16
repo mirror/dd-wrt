@@ -1,0 +1,25 @@
+--- linux-2.4.20-pre10/net/ipv4/netfilter/ip_conntrack_proto_tcp.c.meep	2002-10-24 17:05:49.000000000 +0200
++++ linux-2.4.20-pre10/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	2002-10-24 17:11:19.000000000 +0200
+@@ -186,13 +186,13 @@
+ 	    && tcph->syn && tcph->ack)
+ 		conntrack->proto.tcp.handshake_ack
+ 			= htonl(ntohl(tcph->seq) + 1);
+-	WRITE_UNLOCK(&tcp_lock);
+ 
+ 	/* If only reply is a RST, we can consider ourselves not to
+ 	   have an established connection: this is a fairly common
+ 	   problem case, so we can delete the conntrack
+ 	   immediately.  --RR */
+ 	if (!(conntrack->status & IPS_SEEN_REPLY) && tcph->rst) {
++		WRITE_UNLOCK(&tcp_lock);
+ 		if (del_timer(&conntrack->timeout))
+ 			conntrack->timeout.function((unsigned long)conntrack);
+ 	} else {
+@@ -203,6 +203,7 @@
+ 		    && tcph->ack_seq == conntrack->proto.tcp.handshake_ack)
+ 			set_bit(IPS_ASSURED_BIT, &conntrack->status);
+ 
++		WRITE_UNLOCK(&tcp_lock);
+ 		ip_ct_refresh(conntrack, tcp_timeouts[newconntrack]);
+ 	}
+ 

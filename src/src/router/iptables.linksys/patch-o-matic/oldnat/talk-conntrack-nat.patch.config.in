@@ -1,0 +1,2 @@
+  dep_tristate '  IRC protocol support' CONFIG_IP_NF_IRC $CONFIG_IP_NF_CONNTRACK
+  dep_tristate '  talk protocol support' CONFIG_IP_NF_TALK $CONFIG_IP_NF_CONNTRACK

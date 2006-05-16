@@ -1,0 +1,86 @@
+#!/bin/sh
+#
+# chilli      This shell script takes care of starting and stopping
+#             chilli.
+#
+# chkconfig: - 65 35
+# description: ChilliSpot
+
+# Source function library.
+. /etc/rc.d/init.d/functions
+
+# Source networking configuration.
+. /etc/sysconfig/network
+
+if [ -f /etc/sysconfig/chilli ]; then
+        . /etc/sysconfig/chilli
+fi
+
+# Check that networking is up.
+[ ${NETWORKING} = "no" ] && exit 0
+
+[ -f /usr/sbin/chilli ] || exit 0
+[ -f /etc/chilli.conf ] || exit 0
+
+RETVAL=0
+prog="chilli"
+
+start() {
+	# Start daemons.
+	echo -n $"Starting $prog: "
+
+	# Load tun module
+	/sbin/modprobe tun >/dev/null 2>&1
+
+	# Enable routing of packets: WARNING!!!
+	# Users should enable this explicitly
+	# echo 1 > /proc/sys/net/ipv4/ip_forward
+
+	daemon /usr/sbin/chilli 
+	RETVAL=$?
+	echo
+	[ $RETVAL -eq 0 ] && touch /var/lock/subsys/chilli
+	return $RETVAL
+}
+
+stop() {
+	# Stop daemons.
+	echo -n $"Shutting down $prog: "
+	killproc chilli
+	RETVAL=$?
+	echo
+	[ $RETVAL = 0 ] && rm -f /var/lock/subsys/chilli /var/run/chilli.pid
+	return $RETVAL
+}
+
+# See how we were called.
+case "$1" in
+  start)
+	start
+	;;
+  stop)
+	stop
+	;;
+  restart|reload)
+	stop
+	start
+	RETVAL=$?
+	;;
+  condrestart)
+	if [ -f /var/lock/subsys/chilli ] ; then
+	    stop
+	    start
+	    RETVAL=$?
+	fi
+	;;
+  status)
+	status chilli
+	RETVAL=$?
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|restart|condrestart|status}"
+	exit 1
+esac
+
+exit $RETVAL
+

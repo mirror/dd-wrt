@@ -1,0 +1,1088 @@
+-- **** Copyright (c) AvantCom Corporation 2003 - 2004 ***
+-- **** All rights reserved ***
+--  __________________________________________________________________
+--  |                                                                |
+--  |      Copyright (c) 2003 - 2004  -  AvantCom Corporation        |
+--  |                                                                |
+--  |    This material is the exclusive confidential property of     |
+--  |    AvantCom Corporation. All rights, including copyrights      |
+--  |    and patent rights, are reserved. No copies of any portion   |
+--  |    are to be made by any means without the express written     |
+--  |    permission of AvantCom Corporation.                         |
+--  |________________________________________________________________|
+-- 
+-- **********************************************************************
+-- *  File Name:           AVANTCOM-EXP-80211-MIB.txt
+-- *                                                                           
+-- *  Comments:                                                                
+-- *                                                                           
+-- *  Author:              Larry Simmons                                       
+-- *                       lsimmons@avantcom.com                               
+-- *                       www.avantcom.com                                    
+-- *                                                                           
+-- *  Creation Date:       09/24/03                                            
+-- *                                                                           
+-- *   Ver    Date   Inits Modification                                        
+-- *  ----- -------- ----- ------------                                        
+-- *  0.0.1 09/24/03  LRS  created                                             
+-- **********************************************************************
+-- **********************************************************************
+-- **********************************************************************
+-- * AvantCom 802.11 Management Information Base
+-- **********************************************************************
+AVANTCOM-EXP-80211-MIB DEFINITIONS ::= BEGIN
+
+-- IMPORTS
+--     experimental
+
+   IMPORTS
+        MODULE-IDENTITY, OBJECT-TYPE, 
+        NOTIFICATION-TYPE,Integer32, Counter32  FROM SNMPv2-SMI
+        DisplayString , MacAddress, RowStatus,
+        TruthValue                              FROM SNMPv2-TC
+        MODULE-COMPLIANCE, OBJECT-GROUP, 
+        NOTIFICATION-GROUP                      FROM SNMPv2-CONF 
+        ifIndex                                 FROM RFC1213-MIB;
+
+-- **********************************************************************
+-- *  MODULE IDENTITY
+-- **********************************************************************
+    avc802dot11 MODULE-IDENTITY
+    LAST-UPDATED "200309230000Z"
+    ORGANIZATION ""
+    CONTACT-INFO 
+           "Editor: Larry Simmons
+            Postal: AvantCom Corporation
+                    PO Box 1112
+                    Sandpoint, ID 83860 USA
+               Tel: +1 208 265 7878
+            E-mail: lsimmons@avantcom.com
+                    www.avantcom.com"
+    DESCRIPTION
+        "The MIB module for definition of AvantCom 802.11 entities.
+        iso(1).org(3).dod(6).internet(1).experimental(3).avantcom(14614)"
+--  ::= { 1 3 6 1 3 14614 }
+    ::= { iso org(3) dod(6) internet(1) experimental(3) avantcom(14614) }
+
+-- **********************************************************************
+-- *  Major sections
+-- **********************************************************************
+-- groups in AVANTCOM-EXP-80211
+
+avSystem            OBJECT IDENTIFIER ::= { avc802dot11 1 }
+
+avPrism             OBJECT IDENTIFIER ::= { avc802dot11 2 }
+prClient            OBJECT IDENTIFIER ::= { avPrism     1 }
+
+avAtheros           OBJECT IDENTIFIER ::= { avc802dot11 3 }
+athMac              OBJECT IDENTIFIER ::= { avAtheros   1 }
+athPhy              OBJECT IDENTIFIER ::= { avAtheros   2 }
+
+-- **********************************************************************
+-- **********************************************************************
+-- *   AvantCom 802.11 MIB System Group
+-- **********************************************************************
+-- **********************************************************************
+sysMIBVersion OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS not-accessible
+    STATUS current
+    DESCRIPTION 
+            "Version number of this MIB file."
+    DEFVAL { "Version 0.0.2 - 09/25/2003" }
+    ::= {  avSystem 1 }
+
+sysExpectedMIBVersion OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION 
+            "MIB version number expected by the AvantCom 802.11 
+             agent software. Be certain the version number reported
+             by this object matches the version number indicated
+             in the avSystem.sysMIBVersion object."
+    ::= {  avSystem 2 }
+
+sysAgentVersion OBJECT-TYPE
+    SYNTAX DisplayString
+    MAX-ACCESS read-only
+    STATUS current
+    DESCRIPTION 
+            "Version number of the AvantCom 802.11 agent
+             software."
+    ::= {  avSystem 3 }
+
+-- **********************************************************************
+-- *   
+-- *   Prism Information using HostAP
+-- *   
+-- **********************************************************************
+-- **********************************************************************
+-- *   
+-- *   Associated Client Information
+-- *   
+-- **********************************************************************
+-- **********************************************************************
+-- *   Associated Client Detailed Information
+-- **********************************************************************
+prAssociatedClientsTable OBJECT-TYPE
+    SYNTAX    SEQUENCE OF PrAcTableEntry
+    ACCESS    not-accessible
+    STATUS    mandatory
+    DESCRIPTION
+        "Associated clients detailed information table."
+    ::= { prClient 1 }
+
+prAcTableEntry OBJECT-TYPE
+    SYNTAX    PrAcTableEntry
+    ACCESS    not-accessible
+    STATUS    mandatory
+    DESCRIPTION 
+        "Associated clients detailed information table
+         entry."
+    INDEX    { ifIndex, prAcMacAddress }
+    ::= { prAssociatedClientsTable 1 }
+
+PrAcTableEntry ::=
+    SEQUENCE {
+        ifIndex             INTEGER,
+        prAcMacAddress      MacAddress,
+        prAcStationType     INTEGER,
+        prAcListenInterval  INTEGER,
+        prAcSupports1Mbps   TruthValue,
+        prAcSupports2Mbps   TruthValue,
+        prAcSupports5Mbps   TruthValue,
+        prAcSupports11Mbps  TruthValue,
+        prAcJiffies         Integer32,
+        prAcLastAuth        Integer32,
+        prAcLastAssoc       Integer32,
+        prAcLastRx          Integer32,
+        prAcLastTx          Integer32,
+        prAcRxPackets       Integer32,
+        prAcTxPackets       Integer32,
+        prAcRxBytes         Integer32,
+        prAcTxBytes         Integer32,
+        prAcBfrCnt          Integer32,
+        prAcLastRxSilence   INTEGER,
+        prAcLastRxSignal    INTEGER,
+        prAcLastRxRate      INTEGER,
+        prAcLastRxFlow      INTEGER,
+        prAcTxRate          INTEGER,
+        prAcTx1Mbps         Integer32,
+        prAcTx2Mbps         Integer32,
+        prAcTx5Mbps         Integer32,
+        prAcTx11Mbps        Integer32,
+        prAcRx1Mbps         Integer32,
+        prAcRx2Mbps         Integer32,
+        prAcRx5Mbps         Integer32,
+        prAcRx11Mbps        Integer32
+    }
+
+prAcMacAddress OBJECT-TYPE
+    SYNTAX  MacAddress
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+        "MAC address of the associated client."
+    ::= { prAcTableEntry 1 }
+    
+prAcStationType OBJECT-TYPE
+    SYNTAX INTEGER {sta(1), ap(2)}
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Station type, AP or STA. If the wireless adapter
+             is operating as a client rather than an AP, this
+             value will indicate an association with an AP
+             station type."
+    ::= { prAcTableEntry  2 }
+    
+prAcListenInterval OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Frequency, in milliseconds, the station
+             listens to Beacon frames to monitor the
+             Traffic Indication Map (TIM)."
+    ::= { prAcTableEntry  3 }
+
+prAcSupports1Mbps OBJECT-TYPE
+    SYNTAX  TruthValue
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Indicates whether or not the station supports
+             a transfer rate of 1 Mbps."
+    ::= { prAcTableEntry  4 }
+
+prAcSupports2Mbps OBJECT-TYPE
+    SYNTAX  TruthValue
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Indicates whether or not the station supports
+             a transfer rate of 2 Mbps."
+    ::= { prAcTableEntry  5 }
+
+prAcSupports5Mbps OBJECT-TYPE
+    SYNTAX  TruthValue
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Indicates whether or not the station supports
+             a transfer rate of 5.5 Mbps."
+    ::= { prAcTableEntry  6 }
+
+prAcSupports11Mbps OBJECT-TYPE
+    SYNTAX  TruthValue
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Indicates whether or not the station supports
+             a transfer rate of 11 Mbps."
+    ::= { prAcTableEntry  7 }
+
+prAcJiffies OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Current tick value."
+    ::= { prAcTableEntry  8 }
+
+prAcLastAuth OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Tick value at last authentication."
+    ::= { prAcTableEntry  9 }
+
+prAcLastAssoc OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Tick value at last association."
+    ::= { prAcTableEntry  10 }
+
+prAcLastRx OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Tick value at last receive."
+    ::= { prAcTableEntry  11 }
+
+prAcLastTx OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Tick value at last transmit."
+    ::= { prAcTableEntry  12 }
+
+prAcRxPackets OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets received from station."
+    ::= { prAcTableEntry  13 }
+
+prAcTxPackets OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets transmitted to station."
+    ::= { prAcTableEntry  14 }
+
+prAcRxBytes OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of bytes received from station."
+    ::= { prAcTableEntry  15 }
+
+prAcTxBytes OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of bytes transmitted to station."
+    ::= { prAcTableEntry  16 }
+
+prAcBfrCnt OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { prAcTableEntry  17 }
+
+prAcLastRxSilence OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { prAcTableEntry  18 }
+
+prAcLastRxSignal OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { prAcTableEntry  19 }
+
+prAcLastRxRate OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { prAcTableEntry  20 }
+
+prAcLastRxFlow OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { prAcTableEntry  21 }
+
+prAcTxRate OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { prAcTableEntry  22 }
+
+prAcTx1Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets transmitted to station 
+             at 1 Mbps."
+    ::= { prAcTableEntry  23 }
+
+prAcTx2Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets transmitted to station 
+             at 2 Mbps."
+    ::= { prAcTableEntry  24 }
+
+prAcTx5Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets transmitted to station 
+             at 5.5 Mbps."
+    ::= { prAcTableEntry  25 }
+
+prAcTx11Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets transmitted to station 
+             at 11 Mbps."
+    ::= { prAcTableEntry  26 }
+
+prAcRx1Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets recevied from station 
+             at 1 Mbps."
+    ::= { prAcTableEntry  27 }
+
+prAcRx2Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets recevied from station 
+             at 2 Mbps."
+    ::= { prAcTableEntry  28 }
+
+prAcRx5Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets recevied from station 
+             at 5.5 Mbps."
+    ::= { prAcTableEntry  29 }
+
+prAcRx11Mbps OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of packets recevied from station 
+             at 11 Mbps."
+    ::= { prAcTableEntry  30 }
+
+-- **********************************************************************
+-- *   
+-- *   Atheros Information using MadWiFi Driver
+-- *   
+-- **********************************************************************
+-- **********************************************************************
+-- *   
+-- *   MAC Information
+-- *   
+-- **********************************************************************
+-- **********************************************************************
+-- *   MAC Counters
+-- **********************************************************************
+athMacCountersTable OBJECT-TYPE
+    SYNTAX    SEQUENCE OF AmcTableEntry
+    ACCESS    not-accessible
+    STATUS    mandatory
+    DESCRIPTION
+        "MAC counters table."
+    ::= { athMac 1 }
+
+amcTableEntry OBJECT-TYPE
+    SYNTAX    AmcTableEntry
+    ACCESS    not-accessible
+    STATUS    mandatory
+    DESCRIPTION 
+        "MAC counters detailed information table
+         entry."
+    INDEX    { ifIndex }
+    ::= { athMacCountersTable 1 }
+
+AmcTableEntry ::=
+    SEQUENCE {
+        ifIndex               INTEGER,
+        amcWatchDog           Integer32,
+        amcFatalHwInterrupt   Integer32,
+        amcMissedBeacons      Integer32,
+        amcRxOverRun          Integer32,
+        amcRxEol              Integer32,
+        amcTxUnderRun         Integer32,
+        amcTxMgmtFrames       Integer32,
+        amcTxDiscards         Integer32,
+        amcTxInvalid          Integer32,
+        amcTxQueueStopped     Integer32,
+        amcTxEncapFailed      Integer32,
+        amcTxNoNode           Integer32,
+        amcTxNoDataBuffer     Integer32,
+        amcTxNoMgmtBuffer     Integer32,
+        amcTxExcessiveRetries Integer32,
+        amcTxFifoUnderRun     Integer32,
+        amcTxFiltered         Integer32,
+        amcTxShortRetries     Integer32,
+        amcTxLongRetries      Integer32,
+        amcTxBadRate          Integer32,
+        amcTxNoAck            Integer32,
+        amcTxRts              Integer32,
+        amcTxCts              Integer32,
+        amcTxShortPreamble    Integer32,
+        amcTxRssi             INTEGER,
+        amcTxRssiDelta        INTEGER,
+        amcRxDescOverRun      Integer32,
+        amcRxFrameTooShort    Integer32,
+        amcRxCrcError         Integer32,
+        amcRxFifoOverRun      Integer32,
+        amcRxCryptFailure     Integer32,
+        amcRxNoSkBuffer       Integer32,
+        amcRxRssi             INTEGER,
+        amcRxRssiDelta        INTEGER,
+        amcNoBeaconBuffer     Integer32,
+        amcCalibrations       Integer32,
+        amcFailedCalibrations Integer32,
+        amcRfGainResets       Integer32,
+        amcRateControlChecks  Integer32,
+        amcRateControlRaise   Integer32,
+        amcRateControlDrop    Integer32
+    }
+
+amcWatchDog OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times the device was reset
+             by watchdog."
+    ::= { amcTableEntry  1 }
+
+amcFatalHwInterrupt OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times there was a fatal
+             hardware interrupt."
+    ::= { amcTableEntry  2 }
+
+amcMissedBeacons OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of missed beacons."
+    ::= { amcTableEntry  3 }
+
+amcRxOverRun OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive overrun interrupts."
+    ::= { amcTableEntry  4 }
+
+amcRxEol OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive EOL interrupts."
+    ::= { amcTableEntry  5 }
+
+amcTxUnderRun OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of transmit underrun interrupts."
+    ::= { amcTableEntry  6 }
+
+amcTxMgmtFrames OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of managment frames transmitted."
+    ::= { amcTableEntry  7 }
+
+amcTxDiscards OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of frames discarded prior to association."
+    ::= { amcTableEntry  8 }
+    
+amcTxInvalid OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of frames discarded because device was gone."
+    ::= { amcTableEntry  9 }
+
+amcTxQueueStopped OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times queuing stopped because the 
+             TX queue was full."
+    ::= { amcTableEntry  10 }
+
+amcTxEncapFailed OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX encapsulation failed."
+    ::= { amcTableEntry  11 }
+    
+amcTxNoNode OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because the node
+             was missing."
+    ::= { amcTableEntry  12 }
+
+amcTxNoDataBuffer OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because there was
+             no data buffer available."
+    ::= { amcTableEntry  13 }
+
+amcTxNoMgmtBuffer OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because there was
+             no management buffer available."
+    ::= { amcTableEntry  14 }
+
+amcTxExcessiveRetries OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because there were
+             excessive retries."
+    ::= { amcTableEntry  15 }
+
+amcTxFifoUnderRun OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because there was
+             a FIFO underrun."
+    ::= { amcTableEntry  16 }
+
+amcTxFiltered OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because the
+             transmission was filtered."
+    ::= { amcTableEntry  17 }
+
+amcTxShortRetries OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of on-chip TX short retries."
+    ::= { amcTableEntry  18 }
+
+amcTxLongRetries OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of on-chip TX long retries."
+    ::= { amcTableEntry  19 }
+
+amcTxBadRate OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because the
+             transit rate was invalid."
+    ::= { amcTableEntry  20 }
+
+amcTxNoAck OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of tranmitted frames with no ACK marked."
+    ::= { amcTableEntry  21 }
+
+amcTxRts OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of tranmitted frames with RTS enabled."
+    ::= { amcTableEntry  22 }
+
+amcTxCts OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of tranmitted frames with CTS enabled."
+    ::= { amcTableEntry  23 }
+
+amcTxShortPreamble OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times TX failed because the
+             preamble was too short."
+    ::= { amcTableEntry  24 }
+
+amcTxRssi OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "RSSI of last tranmitted ACK."
+    ::= { amcTableEntry  25 }
+
+amcTxRssiDelta OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Change in RSSI from prior amcTxRssi."
+    ::= { amcTableEntry  26 }
+
+amcRxDescOverRun OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive descriptor overruns."
+    ::= { amcTableEntry  27 }
+
+amcRxFrameTooShort OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive failures becuase the frame
+             was too short."
+    ::= { amcTableEntry  28 }
+
+amcRxCrcError OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive failures becuase the CRC
+             was bad."
+    ::= { amcTableEntry  29 }
+
+amcRxFifoOverRun OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive failures becuase of a
+             FIFO overrun."
+    ::= { amcTableEntry  30 }
+
+amcRxCryptFailure OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive failures becuase of a
+             decryption failure."
+    ::= { amcTableEntry  31 }
+
+amcRxNoSkBuffer OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of receive failures becuase there
+             was no skbuff available."
+    ::= { amcTableEntry  32 }
+
+amcRxRssi OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "RSSI of last received frame."
+    ::= { amcTableEntry  33 }
+
+amcRxRssiDelta OBJECT-TYPE
+    SYNTAX  INTEGER
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Change in RSSI from prior amcRxRssi."
+    ::= { amcTableEntry  34 }
+
+amcNoBeaconBuffer OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times there was no skbuff available
+             for a beacon."
+    ::= { amcTableEntry  35 }
+
+amcCalibrations OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times a periodic calibration occurred."
+    ::= { amcTableEntry  36 }
+
+amcFailedCalibrations OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times a periodic calibration failed."
+    ::= { amcTableEntry  37 }
+
+amcRfGainResets OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of periodic calibration RF gain resets."
+    ::= { amcTableEntry  38 }
+
+amcRateControlChecks OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of rate control checks."
+    ::= { amcTableEntry  39 }
+
+amcRateControlRaise OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of rate control raised the transmit rate."
+    ::= { amcTableEntry  40 }
+
+amcRateControlDrop OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of rate control dropped the transmit rate."
+    ::= { amcTableEntry  41 }
+
+-- **********************************************************************
+-- *   
+-- *   PHY Information
+-- *   
+-- **********************************************************************
+-- **********************************************************************
+-- *   PHY Counters
+-- **********************************************************************
+athPhyCountersTable OBJECT-TYPE
+    SYNTAX    SEQUENCE OF ApcTableEntry
+    ACCESS    not-accessible
+    STATUS    mandatory
+    DESCRIPTION
+        "PHY counters table."
+    ::= { athPhy 1 }
+
+apcTableEntry OBJECT-TYPE
+    SYNTAX    ApcTableEntry
+    ACCESS    not-accessible
+    STATUS    mandatory
+    DESCRIPTION 
+        "PHY counters detailed information table
+         entry."
+    INDEX    { ifIndex }
+    ::= { athPhyCountersTable 1 }
+
+ApcTableEntry ::=
+    SEQUENCE {
+        ifIndex             INTEGER,
+        apcTotalPhyErrors   Integer32,
+        apcTxUnderRun       Integer32,
+        apcTimingErrors     Integer32,
+        apcParityErrors     Integer32,
+        apcInvalidRate      Integer32,
+        apcInvalidLength    Integer32,
+        apcRadarDetected    Integer32,
+        apcInvalidService   Integer32,
+        apcTxOverrideRx     Integer32,
+
+      	-- The following are specific to the 5212
+
+        apcOfdmTiming         Integer32,
+        apcOfdmSignalParity   Integer32,
+        apcOfdmInvalidRate    Integer32,
+        apcOfdmInvalidLength  Integer32,
+        apcOfdmPowerDrop      Integer32,
+        apcOfdmService        Integer32,
+        apcOfdmRestart        Integer32,
+        apcCckTiming          Integer32,
+        apcCckHeaderCrc       Integer32,
+        apcCckInvalidRate     Integer32,
+        apcCckService         Integer32,
+        apcCckRestart         Integer32
+    }
+
+apcTotalPhyErrors OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Total PHY errors that have occurred."
+    ::= { apcTableEntry  1 }
+
+apcTxUnderRun OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times a transmit underrun occurred."
+    ::= { apcTableEntry  2 }
+
+apcTimingErrors OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of timing errors."
+    ::= { apcTableEntry  3 }
+
+apcParityErrors OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of parity errors."
+    ::= { apcTableEntry  4 }
+
+apcInvalidRate OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of invalid rate errors."
+    ::= { apcTableEntry  5 }
+
+apcInvalidLength OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of invalid length errors."
+    ::= { apcTableEntry  6 }
+
+apcRadarDetected OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times radar was detected."
+    ::= { apcTableEntry  7 }
+
+apcInvalidService OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times an invalid service was requested."
+    ::= { apcTableEntry  8 }
+
+apcTxOverrideRx OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            "Number of times a transmit overide receive occurred."
+    ::= { apcTableEntry  9 }
+
+-- The following are specific to the 5212
+	
+apcOfdmTiming OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  10 }
+
+apcOfdmSignalParity OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  11 }
+
+apcOfdmInvalidRate OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  12 }
+
+apcOfdmInvalidLength OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  13 }
+
+apcOfdmPowerDrop OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  14 }
+
+apcOfdmService OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  15 }
+
+apcOfdmRestart OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  16 }
+
+apcCckTiming OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  17 }
+
+apcCckHeaderCrc OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  18 }
+
+apcCckInvalidRate OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  19 }
+
+apcCckService OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  20 }
+
+apcCckRestart OBJECT-TYPE
+    SYNTAX  Integer32
+    ACCESS  read-only
+    STATUS  current
+    DESCRIPTION
+            ""
+    ::= { apcTableEntry  21 }
+
+-- **********************************************************************
+-- *   End of AvantCom 802.11 MIB
+-- **********************************************************************
+END

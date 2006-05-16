@@ -1,0 +1,9 @@
+BitKeeper
+README.subset
+build
+rpm.log
+TODO
+powerquest
+.exclude-file
+po/stamp-cat-id
+po/cat-id-tbl.c

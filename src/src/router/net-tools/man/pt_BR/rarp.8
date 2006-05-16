@@ -1,0 +1,70 @@
+.TH RARP 8 "10 de fevereiro de 1996" "net-tools" "Manual do Programador Linux"
+.SH NOME
+rarp \- manipula a tabela RARP do sistema
+.SH SINOPSE
+.B "rarp [-v] [-t tipo] -a [máquina]"
+.br
+.B "rarp [-v] -d máquina ..."
+.br
+.B "rarp [-v] [-t tipo] -s máquina endereço_hardware"
+.SH DESCRIÇÃO
+.B Rarp
+manipula as tabelas RARP do kernel de varias formas. As opções principais
+são limpar uma entrada de mapeamento de endereços e manualmente configurar uma.
+Para propósitos de depuração, o programa
+.B rarp
+também permite um dump completo da tabela RARP.
+.SH OPÇÕES
+.TP
+.B \-v
+Informe o usuário o que esta acontecendo, sendo detalhado.
+.TP
+.B "\-t tipo"
+quando configurando ou lendo a tabela RARP, este parâmetro opcional informa ao
+.B rarp
+que classe de entradas devem ser verificadas. O valor default para este parâmetro
+é
+.B ether
+(i.e. código de hardware
+.B 0x01
+para
+.B "IEEE 802.3 10Mbps Ethernet".
+Outros valores podem incluir tecnologias de rede como
+.B AX.25 (ax25)
+e
+.B NET/ROM (netrom).
+.TP
+.B "\-a [máquina]"
+Mostra as entradas  dos máquinas especificadas.  Se o
+Mostra as entradas das máquinas especificadas. Se o parâmetro
+.B máquina
+não for usado 
+.B todas
+as entradas serão mostradas.
+.TP
+.B "\-d máquina"
+Remove a(s) entrada(s) para a máquina especificada. Isto pode ser usado se a
+máquina indicada for desligada, por exemplo.
+.TP
+.B "\-s máquina endereço_hardware"
+Cria um mapeamento de endereços RARP para a máquina
+.B máquina
+com endereço de hardware configurado para
+.B endereço_hardware
+.  O formato do endereço de hardware depende da classe do hardware, mas
+para a maioria das classes você pode assumir que a apresentação usual pode
+ser usada.  Para a classe Ethernet, são 6 bytes em hexadecimal, separados
+por dois pontos (:).
+.SH ATENÇÃO
+Alguns arquivos (principalmente Suns velhas) assumem que a máquina respondendo
+ao query ARP também podem oferecer outros serviços de boot remoto. Portanto
+nunca adiciona gratuitamente entradas rarp a menos que deseje encontrar a fúria
+do administrador da rede.
+.SH ARQUIVOS
+.I /proc/net/rarp,
+.SH AUTORES
+Ross D. Martin, <martin@trcsun3.eas.asu.edu>
+.br
+Fred N. van Kempen, <waltje@uwalt.nl.mugnet.org>
+.SH TRADUÇÃO
+Arnaldo Carvalho de Melo <acme@conectiva.com.br> - 13/04/1998

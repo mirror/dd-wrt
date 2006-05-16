@@ -1,0 +1,17 @@
+Author: Filip Sneppe <filip.sneppe@cronos.be>
+Status: WorksForMe (tm)
+
+This adds CONFIG_IP_NF_QUAKE3: a Quake III Arena support module for
+netfilter connection tracking/NAT. 
+
+Quake III Arena Internet multiplayer works by querying an Internet
+master server on UDP port 27950 for specific Quake III servers. The
+master server responds with the IP addresses and UDP ports of
+registered game servers. Those UDP ports can be randomly chosen
+(although 27960 is often used).
+
+This connection tracking module will listen for UDP replies
+from a master server, and will add the necessary expectations
+for connections from client to game servers.
+
+Note: Requires newnat !

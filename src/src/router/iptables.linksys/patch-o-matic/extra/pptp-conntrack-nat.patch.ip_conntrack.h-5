@@ -1,0 +1,2 @@
+	/* insert conntrack helper private data (master) here */
+	struct ip_ct_pptp_master ct_pptp_info;

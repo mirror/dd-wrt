@@ -1,0 +1,40 @@
+diff -Nru linuxppc-benh-190202-plain/net/ipv4/netfilter/ip_conntrack_proto_tcp.c linuxppc-benh-190202-nopickup/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
+--- linuxppc-benh-190202-plain/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	Thu Nov 29 14:40:32 2001
++++ linuxppc-benh-190202-nopickup/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	Tue Feb 19 23:50:57 2002
+@@ -72,6 +72,28 @@
+ #define sLI TCP_CONNTRACK_LISTEN
+ #define sIV TCP_CONNTRACK_MAX
+ 
++#ifdef CONFIG_IP_NF_CONNTRACK_CONSERVATIVE
++static enum tcp_conntrack tcp_conntracks[2][5][TCP_CONNTRACK_MAX] = {
++	{
++/*	ORIGINAL */
++/* 	  sNO, sES, sSS, sSR, sFW, sTW, sCL, sCW, sLA, sLI 	*/
++/*syn*/	{sSS, sES, sSS, sSR, sSS, sSS, sSS, sSS, sSS, sLI },
++/*fin*/	{sIV, sFW, sSS, sTW, sFW, sTW, sCL, sTW, sLA, sLI },
++/*ack*/	{sIV, sES, sSS, sES, sFW, sTW, sCL, sCW, sLA, sES },
++/*rst*/ {sIV, sCL, sSS, sCL, sCL, sTW, sCL, sCL, sCL, sCL },
++/*none*/{sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV }
++	},
++	{
++/*	REPLY */
++/* 	  sNO, sES, sSS, sSR, sFW, sTW, sCL, sCW, sLA, sLI 	*/
++/*syn*/	{sIV, sES, sSR, sSR, sSR, sSR, sSR, sSR, sSR, sSR },
++/*fin*/	{sIV, sCW, sSS, sTW, sTW, sTW, sCL, sCW, sLA, sLI },
++/*ack*/	{sIV, sES, sSS, sSR, sFW, sTW, sCL, sCW, sCL, sLI },
++/*rst*/ {sIV, sCL, sCL, sCL, sCL, sCL, sCL, sCL, sLA, sLI },
++/*none*/{sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV }
++	}
++};
++#else
+ static enum tcp_conntrack tcp_conntracks[2][5][TCP_CONNTRACK_MAX] = {
+ 	{
+ /*	ORIGINAL */
+@@ -92,6 +114,7 @@
+ /*none*/{sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV, sIV }
+ 	}
+ };
++#endif
+ 
+ static int tcp_pkt_to_tuple(const void *datah, size_t datalen,
+ 			    struct ip_conntrack_tuple *tuple)

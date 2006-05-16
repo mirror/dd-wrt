@@ -1,0 +1,36 @@
+wrt-radauth - Radius MAC authenticator for Broadcom based AccessPoints
+
+This software watches the stations associating to a broadcom based
+AccessPoint (e.g. Linksys WRT54G) and sends an authentication request
+to the radius-server specified in nvram.
+The following nvram-variables are used:
+
+wl0_radius_ipaddr       IP-address of the radius-server
+wl0_radius_port         UDP-port the radius-server listens on
+wl0_radius_key          The shared radius-secret
+
+When a station associates to the access-point, a radius access-request
+with the following attributes is sent:
+User-Name	MAC-address (see below)
+User-Password	The shared secret
+NAS-Port	1
+NAS-Port-Type	0x13 (Wireless 802.11)
+
+The MAC-address is sent either in the format aabbcc-ddeeff or
+AA-BB-CC-DD-EE-FF, this can be changed with the -n commandline
+option.
+
+The wrt-radauth program is the wireless radius authenticator, the
+radius-client program is a small test-program to check if
+radius authentication works for a specified user/pass/server/secret
+combination.
+
+To compile the software, you need to modify the Makefile and set
+the WRT_BUILDROOT variable to your buildroot.
+
+This software is (C) 2004 Michael Gernoth <michael@gernoth.net>
+It contains MD5-routines (C) by L. Peter Deutsch <ghost@aladdin.com>
+It contains headers (C) by Broadcom.
+
+Software home: http://www.zerfleddert.de/wrt54g/wrt-radauth/
+tar.gz: http://www.zerfleddert.de/wrt54g/wrt-radauth.tar.gz

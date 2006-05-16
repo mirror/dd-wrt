@@ -1,0 +1,133 @@
+[010824]
+ * ip address add sets scope of loopback addreses to "host".
+   Advised by David Miller.
+ * ZIP! <zip@killerlabs.com> and David Ford <david@blue-labs.org>
+   Some strcpy's changed to strncpy's.
+ * David Ford <david@blue-labs.org>, test for compilation with gcc3.
+ * David Ford <david@blue-labs.org>. Damn, I broke rtnl_talk in previous
+   snapshot.
+
+[010803]
+ * If "dev" is not specified in multipath route, ifindex remained
+   uninitialized. Grr. Thanks to Kunihiro Ishiguro <kunihiro@zebra.org>.
+ * Rafal Maszkowski <rzm@icm.edu.pl>, batch mode tc. The most old patch.
+ * Updates list of data protocol ids.
+   Lots of reporters. I bring my apologies.
+ * Jan Rekorajski <baggins@sith.mimuw.edu.pl>. Updated list of datalink types. 
+ * Christina Chen <chenchristina@cwc.nus.edu.sg>. Bug in parsing IPv6 address match in u32. 
+ * Pekka Savola <pekkas@netcore.fi>. ip -6 route flush dev lo stuck
+   on deleting root of the table.
+ * Werner. dsmark fixes. 
+ * Alexander Demenshin <aldem-reply@aldem.net>. Old miracleous bug
+   in ip monitor. It was puzzle, people permanently blame that
+   it print some crap. 
+ * Rui Prior <rprior@inescporto.pt>. f_route failed to resolve fromif.
+   Werner also noticed this and sent patch. Bad place... [RETHINK]
+ * Kim Woelders <kim@woelders.dk>. 
+   - changes in Makefile for cross-compile
+   - understand "all" as alias for "any"
+   - bug in iprule.c
+!  [ NB. Also he sent patch for kernel. Do not forget! ]
+ * Werner. Fix to tc core files: wrong exits etc.
+ * Bernd Jendrissek <berndj@prism.co.za>. Some sanitizations of tc.c
+!* Marian Jancar <marian.jancar@infonet.cz>. He say q_tbf prints wrong latency!
+!  Seems, he is wrong.
+ * Werner (and Nikolai Vladychevski <niko@isl.net.mx>) check ->print_copts
+   to avoid segfault.
+
+[001007]
+  * Compiles under rh-7.0
+
+[000928]
+  * Sorry. I have lost all the CVS with changes made since 000305.
+    I someone sent me a patch after this date, please, resubmit.
+    Restored from the last backup and mailboxes:
+
+  * Edit ip-cref.tex by raf <raf2@zip.com.au>.
+  * RTAX_REORDERING support.
+  * IFLA_MASTER support.
+  * Bug in rtnl_talk(), libnetlink.c. Reported by David P. Olshfski
+	<olshef@us.ibm.com>
+
+[000305]
+  * Bugs in RESOLVE_HOSTNAMES. Bratislav Ilich <bilik@@zepter.ru>
+  * ARPHRD_IEEE802_TR
+
+[000225]
+  * ECN in q_red.c.
+
+[000221]
+  * diffserv update from Jamal Hadi Slaim
+  * Some bits of IPX from Steve Whitehouse.
+  * ATM qdisc from Werner Almesberger
+  * Support for new attributes on routes in linux-2.3.
+
+[991023]
+  No news, only several bugs are fixed.
+  * Since ss990630 "ip rule list" printed wrong prefix length.
+      Vladimir V. Ivanov <vlad@alis.tusur.ru>
+  * "ip rule" parsed >INT_MAX values of metric incorrectly.
+      Matthew G. Marsh <mgm@paktronix.com>
+  * Some improvements in doc/Makefile advised by
+      Andi Kleen and Werner Almesberger.
+
+[990824]
+  * new attributes in "ip route": rtt, rttvar, cwnd, ssthresh and advmss.
+  * some updates in documentaion to reflect new status.
+
+[990630]
+  * DiffServ support.
+	Werner Almesberger <almesber@lrc.di.epfl.ch>
+	Jamal Hadi Salim <hadi@nortelnetworks.com> 
+  * DECnet support.
+	Steve Whitehouse <SteveW@ACM.org>
+  * Some minor tweaks in docs and code.
+
+[990530]
+  * routel script. Stephen R. van den Berg <srb@cuci.nl>
+  * Bug in tc/q_prio.c resetting priomap. Reported by
+	Ole Husgaard <sparre@login.dknet.dk> and
+	Jan Kasprzak <kas@informatics.muni.cz>
+  * IP command reference manual is published (ip-cref.tex).
+    I am sorry, but tc-cref.tex is still not ready, to be more
+    exact the draft does not describe current tc 8-)
+  * ip, rtmon, rtacct utilities are updated according to manual 8-)
+    Lots of changes:
+	- (MAIN) "flush" command for addr, neigh and route.
+	- error messages are sanitized; now it does not print
+	  usage() page on each error.
+	- output format is improved.
+	- "oneline" mode is added.
+	- etc.
+  * Name databases; resolution acsii <-> numeric is split out to lib/*
+  * scripts ifcfg, ifone and rtpr.
+  * examples/dhcp-client-script is copied from my patch to ISC dhcp.
+  * Makefile in doc/ directory.
+
+[990417]
+  * "pmtudisc" flag to "ip tunnel". Phil Karn <karn@ka9q.ampr.org>
+  * bug in tc/q_tbf.c preventing setting peak_rate, Martin Mares <mj@ucw.cz>
+  * doc/flowlabels.tex
+
+[990329]
+
+  * This snapshot fixes some compatibility problems, which I introduced
+    occasionally to previous snapshots.
+  * Namely, "allot" to "tc qdisc add ... cbq" is accepted but ignored.
+  * Another changes are supposed to be shown in the next snapshot, but
+    because of troubles with "allot" I am forced to release premature
+    version. Namely, "cell", "prio", "weight" etc. are optional now.
+  * doc/ip-tunnels.tex
+
+[990327]
+  * History was not recorded.
+
+[981002]
+  * Rani Assaf <rani@magic.metawire.com> contributed resolving
+    addresses to names.
+	BEWARE! DO NOT USE THIS OPTION, WHEN REPORTING BUGS IN
+	IPROUTE OR IN KERENEL. ALL THE BUG REPORTS MUST CONTAIN
+	ONLY NUMERIC ADDRESSES.
+
+[981101]
+  * now it should compile for any libc.

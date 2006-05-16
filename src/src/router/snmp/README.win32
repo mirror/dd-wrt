@@ -1,0 +1,452 @@
+***************************************************************************
+*
+* README.win32
+*
+***************************************************************************
+
+This guide describes building with Microsoft C++ and with
+the gcc compiler from Cygwin.  As developers build with
+other Win32 environments, their notes will be included here.
+
+
+The remainder of this guide has the following sections :
+
+Status as of 18-Sep-2002 for Win32 platforms
+Status as of 5-Nov-2001 for Win32 platforms
+Installing Platform SDK
+Building with MS VC++
+Building with OpenSSL with MS VC++
+Installing from MS VC++ build
+Building with Cygwin
+Extending the Agent with MS VC++
+Notes on SET support for WIN32 ports
+Acknowledgements
+
+
+***************************************************************************
+*
+* Status as of 18-Sep-2002 for Win32 platforms
+*
+***************************************************************************
+
+  -  new project files created for those wishing to use the platform sdk
+     for more functionality. The default workspace, win32.dsw, does not
+     require the platform sdk. Uses who have installed the platform sdk
+     can use win32sdk.dsw for additional functionality.
+  -  For some as-yet unknown reason, the file descriptors created for the
+     internal callback transport are causing problems with select(), so
+     internal callbacks have been disabled until a fix can be found.
+     This almost certainly means that AgentX will no longer work for win32.
+  -  There appears to be a problem with the libsnmp_dll project, so build
+     the regular libsnmp instead. This, of course, means that the
+     applications will be a bit bigger, but at least they run.
+
+WIN32 savy developers are strongly encouraged to lend a hand in helping
+to fix these problems, as none of the core developers are very enthusiastic
+about working on windows. We'll probably get around to fixing things
+eventually, but if you can help, let us know.
+
+
+***************************************************************************
+*
+* Status as of 5-Nov-2001 for Win32 platforms
+*
+***************************************************************************
+
+  -  the client applications work
+  -  the core framework of the agent works
+  -  the system, snmp, ip, tcp, udp, icmp mibgroups work
+          (assuming one installs the option Platform SDK)
+  -  the target, agentx, smux, notification groups compile
+  -  extending the agent to support enterprise-specific MIBs works
+  -  running the agent on a non-standard port works
+  -  running the UCD agent instead of the MS supplied one "works"
+          (at the loss of most of the functionality)
+  -  running the UCD agent as a "subagent" of the MS one does not work
+          (i.e. using the SNMP.dll interface)
+  -  running the UCD agent as a subagent of an AgentX master "works"
+          (bearing in mind this support is alpha-code)
+
+All applications build with both MS VC++ and Cygwin.
+
+Note: The agent cannot be built as an extensible SNMP agent that
+will work with Microsoft's agent.
+
+Neither snmpd nor snmptrapd register as NT services.
+
+Snmptrapd does not "share" nor multiplex traps with SNMPTRAP.EXE,
+a program that is available from Microsoft or ACE#COMM.
+
+
+***************************************************************************
+*
+* Installing Platform SDK
+*
+***************************************************************************
+
+The core elements of the mibII group of the agent, use the "IP Helper API"
+which is part of Microsoft's "Core Platform SDK".  This is typically
+not installed by default, but can be downloaded from
+		http://msdn.microsoft.com/downloads/
+as follows:
+
+    -  Using Internet Explorer (Netscape won't work), go to the above URL
+    -  From the menu at the left, select
+		"Software Development Kits"
+		"Platform SDK"
+    -  From the new window that appears, select "Core SDK".
+    -  The full Core SDK is ~240Mb (expanding to ~560Mb on installation).
+       In fact, the only portion that's required is the basic "Build
+       Environment" (36Mb) So it's safe to deselect the pre-release version,
+       documentation, sample code and 64-bit elements.
+
+    -  Once this package has installed, from the Start Menu run
+	"Register PSDK directories with Visual Studio"
+
+
+To buld the agent, make sure you use the win32sdk.dsw workspace.
+
+The full agent should now compile successfully.
+
+
+***************************************************************************
+*
+* Building with MS VC++
+*
+***************************************************************************
+
+The win32 directory contains a Microsoft VC++ (6.0) workspace and
+project files to build both static and DLL versions of the UCD SNMP
+library and the applications. Until recently it is known to build with
+VC++ 5.0 too, unfortunately none of the developers have this version around
+anymore.
+
+Building with earlier compiler versions has not been attempted.  Success
+stories are welcomed.
+
+A manually generated config.h file has been provided for use with the
+win32 build since the basic win32 environment does not support autoconf.
+Note: the compiled in MIB path is \usr\mibs which may be changed by
+editing win32/config.h.  Note that the install instructions below
+should be adjusted when changes are made to paths.
+
+To build the libraries and applications, open the workspace file
+"win32\win32.dsw" from VC++.
+
+Note there is a Debug version and Release version for each subproject.
+Due to the way the libraries are organized, there are exactly two
+library versions that work :
+
+  1) libsnmp Debug ;  and 2) libsnmp_dll Release
+
+[Actaully, I'm not sure that is true anymore. I have had success with
+both libsnmp Debug and Release, and no luch with libsnmp_dll.]
+
+The projects are arranged so that ALL of the usable products,
+the .lib, .dll, and .exe files, are written to the win32\bin
+directory.  The win32\lib directory is used only to build the
+the files in the win32\bin directory.  Once building is completed,
+there is no further use for the files in the win32\lib directory.
+
+The Debug product .exe files have "_d" appended to the basename
+of the applications.  This is so the Debug and Release versions
+of an application can be built and tested separately.
+
+
+Runtime libraries
+-----------------
+
+Note that the library must be built using the same options as the
+application which it will be linked with. In particular, the run-time
+libraries must match (Project settings, C/C++ tab, 'Code Generation'
+category).
+
+For example, linking in an snmplib built to use the Multithreaded DLL
+runtime library to an application configured for the Debug
+Multithreaded DLL runtime library results in a link error along the
+lines of 'defaultlib "MSVCRT" conflicts with use of other libs'.   If
+you receive a similar message, check that the projects settings
+between library and application match up.
+
+Debug Information
+-----------------
+
+Note that VC++ 6.0 has new options for for debugging information -
+the 'Program Database'.  This option is set in the Project settings,
+C/C++ tab, 'General' category, and is turned on by default during the
+conversion of the project files. This option is not for use with a
+library, as it embeds debug information into the library that
+references an external file that will not be available to the linking
+application. If you get an error message along the lines of
+'debugging information not available in file vc60.pdb, make sure the
+library debug option is set to 'C7 compatible'.
+
+To build the Release versions:
+Click Build->Batch Build. Uncheck all Debug and libsnmp versions.
+Make sure libsnmp_dll Release and all other Release versions
+are checked.  Rebuild All.  If the library DLL link fails, add
+missing function names to libsnmp_dll/libsnmp.def.
+
+To build the Debug versions:
+Click Build->Batch Build. Uncheck all Release and libsnmp_dll versions.
+Make sure libsnmp Debug and all other Debug versions
+are checked. Rebuild All.
+
+To build both Debug and Release versions:
+Click Build->Batch Build.  Check all versions.  Uncheck
+"libsnmp Release" and "libsnmp_dll Debug" versions only.
+Then click Release All.
+
+
+***************************************************************************
+*
+* Building with OpenSSL with MS VC++
+*
+***************************************************************************
+
+OpenSSL is required to support the encryption capabilities in SNMPv3
+(and will also support MD5 authentication). The win32 version of OpenSSL
+can be built from the source at:
+
+ftp://ftp.openssl.org/source/
+
+Follow the instructions for building on win32 in that package. if you do
+not have the M$ assembler installed (MASM) you can get a free one(NASM)
+from:
+
+http://www.kernel.org/pub/software/devel/nasm
+
+You will also need to change the win32/config.h file from
+
+---
+/* define if you are using the internal MD5 code */
+#define USE_INTERNAL_MD5 1
+---
+to
+---
+/* define if you are using the internal MD5 code */
+#undef USE_INTERNAL_MD5
+
+/* define if you are using OpenSSL */
+#define USE_OPENSSL 1
+---
+
+now you will need to edit the VC++ Project settings for the libraries
+and applications. Change the Settings->Link->'Object/Library Modules' to
+include
+
+libeay32.lib
+
+when installing be sure to place libeay32.dll on your search path (e.g.,
+usr\bin)
+
+
+***************************************************************************
+*
+* Installing from MS VC++ build
+*
+***************************************************************************
+
+Create these subdirectories on the root directory of the
+volume you wish to hold the UC-Davis SNMP applications :
+
+  usr, usr\bin, usr\mibs, usr\lib, usr\include\ucd-snmp
+
+Copy mibs\*.txt to usr\mibs
+Copy win32\bin\*.* to usr\bin
+Copy win32\lib\*.* to usr\lib
+Copy snmplib\*.h to usr\include\ucd-snmp
+Copy win32\config.h to usr\include\ucd-snmp\ucd-snmp-config.h
+
+if using OpenSSL
+Copy libeay32.dll to usr\bin
+Copy libeay32.lib to usr\lib
+
+Installing is complete.  You may want to create a compressed
+archive of the \usr hierarchy.
+
+
+***************************************************************************
+*
+* Building with Cygwin
+*
+***************************************************************************
+
+An alternate way to build UCD SNMP for win32 is to use Cygnus's cygwin32
+environment.  Information on the Cygnus cygwin32 environment is available
+on the web at: http://sources.redhat.com/cygwin/.
+
+Cygwin allows you to compile almost the complete agent and applications.
+The following configure options creates a working set of programs:
+
+./configure --with-mib-modules="host agentx smux examples/example" \
+ 	--with-out-mib-modules=host/hr_network \
+	--with-libs="-lregex -liphlpapi"
+
+This has been tested for Windows 98 and Windows NT 4.0.  In order for
+the process part of the host resources MIB to work under NT you will need
+to get hold of the PSAPI.DLL. This available under the download section
+of www.microsoft.com. The DLL is included with Windows 2000 and XP,
+and is also part of the VC++ distribution.  The IPHLPAPI library is
+part of the "Microsoft Platform SDK", which is also available from
+www.microsoft.com.  See above for details.
+
+
+***************************************************************************
+*
+* Extending the Agent with MS VC++
+*
+***************************************************************************
+
+Assuming that the MIB compiler generated the my.h and my.c files for the
+custom MIB "my", the following changes are required to extend the agent
+using VC++:
+
+   - Add the my.h and my.c files to your 'netsnmpmibs' project in VC++.
+   - Next edit the '<sourcedir>\win32\mib_module_includes.h' file to
+     add an include to your .h file.
+
+        #include "mibgroup/my.h"
+
+   - Next edit the '<sourcedir>\win32\mib_module_inits.h' file to add
+     code to call your initialize function.
+
+        if (should_init("my")) init_my();
+
+
+That's all that is needed. Now go ahead and compile the 'netsnmpmibs'
+and 'snmpd' project. And things should work just fine.
+
+
+***************************************************************************
+*
+* Notes on SET support for WIN32 ports
+*
+***************************************************************************
+
+Requirements:
+
+  Windows NT/2000 or later: Requires Windows NT 4.0 SP4 or later. 
+  Windows 95/98/Me: Requires Windows 98 or later. 
+  Library: Use IPHLPAPI.LIB 
+
+Note: IPHLPAPI.LIB is part of the "Microsoft Platform SDK", which may be
+      freely downloaded from www.microsoft.com.  See above for details.
+
+Windows support for SET on following groups:
+
+interfaces:
+----------
+ifAdminStatus is read-write. Status can be set with either 'up' or
+'down'. (IE, 'testing' status is not supported.)
+
+
+ip group:
+--------
+Scalar objects: 
+ipForwarding:Currently windows supports only ON->OFF (IE,
+enable->disable). For any other value, it returns with failure.
+
+ipDefaultTTL: Supports value greater than or equal to 0. 
+
+Table objects:
+-------------
+1. ipRouteTable:
+   ------------
+route_write.c implements this.
+
+ipRouteDest: Setting this value, updates row with new ipRouteDest and all other
+             entries will be same as old row. 
+    EX:
+    Consider there is an entry with ipRouteDest = 10.0.0.20
+    Request, snmpset localhost private ip.ipRouteTable.ipRouteEntry.ipRouteDest.10.0.0.20 -a 10.0.0.16
+    Updates that row with ipRouteDest = 10.0.0.16
+
+ipRouteIfIndex:Write supported.
+
+ipRouteMetric1: Supports value greater than or equal to -1
+
+ipRouteMetric2, ipRouteMetric3, ipRouteMetric4, ipRouteMetric5: Even though
+		call returns with success, Windows doesn't change these (as
+		these are not used in Windows)
+
+ipRouteNextHop: Write supported.
+
+ipRouteType: Write Supported. If value is 2, IE 'invalid', it deletes the entry.
+
+ipRouteAge: Whenever any row is updated this will be automatically reset.
+
+ipRouteMask: Write Supported.
+
+Creation of ipRouteTable row:
+-----------------------------
+snmpset request for non existent OID with ipRouteIfIndex, ipRouteMetric1, 
+ipRouteNextHop and ipRouteMask varbinds, creates a row.
+
+snmpset with create option is not supported, as row creation requires 
+ipRouteIfIndex, ipRouteMetric1, ipRouteNextHop and ipRouteMask  in a single 
+request.
+
+Example to create a row:
+-----------------------
+Consider there is no entry for 10.0.0.18
+
+snmpset localhost private ip.ipRouteTable.ipRouteEntry.ipRouteIfIndex.10.0.0.18 i 2 4.21.1.ipRouteMask.10.0.0.18 a 255.255.255.255 4.21.1.ipRouteNextHop.10.0.0.0 a 10.0.0.0 4.21.1.ipRouteMetric1.10.0.0.18 i 1
+
+If ipRouteIfIndex is valid then creates row with:
+ipRouteIfIndex = 2
+ipRouteMask = 255.255.255.255
+ipRouteNextHop = 10.0.0.0
+ipRouteMetric1 = 1
+
+2. ipNetToMediaTable:
+--------------------
+ipNetToMediaIfIndex: write supported
+ipNetToMediaPhysAddress: write supported
+ipNetToMediaNetAddress: write supported
+ipNetToMediaType: write supported, setting with value 2, deletes the row.
+
+Creation of row:
+--------------------
+snmpset request for non existent OID with ipNetToMediaPhysAddress varbind
+creates a row.
+
+snmpset with create option is not supported, as row creation requires 
+ipNetToMediaPhysAddress in a request 
+request.
+
+Example to create a row:
+-----------------------
+Consider there is no entry for 10.0.0.32
+
+snmpset localhost private ip.ipNetToMediaTable.ipNetToMediaEntry.ipNetToMediaPhysAddress.2.10.0.0.32 x efcd12130103
+
+If ipNetToMediaIfIndex is valid then creates row with:
+ipNetToMediaIfIndex = 2
+ipNetToMediaPhysAddress = ef:cd:12:12:01:03
+ipNetToMediaNetAddress = 10.0.0.32
+ipNetToMediaType = 4
+
+TCP:
+---
+tcpConnState of tcpConnTable is writable and the only value which may
+be set by a management station is deleteTCB(12)
+
+
+
+***************************************************************************
+*
+* Acknowledgements
+*
+***************************************************************************
+
+These people are known to have contributed to one or more of
+the Win32 platform ports.  If you have, and your name is not here,
+please accept our apologies, and tell us so we can add your name.
+
+David Perkins, Joe Marzot, Wes Hardaker, Niels Baggesen, Dave Shield,
+Robert Story, Suvrit Sra, Mike Slifcak.
+
+A very special thank you goes to Latha Prabhu who contributed the complete
+MIB-II support, including write support. This has put the Windows port
+in the top support class for net-snmp.
