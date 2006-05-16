@@ -1,0 +1,33 @@
+#
+#   $Id: Makefile.in,v 1.1 2004/04/27 01:33:22 dyang Exp $
+#
+#   Libnet simple testcode makefile
+#   Copyright (c) 1998, 1999 route|daemon9 <route@infonexus.com>
+#   @configure_input@
+
+CC          =   @CC@
+CFLAGS      =   @CFLAGS@
+OBJECTS     =   udp.o       \
+                udp+data.o
+
+DEFINES     +=  @DEFS@
+LIBS        =   -L../../lib/ -lnet @ADDITIONAL_LIBS@
+
+.c.o:
+	$(CC) $(CFLAGS) $(DEFINES) -c $< -o $@
+
+all:    udp udp+data
+
+udp: $(OBJECTS)
+	$(CC) udp.o $(LIBS) -o ./udp
+
+udp+data: $(OBJECTS)
+	$(CC) udp+data.o $(LIBS) -o ./udp+data
+
+clean:
+	rm -f *.core udp udp+data *.o
+
+distclean: clean
+	rm -f Makefile
+
+# EOF

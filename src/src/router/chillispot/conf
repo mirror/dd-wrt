@@ -1,0 +1,1 @@
+./configure --host=mipsel-linux-elf CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -mtune=mips32 -pipe -mips32 -funit-at-a-time -DHAVE_MALLOC=1 -Drpl_malloc=malloc"

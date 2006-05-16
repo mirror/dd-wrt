@@ -1,0 +1,8 @@
+opt
+bin
+lib
+Release
+Debug
+*.plg
+*.ilk
+*.ncb

@@ -1,0 +1,5 @@
+  dep_tristate '  FTP protocol support' CONFIG_IP_NF_FTP $CONFIG_IP_NF_CONNTRACK
+  dep_tristate '  PPTP protocol support' CONFIG_IP_NF_PPTP $CONFIG_IP_NF_CONNTRACK
+  if [ "$CONFIG_IP_NF_PPTP" != "n" ]; then
+	bool   '    PPTP verbose debug' CONFIG_IP_NF_PPTP_DEBUG
+  fi

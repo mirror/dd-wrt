@@ -1,0 +1,85 @@
+Usage: configure [options] [host]
+Options: [defaults in brackets after descriptions]
+Configuration:
+  --cache-file=FILE       cache test results in FILE
+  --help                  print this message
+  --no-create             do not create output files
+  --quiet, --silent       do not print `checking...' messages
+  --version               print the version of autoconf that created configure
+Directory and file names:
+  --prefix=PREFIX         install architecture-independent files in PREFIX
+                          [/usr/local/samba]
+  --exec-prefix=EPREFIX   install architecture-dependent files in EPREFIX
+                          [same as prefix]
+  --bindir=DIR            user executables in DIR [EPREFIX/bin]
+  --sbindir=DIR           system admin executables in DIR [EPREFIX/sbin]
+  --libexecdir=DIR        program executables in DIR [EPREFIX/libexec]
+  --datadir=DIR           read-only architecture-independent data in DIR
+                          [PREFIX/share]
+  --sysconfdir=DIR        read-only single-machine data in DIR [PREFIX/etc]
+  --sharedstatedir=DIR    modifiable architecture-independent data in DIR
+                          [PREFIX/com]
+  --localstatedir=DIR     modifiable single-machine data in DIR [PREFIX/var]
+  --libdir=DIR            object code libraries in DIR [EPREFIX/lib]
+  --includedir=DIR        C header files in DIR [PREFIX/include]
+  --oldincludedir=DIR     C header files for non-gcc in DIR [/usr/include]
+  --infodir=DIR           info documentation in DIR [PREFIX/info]
+  --mandir=DIR            man documentation in DIR [PREFIX/man]
+  --srcdir=DIR            find the sources in DIR [configure dir or ..]
+  --program-prefix=PREFIX prepend PREFIX to installed program names
+  --program-suffix=SUFFIX append SUFFIX to installed program names
+  --program-transform-name=PROGRAM
+                          run sed PROGRAM on installed program names
+Host type:
+  --build=BUILD           configure for building on BUILD [BUILD=HOST]
+  --host=HOST             configure for HOST [guessed]
+  --target=TARGET         configure for TARGET [TARGET=HOST]
+Features and packages:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --with-PACKAGE[=ARG]    use PACKAGE [ARG=yes]
+  --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
+  --x-includes=DIR        X include files are in DIR
+  --x-libraries=DIR       X library files are in DIR
+--enable and --with options recognized:
+  --enable-maintainer-mode enable some make rules for maintainers
+  --with-smbwrapper     Include SMB wrapper support
+  --without-smbwrapper  Don't include SMB wrapper support (default)
+  --with-afs     Include AFS support
+  --without-afs  Don't include AFS support (default)
+  --with-dfs     Include DFS support
+  --without-dfs  Don't include DFS support (default)
+  --with-krb4=base-dir     Include Kerberos IV support
+  --without-krb4          Don't include Kerberos IV support (default)
+  --with-krb5=base-dir     Include Kerberos 5 support
+  --without-krb5          Don't include Kerberos 5 support (default)
+  --with-automount     Include AUTOMOUNT support
+  --without-automount  Don't include AUTOMOUNT support (default)
+  --with-smbmount     Include SMBMOUNT (Linux only) support
+  --without-smbmount  Don't include SMBMOUNT support (default)
+  --with-pam     Include PAM password database support
+  --without-pam  Don't include PAM password database support (default)
+  --with-ldap     Include LDAP support
+  --without-ldap  Don't include LDAP support (default)
+  --with-nisplus     Include NISPLUS password database support
+  --without-nisplus  Don't include NISPLUS password database support (default)
+  --with-nisplus-home     Include NISPLUS_HOME support
+  --without-nisplus-home  Don't include NISPLUS_HOME support (default)
+  --with-ssl     Include SSL support
+  --without-ssl  Don't include SSL support (default)
+  --with-sslinc=DIR Where the SSL includes are (defaults to /usr/local/ssl)
+  --with-syslog     Include experimental SYSLOG support
+  --without-syslog  Don't include SYSLOG support (default)
+  --with-profile     Include profile support
+  --without-profile  Don't include profile support (default)
+  --with-netatalk     Include experimental Netatalk support
+  --without-netatalk  Don't include experimental Netatalk support (default)
+  --with-quotas     Include experimental disk-quota support
+  --without-quotas  Don't include experimental disk-quota support (default)
+  --with-utmp     Include experimental utmp accounting
+  --without-utmp  Don't include experimental utmp accounting (default)
+  --with-privatedir=DIR     Where to put smbpasswd (/usr/local/samba/private)
+  --with-lockdir=DIR     Where to put lock files (/usr/local/samba/var/locks)
+  --with-swatdir=DIR     Where to put SWAT files (/usr/local/samba/swat)
+  --with-sambabook=DIR  Where to put Using Samba book (/usr/local/samba/swat/using_samba) (default)
+  --without-sambabook   Don't install Using Samba book

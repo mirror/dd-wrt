@@ -1,0 +1,29 @@
+Author: Dennis Koslowski <dkoslowski@astaro.de>
+Status: Experimental
+
+This option adds CONFIG_IP_NF_MATCH_PSD, which supplies portscan
+detection match (psd). This match will attempt to detect TCP and UDP
+port scans. This match was derived from Solar Designer's scanlogd.
+
+Suppported options are:
+
+--psd-weight-threshold <threshold>
+
+  Total weight of the latest TCP/UDP packets with different
+  destination ports coming from the same host to be treated as port
+  scan sequence.
+
+--psd-delay-threshold <delay>
+
+  Delay (in hundredths of second) for the packets with different
+  destination ports coming from the same host to be treated as
+  possible port scan subsequence.
+
+--psd-lo-ports-weight <weight>
+
+  Weight of the packet with privileged (<=1024) destination port.
+
+--psd-hi-ports-weight <weight>
+
+  Weight of the packet with non-priviliged destination port.
+

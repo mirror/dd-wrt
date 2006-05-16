@@ -1,0 +1,212 @@
+--- http.c.orig	2005-02-07 12:17:44.000000000 -0800
++++ http.c	2005-02-08 10:01:09.765415296 -0800
+@@ -13,6 +13,7 @@
+ # include "util.h"
+ # include "http.h"
+ # include "mime.h"
++# include "conf.h"
+ 
+ GIOChannel *http_bind_socket( const char *ip, int port, int queue ) { 
+     struct sockaddr_in addr;
+@@ -78,7 +79,10 @@
+ 
+     r = getpeername( fd, (struct sockaddr *)&addr, &n );
+     if (r == -1)
+-	g_error( "getpeername failed: %m" );
++	{
++		g_warning( "getpeername failed: %m" );
++		return NULL;
++	}
+     r2 = inet_ntop( AF_INET, &addr.sin_addr, h->peer_ip, INET_ADDRSTRLEN );
+     g_assert( r2 != NULL );
+ 
+@@ -93,7 +97,9 @@
+     g_hash_free( h->query );
+     g_hash_free( h->response );
+     g_string_free( h->buffer, 1 );
+-    g_io_channel_unref( h->sock );
++	/* Irving - from Yurgi - this is already being done in handle_read
++	   before calling us 
++    g_io_channel_unref( h->sock ); */
+     g_free( h );
+ }
+ 
+@@ -116,7 +122,11 @@
+ 
+ 	key = url_decode( key );	
+ 	val = url_decode( val );	
+-	g_hash_set( data, key, val );
++	/* Irving - fix from Yurgi - check to see if the key is already in the
++	   hash table.  This deals with keys that are set twice by web sites */
++	if(g_hash_table_lookup_extended( data, key, NULL, NULL ) == FALSE )
++		g_hash_set( data, key, val );
++
+ 	g_free( key );
+ 	g_free( val );
+     }
+@@ -153,7 +163,9 @@
+ 	    /* Strip ": " plus leading and trailing space from val */
+ 	    g_strchomp( val += 2 ); // ": "
+ 	    
+-	    g_debug("Header in: %s=%s", key, val );
++		if (CONFd("Verbosity") >= 2)
++			g_message("Header in: %s=%s", key, val );
++
+ 	    g_hash_set( head, key, val );
+ 	}
+     }
+@@ -187,24 +199,58 @@
+     return h->query;
+ }
+ 
++/* Irving - fixups from BPsmythe's original http_request_read fix */
+ guint http_request_read (http_request *h) {
+     gchar *buf = g_new( gchar, BUFSIZ + 1 );
+     GIOError r;
+     guint n, t;
++	guint marker = 5;
+ 
+-    // g_message("entering http_request_read");
+-    for (t = 0, n = BUFSIZ; n == BUFSIZ && 
+-	    h->buffer->len < MAX_REQUEST_SIZE; t += n ) {
+-	// g_message("entering read loop");
+-	r = g_io_channel_read( h->sock, buf, BUFSIZ, &n );
+-	// g_message("read loop: read %d bytes of %d (%d)", n, BUFSIZ, r);
+-	if (r != G_IO_ERROR_NONE) {
+-	    g_warning( "read_http_request failure: %m" );
+-	    g_free(buf);
+-	    return 0;
+-	}
+-	buf[n] = '\0';
+-	g_string_append(h->buffer, buf);
++	struct timeval tv;
++	tv.tv_sec = 0;
++	tv.tv_usec = 250000;
++
++	/* BPsmythe: The below original loop will never execute more than once
++	   unless the size of the buffer read in (n) is equal to the constant 
++	   BUFSIZ. What is desired is to keep looping until there is nothing left 
++	   to read. Without using the newer g_io_channel_read_char, and/or some
++	   more research,  the for statement was changed to look for the end of
++	   the headers */
++    /* for (t = 0, n = BUFSIZ; n == BUFSIZ && 
++	    h->buffer->len < MAX_REQUEST_SIZE; t += n ) { */
++
++	if (CONFd("Verbosity") >= 3)
++		g_message("entering http_request_read");
++
++	for (t = 0, n = BUFSIZ; marker > 0 && 
++		h->buffer->len < MAX_REQUEST_SIZE; t += n )
++	{
++		if (CONFd("Verbosity") >= 3)
++			g_message("entering read loop");
++
++		r = g_io_channel_read( h->sock, buf, BUFSIZ, &n );
++
++		if (CONFd("Verbosity") >= 3)
++			g_message("read loop: read %d bytes of %d (%d)", n, BUFSIZ, r);
++
++		if (r != G_IO_ERROR_NONE) {
++			g_warning( "read_http_request failure: %m" );
++			g_free(buf);
++			return 0;
++		}
++		buf[n] = '\0';
++		g_string_append(h->buffer, buf);
++
++		/* Irving - from BPsmythe - Check for the end of the headers */
++		if ((strstr( h->buffer->str, "\r\n\r\n" )) != NULL) {
++			marker = 0;
++		} else {
++			marker--;
++			if (CONFd("Verbosity") >= 3)
++				g_message("http_request_read: No header yet, keep going %d more tries", marker);
++
++			select (0, NULL, NULL, NULL, &tv);
++		}
+     }
+     g_free(buf);
+     return t;
+@@ -225,7 +271,9 @@
+ 	    http_parse_query( h, NULL );
+ 	    if (h->query) {
+ 		z = g_hash_as_string( h->query );
+-		g_debug( "Query: %s", z->str );
++		if (CONFd("Verbosity") >= 5)
++			g_message( "Query: %s", z->str );
++
+ 		g_string_free(z, 1);
+ 	    }
+ 	    h->complete++;
+--- splashd.c.orig	2005-02-07 12:40:36.000000000 -0800
++++ splashd.c	2005-02-07 13:26:22.000000000 -0800
+@@ -14,7 +14,8 @@
+ 
+ gboolean check_peers( void *dummy ) {
+     time_t now = time(NULL);
+-    g_message("Checking peers for expiration");
++	if (CONFd("Verbosity") >= 5)
++		g_message("Checking peers for expiration");
+     g_hash_table_foreach_remove( peer_tab, (GHRFunc)check_peer_expire, &now );
+     return TRUE;
+ }
+@@ -22,19 +23,37 @@
+ /************* Connection handlers ************/
+ 
+ gboolean handle_read( GIOChannel *sock, GIOCondition cond, http_request *h ) {
+-    g_debug( "entering handle_read" );
+-    http_request_read( h );
++	guint n;
+ 
+-    if (! http_request_ok(h))
+-	return TRUE;
++	if (CONFd("Verbosity") >= 3)
++    	g_message( "entering handle_read" );
+ 
+-    handle_request(h);
++    n = http_request_read( h );
+ 
+-    g_io_channel_close( h->sock );
+-    g_io_channel_unref( h->sock );
+-    http_request_free( h );
+-    g_debug( "exiting handle_read" );
+-    return FALSE;
++	/* Irving - stability patch from Yurgi - don't return TRUE if the 
++	   request isn't okay, or it will result in resources not being freed
++	   and lots of time_wait sockets hanging around */
++    if (! http_request_ok(h)) 
++	{
++		g_io_channel_close( h->sock );
++		g_io_channel_unref( h->sock );
++		return FALSE;
++	} 
++	else if ( n == 0 )
++	{
++		return FALSE;
++	} 
++	else 
++	{
++		handle_request(h);
++		g_io_channel_close( h->sock );
++		g_io_channel_unref( h->sock );
++		http_request_free( h );
++		if (CONFd("Verbosity") >= 3)
++			g_message( "exiting handle_read" );
++
++		return FALSE;
++	}
+ }
+ 
+ gboolean handle_accept( GIOChannel *sock, GIOCondition cond, void *dummy ) {
+--- gateway.c.orig	2005-02-07 13:48:48.000000000 -0800
++++ gateway.c	2005-02-07 13:15:59.000000000 -0800
+@@ -49,7 +49,8 @@
+ }
+ 
+ gboolean check_peer_expire ( gchar *ip, peer *p, time_t *now ) {
+-    g_message( "Checking peer %s for expire: %ld sec. remain",
++	if (CONFd("Verbosity") >= 5)
++		g_message( "Checking peer %s for expire: %ld sec. remain",
+ 	ip, p->expire - *now );
+     if (p->expire <= *now) {
+ 	remove_peer( p );

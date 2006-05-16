@@ -1,0 +1,35 @@
+#! /bin/bash
+
+set -e
+
+ENABLE_FLAGS="dietlibc logging release"
+
+rm -rf compile-test
+
+for val in $(seq 0 $[ 2**`echo $ENABLE_FLAGS | wc -w` - 1]); do
+    idx=0
+    cmd=
+    dir=
+    for par in $ENABLE_FLAGS; do
+	test "$idx" -eq 0 || { cmd="${cmd} "; dir="${dir}-"; }
+	cmd="${cmd}--enable-${par}="
+		
+	if test $[ val&(2**idx) ] -ne 0; then
+	    cmd="${cmd}yes"
+	    dir="${dir}$par"
+	else
+	    cmd="${cmd}no"
+	    dir="${dir}no${par}"
+	fi
+
+	idx=$[ idx + 1 ]
+    done
+
+    D=compile-test/$dir
+    mkdir -p $D
+    pushd $D
+	../../configure -q $cmd
+	make -s
+	strip dhcp-fwd -o dhcp-fwd.s
+    popd
+done

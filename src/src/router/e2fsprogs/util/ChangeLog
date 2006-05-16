@@ -1,0 +1,231 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2005-03-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen_tarball.in: Don't remove the .gmo files from the generated
+		tarball; they are now treated as source files instead of
+		generated files.
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-01-21    <tytso@snap.thunk.org>
+
+	* copy_sparse.c: Utility program which is very useful for dealing
+		with large sparse files (such as e2image files).
+
+2005-01-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen-tarball.in: Remove the hyphen in 1.36-rc1, since Debian
+		version numbers can't have '-' in them.
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* subst.c (main): Add new option to update the timestamp of the
+		generated file.
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2004-02-21  Matthias Andree  <matthias.andree@gmx.de>
+
+	* gen-tarball.in: Do not package autom4te.cache directory.
+
+2003-12-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* subst.c: Fix gcc -Wall nitpicks.
+
+	* gcc-wall-cleanup: Remove missing initalizer, zero-length format
+		string, and some more long long warnings.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-03-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* gen-tarball.in, all.exclude, subset.exclude: New files for
+		managing the automatic generation of distribution
+		tarballs.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-05-11    <tytso@snap.thunk.org>
+
+	* subst.conf.in: Add root_sysconfdir and $root_prefix
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-07-27  Theodore Tso  <tytso@valinux.com>
+
+	* subst.conf.in: Enable documentation of the external journal 
+		functionality in mke2fs, e2fsck, and tune2fs.
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-04-21  Theodore Tso  <tytso@valinux.com>
+
+	* subst.conf.in: Add definition of JDEV for mke2fs' and tune2fs'
+		man page. 
+
+2001-04-17  Theodore Tso  <tytso@valinux.com>
+
+	* subst.c (replace_string): Fix replace_string so that it
+		correctly handles replacing a substitution variable with a
+		zero-length string.
+
+2001-01-14  Theodore Ts'o  <tytso@valinux.com>
+
+	* gcc-wall-cleanup: Remove additional annoying warning messages
+		emited by gcc 2.95.2.
+
+2001-01-11    <tytso@snap.thunk.org>
+
+	* gcc-wall-cleanup: New file which is used to clean up unnecessary
+		crud from gcc -Wall that we're not interested in seeing
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-04-03  Theodore Ts'o  <tytso@valinux.com>
+
+	* subst.c: For platforms that don't define optarg.h, manually
+		define optarg and optind.
+
+1999-11-19    <tytso@valinux.com>
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-26    <tytso@valinux.com>
+
+	* subst.c (substitute_line): Removed some unused variables.
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-07-18  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.15
+
+1999-07-03    <tytso@valinux.com>
+
+	* Makefile.in (subst): Build subst using $(BUILD_CC), since it's a
+		helper program which must be built using the native C
+		compiler during a cross-compilation.
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* subst.c (get_subst_symbol): Add [0-9] to the list of valid
+		characters for a substitution symbol.
+
+1998-08-01  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* subst.c: Add the ability to substitute apparent shell/make
+		variables such as ${prefix}, since this is needed to make
+		the shell scripts work correctly.
+
+	* subst.conf.in: Add ${prefix} to the list of substitutions which
+		subst should make.
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-03-31  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* subst.conf.in: Add substitution for @datadir@
+
+Mon Jan 19 09:25:24 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* subst.c: Rename "new" to "new_f" to avoid C++ reserved word
+ 		clash.
+	
+	* subst.c: Explicitly cast all assignments from void * to be
+ 	 	compatible with C++.
+	

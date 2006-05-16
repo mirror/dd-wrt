@@ -1,0 +1,89 @@
+.TH SNMPTRAPD.CONF 5 "28 Aug 2001" VVERSIONINFO "Net-SNMP"
+.UC 4
+.SH NAME
+SYSCONFDIR/snmp/snmptrapd.conf - configuration file for the Net-SNMP trap daemon.
+.SH DESCRIPTION
+.B snmptrapd.conf
+is the configuration file(s) which define how the Net-SNMP SNMP trap
+receiving daemon operates when it receives a trap.  These files may
+contain any of the directives found in the
+.B DIRECTIVES
+section below.  This file is not required for the daemon to operate,
+receive, or report traps.  It is used solely as a method of providing
+extensibility to the trap daemon.
+.SH PLEASE READ FIRST
+First, make sure you have read the
+.I snmp_config(5)
+manual page that
+describes how the Net-SNMP configuration files operate, where they
+are located and how they all work together.
+.SH DIRECTIVES
+.IP "traphandle OID|default PROGRAM [ARGS ...]"
+The
+.I traphandle
+configuration directive configures the snmptrapd program to launch an
+external program any time it receives a trap matching the OID token.
+If the OID token is the word
+.I default
+then any trap not matching any other trap handler will call this
+default one instead.
+The program is fed details about the trap to its standard input, in the
+following format, one entry per line:
+.RS
+.IP HOSTNAME
+The name of the host in question that sent the trap, as determined by
+.IR gethostbyaddr(3) .
+.br
+.IP IPADDRESS
+The IP address of the host that sent the trap.
+.IP VARBINDS
+A list of variable bindings that describe the trap and the variables
+enclosed in it.  The first token on the line, up until the space, in
+the OID and the remainder of the line is its value.  The first OID
+should be the system.sysUpTime.0 OID, and the second should be
+the ...snmpTrap.snmpTrapOID.0 OID.  The remainder of the OIDs, with the
+possible exception of the last one, are the variable bindings
+contained within the trap.  For SNMPv1 traps, the very last OID will
+be the ...snmpTrap.snmpTrapEnterprise OID and its value.  Essentially, 
+SNMPv1 traps have been converted to the SNMPv2 trap PDU type by the
+method described in the SNMPv1/SNMPv2/SNMPv3 coexistence document (RFC2576).
+.br
+.IP Example:
+A traptoemail script has been included in the Net-SNMP package that
+can be used as a trap handle directive:
+.br
+.RS
+.P
+traphandle /usr/bin/perl BINDIR/traptoemail -s mysmtp.somewhere.com -f admin@somewhere.com me@somewhere.com
+.RE
+.RE
+.IP "dontRetainLogs true"
+Turns off the support for the NOTIFICATION-LOG-MIB and thus doesn't
+retain logged traps.  Normally the snmptrapd program keeps a certain
+number of traps around in memory so they can be retrieved via querying
+the nlmLogTable and nlmLogvariableTable tables.  
+See the snmptrapd manual page and the
+NOTIFICATION-LOG-MIB for details.
+.IP "createUser username (MD5|SHA) authpassphrase [DES]"
+See the 
+.I snmpd.conf(5)
+manual page for a description of how to create SNMPv3 users.  It's
+roughly the same, but the file name changes to snmptrapd.conf from
+snmpd.conf.
+.RE
+.IP "format1 format"
+The format used to print a SNMPv1 TRAP message. See
+.IR snmptrapd(8)
+for the layout characters available.
+.RE
+.IP "format2 format"
+The format used to print a SNMPv2 TRAP2 or INFORM message (note that
+the SNMPv3 protocol uses SNMPv2 style TRAPs and INFORMs).
+.SH NOTES
+.IP o
+The daemon blocks on the executing traphandle commands.  (This should
+be fixed in the future with an appropriate signal catch and wait()
+combination).
+.SH "SEE ALSO"
+snmp_config(5), snmptrapd(8), syslog(8), variables(5), snmpd.conf(5), read_config(3).
+

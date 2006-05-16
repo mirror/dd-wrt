@@ -1,0 +1,1 @@
+./configure --host=mipsel-linux-elf --sysconfdir=/tmp/dhcp-fwd CC=mipsel-linux-uclibc-gcc CFLAGS="-O1 -DHAVE_MALLOC=1 -Drpl_malloc=malloc" 

@@ -1,0 +1,14 @@
+Author: Martin Josefsson <gandalf@wlug.westbo.se>
+Status: In Development/Works For Me
+
+This adds CONFIG_IP_NF_TARGET_SAME option, which is similar to
+SNAT: it takes a range of addresses (`--to 1.2.3.4-1.2.3.7') and
+gives a client the same address for each connection.
+
+It has a --nodst option to make it not use the
+destination-ip in the calculations when selecting
+the new source-ip
+
+Now it has support for multiple ranges, including 1-address ranges.
+
+THIS PATCH IS INCOMPATIBLE WITH dropped-table.patch

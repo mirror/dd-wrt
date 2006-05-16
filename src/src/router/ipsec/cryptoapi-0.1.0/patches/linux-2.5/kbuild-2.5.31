@@ -1,0 +1,101 @@
+diff -Nur linux-2.5.31/Makefile linux-2.5.31-cryptoapi/Makefile
+--- linux-2.5.31/Makefile	Sat Aug 17 22:36:43 2002
++++ linux-2.5.31-cryptoapi/Makefile	Sat Aug 17 22:26:43 2002
+@@ -165,7 +165,7 @@
+ 
+ export srctree objtree
+ 
+-SUBDIRS		:= init kernel mm fs ipc lib drivers sound net security
++SUBDIRS		:= init kernel mm fs ipc lib drivers sound net security crypto
+ 
+ 
+ noconfig_targets := xconfig menuconfig config oldconfig randconfig \
+@@ -241,7 +241,7 @@
+ # ---------------------------------------------------------------------------
+ 
+ INIT		:= init/init.o
+-CORE_FILES	:= kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o security/built-in.o
++CORE_FILES	:= kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o security/built-in.o crypto/crypto.o
+ LIBS		:= lib/lib.a
+ DRIVERS		:= drivers/built-in.o sound/sound.o
+ NETWORKS	:= net/network.o
+diff -Nur linux-2.5.31/arch/alpha/config.in linux-2.5.31-cryptoapi/arch/alpha/config.in
+--- linux-2.5.31/arch/alpha/config.in	Sat Aug 17 22:36:43 2002
++++ linux-2.5.31-cryptoapi/arch/alpha/config.in	Sat Aug 17 22:29:17 2002
+@@ -399,4 +399,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ source lib/Config.in
+diff -Nur linux-2.5.31/arch/arm/config.in linux-2.5.31-cryptoapi/arch/arm/config.in
+--- linux-2.5.31/arch/arm/config.in	Sat Aug 17 22:36:43 2002
++++ linux-2.5.31-cryptoapi/arch/arm/config.in	Sat Aug 17 22:30:54 2002
+@@ -678,4 +678,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ source lib/Config.in
+diff -Nur linux-2.5.31/arch/cris/config.in linux-2.5.31-cryptoapi/arch/cris/config.in
+--- linux-2.5.31/arch/cris/config.in	Sat Aug 17 22:36:33 2002
++++ linux-2.5.31-cryptoapi/arch/cris/config.in	Sat Aug 17 22:30:21 2002
+@@ -231,4 +231,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ source lib/Config.in
+diff -Nur linux-2.5.31/arch/i386/config.in linux-2.5.31-cryptoapi/arch/i386/config.in
+--- linux-2.5.31/arch/i386/config.in	Sat Aug 17 22:36:43 2002
++++ linux-2.5.31-cryptoapi/arch/i386/config.in	Sat Aug 17 22:27:35 2002
+@@ -421,4 +421,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ source lib/Config.in
+diff -Nur linux-2.5.31/arch/ia64/config.in linux-2.5.31-cryptoapi/arch/ia64/config.in
+--- linux-2.5.31/arch/ia64/config.in	Sat Aug 17 22:36:37 2002
++++ linux-2.5.31-cryptoapi/arch/ia64/config.in	Sat Aug 17 22:29:35 2002
+@@ -265,3 +265,4 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+diff -Nur linux-2.5.31/arch/m68k/config.in linux-2.5.31-cryptoapi/arch/m68k/config.in
+--- linux-2.5.31/arch/m68k/config.in	Sat Aug 17 22:36:43 2002
++++ linux-2.5.31-cryptoapi/arch/m68k/config.in	Sat Aug 17 22:30:11 2002
+@@ -549,4 +549,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ source lib/Config.in
+diff -Nur linux-2.5.31/arch/mips/config.in linux-2.5.31-cryptoapi/arch/mips/config.in
+--- linux-2.5.31/arch/mips/config.in	Sat Aug 17 22:36:43 2002
++++ linux-2.5.31-cryptoapi/arch/mips/config.in	Sat Aug 17 22:29:59 2002
+@@ -505,4 +505,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ source lib/Config.in
+diff -Nur linux-2.5.31/arch/ppc/config.in linux-2.5.31-cryptoapi/arch/ppc/config.in
+--- linux-2.5.31/arch/ppc/config.in	Sat Aug 17 22:36:43 2002
++++ linux-2.5.31-cryptoapi/arch/ppc/config.in	Sat Aug 17 22:28:56 2002
+@@ -630,4 +630,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ 
+diff -Nur linux-2.5.31/arch/x86_64/config.in linux-2.5.31-cryptoapi/arch/x86_64/config.in
+--- linux-2.5.31/arch/x86_64/config.in	Sat Aug 17 22:36:33 2002
++++ linux-2.5.31-cryptoapi/arch/x86_64/config.in	Sat Aug 17 22:30:35 2002
+@@ -230,4 +230,5 @@
+ endmenu
+ 
+ source security/Config.in
++source crypto/Config.in
+ source lib/Config.in

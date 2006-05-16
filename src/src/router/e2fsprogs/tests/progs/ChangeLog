@@ -1,0 +1,220 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Add install-strip target
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* Makefile.in: Move include/asm/types.h.in to
+		lib/ext2fs/ext2_types.h.in.
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-05-14  Theodore Tso  <tytso@valinux.com>
+
+	* test_icount.c, test_rel.c: Change location of ext2_fs.h to be
+		ext2fs/ext2_fs.h
+
+2001-05-10  Theodore Tso  <tytso@valinux.com>
+
+	* random_exercise.c: Also do some random truncating as well.
+
+2001-01-11    <tytso@snap.thunk.org>
+
+	* test_icount.c, test_rel.c: Change ino_t to ext2_ino_t
+
+2000-12-08    <tytso@snap.thunk.org>
+
+	* Makefile.in (srcdir): Fix so that top-level "make check" works
+		correctly.
+
+2000-10-18    <tytso@valinux.com>
+
+	* random_exercise.c: Add support for making the test files have a
+		certain size, and also add directories as test inodes as
+		well. 
+
+2000-08-20    <tytso@valinux.com>
+
+	* random_exercise.c: New file which feeds a lot of file creations
+		and deletions (while leaving the file descriptor open, and
+		then closing the file descriptor later).  This generates
+		lots of fodder for the orphan list code, as well as for
+		the ext3 journal.
+
+	* hold_inode.c: New file which holds an inode or a directory open
+		(for testing orphan list code).
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-07-04    <tytso@snap.thunk.org>
+
+	* Makefile.in: Use _SS_DIR_OVERRIDE to make sure we get the
+		mk_cmds support files from the source tree.
+
+1999-11-19    <tytso@valinux.com>
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-07-18  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.15
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-06-27  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_icount.c (main): The variable which gets the return value
+		from getopt should be an int so that the comparisons
+		against EOF work on systems with unsigned chars.
+
+1998-06-25  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_icount.c (main): Fix main() declaration so that it returns
+		int, not void.
+
+1998-03-31  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Add uninstall target (which is a just a no-op).
+
+1998-03-29  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_icount.h (do_dump, do_validate): Add prototypes to fix
+		-Wall warnings.
+
+	* test_icount.c: Fix -Wall warnings.
+
+Sat Oct 25 18:50:33 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (PROGS): Remove test_rel from the test programs that
+	 	we build for now.
+
+	* test_icount.c: Fix some random lint warnings.
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Wed Mar 26 15:38:52 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* test_icount.c: New file which tests the icount abstraction.
+

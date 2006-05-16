@@ -1,0 +1,1150 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="Mike Schiffman">
+   <meta name="GENERATOR" content="Mozilla/4.6 [en] (Win98; I) [Netscape]">
+   <title>Introduction</title>
+</head>
+<body text="#000000" bgcolor="#CCCCCC" link="#0000EE" vlink="#551A8B" alink="#FF0000">
+<a href="7.html">Next</a> <a href="5.html">Previous</a> <a href="lrm.html">Top</a>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><b><font size=+2>6. Sample applications</font></b>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><font size=-1>The following are some simple examples that highlight
+different areas of functionality offered by libnet.&nbsp; Each one of these
+programs is autonomous and can be compiled into standalone executable.&nbsp;
+We'll go through the first example step by step, to fully understand what's
+going on, then, as we progress to subsequent examples, we will cover only
+new or salient code.&nbsp; Comments are clearly visible in <font color="#FF0000">red</font><font color="#000000">.</font></font>
+<p><font size=-1>To compile any of these examples (you can download the
+C files from the corresponding links) simply:</font>
+<p><tt><font size=-1>shattered:~> gcc -Wall `libnet-config --defines` libnet-example-x.c
+-o libnet-example-x `libnet-config --libs`</font></tt>
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s6.1"></a><b><font size=+2>6.1 Example 1 [raw socket api -
+TCP packet]</font></b>
+<br><font size=-1>Download <a href="examples/libnet-example-1.c">libnet-example-1.c</a></font>
+<p><tt><font size=-2>#include &lt;libnet.h></font></tt>
+<p><tt><font size=-2>void usage(char *);</font></tt>
+<p><tt><font size=-2>int</font></tt>
+<br><tt><font size=-2>main(int argc, char **argv)</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; int network,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* our network interface */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; packet_size,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* packet size */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* misc */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_long src_ip, dst_ip;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* ip addresses */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_short src_prt, dst_prt;&nbsp;&nbsp;
+/* ports */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_char *cp, *packet;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* misc / packet */</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("libnet example code:\tmodule
+1\n\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet injection interface:\traw
+socket\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet type:\t\t\tTCP
+[no payload]\n");</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; src_ip&nbsp; = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; dst_ip&nbsp; = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; src_prt = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; dst_prt = 0;</font></tt>
+<p><font color="#FF0000">Standard command line argument parsing.&nbsp;
+We require a source IP and a destination IP, both in the form "ip.ip.ip.ip.port".</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; while((c = getopt(argc, argv, "d:s:"))
+!= EOF)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch
+(c)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; We expect the input to be of the form `ip.ip.ip.ip.port`.&nbsp;
+We</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; point cp to the last dot of the IP address/port string and</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; then seperate them with a NULL byte.&nbsp; The optarg now points
+to</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; just the IP address, and cp points to the port.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*/</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 'd':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(cp = strrchr(optarg, '.')))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*cp++ = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dst_prt = (u_short)atoi(cp);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(dst_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "Bad destination IP address: %s\n", optarg);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 's':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(cp = strrchr(optarg, '.')))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*cp++ = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+src_prt = (u_short)atoi(cp);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(src_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "Bad source IP address: %s\n", optarg);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (!src_ip || !src_prt || !dst_ip
+|| !dst_prt)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exit(EXIT_FAILURE);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">Our packet is&nbsp; a TCP/IP packet with no payload,
+so we only need LIBNET_IP_H + LIBNET_TCP_H (40 bytes) of memory.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; We're just going
+to build a TCP packet with no payload using the</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; raw sockets API,
+so we only need memory for a TCP header and an IP</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; header.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; packet_size = LIBNET_IP_H + LIBNET_TCP_H;</font></tt>
+<p><font color="#FF0000">We allocate the heap memory for our packet.&nbsp;
+If it failed, this would be a fatal error that we couldn't recover from
+so we would be done.&nbsp; When libnet_error is called with the LIBNET_ERR_FATAL
+severity, the program exits.&nbsp; This is <i>only </i>defined exit point
+inside of&nbsp; libnet.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 1: Memory initialization
+(interchangable with step 2).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_init_packet(packet_size,
+&amp;packet);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (packet == NULL)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_init_packet failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">Next we open up our network interface.&nbsp; Again
+failure is fatal.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 2: Network
+initialization (interchangable with step 1).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; network = libnet_open_raw_sock(IPPROTO_RAW);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (network == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"Can't open network.\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">Now the fun begins.&nbsp; Like so many tinker
+toys, or so much capsula, we build our packets.&nbsp; Note that no consideration
+is given to data-types or byte-ordering (well almost no consideration for
+data-types).&nbsp; This is all taken care of inside of libnet.&nbsp; All
+you have to worry about is what values to stuff in there.&nbsp; Notice
+that the order we call the modular packet constructors is unimportant.&nbsp;
+The major thing to note is that we pass in the packet at the correct memory
+location.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 3: Packet construction
+(IP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_build_ip(LIBNET_TCP_H,&nbsp;&nbsp;
+/* size of the packet sans IP header */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IPTOS_LOWDELAY,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /* IP tos
+*/</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+242,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* IP ID */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* frag stuff */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+48,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* TTL */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IPPROTO_TCP,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* transport protocol */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+src_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* source IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dst_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* destination IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload (none) */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload length */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* packet header memory */</font></tt>
+<p><font color="#FF0000">Notice the TCP builder gets the packet memory
+buffer at LIBNET_IP_H (20) bytes.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 3: Packet construction
+(TCP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_build_tcp(src_prt,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* source TCP port */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dst_prt,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* destination TCP port */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0xa1d95,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* sequence number */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0x53,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* acknowledgement number */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+TH_SYN,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* control flags */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+1024,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* window size */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* urgent pointer */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload (none) */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload length */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet + LIBNET_IP_H);&nbsp; /* packet header memory */</font></tt>
+<p><font color="#FF0000">Perform our checksum on the TCP header only.&nbsp;
+Since we are using the raw sockets api, the kernel will handle our IP header
+checksum for us.&nbsp; How thoughtful!</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 4: Packet checksums
+(TCP header only).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_do_checksum(packet,
+IPPROTO_TCP, LIBNET_TCP_H) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_do_checksum failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">In you go!&nbsp; The packet is sent on it's merry
+little way!</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 5: Packet injection.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; c = libnet_write_ip(network, packet,
+packet_size);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (c &lt; packet_size)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LN_ERR_WARNING,
+"libnet_write_ip only wrote %d bytes\n", c);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; else</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("construction
+and injection completed, wrote all %d bytes\n", c);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">Since we're good programmers, we always shut things
+down when we are done.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Shut down the interface.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_close_raw_sock(network)
+== -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LN_ERR_WARNING,
+"libnet_close_raw_sock couldn't close the interface");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Free packet memory.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_destroy_packet(&amp;packet);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; return (c == -1 ? EXIT_FAILURE
+: EXIT_SUCCESS);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>void</font></tt>
+<br><tt><font size=-2>usage(char *name)</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; fprintf(stderr, "usage: %s -s
+s_ip.s_port -d d_ip.d_port\n", name);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>/* EOF */</font></tt>
+<br>&nbsp;
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s6.2"></a><b><font size=+2>6.2 Example 2 [link layer api -
+ICMP_MASK]</font></b>
+<br><font size=-1>Download <a href="examples/libnet-example-2.c">libnet-example-1.c</a></font>
+<br>&nbsp;
+<p><tt><font size=-2>#include &lt;libnet.h></font></tt>
+<p><tt><font size=-2>void usage(char *);</font></tt>
+<p><tt><font size=-2>u_char enet_src[6] = {0x0d, 0x0e, 0x0a, 0x0d, 0x00,
+0x00};</font></tt>
+<br><tt><font size=-2>u_char enet_dst[6] = {0xff, 0xff, 0xff, 0xff, 0xff,
+0xff};</font></tt>
+<p><tt><font size=-2>int</font></tt>
+<br><tt><font size=-2>main(int argc, char *argv[])</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; int packet_size,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* size of our packet */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* misc */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_long src_ip, dst_ip;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* source ip, dest ip */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_char *packet;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* pointer to our packet buffer */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; char err_buf[LIBNET_ERRBUF_SIZE];&nbsp;&nbsp;
+/* error buffer */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_char *device;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* pointer to the device to use */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; struct libnet_link_int *network;&nbsp;&nbsp;&nbsp;
+/* pointer to link interface struct */</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("libnet example code:\tmodule
+2\n\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet injection interface:\tlink
+layer\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet type:\t\t\tICMP
+net mask [no payload]\n");</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; device = NULL;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; src_ip&nbsp; = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; dst_ip&nbsp; = 0;</font></tt>
+<p><font color="#FF0000">This time, we have an additional `device` to specify
+the link layer device to use.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; while ((c = getopt(argc, argv,
+"i:d:s:")) != EOF)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch
+(c)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 'd':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(dst_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "Bad destination IP address: %s\n", optarg);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 'i':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+device = optarg;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 's':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(src_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "Bad source IP address: %s\n", optarg);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+default:</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+exit(EXIT_FAILURE);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (!src_ip || !dst_ip)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exit(EXIT_FAILURE);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">If a device isn't specified,&nbsp; libnet will
+attempt to choose one for you.&nbsp;&nbsp; libnet_select_device will return
+the first `up` non-loopback device it finds.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 1: Network
+Initialization (interchangable with step 2).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (device == NULL)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct
+sockaddr_in sin;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; Try to locate a device.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*/</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (libnet_select_device(&amp;sin,
+&amp;device, err_buf) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "libnet_select_device failed: %s\n", err_buf);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("device:\t\t\t\t%s\n",
+device);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">Instead of opening a raw socket, we're opening
+up a link layer interface.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; if ((network = libnet_open_link_interface(device,
+err_buf)) == NULL)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_open_link_interface: %s\n", err_buf);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">The ethernet header needs to be specified explicitly
+in the packet size.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; We're going to build
+an ICMP packet with no payload using the</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; link-layer API,
+so this time we need memory for a ethernet header</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; as well as memory
+for the ICMP and IP headers.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; packet_size = LIBNET_IP_H + LIBNET_ETH_H
++ LIBNET_ICMP_MASK_H;</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 2: Memory Initialization
+(interchangable with step 1).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_init_packet(packet_size,
+&amp;packet) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_init_packet failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 3: Packet construction
+(ethernet header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_build_ethernet(enet_dst,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+enet_src,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ETHERTYPE_IP,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 3: Packet construction
+(ICMP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_build_icmp_mask(ICMP_MASKREPLY,&nbsp;
+/* type */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* code */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+242,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* id */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* seq */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0xffffffff,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* mask */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload_s */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet + LIBNET_ETH_H + LIBNET_IP_H);</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 3: Packet construction
+(IP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_build_ip(ICMP_MASK_H,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* IP tos */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+242,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* IP ID */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Frag */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+64,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* TTL */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IPPROTO_ICMP,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Transport protocol */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+src_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Source IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dst_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Destination IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Pointer to payload (none) */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet + LIBNET_ETH_H); /* Packet header memory */</font></tt>
+<p><font color="#FF0000">The IP header checksum must be explicitly computed
+for the link layer interface.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 4: Packet checksums
+(ICMP header *AND* IP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_do_checksum(packet
++ ETH_H, IPPROTO_ICMP, LIBNET_ICMP_MASK_H) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_do_checksum failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_do_checksum(packet
++ ETH_H, IPPROTO_IP, LIBNET_IP_H) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_do_checksum failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 5: Packet injection.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; c = libnet_write_link_layer(network,
+device, packet, packet_size);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (c &lt; packet_size)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LN_ERR_WARNING,
+"libnet_write_link_layer only wrote %d bytes\n", c);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; else</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("construction
+and injection completed, wrote all %d bytes\n", c);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Shut down the interface.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_close_link_interface(network)
+== -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LN_ERR_WARNING,
+"libnet_close_link_interface couldn't close the interface");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Free packet memory.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_destroy_packet(&amp;packet);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; return (c == -1 ? EXIT_FAILURE
+: EXIT_SUCCESS);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>void</font></tt>
+<br><tt><font size=-2>usage(char *name)</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; fprintf(stderr, "usage: %s [-i
+interface] -s s_ip -d d_ip\n", name);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<p><tt><font size=-2>/* EOF */</font></tt>
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s6.3"></a><b><font size=+2>6.3 Example 3 [raw socket api -
+ICMP_ECHO using an arena]</font></b>
+<br><font size=-1>Download <a href="examples/libnet-example-3.c">libnet-example-1.c</a></font>
+<p><tt><font size=-2>#include &lt;libnet.h></font></tt>
+<p><tt><font size=-2>void usage(char *);</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>int</font></tt>
+<br><tt><font size=-2>main(int argc, char **argv)</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; int network, n, c, number_of_packets,
+packet_size;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; struct libnet_arena arena, *arena_p;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_char *packets[10];</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_long src_ip, dst_ip;</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("libnet example code:\tmodule
+3\n\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet injection interface:\tlink
+layer\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet type:\t\t\tICMP_ECHO
+[no payload] using an arena\n");</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; src_ip = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; dst_ip = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; while((c = getopt(argc, argv,
+"d:s:")) != EOF)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch
+(c)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 'd':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(dst_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "Bad destination IP address: %s\n", optarg);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 's':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(src_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "Bad source IP address: %s\n", optarg);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (!src_ip || !dst_ip)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exit(EXIT_FAILURE);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; We're just going
+to build an ICMP packet with no payload using the</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; raw sockets API,
+so we only need memory for a ICMP header and an IP</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; header.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; packet_size = LIBNET_IP_H + LIBNET_ICMP_ECHO_H;</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Let's just build
+say, 10 packets.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; number_of_packets = 10;</font></tt>
+<p><font color="#FF0000">The arena can be thought of as a pool of memory
+that can be called upon to yield usable memory until it dries up.&nbsp;
+In this case, we'll have enough memory for 10 packets of the above packet
+size.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; arena_p = &amp;arena;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_init_packet_arena(&amp;arena_p,
+number_of_packets, packet_size) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_init_packet_arena failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; else</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("Allocated
+an arena of %ld bytes..\n", LIBNET_GET_ARENA_SIZE(arena));</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; network = libnet_open_raw_sock(IPPROTO_RAW);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (network == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"Can't open the network.\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">We'll keep grabbing chunks of memory from the
+arena to build packets until it runs dry.&nbsp; This isn't the most useful
+implementation of an arena as all of the packets are the same (a for loop
+around in the injection call would accomplish the same thing without an
+arena).&nbsp; Arenas really become useful when you're injecting packets
+of different types (the arena is used to preload packets).</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; for (n = 0; n &lt; number_of_packets;
+n++)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("%ld
+bytes remaining in arena\n", LIBNET_GET_ARENA_REMAINING_BYTES(arena));</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; packets[n]
+= libnet_next_packet_from_arena(&amp;arena_p, packet_size);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (!packets[n])</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_WARNING, "Arena is empty\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+continue;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_build_ip(ICMP_ECHO_H,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Size of the payload */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IPTOS_LOWDELAY | IPTOS_THROUGHPUT,&nbsp; /* IP tos */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+242,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* IP ID */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* frag stuff */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+48,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* TTL */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IPPROTO_ICMP,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* transport protocol */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+src_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* source IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dst_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* destination IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* pointer to payload */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload length */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packets[n]);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* packet header memory */</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_build_icmp_echo(ICMP_ECHO,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* type */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* code */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+242,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* id */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+5,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* seq */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* pointer to payload */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload length */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packets[n] + LIBNET_IP_H);&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* packet header memory */</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (libnet_do_checksum(packets[n],
+IPPROTO_ICMP, LIBNET_ICMP_ECHO_H) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "libnet_do_checksum failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c = libnet_write_ip(network,
+packets[n], packet_size);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (c
+&lt; packet_size)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LN_ERR_WARNING, "libnet_write_ip only wrote %d bytes\n", c);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; else</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+printf("construction and injection of packet %d of %d completed, wrote
+all %d bytes\n",&nbsp; n + 1, number_of_packets, c);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_destroy_packet_arena(&amp;arena_p);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; return (c == -1 ? EXIT_FAILURE
+: EXIT_SUCCESS);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>void</font></tt>
+<br><tt><font size=-2>usage(char *name)</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; fprintf(stderr, "usage: %s -s
+source_ip -d destination_ip\n ", name);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<p><tt><font size=-2>/* EOF */</font></tt>
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a NAME="s6.4"></a><b><font size=+2>6.4 Example 4 [link-layer api -
+UDP packet using port list chaining]</font></b>
+<br><font size=-1>Download <a href="examples/libnet-example-4.c">libnet-example-1.c</a></font>
+<p><tt><font size=-2>#include &lt;libnet.h></font></tt>
+<p><tt><font size=-2>#define MAX_PAYLOAD_SIZE&nbsp;&nbsp;&nbsp; 1024</font></tt>
+<p><tt><font size=-2>void usage(char *);</font></tt>
+<p><tt><font size=-2>u_char enet_src[6] = {0x0d, 0x0e, 0x0a, 0x0d, 0x00,
+0x00};</font></tt>
+<br><tt><font size=-2>u_char enet_dst[6] = {0xff, 0xff, 0xff, 0xff, 0xff,
+0xff};</font></tt>
+<p><tt><font size=-2>int</font></tt>
+<br><tt><font size=-2>main(int argc, char *argv[])</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; int packet_size,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* size of our packet */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; payload_size,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* size of our packet */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; c;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* misc */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_long src_ip, dst_ip;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* source ip, dest ip */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_short bport, eport;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* beginning and end ports */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_short cport;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* current port */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_char payload[MAX_PAYLOAD_SIZE];&nbsp;&nbsp;
+/* packet payload */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_char *packet;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* pointer to our packet buffer */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; char err_buf[LIBNET_ERRBUF_SIZE];&nbsp;&nbsp;
+/* error buffer */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; u_char *device;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* pointer to the device to use */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; struct libnet_link_int *network;&nbsp;&nbsp;&nbsp;
+/* pointer to link interface struct */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; struct libnet_plist_chain plist;&nbsp;&nbsp;&nbsp;
+/* plist chain */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; struct libnet_plist_chain *plist_p;
+/* plist chain pointer */</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("libnet example code:\tmodule
+4\n\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet injection interface:\tlink
+layer\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; printf("packet type:\t\t\tUDP
+[with payload] using port list chaining\n");</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; plist_p = NULL;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; device = NULL;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; src_ip = 0;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; dst_ip = 0;</font></tt>
+<p><font color="#FF0000">HEY LOOK!&nbsp; We have another argument for the
+port list.&nbsp; Port lists must be specified as ranges delimited by dashes,
+with multiple ranges delimited by commas.&nbsp; See <a href="5.html#s5.5">section
+5</a> (support functions) for more information on port list chain syntax.</font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; while ((c = getopt(argc, argv,
+"i:d:s:p:")) != EOF)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; switch
+(c)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 'd':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(dst_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Bad destination IP address: %s\n", optarg);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 'i':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+device = optarg;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 's':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (!(src_ip = libnet_name_resolve(optarg, LIBNET_RESOLVE)))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+"Bad source IP address: %s\n", optarg);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+case 'p':</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+plist_p = &amp;plist;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (libnet_plist_chain_new(&amp;plist_p, optarg) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "Could not build port list\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+break;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+default:</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+exit(EXIT_FAILURE);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (!src_ip || !dst_ip || !plist_p)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exit(EXIT_FAILURE);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><font color="#FF0000">We also require an argument for the packet payload.&nbsp;
+This code is probably not proof from overflows so take heed.</font><font color="#FF0000"></font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; c = argc - optind;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (c != 1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; usage(argv[0]);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; exit(EXIT_FAILURE);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; memset(payload, 0, sizeof(payload));</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; strncpy(payload, argv[optind],
+strlen(argv[optind]));</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 1: Network
+Initialization (interchangable with step 2).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (device == NULL)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; struct
+sockaddr_in sin;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; Try to locate a device.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*/</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; if (libnet_select_device(&amp;sin,
+&amp;device, err_buf) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "libnet_select_device failed: %s\n", err_buf);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; printf("device:\t\t\t\t%s\n",
+device);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if ((network = libnet_open_link_interface(device,
+err_buf)) == NULL)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_open_link_interface: %s\n", err_buf);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Get the payload
+from the user.&nbsp; Hrm.&nbsp; This might fail on a Sparc</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; if byte alignment
+is off...</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; payload_size = strlen(payload);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; We're going to build
+a UDP packet with a payload using the</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; link-layer API,
+so this time we need memory for a ethernet header</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; as well as memory
+for the ICMP and IP headers and our payload.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; packet_size = LIBNET_IP_H + LIBNET_ETH_H
++ LIBNET_UDP_H + payload_size;</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 2: Memory Initialization
+(interchangable with step 1).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_init_packet(packet_size,
+&amp;packet) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LIBNET_ERR_FATAL,
+"libnet_init_packet failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 3: Packet construction
+(ethernet header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_build_ethernet(enet_dst,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+enet_src,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+ETHERTYPE_IP,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Step 3: Packet construction
+(IP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_build_ip(LIBNET_UDP_H +
+payload_size,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* IP tos */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+242,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* IP ID */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Frag */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+64,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* TTL */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+IPPROTO_UDP,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Transport protocol */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+src_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Source IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+dst_ip,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Destination IP */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+NULL,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* Pointer to payload (none) */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+0,</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet + LIBNET_ETH_H); /* Packet header memory */</font></tt>
+<p><font color="#FF0000">We run in a loop, grabbing port list ranges as
+we go.&nbsp; We only really need to update the UDP port and checksum portions
+of the packet, but for simplicity's sake, we'll lump it all together thusly...</font><font color="#FF0000"></font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; while (libnet_plist_chain_next_pair(plist_p,
+&amp;bport, &amp;eport))</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt><font color="#FF0000"></font>
+<p><font color="#FF0000">Check to see if we've exhausted our cache of port
+list ranges.</font><font color="#FF0000"></font>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; while (!(bport
+> eport) &amp;&amp; bport != 0)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+cport = bport++;</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; Step 3: Packet construction (UDP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*/</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_build_udp(242,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* source port */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+cport,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* dest. port */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+payload,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+payload_size,&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/* payload length */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+packet + LIBNET_ETH_H + LIBNET_IP_H);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; Step 4: Packet checksums (ICMP header *AND* IP header).</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*/</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (libnet_do_checksum(packet + ETH_H, IPPROTO_UDP, LIBNET_UDP_H + payload_size)
+== -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "libnet_do_checksum failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (libnet_do_checksum(packet + ETH_H, IPPROTO_IP, LIBNET_IP_H) == -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LIBNET_ERR_FATAL, "libnet_do_checksum failed\n");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+/*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*&nbsp; Step 5: Packet injection.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+*/</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+c = libnet_write_link_layer(network, device, packet, packet_size);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+if (c &lt; packet_size)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+libnet_error(LN_ERR_WARNING, "libnet_write_link_layer only wrote %d bytes\n",
+c);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+else</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+printf("construction and injection completed, wrote all %d bytes, port
+%d\n", c, cport);</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+}</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Shut down the interface.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; if (libnet_close_link_interface(network)
+== -1)</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; {</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; libnet_error(LN_ERR_WARNING,
+"libnet_close_link_interface couldn't close the interface");</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; }</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; /*</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; *&nbsp; Free packet memory.</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp;&nbsp; */</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; libnet_destroy_packet(&amp;packet);</font></tt>
+<p><tt><font size=-2>&nbsp;&nbsp;&nbsp; return (c == -1 ? EXIT_FAILURE
+: EXIT_SUCCESS);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<br>&nbsp;
+<p><tt><font size=-2>void</font></tt>
+<br><tt><font size=-2>usage(char *name)</font></tt>
+<br><tt><font size=-2>{</font></tt>
+<br><tt><font size=-2>&nbsp;&nbsp;&nbsp; fprintf(stderr, "usage: %s [-i
+interface] -s s_ip -d d_ip -p port list payload\n", name);</font></tt>
+<br><tt><font size=-2>}</font></tt>
+<p><tt><font size=-2>/* EOF */</font></tt>
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<p>
+<hr ALIGN=LEFT WIDTH="97%">
+<p><a href="7.html">Next</a> <a href="5.html">Previous</a> <a href="lrm.html">Top</a>
+</body>
+</html>

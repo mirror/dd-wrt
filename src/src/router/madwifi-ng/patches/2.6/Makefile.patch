@@ -1,0 +1,11 @@
+--- Makefile.orig	2004-09-28 11:01:24.026989344 -0700
++++ Makefile	2004-09-28 11:00:34.235558792 -0700
+@@ -31,3 +31,8 @@
+ # 16-bit wireless PCMCIA client drivers
+ obj-$(CONFIG_PCMCIA_RAYCS)	+= ray_cs.o
+ obj-$(CONFIG_PCMCIA_WL3501)	+= wl3501_cs.o
++
++obj-$(CONFIG_ATHEROS_HAL)	+= _ath_hal/
++obj-$(CONFIG_ATHEROS_RATE)	+= _ath_rate/
++obj-$(CONFIG_ATHEROS)		+= ath/
++obj-$(CONFIG_NET80211)		+= net80211/

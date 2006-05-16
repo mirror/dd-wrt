@@ -1,0 +1,4 @@
+Author: Martin Josefsson <gandalf@wlug.westbo.se>
+Status: Pending for kernel inclusion
+
+Fix a locking bug in ip_conntrack_proto_tcp.

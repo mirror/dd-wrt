@@ -1,0 +1,521 @@
+#!/bin/sh
+#
+# Shorewall 1.4 -- /usr/lib/shorewall/functions
+
+#
+# Suppress all output for a command
+#
+qt()
+{
+    "$@" >/dev/null 2>&1
+}
+
+#
+# Find a File -- Look first in $SHOREWALL_DIR then in /var/shorewall
+#
+find_file()
+{
+    if [ -n "$SHOREWALL_DIR" -a -f $SHOREWALL_DIR/$1 ]; then
+    	echo $SHOREWALL_DIR/$1
+    else
+    	echo /var/shorewall/$1
+    fi
+}
+
+#
+# Replace commas with spaces and echo the result
+#
+separate_list() {
+    local list
+    local part
+    local newlist
+    #
+    # There's been whining about us not catching embedded white space in
+    # comma-separated lists. This is an attempt to snag some of the cases.
+    #
+    # The 'terminator' function will be set by the 'firewall' script to
+    # either 'startup_error' or 'fatal_error' depending on the command and
+    # command phase
+    #
+    case "$@" in
+	*,|,*|*,,*|*[[:space:]]*)
+            [ -n "$terminator" ] && \
+		$terminator "Invalid comma-separated list \"$@\""
+            echo "Warning -- invalid comma-separated list \"$@\"" >&2
+	    ;;
+    esac
+
+    list="$@"
+    part="${list%%,*}"
+    newlist="$part"
+
+    while [ "x$part" != "x$list" ]; do
+	list="${list#*,}";
+	part="${list%%,*}";
+	newlist="$newlist $part";
+    done
+
+    echo "$newlist"
+}
+
+#
+# Find the zones
+#
+find_zones() # $1 = name of the zone file
+{
+    while read zone display comments; do
+	[ -n "$zone" ] && case "$zone" in
+	    \#*)
+		;;
+            $FW|multi)
+	        echo "Reserved zone name \"$zone\" in zones file ignored" >&2
+		;;
+            *)
+		echo $zone
+		;;
+        esac
+    done < $1
+}
+
+find_display() # $1 = zone, $2 = name of the zone file
+{
+    grep ^$1 $2 | while read z display comments; do
+	[ "x$1" = "x$z" ] && echo $display
+    done
+}
+#
+# This function assumes that the TMP_DIR variable is set and that
+# its value named an existing directory.
+#
+determine_zones()
+{
+    local zonefile=`find_file zones`
+
+    multi_display=Multi-zone
+    strip_file zones $zonefile
+    zones=`find_zones $TMP_DIR/zones`
+    zones=`echo $zones` # Remove extra trash
+    
+    for zone in $zones; do
+	dsply=`find_display $zone $TMP_DIR/zones`
+	eval ${zone}_display=\$dsply
+    done
+}
+
+#
+# The following functions may be used by apps that wish to ensure that
+# the state of Shorewall isn't changing
+#
+# This function loads the STATEDIR variable (directory where Shorewall is to
+# store state files). If your application supports alternate Shorewall
+# configurations then the name of the alternate configuration directory should
+# be in $SHOREWALL_DIR at the time of the call.
+#
+# If the shorewall.conf file does not exist, this function does not return
+#
+get_statedir()
+{
+    MUTEX_TIMEOUT=
+
+    local config=`find_file shorewall.conf`
+
+    if [ -f $config ]; then
+       . $config
+    else
+	echo "/var/shorewall/shorewall.conf does not exist!" >&2
+	exit 2
+    fi
+
+    [ -z "${STATEDIR}" ] && STATEDIR=/var/shorewall
+}
+
+#
+# Call this function to assert MUTEX with Shorewall. If you invoke the
+# /sbin/shorewall program while holding MUTEX, you should pass "nolock" as
+# the first argument. Example "shorewall nolock refresh"
+#
+# This function uses the lockfile utility from procmail if it exists.
+# Otherwise, it uses a somewhat race-prone algorithm to attempt to simulate the
+# behavior of lockfile.
+#
+mutex_on()
+{
+    local try=0
+    local lockf=$STATEDIR/lock
+
+    MUTEX_TIMEOUT=${MUTEX_TIMEOUT:-60}
+
+    if [ $MUTEX_TIMEOUT -gt 0 ]; then
+
+	[ -d $STATEDIR ] || mkdir -p $STATEDIR
+
+	if qt which lockfile; then
+	    lockfile -${MUTEX_TIMEOUT} -r1 ${lockf}
+	else
+	    while [ -f ${lockf} -a ${try} -lt ${MUTEX_TIMEOUT} ] ; do
+		sleep 1
+		try=$((${try} + 1))
+	    done
+
+	    if  [ ${try} -lt ${MUTEX_TIMEOUT} ] ; then
+	        # Create the lockfile
+		echo $$ > ${lockf}
+	    else
+		echo "Giving up on lock file ${lockf}" >&2
+	    fi
+	fi
+    fi
+}
+
+#
+# Call this function to release MUTEX
+#
+mutex_off()
+{
+    rm -f $STATEDIR/lock
+}
+
+#
+# Read a file and handle "INCLUDE" directives
+#
+
+read_file() # $1 = file name, $2 = nest count
+{
+    local first rest
+
+    while read first rest; do
+	if [ "x$first"  = "xINCLUDE" ]; then
+	    if [ $2 -lt 4 ]; then
+		read_file `find_file ${rest%#*}` $(($2 + 1))
+	    else
+		echo "   WARNING: INCLUDE in $1 ignored (nested too deeply)" >&2
+	    fi
+	else
+	    echo "$first $rest"
+	fi
+    done < $1
+}
+
+#
+# Function for including one file into another
+#
+INCLUDE() {
+    . `find_file $@`
+}
+
+#
+# Strip comments and blank lines from a file and place the result in the
+# temporary directory
+#
+strip_file() # $1 = Base Name of the file, $2 = Full Name of File (optional)
+{
+    local fname
+
+    [ $# = 1 ] && fname=`find_file $1` || fname=$2
+
+    if [ -f $fname ]; then
+	read_file $fname 0 | cut -d'#' -f1 | grep -v '^[[:space:]]*$' > $TMP_DIR/$1
+    else
+	> $TMP_DIR/$1
+    fi
+}
+
+#
+#  Note: The following set of IP address manipulation functions have anomalous
+#        behavior when the shell only supports 32-bit signed arithmatic and
+#        the IP address is 128.0.0.0 or 128.0.0.1.
+#
+#
+# So that emacs doesn't get lost, we use $LEFTSHIFT rather than <<
+#
+LEFTSHIFT='<<'
+
+#
+# Convert an IP address in dot quad format to an integer
+#
+decodeaddr() {
+    local x
+    local temp=0
+    local ifs=$IFS
+    
+    IFS=.
+
+    for x in $1; do
+	temp=$(( $(( $temp $LEFTSHIFT 8 )) | $x ))
+    done
+
+    echo $temp
+
+    IFS=$ifs
+}
+
+#
+# convert an integer to dot quad format
+#
+encodeaddr() {
+    addr=$1
+    local x
+    local y=$(($addr & 255))
+
+    for x in 1 2 3 ; do
+	addr=$(($addr >> 8))
+	y=$(($addr & 255)).$y
+    done
+
+    echo $y
+}
+
+#
+# Enumerate the members of an IP range -- When using a shell supporting only
+# 32-bit signed arithmetic, the range cannot span 128.0.0.0.
+#
+# Comes in two flavors:
+#
+# ip_range() - produces a mimimal list of network/host addresses that spans 
+#              the range.
+#
+# ip_range_explicit() - explicitly enumerates the range.
+#
+ip_range() {
+    local first last l x y z vlsm
+
+    case $1 in 
+    [0-9]*.*.*.*-*.*.*.*)
+	;;
+    *)
+	echo $1
+	return
+	;;
+    esac
+
+    first=`decodeaddr ${1%-*}`
+    last=`decodeaddr ${1#*-}`
+
+    if [ $first -gt $last ]; then
+	fatal_error "Invalid IP address range: $1"
+    fi
+
+    l=$(( $last + 1 ))
+
+    while [ $first -le $last ]; do
+	vlsm=
+	x=31
+	y=2
+	z=1
+
+	while [ $(( $first % $y )) -eq 0 -a $(( $first + $y )) -le $l ]; do
+	    vlsm=/$x
+	    x=$(( $x - 1 ))
+	    z=$y
+	    y=$(( $y * 2 ))
+	done
+
+	echo `encodeaddr $first`$vlsm
+	first=$(($first + $z))
+    done
+}
+
+ip_range_explicit() {
+    local first last
+
+    case $1 in 
+    [0-9]*.*.*.*-*.*.*.*)
+	;;
+    *)
+	echo $1
+	return
+	;;
+    esac
+
+    first=`decodeaddr ${1%-*}`
+    last=`decodeaddr ${1#*-}`
+
+    if [ $first -gt $last ]; then
+	fatal_error "Invalid IP address range: $1"
+    fi
+
+    while [ $first -le $last ]; do
+	echo `encodeaddr $first`
+	first=$(($first + 1))
+    done
+}
+
+#
+# Netmask from CIDR
+#
+ip_netmask() {
+    local vlsm=${1#*/}
+
+    [ $vlsm -eq 0 ] && echo 0 || echo $(( -1 $LEFTSHIFT $(( 32 - $vlsm )) ))
+}
+
+#
+# Network address from CIDR
+#
+ip_network() {
+    local decodedaddr=`decodeaddr ${1%/*}`
+    local netmask=`ip_netmask $1`
+
+    echo `encodeaddr $(($decodedaddr & $netmask))`
+}
+
+#
+# The following hack is supplied to compensate for the fact that many of
+# the popular light-weight Bourne shell derivatives don't support XOR ("^").
+#
+
+ip_broadcast() {
+    local x=$(( 32 - ${1#*/} ))
+
+    [ $x -eq 0 ] && echo -1 || echo $(( $(( 1 $LEFTSHIFT $x )) - 1 ))
+}
+
+#
+# Calculate broadcast address from CIDR
+#
+broadcastaddress() {
+    local decodedaddr=`decodeaddr ${1%/*}`
+    local netmask=`ip_netmask $1`
+    local broadcast=`ip_broadcast $1`
+
+    echo `encodeaddr $(( $(($decodedaddr & $netmask)) | $broadcast ))`
+}
+
+#
+# Test for subnet membership
+#
+in_subnet() # $1 = IP address, $2 = CIDR network
+{
+    local netmask=`ip_netmask $2`
+
+    test $(( `decodeaddr $1` & $netmask)) -eq $(( `decodeaddr ${2%/*}` & $netmask ))
+}
+
+#
+# Netmask to VLSM
+#
+ip_vlsm() {
+    local mask=`decodeaddr $1`
+    local vlsm=0
+    local x=$(( 128 $LEFTSHIFT 24 ))
+
+    while [ $(( $x & $mask )) -ne 0 ]; do
+	[ $mask -eq $x ] && mask=0 || mask=$(( $mask $LEFTSHIFT 1 )) # Don't Ask...
+	vlsm=$(($vlsm + 1))
+    done
+
+    if [ $(( $mask & 2147483647)) -ne 0 ]; then
+	echo "Invalid net mask: $1" >&2
+    else
+	echo $vlsm
+    fi
+}
+
+
+#
+# Chain name base for an interface -- replace all periods with underscores in the passed name.
+#                                     The result is echoed (less "+" and anything following).
+#
+chain_base() #$1 = interface
+{
+    local c=${1%%+*}
+
+    while true; do
+	case $c in
+	    *.*)
+		c="${c%.*}_${c##*.}"
+		;;
+	    *-*)
+		c="${c%-*}_${c##*-}"
+		;;
+	    *)
+		echo ${c:=common}
+		return
+		;;
+	esac
+    done
+}
+
+#
+# Remove trailing digits from a name
+#
+strip_trailing_digits() {
+    echo $1 | sed s'/[0-9].*$//'
+}
+
+#
+# Loosly Match the name of an interface
+#
+
+if_match() # $1 = Name in interfaces file - may end in "+"
+           # $2 = Name from routing table
+{
+    local if_file=$1
+    local rt_table=$2
+
+    case $if_file in
+	*+)
+	    test "`strip_trailing_digits $rt_table`" = "${if_file%+}"
+	    ;;
+	*)
+	    test "$rt_table" = "$if_file"
+	    ;;
+    esac
+}
+
+#
+# Find the value 'dev' in the passed arguments then echo the next value
+#
+
+find_device() {
+    while [ $# -gt 1 ]; do
+	[ "x$1" = xdev ] && echo $2 && return
+	shift
+    done
+}
+    
+#
+# Find the interfaces that have a route to the passed address - the default
+# route is not used.
+#
+
+find_rt_interface() {
+    ip route ls | while read addr rest; do
+	case $addr in
+	    */*)
+		in_subnet ${1%/*} $addr && echo `find_device $rest`
+		;;
+	    default)
+		;;
+	    *)
+		if [ "$addr" = "$1" -o "$addr/32" = "$1" ]; then
+		    echo `find_device $rest`
+		fi
+		;;
+	esac
+    done
+}
+
+#
+# Find the default route's interface
+#
+find_default_interface() {
+    ip route ls | while read first rest; do
+	[ "$first" = default ] && echo `find_device $rest` && return
+    done
+}
+
+#
+# Echo the name of the interface(s) that will be used to send to the
+# passed address
+#
+
+find_interface_by_address() {
+    local dev="`find_rt_interface $1`"
+    local first rest
+
+    [ -z "$dev" ] && dev=`find_default_interface`
+
+    [ -n "$dev" ] && echo $dev
+}
+

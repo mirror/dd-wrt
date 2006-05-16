@@ -1,0 +1,171 @@
+diff -Nur --exclude CVS linux-2.4.18/Makefile linux-int-2.4.18/Makefile
+--- linux-2.4.18/Makefile	Mon Feb 25 20:37:52 2002
++++ linux-int-2.4.18/Makefile	Wed Feb 27 01:18:49 2002
+@@ -120,9 +120,10 @@
+ 
+ CORE_FILES	=kernel/kernel.o mm/mm.o fs/fs.o ipc/ipc.o
+ NETWORKS	=net/network.o
++CRYPTO		=crypto/crypto.o
+ 
+ LIBS		=$(TOPDIR)/lib/lib.a
+-SUBDIRS		=kernel drivers mm fs net ipc lib
++SUBDIRS		=kernel drivers mm fs net ipc lib crypto
+ 
+ DRIVERS-n :=
+ DRIVERS-y :=
+@@ -245,7 +246,7 @@
+ 
+ export	CPPFLAGS CFLAGS CFLAGS_KERNEL AFLAGS AFLAGS_KERNEL
+ 
+-export	NETWORKS DRIVERS LIBS HEAD LDFLAGS LINKFLAGS MAKEBOOT ASFLAGS
++export	NETWORKS CRYPTO DRIVERS LIBS HEAD LDFLAGS LINKFLAGS MAKEBOOT ASFLAGS
+ 
+ .S.s:
+ 	$(CPP) $(AFLAGS) $(AFLAGS_KERNEL) -traditional -o $*.s $<
+@@ -264,6 +265,7 @@
+ 		$(CORE_FILES) \
+ 		$(DRIVERS) \
+ 		$(NETWORKS) \
++		$(CRYPTO) \
+ 		$(LIBS) \
+ 		--end-group \
+ 		-o vmlinux
+diff -Nur --exclude CVS linux-2.4.18/arch/alpha/config.in linux-int-2.4.18/arch/alpha/config.in
+--- linux-2.4.18/arch/alpha/config.in	Wed Nov 21 00:49:31 2001
++++ linux-int-2.4.18/arch/alpha/config.in	Wed Feb 27 01:18:49 2002
+@@ -269,6 +269,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.18/arch/arm/config.in linux-int-2.4.18/arch/arm/config.in
+--- linux-2.4.18/arch/arm/config.in	Fri Nov  9 22:58:02 2001
++++ linux-int-2.4.18/arch/arm/config.in	Wed Feb 27 01:18:49 2002
+@@ -448,6 +448,7 @@
+ source drivers/pnp/Config.in
+ source drivers/block/Config.in
+ source drivers/md/Config.in
++source crypto/Config.in
+ 
+ if [ "$CONFIG_ARCH_ACORN" = "y" ]; then
+    source drivers/acorn/block/Config.in
+diff -Nur --exclude CVS linux-2.4.18/arch/cris/config.in linux-int-2.4.18/arch/cris/config.in
+--- linux-2.4.18/arch/cris/config.in	Mon Feb 25 20:37:52 2002
++++ linux-int-2.4.18/arch/cris/config.in	Wed Feb 27 01:18:49 2002
+@@ -152,6 +152,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.18/arch/i386/config.in linux-int-2.4.18/arch/i386/config.in
+--- linux-2.4.18/arch/i386/config.in	Mon Feb 25 20:37:52 2002
++++ linux-int-2.4.18/arch/i386/config.in	Wed Feb 27 01:18:49 2002
+@@ -300,6 +300,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.18/arch/ia64/config.in linux-int-2.4.18/arch/ia64/config.in
+--- linux-2.4.18/arch/ia64/config.in	Fri Nov  9 23:26:17 2001
++++ linux-int-2.4.18/arch/ia64/config.in	Wed Feb 27 01:18:49 2002
+@@ -137,6 +137,7 @@
+ source drivers/block/Config.in
+ source drivers/message/i2o/Config.in
+ source drivers/md/Config.in
++source crypto/Config.in
+ 
+ mainmenu_option next_comment
+ comment 'ATA/IDE/MFM/RLL support'
+diff -Nur --exclude CVS linux-2.4.18/arch/m68k/config.in linux-int-2.4.18/arch/m68k/config.in
+--- linux-2.4.18/arch/m68k/config.in	Tue Jun 12 04:15:27 2001
++++ linux-int-2.4.18/arch/m68k/config.in	Wed Feb 27 01:18:49 2002
+@@ -161,6 +161,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.18/arch/mips/config.in linux-int-2.4.18/arch/mips/config.in
+--- linux-2.4.18/arch/mips/config.in	Mon Oct 15 22:41:34 2001
++++ linux-int-2.4.18/arch/mips/config.in	Wed Feb 27 01:18:49 2002
+@@ -342,6 +342,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.18/arch/mips64/config.in linux-int-2.4.18/arch/mips64/config.in
+--- linux-2.4.18/arch/mips64/config.in	Sun Sep  9 19:43:02 2001
++++ linux-int-2.4.18/arch/mips64/config.in	Wed Feb 27 01:18:49 2002
+@@ -150,6 +150,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.18/arch/ppc/config.in linux-int-2.4.18/arch/ppc/config.in
+--- linux-2.4.18/arch/ppc/config.in	Mon Feb 25 20:37:55 2002
++++ linux-int-2.4.18/arch/ppc/config.in	Wed Feb 27 01:18:49 2002
+@@ -242,6 +242,7 @@
+ source drivers/pnp/Config.in
+ source drivers/block/Config.in
+ source drivers/md/Config.in
++source crypto/Config.in
+ 
+ if [ "$CONFIG_NET" = "y" ]; then
+   source net/Config.in
+diff -Nur --exclude CVS linux-2.4.18/arch/sh/config.in linux-int-2.4.18/arch/sh/config.in
+--- linux-2.4.18/arch/sh/config.in	Mon Feb 25 20:37:56 2002
++++ linux-int-2.4.18/arch/sh/config.in	Wed Feb 27 01:18:49 2002
+@@ -223,6 +223,8 @@
+ 
+ source drivers/md/Config.in
+ 
++source crypto/Config.in
++
+ if [ "$CONFIG_NET" = "y" ]; then
+    source net/Config.in
+ fi
+diff -Nur --exclude CVS linux-2.4.18/arch/sparc/config.in linux-int-2.4.18/arch/sparc/config.in
+--- linux-2.4.18/arch/sparc/config.in	Tue Jun 12 04:15:27 2001
++++ linux-int-2.4.18/arch/sparc/config.in	Wed Feb 27 01:18:49 2002
+@@ -102,6 +102,7 @@
+ #fi
+ 
+ source drivers/md/Config.in
++source crypto/Config.in
+ 
+ tristate 'RAM disk support' CONFIG_BLK_DEV_RAM
+ if [ "$CONFIG_BLK_DEV_RAM" = "y" -o "$CONFIG_BLK_DEV_RAM" = "m" ]; then
+diff -Nur --exclude CVS linux-2.4.18/arch/sparc64/config.in linux-int-2.4.18/arch/sparc64/config.in
+--- linux-2.4.18/arch/sparc64/config.in	Fri Dec 21 18:41:53 2001
++++ linux-int-2.4.18/arch/sparc64/config.in	Wed Feb 27 01:18:49 2002
+@@ -106,6 +106,7 @@
+ dep_tristate 'Network block device support' CONFIG_BLK_DEV_NBD $CONFIG_NET
+ 
+ source drivers/md/Config.in
++source crypto/Config.in
+ 
+ tristate 'RAM disk support' CONFIG_BLK_DEV_RAM
+ if [ "$CONFIG_BLK_DEV_RAM" = "y" -o "$CONFIG_BLK_DEV_RAM" = "m" ]; then

@@ -1,0 +1,145 @@
+Copyright (C) 2003-2005 Maxina GmbH - Jordan Hrycaj
+
+ This program is free software; you can redistribute it and/or
+ modify it under the terms of the GNU Lesser General Public
+ License as published by the Free Software Foundation; either
+ version 2.1 of the License, or (at your option) any later version.
+
+ This program is distributed in the hope that it will be useful,
+ but WITHOUT ANY WARRANTY; without even the implied warranty of
+ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+ Lesser General Public License for more details.
+
+ You should have received a copy of the GNU Lesser General Public
+ License along with this program; if not, write to the Free Software
+ Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307  USA
+
+$Id: README,v 1.6 2005/02/27 20:30:12 jordan Exp $
+--
+
+
+SHAT for universal gateway access:
+==================================
+
+What is SHAT - source hardware address translation:
+--------------------------------------------------
+As I define it, source hardware address translation is a mixed IP/MAC
+address mapping f:(<MAC>,<IP>) -> <IP'>. By definition, this mapping is
+injective (say, given an arbitrary <IP'> in the image of f we will find
+(<MAC>,<IP>) with f(<MAC>,<IP>)=<IP'>).
+
+COMMENT: All over the place we assume that <MAC> is unique.
+
+COMMENT: IP' is just taken from an address pool and the triple
+(<MAC>,<IP>,<IP'>) is registered when seen seen for the first time.
+
+COMMENT: In theory, this works as defined but there might me a problem
+with the underlying Linux operating system. In particular, it is necessary
+(under Linux) to use permanent mac table entries. But it was impossible
+to enter the same IP address again with a different mac address. The
+problem with this is, that the OS seems to require a permanent mac entry
+in order to answer fancy mac clients ... (more testing needed)
+
+
+What it is needed for:
+----------------------
+In my current implementation, it is used to allow a local LAN client on
+the same Ethernet collision domain access an IP gateway with an arbitrary
+client IP address. Although this is generally a bad idea on routed networks,
+it comes in handy on small sites as they are present with WLAN access
+gateways.  Some restrictions apply, eg. there can only be a single gateway
+using SHAT on the same collision domain.
+
+This implementation also provides someTCP/IP neighbour port scan
+protection.  It is neither complete nor secure.  But it makes it harder
+to get a result and even more harder to connect to a neighbour.  It is
+simply doe to the fact that all traffic is attracted by a (probably
+faked) central gateway.
+
+
+My personal opinion:
+--------------------
+People, in particular mobile managers should (learn to) configure their
+notebook using DHCP, which is the better choice in any circumstandces. Also
+a company roll out of mobile Microsoft systems as w2k/xp notebooks should
+alwasy stick to DHCP. They should not make use of fixed IP addresses that
+no mobile manager can change.
+
+
+Other implementations:
+----------------------
+There are (some US patented) applications from Nomadix and Cisco (BBSM)
+and probably other vendors. At least one of those implementations uses
+an US patented algorithm (eg. calling it a nomadic router) that sets the
+interface into a promiscuos mode. For SHAT, I do not need that. For this
+reason, there is no patent infringement with this code even in the US. In
+Europe we lucky enough to not have US-American patent regulations (as
+of Feb/2005).
+
+
+How SHAT is implemented on a userland Linux application:
+------------------------------------------------------
+The general algorithm goes with four more or less independent tasks:
+
+ [arpfilter]:
+ + on the LAN interface, listen for arp WHOIS requests for <somebody>
+ + answer with arp request "<somebody> is-at <me>"
+ + register client <MAC> and <IP> (but not <somebody>)
+ + add an arp entry with client <IP>/<MAC> to the kernel arp table
+
+ [injector]:
+ + on the LAN interface, listen for Ethernet (aka link layer) data frames
+ + verify that the <MAC> and <IP< addresses were registered by the arpfilter
+ + map (<MAC>,<IP>) -> <IP'> where <IP'> is uniquely related to <MAC>
+ + forward the IP frame to the TUN interface
+
+ [extractor]:
+ + on the TUN interface listen for IP data frames
+ + verify that the IP address <IP'> was registered (arpfilter)
+ + edit <IP'> -> (<MAC>,<IP>) as it was registered
+ + forward the frame to the LAN interface
+
+Here is a sketch that illustrates the interaction of ports and interfaces for
+the userland application:
+
+ client --------------+------- (W)LAN/Ethernet
+                      |
+        +-------------|------------------------------------------------+
+        |             |                                                |
+        |      +------+----------------------+                         |
+        |      |  NIC/driver, LAN interface  |                         |
+        |      +-----------------------------+                         |
+        |        |    ^         |          ^                           |
+        |        |    |         |          |                           |
+        |        |   arp        |       Ethernet                       |
+        |        |  socket      |        socket                        |
+        |        |    |         |          |                           |
+        |        |    |         |          |                           |
+        |       arp   |      Ethernet      |                           |
+        |     socket  |       socket       +-- [extractor] <-----+     |
+        |        |    |         |                                |     |
+        |        |    |         +----> [injector] ----+          |     |
+        |        |    |                               |          |     |
+        |        |    |                              IP         IP     |
+        |        |    |                             socket     socket  |
+        |        v    |                               |          |     |
+        |      [arpfilter]                            v          |     |
+        |                            +------------------------------+  |
+        |                            | TUN/driver, Kernel interface |  |
+        |                            +------------------------------+  |
+        | Linux/OS                              |                      |
+        +---------------------------------------|----------------------+
+                                                |
+                                              KERNEL
+
+Modification for scan protection:
+---------------------------------
+
+ [arpfilter]:
+ + on the LAN interface, listen for arp WHOIS requests for <somebody>
+ + if the frame is in the protection address range:
+   - answer with arp request "<somebody> is-at <eternity>"
+   - repeat that several times
+
+--
+Jordan Hrycaj <jordan@mjh.teddy.net.com>

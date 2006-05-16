@@ -1,0 +1,58 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="Author" content="Mike Schiffman">
+   <meta name="GENERATOR" content="Mozilla/4.6 [en] (Win98; I) [Netscape]">
+   <title>Introduction</title>
+</head>
+<body text="#000000" bgcolor="#CCCCCC" link="#0000EE" vlink="#551A8B" alink="#FF0000">
+<a href="2.html">Next</a> Previous <a href="lrm.html">Top</a>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><b><font size=+2>1. Introduction</font></b>
+<p><font size=-1>Libnet is a C library providing a high-level interface
+to packet injection primitives across many platforms.&nbsp; Previous to
+libnet, programmers had to wrestle with confusing, obscure, and poorly
+documented interfaces to build and write network packets.&nbsp; Libnet
+alleviates these problems and provides a well documented, simple API to
+quickly build portable programs that write network packets (figure 1).</font>
+<center>
+<p><img SRC="figure-1.gif" ALT="figure 1" height=868 width=760></center>
+
+<p><font size=-1>Libnet was written for two main reasons:</font>
+<ul>
+<li>
+<font size=-1>To establish a simple interface by which network programmers
+could ignore the subtleties and nuances of low-level network programming
+(and therefore concentrate on writing their programs and solving their
+problems).</font></li>
+
+<li>
+<font size=-1>To mitigate the irritation many network programmers experienced
+due to the lack of standards.</font></li>
+</ul>
+<font size=-1>To be honest, I can't believe someone didn't write something
+like libnet (also termed "libpwrite") a long time ago.&nbsp; It seemed
+like such an obvious gap that needed to be filled.&nbsp; I was sure the
+<a href="http://ee.lbl.gov">LBNL</a>
+guys (Lawrence Berkeley National Laboratory -- they wrote <a href="http://ee.lbl.gov">libpcap[1</a><a href="7.html">]</a>)
+would put something together.&nbsp; Libnet, on a high level, is the packet
+injector analog to libpcap.&nbsp; They are brothers (or sisters).</font>
+<p><font size=-1>Libnet is a wonderful utility for writing security-related
+applications, tools and modules.&nbsp; Many recent exploits have been rapidly
+developed using libnet as have many security related tools.&nbsp; The <a href="http://www.packetfactory.net">Packetfactory</a>
+has many such examples.</font>
+<p><font size=-1>This manual describes libnet in detail, including library
+internals and design decisions, as well as including step by step coding
+examples.</font>
+<p><font size=-1>The primary author of libnet is Mike D. Schiffman &lt;mike@infonexus.com>.&nbsp;
+However, libnet just wouldn't be libnet without the teeming masses of
+<a href="contrib.html">other
+way talented people</a> who have helped out.</font>
+<br>
+<hr ALIGN=LEFT WIDTH="97%">
+<br><a href="2.html">Next</a> Previous <a href="lrm.html">Top</a>
+<br>&nbsp;
+</body>
+</html>

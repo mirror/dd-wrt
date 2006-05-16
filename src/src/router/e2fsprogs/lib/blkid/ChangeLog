@@ -1,0 +1,512 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-06-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* read.c, dev.c: Fix the debugging/TEST_PROGRAM code so that it is
+		sufficiently standalone that "make check" will compile
+		without errors even when configure "--enable-blkid-debug"
+		is not specified.
+
+2005-05-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* tag.c (blkid_find_dev_with_tag): If a device can't be found with
+		the specified search arguments, probe all new devices
+		before trying to verify existing devices, as a speed
+		optimization.
+
+	* devname.c (blkid_probe_all_new): New function which only probes
+		devices are not known in the blkid cache.  This takes
+		much less time than a full probe of all devices.
+
+	* cache.c, dev.c, devno.c, probe.c, probe.h: Fix gcc -Wall nits.
+
+	* blkidP.h, cache.c, dev.c, read.c, tag.c: Clean up the debugging
+		code so that we don't use the inline functions DEB_DUMP_*
+		and instead use the private functions blkid_debug_dump_*().
+
+	* tag.c (blkid_dev_has_tag): New function which returns 1 if a tag
+		has a particular type and possibly value.
+
+	* blkid.h, dev.c (blkid_dev_set_search, blkid_dev_next): Added new
+		function, blkid_dev_set_search(), which filters the
+		devices returned by the blkid_dev_next() iterator.
+
+	* tag.c, dev.c, Makefile.in: Add debugging test program code.
+
+2005-05-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c (probe_cramfs), probe.h: Fix magic number recognition
+		for the cramfs filesystem, and add support to pull out the
+		label for cramfs filesystems.  Thanks to Karel Zak (kzak
+		at redhat.com) for the patch.
+
+2005-03-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* cache.c (blkid_get_cache): Use a much more paranoid
+		safe_getenv() function which will ignore the BLKID_FILE
+		environment varaible if the application program is setgid
+		or on a Linux system, if kernel doesn't think the process
+		is eligible to create a core dump.  Also if glibc has
+		__secure_getenv(), then use it.
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* cache.c (blkid_get_cache): Ignore the BLKID_FILE environment
+		variable if blkid_get_cache() is called from a setuid
+		program.
+
+2005-03-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* getsize.c (blkid_get_dev_size): Fix compilation problem on
+		Darwin systems.
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Remove blkid.pc on a "make distclean"
+
+2005-01-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* blkid.h, blkidP.h: Rename blkid_verify_devname() to be
+		blkid_verify(), and make it be a publically exported
+		function.
+
+2005-01-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* version.c: Add functions to query the version of the blkid library.
+
+	* blkid.pc.in: Add pkg-config files.
+
+2005-01-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c: Windows can perform a "quick format" that doesn't clear
+		enough of the partition that the blkid probes can get
+		confused.  Do the NTFS test first to deal with this
+		Windows misfeature.  (Addresses Debian Bug #291990)
+
+2005-01-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c (probe_oracleasm): Add support for recognizing Oracle
+		ASM volumes.  Thanks to Manish Singh (manish.singh at
+		oracle.com) for supplying this patch.
+
+2005-01-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Fix the kernel compile-time echo commands to be
+		consistent and portable
+
+2005-01-13  Matthias Andree  <matthias.andree@gmx.de>
+
+	* getsize.c: Move #include "blkidP.h" before <sys/queues.h> to avoid a
+	clash with the LIST_HEAD in the latter file.
+
+2005-01-10  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c: Integrate and fix up Janos Farkas's patch.  Version 0
+		swap headers won't ever have uuid/labels.  Also, if the
+		swap partition is recreated without a label, make sure
+		label in the blkid file gets freed.
+		(get_ext2_info, probe_vfat, probe_msdos, probe_reiserfs):
+		Make sure the label is cleared from the blkid file if the
+		label gets cleared from the filesystem.
+		(probe_romfs): Avoid dereferencing a null pointer of the
+		label is not present.
+
+2005-01-10  Janos Farkas  <chexum+dev@gmail.com>
+
+	* probe.h: Define linux swap format.
+
+	* probe.c: Fetch uuid/label from swap headers if present.  Mark
+	swap types as needing extra probe.
+
+2005-01-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* save.c (save_dev): Don't save relative pathnames since they
+		won't be useful to another process.
+
+	* devname.c (probe_one): Make sure the device is a block device
+		before checking st_rdev.
+
+	* probe.c (probe_msdos): Mark msdos filesystems as type vfat, with
+		a SEC_TYPE of msdos, so that mount will use vfat to mount
+		msdos filesystems.  (Addresses Debian bug #287455)
+		(probe_ext3): For ext3 filesystems, return a type of ext3
+		and a SEC_TYPE of ext2, for similar reasons as above.
+		(blkid_verify_devname): Allow non-block devices to be
+		verified, for testing purposes.
+
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Use Linux-kernel-style makefile output for "make
+		install"
+
+	* Makefile.in (installdirs): Use $(MKINSTALLDIRS) macro
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c, probe.h: Avoid using uint and uchar types, to allow
+		compilation using dietlibc.
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-11-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c (probe_ocfs): Fix bug where the wrong size for "ocfs1"
+		was being passed to blkid_set_tag().  Thanks to Andrea
+		Dilger for pointing this out.
+
+2004-09-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c, probe.h: Add support for ocfs2 detection, courtesy of
+		manish.singh@oracle.com
+
+	* getsize.c: Clean up header #include's.  Include sys/disk.h if
+		present since this is the new place where the
+		DIOCGMEDIASIZE ioctl is defined on FreeBSD systems.
+		(Addresses Debian bug #264630)
+
+	* llseek.c (blkid_llseek): On non-linux systems, use lseek64() if
+		it is present.  (Addresses Debian bug #269044)
+
+2004-05-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* read.c (blkid_read_cache): Add missing fclose() which was
+		causing a memory and file descriptor leak.  Thanks to
+		magnus.fromreide at teligent.se.
+
+2004-04-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c (blkid_verify_devname): If the time is earlier than the
+		last modified time of the device, then force a reverify;
+		it means the system time may not be trustworthy.
+
+2004-04-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* cache.c (blkid_get_cache): If the BLKID_FILE environment
+		variable is set, use it to find the blkid.tab file if the
+		calling application did not supply a filename.
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Update the modtime even if subst doesn't need to
+		update the libblkid man page, to avoid always re-running
+		subst, especially since there are no dependencies on the
+		man page.
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* blkid_types.h.in: Remove check for _UUID_TYPES since uuid_types.h
+		is no longer used.
+
+2004-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* getsize.c (blkid_get_dev_size): Don't close the file descriptor
+		when determining the size.  This bug was introduced in the
+		previous getsize changes, and was screwing up the blkid
+		library probe functions.  (Addresses Debian Bug #239191)
+
+2004-03-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* getsize.c (blkid_get_dev_size): Only use the BLKGETSIZE64 ioctl
+		on Linux 2.6 since it is unreliable in Linux 2.4..
+		(Addresses Debian Bug #236528) Fix typo in the ioctl used
+		for Mac OS X.
+
+2004-03-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c (probe_ocfs), probe.h: Add support for the Oracle
+		Cluster Filesystem (ocfs).  Patches courtesy of Rusty
+		Lynch (rusty@linux.co.intel.com).
+
+2004-03-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* getsize.c (blkid_get_dev_size): Update getsize functions to use
+		Apple Darwin and Linux 64-bit ioctl's
+
+2004-02-29  Brian Bergstrand  <brian@bergstrand.org>
+
+	* Makefile.in: Use $(BSDLIB_PIC_FLAG) to determine whether to use
+		-fpic or -fPIC
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2003-12-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c, read.c, blkidP.h: Fix gcc -Wall nitpicks.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-07-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c (probe_udf): Add specific UDF probing code, and probe
+		UDF before checking for ISO9660 filesystems.
+
+2003-07-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c (blkid_known_fstype): New function which returns true if
+		the filesystem type is one which this blkid library supports.
+
+2003-07-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c: When revalidating a filesystem, delete the LABEL tag if
+		the filesystem no longer has a label.
+
+2003-07-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* tag.c (blkid_find_dev_with_tag): If blkid_probe_all() returns an
+		error, then reflect that error upwards; don't try again
+		(forever).  This prevents an infinite loop when /proc and
+		the /etc/blkid.tab file are not present.
+
+2003-07-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* blkid_types.h.in: Fix gcc -Wall nitpicks (don't use #elsif)
+
+	* cache.c: Fix gcc -Wall nitpicks (missing #include <string.h>)
+
+	* probe.h: Fix gcc -Wall nitpicks (missing casts)
+
+2003-05-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in (ELF_OTHER_LIBS): The blkid library depends on the
+		uuid library.  (Addresses Debian bug: #194094)
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-04-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* blkidP.h: Fix gcc -Wall warnings by using __inline__ instead of
+		inline. 
+
+2003-04-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* probe.c, probe.h: Fix XFS superblock definition.  Add support to
+		extract UUID and labels for JFS and romfs.  (Thanks to
+		Janos Farkas <chexum+dev@gmail.com>.)
+
+2003-03-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* getsize.c: #include stat.h for the Apple Darwin port
+
+2003-03-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* cache.c: Initialize blkid_debug_mask to zero since some
+		operating systems can't deal with variables in the common
+		section in shared libraries.
+ 
+	* getsize.c (blkid_get_dev_size): Fix Apple Darwin port.
+
+2003-03-06    <tytso@mit.edu>
+
+	* devname.c (probe_one): Fix bug; if a partition has no known
+		type, don't derference a null pointer and crash.
+
+2003-03-06  Theodore Tso  <tytso@mit.edu>
+
+	* blkid_types.h.in: Don't redefine types if other e2fsprogs
+		*_types.h files have been included already.
+
+	* list.h, probe.h: Use static inline instead of extern inline to
+		comply with C99 inline support.
+
+	* devname.c (blkid_probe_all): Avoid GCC extension; don't
+		initialize an array with the address of an automatic
+		variable.
+
+	* Makefile.in: Eliminate -Wall as a C compiler option by default;
+		it's not portable.
+
+2003-03-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Don't install list.h, since it's not used by the
+		public blkid.h file.
+
+	* blkid_types.h.in: Change #ifndef protection to use _BLKID_TYPES_H
+
+2003-03-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* tag.c (blkid_set_tag): Fix bug; don't return an error when
+		deleting a tag by setting the value to NULL.  This
+		caused a failed device verification to loop forever in
+		blkid_verify_devname().
+
+	* resolve.c (main): Update debugging test program so that it
+		compiles with the latest blkid API changes.
+
+	* libblkid.3.in: Update manual page to reflect recent API changes.
+
+	* resolve.c (blkid_get_tag_value): If the passed-in cache is NULL,
+		then get and release a temporary cache as a convenience to
+		the calling application.
+		(blkid_get_devname): If the passed in token does not
+		contain an '=', and value is NULL, then return the passed
+		in token.
+
+	* read.c (blkid_read_cache): Don't return 0 since blkid_read_cache
+		now returns void.
+
+	* blkid.h: Add include of sys/types.h, since we use dev_t
+
+2003-02-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* resolve.c (blkid_get_tag_value): Rename function (used to be
+		blkid_get_tagname_devname)
+
+2003-02-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* devname.c (blkid_probe_all), tag.c (blkid_find_dev_with_tag): 
+		Call blkid_read_cache to make sure the in-core version of
+		the data structure is the latest.  After probing all of
+		the devices in blkid_probe_all() force the cache file to
+		be written out, the probe_all represents a lot of effort
+		that shouldn't be lost.
+
+	* tag.c (blkid_set_tag): Always replace an existing tag with the
+		new value; we no longer suppor multiple tags with the same
+		value attached to a device, as this was never really
+		supported well, and significantly increased the code
+		complexity.
+
+	* probe.c (probe_ext2): Change handling of ext2/ext3 filesystems.
+		Ext3 filesystems are now always treated as ext2
+		filesystems, with a special SEC_TYPE tag set to ext3.
+		This was necessary because we now longer support multiple
+		tags with the same name attached to a device.
+
+	* save.c (save_dev): Don't special case the TYPE tag; just write
+		it out along with all of the normal tags.
+		(blkid_flush_cache): Eliminate special case code for stdout.
+
+	* cache.c (blkid_new_cache, blkid_get_cache): Eliminate
+		blkid_new_cache and fold into blkid_get_cache (moved to
+		cache.c)
+
+	* read.c (blkid_read_cache): New function created from
+		blkid_get_cache which used to be in read.c that only
+		updates the in-core cache data structure from the file.
+		Uses the file modification time of the cache file to
+		determine whether the cache file needs to be re-read.
+
+	* cache.c, dev.c, devname.c, devno.c, probe.c, read.c, resolve.c,
+		save.c, tag.c, blkidP.h: Add dynamic debugging
+		capabilities, controlled by the environment variable
+		BLKID_DEBUG. 
+
+2003-02-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* blkid.h, dev.c, devname.c, probe.c, read.c, resolve.c: Rename
+		blkid_get_devname() to blkid_get_dev().  Also rename
+		blkid_get_token() to blkid_get_devname().  This more
+		accurately describes what these functions do.
+
+2003-02-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* blkidP.h, devname.c (blkid_get_devname), read.c (parse_tag),
+		save.c (save_dev): Remove bid_id, as it is not used for
+		anything.
+
+	* Makefile.in (blkid): When building the blkid, don't link against
+		the shared blkid library; link only against the static
+		blkid library.
+
+	* blkidP.h (struct blkid_struct_dev): Remove bid_size and
+		bid_devsize (since they aren't used any more) and add
+		bid_pri to the device structure.
+
+	* devname.c (probe_one, lvm_probe_all, evms_probe_all,
+		blkid_probe_all): Set the bid_pri filed in the device
+		structure depending on type of device so that EVMS, LVM,
+		and MD devices get priority over normal devices.
+
+	* tag.c (blkid_find_dev_with_tag): When looking for a device that
+		matches the search criteria, return the one with the
+		largest priority (bid_pri).
+
+	* save.c (save_dev): Write out the PRI tag from bid_pri.
+
+	* read.c (parse_tag): Parse the PRI tag and store its value in
+		bid_pri.
+
+	* probe.c (blkid_verify_devname): If the device does not exist
+		(open returns ENOENT), treat this as a fatal error and
+		release the device.  After verifying the device, set the
+		cache as being modified so the changes are written out.
+
+	* resolve.c (main): Change the test driver to get a blkid cache
+		and pass it to blkid_get_tagname_devname and
+		blkid_get_token, as the cache is no longer optional.
+
+2003-02-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* blkid.h, blkidP.h, cache.c, dev.c, devname.c, devno.c, probe.c,
+		probe.h, read.c, resolve.c, save.c, tag.c: Wholesale
+		changes to library to simplify the implementation and
+		shrink its size.  Change library version to be 1.0.
+
+2003-01-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* read.c (parse_tag): Do not return that blkid_tag when parsing
+		the blkid.tag file.
+
+	* resolve.c (blkid_get_token, blkid_get_tagname_devname): Fold in
+		code from removed functions
+
+	* tag.c (blkid_create_tag): Don't return the newly tag strcture
+		any more, as it's not needed.
+		(blkid_find_tag_cache, blkid_get_tag_cache,
+		 blkid_token_to_tag, blkid_find_tv_tags): Remove these 
+		functions, as they are either only used once or have
+		interfaces that should be deprecated.
+		(blkid_find_tag_dev, blkid_find_head_cache): Replace use
+		of blkid_tag with one or two const char * type/value
+		arguments.
+		(blkid_find_dev_with_tag): Fold in code from removed functions
+
+	* probe.h, probe.c: Use a more sophisticated set of byte-swapping
+		routines which are more compact and efficient.  Drop
+		calculation of bid_free, since it's unnecessary.  Avoid 
+
+	* save.c (blkid_save_cache): Set the permissions on the blkid
+		cache file to 644.
+	
+2003-01-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* cache.c, dev.c, devname.c, devno.c, getsize.c, llseek.c, 
+		probe.c, probe.h, read.c, resolve.c, save.c, tag.c, 
+		blkid.h, blkidP.h: Separate public and private
+		interfaces into separate header files.  Start
+		separating internal implementation details from the
+		publically exported interface.
+
+	* devname.c: Add support for EVMS
+
+	* blkid.h, cache.c, dev.c, devname.c, devno.c, probe.c, probe.h,
+		read.c, resolve.c, save.c, tag.c: Fix gcc -Wall nits.
+
+2003-01-24  Theodore Ts'o  <tytso@mit.edu>
+
+	* save.c (blkid_save_cache): Use mkstemp() instead mktemp().
+
+2002-10-04  Jordan Breeding  <jordan.breeding@attbi.com>
+
+	* Forward port to e2fsprogs 1.30
+
+2001-09-20  Andreas Dilger  <adilger@turbolinux.com>
+
+	* Initial release of libblkid.

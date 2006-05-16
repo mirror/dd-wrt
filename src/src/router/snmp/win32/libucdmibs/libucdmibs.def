@@ -1,0 +1,17 @@
+;       @(#)libucdmibs.def    1.0 10/26/97 (gmarzot@baynetworks.com)
+
+DESCRIPTION     'UCD SNMP MIBS Library'
+;CODE
+            SHARED READ EXECUTE
+;DATA            SHARED READ WRITE
+EXPORTS
+	send_easy_trap
+	init_master_agent
+	init_mib_modules
+	init_agent
+	argvrestartname
+	argvrestart
+	argvrestartp
+	update_config
+	get_target_sessions
+

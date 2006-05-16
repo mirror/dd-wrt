@@ -1,0 +1,10 @@
+CONFIG_IP_NF_FTP
+TFTP protocol support
+CONFIG_IP_NF_TFTP
+  TFTP connection tracking helper, this is required depending
+  on how restrictive your ruleset is.
+  If you are using a tftp client behind -j SNAT or -j MASQUERADING
+  you will need this.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `Y'.

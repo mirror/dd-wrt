@@ -1,0 +1,8 @@
+Author: Brian J. Murrell <netfilter@interlinx.bc.ca>
+Status: Pending for kernel inclusion
+
+- make ip_nat_resize_packet() more generic (TCP and UDP)
+- add ip_nat_mangle_udp_packet() function similar to 
+  ip_nat_mangle_tcp_packet()
+
+This patch is necessarry for UDP nat helpers (like Amanda protocol)

@@ -1,0 +1,158 @@
+.\" nocat.conf - NoCatSplash gateway daemon configuration file
+.\" This manual page is copyright 2005 Keegan Quinn.
+
+.\" This program is free software; you can redistribute it and/or modify
+.\" it under the terms of the GNU General Public License as published by
+.\" the Free Software Foundation; either version 2, or (at your option)
+.\" any later version.
+.\"
+.\" This program is distributed in the hope that it will be useful,
+.\" but WITHOUT ANY WARRANTY; without even the implied warranty of
+.\" MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+.\" GNU General Public License for more details.
+.\"
+.\" You should have received a copy of the GNU General Public License
+.\" along with this program; if not, write to the Free Software
+.\" Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA 02111-1307, USA.
+
+.TH nocat.conf 5 "January 2005"
+.SH NAME
+nocat.conf \- NoCatSplash gateway daemon configuration file
+
+.SH DESCRIPTION
+.B nocat.conf
+is the configuration file for the NoCatSplash gateway daemon.  It should
+contain one configuration keyword per line, followed by appropriate
+configuration information.  Lines starting with # are comments, and are
+ignored.
+
+.SH OPTIONS
+
+.TP
+.BI GatewayName\  STRING
+The name of the gateway.
+
+.TP
+.BI LoginTimeout\  INTEGER
+Number of seconds after a client's last login/renewal to terminate their
+connection. Probably don't want to set this to less than 60 or a lot of
+bandwidth is likely to get consumed by the client's renewal attempts. 
+
+For Open Mode portals, you probably want to set LoginTimeout to 
+something large (like 86400, for one notification
+per day).
+
+.TP
+.BI LogFacility\  STRING
+If set to "syslog", splashd will log to syslog(3), using the daemon syslog
+facillity. Otherwise, splashd will log to standard error. LogFacility defaults
+to "syslog".
+
+.TP
+.BI SyslogIdent\  STRING
+The string which splashd uses in order to identify itself to syslog(3).
+Defaults to "NoCat".
+
+.TP
+.BI DocumentRoot\  PATH
+Where all of the application templates (including SplashForm) are hiding.
+
+.TP
+.BI SplashForm\  FILE
+The file in DocumentRoot used as the template for the splash page.
+
+.TP
+.BI SplashURL\  URL
+Optional URL to fetch dynamic remote splash page from. You must compile
+with --with-remote-splash for this to work.
+
+.TP
+.BI SplashTimeout\  URL
+Specifies the reload period of the remote splash page, if one is used.
+
+.TP
+.BI StatusForm\  FILE
+The file in DocumentRoot used as the template for the status page.
+
+.TP
+.BI ExternalDevice\  INTERFACE
+The upstream network interface. Required if and only if NoCatSplash can't
+figure it out from looking at your routing tables and picking the interface
+that carries the default route. Must be set to the interface connected to the
+Internet. Usually eth0 or eth1 under Linux, or maybe even ppp0 if you're
+running PPP or PPPoE.
+
+.TP
+.BI InternalDevice\  INTERFACE
+The local (typically wireless) interface.  Required if and only if your machine
+has more than two network interfaces; otherwise, NoCatSplash will assume that
+the network interface that doesn't have the default route is the
+InternalDevice. Must be set to the interface connected to your local network,
+normally your wireless card, e.g. eth1, wlan0, etc.
+
+.TP
+.BI LocalNetwork\  NETWORK/NETMASK
+The network address and netmask of your internal (usually wireless) network.
+Required if and only if NoCatSplash can't figure it out by polling the
+InternalDevice. Must be set to the network address and net mask of your
+internal network. You can use the number of bits in the netmask (e.g. /16, /24,
+etc.) or the full x.x.x.x specification.
+
+.TP
+.BI DNSAddr\  IP-ADDRESS
+Optional. *If* you choose not to run DNS on your internal network, DNSAddr
+should specify the address(es) of one or more domain name server on the
+Internet that wireless clients can use to get out. Should be the same DNS that
+your DHCP server hands out.
+
+.TP
+.BI AllowedWebHosts\  HOSTNAME\ [HOSTNAME ...]
+Optional.  List any hosts that you would like to allow clients to have web
+access to (TCP port 80 and 443) BEFORE logging in. This is the pre-login
+stage, so be careful about what you allow.
+
+.TP
+.BI IncludePorts\  PORT\ [PORT ...]
+Optional.  Specify TCP ports to allow access to when public class users login.
+All others will be denied. Don't forget to specify ports 80 and 443 if you
+decide to use IncludePorts or your users will be grumpy. We recommend using
+ExcludePorts instead.
+
+.TP
+.BI ExcludePorts\  PORT\ [PORT ...]
+Optional.  Specify TCP ports to denied access to when public class users login.
+All others will be allowed.
+
+Note that you should use either IncludePorts or ExcludePorts, but not both.  If
+neither is specified, access is granted to all ports to public class users.
+
+You should *always* exclude port 25 (SMTP), unless you want to run an portal
+for wanton spam sending. Users should have their own way of sending mail. It
+sucks, but that's the way it is. Your nocat.conf excludes port 25 by default.
+
+.TP
+.BI ResetCmd/PermitCmd/DenyCmd\  FILE
+Shell commands to reset, open and close the firewall. You probably don't need
+to change these.
+
+.TP
+.BI GatewayPort\  PORT
+The TCP port to bind the gateway service to. 5280 is de-facto standard for
+NoCatSplash.  Change this only if you absolutely need to.
+
+.SH SEE ALSO
+
+The default nocat.conf comes with extensive comments.
+
+.BR splashd(8)
+
+.BR http://nocat.net/
+
+.SH COPYRIGHT
+
+NoCatSplash is copyright (c) 2004 - 2005 Schuyler Erle <schuyler@nocat.net> and
+Rob Flickenger <rob@nocat.net>, and is distributed under the GNU Public License
+v2 or better.
+
+This manual page is copyright 2005 Keegan Quinn.
+

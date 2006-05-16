@@ -1,0 +1,65 @@
+<HTML>
+<HEAD>
+<META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=windows-1252">
+<META NAME="Generator" CONTENT="Microsoft Word 97">
+<TITLE>Introduction</TITLE>
+</HEAD>
+<BODY TEXT="#000000" LINK="#0000ff" VLINK="#800080" BGCOLOR="#cccccc" alink="#FF0000">
+
+<P><!doctype html public "-//w3c//dtd html 4.0 transitional//en"><A HREF="4.html">Next</A> <A HREF="2.html">Previous</A> <A HREF="lrm.html">Top</A> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<B><FONT SIZE=5>3. Design Decisions</B></FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<FONT SIZE=2>Libnet is very much an ongoing learning/research project.&nbsp; When I started it over a year and a half ago, I had no idea it would grow as it did, incorporating as much functionality as it does.&nbsp; Libnet's design has changed not so much in stages, but rather in <I>evolutions</I>.&nbsp; Many of these evolutionary changes I took from other successful libraries out there.&nbsp; Some of the changes are hard to pass and are still in progress, while some were just simple internal changes.&nbsp; Then there were some modifications to the library that unfortunately changed the interface and obsoleted older versions.&nbsp; In this section I hope enlighten the reader as to some of the design decisions that go into libnet; where it was, where it is, and where it's going.</FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<A NAME="s3_1"></A><B><FONT SIZE=5>3.1 Modularity (interfaces and implementations)</B></FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<FONT SIZE=2>Big programs are made up of many modules </FONT><A HREF="7.html"><FONT SIZE=2>[3]</FONT></A><FONT SIZE=2>.&nbsp; These modules provide the user with functions and data structures that are to be used in a program.&nbsp; A module comes in two parts: its interface and its implementation.&nbsp; The interface specifies what a module does, while the implementation specifies how the module does it.&nbsp; The interface declares all of the data types, function prototypes, global information, macros, or whatever is required by the module.&nbsp; The implementation adheres to the specifications set forth by the interface.&nbsp; This is how libnet was and is designed.&nbsp; Each implementation, you'll find, has a corresponding interface (figure 3a).</FONT> </P>
+<P ALIGN="CENTER"><IMG SRC="fig-3a.gif" WIDTH=575 HEIGHT=432></P>
+<FONT SIZE=2><P>There is a third piece of this puzzle: the client.&nbsp; The client is the piece of code that imports and employs the interface, without having to even see the implementation.&nbsp; Your code is the client.</FONT> </P>
+<FONT SIZE=2><P>For more information on interfaces and implementations in C, I urge the reader to check out </FONT><A HREF="7.html"><FONT SIZE=2>[3]</FONT></A><FONT SIZE=2>.&nbsp; It's an excellent book that changed the way I wrote code.</FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<A NAME="s3_2"></A><B><FONT SIZE=5>3.2 Nomenclature</B></FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<FONT SIZE=2>Initially, the naming of files, functions and other tidbits didn't seem to be that important.&nbsp; They took on whatever names seemed appropriate at the time.&nbsp; In a stand-alone program, this is bad style.&nbsp; In a library, it's bad style AND potentially error-prone.&nbsp; Library code is intended to be used on different platforms and potentially with other libraries.&nbsp; If one of these other libraries (or potentially the user's code) contains an object with the same name, problems result.&nbsp; Therefore, naming has become an important issue to me.&nbsp; A strict naming convention helps in two major areas:</FONT> </P>
+
+<UL>
+<FONT SIZE=2><LI>with filenames it works by keeping them ordered in a directory making for easy perusal and quick file location</FONT> </LI>
+<FONT SIZE=2><LI>for function names, macros, and symbols it cuts down on redefinition problems and makes the interface much easier to learn</FONT> </LI></UL>
+
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<A NAME="s3_3"></A><B><FONT SIZE=5>3.3 Error Handling and Reporting</B></FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<FONT SIZE=2>Error handling and reporting is an essential part of any programming paradigm.&nbsp; Delicate handling of and recovery from error conditions is an absolute necessity, especially in a third party library.&nbsp; I believe Libnet now has decent error handling (see below for a dissertation on assertions).&nbsp; It can recover from most bad situations more or less gracefully.&nbsp; It checks for illegal conditions under most circumstances.&nbsp; Reporting, however, is a different story and is still progressing.&nbsp; Libnet needs to have a standard error reporting convention in place.&nbsp; As it stands now, some functions use errno&nbsp; (since they are basically system call wrappers), while some accept an additional buffer argument to hold potential error messages, and still others as yet have no provision for verbose error reporting.&nbsp; This needs to change and possibly might be accomplished using variable argument lists.</FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<A NAME="s3_4"></A><B><FONT SIZE=5>3.4 Assertions and Exit Points</B></FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<FONT SIZE=2>assert(3) is a macro that accepts a single argument which it treats as an expression, evaluating it for truth.&nbsp; If the expression is evaluated to be false, the assert macro prints an error message and aborts (terminates) the program.&nbsp; Assertions are useful in the developmental stages of programs when verbose error handling is not in place or when a grievous error condition that normally should not happen occurs.&nbsp; Initially libnet was riddled with assertions.&nbsp; Libnet mainly&nbsp; employed assertions to catch NULL pointer dereferences before they occurred (many libnet functions accept pointer arguments expecting them to actually point somewhere).&nbsp; This seemed reasonable at the time because this is obviously a grievous error -- if you're passing a NULL pointer when you shouldn't, your program is probably going to crash.&nbsp; However, assertions also riddled the library with numerous potential unpredictable exit points.&nbsp; Exit points inside a supplementary library such as libnet are bad style, let alone unpredictable exit points.&nbsp; Library code should not cause or allow a program to exit.&nbsp; If a grievous error condition is detected, the library should return error codes to the main, and let it decide what to do. Code should be able to handle grievous errors well enough to be able to exit gracefully from the top level (if possible).&nbsp; In any event, the assertions were removed in version 0.99f in favor of error indicative return values.&nbsp; This preserves compatibility, while removing the exit points.</FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<A NAME="s3_5"></A><B><FONT SIZE=5>3.5 IPv4 vs. IPv6</B></FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<FONT SIZE=2>Libnet currently only supports IPv4.&nbsp; Support for IPv6 is definitely planned, however.&nbsp; The main consideration is nomenclature.&nbsp; Had I been mister-cool-smart guy in the beginning, I would have anticipated this and added IP version information to the function names and macros e.g.: ipv4_build_ip, IPV4_H.&nbsp; However at this point, I refuse to force users to adopt to yet another interface, so the IPv6 functions and macros will contain IPv6 in the name (much like the POSIX 1.g sockets interface </FONT><A HREF="7.html"><FONT SIZE=2>[2]</FONT></A><FONT SIZE=2>).</FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<A NAME="s3_6"></A><B><FONT SIZE=5>3.6 The Configure Script</B></FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<FONT SIZE=2>Early on in the development of libnet, it became clear that there was much OS and architecture dependent code that had to conditionally included and compiled.&nbsp; The autoconf configuration stuff (circa version 0.7) worked great to determine what needed to be included and excluded in order to build the library, but did nothing for post-install support.&nbsp; Many of these CPP macros were needed to conditionally include header information for user-based code.&nbsp; This was initially handled by relying on the user to define the proper macros, but this quickly proved inefficient.</FONT> </P>
+<FONT SIZE=2><P>Libnet now employs a simple configure script.&nbsp; This script is created during autoconf configuration and is installed when the library is installed.&nbsp; It handles all of the OS and architecture dependencies automatically - however, it is now mandatory to use it.&nbsp; You will not be able to compile libnet-based</FONT> <BR>
+<FONT SIZE=2>code without.&nbsp; See the next section for details on how to invoke the script.</FONT> </P>
+<P><HR ALIGN="LEFT"></P>
+<P><BR>
+<A HREF="4.html">Next</A> <A HREF="2.html">Previous</A> <A HREF="lrm.html">Top</A> </P></BODY>
+</HTML>

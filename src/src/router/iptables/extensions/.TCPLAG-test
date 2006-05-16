@@ -1,0 +1,2 @@
+#! /bin/sh
+[ -f $KERNEL_DIR/net/ipv4/netfilter/ipt_TCPLAG.c ] && echo TCPLAG

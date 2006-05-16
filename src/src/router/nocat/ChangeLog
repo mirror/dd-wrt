@@ -1,0 +1,380 @@
+2005-02-27 20:21  sderle
+
+	* htdocs/status.html, man/nocat.conf.5, src/defaults.c,
+	  src/gateway.c: Debugged status page support.
+
+2005-02-27 19:21  sderle
+
+	* htdocs/splash.html, man/nocat.conf.5, man/splashd.8,
+	  src/defaults.c: Documented status page and syslog options; added
+	  StatusForm default.
+
+2005-02-27 19:14  sderle
+
+	* src/: conf.c, defaults.c, gateway.c, gateway.h, http.c, http.h,
+	  open.c: Implemented status page.
+
+2005-02-27 16:56  sderle
+
+	* rc.nocat, src/conf.c, src/conf.h, src/firewall.c, src/splashd.c:
+	  Debugged syslogging; added SysV init script for Debian.
+
+2005-02-25 09:43  sderle
+
+	* nocat.conf.in, src/defaults.c, src/splashd.c: Added (but not
+	  tested) syslog support.
+
+2005-02-25 08:05  sderle
+
+	* Makefile.am, Makefile.in, configure, configure.ac, nocat.conf.5,
+	  splashd.8, man/nocat.conf.5, man/splashd.8: Moved man pages in
+	  man/ subdir.
+
+2005-02-25 04:30  sderle
+
+	* AUTHORS, ChangeLog, Makefile.am, Makefile.in, README, configure,
+	  configure.ac, nocat.conf.5, nocat.conf.in, splashd.8: Added
+	  documentation courtesy of Keegan Quinn.
+
+2005-02-25 03:22  sderle
+
+	* src/http.c: Fixed Content-Length bug, courtesy of Casey T.
+	  Veccio.
+
+2005-02-25 03:20  sderle
+
+	* AUTHORS, configure, configure.ac, src/config.h.in, src/open.c,
+	  src/splashd.c, src/util.c: Added daemonization patch, minor bug
+	  fixes.
+
+2005-02-25 03:18  sderle
+
+	* src/: tpool.c, tpool.h: Removed thread pooling code.
+
+2005-01-02 13:39  sderle
+
+	* configure, configure.ac: Upped version to 0.92
+
+2005-01-02 13:38  sderle
+
+	* Makefile.am, Makefile.in, configure, configure.ac,
+	  src/Makefile.am, src/Makefile.in, src/linux.c: Fixed automake
+	  bug, LocalNetwork autodetect bug.
+
+2004-11-22 16:19  sderle
+
+	* src/open.c: Removed a frivolous assert and warning.
+
+2004-11-22 13:18  sderle
+
+	* ChangeLog, configure, configure.ac, src/open.c: Fixed logging
+	  preparatory to release.
+
+2004-11-22 12:26  sderle
+
+	* AUTHORS, ChangeLog, README, README.uClibc, configure,
+	  configure.ac, nocat.conf.in: Documentation update preparatory to
+	  0.10 release.
+
+2004-11-22 11:58  sderle
+
+	* src/util.c: Added config.h reference to util.c.
+
+2004-11-22 11:55  sderle
+
+	* TODO: Added new TODO items.
+
+2004-11-22 11:52  sderle
+
+	* src/open.c: Made HTTP fetch asynchronous.
+
+2004-11-22 11:52  sderle
+
+	* src/util.c: Fixed warnings.
+
+2004-11-22 08:45  sderle
+
+	* src/: conf.c, conf.h, firewall.c, gateway.c, gateway.h, http.c,
+	  linux.c, open.c, splashd.c: Some debugging.
+
+2004-11-22 00:50  sderle
+
+	* Makefile.in, aclocal.m4, configure, configure.ac,
+	  src/Makefile.am, src/Makefile.in, src/config.h.in,
+	  src/firewall.c, src/open.c, src/util.c, src/util.h: Added defines
+	  to conditionally compile code for libcrypt and libghttp.
+
+2004-11-21 21:20  sderle
+
+	* Makefile.in, aclocal.m4, configure, configure.ac,
+	  src/Makefile.am, src/Makefile.in, src/config.h.in, src/open.c,
+	  src/splashd.c, src/util.c: Updates to autoconf.
+
+2004-11-21 16:37  sderle
+
+	* src/linux.c, t/if-test.c: Moved OS specific stuff into linux.c.
+
+2004-11-21 16:35  sderle
+
+	* configure.ac, nocat.conf.in, src/Makefile.am, src/conf.c,
+	  src/defaults.c, src/firewall.c, src/firewall.h, src/gateway.h,
+	  src/http.c, src/http.h, src/mime.c, src/open.c, src/passive.c,
+	  src/peer.c, src/peer.h, src/sendfile.c, src/splashd.c,
+	  src/util.h: Added dynamic splash, consolidated some source files,
+	  removed the need for threading.
+
+2003-09-24 22:58  sderle
+
+	* Makefile.am, Makefile.in, pgp/trustedkeys.gpg, src/gateway.c,
+	  src/gateway.h, src/http.c, src/open.c, src/passive.c, src/peer.c,
+	  src/peer.h, src/util.h: Passive mode logins now work. Not sure
+	  about renewals.
+
+2003-09-17 04:21  sderle
+
+	* Makefile.am, Makefile.in, configure, configure.ac, nocat.conf.in,
+	  src/Makefile.in, src/config.h.in, src/passive.c, src/peer.c,
+	  src/peer.h, src/util.c, src/util.h: Passive support code now
+	  compiles.
+
+2003-09-15 17:55  sderle
+
+	* configure, configure.ac, nocat.conf.in, src/Makefile.am,
+	  src/Makefile.in, src/defaults.c, src/firewall.c, src/open.c,
+	  src/passive.c, src/sendfile.c, src/util.c, src/util.h: Ongoing
+	  changes for adding passive mode.
+
+2003-09-14 08:16  sderle
+
+	* src/Makefile.in: Minor bug.
+
+2003-09-14 07:31  sderle
+
+	* configure, configure.ac, src/Makefile.am, src/Makefile.in,
+	  src/base64.c, src/gateway.c, src/gateway.h, src/http.c,
+	  src/http.h, src/open.c, src/passive.c, src/peer.c, src/peer.h,
+	  src/sendfile.c, src/splashd.c, src/util.c, src/util.h: Added
+	  passive support.
+
+2003-07-30 23:05  sderle
+
+	* README.uClibc, TODO, src/util.h: Added g_debug definition to
+	  util.h; some minor doc updates.
+
+2003-05-20 08:13  sderle
+
+	* src/tpool.c: Added g_debug and g_info, altered tpool to use
+	  g_debug for pool reporting.
+
+2003-05-20 08:12  sderle
+
+	* htdocs/splash.html: Temporarily commented out unsupported
+	  variables.
+
+2003-02-28 01:53  sderle
+
+	* Makefile.in, configure, configure.ac, src/Makefile.am,
+	  src/Makefile.in, src/open.c: Added open.c and --with-mode to
+	  configure.
+
+2003-02-23 03:09  sderle
+
+	* src/: Makefile.am, Makefile.in, splashd.c, tpool.c, tpool.h:
+	  Split open mode into separate source file.
+
+2003-01-17 20:39  sderle
+
+	* README.uClibc: Added instructions on statically compiling against
+	  GLib with uClibc, for deployment to small and embedded systems.
+
+2003-01-17 20:38  sderle
+
+	* AUTHORS: Added thread pooling attribution to AUTHORS.
+
+2003-01-17 17:30  sderle
+
+	* AUTHORS, README, TODO: Updated documentation, thanks to Terry
+	  Schmidt.
+
+2003-01-17 02:17  sderle
+
+	* src/: Makefile.in, splashd.c, tpool.c, tpool.h: Added thread
+	  pooling to splashd. Needs to have constants changed to config
+	  variables; may still leak memory.
+
+2003-01-17 00:25  sderle
+
+	* src/: Makefile.am, tpool.c, tpool.h: Initial checkin of thread
+	  pooling code.
+
+2003-01-16 21:05  sderle
+
+	* src/splashd.c: First stab at multi-threading.
+
+2003-01-16 19:52  sderle
+
+	* src/: ghttpd.c, http.c, splashd.c: Correctly free GIOChannel and
+	  http_request structs on socket shutdown.
+
+2003-01-15 21:14  sderle
+
+	* src/: http.c, util.c, util.h: Removed g_hash_ncase; put header
+	  key case normalization directly into http_parse_header() to fix
+	  Content-Length: vs Content-length:
+
+2003-01-15 20:45  sderle
+
+	* src/util.c: Fixed little oops in URL coding.
+
+2003-01-15 20:45  sderle
+
+	* Makefile.am, Makefile.in: Added test.html to Makefile.am
+
+2003-01-15 20:36  sderle
+
+	* src/: http.c, util.c, util.h: Made QUERY hash case-insensitive;
+	  also, beefed up URL encoding/decoding.
+
+2003-01-15 18:58  sderle
+
+	* src/: http.c, http.h: Fixed exception relating to calls to
+	  QUERY() when h->query is NULL.
+
+2003-01-13 07:25  sderle
+
+	* htdocs/test.html: Added test page for demo mode.
+
+2003-01-12 07:55  sderle
+
+	* libexec/loopback/access.fw: Fixed loopback access.fw to open the
+	  firewall wide when logged in.
+
+2003-01-12 07:50  sderle
+
+	* Makefile.in, README, TODO, aclocal.m4, configure, configure.ac,
+	  libexec/loopback/access.fw, libexec/loopback/dump.fw,
+	  libexec/loopback/initialize.fw, src/Makefile.am, src/Makefile.in,
+	  src/firewall.c, src/ghttpd.c, src/util.c: Added whole spiffy
+	  testing mode with instructions.
+
+2003-01-11 05:19  sderle
+
+	* src/: conf.c, firewall.c, peer.c, peer.h: Cleaned up some
+	  warnings.
+
+2003-01-11 05:12  sderle
+
+	* Makefile.in, configure, configure.ac, src/Makefile.in: Added
+	  AM_MAINTAINER_MODE to configure.
+
+2003-01-11 03:08  sderle
+
+	* configure, configure.ac: Changed AC_DEFINE(NC_CONF_PATH) to
+	  AC_DEFINE_UNQUOTED.
+
+2003-01-11 02:55  sderle
+
+	* Makefile.am, Makefile.in, configure, configure.ac,
+	  src/Makefile.am, src/Makefile.in, src/config.h.in, src/http.c,
+	  src/http.h, src/splashd.c: Fixed install issues with locations of
+	  images and nocat.conf
+
+2003-01-10 20:50  sderle
+
+	* Makefile.am, Makefile.in, aclocal.m4, configure, configure.ac,
+	  nocat.conf.in, src/Makefile.in, src/config.h.in, src/defaults.c,
+	  src/firewall.c: Made splashd look in the right places for HTML
+	  templates and firewall scripts using defines from configure.
+
+2003-01-08 09:34  sderle
+
+	* nocat.conf: Removed nocat.conf in favor of nocat.conf.in.
+
+2003-01-08 09:34  sderle
+
+	* Makefile.am, Makefile.in, configure, configure.ac, nocat.conf.in,
+	  src/Makefile.am, src/Makefile.in: Now builds and installs
+	  completely with automake/autoconf.
+
+2003-01-02 10:39  sderle
+
+	* AUTHORS, COPYING, ChangeLog, INSTALL, LICENSE, Makefile,
+	  Makefile.am, Makefile.in, NEWS, TODO, aclocal.m4, configure,
+	  configure.ac, depcomp, install-sh, missing, mkinstalldirs,
+	  stamp-h, src/Makefile, src/Makefile.am, src/Makefile.in,
+	  src/config.h.in: Converted project to use autoconf/automake and
+	  glib-2.0.
+
+2003-01-02 10:38  sderle
+
+	* libexec/loopback/: access.fw, initialize.fw: Minor tweaks to
+	  loopback scripts, which still apparently don't quite work.
+
+2002-12-31 00:25  sderle
+
+	* src/: Makefile, firewall.c, splashd.c: Added SIGINT handler &
+	  fixed a bug pointed out by valgrind.
+
+2002-12-27 20:54  sderle
+
+	* README: Added Grave Warning.
+
+2002-12-27 20:50  sderle
+
+	* src/splashd.c: Fixed segfaults on expiration.
+
+2002-12-27 20:46  sderle
+
+	* README: Updated README to reflect the current project status
+
+2002-12-27 10:45  sderle
+
+	* src/: Makefile, conf.c, http.c, peer.c, splashd.c, util.c: Tons
+	  of bugfixes; successful test. Still segfaults on expiration,
+	  though.
+
+2002-12-27 10:44  sderle
+
+	* libexec/iptables/initialize.fw: Fixed DNS steering in
+	  initialize.fw
+
+2002-12-23 18:55  sderle
+
+	* LICENSE, Makefile, README, nocat.conf, htdocs/splash.html,
+	  htdocs/status.html, htdocs/images/auth_logo.gif,
+	  htdocs/images/continue.gif, htdocs/images/login.gif,
+	  htdocs/images/logout.gif, htdocs/images/register.gif,
+	  htdocs/images/reset.gif, htdocs/images/skip.gif,
+	  htdocs/images/update.gif, libexec/iptables/access.fw,
+	  libexec/iptables/clear.fw, libexec/iptables/dump.fw,
+	  libexec/iptables/initialize.fw, libexec/iptables/reset.fw,
+	  libexec/iptables/throttle.fw, libexec/loopback/access.fw,
+	  libexec/loopback/clear.fw, libexec/loopback/dump.fw,
+	  libexec/loopback/initialize.fw, t/conf-t.c, t/demo.html,
+	  t/env-t.c, t/firewall-t.c, t/hello.c, t/loop.c, t/mini_arp.c,
+	  t/parse-t.c, t/url-t.c, src/Makefile, src/conf.c, src/conf.h,
+	  src/defaults.c, src/firewall.c, src/firewall.h, src/ghttpd.c,
+	  src/http.c, src/http.h, src/mime.c, src/mime.h, src/peer.c,
+	  src/peer.h, src/splashd.c, src/util.c, src/util.h: Initial
+	  revision
+
+2002-12-23 18:55  sderle
+
+	* LICENSE, Makefile, README, nocat.conf, htdocs/splash.html,
+	  htdocs/status.html, htdocs/images/auth_logo.gif,
+	  htdocs/images/continue.gif, htdocs/images/login.gif,
+	  htdocs/images/logout.gif, htdocs/images/register.gif,
+	  htdocs/images/reset.gif, htdocs/images/skip.gif,
+	  htdocs/images/update.gif, libexec/iptables/access.fw,
+	  libexec/iptables/clear.fw, libexec/iptables/dump.fw,
+	  libexec/iptables/initialize.fw, libexec/iptables/reset.fw,
+	  libexec/iptables/throttle.fw, libexec/loopback/access.fw,
+	  libexec/loopback/clear.fw, libexec/loopback/dump.fw,
+	  libexec/loopback/initialize.fw, t/conf-t.c, t/demo.html,
+	  t/env-t.c, t/firewall-t.c, t/hello.c, t/loop.c, t/mini_arp.c,
+	  t/parse-t.c, t/url-t.c, src/Makefile, src/conf.c, src/conf.h,
+	  src/defaults.c, src/firewall.c, src/firewall.h, src/ghttpd.c,
+	  src/http.c, src/http.h, src/mime.c, src/mime.h, src/peer.c,
+	  src/peer.h, src/splashd.c, src/util.c, src/util.h: Just moved
+	  everything around, decided to rebuild repository from scratch.
+

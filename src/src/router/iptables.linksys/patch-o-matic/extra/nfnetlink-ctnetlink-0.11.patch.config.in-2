@@ -1,0 +1,6 @@
+if [ "$CONFIG_IP_NF_CONNTRACK" != "n" ]; then
+  if [ "$CONFIG_IP_NF_CONNTRACK" = "y" ]; then
+    dep_tristate '  Connection tracking netlink interface' CONFIG_IP_NF_NETLINK_CONNTRACK $CONFIG_IP_NF_NETLINK
+  else
+    dep_tristate '  Connection tracking netlink interface' CONFIG_IP_NF_NETLINK_CONNTRACK $CONFIG_IP_NF_CONNTRACK
+  fi

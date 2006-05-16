@@ -1,0 +1,142 @@
+.TH SNMP.CONF 5 "11 Dec 2002" VVERSIONINFO "Net-SNMP"
+.UC 4
+.SH NAME
+SYSCONFDIR/snmp/snmp.conf - configuration file for the Net-SNMP applications.
+.br
+~/.snmp/snmp.conf - personal configuration file.
+.SH DESCRIPTION
+.B snmp.conf
+is the configuration file which define how the Net-SNMP applications
+operate.  Tokens that can be put in them are described in the
+.B DIRECTIVES
+section below.
+.SH PLEASE READ FIRST
+Make sure you make these files readable only by the user if you are
+storing sensitive information in them like passphrases!
+.PP
+First, make sure you have read the
+.I snmp_config(5)
+manual page that describes how the Net-SNMP configuration files
+operate, where they are located and how they all work together.
+.SH DIRECTIVES
+.IP "mibdirs (mib-dirs|+mib-dirs)"
+Look for textual MIBs to parse in the list of ':' separated
+directories.  If the directive value starts with a '+' it prepends
+this list to the front of the default directory list compiled into the
+application.  Note that this value can be overridden by the
+.B MIBDIRS
+environment variable.
+.IP "mibs (mib-tokens|+mib-tokens)"
+Specifies a ':' separated list of MIB tokens that represent textual
+MIB files that should be found and parsed.  If the directive value
+starts with a '+' it prepends this list to the front of the default
+MIB token list compiled into the application.  The special keyword of
+"ALL" forces all MIBs files found to be read. Note that the value
+specified here can be overridden by the
+.B MIBS
+environment variable.
+.IP "mibfile file"
+Specifies a textual MIB file to read and parse, in addition to the
+list read from the MIBs token.  Note that the value specified here can
+be overridden by the
+.B MIBFILES
+environment variable.
+.IP "persistentDir directory"
+The directory where snmpd and snmptrapd stores their persistent data
+files.
+.IP "defaultPort port"
+The default port number that all SNMP applications and daemons should use.
+.IP "defVersion (1|2c|3)"
+The default SNMP version to use.
+.IP "defCommunity string"
+The default SNMPv1 and SNMPv2c community string to use.
+.IP "defSecurityName string"
+The default SNMPv3 USM security name you want to use for SNMPv3 requests.
+.IP "defContext string"
+The default SNMPv3 context name you want to use.
+.IP "defPassphrase string"
+.IP "defAuthPassphrase string"
+.IP "defPrivPassphrase string"
+The default SNMPv3 USM passphrase(s) to use.  
+.B defPassphrase
+will be used for both authentication and privacy pass phrases if it is 
+specified.
+.IP "defAuthType MD5|SHA"
+The SNMPv3 USM authentication type to use.
+.IP "defPrivType DES"
+The SNMPv3 USM privacy type to use.  Currently, DES is the only
+possible value.
+.IP "defSecurityLevel noAuthNoPriv|authNoPriv|authPriv"
+The SNMPv3 default security level to use.
+.IP "showMibErrors (1|yes|true|0|no|false)"
+Whether or not to display textual MIB parsing errors when commands are
+run.
+.IP "strictCommentTerm (1|yes|true|0|no|false)"
+Whether or not MIBs that are parsed should be strict about comment
+termination.  "--" terminates a comment if this is true.  Many
+MIBs have broken comments in them, hence this option.
+.IP "mibAllowUnderline (1|yes|true|0|no|false)"
+Allow underline characters in MIBs (illegal).
+.IP "mibWarningLevel integerValue"
+The minimum warning level of the warnings printed by the MIB parser.
+.IP "logTimestamp (1|yes|true|0|no|false)"
+Whether the commands should log timestamps with their error/message
+logging or not.  Note that output will not look as pretty with
+timestamps if the source code that is doing the logging does
+incremental logging of messages that are not line buffered before
+being passed to the logging routines.
+.IP "printNumericEnums (1|yes|true|0|no|false)"
+Equivalent to
+.BR -Oe .
+.IP "printNumericOids (1|yes|true|0|no|false)"
+Equivalent to
+.BR -On .
+.IP "dontBreakdownOids (1|yes|true|0|no|false)"
+Equivalent to
+.BR -Ob .
+.IP "escapeQuotes (1|yes|true|0|no|false)"
+Equivalent to
+.BR -OE .
+.IP "quickPrinting (1|yes|true|0|no|false)"
+Equivalent to
+.BR -Oq .
+.IP "dontPrintUnits (1|yes|true|0|no|false)"
+Equivalent to
+.BR -OU .
+.IP "printHexText (1|yes|true|0|no|false)"
+Equivalent to
+.BR -OT .
+.IP "suffixPrinting (0|1|2)"
+If the value is 1, its equivalent to
+.B -Os
+and if the value is 2 it's equivalent to
+.BR -OS .
+.IP "oidOutputFormat (1|2|3|4|5|6)
+Maps -O options as follow: -Os=1, -OS=2, -Of=3, -On=4, -Ou=5.
+The value 6 has no matching -O option. It suppresses output.
+.IP "extendedIndex (1|yes|true|0|no|false)"
+Equivalent to
+.BR -OX .
+.IP "noRangeCheck (1|yes|true|0|no|false)"
+Disables the validation of values that is done by
+.B snmpset
+before issuing the request to the agent.
+Equivalent to
+.BR -Ir .
+.IP "noDisplayHint (1|yes|true|0|no|false)"
+Disables the use of DISPLAY-HINT information when parsing indices and
+values to set. Equivalent to
+.BR -Ih .
+.IP "dumpPacket (1|yes|true|0|no|false)"
+Whether the commands should dump packets by default.
+.IP "doDebugging (1|0)"
+Turns on debugging for all applications run if set to 1.
+.IP "debugTokens TOKEN[,TOKEN...]"
+The debugging tokens that should be printed.  See the
+.I snmpcmd(1)
+manual page for debugging usage details.
+.SH "SEE ALSO"
+snmp_config(5), read_config(3), snmpcmd(1).
+.\" Local Variables:
+.\"  mode: nroff
+.\" End:

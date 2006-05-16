@@ -1,0 +1,106 @@
+diff -uNr original/linux/include/linux/netfilter_ipv4/ipt_REJECT.h linux/include/linux/netfilter_ipv4/ipt_REJECT.h
+--- original/linux/include/linux/netfilter_ipv4/ipt_REJECT.h	2002-06-21 17:44:14.000000000 +0800
++++ linux/include/linux/netfilter_ipv4/ipt_REJECT.h	2002-06-21 17:47:20.000000000 +0800
+@@ -14,6 +14,7 @@
+ 
+ struct ipt_reject_info {
+ 	enum ipt_reject_with with;      /* reject type */
++	u_int8_t fake_source_address;  /* 1: fake src addr with original packet dest, 0: no fake */
+ };
+ 
+-#endif /*_IPT_REJECT_H*/
++#endif /* _IPT_REJECT_H */
+diff -uNr original/linux/net/ipv4/netfilter/ipt_REJECT.c linux/net/ipv4/netfilter/ipt_REJECT.c
+--- original/linux/net/ipv4/netfilter/ipt_REJECT.c	2002-06-21 17:44:14.000000000 +0800
++++ linux/net/ipv4/netfilter/ipt_REJECT.c	2002-06-21 17:46:04.000000000 +0800
+@@ -1,6 +1,7 @@
+ /*
+  * This is a module which is used for rejecting packets.
+  * Added support for customized reject packets (Jozsef Kadlecsik).
++ * Added support for fake source IP in icmp-unreach (Fabrice MARIE & Guillaume MORIN).
+  */
+ #include <linux/config.h>
+ #include <linux/module.h>
+@@ -153,12 +154,12 @@
+ 	kfree_skb(nskb);
+ }
+ 
+-static void send_unreach(struct sk_buff *skb_in, int code)
++static void send_unreach(struct sk_buff *skb_in, int code, u_int8_t fake_source_address)
+ {
+ 	struct iphdr *iph;
+ 	struct icmphdr *icmph;
+ 	struct sk_buff *nskb;
+-	u32 saddr;
++	u32 saddr,packet_daddr;
+ 	u8 tos;
+ 	int hh_len, length;
+ 	struct rtable *rt = (struct rtable*)skb_in->dst;
+@@ -200,7 +201,7 @@
+ 			return;
+ 	}
+ 
+-	saddr = iph->daddr;
++	packet_daddr = saddr = iph->daddr;
+ 	if (!(rt->rt_flags & RTCF_LOCAL))
+ 		saddr = 0;
+ 
+@@ -243,7 +244,16 @@
+ 	iph->ttl = MAXTTL;
+ 	ip_select_ident(iph, &rt->u.dst, NULL);
+ 	iph->protocol=IPPROTO_ICMP;
+-	iph->saddr=rt->rt_src;
++
++        /* fake source IP if we have to
++           if fake_source_address == 1, we fake the source IP
++           from the packet destination address dynamically.
++        */
++        if (fake_source_address == 1)
++                iph->saddr = packet_daddr;
++        else
++	        iph->saddr=rt->rt_src;
++
+ 	iph->daddr=rt->rt_dst;
+ 	iph->check=0;
+ 	iph->check = ip_fast_csum((unsigned char *)iph, iph->ihl);
+@@ -290,22 +300,22 @@
+ 	   must return an absolute verdict. --RR */
+     	switch (reject->with) {
+     	case IPT_ICMP_NET_UNREACHABLE:
+-    		send_unreach(*pskb, ICMP_NET_UNREACH);
++    		send_unreach(*pskb, ICMP_NET_UNREACH, reject->fake_source_address);
+     		break;
+     	case IPT_ICMP_HOST_UNREACHABLE:
+-    		send_unreach(*pskb, ICMP_HOST_UNREACH);
++    		send_unreach(*pskb, ICMP_HOST_UNREACH, reject->fake_source_address);
+     		break;
+     	case IPT_ICMP_PROT_UNREACHABLE:
+-    		send_unreach(*pskb, ICMP_PROT_UNREACH);
++    		send_unreach(*pskb, ICMP_PROT_UNREACH, reject->fake_source_address);
+     		break;
+     	case IPT_ICMP_PORT_UNREACHABLE:
+-    		send_unreach(*pskb, ICMP_PORT_UNREACH);
++    		send_unreach(*pskb, ICMP_PORT_UNREACH, reject->fake_source_address);
+     		break;
+     	case IPT_ICMP_NET_PROHIBITED:
+-    		send_unreach(*pskb, ICMP_NET_ANO);
++    		send_unreach(*pskb, ICMP_NET_ANO, reject->fake_source_address);
+     		break;
+ 	case IPT_ICMP_HOST_PROHIBITED:
+-    		send_unreach(*pskb, ICMP_HOST_ANO);
++    		send_unreach(*pskb, ICMP_HOST_ANO, reject->fake_source_address);
+     		break;
+ 	case IPT_TCP_RESET:
+ 		send_reset(*pskb, hooknum == NF_IP_LOCAL_IN);
+@@ -352,6 +362,11 @@
+ 			DEBUGP("REJECT: TCP_RESET illegal for non-tcp\n");
+ 			return 0;
+ 		}
++		/* cannot fake source address */
++		if (rejinfo->fake_source_address != 0) {
++			DEBUGP("REJECT: fake-source-address illegal for TCP-RESET\n");
++			return 0;
++		}
+ 	}
+ 
+ 	return 1;

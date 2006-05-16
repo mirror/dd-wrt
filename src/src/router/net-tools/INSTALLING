@@ -1,0 +1,50 @@
+net-tools
+
+                               INSTALLING
+
+Please read the file `README' before you start with the installation of the
+net-tools.
+
+
+
+HACKERS WAY
+-----------
+cd /usr/src ; tar xvzf net-tools*.tar.gz
+less Makefile ; make config ; make ; make -n install ; make install
+
+
+
+CONFIGURE
+---------
+First of all change into the net-tools directory.
+
+Before you start with the Installation please have a look into the toplevel
+Makefile. There are some configuration options with explanations.
+
+To configure the compilation use "make config".  The default answers should
+be safe for all configurations.  If you have kernel 2.2 and glibc 2.1 most
+of the other options should work as well.
+
+
+COMPILE
+-------  
+To compile simply use "make".
+
+There should be no warnings or errors.
+
+
+
+INSTALLATION
+------------
+If you want to install the binaries use "make install".
+
+This will generate backups of your old binaries. If you dont want the
+backups, please use "make update" instead. To change the default permissions
+and ownerships of the installed binaries and manpages edit the Makefile. You
+can test the Installation with "make -n install". This will tell make: Don't
+run any commands, just print them.
+
+
+
+Bernd 'eckes' Eckenfels
+<net-tools@lina.inka.de>

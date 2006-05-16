@@ -1,0 +1,47 @@
+.TH "read_only: make your handler read_only automatically" 3 "5 Sep 2003" "net-snmp" \" -*- nroff -*-
+.ad l
+.nh
+.SH NAME
+read_only: make your handler read_only automatically \- The only purpose of this handler is to return an appropriate error for any requests passed to it in a SET mode. 
+More...
+.SS "handler"
+
+.in +1c
+.ti -1c
+.RI "void \fBnetsnmp_init_read_only_helper\fP (void)"
+.br
+.RI "\fIinitializes the read_only helper which then registers a read_only handler as a run-time injectable handler for configuration file use.\fP"
+.in -1c
+.SS "Functions"
+
+.in +1c
+.ti -1c
+.RI "netsnmp_mib_handler * \fBnetsnmp_get_read_only_handler\fP (void)"
+.br
+.RI "\fIreturns a read_only handler that can be injected into a given handler chain.\fP"
+.in -1c
+.SH "DETAILED DESCRIPTION"
+.PP 
+The only purpose of this handler is to return an appropriate error for any requests passed to it in a SET mode.
+.PP
+Inserting it into your handler chain will ensure you're never asked to perform a SET request so you can ignore those error conditions. 
+.SH "FUNCTION DOCUMENTATION"
+.PP 
+.SS "netsnmp_mib_handler* netsnmp_get_read_only_handler (void)"
+.PP
+returns a read_only handler that can be injected into a given handler chain.
+.PP
+Definition at line 32 of file read_only.c.
+.PP
+References netsnmp_create_handler().
+.PP
+Referenced by netsnmp_init_read_only_helper(), and netsnmp_register_read_only_table_data().
+.SS "void netsnmp_init_read_only_helper (void)"
+.PP
+initializes the read_only helper which then registers a read_only handler as a run-time injectable handler for configuration file use.
+.PP
+Definition at line 71 of file read_only.c.
+.PP
+References netsnmp_get_read_only_handler(), and netsnmp_register_handler_by_name().
+.PP
+Referenced by netsnmp_init_helpers().

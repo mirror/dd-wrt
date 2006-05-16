@@ -1,0 +1,8 @@
+CONFIG_IP_NF_MATCH_MULTIPORT
+Multiple port with ranges match support
+CONFIG_IP_NF_MATCH_MPORT
+  This is an enhanced multiport match which supports port
+  ranges as well as single ports.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

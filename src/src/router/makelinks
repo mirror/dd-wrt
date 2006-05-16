@@ -1,0 +1,4 @@
+#!/bin/sh
+for i in *; do
+  ln -s $2/$i $1/$i
+done

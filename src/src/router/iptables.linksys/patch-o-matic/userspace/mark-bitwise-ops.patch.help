@@ -1,0 +1,13 @@
+Author: Fabrice MARIE <fabrice@netfilter.org>
+Status: Works For Me.
+
+This patch adds support for matching the nfmark bitwise (and & or).
+
+For example, to test if the second bit of nfmark is set :
+# iptables -t mangle -A PREROUTING -p icmp -m mark --markand 0x2/0x2 -j ACCEPT
+
+I'm sure you will find a use for the OR bitwise operation as well :)
+# iptables -t mangle -A PREROUTING -p icmp -m mark --markor 0x7/0x1 -j ACCEPT
+
+***** WARNING ***** This patch also patch the userspace directory which means that
+                    you have to recompile and reinstall the iptables package after that.

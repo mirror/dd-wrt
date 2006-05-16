@@ -1,0 +1,25 @@
+D/ath////
+D/ath_hal////
+D/ath_rate////
+D/contrib////
+D/docs////
+D/hal////
+D/include////
+D/net80211////
+D/patches////
+D/regression////
+D/scripts////
+D/symbols////
+D/tools////
+/001-no_kerneldir.patch/1.1/Tue Nov  8 13:07:19 2005//
+/BuildCaps.inc/1.1/Fri Nov 11 13:50:47 2005//
+/COPYRIGHT/1.1/Wed Nov 30 11:56:09 2005//
+/INSTALL/1.1/Fri Nov 11 13:50:47 2005//
+/Makefile/1.1/Wed Nov 30 11:56:09 2005//
+/Makefile.inc/1.1/Wed Nov 30 11:56:09 2005//
+/Makefile.inc.rej/1.1/Fri Nov 11 13:52:52 2005//
+/README/1.1/Fri Nov 11 13:50:47 2005//
+/THANKS/1.1/Fri Nov 11 13:50:47 2005//
+/install.log/1.1/Fri Nov 11 14:48:50 2005//
+/release.h/1.1/Wed Nov 30 11:56:09 2005//
+/version.h/1.1/Thu Nov 10 10:16:00 2005//

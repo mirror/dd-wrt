@@ -1,0 +1,8 @@
+Package: sipath
+Priority: optional
+Section: net
+Version: TBDL
+Architecture: TBDL
+Maintainer: leMP <lemp@users.sourceforge.net>
+Source: http://sipath.sourceforge.net/ipkg/
+Description: Configuration for a SIP PBX with SER

@@ -1,0 +1,60 @@
+#!/bin/bash
+#
+# chkconfig: - 95 05
+# description: The dhcp-forward agent relays DHCP messages between two \
+#              networks
+
+# Source function library.
+. /etc/init.d/functions
+
+# Get config.
+test -e /etc/sysconfig/network && . /etc/sysconfig/network
+
+# Check that networking is up.
+test "$NETWORKING" != "no" || exit 0
+
+
+DHCPFWD_CFGFILE=/etc/dhcp-fwd.conf
+DHCPFWD_OPTIONS=
+test -e /etc/sysconfig/dhcp-fwd && . /etc/sysconfig/dhcp-fwd
+
+prog="dhcp-fwd"
+lockfile=/var/lock/subsys/dhcp-fwd
+
+start () {
+	echo -n $"Starting $prog: "
+	daemon dhcp-fwd -c ${DHCPFWD_CFGFILE} ${DHCPFWD_OPTIONS}
+	retval=$?
+	echo
+	test $retval -eq 0 && touch $lockfile
+	return $retval
+}
+
+stop () {
+	echo -n $"Stopping $prog: "
+	killproc dhcp-fwd
+	retval=$?
+	echo
+	test $retval -eq 0 && rm -f $lockfile
+	return $retval
+}
+
+restart () {
+	stop
+	start
+}
+
+# See how we were called.
+case "$1" in
+  start|stop|restart)	$1 ;;
+  reload)		restart ;;
+  status)
+	status dhcp-fwd
+	;;
+  condrestart)
+	test ! -f $lockfile || restart
+	;;
+  *)
+	echo $"Usage: $0 {start|stop|status|restart|reload|condrestart}"
+	exit 2
+esac

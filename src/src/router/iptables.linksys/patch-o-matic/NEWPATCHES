@@ -1,0 +1,71 @@
+Here is how to add your new `foo' patch to patch-o-matic:
+
+1) Create a kernel patch which can be applied inside a kernel tree
+   with `patch -p1', and call it `foo.patch', or `foo.patch.PROTOCOL'
+   if it belongs in linux/net/PROTOCOL/netfilter rather than
+   linux/net/ipv4/netfilter (the default).
+
+2) Create a description file called `foo.patch.help'.
+
+3) If your patch creates a new CONFIG option, eliminate that from the
+   patch above, and create a file called `foo.patch.config.in'.  The
+   format of this file is as follows:
+
+	EXACT LINE TO FOLLOW
+	<text to paste in>
+
+   This allows you to specify the entry in net/ipv4/netfilter/Config.in
+   that you wish your text to follow.  Note that it must be an exact match.
+   You can have more than one of these files, to make multiple entries
+   in different places, by calling successive ones foo.patch.config.in*.
+
+   You also need to make an entry in Documentation/Configure.help;
+   once again, eliminate this from your patch file, and create a file
+   called `foo.patch.configure.help' like so:
+
+	EXACT CONFIG OPTION TO FOLLOW
+	<text to paste in>
+
+   Your text will be placed after the config option you indicated
+   (with a blank line before and after).  You can have more than one
+   of these files, to make multiple entries in different places, by
+   calling successive ones foo.patch.configure.help*.
+
+4) If you want to edit the Makefile, eliminate that from the patch
+   above, and create a file called `foo.patch.makefile'.  The format
+   of this file is as follows:
+
+	EXACT LINE TO MATCH
+	<text to paste in>
+
+   You can have more than one of these files, to make multiple entries
+   in different places, by calling successive ones foo.patch.makefile*.
+
+5) If you want to edit ip{6}_conntrack.h in include/linux/netfilter_ipv{4|6},
+   eliminate that from the patch above, and create a file called
+   `foo.patch.ip{6}_conntrack.h'. The format of this file is as follows:
+
+	EXACT LINE TO MATCH
+	<text to paste in>
+
+   There are already well defined "entry points" in these header files.
+
+   You can have more than one of these files, to make multiple entries
+   in different places, by calling successive ones 
+   foo.patch.ip{6}_conntrack.h*.
+
+Finally, if you want to have a libipt_foo built, add it to the
+Makefile.  If you only want it built when the patch is applied, add a
+test for your extension in the iptables userspace distribution, called
+`userspace/extensions/.foo-test'.  This should be a small shell script
+which echos the names of the libraries to be built if the
+corresponding include file exists in the kernel tree (this test may be
+more complex: figure out some way of reliably detecting that the patch
+has been applied to $KERNEL_DIR).  This isn't strictly part of
+patch-o-matic, but it means things will just work normally whether
+they've used patch-o-matic, or if your patch is included in future
+kernel releases.
+
+Enjoy!
+Rusty.
+

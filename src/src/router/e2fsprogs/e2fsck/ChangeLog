@@ -1,0 +1,3763 @@
+2006-06-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.38
+
+2005-06-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (usage, parse_extended_opts): Clean up messages printed
+		by e2fsck for grammar and consistency.
+
+2005-06-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.8.in: Make it clear that the -c, -l, and -L options are
+		never safe to use on a mounted filesystem, and in general,
+		running e2fsck on mounted filesystems is a bad idea.
+
+2005-06-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* message.c: Add @m (multiply-claimed) and @n (invalid)
+		expansions.
+
+	* problem.c: Clean up the problem messages displayed by e2fsck,
+		mostly based on	suggestions from Benno Schulenberg.
+
+2005-06-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.8.in: Add a request to the REPORTING BUGS section of the
+		man page to make sure that e2fsck's messages are printed
+		in English, and to send a raw e2image filesystem dump if
+		possible.
+
+2005-05-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* badblocks.c (check_bb_inode_blocks): Clean up warning printf.
+		Thanks to Benno Schulenberg for the patch.  (Addresses
+		Sourceforge Bug: #1189803)
+
+2005-04-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.8.in: Fix spelling mistakes in man pages.  (Addresses
+		Debian Bugs: #304593)
+
+2005-04-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1b.c (pass1d): Don't offer to clone or delete the resize
+		inode; it's not allowed!
+
+	* e2fsck.c, e2fsck.h, journal.c, pass1.c, pass1b.c, pass2.c,
+		pass3.c, pass4.c, super.c, unix.c: Use a centrally stored
+		current time for "now" which can be overridden using the
+		E2FSCK_TIME environment variable, for better
+		reproducibility for regression tests.
+
+2005-04-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (e2fsck_pass1): If the superblock last mount time (not
+		just the last write time) looks insane, then assume that
+		we can't do the LOW_DTIME checks.
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.37
+
+2005-03-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* message.c, pass1.c, problem.c, problem.h, util.c: Integrate code
+		from Alex Thomas at Clusterfs to check extended attributes
+		stored in inodes.
+
+	* message.c (expand_inode_expression): Add support for %IS in
+		problem descriptions.  Note that this only works if the
+		problem context has a pointer to a large inode!
+
+	* problem.h, problem.c (PR_1_EXTRA_ISIZE, PR_1_ATTR_NAME_LEN,
+		PR_1_ATTR_VALUE_OFFSET, PR_1_ATTR_VALUE_BLOCK,
+		PR_1_ATTR_VALUE_SIZE, PR_1_ATTR_HASH): Add new problem
+		codes.
+
+	* util.c (e2fsck_write_inode_full): New function.
+
+	* pass1.c (check_ea_in_inode, check_inode_extra_space): New
+		function which tests the validity of extended attributes
+		stored in a large inode.
+		(e2fsck_pass1): Call ext2fs_get_next_inode_full() instead
+		of get_next_inode(), and use an allocated inode which is
+		big enough to store extra portion of large inodes.
+
+2005-03-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* super.c (check_super_block): Add sanity checks for the
+		superblock's inode_size field.
+
+	* pass3.c (check_root, e2fsck_get_lost_and_found): Call
+		ext2fs_write_new_inode() instead of ext2fs_write_inode().
+
+	* pass1.c (check_blocks): Move counting the extended attribute
+		block earlier so that we don't have to worry about
+		num_blocks wrapping for files which are too big.
+
+2006-02-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.36
+
+2005-02-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass2.c (e2fsck_pass2), problem.c (PR_2_HTREE_FCLR), problem.h
+		(PR_2_HTREE_FCLR): Remove support for
+		--enable-clear-htree; this was only needed during the
+		early development of the htree patch.
+
+2005-01-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass2.c (e2fsck_process_bad_inode): Fix a corner case involving
+		big-endian systems, long symlinks and i_file_acl set when
+		it shouldn't be.  Without this bugfix, f_clear_xattr will
+		fail on big-endian machines.
+
+	* super.c (check_resize_inode): Deal with the case where the
+		resize inode can't be read; don't try to recreate the
+		resize inode unless the resize feature is actually
+		enabled.
+
+2005-01-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* super.c (check_resize_inode): If the resize inode has a zero
+		i_links_count or isn't a regular file, consider the resize
+		inode as invalid, and offer to recreate it.
+
+	* pass2.c (e2fsck_process_bad_inode): Offer to clear i_file_acl
+		before checking to see if an invalid inode should be
+		removed, since otherwise the fast symlink detection code
+		can get confused.  Also clear the inode's entry in
+		inode_bad_map if the inode has been completely fixed.
+		(Addresses Red Hat Bugzilla #146284)
+
+2005-01-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (main, check_if_skip): Set the valid flag earlier, and if
+		it is cleared by the superblock tests, then assume that
+		the filesystem contains errors and must be checked.
+
+	* super.c (check_super_block): Check the individual block group
+		inode and block free counts, as well as the filesystem
+		inode and block free counts.  If any of the block/inode
+		free counts is too large, force a full filesystem check.
+		(Addresses Debian Bug: #291571)
+
+2005-01-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (e2fsck_simple_progress): Use fixed integer math
+		to check to see if we're at 0 or 100%
+		(is_on_batt): Clean up gcc -Wall warning
+		(main): Remove dead code
+
+2005-01-13  Matthias Andree  <matthias.andree@gmx.de>
+
+	* unix.c: Do not call closedir if the handle is zero, to avoid
+		crashes when the /proc/acpi/ac_adapter directory is
+		missing, for instance on non-ACPI or non-Linux systems.
+
+2005-01-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1b.c: As part of converting configure.in from using the
+		"broken by design" 2.13 version of AC_CHECK_TYPE to
+		AC_CHECK_TYPES, if intptr_t isn't defined, manually
+		typedef it to long.  (Addresses Debian Bug #289133)
+
+2005-01-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* super.c (check_resize_inode): Use ext2fs_{read,write}_ind_block
+		so that byte swapping is handled on big-endian systems.
+		(check_super_block): Allow the number of reserved blocks
+		to be 50% of the number of blocks available, in order to
+		be consistent to what is allowed by tune2fs.
+
+2004-12-24  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (e2fsck_pass1): At the end of the pass 1 processing, if
+		we have been signalled to do so, recreate the resize inode.
+
+	* super.c (check_resize_inode): New function which checks to make
+		sure the resize inode is valid.  It is called by
+		check_super_block().  If it is invalid, it will signal to
+		pass1.c that the resize inode needs to recreate.
+
+	* e2fsck.h (E2F_FLAG_RESIZE_INODE): New flag
+
+	* problem.c, problem.h (PR_0_RESIZE_INODE_INVALID,
+		PR_1_RESIZE_INODE_CREATE): Add new problem codes.
+
+2004-12-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* swapfs.c (swap_inodes): Since swap_inodes bypasses the inode
+		cache for speed reasons, we must flush it to avoid cache
+		coherency problems.
+
+2004-12-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* super.c (check_super_block): If the resize_inode feature is not
+		set, check to make sure that s_reserved_gdt_blocks is
+		zero, and that the resize inode is clear.
+
+	* problem.h (PR_0_NONZERO_RESERVED_GDT_BLOCKS,
+		PR_0_CLEAR_RESIZE_INODE): Add new problem codes.
+
+2004-12-15  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (process_block): Applied resize inode patch.  Mark the
+		DIND block of the resize inode as being in use.
+	
+2004-12-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Move strip command to install-strip target.
+		Use Linux-kernel-style makefile output for "make install"
+
+	* Makefile.in (installdirs): Use $(MKINSTALLDIRS) macro.
+		Remove sync in the "all" target.
+
+2004-11-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* message.c (expand_inode_expression): If the TZ environment
+		variable is set to GMT, use gmtime() instead of
+		localtime() or ctime() to force the use of GMT.  This is
+		because the dietlibc doesn't honor the TZ environment
+		variable.
+	
+	* e2fsck.h: Add io_options to e2fsck_struct
+
+	* unix.c: If there is a question mark in the device name, separate
+		out the options to the IO layer, and pass it on to
+		ext2fs_open2().
+
+	* Makefile.in: Use Linux-kernel-style makefile output to make it
+		easier to see errors/warnings.
+
+2004-10-04  Richard Mortimer  <richm@oldelvet.org.uk>
+
+        * journal.c (e2fsck_check_ext3_journal): Attempt recovery of the
+		filesystem if the journal contains illegal block numbers.
+
+2004-07-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (process_block): Change the limit of directory size from
+		32 MB to 2GB.
+
+2004-05-11  Theodore Ts'o  <tytso@mit.edu>
+
+	* journal.c (sync_blockdev): Flush I/O caches to preserve ordering
+		constraints required by the journal recovery code.  Thanks
+		to Junfeng Yang from the Stanford Metacompilation group
+		for pointing this out.
+
+	* jfs_user.h: Define sync_blockdev() as an emulated function,
+		instead just being a no-op.
+
+2004-05-04  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (check_if_skip): If the checkinterval is zero, then
+		disregard it when calculating when the next check will
+		take place.
+
+2004-04-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (is_on_batt): Be more flexible about the name of the ACPI
+		device that corresponds to the AC adapter.  (Addresses
+		Debian bug #242136)
+
+2004-04-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in: Update the modtime even if subst doesn't need to
+		update the e2fsck man page, to avoid always re-running
+		subst, especially since there are no dependencies on the
+		man page.
+
+2004-02-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.35
+
+2004-02-24  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (main, PRS), e2fsck.8.in: Add a new -k option which keeps
+		the existing badblocks list when using the -c option.
+		(Addresses Debian bug #229103)
+
+2004-02-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in (PROFILED_LIBS, PROFILED_DEPLIBS): Fix reference to
+		libblkid so that the build will work with --enable-profile
+		(Addresses Sourceforge bug #811408)
+
+2004-02-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.c (e2fsck_run): Clear the SETJMP_OK flag when returning
+		so we don't double longjump into an invalid stack frame.
+		(Thanks to Matthias Andree for providing this fix.)
+
+2004-01-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* problem.c (fix_problem): Don't call print_e2fsck_message if the
+		message is empty; otherwise, the NLS substitution will
+		print the .po header, which is Just Wrong.
+
+2004-01-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass2.c (deallocate_inode_block): Check to make sure the block
+		number is invalid before deallocating it, to avoid core
+		dumping e2fsck.
+
+2003-12-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass3.c (check_directory): When reconnecting a directory, we may
+		need to create a lost+found directory.  This may
+		invalidate our pointer to the directory information, so we
+		must look it up again after calling
+		e2fsck_reconnect_file().  (Addresses Debian bug #219640).
+
+2003-12-10  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.h (E2F_FLAG_RESTARTED): Assign a unique flag bitfield to
+		E2F_FLAG_RESTARTED.  This fixes a bug where if the user
+		specifies an alternate superblock, and the journal needs
+		to be replayed, e2fsck would erroneously assume that
+		journal had been run already without clearing the
+		NEEDS_RECOVERY flag, and bomb out with an error.
+
+2003-12-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* badblocks.c, dict.c, ea_refcount.c, ehandler.c, journal.c,
+		pass1.c, pass1b.c, pass2.c, pass3.c, pass5.c, problem.c,
+		rehash.c, super.c, swapfs.c, unix.c, util.c, e2fsck.h: Fix
+		gcc -Wall nitpicks.
+
+	* recovery.c, jfs_user.h: Sync recovery.c with latest 2.5 kernel
+		version.
+
+2003-12-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (main): When testing a disk using e2fsck -c, use the list
+		of new bad blocks to replace the current list of bad
+		blocks.  This way "e2fsck -c" can be used to recover from
+		a corrupted bad block inode.
+
+	* badblocks.c (test_disk): Remove the test_disk() file; e2fsck
+		will just call read_bad_blocks_file() directly with the
+		file parameter set to NULL.
+
+2003-09-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (is_on_batt, check_if_skip): If running on battery, then
+		give an extra grace period before actually forcing a
+		check.  That way the laptop will be biased to waiting
+		until we are on AC power before doing the filesystem
+		check.  (Addresses Debian bug #205177)
+
+2003-09-13  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (check_if_skip): If the number of mounts until the next
+		forced filesystem check is 5 or less, mention this to the
+		user.  (Addresses Debian bug #157194)
+
+	* pass1.c (e2fsck_pass1), problem.h (PR_1_BB_FS_BLOCK), 
+	  problem.c (PR_1_BB_FS_BLOCK, PR_1_BBINODE_BAD_METABLOCK_PROMPT): 
+		Fix up the handling of corrupted indirect blocks in the 
+		bad block.  We now correctly handle the case where there
+		is an overlap between a block group descriptor or
+		a superblock and a bad block indirect block.  In the case
+		where the indirect block is corrupted, we now suggest
+		"e2fsck -c".
+	
+2003-09-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (PRS): Check the returned name from blkid_get_devname and
+		print an error if the requested LABEL/UUID does not exist.
+	
+2003-09-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (mark_table_blocks): Use the new function
+		ext2fs_reserve_super_and_bgd to calculate the blocks to be
+		reserved.
+
+2003-08-24  Theodore Ts'o  <tytso@mit.edu>
+
+	* util.c (get_backup_sb): Check to make sure the context is passed
+		in non-NULL before trying to dereference it.  Otherwise we
+		might core dump when called to expand %S in a problem
+		description.
+
+	* e2fsck.8.in: Adjust description line so that apropos
+		"ext2" or "ext3" will find the man page.  (Addresses
+		Debian Bug #206845)
+
+2003-08-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* journal.c (e2fsck_move_ext3_journal): When moving the journal or
+		backing up the journal inode, make sure it gets written to
+		all the superblocks.
+
+2003-08-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* journal.c (e2fsck_move_ext3_journal): If the superblock's backup
+		journal information is not set, copy the journal inode
+		information to the superblock.
+		(e2fsck_get_journal): If the journal inode is corrupted,
+		synthesize one from the backup information in the
+		superblock.
+
+	* problem.c, problem.h (PR_0_BACKUP_JNL): Add new problem code
+		which is used when we make a backup of the journal inode.
+
+2003-08-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.h, unix.c (PRS, e2fsck_clear_progbar, 
+		e2fsck_simple_progress): Don't print the ^A and ^B
+		characters which bracket the progress bar when the e2fsck
+		program is talking directly to a tty, but only when it is
+		being piped to another program.  (Addresses Debian bug
+		#204137)
+	* unix.c: Move some initialized variables to the BSS segment to 
+		shrink the size of the e2fsck executable.
+
+2003-08-01  Philipp Thomas <pthomas@suse.de>
+
+	* Include inttypes.h if present.  New macros INT_TO_VOIDPTR and
+		VOIDPTR_TO_INT.  Use them throughout for int<->void *
+		casts to fix 64-bit warnings.
+
+	* dirinfo.c, dx_dirinfo.c, e2fsck.c, ea_refcount.c, journal.c,
+		message.c, pass1.c, pass1b.c, pass2.c, pass3.c, pass4.c,
+		pass5.c, super.c, swapfs.c: ext2fs_getmem(),
+		ext2fs_free_mem(), and ext2fs_resize_mem() all now take a
+		'void *' instead of a 'void **' in order to avoid pointer
+		aliasing problems with GCC 3.x.
+
+2003-07-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.34
+
+2003-07-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass2.c: Fix gcc -Wall nitpicks (missing #include <string.h>)
+
+	* dict.c, dict.h: Fix gcc -Wall nitpicks (indented cpp directives)
+
+2003-06-8  Theodore Ts'o  <tytso@mit.edu>
+
+	* problem.c: Fix spelling error.
+
+2003-05-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (show_stats), e2fsck.h: Use ngettext (abbreivated with
+		the macro P_(str1, str2, n)) to simplify the statistics
+		reporting.
+
+2003-05-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (main): If --enable-testio-debug is set, then use the
+		test_io manager so we can watch what e2fsck is doing.
+
+2003-05-03  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (show_stats): Remove uneeded use of _() around string
+		under #ifndef NLS
+
+	* problem.c: Mark two strings (PR_1_RELOC_TO and
+		PR_2_NON_UNIQUE_FILE) as not being printf format strings.
+		Fix typo (doubled 'is') in PR_2_FILE_ACL_BAD.
+
+	* Makefile.in: Add $(LIBINTL) to the link line so we can support
+		using the internal gettext library.
+
+	* e2fsck.h: Add #ifndef protection around LOCALEDIR definition.
+
+2003-04-27  Theodore Ts'o  <tytso@mit.edu>
+
+	* message.c (expand_at_expression): Fixed NLS support for message
+		abbreviations. 
+
+2003-04-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.33
+
+2003-04-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* rehash.c: Fix lint warnings by including string.h and ctype.h
+
+	* pass2.c (dict_de_cmp): Fix lint warnings by using const pointers.
+
+	* unix.c (e2fsck_simple_progress), e2fsck.h: Fix lint warnings by
+		using const pointers.  Remove unused variables.
+	
+2003-04-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* rehash.c (name_cmp): Sort the deleted inodes to the end of the
+		list, for portability to systems that whose qsort does not
+		perform a stable sort.
+
+2003-04-16  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c: Bracket progress bar output with control-A and control-B
+		characters.  These characters are used as in-band
+		signalling to allow a logging program to filter out the
+		progress bar.
+		(PRS): Use setvbuf instead of setbuf to force stdout and
+		stderr to be non-buffered when the stdout/stderr are a pipe.
+		This fixes a cosmetic problem when using e2fsck under
+		logsave. 
+	
+2003-04-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c: Add #ifdef around #include <sys/ioctl.h>
+
+2003-04-05  Theodore Ts'o  <tytso@mit.edu>
+
+	* super.c (check_super_block): Update the global free block and
+		inode counters from the block group specific counters
+		quietly.  This is needed for an experimental patch which
+		eliminates locking the entire filesystem when allocating
+		blocks or inodes; if the filesystem is not unmounted
+		cleanly, the global counts may not be accurate.
+
+2003-03-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* util.c: Explicitly declare e2fsck_global_ctx as extern for the
+		benefit of the Apple Darwin port.
+
+2003-03-15  Theodore Ts'o  <tytso@mit.edu>
+
+	* rehash.c (e2fsck_rehash_dir): If user specified the -n option,
+		skip trying to write out directory.
+		(e2fsck_rehash_directories): Fix the percentage
+		calculation in the progress bar.
+
+2003-03-14  Theodore Ts'o  <tytso@mit.edu>
+
+	* problem.c, problem.h (PR_2_REPORT_DUP_DIRENT): Add new problem
+		code. 
+
+	* pass2.c (check_dir_block): Check for duplicate filenames within
+		a single directory block (because this is the easy case;
+		we don't currently check for duplicates that span
+		directory blocks, for now.  Eventually for htree
+		directories we can do this by searching for all directory
+		blocks that have a hash overflow, and then searching the
+		adjacent blocks to find all other potential duplicates.)
+
+	* iscan.c, scantest.c, unix.c: And #ifdef protection around
+		#include of malloc.h
+
+	* rehash.c (duplicate_search_and_fix): Now search for duplicates
+		filenames, and either prompt to remove a complete
+		duplicate entry, or to rename a duplicate filename.
+		(e2fsck_rehash_dir): Use a progress bar to report
+		progress, and don't print all of the directory inodes as
+		they are optimized.
+
+	* problem.c, problem.h (PR_2_DUPLICATE_DIRENT,
+		PR_2_NON_UNIQUE_FILE):  New problem codes.
+	
+	* unix.c (e2fsck_simple_progress), e2fsck.h: New function which
+		can be called to provide specialized progress bars that
+		are not related to the top-level pass-based completion
+		percentage.
+
+	* pass3.c (e2fsck_adjust_inode_count), e2fsck.h: Export previously
+		static function.
+
+2003-03-06    <tytso@mit.edu>
+
+	* e2fsck.8.in: Fix minor nit in the -C option.  (Addresses Debian
+		bug #173612)
+
+2003-03-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in, journal.c, unix.c: Use blkid functions to find the
+		journal from the UUID, and to interpret the device
+		specification.
+
+	* e2fsck.c: Free the blkid_cache when releasing the e2fsck context
+		structure.
+
+	* e2fsck.h: If strnlen is not present, define it as a macro which
+		calls e2fsck_strlen().  Add prototype for string_copy().
+		Add blkid_cache to e2fsck context, and make
+		filesystem_name, device_name, and journal_name be
+		non-const variables.
+	
+	* pass1.c, pass2.c: Remove static strnlen function
+
+	* util.c (string_copy, e2fsck_strnlen): New functions
+
+2003-01-29  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (usage): Make descripton -c be a bit more explicit
+
+2003-01-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (check_blocks): Use the EXT2_I_SIZE macro.
+
+2003-01-02  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (main): Detect if there is an attempt to run the journal
+		twice, and abort with an error if this is the case.
+		(Address IBM Bugzilla bug #1226)
+
+2002-12-18  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass2.c (strnlen): Provide strnlen if libc doesn't. 
+
+2003-11-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (PRS): Print an error if more than one of the -p/-a, -n
+		or -y options are specified.
+
+2002-11-12  Theodore Ts'o  <tytso@mit.edu>
+
+	* problem.c: Make HTREE problems PR_PREEN_OK, so that we don't
+		abort an e2fsck after the filesystem has been mounted
+		using the 2.4 ext2 codebase.
+
+2002-11-09  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.32
+
+2002-11-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.31
+
+2002-11-08    <tytso@snap.thunk.org>
+
+	* unix.c (main): Fix a bug where e2fsck could erroneously mark a
+		filesystem as being valid if it was being checked and it
+		is interrupted with a ^C.  (Bug introduced in e2fsprogs
+		1.28.)
+
+	* unix.c (PRS), journal.c: Set the default level of journal
+		debugging to be 0, and allow the user to set the level of
+		journal debugging by using the E2FSCK_JBD_DEBUG
+		environment variable.
+
+	* pass1.c (new_table_block), super.c (check_super_block), swapfs.c
+		(swap_filesys): Clear EXT2_FLAG_MASTER_SB_ONLY to make
+		sure the backup superblocks and group descriptors are
+		updated when we make an important change to the
+		superblocks and/or group descriptors.  (i.e., generating a
+		UUID, allocating filesystem metadata, or byte-swapping the
+		filesystem.)
+
+2002-11-07  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.h, unix.c (main, check_mount): Fix e2fsck so that it
+		returns the appropriate exit code, so that the boot
+		scripts will be told that they need to automatically
+		reboot.
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.30
+
+2002-10-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* unix.c (usage), e2fsck.8.in: Add the -D option to the usage and
+		command synopsis.  (Addresses Debian bug #167108)
+
+	* pass1.c (e2fsck_pass1): Check the superblock write time to see
+		whether or not we can safely do the LOW_DTIME checks.
+		(Addresses Sourceforge bug #620980)
+
+2002-10-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* Makefile.in (install): Search all compression extensions when
+		deleting old man pages.
+
+	* pass1.c (mark_table_blocks): Fix bug in meta_bg support; only
+		mark blocks legacy group descriptor blocks up to 
+		s_first_meta_bg.
+
+2002-10-20  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass1.c (mark_table_blocks): Add support for the meta_blockgroup
+		filesystem format.
+
+2002-10-13  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass3.c (e2fsck_get_lost_and_found): Pass in mode 700 to
+		ext2fs_new_inode().
+
+	* unix.c (show_stats): Fix format bug if NLS is in use.
+
+	* journal.c, pass1.c, revoke.c, util.c: Fix gcc -Wall nits.
+
+2002-10-08  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass3.c (e2fsck_get_lost_and_found): Create the lost+found
+		directory with mode 0700.
+
+2002-10-02  Theodore Y. Ts'o  <tytso@mit.edu>
+	
+	* pass2.c (parse_int_node, check_dir_block): Add byte-swap
+		functions around the htree code, so that it works on
+		big-endian machines.
+
+	* swapfs.c (swap_filesys): For PPC machines, byte-swap the bitmap,
+		since PPC big-endian filesystems were historically wierd.
+		This is just for the regression test, since no one
+		actually uses them anymore...
+
+2002-09-30  Theodore Ts'o  <tytso@mit.edu>
+
+	* problem.c, problem.h (PR_2_HTREE_BAD_LIMIT,
+		PR_2_HTREE_BAD_COUNT, PR_2_HTREE_HASH_ORDER, 
+		PR_2_HTREE_BAD_DEPTH): Add new problem codes.
+
+	* pass2.c (salvage_directory, check_dir_block): Avoid counting
+		directory entries twice during a directory salvage.  Make
+		the salvaging algorithm smarter about directory entry size
+		overruns.
+		(parse_int_node): Add check to make sure the limit and
+		count fields in the node headers are sane.  Also check
+		to make sure the hash table in ascending order.
+		(pass2, htree_depth): For all leaf nodes, determine their
+		depth in the tree, and make sure it matches with the depth
+		in the htree root information.
+
+2002-09-29  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass2.c (check_dir_block): Do a more paranoid check when trying
+		to determine whether or not a directory entry is a
+		completely empty leaf block or leaf node.  Otherwise
+		e2fsck might get confused into thinking that a valid dxdir
+		was corrupted.
+
+	* rehash.c (e2fsck_rehash_dir): Apply patch from Christopher Li
+		which avoids creating an empty directory entry at the end
+		of the directory block.  This screws up earlier versions
+		of the indexed directory patch.
+	
+2002-09-28  Theodore Ts'o  <tytso@mit.edu>
+
+	* rehash.c (write_directory): Clear the index flag if by
+		reoptimizing the directory, we bring it back into a
+		non-indexed state.
+		(e2fsck_rehash_dir): Allow directories that contain two
+		blocks to be indexed.  Otherwise when they grow, they
+		never will be indexed by the kernel.
+
+	* unix.c (main): Only update the master superblock; there's no
+		point updating the backup superblocks, and it speeds up
+		fsck slightly.
+
+	* pass2.c (salvage_directory): New function called by
+		check_dir_block() which is much more sophisticated about
+		how it salvages corrupted filesystems.
+
+2001-09-24  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.29
+
+2002-09-06  Theodore Ts'o  <tytso@mit.edu>
+
+	* rehash.c (copy_dir_entries): Fix bug which caused corrupted
+		directories if there are 4 or 8 bytes left over in a
+		directory page when optimizing/reindexing a directory.
+
+2001-08-31  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.28
+
+2002-08-31  Theodore Ts'o  <tytso@mit.edu>
+
+	* ehandler.c (e2fsck_handle_read_error): If the user asks to
+		ignore the error, offer to try forcing a write of the
+		block to the disk; sometimes this will cause the drive to
+		remap the bad block.
+
+2002-08-31  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass2.c (e2fsck_pass2): If this is a HTREE directory, sort the
+		dblist so that the first block of all of the directories
+		is handled first so we can read the hash version
+		information.
+		(check_dir_block): Examine the root node for correctness,
+		and offer to clear it if it is not correct.  Also copy the
+		hash version to the dx_dir structure, so that the proper
+		hash function can be used for other blocks in the
+		directory.
+
+	* problem.c, problem.h (PR_2_HTREE_BAD_ROOT): Add new problem code.
+
+2002-08-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* problem.c: Fix PR_1_RELOC_BLOCK_ALLOCATE message to explain that
+		it is necessary to find contiguous blocks in a particular
+		block group.
+
+2002-08-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.8.in: Add clarifying text describing how e2fsck works
+		with ext3 filesytems.  (Addresses Debian bug #145044).
+
+	* pass1.c (handle_htree): Add support for EXT2_HASH_TEA
+
+	* e2fsck.h, e2fsck.c (e2fsck_allocate_context): Add new field to
+		the e2fsck context, ext_attr_ver, which specifies the EA
+		format version.
+
+	* unix.c (usage, parse_extended_opts, PRS), e2fsck.8.in: Add new
+		option -E, which allows the users to specify extended
+		options.  Added ea_ver extended option.
+
+	* pass1.c (e2fsck_pass1_check_device_inode): Add ext2_filsys
+		argument to this function, so we can account for the
+		presence of extended attribute blocks attached to device
+		inodes.
+		(e2fsck_pass1_check_symlink, e2fsck_pass1): Take into
+		account the fact that symlinks can also have extended
+		attribute blocks.
+		(check_ext_attr): Don't be flexible about the EA format
+		version.  Check against the version number in
+		ctx->ext_attr_ver. 
+		(check_blocks): Check all inodes, so that we account for
+		extended attribute blocks belonging to special files.
+		Clean up i_size checks.
+
+	* pass1b.c (pass1b): Check all inodes, so that we account for
+		extended attribute blocks belonging to special files.
+		(delete_file_block): Use ext2fs_alloc_block_stats() to
+		update the filesystem statistics.
+		(delete_file): Attempt to decrement the extended
+		attribute refcount, and free the EA block if the count
+		hits zero.
+		(clone_file): Fixed bugs in EA handling.  Don't call
+		block_iterate on inodes that don't have a valid i_block[]
+		array.  Reread the base inode since it may have been
+		changed by ext2fs_block_iterate.  When updating inodes as
+		part of cloning an EA block, write out the correct inode
+		structure.
+
+	* pass2.c (deallocate_inode_block, deallocate_inode): Use standard
+		ext2fs_alloc_*_stats functions to update the filesystem 
+		statistics.
+		(deallocate_inode): Attempt to decrement the extended
+		attribute refcount, and free the EA block if the count
+		hits zero. 
+		(e2fsck_process_bad_inode): Add extra argument to calls 
+		to e2fsck_pass1_check_device_inode ().
+
+	* pass3.c (e2fsck_get_lost_and_found): Use standard
+		ext2fs_alloc_*_stats functions to update the filesystem.
+		statistics when creating /lost+found.
+		(adjust_inode_count): Remove debugging code that can never
+		be triggered.
+
+	* pass4.c (disconnect_inode): Add explanation about why we only
+		clear inodes that have no data blocks and no EA blocks.
+		Use ext2fs_inode_alloc_stats2 function to update the
+		filesystem statistics when clearing a zero-length inode.
+
+	* problem.c, problem.h (PR_1B_ADJ_EA_REFCOUNT,
+		PR_2_ADJ_EA_REFCOUNT): Add new problem codes.
+
+	* super.c (release_inode_block), (release_orphan_inodes): Use the
+		standard ext2fs_alloc_*_stats functions to update the
+		filesystem statistics.
+		(release_inode_blocks): Attempt to decrement the extended
+		attribute refcount, and free the EA block if the count
+		hits zero.
+
+2002-08-01  Theodore Ts'o  <tytso@mit.edu>
+
+	* dict.c, dict.h: New file from kazlib 1.20 which implements a
+		red-black tree
+	
+	* pass1b.c: Massive changes to take advantage of dict.c.  This
+		removes several O(n**2) algorithms from the rare case
+		where there are a large number of blocks claimed by
+		multiple inodes.
+
+2002-07-24  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.8.in, e2fsck.h, pass3.c (e2fsck_pass3), unix.c, rehash.c:
+		Add new option -D, which requests e2fsck to optimize all
+		directories.  Rehash.c will also compress and sort
+		non-indexed directories.
+
+	* problem.c, problem.h: Rename PR_3A_REHASH_* to PR_3A_OPTIMIZE_*
+
+	* unix.c (PRS): Make sure the signal_cancel is registered without
+		SA_RESTART.
+
+	* rehash.c (e2fsck_rehash_dir, copy_dir_entries, calculate_tree):
+		Restructured code in e2fsck_rehash_dir into two new
+		subroutines to make the code more understandable/maintainable.
+		(set_root_node): Fixed bug which caused the root node to
+		be invalid on non-FILETYPE filesystems due to an
+		unitialized variable.
+		(calculate_tree): Fix bug where pointers which might get
+		invalidated if realloc() moves outdir->buf around.
+		(e2fsck_rehash_dir): Fix memory leak bug.
+
+	* pass3.c (e2fsck_get_lost_and_found), e2fsck.h, e2fsck.c:
+		Exported as a public interface a function for finding the
+		lost and found directory.  Cache the location of the lost
+		and found directory in the e2fsck context structure.
+
+	* util.c (ask_yn, read_a_char): Note when the user has typed ^C,
+		and abort processing by longjmp'ing to ctx->abort_loc.
+
+2002-07-23  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (e2fsck_pass1): If e2fsck is run with -n, don't create
+		the dirs_to_hash list, since we don't want to reindex
+		directories if the filesystem is opened read-only.
+
+2002-07-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.8.in: Document new exit code FSCK_CANCELED
+
+	* unix.c (PRS, signal_cancel): Capture SIGINT and SIGTERM signals
+		and set a flag in the e2fsck context indicating that
+		cancellation has been requested, so that e2fsck will exit
+		only at safe points.
+		(main): Change the exit handling so that if a cancellation
+		is requested, return FSCK_CANCELED (a new exit code 32).
+		e2fsck can now return more than one exit code as part of a
+		bitmask (as had been documented in the man page).
+
+	* pass2.c (e2fsck_pass2, check_dir_block), pass3.c (e2fsck_pass3),
+		pass4.c (e2fsck_pass4): Check to see if a cancellation was
+		requested, and abort processing if necessary.
+
+2002-07-19  Theodore Ts'o  <tytso@mit.edu>
+
+	* rehash.c, Makefile.in: New file which rewrites directories using
+		the htree format.
+	
+	* problem.c (fix_problem), problemP.h (PR_PREEN_NOHDR): Add option
+		which suppresses the header printed when in preen mode.
+
+	* pass3.c (e2fsck_pass3): If there are entries on the dirs_to_hash
+		list, call e2fsck_rehash_directories to reindex those
+		directories.
+		(e2fsck_expand_directory): Generalize the old
+		expand_dirctory() function so it can expand a directory to
+		a guaranteed minimum size. 
+
+	* e2fsck.h (struct e2fsck_struct): Add the dirs_to_hash list.  Add
+		new function prototypes for rehash.c and for
+		e2fsck_expand_directory().
+	
+	* e2fsck.c (e2fsck_reset_context): Free the dirs_to_hash list.
+
+	* pass1.c (e2fsck_pass1): Initialize the dirs_to_hash list if the
+		htree feature is present in the filesystem.
+		(check_blocks): If a non-htree directory has more than 2
+		blocks, put it on the dirs_to_hash list.
+
+	* pass2.c (clear_htree): Add corrupt htree directories to the
+		dirs_to_hash list.
+
+	* problem.h, problem.c (PR_3A_PASS_HEADER, PR_3A_REHASH_ITER, 
+		PR_3A_REHASH_DIR_ERR, PR_3A_REHASH_DIR_HEADER,
+		PR_3A_REHASH_DIR, PR_3A_REHASH_DIR_END): Add new problem codes
+
+	* pass2.c (parse_int_node), problem.c (PR_2_HTREE_BADBLK): Fix
+		problem display.
+	
+2002-07-15  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass2.c (e2fsck_pass2): Use dx_dir->numblocks instead of
+		dx_dir->ino to indicate that a bad inode was cleared.
+
+2002-06-26  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (check_blocks): Move htree handling to handle_htree().
+		Factor out calls to ext2fs_write_inode so that it happens
+		if dirty_inode is non-zero.
+		(handle_htree): Add checks for invalid htree root, invalid
+		hash version, invalid hash version, and htree depth too deep.
+
+	* problem.h, problem.c (PR_1_HTREE_NODIR, PR_1_HTREE_BADROOT,
+		PR_1_HTREE_HASHV, PR_1_HTREE_INCOMPAT, PR_1_HTREE_DEPTH): 
+		Add new problem codes.
+
+	* pass2.c (parse_int_node): Fix silly typo.
+		(check_dir_block): Change to use new ext2fs_dirhash()
+		function prototype.
+		(pass2): Fixed two minor bugs discovered by the test case:
+		Don't stop checking dxdir's after clearing a bad inode.  
+		If there is a bad max hash, make sure the bad_dir flag
+		is set to make sure we try to clear inode.
+
+2002-06-25  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.c (e2fsck_reset_context): Free the dx_dirinfo structure.
+
+	* message.c: Add new abbrevations @h and @p, "HTREE directory
+		inode" and "problem in".
+
+	* pass1.c (check_blocks): If the inode has the INDEX_FL flag,
+		register the block into the indexed directory data
+		structures.  Or if the filesystem doesn't have the
+		DIR_INDEX flag, offer to clear the INDEX_FL.
+
+	* pass2.c (e2fsck_pass2, parse_int_node): Add support check htree
+		directories (we don't check all possible corruptions yet).
+
+	* problem.h, problem.h (PR_1_HTREE_SET, PR_2_HTREE_NOTREF, 
+		PR_2_HTREE_DUPREF, PR_2_HTREE_MIN_HASH, PR_2_HTREE_MAX_HASH,
+		PR_2_HTREE_CLEAR, PR_2_HTREE_FCLR, PR_2_HTREE_BADBLK): Add
+		new problem codes.
+
+	* unix.c (main): If ENABLE_HTREE is not defined, complain if the
+		filesystem has the dir_index feature.
+
+	* Makefile.in, e2fsck.h, dx_dirinfo.c: New file (and group of
+		functions) which keeps track of blocks in HTREE directory
+		blocks.
+
+2002-05-22  Andreas Dilger <adilger@clusterfs.com>
+
+	* super.c (check_superblock): Check that the number of inodes and
+		blocks in a group is less than 2^16, so that the free inode
+		and block counts for a group fit into the group descriptor
+		table fields.  Any more than that would need a COMPAT flag.
+
+2002-05-22  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (check_ext_attr): Update to support the V2 Bestbits EA
+		format.  We automatically determine from the first EA
+		block we visit whether we are using the V1 or V2 format.
+
+2002-05-21  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (process_block): If an inode has too many blocks or
+		is too big, then offer to truncate the inode.
+		(check_blocks): Don't bother checking the size to see if
+		it's too big, since that's just a symptom, not the disease
+		(which we're now appropriately checking in process_block).
+
+	* problem.c, problem.h: Add new problem codes PR_1_INODE_TOOBIG,
+		PR_1_TOOBIG_DIR, PR_1_TOOBIG_REG, PR_1_TOOBIG_SYMLINK, and
+		add the latch code PR_LATCH_TOOBIG.
+
+2002-05-20  Theodore Ts'o  <tytso@mit.edu>
+
+	* e2fsck.h, pass1.c (e2fsck_pass1_check_symlink), pass2.c
+		(e2fsck_process_bad_inode): Add an extra
+		argument so a scratch buffer can be passed into the
+		function.
+
+	* pass1.c (e2fsck_pass1_check_device_inode,
+		e2fsck_pass1_check_symlink): If the EXT2_INDEX_FL flag is
+		set, then the device/FIFO is invalid.
+		(check_immutable): Don't check for EXT2_INDEX_FL; we take
+		care of that elsewhere now.
+		(e2fsck_pass1): Check to see if the symlink is valid
+		before we offer to clear any immutable bits.  This matches
+		the order in which we check other special files.
+
+	* pass2.c (e2fsck_pass2): Allocate a bigger scratch buffer so we
+		can pass part of it to e2fsck_process_bad_inode.
+
+	* pass4.c (e2fsck_pass4): If we need to call
+		e2fsck_process_bad_inode(), allocate the necessary scratch
+		buffer.
+
+	* problem.h, problem.c: Change PR_2_SYMLINK_SIZE to be
+		PR_2_INVALID_SYMLINK, and change the text
+		accordingly.  Revert the text change for PR_1_SET_IMMUTABLE
+		since we no longer check for EXT2_INDEX_FL in
+		check_immutable().
+
+2002-05-18  Andreas Dilger <adilger@clusterfs.com>
+
+	* pass1.c (e2fsck_pass1_check_symlink): Remove checks of
+		immutable/append-only checks, since this is handled by
+		check_immutable.  For non-fast symlinks, read in the
+		data block and check the length to make sure it
+		matches with the inode size.
+		(check_immutable): Generalize to also check for the 
+		EXT2_INDEX_FL flag. 
+		(check_blocks): For non-regular files, signal a bad inode 
+		size if i_size_high is non-zero.
+
+	* pass2.c: Only count large files if they are regular files
+		(not just if they aren't directories).
+
+	* problem.c, problem.h: Change comment for PR_2_SYMLINK_SIZE
+		to indicate that it can be triggered by any symlink,
+		not fast symlink.  Change text for PR_1_SET_IMMUTABLE
+		to indicate that it the EXT2_INDEX_FL was set.
+
+2002-05-17  Theodore Ts'o  <tytso@mit.edu>
+
+	* pass1.c (e2fsck_pass1): When calculating max_sizes, omit capping
+		this value by the calculated value of max_sect_sizes.
+		The inode may be a sparse inode, and the limit of
+		max_sect_sizes assumed a non-sparse inode and a limit
+		based on a 32-bit i_blocks field measured in 512 sectors.
+
+	* super.c (check_super_block): Fix check for s_log_block_size so
+		that takes into account fact that there is an offset of
+		EXT2_MIN_BLOCK_LOG_SIZE.
+
+	* pass1.c: Allocate max_sizes array to be big enough to support
+		the larger block sizes.
+
+2002-05-16  Andreas Dilger <adilger@clusterfs.com>
+
+	* unix.c (main), util.c (get_backup_sb): Use EXT2_MAX_BLOCK_SIZE
+		instead of using a hardcoded value of 4096.
+
+	* super.c (check_super_block): Change checks for s_log_block_size
+		s_log_frag_size so they support the larger block sizes.
+
+	* pass1.c (e2fsck_pass1): Calculate max_sizes array for block
+		sizes up to EXT2_MAX_BLOCK_SIZE (to support block sizes
+		greater than 4k).
+
+2002-03-08  Theodore Tso  <tytso@mit.edu>
+
+	* Release of E2fsprogs 1.27
+
+2002-03-07  Theodore Tso  <tytso@mit.edu>
+
+	* journal.c, pass5.c, revoke.c: Fix gcc -Wall complaints
+
+2002-03-07  Theodore Tso  <tytso@mit.edu>
+
+	* unix.c (main): Don't close the filesystem before calling
+		fatal_error(); this just causes a needless warning about a
+		bad I/O manager magic number.
+
+	* journal.c (e2fsck_check_ext3_journal): Offer to clear the inode
+		in case the journal is too small, or the inode number in
+		the superblock doesn't appear to be random.
+
+2002-03-06  Theodore Tso  <tytso@mit.edu>
+
+	* problem.h, problem.c: PR_5_BLOCK_RANGE_UNUSED,
+		PR_5_BLOCK_RANGE_USED, PR_5_INODE_RANGE_UNUSED,
+		PR_5_INODE_RANGE_USED: Add new problem codes.
+
+	* pass5.c (check_block_bitmaps, check_inode_bitmaps): Collapse
+		reporting of adjacent blocks and inodes into a range.
+
+2002-03-04  Philipp Thomas  <pthomas@suse.de>
+
+        * unix.c (main): Newer libintl needs LC_CTYPE to be set in
+		addition to LC_MESSAGES.
+
+2002-02-24  Theodore Tso  <tytso@mit.edu>
+
+	* Makefile.in (install): Install hard links for man pages for
+		fsck.ext2 and fsck.ext3.  Remove any compressed man
+		pages before installing the man pages.
+
+2002-02-22  Theodore Tso  <tytso@mit.edu>
+
+	* journal.c: Improve code maintainability and reduce code size by 
+		moving common code paths in e2fsck_journal_init_dev() and
+		e2fsck_journal_init_inode() into e2fsck_get_journal().
+		Also fixed a memory leak in recover_ext3_journal().
+
+	* super.c (release_orphan_inodes): Fix memory leak.
+
+2002-02-03  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.26
+
+2001-12-24  Theodore Tso  <tytso@mit.edu>
+
+	* unix.c (PRS): Don't allow the -c and -l/-L options to be
+		specified at the same time.
+
+	* e2fsck.h (E2F_OPT_WRITECHECK), unix.c (PRS), 
+		badblocks.c (read_bad_blocks_file): If two -c options are
+		specified, then perform a non-destructive read/write scan
+		of the disk.
+
+	* e2fsck.8.in: Document the double -c option; also encourage users
+		to use -c instead of the -l/-L options since it's too hard
+		for users to get things like the blocksize parameter correct.
+
+2001-12-23  Theodore Tso  <tytso@mit.edu>
+
+	* util.c (get_backup_sb): This function now searches for the
+		backup superblock by iterating over possible blocksizes
+		instead of defaulting a guess of 8193 if the superblock
+		isn't available.
+
+	* message.c (expand_percent_expression), unix.c (main): Pass in
+		new parameters to get_backup_sb.  Also, in unix.c, use the
+		blocksize paramter in the e2fsck context structure instead
+		of using a static variable, since get_backup_sb wants to
+		be able to set the blocksize paramter.
+
+	* e2fsck.h: Update function prototype for get_backup_sb; also add
+		the blocksize parameter to the e2fsck context structure.
+
+	* Makefile.in, jfs_user.h: Move linux/jbd.h to
+		ext2fs/kernel-jbd.h, to avoid using the system header
+		file version of hbd.h when using diet glibc (since it
+		forcibly adds /usr/include to the beginning of the
+		include search path.)
+
+2001-12-21  Theodore Tso  <tytso@mit.edu>
+
+	* problem.c (fix_problem): Use ctx->filesystem_name if the
+		ctx->device_name is NULL.
+
+	* journal.c (e2fsck_check_ext3_journal): Give the opportunity to
+		run the journal even if recovery flag is cleared.  If
+		we're using a backup superblock, run the journal by
+		default.
+
+	* e2fsck.h (E2F_OPT_FORCE), unix.c (PRS, check_if_skip): Use a
+		bitfield in the e2fsck context flags word to indicate
+		whether or not a check should be forced.  This allows the
+		journal code to set the option if necessary to force a
+		filesystem check.
+
+	* problem.h, problem.c: Remove PR_0_JOURNAL_RESET_JOURNAL, and add
+		PR_0_JOURNAL_RUN and PR_0_JOURNAL_RUN_DEFAULT.  Update
+		problem decription texts.
+
+2001-12-16  Theodore Tso  <tytso@mit.edu>
+
+	* e2fsck.h (ext2fs_get_refcount_size), unix.c (check_mount, PRS), 
+		pass1.c (adjust_extattr_refcount), 
+		ea_refcount.c (ea_refcount_create): Fix gcc -Wall nits.
+	
+	* recovery.c, revoke.c: Update to versions from 2.4.17-pre8.
+
+	* journal.c, jfs_user.h: Update support code for new version of
+		recover.c and revoke.c.  Fix support for filesystems with
+		external journals.
+
+2001-11-30 Gabriel Paubert <paubert@iram.es>
+
+	* journal.c (e2fsck_journal_load): Fix an endianness bug.
+
+2001-11-26  Theodore Tso  <tytso@mit.edu>
+
+	* super.c (check_super_block): Make sure that if the inode table
+		or allocation bitmap is zero, that it is marked as
+		invalid, so that in pass #1, a new bitmap/inode table gets
+		properly allocated.  (Addresses Debian Bug #116975)
+
+2001-11-24  Theodore Tso  <tytso@mit.edu>
+
+	* e2fsck.8.in: Fix minor typo in man page and clarify device
+		specification.
+
+2001-10-07  Theodore Tso  <tytso@mit.edu>
+
+	* journal.c (clear_v2_journal_fields, e2fsck_journal_load): If the
+		V2 fields are set on a V1 journal superblock, or an
+		internal V2 journal has s_nr_users is non-zero, clear the
+		entire journal superblock beyond the V1 superblock.  This
+		fixes botched V1->V2 updates.
+
+	* problem.c, problem.h (PR_0_CLEAR_V2_JOURNAL): Add new problem code.
+
+2001-09-20  Theodore Tso  <tytso@mit.edu>
+
+	* e2fsck.h, journal.c (e2fsck_move_ext3_journal): Add new function
+		which will automatically relocate the ext3 journal from a
+		visible file to an invisible journal file if the
+		filesystem has been opened read/write.
+
+	* super.c (check_super_block): Add call to e2fsck_move_ext3_journal
+
+	* problem.c, problem.h (PR_0_MOVE_JOURNAL, PR_0_ERR_MOVE_JOURNAL):
+		Add new problem codes.
+
+2001-09-20  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.25
+
+2001-09-19  Theodore Tso  <tytso@mit.edu>
+
+	* unix.c (main): If a superblock is specified explicitly by the
+		user, don't try to automatically fall back to an
+		alternate superblock.
+
+2001-09-02  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24a
+
+2001-08-30  Theodore Tso  <tytso@thunk.org>
+
+	* Release of E2fsprogs 1.24
+
+2001-08-30  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c (e2fsck_pass1): For EXT2_RESIZE_INO, allow its i_mode to
+		either be zero or a regular file (for compatibility with
+		Andreas's on-line resizing programs).
+
+2001-08-27  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (main): Remove EXT2FS_VERSION from the version display,
+		since it only confuses people.
+
+	* pass1.c (strnlen): Provide strnlen if libc doesn't.
+
+2001-08-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.23
+
+2001-08-13  Theodore Tso  <tytso@valinux.com>
+
+	* super.c (release_orphan_inodes): If the filesystem contains
+		errors, don't run the orphan * list, since the orphan list
+		can't be trusted.
+
+	* pass1.c (check_size): Fix logic in check_size; the previous code
+		only offered to clear the inode size fields if both size
+		and i_size_high were zero.
+		(e2fsck_pass1_check_device_inode): If i_blocks is
+		non-zero, then assume that the device/socket/fifo inode
+		is bogus.
+
+2001-08-09  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c, pass2.c, problem.c, problem.h: Fix bug introduced by
+		Andreas's symlink code; check_blocks() was unconditionally
+		testing inode_bad_map without checking to see if it
+		existed first.  Fixed problem a different way; we now no
+		longer check inode_bad_map at all, since the file might
+		not get deleted in pass 2 anyway.  We move the large file
+		feature reconciliation code to to e2fsck_pass2(), and in
+		deallocate_inode() in pass2.c, we decrement the large
+		files counter if we're about to delete a large file.
+
+	* unix.c (show_stats): Print the number of large files in verbose
+		mode.
+
+2001-08-07  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c (recover_ext3_journal): If s_errno is set in the
+		journal superblock, set the EXT2_ERROR_FS flag in the
+		filesystem superblock after the journal is run.
+
+2001-08-04  Andreas Dilger  <root@lynx.adilger.int>
+
+	* message.c:  Change comments for %D and %d expansion in e2fsck
+		problem codes.  It was not consistent which was for dirent
+		expansion, and which was for directory number expansion.
+
+	* problem.c (PR_2_FINAL_RECLEN, PR_2_BAD_FILETYPE): Fix problem
+		codes which got caught by the confusion between %D and %d.
+
+2001-08-04  Theodore Tso  <tytso@valinux.com>
+
+	* problem.c (PR_2_SYMLINK_SIZE): Change description to make it
+		more clear (and remove %s expansion).  Also add missing
+		periods to the end of a number of problem descriptions.
+
+	* pass2.c (e2fsck_process_bad_inode): Remove unneeded problem
+		context string set now that the problem description for
+		PR_2_SYMLINK_SIZE has been changed.
+
+	* pass1.c (e2fsck_pass1_check_symlink): Consolidate some checks,
+		and check the validity of the symlink block here (so that
+		we detect this case here instead of later).  Also use
+		sizeof(inode->i_block) instead EXT2_LINK_DIR.
+
+2001-07-30  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (check_mount): Remove the code which tested for the root
+		filesystem being mounted read-only, and depend on the
+		results flags from ext2fs_check_if_mounted.
+
+2001-07-29  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (check_if_skip): Free the e2fsck context structure on a
+		normal clean filesystem exit, to make it easier to find
+		real memory leaks.
+		(PRS): Only update the path to include /sbin at the
+		beginning if the -c option is given, again to make it
+		easier to find memory leaks.
+		(main): Move the final print_resource_track call after the
+		filesystem and the context are freed.
+
+	* journal.c (e2fsck_journal_init_dev): Avoid memory leak if we
+		need to search for the journal device.
+		(e2fsck_journal_release): Free the journal IO channel when
+		we release the journal handle, to avoid a memory leak.
+
+	* e2fsck.c (e2fsck_reset_context): Fix bug; only close the io
+		channel if it is *different* from the filesystem io
+		channel.
+
+2001-07-27  Theodore Tso  <tytso@valinux.com>
+
+	* problem.c (PR_1_SET_IMMUTABLE): Clarify problem message.
+
+	* pass1.c (e2fsck_pass1): Check for symlinks that have the
+		immutable flag set (and offer to clear them).
+
+2001-07-26  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c (e2fsck_pass1): Free ctx->block_ea_map at the end of
+		pass 1.
+
+2001-07-25  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c (check_ext_attr): Skip zero-length EA entries.
+
+	* problem.c: PR_1_EA_ALLOC_COLLISION shouldn't abort, but should
+		prompt to clear the EA block.
+
+2001-07-22  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c (ll_rw_block): Use ctx->journal_io instead of the
+		filesystem's io_channel.
+		(e2fsck_journal_init_dev): New function which supports 
+		initialization of the external journal.
+		(e2fsck_get_journal): Remove code which flagged an error
+		if the superblock reported the use of an external journal.
+		(ext3_journal_via_mount): Remove unsued, #ifdefed out function.
+
+	* problem.c, problem.h: Removed error codes no longer used
+		(PR_0_JOURNAL_UNSUPP_DEV, PR_0_JOURNAL_BAD_DEV,
+		PR_0_JOURNAL_UNSUPP_UUID) and replace them with new error
+		codes related with failures in loading the external
+		journal (PR_0_JOURNAL_UNSUPP_MULTIFS,
+		PR_0_CANT_FIND_JOURNAL, PR_0_EXT_JOURNAL_BAD_SUPER).
+		Also changed the text assocated with PR_0_JOURNAL_BAD_UUID
+		to reflect the case where the external journal isn't
+		correct for this filesystem.
+
+	* unix.c (PRS), e2fsck.8.in: Add new option -j which allows
+		the user to specify the pathname to find the external journal.
+
+	* e2fsck.c (e2fsck_reset_context): Close journal_io if it isn't
+		the same as the filesystem io_channel.
+
+	* e2fsck.h: Add new fields (journal_io and journal_name) in the
+		context structure to support external journals.
+
+2001-07-20  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (main): Add an explicit warning when the filesystem is
+		left not completely fixed when e2fsck exits.  (Addresses
+		Debian bug #104502.)
+
+2001-07-19  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c (check_ext_attr): The entire EA block is now checked to
+		make sure that parts of the EA block aren't being used for
+		multiple purposes.
+
+	* Makefile.in e2fsck.h, region.c: New file which is used to detect
+		collisions in extended attribute block.
+
+	* problem.h, problem.c (PR_1_EA_MULTI_BLOCK, PR_1_EA_ALLOC_REGION,
+		PR_1_EA_ALLOC_COLLISION, PR_1_EA_BAD_NAME,
+		PR_1_EA_BAD_VALUE): Add new problem codes.
+
+2001-07-10  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c (e2fsck_run_ext3_journal): Only call ext3_flush() if
+		the superblock is dirty.
+
+2001-07-07  Theodore Tso  <tytso@valinux.com>
+
+	* pass1b.c (pass1b, process_pass1b_block): Change the num_bad
+		field calculation so that it only counts EA block entries
+		as a single multiply claimed block (since once we clone
+		the EA blocks for one inode, we fix the problem for all of
+		the other inodes).  Also, I moved the num_bad calculation
+		from process_pass1b_block to the end of pass1b.  This
+		fixes a *significant* performance bug in pass1b which hit
+		people who had to had a lot of multiply claimed blocks.
+		(Can you say O(n**3) boys and girls?  I knew you could...
+		Fortunately, this case didn't happen that much in actual
+		practice.)
+
+	* pass1.c (e2fsck_pass1): Defer inodes which have an extended
+		attribute block for later processing to avoid extra seeks
+		across the disk.
+		(process_inode_cmp): If there is no indirect block, sort
+		by the extended attribute (i_file_acl) block.
+
+	* pass1b.c (clone_file_block): Fix bugs when cloning extended
+		attribute blocks.  Moved free of block_buf to after the
+		code which clones the extattr block, and fixed logic for
+		changing pointers to the extended attribute field in the
+		inodes which were affected.
+		(decrement_badcount): New function which is used whenever
+		we need to decrement the number of files which claim a
+		particular bad block.  Fixed bug where delete_file wasn't
+		checking check_if_fs_block() before clearing the entry in
+		block_dup_map.  This could cause a block which was claimed
+		by multiple files as well as the filesystem metadata to
+		not be completely fixed.
+
+	* pass1.c (adjust_extattr_refcount): Add new function which
+		adjusts the reference counts of extended attribute blocks
+		if needed, both up and down.
+		(e2fsck_pass1): If the refcount or refcount_extra
+		structure are present, call adjust_extattr_refcount(),
+		and free it afterwards.
+
+	* problem.h, problem.c (PR_1_EXTATTR_READ_ABORT, 
+		PR_1_EXTATTR_REFCOUNT, PR_1_EXTATTR_WRITE): Add new
+		problem codes.
+
+2001-07-02  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c (e2fsck_pass1, check_ext_attr, check_blocks): Add
+		initial support for scanning extended attribute blocks.
+
+	* e2fsck.c (e2fsck_reset_context): free extended attribute
+		refcount structure.
+
+	* e2fsck.h: Add new fields for accounting for the extended
+		attribute blocks.
+
+	* Makefile.in, ea_refcount.c, e2fsck.h: Add new file which
+		implements a reference count abstraction.
+
+	* problem.c, problem.h: Add new problem codes PR_1_ALLOCATE_REFCOUNT,
+		PR_1_READ_EA_BLOCK, PR_1_BAD_EA_BLOCK, PR_2_FILE_ACL_BAD
+
+	* message.c: Add "@a" as an abbreviation for "extended attribute"
+
+	* pass1b.c (clone_file): Add code which handles cloning an
+		extended attribute block.
+
+	* pass1b.c (delete_file): 
+	* pass2.c (deallocate_inode): If the inode contains an extended
+		attribute block in the file_acl field, clear it and
+		deallocate the block.
+
+2001-06-28  Theodore Tso  <tytso@valinux.com>
+
+	* pass2.c (e2fsck_process_bad_inode): Deal with inodes which are
+		marked bad because of an invalid file_acl (either because
+		EXT2_FEATURE_COMPAT_EXT_ATTR is not set, or because the
+		block number in file_acl is bad.
+
+2001-06-29  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (show_stats): Use long long to calculate the percentage
+		of the number of blocks in use in the filesystem.
+
+2001-06-23  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.22
+
+2001-06-22  Theodore Tso  <tytso@valinux.com>
+
+	* flushb.c: Use platform independent method of defining the
+		BLKFLSBUF ioctl.  Also include sys/mount.h since on newer
+		platforms BLKFLSBUF is defined there.
+
+2001-06-19  Theodore Tso  <tytso@valinux.com>
+
+	* super.c (release_inode_blocks): Don't try to release the blocks
+		if the orphaned inode is a device file, symlink, or some
+		other kind of special file that doesn't have a block list.
+
+2001-06-15  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.21
+
+2001-06-13  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (check_if_skip): Adapted patch from Andreas Dilger which
+		prints the number of mounts or days elapsed since the last
+		check when e2fsck is forced to check an otherwise clean
+		filesystem.
+
+2001-06-12  Theodore Tso  <tytso@valinux.com>
+
+	* badblocks.c: Stop using the compatibility badblocks function,
+		and use the ext2fs_badblocks_* functions instead.
+
+2001-06-11  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (PRS): Fix bug introduced in 1.20 which broke the -F
+		flag.
+
+	* Makefile.in: Add message.c and swapfs.c to the list of source
+		files to build the make depend.
+
+	* swapfs.c, unix.c: Only support the -s and -S options to e2fsck
+		if ENABLE_SWAPFS is defined.
+
+2001-06-08  Theodore Tso  <tytso@valinux.com>
+
+	* recover.c, revoke.c: Synchronize with ext3 0.7a
+
+2001-06-02  Theodore Tso  <tytso@valinux.com>
+
+	* recovery.c (scan_revoke_records): Fix bug in recovery code;
+		missing byte order conversion.
+
+	* pass1.c (mark_inode_bad): Replace alloc_bad_map with a function
+		which sets the bit in the bad inode bitmap.
+		(e2fsck_pass1): Check for fast symlinks with an invalid
+		size, and set the bad inode map in that case.
+		(check_size): Check i_size_high for special files and
+		prompt to clear it along with i_size if non-zero.
+
+	* pass2.c (e2fsck_process_bad_inode): Check for fast symlinks with
+		an invalid size and prompt the user if the inode should be
+		cleared.
+
+	* problem.h, problem.c (PR_2_SYMLINK_SIZE): Added new problem code.
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* problem.c, problem.h: Change PR_0_JOURNAL_UNSUPP_INCOMPAT and
+		PR_0_JOURNAL_UNSUPP_ROCOMPAT so they aren't fatal errors,
+		but prompt to see if the user should abort.  Removed the
+		PR_0_JOURNAL_RESET_COMPAT problem code.
+
+	* journal.c (e2fsck_journal_load): If there are incompatible
+		journal flags, just return an error code.
+		(e2fsck_check_ext3_journal): If e2fsck_journal_load
+		returns an error code indicating that there are
+		incompatible journal flag, check to see if we should
+		abort, and then offer to clear the journal.
+		(Addresses Debian bug #98527.)
+
+	* Makefile.in: Move include/asm/types.h.in to
+		lib/ext2fs/ext2_types.h.in.
+
+2001-06-01  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c (pass1_get_blocks, pass1_read_inode, pass1_write_inode, 
+		pass1_check_directory): Add a safety check to make sure
+		ctx->stashed_inode is non-zero.
+
+	* pass1b.c (pass1b): Use e2fsck_use_inode_shortcuts() to disable
+		the inode shortcut processing, instead of manually
+		clearing only half of the function pointers that needed to
+		be NULL'ed out.  This caused nasty bugs if the last inode
+		in the filesystem needed dup block processing.
+		
+	* pass1b.c (clone_file_block): When cloning a directory's metadata
+		block, don't try to update the directory block list
+		database, since indirect blocks aren't stored in the
+		database and the resulting error will abort the file clone
+		operation.
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.20
+
+2001-05-25  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c (e2fsck_journal_reset_super): Remove extraneous line
+
+2001-05-23  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c (e2fsck_journal_reset_super): Fix bug; the reset
+		journal wasn't getting written out to disk since the dirty
+		bit wasn't being set on the buffer.
+		(e2fsck_journal_load): Don't print an error message if the
+		journal version number is wrong; just return a error code
+		reflecting this fact.  If the block type in the journal
+		superblcok is obviously not a version number, report the
+		journal is corrupted.
+		(e2fsck_check_ext3_journal): On an unsupported journal
+		version, prompt to abort by default, but then offer a
+		chance to clear the journal as corrupt.
+
+	* problem.c, problem.h (PR_0_JOURNAL_UNSUPP_VERSION): Added new
+		problem code.
+
+2001-05-14  Theodore Tso  <tytso@valinux.com>
+
+	* pass1.c: Treat inodes with a low dtime (that were from a
+		corrupted orphan list) specially.
+
+	* problem.c, problem.h: Add new problem codes PR_1_LOW_DTIME and
+		PR_1_ORPHAN_LIST_REFUGEES, and a new latch group,
+		PR_LATCH_LOW_DTIME.
+
+	* problemP.h: Expand the size of the problem flag to be an int
+		instead of a short.  Expand space in the flag word which
+		is reserved for problem latch flags from 3 bits to 8 bits.
+
+	* e2fsck.h, scantest.c: Change location of ext2_fs.h to be
+		ext2fs/ext2_fs.h
+
+	* super.c (check_super_block): Be more strict on checking
+		s_r_blocks_count superblock field.
+
+2001-05-13  Theodore Tso  <tytso@valinux.com>
+
+	* problem.c, problem.h (PR_0_JOURNAL_UNSUPP_ROCOMPAT, 
+		PR_0_JOURNAL_UNSUPP_INCOMPAT, PR_0_JOURNAL_RESET_COMPAT):
+		New problem codes.	
+
+	* journal.c (e2fsck_journal_load): Use a problem code to
+		report unsupported feature flags.  There is code to
+		clear unsupported flags, but since this is dangerous,
+		it's not allowed in the problem code table.
+	
+2001-05-11  Andreas Dilger  <adilger@turbolinux.com>
+
+	* journal.c (e2fsck_journal_reset_super): initialize the journal
+		sequence number to a random value to avoid recovering
+		bad transactions from a corrupt journal.
+
+2001-05-13  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c: Code cleanup; initialize journal_enable_debug using
+		an initializer.
+
+2001-05-12  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (PRS): Skip validation of -C's file descriptor if it is
+		zero, since that is special case.
+
+2001-05-09  Theodore Tso  <tytso@valinux.com>
+
+	* super.c (release_orphan_inodes): Add gettext quoting around
+		"Truncating" and "Clearing" for i18n.
+
+2001-05-05  Theodore Tso  <tytso@valinux.com>
+
+	* util.c (fatal_error): Use the correct magic number when checking
+		the magic number for the io_channel data structure.  Also
+		remove extraneous call to io_channel_flush() that was left
+		over from an editing session.
+
+	* pass2.c (check_dir_block): Ignore EXT2_ET_DIR_CORRUPTED errors
+		from ext2fs_read_dir_block().
+
+2001-05-01  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (PRS): Validate the completion information file
+		descriptor so that the completion bar won't get
+		accidentally written onto the disk.
+
+	* e2fsck.8.in: Add explanation that you can use mke2fs -n -b
+		blocksize to printout alternate superblock locations.
+
+2001-04-26  Theodore Tso  <tytso@valinux.com>
+
+	* unix.c (check_if_skip): If the max_mount_count is zero, treat it
+		as having no count set.
+
+2001-04-16  Theodore Tso  <tytso@valinux.com>
+
+	* super.c (check_super_block): Fix bad calculation of
+		inodes_per_block, and tighten min/max checks to be a bit
+		more paranoid.  Thanks to Andreas Dilger for pointing out
+		this bug.
+
+2001-03-29  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c (mark_buffer_uptodate): Add emulation of kernel
+		function mark_buffer_uptodate.
+
+	* recovery.c, revoke.c: Synchronize with 0.6b ext3 files.
+
+2001-02-12  Theodore Tso  <tytso@valinux.com>
+
+	* journal.c (e2fsck_run_ext3_journal): Force a flush of the
+		filesystem and io_channel before replaying the journal.
+
+2001-01-17  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass1.c (check_blocks): Fix large file checking code so that
+		files > 2GB are considered large files, and restrict
+		directories from being > 2GB.
+
+2001-01-12  Theodore Ts'o  <tytso@valinux.com>
+
+	* journal.c (e2fsck_journal_fix_unsupported_super): Remove unused
+		function.  Add FIXME notes to e2fsck_get_journal(), from
+		Andreas Dilger.
+
+	* pass1.c (e2fsck_pass1): Cap the maximum legal size of a file by
+		the limit caused by the fact that i_blocks is in 512 byte
+		units, and that the Linux buffer cache also fundamentally
+		assumes 512 byte sectors.  
+		Make sure that the journal inode is a regular file, and
+		when clearing an unused journal inode, make sure the
+		icount db is updated.
+	
+	* problem.c, problem.h (PR_1_JOURNAL_BAD_MODE): Add new problem code.
+
+	* problem.c: For PR_1_RESERVED_BAD_MODE, print a description of
+		the reserved inode.  In PR_0_JOURNAL_HAS_JOURNAL, prompt
+		to clear the journal, rather than deleting it (which is
+		more accurate).  (From Andreas Dilger.)
+
+	* journal.c: Make sure all functions which return an error code
+		use the errcode_t return type, and not "int"
+		(e2fsck_journal_release): Add new parameter, "drop",
+		which is used when we just want to deallocate the journal
+		without trying to write out any changes.
+		(mark_buffer_clean): New function
+		(e2fsck_check_ext3_journal): If we fail loading the
+		journal, make sure we free all memory associated with it.
+		(recover_ext3_journal): If we fail to load the journal or
+		initialize the revoke data structures, make sure we free all
+		memory associated with the journal.
+
+	* message.c (special_inode_name): Add more special inode names
+		(From Andreas Dilger)
+
+	* util.c (fatal_error): Check to make sure the io_manager data
+		structure is sane before trying to flush the io_channel.
+		(From Andreas Dilger)
+
+	* mtrace.h, super.c, pass2.c: Minor whitespace cleanups, from
+		Andreas Dilger.
+
+	* journal.c (e2fsck_journal_fix_bad_inode): Set pctx->ino to the
+		bad journal number.
+
+	* problem.c (PR_0_JOURNAL_BAD_INODE): Use pctx->ino instead of
+		pctx->num when printing the bad journal inode number.
+
+2001-01-11    <tytso@snap.thunk.org>
+
+	* pass1.c (process_block): Remove dead code which was never
+		getting executed.
+
+	* iscan.c, unix.c, e2fsck.h: Don't use NOARGS, and use
+		ext2fs_sync_device() instead of using BLKFLSBUF.
+
+	* flushb.c: Don't use NOARGS anymore; everything is STDC these days.
+	
+	* dirinfo.c, e2fsck.h, emptydir.c, iscan.c, jfs_user.h, journal.c,
+		message.c, pass1.c, pass1b.c, pass2.c, pass3.c, pass4.c,
+		pass5.c, problem.h, scantest.c, super.c, swapfs.c: Change
+		ino_t to ext2_ino_t.
+
+2001-01-09    <tytso@snap.thunk.org>
+
+	* problem.c: Fix another broken @F vs @f problem.
+
+2001-01-06    <tytso@snap.thunk.org>
+
+	* journal.c, pass1.c, pass1b.c, pass3.c, recovery.c, revoke.c,
+		super.c, unix.c, util.c: Fix random gcc -Wall complaints.
+
+	* jfs_user.h: Use more sophisticated inline handling to allow
+		building with --enable-gcc-wall
+
+2001-01-03    <tytso@snap.thunk.org>
+
+	* pass1.c (e2fsck_pass1): Moved journal inode handling out to its
+		own block; if the journal inode is not in use, and it
+		contains data, offer to clear it.
+
+	* problem.h, problem.c (PR1_JOURNAL_INODE_NOT_CLEAR): Add new
+		problem code.
+
+	* problem.c: Modified problem table to use a new abbreviations.
+
+	* message.c: Add @j abbreviation for journal, and @v abbreviation
+		for device.
+
+	* jfs_user.h: Moved contents of jfs_e2fsck.h into jfs_user.h.
+
+	* journal.c (e2fsck_check_ext3_journal): Force a fsck if we remove
+		the journal stored on a reserved inode.  Also force a fsck
+		if the journal appears to exist while !NEEDS_RECOVERY, and
+		we forcibly reset the journal.
+
+2001-01-01    <tytso@snap.thunk.org>
+
+	* journal.c, pass1.c, super.c, unix.c: Replace use of struct
+		ext2fs_sb with struct ext2_super_block.
+
+	* pass1.c (check_blocks): Remove use of EXT2_HAS_*_FEATURE macros.
+
+2000-12-31    <tytso@snap.thunk.org>
+
+	* jfs_compat.h: Remove uneeded header file.
+
+2000-12-30    <tytso@snap.thunk.org>
+
+	* malloc.h, mtrace.c: Renamed malloc.h to mtrace.h to avoid
+		conflicts with the system header file.
+
+	* problem.h: Fixed numbering of pass1 error messages; an extra 0
+		had slipped into some of the numbers.  (Pointed out by
+		Andreas Dilger)
+
+	* journal.c (e2fsck_journal_fix_corrupt_super): Clean up
+		unnecessary automatic variable.  Add explanatory comment
+		about the kernel emulation routines.  (Suggested by
+		Andreas Dilger)
+
+2000-12-13  Theodore Ts'o  <tytso@valinux.com>
+
+	* journal.c (e2fsck_check_ext3_journal): Check to make sure the
+		journal fields are consistent if any of the superblock
+		fields are set.  (Backs out erroneous change made by sct,
+		pointed out by Andreas.)
+
+	* unix.c (main): Clarify coments (no code changes)
+
+	* super.c (release_orphan_inodes): Fix spelling typo in error message.
+
+	* pass1.c (e2fsck_pass1): Offer to update the filesystem revision
+		level if we need to set large files flag.  Patch from
+		Andreas Dilger.
+
+	* super.c (check_super_block): If we have any of the compatibility
+		 flags set, we need to have a revision 1 filesystem.  Most
+		 kernels will not check the flags on a rev 0 filesystem
+		 and we may have corruption issues because of the
+		 incompatible changes to the filesystem.  Patch from Andreas
+		 Dilger.
+
+	* problem.c, problem.h (PR_0_FS_REV_LEVEL, PR_1_FS_REV_LEVEL): Add
+		new problem codes.
+
+2000-12-09    <tytso@snap.thunk.org>
+
+	* flushb.c: Fix flushb so that it does something other than waste
+		disk space when built on systems with modern header files
+		and add a non-subtle Copyright Licensing restriction so
+		Yann will remove it from the Debian Distribution.  (Now
+		violates the Debian Free Software Guidelines, on purpose.)
+
+	* journal.c (e2fsck_check_ext3_journal): If JFS_DEBUG is defined
+		at the top level, set the JFS debuging level to 2.
+
+	* jfs_e2fsck.h, jfs_user.h: Replaces jfs_compat.h.  The jfs.h file
+		has been moved to the include/linux directory.
+
+	* journal.c, revoke.c, recovery.c: Updated files from Stephen to
+		support the V2 superblock and revoke processing.  The
+		journal.c and revoke.c files are copies from the ext3
+		kernel source.
+
+	* Makefile.in: Added revoke.c to the list of source/object files.
+
+2000-11-16  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass1b.c: Change routines to use PR_1B_BLOCK_ITERATE when
+		reporting problems rather than using com_err directly.
+
+	* problem.c, problem.h (PR_1B_BLOCK_ITERATE): Add new problem code.
+
+	* message.c (expand_percent_expression): Add safety check.  If
+		ctx->str is NULL, print "NULL" instead of dereferencing
+		the null pointer.
+
+	* pass1b.c, pass2.c, pass3.c: Change calls to ext2fs_block_iterate
+		to ext2fs_block_iterate2, to support 64-bit filesizes and
+		to speed things up slightly by avoiding the use of the
+		ext2fs_block_iterate's compatibility shim layer.
+
+2000-10-30    <tytso@snap.thunk.org>
+
+	* util.c (get_backup_sb): Calculate backup superblock correctly
+		when the blocksize is > 1k.
+
+2000-10-26    <tytso@snap.thunk.org>
+
+	* jfs.h, jfs_compat.h, journal.c: Updated to include the
+		definition of the new journal superblock format; still
+		only supports V1 superblocks for now.  (From sct)
+
+2000-10-24    <tytso@snap.thunk.org>
+
+	* super.c (release_inode_block, release_inode_blocks,
+		release_orphan_inodes): Add code to deal with truncating
+		inodes which are still in use (but which are on the orphan
+		list because they need truncation).
+
+	* problem.c, problem.h: Rename PR_0_CLEAR_ORPHAN_INODE to
+		PR_0_ORPHAN_CLEAR_INODE, and remove
+		PR_0_ORPHAN_INODE_INUSE.
+	
+	* journal.c (e2fsck_run_ext3_journal): Add i18n support, and print
+		a message when the journal is being recovered.
+
+	* pass1.c (e2fsck_pass1): Don't check the i_mode field for the
+		journal inode, if it is in use.
+
+2000-09-12    <tytso@valinux.com>
+
+	* extend.c: 
+	* flushb.c: Add include of nls-enable.h which is necessary so that
+		they can compile correctly.
+
+2000-08-22    <tytso@valinux.com>
+
+	* unix.c (main): If we're doing a read-only check, skip the
+		journal playback, but don't abort the e2fsck run.
+
+	* super.c (release_orphan_inodes): Fix typo; should do bounds
+		checking on next_ino instead of ino.
+
+	* jfs_compat.h (J_ASSERT): 
+	* journal.c (e2fsck_run_ext3_journal): 
+	* pass3.c (adjust_inode_count): Use fatal_error() instead of exit().
+
+	* unix.c: Use fatal_error() instead of exit() whenever possible.
+		Also fix the fsck exit codes so that we use FSCK_USAGE
+		when it is appropriate.  Rename global_signal_ctx to
+		e2fsck_global_ctx and let it be exported globally.
+
+	* util.c (fatal_error): Try to flush the I/O manager before
+		forcing an exit.
+
+2000-08-20    <tytso@valinux.com>
+
+	* journal.c (e2fsck_journal_load): Fix **nasty** bug which caused
+		e2fsck_check_ext3_journal to smash the journal because
+		journal->j_transaction_sequence wasn't getting
+		initialized.
+
+	* journal.c: (recover_ext3_journal, e2fsck_run_ext3_journal): Move
+		call to e2fsck_clear_recover from recover_ext3_journal to
+		after the filesystem has been closed and reopened.
+		Otherwise, the superblock in the filesystem handle will
+		probably be stale, and will overwrite the newer version of
+		the superblock written by the log recovery.
+
+	* message.c (expand_inode_expression): Add support for %Iu and %Ig
+
+	* problem.h (PR_0_CLEAR_ORPHAN_INODE): Add new problem code.
+
+	* super.c (release_orphan_inodes, release_inode_block,
+		release_inode_blocks): Update the block group descriptor
+		counts when freeing the orphan inode.  Use
+		PR_0_CLEAR_ORPHAN_INODE to report when we clear an orphan.
+
+	* journal.c (e2fsck_run_ext3_journal): Fix a bug where we
+		attempted to reopen the filesystem using the device name
+		instead of the filesystem name.
+
+2000-08-18    <tytso@valinux.com>
+
+	* Makefile.in: Update the make dependencies
+	
+	* problem.c, problem.h: Add the problem codes: 
+		PR_0_ORPHAN_ILLEGAL_BLOCK_NUM, 
+		PR_0_ORPHAN_ALREADY_CLEARED_BLOCK, 
+		PR_0_ORPHAN_ILLEGAL_HEAD_INODE, 
+		PR_0_ORPHAN_ILLEGAL_INODE, PR_0_ORPHAN_INODE_INUSE
+
+	* super.c (release_inode_blocks, release_orphan_inodes,
+		check_super_block): Add support for clearing orphaned
+		inodes from the unmounted filesystem.
+
+	* journal.c (e2fsck_recover_ext3_journal): Remove the last orphan
+		check; this is now handled in check_super_block ---
+		non-journaled filesystems can use the orphan list in the
+		future.  Also, move the the re-opening of the filesystem
+		to e2fsck_run_ext3_journal().
+
+2000-07-12  Andreas Dilger <adilger@turbolinux.com>
+
+	* journal.c: implement loading of ext3 journal for recovery code
+
+	* problem.c (fix_problem): return answer from PR_AFTER_CODE to caller.
+		Add journal problems.
+
+	* recovery.c (journal_recover): user-space ext3 journal recovery code
+
+	* unix.c (main) : check journal and do recovery in separate steps
+
+2000-08-07    <tytso@snap.thunk.org>
+
+	* unix.c (calc_percent): Make sure that we don't take a floating
+		exception if the max value is zero.  (should normally
+		never happen, but...)
+
+2000-07-13    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.19
+
+2000-07-06  Theodore Ts'o  <tytso@valinux.com>
+
+	* unix.c (check_if_skip): Modify algorithm for checking
+		s_max_mnt_count to match with the kernel.  (If
+		s_max_mnt_count is negative, ignore the mnt_count check.)
+
+	* unix.c (e2fsck_update_progress): Adjust the width of the
+		progress bar dynamically, based on the filesystem name
+		that we need to display.
+
+	* unix.c (main): If the ext3 needs_recovery flag is set, call
+		e2fsck_run_ext3_journal() and then restart the e2fsck run.
+
+	* journal.c (e2fsck_run_ext3_journal): New file which contains
+		logic to recover the ext3 journal.  This version relies on
+		the kernel being able to mount the filesystem in order to
+		run the journal.
+
+2000-07-05  Theodore Ts'o  <tytso@valinux.com>
+
+	* unix.c (e2fsck_update_progress): Only save and check the last
+		percentage after multiplying it by 10, nor 1000, since we
+		only need to save values to a tenth of a percent (and the
+		percentage is already from 0 .. 100%, not 0 .. 1).
+		Also, re-arrange the logic so that we do the time
+		check only after doing the percentage check, and we
+		only advance the spinner if we're about to display it.
+
+2000-07-04  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass1.c (e2fsck_pass1): Check to see if the ext3 s_last_orphan
+		field is set; if so, clear it, so that ext3 mounting code
+		won't get confused by the fact that we've cleared out the
+		orphaned inodes.
+
+2000-06-10  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass5.c (check_block_bitmaps, check_inode_bitmaps): Add error
+		checking for a "should never happen case".
+
+	* problem.c, problem.h (PR_5_COPY_IBITMAP_ERROR,
+		PR_5_COPY_BBITMAP_ERROR): Add new error codes.
+
+2000-05-27  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass1.c (pass1, check_size): Apply patch from Chris Wedgewood
+		(cw@foof.org) which checks to see if special devices have
+		a non-zero size, and deals with it.
+
+	* problem.c, problem.h (PR1_SET_NONZSIZE): Add new problem code.
+
+2000-05-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in (install): Create a symbolic link for fsck.ext3 as
+		well.
+
+2000-05-08  Theodore Ts'o  <tytso@valinux.com>
+
+	* problem.c, problem.h (PR_0_HURD_CLEAR_FILETYPE): Add new problem
+		code. 
+
+	* super.c (check_super_block): If the OS type in the superblock is
+		the Hurd, check to see if the filetype feature is set, and
+		offer to clear it if so.   This needs to be done since the
+		Hurd doesn't properly support the filetype feature.
+		(And since the hurd allows the transmogrification of files
+		to special files and vice versa --- for no good reason
+		that I can understand --- it can't support the filetype
+		feature for the forseeable future, either.)
+
+2000-04-03  Theodore Ts'o  <tytso@valinux.com>
+
+	* unix.c: For platforms that don't define optarg.h, manually
+		define optarg and optind.
+
+2000-03-20  Theodore Ts'o  <tytso@valinux.com>
+
+	* pass1.c (check_immutable, e2fsck_pass1_check_device_inode):
+		Check for the append-only as well as the immutable flag.
+
+	* problem.c (PR_1_SET_IMMUTABLE): Adjust message to include
+		append-only flag.   Fix comment for compression flag.
+	
+2000-02-12    <tytso@snap.thunk.org>
+
+	* unix.c (e2fsck_update_progress): Limit the number of updates to
+		the progress bars to 8 times a second.  This allows a 9600
+		baud console link to keep up.
+
+2000-02-11    <tytso@snap.thunk.org>
+
+	* unix.c (main): If compression is enabled on the filesystem,
+		print a warning message (for now).
+
+	* message.c: Add new compression shortcut: @c == compress
+
+	* problem.c, problem.h (PR_1_COMPR_SET): Add new error code.
+
+	* pass1.c (check_blocks): If the inode has EXT2_COMPRBLK_FL flag
+		set, check to see if the filesystem supports compression.
+		If it does pass this information down to process_block()
+		so it can treat the compressed block flag words
+		correctly.  If not, offer to clear the flag, since it
+		shouldn't be set.  
+		(process_block): If an inode has the compressed inode flag
+		set, allow EXT2FS_COMPRESSED_BLKADDR.
+
+	* pass1b.c (process_pass1b_block, delete_file_block,
+		clone_file_block):
+	* pass2.c (deallocate_inode_block): Use HOLE_BLKADDR to check to
+		see if the block can be skipped.
+
+2000-02-08    <tytso@snap.thunk.org>
+
+	* util.c: Make resource tracking message more concise.
+
+	* e2fsck.h:
+	* pass1.c (mark_table_blocks, e2fsck_pass1): Remove
+		ctx->block_illegal_map, since it's not needed by pass1,
+		and pass1b has been modified to calculate it manually if
+		needed.   This reduces the memory footprint needed by e2fsck.
+
+	* pass1b.c (check_if_fs_block): New static function which returns
+		whether or not a block overlaps with filesystem metadata.
+		This replaces consulting the block_illegal_map bitmap.
+
+	* Makefile.in: Call sync after finishing building all in this
+		directory. 
+	
+	* unix.c (PRS): sync the filesystem before trying to use
+		BLKFLSBUF, to minimize the chance of causing dirty blocks
+		to get dropped.
+
+	* e2fsck.h: Manually define BLKFLSBUF if not defined, and we're on
+		a Linux/i386 system.
+	
+	* pass3.c (check_directory): Only do the loop detection algorithm
+		if we've searched over 2048 parent directories and haven't
+		found the end yet.  This means that in the common case, we
+		don't allocate or clear the inode_loop_detection bitmap,
+		which for large systems, merely clearing the bitmap for
+		each directory was turning out to be quite expensive.
+		Thanks to Jani Jaakkola (jjaakkol@cs.helsinki.fi) for
+		identifying this problem.
+
+2000-02-06  Theodore Ts'o  <tytso@valinux.com>
+
+	* badblocks.c, e2fsck.h, ehandler.c, emptydir.c, extend.c,
+		flushb.c, iscan.c, message.c, pass1.c, pass1b.c, pass3.c
+		pass4.c, pass5.c, problem.c, scantest.c, swapfs.c, 
+		unix.c, util.c: Add Internationalization support as 
+		suggested by Marco d'Itri <md@linux.it>.
+
+2000-02-02  Theodore Ts'o  <tytso@valinux.com>
+
+	* e2fsck.h, flushb.c, scantest.c: Remove uneeded include of
+		linux/fs.h 
+
+2000-01-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* Makefile.in: Since LIBUUID can sometimes include "-lsocket"
+		we need a separate DEPLIBUUID that can be used in
+		Makefile's dependency rules.
+
+1999-11-23    <tytso@valinux.com>
+
+	* e2fsck.8.in: Update language about where to find a backup
+		superblock.
+
+1999-11-19    <tytso@valinux.com>
+
+	* pass1.c (process_inodes): Add shortcut handling; if
+		process_inodes_count is zero, return right away, to avoid
+		calling qsort with a non-positive count.
+
+	* message.c (safe_print): Fix to properly display ^A, ^B, etc. and
+		to print Delete as ^?
+
+	* Makefile.in (distclean): Remove TAGS and Makefile.in.old from
+		the source directory.
+
+1999-11-10    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.18
+
+1999-11-10    <tytso@valinux.com>
+
+	* problem.c (fix_problem): Support a new flag, PR_PREEN_NO which
+		means the answer is assumed to be no in preen mode.  This
+		is now used in the PR_1_SET_IMMUTABLE code, so that in
+		preen mode we ignore these inodes and just print a warning
+		message. 
+
+1999-11-09    <tytso@valinux.com>
+
+	* pass1.c (e2fsck_pass1): If the filesystem does not support
+		imagic inodes, if an inode has the imagic flag set, offer
+		to clear the imagic flag.  If a valid device/fifo/socket
+		has the immutable flag set, call the new helper function
+		check_immutable() to offerto clear the immutable flag.
+
+	* pass2.c (check_filetype): Use the new ext2_file_type() helper
+		function instead of calculating the file_type information
+		manually.
+
+	* pass3.c (e2fsck_reconnect_file): When adding a link to
+		lost+found, calculate the filetype information so that
+		ext2fs_link() can use the information if applicable.
+		(get_lost_and_found): Create the /lost+found directory
+		with the correct filetype information if applicable.
+
+	* util.c (ext2_file_type), e2fsck.h: New function which returns
+		the directory entry file type information given the
+		inode's mode bits.
+
+	* problem.c, problem.h: Added new problem codes PR_1_SET_IMAGIC
+		and PR_1_SET_IMMUTABLE.
+
+1999-11-07    <tytso@valinux.com>
+
+	* pass4.c (e2fsck_pass4): Clear inode_imagic_map after freeing it,
+		to prevent it from getting freed twice.
+
+1999-11-06    <tytso@valinux.com>
+
+	* unix.c (main): Close the filesystem before freeing the context,
+		so that in the event of a free()-related segmentation
+		violation, the filesystem is properly closed and written
+		out.
+
+1999-10-27    <tytso@valinux.com>
+
+	* e2fsck.c (e2fsck_reset_context): When freeing
+		ctx->inode_reg_map, we weren't zero'ing
+		ctx->inode_reg_map, which could cause a segfault later on
+		in the e2fsck run.
+
+1999-10-26    <tytso@valinux.com>
+
+	* problem.h (PR_2_SPLIT_DOT): Fix excess zero in problem code (now
+		matches the standard convention).
+
+1999-10-26    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.17
+
+1999-10-26    <tytso@valinux.com>
+
+	* message.c (safe_print): Make safe_print take an char instead of
+		an unsigned char to fix gcc warnings.
+
+1999-10-25    <tytso@valinux.com>
+
+	* util.c: For NT portability, don't redefine getchar(), since
+		stdio defines that.  Instead we introduce a new
+		abstract macro read_a_char() which is #defined to the
+		right function as necessary.
+
+	* problem.c, problem.h (PR_2_NULL_NAME): Add new problem code.
+
+	* pass2.c (check_dir_block): Require that the length of the
+		directory entry be at least 12 bytes.  Check to see if the
+		filename is zero-length, and flag that as an error.
+
+1999-10-22    <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.16
+
+1999-10-22    <tytso@valinux.com>
+
+	* pass2.c (check_filetype): If the filetype filesystem feature is
+		not set, and a directory entry has a dirent feature, offer
+		to clear it (since 2.0 kernels will do complain will
+		interpret it as a very large name length field).
+
+	* problem.c (PR_2_CLEAR_FILETYPE): Add new problem code.
+
+1999-10-21    <tytso@valinux.com>
+
+	* e2fsck.8.in: Update man page to use a more standard format (bold
+		option flags and italicized variables), as suggested by
+		Andreas Dilger (adilger@enel.ucalgary.ca)
+
+	* pass4.c (e2fsck_pass4): If an inode is set in the
+		inode_imagic_map bitmap, don't check to see if it is
+		disconnected from the inode tree (because it almost
+		certainly will be).  Free inode_imagic_map at the end of
+		pass 4.
+
+	* pass2.c (check_dir_block, check_filetype): If the FILETYPE
+		feature is set, check the directory entry's filetype
+		information field, and fix/set it if necessary.
+		(e2fsck_pass2): Free the inode_reg_map bitmap at the end
+		of pass 2.
+
+	* pass1.c (e2fsck_pass1, alloc_imagic_map): Allocate and fill in
+		information for inode_reg_map and inode_imagic_map, which
+		indicates which inodes are regular files and AFS inodes,
+		respectively.
+		Since only the master superblock is written during a
+		restart, force that superblock to be used after a restart;
+		otherwise changes to the block group descriptors end up
+		getting ignored.
+
+	* problem.c, problemP.h: If e2fsck is run -n, make def_yn variable
+		be 0 for "no".  Add support for a new flag, PR_NO_NOMSG,
+		which supresses the problem message if e2fsck is run with
+		the -n option.
+
+	* problem.c, problem.h (PR_2_SET_FILETYPE, PR_2_BAD_FILETYPE): Add
+		new problem codes.
+
+	* message.c (expand_dirent_expression): Add support for %dt which
+		prints the dirent type information.
+
+	* e2fsck.c (e2fsck_reset_context): Free new bitmaps (inode_reg_map
+		and inode_imagic_map).
+
+	* e2fsck.h (e2fsck_t): Add new inode_reg_map and inode_magic_map
+		to the context structure.
+	
+1999-09-24    <tytso@valinux.com>
+
+	* unix.c (PRS), util.c (ask_yn): Add #ifdef's to make
+		e2fsprogs easier to port to non-Unix platforms.
+
+1999-09-07    <tytso@valinux.com>
+
+	* pass3.c (adjust_inode_count): Fix bug where we didn't keep the
+		internal and external inode counts in sync when we
+		decremented an inode whose link count was already zero.
+		Now we skip incrementing or decrementing both link counts
+		if we would cause an overflow condition.
+		(expand_dir, expand_dir_proc): Change where we update the
+		inode block count and size files so that the block count
+		field is updated correctly when we create an indirect block.
+
+1999-08-05    <tytso@valinux.com>
+
+	* super.c (check_super_block): Check to see whether the
+		inodes_per_group value in the superblock is insanely too
+		high.
+
+1999-08-02    <tytso@valinux.com>
+
+	* pass1b.c (clone_file_block): Don't clear the dup_map flag if
+		the block also shares data with the fs metadata when
+		the count drops to 1, since the block should still be
+		cloned, as fs metadata isn't included in the count.
+
+1999-07-18  Theodore Ts'o  <tytso@valinux.com>
+
+	* Release of E2fsprogs 1.15
+
+1999-07-19    <tytso@valinux.com>
+
+	* unix.c (usage): Add minimalist emergency help to the usage
+		message. 
+
+1999-07-18    <tytso@valinux.com>
+
+	* unix.c: Add support for calculating a progress bar if the -C0
+		option is given.   The function e2fsck_clear_progbar()
+		clears the progress bar and must be called before any
+		message is issued.  SIGUSR1 will enable the progress bar,
+		and SIGUSR2 will disable the progress bar.  This is used
+		by fsck to handle parallel filesystem checks.  Also, set
+		the device_name from the filesystem label if it is
+		available. 
+
+	* e2fsck.h: Add new flags E2F_FLAG_PROG_BAR and
+		E2F_FLAG_PROG_SUPRESS.  Add new field in the e2fsck
+		structure which contains the last tenth of a percent
+		printed for the user.
+
+	* message.c (print_e2fsck_message): Add call to
+		e2fsck_clear_progbar(). 
+
+	* pass1.c (e2fsck_pass1):
+	* pass2.c (e2fsck_pass2):
+	* pass3.c (e2fsck_pass3):
+	* pass4.c (e2fsck_pass4):
+	* pass5.c (e2fsck_pass5): Add call to e2fsck_clear_progbar when
+		printing the resource tracking information.
+
+	* pass5.c (check_block_bitmaps, check_inode_bitmaps): If there is
+		an error in the bitmaps, suppress printing the progress
+		bar using the suppression flag for the remainder of the
+		check, in order to clean up the display.
+
+1999-06-30    <tytso@valinux.com>
+
+	* unix.c (check_mount): Clean up the abort message displayed when
+		the filesystem is mounted and either stdout or stdin isn't
+		a tty.
+
+1999-06-25    <tytso@valinux.com>
+
+	* e2fsck.h:
+	* pass1.c (pass1_get_blocks, pass1_read_inode, pass1_write_inode, 
+		pass1_check_directory, e2fsck_use_inode_shortcuts): Make
+		pass1_* be private static functions, and create new
+		function e2fsck_use_inode_shortcuts which sets and clears
+		the inode shortcut functions in the fs structure.
+
+	* e2fsck.h:	
+	* pass2.c (e2fsck_process_bad_inode): Make process_bad_inode() an
+		exported function.
+
+	* pass4.c (e2fsck_pass4): Call e2fsck_process_bad_inode to check
+		if a disconnected inode has any problems before
+		connecting it to /lost+found.  Bug and suggested fix by 
+		Pavel Machek <pavel@bug.ucw.cz>
+
+1999-06-21    <tytso@valinux.com>
+
+	* unix.c (main): Add missing space in the disk write-protected
+		message. 
+
+1999-05-22    <tytso@rsts-11.mit.edu>
+
+	* problem.c, problem.h (PR_0_INODE_COUNT_WRONG): Add new problem
+		code. 
+	
+	* super.c (check_super_block): Add check to make sure the total
+		number of inodes is sane, since this can be calculated
+		from the number of groups times the number of inodes per
+		group.   Offer to correct it if it is incorrect.
+
+1999-03-19    <tytso@rsts-11.mit.edu>
+
+	* pass5.c (check_block_end): Fix fencepost condition where when
+		clearing the block padding we were missing the last position
+		in the bitmap.
+
+1999-05-17    <tytso@rsts-11.mit.edu>
+
+	* unix.c (reserve_stdio_fds): Add safety check in case
+		reserve_stdio_fds couldn't open /dev/null.
+
+1999-03-14  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* util.c (print_resource_track): Use mallinfo if present to get
+		more accurate malloc statistics.
+
+	* pass3.c (get_lost_and_found): Check to see if lost+found is a
+		plain file; if so, offer to unlink it.
+
+	* problem.c, problem.h (PR_3_LPF_NOTDIR): Add new problem code.
+
+1999-03-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* problem.c: Fix problem message for PR_1_BAD_GROUP_DESCRIPTORS so
+		that the block group number is printed.  Add new prompt,
+		PROMPT_UNLINK.
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.14
+
+1999-01-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* message.c (safe_print): New function which prints strings,
+		converting non-printable characters using the '^' and
+		M-notation.  This function is now used to print directory
+		name entries and pathnames.
+
+Mon Jan  4 02:28:59 1999  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* unix.c (main): Reset the context before calling ext2fs_close(),
+		to avoid referencing already freed memory.
+
+1998-12-15  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.13
+
+1998-12-03  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Updated dependencies.
+
+1998-11-27  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass3.c (get_lost_and_found): If the filesystem is not opened
+		read-only, then force /lost+found to be created if it is
+		not present.
+
+	* problem.c: Allow PR_3_NO_LF_DIR to be handled during a preen
+		operation. 
+
+1998-10-28  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (main): Move ext2fs_close() after e2fsck_free_context()
+		since e2fsck_free_context may reference data in ctx->fs.
+
+	* e2fsck.c (e2fsck_reset_context): Make sure ctx->fs is non-NULL
+		before checking ctx->fs->dblist.
+
+1998-10-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (e2fsck_pass1): Use the device check subroutine on
+		FIFO's and Socket's, so that we catch bogus immutable inodes.
+
+	* pass2.c (process_bad_inode): Process bad socket and fifo's.
+
+	* problem.h, problem.c: Define new problem codes PR_2_BAD_FIFO and
+		PR_2_BAD_SOCKET.
+
+1998-09-02  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* problem.c: Add PR_3_NO_DIRINFO error code.
+
+	* super.c (check_super_value): Rename min and max to min_val and
+		max_val to avoid possible cpp macro conflicts.
+
+	* pass4.c (e2fsck_pass4): Rename max to maxgroup, to avoid
+		possible cpp macro conflicts.
+	
+	* pass3.c (e2fsck_pass3): Rename max to maxdirs, to avoid possible
+		cpp macro conflicts.
+		(check_directory): Fix logic to avoid possible core dump
+		in the case of ext2fs_get_dir_info returning NULL.  (By
+		the time we get here, it should never happen, but...).
+		Also simply/streamline the control flow of the function.
+
+1998-08-17  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (check_if_skip): Move the "not cleanly mounted" check
+		ahead of the maximal mount and too long since checked tests.
+		(reserve_stdio_fds): Make sure 0,1,2 file descriptors are
+		open, so that we don't open the filesystem using the same
+		file descriptor as stdout or stderr.
+
+1998-08-01  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass2.c (e2fsck_pass2): Fix the progress accounting so that we
+		get to 100%.
+
+	* pass3.c (e2fsck_pass3): Change progress accounting to be
+		consistent with the other e2fsck passes.		
+
+	* e2fsck.c (e2fsck_run): At the end of each pass, call the
+		progress function with the pass number set to zero. 
+
+	* unix.c (e2fsck_update_progress): If the pass number is zero,
+		ignore the call, since that indicates that we just want to
+		deallocate any progress structures.
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.12
+
+1998-07-09  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (main): Fix typo in checking the incompat feature set; it
+		should be checked against EXT2_LIB_FEATURE_INCOMPAT_SUPP.
+
+1998-07-07  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* badblocks.c (test_disk): Don't clear the existing bad blocks
+		list when using e2fsck -c, since it may cause blocks with
+		marginal errors to be dropped from the bad blocks list.
+
+Mon Jul  6 10:32:11 1998  Theodre Ts'o  <tytso@lurch.mit.edu>
+
+	* pass1.c (e2fsck_pass1): Use ext2fs_sb structure for
+		compatibility with older kernels.
+
+1998-06-25  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (e2fsck_update_progress): Remove unused variables.
+
+1998-06-10  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c, problem.h: Change blkcnt_t to be e2_blkcnt_t to avoid
+		collision with LFS API.
+
+	* pass1.c (e2fsck_pass1): Fix bug so that ext2_max_sizes is
+		properly initialized.  
+		(e2fsck_pass1): Don't allow the the boot loader inode to
+		be a directory (clear the inode mode field if so).
+
+1998-05-07  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (PRS): Added new option -C, which causes e2fsck to print
+		progress updates so that callers can keep track of the
+		completion progress of e2fsck.  Designed for use by
+		progress, except for -C 0, which prints a spinning report
+		which may be useful for some users.
+
+	* pass5.c (e2fsck_pass5): Use a finer-grained progress reporting
+		scheme (useful for larger filesystems).
+
+	* e2fsck.h: Add progress_fd and progress_pos, for use by the Unix
+		progress reporting functions.
+
+1998-04-28  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (process_inode_cmp): Use EXT2_QSORT_TYPE to define the
+		appropriate return type for comparison functions for qsort.
+
+	* e2fsck.h: Add #ifdef protection for unistd.h
+
+	* super.c: Remove header files already included by e2fsck.h
+
+1998-04-26  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* dirinfo.c (e2fsck_add_dir_info): Update function to pass the old
+		  size of the memory to be resized to ext2fs_resize_mem().
+
+1998-03-30  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in: Change to use new installation directory variables
+		convention.  Fix uninstall rules to take $(DESTDIR) into
+		account.  Remove cat8dir from the installdirs target,
+		since modern man package don't necessarily put the cat
+		directory in /usr/man/cat?.
+
+1998-03-29  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* super.c, e2fsck.h: Always declare e2fsck_get_device_size() as an
+		extern in e2fsck.h to prevent -Wall warnings.
+
+	* pass4.c (e2fsck_pass4): Remove unused variable 'j'.
+
+1998-03-28  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* super.c (check_super_block): Fix broken superblock sanity check
+		when calculating blocks_per_group if s_log_frag_size !=
+		s_log_block_size.  Since we don't support fragments, this
+		isn't a bug deal, but it's good to get it fixed.
+
+1998-03-23  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c: Fix bug in check of feature set, to make sure we can
+		really fix this filesystem.
+
+	* problem.h: Make blkcount type to be of type blkcnt_t.  Make the
+		num field be a 64 bit type.  Add the problem code
+		PR_1_FEATURE_LARGE_FILES
+
+	* problem.c: Add table entry for the problem code
+		PR_1_FEATURE_LARGE_FILES.
+
+	* pass1.c (e2fsck_pass1): A non-zero i_dir_acl field is only
+		a problem for directory inodes.  (Since it is also
+		i_size_high now.)   If there are no large_files, then
+		clear the LARGE_FLAG feature flag.  If there are
+		large_files, but the LARGE_FLAG feature flag is not set,
+		complain and offer to fix it.
+		(check_blocks): Add support to deal with non-directory
+		inodes that have i_size_high set (i.e., large_files).
+		Don't give an error if a directory has preallocated
+		blocks, to support the DIR_PREALLOC feature.
+		(process_block, process_bad_block): The blockcnt variable
+		is a type of blkcnt_t, for conversion to the new
+		block_iterate2.
+
+	* pass2.c (process_bad_inode): A non-zero i_dir_acl field is only
+		a problem for directory inodes.  (Since it is also
+		i_size_high now.)
+
+	* message.c (expand_inode_expression): Print a 64-bits of the
+		inode size for non-directory inodes.  (Directory inodes
+		can only use a 32-bit directory acl size, since
+		i_size_high is shared with i_dir_acl.)  Add sanity check
+		so that trying to print out the directory acl on a
+		non-directory inode will print zero.
+		(expand_percent_expression): %B and %N, which print 
+		pctx->blkcount and pctx->num, can now be 64 bit
+		variables.  Print them using the "%lld" format if
+		EXT2_NO_64_TYPE is not defined.
+
+	* e2fsck.h: Add the large_flagsfield to the e2fsck context.
+
+	* e2fsck.c (e2fsck_reset_context): Clear the large_flags
+		field.
+
+Sun Mar  8 23:08:08 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass3.c (fix_dotdot_proc): 
+	* pass2.c (check_dot, check_dotdot, check_name, check_dir_block): 
+	* message.c (expand_dirent_expression): Mask off the high eight
+		bits of the directory entry's name_len field, so that it
+		can be used for other purposes.
+
+Fri Feb 27 00:01:39 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (e2fsck_run): Since E2F_FLAG_SIGNAL_MASK doesn't
+ 		include EXT2_FLAG_RESTART anymore, we need to adjust this
+ 		routine so that it *does* return in the case of it seeing
+ 		EXT2_FLAG_RESTART.
+
+	* pass1.c (e2fsck_pass1): ext2_get_next_inode() may call the group
+		done callback function, which may set context abort
+		flags.  So we need to test the context abort flags after
+		we call ext2_get_next_inode().
+		(process_inodes): If we abort due out of process_inodes,
+		do a clean exit by breaking out of the for loop instead of
+		just returning.
+
+	* e2fsck.h (E2F_FLAG_SIGNAL_MASK): EXT2_FLAG_RESTART shouldn't be
+		considered a SIGNAL mask (i.e., requiring an immediate
+		abort of processing to restart).  FLAG_RESTART just means
+		that we want to restart once pass 1 is complete.
+
+Tue Feb 24 15:19:40 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Change the progress function to return an integer; if returns 1,
+		then the progress function is expected to have set the
+		e2fsck context flag signalling a user abort, and the
+		caller should also initiate a user abort.
+
+Tue Feb 17 19:03:44 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass5.c (check_block_bitmaps, check_inode_bitmaps): Don't call
+		end_problem_latch() unless there was actually a problem
+		latched.  Simplifies semantics of the latch processing.
+
+Mon Feb 16 17:31:44 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.h: Add new field, priv_data to the e2fsck context
+ 		structure.  It should be used by callers of the e2fsck
+ 		functions only, and not by anything in e2fsck itself.
+
+Mon Feb 7 17:31:04 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* super.c: Instead of call ext2fs_get_device_size(), define and call
+		e2fsck_get_device_size().  (This function may be stubbed
+		out in special versions of e2fsck.)
+
+	* pass3.c, pass4.c: Remove extra calls to the progress function
+		that weren't needed.
+
+	* mke2fs.8.in: Update man page to note that the format of the bad
+		block file is the same as the one generated by badblocks. 
+
+Sun Feb  1 07:57:14 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* dirinfo.c, e2fsck.c: Don't include com_err.h; it isn't needed.
+
+	* e2fsck.h: Include <time.h> since it is needed
+
+	* super.c: If EXT2_SKIP_UUID is defined, then skip the UUID
+		processing. 
+
+Tue Jan 20 15:37:01 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (main): In the case where the filesystem revision is too
+ 		high, print the message about the superblock possibly
+ 		being corrupt.
+
+	* e2fsck.8.in: Add expanded comments about how the -b option
+		works. 
+
+Sat Jan 17 13:02:16 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.h: If EXT2_FLAT_INCLUDES is defined, then assume all of
+ 		the ext2-specific header files are in a flat directory.
+
+	* dirinfo.c, ehandler.c, pass1.c, pass1b.c, pass2.c, pass5.c,
+ 		super.c, swapfs.c, unix.c: Explicitly cast all assignments
+ 		from void * to be compatible with C++.
+
+Tue Jan  6 11:30:24 1998  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (sync_disk): Remove sync_disk and calls to that function,
+		since ext2fs_close() now takes care of this.
+
+Mon Dec 29 14:45:42 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c, pass1b.c, pass2.c, pass3.c, swapfs, badblocks.c,
+ 		ehandler.c, unix.c: Change use of private to be priv_data,
+ 		to avoid C++ reserved name clash.
+
+Fri Nov 28 09:30:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* dirinfo.c (e2fsck_add_dir_info): Use ext2fs_get_num_dirs instead
+		of e2fsck_get_num_dirs, which has been removed.
+
+Tue Nov 25 15:54:35 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (PROGS): Remove @EXTRA_PROGS@, since we don't want
+		to compile and install flushb.
+
+Mon Nov 24 06:48:00 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (e2fsck_pass1_check_device_inode): For now, only check
+		to make sure the extra i_blocks in a device are cleared if
+		the immutable flag is set.
+
+	* util.c (print_resource_track): Fix typo which caused the
+ 		time/resource tracking to print "Pass 1 :" instead of
+ 		"Pass 1: ".
+
+Thu Nov 20 16:02:23 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass3.c (expand_directory): Fix bug which could cause core dump
+ 		when expanding the directory, and the bitmaps hadn't yet
+ 		been read in.  Also, only use ext2fs_write_dir_block when
+		writing a directory block, not when writing out a fresh
+		indirect block.
+
+Wed Nov 19 16:15:44 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (process_bad_block): Fix bug where first_block wasn't
+		getting incremented, which caused user to get a
+		"Programming error?" warning if there was a bad block in a
+		non-primary superblock/group_descriptor.  Also fixed
+		another bug so that ext2fs_bg_has_super() is consulted, to
+		avoid problems when using a filesystem with the
+		sparse_groups option set and there are bad blocks at the
+		beginning of a group which doesn't have a superblock.
+
+Thu Nov  6 16:10:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c, pass2.c, pass3.c, pass4.c, pass5.c: Add calls to the 
+		progress indicator function.
+
+	* pass1.c (scan_callback): Add call to the progress feedback
+		function (if it exists).
+
+Tue Nov  4 09:45:36 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* super.c (check_super_block): Skip the device size check if the
+		get_device_size returns EXT2_EXT_UNIMPLEMENTED.
+
+	* iscan.c (main): Don't use fatal_error() anymore.
+
+	* pass1b.c, swapfs.c, badblocks.c: Set E2F_FLAG_ABORT instead of
+ 		calling fatal_error(0).
+
+	* problem.c, pass3.c (PR_3_ROOT_NOT_DIR_ABORT, 
+		PR_3_NO_ROOT_INODE_ABORT): New problem codes.
+	
+	* problem.c, pass2.c (PR_2_SPLIT_DOT): New problem code.
+
+	* problem.c, pass1.c (PR_1_SUPPRESS_MESSAGES): New problem code.
+	
+	* problemP.h: New file which separates out the private fix_problem
+		data structures.
+
+	* util.c, dirinfo.c, pass1.c, pass1b.c, pass2.c, pass5.c, super.c,
+ 		swapfs.c util.c: allocate_memory() now takes a e2fsck
+ 		context as its first argument, and rename it to be
+ 		e2fsck_allocate_memory().
+
+Mon Nov  3 14:35:29 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (main): Add a special case check for the error code EROFS
+		and display an appropriate error message for this case.
+
+	* [lots of files]:  Change ext2fs_read_inode, ext2fs_write_inode
+		to take the e2fsck context as their first argument.
+		Change dir_info.c routines to take an e2fsck_context,
+		renamed them to start with e2fsck_ to avoid namespace
+		issues, and changed them to store the directory
+		information inside the e2fsck context.
+		Added e2fsck_run() which calls all of the e2fsck passes in
+		the correct order, and which handles the return of abort
+		codes.  Added abort processing, both via setjmp/longjmp
+		and via flags in the e2fsck context.  Use a flag in the
+		e2fsck context instead of the restart_e2fsck global
+		variable.   Change uses of free and malloc to
+		ext2fs_free_mem and ext2fs_get_mem.
+	
+Fri Oct 31 01:12:43 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c, pass3.c: Rename new error codes to _ET_ in them for
+	 	consistency.
+
+Sat Oct 25 00:10:58 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass3.c (get_lost_and_found): Check error return of 
+		EXT2_FILE_NOT_FOUND instead of ENOTDIR
+
+	* pass1.c (pass1_check_directory): Return EXT2_NO_DIRECTORY
+		instead of ENOTDIR
+
+Fri Oct 24 00:12:39 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* unix.c (PRS): Make the variable which getopt returns into be
+		an int, so that it won't lose on platforms where char is
+		unsigned. 
+
+	* pass1b.c (clone_file): Fix bug in error reporting in the case
+ 		where cs.errcode is non-zero.
+
+Sun Oct 19 21:12:11 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass*.c, super.c, unix.c, util.c, e2fsck.h: Place #ifdef
+		RESOURCE_TRACK around code which uses init_resource_track
+		and print_resource_track.  (Not all systems have timeval)
+
+	* super.c: Remove excess #includes which are not necessary.
+
+	* e2fsck.h: Add #ifdef's for HAVE_SYS_TYPES_H and HAVE_SYS_TIME_H
+
+Fri Oct  3 13:40:03 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass*.c, super.c: Massive changes to avoid using printf and
+		com_err routines.   All diagnostic messages are now routed
+		through the fix_problem interface.
+
+Sat Sep  6 17:13:28 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass2.c (check_dir_block): Check for duplicate '.' and '..'
+		entries. 
+
+	* problem.c, problem.h: Add new problem codes PR_2_DUP_DOT and
+	 	PR_2_DUP_DOT_DOT.
+
+Tue Sep  2 09:04:51 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* problem.c: Added new problem codes for some of the
+		superblock corruption checks, and for the pass header
+		messages.  ("Pass 1: xxxxx")
+
+	* util.c (print_resource_track): Now takes a description
+		argument. 
+
+Mon Aug 25 10:23:13 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* super.c, unix.c, e2fsck.c: New files to separate out the
+		operating-specific operations out from e2fsck.c.  
+		e2fsck.c now contains the global e2fsck context management
+		routines, and super.c contains the "pass 0" initial
+		validation of the superblock and global block group
+		descriptors. 
+
+	* pass1.c, pass2.c, pass3.c, pass4.c, pass5.c, util.c: Eliminate
+		(nearly) all global variables and moved them to the e2fsck
+		context structure.
+
+	* problem.c, problem.h: Added new problem codes PR_0_SB_CORRUPT,
+ 		PR_0_FS_SIZE_WRONG, PR_0_NO_FRAGMENTS,
+ 		PR_0_BLOCKS_PER_GROUP, PR_0_FIRST_DATA_BLOCK
+
+Thu Aug 14 10:55:21 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* message.c: Add compression for the word "Illegal"
+
+	* problem.c: Added entries for PR_2_BAD_CHAR_DEV and
+	 	PR_2_BAD_BLOCK_DEV
+
+Wed Aug 13 09:55:57 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (pass1, check_device_inode), pass2.c
+ 		(process_bad_inode): Use a more stringent test for a valid
+ 		device.
+
+Sun Aug 10 18:58:02 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (check_mount): Add stronger warning message about the
+		perils of running e2fsck on a mounted filesystem.
+
+Tue Jun 17 01:33:20 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs 1.11
+
+Thu Jun 12 00:25:31 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (mark_table_blocks): Mark the superblock and group
+		descriptor blocks first, so that any conflicts between
+		these and the bitmap or inode table blocks is noticed.
+
+	* problem.c: Fix message printed out when a block or inode bitmap
+		conflicts with other fs data, has the correct group number
+		in it.
+
+Tue Jun 10 12:07:37 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass2.c (pass2): Check the error return from ext2fs_dblist_iterate.
+
+Thu May  8 22:45:27 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.8.in: Fix minor typos and grammer oops found by Bill
+ 		Hawes (whawes@star.net).
+
+	* badblocks.c (read_bad_blocks_file): Pass the blocksize to the
+		bad blocks command so that all of the filesystem gets
+ 		tested in the case where the blocksize 2048 or 4096.
+
+Thu Apr 24 12:16:42 1997  Theodre Ts'o  <tytso@localhost.mit.edu>
+
+	* Release of E2fsprogs version 1.10
+
+Mon Apr 21 22:43:08 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1b.c (pass1b): While scanning for inodes, simply skip inodes
+ 		where ext2fs_get_next_inode returns the 
+ 		EXT2_ET_BAD_BLOCK_IN_INODE_TABLE error.
+
+Thu Apr 17 12:23:38 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.09
+
+Fri Apr 11 18:56:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.08
+
+Thu Apr 10 13:51:16 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1b.c (clone_file_block): If we clone a directory, we need to
+		update the dblist entry so that we check (and correct) the
+		right directory block.
+
+Sun Apr  6 09:13:12 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (process_block): Don't clear blocks references to
+		filesystem metadata; let pass 1B handle this case.
+
+	* problem.c, problem.h: Add new problem, PR_1B_SHARE_METADATA.
+
+	* pass1b.c (pass1d): Deal with a block which is shared with
+ 		filesystem metadata.
+
+	* e2fsck.h: Make block_illegal_map be a global variable
+
+Sat Apr  5 11:51:58 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c, pass1.c (mark_table_blocks): Support the sparse_super
+	 	feature.
+		(get_backup_sb): New function which attempts to obtain the
+	 	correct backup superblock (if possible).
+
+Fri Apr  4 10:46:26 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (main): Check the version of the library, and warn if
+		the library is out of date; this happens generally due to
+		users who manually install e2fsprogs.
+
+	* pass1.c (pass1_get_blocks): If the passed in inode number for
+ 		get_blocks isn't what we're expecting pass back
+ 		EXT2_ET_CALLBACK_NOT_HANDLED.
+
+Wed Mar 12 13:32:05 1997  Theodore Y. Ts'o  <tytso@mit.edu>
+
+	* Release of E2fsprogs version 1.07
+
+Tue Mar 11 10:31:47 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* icount.c: New file which implements an inode count abstraction.
+		This significantly reduces amount of memory needed to
+		check really large filesystems.
+
+	* pass1.c, pass2.c, pass3.c, pass4.c: Modified to use the icount
+	 	abstraction.
+
+Fri Mar  7 08:28:55 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* dirinfo.c (dir_info_iter): New function which allows iteration
+		over the directories in the dir_info map.
+
+	* pass3.c (pass3, check_directory): Speed up pass 3 by iterating
+		over all directories in the dir_info structure, instead of
+		iterating all inodes looking for directories, and then
+		looking up the directories using get_dir_info().
+
+Sat Feb  1 11:33:43 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (pass1, process_block): 
+	* pass2.c (pass2): Use the ext2_dblist abstraction instead of
+		manual code to manage the directory block list information.
+
+	* pass1.c (check_blocks), pass1b.c (pass1b), pass2.c
+	 	(deallocate_inode): Call the ext2 library routine
+ 	 	ext2_inode_has_valid_blocks() instead of
+ 	 	inode_has_valid_blocks().
+
+	* swapfs.c (swap_inodes): Add check so that we don't try to call
+		swap_inode_blocks unless the inode has valid blocks.
+		(Otherwise a long fast symlink might cause
+		swap_inode_blocks to erroneously get called.)
+
+Wed Jan 22 14:42:53 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* problem.c, problem.h: Added entries for PR_2_DOT_NULL_TERM and
+ 	 	PR_2_DOT_DOT_NULL_TERM.
+
+	* pass2.c (check_dot, check_dot_dot): Make sure the new . and
+ 		.. entries are null-terminated, since the 2.0 kernel
+ 		requires this (for no good reason).
+
+Mon Jan 20 20:05:11 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (pass1): Set the EXT2_SF_SKIP_MISSING_ITABLE flag so
+		that we can recover from missing inode tables.
+
+	* dirinfo.c (get_dir_info): If there are no directories in the
+ 		dir_info abstraction, don't core dump (because dir_info is
+ 		NULL).
+
+	* e2fsck.c (main): Don't try using the backup superblocks if there
+		aren't any.
+		(check_super_block): If there are illegal inode table or
+		bitmaps, set the filesystem as being in error.
+
+Wed Jan 15 11:32:01 1997  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass2.c (check_dir_block): Added check to make sure that rec_len
+ 		is a a multiple of 4 (so that the directory entries are
+ 		4-byte aligned).
+
+Sat Dec 28 12:16:32 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (uninstall): Uninstall all programs in the PROGS
+		line.
+		(PROGS): Don't build and install the extend program by
+		default. 
+	
+
+Sat Dec  7 16:41:02 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (process_inodes): Make sure the stashed_ino variable is
+ 		saved and restored as well.
+		(pass1): For fast sym links, skip the check_blocks
+		processing step altogether.
+
+Mon Dec  2 09:28:24 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* problem.c, message.c: New files, to completely refurbish how
+		filesystem problems are reported to the user.  The
+		diagnostic messages are now encoded out in an easily
+		customizable, extensible format.  The messages printed out
+		in preen mode are all on one line, and contain the device
+		name.
+
+Fri Nov 29 20:26:08 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* swapfs.c (swap_inodes): When swapping a filesystem, ignore
+		deleted files.
+
+	* pass1.c (pass1): Ignore missing inode table errors during the
+		scan, and just skip past those inodes.
+
+	* pass3.c (check_root): Remove root_ino argument, and assume that
+		the root inode must be EXT2_ROOT_INO.  Move responsibility
+		of setting the parent of the root inode in the directory
+		inode structure to pass2().
+
+	* pass2.c (check_dir_block): Don't allow links to the root
+		directory.  
+
+	* dirinfo.c (add_dir_info): Remove last argument to add_dir_info,
+		since the inode is no longer used.
+
+Tue Oct 15 00:06:49 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (main): If the superblock magic number is wrong, or the
+		block group fails a sanity check, then automatically
+		restart trying to use the backup superblocks.
+
+	* pass1.c (mark_table_blocks): Make the inode tables ahead of
+		everything else; in the case where a bitmap block overlays
+		the inode table, the inode table should take precedence.
+
+	* pass2.c (maybe_clear_entry): Make the deleted/unused error
+		message fit on one line, since the error can happen during
+		a preen pass.  (We eventually need to revamp the whole
+		e2fsck error reporting and prompting system, but that's a
+		job for another day.)
+
+Mon Oct 14 22:29:49 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (main): Read in the list badblocks into fs->badblocks
+		for the benefit of the inode scan functions. 
+
+	* pass1.c (pass1): If ext2fs_get_next_inode() returns an error
+		indicating that an inode is in a bad block, mark that
+		inode as being used, as well as in the inode "bb" map.
+
+	* pass2.c (maybe_clear_entry): New function which generalizes the
+ 		error cases when a directory entry needs to be cleared.
+		(check_dir_block): If an inode is in the "bb" map, offer
+ 		to clear the directory entry, since the inode is in a bad
+ 		block.
+
+	* pass4.c (pass4): If an inode is marked as used, but is is marked
+		in the "bb" map, don't process it as a disconnected inode.
+
+Tue Oct  8 02:02:03 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.06
+
+Mon Oct  7 00:45:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (main): Print out the version number of the shared
+		library when using the -V option.
+
+	* swapfs.c (swap_filesys): Change EXT2_SWAP to EXT2_FLAG_SWAP for
+	 	consistency's sake.
+
+	* e2fsck.c (main): By setting EXT2_FLAG_MASTER_SB_ONLY, only write
+ 		out the backup superblocks when we know we have a valid
+ 		filesystem.
+
+Tue Oct  1 22:00:29 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* util.c (preenhalt): Make it explicit on preenhalt that running
+		e2fsck manually means without the -a or -p flag.
+
+Fri Sep 27 14:41:08 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (pass1): Add support for the EXT2_BOOT_LOADER inode.
+		(Linux/FT actually sets the mode bits, so we have to
+		handle it specially.)
+
+	* e2fsck.c (check_if_skip): Print a message if the filesystem is
+ 		just dirty, so that the user knows that it's about to be
+ 		checked (since this will take a while).
+
+Mon Sep 16 17:00:01 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass4.c: If a disconnected inode is zero-length, prompt to
+		delete it instead of connecting it to lost+found.
+
+Thu Sep 12 15:23:07 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.05
+
+Fri Aug 30 20:24:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass4.c (pass4): If the user refuses to connect an unattached
+		inode to lost+found, don't try to set i_links_count.  This
+		is bad, since if the user says yes, the inode will be
+		marked as unused, which is not necessarily the right
+		thing, especially since the rest of the cleanup doesn't
+		happen here.
+
+	* pass2.c (deallocate_inode): Set inode_link_info[ino] when
+		dellocating an inode.  (Not strictly necessary, but...)
+
+	* pass4.c (pass4): Add "bonehead" explanation to the "programming
+		error" message.
+
+Tue Aug 27 11:26:32 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (PRS,main): Added new options -s and -S.  -s will
+ 		byte-swap the filesystem so that it is normalized.  -S
+ 		will byte-swap the filesystem regardless of its current
+ 		byte-order.
+
+	* swapfs.c: New file, which will byte-swap a filesystem.
+
+Tue Aug 20 09:41:37 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (pass1): Change handling on files with non-zero dtime
+		and non-zero i_link_count; before we treated them as
+		deleted file per botched ext2 0.3c kernel behavior.  We
+		now clear dtime instead.
+
+Mon Aug 19 23:33:57 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (main): If e2fsck sets the clean bit, even if
+		nothing else is changed, make sure FSCK_NONDESTRUCT is
+		set (since after all having the filesystem set to
+		invalid is an error.  :-)
+
+Fri Aug  9 10:25:13 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* pass1.c (process_block): Make sure that meta data doesn't get
+		accidentally set in the dir_blocks array (which could
+		happen in some error condtions).
+	
+	* pass1.c (pass1): 
+	* pass2.c (process_bad_inode): Check for fragments in a
+		OS-independent fashion.
+
+Thu Aug  8 15:20:54 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (check_if_skip): Close the filesystem when skipping the
+		cleanup for the filesystem.
+
+Mon Jul 22 22:03:28 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c: Improve corrupt_msg, so that it's less confusing.
+
+Thu May 16 11:12:30 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.04
+
+Wed May 15 21:41:29 1996  Theodore Ts'o  <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (relocate_hint): Issue a hint that the user may wish to
+		try "e2fsck -b 8193" before allowing e2fsck to relocate
+		inode table blocks.
+
+	* Makefile.in (e2fsck): Build e2fsck statically or dynamically
+		depending on the option to configure.  Added targets for
+		e2fsck.static and e2fsck.shared for people who want to
+		build a static or shared variant manually.
+
+Wed Mar 27 00:33:40 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.03
+
+Tue Mar 26 12:03:42 1996    <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (show_stats): Don't use floating point to display
+		percentage of non-contiguous files, as different libc
+		handle result truncation differently, and this causes the
+		test suite to bomb out depending on which libc you are
+		using.
+
+	* util.c (allocate_memory): Fix error message to omit extraneous
+		%%s.
+
+Tue Mar  5 03:50:40 1996    <tytso@rsts-11.mit.edu>
+
+	* pass4.c (pass4): 
+	* pass2.c (check_dir_block): 
+	* pass1.c (pass1): Add support for dynamic first inode revision.
+
+Wed Feb 14 16:27:30 1996    <tytso@rsts-11.mit.edu>
+
+	* pass3.c (check_root): Fix spelling typo
+
+Mon Feb  5 22:30:30 1996    <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (check_super_block): If the superblock fails certain
+		internal consistency checks, exit with a fatal error after
+		printing the "superblock is corrupt message".
+
+Wed Jan 31 11:06:08 1996    <tytso@rsts-11.mit.edu>
+
+	* Release of E2fsprogs version 1.02
+
+Wed Dec 15 21:24:26 1996    <tytso@rsts-11.mit.edu>
+
+	* pass1.c (process_block): Check to see if a file is "fragmented".
+		i.e., non-contiguous.  Note that any file which is larger
+		than the block group is guaranteed to be non-contiguous.
+		We may want to use a different hueristic for deciding
+		whether or not a file is "fragmented".
+
+	* e2fsck.c (show_stats): Print statistics of how many
+		non-contiguous files are on the system.
+
+Fri Dec 15 19:19:47 1995    <tytso@rsts-11.mit.edu>
+
+	* badblocks.c (read_bad_blocks_file, test_disk): Fold
+		functionality of test_disk() (which runs badblocks) into
+		read_bad_blocks_file(); test_disk() now calls
+		read_bad_blocks_file() with a NULL bad_blocks_file
+		argument.
+
+Mon Nov 20 18:30:10 1995    <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (check_mount): Use #if defined(__linux__) instead of
+		#if defined(linux).  The latter won't work if we're
+		compiling -ansi.
+
+Mon Oct 30 20:31:17 1995    <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (check_mount): For Linux systems, the check to see if
+		the root is mounted read-only has to be done for all
+		filesystems, not just for the root filesystem, due to the
+		way that some /etc/rc scripts are set up.
+
+Thu Oct 26 12:05:30 1995    <tytso@rsts-11.mit.edu>
+
+	* Makefile.in (install): Strip programs when they are installed.
+		(e2fsck): Build e2fsck statically.
+
+Wed Oct 25 21:18:16 1995    <tytso@rsts-11.mit.edu>
+
+	* util.c (preenhalt): Preenhalt now takes an argument, which is an
+		ext2fs_filsys; this allows it to set the EXT2_ERROR_FS
+		flag in the superblock in cases where preenhalt is called.
+		All calls to preenhalt() were changed to either
+		preenhalt(fs) or preenhalt(NULL) in a few cases where the
+		fs pointer was not available.  (Most notable, for block
+		read/write errors.)
+
+Mon Sep  4 21:41:03 1995  Remy Card  <card@bbj>
+
+	* ehandler.c:
+	  util.c: Include <sys/time.h> before <sys/resource.h>.  BSD needs it.
+
+Mon Sep  4 10:14:49 1995    <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (show_stats): Show statistics about how many inodes
+		have indirect, doubly indirect, and triply indirect
+		blocks.  Allow up to 8 digits for statistics, instead of
+		merely 6, so things look pretty for large filesystems.
+
+	* pass1.c (pass1): Keep statistics about indirect, doubly
+	        indirect, and triply indirect blocks.
+
+	* pass1.c (unwind_pass1): Clear the above statistics when unwinding
+		pass 1.
+
+Fri Aug 18 15:17:10 1995  Theodore Y. Ts'o  <tytso@dcl>
+
+	* util.c, ehandler.c: Move #include of <sys/resource.h> after
+		#include of "e2fsck.h", since sys/resource.h may depend on
+		sys/time.h, which is #included in e2fsck.h.
+
+Thu Aug 17 22:33:37 1995    <tytso@rsts-11.mit.edu>
+
+	* e2fsck.c (check_mount):  Use the new ext2fs_check_if_mounted()
+		function to determine if the device is mounted.
+
+	* e2fsck.c (main):  Add better error messages if ext2fs_open()
+		fails. 
+
+Wed Aug 16 16:25:02 1995    <tytso@rsts-11.mit.edu>
+
+	* pass1.c (check_blocks): If we're clearing a directory, clear
+		pb.is_dir so we don't do the following check of making
+		sure the directory size matches; this is pointless, since
+		we've already cleared the inode.
+
+Fri Aug 11 09:08:54 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* pass1.c (bad_primary_block): New function, called by
+		process_bad_block, which explains the facts of life to the
+		user when a block in the primary superblock or primary
+		group descriptors is bad.
+
+	* pass2.c (check_dot): Handle the case where the first directory
+		entry is used, but not ".".
+
+	* pass2.c (check_dotdot): Handle the case where the second directory
+		entry is used, but is not "..".
+
+Thu Aug 10 10:05:10 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* e2fsck.c (check_super_block): Get the size of the physical
+		device and if it is smaller than the reported size of the
+		filesystem, report an error.
+
+Sat Aug 12 03:39:18 1995  Remy Card  <card@bbj>
+
+	* e2fsck.c (check_if_skip): Print the number of allocated files and
+		blocks on clean filesystems.
+
+Fri Aug 11 14:15:36 1995  Remy Card  <card@bbj>
+
+	* e2fsck.8: Updated date and version number.
+
+Thu Aug 10 14:26:01 1995  Remy Card  <card@bbj>
+
+	* pass1.c (check_blocks): Check that directory size matches *exactly*
+		the count of allocated blocks.
+
+Wed Aug  9 21:21:24 1995  Theodore Y. Ts'o  <tytso@dcl>
+
+	* pass1b.c (pass1d): Free the shared[] array when we're done with
+		it to avoid a memory leak.
+
+	* pass1.c (unwind_pass1): Use ext2fs_free_block_bitmap to free the
+	        block_dup_map.
+
+	* pass2.c (process_bad_inode): When clearing the inode, make sure
+		the pathname is freed, to prevent a memory leak.
+
+	* pass5.c (check_inode_bitmaps): Free free_array and dir_array
+		when we're finished with them.
+		(check_block_bitmaps): Free free_array when we're finished
+		with them.
+
+	* Makefile.in (e2fsck, flushb): Use $(LD) instead of $(CC) when
+		linking the executable.
+
+	* pass2.c (process_bad_inode): Even on OS's that don't support the
+		fragment fields, make sure the Linux equivalent fields are
+		set to zero.  If an OS wants to reuse these fields, which
+		is probably a bad idea (although we may get desperate in
+		the future) this code will have to be changed.
+
+	* pass1.c (dir_block_cmp): If the block numbers are equal, compare
+		on the inode field, and then blockcnt field.  This is just
+		to keep the ordering of dir_blocks the same on all
+		platforms when there are more than on missing directory
+		blocks, which are indicated directories with holes, which
+		are indicated with the block number being set to zero.
+
+Sun Aug  6 15:40:58 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* pass1.c (check_blocks, process_block): check_blocks() modified
+		to call the ext2fs_block_iterate() with BLOCK_FLAG_HOLE if
+		the inode is a directory.  process_block() now checks to
+		see if a directory has a "hole", or missing block.  If so,
+		this fact is recorded in the directory block list so that
+		the problem can be resolved in pass #2.
+
+	* pass2.c (allocate_dir_block): Added allocate_dir_block() to
+		allocate new blocks for directories with "holes".  Called
+		out of check_dir_block if a block in the directory block
+		list is zero.
+
+	* pass3.c (get_lost_and_found): Move location of free(block) to
+		prevent possible memory leak.
+
+Sat Aug  5 12:42:22 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* pass2.c (check_dir_block): Use a automatic, fixed-saize array
+		instead of alloca() --- alloca is not portable!  Check to
+		make sure the filename is not longer than EXT2_NAME_LEN,
+		and offer to fix it by truncating it, since it should
+		never happen.
+
+	* e2fsck.c (PRS): Use malloc() instead of alloca() --- alloca() is
+		not portable!!  In any case putenv() in some systems must
+		take a static character array or malloc()'ed memory;
+		passing memory allocated using alloca() to putenv() is not
+		advisable.
+
+	* pass2.c (check_dot, check_dotdot): Use malloc() instead of
+		alloca() --- alloca() is not portable!!!
+
+Tue Jul 18 20:04:02 1995    <tytso@rsx-11.mit.edu>
+
+	* pass1b.c (pass1c): 
+	* pass3.c (check_root, get_lost_and_found): 
+	* pass2.c (check_dir_block): Use ext2fs_{read,write}_dir_block
+		to read/write the directory block.
+
+Mon Jul 17 04:00:56 1995    <tytso@rsx-11.mit.edu>
+
+	* util.c (ask_yn): Apply patch supplied by Peter A. Zaitcev to
+		make sure VMIN and VTIME are set correct.
+
+Fri Jul 14 19:26:29 1995    <tytso@rsx-11.mit.edu>
+
+	* pass1.c (mark_block_used): Change to be an inline function.
+		Assume that the block validity checks are already done,
+		and use the fast variant of the bitmap functions.
+
+Thu Jul 13 08:10:55 1995    <tytso@rsx-11.mit.edu>
+
+	* pass5.c (check_block_bitmaps, check_inode_bitmaps): Check the
+		bounds of the bitmaps in advance, and then use the fast
+		variant of e2fs_test_{block,inode}_bitmap.
+
+	* pass1.c (mark_block_used): Use ext2_fast_mark_block_bitmap since
+		the bounds checking has already been done earlier.
+
+Wed Jul 12 02:22:46 1995    <tytso@rsx-11.mit.edu>
+
+	* pass1.c (pass1): Allocate and free the block_illegal_map, which
+		is used for shortcut processing in process_block.
+		(mark_table_blocks): Initialize block_illegal_map with the
+		filesystem blocks.
+		(describe_illegal_block): New helper function that
+		describes why a block is illegal.
+		(process_block): Use block_illegal_map as a shortcut
+		to determine whether a block is bad.  Use
+		describe_illegal_block to print out why the block is illegal.
+
+Mon Jun 12 19:11:06 1995  Theodore Y. Ts'o  (tytso@dcl)
+
+	* flushb.c: Don't include <linux/fs.h> if it doesn't exist.
+
+	* scantest.c: Don't include <linux/fs.h>, <getopt.h>, or
+		<mntent.h> if they don't exist.  (Mostly so that "make
+		depend" works.)
+
+	* pass1.c, pass1b.c, pass3.c, badblocks.c: Include <errno.h> (if
+		it exists).
+
+	* e2fsck.c, scantest.c: Don't include <getopt.h> if it doesn't
+		exist. 
+
+Mon Jun 12 08:37:49 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* pass2.c (process_bad_inode, check_for_zero_long,
+	        check_for_zero_char):  Change long to u32, and char to u8.
+
+Sun Jun 11 15:05:57 1995  Theodore Y. Ts'o  <tytso@lurch.mit.edu>
+
+	* util.c (inode_has_valid_blocks): 
+	* pass2.c (process_bad_inode): 
+	* pass1.c (pass1, check_blocks, pass1_check_directory): Use
+		LINUX_S_IS* instead of S_IS*.
+
+	* e2fsck.h: Don't #include <sys/stat.h>
+
+	* flushb.c (main): Add #ifdef BLKFLSBUF around ioctl.  (Although
+		this program is pretty much useless if BLKFLSBUF isn't
+		supported.)
+
+	* e2fsck.c, badblocks.c: Add #include <errno.h>, since errno is
+	        used.
+
+Thu Jun  8 12:31:19 1995  Miles Bader  <miles@churchy.gnu.ai.mit.edu>
+
+	* pass2.c (check_dot, check_dotdot, check_dir_block): Use alloca
+	to allocate space for file names instead of using fixed size buffers.
+	(process_bad_inode): Only check inode frag fields if
+	HAVE_EXT2_FRAGS is defined (by configure).
+	* pass1.c (pass1): Only check the inode frag fields if
+	HAVE_EXT2_FRAGS is defined (by configure).
+
+	* e2fsck.c (check_mount): Only check for a mounted filesystem if
+	HAVE_MNTENT_H is defined (by configure).
+	(PRS): Use alloca to allocate the new path string, instead of
+	having a fixed size buffer (which was the wrong size anyway).
+	(PRS): Only support the -F (flush) option if the BLKFLSBUF ioctl
+	is defined.
+
+	* e2fsck.h: Only include <linux/fs.h> if HAVE_LINUX_FS_H is
+	defined (by configure).
+
+	* Makefile.in: Rewritten to conform to GNU coding standards and
+	support separate compilation directories.
+
+Thu Apr  6 15:04:36 1995  Remy Card  <card@bbj.ibp.fr>
+
+	* pass1.c (pass1): Test the mode in reserved inodes (must be zero).
+
+Sat Mar 11 13:12:16 1995  Theodore Y. Ts'o  <tytso@localhost>
+
+	* pass1.c (unwind_pass1): Clear the file type statistics counter
+		when pass 1 needs to be restarted from scratch.
+
+	* pass1.c (handle_fs_bad_blocks): Fix bug where bitmap blocks were
+		being reallocated to blocks in the next block group,
+		instead of the current block grup.
+
+	* pass1.c (pass1, check_blocks): Set inode_link_info[ino] whenever
+		inode.i_links_count is set.
+
+Tue Feb 14 01:38:04 1995  Theodore Y. Ts'o  (tytso@rt-11)
+
+	* pass1.c (process_block): Add checks for if the block is
+		trepassing on a superblock or group descriptor table.
+
+Sat Dec 31 00:52:11 1994    <tytso@rsx-11.mit.edu>
+
+	* main.c (corrupt_msg): Extend the message which is printed out
+		when the superblock is corrupt, to include the suggestion
+		of using the -b option to specify an alternate superblock.
+
+Thu Nov 24 09:29:58 1994  Theodore Y. Ts'o  (tytso@rt-11)
+
+	* badblocks.c (read_bad_blocks_file): If we are adding or
+		replacing bad blocks in the bad blocks inode, sanity check
+		the bad block inode first, and clear out any illegal blocks.
+
+	* pass2.c (check_name): Don't bomb out if the attempt to get the
+		pathname of the containing directory returns an error; the
+		directory may be too badly damaged to expect that
+		ext2fs_get_pathname will always succeed.  Use "???" if the
+		pathname can't be obtained (it's only for a printf to the
+		user anyway).
+
+		The name of the containing directory and the bad filename
+		were incorrectly interchanged in the user message.  Fixed.
+
+	* pass2.c (check_name, check_dir_block): Use a common static
+		string for the unknown pathname.
+
+Mon Nov  7 22:30:54 1994  Remy Card  <card@bbj>
+
+	* Fixed lots of printf formats to make sure that block and inode
+	numbers are printed as unsigned integers.
+
+Mon Oct 24 14:10:46 1994    (tytso@rsx-11)
+
+	* pass5.c (check_block_end): Fix calculation of how the last block
+		in the block bitmap should be calculated.
+
+Wed Sep  7 10:01:13 1994    (tytso@rsx-11)
+
+	* pass1b.c (pass1_dupblocks): Fix declaration of dup_inode_map to
+		be an ext2fs_inode_bitmap, and free it properly.
+
+	* e2fsck.h
+	* e2fsck.c (main): Folded in Remy Card's changes to add a revision
+	level to the superblock.
+
+Wed Aug 17 22:00:20 1994  Remy Card  (card@bbj)
+
+	* e2fsck.c (usage): Fixed bogus usage message.
+
+Wed Aug 17 11:21:45 1994  Theodore Y. Ts'o  (tytso@rt-11)
+
+	* pass1.c (process_bad_block): Fixed bug so that blocks in the
+	backup superblocks and group descriptors are handled gracefully.
+

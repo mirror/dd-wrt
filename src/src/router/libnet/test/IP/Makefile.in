@@ -1,0 +1,26 @@
+#
+#   $Id: Makefile.in,v 1.1 2004/04/27 01:33:22 dyang Exp $
+#
+#   Libnet IP testcode makefile
+#   (c) 1998, 1999 route|daemon9 <route@infonexus.com>
+#   @configure_input@
+
+CC          =   @CC@
+CFLAGS      =   @CFLAGS@
+OBJECTS     =   
+
+DEFINES     +=  @DEFS@
+LIBS        =   -L../../lib/ -lnet @ADDITIONAL_LIBS@
+
+.c.o:
+	$(CC) $(CFLAGS) $(DEFINES) -c $< -o $@
+
+all: 	
+
+clean:
+	rm -f *.core *.o
+
+distclean: clean
+	rm -f Makefile
+
+# EOF

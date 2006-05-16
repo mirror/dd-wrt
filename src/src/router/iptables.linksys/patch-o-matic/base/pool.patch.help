@@ -1,0 +1,11 @@
+Author: Patrick <bof@bof.de>
+Status: Development: please tell me if and where I fucked up on the locks.
+
+This adds CONFIG_IP_NF_POOL, which provides a match which lets you use
+bitmaps with one bit per address from some range of IP addresses; the
+match depends on whether a checked source or destination address has
+its bit set in the pool.  It also provides a POOL target, which can be
+used to add or remove the addresses of a packet to/from a pool.
+
+The userspace program ippool(8) is also compiled (in the ippool/
+directory), and is used to define the pools and their bounds.

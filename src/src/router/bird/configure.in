@@ -1,0 +1,218 @@
+dnl ** This is a configure script template for BIRD
+dnl ** Process it with autoconf to get ./configure
+dnl ** (c) 1999--2000 Martin Mares <mj@ucw.cz>
+
+AC_REVISION($Id: configure.in,v 1.32 2004/06/05 09:57:35 mj Exp $)
+AC_INIT(conf/confbase.Y)
+AC_CONFIG_AUX_DIR(tools)
+
+AC_ARG_ENABLE(debug,[  --enable-debug          enable internal debugging routines (default: disabled)],,enable_debug=no)
+AC_ARG_ENABLE(memcheck,[  --enable-memcheck       check memory allocations when debugging (default: enabled)],,enable_memcheck=yes)
+AC_ARG_ENABLE(warnings,[  --enable-warnings       enable extra warnings (default: disabled)],,enable_warnings=no)
+AC_ARG_ENABLE(client,[  --enable-client         enable building of BIRD client (default: enabled)],,enable_client=yes)
+AC_ARG_ENABLE(ipv6,[  --enable-ipv6           enable building of IPv6 version (default: disabled)],,enable_ipv6=no)
+AC_ARG_WITH(sysconfig,[  --with-sysconfig=FILE   use specified BIRD system configuration file])
+AC_ARG_WITH(protocols,[  --with-protocols=LIST   include specified routing protocols (default: all)],,[with_protocols="all"])
+AC_ARG_WITH(sysinclude,[  --with-sysinclude=PATH  search for system includes on specified place])
+
+if test "$srcdir" = . ; then
+	# Building in current directory => create obj directory holding all objects
+	objdir=obj
+	mkdir -p obj
+	srcdir_rel=..
+	makefiles="Makefile:tools/Makefile-top.in obj/Makefile:tools/Makefile.in obj/Rules:tools/Rules.in"
+	exedir=..
+else
+	# Building in separate directory
+	objdir=.
+	srcdir_rel=$srcdir
+	makefiles="Makefile:tools/Makefile.in Rules:tools/Rules.in"
+	exedir=.
+fi
+case $srcdir_rel in
+	/*)	srcdir_rel_mf=$srcdir_rel ;;
+	*)	srcdir_rel_mf="\$(root-rel)$srcdir_rel" ;;
+esac
+AC_SUBST(objdir)
+AC_SUBST(exedir)
+AC_SUBST(srcdir_rel_mf)
+
+if test "$enable_ipv6" = yes ; then
+	ip=ipv6
+	if test "$with_protocols" = all ; then
+		with_protocols=bgp,pipe,rip,static
+	fi
+else
+	ip=ipv4
+	if test "$with_protocols" = all ; then
+		with_protocols=bgp,ospf,pipe,rip,static
+	fi
+fi
+
+AC_CANONICAL_HOST
+
+AC_PROG_CC
+if test -z "$GCC" ; then
+	AC_MSG_ERROR([This program requires the GNU C Compiler.])
+	fi
+AC_MSG_CHECKING([what CFLAGS should we use])
+if test "$ac_test_CFLAGS" != set ; then
+	if test "$enable_warnings" = yes ; then
+		WARNS=" -Wmissing-prototypes -Wundef"
+	else
+		WARNS=" -Wno-unused"
+	fi
+	CFLAGS="$CFLAGS -Wall -W -Wstrict-prototypes -Wno-parentheses$WARNS"
+fi
+if test "$with_sysinclude" != no -a -n "$with_sysinclude"; then
+	CPPFLAGS="$CPPFLAGS -I$with_sysinclude"
+fi
+AC_MSG_RESULT($CFLAGS)
+
+AC_PROG_CPP
+AC_PROG_INSTALL
+AC_PROG_RANLIB
+AC_CHECK_PROG(FLEX, flex, flex)
+AC_CHECK_PROG(BISON, bison, bison)
+AC_CHECK_PROGS(M4, gm4 m4, m4)
+if test -z "$FLEX" -o -z "$BISON" -o -z "$M4" ; then
+	AC_MSG_ERROR([Some tools required for building BIRD are missing.])
+	fi
+
+if test -n "$with_sysconfig" -a "$with_sysconfig" != no ; then
+	if test -f $with_sysconfig ; then
+		sysdesc=$with_sysconfig
+	else
+		sysdesc=$srcdir/sysdep/cf/$with_sysconfig
+		if ! test -f $sysdesc ; then
+			sysdesc=$sysdesc.h
+		fi
+	fi
+elif test -f sysconfig.h ; then
+	sysdesc=sysconfig
+else
+	case "$ip:$host_os" in
+		ipv4:linux*)	BIRD_CHECK_LINUX_VERSION
+				case $bird_cv_sys_linux_version in
+					1.*|2.0.*)	sysdesc=linux-20 ;;
+					*)		sysdesc=linux-22 ;;
+					esac
+				;;
+		ipv6:linux*)	BIRD_CHECK_LINUX_VERSION
+				case $bird_cv_sys_linux_version in
+					1.*|2.0.*)	AC_MSG_ERROR([This version of Linux doesn't support IPv6.]) ;;
+					*)		sysdesc=linux-v6 ;;
+					esac
+				;;
+		ipv6:netbsd*)	sysdesc=bsd-v6
+				;;
+		ipv4:netbsd*)	sysdesc=bsd
+				;;
+		ipv6:freebsd*)	sysdesc=bsd-v6
+				;;
+		ipv4:freebsd*)	sysdesc=bsd
+				;;
+		*)		AC_MSG_ERROR([Cannot determine correct system configuration. Please use --with-sysconfig to set it manually.])
+				;;
+		esac
+	sysdesc=$srcdir/sysdep/cf/$sysdesc.h
+fi
+AC_MSG_CHECKING([which OS configuration should we use])
+AC_MSG_RESULT($sysdesc)
+if ! test -f $sysdesc ; then
+	AC_MSG_ERROR([The system configuration file is missing.])
+fi
+sysname=`echo $sysdesc | sed 's/\.h$//'`
+AC_DEFINE_UNQUOTED(SYSCONF_INCLUDE, "$sysdesc")
+
+AC_MSG_CHECKING([system-dependent directories])
+sysdep_dirs="`sed <$sysdesc '/^Link: /!d;s/^Link: \(.*\)$/\1/' | tr '\012' ' '` lib"
+AC_MSG_RESULT($sysdep_dirs)
+AC_SUBST(sysdep_dirs)
+
+AC_MSG_CHECKING([protocols])
+protocols=`echo "$with_protocols" | sed 's/,/ /g'`
+if test "$protocols" = no ; then protocols= ; fi
+for a in $protocols ; do
+	if ! test -f $srcdir/proto/$a/Makefile ; then
+		AC_MSG_RESULT(failed)
+		AC_MSG_ERROR([Requested protocol $a not found.])
+		fi
+	AC_DEFINE_UNQUOTED(CONFIG_`echo $a | tr 'a-z' 'A-Z'`)
+	done
+AC_MSG_RESULT(ok)
+AC_SUBST(protocols)
+
+case $sysdesc in
+	*/linux-22*|*/linux-v6*)
+		AC_CHECK_HEADER(linux/rtnetlink.h,,[AC_MSG_ERROR([Appropriate version of Linux kernel headers not found.])],[
+#include <asm/types.h>
+#include <sys/socket.h>
+])
+		;;
+esac
+
+AC_CHECK_HEADER(syslog.h, [AC_DEFINE(HAVE_SYSLOG)])
+AC_CHECK_HEADER(alloca.h, [AC_DEFINE(HAVE_ALLOCA_H)])
+AC_MSG_CHECKING(whether 'struct sockaddr' has sa_len)
+AC_TRY_COMPILE([#include <sys/types.h>
+  #include <sys/socket.h>
+  ], [static struct sockaddr sa; int i = sizeof(sa.sa_len);],
+  [AC_MSG_RESULT(yes)
+  AC_DEFINE(HAVE_SIN_LEN,,sin_len)],
+  AC_MSG_RESULT(no))
+
+BIRD_CHECK_INTEGERS
+BIRD_CHECK_ENDIAN
+BIRD_CHECK_STRUCT_ALIGN
+BIRD_CHECK_TIME_T
+BIRD_CHECK_STRUCT_IP_MREQN
+
+if test "$enable_debug" = yes ; then
+	AC_DEFINE(DEBUGGING)
+	if test "$enable_memcheck" = yes ; then
+		AC_CHECK_LIB(dmalloc, dmalloc_debug)
+		if test $ac_cv_lib_dmalloc_dmalloc_debug != yes ; then
+			AC_CHECK_LIB(efence, malloc)
+		fi
+	fi
+fi
+
+CLIENT=
+CLIENT_LIBS=
+if test "$enable_client" = yes ; then
+	CLIENT=client
+	AC_CHECK_LIB(history, add_history, CLIENT_LIBS="-lhistory")
+	AC_CHECK_LIB(ncurses, tgetent, USE_TERMCAP_LIB=-lncurses,
+		AC_CHECK_LIB(curses, tgetent, USE_TERMCAP_LIB=-lcurses,
+			AC_CHECK_LIB(termcap, tgetent, USE_TERMCAP_LIB=-ltermcap)))
+	AC_CHECK_LIB(readline, rl_callback_read_char, CLIENT_LIBS="-lreadline $CLIENT_LIBS $USE_TERMCAP_LIB",
+		AC_MSG_ERROR([[The client requires GNU readline library 2.1 or newer. Either install the library or use --disable-client to compile without the client.]]), $USE_TERMCAP_LIB)
+	AC_CHECK_LIB(readline, rl_crlf, AC_DEFINE(HAVE_RL_CRLF),,$USE_TERMCAP_LIB)
+	AC_CHECK_LIB(readline, rl_ding, AC_DEFINE(HAVE_RL_DING),,$USE_TERMCAP_LIB)
+fi
+AC_SUBST(CLIENT)
+AC_SUBST(CLIENT_LIBS)
+
+mkdir -p $objdir/sysdep
+AC_CONFIG_HEADERS([$objdir/sysdep/autoconf.h:sysdep/autoconf.h.in])
+AC_CONFIG_COMMANDS([merge],[[export CPP="$CPP"
+$srcdir/tools/mergedirs $srcdir $srcdir_rel $objdir $sysdep_dirs]],
+	[[srcdir=$srcdir]
+	[srcdir_rel=$srcdir_rel]
+	[objdir=$objdir]
+	[sysdep_dirs="$sysdep_dirs"]])
+AC_CONFIG_FILES($makefiles)
+AC_OUTPUT
+
+cat >&AC_FD_MSG <<EOF
+
+BIRD was configured with the following options:
+	Source directory:	$srcdir
+	Object directory:	$objdir
+	System configuration:	$sysdesc
+	Debugging:		$enable_debug
+	Routing protocols:	$protocols
+	Client:			$enable_client
+EOF
+rm -f $objdir/.*-stamp

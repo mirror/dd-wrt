@@ -1,0 +1,2 @@
+	/* insert nat helper private data here */
+	struct ip_nat_pptp nat_pptp_info;

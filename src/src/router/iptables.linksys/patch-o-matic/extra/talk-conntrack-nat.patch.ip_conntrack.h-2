@@ -1,0 +1,2 @@
+	/* insert conntrack helper private data (expect) here */
+	struct ip_ct_talk_expect exp_talk_info;

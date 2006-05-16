@@ -1,0 +1,8 @@
+CONFIG_IP_NF_MATCH_TOS
+condition match support
+CONFIG_IP_NF_MATCH_CONDITION
+  This option allows you to match firewall rules against condition
+  variables stored in /proc files.
+
+  If you want to compile it as a module, say M here and read
+  Documentation/modules.txt.  If unsure, say `N'.

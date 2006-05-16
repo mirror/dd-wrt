@@ -1,0 +1,18 @@
+<div class="setting">
+	<div class="label"><script type="text/javascript">Capture(wpa.algorithms)</script></div>
+	<select name="wl_crypto">
+		<option value="tkip" <% nvram_selected("wl_crypto","tkip"); %>>TKIP</option>
+		<option value="aes" <% nvram_selected("wl_crypto","aes"); %>>AES</option>
+		<option value="tkip+aes" <% nvram_selected("wl_crypto","tkip+aes"); %>>TKIP+AES</option>
+	</select>
+</div>
+<div class="setting">
+	<div class="label"><script type="text/javascript">Capture(wpa.shared_key)</script></div>
+	<input type="password" id="wl_wpa_psk" name="wl_wpa_psk" maxlength="64" size="32" value="<% nvram_get("wl_wpa_psk"); %>" />&nbsp;&nbsp;&nbsp;
+	<input type="checkbox" name="_wl_unmask" value="0" onclick="setElementMask('wl_wpa_psk', this.checked)" >&nbsp;<script type="text/javascript">Capture(share.unmask)</script></input>
+</div>
+<div class="setting">
+	<div class="label"><script type="text/javascript">Capture(wpa.rekey)</script></div>
+	<input class="num" name="wl_wpa_gtk_rekey" maxlength="5" size="5" onblur="valid_range(this,0,99999,errmsg.err43)" value="<% nvram_get("wl_wpa_gtk_rekey"); %>" />
+	<span class="default">(Default: 3600, Range: 0 - 99999)</span>
+</div>

@@ -1,0 +1,1197 @@
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack.h linux/include/linux/netfilter_ipv4/ip_conntrack.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack.h	Fri Apr 27 14:15:01 2001
++++ linux/include/linux/netfilter_ipv4/ip_conntrack.h	Fri Jun  1 06:47:50 2001
+@@ -23,8 +23,26 @@
+ 	/* >= this indicates reply direction */
+ 	IP_CT_IS_REPLY,
+ 
+-	/* Number of distinct IP_CT types (no NEW in reply dirn). */
+-	IP_CT_NUMBER = IP_CT_IS_REPLY * 2 - 1
++	/* For ctnetlink only, when connection gets deleted. */
++        IP_CT_DELETE,
++
++	/* Number of distinct IP_CT types (no NEW in reply dirn, no DELETE). */
++	IP_CT_NUMBER = IP_CT_IS_REPLY * 2 - 1 
++};
++
++/* Bitset representing status of connection. */
++enum ip_conntrack_status {
++        /* It's an expected connection: bit 0 set.  This bit never changed */
++        IPS_EXPECTED_BIT = 0,
++        IPS_EXPECTED = (1 << IPS_EXPECTED_BIT),
++
++        /* We've seen packets both ways: bit 1 set.  Can be set, not unset. */
++        IPS_SEEN_REPLY_BIT = 1,
++        IPS_SEEN_REPLY = (1 << IPS_SEEN_REPLY_BIT),
++
++        /* Conntrack should never be early-expired. */
++        IPS_ASSURED_BIT = 2,
++        IPS_ASSURED = (1 << IPS_ASSURED_BIT),
+ };
+ 
+ #ifdef __KERNEL__
+@@ -47,21 +65,6 @@
+ #define IP_NF_ASSERT(x)
+ #endif
+ 
+-/* Bitset representing status of connection. */
+-enum ip_conntrack_status {
+-	/* It's an expected connection: bit 0 set.  This bit never changed */
+-	IPS_EXPECTED_BIT = 0,
+-	IPS_EXPECTED = (1 << IPS_EXPECTED_BIT),
+-
+-	/* We've seen packets both ways: bit 1 set.  Can be set, not unset. */
+-	IPS_SEEN_REPLY_BIT = 1,
+-	IPS_SEEN_REPLY = (1 << IPS_SEEN_REPLY_BIT),
+-
+-	/* Conntrack should never be early-expired. */
+-	IPS_ASSURED_BIT = 2,
+-	IPS_ASSURED = (1 << IPS_ASSURED_BIT),
+-};
+-
+ struct ip_conntrack_expect
+ {
+ 	/* Internal linked list */
+@@ -163,9 +166,24 @@
+ extern void ip_ct_refresh(struct ip_conntrack *ct,
+ 			  unsigned long extra_jiffies);
+ 
+-/* These are for NAT.  Icky. */
+-/* Call me when a conntrack is destroyed. */
+-extern void (*ip_conntrack_destroyed)(struct ip_conntrack *conntrack);
++/* This is for the ip_conntrack_notify facilities. */
++struct ip_conntrack_notify
++{
++        /* Internal use. */
++        struct list_head list;
++
++	void (*destroyed)(struct ip_conntrack *conntrack);
++        void (*created)(struct ip_conntrack *conntrack,
++                enum ip_conntrack_info info,
++                const struct net_device *in, 
++		const struct net_device *out);
++};
++
++extern int ip_conntrack_notify_register(struct ip_conntrack_notify *nb);
++extern int ip_conntrack_notify_unregister(struct ip_conntrack_notify *nb);
++
++/* For ctnetlink. */
++extern void ip_conntrack_put(struct ip_conntrack *ct);
+ 
+ /* Returns new sk_buff, or NULL */
+ struct sk_buff *
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_core.h linux/include/linux/netfilter_ipv4/ip_conntrack_core.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_core.h	Fri Apr 27 14:15:01 2001
++++ linux/include/linux/netfilter_ipv4/ip_conntrack_core.h	Fri Jun  1 06:47:50 2001
+@@ -29,7 +29,7 @@
+ 		     struct ip_conntrack_protocol *protocol);
+ 
+ /* Find a connection corresponding to a tuple. */
+-struct ip_conntrack_tuple_hash *
++extern struct ip_conntrack_tuple_hash *
+ ip_conntrack_find_get(const struct ip_conntrack_tuple *tuple,
+ 		      const struct ip_conntrack *ignored_conntrack);
+ 
+@@ -44,6 +44,7 @@
+ 	return NF_ACCEPT;
+ }
+ 
++extern unsigned int ip_conntrack_htable_size;
+ extern struct list_head *ip_conntrack_hash;
+ extern struct list_head expect_list;
+ DECLARE_RWLOCK_EXTERN(ip_conntrack_lock);
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_ftp.h linux/include/linux/netfilter_ipv4/ip_conntrack_ftp.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_ftp.h	Wed Apr 25 15:00:28 2001
++++ linux/include/linux/netfilter_ipv4/ip_conntrack_ftp.h	Fri Jun  1 06:47:50 2001
+@@ -2,15 +2,6 @@
+ #define _IP_CONNTRACK_FTP_H
+ /* FTP tracking. */
+ 
+-#ifndef __KERNEL__
+-#error Only in kernel.
+-#endif
+-
+-#include <linux/netfilter_ipv4/lockhelp.h>
+-
+-/* Protects ftp part of conntracks */
+-DECLARE_LOCK_EXTERN(ip_ftp_lock);
+-
+ enum ip_ct_ftp_type
+ {
+ 	/* PORT command from client */
+@@ -41,4 +32,10 @@
+ 	int seq_aft_nl_set[IP_CT_DIR_MAX];
+ };
+ 
++#ifdef __KERNEL__
++#include <linux/netfilter_ipv4/lockhelp.h>
++
++/* Protects ftp part of conntracks */
++DECLARE_LOCK_EXTERN(ip_ftp_lock);
++#endif /* __KERNEL__ */
+ #endif /* _IP_CONNTRACK_FTP_H */
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_netlink.h linux/include/linux/netfilter_ipv4/ip_conntrack_netlink.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_netlink.h	Wed Dec 31 16:00:00 1969
++++ linux/include/linux/netfilter_ipv4/ip_conntrack_netlink.h	Fri Jun  1 05:55:25 2001
+@@ -0,0 +1,119 @@
++#ifndef _IP_CONNTRACK_NETLINK_H
++#define _IP_CONNTRACK_NETLINK_H
++
++/* ip_conntrack_netlink.h: structures and definitions for ctnetlink.
++ */
++
++/* ctnetlink message types. 
++ */
++#define CTM_BASE		0x10
++#define CTM_GETCONNTRACK	(CTM_BASE + 0)
++#define CTM_DELCONNTRACK	(CTM_BASE + 1)
++#define CTM_NEWCONNTRACK	(CTM_BASE + 2)
++#define CTM_MAX         	(CTM_BASE + 3)
++
++/* ctnetlink attribute types.
++ */
++enum ctattr_type_t
++{
++        CTA_UNSPEC,	/* [none] I don't know (unspecified). */
++	CTA_ORIG,	/* [ip_conntrack_tuple] Original tuple. */
++	CTA_RPLY,	/* [ip_conntrack_tuple] Reply tuple. */
++        CTA_IIF,	/* [char] Input interface name (ie eth0). */
++        CTA_OIF,	/* [char] Output interface name (ie eth1). */
++	CTA_STATUS,	/* [unsigned long] Status of connection. */
++	CTA_INFO,	/* [unsigned long] Information (ctinfo). */
++	CTA_PROTOINFO,	/* [rta_proto] Protocol specific ct information. */
++	CTA_HELPINFO,	/* [rta_help] Helper specific information. */
++	CTA_NATINFO,	/* [rta_nat] Any NAT transformations. */
++	CTA_MAX = CTA_NATINFO 
++};
++
++/* Generic structure for encapsulation optional conntrack information.
++ * It is reminiscent of sockaddr, but with sa_family replaced
++ * with attribute type. 
++ * ! This should someday be put somewhere generic as now rtnetlink and
++ * ! ctnetlink use the same attributes methods. - JSchulist.
++ */
++
++struct ctattr
++{
++        unsigned short  cta_len;
++        unsigned short  cta_type;
++};
++
++#define CTA_ALIGNTO     4
++#define CTA_ALIGN(len)	(((len) + CTA_ALIGNTO - 1) & ~(CTA_ALIGNTO - 1))
++#define CTA_OK(cta,len)	((len) > 0 && (cta)->cta_len >= sizeof(struct ctattr) \
++	&& (cta)->cta_len <= (len))
++#define CTA_NEXT(cta,attrlen)	((attrlen) -= CTA_ALIGN((cta)->cta_len), \
++	(struct ctattr *)(((char *)(cta)) + CTA_ALIGN((cta)->cta_len)))
++#define CTA_LENGTH(len)	(CTA_ALIGN(sizeof(struct ctattr)) + (len))
++#define CTA_SPACE(len)	CTA_ALIGN(CTA_LENGTH(len))
++#define CTA_DATA(cta)   ((void *)(((char *)(cta)) + CTA_LENGTH(0)))
++#define CTA_PAYLOAD(cta) ((int)((cta)->cta_len) - CTA_LENGTH(0))
++
++/* Generic ctnetlink message header. 
++ */
++struct ctmsg {
++	unsigned char	ctm_family;
++	unsigned char	ctm_orig_len;
++	unsigned char	ctm_rply_len;
++};
++
++#define CTM_CTA(c)      ((struct ctattr *)(((char *)(c)) \
++        + NLMSG_ALIGN(sizeof(struct ctmsg))))
++#define CTM_PAYLOAD(n)  NLMSG_PAYLOAD(n, sizeof(struct ctmsg))
++
++/* General form of address family dependent message.
++ */
++struct ctgenmsg {
++	unsigned char ctgen_family;
++};
++
++/* Attribute specific data structures.
++ */
++
++#ifdef CONFIG_IP_NF_NAT_NEEDED
++struct cta_nat {
++	unsigned int num_manips;
++        struct ip_nat_info_manip manips[IP_NAT_MAX_MANIPS];
++};
++#endif /* CONFIG_IP_NF_NAT_NEEDED */
++
++struct cta_proto {
++	unsigned char num_proto;	/* Protocol number IPPROTO_X */
++	union {
++                struct ip_ct_tcp tcp;
++                struct ip_ct_icmp icmp;
++        } proto;
++};
++
++struct cta_help {
++	struct ip_conntrack_tuple tuple;
++        struct ip_conntrack_tuple mask;
++
++	union {
++                struct ip_ct_ftp ct_ftp_info;
++        } help;
++};
++
++/* ctnetlink multicast groups: reports any change of ctinfo,
++ * ctstatus, or protocol state change.
++ */
++#define CTGRP_IPV4_CT_TCP	0x01
++#define CTGRP_IPV4_CT_UDP	0x02
++#define CTGRP_IPV4_CT_ICMP	0x04
++
++#define CTGRP_IPV6_CT_TCP       0x10
++#define CTGRP_IPV6_CT_UDP       0x20
++#define CTGRP_IPV6_CT_ICMP      0x40
++
++#ifdef __KERNEL__
++extern void __cta_fill(struct sk_buff *skb, int attrtype,
++        int attrlen, const void *data);
++#define CTA_PUT(skb, attrtype, attrlen, data) \
++({ if (skb_tailroom(skb) < (int)CTA_SPACE(attrlen)) goto ctattr_failure; \
++   __cta_fill(skb, attrtype, attrlen, data); })
++#endif	/* __KERNEL__ */
++#endif	/* _IP_CONNTRACK_NETLINK_H */
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_protocol.h linux/include/linux/netfilter_ipv4/ip_conntrack_protocol.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_protocol.h	Fri Apr 27 14:15:01 2001
++++ linux/include/linux/netfilter_ipv4/ip_conntrack_protocol.h	Fri Jun  1 06:47:50 2001
+@@ -35,7 +35,7 @@
+ 	/* Returns verdict for packet, or -1 for invalid. */
+ 	int (*packet)(struct ip_conntrack *conntrack,
+ 		      struct iphdr *iph, size_t len,
+-		      enum ip_conntrack_info ctinfo);
++		      enum ip_conntrack_info ctinfo, int *set_notify);
+ 
+ 	/* Called when a new connection for this protocol found;
+ 	 * returns TRUE if it's OK.  If so, packet() called next. */
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_tcp.h linux/include/linux/netfilter_ipv4/ip_conntrack_tcp.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_tcp.h	Fri Aug  4 13:07:24 2000
++++ linux/include/linux/netfilter_ipv4/ip_conntrack_tcp.h	Fri Jun  1 00:31:00 2001
+@@ -2,10 +2,6 @@
+ #define _IP_CONNTRACK_TCP_H
+ /* TCP tracking. */
+ 
+-#ifndef __KERNEL__
+-#error Only in kernel.
+-#endif
+-
+ enum tcp_conntrack {
+ 	TCP_CONNTRACK_NONE,
+ 	TCP_CONNTRACK_ESTABLISHED,
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_tuple.h linux/include/linux/netfilter_ipv4/ip_conntrack_tuple.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	Thu Aug 10 12:35:15 2000
++++ linux/include/linux/netfilter_ipv4/ip_conntrack_tuple.h	Fri Jun  1 00:31:00 2001
+@@ -62,8 +62,6 @@
+ 	} dst;
+ };
+ 
+-#ifdef __KERNEL__
+-
+ #define DUMP_TUPLE(tp)						\
+ DEBUGP("tuple %p: %u %u.%u.%u.%u:%hu -> %u.%u.%u.%u:%hu\n",	\
+        (tp), (tp)->dst.protonum,				\
+@@ -114,6 +112,8 @@
+ 		 || ((t->dst.protonum ^ tuple->dst.protonum)
+ 		     & mask->dst.protonum));
+ }
++
++#ifdef __KERNEL__
+ 
+ /* Connections have two entries in the hash table: one for each way */
+ struct ip_conntrack_tuple_hash
+diff -ruN linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_nat.h linux/include/linux/netfilter_ipv4/ip_nat.h
+--- linux-2.4.5-ac5/include/linux/netfilter_ipv4/ip_nat.h	Wed Apr 25 15:00:28 2001
++++ linux/include/linux/netfilter_ipv4/ip_nat.h	Fri Jun  1 06:47:50 2001
+@@ -55,22 +55,6 @@
+ 	struct ip_nat_range range[1];
+ };
+ 
+-#ifdef __KERNEL__
+-#include <linux/list.h>
+-#include <linux/netfilter_ipv4/lockhelp.h>
+-
+-/* Protects NAT hash tables, and NAT-private part of conntracks. */
+-DECLARE_RWLOCK_EXTERN(ip_nat_lock);
+-
+-/* Hashes for by-source and IP/protocol. */
+-struct ip_nat_hash
+-{
+-	struct list_head list;
+-
+-	/* conntrack we're embedded in: NULL if not in hash. */
+-	struct ip_conntrack *conntrack;
+-};
+-
+ /* Worst case: local-out manip + 1 post-routing, and reverse dirn. */
+ #define IP_NAT_MAX_MANIPS (2*3)
+ 
+@@ -88,6 +72,19 @@
+ 	/* Manipulations to occur at each conntrack in this dirn. */
+ 	struct ip_conntrack_manip manip;
+ };
++
++#ifdef __KERNEL__
++#include <linux/netfilter_ipv4/lockhelp.h>
++#include <linux/list.h>
++
++/* Hashes for by-source and IP/protocol. */
++struct ip_nat_hash
++{
++        struct list_head list;
++
++        /* conntrack we're embedded in: NULL if not in hash. */
++        struct ip_conntrack *conntrack;
++};
+ 	
+ /* The structure embedded in the conntrack structure. */
+ struct ip_nat_info
+@@ -110,6 +107,9 @@
+ 
+ 	struct ip_nat_seq seq[IP_CT_DIR_MAX];
+ };
++
++/* Protects NAT hash tables, and NAT-private part of conntracks. */
++DECLARE_RWLOCK_EXTERN(ip_nat_lock);
+ 
+ /* Set up the info structure to map into this range. */
+ extern unsigned int ip_nat_setup_info(struct ip_conntrack *conntrack,
+diff -ruN linux-2.4.5-ac5/include/linux/netlink.h linux/include/linux/netlink.h
+--- linux-2.4.5-ac5/include/linux/netlink.h	Sun Nov 12 20:37:17 2000
++++ linux/include/linux/netlink.h	Fri Jun  1 00:31:00 2001
+@@ -5,6 +5,7 @@
+ #define NETLINK_SKIP		1	/* Reserved for ENskip  			*/
+ #define NETLINK_USERSOCK	2	/* Reserved for user mode socket protocols 	*/
+ #define NETLINK_FIREWALL	3	/* Firewalling hook				*/
++#define NETLINK_CONNTRACK       5       /* Netfilter connection tracking */
+ #define NETLINK_ARPD		8
+ #define NETLINK_ROUTE6		11	/* af_inet6 route comm channel */
+ #define NETLINK_IP6_FW		13
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_core.c linux/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_core.c	Fri Apr 27 14:15:01 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_core.c	Fri Jun  1 00:31:00 2001
+@@ -45,10 +45,10 @@
+ 
+ DECLARE_RWLOCK(ip_conntrack_lock);
+ 
+-void (*ip_conntrack_destroyed)(struct ip_conntrack *conntrack) = NULL;
+ LIST_HEAD(expect_list);
+ LIST_HEAD(protocol_list);
+ static LIST_HEAD(helpers);
++static LIST_HEAD(notify_list);
+ unsigned int ip_conntrack_htable_size = 0;
+ static int ip_conntrack_max = 0;
+ static atomic_t ip_conntrack_count = ATOMIC_INIT(0);
+@@ -86,7 +86,7 @@
+ 	return p;
+ }
+ 
+-static inline void ip_conntrack_put(struct ip_conntrack *ct)
++inline void ip_conntrack_put(struct ip_conntrack *ct)
+ {
+ 	IP_NF_ASSERT(ct);
+ 	IP_NF_ASSERT(ct->infos[0].master);
+@@ -150,6 +150,55 @@
+ 	return protocol->invert_tuple(inverse, orig);
+ }
+ 
++static inline void
++ip_conntrack_destroyed(struct ip_conntrack *ct)
++{
++        struct list_head *i;
++
++        for (i = notify_list.next; i != &notify_list; i = i->next)
++                if (((struct ip_conntrack_notify *)i)->destroyed)
++                        ((struct ip_conntrack_notify *)i)->destroyed(ct);
++        return;
++}
++
++static inline void
++ip_conntrack_created(struct ip_conntrack *ct,
++        enum ip_conntrack_info info, const struct net_device *in, 
++	const struct net_device *out)
++{
++        struct list_head *i;
++
++        for (i = notify_list.next; i != &notify_list; i = i->next)
++                if (((struct ip_conntrack_notify *)i)->created)
++                        ((struct ip_conntrack_notify *)i)->created(ct, 
++				info, in, out);
++        return;
++}
++
++int
++ip_conntrack_notify_register(struct ip_conntrack_notify *nb)
++{
++        MOD_INC_USE_COUNT;
++
++        WRITE_LOCK(&ip_conntrack_lock);
++        list_prepend(&notify_list, nb);
++        WRITE_UNLOCK(&ip_conntrack_lock);
++
++        return 0;
++}
++
++int
++ip_conntrack_notify_unregister(struct ip_conntrack_notify *nb)
++{
++        WRITE_LOCK(&ip_conntrack_lock);
++        LIST_DELETE(&notify_list, nb);
++        WRITE_UNLOCK(&ip_conntrack_lock);
++
++        MOD_DEC_USE_COUNT;
++
++        return 0;
++}
++
+ static void
+ clean_from_lists(struct ip_conntrack *ct)
+ {
+@@ -182,8 +231,7 @@
+ 	if (ct->master.master)
+ 		nf_conntrack_put(&ct->master);
+ 
+-	if (ip_conntrack_destroyed)
+-		ip_conntrack_destroyed(ct);
++	ip_conntrack_destroyed(ct);
+ 	kmem_cache_free(ip_conntrack_cachep, ct);
+ 	atomic_dec(&ip_conntrack_count);
+ }
+@@ -570,7 +618,7 @@
+ static inline struct ip_conntrack *
+ resolve_normal_ct(struct sk_buff *skb,
+ 		  struct ip_conntrack_protocol *proto,
+-		  int *set_reply,
++		  int *set_reply, int *set_notify,
+ 		  unsigned int hooknum,
+ 		  enum ip_conntrack_info *ctinfo)
+ {
+@@ -611,6 +659,7 @@
+ 			DEBUGP("ip_conntrack_in: new packet for %p\n",
+ 			       h->ctrack);
+ 			*ctinfo = IP_CT_NEW;
++			*set_notify = 1;
+ 		}
+ 		*set_reply = 0;
+ 	}
+@@ -628,7 +677,7 @@
+ 	struct ip_conntrack *ct;
+ 	enum ip_conntrack_info ctinfo;
+ 	struct ip_conntrack_protocol *proto;
+-	int set_reply;
++	int set_reply, set_notify = 0;
+ 	int ret;
+ 
+@@ -668,7 +717,8 @@
+ 	    && icmp_error_track(*pskb, &ctinfo, hooknum))
+ 		return NF_ACCEPT;
+ 
+-	if (!(ct = resolve_normal_ct(*pskb, proto,&set_reply,hooknum,&ctinfo)))
++	if (!(ct = resolve_normal_ct(*pskb, proto, &set_reply, &set_notify,
++	    hooknum,&ctinfo)))
+ 		/* Not valid part of a connection */
+ 		return NF_ACCEPT;
+ 
+@@ -678,7 +728,8 @@
+ 
+ 	IP_NF_ASSERT((*pskb)->nfct);
+ 
+-	ret = proto->packet(ct, (*pskb)->nh.iph, (*pskb)->len, ctinfo);
++	ret = proto->packet(ct, (*pskb)->nh.iph, (*pskb)->len, ctinfo,
++	    &set_notify);
+ 	if (ret == -1) {
+ 		/* Invalid */
+ 		nf_conntrack_put((*pskb)->nfct);
+@@ -698,7 +749,8 @@
+ 	}
+ 	if (set_reply)
+ 		set_bit(IPS_SEEN_REPLY_BIT, &ct->status);
+-
++	if (set_notify)
++		ip_conntrack_created(ct, ctinfo, in, out);
+ 	return ret;
+ }
+ 
+@@ -1050,6 +1102,7 @@
+ #ifdef CONFIG_SYSCTL
+ 	unregister_sysctl_table(ip_conntrack_sysctl_header);
+ #endif
++
+ 	ip_ct_attach = NULL;
+ 	/* This makes sure all current packets have passed through
+            netfilter framework.  Roll on, two-stage module
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_netlink.c linux/net/ipv4/netfilter/ip_conntrack_netlink.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_netlink.c	Wed Dec 31 16:00:00 1969
++++ linux/net/ipv4/netfilter/ip_conntrack_netlink.c	Fri Jun  1 00:31:00 2001
+@@ -0,0 +1,523 @@
++/* Connection tracking via netlink socket. Allows for user space
++ * protocol helpers and general trouble making from userspace.
++ *
++ * Jay Schulist <jschlst@samba.org>, Copyright (c) 2001.
++ *
++ * Initial connection tracking via netlink development funded and 
++ * generally made possible by Network Robots, Inc. (www.networkrobots.com)
++ *
++ * This software may be used and distributed according to the terms
++ * of the GNU General Public License, incorporated herein by reference.
++ */
++
++#include <linux/config.h>
++#include <linux/module.h>
++#include <linux/types.h>
++#include <linux/socket.h>
++#include <linux/kernel.h>
++#include <linux/major.h>
++#include <linux/sched.h>
++#include <linux/timer.h>
++#include <linux/string.h>
++#include <linux/sockios.h>
++#include <linux/net.h>
++#include <linux/fcntl.h>
++#include <linux/skbuff.h>
++#include <asm/uaccess.h>
++#include <asm/system.h>
++#include <net/sock.h>
++#include <linux/init.h>
++#include <linux/netlink.h>
++#include <linux/spinlock.h>
++#include <linux/rtnetlink.h>
++
++#include <linux/netfilter_ipv4/ip_conntrack.h>
++#include <linux/netfilter_ipv4/ip_conntrack_protocol.h>
++#include <linux/netfilter_ipv4/ip_conntrack_helper.h>
++#include <linux/netfilter_ipv4/ip_conntrack_core.h>
++#include <linux/netfilter_ipv4/ip_conntrack_netlink.h>
++
++#define ASSERT_READ_LOCK(x) MUST_BE_READ_LOCKED(&ip_conntrack_lock)
++#define ASSERT_WRITE_LOCK(x) MUST_BE_WRITE_LOCKED(&ip_conntrack_lock)
++#include <linux/netfilter_ipv4/listhelp.h>
++
++char ctversion[] = "1.00";
++int ct_debug_level = 1;
++#define ct_debug(level, format, arg...) \
++	if(ct_debug_level > level)  \
++		printk(__FILE__ ": " format, ## arg)
++
++static struct sock *ctnl = NULL;
++
++void __cta_fill(struct sk_buff *skb, int attrtype, int attrlen, 
++	const void *data)
++{
++        struct ctattr *cta;
++        int size = CTA_LENGTH(attrlen);
++
++        cta = (struct ctattr *)skb_put(skb, CTA_ALIGN(size));
++        cta->cta_type = attrtype;
++        cta->cta_len  = size;
++        memcpy(CTA_DATA(cta), data, attrlen);
++}
++
++static int ctnetlink_fill_info(struct sk_buff *skb, u32 pid, u32 seq,
++	int event, int nowait, const struct ip_conntrack *ct, 
++	const enum ip_conntrack_info *ctinfo, unsigned char proto,
++	const struct net_device *in, const struct net_device *out)
++{
++	struct nlmsghdr *nlh;
++	struct ctmsg *msg;
++	unsigned long s;
++	unsigned char *b;
++
++	b = skb->tail;
++	nlh = NLMSG_PUT(skb, pid, seq, event, sizeof(struct ctmsg));
++        msg = NLMSG_DATA(nlh);
++        nlh->nlmsg_flags 	= (nowait && pid) ? NLM_F_MULTI : 0;
++        msg->ctm_family		= AF_INET;
++	msg->ctm_orig_len	= sizeof(struct ip_conntrack_tuple);
++	msg->ctm_rply_len	= sizeof(struct ip_conntrack_tuple);
++	CTA_PUT(skb, CTA_ORIG, sizeof(struct ip_conntrack_tuple), 
++		&ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple);
++	CTA_PUT(skb, CTA_RPLY, sizeof(struct ip_conntrack_tuple),
++		&ct->tuplehash[IP_CT_DIR_REPLY].tuple);
++	s = ct->status;
++	CTA_PUT(skb, CTA_STATUS, sizeof(unsigned long), &s);
++	if(in)
++		CTA_PUT(skb, CTA_IIF, IFNAMSIZ, in->name);
++        if(out)
++		CTA_PUT(skb, CTA_OIF, IFNAMSIZ, out->name);
++	if(ctinfo)
++		CTA_PUT(skb, CTA_INFO, sizeof(unsigned long), ctinfo);
++#ifdef CONFIG_IP_NF_NAT_NEEDED
++	if(ct->nat.info.initialized && ct->nat.info.num_manips)
++        {
++                const struct ip_nat_info *nat = &ct->nat.info;
++		struct cta_nat cn;
++
++		cn.num_manips = nat->num_manips;
++		memcpy(&cn.manips, &nat->manips, (nat->num_manips 
++			* sizeof(struct ip_nat_info_manip)));
++		CTA_PUT(skb, CTA_NATINFO, sizeof(struct cta_nat), &cn);
++        }
++#endif /* CONFIG_IP_NF_NAT_NEEDED */
++	if(ct->helper)
++	{
++		struct cta_help ch;
++
++		memcpy(&ch.tuple, &ct->helper->tuple, 
++			sizeof(struct ip_conntrack_tuple));
++		memcpy(&ch.mask, &ct->helper->mask,
++			sizeof(struct ip_conntrack_tuple));
++		memcpy(&ch.help.ct_ftp_info, &ct->help.ct_ftp_info, 
++			sizeof(struct ip_ct_ftp));
++		CTA_PUT(skb, CTA_HELPINFO, sizeof(struct cta_help), &ch);
++	}
++	if(proto == IPPROTO_TCP || proto == IPPROTO_UDP
++		 || proto == IPPROTO_ICMP)
++	{
++		struct cta_proto cp;
++
++	        cp.num_proto = proto;
++		if(proto == IPPROTO_TCP)
++			memcpy(&cp.proto.tcp, &ct->proto.tcp, 
++				sizeof(struct ip_ct_tcp));
++		if(proto == IPPROTO_ICMP)
++			memcpy(&cp.proto.icmp, &ct->proto.icmp,
++				sizeof(struct ip_ct_icmp));
++	        CTA_PUT(skb, CTA_PROTOINFO, sizeof(struct cta_proto), &cp);
++	}
++
++        nlh->nlmsg_len = skb->tail - b;
++        return (skb->len);
++
++nlmsg_failure:
++ctattr_failure:
++        skb_trim(skb, b - skb->data);
++        return (-1);
++}
++
++static inline void ctnetlink_send(struct sk_buff *skb, u32 pid, unsigned group)
++{
++	NETLINK_CB(skb).dst_groups = group;
++        netlink_broadcast(ctnl, skb, pid, group, GFP_ATOMIC);
++	return;
++}
++
++inline struct sk_buff *ctnetlink_event_build_msg(const struct ip_conntrack *ct, 
++	const enum ip_conntrack_info ctinfo, const unsigned char proto,
++	const struct net_device *in, const struct net_device *out)
++{
++	struct sk_buff *skb;
++	int err;
++
++        skb = alloc_skb(NLMSG_GOODSIZE, GFP_ATOMIC);
++        if(!skb)
++                return (NULL);
++
++	err = ctnetlink_fill_info(skb, 0, 0, CTM_NEWCONNTRACK, 1,
++		ct, &ctinfo, proto, in, out);
++	if(err <= 0)
++		goto nlmsg_failure;
++        return (skb);
++
++nlmsg_failure:
++        if(skb)
++                kfree_skb(skb);
++        return (NULL);
++}
++
++void ctnetlink_create(struct ip_conntrack *ct, enum ip_conntrack_info ctinfo,
++	const struct net_device *in, const struct net_device *out)
++{
++	u16 proto = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum;
++	struct sk_buff *skb;
++
++        skb = ctnetlink_event_build_msg(ct, ctinfo, proto, in, out);
++        if(!skb)
++                return;
++
++       	if (proto == IPPROTO_TCP) {
++		ctnetlink_send(skb, 0, CTGRP_IPV4_CT_TCP);
++               	return;
++       	}
++       	if (proto == IPPROTO_UDP) {
++		ctnetlink_send(skb, 0, CTGRP_IPV4_CT_UDP);
++               	return;
++       	}
++       	if (proto == IPPROTO_ICMP) {
++		ctnetlink_send(skb, 0, CTGRP_IPV4_CT_ICMP);
++               	return;
++       	}
++
++	kfree_skb(skb);
++	return;
++}
++
++void ctnetlink_destroy(struct ip_conntrack *ct)
++{
++        ctnetlink_create(ct, IP_CT_DELETE, NULL, NULL);
++}
++
++inline int ctnetlink_kill(const struct ip_conntrack *i, void *data)
++{
++	struct ip_conntrack *t = (struct ip_conntrack *)data;
++
++	if(!memcmp(&i->tuplehash[IP_CT_DIR_ORIGINAL], 
++		&t->tuplehash[IP_CT_DIR_ORIGINAL], 
++		sizeof(struct ip_conntrack_tuple_hash)))
++	{
++		ip_conntrack_put(t);
++		return (1);
++	}
++
++	return (0);
++}
++
++int ctnetlink_delete_conntrack(struct sk_buff *skb, struct nlmsghdr *nlh, 
++	void *arg)
++{
++        struct ip_conntrack_tuple_hash *h;
++	struct ip_conntrack_tuple *tuple;
++	struct ctattr **cda = arg;
++
++	if(cda[CTA_ORIG-1])
++		tuple = CTA_DATA(cda[CTA_ORIG-1]);
++	else
++	{
++		if(cda[CTA_RPLY-1])
++			tuple = CTA_DATA(cda[CTA_RPLY-1]);
++		else
++			return (-EINVAL);
++	}
++
++	h = ip_conntrack_find_get(tuple, NULL);
++        if(!h)
++		return (-ENOENT);
++	ip_ct_selective_cleanup(ctnetlink_kill, h->ctrack);
++
++	return (0);
++}
++
++int ctnetlink_get_conntrack(struct sk_buff *skb, struct nlmsghdr *nlh,
++        void *arg)
++{
++        struct ip_conntrack_tuple_hash *h;
++        struct ip_conntrack_tuple *tuple;
++	struct ctattr **cda = arg;
++	struct ip_conntrack *ct;
++	struct sk_buff *skb2 = NULL;
++        int err, proto;
++
++        if(cda[CTA_ORIG-1])
++                tuple = CTA_DATA(cda[CTA_ORIG-1]);
++        else
++        {
++                if(cda[CTA_RPLY-1])
++                        tuple = CTA_DATA(cda[CTA_RPLY-1]);
++                else
++                        return (-EINVAL);
++        }
++
++	h = ip_conntrack_find_get(tuple, NULL);
++        if(!h)
++                return (-ENOENT);
++
++        ct = h->ctrack;
++        if(!ct)
++                goto nlmsg_failure;
++
++        skb2 = alloc_skb(NLMSG_GOODSIZE, GFP_ATOMIC);
++        if(!skb2)
++                return (-ENOMEM);
++	NETLINK_CB(skb2).dst_pid = NETLINK_CB(skb).pid;
++
++        proto = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum;
++        err = ctnetlink_fill_info(skb2, NETLINK_CB(skb).pid, nlh->nlmsg_seq, 
++		CTM_NEWCONNTRACK, 1, ct, NULL, proto, NULL, NULL);
++        if(err <= 0)
++                goto nlmsg_failure;
++
++	err = netlink_unicast(ctnl, skb2, NETLINK_CB(skb).pid, MSG_DONTWAIT);
++        if(err < 0)
++                return (err);
++        return (0);
++
++nlmsg_failure:
++        if(skb2)
++                kfree_skb(skb2);
++        return (-1);
++}
++
++/* Finish me: should support NLM_F_CREATE and NLM_F_REPLACE. */
++int ctnetlink_new_conntrack(struct sk_buff *skb, struct nlmsghdr *nlh,
++        void *arg)
++{
++	return (-EOPNOTSUPP);
++}
++
++int ctnetlink_done(struct netlink_callback *cb)
++{
++        return (0);
++}
++
++int ctnetlink_dump_build_msg(const struct ip_conntrack_tuple_hash *hash,
++	struct sk_buff *skb, u32 pid, u32 seq)
++{
++	struct ip_conntrack *ct;
++	int err, proto;
++
++	/* Only count originals */
++        if (DIRECTION(hash))
++                return (0);
++
++	ct = hash->ctrack;
++	if(!ct)
++		goto nlmsg_failure;
++
++	proto = ct->tuplehash[IP_CT_DIR_ORIGINAL].tuple.dst.protonum;
++        err = ctnetlink_fill_info(skb, pid, seq, CTM_NEWCONNTRACK, 1,
++                ct, NULL, proto, NULL, NULL);
++        if(err <= 0)
++                goto nlmsg_failure;
++        return (0);
++
++nlmsg_failure:
++        if(skb)
++                kfree_skb(skb);
++        return (-1);
++}
++
++int ctnetlink_dump_table(struct sk_buff *skb, struct netlink_callback *cb)
++{
++	int i;
++	int idx;
++        int s_idx = cb->args[0];
++
++	/* Traverse hash; send originals then reply. */
++	READ_LOCK(&ip_conntrack_lock);	
++        for(i = 0, idx = 0; i < ip_conntrack_htable_size; i++, idx++)
++	{
++		if(idx < s_idx)
++                        continue;
++                if(LIST_FIND(&ip_conntrack_hash[i], ctnetlink_dump_build_msg,
++                	struct ip_conntrack_tuple_hash *, skb, 
++			NETLINK_CB(cb->skb).pid, cb->nlh->nlmsg_seq))
++			continue;
++        }
++        READ_UNLOCK(&ip_conntrack_lock);
++
++	cb->args[0] = idx;
++	return (skb->len);
++}
++
++/* Process one complete ctlink message. */
++static inline int ctnetlink_rcv_msg(struct sk_buff *skb, 
++	struct nlmsghdr *nlh, int *errp)
++{
++	struct ctattr *cta[CTA_MAX];
++	int type, min_len, err = 0;
++
++	/* Only requests are handled by kernel now. */
++        if(!(nlh->nlmsg_flags & NLM_F_REQUEST))
++                return (0);
++
++	/* Unknown message: reply with EINVAL */
++	type = nlh->nlmsg_type;
++        if(type > CTM_MAX)
++                goto err_inval;
++
++	/* All the messages must have at least 1 byte length */
++        if(nlh->nlmsg_len < NLMSG_LENGTH(sizeof(struct ctgenmsg)))
++                return (0);
++
++	if(type == CTM_GETCONNTRACK && nlh->nlmsg_flags & NLM_F_DUMP)
++	{
++		struct ctgenmsg *msg = NLMSG_DATA(nlh);
++		u32 rlen;
++
++		if(msg->ctgen_family != AF_INET)
++			return (-EAFNOSUPPORT);
++
++		if((*errp = netlink_dump_start(ctnl, skb, nlh,
++                	ctnetlink_dump_table, ctnetlink_done)) != 0)
++			goto err_inval;
++                rlen = NLMSG_ALIGN(nlh->nlmsg_len);
++                if(rlen > skb->len)
++                        rlen = skb->len;
++                skb_pull(skb, rlen);
++		goto done;
++	}
++
++	/* check attribute lengths. */
++	min_len = sizeof(struct ctmsg);
++        if(nlh->nlmsg_len < min_len)
++                goto err_inval;
++
++        if(nlh->nlmsg_len > min_len)
++	{
++		struct ctattr *attr = CTM_CTA(NLMSG_DATA(nlh));
++		int attrlen = nlh->nlmsg_len - NLMSG_ALIGN(min_len);
++
++                while(CTA_OK(attr, attrlen)) 
++		{
++                        unsigned flavor = attr->cta_type;
++                        if(flavor)
++			{
++                                if(flavor > RTA_MAX)
++                                        goto err_inval;
++                                cta[flavor - 1] = attr;
++                        }
++                        attr = CTA_NEXT(attr, attrlen);
++                }
++        }
++
++	switch(type) {
++		case (CTM_DELCONNTRACK):
++			err = ctnetlink_delete_conntrack(skb,nlh,(void *)&cta);
++			break;
++
++		case (CTM_GETCONNTRACK):
++			err = ctnetlink_get_conntrack(skb,nlh,(void *)&cta);
++			break;
++
++		case (CTM_NEWCONNTRACK):
++			ctnetlink_new_conntrack(skb, nlh, (void *)&cta);
++			break;
++
++		default:
++                        goto err_inval;
++	}
++
++done:
++	*errp = err;
++        return (err);
++
++err_inval:
++        *errp = -EINVAL;
++        return (-1);
++}
++
++/* Process one packet of messages. */
++static inline int ctnetlink_rcv_skb(struct sk_buff *skb)
++{
++	int err;
++        struct nlmsghdr *nlh;
++
++        while(skb->len >= NLMSG_SPACE(0))
++	{
++                u32 rlen;
++
++                nlh = (struct nlmsghdr *)skb->data;
++                if(nlh->nlmsg_len < sizeof(struct nlmsghdr) 
++			|| skb->len < nlh->nlmsg_len)
++                        return (0);
++		rlen = NLMSG_ALIGN(nlh->nlmsg_len);
++                if(rlen > skb->len)
++                        rlen = skb->len;
++		if(ctnetlink_rcv_msg(skb, nlh, &err))
++		{
++			if(err == 0)
++				return (-1);
++			netlink_ack(skb, nlh, err);
++		}
++		else
++			if(nlh->nlmsg_flags & NLM_F_ACK)
++				netlink_ack(skb, nlh, 0);
++		skb_pull(skb, rlen);
++	}
++
++	return (0);
++}
++
++static void ctnetlink_rcv(struct sock *sk, int len)
++{
++	do {
++        	struct sk_buff *skb;
++
++		if(rtnl_shlock_nowait())
++                        return;
++
++	        while((skb = skb_dequeue(&sk->receive_queue)) != NULL)
++		{
++	        	if(ctnetlink_rcv_skb(skb))
++			{
++	                	if(skb->len)
++	                        	skb_queue_head(&sk->receive_queue, skb);                                else
++	                                kfree_skb(skb);
++	                        break;
++	                }
++	                kfree_skb(skb);
++		}
++
++		up(&rtnl_sem);
++        } while (ctnl && ctnl->receive_queue.qlen);
++}
++
++static struct ip_conntrack_notify ctnl_notify = { { NULL, NULL },
++						ctnetlink_destroy,
++						ctnetlink_create };
++
++void __exit ctnetlink_exit(void)
++{
++	printk("CTnetlink: removing netlink socket.\n");
++	ip_conntrack_notify_unregister(&ctnl_notify);
++	sock_release(ctnl->socket);
++	return;
++}
++
++int __init ctnetlink_init(void)
++{
++	printk("CTnetlink: initializing netlink socket v%s.\n", ctversion);
++	ctnl = netlink_kernel_create(NETLINK_CONNTRACK, ctnetlink_rcv);
++        if(!ctnl)
++                panic("ctnetlink_init: cannot initialize ctnetlink.\n");
++	if(ip_conntrack_notify_register(&ctnl_notify) < 0)
++		panic("ctnetlink_init: cannot register notifier.\n");
++
++	return (0);
++}
++
++module_init(ctnetlink_init);
++module_exit(ctnetlink_exit);
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_generic.c linux/net/ipv4/netfilter/ip_conntrack_proto_generic.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_generic.c	Fri Apr 27 14:15:01 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_proto_generic.c	Fri Jun  1 00:31:00 2001
+@@ -41,7 +41,7 @@
+ /* Returns verdict for packet, or -1 for invalid. */
+ static int established(struct ip_conntrack *conntrack,
+ 		       struct iphdr *iph, size_t len,
+-		       enum ip_conntrack_info conntrackinfo)
++		       enum ip_conntrack_info conntrackinfo, int *set_notify)
+ {
+ 	ip_ct_refresh(conntrack, GENERIC_TIMEOUT);
+ 	return NF_ACCEPT;
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_icmp.c linux/net/ipv4/netfilter/ip_conntrack_proto_icmp.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_icmp.c	Fri Apr 27 14:15:01 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_proto_icmp.c	Fri Jun  1 00:31:00 2001
+@@ -70,7 +70,7 @@
+ /* Returns verdict for packet, or -1 for invalid. */
+ static int icmp_packet(struct ip_conntrack *ct,
+ 		       struct iphdr *iph, size_t len,
+-		       enum ip_conntrack_info ctinfo)
++		       enum ip_conntrack_info ctinfo, int *set_notify)
+ {
+ 	/* Try to delete connection immediately after all replies:
+            won't actually vanish as we still have skb, and del_timer
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_tcp.c linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	Fri Apr 27 14:15:01 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_proto_tcp.c	Fri Jun  1 00:31:00 2001
+@@ -146,7 +146,7 @@
+ /* Returns verdict for packet, or -1 for invalid. */
+ static int tcp_packet(struct ip_conntrack *conntrack,
+ 		      struct iphdr *iph, size_t len,
+-		      enum ip_conntrack_info ctinfo)
++		      enum ip_conntrack_info ctinfo, int *set_notify)
+ {
+ 	enum tcp_conntrack newconntrack, oldtcpstate;
+ 	struct tcphdr *tcph = (struct tcphdr *)((u_int32_t *)iph + iph->ihl);
+@@ -174,6 +174,9 @@
+ 		return -1;
+ 	}
+ 
++	if (oldtcpstate != newconntrack)
++		*set_notify = 1;
++
+ 	conntrack->proto.tcp.state = newconntrack;
+ 
+ 	/* Poor man's window tracking: record SYN/ACK for handshake check */
+@@ -196,8 +199,10 @@
+ 		if (oldtcpstate == TCP_CONNTRACK_SYN_RECV
+ 		    && CTINFO2DIR(ctinfo) == IP_CT_DIR_ORIGINAL
+ 		    && tcph->ack && !tcph->syn
+-		    && tcph->ack_seq == conntrack->proto.tcp.handshake_ack)
++		    && tcph->ack_seq == conntrack->proto.tcp.handshake_ack) {
+ 			set_bit(IPS_ASSURED_BIT, &conntrack->status);
++			*set_notify = 1;
++		}
+ 
+ 		ip_ct_refresh(conntrack, tcp_timeouts[newconntrack]);
+ 	}
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_udp.c linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_proto_udp.c	Fri Apr 27 14:15:01 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_proto_udp.c	Fri Jun  1 00:31:00 2001
+@@ -47,14 +47,17 @@
+ /* Returns verdict for packet, and may modify conntracktype */
+ static int udp_packet(struct ip_conntrack *conntrack,
+ 		      struct iphdr *iph, size_t len,
+-		      enum ip_conntrack_info conntrackinfo)
++		      enum ip_conntrack_info conntrackinfo, int *set_notify)
+ {
+ 	/* If we've seen traffic both ways, this is some kind of UDP
+ 	   stream.  Extend timeout. */
+ 	if (conntrack->status & IPS_SEEN_REPLY) {
++		unsigned long oldstatus = conntrack->status;
+ 		ip_ct_refresh(conntrack, UDP_STREAM_TIMEOUT);
+ 		/* Also, more likely to be important, and not a probe */
+ 		set_bit(IPS_ASSURED_BIT, &conntrack->status);
++		if(oldstatus != conntrack->status)
++			*set_notify = 1;
+ 	} else
+ 		ip_ct_refresh(conntrack, UDP_TIMEOUT);
+ 
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_standalone.c linux/net/ipv4/netfilter/ip_conntrack_standalone.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_conntrack_standalone.c	Fri Apr 27 14:15:01 2001
++++ linux/net/ipv4/netfilter/ip_conntrack_standalone.c	Fri Jun  1 00:31:00 2001
+@@ -320,14 +320,19 @@
+ EXPORT_SYMBOL(ip_conntrack_protocol_register);
+ EXPORT_SYMBOL(invert_tuplepr);
+ EXPORT_SYMBOL(ip_conntrack_alter_reply);
+-EXPORT_SYMBOL(ip_conntrack_destroyed);
+ EXPORT_SYMBOL(ip_conntrack_get);
+ EXPORT_SYMBOL(ip_conntrack_module);
+ EXPORT_SYMBOL(ip_conntrack_helper_register);
+ EXPORT_SYMBOL(ip_conntrack_helper_unregister);
++EXPORT_SYMBOL(ip_conntrack_notify_register);
++EXPORT_SYMBOL(ip_conntrack_notify_unregister);
+ EXPORT_SYMBOL(ip_ct_selective_cleanup);
+ EXPORT_SYMBOL(ip_ct_refresh);
+ EXPORT_SYMBOL(ip_conntrack_expect_related);
+ EXPORT_SYMBOL(ip_conntrack_tuple_taken);
+ EXPORT_SYMBOL(ip_ct_gather_frags);
+ EXPORT_SYMBOL(ip_conntrack_htable_size);
++EXPORT_SYMBOL(ip_conntrack_hash);
++EXPORT_SYMBOL(ip_conntrack_lock);
++EXPORT_SYMBOL(ip_conntrack_put);
++EXPORT_SYMBOL(ip_conntrack_find_get);
+diff -ruN linux-2.4.5-ac5/net/ipv4/netfilter/ip_nat_core.c linux/net/ipv4/netfilter/ip_nat_core.c
+--- linux-2.4.5-ac5/net/ipv4/netfilter/ip_nat_core.c	Wed May 16 10:31:27 2001
++++ linux/net/ipv4/netfilter/ip_nat_core.c	Fri Jun  1 00:31:00 2001
+@@ -856,6 +856,10 @@
+ 	return NF_ACCEPT;
+ }
+ 
++static struct ip_conntrack_notify nat_notify = { { NULL, NULL },
++						ip_nat_cleanup_conntrack,
++						NULL };
++
+ int __init ip_nat_init(void)
+ {
+ 	size_t i;
+@@ -882,9 +886,8 @@
+ 		INIT_LIST_HEAD(&byipsproto[i]);
+ 	}
+ 
+-	
+-	IP_NF_ASSERT(ip_conntrack_destroyed == NULL);
+-	ip_conntrack_destroyed = &ip_nat_cleanup_conntrack;
++	if (ip_conntrack_notify_register(&nat_notify) < 0)
++		panic("ip_nat_init: cannot register notifier.\n");
+ 
+ 	return 0;
+ }
+@@ -900,5 +903,5 @@
+ void ip_nat_cleanup(void)
+ {
+ 	ip_ct_selective_cleanup(&clean_nat, NULL);
+-	ip_conntrack_destroyed = NULL;
++	ip_conntrack_notify_unregister(&nat_notify);
+ }
+diff -ruN linux-2.4.5-ac5/net/netlink/netlink_dev.c linux/net/netlink/netlink_dev.c
+--- linux-2.4.5-ac5/net/netlink/netlink_dev.c	Fri Feb  9 11:29:44 2001
++++ linux/net/netlink/netlink_dev.c	Fri Jun  1 00:31:00 2001
+@@ -200,6 +200,7 @@
+ 	make_devfs_entries ("skip", 1);
+ 	make_devfs_entries ("USERSOCK", 2);
+ 	make_devfs_entries ("fwmonitor", 3);
++	make_devfs_entries ("conntrack", 5);
+ 	make_devfs_entries ("ARPD", 8);
+ 	make_devfs_entries ("ROUTE6", 11);
+ 	make_devfs_entries ("IP6_FW", 13);

@@ -1,0 +1,6 @@
+Author: Patrick McHardy
+Status: Working
+
+This patch creates two new files in /proc/net, "ip_tables_matches" and 
+"iptables_targets" which contain the names of all loaded matches/targets
+like the file ip_tables_names already does with loaded tables.

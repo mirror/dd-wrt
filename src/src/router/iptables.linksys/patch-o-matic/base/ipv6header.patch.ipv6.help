@@ -1,0 +1,30 @@
+Author: Brad Chapman (kakadu_croc@yahoo.com)
+        Andras Kis-Szabo <kisza@sch.bme.hu>
+Status: Under development, please test it!
+
+This match allows you to match the specialty headers of an IPv6
+packet. The list can be found from the help message of the match
+module.
+
+The usage of the module is as follows (e.g.):
+
+ip6tables -t filter -A INPUT -m ipv6header --header frag -j ACCEPT
+ip6tables -t filter -A INPUT -m ipv6header --header 44 -j ACCEPT
+ip6tables -t filter -A INPUT -m ipv6header --header route --soft -j ACCEPT
+
+syntax:
+--header [!] headers
+--soft
+
+Supported formats:
+	hop,dst,route,frag,auth,esp,none,prot
+	hop-by-hop,ipv6-opts,ipv6-route,ipv6-frag,ah,esp,ipv6-nonxt,protocol
+	0,60,43,44,51,50,59
+proto means that the packet has got a protocol payload.
+
+The soft mode means that the packet contains the header.
+
+Warning: there is a problem with the fragmented packets!
+ If there is an extension-header after the fragmentation header, we can match 
+ them only in the first fragment!
+

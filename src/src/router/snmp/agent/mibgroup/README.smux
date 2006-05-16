@@ -1,0 +1,44 @@
+[1] What is SMUX?
+SMUX is the snmp multiplexing protocol (RFC 1227). It can be
+used by an snmp agent to query variables maintained by another
+user-level process (e.g. GateD).
+
+[2] Why is it relevant to ucd-snmp?
+The ucd-snmp agent needed a mechanism to query statistics from
+GateD.  GateD has traditionally supported this functionality via
+SMUX.  Hence SMUX was implemented within the ucd-snmp framework
+to extract routing protocol statistics from GateD.  The agent
+can also communicate with other applications via SMUX.
+
+[3] What is GateD?
+GateD is the 'Gateway Daemon' which implements a variety of routing
+protocols on a variety of platforms (OSes).  There is a public
+version that is available free of charge.  For more information
+see http://www.gated.org.
+
+[4] What routing protocol MIBs does ucd-snmp SMUX support?
+GateD supports up-to-date MIBS for all of the routing
+protocols that it implements (RIP, BGP4, OSPF, etc.).  The
+agent will pass down queries it receives for any other MIB
+registered by a SMUX peer.
+
+[5] Can SMUX extract statistics from other user-level processes?
+Yes, the current implementation allows for the registration of
+any MIB that might be registered by a SMUX peer.
+
+[6] How does it work?
+Assuming 'snmpd' is already up and running, when the SMUX
+peer (e.g. GateD) comes up, it identifies itself with an
+oid identifier and string password, and registers any MIBs
+it would like to implement.  When 'snmpd' receives queries
+for these MIBs, it passes these queries to the peer.
+
+[7] Who implemented SMUX for ucd-snmp?
+SMUX was implemented by Rohit Dube. He had oodles of help from
+ucd-snmp-coders (Dave, Niels, Wes, Simon, Felix, Leonti) and 
+gated-people (Acee, Feiyi, Larry, Sue). [If I missed somebody, sorry in 
+advance and do let me know].  Later, Nick Amato re-write the entire
+SMUX package so the code today is mostly his.
+
+[8] How do I find out more about SMUX?
+Read the RFC, the code and get in touch with ucd-snmp-coders@ece.ucdavis.edu
