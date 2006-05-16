@@ -3,13 +3,16 @@ cat<<EOF
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
 <html>
 	<head>
-		<title>Status of $(nvram get lan_ipaddr)</title>
+		<title><% nvram_get("router_name"); %> - Phonebook</title>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1"/>
 		<link type="text/css" rel="stylesheet" href="style/$(nvram get router_style)/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/$(nvram get router_style)/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="lang_pack/english.js"></script>
-		<script type="text/javascript" src="lang_pack/language.js"></script>		
-<script type="text/javascript"><!--
+		<script type="text/javascript" src="lang_pack/language.js"></script>
+		<script type="text/javascript"><!--
+		
+document.title = "<% nvram_get("router_name"); %>" + sipath.status_titl;
+
 function navarr(){}
 navset=new navarr();
 navres=new navarr();
@@ -63,24 +66,25 @@ function ini() {
                   <h1><% show_control(); %></h1>
                </div>
                <div id="menu">
-                  <div id="menuMain">
-                     <ul id="menuMainList">
-                        <li><a href="index.asp">Setup</a></li>
-                        <li><a href="Wireless_Basic.asp">Wireless</a></li>
-                        <li class="current"><span>SIPatH</span><div id="menuSub">
-                              <ul id="menuSubList">
-                                 <li><a href="Sipath.asp">Overview</a></li>
-                                 <li><a href="cgi-bin-mf-phonebook.html">Phonebook</a></li>
-                                 <li><span>Status</span></li>
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
+								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.sipath)</script></span>
+									<div id="menuSub">
+										<ul id="menuSubList">
+                                 <li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipathoverview)</script></a></li>
+                                 <li><a href="cgi-bin-mf-phonebook.html"><script type="text/javascript">Capture(bmenu.sipathphone)</script></a></li>
+                                 <li><span><script type="text/javascript">Capture(bmenu.sipathstatus)</script></span></li>
                               </ul>
-                         </div>
-                         </li>
-                        <li><a href="Firewall.asp">Security</a></li>
-			<li><a href="Filters.asp">Access Restrictions</a></li>
-                        <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                        <li><a href="Management.asp">Administration</a></li>
-                        <li><a href="Status_Router.asp">Status</a></li>
-                     </ul>
+									</div>
+								</li>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+							</ul>
                   </div>
                </div>
             </div>

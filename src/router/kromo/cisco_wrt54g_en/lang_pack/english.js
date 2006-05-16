@@ -1121,14 +1121,8 @@ service.ssh_key="Authorized Keys";
 
 var sipath = new Object();
 sipath.titl=" - SiPath Overview";
-sipath.h2="SIPath";
 sipath.phone_titl=" - Phonebook";
-sipath.phone_booksave="Phonebook: Save Database";
-sipath.phone_bookflush="Phonebook: Flush Database";
-sipath.phone_bookdetail="Phonebook: Details";
-sipath.phone_userlist="SER Userlist:";
-
-
+sipath.status_titl=" - Status";
 
 
 
