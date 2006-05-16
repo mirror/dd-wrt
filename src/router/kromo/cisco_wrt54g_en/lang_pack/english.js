@@ -123,6 +123,7 @@ share.mode="Mode";
 share.encrypt="Encryption";
 share.key="Key";
 share.wireless="Wireless";
+share.dhcp="DHCP";
 
 
 var sbutton = new Object();
