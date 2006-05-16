@@ -86,7 +86,7 @@ function init() {
 											<li><a href="DDNS.asp"><script type="text/javascript">Capture(bmenu.setupddns)</script></a></li>
 											<li><a href="WanMAC.asp"><script type="text/javascript">Capture(bmenu.setupmacclone)</script></a></li>
 	  										<li><a href="Routing.asp"><script type="text/javascript">Capture(bmenu.setuprouting)</script></a></li>
-	  										<li><a href="Vlan.asp"><script type="text/javascript">Capture(bmenu.setupvlan)</script></a></li>
+	  										<li><span><script type="text/javascript">Capture(bmenu.setupvlan)</script></span></li>
   										</ul>
   									</div>
   								</li>
