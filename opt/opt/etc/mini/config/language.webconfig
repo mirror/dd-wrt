@@ -1,0 +1,23 @@
+<!-- Internationalisation will be available in V24 maybe V23 for some languages
+<fieldset>
+  <legend><script type="text/javascript">Capture(management.lang_legend)</script></legend>
+  <div class="setting">
+      <div class="label"><script type="text/javascript">Capture(management.lang_srv)</script></div>
+      <select name="language">
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_bulgarian + "\" <% nvram_selected("language","bulgarian"); %> >" + management.lang_bulgarian + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_tradchinese + "\" <% nvram_selected("language","tradchinese"); %> >" + management.lang_tradchinese + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_croatian + "\" <% nvram_selected("language","croatian"); %> >" + management.lang_croatian + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_czech + "\" <% nvram_selected("language","czech"); %> >" + management.lang_czech + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_dutch + "\" <% nvram_selected("language","dutch"); %> >" + management.lang_dutch + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_english + "\" <% nvram_selected("language","english"); %> >" + management.lang_english + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_french + "\" <% nvram_selected("language","french"); %> >" + management.lang_french + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_german + "\" <% nvram_selected("language","german"); %> >" + management.lang_german + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_italian + "\" <% nvram_selected("language","italian"); %> >" + management.lang_italian + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_brazilian + "\" <% nvram_selected("language","brazilian"); %> >" + management.lang_brazilian + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_slovenian + "\" <% nvram_selected("language","slovenian"); %> >" + management.lang_slovenian + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_spanish + "\" <% nvram_selected("language","spanish"); %> >" + management.lang_spanish + "</option>");</script>
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_swedish + "\" <% nvram_selected("language","swedish"); %> >" + management.lang_swedish + "</option>");</script>
+    </select>
+  </div>
+</fieldset><br/>
+-->

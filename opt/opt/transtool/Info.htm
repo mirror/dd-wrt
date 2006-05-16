@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE html
+  PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html>
+   <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+   
+      <meta http-equiv="Content-Type" content="application/xhtml+xml; charset=UTF-8" />
+      <title><% nvram_get("router_name"); %> - Info</title>
+      <link type="text/css" rel="stylesheet" href="style.css" /><script type="text/JavaScript" src="common.js">{}</script><script language="JavaScript">
+function replace_list(list,target,replacement) {
+	var result = list.search(target);
+	while(result != -1) {
+		list = list.replace(target,replacement);
+		result = list.search(target);
+	}
+
+	return list;
+}
+		</script></head>
+   <body class="gui">
+      <div id="wrapper">
+         <div id="content">
+            <div id="header">
+               <div id="logo">
+                  <h1>DD-WRT Control Panel</h1>
+               </div>
+               <div id="menu">
+                  <div id="menuMain">
+                     <ul id="menuMainList">
+                        <li><a href="index.asp">Configuración</a></li>
+                        <li><a href="Wireless_Basic.asp">Inalámbrico</a></li>
+			<% nvram_invmatch("sipgate","1","<!--"); %>
+			<li><a href="Sipath.asp">Sipath</a></li>
+                        <% nvram_invmatch("sipgate","1","-->"); %>
+                        <li><a href="Firewall.asp">Seguridad</a></li>
+                        <li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Restricción de Acceso</a></li>
+                        <li><a href="Forward.asp">Aplicaciones&nbsp;&amp;&nbsp;Gaming</a></li>
+                        <li><a href="Management.asp">Administración</a></li>
+                        <li><a href="Status_Router.asp">Estado</a></li>
+                     </ul>
+                  </div>
+               </div>
+            </div>
+            <div id="main">
+               <div id="contents">
+                  <h2>Información de Sistema</h2>
+                  <fieldset>
+                     <legend>Información del WRT</legend>
+                     <div class="setting">
+                        <div class="label">Router Name</div><% nvram_get("router_name"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">LAN MAC</div><% nvram_get("lan_hwaddr"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">WAN MAC</div><% nvram_get("wan_hwaddr"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Wireless MAC</div><% nvram_get("wl0_hwaddr"); %>
+                     </div>
+                  </fieldset><br /><fieldset>
+                     <legend>Información Inalámbrica</legend>
+                     <div class="setting">
+                        <div class="label">SSID</div><% nvram_get("wl_ssid"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Modo</div><% nvram_match("wl_mode", "wet", "Client"); %><% nvram_match("wl_mode", "ap", "AP"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Xmit</div><% nvram_get("txpwr"); %> mW
+                     </div>
+                     <div class="setting">
+                        <div class="label">Red</div><% nvram_match("wl_gmode", "1", "Mixed"); %><% nvram_match("wl_gmode", "2", "G-Solamente"); %><% nvram_match("wl_gmode", "-1",
+                        "Inactivo"); %><% nvram_match("wl_gmode", "0", "B-Solamente"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">DHCP Server</div><% nvram_match("lan_proto", "dhcp", "Activado"); %><% nvram_match("lan_proto", "static", "Inactivo"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Canal</div><% get_curchannel(); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Velocidad (Mbps)</div><% get_currate(); %>
+                     </div>
+                  </fieldset><br /><fieldset>
+                     <legend>Información de IP</legend>
+                     <div class="setting">
+                        <div class="label">IP WAN</div><% nvram_status_get("wan_ipaddr"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">IP LAN</div><% nvram_get("lan_ipaddr"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">WRT-Radius</div>
+                        					<% nvram_match("wl_mode", "wet", "<nobr>only AP Mode</nobr><!--"); %>
+                        					<% nvram_match("wl_mode", "infra", "<nobr>only AP Mode</nobr><!--"); %>
+                        
+                        					<% nvram_match("wl_radauth","0","Inactivo"); %><% nvram_match("wl_radauth","1","Active"); %>
+                        
+                        					<% nvram_match("wl_mode", "wet", "-->"); %>
+                        					<% nvram_match("wl_mode", "infra", "-->"); %>
+                        					
+                     </div>
+                     <div class="setting">
+                        <div class="label">WRT-rflow</div><% nvram_match("rflow_enable","0","Inactivo"); %> <% nvram_match("rflow_enable","1","Active"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">MAC-udp</div><% nvram_match("macupd_enable","0","Inactivo"); %> <% nvram_match("macupd_enable","1","Active"); %>
+                     </div>
+                     <div class="setting">
+                        <div class="label">Montaje De Samba</div><% nvram_match("samba_mount","0","Inactivo"); %><% nvram_match("samba_mount","1","Active"); %>
+                     </div>
+                  </fieldset><br /><form name="Eingabe"><input type="hidden" name="Feld" value='<% active_wireless(''); %><% active_wds(); %>' />
+		  <input type="hidden" name="FeldMEM" value='<% wl_packet_get(); %>' />
+		  <h3>
+		  <% nvram_match("wl_mode", "wet", "PA Conectados"); %>
+		  <% nvram_match("wl_mode", "infra", "Clientes Conectados"); %>
+		  <% nvram_match("wl_mode","ap", "Clientes Inalámbricos"); %>
+                     </h3>
+                     <table class="table">
+                        <tbody>
+                           <tr>
+                              <th colspan="5">Nombre de MAC</th>
+                              <th>Level</th>
+                              <th colspan="5">&nbsp;</th>
+                           </tr><script language="JavaScript">
+							var clients = this.document.Eingabe.Feld.value;
+							clients=replace_list(clients,'Clientes:','');
+							clients=replace_list(clients,'Señal WDS:','');
+							clients=replace_list(clients,'width=156 bgColor=#e7e7e7','width=0');
+							clients=replace_list(clients,'width=8 background=image/UI_04.gif','width=0');
+							clients=replace_list(clients,'colSpan=3','');
+							clients=replace_list(clients,'width=13','width=0');
+							clients=replace_list(clients,'width=15 background=image/UI_05.gif','width=0');
+							clients=replace_list(clients,'height=25','');
+							clients=replace_list(clients,'rssi ','</td><td></b><i>rssi</i>&nbsp;&nbsp;&nbsp;&nbsp;<b>');
+		
+							this.document.write(clients);
+						</script></tbody>
+                     </table>
+                  </form><% nvram_match("wl_mode", "wet", "<!--"); %>
+                  <div class="setting">
+                     <h3>Lista de Cliente de DHCP</h3>
+                     <table class="table">
+                        <tr>
+                           <th>PC</th>
+                           <th>IP</th>
+                           <th>MAC</th>
+                           <th>Transcurso</th>
+                        </tr><script language="JavaScript">
+						var table = new Array( <% dumpleases(""); %> );
+						var i = 0;
+						var count = 0;
+						for(;;) {
+							if(!table[i]) {
+								if(i == 0){
+									document.write("<tr>");
+									document.write("<td>Ninguno</td>");
+									document.write("<td>Ninguno</td>");
+									document.write("<td>Ninguno</td>");
+									document.write("<td>Ninguno</td>");
+									document.write("<td>&nbsp;</td></tr>");
+								}
+								break;
+							}
+							document.write("<tr>");
+							document.write("<td>"+table[i]+"</td>");
+							document.write("<td>"+table[i+1]+"</td>");
+							document.write("<td>"+table[i+2]+"</td>");
+							document.write("<td>"+table[i+3]+"</td>");
+							document.write("<td>&nbsp;</td></tr>");
+							count ++;
+							i = i + 5;
+						}
+					</script></table>
+                  </div><% nvram_match("wl_mode", "wet", "-->"); %>
+                  <div class="setting">
+                     <div class="label">Packet Info</div><script language="JavaScript">
+					var clients = this.document.Eingabe.FeldMEM.value;
+					clients=replace_list(clients,';',' ');
+					clients=replace_list(clients,'SWRXgoodPacket=',' RXg=');
+					clients=replace_list(clients,'SWRXerrorPacket=','RXe=');
+					clients=replace_list(clients,'SWTXgoodPacket=',' TXg=');
+					clients=replace_list(clients,'SWTXerrorPacket=','TXe=');
+					
+					this.document.write(clients);
+				</script></div>
+                  <div class="setting">
+                     <div class="label">Mem Info</div><% show_meminfo(); %>
+                  </div>
+		  
+		<a href="http://www.dd-wrt.com/">DD-WRT</a>
+	        <form action="https://www.paypal.com/cgi-bin/webscr" method="post" target="_blank">
+		<input type="hidden" name="cmd" value="_xclick">
+		<input type="hidden" name="business" value="sebastian.gottschall@advis.de">
+		<input type="hidden" name="item_name" value="DD-WRT Development Support">
+		<input type="hidden" name="no_note" value="1">
+		<input type="hidden" name="currency_code" value="EUR">
+		<input type="hidden" name="tax" value="0">
+		<input type="image" src="images/paypal.gif" border="0" name="submit" width="62" height="31">
+		</form>
+               </div>
+            </div>
+            <div id="statusInfo">
+               <div class="info">Firmware: <% get_firmware_version(); %></div>
+               <div class="info">Uptime: <% get_uptime(); %></div>
+               <div class="info">IP WAN: <% nvram_status_get("wan_ipaddr"); %></div>
+            </div>
+            <div id="helpContainer">
+               <div id="help">
+                  <div id="logo">
+                     <h2>Help</h2>
+                  </div>
+               </div>
+            </div>
+         </div>
+      </div>
+   </body>
+</html>
