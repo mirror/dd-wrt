@@ -171,7 +171,7 @@ addEvent(window, "unload", function() {
 							<fieldset>
 							<legend><script type="text/javascript">Capture(status_router.legend)</script></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(status_router.sys_name)</script></div>
+									<div class="label"><script type="text/javascript">Capture(share.routername)</script></div>
 									<span id="router_name"><% nvram_get("router_name"); %></span>&nbsp;
 								</div>
 								<div class="setting">
@@ -319,7 +319,7 @@ addEvent(window, "unload", function() {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(status_router.sys_name)</script>: </dt>
+							<dt class="term"><script type="text/javascript">Capture(share.routername)</script>: </dt>
 							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right2)</script></dd>
 							<dt class="term"><script type="text/javascript">Capture(share.mac)</script>: </dt>
 							<dd class="definition"><script type="text/javascript">Capture(hstatus_router.right4)</script></dd>
