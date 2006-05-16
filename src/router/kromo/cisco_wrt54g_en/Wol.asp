@@ -247,6 +247,16 @@ function setWolHostsTable() {
 
 }
 
+function callDump() {
+	var table = new Array(<% dump_ping_log(""); %>);
+		if(table.length > 0 && location.href.indexOf("Wol.asp") == -1) {
+		document.write("<fieldset>");
+		document.write("<legend>" + wol.legend3 + "</legend>");
+		document.write("<br /><pre style=\"margin: 0\">" + table.join("\n") + "</pre>");
+		document.write("</fieldset><br />");
+	}
+}
+
 addEvent(window, "load", function() {
 	setAvailableHostsTable();
 	setWolHostsTable();
@@ -349,15 +359,9 @@ addEvent(window, "load", function() {
 							</fieldset><br />
 
 							<% nvram_selmatch("wol_cmd","","<!--"); %>
-							<script type="text/javascript">
-								var table = new Array(<% dump_ping_log(""); %>);
-								if(table.length > 0 && location.href.indexOf("Wol.asp") == -1) {
-									document.write("<fieldset>");
-									document.write("<legend>" + wol.legend3 + "</legend>");
-									document.write("<br /><pre style=\"margin: 0\">" + table.join("\n") + "</pre>");
-									document.write("</fieldset><br />");
-								}
-							</script>
+								<script type="text/javascript">
+									callDump();
+								</script>
 							<% nvram_selmatch("wol_cmd","","-->"); %>
 
 							<fieldset> 
@@ -389,11 +393,11 @@ addEvent(window, "load", function() {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl> 
-							<dt class="term"><script type="text/javascript">Capture(hwol.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(wol.h2)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hwol.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hwol.right3)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(wol.mac)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hwol.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hwol.right5)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.ip)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hwol.right6)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HWol.asp');"><script type="text/javascript">Capture(share.more)</script></a>
