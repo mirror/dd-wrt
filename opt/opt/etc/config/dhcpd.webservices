@@ -1,0 +1,65 @@
+
+<fieldset>
+	<legend><script type="text/javascript">Capture(service.dhcp_legend)</script></legend>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.dhcp_vendor)</script></div>
+		<input maxlength="79" size="20" name="dhcpc_vendorclass" value="<% nvram_get("dhcpc_vendorclass"); %>" />
+	</div>
+</fieldset><br />
+
+<fieldset>
+	<legend><script type="text/javascript">Capture(service.dhcp_legend2)</script></legend>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.dhcp_srv)</script></div>
+		<input class="spaceradio" type="radio" name="lan_proto" value="dhcp" <% nvram_selmatch("lan_proto", "dhcp", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" name="lan_proto" value="static" <% nvram_selmatch("lan_proto", "static", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<% nvram_invmatch("enable_jffs2","1","<!--"); %>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.dhcp_jffs2)</script></div>
+		<input class="spaceradio" type="radio" name="dhcpd_usejffs" value="1" <% nvram_selmatch("dhcpd_usejffs", "1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
+		<input class="spaceradio" type="radio" name="dhcpd_usejffs" value="0" <% nvram_selmatch("dhcpd_usejffs", "0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	</div>
+	<% nvram_invmatch("enable_jffs2","1","-->"); %>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.dhcp_domain)</script></div>
+		<select name="dhcp_domain">
+			<option value="wan" <% nvram_selmatch("dhcp_domain", "wan", "selected"); %> >WAN</option>
+			<option value="lan" <% nvram_selmatch("dhcp_domain", "lan", "selected"); %> >LAN &amp; WLAN</option>
+		</select>
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.dhcp_landomain)</script></div>
+		<input maxlength="79" size="20" name="lan_domain" onblur="valid_name(this,sercice.dhcp_landomain,SPACE_NO)" value="<% nvram_get("lan_domain"); %>" />
+	</div>
+	<% nvram_invmatch("expert_mode","1","<!--"); %>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(service.dhcp_option)</script></div>
+		<textarea cols="60" rows="4" id="dhcpd_options" name="dhcpd_options"></textarea>
+		<script type="text/javascript">
+			var dhcpd_options = fix_cr( '<% nvram_get("dhcpd_options"); %>' );
+			document.getElementById("dhcpd_options").value = dhcpd_options;
+		</script>
+	</div>
+	<% nvram_invmatch("expert_mode","1","-->"); %>
+    	<table class="table center">
+			<tr>
+				<th colspan="3"><script type="text/javascript">Capture(share.static_lease)</script></th>
+			</tr>
+			<tr>
+				<th width="33%"><script type="text/javascript">Capture(share.mac)</script></th>
+				<th width="34%"><script type="text/javascript">Capture(share.hostname)</script></th>
+				<th width="33%"><script type="text/javascript">Capture(share.ip)</script></th>
+			</tr>
+                        <% show_staticleases(); %>
+			<tr>
+				<td colspan="3">
+					<div class="center">
+						<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.add + "\" onclick=\"lease_add_submit(this.form)\" />")</script>
+						<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.remove + "\" onclick=\"lease_remove_submit(this.form)\" />")</script>
+					</div>
+				</td>
+			</tr>
+		</table>
+</fieldset><br/>
+
