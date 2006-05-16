@@ -122,6 +122,7 @@ share.state="State";
 share.mode="Mode";
 share.encrypt="Encryption";
 share.key="Key";
+share.wireless="Wireless";
 
 
 var sbutton = new Object();
@@ -306,7 +307,9 @@ bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 
 bmenu.sipath="SIPatH";
-
+bmenu.sipathoverview="Overview";
+bmenu.sipathphone="Phonebook";
+bmenu.sipathstatus="Status";
 
 bmenu.admin="Administration";
 bmenu.adminManagement="Management";
@@ -494,111 +497,15 @@ hfactdef.right1="This will reset all settings back to factory defaults. All of y
 
 
 
+// **************************************************************** FilterIP%AC.asp **********************************************************************//
 
-
-
-
-
-
-
-
-
-
-
-
-
-// **************************************************************** Forward.asp **********************************************************************//
-
-var prforward = new Object();
-prforward.titl=" - Port Range Forwarding";
-prforward.h2="Port Range Forward";
-prforward.legend="Forwards";
-prforward.app="Application";
-
-//help container
-var hprforward = new Object();
-hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
-	Examples of these applications include servers and certain online games. \
-	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
-	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
-	and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
-
-
-
-// **************************************************************** ForwardSpec.asp **********************************************************************//
-
-var pforward = new Object();
-pforward.titl=" - Port Forwarding";
-pforward.h2="Port Forward";
-pforward.legend="Forwards";
-pforward.app="Application";
-pforward.from="Port from";
-pforward.to="Port to";
-
-//help container
-var hpforward = new Object();
-hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
-	Examples of these applications include servers and certain online games. \
-	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
-	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
-	and uncheck the <em>Enable</em> checkbox after you are finished.";
-
-
-
-
-// **************************************************************** Triggering.asp **********************************************************************//
-
-var trforward = new Object();
-trforward.titl=" - Port Triggering";
-trforward.h2="Port Triggering";
-trforward.legend="Forwards";
-trforward.trrange="Triggered Port Range";
-trforward.fwdrange="Forwarded Port Range";
-trforward.app="Application";
-
-//help container
-var htrforward = new Object();
-htrforward.right2="Enter the application name of the trigger.";
-htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right8="Enter the starting port number of the Triggered and Forwarded Range.";
-htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
-
-
-
-// **************************************************************** UPnP.asp **********************************************************************//
-
-var upnp = new Object();
-upnp.titl=" - UPnP";
-upnp.h2="Universal Plug and Play (UPnP)";
-upnp.legend="Forwards";
-upnp.legend2="UPnP Configuration";
-upnp.serv="UPnP Service";
-upnp.clear="Clear port forwards at startup";
-upnp.url="Send presentation URL";
-upnp.msg1="Click to delete lease";
-upnp.msg2="Delete all entries?";
-
-
-//help container
-var hupnp = new Object();
-hupnp.right2="Click the trash can to delete an individual entry.";
-hupnp.right4="Allows applications to automatically setup port forwardings.";
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+var filterIP = new Object();
+filterIP.titl=" - List of PCs";
+filterIP.h2="List of PCs";
+filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
+filterIP.h32="Enter the IP Address of the PCs";
+filterIP.h33="Enter the IP Range of the PCs";
+filterIP.ip_range="IP Range";
 
 
 
@@ -646,18 +553,6 @@ hfilter.right16="You can block access to certain website by the keywords contain
 
 
 
-// **************************************************************** FilterIP%AC.asp **********************************************************************//
-
-var filterIP = new Object();
-filterIP.titl=" - List of PCs";
-filterIP.h2="List of PCs";
-filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Enter the IP Address of the PCs";
-filterIP.h33="Enter the IP Range of the PCs";
-filterIP.ip_range="IP Range";
-
-
-
 // **************************************************************** FilterSummary.asp **********************************************************************//
 
 var filterSum = new Object();
@@ -690,6 +585,44 @@ filter.port113="Filter IDENT (Port 113)";
 var hfirewall = new Object();
 hfirewall.right1="Firewall Protection:";
 hfirewall.right2="Enable or disable the SPI firewall.";
+
+
+
+// **************************************************************** Forward.asp **********************************************************************//
+
+var prforward = new Object();
+prforward.titl=" - Port Range Forwarding";
+prforward.h2="Port Range Forward";
+prforward.legend="Forwards";
+prforward.app="Application";
+
+//help container
+var hprforward = new Object();
+hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
+	Examples of these applications include servers and certain online games. \
+	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
+	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
+	and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
+
+
+
+// **************************************************************** ForwardSpec.asp **********************************************************************//
+
+var pforward = new Object();
+pforward.titl=" - Port Forwarding";
+pforward.h2="Port Forward";
+pforward.legend="Forwards";
+pforward.app="Application";
+pforward.from="Port from";
+pforward.to="Port to";
+
+//help container
+var hpforward = new Object();
+hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
+	Examples of these applications include servers and certain online games. \
+	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
+	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
+	and uncheck the <em>Enable</em> checkbox after you are finished.";
 
 
 
@@ -743,6 +676,15 @@ hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
 hotspot.sputnik_about="about Sputnik";
 
+
+
+// ********************************************************************** Info.htm ***************************************************************//
+
+var info = new Object();
+info.titl=" - Info";
+info.h2="System Information";
+info.wlanmac="Wireless MAC";
+info.srv="Services";
 
 
 // **************************************************************** index_heartbeat.asp *********************************************************//
@@ -1174,6 +1116,21 @@ service.ssh_key="Authorized Keys";
 
 
 
+// **************************************************************** Sipath.asp + cgi **********************************************************************//
+
+var sipath = new Object();
+sipath.titl=" - SiPath Overview";
+sipath.h2="SIPath";
+sipath.phone_titl=" - Phonebook";
+sipath.phone_booksave="Phonebook: Save Database";
+sipath.phone_bookflush="Phonebook: Flush Database";
+sipath.phone_bookdetail="Phonebook: Details";
+sipath.phone_userlist="SER Userlist:";
+
+
+
+
+
 // **************************************************************** Status_Lan.asp **********************************************************************//
 
 var status_lan = new Object();
@@ -1200,7 +1157,6 @@ var status_router = new Object();
 status_router.titl=" - Router Status";
 status_router.h2="Router Information";
 status_router.legend="System";
-status_router.sys_name="Router Name";
 status_router.sys_model="Router Model";
 status_router.sys_firmver="Firmware Version";
 status_router.sys_time="Current Time";
@@ -1270,11 +1226,32 @@ status_wireless.tx="Transmitted (TX)";
 status_wireless.h22="Wireless Nodes";
 status_wireless.legend3="Clients";
 status_wireless.signal_qual="Signal Quality";
+status_wireless.wds="WDS Nodes";
 
 //help container
 var hstatus_wireless = new Object();
 hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
 hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.";
+
+
+
+// **************************************************************** Triggering.asp **********************************************************************//
+
+var trforward = new Object();
+trforward.titl=" - Port Triggering";
+trforward.h2="Port Triggering";
+trforward.legend="Forwards";
+trforward.trrange="Triggered Port Range";
+trforward.fwdrange="Forwarded Port Range";
+trforward.app="Application";
+
+//help container
+var htrforward = new Object();
+htrforward.right2="Enter the application name of the trigger.";
+htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
+htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
+htrforward.right8="Enter the starting port number of the Triggered and Forwarded Range.";
+htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
 
 
 
@@ -1296,6 +1273,40 @@ var hupgrad = new Object();
 hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> \
 			Click the <em>Upgrade</em> button to begin the upgrade process. Upgrade must not be interrupted.";
 
+
+
+// **************************************************************** UPnP.asp **********************************************************************//
+
+var upnp = new Object();
+upnp.titl=" - UPnP";
+upnp.h2="Universal Plug and Play (UPnP)";
+upnp.legend="Forwards";
+upnp.legend2="UPnP Configuration";
+upnp.serv="UPnP Service";
+upnp.clear="Clear port forwards at startup";
+upnp.url="Send presentation URL";
+upnp.msg1="Click to delete lease";
+upnp.msg2="Delete all entries?";
+
+
+//help container
+var hupnp = new Object();
+hupnp.right2="Click the trash can to delete an individual entry.";
+hupnp.right4="Allows applications to automatically setup port forwardings.";
+
+
+
+// **************************************************************** Vlan.asp **********************************************************************//
+
+var vlan = new Object();
+vlan.titl=" - Virtual LAN";
+vlan.h2="Virtual Local Area Network (VLAN)";
+vlan.legend="VLAN";
+vlan.bridge="Assigned To<br />Bridge";
+vlan.tagged="Tagged";
+vlan.negociate="Auto-Negotiate";
+vlan.aggregation="Link Aggregation<br>on Ports 3 & 4";
+vlan.trunk="Trunk";
 
 
 // **************************************************************** WEP.asp **********************************************************************//

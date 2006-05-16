@@ -2,16 +2,19 @@
 <html>
 	<head>
 		<meta http-equiv="Content-Type" content="application/xhtml+xml; charset=iso-8859-1" />
-		<title><% nvram_get("router_name"); %> - VLAN</title>
+		<title><% nvram_get("router_name"); %> - Virtual LAN</title>
 		<link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style.css" />
 		<!--[if IE]><link type="text/css" rel="stylesheet" href="style/<% nvram_get("router_style"); %>/style_ie.css" /><![endif]-->
 		<script type="text/javascript" src="common.js"></script>
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
+		
+document.title = "<% nvram_get("router_name"); %>" + vlan.titl;
+
 function to_submit(F) {
 	F.submit_button.value = "Vlan";
-	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
 
 	F.action.value = "Apply";
 	apply(F);
@@ -73,51 +76,48 @@ function init() {
 			<div id="content">
 				<div id="header">
 					<div id="logo"><h1><% show_control(); %></h1></div>
-						<div id="menu">
-							<div id="menuMain">
-								<ul id="menuMainList">
-									<li class="current"><span>Setup</span>
-										<div id="menuSub">
-											<ul id="menuSubList">
-												<li><a href="index.asp">Basic Setup</a></li>
-												<li><a href="DDNS.asp">DDNS</a></li>
-												<li><a href="WanMAC.asp">MAC Address Clone</a></li>
-												<li><a href="Routing.asp">Advanced Routing</a></li>
-												<% support_invmatch("HSIAB_SUPPORT", "1", "<!--"); %>
-												<li><a href="HotSpot_Admin.asp">Hot Spot</a></li>
-												<% support_invmatch("HSIAB_SUPPORT", "1", "-->"); %>
-												<li><span>VLANs</span></li>
-											</ul>
-										</div>
-									</li>
-									<li><a href="Wireless_Basic.asp">Wireless</a></li>
-									<% nvram_invmatch("sipgate","1","<!--"); %>
-									<li><a href="Sipath.asp">SIPatH</a></li>
-									<% nvram_invmatch("sipgate","1","-->"); %>
-									<li><a href="Firewall.asp">Security</a></li>
-									<li><a href="Filters.asp">Access Restrictions</a></li>
-									<li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-									<li><a href="Management.asp">Administration</a></li>
-									<li><a href="Status_Router.asp">Status</a></li>
-								</ul>
-							</div>
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li class="current"><span><script type="text/javascript">Capture(bmenu.setup)</script></span>
+									<div id="menuSub">
+										<ul id="menuSubList">
+	  										<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setupbasic)</script></a></li>
+											<li><a href="DDNS.asp"><script type="text/javascript">Capture(bmenu.setupddns)</script></a></li>
+											<li><a href="WanMAC.asp"><script type="text/javascript">Capture(bmenu.setupmacclone)</script></a></li>
+	  										<li><a href="Routing.asp"><script type="text/javascript">Capture(bmenu.setuprouting)</script></a></li>
+	  										<li><a href="Vlan.asp"><script type="text/javascript">Capture(bmenu.setupvlan)</script></a></li>
+  										</ul>
+  									</div>
+  								</li>
+  								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
+								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
+								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
+								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
+								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+							</ul>
 						</div>
 					</div>
-					<div id="main">
+				</div>
+				<div id="main">
 					<div id="contents">
 						<form name="vlan" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="Vlan" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="commit" value="1" />
-							<h2>Virtual Local Area Network (VLAN)</h2>
+							<h2><script type="text/javascript">Capture(vlan.h2)</script></h2>
 							<fieldset>
-							   <legend>VLAN</legend>
+							   <legend><script type="text/javascript">Capture(vlan.legend)</script></legend>
 							   <table id="vlan" class="table center vlan">
   								<tbody>
   									<tr>
-  										<th rowspan="2">VLAN</th>
-  										<th colspan="5">Port</th>
-  										<th rowspan="2">Assigned To<br />Bridge</th>
+  										<th rowspan="2"><script type="text/javascript">Capture(vlan.legend)</script></th>
+  										<th colspan="5"><script type="text/javascript">Capture(share.port)</script></th>
+  										<th rowspan="2"><script type="text/javascript">Capture(vlan.bridge)</script></th>
   									</tr>
   									<tr>
   										<th>W</th>
@@ -132,17 +132,19 @@ function init() {
   						</fieldset>
   							 <br/>
 							<div class="submitFooter">
-								<input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)"/>
-								<input type="reset" value="Cancel Changes"/>
+								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
 							</div>
 						</form>
 					</div>
 				</div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2>Help</h2></div>
+						<div id="logo">
+							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+						</div>
 						<br />
-						<!--<a href="javascript:openHelpWindow('HVlan.asp')">More...</a>-->
+						<!-- <a href="javascript:openHelpWindow('HVlan.asp');"><script type="text/javascript">Capture(share.more)</script></a> -->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
