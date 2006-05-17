@@ -36,16 +36,12 @@ function setDHCPTable() {
 		row.insertCell(-1).innerHTML = val[i + 1];
 		
 		var mac = val[i + 2];
-		if ("<% nvram_get("maskmac"); %>" != "1") {
-		  var cellmac = row.insertCell(-1);
-		  cellmac.title = share.oui;
-		  cellmac.style.cursor = "pointer";
-		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
-		  cellmac.innerHTML = mac;
-		} else {
-		  row.insertCell(-1).innerHTML = mac;		 
-		}
-		
+		var cellmac = row.insertCell(-1);
+		cellmac.title = share.oui;
+		cellmac.style.cursor = "pointer";
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		cellmac.innerHTML = mac;
+
 		row.insertCell(-1).innerHTML = val[i + 3];
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
