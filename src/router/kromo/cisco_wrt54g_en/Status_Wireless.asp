@@ -27,16 +27,12 @@ function setWirelessTable() {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
-		if ("<% nvram_get("maskmac"); %>" != "1") {
-		  var cellmac = row.insertCell(-1);
-		  cellmac.title = share.oui;
-		  cellmac.style.cursor = "pointer";
-		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
-		  cellmac.innerHTML = mac;
-		} else {
-		  row.insertCell(-1).innerHTML = mac;		 
-		}
-		
+		var cellmac = row.insertCell(-1);
+		cellmac.title = share.oui;
+		cellmac.style.cursor = "pointer";
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		cellmac.innerHTML = mac;
+
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
@@ -56,16 +52,12 @@ function setWDSTable() {
 		var row = table.insertRow(-1);
 		
 		var mac = val[i];
-		if ("<% nvram_get("maskmac"); %>" != "1") {
-		  var cellmac = row.insertCell(-1);
-		  cellmac.title = share.oui;
-		  cellmac.style.cursor = "pointer";
-		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
-		  cellmac.innerHTML = mac;
-		} else {
-		  row.insertCell(-1).innerHTML = mac;		 
-		}
-
+		var cellmac = row.insertCell(-1);
+		cellmac.title = share.oui;
+		cellmac.style.cursor = "pointer";
+		eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		cellmac.innerHTML = mac;
+		
 		row.insertCell(-1).innerHTML = val[i + 1];
 		row.insertCell(-1).innerHTML = val[i + 2];
 		row.insertCell(-1).innerHTML = val[i + 3];
