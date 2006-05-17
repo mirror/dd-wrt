@@ -2668,7 +2668,7 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 //          }
 //        websWrite (wp, "<tr>\n");
 	//noise = -noise;
-	if (strcmp(mode,"ap"))
+	if (!strcmp(mode,"ap"))
 	{
 	  char *ref = nvram_get("noise_reference");
 	  noise=-98;
