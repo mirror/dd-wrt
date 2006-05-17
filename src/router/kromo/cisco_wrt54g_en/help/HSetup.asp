@@ -67,7 +67,7 @@
 				<dt>WINS</dt>
 				<dd>The Windows Internet Naming Service (WINS) manages each PC's interaction with the Internet. If you use a WINS server, enter that server's IP address here. Otherwise, leave this blank.</dd>
 				<dt>Time Zone</dt>
-				<dd>Select the time zone for your location. If your location experiences daylight savings, leave the checkmark in the box next to <i>Automatically adjust clock for daylight saving changes</i>.</dd>
+				<dd>Select the time zone for your location. To use local time, leave the checkmark in the box next to <i>Use local time</i>.</dd>
 				<dd>Check all values and click <i>Save Settings</i> to save your settings. Click <i>Cancel Changes</i> to cancel your unsaved changes. You can test the settings by connecting to the Internet.</dd>
 			</dl>
 		</div>
