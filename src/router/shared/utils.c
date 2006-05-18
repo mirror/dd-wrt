@@ -208,7 +208,7 @@ internal_getRouterBrand ()
 					((startswith (et0, "00:0C:E5") && startswith (et1, "00:0C:E5")) || 
 					(startswith (et0, "00:0c:e5") && startswith (et1, "00:0c:e5")) ||
 					(startswith (et0, "00:0C:10") && startswith (et1, "00:0C:10")) ||
-					(startswith (et0, "11:22:33") && startswith (et1, "11:22:33"))))
+					(startswith (et0, "00:11:22") && startswith (et1, "00:11:22"))))
 		  			{
 		    		cprintf ("router Motorola WR850G v1\n");
 		    		setRouter ("Motorola WR850G v1");
