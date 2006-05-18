@@ -6,7 +6,7 @@
 //  head_inc.setAttribute('src',"lang_pack/language.js");
 //  Head.appendChild(head_inc);
 
-šŠÈÆÆÆÐÐŠŠ
+
 // ******************************************* COMMON SHARE LABEL *******************************************//
 var lang_charset = new Object();
 lang_charset.set="iso-8859-2";
@@ -36,7 +36,7 @@ share.both="Oboje";
 share.del="Izbriši";
 share.remove="Odstrani";
 share.descr="Opis";
-share.from="Od;
+share.from="Od";
 share.to="Do";
 share.about="Vizitka";
 share.everyday="Vsak dan";
@@ -90,7 +90,7 @@ share.rule="Pravilo";
 share.lan="LAN";
 share.point2point="Povezava med toèkama";
 share.nat="NAT";
-share.subnet="podmrežna maska";
+share.subnet="Podmrežna maska";
 share.unmask="Odkrij";
 share.deflt="Privzeto";  //don't use share.default !!!
 share.all="Vse";
@@ -108,7 +108,7 @@ share.router="Usmerjalnik";
 share.static_lease="Statièni zakupi";
 share.srvip="IP strežnika";
 share.localdns="Lokalni DNS";
-share.minutes="minute";
+share.minutes="minut";
 share.oui="Izkanje OUI";
 share.sttic="Statièno";
 share.connecting="Povezujem";
@@ -132,13 +132,13 @@ sbutton.cmd="Izvajam";
 sbutton.cancel="Preklièi spremembe";
 sbutton.refres="Osveži";
 sbutton.clos="Zapri";
-sbutton.del="Zbriši";
+sbutton.del="Izbriši";
 sbutton.continu="Nadaljuj";
 sbutton.add="Dodaj";
 sbutton.remove="Odstrani";
 sbutton.modify="Spremeni";
 sbutton.deleted="Zbrisano";
-sbutton.delall="Zbriši vse";
+sbutton.delall="Izbriši vse";
 sbutton.autorefresh="Samodejno osveževanje je vkljuèeno";
 sbutton.backup="Varnostno kopiranje";
 sbutton.restore="Obnovitev";
@@ -155,7 +155,7 @@ sbutton.filterMac="Uredi seznam MAC filtrov";
 sbutton.filterSer="Dodaj/uredi storitev";
 sbutton.reboot="Ponovni zagon usmerjalnika";
 sbutton.help="   Pomoè  ";
-sbutton.wl_client_mac="MAC sezman brezžiènih odjamalcev";
+sbutton.wl_client_mac="MAC seznam brezžiènih odjamalcev";
 sbutton.update_filter="Posodobi seznam filtrov";
 sbutton.join="Poveži";
 sbutton.log_in="Vhodni dnevnik";
@@ -281,7 +281,7 @@ bmenu.setupmacclone="Kloniranje MAC naslova";
 bmenu.setuprouting="Napredno usmerjanje";
 bmenu.setupvlan="VLAN";
 
-bmenu.wireless="brezžièno";
+bmenu.wireless="Brezžièno";
 bmenu.wirelessBasic="Osnovne nastavitve";
 bmenu.wirelessRadius="Radius";
 bmenu.wirelessSecurity="Brezžièna zašèita";
@@ -318,7 +318,7 @@ bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Dnevnik";
 bmenu.adminDiag="Diagnostika";
 bmenu.adminWol="WOL";
-bmenu.adminFactory="Prizete nastavitve";
+bmenu.adminFactory="Privzete nast.";
 bmenu.adminUpgrade="Posodabljanje";
 bmenu.adminBackup="Varnostno kopiranje";
 
@@ -476,14 +476,14 @@ dmz.host="DMZ gostiteljev IP naslov";
 
 //help container
 var hdmz = new Object();
-hdmz.right2="Omogoèanje te opcije bo izpostavilo gostitelja svetovnemu spletu. Vsa vrata bodo dostopna z svetovnega spleta.";
+hdmz.right2="Omogoèanje te opcije bo izpostavilo gostitelja medmrežju. Vsa vrata bodo dostopna z medmrežja.";
 
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
 var factdef = new Object();
-factdef.titl=" - Privzete nastavitva";
+factdef.titl=" - Privzete nastavitve";
 factdef.h2="Privzete nastavitve";
 factdef.legend="Ponastavi nastavitve usmerjalnika";
 factdef.restore="Obnovi privzete nastavitve";
@@ -512,13 +512,13 @@ filterIP.ip_range="IP razpon";
 
 var filter = new Object();
 filter.titl=" - Omejitve dostopa";
-filter.h2="Dostop do svetovnega spleta";
+filter.h2="Dostop do medmrežja";
 filter.legend="Smernica dostopa";
 filter.restore="Obnovi privzete nastavitve";
 filter.pol="Smernica";
 filter.polname="Ime smernice";
 filter.pcs="PCji";
-filter.polallow="Dostop do svetovnega spleta med izbranimi dnevi in urami.";
+filter.polallow="Dostop do medmrežja med izbranimi dnevi in urami.";
 filter.legend2="Dnevi";
 filter.time="Èasi";
 filter.h24="24 ur";
@@ -533,7 +533,7 @@ filter.mess3="Konèni èas mora biti veèji od zaèetnega.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Smernice dostopa do svetovnega spleta:";
+hfilter.right1="Smernice dostopa do medmrežja:";
 hfilter.right2="Doloèite lahko do 10 smernic dostopa. Kliknite <em>" + sbutton.del + "</em>, da zbrišete smernico, ali <em>" + sbutton.summary + "</em> za povzetek smernice.";
 hfilter.right3="Status:";
 hfilter.right4="omogoèi ali onemogoèi smernico.";
@@ -556,7 +556,7 @@ hfilter.right16="Zaprete lahko doloèena spletišèa tako, da vnesete kljuèno besed
 
 var filterSum = new Object();
 filterSum.titl=" - Povtetek omejitev dostopa";
-filterSum.h2="Povzetek smernice dostopa do svetovnega spleta";
+filterSum.h2="Povzetek smernice dostopa do medmrežja";
 filterSum.polnum="Št.";
 filterSum.polday="Èas dneva";
 
@@ -575,7 +575,7 @@ firewall.cookies="Filter za piškotke";
 firewall.applet="Filter za Java aplete";
 firewall.activex="Filter za ActiveX";
 firewall.legend3="Prepreèi WAN zahtevo";
-firewall.ping="Prepreèi anonimno zahtevo s svetovnega spleta";
+firewall.ping="Prepreèi anonimno zahtevo z medmrežja";
 firewall.muticast="Filter za multicast";
 filter.nat="Filter za NAT preusmeritev";
 filter.port113="Filter za IDENT (vrata 113)";
@@ -590,19 +590,17 @@ hfirewall.right2="Omogoèi ali onemogoèi zašèito s SPI požarnim zidom.";
 // ******************************************* Forward.asp *******************************************//
 
 var prforward = new Object();
-prforward.titl=" - Port Range Forwarding";
-prforward.h2="Port Range Forward";
-prforward.legend="Forwards";
-prforward.app="Application";
+prforward.titl=" - Posredovanje razpona vrat";
+prforward.h2="Posredovanje razpona vrat";
+prforward.legend="Posredovanje";
+prforward.app="Aplikacija";
 
 //help container
 var hprforward = new Object();
-hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
-	Examples of these applications include servers and certain online games. \
-	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
-	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
-	and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
-
+hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. \
+	Primeri takih aplikacij so strežniki in nekatere igre. \
+	Ko s medmrežja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. \
+	Zaradi varnosti omejite posredovanje vrat samo natista vrata, ki ji uporabljate. ";
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
@@ -617,9 +615,9 @@ pforward.to="Do vrat";
 
 //help container
 var hpforward = new Object();
-hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. \
+pforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. \
 	Primeri takih aplikacij so strežniki in nekatere igre. \
-	Ko s svetovnega spleta pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. \
+	Ko s medmrežja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. \
 	Zaradi varnosti omejite posredovanje vrat samo natista vrata, ki ji uporabljate. ";
 
 
@@ -730,9 +728,9 @@ idx_static.dns="Statièni DNS";
 
 var idx = new Object();
 idx.titl=" - Namestitev";
-idx.h2="Namestitev svetovnega spleta";
+idx.h2="Namestitev medmrežja";
 idx.h22="Namestitev brezžiènega omražja";
-idx.legend="Naèin dostopa do svetovnega spleta";
+idx.legend="Naèin dostopa do medmrežja";
 idx.conn_type="Naèin dostopa";
 idx.stp="STP";
 idx.stp_mess="(onemogoèi za COMCAST ISP)";
@@ -754,8 +752,8 @@ idx.dhcp_srv="DHCP strežnik";
 idx.dhcp_fwd="DHCP posredovalnik";
 idx.dhcp_start="Zaèetni IP naslov";
 idx.dhcp_end="Konèni IP naslov";		//used in Status_Lan.asp
-idx.dhcp_maxusers="najveèje št. DHCP uporabnikov";
-idx.dhcp_lease="Uporankov èas zakupa";
+idx.dhcp_maxusers="Najveèje št. DHCP uporabnikov";
+idx.dhcp_lease="Odjemalèev èas zakupa";
 idx.dhcp_dnsmasq="Uporabi DNSMasq za DHCP";
 
 
@@ -781,7 +779,7 @@ var join = new Object();
 
 //sshd.webservices
 join.titl=" - Poveži";
-join.mess1="Kot klient ste se uspešno povezali s sledeèo mrežo: ";
+join.mess1="Kot odjemalec ste se uspešno povezali s sledeèo mrežo: ";
 
 
 
@@ -825,7 +823,7 @@ var management = new Object();
 management.titl=" - Administracija";
 management.h2="Upravljanje usmerjalnika";
 
-management.psswd_legend="Geslo usmerjanika";
+management.psswd_legend="Geslo usmerjalnika";
 management.psswd_user="Uporabniško ime usmerjalnika";
 management.psswd_pass="Geslo usmerjanika";
 management.pass_conf="Ponovno vnesi za potrditev";
@@ -900,10 +898,10 @@ management.lang_slovenian="slovenšèina";
 management.lang_spanish="španšèina";
 management.lang_swedish="švedšèina";
 
-management.net_legend="Nastavitve IP filtra (nastavi za P2P)";
+management.net_legend="Nastavitve IP filtra (nastavite za P2P)";
 management.net_port="Najveèje št. vrat";
-management.net_tcptimeout="TCP èasovna omejitev (in seconds)";
-management.net_udptimeout="UDP èasovna omejitev (in seconds)";
+management.net_tcptimeout="TCP èasovna omejitev (v sekundah)";
+management.net_udptimeout="UDP èasovna omejitev (v sekundah)";
 
 management.clock_legend="Overclocking";
 management.clock_frq="Frekvenca";
@@ -925,7 +923,7 @@ management.SIPatH_domain="SIP domena";
 //help container
 var hmanagement = new Object();
 hmanagement.right1="Samodejno osveževanje:";
-hmanagement.right2="Nastavi interval samodejnega osveževanja. 0 popolnoma onmogoèi samodejno osveževanje.";
+hmanagement.right2="Nastavite interval samodejnega osveževanja. 0 popolnoma onmogoèi samodejno osveževanje.";
 
 
 
@@ -966,9 +964,9 @@ qos.bandwith="Pasovna širina v Kbits";
 //help container
 var hqos = new Object();
 hqos.right1="Hitrost prenosa od vas:";
-hqos.right2="Nastavi na 80%-95% (maks.) vaše skupnege hitrosti prenosa od vas.";
+hqos.right2="Nastavite na 80%-95% (maks.) vaše skupnege hitrosti prenosa od vas.";
 hqos.right3="Hitrost prenosa k vam:";
-hqos.right4="Nastavi na 80%-100% (maks.) vaše skupne hitrosti prenosa k vam.";
+hqos.right4="Nastavite na 80%-100% (maks.) vaše skupne hitrosti prenosa k vam.";
 hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno širino.";
 hqos.right8="Doloèite lahko prioriteto za ves promet z doloèenega IPja ali razpona IPjev.";
 hqos.right10="Doloèite lahko hitrost za ves promet z doloèene naprave na Vaši mreži tako, da doloèite ime naprave, \
@@ -1041,7 +1039,7 @@ service.kaid_mac="MAC konzole: (konèati se mora z ;)";
 
 //DHCPd
 service.dhcp_legend="DHCP odjemalec";
-service.dhcp_vendor="Nastavi Vendorclass";
+service.dhcp_vendor="Nastavitev Vendorclass";
 service.dhcp_legend2="DHCP strežnik";
 service.dhcp_srv="DHCP demon";
 service.dhcp_jffs2="Uporabi JFFS2 za bazo zakupov";
@@ -1157,7 +1155,7 @@ status_router.sys_load="Povpreèna obremenitev";
 status_router.legend2="Procesor";
 status_router.cpu="Model procesorja";
 status_router.clock="Ura procesorja";
-status_router.legend3="MSpomin";
+status_router.legend3="Spomin";
 status_router.mem_tot="Skupaj na voljo";
 status_router.mem_free="Prosto";
 status_router.mem_used="Uporabljeno";
@@ -1457,8 +1455,8 @@ wl_basic.label4="Brezžièni kanal";
 wl_basic.label5="Brezžièno oddajanje SSID";
 wl_basic.label6="Obmoèje obèutljivosti (ACK uèasenje)";
 wl_basic.ap="AP";
-wl_basic.client="Klient";
-wl_basic.clientBridge="Klient-most";
+wl_basic.client="Odjemalec";
+wl_basic.clientBridge="Odjemalec-most";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mešano";
 wl_basic.b="Samo-B";
@@ -1467,7 +1465,7 @@ wl_basic.sensitivity="Privzeto: 20000 metrov";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right2="Èe želite prepovedati vstop klientom G, izberite <em>Samo_B</em> naèin. Èe želite izkljuèiti brezžièno omrežje, izberite <em>Onemogoèie</em>.";
+hwl_basic.right2="Èe želite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe želite izkljuèiti brezžièno omrežje, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
 hwl_basic.right4="Prilagodi ACK uèasenje. 0 popolnoma onemogoèi ACK uèasenje.";
 
@@ -1491,8 +1489,8 @@ wl_adv.label8="Prag drobitve";
 wl_adv.label9="RTS prag";
 wl_adv.label10="Najveèje št. pridruženih odjemalcev";
 wl_adv.label11="AP osamitev";
-wl_adv.label12="oddajna antena";
-wl_adv.label13="sprejemna antena";
+wl_adv.label12="Oddajna antena";
+wl_adv.label13="Sprejemna antena";
 wl_adv.label14="Preambula";
 wl_adv.reference="Referenca šuma";
 wl_adv.label15="Oddajna moè";
