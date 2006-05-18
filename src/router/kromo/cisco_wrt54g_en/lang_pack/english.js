@@ -1228,7 +1228,7 @@ status_wireless.wds="WDS Nodes";
 //help container
 var hstatus_wireless = new Object();
 hstatus_wireless.right2="This is the Router's MAC Address, as seen on your local, wireless network.";
-hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.";
+hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, B-Only or Disabled) used by the network.";
 
 
 
