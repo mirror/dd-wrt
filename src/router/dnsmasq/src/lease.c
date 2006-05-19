@@ -29,7 +29,7 @@ leases = NULL;
 leases_left = daemon->dhcp_max;
 //printf("load dhcp leases"); 
 FILE *lease_file=load_dhcp(daemon,now);
-rewind(lease_file);
+//rewind(lease_file);
 //printf("done"); 
 file_dirty=no;
 dns_dirty=1;
@@ -296,7 +296,7 @@ lease_update_file (struct daemon *daemon, int always, time_t now)
 /* DD-WRT udhcpd lease file compatibility */
 fprintf(stderr,"update lease file\n");
 
-//  if (file_dirty != no)
+  if (file_dirty != no)
     {
       rewind (daemon->lease_stream);
       ftruncate (fileno (daemon->lease_stream), 0);
