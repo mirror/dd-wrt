@@ -462,10 +462,10 @@ int dnsmasq_main (int argc, char **argv)
 	{
 	  last = now;
 
-//#ifdef HAVE_ISC_READER
-//	  if (daemon->lease_file && !daemon->dhcp)
-//	    load_dhcp(daemon, now);
-//#endif
+#ifdef HAVE_ISC_READER
+	  if (daemon->lease_file && !daemon->dhcp)
+	    load_dhcp(daemon, now);
+#endif
 
 	  if (!(daemon->options & OPT_NO_POLL))
 	    {
