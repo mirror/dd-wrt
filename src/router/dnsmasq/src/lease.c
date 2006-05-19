@@ -29,7 +29,7 @@ leases = NULL;
 leases_left = daemon->dhcp_max;
 //printf("load dhcp leases"); 
 FILE *lease_file=load_dhcp(daemon,now);
-//rewind(lease_file);
+rewind(lease_file);
 //printf("done"); 
 file_dirty=no;
 dns_dirty=1;
