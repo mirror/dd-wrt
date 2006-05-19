@@ -36,6 +36,8 @@ struct isc_lease {
 };
 
 static struct isc_lease *leases = NULL;
+static off_t lease_file_size = (off_t)0;
+static ino_t lease_file_inode = (ino_t)0;
 static int logged_lease = 0;
 
 //void load_dhcp(char *file, char *suffix, time_t now, char *hostname)
@@ -53,11 +55,25 @@ FILE *load_dhcp(struct daemon *daemon, time_t now)
   struct isc_lease *lease, *tmp, **up;
   struct stat statbuf;
 
+  if (stat(file, &statbuf) == -1)
+    {
+      if (!logged_lease)
+	syslog(LOG_WARNING, "failed to access %s: %m", file);
+      logged_lease = 1;
+      return;
+    }
+  
   logged_lease = 0;
   
+  if ((statbuf.st_size <= lease_file_size) &&
+      (statbuf.st_ino == lease_file_inode))
+    return;
   
-//  if (!(fp = fopen (file, "r+b")))
-//    {
+  lease_file_size = statbuf.st_size;
+  lease_file_inode = statbuf.st_ino;
+
+  if (!(fp = fopen (file, "r+b")))
+    {
 fprintf(stderr,"opening %s\n",file);
       if (!(fp = fopen (file, "wb")))
       {
@@ -65,7 +81,7 @@ fprintf(stderr,"error while opening %s\n",file);
       syslog (LOG_ERR, "failed to load %s: %m", file);
       return NULL;
       }
-//    }
+    }
 fprintf(stderr,"done()\n");
   
   syslog (LOG_INFO, "reading %s", file);
