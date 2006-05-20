@@ -1,4 +1,3 @@
-// Not workin20.05.2006 03:34g in IE & Opera ?08.05.2006 15:117.05.2006 15:5717.05.2006 15:57
 //************ Include the current language file after english.js ************//
 //  var Head = document.getElementsByTagName('head')[0];
 //  var head_inc = document.createElement('script');
