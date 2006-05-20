@@ -4,7 +4,7 @@ var lang_charset = new Object();
 lang_charset.set="iso-8859-2";
 
 var share = new Object();
-share.firmwarever="Strojna programska oprema";
+share.firmware="Strojna programska oprema";
 share.time="Èas";
 share.interipaddr="Internetni naslov IP";
 share.more="Veè...";
