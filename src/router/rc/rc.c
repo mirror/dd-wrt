@@ -507,7 +507,7 @@ main (int argc, char **argv)
   if (strstr (base, "ip-up"))
     return start_main ("ipup", argc, argv);
   else if (strstr (base, "ip-down"))
-    return start_main ("updown", argc, argv);
+    return start_main ("ipdown", argc, argv);
 
   /* udhcpc [ deconfig bound renew ] */
   else if (strstr (base, "udhcpc"))
