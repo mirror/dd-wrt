@@ -919,6 +919,7 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP Port";
 management.SIPatH_domain="SIP Domain";
 
+management.gui_style="Router GUI Style";
 
 //help container
 var hmanagement = new Object();
