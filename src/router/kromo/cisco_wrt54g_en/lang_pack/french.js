@@ -8,7 +8,7 @@ var lang_charset = new Object();
 lang_charset.set="iso-8859-1";
 
 var share = new Object();
-share.firmwarever="Micrologiciel";
+share.firmware="Micrologiciel";
 share.time="Heure";
 share.interipaddr="Adresse IP Internet";
 share.more="Plus...";
