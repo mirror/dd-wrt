@@ -738,6 +738,17 @@ idx.wantoswitch="WAN Port dem Switch zuweisen";
 idx.legend3="Zeit Einstellungen";
 idx.timeset="Zeitzone / Sommerzeit (DST)";
 idx.localtime="Nutze Lokale Zeit";
+idx.static_ip="Static IP";
+idx.dhcp="Automatische Konfiguration - DHCP";
+idx.dhcp_legend="Netzwerk Address Server Einstellungen (DHCP)";
+idx.dhcp_type="DHCP Typ";
+idx.dhcp_srv="DHCP Server";
+idx.dhcp_fwd="DHCP Weiterleitung";
+idx.dhcp_start="Start IP Addresse";
+idx.dhcp_end="End IP Addresse";		//used in Status_Lan.asp
+idx.dhcp_maxusers="Maximale DHCP Nutzer";
+idx.dhcp_lease="Client Lease Zeit";
+idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
 
 //help container
 var hidx = new Object();
