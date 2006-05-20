@@ -815,7 +815,7 @@ management.h2="Router Management";
 management.psswd_legend="Router Password";
 management.psswd_user="Router Nutzername";
 management.psswd_pass="Router Passwort";
-management.pass_conf="Zur bestätigen Wiedereingeben";
+management.pass_conf="Zum bestätigen Wiedereingeben";
 
 management.remote_legend="Fernzugriff";
 management.remote_gui="Web GUI Management";
@@ -1246,7 +1246,7 @@ upgrad.resetOff="Kein Reset";
 upgrad.resetOn="Standard Einstellungen";
 upgrad.file="Bitte geben sie eine Daten für das Upgrade an";
 upgrad.warning="W A R N U N G";
-upgrad.mess1="Das Upgraden der Firmware kann eine Minuten dauern.<br />Bitte schalten sie nicht das Gerät ab und drücken Sie auch nicht den Reset Knopf!";
+upgrad.mess1="Das Upgraden der Firmware kann einige Minuten dauern.<br />Bitte schalten sie nicht das Gerät ab und drücken Sie auch nicht den Reset Knopf!";
 
 //help container
 var hupgrad = new Object();
