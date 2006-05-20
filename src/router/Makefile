@@ -1019,7 +1019,7 @@ endif
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
 	$(MAKE) -C pppd/pppd/plugins/radius
 endif
-	$(MAKE) -C pppd/pppd/plugins/pppoatm
+#	$(MAKE) -C pppd/pppd/plugins/pppoatm
 
 
 pppd-clean pppd-distclean: pppd-symlinks
