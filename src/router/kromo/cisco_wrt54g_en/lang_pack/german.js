@@ -4,7 +4,7 @@ var lang_charset = new Object();
 lang_charset.set="iso-8859-1";
 
 var share = new Object();
-share.firmwarever="Firmware";
+share.firmware="Firmware";
 share.time="Zeit";
 share.interipaddr="Internet IP Addresse";
 share.more="Mehr...";
