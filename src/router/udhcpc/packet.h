@@ -21,13 +21,13 @@ struct dhcpMessage {
 	uint8_t file[128];
 	uint32_t cookie;
 	uint8_t options[308]; /* 312 - cookie */
-};
+} __attribute__((packed));
 
 struct udp_dhcp_packet {
 	struct iphdr ip;
 	struct udphdr udp;
 	struct dhcpMessage data;
-};
+} __attribute__((packed));
 
 void init_header(struct dhcpMessage *packet, char type);
 int get_packet(struct dhcpMessage *packet, int fd);
