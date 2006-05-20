@@ -3153,7 +3153,7 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
         continue;
       strcpy(buf,entry->d_name);
       buf[strlen(buf)-3]=0; //strip .js
-      websWrite("<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");</script>\n", buf, 
+      websWrite(wp,"<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");</script>\n", buf, 
       				nvram_match ("language", buf) ? "selected=\\\"selected\\\"" : "", buf);
     }
   closedir (directory);
