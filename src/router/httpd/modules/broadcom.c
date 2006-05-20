@@ -3151,7 +3151,7 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
       if (strlen(entry->d_name)<4)
         continue;
       strcpy(newname,entry->d_name);
-      newname[strlen(newname)-3]=0; //strip .js
+      //newname[strlen(newname)-3]=0; //strip .js
       websWrite("<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");</script>\n", newname, 
       				nvram_match ("language", newname) ? "selected=\\\"selected\\\"" : "", newname);
     }
