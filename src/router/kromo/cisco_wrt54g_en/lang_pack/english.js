@@ -127,6 +127,7 @@ share.encrypt="Encryption";
 share.key="Key";
 share.wireless="Wireless";
 share.dhcp="DHCP";
+share.styl="Style";
 
 
 var sbutton = new Object();
@@ -173,6 +174,7 @@ sbutton.dhcpren="DHCP Renew";
 sbutton.survey="Site Survey";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
+sbutton.preview="Preview";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
@@ -690,6 +692,7 @@ info.wlanmac="Wireless MAC";
 info.srv="Services";
 
 
+
 // ******************************************* index_heartbeat.asp *******************************************//
 
 var idx_h = new Object();
@@ -843,7 +846,6 @@ management.remote_ssh="SSH Management";
 management.remote_sshport="SSH Port";
 
 management.web_legend="Web Access";
-management.web_proto="Protocol";
 management.web_refresh="Auto-Refresh (in seconds)";
 management.web_sysinfo="Enable Info Site";
 management.web_sysinfopass="Info Site Password Protection";
@@ -855,8 +857,8 @@ management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNS Masq";
-management.dsn_srv="DNS Masq";
+management.dsn_legend="DNSMasq";
+management.dsn_srv="DNSMasq";
 management.dsn_loc="Local DNS";
 management.dsn_opt="Additional DNS Options";
 
@@ -925,6 +927,9 @@ management.samba_stscript="Startscript";
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP Port";
 management.SIPatH_domain="SIP Domain";
+
+management.gui_style="Router GUI Style";
+
 
 
 //help container
@@ -1221,7 +1226,7 @@ status_wireless.legend2="Packet Info";
 status_wireless.rx="Received (RX)";
 status_wireless.tx="Transmitted (TX)";
 status_wireless.h22="Wireless Nodes";
-status_wireless.legend3="Clients";
+status_wireless.legend3="Wireless clients";
 status_wireless.signal_qual="Signal Quality";
 status_wireless.wds="WDS Nodes";
 

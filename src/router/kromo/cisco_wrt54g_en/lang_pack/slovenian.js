@@ -1,11 +1,3 @@
-// Not working in IE & Opera ?
-//************ Include the current language file after english.js ************//
-//  var Head = document.getElementsByTagName('head')[0];
-//  var head_inc = document.createElement('script');
-//  head_inc.setAttribute('type','text/javascript');
-//  head_inc.setAttribute('src',"lang_pack/language.js");
-//  Head.appendChild(head_inc);
-
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
 var lang_charset = new Object();
@@ -836,7 +828,6 @@ management.remote_ssh="Upravljanje SSH";
 management.remote_sshport="SSH vrata";
 
 management.web_legend="Dostop do uporabniškega vmesnika";
-management.web_proto="Protokol";
 management.web_refresh="Samodejno osveževanje (v sekundah)";
 management.web_sysinfo="Omogoèi Info stran";
 management.web_sysinfopass="Info stran zašèitena z geslom";
@@ -848,8 +839,8 @@ management.boot_srv="Zagonska pavza";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNS Masq";
-management.dsn_srv="DNS Masq";
+management.dsn_legend="DNSMasq";
+management.dsn_srv="DNSMasq";
 management.dsn_loc="Lokalni DNS";
 management.dsn_opt="Dodatne DNS možnosti";
 
