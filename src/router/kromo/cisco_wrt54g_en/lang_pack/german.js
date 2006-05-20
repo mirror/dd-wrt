@@ -89,7 +89,7 @@ share.auto="Auto";
 share.right="Rechts";
 share.left="Links";
 share.share_key="Shared Key";
-share.inter="Interval (in sekunden)";
+share.inter="Interval (in Sekunden)";
 share.srv="Service Name";
 share.port_range="Port Bereich";
 share.priority="Priorität";
@@ -330,7 +330,7 @@ alive.titl=" - Lebenserhaltung";
 alive.h2="Lebenserhaltung";
 alive.legend="Geplanter Neustart";
 alive.sevr1="Reboot Planen";
-alive.time="Zeit (in sekundenj)";
+alive.time="Zeit (in Sekundenj)";
 alive.hour="Zu einem festen Zeitpunkt";
 alive.legend2="WDS/Verbindungsüberwachung";
 alive.sevr2="Überwachung Einschalten";
@@ -945,6 +945,7 @@ qos.legend="QoS Einstellungen";
 qos.srv="Start QoS";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
+qos.type="Packet Scheduler";
 qos.gaming="Für Spiele optimieren";
 qos.legend2="Service Priorität";
 qos.prio_p="Premium";
@@ -978,9 +979,9 @@ hqos.right12="You may control your data rate according to which physical LAN por
 // **************************************************************** RouteTable.asp **********************************************************************//
 
 var routetbl = new Object();
-routetbl.titl=" - Routing Table";
-routetbl.h2="Routing Table Entry List";
-routetbl.th1="Destination LAN IP";
+routetbl.titl=" - Routen Tabelle";
+routetbl.h2="Routen Tabelle";
+routetbl.th1="Ziel LAN IP";
 
 
 
@@ -988,18 +989,18 @@ routetbl.th1="Destination LAN IP";
 
 var route = new Object();
 route.titl=" - Routing";
-route.h2="Advanced Routing";
-route.mod="Operating Mode";
-route.bgp_legend="BGP Settings";
-route.bgp_ip="Neighbor IP";
-route.bgp_as="Neighbor AS#";
+route.h2="Erweitertes Routing";
+route.mod="Operations Modus";
+route.bgp_legend="BGP Einstellungen";
+route.bgp_ip="Nachbar IP";
+route.bgp_as="Nachbar AS#";
 route.rip2_mod="RIP2 Router";
 route.ospf_mod="OSPF Router";
-route.gateway_legend="Dynamic Routing";
-route.static_legend="Static Routing";
+route.gateway_legend="Dynamisches Routing";
+route.static_legend="Statisches Routing";
 route.static_setno="Select set number";
-route.static_name="Route Name";
-route.static_ip="Destination LAN IP";
+route.static_name="Routen Name";
+route.static_ip="Ziel LAN IP";
 
 //help container
 var hroute = new Object();
@@ -1363,7 +1364,7 @@ wpa.psk="WPA Pre-Shared Key";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
-wpa.rekey="Key Renewal Interval (in sekunden)";
+wpa.rekey="Key Renewal Interval (in Sekunden)";
 wpa.radius_ipaddr="RADIUS Server IP";
 wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
@@ -1426,7 +1427,7 @@ radius.label4="Radius Server Port";
 radius.label5="Erlaubte Unauthentifizierte Nutzer";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
-radius.label8="Umgehe Radius wenn Server nicht verfügbar";
+radius.label8="Umgehen wenn Server nicht verfügbar";
 radius.mac="MAC";
 
 
