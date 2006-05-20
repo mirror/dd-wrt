@@ -1,3 +1,4 @@
+// Not workin20.05.2006 03:34g in IE & Opera ?08.05.2006 15:117.05.2006 15:5717.05.2006 15:57
 //************ Include the current language file after english.js ************//
 //  var Head = document.getElementsByTagName('head')[0];
 //  var head_inc = document.createElement('script');
@@ -164,7 +165,7 @@ sbutton.edit_srv="Hinzufügen/Editieren Service";
 sbutton.routingtab="Routen Tabelle Anzeigen";
 sbutton.wanmac="Zeige aktuelle PC MAC Addresse";
 sbutton.dhcprel="DHCP Freigeben";
-sbutton.dhcpren="DHCP Erneuern;
+sbutton.dhcpren="DHCP Erneuern";
 sbutton.survey="Wireless Suche";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
