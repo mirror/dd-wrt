@@ -46,7 +46,7 @@
 	<fieldset>
 		<legend><script type="text/javascript">Capture(management.web_legend)</script></legend>
 		<div class="setting">
-			<div class="label"><script type="text/javascript">Capture(management.web_proto)</script></div>
+			<div class="label"><script type="text/javascript">Capture(share.proto)</script></div>
 			<input type="checkbox" value="1" name="_http_enable" <% nvram_checked("http_enable", "1"); %> />HTTP
 		</div>
 		<div class="setting">
