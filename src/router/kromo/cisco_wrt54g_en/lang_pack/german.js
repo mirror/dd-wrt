@@ -1,4 +1,4 @@
-// Not working in IE & Opera ?08.05.2006 15:117.05.2006 15:5717.05.2006 15:57
+// Not workin20.05.2006 03:34g in IE & Opera ?08.05.2006 15:117.05.2006 15:5717.05.2006 15:57
 //************ Include the current language file after english.js ************//
 //  var Head = document.getElementsByTagName('head')[0];
 //  var head_inc = document.createElement('script');
@@ -1335,17 +1335,17 @@ hwol.right6="IP Address is typically the broadcast address for the local network
 // **************************************************************** WanMAC.asp **********************************************************************//
 
 var wanmac = new Object();
-wanmac.titl=" - MAC Address Clone";
-wanmac.h2="MAC Address Clone";
-wanmac.legend="MAC Clone";
-wanmac.wan="Clone WAN MAC";
-wanmac.wlan="Clone Wireless MAC";
+wanmac.titl=" - MAC Address Klonen";
+wanmac.h2="MAC Address Klonen";
+wanmac.legend="MAC Klonen";
+wanmac.wan="Klone WAN MAC";
+wanmac.wlan="Klone Wireless MAC";
 
 //help container
 var hwanmac = new Object();
 hwanmac.right1="MAC Address Clone:";
-hwanmac.right2="Some ISP will require you to register your MAC address. \
-			If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
+hwanmac.right2="Manche Anbieter setzen eine Registration ihrer MAC Addresse vorraus. \
+			Wenn Sie ihre MAC Addresse nicht neu registrieren möchten, können Sie hier ihre MAC Addresse klonen so wie sie bei ihrem Anbieter registriert ist.";
 
 
 // **************************************************************** WL_WPATable.asp **************************************************************//
@@ -1378,20 +1378,20 @@ hwpa.right2="Hier können Sie zwischen Deaktiviert, WEP, WPA Pre-Shared Key, WPA 
 // **************************************************************** WL_FilterTable.asp **************************************************************//
 
 var wl_filter = new Object();
-wl_filter.titl=" - MAC Address Filter List";
-wl_filter.h2="MAC Address Filter List";
-wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+wl_filter.titl=" - MAC Address Filter Liste";
+wl_filter.h2="MAC Address Filter Liste";
+wl_filter.h3="Geben Sie die MAC Addresse in folgendem Format an:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 
 // **************************************************************** WL_ActiveTable.asp **************************************************************//
 
 var wl_active = new Object();
-wl_active.titl=" - Wireless Active Client MAC List";
+wl_active.titl=" - Wireless Aktive Client MAC Liste";
 wl_active.h2="Wireless Client MAC List";
-wl_active.h3="Enable MAC Filter";
-wl_active.active="Active PC";
-wl_active.inactive="Inactive PC";
+wl_active.h3="Aktiviere MAC Filter";
+wl_active.active="Aktive PC";
+wl_active.inactive="Inaktive PC";
 
 
 
@@ -1400,11 +1400,11 @@ wl_active.inactive="Inactive PC";
 var wds = new Object();
 wds.titl=" - WDS";
 wds.h2="Wireless Distribution System";
-wds.legend="WDS Settings";
+wds.legend="WDS Einstellungen";
 wds.label="Lazy WDS";
-wds.label2="WDS Subnet";
+wds.label2="WDS Subnetz";
 wds.wl_mac="Wireless MAC";
-wds.lazy_default="Default: Disable";
+wds.lazy_default="Standard: Abgeschaltet";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 
@@ -1420,10 +1420,10 @@ radius.label="MAC Radius Client";
 radius.label2="MAC Format";
 radius.label3="Radius Server IP";
 radius.label4="Radius Server Port";
-radius.label5="Maximum Unauthenticated Users";
+radius.label5="Maximal erlaubte Unauthentifizierte Nutzer";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
-radius.label8="Override Radius if Server is unavailable";
+radius.label8="Umgehe den Radius wenn der Server nicht verfügbar ist";
 radius.mac="MAC";
 
 
@@ -1434,10 +1434,10 @@ var wl_mac = new Object();
 wl_mac.titl=" - MAC Filter";
 wl_mac.h2="Wireless MAC Filter";
 wl_mac.legend="MAC Filter";
-wl_mac.label="Use Filter";
-wl_mac.label2="Filter Mode";
-wl_mac.deny="Prevent PCs listed from accessing the wireless network";
-wl_mac.allow="Permit only PCs listed to access the wireless network";
+wl_mac.label="Nutze Filter";
+wl_mac.label2="Filter Modus";
+wl_mac.deny="Unterbindet den angebebenen PC's den Zugriff auf das Wireless Netzwerk";
+wl_mac.allow="Erlaubt nur PC's in der Liste den Zugriff auf das Wireless Netzwerk";
 
 
 
@@ -1446,39 +1446,39 @@ wl_mac.allow="Permit only PCs listed to access the wireless network";
 var wl_basic = new Object();
 wl_basic.titl=" - Wireless";
 wl_basic.h2="Wireless";
-wl_basic.legend="Basic Settings";
-wl_basic.label="Wireless Mode";
-wl_basic.label2="Wireless Network Mode";
+wl_basic.legend="Basis Einstellungen";
+wl_basic.label="Wireless Modus";
+wl_basic.label2="Wireless Network Modus";
 wl_basic.label3="Wireless Network Name (SSID)";
-wl_basic.label4="Wireless Channel";
+wl_basic.label4="Wireless Kanal";
 wl_basic.label5="Wireless SSID Broadcast";
-wl_basic.label6="Sensitivity Range (ACK Timing)";
+wl_basic.label6="Empfindlichkeits Bereich (ACK Timing)";
 wl_basic.ap="AP";
 wl_basic.client="Client";
 wl_basic.clientBridge="Client Bridge";
 wl_basic.adhoc="Adhoc";
-wl_basic.mixed="Mixed";
-wl_basic.b="B-Only";
-wl_basic.g="G-Only";
-wl_basic.sensitivity="Default: 20000 meters";
+wl_basic.mixed="Gemischt";
+wl_basic.b="Nur-B";
+wl_basic.g="Nur-G";
+wl_basic.sensitivity="Standard: 20000 meter";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right1="Wireless Network Mode: ";
-hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.";
-hwl_basic.right3="Sensitivity Range: ";
-hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
+hwl_basic.right1="Wireless Network Modus: ";
+hwl_basic.right2="Wenn sie G Clients komplett ausschließen wollen sollten Sie <em>Nur-B</em> wählen. Wenn Sie den Wireless Zugriff abschalten wollen, wählen Sie <em>Abschalten</em>.";
+hwl_basic.right3="Empfindlichkeits Bereich: ";
+hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
 
 
 
 // **************************************************************** Wireless_Advanced.asp ***************************************************************//
 
 var wl_adv = new Object();
-wl_adv.titl=" - Advanced Wireless Settings";
-wl_adv.h2="Advanced Wireless Settings";
-wl_adv.legend="Advanced Settings";
-wl_adv.legend2="Wireless Multimedia Support Settings";
-wl_adv.label="Authentication Type";
+wl_adv.titl=" - Erweiterte Wireless Einstellungen";
+wl_adv.h2="Erweiterte Wireless Einstellungen";
+wl_adv.legend="Erweiterte Einstellungen";
+wl_adv.legend2="Wireless Multimedia Unterstützung Einstellungen";
+wl_adv.label="Authentication Typ";
 wl_adv.label2="Basic Rate";
 wl_adv.label3="Transmission Rate";
 wl_adv.label4="CTS Protection Mode";
@@ -1489,15 +1489,15 @@ wl_adv.label8="Fragmentation Threshold";
 wl_adv.label9="RTS Threshold";
 wl_adv.label10="Max Associated Clients";
 wl_adv.label11="AP Isolation";
-wl_adv.label12="TX Antenna";
-wl_adv.label13="RX Antenna";
+wl_adv.label12="TX Antenne";
+wl_adv.label13="RX Antenne";
 wl_adv.label14="Preamble";
 wl_adv.label15="Xmit Power";
 wl_adv.label16="Afterburner";
-wl_adv.label17="Wireless GUI Access";
-wl_adv.label18="WMM Support";
+wl_adv.label17="Wireless GUI Zugriff";
+wl_adv.label18="WMM Unterstützung";
 wl_adv.label19="No-Acknowledgement";
-wl_adv.table1="EDCA AP Parameters (AP to Client)";
+wl_adv.table1="EDCA AP Parameter (AP nach Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
@@ -1514,16 +1514,16 @@ wl_adv.shrt="Short"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Authentication Type:";
-hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
+hwl_adv.right1="Authentication Typ:";
+hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muß dazu jedes Gerät in ihrem Netzwerk diesen Betriebsmodus unterstützen.";
 
 
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
 var fail = new Object();
-fail.mess1="The values you entered are invalid. Please try again.";
-fail.mess2="Upgrade failed.";
+fail.mess1="Die Angegebenen Werte sind nicht korrekt. Bitte versuchen Sie es noch einmal.";
+fail.mess2="Upgrade fehlgeschlagem.";
 
 
 
@@ -1551,9 +1551,9 @@ success.alert3="If you are connected via WLAN, please join the network and then 
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
 var dhcp = new Object();
-dhcp.titl=" - DHCP Active IP Table";
-dhcp.h2="DHCP Active IP Table";
-dhcp.server="DHCP Server IP Address :";
+dhcp.titl=" - DHCP Aktive IP Tabelle";
+dhcp.h2="DHCP Aktive IP Table";
+dhcp.server="DHCP Server IP Addresse :";
 dhcp.tclient="Client Host Name";
 
 
