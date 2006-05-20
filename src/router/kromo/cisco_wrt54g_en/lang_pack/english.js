@@ -951,7 +951,7 @@ portserv.h2="Port Services";
 
 var qos = new Object();
 qos.titl=" - Quality of Service";
-qos.h2="Quality Of Service (QoS )";
+qos.h2="Quality Of Service (QoS)";
 qos.legend="QoS Settings";
 qos.srv="Start QoS";
 qos.type="Packet Scheduler";
