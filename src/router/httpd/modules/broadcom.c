@@ -3134,6 +3134,40 @@ ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 static void
+ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  DIR *directory;
+  char buf[256];
+  directory = opendir ("/www/lang_pack");
+  struct dirent *entry;
+  while ((entry = readdir (directory)) != NULL)
+    {
+      sprintf (buf, "/www/lang_pack/%s", entry->d_name);
+      FILE *test = fopen (buf, "rb");
+      if (test == NULL)
+	continue;
+      fclose (test);
+      char newname[64];
+      strncpy(newname,entry->d_name,63);
+      newname[strlen(newname)-3]=0; //strip .js
+      websWrite("<script type=\"text/javascript\">document.write(\"<option value=\\\"\" + management.lang_%s + \"\\\" %s >\" + management.lang_%s + \"</option>\");</script>",newname,nvram_match("language",newname)?"selected":"",newname);
+    }
+  closedir (directory);
+  return;
+}
+
+/*void
+ej_show_languages (int eid, webs_t wp, int argc, char_t **argv)
+{
+
+
+
+      	<script type="text/javascript">document.write("<option value=\"" + management.lang_english + "\" <% nvram_selected("language","english"); %> >" + management.lang_english + "</option>");</script>
+
+
+}
+
+static void
 ej_show_modules (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char buf[256];
@@ -3968,6 +4002,7 @@ struct ej_handler ej_handlers[] = {
   {"get_clone_wmac", ej_get_clone_wmac},
   {"show_modules", ej_show_modules},
   {"show_styles", ej_show_styles},
+  {"show_languages", ej_show_languages},
   {"show_forward", ej_show_forward},
   {"show_forward_spec", ej_show_forward_spec},
   {"show_triggering", ej_show_triggering},
