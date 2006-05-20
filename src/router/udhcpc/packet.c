@@ -129,6 +129,8 @@ int raw_packet(struct dhcpMessage *payload, uint32_t source_ip, int source_port,
 
 	memset(&dest, 0, sizeof(dest));
 	memset(&packet, 0, sizeof(packet));
+	
+	int messagelen = sizeof(struct dhcpMessage) - 308 + end_option(payload->options);
 
 	dest.sll_family = AF_PACKET;
 	dest.sll_protocol = htons(ETH_P_IP);
@@ -146,9 +148,9 @@ int raw_packet(struct dhcpMessage *payload, uint32_t source_ip, int source_port,
 	packet.ip.daddr = dest_ip;
 	packet.udp.source = htons(source_port);
 	packet.udp.dest = htons(dest_port);
-	packet.udp.len = htons(sizeof(packet.udp) + sizeof(struct dhcpMessage)); /* cheat on the psuedo-header */
+	packet.udp.len = htons(sizeof(packet.udp) + messagelen); /* cheat on the psuedo-header */
 	packet.ip.tot_len = packet.udp.len;
-	memcpy(&(packet.data), payload, sizeof(struct dhcpMessage));
+	memcpy(&(packet.data), payload, messagelen);
 	packet.udp.check = checksum(&packet, sizeof(struct udp_dhcp_packet));
 
 	packet.ip.tot_len = htons(sizeof(struct udp_dhcp_packet));
@@ -195,8 +197,9 @@ int kernel_packet(struct dhcpMessage *payload, uint32_t source_ip, int source_po
 
 	if (connect(fd, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
 		return -1;
+	int messagelen = sizeof(struct dhcpMessage) - 308 + end_option(payload->options);
 
-	result = write(fd, payload, sizeof(struct dhcpMessage));
+	result = write(fd, payload, messagelen);
 	close(fd);
 	return result;
 }
