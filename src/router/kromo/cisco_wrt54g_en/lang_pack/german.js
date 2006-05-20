@@ -1,11 +1,3 @@
-// Not workin20.05.2006 03:34g in IE & Opera ?08.05.2006 15:117.05.2006 15:5717.05.2006 15:57
-//************ Include the current language file after english.js ************//
-//  var Head = document.getElementsByTagName('head')[0];
-//  var head_inc = document.createElement('script');
-//  head_inc.setAttribute('type','text/javascript');
-//  head_inc.setAttribute('src',"lang_pack/language.js");
-//  Head.appendChild(head_inc);
-
 
 // ************************************************************ COMMON SHARE LABEL ***************************************************************//
 var lang_charset = new Object();
@@ -833,7 +825,6 @@ management.remote_ssh="SSH Management";
 management.remote_sshport="SSH Port";
 
 management.web_legend="Web Zugriff";
-management.web_proto="Protokoll";
 management.web_refresh="Automatisches Auffrischen (in seconds)";
 management.web_sysinfo="Info Seite einschalten";
 management.web_sysinfopass="Info Seite Passwort Schutz";
@@ -845,8 +836,8 @@ management.boot_srv="Beim Booten Warten";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNS Masq";
-management.dsn_srv="DNS Masq";
+management.dsn_legend="DNSMasq";
+management.dsn_srv="DNSMasq";
 management.dsn_loc="Lokaler DNS";
 management.dsn_opt="Zusätzliche DNS Optionen";
 
