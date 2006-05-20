@@ -3136,7 +3136,7 @@ ej_show_styles (int eid, webs_t wp, int argc, char_t ** argv)
 static void
 ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  /*DIR *directory;
+  DIR *directory;
   char buf[256];
   char newname[64];
   directory = opendir ("/www/lang_pack");
@@ -3156,7 +3156,7 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
       				nvram_match ("language", newname) ? "selected=\\\"selected\\\"" : "", newname);
     }
   closedir (directory);
-  return;*/
+  return;
 }
 
 static void
