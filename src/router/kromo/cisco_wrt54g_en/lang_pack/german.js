@@ -928,7 +928,7 @@ portserv.h2="Port Services";
 
 var qos = new Object();
 qos.titl=" - Service Qualität";
-qos.h2="Service Qualität (QoS )";
+qos.h2="Service Qualität (QoS)";
 qos.legend="QoS Einstellungen";
 qos.srv="Start QoS";
 qos.uplink="Uplink (kbps)";
