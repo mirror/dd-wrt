@@ -3139,7 +3139,7 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
   DIR *directory;
   char buf[256];
   directory = opendir ("/www/lang_pack");
-  if (directoy==NULL)
+  if (directory==NULL)
     return;
   struct dirent *entry;
   while ((entry = readdir (directory)) != NULL)
