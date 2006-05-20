@@ -3138,8 +3138,9 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
 {
   DIR *directory;
   char buf[256];
-  char newname[64];
   directory = opendir ("/www/lang_pack");
+  if (directoy==NULL)
+    return;
   struct dirent *entry;
   while ((entry = readdir (directory)) != NULL)
     {
@@ -3150,10 +3151,10 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
       fclose (test);
       if (strlen(entry->d_name)<4)
         continue;
-      strcpy(newname,entry->d_name);
-      newname[strlen(newname)-3]=0; //strip .js
-      websWrite("<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");</script>\n", newname, 
-      				nvram_match ("language", newname) ? "selected=\\\"selected\\\"" : "", newname);
+      strcpy(buf,entry->d_name);
+      buf[strlen(buf)-3]=0; //strip .js
+      websWrite("<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");</script>\n", buf, 
+      				nvram_match ("language", buf) ? "selected=\\\"selected\\\"" : "", buf);
     }
   closedir (directory);
   return;
