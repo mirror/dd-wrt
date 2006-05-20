@@ -930,7 +930,7 @@ portserv.h2="Storitve vrat";
 
 var qos = new Object();
 qos.titl=" - Kakovost storitev (QoS)";
-qos.h2="Kakovost storitev (QoS )";
+qos.h2="Kakovost storitev (QoS)";
 qos.legend="QoS nastavitve";
 qos.srv="Zaženi QoS";
 qos.type="Paketni naèrt";
