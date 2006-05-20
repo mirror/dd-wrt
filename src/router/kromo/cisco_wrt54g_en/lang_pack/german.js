@@ -83,7 +83,7 @@ share.point2point="Punkt zu Punkt";
 share.nat="NAT";
 share.subnet="Subnet Mask";
 share.unmask="Unmask";
-share.deflt="Standard";  //don't use share.default !!!
+share.deflt="Std";  //don't use share.default !!!
 share.all="Alles";
 share.auto="Auto";
 share.right="Rechts";
@@ -263,7 +263,7 @@ errmsg.err58="Klicken um die Zuweisung zu löschen";
 errmsg.err59="Nicht verfügbar! Bitte schalten sie das Wireless Netzwerk an.";
 
 //Upgrade.asp error messages
-errmsg.err60="Bitte geben sie eine Date zum upgraden an.";
+errmsg.err60="Bitte geben sie eine Datei zum upgraden an.";
 errmsg.err61="Ungültiges Dateiformat.";
 
 
@@ -354,7 +354,7 @@ config.legend="Backup Einstellungen";
 config.mess1="Klickem Sie den \"" + sbutton.backup + "\" Button um die Backup Datei zu downloaden.";
 config.h22="Konfiguration Wiederherstellen";
 config.legend2="Einstellungen Wiederherstellen";
-config.mess2="Bitte geben Sie eine Datei zur Wiederherstellung an";
+config.mess2="Datei zur Wiederherstellung";
 config.mess3="W A R N U N G";
 config.mess4="Uploaden Sie nur Dateien die auch mit dieser Firmware auf dem selben Routermodell erstellt wurden.!";
 
@@ -1244,7 +1244,7 @@ upgrad.legend="Firmware Upgrade";
 upgrad.info1="Nach dem Flashen zurücksetze auf";
 upgrad.resetOff="Kein Reset";
 upgrad.resetOn="Standard Einstellungen";
-upgrad.file="Bitte geben sie eine Daten für das Upgrade an";
+upgrad.file="Firmware Upgrade Datei";
 upgrad.warning="W A R N U N G";
 upgrad.mess1="Das Upgraden der Firmware kann einige Minuten dauern.<br />Bitte schalten sie nicht das Gerät ab und drücken Sie auch nicht den Reset Knopf!";
 
@@ -1411,10 +1411,10 @@ radius.label="MAC Radius Client";
 radius.label2="MAC Format";
 radius.label3="Radius Server IP";
 radius.label4="Radius Server Port";
-radius.label5="Maximal erlaubte Unauthentifizierte Nutzer";
+radius.label5="Erlaubte Unauthentifizierte Nutzer";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
-radius.label8="Umgehe den Radius wenn der Server nicht verfügbar ist";
+radius.label8="Umgehe Radius wenn Server nicht verfügbar";
 radius.mac="MAC";
 
 
@@ -1427,7 +1427,7 @@ wl_mac.h2="Wireless MAC Filter";
 wl_mac.legend="MAC Filter";
 wl_mac.label="Nutze Filter";
 wl_mac.label2="Filter Modus";
-wl_mac.deny="Unterbindet den angebebenen PC's den Zugriff auf das Wireless Netzwerk";
+wl_mac.deny="Unterbindet den PC's den Zugriff auf das Wireless Netzwerk";
 wl_mac.allow="Erlaubt nur PC's in der Liste den Zugriff auf das Wireless Netzwerk";
 
 
