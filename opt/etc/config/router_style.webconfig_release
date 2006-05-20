@@ -1,20 +1,21 @@
 <script type="text/javascript">
-function setStyle(val) {
-	var linkTags = document.getElementsByTagName("link");
-	if(linkTags[0].href.indexOf("/" + val + "/") != -1) return false;
-	linkTags[0].href = "style/" + val + "/style.css";
-	if(linkTags[1]) linkTags[1].href = "style/" + val + "/style_ie.css";
-}
-document.forms[0].onreset = function() { setStyle("<% nvram_get("router_style"); %>"); }
+	function setStyle(val) {
+		var linkTags = document.getElementsByTagName("link");
+		if(linkTags[0].href.indexOf("/" + val + "/") != -1) return false;
+		linkTags[0].href = "style/" + val + "/style.css";
+		if(linkTags[1]) linkTags[1].href = "style/" + val + "/style_ie.css";
+	}
+	document.forms[0].onreset = function() { setStyle("<% nvram_get("router_style"); %>"); }
 </script>
+
 <fieldset>
-	<legend>Router GUI Style</legend>
+	<legend><script type="text/javascript">Capture(management.gui_style)</script></legend>
 	<div class="setting">
-		<div class="label">Style</div>
+		<div class="label"><script type="text/javascript">Capture(share.styl)</script></div>
 		<select name="router_style">
 		    <% show_styles(); %>
 		</select>&nbsp;
-		<input type="button" id="preview_button" value="Preview" onclick="setStyle(this.form.router_style.value)" />
+		<script type="text/javascript">document.write("<input type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"setStyle(this.form.router_style.value)\" />")</script>
 		<!--[if lt IE 7]><script>setElementVisible("preview_button", false);</script><![endif]-->
 	</div>
 </fieldset><br />
