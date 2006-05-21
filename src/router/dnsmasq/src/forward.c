@@ -10,8 +10,6 @@
    GNU General Public License for more details.
 */
 
-/* Author's email: simon@thekelleys.org.uk */
-
 #include "dnsmasq.h"
 
 static struct frec *frec_list;
@@ -44,7 +42,7 @@ static void send_from(int fd, int nowild, char *packet, size_t len,
   struct iovec iov[1]; 
   union {
     struct cmsghdr align; /* this ensures alignment */
-#if defined(IP_PKTINFO)
+#if defined(HAVE_LINUX_NETWORK)
     char control[CMSG_SPACE(sizeof(struct in_pktinfo))];
 #elif defined(IP_SENDSRCADDR)
     char control[CMSG_SPACE(sizeof(struct in_addr))];
@@ -74,7 +72,7 @@ static void send_from(int fd, int nowild, char *packet, size_t len,
 
       if (to->sa.sa_family == AF_INET)
 	{
-#if defined(IP_PKTINFO)
+#if defined(HAVE_LINUX_NETWORK)
 	  struct in_pktinfo *pkt = (struct in_pktinfo *)CMSG_DATA(cmptr);
 	  pkt->ipi_ifindex = 0;
 	  pkt->ipi_spec_dst = source->addr.addr4;
@@ -352,7 +350,7 @@ static void forward_query(struct daemon *daemon, int udpfd, union mysockaddr *ud
 }
 
 static size_t process_reply(struct daemon *daemon, HEADER *header, time_t now, 
-			 unsigned int query_crc, struct server *server, size_t n)
+			    unsigned int query_crc, struct server *server, size_t n)
 {
   unsigned char *pheader, *sizep;
   int munged = 0;
@@ -448,7 +446,7 @@ void reply_query(struct serverfd *sfd, struct daemon *daemon, time_t now)
   serveraddr.sa.sa_family = sfd->source_addr.sa.sa_family;
 #ifdef HAVE_IPV6
   if (serveraddr.sa.sa_family == AF_INET6)
-    serveraddr.in6.sin6_flowinfo = htonl(0);
+    serveraddr.in6.sin6_flowinfo = 0;
 #endif
   
   header = (HEADER *)daemon->packet;
@@ -522,7 +520,6 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
   HEADER *header = (HEADER *)daemon->packet;
   union mysockaddr source_addr;
   unsigned short type;
-  struct iname *tmp;
   struct all_addr dst_addr;
   struct in_addr netmask, dst_addr_4;
   size_t m;
@@ -536,7 +533,7 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
 #ifdef HAVE_IPV6
     char control6[CMSG_SPACE(sizeof(struct in6_pktinfo))];
 #endif
-#if defined(IP_PKTINFO)
+#if defined(HAVE_LINUX_NETWORK)
     char control[CMSG_SPACE(sizeof(struct in_pktinfo))];
 #elif defined(IP_RECVDSTADDR)
     char control[CMSG_SPACE(sizeof(struct in_addr)) +
@@ -572,13 +569,15 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
   if ((n = recvmsg(listen->fd, &msg, 0)) == -1)
     return;
   
-  if (n < (int)sizeof(HEADER) || header->qr)
+  if (n < (int)sizeof(HEADER) || 
+      (msg.msg_flags & MSG_TRUNC) ||
+      header->qr)
     return;
   
   source_addr.sa.sa_family = listen->family;
 #ifdef HAVE_IPV6
   if (listen->family == AF_INET6)
-    source_addr.in6.sin6_flowinfo = htonl(0);
+    source_addr.in6.sin6_flowinfo = 0;
 #endif
   
   if (!(daemon->options & OPT_NOWILD))
@@ -588,7 +587,7 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
       if (msg.msg_controllen < sizeof(struct cmsghdr))
 	return;
 
-#if defined(IP_PKTINFO)
+#if defined(HAVE_LINUX_NETWORK)
       if (listen->family == AF_INET)
 	for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
 	  if (cmptr->cmsg_level == SOL_IP && cmptr->cmsg_type == IP_PKTINFO)
@@ -643,33 +642,8 @@ void receive_query(struct listener *listen, struct daemon *daemon, time_t now)
 	  netmask = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
 	}
 
-      for (tmp = daemon->if_except; tmp; tmp = tmp->next)
-	if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
-	  return;
-      
-      if (daemon->if_names || daemon->if_addrs)
-	{
-	  for (tmp = daemon->if_names; tmp; tmp = tmp->next)
-	    if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
-	      break;
-	  if (!tmp)
-	    for (tmp = daemon->if_addrs; tmp; tmp = tmp->next)
-	      if (tmp->addr.sa.sa_family == listen->family)
-		{
-		  if (tmp->addr.sa.sa_family == AF_INET &&
-		      tmp->addr.in.sin_addr.s_addr == dst_addr.addr.addr4.s_addr)
-		    break;
-#ifdef HAVE_IPV6
-		  else if (tmp->addr.sa.sa_family == AF_INET6 &&
-			   memcmp(&tmp->addr.in6.sin6_addr, 
-				  &dst_addr.addr.addr6, 
-				  sizeof(struct in6_addr)) == 0)
-		    break;
-#endif
-		}
-	  if (!tmp)
-	    return; 
-	}
+      if (!iface_check(daemon, listen->family, &dst_addr, ifr.ifr_name))
+	return;
     }
   
   if (extract_request(header, (size_t)n, daemon->namebuff, &type))
@@ -709,7 +683,7 @@ static int read_write(int fd, unsigned char *packet, int size, int rw)
 	return 0;
       else if (n == -1)
 	{
-	  if (retry_send())
+	  if (errno == EINTR)
 	    goto retry;
 	  else
 	    return 0;
@@ -920,6 +894,7 @@ static struct frec *get_new_frec(time_t now)
     {
       f->next = frec_list;
       f->time = now;
+      f->new_id = 0;
       frec_list = f;
     }
   return f; /* OK if malloc fails and this is NULL */

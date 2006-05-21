@@ -10,8 +10,6 @@
    GNU General Public License for more details.
 */
 
-/* Author's email: simon@thekelleys.org.uk */
-
 #include "dnsmasq.h"
 
 struct myoption {
@@ -21,7 +19,7 @@ struct myoption {
   int val;
 };
 
-#define OPTSTRING "31yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:"
+#define OPTSTRING "531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:6:"
 
 static const struct myoption opts[] = { 
   {"version", 0, 0, 'v'},
@@ -83,6 +81,8 @@ static const struct myoption opts[] = {
   {"enable-dbus", 0, 0, '1'},
   {"bootp-dynamic", 0, 0, '3'},
   {"dhcp-mac", 1, 0, '4'},
+  {"no-ping", 0, 0, '5'},
+  {"dhcp-script", 1, 0, '6'},
   {0, 0, 0, 0}
 };
 
@@ -112,6 +112,7 @@ static const struct optflags optmap[] = {
   { 'y', OPT_LOCALISE },
   { '1', OPT_DBUS },
   { '3', OPT_BOOTP_DYNAMIC },
+  { '5', OPT_NO_PING },
   { 'v', 0},
   { 'w', 0},
   { 0, 0 }
@@ -179,6 +180,8 @@ static const struct {
   { "-2, --no-dhcp-interface=interface", gettext_noop("Do not provide DHCP on this interface, only provide DNS."), NULL },
   { "-3, --bootp-dynamic", gettext_noop("Enable dynamic address allocation for bootp."), NULL },
   { "-4, --dhcp-mac=<id>,<mac address>", gettext_noop("Map MAC address (with wildcards) to option set."), NULL },
+  { "-5, --no-ping", gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
+  { "-6, --dhcp-script=path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
   { NULL, NULL, NULL }
 }; 
 
@@ -300,7 +303,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
   daemon->namebuff = buff;
 
   /* Set defaults - everything else is zero or NULL */
-  daemon->min_leasetime = UINT_MAX;
   daemon->cachesize = CACHESIZ;
   daemon->port = NAMESERVER_PORT;
   daemon->default_resolv.is_default = 1;
@@ -439,7 +441,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 	      if (errno == ENOENT && !conffile_set)
 		break; /* No conffile, all done. */
 	      else
-		die2(_("cannot read %s: %s"), conffile);
+		die(_("cannot read %s: %s"), conffile);
 	    }
 	}
      
@@ -609,6 +611,15 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 	    case 'l':
 	      daemon->lease_file = safe_string_alloc(arg);
 	      break;
+
+	    case '6':
+#ifdef NO_FORK
+	      problem = _("cannot run scripts under uClinux");
+	      option = '?';
+#else
+	      daemon->lease_change_command = safe_string_alloc(arg);
+#endif
+	      break;
 	      
 	    case 'H':
 	      {
@@ -648,8 +659,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		   "interface=" to disable all interfaces except loop. */
 		new->name = safe_string_alloc(arg);
 		new->isloop = new->used = 0;
-		if (safe_strchr(new->name, ':'))
-		  daemon->options |= OPT_NOWILD;
 		arg = comma;
 	      } while (arg);
 	      break;
@@ -665,8 +674,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		  {
 		    new->next = daemon->if_except;
 		    daemon->if_except = new;
-		    if (safe_strchr(new->name, ':'))
-		      daemon->options |= OPT_NOWILD;
 		  }
 		else
 		  {
@@ -704,16 +711,17 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		  {
 		    new->addr.sa.sa_family = AF_INET;
 #ifdef HAVE_SOCKADDR_SA_LEN
-		    new->addr.in.sin_len = sizeof(struct sockaddr_in);
+		    new->addr.in.sin_len = sizeof(new->addr.in);
 #endif
 		  }
 #ifdef HAVE_IPV6
 		else if (arg && inet_pton(AF_INET6, arg, &new->addr.in6.sin6_addr) > 0)
 		  {
 		    new->addr.sa.sa_family = AF_INET6;
-		    new->addr.in6.sin6_flowinfo = htonl(0);
+		    new->addr.in6.sin6_flowinfo = 0;
+		    new->addr.in6.sin6_scope_id = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
-		    new->addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+		    new->addr.in6.sin6_len = sizeof(new->addr.in6);
 #endif
 		  }
 #endif
@@ -841,9 +849,10 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			newlist->addr.in6.sin6_port = htons(serv_port);
 			newlist->source_addr.in6.sin6_port = htons(source_port);
 			newlist->addr.sa.sa_family = newlist->source_addr.sa.sa_family = AF_INET6;
-			newlist->addr.in6.sin6_flowinfo = newlist->source_addr.in6.sin6_flowinfo = htonl(0);
+			newlist->addr.in6.sin6_flowinfo = newlist->source_addr.in6.sin6_flowinfo = 0;
+			newlist->addr.in6.sin6_scope_id = newlist->source_addr.in6.sin6_scope_id = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
-			newlist->addr.in6.sin6_len = newlist->source_addr.in6.sin6_len = sizeof(struct sockaddr_in6);
+			newlist->addr.in6.sin6_len = newlist->source_addr.in6.sin6_len = sizeof(newlist->addr.in6);
 #endif
 			if (source)
 			  {
@@ -1084,9 +1093,6 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			  }
 		      }
 		  }
-				
-		if (new->lease_time < daemon->min_leasetime)
-		  daemon->min_leasetime = new->lease_time;
 		break;
 	      }
 
@@ -1226,11 +1232,8 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 		    free(new);
 		  }
 		else
-		  {
-		    if ((new->flags & CONFIG_TIME) && new->lease_time < daemon->min_leasetime)
-		      daemon->min_leasetime = new->lease_time;
-		    daemon->dhcp_conf = new;
-		  }
+		  daemon->dhcp_conf = new;
+		  
 		break;
 	      }
 	      
@@ -1299,7 +1302,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 			  }
 			
 			if (!(p = realloc(p, len + strlen(arg) + 2)))
-			  die2(_("could not get memory"), NULL);
+			  die(_("could not get memory"), NULL);
 			q = p + len;
 			
 			/* add string on the end in RFC1035 format */
@@ -1806,11 +1809,11 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
 	  if (f)
 	    complain( problem ? problem : _("error"), lineno, conffile);
 	  else
-	    die2(_("bad command line options: %s."),
+	    die(_("bad command line options: %s."),
 #ifdef HAVE_GETOPT_LONG
-		problem ? problem : "try --help"
+		problem ? problem : _("try --help")
 #else
-		problem ? problem : "try -w"
+		problem ? problem : _("try -w")
 #endif
 		);
 	}
@@ -1850,7 +1853,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
       struct mx_srv_record *mx;
       
       if (gethostname(buff, MAXDNAME) == -1)
-	die2(_("cannot get host-name: %s"), NULL);
+	die(_("cannot get host-name: %s"), NULL);
       
       for (mx = daemon->mxnames; mx; mx = mx->next)
 	if (!mx->issrv && hostname_isequal(mx->name, buff))
@@ -1879,17 +1882,17 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
   else if (daemon->resolv_files && 
 	   (daemon->resolv_files)->next && 
 	   (daemon->options & OPT_NO_POLL))
-    die2(_("only one resolv.conf file allowed in no-poll mode."), NULL);
+    die(_("only one resolv.conf file allowed in no-poll mode."), NULL);
   
   if (daemon->options & OPT_RESOLV_DOMAIN)
     {
       char *line;
       
       if (!daemon->resolv_files || (daemon->resolv_files)->next)
-	die2(_("must have exactly one resolv.conf to read domain from."), NULL);
+	die(_("must have exactly one resolv.conf to read domain from."), NULL);
       
       if (!(f = fopen((daemon->resolv_files)->name, "r")))
-	die2(_("failed to read %s: %m"), (daemon->resolv_files)->name);
+	die(_("failed to read %s: %m"), (daemon->resolv_files)->name);
       
       while ((line = fgets(buff, MAXDNAME, f)))
 	{
@@ -1907,7 +1910,7 @@ struct daemon *read_opts (int argc, char **argv, char *compile_opts)
       fclose(f);
 
       if (!daemon->domain_suffix)
-	die2(_("no search directive found in %s"), (daemon->resolv_files)->name);
+	die(_("no search directive found in %s"), (daemon->resolv_files)->name);
     }
 
   if (daemon->domain_suffix)
