@@ -162,7 +162,7 @@ sbutton.dhcpren="DHCP Erneuern";
 sbutton.survey="Wireless Suche";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
-sbutton.preview="Vorschau;
+sbutton.preview="Vorschau";
 
 
 
@@ -996,7 +996,7 @@ route.static_ip="Ziel LAN IP";
 
 //help container
 var hroute = new Object();
-hroute.right1="Operating Mode:";
+hroute.right1="Operations Modus:";
 hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select <em>Router</em> mode.";
 hroute.right3="Select Set Number:";
 hroute.right4="This is the unique route number, you may set up to 20 routes.";
@@ -1287,7 +1287,7 @@ vpn.l2tp="L2TP Durchleitung";
 
 //help container
 var hvpn = new Object();
-hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.";
+hvpn.right1="Sie können hier IPsec,PPTP und/oder L2TP Durchleitung aktivieren im ihren Netzwerkgeräten die Kommuniktation via VPN zu ermöglichen.";
 
 
 
@@ -1330,9 +1330,9 @@ wol.msg1="Klicken um einen WOL Host zu entfernen";
 
 //help container
 var hwol = new Object();
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
-hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB)";
-hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
+hwol.right2="Diese Seite erlaubt ihnen definierte Hosts in ihrem Netzwerk aufzuwecken (Insofern Sie mit ihrem Router lokal verbunden sind).";
+hwol.right4="Die MAC Addressen werden in folgendem Format angegeben xx:xx:xx:xx:xx:xx (Bsp. 01:23:45:67:89:AB)";
+hwol.right6="IP Addresse ist typischerweise die Broadcast Addresse für ihr lokales Netzwerk. Es kann aber auch eine Remote Addresse sein wenn der Host nicht in ihrem lokalen Netzwerk verbunden ist."
 
 // **************************************************************** WanMAC.asp **********************************************************************//
 
