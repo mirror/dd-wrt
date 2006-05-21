@@ -1298,6 +1298,21 @@ hupnp.right4="Allows applications to automatically setup port forwardings.";
 
 
 
+// ******************************************* VPN.asp *******************************************//
+
+var vpn = new Object();
+vpn.titl=" - VPN";
+vpn.h2="Virtual Private Network (VPN)";
+vpn.legend="VPN Passthrough";
+vpn.ipsec="IPSec Passthrough";
+vpn.pptp="PPTP Passthrough";
+vpn.l2tp="L2TP Passthrough";
+
+//help container
+var hvpn = new Object();
+hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.";
+
+
 // ******************************************* Vlan.asp *******************************************//
 
 var vlan = new Object();
