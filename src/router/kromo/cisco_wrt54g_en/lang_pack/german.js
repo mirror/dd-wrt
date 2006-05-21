@@ -114,6 +114,7 @@ share.encrypt="Verschlüsselung";
 share.key="Schlüssel";
 share.wireless="Wireless";
 share.dhcp="DHCP";
+share.styl="Aussehen";
 
 
 
@@ -161,6 +162,7 @@ sbutton.dhcpren="DHCP Erneuern";
 sbutton.survey="Wireless Suche";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
+sbutton.preview="Vorschau;
 
 
 
@@ -301,6 +303,10 @@ bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 
 bmenu.sipath="SIPatH";
+bmenu.sipathoverview="Übersicht";
+bmenu.sipathphone="Telefonbuch";
+bmenu.sipathstatus="Status";
+
 
 
 bmenu.admin="Administration";
@@ -433,7 +439,7 @@ ddnsm.all_noip="Keine Internet Verbindung";
 var hddns = new Object();
 hddns.right2="DDNS erlaubt ihnen den Zugriff auf ihr Netzwerk unter zuhilfename eines Domain Namens anstatt einer IP Addresse. \
 	Der Service verwaltet und ändert die IP Adresse sowie die domain information dynamisch.\
-	Yie müssen sich für den Service bei TZO.com order DynDNS.ORG anmelden.";
+	Sie müssen sich für den Service bei TZO.com order DynDNS.ORG anmelden.";
 
 
 
@@ -454,7 +460,6 @@ diag.firewall="Firewall";
 
 //help container
 var hdiag = new Object();
-hdiag.right1="Kommandos:";
 hdiag.right2="Hier können Sie mit Hilfe des Web interfaces Kommandos auf der Kommandozeile starten. Geben Sie einfach ihre Kommandos in das Textfeld ein und Klicken Sie <em>" + sbutton.runcmd + "</em> um diese Auszuführen.";
 
 
@@ -471,7 +476,6 @@ dmz.host="DMZ Host IP Addresse";
 
 //help container
 var hdmz = new Object();
-hdmz.right1="DMZ:";
 hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebende Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
 
 
@@ -591,7 +595,6 @@ prforward.app="Applikation";
 
 //help container
 var hprforward = new Object();
-hprforward.right1="Port Bereichs Weiterleitung:";
 hprforward.right2="Einige Applikationen benötigen manchmal offene Ports damit diese korrekt funktionieren. \
 	Beispiele für diese Applikationen sind Server oder einige Online Spiele. \
 	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
@@ -611,7 +614,6 @@ pforward.to="Nach Port";
 
 //help container
 var hpforward = new Object();
-hpforward.right1="Port Weiterleitung:";
 hpforward.right2="Einige Applikationen benötigen manchmal offene Ports damit diese korrekt funktionieren. \
 	Beispiele für diese Applikationen sind Server oder einige Online Spiele. \
 	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
@@ -672,6 +674,7 @@ hotspot.sputnik_srv="Sputnik Agent";
 hotspot.sputnik_id="Sputnik Server ID";
 hotspot.sputnik_instant="Nutze Sputnik Instant Setup";
 hotspot.sputnik_express="Nutze SputnikNet Express";
+hotspot.sputnik_about="über Sputnik";
 
 
 
@@ -712,7 +715,6 @@ idx_pptp.encrypt="PPTP Verschlüsselung";
 // **************************************************************** index_static.asp *********************************************************//
 
 var idx_static = new Object();
-idx_static.gateway="Gateway";
 idx_static.dns="Statischer DNS";
 
 
@@ -732,7 +734,6 @@ idx.mtu="MTU";
 idx.h23="Netzwerk Einstellungen";
 idx.routerip="Router IP";
 idx.lanip="Lokale IP Addresse";
-idx.localdns="Lokaler DNS";
 idx.legend2="WAN Port";
 idx.wantoswitch="WAN Port dem Switch zuweisen";
 idx.legend3="Zeit Einstellungen";
@@ -752,23 +753,14 @@ idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
 
 //help container
 var hidx = new Object();
-hidx.right1="Automatische Konfiguration - DHCP:";
 hidx.right2="Diese Einstellung wird von fast allen Providern genutzt.";
-hidx.right3="Host Name:";
 hidx.right4="Geben Sie den Host Namen an der von ihrem Provider angegeben ist.";
-hidx.right5="Domain Name:";
 hidx.right6="Geben Sie hier den Domainnamen ein der ihnen von ihrem Provider zugewiesen wurde.";
-hidx.right7="Lokale IP Addresse:";
 hidx.right8="Dies ist die Adresse ihres Routers.";
-hidx.right9=share.subnet + ":";
 hidx.right10="Dies ist die Subnetz Maske ihres Routers.";
-hidx.right11="DHCP Server:";
 hidx.right12="Erlaubt dem Router ihre IP Adressen zu verwalten.";
-hidx.right13="Start IP Addresse:";
 hidx.right14="Die Adresse bei der sie Anfangen wollen.";
-hidx.right15="Maximale Anzahl der DHCP Nutzer:";
 hidx.right16="Sie können hier die Anzahl der Adressen einschränken die der Router erzeilt.";
-hidx.right17="Zeit Einstellungen:";
 hidx.right18="Wählen Sie hier ihre Zeitzone und die Sommerzeit Einstellungen. Der Router kann auch die Lokalzeit nutzen.";
 
 
@@ -860,7 +852,6 @@ management.wifi_srv="802.1x";
 
 management.ntp_legend="NTP Client";
 management.ntp_srv="NTP";
-management.ntp_server="Server IP";
 
 management.rst_legend="Reset Knopf";
 management.rst_srv="Reset Knopf";
@@ -943,11 +934,12 @@ qos.titl=" - Service Qualität";
 qos.h2="Service Qualität (QoS)";
 qos.legend="QoS Einstellungen";
 qos.srv="Start QoS";
+qos.type="Packet Scheduler";
 qos.uplink="Uplink (kbps)";
 qos.dnlink="Downlink (kbps)";
-qos.type="Packet Scheduler";
 qos.gaming="Für Spiele optimieren";
 qos.legend2="Service Priorität";
+qos.prio_x="Ausgenommen";
 qos.prio_p="Premium";
 qos.prio_e="Express";
 qos.prio_s="Standard";
@@ -1237,15 +1229,10 @@ trforward.app="Applikation";
 
 //help container
 var htrforward = new Object();
-htrforward.right1="Applikation:";
 htrforward.right2="Geben Sie den Applikationsnamen des Triggers ein.";
-htrforward.right3="Getriggerter Bereich:";
 htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right5="Weitergeleiteter Bereich:";
 htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right7="Start:";
 htrforward.right8="Geben Sie den Start Port des Getriggerten und Weitergeleiteten Bereichs an.";
-htrforward.right9="Ende:";
 htrforward.right10="Geben Sie den End Port des Getriggertern und Weitergeleiteten Bereichs an.";
 
 // **************************************************************** Upgrade.asp **********************************************************************//
@@ -1285,10 +1272,24 @@ upnp.msg2="Alle Einträge löschen?";
 
 //help container
 var hupnp = new Object();
-hupnp.right1="Weiterleitungen:";
 hupnp.right2="Klicken sie auf den Papierkorb um einen individuellen Eintrag zu löschen.";
-hupnp.right3="UPnP Service:";
 hupnp.right4="Erlaubt Applikationen eine Automatische Port weiterleitung auf dem Router durchzuführen.";
+
+// ******************************************* VPN.asp *******************************************//
+
+var vpn = new Object();
+vpn.titl=" - VPN";
+vpn.h2="Virtual Private Network (VPN)";
+vpn.legend="VPN Durchleitung";
+vpn.ipsec="IPSec Durchleitung";
+vpn.pptp="PPTP Durchleitung";
+vpn.l2tp="L2TP Durchleitung";
+
+//help container
+var hvpn = new Object();
+hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.";
+
+
 
 // **************************************************************** Vlan.asp **********************************************************************//
 
@@ -1329,11 +1330,8 @@ wol.msg1="Klicken um einen WOL Host zu entfernen";
 
 //help container
 var hwol = new Object();
-hwol.right1="Local Wake-on-LAN:";
 hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
-hwol.right3="MAC Address(es):";
 hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB)";
-hwol.right5="IP Address:";
 hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router's local network."
 
 // **************************************************************** WanMAC.asp **********************************************************************//
@@ -1347,7 +1345,6 @@ wanmac.wlan="Klone Wireless MAC";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right1="MAC Address Clone:";
 hwanmac.right2="Manche Anbieter setzen eine Registration ihrer MAC Addresse vorraus. \
 			Wenn Sie ihre MAC Addresse nicht neu registrieren möchten, können Sie hier ihre MAC Addresse klonen so wie sie bei ihrem Anbieter registriert ist.";
 
@@ -1411,6 +1408,8 @@ wds.wl_mac="Wireless MAC";
 wds.lazy_default="Standard: Abgeschaltet";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
+wds.subnet="Subnetz";
+wds.legend2="Extra Optionen";
 
 
 
@@ -1468,7 +1467,6 @@ wl_basic.sensitivity="Standard: 20000 meter";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right1="Wireless Network Modus: ";
 hwl_basic.right2="Wenn sie G Clients komplett ausschließen wollen sollten Sie <em>Nur-B</em> wählen. Wenn Sie den Wireless Zugriff abschalten wollen, wählen Sie <em>Abschalten</em>.";
 hwl_basic.right3="Empfindlichkeits Bereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
@@ -1496,6 +1494,7 @@ wl_adv.label11="AP Isolation";
 wl_adv.label12="TX Antenne";
 wl_adv.label13="RX Antenne";
 wl_adv.label14="Preamble";
+wl_adv.reference="Noise Referenz";
 wl_adv.label15="Xmit Power";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Wireless GUI Zugriff";
