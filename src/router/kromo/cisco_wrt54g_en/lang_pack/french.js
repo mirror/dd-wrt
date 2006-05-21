@@ -1560,3 +1560,5 @@ dhcp.server="DHCP Server IP Address :";
 dhcp.tclient="Client Host Name";
 
 
+var donate = new Object();
+donate.mb="You may dontate through the Moneybookers account mb@dd-wrt.com too";

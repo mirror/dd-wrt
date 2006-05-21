@@ -1547,3 +1547,6 @@ dhcp.titl=" - DHCP tabela aktivnih IP";
 dhcp.h2="DHCP tabela aktivnih IP";
 dhcp.server="DHCP strežnikov IP naslov :";
 dhcp.tclient="Odjemalèevo gostiteljevo ime";
+
+var donate = new Object();
+donate.mb="You may dontate through the Moneybookers account mb@dd-wrt.com too";
