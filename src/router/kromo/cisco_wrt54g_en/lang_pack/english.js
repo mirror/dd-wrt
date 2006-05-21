@@ -1569,12 +1569,6 @@ success.alert1="Please check the followings before connecting again:";
 success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
 success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
 
-
-
-
-
-
-
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
@@ -1583,3 +1577,6 @@ dhcp.titl=" - DHCP Active IP Table";
 dhcp.h2="DHCP Active IP Table";
 dhcp.server="DHCP Server IP Address :";
 dhcp.tclient="Client Host Name";
+
+var donate = new Object();
+donate.mb="You may dontate through the Moneybookers account mb@dd-wrt.com too";
