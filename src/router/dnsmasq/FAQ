@@ -369,21 +369,8 @@ A: Yes, dynmaically allocated IP addresses are checked by sending an
    other DHCP requests during this time. To avoid dropping requests,
    the address probe may be skipped when dnsmasq is under heavy load.
 
-
-Q: I'm using dnsmasq on a machine with the Firestarter firewall, and
-   DHCP doesn't work. What's the problem?
-
-A: This a variant on the iptables problem. Explicit details on how to
-   proceed can be found at 
-   http://lists.thekelleys.org.uk/pipermail/dnsmasq-discuss/2005q3/000431.html
  
-
-Q: Dnsmasq logs "running as root because setting capabilities failed"
-   when it starts up. Why did that happen and what can do to fix it?
-
-A: Change your kernel configuration: either deselect CONFIG_SECURITY
-   _or_ select CONFIG_SECURITY_CAPABILITIES.
- 
+  
 
 
 
