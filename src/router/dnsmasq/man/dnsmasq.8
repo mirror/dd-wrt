@@ -102,11 +102,14 @@ or
 options are given dnsmasq listens on all available interfaces except any
 given in
 .B \--except-interface
-options. IP alias interfaces (eg "eth1:0") cannot be used with
+options. If IP alias interfaces (eg "eth1:0") are used with
 .B --interface
 or
 .B --except-interface
-options, use --listen-address instead. 
+options, then the 
+.B --bind-interfaces 
+option will be automatically set. This is required for deeply boring
+sockets-API reasons. 
 .TP
 .B \-I, --except-interface=<interface name>
 Do not listen on the specified interface. Note that the order of
@@ -145,7 +148,9 @@ working even when interfaces come and go and change address. This
 option forces dnsmasq to really bind only the interfaces it is
 listening on. About the only time when this is useful is when 
 running another nameserver (or another instance of dnsmasq) on the
-same machine. Setting this option also enables multiple instances of
+same machine or when using IP
+alias. Specifying interfaces with IP alias automatically turns this
+option on. Setting this option also enables multiple instances of
 dnsmasq which provide DHCP service to run in the same machine.
 .TP
 .B \-y, --localise-queries
@@ -520,47 +525,13 @@ with care, since each address allocated to a BOOTP client is leased
 forever, and therefore becomes permanently unavailable for re-use by
 other hosts.
 .TP
-.B \-5, --no-ping
-By default, the DHCP server will attempt to ensure that an address in
-not in use before allocating it to a host. It does this by sending an
-ICMP echo request (aka "ping") to the address in question. If it gets
-a reply, then the address must already be in use, and another is
-tried. This flag disables this check. Use with caution.
-.TP
 .B \-l, --dhcp-leasefile=<path>
 Use the specified file to store DHCP lease information. If this option
 is given but no dhcp-range option is given then dnsmasq version 1
 behaviour is activated. The file given is assumed to be an ISC dhcpd
 lease file and parsed for leases which are then added to the DNS
 system if they have a hostname. This functionality may have been
-excluded from dnsmasq at compile time, in which case an error will
-occur. In any case note that ISC leasefile integration is a deprecated
-feature. It should not be used in new installations, and will be
-removed in a future release.
-.TP
-.B \-6 --dhcp-script=<path>
-Whenever a new DHCP lease is created, or an old one destroyed, the
-binary specified by this option is run. The arguments to the binary
-are "add", "old" or "del", the MAC
-address of the host (or "<null>"), the IP address, and the hostname,
-if known. "add" means a lease has been created, "del" means it has
-been destroyed, "old" is a notification of an existing lease when
-dnsmasq starts or a change to MAC address or hostname of an existing lease.
-The process is run as any unprivileged user which dnsmasq
-runs as, so it may be necessary to inhibit dropping of the root user,
-using the
-.B -u
-directive, if the script needs root privs.
-The environment is inherited from the invoker of dnsmasq,
-and all file decriptors are
-closed except stdin, stdout and stderr which are open to /dev/null
-(except in debug mode).
-The script is not invoked concurrently: if subsequent lease 
-changes occur, the script is not invoked again until any existing 
-invokation exits. At dnsmasq startup, the script will be invoked for
-all existing leases as they are read from the lease file. Expired
-leases will be called with "del" and others with "old". <path>
-must be an absolute pathname, no PATH search occurs.
+excluded from dnsmasq at compile time, in which case an error will occur.
 .TP
 .B \-s, --domain=<domain>
 Specifies the domain for the DHCP server. This has two effects;
