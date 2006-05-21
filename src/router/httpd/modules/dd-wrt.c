@@ -511,7 +511,7 @@ ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
 	     "<form action=\"https://www.paypal.com/cgi-bin/webscr\" method=\"post\" target=\"_blank\">");
   websWrite (wp, "<input type=\"hidden\" name=\"cmd\" value=\"_xclick\" />");
   websWrite (wp,
-	     "<input type=\"hidden\" name=\"business\" value=\"sebastian.gottschall@advis.de\" />");
+	     "<input type=\"hidden\" name=\"business\" value=\"paypal@dd-wrt.com\" />");
   websWrite (wp,
 	     "<input type=\"hidden\" name=\"item_name\" value=\"DD-WRT Development Support\" />");
   websWrite (wp, "<input type=\"hidden\" name=\"no_note\" value=\"1\" />");
@@ -521,6 +521,10 @@ ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<input type=\"image\" src=\"images/paypal.gif\" border=\"0\" name=\"submit\" width=\"62\" height=\"31\" />");
   websWrite (wp, "</form>");
+  websWrite (wp, "<br>You may donate through the moneybookers account mb@dd-wrt.com too<br>\n");
+  websWrite (wp,"<a href=\"https://www.moneybookers.com/app/send.pl\" target=\"_blank\">\n");
+  websWrite (wp,"<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.gif\" width=88 height=31 border=0>\n");
+  websWrite (wp,"</a>\n");
 #endif
   return;
 }
