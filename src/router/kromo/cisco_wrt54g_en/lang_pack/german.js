@@ -21,7 +21,7 @@ share.statu="Status";
 share.start="Start";
 share.end="Ende";
 share.proto="Protokol";
-share.ip="IP Address";
+share.ip="IP Addresse";
 share.mac="MAC Addresse";
 share.none="Nichts";
 share.both="Beides";
@@ -207,7 +207,7 @@ errmsg.err29=" enthält einen ungülten Ascii Wert."
 errmsg.err30=" enthält illegale hexadezimale Werte.";
 errmsg.err31=" ist ungültig.";
 errmsg.err32="IP Addresse und Gateway sind nicht im selben Netzbereich.";
-errmsg.err33="IP Address und Gateway können nicht die selben sein.";
+errmsg.err33="IP Addresse und Gateway können nicht die selben sein.";
 errmsg.err34=" dark keine leerzeichen enthalten.";
 
 //Wol.asp error messages
