@@ -521,7 +521,7 @@ ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp,
 	     "<input type=\"image\" src=\"images/paypal.gif\" border=\"0\" name=\"submit\" width=\"62\" height=\"31\" />");
   websWrite (wp, "</form>");
-  websWrite (wp, "<br>You may donate through the moneybookers account mb@dd-wrt.com too<br>\n");
+  websWrite (wp, "<br><script type=\"text/javascript\">Capture(donate.mb)</script><br>\n");
   websWrite (wp,"<a href=\"https://www.moneybookers.com/app/send.pl\" target=\"_blank\">\n");
   websWrite (wp,"<img style=\"border-width: 1px; border-color: #8B8583;\" src=\"images/88_en_interpayments.gif\" width=88 height=31 border=0>\n");
   websWrite (wp,"</a>\n");
