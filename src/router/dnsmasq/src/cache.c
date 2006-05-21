@@ -18,7 +18,6 @@ static int cache_inserted, cache_live_freed, insert_error;
 static union bigname *big_free;
 static int bignames_left, log_queries, cache_size, hash_size;
 static int uid;
-static char *addrbuff;
 
 static void cache_free(struct crec *crecp);
 static void cache_unlink(struct crec *crecp);
@@ -30,11 +29,7 @@ void cache_init(int size, int logq)
   struct crec *crecp;
   int i;
 
-  if ((log_queries = logq))
-    addrbuff = safe_malloc(ADDRSTRLEN);
-  else
-    addrbuff = NULL;
-      
+  log_queries = logq;
   cache_head = cache_tail = NULL;
   dhcp_inuse = dhcp_spare = NULL;
   new_chain = NULL;
@@ -767,17 +762,17 @@ void cache_add_dhcp_entry(struct daemon *daemon, char *host_name,
 
 
 
-void dump_cache(struct daemon *daemon, time_t now)
+void dump_cache(struct daemon *daemon)
 {
-  syslog(LOG_INFO, _("time %lu, cache size %d, %d/%d cache insertions re-used unexpired cache entries."), 
-	 (unsigned long)now, daemon->cachesize, cache_live_freed, cache_inserted); 
+  syslog(LOG_INFO, _("cache size %d, %d/%d cache insertions re-used unexpired cache entries."), 
+	 daemon->cachesize, cache_live_freed, cache_inserted); 
   
-  if ((daemon->options & (OPT_DEBUG | OPT_LOG)) &&
-      (addrbuff || (addrbuff = malloc(ADDRSTRLEN))))
+  if (daemon->options & (OPT_DEBUG | OPT_LOG))
     {
       struct crec *cache ;
+      char addrbuff[ADDRSTRLEN];
       int i;
-      syslog(LOG_DEBUG, "Host                                     Address                        Flags     Expires");
+      syslog(LOG_DEBUG, "Host                                     Address                        Flags     Expires\n");
     
       for (i=0; i<hash_size; i++)
 	for (cache = hash_table[i]; cache; cache = cache->hash_next)
@@ -802,7 +797,7 @@ void dump_cache(struct daemon *daemon, time_t now)
 #endif
 	    syslog(LOG_DEBUG, 
 #ifdef HAVE_BROKEN_RTC
-		   "%-40.40s %-30.30s %s%s%s%s%s%s%s%s%s%s  %lu",
+		   "%-40.40s %-30.30s %s%s%s%s%s%s%s%s%s%s  %ld\n",
 #else
 		   "%-40.40s %-30.30s %s%s%s%s%s%s%s%s%s%s  %s",
 #endif
@@ -818,7 +813,7 @@ void dump_cache(struct daemon *daemon, time_t now)
 		   cache->flags & F_NXDOMAIN ? "X" : " ",
 		   cache->flags & F_HOSTS ? "H" : " ",
 #ifdef HAVE_BROKEN_RTC
-		   cache->flags & F_IMMORTAL ? 0: (unsigned long)(cache->ttd - now)
+		   cache->flags & F_IMMORTAL ? 0: (unsigned long)cache->ttd
 #else
 	           cache->flags & F_IMMORTAL ? "\n" : ctime(&(cache->ttd)) 
 #endif
@@ -849,7 +844,8 @@ void log_query(unsigned short flags, char *name, struct all_addr *addr,
   char *source;
   char *verb = "is";
   char types[20];
-  
+  char addrbuff[ADDRSTRLEN];
+
   if (!log_queries)
     return;
   
