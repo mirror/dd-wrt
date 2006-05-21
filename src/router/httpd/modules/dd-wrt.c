@@ -3363,7 +3363,7 @@ qos_add_ip (webs_t wp)
 
   memset (new_ip, 0, sizeof (new_ip));
 
-  snprintf (add_ip, 18, "%s.%s.%s.%s/%s", add_ip0, add_ip1, add_ip2, add_ip3,
+  snprintf (add_ip, 19, "%s.%s.%s.%s/%s", add_ip0, add_ip1, add_ip2, add_ip3,
 	    add_nm);
 
   /* if this ip exists, return an error */
