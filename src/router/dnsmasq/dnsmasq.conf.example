@@ -285,6 +285,12 @@ bogus-priv
 # http://www.isc.org/index.pl?/sw/dhcp/authoritative.php
 #dhcp-authoritative
 
+# Run an executable when a DHCP lease is created or destroyed.
+# The arguments sent to the script are "add" or "del", 
+# then the MAC address, the IP address and finally the hostname
+# if there is one. 
+#dhcp-script=/bin/echo
+
 # Set the cachesize here.
 #cache-size=150
 
