@@ -129,6 +129,9 @@ int raw_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_port
 	
 	memset(&dest, 0, sizeof(dest));
 	memset(&packet, 0, sizeof(packet));
+
+	int messagelen = sizeof(struct dhcpMessage) - 308 + end_option(payload->options);
+	int sub = sizeof(struct dhcpMessage) - messagelen;
 	
 	dest.sll_family = AF_PACKET;
 	dest.sll_protocol = htons(ETH_P_IP);
@@ -146,18 +149,18 @@ int raw_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_port
 	packet.ip.daddr = dest_ip;
 	packet.udp.source = htons(source_port);
 	packet.udp.dest = htons(dest_port);
-	packet.udp.len = htons(sizeof(packet.udp) + sizeof(struct dhcpMessage)); /* cheat on the psuedo-header */
+	packet.udp.len = htons(sizeof(packet.udp) + messagelen + 1); /* cheat on the psuedo-header */
 	packet.ip.tot_len = packet.udp.len;
-	memcpy(&(packet.data), payload, sizeof(struct dhcpMessage));
-	packet.udp.check = checksum(&packet, sizeof(struct udp_dhcp_packet));
+	memcpy(&(packet.data), payload, messagelen + 1);
+	packet.udp.check = checksum(&packet, sizeof(struct udp_dhcp_packet) - sub + 1);
 	
-	packet.ip.tot_len = htons(sizeof(struct udp_dhcp_packet));
+	packet.ip.tot_len = htons(sizeof(struct udp_dhcp_packet) - sub + 1);
 	packet.ip.ihl = sizeof(packet.ip) >> 2;
 	packet.ip.version = IPVERSION;
 	packet.ip.ttl = IPDEFTTL;
 	packet.ip.check = checksum(&(packet.ip), sizeof(packet.ip));
 
-	result = sendto(fd, &packet, sizeof(struct udp_dhcp_packet), 0, (struct sockaddr *) &dest, sizeof(dest));
+	result = sendto(fd, &packet, sizeof(struct udp_dhcp_packet) - sub + 1, 0, (struct sockaddr *) &dest, sizeof(dest));
 	if (result <= 0) {
 		DEBUG(LOG_ERR, "write on socket failed: %s", strerror(errno));
 	}
@@ -179,6 +182,7 @@ int kernel_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_p
 	
 	if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, (char *) &n, sizeof(n)) == -1)
 		return -1;
+	int messagelen = sizeof(struct dhcpMessage) - 308 + end_option(payload->options);
 
 	memset(&client, 0, sizeof(client));
 	client.sin_family = AF_INET;
@@ -196,7 +200,7 @@ int kernel_packet(struct dhcpMessage *payload, u_int32_t source_ip, int source_p
 	if (connect(fd, (struct sockaddr *)&client, sizeof(struct sockaddr)) == -1)
 		return -1;
 
-	result = write(fd, payload, sizeof(struct dhcpMessage));
+	result = write(fd, payload, messagelen + 1);
 	close(fd);
 	return result;
 }	
