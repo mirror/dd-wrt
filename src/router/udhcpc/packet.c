@@ -131,7 +131,7 @@ int raw_packet(struct dhcpMessage *payload, uint32_t source_ip, int source_port,
 	memset(&packet, 0, sizeof(packet));
 	
 	int messagelen = sizeof(struct dhcpMessage) - 308 + end_option(payload->options) + 1;
-
+	int sub = sizeof(struct dhcpMessage) - messagelen;
 	dest.sll_family = AF_PACKET;
 	dest.sll_protocol = htons(ETH_P_IP);
 	dest.sll_ifindex = ifindex;
@@ -159,7 +159,7 @@ int raw_packet(struct dhcpMessage *payload, uint32_t source_ip, int source_port,
 	packet.ip.ttl = IPDEFTTL;
 	packet.ip.check = checksum(&(packet.ip), sizeof(packet.ip));
 
-	result = sendto(fd, &packet, sizeof(struct udp_dhcp_packet), 0, (struct sockaddr *) &dest, sizeof(dest));
+	result = sendto(fd, &packet, sizeof(struct udp_dhcp_packet) - sub, 0, (struct sockaddr *) &dest, sizeof(dest));
 	if (result <= 0) {
 		DEBUG(LOG_ERR, "write on socket failed: %m");
 	}
