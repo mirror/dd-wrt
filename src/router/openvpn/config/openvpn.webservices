@@ -38,7 +38,7 @@
 		    <option value="tcp" <% nvram_selmatch("openvpn_proto","tcp","selected"); %>>TCP</option>
 		</select>
 	</div>
-	<div class="setting">		
+	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(service.vpn_srvcert)</script></div>
 		<textarea cols="60" rows="2" id="openvpn_ca" name="openvpn_ca"></textarea>
 		<script language="javascript">
@@ -46,13 +46,17 @@
 			document.getElementById("openvpn_ca").value = openvpn_ca;
 		</script>
 	</div>
-	<div class="setting">		
+	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(service.vpn_clicert)</script></div>
 		<textarea cols="60" rows="2" id="openvpn_client" name="openvpn_client"></textarea>
 		<script language="javascript">
 			var openvpn_client = fix_cr( '<% nvram_get("openvpn_client"); %>' );
 			document.getElementById("openvpn_client").value = openvpn_client;
 		</script>
+	</div>
+	<div class="setting">
+		<div class="label"><script type="text/javascript">Capture(vpn_certtype)</script></div>
+		<input class="spaceradio" type="checkbox" value="1" name="_openvpn_certtype" <% nvram_selmatch("openvpn_certtype","1","checked"); %> />
 	</div>
 	<div class="setting">		
 		<div class="label"><script type="text/javascript">Capture(service.vpn_clikey)</script></div>
