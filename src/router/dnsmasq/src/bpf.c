@@ -56,7 +56,7 @@ void init_bpf(struct daemon *daemon)
 	    }
 	}
       if (errno != EBUSY)
-	die(_("cannot create DHCP BPF socket: %s"), NULL);
+	die2(_("cannot create DHCP BPF socket: %s"), NULL);
     }	     
 }
 

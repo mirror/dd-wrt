@@ -10,17 +10,8 @@
    GNU General Public License for more details.
 */
 
-/* Author's email: simon@thekelleys.org.uk */
-
 #define COPYRIGHT "Copyright (C) 2000-2006 Simon Kelley" 
 
-#ifdef __linux__
-/* for pselect.... */
-#  define _XOPEN_SOURCE 600 
-/* but then DNS headers don't compile without.... */
-#define _BSD_SOURCE
-#endif
- 
 /* get these before config.h  for IPv6 stuff... */
 #include <sys/types.h> 
 #include <netinet/in.h>
@@ -53,9 +44,6 @@
 #include <sys/ioctl.h>
 #include <sys/select.h>
 #include <sys/wait.h>
-#if defined(__sun) || defined(__sun__)
-#  include <sys/sockio.h>
-#endif
 #include <sys/time.h>
 #include <limits.h>
 #include <net/if.h>
@@ -80,13 +68,18 @@
 #include <netinet/in_systm.h>
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
-#ifdef HAVE_BPF
-#  include <net/bpf.h>
-#  include <net/if_dl.h>
-#else
-#  include <netpacket/packet.h>
-#endif
 #include <sys/uio.h>
+#ifndef HAVE_LINUX_NETWORK
+#  include <net/if_dl.h>
+#endif
+
+#ifdef HAVE_LINUX_NETWORK
+#include <linux/capability.h>
+/* There doesn't seem to be a universally-available 
+   userpace header for this. */
+extern int capset(cap_user_header_t header, cap_user_data_t data);
+#include <sys/prctl.h>
+#endif
 
 /* Min buffer size: we check after adding each record, so there must be 
    memory for the largest packet, and the largest record so the
@@ -116,6 +109,7 @@
 #define OPT_LOCALISE       262144
 #define OPT_DBUS           524288
 #define OPT_BOOTP_DYNAMIC  1048576
+#define OPT_NO_PING        2097152
 
 struct all_addr {
   union {
@@ -294,8 +288,13 @@ struct dhcp_lease {
   int clid_len;          /* length of client identifier */
   unsigned char *clid;   /* clientid */
   char *hostname, *fqdn; /* name from client-hostname option or config */
-  int auth_name;         /* hostname came from config, not from client */
+  char auth_name;        /* hostname came from config, not from client */
+  char new;              /* newly created */
+  char old;              /* read from leasefile */
   time_t expires;        /* lease expiry */
+#ifdef HAVE_BROKEN_RTC
+  unsigned int length;
+#endif
   int hwaddr_len, hwaddr_type;
   unsigned char hwaddr[DHCP_CHADDR_MAX]; 
   struct in_addr addr;
@@ -385,22 +384,13 @@ typedef unsigned short u16;
 typedef unsigned int u32;
 
 
-struct udp_dhcp_packet {
-        struct ip ip;
-        struct udphdr {
-	  u16 uh_sport;               /* source port */
-	  u16 uh_dport;               /* destination port */
-	  u16 uh_ulen;                /* udp length */
-	  u16 uh_sum;                 /* udp checksum */
-	} udp;
-        struct dhcp_packet {
-	  u8 op, htype, hlen, hops;
-	  u32 xid;
-	  u16 secs, flags;
-	  struct in_addr ciaddr, yiaddr, siaddr, giaddr;
-	  u8 chaddr[DHCP_CHADDR_MAX], sname[64], file[128];
-	  u8 options[312];
-	} data;
+struct dhcp_packet {
+  u8 op, htype, hlen, hops;
+  u32 xid;
+  u16 secs, flags;
+  struct in_addr ciaddr, yiaddr, siaddr, giaddr;
+  u8 chaddr[DHCP_CHADDR_MAX], sname[64], file[128];
+  u8 options[312];
 };
 
 struct ping_result {
@@ -423,6 +413,7 @@ struct daemon {
   char *username, *groupname;
   char *domain_suffix;
   char *runfile; 
+  char *lease_change_command;
   struct iname *if_names, *if_addrs, *if_except, *dhcp_except;
   struct bogus_addr *bogus_addr;
   struct server *servers;
@@ -452,14 +443,17 @@ struct daemon {
   struct server *last_server;
   struct server *srv_save; /* Used for resend on DoD */
   size_t packet_len;       /*      "        "        */
-  int uptime_fd;
+  pid_t script_pid, tcp_pids[MAX_PROCS];
+  int num_kids;
   
   /* DHCP state */
-  int dhcpfd, dhcp_raw_fd, dhcp_icmp_fd;
-#ifdef HAVE_RTNETLINK
+  int dhcpfd; 
+#ifdef HAVE_LINUX_NETWORK
   int netlinkfd;
+#else
+  int dhcp_raw_fd, dhcp_icmp_fd;
 #endif
-  struct udp_dhcp_packet *dhcp_packet;
+  struct iovec dhcp_packet;
   char *dhcp_buff, *dhcp_buff2;
   struct ping_result *ping_results;
   FILE *lease_stream;
@@ -489,7 +483,7 @@ struct crec *cache_insert(char *name, struct all_addr *addr,
 void cache_reload(int opts, char *buff, char *domain_suffix, struct hostsfile  *addn_hosts);
 void cache_add_dhcp_entry(struct daemon *daemon, char *host_name, struct in_addr *host_address, time_t ttd);
 void cache_unhash_dhcp(void);
-void dump_cache(struct daemon *daemon);
+void dump_cache(struct daemon *daemon, time_t now);
 char *cache_get_name(struct crec *crecp);
 
 /* rfc1035.c */
@@ -517,18 +511,24 @@ int legal_char(char c);
 int canonicalise(char *s);
 unsigned char *do_rfc1035_name(unsigned char *p, char *sval);
 void die2(char *message, char *arg1);
+/*void die(char *message, char *arg1); 
+--busybox doesnt like die, change to die2 */
 void complain(char *message, int lineno, char *file);
 void *safe_malloc(size_t size);
 int sa_len(union mysockaddr *addr);
 int sockaddr_isequal(union mysockaddr *s1, union mysockaddr *s2);
 int hostname_isequal(char *a, char *b);
-time_t dnsmasq_time(int fd);
+time_t dnsmasq_time(void);
 int is_same_net(struct in_addr a, struct in_addr b, struct in_addr mask);
 int retry_send(void);
 void prettyprint_time(char *buf, unsigned int t);
 int prettyprint_addr(union mysockaddr *addr, char *buf);
 int parse_hex(char *in, unsigned char *out, int maxlen, 
 	      unsigned int *wildcard_mask, int *mac_type);
+int memcmp_masked(unsigned char *a, unsigned char *b, int len, 
+		  unsigned int mask);
+int expand_buf(struct iovec *iov, size_t size);
+char *print_mac(struct daemon *daemon, unsigned char *mac, int len);
 
 /* option.c */
 struct daemon *read_opts (int argc, char **argv, char *compile_opts);
@@ -544,10 +544,12 @@ unsigned char *tcp_request(struct daemon *daemon, int confd, time_t now,
 struct serverfd *allocate_sfd(union mysockaddr *addr, struct serverfd **sfds);
 void reload_servers(char *fname, struct daemon *daemon);
 void check_servers(struct daemon *daemon);
-int enumerate_interfaces(struct daemon *daemon, struct irec **chainp,
-			 union mysockaddr *test_addrp, struct in_addr *netmaskp);
+int enumerate_interfaces(struct daemon *daemon);
 struct listener *create_wildcard_listeners(int port);
-struct listener *create_bound_listeners(struct irec *interfaces, int port);
+struct listener *create_bound_listeners(struct daemon *daemon);
+int iface_check(struct daemon *daemon, int family, 
+		struct all_addr *addr, char *name);
+int fix_fd(int fd);
 
 /* dhcp.c */
 void dhcp_init(struct daemon *daemon);
@@ -569,48 +571,52 @@ void dhcp_read_ethers(struct daemon *daemon);
 struct dhcp_config *config_find_by_address(struct dhcp_config *configs, struct in_addr addr);
 char *strip_hostname(struct daemon *daemon, char *hostname);
 char *host_from_dns(struct daemon *daemon, struct in_addr addr);
-struct dhcp_context *complete_context(struct daemon *daemon, struct in_addr local, 
-				      struct dhcp_context *current, struct in_addr netmask, 
-				      struct in_addr broadcast, struct in_addr relay,
-				      struct in_addr primary);
 
 /* lease.c */
-void lease_update_file(struct daemon *daemon, int force, time_t now);
+void lease_update_file(struct daemon *daemon, time_t now);
 void lease_update_dns(struct daemon *daemon);
 void lease_init(struct daemon *daemon, time_t now);
-struct dhcp_lease *lease_allocate(unsigned char *hwaddr, unsigned char *clid,
-				  int hw_len, int hw_type, int clid_len, struct in_addr addr);
-int lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
+struct dhcp_lease *lease_allocate(struct in_addr addr);
+void lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
 		      unsigned char *clid, int hw_len, int hw_type, int clid_len);
 void lease_set_hostname(struct dhcp_lease *lease, char *name, 
 			char *suffix, int auth);
-void lease_set_expires(struct dhcp_lease *lease, time_t exp);
+void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now);
 struct dhcp_lease *lease_find_by_client(unsigned char *hwaddr, int hw_len, int hw_type,  
 					unsigned char *clid, int clid_len);
 struct dhcp_lease *lease_find_by_addr(struct in_addr addr);
 void lease_prune(struct dhcp_lease *target, time_t now);
 void lease_update_from_configs(struct daemon *daemon);
+void lease_collect(struct daemon *daemon);
 
 /* rfc2131.c */
 size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *iface_name, size_t sz, time_t now, int unicast_dest);
 
 /* dnsmasq.c */
+int make_icmp_sock(void);
 int icmp_ping(struct daemon *daemon, struct in_addr addr);
 void clear_cache_and_reload(struct daemon *daemon, time_t now);
 
 /* isc.c */
 #ifdef HAVE_ISC_READER
-FILE *load_dhcp(struct daemon *daemon, time_t now);
-//void load_dhcp(struct daemon *daemon, time_t now);
+void load_dhcp(struct daemon *daemon, time_t now);
 #endif
 
 /* netlink.c */
-#ifdef HAVE_RTNETLINK
+#ifdef HAVE_LINUX_NETWORK
 void netlink_init(struct daemon *daemon);
-int netlink_process(struct daemon *daemon, int index, 
-		    struct in_addr relay, struct in_addr primary,
-		    struct dhcp_context **retp);
+int iface_enumerate(struct daemon *daemon, void *parm,
+		    int (*ipv4_callback)(), int (*ipv6_callback)());
 void netlink_multicast(struct daemon *daemon);
+#endif
+
+/* bpf.c */
+#ifndef HAVE_LINUX_NETWORK
+void init_bpf(struct daemon *daemon);
+void send_via_bpf(struct daemon *daemon, struct dhcp_packet *mess, size_t len,
+		  struct in_addr iface_addr, struct ifreq *ifr);
+int iface_enumerate(struct daemon *daemon, void *parm,
+		    int (*ipv4_callback)(), int (*ipv6_callback)());
 #endif
 
 /* dbus.c */

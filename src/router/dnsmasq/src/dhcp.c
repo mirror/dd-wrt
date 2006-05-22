@@ -10,23 +10,29 @@
    GNU General Public License for more details.
 */
 
-/* Author's email: simon@thekelleys.org.uk */
-
 #include "dnsmasq.h"
+
+struct iface_param {
+  struct in_addr relay, primary;
+  struct dhcp_context *current;
+  int ind;
+};
+
+static int complete_context(struct daemon *daemon, struct in_addr local, int if_index, 
+			    struct in_addr netmask, struct in_addr broadcast, void *vparam);
 
 void dhcp_init(struct daemon *daemon)
 {
   int fd = socket(PF_INET, SOCK_DGRAM, IPPROTO_UDP);
   struct sockaddr_in saddr;
-  int flags, oneopt = 1, zeroopt = 0;
+  int oneopt = 1;
   struct dhcp_config *configs, *cp;
 
   if (fd == -1)
     die2 (_("cannot create DHCP socket : %s"), NULL);
   
-  if ((flags = fcntl(fd, F_GETFL, 0)) == -1 ||
-      fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1 ||
-#if defined(IP_PKTINFO)
+  if (!fix_fd(fd) ||
+#if defined(HAVE_LINUX_NETWORK)
       setsockopt(fd, SOL_IP, IP_PKTINFO, &oneopt, sizeof(oneopt)) == -1 ||
 #elif defined(IP_RECVIF)
       setsockopt(fd, IPPROTO_IP, IP_RECVIF, &oneopt, sizeof(oneopt)) == -1 ||
@@ -53,41 +59,20 @@ void dhcp_init(struct daemon *daemon)
 
   daemon->dhcpfd = fd;
 
-  if ((fd = socket (AF_INET, SOCK_RAW, IPPROTO_ICMP)) == -1 ||
-      (flags = fcntl(fd, F_GETFL, 0)) == -1 ||
-      fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1 ||
-      setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) == -1 ||
-      setsockopt(fd, SOL_SOCKET, SO_DONTROUTE, &zeroopt, sizeof(zeroopt)) == -1)
-    die2(_("cannot create ICMP raw socket: %s."), NULL);
-
-  daemon->dhcp_icmp_fd = fd;
-
-#ifdef HAVE_BPF
-  { 
-    int i = 0;
-    while (1) 
-      {
-	char filename[50];
-	sprintf(filename, "/dev/bpf%d", i++);
-	if ((fd = open(filename, O_RDWR, 0)) != -1)
-	  break;
-	if (errno != EBUSY)
-	  die2(_("cannot create DHCP BPF socket: %s"), NULL);
-      }	    
-  }
-#else
-  /* since we don't ever use the packet socket for reception,
-     and it receives copies of _all_ IP packets, then that data
-     will build up in kernel buffers, wasting memory. Set the
-     socket receive buffer size to one to avoid that. (zero is
-     rejected as non-sensical by some BSD kernels) */
-  if ((fd = socket(PF_PACKET, SOCK_DGRAM, htons(ETHERTYPE_IP))) == -1 ||
-      setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) == -1)
-    die2(_("cannot create DHCP packet socket: %s. "
-	  "Is CONFIG_PACKET enabled in your kernel?"), NULL);
-#endif
+#ifndef HAVE_LINUX_NETWORK
+  /* When we're not using capabilities, we need to do this here before
+     we drop root. Also, set buffer size small, to avoid wasting
+     kernel buffers */
   
-  daemon->dhcp_raw_fd = fd;
+  if (daemon->options & OPT_NO_PING)
+    daemon->dhcp_icmp_fd = -1;
+  else if ((daemon->dhcp_icmp_fd = make_icmp_sock()) == -1 ||
+	   setsockopt(daemon->dhcp_icmp_fd, SOL_SOCKET, SO_RCVBUF, &oneopt, sizeof(oneopt)) == -1 )
+    die2(_("cannot create ICMP raw socket: %s."), NULL);
+  
+  /* Make BPF raw send socket */
+  init_bpf(daemon);
+#endif
   
   /* If the same IP appears in more than one host config, then DISCOVER
      for one of the hosts will get the address, but REQUEST will be NAKed,
@@ -97,58 +82,68 @@ void dhcp_init(struct daemon *daemon)
       if ((configs->flags & cp->flags & CONFIG_ADDR) &&	configs->addr.s_addr == cp->addr.s_addr)
 	die2(_("duplicate IP address %s in dhcp-config directive."), inet_ntoa(cp->addr));
   
-  daemon->dhcp_packet = safe_malloc(sizeof(struct udp_dhcp_packet));
-  /* These two each hold a DHCP option max size 255
+  daemon->dhcp_packet.iov_len = sizeof(struct dhcp_packet); 
+  daemon->dhcp_packet.iov_base = safe_malloc(daemon->dhcp_packet.iov_len);
+    /* These two each hold a DHCP option max size 255
      and get a terminating zero added */
   daemon->dhcp_buff = safe_malloc(256);
   daemon->dhcp_buff2 = safe_malloc(256); 
   daemon->ping_results = NULL;
 }
-
+  
 void dhcp_packet(struct daemon *daemon, time_t now)
 {
-  struct udp_dhcp_packet *rawpacket = daemon->dhcp_packet;
-  struct dhcp_packet *mess = &rawpacket->data;
+  struct dhcp_packet *mess;
   struct dhcp_context *context;
   struct iname *tmp;
   struct ifreq ifr;
   struct msghdr msg;
-  struct iovec iov[2];
+  struct sockaddr_in dest;
   struct cmsghdr *cmptr;
-  ssize_t sz;
-  size_t newlen; 
+  struct iovec iov;
+  ssize_t sz; 
   int iface_index = 0, unicast_dest = 0;
   struct in_addr iface_addr;
-#ifdef HAVE_BPF
-  unsigned char iface_hwaddr[ETHER_ADDR_LEN];
-#endif
+  struct iface_param parm;
 
   union {
     struct cmsghdr align; /* this ensures alignment */
-#ifdef IP_PKTINFO
+#ifdef HAVE_LINUX_NETWORK
     char control[CMSG_SPACE(sizeof(struct in_pktinfo))];
 #else
     char control[CMSG_SPACE(sizeof(struct sockaddr_dl))];
 #endif
   } control_u;
   
-  iov[0].iov_base = (char *)mess;
-  iov[0].iov_len = sizeof(struct dhcp_packet);
-
   msg.msg_control = control_u.control;
   msg.msg_controllen = sizeof(control_u);
-  msg.msg_flags = 0;
   msg.msg_name = NULL;
   msg.msg_namelen = 0;
-  msg.msg_iov = iov;
+  msg.msg_iov = &daemon->dhcp_packet;
   msg.msg_iovlen = 1;
   
-  sz = recvmsg(daemon->dhcpfd, &msg, 0);
+  do
+    {
+      msg.msg_flags = 0;
+      while ((sz = recvmsg(daemon->dhcpfd, &msg, MSG_PEEK)) == -1 && errno == EINTR);
+    }
+  while (sz != -1 && (msg.msg_flags & MSG_TRUNC) &&
+	 expand_buf(&daemon->dhcp_packet, daemon->dhcp_packet.iov_len + 100));
   
-  if (sz < (ssize_t)(sizeof(*mess) - sizeof(mess->options)))
+  /* expand_buf may have moved buffer */
+  mess = daemon->dhcp_packet.iov_base;
+  msg.msg_controllen = sizeof(control_u);
+  msg.msg_flags = 0;
+  msg.msg_name = &dest;
+  msg.msg_namelen = sizeof(dest);
+
+  while ((sz = recvmsg(daemon->dhcpfd, &msg, 0)) && errno == EINTR);
+ 
+  if ((msg.msg_flags & MSG_TRUNC) ||
+      sz < (ssize_t)(sizeof(*mess) - sizeof(mess->options)))
     return;
   
-#if defined (IP_PKTINFO)
+#if defined (HAVE_LINUX_NETWORK)
   if (msg.msg_controllen < sizeof(struct cmsghdr))
     return;
   for (cmptr = CMSG_FIRSTHDR(&msg); cmptr; cmptr = CMSG_NXTHDR(&msg, cmptr))
@@ -178,225 +173,133 @@ void dhcp_packet(struct daemon *daemon, time_t now)
     struct iname *name;
     for (name = daemon->if_names; name->isloop; name = name->next);
     strcpy(ifr.ifr_name, name->name);
+    iface_index = if_nametoindex(name->name);
   }
 #endif
 
-#ifdef HAVE_BPF
-  ifr.ifr_addr.sa_family = AF_LINK;
-  if (ioctl(daemon->dhcpfd, SIOCGIFADDR, &ifr) < 0)
-    return;
-  memcpy(iface_hwaddr, LLADDR((struct sockaddr_dl *)&ifr.ifr_addr), ETHER_ADDR_LEN);
-#endif
-  
   ifr.ifr_addr.sa_family = AF_INET;
   if (ioctl(daemon->dhcpfd, SIOCGIFADDR, &ifr) < 0 )
     return;
   iface_addr = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
 
-  /* enforce available interface configuration */
-  for (tmp = daemon->if_except; tmp; tmp = tmp->next)
-    if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
-      return;
- 
   for (tmp = daemon->dhcp_except; tmp; tmp = tmp->next)
     if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
       return;
   
-  if (daemon->if_names || daemon->if_addrs)
-    {
-      for (tmp = daemon->if_names; tmp; tmp = tmp->next)
-	if (tmp->name && (strcmp(tmp->name, ifr.ifr_name) == 0))
-	  break;
-      if (!tmp)
-	for (tmp = daemon->if_addrs; tmp; tmp = tmp->next)
-	  if (tmp->addr.sa.sa_family == AF_INET && 
-	      tmp->addr.in.sin_addr.s_addr == iface_addr.s_addr)
-	    break;
-      if (!tmp)
-	return; 
-    }
+  if (!iface_check(daemon, AF_INET, (struct all_addr *)&iface_addr, ifr.ifr_name))
+    return;
   
   /* unlinked contexts are marked by context->current == context */
   for (context = daemon->dhcp; context; context = context->next)
     context->current = context;
   
-#ifdef HAVE_RTNETLINK
-  if (!netlink_process(daemon, iface_index, mess->giaddr, iface_addr, &context))
-#endif
-    {
-      struct in_addr iface_netmask, iface_broadcast;
+  parm.relay = mess->giaddr;
+  parm.primary = iface_addr;
+  parm.current = NULL;
+  parm.ind = iface_index;
 
-#ifdef HAVE_RTNETLINK
-      static int warned = 0;
-
-      if (!warned)
-	{
-	  syslog(LOG_WARNING, _("Cannot use RTnetlink socket, falling back to ioctl API"));
-	  warned = 1;
-	}
-#endif
-
-      if (ioctl(daemon->dhcpfd, SIOCGIFNETMASK, &ifr) < 0)
-	return;
-      iface_netmask = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
-      
-      if (ioctl(daemon->dhcpfd, SIOCGIFBRDADDR, &ifr) < 0)
-	return;
-      iface_broadcast = ((struct sockaddr_in *) &ifr.ifr_addr)->sin_addr;
-      
-      context = complete_context(daemon, iface_addr, NULL, iface_netmask, 
-				 iface_broadcast, mess->giaddr, iface_addr);
-    }
-
+  if (!iface_enumerate(daemon, &parm, complete_context, NULL))
+    return;
   lease_prune(NULL, now); /* lose any expired leases */
-  newlen = dhcp_reply(daemon, context, ifr.ifr_name, (size_t)sz, now, unicast_dest);
-  lease_update_file(daemon, 0, now);
+  iov.iov_len = dhcp_reply(daemon, parm.current, ifr.ifr_name, (size_t)sz, now, unicast_dest);
+  lease_update_file(daemon, now);
   lease_update_dns(daemon);
+  lease_collect(daemon);
   
-  if (newlen == 0)
+  if (iov.iov_len == 0)
     return;
   
-  if (mess->giaddr.s_addr || mess->ciaddr.s_addr)
-    {
-      /* To send to BOOTP relay or configured client, use the IP packet */
-      
-      struct sockaddr_in dest;
-      dest.sin_family = AF_INET;
+  msg.msg_name = &dest;
+  msg.msg_namelen = sizeof(dest);
+  msg.msg_control = NULL;
+  msg.msg_controllen = 0;
+  msg.msg_iov = &iov;
+  iov.iov_base = daemon->dhcp_packet.iov_base;
+  
+  /* packet buffer may have moved */
+  mess = daemon->dhcp_packet.iov_base;
+  
 #ifdef HAVE_SOCKADDR_SA_LEN
-      dest.sin_len = sizeof(struct sockaddr_in);
+  dest.sin_len = sizeof(struct sockaddr_in);
 #endif
      
-      if (mess->giaddr.s_addr)
-	{
-	  dest.sin_port = htons(DHCP_SERVER_PORT);
-	  dest.sin_addr = mess->giaddr; 
-	}
-      else
-	{
-	  dest.sin_port = htons(DHCP_CLIENT_PORT);
-	  dest.sin_addr = mess->ciaddr;
-	}
-      
-      while(sendto(daemon->dhcpfd, mess, newlen, 0, 
-		   (struct sockaddr *)&dest, sizeof(dest)) == -1 &&
-	    retry_send());
+  if (mess->giaddr.s_addr)
+    {
+      /* Send to BOOTP relay  */
+      if (!dest.sin_port)
+	dest.sin_port = htons(DHCP_SERVER_PORT);
+      dest.sin_addr = mess->giaddr; 
+    }
+  else if (mess->ciaddr.s_addr)
+    {
+      dest.sin_addr = mess->ciaddr;
+      if (!dest.sin_port)
+	dest.sin_port = htons(DHCP_CLIENT_PORT);
+    } 
+#ifdef HAVE_LINUX_NETWORK
+  else if (ntohs(mess->flags) & 0x8000)
+    {
+      /* broadcast to 255.255.255.255 */
+      struct in_pktinfo *pkt;
+      msg.msg_control = control_u.control;
+      msg.msg_controllen = sizeof(control_u);
+      cmptr = CMSG_FIRSTHDR(&msg);
+      dest.sin_addr.s_addr = INADDR_BROADCAST;
+      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      pkt = (struct in_pktinfo *)CMSG_DATA(cmptr);
+      pkt->ipi_ifindex = iface_index;
+      pkt->ipi_spec_dst.s_addr = 0;
+      msg.msg_controllen = cmptr->cmsg_len = CMSG_LEN(sizeof(struct in_pktinfo));
+      cmptr->cmsg_level = SOL_IP;
+      cmptr->cmsg_type = IP_PKTINFO;
     }
   else
     {
-      /* Hairy stuff, packet either has to go to the
-	 net broadcast or the destination can't reply to ARP yet,
-	 but we do know the physical address. 
-	 Build the packet by steam, and send directly, bypassing
-	 the kernel IP stack */
-      
-      u32 i, sum;
-      unsigned char hwdest[DHCP_CHADDR_MAX];
-      
-      if (ntohs(mess->flags) & 0x8000)
+      /* unicast to unconfigured client */
+      dest.sin_addr = mess->yiaddr;
+      dest.sin_port = htons(DHCP_CLIENT_PORT);
+      if (mess->hlen != 0 && mess->hlen <= 14 && mess->htype != 0)
 	{
-	  memset(hwdest, 255,  mess->hlen);
-	  rawpacket->ip.ip_dst.s_addr = INADDR_BROADCAST;
+	  /* inject mac address direct into ARP cache. 
+	     struct sockaddr limits size to 14 bytes. */
+	  struct arpreq req;
+	  *((struct sockaddr_in *)&req.arp_pa) = dest;
+	  req.arp_ha.sa_family = mess->htype;
+	  memcpy(req.arp_ha.sa_data, mess->chaddr, mess->hlen);
+	  strncpy(req.arp_dev, ifr.ifr_name, 16);
+	  req.arp_flags = ATF_COM;
+	  ioctl(daemon->dhcpfd, SIOCSARP, &req);
 	}
-      else
-	{
-	  memcpy(hwdest, mess->chaddr, mess->hlen); 
-	  rawpacket->ip.ip_dst.s_addr = mess->yiaddr.s_addr;
-	}
-      
-      rawpacket->ip.ip_p = IPPROTO_UDP;
-      rawpacket->ip.ip_src.s_addr = iface_addr.s_addr;
-      rawpacket->ip.ip_len = htons(sizeof(struct ip) + 
-				   sizeof(struct udphdr) +
-				   newlen) ;
-      rawpacket->ip.ip_hl = sizeof(struct ip) / 4;
-      rawpacket->ip.ip_v = IPVERSION;
-      rawpacket->ip.ip_tos = 0;
-      rawpacket->ip.ip_id = htons(0);
-      rawpacket->ip.ip_off = htons(0x4000); /* don't fragment */
-      rawpacket->ip.ip_ttl = IPDEFTTL;
-      rawpacket->ip.ip_sum = 0;
-      for (sum = 0, i = 0; i < sizeof(struct ip) / 2; i++)
-	sum += ((u16 *)&rawpacket->ip)[i];
-      while (sum>>16)
-	sum = (sum & 0xffff) + (sum >> 16);  
-      rawpacket->ip.ip_sum = (sum == 0xffff) ? sum : ~sum;
-      
-      rawpacket->udp.uh_sport = htons(DHCP_SERVER_PORT);
-      rawpacket->udp.uh_dport = htons(DHCP_CLIENT_PORT);
-      if (newlen & 1)
-	((u8 *)&rawpacket->data)[newlen] = 0; /* for checksum, in case length is odd. */
-      rawpacket->udp.uh_sum = 0;
-      rawpacket->udp.uh_ulen = sum = htons(sizeof(struct udphdr) + newlen);
-      sum += htons(IPPROTO_UDP);
-      for (i = 0; i < 4; i++)
-	sum += ((u16 *)&rawpacket->ip.ip_src)[i];
-      for (i = 0; i < (sizeof(struct udphdr) + newlen + 1) / 2; i++)
-	sum += ((u16 *)&rawpacket->udp)[i];
-      while (sum>>16)
-	sum = (sum & 0xffff) + (sum >> 16);
-      rawpacket->udp.uh_sum = (sum == 0xffff) ? sum : ~sum;
-      
-      { 
-#ifdef HAVE_BPF
-	struct ether_header header;
-	
-	/* Only know how to do ethernet on *BSD */
-	if (mess->htype != ARPHRD_ETHER || mess->hlen != ETHER_ADDR_LEN)
-	  syslog(LOG_WARNING, _("DHCP request for unsupported hardware type (%d) recieved on %s"), 
-                 mess->htype, ifr.ifr_name);
-	else
-	  {
-	    header.ether_type = htons(ETHERTYPE_IP);
-	    memcpy(header.ether_shost, iface_hwaddr, ETHER_ADDR_LEN);
-	    memcpy(header.ether_dhost, hwdest, ETHER_ADDR_LEN); 
-	    
-	    ioctl(daemon->dhcp_raw_fd, BIOCSETIF, &ifr);
-	    
-	    iov[0].iov_base = (char *)&header;
-	    iov[0].iov_len = sizeof(struct ether_header);
-	    iov[1].iov_base = (char *)rawpacket;
-	    iov[1].iov_len = ntohs(rawpacket->ip.ip_len);
-	    while (writev(daemon->dhcp_raw_fd, iov, 2) == -1 && retry_send());
-	  }
-#else
-	/* Most definitions of this only include 8 bytes of address, 
-	   so we roll our own, since later kernels allow more. */
-	struct {
-	  unsigned short int sll_family;
-	  unsigned short int sll_protocol;
-	  int sll_ifindex;
-	  unsigned short int sll_hatype;
-	  unsigned char sll_pkttype;
-	  unsigned char sll_halen;
-	  unsigned char sll_addr[DHCP_CHADDR_MAX];
-	} dest;
-	
-	memset(&dest, 0, sizeof(dest));
-	dest.sll_family = AF_PACKET;
-	dest.sll_halen =  mess->hlen;
-	dest.sll_ifindex = iface_index;
-	dest.sll_protocol = htons(ETHERTYPE_IP);
-	memcpy(dest.sll_addr, hwdest, mess->hlen); 
-	while (sendto(daemon->dhcp_raw_fd, rawpacket, ntohs(rawpacket->ip.ip_len), 
-		      0, (struct sockaddr *)&dest, sizeof(dest)) == -1 &&
-	       retry_send());
-#endif
-      }
     }
+#else
+  else 
+    {
+      send_via_bpf(daemon, mess, iov.iov_len, iface_addr, &ifr);
+      return;
+    }
+#endif
+   
+  while(sendmsg(daemon->dhcpfd, &msg, 0) == -1 && retry_send());
 }
-
+ 
 /* This is a complex routine: it gets called with each (address,netmask,broadcast) triple 
-   of the interface on which a DHCP packet arrives (and any relay address) and does the 
-   following things:
-   1) Fills in any netmask and broadcast addresses which have not been explicitly configured.
-   2) Fills in local (this host) and router (this host or relay) addresses.
-   3) Links contexts which are valid for hosts directly connected to the arrival interface on ->current.
+   of each interface (and any relay address) and does the  following things:
+
+   1) Discards stuff for interfaces other than the one on which a DHCP packet just arrived.
+   2) Fills in any netmask and broadcast addresses which have not been explicitly configured.
+   3) Fills in local (this host) and router (this host or relay) addresses.
+   4) Links contexts which are valid for hosts directly connected to the arrival interface on ->current.
+
    Note that the current chain may be superceded later for configured hosts or those coming via gateways. */
-struct dhcp_context *complete_context(struct daemon *daemon, struct in_addr local, struct dhcp_context *current,
-				      struct in_addr netmask, struct in_addr broadcast, struct in_addr relay,
-				      struct in_addr primary)
+
+static int complete_context(struct daemon *daemon, struct in_addr local, int if_index, 
+			     struct in_addr netmask, struct in_addr broadcast, void *vparam)
 {
   struct dhcp_context *context;
+  struct iface_param *param = vparam;
+  
+  if (if_index != param->ind)
+    return 1; /* no for us. */
   
   for (context = daemon->dhcp; context; context = context->next)
     {
@@ -426,8 +329,8 @@ struct dhcp_context *complete_context(struct daemon *daemon, struct in_addr loca
 		{
 		  context->router = local;
 		  context->local = local;
-		  context->current = current;
-		  current = context;
+		  context->current = param->current;
+		  param->current = context;
 		}
 	      
 	      if (!(context->flags & CONTEXT_BRDCAST))
@@ -438,10 +341,10 @@ struct dhcp_context *complete_context(struct daemon *daemon, struct in_addr loca
 		    context->broadcast.s_addr  = context->start.s_addr | ~context->netmask.s_addr;
 		}
 	    }	
-	  else if (relay.s_addr && is_same_net(relay, context->start, context->netmask))
+	  else if (param->relay.s_addr && is_same_net(param->relay, context->start, context->netmask))
 	    {
-	      context->router = relay;
-	      context->local = primary;
+	      context->router = param->relay;
+	      context->local = param->primary;
 	      /* fill in missing broadcast addresses for relayed ranges */
 	      if (!(context->flags & CONTEXT_BRDCAST))
 		context->broadcast.s_addr  = context->start.s_addr | ~context->netmask.s_addr;
@@ -450,25 +353,31 @@ struct dhcp_context *complete_context(struct daemon *daemon, struct in_addr loca
 	}
     }
 
-  return current;
+  return 1;
 }
 	  
 struct dhcp_context *address_available(struct dhcp_context *context, struct in_addr taddr)
 {
   /* Check is an address is OK for this network, check all
-     possible ranges. */
+     possible ranges. Make sure that the address isn't in use
+     by the server itself. */
   
   unsigned int start, end, addr = ntohl(taddr.s_addr);
-  
-  for (; context; context = context->current)
-    {
-      start = ntohl(context->start.s_addr);
-      end = ntohl(context->end.s_addr);
+  struct dhcp_context *tmp;
 
-      if (!(context->flags & CONTEXT_STATIC) &&
+  for (tmp = context; tmp; tmp = tmp->current)
+    if (taddr.s_addr == context->local.s_addr)
+      return NULL;
+  
+  for (tmp = context; tmp; tmp = tmp->current)
+    {
+      start = ntohl(tmp->start.s_addr);
+      end = ntohl(tmp->end.s_addr);
+
+      if (!(tmp->flags & CONTEXT_STATIC) &&
 	  addr >= start &&
 	  addr <= end)
-	return context;
+	return tmp;
     }
 
   return NULL;
@@ -547,11 +456,15 @@ int address_allocate(struct dhcp_context *context, struct daemon *daemon,
      a particular hwaddr/clientid/hostname in our configuration.
      Try to return from contexts which match netids first. */
 
-  struct in_addr start, addr ;
-  struct dhcp_context *c;
+  struct in_addr start, addr;
+  struct dhcp_context *c, *d;
   int i, pass;
   unsigned int j; 
 
+  /* hash hwaddr */
+  for (j = 0, i = 0; i < hw_len; i++)
+    j += hwaddr[i] + (hwaddr[i] << 8) + (hwaddr[i] << 16);
+  
   for (pass = 0; pass <= 1; pass++)
     for (c = context; c; c = c->current)
       if (c->flags & CONTEXT_STATIC)
@@ -561,35 +474,41 @@ int address_allocate(struct dhcp_context *context, struct daemon *daemon,
       else
 	{
 	  /* pick a seed based on hwaddr then iterate until we find a free address. */
-	  for (j = c->addr_epoch, i = 0; i < hw_len; i++)
-	    j += hwaddr[i] + (hwaddr[i] << 8) + (hwaddr[i] << 16);
-	  
 	  start.s_addr = addr.s_addr = 
 	    htonl(ntohl(c->start.s_addr) + 
-		  (j % (1 + ntohl(c->end.s_addr) - ntohl(c->start.s_addr))));
+		  ((j + c->addr_epoch) % (1 + ntohl(c->end.s_addr) - ntohl(c->start.s_addr))));
 	  
 	  do {
-	    if (!lease_find_by_addr(addr) && 
+	    /* eliminate addresses in use by the server. */
+	    for (d = context; d; d = d->current)
+	      if (addr.s_addr == d->local.s_addr)
+		break;
+
+	    if (!d &&
+		!lease_find_by_addr(addr) && 
 		!config_find_by_address(daemon->dhcp_conf, addr))
 	      {
 		struct ping_result *r, *victim = NULL;
-		int count;
+		int count, max = (int)(0.6 * (((float)PING_CACHE_TIME)/
+					      ((float)PING_WAIT)));
+		
+		*addrp = addr;
+
+		if (daemon->options & OPT_NO_PING)
+		  return 1;
 		
 		/* check if we failed to ping addr sometime in the last
-		   30s. If so, assume the same situation still exists.
+		   PING_CACHE_TIME seconds. If so, assume the same situation still exists.
 		   This avoids problems when a stupid client bangs
-		   on us repeatedly. As a final check, is we did more
-		   than six ping checks in the last 30s, we are in 
-		   high-load mode, so don't do any more. */
+		   on us repeatedly. As a final check, if we did more
+		   than 60% of the possible ping checks in the last 
+		   PING_CACHE_TIME, we are in high-load mode, so don't do any more. */
 		for (count = 0, r = daemon->ping_results; r; r = r->next)
-		  if (difftime(now, r->time) > 30.0)
+		  if (difftime(now, r->time) >  (float)PING_CACHE_TIME)
 		    victim = r; /* old record */
-		  else if (++count == 6 || r->addr.s_addr == addr.s_addr)
-		    {
-		      *addrp = addr;
-		      return 1;
-		    }
-		
+		  else if (++count == max || r->addr.s_addr == addr.s_addr)
+		    return 1;
+		    
 		if (icmp_ping(daemon, addr))
 		  /* address in use: perturb address selection so that we are
 		     less likely to try this address again. */
@@ -613,7 +532,6 @@ int address_allocate(struct dhcp_context *context, struct daemon *daemon,
 			victim->addr = addr;
 			victim->time = now;
 		      }
-		    *addrp = addr;
 		    return 1;
 		  }
 	      }
@@ -677,7 +595,6 @@ struct dhcp_config *find_config(struct dhcp_config *configs,
 	is_addr_in_context(context, config))
       return config;
   
-
   if (hostname && context)
     for (config = configs; config; config = config->next)
       if ((config->flags & CONFIG_NAME) && 
@@ -690,17 +607,10 @@ struct dhcp_config *find_config(struct dhcp_config *configs,
 	config->wildcard_mask != 0 &&
 	config->hwaddr_len == hw_len &&	
 	(config->hwaddr_type == hw_type || config->hwaddr_type == 0) &&
-	is_addr_in_context(context, config))
-      {
-	int i;
-	unsigned int mask = config->wildcard_mask;
-	for (i = hw_len - 1; i >= 0; i--, mask = mask >> 1)
-	  if (mask & 1)
-	    config->hwaddr[i] = hwaddr[i];
-	if (memcmp(config->hwaddr, hwaddr, hw_len) == 0)
-	  return config;
-      }
-  
+	is_addr_in_context(context, config) &&
+	memcmp_masked(config->hwaddr, hwaddr, hw_len, config->wildcard_mask))
+      return config;
+        
   return NULL;
 }
 
@@ -863,8 +773,8 @@ char *host_from_dns(struct daemon *daemon, struct in_addr addr)
   if (lookup && (lookup->flags & F_HOSTS))
     {
       hostname = daemon->dhcp_buff;
-      hostname[256] = 0;
       strncpy(hostname, cache_get_name(lookup), 256);
+      hostname[255] = 0;
       hostname = strip_hostname(daemon, hostname);
     }
 
