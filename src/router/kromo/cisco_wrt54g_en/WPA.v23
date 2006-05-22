@@ -15,11 +15,11 @@ document.title = "<% nvram_get("router_name"); %>" + wpa.titl;
 function to_submit(F)	{
 	if(valid_value(F)){
 		F.submit_button.value = "WPA";
-		F.action.value = "Apply";
 //		F.save_button.value = "Saved";
 		F.save_button.value = sbutton.saving;
-		F.save_button.disabled = true;
-		F.submit();
+		
+		F.action.value = "Apply";
+		apply(F);
 	}
 }
 function valid_value(F) {

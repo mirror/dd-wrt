@@ -62,7 +62,9 @@ function to_submit(F) {
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
-	F.save_button.value = "Saved";
+//	F.save_button.value = "Saved";
+	F.save_button.value = sbutton.saving;
+	
 	F.action.value = "Apply";
 	apply(F);
 }
