@@ -168,8 +168,8 @@ NOTES:
 
 /* platform independent options- uncomment to enable */
 #define HAVE_BROKEN_RTC
-/*#define HAVE_ISC_READER
-#define HAVE_DBUS*/
+/* #define HAVE_ISC_READER */
+/* #define HAVE_DBUS */
 
 #if defined(HAVE_BROKEN_RTC) && defined(HAVE_ISC_READER)
 #  error HAVE_ISC_READER is not compatible with HAVE_BROKEN_RTC
