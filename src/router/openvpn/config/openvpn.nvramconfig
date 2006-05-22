@@ -9,3 +9,4 @@
  "openvpn_mtu" "TUN MTU" "NULL" "FALSE" "0"
  "openvpn_extramtu" "TUN EXTRA" "NULL" "FALSE" "0"
  "openvpn_mssfix" "TCP MSS" "NULL" "FALSE" "0"
+ "openvpn_certtype"  "nsCertType server" "CHOICE" "2" "0" "1" "TRUE" "0"
