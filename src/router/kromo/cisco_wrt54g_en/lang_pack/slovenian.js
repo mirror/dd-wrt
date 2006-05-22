@@ -115,6 +115,7 @@ share.encrypt="Šifriranje";
 share.key="Kljuè";
 share.wireless="Brezžièno";
 share.dhcp="DHCP";
+share.styl="Stil";
 
 
 var sbutton = new Object();
@@ -161,6 +162,7 @@ sbutton.dhcpren="Obnovi DHCP";
 sbutton.survey="Pregled podroèja";
 sbutton.upgrading="Posodabljanje";
 sbutton.upgrade="Posodobi";
+sbutton.preview="Predogled";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
@@ -398,7 +400,7 @@ ddnsm.dyn_numhost="Najdeno preveè ali premalo gostiteljev";
 ddnsm.dyn_dnserr="DNS notranja napaka";
 ddnsm.dyn_911="Neprièakovana napaka 911";
 ddnsm.dyn_999="Neprièakovana napaka 999";
-ddnsm.dyn_donator="Zahtevana funkcija je na voljo samo za darovalce, prosim darujte";
+ddnsm.dyn_donator="Zahtevana funkcija je na voljo samo za donatorje, prosim darujte";
 ddnsm.dyn_uncode="Neznana povratna koda";
 
 ddnsm.tzo_good="Operacija zakljuèena";
@@ -910,6 +912,9 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP vrata";
 management.SIPatH_domain="SIP domena";
 
+management.gui_style="Stil usmerjalnikovega uporabniškega vmesnika";
+
+
 
 //help container
 var hmanagement = new Object();
@@ -1205,7 +1210,7 @@ status_wireless.legend2="Info o paketih";
 status_wireless.rx="Sprejeti (RX)";
 status_wireless.tx="Oddani (TX)";
 status_wireless.h22="Brezžièna vozlišèa";
-status_wireless.legend3="Odjemalci";
+status_wireless.legend3="Brezžièni odjemalci";
 status_wireless.signal_qual="kakovost signala";
 status_wireless.wds="WDS vozlišèa";
 
@@ -1275,6 +1280,21 @@ var hupnp = new Object();
 hupnp.right2="Kliknite na koš za izbris posameznega vnosa.";
 hupnp.right4="Dovoli aplikacijam, da samostojno nastavijo posredovanja.";
 
+
+
+// ******************************************* VPN.asp *******************************************//
+
+var vpn = new Object();
+vpn.titl=" - VPN";
+vpn.h2="Navidezno zasebno omrežje (VPN)";
+vpn.legend="VPN prehajanje";
+vpn.ipsec="IPSec prehajanje";
+vpn.pptp="PPTP prehajanje";
+vpn.l2tp="L2TP prehajanje";
+
+//help container
+var hvpn = new Object();
+hvpn.right1="Izberete lahko IPSec, PPTP in/ali L2TP prehajanje, da se lahko Vaše naprave povežejo v VPN.";
 
 
 // ******************************************* Vlan.asp *******************************************//
@@ -1549,4 +1569,4 @@ dhcp.server="DHCP strežnikov IP naslov :";
 dhcp.tclient="Odjemalèevo gostiteljevo ime";
 
 var donate = new Object();
-donate.mb="You may dontate through the Moneybookers account mb@dd-wrt.com too";
+donate.mb="Darujete lahko tudi preko Moneybookerjevega raèuna mb@dd-wrt.com";
