@@ -914,3 +914,19 @@ function setElementMask(id, state) {
 	newInput.focus();
 	
 }
+
+/* Added by Botho 22.May.06 */
+// change charset meta tag according to language selected
+function setMetaContent() {
+	mymetatags = document.getElementsByTagName("meta");
+	
+	for (i=0;i < mymetatags.length;i++)
+	{
+		if (mymetatags[i].getAttribute("content"))
+		{
+			new_content = "application/xhtml+xml; charset=" + lang_charset.set;
+			mymetatags[i].setAttribute("content",new_content);
+		}
+		//alert(mymetatags[i].getAttribute("content"));
+	}
+}
