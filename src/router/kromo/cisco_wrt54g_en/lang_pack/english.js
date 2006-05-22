@@ -240,7 +240,7 @@ errmsg.err42="Please select a configuration file to restore.";
 errmsg.err44="The total checks exceed 128 counts.";
 
 //Site_Survey.asp error messages
-errmsg.err47=("invalid SSID.");
+errmsg.err47="invalid SSID.";
 
 //Wireless_WDS.asp error messages
 errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
