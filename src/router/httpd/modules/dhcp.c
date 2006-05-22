@@ -26,8 +26,10 @@ char
 
 }
 
-/* Dump leases in this format: <tr><td>hostname</td><td>MAC</td><td>IP</td><td>expires</td></tr>
-read leases from leasefile as expires mac ip hostname */
+/*dump in array:
+hostname,mac,ip,expires
+read leases from leasefile as:
+expires mac ip hostname */
 void
 ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 {
