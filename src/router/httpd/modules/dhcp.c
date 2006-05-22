@@ -42,7 +42,7 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 	char *p;
 
 	/* Write out leases file from dnsmasq*/
-	eval("killall", "-SIGUSR2", "dnsmasq");
+	eval("killall", "-SIGUSR1", "dnsmasq");
 	sleep(1);
 
 	/* Parse leases file */
