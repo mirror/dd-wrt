@@ -35,6 +35,8 @@ LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared 
 ifeq ($(CONFIG_ANTIFLASH),y)
 CFLAGS += -DANTI_FLASH
 endif
+CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
+
 ifeq ($(CONFIG_NOAD),y)
 CFLAGS += -DHAVE_NOAD
 endif
