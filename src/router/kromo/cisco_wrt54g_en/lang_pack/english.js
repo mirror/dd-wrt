@@ -1114,6 +1114,7 @@ service.vpn_compress="Use LZO Compression";
 service.vpn_tunnel="Tunnel Protocol";
 service.vpn_srvcert="Public Server Cert";
 service.vpn_clicert="Public Client Cert";
+service.vpn_certtype="nsCertType";
 service.vpn_clikey="Private Client Key";
 
 //sshd.webservices
