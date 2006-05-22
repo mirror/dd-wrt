@@ -14,6 +14,13 @@ install:
 	cp -a style $(INSTALLDIR)/www
 	cp -a help $(INSTALLDIR)/www
 	cp -a lang_pack $(INSTALLDIR)/www
+ifeq ($(CONFIG_NOMUI),y)
+	rm -f $(INSTALLDIR)/www/lang_pack/*.js
+	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
+	rm -f $(INSTALLDIR)/www/images/logo.png
+	rm -f $(INSTALLDIR)/www/images/88*	
+	cp lang_pack/english.js $(INSTALLDIR)/www/lang_pack/
+endif
 	ln -s ../tmp/www $(INSTALLDIR)/www/user
 
 
