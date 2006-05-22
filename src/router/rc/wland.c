@@ -484,7 +484,7 @@ do_client_check (void)
       /* let wl do this for us (no use in reinventing the wheel) */
       //eval("/usr/sbin/wlconf", get_wdev(), "down");
       //eval("/usr/sbin/wlconf", get_wdev(), "up"); 
-      eval ("wl", "join", nvram_safe_get ("wl_ssid"));
+      eval ("wl", "ssid", nvram_safe_get ("wl_ssid"));
 
 //      join(nvram_get("wl_ssid"));
       fclose (fp);
