@@ -2413,7 +2413,7 @@ start_pptp (int status)
 	  start_redial ();
 	}
       if (nvram_match ("pptp_encrypt", "0"))
-	fprintf (fp, "nomppe\n");	// Disable mppe negotiation
+//	fprintf (fp, "nomppe\n");	// Disable mppe negotiation
       fprintf (fp, "default-asyncmap\n");	// Disable  asyncmap  negotiation
       fprintf (fp, "nopcomp\n");	// Disable protocol field compression
       fprintf (fp, "noaccomp\n");	// Disable Address/Control compression

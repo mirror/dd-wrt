@@ -31,6 +31,7 @@ CFLAGS += -DHAVE_L2TP
 endif
 ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
+OBJS += ppp.o
 endif
 ifeq ($(CONFIG_HEARTBEAT),y)
 CFLAGS += -DHAVE_HEARTBEAT
