@@ -1,4 +1,4 @@
-CFLAGS ?= -Os -DHAVE_HAVE_BROKEN_RTC
+CFLAGS ?= -Os
 PKG_CONFIG ?= pkg-config
 
 
