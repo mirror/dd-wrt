@@ -13,7 +13,8 @@
 #define DHCP_MAX_COUNT 254
 #define EXPIRES_NEVER 0xFFFFFFFF
 
-char *dnsmasq_reltime(char *buf, time_t t)
+char 
+*dnsmasq_reltime(char *buf, time_t t)
 {
 	int days;
 	int min;
@@ -66,7 +67,6 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 	return;
 }
 
-/* Dump leases in <tr><td>hostname</td><td>MAC</td><td>IP</td><td>expires</td></tr> format */
 // void
 // ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 // {
@@ -180,9 +180,9 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 // }
 
 /* Delete leases */
-// void
-// delete_leases (webs_t wp)
-// {
+void
+delete_leases (webs_t wp)
+{
 //   FILE *fp_w;
 //   char sigusr1[] = "-XX";
 //   int i;
@@ -301,8 +301,8 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 // 
 //     }
 // 
-//   return;
-// }
+   return;
+}
 
 
 void
