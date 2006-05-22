@@ -14,6 +14,7 @@
 <% css_include(); %>
 		</style>
 		<script type="text/javascript">
+setMetaContent();
 <% js_include(); %>
 
 var clk = <% get_clkfreq(); %>;
