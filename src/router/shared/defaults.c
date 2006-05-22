@@ -1259,6 +1259,7 @@ struct nvram_tuple router_defaults[] = {
   {"openvpn_mtu", "1500", 0},
   {"openvpn_extramtu", "32", 0},
   {"openvpn_mssfix", "1450", 0},
+  {"openvpn_certtype", "0", 0},
 #endif
 #ifdef HAVE_NEWMEDIA
   {"openvpn_config", "", 0},
