@@ -553,7 +553,7 @@ start_lan (void)
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
 		eval ("wl", "ap", "0");
-		eval ("wl", "join", nvram_get ("wl_ssid"));
+		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #endif
 //              eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
@@ -576,7 +576,7 @@ start_lan (void)
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
 		eval ("wl", "ap", "0");
-		eval ("wl", "join", nvram_get ("wl_ssid"));
+		eval ("wl", "ssid", nvram_get ("wl_ssid"));
 #endif
 	      }
 
@@ -663,8 +663,9 @@ start_lan (void)
   /* Sveasoft - create separate WDS subnet bridge if enabled */
   if (nvram_match ("wl_br1_enable", "1"))
     {
-
-      eval ("ifconfig", "br1", "down");
+      ifconfig("br1",0,0,0);
+      
+    //  eval ("ifconfig", "br1", "down");
       eval ("brctl", "delbr", "br1");
       eval ("brctl", "addbr", "br1");
       eval ("brctl", "setfd", "br1", "0");
@@ -675,9 +676,9 @@ start_lan (void)
       /* Bring up and configure br1 interface */
       if (nvram_invmatch ("wl_br1_ipaddr", "0.0.0.0"))
 	{
-	  //ifconfig("br1", IFUP, nvram_safe_get("wl_br1_ipaddr"), nvram_safe_get("wl_br1_netmask"));
-	  eval ("ifconfig", "br1", nvram_safe_get ("wl_br1_ipaddr"),
-		"netmask", nvram_safe_get ("wl_br1_netmask"), "up");
+	  ifconfig("br1", IFUP, nvram_safe_get("wl_br1_ipaddr"), nvram_safe_get("wl_br1_netmask"));
+    //eval ("ifconfig", "br1", nvram_safe_get ("wl_br1_ipaddr"),
+//		"netmask", nvram_safe_get ("wl_br1_netmask"), "up");
 
 	  if (nvram_match ("router_disable", "1")
 	      || nvram_match ("lan_stp", "0"))
@@ -712,8 +713,9 @@ start_lan (void)
       dev = nvram_safe_get (wdsdevname);
       if (strlen(dev)==0)
         continue;
-
-      eval ("ifconfig", dev, "down");
+      ifconfig(dev,0,0,0);
+      
+    //  eval ("ifconfig", dev, "down");
       if (nvram_match (wdsvarname, "1"))
 	{
 	  char wdsip[32] = { 0 };
@@ -736,8 +738,9 @@ start_lan (void)
 	  eval ("brctl", "addif", "br1", dev);
 	}
       else if (nvram_match (wdsvarname, "3"))
-	{
-	  eval ("ifconfig", dev, "up");
+	{ 
+	  ifconfig(dev,IFUP,0,0);
+	  //eval ("ifconfig", dev, "up");
 	  sleep (1);
 	  eval ("brctl", "addif", "br0", dev);
 	}
@@ -885,7 +888,7 @@ start_wan (int status)
 
   char *wan_ifname = get_wan_face ();
   char *wan_proto = nvram_safe_get ("wan_proto");
-#ifdef HAVE_PPP
+#ifdef HAVE_PPPOE
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
 					   "") ?
     nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
@@ -931,7 +934,7 @@ start_wan (int status)
 /* Added by AhMan March 7 2005 */
 /* By default, Buffalo WBR-G54 does not has the NVRAM "pppoe_wan_ifname"
    defined.  If the boardtype is "bcm94710ap" (buffalo), I'll fix it to eth1 */
-#ifdef HAVE_PPP
+#ifdef HAVE_PPPOE
 //  if ((!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 //      && (!strcmp (nvram_safe_get ("boardtype"), "bcm94710ap")))
 //    pppoe_wan_ifname = "eth1";
@@ -956,7 +959,7 @@ start_wan (int status)
 
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
-#ifdef HAVE_PPP
+#ifdef HAVE_PPPOE
   /* AhMan March 19 2005 */
   if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     strncpy (ifr.ifr_name, pppoe_wan_ifname, IFNAMSIZ);
@@ -1002,7 +1005,7 @@ start_wan (int status)
 
 
   // Set our Interface to the right MTU
-#ifdef HAVE_PPP
+#ifdef HAVE_PPPOE
   if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     {
       if (nvram_invmatch ("pppoe_hw_iface_mtu", ""))
@@ -1027,7 +1030,7 @@ start_wan (int status)
     }
 
   /* Bring up WAN interface */
-#ifdef HAVE_PPP
+#ifdef HAVE_PPPOE
   /* AhMan  March 19 2005 */
   /* ice-man March 19 2005 */
   /* pppoe_wan interface must be up in order to use any pppoe client */
@@ -1058,7 +1061,7 @@ start_wan (int status)
 
 
   /* Configure WAN interface */
-#ifdef HAVE_PPP
+#ifdef HAVE_PPPOE
   /* AhMan  March 19 2005 */
   if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     {
@@ -1142,8 +1145,8 @@ start_wan (int status)
 	       "nopcomp\n"
 	       "novj\n"
 	       "novjccomp\n"
-	       "nomppe\n"
-	       "nomppc\n"
+//	       "nomppe\n"
+//	       "nomppc\n"
 	       "usepeerdns\n"
 	       "user '%s'\n" "password '%s'\n", username, passwd);
 
