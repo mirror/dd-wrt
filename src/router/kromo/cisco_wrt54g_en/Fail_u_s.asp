@@ -15,6 +15,7 @@
 <% css_include(); %>
 		</style>
 		<script type="text/javascript">
+setMetaContent();
 <% js_include(); %>
 		
 function to_submit()

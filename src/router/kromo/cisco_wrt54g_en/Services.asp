@@ -10,6 +10,7 @@
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
 
+setMetaContent();
 document.title = "<% nvram_get("router_name"); %>" + service.titl;
 
 function lease_add_submit(F) {
@@ -34,6 +35,14 @@ function to_reboot(F) {
 }
 
 function to_submit(F) {
+	
+	if (F._openvpn_certtype) {
+		if (F._openvpn_certtype.checked == true) {
+			F.openvpn_certtype = 1;
+		} else {
+			F.openvpn_certtype = 0;
+		}
+	}
 	F.submit_button.value = "Services";
 //	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
