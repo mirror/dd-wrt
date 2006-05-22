@@ -230,7 +230,7 @@ errmsg.err42="Bitte geben sie eine Konfiguration zum wiederherstellen an.";
 errmsg.err44="Die totale Anzahl der Checks überschreitet 128.";
 
 //Site_Survey.asp error messages
-errmsg.err47=("Ungültige SSID.");
+errmsg.err47="Ungültige SSID.";
 
 //Wireless_WDS.asp error messages
 errmsg.err48="WDS ist nicht kompatibel mit der aktuellen Konfiguration des Routers. Bitte prüfen sie die folgenden Punkte :\n * Wireless Modus muß AP sein \n * WPA2 wird vom WDS nicht unterstützt \n * Wireless Netzwerk Modus Nur-B wird von WDS nicht unterstützt";
