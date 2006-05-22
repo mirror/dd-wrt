@@ -34,7 +34,7 @@ share.remove="Enlever";
 share.descr="Description";
 share.from="De";
 share.to="A";
-share.about="A propos...";
+share.about="A propos";
 share.everyday="Tous les jours";
 share.sun="Dimanche";
 share.sun_s="Dim";
@@ -88,7 +88,7 @@ share.point2point="Point à Point";
 share.nat="NAT";
 share.subnet="Masque sous-réseau";
 share.unmask="Afficher";
-share.deflt="Défaut";					//don't use share.default
+share.deflt="Défaut";
 share.all="Tous";
 share.auto="Auto";
 share.right="Droite";
@@ -99,7 +99,7 @@ share.srv="Nom du service";
 share.port_range="Plage de ports";
 share.priority="Priorité";
 share.gateway="Passerelle";
-share.intrface="Interface";				//don't use share.interface, Mozilla problem
+share.intrface="Interface";
 share.router="Routeur";
 share.static_lease="Réservation d'adresse";
 share.srvip="IP Serveur";
@@ -123,10 +123,10 @@ share.styl="Skin";
 
 
 var sbutton = new Object();
-sbutton.save="Enregistrer les paramètres";
+sbutton.save="Enregistrer";
 sbutton.saving="Enregistré";
 sbutton.cmd="Patientez ...";
-sbutton.cancel="Annuler les modifications";
+sbutton.cancel="Annuler";
 sbutton.refres="Actualiser";
 sbutton.clos="Fermer";
 sbutton.del="Supprimer";
@@ -150,7 +150,7 @@ sbutton.summary="Résumé";
 sbutton.filterIP="Liste des PC";
 sbutton.filterMac="Liste de filtrage MAC";
 sbutton.filterSer="Ajouter/Editer un Service";
-sbutton.reboot="Redémarrer le Routeur";
+sbutton.reboot="Redémarrer";
 sbutton.help="Aide";
 sbutton.wl_client_mac="Liste des adresses MAC";
 sbutton.update_filter="Liste des filtres";
@@ -171,104 +171,105 @@ sbutton.preview="Visualiser";
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
 var errmsg = new Object();
-errmsg.err0="You must input a username.";
-errmsg.err1="You must input a Router Name.";
-errmsg.err2="Out of range, please adjust start IP address or user&#39;s numbers.";
-errmsg.err3="You must at least select a day."
-errmsg.err4="The end time must be bigger than start time.";
-errmsg.err5="The MAC Address length is not correct.";
-errmsg.err6="You must input a password.";
-errmsg.err7="You must input a hostname.";
-errmsg.err8="You must input an IP Address or Domain Name.";
-errmsg.err9="Illegal DMZ IP Address.";
-errmsg.err10="Confirmed password did not match Entered Password. Please re-enter password.";
-errmsg.err11="No spaces are allowed in Password";
-errmsg.err12="You must input a command to run.";
-errmsg.err13="Upgrade are failed.";
-errmsg.err45="Not available in HTTPS! Please connect in HTTP mode.";
-errmsg.err46="Not available in HTTPS";
+errmsg.err0="Vous devez saisir un nom d'utilisateur.";
+errmsg.err1="Vous devez saisir un nom de Routeur.";
+errmsg.err2="Hors de l'intervalle, merci d'ajuster l'adresse IP de début ou le nombre d'utilisateurs.";
+errmsg.err3="Vous devez selectionner au moins un jour."
+errmsg.err4="L'heure de fin doit être supérieure à l'heure de départ.";
+errmsg.err5="La longueur de l'adresse MAC est incorrecte.";
+errmsg.err6="Vous devez saisir un mot de passe.";
+errmsg.err7="Vous devez saisir un nom d'hôte.";
+errmsg.err8="Vous devez saisir une adresse IP ou un nom de domaine.";
+errmsg.err9="Adresse IP invalide.";
+errmsg.err10="La confirmation du mot de passe ne correspond pas. Merci de saisir à nouveau le mot de passe.";
+errmsg.err11="Aucun espace n'est permis dans le mot de passe";
+errmsg.err12="Vous devez saisir une commande à exécuter.";
+errmsg.err13="La mise à jour a échoué.";
+errmsg.err45="Non disponible en HTTPS ! Merci de vous connecter en mode HTTP.";
+errmsg.err46="Non disponible en HTTPS.";
 
 
 //common.js error messages
-errmsg.err14=" value is out of range [";
-errmsg.err15="The WAN MAC Address is out of range [00 - ff].";
-errmsg.err16="The second character of MAC must be even number : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="The MAC Address is not correct.";
-errmsg.err18="The MAC Address length is not correct.";
-errmsg.err19="The MAC Address cannot be the broadcast address."
-errmsg.err20="Enter MAC Address in (xx:xx:xx:xx:xx:xx) format.";
-errmsg.err21="Invalid MAC address format.";
-errmsg.err22="The WAN MAC Address is not correct.";
-errmsg.err23="Invalid hex value ";
-errmsg.err24=" found in MAC address ";
-errmsg.err25="The key value is not correct.";
-errmsg.err26="The key length is not correct.";
-errmsg.err27="Illegal subnet mask.";
-errmsg.err28=" have illegal characters, must be [ 0 - 9 ].";
-errmsg.err29=" have illegal ascii code."
-errmsg.err30=" have illegal hexadecimal digits.";
-errmsg.err31=" value is illegal.";
-errmsg.err32="IP address and gateway is not at same subnet mask.";
-errmsg.err33="IP address and gateway can't be same.";
-errmsg.err34=" is not allowed to contain a space.";
+errmsg.err14=" la valeur est en dehors de l'intervalle [";
+errmsg.err15="L'adresse MAC WAN est en dehors de l'intervalle [00 - ff].";
+errmsg.err16="Le deuxième caractère de l'adresse MAC doit être un nombre pair : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="L'adresse MAC est incorrecte.";
+errmsg.err18="La longueur de l'adresse MAC est incorrecte.";
+errmsg.err19="L'adresse MAC ne peut pas être l'adresse de diffusion."
+errmsg.err20="Sairir l'adresse MAC au format (xx:xx:xx:xx:xx:xx).";
+errmsg.err21="Format d'adresse MAC invalide.";
+errmsg.err22="L'adresse MAC WAN est incorrecte.";
+errmsg.err23="Valeur hexadécimale invalide ";
+errmsg.err24=" trouvée dans l'adresse MAC ";
+errmsg.err25="La valeur de la clé est incorrecte.";
+errmsg.err26="La longueur de la clé est incorrecte.";
+errmsg.err27="Masque de sous-réseau incorrect.";
+errmsg.err28=" a un caractère illégal, doit être [ 0 - 9 ].";
+errmsg.err29=" a un code ascii illégal."
+errmsg.err30=" a des nombres hexadécimaux illégaux.";
+errmsg.err31=" a une valeur illégale.";
+errmsg.err32="L'adresse IP et la passerelle n'utilisent pas le même masque de sous réseau.";
+errmsg.err33="L'adresse IP et la passerelle ne peuvent pas être identiques.";
+errmsg.err34=" ne doit pas contenir un espace.";
 
 //Wol.asp error messages
-errmsg.err35="You must input a MAC address to run."
-errmsg.err36="You must input a network broadcast address to run.";
-errmsg.err37="You must input a UDP port to run.";
+errmsg.err35="Vous devez saisir une adresse MAC."
+errmsg.err36="Vous devez saisir une adresse réseau de diffusion.";
+errmsg.err37="Vous devez saisir un port UDP.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Please enter a Shared Key!";
-errmsg.err39="Invalid Key, must be between 8 and 63 ASCII characters or 64 hexadecimal digits"
-errmsg.err40="You have to enter a key for Key ";
-errmsg.err41="Invalid Length in key ";
-errmsg.err43="Rekey interval";
+errmsg.err38="Merci de saisir une clé partagée !";
+errmsg.err39="Clé invalide, doit contenir entre 8 et 63 caractères ASCII ou 64 nombres hexadécimaux"
+errmsg.err40="Vous devez saisir une clé pour la Clé ";
+errmsg.err41="Longueur de clé invalide ";
+errmsg.err43="Saisissez de nouveau l'intervalle.";
 
 //config.asp error messages
-errmsg.err42="Please select a configuration file to restore.";
+errmsg.err42="Merci de sélectionner une fichier de configuration à restaurer.";
 
 //WL_ActiveTable.asp error messages
-errmsg.err44="The total checks exceed 128 counts.";
+errmsg.err44="Le nombre total d'adresses MAC filtrées ne peut pas dépasser 128.";
 
 //Site_Survey.asp error messages
-errmsg.err47=("invalid SSID.");
+errmsg.err47="SSID invalide.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS";
+errmsg.err48="WDS n'est pas compatible avec la configuration courante du routeur. \
+	Merci de vérifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n'est pas supporté sous WDS \n * Le mode sans fil B-Only n'est pas supporté sous WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius is only available in AP mode.";
+errmsg.err49="Radius n'est seulement diponible qu'en mode AP.";
 
 //Wireless_Basic.asp error messages
-errmsg.err50="You must input a SSID.";
+errmsg.err50="Vous devez saisir un SSID.";
 
 // Management.asp error messages
-errmsg.err51="The Router is currently set to its default password. \
-			As a security measure, you must change the password before the Remote Management feature can be enabled. \
-			Click the OK button to change your password. Click the Cancel button to leave the Remote Management feature disabled.";
-errmsg.err52="Password confirmation doesn't match.";
+errmsg.err51="Le routeur dispose actuellement de son mot de passe par défaut. \
+			Par mesure de sécurité, vous devez changer le mot de passe avant de pouvoir activier la fonctionnalité de gestion distante. \
+			Cliquez sur le bouton OK pour changer le mot de passe. Cliquez sur le bouton Annuler pour laisser la fonctionnalité de gestion distante désactivée.";
+errmsg.err52="Le mot de passe de confirmation ne correspond pas.";
 
 // Port_Services.asp error messages
-errmsg.err53="After finished all actions, click the Apply button to save the settings.";
-errmsg.err54="You must input a Service Name.";
-errmsg.err55="The Service Name exists.";
+errmsg.err53="Après avoir terminé toutes les actions, cliquez sur Appliquer pour sauver les options.";
+errmsg.err54="Vous devez saisir un nom de service.";
+errmsg.err55="Le nom de service existe.";
 
 // QoS.asp error messages
-errmsg.err56="Port value is out of range [0 - 65535]";
+errmsg.err56="La valeur du port est en dehors de l'intervalle [0 - 65535]";
 
 // Routing.asp error messages
-errmsg.err57="Delete the Entry ?";
+errmsg.err57="Effacer l'entrée ?";
 
 // Status_Lan.asp error messages
-errmsg.err58="Click to delete lease";
+errmsg.err58="Cliquez pour effacer le bail";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Not available! Please enable Wireless Network.";
+errmsg.err59="Non disponible ! Merci d'activer le réseau sans fil.";
 
 //Upgrade.asp error messages
-errmsg.err60="Please select a file to upgrade.";
-errmsg.err61="Incorrect image file.";
+errmsg.err60="Merci de sélectionner un fichier pour mettre à jour.";
+errmsg.err61="Fichier image incorrect.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
@@ -332,44 +333,44 @@ bmenu.statuSysInfo="Système";
 // ******************************************* Alive.asp *******************************************//
 
 var alive = new Object();
-alive.titl=" - Keep Alive";
-alive.h2="Keep Alive";
-alive.legend="Schedule Reboot";
-alive.sevr1="Schedule Reboot";
-alive.time="Time (in seconds)";
-alive.hour="At a set Time";
+alive.titl=" - Maintenir Actif";
+alive.h2="Maintenir Actif";
+alive.legend="Redémarrage Programmé";
+alive.sevr1="Redémarrage Programmé";
+alive.time="Période (en secondes)";
+alive.hour="A une Période définie";
 alive.legend2="WDS/Connection Watchdog";
-alive.sevr2="Enable Watchdog";
-alive.IP="IP Addresses";
+alive.sevr2="Activer Watchdog";
+alive.IP="Adresses IP";
 alive.legend3="Proxy/Connection Watchdog";
-alive.sevr3="Enable Proxy Watchdog";
-alive.IP2="Proxy IP Address";
-alive.port="Proxy Port";
+alive.sevr3="Activer le Proxy Watchdog";
+alive.IP2="Adresse IP du Proxy";
+alive.port="Port du Proxy";
 
 //help container
 var halive = new Object();
-halive.right2="Choose when reboot the router. Cron must be enabled in the managment tab.";
-halive.right4="A maximum of three IPs separated by a <em>SPACE</em> is allowed.<BR/>IPs Format is xxx.xxx.xxx.xxx.";
+halive.right2="Choisissez quand le routeur doit rebooter. Cron doit être activé dans l'onglet gestion.";
+halive.right4="Un maximum de 3 IPs séparées par un <em>ESPACE</em> est autorisé.<BR/>Le format des IPs est xxx.xxx.xxx.xxx.";
 
 
 
 // ******************************************* config.asp *******************************************//
 
 var config = new Object();
-config.titl=" - Backup & Restore";
-config.h2="Backup Configuration";
-config.legend="Backup Settings";
-config.mess1="Click the \"" + sbutton.backup + "\" button to download the configuration backup file to your computer.";
-config.h22="Restore Configuration";
-config.legend2="Restore Settings";
-config.mess2="Please select a file to restore";
-config.mess3="W A R N I N G";
-config.mess4="Only upload files backed up using this firmware and from the same model of router.<br />Do not upload any files that were not created by this interface!";
+config.titl=" - Sauvegarde &amp; Restauration";
+config.h2="Configuration de la Sauvegarde";
+config.legend="Réglages de la Sauvergarde";
+config.mess1="Cliquez sur le bouton \"" + sbutton.backup + "\" pour télécharger le fichier de sauvegarde de la configuration sur votre ordinateur.";
+config.h22="Restaurer la Configuration";
+config.legend2="Restaurer les Réglages";
+config.mess2="Merci de sélectionner un fichier à restaurer";
+config.mess3="A T T E N T I O N";
+config.mess4="Ne chargez que des fichiers sauvegardés par ce micrologiciel et la même version du routeur.<br />Ne chargez pas de fichier qui n'aurait pas été créé par cette interface !";
 
 //help container
 var hconfig = new Object();
-hconfig.right2="You may backup your current configuration in case you need to reset the router back to its factory default settings.<br /><br />Click the <em>Backup</em> button to backup your current configuration.";
-hconfig.right4="Click the <em>Browse...</em> button to browse for a configuration file that is currently saved on your PC.<br /><br />Click the <em>" + sbutton.restore + "</em> button to overwrite all current configurations with the ones in the configuration file.";
+hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas où vous auriez besoin de réinitialiser votre routeur à ses réglages usine.<br /><br />Cliquez sur le bouton <em>Sauvergarder</em> pour sauver votre configuration courante.";
+hconfig.right4="Cliquez sur le bouton <em>Parcourir...</em> pour chercher un fichier de configuration actuellement sauvé sur votre PC.<br /><br />Cliquez sur le bouton <em>" + sbutton.restore + "</em> pour écraser la configuration courante par celle du fichier de configuration.";
 
 
 
@@ -448,16 +449,16 @@ hddns.right2="DDNS vous permet d'attribuer un nom de domaine et d'hôte fixe à un
 // ******************************************* Diagnostics.asp *******************************************//
 
 var diag = new Object();
-diag.titl=" - Diagnostics";
-diag.h2="Diagnostics";
-diag.legend="Command Shell";
-diag.cmd="Commands";
-diag.startup="Startup";
-diag.firewall="Firewall";
+diag.titl=" - Diagnostiques";
+diag.h2="Diagnostiques";
+diag.legend="Invite de commandes";
+diag.cmd="Commandes";
+diag.startup="Démarrage";
+diag.firewall="Pare-feu";
 
 //help container
 var hdiag = new Object();
-hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
+hdiag.right2="Vous pouvez lancer des lignes de commandes par le biais de l'interface web. Remplissez le change texte avec vos commandes et cliquez sur le bouton <em>" + sbutton.runcmd + "</em> pour les soumettre.";
 
 
 
@@ -465,43 +466,43 @@ hdiag.right2="You can run command lines via the webinterface. Fill the text area
 
 var dmz = new Object();
 dmz.titl=" - DMZ";
-dmz.h2="Demilitarized Zone (DMZ)";
+dmz.h2="Zone démilitarisée (DMZ)";
 dmz.legend="DMZ";
-dmz.serv="Use DMZ";
-dmz.host="DMZ Host IP Address";
+dmz.serv="Utiliser la DMZ";
+dmz.host="Adresse IP hôte de la DMZ";
 
 
 //help container
 var hdmz = new Object();
-hdmz.right2="Enabling this option will expose the specified host to the Internet. All ports will be accessible from the Internet.";
+hdmz.right2="L'activation de cette option va activer l'hôte à Internet. Tous les ports vont être accessibles depuis Internet.";
 
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
 var factdef = new Object();
-factdef.titl=" - Factory Defaults";
-factdef.h2="Factory Defaults";
-factdef.legend="Reset router settings";
-factdef.restore="Restore Factory Defaults";
+factdef.titl=" - Paramètres usine";
+factdef.h2="Paramètres usine";
+factdef.legend="Réinitialiser les réglages du routeur";
+factdef.restore="Réinitialiser les paramètres usine";
 
-factdef.mess1="Warning! If you click OK, the device will reset to factory default and all previous settings will be erased.";
+factdef.mess1="Attention ! Si vous cliquez sur OK, l'appareil va réinitialiser les paramètres usine et tous les réglages précendents vont être effacés.";
 
 //help container
 var hfactdef = new Object();
-hfactdef.right1="This will reset all settings back to factory defaults. All of your settings will be erased.";
+hfactdef.right1="Ceci va réinitialiser tous les réglages au paramètres d'usine. Tous vos réglages vont être perdus.";
 
 
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
 var filterIP = new Object();
-filterIP.titl=" - List of PCs";
-filterIP.h2="List of PCs";
-filterIP.h3="Enter MAC Address of the PCs in this format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Enter the IP Address of the PCs";
-filterIP.h33="Enter the IP Range of the PCs";
-filterIP.ip_range="IP Range";
+filterIP.titl=" - Liste des PCs";
+filterIP.h2="Liste des PCs";
+filterIP.h3="Saisissez une adresse MAC des PCs au format: xx:xx:xx:xx:xx:xx";
+filterIP.h32="Saisissez l'adresse IP des PCs";
+filterIP.h33="Saisissez l'intervalle d'adresse IP des PCs";
+filterIP.ip_range="Intervalle IP";
 
 
 
@@ -562,25 +563,26 @@ filterSum.polday="Time of Day";
 // ******************************************* Firewall.asp *******************************************//
 
 var firewall = new Object();
-firewall.titl=" - Firewall";
-firewall.h2="Security";
-firewall.legend="Firewall Protection";
-firewall.firewall="SPI Firewall";
-firewall.legend2="Additional Filters";
-firewall.proxy="Filter Proxy";
-firewall.cookies="Filter Cookies";
-firewall.applet="Filter Java Applets";
-firewall.activex="Filter ActiveX";
-firewall.legend3="Block WAN Requests";
-firewall.ping="Block Anonymous Internet Requests";
-firewall.muticast="Filter Multicast";
-filter.nat="Filter Internet NAT Redirection";
-filter.port113="Filter IDENT (Port 113)";
+firewall.titl=" - Pare-Feu";
+firewall.h2="Sécurité";
+firewall.legend="Protection par Pare-Feu";
+firewall.firewall="Pare-Feu SPI";
+firewall.legend2="Filtres Supplémentaires";
+firewall.proxy="Filtre Proxy";
+firewall.cookies="Filtre Cookies";
+firewall.applet="Filtre Applets Java";
+firewall.activex="Filtre ActiveX";
+firewall.legend3="Blocage des requêtes WAN";
+firewall.ping="Bloquer les requêtes Internet anonymes";
+firewall.muticast="Filtre Multidiffusion";
+filter.nat="Filtre de redirection NAT Internet";
+filter.port113="Filtre IDENT (port 113)";
 
 //help container
 var hfirewall = new Object();
 hfirewall.right1="Firewall Protection:";
-hfirewall.right2="Enable or disable the SPI firewall.";
+hfirewall.right2="Activez cette fonctionnalité pour utiliser la technologie SPI (Stateful Packet Inspection) \
+		et procéder à une vérification plus poussée des paquets de données infiltrant votre environnement réseau";
 
 
 
@@ -940,34 +942,34 @@ portserv.h2="Port Services";
 // ******************************************* QoS.asp *******************************************//
 
 var qos = new Object();
-qos.titl=" - Quality of Service";
-qos.h2="Quality Of Service (QoS )";
-qos.legend="QoS Settings";
-qos.srv="Start QoS";
-qos.type="Packet Scheduler";
-qos.uplink="Uplink (kbps)";
-qos.dnlink="Downlink (kbps)";
-qos.gaming="Optimize for Gaming";
-qos.legend2="Services Priority";
+qos.titl=" - Qualité de Service";
+qos.h2="Qualité de Service (QoS)";
+qos.legend="Configuration QoS";
+qos.srv="QoS";
+qos.type="Ordonanceur de Packet";
+qos.uplink="Débit montant (kbps)";
+qos.dnlink="Débit descendant (kbps)";
+qos.gaming="Optimiser pour le jeu";
+qos.legend2="Priorité des Services";
 qos.prio_x="Exempt";
 qos.prio_p="Premium";
 qos.prio_e="Express";
-qos.prio_s="Standard";
+qos.prio_s="Standart";
 qos.prio_b="Bulk";
-qos.legend3="Netmask Priority";
-qos.ipmask="IP/Mask";
+qos.legend3="Priorité Sous-réseau";
+qos.ipmask="IP/Masque";
 qos.maxrate_b="Max Kbits";
 qos.maxrate_o="Max Rate";
-qos.legend4="MAC Priority";
-qos.legend5="Ethernet Port Priority";
+qos.legend4="Priorité MAC";
+qos.legend5="Priorité de Port Ethernet";
 qos.legend6="Default Bandwith Level";
 qos.bandwith="Bandwith in Kbits";
 
 //help container
 var hqos = new Object();
-hqos.right1="Uplink:";
+hqos.right1="Débit montant:";
 hqos.right2="Set this to 80%-95% (max) of your total upload limit.";
-hqos.right3="Downlink:";
+hqos.right3="Débit descendant:";
 hqos.right4="Set this to 80%-100% (max) of your total download limit.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
 hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
@@ -1021,9 +1023,9 @@ hroute.right10="Determines the host and the network portion.";
 // ******************************************* Site_Survey.asp *******************************************//
 
 var survey = new Object();
-survey.titl=" - Site Survey";
-survey.h2="Neighbor&#39;s Wireless Networks";
-survey.thjoin="Join Site";
+survey.titl=" - Réseaux Sans Fil à Portée";
+survey.h2="Réseaux Sans Fil à Portée";
+survey.thjoin="Rejoindre le réseau";
 
 
 
@@ -1208,18 +1210,18 @@ hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
 // ******************************************* Status_Wireless.asp *******************************************//
 
 var status_wireless = new Object();
-status_wireless.titl=" - Wireless Status";
-status_wireless.h2="Wireless";
-status_wireless.legend="Wireless Status";
-status_wireless.net="Network";
-status_wireless.pptp="PPTP Status";
-status_wireless.legend2="Packet Info";
-status_wireless.rx="Received (RX)";
-status_wireless.tx="Transmitted (TX)";
-status_wireless.h22="Wireless Nodes";
-status_wireless.legend3="Clients";
-status_wireless.signal_qual="Signal Quality";
-status_wireless.wds="WDS Nodes";
+status_wireless.titl=" - Etat Sans Fil";
+status_wireless.h2="Sans Fil";
+status_wireless.legend="Etat Sans Fil";
+status_wireless.net="Réseau";
+status_wireless.pptp="Etat PPTP";
+status_wireless.legend2="Information Paquets";
+status_wireless.rx="Recus (RX)";
+status_wireless.tx="Transmis (TX)";
+status_wireless.h22="Noeuds Sans fil";
+status_wireless.legend3="Clients Sans fil";
+status_wireless.signal_qual="Qualité du Signal";
+status_wireless.wds="Noueds WDS";
 
 //help container
 var hstatus_wireless = new Object();
@@ -1259,7 +1261,7 @@ upgrad.resetOff="No reset";
 upgrad.resetOn="Default settings";
 upgrad.file="Please select a file to upgrade";
 upgrad.warning="W A R N I N G";
-upgrad.mess1="Upgrading firmware may take a few minutes.<br />Do not turn off the power or press the reset button!";
+upgrad.mess1="Upgrading firmware may take a few minutes.<br />Do not turn off the power or press the reset button !";
 
 //help container
 var hupgrad = new Object();
@@ -1293,15 +1295,15 @@ hupnp.right4="Allows applications to automatically setup port forwardings.";
 
 var vpn = new Object();
 vpn.titl=" - VPN";
-vpn.h2="Virtual Private Network (VPN)";
-vpn.legend="VPN Passthrough";
-vpn.ipsec="IPSec Passthrough";
-vpn.pptp="PPTP Passthrough";
-vpn.l2tp="L2TP Passthrough";
+vpn.h2="Réseau Privé Virtuel (VPN)";
+vpn.legend="Intercommunication VPN";
+vpn.ipsec="Interconnexion IPSec";
+vpn.pptp="Interconnexion PPTP";
+vpn.l2tp="Interconnexion L2TP";
 
 //help container
 var hvpn = new Object();
-hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.";
+hvpn.right1="Utilisez les paramètres de cet onglet pour permettre à des tunnels VPN utilisant les protocoles IPSec, PPTP ou L2TP de traverser le pare-feu du routeur.";
 
 
 
@@ -1578,4 +1580,4 @@ dhcp.tclient="Client Host Name";
 
 
 var donate = new Object();
-donate.mb="You may dontate through the Moneybookers account mb@dd-wrt.com too";
+donate.mb="Vous pouvez également faire un don sur le compte Moneybookers : mb@dd-wrt.com";
