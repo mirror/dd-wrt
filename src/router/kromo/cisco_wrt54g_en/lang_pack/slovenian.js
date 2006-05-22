@@ -228,7 +228,7 @@ errmsg.err42="Prosim, izberite datoteko za obnovitev.";
 errmsg.err44="Skupno število je preseglo 128.";
 
 //Site_Survey.asp error messages
-errmsg.err47=("nepravilen SSID.");
+errmsg.err47="nepravilen SSID.";
 
 //Wireless_WDS.asp error messages
 errmsg.err48="WDS ni združljiv s trenutno konfiguracijo usmerjalnika. Prosim, preverite naslednje :\n * Brezžièni naèin mora biti AP \n * WPA2 ni podprta pod WDS \n * Brežièno omrežje v naèinu samo-B ni podprto pod WDS";
