@@ -576,7 +576,6 @@ filter.port113="Filter za IDENT (vrata 113)";
 
 //help container
 var hfirewall = new Object();
-hfirewall.right1="Zašèita s požarnim zidom:";
 hfirewall.right2="Omogoèi ali onemogoèi zašèito s SPI požarnim zidom.";
 
 

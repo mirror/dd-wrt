@@ -582,7 +582,6 @@ filter.port113="Filter IDENT (Port 113)";
 
 //help container
 var hfirewall = new Object();
-hfirewall.right1="Firewall Schutz:";
 hfirewall.right2="Schaltet die SPI firewall ein oder aus.";
 
 // **************************************************************** Forward.asp **********************************************************************//
