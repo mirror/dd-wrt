@@ -18,17 +18,17 @@ function ddns_check(F,T) {
 		return true;
 	} else if(F.ddns_enable.value == 1) {
 		username = eval("F.ddns_username");
-		passwd = eval("F.ddns_username");
+		passwd = eval("F.ddns_passwd");
 		hostname = eval("F.ddns_hostname");
 		dyndnstype = eval("F.ddns_dyndnstype");
 		wildcard = eval("F.ddns_wildcard");
 	} else if(F.ddns_enable.value == 2) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
-		passwd = eval("F.ddns_username_"+F.ddns_enable.value);
+		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
 	} else if(F.ddns_enable.value == 3) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
-		passwd = eval("F.ddns_username_"+F.ddns_enable.value);
+		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
 	}
 	if(username.value == "") {
@@ -37,13 +37,13 @@ function ddns_check(F,T) {
 		username.focus();
 		return false;
 	}
-	if(passwd.value == ""){
+	if(passwd.value == "") {
 //	alert("You must input a password.");
 		alert(errmsg.err6);
 		passwd.focus();
 		return false;
 	}
-	if(hostname.value == ""){
+	if(hostname.value == "") {
 //	alert("You must input a hostname.");
     alert(errmsg.err7);
 		hostname.focus();
