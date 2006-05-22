@@ -146,6 +146,12 @@ start_openvpn (void)
 
   fprintf (fp, "ca /tmp/openvpn/ca.crt\n");
   fprintf (fp, "cert /tmp/openvpn/client.crt\n");
+  
+  // Botho 22/05/2006 - start
+  if (nvram_match ("openvpn_certtype", "1"))
+    fprintf (fp, "ns-cert-type server\n");
+  // Botho 22/05/2006 - end
+  
   fprintf (fp, "key /tmp/openvpn/client.key\n");
 
   if (nvram_match ("openvpn_lzo", "1"))
@@ -173,7 +179,6 @@ start_openvpn (void)
 	"--daemon");
   return 0;
 }
-
 
 int
 stop_openvpn (void)
