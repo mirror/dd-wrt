@@ -106,8 +106,8 @@ wl_probe(char *name)
 	if ((ret = wl_get_dev_type(name, buf, 3)) < 0)
 		return ret;
 	/* Check interface */
-	if (strncmp(buf, "wl", 2))
-		return -1;
+//	if (strncmp(buf, "wl", 2))
+//		return -1;
 	if ((ret = wl_ioctl(name, WLC_GET_VERSION, &val, sizeof(val))))
 		return ret;
 	if (val > WLC_IOCTL_VERSION)
