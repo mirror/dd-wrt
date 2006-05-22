@@ -38,7 +38,6 @@ function to_submit(F) {
 	}
 //	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
-	F.save_button.disabled = true;
 
 	F.action.value = "Apply";
 	apply(F);
