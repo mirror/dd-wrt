@@ -170,6 +170,7 @@ extern void ej_show_status_setting (int eid, webs_t wp, int argc,
 
 
 /*for dhcp */
+extern char *dnsmasq_reltime (char *buf, time_t t);
 extern void ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv);
 extern void validate_dhcp (webs_t wp, char *value, struct variable *v);
 extern void dhcp_check (webs_t wp, char *value, struct variable *v);
