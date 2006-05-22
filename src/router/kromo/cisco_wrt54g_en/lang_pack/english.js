@@ -588,7 +588,6 @@ filter.port113="Filter IDENT (Port 113)";
 
 //help container
 var hfirewall = new Object();
-hfirewall.right1="Firewall Protection:";
 hfirewall.right2="Enable or disable the SPI firewall.";
 
 
