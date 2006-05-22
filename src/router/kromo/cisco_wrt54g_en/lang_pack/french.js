@@ -34,7 +34,7 @@ share.remove="Enlever";
 share.descr="Description";
 share.from="De";
 share.to="A";
-share.about="A propos";
+share.about="A propos...";
 share.everyday="Tous les jours";
 share.sun="Dimanche";
 share.sun_s="Dim";
@@ -1104,6 +1104,7 @@ service.vpn_compress="Use LZO Compression";
 service.vpn_tunnel="Tunnel Protocol";
 service.vpn_srvcert="Public Server Cert";
 service.vpn_clicert="Public Client Cert";
+service.vpn_certtype="nsCertType";
 service.vpn_clikey="Private Client Key";
 
 //sshd.webservices
@@ -1285,6 +1286,22 @@ upnp.msg2="Delete all entries?";
 var hupnp = new Object();
 hupnp.right2="Click the trash can to delete an individual entry.";
 hupnp.right4="Allows applications to automatically setup port forwardings.";
+
+
+
+// ******************************************* VPN.asp *******************************************//
+
+var vpn = new Object();
+vpn.titl=" - VPN";
+vpn.h2="Virtual Private Network (VPN)";
+vpn.legend="VPN Passthrough";
+vpn.ipsec="IPSec Passthrough";
+vpn.pptp="PPTP Passthrough";
+vpn.l2tp="L2TP Passthrough";
+
+//help container
+var hvpn = new Object();
+hvpn.right1="You may choose to enable IPSec, PPTP and/or L2TP passthrough to allow your network devices to communicate via VPN.";
 
 
 
