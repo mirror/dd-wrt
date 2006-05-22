@@ -53,11 +53,11 @@ PREFIX="./_install"
 #
 # Coreutils
 #
-CONFIG_BASENAME=y
+# CONFIG_BASENAME is not set
 # CONFIG_CAL is not set
 CONFIG_CAT=y
 # CONFIG_CHGRP is not set
-CONFIG_CHMOD=y
+# CONFIG_CHMOD is not set
 # CONFIG_CHOWN is not set
 # CONFIG_CHROOT is not set
 # CONFIG_CMP is not set
@@ -83,29 +83,22 @@ CONFIG_HEAD=y
 # CONFIG_LENGTH is not set
 # CONFIG_LN is not set
 # CONFIG_LOGNAME is not set
-CONFIG_LS=y
-CONFIG_FEATURE_LS_FILETYPES=y
-# CONFIG_FEATURE_LS_FOLLOWLINKS is not set
-# CONFIG_FEATURE_LS_RECURSIVE is not set
-# CONFIG_FEATURE_LS_SORTFILES is not set
-CONFIG_FEATURE_LS_TIMESTAMPS=y
-# CONFIG_FEATURE_LS_USERNAME is not set
-CONFIG_FEATURE_LS_COLOR=y
+# CONFIG_LS is not set
 # CONFIG_MD5SUM is not set
 CONFIG_MKDIR=y
 # CONFIG_MKFIFO is not set
 # CONFIG_MKNOD is not set
-CONFIG_MV=y
+# CONFIG_MV is not set
 # CONFIG_OD is not set
 # CONFIG_PRINTF is not set
-CONFIG_PWD=y
+# CONFIG_PWD is not set
 # CONFIG_REALPATH is not set
-CONFIG_RM=y
-CONFIG_RMDIR=y
+# CONFIG_RM is not set
+# CONFIG_RMDIR is not set
 # CONFIG_SEQ is not set
 # CONFIG_SHA1SUM is not set
 CONFIG_SLEEP=y
-CONFIG_FEATURE_FANCY_SLEEP=y
+# CONFIG_FEATURE_FANCY_SLEEP is not set
 CONFIG_SORT=y
 # CONFIG_STTY is not set
 # CONFIG_SYNC is not set
@@ -117,7 +110,7 @@ CONFIG_TEST=y
 # test (forced enabled for use with shell)
 #
 # CONFIG_FEATURE_TEST_64 is not set
-CONFIG_TOUCH=y
+# CONFIG_TOUCH is not set
 # CONFIG_TR is not set
 # CONFIG_TRUE is not set
 # CONFIG_TTY is not set
@@ -127,7 +120,7 @@ CONFIG_TOUCH=y
 # CONFIG_UUDECODE is not set
 # CONFIG_UUENCODE is not set
 # CONFIG_WATCH is not set
-CONFIG_WC=y
+# CONFIG_WC is not set
 # CONFIG_WHO is not set
 # CONFIG_WHOAMI is not set
 # CONFIG_YES is not set
@@ -135,17 +128,7 @@ CONFIG_WC=y
 #
 # Common options for cp and mv
 #
-CONFIG_FEATURE_PRESERVE_HARDLINKS=y
-
-#
-# Common options for ls and more
-#
-CONFIG_FEATURE_AUTOWIDTH=y
-
-#
-# Common options for df, du, ls
-#
-CONFIG_FEATURE_HUMAN_READABLE=y
+# CONFIG_FEATURE_PRESERVE_HARDLINKS is not set
 
 #
 # Console Utilities
@@ -235,7 +218,7 @@ CONFIG_LOGIN=y
 # CONFIG_MT is not set
 # CONFIG_RX is not set
 # CONFIG_STRINGS is not set
-CONFIG_TIME=y
+# CONFIG_TIME is not set
 # CONFIG_WATCHDOG is not set
 
 #
@@ -263,12 +246,7 @@ CONFIG_RMMOD=y
 # CONFIG_FTPPUT is not set
 CONFIG_HOSTNAME=y
 # CONFIG_HTTPD is not set
-CONFIG_IFCONFIG=y
-# CONFIG_FEATURE_IFCONFIG_STATUS is not set
-# CONFIG_FEATURE_IFCONFIG_SLIP is not set
-# CONFIG_FEATURE_IFCONFIG_MEMSTART_IOADDR_IRQ is not set
-# CONFIG_FEATURE_IFCONFIG_HW is not set
-CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS=y
+# CONFIG_IFCONFIG is not set
 # CONFIG_IFUPDOWN is not set
 # CONFIG_INETD is not set
 # CONFIG_IP is not set
@@ -281,18 +259,14 @@ CONFIG_FEATURE_IFCONFIG_BROADCAST_PLUS=y
 # CONFIG_NC is not set
 # CONFIG_NETSTAT is not set
 # CONFIG_NSLOOKUP is not set
-CONFIG_PING=y
-# CONFIG_FEATURE_FANCY_PING is not set
-CONFIG_ROUTE=y
+# CONFIG_PING is not set
+# CONFIG_ROUTE is not set
 # CONFIG_TELNET is not set
 # CONFIG_TELNETD is not set
 # CONFIG_TFTP is not set
 # CONFIG_TRACEROUTE is not set
 CONFIG_VCONFIG=y
-CONFIG_WGET=y
-# CONFIG_FEATURE_WGET_STATUSBAR is not set
-# CONFIG_FEATURE_WGET_AUTHENTICATION is not set
-# CONFIG_FEATURE_WGET_IP6_LITERAL is not set
+# CONFIG_WGET is not set
 
 #
 # udhcp Server/Client
@@ -367,7 +341,7 @@ CONFIG_LOGGER=y
 #
 # Linux System Utilities
 #
-CONFIG_DMESG=y
+# CONFIG_DMESG is not set
 # CONFIG_FBSET is not set
 # CONFIG_FDFLUSH is not set
 # CONFIG_FDFORMAT is not set
