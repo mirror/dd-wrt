@@ -65,7 +65,7 @@ wl_bssiovar_getint(char *ifname, char *iovar, int bssidx, int *val)
 		 next = strchr(next, ' '))
 
 static char wlbuf[8192];
-static char interface[16] = "wl0";
+static char interface[16] = "eth0";
 static unsigned long ptable[128];
 static unsigned long kmem_offset = 0;
 static int vif = 0, debug = 1, fromstdin = 0;
@@ -977,6 +977,12 @@ static const struct wlc_call wlc_calls[] = {
 		.desc = "Broadcom Afterburner"
 	},
 	{
+		.name = "afterburner_override",
+		.param = INT,
+		.handler = wlc_afterburner,
+		.desc = "Broadcom Afterburner Override"
+	},
+	{
 		.name = "slottime",
 		.param = INT,
 		.handler = wlc_slottime,
@@ -1094,8 +1100,8 @@ int main(int argc, char **argv)
 	if (argc < 2)
 		usage(argv[0]);
 
-	for(interface[2] = '0'; (interface[2] < '3') && (wl_probe(interface) != 0); interface[2]++);
-	if (interface[2] == '3') {
+	for(interface[3] = '0'; (interface[3] < '3') && (wl_probe(interface) != 0); interface[3]++);
+	if (interface[3] == '3') {
 		fprintf(stderr, "No Broadcom wl interface found!\n");
 		return -1;
 	}

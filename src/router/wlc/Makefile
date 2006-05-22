@@ -14,4 +14,7 @@ wlc: wlc.o ioctl.o
 %.o: %.c
 	$(CC) $(COPTS) $(CFLAGS)-lshared -I$(TOP)/shared -c -o $@ $<
 
+install:
+	install -D wlc $(INSTALLDIR)/usr/sbin/wl
+
 .PHONY: all clean
