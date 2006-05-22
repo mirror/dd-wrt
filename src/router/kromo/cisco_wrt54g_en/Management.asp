@@ -9,7 +9,8 @@
 		<script type="text/javascript" src="lang_pack/english.js"></script>
 		<script type="text/javascript" src="lang_pack/language.js"></script>
 		<script type="text/javascript">
-		
+
+setMetaContent();
 document.title = "<% nvram_get("router_name"); %>" + management.titl;
 
 function SelPort(num,F)	{

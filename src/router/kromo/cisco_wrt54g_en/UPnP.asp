@@ -14,7 +14,8 @@
 		Intergated to DD-WRT by LawnMowerGuy1
 -->
 		<script type="text/javascript">
-		
+
+setMetaContent();
 document.title = "<% nvram_get("router_name"); %>" + upnp.titl;
 
 function to_submit(F) {

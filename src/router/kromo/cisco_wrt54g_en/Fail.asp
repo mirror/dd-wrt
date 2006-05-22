@@ -15,6 +15,7 @@
 <% css_include(); %>
 		</style>
 		<script type="text/javascript">
+setMetaContent();
 <% js_include(); %>
 		
 var submit_button = "<% get_web_page_name(); %>";
