@@ -120,6 +120,26 @@ function to_submit(F)
 				F.dhcp_dnsmasq.value = 1;
 			}
 		}
+
+		if(F._dns_dnsmasq)
+		{
+			if(F._dns_dnsmasq.checked == false)
+			{
+				F.dns_dnsmasq.value = 0;
+			} else {
+				F.dns_dnsmasq.value = 1;
+			}
+		}
+
+		if(F._auth_dnsmasq)
+		{
+			if(F._auth_dnsmasq.checked == false)
+			{
+				F.auth_dnsmasq.value = 0;
+			} else {
+				F.auth_dnsmasq.value = 1;
+			}
+		}
 		
 		if(F._fullswitch)
 		{
