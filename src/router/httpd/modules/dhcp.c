@@ -40,6 +40,9 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 	int count;
 	char *p;
 
+	/* Dump leases from DNSMasq */
+	eval("killall", "-SIGARLM", "dnsmasq");
+
 	/* Parse leases file */
 	if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
 		fp = fopen ("/jffs/udhcpd.leases", "r");
@@ -199,7 +202,7 @@ delete_leases(webs_t wp)
 	}
 	fclose(f);
 
-	eval("killall", "-SIGUSR2", "dnsmasq");
+	eval("killall", "-SIGARLM", "dnsmasq");
 	return 0;
 
 }
