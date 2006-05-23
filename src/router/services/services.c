@@ -839,6 +839,7 @@ int
 start_dnsmasq (void)
 {
   FILE *fp;
+  struct dns_lists *dns_list = NULL;
   int ret;
   int i;
   char name[100];
