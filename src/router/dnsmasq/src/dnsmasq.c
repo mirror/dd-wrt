@@ -521,7 +521,7 @@ int dnsmasq_main (int argc, char **argv)
 		if (daemon->dhcp)
 		  {
 		    manual_delete_lease();
-		    lease_update_file(1, now);
+		    lease_update_file(daemon, now);
 		  }
 		break;
 		
