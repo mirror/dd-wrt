@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				French translation DD-WRT V23 SP1 by Botho 17/05/2006															//
+//				French translation DD-WRT V23 SP1 by Botho 17/05/2006						//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -155,8 +155,8 @@ sbutton.help="Aide";
 sbutton.wl_client_mac="Liste des adresses MAC";
 sbutton.update_filter="Liste des filtres";
 sbutton.join="Rejoindre";
-sbutton.log_in="Journal des connexions entrantes";
-sbutton.log_out="Journal des connexions sortantes";
+sbutton.log_in="Connexions entrantes";
+sbutton.log_out="Connexions sortantes";
 sbutton.apply="Valider";
 sbutton.edit_srv="Ajouter/Editer Service";
 sbutton.routingtab="Table de routage";
@@ -195,7 +195,7 @@ errmsg.err15="L'adresse MAC WAN est en dehors de l'intervalle [00 - ff].";
 errmsg.err16="Le deuxième caractère de l'adresse MAC doit être un nombre pair : [0, 2, 4, 6, 8, A, C, E].";
 errmsg.err17="L'adresse MAC est incorrecte.";
 errmsg.err18="La longueur de l'adresse MAC est incorrecte.";
-errmsg.err19="L'adresse MAC ne peut pas être l'adresse de diffusion."
+errmsg.err19="L'adresse MAC ne peut pas être identique à l'adresse de diffusion."
 errmsg.err20="Sairir l'adresse MAC au format (xx:xx:xx:xx:xx:xx).";
 errmsg.err21="Format d'adresse MAC invalide.";
 errmsg.err22="L'adresse MAC WAN est incorrecte.";
@@ -246,30 +246,30 @@ errmsg.err50="Vous devez saisir un SSID.";
 
 // Management.asp error messages
 errmsg.err51="Le routeur dispose actuellement de son mot de passe par défaut. \
-			Par mesure de sécurité, vous devez changer le mot de passe avant de pouvoir activier la fonctionnalité de gestion distante. \
-			Cliquez sur le bouton OK pour changer le mot de passe. Cliquez sur le bouton Annuler pour laisser la fonctionnalité de gestion distante désactivée.";
+	Par mesure de sécurité, vous devez changer le mot de passe avant de pouvoir activer la fonctionnalité de gestion distante. \
+	Cliquez sur le bouton OK pour changer le mot de passe. Cliquez sur le bouton Annuler pour laisser la fonctionnalité de gestion distante désactivée.";
 errmsg.err52="Le mot de passe de confirmation ne correspond pas.";
 
 // Port_Services.asp error messages
-errmsg.err53="Après avoir terminé toutes les actions, cliquez sur Appliquer pour sauver les options.";
+errmsg.err53="Après avoir terminé toutes les actions, cliquez sur Valider pour enregistrer les modifications.";
 errmsg.err54="Vous devez saisir un nom de service.";
-errmsg.err55="Le nom de service existe.";
+errmsg.err55="Ce nom de service existe déjà.";
 
 // QoS.asp error messages
-errmsg.err56="La valeur du port est en dehors de l'intervalle [0 - 65535]";
+errmsg.err56="La valeur du port est en dehors de l'intervalle [0 - 65535].";
 
 // Routing.asp error messages
-errmsg.err57="Effacer l'entrée ?";
+errmsg.err57="Effacer cette entrée ?";
 
 // Status_Lan.asp error messages
-errmsg.err58="Cliquez pour effacer le bail";
+errmsg.err58="Cliquez pour effacer le bail.";
 
 //Status_Wireless.asp error messages
 errmsg.err59="Non disponible ! Merci d'activer le réseau sans fil.";
 
 //Upgrade.asp error messages
-errmsg.err60="Merci de sélectionner un fichier pour mettre à jour.";
-errmsg.err61="Fichier image incorrect.";
+errmsg.err60="Veuillez sélectionner le fichier de mise à jour du routeur.";
+errmsg.err61="Fichier incorrect.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
@@ -315,7 +315,7 @@ bmenu.adminHotspot="Hotspot";
 bmenu.adminServices="Services";
 bmenu.adminAlive="Keep Alive";
 bmenu.adminLog="Journal";
-bmenu.adminDiag="Diagnostics";
+bmenu.adminDiag="Shell";
 bmenu.adminWol="WOL";
 bmenu.adminFactory="Paramètres usine";
 bmenu.adminUpgrade="Mise à niveau";
@@ -330,26 +330,26 @@ bmenu.statuWLAN="Sans fil";
 bmenu.statuSysInfo="Système";
 
 
+
 // ******************************************* Alive.asp *******************************************//
 
 var alive = new Object();
 alive.titl=" - Maintenir Actif";
 alive.h2="Maintenir Actif";
-alive.legend="Redémarrage Programmé";
-alive.sevr1="Redémarrage Programmé";
-alive.time="Période (en secondes)";
-alive.hour="A une Période définie";
+alive.legend="Redémarrage Programmé du Routeur";
+alive.sevr1="Redémarrage programmé";
+alive.hour="A une heure définie";
 alive.legend2="WDS/Connection Watchdog";
-alive.sevr2="Activer Watchdog";
+alive.sevr2="Watchdog";
 alive.IP="Adresses IP";
 alive.legend3="Proxy/Connection Watchdog";
-alive.sevr3="Activer le Proxy Watchdog";
-alive.IP2="Adresse IP du Proxy";
-alive.port="Port du Proxy";
+alive.sevr3="Proxy Watchdog";
+alive.IP2="Adresse IP du proxy";
+alive.port="Port du proxy";
 
 //help container
 var halive = new Object();
-halive.right2="Choisissez quand le routeur doit rebooter. Cron doit être activé dans l'onglet gestion.";
+halive.right2="Choisissez quand le routeur doit redémarrer. <em>Cron</em> doit être activé dans l'onglet gestion.";
 halive.right4="Un maximum de 3 IPs séparées par un <em>ESPACE</em> est autorisé.<BR/>Le format des IPs est xxx.xxx.xxx.xxx.";
 
 
@@ -357,20 +357,20 @@ halive.right4="Un maximum de 3 IPs séparées par un <em>ESPACE</em> est autorisé.
 // ******************************************* config.asp *******************************************//
 
 var config = new Object();
-config.titl=" - Sauvegarde &amp; Restauration";
-config.h2="Configuration de la Sauvegarde";
-config.legend="Réglages de la Sauvergarde";
-config.mess1="Cliquez sur le bouton \"" + sbutton.backup + "\" pour télécharger le fichier de sauvegarde de la configuration sur votre ordinateur.";
-config.h22="Restaurer la Configuration";
+config.titl=" - Sauvegarde & Restauration";
+config.h2="Sauvegarde";
+config.legend="Sauvergarder la Configuration";
+config.mess1="Cliquez sur le bouton <em>\"" + sbutton.backup + "\"</em> pour enregistrer dans un fichier sur votre ordinateur les paramètres de configuration du routeur.";
+config.h22="Restauration";
 config.legend2="Restaurer les Réglages";
-config.mess2="Merci de sélectionner un fichier à restaurer";
+config.mess2="Veuillez sélectionner un fichier de sauvegarde à restaurer";
 config.mess3="A T T E N T I O N";
-config.mess4="Ne chargez que des fichiers sauvegardés par ce micrologiciel et la même version du routeur.<br />Ne chargez pas de fichier qui n'aurait pas été créé par cette interface !";
+config.mess4="Ne restaurer que des fichiers sauvegardés par cette version de micrologiciel.<br />Ne restaurer pas un fichier qui n'aurait pas été créé par cette interface !";
 
 //help container
 var hconfig = new Object();
-hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas où vous auriez besoin de réinitialiser votre routeur à ses réglages usine.<br /><br />Cliquez sur le bouton <em>Sauvergarder</em> pour sauver votre configuration courante.";
-hconfig.right4="Cliquez sur le bouton <em>Parcourir...</em> pour chercher un fichier de configuration actuellement sauvé sur votre PC.<br /><br />Cliquez sur le bouton <em>" + sbutton.restore + "</em> pour écraser la configuration courante par celle du fichier de configuration.";
+hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas où vous auriez besoin de réinitialiser votre routeur à ses paramètres usine.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.backup + "\"</em> pour enregistrer la configuration actuelle.";
+hconfig.right4="Cliquez sur le bouton <em>Parcourir...</em> pour sélectionner le fichier de configuration à restaurer.<br /><br />Cliquez sur le bouton <em>" + sbutton.restore + "</em> pour écraser la configuration courante par celle du fichier de configuration.";
 
 
 
@@ -379,48 +379,48 @@ hconfig.right4="Cliquez sur le bouton <em>Parcourir...</em> pour chercher un fic
 var ddns = new Object();
 ddns.titl=" - DNS Dynamique"
 ddns.h2="Dynamic Domain Name System (DDNS)";
-ddns.legend="DDNS";
+ddns.legend="DNS Dynamique";
 ddns.srv="Service DDNS";
 ddns.emailaddr="Adresse E-mail";
 ddns.typ="Type";
 ddns.dynamic="Dynamique";
 ddns.custom="Personnalisé";
 ddns.wildcard="Wildcard";
-ddns.statu="Statut";
+ddns.statu="Etat";
 
 var ddnsm = new Object();
-ddnsm.dyn_strange="Erreur inconnue. Vérifier que vous êtes connecté au bon serveur";
-ddnsm.dyn_good="DDNS a été mis à jour avec succès";
-ddnsm.dyn_noupdate="Aucune mise à jour nécessaire pour le moment";
-ddnsm.dyn_nohost="Nom d'hôte inconnu";
-ddnsm.dyn_notfqdn="Nom d'hôte incorrect";
-ddnsm.dyn_yours="Ce nom d'hôte ne vous appartient pas";
-ddnsm.dyn_abuse="Hôte bloqué pour abus";
-ddnsm.dyn_nochg="Adresse IP  has not changed since the last update";
-ddnsm.dyn_badauth="Authentication failure (username or passwords)";
-ddnsm.dyn_badsys="Invalid system parameter";
-ddnsm.dyn_badagent="This useragent has been blocked";
-ddnsm.dyn_numhost="Too many or too few hosts found";
-ddnsm.dyn_dnserr="DNS internal error";
-ddnsm.dyn_911="Unexpected error 911";
-ddnsm.dyn_999="Unexpected error 999";
-ddnsm.dyn_donator="A feature requested is only available to donators, please donate";
-ddnsm.dyn_uncode="Unknown return code";
+ddnsm.dyn_strange="Erreur inconnue. Vérifier que vous êtes connecté au bon serveur.";
+ddnsm.dyn_good="DDNS a été mis à jour avec succès.";
+ddnsm.dyn_noupdate="Aucune mise à jour nécessaire pour le moment.";
+ddnsm.dyn_nohost="Nom d&#39;hôte inconnu.";
+ddnsm.dyn_notfqdn="Nom d&#39;hôte incorrect.";
+ddnsm.dyn_yours="Ce nom d&#39;hôte ne vous appartient pas.";
+ddnsm.dyn_abuse="Hôte bloqué pour abus.";
+ddnsm.dyn_nochg="Adresse IP inchangée depuis la dernière mise à jour.";
+ddnsm.dyn_badauth="L&#39;authentification a échoué (nom d&#39;utilisateur ou mot de passe incorrect).";
+ddnsm.dyn_badsys="Paramètre système incorrect.";
+ddnsm.dyn_badagent="Utilisateur bloqué.";
+ddnsm.dyn_numhost="Trop ou pas assez d&#39;hôte trouvés";
+ddnsm.dyn_dnserr="Erreur interne DNS.";
+ddnsm.dyn_911="Erreur inattendue 911.";
+ddnsm.dyn_999="Erreur inattendue 999.";
+ddnsm.dyn_donator="A feature requested is only available to donators, please donate.";
+ddnsm.dyn_uncode="Erreur inconnue.";
 
-ddnsm.tzo_good="Operation Complete";
-ddnsm.tzo_noupdate="No update needed at this time";
-ddnsm.tzo_notfqdn="Invalid Domain Name";
-ddnsm.tzo_notmail="Invalis Email";
-ddnsm.tzo_notact="Invalid Action";
-ddnsm.tzo_notkey="Invalid Key";
-ddnsm.tzo_notip="Invalid IP address";
-ddnsm.tzo_dupfqdn="Duplicate Domain Name";
-ddnsm.tzo_fqdncre="Domain Name has already been created for this domain name";
-ddnsm.tzo_expired="The account has expired";
-ddnsm.tzo_error="An unexpected server error";
+ddnsm.tzo_good="Mise à jour terminée avec succès.";
+ddnsm.tzo_noupdate="Aucune mise à jour nécessaire pour le moment.";
+ddnsm.tzo_notfqdn="Nom d&#39;hôte incorrect.";
+ddnsm.tzo_notmail="Adresse E-mail invalide.";
+ddnsm.tzo_notact="Action invalide.";
+ddnsm.tzo_notkey="Clé invalide.";
+ddnsm.tzo_notip="Adresse IP invalide.";
+ddnsm.tzo_dupfqdn="Nom d&#39;hôte incorrect.";
+ddnsm.tzo_fqdncre="Ce nom d&#39;hôte ne vous appartient pas.";
+ddnsm.tzo_expired="Le compte utilisateur est expiré.";
+ddnsm.tzo_error="Erreur inconnue.";
 
 ddnsm.zone_701="Zone is not set up in this account";
-ddnsm.zone_702="Update failed";
+ddnsm.zone_702="Echec de la mise à jour.";
 ddnsm.zone_703="One of either parameters <em>zones</em> or <em>host</em> are required";
 ddnsm.zone_704="Zone must be a valid <em>dotted</em> internet name";
 ddnsm.zone_705="Zone cannot be empty";
@@ -430,35 +430,37 @@ ddnsm.zone_badauth="Authorization fails (username or passwords)";
 ddnsm.zone_good="ZoneEdit is updated successfully";
 ddnsm.zone_strange="Strange server response, are you connecting to the right server ?";
 
-ddnsm.all_closed="Le serveur DDNS est actuellement fermé";
-ddnsm.all_resolving="Nom de domaine Resolving domain name";
-ddnsm.all_errresolv="Domain name resolv fail";
+ddnsm.all_closed="Le serveur DDNS est actuellement fermé.";
+ddnsm.all_resolving="Résolution du nom de domaine en cours ...";
+ddnsm.all_errresolv="La résolution du nom de domaine a échoué.";
 ddnsm.all_connecting="Connection en cours...";
-ddnsm.all_connectfail="La connection au serveur a échouée";
+ddnsm.all_connectfail="La connection au serveur a échoué";
 ddnsm.all_disabled="DDNS est désactivé";
 ddnsm.all_noip="Connection Internet non détectée";
 
 //help container
 var hddns = new Object();
 hddns.right2="DDNS vous permet d'attribuer un nom de domaine et d'hôte fixe à une adresse IP Internet dynamique.\
-		Cela peut s'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur \
-		derrière le routeur. Avant d'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, tels que DynDNS.org, TZO.com ou ZoneEdit.com.";
+	Cela peut s'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur \
+	derrière le routeur. <br /><br />Avant d'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, \
+	tels que DynDNS.org, TZO.com ou ZoneEdit.com.";
 
 
 
 // ******************************************* Diagnostics.asp *******************************************//
 
 var diag = new Object();
-diag.titl=" - Diagnostiques";
-diag.h2="Diagnostiques";
+diag.titl=" - Shell";
+diag.h2="Commandes Shell";
 diag.legend="Invite de commandes";
-diag.cmd="Commandes";
+diag.cmd="Commande(s)";
 diag.startup="Démarrage";
 diag.firewall="Pare-feu";
 
 //help container
 var hdiag = new Object();
-hdiag.right2="Vous pouvez lancer des lignes de commandes par le biais de l'interface web. Remplissez le change texte avec vos commandes et cliquez sur le bouton <em>" + sbutton.runcmd + "</em> pour les soumettre.";
+hdiag.right2="Vous pouvez lancer des lignes de commandes par le biais de l'interface web. \
+	Remplissez le change texte avec vos commandes et cliquez sur le bouton <em>" + sbutton.runcmd + "</em> pour les soumettre.";
 
 
 
@@ -474,7 +476,7 @@ dmz.host="Adresse IP hôte de la DMZ";
 
 //help container
 var hdmz = new Object();
-hdmz.right2="L'activation de cette option va activer l'hôte à Internet. Tous les ports vont être accessibles depuis Internet.";
+hdmz.right2="L'activation de cette option va exposer l'hôte à Internet. Tous les ports vont être accessibles depuis Internet et redirigés vers cette adresse IP (non recommandé).";
 
 
 
@@ -486,11 +488,13 @@ factdef.h2="Paramètres usine";
 factdef.legend="Réinitialiser les réglages du routeur";
 factdef.restore="Réinitialiser les paramètres usine";
 
-factdef.mess1="Attention ! Si vous cliquez sur OK, l'appareil va réinitialiser les paramètres usine et tous les réglages précendents vont être effacés.";
+factdef.mess1="Attention ! Si vous cliquez sur OK, le routeur va réinitialiser les paramètres usine et tous les réglages seront effacés.";
 
 //help container
 var hfactdef = new Object();
-hfactdef.right1="Ceci va réinitialiser tous les réglages au paramètres d'usine. Tous vos réglages vont être perdus.";
+hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut de tous les paramètres de configuration, puis \
+	cliquez sur <em>\"" + sbutton.save + "\"</em> (Enregistrer les paramètres). Tous les paramètres enregistrés précédemment seront \
+	perdus une fois les paramètres usine restaurés. Par défaut, cette fonctionnalité est désactivée.";
 
 
 
@@ -758,6 +762,8 @@ idx.dhcp_end="Adresse IP de fin";				//used in Status_Lan.asp
 idx.dhcp_maxusers="Nombre maximal d'utilisateurs DHCP";
 idx.dhcp_lease="Durée de connexion du client";
 idx.dhcp_dnsmasq="Utiliser DNSMasq pour DHCP";
+idx.dns_dnsmasq="Utiliser DNSMasq pour DNS";
+idx.auth_dnsmasq="Autorité DHCP";
 
 
 
