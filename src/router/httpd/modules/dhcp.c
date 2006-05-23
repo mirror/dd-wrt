@@ -25,10 +25,8 @@ char
 
 }
 
-/*dump in array:
-hostname,mac,ip,expires
-read leases from leasefile as:
-expires mac ip hostname */
+/*dump in array: hostname,mac,ip,expires
+read leases from leasefile as: expires mac ip hostname */
 void
 ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 {
@@ -41,10 +39,6 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 	char buf[512];
 	int count;
 	char *p;
-
-	/* Write out leases file from dnsmasq*/
-	eval("killall", "-SIGUSR1", "dnsmasq");
-	sleep(1);
 
 	/* Parse leases file */
 	if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
@@ -181,15 +175,15 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 // }
 
 /* Delete leases */
-void
-delete_leases (webs_t wp)
+int
+delete_leases(webs_t wp)
 {
-	FILE *fp;
+	FILE *f;
 	int i;
 	char name[32];
 	const char *value;
 
-	if ((fp = fopen("/tmp/.delete_leases", "w")) == NULL) {
+	if ((f = fopen("/tmp/.delete_leases", "w")) == NULL) {
 		websError(wp, 400, "Error opening delete lease file\n");
 		return -1;
 	}
@@ -197,22 +191,19 @@ delete_leases (webs_t wp)
 		sprintf(name, "d_%d", i);
 		value = websGetVar(wp, name, NULL);
 		if (!value)	continue;
-
-		if (strchr(value, '.')) {
-			fprintf(fp, "%s\n", value);
-		}
-		else {
-			fprintf(fp, "%d.%d.%d.%s\n",
-					get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
-					get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
-					get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
-					value);
-		}
+		fprintf(f, "%d.%d.%d.%s\n",
+				get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
+				get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
+				get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
+				value);
 	}
-	fclose(fp);
+	fclose(f);
 
-	return;
+	eval("killall", "-SIGUSR2", "dnsmasq");
+	return 0;
+
 }
+
 //   FILE *fp_w;
 //   char sigusr1[] = "-XX";
 //   int i;
