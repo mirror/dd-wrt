@@ -41,7 +41,7 @@ srcdir = .
 # You shouldn't need to edit anything below.
 #
 
-CCOPT = $(COPTS) -fomit-frame-pointer -fpic -fPIC -I../../linux/linux.v23/include
+CCOPT = $(COPTS) -fomit-frame-pointer -fpic -fPIC -I$(LINUXDIR)/include
 INCLS = -I. 
 DEFS = -DHAVE_CONFIG_H  -D_U_="__attribute__((unused))"
 LIBS = 
