@@ -817,7 +817,7 @@ start_udhcpd (void)
   /* Dump static leases to udhcpd.leases so they can be read by dnsmasq */
   /* DD-WRT (belanger) : the dump database is now handled directly in udhcpd */
 //  sprintf (sigusr1, "-%d", SIGUSR1);
-  //killps("udhcpd",sigusr1);
+//killps("udhcpd",sigusr1);
 
 //  eval ("killall", sigusr1, "udhcpd");
 
@@ -923,8 +923,7 @@ start_dnsmasq (void)
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
 	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
-	if (nvram_match ("dns_dnsmasq", "0")) 
-	  {
+	if (nvram_match ("dns_dnsmasq", "0")) {
   dns_list = get_dns_list ();
 
   if (nvram_match ("local_dns", "1"))
@@ -977,6 +976,7 @@ start_dnsmasq (void)
 
   if (dns_list)
     free (dns_list);
+}
 
 	if (nvram_match ("auth_dnsmasq", "1"))
 	  {
