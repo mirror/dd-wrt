@@ -74,9 +74,9 @@ share.beacon="beacon";
 share.openn="Odprto";
 share.dtim="dtim";
 share.rates="Hitrost";
-share.low="Nizko";
-share.medium="Srednje";
-share.high="Visoko";
+share.low="Nizek";
+share.medium="Srednji";
+share.high="Visok";
 share.option="Mo¾nosti";
 share.rule="Pravilo";
 share.lan="LAN";
@@ -87,8 +87,8 @@ share.unmask="Odkrij";
 share.deflt="Privzeto";  //don't use share.default !!!
 share.all="Vse";
 share.auto="Samodejno";
-share.right="Dasno";
-share.left="Levo";
+share.right="Dasna";
+share.left="Leva";
 share.share_key="Skupni kljuè";
 share.inter="Interval (v sekundah)";
 share.srv="Ime storitve";
@@ -169,7 +169,7 @@ sbutton.preview="Predogled";
 var errmsg = new Object();
 errmsg.err0="Vnesti morate uporabni¹ko ime.";
 errmsg.err1="Vnesti morate ime usmerjalnika.";
-errmsg.err2="Izven dovoljenega obmoèja, prosim, popravite zaèetni IP naslov ali ¹tevilo uporabnikov.";
+errmsg.err2="Izven dovoljenega obmoèja. Prosimo, do popravite zaèetni IP naslov ali ¹tevilo uporabnikov.";
 errmsg.err3="Izbrati morate vsaj dan."
 errmsg.err4="Konèni èas mora biti veèji od zaèetnega èasa.";
 errmsg.err5="Dol¾ina naslova MAC ni pravilna.";
@@ -177,11 +177,11 @@ errmsg.err6="Vnesti morate geslo.";
 errmsg.err7="Vnesti morate ime gostitelja.";
 errmsg.err8="Vnesti morate IP naslov ali domensko ime.";
 errmsg.err9="Nepravilni DMZ IP naslov.";
-errmsg.err10="Potrditveno geslo se ne ujema z vne¹enim geslom. Prosim, ponovite vnos.";
+errmsg.err10="Potrditveno geslo se ne ujema z vne¹enim geslom. Prosimo, da ponovite vnos.";
 errmsg.err11="V geslu presledki niso dovoljeni";
 errmsg.err12="Vnesti morate ukaz.";
 errmsg.err13="Posodabljanje ni uspelo.";
-errmsg.err45="Ni na voljo v HTTPS naèinu! Prosim, uporabite naèin HTTP.";
+errmsg.err45="Ni na voljo v HTTPS naèinu! Prosimo, da uporabite HTTP naèin.";
 errmsg.err46="Ni na voljo v HTTPS naèinu";
 
 
@@ -215,14 +215,14 @@ errmsg.err37="Vnesti morate UDP vrata za zagon.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
-errmsg.err38="Prosim vnesite skupni kljuè!";
+errmsg.err38="Prosimo, da vnesete skupni kljuè!";
 errmsg.err39="Nepravilen kljuè, biti mora med 8 in 63 ASCII znaki ali 64 hexadecimalnih znakov"
 errmsg.err40="Vnesti morate kljuè za Kljuè ";
 errmsg.err41="Nepravilna dol¾ina kljuèa ";
 errmsg.err43="Interval za izmenjavo kljuèa";
 
 //config.asp error messages
-errmsg.err42="Prosim, izberite datoteko za obnovitev.";
+errmsg.err42="Prosimo, da izberete datoteko za obnovitev.";
 
 //WL_ActiveTable.asp error messages
 errmsg.err44="Skupno ¹tevilo je preseglo 128.";
@@ -231,7 +231,7 @@ errmsg.err44="Skupno ¹tevilo je preseglo 128.";
 errmsg.err47="nepravilen SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS ni zdru¾ljiv s trenutno konfiguracijo usmerjalnika. Prosim, preverite naslednje :\n * Brez¾ièni naèin mora biti AP \n * WPA2 ni podprta pod WDS \n * Bre¾ièno omre¾je v naèinu samo-B ni podprto pod WDS";
+errmsg.err48="WDS ni zdru¾ljiv s trenutno konfiguracijo usmerjalnika. Prosimo, da preverite naslednje :\n * Brez¾ièni naèin mora biti AP \n * WPA2 ni podprta pod WDS \n * Bre¾ièno omre¾je v naèinu samo-B ni podprto pod WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius je na volju samo v naèinu AP.";
@@ -260,10 +260,10 @@ errmsg.err57="Zbri¹em vnos ?";
 errmsg.err58="Kliknite za brisane zakupa";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Ni na voljo! Prosim, omogoèite brez¾ièno omre¾je.";
+errmsg.err59="Ni na voljo! Prosimo, da omogoèite brez¾ièno omre¾je.";
 
 //Upgrade.asp error messages
-errmsg.err60="Prosim, izberite datoteko za posodobitev.";
+errmsg.err60="Prosimo, da izberite datoteko za posodobitev.";
 errmsg.err61="Nepravilna datoteka.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
@@ -360,7 +360,7 @@ config.h22="Obnovi konfiguracijo";
 config.legend2="Obnovi nastavitve";
 config.mess2="Izberite datoteko za obnovitev";
 config.mess3="O P O Z O R I L O";
-config.mess4="Obnovitev je mo¾na samo z datoteko ustvarjeno na istem modelu usmerjalnika in isto verzijo strojne programske opreme.<br />Ne nalagajte datotek, ki niso bile ustvarjene z tem uporabni¹kim vmesnikom!";
+config.mess4="Obnovitev je mo¾na samo z datoteko ustvarjeno na istem modelu usmerjalnika in isto verzijo strojne programske opreme.<br />Ne nalagajte datotek, ki niso bile ustvarjene s tem uporabni¹kim vmesnikom!";
 
 //help container
 var hconfig = new Object();
@@ -400,7 +400,7 @@ ddnsm.dyn_numhost="Najdeno preveè ali premalo gostiteljev";
 ddnsm.dyn_dnserr="DNS notranja napaka";
 ddnsm.dyn_911="Neprièakovana napaka 911";
 ddnsm.dyn_999="Neprièakovana napaka 999";
-ddnsm.dyn_donator="Zahtevana funkcija je na voljo samo za donatorje, prosim darujte";
+ddnsm.dyn_donator="Zahtevana funkcija je na voljo samo za donatorje, prosimo, da darujete";
 ddnsm.dyn_uncode="Neznana povratna koda";
 
 ddnsm.tzo_good="Operacija zakljuèena";
@@ -1160,7 +1160,7 @@ status_router.mem_cached="Predpmnilnik";
 status_router.mem_active="Dejavno";
 status_router.mem_inactive="Nedejavno";
 status_router.legend4="Mre¾a";
-status_router.net_maxports="IP filter najveèje ¹tevilo vrat";
+status_router.net_maxports="IP filter: najveèje ¹tevilo vrat";
 status_router.net_conntrack="Aktivne IP povezave";
 status_router.h22="Medmre¾je";
 status_router.legend5="Naèin povezave";
@@ -1250,7 +1250,7 @@ upgrad.legend="Posodabljanje strojne programske opreme";
 upgrad.info1="Po posodobitvi ponastavi na";
 upgrad.resetOff="Brez ponastavitve";
 upgrad.resetOn="Privzete nastavitve";
-upgrad.file="Prosim izberite datoteko za posodobitev";
+upgrad.file="Prosimo, da izberite datoteko za posodobitev";
 upgrad.warning="O P O Z O R I L O";
 upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izljuèujte usmerjalnika in ne pritiskajte na gumb za ponastavitev!";
 
@@ -1534,7 +1534,7 @@ hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuè. Overovljanje z deljen
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
 var fail = new Object();
-fail.mess1="Vne¹ene vrednosti so neveljavne. Prosim, poskusite znova.";
+fail.mess1="Vne¹ene vrednosti so neveljavne. Prosimo, da poskusite znova.";
 fail.mess2="Posodabljanje ni uspelo.";
 
 
@@ -1543,13 +1543,13 @@ fail.mess2="Posodabljanje ni uspelo.";
 
 var success = new Object();
 success.saved="Nastavitve so shranjene.";
-success.restore="Nastavitve so obnovljene.<br/>Ponovni zagon naprave. Prosim, poèakajte trenutek...";
-success.upgrade="Posodabljanje je uspelo.<br/>Ponovni zagon naprave. Prosim, poèakajte trenutek...";
+success.restore="Nastavitve so obnovljene.<br/>Ponovni zagon naprave. Prosimo, da poèakate trenutek...";
+success.upgrade="Posodabljanje je uspelo.<br/>Ponovni zagon naprave. Prosimo, da poèakate trenutek...";
 success.success_noreboot="Nastavitve so uspele.";
-success.success_reboot=success.success_noreboot + "<br />Ponovni zagon naprave. Prosim, poèakajte trenutek...";
+success.success_reboot=success.success_noreboot + "<br />Ponovni zagon naprave. Prosimo, da poèakate trenutek...";
 
 success.alert_reset="Vse nastavitve so bile nastavljene na privezete vrednosti.<br /><br />";
-success.alert1="Pred ponovnim priklopom, prosim, preverite nasledje:";
+success.alert1="Pred ponovnim priklopom, prosimo, da preverite nasledje:";
 success.alert2="Èe ste spremenili usmerjalnikov IP naslov, morate tudi sprostiti/obnoviti odjemalèeve IP naslove.";
 success.alert3="Èe ste povezani brez¾ièno, se morate ponovno povezati v omre¾je, in nato klikniti <em>Nadaljuj</em>.";
 
