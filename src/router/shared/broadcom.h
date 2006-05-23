@@ -174,7 +174,7 @@ extern char *dnsmasq_reltime (char *buf, time_t t);
 extern void ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv);
 extern void validate_dhcp (webs_t wp, char *value, struct variable *v);
 extern void dhcp_check (webs_t wp, char *value, struct variable *v);
-extern void delete_leases (webs_t wp);
+extern int delete_leases (webs_t wp);
 
 /* for log */
 extern void ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv);
