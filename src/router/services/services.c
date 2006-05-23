@@ -923,7 +923,7 @@ start_dnsmasq (void)
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
 	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
-	if (nvram_match ("dns_dnsmasq", "0")) {
+	if (nvram_match ("dns_dnsmasq", "1")) {
 	dns_list = get_dns_list ();
 
   if (nvram_match ("local_dns", "1"))
