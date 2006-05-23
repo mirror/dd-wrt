@@ -199,8 +199,7 @@ delete_leases (webs_t wp)
 		if (!value)	continue;
 
 		if (strchr(value, '.')) {
-			// for DeviceList.asp
-			fprintf(f, "%s\n", value);
+			fprintf(fp, "%s\n", value);
 		}
 		else {
 			fprintf(fp, "%d.%d.%d.%s\n",
