@@ -931,7 +931,7 @@ start_dnsmasq (void)
 			for (n = 0 ; n < dns->num_servers; ++n) {
 				sprintf(buf + strlen(buf), ",%s", dns->dns_server[n]);
 			}
-			fprintf(f, "dhcp-option=6%s\n", buf);
+			fprintf(fp, "dhcp-option=6%s\n", buf);
 			free(dns);
 	}
 	fprintf (fp, "dhcp-range=");
