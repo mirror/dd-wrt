@@ -55,7 +55,7 @@
 		</script>
 	</div>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(vpn_certtype)</script></div>
+		<div class="label"><script type="text/javascript">Capture(service.vpn_certtype)</script></div>
 		<input class="spaceradio" type="checkbox" value="1" name="_openvpn_certtype" <% nvram_selmatch("openvpn_certtype","1","checked"); %> />
 	</div>
 	<div class="setting">		
