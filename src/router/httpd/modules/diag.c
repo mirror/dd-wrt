@@ -93,31 +93,34 @@ ping_wol (webs_t wp)
   if (!wol_type || !strcmp (wol_type, ""))
     return ret;
 
-  if (!strcmp (wol_type, "update")) {
-    char *wol_hosts = websGetVar (wp, "wol_hosts", NULL);
+  if (!strcmp (wol_type, "update"))
+    {
+      char *wol_hosts = websGetVar (wp, "wol_hosts", NULL);
 
-    if (!wol_hosts || !strcmp (wol_hosts, ""))
+      if (!wol_hosts || !strcmp (wol_hosts, ""))
+	return ret;
+
+      // filter Windows <cr>ud
+      // removeLineBreak (wol_hosts);
+      nvram_set ("wol_hosts", wol_hosts);
+      nvram_set ("wol_cmd", "");
       return ret;
-  
-    // filter Windows <cr>ud
-    // removeLineBreak (wol_hosts);
-    nvram_set ("wol_hosts", wol_hosts);
-    nvram_set ("wol_cmd", "");
-    return ret;
-  }
-  
-    char *manual_wol_mac = websGetVar (wp, "manual_wol_mac", NULL);
-    char *manual_wol_network = websGetVar (wp, "manual_wol_network", NULL);
-    char *manual_wol_port = websGetVar (wp, "manual_wol_port", NULL);
+    }
 
-  if (!strcmp (wol_type, "manual")) {
-    nvram_set ("manual_wol_mac", manual_wol_mac);
-    nvram_set ("manual_wol_network", manual_wol_network);
-    nvram_set ("manual_wol_port", manual_wol_port);
-  }
+  char *manual_wol_mac = websGetVar (wp, "manual_wol_mac", NULL);
+  char *manual_wol_network = websGetVar (wp, "manual_wol_network", NULL);
+  char *manual_wol_port = websGetVar (wp, "manual_wol_port", NULL);
+
+  if (!strcmp (wol_type, "manual"))
+    {
+      nvram_set ("manual_wol_mac", manual_wol_mac);
+      nvram_set ("manual_wol_network", manual_wol_network);
+      nvram_set ("manual_wol_port", manual_wol_port);
+    }
 
   char wol_cmd[256] = { 0 };
-  snprintf (wol_cmd, sizeof(wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s", manual_wol_network, manual_wol_port, manual_wol_mac);
+  snprintf (wol_cmd, sizeof (wol_cmd), "/usr/sbin/wol -v -i %s -p %s %s",
+	    manual_wol_network, manual_wol_port, manual_wol_mac);
   nvram_set ("wol_cmd", wol_cmd);
 
   // use Wol.asp as a debugging console
@@ -231,7 +234,7 @@ ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv)
 	      else
 		newline[nc++] = line[i];
 	    }
-	  newline[nc++]=0;
+	  newline[nc++] = 0;
 	  websWrite (wp, "%c\"%s\"\n", count ? ',' : ' ', newline);
 	  count++;
 	}

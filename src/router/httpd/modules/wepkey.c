@@ -111,4 +111,3 @@ gen_key (char *genstr, int weptype)
     }
   return;
 }
-
