@@ -925,7 +925,7 @@ start_dnsmasq (void)
 	if (nvram_match ("auth_dnsmasq", "1")
 		fprintf (fp, "dhcp-authoritative\n");
 	if (nvram_match("dns_dnsmasq", "0")) {
-		struct dns_lists *dns = get_dns_list(0);
+		struct dns_lists *dns = get_dns_list();
 		if (dns) {
 			buf[0] = 0;
 			for (n = 0 ; n < dns->num_servers; ++n) {
