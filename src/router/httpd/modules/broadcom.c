@@ -3859,7 +3859,8 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match (name, match))
     {
-      if (!strcmp (javascript, "js"))
+    
+      if (javascript!=NULL && !strcmp (javascript, "js"))
 	websWrite (wp, "checked=\\\"checked\\\"");
       else
 	websWrite (wp, "checked=\"checked\"");
