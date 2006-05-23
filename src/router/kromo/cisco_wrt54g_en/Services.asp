@@ -37,9 +37,9 @@ function to_submit(F) {
 	
 	if (F._openvpn_certtype) {
 		if (F._openvpn_certtype.checked == true) {
-			F.openvpn_certtype = 1;
+			F.openvpn_certtype.value = 1;
 		} else {
-			F.openvpn_certtype = 0;
+			F.openvpn_certtype.value = 0;
 		}
 	}
 	F.submit_button.value = "Services";
