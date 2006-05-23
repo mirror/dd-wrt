@@ -11,7 +11,6 @@
 #include <broadcom.h>
 
 #define DHCP_MAX_COUNT 254
-#define EXPIRES_NEVER 0xFFFFFFFF
 
 char 
 *dnsmasq_reltime(char *buf, time_t t)
@@ -185,6 +184,36 @@ ej_dumpleases(int eid, webs_t wp, int argc, char_t **argv)
 void
 delete_leases (webs_t wp)
 {
+	FILE *fp;
+	int i;
+	char name[32];
+	const char *value;
+
+	if ((fp = fopen("/tmp/.delete_leases", "w")) == NULL) {
+		websError(wp, 400, "Error opening delete lease file\n");
+		return -1;
+	}
+	for (i = 0 ; i < DHCP_MAX_COUNT; ++i) {
+		sprintf(name, "d_%d", i);
+		value = websGetVar(wp, name, NULL);
+		if (!value)	continue;
+
+		if (strchr(value, '.')) {
+			// for DeviceList.asp
+			fprintf(f, "%s\n", value);
+		}
+		else {
+			fprintf(fp, "%d.%d.%d.%s\n",
+					get_single_ip(nvram_safe_get("lan_ipaddr"), 0),
+					get_single_ip(nvram_safe_get("lan_ipaddr"), 1),
+					get_single_ip(nvram_safe_get("lan_ipaddr"), 2),
+					value);
+		}
+	}
+	fclose(fp);
+
+	return;
+}
 //   FILE *fp_w;
 //   char sigusr1[] = "-XX";
 //   int i;
@@ -303,8 +332,8 @@ delete_leases (webs_t wp)
 // 
 //     }
 // 
-   return;
-}
+//   return;
+//}
 
 
 void
