@@ -1226,7 +1226,7 @@ status_wireless.legend2="Packet Info";
 status_wireless.rx="Received (RX)";
 status_wireless.tx="Transmitted (TX)";
 status_wireless.h22="Wireless Nodes";
-status_wireless.legend3="Wireless clients";
+status_wireless.legend3="Clients";
 status_wireless.signal_qual="Signal Quality";
 status_wireless.wds="WDS Nodes";
 
