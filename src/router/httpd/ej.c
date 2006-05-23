@@ -405,9 +405,9 @@ do_ej_buffer2 (char *buffer, webs_t stream)	// jimmy, https, 8/4/2003
 //                                      LOG("exec");
 //                                      LOG(func);
 		  //      cdebug(func);
-		  //      cprintf("Call %s\n",func);
+		        cprintf("Call %s\n",func);
 		  call (func, stream);
-		  //      cprintf("Return okay\n");
+		        cprintf("Return %s okay\n",func);
 		  //      cdebug(func);
 //                                      LOG("return");
 		}
