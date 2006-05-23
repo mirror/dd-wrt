@@ -924,7 +924,7 @@ start_dnsmasq (void)
       {
 	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
 	if (nvram_match ("dns_dnsmasq", "0")) {
-  dns_list = get_dns_list ();
+	dns_list = get_dns_list ();
 
   if (nvram_match ("local_dns", "1"))
     {
@@ -939,13 +939,13 @@ start_dnsmasq (void)
 	  fprintf (fp, "dhcp-option=6,");
 
 	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, "%s", dns_list->dns_server[0]);
+	    fprintf (fp, "%s,", dns_list->dns_server[0]);
 
 	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[1]);
+	    fprintf (fp, "%s,", dns_list->dns_server[1]);
 
 	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[2]);
+	    fprintf (fp, "%s", dns_list->dns_server[2]);
 
 	  fprintf (fp, "\n");
 	}
@@ -962,13 +962,13 @@ start_dnsmasq (void)
 	  fprintf (fp, "dhcp-option=6,");
 
 	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, "%s", dns_list->dns_server[0]);
+	    fprintf (fp, "%s,", dns_list->dns_server[0]);
 
 	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[1]);
+	    fprintf (fp, "%s,", dns_list->dns_server[1]);
 
 	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, " %s", dns_list->dns_server[2]);
+	    fprintf (fp, "%s", dns_list->dns_server[2]);
 
 	  fprintf (fp, "\n");
 	}
