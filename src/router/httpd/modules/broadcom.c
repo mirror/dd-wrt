@@ -3822,6 +3822,7 @@ static void
 ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *javascript;
+  int args;
   args=ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
   if (args<2)
     {
