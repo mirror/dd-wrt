@@ -922,9 +922,9 @@ start_dnsmasq (void)
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
 	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
-	if (nvram_match ("auth_dnsmasq", "1")
+	if (nvram_match ("auth_dnsmasq", "1"))
 		fprintf (fp, "dhcp-authoritative\n");
-	if (nvram_match("dns_dnsmasq", "0")) {
+	if (nvram_match ("dns_dnsmasq", "0")) {
 		struct dns_lists *dns = get_dns_list();
 		if (dns) {
 			buf[0] = 0;
