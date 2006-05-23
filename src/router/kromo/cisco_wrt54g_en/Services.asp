@@ -111,6 +111,7 @@ function to_submit(F) {
 							<input type="hidden" name="reboot_button" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="static_leases" value="13" />
+							<input type="hidden" name="openvpn_certtype" />
 							<h2><script type="text/javascript">Capture(service.h2)</script></h2>
 							<% show_modules(".webservices"); %>
 							<div class="submitFooter">
