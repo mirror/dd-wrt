@@ -8,7 +8,7 @@
 	<% nvram_match("syslogd_enable","0","<!--"); %>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(service.syslog_ip)</script></div>
-		<input class="num" maxlength="16" size="16" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" />
+		<input class="num" maxlength="24" size="24" name="syslogd_rem_ip" value="<% nvram_get("syslogd_rem_ip"); %>" />
 	</div>
 	<% nvram_match("syslogd_enable","0","-->"); %>
 </fieldset><br/>
