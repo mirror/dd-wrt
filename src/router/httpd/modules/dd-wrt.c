@@ -1110,6 +1110,18 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
 		 "<input type=\"checkbox\" name=\"_dhcp_dnsmasq\" value=\"1\" %s />\n",
 		 nvram_match ("dhcp_dnsmasq", "1") ? "checked=\"checked\"" : "");
       websWrite (wp, "</div>\n");
+      websWrite (wp, "</div>\n<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dns_dnsmasq)</script></div>\n");
+      websWrite (wp,
+		 "<input type=\"checkbox\" name=\"_dns_dnsmasq\" value=\"1\" %s />\n",
+		 nvram_match ("dns_dnsmasq", "1") ? "checked=\"checked\"" : "");
+      websWrite (wp, "</div>\n");
+      websWrite (wp, "</div>\n<div class=\"setting\">\n");
+      websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.auth_dnsmasq)</script></div>\n");
+      websWrite (wp,
+		 "<input type=\"checkbox\" name=\"_auth_dnsmasq\" value=\"1\" %s />\n",
+		 nvram_match ("auth_dnsmasq", "1") ? "checked=\"checked\"" : "");
+      websWrite (wp, "</div>\n");
     }
 
   websWrite (wp, "</fieldset><br />\n");

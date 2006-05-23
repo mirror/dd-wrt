@@ -764,7 +764,8 @@ idx.dhcp_end="End IP Address";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximum DHCP Users";
 idx.dhcp_lease="Client Lease Time";
 idx.dhcp_dnsmasq="Use DNSMasq for DHCP";
-
+idx.dns_dnsmasq="Use DNSMasq for DNS";
+idx.auth_dnsmasq="DHCP-Authoritative";
 
 
 
