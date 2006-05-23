@@ -50,6 +50,8 @@
  "dhcpd_usejffs" "DHCP leases on jffs" "NULL" "FALSE" "0"
  "dhcpd_options"  "DHCP"  "NULL"  "TRUE" "0"  
  "dnsmasq_enable"  "DNS Masq"  "CHOICE"  "2" "0"  "1"  "FALSE" "0"  
+ "dns_dnsmasq"  "Use DNSMasq for DNS"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
+ "auth_dnsmaq"  "DHCP-Authoritative"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "dnsmasq_options"  "DNS Masq"  "NULL"  "TRUE" "0"  
  "httpd_enable"  "Httpd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
  "httpsd_enable"  "Httpsd"  "CHOICE" "2" "0"  "1"  "FALSE" "0"  
