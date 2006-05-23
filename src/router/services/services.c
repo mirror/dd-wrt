@@ -959,16 +959,16 @@ start_dnsmasq (void)
 	      || strlen (dns_list->dns_server[2]) > 0))
 	{
 
-	  fprintf (fp, "dhcp-option=6,");
+	  fprintf (fp, "dhcp-option=6");
 
 	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, "%s,", dns_list->dns_server[0]);
+	    fprintf (fp, ",%s", dns_list->dns_server[0]);
 
 	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, "%s,", dns_list->dns_server[1]);
+	    fprintf (fp, ",%s", dns_list->dns_server[1]);
 
 	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, "%s", dns_list->dns_server[2]);
+	    fprintf (fp, ",%s", dns_list->dns_server[2]);
 
 	  fprintf (fp, "\n");
 	}
