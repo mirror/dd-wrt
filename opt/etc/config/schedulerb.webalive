@@ -7,7 +7,7 @@
 		<input class="spaceradio" type="radio" value="0" name="schedule_enable" <% nvram_checked("schedule_enable","0"); %> onclick="setAlive()" /><script type="text/javascript">Capture(share.disable)</script>
 	</div>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(alive.time)</script></div>
+		<div class="label"><script type="text/javascript">Capture(share.inter)</script></div>
 		<input class="spaceradio" type="radio" value="1" name="schedule_hour_time" <% nvram_checked("schedule_hour_time","1"); %> onclick="setAlive()" />&nbsp;
 		<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvram_get("schedule_time"); %>" />
 	</div>
