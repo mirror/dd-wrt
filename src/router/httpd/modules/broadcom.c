@@ -3849,21 +3849,29 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 static void
 ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  char *name, *match, *javascript;;
-
-  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript) < 2)
+  char *name, *match, *javascript;
+  int args;
+cprintf("args\n");
+  args=ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
+  if (args<2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-
+cprintf("match()\n");
   if (nvram_match (name, match))
     {
-    
-      if (javascript!=NULL && !strcmp (javascript, "js"))
+    cprintf("javascript check\n");
+      if (args==3 && javascript!=NULL && !strcmp (javascript, "js"))
+        {
+	cprintf("write js\n");
 	websWrite (wp, "checked=\\\"checked\\\"");
-      else
+        
+	}
+        else{
+	cprintf("write non js\n");
 	websWrite (wp, "checked=\"checked\"");
+	}
     }
 
   return;
