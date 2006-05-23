@@ -2792,7 +2792,7 @@ gozila_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	sprintf (path, "%s.asp", submit_button);
     }
   cprintf ("refresh to %s\n", path);
-  do_ej (path, wp);			//refresh
+  do_ej (path, wp);		//refresh
   websDone (wp, 200);
 
   gozila_action = 0;		//reset gozila_action
@@ -3139,7 +3139,7 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
   DIR *directory;
   char buf[256];
   directory = opendir ("/www/lang_pack");
-  if (directory==NULL)
+  if (directory == NULL)
     return;
   struct dirent *entry;
   while ((entry = readdir (directory)) != NULL)
@@ -3149,12 +3149,15 @@ ej_show_languages (int eid, webs_t wp, int argc, char_t ** argv)
       if (test == NULL)
 	continue;
       fclose (test);
-      if (strlen(entry->d_name)<4)
-        continue;
-      strcpy(buf,entry->d_name);
-      buf[strlen(buf)-3]=0; //strip .js
-      websWrite(wp,"<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");</script>\n", buf, 
-      				nvram_match ("language", buf) ? "selected=\\\"selected\\\"" : "", buf);
+      if (strlen (entry->d_name) < 4)
+	continue;
+      strcpy (buf, entry->d_name);
+      buf[strlen (buf) - 3] = 0;	//strip .js
+      websWrite (wp,
+		 "<script type=\"text/javascript\">document.write(\"<option value=\\\"%s\\\" %s >\" + management.lang_%s + \"</option>\");</script>\n",
+		 buf, nvram_match ("language",
+				   buf) ? "selected=\\\"selected\\\"" : "",
+		 buf);
     }
   closedir (directory);
   return;
@@ -3356,13 +3359,14 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 	}
     }
   /* Restore defaults */
-	else if (!strncmp (value, "Restore", 7)) {
-		ACTION ("ACT_SW_RESTORE");
-		nvram_set ("sv_restore_defaults", "1");
-		eval ("killall", "-9", "udhcpc");
-		sys_commit ();
-		eval ("erase", "nvram");
-		action = REBOOT;
+  else if (!strncmp (value, "Restore", 7))
+    {
+      ACTION ("ACT_SW_RESTORE");
+      nvram_set ("sv_restore_defaults", "1");
+      eval ("killall", "-9", "udhcpc");
+      sys_commit ();
+      eval ("erase", "nvram");
+      action = REBOOT;
     }
 
   /* Reboot */
@@ -3381,70 +3385,70 @@ apply_cgi (webs_t wp, char_t * urlPrefix, char_t * webDir, int arg,
 
 
 footer:
-	if (do_reboot)
-		action = REBOOT;
-	
-	/* The will let PC to re-get a new IP Address automatically */
-	if (lan_ip_changed || need_reboot)
-		action = REBOOT;
-	
-	if (action != REBOOT)
+  if (do_reboot)
+    action = REBOOT;
+
+  /* The will let PC to re-get a new IP Address automatically */
+  if (lan_ip_changed || need_reboot)
+    action = REBOOT;
+
+  if (action != REBOOT)
     {
-    	if (!error_value)
-    	{
-    		if (my_next_page[0] != '\0')
-    		{
-    			sprintf (path, "%s", my_next_page);
-    		}
-    		else
-    		{
-    			next_page = websGetVar (wp, "next_page", NULL);
-    			if (next_page)
-    				sprintf (path, "%s", next_page);
-    			else
-    				sprintf (path, "%s.asp", submit_button);
-    		}
-    		cprintf ("refresh to %s\n", path);
-    		do_ej (path, wp);						//refresh
-    		websDone (wp, 200);
-    		
+      if (!error_value)
+	{
+	  if (my_next_page[0] != '\0')
+	    {
+	      sprintf (path, "%s", my_next_page);
+	    }
+	  else
+	    {
+	      next_page = websGetVar (wp, "next_page", NULL);
+	      if (next_page)
+		sprintf (path, "%s", next_page);
+	      else
+		sprintf (path, "%s.asp", submit_button);
+	    }
+	  cprintf ("refresh to %s\n", path);
+	  do_ej (path, wp);	//refresh
+	  websDone (wp, 200);
+
 /* if (websGetVar (wp, "small_screen", NULL))		// this was replaced by the "saved" button value and all controls are now grey out
  * 	do_ej ("Success_s.asp", wp);
  * else
  * 	do_ej ("Success.asp", wp);
  */
-		}
-		else
-		{
-			if (websGetVar (wp, "small_screen", NULL))
-			{
-				do_ej ("Fail_s.asp", wp);
-			}
-			else
-			{
-				do_ej ("Fail.asp", wp);
-			}
-			websDone (wp, 200);
-		}
 	}
-	else
+      else
 	{
-		do_ej ("Reboot.asp", wp);
-		websDone (wp, 200);
-		sleep (5);
-		sys_reboot ();
-		return 1;
+	  if (websGetVar (wp, "small_screen", NULL))
+	    {
+	      do_ej ("Fail_s.asp", wp);
+	    }
+	  else
+	    {
+	      do_ej ("Fail.asp", wp);
+	    }
+	  websDone (wp, 200);
 	}
-	
-	nvram_set ("upnp_wan_proto", "");
-	sleep (sleep_time);
-	
-	if ((action == RESTART) || (action == SYS_RESTART))
-		sys_restart ();
-	else if (action == SERVICE_RESTART)
-		service_restart ();
+    }
+  else
+    {
+      do_ej ("Reboot.asp", wp);
+      websDone (wp, 200);
+      sleep (5);
+      sys_reboot ();
+      return 1;
+    }
 
-	return 1;
+  nvram_set ("upnp_wan_proto", "");
+  sleep (sleep_time);
+
+  if ((action == RESTART) || (action == SYS_RESTART))
+    sys_restart ();
+  else if (action == SERVICE_RESTART)
+    service_restart ();
+
+  return 1;
 
 }
 
@@ -3676,22 +3680,62 @@ ej_get_http_method (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "%s", "post");
 
 }
-static void
-do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
-{
-  // fprintf(stderr,"Read Language\n");
 
+static char *
+getLanguageName ()
+{
   char *lang = nvram_get ("language");
   if (lang == NULL)
     {
-      do_file ("lang_pack/english.js", stream);
-      return;
+      return "lang_pack/english.js";
     }
   char l[60];
   sprintf (l, "lang_pack/%s.js", lang);
-  do_file (l, stream);
+  return l;
+}
+
+static void
+do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
+{
+  do_file (getLanguageName (), stream);
   return;
 }
+
+void
+ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
+{
+
+  char *lang = getLanguageName ();
+  char buf[64];
+  sprintf (buf, "/www/%s", lang);
+// lang_charset.set
+  char *sstring = "lang_charset.set=\"";
+  char s[128];
+  FILE *in = fopen (buf, "rb");
+  while (!feof (in))
+    {
+      fscanf (in, "%s", s);
+      char *cmp = strstr (s, sstring);
+      if (cmp)
+	{
+	  fclose (in);
+	  *cmp += strlen (sstring);
+	  char *t2 = strstr (cmp, "\"");
+	  if (t2 == NULL)
+	    return;		//error (typo?)
+	  int len = *t2 - *cmp;
+	  if (len < 0)
+	    return;		//error (unknown)
+	  char dest[128];
+	  strncpy (dest, cmp, len);
+	  dest[len] = 0;
+	  websWrite (wp, dest);
+	  return;
+	}
+    }
+  fclose (in);
+}
+
 
 
 static char no_cache[] =
@@ -3786,12 +3830,12 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
     }
 
   if (nvram_match (name, match))
-  {  	
-  	if (!strcmp (javascript, "js"))
-  		websWrite (wp, "selected=\\\"selected\\\"");
-  	else
-  		websWrite (wp, "selected=\"selected\"");
-  }
+    {
+      if (!strcmp (javascript, "js"))
+	websWrite (wp, "selected=\\\"selected\\\"");
+      else
+	websWrite (wp, "selected=\"selected\"");
+    }
   return;
 }
 
@@ -3812,15 +3856,15 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-  
+
   if (nvram_match (name, match))
-  {  	
-  	if (!strcmp (javascript, "js"))
-  		websWrite (wp, "checked=\\\"checked\\\"");
-  	else
-  		websWrite (wp, "checked=\"checked\"");
-  }
-  
+    {
+      if (!strcmp (javascript, "js"))
+	websWrite (wp, "checked=\\\"checked\\\"");
+      else
+	websWrite (wp, "checked=\"checked\"");
+    }
+
   return;
 }
 
@@ -4046,7 +4090,7 @@ struct ej_handler ej_handlers[] = {
 // changed by steve
   {"tf_upnp", ej_tf_upnp},
 // end changed by steve
-
+  {"charset", ej_charset},
   {NULL, NULL}
 };
 #endif /* !WEBS */
