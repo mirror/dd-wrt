@@ -6,7 +6,7 @@ lang_charset.set="iso-8859-2";
 var share = new Object();
 share.firmware="Strojna programska oprema";
 share.time="Èas";
-share.interipaddr="Internetni naslov IP";
+share.interipaddr="Internetni IP naslov";
 share.more="Veè...";
 share.help="Pomoè";
 share.enable="Omogoèi";
@@ -21,8 +21,8 @@ share.statu="Status";
 share.start="Zaèetek";
 share.end="Konec";
 share.proto="Protokol";
-share.ip="Naslov IP";
-share.mac="Naslov MAC";
+share.ip="IP naslov";
+share.mac="MAC naslov";
 share.none="Nobeden";
 share.both="Oboje";
 share.del="Izbri¹i";
@@ -175,8 +175,8 @@ errmsg.err4="Konèni èas mora biti veèji od zaèetnega èasa.";
 errmsg.err5="Dol¾ina naslova MAC ni pravilna.";
 errmsg.err6="Vnesti morate geslo.";
 errmsg.err7="Vnesti morate ime gostitelja.";
-errmsg.err8="Vnesti morate naslov IP ali domensko ime.";
-errmsg.err9="Nepravilni DMZ naslov IP.";
+errmsg.err8="Vnesti morate IP naslov ali domensko ime.";
+errmsg.err9="Nepravilni DMZ IP naslov.";
 errmsg.err10="Potrditveno geslo se ne ujema z vne¹enim geslom. Prosim, ponovite vnos.";
 errmsg.err11="V geslu presledki niso dovoljeni";
 errmsg.err12="Vnesti morate ukaz.";
@@ -204,8 +204,8 @@ errmsg.err28=" ima nepravilni znak, biti mora [ 0 - 9 ].";
 errmsg.err29=" ima nepravilno ascii kodo."
 errmsg.err30=" ima nepravino hexadecimalno ¹tevilko.";
 errmsg.err31=" vrednost je nepravilna.";
-errmsg.err32="naslov IP in prehod nista v isti podmre¾i.";
-errmsg.err33="naslov IP in prehod ne moreta biti enaka.";
+errmsg.err32="IP naslov in prehod nista v isti podmre¾i.";
+errmsg.err33="IP naslov in prehod ne moreta biti enaka.";
 errmsg.err34=" ne sme vsebovati presledka.";
 
 //Wol.asp error messages
@@ -436,7 +436,7 @@ ddnsm.all_noip="Ni medmre¾ne povezave";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS omogoèa dostop do va¹e mre¾e z domenskim imenom namesto z naslovom IP. \
+hddns.right2="DDNS omogoèa dostop do va¹e mre¾e z domenskim imenom namesto z IP naslovom. \
 	Ta storitev upravlja s spremembami va¹ega IP naslova in dinamièno posodobi podatke o va¹i domeni. \
 	Prijaviti se morate pri DynDNS.org, TZO.com ali ZoneEdit.com.";
 
@@ -730,7 +730,7 @@ idx.stp_mess="(onemogoèi za COMCAST ISP)";
 idx.optional="Dodatne nastavitve (potrebno za nekatere ISPje)";
 idx.mtu="MTU";
 idx.h23="Nastavitev mre¾e";
-idx.routerip="IP usmerjalnika";
+idx.routerip="IP naslov usmerjalnika";
 idx.lanip="Lokalni IP naslov";
 idx.legend2="WAN vrata";
 idx.wantoswitch="dodeli WAN vrata k stikalu";
@@ -1158,7 +1158,7 @@ status_router.mem_used="Uporabljeno";
 status_router.mem_buf="Medpomnilniki";
 status_router.mem_cached="Predpmnilnik";
 status_router.mem_active="Dejavno";
-status_router.mem_inactive="Nedajvno";
+status_router.mem_inactive="Nedejavno";
 status_router.legend4="Mre¾a";
 status_router.net_maxports="IP filter najveèje ¹tevilo vrat";
 status_router.net_conntrack="Aktivne IP povezave";
