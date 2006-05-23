@@ -3822,8 +3822,8 @@ static void
 ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *javascript;
-
-  if (ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript) < 2)
+  args=ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
+  if (args<2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
@@ -3831,7 +3831,7 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match (name, match))
     {
-      if (!strcmp (javascript, "js"))
+      if (args==3 && javascript!=NULL && !strcmp (javascript, "js"))
 	websWrite (wp, "selected=\\\"selected\\\"");
       else
 	websWrite (wp, "selected=\"selected\"");
