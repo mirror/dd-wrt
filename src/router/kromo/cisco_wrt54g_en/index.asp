@@ -405,6 +405,8 @@ function init()
 							<input type="hidden" name="action" />
 							<input type="hidden" name="now_proto" value="<% nvram_gozila_get("wan_proto"); %>" />
 							<input type="hidden" name="dhcp_dnsmasq" value="0" />
+							<input type="hidden" name="dns_dnsmasq" value="0" />
+							<input type="hidden" name="auth_dnsmasq" value="0" />
 							<input type="hidden" name="fullswitch" value="0" />
 							<input type="hidden" name="daylight_time" value="0" />
 							<input type="hidden" name="lan_ipaddr" value="4" />
