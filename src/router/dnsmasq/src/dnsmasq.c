@@ -43,7 +43,7 @@ static int pipewrite;
 static int set_dns_listeners(struct daemon *daemon, fd_set *set, int maxfd);
 static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now);
 static void sig_handler(int sig);
-static void manual_delete_lease(void);
+// static void manual_delete_lease(void);
 
 /* int main (int argc, char **argv) */
 /* to avoid confusion from busybox we change from main to dnsmasq_main */
@@ -519,7 +519,7 @@ int dnsmasq_main (int argc, char **argv)
 	      case SIGALRM:
 		if (daemon->dhcp)
 		  {
-		    manual_delete_lease();
+// 		    manual_delete_lease();
 		    lease_prune(NULL, now);
 		    lease_update_file(daemon, now);
 		    lease_collect(daemon);
@@ -895,22 +895,22 @@ int icmp_ping(struct daemon *daemon, struct in_addr addr)
 }
 
 /* added for manual delete lease on SIGALRM */
-void manual_delete_lease(void)
-{
-	FILE *f;
-	struct in_addr ia;
-	char buf[256];
-	struct dhcp_lease *lease;
-
-	if ((f = fopen("/tmp/.delete_leases", "r")) == NULL) return;
-	while (fgets(buf, sizeof(buf), f)) {
-		ia.s_addr = inet_addr(buf);
-		if (ia.s_addr != INADDR_NONE) {
-			lease = lease_find_by_addr(ia);
-			if (lease) lease_prune(lease, 0);
-		}
-	}
-	fclose(f);
-
-	unlink("/tmp/.delete_leases");
-}
+// void manual_delete_lease(void)
+// {
+// 	FILE *f;
+// 	struct in_addr ia;
+// 	char buf[256];
+// 	struct dhcp_lease *lease;
+// 
+// 	if ((f = fopen("/tmp/.delete_leases", "r")) == NULL) return;
+// 	while (fgets(buf, sizeof(buf), f)) {
+// 		ia.s_addr = inet_addr(buf);
+// 		if (ia.s_addr != INADDR_NONE) {
+// 			lease = lease_find_by_addr(ia);
+// 			if (lease) lease_prune(lease, 0);
+// 		}
+// 	}
+// 	fclose(f);
+// 
+// 	unlink("/tmp/.delete_leases");
+// }
