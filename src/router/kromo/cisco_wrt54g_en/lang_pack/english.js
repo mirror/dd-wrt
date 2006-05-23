@@ -344,7 +344,6 @@ alive.titl=" - Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="Schedule Reboot";
 alive.sevr1="Schedule Reboot";
-alive.time="Time (in seconds)";
 alive.hour="At a set Time";
 alive.legend2="WDS/Connection Watchdog";
 alive.sevr2="Enable Watchdog";
