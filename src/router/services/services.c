@@ -924,15 +924,59 @@ start_dnsmasq (void)
 	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
 	if (nvram_match ("dns_dnsmasq", "0")) 
 	  {
-		struct dns_lists *dns = get_dns_list();
-		if (dns) {
-			buf[0] = 0;
-			for (n = 0 ; n < dns->num_servers; ++n) {
-				sprintf(buf + strlen(buf), ",%s", dns->dns_server[n]);
-			}
-			fprintf(fp, "dhcp-option=6%s\n", buf);
-			free(dns);
-	  }
+  dns_list = get_dns_list ();
+
+  if (nvram_match ("local_dns", "1"))
+    {
+
+      if (dns_list
+	  && (nvram_invmatch ("lan_ipaddr", "")
+	      || strlen (dns_list->dns_server[0]) > 0
+	      || strlen (dns_list->dns_server[1]) > 0
+	      || strlen (dns_list->dns_server[2]) > 0))
+	{
+
+	  fprintf (fp, "dhcp-option=6,");
+
+	  if (strlen (dns_list->dns_server[0]) > 0)
+	    fprintf (fp, "%s", dns_list->dns_server[0]);
+
+	  if (strlen (dns_list->dns_server[1]) > 0)
+	    fprintf (fp, " %s", dns_list->dns_server[1]);
+
+	  if (strlen (dns_list->dns_server[2]) > 0)
+	    fprintf (fp, " %s", dns_list->dns_server[2]);
+
+	  fprintf (fp, "\n");
+	}
+    }
+  else
+    {
+
+      if (dns_list
+	  && (strlen (dns_list->dns_server[0]) > 0
+	      || strlen (dns_list->dns_server[1]) > 0
+	      || strlen (dns_list->dns_server[2]) > 0))
+	{
+
+	  fprintf (fp, "dhcp-option=6,");
+
+	  if (strlen (dns_list->dns_server[0]) > 0)
+	    fprintf (fp, "%s", dns_list->dns_server[0]);
+
+	  if (strlen (dns_list->dns_server[1]) > 0)
+	    fprintf (fp, " %s", dns_list->dns_server[1]);
+
+	  if (strlen (dns_list->dns_server[2]) > 0)
+	    fprintf (fp, " %s", dns_list->dns_server[2]);
+
+	  fprintf (fp, "\n");
+	}
+    }
+
+  if (dns_list)
+    free (dns_list);
+
 	if (nvram_match ("auth_dnsmasq", "1"))
 	  {
 		fprintf (fp, "dhcp-authoritative\n");
