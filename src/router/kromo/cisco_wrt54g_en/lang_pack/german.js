@@ -336,7 +336,6 @@ alive.titl=" - Lebenserhaltung";
 alive.h2="Lebenserhaltung";
 alive.legend="Geplanter Neustart";
 alive.sevr1="Reboot Planen";
-alive.time="Zeit (in Sekundenj)";
 alive.hour="Zu einem festen Zeitpunkt";
 alive.legend2="WDS/Verbindungsüberwachung";
 alive.sevr2="Überwachung Einschalten";
