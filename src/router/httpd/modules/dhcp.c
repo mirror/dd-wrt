@@ -11,6 +11,7 @@
 #include <broadcom.h>
 
 #define DHCP_MAX_COUNT 254
+#define EXPIRES_NEVER 0xFFFFFFFF /* static lease */
 
 char *
 dnsmasq_reltime (char *buf, time_t t)
