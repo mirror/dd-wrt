@@ -862,7 +862,7 @@ start_dnsmasq (void)
 
   if (nvram_match ("dhcpd_usejffs", "1"))
     {
-      if (!(fp = fopen ("/jffs/udhcpd.leases", "a")))
+      if (!(fp = fopen ("/jffs/dnsmasq.leases", "a")))
 	{
 	  usejffs = 0;
 	}
@@ -893,14 +893,6 @@ start_dnsmasq (void)
     }
 
   fprintf (fp, "resolv-file=/tmp/resolv.dnsmasq\n");
-  if (usejffs)
-    { 
-      fprintf (fp, "dhcp-leasefile=/jffs/udhcpd.leases\n");
-    }
-  else
-    {
-      fprintf (fp, "dhcp-leasefile=/tmp/udhcpd.leases\n");
-    }
 
   /* DHCP domain */
    if (nvram_match ("dhcp_domain", "wan"))
@@ -922,12 +914,22 @@ start_dnsmasq (void)
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
-	fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
-	if (nvram_match ("dns_dnsmasq", "1")) {
-	dns_list = get_dns_list ();
+        if (usejffs)
+         { 
+           fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
+         }
+        else
+         {
+           fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
+         }
 
-  if (nvram_match ("local_dns", "1"))
-    {
+  fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
+  if (nvram_match ("dns_dnsmasq", "1")) 
+  {
+    dns_list = get_dns_list ();
+
+    if (nvram_match ("local_dns", "1"))
+      {
 
       if (dns_list
 	  && (nvram_invmatch ("lan_ipaddr", "")
@@ -949,7 +951,7 @@ start_dnsmasq (void)
 
 	  fprintf (fp, "\n");
 	}
-    }
+      }
   else
     {
 
