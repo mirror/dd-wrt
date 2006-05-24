@@ -7,6 +7,9 @@
 var lang_charset = new Object();
 lang_charset.set="iso-8859-1";
 
+var donate = new Object();
+donate.mb="Vous pouvez également faire un don sur le compte Moneybookers : mb@dd-wrt.com";
+
 var share = new Object();
 share.firmware="Micrologiciel";
 share.time="Heure";
@@ -143,7 +146,7 @@ sbutton.autorefresh="Auto-Actualisation On";
 sbutton.backup="Sauvegarder";
 sbutton.restore="Restaurer";
 sbutton.cptotext="Copier dans la zone de texte";
-sbutton.runcmd="Exécutez la commande";
+sbutton.runcmd="Exécutez les commandes";
 sbutton.startup="Sauver Démarrage";
 sbutton.firewall="Sauver Pare-feu";
 sbutton.wol="Réveiller";
@@ -373,7 +376,7 @@ config.mess4="Ne restaurer que des fichiers sauvegardés par cette version de mic
 //help container
 var hconfig = new Object();
 hconfig.right2="Vous devriez sauvegarder votre configuration courante au cas où vous auriez besoin de réinitialiser votre routeur à ses paramètres usine.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.backup + "\"</em> pour enregistrer la configuration actuelle.";
-hconfig.right4="Cliquez sur le bouton <em>Parcourir...</em> pour sélectionner le fichier de configuration à restaurer.<br /><br />Cliquez sur le bouton <em>" + sbutton.restore + "</em> pour écraser la configuration courante par celle du fichier de configuration.";
+hconfig.right4="Cliquez sur le bouton <em>\"Parcourir...\"</em> pour sélectionner le fichier de configuration à restaurer.<br /><br />Cliquez sur le bouton <em>\"" + sbutton.restore + "\"</em> pour écraser la configuration courante par celle du fichier de configuration.";
 
 
 
@@ -463,7 +466,7 @@ diag.firewall="Pare-feu";
 //help container
 var hdiag = new Object();
 hdiag.right2="Vous pouvez lancer des lignes de commandes par le biais de l'interface web. \
-	Remplissez le change texte avec vos commandes et cliquez sur le bouton <em>" + sbutton.runcmd + "</em> pour les soumettre.";
+	Saisissez dans la zone de texte les commandes à exécuter et cliquez sur le bouton <em>\"" + sbutton.runcmd + "\"</em> pour les soumettre.";
 
 
 
@@ -473,8 +476,8 @@ var dmz = new Object();
 dmz.titl=" - DMZ";
 dmz.h2="Zone démilitarisée (DMZ)";
 dmz.legend="DMZ";
-dmz.serv="Utiliser la DMZ";
-dmz.host="Adresse IP hôte de la DMZ";
+dmz.serv="DMZ";
+dmz.host="Adresse IP de l'hôte de la DMZ";
 
 
 //help container
@@ -496,7 +499,7 @@ factdef.mess1="Attention ! Si vous cliquez sur OK, le routeur va réinitialiser l
 //help container
 var hfactdef = new Object();
 hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut de tous les paramètres de configuration, puis \
-	cliquez sur <em>\"" + sbutton.save + "\"</em> (Enregistrer les paramètres). Tous les paramètres enregistrés précédemment seront \
+	cliquez sur <em>\"" + sbutton.save + "\"</em>. Tous les paramètres enregistrés précédemment seront \
 	perdus une fois les paramètres usine restaurés. Par défaut, cette fonctionnalité est désactivée.";
 
 
@@ -504,11 +507,11 @@ hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut d
 // ******************************************* FilterIP%AC.asp *******************************************//
 
 var filterIP = new Object();
-filterIP.titl=" - Liste des PCs";
-filterIP.h2="Liste des PCs";
-filterIP.h3="Saisissez une adresse MAC des PCs au format: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Saisissez l'adresse IP des PCs";
-filterIP.h33="Saisissez l'intervalle d'adresse IP des PCs";
+filterIP.titl=" - Liste des Ordinateurs";
+filterIP.h2="Liste des Ordinateurs";
+filterIP.h3="Saisissez l'adresse MAC des ordinateurs au format: xx:xx:xx:xx:xx:xx";
+filterIP.h32="Saisissez l'adresse IP des ordinateurs";
+filterIP.h33="Saisissez l'intervalle d'adresses IP des ordinateurs";
 filterIP.ip_range="Intervalle IP";
 
 
@@ -1554,40 +1557,21 @@ hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authenticatio
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
 var fail = new Object();
-fail.mess1="The values you entered are invalid. Please try again.";
-fail.mess2="Upgrade failed.";
+fail.mess1="Les paramètres sont incorrects. Veuillez essayer de nouveau.";
+fail.mess2="La mise à jour a échoué.";
 
 
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
 var success = new Object();
-success.saved="Settings saved.";
-success.restore="Settings restored.<br/>Le routeur redémarre. Patientez un moment SVP ...";
-success.upgrade="Upgrade successful.<br/>Le routeur redémarre. Patientez un moment SVP ...";
-success.success_noreboot="Settings are successful.";
+success.saved="Les paramètres ont été enregistrés avec succès.";
+success.restore="Les paramètres ont été restaurés avec succès.<br/>Le routeur redémarre. Patientez un moment SVP ...";
+success.upgrade="Mise à jour réussie.<br/>Le routeur redémarre. Patientez un moment SVP ...";
+success.success_noreboot="Les paramètres ont été enregistrés avec succès.";
 success.success_reboot=success.success_noreboot + "<br />Le routeur redémarre. Patientez un moment SVP ...";
 
-success.alert_reset="All configuration settings have been restored to their default values.<br /><br />";
-success.alert1="Please check the followings before connecting again:";
-success.alert2="If you have changed your router&#39;s IP address, please note that you must release/renew your client(s) address(s) on the network.";
-success.alert3="If you are connected via WLAN, please join the network and then click <em>Continue</em>.";
-
-
-
-
-
-
-
-// *****************************************************		OLD PAGES 		************************************************************************//
-// **************************************************************** DHCPTable.asp **********************************************************************//
-
-var dhcp = new Object();
-dhcp.titl=" - DHCP Active IP Table";
-dhcp.h2="DHCP Active IP Table";
-dhcp.server="DHCP Server IP Address :";
-dhcp.tclient="Client Host Name";
-
-
-var donate = new Object();
-donate.mb="Vous pouvez également faire un don sur le compte Moneybookers : mb@dd-wrt.com";
+success.alert_reset="Tous les paramètres ont été initialisés à leur valeur par défaut.<br /><br />";
+success.alert1="Veuillez vérifier les points suivants avant de vous connecter de nouveau :";
+success.alert2="Si l'adresse IP du routeur a changé, veuillez SVP renouveler les adresses IP de tous les clients connectés.";
+success.alert3="Si vous êtes connecté au routeur par une connexion sans fil, veuillez SVP vous connecter de nouveau avant de cliquer sur le bouton <em>Continuer</em>.";
