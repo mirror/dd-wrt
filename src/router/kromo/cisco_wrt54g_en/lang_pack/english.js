@@ -36,6 +36,7 @@ share.proto="Protocol";
 share.ip="IP Address";
 share.mac="MAC Address";
 share.none="None";
+share.none2="No";
 share.both="Both";
 share.del="Delete";
 share.remove="Remove";
@@ -128,6 +129,9 @@ share.key="Key";
 share.wireless="Wireless";
 share.dhcp="DHCP";
 share.styl="Style";
+share.err="error";
+share.errs="errors";
+
 
 
 var sbutton = new Object();
