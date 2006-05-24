@@ -944,6 +944,7 @@ start_wan (int status)
   switch (brand)
     {
     case ROUTER_BUFFALO_WBR54G:
+    case ROUTER_MICROSOFT_MN700:
     case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_MOTOROLA_V1:
 		if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))

@@ -1458,6 +1458,7 @@ check_cfe_nv (void)
       break;
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WZRRSG54:
+    case ROUTER_MICROSOFT_MN700:
 
       ret += check_nv ("lan_hwnames", "et0 wl0");
       ret += check_nv ("lan_ifnames", "eth0 eth2");
