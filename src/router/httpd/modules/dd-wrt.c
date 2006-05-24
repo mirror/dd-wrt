@@ -1181,10 +1181,10 @@ showOption (webs_t wp, char *propname, char *nvname)
 	     "<div class=\"label\">%s</div><select name=\"%s\">\n",
 	     propname, nvname);
   websWrite (wp,
-	     "<script type=\"text/javascript\"><option value=\\\"0\\\" %s>Capture(share.disabled)</option></script>\n",
+	     "<option value=\"0\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></option>\n",
 	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
-	     "<script type=\"text/javascript\"><option value=\\\"1\\\" %s>Capture(share.enabled)</option></script>\n</select>\n",
+	     "<option value=\"1\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></option>\n</select>\n",
 	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "</div>\n");
 
