@@ -11,7 +11,7 @@ STRIP = $(CROSS)strip
 ifeq ($(PLATFORM),ppc)
 CCFLAGS = -g -D_GNU_SOURCE -Wall -I../../linuxppc/linux-2.4.19-rc3/include
 else
-CCFLAGS = -Os -mips32 -mtune=mips32 -pipe -D_GNU_SOURCE -Wall -I../../linux/linux.v23/include
+CCFLAGS = -Os -mips32 -mtune=mips32 -pipe -D_GNU_SOURCE -Wall -I$(LINUXDIR)/include
 endif
 
 ifeq ($(strip $(DOSTATIC)),true)

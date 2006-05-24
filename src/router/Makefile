@@ -42,9 +42,9 @@ export PLATFORM := $(PLATFORM)-uclibc
 endif
 
 ifeq ($(CONFIG_MSSID),y)
-export LINUXDIR := $(SRCBASE)/linux/linux.v24
+export LINUXDIR := $(SRCBASE)/linux/brcm/linux.v24
 else
-export LINUXDIR := $(SRCBASE)/linux/linux.v23
+export LINUXDIR := $(SRCBASE)/linux/brcm/linux.v23
 endif
 
 ifeq ($(PLATFORM),mipsel)
@@ -92,6 +92,7 @@ obj-y += libcrypto
 # Configuration
 #
 CONFIG_IPTABLES=y
+#CONFIG_WLC=y
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_HTTPD) += httpd validate
@@ -180,6 +181,7 @@ obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_E2FSPROGS) += e2fsprogs
 obj-$(CONFIG_HTTPREDIRECT) += http-redirect
 obj-$(CONFIG_SMTPREDIRECT) += smtp-redirect
+obj-$(CONFIG_WLC) += wlc
 
 obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
 obj-install := $(foreach obj,$(obj-y),$(obj)-install)
@@ -300,11 +302,7 @@ endif
 ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
-ifeq ($(CONFIG_MSSID),y)
-	../../opt/loader-0.02/lzma e ../linux/linux.v24/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinuz
-else
-	../../opt/loader-0.02/lzma e ../linux/linux.v23/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinuz
-endif
+	../../opt/loader-0.02/lzma e $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinuz
 	
 #endif
 #
