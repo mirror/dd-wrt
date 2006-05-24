@@ -64,6 +64,17 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 	    ++p;
 	  if ((p = strrchr (ip, '.')) == NULL)
 	    continue;
+	  if (nvram_match ("maskmac", "1"))
+	    {
+	      mac[0] = 'x';
+              mac[1] = 'x';
+              mac[3] = 'x';
+              mac[4] = 'x';
+              mac[6] = 'x';
+              mac[7] = 'x';
+              mac[9] = 'x';
+              mac[10] = 'x';
+	    }
 	  websWrite (wp, "%c'%s','%s','%s','%s','%s'",
 		     (count ? ',' : ' '),
 		     (hostname[0] ? hostname : "unknown"),
