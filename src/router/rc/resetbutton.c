@@ -286,7 +286,7 @@ resetbutton_main (int argc, char *argv[])
 
   if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN || brand == ROUTER_RT210W
       || brand == ROUTER_MOTOROLA || brand == ROUTER_BUFFALO_WBR2G54S
-      || brand == ROUTER_BELKIN_F5D7230)
+      || brand == ROUTER_BELKIN_F5D7230 || brand == ROUTER_MICROSOFT_MN700)
     {
       puts ("sorry, your unit does not support resetbutton feature");
       nvram_set ("resetbutton_enable", "0");
