@@ -885,7 +885,7 @@ management.lang_french="Französisch";
 management.lang_german="Deutsch";
 management.lang_italian="Italienisch";
 management.lang_brazilian="Portogiesisch (Braz.)";
-management.lang_slovenian="Slovenisch";
+management.lang_slovenian="Slowenisch";
 management.lang_spanish="Spanisch";
 management.lang_swedish="Schwedisch";
 
