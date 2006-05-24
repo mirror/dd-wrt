@@ -90,25 +90,7 @@ minigzip$(EXE): minigzip.o $(LIBS)
 	$(CC) $(CFLAGS) -o $@ minigzip.o $(LDFLAGS)
 
 install: $(LIBS)
-	-@if [ ! -d $(exec_prefix) ]; then mkdir -p $(exec_prefix); fi
-	-@if [ ! -d $(includedir)  ]; then mkdir -p $(includedir); fi
-	-@if [ ! -d $(libdir)      ]; then mkdir -p $(libdir); fi
-	-@if [ ! -d $(man3dir)     ]; then mkdir -p $(man3dir); fi
-	cp zlib.h zconf.h $(includedir)
-	chmod 644 $(includedir)/zlib.h $(includedir)/zconf.h
-	cp $(LIBS) $(libdir)
-	cd $(libdir); chmod 755 $(LIBS)
-	-@(cd $(libdir); $(RANLIB) libz.a || true) >/dev/null 2>&1
-	cd $(libdir); if test -f $(SHAREDLIBV); then \
-	  rm -f $(SHAREDLIB) $(SHAREDLIBM); \
-	  ln -s $(SHAREDLIBV) $(SHAREDLIB); \
-	  ln -s $(SHAREDLIBV) $(SHAREDLIBM); \
-	  (ldconfig || true)  >/dev/null 2>&1; \
-	fi
-	cp zlib.3 $(man3dir)
-	chmod 644 $(man3dir)/zlib.3
-# The ranlib in install is needed on NeXTSTEP which checks file times
-# ldconfig is for Linux
+	@true
 
 uninstall:
 	cd $(includedir); \
