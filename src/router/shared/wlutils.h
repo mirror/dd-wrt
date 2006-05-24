@@ -17,6 +17,12 @@
 
 #include <typedefs.h>
 #include <wlioctl.h>
+#ifndef WLC_IOCTL_SMLEN
+#define	WLC_IOCTL_SMLEN		256		/* "small" length ioctl buffer required */
+#endif
+#ifndef BCME_BUFTOOSHORT
+#define BCME_BUFTOOSHORT		-14	/* Buffer too short */
+#endif
 
 /* Sveasoft addition - get wireless interface */
 extern char *get_wdev (void);
@@ -83,7 +89,9 @@ extern int wl_iovar_set (char *ifname, char *iovar, void *param,
 			 int paramlen);
 extern int wl_iovar_get (char *ifname, char *iovar, void *bufptr, int buflen);
 extern int wl_iovar_setint (char *ifname, char *iovar, int val);
-extern int wl_iovar_getint (char *ifname, char *iovar, int *val);
+
+
+//extern int wl_iovar_getint (char *ifname, char *iovar, int *val);
 
 extern int wl_bssiovar_setbuf (char *ifname, char *iovar, int bssidx,
 			       void *param, int paramlen, void *bufptr,
