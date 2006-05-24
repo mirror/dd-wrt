@@ -3724,11 +3724,16 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
       if (cmp)
 	{
 	  fclose (in);
-	  *cmp += strlen (sstring);
+	  cmp += strlen (sstring);
+	  cprintf("source %s\n",cmp);
 	  char *t2 = strstr (cmp, "\"");
 	  if (t2 == NULL)
+	    {
+	    cprintf(" length was null\n");
 	    return;		//error (typo?)
-	  int len = *t2 - *cmp;
+	    }
+	  int len = t2 - cmp;
+	  cprintf("length = %d\n",len);
 	  if (len < 0)
 	    return;		//error (unknown)
 	  char dest[128];
