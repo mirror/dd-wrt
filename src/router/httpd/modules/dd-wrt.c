@@ -1181,11 +1181,11 @@ showOption (webs_t wp, char *propname, char *nvname)
 	     "<div class=\"label\">%s</div><select name=\"%s\">\n",
 	     propname, nvname);
   websWrite (wp,
-	     "<option value=\"0\" %s>Off</option>\n",
-	     nvram_match (nvname, "0") ? "selected=\"selected\"" : "");
+	     "<script type=\"text/javascript\"><option value=\\\"0\\\" %s>Capture(share.disabled)</option></script>\n",
+	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
-	     "<option value=\"1\" %s>On</option></select>\n",
-	     nvram_match (nvname, "1") ? "selected=\"selected\"" : "");
+	     "<script type=\"text/javascript\"><option value=\\\"1\\\" %s>Capture(share.enabled)</option></script>\n</select>\n",
+	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "</div>\n");
 
 }
@@ -1571,6 +1571,12 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_outdoor", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_diversity", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_txantenna", prefix);
+  copytonv (wp, n);
+  sprintf (n, "%s_rxantenna", prefix);
+  copytonv (wp, n);
 #endif
   sprintf (n, "%s_closed", prefix);
   copytonv (wp, n);
@@ -1770,12 +1776,40 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_turbo[16];
   char wl_xchanmode[16];
   char wl_outdoor[16];
+  char wl_diversity[16];
+  char wl_rxantenna[16];
+  char wl_txantenna[16];
   sprintf (wl_turbo, "%s_turbo", prefix);
   sprintf (wl_xchanmode, "%s_xchanmode", prefix);
   sprintf (wl_outdoor, "%s_outdoor", prefix);
+  sprintf (wl_diversity, "%s_diversity", prefix);
+  sprintf (wl_rxantenna, "%s_rxantenna", prefix);
+  sprintf (wl_txantenna, "%s_txantenna", prefix);
   showOption (wp, "Turbo Mode", wl_turbo);
   showOption (wp, "Extended Channel Mode", wl_xchanmode);
   showOption (wp, "Outdoor Band", wl_outdoor);
+  showOption (wp, "Diversity",wl_diversity);
+  websWrite (wp,"<div class=\"setting\"><div class=\"label\">TX Antenna</div><select name=\"%s\" >\n",wl_txantenna);
+      websWrite (wp, "<option value=\"0\" %s>Diversity</option>\n",
+		 nvram_match (wl_txantenna, "0") ? "selected" : "");
+      websWrite (wp, "<option value=\"1\" %s>Primary</option>\n",
+		 nvram_match (wl_txantenna, "1") ? "selected" : "");
+      websWrite (wp, "<option value=\"2\" %s>Secondary</option>\n",
+		 nvram_match (wl_txantenna, "2") ? "selected" : "");
+      websWrite (wp, "</select>\n");
+      websWrite (wp, "</div>\n");
+
+
+  websWrite (wp,"<div class=\"setting\"><div class=\"label\">RX Antenna</div><select name=\"%s\" >\n",wl_rxantenna);
+      websWrite (wp, "<option value=\"0\" %s>Diversity</option>\n",
+		 nvram_match (wl_rxantenna, "0") ? "selected" : "");
+      websWrite (wp, "<option value=\"1\" %s>Primary</option>\n",
+		 nvram_match (wl_rxantenna, "1") ? "selected" : "");
+      websWrite (wp, "<option value=\"2\" %s>Secondary</option>\n",
+		 nvram_match (wl_rxantenna, "2") ? "selected" : "");
+      websWrite (wp, "</select>\n");
+      websWrite (wp, "</div>\n");
+   
 #endif
 
   char wl_ssid[16];
