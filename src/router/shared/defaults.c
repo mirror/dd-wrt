@@ -1227,7 +1227,7 @@ struct nvram_tuple router_defaults[] = {
   {"dhcp_dnsmasq", "1", 0},
   {"enable_game", "0", 0},
 #endif
-  {"dns_dnsmasq", "0", 0},
+  {"dns_dnsmasq", "1", 0},
   {"auth_dnsmasq", "1", 0},
 
   {"pptp_use_dhcp", "0", 0},	/* pptp will use dhcp to obtain ip address, netmask and gateway */
