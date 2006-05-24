@@ -692,6 +692,7 @@ info.titl=" - Info";
 info.h2="System Information";
 info.wlanmac="Wireless MAC";
 info.srv="Services";
+info.ap="Access Point";
 
 
 

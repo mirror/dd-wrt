@@ -28,6 +28,7 @@ share.proto="Protocole";
 share.ip="Adresse IP";
 share.mac="Adresse MAC";
 share.none="Aucun";
+share.none2="aucune";
 share.both="Les deux";
 share.del="Supprimer";
 share.remove="Enlever";
@@ -120,6 +121,8 @@ share.key="Clé";
 share.wireless="Sans fil";
 share.dhcp="DHCP";
 share.styl="Skin";
+share.err="erreur";
+share.errs="erreurs";
 
 
 var sbutton = new Object();
@@ -586,7 +589,7 @@ filter.port113="Filtre IDENT (port 113)";
 var hfirewall = new Object();
 hfirewall.right1="Firewall Protection:";
 hfirewall.right2="Activez cette fonctionnalité pour utiliser la technologie SPI (Stateful Packet Inspection) \
-		et procéder à une vérification plus poussée des paquets de données infiltrant votre environnement réseau";
+		et procéder à une vérification plus poussée des paquets de données infiltrant votre environnement réseau.";
 
 
 
@@ -687,7 +690,7 @@ info.titl=" - Information";
 info.h2="Information du Système";
 info.wlanmac="WLAN MAC";
 info.srv="Services";
-
+info.ap="Points d'Access";
 
 
 // ******************************************* index_heartbeat.asp *******************************************//
@@ -893,7 +896,8 @@ management.jffs_clean="Effacer JFFS2";
 management.lang_legend="Langue";
 management.lang_srv="Langue";
 management.lang_bulgarian="bulgare";
-management.lang_tradchinese="chinois traditionnel";
+management.lang_chinese_traditional="chinois traditionnel";
+management.lang_chinese_simplified="chinois simplifié";
 management.lang_croatian="croate";
 management.lang_czech="tchèque";
 management.lang_dutch="hollandais";
