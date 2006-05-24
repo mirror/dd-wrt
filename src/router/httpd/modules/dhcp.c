@@ -49,8 +49,8 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
   eval ("killall", "-SIGUSR2", "dnsmasq");
 
   /* Parse leases file */
-  if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
-    fp = fopen ("/jffs/udhcpd.leases", "r");
+  if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
+    fp = fopen ("/jffs/dnsmasq.leases", "r");
   if (fp)
     {
       count = 0;
@@ -149,7 +149,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
          {
            if (expires > 60 * 60 * 24)
              {
-               sprintf (expires_time + strlen (expires_time), "%ld days, ",
+               sprintf (expires_time + strlen (expires_time), "%ld days ",
                         expires / (60 * 60 * 24));
                expires %= 60 * 60 * 24;
              }

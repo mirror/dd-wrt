@@ -58,11 +58,15 @@ validate_lan_ipaddr (webs_t wp, char *value, struct variable *v)
     {
       unlink ("/tmp/udhcpd.leases");
       unlink ("/jffs/udhcpd.leases");
+      unlink ("/tmp/dnsmasq.leases");
+      unlink ("/jffs/dnsmasq.leases");
     }
   if (strcmp (nvram_safe_get ("lan_netmask"), lan_netmask))
     {
       unlink ("/tmp/udhcpd.leases");
       unlink ("/jffs/udhcpd.leases");
+      unlink ("/tmp/dnsmasq.leases");
+      unlink ("/jffs/dnsmasq.leases");
     }
 
   if (strcmp (lan_ipaddr, nvram_safe_get ("lan_ipaddr")) ||
