@@ -921,8 +921,8 @@ start_dnsmasq (void)
          {
            fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
          }
-
-  fprintf (fp, "dhcp-lease-max=%s\n", (nvram_safe_get ("dhcp_num") + nvram_safe_get("static_leasenum")));
+  int dhcp_max = nvram_safe_get ("dhcp_num") + nvram_safe_get("static_leasenum");
+  fprintf (fp, "dhcp-lease-max=%s\n", dhcp_max);
   fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
   if (nvram_match ("dns_dnsmasq", "0")) 
   {
