@@ -3744,7 +3744,7 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
 	  strncpy (dest, cmp, len);
 	  dest[len] = 0;
 	  cprintf("destination %s\n",dest);
-	  websWrite (wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",dest);
+	  websWrite (wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />",dest);
 	  return;
 	}
     }
