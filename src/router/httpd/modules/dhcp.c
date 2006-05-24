@@ -49,6 +49,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
       char ip[32];
       char hostname[256];
       char *p;
+      char *buf;
 
       /* Write out leases file from DNSMasq */
       eval ("killall", "-SIGUSR2", "dnsmasq");
@@ -266,7 +267,7 @@ delete_leases (webs_t wp)
              return -1;
         }
        if (ipcount == 0)
-         return;
+         return -1;
       fgets (buff, sizeof (buff), fp_w);
       sprintf (sigusr1, "-%d", SIGUSR2);
       eval ("kill", sigusr1, buff);  // call udhcpd to delete ip from lease table
