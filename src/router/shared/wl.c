@@ -63,7 +63,7 @@ wl_probe (char *name)
   return ret;
 }
 
-#ifndef HAVE_MSSID
+//#ifndef HAVE_MSSID
 int
 wl_set_val (char *name, char *var, void *val, int len)
 {
@@ -113,7 +113,7 @@ wl_get_int (char *name, char *var, int *val)
 {
   return wl_get_val (name, var, val, sizeof (*val));
 }
-#else
+//#else
 int
 wl_iovar_getbuf (char *ifname, char *iovar, void *param, int paramlen,
 		 void *bufptr, int buflen)
@@ -340,6 +340,7 @@ wl_bssiovar_setint (char *ifname, char *iovar, int bssidx, int val)
   return wl_bssiovar_set (ifname, iovar, bssidx, &val, sizeof (int));
 }
 
+
 /*
 void 
 wl_printlasterror(char *name)
@@ -355,4 +356,4 @@ wl_printlasterror(char *name)
 }
 */
 
-#endif
+//#endif
