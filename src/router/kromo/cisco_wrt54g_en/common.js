@@ -917,7 +917,7 @@ function setElementMask(id, state) {
 
 /* Added by Botho 22.May.06 */
 // change charset meta tag according to language selected
-function setMetaContent() {
+/* function setMetaContent() {
 	mymetatags = document.getElementsByTagName("meta");
 	
 	for (i=0;i < mymetatags.length;i++)
@@ -930,3 +930,4 @@ function setMetaContent() {
 		//alert(mymetatags[i].getAttribute("content"));
 	}
 }
+*/
