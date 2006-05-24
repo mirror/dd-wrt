@@ -5,7 +5,6 @@
 {lan_gateway::<% nvram_get("lan_gateway"); %>}
 {lan_dns::<% nvram_get("sv_localdns"); %>}
 {lan_proto::<% nvram_get("lan_proto"); %>}
-{dhcp_enabled::<% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %>}
 {dhcp_daemon::<% nvram_else_match("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %>}
 {dhcp_start::<% nvram_get("dhcp_start"); %>}
 {dhcp_num::<% nvram_get("dhcp_num"); %>}
