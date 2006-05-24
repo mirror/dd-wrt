@@ -231,14 +231,14 @@ delete_leases (webs_t wp)
       char **ipbuf;
 
       if (nvram_match ("lan_proto", "static"))
-        return;
+        return -1;
 
       unlink ("/tmp/.delete_leases");
 
       if (!(fp_w = fopen ("/tmp/.delete_leases", "w")))
         {
           websError (wp, 400, "Write leases error\n");
-          return;
+          return -1;
         }
       int ipcount = 0;
       for (i = 0; i < DHCP_MAX_COUNT; i++)
@@ -263,7 +263,7 @@ delete_leases (webs_t wp)
           if (!(fp_w = fopen ("/var/run/dnsmasq.pid", "r")))
            {
              websError (wp, 400, "Write leases error\n");
-             return;
+             return -1;
         }
        if (ipcount == 0)
          return;
@@ -282,7 +282,7 @@ delete_leases (webs_t wp)
        if (!(fp = fopen ("/jffs/udhcpd.leases", "r")))
          {
            perror ("could not open input file");
-           return;
+           return -1;
          }
      }
       FILE *nfp = fopen ("/tmp/newdhcp.leases", "wb");
@@ -333,7 +333,7 @@ delete_leases (webs_t wp)
       if (!(fp_w = fopen ("/var/run/udhcpd.pid", "r")))
      {
        websError (wp, 400, "Write leases error\n");
-       return;
+       return -1;
      }
       fgets (buff, sizeof (buff), fp_w);
 
