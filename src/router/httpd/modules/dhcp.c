@@ -49,7 +49,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
       char ip[32];
       char hostname[256];
       char *p;
-      char *buf;
 
       /* Write out leases file from DNSMasq */
       eval ("killall", "-SIGUSR2", "dnsmasq");
