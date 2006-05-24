@@ -625,7 +625,8 @@ start_udhcpd (void)
 	   get_single_ip (nvram_safe_get ("lan_ipaddr"), 2),
 	   atoi (nvram_safe_get ("dhcp_start")) +
 	   atoi (nvram_safe_get ("dhcp_num")) - 1);
-  fprintf (fp, "max_leases 254\n");	// Need to adjust ?
+  int dhcp_max = atoi (nvram_safe_get("dhcp_num")) + atoi (nvram_safe_get("static_leasenum"));
+  fprintf (fp, "max_leases %d\n", dhcp_max);
   fprintf (fp, "interface %s\n", nvram_safe_get ("lan_ifname"));
   fprintf (fp, "remaining yes\n");
   fprintf (fp, "auto_time 30\n");	// N seconds to update lease table
