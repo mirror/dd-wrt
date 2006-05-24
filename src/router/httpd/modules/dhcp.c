@@ -13,8 +13,8 @@
 #define DHCP_MAX_COUNT 254
 #define EXPIRES_NEVER 0xFFFFFFFF /* static lease */
 
-char *
-dnsmasq_reltime (char *buf, time_t t)
+char 
+*dnsmasq_reltime (char *buf, time_t t)
 {
   int days;
   int min;
@@ -25,7 +25,6 @@ dnsmasq_reltime (char *buf, time_t t)
   sprintf (buf, "%d day%s %02d:%02d:%02d", days, ((days == 1) ? "" : "s"),
 	   ((min / 60) % 24), (min % 60), (int) (t % 60));
   return buf;
-
 }
 
 /*dump in array: hostname,mac,ip,expires
@@ -33,247 +32,241 @@ read leases from leasefile as: expires mac ip hostname */
 void
 ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 {
-
-  if (nvram_match ("dhcp_dnsmasq", "1"))
-  {
   FILE *fp;
   unsigned long expires;
-  char mac[32];
-  char ip[32];
-  char hostname[256];
-  char buf[512];
-  int count;
-  char *p;
-
-  /* Dump leases from DNSMasq */
-  eval ("killall", "-SIGUSR2", "dnsmasq");
-
-  /* Parse leases file */
-  if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
-    fp = fopen ("/jffs/dnsmasq.leases", "r");
-  if (fp)
-    {
-      count = 0;
-      while (fgets (buf, sizeof (buf), fp))
-	{
-	  if (sscanf (buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname)
-	      != 4)
-	    continue;
-	  p = mac;
-	  while ((*p = toupper (*p)) != 0)
-	    ++p;
-	  if ((p = strrchr (ip, '.')) == NULL)
-	    continue;
-	  if (nvram_match ("maskmac", "1"))
-	    {
-	      mac[0] = 'x';
-              mac[1] = 'x';
-              mac[3] = 'x';
-              mac[4] = 'x';
-              mac[6] = 'x';
-              mac[7] = 'x';
-              mac[9] = 'x';
-              mac[10] = 'x';
-	    }
-	  websWrite (wp, "%c'%s','%s','%s','%s','%s'",
-		     (count ? ',' : ' '),
-		     (hostname[0] ? hostname : "unknown"),
-		     ip, mac,
-		     ((expires == 0) ? "never" : dnsmasq_reltime (buf,
-								  expires)),
-		     p + 1);
-	  ++count;
-	}
-      fclose (fp);
-    }
-  }
-  else
-  {
-  FILE *fp;
-  struct lease_t lease;
-  int i;
-  struct in_addr addr;
-  unsigned long expires;
-  char sigusr1[] = "-XX";
   int count = 0;
-  char *ipaddr, mac[20] = "", expires_time[50] = "";
   int macmask;
+
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
 
-
-  /* Write out leases file */
-  sprintf (sigusr1, "-%d", SIGUSR1);
-  eval ("killall", sigusr1, "udhcpd");
-
-
-  /* Parse leases file */
-  if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
-    fp = fopen ("/jffs/udhcpd.leases", "r");
-  if (fp)
+  if (nvram_match ("dhcp_dnsmasq", "1"))
     {
-      while (fread (&lease, sizeof (lease), 1, fp))
-     {
-       strcpy (mac, "");
+      char mac[32];
+      char ip[32];
+      char hostname[256];
+      char *p;
 
-       for (i = 0; i < 6; i++)
-         {
-           sprintf (mac + strlen (mac), "%02X", lease.chaddr[i]);
-           if (i != 5)
-             sprintf (mac + strlen (mac), ":");
-         }
-       mac[17] = '\0';
-       if (!strcmp (mac, "00:00:00:00:00:00"))
-         continue;
-       if (nvram_match ("maskmac", "1") && macmask)
-         {
+      /* Write out leases file from DNSMasq */
+      eval ("killall", "-SIGUSR2", "dnsmasq");
 
-           mac[0] = 'x';
-           mac[1] = 'x';
-           mac[3] = 'x';
-           mac[4] = 'x';
-           mac[6] = 'x';
-           mac[7] = 'x';
-           mac[9] = 'x';
-           mac[10] = 'x';
-         }
-       addr.s_addr = lease.yiaddr;
+      /* Parse leases file */
+      if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
+        fp = fopen ("/jffs/dnsmasq.leases", "r");
 
-       ipaddr = inet_ntoa (addr);
-
-       expires = ntohl (lease.expires);
-
-       strcpy (expires_time, "");
-       if (!expires)
-         {
-           continue;
-           strcpy (expires_time, "expired");
-         }
-       else if (expires == (long) EXPIRES_NEVER)
-         {
-           strcpy (expires_time, "never");
-         }
-       else
-         {
-           if (expires > 60 * 60 * 24)
-             {
-               sprintf (expires_time + strlen (expires_time), "%ld days ",
-                        expires / (60 * 60 * 24));
-               expires %= 60 * 60 * 24;
-             }
-           if (expires > 60 * 60)
-             {
-               sprintf (expires_time + strlen (expires_time), "%02ld:", expires / (60 * 60));        // hours
-               expires %= 60 * 60;
-             }
-           else
-             {
-               sprintf (expires_time + strlen (expires_time), "00:");        // no hours
-             }
-           if (expires > 60)
-             {
-               sprintf (expires_time + strlen (expires_time), "%02ld:", expires / 60);       // minutes
-               expires %= 60;
-             }
-           else
-             {
-               sprintf (expires_time + strlen (expires_time), "00:");        // no minutes
-             }
-
-           sprintf (expires_time + strlen (expires_time), "%02ld:", expires);        // seconds
-
-           expires_time[strlen (expires_time) - 1] = '\0';
-         }
-       websWrite (wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"", count ? ',' : ' ',
-                  !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr,
-                  mac, expires_time, get_single_ip (inet_ntoa (addr), 3));
-       count++;
-     }
+      if (fp)
+       {
+         while (fgets (buf, sizeof (buf), fp))
+          {
+            if (sscanf (buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4)
+              continue;
+            p = mac;
+            while ((*p = toupper (*p)) != 0)
+              ++p;
+            if ((p = strrchr (ip, '.')) == NULL)
+              continue;
+            if (!strcmp (mac, "00:00:00:00:00:00"))
+              continue;
+            if (nvram_match ("maskmac", "1") && macmask)
+              {
+                mac[0] = 'x';
+                mac[1] = 'x';
+                mac[3] = 'x';
+                mac[4] = 'x';
+                mac[6] = 'x';
+                mac[7] = 'x';
+                mac[9] = 'x';
+                mac[10] = 'x';
+              }
+            websWrite (wp, "%c'%s','%s','%s','%s','%s'",
+                      (count ? ',' : ' '),
+                      (hostname[0] ? hostname : "unknown"),
+                      ip, mac,
+                      ((expires == 0) ? "never" : dnsmasq_reltime (buf, expires)), p + 1);
+            ++count;
+          }
       fclose (fp);
+      }
     }
-  }
-  return;
+  else
+  {
+    struct lease_t lease;
+    struct in_addr addr;
+    int i;
+    char sigusr1[] = "-XX";
+    char *ipaddr, mac[20] = "", expires_time[50] = "";
+
+    /* Write out leases file from udhcpd*/
+    sprintf (sigusr1, "-%d", SIGUSR1);
+    eval ("killall", sigusr1, "udhcpd");
+
+    /* Parse leases file */
+    if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
+      fp = fopen ("/jffs/udhcpd.leases", "r");
+
+    if (fp)
+      {
+        while (fread (&lease, sizeof (lease), 1, fp))
+       {
+         strcpy (mac, "");
+
+         for (i = 0; i < 6; i++)
+           {
+             sprintf (mac + strlen (mac), "%02X", lease.chaddr[i]);
+             if (i != 5)
+               sprintf (mac + strlen (mac), ":");
+           }
+         mac[17] = '\0';
+         if (!strcmp (mac, "00:00:00:00:00:00"))
+           continue;
+         if (nvram_match ("maskmac", "1") && macmask)
+           {
+
+             mac[0] = 'x';
+             mac[1] = 'x';
+             mac[3] = 'x';
+             mac[4] = 'x';
+             mac[6] = 'x';
+             mac[7] = 'x';
+             mac[9] = 'x';
+             mac[10] = 'x';
+           }
+         addr.s_addr = lease.yiaddr;
+
+         ipaddr = inet_ntoa (addr);
+
+         expires = ntohl (lease.expires);
+
+         strcpy (expires_time, "");
+         if (!expires)
+           {
+             continue;
+             strcpy (expires_time, "expired");
+           }
+         else if (expires == (long) EXPIRES_NEVER)
+           {
+             strcpy (expires_time, "never");
+           }
+         else
+           {
+             if (expires > 60 * 60 * 24)
+               {
+                 sprintf (expires_time + strlen (expires_time), "%ld days ",
+                          expires / (60 * 60 * 24));
+                 expires %= 60 * 60 * 24;
+               }
+             if (expires > 60 * 60)
+               {
+                 sprintf (expires_time + strlen (expires_time), "%02ld:", expires / (60 * 60));        // hours
+                 expires %= 60 * 60;
+               }
+             else
+               {
+                 sprintf (expires_time + strlen (expires_time), "00:");        // no hours
+               }
+             if (expires > 60)
+               {
+                 sprintf (expires_time + strlen (expires_time), "%02ld:", expires / 60);       // minutes
+                 expires %= 60;
+               }
+             else
+               {
+                 sprintf (expires_time + strlen (expires_time), "00:");        // no minutes
+               }
+
+             sprintf (expires_time + strlen (expires_time), "%02ld:", expires);        // seconds
+
+             expires_time[strlen (expires_time) - 1] = '\0';
+           }
+         websWrite (wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"", count ? ',' : ' ',
+                    !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr,
+                    mac, expires_time, get_single_ip (inet_ntoa (addr), 3));
+         count++;
+       }
+        fclose (fp);
+      }
+    }
+    return;
 }
 
 /* Delete lease */
 int
 delete_leases (webs_t wp)
 {
-  if (nvram_match ("dhcp_dnsmasq", "1"))
-  {
-  FILE *fp;
   int i;
-  char name[32];
-  const char *value;
+  if (nvram_match ("dhcp_dnsmasq", "1"))
+    {
+      FILE *fp;
+      char name[32];
+      const char *value;
 
-  if ((fp = fopen ("/tmp/.delete_leases", "w")) == NULL)
-    {
-      websError (wp, 400, "Error opening delete lease file\n");
-      return -1;
-    }
-  for (i = 0; i < DHCP_MAX_COUNT; ++i)
-    {
-      sprintf (name, "d_%d", i);
-      value = websGetVar (wp, name, NULL);
-      if (!value)
-	continue;
-      fprintf (fp, "%d.%d.%d.%s\n",
+      if ((fp = fopen ("/tmp/.delete_leases", "w")) == NULL)
+        {
+          websError (wp, 400, "Error opening delete lease file\n");
+          return -1;
+        }
+      for (i = 0; i < DHCP_MAX_COUNT; ++i)
+        {
+          sprintf (name, "d_%d", i);
+          value = websGetVar (wp, name, NULL);
+          if (!value)
+            continue;
+          fprintf (fp, "%d.%d.%d.%s\n",
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
-    }
-  fclose (fp);
+        }
+      fclose (fp);
 
-  eval ("killall", "-SIGUSR2", "dnsmasq");
-  }
+      eval ("killall", "-SIGUSR2", "dnsmasq");
+    }
   else
-  {
-  FILE *fp_w;
-  char sigusr1[] = "-XX";
-  int i;
-  char buff[8];
-  char **ipbuf;
-
-  if (nvram_match ("lan_proto", "static"))
-    return;
-
-  unlink ("/tmp/.delete_leases");
-
-  if (!(fp_w = fopen ("/tmp/.delete_leases", "w")))
     {
-      websError (wp, 400, "Write leases error\n");
-      return;
-    }
-  int ipcount = 0;
-  for (i = 0; i < DHCP_MAX_COUNT; i++)
-    {
-      char name[] = "d_XXX";
-      char *value;
-      snprintf (name, sizeof (name), "d_%d", i);
-      value = websGetVar (wp, name, NULL);
-      if (!value)
-     continue;
-      fprintf (fp_w, "%d.%d.%d.%s\n",
-            get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
-            get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
-            get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
-      ipcount++;
-    }
+      FILE *fp_w;
+      char sigusr1[] = "-XX";
+      char buff[8];
+      char **ipbuf;
 
-  fclose (fp_w);
+      if (nvram_match ("lan_proto", "static"))
+        return;
 
-  if (nvram_match ("dhcp_dnsmasq", "1"))
-    {
-      if (!(fp_w = fopen ("/var/run/dnsmasq.pid", "r")))
-     {
-       websError (wp, 400, "Write leases error\n");
-       return;
-     }
-      if (ipcount == 0)
-     return;
+      unlink ("/tmp/.delete_leases");
+
+      if (!(fp_w = fopen ("/tmp/.delete_leases", "w")))
+        {
+          websError (wp, 400, "Write leases error\n");
+          return;
+        }
+      int ipcount = 0;
+      for (i = 0; i < DHCP_MAX_COUNT; i++)
+        {
+          char name[] = "d_XXX";
+          char *value;
+          snprintf (name, sizeof (name), "d_%d", i);
+          value = websGetVar (wp, name, NULL);
+          if (!value)
+           continue;
+          fprintf (fp_w, "%d.%d.%d.%s\n",
+                get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
+                get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
+                get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
+          ipcount++;
+        }
+
+      fclose (fp_w);
+
+      if (nvram_match ("dhcp_dnsmasq", "1"))
+        {
+          if (!(fp_w = fopen ("/var/run/dnsmasq.pid", "r")))
+           {
+             websError (wp, 400, "Write leases error\n");
+             return;
+        }
+       if (ipcount == 0)
+         return;
       fgets (buff, sizeof (buff), fp_w);
       sprintf (sigusr1, "-%d", SIGUSR2);
       eval ("kill", sigusr1, buff);  // call udhcpd to delete ip from lease table
