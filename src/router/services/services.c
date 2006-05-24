@@ -924,7 +924,7 @@ start_dnsmasq (void)
 
   fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
   fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
-  if (nvram_match ("dns_dnsmasq", "1")) 
+  if (nvram_match ("dns_dnsmasq", "0")) 
   {
     dns_list = get_dns_list ();
 
