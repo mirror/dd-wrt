@@ -57,6 +57,9 @@
 // Belkin F5D7230-4 v1444 (4712 cpu, 2MB flash) (fccid: Belkin K7S-F5D72304)
 #define ROUTER_BELKIN_F5D7230 15
 
+// Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
+#define ROUTER_MICROSOFT_MN700 16
+
 
 
 #define NVROUTER "DD_BOARD"
