@@ -172,15 +172,15 @@ addEvent(window, "unload", function() {
 							<legend><script type="text/javascript">Capture(status_router.legend)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.routername)</script></div>
-									<span id="router_name"><% nvram_get("router_name"); %></span>&nbsp;
+									<% nvram_get("router_name"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.sys_model)</script></div>
-									<span id="router_model"><% nvram_get("DD_BOARD"); %></span>&nbsp;
+									<% nvram_get("DD_BOARD"); %>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.sys_firmver)</script></div>
-									<span id="router_firmware"><% get_firmware_version(); %></span>&nbsp;
+									<% get_firmware_version(); %>
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.mac)</script></div>
@@ -188,11 +188,11 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
-									<span id="wan_host"><% nvram_get("wan_hostname"); %></span>&nbsp;
+									<% nvram_get("wan_hostname"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.domainname)</script></div>
-									<span id="wan_name"><% nvram_get("wan_domain"); %></span>&nbsp;
+									<% nvram_get("wan_domain"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.sys_time)</script></div>
@@ -212,11 +212,11 @@ addEvent(window, "unload", function() {
 								<legend><script type="text/javascript">Capture(status_router.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.cpu)</script></div>
-									<span id="cpu_info"><% show_cpuinfo(); %></span>&nbsp;
+									<% show_cpuinfo(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.clock)</script></div>
-									<span id="cpu_clock"><% get_clkfreq(); %></span>&nbsp;MHz
+									<% get_clkfreq(); %>&nbsp;MHz
 								</div>
 							</fieldset><br />
 							
@@ -256,7 +256,7 @@ addEvent(window, "unload", function() {
 								<legend><script type="text/javascript">Capture(status_router.legend4)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.net_maxports)</script></div>
-									<span id="ip_conntrack_max"><% nvram_get("ip_conntrack_max"); %></span>&nbsp;
+									<% nvram_get("ip_conntrack_max"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.net_conntrack)</script></div>
@@ -269,7 +269,7 @@ addEvent(window, "unload", function() {
 								<legend><script type="text/javascript">Capture(status_router.legend5)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_router.www_login)</script></div>
-									<span id="wan_proto"><% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disable)</script>"); %></span>&nbsp;
+									<% nvram_match("wan_proto", "dhcp", "<script type="text/javascript">Capture(idx.dhcp)</script>"); %><% nvram_match("wan_proto", "static", "<script type="text/javascript">Capture(share.sttic)</script>"); %><% nvram_match("wan_proto", "pppoe", "PPPoE"); %><% nvram_match("wan_proto", "pptp", "PPTP"); %><% nvram_match("wan_proto", "l2tp", "L2TP"); %><% nvram_match("wan_proto", "heartbeat", "HeartBeatSignal"); %><% nvram_match("wan_proto", "disabled", "<script type="text/javascript">Capture(share.disable)</script>"); %>&nbsp;
 								</div>
 								<span id="wan_info" style="display:none">
 									<div class="setting" id="wan_connection">
