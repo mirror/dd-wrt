@@ -340,7 +340,7 @@ addEvent(window, "unload", function() {
 						</div><br clear="all" />
 						<h2><script type="text/javascript">Capture(share.wireless)</script></h2>
 						<fieldset>
-							<legend id="wireless_table_legend"><script type="text/javascript">Capture(status_wireless.legend3)</script></legend>
+							<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %></script></legend>
 							<table class="table center" cellspacing="6" id="wireless_table">
 								<tr>
 									<th width="43%"><script type="text/javascript">Capture(share.mac)</script></th>
