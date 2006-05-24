@@ -894,7 +894,6 @@ start_dnsmasq (void)
 
   fprintf (fp, "resolv-file=/tmp/resolv.dnsmasq\n");
 
-  /* DHCP domain */
    if (nvram_match ("dhcp_domain", "wan"))
     {
       if (nvram_match ("wan_domain", ""))
@@ -924,6 +923,7 @@ start_dnsmasq (void)
          }
 
   fprintf (fp, "dhcp-lease-max=%s\n", nvram_safe_get ("dhcp_num"));
+  fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
   if (nvram_match ("dns_dnsmasq", "1")) 
   {
     dns_list = get_dns_list ();
@@ -978,11 +978,11 @@ start_dnsmasq (void)
 
   if (dns_list)
     free (dns_list);
-}
+  }
 
 	if (nvram_match ("auth_dnsmasq", "1"))
 	  {
-		fprintf (fp, "dhcp-authoritative\n");
+	    fprintf (fp, "dhcp-authoritative\n");
 	  }
 	fprintf (fp, "dhcp-range=");
 	fprintf (fp, "%d.%d.%d.%s,",
