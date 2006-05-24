@@ -3689,7 +3689,7 @@ getLanguageName ()
     {
       return "lang_pack/english.js";
     }
-  char l[60];
+  char *l = malloc(60);
   sprintf (l, "lang_pack/%s.js", lang);
   return l;
 }
@@ -3697,7 +3697,9 @@ getLanguageName ()
 static void
 do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
-  do_file (getLanguageName (), stream);
+char *lang = getLanguageName ();
+  do_file (lang, stream);
+free(lang);
   return;
 }
 
@@ -3708,6 +3710,7 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
   char *lang = getLanguageName ();
   char buf[64];
   sprintf (buf, "/www/%s", lang);
+  free(lang);
 // lang_charset.set
   char *sstring = "lang_charset.set=\"";
   char s[128];
@@ -3715,7 +3718,9 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
   while (!feof (in))
     {
       fscanf (in, "%s", s);
+      cprintf("lang scan %s\n",s); 
       char *cmp = strstr (s, sstring);
+      cprintf("strstr %s\n",cmp);
       if (cmp)
 	{
 	  fclose (in);
@@ -3729,6 +3734,7 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
 	  char dest[128];
 	  strncpy (dest, cmp, len);
 	  dest[len] = 0;
+	  cprintf("destination %s\n",dest);
 	  websWrite (wp, dest);
 	  return;
 	}
