@@ -151,7 +151,7 @@ addEvent(window, "unload", function() {
 								<legend><script type="text/javascript">Capture(status_lan.legend2)</script></legend>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(service.dhcp_legend2)</script></div>
-									<span id="dhcp_enabled"><% nvram_match("lan_proto", "dhcp", "Enabled"); %><% nvram_match("lan_proto", "static", "Disabled"); %></span>&nbsp;
+									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 								</div>
 								<span id="dhcp_1" style="display:none">
 									<div class="setting">
