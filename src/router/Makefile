@@ -302,7 +302,8 @@ endif
 ifeq ($(CONFIG_KAID),y)
 	cp kaid/kaid $(TARGETDIR)/usr/sbin
 endif
-	../../opt/loader-0.02/lzma e $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinuz
+	cp $(LINUXDIR)/arch/mips/bcm947xx/compressed/piggy mipsel-uclibc/vmlinux
+	../../opt/loader-0.02/lzma e mipsel-uclibc/vmlinux mipsel-uclibc/vmlinuz
 	
 #endif
 #
