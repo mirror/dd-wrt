@@ -372,6 +372,7 @@ start_restore_defaults (void)
     case ROUTER_WRT54G1X:
     case ROUTER_SIEMENS:
     case ROUTER_RT210W:
+    case ROUTER_MICROSOFT_MN700:
     case ROUTER_BELKIN_F5D7230:
     case ROUTER_ASUS:
     case ROUTER_MOTOROLA:
