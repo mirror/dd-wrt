@@ -3685,12 +3685,16 @@ static char *
 getLanguageName ()
 {
   char *lang = nvram_get ("language");
+      cprintf("get language %s\n",lang); 
+  char *l = malloc(60);
   if (lang == NULL)
     {
-      return "lang_pack/english.js";
+      cprintf("return default\n");
+      sprintf(l,"lang_pack/english.js");
+      return l;
     }
-  char *l = malloc(60);
   sprintf (l, "lang_pack/%s.js", lang);
+  cprintf("return %s\n",l);
   return l;
 }
 
