@@ -19,7 +19,7 @@ export-objs	:=
 obj-y		:= $(LED_OBJS)
 obj-m		:= $(O_TARGET)
 
-SRCBASE		:= $(TOPDIR)/../..
+SRCBASE		:= $(TOPDIR)/../../../
 EXTRA_CFLAGS	+= -I$(SRCBASE)/include.v23
 EXTRA_CFLAGS	+= -DDMA
 
