@@ -89,7 +89,15 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WBR-G54 / WLA-G54");
       return ROUTER_BUFFALO_WBR54G;
     }
-
+    
+	if (nvram_match ("boardnum", "mn700") &&
+      nvram_match ("boardtype", "bcm94710ap"))
+    {
+      cprintf ("router is Microsoft mn700\n");
+      setRouter ("Microsoft MN-700");
+      return ROUTER_MICROSOFT_MN700;
+    }
+    
   if (nvram_match ("boardnum", "100") &&	//added by Eko - experimental
       nvram_match ("boardtype", "bcm94710dev"))	//detect WLA-G54C 
     {
