@@ -166,7 +166,7 @@ retry:
 	{
 	  if (status & AR5211_EEPROM_STAT_WRERR)
 	    {
-	      fprintf (stderr, "eeprom write access failed!\n");
+	     // fprintf (stderr, "eeprom write access failed!\n");
 	      return 1;
 	    }
 	  VT_WLAN_OUT32 (0, AR5211_EEPROM_STATUS);
@@ -180,7 +180,7 @@ retry:
   if ((sdata != new_data) && i)
     {
       --i;
-      fprintf (stderr, "Retrying eeprom write!\n");
+     // fprintf (stderr, "Retrying eeprom write!\n");
       goto retry;
     }
 
@@ -198,21 +198,21 @@ get_regdomain (unsigned long int base_addr)
   fd = open ("/dev/mem", O_RDWR);
   if (fd < 0)
     {
-      fprintf (stderr, "Open of /dev/mem failed!\n");
+     // fprintf (stderr, "Open of /dev/mem failed!\n");
       return -2;
     }
   membase = mmap (0, ATHEROS_PCI_MEM_SIZE, PROT_READ | PROT_WRITE,
 		  MAP_SHARED | MAP_FILE, fd, base_addr);
   if (membase == (void *) -1)
     {
-      fprintf (stderr,
-	       "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
-	       base_addr, ATHEROS_PCI_MEM_SIZE);
+     // fprintf (stderr,
+//	       "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
+//	       base_addr, ATHEROS_PCI_MEM_SIZE);
       return -3;
     }
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
-      fprintf (stderr, "EEPROM read failed\n");
+    //  fprintf (stderr, "EEPROM read failed\n");
       return -1;
     }
   close (fd);
@@ -240,16 +240,16 @@ set_regdomain (unsigned long int base_addr, int code)
   fd = open ("/dev/mem", O_RDWR);
   if (fd < 0)
     {
-      fprintf (stderr, "Open of /dev/mem failed!\n");
+     // fprintf (stderr, "Open of /dev/mem failed!\n");
       return -2;
     }
   membase = mmap (0, ATHEROS_PCI_MEM_SIZE, PROT_READ | PROT_WRITE,
 		  MAP_SHARED | MAP_FILE, fd, base_addr);
   if (membase == (void *) -1)
     {
-      fprintf (stderr,
-	       "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
-	       base_addr, ATHEROS_PCI_MEM_SIZE);
+     // fprintf (stderr,
+//	       "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
+//	       base_addr, ATHEROS_PCI_MEM_SIZE);
       return -3;
     }
 
@@ -260,7 +260,7 @@ set_regdomain (unsigned long int base_addr, int code)
   int errcode = 0;
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
-      fprintf (stderr, "EEPROM read failed\n");
+    //  fprintf (stderr, "EEPROM read failed\n");
       errcode = -4;
       close (fd);
       return errcode;
@@ -269,7 +269,7 @@ set_regdomain (unsigned long int base_addr, int code)
 
   if (vt_ar5211_eeprom_write ((unsigned char *) membase, 0xBF, new_cc))
     {
-      fprintf (stderr, "EEPROM write failed\n");
+    //  fprintf (stderr, "EEPROM write failed\n");
       errcode = -4;
       close (fd);
       return errcode;
@@ -277,7 +277,7 @@ set_regdomain (unsigned long int base_addr, int code)
 
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
-      fprintf (stderr, "EEPROM read failed\n");
+    //  fprintf (stderr, "EEPROM read failed\n");
       errcode = -4;
       close (fd);
       return errcode;
@@ -285,8 +285,8 @@ set_regdomain (unsigned long int base_addr, int code)
 
   if (sdata != new_cc)
     {
-      fprintf (stderr, "Write & read dont match 0x%04X != 0x%04X\n",
-	       new_cc, sdata);
+    //  fprintf (stderr, "Write & read dont match 0x%04X != 0x%04X\n",
+//	       new_cc, sdata);
       errcode = -4;
     }
   close (fd);
@@ -535,7 +535,7 @@ static int
 get80211priv(const char *ifname, int op, void *data, size_t len)
 {
 	struct iwreq iwr;
-  fprintf(stderr,"get80211priv %s op %X", ifname,op);
+//  fprintf(stderr,"get80211priv %s op %X", ifname,op);
 
 	if (do80211priv(&iwr, ifname, op, data, len) < 0)
 		return -1;
@@ -553,7 +553,7 @@ list_channelsext (const char *ifname, int allchans)
   const struct ieee80211_channel *c;
   int i, half;
   cprintf ("get priv\n");
-  fprintf (stderr, "list channels for %s\n", ifname);
+//  fprintf (stderr, "list channels for %s\n", ifname);
   if (get80211priv
       (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
     {
@@ -585,7 +585,7 @@ list_channelsext (const char *ifname, int allchans)
 
   cprintf ("malloc list\n");
 
-  fprintf(stderr,"channel number %d\n", achans.ic_nchans);
+//  fprintf(stderr,"channel number %d\n", achans.ic_nchans);
   struct wifi_channels *list =
     (struct wifi_channels *) malloc (sizeof (struct wifi_channels) *
 				     (achans.ic_nchans + 1));
@@ -914,7 +914,7 @@ set_netmode (char *dev)
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
   char *netmode = default_get (net, "mixed");
-  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
+//  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
 
 //  else
@@ -956,6 +956,9 @@ configure_single (int count)
   char power[16];
   char sens[16];
   char basedev[16];
+  char diversity[16];
+  char rxantenna[16];
+  char txantenna[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
   sprintf (wif, "wifi%d", count);
@@ -965,6 +968,9 @@ configure_single (int count)
   sprintf (broadcast, "ath%d_closed", count);
   sprintf (power, "ath%d_txpwr", count);
   sprintf (sens, "ath%d_distance", count);
+  sprintf (diversity, "ath%d_diversity", count);
+  sprintf (txantenna, "ath%d_txantenna", count);
+  sprintf (rxantenna, "ath%d_rxantenna", count);
   //create base device
   cprintf ("configure base interface %d\n", count);
 
@@ -1039,7 +1045,13 @@ configure_single (int count)
 
   int distance = atoi (default_get (sens, "20000"));	//to meter
   setdistance (wif, distance);	//sets the receiver sensitivity
- 
+  int rx = atoi (default_get (rxantenna, "1"));	
+  int tx = atoi (default_get (txantenna, "1"));	
+  int diva = atoi (default_get (diversity, "0"));	
+  setsysctrl(wif,"diversity",diva);
+  setsysctrl(wif,"rxantenna",rx);
+  setsysctrl(wif,"txantenna",tx);
+  
   if (!strcmp(m,"wdssta") || !strcmp(m,"wdsap"))
   eval("iwpriv",dev,"wds","1");
   
@@ -1084,10 +1096,10 @@ configure_single (int count)
 //      {
 //        eval ("iwconfig", var, "channel", default_get (channel, "6"));
 //      }
-      fprintf (stderr, "set ssid for %s\n", var);
+    //  fprintf (stderr, "set ssid for %s\n", var);
       eval ("iwconfig", var, "essid", default_get (ssid, "default"));
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
-      fprintf (stderr, "set broadcast for %s\n", var);
+    //  fprintf (stderr, "set broadcast for %s\n", var);
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
 
@@ -1097,7 +1109,7 @@ configure_single (int count)
       // net mode
 //      set_netmode (var);
 
-      fprintf (stderr, "encryption %s\n", var);
+//      fprintf (stderr, "encryption %s\n", var);
 
       cprintf ("setup encryption");
       if (strcmp (m, "sta") && strcmp(m,"wdssta"))
