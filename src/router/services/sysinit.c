@@ -1004,7 +1004,7 @@ if (check_vlan_support())
   eval ("insmod", "korina");
   eval ("insmod", "via-rhine");
   eval ("insmod", "ipv6");
-
+//  load_drivers(); //load madwifi drivers
 #endif
   /* Set a sane date */
   stime (&tm);
