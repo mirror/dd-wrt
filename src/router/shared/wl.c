@@ -113,6 +113,7 @@ wl_get_int (char *name, char *var, int *val)
 {
   return wl_get_val (name, var, val, sizeof (*val));
 }
+
 //#else
 int
 wl_iovar_getbuf (char *ifname, char *iovar, void *param, int paramlen,

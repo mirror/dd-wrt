@@ -166,7 +166,7 @@ retry:
 	{
 	  if (status & AR5211_EEPROM_STAT_WRERR)
 	    {
-	     // fprintf (stderr, "eeprom write access failed!\n");
+	      // fprintf (stderr, "eeprom write access failed!\n");
 	      return 1;
 	    }
 	  VT_WLAN_OUT32 (0, AR5211_EEPROM_STATUS);
@@ -180,7 +180,7 @@ retry:
   if ((sdata != new_data) && i)
     {
       --i;
-     // fprintf (stderr, "Retrying eeprom write!\n");
+      // fprintf (stderr, "Retrying eeprom write!\n");
       goto retry;
     }
 
@@ -198,21 +198,21 @@ get_regdomain (unsigned long int base_addr)
   fd = open ("/dev/mem", O_RDWR);
   if (fd < 0)
     {
-     // fprintf (stderr, "Open of /dev/mem failed!\n");
+      // fprintf (stderr, "Open of /dev/mem failed!\n");
       return -2;
     }
   membase = mmap (0, ATHEROS_PCI_MEM_SIZE, PROT_READ | PROT_WRITE,
 		  MAP_SHARED | MAP_FILE, fd, base_addr);
   if (membase == (void *) -1)
     {
-     // fprintf (stderr,
-//	       "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
-//	       base_addr, ATHEROS_PCI_MEM_SIZE);
+      // fprintf (stderr,
+//             "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
+//             base_addr, ATHEROS_PCI_MEM_SIZE);
       return -3;
     }
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
-    //  fprintf (stderr, "EEPROM read failed\n");
+      //  fprintf (stderr, "EEPROM read failed\n");
       return -1;
     }
   close (fd);
@@ -240,16 +240,16 @@ set_regdomain (unsigned long int base_addr, int code)
   fd = open ("/dev/mem", O_RDWR);
   if (fd < 0)
     {
-     // fprintf (stderr, "Open of /dev/mem failed!\n");
+      // fprintf (stderr, "Open of /dev/mem failed!\n");
       return -2;
     }
   membase = mmap (0, ATHEROS_PCI_MEM_SIZE, PROT_READ | PROT_WRITE,
 		  MAP_SHARED | MAP_FILE, fd, base_addr);
   if (membase == (void *) -1)
     {
-     // fprintf (stderr,
-//	       "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
-//	       base_addr, ATHEROS_PCI_MEM_SIZE);
+      // fprintf (stderr,
+//             "Mmap of device at 0x%08X for 0x%X bytes failed!\n",
+//             base_addr, ATHEROS_PCI_MEM_SIZE);
       return -3;
     }
 
@@ -260,7 +260,7 @@ set_regdomain (unsigned long int base_addr, int code)
   int errcode = 0;
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
-    //  fprintf (stderr, "EEPROM read failed\n");
+      //  fprintf (stderr, "EEPROM read failed\n");
       errcode = -4;
       close (fd);
       return errcode;
@@ -269,7 +269,7 @@ set_regdomain (unsigned long int base_addr, int code)
 
   if (vt_ar5211_eeprom_write ((unsigned char *) membase, 0xBF, new_cc))
     {
-    //  fprintf (stderr, "EEPROM write failed\n");
+      //  fprintf (stderr, "EEPROM write failed\n");
       errcode = -4;
       close (fd);
       return errcode;
@@ -277,7 +277,7 @@ set_regdomain (unsigned long int base_addr, int code)
 
   if (vt_ar5211_eeprom_read ((unsigned char *) membase, 0xBF, &sdata))
     {
-    //  fprintf (stderr, "EEPROM read failed\n");
+      //  fprintf (stderr, "EEPROM read failed\n");
       errcode = -4;
       close (fd);
       return errcode;
@@ -285,8 +285,8 @@ set_regdomain (unsigned long int base_addr, int code)
 
   if (sdata != new_cc)
     {
-    //  fprintf (stderr, "Write & read dont match 0x%04X != 0x%04X\n",
-//	       new_cc, sdata);
+      //  fprintf (stderr, "Write & read dont match 0x%04X != 0x%04X\n",
+//             new_cc, sdata);
       errcode = -4;
     }
   close (fd);
@@ -320,9 +320,11 @@ set_regdomain (unsigned long int base_addr, int code)
 #include <shutils.h>
 #include <unistd.h>
 #include "wireless.h"
+
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
+#include <iwlib.h>
 
 
 
@@ -332,13 +334,14 @@ setsysctrl (const char *dev, const char *control, u_long value)
   char buffer[256];
   FILE *fd;
 
-  snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,dev, control);
-  system(buffer);
- /* fd = fopen (buffer, "w");
-  if (fd != NULL)
-    {
-      fprintf (fd, "%li", value);
-    }*/
+  snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,
+	    dev, control);
+  system (buffer);
+  /* fd = fopen (buffer, "w");
+     if (fd != NULL)
+     {
+     fprintf (fd, "%li", value);
+     } */
   return 0;
 }
 
@@ -478,71 +481,76 @@ getsocket (void)
 
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
 static int
-do80211priv(struct iwreq *iwr, const char *ifname, int op, void *data, size_t len)
+do80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
+	     size_t len)
 {
 #define	N(a)	(sizeof(a)/sizeof(a[0]))
 
-	memset(iwr, 0, sizeof(struct iwreq));
-	strncpy(iwr->ifr_name, ifname, IFNAMSIZ);
-	if (len < IFNAMSIZ) {
-		/*
-		 * Argument data fits inline; put it there.
-		 */
-		memcpy(iwr->u.name, data, len);
-	} else {
-		/*
-		 * Argument data too big for inline transfer; setup a
-		 * parameter block instead; the kernel will transfer
-		 * the data for the driver.
-		 */
-		iwr->u.data.pointer = data;
-		iwr->u.data.length = len;
-	}
+  memset (iwr, 0, sizeof (struct iwreq));
+  strncpy (iwr->ifr_name, ifname, IFNAMSIZ);
+  if (len < IFNAMSIZ)
+    {
+      /*
+       * Argument data fits inline; put it there.
+       */
+      memcpy (iwr->u.name, data, len);
+    }
+  else
+    {
+      /*
+       * Argument data too big for inline transfer; setup a
+       * parameter block instead; the kernel will transfer
+       * the data for the driver.
+       */
+      iwr->u.data.pointer = data;
+      iwr->u.data.length = len;
+    }
 
-	if (ioctl(getsocket(), op, iwr) < 0) {
-		static const char *opnames[] = {
-			IOCTL_ERR(IEEE80211_IOCTL_SETPARAM),
-			IOCTL_ERR(IEEE80211_IOCTL_GETPARAM),
-			IOCTL_ERR(IEEE80211_IOCTL_SETMODE),
-			IOCTL_ERR(IEEE80211_IOCTL_GETMODE),
-			IOCTL_ERR(IEEE80211_IOCTL_SETWMMPARAMS),
-			IOCTL_ERR(IEEE80211_IOCTL_GETWMMPARAMS),
-			IOCTL_ERR(IEEE80211_IOCTL_SETCHANLIST),
-			IOCTL_ERR(IEEE80211_IOCTL_GETCHANLIST),
-			IOCTL_ERR(IEEE80211_IOCTL_CHANSWITCH),
-			IOCTL_ERR(IEEE80211_IOCTL_GETCHANINFO),
-			IOCTL_ERR(IEEE80211_IOCTL_SETOPTIE),
-			IOCTL_ERR(IEEE80211_IOCTL_GETOPTIE),
-			IOCTL_ERR(IEEE80211_IOCTL_SETMLME),
-			IOCTL_ERR(IEEE80211_IOCTL_SETKEY),
-			IOCTL_ERR(IEEE80211_IOCTL_DELKEY),
-			IOCTL_ERR(IEEE80211_IOCTL_ADDMAC),
-			IOCTL_ERR(IEEE80211_IOCTL_DELMAC),
-			IOCTL_ERR(IEEE80211_IOCTL_WDSADDMAC),
-			IOCTL_ERR(IEEE80211_IOCTL_WDSDELMAC),
-		};
-		op -= SIOCIWFIRSTPRIV;
-		if (0 <= op && op < N(opnames))
-			perror(opnames[op]);
-		else
-			perror("ioctl[unknown???]");
-		return -1;
-	}
-	return 0;
+  if (ioctl (getsocket (), op, iwr) < 0)
+    {
+      static const char *opnames[] = {
+	IOCTL_ERR (IEEE80211_IOCTL_SETPARAM),
+	IOCTL_ERR (IEEE80211_IOCTL_GETPARAM),
+	IOCTL_ERR (IEEE80211_IOCTL_SETMODE),
+	IOCTL_ERR (IEEE80211_IOCTL_GETMODE),
+	IOCTL_ERR (IEEE80211_IOCTL_SETWMMPARAMS),
+	IOCTL_ERR (IEEE80211_IOCTL_GETWMMPARAMS),
+	IOCTL_ERR (IEEE80211_IOCTL_SETCHANLIST),
+	IOCTL_ERR (IEEE80211_IOCTL_GETCHANLIST),
+	IOCTL_ERR (IEEE80211_IOCTL_CHANSWITCH),
+	IOCTL_ERR (IEEE80211_IOCTL_GETCHANINFO),
+	IOCTL_ERR (IEEE80211_IOCTL_SETOPTIE),
+	IOCTL_ERR (IEEE80211_IOCTL_GETOPTIE),
+	IOCTL_ERR (IEEE80211_IOCTL_SETMLME),
+	IOCTL_ERR (IEEE80211_IOCTL_SETKEY),
+	IOCTL_ERR (IEEE80211_IOCTL_DELKEY),
+	IOCTL_ERR (IEEE80211_IOCTL_ADDMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_DELMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_WDSADDMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_WDSDELMAC),
+      };
+      op -= SIOCIWFIRSTPRIV;
+      if (0 <= op && op < N (opnames))
+	perror (opnames[op]);
+      else
+	perror ("ioctl[unknown???]");
+      return -1;
+    }
+  return 0;
 #undef N
 }
 
 static int
-get80211priv(const char *ifname, int op, void *data, size_t len)
+get80211priv (const char *ifname, int op, void *data, size_t len)
 {
-	struct iwreq iwr;
+  struct iwreq iwr;
 //  fprintf(stderr,"get80211priv %s op %X", ifname,op);
 
-	if (do80211priv(&iwr, ifname, op, data, len) < 0)
-		return -1;
-	if (len < IFNAMSIZ)
-		memcpy(data, iwr.u.name, len);
-	return iwr.u.data.length;
+  if (do80211priv (&iwr, ifname, op, data, len) < 0)
+    return -1;
+  if (len < IFNAMSIZ)
+    memcpy (data, iwr.u.name, len);
+  return iwr.u.data.length;
 }
 
 
@@ -713,7 +721,41 @@ default_match (char *var, char *match, char *def)
 }
 
 
-
+static int
+getMaxPower (char *ifname)
+{
+  struct iwreq wrq;
+  struct iw_range range;
+  int dbm;
+  int mwatt;
+  int k;
+  int skfd;
+  if ((skfd = iw_sockets_open ()) < 0)
+    {
+      perror ("socket");
+      return -1;
+    }
+  int maxwatt = 0;
+  iw_get_range_info (skfd, ifname, &range);
+  /* Print them all */
+  for (k = 0; k < range.num_txpower; k++)
+    {
+      /* Check for relative values */
+      if (range.txpower_capa & IW_TXPOW_MWATT)
+	{
+	  dbm = iw_mwatt2dbm (range.txpower[k]);
+	  mwatt = range.txpower[k];
+	}
+      else
+	{
+	  dbm = range.txpower[k];
+	  mwatt = iw_dbm2mwatt (range.txpower[k]);
+	}
+      if (mwatt > maxwatt)
+	maxwatt = mwatt;
+    }
+  iw_sockets_close (skfd);
+}
 
 /*
 MADWIFI Encryption Setup
@@ -835,7 +877,8 @@ setupHostAP (char *prefix)
 	nvram_match (akm, "psk2") ||
 	nvram_match (akm, "psk psk2") ||
 	nvram_match (akm, "wpa") ||
-	nvram_match (akm, "wpa2") || nvram_match (akm, "wpa wpa2"))
+	nvram_match (akm, "wpa2") ||
+	nvram_match (akm, "wpa wpa2") || nvram_match (akm, "radius"))
     {
       char fstr[32];
       sprintf (fstr, "/tmp/%s_hostap.conf", prefix);
@@ -869,7 +912,11 @@ setupHostAP (char *prefix)
 	}
       else
 	{
-	  fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
+	  if (nvram_invmatch (akm, "radius"))
+	    fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
+	  else
+	    fprintf (fp, "maccaddr_acl=2\n");
+
 	  sprintf (psk, "%s_radius_ipaddr", prefix);
 	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
 
@@ -879,18 +926,19 @@ setupHostAP (char *prefix)
 	  sprintf (psk, "%s_radius_key", prefix);
 	  fprintf (fp, "auth_sserver_shared_secret=%s\n",
 		   nvram_safe_get (psk));
-
 	}
-
-      sprintf (psk, "%s_crypto", prefix);
-      if (nvram_match (psk, "aes"))
-	fprintf (fp, "wpa_pairwise=CCMP\n");
-      if (nvram_match (psk, "tkip"))
-	fprintf (fp, "wpa_pairwise=TKIP\n");
-      if (nvram_match (psk, "tkip+aes"))
-	fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
-      sprintf (psk, "%s_wpa_gtk_rekey", prefix);
-      fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
+      if (nvram_invmatch (akm, "radius"))
+	{
+	  sprintf (psk, "%s_crypto", prefix);
+	  if (nvram_match (psk, "aes"))
+	    fprintf (fp, "wpa_pairwise=CCMP\n");
+	  if (nvram_match (psk, "tkip"))
+	    fprintf (fp, "wpa_pairwise=TKIP\n");
+	  if (nvram_match (psk, "tkip+aes"))
+	    fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
+	  sprintf (psk, "%s_wpa_gtk_rekey", prefix);
+	  fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
+	}
 //      fprintf (fp, "jumpstart_p1=1\n");
       fclose (fp);
       eval ("hostapd", "-B", fstr);
@@ -919,21 +967,21 @@ set_netmode (char *dev)
   cprintf ("configure net mode %s\n", netmode);
 
 //  else
-    {
-      eval ("iwpriv", dev, "turbo", "0");
-      if (!strcmp (netmode, "mixed"))
-	eval ("iwpriv", dev, "mode", "0");
-      if (!strcmp (netmode, "b-only"))
-	eval ("iwpriv", dev, "mode", "2");
-      if (!strcmp (netmode, "g-only"))
-	eval ("iwpriv", dev, "mode", "3");
-      if (!strcmp (netmode, "a-only"))
-	eval ("iwpriv", dev, "mode", "1");
-    }
+  {
+    eval ("iwpriv", dev, "turbo", "0");
+    if (!strcmp (netmode, "mixed"))
+      eval ("iwpriv", dev, "mode", "0");
+    if (!strcmp (netmode, "b-only"))
+      eval ("iwpriv", dev, "mode", "2");
+    if (!strcmp (netmode, "g-only"))
+      eval ("iwpriv", dev, "mode", "3");
+    if (!strcmp (netmode, "a-only"))
+      eval ("iwpriv", dev, "mode", "1");
+  }
   if (default_match (turbo, "1", "0"))
     {
-  if (nvram_match(mode,"sta"))
-      eval ("iwpriv", dev, "mode", "5");
+      if (nvram_match (mode, "sta"))
+	eval ("iwpriv", dev, "mode", "5");
 //      eval ("iwpriv", dev, "mode", "1");
 //      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
     }
@@ -984,7 +1032,7 @@ configure_single (int count)
 
   char *m = default_get (wl, "ap");
   cprintf ("mode %s\n", m);
-  if (!strcmp (m, "wet") || !strcmp(m,"wdssta") || !strcmp(m,"sta"))
+  if (!strcmp (m, "wet") || !strcmp (m, "wdssta") || !strcmp (m, "sta"))
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "sta");
   else
     eval ("wlanconfig", dev, "create", "wlandev", wif, "wlanmode", "ap");
@@ -1004,7 +1052,8 @@ configure_single (int count)
 	  char newmode[16];
 	  strcpy (newmode, var);
 	  newmode[strlen (newmode) - 1] = 0;
-	  if (!strcmp (m, "wet") || !strcmp (m, "sta") || !strcmp(m,"wdssta"))
+	  if (!strcmp (m, "wet") || !strcmp (m, "sta")
+	      || !strcmp (m, "wdssta"))
 	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
 	  else
@@ -1017,7 +1066,12 @@ configure_single (int count)
     }
 
   m = default_get (wl, "ap");
-
+  char maxp[16];
+  int maxpower = getMaxPower (dev);
+  sprintf (maxp, "%d", maxpower);	//set maximum power 
+  char max_power[32];
+  sprintf (max_power, "%s_maxpower", dev);
+  nvram_set (max_power, maxp);
 
   //confige net mode
 
@@ -1025,7 +1079,7 @@ configure_single (int count)
   set_netmode (dev);
 
 
-  if (strcmp (m, "sta") && strcmp(m, "wdssta"))
+  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
     {
       cprintf ("set channel\n");
       char *ch = default_get (channel, "0");
@@ -1039,33 +1093,43 @@ configure_single (int count)
 
 
   cprintf ("adjust power\n");
-  sprintf (var, "%smW", default_get (power, "28"));
+
+  int newpower = atoi (default_get (power, "28"));
+//limit power if needed
+  if (newpower > maxpower)
+    {
+      newpower = maxpower;
+      char powerset[32];
+      sprintf (powerset, "%s", newpower);
+      nvram_set (power, powerset);
+    }
+  sprintf (var, "%dmW", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
   cprintf ("adjust sensitivity\n");
 
   int distance = atoi (default_get (sens, "20000"));	//to meter
   setdistance (wif, distance);	//sets the receiver sensitivity
-  int rx = atoi (default_get (rxantenna, "1"));	
-  int tx = atoi (default_get (txantenna, "1"));	
-  int diva = atoi (default_get (diversity, "0"));	
-  setsysctrl(wif,"diversity",diva);
-  setsysctrl(wif,"rxantenna",rx);
-  setsysctrl(wif,"txantenna",tx);
-  
-  if (!strcmp(m,"wdssta") || !strcmp(m,"wdsap"))
-  eval("iwpriv",dev,"wds","1");
-  
-  
+  int rx = atoi (default_get (rxantenna, "1"));
+  int tx = atoi (default_get (txantenna, "1"));
+  int diva = atoi (default_get (diversity, "0"));
+  setsysctrl (wif, "diversity", diva);
+  setsysctrl (wif, "rxantenna", rx);
+  setsysctrl (wif, "txantenna", tx);
+
+  if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
+    eval ("iwpriv", dev, "wds", "1");
+
+
   memset (var, 0, 80);
 
   cprintf ("set ssid\n");
   eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
   cprintf ("set broadcast flag\n");	//hide ssid
   eval ("iwpriv", dev, "hide_ssid", default_get (broadcast, "0"));
-  
+
   cprintf ("setup encryption");
-  if (strcmp (m, "sta") && strcmp(m,"wdssta"))
+  if (strcmp (m, "sta") && strcmp (m, "wdssta"))
     setupHostAP (dev);
   else
     setupSupplicant (dev);
@@ -1076,10 +1140,10 @@ configure_single (int count)
     {
       eval ("brctl", "addif", "br0", dev);
     }
-    else
+  else
     {
-  cprintf ("set ssid\n");
-  eval ("iwconfig", dev, "essid", default_get (ssid, "default"));    
+      cprintf ("set ssid\n");
+      eval ("iwconfig", dev, "essid", default_get (ssid, "default"));
     }
   vifs = nvram_safe_get (wifivifs);
   if (vifs != NULL)
@@ -1097,23 +1161,23 @@ configure_single (int count)
 //      {
 //        eval ("iwconfig", var, "channel", default_get (channel, "6"));
 //      }
-    //  fprintf (stderr, "set ssid for %s\n", var);
+      //  fprintf (stderr, "set ssid for %s\n", var);
       eval ("iwconfig", var, "essid", default_get (ssid, "default"));
       cprintf ("set broadcast flag vif %s\n", var);	//hide ssid
-    //  fprintf (stderr, "set broadcast for %s\n", var);
+      //  fprintf (stderr, "set broadcast for %s\n", var);
       sprintf (broadcast, "%s_closed", var);
       eval ("iwpriv", var, "hide_ssid", default_get (broadcast, "0"));
 
-      if (!strcmp(m,"wdssta") || !strcmp(m,"wdsap"))
-      eval("iwpriv",dev,"wds","1");
-      
+      if (!strcmp (m, "wdssta") || !strcmp (m, "wdsap"))
+	eval ("iwpriv", dev, "wds", "1");
+
       // net mode
 //      set_netmode (var);
 
 //      fprintf (stderr, "encryption %s\n", var);
 
       cprintf ("setup encryption");
-      if (strcmp (m, "sta") && strcmp(m,"wdssta"))
+      if (strcmp (m, "sta") && strcmp (m, "wdssta"))
 	setupHostAP (var);
       else
 	setupSupplicant (var);
@@ -1175,7 +1239,8 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_pci","autocreate=none", countrycode, xchanmode, outdoor);
+  eval ("insmod", "ath_pci", "autocreate=none", countrycode, xchanmode,
+	outdoor);
 
 //  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
 
