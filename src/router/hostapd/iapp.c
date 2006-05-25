@@ -321,8 +321,10 @@ static void iapp_receive_udp(int sock, void *eloop_ctx, void *sock_ctx)
 	fromlen = sizeof(from);
 	len = recvfrom(iapp->udp_sock, buf, sizeof(buf), 0,
 		       (struct sockaddr *) &from, &fromlen);
-	if (len < 0)
+	if (len < 0) {
 		perror("recvfrom");
+		return;
+	}
 
 	if (from.sin_addr.s_addr == iapp->own.s_addr)
 		return; /* ignore own IAPP messages */
@@ -331,9 +333,9 @@ static void iapp_receive_udp(int sock, void *eloop_ctx, void *sock_ctx)
 		       HOSTAPD_LEVEL_DEBUG,
 		       "Received %d byte IAPP frame from %s%s\n",
 		       len, inet_ntoa(from.sin_addr),
-		       len < sizeof(*hdr) ? " (too short)" : "");
+		       len < (int) sizeof(*hdr) ? " (too short)" : "");
 
-	if (len < sizeof(*hdr))
+	if (len < (int) sizeof(*hdr))
 		return;
 
 	hdr = (struct iapp_hdr *) buf;

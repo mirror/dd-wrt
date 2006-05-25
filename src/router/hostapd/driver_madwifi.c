@@ -20,11 +20,11 @@
 
 #include <include/compat.h>
 #include <net80211/ieee80211.h>
-//#ifdef WME_NUM_AC
+#ifdef WME_NUM_AC
 /* Assume this is built against BSD branch of madwifi driver. */
-//#define MADWIFI_BSD
-//#include <net80211/_ieee80211.h>
-//#endif /* WME_NUM_AC */
+#define MADWIFI_BSD
+#include <net80211/_ieee80211.h>
+#endif /* WME_NUM_AC */
 #include <net80211/ieee80211_crypto.h>
 #include <net80211/ieee80211_ioctl.h>
 
@@ -160,7 +160,8 @@ set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 #endif /* MADWIFI_NG */
 		int idx = op - first;
 		if (first <= op && op <= last &&
-		    idx < sizeof(opnames) / sizeof(opnames[0]) && opnames[idx])
+		    idx < (int) (sizeof(opnames) / sizeof(opnames[0])) &&
+		    opnames[idx])
 			perror(opnames[idx]);
 		else
 			perror("ioctl[unknown???]");
@@ -168,7 +169,10 @@ set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
 	}
 	return 0;
 }
-
+static int madwifi_get_inact_sec(void *priv, const u8 *addr)
+{
+return 0;
+}
 static int
 set80211param(struct madwifi_driver_data *drv, int op, int arg)
 {
@@ -363,7 +367,7 @@ madwifi_set_ieee8021x(const char *ifname, void *priv, int enabled)
 			HOSTAPD_LEVEL_WARNING, "Error enabling WPA/802.1X!");
 		return -1;
 	}
-	return 0;//madwifi_set_iface_flags(priv, 1);
+	return madwifi_set_iface_flags(priv, 1);
 }
 
 static int
@@ -724,12 +728,12 @@ madwifi_process_wpa_ie(struct madwifi_driver_data *drv, struct sta_info *sta)
 		printf("Failed to get WPA/RSN information element.\n");
 		return -1;		/* XXX not right */
 	}
-	iebuf = ie.rsn_ie;
+	iebuf = ie.wpa_ie;
 #ifdef MADWIFI_NG
-	if (iebuf[1] == 0 && ie.wpa_ie[1] > 0) {
+	if (iebuf[1] == 0 && ie.rsn_ie[1] > 0) {
 		/* madwifi-ng svn #1453 added rsn_ie. Use it, if wpa_ie was not
 		 * set. This is needed for WPA2. */
-		iebuf = ie.wpa_ie;
+		iebuf = ie.rsn_ie;
 	}
 #endif /* MADWIFI_NG */
 	ielen = iebuf[1];
@@ -916,7 +920,7 @@ madwifi_wireless_event_rtm_newlink(struct madwifi_driver_data *drv,
 	int attrlen, nlmsg_len, rta_len;
 	struct rtattr * attr;
 
-	if (len < sizeof(*ifi))
+	if (len < (int) sizeof(*ifi))
 		return;
 
 	ifi = NLMSG_DATA(h);
@@ -964,7 +968,7 @@ madwifi_wireless_event_receive(int sock, void *eloop_ctx, void *sock_ctx)
 	}
 
 	h = (struct nlmsghdr *) buf;
-	while (left >= sizeof(*h)) {
+	while (left >= (int) sizeof(*h)) {
 		int len, plen;
 
 		len = h->nlmsg_len;
@@ -1204,7 +1208,7 @@ madwifi_init(struct hostapd_data *hapd)
 		goto bad;
 	}
 
-//	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
+	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
 
 	hapd->driver = &drv->ops;
 	return 0;
@@ -1226,7 +1230,7 @@ madwifi_deinit(void *priv)
 
 	drv->hapd->driver = NULL;
 
-	//(void) madwifi_set_iface_flags(drv, 0);
+	(void) madwifi_set_iface_flags(drv, 0);
 	if (drv->ioctl_sock >= 0)
 		close(drv->ioctl_sock);
 	if (drv->sock_recv != NULL && drv->sock_recv != drv->sock_xmit)
@@ -1306,6 +1310,7 @@ static const struct driver_ops madwifi_driver_ops = {
 	.get_ssid		= madwifi_get_ssid,
 	.set_countermeasures	= madwifi_set_countermeasures,
 	.sta_clear_stats        = madwifi_sta_clear_stats,
+	.get_inact_sec 		= madwifi_get_inact_sec,
 };
 
 void madwifi_driver_register(void)

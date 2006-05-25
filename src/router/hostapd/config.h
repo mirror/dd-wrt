@@ -180,6 +180,7 @@ struct hostapd_bss_config {
 	int rsn_preauth;
 	char *rsn_preauth_interfaces;
 	int stakey;
+	int peerkey;
 
 	char *ctrl_interface; /* directory for UNIX domain sockets */
 	gid_t ctrl_interface_gid;
