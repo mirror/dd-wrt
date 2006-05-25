@@ -14,7 +14,7 @@
 #define EXPIRES_NEVER 0xFFFFFFFF /* static lease */
 
 char 
-*dnsmasq_reltime (char *buf, time_t t)
+*dhcp_reltime (char *buf, time_t t)
 {
   int days;
   int min;
@@ -87,7 +87,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
                       (count ? ',' : ' '),
                       (hostname[0] ? hostname : "unknown"),
                       ip, mac,
-                      ((expires == 0) ? "never" : dnsmasq_reltime (buf, expires)), p + 1);
+                      ((expires == 0) ? "never" : dhcp_reltime (buf, expires)), p + 1);
             ++count;
           }
       fclose (fp);

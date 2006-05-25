@@ -48,68 +48,27 @@ ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  unsigned long now_time = 0L;
-  unsigned long get_leases_time = 0L;
-  unsigned long leases_time = 0L;
-  unsigned long remain_time = 0L;
-  struct sysinfo info;
-  char string[80];
-  int day = 0, hour = 0, min = 0, sec = 0;
-  FILE *fp;
+  // tofu12
 
-  if (nvram_invmatch ("wan_proto", "dhcp"))
+  if (nvram_invmatch("wan_proto", "dhcp")) 
     return;
 
-  leases_time = atol (nvram_safe_get ("wan_lease"));
+  long exp;
+  char buf[128];
+  struct sysinfo si;
+  long n;
 
-  if ((fp = fopen ("/tmp/udhcpc.wan.expires", "r")) != NULL)
-    {
-      fscanf (fp, "%s", string);
-      get_leases_time = atol (string) - leases_time;
-      fclose (fp);
-    }
-
-  if (get_leases_time == 0 || leases_time == 0)
-    {
-      websWrite (wp, "0");
-      return;
-    }
-
-  sysinfo (&info);
-  now_time = info.uptime;
-
-  remain_time = leases_time - (now_time - get_leases_time);
-
-  if (remain_time < 0)
-    {
-      websWrite (wp, "0");
-      return;
-    }
-  if (leases_time)
-    {
-      if (remain_time > 60 * 60 * 24)
-	{			//days
-	  day = (int) remain_time / (60 * 60 * 24);
-	  remain_time %= 60 * 60 * 24;
-	}
-      if (remain_time > 60 * 60)
-	{			//hours
-	  hour = (int) remain_time / (60 * 60);
-	  remain_time %= 60 * 60;
-	}
-
-      if (remain_time > 60)
-	{			//miniutes
-	  min = (int) remain_time / 60;
-	  remain_time %= 60;
-	}			//seconds
-
-      sec = (int) remain_time;
-    }
-
-  if (day)
-    websWrite (wp, "%d days, ", day);
-  websWrite (wp, "%d:%02d:%02d", hour, min, sec);
+  exp = 0;
+  if (file_to_buf("/tmp/udhcpc.expires", buf, sizeof(buf))) 
+  {
+    n = atol(buf);
+    if (n > 0)
+      {
+        sysinfo(&si);
+        exp = n - si.uptime;
+      }
+  }
+  websWrite(wp, dhcp_reltime(buf, exp));
 
   return;
 }
