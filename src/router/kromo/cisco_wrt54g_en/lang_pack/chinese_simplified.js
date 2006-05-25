@@ -7,7 +7,7 @@
 //  Head.appendChild(head_inc);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V23 SP1 by Botho 17/05/2006				//
+//		Chinese (Simplified) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006		//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -38,10 +38,10 @@ share.mac="MAC地址";
 share.none="无";
 share.both="两者都有";
 share.del="删除";
-share.remove="去除";
+share.remove="移除";
 share.descr="描述";
 share.from="起始于";
-share.to="中止于";
+share.to="终止于";
 share.about="关于";
 share.everyday="每天";
 share.sun="星期天";
@@ -91,7 +91,7 @@ share.medium="中";
 share.high="高";
 share.option="选项";
 share.rule="规则";
-share.lan="LAN（本地网络）";
+share.lan="LAN（局域网络）";
 share.point2point="点对点";
 share.nat="NAT（网络地址转换）";
 share.subnet="子网掩码";
@@ -156,7 +156,7 @@ sbutton.add_wol="添加主机";
 sbutton.manual_wol="手动唤醒";
 sbutton.summary="综述";
 sbutton.filterIP="编辑PC列表";
-sbutton.filterMac="编辑MAC过滤列表";
+sbutton.filterMac="编辑MAC过滤器列表";
 sbutton.filterSer="添加/编辑服务";
 sbutton.reboot="重新启动路由器";
 sbutton.help="   帮助  ";
@@ -182,12 +182,12 @@ var errmsg = new Object();
 errmsg.err0="您必须输入一个用户名。";
 errmsg.err1="您必须输入一个路由器名称。";
 errmsg.err2="超出范围，请调整起始IP地址或用户的个数。";
-errmsg.err3="你必须选择至少一个日期。"
+errmsg.err3="您必须至少选择一个日期。"
 errmsg.err4="结束时间必须比开始时间大。";
 errmsg.err5="MAC地址长度不正确。";
-errmsg.err6="你必须输入一个密码。";
-errmsg.err7="你必须输入一个主机名。";
-errmsg.err8="你必须输入一个IP地址或者域名。";
+errmsg.err6="您必须输入一个密码。";
+errmsg.err7="您必须输入一个主机名。";
+errmsg.err8="您必须输入一个IP地址或者域名。";
 errmsg.err9="非法DMZ IP地址。";
 errmsg.err10="确认密码与所输入密码不相符。请重新输入密码。";
 errmsg.err11="在密码中不允许使用空格";
@@ -206,7 +206,7 @@ errmsg.err18="MAC地址长度不正确。";
 errmsg.err19="MAC地址不能是广播MAC地址。"
 errmsg.err20="使用形如(xx:xx:xx:xx:xx:xx)的格式输入MAC地址。";
 errmsg.err21="无效MAC地址格式。";
-errmsg.err22="WAM口MAC地址不正确。";
+errmsg.err22="WAN口MAC地址不正确。";
 errmsg.err23="无效16进制数值 ";
 errmsg.err24=" 在如下MAC地址中出现 ";
 errmsg.err25="秘钥值不正确。";
@@ -231,7 +231,7 @@ errmsg.err38="请输入一个Shared Key（共享秘钥）！";
 errmsg.err39="无效秘钥，必须是长度为8到63个ASCII字符或者64个十六进制数字"
 errmsg.err40="你必须为如下秘钥输入一个关键字 ";
 errmsg.err41="关键字长度无效 ";
-errmsg.err43="重新协商秘钥间隔";
+errmsg.err43="重新获取秘钥间隔";
 
 //config.asp error messages
 errmsg.err42="请选择一个用来恢复的配置文件。";
@@ -240,10 +240,10 @@ errmsg.err42="请选择一个用来恢复的配置文件。";
 errmsg.err44="总检查次数超过128次。";
 
 //Site_Survey.asp error messages
-errmsg.err47=("无效SSID。");
+errmsg.err47="无效SSID。";   //changed 20060525
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS与当前路由器的配置不兼容。请检查以下几点 :\n * 无线模式必须被设置为AP（接入点） \n * WDS下不支持WPA2 \n * WDS下不支持无线网络使用B-Only模式";
+errmsg.err48="WDS与当前路由器的配置不兼容。请检查以下几点 :\n * 无线模式必须被设置为AP（接入点） \n * WDS下不支持WPA2 \n * WDS下不支持无线网络使用 仅B 模式";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius仅在AP（接入点）模式下可用。";
@@ -275,7 +275,7 @@ errmsg.err58="点击删除";
 errmsg.err59="不可用！请启用无线网络。";
 
 //Upgrade.asp error messages
-errmsg.err60="请选在升级文件。";
+errmsg.err60="请选择升级文件。";
 errmsg.err61="不正确的镜像文件。";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
@@ -344,7 +344,6 @@ alive.titl=" - 保持活动";
 alive.h2="保持活动";
 alive.legend="计划重新启动";
 alive.sevr1="计划重新启动";
-alive.time="时间（以秒为单位）";
 alive.hour="在设置的时间";
 alive.legend2="WDS/连接看门狗";
 alive.sevr2="开启看门狗";
@@ -393,7 +392,7 @@ ddns.typ="类型";
 ddns.dynamic="动态";
 // ddns.static="静态"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="自定义";
-ddns.wildcard="统配";
+ddns.wildcard="统配符";
 ddns.statu="DDNS状态";
 
 var ddnsm = new Object();
@@ -476,8 +475,8 @@ var dmz = new Object();
 dmz.titl=" - DMZ";
 dmz.h2="非军事区 (DMZ)";
 dmz.legend="DMZ";
-dmz.serv="使用 DMZ";
-dmz.host="DMZ 主机IP地址";
+dmz.serv="使用DMZ";
+dmz.host="DMZ主机IP地址";
 
 
 //help container
@@ -508,9 +507,9 @@ var filterIP = new Object();
 filterIP.titl=" - PC列表";
 filterIP.h2="PC列表";
 filterIP.h3="以如下格式输入PC的MAC地址：xx:xx:xx:xx:xx:xx";
-filterIP.h32="输入PC机的IP地址";
-filterIP.h33="输入PC机的IP地址范围";
-filterIP.ip_range="IP地址范围";
+filterIP.h32="输入PC的IP地址";
+filterIP.h33="输入PC的IP范围";
+filterIP.ip_range="IP范围";
 
 
 
@@ -523,11 +522,11 @@ filter.legend="访问策略";
 filter.restore="恢复出厂默认设置";
 filter.pol="策略";
 filter.polname="策略名称";
-filter.pcs="PC机";
+filter.pcs="PC";
 filter.polallow="在选定的日期和时间允许Internet访问。";
 filter.legend2="日期";
 filter.time="时间";
-filter.h24="24小时制";
+filter.h24="24小时";
 filter.legend3="被封禁的服务";
 filter.catchall="捕获所有P2P协议";
 filter.legend4="通过URL地址封锁Web站点";
@@ -550,19 +549,19 @@ hfilter.right8="请选择您希望您的策略被应用的日期。";
 hfilter.right9="时间：";
 hfilter.right10="请输入您希望您的策略被应用的时间。";
 hfilter.right11="非封禁的服务：";
-hfilter.right12="您可以选择封锁特定的服务。点击 <em>" + sbutton.filterSer + "</em> 按钮更改这些设置。";
-hfilter.right13="正在通过URL被封锁的Web站点：";
-hfilter.right14="您可以通过输入特定Web站点的URL来封锁对其访问。";
-hfilter.right15="正在通过关键字被封锁的Web站点：";
-hfilter.right16="您可以通过输入包含在特定Web站点页面中的关键字来封锁对其访问。";;
+hfilter.right12="您可以选择封禁特定的服务。点击 <em>" + sbutton.filterSer + "</em> 按钮更改这些设置。";
+hfilter.right13="正在通过URL被封禁的Web站点：";
+hfilter.right14="您可以通过输入特定Web站点的URL来封禁对其访问。";
+hfilter.right15="正在通过关键字被封禁的Web站点：";
+hfilter.right16="您可以通过输入包含在特定Web站点页面中的关键字来封禁对其访问。";;
 
 
 
 // ******************************************* FilterSummary.asp *******************************************//
 
 var filterSum = new Object();
-filterSum.titl=" - 访问限制总揽";
-filterSum.h2="Internet策略总揽";
+filterSum.titl=" - 访问限制综览";
+filterSum.h2="Internet策略综览";
 filterSum.polnum="序号";
 filterSum.polday="（每天的）时间";
 
@@ -580,15 +579,14 @@ firewall.proxy="过滤代理";
 firewall.cookies="过滤Cookies";
 firewall.applet="过滤Java Applets（Java小应用程序）";
 firewall.activex="过滤ActiveX";
-firewall.legend3="封锁来自WAN口的请求";
-firewall.ping="封锁来自Internet的匿名请求";
+firewall.legend3="封禁来自WAN口的请求";
+firewall.ping="封禁来自Internet的匿名请求";
 firewall.muticast="过滤多播";
 filter.nat="过滤Internet NAT重定向";
 filter.port113="过滤IDENT（113号端口）";
 
 //help container
 var hfirewall = new Object();
-hfirewall.right1="防火墙保护：";
 hfirewall.right2="启用或禁用SPI防火墙。";
 
 
@@ -699,7 +697,7 @@ var idx_h = new Object();
 idx_h.srv="心跳服务器";
 idx_h.con_strgy="连接策略";
 idx_h.max_idle="按需连接：最大空闲时间";
-idx_h.alive="保持活动：重拨号间期";
+idx_h.alive="保持活动：重拨间期";
 
 
 
@@ -764,8 +762,9 @@ idx.dhcp_start="起始IP地址";
 idx.dhcp_end="终止IP地址";		//used in Status_Lan.asp
 idx.dhcp_maxusers="最大DHCP用户数";
 idx.dhcp_lease="客户端租用时间";
-idx.dhcp_dnsmasq="对DHCP使用DNSMasq";
-
+idx.dhcp_dnsmasq="为DHCP使用DNSMasq";
+idx.dns_dnsmasq="为DNS使用DNSMasq";
+idx.auth_dnsmasq="以DHCP为准";
 
 
 
@@ -796,8 +795,8 @@ join.mess1="已经以客户端身份成功地加入了下列网络：";
 // ******************************************* Log_incoming.asp *******************************************//
 
 var log_in = new Object();
-log_in.titl=" - 呼入日志表";
-log_in.h2="呼入日志表";
+log_in.titl=" - 连入日志表";
+log_in.h2="连入日志表";
 log_in.th_ip="源IP";
 log_in.th_port="目的端口号";
 
@@ -806,8 +805,8 @@ log_in.th_port="目的端口号";
 // ******************************************* Log_outgoing.asp *******************************************//
 
 var log_out = new Object();
-log_out.titl=" - 呼出日志表";
-log_out.h2="呼出日志表";
+log_out.titl=" - 连出日志表";
+log_out.h2="连出日志表";
 log_out.th_lanip="LAN IP";
 log_out.th_wanip="目的URL/IP";
 log_out.th_port="服务/端口号";
@@ -919,10 +918,10 @@ management.clock_support="不支持";
 management.mmc_legend="MMC/SD卡支持";
 management.mmc_srv="MMC设备";
 
-management.samba_legend="Samba FS Automount";
+management.samba_legend="Samba FS自动装载";
 management.samba_srv="SMB文件系统";
 management.samba_share="共享";
-management.samba_stscript="Startscript";
+management.samba_stscript="启动脚本";
 
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="SIP端口";
@@ -959,13 +958,13 @@ qos.uplink="上行 (kbps)";
 qos.dnlink="下行 (kbps)";
 qos.gaming="为游戏优化";
 qos.legend2="服务优先级";
-qos.prio_x="Exempt";
-qos.prio_p="Premium";
-qos.prio_e="Express";
-qos.prio_s="Standard";
-qos.prio_b="Bulk";
+qos.prio_x="Exempt（豁免）";
+qos.prio_p="Premium（促进）";
+qos.prio_e="Express（快速）";
+qos.prio_s="Standard（标准）";
+qos.prio_b="Bulk（压底）";
 qos.legend3="Netmask优先级";
-qos.ipmask="IP/Mask";
+qos.ipmask="IP/掩模";
 qos.maxrate_b="最大Kbits";
 qos.maxrate_o="最大数据率";
 qos.legend4="MAC优先级";
@@ -1004,15 +1003,15 @@ route.titl=" - 路由操作";
 route.h2="高级路由操作";
 route.mod="工作模式";
 route.bgp_legend="BGP设置";
-route.bgp_ip="Neighbor IP";
-route.bgp_as="Neighbor AS#";
+route.bgp_ip="邻近IP";
+route.bgp_as="邻近AS#";
 route.rip2_mod="RIP2路由器";
 route.ospf_mod="OSPF路由器";
 route.gateway_legend="动态路由操作";
 route.static_legend="动态路由操作";
 route.static_setno="选择设置号";
 route.static_name="路由名称";
-route.static_ip="目标LAN IP";
+route.static_ip="目的LAN IP";
 
 //help container
 var hroute = new Object();
@@ -1032,7 +1031,7 @@ hroute.right10="决定主机和网络分配。";
 
 var survey = new Object();
 survey.titl=" - Site Survey（选址）";
-survey.h2="邻近的&#39;s无线网络";
+survey.h2="邻近的无线网络";
 survey.thjoin="加入站点";
 
 
@@ -1047,7 +1046,7 @@ service.h2="服务管理";
 //kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="开启Kaid";
-service.kaid_mac="Console Macs: (must end with;)";
+service.kaid_mac="控制台Macs: (必须以 ; 结束)";
 
 //DHCPd
 service.dhcp_legend="DHCP客户端";
@@ -1100,24 +1099,25 @@ service.snmp_srv="SNMP";
 service.snmp_loc="位置";
 service.snmp_contact="联系";
 service.snmp_name="名称";
-service.snmp_read="RO Community";
-service.snmp_write="RW Community";
+service.snmp_read="RO群社";
+service.snmp_write="RW群社";
 
 //openvpn.webservices
 service.vpn_legend="OpenVPN客户端";
 service.vpn_srv="开启OpenVPN";
-service.vpn_ipname="服务器IP/Name";
+service.vpn_ipname="服务器IP/名称";
 service.vpn_mtu="TUN MTU设置";
-service.vpn_mru="TUN MTU Extra";
+service.vpn_mru="TUN MTU额外附加";
 service.vpn_mss="TCP MSS";
 service.vpn_compress="使用LZO压缩";
 service.vpn_tunnel="隧道协议";
 service.vpn_srvcert="公共服务器端证书";
 service.vpn_clicert="公共客户端证书";
+service.vpn_certtype="nsCertType（ns证书类型）";
 service.vpn_clikey="客户端私钥";
 
 //sshd.webservices
-service.ssh_legend="Secure Shell";
+service.ssh_legend="Secure Shell（安全外壳）";
 service.ssh_srv="SSHd";
 service.ssh_password="密码登录";
 service.ssh_key="授权秘钥";
@@ -1127,9 +1127,9 @@ service.ssh_key="授权秘钥";
 // ******************************************* Sipath.asp + cgi *******************************************//
 
 var sipath = new Object();
-sipath.titl=" - SiPath Overview";
-sipath.phone_titl=" - Phonebook";
-sipath.status_titl=" - Status";
+sipath.titl=" - SiPath总览";
+sipath.phone_titl=" - 电话本";
+sipath.status_titl=" - 状态";
 
 
 
@@ -1385,14 +1385,14 @@ wpa.auth_mode="网络鉴权";
 wpa.psk="WPA预共享秘钥";
 wpa.wpa="WPA";
 wpa.radius="Radius";
-wpa.gtk_rekey="WPA组重新协商秘钥间隔";
+wpa.gtk_rekey="WPA组重新获取秘钥间隔";
 wpa.rekey="秘钥更新间歇（以秒为单位）";
 wpa.radius_ipaddr="RADIUS服务器地址";
 wpa.radius_port="RADIUS服务器端口";
 wpa.radius_key="RADIUS秘钥";
 wpa.algorithms="WPA算法";
 wpa.shared_key="WPA共享秘钥";
-wpa.rekeyInt="重新协商秘钥间隔";
+wpa.rekeyInt="重新获取秘钥间隔";
 
 //help container
 var hwpa = new Object();
@@ -1565,7 +1565,7 @@ success.success_noreboot="设置成功。";
 success.success_reboot=success.success_noreboot + "<br />设备正在重新启动。请稍候……";
 
 success.alert_reset="所有配置已经被恢复到它们的默认值。<br /><br />";
-success.alert1="请再在此连接前检查以下内容：";
+success.alert1="请在再次连接前检查以下内容：";
 success.alert2="如果您更改了您的路由器的IP地址，请注意您必须release并且renew您网络上客户端的地址。";
 success.alert3="如果您是通过WLAN连接的，请加入网络并且点击 <em>继续</em>.";
 
