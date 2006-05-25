@@ -2,6 +2,8 @@ ChangeLog for hostapd
 
 ????-??-?? - v0.5.4
 	* fixed nt_password_hash build [Bug 144]
+	* added PeerKey handshake implementation for IEEE 802.11e
+	  direct link setup (DLS) to replace STAKey handshake
 
 2006-04-27 - v0.5.3
 	* do not build nt_password_hash and hlr_auc_gw by default to avoid

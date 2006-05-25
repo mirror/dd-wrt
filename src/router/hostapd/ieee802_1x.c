@@ -563,7 +563,7 @@ static void handle_eap_response(struct hostapd_data *hapd,
 
 	if (type == EAP_TYPE_IDENTITY) {
 		char *buf, *pos;
-		int i;
+		size_t i;
 		buf = malloc(4 * len + 1);
 		if (buf) {
 			pos = buf;
@@ -834,7 +834,7 @@ void ieee802_1x_new_station(struct hostapd_data *hapd, struct sta_info *sta)
 
 void ieee802_1x_free_radius_class(struct radius_class_data *class)
 {
-	int i;
+	size_t i;
 	if (class == NULL)
 		return;
 	for (i = 0; i < class->count; i++)
@@ -1262,7 +1262,7 @@ ieee802_1x_receive_auth(struct radius_msg *msg, struct radius_msg *req,
 		if (sm->keyAvailable &&
 		    wpa_auth_pmksa_add(sta->wpa_sm, sm->eapol_key_crypt,
 				       session_timeout_set ?
-				       session_timeout : -1, sm) == 0) {
+				       (int) session_timeout : -1, sm) == 0) {
 			hostapd_logger(hapd, sta->addr, HOSTAPD_MODULE_WPA,
 				       HOSTAPD_LEVEL_DEBUG,
 				       "Added PMKSA cache entry");
@@ -1587,7 +1587,7 @@ u8 * ieee802_1x_get_radius_class(struct eapol_state_machine *sm, size_t *len,
 				 int idx)
 {
 	if (sm == NULL || sm->radius_class.attr == NULL ||
-	    idx >= sm->radius_class.count)
+	    idx >= (int) sm->radius_class.count)
 		return NULL;
 
 	*len = sm->radius_class.attr[idx].len;

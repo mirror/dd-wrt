@@ -151,6 +151,18 @@ static inline unsigned int wpa_swap_32(unsigned int v)
 		(a)[3] = (u8) (((u32) (val)) & 0xff);	\
 	} while (0)
 
+#define WPA_PUT_BE64(a, val)				\
+	do {						\
+		(a)[0] = (u8) (((u64) (val)) >> 56);	\
+		(a)[1] = (u8) (((u64) (val)) >> 48);	\
+		(a)[2] = (u8) (((u64) (val)) >> 40);	\
+		(a)[3] = (u8) (((u64) (val)) >> 32);	\
+		(a)[4] = (u8) (((u64) (val)) >> 24);	\
+		(a)[5] = (u8) (((u64) (val)) >> 16);	\
+		(a)[6] = (u8) (((u64) (val)) >> 8);	\
+		(a)[7] = (u8) (((u64) (val)) & 0xff);	\
+	} while (0)
+
 
 #ifndef ETH_ALEN
 #define ETH_ALEN 6

@@ -175,6 +175,7 @@ void ap_handle_timer(void *eloop_ctx, void *timeout_ctx)
 			      "Checking STA " MACSTR " inactivity:\n",
 			      MAC2STR(sta->addr));
 		inactive_sec = hostapd_get_inact_sec(hapd, sta->addr);
+	
 		if (inactive_sec == -1) {
 			printf("  Could not get station info from kernel "
 			       "driver for " MACSTR ".\n",

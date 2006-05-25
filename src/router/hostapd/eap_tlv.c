@@ -141,7 +141,7 @@ static void eap_tlv_process(struct eap_sm *sm, void *priv,
 		tlv_len = ((int) pos[2] << 8) | pos[3];
 		pos += 4;
 		left -= 4;
-		if (tlv_len > left) {
+		if ((size_t) tlv_len > left) {
 			wpa_printf(MSG_DEBUG, "EAP-TLV: TLV underrun "
 				   "(tlv_len=%d left=%lu)", tlv_len,
 				   (unsigned long) left);

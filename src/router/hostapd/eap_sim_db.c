@@ -288,7 +288,7 @@ static void eap_sim_db_receive(int sock, void *eloop_ctx, void *sock_ctx)
 			      "external source", (u8 *) buf, res);
 	if (res == 0)
 		return;
-	if (res >= sizeof(buf))
+	if (res >= (int) sizeof(buf))
 		res = sizeof(buf) - 1;
 	buf[res] = '\0';
 
@@ -550,7 +550,8 @@ int eap_sim_db_get_gsm_triplets(void *priv, const u8 *identity,
 {
 	struct eap_sim_db_data *data = priv;
 	struct eap_sim_db_pending *entry;
-	int i, len;
+	int len;
+	size_t i;
 	char msg[40];
 
 	if (identity_len < 2 || identity[0] != EAP_SIM_PERMANENT_PREFIX ||
@@ -1103,7 +1104,8 @@ int eap_sim_db_get_aka_auth(void *priv, const u8 *identity,
 {
 	struct eap_sim_db_data *data = priv;
 	struct eap_sim_db_pending *entry;
-	int i, len;
+	int len;
+	size_t i;
 	char msg[40];
 
 	if (identity_len < 2 || identity[0] != EAP_AKA_PERMANENT_PREFIX ||

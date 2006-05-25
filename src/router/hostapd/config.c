@@ -781,8 +781,9 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 	struct hostapd_bss_config *bss;
 	FILE *f;
 	char buf[256], *pos;
-	int line = 0, i;
+	int line = 0;
 	int errors = 0;
+	size_t i;
 
 	f = fopen(fname, "r");
 	if (f == NULL) {
@@ -1141,6 +1142,10 @@ struct hostapd_config * hostapd_config_read(const char *fname)
 		} else if (strcmp(buf, "stakey") == 0) {
 			bss->stakey = atoi(pos);
 #endif /* CONFIG_STAKEY */
+#ifdef CONFIG_PEERKEY
+		} else if (strcmp(buf, "peerkey") == 0) {
+			bss->peerkey = atoi(pos);
+#endif /* CONFIG_PEERKEY */
 		} else if (strcmp(buf, "ctrl_interface") == 0) {
 			free(bss->ctrl_interface);
 			bss->ctrl_interface = strdup(pos);
@@ -1362,7 +1367,7 @@ static void hostapd_config_free_bss(struct hostapd_bss_config *conf)
 
 void hostapd_config_free(struct hostapd_config *conf)
 {
-	int i;
+	size_t i;
 
 	if (conf == NULL)
 		return;
