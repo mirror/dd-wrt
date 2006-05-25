@@ -903,6 +903,7 @@ management.lang_chinese_simplified="chinese simplified";
 management.lang_croatian="croatian";
 management.lang_czech="czech";
 management.lang_dutch="dutch";
+management.lang_portoguese="portoguese";
 management.lang_english="english";
 management.lang_french="french";
 management.lang_german="german";
