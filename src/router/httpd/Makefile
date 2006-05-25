@@ -130,6 +130,7 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
   CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h
+#  OBJS += ../wireless-tools/libiw.so.29
 endif
 
 ifeq ($(CONFIG_CDEBUG),y)
