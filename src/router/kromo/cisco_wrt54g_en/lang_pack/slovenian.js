@@ -889,6 +889,7 @@ management.lang_chinese_simplified="poenostavljena kitaj¹èina";
 management.lang_croatian="hrva¹èina";
 management.lang_czech="èe¹èina";
 management.lang_dutch="nizozem¹èina";
+management.lang_portoguese="portugal¹èina";
 management.lang_english="angle¹èina";
 management.lang_french="franco¹èina";
 management.lang_german="nem¹èina";
