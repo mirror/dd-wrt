@@ -710,7 +710,8 @@ static int eap_sm_nextId(struct eap_sm *sm, int id)
  */
 void eap_sm_process_nak(struct eap_sm *sm, u8 *nak_list, size_t len)
 {
-	int i, j;
+	int i;
+	size_t j;
 
 	wpa_printf(MSG_MSGDUMP, "EAP: processing NAK (current EAP method "
 		   "index %d)", sm->user_eap_method_index);

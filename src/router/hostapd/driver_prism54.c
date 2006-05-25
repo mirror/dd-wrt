@@ -292,7 +292,7 @@ static int prism54_get_seqnum(const char *ifname, void *priv, const u8 *addr,
 	if (prism54_waitpim(priv, DOT11_OID_STASC, hdr, blen, 10) <= 0) {
 		ret = -1;
 	} else {
-		if (hdr->op == htonl(PIMOP_RESPONSE)) {
+		if (hdr->op == (int) htonl(PIMOP_RESPONSE)) {
 			memcpy(seq + 2, &stasc->sc_high, ETH_ALEN);
 			memset(seq, 0, 2);
 		} else {
@@ -415,7 +415,7 @@ static int prism54_flush(void *priv)
 	hdr->oid = htonl(DOT11_OID_CLIENTS);
 	ret = send(drv->pim_sock, hdr, sizeof(*hdr) + sizeof(long), 0);
 	ret = prism54_waitpim(priv, DOT11_OID_CLIENTS, hdr, blen, 10);
-	if ((ret < 0) || (hdr->op != htonl(PIMOP_RESPONSE)) ||
+	if ((ret < 0) || (hdr->op != (int) htonl(PIMOP_RESPONSE)) ||
 	    (le_to_host32(*nsta) > 2007)) {
 		free(hdr);
 		return 0;
@@ -521,7 +521,7 @@ static int prism54_get_inact_sec(void *priv, const u8 *addr)
 		free(hdr);
 		return -1;
 	}
-	if (hdr->op != htonl(PIMOP_RESPONSE)) {
+	if (hdr->op != (int) htonl(PIMOP_RESPONSE)) {
 		printf("get_inact_sec: bad resp\n");
 		free(hdr);
 		return -1;
@@ -709,8 +709,8 @@ static void prism54_handle_assoc(struct prism54_driver_data *drv,
 		default:
 			break;
 	}
-	if ((mlme->state == htonl(DOT11_STATE_ASSOCING)) ||
-	    (mlme->state == htonl(DOT11_STATE_REASSOCING))) {
+	if ((mlme->state == (int) htonl(DOT11_STATE_ASSOCING)) ||
+	    (mlme->state == (int) htonl(DOT11_STATE_REASSOCING))) {
 		if (len < sizeof(pimdev_hdr) + sizeof(struct obj_mlme)) {
 			printf("bad assoc packet\n");
 			return;
@@ -845,7 +845,7 @@ static void handle_pim(int sock, void *eloop_ctx, void *sock_ctx)
 		return;
 	}
 
-	if (hdr->op != htonl(PIMOP_TRAP)) {
+	if (hdr->op != (int) htonl(PIMOP_TRAP)) {
 		free(hdr);
 		return;
 	}

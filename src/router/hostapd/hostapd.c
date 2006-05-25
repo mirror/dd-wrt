@@ -268,6 +268,7 @@ static void hostapd_wpa_auth_conf(struct hostapd_bss_config *conf,
 	wconf->rsn_preauth = conf->rsn_preauth;
 	wconf->stakey = conf->stakey;
 	wconf->eapol_version = conf->eapol_version;
+	wconf->peerkey = conf->peerkey;
 }
 
 
@@ -692,7 +693,7 @@ static int hostapd_setup_interface(struct hostapd_iface *iface)
 		 * from what is being used then force installation of the
 		 * new SSID.
 		 */
-		set_ssid = (conf->ssid.ssid_len != ssid_len ||
+		set_ssid = (conf->ssid.ssid_len != (size_t) ssid_len ||
 			    memcmp(conf->ssid.ssid, ssid, ssid_len) != 0);
 	} else {
 		/*
@@ -1062,7 +1063,7 @@ static struct hostapd_iface * hostapd_init(const char *config_file)
 	if (hapd_iface->bss == NULL)
 		goto fail;
 
-	for (i = 0; i < conf->num_bss; i++) {
+	for (i = 0; (size_t) i < conf->num_bss; i++) {
 		hapd = hapd_iface->bss[i] =
 			hostapd_alloc_bss_data(hapd_iface, conf,
 					       &conf->bss[i]);

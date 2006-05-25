@@ -753,8 +753,8 @@ static void eapol_sm_step_run(struct eapol_state_machine *sm)
 {
 	struct hostapd_data *hapd = sm->hapd;
 	u8 addr[ETH_ALEN];
-	int prev_auth_pae, prev_be_auth, prev_reauth_timer, prev_auth_key_tx,
-		prev_key_rx, prev_ctrl_dir;
+	unsigned int prev_auth_pae, prev_be_auth, prev_reauth_timer,
+		prev_auth_key_tx, prev_key_rx, prev_ctrl_dir;
 	int max_steps = 100;
 
 	memcpy(addr, sm->sta->addr, ETH_ALEN);

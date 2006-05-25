@@ -183,7 +183,7 @@ static int eap_ttls_avp_parse(u8 *buf, size_t len, struct eap_ttls_avp *parse)
 		wpa_printf(MSG_DEBUG, "EAP-TTLS: AVP: code=%d flags=0x%02x "
 			   "length=%d", (int) avp_code, avp_flags,
 			   (int) avp_length);
-		if (avp_length > left) {
+		if ((int) avp_length > left) {
 			wpa_printf(MSG_WARNING, "EAP-TTLS: AVP overflow "
 				   "(len=%d, left=%d) - dropped",
 				   (int) avp_length, left);
@@ -856,8 +856,7 @@ static void eap_ttls_process_phase2_mschapv2(struct eap_sm *sm,
 {
 	u8 *chal, *username, nt_response[24], *pos, *rx_resp, *peer_challenge,
 		*auth_challenge;
-	size_t username_len;
-	int i;
+	size_t username_len, i;
 
 	if (challenge == NULL || response == NULL ||
 	    challenge_len != EAP_TTLS_MSCHAPV2_CHALLENGE_LEN ||
@@ -1163,8 +1162,9 @@ static void eap_ttls_process_phase2(struct eap_sm *sm,
 				    u8 *in_data, size_t in_len)
 {
 	u8 *in_decrypted;
-	int buf_len, len_decrypted, res;
+	int len_decrypted, res;
 	struct eap_ttls_avp parse;
+	size_t buf_len;
 
 	wpa_printf(MSG_DEBUG, "EAP-TTLS: received %lu bytes encrypted data for"
 		   " Phase 2", (unsigned long) in_len);
