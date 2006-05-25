@@ -1563,6 +1563,8 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "%s_distance", prefix);
   copytonv (wp, n);
 #ifdef HAVE_MADWIFI
+  sprintf (n, "%s_txpwr", prefix);
+  copytonv (wp, n);
   sprintf (n, "%s_regdomain", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_turbo", prefix);
@@ -1687,6 +1689,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "<h2>Wireless Physical Interface %s</h2>\n", prefix);
   websWrite (wp, "<div>\n");
   char power[16];
+  char maxpower[16];
 #ifdef HAVE_MADWIFI
   char wl_regdomain[16];
   sprintf (wl_regdomain, "%s_regdomain", prefix);
@@ -1711,10 +1714,11 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 #endif
 //power adjustment
   sprintf (power, "%s_txpwr", prefix);
+  sprintf (maxpower, "%s_maxpower", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> mW (Default: 28)\n",
-	     power, nvram_safe_get (power));
+	     "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> mW (Max: %s)\n",
+	     power, nvram_safe_get (power),nvram_safe_get(maxpower));
   websWrite (wp, "</div>\n");
 
 #endif
