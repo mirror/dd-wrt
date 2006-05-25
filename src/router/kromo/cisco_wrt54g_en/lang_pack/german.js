@@ -882,6 +882,7 @@ management.lang_croatian="Kroatisch";
 management.lang_czech="Czechisch";
 management.lang_dutch="Niederländisch";
 management.lang_english="Englisch";
+management.lang_portoguese="Portogiesisch";
 management.lang_french="Französisch";
 management.lang_german="Deutsch";
 management.lang_italian="Italienisch";
