@@ -89,15 +89,15 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WBR-G54 / WLA-G54");
       return ROUTER_BUFFALO_WBR54G;
     }
-    
-	if (nvram_match ("boardnum", "mn700") &&
+
+  if (nvram_match ("boardnum", "mn700") &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
       cprintf ("router is Microsoft mn700\n");
       setRouter ("Microsoft MN-700");
       return ROUTER_MICROSOFT_MN700;
     }
-    
+
   if (nvram_match ("boardnum", "100") &&	//added by Eko - experimental
       nvram_match ("boardtype", "bcm94710dev"))	//detect WLA-G54C 
     {
@@ -151,7 +151,8 @@ internal_getRouterBrand ()
     }
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x042f") &&
-      (nvram_match ("product_name", "Product_name") || nvram_match ("product_name", "WZR-RS-G54")))
+      (nvram_match ("product_name", "Product_name")
+       || nvram_match ("product_name", "WZR-RS-G54")))
     {
       cprintf ("router is buffalo WZR-RS\n");
       setRouter ("Buffalo WZR-RS-G54");
@@ -164,72 +165,80 @@ internal_getRouterBrand ()
     et1 = nvram_safe_get ("et1macaddr");
     if (et0 != NULL && et1 != NULL)
       {
-		if (nvram_match ("clkfreq", "125") &&
-			nvram_match ("boardnum", "100") &&
-			nvram_match ("boardtype", "bcm94710r4"))
-			{
-	     	if (startswith (et0, "00:11:50"))
-	  			{
-	    		cprintf ("router is Belkin F5D7130 / F5D7330\n"); 
-	    		setRouter ("Belkin F5D7130 / F5D7330");
-	    		return ROUTER_WRT54G;
-	  			}
-	  		if (startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
-	  			{
-	    		cprintf ("router is Belkin F5D7230 v1000\n"); 
-	    		setRouter ("Belkin F5D7230-4 v1000");
-	    		return ROUTER_RT210W;
-	  			}
-	      	if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3")) || 
-				(startswith (et0, "00:01:e3") && startswith (et1, "00:01:e3")) ||
-				(startswith (et0, "00:90:96") && startswith (et1, "00:90:96")))
-	  			{
-	    		cprintf ("router is Siemens / Askey\n");
-	    		setRouter ("Siemens SE505 v1");
-	    		return ROUTER_RT210W;
-	  			}	      
-			}
+	if (nvram_match ("clkfreq", "125") &&
+	    nvram_match ("boardnum", "100") &&
+	    nvram_match ("boardtype", "bcm94710r4"))
+	  {
+	    if (startswith (et0, "00:11:50"))
+	      {
+		cprintf ("router is Belkin F5D7130 / F5D7330\n");
+		setRouter ("Belkin F5D7130 / F5D7330");
+		return ROUTER_WRT54G;
+	      }
+	    if (startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
+	      {
+		cprintf ("router is Belkin F5D7230 v1000\n");
+		setRouter ("Belkin F5D7230-4 v1000");
+		return ROUTER_RT210W;
+	      }
+	    if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3"))
+		|| (startswith (et0, "00:01:e3")
+		    && startswith (et1, "00:01:e3"))
+		|| (startswith (et0, "00:90:96")
+		    && startswith (et1, "00:90:96")))
+	      {
+		cprintf ("router is Siemens / Askey\n");
+		setRouter ("Siemens SE505 v1");
+		return ROUTER_RT210W;
+	      }
+	  }
 
-		if (nvram_match ("boardtype", "0x0101"))
-				{ 
-				if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
-	  				{
-	    			cprintf ("router is Belkin F5D7230-4 v1444\n");
-	    			setRouter ("Belkin F5D7230-4 v1444");
-	    			return ROUTER_BELKIN_F5D7230;
-	  				}	
-				if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3")) || 
-					(startswith (et0, "00:01:e3") && startswith (et1, "00:01:e3")) ||
-					(startswith (et0, "00:90:96") && startswith (et1, "00:90:96")))
-	  				{
-	    			cprintf ("router is Siemens / Askey\n");
-	    			setRouter ("Siemens SE505 v2");
-	    			return ROUTER_SIEMENS;
-	  				}	      
-				}
-						
-		if (nvram_match ("boardnum", "2") &&
-      		nvram_match ("clkfreq", "125") &&
-      		nvram_match ("boardtype", "bcm94710dev"))
-    			{
-				if (nvram_match ("GemtekPmonVer", "9") && 
-					((startswith (et0, "00:0C:E5") && startswith (et1, "00:0C:E5")) || 
-					(startswith (et0, "00:0c:e5") && startswith (et1, "00:0c:e5")) ||
-					(startswith (et0, "00:0C:10") && startswith (et1, "00:0C:10")) ||
-					(startswith (et0, "00:11:22") && startswith (et1, "00:11:22"))))
-		  			{
-		    		cprintf ("router Motorola WR850G v1\n");
-		    		setRouter ("Motorola WR850G v1");
-		    		return ROUTER_MOTOROLA_V1;
-		  			}
-				else
-		  			{
-		  			cprintf ("router is linksys WRT55AG\n");
-	      			setRouter ("Linksys WRT55AG v1");
-	      			return ROUTER_LINKSYS_WRT55AG;
-  	  	  			}
-    			}	
-    						  
+	if (nvram_match ("boardtype", "0x0101"))
+	  {
+	    if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
+	      {
+		cprintf ("router is Belkin F5D7230-4 v1444\n");
+		setRouter ("Belkin F5D7230-4 v1444");
+		return ROUTER_BELKIN_F5D7230;
+	      }
+	    if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3"))
+		|| (startswith (et0, "00:01:e3")
+		    && startswith (et1, "00:01:e3"))
+		|| (startswith (et0, "00:90:96")
+		    && startswith (et1, "00:90:96")))
+	      {
+		cprintf ("router is Siemens / Askey\n");
+		setRouter ("Siemens SE505 v2");
+		return ROUTER_SIEMENS;
+	      }
+	  }
+
+	if (nvram_match ("boardnum", "2") &&
+	    nvram_match ("clkfreq", "125") &&
+	    nvram_match ("boardtype", "bcm94710dev"))
+	  {
+	    if (nvram_match ("GemtekPmonVer", "9") &&
+		((startswith (et0, "00:0C:E5")
+		  && startswith (et1, "00:0C:E5"))
+		 || (startswith (et0, "00:0c:e5")
+		     && startswith (et1, "00:0c:e5"))
+		 || (startswith (et0, "00:0C:10")
+		     && startswith (et1, "00:0C:10"))
+		 || (startswith (et0, "00:11:22")
+		     && startswith (et1, "00:11:22"))))
+	      {
+		cprintf ("router Motorola WR850G v1\n");
+		setRouter ("Motorola WR850G v1");
+		return ROUTER_MOTOROLA_V1;
+	      }
+	    else
+	      {
+		cprintf ("router is linksys WRT55AG\n");
+		setRouter ("Linksys WRT55AG v1");
+		return ROUTER_LINKSYS_WRT55AG;
+	      }
+	  }
+
       }
   }
   if (nvram_match ("boardnum", "42") &&
@@ -732,7 +741,8 @@ get_wan_face (void)
   else if (nvram_invmatch ("wl_mode", "ap"))
     {
 
-      if (check_hw_type () == BCM4702_CHIP || check_hw_type () == BCM4704_BCM5325F_CHIP)
+      if (check_hw_type () == BCM4702_CHIP
+	  || check_hw_type () == BCM4704_BCM5325F_CHIP)
 	strcpy (localwanface, "eth2");
       else
 	strcpy (localwanface, "eth1");
@@ -1010,7 +1020,7 @@ find_all_pid_by_ps (char *pidName)
   char line[254];
   int *pidList = NULL;
   int i = 0;
-  printf("Search for %s\n",pidName);
+  printf ("Search for %s\n", pidName);
   if ((fp = popen ("ps -ax", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
@@ -1032,19 +1042,19 @@ find_all_pid_by_ps (char *pidName)
       pidList = realloc (pidList, sizeof (int));
       pidList[0] = -1;
     }
-  printf("Search done...\n");
+  printf ("Search done...\n");
 
   return pidList;
 }
 
 
-int 
+int
 count_processes (char *pidName)
 {
   FILE *fp;
   char line[254];
   int i = 0;
-  printf("Search for %s\n",pidName);
+  printf ("Search for %s\n", pidName);
   if ((fp = popen ("ps -ax", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
@@ -1056,7 +1066,7 @@ count_processes (char *pidName)
 	}
       pclose (fp);
     }
-  printf("Search done... %d\n",i);
+  printf ("Search done... %d\n", i);
 
   return i;
 }
@@ -1250,9 +1260,7 @@ check_hw_type (void)
 
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
 
-  if (nvram_match ("boardtype", "bcm94710dev")
-  	 || nvram_match ("boardtype", "bcm94710ap")
-  	 || nvram_match ("boardtype", "bcm94710r4")) //Eko 19.apr.06, 10.may.06
+  if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("boardtype", "bcm94710ap") || nvram_match ("boardtype", "bcm94710r4"))	//Eko 19.apr.06, 10.may.06
     return BCM4702_CHIP;
   else if (nvram_match ("boardtype", "0x0708") && !(boardflags & BFL_ENETADM))
     return BCM5325E_CHIP;
@@ -1565,7 +1573,8 @@ check_vlan_support (void)
 
 //  if ((nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
 //  && nvram_invmatch ("boardnum", "2"))
-  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG || getRouterBrand () == ROUTER_MOTOROLA_V1)
+  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG
+      || getRouterBrand () == ROUTER_MOTOROLA_V1)
     return 0;
 
   if (nvram_match ("boardtype", "bcm94710dev")

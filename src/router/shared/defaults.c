@@ -761,7 +761,7 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"txpwr", "28", 0},
 #endif
-  {"noise_reference","-98",0},
+  {"noise_reference", "-98", 0},
 #ifdef HAVE_GGEW
   {"txant", "0", 0},
   {"wl_antdiv", "0", 0},
@@ -894,7 +894,7 @@ struct nvram_tuple router_defaults[] = {
   {"sshd_dss_host_key", "", 0},
   {"sshd_authorized_keys", "", 0},
   {"remote_mgt_ssh", "0", 0},
-  {"sshd_wanport", "22", 0},		/* Botho 03-05-2006 : WAN port to listen on */
+  {"sshd_wanport", "22", 0},	/* Botho 03-05-2006 : WAN port to listen on */
 #endif
   {"syslogd_enable", "0", 0},
   {"syslogd_rem_ip", "", 0},
@@ -1038,7 +1038,7 @@ struct nvram_tuple router_defaults[] = {
   {"wshaper_noprioportsrc", "", 0},
   {"wshaper_noprioportdst", "", 0},
   {"zebra_enable", "1", 0},
-  {"qos_type","0",0},
+  {"qos_type", "0", 0},
   {"svqos_svcs", "", 0},
   {"svqos_ips", "", 0},
   {"svqos_macs", "", 0},
@@ -1301,7 +1301,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik_mjid_type", "2", 0},
   {"sputnik_mjid", "", 0},
-  {"sputnik_done","0",0},
+  {"sputnik_done", "0", 0},
   {"apd_enable", "0", 0},
 #endif
 #ifdef HAVE_CHILLILOCAL
