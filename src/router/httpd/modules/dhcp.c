@@ -200,7 +200,7 @@ delete_leases (webs_t wp)
 {
   int i;
   FILE *fp_w;
- const char *value;
+  const char *value;
 
   if (nvram_match ("lan_proto", "static"))
     return -1;
@@ -249,10 +249,9 @@ delete_leases (webs_t wp)
                 get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
                 get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
                 get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
-          ipcount++;
         }
-
       fclose (fp_w);
+
       if (!(fp_w = fopen ("/var/run/udhcpd.pid", "r")))
         {
           websError (wp, 400, "Write leases error\n");
