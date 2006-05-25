@@ -332,12 +332,13 @@ setsysctrl (const char *dev, const char *control, u_long value)
   char buffer[256];
   FILE *fd;
 
-  snprintf (buffer, sizeof (buffer), "/proc/sys/dev/%s/%s", dev, control);
-  fd = fopen (buffer, "w");
+  snprintf (buffer, sizeof (buffer), "echo %li > /proc/sys/dev/%s/%s", value,dev, control);
+  system(buffer);
+ /* fd = fopen (buffer, "w");
   if (fd != NULL)
     {
       fprintf (fd, "%li", value);
-    }
+    }*/
   return 0;
 }
 
