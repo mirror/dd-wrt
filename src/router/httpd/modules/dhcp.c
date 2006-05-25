@@ -199,16 +199,17 @@ int
 delete_leases (webs_t wp)
 {
   int i;
+  FILE *fp_w;
+ const char *value;
+
   if (nvram_match ("lan_proto", "static"))
     return -1;
 
   if (nvram_match ("dhcp_dnsmasq", "1"))
     {
-      FILE *fp;
       char name[32];
-      const char *value;
 
-      if ((fp = fopen ("/tmp/.delete_leases", "w")) == NULL)
+      if ((fp_w = fopen ("/tmp/.delete_leases", "w")) == NULL)
         {
           websError (wp, 400, "Error opening delete lease file\n");
           return -1;
@@ -219,34 +220,27 @@ delete_leases (webs_t wp)
           value = websGetVar (wp, name, NULL);
           if (!value)
             continue;
-          fprintf (fp, "%d.%d.%d.%s\n",
+          fprintf (fp_w, "%d.%d.%d.%s\n",
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
         }
-      fclose (fp);
+      fclose (fp_w);
 
       eval ("killall", "-SIGUSR2", "dnsmasq");
     }
   else
     {
-      FILE *fp_w;
-//      char sigusr1[] = "-XX";
-      char buff[8];
-      char **ipbuf;
-
       unlink ("/tmp/.delete_leases");
 
-      if (!(fp_w = fopen ("/tmp/.delete_leases", "w")))
+      if ((fp_w = fopen ("/tmp/.delete_leases", "w")) == NULL)
         {
-          websError (wp, 400, "Write leases error\n");
+           websError (wp, 400, "Error opening delete lease file\n");
           return -1;
         }
-      int ipcount = 0;
       for (i = 0; i < DHCP_MAX_COUNT; i++)
         {
           char name[] = "d_XXX";
-          char *value;
           snprintf (name, sizeof (name), "d_%d", i);
           value = websGetVar (wp, name, NULL);
           if (!value)
@@ -259,92 +253,14 @@ delete_leases (webs_t wp)
         }
 
       fclose (fp_w);
-
-//      if (nvram_match ("dhcp_dnsmasq", "1"))
-//        {
-//          if (!(fp_w = fopen ("/var/run/dnsmasq.pid", "r")))
-//           {
-//             websError (wp, 400, "Write leases error\n");
-//             return -1;
-//           }
-       if (ipcount == 0)
-         return -1;
-//      fgets (buff, sizeof (buff), fp_w);
-//      sprintf (sigusr1, "-%d", SIGUSR2);
-      eval ("kill", "-SIGUSR2", "udhcpd");  // call udhcpd to delete ip from lease table
-
-      //delete leases
-      struct lease_t lease;
-      struct in_addr addr;
-      char *ipaddr;
-      FILE *fp;
-      int usejffs = 0;
-      if (!(fp = fopen ("/tmp/udhcpd.leases", "r")))
+      if (!(fp_w = fopen ("/var/run/udhcpd.pid", "r")))
         {
-          usejffs = 1;
-          if (!(fp = fopen ("/jffs/udhcpd.leases", "r")))
-           {
-             perror ("could not open input file");
-             return -1;
-           }
-        }
-      FILE *nfp = fopen ("/tmp/newdhcp.leases", "wb");
-      ipbuf = malloc (ipcount * sizeof (ipbuf));
-      ipcount = 0;
-      for (i = 0; i < DHCP_MAX_COUNT; i++)
-        {
-          char name[] = "d_XXX";
-          char *value;
-          snprintf (name, sizeof (name), "d_%d", i);
-          value = websGetVar (wp, name, NULL);
-          if (!value)
-            continue;
-          ipbuf[ipcount] = (char *) malloc (20);
-          sprintf (ipbuf[ipcount++], "%d.%d.%d.%s",
-                get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
-                get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
-                get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
-          cprintf ("%s needs to be deleted\n", ipbuf[ipcount - 1]);
+          websError (wp, 400, "Write leases error\n");
+          return -1;
         }
 
-      while (fread (&lease, sizeof (lease), 1, fp))
-        {
-          addr.s_addr = lease.yiaddr;
-          ipaddr = inet_ntoa (addr);
-       for (i = 0; i < ipcount; i++)
-         {
-           cprintf ("comparing %s with %s\n", ipbuf[i], ipaddr);
-           if (strcmp (ipbuf[i], ipaddr))
-             fwrite (&lease, sizeof (lease), 1, nfp);
-         }
-        }
-      fclose (nfp);
-      fclose (fp);
-//      eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
-      if (usejffs)
-        eval ("mv", "-f", "/tmp/newdhcp.leases", "/jffs/udhcpd.leases");
-      else
-        eval ("mv", "-f", "/tmp/newdhcp.leases", "/tmp/udhcpd.leases");
-      for (i = 0; i < ipcount; i++)
-        {
-          free (ipbuf[i]);
-        }
-      free (ipbuf);
-//    }
-//  else
-//    {
-//      if (!(fp_w = fopen ("/var/run/udhcpd.pid", "r")))
-//     {
-//       websError (wp, 400, "Write leases error\n");
-//       return -1;
-//     }
-//      fgets (buff, sizeof (buff), fp_w);
-
-//     sprintf (sigusr1, "-%d", SIGUSR2);
-//     eval ("kill", sigusr1, buff);  // call udhcpd to delete ip from lease table
-
-//    }
-  }
+      eval ("killall", "-SIGUSR2", "udhcpd");  // call udhcpd to delete ip from lease table
+    }
   return 0;
 }
 
