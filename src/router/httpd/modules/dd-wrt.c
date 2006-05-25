@@ -1148,7 +1148,7 @@ ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp,
 		 "<div class=\"label\"><script type=\"text/javascript\">Capture(idx.dhcp_dnsmasq)</script></div>\n");
       websWrite (wp,
-		 "<input type=\"checkbox\" name=\"_dhcp_dnsmasq\" value=\"1\" %s />\n",
+		 "<input type=\"checkbox\" name=\"_dhcp_dnsmasq\" value=\"1\" onclick=\"setDNSMasq(this.form)\" %s />\n",
 		 nvram_match ("dhcp_dnsmasq",
 			      "1") ? "checked=\"checked\"" : "");
       websWrite (wp, "</div>\n<div class=\"setting\">\n");
