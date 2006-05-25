@@ -571,17 +571,6 @@ start_restore_defaults (void)
 		nvram_set("boardflags", "0x0388");
 
 	}*/
-    if (brand == ROUTER_MICROSOFT_MN700)  //Temp fix for  MN-700 nvram max size problem
-	 {
-    nvram_set ("filter_services0", "");
-    nvram_set ("filter_services1", "");
-    nvram_set ("filter_services2", "");
-    nvram_set ("filter_services3", "");
-    nvram_set ("filter_services4", "");
-    nvram_set ("filter_services5", "");
-    nvram_set ("filter_services6", "");
-    nvram_set ("filter_services7", "");
-	 }
 	
 	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
       || brand == ROUTER_LINKSYS_WRT55AG || brand == ROUTER_MOTOROLA_V1)
@@ -866,14 +855,6 @@ start_sysinit (void)
 
   if (brand == ROUTER_MICROSOFT_MN700)  //Temp fix for  MN-700 nvram max size problem
 	 {
-    nvram_set ("filter_services0", "");
-    nvram_set ("filter_services1", "");
-    nvram_set ("filter_services2", "");
-    nvram_set ("filter_services3", "");
-    nvram_set ("filter_services4", "");
-    nvram_set ("filter_services5", "");
-    nvram_set ("filter_services6", "");
-    nvram_set ("filter_services7", "");
 	eval ("gpio", "enable", "6");	//power led on
 	 }
 		
