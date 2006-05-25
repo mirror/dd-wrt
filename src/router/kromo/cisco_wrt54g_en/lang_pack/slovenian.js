@@ -24,6 +24,7 @@ share.proto="Protokol";
 share.ip="IP naslov";
 share.mac="MAC naslov";
 share.none="Nobeden";
+share.none2="niè";
 share.both="Oboje";
 share.del="Izbri¹i";
 share.remove="Odstrani";
@@ -116,6 +117,9 @@ share.key="Kljuè";
 share.wireless="Brez¾ièno";
 share.dhcp="DHCP";
 share.styl="Stil";
+share.err="napaka";
+share.errs="napak";
+
 
 
 var sbutton = new Object();
@@ -659,8 +663,8 @@ hotspot.shat_legend="Zero IP nastavitev";
 hotspot.shat_srv="Zero IP nastavitev";
 hotspot.shat_srv2="Zero IP nastavitev omogoèena";
 hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik agent";
-hotspot.sputnik_id="Sputnik server ID";
+hotspot.sputnik_srv="Sputnik zastopnik";
+hotspot.sputnik_id="Sputnik stre¾nikov ID";
 hotspot.sputnik_instant="Uporabi Sputnik Instant Setup";
 hotspot.sputnik_express="Uporabi SputnikNet Express";
 hotspot.sputnik_about="o Sputniku";
@@ -674,6 +678,8 @@ info.titl=" - Info";
 info.h2="Sistemske informacije";
 info.wlanmac="Brez¾ièni MAC";
 info.srv="Storitve";
+info.ap="Dostopna toèka";
+
 
 
 // ******************************************* index_heartbeat.asp *******************************************//
@@ -1553,12 +1559,6 @@ success.alert_reset="Vse nastavitve so bile nastavljene na privezete vrednosti.<
 success.alert1="Pred ponovnim priklopom, prosimo, da preverite nasledje:";
 success.alert2="Èe ste spremenili usmerjalnikov IP naslov, morate tudi sprostiti/obnoviti odjemalèeve IP naslove.";
 success.alert3="Èe ste povezani brez¾ièno, se morate ponovno povezati v omre¾je, in nato klikniti <em>Nadaljuj</em>.";
-
-
-
-
-
-
 
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
