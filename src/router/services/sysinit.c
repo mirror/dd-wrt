@@ -851,7 +851,19 @@ start_sysinit (void)
   	nvram_set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
 	nvram_set ("wan_ifnames", "eth1");
 	}
-	
+
+	if (brand == ROUTER_MICROSOFT_MN700)  //Temp fix for  MN-700 nvram max size problem
+	 {
+    nvram_unset ("filter_services0");
+    nvram_unset ("filter_services1");
+    nvram_unset ("filter_services2");
+    nvram_unset ("filter_services3");
+    nvram_unset ("filter_services4");
+    nvram_unset ("filter_services5");
+    nvram_unset ("filter_services7");
+	eval ("gpio6", "enable");	//power led on
+	 }
+		
   /* Modules */
   uname (&name);
 
