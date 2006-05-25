@@ -861,7 +861,7 @@ start_sysinit (void)
     nvram_unset ("filter_services4");
     nvram_unset ("filter_services5");
     nvram_unset ("filter_services7");
-	eval ("gpio6", "enable");	//power led on
+	eval ("gpio", "enable", "6");	//power led on
 	 }
 		
   /* Modules */
