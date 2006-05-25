@@ -194,6 +194,10 @@ int main(int argc, char *argv[])
 				/* why not just reset the timeout, eh */
 				timeout_end = get_time(0) + server_config.auto_time;
 				continue;
+			case SIGUSR2:
+				LOG(LOG_INFO, "Received a SIGUSR2");
+				delete_leases();
+				continue;
 			case SIGHUP:
 				LOG(LOG_INFO, "Received a SIGHUP");
 				read_leases(server_config.lease_file);
