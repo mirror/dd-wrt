@@ -209,7 +209,7 @@ static void handle_frame(struct hostapd_data *hapd, u8 *buf, size_t len)
 		u8 *pos = buf + len - 2;
 		extra_len = (u16) pos[1] << 8 | pos[0];
 		printf("extra data in frame (elen=%d)\n", extra_len);
-		if (extra_len + 2 > len) {
+		if ((size_t) extra_len + 2 > len) {
 			printf("  extra data overflow\n");
 			return;
 		}
@@ -661,7 +661,8 @@ static int hostap_sta_add(const char *ifname, void *priv, const u8 *addr,
 {
 	struct hostap_driver_data *drv = priv;
 	struct prism2_hostapd_param param;
-	int tx_supp_rates = 0, i;
+	int tx_supp_rates = 0;
+	size_t i;
 
 #define WLAN_RATE_1M BIT(0)
 #define WLAN_RATE_2M BIT(1)
@@ -869,7 +870,7 @@ static void hostapd_wireless_event_rtm_newlink(struct hostap_driver_data *drv,
 	int attrlen, nlmsg_len, rta_len;
 	struct rtattr * attr;
 
-	if (len < sizeof(*ifi))
+	if (len < (int) sizeof(*ifi))
 		return;
 
 	ifi = NLMSG_DATA(h);
@@ -917,7 +918,7 @@ static void hostapd_wireless_event_receive(int sock, void *eloop_ctx,
 	}
 
 	h = (struct nlmsghdr *) buf;
-	while (left >= sizeof(*h)) {
+	while (left >= (int) sizeof(*h)) {
 		int len, plen;
 
 		len = h->nlmsg_len;

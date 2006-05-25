@@ -1168,7 +1168,7 @@ struct radius_tunnel_attrs {
 int radius_msg_get_vlanid(struct radius_msg *msg)
 {
 	struct radius_tunnel_attrs tunnel[RADIUS_TUNNEL_TAGS], *tun;
-	int i;
+	size_t i;
 	struct radius_attr_hdr *attr = NULL;
 	const u8 *data;
 	char buf[10];

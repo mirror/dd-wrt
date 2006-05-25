@@ -107,7 +107,7 @@ void hmac_md5(const u8 *key, size_t key_len, const u8 *data, size_t data_len,
 }
 
 
-#if !defined(EAP_TLS_FUNCS) || defined(EAP_TLS_NONE)
+#ifdef INTERNAL_MD5
 
 struct MD5Context {
 	u32 buf[4];
@@ -389,4 +389,4 @@ static void MD5Transform(u32 buf[4], u32 const in[16])
 }
 /* ===== end - public domain MD5 implementation ===== */
 
-#endif /* !EAP_TLS_FUNCS || EAP_TLS_NONE */
+#endif /* INTERNAL_MD5 */

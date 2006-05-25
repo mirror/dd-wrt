@@ -274,9 +274,8 @@ static void eap_mschapv2_process_response(struct eap_sm *sm,
 	struct eap_mschapv2_hdr *resp;
 	const u8 *pos, *end, *peer_challenge, *nt_response, *name;
 	u8 flags;
-	size_t len, name_len;
+	size_t len, name_len, i;
 	u8 expected[24];
-	int i;
 	const u8 *username, *user;
 	size_t username_len, user_len;
 

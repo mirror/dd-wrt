@@ -32,7 +32,7 @@ CFLAGS += -DCONFIG_NATIVE_WINDOWS
 LIBS += -lws2_32
 endif
 
-OBJS =	hostapd.o eloop.o ieee802_1x.o eapol_sm.o radius.o md5.o rc4.o \
+OBJS =	hostapd.o eloop.o ieee802_1x.o eapol_sm.o radius.o md5.o rc4.o md4.o \
 	common.o ieee802_11.o config.o ieee802_11_auth.o accounting.o \
 	sta_info.o radius_client.o sha1.o wpa.o aes_wrap.o ctrl_iface.o \
 	driver_conf.o os_$(CONFIG_OS).o preauth.o pmksa_cache.o beacon.o \
@@ -54,6 +54,10 @@ endif
 
 ifdef CONFIG_STAKEY
 CFLAGS += -DCONFIG_STAKEY
+endif
+
+ifdef CONFIG_PEERKEY
+CFLAGS += -DCONFIG_PEERKEY
 endif
 
 ifdef CONFIG_DRIVER_HOSTAP
@@ -257,6 +261,23 @@ OBJS += $(DIR_WPA_SUPPLICANT)/crypto_gnutls.o
 OBJS_p += $(DIR_WPA_SUPPLICANT)/crypto_gnutls.o
 HOBJS += $(DIR_WPA_SUPPLICANT)/crypto_gnutls.o
 endif
+else
+CONFIG_INTERNAL_AES=y
+CONFIG_INTERNAL_SHA1=y
+CONFIG_INTERNAL_MD5=y
+endif
+
+ifdef CONFIG_INTERNAL_AES
+CFLAGS += -DINTERNAL_AES
+endif
+ifdef CONFIG_INTERNAL_SHA1
+CFLAGS += -DINTERNAL_SHA1
+endif
+ifdef CONFIG_INTERNAL_MD5
+CFLAGS += -DINTERNAL_MD5
+endif
+ifdef CONFIG_INTERNAL_MD4
+CFLAGS += -DINTERNAL_MD4
 endif
 
 ifdef CONFIG_RADIUS_SERVER
@@ -282,7 +303,8 @@ verify_config:
 	fi
 
 install: all
-	for i in $(ALL); do cp $$i /usr/local/bin/$$i; done
+	mkdir -p $(INSTALLDIR)/hostapd/usr/sbin
+	for i in $(ALL); do cp $$i $(INSTALLDIR)/hostapd/usr/sbin/$$i; done
 
 hostapd: $(OBJS)
 	$(CC) -o hostapd $(OBJS) $(LIBS)

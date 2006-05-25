@@ -22,6 +22,9 @@
 #define WPA_GTK_MAX_LEN 32
 #define PMKID_LEN 16
 
+#define WPA_CAPABILITY_PREAUTH BIT(0)
+#define WPA_CAPABILITY_PEERKEY_ENABLED BIT(9)
+
 struct wpa_eapol_key {
 	u8 type;
 	u16 key_info;
@@ -51,6 +54,7 @@ struct wpa_eapol_key {
 #define WPA_KEY_INFO_ERROR BIT(10)
 #define WPA_KEY_INFO_REQUEST BIT(11)
 #define WPA_KEY_INFO_ENCR_KEY_DATA BIT(12)
+#define WPA_KEY_INFO_SMK_MESSAGE BIT(13)
 
 
 /* per STA state machine data */
@@ -84,6 +88,7 @@ struct wpa_auth_config {
 	int rsn_preauth;
 	int stakey;
 	int eapol_version;
+	int peerkey;
 };
 
 typedef enum {

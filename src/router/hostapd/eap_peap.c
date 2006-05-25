@@ -475,8 +475,9 @@ static void eap_peap_process_phase2(struct eap_sm *sm,
 				    u8 *in_data, size_t in_len)
 {
 	u8 *in_decrypted;
-	int buf_len, len_decrypted, len, res;
+	int len_decrypted, len, res;
 	struct eap_hdr *hdr;
+	size_t buf_len;
 
 	wpa_printf(MSG_DEBUG, "EAP-PEAP: received %lu bytes encrypted data for"
 		   " Phase 2", (unsigned long) in_len);
@@ -535,7 +536,7 @@ static void eap_peap_process_phase2(struct eap_sm *sm,
 		in_decrypted = (u8 *) nhdr;
 	}
 	hdr = (struct eap_hdr *) in_decrypted;
-	if (len_decrypted < sizeof(*hdr)) {
+	if (len_decrypted < (int) sizeof(*hdr)) {
 		free(in_decrypted);
 		wpa_printf(MSG_INFO, "EAP-PEAP: Too short Phase 2 "
 			   "EAP frame (len=%d)", len_decrypted);
