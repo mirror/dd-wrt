@@ -11,7 +11,7 @@ struct config_keyword {
 
 int read_config(char *file);
 void write_leases(void);
-void delete_leases(int dummy);
+void delete_leases(void);
 void read_leases(char *file);
 void read_statics(char *file);
 
