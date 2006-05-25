@@ -262,7 +262,7 @@ void write_leases(void)
 }
 
 /* delete leases from memory , by honor*/
-void delete_leases(int dummy)
+void delete_leases(void)
 {
 	int i=0,j,count;
 	struct in_addr addr;
@@ -272,19 +272,17 @@ void delete_leases(int dummy)
 	u_int32_t table[server_config.max_leases];
 	char line[80];
 
-	dummy = 0;
-
 	LOG(LOG_DEBUG,"Receive SIGUSR2 : delete_leases()");
 
 	bzero(table,sizeof(table));
 	
 	/* read "/tmp/delete_leases" which generated from DHCPTable.asp */
 	if ((fp = fopen("/tmp/.delete_leases", "r"))!=NULL) {
-		while(i<(int)server_config.max_leases && fgets(line,sizeof(line),fp)!=NULL){
+		while(fgets(line,sizeof(line),fp)!=NULL){
 			LOG(LOG_DEBUG,"line %d [%s] from /tmp/.delete_leases",i,line);
 			inet_aton(line, &in);
 			table[i]=(u_int32_t)in.s_addr;
-			i++;
+		i++;
 		}
 	   fclose(fp);
 	}
