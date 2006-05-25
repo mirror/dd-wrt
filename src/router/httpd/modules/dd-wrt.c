@@ -1181,10 +1181,10 @@ showOption (webs_t wp, char *propname, char *nvname)
 	     "<div class=\"label\">%s</div><select name=\"%s\">\n",
 	     propname, nvname);
   websWrite (wp,
-	     "<option value=\"0\" %s><script type=\"text/javascript\">Capture(share.disabled)</script></option>\n",
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s>\" + share.disabled + \"</option>\");</script>\n",
 	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp,
-	     "<option value=\"1\" %s><script type=\"text/javascript\">Capture(share.enabled)</script></option>\n</select>\n",
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"1\\\" %s>\" + share.enabled + \"</option>\");</script>\n</select>\n",
 	     nvram_match (nvname, "1") ? "selected=\\\"selected\\\"" : "");
   websWrite (wp, "</div>\n");
 
@@ -2605,8 +2605,8 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
 	websWrite (wp, ",");
       cnt++;
       websWrite (wp, "'%s','%d','%d','%d'", ieee80211_ntoa (si->isi_macaddr),
-		 rssi2dbm (si->isi_rssi), -100,
-		 rssi2dbm (si->isi_rssi) - (-100));
+		 rssi2dbm (si->isi_rssi), si->isi_noise,
+		 rssi2dbm (si->isi_rssi) - (si->isi_noise));
 
       cp += si->isi_len, len -= si->isi_len;
     }
