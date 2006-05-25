@@ -341,6 +341,18 @@ function daylight_enable_disable(F,aaa)
 	}
 }
 
+function setDNSMasq(F)
+{
+	if(F._dhcp_dnsmasq.checked == true) {
+		choose_enable(F._dns_dnsmasq);
+		choose_enable(F._auth_dnsmasq);
+	}
+	else {
+		choose_disable(F._dns_dnsmasq);
+		choose_disable(F._auth_dnsmasq);
+	}
+}
+
 function init()
 {
 	mtu_enable_disable(document.setup,'<% nvram_get("mtu_enable"); %>');
@@ -359,6 +371,7 @@ function init()
 			ppp_enable_disable(document.setup,'<% nvram_get("ppp_demand"); %>');
 
 	dhcp_enable_disable(document.setup,'<% nvram_get("lan_proto"); %>');
+	setDNSMasq(document.setup);
 }
 		</script>
 	</head>
