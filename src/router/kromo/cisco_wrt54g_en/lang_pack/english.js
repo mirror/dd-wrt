@@ -1059,6 +1059,7 @@ service.kaid_mac="Console Macs: (must end with;)";
 service.dhcp_legend="DHCP Client";
 service.dhcp_vendor="Set Vendorclass";
 service.dhcp_legend2="DHCP Server";
+service.dhcp_srv="DHCP Daemon";
 service.dhcp_jffs2="Use JFFS2 for client lease DB";
 service.dhcp_domain="Used Domain";
 service.dhcp_landomain="LAN Domain";
