@@ -23,7 +23,7 @@
 // Buffalo WBR-G54, WLA-G54 and WLA-G54C (4702 cpu)
 #define ROUTER_BUFFALO_WBR54G 5
 
-// Buffalo WBR2-G54, WBR2-G54S and Buffalo WLA2-G54L
+// Buffalo WBR2-G54 (fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
 #define ROUTER_BUFFALO_WBR2G54S 6
 #define ROUTER_BUFFALO_WLA2G54L 6	//should work like a WBR2
 
