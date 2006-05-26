@@ -635,7 +635,6 @@ start_udhcpd (void)
   else
     fprintf (fp, "lease_file /tmp/udhcpd.leases\n");
   fprintf (fp, "statics_file /tmp/udhcpd.statics\n");
-  //fprintf (fp, "static_lease /tmp/udhcpd.statics\n");
 
   if (nvram_invmatch ("lan_netmask", "")
       && nvram_invmatch ("lan_netmask", "0.0.0.0"))
