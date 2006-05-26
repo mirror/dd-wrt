@@ -217,7 +217,7 @@ errmsg.err25="The key value is not correct.";
 errmsg.err26="The key length is not correct.";
 errmsg.err27="Illegal subnet mask.";
 errmsg.err28=" have illegal characters, must be [ 0 - 9 ].";
-errmsg.err29=" have illegal ascii code."
+errmsg.err29=" have illegal ascii code.";
 errmsg.err30=" have illegal hexadecimal digits.";
 errmsg.err31=" value is illegal.";
 errmsg.err32="IP address and gateway is not at same subnet mask.";
@@ -225,7 +225,7 @@ errmsg.err33="IP address and gateway can't be same.";
 errmsg.err34=" is not allowed to contain a space.";
 
 //Wol.asp error messages
-errmsg.err35="You must input a MAC address to run."
+errmsg.err35="You must input a MAC address to run.";
 errmsg.err36="You must input a network broadcast address to run.";
 errmsg.err37="You must input a UDP port to run.";
 
