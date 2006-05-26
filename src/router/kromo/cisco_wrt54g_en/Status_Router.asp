@@ -301,14 +301,15 @@ addEvent(window, "unload", function() {
 										<div class="label">DNS 3</div>
 										<span id="wan_dns2"><% nvram_status_get("wan_dns2"); %></span>&nbsp;
 									</div>
-									<% nvram_invmatch("wan_proto", "dhcp", "<!--"); %>
+									<div id="wan_dhcp">
 										<div class="setting">
 											<div class="label">Remaining Lease Time</div>
 											<span id="dhcp_remaining"><% dhcp_remaining_time(); %></span>&nbsp;
-									<% nvram_invmatch("wan_proto", "dhcp", "-->"); %> 
-									<div class="center" id="wan_dhcp">
-										<script>document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");</script>&nbsp;
-										<script>document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");</script>
+										</div>
+										<div class="center">
+											<script>document.write("<input type=\"button\" value=\"" + sbutton.dhcprel + "\" onclick=\"DHCPAction(this.form,'release')\">");</script>&nbsp;
+											<script>document.write("<input type=\"button\" value=\"" + sbutton.dhcpren + "\" onclick=\"DHCPAction(this.form,'renew')\">");</script>
+										</div>
 									</div>
 								</span>
 							</fieldset><br />
