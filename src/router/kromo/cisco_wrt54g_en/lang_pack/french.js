@@ -211,7 +211,7 @@ errmsg.err25="La valeur de la clé est incorrecte.";
 errmsg.err26="La longueur de la clé est incorrecte.";
 errmsg.err27="Masque de sous-réseau incorrect.";
 errmsg.err28=" a un caractère illégal, doit être [ 0 - 9 ].";
-errmsg.err29=" a un code ascii illégal."
+errmsg.err29=" a un code ascii illégal.";
 errmsg.err30=" a des nombres hexadécimaux illégaux.";
 errmsg.err31=" a une valeur illégale.";
 errmsg.err32="L'adresse IP et la passerelle n'utilisent pas le même masque de sous réseau.";
@@ -219,14 +219,14 @@ errmsg.err33="L'adresse IP et la passerelle ne peuvent pas être identiques.";
 errmsg.err34=" ne doit pas contenir un espace.";
 
 //Wol.asp error messages
-errmsg.err35="Vous devez saisir une adresse MAC."
+errmsg.err35="Vous devez saisir une adresse MAC.";
 errmsg.err36="Vous devez saisir une adresse réseau de diffusion.";
 errmsg.err37="Vous devez saisir un port UDP.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Merci de saisir une clé partagée !";
-errmsg.err39="Clé invalide, doit contenir entre 8 et 63 caractères ASCII ou 64 nombres hexadécimaux"
+errmsg.err39="Clé invalide, doit contenir entre 8 et 63 caractères ASCII ou 64 nombres hexadécimaux";
 errmsg.err40="Vous devez saisir une clé pour la Clé ";
 errmsg.err41="Longueur de clé invalide ";
 errmsg.err43="Saisissez de nouveau l'intervalle.";
