@@ -217,7 +217,7 @@ errmsg.err25="O valor da Chave não está correto.";
 errmsg.err26="O tamanho da Chave não está correto.";
 errmsg.err27="Máscara de Sub-Rede inválida.";
 errmsg.err28=" possui caracteres inválidos, devem estar entre [ 0 - 9 ].";
-errmsg.err29=" possui código ascii inválido."
+errmsg.err29=" possui código ascii inválido.";
 errmsg.err30=" possui dígitos hexadecimais inválidos.";
 errmsg.err31=" valor é inválido.";
 errmsg.err32="Endereço IP e Gateway não estão na mesma máscara de sub-rede.";
@@ -225,14 +225,14 @@ errmsg.err33="Endereço IP e Gateway não podem ser o mesmo.";
 errmsg.err34=" não é permitido conter espaços em branco.";
 
 //Wol.asp error messages
-errmsg.err35="Você deve inserir um Endereço MAC para funcionar."
+errmsg.err35="Você deve inserir um Endereço MAC para funcionar.";
 errmsg.err36="Você deve inserir um endereço broadcast de rede para funcionar.";
 errmsg.err37="Você deve inserir uma porta UDP para funcionar.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Por favor insira uma Chave Compartilhada!";
-errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais."
+errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais.";
 errmsg.err40="Você deve inserir uma chave no campo Chave ";
 errmsg.err41="Tamanho inválido na Chave ";
 errmsg.err43="Rekey interval";
