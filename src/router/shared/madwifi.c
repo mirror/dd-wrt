@@ -724,6 +724,22 @@ default_match (char *var, char *match, char *def)
 static int
 getMaxPower (char *ifname)
 {
+char buf[32];
+sprintf(buf,"iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",ifname);
+system(buf);
+FILE *in = fopen("/tmp/.power","rb");
+if (in==NULL)
+    return 1000;
+char buf2[16];
+int max;
+fscanf(in,"%s %s %d",buf,buf2,&max);
+fclose(in);
+return max;
+
+
+
+/*
+
   struct iwreq wrq;
   struct iw_range range;
   int dbm;
@@ -737,10 +753,8 @@ getMaxPower (char *ifname)
     }
   int maxwatt = 0;
   iw_get_range_info (skfd, ifname, &range);
-  /* Print them all */
   for (k = 0; k < range.num_txpower; k++)
     {
-      /* Check for relative values */
       if (range.txpower_capa & IW_TXPOW_MWATT)
 	{
 	  dbm = iw_mwatt2dbm (range.txpower[k]);
@@ -755,6 +769,7 @@ getMaxPower (char *ifname)
 	maxwatt = mwatt;
     }
   iw_sockets_close (skfd);
+*/
 }
 
 /*
@@ -915,7 +930,7 @@ setupHostAP (char *prefix)
 	  if (nvram_invmatch (akm, "radius"))
 	    fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
 	  else
-	    fprintf (fp, "maccaddr_acl=2\n");
+	    fprintf (fp, "macaddr_acl=2\n");
 
 	  sprintf (psk, "%s_radius_ipaddr", prefix);
 	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
@@ -924,7 +939,7 @@ setupHostAP (char *prefix)
 	  fprintf (fp, "auth_server_port=%s\n", nvram_safe_get (psk));
 
 	  sprintf (psk, "%s_radius_key", prefix);
-	  fprintf (fp, "auth_sserver_shared_secret=%s\n",
+	  fprintf (fp, "auth_server_shared_secret=%s\n",
 		   nvram_safe_get (psk));
 	}
       if (nvram_invmatch (akm, "radius"))
@@ -1065,13 +1080,10 @@ configure_single (int count)
       sleep (1);
     }
 
+
+  cprintf("detect maxpower\n");
   m = default_get (wl, "ap");
   char maxp[16];
-  int maxpower = getMaxPower (dev);
-  sprintf (maxp, "%d", maxpower);	//set maximum power 
-  char max_power[32];
-  sprintf (max_power, "%s_maxpower", dev);
-  nvram_set (max_power, maxp);
 
   //confige net mode
 
@@ -1092,19 +1104,6 @@ configure_single (int count)
     }
 
 
-  cprintf ("adjust power\n");
-
-  int newpower = atoi (default_get (power, "28"));
-//limit power if needed
-  if (newpower > maxpower)
-    {
-      newpower = maxpower;
-      char powerset[32];
-      sprintf (powerset, "%s", newpower);
-      nvram_set (power, powerset);
-    }
-  sprintf (var, "%dmW", newpower);
-  eval ("iwconfig", dev, "txpower", var);
 
   cprintf ("adjust sensitivity\n");
 
@@ -1192,6 +1191,32 @@ configure_single (int count)
 //                  eval ("brctl", "addif", lan_ifname, var);
       cnt++;
     }
+
+  int maxpower = getMaxPower (dev);
+  if (maxpower==-1)
+    maxpower=28;
+  sprintf (maxp, "%d", maxpower);	//set maximum power 
+  char max_power[32];
+  sprintf (max_power, "%s_maxpower", dev);
+  cprintf("maxpower configured to %s\n",maxp);
+  nvram_set (max_power, maxp);
+
+  cprintf ("adjust power\n");
+
+  int newpower = atoi (default_get (power, "28"));
+//limit power if needed
+  if (newpower > maxpower)
+    {
+      newpower = maxpower;
+      char powerset[32];
+      sprintf (powerset, "%d", newpower);
+      nvram_set (power, powerset);
+    }
+  cprintf("new power limit %d\n",newpower);
+  sprintf (var, "%dmW", newpower);
+  eval ("iwconfig", dev, "txpower", var);
+
+
   cprintf ("done()\n");
 }
 
