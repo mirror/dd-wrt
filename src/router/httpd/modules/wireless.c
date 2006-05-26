@@ -1924,7 +1924,7 @@ ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
     {
       //do_ej ("Radius.asp", wp);
       show_radius (wp, prefix);
-      show_wep (wp, prefix);
+      //show_wep (wp, prefix);
       //do_ej ("WEP.asp", wp);
     }
   else if (!strcmp (security_mode, "wpa")
