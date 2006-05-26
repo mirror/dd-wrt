@@ -60,7 +60,8 @@
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
 #define ROUTER_MICROSOFT_MN700 16
 
-
+// Buffalo WLA-G54C (4702 cpu)
+#define ROUTER_BUFFALO_WLAG54C 17
 
 #define NVROUTER "DD_BOARD"
 
