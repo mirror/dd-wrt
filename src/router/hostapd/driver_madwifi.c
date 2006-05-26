@@ -22,7 +22,7 @@
 #include <net80211/ieee80211.h>
 #ifdef WME_NUM_AC
 /* Assume this is built against BSD branch of madwifi driver. */
-#define MADWIFI_BSD
+//#define MADWIFI_BSD
 #include <net80211/_ieee80211.h>
 #endif /* WME_NUM_AC */
 #include <net80211/ieee80211_crypto.h>
@@ -367,7 +367,8 @@ madwifi_set_ieee8021x(const char *ifname, void *priv, int enabled)
 			HOSTAPD_LEVEL_WARNING, "Error enabling WPA/802.1X!");
 		return -1;
 	}
-	return madwifi_set_iface_flags(priv, 1);
+//	return madwifi_set_iface_flags(priv, 1);
+    return 0;
 }
 
 static int
@@ -672,7 +673,12 @@ madwifi_sta_deauth(void *priv, const u8 *addr, int reason_code)
 	mlme.im_op = IEEE80211_MLME_DEAUTH;
 	mlme.im_reason = reason_code;
 	memcpy(mlme.im_macaddr, addr, IEEE80211_ADDR_LEN);
-	return set80211priv(priv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
+	
+	int ret = set80211priv(priv, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
+	if (ret==-EINVAL)
+	    HOSTAPD_DEBUG(HOSTAPD_DEBUG_MINIMAL,"No Station found\n");
+		
+	return 0;
 }
 
 static int
@@ -1208,7 +1214,7 @@ madwifi_init(struct hostapd_data *hapd)
 		goto bad;
 	}
 
-	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
+//	madwifi_set_iface_flags(drv, 0);	/* mark down during setup */
 
 	hapd->driver = &drv->ops;
 	return 0;
@@ -1230,7 +1236,7 @@ madwifi_deinit(void *priv)
 
 	drv->hapd->driver = NULL;
 
-	(void) madwifi_set_iface_flags(drv, 0);
+//	(void) madwifi_set_iface_flags(drv, 0);
 	if (drv->ioctl_sock >= 0)
 		close(drv->ioctl_sock);
 	if (drv->sock_recv != NULL && drv->sock_recv != drv->sock_xmit)
