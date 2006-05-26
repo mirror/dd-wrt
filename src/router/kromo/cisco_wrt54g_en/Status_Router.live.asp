@@ -8,6 +8,7 @@
 {wan_dns0::<% nvram_status_get("wan_dns0"); %>}
 {wan_dns1::<% nvram_status_get("wan_dns1"); %>}
 {wan_dns2::<% nvram_status_get("wan_dns2"); %>}
+{dhcp_remaining::<% dhcp_remaining_time(); %>}
 {mem_info::<% dumpmeminfo(); %>}
 {uptime::<% get_uptime(); %>}
 {ip_conntrack::<% dumpip_conntrack(); %>}
