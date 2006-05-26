@@ -20,7 +20,7 @@
 // Asus WL-550G-Deluxe
 #define ROUTER_ASUS 4
 
-// Buffalo WBR-G54, WLA-G54 and WLA-G54C (4702 cpu)
+// Buffalo WBR-G54, WLA-G54 (4702 cpu)
 #define ROUTER_BUFFALO_WBR54G 5
 
 // Buffalo WBR2-G54 (fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
@@ -42,7 +42,7 @@
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
 // Siemens se505 v1, Belkin F5D7230-4 v1000
-#define ROUTER_RT210W 11  //NOT USED YET
+#define ROUTER_RT210W 11 
 
 // RT480W generic and branded (fccid: Askey H8N-RT480W), (4712 cpu + ADM6996)
 // Siemens se505 v2
