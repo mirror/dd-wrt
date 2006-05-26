@@ -180,11 +180,8 @@ struct nvram_tuple router_defaults[] = {
   {"wan_dns", "", 0},		/* x.x.x.x x.x.x.x ... */
 #endif
 
-#ifdef HAVE_POWERNOC_WORT54G
   {"wan_wins", "0.0.0.0", 0},	/* x.x.x.x x.x.x.x ... */
-#else
-  {"wan_wins", "", 0},		/* x.x.x.x x.x.x.x ... */
-#endif
+
 #ifdef HAVE_SKYTRON
   {"wan_hostname", "skymax254b", 0},	/* WAN hostname */
   {"wan_domain", "local", 0},	/* WAN domain name */
