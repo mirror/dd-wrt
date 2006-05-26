@@ -213,7 +213,7 @@ errmsg.err25="秘鑰值不正確。";
 errmsg.err26="秘鑰長度不正確。";
 errmsg.err27="非法子網路遮罩。";
 errmsg.err28=" 含有非法字元, 字元必須是 [ 0 - 9 ]。";
-errmsg.err29=" 含有非法ASCII碼。"
+errmsg.err29=" 含有非法ASCII碼。";
 errmsg.err30=" 含有非法16進制數字。";
 errmsg.err31=" 數值非法。";
 errmsg.err32="IP位址和閘道不在同一子網中。";
@@ -221,14 +221,14 @@ errmsg.err33="IP位址與閘道不能相同。";
 errmsg.err34=" 中不允許含有空格。";
 
 //Wol.asp error messages
-errmsg.err35="你必須輸入一個MAC位址來執行操作。"
+errmsg.err35="你必須輸入一個MAC位址來執行操作。";
 errmsg.err36="你必須輸入一個網路廣播位址來執行操作。";
 errmsg.err37="你必須輸入一個UDP埠來執行操作。";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="請輸入一個Shared Key（共用秘鑰）！";
-errmsg.err39="無效秘鑰，必須是長度為8到63個ASCII字元或者64個十六進位數位"
+errmsg.err39="無效秘鑰，必須是長度為8到63個ASCII字元或者64個十六進位數位";
 errmsg.err40="你必須為如下秘鑰輸入一個關鍵字 ";
 errmsg.err41="關鍵字長度無效 ";
 errmsg.err43="重新獲取秘鑰間隔";

@@ -205,7 +205,7 @@ errmsg.err25="Vrednost kljuèa ni pravilna.";
 errmsg.err26="Do¾ina kljuèa ni pravilna.";
 errmsg.err27="Nepravina podmre¾na maska.";
 errmsg.err28=" ima nepravilni znak, biti mora [ 0 - 9 ].";
-errmsg.err29=" ima nepravilno ascii kodo."
+errmsg.err29=" ima nepravilno ascii kodo.";
 errmsg.err30=" ima nepravino hexadecimalno ¹tevilko.";
 errmsg.err31=" vrednost je nepravilna.";
 errmsg.err32="IP naslov in prehod nista v isti podmre¾i.";
@@ -213,14 +213,14 @@ errmsg.err33="IP naslov in prehod ne moreta biti enaka.";
 errmsg.err34=" ne sme vsebovati presledka.";
 
 //Wol.asp error messages
-errmsg.err35="Vnesti morate MAC naslov za zagon."
+errmsg.err35="Vnesti morate MAC naslov za zagon.";
 errmsg.err36="Vnesti morate mre¾ni broadcast naslov za zagon.";
 errmsg.err37="Vnesti morate UDP vrata za zagon.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Prosimo, da vnesete skupni kljuè!";
-errmsg.err39="Nepravilen kljuè, biti mora med 8 in 63 ASCII znaki ali 64 hexadecimalnih znakov"
+errmsg.err39="Nepravilen kljuè, biti mora med 8 in 63 ASCII znaki ali 64 hexadecimalnih znakov";
 errmsg.err40="Vnesti morate kljuè za Kljuè ";
 errmsg.err41="Nepravilna dol¾ina kljuèa ";
 errmsg.err43="Interval za izmenjavo kljuèa";

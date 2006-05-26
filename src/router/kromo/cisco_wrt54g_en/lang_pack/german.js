@@ -203,7 +203,7 @@ errmsg.err25="Der Schlüssel Wert ist nicht korrekt.";
 errmsg.err26="Die Schlüssel länge ist nicht korrekt.";
 errmsg.err27="Ungültige Subnetz Maske.";
 errmsg.err28=" enthält ungültige Werte, diese müssen [ 0 - 9 ] sein.";
-errmsg.err29=" enthält einen ungülten Ascii Wert."
+errmsg.err29=" enthält einen ungülten Ascii Wert.";
 errmsg.err30=" enthält illegale hexadezimale Werte.";
 errmsg.err31=" ist ungültig.";
 errmsg.err32="IP Addresse und Gateway sind nicht im selben Netzbereich.";
@@ -211,14 +211,14 @@ errmsg.err33="IP Addresse und Gateway können nicht die selben sein.";
 errmsg.err34=" dark keine leerzeichen enthalten.";
 
 //Wol.asp error messages
-errmsg.err35="Sie müssen eine MAC Addresse zum fortfahren eingeben."
+errmsg.err35="Sie müssen eine MAC Addresse zum fortfahren eingeben.";
 errmsg.err36="Sie müssen eine Netzwerk Broadcast Addresse angeben um fortzufahren.";
 errmsg.err37="Sie müssen einen UDP Port angeben um fortzufahren.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Bitte geben sie einen Shared Key an!";
-errmsg.err39="Ungültiger Schlüssel, er muß aus 8 bis 63 ASCII Werten oder 64 hexadezimalen Zahlen bestehen"
+errmsg.err39="Ungültiger Schlüssel, er muß aus 8 bis 63 ASCII Werten oder 64 hexadezimalen Zahlen bestehen";
 errmsg.err40="Sie müssen einen Schlüssel für Key angeben ";
 errmsg.err41="Ungültige Schlüssen länge ";
 errmsg.err43="Rekey Interval";
