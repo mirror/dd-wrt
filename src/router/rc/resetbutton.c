@@ -180,10 +180,11 @@ period_check (int sig)
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-	      if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
-		  || brand == ROUTER_LINKSYS_WRT55AG
-		  || brand == ROUTER_BUFFALO_WHRG54S
-		  || brand == ROUTER_BUFFALO_WBR54G)
+	      if ((brand == ROUTER_WRT54G) || 
+	      	(brand == ROUTER_WRT54G1X) ||
+		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
+		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
+		  	(brand == ROUTER_BUFFALO_WBR54G))
 		{
 		  printf ("resetbutton: factory default.\n");
 		  if (brand == ROUTER_BUFFALO_WBR54G)
@@ -276,17 +277,17 @@ int
 resetbutton_main (int argc, char *argv[])
 {
 
-//DD-WRT detecting buffalo WBR54G unit
   brand = getRouterBrand ();
-//#define ROUTER_BELKIN 2
-//#define ROUTER_BUFFALO_WBR54G 3
-//#define ROUTER_ASUS 4
-//#define ROUTER_BUFFALO_WBR2G54S 5
-//#define ROUTER_SIEMENS 6
 
-  if (brand == ROUTER_SIEMENS || brand == ROUTER_BELKIN || brand == ROUTER_RT210W
-      || brand == ROUTER_MOTOROLA || brand == ROUTER_BUFFALO_WBR2G54S
-      || brand == ROUTER_BELKIN_F5D7230 || brand == ROUTER_MICROSOFT_MN700 || brand == ROUTER_BUFFALO_WLAG54C)
+  	if ((brand == ROUTER_SIEMENS) || 
+  		(brand == ROUTER_BELKIN) || 
+  		(brand == ROUTER_RT210W) ||
+  		(brand == ROUTER_MOTOROLA) || 
+  		(brand == ROUTER_BUFFALO_WBR2G54S) ||
+  		(brand == ROUTER_BUFFALO_WZRRSG54) ||
+  		(brand == ROUTER_BELKIN_F5D7230) ||
+  		(brand == ROUTER_MICROSOFT_MN700) ||
+  		(brand == ROUTER_BUFFALO_WLAG54C))
     {
       puts ("sorry, your unit does not support resetbutton feature");
       nvram_set ("resetbutton_enable", "0");

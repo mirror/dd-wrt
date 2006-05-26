@@ -368,7 +368,14 @@ main_loop (void)
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
-	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_BELKIN_F5D7230) && (brand != ROUTER_RT210W) && (brand != ROUTER_MICROSOFT_MN700) && (brand != ROUTER_BUFFALO_WLAG54C))	//belkin doesnt like that
+	if ((brand == ROUTER_WRT54G) ||
+	   (brand == ROUTER_WRT54G1X) ||
+	   (brand == ROUTER_LINKSYS_WRT55AG) ||
+	   (brand == ROUTER_ASUS) ||
+	   (brand == ROUTER_BUFFALO_WBR54G) ||
+	   (brand == ROUTER_BUFFALO_WHRG54S) ||
+	   (brand == ROUTER_MOTOROLA_V1) ||
+	   (brand == ROUTER_BOARD_500))
 	    {
 	      stop_service ("resetbutton");
 	    }
@@ -393,7 +400,14 @@ main_loop (void)
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
-	  if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_BELKIN_F5D7230) && (brand != ROUTER_RT210W) && (brand != ROUTER_MICROSOFT_MN700) && (brand != ROUTER_BUFFALO_WLAG54C))	//belkin doesnt like that
+	if ((brand == ROUTER_WRT54G) ||
+	   (brand == ROUTER_WRT54G1X) ||
+	   (brand == ROUTER_LINKSYS_WRT55AG) ||
+	   (brand == ROUTER_ASUS) ||
+	   (brand == ROUTER_BUFFALO_WBR54G) ||
+	   (brand == ROUTER_BUFFALO_WHRG54S) ||
+	   (brand == ROUTER_MOTOROLA_V1) ||
+	   (brand == ROUTER_BOARD_500))
 	    {
 	      start_service ("resetbutton");
 	    }
@@ -619,16 +633,23 @@ main (int argc, char **argv)
     {
 #ifndef HAVE_RB500
       int brand = getRouterBrand ();
-      if ((brand != ROUTER_BELKIN) && (brand != ROUTER_BUFFALO_WBR2G54S) && (brand != ROUTER_BUFFALO_WZRRSG54) && (brand != ROUTER_SIEMENS) && (brand != ROUTER_BELKIN_F5D7230) && (brand != ROUTER_RT210W) && (brand != ROUTER_MICROSOFT_MN700) && (brand != ROUTER_BUFFALO_WLAG54C))	//belkin doesnt like that
-	{
+	if ((brand == ROUTER_WRT54G) ||
+	   (brand == ROUTER_WRT54G1X) ||
+	   (brand == ROUTER_LINKSYS_WRT55AG) ||
+	   (brand == ROUTER_ASUS) ||
+	   (brand == ROUTER_BUFFALO_WBR54G) ||
+	   (brand == ROUTER_BUFFALO_WHRG54S) ||
+	   (brand == ROUTER_MOTOROLA_V1) ||
+	   (brand == ROUTER_BOARD_500))
+	   {
 	  return resetbutton_main (argc, argv);
-	}
+		}
       else
-	{
+		{
 	  fprintf (stderr,
-		   "Belkin,Buffalo,Siemens S505 doesnt support the resetbutton!");
+		   "Your router model doesnt support the resetbutton!");
 	  return 0;
-	}
+		}
 #endif
     }
 #ifndef HAVE_MADWIFI
