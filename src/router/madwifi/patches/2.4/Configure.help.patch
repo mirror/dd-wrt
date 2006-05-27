@@ -1,0 +1,41 @@
+--- Configure.help.orig	Tue Sep 28 12:57:52 2004
++++ Configure.help	Tue Sep 28 12:57:58 2004
+@@ -6517,6 +6517,38 @@
+   kernel: saying N will just cause the configurator to skip all
+   the questions about amateur radio.
+ 
++Atheros wireless support
++CONFIG_ATHEROS
++  Say Y here if you intend to attach an Atheros Cardbus or PCI
++  wireless Ethernet networking card to your computer.  This driver
++  support the standard Linux Wireless Extensions.
++
++  You will also very likely also need the Wireless Tools in order to
++  configure your card and that /etc/pcmcia/wireless.opts works:
++  <http://www.hpl.hp.com/personal/Jean_Tourrilhes/Linux/Tools.html>.
++
++  To compile this driver as a module, choose M here: the module will
++  be called ath_pci.o  If unsure, say N.
++
++Rate control algorithm
++CONFIG_ATHEROS_RATE_SAMPLE
++  Rate control algorithms determine how the transmission rate is
++  selected based on the quality of the connection.
++
++  SampleRate chooses the bitrate it predicts will provide the most
++  throughput based on estimates of the expected per-packet transmission
++  time for each bitrate. SampleRate periodically sends packets at
++  bitrates other than the current one to estimate when another bitrate
++  will provide better performance. SampleRate switches to another
++  bitrate when its estimated per-packet transmission time becomes
++  smaller than the current bitrate's. SampleRate reduces the number of
++  bitrates it must sample by eliminating those that could not perform
++  better than the one currently being used. SampleRate also stops
++  probing at a bitrate if it experiences several successive losses.
++
++  Also available are Atsushi Onoe's rate control algorithm and Adaptive
++  Multi Rate Retry rate control algorithm.
++
+ Amateur Radio AX.25 Level 2 protocol
+ CONFIG_AX25
+   This is the protocol used for computer communication over amateur

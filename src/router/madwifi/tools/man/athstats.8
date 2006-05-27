@@ -1,0 +1,47 @@
+.TH "ATHSTATS" "8" "February 2006" "" ""
+.SH "NAME"
+\fBathstats\fP \- simple tool to inspect and monitor network traffic statistics
+.SH "SYNOPSIS"
+.B athstats
+.I "[\-i device] [interval]"
+.SH "DESCRIPTION"
+Provide statistics about a madwifi device. Without any arguments,
+\fBathstats\fP will print a summary of statistical elements for the specified
+device (defaults to wifi0 when no device is given). If an additional argument
+is given as an integer, athstats will print progressive statistical data at an
+interval equal to the integer in seconds.
+.PP
+Statistical elements of the summary report include packets sent/received, tx/rx
+errors, calibration information and antenna profile data.
+.PP
+The progressive report elements include packet input/output as well as altrate,
+short, long, xretry, crcerr, crypt, phyerror packet count, rssi and rate data.
+.PP
+The statistical data is derived from device ioctls and /proc/net/dev. For
+further understanding of how the statistical information is collected and what
+it represents, please refer to the \fBathstats\fP source code
+(tools/athstats.c).
+.SH "OPTIONS"
+.TP
+.B \-i device
+The madwifi device to apply the settings to. If no device is specified, 
+\fBathstats\fP defaults to wifi0.
+.TP
+.B interval
+Define the interval between realtime statistical feedback in seconds.
+.PP
+.SH "EXAMPLES"
+.TP
+.B athstats
+Print summary of statistics for wifi0.
+.TP
+.B athstats 1
+Update a progressive statistical report every 1 second for wifi0.
+.TP
+.B athstats \-i wifi1 5
+Update a progressive statistical report every 5 seconds for wifi1.
+.PP
+.SH "SEE ALSO"
+\fB80211stats\fP(8)
+.SH "AUTHOR"
+This manual page was written by Kel Modderman <kelrin@tpg.com.au>.

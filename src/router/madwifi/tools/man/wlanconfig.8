@@ -1,0 +1,131 @@
+.TH "WLANCONFIG" "8" "October 2005"
+.SH "NAME"
+\fBwlanconfig\fP \- Create, destroy and manipulate madwifi VAPs
+.SH "SYNOPSIS"
+\fBwlanconfig <vap> create wlandev <base device> wlanmode <mode>
+.TP
+\fBwlanconfig <vap> destroy
+.TP
+\fBwlanconfig <vap> list <list item>
+.SH "DESCRIPTION"
+The current MadWifi driver supports multiple AP's and concurrent AP/Station
+mode operation on the same device.  The devices are restricted to using the
+same underlying hardware, thus are limited to coexisting on the same channel
+and using the same physical layer features. Each instance of an AP or station
+is called a Virtual AP (or VAP). Each VAP can be in either AP mode, Station
+Mode, "special" station mode, and Monitor mode. Every VAP has an associated
+underlying base device which is created when the driver is loaded.
+.PP
+.SH "ARGUMENTS"
+.TP
+.B <vap> create [nounit] wlandev <base device> wlanmode <mode> [bssid|-bssid] [nosbeacon]
+Create the interface <vap> using the specified <base device> and <mode>. <vap> can either be a full interface name (e.g. 'ath0'), or just the suffix (e.g. 'ath'), in which case, the kernel will automatically append the next vacant integer. [nounit] will turn off the automatic integer increments.
+.TP
+.B <vap> destroy
+Removes the given VAP interface. You must specify the full interface name. I.e 'ath0' rather than just 'ath'.
+.TP
+.B <vap> list <list item>
+Show information about connected peers, keys, channels etc.
+.PP
+.SH "AVAILABLE MODES"
+.TP
+.B ahdemo
+Create the station in ad-hoc demo (aka pseudo IBSS) mode.
+.TP
+.B adhoc
+Create the station in ad-hoc mode.
+.TP
+.B ap
+Create the VAP in AP mode.
+.TP
+.B monitor
+Create the station in monitor mode.
+.TP
+.B sta
+Create the VAP in station mode.
+.TP
+.B wds
+Create the station in WDS mode.
+.PP
+.SH "OPTIONS"
+.TP
+.B bssid
+Create the VAP using a different MAC address from the underlying device.
+.TP
+.B \-bssid
+Create the VAP using the MAC address of the underlying device.
+.TP 
+.B nosbeacon
+When both station VAPS and AP VAPs coexist, the station should be created with the nosbeacon flag set in order to disable the use of hardware beacon times for the station.
+.PP
+.SH "LIST ITEMS"
+.TP
+.B sta or no parameters.
+Show information on associated stations.
+.TP
+.B scan or ap
+List all visible stations.
+.TP
+.B chan or freq
+List all channels and frequencies.
+.TP
+.B active
+List all available channels and frequencies.
+.TP
+.B keys
+List all of the keys associated with the VAP
+.TP
+.B caps
+List the capabilities of the given VAP.
+.TP
+.B wme
+List WME (Wireless multimedia extensions, aka WMM) parameters.
+.PP
+.SH "EXAMPLES"
+.TP
+\fBwlanconfig ath create wlandev wifi0 wlanmode sta
+Create a station mode VAP, using wifi0 as the underlying device. The interface wil be called athN, where N is the first free integer. The MAC address will be the same as the underlying device.
+.TP
+\fBwlanconfig ath0 create wlandev wifi0 wlanmode sta
+Create a station mode VAP (ath0) using wifi0 as the underlying device. The MAC address will be the same as the underlying device.
+.TP
+\fBwlanconfig ath0 create wlandev wifi0 wlanmode ap 
+.RS 0
+\fBwlanconfig ath1 create wlandev wifi0 wlanmode sta nosbeacon 
+.RS 7
+\fRCreate both an AP and a station mode interface.
+.RS -7
+.TP
+\fBwlanconfig ath0 destroy
+Destroy VAP ath0.
+.TP
+\fBwlanconfig ath0 list scan
+Scan for local stations and access points.
+.TP
+\fBwlanconfig ath0 create wlandev wifi0 wlanmode ap
+.RS 0
+\fBwlanconfig ath1 create wlandev wifi0 wlanmode wds
+.RS 0
+\fBiwconfig ath0 essid "Normal atheros AP" channel 1
+.RS 0
+\fBiwpriv ath1 wds_add <mac of the peer wds ap>
+.RS 0
+\fBiwpriv ath1 wds 1
+.RS 0
+\fBifconfig ath1 up
+.RS 0
+\fBifconfig ath0 up
+.RS 0
+\fBbrctl addbr br0
+.RS 0
+\fBbrctl addif br0 ath1
+.RS 0
+\fBbrctl addif br0 ath0
+.RS 0
+\fBifconfig br0 up
+.RS 7
+\fRCreate a WDS bridge. See http://madwifi.org/ for more information.
+.RS -7
+.PP
+.SH "AUTHOR"
+This manual page was written by Matt Foster <mattfoster@clara.co.uk>, using information from the Atheros user documentation, and MadWiFi users mailing list.
