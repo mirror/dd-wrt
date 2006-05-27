@@ -1,0 +1,79 @@
+#
+# Makefile for the Atheros HAL Module.
+#
+
+##2.4##src=.
+##2.4##obj=.
+##2.6##src:=$(srctree)/$(src)
+
+include $(src)/../BuildCaps.inc
+
+#
+# Use ARCH to guess the target platform.
+#
+ifdef CONFIG_CPU_BIG_ENDIAN
+ENDIAN = be
+else
+ENDIAN = le
+endif
+
+TARGET-$(CONFIG_SPARC64) = sparc64-$(ENDIAN)-elf
+TARGET-$(CONFIG_PPC32) = powerpc-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_SH4) = sh4-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_XSCALE) = xscale-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_32v4) = armv4-$(ENDIAN)-elf
+TARGET-$(CONFIG_MIPS) = mips1-$(ENDIAN)-elf
+
+ifdef TARGET-y
+TARGET = $(TARGET-y)
+else
+TARGET = $(ARCH)-elf
+endif
+
+EXTRA_CFLAGS+=	-I. -I$(src) -I${HAL}/.. -I${HAL} -I${HAL}/linux
+
+ifndef HAL_OBJDIR
+#
+# Use release version of HAL.
+#
+HAL=		$(src)/../hal
+OPT_AH_H=	${HAL}/public/${TARGET}.opt_ah.h
+else
+#
+# Use private version of HAL.
+#
+HAL=		$(shell dirname `dirname ${HAL_OBJDIR}`)
+OPT_AH_H=	${HAL_OBJDIR}/opt_ah.h
+endif
+
+##2.6##obj-$(CONFIG_ATHEROS_HAL) += ath_hal.o
+##2.6##ath_hal-objs	:= ah_osdep.o ${TARGET}.hal.o
+
+##2.4##obj-$(CONFIG_ATHEROS_HAL) := ah_osdep.o ${TARGET}.hal.o
+
+##2.4##export-objs	:= ah_osdep.o
+##2.4##list-multi	:= ath_hal.o
+
+##2.4##O_TARGET	:= ath_hal.o
+##2.4##include $(TOPDIR)/Rules.make
+
+##2.6##hostprogs-y := uudecode
+
+ifndef HAL_OBJDIR
+$(obj)/${TARGET}.hal.o: ${HAL}/public/${TARGET}.hal.o.uu $(obj)/uudecode
+	echo "deps_$@ :=" >$(@D)/.$(@F).cmd
+	$(obj)/uudecode -o $@ $<
+else
+$(obj)/${TARGET}.hal.o:	${HAL_OBJDIR}/hal.o
+	echo "deps_$@ :=" >$(@D)/.$(@F).cmd
+	cp $< $@
+endif
+
+##2.4##$(obj)/uudecode: $(src)/uudecode.c
+##2.4##	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
+
+$(obj)/ah_osdep.o: $(obj)/opt_ah.h
+
+# XXX need opt_ah.h to do dependencies so give this bogus dependency
+$(obj)/opt_ah.h: ${OPT_AH_H}
+	cp ${OPT_AH_H} $(obj)/opt_ah.h
