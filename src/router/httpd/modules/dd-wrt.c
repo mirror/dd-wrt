@@ -1409,7 +1409,7 @@ show_virtualssid (webs_t wp, char *prefix)
     count++;
   }
 #ifdef HAVE_MADWIFI
-  if (count < ATH_BCBUF)
+  if (count < 16)
 #else
   if (count < WL_MAXBSSCFG)
 #endif
