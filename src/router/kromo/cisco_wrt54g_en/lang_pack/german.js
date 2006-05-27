@@ -1161,7 +1161,7 @@ status_router.legend4="Netzwerk";
 status_router.net_maxports="IP Filter Maximale Ports";
 status_router.net_conntrack="Aktive IP Verbindungen";
 status_router.h22="Internet";
-status_router.legend5="Konfigurations Typ";
+status_router.legend5="Konfigurationstyp";
 status_router.www_login="Login Typ";
 status_router.www_loginstatus="Login Status";
 
