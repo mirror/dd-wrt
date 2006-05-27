@@ -1,0 +1,23 @@
+This directory contains the bits needed to integrate the Madwifi source
+distribution into a Linux kernel source tree.  To do this, unpack the
+kernel source if needed, then run the install.sh script from this
+directory.
+
+If you want to patch the currently running system you can run install.sh
+without arguments, otherwise specify the source tree location on the
+command line:
+
+./install.sh /usr/src/linux
+
+The driver sources will be copies into drivers/net/wireless/madwifi and
+some kernel files will be patched to know about this directory.
+
+Now you can run "make menuconfig" or similar command and configure the
+driver using the normal mechanisms.  If the kernel is already configured,
+run "make oldconfig" to skip the questions you have already answered.
+
+If you want to build modules, it's recommended that you use the
+standalone build rather than integrate the driver into the kernel.  Use
+integrated build to compile Madwifi into the kernel.  However, it's
+possible to build Madwifi modules when the driver is integrated into a
+2.6.x kernel.
