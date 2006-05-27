@@ -962,16 +962,17 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   char var[80];
   char ssid[80];
   char vif[16];
+  char mac[16];
+  sprintf (mac, "%s_macaddr", prefix);  
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
     return 0;
-  int count = 1;
   sprintf (ssid, "%s_ssid", prefix);
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-  websWrite (wp, "<legend>Base Interface %d SSID [%s]</legend>\n", count,
-	     nvram_get (ssid));
+  websWrite (wp, "<legend>Base Interface %s SSID [%s] HWAddr [%s]</legend>\n", prefix,
+	     nvram_safe_get (ssid),nvram_safe_get(mac));
   show_security_prefix (eid, wp, argc, argv, prefix);
   websWrite (wp, "</fieldset>\n");
   foreach (var, vifs, next)
@@ -979,12 +980,11 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
     sprintf (ssid, "%s_ssid", var);
     websWrite (wp, "<fieldset>\n");
     //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-    websWrite (wp, "<legend>Virtual Interface %d SSID [%s]</legend>\n", count,
+    websWrite (wp, "<legend>Virtual Interface %s SSID [%s]</legend>\n", var,
 	       nvram_get (ssid));
     rep (var, '.', 'X');
     show_security_prefix (eid, wp, argc, argv, var);
     websWrite (wp, "</fieldset>\n");
-    count++;
   }
 
 }
@@ -1368,7 +1368,7 @@ show_virtualssid (webs_t wp, char *prefix)
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
-    websWrite (wp, "<fieldset><legend>Interface %d</legend>\n", count);
+    websWrite (wp, "<fieldset><legend>Interface %s SSID [%s]</legend>\n", var,nvram_safe_get(ssid));
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\">Wireless Network Name (SSID)</div>\n");
@@ -1683,10 +1683,15 @@ void
 ej_show_wireless_single (webs_t wp, char *prefix)
 {
   char wl_mode[16];
+  char wl_macaddr[16];
+  char wl_ssid[16];
   sprintf (wl_mode, "%s_mode", prefix);
+  sprintf (wl_macaddr, "%s_macaddr", prefix);
+  sprintf (wl_ssid, "%s_ssid", prefix);
+  
 
 //wireless mode
-  websWrite (wp, "<h2>Wireless Physical Interface %s</h2>\n", prefix);
+  websWrite (wp, "<h2>Wireless Physical Interface %s - SSID [%s] HWAddr [%s]</h2>\n", prefix,nvram_safe_get(wl_ssid),nvram_safe_get(wl_macaddr));
   websWrite (wp, "<div>\n");
   char power[16];
   char maxpower[16];
@@ -1816,8 +1821,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
    
 #endif
 
-  char wl_ssid[16];
-  sprintf (wl_ssid, "%s_ssid", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\">Wireless Network Name (SSID)</div><input name=\"%s\" size=\"20\" maxLength=\"32\" onblur=\"valid_name(this,'SSID')\" value='%s' /></div>\n",
