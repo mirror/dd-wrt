@@ -1146,8 +1146,8 @@ start_wan (int status)
 	       "nopcomp\n"
 	       "novj\n"
 	       "novjccomp\n"
-//	       "nomppe\n"
-//	       "nomppc\n"
+	       "nomppe\n"
+	       "nomppc\n"
 	       "usepeerdns\n"
 	       "user '%s'\n" "password '%s'\n", username, passwd);
 
