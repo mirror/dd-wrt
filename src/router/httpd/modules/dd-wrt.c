@@ -1408,7 +1408,11 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp, "</fieldset>\n");
     count++;
   }
+#ifdef HAVE_MADWIFI
+  if (count < ATH_BCBUFS)
+#else
   if (count < WL_MAXBSSCFG)
+#endif
     websWrite (wp,
 	       "<input type=\"button\" value=\"Add\" onClick=vifs_add_submit(this.form,'%s') />\n",
 	       prefix);
