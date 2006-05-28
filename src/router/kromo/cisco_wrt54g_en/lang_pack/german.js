@@ -81,7 +81,7 @@ share.rule="Regel";
 share.lan="LAN";
 share.point2point="Punkt zu Punkt";
 share.nat="NAT";
-share.subnet="Subnet Mask";
+share.subnet="Subnetz Maske";
 share.unmask="Unmask";
 share.deflt="Std";  //don't use share.default !!!
 share.all="Alles";
@@ -963,10 +963,8 @@ hqos.right3="Downlink:";
 hqos.right4="Setzen Sie dies auf 80%-100% ihres totalen download limits.";
 hqos.right6="Hier konnen sie die Datenrate unter beachtung der Applikation die diese verwendet kontrollieren.";
 hqos.right8="Hier können sie die Priorität allen Traffics IPs oder IP Bereichen zuweisen.";
-hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, \
-			specifying priority and entering its MAC-address.";
-hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. \
-			You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
+hqos.right10="Hier können Sie die Priorität für jeden Traffik ihres Gerätes in ihrem Netzwerk angeben, indem Sie von dem Gerät die MAC Addresse, die Priorität und einen Namen angeben";
+hqos.right12="Hier können Sie die Datenrate der Physikalischen LAN Ports an ihrem Router angeben. Sie können hier Prioritäten für die Geräte angeben die an Port 1 - 4 angeschlossen sind";
 
 
 
@@ -992,22 +990,22 @@ route.rip2_mod="RIP2 Router";
 route.ospf_mod="OSPF Router";
 route.gateway_legend="Dynamisches Routing";
 route.static_legend="Statisches Routing";
-route.static_setno="Select set number";
+route.static_setno="Wähle Set Nummer";
 route.static_name="Routen Name";
 route.static_ip="Ziel LAN IP";
 
 //help container
 var hroute = new Object();
 hroute.right1="Operations Modus:";
-hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select <em>Router</em> mode.";
-hroute.right3="Select Set Number:";
-hroute.right4="This is the unique route number, you may set up to 20 routes.";
-hroute.right5="Route Name:";
-hroute.right6="Enter the name you would like to assign to this route.";
-hroute.right7="Destination LAN IP:";
-hroute.right8="This is the remote host to which you would like to assign the static route.";
-hroute.right9="Subnet Mask:";
-hroute.right10="Determines the host and the network portion.";
+hroute.right2="Wenn ihr Router die Internet Verbindung bereit stellt, nutzen Sie bitte den <em>Gateway</em> Modus. Wenn ein anderer Router in ihrem Netzwerk existiert, nutzen Sie den <em>Router</em> Modus.";
+hroute.right3="Wähle Set Nummer:";
+hroute.right4="Dies ist eine einzigartige Routen Nummer, Sie können bis zu 20 Routen definieren.";
+hroute.right5="Routen Name:";
+hroute.right6="Geben Sie einen Namen an den Sie der Router zuweisen möchten.";
+hroute.right7="Ziel LAN IP:";
+hroute.right8="Dies ist der Remote Host dem die Statische Routet zugewiesen wird.";
+hroute.right9="Subnetz Maske:";
+hroute.right10="Setzt den angewanden Netzwerk Bereich.";
 
 
 
@@ -1061,8 +1059,8 @@ service.telnet_srv="Telnet";
 service.pptpd_legend="PPTP Client";
 service.pptpd_option="PPTP Client Options";
 service.pptpd_ipdns="Server IP oder DNS Name";
-service.pptpd_subnet="Remote Subnet";
-service.pptpd_subnetmask="Remote Subnet Maske";
+service.pptpd_subnet="Entferntes Subnetz";
+service.pptpd_subnetmask="Entfernte Subnetz Maske";
 service.pptpd_encry="MPPE Verschlüsselung";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
@@ -1232,8 +1230,8 @@ trforward.app="Applikation";
 //help container
 var htrforward = new Object();
 htrforward.right2="Geben Sie den Applikationsnamen des Triggers ein.";
-htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
+htrforward.right4="Gibt für jede Applikation den getriggerten Port Bereich an. Konsultieren Sie hierzu auch die Dokumentation ihrer Applikation.";
+htrforward.right6="Gibt für jede Applikation den weitergeleiteten Port Bereich an. Konsultieren Sie hierzu auch die Dokumentation ihrer Applikation.";
 htrforward.right8="Geben Sie den Start Port des Getriggerten und Weitergeleiteten Bereichs an.";
 htrforward.right10="Geben Sie den End Port des Getriggertern und Weitergeleiteten Bereichs an.";
 
@@ -1469,7 +1467,7 @@ wl_basic.sensitivity="Standard: 20000 meter";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right2="Wenn sie G Clients komplett ausschließen wollen sollten Sie <em>Nur-B</em> wählen. Wenn Sie den Wireless Zugriff abschalten wollen, wählen Sie <em>Abschalten</em>.";
+hwl_basic.right2="Wenn Sie G Clients komplett ausschließen wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den Wireless Zugriff abschalten wollen, wählen Sie <em>Abschalten</em>.";
 hwl_basic.right3="Empfindlichkeits Bereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
 
@@ -1519,7 +1517,7 @@ wl_adv.shrt="Short"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Authentication Typ:";
+hwl_adv.right1="Authenticationtyp:";
 hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muß dazu jedes Gerät in ihrem Netzwerk diesen Betriebsmodus unterstützen.";
 
 
