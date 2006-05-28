@@ -67,7 +67,7 @@ rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/ipv6.o
 #cd ../../../../../opt
 
 
-../src/linux/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
+../src/linux/brcm/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
 ./mkfs.jffs2 --pad --little-endian --squash -e 0x10000 -o target.jffs2 -d ../src/router/mipsel-uclibc/target 
 
 
