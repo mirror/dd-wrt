@@ -1,1 +1,1 @@
-#define USE_NICE(...)
+#define USE_NICE(...)  __VA_ARGS__

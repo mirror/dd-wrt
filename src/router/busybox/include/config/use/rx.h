@@ -1,1 +1,1 @@
-#define USE_RX(...)
+#define USE_RX(...)  __VA_ARGS__

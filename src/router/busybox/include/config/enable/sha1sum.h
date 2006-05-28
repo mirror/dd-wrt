@@ -1,1 +1,1 @@
-#define ENABLE_SHA1SUM 0
+#define ENABLE_SHA1SUM 1

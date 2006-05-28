@@ -1,1 +1,1 @@
-#define USE_UUENCODE(...)
+#define USE_UUENCODE(...)  __VA_ARGS__

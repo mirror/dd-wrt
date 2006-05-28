@@ -1,1 +1,1 @@
-#define USE_CHOWN(...)
+#define USE_CHOWN(...)  __VA_ARGS__

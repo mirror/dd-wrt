@@ -1,1 +1,1 @@
-#undef CONFIG_TAR
+#define CONFIG_TAR 1

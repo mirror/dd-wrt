@@ -1,1 +1,1 @@
-#define USE_SEQ(...)
+#define USE_SEQ(...)  __VA_ARGS__

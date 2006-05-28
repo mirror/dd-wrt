@@ -1,1 +1,1 @@
-#define USE_SETCONSOLE(...)
+#define USE_SETCONSOLE(...)  __VA_ARGS__

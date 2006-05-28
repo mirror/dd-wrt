@@ -1,1 +1,1 @@
-#define USE_FTPGET(...)
+#define USE_FTPGET(...)  __VA_ARGS__

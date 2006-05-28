@@ -1,1 +1,1 @@
-#define ENABLE_E2LABEL 0
+#define ENABLE_E2LABEL 1

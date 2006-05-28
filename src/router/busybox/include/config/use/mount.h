@@ -1,1 +1,1 @@
-#define USE_MOUNT(...)
+#define USE_MOUNT(...)  __VA_ARGS__

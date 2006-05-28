@@ -1,1 +1,1 @@
-#define USE_NOHUP(...)
+#define USE_NOHUP(...)  __VA_ARGS__

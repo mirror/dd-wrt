@@ -1,1 +1,1 @@
-#undef CONFIG_E2LABEL
+#define CONFIG_E2LABEL 1
