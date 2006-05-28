@@ -1,0 +1,1 @@
+#define ENABLE_FEATURE_TAR_BZIP2 0
