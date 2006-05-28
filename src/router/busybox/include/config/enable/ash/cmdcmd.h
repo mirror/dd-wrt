@@ -1,0 +1,1 @@
+#define ENABLE_ASH_CMDCMD 1
