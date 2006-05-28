@@ -1,7 +1,13 @@
 OpenVPN
 Copyright (C) 2002-2005 OpenVPN Solutions LLC <info@openvpn.net>
 
-$Id: ChangeLog 873 2006-01-03 09:45:59Z james $
+$Id: ChangeLog 999 2006-04-12 09:07:59Z james $
+
+2006.04.12 -- Version 2.0.7
+
+* Code added in 2.0.6-rc1 to extend byte counters
+  to 64 bits caused a bug in the Windows version which has now
+  been fixed.  The bug could cause intermittent crashes.
 
 2006.04.05 -- Version 2.0.6
 
@@ -20,7 +26,9 @@ $Id: ChangeLog 873 2006-01-03 09:45:59Z james $
   the attacker, and (e) the attacker has at least some level of
   pre-existing control over files on the client (this might be
   accomplished by having the server respond to a client web
-  request with a specially crafted file).
+  request with a specially crafted file).  Credit: Hendrik Weimer.
+  CVE-2006-1629.
+	
   The fix is to disallow "setenv" to be pushed to clients from
   the server.  For those who need this capability, OpenVPN
   2.1 supports a new "setenv-safe" directive which is free
