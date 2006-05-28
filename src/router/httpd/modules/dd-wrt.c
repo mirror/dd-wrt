@@ -1358,7 +1358,9 @@ show_virtualssid (webs_t wp, char *prefix)
   char var[80];
   char ssid[80];
   char vif[16];
+  char mac[16];
   sprintf (vif, "%s_vifs", prefix);
+  sprintf (mac, "%s_macaddr", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
     return 0;
@@ -1368,7 +1370,7 @@ show_virtualssid (webs_t wp, char *prefix)
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
-    websWrite (wp, "<fieldset><legend>Interface %s SSID [%s]</legend>\n", var,nvram_safe_get(ssid));
+    websWrite (wp, "<fieldset><legend>Interface %s SSID [%s] HWAddr [%s]</legend>\n", var,nvram_safe_get(ssid),nvram_safe_get(mac));
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\">Wireless Network Name (SSID)</div>\n");
@@ -1461,8 +1463,8 @@ add_vifs_single (char *prefix, int device)
   char v[80];
   char v2[80];
 #ifdef HAVE_MADWIFI
-  char *cou[] = { "a", "b", "c", "d", "e", "f" };
-  sprintf (v, "ath%s%d", cou[device], count + 1);
+//  char *cou[] = { "a", "b", "c", "d", "e", "f" };
+  sprintf (v, "ath%d.%d", device, count + 1);
 #else
   sprintf (v, "wl%d.%d", device, count + 1);
 #endif
