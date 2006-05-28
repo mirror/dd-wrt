@@ -104,7 +104,7 @@ obj-$(CONFIG_GLIBC) += lib
 obj-$(CONFIG_UCLIBC) += lib
 obj-$(CONFIG_BRIDGE) += bridge
 obj-$(CONFIG_BUSYBOX) += busybox net-tools
-obj-$(CONFIG_TELNET) += telnetd
+#obj-$(CONFIG_TELNET) += telnetd
 obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_IPTABLES) += iptables
 obj-$(CONFIG_LIBIPT) += iptables
@@ -178,7 +178,7 @@ obj-$(CONFIG_MULTICAST) += igmp-proxy
 obj-$(CONFIG_SKYTRON) += skytron
 obj-$(CONFIG_OPENVPN) += openvpn
 obj-$(CONFIG_OLSRD) += olsrd
-obj-$(CONFIG_E2FSPROGS) += e2fsprogs
+#obj-$(CONFIG_E2FSPROGS) += e2fsprogs
 obj-$(CONFIG_HTTPREDIRECT) += http-redirect
 obj-$(CONFIG_SMTPREDIRECT) += smtp-redirect
 obj-$(CONFIG_WLC) += wlc
@@ -494,11 +494,19 @@ busybox-config:
 
 busybox: busybox-config rc net-tools
 ifeq ($(CONFIG_DIST),"micro")
-	cp busybox/.config_micro busybox/sysdeps/linux/defconfig
-	cd busybox && make defconfig
+#	cp busybox/.config_micro busybox/sysdeps/linux/defconfig
+	cp busybox/.config_micro busybox/.config
+	cd busybox && make oldconfig
 else
-	cp busybox/.config_std busybox/sysdeps/linux/defconfig
-	cd busybox && make defconfig
+ifeq ($(CONFIG_DIST),"mini")
+#	cp busybox/.config_mini busybox/sysdeps/linux/defconfig
+	cp busybox/.config_mini busybox/.config
+	cd busybox && make oldconfig
+else
+#	cp busybox/.config_std busybox/sysdeps/linux/defconfig
+	cp busybox/.config_std busybox/.config
+	cd busybox && make oldconfig
+endif
 endif
 	
 	make -C busybox clean

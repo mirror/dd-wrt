@@ -1,0 +1,1 @@
+#undef CONFIG_ASH_BUILTIN_ECHO
