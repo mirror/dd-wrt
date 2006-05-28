@@ -1,1 +1,1 @@
-#define USE_E2FSCK(...)
+#define USE_E2FSCK(...)  __VA_ARGS__

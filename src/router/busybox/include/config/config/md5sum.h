@@ -1,1 +1,1 @@
-#undef CONFIG_MD5SUM
+#define CONFIG_MD5SUM 1

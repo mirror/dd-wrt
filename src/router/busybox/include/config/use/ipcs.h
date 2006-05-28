@@ -1,1 +1,1 @@
-#define USE_IPCS(...)
+#define USE_IPCS(...)  __VA_ARGS__

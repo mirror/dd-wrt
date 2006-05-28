@@ -1,1 +1,1 @@
-#define USE_LESS(...)
+#define USE_LESS(...)  __VA_ARGS__

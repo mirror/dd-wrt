@@ -1,1 +1,1 @@
-#define USE_TOP(...)
+#define USE_TOP(...)  __VA_ARGS__

@@ -1,1 +1,1 @@
-#define USE_FALSE(...)
+#define USE_FALSE(...)  __VA_ARGS__

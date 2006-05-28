@@ -1,1 +1,1 @@
-#define USE_HEXDUMP(...)
+#define USE_HEXDUMP(...)  __VA_ARGS__

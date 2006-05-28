@@ -1,1 +1,1 @@
-#define USE_UNAME(...)
+#define USE_UNAME(...)  __VA_ARGS__

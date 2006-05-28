@@ -1,1 +1,1 @@
-#undef CONFIG_GUNZIP
+#define CONFIG_GUNZIP 1

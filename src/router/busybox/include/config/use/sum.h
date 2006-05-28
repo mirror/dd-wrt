@@ -1,1 +1,1 @@
-#define USE_SUM(...)
+#define USE_SUM(...)  __VA_ARGS__

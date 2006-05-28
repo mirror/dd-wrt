@@ -1,1 +1,1 @@
-#define USE_CUT(...)
+#define USE_CUT(...)  __VA_ARGS__
