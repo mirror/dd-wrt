@@ -1,1 +1,1 @@
-#define USE_WGET(...)
+#define USE_WGET(...)  __VA_ARGS__

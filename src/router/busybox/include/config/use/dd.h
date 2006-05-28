@@ -1,1 +1,1 @@
-#define USE_DD(...)
+#define USE_DD(...)  __VA_ARGS__

@@ -1,1 +1,1 @@
-#define USE_HDPARM(...)
+#define USE_HDPARM(...)  __VA_ARGS__

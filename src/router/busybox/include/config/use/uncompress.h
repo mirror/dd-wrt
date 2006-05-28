@@ -1,1 +1,1 @@
-#define USE_UNCOMPRESS(...)
+#define USE_UNCOMPRESS(...)  __VA_ARGS__

@@ -1,1 +1,1 @@
-#define USE_MKFIFO(...)
+#define USE_MKFIFO(...)  __VA_ARGS__

@@ -1,1 +1,1 @@
-#define USE_REALPATH(...)
+#define USE_REALPATH(...)  __VA_ARGS__

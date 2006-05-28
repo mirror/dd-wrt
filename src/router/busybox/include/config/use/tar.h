@@ -1,1 +1,1 @@
-#define USE_TAR(...)
+#define USE_TAR(...)  __VA_ARGS__

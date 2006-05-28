@@ -1,1 +1,1 @@
-#define USE_ZCIP(...)
+#define USE_ZCIP(...)  __VA_ARGS__

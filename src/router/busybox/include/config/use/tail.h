@@ -1,1 +1,1 @@
-#define USE_TAIL(...)
+#define USE_TAIL(...)  __VA_ARGS__

@@ -1,1 +1,1 @@
-#define USE_TRACEROUTE(...)
+#define USE_TRACEROUTE(...)  __VA_ARGS__

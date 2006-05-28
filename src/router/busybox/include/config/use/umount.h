@@ -1,1 +1,1 @@
-#define USE_UMOUNT(...)
+#define USE_UMOUNT(...)  __VA_ARGS__

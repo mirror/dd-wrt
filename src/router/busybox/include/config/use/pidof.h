@@ -1,1 +1,1 @@
-#define USE_PIDOF(...)
+#define USE_PIDOF(...)  __VA_ARGS__

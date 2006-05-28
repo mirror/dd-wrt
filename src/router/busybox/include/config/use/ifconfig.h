@@ -1,1 +1,1 @@
-#define USE_IFCONFIG(...)
+#define USE_IFCONFIG(...)  __VA_ARGS__

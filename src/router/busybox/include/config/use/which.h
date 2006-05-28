@@ -1,1 +1,1 @@
-#define USE_WHICH(...)
+#define USE_WHICH(...)  __VA_ARGS__
