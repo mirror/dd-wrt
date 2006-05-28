@@ -544,7 +544,6 @@ static int
 get80211priv (const char *ifname, int op, void *data, size_t len)
 {
   struct iwreq iwr;
-//  fprintf(stderr,"get80211priv %s op %X", ifname,op);
 
   if (do80211priv (&iwr, ifname, op, data, len) < 0)
     return -1;
@@ -720,6 +719,16 @@ default_match (char *var, char *match, char *def)
   return nvram_match (var, match);
 }
 
+
+char *getMacAddr(char *ifname,char *mac)
+{
+unsigned char hwbuff[16];
+int i = wl_hwaddr(ifname,hwbuff);
+if (i<0)
+    return NULL;
+sprintf(mac,"%02X:%02X:%02X:%02X:%02X:%02X",hwbuff[0],hwbuff[1],hwbuff[2],hwbuff[3],hwbuff[4],hwbuff[5]);
+
+}
 
 static int
 getMaxPower (char *ifname)
@@ -932,6 +941,12 @@ setupHostAP (char *prefix)
 	  else
 	    fprintf (fp, "macaddr_acl=2\n");
 
+//	  fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
+//	  fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
+	  fprintf (fp, "own_ip_addr=%s\n",nvram_safe_get("lan_ipaddr"));
+	  fprintf (fp, "eap_server=0\n");
+	  fprintf (fp, "auth_algs=1\n");
+	
 	  sprintf (psk, "%s_radius_ipaddr", prefix);
 	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
 
@@ -1023,6 +1038,7 @@ configure_single (int count)
   char diversity[16];
   char rxantenna[16];
   char txantenna[16];
+  char athmac[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
   sprintf (wif, "wifi%d", count);
@@ -1035,6 +1051,7 @@ configure_single (int count)
   sprintf (diversity, "ath%d_diversity", count);
   sprintf (txantenna, "ath%d_txantenna", count);
   sprintf (rxantenna, "ath%d_rxantenna", count);
+  sprintf (athmac, "ath%d_macaddr", count);
   //create base device
   cprintf ("configure base interface %d\n", count);
 
@@ -1056,26 +1073,32 @@ configure_single (int count)
     foreach (var, vifs, next)
     {
       //create device
-      sprintf (net, "%s_net_mode", var);
-      if (nvram_match (net, "disabled"))
-	continue;
+//      sprintf (net, "%s_net_mode", var);
+//      if (nvram_match (net, "disabled"))
+//	continue;
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
       //create device
       if (strlen (mode) > 0)
 	{
-	  char newmode[16];
-	  strcpy (newmode, var);
-	  newmode[strlen (newmode) - 1] = 0;
+//	  char newmode[16];
+//	  strcpy (newmode, var);
+//	  newmode[strlen (newmode) - 1] = 0;
 	  if (!strcmp (m, "wet") || !strcmp (m, "sta")
 	      || !strcmp (m, "wdssta"))
-	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
 	  else
-	    eval ("wlanconfig", newmode, "create", "wlandev", wif, "wlanmode",
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  m);
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
+	 char vathmac[16];
+         sprintf (vathmac, "%s_macaddr", var);
+	 char vmacaddr[32];
+	 getMacAddr(var,vmacaddr);
+         nvram_set(vathmac,vmacaddr);
+
 	}
       sleep (1);
     }
@@ -1103,8 +1126,10 @@ configure_single (int count)
 	eval ("iwconfig", dev, "channel", ch);
     }
 
-
-
+  char macaddr[32];
+  getMacAddr(dev,macaddr);
+  nvram_set(athmac,macaddr);
+  
   cprintf ("adjust sensitivity\n");
 
   int distance = atoi (default_get (sens, "20000"));	//to meter
