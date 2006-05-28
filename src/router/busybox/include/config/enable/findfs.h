@@ -1,1 +1,1 @@
-#define ENABLE_FINDFS 0
+#define ENABLE_FINDFS 1

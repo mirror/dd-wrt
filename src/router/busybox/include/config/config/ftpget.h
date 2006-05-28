@@ -1,1 +1,1 @@
-#undef CONFIG_FTPGET
+#define CONFIG_FTPGET 1

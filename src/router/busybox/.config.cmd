@@ -17,7 +17,7 @@ deps_config := \
 	coreutils/Config.in \
 	archival/Config.in \
 	libbb/Config.in \
-	/home/dd-wrt/DEV/src/router/busybox/Config.in
+	/home/dd-wrt/mikrotik/router/busybox/Config.in
 
 .config include/config.h: $(deps_config)
 

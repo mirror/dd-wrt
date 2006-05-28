@@ -1,1 +1,1 @@
-#define USE_ENV(...)
+#define USE_ENV(...)  __VA_ARGS__

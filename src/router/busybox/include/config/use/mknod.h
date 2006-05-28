@@ -1,1 +1,1 @@
-#define USE_MKNOD(...)
+#define USE_MKNOD(...)  __VA_ARGS__

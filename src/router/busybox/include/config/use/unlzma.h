@@ -1,1 +1,1 @@
-#define USE_UNLZMA(...)
+#define USE_UNLZMA(...)  __VA_ARGS__

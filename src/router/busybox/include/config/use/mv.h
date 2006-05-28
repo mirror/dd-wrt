@@ -1,1 +1,1 @@
-#define USE_MV(...)
+#define USE_MV(...)  __VA_ARGS__

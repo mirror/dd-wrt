@@ -1,1 +1,1 @@
-#define USE_EXPR(...)
+#define USE_EXPR(...)  __VA_ARGS__

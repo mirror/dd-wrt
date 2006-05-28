@@ -1,1 +1,1 @@
-#define USE_WC(...)
+#define USE_WC(...)  __VA_ARGS__

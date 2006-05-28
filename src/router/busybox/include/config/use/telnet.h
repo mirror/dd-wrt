@@ -1,1 +1,1 @@
-#define USE_TELNET(...)
+#define USE_TELNET(...)  __VA_ARGS__
