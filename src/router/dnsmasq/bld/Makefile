@@ -1,4 +1,4 @@
-CFLAGS ?= -Os
+CFLAGS ?= -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time
 PKG_CONFIG ?= pkg-config
 
 
