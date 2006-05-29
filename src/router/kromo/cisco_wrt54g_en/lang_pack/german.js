@@ -1439,9 +1439,9 @@ wl_mac.titl=" - MAC Filter";
 wl_mac.h2="WLAN MAC Filter";
 wl_mac.legend="MAC Filter";
 wl_mac.label="Nutze Filter";
-wl_mac.label2="Filter Modus";
-wl_mac.deny="Unterbindet den PC's den Zugriff auf das WLAN Netzwerk";
-wl_mac.allow="Erlaubt nur PC's in der Liste den Zugriff auf das WLAN Netzwerk";
+wl_mac.label2="Liste enthält...";
+wl_mac.deny="WLAN-MAC Adressen die nicht auf das Netzwerk zugreifen dürfen";
+wl_mac.allow="WLAN-MAC Adressen die auf das Netzwerk zugreifen dürfen";
 
 
 
