@@ -1,1 +1,0 @@
-#define USE_FEATURE_COMMAND_EDITING(...)  __VA_ARGS__

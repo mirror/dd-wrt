@@ -1,1 +1,0 @@
-#define USE_FEATURE_HTTPD_AUTH_MD5(...)

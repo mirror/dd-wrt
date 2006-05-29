@@ -1,1 +1,0 @@
-#define CONFIG_FEATURE_2_6_MODULES 1
