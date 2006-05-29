@@ -78,6 +78,13 @@ LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../
 LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet
 LIBRARIES += ../net-tools/arp.a ../net-tools/lib/libnet-tools.a		
 
+ifeq ($(CONFIG_DROPBEAR_SSHD),y)
+#OBJS += sshd.o
+CFLAGS += -DHAVE_SSHD
+LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz 
+#LDFLAGS += -Wl,--gc-sections
+endif
+
 ARFLAGS=cru
 
 
