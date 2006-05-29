@@ -542,21 +542,13 @@ filter.mess3="The end time must be bigger than start time.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Internet Access Policy:";
 hfilter.right2="You may define up to 10 access policies. Click <em>" + sbutton.del + "</em> to delete a policy or <em>" + sbutton.summary + "</em> to see a summary of the policy.";
-hfilter.right3="Status:";
 hfilter.right4="Enable or disable a policy.";
-hfilter.right5="Policy Name:";
 hfilter.right6="You may assign a name to your policy.";
-hfilter.right7="Days:";
 hfilter.right8="Choose the day of the week you would like your policy to be applied.";
-hfilter.right9="Times:";
 hfilter.right10="Enter the time of the day you would like your policy to apply.";
-hfilter.right11="Blocked Services:";
 hfilter.right12="You may choose to block access to certain services. Click <em>" + sbutton.filterSer + "</em> to modify these settings.";
-hfilter.right13="Website Blocking by URL:";
 hfilter.right14="You can block access to certain websites by entering their URL.";
-hfilter.right15="Website Blocking by Keyword:";
 hfilter.right16="You can block access to certain website by the keywords contained in their webpage.";
 
 
