@@ -187,18 +187,14 @@ mk_nocat_conf (void)
 
   fprintf (fp, "#\n");
   /* settings that need to be set based on router configurations */
-  fflush (fp);
   fprintf (fp, "InternalDevice\t%s\n", nvram_safe_get ("lan_ifname"));
-  fflush (fp);
   fprintf (fp, "ExternalDevice\t%s\n", nvram_safe_get ("wan_ifname"));
-  fflush (fp);
   fprintf (fp, "LocalNetwork\t%s/%s\n",
 	   _get_network (nvram_safe_get ("lan_ipaddr"),
 			 nvram_safe_get ("lan_netmask")),
 	   nvram_safe_get ("lan_netmask"));
+  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
   fflush (fp);
-//  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
-//  fflush (fp);
 
   /* Irving - Rework getting DNS */
   struct dns_lists *dns_list = NULL;
@@ -222,7 +218,7 @@ mk_nocat_conf (void)
     fprintf (fp, "ExcludePorts\t%s\n", nvram_safe_get ("NC_ExcludePorts"));
   fprintf (fp, "Verbosity\t%s\n", nvram_safe_get ("NC_Verbosity"));
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
-  fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
+//  fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
 //  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
   fprintf (fp, "GatewayPort\t5280\n");
   fprintf (fp, "HomePage\t%s\n", nvram_safe_get ("NC_HomePage"));
