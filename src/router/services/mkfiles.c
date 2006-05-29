@@ -197,8 +197,8 @@ mk_nocat_conf (void)
 			 nvram_safe_get ("lan_netmask")),
 	   nvram_safe_get ("lan_netmask"));
   fflush (fp);
-  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
-  fflush (fp);
+//  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
+//  fflush (fp);
 
   /* Irving - Rework getting DNS */
   struct dns_lists *dns_list = NULL;
@@ -223,7 +223,7 @@ mk_nocat_conf (void)
   fprintf (fp, "Verbosity\t%s\n", nvram_safe_get ("NC_Verbosity"));
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
   fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
-  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
+//  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
   fprintf (fp, "GatewayPort\t5280\n");
   fprintf (fp, "HomePage\t%s\n", nvram_safe_get ("NC_HomePage"));
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
