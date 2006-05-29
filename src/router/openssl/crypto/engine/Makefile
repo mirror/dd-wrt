@@ -168,11 +168,10 @@ eng_openssl.o: ../../e_os.h ../../include/openssl/asn1.h
 eng_openssl.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 eng_openssl.o: ../../include/openssl/crypto.h ../../include/openssl/dh.h
 eng_openssl.o: ../../include/openssl/dsa.h ../../include/openssl/dso.h
-eng_openssl.o: ../../include/openssl/e_os2.h ../../include/openssl/ec.h
-eng_openssl.o: ../../include/openssl/ecdh.h ../../include/openssl/ecdsa.h
-eng_openssl.o: ../../include/openssl/engine.h ../../include/openssl/err.h
-eng_openssl.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-eng_openssl.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
+eng_openssl.o: ../../include/openssl/e_os2.h ../../include/openssl/engine.h
+eng_openssl.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+eng_openssl.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+eng_openssl.o: ../../include/openssl/objects.h
 eng_openssl.o: ../../include/openssl/opensslconf.h
 eng_openssl.o: ../../include/openssl/opensslv.h
 eng_openssl.o: ../../include/openssl/ossl_typ.h ../../include/openssl/pem.h

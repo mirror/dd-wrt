@@ -124,9 +124,7 @@ sha512.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 sha512.o: ../../include/openssl/safestack.h ../../include/openssl/sha.h
 sha512.o: ../../include/openssl/stack.h ../../include/openssl/symhacks.h
 sha512.o: ../cryptlib.h sha512.c
-sha_dgst.o: ../../include/openssl/e_os2.h ../../include/openssl/opensslconf.h
-sha_dgst.o: ../../include/openssl/opensslv.h ../../include/openssl/sha.h
-sha_dgst.o: ../md32_common.h sha_dgst.c sha_locl.h
+sha_dgst.o: ../../include/openssl/opensslconf.h sha_dgst.c
 sha_one.o: ../../include/openssl/crypto.h ../../include/openssl/e_os2.h
 sha_one.o: ../../include/openssl/opensslconf.h ../../include/openssl/opensslv.h
 sha_one.o: ../../include/openssl/ossl_typ.h ../../include/openssl/safestack.h
