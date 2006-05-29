@@ -747,7 +747,7 @@ ser-clean:
 nocat:
 	cd glib && ./config.sh
 	make -C glib
-	cd nocat && . ./conf 
+	cd nocat && ./configure --with-glib-prefix=${PWD}/../glib-1.2.10-install --disable-glibtest --host=mipsel-linux --with-remote-splash --prefix=/usr --localstatedir=/var --sysconfdir=/etc CC=mipsel-linux-uclibc-gcc CFLAGS="-Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -I../libghttp"
 	make -C nocat
 
 nocat-clean:
@@ -1329,7 +1329,7 @@ ifeq ($(CONFIG_NEWMEDIA),y)
 	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --enable-password-save --enable-management --disable-socks --enable-lzo --enable-small --enable-server --disable-http CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
 	make -C openvpn clean
 else
-	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --disable-server --disable-http --enable-password-save CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
+	cd openvpn && ./configure --host=$(ARCH)-linux CPPFLAGS="-I../lzo/include -I../openssl/include -L../lzo -L../openssl -L../lzo/src/.libs" --enable-static --disable-shared --disable-pthread --disable-plugins --disable-debug --disable-management --disable-socks --enable-lzo --enable-small --enable-server --disable-http --enable-password-save CFLAGS="$(COPTS)" LDFLAGS="-L../openssl -L../lzo -L../lzo/src/.libs"
 	make -C openvpn clean
 endif
 	make -C openvpn

@@ -50,7 +50,7 @@ AC_ARG_ENABLE(ssl,
 AC_ARG_ENABLE(multi,
    [  --disable-multi         Disable client/server support (--mode server + client mode)],
    [MULTI="$enableval"],
-   [MULTI="no"]
+   [MULTI="yes"]
 )
 
 AC_ARG_ENABLE(server,

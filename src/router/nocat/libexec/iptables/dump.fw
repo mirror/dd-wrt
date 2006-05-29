@@ -3,8 +3,7 @@
 # dump.fw: show the status of all iptables.
 ##
 
-# Note: your PATH is inherited from the gateway process
-#
+export PATH=/tmp/sbin:/tmp/bin:/bin:/usr/bin:/sbin:/usr/sbin
 
 echo ">>>>> NAT table: <<<<<"
 echo
