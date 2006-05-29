@@ -538,21 +538,13 @@ filter.mess3="結束時間必須大於起始時間。";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Internet訪問策略：";
 hfilter.right2="您可以最多定義10條訪問策略。點擊 <em>" + sbutton.del + "</em> 按鈕刪除一條策略，或者點擊 <em>" + sbutton.summary + "</em> 按鈕察看策略綜述。";
-hfilter.right3="狀態：";
 hfilter.right4="啟用或禁用一條策略。";
-hfilter.right5="策略名稱：";
 hfilter.right6="您可以為您的策略指定一個名稱。";
-hfilter.right7="日期：";
 hfilter.right8="請選擇您希望您的策略被應用的日期。";
-hfilter.right9="時間：";
 hfilter.right10="請輸入您希望您的策略被應用的時間。";
-hfilter.right11="非封禁的服務：";
 hfilter.right12="您可以選擇封禁特定的服務。點擊 <em>" + sbutton.filterSer + "</em> 按鈕更改這些設置。";
-hfilter.right13="正在通過URL被封禁的Web站點：";
 hfilter.right14="您可以通過輸入特定Web站點的URL來封禁對其訪問。";
-hfilter.right15="正在通過關鍵字被封禁的Web站點：";
 hfilter.right16="您可以通過輸入包含在特定Web站點頁面中的關鍵字來封禁對其訪問。";;
 
 
