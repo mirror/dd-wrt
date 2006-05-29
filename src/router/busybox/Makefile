@@ -138,7 +138,7 @@ help:
 	@echo '  sizes			- show size of all enabled busybox symbols'
 	@echo
 
-
+include $(top_builddir)/../.config
 include $(top_srcdir)/Rules.mak
 
 ifneq ($(strip $(HAVE_DOT_CONFIG)),y)
