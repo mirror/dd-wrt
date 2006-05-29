@@ -255,7 +255,7 @@ exec 6>&1
 #
 ac_default_prefix=/usr/local
 ac_config_libobj_dir=.
-cross_compiling=no
+cross_compiling=yes
 subdirs=
 MFLAGS=
 MAKEFLAGS=
@@ -690,7 +690,7 @@ target=$target_alias
 # FIXME: To remove some day.
 if test "x$host_alias" != x; then
   if test "x$build_alias" = x; then
-    cross_compiling=maybe
+    cross_compiling=yes
     echo "$as_me: WARNING: If you wanted to set the --build type, don't use --host.
     If a cross compiler is detected then cross compile mode will be used." >&2
   elif test "x$build_alias" != "x$host_alias"; then
@@ -2213,7 +2213,7 @@ if test "$cross_compiling" != yes; then
   ac_status=$?
   echo "$as_me:$LINENO: \$? = $ac_status" >&5
   (exit $ac_status); }; }; then
-    cross_compiling=no
+    cross_compiling=yes
   else
     if test "$cross_compiling" = maybe; then
 	cross_compiling=yes
@@ -4638,7 +4638,9 @@ cat >>conftest.$ac_ext <<_ACEOF
    is told about this with #include <vfork.h>, but some compilers
    (e.g. gcc -O) don't grok <vfork.h>.  Test for this by using a
    static variable whose address is put into a register that is
-   clobbered by the vfork.  */
+   clobbered by the vfork.  
+*/
+
 static void
 #ifdef __cplusplus
 sparc_address_test (int arg)
