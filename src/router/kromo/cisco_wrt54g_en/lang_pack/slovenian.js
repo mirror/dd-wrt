@@ -1372,6 +1372,7 @@ hwanmac.right2="nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC na
 var wpa = new Object();
 wpa.titl=" - Brez¾ièna za¹èita";
 wpa.h2="Brez¾ièna za¹èita";
+wpa.secmode="Naèin za¹èite";
 wpa.legend="Brez¾ièno ¹ifriranje";
 wpa.auth_mode="Mre¾no overovljenje";
 wpa.psk="WPA predhodno deljeni kljuè";
