@@ -177,7 +177,7 @@ errmsg.err4="Die End Zeit muß größer als die Startzeit sein.";
 errmsg.err5="Die MAC-Adressen länge ist nicht korrekt.";
 errmsg.err6="Sie müssen einen Nutzernamen angeben.";
 errmsg.err7="Sie müssen einen Hostnamen angeben.";
-errmsg.err8="Sie müssen eine IP Adresse oder einen Domainnamen angeben.";
+errmsg.err8="Sie müssen eine IP-Adresse oder einen Domainnamen angeben.";
 errmsg.err9="Illegale DMZ IP-Adresse.";
 errmsg.err10="Das Passwort zur Bestätigung entspricht nicht dem originalen. Bitte geben Sie es neu ein.";
 errmsg.err11="In einem Passwort sind keine Leerzeichen erlaubt";
@@ -274,7 +274,7 @@ var bmenu= new Object();
 bmenu.setup="Setup";
 bmenu.setupbasic="Basis Setup";
 bmenu.setupddns="DDNS";
-bmenu.setupmacclone="MAC-Adress Klonen";
+bmenu.setupmacclone="MAC-Adresse Klonen";
 bmenu.setuprouting="Erweitertes Routing";
 bmenu.setupvlan="VLANs";
 
@@ -436,9 +436,9 @@ ddnsm.all_noip="Keine Internet Verbindung";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS erlaubt ihnen den Zugriff auf ihr Netzwerk unter zuhilfename eines Domainnamens anstatt einer IP-Adresse. \
-	Der Service verwaltet und ändert die IP Adresse sowie die domain information dynamisch.\
-	Sie müssen sich für den Service bei TZO.com order DynDNS.ORG anmelden.";
+hddns.right2="DDNS erlaubt ihnen den Zugriff auf ihr Netzwerk unter Zuhilfename eines Domainnamens anstatt einer IP-Adresse. \
+	Der Service verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
+	Sie müssen sich für den Service bei TZO.com, ZoneEdit.com oder DynDNS.ORG anmelden.";
 
 
 
@@ -499,8 +499,8 @@ var filterIP = new Object();
 filterIP.titl=" - Liste der PCs";
 filterIP.h2="Liste der PCs";
 filterIP.h3="Geben Sie die MAC Adresse der PC in folgendem Format an: xx:xx:xx:xx:xx:xx";
-filterIP.h32="Geben Sie die IP Adresse des PC's ein";
-filterIP.h33="Geben Sie den IP Bereich der PC's an";
+filterIP.h32="Geben Sie die IP-Adresse des PC's ein";
+filterIP.h33="Geben Sie den IP-Bereich der PC's an";
 filterIP.ip_range="IP Bereich";
 
 
@@ -672,7 +672,7 @@ hotspot.sputnik_about="über Sputnik";
 
 var idx_h = new Object();
 idx_h.srv="Heart Beat Server";
-idx_h.con_strgy="Connection Strategie";
+idx_h.con_strgy="Verbindungsstrategie";
 idx_h.max_idle="Auf bedarf Verbinden: Maximale Ruhezeit";
 idx_h.alive="Lebenserhaltung: Wiederwahl Periode";
 
@@ -715,8 +715,8 @@ var idx = new Object();
 idx.titl=" - Einstellungen";
 idx.h2="Internet Einstellungen";
 idx.h22="WLAN Einstellungen";
-idx.legend="Internet Verbindungs Typ";
-idx.conn_type="Verbindungs Type";
+idx.legend="Internet Verbindungstyp";
+idx.conn_type="Verbindungstyp";
 idx.stp="STP";
 idx.stp_mess="(Für COMCAST Provider ausschalten)";
 idx.optional="Zusätzliche Einstellungen (Wird von einigen Providern benötigt)";
@@ -746,13 +746,13 @@ idx.auth_dnsmasq="DHCP-Authoritative";
 //help container
 var hidx = new Object();
 hidx.right2="Diese Einstellung wird von fast allen Providern genutzt.";
-hidx.right4="Geben Sie den Hostnamen an der von ihrem Provider angegeben ist.";
-hidx.right6="Geben Sie hier den Domainnamen ein der ihnen von ihrem Provider zugewiesen wurde.";
-hidx.right8="Dies ist die Adresse ihres Routers.";
+hidx.right4="Geben Sie hier den Hostnamen ein, der Ihnen vom Provider zugewiesen wurde.";
+hidx.right6="Geben Sie hier den Domainnamen ein, der Ihnen vom Provider zugewiesen wurde.";
+hidx.right8="Dies ist die Lokale IP-Adresse ihres Routers im LAN.";
 hidx.right10="Dies ist die Subnetz Maske ihres Routers.";
-hidx.right12="Erlaubt dem Router ihre IP Adressen zu verwalten.";
-hidx.right14="Die Adresse bei der sie Anfangen wollen.";
-hidx.right16="Sie können hier die Anzahl der Adressen einschränken die der Router erzeilt.";
+hidx.right12="Erlaubt dem Router ihre IP-Adressen zu verwalten.";
+hidx.right14="Die erste IP-Adresse die vergeben werden soll.";
+hidx.right16="Sie können hier die Anzahl der IP-Adressen einschränken die der Router maximal vergeben kann.";
 hidx.right18="Wählen Sie hier ihre Zeitzone und die Sommerzeit Einstellungen. Der Router kann auch die Lokalzeit nutzen.";
 
 
@@ -995,7 +995,7 @@ hroute.right4="Dies ist eine einzigartige Routen Nummer, Sie können bis zu 20 Ro
 hroute.right5="Routen Name:";
 hroute.right6="Geben Sie einen Namen an den Sie der Router zuweisen möchten.";
 hroute.right7="Ziel LAN IP:";
-hroute.right8="Dies ist der Remote Host dem die Statische Routet zugewiesen wird.";
+hroute.right8="Dies ist die IP-Adresse des Zielnetzes, dem die statische Route zugewiesen wird.";
 hroute.right9="Subnetz Maske:";
 hroute.right10="Setzt den angewanden Netzwerk Bereich.";
 
@@ -1289,7 +1289,7 @@ var vlan = new Object();
 vlan.titl=" - Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
-vlan.bridge="Zugewiesen der<br />Bridge";
+vlan.bridge="Der Bridge Zuweisen";
 vlan.tagged="Tagged";
 vlan.negociate="Auto-Negotiate";
 vlan.aggregation="Link Aggregation<br>on Ports 3 & 4";
