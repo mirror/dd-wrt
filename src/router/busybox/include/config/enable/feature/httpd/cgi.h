@@ -1,1 +1,0 @@
-#define ENABLE_FEATURE_HTTPD_CGI 0
