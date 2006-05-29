@@ -747,8 +747,7 @@ ser-clean:
 nocat:
 	cd glib && ./config.sh
 	make -C glib
-	cd nocat && ./configure --with-remote-splash --prefix=/usr --localstatedir=/var --sysconfdir=/etc  CFLAGS="$(COPTS) -I../libghttp"
-	#--with-glib-prefix=${PWD}/../glib-1.2.10-install --disable-glibtest --host=mipsel-linux CC="$(CROSS_COMPILE)gcc"
+	cd nocat && ./configure --with-glib-prefix=../glib-1.2.10-install --disable-glibtest --host=mipsel-linux CC="$(CROSS_COMPILE)gcc" --with-remote-splash --prefix=/usr --localstatedir=/var --sysconfdir=/etc CFLAGS="$(COPTS) -I../libghttp"
 	make -C nocat
 
 nocat-clean:
