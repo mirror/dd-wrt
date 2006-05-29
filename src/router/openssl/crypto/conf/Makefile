@@ -111,11 +111,9 @@ conf_mall.o: ../../e_os.h ../../include/openssl/asn1.h
 conf_mall.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 conf_mall.o: ../../include/openssl/conf.h ../../include/openssl/crypto.h
 conf_mall.o: ../../include/openssl/dso.h ../../include/openssl/e_os2.h
-conf_mall.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
-conf_mall.o: ../../include/openssl/ecdsa.h ../../include/openssl/engine.h
-conf_mall.o: ../../include/openssl/err.h ../../include/openssl/evp.h
-conf_mall.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
-conf_mall.o: ../../include/openssl/objects.h
+conf_mall.o: ../../include/openssl/engine.h ../../include/openssl/err.h
+conf_mall.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
+conf_mall.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
 conf_mall.o: ../../include/openssl/opensslconf.h
 conf_mall.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 conf_mall.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
@@ -126,11 +124,9 @@ conf_mod.o: ../../e_os.h ../../include/openssl/asn1.h
 conf_mod.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 conf_mod.o: ../../include/openssl/conf.h ../../include/openssl/crypto.h
 conf_mod.o: ../../include/openssl/dso.h ../../include/openssl/e_os2.h
-conf_mod.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
-conf_mod.o: ../../include/openssl/ecdsa.h ../../include/openssl/err.h
-conf_mod.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
-conf_mod.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
-conf_mod.o: ../../include/openssl/opensslconf.h
+conf_mod.o: ../../include/openssl/err.h ../../include/openssl/evp.h
+conf_mod.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
+conf_mod.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
 conf_mod.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 conf_mod.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
 conf_mod.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
@@ -140,11 +136,10 @@ conf_sap.o: ../../e_os.h ../../include/openssl/asn1.h
 conf_sap.o: ../../include/openssl/bio.h ../../include/openssl/buffer.h
 conf_sap.o: ../../include/openssl/conf.h ../../include/openssl/crypto.h
 conf_sap.o: ../../include/openssl/dso.h ../../include/openssl/e_os2.h
-conf_sap.o: ../../include/openssl/ec.h ../../include/openssl/ecdh.h
-conf_sap.o: ../../include/openssl/ecdsa.h ../../include/openssl/engine.h
-conf_sap.o: ../../include/openssl/err.h ../../include/openssl/evp.h
-conf_sap.o: ../../include/openssl/lhash.h ../../include/openssl/obj_mac.h
-conf_sap.o: ../../include/openssl/objects.h ../../include/openssl/opensslconf.h
+conf_sap.o: ../../include/openssl/engine.h ../../include/openssl/err.h
+conf_sap.o: ../../include/openssl/evp.h ../../include/openssl/lhash.h
+conf_sap.o: ../../include/openssl/obj_mac.h ../../include/openssl/objects.h
+conf_sap.o: ../../include/openssl/opensslconf.h
 conf_sap.o: ../../include/openssl/opensslv.h ../../include/openssl/ossl_typ.h
 conf_sap.o: ../../include/openssl/pkcs7.h ../../include/openssl/safestack.h
 conf_sap.o: ../../include/openssl/sha.h ../../include/openssl/stack.h
