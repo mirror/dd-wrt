@@ -531,21 +531,13 @@ filter.mess3="Konèni èas mora biti veèji od zaèetnega.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Smernice dostopa do medmre¾ja:";
 hfilter.right2="Doloèite lahko do 10 smernic dostopa. Kliknite <em>" + sbutton.del + "</em>, da zbri¹ete smernico, ali <em>" + sbutton.summary + "</em> za povzetek smernice.";
-hfilter.right3="Status:";
 hfilter.right4="Omogoèi ali onemogoèi smernico.";
-hfilter.right5="Ime smernice:";
 hfilter.right6="Smernici lahko doloèite ime.";
-hfilter.right7="Dnevi:";
 hfilter.right8="Doloèite dan v tednu, ko bo smernica uporabljena.";
-hfilter.right9="Èasi:";
 hfilter.right10="Vnesite èas, ko bo smernica uporabljena.";
-hfilter.right11="Zaprte storitve:";
 hfilter.right12="Zaprete lahko doloèene storitve. Kliknite <em>" + sbutton.filterSer + "</em> za spremembo nastavitev.";
-hfilter.right13="Zapiranje spleti¹è z URL naslovom:";
 hfilter.right14="Zaprete lahko doloèena spleti¹èa tako, da vnesete njihov URL.";
-hfilter.right15="Zapiranje spleti¹è s kljuèno besedo:";
 hfilter.right16="Zaprete lahko doloèena spleti¹èa tako, da vnesete kljuèno besedo vsebovano v njihovi spletni starni.";
 
 
