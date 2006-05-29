@@ -1387,6 +1387,7 @@ hwanmac.right2="Some ISP will require you to register your MAC address. \
 var wpa = new Object();
 wpa.titl=" - Wireless Security";
 wpa.h2="Wireless Security";
+wpa.secmode="Security Mode";
 wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
 wpa.psk="WPA Pre-Shared Key";

@@ -10,9 +10,9 @@ share.interipaddr="Internet IP-Addresse";
 share.more="Mehr...";
 share.help="Hilfe";
 share.enable="Einschalten";
-share.enabled="An";
+share.enabled="Eingeschaltet";
 share.disable="Abschalten";
-share.disabled="Aus";
+share.disabled="Ausgeschaltet";
 share.usrname="Nutzername";
 share.passwd="Passwort";
 share.hostname="Hostname";
@@ -21,8 +21,8 @@ share.statu="Status";
 share.start="Start";
 share.end="Ende";
 share.proto="Protokol";
-share.ip="IP-Addresse";
-share.mac="MAC-Addresse";
+share.ip="IP-Adresse";
+share.mac="MAC-Adresse";
 share.none="Nichts";
 share.both="Beides";
 share.del="Löschen";
@@ -112,7 +112,7 @@ share.state="Status";
 share.mode="Modus";
 share.encrypt="Verschlüsselung";
 share.key="Schlüssel";
-share.wireless="Wireless";
+share.wireless="WLAN";
 share.dhcp="DHCP";
 share.styl="Aussehen";
 
@@ -148,7 +148,7 @@ sbutton.filterMac="MAC Filter Liste editieren";
 sbutton.filterSer="Hinzufügen/Editieren Service";
 sbutton.reboot="Router Neustarten";
 sbutton.help="   Hilfe  ";
-sbutton.wl_client_mac="Wireless Client MAC Liste";
+sbutton.wl_client_mac="WLAN Client MAC Liste";
 sbutton.update_filter="Filter Liste updaten";
 sbutton.join="Beitreten";
 sbutton.log_in="Eingehendes Log";
@@ -156,10 +156,10 @@ sbutton.log_out="Ausgehendes Log";
 sbutton.apply="Anwenden";
 sbutton.edit_srv="Hinzufügen/Editieren Service";
 sbutton.routingtab="Routen Tabelle Anzeigen";
-sbutton.wanmac="Zeige aktuelle PC MAC-Addresse";
+sbutton.wanmac="Zeige aktuelle PC MAC-Adresse";
 sbutton.dhcprel="DHCP Freigeben";
 sbutton.dhcpren="DHCP Erneuern";
-sbutton.survey="Wireless Suche";
+sbutton.survey="WLAN Suche";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
 sbutton.preview="Vorschau";
@@ -171,14 +171,14 @@ sbutton.preview="Vorschau";
 var errmsg = new Object();
 errmsg.err0="Sie müssen einen Nutzernamen angeben.";
 errmsg.err1="Sie müssen einen Routernamen angeben.";
-errmsg.err2="Auserhalb des zulässigen Bereichs, bitte verändern Sie die Start IP-Addresse oder die anzahl der Nutzer.";
+errmsg.err2="Auserhalb des zulässigen Bereichs, bitte verändern Sie die Start IP-Adresse oder die anzahl der Nutzer.";
 errmsg.err3="Sie müssen einen Tag auswählen."
 errmsg.err4="Die End Zeit muß größer als die Startzeit sein.";
-errmsg.err5="Die MAC-Addressen länge ist nicht korrekt.";
+errmsg.err5="Die MAC-Adressen länge ist nicht korrekt.";
 errmsg.err6="Sie müssen einen Nutzernamen angeben.";
 errmsg.err7="Sie müssen einen Hostnamen angeben.";
 errmsg.err8="Sie müssen eine IP Adresse oder einen Domainnamen angeben.";
-errmsg.err9="Illegale DMZ IP-Addresse.";
+errmsg.err9="Illegale DMZ IP-Adresse.";
 errmsg.err10="Das Passwort zur Bestätigung entspricht nicht dem originalen. Bitte geben Sie es neu ein.";
 errmsg.err11="In einem Passwort sind keine Leerzeichen erlaubt";
 errmsg.err12="Sie müssen ein Kommando zum Ausführen angeben.";
@@ -189,14 +189,14 @@ errmsg.err46="Diese Funktion ist nicht unter HTTPS verfügbar";
 
 //common.js error messages
 errmsg.err14=" wert ist außerhalb des zulässigen Bereichs [";
-errmsg.err15="Die WAN MAC-Addresse ist außerhalb des gültigen Bereichs [00 - ff].";
-errmsg.err16="Der zweite Wert der MAC-Addresse muß eine gerade Zahl sein : [0, 2, 4, 6, 8, A, C, E].";
-errmsg.err17="Diese MAC-Addresse ist nicht korrekt.";
-errmsg.err18="Die länger der MAC-Addresse ist nicht korrekt.";
-errmsg.err19="Die MAC Adresse kann nicht die Broadcast Addresse sein."
+errmsg.err15="Die WAN MAC-Adresse ist außerhalb des gültigen Bereichs [00 - ff].";
+errmsg.err16="Der zweite Wert der MAC-Adresse muß eine gerade Zahl sein : [0, 2, 4, 6, 8, A, C, E].";
+errmsg.err17="Diese MAC-Adresse ist nicht korrekt.";
+errmsg.err18="Die länger der MAC-Adresse ist nicht korrekt.";
+errmsg.err19="Die MAC Adresse kann nicht die Broadcast Adresse sein."
 errmsg.err20="Geben Sie die MAC Adresse im Format (xx:xx:xx:xx:xx:xx) ein.";
-errmsg.err21="Ungültiges MAC-Addressen Format.";
-errmsg.err22="Die WAN MAC-Addresse ist nicht korrekt.";
+errmsg.err21="Ungültiges MAC-Adressen Format.";
+errmsg.err22="Die WAN MAC-Adresse ist nicht korrekt.";
 errmsg.err23="Ungültiger HEX Wert ";
 errmsg.err24=" in MAC Adresse gefunden ";
 errmsg.err25="Der Schlüssel Wert ist nicht korrekt.";
@@ -206,13 +206,13 @@ errmsg.err28=" enthält ungültige Werte, diese müssen [ 0 - 9 ] sein.";
 errmsg.err29=" enthält einen ungülten Ascii Wert.";
 errmsg.err30=" enthält illegale hexadezimale Werte.";
 errmsg.err31=" ist ungültig.";
-errmsg.err32="IP-Addresse und Gateway sind nicht im selben Netzbereich.";
-errmsg.err33="IP-Addresse und Gateway können nicht die selben sein.";
+errmsg.err32="IP-Adresse und Gateway sind nicht im selben Netzbereich.";
+errmsg.err33="IP-Adresse und Gateway können nicht die selben sein.";
 errmsg.err34=" dark keine leerzeichen enthalten.";
 
 //Wol.asp error messages
-errmsg.err35="Sie müssen eine MAC-Addresse zum fortfahren eingeben.";
-errmsg.err36="Sie müssen eine Netzwerk Broadcast Addresse angeben um fortzufahren.";
+errmsg.err35="Sie müssen eine MAC-Adresse zum fortfahren eingeben.";
+errmsg.err36="Sie müssen eine Netzwerk Broadcast Adresse angeben um fortzufahren.";
 errmsg.err37="Sie müssen einen UDP Port angeben um fortzufahren.";
 
 //WL_WPATable.asp error messages
@@ -233,7 +233,7 @@ errmsg.err44="Die totale Anzahl der Checks überschreitet 128.";
 errmsg.err47="Ungültige SSID.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS ist nicht kompatibel mit der aktuellen Konfiguration des Routers. Bitte prüfen sie die folgenden Punkte :\n * Wireless Modus muß AP sein \n * WPA2 wird vom WDS nicht unterstützt \n * Wireless Netzwerk Modus Nur-B wird von WDS nicht unterstützt";
+errmsg.err48="WDS ist nicht kompatibel mit der aktuellen Konfiguration des Routers. Bitte prüfen sie die folgenden Punkte :\n * WLAN Modus muß AP sein \n * WPA2 wird vom WDS nicht unterstützt \n * WLAN Netzwerk Modus Nur-B wird von WDS nicht unterstützt";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius ist nur im AP Modus verfügbar.";
@@ -262,7 +262,7 @@ errmsg.err57="Eintrag löschen ?";
 errmsg.err58="Klicken um die Zuweisung zu löschen";
 
 //Status_Wireless.asp error messages
-errmsg.err59="Nicht verfügbar! Bitte schalten sie das Wireless Netzwerk an.";
+errmsg.err59="Nicht verfügbar! Bitte schalten sie das WLAN Netzwerk an.";
 
 //Upgrade.asp error messages
 errmsg.err60="Bitte geben sie eine Datei zum upgraden an.";
@@ -274,14 +274,14 @@ var bmenu= new Object();
 bmenu.setup="Setup";
 bmenu.setupbasic="Basis Setup";
 bmenu.setupddns="DDNS";
-bmenu.setupmacclone="MAC-Address Klonen";
+bmenu.setupmacclone="MAC-Adress Klonen";
 bmenu.setuprouting="Erweitertes Routing";
 bmenu.setupvlan="VLANs";
 
-bmenu.wireless="Wireless";
+bmenu.wireless="WLAN";
 bmenu.wirelessBasic="Basis Einstellungen";
 bmenu.wirelessRadius="Radius";
-bmenu.wirelessSecurity="Wireless Sicherheit";
+bmenu.wirelessSecurity="WLAN Sicherheit";
 bmenu.wirelessMac="MAC Filter";
 bmenu.wirelessAdvanced="Erweiterte Einstellungen";
 bmenu.wirelessWds="WDS";
@@ -326,7 +326,7 @@ bmenu.statu="Status";
 bmenu.statuRouter="Router";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Sputnik Agent";
-bmenu.statuWLAN="Wireless";
+bmenu.statuWLAN="WLAN";
 bmenu.statuSysInfo="Sys-Info";
 
 // **************************************************************** Alive.asp **********************************************************************//
@@ -339,10 +339,10 @@ alive.sevr1="Reboot Planen";
 alive.hour="Zu einem festen Zeitpunkt";
 alive.legend2="WDS/Verbindungsüberwachung";
 alive.sevr2="Überwachung Einschalten";
-alive.IP="IP-Addressen";
+alive.IP="IP-Adressen";
 alive.legend3="Proxy/Verbindungsüberwachung";
 alive.sevr3="Proxy Überwachung Einschalten";
-alive.IP2="Proxy IP-Addresse";
+alive.IP2="Proxy IP-Adresse";
 alive.port="Proxy Port";
 
 //help container
@@ -376,7 +376,7 @@ ddns.titl=" - Dynamic DNS"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="DDNS Service";
-ddns.emailaddr="E-mail Addresse";
+ddns.emailaddr="E-mail Adresse";
 ddns.typ="Type";
 ddns.dynamic="Dynamisch";
 // ddns.static="Static"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
@@ -392,7 +392,7 @@ ddnsm.dyn_nohost="Der hostname existiert nicht";
 ddnsm.dyn_notfqdn="Der Hostname ist nicht korrekt";
 ddnsm.dyn_yours="Der Host gehört ihnen nicht";
 ddnsm.dyn_abuse="Der Host wurde wegen mißbrauchs blockiert";
-ddnsm.dyn_nochg="Die IP-Addresse hat sich seit dem letzten update nicht geändert";
+ddnsm.dyn_nochg="Die IP-Adresse hat sich seit dem letzten update nicht geändert";
 ddnsm.dyn_badauth="Authentizifierung fehlgeschlagen (Nutzername oder Passwort)";
 ddnsm.dyn_badsys="Ungüötiger System parameter";
 ddnsm.dyn_badagent="Dieser Nutzeragent wurde blockiert";
@@ -409,7 +409,7 @@ ddnsm.tzo_notfqdn="Ungültiger Domainname";
 ddnsm.tzo_notmail="Ungültige Email";
 ddnsm.tzo_notact="Ungültige Aktion";
 ddnsm.tzo_notkey="Ungültiger Schlüssel";
-ddnsm.tzo_notip="Ungültige IP-Addresse";
+ddnsm.tzo_notip="Ungültige IP-Adresse";
 ddnsm.tzo_dupfqdn="Duplizierter Domainname";
 ddnsm.tzo_fqdncre="Domainname wurde schon erstellt";
 ddnsm.tzo_expired="Der Account ist abgelaufen";
@@ -436,7 +436,7 @@ ddnsm.all_noip="Keine Internet Verbindung";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS erlaubt ihnen den Zugriff auf ihr Netzwerk unter zuhilfename eines Domainnamens anstatt einer IP-Addresse. \
+hddns.right2="DDNS erlaubt ihnen den Zugriff auf ihr Netzwerk unter zuhilfename eines Domainnamens anstatt einer IP-Adresse. \
 	Der Service verwaltet und ändert die IP Adresse sowie die domain information dynamisch.\
 	Sie müssen sich für den Service bei TZO.com order DynDNS.ORG anmelden.";
 
@@ -470,7 +470,7 @@ dmz.titl=" - DMZ";
 dmz.h2="Demilitarisierte Zone (DMZ)";
 dmz.legend="DMZ";
 dmz.serv="DMZ Nutzen";
-dmz.host="DMZ Host IP-Addresse";
+dmz.host="DMZ Host IP-Adresse";
 
 
 //help container
@@ -704,7 +704,7 @@ idx_pppoe.use_rp="Nutze RP PPPoE";
 
 var idx_pptp = new Object();
 idx_pptp.srv="Nutze DHCP";
-idx_pptp.wan_ip="Internet IP-Addresse";
+idx_pptp.wan_ip="Internet IP-Adresse";
 idx_pptp.gateway="Gateway (PPTP Server)";
 idx_pptp.encrypt="PPTP Verschlüsselung";
 
@@ -722,7 +722,7 @@ idx_static.dns="Statischer DNS";
 var idx = new Object();
 idx.titl=" - Einstellungen";
 idx.h2="Internet Einstellungen";
-idx.h22="Wireless Einstellungen";
+idx.h22="WLAN Einstellungen";
 idx.legend="Internet Verbindungs Typ";
 idx.conn_type="Verbindungs Type";
 idx.stp="STP";
@@ -731,7 +731,7 @@ idx.optional="Zusätzliche Einstellungen (Wird von einigen Providern benötigt)";
 idx.mtu="MTU";
 idx.h23="Netzwerk Einstellungen";
 idx.routerip="Router IP";
-idx.lanip="Lokale IP-Addresse";
+idx.lanip="Lokale IP-Adresse";
 idx.legend2="WAN Port";
 idx.wantoswitch="WAN Port dem Switch zuweisen";
 idx.legend3="Zeit Einstellungen";
@@ -739,12 +739,12 @@ idx.timeset="Zeitzone / Sommerzeit (DST)";
 idx.localtime="Nutze Lokale Zeit";
 idx.static_ip="Static IP";
 idx.dhcp="Automatische Konfiguration - DHCP";
-idx.dhcp_legend="Netzwerk Address Server Einstellungen (DHCP)";
+idx.dhcp_legend="Netzwerk Adress Server Einstellungen (DHCP)";
 idx.dhcp_type="DHCP Typ";
 idx.dhcp_srv="DHCP Server";
 idx.dhcp_fwd="DHCP Weiterleitung";
-idx.dhcp_start="Start IP-Addresse";
-idx.dhcp_end="End IP-Addresse";		//used in Status_Lan.asp
+idx.dhcp_start="Start IP-Adresse";
+idx.dhcp_end="End IP-Adresse";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Maximale DHCP Nutzer";
 idx.dhcp_lease="Client Lease Zeit";
 idx.dhcp_dnsmasq="Nutze DNSMasq für DHCP";
@@ -862,7 +862,7 @@ management.routing_srv="Routing";
 management.wol_legend="Wake-On-LAN";
 management.wol_srv="WOL";
 management.wol_pass="SecureOn Passwort";
-management.wol_mac="MAC-Addressen<br/>( Format: xx:xx:xx:xx:xx:xx )";
+management.wol_mac="MAC-Adressen<br/>( Format: xx:xx:xx:xx:xx:xx )";
 
 management.ipv6_legend="IPv6 Unterstützung";
 management.ipv6_srv="IPv6";
@@ -963,7 +963,7 @@ hqos.right3="Downlink:";
 hqos.right4="Setzen Sie dies auf 80%-100% ihres totalen download limits.";
 hqos.right6="Hier konnen sie die Datenrate unter beachtung der Applikation die diese verwendet kontrollieren.";
 hqos.right8="Hier können sie die Priorität allen Traffics IPs oder IP Bereichen zuweisen.";
-hqos.right10="Hier können Sie die Priorität für jeden Traffik ihres Gerätes in ihrem Netzwerk angeben, indem Sie von dem Gerät die MAC Addresse, die Priorität und einen Namen angeben";
+hqos.right10="Hier können Sie die Priorität für jeden Traffik ihres Gerätes in ihrem Netzwerk angeben, indem Sie von dem Gerät die MAC Adresse, die Priorität und einen Namen angeben";
 hqos.right12="Hier können Sie die Datenrate der Physikalischen LAN Ports an ihrem Router angeben. Sie können hier Prioritäten für die Geräte angeben die an Port 1 - 4 angeschlossen sind";
 
 
@@ -1014,7 +1014,7 @@ hroute.right10="Setzt den angewanden Netzwerk Bereich.";
 
 var survey = new Object();
 survey.titl=" - Netzsuche";
-survey.h2="Nachbarliche Wireless Netzwerke";
+survey.h2="Nachbarliche WLAN Netzwerke";
 survey.thjoin="Netz Betreten";
 
 
@@ -1127,11 +1127,11 @@ status_lan.legend3="DHCP Clients";
 
 //help container
 var hstatus_lan = new Object();
-hstatus_lan.right2="Dies ist die Router MAC-Addresse wie sie in ihrem lokalen Ethernet Netzwerk sichtbar ist.";
-hstatus_lan.right4="Dies zeigt die Router IP-Addresse wie sie in ihrem lokalen Ethernet Netzwerk sichtbar ist.";
+hstatus_lan.right2="Dies ist die Router MAC-Adresse wie sie in ihrem lokalen Ethernet Netzwerk sichtbar ist.";
+hstatus_lan.right4="Dies zeigt die Router IP-Adresse wie sie in ihrem lokalen Ethernet Netzwerk sichtbar ist.";
 hstatus_lan.right6="Wenn der Router eine Subnetz Maske nutzt, wird diese hier angezeigt.";
 hstatus_lan.right8="Wenn Sie den router als DHCP Server nutzen wird dies hier angezeigt.";
-hstatus_lan.right10="Indem Sie auf irgendeine MAC-Addresse klicken erhalten Sie die OUI ID welche den Hersteller des geräts darstellt.";
+hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken erhalten Sie die OUI ID welche den Hersteller des geräts darstellt.";
 
 // **************************************************************** Status_Router.asp **********************************************************************//
 
@@ -1166,7 +1166,7 @@ status_router.www_loginstatus="Login Status";
 //help container
 var hstatus_router = new Object();
 hstatus_router.right2="Dies ist der Name des Routers wie er unter <i>Setup</i> gesetzt wurde.";
-hstatus_router.right4="Dies ist die Router MAC-Addresse, Wie sie von ihrem Anbieter gesehen wird.";
+hstatus_router.right4="Dies ist die Router MAC-Adresse, Wie sie von ihrem Anbieter gesehen wird.";
 hstatus_router.right6="Dies ist die aktuelle Firmware des Routers.";
 hstatus_router.right8="Dies ist die Zeit wie sie unter <i>Setup</i> gesetzt wurde.";
 hstatus_router.right10="Dies ist die seit dem Start des Routers gemessene Zeit.";
@@ -1196,23 +1196,23 @@ hstatus_sputnik.right8="Die Lizenz Nummer ihres Sputnik Control Centers.";
 // **************************************************************** Status_Wireless.asp **********************************************************************//
 
 var status_wireless = new Object();
-status_wireless.titl=" - Wireless Status";
-status_wireless.h2="Wireless";
-status_wireless.legend="Wireless Status";
+status_wireless.titl=" - WLAN Status";
+status_wireless.h2="WLAN";
+status_wireless.legend="WLAN Status";
 status_wireless.net="Network";
 status_wireless.pptp="PPTP Status";
 status_wireless.legend2="Packet Info";
 status_wireless.rx="Empfangen (RX)";
 status_wireless.tx="Übermittelt (TX)";
-status_wireless.h22="Wireless Knoten";
+status_wireless.h22="WLAN Knoten";
 status_wireless.legend3="Clients";
 status_wireless.signal_qual="Signal Qualität";
 status_wireless.wds="WDS Nodes";
 
 //help container
 var hstatus_wireless = new Object();
-hstatus_wireless.right2="Dies ist die Router MAC Adresse wie sie in ihrem lokalen Wireless Netzwerk sichbar ist.";
-hstatus_wireless.right4="Wie auf dem Wireless Tab angegeben, zeigt ihnen dies den Modus ihres Wireless Interface an (Mixed, Nur-G, or Ausgeschaltet).";
+hstatus_wireless.right2="Dies ist die Router MAC Adresse wie sie in ihrem lokalen WLAN Netzwerk sichbar ist.";
+hstatus_wireless.right4="Wie auf dem WLAN Tab angegeben, zeigt ihnen dies den Modus ihres WLAN Interface an (Mixed, Nur-G, or Ausgeschaltet).";
 
 
 
@@ -1317,13 +1317,13 @@ var wol = new Object();
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Verfügbare Hosts";
-wol.legend2="WOL Addressen";
+wol.legend2="WOL Adressen";
 wol.legend3="Ausgabe";
 wol.legend4="Manuelles WOL";
 wol.enable="WOL Einschalten?";
 wol.add_wol="WOL Host Hinzufügen";
 wol.restore="Werks Einstellungen Wiederherstellen";
-wol.mac="MAC-Addresse(n)";
+wol.mac="MAC-Adresse(n)";
 wol.broadcast="Netz Broadcast";
 wol.udp="UDP Port";
 wol.msg1="Klicken um einen WOL Host zu entfernen";
@@ -1331,31 +1331,32 @@ wol.msg1="Klicken um einen WOL Host zu entfernen";
 //help container
 var hwol = new Object();
 hwol.right2="Diese Seite erlaubt ihnen definierte Hosts in ihrem Netzwerk aufzuwecken (Insofern Sie mit ihrem Router lokal verbunden sind).";
-hwol.right4="Die MAC-Addressen werden in folgendem Format angegeben xx:xx:xx:xx:xx:xx (Bsp. 01:23:45:67:89:AB)";
-hwol.right6="IP-Addresse ist typischerweise die Broadcast Addresse für ihr lokales Netzwerk. Es kann aber auch eine Remote Addresse sein wenn der Host nicht in ihrem lokalen Netzwerk verbunden ist."
+hwol.right4="Die MAC-Adressen werden in folgendem Format angegeben xx:xx:xx:xx:xx:xx (Bsp. 01:23:45:67:89:AB)";
+hwol.right6="IP-Adresse ist typischerweise die Broadcast Adresse für ihr lokales Netzwerk. Es kann aber auch eine Remote Adresse sein wenn der Host nicht in ihrem lokalen Netzwerk verbunden ist."
 
 // **************************************************************** WanMAC.asp **********************************************************************//
 
 var wanmac = new Object();
-wanmac.titl=" - MAC-Addresse Klonen";
-wanmac.h2="MAC-Addresse Klonen";
+wanmac.titl=" - MAC-Adresse Klonen";
+wanmac.h2="MAC-Adresse Klonen";
 wanmac.legend="MAC-Klonen";
 wanmac.wan="Klone WAN MAC";
-wanmac.wlan="Klone Wireless MAC";
+wanmac.wlan="Klone WLAN MAC";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="Manche Anbieter setzen eine Registration ihrer MAC-Addresse vorraus. \
-			Wenn Sie ihre MAC-Addresse nicht neu registrieren möchten, können Sie hier ihre MAC-Addresse klonen so wie sie bei ihrem Anbieter registriert ist.";
+hwanmac.right2="Manche Anbieter setzen eine Registration ihrer MAC-Adresse vorraus. \
+			Wenn Sie ihre MAC-Adresse nicht neu registrieren möchten, können Sie hier ihre MAC-Adresse klonen so wie sie bei ihrem Anbieter registriert ist.";
 
 
 // **************************************************************** WL_WPATable.asp **************************************************************//
 // **************************************************************** WPA.asp **********************************************************************//
 
 var wpa = new Object();
-wpa.titl=" - Wireless Sicherheit";
-wpa.h2="Wireless Sicherheit";
-wpa.h3="Wireless Verschlüsselung";
+wpa.titl=" - WLAN Sicherheit";
+wpa.h2="WLAN Sicherheit";
+wpa.secmode="Sicherheitsmodus";
+wpa.legend="WLAN Verschlüsselung";
 wpa.auth_mode="Network Authentication";
 wpa.psk="WPA Pre-Shared Key";
 wpa.wpa="WPA";
@@ -1379,17 +1380,17 @@ hwpa.right2="Hier können Sie zwischen Deaktiviert, WEP, WPA Pre-Shared Key, WPA 
 // **************************************************************** WL_FilterTable.asp **************************************************************//
 
 var wl_filter = new Object();
-wl_filter.titl=" - MAC-Addressen Filter Liste";
-wl_filter.h2="MAC-Addressen Filter Liste";
-wl_filter.h3="Geben Sie die MAC-Addresse in folgendem Format an:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+wl_filter.titl=" - MAC-Adressen Filter Liste";
+wl_filter.h2="MAC-Adressen Filter Liste";
+wl_filter.h3="Geben Sie die MAC-Adresse in folgendem Format an:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 
 // **************************************************************** WL_ActiveTable.asp **************************************************************//
 
 var wl_active = new Object();
-wl_active.titl=" - Wireless Aktive Client MAC Liste";
-wl_active.h2="Wireless Client MAC List";
+wl_active.titl=" - WLAN Aktive Client MAC Liste";
+wl_active.h2="WLAN Client MAC List";
 wl_active.h3="Aktiviere MAC Filter";
 wl_active.active="Aktive PC";
 wl_active.inactive="Inaktive PC";
@@ -1400,11 +1401,11 @@ wl_active.inactive="Inaktive PC";
 
 var wds = new Object();
 wds.titl=" - WDS";
-wds.h2="Wireless Distribution System";
+wds.h2="WLAN Distribution System";
 wds.legend="WDS Einstellungen";
 wds.label="Lazy WDS";
 wds.label2="WDS Subnetz";
-wds.wl_mac="Wireless MAC";
+wds.wl_mac="WLAN MAC";
 wds.lazy_default="Standard: Abgeschaltet";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
@@ -1435,26 +1436,26 @@ radius.mac="MAC";
 
 var wl_mac = new Object();
 wl_mac.titl=" - MAC Filter";
-wl_mac.h2="Wireless MAC Filter";
+wl_mac.h2="WLAN MAC Filter";
 wl_mac.legend="MAC Filter";
 wl_mac.label="Nutze Filter";
 wl_mac.label2="Filter Modus";
-wl_mac.deny="Unterbindet den PC's den Zugriff auf das Wireless Netzwerk";
-wl_mac.allow="Erlaubt nur PC's in der Liste den Zugriff auf das Wireless Netzwerk";
+wl_mac.deny="Unterbindet den PC's den Zugriff auf das WLAN Netzwerk";
+wl_mac.allow="Erlaubt nur PC's in der Liste den Zugriff auf das WLAN Netzwerk";
 
 
 
 // **************************************************************** Wireless_Basic.asp ***************************************************************//
 
 var wl_basic = new Object();
-wl_basic.titl=" - Wireless";
-wl_basic.h2="Wireless";
+wl_basic.titl=" - WLAN";
+wl_basic.h2="WLAN";
 wl_basic.legend="Basis Einstellungen";
-wl_basic.label="Wireless Modus";
-wl_basic.label2="Wireless Network Modus";
-wl_basic.label3="Wireless Network Name (SSID)";
-wl_basic.label4="Wireless Kanal";
-wl_basic.label5="Wireless SSID Broadcast";
+wl_basic.label="WLAN Modus";
+wl_basic.label2="WLAN Netzwerk Modus";
+wl_basic.label3="WLAN Netzwerk Name (SSID)";
+wl_basic.label4="WLAN Kanal";
+wl_basic.label5="WLAN SSID Broadcast";
 wl_basic.label6="Empfindlichkeits Bereich (ACK Timing)";
 wl_basic.ap="AP";
 wl_basic.client="Client";
@@ -1467,7 +1468,7 @@ wl_basic.sensitivity="Standard: 20000 meter";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right2="Wenn Sie G Clients komplett ausschließen wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den Wireless Zugriff abschalten wollen, wählen Sie <em>Abschalten</em>.";
+hwl_basic.right2="Wenn Sie G Clients komplett ausschließen wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den WLAN Zugriff abschalten wollen, wählen Sie <em>Abschalten</em>.";
 hwl_basic.right3="Empfindlichkeits Bereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
 
@@ -1476,10 +1477,10 @@ hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
 // **************************************************************** Wireless_Advanced.asp ***************************************************************//
 
 var wl_adv = new Object();
-wl_adv.titl=" - Erweiterte Wireless Einstellungen";
-wl_adv.h2="Erweiterte Wireless Einstellungen";
+wl_adv.titl=" - Erweiterte WLAN Einstellungen";
+wl_adv.h2="Erweiterte WLAN Einstellungen";
 wl_adv.legend="Erweiterte Einstellungen";
-wl_adv.legend2="Wireless Multimedia Unterstützung Einstellungen";
+wl_adv.legend2="WLAN Multimedia Unterstützung Einstellungen";
 wl_adv.label="Authentication Typ";
 wl_adv.label2="Basic Rate";
 wl_adv.label3="Transmission Rate";
@@ -1497,7 +1498,7 @@ wl_adv.label14="Preamble";
 wl_adv.reference="Noise Referenz";
 wl_adv.label15="Xmit Power";
 wl_adv.label16="Afterburner";
-wl_adv.label17="Wireless GUI Zugriff";
+wl_adv.label17="WLAN GUI Zugriff";
 wl_adv.label18="WMM Unterstützung";
 wl_adv.label19="No-Acknowledgement";
 wl_adv.table1="EDCA AP Parameter (AP nach Client)";
@@ -1541,7 +1542,7 @@ success.success_reboot=success.success_noreboot + "<br />Das Gerät wird nun neu 
 
 success.alert_reset="Alle Konfigurationseinträge wurden auf ihre Standardwerte gesetzt.<br /><br />";
 success.alert1="Bitte prüfen sie nachfolgende Dinge bevor Sie sich neu verbinden:";
-success.alert2="Sie haben die IP-Addresse Ihres Routers geändert. Bitte erneuern Sie ihre Client-Addresse in ihrem Netzwerk.";
+success.alert2="Sie haben die IP-Adresse Ihres Routers geändert. Bitte erneuern Sie ihre Client-Adresse in ihrem Netzwerk.";
 success.alert3="Wenn Sie via WLAN verbunden sind, treten Sie dem Netzwerk erneut bei und klicken Sie auf <em>Fortfahren</em>.";
 
 
@@ -1556,7 +1557,7 @@ success.alert3="Wenn Sie via WLAN verbunden sind, treten Sie dem Netzwerk erneut
 var dhcp = new Object();
 dhcp.titl=" - DHCP Aktive IP-Tabelle";
 dhcp.h2="DHCP Aktive IP-Tabelle";
-dhcp.server="DHCP Server IP-Addresse :";
+dhcp.server="DHCP Server IP-Adresse :";
 dhcp.tclient="Client Hostname";
 
 
