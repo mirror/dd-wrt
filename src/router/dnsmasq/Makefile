@@ -7,7 +7,7 @@ SRC = src
 PO = po
 MAN = man
 
-CFLAGS?= -Os
+CFLAGS?= $(COPTS)
 
 all : 
 	$(MAKE) I18N=-DNO_GETTEXT -f ../bld/Makefile -C $(SRC) dnsmasq 
