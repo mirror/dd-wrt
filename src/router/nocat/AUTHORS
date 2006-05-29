@@ -8,6 +8,7 @@ System architecture:
 Additional patches submitted by:
     Punky Tse <punkytse@punknix.com>
     Casey T. Veccio <ctveccio@sandia.gov>
+    Jeff Kyllo <jkyllo-nocat@echospiral.com>
 
 Documentation assistance:
     Terry Schmidt <terry@nycwireless.net>
@@ -17,3 +18,6 @@ Word to the Homies, Yo:
     Jerritt Collord <collord@linuxfund.org>
     Drew Woods <drew@entropy.net>
     & the rest of the FreeNetworks.org community
+
+This distribution contains code from libghttp. See libghttp/AUTHORS for a list
+of authors of that package.

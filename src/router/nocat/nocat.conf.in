@@ -6,134 +6,45 @@
 #   be a comment.
 
 ###### General settings.
-#
-# See the bottom of this file for options for logging to syslog.
-
-##### Gateway application settings.
-#
-# GatewayName -- The name of this gateway, to be optionally displayed
-#   on the splash and status pages. Any short string of text will do.
-#
-GatewayName	the NoCat Network
-
 ##
-#
-# GatewayMode -- Determines the mode of operation of the gateway. Possible
-#   values are:
-#   
-#   Open	- Simply require a user to view a splash page and accept 
-#		    a use agreement.
-#
-# Only Open mode is currently supported.
-#
-GatewayMode	Open
-
+####### Syslog Options
 ##
-# GatewayLog -- Optional.  If unset, messages will go to STDERR.
-# (currently unused!)
+# Log Facility - syslog or internal.  "internal" sends log messages
+#    using GatewayLog or STDERR. "syslog" (the default) sends all messages to the system log.
 #
+# LogFacility	syslog
 # GatewayLog	/var/log/nocat.log
 
 ##
-# LoginTimeout - Number of seconds after a client's last
-#   login/renewal to terminate their connection. Probably
-#   don't want to set this to less than 60 or a lot of 
-#   bandwidth is likely to get consumed by the client's
-#   renewal attempts. 
+# SyslogIdent - The ident of the program that is calling syslog.  This will
+#    be prepended to every log entry made by NoCat.  Defaults to NoCat.
 #
-# For Open Mode portals, you probably want to comment out
-#   the preceding and set LoginTimeout to 
-#   something large (like 86400, for one notification
-#   per day).
-#
-LoginTimeout	86400
-
-###### Open Portal settings.
-#
-##
-# HomePage -- The authservice's notion of a default
-#   redirect.
-#
-HomePage	http://nocat.net/
-
-# DocumentRoot -- Where all of the application templates (including
-#   SplashForm) are hiding. Can be different from Apache's DocumentRoot.
-#   Defaults to @htdocsdir@ via compile-time option.
-#
-# DocumentRoot	@htdocsdir@	
-
-# SplashForm -- Form displayed to users on capture.
-#
-SplashForm	splash.html
-
-# StatusForm -- Page displaying status of logged in users.
-#   NOT YET IMPLEMENTED.
-#
-StatusForm	status.html
-
-# SplashURL -- URL to fetch remote splash page from. You must compile
-#   with --with-remote-splash for this to work. SplashTimeout specifies
-#   the reload period of the remote splash page.
-#
-# SplashURL	http://example.com/get_splash_page.cgi?node=$NodeID
-# 
-# SplashTimeout	21600
-
-###### Active/Passive Portal settings. 
-# None of these settings affect open mode operation.
-#
-# TrustedGroups - A list of groups registered with the auth server
-#   that a user may claim membership in order to gain Member-class
-#   access through this portal. The default magic value "Any" indicates
-#   that a member of *any* group is granted member-class access from
-#   this gateway. NOT YET IMPLEMENTED.
-#
-# TrustedGroups	NoCat NYCWireless PersonalTelco
-#
-TrustedGroups Any
+# SyslogIdent NoCat
 
 ##
-# Owners - Optional.  List all local "owner" class users here, separated 
-#   by spaces.  Owners typically get full bandwidth, and unrestricted
-#   access to all network resources. NOT YET IMPLEMENTED.
+# Log verbosity -- 0 is (almost) no logging. 10 is log
+#   everything. 5 is probably a safe middle road.
 #
-# Owners rob@nocat.net schuyler@nocat.net
+#Verbosity       5
+
+##### Gateway application settings.
+##
+# GatewayName -- The name of this gateway, to be optionally displayed
+#   on the splash and status pages. Any short string of text will do.
+#
+#GatewayName	the NoCat Network
 
 ##
-# AuthServiceAddr - Required, for captive mode. Must be set to the address of
-#   your authentication service. You must use an IP address
-#   if DNS resolution isn't available at gateway startup.
+# GatewayAddr/GatewayPort - The address & TCP port to bind the gateway 
+#   service to. 5280 is de-facto standard for NoCatAuth.
+#   Change this only if you absolutely need to.
 #
-# AuthServiceAddr 208.201.239.21
-#
-AuthServiceAddr	auth.nocat.net
+# GatewayAddr     192.168.1.1
+# GatewayPort     5280
 
-##
-# AuthServiceURL - HTTPS URL to the login script at the authservice. 
-#
-AuthServiceURL  https://auth.nocat.net/cgi-bin/login
-
-##
-# LogoutURL - HTTP URL to redirect user after logout.
-#
-LogoutURL	https://auth.nocat.net/logout.html
-
-##
-# PGPKeyPath -- The directory in which PGP keys are stored.
-#   NoCat tries to find this in the pgp/ directory above
-#   the bin/ parent directory. Set this only if you put it
-#   somewhere that NoCat doesn't expect.
-#
-# PGPKeyPath	@pgpdir@
-
-
+#Now these are auto detected.
 ### Network Topology
 #
-# FirewallPath - Where to find the firewall scripts.
-#   Defaults to @pkglibexecdir@ via compile-time option.
-#
-# FirewallPath	@pkglibexecdir@
-
 #
 # ExternalDevice - Required if and only if NoCatAuth can't figure it out
 #   from looking at your routing tables and picking the interface
@@ -158,22 +69,7 @@ LogoutURL	https://auth.nocat.net/logout.html
 #   can use the number of bits in the netmask (e.g. /16, /24, etc.)
 #   or the full x.x.x.x specification.
 #
-# LocalNetwork	10.0.1.0/24
-
-##
-# DNSAddr - Optional. *If* you choose not to run DNS on your internal network,
-#   specify the address(es) of one or more domain name server on the Internet
-#   that wireless clients can use to get out. Should be the same DNS that your
-#   DHCP server hands out.
-#
-# DNSAddr 111.222.333.444
-
-##
-# AllowedWebHosts - Optional.  List any domains that you would like to
-#   allow web access (TCP port 80 and 443) BEFORE logging in (this is the
-#   pre-'skip' stage, so be careful about what you allow.)
-#
-# AllowedWebHosts	nocat.net
+# LocalNetwork	192.168.1.0/24
 
 ##
 # RouteOnly - Required only if you DO NOT want your gateway to act as a NAT. 
@@ -182,13 +78,53 @@ LogoutURL	https://auth.nocat.net/logout.html
 #
 # RouteOnly	1
 
+## On WRT54G --now autodetected!
+# ExternalDevice	eth1
+# InternalDevice	br0
+# InsideIP is depreciated - now defined by GatewayAddr
+# InsideIP	192.168.1.1
+# LocalNetwork	192.168.1.0/24
+
+###### Other Common Gateway Options. (stuff you probably won't have to change)
 ##
-# MembersOnly - Optional.  Uncomment this if you want to disable public
-#   access (i.e. unauthenticated 'skip' button access).  You'll also want to
-#   point AuthServiceURL somewhere that doesn't include a skip button (like
-#   at your own Auth server.)
 #
-# MembersOnly	1
+# FirewallPath - Where to find the firewall scripts.
+#   Defaults to @pkglibexecdir@ via compile-time option.
+#
+# FirewallPath	@pkglibexecdir@
+#
+##
+# ResetCmd, PermitCmd, DenyCmd -- Shell commands to reset,
+#   open and close the firewall. You probably don't need to
+#   change these.
+#
+# ResetCmd	initialize.fw
+# PermitCmd	access.fw permit $MAC $IP $Class 
+# DenyCmd	access.fw deny $MAC $IP $Class 
+
+##
+# DocumentRoot -- Where all of the application templates (including
+#   SplashForm) are hiding. Can be different from Apache's DocumentRoot.
+#   Defaults to /usr/share/nocat/htdocs via compile-time option.
+#
+# DocumentRoot	@htdocsdir@	
+
+##
+# DNSAddr - Optional. *If* you choose not to run DNS on your internal network,
+#   specify the address(es) of one or more domain name server on the Internet
+#   that wireless clients can use to get out. Should be the same DNS that your
+#   DHCP server hands out.
+#
+# DNSAddr 111.222.333.444
+# DNSAddr	198.6.1.4	
+
+##
+# AllowedWebHosts - Optional.  List any domains that you would like to
+#   allow web access (TCP port 80 and 443) BEFORE logging in (this is the
+#   pre-'skip' stage, so be careful about what you allow.)
+#
+# AllowedWebHosts	nocat.net
+# AllowedWebHosts           69.59.149.160 //HSZ.de
 
 ##
 # IncludePorts - Optional.  Specify TCP ports to allow access to when 
@@ -217,38 +153,28 @@ LogoutURL	https://auth.nocat.net/logout.html
 #
 ExcludePorts    25
 
-####### Syslog Options
+##
+# ForcedRedirect -- 2 = check header/POST for redirect, 1 == always redirect after splash, 0 = redirect to original URL
+# HomePage -- The authservice's notion of a default post-capture redirect.
 #
-# Log Facility - syslog or internal.  "internal" sends log messages
-#    using STDERR. "syslog" sends all messages to the system log.
-#
-# LogFacility	syslog
+# ForcedRedirect 0
+# HomePage	http://portless.net/
 
 ##
-# SyslogIdent - The ident of the program that is calling syslog.  This will
-#    be prepended to every log entry made by NoCat.  Defaults to NoCat.
+# LoginTimeout - Number of seconds after a client's last
+#   login/renewal to terminate their connection. Probably
+#   don't want to set this to less than 60 or a lot of 
+#   bandwidth is likely to get consumed by the client's
+#   renewal attempts. 
 #
-# SyslogIdent NoCat
-
-###### Other Common Gateway Options. (stuff you probably won't have to change)
+# For Open mode portals: you probably want to comment out
+#   the preceding and set LoginTimeout to 
+#   something large (like 86400, for one notification
+#   per day).
 #
-# ResetCmd, PermitCmd, DenyCmd -- Shell commands to reset,
-#   open and close the firewall. You probably don't need to
-#   change these.
-#
-# ResetCmd	initialize.fw
-# PermitCmd	access.fw permit $MAC $IP $Class 
-# DenyCmd	access.fw deny $MAC $IP $Class 
+# LoginTimeout	86400
 
 ##
-# GatewayPort - The TCP port to bind the gateway 
-#   service to. 5280 is de-facto standard for NoCatAuth.
-#   Change this only if you absolutely need to.
-#
-# GatewayPort     5280
-
-##
-#
 # IdleTimeout -- How often to check the ARP cache, in seconds,
 #   for expiration of idle clients. NOT YET IMPLEMENTED.
 #
@@ -260,4 +186,108 @@ ExcludePorts    25
 #
 # IdleTimeout   300
 
+##
+#
+# GatewayMode -- Determines the mode of operation of the gateway. Possible values are:
+#   
+#   Open	- (default) Simply require a user to view a SplashPage and (hopefullly) an Acceptable Use Policy.
+#   Passive-Radius  - Login to an external server at the LoginPage, with optional ConfirmPage and LogoutPage
+#
+# GatewayMode	Open
+
+###### Open Portal settings.
+##
+# SplashForm -- Form displayed to users on capture.
+#
+# SplashForm	splash.html
+
+# StatusForm -- Page displaying status of logged in users.
+#   NOT YET IMPLEMENTED.
+#
+# StatusForm	status.html
+
+# SplashURL -- URL to fetch remote splash page from. You must compile
+#   with --with-remote-splash for this to work. SplashTimeout specifies
+#   the reload period of the remote splash page.
+#
+# SplashURL	http://example.com/get_splash_page.cgi?node=$NodeID
+# SplashURLTimeout	21600
+
+
+###### Active/Passive Portal settings. 
+# None of these settings affect open mode operation.
+#
+##
+# PGPKeyPath -- The directory in which PGP keys are stored.
+#   NoCat tries to find this in the pgp/ directory above
+#   the bin/ parent directory. Set this only if you put it
+#   somewhere that NoCat doesn't expect.
+#
+# PGPKeyPath	@pgpdir@
+
+##
+# TrustedGroups - A list of groups registered with the auth server
+#   that a user may claim membership in order to gain Member-class
+#   access through this portal. The default magic value "Any" indicates
+#   that a member of *any* group is granted member-class access from
+#   this gateway. NOT YET IMPLEMENTED.
+#
+# TrustedGroups	NoCat NYCWireless PersonalTelco
+#
+TrustedGroups Any
+
+##
+# Owners - Optional.  List all local "owner" class users here, separated 
+#   by spaces.  Owners typically get full bandwidth, and unrestricted
+#   access to all network resources. NOT YET IMPLEMENTED.
+#
+# Owners rob@nocat.net schuyler@nocat.net
+
+##
+# MembersOnly - Optional.  Uncomment this if you want to disable public
+#   access (i.e. unauthenticated 'skip' button access).  You'll also want to
+#   point AuthServiceURL somewhere that doesn't include a skip button (like
+#   at your own Auth server.)
+#
+# MembersOnly	1
+
+##
+# NoCat.net NoCatAuth-service registration
+#
+# AuthServiceAddr - Required, for captive mode. Must be set to the address of
+#   your authentication service. You must use an IP address
+#   if DNS resolution isn't available at gateway startup.
+#
+# AuthServiceAddr 208.201.239.21
+# AuthServiceAddr	auth.nocat.net
+#AuthServiceAddr           192.168.1.2
+##
+# AuthServiceURL - HTTPS URL to the login script at the authservice. 
+#
+# AuthServiceURL  https://auth.nocat.net/cgi-bin/login
+##
+# LogoutURL - HTTP URL to redirect user after logout.
+#
+# LogoutURL	https://auth.nocat.net/logout.html
+
+##
+#  HotSpotZone RADIUS community-web backend registration
+#HomePage	http://hot-spot-zone.de/hsz/modules/hotspotportal/portal.php?hsz_hotspot=puck
+#LoginPage   http://www.hot-spot-zone.de/hsz/modules/hotspotportal/portal.php?hsz_hotspot=puck&hsz_page=welcome&X=
+#ConfirmPage http://www.hot-spot-zone.de/hsz/modules/hotspotportal/portal.php?hsz_hotspot=puck&hsz_page=confirm&X=
+#LogoutPage  http://hot-spot-zone.de/hsz/modules/hotspotportal/portal.php?hsz_hotspot=puck
+
+
+#RADIUSAuthServer          192.168.1.2
+#RADIUSAuthPort            1812
+#RADIUSAuthSecret          test
+#RADIUSAuthNASIdentifier   wrt54g
+#RADIUSAuthWait            50
+#RADIUSAuthRetries         2
+#RADIUSAcctServer          192.168.1.2
+#RADIUSAcctPort            1813
+#RADIUSAcctSecret          test
+#RADIUSAcctNASIdentifier   wrt54g
+#RADIUSAcctWait            50
+#RADIUSAcctRetries         2
 ### Fin!
