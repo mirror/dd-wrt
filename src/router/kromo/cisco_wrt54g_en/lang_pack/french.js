@@ -152,8 +152,8 @@ sbutton.firewall="Sauver Pare-feu";
 sbutton.wol="Réveiller";
 sbutton.add_wol="Ajouter l'hôte";
 sbutton.manual_wol="Réveil manuel";
-sbutton.summary="Résumé";
-sbutton.filterIP="Liste des PC";
+sbutton.summary="Récapitulatif";
+sbutton.filterIP="Liste des Ordinateurs";
 sbutton.filterMac="Liste de filtrage MAC";
 sbutton.filterSer="Ajouter/Editer un Service";
 sbutton.reboot="Redémarrer";
@@ -519,44 +519,43 @@ filterIP.ip_range="Intervalle IP";
 // ******************************************* Filter.asp *******************************************//
 
 var filter = new Object();
-filter.titl=" - Access Restrictions";
-filter.h2="Internet Access";
-filter.legend="Access Policy";
-filter.restore="Restore Factory Defaults";
-filter.pol="Policy";
-filter.polname="Policy Name";
-filter.pcs="PCs";
-filter.polallow="Internet access during selected days and hours.";
-filter.legend2="Days";
-filter.time="Times";
-filter.h24="24 Hours";
-filter.legend3="Blocked Services";
-filter.catchall="Catch all P2P Protocols";
-filter.legend4="Website Blocking by URL Address";
-filter.legend5="Website Blocking by Keyword";
+filter.titl=" - Restrictions d'accès";
+filter.h2="Accès Internet";
+filter.legend="Stratégie d'accès à Internet";
+filter.pol="Stratégie";
+filter.polname="Nom de la stratégie";
+filter.pcs="Ordinateurs";
+filter.polallow="Accès Internet pendant les horaires ci-dessous.";
+filter.legend2="Calendrier";
+filter.time="Plage Horaire";
+filter.h24="24 Heures";
+filter.legend3="Services Bloqués";
+filter.catchall="Interdire P2P";
+filter.legend4="Blocage de site Web par adresse URL";
+filter.legend5="Blocage de site Web par mot clé";
 
-filter.mess1="Delete the Policy?";
-filter.mess2="You must at least select a day.";
-filter.mess3="The end time must be bigger than start time.";
+filter.mess1="Effacer la stratégie ?";
+filter.mess2="Veuillez sélectionner au moins un jour du calendrier.";
+filter.mess3="L'heure de fin doit être postérieure à l'heure de début.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Internet Access Policy:";
-hfilter.right2="You may define up to 10 access policies. Click <em>" + sbutton.del + "</em> to delete a policy or <em>" + sbutton.summary + "</em> to see a summary of the policy.";
-hfilter.right3="Status:";
-hfilter.right4="Enable or disable a policy.";
-hfilter.right5="Policy Name:";
-hfilter.right6="You may assign a name to your policy.";
-hfilter.right7="Days:";
-hfilter.right8="Choose the day of the week you would like your policy to be applied.";
-hfilter.right9="Times:";
-hfilter.right10="Enter the time of the day you would like your policy to apply.";
-hfilter.right11="Blocked Services:";
-hfilter.right12="You may choose to block access to certain services. Click <em>" + sbutton.filterSer + "</em> to modify these settings.";
-hfilter.right13="Website Blocking by URL:";
-hfilter.right14="You can block access to certain websites by entering their URL.";
-hfilter.right15="Website Blocking by Keyword:";
-hfilter.right16="You can block access to certain website by the keywords contained in their webpage.";
+hfilter.right2="Vous pouvez contrôler l'accès à Internet à l'aide d'une stratégie. \
+	Pour supprimer une stratégie, sélectionnez son numéro, puis cliquez sur \
+	le bouton <em>" + sbutton.del + "</em>. Pour afficher l'ensemble des stratégies, cliquez sur le bouton <em>" + sbutton.summary + "</em>."
+hfilter.right4="Par défaut, les stratégies sont activées. Pour activer une stratégie, sélectionnez son numéro dans le menu déroulant, \
+	puis cliquez sur le bouton radio en regard de l'option <em>Activer</em>.";
+hfilter.right6="Saisissez le nom de la stratégie.";
+hfilter.right8="Définissez les jours pendant lesquels vous souhaitez appliquer cette stratégie. Sélectionnez \
+	individuellement les jours pendant lesquels la stratégie doit être en vigueur ou bien sélectionnez l'option <em>Tous les jours</em>.";
+hfilter.right10="Saisissez une plage d'heures et de minutes pendant laquelle la stratégie sera appliquée ou bien sélectionnez l'option <em>24 heures</em>.";
+hfilter.right12="Vous pouvez filtrer l'accès à divers services accessibles par Internet, notamment FTP ou Telnet, en choisissant ces services \
+	dans les menus déroulants en regard de l'option <em>Services bloqués</em>. Vous pouvez bloquer jusqu'à 20 services. \
+	Saisissez ensuite l'intervalle des ports à filtrer.";
+hfilter.right14="Si vous souhaitez bloquer des sites Web dotés d'adresses URL spécifiques, saisissez chaque URL dans un \
+	champ distinct en regard de la section <em>Blocage de site Web par adresse URL</em>.";
+hfilter.right16="Si vous souhaitez bloquer des sites Web à l'aide de mots clés spécifiques, saisissez chaque mot clé dans un \
+	champ distinct en regard de la section <em>Blocage de site Web par mot clé</em>.";
 
 
 
@@ -904,6 +903,7 @@ management.lang_chinese_simplified="chinois simplifié";
 management.lang_croatian="croate";
 management.lang_czech="tchèque";
 management.lang_dutch="hollandais";
+management.lang_portuguese_braz="Portugais (Brésil)";
 management.lang_english="anglais";
 management.lang_french="francais";
 management.lang_german="allemand";
@@ -1387,6 +1387,7 @@ hwanmac.right2="Some ISP will require you to register your MAC address. \
 var wpa = new Object();
 wpa.titl=" - Wireless Security";
 wpa.h2="Wireless Security";
+wpa.secmode="Security Mode";
 wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
 wpa.psk="WPA Pre-Shared Key";
