@@ -535,21 +535,13 @@ filter.mess3="O tempo final deve ser maior que o tempo inicial.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Política de Acesso à Internet:";
 hfilter.right2="Você pode definir até 10 políticas de acesso. Clique em <em>" + sbutton.del + "</em> para remover uma política ou em <em>" + sbutton.summary + "</em> para ver um das políticas de acesso.";
-hfilter.right3="Status:";
 hfilter.right4="Habilitar ou Desabilitar política.";
-hfilter.right5="Nome da Política:";
 hfilter.right6="Você deve adicionar um nome à sua política de acesso.";
-hfilter.right7="Dias:";
 hfilter.right8="Escolha os dias da semana aos quais a política será aplicada.";
-hfilter.right9="Horários:";
 hfilter.right10="Insira o horário do dia em que você gostaria de aplicar a política.";
-hfilter.right11="Serviços Bloqueados:";
 hfilter.right12="Você pode escolher bloquear determinados serviços. Clique em <em>" + sbutton.filterSer + "</em> para modificar estas configurações.";
-hfilter.right13="Bloqueio de Website pela URL:";
 hfilter.right14="Você pode bloquear determinados sites inserindo o endereço da URL.";
-hfilter.right15="Bloqueio de Website por Palavra-Chave:";
 hfilter.right16="Você pode bloquear acesso à determinados sites pelas Palavras-Chave contidas na página web.";
 
 

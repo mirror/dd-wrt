@@ -529,21 +529,13 @@ filter.mess3="Die Endzeit muß größer sein als die Startzeit.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Internet Zugriffs Richtlinie:";
 hfilter.right2="Sie können bis zu 10 Zugriffs Richtlinien definieren. Klicken Sie <em>" + sbutton.del + "</em> um eine Richtlinie zu löschen, oder <em>" + sbutton.summary + "</em> um sich die zusammenfassung der Richtlinie anzuschauen.";
-hfilter.right3="Status:";
 hfilter.right4="Hier könnnen Sie eine Richtlinie Ein oder Ausschalten.";
-hfilter.right5="Richtlinien Name:";
 hfilter.right6="Hier können Sie ihrer Richtlinie einen Namen zuweisen.";
-hfilter.right7="Tage:";
 hfilter.right8="Hier können Sie ein oder mehere Tage selektieren an dem die Richtlinie gültig ist.";
-hfilter.right9="Zeiten:";
 hfilter.right10="Hier können Sie die Tageszeit angeben an dem die Richtlinie gültig ist.";
-hfilter.right11="Blockierte Services:";
 hfilter.right12="Hier können Sie Service auswählen die Blockiert werden sollen. Klicken Sie <em>" + sbutton.filterSer + "</em> um die Einstellungen zu ändern.";
-hfilter.right13="Webseite mit Hilfe einer URL blockieren:";
 hfilter.right14="Hier können Sie diverse Webseiten mit Hilfe einer URL Blockieren.";
-hfilter.right15="Webseite mit Hilfe von Schlagworten blockieren:";
 hfilter.right16="Hier können Sie mit hilfe von Schlagworten Webseiten blockieren die diese enthalten.";
 
 
