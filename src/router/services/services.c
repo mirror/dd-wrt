@@ -3145,12 +3145,12 @@ start_splashd (void)
       return errno;
     }
   fprintf (fp, "#!/bin/sh\n");
-  fprintf (fp, "sleep 20\n");
+  fprintf (fp, "sleep 5\n");
   fprintf (fp, "splashd >> /tmp/services.out 2>&1 &\n");
   fclose (fp);
-  chmod ("/tmp/start_splashd.sh", 0700);
-  system ("/tmp/start_splashd.sh&");
-  //ret = eval("sh", "/tmp/start_splashd.sh","&");
+//  chmod ("/tmp/start_splashd.sh", 0700);
+//  system ("/tmp/start_splashd.sh&");
+  ret = eval("sh", "/tmp/start_splashd.sh");
 
   return ret;
 }

@@ -218,8 +218,8 @@ mk_nocat_conf (void)
     fprintf (fp, "ExcludePorts\t%s\n", nvram_safe_get ("NC_ExcludePorts"));
   fprintf (fp, "Verbosity\t%s\n", nvram_safe_get ("NC_Verbosity"));
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
-//  fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
-//  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
+  fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
+  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
   fprintf (fp, "GatewayPort\t5280\n");
   fprintf (fp, "HomePage\t%s\n", nvram_safe_get ("NC_HomePage"));
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
@@ -237,7 +237,7 @@ mk_nocat_conf (void)
       else
 	fprintf (fp, "SplashURL\t%s/\n", sp);
     }
-  fprintf (fp, "SplashTimeout\t900\n");
+  fprintf (fp, "SplashTimeout\t21600\n");
 
   fprintf (fp, "RouteOnly\t%s\n", nvram_safe_get ("NC_RouteOnly"));
 
