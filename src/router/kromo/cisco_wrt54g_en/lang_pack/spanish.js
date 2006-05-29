@@ -542,21 +542,13 @@ filter.mess3="La hora final debe ser posterior a la hora de inicio.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Pol&#237;tica de Acceso a Intenet:";
 hfilter.right2="Puedes definir hasta 10 pol&#237;ticas de acceso. Haz click <em>" + sbutton.del + "</em> para borrar una pol&#237;tica &#243; <em>" + sbutton.summary + "</em> para ver un sumario de la misma.";
-hfilter.right3="Estado:";
 hfilter.right4="Activar o desactivar pol&#237;tica.";
-hfilter.right5="Nombre de Pol&#237;tica:";
 hfilter.right6="Puedes asignar un nombre a tu pol&#237;tica.";
-hfilter.right7="D&#237;as:";
 hfilter.right8="Elige el d&#237;a de la semana que en que te gustar&#237;a aplicar tu pol&#237;tica.";
-hfilter.right9="Horas:";
 hfilter.right10="Introducir la hora del d&#237;a en que te gustar&#237;a aplicar tu pol&#237;tica.";
-hfilter.right11="Servicios Bloqueados:";
 hfilter.right12="Puedes elegir bloqueos de acceso a ciertos servicios. Click en <em>" + sbutton.filterSer + "</em> para modificar la configuraci&#243;n.";
-hfilter.right13="Bloqueo Web mediante URL:";
 hfilter.right14="Puedes bloquear ciertos sitios introduciendo su URL.";
-hfilter.right15="Bloqueo Web via Palabra Clave:";
 hfilter.right16="Puedes bloquear el acceso a ciertos sitios web seg&#250;n las palabras contenidas en dichas p&#225;ginas web.";
 
 
