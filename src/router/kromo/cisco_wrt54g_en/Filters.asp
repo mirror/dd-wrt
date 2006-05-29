@@ -512,21 +512,21 @@ function Status(F,I) {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(filter.legend)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right3)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.statu)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right5)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(filter.polname)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right7)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(filter.legend2)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right9)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(filter.time)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right10)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right11)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(filter.legend3)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right12)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right13)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(filter.legend4)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right14)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hfilter.right15)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(filter.legend5)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hfilter.right16)</script></dd>
 						</dl>
 						<br />
