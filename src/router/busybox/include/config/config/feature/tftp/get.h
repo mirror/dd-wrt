@@ -1,1 +1,0 @@
-#define CONFIG_FEATURE_TFTP_GET 1
