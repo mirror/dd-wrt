@@ -4,11 +4,35 @@
 /* OpenSSL was configured with the following options: */
 #ifndef OPENSSL_DOING_MAKEDEPEND
 
+#ifndef OPENSSL_NO_AES192
+# define OPENSSL_NO_AES192
+#endif
+#ifndef OPENSSL_NO_EC
+# define OPENSSL_NO_EC
+#endif
+#ifndef OPENSSL_NO_ECDH
+# define OPENSSL_NO_ECDH
+#endif
+#ifndef OPENSSL_NO_ECDSA
+# define OPENSSL_NO_ECDSA
+#endif
+#ifndef OPENSSL_NO_ENGINES
+# define OPENSSL_NO_ENGINES
+#endif
+#ifndef OPENSSL_NO_FIPS
+# define OPENSSL_NO_FIPS
+#endif
 #ifndef OPENSSL_NO_GMP
 # define OPENSSL_NO_GMP
 #endif
+#ifndef OPENSSL_NO_IDEA
+# define OPENSSL_NO_IDEA
+#endif
 #ifndef OPENSSL_NO_KRB5
 # define OPENSSL_NO_KRB5
+#endif
+#ifndef OPENSSL_NO_MD2
+# define OPENSSL_NO_MD2
 #endif
 #ifndef OPENSSL_NO_MDC2
 # define OPENSSL_NO_MDC2
@@ -16,13 +40,22 @@
 #ifndef OPENSSL_NO_RC5
 # define OPENSSL_NO_RC5
 #endif
+#ifndef OPENSSL_NO_RMD160
+# define OPENSSL_NO_RMD160
+#endif
+#ifndef OPENSSL_NO_SHA0
+# define OPENSSL_NO_SHA0
+#endif
 
 #endif /* OPENSSL_DOING_MAKEDEPEND */
-#ifndef OPENSSL_THREADS
-# define OPENSSL_THREADS
+#ifndef OPENSSL_NO_ERR
+# define OPENSSL_NO_ERR
 #endif
-#ifndef OPENSSL_NO_DYNAMIC_ENGINE
-# define OPENSSL_NO_DYNAMIC_ENGINE
+#ifndef OPENSSL_NO_HW
+# define OPENSSL_NO_HW
+#endif
+#ifndef OPENSSL_NO_STATIC_ENGINE
+# define OPENSSL_NO_STATIC_ENGINE
 #endif
 
 /* The OPENSSL_NO_* macros are also defined as NO_* if the application
@@ -30,17 +63,47 @@
    who haven't had the time to do the appropriate changes in their
    applications.  */
 #ifdef OPENSSL_ALGORITHM_DEFINES
+# if defined(OPENSSL_NO_AES192) && !defined(NO_AES192)
+#  define NO_AES192
+# endif
+# if defined(OPENSSL_NO_EC) && !defined(NO_EC)
+#  define NO_EC
+# endif
+# if defined(OPENSSL_NO_ECDH) && !defined(NO_ECDH)
+#  define NO_ECDH
+# endif
+# if defined(OPENSSL_NO_ECDSA) && !defined(NO_ECDSA)
+#  define NO_ECDSA
+# endif
+# if defined(OPENSSL_NO_ENGINES) && !defined(NO_ENGINES)
+#  define NO_ENGINES
+# endif
+# if defined(OPENSSL_NO_FIPS) && !defined(NO_FIPS)
+#  define NO_FIPS
+# endif
 # if defined(OPENSSL_NO_GMP) && !defined(NO_GMP)
 #  define NO_GMP
 # endif
+# if defined(OPENSSL_NO_IDEA) && !defined(NO_IDEA)
+#  define NO_IDEA
+# endif
 # if defined(OPENSSL_NO_KRB5) && !defined(NO_KRB5)
 #  define NO_KRB5
+# endif
+# if defined(OPENSSL_NO_MD2) && !defined(NO_MD2)
+#  define NO_MD2
 # endif
 # if defined(OPENSSL_NO_MDC2) && !defined(NO_MDC2)
 #  define NO_MDC2
 # endif
 # if defined(OPENSSL_NO_RC5) && !defined(NO_RC5)
 #  define NO_RC5
+# endif
+# if defined(OPENSSL_NO_RMD160) && !defined(NO_RMD160)
+#  define NO_RMD160
+# endif
+# if defined(OPENSSL_NO_SHA0) && !defined(NO_SHA0)
+#  define NO_SHA0
 # endif
 #endif
 

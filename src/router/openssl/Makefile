@@ -13,8 +13,8 @@ SHLIB_MAJOR=0
 SHLIB_MINOR=9.8
 SHLIB_EXT=.so.$(SHLIB_MAJOR).$(SHLIB_MINOR)
 PLATFORM=linux-openwrt
-OPTIONS= no-gmp no-krb5 no-mdc2 no-rc5 no-shared no-zlib no-zlib-dynamic
-CONFIGURE_ARGS=linux-openwrt
+OPTIONS=enable-shared no-aes192 no-dso no-ec no-ecdh no-ecdsa no-engines no-err no-fips no-gmp no-hw no-idea no-krb5 no-md2 no-mdc2 no-rc5 no-rmd160 no-sha0 no-threads no-zlib no-zlib-dynamic
+CONFIGURE_ARGS=linux-openwrt no-idea no-md2 no-mdc2 no-rc5 no-sha0 no-rmd160 no-aes192 shared no-ec no-err no-fips no-hw no-krb5 no-threads no-engines no-dso
 SHLIB_TARGET=linux-shared
 
 # HERE indicates where this Makefile lives.  This can be used to indicate
@@ -59,8 +59,9 @@ OPENSSLDIR=/usr/local/ssl
 # equal 4.
 # PKCS1_CHECK - pkcs1 tests.
 
-CFLAG= -DOPENSSL_THREADS -D_REENTRANT -DDSO_DLFCN -DHAVE_DLFCN_H -DTERMIO $(COPTS) -fomit-frame-pointer -Wall
-DEPFLAG= -DOPENSSL_NO_GMP -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 
+
+CFLAG= -fPIC -DOPENSSL_PIC -DOPENSSL_NO_ERR -DTERMIO $(COPTS) -fomit-frame-pointer -Wall
+DEPFLAG= -DOPENSSL_NO_AES192 -DOPENSSL_NO_EC -DOPENSSL_NO_ECDH -DOPENSSL_NO_ECDSA -DOPENSSL_NO_ENGINES -DOPENSSL_NO_FIPS -DOPENSSL_NO_GMP -DOPENSSL_NO_IDEA -DOPENSSL_NO_MD2 -DOPENSSL_NO_MDC2 -DOPENSSL_NO_RC5 -DOPENSSL_NO_RMD160 -DOPENSSL_NO_SHA0 
 PEX_LIBS= 
 EX_LIBS= -ldl
 EXE_EXT= 
@@ -107,9 +108,9 @@ SHLIBDIRS= crypto ssl
 # dirs in crypto to build
 SDIRS=  \
 	objects \
-	md2 md4 md5 sha hmac ripemd \
-	des aes rc2 rc4 idea bf cast \
-	bn ec rsa dsa ecdsa dh ecdh dso engine \
+	md4 md5 sha hmac ripemd \
+	des aes rc2 rc4 bf cast \
+	bn rsa dsa dh dso engine \
 	buffer bio stack lhash rand err \
 	evp asn1 pem x509 x509v3 conf txt_db pkcs7 pkcs12 comp ocsp ui krb5 \
 	store pqueue
@@ -135,7 +136,7 @@ WDIRS=  windows
 LIBS=   libcrypto.a libssl.a
 SHARED_CRYPTO=libcrypto$(SHLIB_EXT)
 SHARED_SSL=libssl$(SHLIB_EXT)
-SHARED_LIBS=
+SHARED_LIBS=$(SHARED_CRYPTO) $(SHARED_SSL)
 SHARED_LIBS_LINK_EXTS=.so.$(SHLIB_MAJOR) .so
 SHARED_LDFLAGS=
 
