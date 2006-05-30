@@ -137,7 +137,7 @@ sbutton.modify="Spremeni";
 sbutton.deleted="Izbrisano";
 sbutton.delall="Izbri¹i vse";
 sbutton.autorefresh="Samodejno osve¾evanje je vkljuèeno";
-sbutton.backup="Varnostno kop.";
+sbutton.backup="Varnostna kop.";
 sbutton.restore="Obnovitev";
 sbutton.cptotext="Kopiraj v polje z besedilom";
 sbutton.runcmd="Za¾eni ukaze";
@@ -318,7 +318,7 @@ bmenu.adminDiag="Diagnostika";
 bmenu.adminWol="WOL";
 bmenu.adminFactory="Privzete nast.";
 bmenu.adminUpgrade="Posodabljanje";
-bmenu.adminBackup="Varnostno kop.";
+bmenu.adminBackup="Varnostna kop.";
 
 
 bmenu.statu="Status";
@@ -356,9 +356,9 @@ halive.right4="Dovoljeni so najveè trije IP naslovi loèeni s <em>PRESLEDEK</em>.
 // ******************************************* config.asp *******************************************//
 
 var config = new Object();
-config.titl=" - Varnostno kopiranje & Obnovitev";
+config.titl=" - Varnostna kopija & Obnovitev";
 config.h2="Konfiguracija varnostnega kopiranja";
-config.legend="Varnostno kopiranje nastavitev";
+config.legend="Varnostna kopija";
 config.mess1="Kliknite na gumb \"" + sbutton.backup + "\" za pronos varnostne kopije na va¹ raèunalnik.";
 config.h22="Obnovi konfiguracijo";
 config.legend2="Obnovi nastavitve";
@@ -546,7 +546,7 @@ hfilter.right16="Zaprete lahko doloèena spleti¹èa tako, da vnesete kljuèno besed
 
 var filterSum = new Object();
 filterSum.titl=" - Povtetek omejitev dostopa";
-filterSum.h2="Povzetek smernice dostopa do medmre¾ja";
+filterSum.h2="Povzetek smernic dostopa do medmre¾ja";
 filterSum.polnum="©t.";
 filterSum.polday="Èas dneva";
 
@@ -604,7 +604,7 @@ pforward.to="Do vrat";
 
 //help container
 var hpforward = new Object();
-pforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. \
+hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. \
 	Primeri takih aplikacij so stre¾niki in nekatere igre. \
 	Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. \
 	Zaradi varnosti omejite posredovanje vrat samo natista vrata, ki ji uporabljate. ";
@@ -655,7 +655,7 @@ hotspot.shat_legend="Zero IP nastavitev";
 hotspot.shat_srv="Zero IP nastavitev";
 hotspot.shat_srv2="Zero IP nastavitev omogoèena";
 hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik zastopnik";
+hotspot.sputnik_srv="Sputnikov zastopnik";
 hotspot.sputnik_id="Sputnik stre¾nikov ID";
 hotspot.sputnik_instant="Uporabi Sputnik Instant Setup";
 hotspot.sputnik_express="Uporabi SputnikNet Express";
@@ -1301,7 +1301,7 @@ hvpn.right1="Izberete lahko IPSec, PPTP in/ali L2TP prehajanje, da se lahko va¹e
 
 var vlan = new Object();
 vlan.titl=" - Virtualni LAN";
-vlan.h2="Virtualno loaklno omre¾je (VLAN)";
+vlan.h2="Virtualno lokalno omre¾je (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Dodeli k<br />Mostu";
 vlan.tagged="Znaèka";
@@ -1339,7 +1339,7 @@ wol.msg1="Kliknite za odstranitev WOL gostitelja";
 var hwol = new Object();
 hwol.right2="Ta stran omogoèa da <em>zbudite</em> na va¹i lokalni mre¾i (t.j. prikljuèene na va¹ usmerjalnik).";
 hwol.right4="MAC naslove vnesite v formatu xx:xx:xx:xx:xx:xx (t.j. 01:23:45:67:89:AB)";
-hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mre¾o.Lahko pa je oddaljeni naslov, èe gostitelj ni prikljuèenj na va¹o lokalno mre¾o."
+hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mre¾o. Lahko pa je oddaljeni naslov, èe gostitelj ni prikljuèenj na va¹o lokalno mre¾o."
 
 
 
