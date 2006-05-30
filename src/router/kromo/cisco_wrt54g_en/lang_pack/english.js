@@ -282,6 +282,9 @@ errmsg.err59="Not available! Please enable Wireless Network.";
 errmsg.err60="Please select a file to upgrade.";
 errmsg.err61="Incorrect image file.";
 
+//Services.asp error messages
+errmsg.err62=" is already defined as a static lease.";
+
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
 bmenu.setup="Setup";
