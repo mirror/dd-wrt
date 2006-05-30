@@ -747,7 +747,8 @@ ser-clean:
 nocat:
 	cd glib && ./config.sh
 	make -C glib
-	cd nocat && . ./config.sh
+	cd nocat && ./configure --with-remote-splash CC="mipsel-linux-uclibc-gcc" CFLAGS="$(COPTS)" --prefix=/tmp/ --with-glib-prefix=${PWD}/router/glib-1.2.10-install --disable-glibtest --host=mipsel-linux
+
 	make -C nocat
 
 nocat-clean:
