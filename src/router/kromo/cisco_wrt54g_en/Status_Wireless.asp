@@ -69,13 +69,13 @@ function setWDSTable() {
 
 function setPacketInfo(val) {
 	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
-	setMeterBar("packet_rx",
+	setMeterBar("packet_rx", 
 		(parseInt(packet[1]) == 0 ? 100 : parseInt(packet[0]) / (parseInt(packet[0]) + parseInt(packet[1])) * 100),
-		packet[0] + " OK, " + (packet[1] > 0 ? packet[1] : "no") + " errors"
+		packet[0] + " OK, " + (packet[1] > 0 ? packet[1] + " " + share.errs : share.none2 + " " + share.err)
 	);
 	setMeterBar("packet_tx",
 		(parseInt(packet[3]) == 0 ? 100 : parseInt(packet[2]) / (parseInt(packet[2]) + parseInt(packet[3])) * 100),
-		packet[2] + " OK, " + (packet[3] > 0 ? packet[3] : "no") + " errors"
+		packet[2] + " OK, " + (packet[3] > 0 ? packet[3] + " " + share.errs : share.none2 + " " + share.err)
 	);
 }
 
