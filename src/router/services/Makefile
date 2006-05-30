@@ -33,6 +33,11 @@ ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 OBJS += ppp.o
 endif
+
+ifeq ($(CONFIG_DDLAN),y)
+CFLAGS += -DHAVE_DDLAN
+endif
+
 ifeq ($(CONFIG_HEARTBEAT),y)
 CFLAGS += -DHAVE_HEARTBEAT
 OBJS += heartbeat.o

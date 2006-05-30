@@ -598,6 +598,13 @@ start_restore_defaults (void)
   /* Always set OS defaults */
   nvram_set ("os_name", "linux");
   nvram_set ("os_version", EPI_VERSION_STR);
+
+#ifdef HAVE_DDLAN
+      nvram_unset("cur_rssi");
+      nvram_unset("cur_noise");
+      nvram_unset("cur_bssid");
+      nvram_unset("cur_snr");
+#endif
 #ifdef HAVE_SPUTNIK_APD
   /* Added for Sputnik Agent */
   nvram_unset ("sputnik_mjid");

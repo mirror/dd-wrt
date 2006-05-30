@@ -469,7 +469,14 @@ do_client_check (void)
   if (len > 0 && strstr (buf, "Not associated."))
     {
 #ifdef HAVE_DDLAN
-      nvram_set ("cur_state", "Nicht Verbunden");
+
+      nvram_unset("cur_rssi");
+      nvram_unset("cur_noise");
+      nvram_unset("cur_bssid");
+      nvram_unset("cur_snr");
+      nvram_set ("cur_state","<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
+      
+//      nvram_set ("cur_state", "Nicht Verbunden");
 #endif
       /*if (nvram_match("wl_mode", "wet"))
          {
@@ -492,7 +499,7 @@ do_client_check (void)
   else
     {
 #ifdef HAVE_DDLAN
-      nvram_set ("cur_state", "Verbunden");
+      nvram_set ("cur_state","<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
       eval ("/sbin/check.sh");
 #endif
     }				/*else if (nvram_match("wl_mode","bridge"))
