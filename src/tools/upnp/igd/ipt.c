@@ -1,5 +1,5 @@
 /*
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,7 +7,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: ipt.c,v 1.1.1.7 2005/03/07 07:31:12 kanki Exp $
+ * $Id: ipt.c,v 1.1.1.7.30.2 2006/04/12 01:40:34 honor Exp $
  */
 
 #include "upnp_dbg.h"
@@ -18,8 +18,9 @@
 #include "netconf.h"
 #include "bcmnvram.h"
 #include "mapmgr.h"
-
-
+#include <shutils.h>
+/*@.@add define to fixed upnp port forward bug*/
+#define compare_subnet(A,B,netmask) ( _compare_subnet(A,B,netmask))
 
 void print_rule(const netconf_nat_t *nat_current);
 void print_mapping(const mapping_t *m);
@@ -87,10 +88,9 @@ static bool SameInternalClient(netconf_nat_t *e1,   netconf_nat_t *e2)
    but RemoteHost is different. 
    pp 15, WANIPConection Sevice.
 */
-/* not used -- tofu
 static bool OverlappingRange(netconf_nat_t *e1, netconf_nat_t *e2)
 {
-    bool overlap = FALSE; // assume no conflict
+    bool overlap = FALSE; /* assume no conflict */
 
     do {
 	if (e1->ports[1] < e2->ports[0])
@@ -109,7 +109,6 @@ static bool OverlappingRange(netconf_nat_t *e1, netconf_nat_t *e2)
     printf("%s\n", (overlap ? "OverlappingRange" : "not OverlappingRange"));
     return overlap;
 }
-*/
 
 int AddPortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t args, int nargs)
 /* {"NewRemoteHost", VAR_RemoteHost, VAR_IN},				*/
@@ -194,6 +193,11 @@ int DeletePortMapping( UFILE *uclient, PService psvc, PAction ac, pvar_entry_t a
     int i, parse_status, status = 0;
     netconf_nat_t e;
     mapping_t mapping;
+
+    if(nvram_invmatch("upnp_config","1")) {
+	cprintf("Cann't del rule from upnp\n");
+	return SOAP_ACTION_FAILED;
+    }
     
     parse_status = (int) parse_dnat(&e, 
 				    ac->params[2].value,	/* NewProtocol */
@@ -371,11 +375,21 @@ static bool SameMatchInfo(const netconf_nat_t *e1, const netconf_nat_t *e2)
     return matched;
 }
 
+/*@.@ fixed upnp prot forware bug*/
+int _compare_subnet(unsigned int IP1, unsigned int IP2, unsigned int netmask) 
+{ 
+     return (IP1 & netmask) == (IP2 & netmask); 
+} 
+/*@.@ end*/
 
 netconf_nat_t *parse_dnat(netconf_nat_t *entry, const char *Protocol, 
 			  const char *RemoteHost, const char *ExternalStartPort, const char *ExternalEndPort,
 			  const char *InternalClient, const char *InternalStartPort, const char *InternalEndPort)
 {
+    /*@.@ fixed upnp port forward bug*/
+    unsigned int lan_ip = 0, lan_mask = 0, internel_ip = 0; 
+    int ret = 0; 
+    /*@.@ end*/
     // it is always an error to not have these two arguments.
     if (!Protocol || !RemoteHost || !ExternalStartPort)
 	return NULL;
@@ -407,7 +421,16 @@ netconf_nat_t *parse_dnat(netconf_nat_t *entry, const char *Protocol,
 
 	// parse the internal ip address.
 	inet_aton(InternalClient, (struct in_addr *)&entry->ipaddr);
-
+	/*@.@ fixed upnp forward bug*/
+        inet_aton(InternalClient,(void *)&internel_ip); 
+        inet_aton(nvram_safe_get("lan_ipaddr"),(void *)&lan_ip); 
+        inet_aton(nvram_safe_get("lan_netmask"),(void *)&lan_mask); 
+        ret = compare_subnet(internel_ip,lan_ip,lan_mask); 
+        if (ret == 0) 
+        { 
+              return NULL; 
+        } 
+	/*@.@ end*/
 	// parse the internal port number
 	if (!InternalEndPort) 
 	    InternalEndPort = InternalStartPort;
