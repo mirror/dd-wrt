@@ -890,6 +890,7 @@ management.lang_chinese_simplified="simpchinese（簡體中文，Simplified Chinese）"
 management.lang_croatian="croatian（克羅地亞）";
 management.lang_czech="czech（捷克）";
 management.lang_dutch="dutch（荷蘭語）";
+management.lang_portuguese_braz="brazilian（巴西语）";
 management.lang_english="english（英語）";
 management.lang_french="french（法語）";
 management.lang_german="german（德語）";
