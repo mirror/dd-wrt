@@ -348,8 +348,10 @@ function setDNSMasq(F)
 		choose_enable(F._auth_dnsmasq);
 	}
 	else {
+		F._dns_dnsmasq.checked=false;
+		F._auth_dnsmasq.checked=false;		
 		choose_disable(F._dns_dnsmasq);
-		choose_disable(F._auth_dnsmasq);
+		choose_disable(F._auth_dnsmasq)
 	}
 }
 
