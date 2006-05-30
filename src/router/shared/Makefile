@@ -41,6 +41,7 @@ endif
 ifeq ($(CONFIG_RAMSKOV),y)
   CFLAGS += -DHAVE_RAMSKOV
 endif
+
 ifeq ($(CONFIG_SNMP),y)
   CFLAGS += -DHAVE_SNMP
 endif
