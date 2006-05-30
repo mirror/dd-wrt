@@ -1174,8 +1174,8 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"NC_HomePage", "http://www.dd-wrt.com", 0},
 #endif
-  {"NC_ExcludePorts", "", 0},
-  {"NC_Verbosity", "0", 0},
+  {"NC_ExcludePorts", "25", 0},
+  {"NC_Verbosity", "5", 0},
   {"NC_LoginTimeout", "86400", 0},
 #ifdef CONFIG_BRANDING
   {"NC_AllowedWebHosts", "google.com", 0},
