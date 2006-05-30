@@ -98,6 +98,14 @@ internal_getRouterBrand ()
       return ROUTER_MICROSOFT_MN700;
     }
 
+  if (nvram_match ("boardnum", "asusX") &&
+      nvram_match ("boardtype", "bcm94710dev"))
+    {
+      cprintf ("router is Asus WL300g\n");
+      setRouter ("Asus WL300g");
+      return ROUTER_MICROSOFT_MN700;
+    }  
+    
   if (nvram_match ("boardnum", "100") &&	//added by Eko - experimental
       nvram_match ("boardtype", "bcm94710dev"))	//detect WLA-G54C 
     {
