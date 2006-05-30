@@ -193,7 +193,7 @@ mk_nocat_conf (void)
 	   _get_network (nvram_safe_get ("lan_ipaddr"),
 			 nvram_safe_get ("lan_netmask")),
 	   nvram_safe_get ("lan_netmask"));
-  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
+//  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
   fflush (fp);
 
   /* Irving - Rework getting DNS */
@@ -219,7 +219,7 @@ mk_nocat_conf (void)
   fprintf (fp, "Verbosity\t%s\n", nvram_safe_get ("NC_Verbosity"));
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
   fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
-  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
+//  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
   fprintf (fp, "GatewayPort\t5280\n");
   fprintf (fp, "HomePage\t%s\n", nvram_safe_get ("NC_HomePage"));
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
@@ -246,6 +246,7 @@ mk_nocat_conf (void)
   fprintf (fp, "StatusForm\t%s\n", "status.html");
   fprintf (fp, "GatewayMode\t%s\n", "Open");
   fprintf (fp, "FirewallPath\t%s\n", "/usr/libexec/nocat");
+  fprintf (fp, "LogFacility\t%s\n,", "syslog");
 
   fclose (fp);
   /* end BPsmythe */
