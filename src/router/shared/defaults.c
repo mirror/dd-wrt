@@ -357,6 +357,10 @@ struct nvram_tuple router_defaults[] = {
 
 
   /* Web server parameters */
+#ifdef HAVE_DDLAN
+  {"http2_username", "mediaconstruct", 0},	/* Username */
+  {"http2_passwd", "mediaconstruct", 0},	/* Username */
+#endif
 #ifdef HAVE_POWERNOC
   {"http_username", "admin", 0},	/* Username */
 #else
