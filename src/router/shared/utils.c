@@ -181,16 +181,23 @@ internal_getRouterBrand ()
 		setRouter ("Belkin F5D7230-4 v1000");
 		return ROUTER_RT210W;
 	      }
-	    if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3"))
+	    if ((startswith (et0, "00:01:E3") 
+	    	&& startswith (et1, "00:01:E3"))
 		|| (startswith (et0, "00:01:e3")
 		    && startswith (et1, "00:01:e3"))
 		|| (startswith (et0, "00:90:96")
 		    && startswith (et1, "00:90:96")))
 	      {
-		cprintf ("router is Siemens / Askey\n");
+		cprintf ("router is Siemens\n");
 		setRouter ("Siemens SE505 v1");
 		return ROUTER_RT210W;
 	      }
+	  }
+	else
+	  {
+		cprintf ("router is Askey generic\n");
+		setRouter ("RT210W generic");
+		return ROUTER_RT210W;
 	  }
 
 	if (nvram_match ("boardtype", "0x0101"))
