@@ -1,7 +1,4 @@
-# define RAW_LINE_SIZE 40
 # define MAX_REQUEST_SIZE 100000L
-# define REQ_TIMEOUT 250000
-# define MAX_REQ_TIMEOUTS 5
 # define HEADER(x) (h->header == NULL ? NULL : \
 	(gchar *)g_hash_table_lookup(h->header, (x)))
 # define QUERY(x)  (h->query == NULL  ? NULL : \
@@ -18,7 +15,6 @@ typedef struct {
     GIOChannel *sock;
     gchar peer_ip[16];
     gchar sock_ip[16];
-    gboolean password_checked;
 } http_request;
 
 /*** Function prototypes start here ***/
