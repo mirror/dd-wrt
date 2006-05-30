@@ -12,6 +12,7 @@ esac
 base="0x$(sort /proc/ksyms | grep \\\[wl\\\] | head -n1 | awk '{ print $1 }')"
 
 # wlc_sendpkt should be near to the code that we want to patch. Use it for verification
+ 
 ofs1="$((0x$(grep wlc_sendpkt /proc/ksyms | awk '{ print $1 }') - $base))"
 case "$ofs1" in
 	200252) offset="0x33c9c";;
