@@ -854,9 +854,9 @@ start_sysinit (void)
 	nvram_set ("wan_ifnames", "eth1");
 	}
 
-  if (brand == ROUTER_MICROSOFT_MN700)  //Temp fix for  MN-700 nvram max size problem
+  if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
 	 {
-	eval ("gpio", "enable", "6");	//power led on
+	eval ("gpio", "enable", "6");	//MN700 power led on
 	 }
 		
   /* Modules */
