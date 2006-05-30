@@ -2,71 +2,9 @@
 # include <string.h>
 # include <stdio.h>
 # include <unistd.h>
-# include <time.h>
 # include "gateway.h"
 
 gchar *splash_page = NULL;
-
-
-
-/************* Permit and deny peers *************/
-
-
-
-void accept_peer ( http_request *h ) {
-    peer *p;
-   
-    p  = find_peer( h->peer_ip );
-    if ( NULL != p ) {
-	if (CONFd("Verbosity") >= 1) g_message( "accept_peer: adding %s", p->ip );
-
-        increment_total_connections();
-
-        peer_permit( nocat_conf, p );
-
-        if (CONFd("ForcedRedirect") >= 1 ) {
-            http_add_header ( h, "Location", CONF("HomePage") );
-        } else {
-            http_add_header ( h, "Location", QUERY("redirect") );
-        }
-        http_send_header( h, 302, "Moved" );
-
-    }
-}
-
-void remove_peer ( peer *p ) {
-    if (CONFd("Verbosity") >= 1) g_message( "remove_peer: removing %s", p->ip );
-    peer_deny( nocat_conf, p );
-}
-
-gboolean check_peer_expire ( gchar *ip, peer *p, time_t *now ) {
-// IDLE CHECK
-    if (0 != p->idle_check) {
-        if (CONFd("Verbosity") >= 7) g_message( "check_peer_expire: IDLE check: %s: %lu sec. remain", ip, p->idle_check - *now );
-        if (p->idle_check <= *now) {
-            if (CONFd("Verbosity") >= 7) g_message("check_peer_expire: MISSING check: %s: missing count = %lu", ip, p->missing_count);
-            if ( !find_peer_arp(p) ) {
-                p->missing_count++;
-                if (p->missing_count > CONFd("MaxMissedARP")) {
-                    if (CONFd("Verbosity") >= 1) g_message( "check_peer_expire: removing IDLE peer %s", ip );
-                    remove_peer( p );
-                    return TRUE;
-                }
-            }
-	    else p->missing_count = 0;
-            p->idle_check = *now + CONFd("IdleTimeout");
-        }
-    }
-// TIME OUT EXPIRED
-    if (CONFd("Verbosity") >= 7) g_message( "check_peer_expire: EXPIRED check: %s: %ld sec. remain", ip, p->expire - *now );
-    if (p->expire <= *now) {
-        if (CONFd("Verbosity") >= 1) g_message( "check_peer_expire: removing EXPIRED peer %s", ip );
-	remove_peer( p );
-	return TRUE;
-    } else {
-	return FALSE;
-    }
-} 
 
 /************* Capture and splash *************/
 
@@ -79,8 +17,7 @@ void capture_peer ( http_request *h ) {
 
     http_send_redirect( h, dest );
 
-    if(CONFd("Verbosity") >= 1) g_message( "capture_peer: %s CAPTURED", h->peer_ip );
-    if(CONFd("Verbosity") >= 3) g_message( "capture_peer: %s REDIRECTED to: %s", h->peer_ip, dest);
+    g_message( "Captured peer %s", h->peer_ip );
 
     g_free( orig  );
     g_free( redir );
@@ -89,12 +26,11 @@ void capture_peer ( http_request *h ) {
 
 void splash_peer ( http_request *h ) {
     GHashTable *data;
-    gchar *hostname = HEADER("Host");
-    gchar *path = NULL, *file, *action, *localhost;
+    gchar *path = NULL, *file, *action, *host;
     GIOError r;
    
-    localhost = local_host( h );
-    action = g_strdup_printf("http://%s/", localhost);
+    host = local_host( h );
+    action = g_strdup_printf("http://%s/", host);
     data = g_hash_dup( nocat_conf );
     g_hash_merge( data, h->query );
     g_hash_set( data, "action", action );
@@ -107,14 +43,12 @@ void splash_peer ( http_request *h ) {
     } 
 
     r = http_serve_template( h, file, data );
-    if (r == G_IO_ERROR_NONE) {
-	if (CONFd("Verbosity") >= 1) g_message( "splash_peer: %s got SERVED: %s", h->peer_ip, path );
-	// if (CONFd("Verbosity") >= 9) g_message( "splash_peer: %s ", file );
-    }
+    if (r == G_IO_ERROR_NONE)
+	g_message( "Splashed peer %s", h->peer_ip );
 
     g_hash_free( data );
     g_free( action );
-    g_free( localhost );
+    g_free( host );
     if ( path != NULL ) {
 	g_free( file );
 	g_free( path );
@@ -130,12 +64,9 @@ void handle_request( http_request *h ) {
     if (hostname == NULL || strcmp( hostname, sockname ) != 0) {
 	capture_peer(h);
     } else if (strcmp( h->uri, "/" ) == 0) {
-	/* Irving - Force addition of an accept_terms checkbox */
-	if ( QUERY("accept_terms") && (strncmp(QUERY("accept_terms"),"yes",3) == 0)  
-	     && ( QUERY("mode_login") != NULL || QUERY("mode_login.x") != NULL ) )
-	{
+	if ( QUERY("mode_login") != NULL || QUERY("mode_login.x") != NULL ) {
 	    accept_peer(h);
-	    // sleep(2);
+	    sleep(2);
 	    http_send_redirect( h, QUERY("redirect") );
 	} else if ( QUERY("redirect") != NULL ) {
 	    splash_peer(h);
@@ -143,7 +74,7 @@ void handle_request( http_request *h ) {
 	    capture_peer(h);
 	}
     } else if (strcmp( h->uri, "/status" ) == 0) {
-        status_page( h );
+	status_page( h );
     } else {
 	http_serve_file( h, CONF("DocumentRoot") );
     }
@@ -153,7 +84,7 @@ void handle_request( http_request *h ) {
 
 /*** Dynamic splash page fetch ***/
 # ifdef HAVE_LIBGHTTP
-# include "ghttp.h"
+# include <ghttp.h>
 
 static struct ghttp_process {
     ghttp_request *req;
@@ -176,7 +107,7 @@ gboolean process_http_fetch (struct ghttp_process *proc) {
     }
 
     else if (r == ghttp_error) {
-	g_warning( "%s, retrying: %s", 
+	g_warning( "Can't load URL %s, retrying: %s", 
 	    proc->uri, ghttp_get_error(req));
 	
 	/* We could retry at this point...
@@ -188,7 +119,7 @@ gboolean process_http_fetch (struct ghttp_process *proc) {
     }
     
     else if (ghttp_status_code(req) != 200) {
-	g_warning( "%s: %d %s", proc->uri,
+	g_warning( "Can't load URL %s: %d %s", proc->uri,
 		    ghttp_status_code(req), ghttp_reason_phrase(req) );
     }
 
@@ -205,7 +136,7 @@ gboolean process_http_fetch (struct ghttp_process *proc) {
 	g_strncpy( *buffer, ghttp_get_body(proc->req), n );
 	(*buffer)[n] = '\0';
 
-	g_message( "process_http_fetch: finished loading HTTP request" );
+	g_message( "finished loading HTTP request" );
     }
 
     g_free(proc->uri);
@@ -230,7 +161,7 @@ void fetch_http_uri ( struct ghttp_process *proc, gchar *uri ) {
     int r;
 
     if (proc->active) {
-	g_warning("fetch_http_uri: attempt to interrupt existing HTTP request");
+	g_warning("attempt to interrupt existing HTTP request");
 	return;
     }    
 
@@ -245,7 +176,7 @@ void fetch_http_uri ( struct ghttp_process *proc, gchar *uri ) {
 
     r = ghttp_prepare(req);
     if (r < 0) {
-	g_warning( "fetch_http_uri: Can't request splash page from %s", uri );
+	g_warning( "Can't request splash page from %s", uri );
 	ghttp_request_destroy(req);
 	return;
     }
@@ -262,18 +193,18 @@ gboolean fetch_splash_page (struct ghttp_process *proc) {
     gchar *uri;
     if (! proc->active) {
 	uri = parse_template( CONF("SplashURL"), nocat_conf );
-	g_message( "fetch_splash_page: %s", uri );
+	g_message( "fetching remote splash page: %s", uri );
 	fetch_http_uri( proc, uri ); 
     }
     return TRUE;
 }
 
 void initialize_driver (void) {
-    g_message("initialize_driver: Retrieving dynamic splash page");
+    g_message("initializing dynamic splash page");
     if (CONF("SplashURL") != NULL) { 
 	ghttp_action.buffer = &splash_page;
 	fetch_splash_page( &ghttp_action );
-	g_timeout_add( CONFd("SplashURLTimeout") * 1000, 
+	g_timeout_add( CONFd("SplashTimeout") * 1000, 
 		(GSourceFunc) fetch_splash_page, &ghttp_action );
     }
 }
@@ -281,7 +212,7 @@ void initialize_driver (void) {
 # else /* don't HAVE_LIBGHTTP */
 
 void initialize_driver (void) {
-    g_message("initialize_driver: No fetch required (static splash page)");
+    g_message("initializing static splash page");
     return;
 }
 
