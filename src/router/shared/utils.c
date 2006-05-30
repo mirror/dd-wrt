@@ -1034,7 +1034,7 @@ find_all_pid_by_ps (char *pidName)
   int *pidList = NULL;
   int i = 0;
   printf ("Search for %s\n", pidName);
-  if ((fp = popen ("ps -ax", "r")))
+  if ((fp = popen ("ps", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
@@ -1068,7 +1068,7 @@ count_processes (char *pidName)
   char line[254];
   int i = 0;
   printf ("Search for %s\n", pidName);
-  if ((fp = popen ("ps -ax", "r")))
+  if ((fp = popen ("ps", "r")))
     {
       while (fgets (line, sizeof (line), fp) != NULL)
 	{
