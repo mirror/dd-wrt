@@ -11,6 +11,12 @@ CFLAGS=$(COPTS) -I. -I../shared -I../../include.v24
 else
 CFLAGS=$(COPTS) -Wall -I. -I../shared -I../../include.v23
 endif
+
+ifeq ($(CONFIG_MADWIFI),y)
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h -DHEADERS_KERNEL -DDEBUG
+endif
+
+
 all: wrt-radauth radius-client macupd
 
 wrt-radauth: wrt-radauth.o md5.o radius.o
