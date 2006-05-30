@@ -225,20 +225,9 @@ mk_nocat_conf (void)
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
 	   nvram_safe_get ("NC_AllowedWebHosts"));
   fprintf (fp, "LoginTimeout\t%s\n", nvram_safe_get ("NC_LoginTimeout"));
-  if (nvram_invmatch ("NC_DocumentRoot", ""))
-    {
-      fprintf (fp, "DocumentRoot\t%s\n", nvram_safe_get ("NC_DocumentRoot"));
-    }
-  char *sp = nvram_get ("NC_SplashURL");
-  if (sp && strlen (sp) > 0)
-    {
-      if (sp[strlen (sp) - 1] == '/')
-	fprintf (fp, "SplashURL\t%s\n", sp);
-      else
-	fprintf (fp, "SplashURL\t%s/\n", sp);
-    }
+  fprintf (fp, "DocumentRoot\t%s\n", nvram_safe_get ("NC_DocumentRoot"));
+  fprintf (fp, "SplashURL\t%s\n", nvram_safe_get ("NC_SplashURL"));
   fprintf (fp, "SplashTimeout\t21600\n");
-
   fprintf (fp, "RouteOnly\t%s\n", nvram_safe_get ("NC_RouteOnly"));
 
   /* These should be hardcoded as the defaults */
