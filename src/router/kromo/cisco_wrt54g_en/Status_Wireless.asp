@@ -155,11 +155,11 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.mode)</script></div>
-									<span id="wl_mode"><% nvram_match("wl_mode", "wet", "Client Bridge"); %><% nvram_match("wl_mode", "ap", "AP"); %><% nvram_match("wl_mode", "sta", "Client"); %><% nvram_match("wl_mode", "infra", "Adhoc"); %><% nvram_match("wl_mode", "apsta", "Repeater"); %></span>&nbsp;
+									<% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(wl_basic.clientBridge)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(wl_basic.client)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(wl_basic.adhoc)</script>"); %><% nvram_match("wl_mode", "apsta", "Repeater"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_wireless.net)</script></div>
-									<span id="wl_net_mode"><% nvram_match("wl_net_mode", "disabled", "Disabled"); %><% nvram_match("wl_net_mode", "mixed", "Mixed"); %><% nvram_match("wl_net_mode", "g-only", "G-Only"); %><% nvram_match("wl_net_mode", "b-only", "B-Only"); %></span>&nbsp;
+									<% nvram_match("wl_net_mode", "disabled","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl_net_mode", "mixed", "<script type="text/javascript">Capture(wl_basic.mixed)</script>"); %><% nvram_match("wl_net_mode", "g-only", "<script type="text/javascript">Capture(wl_basic.g)</script>"); %><% nvram_match("wl_net_mode", "b-only", "<script type="text/javascript">Capture(wl_basic.b)</script>"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.ssid)</script></div>
@@ -179,11 +179,11 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(share.encrypt)</script></div>
-									<span id="wl_security"><% nvram_match("security_mode", "disabled", "Disabled"); %><% nvram_invmatch("security_mode", "disabled", "Enabled,&nbsp;"); %><% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %><% nvram_match("security_mode", "wpa", "WPA RADIUS"); %><% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %><% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %><% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %><% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %><% nvram_match("security_mode", "radius", "RADIUS"); %><% nvram_match("security_mode", "wep", "WEP"); %></span>&nbsp;
+									<% nvram_match("security_mode", "disabled", "<script type="text/javascript">Capture(share.disable)</script>"); %><% nvram_invmatch("security_mode", "disabled", "<script type="text/javascript">Capture(share.enable)</script>,&nbsp;"); %><% nvram_match("security_mode", "psk", "WPA Pre-shared Key"); %><% nvram_match("security_mode", "wpa", "WPA RADIUS"); %><% nvram_match("security_mode", "psk2", "WPA2 Pre-Shared Key Only"); %><% nvram_match("security_mode", "wpa2", "WPA2 RADIUS Only"); %><% nvram_match("security_mode", "psk psk2", "WPA2 Pre-Shared Key Mixed"); %><% nvram_match("security_mode", "wpa wpa2", "WPA2 RADIUS Mixed"); %><% nvram_match("security_mode", "radius", "RADIUS"); %><% nvram_match("security_mode", "wep", "WEP"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><script type="text/javascript">Capture(status_wireless.pptp)</script></div>
-									<span id="pptp"><% nvram_else_match("pptpd_connected", "1", "Connected", "Disconnected"); %></span>&nbsp;
+									<% nvram_else_match("pptpd_connected", "1", "<script type="text/javascript">Capture(share.connected)</script>", "<script type="text/javascript">Capture(share.disconnected)</script>"); %>&nbsp;
 								</div>
 							</fieldset><br />
 							
@@ -201,7 +201,7 @@ addEvent(window, "unload", function() {
 							
 							<h2><script type="text/javascript">Capture(status_wireless.h22)</script></h2>
 							<fieldset>
-								<legend id="wireless_table_legend"><script type="text/javascript">Capture(status_wireless.legend3)</script></legend>
+								<legend><% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
 								<table class="table center" cellspacing="6" id="wireless_table">
 									<tr>
 										<th width="54%"><script type="text/javascript">Capture(share.mac)</script></th>
