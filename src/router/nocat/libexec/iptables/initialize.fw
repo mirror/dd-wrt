@@ -28,7 +28,7 @@ echo "1" > /proc/sys/net/ipv4/conf/all/rp_filter
 
 # Load alllll the kernel modules we need.
 #
-#rmmod ipchains > /dev/null 2>&1 # for RH 7.1 users.
+rmmod ipchains > /dev/null 2>&1 # for RH 7.1 users.
 
 #for module in ip_tables ipt_REDIRECT ipt_MASQUERADE ipt_MARK ipt_REJECT  \
 #    ipt_TOS ipt_LOG iptable_mangle iptable_filter iptable_nat ip_nat_ftp \
