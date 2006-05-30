@@ -109,9 +109,7 @@ function setDHCPTable() {
 
 function setPacketInfo(val) {
 	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
-//	setElementContent("packet_rx", packet[0] + " OK, " + (packet[1] > 0 ? packet[1] : "no") + " errors");
 	setElementContent("packet_rx", packet[0] + " OK, " + (packet[1] > 0 ? packet[1] + " " + share.errs : share.none2 + " " + share.err) );
-//	setElementContent("packet_tx", packet[2] + " OK, " + (packet[3] > 0 ? packet[3] : "no") + " errors");
 	setElementContent("packet_tx", packet[2] + " OK, " + (packet[3] > 0 ? packet[3] + " " + share.errs : share.none2 + " " + share.err) );
 }
 
