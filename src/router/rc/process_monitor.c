@@ -46,7 +46,7 @@ process_monitor_main (void)
 //      if( check_wan_link(0) ) { 
 //      if( nvram_invmatch("ntp_enable", "0") && ( ( check_wan_link(0) && nvram_match("ppp_demand", "1") ) || (nvram_match("wan_proto", "pppoe") && nvram_match("ppp_demand", "0") ) ) {
 
-  if nvram_invmatch ("dhcp_dnsmasq", "1"))
+  if (nvram_invmatch ("dhcp_dnsmasq", "1"))
   {
     leasetime = atol (nvram_safe_get ("dhcp_lease")) * 60;
 
