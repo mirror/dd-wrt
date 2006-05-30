@@ -173,8 +173,7 @@ internal_getRouterBrand ()
     et1 = nvram_safe_get ("et1macaddr");
     if (et0 != NULL && et1 != NULL)
       {
-	if (nvram_match ("clkfreq", "125") &&
-	    nvram_match ("boardnum", "100") &&
+	if (nvram_match ("boardnum", "100") &&
 	    nvram_match ("boardtype", "bcm94710r4"))
 	  {
 	    if (startswith (et0, "00:11:50"))
@@ -200,14 +199,14 @@ internal_getRouterBrand ()
 		setRouter ("Siemens SE505 v1");
 		return ROUTER_RT210W;
 	      }
-	  }
-	else
-	  {
+	  	else
+	  	{
 		cprintf ("router is Askey generic\n");
 		setRouter ("RT210W generic");
 		return ROUTER_RT210W;
-	  }
-
+	  	}
+	 }
+	
 	if (nvram_match ("boardtype", "0x0101"))
 	  {
 	    if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
@@ -229,7 +228,6 @@ internal_getRouterBrand ()
 	  }
 
 	if (nvram_match ("boardnum", "2") &&
-	    nvram_match ("clkfreq", "125") &&
 	    nvram_match ("boardtype", "bcm94710dev"))
 	  {
 	    if (nvram_match ("GemtekPmonVer", "9") &&
