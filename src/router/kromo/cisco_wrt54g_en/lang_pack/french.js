@@ -277,6 +277,11 @@ errmsg.err59="Non disponible ! Merci d'activer le réseau sans fil.";
 errmsg.err60="Veuillez sélectionner le fichier de mise à jour du routeur.";
 errmsg.err61="Fichier incorrect.";
 
+//Services.asp error messages
+errmsg.err62=" is already defined as a static lease.";
+
+
+
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
 bmenu.setup="Configuration";
@@ -482,7 +487,8 @@ dmz.host="Adresse IP de l'hôte de la DMZ";
 
 //help container
 var hdmz = new Object();
-hdmz.right2="L'activation de cette option va exposer l'hôte à Internet. Tous les ports vont être accessibles depuis Internet et redirigés vers cette adresse IP (non recommandé).";
+hdmz.right2="L'activation de cette option va exposer l'hôte à Internet. \
+	Tous les ports vont être accessibles depuis Internet et redirigés vers cette adresse IP (non recommandé).";
 
 
 
@@ -562,10 +568,10 @@ hfilter.right16="Si vous souhaitez bloquer des sites Web à l'aide de mots clés s
 // ******************************************* FilterSummary.asp *******************************************//
 
 var filterSum = new Object();
-filterSum.titl=" - Access Restrictions Summary";
-filterSum.h2="Internet Policy Summary";
-filterSum.polnum="No.";
-filterSum.polday="Time of Day";
+filterSum.titl=" - Récapitulatif des Restrictions d'accès";
+filterSum.h2="Récapitulatif de la Stratégie d'accès à Internet";
+filterSum.polnum="N°.";
+filterSum.polday="Plage Horaire";
 
 
 
@@ -598,9 +604,9 @@ hfirewall.right2="Activez cette fonctionnalité pour utiliser la technologie SPI 
 // ******************************************* Forward.asp *******************************************//
 
 var prforward = new Object();
-prforward.titl=" - Port Range Forwarding";
-prforward.h2="Port Range Forward";
-prforward.legend="Forwards";
+prforward.titl=" - Redirection plage de port";
+prforward.h2="Redirection plage de port";
+prforward.legend="Transfert de connexion";
 prforward.app="Application";
 
 //help container
@@ -616,12 +622,12 @@ hprforward.right2="Certain applications may require to open specific ports in or
 // ******************************************* ForwardSpec.asp *******************************************//
 
 var pforward = new Object();
-pforward.titl=" - Port Forwarding";
-pforward.h2="Port Forward";
-pforward.legend="Forwards";
+pforward.titl=" - Redirection de port";
+pforward.h2="Redirection de port";
+pforward.legend="Transfert de connexion";
 pforward.app="Application";
-pforward.from="Port from";
-pforward.to="Port to";
+pforward.from="du Port";
+pforward.to="vers le Port";
 
 //help container
 var hpforward = new Object();
@@ -679,9 +685,9 @@ hotspot.shat_srv2="Zero IP Config enabled";
 hotspot.sputnik_legend="Sputnik";
 hotspot.sputnik_srv="Sputnik Agent";
 hotspot.sputnik_id="Sputnik Server ID";
-hotspot.sputnik_instant="Use Sputnik Instant Setup";
-hotspot.sputnik_express="Use SputnikNet Express";
-hotspot.sputnik_about="about Sputnik";
+hotspot.sputnik_instant="Sputnik Instant Setup";
+hotspot.sputnik_express="SputnikNet Express";
+hotspot.sputnik_about="à propos de Sputnik";
 
 
 
@@ -763,7 +769,7 @@ idx.dhcp_type="Type de DHCP";
 idx.dhcp_srv="Serveur DHCP";
 idx.dhcp_fwd="Transfert de DHCP";
 idx.dhcp_start="Adresse IP de début";
-idx.dhcp_end="Adresse IP de fin";				//used in Status_Lan.asp
+idx.dhcp_end="Adresse IP de fin";
 idx.dhcp_maxusers="Nombre maximal d'utilisateurs DHCP";
 idx.dhcp_lease="Durée de connexion du client";
 idx.dhcp_dnsmasq="Utiliser DNSMasq pour DHCP";
@@ -1194,7 +1200,7 @@ var hstatus_router = new Object();
 hstatus_router.right2="This is the specific name for the router, which you set on the <i>Setup</i> tab.";
 hstatus_router.right4="This is the router's MAC Address, as seen by your ISP.";
 hstatus_router.right6="This is the router's current firmware.";
-hstatus_router.right8="This is the time, as you set on the Setup Tab.";
+hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.adminManagement + "</em> tab.";
 hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
 hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
 hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. \
