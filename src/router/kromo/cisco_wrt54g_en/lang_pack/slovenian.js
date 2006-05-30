@@ -117,7 +117,7 @@ share.key="Kljuè";
 share.wireless="Brez¾ièno";
 share.dhcp="DHCP";
 share.styl="Stil";
-share.err="napaka";
+share.err="napak";
 share.errs="napak";
 
 
@@ -881,7 +881,7 @@ management.lang_chinese_simplified="poenostavljena kitaj¹èina";
 management.lang_croatian="hrva¹èina";
 management.lang_czech="èe¹èina";
 management.lang_dutch="nizozem¹èina";
-management.lang_portuguese="portugal¹èina";
+management.lang_portuguese_braz="braziljska portugal¹èina";
 management.lang_english="angle¹èina";
 management.lang_french="franco¹èina";
 management.lang_german="nem¹èina";
@@ -900,7 +900,7 @@ management.clock_legend="Overclocking";
 management.clock_frq="Frekvenca";
 management.clock_support="Ni podprto";
 
-management.mmc_legend="podpora za MMC/SD kartice";
+management.mmc_legend="Podpora za MMC/SD kartice";
 management.mmc_srv="MMC naprava";
 
 management.samba_legend="Samba FS avtomatski priklop";
