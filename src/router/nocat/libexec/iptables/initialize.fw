@@ -30,6 +30,7 @@ echo "1" > /proc/sys/net/ipv4/conf/all/rp_filter
 #
 rmmod ipchains > /dev/null 2>&1 # for RH 7.1 users.
 
+#all modules are already loaded, nocat doesnt need to load them
 #for module in ip_tables ipt_REDIRECT ipt_MASQUERADE ipt_MARK ipt_REJECT  \
 #    ipt_TOS ipt_LOG iptable_mangle iptable_filter iptable_nat ip_nat_ftp \
 #    ip_conntrack ipt_mac ipt_state ipt_mark; do
