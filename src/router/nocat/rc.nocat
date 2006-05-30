@@ -1,0 +1,43 @@
+#!/bin/sh
+#
+# start/stop splashd super server.
+
+if ! [ -x /usr/local/sbin/splashd ]; then
+	exit 0
+fi
+
+case "$1" in
+    start)
+	echo -n "Starting NoCat splash server:"
+	echo -n " splashd" ; start-stop-daemon --start --quiet --pidfile /var/run/splashd.pid --exec /usr/local/sbin/splashd
+	echo "."
+	;;
+    stop)
+	echo -n "Stopping NoCat splash server:"
+	echo -n " splashd" ; start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/splashd.pid --exec /usr/local/sbin/splashd
+	echo "."
+	;;
+    reload)
+	echo -n "Reloading NoCat splash server:"
+	echo -n " splashd"
+	start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/splashd.pid --signal 1
+	echo "."
+	;;
+    force-reload)
+	$0 reload
+	;;
+    restart)
+	echo -n "Restarting NoCat splash server:"
+	echo -n " splashd"
+	start-stop-daemon --stop --quiet --oknodo --pidfile /var/run/splashd.pid
+	start-stop-daemon --start --quiet --pidfile /var/run/splashd.pid --exec /usr/local/sbin/splashd
+	echo "."
+	;;
+    *)
+	echo "Usage: /etc/init.d/nocat {start|stop|reload|restart}"
+	exit 1
+	;;
+esac
+
+exit 0
+
