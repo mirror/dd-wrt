@@ -604,6 +604,7 @@ start_restore_defaults (void)
       nvram_unset("cur_noise");
       nvram_unset("cur_bssid");
       nvram_unset("cur_snr");
+      nvram_set ("cur_state","<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
 #endif
 #ifdef HAVE_SPUTNIK_APD
   /* Added for Sputnik Agent */
