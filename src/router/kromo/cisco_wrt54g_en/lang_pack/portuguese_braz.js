@@ -830,11 +830,6 @@ management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNSMasq";
-management.dsn_srv="DNSMasq";
-management.dsn_loc="DNS Local";
-management.dsn_opt="Opções Adicionais de DNS";
-
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 
@@ -1026,6 +1021,10 @@ service.dhcp_jffs2="Usar JFFS2 Para o BD de Concessão aos Clientes";
 service.dhcp_domain="Domínio Utilizado";
 service.dhcp_landomain="Dominio da LAN";
 service.dhcp_option="Opções Adicionais do DHCPd";
+service.dnsmasq_legend="DNSMasq";
+service.dnsmasq_srv="DNSMasq";
+service.dnsmasq_loc="DNS Local";
+service.dnsmasq_opt="Opções Adicionais de DNS";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
