@@ -2660,7 +2660,6 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 #else
-#define ASSOCLIST_TMP	"/tmp/.wl_assoclist"
 #define RSSI_TMP	"/tmp/.rssi"
 #define ASSOCLIST_CMD	"wl assoclist"
 #define RSSI_CMD	"wl rssi"
@@ -2670,14 +2669,12 @@ void
 ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 {
   int rssi = 0, noise = 0;
-  FILE *fp, *fp2;
+  FILE *fp2;
   char *mode;
   char mac[30];
   char list[2][30];
   char line[80];
   char cmd[80];
-//  char title[20];
-//  char title2[20];
   int macmask;
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
     {
@@ -2685,34 +2682,20 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
   int cnt = 0;
   mode = nvram_safe_get ("wl_mode");
-  snprintf (cmd, sizeof (cmd), "%s > %s", ASSOCLIST_CMD, ASSOCLIST_TMP);
-  system (cmd);			// get active wireless mac
-
-//  if (strcmp (mode, "ap") != 0 && strcmp (mode, "apsta") != 0)
-//    {
-//      strcpy (title, "AP Signal");
-//      strcpy (title2, "AP");
-//    }
-//  else
-//    {
-//      strcpy (title, "Wireless AP");
-//      strcpy (title2, "Clients");
-//    }
-
-  if ((fp = fopen (ASSOCLIST_TMP, "r")))
+unsigned char buf[WLC_IOCTL_MAXLEN];
+char *iface = get_wdev();
+int r = getassoclist(iface,buf);
+if (r<0)
+    return;
+struct maclist *maclist = (struct maclist *)buf;
+int i;
+for (i=0;i<maclist->count;i++)
     {
-      while (fgets (line, sizeof (line), fp) != NULL)
-	{
-	  if (sscanf (line, "%s %s", list[0], mac) != 2)	// assoclist 00:11:22:33:44:55
-	    continue;
-
-	  if (strcmp (list[0], "assoclist"))
-	    break;
-
+        ether_etoa((uint8*)&maclist->ea[i],mac);
+	
 	  rssi = 0;
 	  noise = 0;
 	  // get rssi value
@@ -2765,25 +2748,9 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	      mac[9] = 'x';
 	      mac[10] = 'x';
 	    }
-//        if (!cnt)
-//          {
 	  if (cnt)
 	    websWrite (wp, ",");
 	  cnt++;
-//            websWrite (wp, "<h2>%s</h2>\n", title);
-//            websWrite (wp, "<fieldset>\n");
-//            websWrite (wp, "<legend>%s</legend>\n", title2);
-//            websWrite (wp,
-//                       "<table class=\"table center\" cellspacing=\"5\">\n");
-//            websWrite (wp, "<tr>\n");
-//            websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
-//            websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
-//            websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
-//            websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
-//            websWrite (wp, "</tr>\n");
-//          }
-//        websWrite (wp, "<tr>\n");
-	  //noise = -noise;
 	  if (!strcmp (mode, "ap"))
 	    {
 	      char *ref = nvram_get ("noise_reference");
@@ -2793,22 +2760,13 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
 	    }
 	  websWrite (wp, "'%s','%d','%d','%d'",
 		     mac, rssi, noise, rssi - noise);
-//        websWrite (wp, "</tr>\n");
 	}
-      // One less Top10-Wanted leak (belanger[AT]pobox.com)
-      fclose (fp);
-    }
-//  if (cnt)
-//    websWrite (wp, "</table></fieldset><br />\n");
-
-  unlink (ASSOCLIST_TMP);
   unlink (RSSI_TMP);
 
   return;
 }
 #endif
 
-#define WDS_LIST_TMP	"/tmp/.wl_wdslist"
 #define WDS_RSSI_TMP	"/tmp/.rssi"
 #define WDS_CMD			"wl wds"
 
@@ -2817,7 +2775,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifndef HAVE_MADWIFI
   int rssi = 0, i;
-  FILE *fp, *fp2;
+  FILE *fp2;
   char *mode;
   char mac[30];
   char list[2][30];
@@ -2834,26 +2792,24 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
 
   mode = nvram_safe_get ("wl_mode");
-  snprintf (cmd, sizeof (cmd), "%s > %s", WDS_CMD, WDS_LIST_TMP);
-  system (cmd);			// get active wireless mac
 
   if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
     return;
-
-
-  if ((fp = fopen (WDS_LIST_TMP, "r")))
+unsigned char buf[WLC_IOCTL_MAXLEN];
+char *iface = get_wdev();
+int r = getassoclist(iface,buf);
+if (r<0)
+    return;
+struct maclist *maclist = (struct maclist *)buf;
+int e;
+for (e=0;e<maclist->count;e++)
     {
-      while (fgets (line, sizeof (line), fp) != NULL)
-	{
-	  if (sscanf (line, "%s %s", list[0], mac) != 2)	// "XX:XX:XX:XX:XX:XX XX:XX:XX:XX:XX:XX" etc
-	    continue;
 
-	  if (strcmp (list[0], "wds"))
-	    break;
+        ether_etoa((uint8*)&maclist->ea[e],mac);
+
 
 	  rssi = 0;
 
@@ -2862,14 +2818,8 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
 	      if (nvram_match (wdsvar, mac))
 		{
-//                snprintf (wdsvar, 30, "wl_wds%d_desc", i);
-//                snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-//                snprintf (title, sizeof (title), "WDS Signal (%s) :", desc);
-//                if (!strcmp (nvram_get (wdsvar), ""))
-//                  strcpy (title, "WDS Signal :");
 		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
 		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-//                snprintf (title, sizeof (title), "%s", desc);
 		  if (!strcmp (nvram_get (wdsvar), ""))
 		    strcpy (desc, "&nbsp;");
 		}
@@ -2904,45 +2854,18 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 	      mac[9] = 'x';
 	      mac[10] = 'x';
 	    }
-//        if (!cnt)
-//          {
 	  if (cnt)
 	    websWrite (wp, ",");
 	  cnt++;
-//            websWrite (wp, "<h2>WDS</h2>\n");
-//            websWrite (wp, "<fieldset>\n");
-//            websWrite (wp, "<legend>Nodes</legend>\n");
-//            websWrite (wp, "<div class=\"setting\">\n");
-//            websWrite (wp,
-//                       "<table class=\"table center\" cellspacing=\"5\">\n");
-//            websWrite (wp, "<tr>\n");
-//            websWrite (wp, "<th width=\"55%%\">MAC Address</th>\n");
-//            websWrite (wp, "<th width=\"15%%\">Signal</th>\n");
-//            websWrite (wp, "<th width=\"15%%\">Noise</th>\n");
-//            websWrite (wp, "<th width=\"15%%\">SNR</th>\n");
-//            websWrite (wp, "</tr>\n");
-//          }
-
-//        websWrite (wp,
-//                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
-//                   title, mac, rssi, -100, rssi - (-100));
 	  char *ref = nvram_get ("noise_reference");
 	  int noise = -98;
 	  if (ref)
 	    noise = atoi (ref);
 	  websWrite (wp,
-//                   "<tr><td>%s %s</td><td>%d</td><td>%d</td><td>%d</td></tr>\n",
 		     "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
 		     mac, desc, rssi, noise, rssi - noise);
-	}
-      // One less Top10-Wanted leak (belanger[AT]pobox.com)
-      fclose (fp);
     }
-//  if (cnt)
-//    websWrite (wp, "</table></fieldset><br />\n");
-//    websWrite (wp, "</table></div></fieldset><br/>\n");
 
-  unlink (WDS_LIST_TMP);
   unlink (WDS_RSSI_TMP);
 #endif
   return;

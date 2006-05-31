@@ -598,6 +598,22 @@ ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
+static void
+ej_nvram_real_get (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *name;
+
+  if (ejArgs (argc, argv, "%s", &name) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+
+  websWrite (wp, "%s", nvram_safe_get (name));
+
+  return;
+}
+
 /*
  * Example:
  * lan_ipaddr = 192.168.1.1, gozila_action = 0
@@ -3458,6 +3474,7 @@ void
 initHandlers (void)
 {
   websAspDefine ("nvram_get", ej_nvram_get);
+  websAspDefine ("nvram_real_get", ej_nvram_real_get);
   websAspDefine ("nvram_match", ej_nvram_match);
   websAspDefine ("nvram_invmatch", ej_nvram_invmatch);
   websAspDefine ("nvram_list", ej_nvram_list);
@@ -3542,6 +3559,18 @@ do_cauth (char *userid, char *passwd, char *realm)
   if (nvram_match ("info_passwd", "0"))
     return -1;
   return do_auth (userid, passwd, realm);
+}
+#endif
+
+#ifdef HAVE_DDLAN
+int
+do_auth2 (char *userid, char *passwd, char *realm)
+{
+  strncpy (userid, nvram_safe_get ("http2_username"), AUTH_MAX);
+  strncpy (passwd, nvram_safe_get ("http2_passwd"), AUTH_MAX);
+  //strncpy(realm, MODEL_NAME, AUTH_MAX);
+  strncpy (realm, nvram_safe_get ("router_name"), AUTH_MAX);
+  return 0;
 }
 #endif
 
@@ -3761,6 +3790,18 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_SKYTRON
   {"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
+#ifdef HAVE_DDLAN
+  {"Management*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Services*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Wireless_Basic*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Log*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Alive*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Wol*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Factory_Defaults*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"config*", "text/html", no_cache, NULL, do_ej, do_auth2},
+#endif
 
 #ifdef HAVE_NEWMEDIA
   {"Services.asp", "text/html", no_cache, NULL, do_ej, do_auth2},
@@ -3938,6 +3979,7 @@ tf_webWriteESCNV (webs_t wp, const char *nvname)
 struct ej_handler ej_handlers[] = {
   /* for all */
   {"nvram_get", ej_nvram_get},
+  {"nvram_real_get", ej_nvram_real_get},
 /*	{ "nvram_get_len", ej_nvram_get_len }, */
   {"nvram_selget", ej_nvram_selget},
   {"nvram_match", ej_nvram_match},
