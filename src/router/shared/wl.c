@@ -34,13 +34,25 @@ getassoclist (char *name, unsigned char *list)
   return (ret);
 }
 #else
+#include <sys/types.h>
+#include <sys/file.h>
+#include <sys/ioctl.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <ctype.h>
+#include <getopt.h>
+#include <err.h>
 
-#include <linux/wireless.h>
+
+#include "wireless.h"
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 
-void getassoclist(char *ifname, unsigned char *list)
+int getassoclist(char *ifname, unsigned char *list)
 {
   unsigned char buf[24 * 1024];
   unsigned char *cp;
@@ -59,11 +71,11 @@ void getassoclist(char *ifname, unsigned char *list)
   iwr.u.data.length = sizeof (buf);
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
-      return;
+      return -1;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
-    return;
+    return -1;
   int cnt = 0;
   cp = buf;
   unsigned char *l = (unsigned char*)list;
@@ -73,12 +85,14 @@ void getassoclist(char *ifname, unsigned char *list)
     {
       struct ieee80211req_sta_info *si;
       si = (struct ieee80211req_sta_info *) cp;            
-      memcpy(&si->isi_macaddr[0],l,6);
+      memcpy(l,&si->isi_macaddr[0],6);
+//      printf("%X%X%X%X%X%X\n",l[0],l[1],l[2],l[3],l[4],l[5]);
       l+=6;
-      *count++;      
+      count[0]++;      
+      cp += si->isi_len, len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
-
+return count[0];
 }
 
 

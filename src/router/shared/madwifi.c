@@ -1100,7 +1100,7 @@ configure_single (int count)
          nvram_set(vathmac,vmacaddr);
 
 	}
-      sleep (1);
+//      sleep (1);
     }
 
 
