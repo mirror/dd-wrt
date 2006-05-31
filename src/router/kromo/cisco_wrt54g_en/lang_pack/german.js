@@ -68,6 +68,7 @@ share.port="Port";
 share.ssid="SSID";
 share.channel="Kanal";
 share.rssi="Signal";
+share.signal="Signal";
 share.noise="Rauschen";
 share.beacon="beacon";
 share.openn="Offen";
