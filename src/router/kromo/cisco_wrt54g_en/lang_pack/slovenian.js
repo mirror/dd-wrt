@@ -839,11 +839,6 @@ management.boot_srv="Zagonska pavza";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNSMasq";
-management.dsn_srv="DNSMasq";
-management.dsn_loc="Lokalni DNS";
-management.dsn_opt="Dodatne DNS mo¾nosti";
-
 management.loop_legend="Povratna zanka";
 management.loop_srv="Povratna zanka";
 
@@ -1042,6 +1037,10 @@ service.dhcp_jffs2="Uporabi JFFS2 za bazo zakupov";
 service.dhcp_domain="Uporabljena domena";
 service.dhcp_landomain="LAN domena";
 service.dhcp_option="Dodatne DHCPd opcije";
+service.dnsmasq_legend="DNSMasq";
+service.dnsmasq_srv="DNSMasq";
+service.dnsmasq_loc="Lokalni DNS";
+service.dnsmasq_opt="Dodatne DNS mo¾nosti";
 
 //pptp.webservices
 service.pptp_legend="PPTP";

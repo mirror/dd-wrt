@@ -151,7 +151,7 @@ sbutton.delall="Delete All";
 sbutton.autorefresh="Auto-Refresh is On";
 sbutton.backup="Backup";
 sbutton.restore="Restore";
-sbutton.cptotext="Copy to text area";
+sbutton.cptotext="Edit";
 sbutton.runcmd="Run Commands";
 sbutton.startup="Save Startup";
 sbutton.firewall="Save Firewall";
@@ -856,11 +856,6 @@ management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNSMasq";
-management.dsn_srv="DNSMasq";
-management.dsn_loc="Local DNS";
-management.dsn_opt="Additional DNS Options";
-
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 
@@ -1059,6 +1054,10 @@ service.dhcp_jffs2="Use JFFS2 for client lease DB";
 service.dhcp_domain="Used Domain";
 service.dhcp_landomain="LAN Domain";
 service.dhcp_option="Additional DHCPd Options";
+service.dnsmasq_legend="DNSMasq";
+service.dnsmasq_srv="DNSMasq";
+service.dnsmasq_loc="Local DNS";
+service.dnsmasq_opt="Additional DNS Options";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
