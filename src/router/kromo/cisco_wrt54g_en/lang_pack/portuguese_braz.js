@@ -980,15 +980,10 @@ route.static_ip="Endereço IP de Destino da LAN";
 
 //help container
 var hroute = new Object();
-hroute.right1="Modo de Operação:";
 hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se algum outro roteador existir na sua rede, selecione o modo <em>Router</em>.";
-hroute.right3="Selecione Uum Número de Registro:";
 hroute.right4="Este é o número único da rota, você pode definir até 20 rotas.";
-hroute.right5="Nome da Rota:";
 hroute.right6="Insira o nome desejado que deseja associar à esta regra.";
-hroute.right7="Endereço IP de Destino da LAN:";
 hroute.right8="Este é o host remoto ao qual você gostaria de atribuir a rota estática.";
-hroute.right9="Máscara de Sub-Rede:";
 hroute.right10="Determina o host e a porção de rede a qual pertence a rota.";
 
 
