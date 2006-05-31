@@ -2686,10 +2686,11 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   int cnt = 0;
   mode = nvram_safe_get ("wl_mode");
 unsigned char buf[WLC_IOCTL_MAXLEN];
+memset(buf,0,WLC_IOCTL_MAXLEN);
 char *iface = get_wdev();
 int r = getassoclist(iface,buf);
-if (r<0)
-    return;
+//if (r<0)
+//    return;
 struct maclist *maclist = (struct maclist *)buf;
 int i;
 for (i=0;i<maclist->count;i++)
@@ -2802,7 +2803,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
     return;
 unsigned char buf[WLC_IOCTL_MAXLEN];
 char *iface = get_wdev();
-int r = getassoclist(iface,buf);
+int r = getwdslist(iface,buf);
 if (r<0)
     return;
 struct maclist *maclist = (struct maclist *)buf;
