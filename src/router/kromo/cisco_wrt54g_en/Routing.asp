@@ -198,15 +198,15 @@ function SelMode(num,F) {
 							<h2><script type="text/javascript">Capture(share.help)</script></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hroute.right1)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(route.mod)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hroute.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hroute.right3)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(route.static_setno)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hroute.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hroute.right5)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(route.static_name)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hroute.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hroute.right7)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(route.static_ip)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hroute.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hroute.right9)</script></dt>
+							<dt class="term"><script type="text/javascript">Capture(share.subnet)</script>:</dt>
 							<dd class="definition"><script type="text/javascript">Capture(hroute.right10)</script></dd>
 						</dl><br />
 						<a href="javascript:openHelpWindow('HRouting.asp');"><script type="text/javascript">Capture(share.more)</script></a>

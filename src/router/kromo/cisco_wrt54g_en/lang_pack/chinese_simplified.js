@@ -1004,15 +1004,10 @@ route.static_ip="目的LAN IP";
 
 //help container
 var hroute = new Object();
-hroute.right1="工作模式：";
 hroute.right2="如果本路由器正主控您的Internet连接，选择 <em>网关</em> 模式。如果您的网络中存在另外一个路由器，选择 <em>路由</em> 模式。";
-hroute.right3="选择设置数：";
 hroute.right4="这是唯一的路由号，您可以设置最多20条路由。";
-hroute.right5="路由名称：";
 hroute.right6="设置您希望指定给这条路由的名称。";
-hroute.right7="目的LAN IP:";
 hroute.right8="这是您希望设定静态路由的远程主机。";
-hroute.right9="子网掩码：";
 hroute.right10="决定主机和网络分配。";
 
 
