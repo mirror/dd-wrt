@@ -1,0 +1,8 @@
+#
+# Configuration file for using the ghttp library in GNOME applications.
+#
+GHTTP_LIBDIR="@GHTTP_LIBDIR@"
+GHTTP_LIBS="@GHTTP_LIBS@"
+GHTTP_INCLUDEDIR="@GHTTP_INCLUDEDIR@"
+MODULE_VERSION="ghttp-@VERSION@"
+
