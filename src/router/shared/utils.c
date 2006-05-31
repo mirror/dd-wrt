@@ -103,7 +103,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Asus WL300g\n");
       setRouter ("Asus WL300g");
-      return ROUTER_MICROSOFT_MN700;
+      return ROUTER_RT210W;
     }  
     
   if (nvram_match ("boardnum", "100") &&	//added by Eko - experimental
