@@ -89,19 +89,20 @@ static void kick_mac(char *iface,char *mac)
 
 /* Atheros */
 
+static int socket_handle = -1;
+
 
 static int
 getsocket (void)
 {
-  static int s = -1;
 
-  if (s < 0)
+  if (socket_handle < 0)
     {
-      s = socket (AF_INET, SOCK_DGRAM, 0);
-      if (s < 0)
+      socket_handle = socket (AF_INET, SOCK_DGRAM, 0);
+      if (socket_handle < 0)
 	err (1, "socket(SOCK_DGRAM)");
     }
-  return s;
+  return socket_handle;
 }
 
 #define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
@@ -240,10 +241,13 @@ static void kick_mac(char *iface,char *mac)
 #ifdef DEBUG
 	printf("KickMac: %s\n",mac);
 #endif
-
 	struct ieee80211req_mlme mlme;
+	mlme.im_op = IEEE80211_MLME_DISASSOC;
+	//mlme.im_reason = IEEE80211_REASON_UNSPECIFIED;
 	mlme.im_reason = IEEE80211_REASON_NOT_AUTHED;
-        ether_atoe (mac, mlme.im_macaddr);
+        memcpy(mlme.im_macaddr,mac,6);
+	
+	
 	do80211priv(iface, IEEE80211_IOCTL_SETMLME, &mlme, sizeof(mlme));
 }
 #endif
@@ -386,10 +390,19 @@ int main(int argc, char** argv)
 
 		/* Query card for currently associated STAs */
 		memset(buf,0,sizeof(buf));
+#ifdef DEBUG
+	puts("get assoc list");
+#endif
 		getassoclist(iface,buf);
+#ifdef DEBUG
+	puts("done()");
+#endif
 		pos=buf;
 		memcpy(&num,pos,4);	/* TODO: This really is struct maclist */
 		pos+=4;
+#ifdef DEBUG
+	printf("count %d\n",num);
+#endif
 
 		unauthenticated_users = 0; //reset count for unauthenticated users
 		

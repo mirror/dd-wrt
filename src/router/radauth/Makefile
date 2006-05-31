@@ -13,7 +13,7 @@ CFLAGS=$(COPTS) -Wall -I. -I../shared -I../../include.v23
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h -DHEADERS_KERNEL -DDEBUG
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h -DHEADERS_KERNEL
 endif
 
 
