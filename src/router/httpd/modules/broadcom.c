@@ -3664,7 +3664,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("chilli_uamanydns", "1");
   nvram_set ("chilli_uamallowed",
 	     "www.fon.com,acceso.fon.com,en.fon.com,es.fon.com,www.paypal.com,www.paypalobjects.com");
-  nvram_set ("chilli_macauth", "");
+  nvram_set ("chilli_macauth", "0");
   nvram_set ("chilli_additional", "");
   nvram_set ("fon_enable", "1");
   nvram_commit ();
