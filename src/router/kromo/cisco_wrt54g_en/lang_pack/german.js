@@ -984,15 +984,10 @@ route.static_ip="Ziel LAN IP";
 
 //help container
 var hroute = new Object();
-hroute.right1="Operations Modus:";
 hroute.right2="Wenn ihr Router die Internet Verbindung bereit stellt, nutzen Sie bitte den <em>Gateway</em> Modus. Wenn ein anderer Router in ihrem Netzwerk existiert, nutzen Sie den <em>Router</em> Modus.";
-hroute.right3="Wähle Set Nummer:";
 hroute.right4="Dies ist eine einzigartige Routen Nummer, Sie können bis zu 20 Routen definieren.";
-hroute.right5="Routen Name:";
 hroute.right6="Geben Sie einen Namen an den Sie der Router zuweisen möchten.";
-hroute.right7="Ziel LAN IP:";
 hroute.right8="Dies ist die IP-Adresse des Zielnetzes, dem die statische Route zugewiesen wird.";
-hroute.right9="Subnetz Maske:";
 hroute.right10="Setzt den angewanden Netzwerk Bereich.";
 
 

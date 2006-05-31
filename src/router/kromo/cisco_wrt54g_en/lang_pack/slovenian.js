@@ -995,15 +995,10 @@ route.static_ip="Ciljni LAN IP";
 
 //help container
 var hroute = new Object();
-hroute.right1="Naèin:";
 hroute.right2="Èe usmerjalnik gosti va¹o povezavo v medmere¾je, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
-hroute.right3="Izberite ¹t. niza:";
 hroute.right4="To je edinstvena ¹tevilka, doloèite lahko do 20 smeri.";
-hroute.right5="Ime smeri:";
 hroute.right6="Vnesite ime, ki ga doloèite za smer.";
-hroute.right7="Ciljni LAN IP:";
 hroute.right8="To je oddaljeni gostitelj do katerage doloèate statièno smer.";
-hroute.right9="Maska podmre¾e:";
 hroute.right10="Doloèi gostitelja in mre¾o.";
 
 

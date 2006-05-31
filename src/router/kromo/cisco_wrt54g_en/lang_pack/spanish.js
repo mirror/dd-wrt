@@ -1009,15 +1009,10 @@ route.static_ip="IP LAN de Destino";
 
 //help container
 var hroute = new Object();
-hroute.right1="Modo de Operaci&#243;n:";
 hroute.right2="Si el router est&#225; hospedando tu conexi&#243;n de Internet, elegir el modo <em>Puerta de Enlace</em> (en ingl&#233;s Gateway). Si hay otro router en tu red, entonces selecciona el modo <em>Router</em>.";
-hroute.right3="Elegir N&#250;mero de SET:";
 hroute.right4="Este es el n&#250;mero de ruteo &#250;nico, puedes establecer hasta 20 rutas.";
-hroute.right5="Nombre de Ruteo:";
 hroute.right6="Introduce el nombre que te gustar&#237;a asignar a este ruteo.";
-hroute.right7="IP LAN de Destino:";
 hroute.right8="Este es el host remoto al cual querr&#237;as asignar el ruteo est&#225;tico..";
-hroute.right9="M&#225;scara de Subred:";
 hroute.right10="Determina el host y la segmento de red.";
 
 
