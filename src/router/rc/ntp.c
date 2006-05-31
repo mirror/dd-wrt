@@ -32,7 +32,7 @@ extern void timer_cancel (timer_t timerid);
 int
 isRunning (char *name)
 {
-  return !eval ("pidof", name);
+  return eval ("pidof", name)==0?1:0;
 }
 
 void
