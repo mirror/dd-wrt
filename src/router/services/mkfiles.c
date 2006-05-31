@@ -193,8 +193,7 @@ mk_nocat_conf (void)
 	   _get_network (nvram_safe_get ("lan_ipaddr"),
 			 nvram_safe_get ("lan_netmask")),
 	   nvram_safe_get ("lan_netmask"));
-//  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
-  fflush (fp);
+  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
 
   /* Irving - Rework getting DNS */
   struct dns_lists *dns_list = NULL;
