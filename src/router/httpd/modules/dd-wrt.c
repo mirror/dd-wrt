@@ -2562,7 +2562,6 @@ ej_get_curchannel (int eid, webs_t wp, int argc, char_t ** argv)
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
-#include "ath/if_athvar.h"
 static const char *
 ieee80211_ntoa (const uint8_t mac[IEEE80211_ADDR_LEN])
 {
@@ -2600,11 +2599,15 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
   iwr.u.data.length = sizeof (buf);
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
+      close(s);
       return;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
+    {
+    close(s);
     return;
+    }
   int cnt = 0;
   cp = buf;
   do
@@ -2625,7 +2628,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
       cp += si->isi_len, len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
-
+  close(s);
 
 
 }

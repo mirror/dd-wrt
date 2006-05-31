@@ -56,9 +56,9 @@ int getassoclist(char *ifname, unsigned char *list)
 {
   unsigned char buf[24 * 1024];
   unsigned char *cp;
-  int s, len;
+  len;
   struct iwreq iwr;
-
+  int s;
   s = socket (AF_INET, SOCK_DGRAM, 0);
   if (s < 0)
     {
@@ -71,6 +71,7 @@ int getassoclist(char *ifname, unsigned char *list)
   iwr.u.data.length = sizeof (buf);
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
+      close(s);
       return -1;
     }
   len = iwr.u.data.length;
@@ -92,6 +93,7 @@ int getassoclist(char *ifname, unsigned char *list)
       cp += si->isi_len, len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
+close(s);
 return count[0];
 }
 
