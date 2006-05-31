@@ -454,19 +454,23 @@ static int
 do_client_check (void)
 {
   FILE *fp = NULL;
-  char buf[1024];
+  char buf[8192];
 //  char mac[512];
   int len;
+  memset(buf,0,8192);
+  getassoclist(get_wdev(),buf);
+  struct maclist* maclist = (struct maclist*)buf;
+   
 
-  system ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
-  if ((fp = fopen ("/tmp/.xassocx", "r")) == NULL)
-    return -1;
+  //system ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
+  //if ((fp = fopen ("/tmp/.xassocx", "r")) == NULL)
+  //    return -1;
 
-  len = fread (buf, 1, 1023, fp);
+  //len = fread (buf, 1, 1023, fp);
 
-  buf[len] = 0;
-
-  if (len > 0 && strstr (buf, "Not associated."))
+  //buf[len] = 0;
+ 
+  if (maclist->count > 0)
     {
 #ifdef HAVE_DDLAN
 
