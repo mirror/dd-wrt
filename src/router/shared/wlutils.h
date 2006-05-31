@@ -55,7 +55,8 @@ extern int wl_probe (char *name);
 
 /* Returns the list of associated stations in the pre-existing buffer list */
 int getassoclist (char *name, unsigned char *list);
-
+int getwdslist (char *name, unsigned char *list);
+int getNoise(char *name);
 /*
  * Set/Get named variable.
  * @param	name	interface name

@@ -2707,10 +2707,9 @@ for (i=0;i<maclist->count;i++)
 	  system (cmd);
 
 	  // get noise value if not ap mode
-	  if (strcmp (mode, "ap"))
-	    snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
-
-	  system (cmd);		// get RSSI value for mac
+//	  if (strcmp (mode, "ap"))
+//	    snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
+//	  system (cmd);		// get RSSI value for mac
 
 	  fp2 = fopen (RSSI_TMP, "r");
 	  if (fgets (line, sizeof (line), fp2) != NULL)
@@ -2721,17 +2720,20 @@ for (i=0;i<maclist->count;i++)
 	      if (sscanf (line, "%d", &rssi) != 1)
 		continue;
 
-	      if (strcmp (mode, "ap") &&
-		  fgets (line, sizeof (line), fp2) != NULL &&
-		  sscanf (line, "%d", &noise) != 1)
-		continue;
+	     noise=getNoise(iface);
+	     
+//	      if (strcmp (mode, "ap") &&
+//		  fgets (line, sizeof (line), fp2) != NULL &&
+//		  sscanf (line, "%d", &noise) != 1)
+//		continue;
 #else
 	      if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
 		continue;
-	      if (strcmp (mode, "ap") &&
-		  fgets (line, sizeof (line), fp2) != NULL &&
-		  sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
-		continue;
+	    noise=getNoise(iface);
+//	      if (strcmp (mode, "ap") &&
+//		  fgets (line, sizeof (line), fp2) != NULL &&
+//		  sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
+//		continue;
 #endif
 	      // get noise for client/wet mode
 
