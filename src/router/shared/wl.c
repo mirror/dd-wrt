@@ -24,15 +24,104 @@
 int
 getassoclist (char *name, unsigned char *list)
 {
+int ap;
+if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) 
+{
   int ret, num;
 
   num = (sizeof (*list) - 4) / 6;	/* Maximum number of entries in the buffer */
   memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
 
   ret = wl_ioctl (name, WLC_GET_ASSOCLIST, list, 8192);
+}else
+{
+char buf[WLC_IOCTL_MAXLEN];
+	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+	memset(buf,0,WLC_IOCTL_MAXLEN);
+	if (wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN)<0)return 0;
+	struct maclist *l = (struct maclist*)list;
+	l->count=1;
+	memcpy(&l->ea,&bss_info->BSSID,6);
+}
+
+  return 0;
+}
+int
+getwdslist (char *name, unsigned char *list)
+{
+  int ret, num;
+
+  num = (sizeof (*list) - 4) / 6;	/* Maximum number of entries in the buffer */
+  memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
+
+  ret = wl_ioctl (name, WLC_GET_WDSLIST, list, 8192);
 
   return (ret);
 }
+
+int getNoise(char *name)
+{
+	unsigned int rssi, noise, ap;
+	rssi = 0;
+        char buf[WLC_IOCTL_MAXLEN];
+	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+	memset(buf,0,WLC_IOCTL_MAXLEN);
+	
+	wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
+	if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) {
+		if (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
+			noise = 0;
+	} else {
+		// somehow the structure doesn't fit here
+		rssi = buf[82];
+		noise = buf[84];
+	}
+return noise;
+}
+
+
+
+/*
+struct iw_statistics *wlcompat_get_wireless_stats(struct net_device *dev)
+{
+	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+	get_pktcnt_t pkt;
+	unsigned int rssi, noise, ap;
+	
+	memset(&wstats, 0, sizeof(wstats));
+	memset(&pkt, 0, sizeof(pkt));
+	memset(buf, 0, sizeof(buf));
+	bss_info->version = 0x2000;
+	wl_ioctl(dev, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
+	wl_ioctl(dev, WLC_GET_PKTCNTS, &pkt, sizeof(pkt));
+
+	rssi = 0;
+	if ((wl_ioctl(dev, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) {
+		if (wl_ioctl(dev, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
+			noise = 0;
+	} else {
+		// somehow the structure doesn't fit here
+		rssi = buf[82];
+		noise = buf[84];
+	}
+	rssi = (rssi == 0 ? 1 : rssi);
+	wstats.qual.updated = 0x10;
+	if (rssi <= 1) 
+		wstats.qual.updated |= 0x20;
+	if (noise <= 1)
+		wstats.qual.updated |= 0x40;
+
+	if ((wstats.qual.updated & 0x60) == 0x60)
+		return NULL;
+
+	wstats.qual.level = rssi;
+	wstats.qual.noise = noise;
+	wstats.discard.misc = pkt.rx_bad_pkt;
+	wstats.discard.retries = pkt.tx_bad_pkt;
+
+	return &wstats;
+}*/
+
 #else
 #include <sys/types.h>
 #include <sys/file.h>
