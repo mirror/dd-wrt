@@ -84,6 +84,12 @@ CFLAGS += -DHAVE_SSHD
 LIBRARIES += -L../zlib ../dropbear/dropbear.a ../dropbear/libtomcrypt/libtomcrypt.a ../dropbear/libtommath/libtommath.a -lutil -lz 
 #LDFLAGS += -Wl,--gc-sections
 endif
+ifeq ($(CONFIG_RFLOW),y)
+CFLAGS += -DHAVE_RFLOW
+LIBRARIES += ../rflow/rflow.a -lpthread
+endif
+
+
 
 ARFLAGS=cru
 
