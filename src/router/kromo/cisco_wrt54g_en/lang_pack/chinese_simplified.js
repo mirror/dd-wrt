@@ -848,11 +848,6 @@ management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNSMasq";
-management.dsn_srv="DNSMasq";
-management.dsn_loc="本地DNS";
-management.dsn_opt="附加的DNS选项";
-
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 
@@ -1051,6 +1046,10 @@ service.dhcp_jffs2="使用JFFS2作为客户端租约数据库";
 service.dhcp_domain="已使用的域";
 service.dhcp_landomain="LAN域";
 service.dhcp_option="附加的DHCPd选项";
+service.dnsmasq_legend="DNSMasq";
+service.dnsmasq_srv="DNSMasq";
+service.dnsmasq_loc="本地DNS";
+service.dnsmasq_opt="附加的DNS选项";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
