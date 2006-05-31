@@ -19,6 +19,8 @@
 
 
 /* DD-WRT addition  (loaned from radauth) */
+
+#ifndef HAVE_MADWIFI
 int
 getassoclist (char *name, unsigned char *list)
 {
@@ -31,7 +33,51 @@ getassoclist (char *name, unsigned char *list)
 
   return (ret);
 }
+#else
+void getassoclist(char *ifname, unsigned char *list)
+{
+  unsigned char buf[24 * 1024];
+  unsigned char *cp;
+  int s, len;
+  struct iwreq iwr;
 
+  s = socket (AF_INET, SOCK_DGRAM, 0);
+  if (s < 0)
+    {
+      fprintf (stderr, "socket(SOCK_DRAGM)\n");
+      return;
+    }
+  (void) memset (&iwr, 0, sizeof (iwr));
+  (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));
+  iwr.u.data.pointer = (void *) buf;
+  iwr.u.data.length = sizeof (buf);
+  if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
+    {
+      return;
+    }
+  len = iwr.u.data.length;
+  if (len < sizeof (struct ieee80211req_sta_info))
+    return;
+  int cnt = 0;
+  cp = buf;
+  unsigned char *l = (unsigned char*)list;
+  uint *count = (uint*)list;
+  l+=4;
+  do
+    {
+      struct ieee80211req_sta_info *si;
+      si = (struct ieee80211req_sta_info *) cp;            
+      memcpy(&si->isi_macaddr[0],l,6);
+      l+=6;
+      *count++;      
+    }
+  while (len >= sizeof (struct ieee80211req_sta_info));
+
+}
+
+
+
+#endif
 
 /* Sveasoft addition - return wirteless interface */
 char *
