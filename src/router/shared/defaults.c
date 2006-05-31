@@ -896,7 +896,7 @@ struct nvram_tuple router_defaults[] = {
   {"chilli_uamallowed",
    "www.fon.com,acceso.fon.com,en.fon.com,es.fon.com,www.paypal.com,www.paypalobjects.com",
    0},
-  {"chilli_macauth", "", 0},
+  {"chilli_macauth", "0", 0},
   {"chilli_additional", "", 0},
 #elif HAVE_FON
   {"chilli_enable", "1", 0},
@@ -912,7 +912,7 @@ struct nvram_tuple router_defaults[] = {
   {"chilli_uamallowed",
    "www.fon.com,acceso.fon.com,en.fon.com,es.fon.com,www.paypal.com,www.paypalobjects.com",
    0},
-  {"chilli_macauth", "", 0},
+  {"chilli_macauth", "0", 0},
   {"chilli_additional", "", 0},
 #else
   {"chilli_enable", "0", 0},
@@ -926,7 +926,7 @@ struct nvram_tuple router_defaults[] = {
   {"chilli_uamsecret", "", 0},
   {"chilli_uamanydns", "0", 0},
   {"chilli_uamallowed", "", 0},
-  {"chilli_macauth", "", 0},
+  {"chilli_macauth", "0", 0},
   {"chilli_additional", "", 0},
 #endif
 #endif
