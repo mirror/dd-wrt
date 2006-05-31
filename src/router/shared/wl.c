@@ -56,7 +56,7 @@ int getassoclist(char *ifname, unsigned char *list)
 {
   unsigned char buf[24 * 1024];
   unsigned char *cp;
-  len;
+  int len;
   struct iwreq iwr;
   int s;
   s = socket (AF_INET, SOCK_DGRAM, 0);
