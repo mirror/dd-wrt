@@ -34,6 +34,12 @@ getassoclist (char *name, unsigned char *list)
   return (ret);
 }
 #else
+
+#include <linux/wireless.h>
+#include "net80211/ieee80211.h"
+#include "net80211/ieee80211_crypto.h"
+#include "net80211/ieee80211_ioctl.h"
+
 void getassoclist(char *ifname, unsigned char *list)
 {
   unsigned char buf[24 * 1024];
