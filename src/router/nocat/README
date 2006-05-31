@@ -15,6 +15,10 @@ NoCatSplash is copyrighted (c) 2004 - 2005 by Schuyler Erle
 <schuyler@nocat.net> and Rob Flickenger <rob@nocat.net>, and is distributed
 under the GNU Public License v2 or better.
 
+This distribution contains code from libghttp, which is (c) its original
+authors and also distributed under the GPL v2. See libghttp/README for more
+details.
+
 *** Quickstart
 
 ./configure
@@ -29,8 +33,6 @@ vi /usr/local/etc/nocat.conf
  * glib 1.2
  * iptables
  * netfilter kernel modules for NAT, redirection, etc.
- * GnuPG (passive mode only)
- * libghttp (remote splash only)
 
 *** Requirements - Future Version
 
@@ -54,7 +56,10 @@ $ cd NoCatSplash-nightly
 $ ./configure
 $ make 
 
-iptables must be in your path when you run ./configure! Next, as root:
+iptables must be in your path when you run ./configure, or you must
+use the --with-firewall=iptables option to ./configure.
+
+Next, as root:
 
 # make install
 # vi /usr/local/etc/nocat.conf [or use your editor of choice]
