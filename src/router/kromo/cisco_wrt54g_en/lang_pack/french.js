@@ -988,54 +988,55 @@ var hqos = new Object();
 hqos.right1="Débit montant:";
 hqos.right2="Doit être entre 80% et 95% (max) du débit montant maximum de la connexion.";
 hqos.right3="Débit descendant:";
-hqos.right4="Doit être entre 80% et 100% (max) du débit descendant maximum de la connexion.";
-hqos.right6="Vous pouvez contrôler la priorité de plusieurs type d'applications pour gérer la bande passante.";
-hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
-hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, \
-			specifying priority and entering its MAC address.";
-hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. \
-			You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
+hqos.right4="Doit être entre 80% et 100% du débit descendant maximum de la connexion.";
+hqos.right6="Vous pouvez contrôler la priorité de plusieurs types d'applications pour optimiser la bande passante.";
+hqos.right8="Vous pouvez contrôler la priorité du trafic pour les adresses IP spécifiées ou une plage d'adresses.";
+hqos.right10="Vous pouvez contrôler la priorité du trafic en fonction de l\'adresse MAC des clients.";
+hqos.right12="Vous pouvez contrôler la priorité du trafic en fonction du port ethernet auquel sont connectés les clients.";
 
 
 
 // ******************************************* RouteTable.asp *******************************************//
 
 var routetbl = new Object();
-routetbl.titl=" - Routing Table";
-routetbl.h2="Routing Table Entry List";
-routetbl.th1="Destination LAN IP";
+routetbl.titl=" - Table de Routage";
+routetbl.h2="Table de Routage";
+routetbl.th1="IP Destination sur le LAN";
 
 
 
 // ******************************************* Routing.asp *******************************************//
 
 var route = new Object();
-route.titl=" - Routing";
-route.h2="Advanced Routing";
-route.mod="Operating Mode";
-route.bgp_legend="BGP Settings";
+route.titl=" - Routage";
+route.h2="Routage Avancé";
+route.mod="Mode de Fonctonnement";
+route.bgp_legend="Paramètres BGP";
 route.bgp_ip="Neighbor IP";
 route.bgp_as="Neighbor AS#";
-route.rip2_mod="RIP2 Router";
-route.ospf_mod="OSPF Router";
-route.gateway_legend="Dynamic Routing";
-route.static_legend="Static Routing";
-route.static_setno="Select set number";
-route.static_name="Route Name";
-route.static_ip="Destination LAN IP";
+route.rip2_mod="Routeur RIP2";
+route.ospf_mod="Routeur OSPF";
+route.gateway_legend="Routage Dynamique";
+route.static_legend="Routage Statique";
+route.static_setno="Choisir l\'itinéraire";
+route.static_name="Nom de la Route";
+route.static_ip="IP de Destination sur le LAN";
 
 //help container
 var hroute = new Object();
-hroute.right1="Operating Mode:";
-hroute.right2="If the router is hosting your Internet connection, select <em>Gateway</em> mode. If another router exists on your network, select <em>Router</em> mode.";
-hroute.right3="Select Set Number:";
-hroute.right4="This is the unique route number, you may set up to 20 routes.";
-hroute.right5="Route Name:";
-hroute.right6="Enter the name you would like to assign to this route.";
-hroute.right7="Destination LAN IP:";
-hroute.right8="This is the remote host to which you would like to assign the static route.";
-hroute.right9="Subnet Mask:";
-hroute.right10="Determines the host and the network portion.";
+hroute.right2="Sélectionnez le mode sous lequel le routeur doit opérer. \
+	Si le routeur concerné héberge la connexion de votre réseau à Internet, sélectionnez l\'option <em>" + share.gateway + "</em>. \
+	Si un autre routeur existe sur le réseau, sélectionnez <em>Routeur</em>. Si vous choisissez l\'option <em>Routeur</em>, \
+	la section <em>" + route.gateway_legend + "</em> est activée.";
+hroute.right4="Pour définir un itinéraire statique entre le routeur et un autre réseau, \
+	choisissez un nombre dans la liste déroulante de la section <em>" + route.static_legend + "</em>. Un itinéraire statique identifie un \
+	chemin pré-défini que les informations du réseau doivent emprunter pour atteindre un hôte ou un réseau spécifique. \
+	Saisissez les informations décrites ci-dessous pour définir un nouvel itinéraire statique. Cliquez sur le bouton <em>" + sbutton.del + "</em> \
+	pour supprimer un itinéraire statique.";
+hroute.right6="Saisissez dans ce champ le nom de l\'itinéraire.";
+hroute.right8="Cette option identifie l\'adresse du réseau distant, ou hôte, auquel vous souhaitez attribuer un itinéraire statique.";
+hroute.right10="Cette option détermine quelle portion de l\'adresse IP du réseau local (LAN) \
+	de destination correspond au réseau et quelle portion correspond à l\'hôte.";
 
 
 // ******************************************* Site_Survey.asp *******************************************//
