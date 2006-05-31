@@ -39,7 +39,15 @@
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_verbose)</script></div>
 		<select name="NC_Verbosity">
 			<option value="1" <% nvram_selmatch("NC_Verbosity","1","selected"); %> >1</option>
-			<option value="2" <% nvram_selmatch("NC_Verbosity","2","selected"); %> >2</option>			<option value="3" <% nvram_selmatch("NC_Verbosity","3","selected"); %> >3</option>			<option value="4" <% nvram_selmatch("NC_Verbosity","4","selected"); %> >4</option>			<option value="5" <% nvram_selmatch("NC_Verbosity","5","selected"); %> >5</option>			<option value="6" <% nvram_selmatch("NC_Verbosity","6","selected"); %> >6</option>			<option value="7" <% nvram_selmatch("NC_Verbosity","7","selected"); %> >7</option>			<option value="8" <% nvram_selmatch("NC_Verbosity","8","selected"); %> >8</option>			<option value="9" <% nvram_selmatch("NC_Verbosity","9","selected"); %> >9</option>			<option value="10" <% nvram_selmatch("NC_Verbosity","10","selected"); %> >10</option>
+			<option value="2" <% nvram_selmatch("NC_Verbosity","2","selected"); %> >2</option>
+			<option value="3" <% nvram_selmatch("NC_Verbosity","3","selected"); %> >3</option>
+			<option value="4" <% nvram_selmatch("NC_Verbosity","4","selected"); %> >4</option>
+			<option value="5" <% nvram_selmatch("NC_Verbosity","5","selected"); %> >5</option>
+			<option value="6" <% nvram_selmatch("NC_Verbosity","6","selected"); %> >6</option>
+			<option value="7" <% nvram_selmatch("NC_Verbosity","7","selected"); %> >7</option>
+			<option value="8" <% nvram_selmatch("NC_Verbosity","8","selected"); %> >8</option>
+			<option value="9" <% nvram_selmatch("NC_Verbosity","9","selected"); %> >9</option>
+			<option value="10" <% nvram_selmatch("NC_Verbosity","10","selected"); %> >10</option>
 		</select>
 	</div>
 	<div class="setting">
