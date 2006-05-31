@@ -24,28 +24,34 @@
 int
 getassoclist (char *name, unsigned char *list)
 {
-int ap;
-if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) 
-{
+//int ap;
+//if ((wl_ioctl(name, WLC_GET_AP, &ap, sizeof(ap)) < 0) || ap) 
+//{
   int ret, num;
 
   num = (sizeof (*list) - 4) / 6;	/* Maximum number of entries in the buffer */
   memcpy (list, &num, 4);	/* First 4 bytes are the number of ent. */
 
   ret = wl_ioctl (name, WLC_GET_ASSOCLIST, list, 8192);
-}else
-{
-char buf[WLC_IOCTL_MAXLEN];
+//}else
+//{
+//char buf[WLC_IOCTL_MAXLEN];
+/*
 	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
 	memset(buf,0,WLC_IOCTL_MAXLEN);
 	if (wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN)<0)return 0;
 	struct maclist *l = (struct maclist*)list;
+*/
+/*	sta_info_t *sta_info = (sta_info_t *) buf;
+	memset(buf,0,WLC_IOCTL_MAXLEN);
+	if (wl_ioctl(name, WLC_GET_VAR, sta_info, WLC_IOCTL_MAXLEN)<0)return 0;
+
+	struct maclist *l = (struct maclist*)list;
 	l->count=1;
-	memcpy(&l->ea,&bss_info->BSSID,6);
+	memcpy(&l->ea,&sta_info->ea,6);*/
+return ret;
 }
 
-  return 0;
-}
 int
 getwdslist (char *name, unsigned char *list)
 {
@@ -61,10 +67,12 @@ getwdslist (char *name, unsigned char *list)
 
 int getNoise(char *name)
 {
-	unsigned int rssi, noise, ap;
-	rssi = 0;
-        char buf[WLC_IOCTL_MAXLEN];
-	wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
+	unsigned int noise;
+	//rssi = 0;
+        //char buf[WLC_IOCTL_MAXLEN];
+	if (wl_ioctl(name, WLC_GET_PHY_NOISE, &noise, sizeof(noise)) < 0)
+
+	/*wl_bss_info_t *bss_info = (wl_bss_info_t *) buf;
 	memset(buf,0,WLC_IOCTL_MAXLEN);
 	
 	wl_ioctl(name, WLC_GET_BSS_INFO, bss_info, WLC_IOCTL_MAXLEN);
@@ -75,7 +83,7 @@ int getNoise(char *name)
 		// somehow the structure doesn't fit here
 		rssi = buf[82];
 		noise = buf[84];
-	}
+	}*/
 return noise;
 }
 
