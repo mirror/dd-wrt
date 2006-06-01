@@ -151,29 +151,29 @@ function init() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.applications)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li class="current"><span><% tran("bmenu.applications"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
-											<li><a href="ForwardSpec.asp"><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></a></li>
-											<li><a href="Triggering.asp"><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></a></li>
+											<li><a href="Forward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+											<li><a href="ForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
+											<li><a href="Triggering.asp"><% tran("bmenu.applicationsptriggering"); %></a></li>
 											<% nvram_match("dist_type", "micro", "<!--"); %>
-											<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<li><a href="UPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>
 											<% nvram_match("dist_type", "micro", "-->"); %>
-											<li><a href="DMZ.asp"><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></span></li>
+											<li><a href="DMZ.asp"><% tran("bmenu.applicationsDMZ"); %></a></li>
+											<li><span><% tran("bmenu.applicationsQoS"); %></span></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -187,50 +187,50 @@ function init() {
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="commit" value="1" />
-							<h2><script type="text/javascript">Capture(qos.h2)</script></h2>
+							<h2><% tran("qos.h2"); %></h2>
 							
 							<fieldset>
-  								<legend><script type="text/javascript">Capture(qos.legend)</script></legend>
+  								<legend><% tran("qos.legend"); %></legend>
   								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(qos.srv)</script></div>
-									<input class="spaceradio" type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_checked("wshaper_enable","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_checked("wshaper_enable","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("qos.srv"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_checked("wshaper_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="wshaper_enable" onclick="qos_grey(this.value,this.form)" <% nvram_checked("wshaper_enable","0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.port)</script></div>
+									<div class="label"><% tran("share.port"); %></div>
 									<select name="wshaper_dev">
 										<option value="WAN" <% nvram_selmatch("wshaper_dev", "WAN", "selected"); %>>WAN</option>
 										<option value="LAN" <% nvram_selmatch("wshaper_dev", "LAN", "selected"); %>>LAN &amp; WLAN</option>
 									</select>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(qos.type)</script></div>
+									<div class="label"><% tran("qos.type"); %></div>
 									<select name="qos_type">
 										<option value="0" <% nvram_selmatch("qos_type", "0", "selected"); %>>HTB</option>
 										<option value="1" <% nvram_selmatch("qos_type", "1", "selected"); %>>HFSC</option>
 									</select>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(qos.uplink)</script></div>
+									<div class="label"><% tran("qos.uplink"); %></div>
 									<input type="text" size="5" class="num" name="wshaper_uplink" value="<% nvram_get("wshaper_uplink"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(qos.dnlink)</script></div>
+									<div class="label"><% tran("qos.dnlink"); %></div>
 									<input type="text" size="5" class="num" name="wshaper_downlink" value="<% nvram_get("wshaper_downlink"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(qos.gaming)</script></div>
+									<div class="label"><% tran("qos.gaming"); %></div>
 									<input type="checkbox" name="_enable_game" value="1" <% nvram_checked("enable_game", "1"); %> />
 								</div>
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(qos.legend2)</script></legend>
+								<legend><% tran("qos.legend2"); %></legend>
 								<table class="table">
 									<tr>
-										<th><script type="text/javascript">Capture(share.del)</script></th>
-										<th><script type="text/javascript">Capture(share.srv)</script></th>
-										<th><script type="text/javascript">Capture(share.priority)</script></th>
+										<th><% tran("share.del"); %></th>
+										<th><% tran("share.srv"); %></th>
+										<th><% tran("share.priority"); %></th>
 									</tr>
 									<% get_qossvcs(); %>
 									<tr>
@@ -258,7 +258,7 @@ function init() {
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(qos.legend3)</script></legend>
+								<legend><% tran("qos.legend3"); %></legend>
 								<table class="table">
 									<% get_qosips(); %>
 									<tr>
@@ -273,7 +273,7 @@ function init() {
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(qos.legend4)</script></legend>
+								<legend><% tran("qos.legend4"); %></legend>
 								<table class="table">
 									<% get_qosmacs(); %>
 									<tr>
@@ -288,15 +288,15 @@ function init() {
 							<% show_default_level(); %>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(qos.legend5)</script></legend>
+								<legend><% tran("qos.legend5"); %></legend>
 								<table>
 									<tr>
 										<th>&nbsp;</th>
-										<th><script type="text/javascript">Capture(share.priority)</script></th>
-										<th><script type="text/javascript">Capture(qos.maxrate_o)</script></th>
+										<th><% tran("share.priority"); %></th>
+										<th><% tran("qos.maxrate_o"); %></th>
 									</tr>
 									<tr>
-										<td><script type="text/javascript">Capture(share.port)</script> 1</td>
+										<td><% tran("share.port"); %> 1</td>
 										<td>
 											<select name="svqos_port1prio">
 												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port1prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
@@ -322,7 +322,7 @@ function init() {
 										</td>
 									</tr>
 									<tr>
-										<td><script type="text/javascript">Capture(share.port)</script> 2</td>
+										<td><% tran("share.port"); %> 2</td>
 										<td>
 											<select name="svqos_port2prio">
 												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port2prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
@@ -348,7 +348,7 @@ function init() {
 										</td>
 									</tr>
 									<tr>
-										<td><script type="text/javascript">Capture(share.port)</script> 3</td>
+										<td><% tran("share.port"); %> 3</td>
 										<td>
 											<select name="svqos_port3prio">
 												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port3prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
@@ -374,7 +374,7 @@ function init() {
 										</td>
 									</tr>
 									<tr>
-										<td><script type="text/javascript">Capture(share.port)</script> 4</td>
+										<td><% tran("share.port"); %> 4</td>
 										<td>
 											<select name="svqos_port4prio">
 												<script type="text/javascript">document.write("<option value=\"100\" <% nvram_selmatch("svqos_port4prio", "100", "selected"); %> >" + qos.prio_x + "</option>");</script>
@@ -411,30 +411,30 @@ function init() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(hqos.right1)</script></dt>
-							<dd class="definition"><script type="text/javascript">Capture(hqos.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(hqos.right3)</script></dt>
-							<dd class="definition"><script type="text/javascript">Capture(hqos.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend2)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hqos.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend3)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hqos.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend4)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hqos.right10)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(qos.legend5)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hqos.right12)</script></dd>
+							<dt class="term"><% tran("hqos.right1"); %></dt>
+							<dd class="definition"><% tran("hqos.right2"); %></dd>
+							<dt class="term"><% tran("hqos.right3"); %></dt>
+							<dd class="definition"><% tran("hqos.right4"); %></dd>
+							<dt class="term"><% tran("qos.legend2"); %>:</dt>
+							<dd class="definition"><% tran("hqos.right6"); %></dd>
+							<dt class="term"><% tran("qos.legend3"); %>:</dt>
+							<dd class="definition"><% tran("hqos.right8"); %></dd>
+							<dt class="term"><% tran("qos.legend4"); %>:</dt>
+							<dd class="definition"><% tran("hqos.right10"); %></dd>
+							<dt class="term"><% tran("qos.legend5"); %>:</dt>
+							<dd class="definition"><% tran("hqos.right12"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HQos.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HQos.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
