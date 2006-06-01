@@ -311,22 +311,22 @@ function Status(F,I) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.accrestriction)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li class="current"><span><% tran("bmenu.accrestriction"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><span><script type="text/javascript">Capture(bmenu.webaccess)</script></span></li>
+											<li><span><% tran("bmenu.webaccess"); %></span></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -343,56 +343,56 @@ function Status(F,I) {
 							<input type="hidden" name="filter_policy" />
 							<input type="hidden" name="filter_p2p" />
 							<input type="hidden" name="f_status" />
-							<h2><script type="text/javascript">Capture(filter.h2)</script></h2>
+							<h2><% tran("filter.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(filter.legend)</script></legend>
+								<legend><% tran("filter.legend"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(filter.pol)</script></div>
+									<div class="label"><% tran("filter.pol"); %></div>
 									<select name="f_id" onchange="SelFilter(this.form.f_id.selectedIndex,this.form)"><% filter_policy_select(); %></select>
 									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.del + "\" onclick=\"to_delete(this.form)\" />")</script>
 									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.summary + "\" onclick=\"openWindow('FilterSummary.asp', 700, 480)\" />")</script>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.statu)</script></div>
-									<input class="spaceradio" type="radio" value="enable" name="f_status1" <% filter_policy_get("f_status","enable"); %>/><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="disable" name="f_status1" <% filter_policy_get("f_status","disable"); %>/><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("share.statu"); %></div>
+									<input class="spaceradio" type="radio" value="enable" name="f_status1" <% filter_policy_get("f_status","enable"); %>/><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="disable" name="f_status1" <% filter_policy_get("f_status","disable"); %>/><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(filter.polname)</script></div>
+									<div class="label"><% tran("filter.polname"); %></div>
 									<input maxlength="30" size="22" name="f_name" value="<% filter_policy_get("f_name",""); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(filter.pcs)</script></div>
+									<div class="label"><% tran("filter.pcs"); %></div>
 									<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.filterIP + "\" onclick=\"openWindow('FilterIPMAC.asp', 590, 700)\" />")</script>
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input class="spaceradio" type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /><script type="text/javascript">Capture(share.deny)</script>
+										<input class="spaceradio" type="radio" name="f_status2" value="deny" onclick="Status(this.form,'deny')" <% filter_policy_get("f_status","deny"); %> /><% tran("share.deny"); %>
 									</div>
-									<script type="text/javascript">Capture(filter.polallow)</script>
+									<% tran("filter.polallow"); %>
 								</div>
 								<div class="setting">
 									<div class="label">
-										<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><script type="text/javascript">Capture(share.allow)</script>
+										<input class="spaceradio" type="radio" name="f_status2" value="allow" onclick="Status(this.form,'allow')" <% filter_policy_get("f_status","allow"); %> /><% tran("share.allow"); %>
 									</div>
 								</div>
 								<br />
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(filter.legend2)</script></legend>
+								<legend><% tran("filter.legend2"); %></legend>
 								<div class="setting">
 									<table>
 										<tr>
-											<td align="center"><script type="text/javascript">Capture(share.everyday)</script></td>
-											<td align="center"><script type="text/javascript">Capture(share.sun_s)</script></td>
-											<td align="center"><script type="text/javascript">Capture(share.mon_s)</script></td>
-											<td align="center"><script type="text/javascript">Capture(share.tue_s)</script></td>
-											<td align="center"><script type="text/javascript">Capture(share.wed_s)</script></td>
-											<td align="center"><script type="text/javascript">Capture(share.thu_s)</script></td>
-											<td align="center"><script type="text/javascript">Capture(share.fri_s)</script></td>
-											<td align="center"><script type="text/javascript">Capture(share.sat_s)</script></td>
+											<td align="center"><% tran("share.everyday"); %></td>
+											<td align="center"><% tran("share.sun_s"); %></td>
+											<td align="center"><% tran("share.mon_s"); %></td>
+											<td align="center"><% tran("share.tue_s"); %></td>
+											<td align="center"><% tran("share.wed_s"); %></td>
+											<td align="center"><% tran("share.thu_s"); %></td>
+											<td align="center"><% tran("share.fri_s"); %></td>
+											<td align="center"><% tran("share.sat_s"); %></td>
 										</tr>
 										<tr>
 											<td align="center"><input type="checkbox" value="1" name="day_all" onClick="dayall(this.form)" <% filter_tod_get("day_all"); %> /></td>
@@ -409,20 +409,20 @@ function Status(F,I) {
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(filter.time)</script></legend>
+								<legend><% tran("filter.time"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(filter.h24)</script></div>
+									<div class="label"><% tran("filter.h24"); %></div>
 									<input class="spaceradio" type="radio" value="1" name="time_all" onclick="timeall(this.form,'0')" <% filter_tod_get("time_all_en"); %> />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.from)</script></div>
+									<div class="label"><% tran("share.from"); %></div>
 									<input type="hidden" name="allday" />
 									<input class="spaceradio" type="radio" value="0" name="time_all" onclick="timeall(this.form,'1')" <% filter_tod_get("time_all_dis"); %> />
 									<select name="start_hour"><% filter_tod_get("start_hour_12"); %></select>:<select name="start_min"><% filter_tod_get("start_min_5"); %></select>
 									<select name="start_time">
 										<option value="0" <% filter_tod_get("start_time_am"); %>>AM</option>
 										<option value="1" <% filter_tod_get("start_time_pm"); %>>PM</option>
-									</select>&nbsp;<script type="text/javascript">Capture(share.to)</script>&nbsp;<select name="end_hour"><% filter_tod_get("end_hour_12"); %></select>:<select name="end_min"><% filter_tod_get("end_min_5"); %></select>
+									</select>&nbsp;<% tran("share.to"); %>&nbsp;<select name="end_hour"><% filter_tod_get("end_hour_12"); %></select>:<select name="end_min"><% filter_tod_get("end_min_5"); %></select>
 									<select name="end_time">
 										<option value="0" <% filter_tod_get("end_time_am"); %>>AM</option>
 										<option value="1" <% filter_tod_get("end_time_pm"); %>>PM</option>
@@ -431,9 +431,9 @@ function Status(F,I) {
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(filter.legend3)</script></legend>
+								<legend><% tran("filter.legend3"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(filter.catchall)</script></div>
+									<div class="label"><% tran("filter.catchall"); %></div>
   									<input class="spaceradio" type="checkbox" name="_filter_p2p" value="1" <% nvram_checked("filter_p2p", "1"); %> />
 								</div>
 								<div class="setting">
@@ -470,7 +470,7 @@ function Status(F,I) {
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(filter.legend4)</script></legend>
+								<legend><% tran("filter.legend4"); %></legend>
 								<div class="setting center">
 									<input class="num" size="30" maxlength="79" name="host0" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","0"); %>" />&nbsp;&nbsp;&nbsp;
 									<input class="num" size="30" maxlength="79" name="host1" onblur="valid_name(this,'URL')" value="<% filter_web_get("host","1"); %>" />&nbsp;&nbsp;&nbsp;
@@ -484,7 +484,7 @@ function Status(F,I) {
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(filter.legend5)</script></legend>
+								<legend><% tran("filter.legend5"); %></legend>
 								<div class="setting center">
 									<input class="num" size="18" maxlength="79" name="url0" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","0"); %>" />&nbsp;&nbsp;&nbsp;
 									<input class="num" size="18" maxlength="79" name="url1" onblur="valid_name(this,'Keyword')" value="<% filter_web_get("url","1"); %>" />&nbsp;&nbsp;&nbsp;
@@ -509,34 +509,34 @@ function Status(F,I) {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(filter.legend)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.statu)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(filter.polname)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(filter.legend2)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(filter.time)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right10)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(filter.legend3)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right12)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(filter.legend4)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right14)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(filter.legend5)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfilter.right16)</script></dd>
+							<dt class="term"><% tran("filter.legend"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right2"); %></dd>
+							<dt class="term"><% tran("share.statu"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right4"); %></dd>
+							<dt class="term"><% tran("filter.polname"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right6"); %></dd>
+							<dt class="term"><% tran("filter.legend2"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right8"); %></dd>
+							<dt class="term"><% tran("filter.time"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right10"); %></dd>
+							<dt class="term"><% tran("filter.legend3"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right12"); %></dd>
+							<dt class="term"><% tran("filter.legend4"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right14"); %></dd>
+							<dt class="term"><% tran("filter.legend5"); %>:</dt>
+							<dd class="definition"><% tran("hfilter.right16"); %></dd>
 						</dl>
 						<br />
-						<a href="javascript:openHelpWindow('HFilters.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HFilters.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

@@ -49,25 +49,25 @@ function valid(F,I) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.admin)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li class="current"><span><% tran("bmenu.admin"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.adminManagement)</script></a></li>
-											<li><a href="Hotspot.asp"><script type="text/javascript">Capture(bmenu.adminHotspot)</script></a></li>
-											<li><a href="Services.asp"><script type="text/javascript">Capture(bmenu.adminServices)</script></a></li>
-											<li><a href="Alive.asp"><script type="text/javascript">Capture(bmenu.adminAlive)</script></a></li>
-											<li><a href="Log.asp"><script type="text/javascript">Capture(bmenu.adminLog)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.adminDiag)</script></span></li>
-											<li><a href="Wol.asp"><script type="text/javascript">Capture(bmenu.adminWol)</script></a></li>
-											<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
+											<li><a href="Management.asp"><% tran("bmenu.adminManagement"); %></a></li>
+											<li><a href="Hotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
+											<li><a href="Services.asp"><% tran("bmenu.adminServices"); %></a></li>
+											<li><a href="Alive.asp"><% tran("bmenu.adminAlive"); %></a></li>
+											<li><a href="Log.asp"><% tran("bmenu.adminLog"); %></a></li>
+											<li><span><% tran("bmenu.adminDiag"); %></span></li>
+											<li><a href="Wol.asp"><% tran("bmenu.adminWol"); %></a></li>
+											<li><a href="Factory_Defaults.asp"><% tran("bmenu.adminFactory"); %></a></li>
 								<script type="text/javascript">
 										https_visit = <% support_elsematch("HTTPS","1","1","0"); %>;
 										if (https_visit =="1") {
@@ -84,7 +84,7 @@ function valid(F,I) {
 										</ul>
 									</div>
 								</li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -98,12 +98,12 @@ function valid(F,I) {
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="ping_times" value="1" />
 							<input type="hidden" name="next_page" value="Diagnostics.asp" />
-							<h2><script type="text/javascript">Capture(diag.h2)</script></h2>
+							<h2><% tran("diag.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(diag.legend)</script></legend>
+								<legend><% tran("diag.legend"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(diag.cmd)</script></div>
+									<div class="label"><% tran("diag.cmd"); %></div>
 									<textarea id="ping_ip" name="ping_ip" rows="6" cols="40" style="font-family:Courier, Courier New"><% nvram_get("ping_ip"); %></textarea>
 								</div>
 						<script type="text/javascript">
@@ -116,7 +116,7 @@ function valid(F,I) {
 							
 							<% nvram_match("rc_startup", "", "<!--"); %>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(diag.startup)</script></legend>
+								<legend><% tran("diag.startup"); %></legend>
 								<pre id="startup" style="margin:0"><% nvram_get("rc_startup"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">document.write("<input type=\"button\" name=\"button_start\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('startup').firstChild.data\" />")</script>
@@ -126,7 +126,7 @@ function valid(F,I) {
 							<% nvram_match("rc_startup", "", "-->"); %>
 							<% nvram_match("rc_firewall", "", "<!--"); %>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(diag.firewall)</script></legend>
+								<legend><% tran("diag.firewall"); %></legend>
 								<pre id="firewall" style="margin:0"><% nvram_get("rc_firewall"); %></pre><br />
 								<div class="center">
 									<script type="text/javascript">document.write("<input type=\"button\" name=\"button_firewall\" value=\"" + sbutton.cptotext + "\" onclick=\"this.form.ping_ip.value = document.getElementById('firewall').firstChild.data\" />")</script>
@@ -144,19 +144,19 @@ function valid(F,I) {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(diag.cmd)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hdiag.right2)</script></dd>
+							<dt class="term"><% tran("diag.cmd"); %>:</dt>
+							<dd class="definition"><% tran("hdiag.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HDiagnostics.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HDiagnostics.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
