@@ -58,7 +58,7 @@ function init()
 		<div class="message">
 			<div>
 			<form>
-            	<script type="text/javascript">Capture(success.success_reboot)</script><br /><br />
+            	<% tran("success.success_reboot"); %><br /><br />
 	            	<div align="center">
 	            		<script type="text/javascript">
 	            			var bar1 = createBar(500,15,100,15,my_tab.scroll_count,"to_submit()");
@@ -67,10 +67,10 @@ function init()
 	            	</div>
 	            	<div id="mess" style="display:none"><br /><br />
 	            		<div style="text-align:left">
-							<script type="text/javascript">Capture(success.alert1)</script>
+							<% tran("success.alert1"); %>
 	            			<ul>
-	            				<li><script type="text/javascript">Capture(success.alert2)</script></li>
-	            				<li><script type="text/javascript">Capture(success.alert3)</script></li>
+	            				<li><% tran("success.alert2"); %></li>
+	            				<li><% tran("success.alert3"); %></li>
 	            			</ul>
 	            		</div>
 		            	<script type="text/javascript">

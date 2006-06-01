@@ -17,14 +17,14 @@ document.title = "<% nvram_get("router_name"); %>" + log_out.titl;
 	<body>
 		<div class="popup">
 			<form>
-				<h2><script type="text/javascript">Capture(log_out.h2)</script></h2>
+				<h2><% tran("log_out.h2"); %></h2>
 				<table class="table">
 					<tr>
-						<th><script type="text/javascript">Capture(log_out.th_lanip)</script></th>
-						<th><script type="text/javascript">Capture(log_out.th_wanip)</script></th>
-						<th><script type="text/javascript">Capture(share.proto)</script></th>
-						<th><script type="text/javascript">Capture(log_out.th_port)</script></th>
-						<th><script type="text/javascript">Capture(share.rule)</script></th>
+						<th><% tran("log_out.th_lanip"); %></th>
+						<th><% tran("log_out.th_wanip"); %></th>
+						<th><% tran("share.proto"); %></th>
+						<th><% tran("log_out.th_port"); %></th>
+						<th><% tran("share.rule"); %></th>
 					</tr>
 					<% dumplog("outgoing"); %>
 				</table><br />
