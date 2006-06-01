@@ -50,7 +50,7 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
 {
   // tofu12
 
-  if (nvram_invmatch("wan_proto", "dhcp")) 
+  if (nvram_invmatch ("wan_proto", "dhcp"))
     return;
 
   long exp;
@@ -59,16 +59,16 @@ ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv)
   long n;
 
   exp = 0;
-  if (file_to_buf("/tmp/udhcpc.expires", buf, sizeof(buf))) 
-  {
-    n = atol(buf);
-    if (n > 0)
-      {
-        sysinfo(&si);
-        exp = n - si.uptime;
-      }
-  }
-  websWrite(wp, dhcp_reltime(buf, exp));
+  if (file_to_buf ("/tmp/udhcpc.expires", buf, sizeof (buf)))
+    {
+      n = atol (buf);
+      if (n > 0)
+	{
+	  sysinfo (&si);
+	  exp = n - si.uptime;
+	}
+    }
+  websWrite (wp, dhcp_reltime (buf, exp));
 
   return;
 }
