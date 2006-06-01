@@ -17,13 +17,13 @@ document.title = "<% nvram_get("router_name"); %>" + routetbl.titl;
 
 	<body>
 		<form>
-			<h2><script type="text/javascript">Capture(routetbl.h2)</script></h2>
+			<h2><% tran("routetbl.h2"); %></h2>
 			<table>
 				<tr>
-					<th><script type="text/javascript">Capture(routetbl.th1)</script></th>
-					<th><script type="text/javascript">Capture(share.subnet)</script></th>
-					<th><script type="text/javascript">Capture(share.gateway)</script></th>
-					<th><script type="text/javascript">Capture(share.intrface)</script></th>
+					<th><% tran("routetbl.th1"); %></th>
+					<th><% tran("share.subnet"); %></th>
+					<th><% tran("share.gateway"); %></th>
+					<th><% tran("share.intrface"); %></th>
 				</tr>
 				<script language="JavaScript">
 					var table = new Array(<% dump_route_table(""); %>);

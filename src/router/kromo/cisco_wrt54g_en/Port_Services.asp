@@ -269,13 +269,13 @@ addEvent(window, "unload", function() {
 		<input type="hidden" name="services_length6" />
 		<input type="hidden" name="services_length7" />
 		<div>
-		    <h2><script type="text/javascript">Capture(portserv.h2)</script></h2>
+		    <h2><% tran("portserv.h2"); %></h2>
 			<div class="setting">
-				<div class="label"><script type="text/javascript">Capture(share.srv)</script></div>
+				<div class="label"><% tran("share.srv"); %></div>
 				<input name="Add_Service_Name" size="12" maxlength="18" onblur="valid_name(this,share.srv)" />
 			</div>
 			<div class="setting">
-				<div class="label"><script type="text/javascript">Capture(share.proto)</script></div>
+				<div class="label"><% tran("share.proto"); %></div>
 				<select name="Add_Service_Protocol" onchange="onChange_Prot(Add_Service_Protocol.options[Add_Service_Protocol.selectedIndex].value)" >
 					<option value="1">ICMP</option>
 					<option value="6">TCP</option>
@@ -286,7 +286,7 @@ addEvent(window, "unload", function() {
 				</select>
 			</div>
 			<div class="setting">
-				<div class="label"><script type="text/javascript">Capture(share.port_range)</script></div>
+				<div class="label"><% tran("share.port_range"); %></div>
 				<input name="Add_Service_Port_S" size="5" maxlength="5" onblur="valid_range(this,1,65535,share.port_range)" class="num" value="0" /> ~ <input name="Add_Service_Port_E" size="5" maxlength="5" onblur="valid_range(this,1,65535,share.port_range)" class="num" value="0" />
 			</div>
 				<div class="setting">
