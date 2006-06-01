@@ -62,8 +62,6 @@ gboolean handle_read( GIOChannel *sock, GIOCondition cond, http_request *h ) {
         // NOCAT_GATEWAY_PASSWORD with a password as defined in the nocat conf
         // NOTE: sniffing could reveal the password
         if (client_peer_ip = HEADER("NOCAT_REMOTE_ADDR")) g_strncpy(h->peer_ip,client_peer_ip,16);
-        }
-        
 	if (CONFd("Verbosity") >= 6) g_message( "handle_read: Request is OK, passing to handle_request");
         handle_request(h);
     }
