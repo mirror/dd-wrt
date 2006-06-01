@@ -387,26 +387,26 @@ function init()
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.setup)</script></span>
+								<li class="current"><span><% tran("bmenu.setup"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><span><script type="text/javascript">Capture(bmenu.setupbasic)</script></span></li>
-											<li><a href="DDNS.asp"><script type="text/javascript">Capture(bmenu.setupddns)</script></a></li>
-											<li><a href="WanMAC.asp"><script type="text/javascript">Capture(bmenu.setupmacclone)</script></a></li>
-	  										<li><a href="Routing.asp"><script type="text/javascript">Capture(bmenu.setuprouting)</script></a></li>
-	  										<li><a href="Vlan.asp"><script type="text/javascript">Capture(bmenu.setupvlan)</script></a></li>
+											<li><span><% tran("bmenu.setupbasic"); %></span></li>
+											<li><a href="DDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
+											<li><a href="WanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
+	  										<li><a href="Routing.asp"><% tran("bmenu.setuprouting"); %></a></li>
+	  										<li><a href="Vlan.asp"><% tran("bmenu.setupvlan"); %></a></li>
   										</ul>
   									</div>
   								</li>
-  								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+  								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -428,38 +428,38 @@ function init()
 							<% nvram_match("wl_mode", "wet", "<!--"); %>
 							<h2><% nvram_else_match("wl_mode", "ap", "<script type="text/javascript">Capture(idx.h2)</script>", "<script type="text/javascript">Capture(idx.h22)</script>"); %></h2>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(idx.legend)</script></legend>
+								<legend><% tran("idx.legend"); %></legend>
 								<div class="setting">
-							    	<div class="label"><script type="text/javascript">Capture(idx.conn_type)</script></div>
+							    	<div class="label"><% tran("idx.conn_type"); %></div>
 							    	<select name="wan_proto" onchange="SelWAN(this.form.wan_proto.selectedIndex,this.form)">
 									<% show_connectiontype(); %>
 									</select>
 								</div>
 								<% show_index_setting(); %>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx.stp)</script></div>
-									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_selmatch("lan_stp", "1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_selmatch("lan_stp", "0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
-									<span class="default"><script type="text/javascript">Capture(idx.stp_mess)</script></span>
+									<div class="label"><% tran("idx.stp"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="lan_stp" <% nvram_selmatch("lan_stp", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="lan_stp" <% nvram_selmatch("lan_stp", "0", "checked"); %> /><% tran("share.disable"); %>
+									<span class="default"><% tran("idx.stp_mess"); %></span>
 								</div>
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(idx.optional)</script></legend>
+								<legend><% tran("idx.optional"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.routername)</script></div>
+									<div class="label"><% tran("share.routername"); %></div>
 									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvram_get("router_name"); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
+									<div class="label"><% tran("share.hostname"); %></div>
 									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvram_get("wan_hostname"); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.domainname)</script></div>
+									<div class="label"><% tran("share.domainname"); %></div>
 									<input maxlength="79" name="wan_domain" size="20" onblur="valid_name(this,&#34;Domain%20name&#34;,SPACE_NO)" value="<% nvram_get("wan_domain"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx.mtu)</script></div>
+									<div class="label"><% tran("idx.mtu"); %></div>
 									<select name="mtu_enable" onchange="SelMTU(this.form.mtu_enable.selectedIndex,this.form)">
 										<option value="0" <% nvram_selmatch("mtu_enable", "0", "selected"); %>>Auto</option>
 										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("mtu_enable", "1", "selected"); %> >" + share.manual + "</option>");</script>
@@ -469,25 +469,25 @@ function init()
 							</fieldset><br />
 							<% nvram_match("wl_mode", "wet", "-->"); %>
 							
-							<h2><script type="text/javascript">Capture(idx.h23)</script></h2>
+							<h2><% tran("idx.h23"); %></h2>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(idx.routerip)</script></legend>
+								<legend><% tran("idx.routerip"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx.lanip)</script></div>
+									<div class="label"><% tran("idx.lanip"); %></div>
 									<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,223,'IP')" name="lan_ipaddr_0" value="<% get_single_ip("lan_ipaddr","0"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_1" value="<% get_single_ip("lan_ipaddr","1"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,0,255,'IP')" name="lan_ipaddr_2" value="<% get_single_ip("lan_ipaddr","2"); %>"/>.<input class="num" maxlength="3" size="3" onblur="valid_range(this,1,254,'IP')" name="lan_ipaddr_3" value="<% get_single_ip("lan_ipaddr","3"); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.subnet)</script></div>
+									<div class="label"><% tran("share.subnet"); %></div>
 									<input type="hidden" name="lan_netmask" value="4" />
 									<input class="num" maxlength="3" size="3" name="lan_netmask_0" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_1" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_2" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_netmask_3" onblur="valid_range(this,0,255,'Netmask')" value="<% get_single_ip("lan_netmask","3"); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.gateway)</script></div>
+									<div class="label"><% tran("share.gateway"); %></div>
 									<input type="hidden" name="lan_gateway" value="4" />
 									<input class="num" maxlength="3" size="3" name="lan_gateway_0" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("lan_gateway","0"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_1" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("lan_gateway","1"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_2" onblur="valid_range(this,0,255,share.gateway)" value="<% get_single_ip("lan_gateway","2"); %>"/>.<input class="num" maxlength="3" size="3" name="lan_gateway_3" onblur="valid_range(this,0,254,share.gateway)" value="<% get_single_ip("lan_gateway","3"); %>"/>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.localdns)</script></div>
+									<div class="label"><% tran("share.localdns"); %></div>
 									<input type="hidden" name="sv_localdns" value="4" />
 									<input class="num" maxlength="3" size="3" name="sv_localdns_0" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","0"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_1" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","1"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_2" onblur="valid_range(this,0,255,share.localdns)" value="<% get_single_ip("sv_localdns","2"); %>"/>.<input class="num" maxlength="3" size="3" name="sv_localdns_3" onblur="valid_range(this,0,254,share.localdns)" value="<% get_single_ip("sv_localdns","3"); %>"/>
 								</div>
@@ -497,9 +497,9 @@ function init()
 							<% show_dhcpd_settings(); %>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(idx.legend3)</script></legend>
+								<legend><% tran("idx.legend3"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx.timeset)</script></div>
+									<div class="label"><% tran("idx.timeset"); %></div>
 									<select name="time_zone" onchange="SelTime(this.form.time_zone.selectedIndex,this.form)">
 										<option value="-12 1 1" <% nvram_selmatch("time_zone", "-12 1 1", "selected"); %>>UTC-12:00 / none</option>
 										<option value="-12 1 2" <% nvram_selmatch("time_zone", "-12 1 2", "selected"); %>>UTC-12:00 / first Sun Apr - last Sun Oct</option>
@@ -652,7 +652,7 @@ function init()
 									</select>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(idx.localtime)</script></div>
+									<div class="label"><% tran("idx.localtime"); %></div>
 									<input class="spaceradio" type="checkbox" value="1" name="_daylight_time" <% nvram_checked("daylight_time", "1"); %> />
 								</div>
 							</fieldset><br />
@@ -667,36 +667,36 @@ function init()
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(idx.dhcp)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.hostname)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.domainname)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(idx.lanip)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.subnet)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right10)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_srv)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right12)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_start)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right14)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_maxusers)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right16)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(idx.legend3)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hidx.right18)</script></dd>
+							<dt class="term"><% tran("idx.dhcp"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right2"); %></dd>
+							<dt class="term"><% tran("share.hostname"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right4"); %></dd>
+							<dt class="term"><% tran("share.domainname"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right6"); %></dd>
+							<dt class="term"><% tran("idx.lanip"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right8"); %></dd>
+							<dt class="term"><% tran("share.subnet"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right10"); %></dd>
+							<dt class="term"><% tran("idx.dhcp_srv"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right12"); %></dd>
+							<dt class="term"><% tran("idx.dhcp_start"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right14"); %></dd>
+							<dt class="term"><% tran("idx.dhcp_maxusers"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right16"); %></dd>
+							<dt class="term"><% tran("idx.legend3"); %>:</dt>
+							<dd class="definition"><% tran("hidx.right18"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HSetup.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HSetup.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

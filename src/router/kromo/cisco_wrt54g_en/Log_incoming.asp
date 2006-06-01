@@ -17,13 +17,13 @@ document.title = "<% nvram_get("router_name"); %>" + log_in.titl;
 	<body>
 		<div class="popup">
 			<form>
-				<h2><script type="text/javascript">Capture(log_in.h2)</script></h2>
+				<h2><% tran("log_in.h2"); %></h2>
 				<table class="table">
 					<tr>
-						<th><script type="text/javascript">Capture(log_in.th_ip)</script></th>
-						<th><script type="text/javascript">Capture(share.proto)</script></th>
-						<th><script type="text/javascript">Capture(log_in.th_port)</script></th>
-						<th><script type="text/javascript">Capture(share.rule)</script></th>
+						<th><% tran("log_in.th_ip"); %></th>
+						<th><% tran("share.proto"); %></th>
+						<th><% tran("log_in.th_port"); %></th>
+						<th><% tran("share.rule"); %></th>
 					</tr>
 					<% dumplog("incoming"); %>
 				</table><br />
