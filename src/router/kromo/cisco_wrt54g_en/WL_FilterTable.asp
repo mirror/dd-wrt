@@ -41,10 +41,10 @@ function to_submit_mac(F) {
 			<input type="hidden" name="small_screen" />
 			<div id="main">
 				<div id="contentsInfo">
-					<h2><script type="text/javascript">Capture(wl_filter.h2)</script></h2>
+					<h2><% tran("wl_filter.h2"); %></h2>
 					<table width="100%" >
 						<tr>
-							<TD align="left"><script type="text/javascript">Capture(wl_filter.h3)</script></TD>
+							<TD align="left"><% tran("wl_filter.h3"); %></TD>
 							<TD align="right"><script type="text/javascript">document.write("<input type=\"button\" id=\"button4\" name=\"button5\" value=\"" + sbutton.wl_client_mac + "\" onclick=\"openWindow('WL_ActiveTable.asp', 650, 450)\" />")</script></TD>
 						</tr>
 					</table><br/>

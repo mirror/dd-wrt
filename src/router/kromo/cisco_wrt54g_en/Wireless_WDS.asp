@@ -97,27 +97,27 @@ addEvent(window, "load", function() {
                <div id="menu">
                   <div id="menuMain">
                      <ul id="menuMainList">
-                        <li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-                        <li class="current"><span><script type="text/javascript">Capture(bmenu.wireless)</script></span>
+                        <li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+                        <li class="current"><span><% tran("bmenu.wireless"); %></span>
                           <div id="menuSub">
                               <ul id="menuSubList">
-                                 <li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wirelessBasic)</script></a></li>
-                                 <li><a href="Wireless_radauth.asp"><script type="text/javascript">Capture(bmenu.wirelessRadius)</script></a></li>
-                                 <li><a href="WL_WPATable.asp"><script type="text/javascript">Capture(bmenu.wirelessSecurity)</script></a></li>
-                                 <li><a href="Wireless_MAC.asp"><script type="text/javascript">Capture(bmenu.wirelessMac)</script></a></li>
-                                 <li><a href="Wireless_Advanced.asp"><script type="text/javascript">Capture(bmenu.wirelessAdvanced)</script></a></li>
-                                 <li><span><script type="text/javascript">Capture(bmenu.wirelessWds)</script></span></li>
+                                 <li><a href="Wireless_Basic.asp"><% tran("bmenu.wirelessBasic"); %></a></li>
+                                 <li><a href="Wireless_radauth.asp"><% tran("bmenu.wirelessRadius"); %></a></li>
+                                 <li><a href="WL_WPATable.asp"><% tran("bmenu.wirelessSecurity"); %></a></li>
+                                 <li><a href="Wireless_MAC.asp"><% tran("bmenu.wirelessMac"); %></a></li>
+                                 <li><a href="Wireless_Advanced.asp"><% tran("bmenu.wirelessAdvanced"); %></a></li>
+                                 <li><span><% tran("bmenu.wirelessWds"); %></span></li>
                               </ul>
                            </div>
                         </li>
                         <% nvram_invmatch("sipgate","1","<!--"); %>
-                        <li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+                        <li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
                         <% nvram_invmatch("sipgate","1","-->"); %>
-                        <li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-                        <li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-                        <li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-                        <li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-                        <li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+                        <li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+                        <li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+                        <li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+                        <li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+                        <li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
                      </ul>
                   </div>
                </div>
@@ -130,12 +130,12 @@ addEvent(window, "load", function() {
                   	<input type="hidden" name="submit_type" />
                   	<input type="hidden" name="commit" value="1" />
                   	<input type="hidden" name="action" value="Apply" />
-                  	<h2><script type="text/javascript">Capture(wds.h2)</script></h2>
+                  	<h2><% tran("wds.h2"); %></h2>
                      <div>
                       <fieldset>
-                        <legend><script type="text/javascript">Capture(wds.legend)</script></legend>
+                        <legend><% tran("wds.legend"); %></legend>
                         <div class="setting">
-                           <div class="label"><script type="text/javascript">Capture(wds.wl_mac)</script></div><% nvram_get("wl0_hwaddr"); %>
+                           <div class="label"><% tran("wds.wl_mac"); %></div><% nvram_get("wl0_hwaddr"); %>
                         </div>
 
                         <div class="setting">
@@ -271,20 +271,20 @@ addEvent(window, "load", function() {
                         </fieldset>
                         <br/>
                         <fieldset>
-                          <legend><script type="text/javascript">Capture(wds.legend2)</script></legend>
+                          <legend><% tran("wds.legend2"); %></legend>
                         <div class="setting">
-                           <div class="label"><script type="text/javascript">Capture(wds.label)</script></div>
-                           <input type="radio" name="wl_lazywds" value="1" <% nvram_checked("wl_lazywds", "1"); %>><script type="text/javascript">Capture(share.enable)</script></input>
-                           <input type="radio" name="wl_lazywds" value="0" <% nvram_checked("wl_lazywds", "0"); %>><script type="text/javascript">Capture(share.disable)</script></input>
-                           <span class="default">(<script type="text/javascript">Capture(wds.lazy_default)</script>)</span>
+                           <div class="label"><% tran("wds.label"); %></div>
+                           <input type="radio" name="wl_lazywds" value="1" <% nvram_checked("wl_lazywds", "1"); %>><% tran("share.enable"); %></input>
+                           <input type="radio" name="wl_lazywds" value="0" <% nvram_checked("wl_lazywds", "0"); %>><% tran("share.disable"); %></input>
+                           <span class="default">(<% tran("wds.lazy_default"); %>)</span>
                         </div>
                         <div class="setting">
-                           <div class="label"><script type="text/javascript">Capture(wds.label2)</script></div>
-                           <input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_checked("wl_br1_enable", "1"); %> ><script type="text/javascript">Capture(share.enable)</script></input>
-                           <input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_checked("wl_br1_enable", "0"); %> ><script type="text/javascript">Capture(share.disable)</script></input>
+                           <div class="label"><% tran("wds.label2"); %></div>
+                           <input type="radio" name="wl_br1_enable" value="1" OnClick="SelSubnet(this.form,1)" <% nvram_checked("wl_br1_enable", "1"); %> ><% tran("share.enable"); %></input>
+                           <input type="radio" name="wl_br1_enable" value="0" OnClick="SelSubnet(this.form,0)" <% nvram_checked("wl_br1_enable", "0"); %> ><% tran("share.disable"); %></input>
                         </div>
                         <div class="setting">
-                           <div class="label"><script type="text/javascript">Capture(share.nat)</script></div>
+                           <div class="label"><% tran("share.nat"); %></div>
                            <select name="wl_br1_nat">
                               <script type="text/javascript">document.write("<option value='<% nvram_match("wl_br1_nat", "0", "selected"); %>'>" + share.disable + "</option>");</script>
                               <script type="text/javascript">document.write("<option value='<% nvram_match("wl_br1_nat", "1", "selected"); %>'>" + wds.nat1 + "</option>");</script>
@@ -292,12 +292,12 @@ addEvent(window, "load", function() {
                            </select>
                         </div>
                         <div class="setting">
-                           <div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
+                           <div class="label"><% tran("share.ip"); %></div>
                            <input type="hidden" name="wl_br1_ipaddr" value="4" />
                            <input class="num" name="wl_br1_ipaddr0" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value="<% get_br1_ip("0"); %>" />.<input class="num" name="wl_br1_ipaddr1" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value="<% get_br1_ip("1"); %>" />.<input class="num" name="wl_br1_ipaddr2" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value="<% get_br1_ip("2"); %>" />.<input class="num" name="wl_br1_ipaddr3" size="3" maxlength="3" onblur="valid_range(this,0,255,share.ip)" value="<% get_br1_ip("3"); %>" />
                         </div>
                         <div class="setting">
-                           <div class="label"><script type="text/javascript">Capture(share.subnet)</script></div>
+                           <div class="label"><% tran("share.subnet"); %></div>
                            <input type="hidden" name="wl_br1_netmask" value="4" /><input class="num" name="wl_br1_netmask0" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<% get_br1_netmask("0"); %>" />.<input class="num" name="wl_br1_netmask1" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<% get_br1_netmask("1"); %>" />.<input class="num" name="wl_br1_netmask2" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<% get_br1_netmask("2"); %>" />.<input class="num" name="wl_br1_netmask3" size="3" maxlength="3" onblur="valid_range(this,0,255,share.subnet)" value="<% get_br1_netmask("3"); %>" />
                         </div>
                      </fieldset>
@@ -312,15 +312,15 @@ addEvent(window, "load", function() {
             </div>
 				<div id="helpContainer">
 					<div id="help">
-						<div id="logo"><h2><script type="text/javascript">Capture(share.help)</script></h2></div>
+						<div id="logo"><h2><% tran("share.help"); %></h2></div>
 						<br />
-						<a href="javascript:openHelpWindow('HWDS.asp')"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HWDS.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
