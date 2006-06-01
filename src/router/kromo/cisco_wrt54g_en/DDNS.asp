@@ -90,26 +90,26 @@ function SelDDNS(num,F) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.setup)</script></span>
+								<li class="current"><span><% tran("bmenu.setup"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-	  										<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setupbasic)</script></a></li>
-	  										<li><span><script type="text/javascript">Capture(bmenu.setupddns)</script></span></li>
-	  										<li><a href="WanMAC.asp"><script type="text/javascript">Capture(bmenu.setupmacclone)</script></a></li>
-	  										<li><a href="Routing.asp"><script type="text/javascript">Capture(bmenu.setuprouting)</script></a></li>
-	  										<li><a href="Vlan.asp"><script type="text/javascript">Capture(bmenu.setupvlan)</script></a></li>
+	  										<li><a href="index.asp"><% tran("bmenu.setupbasic"); %></a></li>
+	  										<li><span><% tran("bmenu.setupddns"); %></span></li>
+	  										<li><a href="WanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
+	  										<li><a href="Routing.asp"><% tran("bmenu.setuprouting"); %></a></li>
+	  										<li><a href="Vlan.asp"><% tran("bmenu.setupvlan"); %></a></li>
   										</ul>
   									</div>
   								</li>
-  								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+  								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -121,12 +121,12 @@ function SelDDNS(num,F) {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
-							<h2><script type="text/javascript">Capture(ddns.h2)</script></h2>
+							<h2><% tran("ddns.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(ddns.legend)</script></legend>
+								<legend><% tran("ddns.legend"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(ddns.srv)</script></div>
+									<div class="label"><% tran("ddns.srv"); %></div>
 									<select name="ddns_enable" onchange="SelDDNS(this.form.ddns_enable.selectedIndex,this.form)">
 										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("ddns_enable", "0", "selected"); %> >" + share.disable + "</option>");</script>
 										<option value="1" <% nvram_selmatch("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
@@ -138,15 +138,15 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.usrname)</script></div>
+									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
+									<div class="label"><% tran("share.passwd"); %></div>
 									<input type="password" name="ddns_passwd" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd","","d6nw5v1x2pc7st9m"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
+									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname"); %>" />
 								</div>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
@@ -154,15 +154,15 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(ddns.emailaddr)</script></div>
+									<div class="label"><% tran("ddns.emailaddr"); %></div>
 									<input name="ddns_username_2" size="30" maxlength="32" onblur="valid_name(this,ddns.emailaddr)" value="<% nvram_get("ddns_username_2"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
+									<div class="label"><% tran("share.passwd"); %></div>
 									<input type="password" name="ddns_passwd_2" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_2","","d6nw5v1x2pc7st9m"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.domainname)</script></div>
+									<div class="label"><% tran("share.domainname"); %></div>
 									<input name="ddns_hostname_2" size="42" maxlength="48" onblur="valid_name(this,share.domainname)" value="<% nvram_get("ddns_hostname_2"); %>" />
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
@@ -170,21 +170,21 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.usrname)</script></div>
+									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username_3" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_3"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.passwd)</script></div>
+									<div class="label"><% tran("share.passwd"); %></div>
 									<input type="password" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_3","","d6nw5v1x2pc7st9m"); %>" />
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.hostname)</script></div>
+									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_3" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_3"); %>" />
 								</div>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(ddns.typ)</script></div>
+									<div class="label"><% tran("ddns.typ"); %></div>
 									<select name="ddns_dyndnstype">
 										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype", "1", "selected"); %> >" + ddns.dynamic + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");</script>
@@ -192,18 +192,18 @@ function SelDDNS(num,F) {
 									</select>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(ddns.wildcard)</script></div>
+									<div class="label"><% tran("ddns.wildcard"); %></div>
 									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_checked("ddns_wildcard", "1"); %> />
 								</div>
 							</fieldset><br />
 							<fieldset>
-								<legend><script type="text/javascript">Capture(ddns.statu)</script></legend>
+								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.statu)</script></div>
+									<div class="label"><% tran("share.statu"); %></div>
 									<script type="text/javascript">Capture(<% show_ddns_status(); %>)</script>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.interipaddr)</script></div>
+									<div class="label"><% tran("share.interipaddr"); %></div>
 									<% show_ddns_ip(); %>&nbsp;
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
@@ -218,19 +218,19 @@ function SelDDNS(num,F) {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(ddns.srv)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hddns.right2)</script></dd>
+							<dt class="term"><% tran("ddns.srv"); %>:</dt>
+							<dd class="definition"><% tran("hddns.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HDDNS.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HDDNS.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

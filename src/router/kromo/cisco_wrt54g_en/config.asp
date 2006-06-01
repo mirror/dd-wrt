@@ -34,31 +34,31 @@ function to_submit(F) {
 						<div id="menu">
 							<div id="menuMain">
 								<ul id="menuMainList">
-									<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-									<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+									<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+									<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 									<% nvram_invmatch("sipgate","1","<!--"); %>
-									<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+									<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 									<% nvram_invmatch("sipgate","1","-->"); %>
-									<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-									<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-									<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-									<li class="current"><span><script type="text/javascript">Capture(bmenu.admin)</script></span>
+									<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+									<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+									<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+									<li class="current"><span><% tran("bmenu.admin"); %></span>
 										<div id="menuSub">
 											<ul id="menuSubList">
-												<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.adminManagement)</script></a></li>
-												<li><a href="Hotspot.asp"><script type="text/javascript">Capture(bmenu.adminHotspot)</script></a></li>
-												<li><a href="Services.asp"><script type="text/javascript">Capture(bmenu.adminServices)</script></a></li>
-												<li><a href="Alive.asp"><script type="text/javascript">Capture(bmenu.adminAlive)</script></a></li>
-												<li><a href="Log.asp"><script type="text/javascript">Capture(bmenu.adminLog)</script></a></li>
-												<li><a href="Diagnostics.asp"><script type="text/javascript">Capture(bmenu.adminDiag)</script></a></li>
-												<li><a href="Wol.asp"><script type="text/javascript">Capture(bmenu.adminWol)</script></a></li>
-												<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
-												<li><a href="Upgrade.asp"><script type="text/javascript">Capture(bmenu.adminUpgrade)</script></a></li>
-											    <li><span><script type="text/javascript">Capture(bmenu.adminBackup)</script></span></li>
+												<li><a href="Management.asp"><% tran("bmenu.adminManagement"); %></a></li>
+												<li><a href="Hotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
+												<li><a href="Services.asp"><% tran("bmenu.adminServices"); %></a></li>
+												<li><a href="Alive.asp"><% tran("bmenu.adminAlive"); %></a></li>
+												<li><a href="Log.asp"><% tran("bmenu.adminLog"); %></a></li>
+												<li><a href="Diagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
+												<li><a href="Wol.asp"><% tran("bmenu.adminWol"); %></a></li>
+												<li><a href="Factory_Defaults.asp"><% tran("bmenu.adminFactory"); %></a></li>
+												<li><a href="Upgrade.asp"><% tran("bmenu.adminUpgrade"); %></a></li>
+											    <li><span><% tran("bmenu.adminBackup"); %></span></li>
 											</ul>
 										</div>
 									</li>
-								    <li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								    <li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 								</ul>
 							</div>
 						</div>
@@ -66,27 +66,27 @@ function to_submit(F) {
 				    <div id="main">
 					<div id="contents">
 						<form name="nvramrestore" action="nvram.cgi" method="POST" encType="multipart/form-data">
-							<h2><script type="text/javascript">Capture(config.h2)</script></h2>
+							<h2><% tran("config.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(config.legend)</script></legend>
+								<legend><% tran("config.legend"); %></legend>
 								<div class="setting">
-									<script type="text/javascript">Capture(config.mess1)</script>
+									<% tran("config.mess1"); %>
 								</div>
 							</fieldset><br />
 							
-							<h2><script type="text/javascript">Capture(config.h22)</script></h2>
+							<h2><% tran("config.h22"); %></h2>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(config.legend2)</script></legend>
+								<legend><% tran("config.legend2"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(config.mess2)</script></div>
+									<div class="label"><% tran("config.mess2"); %></div>
 									<input type="file" name="file" size="40" />
 								</div>
 							</fieldset><br />
 							
 							<div class="warning">
-								<p><b><script type="text/javascript">Capture(config.mess3)</script></b></p>
-								<p><script type="text/javascript">Capture(config.mess4)</script></p>
+								<p><b><% tran("config.mess3"); %></b></p>
+								<p><% tran("config.mess4"); %></p>
 							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"B1\" value=\"" + sbutton.backup + "\" onclick=\"window.location.href='/nvrambak.bin'\" />")</script>
@@ -98,22 +98,22 @@ function to_submit(F) {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(config.legend)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hconfig.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(config.legend2)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hconfig.right4)</script></dd>
+							<dt class="term"><% tran("config.legend"); %>:</dt>
+							<dd class="definition"><% tran("hconfig.right2"); %></dd>
+							<dt class="term"><% tran("config.legend2"); %>:</dt>
+							<dd class="definition"><% tran("hconfig.right4"); %></dd>
 						</dl>
 						<br />
-						<a href="javascript:openHelpWindow('HBackup.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HBackup.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

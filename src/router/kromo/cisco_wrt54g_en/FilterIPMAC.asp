@@ -47,9 +47,9 @@ function valid_macs_all(I) {
 			<input type="hidden" name="small_screen" />
 			<input type="hidden" name="filter_ip_value" />
 			<input type="hidden" name="filter_mac_value" />
-			<h2><script type="text/javascript">Capture(filterIP.h2)</script></h2>
+			<h2><% tran("filterIP.h2"); %></h2>
 			<div>
-				<h3><script type="text/javascript">Capture(filterIP.h3)</script></h3>
+				<h3><% tran("filterIP.h3"); %></h3>
 				<div class="setting">
 					<div class="label">MAC 01</div>
 					<input class="num" size="20" maxlength="17" name="mac0" onblur="valid_macs_all(this)" value="<% filter_mac_get(0); %>" />
@@ -85,7 +85,7 @@ function valid_macs_all(I) {
 			</div>
 			<br />
 			<div>
-            	<h3><script type="text/javascript">Capture(filterIP.h32)</script></h3>
+            	<h3><% tran("filterIP.h32"); %></h3>
 				<div class="setting">
 					<div class="label">IP 01</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip0" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip",0); %>" />
@@ -113,13 +113,13 @@ function valid_macs_all(I) {
 			</div>
 			<br />
 			<div>
-				<h3><script type="text/javascript">Capture(filterIP.h33)</script></h3>
+				<h3><% tran("filterIP.h33"); %></h3>
 				<div class="setting">
-					<div class="label"><script type="text/javascript">Capture(filterIP.ip_range)</script> 01</div>
+					<div class="label"><% tran("filterIP.ip_range"); %> 01</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip_range0_0" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range0_0",6); %>" />~<input class="num" size="3" maxlength="3" name="ip_range0_1" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range0_1",6); %>" />
 				</div>
 				<div class="setting">
-					<div class="label"><script type="text/javascript">Capture(filterIP.ip_range)</script> 02</div>
+					<div class="label"><% tran("filterIP.ip_range"); %> 02</div>
 					<% prefix_ip_get("lan_ipaddr",1); %><input class="num" size="3" maxlength="3" name="ip_range1_0" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range1_0",7); %>" />~<input class="num" size="3" maxlength="3" name="ip_range1_1" onblur="valid_range(this,0,254,'IP')" value="<% filter_ip_get("ip_range1_1",7); %>" />
 				</div>
 			</div>

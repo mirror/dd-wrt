@@ -40,29 +40,29 @@ addEvent(window, "load", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.applications)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li class="current"><span><% tran("bmenu.applications"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
-											<li><a href="ForwardSpec.asp"><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></a></li>
-											<li><a href="Triggering.asp"><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></a></li>
+											<li><a href="Forward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+											<li><a href="ForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
+											<li><a href="Triggering.asp"><% tran("bmenu.applicationsptriggering"); %></a></li>
 											<% nvram_match("dist_type", "micro", "<!--"); %>
-											<li><a href="UPnP.asp"><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></a></li>
+											<li><a href="UPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>
 											<% nvram_match("dist_type", "micro", "-->"); %>
-	  										<li><span><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></span></li>
-	  										<li><a href="QoS.asp"><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></a></li>
+	  										<li><span><% tran("bmenu.applicationsDMZ"); %></span></li>
+	  										<li><a href="QoS.asp"><% tran("bmenu.applicationsQoS"); %></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -73,17 +73,17 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="submit_button" value="DMZ" />
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="action" value="Apply" />
-							<h2><script type="text/javascript">Capture(dmz.h2)</script></h2>
+							<h2><% tran("dmz.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(dmz.legend)</script></legend>
+								<legend><% tran("dmz.legend"); %></legend>
 	                			<div class="setting">
-	                				<div class="label"><script type="text/javascript">Capture(dmz.serv)</script></div>
-	                				<input class="spaceradio" type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-	                				<input class="spaceradio" type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+	                				<div class="label"><% tran("dmz.serv"); %></div>
+	                				<input class="spaceradio" type="radio" value="1" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+	                				<input class="spaceradio" type="radio" value="0" name="dmz_enable" onclick="setDMZ(this.value)" <% nvram_checked("dmz_enable", "0"); %> /><% tran("share.disable"); %>
 	                			</div>
 	                			<div class="setting">
-	                				<div class="label"><script type="text/javascript">Capture(dmz.host)</script></div>
+	                				<div class="label"><% tran("dmz.host"); %></div>
 	                				<% prefix_ip_get("lan_ipaddr",1); %>
 	                				<input class="num" maxLength="3" size="3" name="dmz_ipaddr" value="<% nvram_get("dmz_ipaddr"); %>" onblur="valid_range(this,1,254,dmz.host)" />
 	                			</div>
@@ -99,19 +99,19 @@ addEvent(window, "load", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(dmz.legend)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hdmz.right2)</script></dd>
+							<dt class="term"><% tran("dmz.legend"); %>:</dt>
+							<dd class="definition"><% tran("hdmz.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HDMZ.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HDMZ.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
