@@ -454,23 +454,19 @@ static int
 do_client_check (void)
 {
   FILE *fp = NULL;
-  char buf[8192];
+  char buf[1024];
 //  char mac[512];
   int len;
-  memset(buf,0,8192);
-  getassoclist(get_wdev(),buf);
-  struct maclist* maclist = (struct maclist*)buf;
-   
 
-  //system ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
-  //if ((fp = fopen ("/tmp/.xassocx", "r")) == NULL)
-  //    return -1;
+  system ("/usr/sbin/wl assoc 2>&1 > /tmp/.xassocx");
+  if ((fp = fopen ("/tmp/.xassocx", "r")) == NULL)
+    return -1;
 
-  //len = fread (buf, 1, 1023, fp);
+  len = fread (buf, 1, 1023, fp);
 
-  //buf[len] = 0;
- 
-  if (maclist->count > 0)
+  buf[len] = 0;
+
+  if (len > 0 && strstr (buf, "Not associated."))
     {
 #ifdef HAVE_DDLAN
 
@@ -495,7 +491,7 @@ do_client_check (void)
       /* let wl do this for us (no use in reinventing the wheel) */
       //eval("/usr/sbin/wlconf", get_wdev(), "down");
       //eval("/usr/sbin/wlconf", get_wdev(), "up"); 
-      eval ("wl", "ssid", nvram_safe_get ("wl_ssid"));
+      eval ("wl", "join", nvram_safe_get ("wl_ssid"));
 
 //      join(nvram_get("wl_ssid"));
       fclose (fp);
