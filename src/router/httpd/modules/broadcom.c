@@ -3503,8 +3503,7 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");
-		 }
+		 websSetRealm ("DD-WRT Router OS Core");}
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3714,25 +3713,25 @@ static char *
 getLanguageName ()
 {
   char *lang = nvram_get ("language");
-      cprintf("get language %s\n",lang); 
-  char *l = malloc(60);
+  cprintf ("get language %s\n", lang);
+  char *l = malloc (60);
   if (lang == NULL)
     {
-      cprintf("return default\n");
-      sprintf(l,"lang_pack/english.js");
+      cprintf ("return default\n");
+      sprintf (l, "lang_pack/english.js");
       return l;
     }
   sprintf (l, "lang_pack/%s.js", lang);
-  cprintf("return %s\n",l);
+  cprintf ("return %s\n", l);
   return l;
 }
 
 static void
 do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
 {
-char *lang = getLanguageName ();
+  char *lang = getLanguageName ();
   do_file (lang, stream);
-free(lang);
+  free (lang);
   return;
 }
 
@@ -3743,7 +3742,7 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
   char *lang = getLanguageName ();
   char buf[64];
   sprintf (buf, "/www/%s", lang);
-  free(lang);
+  free (lang);
 // lang_charset.set
   char *sstring = "lang_charset.set=\"";
   char s[128];
@@ -3751,29 +3750,31 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
   while (!feof (in))
     {
       fscanf (in, "%s", s);
-      cprintf("lang scan %s\n",s); 
+      cprintf ("lang scan %s\n", s);
       char *cmp = strstr (s, sstring);
-      cprintf("strstr %s\n",cmp);
+      cprintf ("strstr %s\n", cmp);
       if (cmp)
 	{
 	  fclose (in);
 	  cmp += strlen (sstring);
-	  cprintf("source %s\n",cmp);
+	  cprintf ("source %s\n", cmp);
 	  char *t2 = strstr (cmp, "\"");
 	  if (t2 == NULL)
 	    {
-	    cprintf(" length was null\n");
-	    return;		//error (typo?)
+	      cprintf (" length was null\n");
+	      return;		//error (typo?)
 	    }
 	  int len = t2 - cmp;
-	  cprintf("length = %d\n",len);
+	  cprintf ("length = %d\n", len);
 	  if (len < 0)
 	    return;		//error (unknown)
 	  char dest[128];
 	  strncpy (dest, cmp, len);
 	  dest[len] = 0;
-	  cprintf("destination %s\n",dest);
-	  websWrite (wp, "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />",dest);
+	  cprintf ("destination %s\n", dest);
+	  websWrite (wp,
+		     "<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />",
+		     dest);
 	  return;
 	}
     }
@@ -3879,8 +3880,8 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *javascript;
   int args;
-  args=ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
-  if (args<2)
+  args = ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
+  if (args < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
@@ -3888,11 +3889,24 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match (name, match))
     {
-      if (args==3 && javascript!=NULL && !strcmp (javascript, "js"))
+      if (args == 3 && javascript != NULL && !strcmp (javascript, "js"))
 	websWrite (wp, "selected=\\\"selected\\\"");
       else
 	websWrite (wp, "selected=\"selected\"");
     }
+  return;
+}
+
+static void
+ej_tran (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *name;
+  int args;
+  args = ejArgs (argc, argv, "%s", &name);
+  if (args != 1)
+    return;
+  websWrite (wp, "<script type=\"text/javascript\">Capture(%s)</script>",
+	     name);
   return;
 }
 
@@ -3908,26 +3922,27 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name, *match, *javascript;
   int args;
-cprintf("args\n");
-  args=ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
-  if (args<2)
+  cprintf ("args\n");
+  args = ejArgs (argc, argv, "%s %s %s", &name, &match, &javascript);
+  if (args < 2)
     {
       websError (wp, 400, "Insufficient args\n");
       return;
     }
-cprintf("match()\n");
+  cprintf ("match()\n");
   if (nvram_match (name, match))
     {
-    cprintf("javascript check\n");
-      if (args==3 && javascript!=NULL && !strcmp (javascript, "js"))
-        {
-	cprintf("write js\n");
-	websWrite (wp, "checked=\\\"checked\\\"");
-        
+      cprintf ("javascript check\n");
+      if (args == 3 && javascript != NULL && !strcmp (javascript, "js"))
+	{
+	  cprintf ("write js\n");
+	  websWrite (wp, "checked=\\\"checked\\\"");
+
 	}
-        else{
-	cprintf("write non js\n");
-	websWrite (wp, "checked=\"checked\"");
+      else
+	{
+	  cprintf ("write non js\n");
+	  websWrite (wp, "checked=\"checked\"");
 	}
     }
 
@@ -3979,7 +3994,6 @@ tf_webWriteESCNV (webs_t wp, const char *nvname)
 struct ej_handler ej_handlers[] = {
   /* for all */
   {"nvram_get", ej_nvram_get},
-  {"nvram_real_get", ej_nvram_real_get},
 /*	{ "nvram_get_len", ej_nvram_get_len }, */
   {"nvram_selget", ej_nvram_selget},
   {"nvram_match", ej_nvram_match},
@@ -3987,10 +4001,12 @@ struct ej_handler ej_handlers[] = {
   {"nvram_selmatch", ej_nvram_selmatch},
   {"nvram_else_selmatch", ej_nvram_else_selmatch},
   {"nvram_else_match", ej_nvram_else_match},
+  {"tran", ej_tran},
   {"nvram_list", ej_nvram_list},
   {"nvram_mac_get", ej_nvram_mac_get},
   {"nvram_gozila_get", ej_nvram_gozila_get},
   {"nvram_status_get", ej_nvram_status_get},
+  {"nvram_real_get", ej_nvram_real_get},
   {"webs_get", ej_webs_get},
   {"support_match", ej_support_match},
   {"support_invmatch", ej_support_invmatch},
