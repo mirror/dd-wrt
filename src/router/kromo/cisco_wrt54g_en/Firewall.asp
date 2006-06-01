@@ -65,23 +65,23 @@ addEvent(window, "load", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.security)</script></span>
+								<li class="current"><span><% tran("bmenu.security"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><span><script type="text/javascript">Capture(bmenu.firwall)</script></span></li>
-											<li><a href="VPN.asp"><script type="text/javascript">Capture(bmenu.vpn)</script></a></li>
+											<li><span><% tran("bmenu.firwall"); %></span></li>
+											<li><a href="VPN.asp"><% tran("bmenu.vpn"); %></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -100,48 +100,48 @@ addEvent(window, "load", function() {
 						<input type="hidden" name="block_java" value="0" />
 						<input type="hidden" name="block_proxy" value="0" />
 						<input type="hidden" name="block_activex" value="0" />
-						<h2><script type="text/javascript">Capture(firewall.h2)</script></h2>
+						<h2><% tran("firewall.h2"); %></h2>
 						
 						<fieldset>
-							<legend><script type="text/javascript">Capture(firewall.legend)</script></legend>
+							<legend><% tran("firewall.legend"); %></legend>
 							<div class="setting">
-								<div class="label"><script type="text/javascript">Capture(firewall.firewall)</script></div>
-								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value)" ><script type="text/javascript">Capture(share.enable)</script></input>&nbsp;
-								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value)" ><script type="text/javascript">Capture(share.disable)</script></input>
+								<div class="label"><% tran("firewall.firewall"); %></div>
+								<input class="spaceradio" type="radio" value="on" name="filter" <% nvram_checked("filter", "on"); %> onclick="setFirewall(this.value)" ><% tran("share.enable"); %></input>&nbsp;
+								<input class="spaceradio" type="radio" value="off" name="filter" <% nvram_checked("filter", "off"); %> onclick="setFirewall(this.value)" ><% tran("share.disable"); %></input>
 							</div>
 						</fieldset><br />
 						
 						<fieldset>
-							<legend><script type="text/javascript">Capture(firewall.legend2)</script></legend>
+							<legend><% tran("firewall.legend2"); %></legend>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvram_checked("block_proxy", "1"); %> ><script type="text/javascript">Capture(firewall.proxy)</script></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_proxy" <% nvram_checked("block_proxy", "1"); %> ><% tran("firewall.proxy"); %></input>
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvram_checked("block_cookie", "1"); %> ><script type="text/javascript">Capture(firewall.cookies)</script></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_cookie" <% nvram_checked("block_cookie", "1"); %> ><% tran("firewall.cookies"); %></input>
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvram_checked("block_java", "1"); %> ><script type="text/javascript">Capture(firewall.applet)</script></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_java" <% nvram_checked("block_java", "1"); %> ><% tran("firewall.applet"); %></input>
 								</div>
 								<div class="setting">
-									<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvram_checked("block_activex", "1"); %> ><script type="text/javascript">Capture(firewall.activex)</script></input>
+									<input class="spaceradio" type="checkbox" value="1" name="_block_activex" <% nvram_checked("block_activex", "1"); %> ><% tran("firewall.activex"); %></input>
 								</div>
 							</fieldset><br />
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(firewall.legend3)</script></legend>
+								<legend><% tran("firewall.legend3"); %></legend>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> ><script type="text/javascript">Capture(firewall.ping)</script></input>
+										<input class="spaceradio" type="checkbox" value="1" name="_block_wan" <% nvram_checked("block_wan", "1"); %> ><% tran("firewall.ping"); %></input>
 									</div>
 									<% support_invmatch("MULTICAST_SUPPORT", "1", "<!--"); %>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "0"); %> ><script type="text/javascript">Capture(firewall.muticast)</script></input>
+										<input class="spaceradio" type="checkbox" value="0" name="_block_multicast" <% nvram_checked("multicast_pass", "0"); %> ><% tran("firewall.muticast"); %></input>
 									</div>
 									<% support_invmatch("MULTICAST_SUPPORT", "1", "-->"); %>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="0" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> ><script type="text/javascript">Capture(filter.nat)</script></input>
+										<input class="spaceradio" type="checkbox" value="0" name="_block_loopback" <% nvram_checked("block_loopback", "1"); %> ><% tran("filter.nat"); %></input>
 									</div>
 									<div class="setting">
-										<input class="spaceradio" type="checkbox" value="1" name="_ident_pass" <% nvram_checked("ident_pass", "0"); %> ><script type="text/javascript">Capture(filter.port113)</script></input>
+										<input class="spaceradio" type="checkbox" value="1" name="_ident_pass" <% nvram_checked("ident_pass", "0"); %> ><% tran("filter.port113"); %></input>
 									</div>
 								</fieldset><br />
 								<div class="submitFooter">
@@ -154,19 +154,19 @@ addEvent(window, "load", function() {
 					<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(firewall.legend)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hfirewall.right2)</script></dd>
+							<dt class="term"><% tran("firewall.legend"); %>:</dt>
+							<dd class="definition"><% tran("hfirewall.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HFirewall.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HFirewall.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 			<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

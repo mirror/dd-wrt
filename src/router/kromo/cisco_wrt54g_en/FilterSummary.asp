@@ -28,15 +28,15 @@ function filter_del(F) {
 			<input type="hidden" name="submit_button" />
 			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="change_action" />
-			<h2><script type="text/javascript">Capture(filterSum.h2)</script></h2>
+			<h2><% tran("filterSum.h2"); %></h2>
 			<table>
 				<tbody>
 					<tr>
-						<th><script type="text/javascript">Capture(filterSum.polnum)</script></th>
-						<th><script type="text/javascript">Capture(filter.polname)</script></th>
-						<th><script type="text/javascript">Capture(filter.legend2)</script></th>
-						<th><script type="text/javascript">Capture(filterSum.polday)</script></th>
-						<th><script type="text/javascript">Capture(share.del)</script></th>
+						<th><% tran("filterSum.polnum"); %></th>
+						<th><% tran("filter.polname"); %></th>
+						<th><% tran("filter.legend2"); %></th>
+						<th><% tran("filterSum.polday"); %></th>
+						<th><% tran("share.del"); %></th>
 					</tr>
 					<% filter_summary_show(); %>
 					<tr>
