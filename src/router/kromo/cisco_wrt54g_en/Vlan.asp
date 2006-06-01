@@ -79,26 +79,26 @@ function init() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.setup)</script></span>
+								<li class="current"><span><% tran("bmenu.setup"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-	  										<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setupbasic)</script></a></li>
-											<li><a href="DDNS.asp"><script type="text/javascript">Capture(bmenu.setupddns)</script></a></li>
-											<li><a href="WanMAC.asp"><script type="text/javascript">Capture(bmenu.setupmacclone)</script></a></li>
-	  										<li><a href="Routing.asp"><script type="text/javascript">Capture(bmenu.setuprouting)</script></a></li>
-	  										<li><span><script type="text/javascript">Capture(bmenu.setupvlan)</script></span></li>
+	  										<li><a href="index.asp"><% tran("bmenu.setupbasic"); %></a></li>
+											<li><a href="DDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
+											<li><a href="WanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
+	  										<li><a href="Routing.asp"><% tran("bmenu.setuprouting"); %></a></li>
+	  										<li><span><% tran("bmenu.setupvlan"); %></span></li>
   										</ul>
   									</div>
   								</li>
-  								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+  								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -109,15 +109,15 @@ function init() {
 							<input type="hidden" name="submit_button" value="Vlan" />
 							<input type="hidden" name="action" value="Apply" />
 							<input type="hidden" name="commit" value="1" />
-							<h2><script type="text/javascript">Capture(vlan.h2)</script></h2>
+							<h2><% tran("vlan.h2"); %></h2>
 							<fieldset>
-							   <legend><script type="text/javascript">Capture(vlan.legend)</script></legend>
+							   <legend><% tran("vlan.legend"); %></legend>
 							   <table id="vlan" class="table center vlan">
   								<tbody>
   									<tr>
-  										<th rowspan="2"><script type="text/javascript">Capture(vlan.legend)</script></th>
-  										<th colspan="5"><script type="text/javascript">Capture(share.port)</script></th>
-  										<th rowspan="2"><script type="text/javascript">Capture(vlan.bridge)</script></th>
+  										<th rowspan="2"><% tran("vlan.legend"); %></th>
+  										<th colspan="5"><% tran("share.port"); %></th>
+  										<th rowspan="2"><% tran("vlan.bridge"); %></th>
   									</tr>
   									<tr>
   										<th>W</th>
@@ -141,16 +141,16 @@ function init() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<br />
-						<!-- <a href="javascript:openHelpWindow('HVlan.asp');"><script type="text/javascript">Capture(share.more)</script></a> -->
+						<!-- <a href="javascript:openHelpWindow('HVlan.asp');"><% tran("share.more"); %></a> -->
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

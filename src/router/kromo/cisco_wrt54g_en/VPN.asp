@@ -34,23 +34,23 @@ function to_submit(F) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.security)</script></span>
+								<li class="current"><span><% tran("bmenu.security"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.firwall)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.vpn)</script></span></li>
+											<li><a href="Firewall.asp"><% tran("bmenu.firwall"); %></a></li>
+											<li><span><% tran("bmenu.vpn"); %></span></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -60,24 +60,24 @@ function to_submit(F) {
 						<form action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button"/>
 							<input type="hidden" name="action"/>
-							<h2><script type="text/javascript">Capture(vpn.h2)</script></h2>
+							<h2><% tran("vpn.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(vpn.legend)</script></legend>
+								<legend><% tran("vpn.legend"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(vpn.ipsec)</script></div>
-									<input class="spaceradio" type="radio" value="1" name="ipsec_pass" <% nvram_checked("ipsec_pass","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="ipsec_pass" <% nvram_checked("ipsec_pass","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("vpn.ipsec"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="ipsec_pass" <% nvram_checked("ipsec_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="ipsec_pass" <% nvram_checked("ipsec_pass","0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(vpn.pptp)</script></div>
-									<input class="spaceradio" type="radio" value="1" name="pptp_pass" <% nvram_checked("pptp_pass","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="pptp_pass" <% nvram_checked("pptp_pass","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("vpn.pptp"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="pptp_pass" <% nvram_checked("pptp_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="pptp_pass" <% nvram_checked("pptp_pass","0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(vpn.l2tp)</script></div>
-									<input class="spaceradio" type="radio" value="1" name="l2tp_pass" <% nvram_checked("l2tp_pass","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="l2tp_pass" <% nvram_checked("l2tp_pass","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("vpn.l2tp"); %></div>
+									<input class="spaceradio" type="radio" value="1" name="l2tp_pass" <% nvram_checked("l2tp_pass","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="l2tp_pass" <% nvram_checked("l2tp_pass","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br/>
 							
@@ -91,19 +91,19 @@ function to_submit(F) {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dd class="definition"><script type="text/javascript">Capture(hvpn.right1)</script></dd>
+							<dd class="definition"><% tran("hvpn.right1"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HVPN.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HVPN.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
