@@ -5742,7 +5742,6 @@ if test "${with_remote_splash+set}" = set; then
 cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBGHTTP 1
 _ACEOF
-      LIBS="-lghttp $LIBS"
 
 
 fi;
