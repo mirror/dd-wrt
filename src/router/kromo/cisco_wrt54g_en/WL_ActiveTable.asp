@@ -53,32 +53,32 @@ function init() {
 			<input type="hidden" name="submit_button" />
 			<input type="hidden" name="submit_type" />
 			<input type="hidden" name="change_action" />
-			<h2><script type="text/javascript">Capture(wl_active.h2)</script></h2>
+			<h2><% tran("wl_active.h2"); %></h2>
 			<table>
 				<tbody>
 					<tr>
-						<td><strong><script type="text/javascript">Capture(wl_active.active)</script></strong></td>
+						<td><strong><% tran("wl_active.active"); %></strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
-						<th><script type="text/javascript">Capture(dhcp.tclient)</script></th>
-						<th><script type="text/javascript">Capture(share.ip)</script></th>
-						<th><script type="text/javascript">Capture(share.mac)</script></th>
-						<th><script type="text/javascript">Capture(wl_active.h3)</script></th>
+						<th><% tran("dhcp.tclient"); %></th>
+						<th><% tran("share.ip"); %></th>
+						<th><% tran("share.mac"); %></th>
+						<th><% tran("wl_active.h3"); %></th>
 					</tr>
 					<% wireless_active_table("online"); %>
 					<tr>
 						<td colspan="4">&nbsp;</td>
 					</tr>
 					<tr>
-						<td><strong><script type="text/javascript">Capture(wl_active.inactive)</script></strong></td>
+						<td><strong><% tran("wl_active.inactive"); %></strong></td>
 						<td colspan="3">&nbsp;</td>
 					</tr>
 					<tr>
-						<th><script type="text/javascript">Capture(dhcp.tclient)</script></th>
-						<th><script type="text/javascript">Capture(share.ip)</script></th>
-						<th><script type="text/javascript">Capture(share.mac)</script></th>
-						<th><script type="text/javascript">Capture(wl_active.h3)</script></th>
+						<th><% tran("dhcp.tclient"); %></th>
+						<th><% tran("share.ip"); %></th>
+						<th><% tran("share.mac"); %></th>
+						<th><% tran("wl_active.h3"); %></th>
 					</tr>
 					<% wireless_active_table("offline"); %>
 					<tr>

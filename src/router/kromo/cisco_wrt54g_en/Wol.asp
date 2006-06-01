@@ -275,25 +275,25 @@ addEvent(window, "load", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.admin)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li class="current"><span><% tran("bmenu.admin"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.adminManagement)</script></a></li>
-											<li><a href="Hotspot.asp"><script type="text/javascript">Capture(bmenu.adminHotspot)</script></a></li>
-											<li><a href="Services.asp"><script type="text/javascript">Capture(bmenu.adminServices)</script></a></li>
-											<li><a href="Alive.asp"><script type="text/javascript">Capture(bmenu.adminAlive)</script></a></li>
-											<li><a href="Log.asp"><script type="text/javascript">Capture(bmenu.adminLog)</script></a></li>
-											<li><a href="Diagnostics.asp"><script type="text/javascript">Capture(bmenu.adminDiag)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.adminWol)</script></span></li>
-											<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
+											<li><a href="Management.asp"><% tran("bmenu.adminManagement"); %></a></li>
+											<li><a href="Hotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
+											<li><a href="Services.asp"><% tran("bmenu.adminServices"); %></a></li>
+											<li><a href="Alive.asp"><% tran("bmenu.adminAlive"); %></a></li>
+											<li><a href="Log.asp"><% tran("bmenu.adminLog"); %></a></li>
+											<li><a href="Diagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
+											<li><span><% tran("bmenu.adminWol"); %></span></li>
+											<li><a href="Factory_Defaults.asp"><% tran("bmenu.adminFactory"); %></a></li>
 								<script type="text/javascript">
 										https_visit = <% support_elsematch("HTTPS","1","1","0"); %>;
 										if (https_visit =="1") {
@@ -310,7 +310,7 @@ addEvent(window, "load", function() {
 										</ul>
 									</div>
 								</li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -326,27 +326,27 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="next_page" value="Wol.asp" />
 
-							<h2><script type="text/javascript">Capture(wol.h2)</script></h2>
+							<h2><% tran("wol.h2"); %></h2>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(wol.legend)</script></legend>
+								<legend><% tran("wol.legend"); %></legend>
 								<table class="table center" cellspacing="5" id="available_hosts_table">
 									<tr>
-										<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
-										<th width="35%"><script type="text/javascript">Capture(share.hostname)</script></th>
-										<th width="20%"><script type="text/javascript">Capture(share.ip)</script></th>
-										<th width="30%"><script type="text/javascript">Capture(wol.enable)</script></th>
+										<th width="25%"><% tran("share.mac"); %></th>
+										<th width="35%"><% tran("share.hostname"); %></th>
+										<th width="20%"><% tran("share.ip"); %></th>
+										<th width="30%"><% tran("wol.enable"); %></th>
 									</tr>
 								</table>
 							</fieldset><br />
 
 							<fieldset>
-								<legend><script type="text/javascript">Capture(wol.legend2)</script></legend>
+								<legend><% tran("wol.legend2"); %></legend>
 								<table class="table center" cellspacing="5" id="wol_hosts_table">
 									<tr>
-										<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
-										<th width="35%"><script type="text/javascript">Capture(share.hostname)</script></th>
-										<th width="20%"><script type="text/javascript">Capture(wol.broadcast)</script></th>
-										<th><script type="text/javascript">Capture(share.remove)</script></th>
+										<th width="25%"><% tran("share.mac"); %></th>
+										<th width="35%"><% tran("share.hostname"); %></th>
+										<th width="20%"><% tran("wol.broadcast"); %></th>
+										<th><% tran("share.remove"); %></th>
 									</tr>
 									<tr>
 										<td><input maxlength="17" size="17" id="wol_hosts_mac" name="wol_hosts_mac" onblur="valid_macs_17(this)" value=""/></td>
@@ -365,17 +365,17 @@ addEvent(window, "load", function() {
 							<% nvram_selmatch("wol_cmd","","-->"); %>
 
 							<fieldset> 
-								<legend><script type="text/javascript">Capture(wol.legend4)</script></legend>
+								<legend><% tran("wol.legend4"); %></legend>
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(wol.mac)</script></div>
+										<div class="label"><% tran("wol.mac"); %></div>
 										<textarea id="manual_wol_mac" name="manual_wol_mac" onblur="valid_macs_list(this)" rows="3" cols="20"><% nvram_get("manual_wol_mac"); %></textarea>
 									</div>
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
+										<div class="label"><% tran("share.ip"); %></div>
 										<input class="num" maxlength="15" size="15" id="manual_wol_network" onblur="valid_ip_str(this, share.ip)" name="manual_wol_network" value="<% nvram_get("manual_wol_network"); %>" />
 									</div>
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(wol.udp)</script></div>
+										<div class="label"><% tran("wol.udp"); %></div>
 										<input class="num" maxlength="5" size="5" id="manual_wol_port" name="manual_wol_port" onblur="valid_port(this)"  value="<% nvram_get("manual_wol_port"); %>" />
 									</div>
 
@@ -390,23 +390,23 @@ addEvent(window, "load", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl> 
-							<dt class="term"><script type="text/javascript">Capture(wol.h2)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hwol.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(wol.mac)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hwol.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.ip)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hwol.right6)</script></dd>
+							<dt class="term"><% tran("wol.h2"); %>:</dt>
+							<dd class="definition"><% tran("hwol.right2"); %></dd>
+							<dt class="term"><% tran("wol.mac"); %>:</dt>
+							<dd class="definition"><% tran("hwol.right4"); %></dd>
+							<dt class="term"><% tran("share.ip"); %>:</dt>
+							<dd class="definition"><% tran("hwol.right6"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HWol.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HWol.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
