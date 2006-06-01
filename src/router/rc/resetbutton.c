@@ -200,7 +200,7 @@ period_check (int sig)
 	    }
 	}
     }
-  else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_LINKSYS_WRT54G)
+  else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRT54G)
     {
       if (ses_mode == 1)
 	{
