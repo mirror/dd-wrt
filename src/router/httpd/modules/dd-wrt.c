@@ -838,10 +838,12 @@ void
 ej_show_security (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n");
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.secmode)</script></div>\n");
   websWrite (wp,
 	     "<select name=\"security_mode\" onchange=\"SelMode('security_mode',this.form.security_mode.selectedIndex,this.form)\">\n");
-  websWrite (wp, "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");</script>\n",
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s >\" + share.disabled + \"</option>\");</script>\n",
 	     selmatch ("security_mode", "disabled", "selected"));
   websWrite (wp, "<option value=\"psk\" %s>WPA Pre-Shared Key</option>\n",
 	     selmatch ("security_mode", "psk", "selected"));
@@ -963,7 +965,7 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   char ssid[80];
   char vif[16];
   char mac[16];
-  sprintf (mac, "%s_macaddr", prefix);  
+  sprintf (mac, "%s_macaddr", prefix);
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
@@ -971,8 +973,8 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   sprintf (ssid, "%s_ssid", prefix);
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-  websWrite (wp, "<legend>Base Interface %s SSID [%s] HWAddr [%s]</legend>\n", prefix,
-	     nvram_safe_get (ssid),nvram_safe_get(mac));
+  websWrite (wp, "<legend>Base Interface %s SSID [%s] HWAddr [%s]</legend>\n",
+	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
   show_security_prefix (eid, wp, argc, argv, prefix);
   websWrite (wp, "</fieldset>\n");
   foreach (var, vifs, next)
@@ -1370,7 +1372,9 @@ show_virtualssid (webs_t wp, char *prefix)
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
-    websWrite (wp, "<fieldset><legend>Interface %s SSID [%s] HWAddr [%s]</legend>\n", var,nvram_safe_get(ssid),nvram_safe_get(mac));
+    websWrite (wp,
+	       "<fieldset><legend>Interface %s SSID [%s] HWAddr [%s]</legend>\n",
+	       var, nvram_safe_get (ssid), nvram_safe_get (mac));
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\">Wireless Network Name (SSID)</div>\n");
@@ -1694,10 +1698,12 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_mode, "%s_mode", prefix);
   sprintf (wl_macaddr, "%s_macaddr", prefix);
   sprintf (wl_ssid, "%s_ssid", prefix);
-  
+
 
 //wireless mode
-  websWrite (wp, "<h2>Wireless Physical Interface %s - SSID [%s] HWAddr [%s]</h2>\n", prefix,nvram_safe_get(wl_ssid),nvram_safe_get(wl_macaddr));
+  websWrite (wp,
+	     "<h2>Wireless Physical Interface %s - SSID [%s] HWAddr [%s]</h2>\n",
+	     prefix, nvram_safe_get (wl_ssid), nvram_safe_get (wl_macaddr));
   websWrite (wp, "<div>\n");
   char power[16];
   char maxpower[16];
@@ -1729,7 +1735,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
 	     "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> mW (Max: %s)\n",
-	     power, nvram_safe_get (power),nvram_safe_get(maxpower));
+	     power, nvram_safe_get (power), nvram_safe_get (maxpower));
   websWrite (wp, "</div>\n");
 
 #endif
@@ -1803,28 +1809,32 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   showOption (wp, "Turbo Mode", wl_turbo);
   showOption (wp, "Extended Channel Mode", wl_xchanmode);
   showOption (wp, "Outdoor Band", wl_outdoor);
-  showOption (wp, "Diversity",wl_diversity);
-  websWrite (wp,"<div class=\"setting\"><div class=\"label\">TX Antenna</div><select name=\"%s\" >\n",wl_txantenna);
-      websWrite (wp, "<option value=\"0\" %s>Diversity</option>\n",
-		 nvram_match (wl_txantenna, "0") ? "selected" : "");
-      websWrite (wp, "<option value=\"1\" %s>Primary</option>\n",
-		 nvram_match (wl_txantenna, "1") ? "selected" : "");
-      websWrite (wp, "<option value=\"2\" %s>Secondary</option>\n",
-		 nvram_match (wl_txantenna, "2") ? "selected" : "");
-      websWrite (wp, "</select>\n");
-      websWrite (wp, "</div>\n");
+  showOption (wp, "Diversity", wl_diversity);
+  websWrite (wp,
+	     "<div class=\"setting\"><div class=\"label\">TX Antenna</div><select name=\"%s\" >\n",
+	     wl_txantenna);
+  websWrite (wp, "<option value=\"0\" %s>Diversity</option>\n",
+	     nvram_match (wl_txantenna, "0") ? "selected" : "");
+  websWrite (wp, "<option value=\"1\" %s>Primary</option>\n",
+	     nvram_match (wl_txantenna, "1") ? "selected" : "");
+  websWrite (wp, "<option value=\"2\" %s>Secondary</option>\n",
+	     nvram_match (wl_txantenna, "2") ? "selected" : "");
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
 
 
-  websWrite (wp,"<div class=\"setting\"><div class=\"label\">RX Antenna</div><select name=\"%s\" >\n",wl_rxantenna);
-      websWrite (wp, "<option value=\"0\" %s>Diversity</option>\n",
-		 nvram_match (wl_rxantenna, "0") ? "selected" : "");
-      websWrite (wp, "<option value=\"1\" %s>Primary</option>\n",
-		 nvram_match (wl_rxantenna, "1") ? "selected" : "");
-      websWrite (wp, "<option value=\"2\" %s>Secondary</option>\n",
-		 nvram_match (wl_rxantenna, "2") ? "selected" : "");
-      websWrite (wp, "</select>\n");
-      websWrite (wp, "</div>\n");
-   
+  websWrite (wp,
+	     "<div class=\"setting\"><div class=\"label\">RX Antenna</div><select name=\"%s\" >\n",
+	     wl_rxantenna);
+  websWrite (wp, "<option value=\"0\" %s>Diversity</option>\n",
+	     nvram_match (wl_rxantenna, "0") ? "selected" : "");
+  websWrite (wp, "<option value=\"1\" %s>Primary</option>\n",
+	     nvram_match (wl_rxantenna, "1") ? "selected" : "");
+  websWrite (wp, "<option value=\"2\" %s>Secondary</option>\n",
+	     nvram_match (wl_rxantenna, "2") ? "selected" : "");
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
+
 #endif
 
   websWrite (wp, "<div class=\"setting\">\n");
@@ -2599,14 +2609,14 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
   iwr.u.data.length = sizeof (buf);
   if (ioctl (s, IEEE80211_IOCTL_STA_INFO, &iwr) < 0)
     {
-      close(s);
+      close (s);
       return;
     }
   len = iwr.u.data.length;
   if (len < sizeof (struct ieee80211req_sta_info))
     {
-    close(s);
-    return;
+      close (s);
+      return;
     }
   int cnt = 0;
   cp = buf;
@@ -2628,7 +2638,7 @@ ej_active_wireless_if (int eid, webs_t wp, int argc, char_t ** argv,
       cp += si->isi_len, len -= si->isi_len;
     }
   while (len >= sizeof (struct ieee80211req_sta_info));
-  close(s);
+  close (s);
 
 
 }
@@ -2685,85 +2695,84 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   unlink (RSSI_TMP);
   int cnt = 0;
   mode = nvram_safe_get ("wl_mode");
-unsigned char buf[WLC_IOCTL_MAXLEN];
-memset(buf,0,WLC_IOCTL_MAXLEN);
-char *iface = get_wdev();
-int r = getassoclist(iface,buf);
+  unsigned char buf[WLC_IOCTL_MAXLEN];
+  memset (buf, 0, WLC_IOCTL_MAXLEN);
+  char *iface = get_wdev ();
+  int r = getassoclist (iface, buf);
 //if (r<0)
 //    return;
-struct maclist *maclist = (struct maclist *)buf;
-int i;
-for (i=0;i<maclist->count;i++)
+  struct maclist *maclist = (struct maclist *) buf;
+  int i;
+  for (i = 0; i < maclist->count; i++)
     {
-        ether_etoa((uint8*)&maclist->ea[i],mac);
-	
-	  rssi = 0;
-	  noise = 0;
-	  // get rssi value
-	  if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
-	    snprintf (cmd, sizeof (cmd), "%s > %s", RSSI_CMD, RSSI_TMP);
-	  else
-	    snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
-		      RSSI_TMP);
-	  system (cmd);
+      ether_etoa ((uint8 *) & maclist->ea[i], mac);
 
-	  // get noise value if not ap mode
-	  if (strcmp (mode, "ap"))
-	    snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
-	  system (cmd);		// get RSSI value for mac
+      rssi = 0;
+      noise = 0;
+      // get rssi value
+      if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
+	snprintf (cmd, sizeof (cmd), "%s > %s", RSSI_CMD, RSSI_TMP);
+      else
+	snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
+		  RSSI_TMP);
+      system (cmd);
 
-	  fp2 = fopen (RSSI_TMP, "r");
-	  if (fgets (line, sizeof (line), fp2) != NULL)
-	    {
+      // get noise value if not ap mode
+      if (strcmp (mode, "ap"))
+	snprintf (cmd, sizeof (cmd), "%s >> %s", NOISE_CMD, RSSI_TMP);
+      system (cmd);		// get RSSI value for mac
 
-	      // get rssi
+      fp2 = fopen (RSSI_TMP, "r");
+      if (fgets (line, sizeof (line), fp2) != NULL)
+	{
+
+	  // get rssi
 #ifdef HAVE_MSSID
-	      if (sscanf (line, "%d", &rssi) != 1)
-		continue;
+	  if (sscanf (line, "%d", &rssi) != 1)
+	    continue;
 
-//	     noise=getNoise(iface);
-	     
-	      if (strcmp (mode, "ap") &&
-		  fgets (line, sizeof (line), fp2) != NULL &&
-		  sscanf (line, "%d", &noise) != 1)
-		continue;
+//           noise=getNoise(iface);
+
+	  if (strcmp (mode, "ap") &&
+	      fgets (line, sizeof (line), fp2) != NULL &&
+	      sscanf (line, "%d", &noise) != 1)
+	    continue;
 #else
-	      if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
-		continue;
-//	    noise=getNoise(iface);
-	      if (strcmp (mode, "ap") &&
-		  fgets (line, sizeof (line), fp2) != NULL &&
-		  sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
-		continue;
+	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
+	    continue;
+//          noise=getNoise(iface);
+	  if (strcmp (mode, "ap") &&
+	      fgets (line, sizeof (line), fp2) != NULL &&
+	      sscanf (line, "%s %s %d", list[0], list[1], &noise) != 3)
+	    continue;
 #endif
-	      // get noise for client/wet mode
+	  // get noise for client/wet mode
 
-	      fclose (fp2);
-	    }
-	  if (nvram_match ("maskmac", "1") && macmask)
-	    {
-	      mac[0] = 'x';
-	      mac[1] = 'x';
-	      mac[3] = 'x';
-	      mac[4] = 'x';
-	      mac[6] = 'x';
-	      mac[7] = 'x';
-	      mac[9] = 'x';
-	      mac[10] = 'x';
-	    }
-	  if (cnt)
-	    websWrite (wp, ",");
-	  cnt++;
-	  if (!strcmp (mode, "ap"))
-	    {
-	      char *ref = nvram_get ("noise_reference");
-	      noise = -98;
-	      if (ref)
-		noise = atoi (ref);
-	    }
-	  websWrite (wp, "'%s','%d','%d','%d'",
-		     mac, rssi, noise, rssi - noise);
+	  fclose (fp2);
 	}
+      if (nvram_match ("maskmac", "1") && macmask)
+	{
+	  mac[0] = 'x';
+	  mac[1] = 'x';
+	  mac[3] = 'x';
+	  mac[4] = 'x';
+	  mac[6] = 'x';
+	  mac[7] = 'x';
+	  mac[9] = 'x';
+	  mac[10] = 'x';
+	}
+      if (cnt)
+	websWrite (wp, ",");
+      cnt++;
+      if (!strcmp (mode, "ap"))
+	{
+	  char *ref = nvram_get ("noise_reference");
+	  noise = -98;
+	  if (ref)
+	    noise = atoi (ref);
+	}
+      websWrite (wp, "'%s','%d','%d','%d'", mac, rssi, noise, rssi - noise);
+    }
   unlink (RSSI_TMP);
 
   return;
@@ -2801,72 +2810,71 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (strcmp (mode, "ap") && strcmp (mode, "apsta"))
     return;
-unsigned char buf[WLC_IOCTL_MAXLEN];
-char *iface = get_wdev();
-int r = getwdslist(iface,buf);
-if (r<0)
+  unsigned char buf[WLC_IOCTL_MAXLEN];
+  char *iface = get_wdev ();
+  int r = getwdslist (iface, buf);
+  if (r < 0)
     return;
-struct maclist *maclist = (struct maclist *)buf;
-int e;
-for (e=0;e<maclist->count;e++)
+  struct maclist *maclist = (struct maclist *) buf;
+  int e;
+  for (e = 0; e < maclist->count; e++)
     {
 
-        ether_etoa((uint8*)&maclist->ea[e],mac);
+      ether_etoa ((uint8 *) & maclist->ea[e], mac);
 
 
-	  rssi = 0;
+      rssi = 0;
 
-	  for (i = 1; i <= 10; i++)
+      for (i = 1; i <= 10; i++)
+	{
+	  snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
+	  if (nvram_match (wdsvar, mac))
 	    {
-	      snprintf (wdsvar, 30, "wl_wds%d_hwaddr", i);
-	      if (nvram_match (wdsvar, mac))
-		{
-		  snprintf (wdsvar, 30, "wl_wds%d_desc", i);
-		  snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
-		  if (!strcmp (nvram_get (wdsvar), ""))
-		    strcpy (desc, "&nbsp;");
-		}
+	      snprintf (wdsvar, 30, "wl_wds%d_desc", i);
+	      snprintf (desc, sizeof (desc), "%s", nvram_get (wdsvar));
+	      if (!strcmp (nvram_get (wdsvar), ""))
+		strcpy (desc, "&nbsp;");
 	    }
+	}
 
-	  snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac,
-		    RSSI_TMP);
-	  system (cmd);
+      snprintf (cmd, sizeof (cmd), "%s \"%s\" > %s", RSSI_CMD, mac, RSSI_TMP);
+      system (cmd);
 
-	  fp2 = fopen (RSSI_TMP, "r");
-	  if (fgets (line, sizeof (line), fp2) != NULL)
-	    {
+      fp2 = fopen (RSSI_TMP, "r");
+      if (fgets (line, sizeof (line), fp2) != NULL)
+	{
 
-	      // get rssi
+	  // get rssi
 #ifdef HAVE_MSSID
-	      if (sscanf (line, "%d", &rssi) != 1)
-		continue;
+	  if (sscanf (line, "%d", &rssi) != 1)
+	    continue;
 #else
-	      if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
-		continue;
+	  if (sscanf (line, "%s %s %d", list[0], list[1], &rssi) != 3)
+	    continue;
 #endif
-	      fclose (fp2);
-	    }
-	  if (nvram_match ("maskmac", "1") && macmask)
-	    {
-	      mac[0] = 'x';
-	      mac[1] = 'x';
-	      mac[3] = 'x';
-	      mac[4] = 'x';
-	      mac[6] = 'x';
-	      mac[7] = 'x';
-	      mac[9] = 'x';
-	      mac[10] = 'x';
-	    }
-	  if (cnt)
-	    websWrite (wp, ",");
-	  cnt++;
-	  char *ref = nvram_get ("noise_reference");
-	  int noise = -98;
-	  if (ref)
-	    noise = atoi (ref);
-	  websWrite (wp,
-		     "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
-		     mac, desc, rssi, noise, rssi - noise);
+	  fclose (fp2);
+	}
+      if (nvram_match ("maskmac", "1") && macmask)
+	{
+	  mac[0] = 'x';
+	  mac[1] = 'x';
+	  mac[3] = 'x';
+	  mac[4] = 'x';
+	  mac[6] = 'x';
+	  mac[7] = 'x';
+	  mac[9] = 'x';
+	  mac[10] = 'x';
+	}
+      if (cnt)
+	websWrite (wp, ",");
+      cnt++;
+      char *ref = nvram_get ("noise_reference");
+      int noise = -98;
+      if (ref)
+	noise = atoi (ref);
+      websWrite (wp,
+		 "\"%s\",\"%s\",\"%d\",\"%d\",\"%d\"",
+		 mac, desc, rssi, noise, rssi - noise);
     }
 
   unlink (WDS_RSSI_TMP);
