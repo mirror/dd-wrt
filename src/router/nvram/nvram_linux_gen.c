@@ -522,3 +522,4 @@ nvram2file (char *varname, char *filename)
   free (buf);
   return j;
 }
+#include "nvram_generics.h"
