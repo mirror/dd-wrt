@@ -58,31 +58,31 @@ function upgrade(F,id) {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.admin)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li class="current"><span><% tran("bmenu.admin"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.adminManagement)</script></a></li>
-											<li><a href="Hotspot.asp"><script type="text/javascript">Capture(bmenu.adminHotspot)</script></a></li>
-											<li><a href="Services.asp"><script type="text/javascript">Capture(bmenu.adminServices)</script></a></li>
-											<li><a href="Alive.asp"><script type="text/javascript">Capture(bmenu.adminAlive)</script></a></li>
-											<li><a href="Log.asp"><script type="text/javascript">Capture(bmenu.adminLog)</script></a></li>
-											<li><a href="Diagnostics.asp"><script type="text/javascript">Capture(bmenu.adminDiag)</script></a></li>
-											<li><a href="Wol.asp"><script type="text/javascript">Capture(bmenu.adminWol)</script></a></li>
-											<li><a href="Factory_Defaults.asp"><script type="text/javascript">Capture(bmenu.adminFactory)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.adminUpgrade)</script></span></li>
-											<li><a href="config.asp"><script type="text/javascript">Capture(bmenu.adminBackup)</script></a></li>
+											<li><a href="Management.asp"><% tran("bmenu.adminManagement"); %></a></li>
+											<li><a href="Hotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
+											<li><a href="Services.asp"><% tran("bmenu.adminServices"); %></a></li>
+											<li><a href="Alive.asp"><% tran("bmenu.adminAlive"); %></a></li>
+											<li><a href="Log.asp"><% tran("bmenu.adminLog"); %></a></li>
+											<li><a href="Diagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
+											<li><a href="Wol.asp"><% tran("bmenu.adminWol"); %></a></li>
+											<li><a href="Factory_Defaults.asp"><% tran("bmenu.adminFactory"); %></a></li>
+											<li><span><% tran("bmenu.adminUpgrade"); %></span></li>
+											<li><a href="config.asp"><% tran("bmenu.adminBackup"); %></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -93,24 +93,24 @@ function upgrade(F,id) {
 							<input type="hidden" name="submit_button" />
 							<input type="hidden" name="action" />
 							<input type="hidden" name="change_action" />
-							<h2><script type="text/javascript">Capture(upgrad.h2)</script></h2>
+							<h2><% tran("upgrad.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(upgrad.legend)</script></legend>
+								<legend><% tran("upgrad.legend"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(upgrad.info1)</script></div>
-									<input class="spaceradio" type="radio" value="0" name="erase" checked="checked" /><script type="text/javascript">Capture(upgrad.resetOff)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="1" name="erase" /><script type="text/javascript">Capture(upgrad.resetOn)</script>
+									<div class="label"><% tran("upgrad.info1"); %></div>
+									<input class="spaceradio" type="radio" value="0" name="erase" checked="checked" /><% tran("upgrad.resetOff"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="1" name="erase" /><% tran("upgrad.resetOn"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(upgrad.file)</script></div>
+									<div class="label"><% tran("upgrad.file"); %></div>
 									<input type="file" name="file" size="40"/>
 								</div>
 							</fieldset><br />
 							
 							<div class="warning">
-								<p><div id="warning_text"><b><script type="text/javascript">Capture(upgrad.warning)</script></b></div></p>
-								<p><script type="text/javascript">Capture(upgrad.mess1)</script></p>
+								<p><div id="warning_text"><b><% tran("upgrad.warning"); %></b></div></p>
+								<p><% tran("upgrad.mess1"); %></p>
 								<div align="center"><script type="text/javascript">
 									var bar1 = createBar(500,15,100,15,50,"process_aborted(this.form)");
 									bar1.togglePause();
@@ -125,20 +125,20 @@ function upgrade(F,id) {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(upgrad.legend)</script>: </dt>
-							<dd class="definition"><script type="text/javascript">Capture(hupgrad.right2)</script></dd>
+							<dt class="term"><% tran("upgrad.legend"); %>: </dt>
+							<dd class="definition"><% tran("hupgrad.right2"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HUpgrade.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HUpgrade.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

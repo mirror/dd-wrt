@@ -139,27 +139,27 @@ addEvent(window, "unload", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.applications)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li class="current"><span><% tran("bmenu.applications"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applicationsprforwarding)</script></a></li>
-											<li><a href="ForwardSpec.asp"><script type="text/javascript">Capture(bmenu.applicationspforwarding)</script></a></li>
-											<li><a href="Triggering.asp"><script type="text/javascript">Capture(bmenu.applicationsptriggering)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.applicationsUpnp)</script></span></li>
-											<li><a href="DMZ.asp"><script type="text/javascript">Capture(bmenu.applicationsDMZ)</script></a></li>
-											<li><a href="QoS.asp"><script type="text/javascript">Capture(bmenu.applicationsQoS)</script></a></li>
+											<li><a href="Forward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
+											<li><a href="ForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
+											<li><a href="Triggering.asp"><% tran("bmenu.applicationsptriggering"); %></a></li>
+											<li><span><% tran("bmenu.applicationsUpnp"); %></span></li>
+											<li><a href="DMZ.asp"><% tran("bmenu.applicationsDMZ"); %></a></li>
+											<li><a href="QoS.asp"><% tran("bmenu.applicationsQoS"); %></a></li>
 										</ul>
 									</div>
 								</li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -172,17 +172,17 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="remove" />
-							<h2><script type="text/javascript">Capture(upnp.h2)</script></h2>
+							<h2><% tran("upnp.h2"); %></h2>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(upnp.legend)</script></legend>
+								<legend><% tran("upnp.legend"); %></legend>
 								<table class="table center" cellspacing="6" id="upnp_table">
 									<tr>
-										<th width="40%"><script type="text/javascript">Capture(share.descr)</script></th>
-										<th width="15%"><script type="text/javascript">Capture(share.from)</script>&nbsp;(WAN)</th>
-										<th width="15%"><script type="text/javascript">Capture(share.to)</script>&nbsp;(LAN)</th>
-										<th width="20%"><script type="text/javascript">Capture(share.ip)</script></th>
-										<th width="10%"><script type="text/javascript">Capture(share.proto)</script></th>
-										<th><script type="text/javascript">Capture(share.del)</script></th>
+										<th width="40%"><% tran("share.descr"); %></th>
+										<th width="15%"><% tran("share.from"); %>&nbsp;(WAN)</th>
+										<th width="15%"><% tran("share.to"); %>&nbsp;(LAN)</th>
+										<th width="20%"><% tran("share.ip"); %></th>
+										<th width="10%"><% tran("share.proto"); %></th>
+										<th><% tran("share.del"); %></th>
 									</tr>
 								</table><br />
 								<div class="center">
@@ -191,21 +191,21 @@ addEvent(window, "unload", function() {
 								</div>
 							</fieldset><br />
 							<fieldset>
-								<legend><script type="text/javascript">Capture(upnp.legend2)</script></legend>
+								<legend><% tran("upnp.legend2"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(upnp.serv)</script></div>
-									<input class="spaceradio" type="radio" name="upnp_enable" value="1" <% nvram_checked("upnp_enable","1"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" name="upnp_enable" value="0" <% nvram_checked("upnp_enable","0"); %> onclick="setUPnP(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("upnp.serv"); %></div>
+									<input class="spaceradio" type="radio" name="upnp_enable" value="1" <% nvram_checked("upnp_enable","1"); %> onclick="setUPnP(this.value)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="upnp_enable" value="0" <% nvram_checked("upnp_enable","0"); %> onclick="setUPnP(this.value)" /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(upnp.clear)</script></div>
-									<input class="spaceradio" type="radio" name="upnpcas" value="1" <% nvram_checked("upnpcas","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvram_checked("upnpcas","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("upnp.clear"); %></div>
+									<input class="spaceradio" type="radio" name="upnpcas" value="1" <% nvram_checked("upnpcas","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="upnpcas" value="0" <% nvram_checked("upnpcas","0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(upnp.url)</script></div>
-									<input class="spaceradio" type="radio" name="upnpmnp" value="1" <% nvram_checked("upnpmnp","1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" name="upnpmnp" value="0" <% nvram_checked("upnpmnp","0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<div class="label"><% tran("upnp.url"); %></div>
+									<input class="spaceradio" type="radio" name="upnpmnp" value="1" <% nvram_checked("upnpmnp","1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="upnpmnp" value="0" <% nvram_checked("upnpmnp","0"); %> /><% tran("share.disable"); %>
 								</div>
 							</fieldset><br />
 							<div class="submitFooter">
@@ -218,21 +218,21 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(upnp.legend)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hupnp.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(upnp.serv)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hupnp.right4)</script></dd>
+							<dt class="term"><% tran("upnp.legend"); %>:</dt>
+							<dd class="definition"><% tran("hupnp.right2"); %></dd>
+							<dt class="term"><% tran("upnp.serv"); %>:</dt>
+							<dd class="definition"><% tran("hupnp.right4"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HUPnP.asp')"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HUPnP.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
