@@ -3148,9 +3148,9 @@ start_splashd (void)
   fprintf (fp, "sleep 20\n");
   fprintf (fp, "splashd >> /tmp/nocat.log 2>&1 &\n");
   fclose (fp);
-//  chmod ("/tmp/start_splashd.sh", 0700);
-//  system ("/tmp/start_splashd.sh&");
-  ret = eval("sh", "/tmp/start_splashd.sh");
+  chmod ("/tmp/start_splashd.sh", 0700);
+  system ("/tmp/start_splashd.sh&");
+  //ret = eval("sh", "/tmp/start_splashd.sh");
 
   cprintf ("done\n");
   return ret;
