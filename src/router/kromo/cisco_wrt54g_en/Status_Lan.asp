@@ -88,24 +88,24 @@ addEvent(window, "unload", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.statu)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li class="current"><span><% tran("bmenu.statu"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statuRouter)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.statuLAN)</script></span></li>
-											<li><a href="Status_Wireless.asp"><script type="text/javascript">Capture(bmenu.statuWLAN)</script></a></li>
+											<li><a href="Status_Router.asp"><% tran("bmenu.statuRouter"); %></a></li>
+											<li><span><% tran("bmenu.statuLAN"); %></span></li>
+											<li><a href="Status_Wireless.asp"><% tran("bmenu.statuWLAN"); %></a></li>
 											<% show_sputnik(); %>
 											<% nvram_invmatch("status_auth","1","<!--"); %>
-											<li><a href="Info.htm"><script type="text/javascript">Capture(bmenu.statuSysInfo)</script></a></li>
+											<li><a href="Info.htm"><% tran("bmenu.statuSysInfo"); %></a></li>
 											<% nvram_invmatch("status_auth","1","-->"); %>
 										</ul>
 									</div>
@@ -122,65 +122,65 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_type" value="delete" />
 							<input type="hidden" name="d_0" />
 							<input type="hidden" name="next_page" value="Status_Lan.asp" />
-							<h2><script type="text/javascript">Capture(status_lan.h2)</script></h2>
+							<h2><% tran("status_lan.h2"); %></h2>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(status_lan.legend)</script></legend>
+								<legend><% tran("status_lan.legend"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.mac)</script></div>
+									<div class="label"><% tran("share.mac"); %></div>
 									<script>document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");</script><% nvram_get("lan_hwaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.ip)</script></div>
+									<div class="label"><% tran("share.ip"); %></div>
 									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.subnet)</script></div>
+									<div class="label"><% tran("share.subnet"); %></div>
 									<span id="lan_netmask"><% nvram_get("lan_netmask"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.gateway)</script></div>
+									<div class="label"><% tran("share.gateway"); %></div>
 									<span id="lan_gateway"><% nvram_get("lan_gateway"); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(share.localdns)</script></div>
+									<div class="label"><% tran("share.localdns"); %></div>
 									<span id="lan_dns"><% nvram_get("sv_localdns"); %></span>&nbsp;
 								</div>
 							</fieldset><br />
-							<h2><script type="text/javascript">Capture(status_lan.h22)</script></h2>
+							<h2><% tran("status_lan.h22"); %></h2>
 							<fieldset>
-								<legend><script type="text/javascript">Capture(status_lan.legend2)</script></legend>
+								<legend><% tran("status_lan.legend2"); %></legend>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(service.dhcp_legend2)</script></div>
-									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+									<div class="label"><% tran("service.dhcp_legend2"); %></div>
+									<% nvram_match("lan_proto", "dhcp", "<% tran("share.enabled"); %>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 								</div>
 								<span id="dhcp_1" style="display:none">
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(service.dhcp_srv)</script></div>
+										<div class="label"><% tran("service.dhcp_srv"); %></div>
 										<span id="dhcp_daemon"><% nvram_else_match("dhcp_dnsmasq", "1", "DNSMasq", "uDHCPd"); %></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(idx.dhcp_start)</script></div>
+										<div class="label"><% tran("idx.dhcp_start"); %></div>
 										<span id="dhcp_start_ip"><% prefix_ip_get("lan_ipaddr", "1"); %><% nvram_get("dhcp_start"); %></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(idx.dhcp_end)</script></div>
+										<div class="label"><% tran("idx.dhcp_end"); %></div>
 										<span id="dhcp_end_ip"></span>&nbsp;
 									</div>
 									<div class="setting">
-										<div class="label"><script type="text/javascript">Capture(idx.dhcp_lease)</script></div>
-										<span id="dhcp_lease_time"><% nvram_get("dhcp_lease"); %></span> <script type="text/javascript">Capture(share.minutes)</script>&nbsp;
+										<div class="label"><% tran("idx.dhcp_lease"); %></div>
+										<span id="dhcp_lease_time"><% nvram_get("dhcp_lease"); %></span> <% tran("share.minutes"); %>&nbsp;
 									</div>
 								</span>
 							</fieldset><br />
 							<span id="dhcp_2" style="display:none">
 								<fieldset>
-									<legend><script type="text/javascript">Capture(status_lan.legend3)</script></legend>
+									<legend><% tran("status_lan.legend3"); %></legend>
 									<table class="table center" cellspacing="6" id="dhcp_leases_table">
 										<tr>
-											<th width="25%"><script type="text/javascript">Capture(share.hostname)</script></th>
-											<th width="25%"><script type="text/javascript">Capture(share.ip)</script></th>
-											<th width="25%"><script type="text/javascript">Capture(share.mac)</script></th>
-											<th width="25%"><script type="text/javascript">Capture(share.expires)</script></th>
+											<th width="25%"><% tran("share.hostname"); %></th>
+											<th width="25%"><% tran("share.ip"); %></th>
+											<th width="25%"><% tran("share.mac"); %></th>
+											<th width="25%"><% tran("share.expires"); %></th>
 											<th>Delete</th>
 										</tr>
 									</table>
@@ -195,27 +195,27 @@ addEvent(window, "unload", function() {
 				<div id="helpContainer">
 					<div id="help">
 						<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 						</div>
 						<dl>
-							<dt class="term"><script type="text/javascript">Capture(share.mac)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right2)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.ip)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right4)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.subnet)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right6)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(idx.dhcp_srv)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right8)</script></dd>
-							<dt class="term"><script type="text/javascript">Capture(share.oui)</script>:</dt>
-							<dd class="definition"><script type="text/javascript">Capture(hstatus_lan.right10)</script></dd>
+							<dt class="term"><% tran("share.mac"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_lan.right2"); %></dd>
+							<dt class="term"><% tran("share.ip"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_lan.right4"); %></dd>
+							<dt class="term"><% tran("share.subnet"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_lan.right6"); %></dd>
+							<dt class="term"><% tran("idx.dhcp_srv"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_lan.right8"); %></dd>
+							<dt class="term"><% tran("share.oui"); %>:</dt>
+							<dd class="definition"><% tran("hstatus_lan.right10"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HStatusLan.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+						<a href="javascript:openHelpWindow('HStatusLan.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>

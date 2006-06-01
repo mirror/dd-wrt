@@ -36,24 +36,24 @@ addEvent(window, "unload", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setup)</script></a></li>
-								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.statu)</script></span>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li class="current"><span><% tran("bmenu.statu"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-											<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statuRouter)</script></a></li>
-											<li><a href="Status_Lan.asp"><script type="text/javascript">Capture(bmenu.statuLAN)</script></a></li>
-											<li><a href="Status_Wireless.asp"><script type="text/javascript">Capture(bmenu.statuWLAN)</script></a></li>
-											<li><span><script type="text/javascript">Capture(bmenu.statuSputnik)</script></span></li>
+											<li><a href="Status_Router.asp"><% tran("bmenu.statuRouter"); %></a></li>
+											<li><a href="Status_Lan.asp"><% tran("bmenu.statuLAN"); %></a></li>
+											<li><a href="Status_Wireless.asp"><% tran("bmenu.statuWLAN"); %></a></li>
+											<li><span><% tran("bmenu.statuSputnik"); %></span></li>
 											<% nvram_invmatch("status_auth","1","<!--"); %>
-											<li><a href="Info.htm"><script type="text/javascript">Capture(bmenu.statuSysInfo)</script></a></li>
+											<li><a href="Info.htm"><% tran("bmenu.statuSysInfo"); %></a></li>
 											<% nvram_invmatch("status_auth","1","-->"); %>
 										</ul>
 									</div>
@@ -64,20 +64,20 @@ addEvent(window, "unload", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-					<h2><script type="text/javascript">Capture(status_sputnik.h2)</script></h2>
+					<h2><% tran("status_sputnik.h2"); %></h2>
 					
 					<fieldset>
-						<legend><script type="text/javascript">Capture(share.info)</script></legend>
+						<legend><% tran("share.info"); %></legend>
                         <div class="setting">
-                        	<div class="label"><script type="text/javascript">Capture(status_sputnik.manage)</script></div>
+                        	<div class="label"><% tran("status_sputnik.manage"); %></div>
                         	<span id="sputnik_status"><% sputnik_apd_status("scc_server"); %></span>&nbsp;
                         </div>
                         <div class="setting">
-                        	<div class="label"><script type="text/javascript">Capture(share.state)</script></div>
+                        	<div class="label"><% tran("share.state"); %></div>
                         	<span id="sputnik_state"><% sputnik_apd_status("phase"); %></span>&nbsp;
                         </div>
                         <div class="setting">
-                        	<div class="label"><script type="text/javascript">Capture(status_sputnik.license)</script></div>
+                        	<div class="label"><% tran("status_sputnik.license"); %></div>
                         	<span id="sputnik_serial"><% sputnik_apd_status("lsk_serial"); %></span>&nbsp;
                         </div>
                     
@@ -91,26 +91,26 @@ addEvent(window, "unload", function() {
             <div id="helpContainer">
                <div id="help">
                   <div id="logo">
-                  	<h2><script type="text/javascript">Capture(share.help)</script></h2>
+                  	<h2><% tran("share.help"); %></h2>
                   </div>
                   <dl>
-                     <dt class="term"><script type="text/javascript">Capture(hstatus_sputnik.right1)</script>:</dt>
-                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right2)</script></dd>
-                     <dt class="term"><script type="text/javascript">Capture(status_sputnik.manage)</script>:</dt>
-                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right4)</script></dd>
-                     <dt class="term"><script type="text/javascript">Capture(share.state)</script>:</dt>
-                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right6)</script></dd>
-                     <dt class="term"><script type="text/javascript">Capture(status_sputnik.license)</script>:</dt>
-                     <dd class="definition"><script type="text/javascript">Capture(hstatus_sputnik.right8)</script></dd>
+                     <dt class="term"><% tran("hstatus_sputnik.right1"); %>:</dt>
+                     <dd class="definition"><% tran("hstatus_sputnik.right2"); %></dd>
+                     <dt class="term"><% tran("status_sputnik.manage"); %>:</dt>
+                     <dd class="definition"><% tran("hstatus_sputnik.right4"); %></dd>
+                     <dt class="term"><% tran("share.state"); %>:</dt>
+                     <dd class="definition"><% tran("hstatus_sputnik.right6"); %></dd>
+                     <dt class="term"><% tran("status_sputnik.license"); %>:</dt>
+                     <dd class="definition"><% tran("hstatus_sputnik.right8"); %></dd>
                   </dl><br />
                   
-                  <!--<a href="javascript:openHelpWindow('HSputnikStatus.asp');"><script type="text/javascript">Capture(share.more)</script></a>-->
+                  <!--<a href="javascript:openHelpWindow('HSputnikStatus.asp');"><% tran("share.more"); %></a>-->
                </div>
             </div>
 				<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
