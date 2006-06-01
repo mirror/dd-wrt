@@ -36,19 +36,19 @@ function do_join (F,SSID) {
 			<input type="hidden" name="action" />
 			<input type="hidden" name="wl_ssid" />
 			<input type="hidden" name="wl_mode" />
-			<h2><script type="text/javascript">Capture(survey.h2)</script></h2>
+			<h2><% tran("survey.h2"); %></h2>
         	<table class="center table" cellspacing="5">
 				<tr>
-				   <th width="31%"><script type="text/javascript">Capture(share.ssid)</script></th>
-				   <th width="20%"><script type="text/javascript">Capture(share.mac)</script></th>
-				   <th width="7%"><script type="text/javascript">Capture(share.channel)</script></th>
-				   <th width="7%"><script type="text/javascript">Capture(share.rssi)</script></th>
-				   <th width="7%"><script type="text/javascript">Capture(share.noise)</script></th>
-				   <th width="7%"><script type="text/javascript">Capture(share.beacon)</script></th>
-				   <th width="7%"><script type="text/javascript">Capture(share.openn)</script></th>
-				   <th width="7%"><script type="text/javascript">Capture(share.dtim)</script></th>
-				   <th width="7%"><script type="text/javascript">Capture(share.rates)</script></th>
-				   <th width="10%"><script type="text/javascript">Capture(survey.thjoin)</script></th>
+				   <th width="31%"><% tran("share.ssid"); %></th>
+				   <th width="20%"><% tran("share.mac"); %></th>
+				   <th width="7%"><% tran("share.channel"); %></th>
+				   <th width="7%"><% tran("share.rssi"); %></th>
+				   <th width="7%"><% tran("share.noise"); %></th>
+				   <th width="7%"><% tran("share.beacon"); %></th>
+				   <th width="7%"><% tran("share.openn"); %></th>
+				   <th width="7%"><% tran("share.dtim"); %></th>
+				   <th width="7%"><% tran("share.rates"); %></th>
+				   <th width="10%"><% tran("survey.thjoin"); %></th>
 				</tr>
 	<script language="JavaScript">
 
