@@ -50,26 +50,26 @@ addEvent(window, "load", function() {
 					<div id="menu">
 						<div id="menuMain">
 							<ul id="menuMainList">
-								<li class="current"><span><script type="text/javascript">Capture(bmenu.setup)</script></span>
+								<li class="current"><span><% tran("bmenu.setup"); %></span>
 									<div id="menuSub">
 										<ul id="menuSubList">
-	  										<li><a href="index.asp"><script type="text/javascript">Capture(bmenu.setupbasic)</script></a></li>
-	  										<li><a href="DDNS.asp"><script type="text/javascript">Capture(bmenu.setupddns)</script></a></li>
-	  										<li><span><script type="text/javascript">Capture(bmenu.setupmacclone)</script></span></li>
-	  										<li><a href="Routing.asp"><script type="text/javascript">Capture(bmenu.setuprouting)</script></a></li>
-	  										<li><a href="Vlan.asp"><script type="text/javascript">Capture(bmenu.setupvlan)</script></a></li>
+	  										<li><a href="index.asp"><% tran("bmenu.setupbasic"); %></a></li>
+	  										<li><a href="DDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
+	  										<li><span><% tran("bmenu.setupmacclone"); %></span></li>
+	  										<li><a href="Routing.asp"><% tran("bmenu.setuprouting"); %></a></li>
+	  										<li><a href="Vlan.asp"><% tran("bmenu.setupvlan"); %></a></li>
   										</ul>
   									</div>
   								</li>
-  								<li><a href="Wireless_Basic.asp"><script type="text/javascript">Capture(bmenu.wireless)</script></a></li>
+  								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
 								<% nvram_invmatch("sipgate","1","<!--"); %>
-								<li><a href="Sipath.asp"><script type="text/javascript">Capture(bmenu.sipath)</script></a></li>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
 								<% nvram_invmatch("sipgate","1","-->"); %>
-								<li><a href="Firewall.asp"><script type="text/javascript">Capture(bmenu.security)</script></a></li>
-								<li><a href="Filters.asp"><script type="text/javascript">Capture(bmenu.accrestriction)</script></a></li>
-								<li><a href="Forward.asp"><script type="text/javascript">Capture(bmenu.applications)</script></a></li>
-								<li><a href="Management.asp"><script type="text/javascript">Capture(bmenu.admin)</script></a></li>
-								<li><a href="Status_Router.asp"><script type="text/javascript">Capture(bmenu.statu)</script></a></li>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
 							</ul>
 						</div>
 					</div>
@@ -81,16 +81,16 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="change_action" />
 							<input type="hidden" name="submit_type" />
 							<input type="hidden" name="action" />
-							<h2><script type="text/javascript">Capture(wanmac.h2)</script></h2>
+							<h2><% tran("wanmac.h2"); %></h2>
 							
 							<fieldset>
-								<legend><script type="text/javascript">Capture(wanmac.legend)</script></legend>
+								<legend><% tran("wanmac.legend"); %></legend>
 								<div class="setting">
-									<input class="spaceradio" type="radio" value="1" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvram_checked("mac_clone_enable", "1"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvram_checked("mac_clone_enable", "0"); %> /><script type="text/javascript">Capture(share.disable)</script>
+									<input class="spaceradio" type="radio" value="1" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvram_checked("mac_clone_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="mac_clone_enable" onclick="SelMac(this.value)" <% nvram_checked("mac_clone_enable", "0"); %> /><% tran("share.disable"); %>
 								</div>
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(wanmac.wan)</script></div>
+									<div class="label"><% tran("wanmac.wan"); %></div>
 									<input type="hidden" name="def_hwaddr" value="6" />
 									<input class="num" size="2" maxlength="2" name="def_hwaddr_0" onblur="valid_mac(this,0)" value="<% get_clone_mac("0"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_1" onblur="valid_mac(this,1)" value="<% get_clone_mac("1"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_2" onblur="valid_mac(this,1)" value="<% get_clone_mac("2"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_3" onblur="valid_mac(this,1)" value="<% get_clone_mac("3"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_4" onblur="valid_mac(this,1)" value="<% get_clone_mac("4"); %>" />:<input class="num" size="2" maxlength="2" name="def_hwaddr_5" onblur="valid_mac(this,1)" value="<% get_clone_mac("5"); %>" />
 								</div>
@@ -101,7 +101,7 @@ addEvent(window, "load", function() {
 								<hr width="90%"><br />
 								
 								<div class="setting">
-									<div class="label"><script type="text/javascript">Capture(wanmac.wlan)</script></div>
+									<div class="label"><% tran("wanmac.wlan"); %></div>
 									<input type="hidden" name="def_whwaddr" value="6" />
 									<input class="num" size="2" maxlength="2" name="def_whwaddr_0" onblur="valid_mac(this,0)" value="<% get_clone_wmac("0"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_1" onblur="valid_mac(this,1)" value="<% get_clone_wmac("1"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_2" onblur="valid_mac(this,1)" value="<% get_clone_wmac("2"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_3" onblur="valid_mac(this,1)" value="<% get_clone_wmac("3"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_4" onblur="valid_mac(this,1)" value="<% get_clone_wmac("4"); %>" />:<input class="num" size="2" maxlength="2" name="def_whwaddr_5" onblur="valid_mac(this,1)" value="<% get_clone_wmac("5"); %>" />
 								</div>
@@ -117,19 +117,19 @@ addEvent(window, "load", function() {
 				<div id="helpContainer">
 				<div id="help">
 					<div id="logo">
-							<h2><script type="text/javascript">Capture(share.help)</script></h2>
+							<h2><% tran("share.help"); %></h2>
 					</div>
 					<dl>
-						<dt class="term"><script type="text/javascript">Capture(wanmac.legend)</script>:</dt>
-						<dd class="definition"><script type="text/javascript">Capture(hwanmac.right2)</script></dd>
+						<dt class="term"><% tran("wanmac.legend"); %>:</dt>
+						<dd class="definition"><% tran("hwanmac.right2"); %></dd>
 					</dl><br />
-					<a href="javascript:openHelpWindow('HMAC.asp');"><script type="text/javascript">Capture(share.more)</script></a>
+					<a href="javascript:openHelpWindow('HMAC.asp');"><% tran("share.more"); %></a>
 				</div>
 			</div>
 			<div id="floatKiller"></div>
 				<div id="statusInfo">
-					<div class="info"><script type="text/javascript">Capture(share.firmware)</script>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><script type="text/javascript">Capture(share.time)</script>: <% get_uptime(); %></div>
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
 					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
 				</div>
 			</div>
