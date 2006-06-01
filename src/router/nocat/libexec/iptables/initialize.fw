@@ -18,12 +18,26 @@
 #  3: Public
 #  4: Free
 
-export PATH=/tmp/sbin:/tmp/bin:/bin:/usr/bin:/sbin:/usr/sbin
+# Note: your PATH is inherited from the gateway process
+#
 
 # Enable IP forwarding and rp_filter (to kill IP spoof attempts).
 #
 echo "1" > /proc/sys/net/ipv4/ip_forward
 echo "1" > /proc/sys/net/ipv4/conf/all/rp_filter
+
+# Load alllll the kernel modules we need.
+#
+rmmod ipchains > /dev/null 2>&1 # for RH 7.1 users.
+
+#DD-WRT (Steve Horbachuk) these are already loaded, don't load again
+#for module in ip_tables ipt_REDIRECT ipt_MASQUERADE ipt_MARK ipt_REJECT  \
+#    ipt_TOS ipt_LOG iptable_mangle iptable_filter iptable_nat ip_nat_ftp \
+#    ip_conntrack ipt_mac ipt_state ipt_mark; do
+
+#    modprobe $module
+#done
+
 
 # Flush all user-defined chains
 #
@@ -137,8 +151,8 @@ fi
 for port in 80 443; do
     for mark in $nonauth; do
 #	$redirect -m mark --mark $mark -d windowsupdate.microsoft.com -j DROP
-	$redirect -m mark --mark $mark -p tcp --dport $port  -j DNAT \
-	    --to-destination $InsideIP:$GatewayPort
+	$redirect -m mark --mark $mark -p tcp --dport $port  -j REDIRECT \
+	    --to-port $GatewayPort
     done
 done
 
@@ -216,7 +230,7 @@ $fwd -j DROP
 #
 # chmod +x throttle.fw
 #
-#[ -x throttle.fw ] && throttle.fw
+[ -x throttle.fw ] && throttle.fw
 
 ##
 # Add any other local firewall rules below.

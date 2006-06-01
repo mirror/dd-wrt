@@ -8,7 +8,8 @@
 #
 ##
 
-export PATH=/tmp/sbin:/tmp/bin:/bin:/usr/bin:/sbin:/usr/sbin
+# Note: your PATH is inherited from the gateway process
+#
 
 TOTAL_DOWN=3mbit
 TOTAL_UP=384kbit
