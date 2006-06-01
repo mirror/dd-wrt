@@ -58,17 +58,12 @@ extern char * BCMINIT(nvram_get)(const char *name);
  * @param	name	name of variable to get
  * @return	value of variable or NUL if undefined
  */
-#define nvram_safe_get(name) (BCMINIT(nvram_get)(name) ? : "")
+extern char *nvram_safe_get(const char *name);
 
-#define nvram_safe_unset(name) ({ \
-	if(nvram_get(name)) \
-		nvram_unset(name); \
-})
+extern void nvram_safe_unset(const char *name);
 
-#define nvram_safe_set(name, value) ({ \
-	if(!nvram_get(name) || strcmp(nvram_get(name), value)) \
-		nvram_set(name, value); \
-})
+extern void nvram_safe_set(const char *name, char *value);
+
 
 /*
  * Match an NVRAM variable.
@@ -77,11 +72,7 @@ extern char * BCMINIT(nvram_get)(const char *name);
  * @return	TRUE if variable is defined and its value is string equal
  *		to match or FALSE otherwise
  */
-static INLINE int
-nvram_match(char *name, char *match) {
-	const char *value = BCMINIT(nvram_get)(name);
-	return (value && !strcmp(value, match));
-}
+extern int nvram_match(char *name, char *match);
 
 /*
  * Inversely match an NVRAM variable.
@@ -90,12 +81,13 @@ nvram_match(char *name, char *match) {
  * @return	TRUE if variable is defined and its value is not string
  *		equal to invmatch or FALSE otherwise
  */
-static INLINE int
-nvram_invmatch(char *name, char *invmatch) {
-	const char *value = BCMINIT(nvram_get)(name);
-	return (value && strcmp(value, invmatch));
-}
+ 
+extern int nvram_invmatch(char *name, char *invmatch);
 
+
+extern void nvram_store_collection(char *name,char *buf);
+
+extern char *nvram_get_collection(char *name);
 /*
  * Set the value of an NVRAM variable. The name and value strings are
  * copied into private storage. Pointers to previously set values
