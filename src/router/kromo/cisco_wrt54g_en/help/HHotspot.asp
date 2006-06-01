@@ -63,7 +63,7 @@ List any webservers, that you would like connecting clients to be able to access
 				<dt>Document Root</dt>
 				<dd>Where all of the application templates (including SplashForm) are hiding (splash.html is the form displayed to users on capture).</dd>
 				<dt>Splash URL</dt>
-				<dd>Optional URL to fetch dynamic remote splash page from.<br/><br/>
+				<dd>Optional URL to fetch dynamic remote splash page from. This should end with the /splash.html, or the name of your splash page.<br/><br/>
 					<div class="note">
 						<h4>Note</h4>
 						<div>Leave empty if using a page stored on the router.</div>
@@ -79,7 +79,7 @@ List any webservers, that you would like connecting clients to be able to access
 				<dt>Login Timeout</dt>
 				<dd>How much time, in seconds, elapses before the client has to see the splash screen again, and click on 'I Agree'. How often a client is shown the EULA or other designated splash page.</dd>
 				<dt>Verbosity</dt>
-				<dd>Log verbosity (to syslogd). Syslogd service must be enable.
+				<dd>Log verbosity (to syslogd and /tmp/nocat.log). Syslogd service must be enabled.
 					<ul>
 						<li>0 is (almost) no logging.</li>
 						<li>10 is log everything.</li>
@@ -87,7 +87,7 @@ List any webservers, that you would like connecting clients to be able to access
 					</ul>
 				</dd>
 				<dt>Route Only</dt>
-				<dd>Required only if you DO NOT want your gateway to act as a NAT. Enable this only if you're running a strictly routed network, and don't need the gateway to enable NAT for you. You would not normally use this option. So if you don't understand it, leave it to No/Off.</dd>
+				<dd>Required only if you DO NOT want your gateway to act as a NAT. Enable this only if you're running a strictly routed network, and don't need the gateway to enable NAT for you. You would not normally use this option. So if you don't understand it, leave it Disabled</dd>
 				<dd>Check all values and click <em>Save Settings</em> to save your settings. Click <em>Cancel Changes</em> to cancel your unsaved changes. Click <em>Reboot router</em> to reboot your router immediately.</dd>
 			</dl>
 		</div>
