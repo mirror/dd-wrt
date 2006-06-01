@@ -193,7 +193,6 @@ mk_nocat_conf (void)
 	   _get_network (nvram_safe_get ("lan_ipaddr"),
 			 nvram_safe_get ("lan_netmask")),
 	   nvram_safe_get ("lan_netmask"));
-  fprintf (fp, "InsideIP\t%s\n", nvram_safe_get ("lan_ipaddr"));
 
   /* Irving - Rework getting DNS */
   struct dns_lists *dns_list = NULL;
@@ -218,15 +217,17 @@ mk_nocat_conf (void)
   fprintf (fp, "Verbosity\t%s\n", nvram_safe_get ("NC_Verbosity"));
   fprintf (fp, "GatewayName\t%s\n", nvram_safe_get ("NC_GatewayName"));
   fprintf (fp, "GatewayAddr\t%s\n", nvram_safe_get ("lan_ipaddr"));
-//  fprintf (fp, "GatewayMAC\t%s\n", nvram_safe_get ("et0macaddr"));
   fprintf (fp, "GatewayPort\t5280\n");
   fprintf (fp, "HomePage\t%s\n", nvram_safe_get ("NC_HomePage"));
   fprintf (fp, "AllowedWebHosts\t%s %s\n", nvram_safe_get ("lan_ipaddr"),
 	   nvram_safe_get ("NC_AllowedWebHosts"));
   fprintf (fp, "LoginTimeout\t%s\n", nvram_safe_get ("NC_LoginTimeout"));
   fprintf (fp, "DocumentRoot\t%s\n", nvram_safe_get ("NC_DocumentRoot"));
-  fprintf (fp, "SplashURL\t%s\n", nvram_safe_get ("NC_SplashURL"));
-  fprintf (fp, "SplashTimeout\t21600\n");
+  if (nvram_invmatch ("NC_SplashURL", ""))
+    {
+      fprintf (fp, "SplashURL\t%s\n", nvram_safe_get ("NC_SplashURL"));
+      fprintf (fp, "SplashTimeout\t21600\n");
+    }
   fprintf (fp, "RouteOnly\t%s\n", nvram_safe_get ("NC_RouteOnly"));
 
   /* These should be hardcoded as the defaults */
