@@ -19,7 +19,7 @@ lang_charset.set="iso-8859-1";
 var share = new Object();
 share.firmware="Firmware";
 share.time="Hora";
-share.interipaddr="Internet IP Address";
+share.interipaddr="Endereço IP para Internet";
 share.more="Mais...";
 share.help="Ajuda";
 share.enable="Habilitar";
@@ -124,7 +124,7 @@ share.disconnect="Desconectar";
 share.disconnected="Desconectado";
 share.info="Informação";
 share.state="Estado";
-share.mode="Modo";
+share.mode="Modo Wireless";
 share.encrypt="Criptografia";
 share.key="Chave";
 share.wireless="Wireless";
@@ -164,7 +164,7 @@ sbutton.filterMac="Editar Lista do Filtro de MAC";
 sbutton.filterSer="Adicionar/Editar Serviço";
 sbutton.reboot="Reiniciar Roteador";
 sbutton.help="   Ajuda  ";
-sbutton.wl_client_mac="Lista de MAC dos Clientes Wireless";
+sbutton.wl_client_mac="Lista de MAC dos Clientes Wireless Associados";
 sbutton.update_filter="Atualiar Lista de Filtros";
 sbutton.join="Ingressar";
 sbutton.log_in="Log de Entrada";
@@ -217,7 +217,7 @@ errmsg.err25="O valor da Chave não está correto.";
 errmsg.err26="O tamanho da Chave não está correto.";
 errmsg.err27="Máscara de Sub-Rede inválida.";
 errmsg.err28=" possui caracteres inválidos, devem estar entre [ 0 - 9 ].";
-errmsg.err29=" possui código ascii inválido.";
+errmsg.err29=" possui código ascii inválido."
 errmsg.err30=" possui dígitos hexadecimais inválidos.";
 errmsg.err31=" valor é inválido.";
 errmsg.err32="Endereço IP e Gateway não estão na mesma máscara de sub-rede.";
@@ -225,14 +225,14 @@ errmsg.err33="Endereço IP e Gateway não podem ser o mesmo.";
 errmsg.err34=" não é permitido conter espaços em branco.";
 
 //Wol.asp error messages
-errmsg.err35="Você deve inserir um Endereço MAC para funcionar.";
+errmsg.err35="Você deve inserir um Endereço MAC para funcionar."
 errmsg.err36="Você deve inserir um endereço broadcast de rede para funcionar.";
 errmsg.err37="Você deve inserir uma porta UDP para funcionar.";
 
 //WL_WPATable.asp error messages
 //WPA.asp error messages
 errmsg.err38="Por favor insira uma Chave Compartilhada!";
-errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais.";
+errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais."
 errmsg.err40="Você deve inserir uma chave no campo Chave ";
 errmsg.err41="Tamanho inválido na Chave ";
 errmsg.err43="Rekey interval";
@@ -247,10 +247,10 @@ errmsg.err44="As verificações totais excedem 128 contagens.";
 errmsg.err47="SSID Inválida.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS não é compatível com a configuração atual do roteador. Por favor verifique os seguintes passos :\n * O Modo Wireless deve ser AccessPoint \n * WPA2 não é suportado no modo WDS \n * Modo de Rede Somente-B não é suportado em modo WDS";
+errmsg.err48="WDS não é compatível com a configuração atual do roteador. Por favor verifique os seguintes passos :\n * O Modo Wireless deve ser Access Point \n * WPA2 não é suportado no modo WDS \n * Modo de Rede Somente-B não é suportado em modo WDS";
 
 //Wireless_radauth.asp error messages
-errmsg.err49="Radius está disponível somente no modo AccessPoint.";
+errmsg.err49="Radius está disponível somente no modo Access Point.";
 
 //Wireless_Basic.asp error messages
 errmsg.err50="Você deve inserir uma SSID.";
@@ -386,10 +386,10 @@ hconfig.right4="Clique em <em>Procurar...</em> para procurar por um arquivo de c
 
 var ddns = new Object();
 ddns.titl=" - DNS Dinâmico"
-ddns.h2="Sistema de Nomes de Domínio Dinâmico(DDNS)";
+ddns.h2="Sistema de Nomes de Domínio Dinâmico (DDNS)";
 ddns.legend="DDNS";
 ddns.srv="Serviço DDNS";
-ddns.emailaddr="Endereço de e-mail";
+ddns.emailaddr="Endereço de E-mail";
 ddns.typ="Tipo";
 ddns.dynamic="Dinâmico";
 // ddns.static="Estático"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
@@ -449,7 +449,7 @@ ddnsm.all_noip="Sem conexão à internet";
 
 //help container
 var hddns = new Object();
-hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domínios so invés de endereços IPs. \
+hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domínios ao invés de endereços IPs. \
 	O serviço gerencia mudanças no endereço IP e atualiza as informações do seu domínio dinamicamente. \
 	Você deve se inscrever no serviço através de um dos sites: DynDNS.org, TZO.com ou ZoneEdit.com.";
 
@@ -535,13 +535,21 @@ filter.mess3="O tempo final deve ser maior que o tempo inicial.";
 
 //help container
 var hfilter = new Object();
+hfilter.right1="Política de Acesso à Internet:";
 hfilter.right2="Você pode definir até 10 políticas de acesso. Clique em <em>" + sbutton.del + "</em> para remover uma política ou em <em>" + sbutton.summary + "</em> para ver um das políticas de acesso.";
+hfilter.right3="Status:";
 hfilter.right4="Habilitar ou Desabilitar política.";
+hfilter.right5="Nome da Política:";
 hfilter.right6="Você deve adicionar um nome à sua política de acesso.";
+hfilter.right7="Dias:";
 hfilter.right8="Escolha os dias da semana aos quais a política será aplicada.";
+hfilter.right9="Horários:";
 hfilter.right10="Insira o horário do dia em que você gostaria de aplicar a política.";
+hfilter.right11="Serviços Bloqueados:";
 hfilter.right12="Você pode escolher bloquear determinados serviços. Clique em <em>" + sbutton.filterSer + "</em> para modificar estas configurações.";
+hfilter.right13="Bloqueio de Website pela URL:";
 hfilter.right14="Você pode bloquear determinados sites inserindo o endereço da URL.";
+hfilter.right15="Bloqueio de Website por Palavra-Chave:";
 hfilter.right16="Você pode bloquear acesso à determinados sites pelas Palavras-Chave contidas na página web.";
 
 
@@ -720,22 +728,22 @@ idx.legend="Tipo de Conexão à Internet";
 idx.conn_type="Tipo de Conexão";
 idx.stp="STP";
 idx.stp_mess="(desabilitar para ISPs COMCAST)";
-idx.optional="Configuração Opcional (necessária para alguns ISPs)";
+idx.optional="Configurações Opcionais (necessárias para alguns ISPs)";
 idx.mtu="MTU";
-idx.h23="Configuração da Rede";
+idx.h23="Configuração de Rede";
 idx.routerip="IP do Roteador";
 idx.lanip="Endereço IP Local";
 idx.legend2="Porta WAN";
 idx.wantoswitch="Atribuir Porta WAN ao Switch";
 idx.legend3="Configurações de Hora";
 idx.timeset="Fuso Horário / Horário de Verão (DST)";
-idx.localtime="Usar hora local";
+idx.localtime="Usar Fuso-Horário Local";
 idx.static_ip="Endereço IP Estático";
 idx.dhcp="Configuração Automática - DHCP";
-idx.dhcp_legend="Configurações do Endereço de Rede do Servidor (DHCP)";
+idx.dhcp_legend="Configurações do Servidor de Endereços de Rede (DHCP)";
 idx.dhcp_type="Tipo de DHCP";
 idx.dhcp_srv="Servidor DHCP";
-idx.dhcp_fwd="DHCP Forwarder";
+idx.dhcp_fwd="Encaminhador DHCP";
 idx.dhcp_start="Endereço IP Inicial";
 idx.dhcp_end="Endereço IP Final";		//used in Status_Lan.asp
 idx.dhcp_maxusers="Número Máximo de Usuários DHCP";
@@ -747,14 +755,14 @@ idx.auth_dnsmasq="DHCP-Authoritative";
 
 //help container
 var hidx = new Object();
-hidx.right2="Estas configurações são comumente usdas por provedores à Cabo.";
+hidx.right2="Estas configurações são comumente usadas por provedores à Cabo.";
 hidx.right4="Insira o Host Name fornecido pelo seu ISP.";
 hidx.right6="Insira o Nome de Domínio fornecido pelo seu ISP.";
-hidx.right8="Este é o endereço do roteador.";
+hidx.right8="Este é o Endereço IP do roteador para sua rede local.";
 hidx.right10="Esta é a máscara de sub-rede do roteador.";
-hidx.right12="Permite ao roteador gerenciar seus endereços IP.";
-hidx.right14="O endereço com o qual você gostaria de iniciar.";
-hidx.right16="Você pode limitar o número de endereços fornecidos pelo seu roteador.";
+hidx.right12="Permite ao roteador gerenciar seus endereços IP, e fornecê-los automaticamente para sua rede.";
+hidx.right14="Endereço IP com o qual você gostaria de iniciar a sequência de endereços a ser fornecida.";
+hidx.right16="Você pode limitar o número de endereços IP fornecidos pelo seu roteador.";
 hidx.right18="Escolha o fuso horário e o horário de verão ao qual você pertence. O roteador pode usar horários locais ou o horário UTC.";
 
 
@@ -830,6 +838,11 @@ management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
+management.dsn_legend="DNSMasq";
+management.dsn_srv="DNSMasq";
+management.dsn_loc="DNS Local";
+management.dsn_opt="Opções Adicionais de DNS";
+
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 
@@ -861,18 +874,18 @@ management.jffs_clean="Limpar JFFS2";
 
 management.lang_legend="Selecionar Linguagem";
 management.lang_srv="Linguagem";
-management.lang_bulgarian="bulgarian";
-management.lang_chinese_traditional="tradchinese";
-management.lang_chinese_simplified="chinese simplified";
-management.lang_croatian="croatian";
-management.lang_czech="czech";
-management.lang_dutch="dutch";
+management.lang_bulgarian="Búlgaro";
+management.lang_tradchinese="Chinês Tradicional";
+management.lang_chinese_simplified="Chinês Simplificado";
+management.lang_croatian="Croata";
+management.lang_czech="Tcheco";
+management.lang_dutch="Holandês";
 management.lang_english="Inglês";
 management.lang_french="Francês";
 management.lang_german="Alemão";
 management.lang_italian="Italiano";
 management.lang_brazilian="Português-Brazil";
-management.lang_slovenian="slovenian";
+management.lang_slovenian="Esloveno";
 management.lang_spanish="Espanhol";
 management.lang_swedish="swedish";
 
@@ -980,10 +993,15 @@ route.static_ip="Endereço IP de Destino da LAN";
 
 //help container
 var hroute = new Object();
-hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se algum outro roteador existir na sua rede, selecione o modo <em>Router</em>.";
+hroute.right1="Modo de Operação:";
+hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se existir algum outro roteador na sua rede, selecione o modo <em>Router</em>.";
+hroute.right3="Selecione um Número de Registro:";
 hroute.right4="Este é o número único da rota, você pode definir até 20 rotas.";
+hroute.right5="Nome da Rota:";
 hroute.right6="Insira o nome desejado que deseja associar à esta regra.";
+hroute.right7="Endereço IP de Destino da LAN:";
 hroute.right8="Este é o host remoto ao qual você gostaria de atribuir a rota estática.";
+hroute.right9="Máscara de Sub-Rede:";
 hroute.right10="Determina o host e a porção de rede a qual pertence a rota.";
 
 
@@ -1016,10 +1034,6 @@ service.dhcp_jffs2="Usar JFFS2 Para o BD de Concessão aos Clientes";
 service.dhcp_domain="Domínio Utilizado";
 service.dhcp_landomain="Dominio da LAN";
 service.dhcp_option="Opções Adicionais do DHCPd";
-service.dnsmasq_legend="DNSMasq";
-service.dnsmasq_srv="DNSMasq";
-service.dnsmasq_loc="DNS Local";
-service.dnsmasq_opt="Opções Adicionais de DNS";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1133,7 +1147,7 @@ status_router.mem_tot="Total Disponível";
 status_router.mem_free="Livre";
 status_router.mem_used="Utilizado";
 status_router.mem_buf="Buffers";
-status_router.mem_cached="Cached";
+status_router.mem_cached="Em Cache";
 status_router.mem_active="Ativo";
 status_router.mem_inactive="Inativo";
 status_router.legend4="Rede";
@@ -1180,7 +1194,7 @@ var status_wireless = new Object();
 status_wireless.titl=" - Status Wireless";
 status_wireless.h2="Wireless";
 status_wireless.legend="Status Wireless";
-status_wireless.net="Rede";
+status_wireless.net="Tipo de Rede";
 status_wireless.pptp="Status PPTP";
 status_wireless.legend2="Informações dos Pacotes";
 status_wireless.rx="Recebidos (RX)";
@@ -1193,7 +1207,7 @@ status_wireless.wds="Nós WDS";
 //help container
 var hstatus_wireless = new Object();
 hstatus_wireless.right2="Este é o Endereço MAC do Roteador, visto pela sua rede wireless.";
-hstatus_wireless.right4="Como selecionado na aba Wireless, ela irá mostrar o mode de operação da rede wireless (Mixto, Somente-G, Somente-B ou Desabilitado) utilizado pela rede.";
+hstatus_wireless.right4="Como selecionado na aba Wireless, ela irá mostrar o mode de operação da rede wireless (Misto, Somente-G, Somente-B ou Desabilitado) utilizado pela rede.";
 
 
 // ******************************************* Triggering.asp *******************************************//
@@ -1324,8 +1338,7 @@ wanmac.wlan="Clonar MAC Wireless";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="Alguns ISPs requerem o registro do seu endereço MAC. \
-			Se você não deseja registrar novamente seu endereço MAC, você pode clonar o endereço MAC que está registrado com seu ISP.";
+hwanmac.right2="Alguns ISPs requerem o registro do seu endereço MAC. Se você não deseja registrar novamente seu endereço MAC caso já possua um endereço registrado, você pode clonar o endereço MAC que está registrado com seu ISP e utilizá-lo em seu roteador.";
 
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
@@ -1334,6 +1347,7 @@ var wpa = new Object();
 wpa.titl=" - Segurança Wireless";
 wpa.h2="Segurança Wireless";
 wpa.legend="Criptografia Wireless";
+wpa.secmode="Modo de Segurança";
 wpa.auth_mode="Autenticação de Rede";
 wpa.psk="Chave WPA Pré-Compartilhada";
 wpa.wpa="WPA";
@@ -1365,7 +1379,7 @@ wl_filter.h3="Insira os Endereços MAC no formato &nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:
 
 var wl_active = new Object();
 wl_active.titl=" - Lista de Clientes Wireless Ativos";
-wl_active.h2="Lista de MAC dos Clientes Wireless";
+wl_active.h2="Lista de MAC dos Clientes Wireless Associados";
 wl_active.h3="Habilitar o Filtro de Endereços MAC";
 wl_active.active="PCs Ativos";
 wl_active.inactive="PCs Inativos";
@@ -1391,9 +1405,9 @@ wds.legend2="Opções Extra";
 
 var radius = new Object();
 radius.titl=" - Radius";
-radius.h2="Remote Authentication Dial-In User Service";
+radius.h2="Serviço de Autenticação Remota de Usuários Discados";
 radius.legend="Radius";
-radius.label="MAC Radius Client";
+radius.label="Cliente Radius MAC";
 radius.label2="Formato do MAC";
 radius.label3="IP do Servidor Radius";
 radius.label4="Porta do Servidor Radius";
@@ -1427,21 +1441,21 @@ wl_basic.label2="Modo de Rede Wireless";
 wl_basic.label3="Nome da Rede Wireless (SSID)";
 wl_basic.label4="Canal Wireless";
 wl_basic.label5="Broadcast SSID Wireless";
-wl_basic.label6="Sensitivity Range (ACK Timing)";
-wl_basic.ap="AccessPoint";
+wl_basic.label6="Escala de Sensibilidade (Sincronismo ACK)";
+wl_basic.ap="Access Point";
 wl_basic.client="Cliente";
 wl_basic.clientBridge="Cliente Bridge";
 wl_basic.adhoc="Adhoc";
-wl_basic.mixed="Mixto";
+wl_basic.mixed="Misto";
 wl_basic.b="Somente-B";
 wl_basic.g="Somente-G";
-wl_basic.sensitivity="Padrão: 20000 metros";
+wl_basic.sensitivity="Padrão: 20000 Metros";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em>.";
-hwl_basic.right3="Sensitivity Range: ";
-hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
+hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja excluir clientes Wireless-B, escolha o modo <em>Somente-G</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em>.";
+hwl_basic.right3="Escala de Sensibilidade: ";
+hwl_basic.right4="Ajuste do sincronismo ACK. Se desejar desabilitar o sincronismo ACK use o valor 0.";
 
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
@@ -1450,7 +1464,7 @@ var wl_adv = new Object();
 wl_adv.titl=" - Configurações Wireless Avançadas";
 wl_adv.h2="Configurações Wireless Avançadas";
 wl_adv.legend="Configurações Avançadas";
-wl_adv.legend2="Configurações de Suporte Multimídia Wireless";
+wl_adv.legend2="Configurações Wireless de Suporte Multimídia";
 wl_adv.label="Tipo de Autenticação";
 wl_adv.label2="Taxa Básica";
 wl_adv.label3="Taxa de Transmissão";
@@ -1471,7 +1485,7 @@ wl_adv.label16="Afterburner";
 wl_adv.label17="Acesso Wireless à Interface de Configuração";
 wl_adv.label18="Suporte WMM";
 wl_adv.label19="No-Acknowledgement";
-wl_adv.table1="EDCA AP Parameters (AccessPoint para Cliente)";
+wl_adv.table1="Parâmetros EDCA Access Point (Access Point para Cliente)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
@@ -1482,14 +1496,14 @@ wl_adv.row1="Background";
 wl_adv.row2="Best Effort";
 wl_adv.row3="Vídeo";
 wl_adv.row4="Voz";
-wl_adv.table2="EDCA STA Parameters (Client to AP)";
+wl_adv.table2="Parâmetros EDCA Cliente (Cliente para Access Point)";
 wl_adv.lng="Longo"; 					//************* don't use .long ! *************
 wl_adv.shrt="Curto"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
 hwl_adv.right1="Tipo de Autenticação:";
-hwl_adv.right2="Você pode escolher entre Automática e Chave Compartilhada. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar o modo de autenticação de Chave Compartilhada.";
+hwl_adv.right2="Você pode escolher entre <em>Automático</em> e <em>Chave Compartilhada</em>. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar este modo de autenticação.";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
