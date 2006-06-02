@@ -1535,7 +1535,6 @@ wl_adv.shrt="Corto"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Tipo de Autenticaci&#243;n:";
 hwl_adv.right2="Deber&#237;as escoger entre <em>Auto</em> &#243; <em>Clave Compartida</em>. La autenticaci&#243;n por clave compartida es m&#225;s segura, pero todos los dispositivos en tu red deber&#225;n soportar <em>Autenticaci&#243;n por Clave Compartida</em>.";
 
 

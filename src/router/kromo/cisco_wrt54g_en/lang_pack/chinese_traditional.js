@@ -1530,7 +1530,6 @@ wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="授權類型：";
 hwl_adv.right2="您可以從自動或者共用秘鑰中選擇一個。共用秘鑰授權更加安全，但是所有在您網路中的設備必須支援共用秘鑰授權。";
 
 

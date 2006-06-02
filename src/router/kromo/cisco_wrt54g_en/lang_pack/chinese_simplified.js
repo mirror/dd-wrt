@@ -1530,7 +1530,6 @@ wl_adv.shrt="短"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="授权类型：";
 hwl_adv.right2="您可以从自动或者共享秘钥中选择一个。共享秘钥授权更加安全，但是所有在您网络中的设备必须支持共享秘钥授权。";
 
 
