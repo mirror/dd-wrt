@@ -80,6 +80,10 @@ extern int start_udhcpd (void);
 extern int stop_udhcpd (void);
 extern int start_dns (void);
 extern int stop_dns (void);
+extern int start_dnsmasq (void);
+extern int stop_dnsmasq (void);
+extern int start_dhcpfwd (void);
+extern int stop_dhcpfwd (void);
 extern int start_ntpc (void);
 extern int stop_ntpc (void);
 extern int start_services (void);
@@ -99,6 +103,8 @@ extern int setup_vlans (void);
 
 extern int start_nas (char *type);
 #ifdef HAVE_SPUTNIK_APD
+extern int start_sputnik (void);
+extern int stop_sputnik (void);
 extern int start_sputnik_apd (void);
 extern int stop_sputnik_apd (void);
 #endif

@@ -10,6 +10,7 @@
 #else
 #define setlocale(x,y)
 #endif
+#include <rc.h>
 
 const char *bb_applet_name ATTRIBUTE_EXTERNALLY_VISIBLE;
 
