@@ -26,6 +26,7 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <ctype.h>
 #include "radius.h"
 
 #define WAIT	300	/* Seconds until a STA expires */
@@ -43,7 +44,8 @@ char *server, *secret;
 short port;
 short mackey;
 short macfmt;
-
+int internal=0;
+#include <shutils.h>
 
 /* Broadcom */
 #ifndef HAVE_MADWIFI
@@ -53,8 +55,7 @@ short macfmt;
 #include <bcmnvram.h>
 static void set_maclist(char *iface,char *buf)
 {
-	memset(buf,0,sizeof(buf));
-	wl_ioctl(iface, WLC_SET_MACLIST, buf, sizeof(buf));
+	wl_ioctl(iface, WLC_SET_MACLIST, buf, WLC_IOCTL_MAXLEN);
 }
 static void security_disable(char *iface)
 {
@@ -202,11 +203,22 @@ struct maclist {
 	struct ether_addr ea[1];	/* variable length array of MAC addresses */
 };
 
+static void security_disable(char *iface)
+{
+#ifdef DEBUG
+	printf("Security Disable\n");
+#endif
+    set80211param(iface,IEEE80211_PARAM_MACCMD,IEEE80211_MACCMD_FLUSH);
+    set80211param(iface,IEEE80211_PARAM_MACCMD,IEEE80211_MACCMD_POLICY_OPEN);
+    
+}
 static void set_maclist(char *iface,char *buf)
 {
 	struct ieee80211req_mlme mlme;
 	struct maclist *maclist = (struct maclist *) buf;
 
+	if (maclist->count==0)
+	    security_disable();
 //	if (authorized)
 //		mlme.im_op = IEEE80211_MLME_AUTHORIZE;
 //	else
@@ -218,16 +230,6 @@ static void set_maclist(char *iface,char *buf)
 		memcpy(mlme.im_macaddr, &maclist->ea[i], IEEE80211_ADDR_LEN);
 		do80211priv(iface, IEEE80211_IOCTL_SETMLME, &mlme,sizeof(mlme));
 	    }
-}
-static void security_disable(char *iface)
-{
-#ifdef DEBUG
-	printf("Security Disable\n");
-#endif
-
-    set80211param(iface,IEEE80211_PARAM_MACCMD,IEEE80211_MACCMD_FLUSH);
-    set80211param(iface,IEEE80211_PARAM_MACCMD,IEEE80211_MACCMD_POLICY_OPEN);
-    
 }
 static void security_deny(char *iface)
 {
@@ -252,9 +254,94 @@ static void kick_mac(char *iface,char *mac)
 }
 #endif
 
+#define tou(a) if (a>('a'-1) && a<('z'+1) ){ a-='a'; a+='A';}
+int stricmp(unsigned char *c1,unsigned char *c2)
+{
+if (c1==NULL && c2==NULL)return 0;
+if (c1==NULL)return -1;
+if (c2==NULL)return -1;
+int i;
+for (i=0;i<strlen(c1);i++)
+    tou(c1[i]);
+
+for (i=0;i<strlen(c2);i++)
+    tou(c2[i]);
+return strcmp(c1,c2);
+}
+
 int authmac(unsigned char *mac)
 {
-	char macstr[32];
+char macstr[32];
+if (internal)
+    {
+	sprintf(macstr,"%2.2x:%2.2x:%2.2x:%2.2x:%2.2x:%2.2x",\
+		mac[0],mac[1],mac[2],mac[3],\
+		mac[4],mac[5]);
+#ifdef DEBUG
+	printf("mac %s\n",macstr);
+#endif
+    
+    char *collection=nvram_get_collection("iradius");
+    if (collection!=NULL)
+    {
+    char entry[32];
+    char *next;
+    int c=0;
+    foreach(entry,collection,next)
+	{
+	if (!(c%2))
+	if (!stricmp(entry,macstr))
+	    {
+	    if (next!=NULL)
+		{
+#ifdef DEBUG
+	printf("next %s\n",next);
+#endif
+		if (strncmp(next," 1",2)==0)
+		    {
+		    free(collection);
+		    return 1;
+		    }
+		    else
+		    {
+		    free(collection);
+		    return 0;
+		    }
+		}
+	    }
+	c++;
+	}
+    }
+    if (collection==NULL)
+    {
+    collection=malloc(32);
+    memset(collection,0,32);
+    }
+    else
+    collection=realloc(collection,strlen(collection)+32);
+#ifdef DEBUG
+	printf("mac2 %s\n",macstr);
+#endif
+    strcat(collection,macstr);
+    strcat(collection," 0 ");
+#ifdef DEBUG
+	printf("collection %s\n",collection);
+#endif
+    nvram_store_collection("iradius",collection);
+
+int radcount=0;
+char *radc=nvram_get("iradius_count");
+if (radc!=NULL)radcount=atoi(radc);
+radcount++;
+char count[16];
+sprintf(count,"%d",radcount);
+nvram_set("iradius_count",count);
+nvram_commit();
+    free(collection);
+    return 0;
+    }else{
+
+
 	switch(macfmt)
 	{
 	case 1: //000000-000000
@@ -281,7 +368,7 @@ int authmac(unsigned char *mac)
 	return radius(server, port, macstr, macstr, secret);
 	else
 	return radius(server, port, macstr, secret, secret);
-	
+}
 	
 	
 }
@@ -299,6 +386,7 @@ int main(int argc, char** argv)
 	int usePortal=0;
 	char macbuild[64];
 	struct sta *first;	/* Pointer to first element in linked STA list */
+	
 	int val;
 	int lastcnt;		/* Number of blacklisted cards in the last loop */
 	int statechange;	/* Do we need to push the new blacklist/reset the card? */
@@ -339,6 +427,12 @@ int main(int argc, char** argv)
 	{
 		macfmt=3;
 		iface=argv[2];
+	}else
+	if (argc>2 && (strcmp(argv[1],"-t") == 0))
+	{
+		macfmt=0;
+		internal=1;
+		iface=argv[2];
 	}
 	else {
 		macfmt=0;
@@ -372,6 +466,7 @@ int main(int argc, char** argv)
 	lastcnt=0;
 
 	/* Disable MAC security on card */
+	memset(buf,0,WLC_IOCTL_MAXLEN);	
 	set_maclist(iface,buf);
 	security_disable(iface);
 
