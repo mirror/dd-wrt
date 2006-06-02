@@ -2020,6 +2020,12 @@ Initnvramtab ()
 		      tmp->validate = validate_userlist;
 		    }
 #endif
+#ifdef HAVE_RADLOCAL
+		  if (!stricmp (tmpstr, "IRADIUSUSERLIST"))
+		    {
+		      tmp->validate = validate_iradius;
+		    }
+#endif
 		  if (!stricmp (tmpstr, "IPADDRS"))
 		    {
 		      tmp->validate = validate_ipaddrs;
@@ -2699,6 +2705,9 @@ struct gozila_action gozila_actions[] = {
 #ifdef HAVE_CHILLILOCAL
   {"Hotspot", "add_user", "", 1, REFRESH, user_add},
   {"Hotspot", "remove_user", "", 1, REFRESH, user_remove},
+#endif
+#ifdef HAVE_RADLOCAL
+  {"Hotspot", "add_iradius", "", 1, REFRESH, raduser_add},
 #endif
   {"ForwardSpec", "add_forward_spec", "", 1, REFRESH, forwardspec_add},
   {"ForwardSpec", "remove_forward_spec", "", 1, REFRESH, forwardspec_remove},
@@ -3841,6 +3850,9 @@ struct mime_handler mime_handlers[] = {
 #elif HAVE_NEWMEDIA
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth2},
+#elif HAVE_DDLAN
+  {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
+   NULL},
 #else
   {"applyuser.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi,
    do_auth},
@@ -3848,9 +3860,15 @@ struct mime_handler mime_handlers[] = {
 #ifdef HAVE_CHILLI
   {"fon.cgi*", "text/html", no_cache, NULL, do_fon_cgi, do_auth},
 #endif
+#ifdef HAVE_DDLAN
+  {"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, NULL},
+  {"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
+   NULL},
+#else
   {"apply.cgi*", "text/html", no_cache, do_apply_post, do_apply_cgi, do_auth},
   {"upgrade.cgi*", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
    do_auth},
+#endif
 //  {"Gozila.cgi*", "text/html", no_cache, NULL, do_setup_wizard, do_auth},     // for setup wizard
 /*	{ "**.cfg", "application/octet-stream", no_cache, NULL, do_backup, do_auth }, */
   {"restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
@@ -4150,6 +4168,10 @@ struct ej_handler ej_handlers[] = {
   {"show_routing", ej_show_routing},
 #ifdef HAVE_MSSID
   {"show_wireless", ej_show_wireless},
+#endif
+#ifdef HAVE_RADLOCAL
+  {"show_iradius_check", ej_show_iradius_check},
+  {"show_iradius", ej_show_iradius},
 #endif
 
 #ifdef HAVE_CHILLILOCAL
