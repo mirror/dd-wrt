@@ -24,6 +24,7 @@ share.proto="Protokol";
 share.ip="IP-Adresse";
 share.mac="MAC-Adresse";
 share.none="Nichts";
+share.none2="Ohne";
 share.both="Beides";
 share.del="Löschen";
 share.remove="Entfernen";
@@ -116,6 +117,8 @@ share.key="Schlüssel";
 share.wireless="WLAN";
 share.dhcp="DHCP";
 share.styl="Aussehen";
+share.err="Fehler";
+share.errs="Fehler";
 
 
 
