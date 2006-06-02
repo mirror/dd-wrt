@@ -1053,11 +1053,11 @@ survey.thjoin="Rejoindre le réseau";
 var service = new Object();
 
 service.titl=" - Services";
-service.h2="Services Management";
+service.h2="Gestion des Services";
 
 //kaid
 service.kaid_legend="XBOX Kaid";
-service.kaid_srv="Start Kaid";
+service.kaid_srv="Démarrer Kaid";
 service.kaid_mac="Console Macs: (must end with;)";
 
 //DHCPd
@@ -1143,26 +1143,26 @@ service.ssh_key="Authorized Keys";
 // ******************************************* Sipath.asp + cgi *******************************************//
 
 var sipath = new Object();
-sipath.titl=" - SiPath Overview";
-sipath.phone_titl=" - Phonebook";
-sipath.status_titl=" - Status";
+sipath.titl=" - Généralités SiPath";
+sipath.phone_titl=" - Répertoire";
+sipath.status_titl=" - Etat";
 
 
 
 // ******************************************* Status_Lan.asp *******************************************//
 
 var status_lan = new Object();
-status_lan.titl=" - LAN Status";
-status_lan.h2="Local Network";
-status_lan.legend="LAN Status";
-status_lan.h22="Dynamic Host Configuration Protocol";
-status_lan.legend2="DHCP Status";
-status_lan.legend3="DHCP Clients";
+status_lan.titl=" - Etat LAN";
+status_lan.h2="Réseau Local";
+status_lan.legend="Etat LAN";
+status_lan.h22="Dynamic Host Configuration Protocol (DHCP)";
+status_lan.legend2="Etat DHCP";
+status_lan.legend3="Clients DHCP";
 
 //help container
 var hstatus_lan = new Object();
-hstatus_lan.right2="This is the Router\'s MAC Address, as seen on your local, Ethernet network.";
-hstatus_lan.right4="This shows the Router\'s IP Address, as it appears on your local, Ethernet network.";
+hstatus_lan.right2="C\'est l\'adresse MAC de l\'interface Ethernet du routeur.";
+hstatus_lan.right4="Adresse IP du routeur sur le réseau local.";
 hstatus_lan.right6="When the Router is using a Subnet Mask, it is shown here.";
 hstatus_lan.right8="If you are using the Router as a DHCP server, that will be displayed here.";
 hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).";
@@ -1519,49 +1519,50 @@ hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
 var wl_adv = new Object();
-wl_adv.titl=" - Advanced Wireless Settings";
-wl_adv.h2="Advanced Wireless Settings";
-wl_adv.legend="Advanced Settings";
-wl_adv.legend2="Wireless Multimedia Support Settings";
-wl_adv.label="Authentication Type";
-wl_adv.label2="Basic Rate";
-wl_adv.label3="Transmission Rate";
-wl_adv.label4="CTS Protection Mode";
-wl_adv.label5="Frame Burst";
-wl_adv.label6="Beacon Interval";
-wl_adv.label7="DTIM Interval";
-wl_adv.label8="Fragmentation Threshold";
-wl_adv.label9="RTS Threshold";
-wl_adv.label10="Max Associated Clients";
-wl_adv.label11="AP Isolation";
-wl_adv.label12="TX Antenna";
-wl_adv.label13="RX Antenna";
-wl_adv.label14="Preamble";
-wl_adv.reference="Noise Reference";
-wl_adv.label15="Xmit Power";
-wl_adv.label16="Afterburner";
-wl_adv.label17="Wireless GUI Access";
-wl_adv.label18="WMM Support";
+wl_adv.titl=" - Paramètres sans fil avancés";
+wl_adv.h2="Paramètres sans fil avancés";
+wl_adv.legend="Paramètres Avancés";
+wl_adv.legend2="Paramètres Sans Fil Multimedia (WMM)";
+wl_adv.label="Type d\'authentification";
+wl_adv.label2="Taux de base";
+wl_adv.label3="Taux de transmission";
+wl_adv.label4="Mode de protection CTS";
+wl_adv.label5="Rafale de trames";
+wl_adv.label6="Intervalle de transmission de balise";
+wl_adv.label7="Intervalle DTIM";
+wl_adv.label8="Seuil de fragmentation";
+wl_adv.label9="Seuil RTS";
+wl_adv.label10="Clients sans fil max.";
+wl_adv.label11="Mode isolation AP";
+wl_adv.label12="Antenne TX";
+wl_adv.label13="Antenne RX";
+wl_adv.label14="Préambule";
+wl_adv.reference="Référence de bruit";
+wl_adv.label15="Puissance Xmit";
+wl_adv.label16="SpeedBooster";
+wl_adv.label17="Accès à la console an sans fil";
+wl_adv.label18="Support de WMM";
 wl_adv.label19="No-Acknowledgement";
-wl_adv.table1="EDCA AP Parameters (AP to Client)";
+wl_adv.table1="Paramètres EDCA AP (AP vers Client)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
 wl_adv.col3="AIFSN";
 wl_adv.col4="TXOP(b)";
 wl_adv.col5="TXOP(a/g)";
-wl_adv.col6="Admin Forced";
-wl_adv.row1="Background";
-wl_adv.row2="Best Effort";
-wl_adv.row3="Video";
-wl_adv.row4="Voice";
-wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.col6="Admin. Forcé";
+wl_adv.row1="Arrière plan";
+wl_adv.row2="Meilleurs effort";
+wl_adv.row3="Vidéo";
+wl_adv.row4="Voix";
+wl_adv.table2="Paramètres EDCA STA (Client vers AP)";
+wl_adv.lng="Long";
+wl_adv.shrt="Court";
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Authentication Type:";
-hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
+hwl_adv.right2="La valeur <em>Auto</em> définie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. \
+	En mode d\'authentification <em>Système ouvert</em>, l\'expéditeur et le destinataire n\'utilisent pas de clé WEP pour l\'authentification. \
+	En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
 
 
 
