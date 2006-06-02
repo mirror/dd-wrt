@@ -78,8 +78,6 @@ static int wlconf_up (char *name);
 extern int stop_l2tp (void);
 extern int start_udhcpd (void);
 extern int stop_udhcpd (void);
-extern int start_dns (void);
-extern int stop_dns (void);
 extern int start_dnsmasq (void);
 extern int stop_dnsmasq (void);
 extern int start_dhcpfwd (void);
@@ -102,6 +100,10 @@ extern int setup_vlans (void);
 /* end lonewolf mods */
 
 extern int start_nas (char *type);
+#ifdef HAVE_MULTICAST
+extern int start_igmp_proxy (void);
+extern int stop_igmp_proxy (void);
+#endif
 #ifdef HAVE_SPUTNIK_APD
 extern int start_sputnik (void);
 extern int stop_sputnik (void);
@@ -256,6 +258,8 @@ extern int is_running (char *process_name);
 extern int create_rc_file (char *name);
 extern int wland_main (int argc, char **argv);
 
+extern void start_vpn_modules (void);
+extern void stop_vpn_modules (void);
 extern void load_vpn_modules (void);
 extern void unload_vpn_modules (void);
 extern void depend_vpn_modules (void);
