@@ -1251,7 +1251,7 @@ struct nvram_tuple router_defaults[] = {
   {"NC_DocumentRoot", "/tmp", 0},
 #else
   {"NC_RouteOnly", "0", 0},
-  {"NC_DocumentRoot", "/jffs/nocat", 0},
+  {"NC_DocumentRoot", "/www", 0},
 #endif
   {"NC_SplashURL", "", 0},
   {"wl_wme", "off", 0},		/* WME mode (off|on) */
