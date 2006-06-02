@@ -673,6 +673,10 @@ shat-clean:
 	make -C shat/src clean
 
 radauth:
+ifeq ($(CONFIG_CHILLILOCAL),y)
+	install -D chillispot/config/fon.nvramconfig $(INSTALLDIR)/chillispot/etc/config/fon.nvramconfig
+	install -D chillispot/config/fon.webhotspot $(INSTALLDIR)/chillispot/etc/config/fon.webhotspot
+endif
 	$(MAKE) -C radauth
 
 radauth-install:
@@ -681,6 +685,11 @@ radauth-install:
 	install -D radauth/radiusallow $(INSTALLDIR)/radauth/usr/sbin/radiusallow
 	install -D radauth/radiusdisallow $(INSTALLDIR)/radauth/usr/sbin/radiusdisallow
 	install -D radauth/macupd $(INSTALLDIR)/radauth/usr/sbin/macupd
+ifeq ($(CONFIG_RADLOCAL),y)
+	install -D chillispot/config/iradius.nvramconfig $(INSTALLDIR)/chillispot/etc/config/iradius.nvramconfig
+	install -D chillispot/config/iradius.webhotspot $(INSTALLDIR)/chillispot/etc/config/iradius.webhotspot
+	install -D chillispot/config/iradius.startup $(INSTALLDIR)/chillispot/etc/config/iradius.startup
+endif
 	
 radauth-clean:
 	$(MAKE) -C radauth clean
