@@ -1539,7 +1539,6 @@ wl_adv.shrt="Short"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Authentication Type:";
 hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
 
 

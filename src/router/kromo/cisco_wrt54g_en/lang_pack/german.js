@@ -1508,7 +1508,6 @@ wl_adv.shrt="Short"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Authenticationtyp:";
 hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muß dazu jedes Gerät in ihrem Netzwerk diesen Betriebsmodus unterstützen.";
 
 
