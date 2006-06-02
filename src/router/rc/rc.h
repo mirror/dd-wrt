@@ -83,7 +83,7 @@ extern int stop_dns (void);
 extern int start_dnsmasq (void);
 extern int stop_dnsmasq (void);
 extern int start_dhcpfwd (void);
-extern int stop_dhcpfwd (void);
+extern void stop_dhcpfwd (void);
 extern int start_ntpc (void);
 extern int stop_ntpc (void);
 extern int start_services (void);
