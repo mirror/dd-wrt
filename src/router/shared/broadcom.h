@@ -363,6 +363,7 @@ extern void ej_get_firmware_title (int eid, webs_t wp, int argc,
 /* Sveasoft additions */
 
 extern void save_wds (webs_t wp);
+extern void validate_iradius (webs_t wp, char *value, struct variable *v);
 extern void validate_wds (webs_t wp, char *value, struct variable *v);
 extern void validate_statics (webs_t wp, char *value, struct variable *v);
 extern void ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv);
@@ -371,6 +372,8 @@ extern void ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv);
 #endif
 extern void ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_show_iradius_check (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wds_mac (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wds_ip (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wds_netmask (int eid, webs_t wp, int argc, char_t ** argv);
@@ -393,6 +396,7 @@ extern void ej_get_services_options (int eid, webs_t wp, int argc,
 extern void ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_control (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv);
+extern int raduser_add (webs_t wp);
 extern int qos_add_svc (webs_t wp);
 extern int qos_add_ip (webs_t wp);
 extern int qos_add_mac (webs_t wp);
