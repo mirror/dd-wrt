@@ -209,7 +209,11 @@ internal_getRouterBrand ()
 	
 	if (nvram_match ("boardtype", "0x0101"))
 	  {
-	    if (startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
+	    if ((startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
+	    || (startswith (et0, "00:30:BD")
+		    && startswith (et1, "00:30:BD"))
+		|| (startswith (et0, "00:30:bd")
+		    && startswith (et1, "00:30:bd")))
 	      {
 		cprintf ("router is Belkin F5D7230-4 v1444\n");
 		setRouter ("Belkin F5D7230-4 v1444");
