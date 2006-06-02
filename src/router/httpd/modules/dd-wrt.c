@@ -603,6 +603,158 @@ buildmac (char *in)
   return outmac;
 }
 
+#ifdef HAVE_RADLOCAL
+
+int
+raduser_add (webs_t wp)
+{
+int radcount=0;
+char *radc=nvram_get("iradius_count");
+if (radc!=NULL)radcount=atoi(radc);
+radcount++;
+char count[16];
+sprintf(count,"%d",radcount);
+nvram_set("iradius_count",count);
+return 0;
+}
+void
+ej_show_iradius_check (int eid, webs_t wp, int argc, char_t ** argv)
+{
+char *sln = nvram_safe_get ("iradius_count");
+  if (sln == NULL || strlen (sln) == 0)
+    return;
+  int leasenum = atoi (sln);
+int i;
+for (i=0;i<leasenum;i++)
+{
+websWrite(wp,"if(F._iradius%d_active)\n",i);
+websWrite(wp,"if(F._iradius%d_active.checked == true)\n",i);
+websWrite(wp,"F.iradius%d_active.value=1\n",i);
+websWrite(wp,"else\n");
+websWrite(wp,"F.iradius%d_active.value=0\n",i);
+
+websWrite(wp,"if(F._iradius%d_delete)\n",i);
+websWrite(wp,"if(F._iradius%d_delete.checked == true)\n",i);
+websWrite(wp,"F.iradius%d_delete.value=1\n",i);
+websWrite(wp,"else\n");
+websWrite(wp,"F.iradius%d_delete.value=0\n",i);
+}
+
+
+}
+void
+ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *sln = nvram_safe_get ("iradius_count");
+  if (sln == NULL || strlen (sln) == 0)
+    return;
+  int leasenum = atoi (sln);
+  if (leasenum == 0)
+    return;
+  int i;
+  char username[32];
+  char *o,*userlist;
+  cprintf("get collection\n");
+  char *u = nvram_get_collection ("iradius");
+  cprintf("collection result %s",u);
+  if (u!=NULL)
+  {
+  userlist = (char *) malloc (strlen (u) + 1);
+  strcpy (userlist, u);
+  free(u);
+  o = userlist;
+  }else {
+  userlist=NULL;
+  o = NULL;
+  }
+  cprintf("display = chain\n");
+  for (i = 0; i < leasenum; i++)
+    {
+      snprintf (username, 31, "iradius%d_name", i);
+      char *sep=NULL;
+      if (userlist)
+        sep = strsep (&userlist, " ");
+      websWrite (wp, "<tr><td>\n");
+      websWrite (wp, "<input name=\"%s\" type=\"hidden\" />",username);
+      websWrite (wp,
+		 "<input name=\"%s\" value=\"%s\" size=\"25\" maxlength=\"63\" />\n",
+		 username, sep != NULL ? sep : "");
+      websWrite (wp, "</td>\n");
+      if (userlist)
+        sep = strsep (&userlist, " ");
+      
+      char active[32];
+      snprintf (active, 31, "iradius%d_active", i);
+      
+      websWrite (wp, "<td>\n");
+      websWrite (wp, "<input name=\"%s\" type=\"hidden\" />",active);
+      websWrite (wp,
+		 "<input type=\"checkbox\" value=\"%s\" name=\"_%s\" %s />\n",sep,active,sep!=NULL?strcmp(sep,"1")==0?"checked=\"checked\"":"":"");
+      websWrite (wp, "</td>\n");
+      websWrite (wp, "<td>\n");
+      snprintf (active, 31, "iradius%d_delete", i);
+      websWrite (wp, "<input name=\"%s\" type=\"hidden\" />",active);
+      websWrite (wp,
+		 "<input type=\"checkbox\" name=\"_%s\"/>\n",active);
+      websWrite (wp, "</td></tr>\n");
+    }
+  if (o!=NULL)
+  free (o);
+  return;
+}
+
+
+void
+validate_iradius (webs_t wp, char *value, struct variable *v)
+{
+  char username[32] = "iradiusxxx_name";
+  char active[32] = "iradiusxxx_active";
+  char del[32] = "iradiusxxx_delete";
+  
+  char *sln = nvram_safe_get ("iradius_count");
+  if (sln == NULL || strlen (sln) == 0)
+    return;
+  int leasenum = atoi (sln);
+  if (leasenum == 0)
+    return;
+  char *leases;
+  int i;
+  leases = (char *) malloc ((128 * leasenum) + 1);
+  memset (leases, 0, (128 * leasenum) + 1);
+  int leasen=0;
+  cprintf("build mac list\n");
+  for (i = 0; i < leasenum; i++)
+    {
+      snprintf (del, 31, "iradius%d_delete", i);
+      char *d=websGetVar(wp,del,"");
+      cprintf("radius delete = %s\n",d);
+      if (strcmp(d,"1")==0)continue;
+      
+      snprintf (username, 31, "iradius%d_name", i);
+      strcat (leases, websGetVar (wp, username, ""));
+      strcat (leases, " ");
+      
+      snprintf (active, 31, "iradius%d_active", i);
+      strcat (leases, websGetVar (wp, active, ""));
+      strcat (leases, " ");
+      leasen++;
+    }
+
+  cprintf("done %s\n",leases);
+  nvram_store_collection ("iradius", leases);
+  cprintf("stored\n");
+  char nr[16];
+  sprintf(nr,"%d",leasen);
+  nvram_set("iradius_count",nr);
+  nvram_commit ();
+  free (leases);
+}
+
+
+
+
+#endif
+
 #ifdef HAVE_CHILLILOCAL
 
 int
