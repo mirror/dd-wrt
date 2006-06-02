@@ -1521,7 +1521,6 @@ wl_adv.shrt="Kratka"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Naèin overovljanja:";
 hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuè. Overovljanje z deljenim kljuèem je bolj varno, toda vse naprave na va¹i mre¾i morajo podpirati ta naèin.";
 
 
