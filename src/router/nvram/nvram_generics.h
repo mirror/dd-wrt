@@ -1,35 +1,55 @@
 #include <malloc.h>
 
+#define cprintf(fmt, args...)
+
+/*
+#define cprintf(fmt, args...) do { \
+	FILE *fp = fopen("/dev/console", "w"); \
+	if (fp) { \
+		fprintf(fp, fmt, ## args); \
+		fclose(fp); \
+	} \
+} while (0)
+*/
+
 void nvram_store_collection(char *name,char *buf)
 {
 char *chain;
 char *n;
-int size=strlen(name);
+int size=strlen(buf);
 int chaincount=size/1024;
 int c=0;
 int i,offset;
 offset=0;
+cprintf("chaincount = %d\n",chaincount);
 for (i=0;i<chaincount;i++)
     {
     n=malloc(strlen(name)+16);
     sprintf(n,"%s%d",name,c++);
+    cprintf("get chain name %s\n",n);
     chain=malloc(1025);
     memcpy(chain,&buf[offset],1024);
     chain[1024]=0;
+    cprintf("story chain %s\n",chain);
     nvram_set(n,chain);
     offset+=1024;
     free(n);
     free(chain);
     }
 int rest=size%1024;
+if (rest)
+{
 n=malloc(strlen(name)+16);
 sprintf(n,"%s%d",name,c);
-chain=malloc(rest);
+cprintf("chainname = %s, malloc = %d\n",n,rest+16);
+chain=malloc(rest+1);
 memcpy(chain,&buf[offset],rest);
 chain[rest]=0;
 nvram_set(n,chain);
+cprintf("free mem\n");
 free(n);
 free(chain);
+}
 }
 /*
     do not forget to free the returned result
@@ -40,14 +60,21 @@ char *chains=NULL;
 int offset=0;
 int c=0;
 char n[65];
+
 sprintf(n,"%s%d",name,c++);
+cprintf("name = %s\n",n);
 while(nvram_get(n)!=NULL)
     {
     char *chain=nvram_get(n);
-    chains=(char*)realloc(chains,chains!=NULL?strlen(chains)+strlen(chain)+1:strlen(chain+1));
-    memcpy(chains[offset],chain,strlen(chain));
+    cprintf("chain = %s\n",chain);
+    if (chains==NULL)
+	chains=malloc(strlen(chain)+1);
+    chains=(char*)realloc(chains,chains!=NULL?strlen(chains)+strlen(chain)+1:strlen(chain)+1);
+    cprintf("alloc okay\n");
+    memcpy(&chains[offset],chain,strlen(chain));
     offset+=strlen(chain);
     chains[offset]=0;
+    cprintf("copy %s\n",chains);
     sprintf(n,"%s%d",name,c++);
     }
 return chains;
