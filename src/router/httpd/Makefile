@@ -40,6 +40,9 @@ CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
 ifeq ($(CONFIG_NOAD),y)
 CFLAGS += -DHAVE_NOAD
 endif
+ifeq ($(CONFIG_RADLOCAL),y)
+CFLAGS += -DHAVE_RADLOCAL
+endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 endif
