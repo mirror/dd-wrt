@@ -44,6 +44,7 @@ typedef u_int8_t u8;
 #include <wlutils.h>
 #include <utils.h>
 #include <rc.h>
+#include <ledcontrol.h>
 #include <cy_conf.h>
 #include <cymac.h>
 #include <bcmutils.h>

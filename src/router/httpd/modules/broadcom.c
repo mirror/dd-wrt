@@ -625,7 +625,6 @@ static void
 ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
 {
   char *name;
-  int ret = 0;
 
   if (ejArgs (argc, argv, "%s", &name) < 1)
     {
