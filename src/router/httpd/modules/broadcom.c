@@ -3743,6 +3743,7 @@ do_language (char *path, webs_t stream)	//jimmy, https, 8/4/2003
   return;
 }
 
+/* obsolete, use do_pagehead
 void
 ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -3788,6 +3789,7 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
     }
   fclose (in);
 }
+*/
 
 void
 ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
@@ -3854,6 +3856,22 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
   fclose (in);
 }
 
+void
+ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
+{
+	
+	  websWrite (wp,
+		     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+	  websWrite (wp,
+		     "<html>\n");
+	  websWrite (wp,
+		     "\t<head>\n");     
+	  websWrite (wp,
+		     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
+	  websWrite (wp,
+		     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
+	
+}
 
 static char no_cache[] =
   "Cache-Control: no-cache\r\n" "Pragma: no-cache\r\n" "Expires: 0";
@@ -4260,6 +4278,7 @@ struct ej_handler ej_handlers[] = {
 // end changed by steve
   {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},
+  {"do_hpagehead", ej_do_hpagehead},
   {NULL, NULL}
 };
 #endif /* !WEBS */
