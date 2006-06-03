@@ -182,11 +182,6 @@ ifneq ($(BACKUP_RESTORE_SUPPORT),1)
 	rm -f $(INSTALLDIR)/www/Backup_Restore.asp
 endif
 
-
-ifneq ($(UPNP_FORWARD_SUPPORT),1)
-	rm -f $(INSTALLDIR)/www/UPnP.asp
-endif
-
 ifeq ($(CONFIG_NEWMEDIA),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
 else
