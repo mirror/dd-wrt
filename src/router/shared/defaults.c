@@ -1254,7 +1254,7 @@ struct nvram_tuple router_defaults[] = {
   {"NC_DocumentRoot", "/www", 0},
 #endif
   {"NC_SplashURL", "", 0},
-  {"NC_Iface", "br0", 0}
+  {"NC_Iface", "br0", 0},
 
   {"wl_wme", "off", 0},		/* WME mode (off|on) */
   /* WME parameters */
