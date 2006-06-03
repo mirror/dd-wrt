@@ -779,59 +779,59 @@ nat_postrouting (void)
           //added for logic test
           char *netmask;
           //for class C subnets
-          if ((nvram_match ("lan_netmask", "255.255.255.0"))
+          if (nvram_match ("lan_netmask", "255.255.255.0"))
             netmask = "0/24";
-          else if ((nvram_match ("lan_netmask", "255.255.255.128"))
+          else if (nvram_match ("lan_netmask", "255.255.255.128"))
             netmask = "0/25";
-          else if ((nvram_match ("lan_netmask", "255.255.255.192"))
+          else if (nvram_match ("lan_netmask", "255.255.255.192"))
             netmask = "0/26";
-          else if ((nvram_match ("lan_netmask", "255.255.255.224"))
+          else if (nvram_match ("lan_netmask", "255.255.255.224"))
             netmask = "0/27";
-          else if ((nvram_match ("lan_netmask", "255.255.255.240"))
+          else if (nvram_match ("lan_netmask", "255.255.255.240"))
             netmask = "0/28";
-          else if ((nvram_match ("lan_netmask", "255.255.255.248"))
+          else if (nvram_match ("lan_netmask", "255.255.255.248"))
             netmask = "0/29";
-          else if ((nvram_match ("lan_netmask", "255.255.255.252"))
+          else if (nvram_match ("lan_netmask", "255.255.255.252"))
             netmask = "0/30";
-//          else if ((nvram_match ("lan_netmask", "255.255.255.254"))
+//          else if (nvram_match ("lan_netmask", "255.255.255.254"))
 //            netmask = "0/31";
-          else if ((nvram_match ("lan_netmask", "255.255.255.255"))
+          else if (nvram_match ("lan_netmask", "255.255.255.255"))
             netmask = "0/32";
 
           //for class B subnets
-          else if ((nvram_match ("lan_netmask", "255.255.0.0"))
+          else if (nvram_match ("lan_netmask", "255.255.0.0"))
             netmask = "0/16";
-          else if ((nvram_match ("lan_netmask", "255.255.128.0"))
+          else if (nvram_match ("lan_netmask", "255.255.128.0"))
             netmask = "0/17";
-          else if ((nvram_match ("lan_netmask", "255.255.192.0"))
+          else if (nvram_match ("lan_netmask", "255.255.192.0"))
             netmask = "0/18";
-          else if ((nvram_match ("lan_netmask", "255.255.224.0"))
+          else if (nvram_match ("lan_netmask", "255.255.224.0"))
             netmask = "0/19";
-          else if ((nvram_match ("lan_netmask", "255.255.240.0"))
+          else if (nvram_match ("lan_netmask", "255.255.240.0"))
             netmask = "0/20";
-          else if ((nvram_match ("lan_netmask", "255.255.248.0"))
+          else if (nvram_match ("lan_netmask", "255.255.248.0"))
             netmask = "0/21";
-          else if ((nvram_match ("lan_netmask", "255.255.252.0"))
+          else if (nvram_match ("lan_netmask", "255.255.252.0"))
             netmask = "0/22";
-          else if ((nvram_match ("lan_netmask", "255.255.254.0"))
+          else if (nvram_match ("lan_netmask", "255.255.254.0"))
             netmask = "0/23";
 
           //for class A subnets
-          else if ((nvram_match ("lan_netmask", "255.0.0.0"))
+          else if (nvram_match ("lan_netmask", "255.0.0.0"))
             netmask = "0/8";
-          else if ((nvram_match ("lan_netmask", "255.128.0.0"))
+          else if (nvram_match ("lan_netmask", "255.128.0.0"))
             netmask = "0/9";
-          else if ((nvram_match ("lan_netmask", "255.192.0.0"))
+          else if (nvram_match ("lan_netmask", "255.192.0.0"))
             netmask = "0/10";
-          else if ((nvram_match ("lan_netmask", "255.224.0.0"))
+          else if (nvram_match ("lan_netmask", "255.224.0.0"))
             netmask = "0/11";
-          else if ((nvram_match ("lan_netmask", "255.240.0.0"))
+          else if (nvram_match ("lan_netmask", "255.240.0.0"))
             netmask = "0/12";
-          else if ((nvram_match ("lan_netmask", "255.248.0.0"))
+          else if (nvram_match ("lan_netmask", "255.248.0.0"))
             netmask = "0/13";
-          else if ((nvram_match ("lan_netmask", "255.252.0.0"))
+          else if (nvram_match ("lan_netmask", "255.252.0.0"))
             netmask = "0/14";
-          else if ((nvram_match ("lan_netmask", "255.254.0.0"))
+          else if (nvram_match ("lan_netmask", "255.254.0.0"))
             netmask = "0/15";
 
 	  save2file
