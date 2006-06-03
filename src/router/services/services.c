@@ -438,6 +438,7 @@ write_nvram (char *name, char *nv)
     }
   else
     return -1;
+return 0;
 }
 
 
@@ -547,8 +548,8 @@ int usejffs = 0;
 int
 start_udhcpd (void)
 {
-  struct dns_lists *dns_list = NULL;
   FILE *fp;
+  struct dns_lists *dns_list = NULL;
   int i = 0;
 //  char sigusr1[] = "-XX";
   char name[100];
@@ -1076,7 +1077,7 @@ stop_dns_clear_resolv (void)
       perror (RESOLV_FILE);
       return errno;
     }
-  fprintf (fp_w, "");
+  fprintf (fp_w, " ");
   fclose (fp_w);
 
   cprintf ("done\n");
@@ -1925,7 +1926,7 @@ bird_init (void)
 	    {
 	      if (nvram_match ("wl_mode", "sta")
 		  || nvram_match ("wl_mode", "apsta"))
-		fprintf (fp, "	interface \"%s\" { };\n", getwlif ());
+		fprintf (fp, "	interface \"%d\" { };\n", getwlif ());
 	      else
 		fprintf (fp, "	interface \"%s\" { };\n",
 			 nvram_safe_get ("wan_ifname"));
@@ -2010,9 +2011,10 @@ start_zebra (void)
 int
 stop_zebra (void)
 {
-  int ret1, ret2, ret3;
+  int ret1;
 
 #ifdef HAVE_ZEBRA
+  int ret2, ret3;
   ret1 = eval ("killall", "zebra");
   ret2 = eval ("killall", "ripd");
   ret3 = eval ("killall", "ospfd");

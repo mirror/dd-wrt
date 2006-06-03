@@ -9,7 +9,7 @@ all:
 install:
 	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
-	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(INSTALLDIR)/www
+	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.html) $(INSTALLDIR)/www
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 	cp -a help $(INSTALLDIR)/www
@@ -184,7 +184,7 @@ endif
 
 
 ifneq ($(UPNP_FORWARD_SUPPORT),1)
-	rm -f $(INSTALLDIR)/www/Forward_UPnP.asp
+	rm -f $(INSTALLDIR)/www/UPnP.asp
 endif
 
 ifeq ($(CONFIG_NEWMEDIA),y)
