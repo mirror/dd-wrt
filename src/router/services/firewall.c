@@ -776,11 +776,69 @@ nat_postrouting (void)
 
       if (nvram_match ("loopback_enable", "1"))
 	{
+          //added for logic test
+          char *netmask;
+          //for class C subnets
+          if ((nvram_match ("lan_netmask", "255.255.255.0"))
+            netmask = "0/24";
+          else if ((nvram_match ("lan_netmask", "255.255.255.128"))
+            netmask = "0/25";
+          else if ((nvram_match ("lan_netmask", "255.255.255.192"))
+            netmask = "0/26";
+          else if ((nvram_match ("lan_netmask", "255.255.255.224"))
+            netmask = "0/27";
+          else if ((nvram_match ("lan_netmask", "255.255.255.240"))
+            netmask = "0/28";
+          else if ((nvram_match ("lan_netmask", "255.255.255.248"))
+            netmask = "0/29";
+          else if ((nvram_match ("lan_netmask", "255.255.255.252"))
+            netmask = "0/30";
+//          else if ((nvram_match ("lan_netmask", "255.255.255.254"))
+//            netmask = "0/31";
+          else if ((nvram_match ("lan_netmask", "255.255.255.255"))
+            netmask = "0/32";
+
+          //for class B subnets
+          else if ((nvram_match ("lan_netmask", "255.255.0.0"))
+            netmask = "0/16";
+          else if ((nvram_match ("lan_netmask", "255.255.128.0"))
+            netmask = "0/17";
+          else if ((nvram_match ("lan_netmask", "255.255.192.0"))
+            netmask = "0/18";
+          else if ((nvram_match ("lan_netmask", "255.255.224.0"))
+            netmask = "0/19";
+          else if ((nvram_match ("lan_netmask", "255.255.240.0"))
+            netmask = "0/20";
+          else if ((nvram_match ("lan_netmask", "255.255.248.0"))
+            netmask = "0/21";
+          else if ((nvram_match ("lan_netmask", "255.255.252.0"))
+            netmask = "0/22";
+          else if ((nvram_match ("lan_netmask", "255.255.254.0"))
+            netmask = "0/23";
+
+          //for class A subnets
+          else if ((nvram_match ("lan_netmask", "255.0.0.0"))
+            netmask = "0/8";
+          else if ((nvram_match ("lan_netmask", "255.128.0.0"))
+            netmask = "0/9";
+          else if ((nvram_match ("lan_netmask", "255.192.0.0"))
+            netmask = "0/10";
+          else if ((nvram_match ("lan_netmask", "255.224.0.0"))
+            netmask = "0/11";
+          else if ((nvram_match ("lan_netmask", "255.240.0.0"))
+            netmask = "0/12";
+          else if ((nvram_match ("lan_netmask", "255.248.0.0"))
+            netmask = "0/13";
+          else if ((nvram_match ("lan_netmask", "255.252.0.0"))
+            netmask = "0/14";
+          else if ((nvram_match ("lan_netmask", "255.254.0.0"))
+            netmask = "0/15";
+
 	  save2file
 	    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
 	     lanface);
 	  save2file ("-A POSTROUTING -o %s -s %s%s -d %s%s -j MASQUERADE\n",
-		     lanface, lan_cclass, "0/24", lan_cclass, "0/24");
+		     lanface, lan_cclass, netmask, lan_cclass, netmask);
 	  system ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
 	}
     }
