@@ -8,9 +8,9 @@ function setStyle(val) {
 document.forms[0].onreset = function() { setStyle("<% nvram_get("router_style"); %>"); }
 </script>
 <fieldset>
-	<legend><script type="text/javascript">Capture(management.gui_style)</script></legend>
+	<legend><% tran("management.gui_style"); %></legend>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(share.styl)</script></div>
+		<div class="label"><% tran("share.styl"); %></div>
 		<select name="router_style">
 		    <% show_styles(); %>
 		</select>&nbsp;
