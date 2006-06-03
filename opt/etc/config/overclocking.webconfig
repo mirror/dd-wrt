@@ -1,9 +1,9 @@
 
 <fieldset>
-  <legend><script type="text/javascript">Capture(management.clock_legend)</script></legend>
+  <legend><% tran("management.clock_legend"); %></legend>
   <div class="setting">
    <% nvram_match("clkfreq","125","<!--"); %>
-    <div class="label"><script type="text/javascript">Capture(management.clock_frq)</script></div>
+    <div class="label"><% tran("management.clock_frq"); %></div>
     <select name="overclocking">
       <option value="192" <% nvram_selected("overclocking","192"); %>>192 Mhz</option>
       <option value="200" <% nvram_selected("overclocking","200"); %>>200 Mhz</option>
