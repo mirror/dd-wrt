@@ -7,4 +7,5 @@
 "NC_ExcludePorts" "Exlude Ports" "NULL" "TRUE" "0"
 "NC_LoginTimeout" "Login Timeout" "NULL" "TRUE" "0"
 "NC_Verbosity" "Verbosity" "NULL" "TRUE" "0"
+"NC_Iface" "Interface" "NULL" "TRUE" "0"
 "NC_RouteOnly","Route Only" "NULL" "TRUE" "0" 
