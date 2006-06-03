@@ -187,7 +187,7 @@ mk_nocat_conf (void)
 
   fprintf (fp, "#\n");
   /* settings that need to be set based on router configurations */
-  fprintf (fp, "InternalDevice\t%s\n", nvram_safe_get ("lan_ifname"));
+  fprintf (fp, "InternalDevice\t%s\n", nvram_safe_get ("NC_Iface"));
   fprintf (fp, "ExternalDevice\t%s\n", nvram_safe_get ("wan_ifname"));
   fprintf (fp, "LocalNetwork\t%s/%s\n",
 	   _get_network (nvram_safe_get ("lan_ipaddr"),
