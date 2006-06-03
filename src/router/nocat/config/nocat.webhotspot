@@ -52,7 +52,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
-		<select name="NC_Iace">
+		<select name="NC_Iface">
 		    <option value="br0" <% nvram_selmatch("NC_Iface","br0","selected"); %>>LAN &amp; WLAN</option>
 		    <option value="eth1" <% nvram_selmatch("NC_Iface","eth1","selected"); %>>WLAN</option>
 		    <option value="vlan0" <% nvram_selmatch("NC_Iface","vlan0","selected"); %>>LAN</option>
