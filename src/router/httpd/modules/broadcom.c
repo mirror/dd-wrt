@@ -3835,7 +3835,7 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
 	  websWrite (wp,
 		     "\t<head>\n");     
 	  websWrite (wp,
-		     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />",
+		     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		     dest);
 	  websWrite (wp,
 		     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
@@ -3847,7 +3847,7 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
 		     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
 		     style);
 	  websWrite (wp,
-		     "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->\n",
+		     "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->",
 		     style);
 	  return;
 	}
