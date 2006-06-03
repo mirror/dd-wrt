@@ -1,5 +1,4 @@
 <% do_hpagehead(); %>
-		<link type="text/css" rel="stylesheet" href="help.css">
 		<title>Help - Router Status</title>
 	</head>
 	<body>
