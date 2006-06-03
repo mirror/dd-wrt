@@ -4276,9 +4276,9 @@ struct ej_handler ej_handlers[] = {
 // changed by steve
   {"tf_upnp", ej_tf_upnp},
 // end changed by steve
-  {"charset", ej_charset},
-  {"do_pagehead", ej_do_pagehead},
-  {"do_hpagehead", ej_do_hpagehead},
+//  {"charset", ej_charset},
+  {"do_pagehead", ej_do_pagehead},  //Eko
+  {"do_hpagehead", ej_do_hpagehead},  //Eko
   {NULL, NULL}
 };
 #endif /* !WEBS */
