@@ -1,6 +1,7 @@
 /* Really simple radius authenticator
  *
  * Copyright (c) 2004 Michael Gernoth <michael@gernoth.net>
+ * Copyright (c) 2006 Atheros Support by Sebastian Gottschall <s.gottschall@newmedia-net.de>
  *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to
