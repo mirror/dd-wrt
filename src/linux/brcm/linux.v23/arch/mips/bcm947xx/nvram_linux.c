@@ -37,7 +37,10 @@
 #include <sbchipc.h>
 #include <sbutils.h>
 #include <sbmips.h>
+
+#ifdef CONFIG_SFLASH
 #include <sflash.h>
+#endif
 
 /* In BSS to minimize text size and page aligned so it can be mmap()-ed */
 static char nvram_buf[NVRAM_SPACE] __attribute__((aligned(PAGE_SIZE)));
@@ -64,7 +67,9 @@ early_nvram_init(void)
 {
 	struct nvram_header *header;
 	chipcregs_t *cc;
+#ifdef CONFIG_SFLASH
 	struct sflash *info = NULL;
+#endif
 	int i;
 	uint32 base, off, lim;
 	u32 *src, *dst;
@@ -78,11 +83,12 @@ early_nvram_init(void)
 
 		case SFLASH_ST:
 		case SFLASH_AT:
+#ifdef CONFIG_SFLASH
 			if ((info = sflash_init(cc)) == NULL)
 				return;
 			lim = info->size;
 			break;
-
+#endif
 		case FLASH_NONE:
 		default:
 			return;
