@@ -379,6 +379,7 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WHRG54S:
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WLAG54C:
+    case ROUTER_ASUS_WL500G_PRE:
       if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
 	restore_defaults = 1;
       if (nvram_match ("product_name", "INSPECTION"))
@@ -401,6 +402,7 @@ start_restore_defaults (void)
   switch (brand)
     {
     case ROUTER_ASUS:
+    case ROUTER_ASUS_WL500G_PRE:
       linux_overrides = vlan;
       break;
     case ROUTER_SIEMENS:
@@ -524,6 +526,7 @@ start_restore_defaults (void)
       switch (brand)
 	{
 	case ROUTER_MOTOROLA:
+	case ROUTER_ASUS_WL500G_PRE:
 	  nvram_set ("vlan0ports", "1 2 3 4 5*");
 	  break;
 	case ROUTER_LINKSYS_WRT55AG:
@@ -548,6 +551,7 @@ start_restore_defaults (void)
 	  switch (brand)
 	    {
 	    case ROUTER_MOTOROLA:
+	    case ROUTER_ASUS_WL500G_PRE:
 	      nvram_set ("vlan1ports", "0 5u");
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
@@ -861,7 +865,13 @@ start_sysinit (void)
   	nvram_set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
 	nvram_set ("wan_ifnames", "eth1");
 	}
-
+	
+  if (brand == ROUTER_ASUS_WL500G_PRE)
+	{
+  	nvram_set ("wan_ifname", "eth0"); // fix for Asus WL500gPremium WAN problem.
+	nvram_set ("wan_ifnames", "eth0");
+	}
+	
   if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
 	 {
 	eval ("gpio", "enable", "6");	//MN700 power led on
