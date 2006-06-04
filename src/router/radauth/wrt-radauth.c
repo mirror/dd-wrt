@@ -227,7 +227,7 @@ set_maclist (char *iface, char *buf)
   struct maclist *maclist = (struct maclist *) buf;
 
   if (maclist->count == 0)
-    security_disable ();
+    security_disable (iface);
 //      if (authorized)
 //              mlme.im_op = IEEE80211_MLME_AUTHORIZE;
 //      else
