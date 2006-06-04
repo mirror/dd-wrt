@@ -143,7 +143,7 @@ addEvent(window, "unload", function() {
 								<legend><% tran("status_lan.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("service.dhcp_legend2"); %></div>
-									<% nvram_match("lan_proto", "dhcp", "<% tran("share.enabled"); %>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
 								</div>
 								<span id="dhcp_1" style="display:none">
 									<div class="setting">
