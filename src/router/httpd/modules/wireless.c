@@ -1137,36 +1137,67 @@ add_active_mac (webs_t wp)
 int
 dhcp_lease_table_init (void)
 {
-  char sigusr1[] = "-XX";
   FILE *fp, *fp_w;
-  struct lease_t lease;
-  struct in_addr addr;
-  char mac[20] = "";
   int count = 0;
-
-  sprintf (sigusr1, "-%d", SIGUSR1);
-  eval ("killall", sigusr1, "udhcpd");
-
-  fp_w = fopen (LEASES_NAME_IP, "w");
-
-  // Parse leases file 
-  if ((fp = fopen ("/tmp/udhcpd.leases", "r")))
+  if (nvram_match ("dhcp_dnsmasq", "1"))
     {
-      while (fread (&lease, sizeof (lease), 1, fp))
-	{
-	  snprintf (mac, sizeof (mac), "%02X:%02X:%02X:%02X:%02X:%02X",
+      unsigned long expires;
+      char mac[32];
+      char ip[32];
+      char hostname[256];
+      char buf[512];
+      char *p;
+
+      eval("killall", "-SIGUSR2", "dnsmasq");
+      sleep(1);
+
+      if ((fp_w = fopen(LEASES_NAME_IP, "w")) != NULL) 
+        {
+          // Parse leases file
+          if ((fp = fopen("/tmp/dnsmasq.leases", "r")) != NULL) 
+            {
+              while (fgets(buf, sizeof(buf), fp))
+                {
+                  if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4) 
+                    continue;
+                  p = mac;
+                  while ((*p = toupper(*p)) != 0) 
+                    ++p;
+                  fprintf(fp_w, "%s %s %s\n", mac, ip, hostname);
+                  ++count;
+                }
+              fclose(fp);
+            }
+          fclose(fp_w);
+        }
+    }
+  else
+    {
+      struct lease_t lease;
+      struct in_addr addr;
+      char mac[20] = "";
+
+      eval ("killall", "-SIGUSR1", "udhcpd");
+      fp_w = fopen (LEASES_NAME_IP, "w");
+
+      // Parse leases file 
+      if ((fp = fopen ("/tmp/udhcpd.leases", "r")))
+        {
+          while (fread (&lease, sizeof (lease), 1, fp))
+            {
+              snprintf (mac, sizeof (mac), "%02X:%02X:%02X:%02X:%02X:%02X",
 		    lease.chaddr[0], lease.chaddr[1], lease.chaddr[2],
 		    lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
-	  if (!strcmp ("00:00:00:00:00:00", mac))
-	    continue;
-
-	  addr.s_addr = lease.yiaddr;
-	  fprintf (fp_w, "%s %s %s\n", mac, inet_ntoa (addr), lease.hostname);
-	  count++;
-	}
-      fclose (fp);
+              if (!strcmp ("00:00:00:00:00:00", mac))
+                continue;
+              addr.s_addr = lease.yiaddr;
+              fprintf (fp_w, "%s %s %s\n", mac, inet_ntoa (addr), lease.hostname);
+              count++;
+            }
+           fclose (fp);
+         }
+      fclose (fp_w);
     }
-  fclose (fp_w);
 
   return count;
 }

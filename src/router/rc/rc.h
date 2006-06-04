@@ -65,6 +65,8 @@ extern void start_wan (int status);
 extern void start_wan_done (char *ifname);
 extern void stop_wan (void);
 extern int hotplug_net (void);
+extern int isClient (void);
+
 
 /* services */
 #ifdef HAVE_CHILLI
