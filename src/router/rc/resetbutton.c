@@ -287,7 +287,8 @@ resetbutton_main (int argc, char *argv[])
   		(brand == ROUTER_BUFFALO_WZRRSG54) ||
   		(brand == ROUTER_BELKIN_F5D7230) ||
   		(brand == ROUTER_MICROSOFT_MN700) ||
-  		(brand == ROUTER_BUFFALO_WLAG54C))
+  		(brand == ROUTER_BUFFALO_WLAG54C) ||
+  		(brand == ROUTER_ASUS_WL500G_PRE))
     {
       puts ("sorry, your unit does not support resetbutton feature");
       nvram_set ("resetbutton_enable", "0");
