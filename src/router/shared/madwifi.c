@@ -420,9 +420,11 @@ void
 deconfigure_wifi (void)
 {
   memset (iflist, 0, 1024);
+  eval ("killall", "wrt-radauth");
   eval ("killall", "hostapd");
   eval ("killall", "wpa_supplicant");
   sleep (2);
+  eval ("killall", "-9", "wrt-radauth");  
   eval ("killall", "-9", "hostapd");
   eval ("killall", "-9", "wpa_supplicant");
 
@@ -902,7 +904,7 @@ setupHostAP (char *prefix)
 	nvram_match (akm, "psk psk2") ||
 	nvram_match (akm, "wpa") ||
 	nvram_match (akm, "wpa2") ||
-	nvram_match (akm, "wpa wpa2") || nvram_match (akm, "radius"))
+	nvram_match (akm, "wpa wpa2"))
     {
       char fstr[32];
       sprintf (fstr, "/tmp/%s_hostap.conf", prefix);
@@ -936,10 +938,10 @@ setupHostAP (char *prefix)
 	}
       else
 	{
-	  if (nvram_invmatch (akm, "radius"))
+//	  if (nvram_invmatch (akm, "radius"))
 	    fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
-	  else
-	    fprintf (fp, "macaddr_acl=2\n");
+//	  else
+//	    fprintf (fp, "macaddr_acl=2\n");
 
 //	  fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
 //	  fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
@@ -957,7 +959,7 @@ setupHostAP (char *prefix)
 	  fprintf (fp, "auth_server_shared_secret=%s\n",
 		   nvram_safe_get (psk));
 	}
-      if (nvram_invmatch (akm, "radius"))
+/*      if (nvram_invmatch (akm, "radius"))
 	{
 	  sprintf (psk, "%s_crypto", prefix);
 	  if (nvram_match (psk, "aes"))
@@ -968,12 +970,29 @@ setupHostAP (char *prefix)
 	    fprintf (fp, "wpa_pairwise=TKIP CCMP\n");
 	  sprintf (psk, "%s_wpa_gtk_rekey", prefix);
 	  fprintf (fp, "wpa_group_rekey=%s\n", nvram_safe_get (psk));
-	}
+	}*/
 //      fprintf (fp, "jumpstart_p1=1\n");
       fclose (fp);
       eval ("hostapd", "-B", fstr);
     }
-  else
+  else if (nvram_match(akm,"radius"))
+    {
+    //	wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
+    char *ifname=prefix;
+    sprintf (psk, "%s_radius_ipaddr", prefix);
+    char *server=nvram_safe_get(psk);
+    sprintf (psk, "%s_radius_port", prefix);
+    char *port=nvram_safe_get(psk);
+    sprintf (psk, "%s_radius_key", prefix);
+    char *share=nvram_safe_get(psk);
+    char exec[64];
+    sprintf(exec,"wrt-radauth %s %s %s %s 1 1 0 &",prefix,server,port,share);
+    system(exec);
+    
+//    eval("wrt-radauth",prefix,server,port,share,"1","1","0");
+    
+    
+    }else
     {
       eval ("iwconfig", prefix, "key", "off");
 //      eval ("iwpriv", prefix, "authmode", "0");
