@@ -166,6 +166,14 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WZR-RS-G54");
       return ROUTER_BUFFALO_WZRRSG54;
     }
+  if (nvram_match ("boardnum", "45") &&
+      nvram_match ("boardtype", "0x042f") &&
+      nvram_match ("boardrev", "0x10"))
+    {
+      cprintf ("router is Asus WL-500g premium\n");
+      setRouter ("Asus WL-500g Premium");
+      return ROUTER_BUFFALO_WZRRSG54;
+    }
 
 
   {
