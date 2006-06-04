@@ -1,13 +1,13 @@
 
 <fieldset>
-	<legend><script type="text/javascript">Capture(service.kaid_legend)</script></legend>
+	<legend><% tran("service.kaid_legend"); %></legend>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(service.kaid_srv)</script></div>
-		<input class="spaceradio" type="radio" value="1" name="kaid_enable" <% nvram_selmatch("kaid_enable", "1", "checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="kaid_enable" <% nvram_selmatch("kaid_enable", "0", "checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+		<div class="label"><% tran("service.kaid_srv"); %></div>
+		<input class="spaceradio" type="radio" value="1" name="kaid_enable" <% nvram_selmatch("kaid_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="kaid_enable" <% nvram_selmatch("kaid_enable", "0", "checked"); %> /><% tran("share.disable"); %>
 	</div>
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(service.kaid_mac)</script></div>
+		<div class="label"><% tran("service.kaid_mac"); %></div>
 		<textarea id="kaid_macs" name="kaid_macs" cols="60" rows="4"></textarea>
 		<script language="javascript">
 			var kaid_macs = fix_cr( '<% nvram_get("kaid_macs"); %>' );
