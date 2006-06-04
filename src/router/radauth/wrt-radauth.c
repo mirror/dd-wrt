@@ -396,68 +396,83 @@ int main(int argc, char** argv)
 	int maxunauthenticated_users; /* maxcount for unauthenticated users */
 
 
-	if ( argc < 2 )
+	if (argc < 2 )
 	{
+	argerror:;
 		fprintf(stderr,"wrt-radauth - A simple radius authenticator\n");
 		fprintf(stderr,"(C) 2005 Michael Gernoth\n");
 		fprintf(stderr,"(C) 2006 Atheros support Sebastian Gottschall\n");
-		fprintf(stderr,"Usage: %s [-n] interface\n",argv[0]);
+		fprintf(stderr,"Usage: %s [-nx] interface radiusip radiusport sharedkey radiusoverride mackeytype macunauthusers\n",argv[0]);
 		fprintf(stderr,"\t-n1\tUse new MAC address format 'aabbcc-ddeeff' instead of 'AA-BB-CC-DD-EE-FF'\n");
-		fprintf(stderr,"\t-n2\tUse really new MAC address format 'aabbccddeeff' instead of 'AA-BB-CC-DD-EE-FF'\n");
-		
-		
+		fprintf(stderr,"\t-n2\tUse really new MAC address format 'aabbccddeeff' instead of 'AA-BB-CC-DD-EE-FF'\n");	
 		exit(1);
 	}
 
 #ifdef DEBUG
 	printf("$Id: wrt-radauth.c,v 1.17 2004/09/28 13:15:51 simigern Exp $ coming up...\n");
 #endif
-
+offset=1;
 	if (argc>2 && (strcmp(argv[1],"-n1") == 0))
 	{
 		macfmt=1;
-		iface=argv[2];
+		offset=2;
 	}else
 	if (argc>2 && (strcmp(argv[1],"-n2") == 0))
 	{
 		macfmt=2;
-		iface=argv[2];
+		offset=2;
 	}else
 	if (argc>2 && (strcmp(argv[1],"-n3") == 0))
 	{
 		macfmt=3;
-		iface=argv[2];
+		offset=2;
 	}else
 	if (argc>2 && (strcmp(argv[1],"-t") == 0))
 	{
 		macfmt=0;
 		internal=1;
-		iface=argv[2];
+		offset=2;
 	}
 	else {
 		macfmt=0;
-		iface=argv[1];
+		offset=1;
 	}
-
+	iface=argv[offset++];
+	if (argc-offset!=6)
+	    {
+	     goto argerror;
+	    }
+	if (!internal)
+	    {
+	    usePortal=0;
+	    server=argv[offset++];
+	    port=atoi(argv[offset++]);
+	    secret=argv[offset++];
+	    override=atoi(argv[offset++]);	
+	    mackey=atoi(argv[offset++]);	        
+	    maxun=atoi(argv[offset++]);
+	    }
+#ifndef HAVE_MADWIFI
 	if (wl_probe(iface))
 	{
 		printf("Interface %s is not broadcom wireless!\n",iface);
 	}
+#endif
 
 	/* Get configuration from nvram */
-	server=strdup(nvram_safe_get("wl0_radius_ipaddr"));
+/*	server=strdup(nvram_safe_get("wl0_radius_ipaddr"));
 	port=atoi(nvram_safe_get("wl0_radius_port"));
 	usePortal=atoi(nvram_safe_get("wl_radportal"));
         override=atoi(nvram_safe_get("radius_override"));
-	
+*/	
 	/* SeG DD-WRT change */
 	maxun = nvram_get("max_unauth_users");
 	if (maxun!=NULL && strlen(maxun)>0)
 	    maxunauthenticated_users = atoi(maxun); //read nvram variable
 	else
 	    maxunauthenticated_users = 0;
-	secret=strdup(nvram_get("wl0_radius_key"));
-	mackey=atoi(nvram_get("wl_radmacpassword"));
+//	secret=strdup(nvram_get("wl0_radius_key"));
+//	mackey=atoi(nvram_get("wl_radmacpassword"));
 #ifdef DEBUG
 	printf("Server: %s:%d, Secret: %s\n",server,port,secret);
 #endif
