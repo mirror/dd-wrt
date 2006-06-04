@@ -531,15 +531,15 @@ reltime (unsigned int seconds)
   static char s[] = "XXXXX days, XX hours, XX minutes, XX seconds";
   char *c = s;
 
-  if (seconds > 60 * 60 * 24)
+  if (seconds > 86400)  //60 * 60 * 24
     {
-      c += sprintf (c, "%d days, ", seconds / (60 * 60 * 24));
-      seconds %= 60 * 60 * 24;
+      c += sprintf (c, "%d days, ", seconds / 86400);  //60 * 60 * 24
+      seconds %= 86400;  //60 * 60 * 24
     }
-  if (seconds > 60 * 60)
+  if (seconds > 3600)  //60 * 60 
     {
-      c += sprintf (c, "%d hours, ", seconds / (60 * 60));
-      seconds %= 60 * 60;
+      c += sprintf (c, "%d hours, ", seconds / 3600);  //60 * 60
+      seconds %= 3600;  //60 * 60
     }
   if (seconds > 60)
     {
