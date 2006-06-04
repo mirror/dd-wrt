@@ -929,33 +929,6 @@ start_dnsmasq (void)
   {
     dns_list = get_dns_list ();
 
-    if (nvram_match ("local_dns", "1"))
-      {
-
-      if (dns_list
-	  && (nvram_invmatch ("lan_ipaddr", "")
-	      || strlen (dns_list->dns_server[0]) > 0
-	      || strlen (dns_list->dns_server[1]) > 0
-	      || strlen (dns_list->dns_server[2]) > 0))
-	{
-
-	  fprintf (fp, "dhcp-option=6,");
-
-	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, "%s,", dns_list->dns_server[0]);
-
-	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, "%s,", dns_list->dns_server[1]);
-
-	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, "%s", dns_list->dns_server[2]);
-
-	  fprintf (fp, "\n");
-	}
-      }
-  else
-    {
-
       if (dns_list
 	  && (strlen (dns_list->dns_server[0]) > 0
 	      || strlen (dns_list->dns_server[1]) > 0
@@ -975,10 +948,9 @@ start_dnsmasq (void)
 
 	  fprintf (fp, "\n");
 	}
-    }
 
-  if (dns_list)
-    free (dns_list);
+    if (dns_list)
+      free (dns_list);
   }
 
 	if (nvram_match ("auth_dnsmasq", "1"))
