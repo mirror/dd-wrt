@@ -281,6 +281,7 @@ if (internal)
 	printf("mac %s\n",macstr);
 #endif
     
+
     char *collection=nvram_get_collection("iradius");
     if (collection!=NULL)
     {
@@ -332,6 +333,7 @@ if (internal)
 int radcount=0;
 char *radc=nvram_get("iradius_count");
 if (radc!=NULL)radcount=atoi(radc);
+
 radcount++;
 char count[16];
 sprintf(count,"%d",radcount);
@@ -411,7 +413,7 @@ int main(int argc, char** argv)
 #ifdef DEBUG
 	printf("$Id: wrt-radauth.c,v 1.17 2004/09/28 13:15:51 simigern Exp $ coming up...\n");
 #endif
-offset=1;
+int offset=1;
 	if (argc>2 && (strcmp(argv[1],"-n1") == 0))
 	{
 		macfmt=1;
@@ -466,7 +468,7 @@ offset=1;
         override=atoi(nvram_safe_get("radius_override"));
 */	
 	/* SeG DD-WRT change */
-	maxun = nvram_get("max_unauth_users");
+//	maxun = nvram_get("max_unauth_users");
 	if (maxun!=NULL && strlen(maxun)>0)
 	    maxunauthenticated_users = atoi(maxun); //read nvram variable
 	else
