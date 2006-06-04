@@ -313,7 +313,7 @@ cprintf("is all?\n");
       if (v == 0)
 	{
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
-	  return;
+	  return 0;
 	}
       else
 	{
