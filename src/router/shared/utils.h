@@ -63,6 +63,9 @@
 // Buffalo WLA-G54C (4702 cpu)
 #define ROUTER_BUFFALO_WLAG54C 17
 
+// Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
+#define ROUTER_ASUS_WL500G_PRE 18
+
 #define NVROUTER "DD_BOARD"
 
 
