@@ -11,5 +11,6 @@ export-objs     := nvram_linux.o setup.o
 obj-y		:= prom.o setup.o time.o sbmips.o sflash.o gpio.o perfcntr.o
 obj-y		+= nvram.o nvram_linux.o
 obj-$(CONFIG_PCI) += sbpci.o pcibios.o
+obj-$(CONFIG_SFLASH) += sflash.o
 
 include $(TOPDIR)/Rules.make

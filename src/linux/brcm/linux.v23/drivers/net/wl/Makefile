@@ -28,12 +28,12 @@ obj-m		:= $(O_TARGET)
 obj-y		:= $(foreach obj,$(obj-y),$(SRCBASE)/wl/wl/$(obj))
 variant-objs	:= $(foreach obj,$(variant-objs),$(SRCBASE)/wl/wl/$(obj))
 
-wl_link.o: 
-	$(OBJDUMP) -d $< | perl patchtable.pl > patchtable.bin
-	cat wl.o patchtable.bin > $@
-	cp wl_link.o wl.o
-
-modules: wl_link.o 
+#wl_link.o: 
+#	$(OBJDUMP) -d $< | perl patchtable.pl > patchtable.bin
+#	cat wl.o patchtable.bin > $@
+#	cp wl_link.o wl.o
+#
+#modules: wl_link.o 
 
 include $(TOPDIR)/Rules.make
 
