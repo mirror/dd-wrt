@@ -172,7 +172,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Asus WL-500g premium\n");
       setRouter ("Asus WL-500g Premium");
-      return ROUTER_BUFFALO_WZRRSG54;
+      return ROUTER_ASUS_WL500G_PRE;
     }
 
 
