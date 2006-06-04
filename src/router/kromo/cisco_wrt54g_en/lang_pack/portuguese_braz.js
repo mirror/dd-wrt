@@ -348,11 +348,11 @@ alive.titl=" - Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="Reinício Agendado";
 alive.sevr1="Reinício Agendado";
-alive.hour="No Horário determinado";
+alive.hour="No Horário Determinado";
 alive.legend2="Watchdog da Conexão WDS";
 alive.sevr2="Habilitar Watchdog";
 alive.IP="Endereços IP";
-alive.legend3="Proxy/Watchdog da Conexão";
+alive.legend3="Watchdog da Conexão/Proxy";
 alive.sevr3="Habilitar Watchdog do Proxy";
 alive.IP2="Endereço IP do Proxy";
 alive.port="Porta do Proxy";
@@ -459,7 +459,7 @@ hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domíni
 var diag = new Object();
 diag.titl=" - Diagnósticos";
 diag.h2="Diagnósticos";
-diag.legend="Command Shell";
+diag.legend="Shell de Comandos";
 diag.cmd="Comandos";
 diag.startup="Inicialização";
 diag.firewall="Firewall";
@@ -489,7 +489,7 @@ hdmz.right2="Habilitando esta opção você irá expor o host especificado à Interne
 var factdef = new Object();
 factdef.titl=" - Padrões de Fábrica";
 factdef.h2="Padrões de Fábrica";
-factdef.legend="Resetar configurações do roteador";
+factdef.legend="Resetar Configurações do Roteador";
 factdef.restore="Restaurar Padrões de Fábrica";
 
 factdef.mess1="Atenção! Se você clicar em OK, o dispositivo irá resetar aos padrões de fábrica e todas as configurações anteriores serão apagadas.";
@@ -803,9 +803,9 @@ log.titl=" - Log";
 log.h2="Gerenciamento do Log";
 log.legend="Log";
 log.lvl="Nível do Log";
-log.drop="Derrubados";
-log.reject="Rejeitados";
-log.accept="Aceitos";
+log.drop="Pacotes Derrubados";
+log.reject="Pacotes Rejeitados";
+log.accept="Pacotes Aceitos";
 
 
 // ******************************************* Management.asp *******************************************//
@@ -1502,6 +1502,7 @@ wl_adv.shrt="Curto"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
+hwl_adv.right1="Tipo de Autenticação:";
 hwl_adv.right2="Você pode escolher entre <em>Automático</em> e <em>Chave Compartilhada</em>. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar este modo de autenticação.";
 
 
