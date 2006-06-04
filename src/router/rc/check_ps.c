@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <wait.h>
+#include <dlfcn.h>
 
 #include <bcmnvram.h>
 #include <netconf.h>
