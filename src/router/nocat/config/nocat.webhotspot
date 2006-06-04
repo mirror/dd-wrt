@@ -32,6 +32,10 @@
 		<input maxlength="39" name="NC_ExcludePorts" size="39" value="<% nvram_get("NC_ExcludePorts"); %>" />
 	</div>
 	<div class="setting">
+		<div class="label">MAC White List</div>
+		<input maxlength="39" name="NC_MacWhiteList" size="39" value="<% nvram_get("NC_MacWhiteList"); %>" />
+	</div>
+	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_timeout)</script></div>
 		<input class="num" type="text" size="6" name="NC_LoginTimeout" value="<% nvram_get("NC_LoginTimeout"); %>" />
 	</div>
@@ -48,14 +52,6 @@
 			<option value="8" <% nvram_selmatch("NC_Verbosity","8","selected"); %> >8</option>
 			<option value="9" <% nvram_selmatch("NC_Verbosity","9","selected"); %> >9</option>
 			<option value="10" <% nvram_selmatch("NC_Verbosity","10","selected"); %> >10</option>
-		</select>
-	</div>
-	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(share.intrface)</script></div>
-		<select name="NC_Iface">
-		    <option value="br0" <% nvram_selmatch("NC_Iface","br0","selected"); %>>LAN &amp; WLAN</option>
-		    <option value="eth1" <% nvram_selmatch("NC_Iface","eth1","selected"); %>>WLAN</option>
-		    <option value="vlan0" <% nvram_selmatch("NC_Iface","vlan0","selected"); %>>LAN</option>
 		</select>
 	</div>
 	<div class="setting">
