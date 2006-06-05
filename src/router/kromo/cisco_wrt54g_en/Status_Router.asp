@@ -184,7 +184,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.domainname"); %></div>
-									<% nvram_get("wan_domain"); %>&nbsp;
+									<% show_wan_domain(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_time"); %></div>
