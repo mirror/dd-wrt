@@ -553,7 +553,6 @@ start_udhcpd (void)
   struct dns_lists *dns_list = NULL;
   int i = 0;
 //  char sigusr1[] = "-XX";
-  char name[100];
   if (nvram_match ("dhcpfwd_enable", "1"))
     {
       return 0;
@@ -735,7 +734,7 @@ start_udhcpd (void)
       if (nvram_invmatch ("wan_domain", ""))
 	 fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_domain"));
       else if (nvram_invmatch ("wan_get_domain", ""))
-	 fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));*/
+	 fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));
     }
    else
     {
@@ -836,7 +835,6 @@ start_dnsmasq (void)
   struct dns_lists *dns_list = NULL;
   int ret;
   int i;
-  char name[100];
 
   if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
       && nvram_match ("dnsmasq_enable", "0"))
