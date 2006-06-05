@@ -332,7 +332,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("status_router.legend5"); %>: </dt>
 							<dd class="definition"><% tran("hstatus_router.right14"); %></dd>
 						</dl><br />
-						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HStatus.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HStatus.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
