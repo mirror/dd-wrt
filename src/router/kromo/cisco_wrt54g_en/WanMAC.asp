@@ -115,7 +115,7 @@ addEvent(window, "load", function() {
 						<dt class="term"><% tran("wanmac.legend"); %>:</dt>
 						<dd class="definition"><% tran("hwanmac.right2"); %></dd>
 					</dl><br />
-					<a href="javascript:openHelpWindow('HMAC.asp');"><% tran("share.more"); %></a>
+					<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>'HMAC.asp');"><% tran("share.more"); %></a>
 				</div>
 			</div>
 			<div id="floatKiller"></div>

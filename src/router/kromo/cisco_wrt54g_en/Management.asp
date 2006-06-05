@@ -232,7 +232,7 @@ addEvent(window, "load", function() {
 							<dt class="term"><% tran("hmanagement.right1"); %></dt>
 							<dd class="definition"><% tran("hmanagement.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HManagement.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HManagement.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
