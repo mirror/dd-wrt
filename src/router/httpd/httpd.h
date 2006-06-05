@@ -98,7 +98,7 @@ typedef char char_t;
 #define TMPVAR _TMPVAR(__LINE__)
 
 //#define websWrite(wp, fmt, args...) ({ int TMPVAR = wfprintf(wp, fmt, ## args); wfflush(wp); TMPVAR; })
-void websWrite(webs_t wp, char *fmt, ...);
+int websWrite(webs_t wp, char *fmt, ...);
 #define websDebugWrite(wp, fmt, args...)
 //#define websDebugWrite(wp, fmt, args...) ({ error_value = 1; wfputs("<!--", wp); int TMPVAR = wfprintf(wp, fmt, ## args); wfputs("-->", wp); wfflush(wp); TMPVAR; })
 #define websError(wp, code, msg, args...)

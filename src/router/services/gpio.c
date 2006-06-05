@@ -10,7 +10,8 @@ int
 gpio_main (int argc, char **argv)
 {
 
-  unsigned int gpio, old_gpio;
+  unsigned int gpio;
+  unsigned int old_gpio;
   unsigned int pin;
 
   int gpioouten = open ("/dev/gpio/outen", O_RDWR);
