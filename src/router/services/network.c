@@ -1667,7 +1667,7 @@ start_wan_done (char *wan_ifname)
   start_chilli ();
 #endif
 #else
-  if (nvram_match ("fon_enable", "1"))
+  if (nvram_match ("fon_enable", "1") || nvram_match("chilli_nowifibridge","1"))
     {
 #ifndef HAVE_MSSID
       eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
@@ -1756,7 +1756,7 @@ stop_wan (void)
 	    eval("rmmod","slhc");	 */
 #endif
 #ifndef HAVE_FON
-  if (nvram_match ("fon_enable", "1"))
+  if (nvram_match ("fon_enable", "1") || nvram_match("chilli_nowifibridge","1"))
 #endif
     eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
 
