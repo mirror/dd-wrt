@@ -12,6 +12,13 @@ function user_add_submit(F) {
  	F.action.value = "Apply";
 	F.submit();
 }
+function iradius_add_submit(F) {
+	F.change_action.value = "gozila_cgi";
+	F.submit_button.value = "Hotspot";
+	F.submit_type.value = "add_iradius";
+ 	F.action.value = "Apply";
+	F.submit();
+}
 
 function user_remove_submit(F) {
 	F.change_action.value = "gozila_cgi";
@@ -29,6 +36,7 @@ function to_reboot(F) {
 }
 
 function to_submit(F) {
+	<% show_iradius_check(); %>
 	F.submit_button.value = "Hotspot";
 //	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
