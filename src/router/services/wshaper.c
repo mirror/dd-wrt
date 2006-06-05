@@ -53,7 +53,7 @@ get_mtu_val (void)
 }
 
 #ifdef HAVE_SVQOS
-int
+void
 svqos_reset_ports (void)
 {
 /*
