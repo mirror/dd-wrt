@@ -96,7 +96,7 @@ addEvent(window, "unload", function() {
                      <dd class="definition"><% tran("hstatus_sputnik.right8"); %></dd>
                   </dl><br />
                   
-                  <!--<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HSputnikStatus.asp');"><% tran("share.more"); %></a>-->
+                  <!--<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HSputnikStatus.asp');"><% tran("share.more"); %></a>-->
                </div>
             </div>
 				<div id="floatKiller"></div>

@@ -220,7 +220,7 @@ function SelDDNS(num,F) {
 							<dt class="term"><% tran("ddns.srv"); %>:</dt>
 							<dd class="definition"><% tran("hddns.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HDDNS.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HDDNS.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
