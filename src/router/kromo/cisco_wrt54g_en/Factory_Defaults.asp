@@ -101,7 +101,7 @@ function to_submit(F) {
 						<dl>
 							<dd class="definition"><% tran("hfactdef.right1"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HDefault.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HDefault.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

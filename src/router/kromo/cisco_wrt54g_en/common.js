@@ -627,6 +627,15 @@ function openHelpWindow(url) {
 	win.focus();
 }
 
+function openHelpWindowExt(url) {
+	var top = 30;
+	var left = Math.floor(screen.availWidth * .66) - 10;
+	var width = Math.floor(screen.availWidth * .33);
+	var height = Math.floor(screen.availHeight * .9) - 30;
+	var win = window.open("http://www.dd-wrt.com/help/english/" + url, 'DDWRT_Help', 'top=' + top + ',left=' + left + ',width=' + width + ',height=' + height + ",resizable=yes,scrollbars=yes,statusbar=no");
+	win.focus();
+}
+
 function openAboutWindow() {
 	var width = 400;
 	var height = 600;

@@ -392,7 +392,7 @@ addEvent(window, "load", function() {
 							<dt class="term"><% tran("share.ip"); %>:</dt>
 							<dd class="definition"><% tran("hwol.right6"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HWol.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HWol.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

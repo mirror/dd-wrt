@@ -234,7 +234,7 @@ function init(){
 							<dt class="term"><% tran("hwpa.right1"); %></dt>
 							<dd class="definition"><% tran("hwpa.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HWPA.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HWPA.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

@@ -124,7 +124,7 @@ function upgrade(F,id) {
 							<dd class="definition"><% tran("hupgrad.right2"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HUpgrade.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HUpgrade.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

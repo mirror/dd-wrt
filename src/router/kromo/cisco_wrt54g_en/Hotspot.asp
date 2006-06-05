@@ -130,7 +130,7 @@ addEvent(window, "load", function() {
 						<div id="logo">
 							<h2><% tran("share.help"); %></h2>
 						</div><br/>
-						<a href="javascript:openHelpWindow('HHotspot.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HHotspot.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
