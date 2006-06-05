@@ -288,7 +288,7 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (strcmp (nvram_safe_get ("wan_domain"), ""))
     wan_domain = nvram_safe_get ("wan_domain");
-  else if (strcmp (nvram_safe_get ("wan_get_domain"), "")
+  else if (strcmp (nvram_safe_get ("wan_get_domain"), ""))
     wan_domain = nvram_safe_get ("wan_get_domain");
 
   if (strcmp (nvram_safe_get ("lan_domain"), ""))
