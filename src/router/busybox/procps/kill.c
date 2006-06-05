@@ -42,7 +42,7 @@ int kill_main(int argc, char **argv)
 	int errors = 0;
 
 #ifdef CONFIG_KILLALL
-	int quiet=0;
+	int quiet=1;
 	/* Figure out what we are trying to do here */
 	whichApp = (strcmp(bb_applet_name, "killall") == 0)? KILLALL : KILL;
 #else
