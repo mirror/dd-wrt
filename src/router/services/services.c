@@ -552,7 +552,6 @@ start_udhcpd (void)
   FILE *fp;
   struct dns_lists *dns_list = NULL;
   int i = 0;
-//  char sigusr1[] = "-XX";
   if (nvram_match ("dhcpfwd_enable", "1"))
     {
       return 0;
