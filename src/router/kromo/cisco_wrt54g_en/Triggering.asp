@@ -127,7 +127,7 @@ function to_submit(F)
 							<dt class="term"><% tran("share.end"); %>:</dt>
 							<dd class="definition"><% tran("htrforward.right10"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HTrigger.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HTrigger.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
