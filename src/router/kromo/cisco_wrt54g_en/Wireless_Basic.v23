@@ -185,7 +185,7 @@ function init() {
 							<dt class="term"><% tran("hwl_basic.right3"); %></dt>
 							<dd class="definition"><% tran("hwl_basic.right4"); %></dt>
 						</dl><br />
-						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HWireless.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HWireless.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
