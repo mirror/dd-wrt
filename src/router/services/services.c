@@ -729,28 +729,20 @@ start_udhcpd (void)
   if (dns_list)
     free (dns_list);
 
+   /* DHCP Domain */
    if (nvram_match ("dhcp_domain", "wan"))
     {
-      if (nvram_match ("wan_domain", ""))
-       {
-	 char *domain = nvram_safe_get ("wan_get_domain");
-         nvram_set ("wan_domain", domain);
-       }
+      if (nvram_invmatch ("wan_domain", ""))
+	 fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_domain"));
+      else if (nvram_invmatch ("wan_get_domain", ""))
+	 fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));*/
     }
-  snprintf (name, sizeof (name), "%s_domain", nvram_safe_get ("dhcp_domain"));
-  if (nvram_invmatch (name, ""))
+   else
     {
-      fprintf (fp, "option domain %s\n", nvram_safe_get (name));
+      if (nvram_invmatch ("lan_domain", ""))
+	 fprintf (fp, "option domain %s\n", nvram_safe_get ("lan_domain"));
     }
 
-  /*snprintf (name, sizeof (name), "%s_domain", nvram_safe_get ("dhcp_domain"));
-
-  if (nvram_invmatch ("wan_domain", ""))
-    fprintf (fp, "option domain %s\n", nvram_safe_get (name));
-  else if (nvram_invmatch ("wan_get_domain", ""))
-    fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));*/
-
-  /* Sveasoft addition - additional options */
   if (nvram_invmatch ("dhcpd_options", ""))
     {
       char *host_key = nvram_safe_get ("dhcpd_options");
@@ -896,21 +888,21 @@ start_dnsmasq (void)
 
   fprintf (fp, "resolv-file=/tmp/resolv.dnsmasq\n");
 
+   /* Domain */
    if (nvram_match ("dhcp_domain", "wan"))
     {
-      if (nvram_match ("wan_domain", ""))
-       {
-	 char *domain = nvram_safe_get ("wan_get_domain");
-         nvram_set ("wan_domain", domain);
-       }
+      if (nvram_invmatch ("wan_domain", ""))
+	 fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_domain"));
+      else if (nvram_invmatch ("wan_get_domain", ""))
+	 fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_get_domain"));*/
     }
-  snprintf (name, sizeof (name), "%s_domain", nvram_safe_get ("dhcp_domain"));
-  if (nvram_invmatch (name, ""))
+   else
     {
-      fprintf (fp, "domain=%s\n", nvram_safe_get (name));
+      if (nvram_invmatch ("lan_domain", ""))
+	 fprintf (fp, "domain=%s\n", nvram_safe_get ("lan_domain"));
     }
 
-  /* DD-WRT use dnsmasq as dhcp replacement */
+  /* DD-WRT use dnsmasq as DHCP replacement */
   if (!nvram_match ("wl_mode", "wet"))
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
