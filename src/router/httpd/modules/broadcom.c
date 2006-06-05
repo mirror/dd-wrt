@@ -591,8 +591,10 @@ ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
      ret += websWrite (wp, "&#%d", *c);
      }
      } */
-  return tf_webWriteESCNV (wp, name);	// test: buffered version of above
+ 
+  tf_webWriteESCNV (wp, name);	// test: buffered version of above
 
+  return; 
 #endif
 
   return;
@@ -649,7 +651,7 @@ ej_nvram_selget (int eid, webs_t wp, int argc, char_t ** argv)
       else
 	ret += websWrite (wp, "&#%d", *c);
     }*/
-  return tf_webWriteESCNV (wp, name);	// test: buffered version of above
+  tf_webWriteESCNV (wp, name);	// test: buffered version of above
 
   return;
 }
