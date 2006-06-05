@@ -92,8 +92,10 @@ extern int stop_services (void);
 extern int config_vlan (void);
 extern void config_loopback (void);
 
+#ifdef HAVE_NOCAT
 extern int start_splashd (void);
 extern int stop_splashd (void);
+#endif
 
 /* lonewolf mods */
 extern int flush_interfaces (void);
