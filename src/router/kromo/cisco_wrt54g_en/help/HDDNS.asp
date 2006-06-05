@@ -20,6 +20,8 @@
 					</ol><br />
 					You can now access your router from the Internet with the domain you have chosen.
 				</dd>
+				<dt>Wildcard</dt>
+				<dd>Enabling the wildcard feature for your host causes *.yourhost.dyndns.org to be aliased to the same IP address as yourhost.dyndns.org. This feature is useful if you want to be able to use, for example, www.yourhost.dyndns.org and still reach your hostname</dd>
 				<dt>Internet IP Address</dt>
 				<dd>The router current Internet IP address is displayed here.</dt>
 				<dt>Status</dt>
