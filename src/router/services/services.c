@@ -894,7 +894,7 @@ start_dnsmasq (void)
       if (nvram_invmatch ("wan_domain", ""))
 	 fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_domain"));
       else if (nvram_invmatch ("wan_get_domain", ""))
-	 fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_get_domain"));*/
+	 fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_get_domain"));
     }
    else
     {
