@@ -152,7 +152,7 @@ addEvent(window, "load", function() {
 							<dt class="term"><% tran("firewall.legend"); %>:</dt>
 							<dd class="definition"><% tran("hfirewall.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HFirewall.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HFirewall.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 			<div id="floatKiller"></div>

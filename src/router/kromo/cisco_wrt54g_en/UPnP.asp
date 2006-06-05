@@ -218,7 +218,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("upnp.serv"); %>:</dt>
 							<dd class="definition"><% tran("hupnp.right4"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HUPnP.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HUPnP.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

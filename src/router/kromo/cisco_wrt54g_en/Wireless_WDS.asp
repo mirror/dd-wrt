@@ -306,7 +306,7 @@ addEvent(window, "load", function() {
 					<div id="help">
 						<div id="logo"><h2><% tran("share.help"); %></h2></div>
 						<br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HWDS.asp')"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWDS.asp')"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
