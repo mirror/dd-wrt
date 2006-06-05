@@ -871,7 +871,7 @@ start_dnsmasq (void)
       return errno;
     }
 
-  if (nvram_match ("fon_enable", "1"))
+  if (nvram_match ("fon_enable", "1") || nvram_match ("chilli_nowifibridge","1"))
     {
       fprintf (fp, "interface=%s,br0\n", nvram_safe_get ("wl0_ifname"));
     }
