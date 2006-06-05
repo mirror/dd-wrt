@@ -183,10 +183,14 @@ function SelDDNS(num,F) {
 										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");</script>
 									</select>
 								</div>
+								<% nvram_selmatch("ddns_enable","2","<!--"); %>
+								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
 									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_checked("ddns_wildcard", "1"); %> />
 								</div>
+								<% nvram_selmatch("ddns_enable","2","-->"); %>
+								<% nvram_selmatch("ddns_enable","3","-->"); %>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
