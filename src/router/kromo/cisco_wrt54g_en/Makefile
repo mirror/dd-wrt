@@ -12,7 +12,9 @@ install:
 	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.html) $(INSTALLDIR)/www
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
+ifneq ($(CONFIG_DIST),"micro")
 	cp -a help $(INSTALLDIR)/www
+endif
 	cp -a lang_pack $(INSTALLDIR)/www
 ifeq ($(CONFIG_NOMUI),y)
 	rm -f $(INSTALLDIR)/www/lang_pack/*.js
