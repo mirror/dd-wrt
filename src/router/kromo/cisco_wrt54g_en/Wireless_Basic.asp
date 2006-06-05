@@ -124,7 +124,7 @@ function init() {
                      <dd class="definition">If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.
                      </dd>
                   </dl><br />
-                  <a href="javascript:openHelpWindow('HWireless.asp')">More...</a>
+                  <a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HWireless.asp')">More...</a>
                </div>
             </div>
 				<div id="floatKiller"></div>

@@ -682,7 +682,7 @@ function init()
 							<dd class="definition"><% tran("hidx.right18"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HSetup.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HSetup.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

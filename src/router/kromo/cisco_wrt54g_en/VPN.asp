@@ -89,7 +89,7 @@ function to_submit(F) {
 							<dd class="definition"><% tran("hvpn.right1"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HVPN.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HVPN.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
