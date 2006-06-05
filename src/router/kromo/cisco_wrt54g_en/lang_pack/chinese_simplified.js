@@ -628,6 +628,7 @@ hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot门户";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
+hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
 hotspot.pserver="主Radius服务器IP/DNS";
 hotspot.bserver="备份RadiusIP/DNS";
 hotspot.dns="DNS IP";

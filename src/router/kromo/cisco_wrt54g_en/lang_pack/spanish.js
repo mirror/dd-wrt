@@ -632,6 +632,7 @@ hotspot.titl=" - Hotspot";
 hotspot.h2="Portal Hotspot";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
+hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
 hotspot.pserver="IP/DNS Principal del Radius Server";
 hotspot.bserver="Backup de IP/DNS del Radius Server";
 hotspot.dns="IP DNS";
