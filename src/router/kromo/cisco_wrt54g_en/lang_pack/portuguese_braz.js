@@ -65,14 +65,14 @@ share.fri="Sexta";
 share.fri_s="Sex";
 share.fri_s1="S";
 share.sat="Sábado";
-share.sat_s="Sab";
+share.sat_s="Sáb";
 share.sat_s1="S";
 share.expires="Expira";
 share.yes="Sim";
 share.no="Não";
 share.allow="Permitir";
 share.deny="Negar";
-share.range="Range";
+share.range="Faixa";
 share.use="Usar";
 share.mins="Min.";
 share.secs="Seg.";
@@ -94,7 +94,7 @@ share.high="Alto";
 share.option="Opções";
 share.rule="Regra";
 share.lan="LAN";
-share.point2point="Ponto a Ponto";
+share.point2point="Ponto-a-Ponto";
 share.nat="NAT";
 share.subnet="Máscara de Sub-Rede";
 share.unmask="Desmascarar";
@@ -102,7 +102,7 @@ share.deflt="Padrão";  //don't use share.default !!!
 share.all="Tudo";
 share.auto="Automático";
 share.right="Direita";
-share.left="Esquera";
+share.left="Esquerda";
 share.share_key="Chave Compartilhada";
 share.inter="Intervalo (em segundos)";
 share.srv="Nome do Serviço";
@@ -247,7 +247,7 @@ errmsg.err44="As verificações totais excedem 128 contagens.";
 errmsg.err47="SSID Inválida.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS não é compatível com a configuração atual do roteador. Por favor verifique os seguintes passos :\n * O Modo Wireless deve ser Access Point \n * WPA2 não é suportado no modo WDS \n * Modo de Rede Somente-B não é suportado em modo WDS";
+errmsg.err48="WDS não é compatível com a configuração atual do roteador. Por favor verifique os seguintes passos:\n * O Modo Wireless deve ser Access Point \n * WPA2 não é suportado no modo WDS \n * Modo de Rede Somente-B não é suportado em modo WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius está disponível somente no modo Access Point.";
@@ -281,6 +281,9 @@ errmsg.err59="Não disponível! Por favor habilite a Rede Wireless.";
 //Upgrade.asp error messages
 errmsg.err60="Por favor selecione um arquivo para atualizar.";
 errmsg.err61="Arquivo de imagem incorreto.";
+
+//Services.asp error messages
+errmsg.err62=" já está definido como concessão estática.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
@@ -316,7 +319,7 @@ bmenu.applicationsDMZ="DMZ";
 bmenu.applicationsQoS="QoS";
 
 bmenu.sipath="SIPatH";
-bmenu.sipathoverview="Overview";
+bmenu.sipathoverview="Visão Geral";
 bmenu.sipathphone="Phonebook";
 bmenu.sipathstatus="Status";
 
@@ -401,7 +404,7 @@ var ddnsm = new Object();
 ddnsm.dyn_strange="Resposta estranha do servidor, você está se conectando ao servidor correto?";
 ddnsm.dyn_good="DDNS atualizado com sucesso";
 ddnsm.dyn_noupdate="Atualização não necessária no momento";
-ddnsm.dyn_nohost="O hostname não existe";
+ddnsm.dyn_nohost="Este Host Name não existe";
 ddnsm.dyn_notfqdn="O Host Name não está correto";
 ddnsm.dyn_yours="O Host mão está sob o seu controle";
 ddnsm.dyn_abuse="O Host foi bloqueado por por abusos";
@@ -444,7 +447,7 @@ ddnsm.all_resolving="Resolvendo nome de domínio";
 ddnsm.all_errresolv="Falha na resolução do nome de domínio";
 ddnsm.all_connecting="Conectando ao servidor";
 ddnsm.all_connectfail="Falha na conexão ao servidor";
-ddnsm.all_disabled="Função DDNS desabilitada";
+ddnsm.all_disabled="Função DDNS Desabilitada";
 ddnsm.all_noip="Sem conexão à internet";
 
 //help container
@@ -510,7 +513,7 @@ filterIP.h33="Insira a Faixa de IPs dos PCs";
 filterIP.ip_range="Faixa de IPs";
 
 
-// ******************************************* Filter.asp *******************************************//
+// ******************************************* Filters.asp *******************************************//
 
 var filter = new Object();
 filter.titl=" - Restrições de Acesso";
@@ -535,21 +538,13 @@ filter.mess3="O tempo final deve ser maior que o tempo inicial.";
 
 //help container
 var hfilter = new Object();
-hfilter.right1="Política de Acesso à Internet:";
-hfilter.right2="Você pode definir até 10 políticas de acesso. Clique em <em>" + sbutton.del + "</em> para remover uma política ou em <em>" + sbutton.summary + "</em> para ver um das políticas de acesso.";
-hfilter.right3="Status:";
+hfilter.right2="Você pode definir até 10 políticas de acesso. Clique em <em>" + sbutton.del + "</em> para remover uma política ou em <em>" + sbutton.summary + "</em> para ver um resumo das políticas de acesso atuais.";
 hfilter.right4="Habilitar ou Desabilitar política.";
-hfilter.right5="Nome da Política:";
 hfilter.right6="Você deve adicionar um nome à sua política de acesso.";
-hfilter.right7="Dias:";
 hfilter.right8="Escolha os dias da semana aos quais a política será aplicada.";
-hfilter.right9="Horários:";
 hfilter.right10="Insira o horário do dia em que você gostaria de aplicar a política.";
-hfilter.right11="Serviços Bloqueados:";
 hfilter.right12="Você pode escolher bloquear determinados serviços. Clique em <em>" + sbutton.filterSer + "</em> para modificar estas configurações.";
-hfilter.right13="Bloqueio de Website pela URL:";
-hfilter.right14="Você pode bloquear determinados sites inserindo o endereço da URL.";
-hfilter.right15="Bloqueio de Website por Palavra-Chave:";
+hfilter.right14="Você pode bloquear determinados sites pele endereço URL, ou por palavras contidas na URL do site.";
 hfilter.right16="Você pode bloquear acesso à determinados sites pelas Palavras-Chave contidas na página web.";
 
 
@@ -700,7 +695,7 @@ idx_l.srv="Servidor L2TP";
 // ******************************************* index_pppoe.asp *******************************************//
 
 var idx_pppoe = new Object();
-idx_pppoe.use_rp="Usar RP PPPoE";
+idx_pppoe.use_rp="Usar RP-PPPoE";
 
 
 // ******************************************* index_pptp.asp *******************************************//
@@ -775,7 +770,6 @@ join.titl=" - Ingressar";
 join.mess1="Ingresso como cliente realizado com sucesso à rede: ";
 
 
-
 // ******************************************* Log_incoming.asp *******************************************//
 
 var log_in = new Object();
@@ -783,7 +777,6 @@ log_in.titl=" - Tabela do Log de Entrada";
 log_in.h2="Tabela do Log de Entrada";
 log_in.th_ip="IP de Origem";
 log_in.th_port="Número da Porta de Destino";
-
 
 
 // ******************************************* Log_outgoing.asp *******************************************//
@@ -838,11 +831,6 @@ management.boot_srv="Boot Wait";
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
 
-management.dsn_legend="DNSMasq";
-management.dsn_srv="DNSMasq";
-management.dsn_loc="DNS Local";
-management.dsn_opt="Opções Adicionais de DNS";
-
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
 
@@ -880,14 +868,15 @@ management.lang_chinese_simplified="Chinês Simplificado";
 management.lang_croatian="Croata";
 management.lang_czech="Tcheco";
 management.lang_dutch="Holandês";
+management.lang_portuguese_braz="Português (Brasil)";
 management.lang_english="Inglês";
 management.lang_french="Francês";
 management.lang_german="Alemão";
 management.lang_italian="Italiano";
-management.lang_brazilian="Português-Brazil";
+management.lang_brazilian="Português (Brasil)";
 management.lang_slovenian="Esloveno";
 management.lang_spanish="Espanhol";
-management.lang_swedish="swedish";
+management.lang_swedish="Sueco";
 
 management.net_legend="Configurações do Filtro de IP (ajustes para P2P)";
 management.net_port="Número Máximo de Portas";
@@ -993,13 +982,9 @@ route.static_ip="Endereço IP de Destino da LAN";
 
 //help container
 var hroute = new Object();
-hroute.right1="Modo de Operação:";
 hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se existir algum outro roteador na sua rede, selecione o modo <em>Router</em>.";
-hroute.right3="Selecione um Número de Registro:";
 hroute.right4="Este é o número único da rota, você pode definir até 20 rotas.";
-hroute.right5="Nome da Rota:";
 hroute.right6="Insira o nome desejado que deseja associar à esta regra.";
-hroute.right7="Endereço IP de Destino da LAN:";
 hroute.right8="Este é o host remoto ao qual você gostaria de atribuir a rota estática.";
 hroute.right9="Máscara de Sub-Rede:";
 hroute.right10="Determina o host e a porção de rede a qual pertence a rota.";
@@ -1034,6 +1019,10 @@ service.dhcp_jffs2="Usar JFFS2 Para o BD de Concessão aos Clientes";
 service.dhcp_domain="Domínio Utilizado";
 service.dhcp_landomain="Dominio da LAN";
 service.dhcp_option="Opções Adicionais do DHCPd";
+service.dnsmasq_legend="DNSMasq";
+service.dnsmasq_srv="DNSMasq";
+service.dnsmasq_loc="DNS Local";
+service.dnsmasq_opt="Opções Adicionais de DNS";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
@@ -1103,7 +1092,7 @@ service.ssh_key="Chaves Autorizadas";
 // ******************************************* Sipath.asp + cgi *******************************************//
 
 var sipath = new Object();
-sipath.titl=" - SiPath Overview";
+sipath.titl=" - Visão Geral SiPath";
 sipath.phone_titl=" - Phonebook";
 sipath.status_titl=" - Status";
 
@@ -1123,9 +1112,9 @@ status_lan.legend3="Clientes DHCP";
 var hstatus_lan = new Object();
 hstatus_lan.right2="Este é o Enderelo MAC do Roteador, como visto na sua rede local (rede Ethernet).";
 hstatus_lan.right4="Este é o Endereço IP do Roteador, como visto na sua rede local (rede Ethernet).";
-hstatus_lan.right6="When the Router is using a Subnet Mask, it is shown here.";
+hstatus_lan.right6="A máscara de Sub-Rede do seu Roteador é exibida aqui.";
 hstatus_lan.right8="Se você está utilizando o Roteador como um servidor DHCP, suas configurações serão exibidas aqui.";
-hstatus_lan.right10="Clicando em qualquer enderço MAC você irá obter o Identificador Único Organizacional da interface de rede (Padrões IEEE Standards OUI database search).";
+hstatus_lan.right10="Clicando em qualquer enderço MAC você irá obter o Identificador Único Organizacional da interface de rede (pesquisa na base de Padrões IEEE Standards OUI).";
 
 
 // ******************************************* Status_Router.asp *******************************************//
@@ -1163,20 +1152,20 @@ var hstatus_router = new Object();
 hstatus_router.right2="Este é o nome específico do roteador, que pode ser configurado na aba <i>Configurações</i>.";
 hstatus_router.right4="Este é o Endereço MAC do roteador, visível para o seu ISP.";
 hstatus_router.right6="Este é o firmware atual do roteador.";
-hstatus_router.right8="Este é o horário, configurado na aba de Configurações.";
+hstatus_router.right8="Este é o horário, configurado na aba de <i>Configurações</i>.";
 hstatus_router.right10="Esta é a medida de tempo que o roteador está \"ligado\" e operacional.";
-hstatus_router.right12="É dado por três números que representam a carga do sistema durante o último minuto, os cinco, e quinze minutos passados.";
-hstatus_router.right14="Exibe todas as informações necessárias pelo seu ISP para conxão com a Internet. \
-				Estas informações são fornecidas através da aba de Configuração. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
+hstatus_router.right12="É dado por três números que representam a carga do sistema durante o último minuto, os cinco, e quinze minutos passados respectivamente.";
+hstatus_router.right14="Exibe todas as informações necessárias pelo seu ISP para conexão com a Internet. \
+				Estas informações são fornecidas através da aba de <i>Configuração</i>. Você pode <em>Conectar</em> ou <em>Desconectar</em> sua conexão aqui, clicando no botão.";
 
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
 var status_sputnik = new Object();
-status_sputnik.titl=" - Sputnik Agent Status";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
-status_sputnik.manage="Managed By";
-status_sputnik.license="SCC License No.";
+status_sputnik.titl=" - Status do Agente Sputnik";
+status_sputnik.h2="Agente Sputnik&reg;&trade;";
+status_sputnik.manage="Gerenciado Por";
+status_sputnik.license="Licença SCC Nº.";
 
 //help container
 var hstatus_sputnik = new Object();
@@ -1185,7 +1174,6 @@ hstatus_sputnik.right2="Esta tela exibe o status do processo do Agente Sputnik."
 hstatus_sputnik.right4="O Centro de Controle Sputnik ao qual este Access Point está conectado.";
 hstatus_sputnik.right6="O status do Agente atual.";
 hstatus_sputnik.right8="O número da licensa do seu Centro de Controle Sputnik.";
-
 
 
 // ******************************************* Status_Wireless.asp *******************************************//
@@ -1338,7 +1326,7 @@ wanmac.wlan="Clonar MAC Wireless";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="Alguns ISPs requerem o registro do seu endereço MAC. Se você não deseja registrar novamente seu endereço MAC caso já possua um endereço registrado, você pode clonar o endereço MAC que está registrado com seu ISP e utilizá-lo em seu roteador.";
+hwanmac.right2="Alguns ISPs requerem o registro do seu endereço MAC. Se você não deseja registrar novamente seu endereço MAC, caso já possua um endereço registrado, você pode clonar o endereço MAC que está registrado com seu ISP e utilizá-lo em seu roteador.";
 
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
@@ -1364,7 +1352,7 @@ wpa.rekeyInt="rekey interval";
 //help container
 var hwpa = new Object();
 hwpa.right1="Modo de Segurança:";
-hwpa.right2="Você pode escolher entre Desabilitado, WEP, Chave WPA Pré-Compartilhada, WPA RADIUS, ou RADIUS. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança.";
+hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>Chave WPA Pré-Compartilhada</em>, <em>WPA RADIUS</em>, ou <em>RADIUS</em>. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança.";
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
@@ -1372,7 +1360,7 @@ hwpa.right2="Você pode escolher entre Desabilitado, WEP, Chave WPA Pré-Compartil
 var wl_filter = new Object();
 wl_filter.titl=" - Lista de Filtro de Endereços MAC";
 wl_filter.h2="Lista de Filtro de Endereços MAC";
-wl_filter.h3="Insira os Endereços MAC no formato &nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+wl_filter.h3="Insira os Endereços MAC no formato&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
@@ -1398,7 +1386,7 @@ wds.lazy_default="Padrão: Desabilitar";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Sub-Rede";
-wds.legend2="Opções Extra";
+wds.legend2="Opções Extras";
 
 
 // ******************************************* Wireless_radauth.asp *******************************************//
@@ -1424,10 +1412,10 @@ var wl_mac = new Object();
 wl_mac.titl=" - Filtro MAC";
 wl_mac.h2="Filtro de MAC Wireless";
 wl_mac.legend="Filtro MAC";
-wl_mac.label="Usar Filtro";
+wl_mac.label="Usar Filtro MAC";
 wl_mac.label2="Modo do Filtro";
-wl_mac.deny="Prevenir os PCs listads de acessar a rede wireless";
-wl_mac.allow="Permitir somente os PCs listados acessarem a rede wireless";
+wl_mac.deny="Prevenir que os PCs listados acessem a rede wireless";
+wl_mac.allow="Permitir que somente os PCs listados acessem a rede wireless";
 
 
 // ******************************************* Wireless_Basic.asp *******************************************//
@@ -1484,7 +1472,7 @@ wl_adv.label15="Força Xmit";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Acesso Wireless à Interface de Configuração";
 wl_adv.label18="Suporte WMM";
-wl_adv.label19="No-Acknowledgement";
+wl_adv.label19="Sem-Reconhecimento";
 wl_adv.table1="Parâmetros EDCA Access Point (Access Point para Cliente)";
 wl_adv.col1="CWmin";
 wl_adv.col2="CWmax";
@@ -1502,7 +1490,6 @@ wl_adv.shrt="Curto"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right1="Tipo de Autenticação:";
 hwl_adv.right2="Você pode escolher entre <em>Automático</em> e <em>Chave Compartilhada</em>. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar este modo de autenticação.";
 
 
@@ -1537,4 +1524,4 @@ dhcp.server="Endereço IP do Servidor DHCP:";
 dhcp.tclient="Nome de Host do Cliente";
 
 var donate = new Object();
-donate.mb="Você pode desejar doar através da conta Moneybookers mb@dd-wrt.com";
+donate.mb="Se desejar você pode doar através da conta Moneybookers: mb@dd-wrt.com";
