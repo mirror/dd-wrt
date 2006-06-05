@@ -28,7 +28,7 @@
 #include <sys/utsname.h>
 #include <time.h>
 
-#define LOGIN " login: "
+#define LOGIN "Login as: "
 
 static const char fmtstr_d[] = "%A, %d %B %Y";
 static const char fmtstr_t[] = "%H:%M:%S";
