@@ -301,9 +301,9 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
   	{
     lan_domain = nvram_safe_get ("lan_domain");
     if (!strcmp (wan_domain, ""))
-      websWrite (wp, ", LAN: %s", lan_domain);
-    else
       websWrite (wp, "LAN: %s", lan_domain);
+    else
+      websWrite (wp, ", LAN: %s", lan_domain);
 	}
 	
   return;
