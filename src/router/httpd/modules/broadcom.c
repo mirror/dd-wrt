@@ -4136,6 +4136,7 @@ struct ej_handler ej_handlers[] = {
   {"show_status_setting", ej_show_status_setting},
   {"localtime", ej_localtime},
   {"dhcp_remaining_time", ej_dhcp_remaining_time},
+  {"show_wan_domain", ej_show_wan_domain},
   /* for dhcp */
   {"dumpleases", ej_dumpleases},
   /* for ddm */
