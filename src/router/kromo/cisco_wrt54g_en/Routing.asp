@@ -201,7 +201,7 @@ function SelMode(num,F) {
 							<dt class="term"><% tran("share.subnet"); %>:</dt>
 							<dd class="definition"><% tran("hroute.right10"); %></dd>
 						</dl><br />
-						<a href="javascript:openHelpWindow('HRouting.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HRouting.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

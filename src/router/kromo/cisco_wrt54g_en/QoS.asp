@@ -420,7 +420,7 @@ function init() {
 							<dd class="definition"><% tran("hqos.right12"); %></dd>
 						</dl>
 						<br/>
-						<a href="javascript:openHelpWindow('HQos.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HQos.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
