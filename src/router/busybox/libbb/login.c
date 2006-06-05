@@ -129,8 +129,7 @@ void print_login_prompt(void)
       fclose (fp);
     }
   fputs("\n",stdout);
-	char *buf;
-	//char buf[MAXHOSTNAMELEN+1];
+	char buf[MAXHOSTNAMELEN+1];
 
 	if(gethostname(buf, MAXHOSTNAMELEN) == 0)
           {
