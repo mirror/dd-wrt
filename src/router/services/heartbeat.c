@@ -178,7 +178,7 @@ hb_connect_main (int argc, char **argv)
   start_wan_done (get_wan_face ());
 
   snprintf (buf, sizeof (buf),
-	    "iptables -I INPUT -i %s -p udp -s %s -d %s --dport %s -j %s",
+	    "iptables -I INPUT -i %s -p udp -s %s -d %s --dport %d -j %s",
 	    get_wan_face (), argv[3], nvram_safe_get ("wan_ipaddr"), argv[1],
 	    "ACCEPT");
 
