@@ -201,7 +201,7 @@ addEvent(window, "unload", function() {
 							<dt class="term"><% tran("share.oui"); %>:</dt>
 							<dd class="definition"><% tran("hstatus_lan.right10"); %></dd>
 						</dl><br />
-						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HStatusLan.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HStatusLan.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>

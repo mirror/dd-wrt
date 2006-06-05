@@ -117,7 +117,7 @@ document.title = "<% nvram_get("router_name"); %>" + sipath.titl;
 						<h2>Help</h2>
 						</div>
 					<br />
-					<!--<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HSipath.asp')">More...</a>-->
+					<!--<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HSipath.asp')">More...</a>-->
 					</div>
 				</div>
 				<div id="floatKiller"></div>

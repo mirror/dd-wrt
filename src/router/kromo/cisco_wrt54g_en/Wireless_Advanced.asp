@@ -327,7 +327,7 @@ addEvent(window, "load", function() {
 							<dt class="term"><% tran("wl_adv.label"); %>:</dt>
 							<dd class="definition"><% tran("hwl_adv.right2"); %></dd>
 						</dl><br />
-						<a href="javascript:<% nvram_else_selmatch("dist_type","micro","openHelpWindowExt","openHelpWindow"); %>('HWirelessAdvanced.asp');"><% tran("share.more"); %></a>
+						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HAlive.asp');">('HWirelessAdvanced.asp');"><% tran("share.more"); %></a>
 					</div>
 				</div>
 				<div id="floatKiller"></div>
