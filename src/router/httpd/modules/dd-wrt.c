@@ -2850,9 +2850,9 @@ ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv)
   unsigned char buf[WLC_IOCTL_MAXLEN];
   memset (buf, 0, WLC_IOCTL_MAXLEN);
   char *iface = get_wdev ();
-//  int r = getassoclist (iface, buf);
-//if (r<0)
-//    return;
+  int r = getassoclist (iface, buf);
+   if (r<0)
+   return;
   struct maclist *maclist = (struct maclist *) buf;
   int i;
   for (i = 0; i < maclist->count; i++)
