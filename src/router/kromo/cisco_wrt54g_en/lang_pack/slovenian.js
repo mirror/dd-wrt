@@ -618,6 +618,7 @@ hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot portal";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
+hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
 hotspot.pserver="Glavni Radius Server IP/DNS";
 hotspot.bserver="Nadomestni Radius Server IP/DNS";
 hotspot.dns="DNS IP";

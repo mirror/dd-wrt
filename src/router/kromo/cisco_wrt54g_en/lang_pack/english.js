@@ -634,6 +634,7 @@ var hotspot = new Object();
 hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot Portal";
 hotspot.legend="Chillispot";
+hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
 hotspot.hotspot="Chillispot";
 hotspot.pserver="Primary Radius Server IP/DNS";
 hotspot.bserver="Backup Radius Server IP/DNS";

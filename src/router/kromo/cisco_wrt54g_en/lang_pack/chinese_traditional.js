@@ -208,7 +208,7 @@ errmsg.err20="使用形如(xx:xx:xx:xx:xx:xx)的格式輸入MAC位址。";
 errmsg.err21="無效MAC地址格式。";
 errmsg.err22="WAN口MAC位址不正確。";
 errmsg.err23="無效16進制數值 ";
-errmsg.err24=" 在如下MAC地址中出現 ";
+errmsg.err24?6c=" 在如下MAC地址中出現 ";
 errmsg.err25="秘鑰值不正確。";
 errmsg.err26="秘鑰長度不正確。";
 errmsg.err27="非法子網路遮罩。";
@@ -276,7 +276,7 @@ errmsg.err59="不可用！請啟用無線網路。";
 
 //Upgrade.asp error messages
 errmsg.err60="請選擇升級檔。";
-errmsg.err61="不正確的鏡像檔。";
+errmsg?6c?6c.err61="不正確的鏡像檔。";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
@@ -412,7 +412,7 @@ ddnsm.dyn_dnserr="DNS內部錯誤";
 ddnsm.dyn_911="未知錯誤911";
 ddnsm.dyn_999="未知錯誤999";
 ddnsm.dyn_donator="所請求的特性中有一個是僅對捐贈者可用的特性，請捐贈";
-ddnsm.dyn_uncode="未知返回代碼";
+ddn?6csm.dyn_uncode="未知返回代碼";
 
 ddnsm.tzo_good="操作完成";
 ddnsm.tzo_noupdate="當前不需要更新";
@@ -548,7 +548,7 @@ hfilter.right14="您可以通過輸入特定Web站點的URL來封禁對其訪問。";
 hfilter.right16="您可以通過輸入包含在特定Web站點頁面中的關鍵字來封禁對其訪問。";;
 
 
-
+?6c
 // ******************************************* FilterSummary.asp *******************************************//
 
 var filterSum = new Object();
@@ -628,6 +628,7 @@ hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot門戶";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
+hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
 hotspot.pserver="主Radius伺服器IP/DNS";
 hotspot.bserver="備份RadiusIP/DNS";
 hotspot.dns="DNS IP";

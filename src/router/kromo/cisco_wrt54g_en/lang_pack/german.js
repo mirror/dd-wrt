@@ -627,6 +627,7 @@ hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot Portal";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
+hotspot.nowifibridge="Entferne WLAN von der LAN Bridge";
 hotspot.pserver="Primärer Radius Server IP/DNS";
 hotspot.bserver="Secundärer Radius Server IP/DNS";
 hotspot.dns="DNS IP";
