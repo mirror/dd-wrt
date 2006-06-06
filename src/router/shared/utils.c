@@ -549,7 +549,7 @@ diag_led (int type, int act)
 //show_hw_type(check_hw_type());
 
 	if (getRouterBrand () == ROUTER_BELKIN_F5D7230)  //fix for belkin DMZ=enable reboot problem
-		return;
+		return 0;
 	else
 		{
 		if (check_hw_type () == BCM4702_CHIP)
@@ -1560,8 +1560,8 @@ get_mtu (char *proto)
 void
 set_host_domain_name (void)
 {
-  char *domain;
   char *hostname;
+  char *domain;
 
   /* Allow you to use gethostname to get Host Name */
   if (strlen (nvram_safe_get ("wan_hostname")) > 0)
@@ -1573,12 +1573,12 @@ set_host_domain_name (void)
   sethostname (hostname, strlen (hostname));
 
   /* Allow you to use getdomainname to get Domain Name */
- if (strlen (nvram_safe_get ("wan_domain")) > 0 && strlen (nvram_safe_get ("wan_domain")) <= 64)
+ if (strlen (nvram_safe_get ("wan_domain")) > 0 && strlen (nvram_safe_get ("wan_domain")) <= 64) //no more than 64
     domain = nvram_safe_get ("wan_domain");
   else
     domain = nvram_safe_get ("wan_get_domain");
 
-  setdomainname (domainname, strlen (domain));
+  setdomainname (domain, strlen (domain));
 }
 
 int
