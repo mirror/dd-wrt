@@ -521,7 +521,7 @@ parse_port_forward (char *wordlist)
   }
 }
 
-// changed by steve
+#ifndef HAVE_UPNP
 static void
 parse_upnp_forward ()
 {
@@ -636,8 +636,7 @@ parse_upnp_forward ()
 	}
     }
 }
-
-// end changed by steve
+#endif
 
 static void
 parse_spec_forward (char *wordlist)
@@ -741,7 +740,9 @@ nat_prerouting (void)
   if (nvram_match ("wk_mode", "gateway"))
     {
       /* Port forwarding */
+#ifndef HAVE_UPNP
       parse_upnp_forward ();
+#endif
       parse_spec_forward (nvram_safe_get ("forward_spec"));
       parse_port_forward (nvram_safe_get ("forward_port"));
       /* DD-WRT addition by Eric Sauvageau */

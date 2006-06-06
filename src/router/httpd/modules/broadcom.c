@@ -73,10 +73,10 @@ int debug_value = 0;
 //tofu
 int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
-// changed by steve
+#ifndef HAVE_UPNP
 static int tf_upnp (webs_t wp);
 static void ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv);
-// end changed by steve
+#endif
 
 /* Example:
  * ISDIGIT("", 0); return true;
@@ -2836,9 +2836,9 @@ struct apply_action apply_actions[] = {
   {"OnePage", "", 0, RESTART, NULL},	// same as index
   {"Expose", "filters", 0, SYS_RESTART, NULL},	// same as DMZ
   {"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
-// changed by steve
+#ifndef HAVE_UPNP
   {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added
-// end changed by steve
+#endif
 //#endif
   {"Security", "", 1, RESTART, NULL},
   {"System", "", 0, RESTART, NULL},
@@ -4163,9 +4163,9 @@ struct ej_handler ej_handlers[] = {
   /* for forward */
 //  {"port_forward_table", ej_port_forward_table},
 //  {"port_forward_spec", ej_port_forward_spec},
-// changed by steve
-  //{"forward_upnp", ej_forward_upnp},
-// end changed by steve
+//  changed by steve
+//  {"forward_upnp", ej_forward_upnp},
+//   end changed by steve
   {"port_trigger_table", ej_port_trigger_table},
   /* for route */
   {"static_route_table", ej_static_route_table},
@@ -4276,9 +4276,9 @@ struct ej_handler ej_handlers[] = {
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
 /* end lonewolf additions */
-// changed by steve
+#ifndef HAVE_UPNP
   {"tf_upnp", ej_tf_upnp},
-// end changed by steve
+#endif
 //  {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},  //Eko
   {"do_hpagehead", ej_do_hpagehead},  //Eko
@@ -4324,6 +4324,7 @@ tf_webWriteJS (webs_t wp, const char *s)
   return r;
 }
 
+#ifndef HAVE_UPNP
 // handle UPnP.asp requests / added 10
 static int
 tf_upnp (webs_t wp)
@@ -4369,5 +4370,5 @@ ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 
 }
-
 // end changed by steve
+#endif
