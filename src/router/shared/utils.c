@@ -1557,11 +1557,16 @@ void
 set_host_domain_name (void)
 {
   char buf[254];
+  char *hostname;
 
   /* Allow you to use gethostname to get Host Name */
-  snprintf (buf, sizeof (buf), "echo \"%s\" > /proc/sys/kernel/hostname",
-	    nvram_safe_get ("wan_hostname"));
-  system (buf);
+  if (strlen (nvram_safe_get ("wan_hostname")) > 0)
+    hostname = nvram_safe_get ("wan_hostname");
+  else if (strlen (nvram_safe_get ("router_name")) > 0)
+    hostname = nvram_safe_get ("router_name");
+  else
+    hostname = "dd-wrt";
+  sethostname (hostname, strlen (hostname));
 
   /* Allow you to use getdomainname to get Domain Name */
   if (nvram_invmatch ("wan_domain", ""))
