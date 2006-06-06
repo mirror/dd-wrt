@@ -1,3 +1,5 @@
+#ifdef HAVE_SSHD
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,8 +20,6 @@
 #include <cy_conf.h>
 #include <code_pattern.h>
 #include <rc.h>
-
-#ifdef HAVE_SSHD
 
 #define RSA_HOST_KEY_FILE	"/tmp/root/.ssh/ssh_host_rsa_key"
 #define DSS_HOST_KEY_FILE	"/tmp/root/.ssh/ssh_host_dss_key"

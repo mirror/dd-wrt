@@ -677,11 +677,15 @@ dns_to_resolv (void)
       perror (RESOLV_FILE);
       return errno;
     }
-  if (!nvram_match ("wan_domain", ""))
+  if (nvram_invmatch ("wan_get_domain", ""))
+    {
+      fprintf (fp_w, "search %s\n", nvram_safe_get ("wan_get_domain"));
+    }
+  else if (nvram_invmatch ("wan_domain", ""))
     {
       fprintf (fp_w, "search %s\n", nvram_safe_get ("wan_domain"));
     }
-  if (!nvram_match ("lan_domain", ""))
+  if (nvram_invmatch ("lan_domain", ""))
     {
       fprintf (fp_w, "search %s\n", nvram_safe_get ("lan_domain"));
     }
@@ -1556,7 +1560,7 @@ get_mtu (char *proto)
 void
 set_host_domain_name (void)
 {
-  char buf[254];
+  char *domain;
   char *hostname;
 
   /* Allow you to use gethostname to get Host Name */
@@ -1569,14 +1573,12 @@ set_host_domain_name (void)
   sethostname (hostname, strlen (hostname));
 
   /* Allow you to use getdomainname to get Domain Name */
-  if (nvram_invmatch ("wan_domain", ""))
-    snprintf (buf, sizeof (buf), "echo \"%s\" > /proc/sys/kernel/domainname",
-	      nvram_safe_get ("wan_domain"));
+ if (strlen (nvram_safe_get ("wan_domain")) > 0 && strlen (nvram_safe_get ("wan_domain")) <= 64)
+    domain = nvram_safe_get ("wan_domain");
   else
-    snprintf (buf, sizeof (buf), "echo \"%s\" > /proc/sys/kernel/domainname",
-	      nvram_safe_get ("wan_get_domain"));
+    domain = nvram_safe_get ("wan_get_domain");
 
-  system (buf);
+  setdomainname (domainname, strlen (domain));
 }
 
 int
