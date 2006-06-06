@@ -1146,7 +1146,7 @@ start_nvram (void)
 	    }
 	}
     }
-// changed by steve
+#ifndef HAVE_UPNP
   if ((nvram_match ("restore_defaults", "1"))
       || (nvram_match ("upnpcas", "1")))
     {
@@ -1167,8 +1167,7 @@ start_nvram (void)
 	}
     }
   nvram_set ("upnp_wan_proto", "");
-
-// changed by steve
+#endif
 
   /* The tkip and aes already are changed to wl_crypto from v3.63.3.0 */
   if (nvram_match ("wl_wep", "tkip"))
@@ -1309,17 +1308,6 @@ unset_nvram (void)
 //        nvram_safe_unset("wl_ap_ssid");
 //        nvram_safe_unset("wl_ap_ip");
 #endif
-
-#ifndef UPNP_FORWARD_SUPPORT
-  {
-    int i;
-    for (i = 0; i < MAX_NVPARSE; i++)
-      {
-	del_forward_port (i);
-      }
-  }
-#endif
-
 
 //#ifndef SYSLOG_SUPPORT
   {
