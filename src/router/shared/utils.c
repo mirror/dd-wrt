@@ -548,13 +548,17 @@ diag_led (int type, int act)
 {
 //show_hw_type(check_hw_type());
 
-
-  if (check_hw_type () == BCM4702_CHIP)
-    return diag_led_4702 (type, act);
-  else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
-    return diag_led_4704 (type, act);
-  else
-    return diag_led_4712 (type, act);
+	if (getRouterBrand () == ROUTER_BELKIN_F5D7230)  //fix for belkin DMZ=enable reboot problem
+		return;
+	else
+		{
+		if (check_hw_type () == BCM4702_CHIP)
+    		return diag_led_4702 (type, act);
+		else if (check_hw_type () == BCM4704_BCM5325F_CHIP)
+			return diag_led_4704 (type, act);
+		else
+			return diag_led_4712 (type, act);
+		}
 }
 
 char *
