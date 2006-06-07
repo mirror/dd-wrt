@@ -1047,6 +1047,13 @@ __nfs_refresh_inode(struct inode *inode, struct nfs_fattr *fattr)
 		invalid = 0;
 	}
 
+	/* set the invalid flag if the last attempt at invalidating
+	 * the inode didn't empty the clean_pages list */
+	if ( NFS_FLAGS(inode) & NFS_INO_MAPPED) {
+		NFS_FLAGS(inode) &= ~NFS_INO_MAPPED;
+		invalid = 1;
+	}
+
 	/*
 	 * If we have pending writebacks, things can get
 	 * messy.
@@ -1092,6 +1099,12 @@ __nfs_refresh_inode(struct inode *inode, struct nfs_fattr *fattr)
 		NFS_ATTRTIMEO(inode) = NFS_MINATTRTIMEO(inode);
 		NFS_ATTRTIMEO_UPDATE(inode) = jiffies;
 		invalidate_inode_pages(inode);
+		if (! list_empty(&inode->i_mapping->clean_pages)) {
+			dfprintk(PAGECACHE,
+				 "NFS: clean_pages for %x/%ld is not empty\n",
+				 inode->i_dev, inode->i_ino);
+			NFS_FLAGS(inode) |= NFS_INO_MAPPED;
+		}
 		memset(NFS_COOKIEVERF(inode), 0, sizeof(NFS_COOKIEVERF(inode)));
 	} else if (time_after(jiffies, NFS_ATTRTIMEO_UPDATE(inode)+NFS_ATTRTIMEO(inode))) {
 		if ((NFS_ATTRTIMEO(inode) <<= 1) > NFS_MAXATTRTIMEO(inode))

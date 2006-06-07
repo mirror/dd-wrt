@@ -664,6 +664,11 @@ static int load_elf_binary(struct linux_binprm * bprm, struct pt_regs * regs)
 		SET_PERSONALITY(elf_ex, ibcs2_interpreter);
 	}
 
+	if (BAD_ADDR(elf_ex.e_entry)) {
+		retval = -ENOEXEC;
+		goto out_free_dentry;
+	}
+
 	/* OK, we are done with that, now set up the arg stuff,
 	   and then start this sucker up */
 

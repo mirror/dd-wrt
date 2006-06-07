@@ -14,6 +14,10 @@
 #include <asm/byteorder.h>
 #include <asm/uaccess.h>
 
+MODULE_AUTHOR("Jan Kara");
+MODULE_DESCRIPTION("Quota format v2 support");
+MODULE_LICENSE("GPL");
+
 #define __QUOTA_V2_PARANOIA
 
 typedef char *dqbuf_t;

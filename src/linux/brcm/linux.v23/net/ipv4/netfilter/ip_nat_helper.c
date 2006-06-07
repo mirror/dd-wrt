@@ -235,8 +235,8 @@ ip_nat_mangle_udp_packet(struct sk_buff **skb,
 
 	/* UDP helpers might accidentally mangle the wrong packet */
 	if (udplen < sizeof(*udph) + match_offset + match_len) {
-		if (net_ratelimit())
-			printk("ip_nat_mangle_udp_packet: undersized packet\n");
+//		if (net_ratelimit())
+//			printk("ip_nat_mangle_udp_packet: undersized packet\n");
 		return 0;
 	}
 
