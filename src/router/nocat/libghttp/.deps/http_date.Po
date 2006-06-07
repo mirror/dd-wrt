@@ -1,44 +1,46 @@
-http_date.o http_date.o: http_date.c /usr/include/string.h \
-  /usr/include/features.h /usr/include/sys/cdefs.h \
-  /usr/include/gnu/stubs.h \
-  /usr/lib/gcc/i586-suse-linux/4.0.2/include/stddef.h \
-  /usr/include/bits/string.h /usr/include/bits/string2.h \
-  /usr/include/endian.h /usr/include/bits/endian.h \
-  /usr/include/bits/types.h /usr/include/bits/wordsize.h \
-  /usr/include/bits/typesizes.h /usr/include/stdlib.h \
-  /usr/include/ctype.h http_date.h /usr/include/time.h \
-  /usr/include/bits/time.h
+http_date.o http_date.o: http_date.c \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/string.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/features.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stddef.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/ctype.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h \
+  http_date.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/time.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_clk_tck.h
 
-/usr/include/string.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/string.h:
 
-/usr/include/features.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/features.h:
 
-/usr/include/sys/cdefs.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
 
-/usr/include/gnu/stubs.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
 
-/usr/lib/gcc/i586-suse-linux/4.0.2/include/stddef.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stddef.h:
 
-/usr/include/bits/string.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/ctype.h:
 
-/usr/include/bits/string2.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/types.h:
 
-/usr/include/endian.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h:
 
-/usr/include/bits/endian.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h:
 
-/usr/include/bits/types.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h:
 
-/usr/include/bits/wordsize.h:
-
-/usr/include/bits/typesizes.h:
-
-/usr/include/stdlib.h:
-
-/usr/include/ctype.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_touplow.h:
 
 http_date.h:
 
-/usr/include/time.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/time.h:
 
-/usr/include/bits/time.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
+
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_clk_tck.h:
