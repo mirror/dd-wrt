@@ -296,7 +296,7 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
       wan_domain = nvram_safe_get ("wan_get_domain");
     }
   
-  websWrite (wp, "\t\t\t<div class="setting">\n");
+  websWrite (wp, "\t\t\t<div class=\"setting\">\n");
   websWrite (wp, "\t\t\t\t<div class=\"label\"><script type=\"text/javascript\">Capture(share.wandomainname)</script></div>\n");
   websWrite (wp, "%s", wan_domain);
   websWrite (wp, "\t\t\t</div>\n");
@@ -304,7 +304,7 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
   if (nvram_invmatch ("lan_domain", ""))
     {
       lan_domain = nvram_safe_get ("lan_domain");
-      websWrite (wp, "\t\t\t<div class="setting">\n");
+      websWrite (wp, "\t\t\t<div class=\"setting\">\n");
       websWrite (wp, "\t\t\t\t<div class=\"label\"><script type=\"text/javascript\">Capture(share.landomainname)</script></div>\n");
       websWrite (wp, "%s", lan_domain);
       websWrite (wp, "\t\t\t</div>\n");
