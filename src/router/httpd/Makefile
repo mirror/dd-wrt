@@ -254,8 +254,7 @@ install:
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 #	$(STRIP) $(INSTALLDIR)/usr/sbin/httpd
 	install -d $(INSTALLDIR)/etc
-	install openssl.cnf $(INSTALLDIR)/etc
-	install -m 755 gencert.sh $(INSTALLDIR)/usr/sbin
+	install *.pem $(INSTALLDIR)/etc
 
 cert:
 	./gencert.sh
