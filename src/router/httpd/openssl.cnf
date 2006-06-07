@@ -15,7 +15,7 @@ oid_section		= new_oids
 # To use this configuration file with the "-extfile" option of the
 # "openssl x509" utility, name here the section containing the
 # X.509v3 extensions to use:
-# extensions		=
+# extensions		= 
 # (Alternatively, use a configuration file that has only
 # X.509v3 extensions in its main [= default] section.)
 
@@ -93,10 +93,10 @@ attributes		= req_attributes
 x509_extensions	= v3_ca	# The extentions to add to the self signed cert
 
 # Passwords for private keys if not present they will be prompted for
-# input_password = secret
-# output_password = secret
+#input_password = secret
+#output_password = secret
 
-# This sets a mask for permitted string types. There are several options.
+# This sets a mask for permitted string types. There are several options. 
 # default: PrintableString, T61String, BMPString.
 # pkix	 : PrintableString, BMPString.
 # utf8only: only UTF8Strings.
@@ -111,30 +111,36 @@ req_extensions = v3_req # The extensions to add to a certificate request
 [ req_distinguished_name ]
 countryName			= Country Name (2 letter code)
 countryName_default		= DE
+countryName_value		= DE
 countryName_min			= 2
 countryName_max			= 2
 
 stateOrProvinceName		= State or Province Name (full name)
 stateOrProvinceName_default	= Saxon
+stateOrProvinceName_value	= Saxon
 
 localityName			= Locality Name (eg, city)
 localityName_default		= Dresden
+localityName_value		= Dresden
 
 0.organizationName		= Organization Name (eg, company)
 0.organizationName_default	= NewMedia-NET GmbH
+0.organizationName_value	= NewMedia-NET GmbH
 
 # we can do this but it is not needed normally :-)
 #1.organizationName		= Second Organization Name (eg, company)
-1.organizationName_default	= DD-WRT
+#1.organizationName_default	= World Wide Web Pty Ltd
 
 organizationalUnitName		= Organizational Unit Name (eg, section)
-#organizationalUnitName_default	=
+organizationalUnitName_value	= Division
 
 commonName			= Common Name (eg, your name or your server\'s hostname)
-commonName_max			= DD-WRT
+commonName_max			= 64
+commonName_value		= NewMedia-NET GmbH
 
 emailAddress			= Email Address
-emailAddress_max		= info@dd-wrt.com
+emailAddress_max		= 40
+emailAddress_value		= info@dd-wrt.com
 
 # SET-ex3			= SET extension number 3
 
@@ -142,8 +148,10 @@ emailAddress_max		= info@dd-wrt.com
 challengePassword		= A challenge password
 challengePassword_min		= 4
 challengePassword_max		= 20
+challengePassword_value		= 
 
 unstructuredName		= An optional company name
+unstructuredName_value		= 
 
 [ usr_cert ]
 
