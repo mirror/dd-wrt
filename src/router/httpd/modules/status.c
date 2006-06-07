@@ -299,7 +299,7 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.wandomainname)</script></div>\n");
   websWrite (wp, "%s", wan_domain);
-  websWrite (wp, "</div>\n");
+  websWrite (wp, "</div>");
   
   if (nvram_invmatch ("lan_domain", ""))
     {
@@ -307,7 +307,7 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.landomainname)</script></div>\n");
       websWrite (wp, "%s", lan_domain);
-      websWrite (wp, "</div>\n");
+      websWrite (wp, "</div>");
     }
   return;
 }
