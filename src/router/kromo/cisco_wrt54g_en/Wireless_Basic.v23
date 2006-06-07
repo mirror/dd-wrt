@@ -165,7 +165,7 @@ function init() {
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label6"); %></div>
                     <input class="num" name="wl_distance" size="8" maxlength="8" value="<% nvram_get("wl_distance"); %>" />
-                    <span class="default">(<% tran("wl_basic.sensitivity"); %>)</span>
+                    <span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 2000 " + share.meters + ")")</script></span>
                   </div>
                 </fieldset>
                 <br/>

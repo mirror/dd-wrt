@@ -17,6 +17,8 @@ share.usrname="Uporabni¹ko ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
 share.domainname="Domensko ime";
+share.wandomainname="WAN Domain Name";
+share.landomainname="LAN Domain Name";
 share.statu="Status";
 share.start="Zaèetek";
 share.end="Konec";
@@ -119,6 +121,7 @@ share.dhcp="DHCP";
 share.styl="Stil";
 share.err="napak";
 share.errs="napak";
+share.meters="meters";
 
 
 
@@ -1468,7 +1471,6 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Me¹ano";
 wl_basic.b="Samo-B";
 wl_basic.g="Samo-G";
-wl_basic.sensitivity="Privzeto: 20000 metrov";
 
 //help container
 var hwl_basic = new Object();
