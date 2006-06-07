@@ -1,14 +1,7 @@
-// Not working in IE & Opera ?
-//************ Include the current language file after english.js ************//
-//  var Head = document.getElementsByTagName('head')[0];
-//  var head_inc = document.createElement('script');
-//  head_inc.setAttribute('type','text/javascript');
-//  head_inc.setAttribute('src',"lang_pack/language.js");
-//  Head.appendChild(head_inc);
 
-//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 //		Chinese (Traditional) reference translation file - DD-WRT V23 SP1 by JnJn 25/05/2006	//
-//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
@@ -29,6 +22,8 @@ share.usrname="用戶名";
 share.passwd="密碼";
 share.hostname="主機名";
 share.domainname="功能變數名稱";
+share.wandomainname="WAN Domain Name";
+share.landomainname="LAN Domain Name";
 share.statu="狀態";
 share.start="開始";
 share.end="結束";
@@ -128,6 +123,7 @@ share.key="秘鑰";
 share.wireless="無線";
 share.dhcp="DHCP";
 share.styl="風格";
+share.meters="meters";
 
 
 var sbutton = new Object();
@@ -1477,7 +1473,6 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="混合";
 wl_basic.b="僅B";
 wl_basic.g="僅G";
-wl_basic.sensitivity="默認：20000米";
 
 //help container
 var hwl_basic = new Object();

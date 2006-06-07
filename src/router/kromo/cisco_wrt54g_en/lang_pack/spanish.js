@@ -1,15 +1,8 @@
-// Not working in IE & Opera ?
-//************ Include the current language file after english.js ************//
-//  var Head = document.getElementsByTagName('head')[0];
-//  var head_inc = document.createElement('script');
-//  head_inc.setAttribute('type','text/javascript');
-//  head_inc.setAttribute('src',"lang_pack/language.js");
-//  Head.appendChild(head_inc);
 
-//////////////////////////////////////////////////////////////////////////////////////////////
-//		English reference translation file - DD-WRT V23 SP1 by Botho 17/05/2006				//
+//////////////////////////////////////////////////////////////////////////////////////////////////////
+//		English reference translation file - DD-WRT V23 SP1 by Botho 17/05/2006						//
 //		Traducción Española del archivo de referencia - DD-WRT V23 SP1 por SuperWebon 25/05/2006	//
-//////////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////////////////
 
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
@@ -30,6 +23,8 @@ share.usrname="Nombre Usuario";
 share.passwd="Clave";
 share.hostname="Host Name";
 share.domainname="Nombre Dominio";
+share.wandomainname="WAN Domain Name";
+share.landomainname="LAN Domain Name";
 share.statu="Estado";
 share.start="Inicio";
 share.end="Fin";
@@ -132,6 +127,7 @@ share.dhcp="DHCP";
 share.styl="Estilo";
 share.err="error";
 share.errs="errores";
+share.meters="meters";
 
 
 var sbutton = new Object();
@@ -1482,7 +1478,6 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mezcla";
 wl_basic.b="Sólo-B";
 wl_basic.g="Sólo-G";
-wl_basic.sensitivity="Por defecto: 20000 metros";
 
 //help container
 var hwl_basic = new Object();
