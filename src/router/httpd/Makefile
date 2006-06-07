@@ -239,7 +239,7 @@ endif
 
 vpath %.c modules $(SRCBASE)/../tools/src
 
-all: httpd
+all: httpd cert
 
 clean:
 	rm -f *.o *~ httpd
@@ -254,18 +254,11 @@ install:
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 #	$(STRIP) $(INSTALLDIR)/usr/sbin/httpd
 	install -d $(INSTALLDIR)/etc
-	install *.pem $(INSTALLDIR)/etc
+	install openssl.cnf $(INSTALLDIR)/etc
+	install -m 755 gencert.sh $(INSTALLDIR)/usr/sbin
 
 cert:
-	# create the key and certificate request
-	openssl req -new -out cert.csr -config openssl.cnf -keyout privkey.pem -days 3650 -newkey rsa:512
-	# remove the passphrase from the key:
-	openssl rsa -in privkey.pem -out key.pem
-	# convert the certificate request into a signed certificate
-	openssl x509 -in cert.csr -out cert.pem -req -signkey key.pem
-	rm -f cert.csr privkey.pem
-	# Show human-readable format
-	openssl x509 -in cert.pem -text -noout
+	./gencert.sh
 
 httpd: cgi.o ej.o httpd.o broadcom.o \
        index.o status.o dhcp.o log.o upgrade.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
