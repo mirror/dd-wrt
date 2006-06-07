@@ -8,7 +8,7 @@ comment 'Input core support'
 tristate 'Input core support' CONFIG_INPUT
 dep_tristate '  Keyboard support' CONFIG_INPUT_KEYBDEV $CONFIG_INPUT
 
-if [ "$CONFIG_INPUT_KEYBDEV" == "n" ]; then
+if [ "$CONFIG_INPUT_KEYBDEV" = "n" ]; then
 	bool '  Use dummy keyboard driver' CONFIG_DUMMY_KEYB $CONFIG_INPUT
 fi
 

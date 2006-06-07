@@ -124,6 +124,7 @@
 
 	LK1.1.19 (Roger Luethi)
 	- Increase Tx threshold for unspecified errors
+	- Craig Brind: Zero padded aligned buffers for short packets
 
 */
 
@@ -1308,10 +1309,14 @@ static int via_rhine_start_tx(struct sk_buff *skb, struct net_device *dev)
 			np->stats.tx_dropped++;
 			return 0;
 		}
+		/* Padding is not copied and so must be redone. */
 		skb_copy_and_csum_dev(skb, np->tx_buf[entry]);
+		if (skb->len < ETH_ZLEN)
+			memset(np->tx_buf[entry] + skb->len, 0,
+			       ETH_ZLEN - skb->len);
 		np->tx_skbuff_dma[entry] = 0;
 		np->tx_ring[entry].addr = cpu_to_le32(np->tx_bufs_dma +
-										  (np->tx_buf[entry] - np->tx_bufs));
+					  (np->tx_buf[entry] - np->tx_bufs));
 	} else {
 		np->tx_skbuff_dma[entry] =
 			pci_map_single(np->pdev, skb->data, skb->len, PCI_DMA_TODEVICE);

@@ -724,6 +724,7 @@ int inet_getname(struct socket *sock, struct sockaddr *uaddr,
 		sin->sin_port = sk->sport;
 		sin->sin_addr.s_addr = addr;
 	}
+	memset(sin->sin_zero, 0, sizeof(sin->sin_zero));
 	*uaddr_len = sizeof(*sin);
 	return(0);
 }

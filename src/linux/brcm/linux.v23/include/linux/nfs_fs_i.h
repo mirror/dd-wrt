@@ -85,6 +85,7 @@ struct nfs_inode_info {
 #define NFS_INO_REVALIDATING	0x0004		/* revalidating attrs */
 #define NFS_IS_SNAPSHOT		0x0010		/* a snapshot file */
 #define NFS_INO_FLUSH		0x0020		/* inode is due for flushing */
+#define NFS_INO_MAPPED		0x0040		/* page invalidation failed */
 
 /*
  * NFS lock info
