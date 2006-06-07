@@ -474,9 +474,17 @@ start_dhcpfwd (void)
       fprintf (fp, "if	%s	true	false	true\n",
 	       nvram_safe_get ("lan_ifname"));
 	       
-char *wan_proto=nvram_get("wan_proto");
+char *wan_proto=nvram_safe_get("wan_proto");
+char *wan_ifname=nvram_safe_get("wan_ifname");
+#ifdef HAVE_MADWIFI
+if (nvram_match("ath0_mode","sta"))
+#else
+if (nvram_match("wl_mode","sta"))
+#endif
+    {
+    wan_ifname=getwlif(); //returns eth1/eth2 for broadcom and ath0 for atheros
+    }
 #ifdef HAVE_PPPOE
-
   if (strcmp (wan_proto, "pppoe") == 0)
     {
       fprintf (fp, "if	ppp0	false	true	true\n");
