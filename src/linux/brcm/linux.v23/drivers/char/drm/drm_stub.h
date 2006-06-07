@@ -52,6 +52,7 @@ static int DRM(stub_open)(struct inode *inode, struct file *filp)
 	int                    err   = -ENODEV;
 	struct file_operations *old_fops;
 
+	if (minor < 0 || minor >=DRM_STUB_MAXCARDS) return -ENODEV;
 	if (!DRM(stub_list) || !DRM(stub_list)[minor].fops) return -ENODEV;
 	old_fops   = filp->f_op;
 	filp->f_op = fops_get(DRM(stub_list)[minor].fops);
