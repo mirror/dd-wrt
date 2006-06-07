@@ -29,6 +29,8 @@ share.usrname="User Name";
 share.passwd="Password";
 share.hostname="Host Name";
 share.domainname="Domain Name";
+share.wandomainname="WAN Domain Name";
+share.landomainname="LAN Domain Name";
 share.statu="Status";
 share.start="Start";
 share.end="End";
@@ -131,6 +133,7 @@ share.dhcp="DHCP";
 share.styl="Style";
 share.err="error";
 share.errs="errors";
+share.meters="meters";
 
 
 
@@ -1486,7 +1489,6 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mixed";
 wl_basic.b="B-Only";
 wl_basic.g="G-Only";
-wl_basic.sensitivity="Default: 20000 meters";
 
 //help container
 var hwl_basic = new Object();

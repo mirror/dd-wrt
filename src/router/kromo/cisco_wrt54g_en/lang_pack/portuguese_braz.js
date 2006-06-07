@@ -1,14 +1,7 @@
-// Not working in IE & Opera ?
-//************ Include the current language file after english.js ************//
-//  var Head = document.getElementsByTagName('head')[0];
-//  var head_inc = document.createElement('script');
-//  head_inc.setAttribute('type','text/javascript');
-//  head_inc.setAttribute('src',"lang_pack/language.js");
-//  Head.appendChild(head_inc);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr 25/05/2006		  //
-//						Need some improvements yet...					  //
+//		Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr 25/05/2006		        //
+//						Need some improvements yet...					                    //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -30,6 +23,8 @@ share.usrname="Nome de Usuário";
 share.passwd="Senha";
 share.hostname="Host Name";
 share.domainname="Nome de Domínio";
+share.wandomainname="WAN Domain Name";
+share.landomainname="LAN Domain Name";
 share.statu="Status";
 share.start="Iniciar";
 share.end="Fim";
@@ -132,6 +127,7 @@ share.dhcp="DHCP";
 share.styl="Estilo";
 share.err="erro";
 share.errs="erros";
+share.meters="meters";
 
 
 var sbutton = new Object();
@@ -1438,7 +1434,6 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Misto";
 wl_basic.b="Somente-B";
 wl_basic.g="Somente-G";
-wl_basic.sensitivity="Padrão: 20000 Metros";
 
 //help container
 var hwl_basic = new Object();

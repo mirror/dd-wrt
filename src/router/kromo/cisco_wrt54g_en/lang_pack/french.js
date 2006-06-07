@@ -24,6 +24,8 @@ share.usrname="Nom d\'utilisateur";
 share.passwd="Mot de passe";
 share.hostname="Nom d\'hôte";
 share.domainname="Nom de domaine";
+share.wandomainname="Nom de domaine WAN";
+share.landomainname="Nom de domaine LAN";
 share.statu="Etat";
 share.start="Début";
 share.end="Fin";
@@ -126,6 +128,7 @@ share.dhcp="DHCP";
 share.styl="Skin";
 share.err="erreur";
 share.errs="erreurs";
+share.meters="mètres";
 
 
 var sbutton = new Object();
@@ -285,7 +288,7 @@ errmsg.err62=" is already defined as a static lease.";
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
 bmenu.setup="Configuration";
-bmenu.setupbasic="Configuration de base";
+bmenu.setupbasic="Paramètres de base";
 bmenu.setupddns="DDNS";
 bmenu.setupmacclone="Adresse MAC dupliquée";
 bmenu.setuprouting="Routage avancé";
@@ -648,7 +651,7 @@ hotspot.titl=" - Hotspot";
 hotspot.h2="Portail Hotspot";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
-hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
+hotspot.nowifibridge="Séparer Wifi du Pont LAN";
 hotspot.pserver="IP/DNS Serveur Radius primaire";
 hotspot.bserver="IP/DNS Serveur Radius secondaire";
 hotspot.dns="IP / DNS";
@@ -1491,29 +1494,31 @@ wl_mac.allow="Permit only PCs listed to access the wireless network";
 // ******************************************* Wireless_Basic.asp *******************************************//
 
 var wl_basic = new Object();
-wl_basic.titl=" - Wireless";
-wl_basic.h2="Wireless";
-wl_basic.legend="Basic Settings";
-wl_basic.label="Wireless Mode";
-wl_basic.label2="Wireless Network Mode";
-wl_basic.label3="Wireless Network Name (SSID)";
-wl_basic.label4="Wireless Channel";
-wl_basic.label5="Wireless SSID Broadcast";
-wl_basic.label6="Sensitivity Range (ACK Timing)";
+wl_basic.titl=" - Sans Fil";
+wl_basic.h2="Sans Fil";
+wl_basic.legend="Paramètres de base";
+wl_basic.label="Mode sans fil";
+wl_basic.label2="Mode réseau sans fil";
+wl_basic.label3="Nom du réseau sans fil (SSID)";
+wl_basic.label4="Canal sans fil";
+wl_basic.label5="Diffusion SSID sans fil";
+wl_basic.label6="Sensibilité (ACK Timing)";
 wl_basic.ap="AP";
 wl_basic.client="Client";
-wl_basic.clientBridge="Client Bridge";
+wl_basic.clientBridge="Pont Client";
 wl_basic.adhoc="Adhoc";
-wl_basic.mixed="Mixed";
-wl_basic.b="B-Only";
-wl_basic.g="G-Only";
-wl_basic.sensitivity="Default: 20000 meters";
+wl_basic.mixed="Mixte";
+wl_basic.b="B-uniquement";
+wl_basic.g="G-uniquement";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.";
-hwl_basic.right3="Sensitivity Range: ";
-hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
+hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, \
+	conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, \
+	sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, \
+	sélectionnez <em>B-uniquement</em>. Si votre réseau n\'est muni d\'aucun périphérique sans fil, sélectionnez l\'option <em>Désactiver</em>.";
+hwl_basic.right3="Sensibilité: ";
+hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité.";
 
 
 
