@@ -160,7 +160,8 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x042f") &&
       (nvram_match ("product_name", "Product_name")
-       || nvram_match ("product_name", "WZR-RS-G54")))
+       || nvram_match ("product_name", "WZR-RS-G54")
+       || nvram_match ("product_name", "WZR-HP-G54"))
     {
       cprintf ("router is buffalo WZR-RS\n");
       setRouter ("Buffalo WZR-RS-G54");
