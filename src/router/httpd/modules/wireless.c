@@ -380,7 +380,7 @@ validate_wl_wep (webs_t wp, char *value, struct variable *v)
   if (!valid_choice (wp, value, v))
     return;
 #ifdef ABURN_WSEC_CHECK
-  if (strcmp (value, "off") != 0
+  if (strcmp (value, "off")
       && atoi (nvram_safe_get ("wl_gmode")) == GMODE_AFTERBURNER)
     {
       websWrite (wp,
