@@ -886,6 +886,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef HAVE_CHILLI
 #ifdef HAVE_FONBETA
   {"chilli_enable", "1", 0},
+  {"chilli_nowifibridge", "1", 0},
   {"chilli_url", "https://beta.fon.com/test2/index.php", 0},
   {"chilli_radius", "beta.fon.com", 0},
   {"chilli_backup", "beta.fon.com", 0},

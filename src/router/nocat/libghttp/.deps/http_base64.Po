@@ -1,83 +1,79 @@
-http_base64.o http_base64.o: http_base64.c /usr/include/stdlib.h \
-  /usr/include/features.h /usr/include/sys/cdefs.h \
-  /usr/include/gnu/stubs.h \
-  /usr/lib/gcc/i586-suse-linux/4.0.2/include/stddef.h \
-  /usr/include/sys/types.h /usr/include/bits/types.h \
-  /usr/include/bits/wordsize.h /usr/include/bits/typesizes.h \
-  /usr/include/time.h /usr/include/endian.h /usr/include/bits/endian.h \
-  /usr/include/sys/select.h /usr/include/bits/select.h \
-  /usr/include/bits/sigset.h /usr/include/bits/time.h \
-  /usr/include/sys/sysmacros.h /usr/include/bits/pthreadtypes.h \
-  /usr/include/bits/sched.h /usr/include/alloca.h /usr/include/stdio.h \
-  /usr/include/libio.h /usr/include/_G_config.h /usr/include/wchar.h \
-  /usr/include/bits/wchar.h /usr/include/gconv.h \
-  /usr/lib/gcc/i586-suse-linux/4.0.2/include/stdarg.h \
-  /usr/include/bits/stdio_lim.h /usr/include/bits/sys_errlist.h \
-  /usr/include/bits/stdio.h /usr/include/string.h \
-  /usr/include/bits/string.h /usr/include/bits/string2.h
+http_base64.o http_base64.o: http_base64.c \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdlib.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/features.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stddef.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/time.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/endian.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/select.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/select.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/alloca.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdio.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/wchar.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stdarg.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/string.h
 
-/usr/include/stdlib.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdlib.h:
 
-/usr/include/features.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/features.h:
 
-/usr/include/sys/cdefs.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
 
-/usr/include/gnu/stubs.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
 
-/usr/lib/gcc/i586-suse-linux/4.0.2/include/stddef.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stddef.h:
 
-/usr/include/sys/types.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/types.h:
 
-/usr/include/bits/types.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/types.h:
 
-/usr/include/bits/wordsize.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h:
 
-/usr/include/bits/typesizes.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h:
 
-/usr/include/time.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h:
 
-/usr/include/endian.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/time.h:
 
-/usr/include/bits/endian.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/endian.h:
 
-/usr/include/sys/select.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h:
 
-/usr/include/bits/select.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/select.h:
 
-/usr/include/bits/sigset.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/select.h:
 
-/usr/include/bits/time.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h:
 
-/usr/include/sys/sysmacros.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
 
-/usr/include/bits/pthreadtypes.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h:
 
-/usr/include/bits/sched.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/alloca.h:
 
-/usr/include/alloca.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdio.h:
 
-/usr/include/stdio.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h:
 
-/usr/include/libio.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/wchar.h:
 
-/usr/include/_G_config.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h:
 
-/usr/include/wchar.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stdarg.h:
 
-/usr/include/bits/wchar.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h:
 
-/usr/include/gconv.h:
-
-/usr/lib/gcc/i586-suse-linux/4.0.2/include/stdarg.h:
-
-/usr/include/bits/stdio_lim.h:
-
-/usr/include/bits/sys_errlist.h:
-
-/usr/include/bits/stdio.h:
-
-/usr/include/string.h:
-
-/usr/include/bits/string.h:
-
-/usr/include/bits/string2.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/string.h:
