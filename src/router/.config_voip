@@ -124,7 +124,7 @@ CONFIG_LIBUTIL=y
 # Environment
 #
 PLATFORM=mipsel
-LINUXDIR=$(SRCBASE)/linux/linux
+LINUXDIR=$(SRCBASE)/linux/brcm/linux.v23
 LIBDIR=$(TOOLCHAIN)/lib
 USRLIBDIR=$(TOOLCHAIN)/usr/lib
 
