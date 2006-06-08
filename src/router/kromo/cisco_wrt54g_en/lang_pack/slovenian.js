@@ -1413,7 +1413,6 @@ wds.legend="WDS nastavitve";
 wds.label="Leni WDS";
 wds.label2="WDS podmre¾a";
 wds.wl_mac="Brez¾ièni MAC";
-wds.lazy_default="Privzeto: Onemogoèeno";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Podmre¾a";
@@ -1435,7 +1434,6 @@ radius.label5="Najveèje ¹t. neoverovljenih uporabnikov";
 radius.label6="Format gesla";
 radius.label7="RADIUS deljena skrivnost";
 radius.label8="razveljavi Radius, èe stre¾nik ni na voljo";
-radius.mac="MAC";
 
 
 

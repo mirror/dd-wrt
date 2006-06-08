@@ -1379,7 +1379,6 @@ wds.legend="Configurações WDS";
 wds.label="WDS 'Preguiçoso'";
 wds.label2="Sub-Rede WDS";
 wds.wl_mac="MAC Wireless";
-wds.lazy_default="Padrão: Desabilitar";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Sub-Rede";
@@ -1400,7 +1399,6 @@ radius.label5="Máximo de Usuários Não Autenticados";
 radius.label6="Formato da Senha";
 radius.label7="RADIUS Shared Secret";
 radius.label8="Override Radius if Server is unavailable";
-radius.mac="MAC";
 
 
 // ******************************************* Wireless_MAC.asp *******************************************//

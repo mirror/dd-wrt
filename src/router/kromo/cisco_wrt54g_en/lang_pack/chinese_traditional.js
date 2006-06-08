@@ -1415,7 +1415,6 @@ wds.legend="WDS設置";
 wds.label="Lazy WDS";
 wds.label2="WDS子網";
 wds.wl_mac="無線MAC";
-wds.lazy_default="默認：禁用";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="子網";
@@ -1437,7 +1436,6 @@ radius.label5="最大非授權用戶數";
 radius.label6="密碼格式";
 radius.label7="RADIUS Shared Secret";
 radius.label8="如果伺服器不可用則越過Radius";
-radius.mac="MAC";
 
 
 
