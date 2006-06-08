@@ -3038,9 +3038,7 @@ ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  int index = -1, ip[4] = { 0, 0, 0, 0 }, netmask[4] =
-  {
-  0, 0, 0, 0};
+  int index = -1, ip[4] = { 0, 0, 0, 0 }, netmask[4] = { 0, 0, 0, 0 };
   char nvramvar[32] = { 0 };
 
   if (ejArgs (argc, argv, "%d", &index) < 1)
@@ -3082,20 +3080,22 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 #ifdef KROMOGUI
       websWrite (wp, "\
 	<div class=\"setting\">\n\
-	          <input type=hidden name=wl_wds%d_ipaddr value=4>\n\
-	          <input size=3 maxlength=3 name=wl_wds%d_ipaddr0 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr1 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr2 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr3 value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=num>\n\
+	          <input type=\"hidden\" name=\"wl_wds%d_ipaddr\" value=\"4\">\n\
+	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n\
+	          <input size=\"3\" maxlength=\"3 name=\"wl_wds%d_ipaddr0\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.\n\
+                  <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr1\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.\n\
+                  <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr2\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.\n\
+                  <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr3\" value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=\"num\">\.\n\
        </div>\n", index, index, ip[0], index, ip[1], index, ip[2], index, ip[3], index);
 
       websWrite (wp, "\
        	  <div class=\"setting\">\n\
+       	  <div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n\
 	  <input type=\"hidden\" name=\"wl_wds%d_netmask\" value=\"4\">\n\
-	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.\n\
+	  <input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.\n\
+	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.\n\
+	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
 
 #else
