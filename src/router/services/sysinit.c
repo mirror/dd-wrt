@@ -1146,7 +1146,7 @@ start_nvram (void)
 	    }
 	}
     }
-#ifndef HAVE_UPNP
+#ifdef HAVE_UPNP
   if ((nvram_match ("restore_defaults", "1"))
       || (nvram_match ("upnpcas", "1")))
     {

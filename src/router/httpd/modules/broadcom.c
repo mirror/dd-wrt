@@ -73,7 +73,7 @@ int debug_value = 0;
 //tofu
 int tf_webWriteESCNV (webs_t wp, const char *nvname);
 
-#ifndef HAVE_UPNP
+#ifdef HAVE_UPNP
 static int tf_upnp (webs_t wp);
 static void ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv);
 #endif
@@ -2836,7 +2836,7 @@ struct apply_action apply_actions[] = {
   {"OnePage", "", 0, RESTART, NULL},	// same as index
   {"Expose", "filters", 0, SYS_RESTART, NULL},	// same as DMZ
   {"VServer", "forward", 0, SERVICE_RESTART, NULL},	// same as Forward
-#ifndef HAVE_UPNP
+#ifdef HAVE_UPNP
   {"UPnP", "forward_upnp", 0, SERVICE_RESTART, tf_upnp},	// upnp added
 #endif
 //#endif
@@ -4275,7 +4275,7 @@ struct ej_handler ej_handlers[] = {
 /* lonewolf additions */
   {"port_vlan_table", ej_port_vlan_table},
 /* end lonewolf additions */
-#ifndef HAVE_UPNP
+#ifdef HAVE_UPNP
   {"tf_upnp", ej_tf_upnp},
 #endif
 //  {"charset", ej_charset},
@@ -4323,7 +4323,7 @@ tf_webWriteJS (webs_t wp, const char *s)
   return r;
 }
 
-#ifndef HAVE_UPNP
+#ifdef HAVE_UPNP
 // handle UPnP.asp requests / added 10
 static int
 tf_upnp (webs_t wp)
