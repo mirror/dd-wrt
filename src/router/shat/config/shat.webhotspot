@@ -1,14 +1,14 @@
 
 <fieldset>
-	<legend><script type="text/javascript">Capture(hotspot.shat_legend)</script></legend>
-	<span class="comment"><script type="text/javascript">Capture(hotspot.shat_srv)</script></span>
+	<legend><% tran("hotspot.shat_legend"); %></legend>
+	<span class="comment"><% tran("hotspot.shat_srv"); %></span>
 		<div class="setting">
-			<div class="label"><script type="text/javascript">Capture(hotspot.shat_srv2)</script></div>
-			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvram_selmatch("shat_enable","1","checked"); %> /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="shat_enable" <% nvram_selmatch("shat_enable","0","checked"); %> /><script type="text/javascript">Capture(share.disable)</script>
+			<div class="label"><% tran("hotspot.shat_srv2"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="shat_enable" <% nvram_selmatch("shat_enable","1","checked"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="shat_enable" <% nvram_selmatch("shat_enable","0","checked"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting">
-			<div class="label"><script type="text/javascript">Capture(share.range)</script></div>
+			<div class="label"><% tran("share.range"); %></div>
 			<input class="text" maxLength="100" size="25" name="shat_range" value="<% nvram_get("shat_range"); %>" />
 		</div>
 </fieldset><br />
