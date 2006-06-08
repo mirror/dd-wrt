@@ -1370,7 +1370,7 @@ wanmac.wlan="Clone Wireless MAC";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="Some ISP will require you to register your MAC address. \
+hwanmac.right2="Some ISPs will require you to register your MAC address. \
 			If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
 
 
