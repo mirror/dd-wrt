@@ -335,15 +335,16 @@ function daylight_enable_disable(F,aaa)
 
 function setDNSMasq(F)
 {
-	if(F._dhcp_dnsmasq.checked == true) {
-		choose_enable(F._dns_dnsmasq);
-		choose_enable(F._auth_dnsmasq);
-	}
-	else {
-		F._dns_dnsmasq.checked=false;
-		F._auth_dnsmasq.checked=false;		
-		choose_disable(F._dns_dnsmasq);
-		choose_disable(F._auth_dnsmasq)
+	if (document.setup._dhcp_dnsmasq)
+	{
+		if(F._dhcp_dnsmasq.checked == true) {
+			setElementsActive("_dns_dnsmasq", "_auth_dnsmasq", true);
+		}
+		else {
+			F._dns_dnsmasq.checked=false;
+			F._auth_dnsmasq.checked=false;		
+			setElementsActive("_dns_dnsmasq", "_auth_dnsmasq", false);
+		}
 	}
 }
 
