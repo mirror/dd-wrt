@@ -66,6 +66,7 @@ extern void start_wan_done (char *ifname);
 extern void stop_wan (void);
 extern int hotplug_net (void);
 extern int isClient (void);
+extern char *getwlif (void);
 
 
 /* services */
@@ -169,8 +170,10 @@ extern int stop_redial (void);
 extern int start_ddns (void);
 extern int stop_ddns (void);
 
+#ifdef HAVE_UPNP
 extern int start_upnp (void);
 extern int stop_upnp (void);
+#endif
 
 extern int start_ntp (void);
 extern int stop_ntp (void);
