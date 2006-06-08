@@ -113,7 +113,7 @@ addEvent(window, "load", function() {
                         <div class="setting">
                            <div class="label"><% tran("radius.label6"); %></div>
                            <input class="spaceradio" type="radio" name="wl_radmacpassword" value="1" <% nvram_checked("wl_radmacpassword","1"); %> ><% tran("share.share_key"); %></input>&nbsp;
-                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> ><% tran("radius.mac"); %></input>
+                           <input class="spaceradio" type="radio" name="wl_radmacpassword" value="0" <% nvram_checked("wl_radmacpassword","0"); %> ><% tran("share.mac"); %></input>
                         </div>
                         <div class="setting">
                            <div class="label"><% tran("radius.label7"); %></div>
