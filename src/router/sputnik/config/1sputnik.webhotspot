@@ -1,28 +1,28 @@
 
 <fieldset>
-	<legend><script type="text/javascript">Capture(hotspot.sputnik_legend)</script></legend>
+	<legend><% tran("hotspot.sputnik_legend"); %></legend>
 	<div class="center"><img src="images/sputnik.gif" /></div><br />
 	<div class="setting">
-		<div class="label"><script type="text/javascript">Capture(hotspot.sputnik_srv)</script></div>
-		<input class="spaceradio" type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> onclick="setSputnik(this.value)" /><script type="text/javascript">Capture(share.enable)</script>&nbsp;
-		<input class="spaceradio" type="radio" name="apd_enable" value="0" <% nvram_selmatch("apd_enable", "0", "checked"); %> onclick="setSputnik(this.value)" /><script type="text/javascript">Capture(share.disable)</script>
+		<div class="label"><% tran("hotspot.sputnik_srv"); %></div>
+		<input class="spaceradio" type="radio" name="apd_enable" value="1" <% nvram_selmatch("apd_enable", "1", "checked"); %> onclick="setSputnik(this.value)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="apd_enable" value="0" <% nvram_selmatch("apd_enable", "0", "checked"); %> onclick="setSputnik(this.value)" /><% tran("share.disable"); %>
 	</div>
 	<div class="setting">	
-		<div class="label"><script type="text/javascript">Capture(hotspot.sputnik_id)</script></div>
-		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="0" <% nvram_selmatch("sputnik_mjid_type", "0", "checked"); %> /><script type="text/javascript">Capture(hotspot.sputnik_instant)</script>
+		<div class="label"><% tran("hotspot.sputnik_id"); %></div>
+		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="0" <% nvram_selmatch("sputnik_mjid_type", "0", "checked"); %> /><% tran("hotspot.sputnik_instant"); %>
 	</div>
 	<div class="setting">	
 		<div class="label">&nbsp;</div>
-		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="1" <% nvram_selmatch("sputnik_mjid_type", "1", "checked"); %> /><script type="text/javascript">Capture(hotspot.sputnik_express)</script>
+		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="1" <% nvram_selmatch("sputnik_mjid_type", "1", "checked"); %> /><% tran("hotspot.sputnik_express"); %>
 	</div>
 	<% nvram_invmatch("sputnik_done","1","<!--"); %>
 	<div class="setting">	
 		<div class="label">&nbsp;</div>
-		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="2" <% nvram_selmatch("sputnik_mjid_type", "2", "checked"); %> /><script type="text/javascript">Capture(share.use)</script>&nbsp;
+		<input class="spaceradio" type="radio" name="sputnik_mjid_type" value="2" <% nvram_selmatch("sputnik_mjid_type", "2", "checked"); %> /><% tran("share.use"); %>&nbsp;
 		<input class="text" maxLength="100" size="35" name="sputnik_mjid" value="<% nvram_get("sputnik_mjid"); %>" />
 	</div>
 	<% nvram_invmatch("sputnik_done","1","-->"); %>
 	<div class="center">
-		<a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a>&nbsp;<script type="text/javascript">Capture(hotspot.sputnik_about)</script>
+		<a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a>&nbsp;<% tran("hotspot.sputnik_about"); %>
 	</div>
 </fieldset><br />
