@@ -1447,47 +1447,45 @@ wl_active.inactive="Inactive PC";
 
 var wds = new Object();
 wds.titl=" - WDS";
-wds.h2="Wireless Distribution System";
-wds.legend="WDS Settings";
+wds.h2="Wireless Distribution System (WDS)";
+wds.legend="Paramètres WDS";
 wds.label="Lazy WDS";
-wds.label2="WDS Subnet";
-wds.wl_mac="Wireless MAC";
-wds.lazy_default="Default: Disable";
-wds.nat1="wLAN->WDS";
-wds.nat2="WDS->wLAN";
-wds.subnet="Subnet";
-wds.legend2="Extra Options";
+wds.label2="Sous-réseau WDS";
+wds.wl_mac="Adresse MAC Sans Fil";
+wds.nat1="WLAN -> WDS";
+wds.nat2="WDS -> WLAN";
+wds.subnet="Sous-réseau";
+wds.legend2="Options Supplémentaires";
 
 
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
 var radius = new Object();
-radius.titl=" - Radius";
-radius.h2="Remote Authentication Dial-In User Service";
-radius.legend="Radius";
-radius.label="MAC Radius Client";
-radius.label2="MAC Format";
-radius.label3="Radius Server IP";
-radius.label4="Radius Server Port";
-radius.label5="Maximum Unauthenticated Users";
-radius.label6="Password Format";
-radius.label7="RADIUS Shared Secret";
-radius.label8="Override Radius if Server is unavailable";
-radius.mac="MAC";
+radius.titl=" - RADIUS";
+radius.h2="Remote Authentication Dial-In User Service (RADIUS)";
+radius.legend="RADIUS";
+radius.label="Identification RADIUS";
+radius.label2="Format adresse MAC";
+radius.label3="IP serveur RADIUS";
+radius.label4="Port serveur RADIUS";
+radius.label5="Utilisateurs non identifiés Max.";
+radius.label6="Format du mot de passe";
+radius.label7="Secret partagé RADIUS";
+radius.label8="Outre passer l\'identification en cas d'indisponibilité du serveur RADIUS";
 
 
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
 var wl_mac = new Object();
-wl_mac.titl=" - MAC Filter";
-wl_mac.h2="Wireless MAC Filter";
-wl_mac.legend="MAC Filter";
-wl_mac.label="Use Filter";
-wl_mac.label2="Filter Mode";
-wl_mac.deny="Prevent PCs listed from accessing the wireless network";
-wl_mac.allow="Permit only PCs listed to access the wireless network";
+wl_mac.titl=" - Filtre MAC sans fil";
+wl_mac.h2="Filtre MAC sans fil";
+wl_mac.legend="Filtrage par Adresse MAC";
+wl_mac.label="Filtre";
+wl_mac.label2="Mode de Filtrage";
+wl_mac.deny="Bloquer l\'accès au réseau sans fil pour les ordinateurs référencés";
+wl_mac.allow="Autoriser l\'accès au réseau sans fil pour les ordinateurs référencés";
 
 
 

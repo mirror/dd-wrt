@@ -1400,7 +1400,6 @@ wds.legend="WDS Einstellungen";
 wds.label="Lazy WDS";
 wds.label2="WDS Subnetz";
 wds.wl_mac="WLAN MAC";
-wds.lazy_default="Standard: Abgeschaltet";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Subnetz";
@@ -1422,7 +1421,6 @@ radius.label5="Erlaubte Unauthentifizierte Nutzer";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
 radius.label8="Umgehen wenn Server nicht verfügbar";
-radius.mac="MAC";
 
 
 
