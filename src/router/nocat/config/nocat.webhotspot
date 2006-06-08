@@ -13,19 +13,19 @@
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_home)</script></div>
-		<input maxlength="80" name="NC_HomePage" size="39" value="<% nvram_get("NC_HomePage"); %>" />
+		<input maxlength="100" name="NC_HomePage" size="39" value="<% nvram_get("NC_HomePage"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_allowweb)</script></div>
-		<input maxlength="80" name="NC_AllowedWebHosts" size="39" value="<% nvram_get("NC_AllowedWebHosts"); %>" />
+		<input maxlength="100" name="NC_AllowedWebHosts" size="39" value="<% nvram_get("NC_AllowedWebHosts"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_docroot)</script></div>
-		<input maxlength="80" name="NC_DocumentRoot" size="39" value="<% nvram_get("NC_DocumentRoot"); %>" /> /splash.html
+		<input maxlength="100" name="NC_DocumentRoot" size="39" value="<% nvram_get("NC_DocumentRoot"); %>" /> /splash.html
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_splash)</script></div>
-		<input maxlength="80" name="NC_SplashURL" size="39" value="<% nvram_get("NC_SplashURL"); %>" />
+		<input maxlength="100" name="NC_SplashURL" size="39" value="<% nvram_get("NC_SplashURL"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_port)</script></div>
@@ -33,7 +33,7 @@
 	</div>
 	<div class="setting">
 		<div class="label">MAC White List</div>
-		<input maxlength="39" name="NC_MacWhiteList" size="39" value="<% nvram_get("NC_MacWhiteList"); %>" />
+		<input name="NC_MacWhiteList" size="39" value="<% nvram_get("NC_MacWhiteList"); %>" />
 	</div>
 	<div class="setting">
 		<div class="label"><script type="text/javascript">Capture(hotspot.nocat_timeout)</script></div>
