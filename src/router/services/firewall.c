@@ -839,7 +839,7 @@ nat_postrouting (void)
 	    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
 	     lanface);
 	  save2file ("-A POSTROUTING -o %s -s %s%s -d %s%s -j MASQUERADE\n",
-		     lanface, lan_cclass, loopmask, lan_cclass, netmask);
+		     lanface, lan_cclass, loopmask, lan_cclass, loopmask);
 	  system ("echo 1 > /proc/sys/net/ipv4/conf/br0/loop");
 	}
     }
