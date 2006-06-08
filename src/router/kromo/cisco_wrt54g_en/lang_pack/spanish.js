@@ -1420,7 +1420,6 @@ wds.legend="Configuración WDS";
 wds.label="Lazy WDS";
 wds.label2="Subred WDS";
 wds.wl_mac="MAC Inalámbrica";
-wds.lazy_default="Por Defecto: Desactivado";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Subred";
@@ -1442,7 +1441,6 @@ radius.label5="Máximo Usuarios No-Identificados";
 radius.label6="Formato Clave";
 radius.label7="Secreto Compartido RADIUS";
 radius.label8="Invalidar Servidor no Disponible";
-radius.mac="MAC";
 
 
 

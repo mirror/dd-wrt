@@ -1453,7 +1453,6 @@ radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
 radius.label8="Override Radius if Server is unavailable";
-radius.mac="MAC";
 
 
 
