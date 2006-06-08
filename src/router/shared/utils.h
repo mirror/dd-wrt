@@ -31,7 +31,7 @@
 #define ROUTER_BUFFALO_WHRG54S 7
 #define ROUTER_BUFFALO_HP_WHRG54S 7	//no differences between these models. so we leave it
 
-// Buffalo WZR-RS-G54 (4704 cpu)
+// Buffalo WZR-RS-G54 (4704 cpu), WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0)
 #define ROUTER_BUFFALO_WZRRSG54 8
 
 // Motorola WR850G v1 (4702 cpu)
