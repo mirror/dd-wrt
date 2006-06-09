@@ -18,6 +18,20 @@
 #include <wlutils.h>
 
 
+
+char *
+getwlif ()
+{
+#ifdef HAVE_MADWIFI
+  return "ath0";
+#else
+  if (wl_probe ("eth2"))
+    return "eth1";
+  else
+    return "eth2";
+#endif
+}
+
 /* DD-WRT addition  (loaned from radauth) */
 
 #ifndef HAVE_MADWIFI

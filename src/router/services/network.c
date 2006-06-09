@@ -77,19 +77,6 @@ config_loopback (void)
   route_add ("lo", 0, "127.0.0.0", "0.0.0.0", "255.0.0.0");
 }
 
-char *
-getwlif ()
-{
-#ifdef HAVE_MADWIFI
-  return "ath0";
-#else
-  if (wl_probe ("eth2"))
-    return "eth1";
-  else
-    return "eth2";
-#endif
-}
-
 
 #ifndef HAVE_MADWIFI
 static int notify_nas (char *type, char *ifname, char *action);
