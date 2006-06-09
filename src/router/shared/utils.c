@@ -1568,25 +1568,20 @@ get_mtu (char *proto)
 void
 set_host_domain_name (void)
 {
-  char *hostname;
-  char *domain;
+  char *wan_hostname = nvram_safe_get ("wan_hostname");
+  char *wan_domain = nvram_safe_get ("wan_domain");
+  char *wan_get_domain = nvram_safe_get ("wan_get_domain");
 
   /* Allow you to use gethostname to get Host Name */
-  if (strlen (nvram_safe_get ("wan_hostname")) > 0)
-    hostname = nvram_safe_get ("wan_hostname");
-  else if (strlen (nvram_safe_get ("router_name")) > 0)
-    hostname = nvram_safe_get ("router_name");
-  else
-    hostname = "dd-wrt";
-  sethostname (hostname, strlen (hostname));
+  /* If wan_hostname is blank then we do nothing, we leave to what it was set at boot */
+  if (strlen (wan_hostname) > 0)
+    sethostname (wan_hostname, strlen (wan_hostname));
 
   /* Allow you to use getdomainname to get Domain Name */
- if (strlen (nvram_safe_get ("wan_domain")) > 0 && strlen (nvram_safe_get ("wan_domain")) <= 64) //no more than 64
-    domain = nvram_safe_get ("wan_domain");
+  if (strlen (wan_domain)) > 0 && strlen (wan_domain) <= 64) //no more than 64
+    setdomainname (wan_domain, strlen (wan_domain));
   else
-    domain = nvram_safe_get ("wan_get_domain");
-
-  setdomainname (domain, strlen (domain));
+    setdomainname (wan_get_domain, strlen (wan_get_domain));
 }
 
 int
