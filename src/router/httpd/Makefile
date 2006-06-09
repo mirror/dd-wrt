@@ -70,6 +70,10 @@ ifeq ($(CONFIG_PPPOE),y)
 CFLAGS += -DHAVE_PPPOE
 endif
 
+ifeq ($(CONFIG_UPNP),y)
+CFLAGS += -DHAVE_UPNP
+endif
+
 ifeq ($(CONFIG_BIRD),y)
 CFLAGS += -DHAVE_BIRD
 endif

@@ -4286,6 +4286,7 @@ struct ej_handler ej_handlers[] = {
 };
 #endif /* !WEBS */
 
+#ifdef HAVE_UPNP
 // changed by steve
 // writes javascript-string safe text
 static int
@@ -4324,7 +4325,6 @@ tf_webWriteJS (webs_t wp, const char *s)
   return r;
 }
 
-#ifdef HAVE_UPNP
 // handle UPnP.asp requests / added 10
 static int
 tf_upnp (webs_t wp)
