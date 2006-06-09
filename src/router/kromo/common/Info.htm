@@ -209,7 +209,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("info.wlanmac"); %></div>
-									<script>document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");</script><% nvram_get("wl0_hwaddr"); %></span>&nbsp;
+									<script>document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");</script><% show_wl_mac(); %></span>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label">WAN IP</div>
