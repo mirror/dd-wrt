@@ -1,4 +1,4 @@
-{wl_mac::<% nvram_get("wl0_hwaddr"); %>}
+{wl_mac::<% show_wl_mac(); %>}
 {wl_ssid::<% nvram_get("wl_ssid"); %>}
 {wl_channel::<% get_curchannel(); %>}
 {wl_xmit::<% nvram_get("txpwr"); %> mW}

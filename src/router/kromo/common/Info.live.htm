@@ -1,6 +1,6 @@
 {lan_mac::<% nvram_get("lan_hwaddr"); %>}
 {wan_mac::<% nvram_get("wan_hwaddr"); %>}
-{wl_mac::<% nvram_get("wl0_hwaddr"); %>}
+{wl_mac::<% show_wl_mac(); %>}
 {lan_ip::<% nvram_get("lan_ipaddr"); %>}
 {wl_channel::<% get_curchannel(); %>}
 {wl_xmit::<% nvram_get("txpwr"); %> mW}
