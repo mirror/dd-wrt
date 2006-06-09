@@ -2072,6 +2072,7 @@ stop_redial (void)
   return ret;
 }
 
+#ifdef HAVE_RADVD
 int
 start_radvd (void)
 {
@@ -2128,6 +2129,7 @@ stop_radvd (void)
   cprintf ("done\n");
   return ret;
 }
+#endif
 
 int
 start_ipv6 (void)
