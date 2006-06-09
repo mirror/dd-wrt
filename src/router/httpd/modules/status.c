@@ -288,19 +288,15 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
   char *wan_domain = "&nbsp;", *lan_domain = "&nbsp;";
 
   if (nvram_invmatch ("wan_domain", ""))
-    {
       wan_domain = nvram_safe_get ("wan_domain");
-    }
   else if (nvram_invmatch ("wan_get_domain", ""))
-    {
       wan_domain = nvram_safe_get ("wan_get_domain");
-    }
-  
+
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.wandomainname)</script></div>\n");
   websWrite (wp, "%s", wan_domain);
   websWrite (wp, "</div>");
-  
+
   if (nvram_invmatch ("lan_domain", ""))
     {
       lan_domain = nvram_safe_get ("lan_domain");
@@ -309,6 +305,21 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, "%s", lan_domain);
       websWrite (wp, "</div>");
     }
+  return;
+}
+
+void
+ej_show_wl_mac (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *wl_mac;
+
+  /* In client mode the WAN MAC is the Wireless MAC */
+  if (nvram_match ("wl_mode", "sta"))
+    wl_mac = nvram_safe_get ("wan_hwaddr");
+  else
+    wl_mac = nvram_safe_get ("wl0_hwaddr");
+
+  websWrite (wp, "%s", wl_mac);
   return;
 }
 
