@@ -134,6 +134,7 @@ extern void ej_get_wl_max_channel (int eid, webs_t wp, int argc,
 extern void ej_get_wl_domain (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_clone_mac (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_show_wl_mac (int eid, webs_t wp, int argc, char_t ** argv);
 extern void validate_ntp (webs_t wp, char *value, struct variable *v);
 extern void validate_catchall (webs_t wp, char *value, struct variable *v);
 extern void validate_lan_ipaddr (webs_t wp, char *value, struct variable *v);
