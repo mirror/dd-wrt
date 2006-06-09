@@ -27,7 +27,7 @@
 #define ROUTER_BUFFALO_WBR2G54S 6
 #define ROUTER_BUFFALO_WLA2G54L 6	//should work like a WBR2
 
-// Buffalo WHR-G54S and WHR-HP-G54
+// Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 7
 #define ROUTER_BUFFALO_HP_WHRG54S 7	//no differences between these models. so we leave it
 
