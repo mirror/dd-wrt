@@ -1570,7 +1570,6 @@ set_host_domain_name (void)
 {
   char *wan_hostname = nvram_safe_get ("wan_hostname");
   char *wan_domain = nvram_safe_get ("wan_domain");
-  char *wan_get_domain = nvram_safe_get ("wan_get_domain");
 
   /* Allow you to use gethostname to get Host Name */
   /* If wan_hostname is blank then we do nothing, we leave to what it was set at boot */
@@ -1578,10 +1577,13 @@ set_host_domain_name (void)
     sethostname (wan_hostname, strlen (wan_hostname));
 
   /* Allow you to use getdomainname to get Domain Name */
-  if (strlen (wan_domain)) > 0 && strlen (wan_domain) <= 64) //no more than 64
+  if (strlen (wan_domain) > 0 && strlen (wan_domain) <= 64) //no more than 64
     setdomainname (wan_domain, strlen (wan_domain));
   else
-    setdomainname (wan_get_domain, strlen (wan_get_domain));
+    {
+      char *wan_get_domain = nvram_safe_get ("wan_get_domain");
+      setdomainname (wan_get_domain, strlen (wan_get_domain));
+    }
 }
 
 int
