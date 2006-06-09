@@ -188,6 +188,10 @@ ifneq ($(CONFIG_UPNP),y)
 	rm -f $(INSTALLDIR)/www/UPnP.asp
 endif
 
+ifneq ($(CONFIG_NOCAT),y)
+	rm -f $(INSTALLDIR)/www/splash.html
+	rm -f $(INSTALLDIR)/www/status.html
+endif
 
 ifeq ($(CONFIG_NEWMEDIA),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
