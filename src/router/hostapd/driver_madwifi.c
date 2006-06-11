@@ -22,7 +22,7 @@
 #include <net80211/ieee80211.h>
 #ifdef WME_NUM_AC
 /* Assume this is built against BSD branch of madwifi driver. */
-//#define MADWIFI_BSD
+#define MADWIFI_BSD
 #include <net80211/_ieee80211.h>
 #endif /* WME_NUM_AC */
 #include <net80211/ieee80211_crypto.h>
@@ -53,6 +53,7 @@
 #include "ieee802_11.h"
 #include "accounting.h"
 #include "common.h"
+#include "hw_features.h"
 
 
 struct madwifi_driver_data {
@@ -1295,6 +1296,157 @@ madwifi_set_countermeasures(void *priv, int enabled)
 	return set80211param(drv, IEEE80211_PARAM_COUNTERMEASURES, enabled);
 }
 
+
+
+struct wifi_channels
+{
+  int channel;
+  int freq;
+};
+//set80211priv(struct madwifi_driver_data *drv, int op, void *data, int len)
+
+static struct wifi_channels *
+list_channelsext (struct madwifi_driver_data *drv, int allchans,int mode)
+{
+  struct ieee80211req_chaninfo chans;
+  struct ieee80211req_chaninfo achans;
+  const struct ieee80211_channel *c;
+  int i, half;
+  if (set80211priv
+      (drv, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
+    {
+      return NULL;
+    }
+  if (!allchans)
+    {
+      uint8_t active[32];
+      cprintf ("get priv 2\n");
+
+      if (set80211priv
+	  (drv, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof (active)) < 0)
+	{
+	  return NULL;
+	}
+      cprintf ("clear achans\n");
+      memset (&achans, 0, sizeof (achans));
+      for (i = 0; i < chans.ic_nchans; i++)
+	{
+	  c = &chans.ic_chans[i];
+	  if (isset (active, ieee80211_mhz2ieee (c->ic_freq)) || allchans)
+	    achans.ic_chans[achans.ic_nchans++] = *c;
+	}
+    }
+  else
+    achans = chans;
+
+
+
+  struct wifi_channels *list = (struct wifi_channels *) malloc (sizeof (struct wifi_channels) * (achans.ic_nchans + 1));
+
+  int l = 0;
+  for (i = 0; i < achans.ic_nchans; i++)
+    {
+      //filter out A channels if mode isnt A-Only or mixed
+      if (IEEE80211_IS_CHAN_A (&achans.ic_chans[i]))
+	{
+	  if (mode!=HOSTAPD_MODE_IEEE80211B)
+	    continue;
+	}
+      //filter out B/G channels if mode isnt g-only, b-only or mixed
+      if (IEEE80211_IS_CHAN_G (&achans.ic_chans[i]))
+	{
+	  if (mode!=HOSTAPD_MODE_IEEE80211G)
+	    continue;
+	}
+      if (IEEE80211_IS_CHAN_B (&achans.ic_chans[i]))
+	{
+	  if (mode!=HOSTAPD_MODE_IEEE80211B)
+	    continue;
+	}
+      list[l].channel = achans.ic_chans[i].ic_ieee;
+      list[l].freq = achans.ic_chans[i].ic_freq;
+      l++;
+    }
+
+  list[l].freq = -1;
+  return list;
+}
+
+
+
+static struct hostapd_hw_modes * madwifi_get_hw_feature_data(void *priv,
+							    u16 *num_modes,
+							    u16 *flags)
+{
+	struct madwifi_driver_data *drv = priv;
+	struct hostapd_hw_modes *modes;
+        int i;
+	modes = wpa_zalloc(3 * sizeof(struct hostapd_hw_modes));
+	if (modes == NULL) {
+		return NULL;
+	}
+
+
+	for (i=0;i<3;i++)
+	{
+	struct wifi_channels *channels = list_channelsext(drv,1,i);
+	int cnt=0;
+	while (channels[cnt++].freq!=-1);
+	modes[i].num_channels=cnt;
+
+	switch(i)
+	{
+	case HOSTAPD_MODE_IEEE80211B:
+	modes[i].num_rates=4;
+	int rlen = modes[i].num_rates * sizeof(struct hostapd_rate_data);
+	modes[i].rates = wpa_zalloc(rlen);
+	modes[i].rates[0].rate = 10;
+	modes[i].rates[0].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[1].rate = 20;
+	modes[i].rates[1].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[2].rate = 55;
+	modes[i].rates[2].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[3].rate = 110;
+    	modes[i].rates[3].flags = HOSTAPD_RATE_CCK;
+	break;
+	case HOSTAPD_MODE_IEEE80211G:
+	case HOSTAPD_MODE_IEEE80211A:
+	modes[i].num_rates=7;
+	int rlen2 = modes[i].num_rates * sizeof(struct hostapd_rate_data);
+	modes[i].rates = wpa_zalloc(rlen2);
+	modes[i].rates[0].rate = 6;
+	modes[i].rates[0].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[1].rate = 9;
+	modes[i].rates[1].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[2].rate = 12;
+	modes[i].rates[2].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[3].rate = 24;
+    	modes[i].rates[3].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[4].rate = 36;
+    	modes[i].rates[4].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[5].rate = 48;
+    	modes[i].rates[5].flags = HOSTAPD_RATE_CCK;
+	modes[i].rates[6].rate = 54;
+    	modes[i].rates[6].flags = HOSTAPD_RATE_CCK;
+	break;
+	}
+	int clen = modes[i].num_channels * sizeof(struct hostapd_channel_data);
+	modes[i].channels = wpa_zalloc(clen);
+	if (modes[i].channels == NULL || modes[i].rates == NULL) {
+		hostapd_free_hw_features(modes, *num_modes);
+		return NULL;
+	}
+	int a;
+	for (a=0;a<cnt;a++)
+	    {
+	    modes[i].channels[a].chan = channels[a].channel;
+	    modes[i].channels[a].freq = channels[a].freq;
+	    }
+	}
+return modes;	
+}
+
+
 static const struct driver_ops madwifi_driver_ops = {
 	.name			= "madwifi",
 	.init			= madwifi_init,
@@ -1317,6 +1469,7 @@ static const struct driver_ops madwifi_driver_ops = {
 	.set_countermeasures	= madwifi_set_countermeasures,
 	.sta_clear_stats        = madwifi_sta_clear_stats,
 	.get_inact_sec 		= madwifi_get_inact_sec,
+	.get_hw_feature_data    = madwifi_get_hw_feature_data,
 };
 
 void madwifi_driver_register(void)

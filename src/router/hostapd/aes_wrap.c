@@ -167,8 +167,8 @@ static void gf_mulx(u8 *pad)
 
 
 /**
- * omac1_aes_128 - One-Key CBC MAC (OMAC1) hash with AES-128
- * @key: Key for the hash operation
+ * omac1_aes_128 - One-Key CBC MAC (OMAC1) hash with AES-128 (aka AES-CMAC)
+ * @key: 128-bit key for the hash operation
  * @data: Data buffer for which a MAC is determined
  * @data: Length of data buffer in bytes
  * @mac: Buffer for MAC (128 bits, i.e., 16 bytes)
