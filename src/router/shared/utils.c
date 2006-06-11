@@ -166,13 +166,13 @@ internal_getRouterBrand ()
       		setRouter ("Buffalo WZR-RS-G54");
       		return ROUTER_BUFFALO_WZRRSG54;
      		}
- 		if nvram_match ("product_name", "WZR-HP-G54"))
+ 		if (nvram_match ("product_name", "WZR-HP-G54"))
     		{
       		cprintf ("router is Buffalo WZR-HP-G54\n");
       		setRouter ("Buffalo WZR-HP-G54");
       		return ROUTER_BUFFALO_WZRRSG54;
     		}
-    	if nvram_match ("product_name", "WZR-G54"))
+    	if (nvram_match ("product_name", "WZR-G54"))
     		{
       		cprintf ("router is Buffalo WZR-G54\n");
       		setRouter ("Buffalo WZR-G54");
