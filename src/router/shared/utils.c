@@ -158,22 +158,33 @@ internal_getRouterBrand ()
       return ROUTER_BUFFALO_HP_WHRG54S;
     }
   if (nvram_match ("boardnum", "42") &&
-      nvram_match ("boardtype", "0x042f") &&
-      (nvram_match ("product_name", "Product_name")
-       || nvram_match ("product_name", "WZR-RS-G54")))
-    {
-      cprintf ("router is buffalo WZR-RS-G54\n");
-      setRouter ("Buffalo WZR-RS-G54");
-      return ROUTER_BUFFALO_WZRRSG54;
-    }
-  if (nvram_match ("boardnum", "42") &&
-      nvram_match ("boardtype", "0x042f") &&
-      nvram_match ("product_name", "WZR-HP-G54"))
-    {
-      cprintf ("router is buffalo WZR-HP-G54\n");
-      setRouter ("Buffalo WZR-HP-G54");
-      return ROUTER_BUFFALO_WZRRSG54;
-    }    
+      nvram_match ("boardtype", "0x042f"))
+      {
+      	if (nvram_match ("product_name", "WZR-RS-G54"))
+    		{
+      		cprintf ("router is Buffalo WZR-RS-G54\n");
+      		setRouter ("Buffalo WZR-RS-G54");
+      		return ROUTER_BUFFALO_WZRRSG54;
+     		}
+ 		if nvram_match ("product_name", "WZR-HP-G54"))
+    		{
+      		cprintf ("router is Buffalo WZR-HP-G54\n");
+      		setRouter ("Buffalo WZR-HP-G54");
+      		return ROUTER_BUFFALO_WZRRSG54;
+    		}
+    	if nvram_match ("product_name", "WZR-G54"))
+    		{
+      		cprintf ("router is Buffalo WZR-G54\n");
+      		setRouter ("Buffalo WZR-G54");
+      		return ROUTER_BUFFALO_WZRRSG54;
+    		}
+    	else 
+    		{
+      		cprintf ("router is Buffalo WZR series\n");
+      		setRouter ("Buffalo WZR series");
+            return ROUTER_BUFFALO_WZRRSG54;
+    		}
+	}
   if (nvram_match ("boardnum", "45") &&
       nvram_match ("boardtype", "0x042f") &&
       nvram_match ("boardrev", "0x10"))
