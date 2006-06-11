@@ -31,7 +31,7 @@ struct eap_psk_data {
 	u8 *id_p, *id_s;
 	size_t id_p_len, id_s_len;
 	u8 ak[EAP_PSK_AK_LEN], kdk[EAP_PSK_KDK_LEN], tek[EAP_PSK_TEK_LEN];
-	u8 msk[EAP_PSK_MSK_LEN];
+	u8 msk[EAP_MSK_LEN];
 };
 
 
@@ -133,7 +133,7 @@ static u8 * eap_psk_build_3(struct eap_sm *sm, struct eap_psk_data *data,
 
 	eap_psk_derive_keys(data->kdk, data->rand_p, data->tek, data->msk);
 	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: TEK", data->tek, EAP_PSK_TEK_LEN);
-	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: MSK", data->msk, EAP_PSK_MSK_LEN);
+	wpa_hexdump_key(MSG_DEBUG, "EAP-PSK: MSK", data->msk, EAP_MSK_LEN);
 
 	memset(nonce, 0, sizeof(nonce));
 	pchannel = (u8 *) (req + 1);
@@ -427,11 +427,11 @@ static u8 * eap_psk_getKey(struct eap_sm *sm, void *priv, size_t *len)
 	if (data->state != SUCCESS)
 		return NULL;
 
-	key = malloc(EAP_PSK_MSK_LEN);
+	key = malloc(EAP_MSK_LEN);
 	if (key == NULL)
 		return NULL;
-	memcpy(key, data->msk, EAP_PSK_MSK_LEN);
-	*len = EAP_PSK_MSK_LEN;
+	memcpy(key, data->msk, EAP_MSK_LEN);
+	*len = EAP_MSK_LEN;
 
 	return key;
 }

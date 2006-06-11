@@ -79,6 +79,11 @@ CONFIG_EAP_TTLS=y
 # EAP-SAKE for the integrated EAP server
 #CONFIG_EAP_SAKE=y
 
+# EAP-GPSK for the integrated EAP server
+#CONFIG_EAP_GPSK=y
+# Include support for optional SHA256 cipher suite in EAP-GPSK
+#CONFIG_EAP_GPSK_SHA256=y
+
 # PKCS#12 (PFX) support (used to read private key and certificate file from
 # a file that usually has extension .p12 or .pfx)
 CONFIG_PKCS12=y
