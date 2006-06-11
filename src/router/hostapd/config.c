@@ -610,7 +610,8 @@ static int hostapd_config_parse_key_mgmt(int line, const char *value)
 		else if (strcmp(start, "WPA-EAP") == 0)
 			val |= WPA_KEY_MGMT_IEEE8021X;
 		else {
-			printf("Line %d: invalid key_mgmt '%s'", line, start);
+			printf("Line %d: invalid key_mgmt '%s'\n",
+			       line, start);
 			free(buf);
 			return -1;
 		}
@@ -622,7 +623,7 @@ static int hostapd_config_parse_key_mgmt(int line, const char *value)
 
 	free(buf);
 	if (val == 0) {
-		printf("Line %d: no key_mgmt values configured.", line);
+		printf("Line %d: no key_mgmt values configured.\n", line);
 		return -1;
 	}
 

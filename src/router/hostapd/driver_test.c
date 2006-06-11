@@ -15,6 +15,7 @@
 #include "includes.h"
 #include <sys/ioctl.h>
 #include <sys/un.h>
+#include <dirent.h>
 
 #include "hostapd.h"
 #include "driver.h"
@@ -28,6 +29,8 @@
 #include "radius.h"
 #include "l2_packet.h"
 #include "hostap_common.h"
+#include "ieee802_11.h"
+#include "hw_features.h"
 
 
 struct test_client_socket {
@@ -44,6 +47,7 @@ struct test_driver_data {
 	int test_socket;
 	u8 *ie;
 	size_t ielen;
+	char *socket_dir;
 	char *own_socket_path;
 };
 
@@ -57,6 +61,7 @@ static void test_driver_free_priv(struct test_driver_data *drv)
 
 	free(drv->ie);
 	free(drv->own_socket_path);
+	free(drv->socket_dir);
 	free(drv);
 }
 
@@ -98,8 +103,11 @@ static int test_driver_send_eapol(void *priv, const u8 *addr, const u8 *data,
 		cli = cli->next;
 	}
 
-	if (!cli)
+	if (!cli) {
+		wpa_printf(MSG_DEBUG, "%s: no destination client entry",
+			   __func__);
 		return -1;
+	}
 
 	memcpy(eth.h_dest, addr, ETH_ALEN);
 	memcpy(eth.h_source, drv->hapd->own_addr, ETH_ALEN);
@@ -118,6 +126,81 @@ static int test_driver_send_eapol(void *priv, const u8 *addr, const u8 *data,
 	msg.msg_name = &cli->un;
 	msg.msg_namelen = cli->unlen;
 	return sendmsg(drv->test_socket, &msg, 0);
+}
+
+
+static int test_driver_send_mgmt_frame(void *priv, const void *buf,
+				  size_t len, int flags)
+{
+	struct test_driver_data *drv = priv;
+	struct msghdr msg;
+	struct iovec io[2];
+	const u8 *dest;
+	int ret = 0, broadcast = 0;
+	char desttxt[30];
+	struct sockaddr_un addr;
+	struct dirent *dent;
+	DIR *dir;
+	struct ieee80211_hdr *hdr;
+	u16 fc;
+
+	if (drv->test_socket < 0 || len < 10 || drv->socket_dir == NULL)
+		return -1;
+
+	dest = buf;
+	dest += 4;
+	broadcast = memcmp(dest, "\xff\xff\xff\xff\xff\xff", ETH_ALEN) == 0;
+	snprintf(desttxt, sizeof(desttxt), MACSTR, MAC2STR(dest));
+
+	io[0].iov_base = "MLME ";
+	io[0].iov_len = 5;
+	io[1].iov_base = (void *) buf;
+	io[1].iov_len = len;
+
+	memset(&msg, 0, sizeof(msg));
+	msg.msg_iov = io;
+	msg.msg_iovlen = 2;
+
+	dir = opendir(drv->socket_dir);
+	if (dir == NULL)
+		return -1;
+	while ((dent = readdir(dir))) {
+#ifdef _DIRENT_HAVE_D_TYPE
+		/* Skip the file if it is not a socket. Also accept
+		 * DT_UNKNOWN (0) in case the C library or underlying file
+		 * system does not support d_type. */
+		if (dent->d_type != DT_SOCK && dent->d_type != DT_UNKNOWN)
+			continue;
+#endif /* _DIRENT_HAVE_D_TYPE */
+		if (strcmp(dent->d_name, ".") == 0 ||
+		    strcmp(dent->d_name, "..") == 0)
+			continue;
+
+		memset(&addr, 0, sizeof(addr));
+		addr.sun_family = AF_UNIX;
+		snprintf(addr.sun_path, sizeof(addr.sun_path), "%s/%s",
+			 drv->socket_dir, dent->d_name);
+
+		if (strcmp(addr.sun_path, drv->own_socket_path) == 0)
+			continue;
+		if (!broadcast && strstr(dent->d_name, desttxt) == NULL)
+			continue;
+
+		wpa_printf(MSG_DEBUG, "%s: Send management frame to %s",
+			   __func__, dent->d_name);
+
+		msg.msg_name = &addr;
+		msg.msg_namelen = sizeof(addr);
+		ret = sendmsg(drv->test_socket, &msg, 0);
+	}
+	closedir(dir);
+
+	hdr = (struct ieee80211_hdr *) buf;
+	fc = le_to_host16(hdr->frame_control);
+	ieee802_11_mgmt_cb(drv->hapd, (u8 *) buf, len, WLAN_FC_GET_STYPE(fc),
+			   ret >= 0);
+
+	return ret;
 }
 
 
@@ -299,6 +382,41 @@ static void test_driver_eapol(struct test_driver_data *drv,
 }
 
 
+static void test_driver_mlme(struct test_driver_data *drv,
+			     struct sockaddr_un *from, socklen_t fromlen,
+			     u8 *data, size_t datalen)
+{
+	struct ieee80211_hdr *hdr;
+	u16 fc;
+
+	hdr = (struct ieee80211_hdr *) data;
+
+	if (test_driver_get_cli(drv, from, fromlen) == NULL && datalen >= 16) {
+		struct test_client_socket *cli;
+		cli = wpa_zalloc(sizeof(*cli));
+		if (cli == NULL)
+			return;
+		wpa_printf(MSG_DEBUG, "Adding client entry for " MACSTR,
+			   MAC2STR(hdr->addr2));
+		memcpy(cli->addr, hdr->addr2, ETH_ALEN);
+		memcpy(&cli->un, from, sizeof(cli->un));
+		cli->unlen = fromlen;
+		cli->next = drv->cli;
+		drv->cli = cli;
+	}
+
+	wpa_hexdump(MSG_MSGDUMP, "test_driver_mlme: received frame",
+		    data, datalen);
+	fc = le_to_host16(hdr->frame_control);
+	if (WLAN_FC_GET_TYPE(fc) != WLAN_FC_TYPE_MGMT) {
+		wpa_printf(MSG_ERROR, "%s: received non-mgmt frame",
+			   __func__);
+		return;
+	}
+	ieee802_11_mgmt(drv->hapd, data, datalen, WLAN_FC_GET_STYPE(fc));
+}
+
+
 static void test_driver_receive_unix(int sock, void *eloop_ctx, void *sock_ctx)
 {
 	struct test_driver_data *drv = eloop_ctx;
@@ -325,6 +443,8 @@ static void test_driver_receive_unix(int sock, void *eloop_ctx, void *sock_ctx)
 		test_driver_disassoc(drv, &from, fromlen);
 	} else if (strncmp(buf, "EAPOL ", 6) == 0) {
 		test_driver_eapol(drv, &from, fromlen, buf + 6, res - 6);
+	} else if (strncmp(buf, "MLME ", 5) == 0) {
+		test_driver_mlme(drv, &from, fromlen, buf + 5, res - 5);
 	} else {
 		wpa_hexdump_ascii(MSG_DEBUG, "Unknown test_socket command",
 				  (u8 *) buf, res);
@@ -396,6 +516,37 @@ static int test_driver_sta_disassoc(void *priv, const u8 *addr, int reason)
 }
 
 
+static struct hostapd_hw_modes *
+test_driver_get_hw_feature_data(void *priv, u16 *num_modes, u16 *flags)
+{
+	struct hostapd_hw_modes *modes;
+
+	*num_modes = 1;
+	*flags = 0;
+	modes = wpa_zalloc(*num_modes * sizeof(struct hostapd_hw_modes));
+	if (modes == NULL)
+		return NULL;
+	modes[0].mode = HOSTAPD_MODE_IEEE80211G;
+	modes[0].num_channels = 1;
+	modes[0].num_rates = 1;
+	modes[0].channels = wpa_zalloc(sizeof(struct hostapd_channel_data));
+	modes[0].rates = wpa_zalloc(sizeof(struct hostapd_rate_data));
+	if (modes[0].channels == NULL || modes[0].rates == NULL) {
+		hostapd_free_hw_features(modes, *num_modes);
+		return NULL;
+	}
+	modes[0].channels[0].chan = 1;
+	modes[0].channels[0].freq = 2412;
+	modes[0].channels[0].flag = HOSTAPD_CHAN_W_SCAN |
+		HOSTAPD_CHAN_W_ACTIVE_SCAN;
+	modes[0].rates[0].rate = 10;
+	modes[0].rates[0].flags = HOSTAPD_RATE_BASIC | HOSTAPD_RATE_SUPPORTED |
+		HOSTAPD_RATE_CCK | HOSTAPD_RATE_MANDATORY;
+
+	return modes;
+}
+
+
 static int test_driver_init(struct hostapd_data *hapd)
 {
 	struct test_driver_data *drv;
@@ -425,6 +576,7 @@ static int test_driver_init(struct hostapd_data *hapd)
 		}
 		if (strncmp(hapd->conf->test_socket, "DIR:", 4) == 0) {
 			size_t len = strlen(hapd->conf->test_socket) + 30;
+			drv->socket_dir = strdup(hapd->conf->test_socket + 4);
 			drv->own_socket_path = malloc(len);
 			if (drv->own_socket_path) {
 				snprintf(drv->own_socket_path, len,
@@ -498,9 +650,11 @@ static const struct driver_ops test_driver_ops = {
 	.init = test_driver_init,
 	.deinit = test_driver_deinit,
 	.send_eapol = test_driver_send_eapol,
+	.send_mgmt_frame = test_driver_send_mgmt_frame,
 	.set_generic_elem = test_driver_set_generic_elem,
 	.sta_deauth = test_driver_sta_deauth,
 	.sta_disassoc = test_driver_sta_disassoc,
+	.get_hw_feature_data = test_driver_get_hw_feature_data,
 };
 
 
