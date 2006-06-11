@@ -530,6 +530,7 @@ dnsmasq-install:
 #	$(STRIP) $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
 
 iptables:
+	$(MAKE) -C iptables.linksys BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
 	$(MAKE) -C iptables DO_MULTI=1 BINDIR=/usr/sbin LIBDIR=/usr/lib KERNEL_DIR=$(LINUXDIR)
 
 iptables-devel:
@@ -556,6 +557,7 @@ else
 endif
 
 iptables-clean:
+	-$(MAKE) -C iptables.linksys KERNEL_DIR=$(LINUXDIR) clean
 	-$(MAKE) -C iptables KERNEL_DIR=$(LINUXDIR) clean
 
 iptables-distclean:
@@ -1016,48 +1018,48 @@ netstatnat-install:
 	$(STRIP) $(INSTALLDIR)/netstatnat/usr/sbin/netstat-nat
 
 pppd-symlinks:
-	- (cd pppd ; \
+	- (cd pppd.new ; \
 	ln -s linux/Makefile.top Makefile ; \
-	ln -s Makefile.linux pppd/Makefile ; \
+	ln -s Makefile.linux pppd.new/Makefile ; \
 	ln -s Makefile.linux chat/Makefile ; \
-	ln -s Makefile.linux pppd/plugins/Makefile ; \
-	ln -s Makefile.linux pppd/plugins/radius/Makefile ; \
-	ln -s Makefile.linux pppd/plugins/rp-pppoe/Makefile ; \
-	ln -s Makefile.linux pppd/plugins/pppoatm/Makefile ; \
+	ln -s Makefile.linux pppd.new/plugins/Makefile ; \
+	ln -s Makefile.linux pppd.new/plugins/radius/Makefile ; \
+	ln -s Makefile.linux pppd.new/plugins/rp-pppoe/Makefile ; \
+	ln -s Makefile.linux pppd.new/plugins/pppoatm/Makefile ; \
 	ln -s Makefile.linux pppdump/Makefile ; \
 	ln -s Makefile.linux pppstats/Makefile ; \
 	)
 
 pppd: pppd-symlinks
-	$(MAKE) -C pppd/pppd
+	$(MAKE) -C pppd.new/pppd
 ifeq ($(CONFIG_PPPSTATS),y)
-	$(MAKE) -C pppd/pppstats
+	$(MAKE) -C pppd.new/pppstats
 endif
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
-	$(MAKE) -C pppd/pppd/plugins/radius
+	$(MAKE) -C pppd.new/pppd/plugins/radius
 endif
-#	$(MAKE) -C pppd/pppd/plugins/pppoatm
+#	$(MAKE) -C pppd.new/pppd/plugins/pppoatm
 
 
 pppd-clean pppd-distclean: pppd-symlinks
-	$(MAKE) -C pppd/pppd clean
+	$(MAKE) -C pppd.new/pppd clean
 
 pppd-install:
-	install -D pppd/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
+	install -D pppd.new/pppd/pppd $(INSTALLDIR)/pppd/usr/sbin/pppd
 ifeq ($(CONFIG_PPPSTATS),y)
-	install -D pppd/pppstats/pppstats $(INSTALLDIR)/pppd/usr/sbin/pppstats
+	install -D pppd.new/pppstats/pppstats $(INSTALLDIR)/pppd/usr/sbin/pppstats
 else
 	rm -rf $(INSTALLDIR)/pppd/usr/sbin/pppstats
 endif
 ifeq ($(CONFIG_RADIUSPLUGIN),y)
-	install -D pppd/pppd/plugins/radius/radius.so $(INSTALLDIR)/pppd/usr/lib/pppd/radius.so
-	install -D pppd/pppd/plugins/radius/radattr.so $(INSTALLDIR)/pppd/usr/lib/pppd/radattr.so
-	install -D pppd/pppd/plugins/radius/radrealms.so $(INSTALLDIR)/pppd/usr/lib/pppd/radrealms.so
+	install -D pppd.new/pppd/plugins/radius/radius.so $(INSTALLDIR)/pppd/usr/lib/pppd/radius.so
+	install -D pppd.new/pppd/plugins/radius/radattr.so $(INSTALLDIR)/pppd/usr/lib/pppd/radattr.so
+	install -D pppd.new/pppd/plugins/radius/radrealms.so $(INSTALLDIR)/pppd/usr/lib/pppd/radrealms.so
 	install -d $(INSTALLDIR)/pppd/etc/radiusclient
-	cp pppd/pppd/plugins/radius/radiusclient/etc/issue $(INSTALLDIR)/pppd/etc/radiusclient/issue
-	cp pppd/pppd/plugins/radius/radiusclient/etc/port-id-map $(INSTALLDIR)/pppd/etc/radiusclient/port-id-map
-	cp pppd/pppd/plugins/radius/radiusclient/etc/dictionary $(INSTALLDIR)/pppd/etc/radiusclient/dictionary
-	cp pppd/pppd/plugins/radius/radiusclient/etc/dictionary.microsoft $(INSTALLDIR)/pppd/etc/radiusclient/dictionary.microsoft
+	cp pppd.new/pppd/plugins/radius/radiusclient/etc/issue $(INSTALLDIR)/pppd/etc/radiusclient/issue
+	cp pppd.new/pppd/plugins/radius/radiusclient/etc/port-id-map $(INSTALLDIR)/pppd/etc/radiusclient/port-id-map
+	cp pppd.new/pppd/plugins/radius/radiusclient/etc/dictionary $(INSTALLDIR)/pppd/etc/radiusclient/dictionary
+	cp pppd.new/pppd/plugins/radius/radiusclient/etc/dictionary.microsoft $(INSTALLDIR)/pppd/etc/radiusclient/dictionary.microsoft
 	chmod 0644 $(INSTALLDIR)/pppd/etc/radiusclient/*
 else
 	rm -rf $(INSTALLDIR)/pppd/usr/lib/pppd/rad*.so
