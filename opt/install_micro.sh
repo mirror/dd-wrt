@@ -43,15 +43,15 @@ cd ../../../../../opt
 rm ../src/router/mipsel-uclibc/target/etc/config/jffs2*
 rm ../src/router/mipsel-uclibc/target/etc/config/language*
 
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/mmc.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/fat.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/smbfs.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/vfat.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/ext2.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/msdos.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/ipv6.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/eb*.o
-rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre2/jffs*.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/mmc.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/fat.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/smbfs.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/vfat.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/ext2.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/msdos.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/ipv6.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/eb*.o
+rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/jffs*.o
 rm ../src/router/mipsel-uclibc/target/usr/sbin/mtd
 
 
