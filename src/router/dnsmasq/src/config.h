@@ -10,7 +10,7 @@
    GNU General Public License for more details.
 */
 
-#define VERSION "2.31"
+#define VERSION "2.32"
 
 #define FTABSIZ 150 /* max number of outstanding requests */
 #define MAX_PROCS 20 /* max no children for TCP requests */
@@ -23,6 +23,7 @@
 #define MAXLEASES 150 /* maximum number of DHCP leases */
 #define PING_WAIT 3 /* wait for ping address-in-use test */
 #define PING_CACHE_TIME 30 /* Ping test assumed to be valid this long. */
+#define DECLINE_BACKOFF 600 /* disable DECLINEd static addresses for this long */
 #define DHCP_PACKET_MAX 16384 /* hard limit on DHCP packet size */
 #define SMALLDNAME 40 /* most domain names are smaller than this */
 #define HOSTSFILE "/etc/hosts"
@@ -52,20 +53,6 @@
 /* DBUS interface specifics */
 #define DNSMASQ_SERVICE "uk.org.thekelleys.dnsmasq"
 #define DNSMASQ_PATH "/uk/org/thekelleys/dnsmasq"
-
-/* Logfile stuff - change this to change the options and facility */
-/* debug is true if the --no-daemon flag is given */
-#ifdef LOG_PERROR
-#  define DNSMASQ_LOG_OPT(debug)  (debug) ? LOG_PERROR : LOG_PID
-#else
-#  define DNSMASQ_LOG_OPT(debug)  (debug) ? 0 : LOG_PID
-#endif
-
-#ifdef LOG_LOCAL0
-#  define DNSMASQ_LOG_FAC(debug)  (debug) ? LOG_LOCAL0 : LOG_DAEMON
-#else
-#  define DNSMASQ_LOG_FAC(debug)  LOG_DAEMON
-#endif
 
 /* A small collection of RR-types which are missing on some platforms */
 

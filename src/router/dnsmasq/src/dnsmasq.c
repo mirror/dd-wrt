@@ -45,8 +45,7 @@ static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now);
 static void sig_handler(int sig);
 static void manual_delete_lease(void);
 
-/* int main (int argc, char **argv) */
-/* to avoid confusion from busybox we change from main to dnsmasq_main */
+/* int main (int argc, char **argv) renamed to dnsmasq_main */
 int dnsmasq_main (int argc, char **argv)
 {
   struct daemon *daemon;
@@ -70,6 +69,7 @@ int dnsmasq_main (int argc, char **argv)
   sigact.sa_flags = 0;
   sigemptyset(&sigact.sa_mask);
   sigaction(SIGUSR1, &sigact, NULL);
+  /* SIGUSR2 added */
   sigaction(SIGUSR2, &sigact, NULL);
   sigaction(SIGHUP, &sigact, NULL);
   sigaction(SIGTERM, &sigact, NULL);
@@ -132,7 +132,6 @@ int dnsmasq_main (int argc, char **argv)
   else if (!(daemon->listeners = create_wildcard_listeners(daemon->port)))
     die2(_("failed to create listening socket: %s"), NULL);
   
-  forward_init(1);
   cache_init(daemon->cachesize, daemon->options & OPT_LOG);
 
   now = dnsmasq_time();
@@ -171,6 +170,7 @@ int dnsmasq_main (int argc, char **argv)
   if (daemon->query_port)
     {
       union  mysockaddr addr;
+      memset(&addr, 0, sizeof(addr));
       addr.in.sin_family = AF_INET;
       addr.in.sin_addr.s_addr = INADDR_ANY;
       addr.in.sin_port = htons(daemon->query_port);
@@ -179,11 +179,10 @@ int dnsmasq_main (int argc, char **argv)
 #endif
       allocate_sfd(&addr, &daemon->sfds);
 #ifdef HAVE_IPV6
+      memset(&addr, 0, sizeof(addr));
       addr.in6.sin6_family = AF_INET6;
       addr.in6.sin6_addr = in6addr_any;
       addr.in6.sin6_port = htons(daemon->query_port);
-      addr.in6.sin6_flowinfo = 0;
-      addr.in6.sin6_scope_id = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
       addr.in6.sin6_len = sizeof(struct sockaddr_in6);
 #endif
@@ -201,7 +200,19 @@ int dnsmasq_main (int argc, char **argv)
   sig = SIGHUP; 
   write(pipewrite, &sig, 1);
  
-  if (!(daemon->options & OPT_DEBUG)) 
+  if (daemon->options & OPT_DEBUG)   
+    {
+#ifdef LOG_PERROR
+      openlog("dnsmasq", LOG_PERROR, daemon->log_fac);
+#else
+      openlog("dnsmasq", 0, daemon->log_fac);
+#endif
+      
+#ifdef HAVE_LINUX_NETWORK
+      prctl(PR_SET_DUMPABLE, 1);
+#endif
+    }
+  else
     {
       FILE *pidfile;
       struct passwd *ent_pw = daemon->username ? getpwnam(daemon->username) : NULL;
@@ -326,16 +337,10 @@ int dnsmasq_main (int argc, char **argv)
 	  capset(hdr, data);
 #endif
 	}
-    }
-#ifdef HAVE_LINUX_NETWORK
-  else
-     prctl(PR_SET_DUMPABLE, 1);
-#endif
 
-  openlog("dnsmasq", 
-	  DNSMASQ_LOG_OPT(daemon->options & OPT_DEBUG), 
-	  DNSMASQ_LOG_FAC(daemon->options & OPT_DEBUG));
-  
+      openlog("dnsmasq", LOG_PID, daemon->log_fac);
+    }
+
   if (daemon->cachesize != 0)
     syslog(LOG_INFO, _("started, version %s cachesize %d"), VERSION, daemon->cachesize);
   else
@@ -448,7 +453,7 @@ int dnsmasq_main (int argc, char **argv)
 
       /* Check for changes to resolv files once per second max. */
       /* Don't go silent for long periods if the clock goes backwards. */
-      if (last == 0 || difftime(now, last) > 1.0 || difftime(now, last) < 1.0)
+      if (last == 0 || difftime(now, last) > 1.0 || difftime(now, last) < -1.0)
 	{
 	  last = now;
 
@@ -476,14 +481,11 @@ int dnsmasq_main (int argc, char **argv)
 		  else
 		    {
 		      res->logged = 0;
-		      if (statbuf.st_mtime != res->mtime)
+		      if (statbuf.st_mtime != res->mtime &&
+			  difftime(statbuf.st_mtime, last_change) > 0.0)
 			{
-			  res->mtime = statbuf.st_mtime;
-			  if (difftime(res->mtime, last_change) > 0.0)
-			    {
-			      last_change = res->mtime;
-			      latest = res;
-			    }
+			  last_change = statbuf.st_mtime;
+			  latest = res;
 			}
 		    }
 		  res = res->next;
@@ -491,8 +493,19 @@ int dnsmasq_main (int argc, char **argv)
 	  
 	      if (latest)
 		{
-		  reload_servers(latest->name, daemon);
-		  check_servers(daemon);
+		  static int warned = 0;
+		  if (reload_servers(latest->name, daemon))
+		    {
+		      syslog(LOG_INFO, _("reading %s"), latest->name);
+		      latest->mtime = last_change;
+		      warned = 0;
+		      check_servers(daemon);
+		    }
+		  else if (!warned)
+		    {
+		      syslog(LOG_WARNING, _("no servers found in %s, will retry"), latest->name);
+		      warned = 1;
+		    }
 		}
 	    }
 	}
@@ -516,12 +529,13 @@ int dnsmasq_main (int argc, char **argv)
 	      case SIGUSR1:
 		dump_cache(daemon, now);
 		break;
-
+		
 	      case SIGUSR2:
 		if (daemon->dhcp)
 		  {
 		    manual_delete_lease();
 		    lease_update_file(daemon, now);
+		    lease_collect(daemon);
 		  }
 		break;
 		
@@ -541,16 +555,11 @@ int dnsmasq_main (int argc, char **argv)
 		  /* Knock all our children on the head. */
 		  for (i = 0; i < MAX_PROCS; i++)
 		    if (daemon->tcp_pids[i] != 0)
-		      kill(daemon->tcp_pids[i], SIGQUIT);
+		      kill(daemon->tcp_pids[i], SIGALRM);
 		  
 		  if (daemon->dhcp)
-		    {
-		      if (daemon->script_pid != 0)
-			kill(daemon->script_pid, SIGQUIT);
-		      /* close this carefully */
-		      fclose(daemon->lease_stream);
-		    }
-
+		    fclose(daemon->lease_stream);
+		    
 		  exit(0);
 		}
 
@@ -558,7 +567,7 @@ int dnsmasq_main (int argc, char **argv)
 		/* See Stevens 5.10 */
 		/* Note that if a script process forks and then exits
 		   without waiting for its child, we will reap that child.
-		   It is not therefore safe to assume that any dieing children
+		   It is not therefore safe to assume that any die2ing children
 		   whose pid != script_pid are TCP server threads. */ 
 		while ((p = waitpid(-1, NULL, WNOHANG)) > 0)
 		  {
@@ -902,7 +911,7 @@ int icmp_ping(struct daemon *daemon, struct in_addr addr)
   return gotreply;
 }
 
-/* added for manual delete lease on SIGALRM */
+/* added for manual delete lease on SIGUSR2 */
 void manual_delete_lease(void)
 {
 	FILE *f;
@@ -922,3 +931,5 @@ void manual_delete_lease(void)
 
 	unlink("/tmp/.delete_leases");
 }
+
+ 
