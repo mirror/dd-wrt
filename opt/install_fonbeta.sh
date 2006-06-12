@@ -50,7 +50,7 @@ cd ../../../../../opt
 #copy language packs to destination
 #cp ./lang/langpacks/* ../src/router/mipsel-uclibc/target/langpacks
 cp ./lang/* ../src/router/mipsel-uclibc/target/etc/langpack
-../src/linux/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
+../src/linux/brcm/linux.v23/scripts/squashfs/mksquashfs-lzma ../src/router/mipsel-uclibc/target target.squashfs -noappend -root-owned -le
 ./make_kernel.sh
 ../tools/trx -o dd-wrt.v23.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ../tools/trx_gs -o dd-wrt.v23_gs.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
