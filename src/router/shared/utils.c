@@ -291,6 +291,13 @@ internal_getRouterBrand ()
       setRouter ("Linksys WRT54G 1.x");
       return ROUTER_WRT54G1X;
     }
+  if (nvram_match ("boardnum", "1024") &&
+      nvram_match ("boardtype", "0x0446"))
+    {
+      cprintf ("router is Linksys WAP54G v2\n");
+	  setRouter ("Linksys WAP54G v2");
+      return ROUTER_WRT54;
+    }
   if (nvram_invmatch ("CFEver", ""))
     {
       char *cfe = nvram_safe_get ("CFEver");
@@ -1320,7 +1327,7 @@ check_hw_type (void)
     return BCM4704_BCM5325F_CHIP;
   else if (nvram_match ("boardtype", "0x0467"))
     return BCM5352E_CHIP;
-  else if (nvram_match ("boardtype", "0x0101"))
+  else if (nvram_match ("boardtype", "0x0101") || nvram_match ("boardtype", "0x0446"))  //0x446 is wap54g v2
     return BCM4712_CHIP;
   else
     return NO_DEFINE_CHIP;
