@@ -16,6 +16,7 @@ make modules
 cd ../../../
 
 cd linux/brcm/linux.v24
+make oldconfig
 make clean
 make dep
 make
