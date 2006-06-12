@@ -27,15 +27,6 @@ make clean
 cd ../opt
 export PATH=/home/dd-wrt/toolchains/4.1.0/bin:$MYPATH
 
-#build sputnik
-cd ../src/router
-rm -dfr mipsel-uclibc/install
-make httpd-clean
-make rc-clean
-make shared-clean
-cd ../../opt
-./install_sputnik.sh
-
 #build mini
 cd ../src/router
 rm -dfr mipsel-uclibc/install
@@ -81,6 +72,7 @@ make shared-clean
 cd ../../opt
 ./install_voip.sh
 
+#build voip.v24
 cd ../src/router
 rm -dfr mipsel-uclibc/install
 make httpd-clean
@@ -88,6 +80,15 @@ make rc-clean
 make shared-clean
 cd ../../opt
 ./install_voip.v24.sh
+
+#build sputnik
+cd ../src/router
+rm -dfr mipsel-uclibc/install
+make httpd-clean
+make rc-clean
+make shared-clean
+cd ../../opt
+./install_sputnik.sh
 
 cd ../src/router
 rm -dfr mipsel-uclibc/install
