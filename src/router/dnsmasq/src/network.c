@@ -312,14 +312,14 @@ struct listener *create_bound_listeners(struct daemon *daemon)
 	  setsockopt(new->tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
 	  !fix_fd(new->tcpfd) ||
 	  !fix_fd(new->fd))
-	die(_("failed to create listening socket: %s"), NULL);
+	die2(_("failed to create listening socket: %s"), NULL);
       
 #ifdef HAVE_IPV6
       if (iface->addr.sa.sa_family == AF_INET6)
 	{
 	  if (setsockopt(new->fd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1 ||
 	      setsockopt(new->tcpfd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1)
-	    die(_("failed to set IPV6 options on listening socket: %s"), NULL);
+	    die2(_("failed to set IPV6 options on listening socket: %s"), NULL);
 	}
 #endif
       
@@ -337,7 +337,7 @@ struct listener *create_bound_listeners(struct daemon *daemon)
 #endif
 	    {
 	      prettyprint_addr(&iface->addr, daemon->namebuff);
-	      die(_("failed to bind listening socket for %s: %s"), 
+	      die2(_("failed to bind listening socket for %s: %s"), 
 		  daemon->namebuff);
 	    }
 	}
@@ -345,7 +345,7 @@ struct listener *create_bound_listeners(struct daemon *daemon)
 	 {
 	   listeners = new;     
 	   if (listen(new->tcpfd, 5) == -1)
-	     die(_("failed to listen on socket: %s"), NULL);
+	     die2(_("failed to listen on socket: %s"), NULL);
 	 }
     }
   
