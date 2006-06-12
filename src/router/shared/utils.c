@@ -296,7 +296,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is Linksys WAP54G v2\n");
 	  setRouter ("Linksys WAP54G v2");
-      return ROUTER_WRT54;
+      return ROUTER_WRT54G;
     }
   if (nvram_invmatch ("CFEver", ""))
     {
