@@ -1637,7 +1637,7 @@ check_vlan_support (void)
     return 0;
 
   if (nvram_match ("boardtype", "bcm94710dev")
-      || nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
+      || nvram_match ("boardtype", "0x0101") || nvram_match ("boardtype", "0x0446") || (boardflags & 0x0100))  //0x0446 is wap54g v2
     return 1;
   else
     return 0;
