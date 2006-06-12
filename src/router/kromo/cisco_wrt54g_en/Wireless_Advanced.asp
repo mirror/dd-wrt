@@ -186,6 +186,7 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">document.write("<option value=\"on\" <% nvram_selected("wl_afterburner", "on", "js"); %>>" + share.enable + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"auto\" <% nvram_selected("wl_afterburner", "auto", "js"); %>>" + share.auto + "</option>");</script>
 									</select>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.auto + ")")</script></span>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label17"); %></div>
