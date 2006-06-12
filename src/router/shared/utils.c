@@ -81,7 +81,7 @@ internal_getRouterBrand ()
   setRouter ("Mikrotik RB500");
   return ROUTER_BOARD_500;
 #else
-  char *et0, *et1;
+  char *et0;
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "bcm94710ap"))
     {
@@ -106,8 +106,8 @@ internal_getRouterBrand ()
       return ROUTER_RT210W;
     }  
     
-  if (nvram_match ("boardnum", "100") &&	//added by Eko - experimental
-      nvram_match ("boardtype", "bcm94710dev"))	//detect WLA-G54C 
+  if (nvram_match ("boardnum", "100") &&
+      nvram_match ("boardtype", "bcm94710dev"))	
     {
       cprintf ("router is buffalo\n");
       setRouter ("Buffalo WLA-G54C");	
@@ -197,8 +197,7 @@ internal_getRouterBrand ()
 
   {
     et0 = nvram_safe_get ("et0macaddr");
-    et1 = nvram_safe_get ("et1macaddr");
-    if (et0 != NULL && et1 != NULL)
+    if (et0 != NULL)
       {
 	if (nvram_match ("boardnum", "100") &&
 	    nvram_match ("boardtype", "bcm94710r4"))
@@ -209,18 +208,16 @@ internal_getRouterBrand ()
 		setRouter ("Belkin F5D7130 / F5D7330");
 		return ROUTER_RT210W;
 	      }
-	    if (startswith (et0, "00:30:BD") || startswith (et0, "00:30:bd"))
+	    if (startswith (et0, "00:30:BD") ||
+	        startswith (et0, "00:30:bd"))
 	      {
 		cprintf ("router is Belkin F5D7230 v1000\n");
 		setRouter ("Belkin F5D7230-4 v1000");
 		return ROUTER_RT210W;
 	      }
-	    if ((startswith (et0, "00:01:E3") 
-	    	&& startswith (et1, "00:01:E3"))
-		|| (startswith (et0, "00:01:e3")
-		    && startswith (et1, "00:01:e3"))
-		|| (startswith (et0, "00:90:96")
-		    && startswith (et1, "00:90:96")))
+	    if (startswith (et0, "00:01:E3") ||
+		    startswith (et0, "00:01:e3") ||
+		    startswith (et0, "00:90:96"))
 	      {
 		cprintf ("router is Siemens\n");
 		setRouter ("Siemens SE505 v1");
@@ -236,21 +233,17 @@ internal_getRouterBrand ()
 	
 	if (nvram_match ("boardtype", "0x0101"))
 	  {
-	    if ((startswith (et0, "00:11:50") && startswith (et1, "00:11:50"))
-	    || (startswith (et0, "00:30:BD")
-		    && startswith (et1, "00:30:BD"))
-		|| (startswith (et0, "00:30:bd")
-		    && startswith (et1, "00:30:bd")))
+	    if (startswith (et0, "00:11:50") ||
+	        startswith (et0, "00:30:BD") ||
+		    startswith (et0, "00:30:bd"))
 	      {
 		cprintf ("router is Belkin F5D7230-4 v1444\n");
 		setRouter ("Belkin F5D7230-4 v1444");
 		return ROUTER_BELKIN_F5D7230;
 	      }
-	    if ((startswith (et0, "00:01:E3") && startswith (et1, "00:01:E3"))
-		|| (startswith (et0, "00:01:e3")
-		    && startswith (et1, "00:01:e3"))
-		|| (startswith (et0, "00:90:96")
-		    && startswith (et1, "00:90:96")))
+	    if (startswith (et0, "00:01:E3") ||
+		    startswith (et0, "00:01:e3") ||
+		    startswith (et0, "00:90:96"))
 	      {
 		cprintf ("router is Siemens / Askey\n");
 		setRouter ("Siemens SE505 v2");
@@ -262,14 +255,11 @@ internal_getRouterBrand ()
 	    nvram_match ("boardtype", "bcm94710dev"))
 	  {
 	    if (nvram_match ("GemtekPmonVer", "9") &&
-		((startswith (et0, "00:0C:E5")
-		  && startswith (et1, "00:0C:E5"))
-		 || (startswith (et0, "00:0c:e5")
-		     && startswith (et1, "00:0c:e5"))
-		 || (startswith (et0, "00:0C:10")
-		     && startswith (et1, "00:0C:10"))
-		 || (startswith (et0, "00:11:22")
-		     && startswith (et1, "00:11:22"))))
+		   (startswith (et0, "00:0C:E5") ||
+		    startswith (et0, "00:0c:e5") ||
+		    startswith (et0, "00:0C:10") ||
+		    startswith (et0, "00:0c:10") ||
+		    startswith (et0, "00:11:22")))
 	      {
 		cprintf ("router Motorola WR850G v1\n");
 		setRouter ("Motorola WR850G v1");
@@ -282,15 +272,16 @@ internal_getRouterBrand ()
 		return ROUTER_LINKSYS_WRT55AG;
 	      }
 	  }
-
       }
   }
+  
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
       setRouter ("Linksys WRT54G 1.x");
       return ROUTER_WRT54G1X;
     }
+    
   if (nvram_match ("boardnum", "1024") &&
       nvram_match ("boardtype", "0x0446"))
     {
@@ -298,6 +289,7 @@ internal_getRouterBrand ()
 	  setRouter ("Linksys WAP54G v2");
       return ROUTER_WRT54G;
     }
+    
   if (nvram_invmatch ("CFEver", ""))
     {
       char *cfe = nvram_safe_get ("CFEver");
