@@ -1896,7 +1896,7 @@ bird_init (void)
 	    {
 	      if (nvram_match ("wl_mode", "sta")
 		  || nvram_match ("wl_mode", "apsta"))
-		fprintf (fp, "	interface \"%d\" { };\n", getwlif ());
+		fprintf (fp, "	interface \"%s\" { };\n", getwlif ());
 	      else
 		fprintf (fp, "	interface \"%s\" { };\n",
 			 nvram_safe_get ("wan_ifname"));
