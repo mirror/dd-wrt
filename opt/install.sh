@@ -21,13 +21,13 @@ make clean
 make dep
 make
 make modules
-
 cd ../../../
+
 make clean
 cd ../opt
 export PATH=/home/dd-wrt/toolchains/4.1.0/bin:$MYPATH
 
-
+#build sputnik
 cd ../src/router
 rm -dfr mipsel-uclibc/install
 make httpd-clean
@@ -36,15 +36,16 @@ make shared-clean
 cd ../../opt
 ./install_sputnik.sh
 
+#build mini
 cd ../src/router
-
 rm -dfr mipsel-uclibc/install
 make httpd-clean
 make rc-clean
 make shared-clean
-
 cd ../../opt
 ./install_mini.sh
+
+#build standard
 cd ../src/router
 rm -dfr mipsel-uclibc/install
 make httpd-clean
@@ -53,7 +54,7 @@ make shared-clean
 cd ../../opt
 ./install_normal.sh
 
-
+#build aqos
 cd ../src/router
 rm -dfr mipsel-uclibc/install
 make httpd-clean
@@ -61,8 +62,6 @@ make rc-clean
 make shared-clean
 cd ../../opt
 ./install_aqos.sh
-
-
 
 #build vpn version
 cd ../src/router
@@ -73,7 +72,7 @@ make shared-clean
 cd ../../opt
 ./install_openvpn.sh
 
-
+#build voip
 cd ../src/router
 rm -dfr mipsel-uclibc/install
 make httpd-clean
@@ -106,10 +105,10 @@ make shared-clean
 cd ../../opt
 ./install_newmedia.sh
 
-cd ../src/router
-rm -dfr mipsel-uclibc/install
-make httpd-clean
-make rc-clean
-make shared-clean
-cd ../../opt
-./install_fon.sh
+# cd ../src/router
+# rm -dfr mipsel-uclibc/install
+# make httpd-clean
+# make rc-clean
+# make shared-clean
+# cd ../../opt
+# ./install_fon.sh
