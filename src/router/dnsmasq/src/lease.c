@@ -18,7 +18,6 @@ static int dns_dirty, file_dirty, leases_left;
 void lease_init(struct daemon *daemon, time_t now)
 {
   unsigned long ei;
-  unsigned char hwaddr[DHCP_CHADDR_MAX];
   struct in_addr addr;
   struct dhcp_lease *lease;
   int flags, clid_len, hw_len, hw_type;
@@ -43,7 +42,7 @@ void lease_init(struct daemon *daemon, time_t now)
 		&ei, daemon->dhcp_buff2, daemon->namebuff, 
 		daemon->dhcp_buff, daemon->packet) == 5)
     {
-      hw_len = parse_hex(daemon->dhcp_buff2, hwaddr, DHCP_CHADDR_MAX, NULL, &hw_type);
+      hw_len = parse_hex(daemon->dhcp_buff2, (unsigned char *)daemon->dhcp_buff2, DHCP_CHADDR_MAX, NULL, &hw_type);
       /* For backwards compatibility, no explict MAC address type means ether. */
       if (hw_type == 0 && hw_len != 0)
 	hw_type = ARPHRD_ETHER;
@@ -72,7 +71,7 @@ void lease_init(struct daemon *daemon, time_t now)
       lease->expires = (time_t)ei;
 #endif
 
-      lease_set_hwaddr(lease, hwaddr, (unsigned char *)daemon->packet, hw_len, hw_type, clid_len);
+      lease_set_hwaddr(lease, (unsigned char *)daemon->dhcp_buff2, (unsigned char *)daemon->packet, hw_len, hw_type, clid_len);
 
       if (strcmp(daemon->dhcp_buff, "*") !=  0)
 	lease_set_hostname(lease, daemon->dhcp_buff, daemon->domain_suffix, 0);
