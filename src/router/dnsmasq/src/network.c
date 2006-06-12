@@ -141,6 +141,7 @@ static int iface_allowed_v6(struct daemon *daemon, struct in6_addr *local,
   
   netmask.s_addr = 0;
   
+  memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SOCKADDR_SA_LEN
   addr.in6.sin6_len = sizeof(addr.in6);
 #endif
@@ -148,8 +149,7 @@ static int iface_allowed_v6(struct daemon *daemon, struct in6_addr *local,
   addr.in6.sin6_addr = *local;
   addr.in6.sin6_port = htons(daemon->port);
   addr.in6.sin6_scope_id = scope;
-  addr.in6.sin6_flowinfo = 0;
-
+  
   return iface_allowed(daemon, (struct irec **)vparam, if_index, &addr, netmask);
 }
 #endif
@@ -158,7 +158,8 @@ static int iface_allowed_v4(struct daemon *daemon, struct in_addr local, int if_
 			    struct in_addr netmask, struct in_addr broadcast, void *vparam)
 {
   union mysockaddr addr;
-  
+
+  memset(&addr, 0, sizeof(addr));
 #ifdef HAVE_SOCKADDR_SA_LEN
   addr.in.sin_len = sizeof(addr.in);
 #endif
@@ -202,11 +203,10 @@ static int create_ipv6_listener(struct listener **link, int port)
   struct listener *l;
   int opt = 1;
 
+  memset(&addr, 0, sizeof(addr));
   addr.in6.sin6_family = AF_INET6;
   addr.in6.sin6_addr = in6addr_any;
   addr.in6.sin6_port = htons(port);
-  addr.in6.sin6_flowinfo = 0;
-  addr.in6.sin6_scope_id = 0;
 #ifdef HAVE_SOCKADDR_SA_LEN
   addr.in6.sin6_len = sizeof(addr.in6);
 #endif
@@ -254,6 +254,7 @@ struct listener *create_wildcard_listeners(int port)
   struct listener *l, *l6 = NULL;
   int tcpfd, fd;
 
+  memset(&addr, 0, sizeof(addr));
   addr.in.sin_family = AF_INET;
   addr.in.sin_addr.s_addr = INADDR_ANY;
   addr.in.sin_port = htons(port);
@@ -311,14 +312,14 @@ struct listener *create_bound_listeners(struct daemon *daemon)
 	  setsockopt(new->tcpfd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1 ||
 	  !fix_fd(new->tcpfd) ||
 	  !fix_fd(new->fd))
-	die2(_("failed to create listening socket: %s"), NULL);
+	die(_("failed to create listening socket: %s"), NULL);
       
 #ifdef HAVE_IPV6
       if (iface->addr.sa.sa_family == AF_INET6)
 	{
 	  if (setsockopt(new->fd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1 ||
 	      setsockopt(new->tcpfd, IPV6_LEVEL, IPV6_V6ONLY, &opt, sizeof(opt)) == -1)
-	    die2(_("failed to set IPV6 options on listening socket: %s"), NULL);
+	    die(_("failed to set IPV6 options on listening socket: %s"), NULL);
 	}
 #endif
       
@@ -336,7 +337,7 @@ struct listener *create_bound_listeners(struct daemon *daemon)
 #endif
 	    {
 	      prettyprint_addr(&iface->addr, daemon->namebuff);
-	      die2(_("failed to bind listening socket for %s: %s"), 
+	      die(_("failed to bind listening socket for %s: %s"), 
 		  daemon->namebuff);
 	    }
 	}
@@ -344,7 +345,7 @@ struct listener *create_bound_listeners(struct daemon *daemon)
 	 {
 	   listeners = new;     
 	   if (listen(new->tcpfd, 5) == -1)
-	     die2(_("failed to listen on socket: %s"), NULL);
+	     die(_("failed to listen on socket: %s"), NULL);
 	 }
     }
   
@@ -394,11 +395,6 @@ void check_servers(struct daemon *daemon)
   struct server *new, *tmp, *ret = NULL;
   int port = 0;
 
-  /* forward table rules reference servers, so have to blow them away */
-  forward_init(0);
-  
-  daemon->last_server = daemon->srv_save = NULL;
-  
   for (new = daemon->servers; new; new = tmp)
     {
       tmp = new->next;
@@ -450,25 +446,37 @@ void check_servers(struct daemon *daemon)
   
   daemon->servers = ret;
 }
-  
-void reload_servers(char *fname, struct daemon *daemon)
+
+/* Return zero if no servers found, in that case we keep polling.
+   This is a protection against an update-time/write race on resolv.conf */
+int reload_servers(char *fname, struct daemon *daemon)
 {
   FILE *f;
   char *line;
   struct server *old_servers = NULL;
   struct server *new_servers = NULL;
-  struct server *serv = daemon->servers;
+  struct server *serv;
+  int gotone = 0;
 
+  /* buff happens to be MAXDNAME long... */
+  if (!(f = fopen(fname, "r")))
+    {
+      syslog(LOG_ERR, _("failed to read %s: %m"), fname);
+      return 0;
+    }
+  
   /* move old servers to free list - we can reuse the memory 
      and not risk malloc if there are the same or fewer new servers. 
      Servers which were specced on the command line go to the new list. */
-  while (serv)
+  for (serv = daemon->servers; serv;)
     {
       struct server *tmp = serv->next;
       if (serv->flags & SERV_FROM_RESOLV)
 	{
 	  serv->next = old_servers;
-	  old_servers = serv;
+	  old_servers = serv; 
+	  /* forward table rules reference servers, so have to blow them away */
+	  server_gone(daemon, serv);
 	}
       else
 	{
@@ -477,82 +485,68 @@ void reload_servers(char *fname, struct daemon *daemon)
 	}
       serv = tmp;
     }
-
-  /* buff happens to be NAXDNAME long... */
-  f = fopen(fname, "r");
-  if (!f)
-    {
-      syslog(LOG_ERR, _("failed to read %s: %m"), fname);
-    }
-  else
-    {
-      syslog(LOG_INFO, _("reading %s"), fname);
-      while ((line = fgets(daemon->namebuff, MAXDNAME, f)))
-	{
-	  union  mysockaddr addr, source_addr;
-	  char *token = strtok(line, " \t\n\r");
-	  struct server *serv;
-	  
-	  if (!token || strcmp(token, "nameserver") != 0)
-	    continue;
-	  if (!(token = strtok(NULL, " \t\n\r")))
-	    continue;
-	  
-#ifdef HAVE_IPV6
-          if (inet_pton(AF_INET, token, &addr.in.sin_addr) > 0)
-#else
-          if ((addr.in.sin_addr.s_addr = inet_addr(token)) != (in_addr_t) -1)
-#endif
-	    {
-#ifdef HAVE_SOCKADDR_SA_LEN
-	      source_addr.in.sin_len = addr.in.sin_len = sizeof(source_addr.in);
-#endif
-	      source_addr.in.sin_family = addr.in.sin_family = AF_INET;
-	      addr.in.sin_port = htons(NAMESERVER_PORT);
-	      source_addr.in.sin_addr.s_addr = INADDR_ANY;
-	      source_addr.in.sin_port = htons(daemon->query_port);
-	    }
-#ifdef HAVE_IPV6
-	  else if (inet_pton(AF_INET6, token, &addr.in6.sin6_addr) > 0)
-	    {
-#ifdef HAVE_SOCKADDR_SA_LEN
-	      source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(source_addr.in6);
-#endif
-	      source_addr.in6.sin6_family = addr.in6.sin6_family = AF_INET6;
-	      addr.in6.sin6_port = htons(NAMESERVER_PORT);
-	      source_addr.in6.sin6_flowinfo = addr.in6.sin6_flowinfo = 0;
-	      source_addr.in6.sin6_scope_id = addr.in6.sin6_scope_id = 0;
-	      source_addr.in6.sin6_addr = in6addr_any;
-	      source_addr.in6.sin6_port = htons(daemon->query_port);
-	    }
-#endif /* IPV6 */
-	  else
-	    continue;
-	  
-	  if (old_servers)
-	    {
-	      serv = old_servers;
-	      old_servers = old_servers->next;
-	    }
-	  else if (!(serv = malloc(sizeof (struct server))))
-	    continue;
-	  
-	  /* this list is reverse ordered: 
-	     it gets reversed again in check_servers */
-	  serv->next = new_servers;
-	  new_servers = serv;
-	  serv->addr = addr;
-	  serv->source_addr = source_addr;
-	  serv->domain = NULL;
-	  serv->sfd = NULL;
-	  serv->flags = SERV_FROM_RESOLV;
-	}
   
-      fclose(f);
-    }
+  while ((line = fgets(daemon->namebuff, MAXDNAME, f)))
+    {
+      union mysockaddr addr, source_addr;
+      char *token = strtok(line, " \t\n\r");
+      
+      if (!token || strcmp(token, "nameserver") != 0)
+	continue;
+      if (!(token = strtok(NULL, " \t\n\r")))
+	continue;
+      
+      memset(&addr, 0, sizeof(addr));
+      memset(&source_addr, 0, sizeof(source_addr));
+      
+      if ((addr.in.sin_addr.s_addr = inet_addr(token)) != (in_addr_t) -1)
+	{
+#ifdef HAVE_SOCKADDR_SA_LEN
+	  source_addr.in.sin_len = addr.in.sin_len = sizeof(source_addr.in);
+#endif
+	  source_addr.in.sin_family = addr.in.sin_family = AF_INET;
+	  addr.in.sin_port = htons(NAMESERVER_PORT);
+	  source_addr.in.sin_addr.s_addr = INADDR_ANY;
+	  source_addr.in.sin_port = htons(daemon->query_port);
+	}
+#ifdef HAVE_IPV6
+      else if (inet_pton(AF_INET6, token, &addr.in6.sin6_addr) > 0)
+	{
+#ifdef HAVE_SOCKADDR_SA_LEN
+	  source_addr.in6.sin6_len = addr.in6.sin6_len = sizeof(source_addr.in6);
+#endif
+	  source_addr.in6.sin6_family = addr.in6.sin6_family = AF_INET6;
+	  addr.in6.sin6_port = htons(NAMESERVER_PORT);
+	  source_addr.in6.sin6_addr = in6addr_any;
+	  source_addr.in6.sin6_port = htons(daemon->query_port);
+	}
+#endif /* IPV6 */
+      else
+	continue;
+      
+      if (old_servers)
+	{
+	  serv = old_servers;
+	  old_servers = old_servers->next;
+	}
+      else if (!(serv = malloc(sizeof (struct server))))
+	continue;
+      
+      /* this list is reverse ordered: 
+	 it gets reversed again in check_servers */
+      serv->next = new_servers;
+      new_servers = serv;
+      serv->addr = addr;
+      serv->source_addr = source_addr;
+      serv->domain = NULL;
+      serv->sfd = NULL;
+      serv->flags = SERV_FROM_RESOLV;
 
+      gotone = 1;
+    }
+  
   /* Free any memory not used. */
-  while(old_servers)
+  while (old_servers)
     {
       struct server *tmp = old_servers->next;
       free(old_servers);
@@ -560,6 +554,9 @@ void reload_servers(char *fname, struct daemon *daemon)
     }
 
   daemon->servers = new_servers;
+  fclose(f);
+
+  return gotone;
 }
 
 

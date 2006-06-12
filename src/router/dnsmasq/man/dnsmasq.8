@@ -60,6 +60,10 @@ to handle TCP queries.
 .B \-q, --log-queries
 Log the results of DNS queries handled by dnsmasq. Enable a full cache dump on receipt of SIGUSR1.
 .TP
+.B \-8, --log-facility=<facility>
+Set the facility to which dnsmasq will send syslog entries, this
+defaults to DAEMON, and to LOCAL0 when debug mode is in operation.
+.TP
 .B \-x, --pid-file=<path>
 Specify an alternate path for dnsmasq to record its process-id in. Normally /var/run/dnsmasq.pid.
 .TP
@@ -580,8 +584,13 @@ in the same way as for DHCP-derived names.
 .TP
 .B \-C, --conf-file=<file>
 Specify a different configuration file. The conf-file option is also allowed in
-configuration files, to include multiple configuration files. Only one
-level of nesting is allowed.
+configuration files, to include multiple configuration files.
+.TP
+.B \-7, --conf-dir=<directory>
+Read all the files in the given directory as configuration
+files. Files whose names end in ~ or start with . or start and end
+with # are skipped. This flag may be given on the command
+line or in a configuration file.
 .SH CONFIG FILE
 At startup, dnsmasq reads
 .I /etc/dnsmasq.conf,
@@ -590,7 +599,9 @@ FreeBSD, the file is
 .I /usr/local/etc/dnsmasq.conf
 ) (but see the 
 .B \-C
-option.) The format of this
+and
+.B \-7
+options.) The format of this
 file consists of one option per line, exactly as the long options detailed 
 in the OPTIONS section but without the leading "--". Lines starting with # are comments and ignored. For
 options which may only be specified once, the configuration file overrides 
