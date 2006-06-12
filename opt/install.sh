@@ -7,21 +7,21 @@ export SRCBASE=$(cd "../src" && pwd -P)
 echo $SRCBASE
 
 cd ../src
-cd linux/linux.v23
+cd linux/brcm/linux.v23
 make oldconfig
 make clean
 make dep
 make
 make modules
-cd ../../
+cd ../../../
 
-cd linux/linux.v24
+cd linux/brcm/linux.v24
 make clean
 make dep
 make
 make modules
 
-cd ../../
+cd ../../../
 make clean
 cd ../opt
 export PATH=/home/dd-wrt/toolchains/4.1.0/bin:$MYPATH
