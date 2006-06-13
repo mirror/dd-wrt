@@ -876,6 +876,15 @@ start_sysinit (void)
 	 {
 	eval ("gpio", "enable", "6");	//MN700 power led on
 	 }
+	 
+  if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
+      {
+	  nvram_set ("lan_ifnames", "eth0 eth1"); // fix for WAP54G v2 interfaces
+	  nvram_set ("wl0_ifname", "eth1");
+	  strcpy (wlifname, "eth1");
+	  nvram_set ("wan_ifname", "eth2");   // map WAN port to nonexistant interface
+	  nvram_set ("wan_ifnames", "eth2");
+  	  }
 		
   /* Modules */
   uname (&name);
