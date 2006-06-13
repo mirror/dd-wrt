@@ -16,6 +16,8 @@
 #include <sys/types.h> 
 #include <netinet/in.h>
 
+/* get this before config.h too. */
+#include <syslog.h>
 #ifdef __APPLE__
 /* need this before arpa/nameser.h */
 #  define BIND_8_COMPAT
@@ -67,8 +69,6 @@
 #include <netinet/ip.h>
 #include <netinet/ip_icmp.h>
 #include <sys/uio.h>
-#include <syslog.h>
-#include <dirent.h>
 #ifndef HAVE_LINUX_NETWORK
 #  include <net/if_dl.h>
 #endif
@@ -319,7 +319,6 @@ struct dhcp_config {
   char *hostname;
   struct dhcp_netid netid;
   struct in_addr addr;
-  time_t decline_time;
   unsigned int lease_time, wildcard_mask;
   struct dhcp_config *next;
 };
@@ -332,9 +331,6 @@ struct dhcp_config {
 #define CONFIG_ADDR             32
 #define CONFIG_NETID            64
 #define CONFIG_NOCLID          128
-#define CONFIG_FROM_ETHERS     256    /* entry created by /etc/ethers */
-#define CONFIG_ADDR_HOSTS      512    /* address added by from /etc/hosts */
-#define CONFIG_DECLINED       1024    /* address declined by client */
 
 struct dhcp_opt {
   int opt, len, flags;
@@ -421,7 +417,6 @@ struct daemon {
   struct iname *if_names, *if_addrs, *if_except, *dhcp_except;
   struct bogus_addr *bogus_addr;
   struct server *servers;
-  int log_fac; /* log facility */
   int cachesize;
   int port, query_port;
   unsigned long local_ttl;
@@ -515,8 +510,9 @@ unsigned short rand16(void);
 int legal_char(char c);
 int canonicalise(char *s);
 unsigned char *do_rfc1035_name(unsigned char *p, char *sval);
-/* void die(char *message, char *arg1); */
 void die2(char *message, char *arg1);
+/*void die(char *message, char *arg1); 
+--busybox doesnt like die, change to die2 */
 void complain(char *message, int lineno, char *file);
 void *safe_malloc(size_t size);
 int sa_len(union mysockaddr *addr);
@@ -538,15 +534,15 @@ char *print_mac(struct daemon *daemon, unsigned char *mac, int len);
 struct daemon *read_opts (int argc, char **argv, char *compile_opts);
 
 /* forward.c */
+void forward_init(int first);
 void reply_query(struct serverfd *sfd, struct daemon *daemon, time_t now);
 void receive_query(struct listener *listen, struct daemon *daemon, time_t now);
 unsigned char *tcp_request(struct daemon *daemon, int confd, time_t now,
 			   struct in_addr local_addr, struct in_addr netmask);
-void server_gone(struct daemon *daemon, struct server *server);
 
 /* network.c */
 struct serverfd *allocate_sfd(union mysockaddr *addr, struct serverfd **sfds);
-int reload_servers(char *fname, struct daemon *daemon);
+void reload_servers(char *fname, struct daemon *daemon);
 void check_servers(struct daemon *daemon);
 int enumerate_interfaces(struct daemon *daemon);
 struct listener *create_wildcard_listeners(int port);
