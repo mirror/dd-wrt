@@ -12,7 +12,7 @@
 
 #include "dnsmasq.h"
 
-static struct frec *frec_list = NULL;
+static struct frec *frec_list;
 
 static struct frec *get_new_frec(time_t now);
 static struct frec *lookup_frec(unsigned short id);
@@ -21,6 +21,16 @@ static struct frec *lookup_frec_by_sender(unsigned short id,
 					  unsigned int crc);
 static unsigned short get_id(void);
 
+/* May be called more than once. */
+void forward_init(int first)
+{
+  struct frec *f;
+  
+  if (first)
+    frec_list = NULL;
+  for (f = frec_list; f; f = f->next)
+    f->new_id = 0;
+}
 
 /* Send a UDP packet with it's source address set as "source" 
    unless nowild is true, when we just send it with the kernel default */
@@ -917,21 +927,6 @@ static struct frec *lookup_frec_by_sender(unsigned short id,
   return NULL;
 }
 
-/* A server record is going away, remove references to it */
-void server_gone(struct daemon *daemon, struct server *server)
-{
-  struct frec *f;
-  
-  for (f = frec_list; f; f = f->next)
-    if (f->new_id != 0 && f->sentto == server)
-      f->new_id = 0;
-  
-  if (daemon->last_server == server)
-    daemon->last_server = NULL;
-
-  if (daemon->srv_save == server)
-    daemon->srv_save = NULL;
-}
 
 /* return unique random ids between 1 and 65535 */
 static unsigned short get_id(void)

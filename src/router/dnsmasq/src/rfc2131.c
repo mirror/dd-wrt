@@ -109,10 +109,9 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
   unsigned short fuzz = 0;
   unsigned int mess_type = 0;
   unsigned char fqdn_flags = 0;
+  subnet_addr.s_addr = 0;
   unsigned char *agent_id = NULL;
 
-  subnet_addr.s_addr = 0;
-  
   if (mess->op != BOOTREQUEST || mess->hlen > DHCP_CHADDR_MAX)
     return 0;
    
@@ -525,12 +524,13 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 		*q++ = c;
 	    }
 	  *q++ = 0; /* add terminator */
+	  message = daemon->dhcp_buff;
 	}
       
       if (!(opt = option_find(mess, sz, OPTION_REQUESTED_IP, INADDRSZ)))
 	return 0;
       
-      log_packet(daemon, "DECLINE", option_ptr(opt), mess, iface_name, daemon->dhcp_buff);
+      log_packet(daemon, "DECLINE", option_ptr(opt), mess, iface_name, message);
       
       if (lease && lease->addr.s_addr == option_addr(opt).s_addr)
 	lease_prune(lease, now);
@@ -538,11 +538,8 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
       if (have_config(config, CONFIG_ADDR) && 
 	  config->addr.s_addr == option_addr(opt).s_addr)
 	{
-	  prettyprint_time(daemon->dhcp_buff, DECLINE_BACKOFF);
-	  syslog(LOG_WARNING, _("disabling DHCP static address %s for %s"), 
-		 inet_ntoa(config->addr), daemon->dhcp_buff);
-	  config->flags |= CONFIG_DECLINED;
-	  config->decline_time = now;
+	  syslog(LOG_WARNING, _("disabling DHCP static address %s"), inet_ntoa(config->addr));
+	  config->flags &= ~CONFIG_ADDR ;
 	}
       else
 	/* make sure this host gets a different address next time. */
@@ -581,22 +578,18 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	  conf.s_addr = 0;
 	  if (have_config(config, CONFIG_ADDR))
 	    {
-	      char *addrs = inet_ntoa(config->addr);
-	      
 	      if ((ltmp = lease_find_by_addr(config->addr)) && ltmp != lease)
 		syslog(LOG_WARNING, _("not using configured address %s because it is leased to %s"),
-		       addrs, print_mac(daemon, ltmp->hwaddr, ltmp->hwaddr_len));
+		       inet_ntoa(config->addr), print_mac(daemon, ltmp->hwaddr, ltmp->hwaddr_len));
 	      else
 		{
 		  struct dhcp_context *tmp;
 		  for (tmp = context; tmp; tmp = tmp->current)
-		    if (context->router.s_addr == config->addr.s_addr)
+		    if (context->local.s_addr == config->addr.s_addr)
 		      break;
 		  if (tmp)
-		    syslog(LOG_WARNING, _("not using configured address %s because it is in use by the server or relay"), addrs);
-		  else if (have_config(config, CONFIG_DECLINED) &&
-			   difftime(now, config->decline_time) < (float)DECLINE_BACKOFF)
-		    syslog(LOG_WARNING, _("not using configured address %s because it was previously declined"), addrs);
+		    syslog(LOG_WARNING, _("not using configured address %s because it is in use by the server"),
+			   inet_ntoa(config->addr));
 		  else
 		    conf = config->addr;
 		}
@@ -706,7 +699,7 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	  
 	  if (have_config(config, CONFIG_ADDR))
 	    for (tmp = context; tmp; tmp = tmp->current)
-	      if (context->router.s_addr == config->addr.s_addr)
+	      if (context->local.s_addr == config->addr.s_addr)
 		break;
 	  
 	  if (!(context = narrow_context(context, mess->yiaddr)))
@@ -727,8 +720,6 @@ size_t dhcp_reply(struct daemon *daemon, struct dhcp_context *context, char *ifa
 	     an endless protocol loop will ensue. */
 	  else if (!tmp &&
 		   have_config(config, CONFIG_ADDR) && 
-		   (!have_config(config, CONFIG_DECLINED) ||
-		    difftime(now, config->decline_time) > (float)DECLINE_BACKOFF) &&
 		   config->addr.s_addr != mess->yiaddr.s_addr &&
 		   (!(ltmp = lease_find_by_addr(config->addr)) || ltmp == lease))
 	    message = _("static lease available");

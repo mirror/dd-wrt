@@ -26,6 +26,17 @@ static struct iovec ifreq = {
   .iov_len = 0
 };
 
+struct header {
+  struct ether_header ether; 
+  struct ip ip;
+  struct udphdr {
+    u16 uh_sport;               /* source port */
+    u16 uh_dport;               /* destination port */
+    u16 uh_ulen;                /* udp length */
+    u16 uh_sum;                 /* udp checksum */
+  } udp;
+};
+
 void init_bpf(struct daemon *daemon)
 {
   int i = 0;
@@ -58,17 +69,9 @@ void send_via_bpf(struct daemon *daemon, struct dhcp_packet *mess, size_t len,
       Build the packet by steam, and send directly, bypassing
       the kernel IP stack */
   
-  struct ether_header ether; 
-  struct ip ip;
-  struct udphdr {
-    u16 uh_sport;               /* source port */
-    u16 uh_dport;               /* destination port */
-    u16 uh_ulen;                /* udp length */
-    u16 uh_sum;                 /* udp checksum */
-  } udp;
-  
+  struct header header;
   u32 i, sum;
-  struct iovec iov[4];
+  struct iovec iov[2];
 
   /* Only know how to do ethernet on *BSD */
   if (mess->htype != ARPHRD_ETHER || mess->hlen != ETHER_ADDR_LEN)
@@ -82,67 +85,62 @@ void send_via_bpf(struct daemon *daemon, struct dhcp_packet *mess, size_t len,
   if (ioctl(daemon->dhcpfd, SIOCGIFADDR, ifr) < 0)
     return;
   
-  memcpy(ether.ether_shost, LLADDR((struct sockaddr_dl *)&ifr->ifr_addr), ETHER_ADDR_LEN);
-  ether.ether_type = htons(ETHERTYPE_IP);
+  memcpy(header.ether.ether_shost, LLADDR((struct sockaddr_dl *)&ifr->ifr_addr), ETHER_ADDR_LEN);
+  header.ether.ether_type = htons(ETHERTYPE_IP);
   
   if (ntohs(mess->flags) & 0x8000)
     {
-      memset(ether.ether_dhost, 255,  ETHER_ADDR_LEN);
-      ip.ip_dst.s_addr = INADDR_BROADCAST;
+      memset(header.ether.ether_dhost, 255,  ETHER_ADDR_LEN);
+      header.ip.ip_dst.s_addr = INADDR_BROADCAST;
     }
   else
     {
-      memcpy(ether.ether_dhost, mess->chaddr, ETHER_ADDR_LEN); 
-      ip.ip_dst.s_addr = mess->yiaddr.s_addr;
+      memcpy(header.ether.ether_dhost, mess->chaddr, ETHER_ADDR_LEN); 
+      header.ip.ip_dst.s_addr = mess->yiaddr.s_addr;
     }
   
-  ip.ip_p = IPPROTO_UDP;
-  ip.ip_src.s_addr = iface_addr.s_addr;
-  ip.ip_len = htons(sizeof(struct ip) + 
-		    sizeof(struct udphdr) +
-		    len) ;
-  ip.ip_hl = sizeof(struct ip) / 4;
-  ip.ip_v = IPVERSION;
-  ip.ip_tos = 0;
-  ip.ip_id = htons(0);
-  ip.ip_off = htons(0x4000); /* don't fragment */
-  ip.ip_ttl = IPDEFTTL;
-  ip.ip_sum = 0;
+  header.ip.ip_p = IPPROTO_UDP;
+  header.ip.ip_src.s_addr = iface_addr.s_addr;
+  header.ip.ip_len = htons(sizeof(struct ip) + 
+			   sizeof(struct udphdr) +
+			   len) ;
+  header.ip.ip_hl = sizeof(struct ip) / 4;
+  header.ip.ip_v = IPVERSION;
+  header.ip.ip_tos = 0;
+  header.ip.ip_id = htons(0);
+  header.ip.ip_off = htons(0x4000); /* don't fragment */
+  header.ip.ip_ttl = IPDEFTTL;
+  header.ip.ip_sum = 0;
   for (sum = 0, i = 0; i < sizeof(struct ip) / 2; i++)
-    sum += ((u16 *)&ip)[i];
+    sum += ((u16 *)&header.ip)[i];
   while (sum>>16)
     sum = (sum & 0xffff) + (sum >> 16);  
-  ip.ip_sum = (sum == 0xffff) ? sum : ~sum;
+  header.ip.ip_sum = (sum == 0xffff) ? sum : ~sum;
   
-  udp.uh_sport = htons(DHCP_SERVER_PORT);
-  udp.uh_dport = htons(DHCP_CLIENT_PORT);
+  header.udp.uh_sport = htons(DHCP_SERVER_PORT);
+  header.udp.uh_dport = htons(DHCP_CLIENT_PORT);
   if (len & 1)
     ((char *)mess)[len] = 0; /* for checksum, in case length is odd. */
-  udp.uh_sum = 0;
-  udp.uh_ulen = sum = htons(sizeof(struct udphdr) + len);
+  header.udp.uh_sum = 0;
+  header.udp.uh_ulen = sum = htons(sizeof(struct udphdr) + len);
   sum += htons(IPPROTO_UDP);
   for (i = 0; i < 4; i++)
-    sum += ((u16 *)&ip.ip_src)[i];
+    sum += ((u16 *)&header.ip.ip_src)[i];
   for (i = 0; i < sizeof(struct udphdr)/2; i++)
-    sum += ((u16 *)&udp)[i];
+    sum += ((u16 *)&header.udp)[i];
   for (i = 0; i < (len + 1) / 2; i++)
     sum += ((u16 *)mess)[i];
   while (sum>>16)
     sum = (sum & 0xffff) + (sum >> 16);
-  udp.uh_sum = (sum == 0xffff) ? sum : ~sum;
+  header.udp.uh_sum = (sum == 0xffff) ? sum : ~sum;
   
   ioctl(daemon->dhcp_raw_fd, BIOCSETIF, ifr);
   
-  iov[0].iov_base = &ether;
-  iov[0].iov_len = sizeof(ether);
-  iov[1].iov_base = &ip;
-  iov[1].iov_len = sizeof(ip);
-  iov[2].iov_base = &udp;
-  iov[2].iov_len = sizeof(udp);
-  iov[3].iov_base = mess;
-  iov[3].iov_len = len;
-
-  while (writev(daemon->dhcp_raw_fd, iov, 4) == -1 && retry_send());
+  iov[0].iov_base = &header;
+  iov[0].iov_len = sizeof(struct header);
+  iov[1].iov_base = mess;
+  iov[1].iov_len = len;
+  while (writev(daemon->dhcp_raw_fd, iov, 2) == -1 && retry_send());
 }
 
 int iface_enumerate(struct daemon *daemon, void *parm, int (*ipv4_callback)(), int (*ipv6_callback)())
@@ -152,33 +150,31 @@ int iface_enumerate(struct daemon *daemon, void *parm, int (*ipv4_callback)(), i
   struct ifconf ifc;
   int fd, errsav, ret = 0;
   int lastlen = 0;
-  size_t len = 0;
+  size_t len;
   
   if ((fd = socket(PF_INET, SOCK_DGRAM, 0)) == -1)
     return 0;
-  
-  while(1)
+        
+  for (len = 0; ; len += 10*sizeof(struct ifreq))
     {
-      len += 10*sizeof(struct ifreq);
-      
-      if (!expand_buf(&ifconf, len))
-	goto err;
-      
-      ifc.ifc_len = len;
-      ifc.ifc_buf = ifconf.iov_base;
-      
-      if (ioctl(fd, SIOCGIFCONF, &ifc) == -1)
-	{
-	  if (errno != EINVAL || lastlen != 0)
-	    goto err;
-	}
-      else
-	{
-	  if (ifc.ifc_len == lastlen)
-	    break; /* got a big enough buffer now */
-	  lastlen = ifc.ifc_len;
-	}
-    }
+       if (!expand_buf(&ifconf, len))
+	 goto err;
+
+       ifc.ifc_len = len;
+       ifc.ifc_buf = ifconf.iov_base;
+
+       if (ioctl(fd, SIOCGIFCONF, &ifc) == -1)
+	 {
+	   if (errno != EINVAL || lastlen != 0)
+	     goto err;
+	 }
+       else
+	 {
+	   if (ifc.ifc_len == lastlen)
+	     break; /* got a big enough buffer now */
+	   lastlen = ifc.ifc_len;
+	 }
+     }
   
   for (ptr = ifc.ifc_buf; ptr < ifc.ifc_buf + ifc.ifc_len; ptr += len )
     {

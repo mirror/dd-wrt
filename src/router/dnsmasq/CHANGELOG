@@ -1833,57 +1833,6 @@ version 2.31
 	    Tweaked config.h logic for uclibc build. It will now pick
 	    up MMU and IPV6 status correctly on every system I tested.
 
-version 2.32 
-	    Attempt a better job of replacing previous configuration
-	    when re-reading /etc/hosts and /etc/ethers. SIGHUP is
-	    still not identical to a restart under all circumstances,
-	    but it is for the common case of name->MAC address in
-	    /etc/ethers and name->IP address in /etc/hosts.
-
-	    Fall back to broadcast for DHCP to an unconfigured client
-	    when the MAC address size is greater than 14 bytes.
-
-	    Fix problem in 2.28-onwards releases which breaks DNS on
-	    Mac OS X. Thanks to Doug Fields for the bug report and
-	    testing.
-
-	    Added fix to allow compilation on c89-only compilers.
-	    Thanks to John Mastwijk for the patch.
-	   
-	    Tweak resolv file polling code to work better if there is
-	    a race between updating the mtime and file contents. This
-	    is not normally a problem, but it can be on systems which
-	    replace nameservers whilst active. The code now continues
-	    to read resolv.conf until it gets at least one usable
-	    server. Thanks to Holger Mauermann for help with this.
-
-	    If a client DECLINEs an address which is allocated to it
-	    via dhcp-host or /etc/hosts, lock that address out of use
-	    for ten minutes, instead of forever, and log when it's not
-	    being used because of the lock-out. This should provide
-	    less surprising behaviour when a configured address can't be
-	    used. Thanks to Peter Surda and Heinz Deinhart for input
-	    on this.
-
-	    Fixed *BSD DHCP breakage with only some
-	    arches/compilers, depending on structure padding rules.
-	    Thanks to Jeb Campbell and Tom Hensel for help with this.
-
-	    Added --conf-dir option. Suggestion from Aaron Tygart.
-
-	    Applied patch from Brent Cook which allows netids in
-	    dhcp-option configuration lines to be prefixed by
-	    "net:". This is not required by the syntax, but it is
-	    consistent with other configuration items.
-
-	    Added --log-facility option. Suggestion from Fabio Muzzi.
-
-	    Major update to Spanish translation. Many thanks to Chris
-	    Chatham. 
-
-	    Fixed gcc-4.1 strict-alias compilation warning.
 
 
-
-  
 
