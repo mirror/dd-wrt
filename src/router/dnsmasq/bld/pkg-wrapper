@@ -1,7 +1,0 @@
-#!/bin/sh
-
-if grep -q "^\#.*define.*HAVE_DBUS" config.h || grep -q HAVE_DBUS ; then
-  exec $*
-fi
-
-
