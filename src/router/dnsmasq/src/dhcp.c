@@ -47,7 +47,6 @@ void dhcp_init(struct daemon *daemon)
       setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &oneopt, sizeof(oneopt)) == -1)
     die2(_("failed to set SO_REUSEADDR on DHCP socket: %s"), NULL);
   
-  memset(&saddr, 0, sizeof(saddr));
   saddr.sin_family = AF_INET;
   saddr.sin_port = htons(DHCP_SERVER_PORT);
   saddr.sin_addr.s_addr = INADDR_ANY;
@@ -238,10 +237,9 @@ void dhcp_packet(struct daemon *daemon, time_t now)
 	dest.sin_port = htons(DHCP_CLIENT_PORT);
     } 
 #ifdef HAVE_LINUX_NETWORK
-  else if ((ntohs(mess->flags) & 0x8000) || mess->hlen == 0 ||
-	   mess->hlen > sizeof(ifr.ifr_addr.sa_data) || mess->htype == 0)
+  else if (ntohs(mess->flags) & 0x8000)
     {
-      /* broadcast to 255.255.255.255 (or mac address invalid) */
+      /* broadcast to 255.255.255.255 */
       struct in_pktinfo *pkt;
       msg.msg_control = control_u.control;
       msg.msg_controllen = sizeof(control_u);
@@ -257,17 +255,21 @@ void dhcp_packet(struct daemon *daemon, time_t now)
     }
   else
     {
-      /* unicast to unconfigured client. Inject mac address direct into ARP cache. 
-	 struct sockaddr limits size to 14 bytes. */
-      struct arpreq req;
+      /* unicast to unconfigured client */
       dest.sin_addr = mess->yiaddr;
       dest.sin_port = htons(DHCP_CLIENT_PORT);
-      *((struct sockaddr_in *)&req.arp_pa) = dest;
-      req.arp_ha.sa_family = mess->htype;
-      memcpy(req.arp_ha.sa_data, mess->chaddr, mess->hlen);
-      strncpy(req.arp_dev, ifr.ifr_name, 16);
-      req.arp_flags = ATF_COM;
-      ioctl(daemon->dhcpfd, SIOCSARP, &req);
+      if (mess->hlen != 0 && mess->hlen <= 14 && mess->htype != 0)
+	{
+	  /* inject mac address direct into ARP cache. 
+	     struct sockaddr limits size to 14 bytes. */
+	  struct arpreq req;
+	  *((struct sockaddr_in *)&req.arp_pa) = dest;
+	  req.arp_ha.sa_family = mess->htype;
+	  memcpy(req.arp_ha.sa_data, mess->chaddr, mess->hlen);
+	  strncpy(req.arp_dev, ifr.ifr_name, 16);
+	  req.arp_flags = ATF_COM;
+	  ioctl(daemon->dhcpfd, SIOCSARP, &req);
+	}
     }
 #else
   else 
@@ -364,7 +366,7 @@ struct dhcp_context *address_available(struct dhcp_context *context, struct in_a
   struct dhcp_context *tmp;
 
   for (tmp = context; tmp; tmp = tmp->current)
-    if (taddr.s_addr == context->router.s_addr)
+    if (taddr.s_addr == context->local.s_addr)
       return NULL;
   
   for (tmp = context; tmp; tmp = tmp->current)
@@ -479,7 +481,7 @@ int address_allocate(struct dhcp_context *context, struct daemon *daemon,
 	  do {
 	    /* eliminate addresses in use by the server. */
 	    for (d = context; d; d = d->current)
-	      if (addr.s_addr == d->router.s_addr)
+	      if (addr.s_addr == d->local.s_addr)
 		break;
 
 	    if (!d &&
@@ -620,7 +622,6 @@ void dhcp_read_ethers(struct daemon *daemon)
   char *ip, *cp;
   struct in_addr addr;
   unsigned char hwaddr[ETHER_ADDR_LEN];
-  struct dhcp_config **up, *tmp;
   struct dhcp_config *config, *configs = daemon->dhcp_conf;
   int count = 0, lineno = 0;
 
@@ -630,22 +631,6 @@ void dhcp_read_ethers(struct daemon *daemon)
     {
       syslog(LOG_ERR, _("failed to read %s:%m"), ETHERSFILE);
       return;
-    }
-
-  /* This can be called again on SIGHUP, so remove entries created last time round. */
-  for (up = &daemon->dhcp_conf, config = configs; config; config = tmp)
-    {
-      tmp = config->next;
-      if (config->flags & CONFIG_FROM_ETHERS)
-	{
-	  *up = tmp;
-	  /* cannot have a clid */
-	  if (config->flags & CONFIG_NAME)
-	    free(config->hostname);
-	  free(config);
-	}
-      else
-	up = &config->next;
     }
 
   while (fgets(buff, MAXDNAME, f))
@@ -715,7 +700,7 @@ void dhcp_read_ethers(struct daemon *daemon)
 	    {
 	      if (!(config = malloc(sizeof(struct dhcp_config))))
 		continue;
-	      config->flags = CONFIG_FROM_ETHERS;
+	      config->flags = 0;
 	      config->wildcard_mask = 0;
 	      config->next = configs;
 	      configs = config;
@@ -755,15 +740,10 @@ void dhcp_update_configs(struct dhcp_config *configs)
      This goes through /etc/hosts and sets static addresses for any DHCP config
      records which don't have an address and whose name matches. 
      We take care to maintain the invariant that any IP address can appear
-     in at most one dhcp-host. Since /etc/hosts can be re-read by SIGHUP, 
-     restore the status-quo ante first. */
+     in at most one dhcp-host. */
   
   struct dhcp_config *config;
   struct crec *crec;
-
-  for (config = configs; config; config = config->next)
-    if (config->flags & CONFIG_ADDR_HOSTS)
-      config->flags &= ~(CONFIG_ADDR | CONFIG_ADDR_HOSTS);
   
   for (config = configs; config; config = config->next)
     if (!(config->flags & CONFIG_ADDR) &&
@@ -777,7 +757,7 @@ void dhcp_update_configs(struct dhcp_config *configs)
 	else
 	  {
 	    config->addr = crec->addr.addr.addr.addr4;
-	    config->flags |= CONFIG_ADDR | CONFIG_ADDR_HOSTS;
+	    config->flags |= CONFIG_ADDR;
 	  }
       }
 }
