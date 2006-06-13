@@ -15,7 +15,7 @@
 #endif /* HAVE_PATHS_H */
 
 #ifndef _ROOT_PATH
-#define _ROOT_PATH
+#define _ROOT_PATH "/tmp"
 #endif
 
 
@@ -47,12 +47,12 @@
 #endif /* IPX_CHANGE */
 
 #ifdef __STDC__
-#define _PATH_PPPDB	_ROOT_PATH _PATH_VARRUN "pppd2.tdb"
+#define _PATH_PPPDB	_ROOT_PATH _PATH_VARRUN "pppd.tdb"
 #else /* __STDC__ */
 #ifdef HAVE_PATHS_H
-#define _PATH_PPPDB	"/var/run/pppd2.tdb"
+#define _PATH_PPPDB	"/var/run/pppd.tdb"
 #else
-#define _PATH_PPPDB	"/etc/ppp/pppd2.tdb"
+#define _PATH_PPPDB	"/etc/ppp/pppd.tdb"
 #endif
 #endif /* __STDC__ */
 
