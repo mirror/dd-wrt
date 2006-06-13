@@ -394,7 +394,7 @@ src/logging.$(OBJEXT): src/$(am__dirstamp) \
 	src/$(DEPDIR)/$(am__dirstamp)
 dhcp-fwd$(EXEEXT): $(dhcp_fwd_OBJECTS) $(dhcp_fwd_DEPENDENCIES) 
 	@rm -f dhcp-fwd$(EXEEXT)
-	$(LINK) $(dhcp_fwd_LDFLAGS) $(dhcp_fwd_OBJECTS) $(dhcp_fwd_LDADD) $(LIBS)
+	$(AR) arc -o dhcpfwd.a $(dhcp_fwd_OBJECTS) $(dhcp_fwd_LDADD)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
