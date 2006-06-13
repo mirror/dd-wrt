@@ -1,0 +1,68 @@
+
+
+	Upgrading to dnsmasq V2
+        -----------------------
+
+Version 1.x of dnsmasq includes a facility for reading the dhcp.leases
+file written by ISC dhcpd. This allows the names of machines which
+have addresses allocated by DHCP to be included in the DNS.
+
+Version 2.x of dnsmasq replaces the ISC dhcpd integration with a DHCP 
+server integrated into dnsmasq. Versions 2.0-2.5 removed the ISC 
+integration completely, but in version 2.6 it was re-enabled for 
+backwards compatibility purposes. The change to an integrated DHCP 
+server has the following advantages:
+
+* Small. ISC dhcpd is a large and comprehensive DHCP solution. The
+  dnsmasq DHCP server adds about 15k to DNS-only dnsmasq and provides
+  all the facilities likely to be needed in the sort of networks
+  which are targeted by dnsmasq.
+
+* Easy to configure. All configuration is in one file and there are
+  sensible defaults for common settings. Many applications will need
+  just one extra line in /etc/dnsmasq.conf which tells it the range of
+  addresses to allocate to DHCP.
+
+* Support for static leases. When static leases are used with ISC DHCP
+  they don't appear in the dhcp.leases file (since that file is used
+  for storage of dynamic leases which aren't pre-configured.) Hence
+  static leases cannot be used with dnsmasq unless each machine with a
+  static lease is also inserted into /etc/hosts. This is not required
+  with the dnsmasq DHCP server.
+
+
+       DHCP configuration
+       ------------------
+
+To convert an installation which is currently using ISC dhcpd, remove
+the ISC DHCP daemon. Unless you want dnsmasq to use the same file
+to store its leases it is necessary to remove the configuration line in
+/etc/dnsmasq.conf which specifies the dhcp.leases file.
+
+To enable DHCP, simply add a line like this to /etc/dnsmasq.conf
+
+dhcp-range=192.168.0.100,192.168.0.200,12h
+
+which tells dnsmasq to us the addresses 192.168.0.100 to 192.168.0.200
+for dynamic IP addresses, and to issue twelve hour leases.
+
+Each host will have its default route and DNS server set to be the
+address of the host running dnsmasq, and its netmask and broadcast 
+address set correctly, so nothing else at all is required for a
+minimal system. Hosts which include a hostname in their DHCP request 
+will have that name and their allocated address inserted into the DNS,
+in the same way as before.
+
+Having started dnsmasq, tell any hosts on the network to renew their
+DHCP lease, so that dnsmasq's  DHCP server becomes aware of them. For
+Linux, this is best done by killing-and-restarting the DHCP client
+daemon or taking the network interface down and then back up. For 
+Windows 9x/Me, use the graphical tool "winipcfg". For Windows
+NT/2000/XP, use the command-line "ipconfig /renew"
+
+For more complex DHCP configuration, refer to the doc/setup.html, the
+dnsmasq manpage and the annotated example configuration file. Also
+note that for some ISC dhcpd to dnsmasq DHCP upgrades there may be
+firewall issues: see the FAQ for details of this.
+
+
