@@ -30,6 +30,15 @@ ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
 endif
 
+
+
+
+ifeq ($(CONFIG_3COM),y)
+	mkdir $(INSTALLDIR)/www/style/3com
+	cp 3com/style.css $(INSTALLDIR)/www/style/3com
+	cp 3com/images/* $(INSTALLDIR)/www/images
+endif
+
 ifeq ($(CONFIG_RED),y)
 	mkdir $(INSTALLDIR)/www/style/red
 	cp red/style.css $(INSTALLDIR)/www/style/red
