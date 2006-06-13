@@ -1,6 +1,6 @@
 #!/bin/sh
 
-if [ ${1} = "-a" ]; then
+if ${1} = "-a" ; then
 	aclocal
 	libtoolize --automake --copy --force
 	automake --add-missing --copy --force
