@@ -123,20 +123,19 @@ DIST_ARCHIVES = $(distdir).tar.gz $(distdir).tar.bz2
 GZIP_ENV = --best
 distuninstallcheck_listfiles = find . -type f -print
 distcleancheck_listfiles = find . -type f -print
-ACLOCAL = ${SHELL} /home/dev/DD-WRT/src/router/dhcpforwarder/missing --run aclocal-1.9
+ACLOCAL = ${SHELL} /home/dd-wrt/DEV/src/router/dhcpforwarder/missing --run aclocal-1.9
 ALLOCA = 
 AMDEP_FALSE = #
 AMDEP_TRUE = 
-AMTAR = ${SHELL} /home/dev/DD-WRT/src/router/dhcpforwarder/missing --run tar
-AUTOCONF = ${SHELL} /home/dev/DD-WRT/src/router/dhcpforwarder/missing --run autoconf
-AUTOHEADER = ${SHELL} /home/dev/DD-WRT/src/router/dhcpforwarder/missing --run autoheader
-AUTOMAKE = ${SHELL} /home/dev/DD-WRT/src/router/dhcpforwarder/missing --run automake-1.9
-AWK = mawk
+AMTAR = ${SHELL} /home/dd-wrt/DEV/src/router/dhcpforwarder/missing --run tar
+AUTOCONF = ${SHELL} /home/dd-wrt/DEV/src/router/dhcpforwarder/missing --run autoconf
+AUTOHEADER = ${SHELL} /home/dd-wrt/DEV/src/router/dhcpforwarder/missing --run autoheader
+AUTOMAKE = ${SHELL} /home/dd-wrt/DEV/src/router/dhcpforwarder/missing --run automake-1.9
+AWK = gawk
 CAT = /bin/cat
 CC = $(DIET_CC)
 CCDEPMODE = depmode=gcc3
-CFLAGS = $(COPTS) -Wall -W -Wno-unused-function -std=c99 -pedantic
-#CFLAGS = -Os -DHAVE_MALLOC=1 -Drpl_malloc=malloc -Wall -W -Wno-unused-function -std=c99 -pedantic
+CFLAGS = -Os -mips32 -mtune=mips32 -funit-at-a-time -pipe -DHAVE_MALLOC=1 -Drpl_malloc=malloc -Wall -W -Wno-unused-function -std=c99 -pedantic
 CHMOD = /bin/chmod
 CHMOD_REFERENCE = ${CHMOD} --reference
 CHOWN = /bin/chown
@@ -163,7 +162,7 @@ ENSC_ENABLE_DIET_TRUE = #
 ENSC_NEED_ETHER_FALSE = #
 ENSC_NEED_ETHER_TRUE = 
 EXEEXT = 
-GREP = /bin/grep
+GREP = /usr/bin/grep
 HAVE_CVS2CL_FALSE = 
 HAVE_CVS2CL_TRUE = #
 HAVE_RCS2LOG_FALSE = #
@@ -182,7 +181,7 @@ LTLIBOBJS =  malloc$U.lo
 MAINT = #
 MAINTAINER_MODE_FALSE = 
 MAINTAINER_MODE_TRUE = #
-MAKEINFO = ${SHELL} /home/dev/DD-WRT/src/router/dhcpforwarder/missing --run makeinfo
+MAKEINFO = ${SHELL} /home/dd-wrt/DEV/src/router/dhcpforwarder/missing --run makeinfo
 MKDIR = /bin/mkdir
 MKDIR_P = ${MKDIR} -p
 MV = /bin/mv
@@ -198,7 +197,7 @@ RCS2LOG = rcs2log
 RM = /bin/rm
 RMDIR = /bin/rmdir
 RM_F = ${RM} -f
-SED = sed
+SED = /opt/4.1.1/bin//sed
 SET_MAKE = 
 SH = /bin/sh
 SHELL = /bin/sh
@@ -225,7 +224,7 @@ host_alias = mipsel-linux-elf
 includedir = ${prefix}/include
 infodir = ${prefix}/info
 initrddir = $(sysconfdir)/init.d
-install_sh = /home/dev/DD-WRT/src/router/dhcpforwarder/install-sh
+install_sh = /home/dd-wrt/DEV/src/router/dhcpforwarder/install-sh
 libdir = ${exec_prefix}/lib
 libexecdir = ${exec_prefix}/libexec
 localstatedir = ${prefix}/var
@@ -396,8 +395,6 @@ src/logging.$(OBJEXT): src/$(am__dirstamp) \
 dhcp-fwd$(EXEEXT): $(dhcp_fwd_OBJECTS) $(dhcp_fwd_DEPENDENCIES) 
 	@rm -f dhcp-fwd$(EXEEXT)
 	$(AR) arc -o dhcpfwd.a $(dhcp_fwd_OBJECTS) $(dhcp_fwd_LDADD)
-
-#	$(LINK) $(dhcp_fwd_LDFLAGS) $(dhcp_fwd_OBJECTS) $(dhcp_fwd_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
