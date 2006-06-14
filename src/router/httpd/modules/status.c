@@ -289,7 +289,7 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_invmatch ("wan_domain", ""))
       wan_domain = nvram_safe_get ("wan_domain");
-  else if (nvram_invmatch ("wan_get_domain", ""))
+  else
       wan_domain = nvram_safe_get ("wan_get_domain");
 
   websWrite (wp, "%s", wan_domain);
