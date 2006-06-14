@@ -17,8 +17,8 @@ share.usrname="Uporabni¹ko ime";
 share.passwd="Geslo";
 share.hostname="Ime gostitelja";
 share.domainname="Domensko ime";
-share.wandomainname="WAN Domain Name";
-share.landomainname="LAN Domain Name";
+share.wandomainname="WAN domensko ime";
+share.landomainname="LAN domensko ime";
 share.statu="Status";
 share.start="Zaèetek";
 share.end="Konec";
@@ -270,7 +270,7 @@ errmsg.err58="Kliknite za brisane zakupa";
 errmsg.err59="Ni na voljo! Prosimo, da omogoèite brez¾ièno omre¾je.";
 
 //Upgrade.asp error messages
-errmsg.err60="Prosimo, da izberite datoteko za posodobitev.";
+errmsg.err60="Prosimo, da izberete datoteko za posodobitev.";
 errmsg.err61="Nepravilna datoteka.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
@@ -329,7 +329,7 @@ bmenu.statuRouter="Usmerjalnik";
 bmenu.statuLAN="LAN";
 bmenu.statuSputnik="Agent Sputnik";
 bmenu.statuWLAN="Brez¾ièno";
-bmenu.statuSysInfo="Sis-Info";
+bmenu.statuSysInfo="Info stran";
 
 
 // ******************************************* Alive.asp *******************************************//
@@ -560,7 +560,7 @@ filterSum.polday="Èas dneva";
 var firewall = new Object();
 firewall.titl=" - Po¾arni zid";
 firewall.h2="Varnost";
-firewall.legend="Za¹èita z po¾arnim zidom";
+firewall.legend="Za¹èita s po¾arnim zidom";
 firewall.firewall="SPI po¾arni zid";
 firewall.legend2="Dodatni filtri";
 firewall.proxy="Filter za proksi";
@@ -950,7 +950,7 @@ qos.prio_b="Bulk";
 qos.legend3="Prioriteta maske omre¾ja";
 qos.ipmask="IP/maska";
 qos.maxrate_b="Maks. Kbits";
-qos.maxrate_o="Maks. hitrost";
+qos.maxrate_o="Najveèja hitrost";
 qos.legend4="MAC prioriteta";
 qos.legend5="Prioriteta ethernet vrat";
 qos.legend6="Privzeti nivo pasovne ¹irine";
@@ -959,7 +959,7 @@ qos.bandwith="Pasovna ¹irina v Kbits";
 //help container
 var hqos = new Object();
 hqos.right1="Hitrost prenosa od vas:";
-hqos.right2="Nastavite na 80%-95% (maks.) va¹e skupnege hitrosti prenosa od vas.";
+hqos.right2="Nastavite na 80%-95% (maks.) va¹e skupne hitrosti prenosa od vas.";
 hqos.right3="Hitrost prenosa k vam:";
 hqos.right4="Nastavite na 80%-100% (maks.) va¹e skupne hitrosti prenosa k vam.";
 hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno ¹irino.";
@@ -1204,12 +1204,12 @@ status_wireless.h2="Brez¾ièno";
 status_wireless.legend="Brez¾ièni status";
 status_wireless.net="Mre¾a";
 status_wireless.pptp="PPTP status";
-status_wireless.legend2="Info o paketih";
+status_wireless.legend2="Info o brez¾iènih paketih";
 status_wireless.rx="Sprejeti (RX)";
 status_wireless.tx="Oddani (TX)";
 status_wireless.h22="Brez¾ièna vozli¹èa";
 status_wireless.legend3="Brez¾ièni odjemalci";
-status_wireless.signal_qual="kakovost signala";
+status_wireless.signal_qual="Kakovost signala";
 status_wireless.wds="WDS vozli¹èa";
 
 //help container
@@ -1248,7 +1248,7 @@ upgrad.legend="Posodabljanje strojne programske opreme";
 upgrad.info1="Po posodobitvi ponastavi na";
 upgrad.resetOff="Brez ponastavitve";
 upgrad.resetOn="Privzete nastavitve";
-upgrad.file="Prosimo, da izberite datoteko za posodobitev";
+upgrad.file="Prosimo, da izberete datoteko za posodobitev";
 upgrad.warning="O P O Z O R I L O";
 upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izljuèujte usmerjalnika in ne pritiskajte na gumb za ponastavitev!";
 
