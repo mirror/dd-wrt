@@ -256,9 +256,10 @@ clean:
 
 install:
 	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
-#	$(STRIP) $(INSTALLDIR)/usr/sbin/httpd
+ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
+endif
 
 cert:
 	./gencert.sh
