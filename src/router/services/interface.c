@@ -255,10 +255,10 @@ start_setup_vlans (void)
   s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW);
   strcpy (mac, nvram_safe_get ("et0macaddr"));
 
-  if (nvram_match ("trunking", "1"))
-    system ("echo 1 > /proc/sys/dev/adm6996/trunk");
-  else
-    system ("echo 0 > /proc/sys/dev/adm6996/trunk");
+//  if (nvram_match ("trunking", "1"))
+//    system ("echo 1 > /proc/sys/dev/adm6996/trunk");
+//  else
+//    system ("echo 0 > /proc/sys/dev/adm6996/trunk");
 
   if (nvram_match ("boardtype", "bcm94710dev") || nvram_match ("xover", "1"))
     workaround = 1;

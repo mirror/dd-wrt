@@ -713,6 +713,30 @@ static void SynchronizeDir(void)
 			crondlog("\311Unable to open current dir!\n");
 		}
 	}
+	if (chdir("/tmp/cron.d") < 0) {
+		crondlog("\311unable to find %s\n", "/tmp/cron.d");
+	}
+
+	{
+		DIR *dir = opendir(".");
+		struct dirent *den;
+
+		if (dir) {
+			while ((den = readdir(dir))) {
+				if (strchr(den->d_name, '.') != NULL) {
+					continue;
+				}
+//				if (getpwnam(den->d_name)) {
+					SynchronizeFile(den->d_name);
+//				} else {
+//					crondlog("\007ignoring %s\n", den->d_name);
+//				}
+			}
+			closedir(dir);
+		} else {
+			crondlog("\311Unable to open current dir!\n");
+		}
+	}
 }
 
 

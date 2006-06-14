@@ -1568,7 +1568,7 @@ start_cron (void)
 
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
   cprintf ("starting cron\n");
-  ret = eval ("/usr/sbin/cron");
+  ret = eval ("/usr/sbin/crond");
 
 
   cprintf ("done\n");
@@ -1581,7 +1581,7 @@ stop_cron (void)
   int ret = 0;
 
   //ret = killps("cron","-9");
-  ret = eval ("killall", "-9", "cron");
+  ret = eval ("killall", "-9", "crond");
 
   cprintf ("done\n");
   return ret;
