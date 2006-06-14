@@ -903,6 +903,7 @@ struct nvram_tuple router_defaults[] = {
   {"chilli_additional", "", 0},
 #elif HAVE_FON
   {"chilli_enable", "1", 0},
+  {"chilli_nowifibridge", "1", 0},
   {"chilli_url", "https://login.fon.com/cp/index.php", 0},
   {"chilli_radius", "emilio.fon.com", 0},
   {"chilli_backup", "emilio.fon.com", 0},
@@ -919,6 +920,7 @@ struct nvram_tuple router_defaults[] = {
   {"chilli_additional", "", 0},
 #else
   {"chilli_enable", "0", 0},
+  {"chilli_nowifibridge", "0", 0},
   {"chilli_url", "", 0},
   {"chilli_radius", "0.0.0.0", 0},
   {"chilli_backup", "0.0.0.0", 0},

@@ -149,7 +149,7 @@ function valid_wpa_psk(I) {
          	<br />
          	
          	<div class="submitFooter">
-         		<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onClick=\"to_submit(this.form)\" /><input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+         		<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" /><input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
          		<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.help + "\" name=\"Submit3\" onclick=\"showHELP(this.form)\" />")</script>
          	</div>
       </form>
