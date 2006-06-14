@@ -139,24 +139,25 @@ internal_getRouterBrand ()
       setRouter ("Buffalo WBR2-G54 / WBR2-G54S");
       return ROUTER_BUFFALO_WBR2G54S;
     }
+    
   if (nvram_match ("boardnum", "00") &&
       nvram_match ("boardrev", "0x13") &&
-      nvram_match ("boardtype", "0x467") &&
-      nvram_match ("boardflags", "0x2758"))
-    {
-      cprintf ("router is buffalo WHR-G54S\n");
-      setRouter ("Buffalo WHR-G54S");
-      return ROUTER_BUFFALO_WHRG54S;
-    }
-  if (nvram_match ("boardnum", "00") &&
-      nvram_match ("boardrev", "0x13") &&
-      nvram_match ("boardtype", "0x467") &&
-      nvram_match ("boardflags", "0x1758"))
-    {
-      cprintf ("router is buffalo WHR-HP-G54\n");
-      setRouter ("Buffalo WHR-HP-G54");
-      return ROUTER_BUFFALO_HP_WHRG54S;
-    }
+      nvram_match ("boardtype", "0x467"))
+      {
+		if (nvram_match ("boardflags", "0x2758"))
+      		{
+			cprintf ("router is buffalo WHR-G54S\n");
+			setRouter ("Buffalo WHR-G54S");
+			return ROUTER_BUFFALO_WHRG54S;
+			}
+		if (nvram_match ("boardflags", "0x1758"))
+			{
+			cprintf ("router is buffalo WHR-HP-G54\n");
+			setRouter ("Buffalo WHR-HP-G54");
+			return ROUTER_BUFFALO_HP_WHRG54S;
+			}
+	  }
+
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x042f"))
       {
@@ -178,13 +179,20 @@ internal_getRouterBrand ()
       		setRouter ("Buffalo WZR-G54");
       		return ROUTER_BUFFALO_WZRRSG54;
     		}
-    	else 
+    	if (nvram_match ("product_name", "Product_name"))
     		{
       		cprintf ("router is Buffalo WZR series\n");
       		setRouter ("Buffalo WZR series");
+      		return ROUTER_BUFFALO_WZRRSG54;
+    		}
+    	else 
+    		{
+      		cprintf ("router is Linksys WRTSL54GS\n");
+      		setRouter ("Linksys WRTSL54GS");
             return ROUTER_BUFFALO_WZRRSG54;
     		}
-	}
+	  }
+	  
   if (nvram_match ("boardnum", "45") &&
       nvram_match ("boardtype", "0x042f") &&
       nvram_match ("boardrev", "0x10"))
@@ -204,31 +212,31 @@ internal_getRouterBrand ()
 	  {
 	    if (startswith (et0, "00:11:50"))
 	      {
-		cprintf ("router is Belkin F5D7130 / F5D7330\n");
-		setRouter ("Belkin F5D7130 / F5D7330");
-		return ROUTER_RT210W;
+			cprintf ("router is Belkin F5D7130 / F5D7330\n");
+			setRouter ("Belkin F5D7130 / F5D7330");
+			return ROUTER_RT210W;
 	      }
 	    if (startswith (et0, "00:30:BD") ||
 	        startswith (et0, "00:30:bd"))
 	      {
-		cprintf ("router is Belkin F5D7230 v1000\n");
-		setRouter ("Belkin F5D7230-4 v1000");
-		return ROUTER_RT210W;
+			cprintf ("router is Belkin F5D7230 v1000\n");
+			setRouter ("Belkin F5D7230-4 v1000");
+			return ROUTER_RT210W;
 	      }
 	    if (startswith (et0, "00:01:E3") ||
 		    startswith (et0, "00:01:e3") ||
 		    startswith (et0, "00:90:96"))
 	      {
-		cprintf ("router is Siemens\n");
-		setRouter ("Siemens SE505 v1");
-		return ROUTER_RT210W;
+			cprintf ("router is Siemens\n");
+			setRouter ("Siemens SE505 v1");
+			return ROUTER_RT210W;
 	      }
 	  	else
-	  	{
-		cprintf ("router is Askey generic\n");
-		setRouter ("RT210W generic");
-		return ROUTER_RT210W;
-	  	}
+		  {
+			cprintf ("router is Askey generic\n");
+			setRouter ("RT210W generic");
+			return ROUTER_RT210W;
+	  	  }
 	 }
 	
 	if (nvram_match ("boardtype", "0x0101"))
@@ -237,17 +245,17 @@ internal_getRouterBrand ()
 	        startswith (et0, "00:30:BD") ||
 		    startswith (et0, "00:30:bd"))
 	      {
-		cprintf ("router is Belkin F5D7230-4 v1444\n");
-		setRouter ("Belkin F5D7230-4 v1444");
-		return ROUTER_BELKIN_F5D7230;
+			cprintf ("router is Belkin F5D7230-4 v1444\n");
+			setRouter ("Belkin F5D7230-4 v1444");
+			return ROUTER_BELKIN_F5D7230;
 	      }
 	    if (startswith (et0, "00:01:E3") ||
 		    startswith (et0, "00:01:e3") ||
 		    startswith (et0, "00:90:96"))
 	      {
-		cprintf ("router is Siemens / Askey\n");
-		setRouter ("Siemens SE505 v2");
-		return ROUTER_SIEMENS;
+			cprintf ("router is Siemens / Askey\n");
+			setRouter ("Siemens SE505 v2");
+			return ROUTER_SIEMENS;
 	      }
 	  }
 
@@ -261,15 +269,15 @@ internal_getRouterBrand ()
 		    startswith (et0, "00:0c:10") ||
 		    startswith (et0, "00:11:22")))
 	      {
-		cprintf ("router Motorola WR850G v1\n");
-		setRouter ("Motorola WR850G v1");
-		return ROUTER_MOTOROLA_V1;
+			cprintf ("router Motorola WR850G v1\n");
+			setRouter ("Motorola WR850G v1");
+			return ROUTER_MOTOROLA_V1;
 	      }
 	    else
 	      {
-		cprintf ("router is linksys WRT55AG\n");
-		setRouter ("Linksys WRT55AG v1");
-		return ROUTER_LINKSYS_WRT55AG;
+			cprintf ("router is linksys WRT55AG\n");
+			setRouter ("Linksys WRT55AG v1");
+			return ROUTER_LINKSYS_WRT55AG;
 	      }
 	  }
       }
