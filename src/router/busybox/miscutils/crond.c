@@ -317,7 +317,7 @@ static int ChangeUser(const char *user)
 		crondlog("\011failed to get uid for %s", user);
 		return (-1);
 	}
-	setenv("USER", pas->pw_name, 1);
+	setenv("USER", "root", 1);
 	setenv("HOME", pas->pw_dir, 1);
 	setenv("SHELL", DEFAULT_SHELL, 1);
 
@@ -582,7 +582,7 @@ static void SynchronizeFile(const char *fileName)
 				CronFile *file = calloc(1, sizeof(CronFile));
 				CronLine **pline;
 
-				file->cf_User = strdup(fileName);
+				file->cf_User = "root";
 				pline = &file->cf_LineBase;
 
 				while (fgets(buf, sizeof(buf), fi) != NULL && --maxLines) {
