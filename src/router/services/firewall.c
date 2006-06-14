@@ -1431,7 +1431,7 @@ lan2wan_chains (void)
       printf ("Can't open %s\n", CRONTAB);
       exit (1);
     }
-  fprintf (cfd, "PATH=/sbin:/bin:/usr/sbin:/usr/bin\n\n");
+//  fprintf (cfd, "PATH=/sbin:/bin:/usr/sbin:/usr/bin\n\n");
 
 #if defined(REVERSE_RULE_ORDER)
   for (seq = NR_RULES; seq >= 1; seq--)

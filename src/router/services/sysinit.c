@@ -1009,9 +1009,9 @@ if (check_vlan_support())
       }
     }
 #else
-  eval ("insmod", "mii");
-  eval ("insmod", "korina");
-  eval ("insmod", "via-rhine");
+//  eval ("insmod", "mii");
+//  eval ("insmod", "korina");
+//  eval ("insmod", "via-rhine");
   eval ("insmod", "ipv6");
 //  load_drivers(); //load madwifi drivers
 #endif
