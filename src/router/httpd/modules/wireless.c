@@ -1433,7 +1433,7 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
     <td height=\"20\" width=\"167\">%s</td> \n\
     <td height=\"20\" width=\"140\">%s</td> \n\
     <td height=\"20\" width=\"156\">%s</td> \n\
-    <td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"on%d\" value=\"%d\" %s></td> \n\
+    <td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"on%d\" value=\"%d\" onclick=\"MACAct(this.form)\" %s></td> \n\
  </tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked=\"checked\"" : "");
 	}
     }
@@ -1448,7 +1448,7 @@ ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv)
     <td height=\"20\" width=\"167\">%s</td> \n\
     <td height=\"20\" width=\"140\">%s</td> \n\
     <td height=\"20\" width=\"156\">%s</td> \n\
-    <td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"off%d\" value=\"%d\" %s></td> \n\
+    <td height=\"20\" width=\"141\"><input type=\"checkbox\" name=\"off%d\" value=\"%d\" onclick=\"MACAct(this.form)\" %s></td> \n\
  </tr>\n", wl_client_macs[i].hostname, wl_client_macs[i].ipaddr, wl_client_macs[i].hwaddr, flag++, i, wl_client_macs[i].check ? "checked=\"checked\"" : "");
 
 	}
