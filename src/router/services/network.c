@@ -922,12 +922,13 @@ start_wan (int status)
 /* Added by AhMan March 7 2005 */
 /* By default, Buffalo WBR-G54 does not has the NVRAM "pppoe_wan_ifname"
    defined.  If the boardtype is "bcm94710ap" (buffalo), I'll fix it to eth1 */
-#ifdef HAVE_PPPOE
 //  if ((!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 //      && (!strcmp (nvram_safe_get ("boardtype"), "bcm94710ap")))
 //    pppoe_wan_ifname = "eth1";
 
 /* Rewritten by Eko, May 10, 2006 */
+#ifdef HAVE_PPPOE
+
   int brand = getRouterBrand ();
   switch (brand)
     {
@@ -937,6 +938,10 @@ start_wan (int status)
     case ROUTER_MOTOROLA_V1:
 		if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 		    pppoe_wan_ifname = "eth1";
+      break;
+    case ROUTER_ASUS_WL500G_PRE:
+		if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
+		    pppoe_wan_ifname = "eth0";
       break;
     }
 
