@@ -393,8 +393,8 @@ start_lan (void)
       nvram_invmatch ("def_whwaddr", ""))
     {
       ether_atoe (nvram_safe_get ("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
-    }
 #ifndef HAVE_MADWIFI
+    }
   else
     {
       unsigned char mac[20];
@@ -408,7 +408,14 @@ start_lan (void)
 	  nvram_commit ();
 	}
     }
-#endif
+  ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+  strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
+
+  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+    perror ("Write wireless mac fail : ");
+  else
+    cprintf ("Write wireless mac successfully\n");
+#else
 
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
   strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
@@ -417,6 +424,9 @@ start_lan (void)
     perror ("Write wireless mac fail : ");
   else
     cprintf ("Write wireless mac successfully\n");
+}
+#endif
+
 
   ifconfig (wl_face, IFUP, 0, 0);
 
@@ -450,6 +460,8 @@ start_lan (void)
 	  continue;
 
 	/* Set the logical bridge address to that of the first interface */
+	
+#ifndef HAVE_MADWIFI	
 	strncpy (ifr.ifr_name, lan_ifname, IFNAMSIZ);
 	if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0 &&
 	    memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0",
@@ -469,7 +481,7 @@ start_lan (void)
 	  }
 	else
 	  perror (lan_ifname);
-
+#endif
 	/* If not a wl i/f then simply add it to the bridge */
 #ifndef HAVE_MADWIFI
 	if (wlconf_up (name))
