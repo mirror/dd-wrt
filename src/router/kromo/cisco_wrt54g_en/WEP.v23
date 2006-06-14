@@ -1,7 +1,7 @@
 <div class="setting">
 	<div class="label"><% tran("wep.defkey"); %></div>
 	<input type="hidden" name="wl_WEP_key" />
-	<input type="hidden" name="wl_wep" value=restricted />
+	<input type="hidden" name="wl_wep" value="restricted" />
 	<input class="spaceradio" type="radio" value="1" name="wl_key" <% nvram_selmatch("wl_key","1","checked"); %> /> 1&nbsp;
 	<input class="spaceradio" type="radio" value="2" name="wl_key" <% nvram_selmatch("wl_key","2","checked"); %> /> 2&nbsp;
 	<input class="spaceradio" type="radio" value="3" name="wl_key" <% nvram_selmatch("wl_key","3","checked"); %> /> 3&nbsp;
