@@ -79,6 +79,7 @@ function init() {
 				</tbody>
 			</table></br />
 			<div class="submitFooter">
+					<script type="text/javascript">document.write("<input type=\"button\" name=\"action\" value=\"" + sbutton.update_filter + "\" onclick=\"MACAct(this.form)\" />")</script>
 					<script type="text/javascript">document.write("<input type=\"button\" name=\"button\" value=\"" + sbutton.refres + "\" onclick=\"window.location.reload()\" />")</script>
 					<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.clos + "\" onclick=\"self.close()\" />")</script>
 			</div>
