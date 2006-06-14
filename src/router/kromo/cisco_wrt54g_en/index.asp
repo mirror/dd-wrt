@@ -338,12 +338,11 @@ function setDNSMasq(F)
 	if (document.setup._dhcp_dnsmasq)
 	{
 		if(F._dhcp_dnsmasq.checked == true) {
-			setElementsActive("_dns_dnsmasq", "_auth_dnsmasq", true);
+			setElementActive("_auth_dnsmasq", true);
 		}
 		else {
-			F._dns_dnsmasq.checked=false;
 			F._auth_dnsmasq.checked=false;		
-			setElementsActive("_dns_dnsmasq", "_auth_dnsmasq", false);
+			setElementActive("_auth_dnsmasq", false);
 		}
 	}
 }
