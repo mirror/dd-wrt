@@ -3126,7 +3126,7 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 	<div class=\"setting\">\n\
 	          <input type=\"hidden\" name=\"wl_wds%d_ipaddr\" value=\"4\">\n\
 	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n\
-	          <input size=\"3\" maxlength=\"3 name=\"wl_wds%d_ipaddr0\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr1\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr2\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr3\" value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=\"num\">\n\
+	          <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr0\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr1\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr2\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr3\" value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=\"num\">\n\
        </div>\n", index, index, ip[0], index, ip[1], index, ip[2], index, ip[3], index);
 
       websWrite (wp, "\
