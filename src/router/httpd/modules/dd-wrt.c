@@ -39,7 +39,7 @@
 
 
 static unsigned int oldclocks[9]={192,200,216,228,240,252,264,280,300};
-static unsigned int newclocks[9]={183,187,198,200,216,225,233,237,350};
+static unsigned int newclocks[9]={183,187,198,200,216,225,233,237,250};
 
 
 void ej_show_clocks(int eid, webs_t wp, int argc, char_t ** argv)
