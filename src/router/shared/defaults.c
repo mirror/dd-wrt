@@ -508,12 +508,20 @@ struct nvram_tuple router_defaults[] = {
   {"ath3_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath4_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath5_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
+
   {"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath2_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath3_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath4_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath5_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
+
+  {"ath0_xr", "0", 0},	/* AP mode (ap|sta|wds) */
+  {"ath1_xr", "0", 0},	/* AP mode (ap|sta|wds) */
+  {"ath2_xr", "0", 0},	/* AP mode (ap|sta|wds) */
+  {"ath3_xr", "0", 0},	/* AP mode (ap|sta|wds) */
+  {"ath4_xr", "0", 0},	/* AP mode (ap|sta|wds) */
+  {"ath5_xr", "0", 0},	/* AP mode (ap|sta|wds) */
 #endif
 #endif
 #endif
