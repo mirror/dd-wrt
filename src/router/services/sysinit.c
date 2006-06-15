@@ -860,12 +860,6 @@ start_sysinit (void)
       setup_4712 ();
     }
 
-  if (brand == ROUTER_BUFFALO_WZRRSG54)
-	{
-  	nvram_set ("clkfreq", "264"); 
-	nvram_set ("overclocking", "");
-	}
-        
   if (brand == ROUTER_RT210W)
 	{
   	nvram_set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
