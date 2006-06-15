@@ -1,9 +1,0 @@
-OUTPUT_ARCH(mips)
-SECTIONS
-{
-  .initrd :
-  {
-       *(.data)
-  }
-}
-
