@@ -860,7 +860,7 @@ start_sysinit (void)
       setup_4712 ();
     }
 
-  if brand == ROUTER_BUFFALO_WZRRSG54)
+  if (brand == ROUTER_BUFFALO_WZRRSG54)
 	{
   	nvram_set ("clkfreq", "264"); 
 	nvram_set ("overclocking", "");
