@@ -37,6 +37,32 @@
 #include <bcmparams.h>
 #include <dirent.h>
 
+
+static unsigned int oldclocks[9]={192,200,216,228,240,252,264,280,300};
+static unsigned int newclocks[9]={183,187,198,200,216,225,233,237,350};
+
+
+void ej_show_clocks(int eid, webs_t wp, int argc, char_t ** argv)
+{
+int tab=getcpurev();
+unsigned int *c;
+if (tab==7)
+    c=oldclocks;
+else
+if (tab==8)
+    c=newclocks;
+else
+return;
+int i;
+for (i=0;i<9;i++)
+{
+char clock[16];
+sprintf(clock,"%d",c[i]);
+websWrite(wp,"<option value=\"%d\" %s >%d Mhz</option>\n",c[i],nvram_match("overclocking",clock)?"selected":"",c[i]);
+
+}
+}
+
 void
 ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -2416,11 +2442,11 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 		break;
 	    }
 
-	  if (!valid_ipaddr (wp, ipaddr, &wds_variables[1]) ||
-	      !valid_netmask (wp, netmask, &wds_variables[2]))
-	    {
-	      continue;
-	    }
+//	  if (!valid_ipaddr (wp, ipaddr, &wds_variables[1]) ||
+//	      !valid_netmask (wp, netmask, &wds_variables[2]))
+//	    {
+//	      continue;
+//	    }
 
 	  snprintf (ipaddr_var, 31, "%s_%s", wds, "ipaddr");
 	  snprintf (netmask_var, 31, "%s_%s", wds, "netmask");

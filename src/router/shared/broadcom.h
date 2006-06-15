@@ -372,6 +372,7 @@ extern void ej_active_wireless (int eid, webs_t wp, int argc, char_t ** argv);
 #ifdef HAVE_SKYTRON
 extern void ej_active_wireless2 (int eid, webs_t wp, int argc, char_t ** argv);
 #endif
+extern void ej_show_clocks (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_active_wds (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_iradius_check (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_iradius (int eid, webs_t wp, int argc, char_t ** argv);
