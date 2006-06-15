@@ -868,8 +868,9 @@ start_sysinit (void)
 	
   if (brand == ROUTER_ASUS_WL500G_PRE)
 	{
-  	nvram_set ("wan_ifname", "eth0"); // fix for Asus WL500gPremium WAN problem.
-	nvram_set ("wan_ifnames", "eth0");
+	strcpy (wanifname, "vlan1");
+  	nvram_set ("wan_ifname", "vlan1"); // fix for Asus WL500gPremium WAN problem.
+	nvram_set ("wan_ifnames", "vlan1");
 	}
 	
   if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
