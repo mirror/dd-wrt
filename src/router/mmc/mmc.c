@@ -669,7 +669,7 @@ mmc_init (void)
       rc = mmc_card_init ();
       if (rc != 0)
 	{
-	  printk ("mmc: definitly not a old GPIO MMC HW, try to use new GPIO Layout\n");
+	  printk ("mmc: Device does not use old GPIO layout, trying to use new GPIO layout\n");
 	  SD_DI = SD_DIV4;	//try second one
 	  mmc_hardware_init ();
 	  rc = mmc_card_init ();
@@ -680,7 +680,7 @@ mmc_init (void)
 	      if (rc != 0)
 		{
 
-		  printk ("mmc: Okay, as it seems this board has no MMC Mod!\n");
+		  printk ("mmc: This board has no MMC mod installed!\n");
 		  return -1;
 		}
 	    }
