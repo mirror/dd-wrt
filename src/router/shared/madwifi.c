@@ -1009,10 +1009,12 @@ set_netmode (char *wif, char *dev)
   char turbo[16];
   char mode[16];
   char bw[16];
+  char xr[16];
   sprintf (bw, "%s_channelbw", dev);
   sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
+  sprintf (xr, "%s_xr", dev);
   char *netmode = default_get (net, "mixed");
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
@@ -1037,10 +1039,23 @@ set_netmode (char *wif, char *dev)
 //      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
     }else
     {
-    char *bw = nvram_get(bw);
+    char *ext = nvram_get(xr);
+    if (ext)
+	{
+	if (strcmp(ext,"1")==0)
+	    {
+	    eval("iwpriv",dev,"xr","1");
+	    }else
+	    {
+	    eval("iwpriv",dev,"xr","0");
+	    }
+	}
+    
+    
+    char *wid = nvram_get(bw);
     int width=20;
-    if (bw)
-	width=atoi(bw);
+    if (wid)
+	width=atoi(wid);
     char buf[64];
     setsysctl(wif,"channelbw",(long)width);
     }
