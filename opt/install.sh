@@ -27,6 +27,15 @@ make clean
 cd ../opt
 export PATH=/home/dd-wrt/toolchains/4.1.0/bin:$MYPATH
 
+#build micro
+cd ../src/router
+rm -dfr mipsel-uclibc/install
+make httpd-clean
+make rc-clean
+make shared-clean
+cd ../../opt
+./install_micro.sh
+
 #build mini
 cd ../src/router
 rm -dfr mipsel-uclibc/install
