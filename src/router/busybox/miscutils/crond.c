@@ -86,7 +86,7 @@ typedef struct CronLine {
 static short DebugOpt;
 #endif
 
-static short LogLevel = 8;
+static short LogLevel = 0;
 static const char *LogFile;
 static const char *CDir = CRONTABS;
 
