@@ -3,7 +3,7 @@
 	<legend><% tran("alive.legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("alive.sevr1"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="schedule_enable" <% nvram_checked("schedule_enable","1"); %> onclick="setAlive()" /><% tran("share.enabled"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="1" name="schedule_enable" <% nvram_checked("schedule_enable","1"); %> onclick="setAlive()" /><% tran("share.enable"); %>&nbsp;
 		<input class="spaceradio" type="radio" value="0" name="schedule_enable" <% nvram_checked("schedule_enable","0"); %> onclick="setAlive()" /><% tran("share.disable"); %>
 	</div>
 	<div class="setting">
