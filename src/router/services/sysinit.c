@@ -551,7 +551,6 @@ start_restore_defaults (void)
 	  switch (brand)
 	    {
 	    case ROUTER_MOTOROLA:
-	    case ROUTER_ASUS_WL500G_PRE:
 	      nvram_set ("vlan1ports", "0 5u");
 	      break;
 	    case ROUTER_LINKSYS_WRT55AG:
@@ -871,6 +870,7 @@ start_sysinit (void)
 	strcpy (wanifname, "vlan1");
   	nvram_set ("wan_ifname", "vlan1"); // fix for Asus WL500gPremium WAN problem.
 	nvram_set ("wan_ifnames", "vlan1");
+	nvram_set ("vlan1ports", "0 5");
 	}
 	
   if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
