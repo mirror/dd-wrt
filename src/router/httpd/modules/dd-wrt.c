@@ -1743,6 +1743,8 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_channelbw", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_xr", prefix);
+  copytonv (wp, n);
 #endif
   sprintf (n, "%s_closed", prefix);
   copytonv (wp, n);
@@ -1955,6 +1957,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_rxantenna[16];
   char wl_txantenna[16];
   char wl_width[16];
+  char wl_xr[16];
   sprintf (wl_turbo, "%s_turbo", prefix);
   sprintf (wl_xchanmode, "%s_xchanmode", prefix);
   sprintf (wl_outdoor, "%s_outdoor", prefix);
@@ -1962,7 +1965,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_rxantenna, "%s_rxantenna", prefix);
   sprintf (wl_txantenna, "%s_txantenna", prefix);
   sprintf (wl_width, "%s_channelbw", prefix);
+  sprintf (wl_xr, "%s_xr", prefix);
+  
   showOption (wp, "Turbo Mode", wl_turbo);
+  showOption (wp, "Extended Range", wl_xr);
   showOption (wp, "Extended Channel Mode", wl_xchanmode);
   showOption (wp, "Outdoor Band", wl_outdoor);
   showOption (wp, "Diversity", wl_diversity);
