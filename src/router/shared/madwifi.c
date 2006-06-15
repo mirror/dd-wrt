@@ -1057,7 +1057,7 @@ set_netmode (char *wif, char *dev)
     if (wid)
 	width=atoi(wid);
     char buf[64];
-    setsysctl(wif,"channelbw",(long)width);
+    setsysctrl(wif,"channelbw",(long)width);
     }
 }
 
