@@ -1741,6 +1741,8 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_rxantenna", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_channelbw", prefix);
+  copytonv (wp, n);
 #endif
   sprintf (n, "%s_closed", prefix);
   copytonv (wp, n);
@@ -1952,16 +1954,26 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_diversity[16];
   char wl_rxantenna[16];
   char wl_txantenna[16];
+  char wl_width[16];
   sprintf (wl_turbo, "%s_turbo", prefix);
   sprintf (wl_xchanmode, "%s_xchanmode", prefix);
   sprintf (wl_outdoor, "%s_outdoor", prefix);
   sprintf (wl_diversity, "%s_diversity", prefix);
   sprintf (wl_rxantenna, "%s_rxantenna", prefix);
   sprintf (wl_txantenna, "%s_txantenna", prefix);
+  sprintf (wl_width, "%s_channelbw", prefix);
   showOption (wp, "Turbo Mode", wl_turbo);
   showOption (wp, "Extended Channel Mode", wl_xchanmode);
   showOption (wp, "Outdoor Band", wl_outdoor);
   showOption (wp, "Diversity", wl_diversity);
+  websWrite (wp,
+	     "<div class=\"setting\"><div class=\"label\">Channel Width</div><select name=\"%s\" >\n",wl_width);
+  websWrite (wp, "<option value=\"20\" %s>Full</option>\n",nvram_match (wl_width, "20") ? "selected" : "");
+  websWrite (wp, "<option value=\"10\" %s>Half</option>\n",nvram_match (wl_width, "10") ? "selected" : "");
+  websWrite (wp, "<option value=\"5\" %s>Quarter</option>\n",nvram_match (wl_width, "5") ? "selected" : "");
+  websWrite (wp, "</select>\n");
+  websWrite (wp, "</div>\n");
+
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\">TX Antenna</div><select name=\"%s\" >\n",
 	     wl_txantenna);
