@@ -69,6 +69,7 @@
 #define NVROUTER "DD_BOARD"
 
 
+extern int getcpurev(void);
 extern int check_vlan_support (void);
 extern int startswith (char *source, char *cmp);
 extern int getRouterBrand (void);

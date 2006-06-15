@@ -1366,6 +1366,7 @@ check_nv (char *name, char *value)
 static void
 overclock (void)
 {
+  int rev=getcpurev();
   char *ov = nvram_get ("overclocking");
   if (ov == NULL)
     return;
@@ -1374,6 +1375,9 @@ overclock (void)
     return;			//unsupported
   if (nvram_match ("clkfreq", "125"))
     return;			//unsupported
+  if (rev==0)
+    return;		        //unsupported
+    
 //int cclk = atoi(nvram_safe_get("clkfreq"));
 //if (cclk<192)return; //unsupported
   char *pclk = nvram_safe_get ("clkfreq");
@@ -1384,7 +1388,12 @@ overclock (void)
     if (dup[i] == ',')
       dup[i] = 0;
   int cclk = atoi (dup);
-  if (cclk < 192)
+  if (cclk < 192 && rev==7)
+    {
+      cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
+      return;			//unsupported
+    }
+  if (cclk < 183 && rev==8)
     {
       cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
       return;			//unsupported
@@ -1395,11 +1404,23 @@ overclock (void)
       cprintf ("clkfreq identical with new setting\n");
       return;			//clock already set
     }
+
+
   int set = 1;
+
   switch (clk)
     {
+    case 183:
+      nvram_set ("clkfreq", "183,92");
+      break;    
+    case 187:
+      nvram_set ("clkfreq", "187,94");
+      break;
     case 192:
       nvram_set ("clkfreq", "192,96");
+      break;
+    case 198:
+      nvram_set ("clkfreq", "198,98");
       break;
     case 200:
       nvram_set ("clkfreq", "200,100");
@@ -1407,11 +1428,23 @@ overclock (void)
     case 216:
       nvram_set ("clkfreq", "216,108");
       break;
+    case 225:
+      nvram_set ("clkfreq", "225,113");
+      break;
     case 228:
       nvram_set ("clkfreq", "228,114");
       break;
+    case 233:
+      nvram_set ("clkfreq", "233,116");
+      break;
+    case 237:
+      nvram_set ("clkfreq", "237,119");
+      break;
     case 240:
       nvram_set ("clkfreq", "240,120");
+      break;
+    case 250:
+      nvram_set ("clkfreq", "250,125");
       break;
     case 252:
       nvram_set ("clkfreq", "252,126");

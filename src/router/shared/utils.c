@@ -40,6 +40,38 @@ struct mii_ioctl_data
 };
 
 
+int getcpurev(void)
+{
+  FILE *fp = fopen ("/proc/cpuinfo", "rb");
+  if (fp == NULL)
+    {
+      return 0;
+    }
+  int cnt = 0;
+  int b = 0;
+  while (b != EOF)
+    {
+      b = getc (fp);
+      if (b == ':')
+	cnt++;
+      if (cnt == 3)
+	{
+	  getc (fp);
+	  char cpurev[13];
+	  int i=0;
+	  for (i=0;i<12;i++)
+	    cpurev[i] = getc(fp);
+	  cpurev[i]=0;
+	  fclose (fp);
+	  if (!strcmp(cpurev,"BCM3302 V0.7"))return 7;
+	  if (!strcmp(cpurev,"BCM3302 V0.8"))return 8;
+	  return 0;
+	}
+    }
+  fclose(fp);
+  return 0;
+}
+
 int
 startswith (char *source, char *cmp)
 {

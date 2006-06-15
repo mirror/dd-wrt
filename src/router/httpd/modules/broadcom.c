@@ -4282,6 +4282,7 @@ struct ej_handler ej_handlers[] = {
 //  {"charset", ej_charset},
   {"do_pagehead", ej_do_pagehead},  //Eko
   {"do_hpagehead", ej_do_hpagehead},  //Eko
+  {"show_clocks", ej_show_clocks},
   {NULL, NULL}
 };
 #endif /* !WEBS */
