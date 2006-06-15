@@ -5,15 +5,7 @@
    <% nvram_match("clkfreq","125","<!--"); %>
     <div class="label"><% tran("management.clock_frq"); %></div>
     <select name="overclocking">
-      <option value="192" <% nvram_selected("overclocking","192"); %>>192 Mhz</option>
-      <option value="200" <% nvram_selected("overclocking","200"); %>>200 Mhz</option>
-      <option value="216" <% nvram_selected("overclocking","216"); %>>216 Mhz</option>
-      <option value="228" <% nvram_selected("overclocking","228"); %>>228 Mhz</option>
-      <option value="240" <% nvram_selected("overclocking","240"); %>>240 Mhz</option>
-      <option value="252" <% nvram_selected("overclocking","252"); %>>252 Mhz</option>
-      <option value="264" <% nvram_selected("overclocking","264"); %>>264 Mhz</option>
-      <option value="280" <% nvram_selected("overclocking","280"); %>>280 Mhz</option>
-      <option value="300" <% nvram_selected("overclocking","300"); %>>300 Mhz</option>
+    <% show_clocks(); %>
     </select>
    <% nvram_match("clkfreq","125","-->"); %>
    <% nvram_match("clkfreq","125","<script type="text/javascript">Capture(management.clock_support)</script>"); %>
