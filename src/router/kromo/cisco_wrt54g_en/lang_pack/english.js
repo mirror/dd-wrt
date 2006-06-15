@@ -199,7 +199,7 @@ errmsg.err9="Illegal DMZ IP Address.";
 errmsg.err10="Confirmed password did not match Entered Password. Please re-enter password.";
 errmsg.err11="No spaces are allowed in Password";
 errmsg.err12="You must input a command to run.";
-errmsg.err13="Upgrade are failed.";
+errmsg.err13="Upgrade failed.";
 errmsg.err45="Not available in HTTPS! Please connect in HTTP mode.";
 errmsg.err46="Not available in HTTPS";
 
@@ -475,7 +475,7 @@ diag.firewall="Firewall";
 
 //help container
 var hdiag = new Object();
-hdiag.right2="You can run command lines via the webinterface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
+hdiag.right2="You can run command lines via the web interface. Fill the text area with your command and click <em>" + sbutton.runcmd + "</em> to submit.";
 
 
 
@@ -846,7 +846,7 @@ management.remote_gui="Web GUI Management";
 management.remote_https="Use HTTPS";
 management.remote_guiport="Web GUI Port";
 management.remote_ssh="SSH Management";
-management.remote_sshport="SSH Port";
+management.remote_sshport="SSH Remote Port";
 
 management.web_legend="Web Access";
 management.web_refresh="Auto-Refresh (in seconds)";
@@ -1287,7 +1287,7 @@ upnp.legend2="UPnP Configuration";
 upnp.serv="UPnP Service";
 upnp.clear="Clear port forwards at startup";
 upnp.url="Send presentation URL";
-upnp.msg1="Click to delete lease";
+upnp.msg1="Click to delete entry";
 upnp.msg2="Delete all entries?";
 
 
@@ -1452,7 +1452,7 @@ radius.label4="Radius Server Port";
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
-radius.label8="Override Radius if Server is unavailable";
+radius.label8="Override Radius if server is unavailable";
 
 
 
