@@ -174,7 +174,7 @@ int getassoclist(char *ifname, unsigned char *list)
   if (s < 0)
     {
       fprintf (stderr, "socket(SOCK_DRAGM)\n");
-      return;
+      return -1;
     }
   (void) memset (&iwr, 0, sizeof (iwr));
   (void) strncpy (iwr.ifr_name, ifname, sizeof (iwr.ifr_name));

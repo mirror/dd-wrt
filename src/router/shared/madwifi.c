@@ -874,6 +874,7 @@ setupSupplicant (char *prefix)
 void
 setupHostAP (char *prefix)
 {
+  char psk[32];
   char akm[16];
   sprintf (akm, "%s_akm", prefix);
 //wep key support
@@ -927,7 +928,6 @@ setupHostAP (char *prefix)
       if (nvram_match (akm, "psk psk2") || nvram_match (akm, "wpa wpa2"))
 	fprintf (fp, "wpa=3\n");
 
-      char psk[16];
 
       if (nvram_match (akm, "psk") ||
 	  nvram_match (akm, "psk2") || nvram_match (akm, "psk psk2"))
@@ -1003,11 +1003,13 @@ setupHostAP (char *prefix)
 
 
 static void
-set_netmode (char *dev)
+set_netmode (char *wif, char *dev)
 {
   char net[16];
   char turbo[16];
   char mode[16];
+  char bw[16];
+  sprintf (bw, "%s_channelbw", dev);
   sprintf (mode, "%s_mode", dev);
   sprintf (net, "%s_net_mode", dev);
   sprintf (turbo, "%s_turbo", dev);
@@ -1033,6 +1035,14 @@ set_netmode (char *dev)
 	eval ("iwpriv", dev, "mode", "5");
 //      eval ("iwpriv", dev, "mode", "1");
 //      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
+    }else
+    {
+    char *bw = nvram_get(bw);
+    int width=20;
+    if (bw)
+	width=atoi(bw);
+    char buf[64];
+    setsysctl(wif,"channelbw",(long)width);
     }
 }
 
@@ -1130,7 +1140,7 @@ configure_single (int count)
   //confige net mode
 
 
-  set_netmode (dev);
+  set_netmode (wif,dev);
 
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta"))
@@ -1305,11 +1315,11 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 
   eval ("modprobe", "ath_pci");
 #else
+
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_pci", "autocreate=none", countrycode, xchanmode,
-	outdoor);
+  eval ("insmod", "ath_pci", "rfkill=0","autocreate=none", countrycode, xchanmode,outdoor);
 
 //  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
 

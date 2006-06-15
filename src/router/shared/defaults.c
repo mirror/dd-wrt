@@ -502,6 +502,12 @@ struct nvram_tuple router_defaults[] = {
 #ifndef HAVE_MADWIFI
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
 #else
+  {"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
+  {"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
+  {"ath2_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
+  {"ath3_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
+  {"ath4_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
+  {"ath5_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath0_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
   {"ath2_mode", "ap", 0},	/* AP mode (ap|sta|wds) */
