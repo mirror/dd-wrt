@@ -2442,11 +2442,11 @@ validate_wds (webs_t wp, char *value, struct variable *v)
 		break;
 	    }
 
-//	  if (!valid_ipaddr (wp, ipaddr, &wds_variables[1]) ||
-//	      !valid_netmask (wp, netmask, &wds_variables[2]))
-//	    {
-//	      continue;
-//	    }
+	  if (!valid_ipaddr (wp, ipaddr, &wds_variables[1]) ||
+	      !valid_netmask (wp, netmask, &wds_variables[2]))
+	    {
+	      continue;
+	    }
 
 	  snprintf (ipaddr_var, 31, "%s_%s", wds, "ipaddr");
 	  snprintf (netmask_var, 31, "%s_%s", wds, "netmask");
