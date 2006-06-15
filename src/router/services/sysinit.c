@@ -806,16 +806,16 @@ start_sysinit (void)
   // eval("insmod","jbd");
   eval ("insmod", "ext2");
 #ifndef KERNEL_24
-  if (mount ("/dev/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
+  if (mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
 #else
   if (mount
       ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL))
 #endif
     {
       //not created yet, create ext2 partition
-      eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/discs/disc0/part3");
+      eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/cf/card0/part3");
       //mount ext2 
-      mount ("/dev/discs/disc0/part3", "/usr/local", "ext2", MS_MGC_VAL,
+      mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL,
 	     NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
       mkdir ("/usr/local/nvram", 0777);
