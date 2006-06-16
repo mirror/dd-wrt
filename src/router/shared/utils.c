@@ -341,7 +341,7 @@ internal_getRouterBrand ()
 	}
     }
 
-  setRouter ("Linksys WRT54G/GS");
+  setRouter ("Linksys WRT54G/GL/GS");
   cprintf ("router is wrt54g\n");
   return ROUTER_WRT54G;
 #endif
