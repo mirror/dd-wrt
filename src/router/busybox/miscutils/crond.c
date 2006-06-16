@@ -610,7 +610,6 @@ static void SynchronizeFile(const char *fileName)
 					ptr = ParseField(file->cf_User, line.cl_Days, 32, 0, NULL, ptr);
 					ptr = ParseField(file->cf_User, line.cl_Mons, 12, -1, MonAry, ptr);
 					ptr = ParseField(file->cf_User, line.cl_Dow, 7, 0, DowAry, ptr);
-
 					/* check failure */
 					if (ptr == NULL) {
 						continue;
@@ -1047,31 +1046,10 @@ static void EndJob(const char *user, CronLine * line)
 static void RunJob(const char *user, CronLine * line)
 {
 	/* Fork as the user in question and run program */
-	pid_t pid = fork();
-
-	if (pid == 0) {
-		/* CHILD */
-
-		/* Change running state to the user in question */
-
-		if (ChangeUser(user) < 0) {
-			exit(0);
-		}
-#ifdef FEATURE_DEBUG_OPT
-		if (DebugOpt) {
-			crondlog("\005Child Running %s\n", DEFAULT_SHELL);
-		}
-#endif
-
-		execl(DEFAULT_SHELL, DEFAULT_SHELL, "-c", line->cl_Shell, NULL);
-		crondlog("\024unable to exec, user %s cmd %s -c %s\n", user,
-				 DEFAULT_SHELL, line->cl_Shell);
-		exit(0);
-	} else if (pid < 0) {
-		/* FORK FAILED */
-		crondlog("\024couldn't fork, user %s\n", user);
-		pid = 0;
-	}
-	line->cl_Pid = pid;
+char buf[64];
+char temp[64];
+sscanf(line->cl_Shell,"%s %s",temp,buf);
+crondlog("\024Running command %s\n", buf);
+system(buf);		
 }
 #endif							/* CONFIG_FEATURE_CROND_CALL_SENDMAIL */
