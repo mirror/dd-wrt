@@ -86,7 +86,7 @@ typedef struct CronLine {
 static short DebugOpt;
 #endif
 
-static short LogLevel = 0;
+static short LogLevel = 99;
 static const char *LogFile;
 static const char *CDir = CRONTABS;
 
@@ -1049,7 +1049,6 @@ static void RunJob(const char *user, CronLine * line)
 char buf[64];
 char temp[64];
 sscanf(line->cl_Shell,"%s %s",temp,buf);
-crondlog("\024Running command %s\n", buf);
 system(buf);		
 }
 #endif							/* CONFIG_FEATURE_CROND_CALL_SENDMAIL */
