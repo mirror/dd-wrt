@@ -2,7 +2,7 @@
 		<title><% nvram_get("router_name"); %> - Wireless Active Client MAC List</title>
 		<script type="text/javascript">
 
-document.title = "<% nvram_get("router_name"); %>" + wl_filter.titl;
+document.title = "<% nvram_get("router_name"); %>" + wl_active.titl;
 
 function MACAct(F)
 {
