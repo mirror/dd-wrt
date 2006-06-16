@@ -25,7 +25,7 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.dhcp_landomain"); %></div>
-		<input maxlength="79" size="20" name="lan_domain" onblur="valid_name(this,sercice.dhcp_landomain,SPACE_NO)" value="<% nvram_get("lan_domain"); %>" />
+		<input maxlength="79" size="20" name="lan_domain" onblur="valid_name(this,service.dhcp_landomain,SPACE_NO)" value="<% nvram_get("lan_domain"); %>" />
 	</div>
 	<% nvram_invmatch("expert_mode","1","<!--"); %>
 	<div class="setting">
