@@ -475,8 +475,6 @@ endif
 
 bridge:
 	$(MAKE) -C bridge brctl/brctl
-bridge:
-	$(MAKE) -C bridge brctl/brctl
 
 bridge-clean:
 	@echo "Cleaning bridge"
@@ -486,8 +484,9 @@ bridge-clean:
 	fi;
 
 bridge-install:
-	install -D bridge/brctl/brctl $(INSTALLDIR)/bridge/usr/sbin/brctl
-	$(STRIP) $(INSTALLDIR)/bridge/usr/sbin/brctl
+	@true
+#	install -D bridge/brctl/brctl $(INSTALLDIR)/bridge/usr/sbin/brctl
+#	$(STRIP) $(INSTALLDIR)/bridge/usr/sbin/brctl
 
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
