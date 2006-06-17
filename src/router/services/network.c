@@ -36,6 +36,7 @@ typedef u_int16_t u16;
 typedef u_int8_t u8;
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
+#include <libbridge.h>
 
 #include <bcmnvram.h>
 #include <netconf.h>
@@ -433,12 +434,17 @@ start_lan (void)
   /* Bring up bridged interface */
   if (strncmp (lan_ifname, "br0", 3) == 0)
     {
-
-      eval ("brctl", "addbr", lan_ifname);
-      eval ("brctl", "setfd", lan_ifname, "0");
+      br_add_bridge(lan_ifname);
+      struct timeval tv;
+      tv.tv_sec = 0;
+      tv.tv_usec = 0;
+      br_set_bridge_forward_delay(lan_ifname,&tv);
+      //eval ("brctl", "addbr", lan_ifname);
+      //eval ("brctl", "setfd", lan_ifname, "0");
       if (check_hw_type () != BCM4702_CHIP)
 	{
-	  eval ("brctl", "stp", lan_ifname, "off");
+	  br_set_stp_state(lan_ifname,0);
+	  //eval ("brctl", "stp", lan_ifname, "off");
 	}
       foreach (name, lan_ifnames, next)
       {
@@ -485,14 +491,15 @@ start_lan (void)
 	/* If not a wl i/f then simply add it to the bridge */
 #ifndef HAVE_MADWIFI
 	if (wlconf_up (name))
-	  eval ("brctl", "addif", lan_ifname, name);
+	  br_add_interface(lan_ifname,name); // eval ("brctl", "addif", lan_ifname, name);
 	else
 	  {
 #else
 	cprintf ("configure %s\n", name);
 	if (strcmp (name, "wl0"))	//check if the interface is a buffalo wireless
 	  {
-	    eval ("brctl", "addif", lan_ifname, name);
+	    br_add_interface(lan_ifname,name);
+	    //eval ("brctl", "addif", lan_ifname, name);
 	  }
 	else
 	  {
@@ -512,7 +519,8 @@ start_lan (void)
 	    if (nvram_match (wl_name, "wet"))
 	      {
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);	// from up
-		eval ("brctl", "addif", lan_ifname, name);
+		br_add_interface(lan_ifname,name);
+		//eval ("brctl", "addif", lan_ifname, name);
 /*
 				eval("wl", "ap", "0");			  //disable ap mode
 				wl_ioctl(wl_name, WLC_SCAN, svbuf, sizeof(svbuf));
@@ -536,7 +544,7 @@ start_lan (void)
 
 	    if (nvram_match (wl_name, "ap"))
 	      {
-		eval ("brctl", "addif", lan_ifname, name);
+	        br_add_interface(lan_ifname,name);//eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
 		do_mssid (lan_ifname);
 #endif
@@ -666,12 +674,18 @@ start_lan (void)
       ifconfig("br1",0,0,0);
       
     //  eval ("ifconfig", "br1", "down");
-      eval ("brctl", "delbr", "br1");
-      eval ("brctl", "addbr", "br1");
-      eval ("brctl", "setfd", "br1", "0");
+      br_del_bridge("br1");
+      br_add_bridge("br1");
+      struct timeval tv;
+      tv.tv_sec = 0;
+      tv.tv_usec = 0;
+      br_set_bridge_forward_delay("br1",&tv);
+      //eval ("brctl", "delbr", "br1");
+      //eval ("brctl", "addbr", "br1");
+      //eval ("brctl", "setfd", "br1", "0");
 
       if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-	eval ("brctl", "stp", "br1", "off");
+        br_set_stp_state("br1",0);//eval ("brctl", "stp", "br1", "off");
 
       /* Bring up and configure br1 interface */
       if (nvram_invmatch ("wl_br1_ipaddr", "0.0.0.0"))
@@ -682,7 +696,7 @@ start_lan (void)
 
 	  if (nvram_match ("router_disable", "1")
 	      || nvram_match ("lan_stp", "0"))
-	    eval ("brctl", "stp", "br1", "off");
+	    br_set_stp_state("br1",0); //eval ("brctl", "stp", "br1", "off");
 
 //                      system("/usr/sbin/iptables -t nat -I POSTROUTING 1 -o br0 -j MASQUERADE");
 //                      if(nvram_invmatch("wan_proto", "disable") && check_vlan_support())
@@ -735,14 +749,16 @@ start_lan (void)
 	{
 	  eval ("ifconfig", dev, "up");
 	  sleep (1);
-	  eval ("brctl", "addif", "br1", dev);
+	  br_add_interface("br1",dev);
+	  //eval ("brctl", "addif", "br1", dev);
 	}
       else if (nvram_match (wdsvarname, "3"))
 	{ 
 	  ifconfig(dev,IFUP,0,0);
 	  //eval ("ifconfig", dev, "up");
 	  sleep (1);
-	  eval ("brctl", "addif", "br0", dev);
+	  br_add_interface("br0",dev);
+	  //eval ("brctl", "addif", "br0", dev);
 	}
     }
 #ifndef HAVE_RB500
@@ -823,7 +839,8 @@ start_lan (void)
     }
 #endif
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-    system ("/usr/sbin/brctl stp br0 off");
+    br_set_stp_state("br0",0);
+    //system ("/usr/sbin/brctl stp br0 off");
 
   free (lan_ifnames);
   free (lan_ifname);
@@ -853,9 +870,11 @@ stop_lan (void)
       {
 	eval ("wlconf", name, "down");
 	ifconfig (name, 0, NULL, NULL);
-	eval ("brctl", "delif", lan_ifname, name);
+	br_del_interface(lan_ifname,name);
+	//eval ("brctl", "delif", lan_ifname, name);
       }
-      eval ("brctl", "delbr", lan_ifname);
+      br_del_bridge(lan_ifname);
+      //eval ("brctl", "delbr", lan_ifname);
     }
   /* Bring down specific interface */
   else if (strcmp (lan_ifname, ""))
@@ -1398,7 +1417,7 @@ if (0)
     }
   cprintf ("disable stp if neede\n");
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-    system ("/usr/sbin/brctl stp br0 off");
+    br_set_stp_state("br0",0);//system ("/usr/sbin/brctl stp br0 off");
   cprintf ("done()()()\n");
 }
 
@@ -1595,7 +1614,8 @@ start_wan_done (char *wan_ifname)
   cprintf ("std on\n");
   if (check_hw_type () == BCM4702_CHIP)
     {
-      eval ("brctl", "stp", nvram_safe_get ("lan_ifname"), "off");
+      br_set_stp_state(nvram_safe_get("lan_ifname"),0);
+      //eval ("brctl", "stp", nvram_safe_get ("lan_ifname"), "off");
     }
   cprintf ("check wan link\n");
   if (check_wan_link (0))
@@ -1654,17 +1674,20 @@ start_wan_done (char *wan_ifname)
 
 #ifdef HAVE_FON
 #ifndef HAVE_MSSID
-  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+  br_del_interface(nvram_safe_get("lan_ifname"),getwlif());
+  //eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
   ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
   if (nvram_match ("wl0_mode", "apsta"))
     {
-      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
+  br_del_interface(nvram_safe_get("lan_ifname"),"wl0.1");
+//      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
       ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
     }
   else if (nvram_match ("wl0_mode", "ap"))
     {
-      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+      br_del_interface(nvram_safe_get("lan_ifname"),getwlif());
+//      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
       ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
     }
   stop_chilli ();
@@ -1674,17 +1697,20 @@ start_wan_done (char *wan_ifname)
   if (nvram_match ("fon_enable", "1") || (nvram_match("chilli_nowifibridge","1") && nvram_match("chilli_enable","1")))
     {
 #ifndef HAVE_MSSID
-      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+  br_del_interface(nvram_safe_get("lan_ifname"),getwlif());
+//      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
       ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
       if (nvram_match ("wl0_mode", "apsta"))
 	{
-	  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
+  br_del_interface(nvram_safe_get("lan_ifname"),"wl0.1");
+//	  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), "wl0.1");
 	  ifconfig ("wl0.1", IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 	}
       else if (nvram_match ("wl0_mode", "ap"))
 	{
-	  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
+  br_del_interface(nvram_safe_get("lan_ifname"),getwlif());
+//	  eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
 	  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 	}
       stop_chilli ();
@@ -1762,7 +1788,8 @@ stop_wan (void)
 #ifndef HAVE_FON
   if (nvram_match ("fon_enable", "1") || (nvram_match("chilli_nowifibridge","1") && nvram_match("chilli_enable","1")))
 #endif
-    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
+  br_add_interface(nvram_safe_get("lan_ifname"),getwlif());
+//    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
 
   cprintf ("done\n");
 }
@@ -1965,7 +1992,7 @@ start_hotplug_net (void)
 
       /* Bridge WDS interfaces if lazywds active */
       if (!strncmp (interface, "wds", 3) && nvram_match ("wl_lazywds", "1"))
-	eval ("brctl", "addif", "br0", interface);
+        br_add_interface("br0",interface);//eval ("brctl", "addif", "br0", interface);
 
       /* Notify NAS of adding the interface */
       sleep (5);
@@ -1973,7 +2000,7 @@ start_hotplug_net (void)
       notify_nas ("lan", interface, "up");
 #endif
       if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-	system ("/usr/sbin/brctl stp br0 off");
+        br_set_stp_state("br0",0);//system ("/usr/sbin/brctl stp br0 off");
     }
   cprintf ("config done()\n");
   return 0;
