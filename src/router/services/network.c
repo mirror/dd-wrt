@@ -436,7 +436,7 @@ start_lan (void)
 
 
   ifconfig (wl_face, IFUP, 0, 0);
-
+  br_init();
   /* Bring up bridged interface */
   if (strncmp (lan_ifname, "br0", 3) == 0)
     {
@@ -868,7 +868,7 @@ stop_lan (void)
   cprintf ("%s\n", lan_ifname);
   /* Bring down LAN interface */
   ifconfig (lan_ifname, 0, NULL, NULL);
-
+  br_init();
   /* Bring down bridged interfaces */
   if (strncmp (lan_ifname, "br", 2) == 0)
     {
@@ -1679,6 +1679,7 @@ start_wan_done (char *wan_ifname)
 #endif
 
 #ifdef HAVE_FON
+br_init();
 #ifndef HAVE_MSSID
   br_del_interface(nvram_safe_get("lan_ifname"),getwlif());
   //eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
@@ -1794,7 +1795,10 @@ stop_wan (void)
 #ifndef HAVE_FON
   if (nvram_match ("fon_enable", "1") || (nvram_match("chilli_nowifibridge","1") && nvram_match("chilli_enable","1")))
 #endif
+  {
+  br_init();
   br_add_interface(nvram_safe_get("lan_ifname"),getwlif());
+  }
 //    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
 
   cprintf ("done\n");
@@ -1992,6 +1996,7 @@ start_hotplug_net (void)
 
   if (!strcmp (action, "register"))
     {
+      br_init();
       /* Bring up the interface and add to the bridge */
       ifconfig (interface, IFUP, NULL, NULL);
       sleep (2);
@@ -2140,6 +2145,7 @@ start_wds_check (void)
 	       && nvram_match ("wl_br1_enable", "1"))
 	{
 	  eval ("ifconfig", dev, "up");
+	  br_init();
 	  br_add_interface("br1",dev);
 	  
 	  //eval ("brctl", "addif", "br1", dev);
@@ -2148,6 +2154,7 @@ start_wds_check (void)
       else if (nvram_match (wdsvarname, "3"))
 	{
 	  eval ("ifconfig", dev, "up");
+	  br_init();
 	  br_add_interface("br0",dev);
 //	  eval ("brctl", "addif", "br0", dev);
 	}
