@@ -25,7 +25,7 @@ endif
 #CFLAGS	+= -g -DDEBUG
 CFLAGS	+= -s $(COPTS) 
 LDFLAGS += -L.
-OBJS := nvparse.o shutils.o wl.o wl_linux.o linux_timer.o defaults.o utils.o support.o nvports.o madwifi.o
+OBJS := nvparse.o shutils.o wl.o wl_linux.o linux_timer.o defaults.o utils.o support.o nvports.o
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
