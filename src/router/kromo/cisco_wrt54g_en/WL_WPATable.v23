@@ -258,7 +258,7 @@ addEvent(window, "unload", function() {
                      <h2><% tran("share.help"); %></h2>
                   </div>
                   <dl>
-                     <dt class="term"><% tran("hwpa.right1"); %></dt>
+                     <dt class="term"><% tran("wpa.secmode"); %>:</dt>
                      <dd class="definition"><% tran("hwpa.right2"); %></dd>
                   </dl><br />
                   <a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWPA.asp')"><% tran("share.more"); %></a>
