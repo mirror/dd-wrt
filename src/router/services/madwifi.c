@@ -39,12 +39,10 @@ i
 
 
 #ifdef HAVE_MADWIFI
-
 #include <sys/mman.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <libbridge.h>
 
 #define AR5K_PCICFG 0x4010
 
@@ -320,13 +318,14 @@ set_regdomain (unsigned long int base_addr, int code)
 #include <bcmutils.h>
 #include <shutils.h>
 #include <unistd.h>
-#include "wireless.h"
 
+#include "wireless.h"
 #include "net80211/ieee80211.h"
 #include "net80211/ieee80211_crypto.h"
 #include "net80211/ieee80211_ioctl.h"
 #include <iwlib.h>
 
+extern int br_add_interface(const char *br, const char *dev);
 
 
 static int
