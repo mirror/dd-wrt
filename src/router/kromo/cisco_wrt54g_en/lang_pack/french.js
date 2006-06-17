@@ -1399,47 +1399,44 @@ hwanmac.right2="Some ISP will require you to register your MAC address. \
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
 var wpa = new Object();
-wpa.titl=" - Wireless Security";
-wpa.h2="Wireless Security";
-wpa.secmode="Security Mode";
-wpa.legend="Wireless Encryption";
+wpa.titl=" - Sécurité Sans Fil";
+wpa.h2="Sécurité Sans Fil";
+wpa.secmode="Mode de Sécurité";
+wpa.legend="Cryptage Sans Fil";
 wpa.auth_mode="Network Authentication";
-wpa.psk="WPA Pre-Shared Key";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
-wpa.rekey="Key Renewal Interval (in seconds)";
-wpa.radius_ipaddr="RADIUS Server Address";
-wpa.radius_port="RADIUS Server Port";
-wpa.radius_key="RADIUS Key";
-wpa.algorithms="WPA Algorithms";
-wpa.shared_key="WPA Shared Key";
-wpa.rekeyInt="rekey interval";
+wpa.rekey="Délai de renouvellement des clés (en seconds)";
+wpa.radius_ipaddr="IP du serveur RADIUS";
+wpa.radius_port="Port du serveur RADIUS";
+wpa.radius_key="Clé RADIUS";
+wpa.algorithms="Cryptage WPA";
+wpa.shared_key="Clé WPA partagée";
 
 //help container
 var hwpa = new Object();
-hwpa.right1="Security Mode:";
-hwpa.right2="You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same security mode.";
+hwpa.right2="Choisissez le mode de sécurité du réseau sans fil. Tous les périphériques du réseau doivent être compatibles avec le mode sélectionné.";
 
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
 var wl_filter = new Object();
-wl_filter.titl=" - MAC Address Filter List";
-wl_filter.h2="MAC Address Filter List";
-wl_filter.h3="Enter MAC Address in this format&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
+wl_filter.titl=" - Liste des Adresses MAC Filtrées";
+wl_filter.h2="Liste des Adresses MAC Filtrées";
+wl_filter.h3="Renseigner les adresses MAC dans le format &nbsp;:&nbsp;&nbsp;&nbsp;XX:XX:XX:XX:XX:XX";
 
 
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
 var wl_active = new Object();
-wl_active.titl=" - Wireless Active Client MAC List";
-wl_active.h2="Wireless Client MAC List";
-wl_active.h3="Enable MAC Filter";
-wl_active.active="Active PC";
-wl_active.inactive="Inactive PC";
+wl_active.titl=" - Liste des Adresses MAC Filtrées";
+wl_active.h2="Liste des Adresses MAC Sans Fil";
+wl_active.h3="Activer le Filtre";
+wl_active.active="Ordinateurs Actifs";
+wl_active.inactive="Ordinateurs Inactifs";
 
 
 
@@ -1467,8 +1464,8 @@ radius.h2="Remote Authentication Dial-In User Service (RADIUS)";
 radius.legend="RADIUS";
 radius.label="Identification RADIUS";
 radius.label2="Format adresse MAC";
-radius.label3="IP serveur RADIUS";
-radius.label4="Port serveur RADIUS";
+radius.label3="IP du serveur RADIUS";
+radius.label4="Port du serveur RADIUS";
 radius.label5="Utilisateurs non identifiés Max.";
 radius.label6="Format du mot de passe";
 radius.label7="Secret partagé RADIUS";
