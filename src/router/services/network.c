@@ -2080,3 +2080,79 @@ init_mtu (char *wan_proto)
     }
   return 0;
 }
+
+
+void
+start_wds_check (void)
+{
+  int s = 0;
+
+  /* Sveasoft - Bring up and configure wds interfaces */
+  /* logic - if separate ip defined bring it up */
+  /*         else if flagged for br1 and br1 is enabled add to br1 */
+  /*         else add it to the br0 bridge */
+  for (s = 1; s <= MAX_WDS_DEVS; s++)
+    {
+      char wdsvarname[32] = { 0 };
+      char wdsdevname[32] = { 0 };
+      char *dev;
+      struct ifreq ifr;
+
+
+      sprintf (wdsvarname, "wl_wds%d_enable", s);
+      sprintf (wdsdevname, "wl_wds%d_if", s);
+      dev = nvram_safe_get (wdsdevname);
+
+      if (nvram_invmatch (wdsvarname, "1"))
+	continue;
+
+      memset (&ifr, 0, sizeof (struct ifreq));
+
+      snprintf (ifr.ifr_name, IFNAMSIZ, wdsdevname);
+      ioctl (s, SIOCGIFFLAGS, &ifr);
+
+      if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
+	continue;
+
+      /* P2P WDS type */
+      if (nvram_match (wdsvarname, "1"))
+	{
+	  char wdsip[32] = { 0 };
+	  char wdsbc[32] = { 0 };
+	  char wdsnm[32] = { 0 };
+
+	  snprintf (wdsip, 31, "wl_wds%d_ipaddr", s);
+	  snprintf (wdsnm, 31, "wl_wds%d_netmask", s);
+
+	  snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
+	  get_broadcast (wdsbc, nvram_safe_get (wdsnm));
+	  eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast", wdsbc,
+		"netmask", nvram_safe_get (wdsnm), "up");
+	}
+      /* Subnet WDS type */
+      else if (nvram_match (wdsvarname, "2")
+	       && nvram_match ("wl_br1_enable", "1"))
+	{
+	  eval ("ifconfig", dev, "up");
+	  br_add_interface("br1",dev);
+	  
+	  //eval ("brctl", "addif", "br1", dev);
+	}
+      /* LAN WDS type */
+      else if (nvram_match (wdsvarname, "3"))
+	{
+	  eval ("ifconfig", dev, "up");
+	  br_add_interface("br0",dev);
+//	  eval ("brctl", "addif", "br0", dev);
+	}
+
+    }
+
+  if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
+    br_set_stp_state("br0",0);
+
+    
+    //system ("/usr/sbin/brctl stp br0 off");
+
+  return 0;
+}
