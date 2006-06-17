@@ -29,7 +29,7 @@
 #include <bcmnvram.h>
 #include <bcmutils.h>
 #include <shutils.h>
-
+#include <libbridge.h>
 
 void
 do_mssid (char *lan_ifname)
@@ -41,7 +41,8 @@ do_mssid (char *lan_ifname)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      eval ("brctl", "addif", lan_ifname, var);
+      br_add_interface(lan_ifname,var);
+    //  eval ("brctl", "addif", lan_ifname, var);
     }
 }
 #endif
