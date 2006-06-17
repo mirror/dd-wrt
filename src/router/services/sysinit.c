@@ -474,6 +474,8 @@ start_restore_defaults (void)
     }
 #endif
   int nvcnt = 0;
+  if (nvram_invmatch("default_init","1"))
+  {
   for (t = router_defaults; t->name; t++)
     {
       if (restore_defaults || !nvram_get (t->name))
@@ -493,6 +495,7 @@ start_restore_defaults (void)
 	      nvram_set (t->name, t->value);
 	    }
 	}
+    }
     }
 #ifndef HAVE_FON
   if (restore_defaults)		//fix for belkin std ip

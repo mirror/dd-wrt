@@ -34,6 +34,8 @@
 #endif
 
 struct nvram_tuple router_defaults[] = {
+  {"default_init","1",0},
+
 #ifdef HAVE_FON
 
 #ifdef HAVE_MSSID
