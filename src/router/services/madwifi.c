@@ -44,6 +44,7 @@ i
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <libbridge.h>
 
 #define AR5K_PCICFG 0x4010
 
@@ -402,7 +403,8 @@ deconfigure_single (int count)
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
-  eval ("brctl", "delif", "br0", dev);
+  br_add_interface("br0",dev);
+//  eval ("brctl", "delif", "br0", dev);
   eval ("ifconfig", dev, "down");
   eval ("wlanconfig", dev, "destroy");
   char *vifs = nvram_safe_get (wifivifs);
@@ -1206,7 +1208,9 @@ configure_single (int count)
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta"))
     {
-      eval ("brctl", "addif", "br0", dev);
+      br_add_interface("br0",dev);
+      
+//      eval ("brctl", "addif", "br0", dev);
     }
   else
     {
@@ -1254,7 +1258,8 @@ configure_single (int count)
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
       if (strcmp (m, "sta"))
 	{
-	  eval ("brctl", "addif", "br0", var);
+	  br_add_interface("br0",var);
+	//  eval ("brctl", "addif", "br0", var);
 	}
       //add to bridge
 //                  eval ("brctl", "addif", lan_ifname, var);
