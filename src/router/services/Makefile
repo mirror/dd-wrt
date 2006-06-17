@@ -12,9 +12,12 @@ CFLAGS	= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
 CFLAGS  += -I$(TOP)/iptables/include -I../bridge/libbridge -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) 
-LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -L../libnet/lib -lnet -L../bridge/libbridge -lbridge
+LDFLAGS	= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -L../libnet/lib -lnet
 
 OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o sysinit.o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o
+OBJS += libbridge_if.o
+OBJS += libbridge_init.o
+
 
 ifeq ($(CONFIG_ONLYCLIENT),y)
 CFLAGS += -DHAVE_ONLYCLIENT
@@ -47,6 +50,7 @@ ifeq ($(CONFIG_MADWIFI),y)
 OBJS += madwifi.o
 CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 
+
 
 endif
 ifeq ($(CONFIG_POWERNOC),y)
