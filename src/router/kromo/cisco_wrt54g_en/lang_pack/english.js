@@ -1383,7 +1383,6 @@ wpa.h2="Wireless Security";
 wpa.secmode="Security Mode";
 wpa.legend="Wireless Encryption";
 wpa.auth_mode="Network Authentication";
-wpa.psk="WPA Pre-Shared Key";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA Group Rekey Interval";
@@ -1393,11 +1392,9 @@ wpa.radius_port="RADIUS Server Port";
 wpa.radius_key="RADIUS Key";
 wpa.algorithms="WPA Algorithms";
 wpa.shared_key="WPA Shared Key";
-wpa.rekeyInt="rekey interval";
 
 //help container
 var hwpa = new Object();
-hwpa.right1="Security Mode:";
 hwpa.right2="You may choose from Disable, WEP, WPA Pre-Shared Key, WPA RADIUS, or RADIUS. All devices on your network must use the same security mode.";
 
 
