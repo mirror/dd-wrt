@@ -474,7 +474,7 @@ start_restore_defaults (void)
     }
 #endif
   int nvcnt = 0;
-  if (nvram_invmatch("default_init","1"))
+//  if (!nvram_match("default_init","1"))
   {
   for (t = router_defaults; t->name; t++)
     {
