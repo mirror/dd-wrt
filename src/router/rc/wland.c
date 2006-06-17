@@ -71,146 +71,6 @@ get_wshaper_dev (void)
     return "br0";
 }
 
-static int
-notify_nas (char *type, char *ifname, char *action)
-{
-  char *argv[] = { "nas4not", type, ifname, action,
-    NULL,			/* role */
-    NULL,			/* crypto */
-    NULL,			/* auth */
-    NULL,			/* passphrase */
-    NULL,			/* ssid */
-    NULL
-  };
-  char *str = NULL;
-  int retries = 10;
-  char tmp[100], prefix[] = "wlXXXXXXXXXX_";
-  int unit;
-  char remote[ETHER_ADDR_LEN];
-  char ssid[48], pass[80], auth[16], crypto[16], role[8];
-  int i;
-
-  /* the wireless interface must be configured to run NAS */
-  wl_ioctl (ifname, WLC_GET_INSTANCE, &unit, sizeof (unit));
-  snprintf (prefix, sizeof (prefix), "wl%d_", unit);
-  if (nvram_match (strcat_r (prefix, "akm", tmp), "") &&
-      nvram_match (strcat_r (prefix, "auth_mode", tmp), "none"))
-    return 0;
-
-  /* find WDS link configuration */
-  wl_ioctl (ifname, WLC_WDS_GET_REMOTE_HWADDR, remote, ETHER_ADDR_LEN);
-  for (i = 0; i < MAX_NVPARSE; i++)
-    {
-      char mac[ETHER_ADDR_STR_LEN];
-      uint8 ea[ETHER_ADDR_LEN];
-
-      if (get_wds_wsec (unit, i, mac, role, crypto, auth, ssid, pass) &&
-	  ether_atoe (mac, ea) && !bcmp (ea, remote, ETHER_ADDR_LEN))
-	{
-	  argv[4] = role;
-	  argv[5] = crypto;
-	  argv[6] = auth;
-	  argv[7] = pass;
-	  argv[8] = ssid;
-	  break;
-	}
-    }
-
-  /* did not find WDS link configuration, use wireless' */
-  if (i == MAX_NVPARSE)
-    {
-      /* role */
-      argv[4] = "auto";
-      /* crypto */
-      argv[5] = nvram_safe_get (strcat_r (prefix, "crypto", tmp));
-      /* auth mode */
-      argv[6] = nvram_safe_get (strcat_r (prefix, "akm", tmp));
-      /* passphrase */
-      argv[7] = nvram_safe_get (strcat_r (prefix, "wpa_psk", tmp));
-      /* ssid */
-      argv[8] = nvram_safe_get (strcat_r (prefix, "ssid", tmp));
-    }
-
-  /* wait till nas is started */
-  while (retries-- > 0 && !(str = file2str ("/tmp/nas.lan.pid")))
-    sleep (1);
-  if (str)
-    {
-      int pid;
-      free (str);
-      return _eval (argv, ">/dev/console", 0, &pid);
-    }
-  return -1;
-}
-
-static int
-do_wds_check (void)
-{
-  int s = 0;
-
-  /* Sveasoft - Bring up and configure wds interfaces */
-  /* logic - if separate ip defined bring it up */
-  /*         else if flagged for br1 and br1 is enabled add to br1 */
-  /*         else add it to the br0 bridge */
-  for (s = 1; s <= MAX_WDS_DEVS; s++)
-    {
-      char wdsvarname[32] = { 0 };
-      char wdsdevname[32] = { 0 };
-      char *dev;
-      struct ifreq ifr;
-
-
-      sprintf (wdsvarname, "wl_wds%d_enable", s);
-      sprintf (wdsdevname, "wl_wds%d_if", s);
-      dev = nvram_safe_get (wdsdevname);
-
-      if (nvram_invmatch (wdsvarname, "1"))
-	continue;
-
-      memset (&ifr, 0, sizeof (struct ifreq));
-
-      snprintf (ifr.ifr_name, IFNAMSIZ, wdsdevname);
-      ioctl (s, SIOCGIFFLAGS, &ifr);
-
-      if ((ifr.ifr_flags & (IFF_RUNNING | IFF_UP)) == (IFF_RUNNING | IFF_UP))
-	continue;
-
-      /* P2P WDS type */
-      if (nvram_match (wdsvarname, "1"))
-	{
-	  char wdsip[32] = { 0 };
-	  char wdsbc[32] = { 0 };
-	  char wdsnm[32] = { 0 };
-
-	  snprintf (wdsip, 31, "wl_wds%d_ipaddr", s);
-	  snprintf (wdsnm, 31, "wl_wds%d_netmask", s);
-
-	  snprintf (wdsbc, 31, "%s", nvram_safe_get (wdsip));
-	  get_broadcast (wdsbc, nvram_safe_get (wdsnm));
-	  eval ("ifconfig", dev, nvram_safe_get (wdsip), "broadcast", wdsbc,
-		"netmask", nvram_safe_get (wdsnm), "up");
-	}
-      /* Subnet WDS type */
-      else if (nvram_match (wdsvarname, "2")
-	       && nvram_match ("wl_br1_enable", "1"))
-	{
-	  eval ("ifconfig", dev, "up");
-	  eval ("brctl", "addif", "br1", dev);
-	}
-      /* LAN WDS type */
-      else if (nvram_match (wdsvarname, "3"))
-	{
-	  eval ("ifconfig", dev, "up");
-	  eval ("brctl", "addif", "br0", dev);
-	}
-
-    }
-
-  if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
-    system ("/usr/sbin/brctl stp br0 off");
-
-  return 0;
-}
 
 
 static int
@@ -442,8 +302,8 @@ do_ap_check (void)
 
 //  if (nvram_match ("apwatchdog_enable", "1"))
 //    do_ap_watchdog ();
-
-  do_wds_check ();
+start_service("wds_check");
+//  do_wds_check ();
 
   return 0;
 }
