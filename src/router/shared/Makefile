@@ -79,8 +79,7 @@ ifeq ($(CONFIG_34TELECOM),y)
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
-  OBJS += ../wireless-tools/libiw.so.29 
+  CFLAGS += -DHAVE_MADWIFI
 endif
 
 ifeq ($(CONFIG_NEWMEDIA),y)
