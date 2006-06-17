@@ -36,7 +36,7 @@ typedef u_int16_t u16;
 typedef u_int8_t u8;
 #include <linux/sockios.h>
 #include <linux/ethtool.h>
-#include <libbridge.h>
+//#include <libbridge.h>
 
 #include <bcmnvram.h>
 #include <netconf.h>
@@ -52,6 +52,12 @@ typedef u_int8_t u8;
 #include <nvparse.h>
 #include <etsockio.h>
 #include <bcmparams.h>
+
+extern int br_add_bridge(const char *brname);
+extern int br_del_bridge(const char *brname);
+extern int br_add_interface(const char *br, const char *dev);
+extern int br_del_interface(const char *br, const char *dev);
+extern int br_set_stp_state(const char *br, int stp_state);
 
 
 /* phy types */
