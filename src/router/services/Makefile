@@ -231,7 +231,7 @@ endif
 
 vpath %.c $(TOP)/shared $(SRCBASE)/rts/src
 
-all: services.so
+all: services.so services.a
 
 clean:
 	rm -f *.o *.a *.so
@@ -244,6 +244,10 @@ install: all
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
 	$(CC) --shared -o $@ $^ $(LDFLAGS)
+	
+services.a: $(OBJS)
+	$(AR) arc -o  $@ $^
+
 #	$(CC) -o $@.test $^ $(LDFLAGS)
 
 $(OBJS): $(CY_DEPS)
