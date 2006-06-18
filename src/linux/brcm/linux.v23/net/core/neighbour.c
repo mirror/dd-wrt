@@ -14,6 +14,7 @@
  *	Vitaly E. Lavrov	releasing NULL neighbor in neigh_add.
  *	Harald Welte		Add neighbour cache statistics like rtstat
  *	Harald Welte		port neighbour cache rework from 2.6.9-rcX
+ *	Pradeep Vincent		Move neighbour cache entry to stale state
  */
 
 #include <linux/config.h>
@@ -705,6 +706,14 @@ static void SMP_TIMER_NAME(neigh_periodic_timer)(unsigned long arg)
 			neigh_release(n);
 			continue;
 		}
+
+		/* Mark it stale - To be reconfirmed later when used */
+		if (n->nud_state & NUD_REACHABLE &&
+		    now - n->confirmed > n->parms->reachable_time) {
+			n->nud_state = NUD_STALE;
+			neigh_suspect(n);
+		}
+
 		write_unlock(&n->lock);
 
 next_elt:

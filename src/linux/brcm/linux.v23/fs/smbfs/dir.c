@@ -416,6 +416,11 @@ smb_lookup(struct inode *dir, struct dentry *dentry)
 	if (dentry->d_name.len > SMB_MAXNAMELEN)
 		goto out;
 
+	/* Do not allow lookup of names with backslashes in */
+	error = -EINVAL;
+	if (memchr(dentry->d_name.name, '\\', dentry->d_name.len))
+		goto out;
+
 	error = smb_proc_getattr(dentry, &finfo);
 #ifdef SMBFS_PARANOIA
 	if (error && error != -ENOENT)

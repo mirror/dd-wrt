@@ -1479,26 +1479,27 @@ int vfs_unlink(struct inode *dir, struct dentry *dentry)
 {
 	int error;
 
-	down(&dir->i_zombie);
 	error = may_delete(dir, dentry, 0);
-	if (!error) {
-		error = -EPERM;
-		if (dir->i_op && dir->i_op->unlink) {
-			DQUOT_INIT(dir);
-			if (d_mountpoint(dentry))
-				error = -EBUSY;
-			else {
-				lock_kernel();
-				error = dir->i_op->unlink(dir, dentry);
-				unlock_kernel();
-				if (!error)
-					d_delete(dentry);
-			}
+	if (error)
+		return error;
+
+	double_down(&dir->i_zombie, &dentry->d_inode->i_zombie);
+	error = -EPERM;
+	if (dir->i_op && dir->i_op->unlink) {
+		DQUOT_INIT(dir);
+		if (d_mountpoint(dentry))
+			error = -EBUSY;
+		else {
+			lock_kernel();
+			error = dir->i_op->unlink(dir, dentry);
+			unlock_kernel();
 		}
 	}
-	up(&dir->i_zombie);
-	if (!error)
+	double_up(&dir->i_zombie, &dentry->d_inode->i_zombie);
+	if (!error) {
+		d_delete(dentry);
 		inode_dir_notify(dir, DN_DELETE);
+	}
 	return error;
 }
 
@@ -1607,18 +1608,19 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
 	struct inode *inode;
 	int error;
 
-	down(&dir->i_zombie);
 	error = -ENOENT;
 	inode = old_dentry->d_inode;
 	if (!inode)
-		goto exit_lock;
-
-	error = may_create(dir, new_dentry);
-	if (error)
-		goto exit_lock;
+		goto exit;
 
 	error = -EXDEV;
 	if (dir->i_dev != inode->i_dev)
+		goto exit;
+
+	double_down(&dir->i_zombie, &old_dentry->d_inode->i_zombie);
+
+	error = may_create(dir, new_dentry);
+	if (error)
 		goto exit_lock;
 
 	/*
@@ -1636,9 +1638,10 @@ int vfs_link(struct dentry *old_dentry, struct inode *dir, struct dentry *new_de
 	unlock_kernel();
 
 exit_lock:
-	up(&dir->i_zombie);
+	double_up(&dir->i_zombie, &old_dentry->d_inode->i_zombie);
 	if (!error)
 		inode_dir_notify(dir, DN_CREATE);
+exit:
 	return error;
 }
 

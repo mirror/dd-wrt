@@ -1107,6 +1107,13 @@ do_replace(void *user, unsigned int len)
 	if (len != sizeof(tmp) + tmp.size)
 		return -ENOPROTOOPT;
 
+	/* overflow check */
+	if (tmp.size >= (INT_MAX - sizeof(struct ipt_table_info)) / NR_CPUS -
+			SMP_CACHE_BYTES)
+		return -ENOMEM;
+	if (tmp.num_counters >= INT_MAX / sizeof(struct ipt_counters))
+		return -ENOMEM;
+
 	/* Pedantry: prevent them from hitting BUG() in vmalloc.c --RR */
 	if ((SMP_ALIGN(tmp.size) >> PAGE_SHIFT) + 2 > num_physpages)
 		return -ENOMEM;

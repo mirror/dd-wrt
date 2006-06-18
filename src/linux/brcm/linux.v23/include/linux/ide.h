@@ -1691,6 +1691,7 @@ extern void ide_destroy_dmatable(ide_drive_t *);
 extern ide_startstop_t ide_dma_intr(ide_drive_t *);
 extern int ide_release_dma(ide_hwif_t *);
 extern void ide_setup_dma(ide_hwif_t *, unsigned long, unsigned int);
+extern void ide_setup_no_dma(ide_hwif_t *);
 
 extern int __ide_dma_host_off(ide_drive_t *);
 extern int __ide_dma_off_quietly(ide_drive_t *);
@@ -1713,6 +1714,7 @@ extern int __ide_dma_timeout(ide_drive_t *);
 #else
 static inline void ide_setup_dma(ide_hwif_t *x, unsigned long y, unsigned int z) {;}
 static inline void ide_release_dma(ide_hwif_t *x) {;}
+static inline void ide_setup_no_dma(ide_hwif_t *x) {;}
 #endif
 
 extern void hwif_unregister(ide_hwif_t *);

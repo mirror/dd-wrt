@@ -507,6 +507,7 @@ static void ide_hwif_setup_dma(struct pci_dev *dev, ide_pci_device_t *d, ide_hwi
 		} else {
 			printk(KERN_INFO "%s: %s Bus-Master DMA disabled "
 				"(BIOS)\n", hwif->name, d->name);
+			ide_setup_no_dma(hwif);
 		}
 	}
 }
