@@ -244,8 +244,7 @@ errmsg.err44="Le nombre total d\'adresses MAC filtrées ne peut pas dépasser 128.
 errmsg.err47="SSID invalide.";
 
 //Wireless_WDS.asp error messages
-errmsg.err48="WDS n\'est pas compatible avec la configuration courante du routeur. \
-	Merci de vérifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n\'est pas supporté sous WDS \n * Le mode sans fil B-Only n\'est pas supporté sous WDS";
+errmsg.err48="WDS n\'est pas compatible avec la configuration courante du routeur. Merci de vérifier les points suivants :\n * Le routeur doit fonctionner en mode AP \n * WPA2 n\'est pas supporté sous WDS \n * Le mode sans fil B-Only n\'est pas supporté sous WDS";
 
 //Wireless_radauth.asp error messages
 errmsg.err49="Radius n\'est seulement diponible qu\'en mode AP.";
@@ -254,9 +253,7 @@ errmsg.err49="Radius n\'est seulement diponible qu\'en mode AP.";
 errmsg.err50="Vous devez saisir un SSID.";
 
 // Management.asp error messages
-errmsg.err51="Le routeur dispose actuellement de son mot de passe par défaut. \
-	Par mesure de sécurité, vous devez changer le mot de passe avant de pouvoir activer la fonctionnalité de gestion distante. \
-	Cliquez sur le bouton OK pour changer le mot de passe. Cliquez sur le bouton Annuler pour laisser la fonctionnalité de gestion distante désactivée.";
+errmsg.err51="Le routeur dispose actuellement de son mot de passe par défaut. Par mesure de sécurité, vous devez changer le mot de passe avant de pouvoir activer la fonctionnalité de gestion distante. Cliquez sur le bouton OK pour changer le mot de passe. Cliquez sur le bouton Annuler pour laisser la fonctionnalité de gestion distante désactivée.";
 errmsg.err52="Le mot de passe de confirmation ne correspond pas.";
 
 // Port_Services.asp error messages
@@ -454,10 +451,7 @@ ddnsm.all_noip="Connection Internet non détectée";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à une adresse IP Internet dynamique.\
-	Cela peut s\'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur \
-	derrière le routeur. <br /><br />Avant d\'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, \
-	tels que DynDNS.org, TZO.com ou ZoneEdit.com.";
+hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à une adresse IP Internet dynamique. Cela peut s\'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur derrière le routeur. <br /><br />Avant d\'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, tels que DynDNS.org, TZO.com ou ZoneEdit.com.";
 
 
 
@@ -473,8 +467,7 @@ diag.firewall="Pare-feu";
 
 //help container
 var hdiag = new Object();
-hdiag.right2="Vous pouvez lancer des lignes de commandes grâce à la console d\'administration. \
-	Saisissez dans la zone de texte les commandes à exécuter et cliquez sur le bouton <em>\"" + sbutton.runcmd + "\"</em> pour les soumettre.";
+hdiag.right2="Vous pouvez lancer des lignes de commandes grâce à la console d\'administration. Saisissez dans la zone de texte les commandes à exécuter et cliquez sur le bouton <em>\"" + sbutton.runcmd + "\"</em> pour les soumettre.";
 
 
 
@@ -507,9 +500,7 @@ factdef.mess1="Attention ! Si vous cliquez sur OK, le routeur va réinitialiser l
 
 //help container
 var hfactdef = new Object();
-hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut de tous les paramètres de configuration, puis \
-	cliquez sur <em>\"" + sbutton.save + "\"</em>. Tous les paramètres enregistrés précédemment seront \
-	perdus une fois les paramètres usine restaurés. Par défaut, cette fonctionnalité est désactivée.";
+hfactdef.right1="Cliquez sur <em>Oui</em> pour rétablir les valeurs par défaut de tous les paramètres de configuration, puis cliquez sur <em>\"" + sbutton.save + "\"</em>. Tous les paramètres enregistrés précédemment seront perdus une fois les paramètres usine restaurés. Par défaut, cette fonctionnalité est désactivée.";
 
 
 
@@ -549,22 +540,14 @@ filter.mess3="L\'heure de fin doit être postérieure à l\'heure de début.";
 
 //help container
 var hfilter = new Object();
-hfilter.right2="Vous pouvez contrôler l\'accès à Internet à l\'aide d\'une stratégie. \
-	Pour supprimer une stratégie, sélectionnez son numéro, puis cliquez sur \
-	le bouton <em>" + sbutton.del + "</em>. Pour afficher l\'ensemble des stratégies, cliquez sur le bouton <em>" + sbutton.summary + "</em>."
-hfilter.right4="Par défaut, les stratégies sont activées. Pour activer une stratégie, sélectionnez son numéro dans le menu déroulant, \
-	puis cliquez sur le bouton radio en regard de l\'option <em>Activer</em>.";
+hfilter.right2="Vous pouvez contrôler l\'accès à Internet à l\'aide d\'une stratégie. Pour supprimer une stratégie, sélectionnez son numéro, puis cliquez sur le bouton <em>" + sbutton.del + "</em>. Pour afficher l\'ensemble des stratégies, cliquez sur le bouton <em>" + sbutton.summary + "</em>."
+hfilter.right4="Par défaut, les stratégies sont activées. Pour activer une stratégie, sélectionnez son numéro dans le menu déroulant, puis cliquez sur le bouton radio en regard de l\'option <em>Activer</em>.";
 hfilter.right6="Saisissez le nom de la stratégie.";
-hfilter.right8="Définissez les jours pendant lesquels vous souhaitez appliquer cette stratégie. Sélectionnez \
-	individuellement les jours pendant lesquels la stratégie doit être en vigueur ou bien sélectionnez l\'option <em>Tous les jours</em>.";
+hfilter.right8="Définissez les jours pendant lesquels vous souhaitez appliquer cette stratégie. Sélectionnez individuellement les jours pendant lesquels la stratégie doit être en vigueur ou bien sélectionnez l\'option <em>Tous les jours</em>.";
 hfilter.right10="Saisissez une plage d\'heures et de minutes pendant laquelle la stratégie sera appliquée ou bien sélectionnez l\'option <em>24 heures</em>.";
-hfilter.right12="Vous pouvez filtrer l\'accès à divers services accessibles par Internet, notamment FTP ou Telnet, en choisissant ces services \
-	dans les menus déroulants en regard de l\'option <em>Services bloqués</em>. Vous pouvez bloquer jusqu\'à 20 services. \
-	Saisissez ensuite l\'intervalle des ports à filtrer.";
-hfilter.right14="Si vous souhaitez bloquer des sites Web dotés d\'adresses URL spécifiques, saisissez chaque URL dans un \
-	champ distinct en regard de la section <em>Blocage de site Web par adresse URL</em>.";
-hfilter.right16="Si vous souhaitez bloquer des sites Web à l\'aide de mots clés spécifiques, saisissez chaque mot clé dans un \
-	champ distinct en regard de la section <em>Blocage de site Web par mot clé</em>.";
+hfilter.right12="Vous pouvez filtrer l\'accès à divers services accessibles par Internet, notamment FTP ou Telnet, en choisissant ces services dans les menus déroulants en regard de l\'option <em>Services bloqués</em>. Vous pouvez bloquer jusqu\'à 20 services. Saisissez ensuite l\'intervalle des ports à filtrer.";
+hfilter.right14="Si vous souhaitez bloquer des sites Web dotés d\'adresses URL spécifiques, saisissez chaque URL dans un champ distinct en regard de la section <em>Blocage de site Web par adresse URL</em>.";
+hfilter.right16="Si vous souhaitez bloquer des sites Web à l\'aide de mots clés spécifiques, saisissez chaque mot clé dans un champ distinct en regard de la section <em>Blocage de site Web par mot clé</em>.";
 
 
 
@@ -599,8 +582,7 @@ filter.port113="Filtre IDENT (port 113)";
 //help container
 var hfirewall = new Object();
 hfirewall.right1="Firewall Protection:";
-hfirewall.right2="Activez cette fonctionnalité pour utiliser la technologie SPI (Stateful Packet Inspection) \
-		et procéder à une vérification plus poussée des paquets de données infiltrant votre environnement réseau.";
+hfirewall.right2="Activez cette fonctionnalité pour utiliser la technologie SPI (Stateful Packet Inspection) et procéder à une vérification plus poussée des paquets de données infiltrant votre environnement réseau.";
 
 
 
@@ -614,12 +596,7 @@ prforward.app="Application";
 
 //help container
 var hprforward = new Object();
-hprforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. \
-	Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... \
-	Certaines applications Internet peuvent n\'exiger aucun transfert. \
-	Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquate. \
-	En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires \
-	grâce à la case à cocher <em>" + share.enable +"</em>.";
+hprforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n\'exiger aucun transfert. Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquate. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
 
 
 
@@ -635,12 +612,7 @@ pforward.to="vers le Port";
 
 //help container
 var hpforward = new Object();
-hpforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. \
-	Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... \
-	Certaines applications Internet peuvent n\'exiger aucun transfert. \
-	Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquate. \
-	En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires \
-	grâce à la case à cocher <em>" + share.enable +"</em>.";
+hpforward.right2="Certaines applications nécessitent d\'ouvrir des ports spécifiques pour fonctionner correctement. Il peut s\'agir de certains jeux en ligne, les serveurs type FTP, messagerie, web etc ... Certaines applications Internet peuvent n\'exiger aucun transfert. Quand une demande sur un port bien précis venant d\'Internet se présente au niveau du routeur, celui-ci transfert les données vers l\'ordinateur adéquate. En raison des problématiques de sécurité, vous pouvez activer ou désactiver les transferts de connexion quand ils ne sont pas nécessaires grâce à la case à cocher <em>" + share.enable +"</em>.";
 
 
 
@@ -947,9 +919,7 @@ management.gui_style="Skin de la console";
 //help container
 var hmanagement = new Object();
 hmanagement.right1="Auto-Actualisation:";
-hmanagement.right2="Saisissez l\'intervalle de rafraichissement automatique de la console d\'administration \
-	(seules certaines pages bénéficient de cette fonction). La valeur 0 désactive cette fonctionnalité et bascule le rafraichissement \
-	en mode manuel.";
+hmanagement.right2="Saisissez l\'intervalle de rafraichissement automatique de la console d\'administration (seules certaines pages bénéficient de cette fonction). La valeur 0 désactive cette fonctionnalité et bascule le rafraichissement en mode manuel.";
 
 
 
@@ -1028,19 +998,11 @@ route.static_ip="IP de Destination sur le LAN";
 
 //help container
 var hroute = new Object();
-hroute.right2="Sélectionnez le mode sous lequel le routeur doit opérer. \
-	Si le routeur concerné héberge la connexion de votre réseau à Internet, sélectionnez l\'option <em>" + share.gateway + "</em>. \
-	Si un autre routeur existe sur le réseau, sélectionnez <em>Routeur</em>. Si vous choisissez l\'option <em>Routeur</em>, \
-	la section <em>" + route.gateway_legend + "</em> est activée.";
-hroute.right4="Pour définir un itinéraire statique entre le routeur et un autre réseau, \
-	choisissez un nombre dans la liste déroulante de la section <em>" + route.static_legend + "</em>. Un itinéraire statique identifie un \
-	chemin pré-défini que les informations du réseau doivent emprunter pour atteindre un hôte ou un réseau spécifique. \
-	Saisissez les informations décrites ci-dessous pour définir un nouvel itinéraire statique. Cliquez sur le bouton <em>" + sbutton.del + "</em> \
-	pour supprimer un itinéraire statique.";
+hroute.right2="Sélectionnez le mode sous lequel le routeur doit opérer. Si le routeur concerné héberge la connexion de votre réseau à Internet, sélectionnez l\'option <em>" + share.gateway + "</em>. Si un autre routeur existe sur le réseau, sélectionnez <em>Routeur</em>. Si vous choisissez l\'option <em>Routeur</em>, la section <em>" + route.gateway_legend + "</em> est activée.";
+hroute.right4="Pour définir un itinéraire statique entre le routeur et un autre réseau, choisissez un nombre dans la liste déroulante de la section <em>" + route.static_legend + "</em>. Un itinéraire statique identifie un chemin pré-défini que les informations du réseau doivent emprunter pour atteindre un hôte ou un réseau spécifique. Saisissez les informations décrites ci-dessous pour définir un nouvel itinéraire statique. Cliquez sur le bouton <em>" + sbutton.del + "</em> pour supprimer un itinéraire statique.";
 hroute.right6="Saisissez dans ce champ le nom de l\'itinéraire.";
 hroute.right8="Cette option identifie l\'adresse du réseau distant, ou hôte, auquel vous souhaitez attribuer un itinéraire statique.";
-hroute.right10="Cette option détermine quelle portion de l\'adresse IP du réseau local (LAN) \
-	de destination correspond au réseau et quelle portion correspond à l\'hôte.";
+hroute.right10="Cette option détermine quelle portion de l\'adresse IP du réseau local (LAN) de destination correspond au réseau et quelle portion correspond à l\'hôte.";
 
 
 // ******************************************* Site_Survey.asp *******************************************//
@@ -1211,8 +1173,7 @@ hstatus_router.right6="This is the router\'s current firmware.";
 hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
 hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
 hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
-hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. \
-				This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
+hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
 
 
 
@@ -1292,8 +1253,7 @@ upgrad.mess1="Upgrading firmware may take a few minutes.<br />Do not turn off th
 
 //help container
 var hupgrad = new Object();
-hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> \
-			Click the <em>Upgrade</em> button to begin the upgrade process. Upgrade must not be interrupted.";
+hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> Click the <em>Upgrade</em> button to begin the upgrade process. Upgrade must not be interrupted.";
 
 
 
@@ -1374,8 +1334,7 @@ wol.msg1="Cliquer pour supprimer l\'hôte";
 var hwol = new Object();
 hwol.right2="Cette fonctionnalité permet de <em>réveiller</em> à distance une machine de votre réseau local sans avoir à se déplacer.";
 hwol.right4="Les adresses MAC doivent être saisies dans le format XX:XX:XX:XX:XX:XX (ex. 01:23:45:67:89:AB)";
-hwol.right6="L\'adresse IP désigne généralement l\'adresse de broadcast du réseau local, \
-	mais peut également désigner une adresse IP si l\'hôte n'est pas sur le réseau local connecté au routuer."
+hwol.right6="L\'adresse IP désigne généralement l\'adresse de broadcast du réseau local, mais peut également désigner une adresse IP si l\'hôte n'est pas sur le réseau local connecté au routuer."
 
 
 
@@ -1390,10 +1349,7 @@ wanmac.wlan="Dupliquer l\'adresse MAC WLAN";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="Une adresse MAC désigne un code à 12 chiffres attribué à un composant matériel unique en vue de son identification. \
-	Certains fournisseurs d\'accès Internet (FAI) exigent l\'enregistrement d\'une adresse MAC pour l\'accès à Internet. \
-	Si vous ne souhaitez pas ré-enregistrer l\'adresse MAC auprès de votre FAI, vous pouvez attribuer l\'adresse MAC actuellement enregistrée \
-	auprès de votre FAI au routeur via la fonctionnalité d\'<em>Adresse MAC dupliquée</em>.";
+hwanmac.right2="Une adresse MAC désigne un code à 12 chiffres attribué à un composant matériel unique en vue de son identification. Certains fournisseurs d\'accès Internet (FAI) exigent l\'enregistrement d\'une adresse MAC pour l\'accès à Internet. Si vous ne souhaitez pas ré-enregistrer l\'adresse MAC auprès de votre FAI, vous pouvez attribuer l\'adresse MAC actuellement enregistrée auprès de votre FAI au routeur via la fonctionnalité d\'<em>Adresse MAC dupliquée</em>.";
 
 
 
@@ -1509,10 +1465,7 @@ wl_basic.g="G-uniquement";
 
 //help container
 var hwl_basic = new Object();
-hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, \
-	conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, \
-	sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, \
-	sélectionnez <em>B-uniquement</em>. Si votre réseau n\'est muni d\'aucun périphérique sans fil, sélectionnez l\'option <em>Désactiver</em>.";
+hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n\'est muni d\'aucun périphérique sans fil, sélectionnez l\'option <em>Désactiver</em>.";
 hwl_basic.right3="Sensibilité: ";
 hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité.";
 
@@ -1562,9 +1515,7 @@ wl_adv.shrt="Court";
 
 //help container
 var hwl_adv = new Object();
-hwl_adv.right2="La valeur <em>Auto</em> définie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. \
-	En mode d\'authentification <em>Système ouvert</em>, l\'expéditeur et le destinataire n\'utilisent pas de clé WEP pour l\'authentification. \
-	En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
+hwl_adv.right2="La valeur <em>Auto</em> définie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. En mode d\'authentification <em>Système ouvert</em>, l\'expéditeur et le destinataire n\'utilisent pas de clé WEP pour l\'authentification. En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
 
 
 
