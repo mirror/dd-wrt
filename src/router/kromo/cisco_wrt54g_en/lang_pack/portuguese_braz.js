@@ -7,7 +7,7 @@
 //  Head.appendChild(head_inc);
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr 08/06/2006	        //
+//		Portuguese-Brazil translation file - DD-WRT V23 SP1 by aledr 16/06/2006	        //
 //						Need some improvements yet...		                    //
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -30,6 +30,8 @@ share.usrname="Nome de Usuário";
 share.passwd="Senha";
 share.hostname="Host Name";
 share.domainname="Nome de Domínio";
+share.wandomainname="Nome de Domínio WAN";
+share.landomainname="Nome de Domínio LAN";
 share.statu="Status";
 share.start="Da Porta";
 share.end="Até a Porta";
@@ -132,6 +134,7 @@ share.dhcp="DHCP";
 share.styl="Estilo";
 share.err="erro";
 share.errs="erros";
+share.meters="Metros";
 
 
 var sbutton = new Object();
@@ -235,7 +238,7 @@ errmsg.err38="Por favor insira uma Chave Compartilhada!";
 errmsg.err39="Chave Inválida, deve conter entre 8 e 63 caracteres ASCII ou 64 dígitos hexadecimais."
 errmsg.err40="Você deve inserir uma chave no campo Chave ";
 errmsg.err41="Tamanho inválido na Chave ";
-errmsg.err43="Rekey interval";
+errmsg.err43="Intervalo de Renovação de Chave";
 
 //config.asp error messages
 errmsg.err42="Por favor selecione um arquivo de configuração para restaurar.";
@@ -1028,7 +1031,7 @@ service.dnsmasq_opt="Opções Adicionais de DNS";
 service.pptp_legend="PPTP";
 service.pptp_srv="Servidor PPTP";
 service.pptp_client="IP(s) Clientes";
-service.pptp_chap="CHAP-Secrets";
+service.pptp_chap="Segredo-CHAP";
 
 //syslog.webservices
 service.syslog_legend="Log do Sistema";
@@ -1183,7 +1186,7 @@ status_wireless.h2="Wireless";
 status_wireless.legend="Status Wireless";
 status_wireless.net="Tipo de Rede";
 status_wireless.pptp="Status PPTP";
-status_wireless.legend2="Informações dos Pacotes";
+status_wireless.legend2="Informações dos Pacotes Wireless";
 status_wireless.rx="Recebidos (RX)";
 status_wireless.tx="Enviados (TX)";
 status_wireless.h22="Nós Wireless";
@@ -1331,10 +1334,9 @@ hwanmac.right2="Alguns ISPs requerem o registro do seu endereço MAC. Se você não
 var wpa = new Object();
 wpa.titl=" - Segurança Wireless";
 wpa.h2="Segurança Wireless";
-wpa.legend="Criptografia Wireless";
 wpa.secmode="Modo de Segurança";
+wpa.legend="Criptografia Wireless";
 wpa.auth_mode="Autenticação de Rede";
-wpa.psk="Chave WPA Pré-Compartilhada";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="Intervalo de Renovação da Chava WPA do Grupo";
@@ -1344,11 +1346,9 @@ wpa.radius_port="Porta do Servidor RADIUS";
 wpa.radius_key="Chave RADIUS";
 wpa.algorithms="Algoritimos WPA";
 wpa.shared_key="Chave Compartilhada WPA";
-wpa.rekeyInt="rekey interval";
 
 //help container
 var hwpa = new Object();
-hwpa.right1="Modo de Segurança:";
 hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>Chave WPA Pré-Compartilhada</em>, <em>WPA RADIUS</em>, ou <em>RADIUS</em>. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança.";
 
 
@@ -1398,9 +1398,8 @@ radius.label3="IP do Servidor Radius";
 radius.label4="Porta do Servidor Radius";
 radius.label5="Máximo de Usuários Não Autenticados";
 radius.label6="Formato da Senha";
-radius.label7="RADIUS Shared Secret";
+radius.label7="Segredo Compartilhado RADIUS";
 radius.label8="Override Radius if Server is unavailable";
-radius.mac="MAC";
 
 
 // ******************************************* Wireless_MAC.asp *******************************************//
@@ -1434,7 +1433,6 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Misto";
 wl_basic.b="Somente-B";
 wl_basic.g="Somente-G";
-wl_basic.sensitivity="Padrão: 20000 Metros";
 
 //help container
 var hwl_basic = new Object();
