@@ -325,7 +325,7 @@ set_regdomain (unsigned long int base_addr, int code)
 #include "net80211/ieee80211_ioctl.h"
 #include <iwlib.h>
 
-extern int br_add_interface(const char *br, const char *dev);
+extern int br_add_interface (const char *br, const char *dev);
 
 
 static int
@@ -402,7 +402,7 @@ deconfigure_single (int count)
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
-  br_add_interface("br0",dev);
+  br_add_interface ("br0", dev);
 //  eval ("brctl", "delif", "br0", dev);
   eval ("ifconfig", dev, "down");
   eval ("wlanconfig", dev, "destroy");
@@ -425,7 +425,7 @@ deconfigure_wifi (void)
   eval ("killall", "hostapd");
   eval ("killall", "wpa_supplicant");
   sleep (2);
-  eval ("killall", "-9", "wrt-radauth");  
+  eval ("killall", "-9", "wrt-radauth");
   eval ("killall", "-9", "hostapd");
   eval ("killall", "-9", "wpa_supplicant");
 
@@ -723,30 +723,33 @@ default_match (char *var, char *match, char *def)
 }
 
 
-char *getMacAddr(char *ifname,char *mac)
+char *
+getMacAddr (char *ifname, char *mac)
 {
-unsigned char hwbuff[16];
-int i = wl_hwaddr(ifname,hwbuff);
-if (i<0)
+  unsigned char hwbuff[16];
+  int i = wl_hwaddr (ifname, hwbuff);
+  if (i < 0)
     return NULL;
-sprintf(mac,"%02X:%02X:%02X:%02X:%02X:%02X",hwbuff[0],hwbuff[1],hwbuff[2],hwbuff[3],hwbuff[4],hwbuff[5]);
+  sprintf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1],
+	   hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 
 }
 
 static int
 getMaxPower (char *ifname)
 {
-char buf[32];
-sprintf(buf,"iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",ifname);
-system(buf);
-FILE *in = fopen("/tmp/.power","rb");
-if (in==NULL)
+  char buf[32];
+  sprintf (buf, "iwlist %s txpower|grep \"Maximum Power:\" > /tmp/.power",
+	   ifname);
+  system (buf);
+  FILE *in = fopen ("/tmp/.power", "rb");
+  if (in == NULL)
     return 1000;
-char buf2[16];
-int max;
-fscanf(in,"%s %s %d",buf,buf2,&max);
-fclose(in);
-return max;
+  char buf2[16];
+  int max;
+  fscanf (in, "%s %s %d", buf, buf2, &max);
+  fclose (in);
+  return max;
 
 
 
@@ -905,8 +908,7 @@ setupHostAP (char *prefix)
 	nvram_match (akm, "psk2") ||
 	nvram_match (akm, "psk psk2") ||
 	nvram_match (akm, "wpa") ||
-	nvram_match (akm, "wpa2") ||
-	nvram_match (akm, "wpa wpa2"))
+	nvram_match (akm, "wpa2") || nvram_match (akm, "wpa wpa2"))
     {
       char fstr[32];
       sprintf (fstr, "/tmp/%s_hostap.conf", prefix);
@@ -939,17 +941,17 @@ setupHostAP (char *prefix)
 	}
       else
 	{
-//	  if (nvram_invmatch (akm, "radius"))
-	    fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
-//	  else
-//	    fprintf (fp, "macaddr_acl=2\n");
+//        if (nvram_invmatch (akm, "radius"))
+	  fprintf (fp, "wpa_key_mgmt=WPA-EAP\n");
+//        else
+//          fprintf (fp, "macaddr_acl=2\n");
 
-//	  fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
-//	  fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
-	  fprintf (fp, "own_ip_addr=%s\n",nvram_safe_get("lan_ipaddr"));
+//        fprintf (fp, "accept_mac_file=/tmp/hostapd.accept\n");
+//        fprintf (fp, "deny_mac_file=/tmp/hostapd.deny\n");
+	  fprintf (fp, "own_ip_addr=%s\n", nvram_safe_get ("lan_ipaddr"));
 	  fprintf (fp, "eap_server=0\n");
 	  fprintf (fp, "auth_algs=1\n");
-	
+
 	  sprintf (psk, "%s_radius_ipaddr", prefix);
 	  fprintf (fp, "auth_server_addr=%s\n", nvram_safe_get (psk));
 
@@ -976,24 +978,26 @@ setupHostAP (char *prefix)
       fclose (fp);
       eval ("hostapd", "-B", fstr);
     }
-  else if (nvram_match(akm,"radius"))
+  else if (nvram_match (akm, "radius"))
     {
-    //	wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
-    char *ifname=prefix;
-    sprintf (psk, "%s_radius_ipaddr", prefix);
-    char *server=nvram_safe_get(psk);
-    sprintf (psk, "%s_radius_port", prefix);
-    char *port=nvram_safe_get(psk);
-    sprintf (psk, "%s_radius_key", prefix);
-    char *share=nvram_safe_get(psk);
-    char exec[64];
-    sprintf(exec,"wrt-radauth %s %s %s %s 1 1 0 &",prefix,server,port,share);
-    system(exec);
-    
+      //  wrt-radauth $IFNAME $server $port $share $override $mackey $maxun &
+      char *ifname = prefix;
+      sprintf (psk, "%s_radius_ipaddr", prefix);
+      char *server = nvram_safe_get (psk);
+      sprintf (psk, "%s_radius_port", prefix);
+      char *port = nvram_safe_get (psk);
+      sprintf (psk, "%s_radius_key", prefix);
+      char *share = nvram_safe_get (psk);
+      char exec[64];
+      sprintf (exec, "wrt-radauth %s %s %s %s 1 1 0 &", prefix, server, port,
+	       share);
+      system (exec);
+
 //    eval("wrt-radauth",prefix,server,port,share,"1","1","0");
-    
-    
-    }else
+
+
+    }
+  else
     {
       eval ("iwconfig", prefix, "key", "off");
 //      eval ("iwpriv", prefix, "authmode", "0");
@@ -1038,27 +1042,29 @@ set_netmode (char *wif, char *dev)
 	eval ("iwpriv", dev, "mode", "5");
 //      eval ("iwpriv", dev, "mode", "1");
 //      eval ("iwpriv", dev, "turbo", "1"); //only for dynamic turbo
-    }else
+    }
+  else
     {
-    char *ext = nvram_get(xr);
-    if (ext)
+      char *ext = nvram_get (xr);
+      if (ext)
 	{
-	if (strcmp(ext,"1")==0)
+	  if (strcmp (ext, "1") == 0)
 	    {
-	    eval("iwpriv",dev,"xr","1");
-	    }else
+	      eval ("iwpriv", dev, "xr", "1");
+	    }
+	  else
 	    {
-	    eval("iwpriv",dev,"xr","0");
+	      eval ("iwpriv", dev, "xr", "0");
 	    }
 	}
-    
-    
-    char *wid = nvram_get(bw);
-    int width=20;
-    if (wid)
-	width=atoi(wid);
-    char buf[64];
-    setsysctrl(wif,"channelbw",(long)width);
+
+
+      char *wid = nvram_get (bw);
+      int width = 20;
+      if (wid)
+	width = atoi (wid);
+      char buf[64];
+      setsysctrl (wif, "channelbw", (long) width);
     }
 }
 
@@ -1120,43 +1126,42 @@ configure_single (int count)
       //create device
 //      sprintf (net, "%s_net_mode", var);
 //      if (nvram_match (net, "disabled"))
-//	continue;
+//      continue;
       sprintf (mode, "%s_mode", var);
       m = default_get (mode, "ap");
       //create device
       if (strlen (mode) > 0)
 	{
-//	  char newmode[16];
-//	  strcpy (newmode, var);
-//	  newmode[strlen (newmode) - 1] = 0;
+//        char newmode[16];
+//        strcpy (newmode, var);
+//        newmode[strlen (newmode) - 1] = 0;
 	  if (!strcmp (m, "wet") || !strcmp (m, "sta")
 	      || !strcmp (m, "wdssta"))
 	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
 		  "sta", "nosbeacon");
 	  else
-	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode",
-		  m);
+	    eval ("wlanconfig", var, "create", "wlandev", wif, "wlanmode", m);
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
-	 char vathmac[16];
-         sprintf (vathmac, "%s_macaddr", var);
-	 char vmacaddr[32];
-	 getMacAddr(var,vmacaddr);
-         nvram_set(vathmac,vmacaddr);
+	  char vathmac[16];
+	  sprintf (vathmac, "%s_macaddr", var);
+	  char vmacaddr[32];
+	  getMacAddr (var, vmacaddr);
+	  nvram_set (vathmac, vmacaddr);
 
 	}
 //      sleep (1);
     }
 
 
-  cprintf("detect maxpower\n");
+  cprintf ("detect maxpower\n");
   m = default_get (wl, "ap");
   char maxp[16];
 
   //confige net mode
 
 
-  set_netmode (wif,dev);
+  set_netmode (wif, dev);
 
 
   if (strcmp (m, "sta") && strcmp (m, "wdssta"))
@@ -1172,9 +1177,9 @@ configure_single (int count)
     }
 
   char macaddr[32];
-  getMacAddr(dev,macaddr);
-  nvram_set(athmac,macaddr);
-  
+  getMacAddr (dev, macaddr);
+  nvram_set (athmac, macaddr);
+
   cprintf ("adjust sensitivity\n");
 
   int distance = atoi (default_get (sens, "20000"));	//to meter
@@ -1207,8 +1212,8 @@ configure_single (int count)
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta"))
     {
-      br_add_interface("br0",dev);
-      
+      br_add_interface ("br0", dev);
+
 //      eval ("brctl", "addif", "br0", dev);
     }
   else
@@ -1257,8 +1262,8 @@ configure_single (int count)
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
       if (strcmp (m, "sta"))
 	{
-	  br_add_interface("br0",var);
-	//  eval ("brctl", "addif", "br0", var);
+	  br_add_interface ("br0", var);
+	  //  eval ("brctl", "addif", "br0", var);
 	}
       //add to bridge
 //                  eval ("brctl", "addif", lan_ifname, var);
@@ -1266,12 +1271,12 @@ configure_single (int count)
     }
 
   int maxpower = getMaxPower (dev);
-  if (maxpower==-1)
-    maxpower=28;
+  if (maxpower == -1)
+    maxpower = 28;
   sprintf (maxp, "%d", maxpower);	//set maximum power 
   char max_power[32];
   sprintf (max_power, "%s_maxpower", dev);
-  cprintf("maxpower configured to %s\n",maxp);
+  cprintf ("maxpower configured to %s\n", maxp);
   nvram_set (max_power, maxp);
 
   cprintf ("adjust power\n");
@@ -1285,7 +1290,7 @@ configure_single (int count)
       sprintf (powerset, "%d", newpower);
       nvram_set (power, powerset);
     }
-  cprintf("new power limit %d\n",newpower);
+  cprintf ("new power limit %d\n", newpower);
   sprintf (var, "%dmW", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
@@ -1338,7 +1343,8 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
   eval ("insmod", "ath_hal");
   eval ("insmod", "wlan");
   eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_pci", "rfkill=0","autocreate=none", countrycode, xchanmode,outdoor);
+  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none", countrycode,
+	xchanmode, outdoor);
 
 //  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
 

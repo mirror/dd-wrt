@@ -10,8 +10,8 @@
  */
 
 //#define DEVELOPE_ENV
-//#define XBOX_SUPPORT			/* Define Microsoft XBox, game machine, support */
-#define AOL_SUPPORT				/* Define AOL support */
+//#define XBOX_SUPPORT                  /* Define Microsoft XBox, game machine, support */
+#define AOL_SUPPORT		/* Define AOL support */
 //#define FLOOD_PROTECT         /* Define flooding protection */
 //#define REVERSE_RULE_ORDER    /* If it needs to reverse the rule's sequential. It is used
 //                                 when the MARK match/target be using. */
@@ -53,15 +53,15 @@
 #define IPTABLES_RULE_STAT		"/tmp/.rule"
 
 /* Known port */
-#define DNS_PORT		53		/* UDP */
-#define TFTP_PORT		69		/* UDP */
-#define ISAKMP_PORT		500		/* UDP */
-#define RIP_PORT		520		/* UDP */
+#define DNS_PORT		53	/* UDP */
+#define TFTP_PORT		69	/* UDP */
+#define ISAKMP_PORT		500	/* UDP */
+#define RIP_PORT		520	/* UDP */
 #define L2TP_PORT		1701	/* UDP */
 
-#define HTTP_PORT		80		/* TCP */
-#define IDENT_PORT		113		/* TCP */
-#define HTTPS_PORT		443		/* TCP */
+#define HTTP_PORT		80	/* TCP */
+#define IDENT_PORT		113	/* TCP */
+#define HTTPS_PORT		443	/* TCP */
 #define PPTP_PORT		1723	/* TCP */
 
 #define IP_MULTICAST			"224.0.0.0/4"
@@ -114,7 +114,7 @@ static unsigned int now_wday, now_hrmin;
 static int webfilter = 0;
 static int dmzenable = 0;
 static int remotemanage = 0;
-static int remotessh = 0;		/* Botho 03-05-2006 */
+static int remotessh = 0;	/* Botho 03-05-2006 */
 
 /******************************* DEVELOPE_ENV ***********************************************/
 #ifdef DEVELOPE_ENV
@@ -265,7 +265,7 @@ get_wan_face (void)
 #else
   else if (nvram_match ("ath0_mode", "sta"))
     {
-	strcpy (localwanface, "ath0");
+      strcpy (localwanface, "ath0");
     }
 #endif
   else
@@ -716,7 +716,7 @@ nat_prerouting (void)
 	       nvram_safe_get ("http_wanport"), nvram_safe_get ("lan_ipaddr"),
 	       web_lanport);
 
-	/* Enable remote ssh management : Botho 03-05-2006*/
+  /* Enable remote ssh management : Botho 03-05-2006 */
   if (remotessh)
     save2file ("-A PREROUTING -p tcp -m tcp -d %s --dport %s "
 	       "-j DNAT --to-destination %s:%s\n", wanaddr,
@@ -777,63 +777,63 @@ nat_postrouting (void)
 
       if (nvram_match ("loopback_enable", "1"))
 	{
-          //added for logic test
-          char *loopmask = "";
-          //for class C subnets
-          if (nvram_match ("lan_netmask", "255.255.255.0"))
-            loopmask = "0/24";
-          else if (nvram_match ("lan_netmask", "255.255.255.128"))
-            loopmask = "0/25";
-          else if (nvram_match ("lan_netmask", "255.255.255.192"))
-            loopmask = "0/26";
-          else if (nvram_match ("lan_netmask", "255.255.255.224"))
-            loopmask = "0/27";
-          else if (nvram_match ("lan_netmask", "255.255.255.240"))
-            loopmask = "0/28";
-          else if (nvram_match ("lan_netmask", "255.255.255.248"))
-            loopmask = "0/29";
-          else if (nvram_match ("lan_netmask", "255.255.255.252"))
-            loopmask = "0/30";
+	  //added for logic test
+	  char *loopmask = "";
+	  //for class C subnets
+	  if (nvram_match ("lan_netmask", "255.255.255.0"))
+	    loopmask = "0/24";
+	  else if (nvram_match ("lan_netmask", "255.255.255.128"))
+	    loopmask = "0/25";
+	  else if (nvram_match ("lan_netmask", "255.255.255.192"))
+	    loopmask = "0/26";
+	  else if (nvram_match ("lan_netmask", "255.255.255.224"))
+	    loopmask = "0/27";
+	  else if (nvram_match ("lan_netmask", "255.255.255.240"))
+	    loopmask = "0/28";
+	  else if (nvram_match ("lan_netmask", "255.255.255.248"))
+	    loopmask = "0/29";
+	  else if (nvram_match ("lan_netmask", "255.255.255.252"))
+	    loopmask = "0/30";
 //          else if (nvram_match ("lan_netmask", "255.255.255.254"))
 //            loopmask = "0/31";
-          else if (nvram_match ("lan_netmask", "255.255.255.255"))
-            loopmask = "0/32";
+	  else if (nvram_match ("lan_netmask", "255.255.255.255"))
+	    loopmask = "0/32";
 
-          //for class B subnets
-          else if (nvram_match ("lan_netmask", "255.255.0.0"))
-            loopmask = "0/16";
-          else if (nvram_match ("lan_netmask", "255.255.128.0"))
-            loopmask = "0/17";
-          else if (nvram_match ("lan_netmask", "255.255.192.0"))
-            loopmask = "0/18";
-          else if (nvram_match ("lan_netmask", "255.255.224.0"))
-            loopmask = "0/19";
-          else if (nvram_match ("lan_netmask", "255.255.240.0"))
-            loopmask = "0/20";
-          else if (nvram_match ("lan_netmask", "255.255.248.0"))
-            loopmask = "0/21";
-          else if (nvram_match ("lan_netmask", "255.255.252.0"))
-            loopmask = "0/22";
-          else if (nvram_match ("lan_netmask", "255.255.254.0"))
-            loopmask = "0/23";
+	  //for class B subnets
+	  else if (nvram_match ("lan_netmask", "255.255.0.0"))
+	    loopmask = "0/16";
+	  else if (nvram_match ("lan_netmask", "255.255.128.0"))
+	    loopmask = "0/17";
+	  else if (nvram_match ("lan_netmask", "255.255.192.0"))
+	    loopmask = "0/18";
+	  else if (nvram_match ("lan_netmask", "255.255.224.0"))
+	    loopmask = "0/19";
+	  else if (nvram_match ("lan_netmask", "255.255.240.0"))
+	    loopmask = "0/20";
+	  else if (nvram_match ("lan_netmask", "255.255.248.0"))
+	    loopmask = "0/21";
+	  else if (nvram_match ("lan_netmask", "255.255.252.0"))
+	    loopmask = "0/22";
+	  else if (nvram_match ("lan_netmask", "255.255.254.0"))
+	    loopmask = "0/23";
 
-          //for class A subnets
-          else if (nvram_match ("lan_netmask", "255.0.0.0"))
-            loopmask = "0/8";
-          else if (nvram_match ("lan_netmask", "255.128.0.0"))
-            loopmask = "0/9";
-          else if (nvram_match ("lan_netmask", "255.192.0.0"))
-            loopmask = "0/10";
-          else if (nvram_match ("lan_netmask", "255.224.0.0"))
-            loopmask = "0/11";
-          else if (nvram_match ("lan_netmask", "255.240.0.0"))
-            loopmask = "0/12";
-          else if (nvram_match ("lan_netmask", "255.248.0.0"))
-            loopmask = "0/13";
-          else if (nvram_match ("lan_netmask", "255.252.0.0"))
-            loopmask = "0/14";
-          else if (nvram_match ("lan_netmask", "255.254.0.0"))
-            loopmask = "0/15";
+	  //for class A subnets
+	  else if (nvram_match ("lan_netmask", "255.0.0.0"))
+	    loopmask = "0/8";
+	  else if (nvram_match ("lan_netmask", "255.128.0.0"))
+	    loopmask = "0/9";
+	  else if (nvram_match ("lan_netmask", "255.192.0.0"))
+	    loopmask = "0/10";
+	  else if (nvram_match ("lan_netmask", "255.224.0.0"))
+	    loopmask = "0/11";
+	  else if (nvram_match ("lan_netmask", "255.240.0.0"))
+	    loopmask = "0/12";
+	  else if (nvram_match ("lan_netmask", "255.248.0.0"))
+	    loopmask = "0/13";
+	  else if (nvram_match ("lan_netmask", "255.252.0.0"))
+	    loopmask = "0/14";
+	  else if (nvram_match ("lan_netmask", "255.254.0.0"))
+	    loopmask = "0/15";
 
 	  save2file
 	    ("-A POSTROUTING -o %s -m pkttype --pkt-type broadcast -j RETURN\n",
@@ -1707,19 +1707,19 @@ filter_input (void)
    * Use interface name, destination address, and port to make sure
    * that it's redirected from WAN */
   if (remotemanage)
-  {
-  	save2file ("-A INPUT -p tcp -m tcp -d %s --dport %d -j logaccept\n",
-  		nvram_safe_get ("lan_ipaddr"), web_lanport);
-  }
+    {
+      save2file ("-A INPUT -p tcp -m tcp -d %s --dport %d -j logaccept\n",
+		 nvram_safe_get ("lan_ipaddr"), web_lanport);
+    }
 
 #ifdef HAVE_SSHD
-	/* Remote Web GUI Management 
-	 * Botho 03-05-2006 : remote ssh & remote GUI management are not linked anymore */
-	if (remotessh)
-	{
+  /* Remote Web GUI Management 
+   * Botho 03-05-2006 : remote ssh & remote GUI management are not linked anymore */
+  if (remotessh)
+    {
       save2file ("-A INPUT -p tcp -m tcp -d %s --dport %s -j logaccept\n",
-      	nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("sshd_port"));
-	}
+		 nvram_safe_get ("lan_ipaddr"), nvram_safe_get ("sshd_port"));
+    }
 #endif
 
   /* ICMP request from WAN interface */
@@ -1972,24 +1972,24 @@ filter_table (void)
   if (nvram_match ("filter", "off") || nvram_match ("wk_mode", "router"))
     {
 
-  /* Make sure remote management ports are filtered if it is disabled */
+      /* Make sure remote management ports are filtered if it is disabled */
       if (!remotemanage)
-      {
-      	save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n", wanface,
-      		nvram_safe_get ("http_wanport"));
-      	save2file ("-A INPUT -p tcp -i %s --dport 80 -j DROP\n", wanface);
-      	save2file ("-A INPUT -p tcp -i %s --dport 443 -j DROP\n", wanface);
-      	save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
-      	save2file ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n", wanface);
-      }
-	/* Make sure remote ssh ports is filtered if it is disabled : Botho 03-05-2006*/
+	{
+	  save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n", wanface,
+		     nvram_safe_get ("http_wanport"));
+	  save2file ("-A INPUT -p tcp -i %s --dport 80 -j DROP\n", wanface);
+	  save2file ("-A INPUT -p tcp -i %s --dport 443 -j DROP\n", wanface);
+	  save2file ("-A INPUT -p tcp -i %s --dport 23 -j DROP\n", wanface);
+	  save2file ("-A INPUT -p tcp -i %s --dport 69 -j DROP\n", wanface);
+	}
+      /* Make sure remote ssh ports is filtered if it is disabled : Botho 03-05-2006 */
 #ifdef HAVE_SSHD
-		if (!remotessh)
-		{
-			save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
-				wanface, nvram_safe_get ("sshd_wanport"));
-			save2file ("-A INPUT -p tcp -i %s --dport 22 -j DROP\n", wanface);
-		}
+      if (!remotessh)
+	{
+	  save2file ("-A INPUT -p tcp -i %s --dport %s -j DROP\n",
+		     wanface, nvram_safe_get ("sshd_wanport"));
+	  save2file ("-A INPUT -p tcp -i %s --dport 22 -j DROP\n", wanface);
+	}
 #endif
 
       filter_forward ();
@@ -2325,7 +2325,7 @@ app_udp_settable (void)
   if (!strcmp (nvram_safe_get ("QoS"), "1"))
     {
       int i = 0;
-      
+
 /*	char *port = NULL;
     struct application_based_qos_t app_item;
 	
@@ -2489,8 +2489,8 @@ start_firewall (void)
   else
     remotemanage = 0;
 
-#ifdef HAVE_SSHD    
-    /* Remote Web GUI management : Botho 03-05-2006 */
+#ifdef HAVE_SSHD
+  /* Remote Web GUI management : Botho 03-05-2006 */
   if (nvram_match ("remote_mgt_ssh", "1") &&
       nvram_invmatch ("sshd_wanport", "") &&
       nvram_invmatch ("sshd_wanport", "0"))
@@ -2547,7 +2547,7 @@ start_firewall (void)
   /* end Sveasoft add */
 
   // run wanup scripts
-  start_wanup();
+  start_wanup ();
 
 
 
@@ -2560,7 +2560,8 @@ start_firewall (void)
   cprintf ("done");
 #ifdef XBOX_SUPPORT
 #ifdef HAVE_RB500
-  if ((fp = fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
+  if ((fp =
+       fopen ("/proc/sys/net/ipv4/netfilter/ip_conntrack_udp_timeout", "r+")))
     {
       fprintf (fp, "%d", 65);
       fclose (fp);
