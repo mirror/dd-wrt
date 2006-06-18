@@ -158,31 +158,31 @@ start_pptpd (void)
     }
 //cprintf("stop vpn modules\n");
 //  stop_vpn_modules ();
-  
-  
+
+
   // Create directory for use by pptpd daemon and its supporting files
   mkdir ("/tmp/pptpd", 0744);
-cprintf("open options file\n");
+  cprintf ("open options file\n");
   // Create options file that will be unique to pptpd to avoid interference with pppoe and pptp
   fp = fopen ("/tmp/pptpd/options.pptpd", "w");
-cprintf("adding radius plugin\n");
+  cprintf ("adding radius plugin\n");
   if (nvram_match ("pptpd_radius", "1"))
     fprintf (fp, "plugin /usr/lib/pppd/radius.so\n"
 	     "radius-config-file /tmp/pptpd/radius/radiusclient.conf\n"
 	     "%s%s\n", nvram_get ("pptpd_radavpair") ? "avpair " : "",
 	     nvram_get ("pptpd_radavpair") ? nvram_get ("pptpd_radavpair") :
 	     "");
-cprintf("check if wan_wins = zero\n");
-int nowins=0;
+  cprintf ("check if wan_wins = zero\n");
+  int nowins = 0;
   if (nvram_match ("wan_wins", "0.0.0.0"))
     {
-    nvram_set ("wan_wins", "");
-    nowins=1;
+      nvram_set ("wan_wins", "");
+      nowins = 1;
     }
-  if (strlen(nvram_safe_get("wan_wins"))==0)
-    nowins=1;
-    
-cprintf("write config\n");
+  if (strlen (nvram_safe_get ("wan_wins")) == 0)
+    nowins = 1;
+
+  cprintf ("write config\n");
   fprintf (fp, "lock\n"
 	   "name *\n"
 	   "proxyarp\n"
@@ -204,16 +204,15 @@ cprintf("write config\n");
 	   "ms-dns %s\n" "%s%s%s" "%s%s%s" "mtu %s\n" "mru %s\n",
 	   // Crude but very effective one-liners. Speed is not an issue as this is only run at startup.
 	   // Since we need NULL's returned by nvram_get's we cant use nvram_safe_get
-	   nvram_get ("pptpd_dns1") ? nvram_get ("pptpd_dns1") : nvram_safe_get ("lan_ipaddr"),
+	   nvram_get ("pptpd_dns1") ? nvram_get ("pptpd_dns1") :
+	   nvram_safe_get ("lan_ipaddr"),
 	   nvram_get ("pptpd_dns2") ? "ms-dns " : "",
 	   nvram_get ("pptpd_dns2") ? nvram_get ("pptpd_dns2") : "",
-	   nvram_get ("pptpd_dns2") ? "\n" : "",
-	   !nowins ? "ms-wins " : "",
-	   !nowins ? nvram_get ("wan_wins") : "",
-	   !nowins ? "\n" : "",
-//	   nvram_get ("pptpd_wins2") ? "ms-wins " : "",
-//	   nvram_get ("pptpd_wins2") ? nvram_get ("pptpd_wins2") : "",
-//	   nvram_get ("pptpd_wins2") ? "\n" : "",
+	   nvram_get ("pptpd_dns2") ? "\n" : "", !nowins ? "ms-wins " : "",
+	   !nowins ? nvram_get ("wan_wins") : "", !nowins ? "\n" : "",
+//         nvram_get ("pptpd_wins2") ? "ms-wins " : "",
+//         nvram_get ("pptpd_wins2") ? nvram_get ("pptpd_wins2") : "",
+//         nvram_get ("pptpd_wins2") ? "\n" : "",
 	   nvram_get ("pptpd_mtu") ? nvram_get ("pptpd_mtu") : "1450",
 	   nvram_get ("pptpd_mru") ? nvram_get ("pptpd_mru") : "1450");
 
@@ -439,7 +438,7 @@ write_nvram (char *name, char *nv)
     }
   else
     return -1;
-return 0;
+  return 0;
 }
 
 
@@ -473,55 +472,58 @@ start_dhcpfwd (void)
       fprintf (fp, "ulimit as	0\n");
       fprintf (fp, "if	%s	true	false	true\n",
 	       nvram_safe_get ("lan_ifname"));
-	       
-char *wan_proto=nvram_safe_get("wan_proto");
-char *wan_ifname=nvram_safe_get("wan_ifname");
-#ifdef HAVE_MADWIFI
-if (nvram_match("ath0_mode","sta"))
-#else
-if (nvram_match("wl_mode","sta"))
-#endif
-    {
-    wan_ifname=getwlif(); //returns eth1/eth2 for broadcom and ath0 for atheros
-    }
-#ifdef HAVE_PPPOE
-  if (strcmp (wan_proto, "pppoe") == 0)
-    {
-      fprintf (fp, "if	ppp0	false	true	true\n");
 
-    }
+      char *wan_proto = nvram_safe_get ("wan_proto");
+      char *wan_ifname = nvram_safe_get ("wan_ifname");
+#ifdef HAVE_MADWIFI
+      if (nvram_match ("ath0_mode", "sta"))
 #else
-if (0)
-{
-}
+      if (nvram_match ("wl_mode", "sta"))
 #endif
-  else if (strcmp (wan_proto, "dhcp") == 0 || strcmp (wan_proto, "static")==0)
-    {
-      fprintf (fp, "if	%s	false	true	true\n",nvram_safe_get ("wan_ifname"));
-    }
+	{
+	  wan_ifname = getwlif ();	//returns eth1/eth2 for broadcom and ath0 for atheros
+	}
+#ifdef HAVE_PPPOE
+      if (strcmp (wan_proto, "pppoe") == 0)
+	{
+	  fprintf (fp, "if	ppp0	false	true	true\n");
+
+	}
+#else
+      if (0)
+	{
+	}
+#endif
+      else if (strcmp (wan_proto, "dhcp") == 0
+	       || strcmp (wan_proto, "static") == 0)
+	{
+	  fprintf (fp, "if	%s	false	true	true\n",
+		   nvram_safe_get ("wan_ifname"));
+	}
 #ifdef HAVE_PPTP
-  else if (strcmp (wan_proto, "pptp") == 0)
-    {
-      fprintf (fp, "if	ppp0	false	true	true\n");
-    }
+      else if (strcmp (wan_proto, "pptp") == 0)
+	{
+	  fprintf (fp, "if	ppp0	false	true	true\n");
+	}
 #endif
 #ifdef HAVE_L2TP
-  else if (strcmp (wan_proto, "l2tp") == 0)
-    {
-      fprintf (fp, "if	ppp0	false	true	true\n");
-    }
+      else if (strcmp (wan_proto, "l2tp") == 0)
+	{
+	  fprintf (fp, "if	ppp0	false	true	true\n");
+	}
 #endif
 #ifdef HAVE_HEARTBEAT
-  else if (strcmp (wan_proto, "heartbeat") == 0)
-    {
-      fprintf (fp, "if	ppp0	false	true	true\n");
-    }
+      else if (strcmp (wan_proto, "heartbeat") == 0)
+	{
+	  fprintf (fp, "if	ppp0	false	true	true\n");
+	}
 #endif
-  else
-    {
-      fprintf (fp, "if	%s	false	true	true\n",nvram_safe_get ("wan_ifname"));
-    }
-	       
+      else
+	{
+	  fprintf (fp, "if	%s	false	true	true\n",
+		   nvram_safe_get ("wan_ifname"));
+	}
+
       fprintf (fp, "name	%s	ws-c\n",
 	       nvram_safe_get ("lan_ifname"));
       fprintf (fp, "server	ip	%s\n", nvram_safe_get ("dhcpfwd_ip"));
@@ -633,7 +635,9 @@ start_udhcpd (void)
 	   get_single_ip (nvram_safe_get ("lan_ipaddr"), 2),
 	   atoi (nvram_safe_get ("dhcp_start")) +
 	   atoi (nvram_safe_get ("dhcp_num")) - 1);
-  int dhcp_max = atoi (nvram_safe_get("dhcp_num")) + atoi (nvram_safe_get("static_leasenum"));
+  int dhcp_max =
+    atoi (nvram_safe_get ("dhcp_num")) +
+    atoi (nvram_safe_get ("static_leasenum"));
   fprintf (fp, "max_leases %d\n", dhcp_max);
   fprintf (fp, "interface %s\n", nvram_safe_get ("lan_ifname"));
   fprintf (fp, "remaining yes\n");
@@ -735,18 +739,18 @@ start_udhcpd (void)
   if (dns_list)
     free (dns_list);
 
-   /* DHCP Domain */
-   if (nvram_match ("dhcp_domain", "wan"))
+  /* DHCP Domain */
+  if (nvram_match ("dhcp_domain", "wan"))
     {
       if (nvram_invmatch ("wan_domain", ""))
-	 fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_domain"));
+	fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_domain"));
       else if (nvram_invmatch ("wan_get_domain", ""))
-	 fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));
+	fprintf (fp, "option domain %s\n", nvram_safe_get ("wan_get_domain"));
     }
-   else
+  else
     {
       if (nvram_invmatch ("lan_domain", ""))
-	 fprintf (fp, "option domain %s\n", nvram_safe_get ("lan_domain"));
+	fprintf (fp, "option domain %s\n", nvram_safe_get ("lan_domain"));
     }
 
   if (nvram_invmatch ("dhcpd_options", ""))
@@ -879,7 +883,9 @@ start_dnsmasq (void)
       return errno;
     }
 
-  if (nvram_match ("fon_enable", "1") || (nvram_match ("chilli_nowifibridge","1") && nvram_match("chilli_enable","1")))
+  if (nvram_match ("fon_enable", "1")
+      || (nvram_match ("chilli_nowifibridge", "1")
+	  && nvram_match ("chilli_enable", "1")))
     {
       fprintf (fp, "interface=%s,br0\n", nvram_safe_get ("wl0_ifname"));
     }
@@ -893,18 +899,18 @@ start_dnsmasq (void)
 
   fprintf (fp, "resolv-file=/tmp/resolv.dnsmasq\n");
 
-   /* Domain */
-   if (nvram_match ("dhcp_domain", "wan"))
+  /* Domain */
+  if (nvram_match ("dhcp_domain", "wan"))
     {
       if (nvram_invmatch ("wan_domain", ""))
-	 fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_domain"));
+	fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_domain"));
       else if (nvram_invmatch ("wan_get_domain", ""))
-	 fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_get_domain"));
+	fprintf (fp, "domain=%s\n", nvram_safe_get ("wan_get_domain"));
     }
-   else
+  else
     {
       if (nvram_invmatch ("lan_domain", ""))
-	 fprintf (fp, "domain=%s\n", nvram_safe_get ("lan_domain"));
+	fprintf (fp, "domain=%s\n", nvram_safe_get ("lan_domain"));
     }
 
   /* DD-WRT use dnsmasq as DHCP replacement */
@@ -912,44 +918,46 @@ start_dnsmasq (void)
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
-        if (usejffs)
-         { 
-           fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
-         }
-        else
-         {
-           fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
-         }
-  int dhcp_max = atoi (nvram_safe_get("dhcp_num")) + atoi (nvram_safe_get("static_leasenum"));
-  fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
-  fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
-  if (nvram_match ("dns_dnsmasq", "0")) 
-  {
-    dns_list = get_dns_list ();
+	if (usejffs)
+	  {
+	    fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
+	  }
+	else
+	  {
+	    fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
+	  }
+	int dhcp_max =
+	  atoi (nvram_safe_get ("dhcp_num")) +
+	  atoi (nvram_safe_get ("static_leasenum"));
+	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
+	fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
+	if (nvram_match ("dns_dnsmasq", "0"))
+	  {
+	    dns_list = get_dns_list ();
 
-      if (dns_list
-	  && (strlen (dns_list->dns_server[0]) > 0
-	      || strlen (dns_list->dns_server[1]) > 0
-	      || strlen (dns_list->dns_server[2]) > 0))
-	{
+	    if (dns_list
+		&& (strlen (dns_list->dns_server[0]) > 0
+		    || strlen (dns_list->dns_server[1]) > 0
+		    || strlen (dns_list->dns_server[2]) > 0))
+	      {
 
-	  fprintf (fp, "dhcp-option=6");
+		fprintf (fp, "dhcp-option=6");
 
-	  if (strlen (dns_list->dns_server[0]) > 0)
-	    fprintf (fp, ",%s", dns_list->dns_server[0]);
+		if (strlen (dns_list->dns_server[0]) > 0)
+		  fprintf (fp, ",%s", dns_list->dns_server[0]);
 
-	  if (strlen (dns_list->dns_server[1]) > 0)
-	    fprintf (fp, ",%s", dns_list->dns_server[1]);
+		if (strlen (dns_list->dns_server[1]) > 0)
+		  fprintf (fp, ",%s", dns_list->dns_server[1]);
 
-	  if (strlen (dns_list->dns_server[2]) > 0)
-	    fprintf (fp, ",%s", dns_list->dns_server[2]);
+		if (strlen (dns_list->dns_server[2]) > 0)
+		  fprintf (fp, ",%s", dns_list->dns_server[2]);
 
-	  fprintf (fp, "\n");
-	}
+		fprintf (fp, "\n");
+	      }
 
-    if (dns_list)
-      free (dns_list);
-  }
+	    if (dns_list)
+	      free (dns_list);
+	  }
 
 	if (nvram_match ("auth_dnsmasq", "1"))
 	  {
@@ -1057,14 +1065,14 @@ stop_dns_clear_resolv (void)
 int
 start_httpd (void)
 {
-  int ret=0;
+  int ret = 0;
   if (nvram_invmatch ("http_enable", "0") && !is_exist ("/var/run/httpd.pid"))
     {
       chdir ("/www");
 //      if (chdir ("/tmp/www") == 0)
-//	cprintf ("[HTTPD Starting on /tmp/www]\n");
+//      cprintf ("[HTTPD Starting on /tmp/www]\n");
 //      else
-	cprintf ("[HTTPD Starting on /www]\n");
+      cprintf ("[HTTPD Starting on /www]\n");
       ret = eval ("httpd");
       chdir ("/");
     }
@@ -2645,12 +2653,12 @@ start_pppoe (int pppoe_num)
   char wanmask[2][15] = { "wan_netmask", "wan_netmask_1" };
   char wangw[2][15] = { "wan_gateway", "wan_gateway_1" };
   char pppoeifname[15];
-  char *wan_ifname = nvram_safe_get("wan_ifname");
-   if (isClient ())
+  char *wan_ifname = nvram_safe_get ("wan_ifname");
+  if (isClient ())
     {
       wan_ifname = getwlif ();
     }
- 
+
   pid_t pid;
 
   sprintf (pppoeifname, "pppoe_ifname%d", pppoe_num);
@@ -2717,9 +2725,10 @@ start_pppoe (int pppoe_num)
 
   /* Removed by AhMan */
 
-        if (pppoe_num == PPPOE0) { // PPPOE0 must set default route.
-                *arg++ = "-R";
-        }
+  if (pppoe_num == PPPOE0)
+    {				// PPPOE0 must set default route.
+      *arg++ = "-R";
+    }
 
   if (nvram_invmatch (ppp_service[pppoe_num], ""))
     {
@@ -3280,7 +3289,7 @@ start_force_to_dial (void)
       return ret;
     }
 #endif
-    _eval (ping_argv, NULL, 3, NULL);
+  _eval (ping_argv, NULL, 3, NULL);
 
   return ret;
 }

@@ -480,12 +480,12 @@ flush_interfaces (void)
   {
     if (strcmp (buff, "br0") == 0)
       continue;
-    ifconfig(buff,0,0,0);
-    
+    ifconfig (buff, 0, 0, 0);
+
 //    eval ("ifconfig", buff, "down");
     eval ("ip", "addr", "flush", "dev", buff);
-    ifconfig(buff,IFUP,0,0);
-    
+    ifconfig (buff, IFUP, 0, 0);
+
 //    eval ("ifconfig", buff, "up");
   }
 

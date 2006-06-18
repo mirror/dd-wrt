@@ -71,12 +71,12 @@ start_sshd (void)
      RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE,
      "-p", port, passwd_ok, NULL
      }; */
-  stop_sshd();
+  stop_sshd ();
   char *port = nvram_safe_get ("sshd_port");
   char *passwd_ok = nvram_match ("sshd_passwd_auth", "1") ? "" : "-s";
   ret =
-    eval ("dropbear", "-b","/tmp/loginprompt","-r", RSA_HOST_KEY_FILE, "-d", DSS_HOST_KEY_FILE, "-p",
-	  port, passwd_ok);
+    eval ("dropbear", "-b", "/tmp/loginprompt", "-r", RSA_HOST_KEY_FILE, "-d",
+	  DSS_HOST_KEY_FILE, "-p", port, passwd_ok);
 
 //  ret = _eval (sshd_argv, NULL, 0, &pid);
 
@@ -91,7 +91,7 @@ stop_sshd (void)
 
 //  if (nvram_match("sshd_enable", "0"))
   ret = eval ("killall", "dropbear");
-  sleep(1);
+  sleep (1);
   ret = eval ("killall", "-9", "dropbear");
 
   cprintf ("done\n");
