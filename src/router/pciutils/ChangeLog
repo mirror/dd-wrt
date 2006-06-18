@@ -1,0 +1,728 @@
+2002-03-30  Martin Mares  <mj@ucw.cz>
+
+	* Released as 2.1.10.
+
+	* Removed pci.ids from the CVS as they are now maintained separately.
+	They are still included in the tarball, but if you are building	pciutils
+	from CVS sources or you want to get a newer ID file than the one distributed,
+	just use "make update-ids" to download the most recent snapshot from
+	pciids.sf.net.
+
+	* Makefile, README: Updated accordingly.
+
+	* Makefile: Added a couple of maintenance targets.
+
+	* maint/*: Maintainer's utilities now reside here (present only in CVS,
+	not in the tarball).
+
+	* lib/names.c (parse_name_list): End-of-line comments are no longer
+	supported. Hashes are now perfectly valid in all names and they start
+	a comment only at the start of the line.
+
+2002-03-26  Martin Mares  <mj@ucw.cz>
+
+	* README: Rewritten.
+
+	* Makefile: When the currently installed pci.ids file is newer than
+	the version to be installed, don't overwrite it. Suggested by
+	Jean Delvare <khali@linux-fr.org>.
+
+2002-03-24  Martin Mares  <mj@ucw.cz>
+
+	* lspci.c (show_pcix_bridge): Added PCI-X capability display.
+	Contributed by Jeff Garzik <jgarzik@mandrakesoft.com>.
+
+	* lib/header.h: Added PCI-X stuff. Again by Jeff.
+
+	* Makefile (CFLAGS): -Werror is gone.
+
+	* lspci.c (format_agp_rate): Fixed AGP rate reporting.
+
+	* lib/filter.c (pci_filter_parse_slot): Allow bus 0xff, slot 0x1f and
+	function 7.
+
+	* lib/names.c (pci_lookup_name): When printing unknown subsystem vendor
+	or device hexadecimally, don't confuse it with chip vendor/device ID.
+	First reported by Marc Boucher <marc@mbsi.ca>.
+
+2001-11-04  Martin Mares  <mj@ucw.cz>
+
+	* Released as 2.1.9.
+
+	* pci.ids: Synced with the PCI ID Repository at SourceForge
+	(http://pciids.sourceforge.net/).
+
+2000-08-25  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: Updated ID's, synced with kernel 2.4.0-test7.
+
+2000-06-13  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Makefile (uninstall): Fixed.
+
+	* pci.ids: ID updates.
+
+2000-05-20  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 2.1.8.
+
+	* pci.ids: ID updates.
+
+	* lspci.c (show_verbose): Min/max latency is now printed in nanoseconds.
+
+2000-05-04  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_verbose): If the header type doesn't match device
+	class, just print a warning and still use the header type, assuming
+	bogus class info.
+
+2000-05-01  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_pm): Updated according to PCI PM specs 1.1.
+
+	* pci.ids: Updated Contemporary Control ARCnet card entries.
+
+	* pci.ids: Synchronized class list with latest PCI SIG documents.
+
+2000-04-29  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/names.c (pci_lookup_name): Fixed the cheat.
+
+	* lib/internal.h: Moved UNUSED/inline hacks above all other declarations.
+
+	* pci.ids: Various ID updates.
+
+2000-04-21  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 2.1.7.
+
+	* pciutils.spec: Added German description.
+
+	* lib/names.c (pci_lookup_name): Added a cheat for case that subsystem ID's
+	are the same as device ID and just output subsystem name according to
+	device name.
+
+	* lib/proc.c: Use UNUSED instead of __attribute__((unused)).
+
+	* lib/pci.h: Added the correct typedefs for AIX.
+
+	* lib/generic.c (pci_generic_scan_bus): Export.
+
+	* lib/configure: Detect AIX. Use "echo '...\c'" instead of
+	"echo -n" if the shell isn't bash.
+
+	* lspci.c: Avoid using alloca() if not compiled by GCC.
+	(insert_dev): Avoid returning a void value.
+
+	* Makefile: Choose which install utility to use according to
+	OS type. Also use `-o' instead of `-or' in find arguments.
+	Part of the AIX port.
+
+	* lib/aix-device.c: Added AIX low-level interface. Contributed
+	by Dave Johnson <ddj@brown.edu>, thanks a lot!
+
+	* pci.ids: Few new ID's.
+
+	* pciutils.h, lib/internal.h: Redefine __attribute__ and inline
+	when not compiled by GCC.
+
+2000-04-17  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 2.1.6.
+
+	* pci.ids: Added a large batch of ID's contributed by Gunther
+	Mayer <gunther.mayer@braunschweig.netsurf.de> and synced the
+	list with the 2.3.99pre6 kernel.
+
+Thu Mar  9 13:11:39 2000  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/example.c: Added a simple example of how to use
+	the library.
+
+	* lspci.man, setpci.man: Revealed --version. Well spotted
+	by Adam Sulmicki.
+
+	* pci.ids: Added lots of new ID's and synced with 2.3.50.
+
+Tue Feb 15 00:16:21 2000  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 2.1.5.
+
+	* pciutils.spec: Updated spec file from Andreas Jaeger. Now using
+	%{_mandir} to find the right location to install manual pages to.
+
+	* pci.ids: New ID's.
+
+	* setpci.c (main): Don't crash when `-s' or `-d' is given with
+	no argument.
+
+Mon Jan 24 20:04:11 2000  Andreas Jaeger  <aj@suse.de>
+
+	* lib/i386-ports.c: Include <asm/io.h> only on systems without
+	glibc.
+
+Mon Jan 24 11:24:43 2000  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Makefile: Modified to work with the Linux FHS brain-damaged idea
+	of putting man pages to /usr/share/man. Now we choose either /usr/man
+	or /usr/share/man depending on which one exists.
+
+Sun Jan 23 10:52:34 2000  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: Synced with Linux 2.3.40.
+
+	* Released as version 2.1.4.
+
+Thu Jan 20 11:08:32 2000  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (scan_device): Fixed bug in reading of cardbus extensions.
+
+	* lib/proc.c: pread/pwrite fixed again, this time on libc5 :(
+
+	* lspci.c (format_agp_rate): Better formatting of AGP rates.
+
+	* pci.ids: New ID's.
+
+	* lib/configure: Added configuration for ia64 (the same as for Alpha).
+	Patch from Stephane Eranian <eranian@cello.hpl.hp.com>.
+
+Thu Jan 13 23:01:52 2000  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as version 2.1.3.
+
+	* pci.ids: New ID's.
+
+	* lspci.c: Alpha IO_FORMAT fix by Andrea Arcangeli.
+
+	* lib/access.c: Corrected order of access methods -- it's wonderful how
+	long could such a bug remain unspotted. Thanks go to Andreas Schockenhoff.
+
+Sat Dec 11 23:34:48 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as version 2.1.2.
+
+	* lib/names.c (pci_lookup_name): Fixed printing of unknown subsystem ID's.
+
+Sat Dec  4 13:11:03 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as version 2.1.1.
+
+	* pci.ids: Several new ID's.
+
+	* setpci.c (exec_op): Don't forget to increment address after writing
+	single value, so that `30.b=12,34,56,78' works as expected. Reported
+	by Petr Soucek <petr@ryston.cz>.
+
+Wed Nov  3 10:24:38 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_terse): If prog-if is zero, but it's present in the
+	ID list, show it.
+
+Sat Oct 30 11:06:35 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as version 2.1.
+
+	* pci.ids: Synced to devlist.h in 2.3.24 kernel. Merged in
+	lots of contributed entries.
+
+Thu Oct 14 10:40:12 1999  Dave Jones    <dave@powertweak.com>
+
+	* pci.ids: Added lots of subsystem definitions.
+
+Sat Oct  9 14:32:28 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* setpci.man: Better example.
+
+	* lspci.c: Resolve prog-if names.
+
+	* lib/names.c: Adapted to new pci.ids syntax.
+
+	* pci.ids: Reorganized the pci.ids file. Subsystems are listed
+	under devices, classes can optionally contain prog-if information.
+	New ID's, as usually.
+
+Wed Sep 22 09:45:24 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: New ID's. As usually.
+
+	* lspci.c (show_htype1, show_htype2): Don't show `closed' bridge windows
+	unless we're vvvery verbose.
+
+Mon Sep 20 11:22:54 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_htype2): Don't forget a TAB before the "I/O window" line.
+
+Tue Sep 14 09:31:01 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: New ID's. Again.
+
+Thu Aug  5 17:45:42 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_size): Don't show size if it's zero (usually
+	due to bus-centric mode being enabled).
+
+Tue Jul 20 13:25:09 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/pci.h: Types are OS dependent.
+
+	* lib/internal.h: Byte order hacks are OS dependent.
+
+	* lib/configure: Recognize FreeBSD. Also set OS_XXX according to the OS.
+
+	* lib/Makefile, lib/access.c: Added fbsd-device target.
+
+	* pci.ids: Added an entry for PLX 9080 bridges with subsystem ID
+	incorrectly set to device ID.
+
+	* README: Added a note that we support FreeBSD.
+
+	* Makefile (PREFIX, ROOT): Set it depending on the OS.
+	(%.8): Grrr, BSD date is not able to convert date formats the same way
+	as GNU date does. Use sed instead.
+	(install): Use `-c' when calling install.
+
+	* lib/fbsd-device.c: Added FreeBSD /dev/pci access module contributed
+	by Jari Kirma <kirma@cs.hut.fi>.
+
+	* lib/proc.c: Rewrote the pread/pwrite things once again. Use pread
+	and pwrite only when we are certain it's safe (i.e., glibc 2.1
+	on all architectures or any libc on a i386 where we really know
+	how to use syscalls directly). In all other cases, emulate it
+	with lseek/read/write.
+
+	* pci.ids: Some more IDs.
+
+Mon Jul 19 14:10:36 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: Added IDs of parallel port controller cards as sent
+	by Tim Waugh <tim@cyberelk.demon.co.uk>.
+
+Wed Jul  7 00:55:48 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/proc.c (proc_scan): HAVE_LONG_ADDRESS instead of HAVE_64BIT_ADDRESS.
+
+	* lspci.c: ADDR_FORMAT now depends on both HAVE_64BIT_ADDRESS and
+	HAVE_LONG_ADDRESS.
+
+	* lib/configure: HAVE_64BIT_ADDRESS now doesn't imply that the addresses
+	are represented as long long. Introduced a new flag HAVE_LONG_ADDRESS
+	to indicate this. Both Sparc architectures now use both 64BIT_ADDRESS
+	and LONG_ADDRESS since they have 32-bit userland, but don't set LONG_ADDRESS
+	on Alpha.
+
+	* lspci.c (show_msi): Added dumping of the MSI capability.
+	(show_slotid): The same for SlotID capability.
+	(show_caps): Seperated capability dumping, because it should
+	be used for both htype0 and htype1. Even PCI 2.2 doesn't mention
+	layout of htype2, so I'm a bit unsure about it wrt capabilities
+	-- they at least have to live somewhere else since address 0x34
+	is already defined differently in htype2.
+
+	* lib/header.h (PCI_STATUS_UDF): Marked as obsolete (PCI 2.2).
+	(PCI_BASE_ADDRESS_MEM_TYPE_1M): Ditto.
+	(PCI_CAP_ID_*): Added some new capabilities defined in PCI 2.2.
+
+	* lspci.c (show_htype0): Mask out lowest 2 bits from all capability pointers
+	(required by the PCI 2.2 specs).
+
+Mon Jul  5 12:45:19 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_size): Added new function for dumping of region sizes.
+	(show_rom): Added. Now correctly dumps unassigned ROM addresses, disabled
+	ROMs et cetera.
+
+	* lib/pci.h (struct pci_dev): known_fields moved to the public part
+	of the structure.
+
+	* Added support for region sizes. Needs support in the kernel, because
+	sizes have to be scanned before drivers initialize yourself. pci_fill_info()
+	now returns a bitmask of what fields were really read.
+
+Mon Jun 28 18:37:51 1999  Dave Jones    <dave@powertweak.com>
+
+	* Makefile:
+	  Added `uninstall' target - removes all traces of pciutils.
+	* pci.ids:
+	  - Lots of cleanups in the ATI, S3, Adaptec vendors.
+	  - Changed Compaq QVision 1280/p definitions, as it's not possible
+	    to determine the revision from the device ID.
+	  - Same for the Tseng ET4000.
+	    The id's said I had a rev C, when it was actually a rev B.
+	  - Removed some unnecessary strings
+	    `PCI'. Unless it's an AGP card, it should be obvious that it's PCI.
+	    `Ethernet card'. This should be determined from config space.
+	  - Lots of other new vendors & devices
+	  - Other additional small cleanups.
+
+Mon Jun 21 22:11:10 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/names.c (pci_lookup_name): When device ID lookup
+	fails, return hexadecimal device ID instead of vendor ID.
+	Well spotted by Axel Bodemann <Axel.Bodemann@ruhr-uni-bochum.de>,
+	I've just extended the fix to subsystem ID's.
+
+Thu Jun 17 19:48:21 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_agp): Bug fix from Petr Vandrovec
+	<vandrove@vc.cvut.cz>. The command register was displayed
+	incorrectly.
+
+Wed Jun  2 22:42:44 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/proc.c (SYS_pread, SYS_pwrite): Use hard-coded
+	numbers if not supplied by the libc.
+
+Wed May 19 13:24:39 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released the whole package as version 2.0.
+
+Fri May 14 22:42:02 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: Added several new ID's contributed by people
+	on the linux-pci list.
+
+Mon Apr 19 15:21:08 1999  Jakub Jelinek  <jj@ultra.linux.cz>
+
+	* lspci.c: Display I/O addresses correctly on sparc64.
+	* lib/header.h: Ditto.
+
+	* lib/configure: On sparc set HAVE_64BIT* as well, we want
+	a binary which works on both 32bit and 64bit SPARCs.
+
+Sun Apr 18 21:14:58 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c, lib/proc.c: Alpha compilation fixes from Matthew Jacob
+	<mjacob@feral.com>.
+
+	* pci.ids: A lot of updates from Adam J. Richter <adam@yggdrasil.com>.
+
+Sun Feb 28 22:26:21 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (do_map_bus): Don't dump functions 1--7 if not flagged
+	as a multi-function device, because several single-function devices
+	don't decode the function bits at all.
+
+Sun Feb 14 23:48:22 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Makefile (install): Don't use "-o root -g root" for installation
+	since it breaks on machines where programs are not installed by root.
+	Reported by Richard Gooch <rgooch@atnf.csiro.au>
+
+Tue Feb  9 15:54:39 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_bases): Use new address masking macros and pciaddr_t.
+
+	* lib/pci.h: Using pciaddr_t for bus addresses, which are 32-bit
+	or 64-bit depending on CPU.
+
+	* lib/pci.h (PCI_ADDR_MEM_MASK): Added macros for address masks
+	according to bus address width.
+
+Thu Jan 28 20:54:16 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 1.99.4.
+
+	* lspci.c: Capability list parser now recognizes both AGP
+	registers and PCI Power Management registers (the latter
+	is mainly guesswork based on DEC/Intel 21153 bridge specs
+	since I don't have the PCI Power Management document).
+
+	* lspci.c: Replaced numerous occurences of (x & flag) ? '+' : '-'
+	by FLAG macro.
+
+	* lspci.c: Added bridge checks to bus mapping code.
+
+Wed Jan 27 14:59:16 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c: Implemented bus mapping mode (-M).
+
+	* lspci.c (scan_devices): Split to scan_devices() and scan_device().
+	(show): Split to show() and show_device().
+
+	* lib/access.c (pci_init): When a->method == PCI_ACCESS_AUTO,
+	set it to the real access method afterwards.
+
+Mon Jan 25 23:46:13 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/generic.c (pci_generic_fill_info): If in buscentric mode,
+	don't check PCI_COMMAND for I/O and memory enables.
+
+Mon Jan 25 21:28:49 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Makefile: Added target `release' which substitutes new version
+	number to .spec, .lsm and README. Also rewrote target `dist'.
+
+	* Released as 1.99.3.
+
+Sun Jan 24 22:10:36 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lib/header.h: Until kernel adopts new layout of PCI
+	includes (i.e., separate declaration of header structure,
+	functions and device IDs), which is not going to happen
+	before 2.3, we'll use our own definiton of the header.
+
+	* lspci.c (show_verbose): Display `Cap' flag in device status.
+
+	* lspci.c (show_htype0): Display capability lists whereever
+	available. The only capability name we recognize now is `AGP'.
+	Unfortunately, capabilities are stored in device-dependent
+	portion of the configuration space and are thus available
+	only to root unless you read a dump.
+
+	* lspci.c (scan_devices): Use cache instead of buffering.
+
+	* lib/buffer.c: Removed (obsoleted by the cache).
+
+	* lib/access.c: Added general caching mechanism.
+
+Sat Jan 23 21:30:54 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: Added few devices.
+
+Fri Jan 22 19:29:31 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Version string is now defined in top-level Makefile, exported
+	to the configure script and also substituted to man pages.
+
+	* lspci.c (show_bases): Rewrote displaying of 64-bit addresses.
+	(show_verbose): Rewrote interrupt display logic.
+
+	* lib/i386-ports.c: Include sys/io.h only on glibc systems.
+
+	* lib/configure: Rewrote detection of Linux versions. Now it
+	works on 2.0 kernels (only with direct/dump access, of course).
+
+	* lib/internal.h: New bytesex macros using <asm/byteorder.h>
+	whenever available.
+
+	* lib/proc.c (proc_read, proc_write): Distinguish between short
+	read/write and real errors.
+
+	* lspci.c (show_htype{0,1}): Always use d->dev->rom_base_addr since
+	libpci respects buscentric mode automatically.
+
+	* lspci.c (show_hex_dump): For CardBus bridges, print out 128
+	bytes of header (the whole standard part).
+
+	* common.c: pcilib options are now all uppercase. Also moved
+	PCI access debugging option here.
+
+	* Released as 1.99.2.
+
+Wed Jan 20 22:50:35 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Wrote configure script and rewrote Makefiles.
+
+	* Removed few unused variables.
+
+Wed Jan 20 12:21:56 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* common.c: Moved several functions used in both setpci and lspci
+	here. This includes parsing of libpci-related options.
+
+	* More library tweaks.
+
+	* filter.c, names.c: Moved to library.
+
+	* setpci: Rewritten to use the library.
+
+	* Released as 1.99.1.
+
+Tue Jan 19 23:00:12 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (scan_devices): For cardbus bridges, read first 128
+	bytes of config space to get full standard header.
+
+	* Makefile (CFLAGS): Removed "-Wno-unused".
+
+	* Started the "New Generation" branch and introduced the
+	PCI library.
+	
+	* lspci: Rewritten to use the library.
+
+Tue Jan 19 22:24:08 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as version 1.10.
+
+Mon Jan 18 08:51:17 1999  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.8, setpci.8: Miscellaneous fixes as suggested by
+	Dag Wieers <dag@digibel.be>.
+
+Sun Nov 29 20:05:56 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pciutils.spec (Name): Update from Krzysztof G. Baranowski.
+
+Sun Nov 22 10:49:56 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Makefile, pciutils.h: Moved pci.ids to /usr/share.
+
+	* Released as version 1.09.
+
+Wed Nov 18 15:47:05 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_htype1): Fixed displaying of prefetchable memory behind
+	bridge. Thanks to Petr Vandrovec <vandrove@vc.cvut.cz> for bug report.
+
+Fri Oct 23 18:59:19 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* setpci.c: Don't include <syscall-list.h> with glibc >= 2.1.
+
+Mon Oct 19 21:53:30 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as version 1.08.
+
+	* setpci.c: glibc 2.1.x already defines pread() and pwrite().
+
+	* lspci.8: Changed warning about lspci -xxx.
+
+	* lspci.c: Require "-xxx" for full configuration space dump, so that
+	it's impossible to crash the machine by single typo.
+
+	* specs: Added (courtesy of Krzysztof G. Baranowski <kgb@knm.org.pl>).
+
+Wed Sep  9 12:03:24 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_bases): Better displaying of unassigned and
+	disabled bases. Thanks to Gabriel Paubert <paubert@iram.es>
+	for an idea.
+
+Wed Sep  2 10:58:01 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* setpci.c (pread): Recognize glibc 1.99 numbered as 2.0 on the PPC.
+	(thanks to Geert Uytterhoeven for finding this out)
+
+Fri Jul 17 10:43:30 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_verbose): Print subsystem ID using the new resolver.
+	(show_machine): Print subsystem ID.
+
+	* names.c: New name resolution engine supporting subsystem IDs.
+
+	* Released as version 1.07.
+
+Wed Jul 15 15:37:21 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_htype2 etc.): Displaying of CardBus headers.
+	(show_bases): Honor the `cnt' argument.
+	(grow_tree): Parse CardBus headers in tree mode as well.
+
+	* pci.h: Updated CardBus header field description. I still don't
+	have the CardBus standard available, but OZ6832 specs contain
+	full description of all header fields supported by the chip.
+
+Tue Jun  9 22:53:59 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 1.06.
+
+	* names.c (parse_name_list): Killed an unused variable.
+
+	* setpci.c (pread, pwrite): Define SYS_(pread|pwrite) as __NR_\1
+	if they are not defined by glibc (needed for glibc built on older
+	kernels). Ugly.
+
+	* setpci.c (exec_op): Fixed error messages. Thanks, Steve!
+
+Mon Jun  8 10:59:22 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 1.05.
+
+	* setpci.c: Problems with pread()/pwrite() with glibc on Alpha
+	should be gone. Again thanks to Steve for bug report.
+
+	* filter.c (filter_parse_slot): Fixed ":x" type filters.
+
+	* pci.ids: Killed duplicate entry. Thanks to Stephen Williams
+	<steve@icarus.com> for reporting this.
+
+Sun Jun  7 19:27:51 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (main), setpci.c (main): Implemented "--version".
+
+	* Released as 1.04.
+
+	* pciutils.h (PCIUTILS_VERSION): Added version string.
+
+	* filter.c, names.c: Extraneous #include <linux/pci.h> removed.
+	Thanks to Geert Uytterhoeven <Geert.Uytterhoeven@cs.kuleuven.ac.be>
+	for bug report.
+
+Thu May 28 14:45:58 1998  Martin Mares  <mj@lomikel.karlin.mff.cuni.cz>
+
+	* pci.ids: More updates from Jens Maurer.
+
+Wed Apr 22 10:00:39 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* pci.ids: Updates from Jens Maurer.
+
+Sun Apr 19 11:14:25 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Released as 1.03.
+
+	* setpci.8: Written.
+
+	* setpci.c: Finished.
+
+	* lspci.c: Now able to fetch expansion ROM base from kernel device list
+	and print it if not in buscentric mode.
+
+Tue Mar 31 23:11:57 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* setpci.c: Added.
+
+Sun Mar 22 15:39:08 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.8: Updated the documentation.
+
+	* lspci.c: Modified to use the new filtering mechanism (options -f and -d).
+
+	* filter.c: Introduced new generic device filter.
+
+Thu Mar 19 17:03:48 1998  Martin Mares  <mj@lomikel.karlin.mff.cuni.cz>
+
+	* lspci.c (grow_tree, show_tree_dev, print_it): Fixed displaying
+	of PCI-to-PCI bridges in the tree format.
+
+Sun Feb 15 10:12:25 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* lspci.c (show_machine): Added non-verbose mode of machine-readable
+	dump.
+
+	* pci.ids: Updates from Jens Maurer.
+
+	* Released as version 1.02.
+
+Thu Feb 12 16:53:28 1998  Martin Mares  <mj@lomikel.karlin.mff.cuni.cz>
+
+	* lspci.c: Added a "-m" switch for dumping machine-readable
+	configuration data (requested by Bjoern Kriews <bkr@cut.de>).
+
+Mon Feb  9 13:17:43 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Makefile, pciutils.h: Include local pci.h instead of <linux/pci.h>
+	if available. This should avoid all problems with official kernel
+	not synchronized to newer PCI code in CVS -- standard distribution
+	of pciutils now contains pci.h from current CVS kernel, pciutils
+	in CVS contain no pci.h and use the correct kernel include.
+
+	* Makefile: Fixed installation path for man pages.
+
+Sat Feb  7 15:15:46 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* README: Updated.
+
+	* lspci.8: Created a man page.
+
+	* Releasing as version 1.0.
+
+Tue Feb  3 20:56:00 1998  Martin Mares  <mj@albireo.ucw.cz>
+
+	* Makefile: Recognize architecture by calling uname and pass it as ARCH_xxx
+	to all the C sources. This should eliminate problems with 32-bit compilers
+	on sparc64.
+
+	* lspci.c (show_verbose): Recognize CardBus bridge header type.
+	(show_htype2): Stub routine.
+	(scan_config): Write sensible error message if the kernel denies reading of
+	upper part of the PCI config space.
+
