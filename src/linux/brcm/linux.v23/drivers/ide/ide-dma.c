@@ -567,6 +567,18 @@ static int dma_timer_expiry (ide_drive_t *drive)
 }
 
 /**
+ *	__ide_dma_no_op	- dummy DMA function.
+ *
+ *	This empty function prevents non-DMA controllers from causing an oops.
+ */
+
+int __ide_dma_no_op (void)
+{
+	return 0;
+}
+
+
+/**
  *	__ide_dma_host_off	-	Generic DMA kill
  *	@drive: drive to control
  *
@@ -1215,3 +1227,20 @@ void ide_setup_dma (ide_hwif_t *hwif, unsigned long dma_base, unsigned int num_p
 }
 
 EXPORT_SYMBOL_GPL(ide_setup_dma);
+
+/*
+ * For IDE interfaces that do not support DMA, we still need to
+ * initialize some pointers to dummy functions.
+ */
+void ide_setup_no_dma (ide_hwif_t *hwif)
+{
+	if (!hwif->ide_dma_off_quietly)
+		hwif->ide_dma_off_quietly = (int (*)(ide_drive_t *))&__ide_dma_no_op;
+	if (!hwif->ide_dma_host_off)
+		hwif->ide_dma_host_off = (int (*)(ide_drive_t *))&__ide_dma_no_op;
+	if (!hwif->ide_dma_host_on)
+		hwif->ide_dma_host_on = (int (*)(ide_drive_t *))&__ide_dma_no_op;
+}
+
+EXPORT_SYMBOL_GPL(ide_setup_no_dma);
+

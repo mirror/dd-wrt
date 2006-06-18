@@ -467,7 +467,6 @@ static int  __init scx200_acb_create(int base, int index)
 	struct scx200_acb_iface *iface;
 	struct i2c_adapter *adapter;
 	int rc = 0;
-	char description[64];
 
 	iface = kmalloc(sizeof(*iface), GFP_KERNEL);
 	if (!iface) {
@@ -489,8 +488,7 @@ static int  __init scx200_acb_create(int base, int index)
 
 	init_MUTEX(&iface->sem);
 
-	sprintf(description, "NatSemi SCx200 ACCESS.bus [%s]", adapter->name);
-	if (request_region(base, 8, description) == 0) {
+	if (request_region(base, 8, adapter->name) == 0) {
 		printk(KERN_ERR NAME ": %s, can't allocate io 0x%x-0x%x\n", 
 		       adapter->name, base, base + 8-1);
 		rc = -EBUSY;

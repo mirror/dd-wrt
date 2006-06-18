@@ -131,6 +131,7 @@ static void free_block( struct mem_block *p )
 	}
 }
 
+#if 0
 static void print_heap( struct mem_block *heap )
 {
 	struct mem_block *p;
@@ -140,6 +141,7 @@ static void print_heap( struct mem_block *heap )
 			  p->start, p->start + p->size,
 			  p->size, p->pid);
 }
+#endif
 
 /* Initialize.  How to check for an uninitialized heap?
  */
