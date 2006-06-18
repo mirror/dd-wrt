@@ -183,11 +183,10 @@ function generateKey128(F,PREFIX) {
 
 addEvent(window, "unload", function() {
 	var F = document.forms[0];
-	if(F.security_mode)
-	if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
-		//keyMode(<% nvram_gozila_get("wl_wep_bit"); %>);
-		keyMode(document.wpa.wl_wep_bit.value, F);
-	}
+	if(F.security_mode && F.wl_wep_bit)
+		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
+			keyMode(F.wl_wep_bit.value, F);
+		}
 });
 
 		</script>
