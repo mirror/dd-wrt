@@ -252,7 +252,7 @@ bound (void)
 	      nvram_safe_get ("wan_netmask"));
 
   /* We only want to exec bellow functions after dhcp get ip if the wan_proto is heartbeat */
-#ifdef HAVE_HEARTBEAT  
+#ifdef HAVE_HEARTBEAT
   if (nvram_match ("wan_proto", "heartbeat"))
     {
       int i = 0;
@@ -273,9 +273,9 @@ bound (void)
     }
 #else
   if (0)
-  {
-  //nothing
-  }
+    {
+      //nothing
+    }
 #endif
 #ifdef HAVE_PPTP
   else if (nvram_match ("wan_proto", "pptp")

@@ -51,7 +51,7 @@ ipup_main (int argc, char **argv)
   cprintf ("%s\n", argv[0]);
 
   eval ("killall", "-9", "listen");
-  nvram_set("wan_iface",wan_ifname);
+  nvram_set ("wan_iface", wan_ifname);
   if (check_action () != ACT_IDLE)
     return -1;
 

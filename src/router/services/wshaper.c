@@ -94,10 +94,10 @@ system ("echo 1 > /proc/sys/dev/adm6996/port1/enable 2>&1 > /dev/null");
   system ("echo 1 > /proc/switch/eth0/port/3/enable 2>&1 > /dev/null");
   system ("echo 1 > /proc/switch/eth0/port/4/enable 2>&1 > /dev/null");
 
-  system("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
-  system("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
-  system("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
-  system("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
+  system ("echo 0 > /proc/switch/eth0/port/1/prio-enable 2>&1 > /dev/null");
+  system ("echo 0 > /proc/switch/eth0/port/2/prio-enable 2>&1 > /dev/null");
+  system ("echo 0 > /proc/switch/eth0/port/3/prio-enable 2>&1 > /dev/null");
+  system ("echo 0 > /proc/switch/eth0/port/4/prio-enable 2>&1 > /dev/null");
 
 
   system ("echo AUTO > /proc/switch/eth0/port/1/media 2>&1 > /dev/null");
@@ -479,7 +479,7 @@ svqos_iptables (void)
 
 	  char *proto = NULL;
 	  char *realname = name;
-	  
+
 	  if (!strcasecmp (realname, "gnutella"))
 	    proto = "gnu";
 	  else if (!strcasecmp (realname, "bearshare"))
@@ -589,11 +589,11 @@ start_wshaper (void)
 	  noprioportsrc_val, noprioportdst_val);
 #elif defined(HAVE_SVQOS)
   svqos_iptables ();
-  if (nvram_match("qos_type","0"))
-  ret = eval ("/usr/sbin/svqos", dl_val, ul_val, dev_val, mtu_val,"0");
+  if (nvram_match ("qos_type", "0"))
+    ret = eval ("/usr/sbin/svqos", dl_val, ul_val, dev_val, mtu_val, "0");
   else
-  ret = eval ("/usr/sbin/svqos2", ul_val, dl_val, dev_val, mtu_val,"0");
-  
+    ret = eval ("/usr/sbin/svqos2", ul_val, dl_val, dev_val, mtu_val, "0");
+
 #endif
   return ret;
 }
@@ -606,11 +606,11 @@ stop_wshaper (void)
 #ifdef HAVE_WSHAPER
   char script_name[] = "/usr/sbin/wshaper";
 #elif defined(HAVE_SVQOS)
- char *script_name;
-   if (nvram_match("qos_type","0"))
-  script_name = "/usr/sbin/svqos";
-   else
-  script_name = "/usr/sbin/svqos2";
+  char *script_name;
+  if (nvram_match ("qos_type", "0"))
+    script_name = "/usr/sbin/svqos";
+  else
+    script_name = "/usr/sbin/svqos2";
 #endif
 
   ret = eval (script_name, "stop", "XX", "br0");
