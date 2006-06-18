@@ -1360,39 +1360,40 @@ wep.passphrase="Passphrase";
 var wol = new Object();
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
-wol.legend="Available Hosts";
-wol.legend2="WOL Addresses";
-wol.legend3="Output";
-wol.legend4="Manual WOL";
-wol.enable="Enable WOL?";
-wol.add_wol="Add WOL Host";
-wol.restore="Restore Factory Defaults";
-wol.mac="MAC Address(es)";
+wol.legend="Hôtes Disponibles";
+wol.legend2="Nouvel Hôte";
+wol.legend3="Journal";
+wol.legend4="Réveil Manuel";
+wol.enable="Activer WOL ?";
+wol.mac="Adresse(s) MAC";
 wol.broadcast="Net Broadcast";
-wol.udp="UDP Port";
-wol.msg1="Click to remove WOL host";
+wol.udp="Port UDP";
+wol.msg1="Cliquer pour supprimer l\'hôte";
 
 //help container
 var hwol = new Object();
-hwol.right2="This page allows you to <em>Wake Up</em> hosts on your local network (i.e. locally connected to your router).";
-hwol.right4="MAC Addresses are entered in the format xx:xx:xx:xx:xx:xx (i.e. 01:23:45:67:89:AB)";
-hwol.right6="IP Address is typically the broadcast address for the local network, but could be a remote address if the target host is not connected to the router\'s local network."
+hwol.right2="Cette fonctionnalité permet de <em>réveiller</em> à distance une machine de votre réseau local sans avoir à se déplacer.";
+hwol.right4="Les adresses MAC doivent être saisies dans le format XX:XX:XX:XX:XX:XX (ex. 01:23:45:67:89:AB)";
+hwol.right6="L\'adresse IP désigne généralement l\'adresse de broadcast du réseau local, \
+	mais peut également désigner une adresse IP si l\'hôte n'est pas sur le réseau local connecté au routuer."
 
 
 
 // ******************************************* WanMAC.asp *******************************************//
 
 var wanmac = new Object();
-wanmac.titl=" - MAC Address Clone";
-wanmac.h2="MAC Address Clone";
-wanmac.legend="MAC Clone";
-wanmac.wan="Clone WAN MAC";
-wanmac.wlan="Clone Wireless MAC";
+wanmac.titl=" - Adresse MAC Dupliquée";
+wanmac.h2="Adresse MAC Dupliquée";
+wanmac.legend="MAC Dupliquée";
+wanmac.wan="Dupliquer l\'adresse MAC WAN";
+wanmac.wlan="Dupliquer l\'adresse MAC WLAN";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="Some ISP will require you to register your MAC address. \
-			If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
+hwanmac.right2="Une adresse MAC désigne un code à 12 chiffres attribué à un composant matériel unique en vue de son identification. \
+	Certains fournisseurs d\'accès Internet (FAI) exigent l\'enregistrement d\'une adresse MAC pour l\'accès à Internet. \
+	Si vous ne souhaitez pas ré-enregistrer l\'adresse MAC auprès de votre FAI, vous pouvez attribuer l\'adresse MAC actuellement enregistrée \
+	auprès de votre FAI au routeur via la fonctionnalité d\'<em>Adresse MAC dupliquée</em>.";
 
 
 
