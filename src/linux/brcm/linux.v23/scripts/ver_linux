@@ -22,7 +22,8 @@ make --version 2>&1 | awk -F, '{print $1}' | awk \
       '/GNU Make/{print "Gnu make              ",$NF}'
 
 ld -v 2>&1 | awk -F\) '{print $1}' | awk \
-      '/BFD/{print "binutils              ",$NF}'
+      '/BFD/{print "binutils              ",$NF} \
+       /^GNU/{print "binutils              ",$4}'
 
 fdformat --version | awk -F\- '{print "util-linux            ", $NF}'
 

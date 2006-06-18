@@ -572,6 +572,19 @@ int msdos_partition(struct gendisk *hd, struct block_device *bdev,
 		put_dev_sector(sect);
 		return 0;
 	}
+	/*
+	 * Now that the 55aa signature is present, this is probably
+	 * either the boot sector of a FAT filesystem or a DOS-type
+	 * partition table. Reject this in case the boot indicator
+	 * is not 0 or 0x80.
+	 */
+	p = (struct partition *) (data + 0x1be);
+	for (i = 1; i <= 4; i++, p++) {
+		if (p->boot_ind != 0 && p->boot_ind != 0x80) {
+			put_dev_sector(sect);
+			return 0;
+		}
+	}
 	p = (struct partition *) (data + 0x1be);
 
 	/*

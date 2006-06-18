@@ -285,21 +285,6 @@ void blk_queue_make_request(request_queue_t * q, make_request_fn * mfn)
 void blk_queue_bounce_limit(request_queue_t *q, u64 dma_addr)
 {
 	unsigned long bounce_pfn = dma_addr >> PAGE_SHIFT;
-	unsigned long mb = dma_addr >> 20;
-	static request_queue_t *old_q;
-
-	/*
-	 * keep this for debugging for now...
-	 */
-	if (dma_addr != BLK_BOUNCE_HIGH && q != old_q) {
-		old_q = q;
-		printk("blk: queue %p, ", q);
-		if (dma_addr == BLK_BOUNCE_ANY)
-			printk("no I/O memory limit\n");
-		else
-			printk("I/O limit %luMb (mask 0x%Lx)\n", mb,
-			       (long long) dma_addr);
-	}
 
 	q->bounce_pfn = bounce_pfn;
 }

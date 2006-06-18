@@ -313,6 +313,13 @@ static int ext2_rename (struct inode * old_dir, struct dentry * old_dentry,
 			ext2_inc_count(new_dir);
 	}
 
+	/*
+	 * Like most other Unix systems, set the ctime for inodes on a
+	 * rename. Note that other 2.4 FS as well as EXT2 on 2.2 and 2.6
+	 * do this. ext2_dec_count() will mark the inode dirty.
+	 */
+	old_inode->i_ctime = CURRENT_TIME;
+
 	ext2_delete_entry (old_de, old_page);
 	ext2_dec_count(old_inode);
 
