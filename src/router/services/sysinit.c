@@ -476,27 +476,27 @@ start_restore_defaults (void)
   int nvcnt = 0;
 //  if (!nvram_match("default_init","1"))
   {
-  for (t = router_defaults; t->name; t++)
-    {
-      if (restore_defaults || !nvram_get (t->name))
-	{
-	  for (u = linux_overrides; u && u->name; u++)
-	    {
-	      if (!strcmp (t->name, u->name))
-		{
-		  nvcnt++;
-		  nvram_set (u->name, u->value);
-		  break;
-		}
-	    }
-	  if (!u || !u->name)
-	    {
-	      nvcnt++;
-	      nvram_set (t->name, t->value);
-	    }
-	}
-    }
-    }
+    for (t = router_defaults; t->name; t++)
+      {
+	if (restore_defaults || !nvram_get (t->name))
+	  {
+	    for (u = linux_overrides; u && u->name; u++)
+	      {
+		if (!strcmp (t->name, u->name))
+		  {
+		    nvcnt++;
+		    nvram_set (u->name, u->value);
+		    break;
+		  }
+	      }
+	    if (!u || !u->name)
+	      {
+		nvcnt++;
+		nvram_set (t->name, t->value);
+	      }
+	  }
+      }
+  }
 #ifndef HAVE_FON
   if (restore_defaults)		//fix for belkin std ip
     {
@@ -578,8 +578,8 @@ start_restore_defaults (void)
 		nvram_set("boardflags", "0x0388");
 
 	}*/
-	
-	if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
+
+  if (brand == ROUTER_WRT54G || brand == ROUTER_WRT54G1X
       || brand == ROUTER_LINKSYS_WRT55AG || brand == ROUTER_MOTOROLA_V1)
     {
       if (!nvram_get ("aa0"))
@@ -606,11 +606,12 @@ start_restore_defaults (void)
   nvram_set ("os_version", EPI_VERSION_STR);
 
 #ifdef HAVE_DDLAN
-      nvram_unset("cur_rssi");
-      nvram_unset("cur_noise");
-      nvram_unset("cur_bssid");
-      nvram_unset("cur_snr");
-      nvram_set ("cur_state","<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
+  nvram_unset ("cur_rssi");
+  nvram_unset ("cur_noise");
+  nvram_unset ("cur_bssid");
+  nvram_unset ("cur_snr");
+  nvram_set ("cur_state",
+	     "<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
 #endif
 #ifdef HAVE_SPUTNIK_APD
   /* Added for Sputnik Agent */
@@ -817,8 +818,7 @@ start_sysinit (void)
       //not created yet, create ext2 partition
       eval ("/sbin/mke2fs", "-F", "-b", "1024", "/dev/cf/card0/part3");
       //mount ext2 
-      mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL,
-	     NULL);
+      mount ("/dev/cf/card0/part3", "/usr/local", "ext2", MS_MGC_VAL, NULL);
       eval ("/bin/tar", "-xvvjf", "/etc/local.tar.bz2", "-C", "/");
       mkdir ("/usr/local/nvram", 0777);
 //    eval("ln","-s","/etc/nvram","/usr/local/nvram");
@@ -851,45 +851,46 @@ start_sysinit (void)
       check_brcm_cpu_type ();
     }
   if (brand == ROUTER_MOTOROLA)
- 	 {
-    nvram_set ("cpu_type", "BCM4712");
-	nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
-	 }
-	   
-    if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA || brand == ROUTER_RT210W
-      || brand == ROUTER_BUFFALO_WZRRSG54 || brand == ROUTER_BELKIN_F5D7230)
+    {
+      nvram_set ("cpu_type", "BCM4712");
+      nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
+    }
+
+  if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA
+      || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54
+      || brand == ROUTER_BELKIN_F5D7230)
     {
       setup_4712 ();
     }
 
   if (brand == ROUTER_RT210W)
-	{
-  	nvram_set ("wan_ifname", "eth1"); // fix for Belkin f5d7230 v1000 WAN problem.
-	nvram_set ("wan_ifnames", "eth1");
-	}
-	
+    {
+      nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
+      nvram_set ("wan_ifnames", "eth1");
+    }
+
   if (brand == ROUTER_ASUS_WL500G_PRE)
-	{
-	strcpy (wanifname, "vlan1");
-  	nvram_set ("wan_ifname", "vlan1"); // fix for Asus WL500gPremium WAN problem.
-	nvram_set ("wan_ifnames", "vlan1");
-	nvram_set ("vlan1ports", "0 5");
-	}
-	
+    {
+      strcpy (wanifname, "vlan1");
+      nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
+      nvram_set ("wan_ifnames", "vlan1");
+      nvram_set ("vlan1ports", "0 5");
+    }
+
   if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
-	 {
-	eval ("gpio", "enable", "6");	//MN700 power led on
-	 }
-	 
+    {
+      eval ("gpio", "enable", "6");	//MN700 power led on
+    }
+
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
-      {
-	  nvram_set ("lan_ifnames", "eth0 eth1"); // fix for WAP54G v2 interfaces
-	  nvram_set ("wl0_ifname", "eth1");
-	  strcpy (wlifname, "eth1");
-	  nvram_set ("wan_ifname", "eth2");   // map WAN port to nonexistant interface
-	  nvram_set ("wan_ifnames", "eth2");
-  	  }
-		
+    {
+      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54G v2 interfaces
+      nvram_set ("wl0_ifname", "eth1");
+      strcpy (wlifname, "eth1");
+      nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
+      nvram_set ("wan_ifnames", "eth2");
+    }
+
   /* Modules */
   uname (&name);
 
@@ -922,9 +923,9 @@ start_sysinit (void)
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
 		"diag wl";
-	      eval("insmod","switch-core");
-	      if (eval("insmod","switch-robo"))
-		  eval("insmod","switch-adm");
+	      eval ("insmod", "switch-core");
+	      if (eval ("insmod", "switch-robo"))
+		eval ("insmod", "switch-adm");
 
 	      break;
 //          case ROUTER_BUFFALO_WBR54G:
@@ -965,9 +966,9 @@ start_sysinit (void)
 		nvram_invmatch ("ct_modules",
 				"") ? nvram_safe_get ("ct_modules") :
 		"diag wl";
-	      eval("insmod","switch-core");
-	      if (eval("insmod","switch-robo"))
-		  eval("insmod","switch-adm");
+	      eval ("insmod", "switch-core");
+	      if (eval ("insmod", "switch-robo"))
+		eval ("insmod", "switch-adm");
 	      break;
 	    case ROUTER_BUFFALO_WZRRSG54:
 	      modules =
@@ -1228,15 +1229,15 @@ start_nvram (void)
 //  {"svqos_port3bw", "FULL", 0},
 //  {"svqos_port4bw", "FULL", 0},
 
-if (nvram_match("svqos_port1bw","full"))
-    nvram_set("svqos_port1bw","FULL");
-if (nvram_match("svqos_port2bw","full"))
-    nvram_set("svqos_port2bw","FULL");
-if (nvram_match("svqos_port3bw","full"))
-    nvram_set("svqos_port3bw","FULL");
-if (nvram_match("svqos_port4bw","full"))
-    nvram_set("svqos_port4bw","FULL");
-    
+  if (nvram_match ("svqos_port1bw", "full"))
+    nvram_set ("svqos_port1bw", "FULL");
+  if (nvram_match ("svqos_port2bw", "full"))
+    nvram_set ("svqos_port2bw", "FULL");
+  if (nvram_match ("svqos_port3bw", "full"))
+    nvram_set ("svqos_port3bw", "FULL");
+  if (nvram_match ("svqos_port4bw", "full"))
+    nvram_set ("svqos_port4bw", "FULL");
+
   strcpy (style, nvram_safe_get ("router_style"));
 
   {
@@ -1369,7 +1370,7 @@ check_nv (char *name, char *value)
 static void
 overclock (void)
 {
-  int rev=getcpurev();
+  int rev = getcpurev ();
   char *ov = nvram_get ("overclocking");
   if (ov == NULL)
     return;
@@ -1378,9 +1379,9 @@ overclock (void)
     return;			//unsupported
   if (nvram_match ("clkfreq", "125"))
     return;			//unsupported
-  if (rev==0)
-    return;		        //unsupported
-    
+  if (rev == 0)
+    return;			//unsupported
+
 //int cclk = atoi(nvram_safe_get("clkfreq"));
 //if (cclk<192)return; //unsupported
   char *pclk = nvram_safe_get ("clkfreq");
@@ -1391,12 +1392,12 @@ overclock (void)
     if (dup[i] == ',')
       dup[i] = 0;
   int cclk = atoi (dup);
-  if (cclk < 192 && rev==7)
+  if (cclk < 192 && rev == 7)
     {
       cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
       return;			//unsupported
     }
-  if (cclk < 183 && rev==8)
+  if (cclk < 183 && rev == 8)
     {
       cprintf ("clkfreq is %d (%s), this is unsupported\n", cclk, dup);
       return;			//unsupported
@@ -1415,7 +1416,7 @@ overclock (void)
     {
     case 183:
       nvram_set ("clkfreq", "183,92");
-      break;    
+      break;
     case 187:
       nvram_set ("clkfreq", "187,94");
       break;
