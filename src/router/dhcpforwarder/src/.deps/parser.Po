@@ -1,81 +1,81 @@
 src/parser.o src/parser.o: src/parser.c config.h src/splint.h \
   src/splint_compat.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/unistd.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/features.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/posix_opt.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/environments.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/wordsize.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/types.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stddef.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/confname.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/getopt.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/errno.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/errno.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/errno_values.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdlib.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/waitflags.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/waitstatus.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/endian.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/types.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/time.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/select.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/select.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/alloca.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/assert.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/string.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/fcntl.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/fcntl.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/stat.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/stat.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/netinet/in.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdint.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/socket.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/limits.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/syslimits.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/limits.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/posix1_lim.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/local_lim.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/linux/limits.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/posix2_lim.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/xopen_lim.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sockaddr.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/socket.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/sockios.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/ioctl.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/in.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/byteswap.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/unistd.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/features.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/posix_opt.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/environments.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/wordsize.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stddef.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/confname.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/getopt.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/errno.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/errno.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/errno_values.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdlib.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/waitflags.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/waitstatus.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/endian.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/types.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/time.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/select.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/select.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/time.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/alloca.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/assert.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/string.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/fcntl.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/fcntl.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/stat.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/stat.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/netinet/in.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdint.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/socket.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/limits.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/syslimits.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/limits.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/posix1_lim.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/local_lim.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/linux/limits.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/posix2_lim.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/xopen_lim.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sockaddr.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/socket.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/sockios.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/ioctl.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/in.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/byteswap.h \
   src/parser.h src/cfg.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/net/if.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/socket.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/uio.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uio.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/param.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/linux/param.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/param.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/resource.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/resource.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/net/if.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/socket.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/uio.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uio.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/param.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/linux/param.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/param.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/resource.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/resource.h \
   src/util.h src/compat.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stdbool.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/inttypes.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stdbool.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/inttypes.h \
   src/wrappers.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/pwd.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdio.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/grp.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/wchar.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stdarg.h \
-  /home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/arpa/inet.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/pwd.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdio.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/grp.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/wchar.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stdarg.h \
+  /opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/arpa/inet.h \
   src/recvfromflags.h src/output.h src/ulimit_codes.h
 
 config.h:
@@ -84,161 +84,161 @@ src/splint.h:
 
 src/splint_compat.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/unistd.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/unistd.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/features.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/features.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_config.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/cdefs.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/posix_opt.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/posix_opt.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/environments.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/environments.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/wordsize.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/wordsize.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/types.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/types.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stddef.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stddef.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/kernel_types.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/pthreadtypes.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sched.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/confname.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/confname.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/getopt.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/getopt.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/errno.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/errno.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/errno.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/errno.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/errno_values.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/errno_values.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdlib.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdlib.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/waitflags.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/waitflags.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/waitstatus.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/waitstatus.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/endian.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/endian.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/endian.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/types.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/types.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/time.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/time.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/select.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/select.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/select.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/select.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sigset.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/time.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/sysmacros.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/alloca.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/alloca.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/assert.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/assert.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/string.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/string.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/fcntl.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/fcntl.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/fcntl.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/fcntl.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/stat.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/stat.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/stat.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/stat.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/netinet/in.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/netinet/in.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdint.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdint.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/wchar.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/socket.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/socket.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/limits.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/limits.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/syslimits.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/syslimits.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/limits.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/limits.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/posix1_lim.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/posix1_lim.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/local_lim.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/local_lim.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/linux/limits.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/linux/limits.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/posix2_lim.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/posix2_lim.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/xopen_lim.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/xopen_lim.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/stdio_lim.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/sockaddr.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/sockaddr.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/socket.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/socket.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/sockios.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/sockios.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/ioctl.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/ioctl.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/in.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/in.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/byteswap.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/byteswap.h:
 
 src/parser.h:
 
 src/cfg.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/net/if.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/net/if.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/socket.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/socket.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/uio.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/uio.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uio.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uio.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/param.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/param.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/linux/param.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/linux/param.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/asm/param.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/asm/param.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/sys/resource.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/sys/resource.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/resource.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/resource.h:
 
 src/util.h:
 
 src/compat.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stdbool.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stdbool.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/inttypes.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/inttypes.h:
 
 src/wrappers.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/pwd.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/pwd.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/stdio.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/stdio.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/grp.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/grp.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/bits/uClibc_stdio.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/wchar.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/wchar.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/include/stdarg.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/include/stdarg.h:
 
-/home/dd-wrt/toolchains/4.1.0/bin/../lib/gcc/mipsel-linux-uclibc/4.1.0/../../../../mipsel-linux-uclibc/sys-include/arpa/inet.h:
+/opt/4.1.1/bin/../lib/gcc/mipsel-linux-uclibc/4.1.1/../../../../mipsel-linux-uclibc/sys-include/arpa/inet.h:
 
 src/recvfromflags.h:
 

@@ -96,13 +96,12 @@ CONFIG_IPTABLES=y
 obj-$(CONFIG_OPENSSL) += openssl
 obj-$(CONFIG_MATRIXSSL) += matrixssl
 obj-$(CONFIG_HTTPD) += httpd validate
-obj-$(CONFIG_RC) += rc bridge services
+obj-$(CONFIG_RC) += rc services
 #obj-$(CONFIG_LIBBCM) += libbcm
 obj-$(CONFIG_SHARED) += shared
 obj-$(CONFIG_WWW) += www
 obj-$(CONFIG_GLIBC) += lib
 obj-$(CONFIG_UCLIBC) += lib
-obj-$(CONFIG_BRIDGE) += bridge
 obj-$(CONFIG_BUSYBOX) += busybox net-tools
 #obj-$(CONFIG_TELNET) += telnetd
 obj-$(CONFIG_DNSMASQ) += dnsmasq
@@ -226,7 +225,8 @@ optimize-lib:
 	../../tools/optimize_lib.sh shared/ libshared.so libshared.a libshared_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libshared.so
 #	../../tools/optimize_lib.sh lib/ libm.so libm.a libm_min.so $(TARGETDIR) $(TARGETDIR)/lib/libm.so.0
 	../../tools/optimize_lib.sh lib/ libpthread.so libpthread.a libphread_min.so $(TARGETDIR) $(TARGETDIR)/lib/libpthread.so.0
-#	../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
+#	../../tools/optimize_lib.sh services/ services.so services.a services_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/services.so
+#  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
 
 install package: $(filter-out lib-install,$(obj-install)) $(LINUXDIR)/.config
@@ -473,20 +473,6 @@ else
 	$(MAKE) -C www/$(WEB_PAGE) clean
 endif
 
-bridge:
-	$(MAKE) -C bridge brctl/brctl
-
-bridge-clean:
-	@echo "Cleaning bridge"
-	@if [ -e bridge/libbridge/libbridge.a ]; then\
-		rm bridge/brctl/*.o bridge/libbridge/*.a bridge/libbridge/*.o;\
-	else echo "Nothing to clean";\
-	fi;
-
-bridge-install:
-	@true
-#	install -D bridge/brctl/brctl $(INSTALLDIR)/bridge/usr/sbin/brctl
-#	$(STRIP) $(INSTALLDIR)/bridge/usr/sbin/brctl
 
 busybox-config: 
 	cd busybox && rm -f Config.h && ln -sf configs/$(CONFIG_BUSYBOX_CONFIG).h Config.h
