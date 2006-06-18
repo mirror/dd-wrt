@@ -7,9 +7,9 @@ STRIP=mipsel-linux-uclibc-strip
 
 
 ifeq ($(CONFIG_MSSID),y)
-CFLAGS=$(COPTS) -I. -I../shared -I../../include.v24
+CFLAGS=$(COPTS) -I. -I../shared -I../services -I../../include.v24
 else
-CFLAGS=$(COPTS) -Wall -I. -I../shared -I../../include.v23
+CFLAGS=$(COPTS) -Wall -I. -I../shared -I../services -I../../include.v23
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
