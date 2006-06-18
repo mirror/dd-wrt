@@ -259,9 +259,7 @@ errmsg.err49="Radius is only available in AP mode.";
 errmsg.err50="You must input a SSID.";
 
 // Management.asp error messages
-errmsg.err51="The Router is currently set to its default password. \
-			As a security measure, you must change the password before the Remote Management feature can be enabled. \
-			Click the OK button to change your password. Click the Cancel button to leave the Remote Management feature disabled.";
+errmsg.err51="The Router is currently set to its default password. As a security measure, you must change the password before the Remote Management feature can be enabled. Click the OK button to change your password. Click the Cancel button to leave the Remote Management feature disabled.";
 errmsg.err52="Password confirmation doesn't match.";
 
 // Port_Services.asp error messages
@@ -457,9 +455,7 @@ ddnsm.all_noip="No Internet connection";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. \
-	The service manages changing IP address and updates your domain information dynamically. \
-	You must sign up for service through DynDNS.org, TZO.com or ZoneEdit.com.";
+hddns.right2="DDNS allows you to access your network using domain names instead of IP addresses. The service manages changing IP address and updates your domain information dynamically. You must sign up for service through DynDNS.org, TZO.com or ZoneEdit.com.";
 
 
 
@@ -603,11 +599,7 @@ prforward.app="Application";
 
 //help container
 var hprforward = new Object();
-hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
-	Examples of these applications include servers and certain online games. \
-	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
-	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
-	and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
+hprforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>" + share.enable +"</em> checkbox after you are finished.";
 
 
 
@@ -623,11 +615,7 @@ pforward.to="Port to";
 
 //help container
 var hpforward = new Object();
-hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. \
-	Examples of these applications include servers and certain online games. \
-	When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. \
-	Due to security concerns, you may want to limit port forwarding to only those ports you are using, \
-	and uncheck the <em>Enable</em> checkbox after you are finished.";
+hpforward.right2="Certain applications may require to open specific ports in order for it to function correctly. Examples of these applications include servers and certain online games. When a request for a certain port comes in from the Internet, the router will route the data to the computer you specify. Due to security concerns, you may want to limit port forwarding to only those ports you are using, and uncheck the <em>Enable</em> checkbox after you are finished.";
 
 
 
@@ -981,10 +969,8 @@ hqos.right3="Downlink:";
 hqos.right4="Set this to 80%-100% (max) of your total download limit.";
 hqos.right6="You may control your data rate with respect to the application that is consuming bandwidth.";
 hqos.right8="You may specify priority for all traffic from a given IP address or IP Range.";
-hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, \
-			specifying priority and entering its MAC address.";
-hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. \
-			You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
+hqos.right10="You may specify priority for all traffic from a device on your network by giving the device a Device Name, specifying priority and entering its MAC address.";
+hqos.right12="You may control your data rate according to which physical LAN port your device is plugged into. You may assign Priorities accordingly for devices connected on LAN ports 1 through 4.";
 
 
 
@@ -1191,8 +1177,7 @@ hstatus_router.right6="This is the router's current firmware.";
 hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
 hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
 hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
-hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. \
-				This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
+hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
 
 
 
@@ -1272,8 +1257,7 @@ upgrad.mess1="Upgrading firmware may take a few minutes.<br />Do not turn off th
 
 //help container
 var hupgrad = new Object();
-hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> \
-			Click the <em>Upgrade</em> button to begin the upgrade process. Upgrade must not be interrupted.";
+hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> Click the <em>Upgrade</em> button to begin the upgrade process. Upgrade must not be interrupted.";
 
 
 
@@ -1368,8 +1352,7 @@ wanmac.wlan="Clone Wireless MAC";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="Some ISPs will require you to register your MAC address. \
-			If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
+hwanmac.right2="Some ISPs will require you to register your MAC address. If you do not wish to re-register your MAC address, you can have the router clone the MAC address that is registered with your ISP.";
 
 
 
