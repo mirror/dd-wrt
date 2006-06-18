@@ -15,7 +15,7 @@
 #ifndef _shutils_h_
 #define _shutils_h_
 #include <string.h>
-
+#include <stdio.h>
 
 #define MAX_NVPARSE 256
 
