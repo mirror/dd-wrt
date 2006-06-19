@@ -3884,6 +3884,7 @@ struct mime_handler mime_handlers[] = {
   {"setupindex*", "text/html", no_cache, NULL, do_ej, do_auth2},
 #endif
 #ifdef HAVE_DDLAN
+  {"Upgrade*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Management*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Services*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2},
@@ -3954,8 +3955,13 @@ struct mime_handler mime_handlers[] = {
 #endif
 //  {"Gozila.cgi*", "text/html", no_cache, NULL, do_setup_wizard, do_auth},     // for setup wizard
 /*	{ "**.cfg", "application/octet-stream", no_cache, NULL, do_backup, do_auth }, */
+#ifdef HAVE_DDLAN
+  {"restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
+   NULL},
+#else
   {"restore.cgi**", "text/html", no_cache, do_upgrade_post, do_upgrade_cgi,
    do_auth},
+#endif
   {"test.bin**", "application/octet-stream", no_cache, NULL, do_file,
    do_auth},
   {"nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
