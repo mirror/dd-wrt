@@ -159,16 +159,15 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		}
 	      else
 		{
-		  if (expires > 86400)  //60 * 60 * 24
+		  if (expires > 86400)	//60 * 60 * 24
 		    {
-		      sprintf (expires_time + strlen (expires_time),
-			       "%ld days ", expires / 86400);  //60 * 60 * 24
-		      expires %= 86400; //60 * 60 * 24
+		      sprintf (expires_time + strlen (expires_time), "%ld days ", expires / 86400);	//60 * 60 * 24
+		      expires %= 86400;	//60 * 60 * 24
 		    }
-		  if (expires > 3600)  //60 * 60 
+		  if (expires > 3600)	//60 * 60 
 		    {
 		      sprintf (expires_time + strlen (expires_time), "%02ld:", expires / (60 * 60));	// hours
-		      expires %= 3600;  //60 * 60
+		      expires %= 3600;	//60 * 60
 		    }
 		  else
 		    {

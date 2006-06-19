@@ -44,6 +44,7 @@ do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
 
   websDone (stream, 200);
 
+
   /* Reboot if successful */
   if (upgrade_ret == 0)
     {
@@ -336,20 +337,17 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 	  BIO_gets ((BIO *) stream, buf, 1);
 #elif defined(HAVE_MATRIXSSL)
 	  matrixssl_gets (stream, buf, 1);
-#else
-	}
 #endif
-    }
-  else
-  {
-    (void) fgetc (stream);
-  }
+	}
+      else
+	{
+	  (void) fgetc (stream);
+	}
 
 #else
       (void) fgetc (stream);
 #endif
 
-#endif
     }
-
+#endif
 }
