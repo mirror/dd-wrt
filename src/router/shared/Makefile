@@ -184,6 +184,10 @@ ifeq ($(CONFIG_SPUTNIK_APD),y)
 CFLAGS += -DHAVE_SPUTNIK_APD
 endif
 
+ifeq ($(CONFIG_UPNP),y)
+CFLAGS += -DHAVE_UPNP
+endif
+
 ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif
