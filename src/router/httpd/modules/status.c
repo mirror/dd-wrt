@@ -39,7 +39,7 @@ ej_localtime (int eid, webs_t wp, int argc, char_t ** argv)
 
   time (&tm);
 
-  if (time (0) > (unsigned long) 31536000)  //60 * 60 * 24 * 365
+  if (time (0) > (unsigned long) 31536000)	//60 * 60 * 24 * 365
     websWrite (wp, rfctime (&tm));
   else
     websWrite (wp, "Not Available");
@@ -288,9 +288,9 @@ ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv)
   char *wan_domain;
 
   if (nvram_invmatch ("wan_domain", ""))
-      wan_domain = nvram_safe_get ("wan_domain");
+    wan_domain = nvram_safe_get ("wan_domain");
   else
-      wan_domain = nvram_safe_get ("wan_get_domain");
+    wan_domain = nvram_safe_get ("wan_get_domain");
 
   websWrite (wp, "%s", wan_domain);
   return;

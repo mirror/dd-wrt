@@ -37,12 +37,15 @@ void
 do_upgrade_cgi (char *url, webs_t stream)	//jimmy, https, 8/6/2003
 {
 #ifndef ANTI_FLASH
+  fprintf (stderr, "do post\n");
   if (upgrade_ret)
     do_ej ("Fail_u_s.asp", stream);
   else
     do_ej ("Success_u_s.asp", stream);
+  fprintf (stderr, "websdone\n");
 
   websDone (stream, 200);
+  fprintf (stderr, "reboot\n");
 
   /* Reboot if successful */
   if (upgrade_ret == 0)
@@ -97,19 +100,6 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
     }
 
   /* Set nonblock on the socket so we can timeout */
-#ifdef HAVE_HTTPS
-  if (!do_ssl)
-    {
-#endif
-//      if ((flags = fcntl (fileno (stream), F_GETFL)) < 0 ||
-//	  fcntl (fileno (stream), F_SETFL, flags | O_NONBLOCK) < 0)
-//	{
-//	  ret = errno;
-//	  goto err;
-//	}
-#ifdef HAVE_HTTPS
-    }
-#endif
 
   /*
    ** The buffer must be at least as big as what the stream file is
@@ -133,52 +123,63 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   /* Pipe the rest to the FIFO */
   cprintf ("Upgrading\n");
 //  while (total && *total)
-    {
-       count = safe_fread (buf, 1, 5, stream);
-	  if (!count && (ferror (stream) || feof (stream)))
-	    goto err;
+  {
+    wfread (&buf[0], 1, 5, stream);
+    *total -= 5;
+    if (buf[0] != 'R' || buf[1] != 'B' || buf[2] != '5' || buf[3] != '0'
+	|| buf[4] != '0')
+      {
+	ret = -1;
+	goto err;
+      }
+    int linuxsize;
+    int fssize;
+    wfread (&linuxsize, 1, 4, stream);
+    wfread (&fssize, 1, 4, stream);
+    safe_fwrite (&linuxsize, 1, 4, fifo);
+    safe_fwrite (&fssize, 1, 4, fifo);
+    linuxsize += fssize;
+    for (i = 0; i < linuxsize / MIN_BUF_SIZE; i++)
+      {
+	wfread (&buf[0], 1, MIN_BUF_SIZE, stream);
+	fwrite (&buf[0], 1, MIN_BUF_SIZE, fifo);
+      }
 
-      if (!memcmp(&buf[0],"RB500",5))
-        {
-	    goto err;	  
-	}
-      int linuxsize;
-      int fssize;
-      wfread(&linuxsize,1,4,stream);
-      wfread(&fssize,1,4,stream);
-      safe_fwrite(&linuxsize,1,4,fifo);
-      safe_fwrite(&fssize,1,4,fifo);
-      linuxsize+=fssize;
-      for (i=0;i<linuxsize;i++)
-        {
-	unsigned char c;
-	wfread(&c,1,1,stream);
-        putc(c,fifo);
-	}
-    
-    }
+    wfread (&buf[0], 1, linuxsize % MIN_BUF_SIZE, stream);
+    fwrite (&buf[0], 1, linuxsize % MIN_BUF_SIZE, fifo);
+    *total -= linuxsize;
+
+  }
   fclose (fifo);
   fifo = NULL;
-  fifo=fopen(upload_fifo,"rb");
-  int linuxsize;
-  int fssize;
-  fread(&linuxsize,1,4,stream);
-  fread(&fssize,1,4,stream);
-  fprintf(stderr,"Write Linux %d\n",linuxsize);
-  FILE *out=fopen("/dev/cf/card0/part1","wb");
-  for (i=0;i<linuxsize;i++)
-    putc(getc(fifo),out);
-  fclose(out);    	
-  fprintf(stderr,"Write FileSys %d\n",fssize);
-  out=fopen("/dev/cf/card0/part2","wb");
-  for (i=0;i<fssize;i++)
-    putc(getc(fifo),out);
-  fclose(out);    	
+  fifo = fopen (upload_fifo, "rb");
+  unsigned long linuxsize;
+  unsigned long fssize;
+  linuxsize = 0;
+  linuxsize += getc (fifo);
+  linuxsize += getc (fifo) * 256;
+  linuxsize += getc (fifo) * 256 * 256;
+  linuxsize += getc (fifo) * 256 * 256 * 256;
+  fssize = 0;
+  fssize += getc (fifo);
+  fssize += getc (fifo) * 256;
+  fssize += getc (fifo) * 256 * 256;
+  fssize += getc (fifo) * 256 * 256 * 256;
+  fprintf (stderr, "Write Linux %d\n", linuxsize);
+  FILE *out = fopen ("/dev/cf/card0/part1", "wb");
+  for (i = 0; i < linuxsize; i++)
+    putc (getc (fifo), out);
+  fclose (out);
+  fprintf (stderr, "Write FileSys %d\n", fssize);
+  out = fopen ("/dev/cf/card0/part2", "wb");
+  for (i = 0; i < fssize; i++)
+    putc (getc (fifo), out);
+  fclose (out);
 
   /* Wait for write to terminate */
 //  waitpid (pid, &ret, 0);
   cprintf ("done\n");
-
+  ret = 0;
 err:
   if (buf)
     free (buf);
@@ -187,7 +188,8 @@ err:
   unlink (upload_fifo);
 
   //diag_led(DIAG, STOP_LED);
-  C_led (0);
+  //C_led (0);
+  fprintf (stderr, "Idle\n");
   ACTION ("ACT_IDLE");
 
 
@@ -255,14 +257,14 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 	break;
     }
   upgrade_ret = sys_upgrade (NULL, stream, &len, type);
-
+  fprintf (stderr, "core upgrade done() %d\n", len);
   /* Restore factory original settings if told to.
      This will also cause a restore defaults on reboot
      of a Sveasoft firmware.
    */
   if (nvram_match ("sv_restore_defaults", "1"))
     {
-      system ("/sbin/erase nvram");
+      system ("rm -f /usr/local/nvram/nvram.db");
     }
   /* Slurp anything remaining in the request */
 
@@ -275,20 +277,19 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
 	  BIO_gets ((BIO *) stream, buf, 1);
 #elif defined(HAVE_MATRIXSSL)
 	  matrixssl_gets (stream, buf, 1);
-#else
-	}
 #endif
-    }
-  else
-  {
-    (void) fgetc (stream);
-  }
-
+	}
+      else
+	{
+	  (void) fgetc (stream);
+	}
 #else
       (void) fgetc (stream);
 #endif
 
-#endif
+
     }
+#endif
+  fprintf (stderr, "upgrade done()\n");
 
 }

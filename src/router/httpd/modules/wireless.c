@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																												/* channel info structure *///from 11.9
+																																																																																			/* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -384,8 +384,8 @@ validate_wl_wep (webs_t wp, char *value, struct variable *v)
       && atoi (nvram_safe_get ("wl_gmode")) == GMODE_AFTERBURNER)
     {
       websDebugWrite (wp,
-		 "<br>Invalid <b>%s</b>: must be set to <b>Off</b> when 54g Mode is AfterBurner.",
-		 v->longname);
+		      "<br>Invalid <b>%s</b>: must be set to <b>Off</b> when 54g Mode is AfterBurner.",
+		      v->longname);
       return;
     }
 #endif
@@ -1148,28 +1148,30 @@ dhcp_lease_table_init (void)
       char buf[512];
       char *p;
 
-      eval("killall", "-SIGUSR2", "dnsmasq");
-      sleep(1);
+      eval ("killall", "-SIGUSR2", "dnsmasq");
+      sleep (1);
 
-      if ((fp_w = fopen(LEASES_NAME_IP, "w")) != NULL) 
-        {
-          // Parse leases file
-          if ((fp = fopen("/tmp/dnsmasq.leases", "r")) != NULL) 
-            {
-              while (fgets(buf, sizeof(buf), fp))
-                {
-                  if (sscanf(buf, "%lu %17s %15s %255s", &expires, mac, ip, hostname) != 4) 
-                    continue;
-                  p = mac;
-                  while ((*p = toupper(*p)) != 0) 
-                    ++p;
-                  fprintf(fp_w, "%s %s %s\n", mac, ip, hostname);
-                  ++count;
-                }
-              fclose(fp);
-            }
-          fclose(fp_w);
-        }
+      if ((fp_w = fopen (LEASES_NAME_IP, "w")) != NULL)
+	{
+	  // Parse leases file
+	  if ((fp = fopen ("/tmp/dnsmasq.leases", "r")) != NULL)
+	    {
+	      while (fgets (buf, sizeof (buf), fp))
+		{
+		  if (sscanf
+		      (buf, "%lu %17s %15s %255s", &expires, mac, ip,
+		       hostname) != 4)
+		    continue;
+		  p = mac;
+		  while ((*p = toupper (*p)) != 0)
+		    ++p;
+		  fprintf (fp_w, "%s %s %s\n", mac, ip, hostname);
+		  ++count;
+		}
+	      fclose (fp);
+	    }
+	  fclose (fp_w);
+	}
     }
   else
     {
@@ -1182,20 +1184,21 @@ dhcp_lease_table_init (void)
 
       // Parse leases file 
       if ((fp = fopen ("/tmp/udhcpd.leases", "r")))
-        {
-          while (fread (&lease, sizeof (lease), 1, fp))
-            {
-              snprintf (mac, sizeof (mac), "%02X:%02X:%02X:%02X:%02X:%02X",
-		    lease.chaddr[0], lease.chaddr[1], lease.chaddr[2],
-		    lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
-              if (!strcmp ("00:00:00:00:00:00", mac))
-                continue;
-              addr.s_addr = lease.yiaddr;
-              fprintf (fp_w, "%s %s %s\n", mac, inet_ntoa (addr), lease.hostname);
-              count++;
-            }
-           fclose (fp);
-         }
+	{
+	  while (fread (&lease, sizeof (lease), 1, fp))
+	    {
+	      snprintf (mac, sizeof (mac), "%02X:%02X:%02X:%02X:%02X:%02X",
+			lease.chaddr[0], lease.chaddr[1], lease.chaddr[2],
+			lease.chaddr[3], lease.chaddr[4], lease.chaddr[5]);
+	      if (!strcmp ("00:00:00:00:00:00", mac))
+		continue;
+	      addr.s_addr = lease.yiaddr;
+	      fprintf (fp_w, "%s %s %s\n", mac, inet_ntoa (addr),
+		       lease.hostname);
+	      count++;
+	    }
+	  fclose (fp);
+	}
       fclose (fp_w);
     }
 
