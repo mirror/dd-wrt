@@ -531,15 +531,15 @@ reltime (unsigned int seconds)
   static char s[] = "XXXXX days, XX hours, XX minutes, XX seconds";
   char *c = s;
 
-  if (seconds > 86400)  //60 * 60 * 24
+  if (seconds > 86400)		//60 * 60 * 24
     {
-      c += sprintf (c, "%d days, ", seconds / 86400);  //60 * 60 * 24
-      seconds %= 86400;  //60 * 60 * 24
+      c += sprintf (c, "%d days, ", seconds / 86400);	//60 * 60 * 24
+      seconds %= 86400;		//60 * 60 * 24
     }
-  if (seconds > 3600)  //60 * 60 
+  if (seconds > 3600)		//60 * 60 
     {
-      c += sprintf (c, "%d hours, ", seconds / 3600);  //60 * 60
-      seconds %= 3600;  //60 * 60
+      c += sprintf (c, "%d hours, ", seconds / 3600);	//60 * 60
+      seconds %= 3600;		//60 * 60
     }
   if (seconds > 60)
     {
@@ -591,10 +591,10 @@ ej_nvram_get (int eid, webs_t wp, int argc, char_t ** argv)
      ret += websWrite (wp, "&#%d", *c);
      }
      } */
- 
+
   tf_webWriteESCNV (wp, name);	// test: buffered version of above
 
-  return; 
+  return;
 #endif
 
   return;
@@ -3794,7 +3794,7 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
 */
 
 void
-ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
+ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
 
   char *lang = getLanguageName ();
@@ -3833,10 +3833,8 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
 	  cprintf ("destination %s\n", dest);
 	  websWrite (wp,
 		     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-	  websWrite (wp,
-		     "<html>\n");
-	  websWrite (wp,
-		     "\t<head>\n");     
+	  websWrite (wp, "<html>\n");
+	  websWrite (wp, "\t<head>\n");
 	  websWrite (wp,
 		     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		     dest);
@@ -3859,20 +3857,18 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
 }
 
 void
-ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)  //Eko
+ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
-	
-	  websWrite (wp,
-		     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-	  websWrite (wp,
-		     "<html>\n");
-	  websWrite (wp,
-		     "\t<head>\n");     
-	  websWrite (wp,
-		     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
-	  websWrite (wp,
-		     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
-	
+
+  websWrite (wp,
+	     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+  websWrite (wp, "<html>\n");
+  websWrite (wp, "\t<head>\n");
+  websWrite (wp,
+	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
+  websWrite (wp,
+	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
+
 }
 
 static char no_cache[] =
@@ -4286,8 +4282,8 @@ struct ej_handler ej_handlers[] = {
   {"tf_upnp", ej_tf_upnp},
 #endif
 //  {"charset", ej_charset},
-  {"do_pagehead", ej_do_pagehead},  //Eko
-  {"do_hpagehead", ej_do_hpagehead},  //Eko
+  {"do_pagehead", ej_do_pagehead},	//Eko
+  {"do_hpagehead", ej_do_hpagehead},	//Eko
   {"show_clocks", ej_show_clocks},
   {NULL, NULL}
 };
@@ -4377,5 +4373,6 @@ ej_tf_upnp (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 
 }
+
 // end changed by steve
 #endif
