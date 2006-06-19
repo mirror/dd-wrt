@@ -188,19 +188,6 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   /* Wait for write to terminate */
 //  waitpid (pid, &ret, 0);
   cprintf ("done\n");
-#ifdef HAVE_HTTPS
-  if (!do_ssl)
-    {
-#endif
-      /* Reset nonblock on the socket */
-      if (fcntl (fileno (stream), F_SETFL, flags) < 0)
-	{
-	  ret = errno;
-	  goto err;
-	}
-#ifdef HAVE_HTTPS
-    }
-#endif
 
 err:
   if (buf)
