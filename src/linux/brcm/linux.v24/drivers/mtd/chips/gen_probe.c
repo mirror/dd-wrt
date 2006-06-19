@@ -328,6 +328,7 @@ static struct mtd_info *check_cmd_set(struct map_info *map, int primary)
 		return cfi_cmdset_0001(map, primary);
 #endif
 #ifdef CONFIG_MTD_CFI_AMDSTD
+    case 0x0006:  //openwrt fix for Buffalo wbr2-g54 flash chip Winbond W19L320STT9C, Eko 12., 19.jun.06
 	case 0x0002:
 		return cfi_cmdset_0002(map, primary);
 #endif
