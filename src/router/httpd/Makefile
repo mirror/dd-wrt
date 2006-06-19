@@ -45,6 +45,9 @@ CFLAGS += -DHAVE_RADLOCAL
 endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
+OBJS += upgrade_rb500.o
+else
+OBJS += upgrade.o
 endif
 ifeq ($(REGDOMAIN_OVERRIDE),y)
 CFLAGS += -DREGDOMAIN_OVERRIDE
@@ -265,7 +268,7 @@ cert:
 	./gencert.sh
 
 httpd: cgi.o ej.o httpd.o broadcom.o \
-       index.o status.o dhcp.o log.o upgrade.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
+       index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
        find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)
 	rm -f ../rc/rc
