@@ -1147,19 +1147,6 @@ start_nvram (void)
 
   nvram_set ("filter_port", "");	// The name have been disbaled from 1.41.3
 
-  if (nvram_invmatch ("sv_restore_defaults", "1"))
-    {
-      for (i = 0; i < MAX_NVPARSE; i++)
-	{
-	  char name[] = "forward_portXXXXXXXXXX";
-	  snprintf (name, sizeof (name), "forward_port%d", i);
-	  if (nvram_get (name) && strstr (nvram_safe_get (name), "msmsgs"))
-	    {
-	      cprintf ("unset MSN value %d..........\n", i);
-	      nvram_unset (name);
-	    }
-	}
-    }
 #ifdef HAVE_UPNP
   if ((nvram_match ("restore_defaults", "1"))
       || (nvram_match ("upnpcas", "1")))
