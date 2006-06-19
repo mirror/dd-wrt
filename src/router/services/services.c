@@ -3116,9 +3116,9 @@ start_splashd (void)
     return 0;
 
   /* Irving - make sure our WAN link is up first.
-     if not, check_ps will start us later */
+     if not, check_ps will start us later 
   if (nvram_match ("wan_ipaddr", "0.0.0.0"))
-    return 0;
+    return 0; */
 
   mk_nocat_conf ();
 
