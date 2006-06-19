@@ -134,25 +134,10 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   cprintf ("Upgrading\n");
 //  while (total && *total)
     {
-#ifdef HAVE_HTTPS
-      if (do_ssl)
-	{
-	  if (size > *total)
-	    size = *total;
-	  count = wfread (buf, 1, size, stream);
-	}
-      else
-#endif
-	{
-	  if (waitfor (fileno (stream), 5) <= 0)
-	    {
-	      cprintf ("waitfor timeout 5 secs\n");
-	      break;
-	    }
-	  count = safe_fread (buf, 1, 5, stream);
+       count = safe_fread (buf, 1, 5, stream);
 	  if (!count && (ferror (stream) || feof (stream)))
-	    break;
-	}
+	    goto err;
+
       if (!memcmp(&buf[0],"RB500",5))
         {
 	    goto err;	  
@@ -165,9 +150,12 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
       safe_fwrite(&fssize,1,4,fifo);
       linuxsize+=fssize;
       for (i=0;i<linuxsize;i++)
-        putc(wfgetc(stream),fifo);
+        {
+	unsigned char c;
+	wfread(&c,1,1,stream);
+        putc(c,fifo);
 	}
-    write_data:
+    
     }
   fclose (fifo);
   fifo = NULL;
@@ -176,11 +164,13 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
   int fssize;
   fread(&linuxsize,1,4,stream);
   fread(&fssize,1,4,stream);
+  fprintf(stderr,"Write Linux %d\n",linuxsize);
   FILE *out=fopen("/dev/cf/card0/part1","wb");
   for (i=0;i<linuxsize;i++)
     putc(getc(fifo),out);
   fclose(out);    	
-  FILE *out=fopen("/dev/cf/card0/part2","wb");
+  fprintf(stderr,"Write FileSys %d\n",fssize);
+  out=fopen("/dev/cf/card0/part2","wb");
   for (i=0;i<fssize;i++)
     putc(getc(fifo),out);
   fclose(out);    	
