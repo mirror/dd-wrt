@@ -82,17 +82,18 @@ struct nvram_tuple router_defaults[] = {
 
 #endif
   {"log_level", "0", 0},	/* Bitmask 0:off 1:denied 2:accepted */
+
+#ifdef HAVE_UPNP
 #ifdef HAVE_SKYTRON
   {"upnp_enable", "1", 0},	/* 0:Disable 1:Enable */
 #else
   {"upnp_enable", "0", 0},	/* 0:Disable 1:Enable */
 #endif
-// changed by steve
   {"upnp_ssdp_interval", "60", 0},	/* SSDP interval */
   {"upnp_max_age", "180", 0},	/* MAX age time */
   {"upnpmnp", "0", 0},		/* UPnP URL */
   {"upnpcas", "0", 0},		/* UPnP clear at startup */
-// end changed by steve
+#endif
 
   {"ezc_enable", "1", 0},	/* Enable EZConfig updates */
   {"ezc_version", EZC_VERSION_STR, 0},	/* EZConfig version */
@@ -529,7 +530,7 @@ struct nvram_tuple router_defaults[] = {
 #endif
   {"wl_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
   {"wl_wds", "", 0},		/* xx:xx:xx:xx:xx:xx ... */
-  {"wl_wep", "off", 0},		/* Data encryption (off|wep|tkip|aes) */
+  {"wl_wep", "disabled", 0},		/* Data encryption (off|wep|tkip|aes) */
   {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
   {"wl_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
   {"wl_key", "1", 0},		/* Current WEP key */
