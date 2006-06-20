@@ -461,7 +461,6 @@ endif
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults vmlinux but it is usually overriden in the arch makefile
-all: vmlinux
 ifdef CONFIG_MIKROTIK_RB500
 all: vmlinus
 
