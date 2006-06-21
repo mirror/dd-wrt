@@ -1005,12 +1005,12 @@ netstatnat-install:
 pppd-symlinks:
 	- (cd pppd.new ; \
 	ln -s linux/Makefile.top Makefile ; \
-	ln -s Makefile.linux pppd.new/Makefile ; \
+	ln -s Makefile.linux pppd/Makefile ; \
 	ln -s Makefile.linux chat/Makefile ; \
-	ln -s Makefile.linux pppd.new/plugins/Makefile ; \
-	ln -s Makefile.linux pppd.new/plugins/radius/Makefile ; \
-	ln -s Makefile.linux pppd.new/plugins/rp-pppoe/Makefile ; \
-	ln -s Makefile.linux pppd.new/plugins/pppoatm/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/radius/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/rp-pppoe/Makefile ; \
+	ln -s Makefile.linux pppd/plugins/pppoatm/Makefile ; \
 	ln -s Makefile.linux pppdump/Makefile ; \
 	ln -s Makefile.linux pppstats/Makefile ; \
 	)
