@@ -614,8 +614,13 @@ stop_wshaper (void)
 #endif
 
   ret = eval (script_name, "stop", "XX", "br0");
+#ifdef HAVE_RB500
+  ret = eval (script_name, "stop", "XX", "eth0");
+  ret = eval (script_name, "stop", "XX", "ath0");
+#else
   ret = eval (script_name, "stop", "XX", "vlan1");
   ret = eval (script_name, "stop", "XX", "eth1");
+#endif
   ret = eval (script_name, "stop", "XX", "ppp0");
 
   stop_firewall ();
