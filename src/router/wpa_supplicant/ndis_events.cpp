@@ -1,6 +1,6 @@
 /*
  * ndis_events - test program for receiving NdisMIndicateStatus() events
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -50,8 +50,11 @@ private:
 	void media_connect(IWbemClassObject *pObj);
 	void media_disconnect(IWbemClassObject *pObj);
 	void media_specific(IWbemClassObject *pObj);
+	void adapter_arrival(IWbemClassObject *pObj);
+	void adapter_removal(IWbemClassObject *pObj);
 	enum event_types { EVENT_CONNECT, EVENT_DISCONNECT,
-			   EVENT_MEDIA_SPECIFIC };
+			   EVENT_MEDIA_SPECIFIC, EVENT_ADAPTER_ARRIVAL,
+			   EVENT_ADAPTER_REMOVAL };
 	int send_event(enum event_types type, BSTR instance,
 		       char *data = NULL, size_t data_len = 0);
 
@@ -264,6 +267,34 @@ void CNdisSink::media_specific(IWbemClassObject *pObj)
 }
 
 
+void CNdisSink::adapter_arrival(IWbemClassObject *pObj)
+{
+	VARIANT vt;
+	HRESULT hr;
+	printf("MSNdis_NotifyAdapterArrival\n");
+	hr = pObj->Get(L"InstanceName", 0, &vt, NULL, NULL);
+	if (SUCCEEDED(hr)) {
+		printf("  InstanceName: '%S'\n", vt.bstrVal);
+		send_event(EVENT_ADAPTER_ARRIVAL, vt.bstrVal);
+		VariantClear(&vt);
+	}
+}
+
+
+void CNdisSink::adapter_removal(IWbemClassObject *pObj)
+{
+	VARIANT vt;
+	HRESULT hr;
+	printf("MSNdis_NotifyAdapterRemoval\n");
+	hr = pObj->Get(L"InstanceName", 0, &vt, NULL, NULL);
+	if (SUCCEEDED(hr)) {
+		printf("  InstanceName: '%S'\n", vt.bstrVal);
+		send_event(EVENT_ADAPTER_REMOVAL, vt.bstrVal);
+		VariantClear(&vt);
+	}
+}
+
+
 HRESULT CNdisSink::Indicate(long lObjectCount,
 			    IWbemClassObject __RPC_FAR *__RPC_FAR *ppObjArray)
 {
@@ -290,6 +321,12 @@ HRESULT CNdisSink::Indicate(long lObjectCount,
 		} else if (wcscmp(vtClass.bstrVal,
 				  L"MSNdis_StatusMediaDisconnect") == 0) {
 			media_disconnect(pObj);
+		} else if (wcscmp(vtClass.bstrVal,
+				  L"MSNdis_NotifyAdapterArrival") == 0) {
+			adapter_arrival(pObj);
+		} else if (wcscmp(vtClass.bstrVal,
+				  L"MSNdis_NotifyAdapterRemoval") == 0) {
+			adapter_removal(pObj);
 		} else {
 			printf("Unepected event - __CLASS: '%S'\n",
 			       vtClass.bstrVal);
@@ -345,6 +382,28 @@ static int register_async_notification(IWbemObjectSink *pDestSink,
 	if (FAILED(hr)) {
 		printf("ExecNotificationQueryAsync for "
 		       "MSNdis_StatusMediaSpecificIndication failed with "
+		       "hresult of 0x%x\n", hr);
+		err = -1;
+	}
+
+	query = ::SysAllocString(
+		L"SELECT * FROM MSNdis_NotifyAdapterArrival");
+	hr = pSvc->ExecNotificationQueryAsync(lang, query, 0, 0, pDestSink);
+	::SysFreeString(query);
+	if (FAILED(hr)) {
+		printf("ExecNotificationQueryAsync for "
+		       "MSNdis_NotifyAdapterArrival failed with "
+		       "hresult of 0x%x\n", hr);
+		err = -1;
+	}
+
+	query = ::SysAllocString(
+		L"SELECT * FROM MSNdis_NotifyAdapterRemoval");
+	hr = pSvc->ExecNotificationQueryAsync(lang, query, 0, 0, pDestSink);
+	::SysFreeString(query);
+	if (FAILED(hr)) {
+		printf("ExecNotificationQueryAsync for "
+		       "MSNdis_NotifyAdapterRemoval failed with "
 		       "hresult of 0x%x\n", hr);
 		err = -1;
 	}
