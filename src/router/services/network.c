@@ -400,6 +400,7 @@ start_lan (void)
       nvram_invmatch ("def_whwaddr", ""))
     {
       ether_atoe (nvram_safe_get ("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
+
 #ifndef HAVE_MADWIFI
     }
   else
@@ -433,7 +434,13 @@ start_lan (void)
 	cprintf ("Write wireless mac successfully\n");
     }
 #endif
-
+if (nvram_match("wl_mode","sta"))
+{
+      unsigned char mac[20];
+      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      MAC_ADD (mac);
+      nvram_set ("wan_hwaddr", mac);
+}
 
   ifconfig (wl_face, IFUP, 0, 0);
   br_init ();
