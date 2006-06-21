@@ -404,7 +404,7 @@ ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
 
 var ddnsm = new Object();
-ddnsm.dyn_strange="Strange server response, are you connecting to the right server ?";
+ddnsm.dyn_strange="Strange server response, are you connecting to the right server?";
 ddnsm.dyn_good="DDNS is updated successfully";
 ddnsm.dyn_noupdate="No update needed at this time";
 ddnsm.dyn_nohost="The hostname does not exist";
@@ -443,7 +443,7 @@ ddnsm.zone_707="Duplicate updates for the same host/ip, adjust client settings";
 ddnsm.zone_201="No records need updating";
 ddnsm.zone_badauth="Authorization fails (username or passwords)";
 ddnsm.zone_good="ZoneEdit is updated successfully";
-ddnsm.zone_strange="Strange server response, are you connecting to the right server ?";
+ddnsm.zone_strange="Strange server response, are you connecting to the right server?";
 
 ddnsm.all_closed="DDNS server is currently closed";
 ddnsm.all_resolving="Resolving domain name";
