@@ -1,6 +1,6 @@
 ChangeLog for wpa_supplicant
 
-????-??-?? - v0.5.4
+2006-06-20 - v0.5.4
 	* fixed build with CONFIG_STAKEY=y [Bug 143]
 	* added support for doing MLME (IEEE 802.11 management frame
 	  processing) in wpa_supplicant when using Devicescape IEEE 802.11
@@ -44,6 +44,24 @@ ChangeLog for wpa_supplicant
 	  at the end of RSN pre-authentication and added unregistration of
 	  a Windows event to avoid getting eloop_win stuck with an invalid
 	  handle
+	* driver_ndis: added support for selecting AP based on BSSID
+	* added new environmental variable for wpa_cli action scripts:
+	  WPA_CTRL_DIR is the current control interface directory
+	* driver_ndis: added support for using NDISUIO instead of WinPcap for
+	  OID set/query operations (CONFIG_USE_NDISUIO=y in .config); with new
+	  l2_packet_ndis (CONFIG_L2_PACKET=ndis), this can be used to build
+	  wpa_supplicant without requiring WinPcap; note that using NDISUIO
+	  requires that WZC is disabled (net stop wzcsvc) since NDISUIO allows
+	  only one application to open the device
+	* changed NDIS driver naming to only include device GUID, e.g.,
+	  {7EE3EFE5-C165-472F-986D-F6FBEDFE8C8D}, instead of including WinPcap
+	  specific \Device\NPF_ prefix before the GUID; the prefix is still
+	  allowed for backwards compatibility, but it is not required anymore
+	  when specifying the interface
+	* driver_ndis: re-initialize driver interface is the adapter is removed
+	  and re-inserted [Bug 159]
+	* driver_madwifi: fixed TKIP and CCMP sequence number configuration on
+	  big endian hosts [Bug 146]
 
 2006-04-27 - v0.5.3
 	* fixed EAP-GTC response to include correct user identity when run as
