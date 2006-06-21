@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - Layer2 packet handling with libpcap/libdnet and WinPcap
- * Copyright (c) 2003-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2003-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -206,6 +206,20 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 	char pcap_filter[200], pcap_err[PCAP_ERRBUF_SIZE];
 	struct bpf_program pcap_fp;
 
+#ifdef CONFIG_WINPCAP
+	char ifname[128];
+	snprintf(ifname, sizeof(ifname), "\\Device\\NPF_%s", l2->ifname);
+	pcap_lookupnet(ifname, &pcap_netp, &pcap_maskp, pcap_err);
+	l2->pcap = pcap_open_live(ifname, 2500, 0, 10, pcap_err);
+	if (l2->pcap == NULL) {
+		fprintf(stderr, "pcap_open_live: %s\n", pcap_err);
+		fprintf(stderr, "ifname='%s'\n", ifname);
+		return -1;
+	}
+	if (pcap_setnonblock(l2->pcap, 1, pcap_err) < 0)
+		fprintf(stderr, "pcap_setnonblock: %s\n",
+			pcap_geterr(l2->pcap));
+#else /* CONFIG_WINPCAP */
 	pcap_lookupnet(l2->ifname, &pcap_netp, &pcap_maskp, pcap_err);
 	l2->pcap = pcap_open_live(l2->ifname, 2500, 0, 10, pcap_err);
 	if (l2->pcap == NULL) {
@@ -213,11 +227,6 @@ static int l2_packet_init_libpcap(struct l2_packet_data *l2,
 		fprintf(stderr, "ifname='%s'\n", l2->ifname);
 		return -1;
 	}
-#ifdef CONFIG_WINPCAP
-	if (pcap_setnonblock(l2->pcap, 1, pcap_err) < 0)
-		fprintf(stderr, "pcap_setnonblock: %s\n",
-			pcap_geterr(l2->pcap));
-#else /* CONFIG_WINPCAP */
 	if (pcap_datalink(l2->pcap) != DLT_EN10MB &&
 	    pcap_set_datalink(l2->pcap, DLT_EN10MB) < 0) {
 		fprintf(stderr, "pcap_set_datalinke(DLT_EN10MB): %s\n",

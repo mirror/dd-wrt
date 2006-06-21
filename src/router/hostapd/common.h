@@ -398,9 +398,11 @@ int vsnprintf(char *str, size_t size, const char *format, va_list ap);
  */
 #endif
 
+#if !defined(_MSC_VER) || _MSC_VER < 1400
 /* strdup - used in number of places - simple example implementation in
  * common.c */
 char * strdup(const char *s);
+#endif /* !defined(_MSC_VER) || _MSC_VER < 1400 */
 
 /* strcasecmp - used in couple of places; not critical, so can be defined to
  * use strcmp instead */
@@ -418,6 +420,7 @@ int strncasecmp(const char *s1, const char *s2, size_t n);
 #define strncasecmp strncmp
 #endif
 
+#if !defined(_MSC_VER) || _MSC_VER < 1400
 /* snprintf - used in number of places; sprintf() is _not_ a good replacement
  * due to possible buffer overflow; see, e.g.,
  * http://www.ijs.si/software/snprintf/ for portable implementation of
@@ -426,6 +429,7 @@ int snprintf(char *str, size_t size, const char *format, ...);
 
 /* vsnprintf - only used for wpa_msg() in wpa_supplicant.c */
 int vsnprintf(char *str, size_t size, const char *format, va_list ap);
+#endif /* !defined(_MSC_VER) || _MSC_VER < 1400 */
 
 /* getopt - only used in main.c */
 int getopt(int argc, char *const argv[], const char *optstring);

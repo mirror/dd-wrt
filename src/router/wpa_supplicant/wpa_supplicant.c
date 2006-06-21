@@ -841,14 +841,16 @@ void wpa_supplicant_set_state(struct wpa_supplicant *wpa_s, wpa_states state)
 		   wpa_supplicant_state_txt(wpa_s->wpa_state),
 		   wpa_supplicant_state_txt(state));
 	if (state == WPA_COMPLETED && wpa_s->new_connection) {
+#if defined(CONFIG_CTRL_IFACE) || !defined(CONFIG_NO_STDOUT_DEBUG)
 		struct wpa_ssid *ssid = wpa_s->current_ssid;
-		wpa_s->new_connection = 0;
 		wpa_msg(wpa_s, MSG_INFO, WPA_EVENT_CONNECTED "- Connection to "
 			MACSTR " completed %s [id=%d id_str=%s]",
 			MAC2STR(wpa_s->bssid), wpa_s->reassociated_connection ?
 			"(reauth)" : "(auth)",
 			ssid ? ssid->id : -1,
 			ssid && ssid->id_str ? ssid->id_str : "");
+#endif /* CONFIG_CTRL_IFACE || !CONFIG_NO_STDOUT_DEBUG */
+		wpa_s->new_connection = 0;
 		wpa_s->reassociated_connection = 1;
 		wpa_drv_set_operstate(wpa_s, 1);
 	} else if (state == WPA_DISCONNECTED || state == WPA_ASSOCIATING ||

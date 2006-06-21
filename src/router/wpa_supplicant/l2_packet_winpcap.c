@@ -1,6 +1,6 @@
 /*
  * WPA Supplicant - Layer2 packet handling with WinPcap RX thread
- * Copyright (c) 2003-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2003-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -213,7 +213,11 @@ struct l2_packet_data * l2_packet_init(
 	l2 = wpa_zalloc(sizeof(struct l2_packet_data));
 	if (l2 == NULL)
 		return NULL;
-	strncpy(l2->ifname, ifname, sizeof(l2->ifname));
+	if (strncmp(ifname, "\\Device\\NPF_", 12) == 0)
+		strncpy(l2->ifname, ifname, sizeof(l2->ifname));
+	else
+		snprintf(l2->ifname, sizeof(l2->ifname), "\\Device\\NPF_%s",
+			 ifname);
 	l2->rx_callback = rx_callback;
 	l2->rx_callback_ctx = rx_callback_ctx;
 	l2->l2_hdr = l2_hdr;

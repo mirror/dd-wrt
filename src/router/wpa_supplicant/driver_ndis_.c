@@ -32,10 +32,13 @@ void wpa_driver_ndis_event_connect(struct wpa_driver_ndis_data *drv);
 void wpa_driver_ndis_event_disconnect(struct wpa_driver_ndis_data *drv);
 void wpa_driver_ndis_event_media_specific(struct wpa_driver_ndis_data *drv,
 					  const u8 *data, size_t data_len);
+void wpa_driver_ndis_event_adapter_arrival(struct wpa_driver_ndis_data *drv);
+void wpa_driver_ndis_event_adapter_removal(struct wpa_driver_ndis_data *drv);
 
 
 enum event_types { EVENT_CONNECT, EVENT_DISCONNECT,
-		   EVENT_MEDIA_SPECIFIC };
+		   EVENT_MEDIA_SPECIFIC, EVENT_ADAPTER_ARRIVAL,
+		   EVENT_ADAPTER_REMOVAL };
 
 /* Event data:
  * enum event_types (as int, i.e., 4 octets)
@@ -113,6 +116,12 @@ static void wpa_driver_ndis_event_process(struct wpa_driver_ndis_data *drv,
 		break;
 	case EVENT_MEDIA_SPECIFIC:
 		wpa_driver_ndis_event_media_specific(drv, data, data_len);
+		break;
+	case EVENT_ADAPTER_ARRIVAL:
+		wpa_driver_ndis_event_adapter_arrival(drv);
+		break;
+	case EVENT_ADAPTER_REMOVAL:
+		wpa_driver_ndis_event_adapter_removal(drv);
 		break;
 	}
 }

@@ -229,7 +229,7 @@ union wpa_event_data {
 	 * struct interface_status - Data for EVENT_INTERFACE_STATUS
 	 */
 	struct interface_status {
-		char ifname[20];
+		char ifname[100];
 		enum {
 			EVENT_INTERFACE_ADDED, EVENT_INTERFACE_REMOVED
 		} ievent;
