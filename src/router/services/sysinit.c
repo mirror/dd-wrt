@@ -379,6 +379,7 @@ start_restore_defaults (void)
     case ROUTER_BUFFALO_WHRG54S:
     case ROUTER_BUFFALO_WBR54G:
     case ROUTER_BUFFALO_WLAG54C:
+    case ROUTER_BUFFALO_WZRRSG54:
     case ROUTER_ASUS_WL500G_PRE:
       if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
 	restore_defaults = 1;
