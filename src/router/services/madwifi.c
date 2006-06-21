@@ -325,6 +325,119 @@ set_regdomain (unsigned long int base_addr, int code)
 #include "net80211/ieee80211_ioctl.h"
 #include <iwlib.h>
 
+
+
+static int socket_handle = -1;
+
+
+static int
+getsocket (void)
+{
+
+  if (socket_handle < 0)
+    {
+      socket_handle = socket (AF_INET, SOCK_DGRAM, 0);
+      if (socket_handle < 0)
+	err (1, "socket(SOCK_DGRAM)");
+    }
+  return socket_handle;
+}
+
+#define IOCTL_ERR(x) [x - SIOCIWFIRSTPRIV] "ioctl[" #x "]"
+static int
+set80211priv (struct iwreq *iwr, const char *ifname, int op, void *data,
+	      size_t len)
+{
+#define	N(a)	(sizeof(a)/sizeof(a[0]))
+
+  memset (iwr, 0, sizeof (struct iwreq));
+  strncpy (iwr->ifr_name, ifname, IFNAMSIZ);
+  if (len < IFNAMSIZ)
+    {
+      /*
+       * Argument data fits inline; put it there.
+       */
+      memcpy (iwr->u.name, data, len);
+    }
+  else
+    {
+      /*
+       * Argument data too big for inline transfer; setup a
+       * parameter block instead; the kernel will transfer
+       * the data for the driver.
+       */
+      iwr->u.data.pointer = data;
+      iwr->u.data.length = len;
+    }
+
+  if (ioctl (getsocket (), op, iwr) < 0)
+    {
+      static const char *opnames[] = {
+	IOCTL_ERR (IEEE80211_IOCTL_SETPARAM),
+	IOCTL_ERR (IEEE80211_IOCTL_GETPARAM),
+	IOCTL_ERR (IEEE80211_IOCTL_SETMODE),
+	IOCTL_ERR (IEEE80211_IOCTL_GETMODE),
+	IOCTL_ERR (IEEE80211_IOCTL_SETWMMPARAMS),
+	IOCTL_ERR (IEEE80211_IOCTL_GETWMMPARAMS),
+	IOCTL_ERR (IEEE80211_IOCTL_SETCHANLIST),
+	IOCTL_ERR (IEEE80211_IOCTL_GETCHANLIST),
+	IOCTL_ERR (IEEE80211_IOCTL_CHANSWITCH),
+	IOCTL_ERR (IEEE80211_IOCTL_GETCHANINFO),
+	IOCTL_ERR (IEEE80211_IOCTL_SETOPTIE),
+	IOCTL_ERR (IEEE80211_IOCTL_GETOPTIE),
+	IOCTL_ERR (IEEE80211_IOCTL_SETMLME),
+	IOCTL_ERR (IEEE80211_IOCTL_SETKEY),
+	IOCTL_ERR (IEEE80211_IOCTL_DELKEY),
+	IOCTL_ERR (IEEE80211_IOCTL_ADDMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_DELMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_WDSADDMAC),
+	IOCTL_ERR (IEEE80211_IOCTL_WDSDELMAC),
+      };
+      op -= SIOCIWFIRSTPRIV;
+      if (0 <= op && op < N (opnames))
+	perror (opnames[op]);
+      else
+	perror ("ioctl[unknown???]");
+      return -1;
+    }
+  return 0;
+#undef N
+}
+
+static int
+do80211priv (const char *ifname, int op, void *data, size_t len)
+{
+  struct iwreq iwr;
+
+  if (set80211priv (&iwr, ifname, op, data, len) < 0)
+    return -1;
+  if (len < IFNAMSIZ)
+    memcpy (data, iwr.u.name, len);
+  return iwr.u.data.length;
+}
+
+static int
+set80211param (char *iface, int op, int arg)
+{
+  struct iwreq iwr;
+
+  memset (&iwr, 0, sizeof (iwr));
+  strncpy (iwr.ifr_name, iface, IFNAMSIZ);
+  iwr.u.mode = op;
+  memcpy (iwr.u.name + sizeof (__u32), &arg, sizeof (arg));
+
+  if (ioctl (getsocket (), IEEE80211_IOCTL_SETPARAM, &iwr) < 0)
+    {
+      perror ("ioctl[IEEE80211_IOCTL_SETPARAM]");
+      return -1;
+    }
+  return 0;
+}
+
+
+
+
+
 extern int br_add_interface (const char *br, const char *dev);
 
 
@@ -816,6 +929,45 @@ set_netmode (char *wif, char *dev)
     }
 }
 
+void
+setMacFilter (char *iface)
+{
+  char *next;
+  char var[32];
+  set80211param (iface, IEEE80211_PARAM_MACCMD, IEEE80211_MACCMD_FLUSH);
+
+  if (!nvram_match ("wl_macmode", "disabled"))
+    {
+      foreach (var, nvram_safe_get ("wl_maclist"), next)
+      {
+	char ea[ETHER_ADDR_LEN];
+	if (ether_atoe (var, ea))
+	  {
+	    struct ieee80211req_mlme mlme;
+	    mlme.im_op = IEEE80211_MLME_UNAUTHORIZE;
+	    mlme.im_reason = 0;
+	    memcpy (mlme.im_macaddr, ea, IEEE80211_ADDR_LEN);
+	    do80211priv (iface, IEEE80211_IOCTL_SETMLME, &mlme,
+			 sizeof (mlme));
+	  }
+      }
+    }
+
+
+  /* Set the MAC list mode */
+  if (nvram_match ("wl_macmode", "deny"))
+    set80211param (iface, IEEE80211_PARAM_MACCMD,
+		   IEEE80211_MACCMD_POLICY_DENY);
+  else if (nvram_match ("wl_macmode", "allow"))
+    set80211param (iface, IEEE80211_PARAM_MACCMD,
+		   IEEE80211_MACCMD_POLICY_ALLOW);
+  else
+    set80211param (iface, IEEE80211_PARAM_MACCMD,
+		   IEEE80211_MACCMD_POLICY_OPEN);
+
+
+}
+
 static void
 configure_single (int count)
 {
@@ -1042,7 +1194,7 @@ configure_single (int count)
   sprintf (var, "%dmW", newpower);
   eval ("iwconfig", dev, "txpower", var);
 
-
+  setMacFilter (dev);
   cprintf ("done()\n");
 }
 
