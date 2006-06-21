@@ -1037,6 +1037,7 @@ static void wpa_cli_action_process(const char *msg)
 		int new_id = -1;
 		os_unsetenv("WPA_ID");
 		os_unsetenv("WPA_ID_STR");
+		os_unsetenv("WPA_CTRL_DIR");
 
 		pos = strstr(pos, "[id=");
 		if (pos)
@@ -1060,6 +1061,9 @@ static void wpa_cli_action_process(const char *msg)
 			os_setenv("WPA_ID_STR", id, 1);
 			free(copy);
 		}
+
+		os_setenv("WPA_CTRL_DIR", ctrl_iface_dir, 1);
+
 		if (!wpa_cli_connected || new_id != wpa_cli_last_id) {
 			wpa_cli_connected = 1;
 			wpa_cli_last_id = new_id;

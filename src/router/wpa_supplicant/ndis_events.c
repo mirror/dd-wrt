@@ -1,6 +1,6 @@
 /*
  * ndis_events - Receive NdisMIndicateStatus() events using WMI
- * Copyright (c) 2004-2005, Jouni Malinen <jkmaline@cc.hut.fi>
+ * Copyright (c) 2004-2006, Jouni Malinen <jkmaline@cc.hut.fi>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 2 as
@@ -36,7 +36,8 @@ struct ndis_events_data {
 	int terminating;
 };
 
-enum event_types { EVENT_CONNECT, EVENT_DISCONNECT, EVENT_MEDIA_SPECIFIC };
+enum event_types { EVENT_CONNECT, EVENT_DISCONNECT, EVENT_MEDIA_SPECIFIC,
+		   EVENT_ADAPTER_ARRIVAL, EVENT_ADAPTER_REMOVAL };
 
 
 static int ndis_events_constructor(struct ndis_events_data *events)
@@ -235,6 +236,38 @@ static void ndis_events_media_specific(struct ndis_events_data *events,
 }
 
 
+static void ndis_events_adapter_arrival(struct ndis_events_data *events,
+					IWbemClassObject *pObj)
+{
+	VARIANT vt;
+	HRESULT hr;
+	wpa_printf(MSG_DEBUG, "MSNdis_NotifierAdapterArrival");
+	hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL, NULL);
+	if (SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "  InstanceName: '%S'", vt.bstrVal);
+		ndis_events_send_event(events, EVENT_ADAPTER_ARRIVAL,
+				       vt.bstrVal, NULL, 0);
+		VariantClear(&vt);
+	}
+}
+
+
+static void ndis_events_adapter_removal(struct ndis_events_data *events,
+					IWbemClassObject *pObj)
+{
+	VARIANT vt;
+	HRESULT hr;
+	wpa_printf(MSG_DEBUG, "MSNdis_NotifierAdapterRemoval");
+	hr = IWbemClassObject_Get(pObj, L"InstanceName", 0, &vt, NULL, NULL);
+	if (SUCCEEDED(hr)) {
+		wpa_printf(MSG_DEBUG, "  InstanceName: '%S'", vt.bstrVal);
+		ndis_events_send_event(events, EVENT_ADAPTER_REMOVAL,
+				       vt.bstrVal, NULL, 0);
+		VariantClear(&vt);
+	}
+}
+
+
 static HRESULT STDMETHODCALLTYPE
 ndis_events_indicate(IWbemObjectSink *this, long lObjectCount,
 		     IWbemClassObject __RPC_FAR *__RPC_FAR *ppObjArray)
@@ -273,6 +306,12 @@ ndis_events_indicate(IWbemObjectSink *this, long lObjectCount,
 		} else if (wcscmp(vtClass.bstrVal,
 				  L"MSNdis_StatusMediaDisconnect") == 0) {
 			ndis_events_media_disconnect(events, pObj);
+		} else if (wcscmp(vtClass.bstrVal,
+				  L"MSNdis_NotifyAdapterArrival") == 0) {
+			ndis_events_adapter_arrival(events, pObj);
+		} else if (wcscmp(vtClass.bstrVal,
+				  L"MSNdis_NotifyAdapterRemoval") == 0) {
+			ndis_events_adapter_removal(events, pObj);
 		} else {
 			wpa_printf(MSG_DEBUG, "Unepected event - __CLASS: "
 				   "'%S'", vtClass.bstrVal);
@@ -333,6 +372,30 @@ static int register_async_notification(IWbemObjectSink *pDestSink,
 		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
 			   "MSNdis_StatusMediaSpecificIndication failed with "
 			   "hresult of 0x%x", (int) hr);
+		err = -1;
+	}
+
+	query = SysAllocString(
+		L"SELECT * FROM MSNdis_NotifyAdapterArrival");
+	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, lang, query, 0, 0,
+						      pDestSink);
+	SysFreeString(query);
+	if (FAILED(hr)) {
+		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
+			   "MSNdis_NotifyAdapterArrival failed with hresult "
+			   "of 0x%x", (int) hr);
+		err = -1;
+	}
+
+	query = SysAllocString(
+		L"SELECT * FROM MSNdis_NotifyAdapterRemoval");
+	hr = IWbemServices_ExecNotificationQueryAsync(pSvc, lang, query, 0, 0,
+						      pDestSink);
+	SysFreeString(query);
+	if (FAILED(hr)) {
+		wpa_printf(MSG_DEBUG, "ExecNotificationQueryAsync for "
+			   "MSNdis_NotifyAdapterRemoval failed with hresult "
+			   "of 0x%x", (int) hr);
 		err = -1;
 	}
 

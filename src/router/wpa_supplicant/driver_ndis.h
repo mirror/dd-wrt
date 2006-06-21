@@ -29,9 +29,13 @@ struct ndis_pmkid_entry {
 
 struct wpa_driver_ndis_data {
 	void *ctx;
-	char ifname[100];
+	char ifname[100]; /* GUID: {7EE3EFE5-C165-472F-986D-F6FBEDFE8C8D} */
 	u8 own_addr[ETH_ALEN];
+#ifdef CONFIG_USE_NDISUIO
+	HANDLE ndisuio;
+#else /* CONFIG_USE_NDISUIO */
 	LPADAPTER adapter;
+#endif /* CONFIG_USE_NDISUIO */
 	u8 bssid[ETH_ALEN];
 
 	int has_capability;
@@ -43,6 +47,7 @@ struct wpa_driver_ndis_data {
 	int wired;
 	int mode;
 	int wzc_disabled;
+	int oid_bssid_set;
 #ifdef CONFIG_NDIS_EVENTS_INTEGRATED
 	HANDLE events_pipe, event_avail;
 	struct ndis_events_data *events;

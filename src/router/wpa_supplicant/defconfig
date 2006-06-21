@@ -91,6 +91,11 @@ CONFIG_DRIVER_WEXT=y
 #CFLAGS += -I/opt/mingw/mingw32/include/ddk
 #LIBS += -L/opt/mingw/mingw32/lib
 #CC=mingw32-gcc
+# By default, driver_ndis uses WinPcap for low-level operations. This can be
+# replaced with the following option which replaces WinPcap calls with NDISUIO.
+# However, this requires that WZC is disabled (net stop wzcsvc) before starting
+# wpa_supplicant.
+# CONFIG_USE_NDISUIO=y
 
 # Driver interface for development testing
 #CONFIG_DRIVER_TEST=y
@@ -227,6 +232,7 @@ CONFIG_BACKEND=file
 # pcap = libpcap/libdnet/WinPcap
 # freebsd = FreeBSD libpcap
 # winpcap = WinPcap with receive thread
+# ndis = Windows NDISUIO (note: requires CONFIG_USE_NDISUIO=y)
 # none = Empty template
 #CONFIG_L2_PACKET=linux
 

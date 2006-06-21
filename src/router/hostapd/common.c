@@ -313,6 +313,7 @@ int wpa_snprintf_hex_uppercase(char *buf, size_t buf_size, const u8 *data,
  * library functions
  */
 
+#if !defined(_MSC_VER) || _MSC_VER < 1400
 #ifndef _MSC_VER
 #undef memcpy
 void *memcpy(void *dest, const void *src, size_t n)
@@ -496,6 +497,7 @@ char * strdup(const char *s)
 		memcpy(res, s, len + 1);
 	return res;
 }
+#endif /* !defined(_MSC_VER) || _MSC_VER < 1400 */
 
 
 #ifdef _WIN32_WCE
