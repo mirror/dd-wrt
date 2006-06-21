@@ -916,10 +916,11 @@ start_wan (int status)
   char *wan_ifname = get_wan_face ();
   char *wan_proto = nvram_safe_get ("wan_proto");
 #ifdef HAVE_PPPOE
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
-					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
-
+#ifdef HAVE_RB500
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname","") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+#else
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname","") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+#endif
   if (nvram_match ("wl_mode", "wet"))
     {
       dns_to_resolv ();
@@ -979,6 +980,7 @@ start_wan (int status)
 	pppoe_wan_ifname = "eth1";
       break;
     case ROUTER_ASUS_WL500G_PRE:
+    case ROUTER_BOARD_500:
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth0";
       break;
