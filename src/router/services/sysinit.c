@@ -366,22 +366,11 @@ start_restore_defaults (void)
 
   switch (brand)
     {
-    case ROUTER_LINKSYS_WRT55AG:
-    case ROUTER_MOTOROLA_V1:
-    case ROUTER_WRT54G:
-    case ROUTER_WRT54G1X:
-    case ROUTER_SIEMENS:
-    case ROUTER_RT210W:
-    case ROUTER_MICROSOFT_MN700:
-    case ROUTER_BELKIN_F5D7230:
-    case ROUTER_ASUS:
-    case ROUTER_MOTOROLA:
-    case ROUTER_BUFFALO_WHRG54S:
-    case ROUTER_BUFFALO_WBR54G:
-    case ROUTER_BUFFALO_WLAG54C:
-    case ROUTER_BUFFALO_WZRRSG54:
-    case ROUTER_ASUS_WL500G_PRE:
-      if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+	case ROUTER_BUFFALO_WLA2G54L:
+	break;
+	default:
+
+	  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
 	restore_defaults = 1;
       if (nvram_match ("product_name", "INSPECTION"))
 	{
@@ -393,7 +382,6 @@ start_restore_defaults (void)
 
       if (restore_defaults)
 	cprintf ("Restoring defaults...");
-      break;
 
     }
 
