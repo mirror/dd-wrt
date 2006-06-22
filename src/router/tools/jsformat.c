@@ -30,9 +30,10 @@ putc(buf[i],in);
 fclose(in);
 }
 
-void main(int argc,char *argv[])
+int main(int argc,char *argv[])
 {
 int i;
 for (i=1;i<argc;i++)
     filter(argv[i]);
+return 0;
 }
