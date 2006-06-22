@@ -235,7 +235,7 @@ int crond_main(int ac, char **av)
 		time_t t1 = time(NULL);
 		time_t t2;
 		long dt;
-		int rescan = 60;
+		int rescan = 2;
 		short sleep_time = 60;
 
 		for (;;) {
