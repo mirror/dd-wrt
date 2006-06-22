@@ -38,10 +38,10 @@ static int __init br_init(void)
 
 	br_fdb_init();
 
-#ifdef CONFIG_BRIDGE_NETFILTER
-	if (br_netfilter_init())
-		return 1;
-#endif
+//#ifdef CONFIG_BRIDGE_NETFILTER
+//	if (br_netfilter_init())
+//		return 1;
+//#endif
 	brioctl_set(br_ioctl_deviceless_stub);
 	br_handle_frame_hook = br_handle_frame;
 
@@ -57,9 +57,9 @@ static void __exit br_deinit(void)
 {
 	rcu_assign_pointer(br_stp_sap->rcv_func, NULL);
 
-#ifdef CONFIG_BRIDGE_NETFILTER
-	br_netfilter_fini();
-#endif
+//#ifdef CONFIG_BRIDGE_NETFILTER
+//	br_netfilter_fini();
+//#endif
 	unregister_netdevice_notifier(&br_device_notifier);
 	brioctl_set(NULL);
 
