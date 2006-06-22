@@ -23,6 +23,7 @@ ifeq ($(CONFIG_NOMUI),y)
 	rm -f $(INSTALLDIR)/www/images/88*	
 	cp lang_pack/english.js $(INSTALLDIR)/www/lang_pack/
 endif
+	$(TOP)/tools/l7filter $(INSTALLDIR)/www/lang_pack/*.js
 	ln -s ../tmp/www $(INSTALLDIR)/www/user
 
 
