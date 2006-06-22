@@ -21,6 +21,8 @@ if (buf[i]=='#')
     while(buf[i]!=0xa)i++;
     continue;
     }
+if (i>1 && buf[i]==0xa && buf[i-1]==0xa)
+    continue;
 if (buf[i]==0xa && i<len-1)
     {
     while(buf[i+1]==0xa && i<len-1)i++;
