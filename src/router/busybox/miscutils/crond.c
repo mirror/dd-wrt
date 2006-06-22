@@ -262,7 +262,7 @@ int crond_main(int ac, char **av)
 			 */
 
 			if (--rescan == 0) {
-				rescan = 60;
+				rescan = 2;
 				SynchronizeDir();
 			}
 			CheckUpdates();
