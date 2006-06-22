@@ -1046,9 +1046,17 @@ static void EndJob(const char *user, CronLine * line)
 static void RunJob(const char *user, CronLine * line)
 {
 	/* Fork as the user in question and run program */
-char buf[64];
-char temp[64];
-sscanf(line->cl_Shell,"%s %s",temp,buf);
-system(buf);		
+int i;
+int len = strlen(line->cl_Shell);
+if (len>63)len=63;
+char *temp; 
+for (i=0;i<63;i++)
+    {
+    if (line->cl_Shell[i]==' ')
+	temp=&line->cl_Shell[i+1];
+    }
+if (temp==NULL)
+    return;    
+system(temp);		
 }
 #endif							/* CONFIG_FEATURE_CROND_CALL_SENDMAIL */
