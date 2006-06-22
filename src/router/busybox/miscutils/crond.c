@@ -1049,7 +1049,7 @@ static void RunJob(const char *user, CronLine * line)
 int i;
 int len = strlen(line->cl_Shell);
 if (len>63)len=63;
-char *temp; 
+char *temp = NULL; 
 for (i=0;i<63;i++)
     {
     if (line->cl_Shell[i]==' ')
