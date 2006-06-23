@@ -3873,13 +3873,6 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
   websWrite (wp, "\t<head>\n");
   websWrite (wp,
 	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
-	if (nvram_invmatch ("dist_type", "micro"))
-	  {
-	  websWrite (wp,
-		     "\t\t<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
-	  websWrite (wp,
-		     "\t\t<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
-	  }
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
 
