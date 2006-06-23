@@ -871,6 +871,11 @@ start_sysinit (void)
       eval ("gpio", "enable", "6");	//MN700 power led on
     }
 
+  if (brand == ROUTER_BUFFALO_WBR2G54S)
+    {
+      eval ("gpio", "disable", "1");	//WBR2G54 diag led off
+    }
+    
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
     {
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54G v2 interfaces
