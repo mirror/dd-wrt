@@ -199,6 +199,7 @@ endif
 
 ifneq ($(CONFIG_UPNP),y)
 	rm -f $(INSTALLDIR)/www/UPnP.asp
+	rm -f $(INSTALLDIR)/www/UPnP.live.asp
 endif
 
 ifneq ($(CONFIG_NOCAT),y)
