@@ -3891,7 +3891,9 @@ struct mime_handler mime_handlers[] = {
   {"Management*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Services*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Hotspot*", "text/html", no_cache, NULL, do_ej, do_auth2},
-  {"Wireless_Basic*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"Wireless*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"WL_*", "text/html", no_cache, NULL, do_ej, do_auth2},
+  {"WPA*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Log*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Alive*", "text/html", no_cache, NULL, do_ej, do_auth2},
   {"Diagnostics*", "text/html", no_cache, NULL, do_ej, do_auth2},
@@ -3968,11 +3970,21 @@ struct mime_handler mime_handlers[] = {
 #endif
   {"test.bin**", "application/octet-stream", no_cache, NULL, do_file,
    do_auth},
+
+#ifdef HAVE_DDLAN
+  {"nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
+   do_auth2},
+  {"nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
+   do_auth2},
+  {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, NULL},
+#else
   {"nvrambak.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
    do_auth},
   {"nvrambak**.bin*", "application/octet-stream", no_cache, NULL, nv_file_out,
    do_auth},
   {"nvram.cgi*", "text/html", no_cache, nv_file_in, sr_config_cgi, do_auth},
+#endif
+
 //for ddm
   {NULL, NULL, NULL, NULL, NULL, NULL}
 };
