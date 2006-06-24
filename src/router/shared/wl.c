@@ -267,11 +267,11 @@ list_channelsext (const char *ifname, int allchans)
   struct ieee80211req_chaninfo achans;
   const struct ieee80211_channel *c;
   int i, half;
-//  fprintf (stderr, "list channels for %s\n", ifname);
+  fprintf (stderr, "list channels for %s\n", ifname);
   if (get80211priv
       (ifname, IEEE80211_IOCTL_GETCHANINFO, &chans, sizeof (chans)) < 0)
     {
-//    errx (1, "unable to get channel information");
+    fprintf(stderr,"unable to get channel information\n");
       return NULL;
     }
   if (!allchans)
@@ -281,7 +281,7 @@ list_channelsext (const char *ifname, int allchans)
       if (get80211priv
 	  (ifname, IEEE80211_IOCTL_GETCHANLIST, &active, sizeof (active)) < 0)
 	{
-//      errx (1, "unable to get active channel list");
+      fprintf(stderr, "unable to get active channel list\n");
 	  return NULL;
 	}
       memset (&achans, 0, sizeof (achans));
@@ -296,7 +296,7 @@ list_channelsext (const char *ifname, int allchans)
     achans = chans;
 
 
-//  fprintf(stderr,"channel number %d\n", achans.ic_nchans);
+  fprintf(stderr,"channel number %d\n", achans.ic_nchans);
   struct wifi_channels *list =
     (struct wifi_channels *) malloc (sizeof (struct wifi_channels) *
 				     (achans.ic_nchans + 1));
