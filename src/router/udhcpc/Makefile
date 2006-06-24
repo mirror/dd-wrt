@@ -16,7 +16,7 @@ USRSHAREDIR=${prefix}/share
 
 #ifdef DEBUG_DHCPD
 # Uncomment this for extra output and to compile with debugging symbols
-#DEBUG=1
+# DEBUG=1
 #endif
 
 
@@ -60,6 +60,7 @@ CFLAGS += -DUDHCP_SYSLOG
 
 #CFLAGS += -W -Wall -Wstrict-prototypes -DVERSION='"$(VER)"'
 CFLAGS += -W -Wall -Wstrict-prototypes
+
 
 ifdef DEBUG
 CFLAGS += -g -DDEBUG -DMY_DEBUG
