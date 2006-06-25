@@ -136,6 +136,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
     int fssize;
     wfread (&linuxsize, 1, 4, stream);
     wfread (&fssize, 1, 4, stream);
+    *total -= 8;
     safe_fwrite (&linuxsize, 1, 4, fifo);
     safe_fwrite (&fssize, 1, 4, fifo);
     linuxsize += fssize;
@@ -205,6 +206,8 @@ void
 //do_upgrade_post(char *url, FILE *stream, int len, char *boundary)
 do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, https, 8/6/2003
 {
+
+eval("killall","-9","udhcpc");
 #ifndef ANTI_FLASH
   char buf[1024];
   int type = 0;
@@ -267,7 +270,6 @@ do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, htt
       system ("rm -f /usr/local/nvram/nvram.db");
     }
   /* Slurp anything remaining in the request */
-
   while (len--)
     {
 #ifdef HAVE_HTTPS
