@@ -887,7 +887,7 @@ function getTimeOut(clk, rest_default, flags) {
 		coef = 1.5;
 	}
 	if (flags==1) {
-		coef = coef * 2.5;
+		coef = coef * 3;
 	}
 	
 	this.wait_time = coef * wait_time * (125 / clk);
