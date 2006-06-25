@@ -107,22 +107,7 @@ function init() {
                     <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
                       <script type="text/javascript">document.write("<option value=\"disabled\" <% nvram_selected("wl_net_mode", "disabled", "js"); %>>" + share.disable +"</option>");</script>
                       <script type="text/javascript">document.write("<option value=\"mixed\" <% nvram_selected("wl_net_mode", "mixed", "js"); %>>" + wl_basic.mixed + "</option>");</script>
-                      <script type="text/javascript">
-                      	if( <% nvram_get("wl_wds1_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds2_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds3_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds4_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds5_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds6_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds7_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds8_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds9_enable"); %> == "0" &&
-                            <% nvram_get("wl_wds10_enable"); %> == "0") {
- 
-                      		document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");
-
-                      	}
-                      </script>
+                      <script type="text/javascript">document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");</script>
                       <script type="text/javascript">document.write("<option value=\"g-only\" <% nvram_selected("wl_net_mode", "g-only", "js"); %>>" + wl_basic.g + "</option>");</script>
                     </select>
                   </div>
