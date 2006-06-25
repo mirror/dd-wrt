@@ -12,6 +12,7 @@ install:
 	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/favicon.ico
+	rm -f $(INSTALLDIR)/www/images/logo.png
 endif
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
