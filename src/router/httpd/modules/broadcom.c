@@ -4019,6 +4019,15 @@ ej_nvram_selected (int eid, webs_t wp, int argc, char_t ** argv)
     }
   return;
 }
+static void
+ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
+{
+#ifdef HAVE_RB500
+websWrite(wp,"1");
+#else
+websWrite(wp,"0");
+#endif
+}
 
 static void
 ej_tran (int eid, webs_t wp, int argc, char_t ** argv)
@@ -4305,6 +4314,7 @@ struct ej_handler ej_handlers[] = {
   {"do_pagehead", ej_do_pagehead},	//Eko
   {"do_hpagehead", ej_do_hpagehead},	//Eko
   {"show_clocks", ej_show_clocks},
+  {"getrebootflags", ej_getrebootflags},
   {NULL, NULL}
 };
 #endif /* !WEBS */
