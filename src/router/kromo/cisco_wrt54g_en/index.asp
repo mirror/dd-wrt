@@ -435,6 +435,7 @@ function init()
 									<span class="default"><% tran("idx.stp_mess"); %></span>
 								</div>
 							</fieldset><br />
+							<% nvram_match("wl_mode", "wet", "-->"); %>
 							
 							<fieldset>
 								<legend><% tran("idx.optional"); %></legend>
@@ -442,6 +443,7 @@ function init()
 									<div class="label"><% tran("share.routername"); %></div>
 									<input maxlength="39" name="router_name" size="20" onblur="valid_name(this,&#34;Router%20Name&#34;)" value="<% nvram_get("router_name"); %>"/>
 								</div>
+							<% nvram_match("wl_mode", "wet", "<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input maxlength="39" name="wan_hostname" size="20" onblur="valid_name(this,&#34;Host%20Name&#34;)" value="<% nvram_get("wan_hostname"); %>"/>
@@ -458,8 +460,8 @@ function init()
 									</select>&nbsp;
 									<input class="num" maxlength="4" onblur="valid_mtu(this)" size="5" name="wan_mtu" value="<% nvram_get("wan_mtu"); %>" />
 								</div>
-							</fieldset><br />
 							<% nvram_match("wl_mode", "wet", "-->"); %>
+							</fieldset><br />
 							
 							<h2><% tran("idx.h23"); %></h2>
 							<fieldset>
