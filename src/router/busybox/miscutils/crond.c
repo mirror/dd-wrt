@@ -1053,10 +1053,14 @@ char *temp = NULL;
 for (i=0;i<63;i++)
     {
     if (line->cl_Shell[i]==' ')
+	{
 	temp=&line->cl_Shell[i+1];
+	break;
+	}
     }
 if (temp==NULL)
-    return;    
+    return;
+    
 system(temp);		
 }
 #endif							/* CONFIG_FEATURE_CROND_CALL_SENDMAIL */
