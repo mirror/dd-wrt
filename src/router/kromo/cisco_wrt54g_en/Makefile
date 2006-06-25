@@ -13,11 +13,14 @@ install:
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/logo.png
+	cp common_micro.js $(INSTALLDIR)/www/common.js
+	rm -f $(INSTALLDIR)/www/common_micro.js
 endif
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
 ifneq ($(CONFIG_DIST),"micro")
 	cp -a help $(INSTALLDIR)/www
+	rm -f $(INSTALLDIR)/www/common_micro.js
 endif
 	cp -a lang_pack $(INSTALLDIR)/www
 ifeq ($(CONFIG_NOMUI),y)
