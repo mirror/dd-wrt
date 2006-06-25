@@ -88,6 +88,10 @@ ifeq ($(CONFIG_RFLOW),y)
 CFLAGS += -DHAVE_RFLOW
 LIBRARIES += ../rflow/rflow.a -lpthread
 endif
+ifeq ($(CONFIG_DHCPFORWARD),y)
+CFLAGS += -DHAVE_DHCPFWD
+LIBRARIES += ../dhcpforwarder/dhcpfwd.a -lpthread
+endif
 
 
 
