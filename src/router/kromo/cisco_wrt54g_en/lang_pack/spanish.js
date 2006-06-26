@@ -325,7 +325,7 @@ bmenu.adminLog="Log";
 bmenu.adminDiag="Diagnósticos";
 bmenu.adminWol="WOL";
 bmenu.adminFactory="Valores de Fábrica";
-bmenu.adminUpgrade="Actualización de Firmware";
+bmenu.adminUpgrade="Actualización";
 bmenu.adminBackup="Backup";
 
 
