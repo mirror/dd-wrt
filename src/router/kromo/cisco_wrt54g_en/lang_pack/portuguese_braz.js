@@ -69,7 +69,7 @@ share.fri_s1="S";
 share.sat="Sábado";
 share.sat_s="Sáb";
 share.sat_s1="S";
-share.expires="Expira";
+share.expires="Expira em";
 share.yes="Sim";
 share.no="Não";
 share.allow="Permitir";
@@ -101,7 +101,7 @@ share.nat="NAT";
 share.subnet="Máscara de Sub-Rede";
 share.unmask="Desmascarar";
 share.deflt="Padrão";  //don't use share.default !!!
-share.all="Tudo";
+share.all="Todas";
 share.auto="Automático";
 share.right="Direita";
 share.left="Esquerda";
@@ -168,7 +168,7 @@ sbutton.filterSer="Adicionar/Editar Serviço";
 sbutton.reboot="Reiniciar Roteador";
 sbutton.help="   Ajuda  ";
 sbutton.wl_client_mac="Lista de MAC dos Clientes Wireless Associados";
-sbutton.update_filter="Atualiar Lista de Filtros";
+sbutton.update_filter="Atualiar Lista do Filtro";
 sbutton.join="Ingressar";
 sbutton.log_in="Log de Entrada";
 sbutton.log_out="Log de Saída";
@@ -335,7 +335,7 @@ bmenu.adminLog="Log";
 bmenu.adminDiag="Diagnósticos";
 bmenu.adminWol="WOL";
 bmenu.adminFactory="Padrões de Fábrica";
-bmenu.adminUpgrade="Atualização de Firmware";
+bmenu.adminUpgrade="Atualizar Firmware";
 bmenu.adminBackup="Backup";
 
 
@@ -826,7 +826,7 @@ management.remote_sshport="Porta do SSH";
 management.web_legend="Acesso Web";
 management.web_refresh="Auto-Atualização (em segundos)";
 management.web_sysinfo="Habilitar Página de Informações";
-management.web_sysinfopass="Proteção de Senha na Página de Informações";
+management.web_sysinfopass="Proteger Página de Informações";
 management.web_sysinfomasq="Mascaramento de MAC na Página de Informações";
 
 management.boot_legend="Boot Wait";
@@ -881,30 +881,23 @@ management.lang_brazilian="Português (Brasil)";
 management.lang_slovenian="Esloveno";
 management.lang_spanish="Espanhol";
 management.lang_swedish="Sueco";
-
 management.net_legend="Configurações do Filtro de IP (ajustes para P2P)";
 management.net_port="Número Máximo de Portas";
 management.net_tcptimeout="Timeout TCP (em segundos)";
 management.net_udptimeout="Timeout UDP (em segundos)";
-
 management.clock_legend="Overclocking";
 management.clock_frq="Freqüência";
 management.clock_support="Não Suportado";
-
 management.mmc_legend="Suporte à Cartão MMC/SD";
 management.mmc_srv="Dispositivo MMC";
-
 management.samba_legend="Samba FS Automount";
 management.samba_srv="Sistema de Arquivos SMB";
 management.samba_share="Compartilhamento";
 management.samba_stscript="Startscript";
-
 management.SIPatH_srv="SIPatH";
 management.SIPatH_port="Porta SIP";
 management.SIPatH_domain="Domínio SIP";
-
 management.gui_style="Estilo da Interface do Roteador";
-
 
 //help container
 var hmanagement = new Object();
@@ -939,7 +932,7 @@ qos.prio_b="Bulk";
 qos.legend3="Prioridade de Máscara de Sub-Rede";
 qos.ipmask="IP/Máscara";
 qos.maxrate_b="Max Kbits";
-qos.maxrate_o="Max Rate";
+qos.maxrate_o="Taxa Máxima";
 qos.legend4="Prioridade de MAC";
 qos.legend5="Prioridade de Porta Ethernet";
 qos.legend6="Nível de Banda Padrão";
@@ -1246,7 +1239,7 @@ upnp.h2="Plug and Play Universal (UPnP)";
 upnp.legend="Encaminhamentos";
 upnp.legend2="Configurações UPnP";
 upnp.serv="Serviço UPnP";
-upnp.clear="Limpar a lista de encaminhamento de portas na inicialização";
+upnp.clear="Limpar a lista na inicialização";
 upnp.url="Enviar URL de apresentação";
 upnp.msg1="Clique para apagar a concessão";
 upnp.msg2="Remover todas as entradas?";
@@ -1280,7 +1273,7 @@ vlan.titl=" - LAN Virtual";
 vlan.h2="Rede Local Virtual (VLAN)";
 vlan.legend="VLAN";
 vlan.bridge="Associada à<br />Ponte";
-vlan.tagged="Tagged";
+vlan.tagged="Etiquetar";
 vlan.negociate="Auto-Negociação";
 vlan.aggregation="Agregar Link<br>nas Portas 3 & 4";
 vlan.trunk="Trunk";
@@ -1355,8 +1348,8 @@ hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>C
 // ******************************************* WL_FilterTable.asp *******************************************//
 
 var wl_filter = new Object();
-wl_filter.titl=" - Lista de Filtro de Endereços MAC";
-wl_filter.h2="Lista de Filtro de Endereços MAC";
+wl_filter.titl=" - Lista do Filtro de Endereços MAC";
+wl_filter.h2="Lista do Filtro de Endereços MAC";
 wl_filter.h3="Insira os Endereços MAC no formato&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
 
 
@@ -1503,7 +1496,6 @@ success.restore="Configurações Restauradas.<br/>O roteador está reiniciando. Por
 success.upgrade="Sucesso na Atualização.<br/>A unidades está reiniciando. Por favor aguarde um momento...";
 success.success_noreboot="Configurações efetuadas com sucesso.";
 success.success_reboot=success.success_noreboot + "<br />A unidades está reiniciando. Por favor aguarde um momento...";
-
 success.alert_reset="Todos os parâmetros de configuração foram restaurados para os valores padrão.<br /><br />";
 success.alert1="Por favor verifique os seguintes ítens antes de continuar:";
 success.alert2="Se você alterou o endereço IP do roteador, por favor note que você deve liberar/renovar o(s) endereço(s) do(s) cliente(s) na rede.";
@@ -1517,6 +1509,5 @@ dhcp.titl=" - Tabela DHCP de IPs Ativos";
 dhcp.h2="Tabela DHCP de IPs Ativos";
 dhcp.server="Endereço IP do Servidor DHCP:";
 dhcp.tclient="Nome de Host do Cliente";
-
 var donate = new Object();
 donate.mb="Se desejar você pode doar através da conta Moneybookers: mb@dd-wrt.com";
