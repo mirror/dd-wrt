@@ -1,1 +1,0 @@
-obj-$(CONFIG_LASAT) += crc32.o
