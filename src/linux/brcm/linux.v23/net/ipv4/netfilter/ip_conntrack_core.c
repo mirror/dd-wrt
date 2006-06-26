@@ -12,7 +12,7 @@
  * 	- add usage/reference counts to ip_conntrack_expect
  *	- export ip_conntrack[_expect]_{find_get,put} functions
  * */
-#define ISPRINTK 1
+//##define ISPRINTK 1
 #include <linux/version.h>
 #include <linux/config.h>
 #include <linux/types.h>

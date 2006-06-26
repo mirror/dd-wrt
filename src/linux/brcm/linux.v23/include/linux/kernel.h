@@ -60,8 +60,18 @@ extern int console_printk[];
 struct completion;
 
 extern struct notifier_block *panic_notifier_list;
-NORET_TYPE void panic(const char * fmt, ...)
-	__attribute__ ((NORET_AND format (printf, 1, 2)));
+
+#ifdef ISPRINTK
+NORET_TYPE void panic(const char * fmt, ...) __attribute__ ((NORET_AND format (printf, 1, 2)));
+#else
+
+#ifdef CONFIG_PRINTK
+NORET_TYPE void panic(const char * fmt, ...) __attribute__ ((NORET_AND format (printf, 1, 2)));
+#else
+#define panic(fmt, args...)
+#endif
+#endif
+
 asmlinkage NORET_TYPE void do_exit(long error_code)
 	ATTRIB_NORET;
 NORET_TYPE void complete_and_exit(struct completion *, long)
@@ -93,11 +103,19 @@ extern void dev_probe_unlock(void);
 
 extern int session_of_pgrp(int pgrp);
 
-
-
+#ifdef ISPRINTK
 asmlinkage int printk(const char * fmt, ...)
 	__attribute__ ((format (printf, 1, 2)));
+#else
 
+#ifdef CONFIG_PRINTK 
+asmlinkage int printk(const char * fmt, ...)
+	__attribute__ ((format (printf, 1, 2)));
+#else
+#define printk(fmt, args...)
+
+#endif
+#endif
 static inline void console_silent(void)
 {
 	console_loglevel = 0;

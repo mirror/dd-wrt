@@ -1061,6 +1061,7 @@ mainmenu_option next_comment
 comment 'Kernel hacking'
 
 bool 'Are you using a crosscompiler' CONFIG_CROSSCOMPILE
+bool 'Printk support' CONFIG_PRINTK
 bool 'Enable run-time debugging' CONFIG_RUNTIME_DEBUG
 if [ "$CONFIG_BCM947XX" = "y" ] ; then
 	bool 'Remote GDB kernel debugging' CONFIG_REMOTE_DEBUG
