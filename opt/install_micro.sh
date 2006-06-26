@@ -78,12 +78,12 @@ rm ../src/router/mipsel-uclibc/target/usr/sbin/mtd
 
 
 ./make_kernel.sh
-../tools/trx -o dd-wrt.v23_micro.trx ./loader-0.02/loader.gz vmlinuzmicro target.squashfs
-../tools/trx -o dd-wrt.v23_jffs2_micro.trx ./loader-0.02/loader.gz vmlinuzmicro target.jffs2
+../tools/trx -o dd-wrt.v23_micro.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
+../tools/trx -o dd-wrt.v23_jffs2_micro.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.jffs2
 
 
-../tools/trx_gs -o dd-wrt.v23_gs_micro.trx ./loader-0.02/loader.gz vmlinuzmicro target.squashfs
-./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_micro_asus.trx ./loader-0.02/loader.gz vmlinuzmicro target.squashfs
+../tools/trx_gs -o dd-wrt.v23_gs_micro.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
+./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_micro_asus.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #add pattern
 ./tools/addpattern -4 -p W54G -v v4.20.6 -i dd-wrt.v23_micro.trx -o dd-wrt.v23_micro_wrt54g.bin -g
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23_micro.trx -o dd-wrt.v23_micro_wrt54gs.bin -g
