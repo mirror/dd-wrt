@@ -18,6 +18,7 @@
 #include <linux/types.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
+#include <linux/module.h>
 
 #ifndef __HAVE_ARCH_STRNICMP
 /**
@@ -528,5 +529,5 @@ void *memchr(const void *s, int c, size_t n)
 	}
 	return NULL;
 }
-
+EXPORT_SYMBOL(memchr);
 #endif
