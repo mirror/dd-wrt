@@ -8,7 +8,7 @@
  * - Versions on symbols added (December 1994)
  *   by Bjorn Ekwall <bj0rn@blox.se>
  */
-
+#define ISPRINTK
 #include <linux/config.h>
 #include <linux/slab.h>
 #include <linux/module.h>

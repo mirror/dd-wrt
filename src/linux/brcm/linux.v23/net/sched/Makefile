@@ -2,7 +2,7 @@
 # Makefile for the Linux Traffic Control Unit.
 #
 
-EXTRA_CFLAGS := -DISPRINTK
+#EXTRA_CFLAGS := -DISPRINTK
 
 O_TARGET := sched.o
 

@@ -7,7 +7,7 @@
 #
 # Note 2! The CFLAGS definition is now in the main makefile...
 
-EXTRA_CFLAGS := -DISPRINTK
+#EXTRA_CFLAGS := -DISPRINTK
 
 SRCBASE		:= $(TOPDIR)/../..
 EXTRA_CFLAGS	+= -I$(SRCBASE)/switch/sys -I$(SRCBASE)/include.v23
