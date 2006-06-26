@@ -8,6 +8,7 @@
  * This function is used through-out the kernel (including mm and fs)
  * to indicate a major problem.
  */
+#define ISPRINTK
 #include <linux/config.h>
 #include <linux/sched.h>
 #include <linux/delay.h>

@@ -7,7 +7,7 @@
 #
 # Note 2! The CFLAGS definition is now in the main makefile...
 
-EXTRA_CFLAGS := -DISPRINTK
+#EXTRA_CFLAGS := -DISPRINTK
 
 O_TARGET := core.o
 

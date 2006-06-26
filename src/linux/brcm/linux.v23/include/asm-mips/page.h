@@ -34,11 +34,14 @@
 
 #include <asm/cacheflush.h>
 
-#define BUG()								\
+
+#define BUG() { }
+
+/*#define BUG()								\
 do {									\
 	__asm__ __volatile__("break %0" : : "i" (BRK_BUG));		\
 } while (0)
-
+*/
 #define PAGE_BUG(page) do {  BUG(); } while (0)
 
 extern void clear_page(void * page);

@@ -410,7 +410,6 @@ static void emit_log_char(char c)
  * then changes console_loglevel may break. This is because console_loglevel
  * is inspected when the actual printing occurs.
  */
-
 asmlinkage int printk(const char *fmt, ...)
 {
 	va_list args;

@@ -5,7 +5,7 @@
 # Rewritten to use lists instead of if-statements.
 #
 
-EXTRA_CFLAGS := -DISPRINTK
+#EXTRA_CFLAGS := -DISPRINTK
 
 O_TARGET :=	network.o
 
