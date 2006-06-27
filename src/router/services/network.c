@@ -84,6 +84,17 @@ config_loopback (void)
   route_add ("lo", 0, "127.0.0.0", "0.0.0.0", "255.0.0.0");
 }
 
+char *
+getMacAddr (char *ifname, char *mac)
+{
+  unsigned char hwbuff[16];
+  int i = wl_hwaddr (ifname, hwbuff);
+  if (i < 0)
+    return NULL;
+  sprintf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1],
+	   hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
+
+}
 
 #ifndef HAVE_MADWIFI
 static int notify_nas (char *type, char *ifname, char *action);
@@ -394,6 +405,7 @@ start_lan (void)
   /* you gotta bring it down before you can set its MAC */
   cprintf ("configure wl_face\n");
   ifconfig (wl_face, 0, 0, 0);
+unsigned char mac[20];
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_whwaddr", "00:00:00:00:00:00") &&
@@ -405,7 +417,6 @@ start_lan (void)
     }
   else
     {
-      unsigned char mac[20];
       strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);
       MAC_ADD (mac);		// The wireless mac equal lan mac add 2
@@ -423,6 +434,35 @@ start_lan (void)
     perror ("Write wireless mac fail : ");
   else
     cprintf ("Write wireless mac successfully\n");
+
+#ifdef HAVE_MSSID
+  char tmac[16];
+  sprintf (tmac, "%s_hwaddr", "wl0");
+  char mymac[32];
+  getMacAddr(wl_face,mymac);
+  nvram_set (tmac,mymac);
+
+  char *next2;
+  char var[80];
+  char *vifs = nvram_safe_get ("wl0_vifs");
+  if (vifs != NULL)
+    foreach (var, vifs, next2)
+    {
+      sprintf (tmac, "%s_hwaddr", var);
+     getMacAddr(var,mymac);
+	nvram_set (tmac, mymac);
+      MAC_ADD (mac);
+      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, var, IFNAMSIZ);
+      if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+	perror ("Write wireless mac fail : ");
+      else
+	cprintf ("Write wireless mac successfully\n");
+    }
+
+
+#endif
 #else
 
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -434,13 +474,13 @@ start_lan (void)
 	cprintf ("Write wireless mac successfully\n");
     }
 #endif
-if (nvram_match("wl_mode","sta"))
-{
+  if (nvram_match ("wl_mode", "sta"))
+    {
       unsigned char mac[20];
       strcpy (mac, nvram_safe_get ("et0macaddr"));
       MAC_ADD (mac);
       nvram_set ("wan_hwaddr", mac);
-}
+    }
 
   ifconfig (wl_face, IFUP, 0, 0);
   br_init ();
@@ -557,6 +597,7 @@ if (nvram_match("wl_mode","sta"))
 
 	    if (nvram_match (wl_name, "ap"))
 	      {
+
 		br_add_interface (lan_ifname, name);	//eval ("brctl", "addif", lan_ifname, name);
 #ifdef HAVE_MSSID
 		do_mssid (lan_ifname);
@@ -926,9 +967,13 @@ start_wan (int status)
   char *wan_proto = nvram_safe_get ("wan_proto");
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname","") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+  char *pppoe_wan_ifname =
+    nvram_invmatch ("pppoe_wan_ifname",
+		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #else
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname","") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+  char *pppoe_wan_ifname =
+    nvram_invmatch ("pppoe_wan_ifname",
+		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 #endif
   if (nvram_match ("wl_mode", "wet"))
     {
@@ -1038,11 +1083,11 @@ start_wan (int status)
 //    perror ("Write WAN mac fail : ");
 //  else
 //    cprintf ("Write WAN mac successfully\n");
-    if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) 
-      {
-        ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-        ioctl(s, SIOCSIFHWADDR, &ifr);
-      }
+  if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
+    {
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      ioctl (s, SIOCSIFHWADDR, &ifr);
+    }
 #endif
 
   /* Set MTU */
@@ -1478,21 +1523,21 @@ start_wan_done (char *wan_ifname)
 	     0);
     }
 
-    /* Delete all default routes */
-    while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0);
+  /* Delete all default routes */
+  while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0);
 
-    if ((nvram_match ("wan_proto", "pppoe")) && check_wan_link (1))
-      {
-	while (route_del
-	       (nvram_safe_get ("wan_ifname_1"), 0, NULL, NULL, NULL) == 0);
-      }
+  if ((nvram_match ("wan_proto", "pppoe")) && check_wan_link (1))
+    {
+      while (route_del
+	     (nvram_safe_get ("wan_ifname_1"), 0, NULL, NULL, NULL) == 0);
+    }
 
-    if (nvram_invmatch("wan_proto", "disabled"))
+  if (nvram_invmatch ("wan_proto", "disabled"))
     {
       /* Set default route to gateway if specified */
       char *gateway = nvram_match ("wan_proto",
-				 "pptp") ? nvram_safe_get ("pptp_get_ip") :
-      nvram_safe_get ("wan_gateway");
+				   "pptp") ? nvram_safe_get ("pptp_get_ip") :
+	nvram_safe_get ("wan_gateway");
       while (route_add (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 	     && timeout--)
 	{
@@ -2163,7 +2208,7 @@ start_wds_check (void)
 	  br_init ();
 	  br_add_interface ("br1", dev);
 	  br_shutdown ();
-	//  eval("killall","-9","nas");
+	  //  eval("killall","-9","nas");
 	  //eval ("brctl", "addif", "br1", dev);
 	  notify_nas ("lan", "br1", "up");
 	}
@@ -2173,7 +2218,7 @@ start_wds_check (void)
 	  eval ("ifconfig", dev, "up");
 	  br_init ();
 	  br_add_interface ("br0", dev);
-//	  eval("killall","-9","nas");
+//        eval("killall","-9","nas");
 //        eval ("brctl", "addif", "br0", dev);
 	  br_shutdown ();
 	  notify_nas ("lan", "br0", "up");

@@ -584,17 +584,6 @@ default_match (char *var, char *match, char *def)
 }
 
 
-char *
-getMacAddr (char *ifname, char *mac)
-{
-  unsigned char hwbuff[16];
-  int i = wl_hwaddr (ifname, hwbuff);
-  if (i < 0)
-    return NULL;
-  sprintf (mac, "%02X:%02X:%02X:%02X:%02X:%02X", hwbuff[0], hwbuff[1],
-	   hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
-
-}
 
 static int
 getMaxPower (char *ifname)
@@ -1002,7 +991,7 @@ configure_single (int count)
   sprintf (diversity, "ath%d_diversity", count);
   sprintf (txantenna, "ath%d_txantenna", count);
   sprintf (rxantenna, "ath%d_rxantenna", count);
-  sprintf (athmac, "ath%d_macaddr", count);
+  sprintf (athmac, "ath%d_hwaddr", count);
   //create base device
   cprintf ("configure base interface %d\n", count);
 
@@ -1044,7 +1033,7 @@ configure_single (int count)
 	  strcat (iflist, " ");
 	  strcat (iflist, var);
 	  char vathmac[16];
-	  sprintf (vathmac, "%s_macaddr", var);
+	  sprintf (vathmac, "%s_hwaddr", var);
 	  char vmacaddr[32];
 	  getMacAddr (var, vmacaddr);
 	  nvram_set (vathmac, vmacaddr);
