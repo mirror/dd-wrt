@@ -1,7 +1,7 @@
 /*
  * HND Minimal OS Abstraction Layer.
  *
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: min_osl.h,v 1.1.1.4 2006/02/27 03:43:16 honor Exp $
  */
 
 #ifndef _min_osl_h_
@@ -18,32 +18,12 @@
 #include <typedefs.h>
 #include <sbconfig.h>
 #include <mipsinc.h>
+#include <bcmstdlib.h>
 
 /* Cache support */
 extern void caches_on(void);
 extern void blast_dcache(void);
 extern void blast_icache(void);
-
-/* uart output */
-extern void putc(int c);
-
-/* lib functions */
-extern int printf(const char *fmt, ...);
-extern int sprintf(char *buf, const char *fmt, ...);
-extern int strcmp(const char *s1, const char *s2);
-extern int strncmp(const char *s1, const char *s2, uint n);
-extern char *strcpy(char *dest, const char *src);
-extern char *strncpy(char *dest, const char *src, uint n);
-extern uint strlen(const char *s);
-extern char *strchr(const char *str,int c);
-extern char *strrchr(const char *str, int c);
-extern char *strcat(char *d, const char *s);
-extern void *memset(void *dest, int c, uint n);
-extern void *memcpy(void *dest, const void *src, uint n);
-extern int memcmp(const void *s1, const void *s2, uint n);
-#define	bcopy(src, dst, len)	memcpy((dst), (src), (len))
-#define	bcmp(b1, b2, len)	memcmp((b1), (b2), (len))
-#define	bzero(b, len)		memset((b), '\0', (len))
 
 /* assert & debugging */
 #define	ASSERT(exp)		do {} while (0)
@@ -71,7 +51,7 @@ extern int memcmp(const void *s1, const void *s2, uint n);
 #define rreg16(r)		(*(volatile uint16*)(r))
 #define wreg8(r, v)		(*(volatile uint8*)(r) = (uint8)(v))
 #define rreg8(r)		(*(volatile uint8*)(r))
-#define R_REG(r) ({ \
+#define R_REG(osh, r) ({ \
 	__typeof(*(r)) __osl_v; \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	__osl_v = rreg8((r)); break; \
@@ -80,22 +60,22 @@ extern int memcmp(const void *s1, const void *s2, uint n);
 	} \
 	__osl_v; \
 })
-#define W_REG(r, v) do { \
+#define W_REG(osh, r, v) do { \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	wreg8((r), (v)); break; \
 	case sizeof(uint16):	wreg16((r), (v)); break; \
 	case sizeof(uint32):	wreg32((r), (v)); break; \
 	} \
 } while (0)
-#define	AND_REG(r, v)		W_REG((r), R_REG(r) & (v))
-#define	OR_REG(r, v)		W_REG((r), R_REG(r) | (v))
+#define	AND_REG(osh, r, v)		W_REG(osh, (r), R_REG(osh, r) & (v))
+#define	OR_REG(osh, r, v)		W_REG(osh, (r), R_REG(osh, r) | (v))
 
 /* general purpose memory allocation */
 #define	MALLOC(osh, size)	malloc(size)
 #define	MFREE(osh, addr, size)	free(addr)
 #define	MALLOCED(osh)		0
 #define	MALLOC_FAILED(osh)	0
-#define	MALLOC_DUMP(osh, buf, sz)
+#define	MALLOC_DUMP(osh, b)
 extern int free(void *ptr);
 extern void *malloc(uint size);
 

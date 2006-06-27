@@ -1,5 +1,5 @@
 /*
- * NDIS Error mappings
+ * HND SiliconBackplane Gigabit Ethernet core software interface.
  *
  * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
@@ -9,13 +9,12 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: ndiserrmap.h,v 1.1.1.2 2006/02/27 03:43:16 honor Exp $
+ * $Id: hndgige.h,v 1.1.1.1 2006/02/27 03:43:16 honor Exp $
  */
 
-#ifndef _ndiserrmap_h_
-#define _ndiserrmap_h_
+#ifndef _hndgige_h_
+#define _hndgige_h_
 
-extern int ndisstatus2bcmerror(NDIS_STATUS status);
-extern NDIS_STATUS bcmerror2ndisstatus(int bcmerror);
+extern void sb_gige_init(sb_t *sbh, void *regs, bool *rgmii);
 
-#endif	/* _ndiserrmap_h_ */
+#endif /* _hndgige_h_ */

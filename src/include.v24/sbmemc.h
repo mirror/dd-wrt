@@ -1,15 +1,15 @@
 /*
  * BCM47XX Sonics SiliconBackplane DDR/SDRAM controller core hardware definitions.
  *
- * Copyright 2005, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
+ * Copyright 2006, Broadcom Corporation
+ * All Rights Reserved.
+ * 
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: sbmemc.h,v 1.6 2006/03/02 12:33:44 honor Exp $
  */
 
 #ifndef	_SBMEMC_H
@@ -39,8 +39,7 @@
 #define	MEMC_BARRIER		0x50
 #define	MEMC_CORE		0x54
 
-
-#else
+#else	/* !_LANGUAGE_ASSEMBLY */
 
 /* Sonics side: MEMC core registers */
 typedef volatile struct sbmemcregs {
@@ -68,7 +67,7 @@ typedef volatile struct sbmemcregs {
 	uint32	core;
 } sbmemcregs_t;
 
-#endif
+#endif	/* _LANGUAGE_ASSEMBLY */
 
 /* MEMC Core Init values (OCP ID 0x80f) */
 
