@@ -1,0 +1,7 @@
+package "lzma"
+version "0.01"
+
+option "decode" d "Decode a compressed lzma file" flag off
+option "dictsize" s "Dictionary size in bit" int default="20" no
+option "fastbytes" b "Number of fast bytes" int default="32" no
+option "high" x "Use better, slower compression" flag off
