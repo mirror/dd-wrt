@@ -1153,7 +1153,7 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   char ssid[80];
   char vif[16];
   char mac[16];
-  sprintf (mac, "%s_macaddr", prefix);
+  sprintf (mac, "%s_hwaddr", prefix);
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
@@ -1550,7 +1550,7 @@ show_virtualssid (webs_t wp, char *prefix)
   char vif[16];
   char mac[16];
   sprintf (vif, "%s_vifs", prefix);
-  sprintf (mac, "%s_macaddr", prefix);
+  sprintf (mac, "%s_hwaddr", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
     return 0;
@@ -1888,7 +1888,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   char wl_macaddr[16];
   char wl_ssid[16];
   sprintf (wl_mode, "%s_mode", prefix);
-  sprintf (wl_macaddr, "%s_macaddr", prefix);
+  sprintf (wl_macaddr, "%s_hwaddr", prefix);
   sprintf (wl_ssid, "%s_ssid", prefix);
 
 
