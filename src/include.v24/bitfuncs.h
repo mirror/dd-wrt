@@ -1,14 +1,14 @@
 /*
  * bit manipulation utility functions
  *
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
  * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
- * $Id$
+ * $Id: bitfuncs.h,v 1.1.1.8 2006/02/27 03:43:16 honor Exp $
  */
 
 #ifndef _BITFUNCS_H
@@ -36,13 +36,13 @@ static INLINE uint32 find_msbit(uint32 x);
 static INLINE uint32 find_msbit(uint32 x)
 {
 	uint msbit;
-        __asm__("bsrl %1,%0"
-                :"=r" (msbit)
-                :"r" (x));
-        return msbit;
+	__asm__("bsrl %1,%0"
+	        :"=r" (msbit)
+	        :"r" (x));
+	return msbit;
 }
 
-#else
+#else	/* !USE_PENTIUM_BSR || !__GNUC__ */
 
 /*
  * Generic Implementation
@@ -77,9 +77,9 @@ static INLINE uint32 find_msbit(uint32 x)
 	if (temp_x & DB_POW_MASK1) {
 		msbit += 1;
 	}
-	return(msbit);
+	return (msbit);
 }
 
-#endif
+#endif	/* USE_PENTIUM_BSR && __GNUC__ */
 
 #endif /* _BITFUNCS_H */

@@ -5,8 +5,8 @@
  * jtag, 0/1/2 uarts, clock frequency control, a watchdog interrupt timer,
  * gpio interface, extbus, and support for serial and parallel flashes.
  *
- * $Id$
- * Copyright 2005, Broadcom Corporation
+ * $Id: sbchipc.h,v 1.1.1.14 2006/04/15 01:29:08 michael Exp $
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -77,8 +77,8 @@ typedef volatile struct {
 	uint32	watchdog;		/* 0x80 */
 	uint32	PAD[1];
 
-	/*GPIO based LED powersave registers corerev >= 16*/
-	uint32  gpiotimerval;		/*0x88 */
+	/* GPIO based LED powersave registers corerev >= 16 */
+	uint32  gpiotimerval;		/* 0x88 */
 	uint32  gpiotimeroutmask;
 
 	/* clock control */
@@ -86,7 +86,7 @@ typedef volatile struct {
 	uint32	clockcontrol_sb;	/* aka m0 */
 	uint32	clockcontrol_pci;	/* aka m1 */
 	uint32	clockcontrol_m2;	/* mii/uart/mipsref */
-	uint32	clockcontrol_mips;	/* aka m3 */
+	uint32	clockcontrol_m3;	/* cpu */
 	uint32	clkdiv;			/* corerev >= 3 */
 	uint32	PAD[2];
 
@@ -114,7 +114,12 @@ typedef volatile struct {
 	uint32	prog_waitcount;
 	uint32	flash_config;
 	uint32	flash_waitcount;
-	uint32	PAD[116];
+	uint32	PAD[44];
+
+	/* Clock control and hardware workarounds */
+	uint32	clk_ctl_st;
+	uint32	hw_war;
+	uint32	PAD[70];
 
 	/* uarts */
 	uint8	uart0data;		/* 0x300 */
@@ -156,43 +161,51 @@ typedef volatile struct {
 #define	CC_OTP			0x800
 
 /* chipid */
-#define	CID_ID_MASK		0x0000ffff		/* Chip Id mask */
-#define	CID_REV_MASK		0x000f0000		/* Chip Revision mask */
-#define	CID_REV_SHIFT		16			/* Chip Revision shift */
-#define	CID_PKG_MASK		0x00f00000		/* Package Option mask */
-#define	CID_PKG_SHIFT		20			/* Package Option shift */
-#define	CID_CC_MASK		0x0f000000		/* CoreCount (corerev >= 4) */
+#define	CID_ID_MASK		0x0000ffff	/* Chip Id mask */
+#define	CID_REV_MASK		0x000f0000	/* Chip Revision mask */
+#define	CID_REV_SHIFT		16		/* Chip Revision shift */
+#define	CID_PKG_MASK		0x00f00000	/* Package Option mask */
+#define	CID_PKG_SHIFT		20		/* Package Option shift */
+#define	CID_CC_MASK		0x0f000000	/* CoreCount (corerev >= 4) */
 #define CID_CC_SHIFT		24
 
 /* capabilities */
-#define	CAP_UARTS_MASK		0x00000003		/* Number of uarts */
-#define CAP_MIPSEB		0x00000004		/* MIPS is in big-endian mode */
-#define CAP_UCLKSEL		0x00000018		/* UARTs clock select */
-#define CAP_UINTCLK		0x00000008		/* UARTs are driven by internal divided clock */
-#define CAP_UARTGPIO		0x00000020		/* UARTs own Gpio's 15:12 */
-#define CAP_EXTBUS		0x00000040		/* External bus present */
-#define	CAP_FLASH_MASK		0x00000700		/* Type of flash */
-#define	CAP_PLL_MASK		0x00038000		/* Type of PLL */
-#define CAP_PWR_CTL		0x00040000		/* Power control */
-#define CAP_OTPSIZE		0x00380000		/* OTP Size (0 = none) */
-#define CAP_OTPSIZE_SHIFT	19			/* OTP Size shift */
-#define CAP_OTPSIZE_BASE	5			/* OTP Size base */
-#define CAP_JTAGP		0x00400000		/* JTAG Master Present */
-#define CAP_ROM			0x00800000		/* Internal boot rom active */
+#define	CAP_UARTS_MASK		0x00000003	/* Number of uarts */
+#define CAP_MIPSEB		0x00000004	/* MIPS is in big-endian mode */
+#define CAP_UCLKSEL		0x00000018	/* UARTs clock select */
+#define CAP_UINTCLK		0x00000008	/* UARTs are driven by internal divided clock */
+#define CAP_UARTGPIO		0x00000020	/* UARTs own Gpio's 15:12 */
+#define CAP_EXTBUS_MASK		0x000000c0	/* External bus mask */
+#define CAP_EXTBUS_NONE		0x00000000	/* No ExtBus present */
+#define CAP_EXTBUS_FULL		0x00000040	/* ExtBus: PCMCIA, IDE & Prog */
+#define CAP_EXTBUS_PROG		0x00000080	/* ExtBus: ProgIf only */
+#define	CAP_FLASH_MASK		0x00000700	/* Type of flash */
+#define	CAP_PLL_MASK		0x00038000	/* Type of PLL */
+#define CAP_PWR_CTL		0x00040000	/* Power control */
+#define CAP_OTPSIZE		0x00380000	/* OTP Size (0 = none) */
+#define CAP_OTPSIZE_SHIFT	19		/* OTP Size shift */
+#define CAP_OTPSIZE_BASE	5		/* OTP Size base */
+#define CAP_JTAGP		0x00400000	/* JTAG Master Present */
+#define CAP_ROM			0x00800000	/* Internal boot rom active */
+#define CAP_BKPLN64		0x08000000	/* 64-bit backplane */
 
 /* PLL type */
 #define PLL_NONE		0x00000000
-#define PLL_TYPE1		0x00010000		/* 48Mhz base, 3 dividers */
-#define PLL_TYPE2		0x00020000		/* 48Mhz, 4 dividers */
-#define PLL_TYPE3		0x00030000		/* 25Mhz, 2 dividers */
-#define PLL_TYPE4		0x00008000		/* 48Mhz, 4 dividers */
-#define PLL_TYPE5		0x00018000		/* 25Mhz, 4 dividers */
-#define PLL_TYPE6		0x00028000		/* 100/200 or 120/240 only */
-#define PLL_TYPE7		0x00038000		/* 25Mhz, 4 dividers */
+#define PLL_TYPE1		0x00010000	/* 48Mhz base, 3 dividers */
+#define PLL_TYPE2		0x00020000	/* 48Mhz, 4 dividers */
+#define PLL_TYPE3		0x00030000	/* 25Mhz, 2 dividers */
+#define PLL_TYPE4		0x00008000	/* 48Mhz, 4 dividers */
+#define PLL_TYPE5		0x00018000	/* 25Mhz, 4 dividers */
+#define PLL_TYPE6		0x00028000	/* 100/200 or 120/240 only */
+#define PLL_TYPE7		0x00038000	/* 25Mhz, 4 dividers */
 
 /* corecontrol */
-#define CC_UARTCLKO		0x00000001		/* Drive UART with internal clock */
-#define	CC_SE			0x00000002		/* sync clk out enable (corerev >= 3) */
+#define CC_UARTCLKO		0x00000001	/* Drive UART with internal clock */
+#define	CC_SE			0x00000002	/* sync clk out enable (corerev >= 3) */
+
+/* chipcontrol */
+#define CHIPCTRL_4321A0_DEFAULT	0x3a4		
+#define CHIPCTRL_4321A1_DEFAULT	0x0a4		
 
 /* Fields in the otpstatus register */
 #define	OTPS_PROGFAIL		0x80000000
@@ -232,7 +245,7 @@ typedef volatile struct {
 #define JCMD0_ACC_IRPDR		0x00004000
 #define JCMD0_ACC_PDR		0x00005000
 #define JCMD0_IRW_MASK		0x00000f00
-#define JCMD_ACC_MASK		0x000f0000		/* Changes for corerev 11 */
+#define JCMD_ACC_MASK		0x000f0000	/* Changes for corerev 11 */
 #define JCMD_ACC_IRDR		0x00000000
 #define JCMD_ACC_DR		0x00010000
 #define JCMD_ACC_IR		0x00020000
@@ -244,9 +257,9 @@ typedef volatile struct {
 #define JCMD_DRW_MASK		0x0000003f
 
 /* jtagctrl */
-#define JCTRL_FORCE_CLK		4			/* Force clock */
-#define JCTRL_EXT_EN		2			/* Enable external targets */
-#define JCTRL_EN		1			/* Enable Jtag master */
+#define JCTRL_FORCE_CLK		4		/* Force clock */
+#define JCTRL_EXT_EN		2		/* Enable external targets */
+#define JCTRL_EN		1		/* Enable Jtag master */
 
 /* Fields in clkdiv */
 #define	CLKD_SFLASH		0x0f000000
@@ -254,65 +267,73 @@ typedef volatile struct {
 #define	CLKD_OTP		0x000f0000
 #define	CLKD_OTP_SHIFT		16
 #define	CLKD_JTAG		0x00000f00
-#define	CLKD_JTAG_SHIFT		8		
+#define	CLKD_JTAG_SHIFT		8
 #define	CLKD_UART		0x000000ff
 
 /* intstatus/intmask */
-#define	CI_GPIO			0x00000001		/* gpio intr */
-#define	CI_EI			0x00000002		/* ro: ext intr pin (corerev >= 3) */
-#define	CI_WDRESET		0x80000000		/* watchdog reset occurred */
+#define	CI_GPIO			0x00000001	/* gpio intr */
+#define	CI_EI			0x00000002	/* ro: ext intr pin (corerev >= 3) */
+#define	CI_WDRESET		0x80000000	/* watchdog reset occurred */
 
 /* slow_clk_ctl */
-#define SCC_SS_MASK		0x00000007		/* slow clock source mask */
-#define	SCC_SS_LPO		0x00000000		/* source of slow clock is LPO */
-#define	SCC_SS_XTAL		0x00000001		/* source of slow clock is crystal */
-#define	SCC_SS_PCI		0x00000002		/* source of slow clock is PCI */
-#define SCC_LF			0x00000200		/* LPOFreqSel, 1: 160Khz, 0: 32KHz */
-#define SCC_LP			0x00000400		/* LPOPowerDown, 1: LPO is disabled, 0: LPO is enabled */
-#define SCC_FS			0x00000800		/* ForceSlowClk, 1: sb/cores running on slow clock, 0: power logic control */
-#define SCC_IP			0x00001000		/* IgnorePllOffReq, 1/0: power logic ignores/honors PLL clock disable requests from core */
-#define SCC_XC			0x00002000		/* XtalControlEn, 1/0: power logic does/doesn't disable crystal when appropriate */
-#define SCC_XP			0x00004000		/* XtalPU (RO), 1/0: crystal running/disabled */
-#define SCC_CD_MASK		0xffff0000		/* ClockDivider (SlowClk = 1/(4+divisor)) */
+#define SCC_SS_MASK		0x00000007	/* slow clock source mask */
+#define	SCC_SS_LPO		0x00000000	/* source of slow clock is LPO */
+#define	SCC_SS_XTAL		0x00000001	/* source of slow clock is crystal */
+#define	SCC_SS_PCI		0x00000002	/* source of slow clock is PCI */
+#define SCC_LF			0x00000200	/* LPOFreqSel, 1: 160Khz, 0: 32KHz */
+#define SCC_LP			0x00000400	/* LPOPowerDown, 1: LPO is disabled,
+						 * 0: LPO is enabled
+						 */
+#define SCC_FS			0x00000800	/* ForceSlowClk, 1: sb/cores running on slow clock,
+						 * 0: power logic control
+						 */
+#define SCC_IP			0x00001000	/* IgnorePllOffReq, 1/0: power logic ignores/honors
+						 * PLL clock disable requests from core
+						 */
+#define SCC_XC			0x00002000	/* XtalControlEn, 1/0: power logic does/doesn't
+						 * disable crystal when appropriate
+						 */
+#define SCC_XP			0x00004000	/* XtalPU (RO), 1/0: crystal running/disabled */
+#define SCC_CD_MASK		0xffff0000	/* ClockDivider (SlowClk = 1/(4+divisor)) */
 #define SCC_CD_SHIFT		16
 
 /* system_clk_ctl */
-#define	SYCC_IE			0x00000001		/* ILPen: Enable Idle Low Power */
-#define	SYCC_AE			0x00000002		/* ALPen: Enable Active Low Power */
-#define	SYCC_FP			0x00000004		/* ForcePLLOn */
-#define	SYCC_AR			0x00000008		/* Force ALP (or HT if ALPen is not set */
-#define	SYCC_HR			0x00000010		/* Force HT */
-#define SYCC_CD_MASK		0xffff0000		/* ClkDiv  (ILP = 1/(4+divisor)) */
+#define	SYCC_IE			0x00000001	/* ILPen: Enable Idle Low Power */
+#define	SYCC_AE			0x00000002	/* ALPen: Enable Active Low Power */
+#define	SYCC_FP			0x00000004	/* ForcePLLOn */
+#define	SYCC_AR			0x00000008	/* Force ALP (or HT if ALPen is not set */
+#define	SYCC_HR			0x00000010	/* Force HT */
+#define SYCC_CD_MASK		0xffff0000	/* ClkDiv  (ILP = 1/(4 * (divisor + 1)) */
 #define SYCC_CD_SHIFT		16
 
-/* gpiotimerval*/
+/* gpiotimerval */
 #define GPIO_ONTIME_SHIFT	16
 
 /* clockcontrol_n */
-#define	CN_N1_MASK		0x3f			/* n1 control */
-#define	CN_N2_MASK		0x3f00			/* n2 control */
+#define	CN_N1_MASK		0x3f		/* n1 control */
+#define	CN_N2_MASK		0x3f00		/* n2 control */
 #define	CN_N2_SHIFT		8
-#define	CN_PLLC_MASK		0xf0000			/* pll control */
+#define	CN_PLLC_MASK		0xf0000		/* pll control */
 #define	CN_PLLC_SHIFT		16
 
 /* clockcontrol_sb/pci/uart */
-#define	CC_M1_MASK		0x3f			/* m1 control */
-#define	CC_M2_MASK		0x3f00			/* m2 control */
+#define	CC_M1_MASK		0x3f		/* m1 control */
+#define	CC_M2_MASK		0x3f00		/* m2 control */
 #define	CC_M2_SHIFT		8
-#define	CC_M3_MASK		0x3f0000		/* m3 control */
+#define	CC_M3_MASK		0x3f0000	/* m3 control */
 #define	CC_M3_SHIFT		16
-#define	CC_MC_MASK		0x1f000000		/* mux control */
+#define	CC_MC_MASK		0x1f000000	/* mux control */
 #define	CC_MC_SHIFT		24
 
 /* N3M Clock control magic field values */
-#define	CC_F6_2			0x02			/* A factor of 2 in */
-#define	CC_F6_3			0x03			/* 6-bit fields like */
-#define	CC_F6_4			0x05			/* N1, M1 or M3 */
+#define	CC_F6_2			0x02		/* A factor of 2 in */
+#define	CC_F6_3			0x03		/* 6-bit fields like */
+#define	CC_F6_4			0x05		/* N1, M1 or M3 */
 #define	CC_F6_5			0x09
 #define	CC_F6_6			0x11
 #define	CC_F6_7			0x21
 
-#define	CC_F5_BIAS		5			/* 5-bit fields get this added */
+#define	CC_F5_BIAS		5		/* 5-bit fields get this added */
 
 #define	CC_MC_BYPASS		0x08
 #define	CC_MC_M1		0x04
@@ -321,22 +342,22 @@ typedef volatile struct {
 #define	CC_MC_M1M3		0x11
 
 /* Type 2 Clock control magic field values */
-#define	CC_T2_BIAS		2			/* n1, n2, m1 & m3 bias */
-#define	CC_T2M2_BIAS		3			/* m2 bias */
+#define	CC_T2_BIAS		2		/* n1, n2, m1 & m3 bias */
+#define	CC_T2M2_BIAS		3		/* m2 bias */
 
 #define	CC_T2MC_M1BYP		1
 #define	CC_T2MC_M2BYP		2
 #define	CC_T2MC_M3BYP		4
 
 /* Type 6 Clock control magic field values */
-#define	CC_T6_MMASK		1			/* bits of interest in m */
-#define	CC_T6_M0		120000000		/* sb clock for m = 0 */
-#define	CC_T6_M1		100000000		/* sb clock for m = 1 */
+#define	CC_T6_MMASK		1		/* bits of interest in m */
+#define	CC_T6_M0		120000000	/* sb clock for m = 0 */
+#define	CC_T6_M1		100000000	/* sb clock for m = 1 */
 #define	SB2MIPS_T6(sb)		(2 * (sb))
 
 /* Common clock base */
-#define	CC_CLOCK_BASE1		24000000		/* Half the clock freq */
-#define CC_CLOCK_BASE2		12500000		/* Alternate crystal on some PLL's */
+#define	CC_CLOCK_BASE1		24000000	/* Half the clock freq */
+#define CC_CLOCK_BASE2		12500000	/* Alternate crystal on some PLL's */
 
 /* Clock control values for 200Mhz in 5350 */
 #define	CLKC_5350_N		0x0311
@@ -348,23 +369,46 @@ typedef volatile struct {
 #define SFLASH_AT		0x200		/* Atmel serial flash */
 #define	PFLASH			0x700		/* Parallel flash */
 
-/* Bits in the config registers */
+/* Bits in the ExtBus config registers */
 #define	CC_CFG_EN		0x0001		/* Enable */
 #define	CC_CFG_EM_MASK		0x000e		/* Extif Mode */
-#define	CC_CFG_EM_ASYNC		0x0002		/*   Async/Parallel flash */
-#define	CC_CFG_EM_SYNC		0x0004		/*   Synchronous */
-#define	CC_CFG_EM_PCMCIA	0x0008		/*   PCMCIA */
-#define	CC_CFG_EM_IDE		0x000a		/*   IDE */
+#define	CC_CFG_EM_ASYNC		0x0000		/*   Async/Parallel flash */
+#define	CC_CFG_EM_SYNC		0x0002		/*   Synchronous */
+#define	CC_CFG_EM_PCMCIA	0x0004		/*   PCMCIA */
+#define	CC_CFG_EM_IDE		0x0006		/*   IDE */
 #define	CC_CFG_DS		0x0010		/* Data size, 0=8bit, 1=16bit */
 #define	CC_CFG_CD_MASK		0x0060		/* Sync: Clock divisor */
 #define	CC_CFG_CE		0x0080		/* Sync: Clock enable */
 #define	CC_CFG_SB		0x0100		/* Sync: Size/Bytestrobe */
 
+/* ExtBus address space */
+#define	CC_EB_BASE		0x1a000000	/* Chipc ExtBus base address */
+#define	CC_EB_PCMCIA_MEM	0x1a000000	/* PCMCIA 0 memory base address */
+#define	CC_EB_PCMCIA_IO		0x1a200000	/* PCMCIA 0 I/O base address */
+#define	CC_EB_PCMCIA_CFG	0x1a400000	/* PCMCIA 0 config base address */
+#define	CC_EB_IDE		0x1a800000	/* IDE memory base */
+#define	CC_EB_PCMCIA1_MEM	0x1a800000	/* PCMCIA 1 memory base address */
+#define	CC_EB_PCMCIA1_IO	0x1aa00000	/* PCMCIA 1 I/O base address */
+#define	CC_EB_PCMCIA1_CFG	0x1ac00000	/* PCMCIA 1 config base address */
+#define	CC_EB_PROGIF		0x1b000000	/* ProgIF Async/Sync base address */
+
+
 /* Start/busy bit in flashcontrol */
+#define SFLASH_OPCODE		0x000000ff
+#define SFLASH_ACTION		0x00000700
 #define SFLASH_START		0x80000000
 #define SFLASH_BUSY		SFLASH_START
 
-/* flashcontrol opcodes for ST flashes */
+/* flashcontrol action codes */
+#define	SFLASH_ACT_OPONLY	0x0000		/* Issue opcode only */
+#define	SFLASH_ACT_OP1D		0x0100		/* opcode + 1 data byte */
+#define	SFLASH_ACT_OP3A		0x0200		/* opcode + 3 address bytes */
+#define	SFLASH_ACT_OP3A1D	0x0300		/* opcode + 3 addres & 1 data bytes */
+#define	SFLASH_ACT_OP3A4D	0x0400		/* opcode + 3 addres & 4 data bytes */
+#define	SFLASH_ACT_OP3A4X4D	0x0500		/* opcode + 3 addres, 4 don't care & 4 data bytes */
+#define	SFLASH_ACT_OP3A1X4D	0x0700		/* opcode + 3 addres, 1 don't care & 4 data bytes */
+
+/* flashcontrol action+opcodes for ST flashes */
 #define SFLASH_ST_WREN		0x0006		/* Write Enable */
 #define SFLASH_ST_WRDIS		0x0004		/* Write Disable */
 #define SFLASH_ST_RDSR		0x0105		/* Read Status Register */
@@ -383,7 +427,7 @@ typedef volatile struct {
 #define SFLASH_ST_BP_SHIFT	2
 #define SFLASH_ST_SRWD		0x80		/* Status Register Write Disable */
 
-/* flashcontrol opcodes for Atmel flashes */
+/* flashcontrol action+opcodes for Atmel flashes */
 #define SFLASH_AT_READ				0x07e8
 #define SFLASH_AT_PAGE_READ			0x07d2
 #define SFLASH_AT_BUF1_READ
@@ -436,5 +480,37 @@ typedef volatile struct {
 
 #define	OTP_SIGNATURE	0x578a
 #define	OTP_MAGIC	0x4e56
+
+/* 
+ * These are the UART port assignments, expressed as offsets from the base
+ * register.  These assignments should hold for any serial port based on
+ * a 8250, 16450, or 16550(A).
+ */
+
+#define UART_RX		0	/* In:  Receive buffer (DLAB=0) */
+#define UART_TX		0	/* Out: Transmit buffer (DLAB=0) */
+#define UART_DLL	0	/* Out: Divisor Latch Low (DLAB=1) */
+#define UART_IER	1	/* In/Out: Interrupt Enable Register (DLAB=0) */
+#define UART_DLM	1	/* Out: Divisor Latch High (DLAB=1) */
+#define UART_IIR	2	/* In: Interrupt Identity Register  */
+#define UART_FCR	2	/* Out: FIFO Control Register */
+#define UART_LCR	3	/* Out: Line Control Register */
+#define UART_MCR	4	/* Out: Modem Control Register */
+#define UART_LSR	5	/* In:  Line Status Register */
+#define UART_MSR	6	/* In:  Modem Status Register */
+#define UART_SCR	7	/* I/O: Scratch Register */
+#define UART_LCR_DLAB	0x80	/* Divisor latch access bit */
+#define UART_LCR_WLEN8	0x03	/* Wordlength: 8 bits */
+#define UART_MCR_OUT2	0x08	/* MCR GPIO out 2 */
+#define UART_MCR_LOOP	0x10	/* Enable loopback test mode */
+#define UART_LSR_THRE	0x20	/* Transmit-hold-register empty */
+#define UART_LSR_RXRDY	0x01	/* Receiver ready */
+#define UART_FCR_FIFO_ENABLE 1	/* FIFO control register bit controlling FIFO enable/disable */
+
+/* Interrupt Enable Register (IER) bits */
+#define UART_IER_EDSSI	8	/* enable modem status interrupt */
+#define UART_IER_ELSI	4	/* enable receiver line status interrupt */
+#define UART_IER_ETBEI  2	/* enable transmitter holding register empty interrupt */
+#define UART_IER_ERBFI	1	/* enable data available interrupt */
 
 #endif	/* _SBCHIPC_H */

@@ -1,18 +1,21 @@
 /*
- * BCM47XX Sonics SiliconBackplane PCI core hardware definitions.
+ * HND SiliconBackplane PCI core hardware definitions.
  *
- * $Id$
- * Copyright 2005, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
+ * Copyright 2006, Broadcom Corporation
+ * All Rights Reserved.
+ * 
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ * $Id: sbpci.h,v 1.1.1.11 2006/02/27 03:43:16 honor Exp $
  */
 
-#ifndef	_SBPCI_H
-#define	_SBPCI_H
+#ifndef	_sbpci_h_
+#define	_sbpci_h_
+
+#ifndef _LANGUAGE_ASSEMBLY
 
 /* cpp contortions to concatenate w/arg prescan */
 #ifndef PAD
@@ -42,26 +45,31 @@ typedef struct sbpciregs {
 	uint32 sbtopci0;	/* Sonics to PCI translation 0 */
 	uint32 sbtopci1;	/* Sonics to PCI translation 1 */
 	uint32 sbtopci2;	/* Sonics to PCI translation 2 */
-	uint32 PAD[445];
+	uint32 PAD[189];
+	uint32 pcicfg[4][64];	/* 0x400 - 0x7FF, PCI Cfg Space (>=rev8) */
 	uint16 sprom[36];	/* SPROM shadow Area */
 	uint32 PAD[46];
 } sbpciregs_t;
+
+#endif	/* _LANGUAGE_ASSEMBLY */
 
 /* PCI control */
 #define PCI_RST_OE	0x01	/* When set, drives PCI_RESET out to pin */
 #define PCI_RST		0x02	/* Value driven out to pin */
 #define PCI_CLK_OE	0x04	/* When set, drives clock as gated by PCI_CLK out to pin */
-#define PCI_CLK		0x08	/* Gate for clock driven out to pin */	
+#define PCI_CLK		0x08	/* Gate for clock driven out to pin */
 
 /* PCI arbiter control */
 #define PCI_INT_ARB	0x01	/* When set, use an internal arbiter */
 #define PCI_EXT_ARB	0x02	/* When set, use an external arbiter */
-#define PCI_PARKID_MASK	0x06	/* Selects which agent is parked on an idle bus */
-#define PCI_PARKID_SHIFT   1
-#define PCI_PARKID_LAST	   0	/* Last requestor */
-#define PCI_PARKID_4710	   1	/* 4710 */
-#define PCI_PARKID_EXTREQ0 2	/* External requestor 0 */
-#define PCI_PARKID_EXTREQ1 3	/* External requestor 1 */
+/* ParkID - for PCI corerev >= 8 */
+#define PCI_PARKID_MASK		0x1c	/* Selects which agent is parked on an idle bus */
+#define PCI_PARKID_SHIFT	2
+#define PCI_PARKID_EXT0		0	/* External master 0 */
+#define PCI_PARKID_EXT1		1	/* External master 1 */
+#define PCI_PARKID_EXT2		2	/* External master 2 */
+#define PCI_PARKID_INT		3	/* Internal master */
+#define PCI_PARKID_LAST		4	/* Last active master */
 
 /* Interrupt status/mask */
 #define PCI_INTA	0x01	/* PCI INTA# is asserted */
@@ -103,20 +111,4 @@ typedef struct sbpciregs {
 #define SRSH_PI_MASK	0xf000	/* bit 15:12 */
 #define SRSH_PI_SHIFT	12	/* bit 15:12 */
 
-/* PCI side: Reserved PCI configuration registers (see pcicfg.h) */
-#define cap_list	rsvd_a[0]
-#define bar0_window	dev_dep[0x80 - 0x40]
-#define bar1_window	dev_dep[0x84 - 0x40]
-#define sprom_control	dev_dep[0x88 - 0x40]
-
-#ifndef _LANGUAGE_ASSEMBLY
-
-extern int sbpci_read_config(sb_t *sbh, uint bus, uint dev, uint func, uint off, void *buf, int len);
-extern int sbpci_write_config(sb_t *sbh, uint bus, uint dev, uint func, uint off, void *buf, int len);
-extern void sbpci_ban(uint16 core);
-extern int sbpci_init(sb_t *sbh);
-extern void sbpci_check(sb_t *sbh);
-
-#endif /* !_LANGUAGE_ASSEMBLY */
-
-#endif	/* _SBPCI_H */
+#endif	/* _sbpci_h_ */

@@ -9,6 +9,15 @@
 #define RESERVE_SN	8
 #define PER_SN_LEN	20
 
+#define RESERVE_T_CERT      2
+#define PER_T_CERT_LEN      2816
+
+#define RESERVE_STABLE      1 
+#define PER_STABLE_LEN      2
+
+#define RESERVE_TRY	3
+#define PER_TRY_LEN	2
+
 #define PMON_MAC_START_ADDRESS	0x2000
 #define PMON_VER_START_ADDRESS	0x2100
 
@@ -17,6 +26,7 @@
 
 #define CFE_EOU_KEY_START_ADDRESS	0x3F400	// 256K-3K
 #define CFE_SN_START_ADDRESS		0x3FE32      // 256K-3K+(522*8)
+#define CFE_T_CERT_START_ADDRESS	CFE_EOU_KEY_START_ADDRESS - (RESERVE_T_CERT * PER_T_CERT_LEN)
 
 #define NOT_NULL(var,m,c) ( \
         var[m] != c && var[m+1] != c && var[m+2] != c && var[m+3] != c && var[m+4] != c && var[m+5] != c \

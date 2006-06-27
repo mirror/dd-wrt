@@ -1,7 +1,7 @@
 /*
  * Linux OS Independent Layer
  *
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: linux_osl.h,v 1.1.1.13 2006/04/08 06:13:39 honor Exp $
  */
 
 #ifndef _linux_osl_h_
@@ -26,10 +26,10 @@
 #if GCC_VERSION > 30100
 #define	ASSERT(exp)		do {} while (0)
 #else
-/* ASSERT could causes segmentation fault on GCC3.1, use empty instead*/
-#define	ASSERT(exp)		
-#endif
-#endif
+/* ASSERT could causes segmentation fault on GCC3.1, use empty instead */
+#define	ASSERT(exp)
+#endif /* GCC_VERSION > 30100 */
+#endif /* __GNUC__ */
 
 /* microsecond delay */
 #define	OSL_DELAY(usec)		osl_delay(usec)
@@ -44,7 +44,7 @@ struct pcmcia_dev {
 	size_t size;		/* Size of window */
 	void *drv;		/* Driver data */
 };
-#endif
+#endif /* defined(CONFIG_PCMCIA) || defined(CONFIG_PCMCIA_MODULE) */
 #define	OSL_PCMCIA_READ_ATTR(osh, offset, buf, size) \
 	osl_pcmcia_read_attr((osh), (offset), (buf), (size))
 #define	OSL_PCMCIA_WRITE_ATTR(osh, offset, buf, size) \
@@ -57,7 +57,7 @@ extern void osl_pcmcia_write_attr(osl_t *osh, uint offset, void *buf, int size);
 	osl_pci_read_config((osh), (offset), (size))
 #define	OSL_PCI_WRITE_CONFIG(osh, offset, size, val) \
 	osl_pci_write_config((osh), (offset), (size), (val))
-extern uint32 osl_pci_read_config(osl_t *osh, uint size, uint offset);
+extern uint32 osl_pci_read_config(osl_t *osh, uint offset, uint size);
 extern void osl_pci_write_config(osl_t *osh, uint offset, uint size, uint val);
 
 /* PCI device bus # and slot # */
@@ -66,24 +66,29 @@ extern void osl_pci_write_config(osl_t *osh, uint offset, uint size, uint val);
 extern uint osl_pci_bus(osl_t *osh);
 extern uint osl_pci_slot(osl_t *osh);
 
+/* Pkttag flag should be part of public information */
+struct osl_pubinfo {
+	bool pkttag;
+	uint pktalloced; /* Number of allocated packet buffers */
+};
+
 /* OSL initialization */
-extern osl_t *osl_attach(void *pdev);
+extern osl_t *osl_attach(void *pdev, bool pkttag);
 extern void osl_detach(osl_t *osh);
 
 /* host/bus architecture-specific byte swap */
 #define BUS_SWAP32(v)		(v)
 
-/* general purpose memory allocation */
-
-#if defined(BCMDBG_MEM)
+#ifdef BCMDBG_MEM
 
 #define	MALLOC(osh, size)	osl_debug_malloc((osh), (size), __LINE__, __FILE__)
 #define	MFREE(osh, addr, size)	osl_debug_mfree((osh), (addr), (size), __LINE__, __FILE__)
 #define MALLOCED(osh)		osl_malloced((osh))
-#define	MALLOC_DUMP(osh, buf, sz) osl_debug_memdump((osh), (buf), (sz))
+#define	MALLOC_DUMP(osh, b) osl_debug_memdump((osh), (b))
 extern void *osl_debug_malloc(osl_t *osh, uint size, int line, char* file);
 extern void osl_debug_mfree(osl_t *osh, void *addr, uint size, int line, char* file);
-extern char *osl_debug_memdump(osl_t *osh, char *buf, uint sz);
+struct bcmstrbuf;
+extern int osl_debug_memdump(osl_t *osh, struct bcmstrbuf *b);
 
 #else
 
@@ -102,31 +107,34 @@ extern uint osl_malloc_failed(osl_t *osh);
 
 /* allocate/free shared (dma-able) consistent memory */
 #define	DMA_CONSISTENT_ALIGN	PAGE_SIZE
-#define	DMA_ALLOC_CONSISTENT(osh, size, pap) \
+#define	DMA_ALLOC_CONSISTENT(osh, size, pap, dmah) \
 	osl_dma_alloc_consistent((osh), (size), (pap))
-#define	DMA_FREE_CONSISTENT(osh, va, size, pa) \
+#define	DMA_FREE_CONSISTENT(osh, va, size, pa, dmah) \
 	osl_dma_free_consistent((osh), (void*)(va), (size), (pa))
 extern void *osl_dma_alloc_consistent(osl_t *osh, uint size, ulong *pap);
 extern void osl_dma_free_consistent(osl_t *osh, void *va, uint size, ulong pa);
 
 /* map/unmap direction */
-#define	DMA_TX	1
-#define	DMA_RX	2
+#define	DMA_TX	1	/* TX direction for DMA */
+#define	DMA_RX	2	/* RX direction for DMA */
 
 /* map/unmap shared (dma-able) memory */
-#define	DMA_MAP(osh, va, size, direction, p) \
+#define	DMA_MAP(osh, va, size, direction, p, dmah) \
 	osl_dma_map((osh), (va), (size), (direction))
-#define	DMA_UNMAP(osh, pa, size, direction, p) \
+#define	DMA_UNMAP(osh, pa, size, direction, p, dmah) \
 	osl_dma_unmap((osh), (pa), (size), (direction))
 extern uint osl_dma_map(osl_t *osh, void *va, uint size, int direction);
 extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 
+/* API for DMA addressing capability */
+#define OSL_DMADDRWIDTH(osh, addrwidth) do {} while (0)
+
 /* register access macros */
 #if defined(BCMJTAG)
 #include <bcmjtag.h>
-#define	R_REG(r)	bcmjtag_read(NULL, (uint32)(r), sizeof (*(r)))
-#define	W_REG(r, v)	bcmjtag_write(NULL, (uint32)(r), (uint32)(v), sizeof (*(r)))
-#endif
+#define	R_REG(osh, r)	bcmjtag_read(NULL, (uint32)(r), sizeof(*(r)))
+#define	W_REG(osh, r, v)	bcmjtag_write(NULL, (uint32)(r), (uint32)(v), sizeof(*(r)))
+#endif /* defined(BCMSDIO) */
 
 /*
  * BINOSL selects the slightly slower function-call-based binary compatible osl.
@@ -141,13 +149,13 @@ extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 
 /* register access macros */
 #if !defined(BCMJTAG)
-#ifndef IL_BIGENDIAN   
-#define R_REG(r) ( \
+#ifndef IL_BIGENDIAN
+#define R_REG(osh, r) (\
 	sizeof(*(r)) == sizeof(uint8) ? readb((volatile uint8*)(r)) : \
 	sizeof(*(r)) == sizeof(uint16) ? readw((volatile uint16*)(r)) : \
 	readl((volatile uint32*)(r)) \
 )
-#define W_REG(r, v) do { \
+#define W_REG(osh, r, v) do { \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	writeb((uint8)(v), (volatile uint8*)(r)); break; \
 	case sizeof(uint16):	writew((uint16)(v), (volatile uint16*)(r)); break; \
@@ -155,7 +163,7 @@ extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 	} \
 } while (0)
 #else	/* IL_BIGENDIAN */
-#define R_REG(r) ({ \
+#define R_REG(osh, r) ({ \
 	__typeof(*(r)) __osl_v; \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	__osl_v = readb((volatile uint8*)((uint32)r^3)); break; \
@@ -164,18 +172,18 @@ extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 	} \
 	__osl_v; \
 })
-#define W_REG(r, v) do { \
+#define W_REG(osh, r, v) do { \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	writeb((uint8)(v), (volatile uint8*)((uint32)r^3)); break; \
 	case sizeof(uint16):	writew((uint16)(v), (volatile uint16*)((uint32)r^2)); break; \
 	case sizeof(uint32):	writel((uint32)(v), (volatile uint32*)(r)); break; \
 	} \
 } while (0)
-#endif
-#endif
+#endif /* IL_BIGENDIAN */
+#endif /* !defined(BCMSDIO) && !defined(BCMJTAG) */
 
-#define	AND_REG(r, v)		W_REG((r), R_REG(r) & (v))
-#define	OR_REG(r, v)		W_REG((r), R_REG(r) | (v))
+#define	AND_REG(osh, r, v)		W_REG(osh, (r), R_REG(osh, r) & (v))
+#define	OR_REG(osh, r, v)		W_REG(osh, (r), R_REG(osh, r) | (v))
 
 /* bcopy, bcmp, and bzero */
 #define	bcopy(src, dst, len)	memcpy((dst), (src), (len))
@@ -188,7 +196,7 @@ extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 #include <asm/addrspace.h>
 #else
 #define OSL_UNCACHED(va)	(va)
-#endif
+#endif /* mips */
 
 /* get processor cycle count */
 #if defined(mips)
@@ -197,19 +205,20 @@ extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 #define	OSL_GETCYCLES(x)	rdtscl((x))
 #else
 #define OSL_GETCYCLES(x)	((x) = 0)
-#endif
+#endif /* defined(mips) */
 
 /* dereference an address that may cause a bus exception */
 #ifdef mips
-#if defined(MODULE) && (LINUX_VERSION_CODE < KERNEL_VERSION(2,4,17))
-#define BUSPROBE(val, addr)	panic("get_dbe() will not fixup a bus exception when compiled into a module")
+#if defined(MODULE) && (LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 17))
+#define BUSPROBE(val, addr)	panic("get_dbe() will not fixup a bus exception when compiled into"\
+					" a module")
 #else
 #define	BUSPROBE(val, addr)	get_dbe((val), (addr))
 #include <asm/paccess.h>
-#endif
+#endif /* defined(MODULE) && (LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 17)) */
 #else
-#define	BUSPROBE(val, addr)	({ (val) = R_REG((addr)); 0; })
-#endif
+#define	BUSPROBE(val, addr)	({ (val) = R_REG(NULL, (addr)); 0; })
+#endif /* mips */
 
 /* map/unmap physical to virtual I/O */
 #define	REG_MAP(pa, size)	ioremap_nocache((unsigned long)(pa), (unsigned long)(size))
@@ -222,27 +231,92 @@ extern void osl_dma_unmap(osl_t *osh, uint pa, uint size, int direction);
 
 /* packet primitives */
 #define	PKTGET(osh, len, send)		osl_pktget((osh), (len), (send))
-#define	PKTFREE(osh, skb, send)		osl_pktfree((skb))
+#define	PKTFREE(osh, skb, send)		osl_pktfree((osh), (skb))
 #define	PKTDATA(osh, skb)		(((struct sk_buff*)(skb))->data)
 #define	PKTLEN(osh, skb)		(((struct sk_buff*)(skb))->len)
-#define PKTHEADROOM(osh, skb)		(PKTDATA(osh,skb)-(((struct sk_buff*)(skb))->head))
-#define PKTTAILROOM(osh, skb)		((((struct sk_buff*)(skb))->end)-(((struct sk_buff*)(skb))->tail))
+#define PKTHEADROOM(osh, skb)		(PKTDATA(osh, skb)-(((struct sk_buff*)(skb))->head))
+#define PKTTAILROOM(osh, skb) ((((struct sk_buff*)(skb))->end)-(((struct sk_buff*)(skb))->tail))
 #define	PKTNEXT(osh, skb)		(((struct sk_buff*)(skb))->next)
-#define	PKTSETNEXT(skb, x)		(((struct sk_buff*)(skb))->next = (struct sk_buff*)(x))
+#define	PKTSETNEXT(osh, skb, x)		(((struct sk_buff*)(skb))->next = (struct sk_buff*)(x))
 #define	PKTSETLEN(osh, skb, len)	__skb_trim((struct sk_buff*)(skb), (len))
 #define	PKTPUSH(osh, skb, bytes)	skb_push((struct sk_buff*)(skb), (bytes))
 #define	PKTPULL(osh, skb, bytes)	skb_pull((struct sk_buff*)(skb), (bytes))
-#define	PKTDUP(osh, skb)		skb_clone((struct sk_buff*)(skb), GFP_ATOMIC)
-#define	PKTCOOKIE(skb)			((void*)((struct sk_buff*)(skb))->csum)
-#define	PKTSETCOOKIE(skb, x)		(((struct sk_buff*)(skb))->csum = (uint)(x))
+#define	PKTDUP(osh, skb)		osl_pktdup((osh), (skb))
+#define	PKTTAG(skb)			((void*)(((struct sk_buff*)(skb))->cb))
+#define PKTALLOCED(osh)			osl_pktalloced((osh))
+#ifdef BCMDBG_PKT     /* pkt logging for debugging */
+#define PKTLIST_DUMP(osh, buf) 		osl_pktlist_dump(osh, buf)
+#else /* BCMDBG_PKT */
+#define PKTLIST_DUMP(osh, buf)
+#endif /* BCMDBG_PKT */
+
+#ifdef BCMDBG_PKT     /* pkt logging for debugging */
+extern void osl_pktlist_add(osl_t *osh, void *p);
+extern void osl_pktlist_remove(osl_t *osh, void *p);
+extern char *osl_pktlist_dump(osl_t *osh, char *buf);
+#endif /* BCMDBG_PKT */
+
+/* Convert a native(OS) packet to driver packet.
+ * In the process, native packet is destroyed, there is no copying
+ * Also, a packettag is zeroed out
+ */
+static INLINE void *
+osl_pkt_frmnative(struct osl_pubinfo *osh, struct sk_buff *skb)
+{
+	struct sk_buff *nskb;
+
+	if (osh->pkttag)
+		bzero((void*)skb->cb, OSL_PKTTAG_SZ);
+
+	/* Increment the packet counter */
+	for (nskb = skb; nskb; nskb = nskb->next) {
+#ifdef BCMDBG_PKT
+		osl_pktlist_add((osl_t *)osh, (void *) nskb);
+#endif  /* BCMDBG_PKT */
+		osh->pktalloced++;
+	}
+
+	return (void *)skb;
+}
+#define PKTFRMNATIVE(osh, skb)	osl_pkt_frmnative(((struct osl_pubinfo *)osh), \
+							(struct sk_buff*)(skb))
+
+/* Convert a driver packet to native(OS) packet
+ * In the process, packettag is zeroed out before sending up
+ * IP code depends on skb->cb to be setup correctly with various options
+ * In our case, that means it should be 0
+ */
+static INLINE struct sk_buff *
+osl_pkt_tonative(struct osl_pubinfo *osh, void *pkt)
+{
+	struct sk_buff *nskb;
+
+	if (osh->pkttag)
+		bzero(((struct sk_buff*)pkt)->cb, OSL_PKTTAG_SZ);
+
+	/* Decrement the packet counter */
+	for (nskb = (struct sk_buff *)pkt; nskb; nskb = nskb->next) {
+#ifdef BCMDBG_PKT
+		osl_pktlist_remove((osl_t *)osh, (void *) nskb);
+#endif  /* BCMDBG_PKT */
+		osh->pktalloced--;
+	}
+
+	return (struct sk_buff *)pkt;
+}
+#define PKTTONATIVE(osh, pkt)		osl_pkt_tonative((struct osl_pubinfo *)(osh), (pkt))
+
 #define	PKTLINK(skb)			(((struct sk_buff*)(skb))->prev)
 #define	PKTSETLINK(skb, x)		(((struct sk_buff*)(skb))->prev = (struct sk_buff*)(x))
 #define	PKTPRIO(skb)			(((struct sk_buff*)(skb))->priority)
 #define	PKTSETPRIO(skb, x)		(((struct sk_buff*)(skb))->priority = (x))
-extern void *osl_pktget(osl_t *osh, uint len, bool send);
-extern void osl_pktfree(void *skb);
+#define PKTSHARED(skb)                  (((struct sk_buff*)(skb))->cloned)
 
-#else	/* BINOSL */                                    
+extern void *osl_pktget(osl_t *osh, uint len, bool send);
+extern void osl_pktfree(osl_t *osh, void *skb);
+extern void *osl_pktdup(osl_t *osh, void *skb);
+extern uint osl_pktalloced(osl_t *osh);
+#else	/* BINOSL */
 
 /* string library */
 #ifndef LINUX_OSL
@@ -260,7 +334,7 @@ extern void osl_pktfree(void *skb);
 #define	strcpy(d, s)			osl_strcpy((d), (s))
 #undef strncpy
 #define	strncpy(d, s, n)		osl_strncpy((d), (s), (n))
-#endif
+#endif /* LINUX_OSL */
 extern int osl_printf(const char *format, ...);
 extern int osl_sprintf(char *buf, const char *format, ...);
 extern int osl_strcmp(const char *s1, const char *s2);
@@ -271,22 +345,22 @@ extern char* osl_strncpy(char *d, const char *s, uint n);
 
 /* register access macros */
 #if !defined(BCMJTAG)
-#define R_REG(r) ( \
+#define R_REG(osh, r) (\
 	sizeof(*(r)) == sizeof(uint8) ? osl_readb((volatile uint8*)(r)) : \
 	sizeof(*(r)) == sizeof(uint16) ? osl_readw((volatile uint16*)(r)) : \
 	osl_readl((volatile uint32*)(r)) \
 )
-#define W_REG(r, v) do { \
+#define W_REG(osh, r, v) do { \
 	switch (sizeof(*(r))) { \
 	case sizeof(uint8):	osl_writeb((uint8)(v), (volatile uint8*)(r)); break; \
 	case sizeof(uint16):	osl_writew((uint16)(v), (volatile uint16*)(r)); break; \
 	case sizeof(uint32):	osl_writel((uint32)(v), (volatile uint32*)(r)); break; \
 	} \
 } while (0)
-#endif
+#endif /* !defined(BCMSDIO) && !defined(BCMJTAG) */
 
-#define	AND_REG(r, v)		W_REG((r), R_REG(r) & (v))
-#define	OR_REG(r, v)		W_REG((r), R_REG(r) | (v))
+#define	AND_REG(osh, r, v)		W_REG(osh, (r), R_REG(osh, r) & (v))
+#define	OR_REG(osh, r, v)		W_REG(osh, (r), R_REG(osh, r) | (v))
 extern uint8 osl_readb(volatile uint8 *r);
 extern uint16 osl_readw(volatile uint16 *r);
 extern uint32 osl_readl(volatile uint32 *r);
@@ -324,25 +398,34 @@ extern void osl_reg_unmap(void *va);
 
 /* packet primitives */
 #define	PKTGET(osh, len, send)		osl_pktget((osh), (len), (send))
-#define	PKTFREE(osh, skb, send)		osl_pktfree((skb))
+#define	PKTFREE(osh, skb, send)		osl_pktfree((osh), (skb))
 #define	PKTDATA(osh, skb)		osl_pktdata((osh), (skb))
 #define	PKTLEN(osh, skb)		osl_pktlen((osh), (skb))
 #define PKTHEADROOM(osh, skb)		osl_pktheadroom((osh), (skb))
 #define PKTTAILROOM(osh, skb)		osl_pkttailroom((osh), (skb))
 #define	PKTNEXT(osh, skb)		osl_pktnext((osh), (skb))
-#define	PKTSETNEXT(skb, x)		osl_pktsetnext((skb), (x))
+#define	PKTSETNEXT(osh, skb, x)		osl_pktsetnext((skb), (x))
 #define	PKTSETLEN(osh, skb, len)	osl_pktsetlen((osh), (skb), (len))
 #define	PKTPUSH(osh, skb, bytes)	osl_pktpush((osh), (skb), (bytes))
 #define	PKTPULL(osh, skb, bytes)	osl_pktpull((osh), (skb), (bytes))
 #define	PKTDUP(osh, skb)		osl_pktdup((osh), (skb))
-#define	PKTCOOKIE(skb)			osl_pktcookie((skb))
-#define	PKTSETCOOKIE(skb, x)		osl_pktsetcookie((skb), (x))
+#define PKTTAG(skb)			osl_pkttag((skb))
+#define PKTFRMNATIVE(osh, skb)		osl_pkt_frmnative((osh), (struct sk_buff*)(skb))
+#define PKTTONATIVE(osh, pkt)		osl_pkt_tonative((osh), (pkt))
 #define	PKTLINK(skb)			osl_pktlink((skb))
 #define	PKTSETLINK(skb, x)		osl_pktsetlink((skb), (x))
 #define	PKTPRIO(skb)			osl_pktprio((skb))
 #define	PKTSETPRIO(skb, x)		osl_pktsetprio((skb), (x))
+#define PKTSHARED(skb)                  osl_pktshared((skb))
+#define PKTALLOCED(osh)			osl_pktalloced((osh))
+#ifdef BCMDBG_PKT
+#define PKTLIST_DUMP(osh, buf) 		osl_pktlist_dump(osh, buf)
+#else /* BCMDBG_PKT */
+#define PKTLIST_DUMP(osh, buf)
+#endif /* BCMDBG_PKT */
+
 extern void *osl_pktget(osl_t *osh, uint len, bool send);
-extern void osl_pktfree(void *skb);
+extern void osl_pktfree(osl_t *osh, void *skb);
 extern uchar *osl_pktdata(osl_t *osh, void *skb);
 extern uint osl_pktlen(osl_t *osh, void *skb);
 extern uint osl_pktheadroom(osl_t *osh, void *skb);
@@ -353,12 +436,21 @@ extern void osl_pktsetlen(osl_t *osh, void *skb, uint len);
 extern uchar *osl_pktpush(osl_t *osh, void *skb, int bytes);
 extern uchar *osl_pktpull(osl_t *osh, void *skb, int bytes);
 extern void *osl_pktdup(osl_t *osh, void *skb);
-extern void *osl_pktcookie(void *skb);
-extern void osl_pktsetcookie(void *skb, void *x);
+extern void *osl_pkttag(void *skb);
 extern void *osl_pktlink(void *skb);
 extern void osl_pktsetlink(void *skb, void *x);
 extern uint osl_pktprio(void *skb);
 extern void osl_pktsetprio(void *skb, uint x);
+extern void *osl_pkt_frmnative(osl_t *osh, struct sk_buff *skb);
+extern struct sk_buff *osl_pkt_tonative(osl_t *osh, void *pkt);
+extern bool osl_pktshared(void *skb);
+extern uint osl_pktalloced(osl_t *osh);
+
+#ifdef BCMDBG_PKT     /* pkt logging for debugging */
+extern char *osl_pktlist_dump(osl_t *osh, char *buf);
+extern void osl_pktlist_add(osl_t *osh, void *p);
+extern void osl_pktlist_remove(osl_t *osh, void *p);
+#endif /* BCMDBG_PKT */
 
 #endif	/* BINOSL */
 
@@ -366,6 +458,6 @@ extern void osl_pktsetprio(void *skb, uint x);
 extern int osl_error(int bcmerror);
 
 /* the largest reasonable packet buffer driver uses for ethernet MTU in bytes */
-#define	PKTBUFSZ	2048
+#define	PKTBUFSZ	2048   /* largest reasonable packet buffer, driver uses for ethernet MTU */
 
 #endif	/* _linux_osl_h_ */

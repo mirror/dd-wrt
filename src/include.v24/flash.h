@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: flash.h,v 1.4 2005/03/07 08:35:32 kanki Exp $
  */
 
 /* Types of flashes we know about */
@@ -163,7 +163,8 @@ flash_desc_t flashes[] = {
 	{ 0x0001, 0x2249, 0x0200000, 2,	AMD, 0x10000, 32,  1, 31,  4, amd4112, "AMD 29lv160DB 1Mx16 BotB" },
 	{ 0x0001, 0x22f6, 0x0400000, 2,	AMD, 0x10000, 64,  0, 62,  8, blk8x8k, "AMD 29lv320DT 2Mx16 TopB" },
 	{ 0x0001, 0x22f9, 0x0400000, 2,	AMD, 0x10000, 64,  1, 63,  8, blk8x8k, "AMD 29lv320DB 2Mx16 BotB" },
-	{ 0x0001, 0x2201, 0x0400000, 2,	AMD, 0x10000, 64,  0, 62,  8, blk8x8k, "AMD 29lv320MT 2Mx16 TopB" },
+	{ 0x0001, 0x227E, 0x0400000, 2,	AMD, 0x10000, 64,  0, 62,  8, blk8x8k, "AMD 29lv320MT 2Mx16 TopB" },
+	//{ 0x0001, 0x2201, 0x0400000, 2,	AMD, 0x10000, 64,  0, 62,  8, blk8x8k, "AMD 29lv320MT 2Mx16 TopB" },
 	{ 0x0001, 0x2200, 0x0400000, 2,	AMD, 0x10000, 64,  1, 63,  8, blk8x8k, "AMD 29lv320MB 2Mx16 BotB" },
 	{ 0x0020, 0x22CA, 0x0400000, 2,	AMD, 0x10000, 64,  0, 62,  4, amd4112, "ST 29w320DT 2Mx16 TopB" },
 	{ 0x0020, 0x22CB, 0x0400000, 2,	AMD, 0x10000, 64,  1, 63,  4, amd2114, "ST 29w320DB 2Mx16 BotB" },
