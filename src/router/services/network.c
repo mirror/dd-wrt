@@ -1478,8 +1478,6 @@ start_wan_done (char *wan_ifname)
 	     0);
     }
 
-  {
-
     /* Delete all default routes */
     while (route_del (wan_ifname, 0, NULL, NULL, NULL) == 0);
 
@@ -1489,14 +1487,12 @@ start_wan_done (char *wan_ifname)
 	       (nvram_safe_get ("wan_ifname_1"), 0, NULL, NULL, NULL) == 0);
       }
 
-    /* Set default route to gateway if specified */
-    char *gateway = nvram_match ("wan_proto",
+    if (nvram_invmatch("wan_proto", "disabled"))
+    {
+      /* Set default route to gateway if specified */
+      char *gateway = nvram_match ("wan_proto",
 				 "pptp") ? nvram_safe_get ("pptp_get_ip") :
       nvram_safe_get ("wan_gateway");
-
-
-    if (strcmp (gateway, "0.0.0.0"));
-    {
       while (route_add (wan_ifname, 0, "0.0.0.0", gateway, "0.0.0.0")
 	     && timeout--)
 	{
@@ -1509,8 +1505,6 @@ start_wan_done (char *wan_ifname)
 
 	}
     }
-
-  }
 
   /* Delete all default routes */
 //      while (route_del(wan_ifname, 0, NULL, NULL, NULL) == 0);
