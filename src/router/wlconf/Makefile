@@ -19,7 +19,8 @@ CFLAGS	+= -s -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -DBCMWPA2
 LDFLAGS	+= -L$(TOP)/nvram -lnvram -L$(TOP)/shared -lshared
 
 ifeq ($(CONFIG_MSSID),y)
-OBJS := wlconf.o 
+OBJS := 
+#wlconf.o 
 else
 OBJS := 
 endif
@@ -31,7 +32,8 @@ clean:
 install: all
 	install -d $(INSTALLDIR)/usr/sbin
 ifeq ($(CONFIG_MSSID),y)
-	install wlconf $(INSTALLDIR)/usr/sbin
+	install -D wlconf.v24 $(INSTALLDIR)/usr/sbin/wlconf
+#	install wlconf $(INSTALLDIR)/usr/sbin
 else
 	install -D wlconf.v23 $(INSTALLDIR)/usr/sbin/wlconf
 endif
