@@ -2762,15 +2762,15 @@ start_pppoe (int pppoe_num)
 
   if (nvram_match (ppp_demand[pppoe_num], "1"))
     {
-      //int timeout = 5;
+      int timeout = 5;
       start_tmp_ppp (pppoe_num);
 
       // Wait for pppoeifname to be added
-//      while (ifconfig (nvram_safe_get (pppoeifname), IFUP, NULL, NULL)
-//	     && timeout--)
-//	sleep (1);
-//      route_add (nvram_safe_get ("wan_iface"), 0, "0.0.0.0", "10.112.112.112",
-//		 "0.0.0.0");
+      while (ifconfig (nvram_safe_get (pppoeifname), IFUP, NULL, NULL)
+	     && timeout--)
+	sleep (1);
+      route_add (nvram_safe_get ("wan_iface"), 0, "0.0.0.0", "10.112.112.112",
+		 "0.0.0.0");
 
       cprintf
 	("------------------------------------------------------------------------------\n");
