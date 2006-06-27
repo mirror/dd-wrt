@@ -1017,7 +1017,7 @@ start_wan (int status)
   ifconfig (wan_ifname, 0, NULL, NULL);
 
 
-  ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+//  ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_hwaddr", "00:00:00:00:00:00") &&
@@ -1034,15 +1034,16 @@ start_wan (int status)
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
 
-  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-    perror ("Write WAN mac fail : ");
-  else
-    cprintf ("Write WAN mac successfully\n");
+//  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+//    perror ("Write WAN mac fail : ");
+//  else
+//    cprintf ("Write WAN mac successfully\n");
+    if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) 
+      {
+        ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+        ioctl(s, SIOCSIFHWADDR, &ifr);
+      }
 #endif
-//      if (memcmp(ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN)) {
-//              ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-//              ioctl(s, SIOCSIFHWADDR, &ifr);
-//      }
 
   /* Set MTU */
   init_mtu (wan_proto);		// add by honor 2002/12/27
