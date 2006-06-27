@@ -845,12 +845,14 @@ if (nvram_match("wl_mode","sta"))
     }
 
 #ifndef HAVE_RB500
+#ifndef HAVE_MSSID
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta"))
     {
       system ("wl wep sw");
       sleep (1);
       system ("wl wep hw");
     }
+#endif
 #endif
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
     br_set_stp_state ("br0", 0);
@@ -1425,6 +1427,7 @@ start_wan (int status)
       while (route_del (get_wan_face (), 0, NULL, NULL, NULL) == 0);
     }
   cprintf ("wep handling\n");
+#ifndef HAVE_MSSID
   if (nvram_match ("wl0_mode", "wet") || nvram_match ("wl0_mode", "sta")
       || nvram_match ("wl0_mode", "apsta"))
     {
@@ -1432,6 +1435,7 @@ start_wan (int status)
       sleep (1);
       system ("wl wep hw");
     }
+#endif
   cprintf ("disable stp if neede\n");
   if (nvram_match ("router_disable", "1") || nvram_match ("lan_stp", "0"))
     {
@@ -2114,7 +2118,7 @@ init_mtu (char *wan_proto)
   return 0;
 }
 
-
+#ifndef HAVE_MADWIFI
 void
 start_wds_check (void)
 {
@@ -2170,7 +2174,9 @@ start_wds_check (void)
 	  br_init ();
 	  br_add_interface ("br1", dev);
 	  br_shutdown ();
+	//  eval("killall","-9","nas");
 	  //eval ("brctl", "addif", "br1", dev);
+	  notify_nas ("lan", "br1", "up");
 	}
       /* LAN WDS type */
       else if (nvram_match (wdsvarname, "3"))
@@ -2178,8 +2184,10 @@ start_wds_check (void)
 	  eval ("ifconfig", dev, "up");
 	  br_init ();
 	  br_add_interface ("br0", dev);
+//	  eval("killall","-9","nas");
 //        eval ("brctl", "addif", "br0", dev);
 	  br_shutdown ();
+	  notify_nas ("lan", "br0", "up");
 	}
 
     }
@@ -2195,3 +2203,4 @@ start_wds_check (void)
 
   return 0;
 }
+#endif

@@ -251,7 +251,7 @@ endif
 #	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 #	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 	
-	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
+#	find $(TARGETDIR) -name "wl_*.o"  | xargs rm -rf
 	# quick n dirty - stuff Nikki's module where it belongs
 	#mkdir $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996
 	if [ "$(CONFIG_MMC)" = "y" ] ; then \
@@ -270,7 +270,11 @@ ifneq ($(CONFIG_DIST),"micro")
 	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/2.4.33-rc1
 endif
 	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+#ifeq ($(CONFIG_MSSID),y)
+#	cp ../wl/wl/wl_v24.o $(TARGETDIR)/lib/modules/2.4.33-rc1/wl.o
+#else
 	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+#endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre3
 ifneq ($(CONFIG_DIST),"micro")
 	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-rc1
@@ -279,7 +283,9 @@ ifneq ($(CONFIG_DIST),"micro")
 endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-prc1re3
 ifneq ($(CONFIG_DIST),"micro")
+ifneq ($(CONFIG_MSSID),y)
 	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+endif
 endif
 ifneq ($(CONFIG_DIST),"micro")
 	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-rc1
@@ -292,7 +298,7 @@ endif
 	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel
 	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc1/pcmcia
 	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc1/netfilter
-		
+	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/2.4.33-rc1/*.o		
         # Prepare filesystem
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
         # Make sure mksquashfs-2.0 is used
