@@ -1,7 +1,7 @@
 /*
  * Broadcom Ethernettype  protocol definitions
  *
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,11 +9,11 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
+ * $Id: bcmeth.h,v 1.1.1.4 2006/02/27 03:43:16 honor Exp $
  */
 
 /*
- * Broadcom Ethernet protocol defines 
- *
+ * Broadcom Ethernet protocol defines
  */
 
 #ifndef _BCMETH_H_
@@ -54,8 +54,8 @@
  */
 
 /* 
- * While adding the subtypes and their specific processing code make sure 
- * bcmeth_bcm_hdr_t is the first data structure in the user specific data structure definition 
+ * While adding the subtypes and their specific processing code make sure
+ * bcmeth_bcm_hdr_t is the first data structure in the user specific data structure definition
  */
 
 #define	BCMILCP_SUBTYPE_RATE		1
@@ -74,10 +74,10 @@
 #define BCMILCP_BCM_SUBTYPE_EVENT		1
 #define BCMILCP_BCM_SUBTYPE_SES			2
 /*
-The EAPOL type is not used anymore. Instead EAPOL messages are now embedded
-within BCMILCP_BCM_SUBTYPE_EVENT type messages
-*/
-/*#define BCMILCP_BCM_SUBTYPE_EAPOL		3*/
+ * The EAPOL type is not used anymore. Instead EAPOL messages are now embedded
+ * within BCMILCP_BCM_SUBTYPE_EVENT type messages
+ */
+/* #define BCMILCP_BCM_SUBTYPE_EAPOL		3 */
 
 #define BCMILCP_BCM_SUBTYPEHDR_MINLENGTH	8
 #define BCMILCP_BCM_SUBTYPEHDR_VERSION		0
@@ -85,19 +85,17 @@ within BCMILCP_BCM_SUBTYPE_EVENT type messages
 /* These fields are stored in network order */
 typedef  struct bcmeth_hdr
 {
-	uint16	subtype; /* Vendor specific..32769*/
-	uint16	length; 
-	uint8	version; /* Version is 0*/
-	uint8	oui[3]; /* Broadcom OUI*/
+	uint16	subtype;	/* Vendor specific..32769 */
+	uint16	length;
+	uint8	version;	/* Version is 0 */
+	uint8	oui[3];		/* Broadcom OUI */
 	/* user specific Data */
 	uint16	usr_subtype;
 } PACKED bcmeth_hdr_t;
-
-
 
 #undef PACKED
 #if !defined(__GNUC__)
 #pragma pack()
 #endif
 
-#endif
+#endif	/*  _BCMETH_H_ */

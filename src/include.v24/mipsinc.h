@@ -1,7 +1,7 @@
 /*
  * HND Run Time Environment for standalone MIPS programs.
  *
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -9,7 +9,7 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: mipsinc.h,v 1.1.1.5 2006/02/27 03:43:16 honor Exp $
  */
 
 #ifndef	_MISPINC_H
@@ -59,9 +59,7 @@
 #define ra	$31	/* return address */
 
 
-/*
- * CP0 Registers 
- */
+/* CP0 Registers */
 
 #define C0_INX		$0
 #define C0_RAND		$1
@@ -101,18 +99,25 @@
 #define LEAF(symbol)				\
 		.globl	symbol;			\
 		.align	2;			\
-		.type	symbol,@function;	\
-		.ent	symbol,0;		\
-symbol:		.frame	sp,0,ra
+		.type	symbol, @function;	\
+		.ent	symbol, 0;		\
+symbol:		.frame	sp, 0, ra
 
 /*
  * END - mark end of function
  */
 #define END(function)				\
 		.end	function;		\
-		.size	function,.-function
+		.size	function, . - function
 
 #define _ULCAST_
+
+#define MFC0_SEL(dst, src, sel) \
+		.word\t(0x40000000 | ((dst) << 16) | ((src) << 11) | (sel))
+
+
+#define MTC0_SEL(dst, src, sel) \
+		.word\t(0x40800000 | ((dst) << 16) | ((src) << 11) | (sel))
 
 #else
 
@@ -130,9 +135,7 @@ symbol:		.frame	sp,0,ra
 #define _ULCAST_ (unsigned long)
 
 
-/*
- * CP0 Registers 
- */
+/* CP0 Registers */
 
 #define C0_INX		0		/* CP0: TLB Index */
 #define C0_RAND		1		/* CP0: TLB Random */
@@ -234,7 +237,7 @@ symbol:		.frame	sp,0,ra
 					/* 0x1e is unused */
 #define Hit_Set_Virtual_SI	0x1e
 #define Hit_Set_Virtual_SD	0x1f
-#endif
+#endif	/* !Index_Invalidate_I */
 
 
 /*
@@ -277,7 +280,7 @@ symbol:		.frame	sp,0,ra
 #define ST0_CU1			0x20000000
 #define ST0_CU2			0x40000000
 #define ST0_CU3			0x80000000
-#endif
+#endif	/* !ST0_UM */
 
 
 /*
@@ -336,9 +339,15 @@ symbol:		.frame	sp,0,ra
 #define CONF_DB				(_ULCAST_(1) <<  4)
 #define CONF_IB				(_ULCAST_(1) <<  5)
 #define CONF_SE				(_ULCAST_(1) << 12)
+#ifndef CONF_BE				    /* duplicate in mipsregs.h */
+#define CONF_BE				(_ULCAST_(1) << 15)
+#endif
 #define CONF_SC				(_ULCAST_(1) << 17)
 #define CONF_AC				(_ULCAST_(1) << 23)
 #define CONF_HALT			(_ULCAST_(1) << 25)
+#ifndef CONF_M				    /* duplicate in mipsregs.h */
+#define CONF_M				(_ULCAST_(1) << 31)
+#endif
 
 
 /*
@@ -388,14 +397,17 @@ symbol:		.frame	sp,0,ra
 #define PRID_IMP_UNKNOWN	0xff00
 
 #define BCM330X(id) \
-	(((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == (PRID_COMP_BROADCOM | PRID_IMP_BCM3302)) \
-	|| ((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == (PRID_COMP_BROADCOM | PRID_IMP_BCM3303)))
+		(((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
+		 (PRID_COMP_BROADCOM | PRID_IMP_BCM3302)) || \
+		((id & (PRID_COMP_MASK | PRID_IMP_MASK)) == \
+		 (PRID_COMP_BROADCOM | PRID_IMP_BCM3303)))
 
 /* Bits in C0_BROADCOM */
 #define BRCM_PFC_AVAIL		0x20000000	/* PFC is available */
 #define BRCM_DC_ENABLE		0x40000000	/* Enable Data $ */
 #define BRCM_IC_ENABLE		0x80000000	/* Enable Instruction $ */
 #define BRCM_PFC_ENABLE		0x00400000	/* Obsolete? Enable PFC (at least on 4310) */
+#define BRCM_CLF_ENABLE		0x00100000	/* Enable cache line first feature */
 
 /* PreFetch Cache aka Read Ahead Cache */
 
@@ -424,29 +436,6 @@ symbol:		.frame	sp,0,ra
 #define PFC_I_AND_D		(PFC_INST | PFC_DATA)
 #define PFC_I_AND_D_NOPF	(PFC_INST_NOPF | PFC_DATA_NOPF)
 
-
-/* 
- * These are the UART port assignments, expressed as offsets from the base
- * register.  These assignments should hold for any serial port based on
- * a 8250, 16450, or 16550(A).
- */
-
-#define UART_RX		0	/* In:  Receive buffer (DLAB=0) */
-#define UART_TX		0	/* Out: Transmit buffer (DLAB=0) */
-#define UART_DLL	0	/* Out: Divisor Latch Low (DLAB=1) */
-#define UART_DLM	1	/* Out: Divisor Latch High (DLAB=1) */
-#define UART_LCR	3	/* Out: Line Control Register */
-#define UART_MCR	4	/* Out: Modem Control Register */
-#define UART_LSR	5	/* In:  Line Status Register */
-#define UART_MSR	6	/* In:  Modem Status Register */
-#define UART_SCR	7	/* I/O: Scratch Register */
-#define UART_LCR_DLAB	0x80	/* Divisor latch access bit */
-#define UART_LCR_WLEN8	0x03	/* Wordlength: 8 bits */
-#define UART_MCR_LOOP	0x10	/* Enable loopback test mode */
-#define UART_LSR_THRE	0x20	/* Transmit-hold-register empty */
-#define UART_LSR_RXRDY	0x01	/* Receiver ready */
-
-
 #ifndef	_LANGUAGE_ASSEMBLY
 
 /*
@@ -456,13 +445,13 @@ symbol:		.frame	sp,0,ra
 #define MFC0(source, sel)					\
 ({								\
 	int __res;						\
-	__asm__ __volatile__(					\
-	".set\tnoreorder\n\t"					\
-	".set\tnoat\n\t"					\
-	".word\t"STR(0x40010000 | ((source)<<11) | (sel))"\n\t"	\
-	"move\t%0,$1\n\t"					\
-	".set\tat\n\t"						\
-	".set\treorder"						\
+	__asm__ __volatile__("					\
+	.set\tnoreorder;					\
+	.set\tnoat;						\
+	.word\t"STR(0x40010000 | ((source) << 11) | (sel))";	\
+	move\t%0, $1;						\
+	.set\tat;						\
+	.set\treorder"						\
 	:"=r" (__res)						\
 	:							\
 	:"$1");							\
@@ -471,13 +460,13 @@ symbol:		.frame	sp,0,ra
 
 #define MTC0(source, sel, value)				\
 do {								\
-	__asm__ __volatile__(					\
-	".set\tnoreorder\n\t"					\
-	".set\tnoat\n\t"					\
-	"move\t$1,%z0\n\t"					\
-	".word\t"STR(0x40810000 | ((source)<<11) | (sel))"\n\t"	\
-	".set\tat\n\t"						\
-	".set\treorder"						\
+	__asm__ __volatile__("					\
+	.set\tnoreorder;					\
+	.set\tnoat;						\
+	move\t$1, %z0;						\
+	.word\t"STR(0x40810000 | ((source) << 11) | (sel))";	\
+	.set\tat;						\
+	.set\treorder"						\
 	:							\
 	:"jr" (value)						\
 	:"$1");							\
@@ -486,12 +475,12 @@ do {								\
 #define get_c0_count()						\
 ({								\
 	int __res;						\
-	__asm__ __volatile__(					\
-	".set\tnoreorder\n\t"					\
-	".set\tnoat\n\t"					\
-	"mfc0\t%0,$9\n\t"					\
-	".set\tat\n\t"						\
-	".set\treorder"						\
+	__asm__ __volatile__("					\
+	.set\tnoreorder;					\
+	.set\tnoat;						\
+	mfc0\t%0, $9;						\
+	.set\tat;						\
+	.set\treorder"						\
 	:"=r" (__res));						\
 	__res;							\
 })
@@ -537,10 +526,10 @@ static INLINE void dcache_probe(uint32 config1, uint *size, uint *lsize)
 	__asm__ __volatile__("			\
 		.set noreorder;			\
 		.set mips3;			\
-		cache %1,0(%0);			\
-		cache %1,delta(%0);		\
-		cache %1,(2 * delta)(%0);	\
-		cache %1,(3 * delta)(%0);	\
+		cache %1, 0(%0);		\
+		cache %1, delta(%0);		\
+		cache %1, (2 * delta)(%0);	\
+		cache %1, (3 * delta)(%0);	\
 		.set mips0;			\
 		.set reorder"			\
 		:				\

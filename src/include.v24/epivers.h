@@ -1,5 +1,5 @@
 /*
- * Copyright 2005, Broadcom Corporation
+ * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
  * 
  * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
@@ -7,63 +7,29 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id$
+ * $Id: epivers.h,v 1.1.1.27 2006/04/30 06:13:19 honor Exp $
  *
 */
 
 #ifndef _epivers_h_
 #define _epivers_h_
 
-#ifdef	linux
-#include <linux/config.h>
-#endif
+#define	EPI_MAJOR_VERSION	4
 
-/* Vendor Name, ASCII, 32 chars max */
-#ifdef COMPANYNAME
-#define	HPNA_VENDOR 		COMPANYNAME
-#else
-#define	HPNA_VENDOR 		"Broadcom Corporation"
-#endif
+#define	EPI_MINOR_VERSION	80
 
-/* Driver Date, ASCII, 32 chars max */
-#define HPNA_DRV_BUILD_DATE	__DATE__
+#define	EPI_RC_NUMBER		9
 
-/* Hardware Manufacture Date, ASCII, 32 chars max */
-#define HPNA_HW_MFG_DATE	"Not Specified"
-
-/* See documentation for Device Type values, 32 values max */
-#ifndef	HPNA_DEV_TYPE
-
-#if	defined(CONFIG_BRCM_VJ)
-#define HPNA_DEV_TYPE		{ CDCF_V0_DEVICE_DISPLAY }
-
-#elif	defined(CONFIG_BCRM_93725)
-#define HPNA_DEV_TYPE		{ CDCF_V0_DEVICE_CM_BRIDGE, CDCF_V0_DEVICE_DISPLAY }
-
-#else
-#define HPNA_DEV_TYPE		{ CDCF_V0_DEVICE_PCINIC }
-
-#endif
-
-#endif	/* !HPNA_DEV_TYPE */
-
-
-#define	EPI_MAJOR_VERSION	3
-
-#define	EPI_MINOR_VERSION	130
-
-#define	EPI_RC_NUMBER		20
-
-#define	EPI_INCREMENTAL_NUMBER	0
+#define	EPI_INCREMENTAL_NUMBER	2
 
 #define	EPI_BUILD_NUMBER	0
 
-#define	EPI_VERSION		3,130,20,0
+#define	EPI_VERSION		4, 80, 9, 2
 
-#define	EPI_VERSION_NUM		0x03821400
+#define	EPI_VERSION_NUM		0x04500902
 
 /* Driver Version String, ASCII, 32 chars max */
-#define	EPI_VERSION_STR		"3.130.20.0"
-#define	EPI_ROUTER_VERSION_STR	"3.131.20.0"
+#define	EPI_VERSION_STR		"4.80.9.2"
+#define	EPI_ROUTER_VERSION_STR	"4.81.9.2"
 
 #endif /* _epivers_h_ */

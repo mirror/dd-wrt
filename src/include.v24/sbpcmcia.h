@@ -1,14 +1,15 @@
 /*
  * BCM43XX Sonics SiliconBackplane PCMCIA core hardware definitions.
  *
- * $Id$
- * Copyright 2005, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
+ * Copyright 2006, Broadcom Corporation
+ * All Rights Reserved.
+ * 
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ * $Id: sbpcmcia.h,v 1.1.1.9 2006/02/27 03:43:16 honor Exp $
  */
 
 #ifndef	_SBPCMCIA_H
@@ -117,12 +118,11 @@
 /* Subtypes of BRCM_HNBU: */
 
 #define HNBU_SROMREV		0x00		/* A byte with sromrev, 1 if not present */
-#define HNBU_CHIPID		0x01		/* Six bytes with PCI vendor &
-						 * device id and chiprev
+#define HNBU_CHIPID		0x01		/* Two 16bit values: PCI vendor & device id */
+#define HNBU_BOARDREV		0x02		/* One byte board revision */
+#define HNBU_PAPARMS		0x03		/* PA parameters: 8 (sromrev == 1)
+						 * or 9 (sromrev > 1) bytes
 						 */
-#define HNBU_BOARDREV		0x02		/* Two bytes board revision */
-#define HNBU_PAPARMS		0x03		/* PA parameters: 1 (old), 8 (sreomrev == 1)
-						 * or 9 (sromrev > 1) bytes */
 #define HNBU_OEM		0x04		/* Eight bytes OEM data (sromrev == 1) */
 #define HNBU_CC			0x05		/* Default country code (sromrev == 1) */
 #define	HNBU_AA			0x06		/* Antennas available */
@@ -134,6 +134,7 @@
 						 */
 #define HNBU_CCKPO		0x0b		/* 2 byte cck power offsets in rev 3 */
 #define HNBU_OFDMPO		0x0c		/* 4 byte 11g ofdm power offsets in rev 3 */
+#define HNBU_GPIOTIMER		0x0d		/* 2 bytes with on/off values in rev 3 */
 
 
 /* sbtmstatelow */

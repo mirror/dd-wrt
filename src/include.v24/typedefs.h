@@ -1,12 +1,12 @@
 /*
- * Copyright 2005, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
- * $Id$
+ * Copyright 2006, Broadcom Corporation
+ * All Rights Reserved.
+ * 
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ * $Id: typedefs.h,v 1.1.1.12 2006/04/08 06:13:40 honor Exp $
  */
 
 #ifndef _TYPEDEFS_H_
@@ -28,17 +28,19 @@
 
 #ifdef SITE_TYPEDEFS
 
-/*******************************************************************************
+/*
  * Site Specific Typedefs
- *******************************************************************************/
+ *
+ */
 
 #include "site_typedefs.h"
 
 #else
 
-/*******************************************************************************
+/*
  * Inferred Typedefs
- *******************************************************************************/
+ *
+ */
 
 /* Infer the compile environment based on preprocessor symbols and pramas.
  * Override type definitions as needed, and include configuration dependent
@@ -73,9 +75,18 @@ typedef	unsigned char	bool;			/* consistent w/BOOL */
 typedef ULONG_PTR	uintptr;
 #endif
 
-#ifdef _HNDRTE_
+
+#if defined(_MINOSL_)
+#define _NEED_SIZE_T_
+#endif
+
+#if defined(_NEED_SIZE_T_)
 typedef long unsigned int size_t;
 #endif
+
+#ifdef __DJGPP__
+typedef long unsigned int size_t;
+#endif /* __DJGPP__ */
 
 #ifdef _MSC_VER	    /* Microsoft C */
 #define TYPEDEF_INT64
@@ -84,8 +95,12 @@ typedef signed __int64	int64;
 typedef unsigned __int64 uint64;
 #endif
 
-#if defined(MACOSX) && defined(KERNEL)
+#if defined(MACOSX)
 #define TYPEDEF_BOOL
+#endif
+
+#if defined(__NetBSD__)
+#define TYPEDEF_ULONG
 #endif
 
 
@@ -95,7 +110,8 @@ typedef unsigned __int64 uint64;
 #define TYPEDEF_ULONG
 #endif
 
-#if !defined(linux) && !defined(_WIN32) && !defined(PMON) && !defined(_CFE_) && !defined(_HNDRTE_) && !defined(_MINOSL_)
+#if !defined(linux) && !defined(_WIN32) && !defined(_CFE_) && \
+	!defined(_HNDRTE_) && !defined(_MINOSL_) && !defined(__DJGPP__)
 #define TYPEDEF_UINT
 #define TYPEDEF_USHORT
 #endif
@@ -108,7 +124,8 @@ typedef unsigned __int64 uint64;
 #endif
 
 /* ICL accepts unsigned 64 bit type only, and complains in ANSI mode
- * for singned or unsigned */
+ * for singned or unsigned
+ */
 #if defined(__ICL)
 
 #define TYPEDEF_INT64
@@ -119,8 +136,8 @@ typedef unsigned __int64 uint64;
 
 #endif /* __ICL */
 
-
-#if !defined(_WIN32) && !defined(PMON) && !defined(_CFE_) && !defined(_HNDRTE_) && !defined(_MINOSL_)
+#if !defined(_WIN32) && !defined(_CFE_) && !defined(_MINOSL_) && \
+	!defined(__DJGPP__)
 
 /* pick up ushort & uint from standard types.h */
 #if defined(linux) && defined(__KERNEL__)
@@ -129,15 +146,42 @@ typedef unsigned __int64 uint64;
 
 #else
 
-#include <sys/types.h>	
+#include <sys/types.h>
 
 #endif
 
-#endif /* !_WIN32 && !PMON && !_CFE_ && !_HNDRTE_  && !_MINOSL_ */
+#endif /* !_WIN32 && !PMON && !_CFE_ && !_HNDRTE_  && !_MINOSL_ && !__DJGPP__ */
 
-#if defined(MACOSX) && defined(KERNEL)
+#if defined(MACOSX)
+
+#ifdef __BIG_ENDIAN__
+#define IL_BIGENDIAN
+#else
+#ifdef IL_BIGENDIAN
+#error "IL_BIGENDIAN was defined for a little-endian compile"
+#endif
+#endif /* __BIG_ENDIAN__ */
+
+#if !defined(__cplusplus)
+
+#if defined(__i386__)
+typedef unsigned char bool;
+#else
+typedef unsigned int bool;
+#endif
+#define TYPE_BOOL 1
+enum {
+    false	= 0,
+    true	= 1
+};
+
+#if defined(KERNEL)
 #include <IOKit/IOTypes.h>
-#endif
+#endif /* KERNEL */
+
+#endif /* __cplusplus */
+
+#endif /* MACOSX */
 
 
 /* use the default typedefs in the next section of this file */
@@ -146,18 +190,19 @@ typedef unsigned __int64 uint64;
 #endif /* SITE_TYPEDEFS */
 
 
-/*******************************************************************************
+/*
  * Default Typedefs
- *******************************************************************************/
+ *
+ */
 
 #ifdef USE_TYPEDEF_DEFAULTS
 #undef USE_TYPEDEF_DEFAULTS
 
 #ifndef TYPEDEF_BOOL
-typedef	/*@abstract@*/ unsigned char	bool;
+typedef	/* @abstract@ */ unsigned char	bool;
 #endif
 
-/*----------------------- define uchar, ushort, uint, ulong ------------------*/
+/* define uchar, ushort, uint, ulong */
 
 #ifndef TYPEDEF_UCHAR
 typedef unsigned char	uchar;
@@ -175,7 +220,7 @@ typedef unsigned int	uint;
 typedef unsigned long	ulong;
 #endif
 
-/*----------------------- define [u]int8/16/32/64, uintptr --------------------*/
+/* define [u]int8/16/32/64, uintptr */
 
 #ifndef TYPEDEF_UINT8
 typedef unsigned char	uint8;
@@ -213,7 +258,7 @@ typedef signed int	int32;
 typedef signed long long int64;
 #endif
 
-/*----------------------- define float32/64, float_t -----------------------*/
+/* define float32/64, float_t */
 
 #ifndef TYPEDEF_FLOAT32
 typedef float		float32;
@@ -239,14 +284,14 @@ typedef float64 float_t;
 
 #endif /* TYPEDEF_FLOAT_T */
 
-/*----------------------- define macro values -----------------------------*/
+/* define macro values */
 
 #ifndef FALSE
 #define FALSE	0
 #endif
 
 #ifndef TRUE
-#define TRUE	1
+#define TRUE	1  /* TRUE */
 #endif
 
 #ifndef NULL
@@ -258,31 +303,15 @@ typedef float64 float_t;
 #endif
 
 #ifndef ON
-#define	ON	1
+#define	ON	1  /* ON = 1 */
 #endif
 
-#define	AUTO	(-1)
+#define	AUTO	(-1) /* Auto = -1 */
 
-/* Reclaiming text and data :
-   The following macros specify special linker sections that can be reclaimed
-   after a system is considered 'up'.
- */ 
-#if defined(__GNUC__) && defined(BCMRECLAIM)
-extern bool	bcmreclaimed;
-#define BCMINITDATA(_data)	__attribute__ ((__section__ (".dataini." #_data))) _data##_ini		
-#define BCMINITFN(_fn)		__attribute__ ((__section__ (".textini." #_fn))) _fn##_ini
-#define BCMINIT(_id)		_id##_ini
-#else 
-#define BCMINITDATA(_data)	_data		
-#define BCMINITFN(_fn)		_fn
-#define BCMINIT(_id)		_id
-#define bcmreclaimed		0
-#endif
-
-/*----------------------- define PTRSZ, INLINE ----------------------------*/
+/* define PTRSZ, INLINE */
 
 #ifndef PTRSZ
-#define	PTRSZ	sizeof (char*)
+#define	PTRSZ	sizeof(char*)
 #endif
 
 #ifndef INLINE
@@ -322,5 +351,11 @@ extern bool	bcmreclaimed;
 #undef TYPEDEF_FLOAT_T
 
 #endif /* USE_TYPEDEF_DEFAULTS */
+
+/* 
+ * Including the bcmdefs.h here, to make sure everyone including typedefs.h 
+ * gets this automatically 
+*/
+#include <bcmdefs.h>
 
 #endif /* _TYPEDEFS_H_ */

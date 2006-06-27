@@ -1,14 +1,15 @@
 /*
  * Broadcom SiliconBackplane hardware register definitions.
  *
- * Copyright 2005, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
- * $Id$
+ * Copyright 2006, Broadcom Corporation
+ * All Rights Reserved.
+ * 
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ * $Id: sbconfig.h,v 1.1.1.11 2006/02/27 03:43:16 honor Exp $
  */
 
 #ifndef	_SBCONFIG_H
@@ -27,6 +28,7 @@
  */
 #define SB_SDRAM_BASE		0x00000000	/* Physical SDRAM */
 #define SB_PCI_MEM		0x08000000	/* Host Mode sb2pcitranslation0 (64 MB) */
+#define SB_PCI_MEM_SZ		(64 * 1024 * 1024)
 #define SB_PCI_CFG		0x0c000000	/* Host Mode sb2pcitranslation1 (64 MB) */
 #define	SB_SDRAM_SWAPPED	0x10000000	/* Byteswapped Physical SDRAM */
 #define SB_ENUM_BASE    	0x18000000	/* Enumeration space base */
@@ -36,13 +38,22 @@
 #define	SB_FLASH2_SZ		0x02000000	/* Size of Flash Region 2 */
 
 #define	SB_EXTIF_BASE		0x1f000000	/* External Interface region base address */
-#define	SB_FLASH1		0x1fc00000	/* Flash Region 1 */
-#define	SB_FLASH1_SZ		0x00400000	/* Size of Flash Region 1 */
+#define	SB_FLASH1		0x1fc00000	/* MIPS Flash Region 1 */
+#define	SB_FLASH1_SZ		0x00400000	/* MIPS Size of Flash Region 1 */
+
+#define	SB_ROM			0x20000000	/* ARM ROM */
+#define	SB_SRAM2		0x80000000	/* ARM SRAM Region 2 */
+#define	SB_ARM_FLASH1		0xffff0000	/* ARM Flash Region 1 */
+#define	SB_ARM_FLASH1_SZ	0x00010000	/* ARM Size of Flash Region 1 */
 
 #define SB_PCI_DMA		0x40000000	/* Client Mode sb2pcitranslation2 (1 GB) */
 #define SB_PCI_DMA_SZ		0x40000000	/* Client Mode sb2pcitranslation2 size in bytes */
-#define SB_PCIE_DMA_L32		0x00000000	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), low 32 bits */
-#define SB_PCIE_DMA_H32		0x80000000	/* PCIE Client Mode sb2pcitranslation2 (2 ZettaBytes), high 32 bits */
+#define SB_PCIE_DMA_L32		0x00000000	/* PCIE Client Mode sb2pcitranslation2
+						 * (2 ZettaBytes), low 32 bits
+						 */
+#define SB_PCIE_DMA_H32		0x80000000	/* PCIE Client Mode sb2pcitranslation2
+						 * (2 ZettaBytes), high 32 bits
+						 */
 #define	SB_EUART		(SB_EXTIF_BASE + 0x00800000)
 #define	SB_LED			(SB_EXTIF_BASE + 0x00900000)
 
@@ -50,6 +61,7 @@
 /* enumeration space related defs */
 #define SB_CORE_SIZE    	0x1000		/* each core gets 4Kbytes for registers */
 #define	SB_MAXCORES		((SB_ENUM_LIM - SB_ENUM_BASE)/SB_CORE_SIZE)
+#define SB_MAXFUNCS		4		/* max. # functions per core */
 #define	SBCONFIGOFF		0xf00		/* core sbconfig regs are top 256bytes of regs */
 #define	SBCONFIGSIZE		256		/* sizeof (sbconfig_t) */
 
@@ -82,6 +94,16 @@
 #define	SBFLAGST		0xe8
 #define SBIDLOW			0xf8
 #define SBIDHIGH		0xfc
+
+/* All the previous registers are above SBCONFIGOFF, but with Sonics 2.3, we have
+ * a few registers *below* that line. I think it would be very confusing to try
+ * and change the value of SBCONFIGOFF, so I'm definig them as absolute offsets here,
+ */
+
+#define SBIMERRLOGA		0xea8
+#define SBIMERRLOG		0xeb0
+#define SBTMPORTCONNID0		0xed8
+#define SBTMPORTLOCK0		0xef8
 
 #ifndef _LANGUAGE_ASSEMBLY
 
@@ -288,6 +310,7 @@ typedef volatile struct _sbconfig {
 #define	SB_VEND_BCM		0x4243		/* Broadcom's SB vendor code */
 
 /* core codes */
+#define	SB_NODEV		0x700		/* Invalid coreid */
 #define	SB_CC			0x800		/* chipcommon core */
 #define	SB_ILINE20		0x801		/* iline20 core */
 #define	SB_SDRAM		0x803		/* sdram core */
@@ -300,6 +323,7 @@ typedef volatile struct _sbconfig {
 #define	SB_ILINE100		0x80a		/* iline100 core */
 #define	SB_IPSEC		0x80b		/* ipsec core */
 #define	SB_PCMCIA		0x80d		/* pcmcia core */
+#define SB_SDIOD		SB_PCMCIA	/* pcmcia core has sdio device */
 #define	SB_SOCRAM		0x80e		/* internal memory core */
 #define	SB_MEMC			0x80f		/* memc sdram core */
 #define	SB_EXTIF		0x811		/* external interface core */
@@ -315,8 +339,11 @@ typedef volatile struct _sbconfig {
 #define	SB_SATAXOR		0x81e		/* serial ATA & XOR DMA core */
 #define	SB_GIGETH		0x81f		/* gigabit ethernet core */
 #define	SB_PCIE			0x820		/* pci express core */
+#define	SB_MIMO			0x821		/* MIMO phy core */
 #define	SB_SRAMC		0x822		/* SRAM controller core */
 #define	SB_MINIMAC		0x823		/* MINI MAC/phy core */
+#define	SB_ARM11		0x824		/* ARM 1176 core */
+#define	SB_ARM7			0x825		/* ARM 7tdmi core */
 
 #define	SB_CC_IDX		0		/* chipc, when present, is always core 0 */
 

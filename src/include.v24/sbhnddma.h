@@ -2,47 +2,19 @@
  * Generic Broadcom Home Networking Division (HND) DMA engine HW interface
  * This supports the following chips: BCM42xx, 44xx, 47xx .
  *
- * Copyright 2005, Broadcom Corporation      
- * All Rights Reserved.      
- *       
- * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY      
- * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM      
- * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS      
- * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.      
- * $Id$
+ * Copyright 2006, Broadcom Corporation
+ * All Rights Reserved.
+ * 
+ * THIS SOFTWARE IS OFFERED "AS IS", AND BROADCOM GRANTS NO WARRANTIES OF ANY
+ * KIND, EXPRESS OR IMPLIED, BY STATUTE, COMMUNICATION OR OTHERWISE. BROADCOM
+ * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
+ * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
+ *
+ * $Id: sbhnddma.h,v 1.1.1.2 2006/02/27 03:43:16 honor Exp $
  */
 
 #ifndef	_sbhnddma_h_
 #define	_sbhnddma_h_
-
- 
-/* 2byte-wide pio register set per channel(xmt or rcv) */
-typedef volatile struct {
-	uint16	fifocontrol;
-	uint16	fifodata;
-	uint16	fifofree;	/* only valid in xmt channel, not in rcv channel */
-	uint16	PAD;
-} pio2regs_t;
-
-/* a pair of pio channels(tx and rx) */
-typedef volatile struct {
-	pio2regs_t	tx;
-	pio2regs_t	rx;
-} pio2regp_t;
-
-/* 4byte-wide pio register set per channel(xmt or rcv) */
-typedef volatile struct {
-	uint32	fifocontrol;
-	uint32	fifodata;
-} pio4regs_t;
-
-/* a pair of pio channels(tx and rx) */
-typedef volatile struct {
-	pio4regs_t	tx;
-	pio4regs_t	rx;
-} pio4regp_t;
-
-
 
 /* DMA structure:
  *  support two DMA engines: 32 bits address or 64 bit addressing
@@ -51,7 +23,7 @@ typedef volatile struct {
  */
 
 
-/*** 32 bits addressing ***/ 
+/* 32 bits addressing */
 
 /* dma registers per channel(xmt or rcv) */
 typedef volatile struct {
@@ -175,7 +147,7 @@ typedef volatile struct {
 /* control flags in the range [27:20] are core-specific and not defined here */
 #define	CTRL_CORE_MASK	0x0ff00000
 
-/*** 64 bits addressing ***/
+/* 64 bits addressing */
 
 /* dma registers per channel(xmt or rcv) */
 typedef volatile struct {
@@ -206,8 +178,8 @@ typedef volatile struct {		/* diag access */
 typedef volatile struct {
 	uint32	ctrl1;		/* misc control bits & bufcount */
 	uint32	ctrl2;		/* buffer count and address extension */
-	uint32	addrlow;	/* memory address of the first byte of the date buffer, bits 31:0 */
-	uint32	addrhigh;	/* memory address of the first byte of the date buffer, bits 63:32 */
+	uint32	addrlow;	/* memory address of the date buffer, bits 31:0 */
+	uint32	addrhigh;	/* memory address of the date buffer, bits 63:32 */
 } dma64dd_t;
 
 /*
@@ -222,7 +194,7 @@ typedef volatile struct {
 #define	D64_XC_SE		0x00000002	/* transmit suspend request */
 #define	D64_XC_LE		0x00000004	/* loopback enable */
 #define	D64_XC_FL		0x00000010	/* flush request */
-#define	D64_XC_AE		0x00110000	/* address extension bits */
+#define	D64_XC_AE		0x00030000	/* address extension bits */
 #define	D64_XC_AE_SHIFT		16
 
 /* transmit descriptor table pointer */
@@ -253,7 +225,7 @@ typedef volatile struct {
 #define	D64_RC_RO_MASK		0x000000fe	/* receive frame offset */
 #define	D64_RC_RO_SHIFT		1
 #define	D64_RC_FM		0x00000100	/* direct fifo receive (pio) mode */
-#define	D64_RC_AE		0x00110000	/* address extension bits */
+#define	D64_RC_AE		0x00030000	/* address extension bits */
 #define	D64_RC_AE_SHIFT		16
 
 /* receive descriptor table pointer */
@@ -302,7 +274,7 @@ typedef volatile struct {
 
 /* descriptor control flags 2 */
 #define	D64_CTRL2_BC_MASK	0x00007fff	/* buffer byte count mask */
-#define	D64_CTRL2_AE		0x00110000	/* address extension bits */
+#define	D64_CTRL2_AE		0x00030000	/* address extension bits */
 #define	D64_CTRL2_AE_SHIFT	16
 
 /* control flags in the range [27:20] are core-specific and not defined here */
