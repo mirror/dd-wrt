@@ -1336,10 +1336,6 @@ start_wan (int status)
 	    start_redial ();
 	}
     }
-#else
-  if (0)
-    {
-    }
 #endif
   else if (strcmp (wan_proto, "dhcp") == 0)
     {
@@ -1375,10 +1371,8 @@ start_wan (int status)
       start_wan_done (wan_ifname);
     }
   cprintf ("dhcp client ready\n");
+
   /* Get current WAN hardware address */
-
-
-
   strncpy (ifr.ifr_name, wan_ifname, IFNAMSIZ);
   cprintf ("get current hardware adress");
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
