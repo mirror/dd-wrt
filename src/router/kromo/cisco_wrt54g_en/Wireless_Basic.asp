@@ -1,6 +1,8 @@
 <% do_pagehead(); %>
 		<title><% nvram_get("router_name"); %> - Wireless</title>
 		<script type="text/javascript">
+		
+document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
 var EN_DIS = '<% nvram_else_match("wl_gmode","-1","0","1"); %>';
 function SelWL(num,F) {
@@ -29,7 +31,7 @@ function wl_enable_disable(F,I) {
 }
 
 function vifs_add_submit(F,I) {
-	F.interface.value = I;
+	F.iface.value = I;
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "add_vifs";
@@ -37,7 +39,7 @@ function vifs_add_submit(F,I) {
 	F.submit();
 }
 function vifs_remove_submit(F,I) {
-	F.interface.value = I;
+	F.iface.value = I;
 	F.change_action.value = "gozila_cgi";
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "remove_vifs";
@@ -74,29 +76,30 @@ function init() {
                <div id="logo">
                   <h1><% show_control(); %></h1>
                </div>
-               <div id="menu">
-                  <div id="menuMain">
-                     <ul id="menuMainList">
-                        <li><a href="index.asp">Setup</a></li>
-                        <li class="current"><span>Wireless</span><div id="menuSub">
-                              <ul id="menuSubList">
-                                 <li><span>Basic Settings</span></li>
-                                 <li><a href="Wireless_radauth.asp">Radius</a></li>
-                                 <li><a href="WL_WPATable.asp">Wireless Security</a></li>
-                                 <li><a href="Wireless_MAC.asp">MAC Filter</a></li>
-                                 <li><a href="Wireless_Advanced.asp">Advanced Settings</a></li>
-                                 <li><a href="Wireless_WDS.asp">WDS</a></li>
-                              </ul>
-                           </div>
-                        </li>
-			<% nvram_invmatch("sipgate","1","<!--"); %>
-			<li><a href="Sipath.asp">SIPatH</a></li>
-                        <% nvram_invmatch("sipgate","1","-->"); %>
-                        <li><a href="Firewall.asp">Security</a></li>
-                        <li><a href="Filters.asp">Access Restrictions</a></li>
-                        <li><a href="Forward.asp">Applications&nbsp;&amp;&nbsp;Gaming</a></li>
-                        <li><a href="Management.asp">Administration</a></li>
-                        <li><a href="Status_Router.asp">Status</a></li>
+          <div id="menu">
+            <div id="menuMain">
+              <ul id="menuMainList">
+                <li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+                <li class="current"><span><% tran("bmenu.wireless"); %></span>
+                  <div id="menuSub">
+                      <ul id="menuSubList">
+                      <li><span><% tran("bmenu.wirelessBasic"); %></span></li>
+                      <li><a href="Wireless_radauth.asp"><% tran("bmenu.wirelessRadius"); %></a></li>
+                      <li><a href="WL_WPATable.asp"><% tran("bmenu.wirelessSecurity"); %></a></li>
+                      <li><a href="Wireless_MAC.asp"><% tran("bmenu.wirelessMac"); %></a></li>
+                      <li><a href="Wireless_Advanced.asp"><% tran("bmenu.wirelessAdvanced"); %></a></li>
+                      <li><a href="Wireless_WDS.asp"><% tran("bmenu.wirelessWds"); %></a></li>
+                    </ul>
+                  </div>
+                </li>
+                <% nvram_invmatch("sipgate","1","<!--"); %>
+                <li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
+                <% nvram_invmatch("sipgate","1","-->"); %>
+                <li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+                <li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+                <li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+                <li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+                <li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
                      </ul>
                   </div>
                </div>
@@ -107,7 +110,7 @@ function init() {
 		  <input type="hidden" name="submit_button" value="Wireless_Basic" />
 		  <input type="hidden" name="submit_type" />
 		  <input type="hidden" name="change_action" />
-		  <input type="hidden" name="interface" />
+		  <input type="hidden" name="iface" />
 		  <input type="hidden" name="action" value="Apply" />
 		        <% show_wireless(); %>
 		    <br /><div class="submitFooter"><input type="button" name="save_button" value="Save Settings" onclick="to_submit(this.form)" /><input type="reset" value="Cancel Changes" /></div>
