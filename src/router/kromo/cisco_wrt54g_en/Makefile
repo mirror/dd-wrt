@@ -226,7 +226,7 @@ ifeq ($(CONFIG_34TELECOM),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp cyan/style.css $(INSTALLDIR)/www/style/cyan
 	cp cyan/style_ie.css $(INSTALLDIR)/www/style/cyan
-	cp cyan/common.css $(INSTALLDIR)/www/style
+	cp 34telecom/common.css $(INSTALLDIR)/www/style
 #	cp cyan/logo.png $(INSTALLDIR)/www/style
 	cp -f 34telecom/logo.png $(INSTALLDIR)/www/style/
 else
