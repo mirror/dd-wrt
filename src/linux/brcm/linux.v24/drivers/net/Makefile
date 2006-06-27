@@ -47,7 +47,7 @@ endif
 subdir-$(CONFIG_ET) += et
 subdir-$(CONFIG_BRCMSWITCH) += switch
 subdir-$(CONFIG_ROBO) += robo
-#subdir-$(CONFIG_WL) += wl
+subdir-$(CONFIG_WL) += wl
 ifdef CONFIG_LED	#added by Jerry Lee
 subdir-$(CONFIG_LED) += led
 endif
@@ -88,9 +88,9 @@ obj-$(CONFIG_SUNGEM) += sungem.o
 ifeq ($(CONFIG_ET),y)
   obj-y += et/et.o
 endif
-#ifeq ($(CONFIG_WL),y)
-#  obj-y += wl/wl.o
-#endif
+ifeq ($(CONFIG_WL),y)
+  obj-y += wl/wl.o
+endif
 
 obj-$(CONFIG_MACE) += mace.o
 obj-$(CONFIG_BMAC) += bmac.o
