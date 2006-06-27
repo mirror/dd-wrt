@@ -192,7 +192,7 @@ period_check (int sig)
 		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
 		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
 		  	(brand == ROUTER_BUFFALO_WBR54G) ||
-		  	(brand == ROUTER_BUFFALO_WBR2G54S)
+		  	(brand == ROUTER_BUFFALO_WBR2G54S))
 		{
 		  printf ("resetbutton: factory default.\n");
 		  if (brand == ROUTER_BUFFALO_WBR54G)
