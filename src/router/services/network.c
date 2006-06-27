@@ -438,9 +438,7 @@ unsigned char mac[20];
 #ifdef HAVE_MSSID
   char tmac[16];
   sprintf (tmac, "%s_hwaddr", "wl0");
-  char mymac[32];
-  getMacAddr(wl_face,mymac);
-  nvram_set (tmac,mymac);
+  nvram_set (tmac,mac);
 
   char *next2;
   char var[80];
@@ -449,9 +447,8 @@ unsigned char mac[20];
     foreach (var, vifs, next2)
     {
       sprintf (tmac, "%s_hwaddr", var);
-     getMacAddr(var,mymac);
-	nvram_set (tmac, mymac);
       MAC_ADD (mac);
+      nvram_set (tmac, mac);
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
       strncpy (ifr.ifr_name, var, IFNAMSIZ);
