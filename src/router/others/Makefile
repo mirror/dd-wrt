@@ -16,7 +16,11 @@ ifdef CONFIG_SER
 else
 	install profile $(INSTALLDIR)/etc
 endif
+ifeq ($(CONFIG_MSSID),y)
 	install motd $(INSTALLDIR)/etc
+else
+	install motd.v23 $(INSTALLDIR)/etc/motd
+endif
 	install fstab $(INSTALLDIR)/etc
 	install ethertypes $(INSTALLDIR)/etc
 	install protocols $(INSTALLDIR)/etc
