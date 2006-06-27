@@ -111,7 +111,11 @@ site_survey_main (int argc, char *argv[])
       strcpy (site_survey_lists[i].SSID, bss_info->SSID);
       strcpy (site_survey_lists[i].BSSID,
 	      ether_etoa (bss_info->BSSID.octet, mac));
+#ifndef HAVE_MSSID
       site_survey_lists[i].channel = bss_info->channel;
+#else
+      site_survey_lists[i].channel = bss_info->chanspec&0xff;
+#endif
       site_survey_lists[i].RSSI = bss_info->RSSI;
       site_survey_lists[i].phy_noise = bss_info->phy_noise;
       site_survey_lists[i].beacon_period = bss_info->beacon_period;
