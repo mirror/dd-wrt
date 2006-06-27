@@ -1,0 +1,386 @@
+## Automatically generated incremental diff
+## From:   linux-2.4.33-pre2
+## To:     linux-2.4.33-pre3
+## Robot:  $Id: make-incremental-diff,v 1.12 2004/01/06 07:19:36 hpa Exp $
+
+diff -urN linux-2.4.33-pre2/Makefile linux-2.4.33-pre3/Makefile
+--- linux-2.4.33-pre2/Makefile	2006-05-01 07:11:11.565956321 +0000
++++ linux-2.4.33-pre3/Makefile	2006-05-01 07:11:13.862203387 +0000
+@@ -1,7 +1,7 @@
+ VERSION = 2
+ PATCHLEVEL = 4
+ SUBLEVEL = 33
+-EXTRAVERSION = -pre2
++EXTRAVERSION = -pre3
+ 
+ KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ 
+diff -urN linux-2.4.33-pre2/arch/i386/kernel/i387.c linux-2.4.33-pre3/arch/i386/kernel/i387.c
+--- linux-2.4.33-pre2/arch/i386/kernel/i387.c	2005-04-04 01:42:19.000000000 +0000
++++ linux-2.4.33-pre3/arch/i386/kernel/i387.c	2006-05-01 07:11:13.786195209 +0000
+@@ -11,6 +11,7 @@
+ #include <linux/config.h>
+ #include <linux/sched.h>
+ #include <linux/init.h>
++#include <linux/kernel_stat.h>
+ #include <asm/processor.h>
+ #include <asm/i387.h>
+ #include <asm/math_emu.h>
+@@ -70,8 +71,12 @@
+ static inline void __save_init_fpu( struct task_struct *tsk )
+ {
+ 	if ( cpu_has_fxsr ) {
+-		asm volatile( "fxsave %0 ; fnclex"
++		asm volatile( "fxsave %0"
+ 			      : "=m" (tsk->thread.i387.fxsave) );
++		if (tsk->thread.i387.fxsave.swd & (1<<7))
++			asm volatile("fnclex");
++		/* AMD CPUs leak F?P. Clear it here */
++		asm volatile("ffree %%st(7) ; fildl %0" :: "m" (kstat.context_swtch));
+ 	} else {
+ 		asm volatile( "fnsave %0 ; fwait"
+ 			      : "=m" (tsk->thread.i387.fsave) );
+diff -urN linux-2.4.33-pre2/arch/parisc/kernel/ioctl32.c linux-2.4.33-pre3/arch/parisc/kernel/ioctl32.c
+--- linux-2.4.33-pre2/arch/parisc/kernel/ioctl32.c	2005-01-19 14:09:34.000000000 +0000
++++ linux-2.4.33-pre3/arch/parisc/kernel/ioctl32.c	2006-05-01 07:11:13.790195639 +0000
+@@ -35,6 +35,7 @@
+ #include <linux/cdrom.h>
+ #include <linux/loop.h>
+ #include <linux/auto_fs.h>
++#include <linux/auto_fs4.h>
+ #include <linux/devfs_fs.h>
+ #include <linux/tty.h>
+ #include <linux/vt_kern.h>
+diff -urN linux-2.4.33-pre2/arch/ppc64/kernel/ioctl32.c linux-2.4.33-pre3/arch/ppc64/kernel/ioctl32.c
+--- linux-2.4.33-pre2/arch/ppc64/kernel/ioctl32.c	2005-11-16 19:12:54.000000000 +0000
++++ linux-2.4.33-pre3/arch/ppc64/kernel/ioctl32.c	2006-05-01 07:11:13.794196069 +0000
+@@ -49,6 +49,7 @@
+ #include <linux/cdrom.h>
+ #include <linux/loop.h>
+ #include <linux/auto_fs.h>
++#include <linux/autofs_4.h>
+ #include <linux/devfs_fs.h>
+ #include <linux/tty.h>
+ #include <linux/vt_kern.h>
+diff -urN linux-2.4.33-pre2/arch/ppc64/kernel/signal.c linux-2.4.33-pre3/arch/ppc64/kernel/signal.c
+--- linux-2.4.33-pre2/arch/ppc64/kernel/signal.c	2005-01-19 14:09:36.000000000 +0000
++++ linux-2.4.33-pre3/arch/ppc64/kernel/signal.c	2006-05-01 07:11:13.794196069 +0000
+@@ -332,7 +332,7 @@
+ }
+ 
+ 
+-asmlinkage int
++asmlinkage long
+ sys_rt_sigreturn(unsigned long r3, unsigned long r4, unsigned long r5,
+ 		 unsigned long r6, unsigned long r7, unsigned long r8,
+ 		 struct pt_regs *regs)
+diff -urN linux-2.4.33-pre2/arch/x86_64/kernel/process.c linux-2.4.33-pre3/arch/x86_64/kernel/process.c
+--- linux-2.4.33-pre2/arch/x86_64/kernel/process.c	2005-11-16 19:12:54.000000000 +0000
++++ linux-2.4.33-pre3/arch/x86_64/kernel/process.c	2006-05-01 07:11:13.806197361 +0000
+@@ -564,8 +564,6 @@
+ 				 *next = &next_p->thread;
+ 	struct tss_struct *tss = init_tss + smp_processor_id();
+ 
+-	unlazy_fpu(prev_p);
+-
+ 	/*
+ 	 * Reload rsp0, LDT and the page table pointer:
+ 	 */
+@@ -583,6 +581,11 @@
+ 		loadsegment(ds, next->ds);
+ 
+ 	/* 
++  	 * Must be after DS reload for AMD workaround.
++	 */
++	unlazy_fpu(prev_p);
++
++	/* 
+ 	 * Switch FS and GS.
+ 	 */
+ 	{ 
+diff -urN linux-2.4.33-pre2/arch/x86_64/kernel/signal.c linux-2.4.33-pre3/arch/x86_64/kernel/signal.c
+--- linux-2.4.33-pre2/arch/x86_64/kernel/signal.c	2005-01-19 14:09:40.000000000 +0000
++++ linux-2.4.33-pre3/arch/x86_64/kernel/signal.c	2006-05-01 07:11:13.806197361 +0000
+@@ -137,15 +137,16 @@
+ 
+ 
+ #define COPY(x)		err |= __get_user(regs->x, &sc->x)
+-#define COPY_CANON(x)   \
+-	COPY(x); \
+-	if ((regs->x >> 48)  != 0 && (regs->x >> 48) != 0xffff) \
+-				regs->x = 0; 
+ 
+ 	/* fs and gs are ignored because we cannot handle the 64bit base easily */ 
+ 
+-	COPY(rdi); COPY(rsi); COPY(rbp); COPY_CANON(rsp); COPY(rbx);
+-	COPY(rdx); COPY(rcx); COPY_CANON(rip);
++	COPY(rdi); COPY(rsi); COPY(rbp); COPY(rsp); COPY(rbx);
++	COPY(rdx); COPY(rcx); 
++	COPY(rip);
++	if (regs->rip >= TASK_SIZE && regs->rip < VSYSCALL_START) { 
++		regs->rip = 0;
++		return -EFAULT;
++	}
+ 	COPY(r8);
+ 	COPY(r9);
+ 	COPY(r10);
+@@ -357,6 +358,11 @@
+ 	regs->rdx = (unsigned long)&frame->uc; 
+ 	regs->rsp = (unsigned long) frame;
+ 	regs->rip = (unsigned long) ka->sa.sa_handler;
++	if (regs->rip >= TASK_SIZE) { 
++		if (sig == SIGSEGV)
++			ka->sa.sa_handler = SIG_DFL;
++		regs->rip = 0;
++	}
+ 	regs->cs = __USER_CS;
+ 	regs->ss = __USER_DS; 
+ 
+diff -urN linux-2.4.33-pre2/drivers/char/drm/drm_stub.h linux-2.4.33-pre3/drivers/char/drm/drm_stub.h
+--- linux-2.4.33-pre2/drivers/char/drm/drm_stub.h	2003-11-28 18:26:20.000000000 +0000
++++ linux-2.4.33-pre3/drivers/char/drm/drm_stub.h	2006-05-01 07:11:13.822199082 +0000
+@@ -52,6 +52,7 @@
+ 	int                    err   = -ENODEV;
+ 	struct file_operations *old_fops;
+ 
++	if (minor < 0 || minor >=DRM_STUB_MAXCARDS) return -ENODEV;
+ 	if (!DRM(stub_list) || !DRM(stub_list)[minor].fops) return -ENODEV;
+ 	old_fops   = filp->f_op;
+ 	filp->f_op = fops_get(DRM(stub_list)[minor].fops);
+diff -urN linux-2.4.33-pre2/drivers/input/Config.in linux-2.4.33-pre3/drivers/input/Config.in
+--- linux-2.4.33-pre2/drivers/input/Config.in	2006-05-01 07:11:11.533952878 +0000
++++ linux-2.4.33-pre3/drivers/input/Config.in	2006-05-01 07:11:13.822199082 +0000
+@@ -8,7 +8,7 @@
+ tristate 'Input core support' CONFIG_INPUT
+ dep_tristate '  Keyboard support' CONFIG_INPUT_KEYBDEV $CONFIG_INPUT
+ 
+-if [ "$CONFIG_INPUT_KEYBDEV" == "n" ]; then
++if [ "$CONFIG_INPUT_KEYBDEV" = "n" ]; then
+ 	bool '  Use dummy keyboard driver' CONFIG_DUMMY_KEYB $CONFIG_INPUT
+ fi
+ 
+diff -urN linux-2.4.33-pre2/drivers/net/e1000/e1000_main.c linux-2.4.33-pre3/drivers/net/e1000/e1000_main.c
+--- linux-2.4.33-pre2/drivers/net/e1000/e1000_main.c	2005-04-04 01:42:19.000000000 +0000
++++ linux-2.4.33-pre3/drivers/net/e1000/e1000_main.c	2006-05-01 07:11:13.826199513 +0000
+@@ -2755,7 +2755,7 @@
+ 		if (e1000_write_phy_reg(&adapter->hw, data->reg_num,
+ 					mii_reg))
+ 			return -EIO;
+-		if (adapter->hw.phy_type == e1000_phy_m88) {
++		if (adapter->hw.media_type == e1000_media_type_copper) {
+ 			switch (data->reg_num) {
+ 			case PHY_CTRL:
+ 				if(mii_reg & MII_CR_POWER_DOWN)
+@@ -2771,8 +2771,8 @@
+ 					else
+ 						spddplx = SPEED_10;
+ 					spddplx += (mii_reg & 0x100)
+-						   ? FULL_DUPLEX :
+-						   HALF_DUPLEX;
++						   ? DUPLEX_FULL :
++						   DUPLEX_HALF;
+ 					retval = e1000_set_spd_dplx(adapter,
+ 								    spddplx);
+ 					if(retval)
+diff -urN linux-2.4.33-pre2/drivers/net/via-rhine.c linux-2.4.33-pre3/drivers/net/via-rhine.c
+--- linux-2.4.33-pre2/drivers/net/via-rhine.c	2004-08-07 23:26:05.000000000 +0000
++++ linux-2.4.33-pre3/drivers/net/via-rhine.c	2006-05-01 07:11:13.830199943 +0000
+@@ -124,6 +124,7 @@
+ 
+ 	LK1.1.19 (Roger Luethi)
+ 	- Increase Tx threshold for unspecified errors
++	- Craig Brind: Zero padded aligned buffers for short packets
+ 
+ */
+ 
+@@ -1308,10 +1309,14 @@
+ 			np->stats.tx_dropped++;
+ 			return 0;
+ 		}
++		/* Padding is not copied and so must be redone. */
+ 		skb_copy_and_csum_dev(skb, np->tx_buf[entry]);
++		if (skb->len < ETH_ZLEN)
++			memset(np->tx_buf[entry] + skb->len, 0,
++			       ETH_ZLEN - skb->len);
+ 		np->tx_skbuff_dma[entry] = 0;
+ 		np->tx_ring[entry].addr = cpu_to_le32(np->tx_bufs_dma +
+-										  (np->tx_buf[entry] - np->tx_bufs));
++					  (np->tx_buf[entry] - np->tx_bufs));
+ 	} else {
+ 		np->tx_skbuff_dma[entry] =
+ 			pci_map_single(np->pdev, skb->data, skb->len, PCI_DMA_TODEVICE);
+diff -urN linux-2.4.33-pre2/fs/binfmt_elf.c linux-2.4.33-pre3/fs/binfmt_elf.c
+--- linux-2.4.33-pre2/fs/binfmt_elf.c	2006-05-01 07:11:11.557955460 +0000
++++ linux-2.4.33-pre3/fs/binfmt_elf.c	2006-05-01 07:11:13.850202095 +0000
+@@ -643,6 +643,11 @@
+ 		SET_PERSONALITY(elf_ex, ibcs2_interpreter);
+ 	}
+ 
++	if (BAD_ADDR(elf_ex.e_entry)) {
++		retval = -ENOEXEC;
++		goto out_free_dentry;
++	}
++
+ 	/* OK, we are done with that, now set up the arg stuff,
+ 	   and then start this sucker up */
+ 
+diff -urN linux-2.4.33-pre2/fs/nfs/inode.c linux-2.4.33-pre3/fs/nfs/inode.c
+--- linux-2.4.33-pre2/fs/nfs/inode.c	2004-04-14 13:05:40.000000000 +0000
++++ linux-2.4.33-pre3/fs/nfs/inode.c	2006-05-01 07:11:13.854202526 +0000
+@@ -1047,6 +1047,13 @@
+ 		invalid = 0;
+ 	}
+ 
++	/* set the invalid flag if the last attempt at invalidating
++	 * the inode didn't empty the clean_pages list */
++	if ( NFS_FLAGS(inode) & NFS_INO_MAPPED) {
++		NFS_FLAGS(inode) &= ~NFS_INO_MAPPED;
++		invalid = 1;
++	}
++
+ 	/*
+ 	 * If we have pending writebacks, things can get
+ 	 * messy.
+@@ -1092,6 +1099,12 @@
+ 		NFS_ATTRTIMEO(inode) = NFS_MINATTRTIMEO(inode);
+ 		NFS_ATTRTIMEO_UPDATE(inode) = jiffies;
+ 		invalidate_inode_pages(inode);
++		if (! list_empty(&inode->i_mapping->clean_pages)) {
++			dfprintk(PAGECACHE,
++				 "NFS: clean_pages for %x/%ld is not empty\n",
++				 inode->i_dev, inode->i_ino);
++			NFS_FLAGS(inode) |= NFS_INO_MAPPED;
++		}
+ 		memset(NFS_COOKIEVERF(inode), 0, sizeof(NFS_COOKIEVERF(inode)));
+ 	} else if (time_after(jiffies, NFS_ATTRTIMEO_UPDATE(inode)+NFS_ATTRTIMEO(inode))) {
+ 		if ((NFS_ATTRTIMEO(inode) <<= 1) > NFS_MAXATTRTIMEO(inode))
+diff -urN linux-2.4.33-pre2/fs/quota_v2.c linux-2.4.33-pre3/fs/quota_v2.c
+--- linux-2.4.33-pre2/fs/quota_v2.c	2003-08-25 11:44:43.000000000 +0000
++++ linux-2.4.33-pre3/fs/quota_v2.c	2006-05-01 07:11:13.854202526 +0000
+@@ -14,6 +14,10 @@
+ #include <asm/byteorder.h>
+ #include <asm/uaccess.h>
+ 
++MODULE_AUTHOR("Jan Kara");
++MODULE_DESCRIPTION("Quota format v2 support");
++MODULE_LICENSE("GPL");
++
+ #define __QUOTA_V2_PARANOIA
+ 
+ typedef char *dqbuf_t;
+diff -urN linux-2.4.33-pre2/include/asm-x86_64/i387.h linux-2.4.33-pre3/include/asm-x86_64/i387.h
+--- linux-2.4.33-pre2/include/asm-x86_64/i387.h	2004-08-07 23:26:06.000000000 +0000
++++ linux-2.4.33-pre3/include/asm-x86_64/i387.h	2006-05-01 07:11:13.858202956 +0000
+@@ -125,8 +125,12 @@
+ 
+ static inline void save_init_fpu( struct task_struct *tsk )
+ {
+-	asm volatile( "fxsave %0 ; fnclex"
++	asm volatile( "fxsave %0"
+ 		      : "=m" (tsk->thread.i387.fxsave));
++	if (tsk->thread.i387.fxsave.swd & (1<<7))
++		asm volatile("fnclex");
++	/* AMD CPUs leak F?P through FXSAVE. Clear it here */
++	asm volatile("ffree %st(7) ; fildl %gs:0");
+ 	tsk->flags &= ~PF_USEDFPU;
+ 	stts();
+ }
+diff -urN linux-2.4.33-pre2/include/linux/nfs_fs_i.h linux-2.4.33-pre3/include/linux/nfs_fs_i.h
+--- linux-2.4.33-pre2/include/linux/nfs_fs_i.h	2002-08-03 00:39:45.000000000 +0000
++++ linux-2.4.33-pre3/include/linux/nfs_fs_i.h	2006-05-01 07:11:13.858202956 +0000
+@@ -85,6 +85,7 @@
+ #define NFS_INO_REVALIDATING	0x0004		/* revalidating attrs */
+ #define NFS_IS_SNAPSHOT		0x0010		/* a snapshot file */
+ #define NFS_INO_FLUSH		0x0020		/* inode is due for flushing */
++#define NFS_INO_MAPPED		0x0040		/* page invalidation failed */
+ 
+ /*
+  * NFS lock info
+diff -urN linux-2.4.33-pre2/ipc/shm.c linux-2.4.33-pre3/ipc/shm.c
+--- linux-2.4.33-pre2/ipc/shm.c	2002-08-03 00:39:46.000000000 +0000
++++ linux-2.4.33-pre3/ipc/shm.c	2006-05-01 07:11:13.858202956 +0000
+@@ -161,6 +161,8 @@
+ {
+ 	UPDATE_ATIME(file->f_dentry->d_inode);
+ 	vma->vm_ops = &shm_vm_ops;
++	if (!(vma->vm_flags & VM_WRITE))
++		vma->vm_flags &= ~VM_MAYWRITE;
+ 	shm_inc(file->f_dentry->d_inode->i_ino);
+ 	return 0;
+ }
+diff -urN linux-2.4.33-pre2/net/8021q/vlan.c linux-2.4.33-pre3/net/8021q/vlan.c
+--- linux-2.4.33-pre2/net/8021q/vlan.c	2004-02-18 13:36:32.000000000 +0000
++++ linux-2.4.33-pre3/net/8021q/vlan.c	2006-05-01 07:11:13.862203387 +0000
+@@ -757,6 +757,8 @@
+ 
+ 	case GET_VLAN_REALDEV_NAME_CMD:
+ 		err = vlan_dev_get_realdev_name(args.device1, args.u.device2);
++		if (err)
++			goto out;
+ 		if (copy_to_user((void*)arg, &args,
+ 				 sizeof(struct vlan_ioctl_args))) {
+ 			err = -EFAULT;
+@@ -765,6 +767,8 @@
+ 
+ 	case GET_VLAN_VID_CMD:
+ 		err = vlan_dev_get_vid(args.device1, &vid);
++		if (err)
++			goto out;
+ 		args.u.VID = vid;
+ 		if (copy_to_user((void*)arg, &args,
+ 				 sizeof(struct vlan_ioctl_args))) {
+@@ -778,7 +782,7 @@
+ 			__FUNCTION__, args.cmd);
+ 		return -EINVAL;
+ 	};
+-
++out:
+ 	return err;
+ }
+ 
+diff -urN linux-2.4.33-pre2/net/ipv4/af_inet.c linux-2.4.33-pre3/net/ipv4/af_inet.c
+--- linux-2.4.33-pre2/net/ipv4/af_inet.c	2005-01-19 14:10:13.000000000 +0000
++++ linux-2.4.33-pre3/net/ipv4/af_inet.c	2006-05-01 07:11:13.862203387 +0000
+@@ -724,6 +724,7 @@
+ 		sin->sin_port = sk->sport;
+ 		sin->sin_addr.s_addr = addr;
+ 	}
++	memset(sin->sin_zero, 0, sizeof(sin->sin_zero));
+ 	*uaddr_len = sizeof(*sin);
+ 	return(0);
+ }
+diff -urN linux-2.4.33-pre2/net/ipv4/netfilter/ip_conntrack_core.c linux-2.4.33-pre3/net/ipv4/netfilter/ip_conntrack_core.c
+--- linux-2.4.33-pre2/net/ipv4/netfilter/ip_conntrack_core.c	2005-04-04 01:42:20.000000000 +0000
++++ linux-2.4.33-pre3/net/ipv4/netfilter/ip_conntrack_core.c	2006-05-01 07:11:13.862203387 +0000
+@@ -1349,6 +1349,7 @@
+ 			.tuple.dst.u.tcp.port;
+ 		sin.sin_addr.s_addr = h->ctrack->tuplehash[IP_CT_DIR_ORIGINAL]
+ 			.tuple.dst.ip;
++		memset(sin.sin_zero, 0, sizeof(sin.sin_zero));
+ 
+ 		DEBUGP("SO_ORIGINAL_DST: %u.%u.%u.%u %u\n",
+ 		       NIPQUAD(sin.sin_addr.s_addr), ntohs(sin.sin_port));
+diff -urN linux-2.4.33-pre2/net/ipv4/netfilter/ip_queue.c linux-2.4.33-pre3/net/ipv4/netfilter/ip_queue.c
+--- linux-2.4.33-pre2/net/ipv4/netfilter/ip_queue.c	2005-11-16 19:12:54.000000000 +0000
++++ linux-2.4.33-pre3/net/ipv4/netfilter/ip_queue.c	2006-05-01 07:11:13.862203387 +0000
+@@ -519,7 +519,7 @@
+ 	write_unlock_bh(&queue_lock);
+ 	
+ 	status = ipq_receive_peer(NLMSG_DATA(nlh), type,
+-	                          skblen - NLMSG_LENGTH(0));
++	                          nlmsglen - NLMSG_LENGTH(0));
+ 	if (status < 0)
+ 		RCV_SKB_FAIL(status);
+ 		
+diff -urN linux-2.4.33-pre2/net/ipv6/netfilter/ip6_queue.c linux-2.4.33-pre3/net/ipv6/netfilter/ip6_queue.c
+--- linux-2.4.33-pre2/net/ipv6/netfilter/ip6_queue.c	2005-11-16 19:12:54.000000000 +0000
++++ linux-2.4.33-pre3/net/ipv6/netfilter/ip6_queue.c	2006-05-01 07:11:13.862203387 +0000
+@@ -523,7 +523,7 @@
+ 	write_unlock_bh(&queue_lock);
+ 	
+ 	status = ipq_receive_peer(NLMSG_DATA(nlh), type,
+-	                          skblen - NLMSG_LENGTH(0));
++	                          nlmsglen - NLMSG_LENGTH(0));
+ 	if (status < 0)
+ 		RCV_SKB_FAIL(status);
+ 		
