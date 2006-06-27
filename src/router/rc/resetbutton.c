@@ -40,6 +40,9 @@
 #define WHR_SOFTWARE_RESET 0x10	//GPIO 4  , should work with Buffalo WBR-G54 too
 #define WHR_SW_PUSH 0		//GPIO 0, code unknown
 
+#define WBR2_SOFTWARE_RESET 0x80	//GPIO 7
+#define WBR2_SW_PUSH 0		//GPIO 0, code unknown
+
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
 #define	SES_LED_CHECK_INTERVAL	"1"	/* Wait interval seconds */
 #define RESET_WAIT		3	/* seconds */
@@ -150,6 +153,10 @@ period_check (int sig)
       gpio = WHR_SOFTWARE_RESET;
       state = (val & gpio);
       break;
+    case ROUTER_BUFFALO_WBR2G54S:
+      gpio = WBR2_SOFTWARE_RESET;
+      state = (val & gpio);
+      break;
     case ROUTER_ASUS:
       gpio = BCM47XX_SOFTWARE_RESET;
       state = (val & gpio);
@@ -184,12 +191,17 @@ period_check (int sig)
 	      	(brand == ROUTER_WRT54G1X) ||
 		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
 		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
-		  	(brand == ROUTER_BUFFALO_WBR54G))
+		  	(brand == ROUTER_BUFFALO_WBR54G) ||
+		  	(brand == ROUTER_BUFFALO_WBR2G54S)
 		{
 		  printf ("resetbutton: factory default.\n");
 		  if (brand == ROUTER_BUFFALO_WBR54G)
 		    {
 		      eval ("gpio", "disable", "7");	//turn on DIAG led on WBR-G54/WLA-G54
+		    }
+		  if (brand == ROUTER_BUFFALO_WBR2G54S)
+		    {
+		      eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
 		    }
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
@@ -283,7 +295,6 @@ resetbutton_main (int argc, char *argv[])
   		(brand == ROUTER_BELKIN) || 
   		(brand == ROUTER_RT210W) ||
   		(brand == ROUTER_MOTOROLA) || 
-  		(brand == ROUTER_BUFFALO_WBR2G54S) ||
   		(brand == ROUTER_BUFFALO_WZRRSG54) ||
   		(brand == ROUTER_BELKIN_F5D7230) ||
   		(brand == ROUTER_MICROSOFT_MN700) ||
