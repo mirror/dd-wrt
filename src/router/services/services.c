@@ -3221,6 +3221,9 @@ start_wland (void)
 int
 start_process_monitor (void)
 {
+  if (nvram_match ("pmonitor_enable", "0"))
+    return 0;
+
   pid_t pid;
 
   char *argv[] = { "process_monitor", NULL };
