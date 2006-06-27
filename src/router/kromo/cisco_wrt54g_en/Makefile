@@ -10,6 +10,7 @@ install:
 	rm -rf $(INSTALLDIR)/www
 	install -d $(INSTALLDIR)/www
 	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
+
 ifeq ($(CONFIG_DIST),"micro")
 	rm -f $(INSTALLDIR)/www/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/logo.png
@@ -18,11 +19,13 @@ ifeq ($(CONFIG_DIST),"micro")
 endif
 	cp -a images $(INSTALLDIR)/www
 	cp -a style $(INSTALLDIR)/www
+
 ifneq ($(CONFIG_DIST),"micro")
 	cp -a help $(INSTALLDIR)/www
 	rm -f $(INSTALLDIR)/www/common_micro.js
 endif
 	cp -a lang_pack $(INSTALLDIR)/www
+
 ifeq ($(CONFIG_NOMUI),y)
 	rm -f $(INSTALLDIR)/www/lang_pack/*.js
 	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
@@ -33,12 +36,9 @@ endif
 	$(TOP)/tools/jsformat $(INSTALLDIR)/www/lang_pack/*.js
 	ln -s ../tmp/www $(INSTALLDIR)/www/user
 
-
 ifeq ($(CONFIG_WIKAR),y)
 	cp -a wikar $(INSTALLDIR)/www/style
 endif
-
-
 
 
 ifeq ($(CONFIG_3COM),y)
@@ -86,6 +86,7 @@ ifeq ($(CONFIG_CYAN),y)
 	cp cyan/common.css $(INSTALLDIR)/www/style
 	cp cyan/logo.png $(INSTALLDIR)/www/style
 endif
+
 ifeq ($(CONFIG_CESAR),y)
 	mkdir $(INSTALLDIR)/www/style/cesar
 	cp cesar/style.css $(INSTALLDIR)/www/style/cesar
@@ -93,6 +94,7 @@ ifeq ($(CONFIG_CESAR),y)
 	cp cesar/common.css $(INSTALLDIR)/www/style
 	cp cesar/logo.png $(INSTALLDIR)/www/style
 endif
+
 ifeq ($(CONFIG_ALEDR),y)
 	mkdir $(INSTALLDIR)/www/style/cyan
 	cp aledr/style.css $(INSTALLDIR)/www/style/cyan
@@ -242,6 +244,7 @@ endif
 endif
 endif
 endif
+
 ifeq ($(CONFIG_OMNI),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/omni-wifi/ install
 endif
