@@ -1693,7 +1693,7 @@ add_vifs_single (char *prefix, int device)
 int
 add_vifs (webs_t wp)
 {
-  char *prefix = websGetVar (wp, "interface", NULL);
+  char *prefix = websGetVar (wp, "iface", NULL);
   if (prefix == NULL)
     return 0;
   int devcount = prefix[strlen (prefix) - 1] - '0';
@@ -1738,7 +1738,7 @@ remove_vifs_single (char *prefix)
 int
 remove_vifs (webs_t wp)
 {
-  char *prefix = websGetVar (wp, "interface", NULL);
+  char *prefix = websGetVar (wp, "iface", NULL);
   return remove_vifs_single (prefix);
 }
 #endif
