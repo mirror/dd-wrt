@@ -1,5 +1,5 @@
 /*
- * NDIS Error mappings
+ * HND SiliconBackplane MIPS/ARM cores software interface.
  *
  * Copyright 2006, Broadcom Corporation
  * All Rights Reserved.
@@ -9,13 +9,20 @@
  * SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
  * FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE.
  *
- * $Id: ndiserrmap.h,v 1.1.1.2 2006/02/27 03:43:16 honor Exp $
+ * $Id: hndcpu.h,v 1.1.1.1 2006/02/27 03:43:16 honor Exp $
  */
 
-#ifndef _ndiserrmap_h_
-#define _ndiserrmap_h_
+#ifndef _hndcpu_h_
+#define _hndcpu_h_
 
-extern int ndisstatus2bcmerror(NDIS_STATUS status);
-extern NDIS_STATUS bcmerror2ndisstatus(int bcmerror);
+#if defined(mips)
+#include <hndmips.h>
+#elif defined(__ARM_ARCH_4T__)
+#include <hndarm.h>
+#endif
 
-#endif	/* _ndiserrmap_h_ */
+extern uint sb_irq(sb_t *sbh);
+extern uint32 sb_cpu_clock(sb_t *sbh);
+extern void sb_cpu_wait(void);
+
+#endif /* _hndcpu_h_ */
