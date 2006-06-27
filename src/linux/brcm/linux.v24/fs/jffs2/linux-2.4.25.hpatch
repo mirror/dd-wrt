@@ -1,0 +1,97 @@
+FMakefile
+=BBC insertion
+-COMPR_OBJS
+iMakefile.bbc.inc
++
+I
+?JFFS2_OBJS
++	$(JFFS2_BBC_KERNEL_OBJS) \
+
+F../Config.in
+=BBC insertion
+-tristate 'Compressed ROM file system support' CONFIG_CRAMFS
+iConfig.in.bbc.inc
++
+I
+F../../Documentation/Configure.help
+=BBC insertion
+-JFFS stats available
+iConfigure.help.bbc.inc
++
+I
+Fcompr_zlib.c
+=(de)compress->(de)compress2
+-int zlib_compress(unsigned char *data_in, unsigned char *cpage_out,
++int jffs2_zlib_compress2(unsigned char *data_in, unsigned char *cpage_out,
+-void zlib_decompress(unsigned char *data_in, unsigned char *cpage_out,
++void jffs2_zlib_decompress2(unsigned char *data_in, unsigned char *cpage_out,
+?inflateEnd(&strm);
+?}
++
++extern int jffs2_zlib_compress(unsigned char *data_in, unsigned char *cpage_out, __u32 * sourcelen, __u32 * dstlen);
++extern void jffs2_zlib_decompress(unsigned char *data_in, unsigned char *cpage_out, __u32 srclen, __u32 destlen);
++
++int zlib_compress(unsigned char *data_in, unsigned char *cpage_out,
++                   __u32 *sourcelen, __u32 *dstlen)
++{
++		return jffs2_zlib_compress(data_in,cpage_out,sourcelen,dstlen);
++}
++
++void zlib_decompress(unsigned char *data_in, unsigned char *cpage_out,
++                      __u32 srclen, __u32 destlen)
++{
++		jffs2_zlib_decompress(data_in,cpage_out,srclen,destlen);
++}
++
+
+Ffile.c
+=set_act_sb before write
+-#include
++#include "jffs2_bbc_framework.h" /**BBC**/
+I
+?int jffs2_commit_write
+-jffs2_compress(
++			jffs2_bbc_model_set_act_sb(c); /**BBC**/
+I
+
+Fgc.c
+=set_act_sb before write
+-#include
++#include "jffs2_bbc_framework.h" /**BBC**/
+I
+?int jffs2_garbage_collect_dnode(
+-jffs2_compress(
++			jffs2_bbc_model_set_act_sb(c); /**BBC**/
+I
+
+Fread.c
+=set_act_sb before read
+-#include
++#include "jffs2_bbc_framework.h" /**BBC**/
+I
+?int jffs2_read_dnode(
+-jffs2_decompress(
++		jffs2_bbc_model_set_act_sb(c); /**BBC**/
+I
+
+Fsuper.c
+=init, load_model
+-#include
++#include "jffs2_bbc_fs.h" /**BBC**/
+I
+?struct super_block *jffs2_read_super(
+-return sb;
++	jffs2_bbc_load_model(sb);  /**BBC**/
+I
+?void jffs2_put_super
+?c = JFFS2_SB_INFO
++	jffs2_bbc_unload_model(sb); /**BBC**/
+?init_jffs2_fs(void)
+?int ret;
++
++	jffs2_bbc_proc_init();   /**BBC**/
++
+?exit_jffs2_fs(void)
+?{
++	jffs2_bbc_proc_deinit(); /**BBC**/
++
