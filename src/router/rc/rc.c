@@ -394,7 +394,9 @@ main_loop (void)
 	  /* Fall through */
 	case START:
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
+#ifndef HAVE_MSSID	  
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
+#endif
 	  cprintf ("START\n");
 	  setenv ("PATH",
 		  "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin",
