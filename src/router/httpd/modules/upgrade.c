@@ -178,6 +178,7 @@ sys_upgrade (char *url, webs_t stream, int *total, int type)	//jimmy, https, 8/6
 
 	  if (memcmp (&buf[0], &CODE_PATTERN_WRT54G, 4)
 	      && memcmp (&buf[0], &CODE_PATTERN_WRT54GS, 4)
+	      && memcmp (&buf[0], &CODE_PATTERN_WRTSL54GS, 4)
 	      && memcmp (&buf[0], &CODE_PATTERN_WRT54GSV4, 4))
 	    {
 	      cprintf ("code pattern error!\n");

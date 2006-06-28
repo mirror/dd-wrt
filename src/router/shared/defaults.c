@@ -487,16 +487,23 @@ struct nvram_tuple router_defaults[] = {
 #endif
 #ifdef HAVE_POWERNOC_WORT54G
   {"wl_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
+  {"wl0_mode", "sta", 0},	/* AP mode (ap|sta|wds) */
 #elif HAVE_SKYTRON
   {"wl_mode", "sta", 0},
+  {"wl0_mode", "sta", 0},
 #elif HAVE_DDLAN
   {"wl_mode", "sta", 0},
+  {"wl0_mode", "sta", 0},
 #elif HAVE_GGEW
   {"wl_mode", "sta", 0},
+  {"wl0_mode", "sta", 0},
 #else
+
+
 #ifdef HAVE_MSSID
 #ifdef HAVE_FON
   {"wl_mode", "apsta", 0},
+  {"wl0_mode", "apsta", 0},
   {"wl_vifs", "wl0.1", 0},
   {"wl0_vifs", "wl0.1", 0},
   {"wl0.1_ssid", "FON", 0},
@@ -504,6 +511,7 @@ struct nvram_tuple router_defaults[] = {
 #else
 #ifndef HAVE_MADWIFI
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
+  {"wl0_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
 #else
   {"ath0_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
   {"ath1_channelbw", "20", 0},	/* AP mode (ap|sta|wds) */
