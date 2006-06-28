@@ -125,9 +125,9 @@ main_loop (void)
   //setenv("PATH", "/sbin:/bin:/usr/sbin:/usr/bin:/jffs/sbin:/jffs/bin:/jffs/usr/sbin:/jffs/usr/bin", 1);
   //system("/etc/nvram/nvram");
   /* Basic initialization */
-  if (console_init())
-    noconsole=1;
-  
+  if (console_init ())
+    noconsole = 1;
+
   start_service ("sysinit");
 
   /* Setup signal handlers */
@@ -138,9 +138,9 @@ main_loop (void)
   signal (SIGINT, rc_signal);
   signal (SIGALRM, rc_signal);
   sigemptyset (&sigset);
- 
+
   /* Give user a chance to run a shell before bringing up the rest of the system */
-  
+
   if (!noconsole)
     ddrun_shell (1, 0);
 
@@ -372,16 +372,16 @@ main_loop (void)
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
-	if ((brand == ROUTER_WRT54G) ||
-	   (brand == ROUTER_WRT54G1X) ||
-	   (brand == ROUTER_WRTSL54GS) ||
-	   (brand == ROUTER_LINKSYS_WRT55AG) ||
-	   (brand == ROUTER_ASUS) ||
-	   (brand == ROUTER_BUFFALO_WBR54G) ||
-	   (brand == ROUTER_BUFFALO_WHRG54S) ||
-	   (brand == ROUTER_MOTOROLA_V1) ||
-	   (brand == ROUTER_BOARD_500) ||
-	   (brand == ROUTER_BUFFALO_WBR2G54S))
+	  if ((brand == ROUTER_WRT54G) ||
+	      (brand == ROUTER_WRT54G1X) ||
+	      (brand == ROUTER_WRTSL54GS) ||
+	      (brand == ROUTER_LINKSYS_WRT55AG) ||
+	      (brand == ROUTER_ASUS) ||
+	      (brand == ROUTER_BUFFALO_WBR54G) ||
+	      (brand == ROUTER_BUFFALO_WHRG54S) ||
+	      (brand == ROUTER_MOTOROLA_V1) ||
+	      (brand == ROUTER_BOARD_500) ||
+	      (brand == ROUTER_BUFFALO_WBR2G54S))
 	    {
 	      stop_service ("resetbutton");
 	    }
@@ -396,7 +396,7 @@ main_loop (void)
 	  /* Fall through */
 	case START:
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
-#ifndef HAVE_MSSID	  
+#ifndef HAVE_MSSID
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
 #endif
 	  cprintf ("START\n");
@@ -408,16 +408,16 @@ main_loop (void)
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
-	if ((brand == ROUTER_WRT54G) ||
-	   (brand == ROUTER_WRT54G1X) ||
-	   (brand == ROUTER_WRTSL54GS) ||
-	   (brand == ROUTER_LINKSYS_WRT55AG) ||
-	   (brand == ROUTER_ASUS) ||
-	   (brand == ROUTER_BUFFALO_WBR54G) ||
-	   (brand == ROUTER_BUFFALO_WHRG54S) ||
-	   (brand == ROUTER_MOTOROLA_V1) ||
-	   (brand == ROUTER_BOARD_500) ||
-	   (brand == ROUTER_BUFFALO_WBR2G54S))
+	  if ((brand == ROUTER_WRT54G) ||
+	      (brand == ROUTER_WRT54G1X) ||
+	      (brand == ROUTER_WRTSL54GS) ||
+	      (brand == ROUTER_LINKSYS_WRT55AG) ||
+	      (brand == ROUTER_ASUS) ||
+	      (brand == ROUTER_BUFFALO_WBR54G) ||
+	      (brand == ROUTER_BUFFALO_WHRG54S) ||
+	      (brand == ROUTER_MOTOROLA_V1) ||
+	      (brand == ROUTER_BOARD_500) ||
+	      (brand == ROUTER_BUFFALO_WBR2G54S))
 	    {
 	      start_service ("resetbutton");
 	    }
@@ -476,7 +476,7 @@ main_loop (void)
 		shell_pid = ddrun_shell (0, 1);
 	      else
 		sigsuspend (&sigset);
-	    
+
 	    }
 	  state = signalled;
 	  signalled = -1;
@@ -643,25 +643,24 @@ main (int argc, char **argv)
     {
 #ifndef HAVE_RB500
       int brand = getRouterBrand ();
-	if ((brand == ROUTER_WRT54G) ||
-	   (brand == ROUTER_WRT54G1X) ||
-	   (brand == ROUTER_WRTSL54GS) ||
-	   (brand == ROUTER_LINKSYS_WRT55AG) ||
-	   (brand == ROUTER_ASUS) ||
-	   (brand == ROUTER_BUFFALO_WBR54G) ||
-	   (brand == ROUTER_BUFFALO_WHRG54S) ||
-	   (brand == ROUTER_MOTOROLA_V1) ||
-	   (brand == ROUTER_BOARD_500) ||
-	   (brand == ROUTER_BUFFALO_WBR2G54S))
-	   {
+      fprintf(stderr,"brand = %d\n",brand);
+      switch (brand)
+	{
+	case ROUTER_WRT54G:
+	case ROUTER_WRT54G1X:
+	case ROUTER_WRTSL54GS:
+	case ROUTER_LINKSYS_WRT55AG:
+	case ROUTER_ASUS:
+	case ROUTER_BUFFALO_WBR54G:
+	case ROUTER_BUFFALO_WHRG54S:
+	case ROUTER_MOTOROLA_V1:
+	case ROUTER_BUFFALO_WBR2G54S:
 	  return resetbutton_main (argc, argv);
-		}
-      else
-		{
+	default:
 	  fprintf (stderr,
-		   "Your router model doesnt support the resetbutton!");
+		   "Your router model doesnt support the resetbutton!\n");
 	  return 0;
-		}
+	}
 #endif
     }
 #ifndef HAVE_MADWIFI
