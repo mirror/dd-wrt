@@ -2201,6 +2201,7 @@ Initnvramtab ()
 			}
 		      tmp->argv[i] = NULL;
 		    }
+#ifndef HAVE_MSSID
 		  if (!stricmp (tmpstr, "SECURITYMODE"))
 		    {
 		      tmp->validate = validate_security_mode;
@@ -2215,7 +2216,7 @@ Initnvramtab ()
 			}
 		      tmp->argv[i] = NULL;
 		    }
-
+#endif
 
 		  free (tmpstr);
 		  tmpstr = getFileString (in);

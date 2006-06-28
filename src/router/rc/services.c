@@ -431,6 +431,7 @@ start_single_service (void)
       eval ("wlconf", nvram_safe_get ("wl0_ifname"), "down");
       stop_services ();
       stop_service ("lan");
+#ifndef HAVE_MSSID
       if (nvram_match ("wl_akm", "wpa") ||
 	  nvram_match ("wl_akm", "psk") ||
 	  nvram_match ("wl_akm", "psk2") ||
@@ -439,6 +440,7 @@ start_single_service (void)
 	  nvram_match ("wl_akm", "wpa wpa2") ||
 	  nvram_match ("wl_akm", "radius"))
 	sleep (4);
+#endif
       start_service ("wlconf");
       start_service ("lan");
       start_services ();

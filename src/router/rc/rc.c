@@ -319,6 +319,7 @@ main_loop (void)
 	  start_service ("overclocking");
 	  cprintf ("RESET NVRAM VARS\n");
 	  nvram_set ("wl0_lazy_wds", nvram_safe_get ("wl_lazy_wds"));
+#ifndef HAVE_MSSID
 	  nvram_set ("wl0_akm", nvram_safe_get ("wl_akm"));
 	  if (nvram_match ("wl_wep", "tkip"))
 	    {
@@ -332,11 +333,13 @@ main_loop (void)
 	    {
 	      nvram_set ("wl_crypto", "tkip+aes");
 	    }
-
 	  if (nvram_match ("wl_wep", "restricted"))
 	    nvram_set ("wl_wep", "enabled");	// the nas need this value, the "restricted" is no longer need. (20040624 by honor)
+#endif
 
 	  cprintf ("RESTART\n");
+#ifndef HAVE_MSSID
+
 	  if (nvram_match ("wl_akm", "wpa") ||
 	      nvram_match ("wl_akm", "psk") ||
 	      nvram_match ("wl_akm", "radius") ||
@@ -350,6 +353,7 @@ main_loop (void)
 	      start_service ("wlconf");
 
 	    }
+#endif
 	  /* Fall through */
 	case STOP:
 	  cprintf ("STOP\n");
