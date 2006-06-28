@@ -1001,6 +1001,7 @@ start_wan (int status)
   struct ifreq ifr;
   FILE *fp;
   int pppoe_rp;			/* AhMan March 19 2005 */
+  int pppoe_flag = 0;
 
   cprintf ("%s %s\n", wan_ifname, wan_proto);
 
@@ -1096,6 +1097,7 @@ start_wan (int status)
     {
       char eabuf[32];
       nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+      int pppoe_flag = 1;
     }
 #endif
 
@@ -1432,10 +1434,13 @@ start_wan (int status)
   /* Get current WAN hardware address */
   strncpy (ifr.ifr_name, wan_ifname, IFNAMSIZ);
   cprintf ("get current hardware adress");
-  if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+  if (pppoe_flag = 0)
     {
-      char eabuf[32];
-      nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+      if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+	{
+	  char eabuf[32];
+	  nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+	}
     }
 
   close (s);
