@@ -216,7 +216,7 @@ period_check (int sig)
 	    }
 	}
     }
-  else{ if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRT54G)
+  else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRT54G)
     {
       if (ses_mode == 1)
 	{
@@ -244,7 +244,8 @@ period_check (int sig)
 	  eval ("gpio", "enable", "2");
 	  ses_mode = 0;
 	}
-    } else{ if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRTSL54GS)
+    } 
+    else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRTSL54GS)
     {
       if (ses_mode == 1)
 	{
@@ -272,7 +273,6 @@ period_check (int sig)
 	  eval ("gpio", "enable", "7");
 	  ses_mode = 0;
 	}
-    }
 
       /*
          char *led_argv[] = { "check_ses_led",
