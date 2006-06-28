@@ -72,7 +72,6 @@ extern void nvram_safe_set(const char *name, char *value);
  * @return	TRUE if variable is defined and its value is string equal
  *		to match or FALSE otherwise
  */
-extern int nvram_match(char *name, char *match);
 
 /*
  * Inversely match an NVRAM variable.
@@ -81,6 +80,7 @@ extern int nvram_match(char *name, char *match);
  * @return	TRUE if variable is defined and its value is not string
  *		equal to invmatch or FALSE otherwise
  */
+extern int nvram_match(char *name, char *match);
  
 extern int nvram_invmatch(char *name, char *invmatch);
 
@@ -88,6 +88,13 @@ extern int nvram_invmatch(char *name, char *invmatch);
 extern void nvram_store_collection(char *name,char *buf);
 
 extern char *nvram_get_collection(char *name);
+
+extern char *nvram_safe_get(const char *name);
+
+extern void nvram_safe_unset(const char *name);
+
+extern void nvram_safe_set(const char *name, char *value);
+
 /*
  * Set the value of an NVRAM variable. The name and value strings are
  * copied into private storage. Pointers to previously set values
