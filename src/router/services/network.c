@@ -1378,8 +1378,12 @@ start_wan (int status)
 #endif
     /* AhMan  March 19 2005 */
     /* Added original Linksys PPPoE module */
+  if (strcmp (wan_proto, "dhcp") == 0)
+    {
+      start_dhcpc (wan_ifname);
+    }
 #ifdef HAVE_PPPOE
-  if (!pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
+  else if (!pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     {
 
       start_pppoe (PPPOE0);
@@ -1391,10 +1395,6 @@ start_wan (int status)
 	}
     }
 #endif
-  else if (strcmp (wan_proto, "dhcp") == 0)
-    {
-      start_dhcpc (wan_ifname);
-    }
 #ifdef HAVE_PPTP
   else if (strcmp (wan_proto, "pptp") == 0)
     {
