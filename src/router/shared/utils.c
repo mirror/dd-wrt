@@ -511,6 +511,20 @@ diag_led_4704 (int type, int act)
 	  //cprintf("tallest:=====( DIAG MALFUNCTION_LED !!)=====\n");
 	}
       break;
+    case DMZ:
+	int brand = getRouterBrand();
+	if (brand==ROUTER_WRTSL54GS:
+	    {
+	    if (act==STOP_LED)
+		{
+		eval("gpio","enable","0");
+		}
+	    if (act==START_LED)
+		{
+		eval("gpio","disable","0");
+		}
+	    }
+     break;
 #if 0
     case DMZ:			// GPIO 7
       if (act == STOP_LED)
