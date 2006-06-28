@@ -16,7 +16,7 @@ ifdef CONFIG_SER
 else
 	install profile $(INSTALLDIR)/etc
 endif
-ifeq ($(CONFIG_MSSID),y)
+ifdef CONFIG_MSSID
 	install motd $(INSTALLDIR)/etc
 else
 	install motd.v23 $(INSTALLDIR)/etc/motd
