@@ -133,8 +133,8 @@ internal_getRouterBrand ()
   if (nvram_match ("boardnum", "asusX") &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
-      cprintf ("router is Asus WL300g\n");
-      setRouter ("Asus WL300g");
+      cprintf ("router is Asus WL300g / WL500g\n");
+      setRouter ("Asus WL-300g / WL-500g");
       return ROUTER_RT210W;
     }  
     
