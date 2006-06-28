@@ -1719,6 +1719,9 @@ start_wan_done (char *wan_ifname)
     case ROUTER_WRT54G1X:
       eval ("gpio", "disable", "3");
       break;
+    case ROUTER_WRTSL54GS:
+      eval ("gpio", "disable", "7");
+      break;
     default:
       break;
     }
@@ -1812,6 +1815,9 @@ stop_wan (void)
     case ROUTER_WRT54G:
     case ROUTER_WRT54G1X:
       eval ("gpio", "enable", "3");
+      break;
+    case ROUTER_WRTSL54GS:
+      eval ("gpio", "enable", "7");
       break;
     default:
       break;
