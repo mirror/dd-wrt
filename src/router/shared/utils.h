@@ -66,6 +66,10 @@
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
 #define ROUTER_ASUS_WL500G_PRE 18
 
+// Linusys WRTSL54GS (4704 cpu + BCM5325E switch)
+#define ROUTER_WRTSL54GS 19
+
+
 #define NVROUTER "DD_BOARD"
 
 

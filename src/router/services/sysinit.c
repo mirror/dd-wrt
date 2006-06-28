@@ -390,6 +390,9 @@ start_restore_defaults (void)
   char *ds;
   switch (brand)
     {
+    case ROUTER_WRTSL54GS:
+      linux_overrides = generic;
+      break;    
     case ROUTER_ASUS:
     case ROUTER_ASUS_WL500G_PRE:
       linux_overrides = vlan;
@@ -857,7 +860,12 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wan_ifnames", "eth1");
     }
-
+  if (brand == ROUTER_WRTSL54GS)
+    {
+      nvram_set ("wan_ifname","eth1");
+      nvram_set ("wan_ifnames","eth1");
+      nvram_set ("pppoe_wan_ifname","eth1");
+    }
   if (brand == ROUTER_ASUS_WL500G_PRE)
     {
       strcpy (wanifname, "vlan1");
