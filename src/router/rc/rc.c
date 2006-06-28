@@ -374,12 +374,14 @@ main_loop (void)
 	  cprintf ("STOP RESETBUTTON\n");
 	if ((brand == ROUTER_WRT54G) ||
 	   (brand == ROUTER_WRT54G1X) ||
+	   (brand == ROUTER_WRTSL54GS) ||
 	   (brand == ROUTER_LINKSYS_WRT55AG) ||
 	   (brand == ROUTER_ASUS) ||
 	   (brand == ROUTER_BUFFALO_WBR54G) ||
 	   (brand == ROUTER_BUFFALO_WHRG54S) ||
 	   (brand == ROUTER_MOTOROLA_V1) ||
 	   (brand == ROUTER_BOARD_500))
+	   (brand == ROUTER_BUFFALO_WBR2G54S))
 	    {
 	      stop_service ("resetbutton");
 	    }
@@ -408,6 +410,7 @@ main_loop (void)
 #ifndef HAVE_RB500
 	if ((brand == ROUTER_WRT54G) ||
 	   (brand == ROUTER_WRT54G1X) ||
+	   (brand == ROUTER_WRTSL54GS) ||
 	   (brand == ROUTER_LINKSYS_WRT55AG) ||
 	   (brand == ROUTER_ASUS) ||
 	   (brand == ROUTER_BUFFALO_WBR54G) ||
@@ -642,6 +645,7 @@ main (int argc, char **argv)
       int brand = getRouterBrand ();
 	if ((brand == ROUTER_WRT54G) ||
 	   (brand == ROUTER_WRT54G1X) ||
+	   (brand == ROUTER_WRTSL54GS) ||
 	   (brand == ROUTER_LINKSYS_WRT55AG) ||
 	   (brand == ROUTER_ASUS) ||
 	   (brand == ROUTER_BUFFALO_WBR54G) ||

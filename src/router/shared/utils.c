@@ -189,6 +189,14 @@ internal_getRouterBrand ()
 			return ROUTER_BUFFALO_HP_WHRG54S;
 			}
 	  }
+  if (nvram_match ("boardnum", "42") &&
+      nvram_match ("boardtype", "0x042f") &&
+      nvram_match ("boardrev","0x10") &&
+      nvram_match ("boardflags","0x0018"))
+    {
+      setRouter ("Linksys WRT54SLGS");
+      return ROUTER_WRTSL54GS;
+    }
 
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "0x042f"))
