@@ -828,7 +828,7 @@ management.remote_ssh="SSH Management";
 management.remote_sshport="SSH Port";
 
 management.web_legend="Web Zugriff";
-management.web_refresh="Automatisches Auffrischen (in seconds)";
+management.web_refresh="Automatisches Auffrischen (In Sekunden)";
 management.web_sysinfo="Info Seite einschalten";
 management.web_sysinfopass="Info Seite Passwort Schutz";
 management.web_sysinfomasq="Info Seite MAC Maskierung";
