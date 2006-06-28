@@ -20,6 +20,6 @@
 
 #define DEV_NUMIFS	16	/* Max. # of devices/interfaces supported */
 
-#define WL_MAXBSSCFG	16	/* maximum number of BSS Configs we can configure */
+#define WL_MAXBSSCFG	3	/* maximum number of BSS Configs we can configure */
 
 #endif
