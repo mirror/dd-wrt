@@ -960,9 +960,7 @@ start_dnsmasq (void)
 	  }
 
 	if (nvram_match ("auth_dnsmasq", "1"))
-	  {
 	    fprintf (fp, "dhcp-authoritative\n");
-	  }
 	fprintf (fp, "dhcp-range=");
 	fprintf (fp, "%d.%d.%d.%s,",
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
@@ -1116,11 +1114,12 @@ start_upnp (void)
   char *wan_ifname = get_wan_face ();
   int ret;
 
-  if (!nvram_invmatch ("upnp_enable", "0"))
+  if (nvram_match ("upnp_enable", "0"))
     {
       stop_upnp ();
       return 0;
     }
+  /* Make sure its not running first */
   ret = eval ("killall", "-SIGUSR1", "upnp");
   if (ret != 0)
     {
@@ -2740,9 +2739,9 @@ start_pppoe (int pppoe_num)
   char ppp_demand[2][20] = { "ppp_demand", "ppp_demand_1" };
   char ppp_service[2][20] = { "ppp_service", "ppp_service_1" };
   char ppp_ac[2][10] = { "ppp_ac", "ppp_ac_1" };
-  char wanip[2][15] = { "wan_ipaddr", "wan_ipaddr_1" };
-  char wanmask[2][15] = { "wan_netmask", "wan_netmask_1" };
-  char wangw[2][15] = { "wan_gateway", "wan_gateway_1" };
+//  char wanip[2][15] = { "wan_ipaddr", "wan_ipaddr_1" };
+//  char wanmask[2][15] = { "wan_netmask", "wan_netmask_1" };
+//  char wangw[2][15] = { "wan_gateway", "wan_gateway_1" };
   char pppoeifname[15];
   char *wan_ifname = nvram_safe_get ("wan_ifname");
   if (isClient ())
@@ -3207,9 +3206,9 @@ start_splashd (void)
     return 0;
 
   /* Irving - make sure our WAN link is up first.
-     if not, check_ps will start us later 
-     if (nvram_match ("wan_ipaddr", "0.0.0.0"))
-     return 0; */
+     if not, check_ps will start us later */
+  if (nvram_match ("wan_ipaddr", "0.0.0.0"))
+    return 0;
 
   mk_nocat_conf ();
 

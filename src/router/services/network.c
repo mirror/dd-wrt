@@ -1077,11 +1077,6 @@ start_wan (int status)
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
     }
 
-//  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-//    perror ("Write WAN mac fail : ");
-//  else
-//    cprintf ("Write WAN mac successfully\n");
-
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
     {
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -1097,7 +1092,7 @@ start_wan (int status)
     {
       char eabuf[32];
       nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
-      int pppoe_flag = 1;
+      pppoe_flag = 1;
     }
 #endif
 
@@ -1527,7 +1522,6 @@ start_wan_service (void)
 void
 start_wan_done (char *wan_ifname)
 {
-  int timeout = 5;
   cprintf ("%s %s\n", wan_ifname, nvram_safe_get ("wan_proto"));
   if (getRouterBrand () == ROUTER_SIEMENS)
     led_ctrl (1);		// turn LED2 on
@@ -1550,6 +1544,7 @@ start_wan_done (char *wan_ifname)
 
   if (nvram_invmatch ("wan_proto", "disabled"))
     {
+      int timeout = 5;
       /* Set default route to gateway if specified */
       char *gateway = nvram_match ("wan_proto",
 				   "pptp") ? nvram_safe_get ("pptp_get_ip") :
@@ -1600,7 +1595,7 @@ start_wan_done (char *wan_ifname)
   cprintf ("dns to resolv\n");
   dns_to_resolv ();
 
-  cprintf ("stop start dhcp server\n");
+  cprintf ("restart dhcp server\n");
   /* Restart DHCP server */
   stop_udhcpd ();
   start_udhcpd ();
@@ -1608,7 +1603,7 @@ start_wan_done (char *wan_ifname)
   /* Restart DNS proxy */
   stop_dnsmasq ();
   start_dnsmasq ();
-  cprintf ("start firewalL\n");
+  cprintf ("start firewall\n");
   /* Start firewall */
   start_firewall ();
   cprintf ("start icmp proxy\n");
