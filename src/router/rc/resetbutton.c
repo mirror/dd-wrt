@@ -161,6 +161,9 @@ period_check (int sig)
       gpio = BCM47XX_SOFTWARE_RESET;
       state = (val & gpio);
       break;
+    case ROUTER_WRTSL54GS:
+      gpio = 1<<7; // gpio 7
+      state = !(val & gpio);
     default:
       gpio = BCM47XX_SOFTWARE_RESET;
       state = !(val & gpio);
@@ -188,7 +191,8 @@ period_check (int sig)
 		  return;
 		}
 	      if ((brand == ROUTER_WRT54G) || 
-	      	(brand == ROUTER_WRT54G1X) ||
+	                (brand == ROUTER_WRTSL54GS) || 
+	      	        (brand == ROUTER_WRT54G1X) ||
 		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
 		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
 		  	(brand == ROUTER_BUFFALO_WBR54G) ||
@@ -301,7 +305,7 @@ resetbutton_main (int argc, char *argv[])
   		(brand == ROUTER_BUFFALO_WLAG54C) ||
   		(brand == ROUTER_ASUS_WL500G_PRE))
     {
-      puts ("sorry, your unit does not support resetbutton feature");
+      puts ("sorry, your unit does not support resetbutton feature\n");
       nvram_set ("resetbutton_enable", "0");
       return 0;
     }
