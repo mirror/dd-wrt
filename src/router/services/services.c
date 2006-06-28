@@ -1240,50 +1240,84 @@ start_guest_nas (void)
   return 0;
 }
 #endif
-void
-start_nas_lan (void)
+char *
+getSecMode (char *prefix)
 {
-  start_nas ("lan");
+  char wep[32];
+  char crypto[32];
+  sprintf (wep, "%s_wep", prefix);
+  sprintf (crypto, "%s_crypto", prefix);
+  /* BugBug - should we bail when mode is wep ? */
+  if (nvram_match (wep, "wep") || nvram_match (wep, "on")
+      || nvram_match (wep, "restricted") || nvram_match (wep, "enabled"))
+    return "1";
+  else if (nvram_match (crypto, "tkip"))
+    return "2";
+  else if (nvram_match (crypto, "aes"))
+    return "4";
+  else if (nvram_match (crypto, "tkip+aes"))
+    return "6";
+  else
+    return "0";
 }
 
-void
-start_nas_wan (void)
+char *
+getAuthMode (char *prefix)
 {
-  start_nas ("wan");
+  char akm[32];
+  sprintf (akm, "%s_akm", prefix);
+  if (nvram_match (akm, "wpa") || nvram_match (akm, "radius"))
+    return "2";
+  else if (nvram_match (akm, "psk"))
+    return "4";
+  else if (nvram_match (akm, "psk2"))
+    return "128";
+  else if (nvram_match (akm, "psk psk2"))
+    return "132";
+  else if (nvram_match (akm, "wpa2"))
+    return "64";
+  else if (nvram_match (akm, "wpa wpa2"))
+    return "66";
+  else
+    return "255";
 }
 
-int
-start_nas (char *type)
+char *
+getKey (char *prefix)
 {
+  char akm[32];
+  char psk[32];
+  char radius[32];
+  sprintf (akm, "%s_akm", prefix);
+  sprintf (psk, "%s_wpa_psk", prefix);
+  sprintf (radius, "%s_radius_key", prefix);
+  if (nvram_match (akm, "wpa") || nvram_match (akm, "radius")
+      || nvram_match (akm, "wpa2") || nvram_match (akm, "wpa wpa2"))
+    return nvram_safe_get (radius);
+  else if (nvram_match (akm, "psk") || nvram_match (akm, "psk2")
+	   || nvram_match (akm, "psk psk2"))
+    return nvram_safe_get (psk);
+  else
+    return "";
+}
 
-  char cfgfile[64];
-  char pidfile[64];
-  char *auth_mode = "255";	/* -m N = WPA authorization mode (N = 0: none, 1: 802.1x, 2: WPA PSK, 255: disabled) */
-  char *sec_mode = { 0 };	/* -w N = security mode bitmask  (N = 1: WEP, 2: TKIP, 4: AES) */
-  char *key = { 0 }, *iface =
-  {
-  0}, *mode =
-  {
-  0};
+/*
+static void start_nas_ap(char *prefix,char *type)
+{
+      char sec[32];
+      sprintf(sec,"%s_security_mode",prefix);
+      int i;
+      for (i=0;i<strlen(sec);i++)
+        if (sec[i]=='.')sec[i]='X';
+	
+      char *security_mode = nvram_safe_get (sec);
 
-  // Sveasoft 2003-12-15 only start if enabled
-  if (!nvram_invmatch ("nas_enable", "0")
-      || nvram_match ("security_mode", "wep")
-      || nvram_match ("security_mode", "disabled"))
-    {
-      stop_nas ();
-      return 0;
-    }
-
-  if (nvram_match ("wl0_mode", "ap"))
-    {
-      char *security_mode = nvram_safe_get ("security_mode");
-
-      /* The WPA and PSK mode don't support Shared Key */
       if (strstr (security_mode, "psk") || strstr (security_mode, "wpa"))
-	nvram_set ("wl_auth", "0");
-
-      /* The WPA mode need some extra parameters for WDS mode. */
+        {
+	char auth[32];
+	sprintf(auth,"%s_auth",prefix);
+	nvram_set (auth, "0");
+	}
       convert_wds ();
 
       if (!type || !*type)
@@ -1304,91 +1338,144 @@ start_nas (char *type)
 	_eval (argv, NULL, 0, &pid);
 	cprintf ("done\n");
       }
-      return 0;
-    }
-  else
+}
+*/
+void
+start_nas_lan (void)
+{
+  start_nas ("lan", "wl0");
+#ifdef HAVE_MSSID
+  char *next;
+  char var[80];
+  char *vifs = nvram_safe_get ("wl0_vifs");
+  if (vifs != NULL)
+    foreach (var, vifs, next)
     {
-
-      snprintf (pidfile, sizeof (pidfile), "/tmp/nas.%s.pid", type);
-
-      /* Sveasoft rewrite - start nas with explicit parameters */
-      if (0 == type || 0 == *type)
-	type = "lan";
-
-      if (!strcmp (type, "lan"))
-	iface = "br0";
-      else if (wl_probe ("eth2"))	// identify wireless interface
-	iface = "eth1";
-      else
-	iface = "eth2";
-
-
-      if (0 == strcmp (nvram_safe_get ("wl0_mode"), "ap"))
-	mode = "-A";
-      else
-	mode = "-S";
-
-      /* BugBug - should we bail when mode is wep ? */
-      if (nvram_match ("wl0_wep", "wep") || nvram_match ("wl0_wep", "on")
-	  || nvram_match ("wl0_wep", "restricted")
-	  || nvram_match ("wl0_wep", "enabled"))
-	sec_mode = "1";
-      else if (nvram_match ("wl0_crypto", "tkip"))
-	sec_mode = "2";
-      else if (nvram_match ("wl0_crypto", "aes"))
-	sec_mode = "4";
-      else if (nvram_match ("wl0_crypto", "tkip+aes"))
-	sec_mode = "6";
-      else
-	sec_mode = "0";
-
-      if (nvram_match ("wl_akm", "wpa") || nvram_match ("wl_akm", "radius"))
-	auth_mode = "2";
-      else if (nvram_match ("wl_akm", "psk"))
-	auth_mode = "4";
-      else if (nvram_match ("wl_akm", "psk2"))
-	auth_mode = "128";
-      else if (nvram_match ("wl_akm", "psk psk2"))
-	auth_mode = "132";
-      else if (nvram_match ("wl_akm", "wpa2"))
-	auth_mode = "64";
-      else if (nvram_match ("wl_akm", "wpa wpa2"))
-	auth_mode = "66";
-      else
-	auth_mode = "255";
-
-      if (nvram_match ("wl_akm", "wpa") || nvram_match ("wl_akm", "radius")
-	  || nvram_match ("wl_akm", "wpa2")
-	  || nvram_match ("wl_akm", "wpa wpa2"))
-	key = nvram_safe_get ("wl0_radius_key");
-      else if (nvram_match ("wl_akm", "psk") || nvram_match ("wl_akm", "psk2")
-	       || nvram_match ("wl_akm", "psk psk2"))
-	key = nvram_safe_get ("wl_wpa_psk");
-      else
-	key = "";
-
-      {
-	//char *argv[] = {"nas", "-P", pidfile, "-l", nvram_safe_get("lan_ifname"), "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get("wl0_ssid"), "-w", sec_mode, "-g", nvram_safe_get("wl0_wpa_gtk_rekey"), "-h", nvram_safe_get("wl0_radius_ipaddr"), "-p", nvram_safe_get("wl0_radius_port"), NULL};
-	char *argv[] =
-	  { "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m",
-	  auth_mode, "-k", key, "-s", nvram_safe_get ("wl0_ssid"), "-w",
-	  sec_mode, "-g",
-	  nvram_safe_get ("wl0_wpa_gtk_rekey"), NULL
-	};
-	pid_t pid;
-	FILE *fp = { 0 };
-
-	_eval (argv, NULL, 0, &pid);
-
-	fp = fopen (pidfile, "w");
-	if (fp)
-	  fprintf (fp, "%d", pid);
-	fclose (fp);
-
-	cprintf ("done\n");
-      }
-      return 0;
+      start_nas ("lan", var);
     }
+#endif
+
+}
+
+
+
+void
+start_nas_wan (void)
+{
+  start_nas ("wan", "wl0");
+#ifdef HAVE_MSSID
+  char *next;
+  char var[80];
+  char *vifs = nvram_safe_get ("wl0_vifs");
+  if (vifs != NULL)
+    foreach (var, vifs, next)
+    {
+      start_nas ("wan", var);
+    }
+#endif
+}
+
+int
+start_nas (char *type, char *prefix)
+{
+
+  char cfgfile[64];
+  char pidfile[64];
+  char *auth_mode = "255";	/* -m N = WPA authorization mode (N = 0: none, 1: 802.1x, 2: WPA PSK, 255: disabled) */
+  char *sec_mode = { 0 };	/* -w N = security mode bitmask  (N = 1: WEP, 2: TKIP, 4: AES) */
+  char *key = { 0 }, *iface =
+  {
+  0}, *mode =
+  {
+  0};
+
+  // Sveasoft 2003-12-15 only start if enabled
+  /* if (!nvram_invmatch ("nas_enable", "0")
+     || nvram_match ("security_mode", "wep")
+     || nvram_match ("security_mode", "disabled"))
+     {
+     stop_nas ();
+     return 0;
+     }
+   */
+  convert_wds ();
+  {
+
+    snprintf (pidfile, sizeof (pidfile), "/tmp/nas.%s%s.pid", prefix, type);
+
+    /* Sveasoft rewrite - start nas with explicit parameters */
+    if (0 == type || 0 == *type)
+      type = "lan";
+
+    if (!strcmp (type, "lan"))
+      iface = "br0";
+    else
+      {
+
+	if (!strcmp (prefix, "wl0"))
+	  {
+	    if (wl_probe ("eth2"))	// identify wireless interface
+	      iface = "eth1";
+	    else
+	      iface = "eth2";
+	  }
+	else
+	  {
+	    iface = prefix;
+	  }
+      }
+
+    sec_mode = getSecMode (prefix);
+    auth_mode = getAuthMode (prefix);
+    char apmode[32];
+    sprintf (apmode, "%s_mode", prefix);
+    if (0 == strcmp (nvram_safe_get (apmode), "ap"))
+      mode = "-A";
+    else
+      mode = "-S";
+
+    char rekey[32];
+    char ssid[32];
+    sprintf (rekey, "%s_wpa_gtk_rekey", prefix);
+    sprintf (ssid, "%s_ssid", prefix);
+
+    key = getKey (prefix);
+
+    {
+      //char *argv[] = {"nas", "-P", pidfile, "-l", nvram_safe_get("lan_ifname"), "-H", "34954", "-i", iface, mode, "-m", auth_mode, "-k", key, "-s", nvram_safe_get("wl0_ssid"), "-w", sec_mode, "-g", nvram_safe_get("wl0_wpa_gtk_rekey"), "-h", nvram_safe_get("wl0_radius_ipaddr"), "-p", nvram_safe_get("wl0_radius_port"), NULL};
+      pid_t pid;
+      FILE *fp = { 0 };
+      if (!strcmp (mode, "-S"))
+	{
+	  char *argv[] =
+	    { "nas", "-P", pidfile, "-H", "34954", "-i", iface, mode, "-m",
+	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
+	    sec_mode, "-g",
+	    nvram_safe_get (rekey), NULL
+	  };
+      _eval (argv, NULL, 0, &pid);
+	}
+      else
+	{
+	  char *argv[] =
+	    { "nas", "-P", pidfile, "-H", "34954", "-l", nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
+	    sec_mode, "-g",
+	    nvram_safe_get (rekey), NULL
+	  };
+      _eval (argv, NULL, 0, &pid);
+	}
+
+
+      fp = fopen (pidfile, "w");
+      if (fp)
+	fprintf (fp, "%d", pid);
+      fclose (fp);
+
+      cprintf ("done\n");
+    }
+    return 0;
+  }
 }
 
 int
@@ -3117,8 +3204,8 @@ start_splashd (void)
 
   /* Irving - make sure our WAN link is up first.
      if not, check_ps will start us later 
-  if (nvram_match ("wan_ipaddr", "0.0.0.0"))
-    return 0; */
+     if (nvram_match ("wan_ipaddr", "0.0.0.0"))
+     return 0; */
 
   mk_nocat_conf ();
 
