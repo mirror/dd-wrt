@@ -1080,11 +1080,25 @@ start_wan (int status)
 //    perror ("Write WAN mac fail : ");
 //  else
 //    cprintf ("Write WAN mac successfully\n");
+
   if (memcmp (ifr.ifr_hwaddr.sa_data, "\0\0\0\0\0\0", ETHER_ADDR_LEN))
     {
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
       ioctl (s, SIOCSIFHWADDR, &ifr);
+      cprintf ("Write WAN mac successfully\n");
     }
+  else
+    perror ("Write WAN mac fail : ");
+
+#ifdef HAVE_PPPOE
+  /* PPPOE MAC fix */
+  if (nvram_match ("ppp_demand", "1") && !pppoe_rp && (strcmp (wan_proto, "pppoe") == 0)
+    {
+      char eabuf[32];
+      nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    }
+#endif
+
 #endif
 
   /* Set MTU */
