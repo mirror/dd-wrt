@@ -1428,15 +1428,18 @@ start_wan (int status)
   cprintf ("dhcp client ready\n");
 
   /* Get current WAN hardware address */
+//  fprintf(stderr,"get wan addr of %s\n",wan_ifname);
   strncpy (ifr.ifr_name, wan_ifname, IFNAMSIZ);
   cprintf ("get current hardware adress");
-  if (pppoe_flag = 0)
+  if (pppoe_flag == 0)
     {
       if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
 	{
 	  char eabuf[32];
 	  nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+//	  fprintf(stderr,"write wan addr %s\n",nvram_safe_get("wan_hwaddr"));
 	}
+
     }
 
   close (s);
