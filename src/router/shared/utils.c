@@ -478,7 +478,7 @@ diag_led_4704 (int type, int act)
   /* The router will crash, if we load the code into broadcom demo board. */
   return 1;
 #endif
-
+  int brand;
   control = read_gpio ("/dev/gpio/control");
   in = read_gpio ("/dev/gpio/in");
   out = read_gpio ("/dev/gpio/out");
@@ -512,8 +512,8 @@ diag_led_4704 (int type, int act)
 	}
       break;
     case DMZ:
-	int brand = getRouterBrand();
-	if (brand==ROUTER_WRTSL54GS:
+	brand = getRouterBrand();
+	if (brand==ROUTER_WRTSL54GS)
 	    {
 	    if (act==STOP_LED)
 		{
