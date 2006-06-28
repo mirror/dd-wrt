@@ -1876,7 +1876,27 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n2, "%s_akm", prefix);
   char *v = websGetVar (wp, n, NULL);
   if (v)
+    {
+	char auth[32];
+	char wep[32];
+	sprintf(auth,"%s_auth_mode",prefix);
+	sprintf(wep,"%s_wep",prefix);
+    if (!strcmp(v,"wep"))
+	{
+	nvram_set(auth,"none");
+	nvram_set(wep,"enabled");	
+	}else
+    if (!strcmp(v,"radius"))
+	{
+	nvram_set(auth,"radius");
+	nvram_set(wep,"enabled");	
+	}else
+	{
+	nvram_set(auth,"none");
+	nvram_set(wep,"disabled");	
+	}
     nvram_set (n2, v);
+    }
 
   copytonv (wp, n);
 
