@@ -1266,6 +1266,8 @@ getAuthMode (char *prefix)
 {
   char akm[32];
   sprintf (akm, "%s_akm", prefix);
+  if (nvram_match (akm, "disabled") || nvram_get(akm)==NULL)
+    return NULL;
   if (nvram_match (akm, "wpa") || nvram_match (akm, "radius"))
     return "2";
   else if (nvram_match (akm, "psk"))
@@ -1427,6 +1429,8 @@ start_nas (char *type, char *prefix)
 
     sec_mode = getSecMode (prefix);
     auth_mode = getAuthMode (prefix);
+    if (auth_mode==NULL)
+	return 0; //no nas required
     char apmode[32];
     sprintf (apmode, "%s_mode", prefix);
     if (0 == strcmp (nvram_safe_get (apmode), "ap"))
