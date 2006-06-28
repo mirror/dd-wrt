@@ -1092,7 +1092,7 @@ start_wan (int status)
 
 #ifdef HAVE_PPPOE
   /* PPPOE MAC fix */
-  if (nvram_match ("ppp_demand", "1") && !pppoe_rp && (strcmp (wan_proto, "pppoe") == 0)
+  if (nvram_match ("ppp_demand", "1") && !pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
     {
       char eabuf[32];
       nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
