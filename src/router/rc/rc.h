@@ -104,7 +104,7 @@ extern int start_nonstd_interfaces (void);
 extern int setup_vlans (void);
 /* end lonewolf mods */
 
-extern int start_nas (char *type, char *prefix);
+extern int start_nas (char *type, char *prefix );
 extern int stop_nas (void);
 #ifdef HAVE_MULTICAST
 extern int start_igmp_proxy (void);
