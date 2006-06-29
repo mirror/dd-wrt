@@ -30,6 +30,7 @@
 #include <bcmutils.h>
 #include <shutils.h>
 #include <libbridge.h>
+#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 void
 do_mssid (char *lan_ifname)
