@@ -1599,7 +1599,7 @@ show_virtualssid (webs_t wp, char *prefix)
 //    show_channel (wp, prefix, var);
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "AP Isolation", ssid);
-    websWrite (wp, "</fieldset>\n");
+    websWrite (wp, "</fieldset><br />\n");
     count++;
   }
 #ifdef HAVE_MADWIFI
