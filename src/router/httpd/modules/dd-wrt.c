@@ -1555,8 +1555,8 @@ show_virtualssid (webs_t wp, char *prefix)
   if (vifs == NULL)
     return 0;
   int count = 1;
-  websWrite (wp, "<fieldset>\n");
   websWrite (wp, "<h2>Virtual Interfaces</h2>\n");
+  websWrite (wp, "<fieldset>\n");
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
@@ -1893,8 +1893,10 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 //wireless mode
+  websWrite (wp, "<h2>Wireless Physical Interface\n");
+  websWrite (wp, "<fieldset>\n");
   websWrite (wp,
-	     "<h2>Wireless Physical Interface %s - SSID [%s] HWAddr [%s]</h2>\n",
+	     "<legend>Interface %s - SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (wl_ssid), nvram_safe_get (wl_macaddr));
   websWrite (wp, "<div>\n");
   char power[16];
@@ -1931,14 +1933,17 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 
 #endif
-
+/* moved to the bottom
   sprintf (power, "%s_distance", prefix);
+  websWrite (wp, "<br /><br />\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp,
-	     "<div class=\"label\">Sensitivity Range</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"6\" value='%s'/> m (Default: 20000)\n",
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
+  websWrite (wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
 	     power, nvram_safe_get (power));
+  websWrite (wp, "<span class="default"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\")</script></span>\n");
   websWrite (wp, "</div>\n");
-
+*/
+  
 #ifdef HAVE_MADWIFI
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
 #endif
@@ -2070,7 +2075,21 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 wl_closed, nvram_match (wl_closed, "1") ? "checked" : "");
       websWrite (wp, "</div>\n");
     }
+    
+// ACK timing
+  sprintf (power, "%s_distance", prefix);
+  websWrite (wp, "<br /><br />\n");
+  websWrite (wp, "<div class=\"setting\">\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
+  websWrite (wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
+	     power, nvram_safe_get (power));
+  websWrite (wp, "<span class="default"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\")</script></span>\n");
   websWrite (wp, "</div>\n");
+//end ACK timing
+   
+  websWrite (wp, "</div>\n");
+  websWrite (wp, "</div>\n");
+  websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
   show_virtualssid (wp, prefix);
 }
