@@ -41,6 +41,7 @@ do_mssid (char *lan_ifname)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
+      ifconfig (var, IFUP, NULL, NULL);
       br_add_interface (lan_ifname, var);
       //  eval ("brctl", "addif", lan_ifname, var);
     }
