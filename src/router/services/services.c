@@ -2854,19 +2854,234 @@ start_pppoe (int pppoe_num)
 
   if (nvram_match (ppp_demand[pppoe_num], "1"))
     {
-      int timeout = 5;
+      //int timeout = 5;
       start_tmp_ppp (pppoe_num);
 
-      // Wait for pppoeifname to be added
-      while (ifconfig (nvram_safe_get (pppoeifname), IFUP, NULL, NULL)
-	     && timeout--)
-	sleep (1);
-      route_add (nvram_safe_get ("wan_iface"), 0, "0.0.0.0", "10.112.112.112",
-		 "0.0.0.0");
+// This should be handled in start_wan_done
+//      while (ifconfig (nvram_safe_get (pppoeifname), IFUP, NULL, NULL)
+//	     && timeout--)
+//	sleep (1);
+//      route_add (nvram_safe_get ("wan_iface"), 0, "0.0.0.0", "10.112.112.112",
+//		 "0.0.0.0");
 
     }
   cprintf ("done. session %d\n", pppoe_num);
   return 0;
+}
+
+int
+start_rp_pppoe (void)
+{
+      char username[80], passwd[80];
+      char idletime[20], retry_num[20];
+
+      snprintf (idletime, sizeof (idletime), "%d",
+		atoi (nvram_safe_get ("ppp_idletime")) * 60);
+      snprintf (retry_num, sizeof (retry_num), "%d",
+		(atoi (nvram_safe_get ("ppp_redialperiod")) / 5) - 1);
+
+      if (nvram_match ("aol_block_traffic", "0"))
+	{
+	  snprintf (username, sizeof (username), "%s",
+		    nvram_safe_get ("ppp_username"));
+	  snprintf (passwd, sizeof (passwd), "%s",
+		    nvram_safe_get ("ppp_passwd"));
+	}
+      else
+	{
+	  if (!strcmp (nvram_safe_get ("aol_username"), ""))
+	    {
+	      snprintf (username, sizeof (username), "%s",
+			nvram_safe_get ("ppp_username"));
+	      snprintf (passwd, sizeof (passwd), "%s",
+			nvram_safe_get ("ppp_passwd"));
+	    }
+	  else
+	    {
+	      snprintf (username, sizeof (username), "%s",
+			nvram_safe_get ("aol_username"));
+	      snprintf (passwd, sizeof (passwd), "%s",
+			nvram_safe_get ("aol_passwd"));
+	    }
+	}
+
+      mkdir ("/tmp/ppp", 0777);
+      int timeout = 5;
+
+      // Lets open option file and enter all the parameters.
+      fp = fopen ("/tmp/ppp/options.pppoe", "w");
+
+      // pty is used by pppd to initiate PPPoE binary for connection negotiation
+      fprintf (fp, "pty '/usr/sbin/pppoe -I %s", pppoe_wan_ifname);
+
+
+      // This allows us to select a specific PPPoE service provider (only available via command line setting nvram variable ppp_service to service provider
+      if (nvram_invmatch ("pppoe_service", ""))
+	fprintf (fp, " -S %s", nvram_safe_get ("pppoe_service"));
+
+      // This allows us to select a specific PPPoE access concentrator (only available via command line setting nvram variable ppp_ac to concentrators name
+      if (nvram_invmatch ("pppoe_ac", ""))
+	fprintf (fp, " -C %s", nvram_safe_get ("pppoe_ac"));
+
+      // This allows us to clamp MSS to a specific value.
+      // Warning!!! This _may_ break IPSec connections using this interface if using this options.
+      // if at all possible clampmss should be used in iptables during tcp handshaking (syn)
+      // If IPSec used on this interface, rely on lower MTU and clamp MSS using iptables on traffic before IPSec tunnel
+      // Do not forget about IPSec overhead when clamping with iptables.
+      if (nvram_invmatch ("pppoe_clampmss", ""))
+	if (atoi (nvram_safe_get ("pppoe_clampmss")) > 0)
+	  fprintf (fp, " -m %s", nvram_safe_get ("pppoe_clampmss"));
+
+      // Experimental synchronous transfer mode
+      // Will not work on all ISP's or kernel's.
+      // If it does, consider yourself lucky and enjoy greatly reduced CPU usage and faster troughtput
+      if (nvram_match ("pppoe_synchronous", "1"))
+	fprintf (fp, " -s'\nsync\n");
+      else
+	fprintf (fp, "'\n");
+
+      // Those are default options we use + user/passwd
+      // By using user/password options we dont have to deal with chap/pap secrets files.
+      fprintf (fp, "noipdefault\n"
+	       "noauth\n"
+	       "defaultroute\n"
+	       "noaccomp\n"
+	       "noccp\n"
+	       "nobsdcomp\n"
+	       "nodeflate\n"
+	       "nopcomp\n"
+	       "novj\n"
+	       "novjccomp\n"
+	       "nomppe\n"
+	       "nomppc\n"
+	       "usepeerdns\n"
+	       "user '%s'\n" "password '%s'\n", username, passwd);
+
+      // This is a tricky one. When used it could improve speed of PPPoE but not all ISP's can support it.
+      // default-asyncmap escapes all control characters. By using asyncmap 0 PPPD will not escape any control characters
+      // Not all ISP's can handle this. By default use default-asyncmap
+      // and if ppp_asyncmap=1 do not escape
+      if (nvram_match ("ppp_asyncmap", "1"))
+	fprintf (fp, "asyncmap 0\n");
+      else
+	fprintf (fp, "default-asyncmap\n");
+
+
+      // Allow users some control on PPP interface MTU and MRU
+      // If pppoe_ppp_mtu > 0 will set mtu of pppX interface to the value in the nvram variable
+      // If pppoe_ppp_mru > 0 will set mru of pppX interface to the value in the nvram variable
+      // if none is specified PPPD will autonegotiate the values with ISP (sometimes not desirable)
+      // Do not forget this should be at least 8 bytes less then physycal interfaces mtu.
+
+
+      // if MRU is not Auto force MTU/MRU of interface to value selected by theuser on web page
+      if (nvram_match ("mtu_enable", "1"))
+	{
+	  if (atoi (nvram_safe_get ("wan_mtu")) > 0)
+	    {
+	      fprintf (fp, "mtu %s\n", nvram_safe_get ("wan_mtu"));
+	      fprintf (fp, "mru %s\n", nvram_safe_get ("wan_mtu"));
+	    }
+
+	}
+      else
+	{
+	  // If MRU set to Auto we still allow custom MTU/MRU settings for expirienced users
+	  if (nvram_invmatch ("pppoe_ppp_mtu", ""))
+	    if (atoi (nvram_safe_get ("pppoe_ppp_mtu")) > 0)
+	      fprintf (fp, "mtu %s\n", nvram_safe_get ("pppoe_ppp_mtu"));
+	  if (nvram_invmatch ("pppoe_ppp_mru", ""))
+	    if (atoi (nvram_safe_get ("pppoe_ppp_mru")) > 0)
+	      fprintf (fp, "mru %s\n", nvram_safe_get ("pppoe_ppp_mru"));
+	}
+
+      // Allow runtime debugging
+      if (nvram_match ("ppp_debug", "1"))
+	fprintf (fp, "debug\n");
+
+      // Demand dial.. This is not pretty.
+      // The first problems i see is that if connection is lost it would take PPPoE (idletime * 2) * 3 to notice it.
+      // In other words if idle is set to 30 seconds, it would take 30*2*3 (180) seconds to detect the lost connection.
+      // We have to increase the lcp-echo-interval to idletime*2 so that we do not upset the idletime counter.
+      // When not using demand dialing, it only takes 15 seconds to detect the lost connection.
+      if (nvram_match ("ppp_demand", "1"))
+	fprintf (fp, "demand\n"
+		 "idle %s\n"
+		 "10.112.112.112:10.112.112.113\n"
+		 "lcp-echo-interval %d\n"
+		 "lcp-echo-failure 3\n"
+		 "ipcp-accept-remote\n"
+		 "ipcp-accept-local\n"
+		 "connect true\n" "ktune\n", idletime, atoi (idletime) * 2);
+      else
+	fprintf (fp, "persist\n"
+		 "lcp-echo-interval 5\n" "lcp-echo-failure 3\n");
+
+      fclose (fp);
+
+      symlink ("/sbin/rc", "/tmp/ppp/ip-up");
+      symlink ("/sbin/rc", "/tmp/ppp/ip-down");
+      unlink ("/tmp/ppp/log");
+
+      //Clean pppoe linksys client files - Added by ice-man (Wed Jun 1)
+      unlink ("/tmp/ppp/connect-log");
+      unlink ("/tmp/ppp/set-pppoepid");
+
+      stop_dhcpc ();
+      stop_pptp ();
+
+      eval ("/usr/sbin/pppd", "file", "/tmp/ppp/options.pppoe");
+
+      // This is horrible.
+      // What if pppoe recconects with ppp1?
+
+      /* Pretend that the WAN interface is up */
+      if (nvram_match ("ppp_demand", "1"))
+	{
+	  /* Wait for ppp0 to be created */
+	  while (ifconfig ("ppp0", IFUP, NULL, NULL) && timeout--)
+	    sleep (1);
+	  strncpy (ifr.ifr_name, "ppp0", IFNAMSIZ);
+
+	  /* Set temporary IP address */
+	  timeout = 3;
+	  while (ioctl (s, SIOCGIFADDR, &ifr) && timeout--)
+	    {
+	      perror ("ppp0");
+	      printf ("Wait ppp inteface to init (1) ...\n");
+	      sleep (1);
+	    };
+	  nvram_set ("wan_ipaddr", inet_ntoa (sin_addr (&ifr.ifr_addr)));
+	  nvram_set ("wan_netmask", "255.255.255.255");
+
+	  /* Set temporary P-t-P address */
+	  timeout = 3;
+	  while (ioctl (s, SIOCGIFDSTADDR, &ifr) && timeout--)
+	    {
+	      perror ("ppp0");
+	      printf ("Wait ppp inteface to init (2) ...\n");
+	      sleep (1);
+	    }
+	  nvram_set ("wan_gateway", inet_ntoa (sin_addr (&ifr.ifr_dstaddr)));
+
+	  start_wan_done ("ppp0");
+
+	  // if user press Connect" button from web, we must force to dial
+	  if (nvram_match ("action_service", "start_pppoe"))
+	    {
+	      sleep (3);
+	      start_force_to_dial ();
+	      nvram_set ("action_service", "");
+	    }
+	}
+      else
+	{
+	  if (status != REDIAL)
+	    {
+	      start_redial ();
+	    }
+	}
+return 0;
 }
 #endif
 /* AhMan  March 18 2005 */
