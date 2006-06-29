@@ -1,3 +1,6 @@
+
+include $(TOP)/.config
+
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
@@ -9,7 +12,6 @@ install:
 	install -d $(INSTALLDIR)/sbin
 	install -d $(INSTALLDIR)/usr/sbin
 	install -d $(INSTALLDIR)/lib
-
 	install services $(INSTALLDIR)/etc
 ifdef CONFIG_SER
 	install profile2 $(INSTALLDIR)/etc/profile
@@ -21,10 +23,15 @@ ifdef CONFIG_MSSID
 else
 	install motd.v23 $(INSTALLDIR)/etc/motd
 endif
+
 	install fstab $(INSTALLDIR)/etc
 	install ethertypes $(INSTALLDIR)/etc
 	install protocols $(INSTALLDIR)/etc
+ifndef CONFIG_MSSID
 	install txackset.sh $(INSTALLDIR)/etc
+else
+	install patchtable.bin $(INSTALLDIR)/etc
+endif
 	install network.overrides $(INSTALLDIR)/etc
 	install init.d/rcS $(INSTALLDIR)/etc/init.d
 #install nvram/nvram $(INSTALLDIR)/etc/nvram
