@@ -366,11 +366,11 @@ start_restore_defaults (void)
 
   switch (brand)
     {
-	case ROUTER_BUFFALO_WLA2G54L:
-	break;
-	default:
+    case ROUTER_BUFFALO_WLA2G54L:
+      break;
+    default:
 
-	  if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+      if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
 	restore_defaults = 1;
       if (nvram_match ("product_name", "INSPECTION"))
 	{
@@ -392,7 +392,7 @@ start_restore_defaults (void)
     {
     case ROUTER_WRTSL54GS:
       linux_overrides = generic;
-      break;    
+      break;
     case ROUTER_ASUS:
     case ROUTER_ASUS_WL500G_PRE:
       linux_overrides = vlan;
@@ -862,9 +862,9 @@ start_sysinit (void)
     }
   if (brand == ROUTER_WRTSL54GS)
     {
-      nvram_set ("wan_ifname","eth1");
-      nvram_set ("wan_ifnames","eth1");
-      nvram_set ("pppoe_wan_ifname","eth1");
+      nvram_set ("wan_ifname", "eth1");
+      nvram_set ("wan_ifnames", "eth1");
+      nvram_set ("pppoe_wan_ifname", "eth1");
     }
   if (brand == ROUTER_ASUS_WL500G_PRE)
     {
@@ -883,7 +883,7 @@ start_sysinit (void)
     {
       eval ("gpio", "disable", "1");	//WBR2G54 diag led off
     }
-    
+
   if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
     {
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54G v2 interfaces
