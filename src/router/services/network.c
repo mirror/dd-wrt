@@ -405,7 +405,7 @@ start_lan (void)
   /* you gotta bring it down before you can set its MAC */
   cprintf ("configure wl_face\n");
   ifconfig (wl_face, 0, 0, 0);
-unsigned char mac[20];
+  unsigned char mac[20];
 
   if (nvram_match ("mac_clone_enable", "1") &&
       nvram_invmatch ("def_whwaddr", "00:00:00:00:00:00") &&
@@ -520,27 +520,27 @@ unsigned char mac[20];
 	else
 	  {
 #ifdef HAVE_MSSID
-  char tmac[16];
-  sprintf (tmac, "%s_hwaddr", "wl0");
-  nvram_set (tmac,mac);
+	    char tmac[16];
+	    sprintf (tmac, "%s_hwaddr", "wl0");
+	    nvram_set (tmac, mac);
 
-  char *next2;
-  char var[80];
-  char *vifs = nvram_safe_get ("wl0_vifs");
-  if (vifs != NULL)
-    foreach (var, vifs, next2)
-    {
-      sprintf (tmac, "%s_hwaddr", var);
-      MAC_ADD (mac);
-      nvram_set (tmac, mac);
-      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      strncpy (ifr.ifr_name, var, IFNAMSIZ);
-      if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-	perror ("Write wireless mac fail : ");
-      else
-	cprintf ("Write wireless mac successfully\n");
-    }
+	    char *next2;
+	    char var[80];
+	    char *vifs = nvram_safe_get ("wl0_vifs");
+	    if (vifs != NULL)
+	      foreach (var, vifs, next2)
+	      {
+		sprintf (tmac, "%s_hwaddr", var);
+		MAC_ADD (mac);
+		nvram_set (tmac, mac);
+		ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+		ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+		strncpy (ifr.ifr_name, var, IFNAMSIZ);
+		if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+		  perror ("Write wireless mac fail : ");
+		else
+		  cprintf ("Write wireless mac successfully\n");
+	      }
 #endif
 
 
@@ -917,6 +917,16 @@ stop_lan (void)
   /* Bring down LAN interface */
   ifconfig (lan_ifname, 0, NULL, NULL);
   br_init ();
+#ifdef HAVE_MSSID
+  br_del_bridge ("wl0.1");
+  ifconfig ("wl0.1", 0, NULL, NULL);
+  br_del_bridge ("wl0.2");
+  ifconfig ("wl0.2", 0, NULL, NULL);
+  br_del_bridge ("wl0.3");
+  ifconfig ("wl0.3", 0, NULL, NULL);
+  br_del_bridge ("wl0.4");
+  ifconfig ("wl0.4", 0, NULL, NULL);
+#endif
   /* Bring down bridged interfaces */
   if (strncmp (lan_ifname, "br", 2) == 0)
     {
@@ -964,13 +974,13 @@ start_wan (int status)
   char *wan_proto = nvram_safe_get ("wan_proto");
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #else
-  char *pppoe_wan_ifname =
-    nvram_invmatch ("pppoe_wan_ifname",
-		    "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
+					   "") ?
+    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 #endif
   if (nvram_match ("wl_mode", "wet"))
     {
@@ -1089,7 +1099,8 @@ start_wan (int status)
 
 #ifdef HAVE_PPPOE
   /* PPPOE MAC fix */
-  if (nvram_match ("ppp_demand", "1") && !pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
+  if (nvram_match ("ppp_demand", "1") && !pppoe_rp
+      && (strcmp (wan_proto, "pppoe") == 0))
     {
       char eabuf[32];
       nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
@@ -1436,8 +1447,9 @@ start_wan (int status)
       if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
 	{
 	  char eabuf[32];
-	  nvram_set ("wan_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
-//	  fprintf(stderr,"write wan addr %s\n",nvram_safe_get("wan_hwaddr"));
+	  nvram_set ("wan_hwaddr",
+		     ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+//        fprintf(stderr,"write wan addr %s\n",nvram_safe_get("wan_hwaddr"));
 	}
 
     }
@@ -2071,8 +2083,8 @@ start_hotplug_net (void)
   if (!(interface = getenv ("INTERFACE")) || !(action = getenv ("ACTION")))
     return EINVAL;
 
-  if (strncmp(interface, "wds", 3))
-              return 0;
+  if (strncmp (interface, "wds", 3))
+    return 0;
 
   if (!strcmp (action, "register"))
     {

@@ -18,7 +18,7 @@ gpio_main (int argc, char **argv)
 
   if (argc != 3)
     {
-      fprintf(stdout,"%s <poll | enable | disable> <pin>\n", argv[0]);
+      fprintf (stdout, "%s <poll | enable | disable> <pin>\n", argv[0]);
       exit (1);
     }
 
@@ -34,7 +34,7 @@ gpio_main (int argc, char **argv)
 	  read (gpioin, &gpio, sizeof (gpio));
 	  gpio = (gpio & pin) ? 1 : 0;
 	  if (gpio != old_gpio)
-	fprintf (stdout,"%02X\n", gpio);
+	    fprintf (stdout, "%02X\n", gpio);
 	  old_gpio = gpio;
 	}
     }
