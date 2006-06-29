@@ -1,3 +1,4 @@
+#define NEED_PRINTF
 /* vi: set sw=4 ts=4: */
 /*
  * Mini ps implementation(s) for busybox
