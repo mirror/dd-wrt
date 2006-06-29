@@ -1709,30 +1709,19 @@ remove_vifs_single (char *prefix)
   char var[80];
   char wif[16];
   sprintf (wif, "%s_vifs", prefix);
-  int count = get_vifcount (prefix) - 1;
-  int o = count;
-
+  int o;
   char *vifs = nvram_safe_get (wif);
-  char *n = (char *) malloc (strlen (vifs));
-  n[0] = 0;
-  if (vifs == NULL)
-    return 0;
-  if (count)
+  char copy[128];
+  strcpy(copy,vifs);
+  int i;
+  
+  for (i=0;i<strlen(copy);i++)
     {
-      foreach (var, vifs, next)
-      {
-	if (o == count)
-	  strcat (n, var);
-	else
-	  {
-	    strcat (n, " ");
-	    strcat (n, var);
-	  }
-      }
+      if (copy[i]==0x20)o=i;
     }
-  nvram_set (wif, n);
+    copy[o]=0;
+  nvram_set (wif, copy);
   //nvram_commit ();
-  free (n);
   return 0;
 }
 
