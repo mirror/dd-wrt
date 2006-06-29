@@ -2073,7 +2073,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       websWrite (wp,
 		 "<input type=\"radio\" value=\"1\" name=\"%s\" %s>Disable</input>\n",
 		 wl_closed, nvram_match (wl_closed, "1") ? "checked" : "");
-//      websWrite (wp, "</div>\n");
+      websWrite (wp, "</div>\n");
     }
     
 // ACK timing
@@ -2087,8 +2087,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 //end ACK timing
    
-  websWrite (wp, "</div>\n");
-  websWrite (wp, "</div>\n");
   websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
   show_virtualssid (wp, prefix);
