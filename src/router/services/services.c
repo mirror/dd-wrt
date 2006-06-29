@@ -960,7 +960,7 @@ start_dnsmasq (void)
 	  }
 
 	if (nvram_match ("auth_dnsmasq", "1"))
-	    fprintf (fp, "dhcp-authoritative\n");
+	  fprintf (fp, "dhcp-authoritative\n");
 	fprintf (fp, "dhcp-range=");
 	fprintf (fp, "%d.%d.%d.%s,",
 		 get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
@@ -1265,7 +1265,8 @@ getAuthMode (char *prefix)
 {
   char akm[32];
   sprintf (akm, "%s_akm", prefix);
-  if (nvram_match (akm, "disabled") || nvram_get(akm)==NULL || strlen(nvram_safe_get(akm))==0)
+  if (nvram_match (akm, "disabled") || nvram_get (akm) == NULL
+      || strlen (nvram_safe_get (akm)) == 0)
     return NULL;
   if (nvram_match (akm, "wpa") || nvram_match (akm, "radius"))
     return "2";
@@ -1428,8 +1429,8 @@ start_nas (char *type, char *prefix)
 
     sec_mode = getSecMode (prefix);
     auth_mode = getAuthMode (prefix);
-    if (auth_mode==NULL)
-	return 0; //no nas required
+    if (auth_mode == NULL)
+      return 0;			//no nas required
     char apmode[32];
     sprintf (apmode, "%s_mode", prefix);
     if (0 == strcmp (nvram_safe_get (apmode), "ap"))
@@ -1456,17 +1457,18 @@ start_nas (char *type, char *prefix)
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
-      _eval (argv, NULL, 0, &pid);
+	  _eval (argv, NULL, 0, &pid);
 	}
       else
 	{
 	  char *argv[] =
-	    { "nas", "-P", pidfile, "-H", "34954", "-l", nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+	    { "nas", "-P", pidfile, "-H", "34954", "-l",
+ nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
 	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
-      _eval (argv, NULL, 0, &pid);
+	  _eval (argv, NULL, 0, &pid);
 	}
 
 
