@@ -1677,13 +1677,13 @@ add_vifs_single (char *prefix, int device)
   sprintf (v2, "%s_vifs", prefix);
   nvram_set (v2, n);
 
-  sprintf (v2, "%s_gtk_rekey", prefix);
+  sprintf (v2, "%s_gtk_rekey", v);
   nvram_set (v2, "3600");
 
-  sprintf (v2, "%s_radius_port", prefix);
+  sprintf (v2, "%s_radius_port", v);
   nvram_set (v2, "1812");
 
-  sprintf (v2, "%s_radius_ipaddr", prefix);
+  sprintf (v2, "%s_radius_ipaddr", v);
   nvram_set (v2, "0.0.0.0");
 
 
