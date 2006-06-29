@@ -3664,8 +3664,8 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("dhcp_dnsmasq", "0");
   nvram_set ("chilli_enable", "1");
   nvram_set ("chilli_url", "https://login.fon.com/cp/index.php");
-  nvram_set ("chilli_radius", "emilio.fon.com");
-  nvram_set ("chilli_backup", "emilio.fon.com");
+  nvram_set ("chilli_radius", "radius01.fon.com");
+  nvram_set ("chilli_backup", "radius02.fon.com");
   nvram_set ("chilli_pass", "garrafon");
   nvram_set ("chilli_dns1", "0.0.0.0");
   nvram_set ("chilli_interface", "wlan");
@@ -3673,7 +3673,7 @@ do_fon_cgi (char *url, webs_t wp)
   nvram_set ("chilli_uamsecret", "garrafon");
   nvram_set ("chilli_uamanydns", "1");
   nvram_set ("chilli_uamallowed",
-	     "www.fon.com,acceso.fon.com,en.fon.com,es.fon.com,www.paypal.com,www.paypalobjects.com");
+	     "www.fon.com,www.paypal.com,www.paypalobjects.com,www.skype.com,www.dd-wrt.com,www.dd-wrt.org,www.dd-wrt.com.de,213.134.45.0/24");
   nvram_set ("chilli_macauth", "0");
   nvram_set ("chilli_additional", "");
   nvram_set ("fon_enable", "1");
