@@ -1893,7 +1893,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 //wireless mode
-  websWrite (wp, "<h2>Wireless Physical Interface\n");
+  websWrite (wp, "<h2>Wireless Physical Interface</h2>\n");
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend>Interface %s - SSID [%s] HWAddr [%s]</legend>\n",
@@ -2073,7 +2073,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
       websWrite (wp,
 		 "<input type=\"radio\" value=\"1\" name=\"%s\" %s>Disable</input>\n",
 		 wl_closed, nvram_match (wl_closed, "1") ? "checked" : "");
-      websWrite (wp, "</div>\n");
+//      websWrite (wp, "</div>\n");
     }
     
 // ACK timing
