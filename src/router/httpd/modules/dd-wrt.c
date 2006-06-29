@@ -1581,9 +1581,9 @@ show_virtualssid (webs_t wp, char *prefix)
 	       "<input type=\"radio\" value=\"1\" name=\"%s_closed\" %s>Disable</input>\n",
 	       var, nvram_match (ssid, "1") ? "checked" : "");
     websWrite (wp, "</div>\n");
+#ifdef HAVE_MADWIFI
     char wl_mode[16];
-    sprintf (wl_mode, "%s_mode", prefix);
-
+    sprintf (wl_mode, "%s_mode", var);
     websWrite (wp,
 	       "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
 	       wl_mode);
@@ -1595,6 +1595,7 @@ show_virtualssid (webs_t wp, char *prefix)
 	       nvram_match (wl_mode, "wdsap") ? "selected" : "");
     websWrite (wp, "</select>\n");
     websWrite (wp, "</div>\n");
+#endif
 //mode
 //    show_netmode (wp, var);
 //    show_channel (wp, prefix, var);
