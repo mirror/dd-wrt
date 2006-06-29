@@ -1934,16 +1934,6 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 
 #endif
-/* moved to the bottom
-  sprintf (power, "%s_distance", prefix);
-  websWrite (wp, "<br /><br />\n");
-  websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
-  websWrite (wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
-	     power, nvram_safe_get (power));
-  websWrite (wp, "<span class="default"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\")</script></span>\n");
-  websWrite (wp, "</div>\n");
-*/
   
 #ifdef HAVE_MADWIFI
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
@@ -2079,12 +2069,12 @@ ej_show_wireless_single (webs_t wp, char *prefix)
     
 // ACK timing
   sprintf (power, "%s_distance", prefix);
-  websWrite (wp, "<br /><br />\n");
+  websWrite (wp, "<br />\n");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
   websWrite (wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
 	     power, nvram_safe_get (power));
-  websWrite (wp, "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\")</script></span>\n");
+  websWrite (wp, "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 20000 \" + share.meters + \")\")</script></span>\n");
   websWrite (wp, "</div>\n");
 //end ACK timing
    
