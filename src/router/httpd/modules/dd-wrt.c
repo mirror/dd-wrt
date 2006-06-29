@@ -1778,6 +1778,13 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_mode", prefix);
   copytonv (wp, n);
+  if (!strcmp(prefix,"wl0"))
+    {
+  char *wl = websGetVar (wp, n, NULL);
+  cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
+  if (wl)
+    nvram_set ("wl_mode", wl);
+    }
   sprintf (n, "%s_net_mode", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_channel", prefix);
