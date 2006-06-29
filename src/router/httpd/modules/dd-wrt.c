@@ -1551,7 +1551,6 @@ show_virtualssid (webs_t wp, char *prefix)
   char vif[16];
   char mac[16];
   sprintf (vif, "%s_vifs", prefix);
-  sprintf (mac, "%s_hwaddr", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
     return 0;
@@ -1560,6 +1559,7 @@ show_virtualssid (webs_t wp, char *prefix)
   websWrite (wp, "<fieldset>\n");
   foreach (var, vifs, next)
   {
+    sprintf (mac, "%s_hwaddr", var);
     sprintf (ssid, "%s_ssid", var);
     websWrite (wp,
 	       "<fieldset><legend>Interface %s SSID [%s] HWAddr [%s]</legend>\n",
