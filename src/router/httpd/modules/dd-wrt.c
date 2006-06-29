@@ -2083,7 +2083,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
   websWrite (wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
 	     power, nvram_safe_get (power));
-  websWrite (wp, "<span class="default"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\")</script></span>\n");
+  websWrite (wp, "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 2000 \" + share.meters + \")\")</script></span>\n");
   websWrite (wp, "</div>\n");
 //end ACK timing
    
