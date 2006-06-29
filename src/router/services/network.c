@@ -227,7 +227,7 @@ wlconf_up (char *name)
 #endif
   ret = eval ("wlconf", name, "up");
   gmode = atoi (nvram_safe_get ("wl0_gmode"));
-
+#ifndef HAVE_MSSID
   /* Get current phy type */
   WL_IOCTL (name, WLC_GET_PHYTYPE, &phytype, sizeof (phytype));
 
@@ -335,7 +335,7 @@ cprintf("is all?\n");
       reg.size = 2;
       WL_IOCTL (name, 102, &reg, sizeof (reg));
     }
-
+#endif
   return ret;
 
 }
@@ -435,31 +435,6 @@ unsigned char mac[20];
   else
     cprintf ("Write wireless mac successfully\n");
 
-#ifdef HAVE_MSSID
-  char tmac[16];
-  sprintf (tmac, "%s_hwaddr", "wl0");
-  nvram_set (tmac,mac);
-
-  char *next2;
-  char var[80];
-  char *vifs = nvram_safe_get ("wl0_vifs");
-  if (vifs != NULL)
-    foreach (var, vifs, next2)
-    {
-      sprintf (tmac, "%s_hwaddr", var);
-      MAC_ADD (mac);
-      nvram_set (tmac, mac);
-      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
-      strncpy (ifr.ifr_name, var, IFNAMSIZ);
-      if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
-	perror ("Write wireless mac fail : ");
-      else
-	cprintf ("Write wireless mac successfully\n");
-    }
-
-
-#endif
 #else
 
       ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -544,6 +519,31 @@ unsigned char mac[20];
 	  br_add_interface (lan_ifname, name);	// eval ("brctl", "addif", lan_ifname, name);
 	else
 	  {
+#ifdef HAVE_MSSID
+  char tmac[16];
+  sprintf (tmac, "%s_hwaddr", "wl0");
+  nvram_set (tmac,mac);
+
+  char *next2;
+  char var[80];
+  char *vifs = nvram_safe_get ("wl0_vifs");
+  if (vifs != NULL)
+    foreach (var, vifs, next2)
+    {
+      sprintf (tmac, "%s_hwaddr", var);
+      MAC_ADD (mac);
+      nvram_set (tmac, mac);
+      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, var, IFNAMSIZ);
+      if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+	perror ("Write wireless mac fail : ");
+      else
+	cprintf ("Write wireless mac successfully\n");
+    }
+#endif
+
+
 #else
 	cprintf ("configure %s\n", name);
 	if (strcmp (name, "wl0"))	//check if the interface is a buffalo wireless
@@ -2071,8 +2071,8 @@ start_hotplug_net (void)
   if (!(interface = getenv ("INTERFACE")) || !(action = getenv ("ACTION")))
     return EINVAL;
 
-//      if (strncmp(interface, "wds", 3))
-//              return 0;
+  if (strncmp(interface, "wds", 3))
+              return 0;
 
   if (!strcmp (action, "register"))
     {
