@@ -92,6 +92,7 @@ ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
 LIBRARIES += ../dhcpforwarder/dhcpfwd.a -lpthread
 endif
+CFLAGS += -DNEED_PRINTF
 
 
 
