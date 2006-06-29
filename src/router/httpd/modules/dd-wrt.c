@@ -1161,13 +1161,14 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   sprintf (ssid, "%s_ssid", prefix);
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-  websWrite (wp, "<legend>Base Interface %s SSID [%s] HWAddr [%s]</legend>\n",
+  websWrite (wp, "<legend>Physical Interface %s SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
   show_security_prefix (eid, wp, argc, argv, prefix);
   websWrite (wp, "</fieldset>\n");
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
+    websWrite (wp, "<br />\n"); 
     websWrite (wp, "<fieldset>\n");
     //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
     websWrite (wp, "<legend>Virtual Interface %s SSID [%s]</legend>\n", var,
