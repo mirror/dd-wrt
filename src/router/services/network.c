@@ -446,7 +446,7 @@ wlconf_up (char *name)
   WL_IOCTL (name, WLC_SET_TXPWR, &val, sizeof (val));
   WL_IOCTL (name, WLC_CURRENT_PWR, &val, sizeof (val));
 #else
-eval("wl","txpwr1","-m",nvram_safe_Get("txpwr"));
+eval("wl","txpwr1","-m","-o",nvram_safe_Get("txpwr"));
 #endif
   /* Set txant */
   val = atoi (nvram_safe_get ("txant"));
