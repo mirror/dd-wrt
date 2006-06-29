@@ -2862,18 +2862,6 @@ start_pppoe (int pppoe_num)
       route_add (nvram_safe_get ("wan_iface"), 0, "0.0.0.0", "10.112.112.112",
 		 "0.0.0.0");
 
-      cprintf
-	("------------------------------------------------------------------------------\n");
-      char tmpifname[15];
-      sprintf (tmpifname, "pppoe_ifname%d", pppoe_num);
-      cprintf ("pppoe%d ifname=%s ip=%s , netmask=%s, gw=%s\n",
-	       pppoe_num,
-	       nvram_safe_get (tmpifname),
-	       nvram_safe_get (wanip[pppoe_num]),
-	       nvram_safe_get (wanmask[pppoe_num]),
-	       nvram_safe_get (wangw[pppoe_num]));
-      cprintf
-	("------------------------------------------------------------------------------\n");
     }
   cprintf ("done. session %d\n", pppoe_num);
   return 0;
