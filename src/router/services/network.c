@@ -60,6 +60,13 @@ extern int br_del_interface (const char *br, const char *dev);
 extern int br_set_stp_state (const char *br, int stp_state);
 
 
+#define PTABLE_MAGIC 0xbadc0ded
+#define PTABLE_SLT1 1
+#define PTABLE_SLT2 2
+#define PTABLE_ACKW 3
+#define PTABLE_ADHM 4
+#define PTABLE_END 0xffffffff
+
 /* phy types */
 #define	PHY_TYPE_A		0
 #define	PHY_TYPE_B		1
@@ -95,6 +102,193 @@ getMacAddr (char *ifname, char *mac)
 	   hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 
 }
+#ifdef HAVE_MSSID
+static unsigned long ptable[128];
+static unsigned long kmem_offset;
+static inline void wlc_get_mem_offset(void)
+{
+	FILE *f;
+	char s[64];
+
+	/* yes, i'm lazy ;) */
+	f = popen("grep '\\[wl]' /proc/ksyms | sort", "r");
+	if (fgets(s, 64, f) == 0)
+		return;
+
+	pclose(f);
+	
+	s[8] = 0;
+	kmem_offset = strtoul(s, NULL, 16);
+
+	/* sanity check */
+	if (kmem_offset < 0xc0000000)
+		kmem_offset = 0;
+	return;
+}
+static int ptable_init(void)
+{
+	struct stat statbuf;
+	int fd;
+
+	if (ptable[0] == PTABLE_MAGIC)
+		return 0;
+	
+	if ((fd = open("/etc/patchtable.bin", O_RDONLY)) < 0)
+		return -1;
+	
+	if (fstat(fd, &statbuf) < 0)
+		goto failed;
+
+	if (statbuf.st_size <= 512)
+		goto failed;
+	
+	if (lseek(fd, statbuf.st_size - 512, SEEK_SET) < 0) {
+		perror("lseek");
+		goto failed;
+	}
+
+	if (read(fd, ptable, 512) < 512)
+		goto failed;
+	
+	if (ptable[0] != PTABLE_MAGIC)
+		goto failed;
+	
+	close(fd);
+
+	wlc_get_mem_offset();
+	if (kmem_offset == 0)
+		return -1;
+	
+	return 0;
+		
+failed:
+	close(fd);
+
+	return -1;
+}
+
+static inline unsigned long wlc_kmem_read(unsigned long offset)
+{
+	int fd;
+	unsigned long ret;
+
+	if ((fd = open("/dev/kmem", O_RDONLY )) < 0)
+		return -1;
+	
+	lseek(fd, 0x70000000, SEEK_SET);
+	lseek(fd, (kmem_offset - 0x70000000) + offset, SEEK_CUR);
+	read(fd, &ret, 4);
+	close(fd);
+
+	return ret;
+}
+
+static inline void wlc_kmem_write(unsigned long offset, unsigned long value)
+{
+	int fd;
+
+	if ((fd = open("/dev/kmem", O_WRONLY )) < 0)
+		return;
+	
+	lseek(fd, 0x70000000, SEEK_SET);
+	lseek(fd, (kmem_offset - 0x70000000) + offset, SEEK_CUR);
+	write(fd, &value, 4);
+	close(fd);
+}
+
+static int wlc_patcher_getval(unsigned long key, unsigned long *val)
+{
+	unsigned long *pt = &ptable[1];
+	unsigned long tmp;
+	
+	if (ptable_init() < 0) {
+		fprintf(stderr, "Could not load the ptable\n");
+		return -1;
+	}
+
+	while (*pt != PTABLE_END) {
+		if (*pt == key) {
+			tmp = wlc_kmem_read(pt[1]);
+
+			if (tmp == pt[2])
+				*val = 0xffffffff;
+			else
+				*val = tmp;
+			
+			return 0;
+		}
+		pt += 3;
+	}
+	
+	return -1;
+}
+
+static int wlc_patcher_setval(unsigned long key, unsigned long val)
+{
+	unsigned long *pt = &ptable[1];
+	
+	if (ptable_init() < 0) {
+		fprintf(stderr, "Could not load the ptable\n");
+		return -1;
+	}
+
+	if (val != 0xffffffff)
+		val = (pt[2] & ~(0xffff)) | (val & 0xffff);
+	
+	while (*pt != PTABLE_END) {
+		if (*pt == key) {
+			if (val == 0xffffffff) /* default */
+				val = pt[2];
+
+			wlc_kmem_write(pt[1], val);
+		}
+		pt += 3;
+	}
+	
+	return 0;
+}
+
+/*
+static int get_wlc_slottime(wlc_param param, void *data, void *value)
+{
+	int *val = (int *) value;
+	int ret = 0;
+
+		ret = wlc_patcher_getval(PTABLE_SLT1, (unsigned long *) val);
+		if (*val != 0xffffffff)
+			*val &= 0xffff;
+	}
+	return ret;
+}
+*/
+static int set_wlc_slottime(int value)
+{
+	int ret = 0;
+
+	wlc_patcher_setval(PTABLE_SLT1, value);
+	wlc_patcher_setval(PTABLE_SLT2, ((value == -1) ? value : value + 510));
+	return ret;
+}
+
+
+static int wlc_noack(int value)
+{
+	int ret = 0;
+
+//	if ((param & PARAM_MODE) == SET) {
+		wlc_patcher_setval(PTABLE_ACKW, (value ? 1 : 0));
+//	} else if ((param & PARAM_MODE) == GET) {
+//		ret = wlc_patcher_getval(PTABLE_ACKW, (unsigned long *) val);
+//		*val &= 0xffff;
+//		*val = (*val ? 1 : 0);
+//	}
+
+	return ret;
+}
+
+#endif
+
+
 
 #ifndef HAVE_MADWIFI
 static int notify_nas (char *type, char *ifname, char *action);
@@ -227,7 +421,7 @@ wlconf_up (char *name)
 #endif
   ret = eval ("wlconf", name, "up");
   gmode = atoi (nvram_safe_get ("wl0_gmode"));
-#ifndef HAVE_MSSID
+
   /* Get current phy type */
   WL_IOCTL (name, WLC_GET_PHYTYPE, &phytype, sizeof (phytype));
 
@@ -243,13 +437,17 @@ wlconf_up (char *name)
       WL_IOCTL (name, WLC_SET_PLCPHDR, &val, sizeof (val));
     }
   // adjust txpwr and txant
+#ifndef HAVE_MSSID
   val = atoi (nvram_safe_get ("txpwr"));
   if (val < 0 || val > TXPWR_MAX)
     val = TXPWR_DEFAULT;
   val |= WL_TXPWR_OVERRIDE;	// set the power override bit
+  
   WL_IOCTL (name, WLC_SET_TXPWR, &val, sizeof (val));
   WL_IOCTL (name, WLC_CURRENT_PWR, &val, sizeof (val));
-
+#else
+eval("wl","txpwr1","-m",nvram_safe_Get("txpwr"));
+#endif
   /* Set txant */
   val = atoi (nvram_safe_get ("txant"));
   if (val < 0 || val > 3 || val == 2)
@@ -317,15 +515,28 @@ cprintf("is all?\n");
       val = atoi (v);
       if (v == 0)
 	{
+	  #ifdef HAVE_MSSID
+	  wlc_noack(0);
+	  #else
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
+	  #endif
 	  return 0;
 	}
       else
 	{
+	  #ifdef HAVE_MSSID
+	  wlc_noack(1);
+	  #else
 	  eval ("/etc/txackset.sh", "1");	// enable ack timing
+	  #endif
 	}
+	
+      
       val = 9 + (val / 300) + ((val % 300) ? 1 : 0);
-
+      #ifdef HAVE_MSSID
+      set_wlc_slottime(val);
+      #else
+      
       shm = 0x10;
       shm |= (val << 16);
       WL_IOCTL (name, 197, &shm, sizeof (shm));
@@ -334,8 +545,9 @@ cprintf("is all?\n");
       reg.val = val + 510;
       reg.size = 2;
       WL_IOCTL (name, 102, &reg, sizeof (reg));
+      #endif
     }
-#endif
+
   return ret;
 
 }
