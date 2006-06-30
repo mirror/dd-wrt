@@ -38,6 +38,8 @@ extern void start_dhcpc (char *wan_ifname);
 /* ppp scripts */
 extern int ipup_main (int argc, char **argv);
 extern int ipdown_main (int argc, char **argv);
+extern int set_pppoepid_to_nv_main(int argc, char **argv); // tallest 1219
+extern int disconnected_pppoe_main(int argc, char **argv); //by tallest 0407
 
 /* http functions */
 extern int http_get (const char *server, char *buf, size_t count,
