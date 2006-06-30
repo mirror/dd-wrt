@@ -535,11 +535,11 @@ main (int argc, char **argv)
   else if (strstr (base, "ip-down"))
     return start_main ("ipdown", argc, argv);
   else if (strstr(base, "set-pppoepid")) //tallest 1219
-    return set_pppoepid_to_nv_main(argc, argv);
+    return start_main("set_pppoepid_to_nv",argc, argv);
   else if (strstr(base, "disconnected_pppoe")) //by tallest 0407
-    return disconnected_pppoe_main(argc, argv);
+    return start_main("disconnected_pppoe",argc, argv);
   else if (strstr(base, "ppp_event")) 
-    return pppevent_main(argc, argv);
+    return start_main("pppevent_main",argc, argv);
 
   /* udhcpc [ deconfig bound renew ] */
   else if (strstr (base, "udhcpc"))
