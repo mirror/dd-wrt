@@ -1181,8 +1181,13 @@ wan_valid (char *ifname)
 void
 start_wan (int status)
 {
+  FILE *fp;
   char *wan_ifname = get_wan_face ();
   char *wan_proto = nvram_safe_get ("wan_proto");
+  int pppoe_flag = 0;
+  int s;
+  struct ifreq ifr;
+
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
   char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
@@ -1206,7 +1211,6 @@ start_wan (int status)
 	pppoe_wan_ifname = "eth1";
       break;
     case ROUTER_ASUS_WL500G_PRE:
-    case ROUTER_BOARD_500:
       if (!strcmp (nvram_safe_get ("pppoe_wan_ifname"), ""))
 	pppoe_wan_ifname = "eth0";
       break;
@@ -1238,17 +1242,12 @@ start_wan (int status)
 */
 #endif
 
-  int s;
-  struct ifreq ifr;
-  FILE *fp;
-  int pppoe_flag = 0;
-
   cprintf ("%s %s\n", wan_ifname, wan_proto);
 
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_PPPOE
-  /* AhMan March 19 Check PPPoE version */
+  /* Check PPPoE version, RP or linksys*/
   int pppoe_rp;
   if (!strcmp (nvram_safe_get ("pppoe_ver"), "1"))
     pppoe_rp = 1;
@@ -1306,23 +1305,7 @@ start_wan (int status)
   /* Set MTU */
   init_mtu (wan_proto);		// add by honor 2002/12/27
 
-
-  // Set our Interface to the right MTU
-#ifdef HAVE_PPPOE
-  if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
-    {
-      if (nvram_invmatch ("pppoe_hw_iface_mtu", ""))
-	{
-	  if (atoi (nvram_safe_get ("pppoe_hw_iface_mtu")) > 0)
-	    ifr.ifr_mtu = atoi (nvram_safe_get ("pppoe_hw_iface_mtu"));
-	  else
-	    ifr.ifr_mtu = 1500;	// default ethernet frame size
-	}
-    }
-  else
-#endif
-    ifr.ifr_mtu = atoi (nvram_safe_get ("wan_mtu"));
-
+  ifr.ifr_mtu = atoi (nvram_safe_get ("wan_mtu"));
   ioctl (s, SIOCSIFMTU, &ifr);
 
   if (nvram_match ("router_disable", "1")
@@ -1638,7 +1621,7 @@ start_wan (int status)
 //===================================================================================
   /* Disable wireless will cause diag led blink, so we want to stop it. */
 
-  cprintf ("diag led scheiss\n");
+  cprintf ("diag led control\n");
   if ((check_hw_type () == BCM4712_CHIP)
       || (check_hw_type () == BCM5325E_CHIP))
     {
