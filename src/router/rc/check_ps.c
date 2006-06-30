@@ -35,11 +35,11 @@ enum
 
 struct mon mons[] = {
 //  {"tftpd", 1, M_LAN, stop_tftpd, start_tftpd},
+//  {"upnp", 1, M_LAN},
   {"process_monitor", 1, M_LAN},
   {"httpd", 2, M_LAN},
   {"udhcpd", 1, M_LAN},
   {"dnsmasq", 1, M_LAN},
-  {"upnp", 1, M_LAN},
   {"dhcpfwd", 1, M_LAN},
 #ifdef HAVE_NOCAT
   {"splashd", 1, M_LAN},
