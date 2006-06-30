@@ -356,16 +356,21 @@ listen_interface (char *interface)
 	    }
 
 	  DEBUG ("oooooh!!! got some!\n");
-
+#ifdef HAVE_PPTP
 	  if (nvram_match ("wan_proto", "pptp"))
 	    {
 	      inet_aton (nvram_safe_get ("pptp_server_ip"), &ipaddr);
-	    }
-	  else if (nvram_match ("wan_proto", "l2tp"))
+	    } else
+#endif
+#ifdef HAVE_L2TP
+	if (nvram_match ("wan_proto", "l2tp"))
 	    {
 	      inet_aton (nvram_safe_get ("lan_ipaddr"), &ipaddr);
 	    }
+#endif
+#ifdef HAVE_PPTP | HAVE_L2TP
 	  else
+#endif
 	    {
 	      inet_aton (nvram_safe_get ("wan_ipaddr"), &ipaddr);
 	    }
