@@ -125,10 +125,6 @@ stop_heartbeat (void)
   ret = eval ("killall", "bpalogin");
   // ret += eval("killall", "-9", "bpalogin");
 
-  openlog ("heartbeat", LOG_PID | LOG_NDELAY, LOG_DAEMON);
-  MY_LOG (LOG_INFO, "Stopped heartbeat daemon\n");
-  closelog ();
-
   cprintf ("done\n");
 
   return ret;
