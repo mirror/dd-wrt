@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include "libbb.h"
 
-void bb_error_msg(const char *s, ...)
+/*void bb_error_msg(const char *s, ...)
 {
 	va_list p;
 
@@ -34,7 +34,7 @@ void bb_error_msg(const char *s, ...)
 	va_end(p);
 	putc('\n', stderr);
 }
-
+*/
 
 /* END CODE */
 /*

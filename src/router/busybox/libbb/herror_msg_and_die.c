@@ -24,6 +24,7 @@
 
 #include "libbb.h"
 
+/*
 void bb_herror_msg_and_die(const char *s, ...)
 {
 	va_list p;
@@ -32,7 +33,7 @@ void bb_herror_msg_and_die(const char *s, ...)
 	bb_vherror_msg(s, p);
 	va_end(p);
 	exit(bb_default_error_retval);
-}
+}*/
 
 
 /* END CODE */
