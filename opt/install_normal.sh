@@ -60,6 +60,7 @@ cd ../../../../../opt
 ../tools/trx_gs -o dd-wrt.v23_gs.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_asus.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #add pattern
+./tools/addpattern -4 -p W54U -v v4.20.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrtsl54gs.bin -g
 ./tools/addpattern -4 -p W54G -v v4.20.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54g.bin -g
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gs.bin -g
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23.trx -o dd-wrt.v23_wrt54gsv4.bin -g
@@ -70,6 +71,8 @@ cd ../../../../../opt
 cp dd-wrt.v23_asus.trx /GruppenLW/dd-wrt.v23_asus.trx
 cp dd-wrt.v23_wrt54g.bin /GruppenLW/dd-wrt.v23_wrt54g.bin
 cp dd-wrt.v23_wrt54gs.bin /GruppenLW/dd-wrt.v23_wrt54gs.bin
+cp dd-wrt.v23_wrtsl54gs.bin /GruppenLW/dd-wrt.v23_wrtsl54gs.bin
+
 cp dd-wrt.v23_wrt54gsv4.bin /GruppenLW/dd-wrt.v23_wrt54gsv4.bin
 cp dd-wrt.v23.trx /GruppenLW/dd-wrt.v23_generic.bin
 #cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW

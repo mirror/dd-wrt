@@ -189,6 +189,7 @@
  "wl_radius_key"  "RADIUS Shared Secret"  "NAME"  "255"  "TRUE" "3"    
  "wl_auth_mode"  "Auth Mode"  "AUTHMODE"  "8" "disabled"  "radius"  "wpa"  "psk" "wpa2" "psk2" "wpa wpa2" "psk psk2"  "FALSE" "3"   
  "security_mode"  "Security Mode"  "SECURITYMODE" "9"  "disabled"  "radius"  "wpa"  "psk" "wep" "wpa2" "psk2" "wpa wpa2" "psk psk2"  "FALSE" "0"  
+ "wl0_security_mode"  "Security Mode"  "SECURITYMODE" "9"  "disabled"  "radius"  "wpa"  "psk" "wep" "wpa2" "psk2" "wpa wpa2" "psk psk2"  "FALSE" "0"  
  "wl_unit"  "802.11 Instance"  wl_unit  "NULL"  "TRUE" "0"  
  "wl_ap_ssid"  "SSID of associating AP"  "NAME"  "32"  "TRUE" "0"  
  "wl_ap_mac" "MAC Adress for ap" "NULL" "TRUE" "0"
