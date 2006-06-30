@@ -6,6 +6,7 @@
 # Base Features
 #
 CONFIG_FON=y
+CONFIG_ARP=y
 CONFIG_MSSID=y
 #CONFIG_BLUE=y
 #CONFIG_YELLOW=y
