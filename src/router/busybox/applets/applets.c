@@ -405,7 +405,7 @@ static void check_suid (struct BB_applet *applet)
 
 
 
-void bb_show_usage (void)
+/*void bb_show_usage (void)
 {
   const char *format_string;
   const char *usage_string = usage_messages;
@@ -425,7 +425,7 @@ void bb_show_usage (void)
 
   exit (bb_default_error_retval);
 }
-
+*/
 static int applet_name_compare (const void *x, const void *y)
 {
   const char *name = x;

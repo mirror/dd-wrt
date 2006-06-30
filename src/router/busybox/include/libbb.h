@@ -59,6 +59,43 @@
 #define	MAX(a,b) (((a)>(b))?(a):(b))
 #endif
 
+
+
+
+
+#define bb_show_usage() exit(-1)
+//extern void bb_show_usage(void) ATTRIBUTE_NORETURN ATTRIBUTE_EXTERNALLY_VISIBLE;
+
+#define bb_error_msg(fmt, args...)
+//extern void bb_error_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
+
+#define bb_error_msg_and_die(fmt, arg...) exit(-1)
+//extern void bb_error_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+
+#define bb_perror_msg(fmt, args...)
+//extern void bb_perror_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
+
+#define bb_perror_msg_and_die(fmt, arg...) exit(-1)
+//extern void bb_perror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+
+#define bb_vherror_msg(fmt,args...)
+//extern void bb_vherror_msg(const char *s, va_list p);
+
+#define bb_herror_msg(fmt, arg...)
+//extern void bb_herror_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
+
+#define bb_herror_msg_and_die(fmt, arg...) exit(-1)
+//extern void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
+
+#define bb_perror_nomsg_and_die() exit(-1)
+//extern void bb_perror_nomsg_and_die(void) ATTRIBUTE_NORETURN;
+
+#define bb_perror_nomsg()
+//extern void bb_perror_nomsg(void);
+
+
+
+/*
 extern void bb_show_usage(void) ATTRIBUTE_NORETURN ATTRIBUTE_EXTERNALLY_VISIBLE;
 extern void bb_error_msg(const char *s, ...) __attribute__ ((format (printf, 1, 2)));
 extern void bb_error_msg_and_die(const char *s, ...) __attribute__ ((noreturn, format (printf, 1, 2)));
@@ -70,7 +107,7 @@ extern void bb_herror_msg_and_die(const char *s, ...) __attribute__ ((noreturn, 
 
 extern void bb_perror_nomsg_and_die(void) ATTRIBUTE_NORETURN;
 extern void bb_perror_nomsg(void);
-
+*/
 /* These two are used internally -- you shouldn't need to use them */
 extern void bb_verror_msg(const char *s, va_list p) __attribute__ ((format (printf, 1, 0)));
 extern void bb_vperror_msg(const char *s, va_list p)  __attribute__ ((format (printf, 1, 0)));

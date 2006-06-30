@@ -25,7 +25,7 @@
 #include <stdlib.h>
 #include "libbb.h"
 
-void bb_error_msg_and_die(const char *s, ...)
+/*void bb_error_msg_and_die(const char *s, ...)
 {
 	va_list p;
 
@@ -35,8 +35,7 @@ void bb_error_msg_and_die(const char *s, ...)
 	putc('\n', stderr);
 	exit(bb_default_error_retval);
 }
-
-
+*/
 /* END CODE */
 /*
 Local Variables:

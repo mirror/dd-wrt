@@ -24,14 +24,14 @@
 
 #include "libbb.h"
 
-void bb_herror_msg(const char *s, ...)
+/*void bb_herror_msg(const char *s, ...)
 {
 	va_list p;
 
 	va_start(p, s);
 	bb_vherror_msg(s, p);
 	va_end(p);
-}
+}*/
 
 
 /* END CODE */

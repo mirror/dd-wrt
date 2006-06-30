@@ -25,7 +25,7 @@
 
 #include "libbb.h"
 
-
+/*
 void bb_vherror_msg(const char *s, va_list p)
 {
 	if(s == 0)
@@ -35,3 +35,4 @@ void bb_vherror_msg(const char *s, va_list p)
 		fputs(": ", stderr);
 	herror("");
 }
+*/
