@@ -79,6 +79,7 @@ rm ../src/router/mipsel-uclibc/target/lib/modules/2.4.33-pre3/ipv6.o
 ../tools/trx_gs -o dd-wrt.v23_gs_mini.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 ./asus/asustrx -p WL500gx -v 1.9.2.7 -o dd-wrt.v23_mini_asus.trx ./loader-0.02/loader.gz ../src/router/mipsel-uclibc/vmlinuz target.squashfs
 #add pattern
+./tools/addpattern -4 -p W54U -v v4.20.6 -i dd-wrt.v23_mini.trx -o dd-wrt.v23_mini_wrtsl54gs.bin -g
 ./tools/addpattern -4 -p W54G -v v4.20.6 -i dd-wrt.v23_mini.trx -o dd-wrt.v23_mini_wrt54g.bin -g
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23_mini.trx -o dd-wrt.v23_mini_wrt54gs.bin -g
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23_mini.trx -o dd-wrt.v23_mini_wrt54gsv4.bin -g
@@ -90,6 +91,8 @@ cp dd-wrt.v23_mini_asus.trx /GruppenLW
 cp dd-wrt.v23_mini_wrt54g.bin /GruppenLW
 cp dd-wrt.v23_mini_wrt54gs.bin /GruppenLW
 cp dd-wrt.v23_mini_wrt54gsv4.bin /GruppenLW
+cp dd-wrt.v23_mini_wrtsl54gs.bin /GruppenLW
+
 cp dd-wrt.v23_mini.trx /GruppenLW/dd-wrt.v23_mini_generic.bin
 ./tools/motorola-bin dd-wrt.v23_mini.trx dd-wrt.bin
 cp dd-wrt.bin /GruppenLW/dd-wrt.v23_mini_moto.bin
