@@ -258,7 +258,7 @@ endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc startservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc stopservice
 	cd $(INSTALLDIR)/sbin && ln -sf rc restart_dns
-#	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
+	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox httpd
 ifeq ($(CONFIG_BIRD),y)
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox bird
 endif
