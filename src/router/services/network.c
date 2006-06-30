@@ -2114,7 +2114,7 @@ notify_nas (char *type, char *ifname, char *action)
       nvram_match (strcat_r (prefix, "auth_mode", tmp), "none"))
     return 0;
 
-  while (retries-- > 0 && !(str = file2str ("/tmp/nas.lan.pid")))
+  while (retries-- > 0 && !(str = file2str ("/tmp/nas.wl0lan.pid")))
     sleep (1);
   if (!str)
     {
@@ -2402,7 +2402,7 @@ start_wds_check (void)
 	  br_shutdown ();
 	  //  eval("killall","-9","nas");
 	  //eval ("brctl", "addif", "br1", dev);
-	  notify_nas ("lan", "br1", "up");
+//	  notify_nas ("lan", "br1", "up");
 	}
       /* LAN WDS type */
       else if (nvram_match (wdsvarname, "3"))
@@ -2413,7 +2413,7 @@ start_wds_check (void)
 //        eval("killall","-9","nas");
 //        eval ("brctl", "addif", "br0", dev);
 	  br_shutdown ();
-	  notify_nas ("lan", "br0", "up");
+//	  notify_nas ("lan", "br0", "up");
 	}
 
     }
