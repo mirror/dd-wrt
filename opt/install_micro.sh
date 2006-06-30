@@ -87,6 +87,7 @@ rm ../src/router/mipsel-uclibc/target/usr/sbin/mtd
 #add pattern
 ./tools/addpattern -4 -p W54G -v v4.20.6 -i dd-wrt.v23_micro.trx -o dd-wrt.v23_micro_wrt54g.bin -g
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23_micro.trx -o dd-wrt.v23_micro_wrt54gs.bin -g
+./tools/addpattern -4 -p W54U -v v4.70.6 -i dd-wrt.v23_micro.trx -o dd-wrt.v23_micro_wrtsl54gs.bin -g
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23_micro.trx -o dd-wrt.v23_micro_wrt54gsv4.bin -g
 
 #./tools/addpattern -i dd-wrt.v23_mini.trx -o dd-wrt.v23_mini_wrt54gs.bin -2 -g
@@ -95,6 +96,7 @@ rm ../src/router/mipsel-uclibc/target/usr/sbin/mtd
 cp dd-wrt.v23_micro_asus.trx /GruppenLW
 cp dd-wrt.v23_micro_wrt54g.bin /GruppenLW
 cp dd-wrt.v23_micro_wrt54gs.bin /GruppenLW
+cp dd-wrt.v23_micro_wrtsl54gs.bin /GruppenLW
 cp dd-wrt.v23_micro_wrt54gsv4.bin /GruppenLW
 cp dd-wrt.v23_micro.trx /GruppenLW/dd-wrt.v23_micro_generic.bin
 ./tools/motorola-bin dd-wrt.v23_micro.trx dd-wrt.bin

@@ -1,18 +1,36 @@
 langstr
 read desc
 entry
-<li><a href="Diagnostics.asp">Diagnostics</a></li>
+<li><a href="DDNS.asp"><% tran("bmenu.setupddns"); %></a></li>
  
 entry
-<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
+<li><a href="WanMAC.asp"><% tran("bmenu.setupmacclone"); %></a></li>
  
 entry
-<div class="label">Wireless Network Name (SSID)</div><input name="wl_ssid" size="20" maxLength="32" onBlur="valid_name(this,'SSID')" value='<% nvram_get("wl_ssid"); %>' /></div>
-<div class="label">Wireless Network Name (SSID)</div><input name="wl_ssid" size="20" maxLength="32" onBlur="valid_name(this,'SSID')" value='<% nvram_get("wl_ssid"); %>' /> (Please always use FON as prefix)</div>
+<li><a href="Wireless_radauth.asp"><% tran("bmenu.wirelessRadius"); %></a></li>
+ 
+entry
+<li><a href="Wireless_WDS.asp"><% tran("bmenu.wirelessWds"); %></a></li>
+ 
+entry
+<li><a href="Wireless_MAC.asp"><% tran("bmenu.wirelessMac"); %></a></li>
+ 
+entry
+<li><a href="Management.asp"><% tran("bmenu.adminManagement"); %></a></li>
+ 
+entry
+<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+<li><a href="Services.asp"><% tran("bmenu.admin"); %></a></li>
+entry
+<li><a href="Hotspot.asp"><% tran("bmenu.adminHotspot"); %></a></li>
+ 
+entry
+<li><a href="Log.asp"><% tran("bmenu.adminLog"); %></a></li>
+ 
+entry
+<li><a href="Diagnostics.asp"><% tran("bmenu.adminDiag"); %></a></li>
+ 
 translate
-replace
-<li><a href='<% support_elsematch("PARENTAL_CONTROL_SUPPORT", "1", "Parental_Control.asp", "Filters.asp"); %>'>Access Restrictions</a></li>
- 
 write
 translate
 write
