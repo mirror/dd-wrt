@@ -108,7 +108,7 @@ start_services (void)
   start_service ("wshaper");
   start_service ("cron");
 
-#ifdef HAVE_PPTP
+#ifdef HAVE_PPTPD
   start_service ("pptpd");
 #endif
 
@@ -190,7 +190,7 @@ stop_services (void)
 #endif
   stop_service ("wshaper");
 
-#ifdef HAVE_PPTP
+#ifdef HAVE_PPTPD
   stop_service ("pptpd");
 #endif
 #ifdef HAVE_NOCAT
@@ -284,7 +284,7 @@ start_single_service (void)
 #ifdef HAVE_RADVD
       startstop ("radvd");
 #endif
-#ifdef HAVE_PPTP
+#ifdef HAVE_PPTPD
       startstop ("pptpd");
 #endif
 #ifdef HAVE_BIRD
@@ -575,6 +575,7 @@ redial_main (int argc, char **argv)
 	      perror ("fork failed");
 	      exit (1);
 	    case 0:
+#ifdef HAVE_PPPOE
 	      if (nvram_match ("wan_proto", "pppoe"))
 		{
 		  stop_service ("pppoe");
@@ -582,14 +583,20 @@ redial_main (int argc, char **argv)
 		  eval ("killall", "-9", "pppoecd");
 		  sleep (1);
 		  start_service ("wan_redial");
-		}
-	      else if (nvram_match ("wan_proto", "pptp"))
+		}else
+#endif
+#ifdef HAVE_PPTP
+	      if (nvram_match ("wan_proto", "pptp"))
 		{
 		  stop_service ("pptp");
 		  sleep (1);
 		  start_service ("wan_redial");
 		}
-	      else if (nvram_match ("wan_proto", "l2tp"))
+#endif
+#ifdef HAVE_PPTP | HAVE_PPPOE
+else
+#endif
+	      if (nvram_match ("wan_proto", "l2tp"))
 		{
 		  stop_service ("l2tp");
 		  sleep (1);

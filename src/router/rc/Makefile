@@ -117,9 +117,13 @@ ifeq ($(CONFIG_AQOS),y)
 CFLAGS += -DHAVE_AQOS
 endif
 
-ifeq ($(CONFIG_PPTP),y)
+ifeq ($(CONFIG_PPTPD),y)
 OBJS += pptpd.o
-CFLAGS += -DHAVE_PPTP
+CFLAGS += -DHAVE_PPTPD
+endif
+
+ifeq ($(CONFIG_L2TP),y)
+CFLAGS += -DHAVE_L2TP
 endif
 
 ifeq ($(CONFIG_BOOT_WAIT_ON),y)
@@ -284,7 +288,7 @@ ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 	mkdir -p $(INSTALLDIR)/usr/bin
 	cd $(INSTALLDIR)/usr/bin && ln -sf /bin/busybox ssh && ln -sf /bin/busybox scp
 endif
-ifeq ($(CONFIG_PPTP),y)
+ifeq ($(CONFIG_PPTPD),y)
 	cd $(INSTALLDIR)/sbin && ln -sf rc poptop
 endif
 
