@@ -76,8 +76,10 @@ WARNINGS=-Wall -Wstrict-prototypes -Wshadow
 CFLAGS+=-I$(top_builddir)/include -I$(top_srcdir)/include -I$(srcdir)
 LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -lshared -L../libnet/lib  
 LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet
+ifeq ($(CONFIG_ARP),y)
 LIBRARIES += ../net-tools/arp.a ../net-tools/lib/libnet-tools.a		
-
+CFLAGS += -DHAVE_ARP
+endif
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
 #OBJS += sshd.o
 CFLAGS += -DHAVE_SSHD
