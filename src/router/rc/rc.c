@@ -381,6 +381,7 @@ main_loop (void)
 	      (brand == ROUTER_BUFFALO_WHRG54S) ||
 	      (brand == ROUTER_MOTOROLA_V1) ||
 	      (brand == ROUTER_BOARD_500) ||
+	      (brand == ROUTER_BUFFALO_WZRRSG54) ||
 	      (brand == ROUTER_BUFFALO_WBR2G54S))
 	    {
 	      stop_service ("resetbutton");
@@ -417,6 +418,7 @@ main_loop (void)
 	      (brand == ROUTER_BUFFALO_WHRG54S) ||
 	      (brand == ROUTER_MOTOROLA_V1) ||
 	      (brand == ROUTER_BOARD_500) ||
+	      (brand == ROUTER_BUFFALO_WZRRSG54) ||
 	      (brand == ROUTER_BUFFALO_WBR2G54S))
 	    {
 	      start_service ("resetbutton");
@@ -655,6 +657,7 @@ main (int argc, char **argv)
 	case ROUTER_BUFFALO_WHRG54S:
 	case ROUTER_MOTOROLA_V1:
 	case ROUTER_BUFFALO_WBR2G54S:
+	case ROUTER_BUFFALO_WZRRSG54:
 	  return resetbutton_main (argc, argv);
 	default:
 	  fprintf (stderr,
