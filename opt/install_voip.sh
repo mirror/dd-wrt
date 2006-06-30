@@ -61,12 +61,14 @@ cd ../../../../../opt
 
 ./tools/addpattern -4 -p W54G -v v4.20.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt54g.bin -g
 ./tools/addpattern -4 -p W54S -v v4.70.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt54gs.bin -g
+./tools/addpattern -4 -p W54U -v v4.70.6 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrtsl54gs.bin -g
 ./tools/addpattern -4 -p W54s -v v1.05.0 -i dd-wrt.v23_voip.trx -o dd-wrt.v23_voip_wrt54gsv4.bin -g
 
 
 cp dd-wrt.v23_voip_asus.trx /GruppenLW
 cp dd-wrt.v23_voip_wrt54g.bin /GruppenLW
 cp dd-wrt.v23_voip_wrt54gs.bin /GruppenLW
+cp dd-wrt.v23_voip_wrtsl54gs.bin /GruppenLW
 cp dd-wrt.v23_voip_wrt54gsv4.bin /GruppenLW
 cp dd-wrt.v23_voip.trx /GruppenLW/dd-wrt.v23_voip.bin
 #cp dd-wrt.v23.prefinal5_asus.trx /GruppenLW
