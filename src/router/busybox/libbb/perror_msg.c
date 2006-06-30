@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include "libbb.h"
 
+/*
 void bb_perror_msg(const char *s, ...)
 {
 	va_list p;
@@ -32,7 +33,7 @@ void bb_perror_msg(const char *s, ...)
 	va_start(p, s);
 	bb_vperror_msg(s, p);
 	va_end(p);
-}
+}*/
 
 
 /* END CODE */

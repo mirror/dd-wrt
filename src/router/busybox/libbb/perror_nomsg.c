@@ -23,8 +23,8 @@
 #include <stddef.h>
 #include <libbb.h>
 
+/*
 void bb_perror_nomsg(void)
 {
-	/* Ignore the gcc warning about a null format string. */
 	bb_perror_msg(NULL);
-}
+}*/

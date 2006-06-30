@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include "libbb.h"
 
+/*
 void bb_vperror_msg(const char *s, va_list p)
 {
 	int err=errno;
@@ -33,7 +34,7 @@ void bb_vperror_msg(const char *s, va_list p)
 	if (*s) s = ": ";
 	fprintf(stderr, "%s%s\n", s, strerror(err));
 }
-
+*/
 
 /* END CODE */
 /*
