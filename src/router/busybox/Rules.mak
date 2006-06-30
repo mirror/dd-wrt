@@ -92,6 +92,22 @@ ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
 LIBRARIES += ../dhcpforwarder/dhcpfwd.a -lpthread
 endif
+ifeq ($(CONFIG_HTTPD),y)
+CFLAGS += -DHAVE_DDWRTHTTPD
+LIBRARIES += ../httpd/httpd.a
+endif
+
+ifeq ($(CONFIG_MATRIXSSL),y)
+LIBRARIES += ../matrixssl/src/libmatrixsslstatic.a -lpthread
+
+
+#CFLAGS += -I$(TOP)/matrixssl
+#LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
+#CFLAGS += -DHAVE_MATRIXSSL
+#CFLAGS += -DHAVE_HTTPS
+#OBJS += matrixssl_xface.o
+endif
+
 CFLAGS += -DNEED_PRINTF
 
 

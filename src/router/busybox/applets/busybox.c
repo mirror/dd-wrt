@@ -81,6 +81,10 @@ int main(int argc, char **argv)
   else if (strstr (base, "rflow"))
     return rflow_main(argc,argv);
 #endif
+#ifdef HAVE_DDWRTHTTPD
+  else if (strstr (base, "httpd"))
+    return httpd_main(argc,argv);
+#endif
 #ifdef HAVE_SSHD
   else if (strstr (base, "dropbearkey"))
     return dropbearkey_main(argc,argv);
