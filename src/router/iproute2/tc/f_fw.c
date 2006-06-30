@@ -22,13 +22,14 @@
 #include <linux/if.h> /* IFNAMSIZ */
 #include "utils.h"
 #include "tc_util.h"
+#define explain();
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... fw [ classid CLASSID ] [ police POLICE_SPEC ]\n");
-	fprintf(stderr, "       POLICE_SPEC := ... look at TBF\n");
-	fprintf(stderr, "       CLASSID := X:Y\n");
-}
+//static void explain(void)
+//{
+//	fprintf(stderr, "Usage: ... fw [ classid CLASSID ] [ police POLICE_SPEC ]\n");
+//	fprintf(stderr, "       POLICE_SPEC := ... look at TBF\n");
+//	fprintf(stderr, "       CLASSID := X:Y\n");
+//}
 
 #define usage() return(-1)
 
@@ -42,7 +43,7 @@ static int fw_parse_opt(struct filter_util *qu, char *handle, int argc, char **a
 
 	if (handle) {
 		if (get_u32(&t->tcm_handle, handle, 0)) {
-			fprintf(stderr, "Illegal \"handle\"\n");
+//			fprintf(stderr, "Illegal \"handle\"\n");
 			return -1;
 		}
 	}
@@ -59,21 +60,21 @@ static int fw_parse_opt(struct filter_util *qu, char *handle, int argc, char **a
 			unsigned handle;
 			NEXT_ARG();
 			if (get_tc_classid(&handle, *argv)) {
-				fprintf(stderr, "Illegal \"classid\"\n");
+//				fprintf(stderr, "Illegal \"classid\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_FW_CLASSID, &handle, 4);
 		} else if (matches(*argv, "police") == 0) {
 			NEXT_ARG();
 			if (parse_police(&argc, &argv, TCA_FW_POLICE, n)) {
-				fprintf(stderr, "Illegal \"police\"\n");
+//				fprintf(stderr, "Illegal \"police\"\n");
 				return -1;
 			}
 			continue;
 		} else if (matches(*argv, "action") == 0) {
 			NEXT_ARG();
 			if (parse_action(&argc, &argv, TCA_FW_ACT, n)) {
-				fprintf(stderr, "Illegal fw \"action\"\n");
+//				fprintf(stderr, "Illegal fw \"action\"\n");
 				return -1;
 			}
 			continue;
@@ -83,7 +84,7 @@ static int fw_parse_opt(struct filter_util *qu, char *handle, int argc, char **a
 			argc--;
 			argv++;
 			if (argc < 1) {
-				fprintf(stderr, "Illegal indev\n");
+//				fprintf(stderr, "Illegal indev\n");
 				return -1;
 			}
 			strncpy(d, *argv, sizeof (d) - 1);
@@ -92,7 +93,7 @@ static int fw_parse_opt(struct filter_util *qu, char *handle, int argc, char **a
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}

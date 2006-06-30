@@ -23,10 +23,7 @@
 #include "utils.h"
 #include "tc_util.h"
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... sfq [ limit NUMBER ] [ perturb SECS ] [ quantum BYTES ]\n");
-}
+#define explain()
 
 #define usage() return(-1)
 
@@ -41,25 +38,25 @@ static int sfq_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		if (strcmp(*argv, "quantum") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.quantum, *argv)) {
-				fprintf(stderr, "Illegal \"limit\"\n");
+//				fprintf(stderr, "Illegal \"limit\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "perturb") == 0) {
 			NEXT_ARG();
 			if (get_integer(&opt.perturb_period, *argv, 0)) {
-				fprintf(stderr, "Illegal \"perturb\"\n");
+//				fprintf(stderr, "Illegal \"perturb\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "limit") == 0) {
 			NEXT_ARG();
 			if (get_u32(&opt.limit, *argv, 0)) {
-				fprintf(stderr, "Illegal \"limit\"\n");
+//				fprintf(stderr, "Illegal \"limit\"\n");
 				return -1;
 			}
 			if (opt.limit < 2) {
-				fprintf(stderr, "Illegal \"limit\", must be > 1\n");
+//				fprintf(stderr, "Illegal \"limit\", must be > 1\n");
 				return -1;
 			}
 			ok++;
@@ -67,7 +64,7 @@ static int sfq_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}

@@ -28,35 +28,8 @@
 #if HTB_TC_VER >> 16 != TC_HTB_PROTOVER
 #error "Different kernel and TC HTB versions"
 #endif
-
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... qdisc add ... htb [default N] [r2q N]\n"
-		" default  minor id of class to which unclassified packets are sent {0}\n"
-		" r2q      DRR quantums are computed as rate in Bps/r2q {10}\n"
-		" debug    string of 16 numbers each 0-3 {0}\n\n"
-		"... class add ... htb rate R1 [burst B1] [mpu B] [overhead O]\n"
-		"                      [prio P] [slot S] [pslot PS]\n"
-		"                      [ceil R2] [cburst B2] [mtu MTU] [quantum Q]\n"
-		" rate     rate allocated to this class (class can still borrow)\n"
-		" burst    max bytes burst which can be accumulated during idle period {computed}\n"
-		" mpu      minimum packet size used in rate computations\n"
-		" overhead per-packet size overhead used in rate computations\n"
-
-		" ceil     definite upper class rate (no borrows) {rate}\n"
-		" cburst   burst but for ceil {computed}\n"
-		" mtu      max packet size we create rate map for {1600}\n"
-		" prio     priority of leaf; lower are served first {0}\n"
-		" quantum  how much bytes to serve from leaf at once {use r2q}\n"
-		"\nTC HTB version %d.%d\n",HTB_TC_VER>>16,HTB_TC_VER&0xffff
-		);
-}
-
-static void explain1(char *arg)
-{
-    fprintf(stderr, "Illegal \"%s\"\n", arg);
-    explain();
-}
+#define explain()
+#define explain1(a)
 
 
 #define usage() return(-1)
@@ -88,7 +61,7 @@ static int htb_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			opt.debug |= (*p-'0')<<(2*i);
 		    }
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -162,7 +135,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		} else if (strcmp(*argv, "ceil") == 0) {
 			NEXT_ARG();
 			if (opt.ceil.rate) {
-				fprintf(stderr, "Double \"ceil\" spec\n");
+//				fprintf(stderr, "Double \"ceil\" spec\n");
 				return -1;
 			}
 			if (get_rate(&opt.ceil.rate, *argv)) {
@@ -173,7 +146,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		} else if (strcmp(*argv, "rate") == 0) {
 			NEXT_ARG();
 			if (opt.rate.rate) {
-				fprintf(stderr, "Double \"rate\" spec\n");
+//				fprintf(stderr, "Double \"rate\" spec\n");
 				return -1;
 			}
 			if (get_rate(&opt.rate.rate, *argv)) {
@@ -185,7 +158,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -196,7 +169,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		return 0;*/
 
 	if (opt.rate.rate == 0) {
-		fprintf(stderr, "\"rate\" is required.\n");
+//		fprintf(stderr, "\"rate\" is required.\n");
 		return -1;
 	}
 	/* if ceil params are missing, use the same as rate */
@@ -212,14 +185,14 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 	opt.ceil.mpu = mpu; opt.rate.mpu = mpu;
 
 	if ((cell_log = tc_calc_rtable(opt.rate.rate, rtab, cell_log, mtu, mpu)) < 0) {
-		fprintf(stderr, "htb: failed to calculate rate table.\n");
+//		fprintf(stderr, "htb: failed to calculate rate table.\n");
 		return -1;
 	}
 	opt.buffer = tc_calc_xmittime(opt.rate.rate, buffer);
 	opt.rate.cell_log = cell_log;
 	
 	if ((ccell_log = tc_calc_rtable(opt.ceil.rate, ctab, cell_log, mtu, mpu)) < 0) {
-		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
+//		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
 		return -1;
 	}
 	opt.cbuffer = tc_calc_xmittime(opt.ceil.rate, cbuffer);
@@ -365,7 +338,7 @@ struct qdisc_util htb2_util = {
 
 static void explain(void)
 {
-	fprintf(stderr, "Usage: ... qdisc add ... htb [default N] [r2q N]\n"
+/*	fprintf(stderr, "Usage: ... qdisc add ... htb [default N] [r2q N]\n"
 		" default  minor id of class to which unclassified packets are sent {0}\n"
 		" r2q      DRR quantums are computed as rate in Bps/r2q {10}\n"
 		" debug    string of 16 numbers each 0-3 {0}\n\n"
@@ -383,12 +356,12 @@ static void explain(void)
 		" prio     priority of leaf; lower are served first {0}\n"
 		" quantum  how much bytes to serve from leaf at once {use r2q}\n"
 		"\nTC HTB version %d.%d\n",HTB_TC_VER>>16,HTB_TC_VER&0xffff
-		);
+		);*/
 }
 
 static void explain1(char *arg)
 {
-    fprintf(stderr, "Illegal \"%s\"\n", arg);
+//    fprintf(stderr, "Illegal \"%s\"\n", arg);
     explain();
 }
 
@@ -422,7 +395,7 @@ static int htb_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			opt.debug |= (*p-'0')<<(2*i);
 		    }
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -496,7 +469,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		} else if (strcmp(*argv, "ceil") == 0) {
 			NEXT_ARG();
 			if (opt.ceil.rate) {
-				fprintf(stderr, "Double \"ceil\" spec\n");
+//				fprintf(stderr, "Double \"ceil\" spec\n");
 				return -1;
 			}
 			if (get_rate(&opt.ceil.rate, *argv)) {
@@ -507,7 +480,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		} else if (strcmp(*argv, "rate") == 0) {
 			NEXT_ARG();
 			if (opt.rate.rate) {
-				fprintf(stderr, "Double \"rate\" spec\n");
+//				fprintf(stderr, "Double \"rate\" spec\n");
 				return -1;
 			}
 			if (get_rate(&opt.rate.rate, *argv)) {
@@ -519,7 +492,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -530,7 +503,7 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		return 0;*/
 
 	if (opt.rate.rate == 0) {
-		fprintf(stderr, "\"rate\" is required.\n");
+//		fprintf(stderr, "\"rate\" is required.\n");
 		return -1;
 	}
 	/* if ceil params are missing, use the same as rate */
@@ -546,14 +519,14 @@ static int htb_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 	opt.ceil.mpu = mpu; opt.rate.mpu = mpu;
 
 	if ((cell_log = tc_calc_rtable(opt.rate.rate, rtab, cell_log, mtu, mpu)) < 0) {
-		fprintf(stderr, "htb: failed to calculate rate table.\n");
+//		fprintf(stderr, "htb: failed to calculate rate table.\n");
 		return -1;
 	}
 	opt.buffer = tc_calc_xmittime(opt.rate.rate, buffer);
 	opt.rate.cell_log = cell_log;
 	
 	if ((ccell_log = tc_calc_rtable(opt.ceil.rate, ctab, cell_log, mtu, mpu)) < 0) {
-		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
+//		fprintf(stderr, "htb: failed to calculate ceil rate table.\n");
 		return -1;
 	}
 	opt.cbuffer = tc_calc_xmittime(opt.ceil.rate, cbuffer);

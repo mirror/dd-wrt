@@ -29,14 +29,14 @@ static void usage(void);
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: tc class [ add | del | change | get ] dev STRING\n");
-	fprintf(stderr, "       [ classid CLASSID ] [ root | parent CLASSID ]\n");
-	fprintf(stderr, "       [ [ QDISC_KIND ] [ help | OPTIONS ] ]\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "       tc class show [ dev STRING ] [ root | parent CLASSID ]\n");
-	fprintf(stderr, "Where:\n");
-	fprintf(stderr, "QDISC_KIND := { prio | cbq | etc. }\n");
-	fprintf(stderr, "OPTIONS := ... try tc class add <desired QDISC_KIND> help\n");
+//	fprintf(stderr, "Usage: tc class [ add | del | change | get ] dev STRING\n");
+//	fprintf(stderr, "       [ classid CLASSID ] [ root | parent CLASSID ]\n");
+//	fprintf(stderr, "       [ [ QDISC_KIND ] [ help | OPTIONS ] ]\n");
+//	fprintf(stderr, "\n");
+//	fprintf(stderr, "       tc class show [ dev STRING ] [ root | parent CLASSID ]\n");
+//	fprintf(stderr, "Where:\n");
+//	fprintf(stderr, "QDISC_KIND := { prio | cbq | etc. }\n");
+//	fprintf(stderr, "OPTIONS := ... try tc class add <desired QDISC_KIND> help\n");
 	return;
 }
 
@@ -78,7 +78,7 @@ int tc_class_modify(int cmd, unsigned flags, int argc, char **argv)
 			req.t.tcm_handle = handle;
 		} else if (strcmp(*argv, "root") == 0) {
 			if (req.t.tcm_parent) {
-				fprintf(stderr, "Error: \"root\" is duplicate parent ID.\n");
+//				fprintf(stderr, "Error: \"root\" is duplicate parent ID.\n");
 				return -1;
 			}
 			req.t.tcm_parent = TC_H_ROOT;
@@ -112,7 +112,7 @@ int tc_class_modify(int cmd, unsigned flags, int argc, char **argv)
 
 	if (q) {
 		if (q->parse_copt == NULL) {
-			fprintf(stderr, "Error: Qdisc \"%s\" is classless.\n", k);
+//			fprintf(stderr, "Error: Qdisc \"%s\" is classless.\n", k);
 			return 1;
 		}
 		if (q->parse_copt(q, argc, argv, &req.n))
@@ -121,7 +121,7 @@ int tc_class_modify(int cmd, unsigned flags, int argc, char **argv)
 		if (argc) {
 			if (matches(*argv, "help") == 0)
 				usage();
-			fprintf(stderr, "Garbage instead of arguments \"%s ...\". Try \"tc class help\".", *argv);
+//			fprintf(stderr, "Garbage instead of arguments \"%s ...\". Try \"tc class help\".", *argv);
 			return -1;
 		}
 	}
@@ -130,7 +130,7 @@ int tc_class_modify(int cmd, unsigned flags, int argc, char **argv)
 		ll_init_map(&rth);
 
 		if ((req.t.tcm_ifindex = ll_name_to_index(d)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", d);
 			return 1;
 		}
 	}
@@ -155,12 +155,12 @@ static int print_class(const struct sockaddr_nl *who,
 	char abuf[256];
 
 	if (n->nlmsg_type != RTM_NEWTCLASS && n->nlmsg_type != RTM_DELTCLASS) {
-		fprintf(stderr, "Not a class\n");
+//		fprintf(stderr, "Not a class\n");
 		return 0;
 	}
 	len -= NLMSG_LENGTH(sizeof(*t));
 	if (len < 0) {
-		fprintf(stderr, "Wrong len %d\n", len);
+//		fprintf(stderr, "Wrong len %d\n", len);
 		return -1;
 	}
 	if (filter_qdisc && TC_H_MAJ(t->tcm_handle^filter_qdisc))
@@ -170,7 +170,7 @@ static int print_class(const struct sockaddr_nl *who,
 	parse_rtattr(tb, TCA_MAX, TCA_RTA(t), len);
 
 	if (tb[TCA_KIND] == NULL) {
-		fprintf(stderr, "print_class: NULL kind\n");
+//		fprintf(stderr, "print_class: NULL kind\n");
 		return -1;
 	}
 
@@ -248,7 +248,7 @@ int tc_class_list(int argc, char **argv)
 				invarg(*argv, "invalid qdisc ID");
 		} else if (strcmp(*argv, "root") == 0) {
 			if (t.tcm_parent) {
-				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
+//				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
 				return -1;
 			}
 			t.tcm_parent = TC_H_ROOT;
@@ -263,7 +263,7 @@ int tc_class_list(int argc, char **argv)
 		} else if (matches(*argv, "help") == 0) {
 			usage();
 		} else {
-			fprintf(stderr, "What is \"%s\"? Try \"tc class help\".\n", *argv);
+//			fprintf(stderr, "What is \"%s\"? Try \"tc class help\".\n", *argv);
 			return -1;
 		}
 
@@ -274,19 +274,19 @@ int tc_class_list(int argc, char **argv)
 
 	if (d[0]) {
 		if ((t.tcm_ifindex = ll_name_to_index(d)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", d);
 			return 1;
 		}
 		filter_ifindex = t.tcm_ifindex;
 	}
 
  	if (rtnl_dump_request(&rth, RTM_GETTCLASS, &t, sizeof(t)) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		return 1;
 	}
 
  	if (rtnl_dump_filter(&rth, print_class, stdout, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		return 1;
 	}
 
@@ -314,6 +314,6 @@ int do_class(int argc, char **argv)
 		return tc_class_list(argc-1, argv+1);
 	if (matches(*argv, "help") == 0)
 		usage();
-	fprintf(stderr, "Command \"%s\" is unknown, try \"tc class help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"tc class help\".\n", *argv);
 	return -1;
 }

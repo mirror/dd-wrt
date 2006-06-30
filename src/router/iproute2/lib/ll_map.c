@@ -158,12 +158,12 @@ int ll_name_to_index(const char *name)
 int ll_init_map(struct rtnl_handle *rth)
 {
 	if (rtnl_wilddump_request(rth, AF_UNSPEC, RTM_GETLINK) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		exit(1);
 	}
 
 	if (rtnl_dump_filter(rth, ll_remember_index, &idxmap, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		exit(1);
 	}
 	return 0;

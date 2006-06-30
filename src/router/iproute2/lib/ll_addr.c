@@ -58,7 +58,7 @@ int ll_addr_a2n(unsigned char *lladdr, int len, char *arg)
 	if (strchr(arg, '.')) {
 		inet_prefix pfx;
 		if (get_addr_1(&pfx, arg, AF_INET)) {
-			fprintf(stderr, "\"%s\" is invalid lladdr.\n", arg);
+//			fprintf(stderr, "\"%s\" is invalid lladdr.\n", arg);
 			return -1;
 		}
 		if (len < 4)
@@ -76,11 +76,11 @@ int ll_addr_a2n(unsigned char *lladdr, int len, char *arg)
 				cp++;
 			}
 			if (sscanf(arg, "%x", &temp) != 1) {
-				fprintf(stderr, "\"%s\" is invalid lladdr.\n", arg);
+//				fprintf(stderr, "\"%s\" is invalid lladdr.\n", arg);
 				return -1;
 			}
 			if (temp < 0 || temp > 255) {
-				fprintf(stderr, "\"%s\" is invalid lladdr.\n", arg);
+//				fprintf(stderr, "\"%s\" is invalid lladdr.\n", arg);
 				return -1;
 			}
 			lladdr[i] = temp;

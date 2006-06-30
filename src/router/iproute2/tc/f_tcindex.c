@@ -14,15 +14,17 @@
 
 #include "utils.h"
 #include "tc_util.h"
+#define explain()
 
-static void explain(void)
-{
-	fprintf(stderr," Usage: ... tcindex [ hash SIZE ] [ mask MASK ]"
-	    " [ shift SHIFT ]\n");
-	fprintf(stderr,"                    [ pass_on | fall_through ]\n");
-	fprintf(stderr,"                    [ classid CLASSID ] "
-	    "[ police POLICE_SPEC ]\n");
-}
+
+//static void explain(void)
+//{
+//	fprintf(stderr," Usage: ... tcindex [ hash SIZE ] [ mask MASK ]"
+//	    " [ shift SHIFT ]\n");
+//	fprintf(stderr,"                    [ pass_on | fall_through ]\n");
+//	fprintf(stderr,"                    [ classid CLASSID ] "
+//	    "[ police POLICE_SPEC ]\n");
+//}
 
 
 #define usage() return(-1)
@@ -38,7 +40,7 @@ static int tcindex_parse_opt(struct filter_util *qu, char *handle, int argc,
 	if (handle) {
 		t->tcm_handle = strtoul(handle,&end,0);
 		if (*end) {
-			fprintf(stderr, "Illegal filter ID\n");
+//			fprintf(stderr, "Illegal filter ID\n");
 			return -1;
 		}
 	}
@@ -97,7 +99,7 @@ static int tcindex_parse_opt(struct filter_util *qu, char *handle, int argc,
 
 			NEXT_ARG();
 			if (get_tc_classid(&handle,*argv)) {
-				fprintf(stderr, "Illegal \"classid\"\n");
+//				fprintf(stderr, "Illegal \"classid\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_TCINDEX_CLASSID, &handle, 4);
@@ -105,7 +107,7 @@ static int tcindex_parse_opt(struct filter_util *qu, char *handle, int argc,
 		else if (!strcmp(*argv,"police")) {
 			NEXT_ARG();
 			if (parse_police(&argc, &argv, TCA_TCINDEX_POLICE, n)) {
-				fprintf(stderr, "Illegal \"police\"\n");
+//				fprintf(stderr, "Illegal \"police\"\n");
 				return -1;
 			}
 			continue;

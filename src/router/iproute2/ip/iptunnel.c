@@ -39,6 +39,8 @@
 #include "rt_names.h"
 #include "utils.h"
 
+#define usage() exit(-1);
+/*
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
@@ -55,7 +57,7 @@ static void usage(void)
 	fprintf(stderr, "       KEY  := { DOTTED_QUAD | NUMBER }\n");
 	exit(-1);
 }
-
+*/
 static int do_ioctl_get_ifindex(const char *dev)
 {
 	struct ifreq ifr;
@@ -184,26 +186,26 @@ static int parse_args(int argc, char **argv, int cmd, struct ip_tunnel_parm *p)
 			if (strcmp(*argv, "ipip") == 0 ||
 			    strcmp(*argv, "ip/ip") == 0) {
 				if (p->iph.protocol && p->iph.protocol != IPPROTO_IPIP) {
-					fprintf(stderr,"You managed to ask for more than one tunnel mode.\n");
+//					fprintf(stderr,"You managed to ask for more than one tunnel mode.\n");
 					exit(-1);
 				}
 				p->iph.protocol = IPPROTO_IPIP;
 			} else if (strcmp(*argv, "gre") == 0 ||
 				   strcmp(*argv, "gre/ip") == 0) {
 				if (p->iph.protocol && p->iph.protocol != IPPROTO_GRE) {
-					fprintf(stderr,"You managed to ask for more than one tunnel mode.\n");
+//					fprintf(stderr,"You managed to ask for more than one tunnel mode.\n");
 					exit(-1);
 				}
 				p->iph.protocol = IPPROTO_GRE;
 			} else if (strcmp(*argv, "sit") == 0 ||
 				   strcmp(*argv, "ipv6/ip") == 0) {
 				if (p->iph.protocol && p->iph.protocol != IPPROTO_IPV6) {
-					fprintf(stderr,"You managed to ask for more than one tunnel mode.\n");
+//					fprintf(stderr,"You managed to ask for more than one tunnel mode.\n");
 					exit(-1);
 				}
 				p->iph.protocol = IPPROTO_IPV6;
 			} else {
-				fprintf(stderr,"Cannot guess tunnel mode.\n");
+//				fprintf(stderr,"Cannot guess tunnel mode.\n");
 				exit(-1);
 			}
 		} else if (strcmp(*argv, "key") == 0) {
@@ -215,7 +217,7 @@ static int parse_args(int argc, char **argv, int cmd, struct ip_tunnel_parm *p)
 				p->i_key = p->o_key = get_addr32(*argv);
 			else {
 				if (get_unsigned(&uval, *argv, 0)<0) {
-					fprintf(stderr, "invalid value of \"key\"\n");
+//					fprintf(stderr, "invalid value of \"key\"\n");
 					exit(-1);
 				}
 				p->i_key = p->o_key = htonl(uval);
@@ -228,7 +230,7 @@ static int parse_args(int argc, char **argv, int cmd, struct ip_tunnel_parm *p)
 				p->i_key = get_addr32(*argv);
 			else {
 				if (get_unsigned(&uval, *argv, 0)<0) {
-					fprintf(stderr, "invalid value of \"ikey\"\n");
+//					fprintf(stderr, "invalid value of \"ikey\"\n");
 					exit(-1);
 				}
 				p->i_key = htonl(uval);
@@ -241,7 +243,7 @@ static int parse_args(int argc, char **argv, int cmd, struct ip_tunnel_parm *p)
 				p->o_key = get_addr32(*argv);
 			else {
 				if (get_unsigned(&uval, *argv, 0)<0) {
-					fprintf(stderr, "invalid value of \"okey\"\n");
+//					fprintf(stderr, "invalid value of \"okey\"\n");
 					exit(-1);
 				}
 				p->o_key = htonl(uval);
@@ -328,7 +330,7 @@ static int parse_args(int argc, char **argv, int cmd, struct ip_tunnel_parm *p)
 
 	if (p->iph.protocol == IPPROTO_IPIP || p->iph.protocol == IPPROTO_IPV6) {
 		if ((p->i_flags & GRE_KEY) || (p->o_flags & GRE_KEY)) {
-			fprintf(stderr, "Keys are not allowed with ipip and sit.\n");
+//			fprintf(stderr, "Keys are not allowed with ipip and sit.\n");
 			return -1;
 		}
 	}
@@ -348,7 +350,7 @@ static int parse_args(int argc, char **argv, int cmd, struct ip_tunnel_parm *p)
 		p->o_flags |= GRE_KEY;
 	}
 	if (IN_MULTICAST(ntohl(p->iph.daddr)) && !p->iph.saddr) {
-		fprintf(stderr, "Broadcast tunnel requires a source address.\n");
+//		fprintf(stderr, "Broadcast tunnel requires a source address.\n");
 		return -1;
 	}
 	return 0;
@@ -363,7 +365,7 @@ static int do_add(int cmd, int argc, char **argv)
 		return -1;
 
 	if (p.iph.ttl && p.iph.frag_off == 0) {
-		fprintf(stderr, "ttl != 0 and noptmudisc are incompatible\n");
+//		fprintf(stderr, "ttl != 0 and noptmudisc are incompatible\n");
 		return -1;
 	}
 
@@ -375,7 +377,7 @@ static int do_add(int cmd, int argc, char **argv)
 	case IPPROTO_IPV6:
 		return do_add_ioctl(cmd, "sit0", &p);
 	default:	
-		fprintf(stderr, "cannot determine tunnel mode (ipip, gre or sit)\n");
+//		fprintf(stderr, "cannot determine tunnel mode (ipip, gre or sit)\n");
 		return -1;
 	}
 	return -1;
@@ -490,7 +492,7 @@ static int do_tunnels_list(struct ip_tunnel_parm *p)
 		buf[sizeof(buf) - 1] = 0;
 		if ((ptr = strchr(buf, ':')) == NULL ||
 		    (*ptr++ = 0, sscanf(buf, "%s", name) != 1)) {
-			fprintf(stderr, "Wrong format of /proc/net/dev. Sorry.\n");
+//			fprintf(stderr, "Wrong format of /proc/net/dev. Sorry.\n");
 			return -1;
 		}
 		if (sscanf(ptr, "%ld%ld%ld%ld%ld%ld%ld%*d%ld%ld%ld%ld%ld%ld%ld",
@@ -503,7 +505,7 @@ static int do_tunnels_list(struct ip_tunnel_parm *p)
 			continue;
 		type = do_ioctl_get_iftype(name);
 		if (type == -1) {
-			fprintf(stderr, "Failed to get type of [%s]\n", name);
+//			fprintf(stderr, "Failed to get type of [%s]\n", name);
 			continue;
 		}
 		if (type != ARPHRD_TUNNEL && type != ARPHRD_IPGRE && type != ARPHRD_SIT)
@@ -580,6 +582,6 @@ int do_iptunnel(int argc, char **argv)
 	} else
 		return do_show(0, NULL);
 
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip tunnel help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip tunnel help\".\n", *argv);
 	exit(-1);
 }

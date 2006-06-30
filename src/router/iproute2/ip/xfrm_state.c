@@ -51,6 +51,9 @@
 #define RTA_BUF_SIZE 2048
 #define XFRM_ALGO_KEY_BUF_SIZE 512
 
+
+#define usage() exit(-1);
+/*
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
@@ -106,7 +109,7 @@ static void usage(void)
 	fprintf(stderr, "         [ [byte-soft|byte-hard] SIZE ] | [ [packet-soft|packet-hard] COUNT ]\n");
 	exit(-1);
 }
-
+*/
 static int xfrm_algo_parse(struct xfrm_algo *alg, enum xfrm_attr_type_t type,
 			   char *name, char *key, int max)
 {
@@ -115,7 +118,7 @@ static int xfrm_algo_parse(struct xfrm_algo *alg, enum xfrm_attr_type_t type,
 
 #if 0
 	/* XXX: verifying both name and key is required! */
-	fprintf(stderr, "warning: ALGONAME/ALGOKEY will send to kernel promiscuously!(verifying them isn't implemented yet)\n");
+//	fprintf(stderr, "warning: ALGONAME/ALGOKEY will send to kernel promiscuously!(verifying them isn't implemented yet)\n");
 #endif
 
 	strncpy(alg->alg_name, name, sizeof(alg->alg_name));
@@ -359,7 +362,7 @@ static int xfrm_state_modify(int cmd, unsigned flags, int argc, char **argv)
 	}
 
 	if (!idp) {
-		fprintf(stderr, "Not enough information: \"ID\" is required\n");
+//		fprintf(stderr, "Not enough information: \"ID\" is required\n");
 		exit(1);
 	}
 
@@ -367,14 +370,14 @@ static int xfrm_state_modify(int cmd, unsigned flags, int argc, char **argv)
 		if (req.xsinfo.id.proto != IPPROTO_ESP &&
 		    req.xsinfo.id.proto != IPPROTO_AH &&
 		    req.xsinfo.id.proto != IPPROTO_COMP) {
-			fprintf(stderr, "\"ALGO\" is invalid with proto=%s\n", strxf_xfrmproto(req.xsinfo.id.proto));
+//			fprintf(stderr, "\"ALGO\" is invalid with proto=%s\n", strxf_xfrmproto(req.xsinfo.id.proto));
 			exit(1);
 		}
 	} else {
 		if (req.xsinfo.id.proto == IPPROTO_ESP ||
 		    req.xsinfo.id.proto == IPPROTO_AH ||
 		    req.xsinfo.id.proto == IPPROTO_COMP) {
-			fprintf(stderr, "\"ALGO\" is required with proto=%s\n", strxf_xfrmproto(req.xsinfo.id.proto));
+//			fprintf(stderr, "\"ALGO\" is required with proto=%s\n", strxf_xfrmproto(req.xsinfo.id.proto));
 			exit (1);
 		}
 	}
@@ -461,7 +464,7 @@ static int xfrm_state_allocspi(int argc, char **argv)
 			xfrm_id_parse(&req.xspi.info.saddr, &req.xspi.info.id,
 				      &req.xspi.info.family, 0, &argc, &argv);
 			if (req.xspi.info.id.spi) {
-				fprintf(stderr, "\"SPI\" must be zero\n");
+//				fprintf(stderr, "\"SPI\" must be zero\n");
 				exit(1);
 			}
 			if (preferred_family == AF_UNSPEC)
@@ -471,22 +474,22 @@ static int xfrm_state_allocspi(int argc, char **argv)
 	}
 
 	if (!idp) {
-		fprintf(stderr, "Not enough information: \"ID\" is required\n");
+//		fprintf(stderr, "Not enough information: \"ID\" is required\n");
 		exit(1);
 	}
 
 	if (minp) {
 		if (!maxp) {
-			fprintf(stderr, "\"max\" is missing\n");
+//			fprintf(stderr, "\"max\" is missing\n");
 			exit(1);
 		}
 		if (req.xspi.min > req.xspi.max) {
-			fprintf(stderr, "\"min\" valie is larger than \"max\" one\n");
+//			fprintf(stderr, "\"min\" valie is larger than \"max\" one\n");
 			exit(1);
 		}
 	} else {
 		if (maxp) {
-			fprintf(stderr, "\"min\" is missing\n");
+//			fprintf(stderr, "\"min\" is missing\n");
 			exit(1);
 		}
 
@@ -514,7 +517,7 @@ static int xfrm_state_allocspi(int argc, char **argv)
 		exit(2);
 
 	if (xfrm_state_print(NULL, res_n, (void*)stdout) < 0) {
-		fprintf(stderr, "An error :-)\n");
+//		fprintf(stderr, "An error :-)\n");
 		exit(1);
 	}
 
@@ -561,14 +564,14 @@ int xfrm_state_print(const struct sockaddr_nl *who, struct nlmsghdr *n,
 
 	if (n->nlmsg_type != XFRM_MSG_NEWSA &&
 	    n->nlmsg_type != XFRM_MSG_DELSA) {
-		fprintf(stderr, "Not a state: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not a state: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 
 	len -= NLMSG_LENGTH(sizeof(*xsinfo));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -648,7 +651,7 @@ static int xfrm_state_get_or_delete(int argc, char **argv, int delete)
 			exit(2);
 
 		if (xfrm_state_print(NULL, res_n, (void*)stdout) < 0) {
-			fprintf(stderr, "An error :-)\n");
+//			fprintf(stderr, "An error :-)\n");
 			exit(1);
 		}
 	}
@@ -674,14 +677,14 @@ static int xfrm_state_keep(const struct sockaddr_nl *who,
 	struct xfrm_usersa_id *xsid;
 
 	if (n->nlmsg_type != XFRM_MSG_NEWSA) {
-		fprintf(stderr, "Not a state: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not a state: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 
 	len -= NLMSG_LENGTH(sizeof(*xsinfo));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -689,7 +692,7 @@ static int xfrm_state_keep(const struct sockaddr_nl *who,
 		return 0;
 
 	if (xb->offset > xb->size) {
-		fprintf(stderr, "Flush buffer overflow\n");
+//		fprintf(stderr, "Flush buffer overflow\n");
 		return -1;
 	}
 
@@ -770,29 +773,29 @@ static int xfrm_state_list_or_flush(int argc, char **argv, int flush)
 			xb.nlmsg_count = 0;
 
 			if (show_stats > 1)
-				fprintf(stderr, "Flush round = %d\n", i);
+//				fprintf(stderr, "Flush round = %d\n", i);
 
 			if (rtnl_wilddump_request(&rth, preferred_family, XFRM_MSG_GETSA) < 0) {
-				perror("Cannot send dump request");
+//				perror("Cannot send dump request");
 				exit(1);
 			}
 
 			if (rtnl_dump_filter(&rth, xfrm_state_keep, &xb, NULL, NULL) < 0) {
-				fprintf(stderr, "Flush terminated\n");
+//				fprintf(stderr, "Flush terminated\n");
 				exit(1);
 			}
 			if (xb.nlmsg_count == 0) {
-				if (show_stats > 1)
-					fprintf(stderr, "Flush completed\n");
+//				if (show_stats > 1)
+//					fprintf(stderr, "Flush completed\n");
 				break;
 			}
 
 			if (rtnl_send(&rth, xb.buf, xb.offset) < 0) {
-				perror("Failed to send flush request\n");
+//				perror("Failed to send flush request\n");
 				exit(1);
 			}
-			if (show_stats > 1)
-				fprintf(stderr, "Flushed nlmsg count = %d\n", xb.nlmsg_count);
+//			if (show_stats > 1)
+//				fprintf(stderr, "Flushed nlmsg count = %d\n", xb.nlmsg_count);
 
 			xb.offset = 0;
 			xb.nlmsg_count = 0;
@@ -800,12 +803,12 @@ static int xfrm_state_list_or_flush(int argc, char **argv, int flush)
 
 	} else {
 		if (rtnl_wilddump_request(&rth, preferred_family, XFRM_MSG_GETSA) < 0) {
-			perror("Cannot send dump request");
+//			perror("Cannot send dump request");
 			exit(1);
 		}
 
 		if (rtnl_dump_filter(&rth, xfrm_state_print, stdout, NULL, NULL) < 0) {
-			fprintf(stderr, "Dump terminated\n");
+//			fprintf(stderr, "Dump terminated\n");
 			exit(1);
 		}
 	}
@@ -833,8 +836,8 @@ static int xfrm_state_flush_all(void)
 	if (rtnl_open_byproto(&rth, 0, NETLINK_XFRM) < 0)
 		exit(1);
 
-	if (show_stats > 1)
-		fprintf(stderr, "Flush all\n");
+//	if (show_stats > 1)
+//		fprintf(stderr, "Flush all\n");
 
 	if (rtnl_talk(&rth, &req.n, 0, 0, NULL, NULL, NULL) < 0)
 		exit(2);
@@ -872,6 +875,6 @@ int do_xfrm_state(int argc, char **argv)
 	}
 	if (matches(*argv, "help") == 0)
 		usage();
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip xfrm state help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip xfrm state help\".\n", *argv);
 	exit(-1);
 }

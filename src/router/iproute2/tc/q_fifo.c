@@ -22,11 +22,12 @@
 
 #include "utils.h"
 #include "tc_util.h"
+#define explain();
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... [p|b]fifo [ limit NUMBER ]\n");
-}
+//static void explain(void)
+//{
+//	fprintf(stderr, "Usage: ... [p|b]fifo [ limit NUMBER ]\n");
+//}
 
 #define usage() return(-1)
 
@@ -40,7 +41,7 @@ static int fifo_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 		if (strcmp(*argv, "limit") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.limit, *argv)) {
-				fprintf(stderr, "Illegal \"limit\"\n");
+//				fprintf(stderr, "Illegal \"limit\"\n");
 				return -1;
 			}
 			ok++;
@@ -48,7 +49,7 @@ static int fifo_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}

@@ -54,7 +54,7 @@ static int print_noqopt(struct qdisc_util *qu, FILE *f,
 static int parse_noqopt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
 {
 	if (argc) {
-		fprintf(stderr, "Unknown qdisc \"%s\", hence option \"%s\" is unparsable\n", qu->id, *argv);
+//		fprintf(stderr, "Unknown qdisc \"%s\", hence option \"%s\" is unparsable\n", qu->id, *argv);
 		return -1;
 	}
 	return 0;
@@ -75,13 +75,13 @@ static int parse_nofopt(struct filter_util *qu, char *fhandle, int argc, char **
 	__u32 handle;
 
 	if (argc) {
-		fprintf(stderr, "Unknown filter \"%s\", hence option \"%s\" is unparsable\n", qu->id, *argv);
+//		fprintf(stderr, "Unknown filter \"%s\", hence option \"%s\" is unparsable\n", qu->id, *argv);
 		return -1;
 	}
 	if (fhandle) {
 		struct tcmsg *t = NLMSG_DATA(n);
 		if (get_u32(&handle, fhandle, 16)) {
-			fprintf(stderr, "Unparsable filter ID \"%s\"\n", fhandle);
+//			fprintf(stderr, "Unparsable filter ID \"%s\"\n", fhandle);
 			return -1;
 		}
 		t->tcm_handle = handle;
@@ -179,9 +179,9 @@ noexist:
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: tc [ OPTIONS ] OBJECT { COMMAND | help }\n"
-	                "where  OBJECT := { qdisc | class | filter | action }\n"
-	                "       OPTIONS := { -s[tatistics] | -d[etails] | -r[aw] | -b[atch] file }\n");
+//	fprintf(stderr, "Usage: tc [ OPTIONS ] OBJECT { COMMAND | help }\n"
+//	                "where  OBJECT := { qdisc | class | filter | action }\n"
+//	                "       OPTIONS := { -s[tatistics] | -d[etails] | -r[aw] | -b[atch] file }\n");
 }
 
 static int do_cmd(int argc, char **argv)
@@ -203,8 +203,8 @@ static int do_cmd(int argc, char **argv)
 		return 0;
 	}
 	
-	fprintf(stderr, "Object \"%s\" is unknown, try \"tc help\".\n", 
-		*argv);
+//	fprintf(stderr, "Object \"%s\" is unknown, try \"tc help\".\n", 
+//		*argv);
 	return -1;
 }
 
@@ -217,7 +217,7 @@ static int makeargs(char *line, char *argv[], int maxargs)
 
 	for (cp = strtok(line, ws); cp; cp = strtok(NULL, ws)) {
 		if (argc >= maxargs) {
-			fprintf(stderr, "Too many arguments to command\n");
+//			fprintf(stderr, "Too many arguments to command\n");
 			exit(1);
 		}
 		argv[argc++] = cp;
@@ -248,7 +248,7 @@ static size_t getcmdline(char **linep, size_t *lenp, FILE *in)
 		size_t cc1;
 
 		if ((cc1 = getline(&line1, &len1, in)) < 0) {
-			fprintf(stderr, "Missing continuation line\n");
+//			fprintf(stderr, "Missing continuation line\n");
 			return cc1;
 		}
 
@@ -261,7 +261,7 @@ static size_t getcmdline(char **linep, size_t *lenp, FILE *in)
 
 		*linep = realloc(*linep, strlen(*linep) + strlen(line1) + 1);
 		if (!*linep) {
-			fprintf(stderr, "Out of memory\n");
+//			fprintf(stderr, "Out of memory\n");
 			return -1;
 		}
 		cc += cc1 - 2;
@@ -279,8 +279,8 @@ static int batch(const char *name)
 
 	if (strcmp(name, "-") != 0) {
 		if (freopen(name, "r", stdin) == NULL) {
-			fprintf(stderr, "Cannot open file \"%s\" for reading: %s=n",
-				name, strerror(errno));
+//			fprintf(stderr, "Cannot open file \"%s\" for reading: %s=n",
+//				name, strerror(errno));
 			return -1;
 		}
 	}
@@ -288,7 +288,7 @@ static int batch(const char *name)
 	tc_core_init();
 
 	if (rtnl_open(&rth, 0) < 0) {
-		fprintf(stderr, "Cannot open rtnetlink\n");
+//		fprintf(stderr, "Cannot open rtnetlink\n");
 		return -1;
 	}
 
@@ -302,7 +302,7 @@ static int batch(const char *name)
 			continue;	/* blank line */
 
 		if (do_cmd(largc, largv)) {
-			fprintf(stderr, "Command failed %s:%d\n", name, lineno);
+//			fprintf(stderr, "Command failed %s:%d\n", name, lineno);
 			ret = 1;
 			if (!force)
 				break;
@@ -341,13 +341,13 @@ int main(int argc, char **argv)
 			++force;
 		} else 	if (matches(argv[1], "-batch") == 0) {
 			if (argc < 3) {
-				fprintf(stderr, "Wrong number of arguments in batch mode\n");
+//				fprintf(stderr, "Wrong number of arguments in batch mode\n");
 				return -1;
 			}
 			batchfile = argv[2];
 			argc--;	argv++;
 		} else {
-			fprintf(stderr, "Option \"%s\" is unknown, try \"tc -help\".\n", argv[1]);
+//			fprintf(stderr, "Option \"%s\" is unknown, try \"tc -help\".\n", argv[1]);
 			return -1;
 		}
 		argc--;	argv++;
@@ -363,7 +363,7 @@ int main(int argc, char **argv)
 
 	tc_core_init();
 	if (rtnl_open(&rth, 0) < 0) {
-		fprintf(stderr, "Cannot open rtnetlink\n");
+//		fprintf(stderr, "Cannot open rtnetlink\n");
 		exit(1);
 	}
 

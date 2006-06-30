@@ -32,20 +32,21 @@
 static int atm_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
 {
 	if (argc) {
-		fprintf(stderr,"Usage: atm\n");
+//		fprintf(stderr,"Usage: atm\n");
 		return -1;
 	}
 	return 0;
 }
 
+#define explain()
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... atm ( pvc ADDR | svc ADDR [ sap SAP ] ) "
-	    "[ qos QOS ] [ sndbuf BYTES ]\n");
-	fprintf(stderr, "  [ hdr HEX... ] [ excess ( CLASSID | clp ) ] "
-	  "[ clip ]\n");
-}
+//static void explain(void)
+//{
+//	fprintf(stderr, "Usage: ... atm ( pvc ADDR | svc ADDR [ sap SAP ] ) "
+//	    "[ qos QOS ] [ sndbuf BYTES ]\n");
+//	fprintf(stderr, "  [ hdr HEX... ] [ excess ( CLASSID | clp ) ] "
+//	  "[ clip ]\n");
+//}
 
 
 static int atm_parse_class_opt(struct qdisc_util *qu, int argc, char **argv,
@@ -117,7 +118,7 @@ static int atm_parse_class_opt(struct qdisc_util *qu, int argc, char **argv,
 				int tmp;
 
 				if (ptr == hdr+MAX_HDR_LEN) {
-					fprintf(stderr,"header is too long\n");
+//					fprintf(stderr,"header is too long\n");
 					return -1;
 				}
 				if (*walk == '.') continue;
@@ -152,31 +153,31 @@ static int atm_parse_class_opt(struct qdisc_util *qu, int argc, char **argv,
 	}
 	s = socket(addr.sas_family,SOCK_DGRAM,0);
 	if (s < 0) {
-		perror("socket");
+//		perror("socket");
 		return -1;
 	}
 	if (setsockopt(s,SOL_ATM,SO_ATMQOS,&qos,sizeof(qos)) < 0) {
-		perror("SO_ATMQOS");
+//		perror("SO_ATMQOS");
 		return -1;
 	}
 	if (sndbuf)
 	    if (setsockopt(s,SOL_SOCKET,SO_SNDBUF,&sndbuf,sizeof(sndbuf)) < 0) {
-		perror("SO_SNDBUF");
+//		perror("SO_SNDBUF");
 	    return -1;
 	}
 	if (addr.sas_family == AF_ATMSVC && setsockopt(s,SOL_ATM,SO_ATMSAP,
 	    &sap,sizeof(sap)) < 0) {
-		perror("SO_ATMSAP");
+//		perror("SO_ATMSAP");
 		return -1;
 	}
 	if (connect(s,(struct sockaddr *) &addr,addr.sas_family == AF_ATMPVC ?
 	    sizeof(struct sockaddr_atmpvc) : sizeof(addr)) < 0) {
-		perror("connect");
+///		perror("connect");
 		return -1;
 	}
 	if (set_clip)
 		if (ioctl(s,ATMARP_MKIP,0) < 0) {
-			perror("ioctl ATMARP_MKIP");
+//			perror("ioctl ATMARP_MKIP");
 			return -1;
 		}
 	tail = NLMSG_TAIL(n);
@@ -202,11 +203,10 @@ static int atm_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 	if (tb[TCA_ATM_ADDR]) {
 		if (RTA_PAYLOAD(tb[TCA_ATM_ADDR]) <
 		    sizeof(struct sockaddr_atmpvc))
-			fprintf(stderr,"ATM: address too short\n");
+//			fprintf(stderr,"ATM: address too short\n");
 		else {
-			if (atm2text(buffer,MAX_ATM_ADDR_LEN,
-			    RTA_DATA(tb[TCA_ATM_ADDR]),A2T_PRETTY | A2T_NAME) <
-			    0) fprintf(stderr,"atm2text error\n");
+			atm2text(buffer,MAX_ATM_ADDR_LEN,RTA_DATA(tb[TCA_ATM_ADDR]),A2T_PRETTY | A2T_NAME);
+			 //fprintf(stderr,"atm2text error\n");
 			fprintf(f,"pvc %s ",buffer);
 		}
 	}
@@ -224,7 +224,7 @@ static int atm_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 		__u32 excess;
 
 		if (RTA_PAYLOAD(tb[TCA_ATM_EXCESS]) < sizeof(excess))
-			fprintf(stderr,"ATM: excess class ID too short\n");
+//			fprintf(stderr,"ATM: excess class ID too short\n");
 		else {
 			excess = *(__u32 *) RTA_DATA(tb[TCA_ATM_EXCESS]);
 			if (!excess) fprintf(f,"excess clp ");
@@ -241,7 +241,7 @@ static int atm_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 		int state;
 
 		if (RTA_PAYLOAD(tb[TCA_ATM_STATE]) < sizeof(state))
-			fprintf(stderr,"ATM: state field too short\n");
+//			fprintf(stderr,"ATM: state field too short\n");
 		else {
 			state = *(int *) RTA_DATA(tb[TCA_ATM_STATE]);
 			fprintf(f,"%s ",map[state]);
