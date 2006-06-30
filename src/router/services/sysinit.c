@@ -391,6 +391,7 @@ start_restore_defaults (void)
   switch (brand)
     {
     case ROUTER_WRTSL54GS:
+    case ROUTER_BUFFALO_WZRRSG54:
       linux_overrides = generic;
       break;
     case ROUTER_ASUS:
@@ -400,7 +401,6 @@ start_restore_defaults (void)
     case ROUTER_SIEMENS:
     case ROUTER_RT210W:
     case ROUTER_BELKIN_F5D7230:
-    case ROUTER_BUFFALO_WZRRSG54:
       ds = nvram_safe_get ("dhcp_start");
       if (ds != NULL && strlen (ds) > 3)
 	{
