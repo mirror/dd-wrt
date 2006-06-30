@@ -44,8 +44,8 @@ static void rtnl_tab_initialize(char *file, char **tab, int size)
 		    sscanf(p, "0x%x %s #", &id, namebuf) != 2 &&
 		    sscanf(p, "%d %s\n", &id, namebuf) != 2 &&
 		    sscanf(p, "%d %s #", &id, namebuf) != 2) {
-			fprintf(stderr, "Database %s is corrupted at %s\n",
-				file, p);
+//			fprintf(stderr, "Database %s is corrupted at %s\n",
+//				file, p);
 			return;
 		}
 

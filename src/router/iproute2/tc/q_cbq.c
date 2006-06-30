@@ -23,27 +23,10 @@
 #include "utils.h"
 #include "tc_util.h"
 #include "tc_cbq.h"
+#define explain_class()
 
-static void explain_class(void)
-{
-	fprintf(stderr, "Usage: ... cbq bandwidth BPS rate BPS maxburst PKTS [ avpkt BYTES ]\n");
-	fprintf(stderr, "               [ minburst PKTS ] [ bounded ] [ isolated ]\n");
-	fprintf(stderr, "               [ allot BYTES ] [ mpu BYTES ] [ weight RATE ]\n");
-	fprintf(stderr, "               [ prio NUMBER ] [ cell BYTES ] [ ewma LOG ]\n");
-	fprintf(stderr, "               [ estimator INTERVAL TIME_CONSTANT ]\n");
-	fprintf(stderr, "               [ split CLASSID ] [ defmap MASK/CHANGE ]\n");
-}
-
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... cbq bandwidth BPS avpkt BYTES [ mpu BYTES ]\n");
-	fprintf(stderr, "               [ cell BYTES ] [ ewma LOG ]\n");
-}
-
-static void explain1(char *arg)
-{
-	fprintf(stderr, "Illegal \"%s\"\n", arg);
-}
+#define explain()
+#define explain1(a)
 
 #define usage() return(-1)
 
@@ -75,7 +58,7 @@ static int cbq_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 				return -1;
 			}
 			if (ewma_log > 31) {
-				fprintf(stderr, "ewma_log must be < 32\n");
+//				fprintf(stderr, "ewma_log must be < 32\n");
 				return -1;
 			}
 		} else if (strcmp(*argv, "cell") == 0) {
@@ -90,7 +73,7 @@ static int cbq_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 				if ((1<<i) == cell)
 					break;
 			if (i>=32) {
-				fprintf(stderr, "cell must be 2^n\n");
+//				fprintf(stderr, "cell must be 2^n\n");
 				return -1;
 			}
 			cell_log = i;
@@ -117,7 +100,7 @@ static int cbq_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -127,18 +110,18 @@ static int cbq_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 	/* OK. All options are parsed. */
 
 	if (r.rate == 0) {
-		fprintf(stderr, "CBQ: bandwidth is required parameter.\n");
+//		fprintf(stderr, "CBQ: bandwidth is required parameter.\n");
 		return -1;
 	}
 	if (avpkt == 0) {
-		fprintf(stderr, "CBQ: \"avpkt\" is required.\n");
+//		fprintf(stderr, "CBQ: \"avpkt\" is required.\n");
 		return -1;
 	}
 	if (allot < (avpkt*3)/2)
 		allot = (avpkt*3)/2;
 
 	if ((cell_log = tc_calc_rtable(r.rate, rtab, cell_log, allot, mpu)) < 0) {
-		fprintf(stderr, "CBQ: failed to calculate rate table.\n");
+//		fprintf(stderr, "CBQ: failed to calculate rate table.\n");
 		return -1;
 	}
 	r.cell_log = cell_log;
@@ -241,7 +224,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 				return -1;
 			}
 			if (ewma_log > 31) {
-				fprintf(stderr, "ewma_log must be < 32\n");
+//				fprintf(stderr, "ewma_log must be < 32\n");
 				return -1;
 			}
 			lss.change |= TCF_CBQ_LSS_EWMA;
@@ -257,7 +240,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 				if ((1<<i) == cell)
 					break;
 			if (i>=32) {
-				fprintf(stderr, "cell must be 2^n\n");
+//				fprintf(stderr, "cell must be 2^n\n");
 				return -1;
 			}
 			cell_log = i;
@@ -269,7 +252,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 				return -1;
 			}
 			if (prio > TC_CBQ_MAXPRIO) {
-				fprintf(stderr, "\"prio\" must be number in the range 1...%d\n", TC_CBQ_MAXPRIO);
+//				fprintf(stderr, "\"prio\" must be number in the range 1...%d\n", TC_CBQ_MAXPRIO);
 				return -1;
 			}
 			wrr.priority = prio;
@@ -303,7 +286,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		} else if (strcmp(*argv, "split") == 0) {
 			NEXT_ARG();
 			if (get_tc_classid(&fopt.split, *argv)) {
-				fprintf(stderr, "Invalid split node ID.\n");
+//				fprintf(stderr, "Invalid split node ID.\n");
 				usage();
 			}
 			fopt_ok++;
@@ -312,7 +295,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 			NEXT_ARG();
 			err = sscanf(*argv, "%08x/%08x", &fopt.defmap, &fopt.defchange);
 			if (err < 1) {
-				fprintf(stderr, "Invalid defmap, should be MASK32[/MASK]\n");
+//				fprintf(stderr, "Invalid defmap, should be MASK32[/MASK]\n");
 				return -1;
 			}
 			if (err == 1)
@@ -322,7 +305,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 			explain_class();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain_class();
 			return -1;
 		}
@@ -337,7 +320,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		if (wrr.allot < (lss.avpkt*3)/2)
 			wrr.allot = (lss.avpkt*3)/2;
 		if ((cell_log = tc_calc_rtable(r.rate, rtab, cell_log, pktsize, mpu)) < 0) {
-			fprintf(stderr, "CBQ: failed to calculate rate table.\n");
+//			fprintf(stderr, "CBQ: failed to calculate rate table.\n");
 			return -1;
 		}
 		r.cell_log = cell_log;
@@ -348,11 +331,11 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 	lss.ewma_log = ewma_log;
 	if (lss.change&(TCF_CBQ_LSS_OFFTIME|TCF_CBQ_LSS_MAXIDLE)) {
 		if (lss.avpkt == 0) {
-			fprintf(stderr, "CBQ: avpkt is required for max/minburst.\n");
+//			fprintf(stderr, "CBQ: avpkt is required for max/minburst.\n");
 			return -1;
 		}
 		if (bndw==0 || r.rate == 0) {
-			fprintf(stderr, "CBQ: bandwidth&rate are required for max/minburst.\n");
+//			fprintf(stderr, "CBQ: bandwidth&rate are required for max/minburst.\n");
 			return -1;
 		}
 	}
@@ -366,7 +349,7 @@ static int cbq_parse_class_opt(struct qdisc_util *qu, int argc, char **argv, str
 		if (wrr.weight == 0)
 			wrr.weight = (wrr.priority == TC_CBQ_MAXPRIO) ? 1 : r.rate;
 		if (wrr.allot == 0) {
-			fprintf(stderr, "CBQ: \"allot\" is required to set WRR parameters.\n");
+//			fprintf(stderr, "CBQ: \"allot\" is required to set WRR parameters.\n");
 			return -1;
 		}
 	}
@@ -425,34 +408,38 @@ static int cbq_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 	parse_rtattr_nested(tb, TCA_CBQ_MAX, opt);
 
 	if (tb[TCA_CBQ_RATE]) {
-		if (RTA_PAYLOAD(tb[TCA_CBQ_RATE]) < sizeof(*r))
-			fprintf(stderr, "CBQ: too short rate opt\n");
+		if (RTA_PAYLOAD(tb[TCA_CBQ_RATE]) < sizeof(*r)){
+//			fprintf(stderr, "CBQ: too short rate opt\n");
+		}
 		else
 			r = RTA_DATA(tb[TCA_CBQ_RATE]);
 	}
 	if (tb[TCA_CBQ_LSSOPT]) {
-		if (RTA_PAYLOAD(tb[TCA_CBQ_LSSOPT]) < sizeof(*lss))
-			fprintf(stderr, "CBQ: too short lss opt\n");
+		if (RTA_PAYLOAD(tb[TCA_CBQ_LSSOPT]) < sizeof(*lss)){
+//			fprintf(stderr, "CBQ: too short lss opt\n");
+	    }
 		else
 			lss = RTA_DATA(tb[TCA_CBQ_LSSOPT]);
 	}
 	if (tb[TCA_CBQ_WRROPT]) {
-		if (RTA_PAYLOAD(tb[TCA_CBQ_WRROPT]) < sizeof(*wrr))
-			fprintf(stderr, "CBQ: too short wrr opt\n");
-		else
+		if (RTA_PAYLOAD(tb[TCA_CBQ_WRROPT]) < sizeof(*wrr)){
+			//fprintf(stderr, "CBQ: too short wrr opt\n");
+		}else
 			wrr = RTA_DATA(tb[TCA_CBQ_WRROPT]);
 	}
 	if (tb[TCA_CBQ_FOPT]) {
-		if (RTA_PAYLOAD(tb[TCA_CBQ_FOPT]) < sizeof(*fopt))
-			fprintf(stderr, "CBQ: too short fopt\n");
+		if (RTA_PAYLOAD(tb[TCA_CBQ_FOPT]) < sizeof(*fopt)){
+			//fprintf(stderr, "CBQ: too short fopt\n");
+			}
 		else
 			fopt = RTA_DATA(tb[TCA_CBQ_FOPT]);
 	}
 	if (tb[TCA_CBQ_OVL_STRATEGY]) {
-		if (RTA_PAYLOAD(tb[TCA_CBQ_OVL_STRATEGY]) < sizeof(*ovl))
-			fprintf(stderr, "CBQ: too short overlimit strategy %u/%u\n",
-				(unsigned) RTA_PAYLOAD(tb[TCA_CBQ_OVL_STRATEGY]), 
-				(unsigned) sizeof(*ovl));
+		if (RTA_PAYLOAD(tb[TCA_CBQ_OVL_STRATEGY]) < sizeof(*ovl)){
+			//fprintf(stderr, "CBQ: too short overlimit strategy %u/%u\n",
+			//	(unsigned) RTA_PAYLOAD(tb[TCA_CBQ_OVL_STRATEGY]), 
+			//	(unsigned) sizeof(*ovl));
+			}
 		else
 			ovl = RTA_DATA(tb[TCA_CBQ_OVL_STRATEGY]);
 	}

@@ -25,13 +25,7 @@
 #include "tc_common.h"
 #include "tc_util.h"
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... route [ from REALM | fromif TAG ] [ to REALM ]\n");
-	fprintf(stderr, "                [ flowid CLASSID ] [ police POLICE_SPEC ]\n");
-	fprintf(stderr, "       POLICE_SPEC := ... look at TBF\n");
-	fprintf(stderr, "       CLASSID := X:Y\n");
-}
+#define explain()
 
 #define usage() return(-1)
 
@@ -47,7 +41,7 @@ static int route_parse_opt(struct filter_util *qu, char *handle, int argc, char 
 
 	if (handle) {
 		if (get_u32(&t->tcm_handle, handle, 0)) {
-			fprintf(stderr, "Illegal \"handle\"\n");
+//			fprintf(stderr, "Illegal \"handle\"\n");
 			return -1;
 		}
 	}
@@ -63,7 +57,7 @@ static int route_parse_opt(struct filter_util *qu, char *handle, int argc, char 
 			__u32 id;
 			NEXT_ARG();
 			if (rtnl_rtrealm_a2n(&id, *argv)) {
-				fprintf(stderr, "Illegal \"to\"\n");
+//				fprintf(stderr, "Illegal \"to\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_ROUTE4_TO, &id, 4);
@@ -73,7 +67,7 @@ static int route_parse_opt(struct filter_util *qu, char *handle, int argc, char 
 			__u32 id;
 			NEXT_ARG();
 			if (rtnl_rtrealm_a2n(&id, *argv)) {
-				fprintf(stderr, "Illegal \"from\"\n");
+//				fprintf(stderr, "Illegal \"from\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_ROUTE4_FROM, &id, 4);
@@ -84,7 +78,7 @@ static int route_parse_opt(struct filter_util *qu, char *handle, int argc, char 
 			NEXT_ARG();
 			ll_init_map(&rth);
 			if ((id=ll_name_to_index(*argv)) <= 0) {
-				fprintf(stderr, "Illegal \"fromif\"\n");
+//				fprintf(stderr, "Illegal \"fromif\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_ROUTE4_IIF, &id, 4);
@@ -95,28 +89,28 @@ static int route_parse_opt(struct filter_util *qu, char *handle, int argc, char 
 			unsigned handle;
 			NEXT_ARG();
 			if (get_tc_classid(&handle, *argv)) {
-				fprintf(stderr, "Illegal \"classid\"\n");
+//				fprintf(stderr, "Illegal \"classid\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_ROUTE4_CLASSID, &handle, 4);
 		} else if (matches(*argv, "police") == 0) {
 			NEXT_ARG();
 			if (parse_police(&argc, &argv, TCA_ROUTE4_POLICE, n)) {
-				fprintf(stderr, "Illegal \"police\"\n");
+//				fprintf(stderr, "Illegal \"police\"\n");
 				return -1;
 			}
 			continue;
 		} else if (matches(*argv, "order") == 0) {
 			NEXT_ARG();
 			if (get_u32(&order, *argv, 0)) {
-				fprintf(stderr, "Illegal \"order\"\n");
+//				fprintf(stderr, "Illegal \"order\"\n");
 				return -1;
 			}
 		} else if (strcmp(*argv, "help") == 0) {
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}

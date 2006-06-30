@@ -31,23 +31,25 @@ struct action_util police_action_util = {
 	.parse_aopt = act_parse_police,
 	.print_aopt = print_police,
 };
-
+#define explain();
+#define explain1(a)
+/*
 static void explain(void)
 {
-	fprintf(stderr, "Usage: ... police rate BPS burst BYTES[/BYTES] [ mtu BYTES[/BYTES] ]\n");
-	fprintf(stderr, "                [ peakrate BPS ] [ avrate BPS ]\n");
-	fprintf(stderr, "                [ ACTIONTERM ]\n");
-	fprintf(stderr, "Old Syntax ACTIONTERM := action <EXCEEDACT>[/NOTEXCEEDACT] \n"); 
-	fprintf(stderr, "New Syntax ACTIONTERM := conform-exceed <EXCEEDACT>[/NOTEXCEEDACT] \n"); 
-	fprintf(stderr, "Where: *EXCEEDACT := pipe | ok | reclassify | drop | continue \n");
-	fprintf(stderr, "Where:  pipe is only valid for new syntax \n");
-}
-
+//	fprintf(stderr, "Usage: ... police rate BPS burst BYTES[/BYTES] [ mtu BYTES[/BYTES] ]\n");
+//	fprintf(stderr, "                [ peakrate BPS ] [ avrate BPS ]\n");
+//	fprintf(stderr, "                [ ACTIONTERM ]\n");
+//	fprintf(stderr, "Old Syntax ACTIONTERM := action <EXCEEDACT>[/NOTEXCEEDACT] \n"); 
+//	fprintf(stderr, "New Syntax ACTIONTERM := conform-exceed <EXCEEDACT>[/NOTEXCEEDACT] \n"); 
+//	fprintf(stderr, "Where: *EXCEEDACT := pipe | ok | reclassify | drop | continue \n");
+//	fprintf(stderr, "Where:  pipe is only valid for new syntax \n");
+}*/
+/*
 static void explain1(char *arg)
 {
-	fprintf(stderr, "Illegal \"%s\"\n", arg);
+//	fprintf(stderr, "Illegal \"%s\"\n", arg);
 }
-
+*/
 #define usage() return(-1)
 
 
@@ -152,7 +154,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 		if (matches(*argv, "index") == 0) {
 			NEXT_ARG();
 			if (get_u32(&p.index, *argv, 10)) {
-				fprintf(stderr, "Illegal \"index\"\n");
+//				fprintf(stderr, "Illegal \"index\"\n");
 				return -1;
 			}
 		} else if (matches(*argv, "burst") == 0 ||
@@ -160,7 +162,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 			strcmp(*argv, "maxburst") == 0) {
 			NEXT_ARG();
 			if (buffer) {
-				fprintf(stderr, "Double \"buffer/burst\" spec\n");
+//				fprintf(stderr, "Double \"buffer/burst\" spec\n");
 				return -1;
 			}
 			if (get_size_and_cell(&buffer, &Rcell_log, *argv) < 0) {
@@ -171,7 +173,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 			   strcmp(*argv, "minburst") == 0) {
 			NEXT_ARG();
 			if (mtu) {
-				fprintf(stderr, "Double \"mtu/minburst\" spec\n");
+//				fprintf(stderr, "Double \"mtu/minburst\" spec\n");
 				return -1;
 			}
 			if (get_size_and_cell(&mtu, &Pcell_log, *argv) < 0) {
@@ -181,7 +183,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 		} else if (strcmp(*argv, "mpu") == 0) {
 			NEXT_ARG();
 			if (mpu) {
-				fprintf(stderr, "Double \"mpu\" spec\n");
+//				fprintf(stderr, "Double \"mpu\" spec\n");
 				return -1;
 			}
 			if (get_size(&mpu, *argv)) {
@@ -191,7 +193,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 		} else if (strcmp(*argv, "rate") == 0) {
 			NEXT_ARG();
 			if (p.rate.rate) {
-				fprintf(stderr, "Double \"rate\" spec\n");
+//				fprintf(stderr, "Double \"rate\" spec\n");
 				return -1;
 			}
 			if (get_rate(&p.rate.rate, *argv)) {
@@ -201,7 +203,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 		} else if (strcmp(*argv, "avrate") == 0) {
 			NEXT_ARG();
 			if (avrate) {
-				fprintf(stderr, "Double \"avrate\" spec\n");
+//				fprintf(stderr, "Double \"avrate\" spec\n");
 				return -1;
 			}
 			if (get_rate(&avrate, *argv)) {
@@ -211,7 +213,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 		} else if (matches(*argv, "peakrate") == 0) {
 			NEXT_ARG();
 			if (p.peakrate.rate) {
-				fprintf(stderr, "Double \"peakrate\" spec\n");
+//				fprintf(stderr, "Double \"peakrate\" spec\n");
 				return -1;
 			}
 			if (get_rate(&p.peakrate.rate, *argv)) {
@@ -232,7 +234,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 		} else if (strcmp(*argv, "conform-exceed") == 0) {
 			NEXT_ARG();
 			if (get_police_result(&p.action, &presult, *argv)) {
-				fprintf(stderr, "Illegal \"action\"\n");
+//				fprintf(stderr, "Illegal \"action\"\n");
 				return -1;
 			}
 		} else if (strcmp(*argv, "help") == 0) {
@@ -249,23 +251,23 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 		return -1;
 
 	if (p.rate.rate && !buffer) {
-		fprintf(stderr, "\"burst\" requires \"rate\".\n");
+//		fprintf(stderr, "\"burst\" requires \"rate\".\n");
 		return -1;
 	}
 	if (p.peakrate.rate) {
 		if (!p.rate.rate) {
-			fprintf(stderr, "\"peakrate\" requires \"rate\".\n");
+//			fprintf(stderr, "\"peakrate\" requires \"rate\".\n");
 			return -1;
 		}
 		if (!mtu) {
-			fprintf(stderr, "\"mtu\" is required, if \"peakrate\" is requested.\n");
+//			fprintf(stderr, "\"mtu\" is required, if \"peakrate\" is requested.\n");
 			return -1;
 		}
 	}
 
 	if (p.rate.rate) {
 		if ((Rcell_log = tc_calc_rtable(p.rate.rate, rtab, Rcell_log, mtu, mpu)) < 0) {
-			fprintf(stderr, "TBF: failed to calculate rate table.\n");
+//			fprintf(stderr, "TBF: failed to calculate rate table.\n");
 			return -1;
 		}
 		p.burst = tc_calc_xmittime(p.rate.rate, buffer);
@@ -275,7 +277,7 @@ int act_parse_police(struct action_util *a,int *argc_p, char ***argv_p, int tca_
 	p.mtu = mtu;
 	if (p.peakrate.rate) {
 		if ((Pcell_log = tc_calc_rtable(p.peakrate.rate, ptab, Pcell_log, mtu, mpu)) < 0) {
-			fprintf(stderr, "POLICE: failed to calculate peak rate table.\n");
+//			fprintf(stderr, "POLICE: failed to calculate peak rate table.\n");
 			return -1;
 		}
 		p.peakrate.cell_log = Pcell_log;

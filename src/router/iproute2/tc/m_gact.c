@@ -39,27 +39,28 @@ static const char *prob_n2a(int p)
 }
 #endif
 
-static void
+#define explain();
+/*static void
 explain(void)
 {
 #ifdef CONFIG_GACT_PROB
-	fprintf(stderr, "Usage: ... gact <ACTION> [RAND] [INDEX]\n");
-	fprintf(stderr,
-		"Where: ACTION := reclassify | drop | continue | pass "
-		        "RAND := random <RANDTYPE> <ACTION> <VAL>"
-		        "RANDTYPE := netrand | determ"
-			"VAL : = value not exceeding 10000"
-			"INDEX := index value used"
-			"\n");
+//	fprintf(stderr, "Usage: ... gact <ACTION> [RAND] [INDEX]\n");
+//	fprintf(stderr,
+//		"Where: ACTION := reclassify | drop | continue | pass "
+//		        "RAND := random <RANDTYPE> <ACTION> <VAL>"
+//		        "RANDTYPE := netrand | determ"
+//			"VAL : = value not exceeding 10000"
+//			"INDEX := index value used"
+//			"\n");
 #else
-	fprintf(stderr, "Usage: ... gact <ACTION> [INDEX]\n");
-	fprintf(stderr,
-		"Where: ACTION := reclassify | drop | continue | pass "
-		"INDEX := index value used"
-			"\n");
+//	fprintf(stderr, "Usage: ... gact <ACTION> [INDEX]\n");
+//	fprintf(stderr,
+//		"Where: ACTION := reclassify | drop | continue | pass "
+//		"INDEX := index value used"
+//			"\n");
 #endif
 }
-
+*/
 #define usage() return(-1)
 
 int
@@ -78,7 +79,7 @@ get_act(char ***argv_p)
 	} else if (matches(*argv, "pass") == 0 || matches(*argv, "ok") == 0)  {
 		return TC_ACT_OK;
 	} else {
-		fprintf(stderr,"bad action type %s\n",*argv);
+//		fprintf(stderr,"bad action type %s\n",*argv);
 		return -10;
 	}
 }
@@ -134,7 +135,7 @@ parse_gact(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, struc
 				NEXT_ARG();
 				pp.ptype = PGACT_DETERM;
 			} else {
-				fprintf(stderr, "Illegal \"random type\"\n");
+//				fprintf(stderr, "Illegal \"random type\"\n");
 				return -1;
 			}
 
@@ -148,11 +149,11 @@ parse_gact(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, struc
 			argc--;
 			argv++;
 			if (get_u16(&pp.pval, *argv, 10)) {
-				fprintf(stderr, "Illegal probability val 0x%x\n",pp.pval);
+//				fprintf(stderr, "Illegal probability val 0x%x\n",pp.pval);
 				return -1;
 			}
 			if (pp.pval > 10000) {
-				fprintf(stderr, "Illegal probability val  0x%x\n",pp.pval);
+//				fprintf(stderr, "Illegal probability val  0x%x\n",pp.pval);
 				return -1;
 			}
 			argc--;
@@ -165,7 +166,7 @@ parse_gact(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, struc
 		if (matches(*argv, "index") == 0) {
 			NEXT_ARG();
 			if (get_u32(&p.index, *argv, 10)) {
-				fprintf(stderr, "Illegal \"index\"\n");
+//				fprintf(stderr, "Illegal \"index\"\n");
 				return -1;
 			}
 			argc--;

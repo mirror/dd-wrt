@@ -56,9 +56,7 @@ function to_submit(F)
 											<li><a href="Forward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
 											<li><a href="ForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
 											<li><span><% tran("bmenu.applicationsptriggering"); %></span></li>
-											<% nvram_match("dist_type", "micro", "<!--"); %>
 											<li><a href="UPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>
-											<% nvram_match("dist_type", "micro", "-->"); %>
 											<li><a href="DMZ.asp"><% tran("bmenu.applicationsDMZ"); %></a></li>
 											<li><a href="QoS.asp"><% tran("bmenu.applicationsQoS"); %></a></li>
 										</ul>

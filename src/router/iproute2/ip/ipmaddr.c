@@ -38,8 +38,8 @@ static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: ip maddr [ add | del ] MULTIADDR dev STRING\n");
-	fprintf(stderr, "       ip maddr show [ dev STRING ]\n");
+//	fprintf(stderr, "Usage: ip maddr [ add | del ] MULTIADDR dev STRING\n");
+//	fprintf(stderr, "       ip maddr show [ dev STRING ]\n");
 	exit(-1);
 }
 
@@ -299,24 +299,24 @@ int multiaddr_modify(int cmd, int argc, char **argv)
 			if (ifr.ifr_hwaddr.sa_data[0])
 				duparg("address", *argv);
 			if (ll_addr_a2n(ifr.ifr_hwaddr.sa_data, 14, *argv) < 0) {
-				fprintf(stderr, "Error: \"%s\" is not a legal ll address.\n", *argv);
+//				fprintf(stderr, "Error: \"%s\" is not a legal ll address.\n", *argv);
 				exit(1);
 			}
 		}
 		argc--; argv++;
 	}
 	if (ifr.ifr_name[0] == 0) {
-		fprintf(stderr, "Not enough information: \"dev\" is required.\n");
+//		fprintf(stderr, "Not enough information: \"dev\" is required.\n");
 		exit(-1);
 	}
 
 	fd = socket(AF_INET, SOCK_DGRAM, 0);
 	if (fd < 0) {
-		perror("Cannot create socket");
+//		perror("Cannot create socket");
 		exit(1);
 	}
 	if (ioctl(fd, cmd, (char*)&ifr) != 0) {
-		perror("ioctl");
+//		perror("ioctl");
 		exit(1);
 	}
 	close(fd);
@@ -338,6 +338,6 @@ int do_multiaddr(int argc, char **argv)
 		return multiaddr_list(argc-1, argv+1);
 	if (matches(*argv, "help") == 0)
 		usage();
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip maddr help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip maddr help\".\n", *argv);
 	exit(-1);
 }

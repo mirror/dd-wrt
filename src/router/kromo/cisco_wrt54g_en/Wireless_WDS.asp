@@ -67,12 +67,11 @@ function setWDS(val) {
 addEvent(window, "load", function() {
 	var wds = "1";
 	setElementsActive("wl_br1_nat", "wl_br1_netmask3", "<% nvram_get("wl_br1_enable"); %>" == 1);
-	if ("ap" != "<% nvram_get("wl0_mode"); %>" || "psk2" == "<% nvram_get("wl0_akm"); %>" || "wpa2" == "<% nvram_get("wl0_akm"); %>" || "b-only" == "<% nvram_get("wl0_net_mode"); %>"){
-		var wds = "0";
-		setWDS(wds);
-//		alert("WDS is not compatible with the current configuration of the router. Please check the following points :\n * Wireless Mode must be set to AP \n * WPA2 is not supported under WDS \n * Wireless Network B-Only mode is not supported under WDS");
-		alert(errmsg.err48);
-	}
+//	if ("ap" != "<% nvram_get("wl0_mode"); %>" || "psk2" == "<% nvram_get("wl0_akm"); %>" || "wpa2" == "<% nvram_get("wl0_akm"); %>"){
+//		var wds = "0";
+//		setWDS(wds);
+//		alert(errmsg.err48);
+//	}
 });
 
 		</script>

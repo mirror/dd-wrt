@@ -24,20 +24,21 @@
 
 #include "utils.h"
 #include "tc_util.h"
-
+#define explain();
+/*
 static void explain(void)
 {
-	fprintf(stderr, "Usage: ... u32 [ match SELECTOR ... ] [ link HTID ] [ classid CLASSID ]\n");
-	fprintf(stderr, "               [ police POLICE_SPEC ] [ offset OFFSET_SPEC ]\n");
-	fprintf(stderr, "               [ ht HTID ] [ hashkey HASHKEY_SPEC ]\n");
-	fprintf(stderr, "               [ sample SAMPLE ]\n");
-	fprintf(stderr, "or         u32 divisor DIVISOR\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "Where: SELECTOR := SAMPLE SAMPLE ...\n");
-	fprintf(stderr, "       SAMPLE := { ip | ip6 | udp | tcp | icmp | u{32|16|8} | mark } SAMPLE_ARGS\n");
-	fprintf(stderr, "       FILTERID := X:Y:Z\n");
+//	fprintf(stderr, "Usage: ... u32 [ match SELECTOR ... ] [ link HTID ] [ classid CLASSID ]\n");
+//	fprintf(stderr, "               [ police POLICE_SPEC ] [ offset OFFSET_SPEC ]\n");
+//	fprintf(stderr, "               [ ht HTID ] [ hashkey HASHKEY_SPEC ]\n");
+//	fprintf(stderr, "               [ sample SAMPLE ]\n");
+//	fprintf(stderr, "or         u32 divisor DIVISOR\n");
+//	fprintf(stderr, "\n");
+//	fprintf(stderr, "Where: SELECTOR := SAMPLE SAMPLE ...\n");
+//	fprintf(stderr, "       SAMPLE := { ip | ip6 | udp | tcp | icmp | u{32|16|8} | mark } SAMPLE_ARGS\n");
+//	fprintf(stderr, "       FILTERID := X:Y:Z\n");
 }
-
+*/
 #define usage() return(-1)
 
 int get_u32_handle(__u32 *handle, char *str)
@@ -602,19 +603,19 @@ static int parse_mark(int *argc_p, char ***argv_p, struct nlmsghdr *n)
 		return -1;
 
 	if (get_u32(&mark.val, *argv, 0)) {
-		fprintf(stderr, "Illegal \"mark\" value\n");
+//		fprintf(stderr, "Illegal \"mark\" value\n");
 		return -1;
 	}
 	NEXT_ARG();
 
 	if (get_u32(&mark.mask, *argv, 0)) {
-		fprintf(stderr, "Illegal \"mark\" mask\n");
+//		fprintf(stderr, "Illegal \"mark\" mask\n");
 		return -1;
 	}
 	NEXT_ARG();
 
 	if ((mark.val & mark.mask) != mark.val) {
-		fprintf(stderr, "Illegal \"mark\" (impossible combination)\n");
+//		fprintf(stderr, "Illegal \"mark\" (impossible combination)\n");
 		return -1;
 	}
 
@@ -709,7 +710,7 @@ static int parse_offset(int *argc_p, char ***argv_p, struct tc_u32_sel *sel)
 				return -1;
 			sel->offoff = off;
 			if (off%2) {
-				fprintf(stderr, "offset \"at\" must be even\n");
+//				fprintf(stderr, "offset \"at\" must be even\n");
 				return -1;
 			}
 			sel->flags |= TC_U32_VAROFFSET;
@@ -787,7 +788,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 	memset(&sel, 0, sizeof(sel));
 
 	if (handle && get_u32_handle(&t->tcm_handle, handle)) {
-		fprintf(stderr, "Illegal filter ID\n");
+//		fprintf(stderr, "Illegal filter ID\n");
 		return -1;
 	}
 
@@ -801,7 +802,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 		if (matches(*argv, "match") == 0) {
 			NEXT_ARG();
 			if (parse_selector(&argc, &argv, &sel.sel, n)) {
-				fprintf(stderr, "Illegal \"match\"\n");
+//				fprintf(stderr, "Illegal \"match\"\n");
 				return -1;
 			}
 			sel_ok++;
@@ -809,14 +810,14 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 		} else if (matches(*argv, "offset") == 0) {
 			NEXT_ARG();
 			if (parse_offset(&argc, &argv, &sel.sel)) {
-				fprintf(stderr, "Illegal \"offset\"\n");
+//				fprintf(stderr, "Illegal \"offset\"\n");
 				return -1;
 			}
 			continue;
 		} else if (matches(*argv, "hashkey") == 0) {
 			NEXT_ARG();
 			if (parse_hashkey(&argc, &argv, &sel.sel)) {
-				fprintf(stderr, "Illegal \"hashkey\"\n");
+//				fprintf(stderr, "Illegal \"hashkey\"\n");
 				return -1;
 			}
 			continue;
@@ -825,7 +826,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 			unsigned handle;
 			NEXT_ARG();
 			if (get_tc_classid(&handle, *argv)) {
-				fprintf(stderr, "Illegal \"classid\"\n");
+//				fprintf(stderr, "Illegal \"classid\"\n");
 				return -1;
 			}
 			addattr_l(n, MAX_MSG, TCA_U32_CLASSID, &handle, 4);
@@ -835,25 +836,25 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 			NEXT_ARG();
 			if (get_unsigned(&divisor, *argv, 0) || divisor == 0 ||
 			    divisor > 0x100) {
-				fprintf(stderr, "Illegal \"divisor\"\n");
+//				fprintf(stderr, "Illegal \"divisor\"\n");
 				return -1;
 			}
 			addattr_l(n, MAX_MSG, TCA_U32_DIVISOR, &divisor, 4);
 		} else if (matches(*argv, "order") == 0) {
 			NEXT_ARG();
 			if (get_u32(&order, *argv, 0)) {
-				fprintf(stderr, "Illegal \"order\"\n");
+//				fprintf(stderr, "Illegal \"order\"\n");
 				return -1;
 			}
 		} else if (strcmp(*argv, "link") == 0) {
 			unsigned handle;
 			NEXT_ARG();
 			if (get_u32_handle(&handle, *argv)) {
-				fprintf(stderr, "Illegal \"link\"\n");
+//				fprintf(stderr, "Illegal \"link\"\n");
 				return -1;
 			}
 			if (handle && TC_U32_NODE(handle)) {
-				fprintf(stderr, "\"link\" must be a hash table.\n");
+//				fprintf(stderr, "\"link\" must be a hash table.\n");
 				return -1;
 			}
 			addattr_l(n, MAX_MSG, TCA_U32_LINK, &handle, 4);
@@ -861,11 +862,11 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 			unsigned handle;
 			NEXT_ARG();
 			if (get_u32_handle(&handle, *argv)) {
-				fprintf(stderr, "Illegal \"ht\"\n");
+//				fprintf(stderr, "Illegal \"ht\"\n");
 				return -1;
 			}
 			if (handle && TC_U32_NODE(handle)) {
-				fprintf(stderr, "\"ht\" must be a hash table.\n");
+//				fprintf(stderr, "\"ht\" must be a hash table.\n");
 				return -1;
 			}
 			if (sample_ok)
@@ -880,11 +881,11 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 			} sel2;
 			NEXT_ARG();
 			if (parse_selector(&argc, &argv, &sel2.sel, n)) {
-				fprintf(stderr, "Illegal \"sample\"\n");
+//				fprintf(stderr, "Illegal \"sample\"\n");
 				return -1;
 			}
 			if (sel2.sel.nkeys != 1) {
-				fprintf(stderr, "\"sample\" must contain exactly ONE key.\n");
+//				fprintf(stderr, "\"sample\" must contain exactly ONE key.\n");
 				return -1;
 			}
 			hash = sel2.sel.keys[0].val&sel2.sel.keys[0].mask;
@@ -899,7 +900,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 			argc--;
 			argv++;
 			if (argc < 1) {
-				fprintf(stderr, "Illegal indev\n");
+//				fprintf(stderr, "Illegal indev\n");
 				return -1;
 			}
 			strncpy(ind, *argv, sizeof (ind) - 1);
@@ -908,7 +909,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 		} else if (matches(*argv, "action") == 0) {
 			NEXT_ARG();
 			if (parse_action(&argc, &argv, TCA_U32_ACT, n)) {
-				fprintf(stderr, "Illegal \"action\"\n");
+//				fprintf(stderr, "Illegal \"action\"\n");
 				return -1;
 			}
 			continue;
@@ -916,7 +917,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 		} else if (matches(*argv, "police") == 0) {
 			NEXT_ARG();
 			if (parse_police(&argc, &argv, TCA_U32_POLICE, n)) {
-				fprintf(stderr, "Illegal \"police\"\n");
+//				fprintf(stderr, "Illegal \"police\"\n");
 				return -1;
 			}
 			continue;
@@ -924,7 +925,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -933,7 +934,7 @@ static int u32_parse_opt(struct filter_util *qu, char *handle, int argc, char **
 
 	if (order) {
 		if (TC_U32_NODE(t->tcm_handle) && order != TC_U32_NODE(t->tcm_handle)) {
-			fprintf(stderr, "\"order\" contradicts \"handle\"\n");
+//			fprintf(stderr, "\"order\" contradicts \"handle\"\n");
 			return -1;
 		}
 		t->tcm_handle |= order;

@@ -26,11 +26,12 @@
 
 #include "utils.h"
 #include "tc_util.h"
+#define explain()
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... ingress \n");
-}
+//static void explain(void)
+//{
+//	fprintf(stderr, "Usage: ... ingress \n");
+//}
 
 #define usage() return(-1)
 
@@ -44,7 +45,7 @@ static int ingress_parse_opt(struct qdisc_util *qu, int argc, char **argv, struc
 				NEXT_ARG();
 				argc--; argv++;
 			} else {
-				fprintf(stderr, "What is \"%s\"?\n", *argv);
+//				fprintf(stderr, "What is \"%s\"?\n", *argv);
 				explain();
 				return -1;
 			}

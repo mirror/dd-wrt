@@ -24,13 +24,15 @@
 #include "utils.h"
 #include "ip_common.h"
 
+#define usage() exit(-1);
+/*
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
 {
 	fprintf(stderr, "Usage: ip monitor [ all | LISTofOBJECTS ]\n");
 	exit(-1);
-}
+}*/
 
 
 int accept_msg(const struct sockaddr_nl *who,
@@ -118,7 +120,7 @@ int do_ipmonitor(int argc, char **argv)
 		} else if (matches(*argv, "help") == 0) {
 			usage();
 		} else {
-			fprintf(stderr, "Argument \"%s\" is unknown, try \"ip monitor help\".\n", *argv);
+//			fprintf(stderr, "Argument \"%s\" is unknown, try \"ip monitor help\".\n", *argv);
 			exit(-1);
 		}
 		argc--;	argv++;

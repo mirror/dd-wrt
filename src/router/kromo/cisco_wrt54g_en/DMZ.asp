@@ -45,9 +45,7 @@ addEvent(window, "load", function() {
 											<li><a href="Forward.asp"><% tran("bmenu.applicationsprforwarding"); %></a></li>
 											<li><a href="ForwardSpec.asp"><% tran("bmenu.applicationspforwarding"); %></a></li>
 											<li><a href="Triggering.asp"><% tran("bmenu.applicationsptriggering"); %></a></li>
-											<% nvram_match("dist_type", "micro", "<!--"); %>
 											<li><a href="UPnP.asp"><% tran("bmenu.applicationsUpnp"); %></a></li>
-											<% nvram_match("dist_type", "micro", "-->"); %>
 	  										<li><span><% tran("bmenu.applicationsDMZ"); %></span></li>
 	  										<li><a href="QoS.asp"><% tran("bmenu.applicationsQoS"); %></a></li>
 										</ul>

@@ -54,6 +54,9 @@ static struct
 
 static int do_link;
 
+
+#define usage(a) exit(-1);
+/*
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
@@ -73,7 +76,7 @@ static void usage(void)
 	fprintf(stderr, "           tentative | deprecated ]\n");
 	exit(-1);
 }
-
+*/
 void print_link_flags(FILE *fp, unsigned flags, unsigned mdown)
 {
 	fprintf(fp, "<");
@@ -151,7 +154,7 @@ int print_linkinfo(const struct sockaddr_nl *who,
 
 	parse_rtattr(tb, IFLA_MAX, IFLA_RTA(ifi), len);
 	if (tb[IFLA_IFNAME] == NULL) {
-		fprintf(stderr, "BUG: nil ifname\n");
+//		fprintf(stderr, "BUG: nil ifname\n");
 		return -1;
 	}
 	if (filter.label &&
@@ -291,7 +294,7 @@ int print_addrinfo(const struct sockaddr_nl *who, struct nlmsghdr *n,
 		return 0;
 	len -= NLMSG_LENGTH(sizeof(*ifa));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -508,11 +511,11 @@ int ipaddr_list_or_flush(int argc, char **argv, int flush)
 
 	if (flush) {
 		if (argc <= 0) {
-			fprintf(stderr, "Flush requires arguments.\n");
+//			fprintf(stderr, "Flush requires arguments.\n");
 			return -1;
 		}
 		if (filter.family == AF_PACKET) {
-			fprintf(stderr, "Cannot flush link addresses.\n");
+//			fprintf(stderr, "Cannot flush link addresses.\n");
 			return -1;
 		}
 	}
@@ -579,14 +582,14 @@ int ipaddr_list_or_flush(int argc, char **argv, int flush)
 	}
 
 	if (rtnl_dump_filter(&rth, store_nlmsg, &linfo, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		exit(1);
 	}
 
 	if (filter_dev) {
 		filter.ifindex = ll_name_to_index(filter_dev);
 		if (filter.ifindex <= 0) {
-			fprintf(stderr, "Device \"%s\" does not exist.\n", filter_dev);
+//			fprintf(stderr, "Device \"%s\" does not exist.\n", filter_dev);
 			return -1;
 		}
 	}
@@ -607,12 +610,12 @@ int ipaddr_list_or_flush(int argc, char **argv, int flush)
 			}
 			filter.flushed = 0;
 			if (rtnl_dump_filter(&rth, print_addrinfo, stdout, NULL, NULL) < 0) {
-				fprintf(stderr, "Flush terminated\n");
+//				fprintf(stderr, "Flush terminated\n");
 				exit(1);
 			}
 			if (filter.flushed == 0) {
 				if (round == 0) {
-					fprintf(stderr, "Nothing to flush.\n");
+//					fprintf(stderr, "Nothing to flush.\n");
 				} else if (show_stats)
 					printf("*** Flush is complete after %d round%s ***\n", round, round>1?"s":"");
 				fflush(stdout);
@@ -635,7 +638,7 @@ int ipaddr_list_or_flush(int argc, char **argv, int flush)
 		}
 
 		if (rtnl_dump_filter(&rth, store_nlmsg, &ainfo, NULL, NULL) < 0) {
-			fprintf(stderr, "Dump terminated\n");
+//			fprintf(stderr, "Dump terminated\n");
 			exit(1);
 		}
 	}
@@ -832,21 +835,21 @@ int ipaddr_modify(int cmd, int argc, char **argv)
 		argc--; argv++;
 	}
 	if (d == NULL) {
-		fprintf(stderr, "Not enough information: \"dev\" argument is required.\n");
+//		fprintf(stderr, "Not enough information: \"dev\" argument is required.\n");
 		return -1;
 	}
 	if (l && matches(d, l) != 0) {
-		fprintf(stderr, "\"dev\" (%s) must match \"label\" (%s).\n", d, l);
+//		fprintf(stderr, "\"dev\" (%s) must match \"label\" (%s).\n", d, l);
 		exit(1);
 	}
 
 	if (peer_len == 0 && local_len) {
 		if (cmd == RTM_DELADDR && lcl.family == AF_INET && !(lcl.flags & PREFIXLEN_SPECIFIED)) {
-			fprintf(stderr,
-			    "Warning: Executing wildcard deletion to stay compatible with old scripts.\n" \
-			    "         Explicitly specify the prefix length (%s/%d) to avoid this warning.\n" \
-			    "         This special behaviour is likely to disappear in further releases,\n" \
-			    "         fix your scripts!\n", lcl_arg, local_len*8);
+//			fprintf(stderr,
+//			    "Warning: Executing wildcard deletion to stay compatible with old scripts.\n" \
+//			    "         Explicitly specify the prefix length (%s/%d) to avoid this warning.\n" \
+//			    "         This special behaviour is likely to disappear in further releases,\n" \
+//			    "         fix your scripts!\n", lcl_arg, local_len*8);
 		} else {
 			peer = lcl;
 			addattr_l(&req.n, sizeof(req), IFA_ADDRESS, &lcl.data, lcl.bytelen);
@@ -859,7 +862,7 @@ int ipaddr_modify(int cmd, int argc, char **argv)
 		inet_prefix brd;
 		int i;
 		if (req.ifa.ifa_family != AF_INET) {
-			fprintf(stderr, "Broadcast can be set only for IPv4 addresses\n");
+//			fprintf(stderr, "Broadcast can be set only for IPv4 addresses\n");
 			return -1;
 		}
 		brd = peer;
@@ -883,7 +886,7 @@ int ipaddr_modify(int cmd, int argc, char **argv)
 	ll_init_map(&rth);
 
 	if ((req.ifa.ifa_index = ll_name_to_index(d)) == 0) {
-		fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//		fprintf(stderr, "Cannot find device \"%s\"\n", d);
 		return -1;
 	}
 
@@ -908,7 +911,7 @@ int do_ipaddr(int argc, char **argv)
 		return ipaddr_list_or_flush(argc-1, argv+1, 1);
 	if (matches(*argv, "help") == 0)
 		usage();
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip address help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip address help\".\n", *argv);
 	exit(-1);
 }
 
