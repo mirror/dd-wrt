@@ -28,6 +28,8 @@
 #include "rt_names.h"
 #include "utils.h"
 
+#define usage() exit(-1);
+/*
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
@@ -41,7 +43,7 @@ static void usage(void)
 	fprintf(stderr, "TABLE_ID := [ local | main | default | NUMBER ]\n");
 	exit(-1);
 }
-
+*/
 static int print_rule(const struct sockaddr_nl *who, struct nlmsghdr *n,
 		      void *arg)
 {
@@ -168,7 +170,7 @@ static int iprule_list(int argc, char **argv)
 		af = AF_INET;
 
 	if (argc > 0) {
-		fprintf(stderr, "\"ip rule show\" does not take any arguments.\n");
+//		fprintf(stderr, "\"ip rule show\" does not take any arguments.\n");
 		return -1;
 	}
 
@@ -176,12 +178,12 @@ static int iprule_list(int argc, char **argv)
 		return 1;
 
 	if (rtnl_wilddump_request(&rth, af, RTM_GETRULE) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		return 1;
 	}
 
 	if (rtnl_dump_filter(&rth, print_rule, stdout, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		return 1;
 	}
 
@@ -340,7 +342,7 @@ static int iprule_flush(int argc, char **argv)
 		af = AF_INET;
 
 	if (argc > 0) {
-		fprintf(stderr, "\"ip rule flush\" need not any arguments.\n");
+//		fprintf(stderr, "\"ip rule flush\" need not any arguments.\n");
 		return -1;
 	}
 
@@ -348,12 +350,12 @@ static int iprule_flush(int argc, char **argv)
 		return 1;
 
 	if (rtnl_wilddump_request(&rth, af, RTM_GETRULE) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		return 1;
 	}
 
 	if (rtnl_dump_filter(&rth, flush_rule, NULL, NULL, NULL) < 0) {
-		fprintf(stderr, "Flush terminated\n");
+//		fprintf(stderr, "Flush terminated\n");
 		return 1;
 	}
 
@@ -377,7 +379,7 @@ int do_iprule(int argc, char **argv)
 	} else if (matches(argv[0], "help") == 0)
 		usage();
 
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip rule help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip rule help\".\n", *argv);
 	exit(-1);
 }
 

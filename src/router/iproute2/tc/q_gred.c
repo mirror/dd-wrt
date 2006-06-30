@@ -33,18 +33,19 @@
 #else
 #define DPRINTF(format,args...)
 #endif
+#define explain();
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... gred DP drop-probability limit BYTES "
-	    "min BYTES max BYTES\n");
-	fprintf(stderr, "    avpkt BYTES burst PACKETS probability PROBABILITY "
-	    "bandwidth KBPS\n");
-	fprintf(stderr, "    [prio value]\n");
-	fprintf(stderr," OR ...\n");
-	fprintf(stderr," gred setup DPs <num of DPs> default <default DP> "
-	    "[grio]\n");
-}
+//static void explain(void)
+//{
+//	fprintf(stderr, "Usage: ... gred DP drop-probability limit BYTES "
+//	    "min BYTES max BYTES\n");
+//	fprintf(stderr, "    avpkt BYTES burst PACKETS probability PROBABILITY "
+//	    "bandwidth KBPS\n");
+//	fprintf(stderr, "    [prio value]\n");
+//	fprintf(stderr," OR ...\n");
+//	fprintf(stderr," gred setup DPs <num of DPs> default <default DP> "
+//	    "[grio]\n");
+//}
 
 #define usage() return(-1)
 
@@ -62,25 +63,25 @@ static int init_gred(struct qdisc_util *qu, int argc, char **argv, struct nlmsgh
 			DPRINTF(stderr,"init_gred: next_arg with %s\n",*argv);
 			opt.DPs=strtol(*argv, (char **)NULL, 10);
 			if (opt.DPs >MAX_DPs) { /* need a better error check */
-				fprintf(stderr, "DPs =%u \n",opt.DPs);
-				fprintf(stderr, "Illegal \"DPs\"\n");
-				fprintf(stderr, "GRED: only %d DPs are "
-				    "currently supported\n",MAX_DPs);
+//				fprintf(stderr, "DPs =%u \n",opt.DPs);
+//				fprintf(stderr, "Illegal \"DPs\"\n");
+//				fprintf(stderr, "GRED: only %d DPs are "
+//				    "currently supported\n",MAX_DPs);
 				return -1;
 			}
 		} else if (strcmp(*argv, "default") == 0) {
 			NEXT_ARG();
 			opt.def_DP=strtol(*argv, (char **)NULL, 10);
 			if (!opt.DPs) {
-				fprintf(stderr, "\"default DP\" must be "
-				    "defined after DPs\n");
+//				fprintf(stderr, "\"default DP\" must be "
+//				    "defined after DPs\n");
 				return -1;
 			}
 			if (opt.def_DP>opt.DPs) {
 /*
 				fprintf(stderr, "\"default DP\" must be less than %d\nNote: DP runs from 0 to %d for %d DPs\n",opt.DPs,opt.DPs-1,opt.DPs);
 */
-				fprintf(stderr, "\"default DP\" must be less than %d\n",opt.DPs);
+//				fprintf(stderr, "\"default DP\" must be less than %d\n",opt.DPs);
 				return -1;
 			}
 		} else if (strcmp(*argv, "grio") == 0) {
@@ -89,7 +90,7 @@ static int init_gred(struct qdisc_util *qu, int argc, char **argv, struct nlmsgh
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -98,7 +99,7 @@ static int init_gred(struct qdisc_util *qu, int argc, char **argv, struct nlmsgh
 
 if ((!opt.DPs) || (!opt.def_DP))
 {
-	fprintf(stderr, "Illegal gred setup parameters \n");
+//	fprintf(stderr, "Illegal gred setup parameters \n");
 			return -1;
 }
 DPRINTF("TC_GRED: sending DPs=%d default=%d\n",opt.DPs,opt.def_DP);
@@ -130,13 +131,13 @@ static int gred_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 		if (strcmp(*argv, "limit") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.limit, *argv)) {
-				fprintf(stderr, "Illegal \"limit\"\n");
+//				fprintf(stderr, "Illegal \"limit\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "setup") == 0) {
 			if (ok) {
-				fprintf(stderr, "Illegal \"setup\"\n");
+//				fprintf(stderr, "Illegal \"setup\"\n");
 				return -1;
 			}
 		return init_gred(qu,argc-1, argv+1,n);
@@ -144,14 +145,14 @@ static int gred_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 		} else if (strcmp(*argv, "min") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.qth_min, *argv)) {
-				fprintf(stderr, "Illegal \"min\"\n");
+//				fprintf(stderr, "Illegal \"min\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "max") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.qth_max, *argv)) {
-				fprintf(stderr, "Illegal \"max\"\n");
+//				fprintf(stderr, "Illegal \"max\"\n");
 				return -1;
 			}
 			ok++;
@@ -160,30 +161,30 @@ static int gred_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 			opt.DP=strtol(*argv, (char **)NULL, 10);
 			DPRINTF ("\n ******* DP =%u\n",opt.DP);
 			if (opt.DP >MAX_DPs) { /* need a better error check */
-				fprintf(stderr, "DP =%u \n",opt.DP);
-				fprintf(stderr, "Illegal \"DP\"\n");
-				fprintf(stderr, "GRED: only %d DPs are currently supported\n",MAX_DPs);
+//				fprintf(stderr, "DP =%u \n",opt.DP);
+//				fprintf(stderr, "Illegal \"DP\"\n");
+//				fprintf(stderr, "GRED: only %d DPs are currently supported\n",MAX_DPs);
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "burst") == 0) {
 			NEXT_ARG();
                         if (get_unsigned(&burst, *argv, 0)) {
-				fprintf(stderr, "Illegal \"burst\"\n");
+//				fprintf(stderr, "Illegal \"burst\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "avpkt") == 0) {
 			NEXT_ARG();
 			if (get_size(&avpkt, *argv)) {
-				fprintf(stderr, "Illegal \"avpkt\"\n");
+//				fprintf(stderr, "Illegal \"avpkt\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "probability") == 0) {
 			NEXT_ARG();
 			if (sscanf(*argv, "%lg", &probability) != 1) {
-				fprintf(stderr, "Illegal \"probability\"\n");
+//				fprintf(stderr, "Illegal \"probability\"\n");
 				return -1;
 			}
 			ok++;
@@ -195,7 +196,7 @@ static int gred_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 		} else if (strcmp(*argv, "bandwidth") == 0) {
 			NEXT_ARG();
 			if (get_rate(&rate, *argv)) {
-				fprintf(stderr, "Illegal \"bandwidth\"\n");
+//				fprintf(stderr, "Illegal \"bandwidth\"\n");
 				return -1;
 			}
 			ok++;
@@ -203,7 +204,7 @@ static int gred_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -218,28 +219,28 @@ static int gred_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 
 	if (!opt.qth_min || !opt.qth_max || !burst || !opt.limit || !avpkt ||
 	    (opt.DP<0)) {
-		fprintf(stderr, "Required parameter (min, max, burst, limit, "
-		    "avpket, DP) is missing\n");
+//		fprintf(stderr, "Required parameter (min, max, burst, limit, "
+//		    "avpket, DP) is missing\n");
 		return -1;
 	}
 
 	if ((wlog = tc_red_eval_ewma(opt.qth_min, burst, avpkt)) < 0) {
-		fprintf(stderr, "GRED: failed to calculate EWMA constant.\n");
+//		fprintf(stderr, "GRED: failed to calculate EWMA constant.\n");
 		return -1;
 	}
 	if (wlog >= 10)
-		fprintf(stderr, "GRED: WARNING. Burst %d seems to be to "
-		    "large.\n", burst);
+//		fprintf(stderr, "GRED: WARNING. Burst %d seems to be to "
+//		    "large.\n", burst);
 	opt.Wlog = wlog;
 	if ((wlog = tc_red_eval_P(opt.qth_min, opt.qth_max, probability)) < 0) {
-		fprintf(stderr, "GRED: failed to calculate probability.\n");
+//		fprintf(stderr, "GRED: failed to calculate probability.\n");
 		return -1;
 	}
 	opt.Plog = wlog;
 	if ((wlog = tc_red_eval_idle_damping(opt.Wlog, avpkt, rate, sbuf)) < 0)
 	    {
-		fprintf(stderr, "GRED: failed to calculate idle damping "
-		    "table.\n");
+//		fprintf(stderr, "GRED: failed to calculate idle damping "
+//		    "table.\n");
 		return -1;
 	}
 	opt.Scell_log = wlog;

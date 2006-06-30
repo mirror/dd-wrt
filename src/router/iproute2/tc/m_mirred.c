@@ -28,16 +28,17 @@
 
 int mirred_d = 1;
 
-static void
-explain(void)
-{
-	fprintf(stderr, "Usage: mirred <DIRECTION> <ACTION> [index INDEX] <dev DEVICENAME> \n");
-	fprintf(stderr, "where: \n");
-	fprintf(stderr, "DIRECTION := <ingress | egress>\n");
-	fprintf(stderr, "aCTION := <mirror | redirect>\n");
-	fprintf(stderr, "     : INDEX  is the specific policy instance id\n");
-	fprintf(stderr, "     : DEVICENAME is the devicename \n");
-}
+#define explain()
+//static void
+//explain(void)
+//{
+//	fprintf(stderr, "Usage: mirred <DIRECTION> <ACTION> [index INDEX] <dev DEVICENAME> \n");
+//	fprintf(stderr, "where: \n");
+//	fprintf(stderr, "DIRECTION := <ingress | egress>\n");
+//	fprintf(stderr, "aCTION := <mirror | redirect>\n");
+//	fprintf(stderr, "     : INDEX  is the specific policy instance id\n");
+//	fprintf(stderr, "     : DEVICENAME is the devicename \n");
+//}
 
 #define usage() return(-1)
 
@@ -84,7 +85,7 @@ parse_egress(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, str
 			if (matches(*argv, "index") == 0) {
 				NEXT_ARG();
 				if (get_u32(&p.index, *argv, 10)) {
-					fprintf(stderr, "Illegal \"index\"\n");
+//					fprintf(stderr, "Illegal \"index\"\n");
 					return -1;
 				}
 				iok++;
@@ -94,13 +95,13 @@ parse_egress(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, str
 					break;
 				}
 			} else if(!ok) {
-				fprintf(stderr, "was expecting egress (%s)\n", *argv);
+//				fprintf(stderr, "was expecting egress (%s)\n", *argv);
 				break;
 
 			} else if (!mirror && matches(*argv, "mirror") == 0) {
 				mirror=1;
 				if (redir) {
-					fprintf(stderr, "Cant have both mirror and redir\n");
+//					fprintf(stderr, "Cant have both mirror and redir\n");
 					return -1;
 				}
 				p.eaction = TCA_EGRESS_MIRROR;
@@ -109,7 +110,7 @@ parse_egress(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, str
 			} else if (!redir && matches(*argv, "redirect") == 0) {
 				redir=1;
 				if (mirror) {
-					fprintf(stderr, "Cant have both mirror and redir\n");
+//					fprintf(stderr, "Cant have both mirror and redir\n");
 					return -1;
 				}
 				p.eaction = TCA_EGRESS_REDIR;
@@ -144,7 +145,7 @@ parse_egress(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, str
 		ll_init_map(&rth);
 
 		if ((idx = ll_name_to_index(d)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", d);
 			return -1;
 		}
 
@@ -176,13 +177,13 @@ parse_egress(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, str
 
 	if (argc) {
 		if (iok && matches(*argv, "index") == 0) {
-			fprintf(stderr, "mirred: Illegal double index\n");
+//			fprintf(stderr, "mirred: Illegal double index\n");
 			return -1;
 		} else {
 			if (matches(*argv, "index") == 0) {
 				NEXT_ARG();
 				if (get_u32(&p.index, *argv, 10)) {
-					fprintf(stderr, "mirred: Illegal \"index\"\n");
+//					fprintf(stderr, "mirred: Illegal \"index\"\n");
 					return -1;
 				}
 				argc--;
@@ -213,14 +214,14 @@ parse_mirred(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, str
 	char **argv = *argv_p;
 
 	if (argc < 0) {
-		fprintf(stderr,"mirred bad arguement count %d\n", argc);
+//		fprintf(stderr,"mirred bad arguement count %d\n", argc);
 		return -1;
 	}
 
 	if (matches(*argv, "mirred") == 0) {
 		NEXT_ARG();
 	} else {
-		fprintf(stderr,"mirred bad arguement %s\n", *argv);
+//		fprintf(stderr,"mirred bad arguement %s\n", *argv);
 		return -1;
 	}
 
@@ -234,10 +235,10 @@ parse_mirred(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, str
 		}
 
 	} else if (matches(*argv, "ingress") == 0) {
-		fprintf(stderr,"mirred ingress not supported at the moment\n");
+//		fprintf(stderr,"mirred ingress not supported at the moment\n");
 
 	} else {
-		fprintf(stderr,"mirred not supported %s\n", *argv);
+//		fprintf(stderr,"mirred not supported %s\n", *argv);
 	}
 
 	return -1;
@@ -269,7 +270,7 @@ print_mirred(struct action_util *au,FILE * f, struct rtattr *arg)
 
 
 	if ((dev = ll_index_to_name(p->ifindex)) == 0) {
-		fprintf(stderr, "Cannot find device %d\n", p->ifindex);
+//		fprintf(stderr, "Cannot find device %d\n", p->ifindex);
 		return -1;
 	}
 

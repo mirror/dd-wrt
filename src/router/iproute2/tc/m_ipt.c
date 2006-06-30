@@ -86,8 +86,8 @@ register_target(struct iptables_target *me)
 void
 exit_tryhelp(int status)
 {
-	fprintf(stderr, "Try `%s -h' or '%s --help' for more information.\n",
-		pname, pname);
+//	fprintf(stderr, "Try `%s -h' or '%s --help' for more information.\n",
+//		pname, pname);
 	exit(status);
 }
 
@@ -97,15 +97,15 @@ exit_error(enum exittype status, char *msg, ...)
 	va_list args;
 
 	va_start(args, msg);
-	fprintf(stderr, "%s v%s: ", pname, pversion);
-	vfprintf(stderr, msg, args);
+//	fprintf(stderr, "%s v%s: ", pname, pversion);
+//	vfprintf(stderr, msg, args);
 	va_end(args);
 	fprintf(stderr, "\n");
 	if (status == PARAMETER_PROBLEM)
 		exit_tryhelp(status);
-	if (status == VERSION_PROBLEM)
-		fprintf(stderr,
-			"Perhaps iptables or your kernel needs to be upgraded.\n");
+//	if (status == VERSION_PROBLEM)
+//		fprintf(stderr,
+//			"Perhaps iptables or your kernel needs to be upgraded.\n");
 	exit(status);
 }
 
@@ -212,7 +212,7 @@ fw_calloc(size_t count, size_t size)
 	void *p;
 
 	if ((p = (void *) calloc(count, size)) == NULL) {
-		perror("iptables: calloc failed");
+//		perror("iptables: calloc failed");
 		exit(1);
 	}
 	return p;
@@ -289,8 +289,8 @@ get_target_name(char *name)
 			if (NULL == m) {
 				m = find_t(lname);
 				if (NULL == m) {
-					fputs(error, stderr);
-					fprintf(stderr, "\n");
+//					fputs(error, stderr);
+//					fprintf(stderr, "\n");
 					dlclose(handle);
 					return NULL;
 				}
@@ -405,7 +405,7 @@ static int parse_ipt(struct action_util *a,int *argc_p,
 	}
 
 	if (argc <= 2) {
-		fprintf(stderr,"bad arguements to ipt %d vs %d \n", argc, rargc);
+//		fprintf(stderr,"bad arguements to ipt %d vs %d \n", argc, rargc);
 		return -1;
 	}
 
@@ -431,7 +431,7 @@ static int parse_ipt(struct action_util *a,int *argc_p,
 				    merge_options(opts, m->extra_opts,
 						  &m->option_offset);
 			} else {
-				fprintf(stderr," failed to find target %s\n\n", optarg);
+//				fprintf(stderr," failed to find target %s\n\n", optarg);
 				return -1;
 			}
 			ok++;
@@ -444,7 +444,7 @@ static int parse_ipt(struct action_util *a,int *argc_p,
 				m->parse(c - m->option_offset, argv, 0,
 					 &fake_flags, NULL, &m->t);
 			} else {
-				fprintf(stderr," failed to find target %s\n\n", optarg);
+//				fprintf(stderr," failed to find target %s\n\n", optarg);
 				return -1;
 
 			}
@@ -465,7 +465,7 @@ static int parse_ipt(struct action_util *a,int *argc_p,
 	if (iargc > optind) {
 		if (matches(argv[optind], "index") == 0) {
 			if (get_u32(&index, argv[optind + 1], 10)) {
-				fprintf(stderr, "Illegal \"index\"\n");
+//				fprintf(stderr, "Illegal \"index\"\n");
 				return -1;
 			}
 			iok++;
@@ -475,7 +475,7 @@ static int parse_ipt(struct action_util *a,int *argc_p,
 	}
 
 	if (!ok && !iok) {
-		fprintf(stderr," ipt Parser BAD!! (%s)\n", *argv);
+//		fprintf(stderr," ipt Parser BAD!! (%s)\n", *argv);
 		return -1;
 	}
 
@@ -566,7 +566,7 @@ print_ipt(struct action_util *au,FILE * f, struct rtattr *arg)
 		m = get_target_name(t->u.user.name);
 		if (NULL != m) {
 			if (0 > build_st(m, t)) {
-				fprintf(stderr, " %s error \n", m->name);
+//				fprintf(stderr, " %s error \n", m->name);
 				return -1;
 			}
 
@@ -574,8 +574,8 @@ print_ipt(struct action_util *au,FILE * f, struct rtattr *arg)
 			    merge_options(opts, m->extra_opts,
 					  &m->option_offset);
 		} else {
-			fprintf(stderr, " failed to find target %s\n\n",
-				t->u.user.name);
+//			fprintf(stderr, " failed to find target %s\n\n",
+//				t->u.user.name);
 			return -1;
 		}
 		fprintf(f, "\ttarget ");

@@ -1017,7 +1017,7 @@ encodeString (const char *string)
 }
 
 int
-httpd_main (int argc, char **argv)
+main (int argc, char **argv)
 {
   usockaddr usa;
   int listen_fd;

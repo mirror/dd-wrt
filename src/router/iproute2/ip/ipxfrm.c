@@ -55,6 +55,8 @@
 
 struct xfrm_filter filter;
 
+#define usage() exit(-1);
+/*
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
@@ -63,7 +65,7 @@ static void usage(void)
 		"Usage: ip xfrm XFRM_OBJECT { COMMAND | help }\n"
 		"where  XFRM_OBJECT := { state | policy | monitor }\n");
 	exit(-1);
-}
+}*/
 
 /* This is based on utils.c(inet_addr_match) */
 int xfrm_addr_match(xfrm_address_t *x1, xfrm_address_t *x2, int bits)
@@ -999,7 +1001,7 @@ static int xfrm_selector_upspec_parse(struct xfrm_selector *sel,
 		case IPPROTO_UDP:
 			break;
 		default:
-			fprintf(stderr, "\"sport\" and \"dport\" are invalid with proto=%s\n", strxf_proto(sel->proto));
+//			fprintf(stderr, "\"sport\" and \"dport\" are invalid with proto=%s\n", strxf_proto(sel->proto));
 			exit(1);
 		}
 	}
@@ -1009,7 +1011,7 @@ static int xfrm_selector_upspec_parse(struct xfrm_selector *sel,
 		case IPPROTO_ICMPV6:
 			break;
 		default:
-			fprintf(stderr, "\"type\" and \"code\" are invalid with proto=%s\n", strxf_proto(sel->proto));
+//			fprintf(stderr, "\"type\" and \"code\" are invalid with proto=%s\n", strxf_proto(sel->proto));
 			exit(1);
 		}
 	}
@@ -1174,7 +1176,7 @@ int do_xfrm(int argc, char **argv)
 		return do_xfrm_monitor(argc-1, argv+1);
 	else if (matches(*argv, "help") == 0) {
 		usage();
-		fprintf(stderr, "xfrm Object \"%s\" is unknown.\n", *argv);
+//		fprintf(stderr, "xfrm Object \"%s\" is unknown.\n", *argv);
 		exit(-1);
 	}
 	usage();

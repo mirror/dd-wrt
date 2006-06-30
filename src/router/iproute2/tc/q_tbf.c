@@ -23,16 +23,8 @@
 #include "utils.h"
 #include "tc_util.h"
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... tbf limit BYTES burst BYTES[/BYTES] rate KBPS [ mtu BYTES[/BYTES] ]\n");
-	fprintf(stderr, "               [ peakrate KBPS ] [ latency TIME ]\n");
-}
-
-static void explain1(char *arg)
-{
-	fprintf(stderr, "Illegal \"%s\"\n", arg);
-}
+#define explain()
+#define explain1(a)
 
 
 #define usage() return(-1)
@@ -53,7 +45,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		if (matches(*argv, "limit") == 0) {
 			NEXT_ARG();
 			if (opt.limit || latency) {
-				fprintf(stderr, "Double \"limit/latency\" spec\n");
+//				fprintf(stderr, "Double \"limit/latency\" spec\n");
 				return -1;
 			}
 			if (get_size(&opt.limit, *argv)) {
@@ -64,7 +56,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		} else if (matches(*argv, "latency") == 0) {
 			NEXT_ARG();
 			if (opt.limit || latency) {
-				fprintf(stderr, "Double \"limit/latency\" spec\n");
+//				fprintf(stderr, "Double \"limit/latency\" spec\n");
 				return -1;
 			}
 			if (get_usecs(&latency, *argv)) {
@@ -77,7 +69,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			strcmp(*argv, "maxburst") == 0) {
 			NEXT_ARG();
 			if (buffer) {
-				fprintf(stderr, "Double \"buffer/burst\" spec\n");
+//				fprintf(stderr, "Double \"buffer/burst\" spec\n");
 				return -1;
 			}
 			if (get_size_and_cell(&buffer, &Rcell_log, *argv) < 0) {
@@ -89,7 +81,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			   strcmp(*argv, "minburst") == 0) {
 			NEXT_ARG();
 			if (mtu) {
-				fprintf(stderr, "Double \"mtu/minburst\" spec\n");
+//				fprintf(stderr, "Double \"mtu/minburst\" spec\n");
 				return -1;
 			}
 			if (get_size_and_cell(&mtu, &Pcell_log, *argv) < 0) {
@@ -100,7 +92,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		} else if (strcmp(*argv, "mpu") == 0) {
 			NEXT_ARG();
 			if (mpu) {
-				fprintf(stderr, "Double \"mpu\" spec\n");
+//				fprintf(stderr, "Double \"mpu\" spec\n");
 				return -1;
 			}
 			if (get_size(&mpu, *argv)) {
@@ -111,7 +103,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		} else if (strcmp(*argv, "rate") == 0) {
 			NEXT_ARG();
 			if (opt.rate.rate) {
-				fprintf(stderr, "Double \"rate\" spec\n");
+//				fprintf(stderr, "Double \"rate\" spec\n");
 				return -1;
 			}
 			if (get_rate(&opt.rate.rate, *argv)) {
@@ -122,7 +114,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		} else if (matches(*argv, "peakrate") == 0) {
 			NEXT_ARG();
 			if (opt.peakrate.rate) {
-				fprintf(stderr, "Double \"peakrate\" spec\n");
+//				fprintf(stderr, "Double \"peakrate\" spec\n");
 				return -1;
 			}
 			if (get_rate(&opt.peakrate.rate, *argv)) {
@@ -134,7 +126,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -145,18 +137,18 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		return 0;
 
 	if (opt.rate.rate == 0 || !buffer) {
-		fprintf(stderr, "Both \"rate\" and \"burst\" are required.\n");
+//		fprintf(stderr, "Both \"rate\" and \"burst\" are required.\n");
 		return -1;
 	}
 	if (opt.peakrate.rate) {
 		if (!mtu) {
-			fprintf(stderr, "\"mtu\" is required, if \"peakrate\" is requested.\n");
+//			fprintf(stderr, "\"mtu\" is required, if \"peakrate\" is requested.\n");
 			return -1;
 		}
 	}
 
 	if (opt.limit == 0 && latency == 0) {
-		fprintf(stderr, "Either \"limit\" or \"latency\" are required.\n");
+//		fprintf(stderr, "Either \"limit\" or \"latency\" are required.\n");
 		return -1;
 	}
 
@@ -171,7 +163,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 	}
 
 	if ((Rcell_log = tc_calc_rtable(opt.rate.rate, rtab, Rcell_log, mtu, mpu)) < 0) {
-		fprintf(stderr, "TBF: failed to calculate rate table.\n");
+//		fprintf(stderr, "TBF: failed to calculate rate table.\n");
 		return -1;
 	}
 	opt.buffer = tc_calc_xmittime(opt.rate.rate, buffer);
@@ -179,7 +171,7 @@ static int tbf_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 	opt.rate.mpu = mpu;
 	if (opt.peakrate.rate) {
 		if ((Pcell_log = tc_calc_rtable(opt.peakrate.rate, ptab, Pcell_log, mtu, mpu)) < 0) {
-			fprintf(stderr, "TBF: failed to calculate peak rate table.\n");
+//			fprintf(stderr, "TBF: failed to calculate peak rate table.\n");
 			return -1;
 		}
 		opt.mtu = tc_calc_xmittime(opt.peakrate.rate, mtu);

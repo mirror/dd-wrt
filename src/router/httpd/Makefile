@@ -246,7 +246,7 @@ endif
 
 vpath %.c modules $(SRCBASE)/../tools/src
 
-all: httpd.a cert
+all: httpd cert
 
 clean:
 	rm -f *.o *~ httpd
@@ -258,7 +258,7 @@ clean:
 	#rm -rf $(SRCBASE)/../tools/src/code_header.o	
 
 install:
-#	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
+	install -D httpd $(INSTALLDIR)/usr/sbin/httpd
 ifneq ($(CONFIG_NOSSL),y)
 	install -d $(INSTALLDIR)/etc
 	install *.pem $(INSTALLDIR)/etc
@@ -267,11 +267,11 @@ endif
 cert:
 	./gencert.sh
 
-httpd.a: cgi.o ej.o httpd.o broadcom.o \
+httpd: cgi.o ej.o httpd.o broadcom.o \
        index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
        find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
-#	$(CC) -o $@ $^ $(LDFLAGS)
-	ar arc -o $@ $^
+	$(CC) -o $@ $^ $(LDFLAGS)
+#	ar arc -o $@ $^
 	rm -f ../rc/rc
 	
 build_date.o: build_date.c

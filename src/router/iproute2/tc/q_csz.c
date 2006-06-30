@@ -23,15 +23,9 @@
 #include "utils.h"
 #include "tc_util.h"
 
-static void explain()
-{
-	fprintf(stderr, "Usage: ... csz \n");
-}
+#define explain()
+#define explain1(a)
 
-static void explain1(char *arg)
-{
-	fprintf(stderr, "Illegal \"%s\"\n", arg);
-}
 
 
 #define usage() return(-1)

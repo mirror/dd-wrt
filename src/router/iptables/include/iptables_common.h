@@ -11,8 +11,6 @@ enum exittype {
 /* this is a special 64bit data type that is 8-byte aligned */
 #define aligned_u64 unsigned long long __attribute__((aligned(8)))
 
-extern void exit_printhelp() __attribute__((noreturn));
-extern void exit_tryhelp(int) __attribute__((noreturn));
 int check_inverse(const char option[], int *invert, int *optind, int argc);
 extern int string_to_number(const char *, 
 			    unsigned int, 
@@ -27,8 +25,21 @@ extern int string_to_number_ll(const char *,
 			    unsigned long long int,
 			    unsigned long long *);
 extern int iptables_insmod(const char *modname, const char *modprobe);
+
+
+
+#define exit_error(exittype, args...) exit(-1)
+/*
 void exit_error(enum exittype, char *, ...)__attribute__((noreturn,
-							  format(printf,2,3)));
+
+							  format(printf,2,3)));*/
+							  
+#define exit_printhelp(a) exit(-1)
+
+//extern void exit_printhelp() __attribute__((noreturn));
+#define exit_tryhelp(a) exit(-1)
+
+//extern void exit_tryhelp(int) __attribute__((noreturn));
 extern const char *program_name, *program_version;
 extern char *lib_dir;
 

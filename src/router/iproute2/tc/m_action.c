@@ -54,9 +54,9 @@ static int parse_noaopt(struct action_util *au, int *argc_p, char ***argv_p, int
 	char **argv = *argv_p;
 
 	if (argc) {
-		fprintf(stderr, "Unknown action \"%s\", hence option \"%s\" is unparsable\n", au->id, *argv);
+//		fprintf(stderr, "Unknown action \"%s\", hence option \"%s\" is unparsable\n", au->id, *argv);
 	} else {
-		fprintf(stderr, "Unknown action \"%s\"\n", au->id);
+//		fprintf(stderr, "Unknown action \"%s\"\n", au->id);
 	}
 	return -1;
 }
@@ -192,7 +192,7 @@ done0:
 			ret = a->parse_aopt(a,&argc, &argv, TCA_ACT_OPTIONS, n);
 
 			if (ret < 0) {
-				fprintf(stderr,"bad action parsing\n");
+//				fprintf(stderr,"bad action parsing\n");
 				goto bad_val;
 			}
 			tail->rta_len = (void *) NLMSG_TAIL(n) - (void *) tail;
@@ -202,7 +202,7 @@ done0:
 	}
 
 	if (eap > 0) {
-		fprintf(stderr,"bad action empty %d\n",eap);
+//		fprintf(stderr,"bad action empty %d\n",eap);
 		goto bad_val;
 	}
 
@@ -215,7 +215,7 @@ done:
 bad_val:
 	/* no need to undo things, returning from here should 
 	 * cause enough pain */
-	fprintf(stderr, "parse_action: bad value (%d:%s)!\n",argc,*argv);
+//	fprintf(stderr, "parse_action: bad value (%d:%s)!\n",argc,*argv);
 	return -1;
 }
 
@@ -232,7 +232,7 @@ tc_print_one_action(FILE * f, struct rtattr *arg)
 
 	parse_rtattr_nested(tb, TCA_ACT_MAX, arg);
 	if (tb[TCA_ACT_KIND] == NULL) {
-		fprintf(stderr, "NULL Action!\n");
+//		fprintf(stderr, "NULL Action!\n");
 		return -1;
 	}
 
@@ -305,7 +305,7 @@ static int do_print_action(const struct sockaddr_nl *who,
 	len -= NLMSG_LENGTH(sizeof(*t));
 
 	if (len < 0) {
-		fprintf(stderr, "Wrong len %d\n", len);
+//		fprintf(stderr, "Wrong len %d\n", len);
 		return -1;
 	}
 
@@ -313,7 +313,7 @@ static int do_print_action(const struct sockaddr_nl *who,
 
 	if (NULL == tb[TCA_ACT_TAB]) {
 		if (n->nlmsg_type != RTM_GETACTION)
-			fprintf(stderr, "do_print_action: NULL kind\n");
+//			fprintf(stderr, "do_print_action: NULL kind\n");
 		return -1;
 	}     
 
@@ -382,12 +382,12 @@ int tc_action_gd(int cmd, unsigned flags, int *argc_p, char ***argv_p)
 		strncpy(k, *argv, sizeof (k) - 1);
 		a = get_action_kind(k);
 		if (NULL == a) { 
-			fprintf(stderr, "Error: non existent action: %s\n",k);
+//			fprintf(stderr, "Error: non existent action: %s\n",k);
 			ret = -1;
 			goto bad_val;
 		}
 		if (strcmp(a->id, k) != 0) {
-			fprintf(stderr, "Error: non existent action: %s\n",k);
+//			fprintf(stderr, "Error: non existent action: %s\n",k);
 			ret = -1;
 			goto bad_val;
 		}
@@ -395,7 +395,7 @@ int tc_action_gd(int cmd, unsigned flags, int *argc_p, char ***argv_p)
 		argc -=1;
 		argv +=1;
 		if (argc <= 0) {
-			fprintf(stderr, "Error: no index specified action: %s\n",k);
+//			fprintf(stderr, "Error: no index specified action: %s\n",k);
 			ret = -1;
 			goto bad_val;
 		}
@@ -403,14 +403,14 @@ int tc_action_gd(int cmd, unsigned flags, int *argc_p, char ***argv_p)
 		if (matches(*argv, "index") == 0) {
 			NEXT_ARG();
 			if (get_u32(&i, *argv, 10)) {
-				fprintf(stderr, "Illegal \"index\"\n");
+//				fprintf(stderr, "Illegal \"index\"\n");
 				ret = -1;
 				goto bad_val;
 			}
 			argc -=1;
 			argv +=1;
 		} else {
-			fprintf(stderr, "Error: no index specified action: %s\n",k);
+//			fprintf(stderr, "Error: no index specified action: %s\n",k);
 			ret = -1;
 			goto bad_val;
 		}
@@ -430,12 +430,12 @@ int tc_action_gd(int cmd, unsigned flags, int *argc_p, char ***argv_p)
 		ans = &req.n;
 
 	if (rtnl_talk(&rth, &req.n, 0, 0, ans, NULL, NULL) < 0) {
-		fprintf(stderr, "We have an error talking to the kernel\n");
+//		fprintf(stderr, "We have an error talking to the kernel\n");
 		return 1;
 	}
 
 	if (ans && do_print_action(NULL, &req.n, (void*)stdout) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		return 1;
 	}
 
@@ -469,13 +469,13 @@ int tc_action_modify(int cmd, unsigned flags, int *argc_p, char ***argv_p)
 	argc -=1;
 	argv +=1;
 	if (parse_action(&argc, &argv, TCA_ACT_TAB, &req.n)) {
-		fprintf(stderr, "Illegal \"action\"\n");
+//		fprintf(stderr, "Illegal \"action\"\n");
 		return -1;
 	}
 	tail->rta_len = (void *) NLMSG_TAIL(&req.n) - (void *) tail;
 
 	if (rtnl_talk(&rth, &req.n, 0, 0, NULL, NULL, NULL) < 0) {
-		fprintf(stderr, "We have an error talking to the kernel\n");
+//		fprintf(stderr, "We have an error talking to the kernel\n");
 		ret = -1;
 	}
 
@@ -515,11 +515,11 @@ int tc_act_list_or_flush(int argc, char **argv, int event)
 #endif
 	a = get_action_kind(k);
 	if (NULL == a) { 
-		fprintf(stderr,"bad action %s\n",k);
+//		fprintf(stderr,"bad action %s\n",k);
 		goto bad_val;
 	}
 	if (strcmp(a->id, k) != 0) {
-		fprintf(stderr,"bad action %s\n",k);
+//		fprintf(stderr,"bad action %s\n",k);
 		goto bad_val;
 	}
 	strncpy(k, *argv, sizeof (k) - 1);
@@ -533,7 +533,7 @@ int tc_act_list_or_flush(int argc, char **argv, int event)
 
 	if (event == RTM_GETACTION) { 
 		if (rtnl_dump_request(&rth, event, (void *)&req.t, msg_size) < 0) {
-			perror("Cannot send dump request");
+//			perror("Cannot send dump request");
 			return 1;
 		}
 		ret = rtnl_dump_filter(&rth, do_print_action, stdout, NULL, NULL);
@@ -545,7 +545,7 @@ int tc_act_list_or_flush(int argc, char **argv, int event)
 		req.n.nlmsg_flags |= NLM_F_ROOT;
 		req.n.nlmsg_flags |= NLM_F_REQUEST;
 		if (rtnl_talk(&rth, &req.n, 0, 0, NULL, NULL, NULL) < 0) {
-			fprintf(stderr, "We have an error flushing\n");
+//			fprintf(stderr, "We have an error flushing\n");
 			return 1;
 		}
 
@@ -598,7 +598,7 @@ int do_action(int argc, char **argv)
 		}
 
 		if (ret < 0) {
-			fprintf(stderr, "Command \"%s\" is unknown, try \"tc action help\".\n", *argv);
+//			fprintf(stderr, "Command \"%s\" is unknown, try \"tc action help\".\n", *argv);
 			return -1;
 		}
 	}

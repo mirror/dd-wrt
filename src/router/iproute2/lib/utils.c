@@ -254,11 +254,11 @@ done:
 int get_addr(inet_prefix *dst, const char *arg, int family)
 {
 	if (family == AF_PACKET) {
-		fprintf(stderr, "Error: \"%s\" may be inet address, but it is not allowed in this context.\n", arg);
+//		fprintf(stderr, "Error: \"%s\" may be inet address, but it is not allowed in this context.\n", arg);
 		exit(1);
 	}
 	if (get_addr_1(dst, arg, family)) {
-		fprintf(stderr, "Error: an inet address is expected rather than \"%s\".\n", arg);
+//		fprintf(stderr, "Error: an inet address is expected rather than \"%s\".\n", arg);
 		exit(1);
 	}
 	return 0;
@@ -267,11 +267,11 @@ int get_addr(inet_prefix *dst, const char *arg, int family)
 int get_prefix(inet_prefix *dst, char *arg, int family)
 {
 	if (family == AF_PACKET) {
-		fprintf(stderr, "Error: \"%s\" may be inet prefix, but it is not allowed in this context.\n", arg);
+//		fprintf(stderr, "Error: \"%s\" may be inet prefix, but it is not allowed in this context.\n", arg);
 		exit(1);
 	}
 	if (get_prefix_1(dst, arg, family)) {
-		fprintf(stderr, "Error: an inet prefix is expected rather than \"%s\".\n", arg);
+//		fprintf(stderr, "Error: an inet prefix is expected rather than \"%s\".\n", arg);
 		exit(1);
 	}
 	return 0;
@@ -281,7 +281,7 @@ __u32 get_addr32(const char *name)
 {
 	inet_prefix addr;
 	if (get_addr_1(&addr, name, AF_INET)) {
-		fprintf(stderr, "Error: an IP address is expected rather than \"%s\"\n", name);
+//		fprintf(stderr, "Error: an IP address is expected rather than \"%s\"\n", name);
 		exit(1);
 	}
 	return addr.data[0];
@@ -289,31 +289,31 @@ __u32 get_addr32(const char *name)
 
 void incomplete_command(void)
 {
-	fprintf(stderr, "Command line is not complete. Try option \"help\"\n");
+//	fprintf(stderr, "Command line is not complete. Try option \"help\"\n");
 	exit(-1);
 }
 
 void missarg(const char *key)
 {
-	fprintf(stderr, "Error: argument \"%s\" is required\n", key);
+//	fprintf(stderr, "Error: argument \"%s\" is required\n", key);
 	exit(-1);
 }
 
 void invarg(const char *msg, const char *arg)
 {
-	fprintf(stderr, "Error: argument \"%s\" is wrong: %s\n", arg, msg);
+//	fprintf(stderr, "Error: argument \"%s\" is wrong: %s\n", arg, msg);
 	exit(-1);
 }
 
 void duparg(const char *key, const char *arg)
 {
-	fprintf(stderr, "Error: duplicate \"%s\": \"%s\" is the second value.\n", key, arg);
+//	fprintf(stderr, "Error: duplicate \"%s\": \"%s\" is the second value.\n", key, arg);
 	exit(-1);
 }
 
 void duparg2(const char *key, const char *arg)
 {
-	fprintf(stderr, "Error: either \"%s\" is duplicate, or \"%s\" is a garbage.\n", key, arg);
+//	fprintf(stderr, "Error: either \"%s\" is duplicate, or \"%s\" is a garbage.\n", key, arg);
 	exit(-1);
 }
 

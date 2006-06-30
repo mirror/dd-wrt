@@ -49,6 +49,10 @@
 #define RTA_BUF_SIZE 2048
 #define XFRM_TMPLS_BUF_SIZE 1024
 
+
+#define usage() exit(-1);
+/*
+
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
@@ -92,7 +96,7 @@ static void usage(void)
 
 	exit(-1);
 }
-
+*/
 static int xfrm_policy_dir_parse(__u8 *dir, int *argcp, char ***argvp)
 {
 	int argc = *argcp;
@@ -232,7 +236,7 @@ static int xfrm_policy_modify(int cmd, unsigned flags, int argc, char **argv)
 			struct xfrm_user_tmpl *tmpl;
 
 			if (tmpls_len + sizeof(*tmpl) > sizeof(tmpls_buf)) {
-				fprintf(stderr, "Too many tmpls: buffer overflow\n");
+//				fprintf(stderr, "Too many tmpls: buffer overflow\n");
 				exit(1);
 			}
 			tmpl = (struct xfrm_user_tmpl *)((char *)tmpls_buf + tmpls_len);
@@ -260,7 +264,7 @@ static int xfrm_policy_modify(int cmd, unsigned flags, int argc, char **argv)
 	}
 
 	if (!dirp) {
-		fprintf(stderr, "Not enough information: \"DIR\" is required.\n");
+//		fprintf(stderr, "Not enough information: \"DIR\" is required.\n");
 		exit(1);
 	}
 
@@ -341,14 +345,14 @@ int xfrm_policy_print(const struct sockaddr_nl *who, struct nlmsghdr *n,
 
 	if (n->nlmsg_type != XFRM_MSG_NEWPOLICY &&
 	    n->nlmsg_type != XFRM_MSG_DELPOLICY) {
-		fprintf(stderr, "Not a policy: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not a policy: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 
 	len -= NLMSG_LENGTH(sizeof(*xpinfo));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -419,11 +423,11 @@ static int xfrm_policy_get_or_delete(int argc, char **argv, int delete,
 	}
 
 	if (!dirp) {
-		fprintf(stderr, "Not enough information: \"DIR\" is required.\n");
+//		fprintf(stderr, "Not enough information: \"DIR\" is required.\n");
 		exit(1);
 	}
 	if (!selp && !indexp) {
-		fprintf(stderr, "Not enough information: either \"SELECTOR\" or \"INDEX\" is required.\n");
+//		fprintf(stderr, "Not enough information: either \"SELECTOR\" or \"INDEX\" is required.\n");
 		exit(1);
 	}
 	if (selp && indexp)
@@ -458,7 +462,7 @@ static int xfrm_policy_get(int argc, char **argv)
 	xfrm_policy_get_or_delete(argc, argv, 0, n);
 
 	if (xfrm_policy_print(NULL, n, (void*)stdout) < 0) {
-		fprintf(stderr, "An error :-)\n");
+//		fprintf(stderr, "An error :-)\n");
 		exit(1);
 	}
 
@@ -481,14 +485,14 @@ static int xfrm_policy_keep(const struct sockaddr_nl *who,
 	struct xfrm_userpolicy_id *xpid;
 
 	if (n->nlmsg_type != XFRM_MSG_NEWPOLICY) {
-		fprintf(stderr, "Not a policy: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not a policy: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 
 	len -= NLMSG_LENGTH(sizeof(*xpinfo));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -496,7 +500,7 @@ static int xfrm_policy_keep(const struct sockaddr_nl *who,
 		return 0;
 
 	if (xb->offset > xb->size) {
-		fprintf(stderr, "Flush buffer overflow\n");
+//		fprintf(stderr, "Flush buffer overflow\n");
 		return -1;
 	}
 
@@ -589,20 +593,20 @@ static int xfrm_policy_list_or_flush(int argc, char **argv, int flush)
 			xb.nlmsg_count = 0;
 
 			if (show_stats > 1)
-				fprintf(stderr, "Flush round = %d\n", i);
+//				fprintf(stderr, "Flush round = %d\n", i);
 
 			if (rtnl_wilddump_request(&rth, preferred_family, XFRM_MSG_GETPOLICY) < 0) {
-				perror("Cannot send dump request");
+//				perror("Cannot send dump request");
 				exit(1);
 			}
 
 			if (rtnl_dump_filter(&rth, xfrm_policy_keep, &xb, NULL, NULL) < 0) {
-				fprintf(stderr, "Flush terminated\n");
+//				fprintf(stderr, "Flush terminated\n");
 				exit(1);
 			}
 			if (xb.nlmsg_count == 0) {
-				if (show_stats > 1)
-					fprintf(stderr, "Flush completed\n");
+//				if (show_stats > 1)
+//					fprintf(stderr, "Flush completed\n");
 				break;
 			}
 
@@ -610,8 +614,8 @@ static int xfrm_policy_list_or_flush(int argc, char **argv, int flush)
 				perror("Failed to send flush request\n");
 				exit(1);
 			}
-			if (show_stats > 1)
-				fprintf(stderr, "Flushed nlmsg count = %d\n", xb.nlmsg_count);
+//			if (show_stats > 1)
+//				fprintf(stderr, "Flushed nlmsg count = %d\n", xb.nlmsg_count);
 
 			xb.offset = 0;
 			xb.nlmsg_count = 0;
@@ -623,7 +627,7 @@ static int xfrm_policy_list_or_flush(int argc, char **argv, int flush)
 		}
 
 		if (rtnl_dump_filter(&rth, xfrm_policy_print, stdout, NULL, NULL) < 0) {
-			fprintf(stderr, "Dump terminated\n");
+//			fprintf(stderr, "Dump terminated\n");
 			exit(1);
 		}
 	}
@@ -649,8 +653,8 @@ static int xfrm_policy_flush_all(void)
 	if (rtnl_open_byproto(&rth, 0, NETLINK_XFRM) < 0)
 		exit(1);
 
-	if (show_stats > 1)
-		fprintf(stderr, "Flush all\n");
+//	if (show_stats > 1)
+//		fprintf(stderr, "Flush all\n");
 
 	if (rtnl_talk(&rth, &req.n, 0, 0, NULL, NULL, NULL) < 0)
 		exit(2);
@@ -686,6 +690,6 @@ int do_xfrm_policy(int argc, char **argv)
 	}
 	if (matches(*argv, "help") == 0)
 		usage();
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip xfrm policy help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip xfrm policy help\".\n", *argv);
 	exit(-1);
 }

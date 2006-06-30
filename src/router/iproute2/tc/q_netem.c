@@ -25,21 +25,23 @@
 #include "tc_util.h"
 #include "tc_common.h"
 
-static void explain(void)
-{
-	fprintf(stderr, 
+#define explain()
+//static void explain(void)
+//{
+/*	fprintf(stderr, 
 "Usage: ... netem [ limit PACKETS ] \n" \
 "		  [ delay TIME [ JITTER [CORRELATION]]]\n" \
 "                 [ drop PERCENT [CORRELATION]] \n" \
 "                 [ duplicate PERCENT [CORRELATION]]\n" \
 "		  [ distribution {uniform|normal|pareto|paretonormal} ]\n" \
-"                 [ gap PACKETS ]\n");
-}
+"                 [ gap PACKETS ]\n");*/
+//}
+#define explain1(a)
 
-static void explain1(const char *arg)
-{
-	fprintf(stderr, "Illegal \"%s\"\n", arg);
-}
+//static void explain1(const char *arg)
+//{
+//	fprintf(stderr, "Illegal \"%s\"\n", arg);
+//}
 
 #define usage() return(-1)
 
@@ -61,8 +63,8 @@ static int get_distribution(const char *type, __s16 *data)
 
 	snprintf(name, sizeof(name), "/usr/lib/tc/%s.dist", type);
 	if ((f = fopen(name, "r")) == NULL) {
-		fprintf(stderr, "No distribution data for %s (%s: %s)\n", 
-			type, name, strerror(errno));
+//		fprintf(stderr, "No distribution data for %s (%s: %s)\n", 
+//			type, name, strerror(errno));
 		return -1;
 	}
 	
@@ -78,8 +80,8 @@ static int get_distribution(const char *type, __s16 *data)
 				break;
 
 			if (n >= MAXDIST) {
-				fprintf(stderr, "%s: too much data\n",
-					name);
+//				fprintf(stderr, "%s: too much data\n",
+//					name);
 				n = -1;
 				goto error;
 			}
@@ -206,7 +208,7 @@ static int netem_parse_opt(struct qdisc_util *qu, int argc, char **argv,
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -237,7 +239,7 @@ static int netem_print_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 		return 0;
 
 	if (len < 0) {
-		fprintf(stderr, "options size error\n");
+//		fprintf(stderr, "options size error\n");
 		return -1;
 	}
 	memcpy(&qopt, RTA_DATA(opt), sizeof(qopt));

@@ -27,10 +27,11 @@
 #include "utils.h"
 #include "tc_util.h"
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... prio bands NUMBER priomap P1 P2...\n");
-}
+#define explain()
+//static void explain(void)
+//{
+//	fprintf(stderr, "Usage: ... prio bands NUMBER priomap P1 P2...\n");
+//}
 
 #define usage() return(-1)
 
@@ -47,13 +48,13 @@ static int prio_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 				explain();
 			NEXT_ARG();
 			if (get_integer(&opt.bands, *argv, 10)) {
-				fprintf(stderr, "Illegal \"bands\"\n");
+//				fprintf(stderr, "Illegal \"bands\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "priomap") == 0) {
 			if (pmap_mode) {
-				fprintf(stderr, "Error: duplicate priomap\n");
+//				fprintf(stderr, "Error: duplicate priomap\n");
 				return -1;
 			}
 			pmap_mode = 1;
@@ -63,20 +64,20 @@ static int prio_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct n
 		} else {
 			unsigned band;
 			if (!pmap_mode) {
-				fprintf(stderr, "What is \"%s\"?\n", *argv);
+//				fprintf(stderr, "What is \"%s\"?\n", *argv);
 				explain();
 				return -1;
 			}
 			if (get_unsigned(&band, *argv, 10)) {
-				fprintf(stderr, "Illegal \"priomap\" element\n");
+//				fprintf(stderr, "Illegal \"priomap\" element\n");
 				return -1;
 			}
 			if (band > opt.bands) {
-				fprintf(stderr, "\"priomap\" element is out of bands\n");
+//				fprintf(stderr, "\"priomap\" element is out of bands\n");
 				return -1;
 			}
 			if (idx > TC_PRIO_MAX) {
-				fprintf(stderr, "\"priomap\" index > TC_PRIO_MAX=%u\n", TC_PRIO_MAX);
+//				fprintf(stderr, "\"priomap\" index > TC_PRIO_MAX=%u\n", TC_PRIO_MAX);
 				return -1;
 			}
 			opt.priomap[idx++] = band;

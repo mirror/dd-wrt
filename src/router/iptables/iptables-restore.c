@@ -39,7 +39,7 @@ static void print_usage(const char *name, const char *version) __attribute__((no
 
 static void print_usage(const char *name, const char *version)
 {
-	fprintf(stderr, "Usage: %s [-b] [-c] [-v] [-t] [-h]\n"
+	printf("Usage: %s [-b] [-c] [-v] [-t] [-h]\n"
 			"	   [ --binary ]\n"
 			"	   [ --counters ]\n"
 			"	   [ --verbose ]\n"

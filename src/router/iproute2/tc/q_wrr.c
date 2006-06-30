@@ -40,8 +40,8 @@ static int wrr_parse_class_modf(int argc, char** argv,
   int i;
   
   if(argc<1) {
-    fprintf(stderr, "Usage: ... [weight1=val] [decr1=val] [incr1=val] [min1=val] [max1=val] [val2=val] ...\n");
-    fprintf(stderr, "  The values can be floating point like 0.42 or divisions like 42/100\n");
+//    fprintf(stderr, "Usage: ... [weight1=val] [decr1=val] [incr1=val] [min1=val] [max1=val] [val2=val] ...\n");
+//    fprintf(stderr, "  The values can be floating point like 0.42 or divisions like 42/100\n");
     return -1;
   }
   
@@ -63,7 +63,7 @@ static int wrr_parse_class_modf(int argc, char** argv,
     char* name,*value1=0,*value2=0;
     long double f_val1,f_val2=1,value;
     if(strlen(argv[i])>=sizeof(arg)) {
-      fprintf(stderr,"Argument too long: %s\n",argv[i]);
+//      fprintf(stderr,"Argument too long: %s\n",argv[i]);
       return -1;
     }
     strcpy(arg,argv[i]);
@@ -73,7 +73,7 @@ static int wrr_parse_class_modf(int argc, char** argv,
     if(value1) value2=strtok(0,"");
     
     if(!value1) {
-      fprintf(stderr,"No = found in argument: %s\n",argv[i]);
+//      fprintf(stderr,"No = found in argument: %s\n",argv[i]);
       return -1;
     }
     
@@ -81,7 +81,7 @@ static int wrr_parse_class_modf(int argc, char** argv,
     if(value2) f_val2=atof(value2);    
     
     if(f_val2==0)  {
-      fprintf(stderr,"Division by 0\n");
+//      fprintf(stderr,"Division by 0\n");
       return -1;
     }
         
@@ -102,7 +102,7 @@ static int wrr_parse_class_modf(int argc, char** argv,
     else if(!strcmp(name,"min2"))  modf->weight2.min=value;
     else if(!strcmp(name,"max2"))  modf->weight2.max=value;
     else {
-      fprintf(stderr,"illegal value: %s\n",name);
+//      fprintf(stderr,"illegal value: %s\n",name);
       return -1;
     }
   }    
@@ -119,7 +119,7 @@ static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
     int sour,dest,ip,mac,masq;
 
     if(argc<4) {
-      fprintf(stderr, "Usage: ... wrr sour|dest ip|masq|mac maxclasses proxymaxcon [penalty-setup]\n");
+//      fprintf(stderr, "Usage: ... wrr sour|dest ip|masq|mac maxclasses proxymaxcon [penalty-setup]\n");
       return -1;
     }	  
   
@@ -129,7 +129,7 @@ static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
     dest=!strcmp(argv[0],"dest");	
 	
     if(!sour && !dest) {
-      fprintf(stderr,"sour or dest must be specified\n");
+//      fprintf(stderr,"sour or dest must be specified\n");
       return -1;
     }	
 
@@ -139,7 +139,7 @@ static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
     masq=!strcmp(argv[1],"masq");	
 
     if(!ip && !mac && !masq) {
-      fprintf(stderr,"ip, masq or mac must be specified\n");
+//      fprintf(stderr,"ip, masq or mac must be specified\n");
       return -1;
     }	
 
@@ -162,7 +162,7 @@ static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
     
     // This is a modify request:
     if(argc<1) {
-      fprintf(stderr,"... qdisc ... or ... class ...\n");
+//      fprintf(stderr,"... qdisc ... or ... class ...\n");
       return -1;
     }
             
@@ -170,7 +170,7 @@ static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
     class=!strcmp(argv[0],"class");
 
     if(!qdisc && !class) {
-      fprintf(stderr,"qdisc or class must be specified\n");
+//      fprintf(stderr,"qdisc or class must be specified\n");
       return -1;
     }
       
@@ -188,14 +188,14 @@ static int wrr_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
       opt.change_class=1;
       
       if(argc<1) {
-        fprintf(stderr,"... <mac>|<ip>|<masq> ...\n");
+//        fprintf(stderr,"... <mac>|<ip>|<masq> ...\n");
         return -1;
       }
       memset(opt.addr,0,sizeof(opt.addr));
 
       if((sscanf(argv[0],"%i.%i.%i.%i",&a0,&a1,&a2,&a3)!=4) &&
          (sscanf(argv[0],"%x:%x:%x:%x:%x:%x",&a0,&a1,&a2,&a3,&a4,&a5)!=6)) {
-	fprintf(stderr,"Wrong format of mac or ip address\n");
+//	fprintf(stderr,"Wrong format of mac or ip address\n");
 	return -1;
       }
       

@@ -23,18 +23,19 @@
 #include "rt_names.h"
 #include "utils.h"
 #include "tc_util.h"
+#define explain();
 
-static void explain(void)
+/*static void explain(void)
 {
-	fprintf(stderr, "Usage: ... rsvp ipproto PROTOCOL session DST[/PORT | GPI ]\n");
-	fprintf(stderr, "                [ sender SRC[/PORT | GPI ]\n");
-	fprintf(stderr, "                [ classid CLASSID ] [ police POLICE_SPEC ]\n");
-	fprintf(stderr, "                [ tunnelid ID ] [ tunnel ID skip NUMBER ]\n");
-	fprintf(stderr, "Where: GPI := { flowlabel NUMBER | spi/ah SPI | spi/esp SPI |\n");
-	fprintf(stderr, "                u{8|16|32} NUMBER mask MASK at OFFSET}\n");
-	fprintf(stderr, "       POLICE_SPEC := ... look at TBF\n");
-	fprintf(stderr, "       FILTERID := X:Y\n");
-}
+//	fprintf(stderr, "Usage: ... rsvp ipproto PROTOCOL session DST[/PORT | GPI ]\n");
+//	fprintf(stderr, "                [ sender SRC[/PORT | GPI ]\n");
+//	fprintf(stderr, "                [ classid CLASSID ] [ police POLICE_SPEC ]\n");
+//	fprintf(stderr, "                [ tunnelid ID ] [ tunnel ID skip NUMBER ]\n");
+//	fprintf(stderr, "Where: GPI := { flowlabel NUMBER | spi/ah SPI | spi/esp SPI |\n");
+//	fprintf(stderr, "                u{8|16|32} NUMBER mask MASK at OFFSET}\n");
+//	fprintf(stderr, "       POLICE_SPEC := ... look at TBF\n");
+//	fprintf(stderr, "       FILTERID := X:Y\n");
+}*/
 
 #define usage() return(-1)
 
@@ -181,7 +182,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 
 	if (handle) {
 		if (get_u32(&t->tcm_handle, handle, 0)) {
-			fprintf(stderr, "Illegal \"handle\"\n");
+//			fprintf(stderr, "Illegal \"handle\"\n");
 			return -1;
 		}
 	}
@@ -197,7 +198,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 			inet_prefix addr;
 			NEXT_ARG();
 			if (get_addr_and_pi(&argc, &argv, &addr, &pinfo, 1, family)) {
-				fprintf(stderr, "Illegal \"session\"\n");
+//				fprintf(stderr, "Illegal \"session\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_RSVP_DST, &addr.data, addr.bytelen);
@@ -209,7 +210,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 			inet_prefix addr;
 			NEXT_ARG();
 			if (get_addr_and_pi(&argc, &argv, &addr, &pinfo, 0, family)) {
-				fprintf(stderr, "Illegal \"sender\"\n");
+//				fprintf(stderr, "Illegal \"sender\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_RSVP_SRC, &addr.data, addr.bytelen);
@@ -221,7 +222,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 			NEXT_ARG();
 			num = inet_proto_a2n(*argv);
 			if (num < 0) {
-				fprintf(stderr, "Illegal \"ipproto\"\n");
+//				fprintf(stderr, "Illegal \"ipproto\"\n");
 				return -1;
 			}
 			pinfo.protocol = num;
@@ -231,7 +232,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 			unsigned handle;
 			NEXT_ARG();
 			if (get_tc_classid(&handle, *argv)) {
-				fprintf(stderr, "Illegal \"classid\"\n");
+//				fprintf(stderr, "Illegal \"classid\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_RSVP_CLASSID, &handle, 4);
@@ -239,7 +240,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 			unsigned tid;
 			NEXT_ARG();
 			if (get_unsigned(&tid, *argv, 0)) {
-				fprintf(stderr, "Illegal \"tunnelid\"\n");
+//				fprintf(stderr, "Illegal \"tunnelid\"\n");
 				return -1;
 			}
 			pinfo.tunnelid = tid;
@@ -248,7 +249,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 			unsigned tid;
 			NEXT_ARG();
 			if (get_unsigned(&tid, *argv, 0)) {
-				fprintf(stderr, "Illegal \"tunnel\"\n");
+//				fprintf(stderr, "Illegal \"tunnel\"\n");
 				return -1;
 			}
 			addattr_l(n, 4096, TCA_RSVP_CLASSID, &tid, 4);
@@ -257,7 +258,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 				NEXT_ARG();
 			}
 			if (get_unsigned(&tid, *argv, 0)) {
-				fprintf(stderr, "Illegal \"skip\"\n");
+//				fprintf(stderr, "Illegal \"skip\"\n");
 				return -1;
 			}
 			pinfo.tunnelhdr = tid;
@@ -265,7 +266,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 		} else if (matches(*argv, "police") == 0) {
 			NEXT_ARG();
 			if (parse_police(&argc, &argv, TCA_RSVP_POLICE, n)) {
-				fprintf(stderr, "Illegal \"police\"\n");
+//				fprintf(stderr, "Illegal \"police\"\n");
 				return -1;
 			}
 			continue;
@@ -273,7 +274,7 @@ static int rsvp_parse_opt(struct filter_util *qu, char *handle, int argc, char *
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}

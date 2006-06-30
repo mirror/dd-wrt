@@ -146,7 +146,9 @@ parse_expire(const char *s)
 	unsigned int len;
 	
 	if (string_to_number(s, 0, 0, &len) == -1)
+	{
 		exit_error(PARAMETER_PROBLEM, "expire value invalid: `%s'\n", s);
+	}
 	else
 		return len;
 }

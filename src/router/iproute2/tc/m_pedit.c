@@ -31,12 +31,13 @@
 
 static struct m_pedit_util *pedit_list;
 int pedit_debug = 1;
+#define p_explain()
 
-static void
-p_explain(void)
-{
-	fprintf(stderr, "Usage: ... pedit <MUNGE>\n");
-	fprintf(stderr,
+//static void
+//p_explain(void)
+//{
+//	fprintf(stderr, "Usage: ... pedit <MUNGE>\n");
+/*	fprintf(stderr,
 		"Where: MUNGE := <RAW>|<LAYERED>\n" 
 		"<RAW>:= <OFFSETC>[ATC]<CMD>\n "
 		"OFFSETC:= offset <offval> <u8|u16|u32>\n "
@@ -48,8 +49,8 @@ p_explain(void)
 		"<LAYERED>:= ip <ipdata> | ip6 <ip6data> \n "
 		" | udp <udpdata> | tcp <tcpdata> | icmp <icmpdata> \n"
 		"For Example usage look at the examples directory");
-
-}
+*/
+//}
 
 #define usage() return(-1)
 
@@ -60,7 +61,7 @@ pedit_parse_nopopt (int *argc_p, char ***argv_p,struct tc_pedit_sel *sel,struct 
 	char **argv = *argv_p;
 
 	if (argc) {
-		fprintf(stderr, "Unknown action  hence option \"%s\" is unparsable\n", *argv);
+//		fprintf(stderr, "Unknown action  hence option \"%s\" is unparsable\n", *argv);
 			return -1;
 	}
 
@@ -122,7 +123,7 @@ pack_key(struct tc_pedit_sel *sel,struct tc_pedit_key *tkey)
 		return -1;
 
 	if (tkey->off % 4) {
-		fprintf(stderr, "offsets MUST be in 32 bit boundaries\n");
+//		fprintf(stderr, "offsets MUST be in 32 bit boundaries\n");
 		return -1;
 	}
 
@@ -141,8 +142,8 @@ int
 pack_key32(__u32 retain,struct tc_pedit_sel *sel,struct tc_pedit_key *tkey)
 {
 	if (tkey->off > (tkey->off & ~3)) {
-		fprintf(stderr,
-			"pack_key32: 32 bit offsets must begin in 32bit boundaries\n");
+//		fprintf(stderr,
+//			"pack_key32: 32 bit offsets must begin in 32bit boundaries\n");
 		return -1;
 	}
 
@@ -168,14 +169,14 @@ pack_key16(__u32 retain,struct tc_pedit_sel *sel,struct tc_pedit_key *tkey)
 	}
 
 	if (tkey->val > 0xFFFF || tkey->mask > 0xFFFF) {
-		fprintf(stderr, "pack_key16 bad value\n");
+//		fprintf(stderr, "pack_key16 bad value\n");
 		return -1;
 	}
 
 	ind = tkey->off & 3;
 
 	if (0 > ind || 2 < ind) {
-		fprintf(stderr, "pack_key16 bad index value %d\n",ind);
+//		fprintf(stderr, "pack_key16 bad index value %d\n",ind);
 		return -1;
 	}
 
@@ -211,7 +212,7 @@ pack_key8(__u32 retain,struct tc_pedit_sel *sel,struct tc_pedit_key *tkey)
 	}
 
 	if (tkey->val > 0xFF || tkey->mask > 0xFF) {
-		fprintf(stderr, "pack_key8 bad value (val %x mask %x\n", tkey->val, tkey->mask);
+//		fprintf(stderr, "pack_key8 bad value (val %x mask %x\n", tkey->val, tkey->mask);
 		return -1;
 	}
 
@@ -438,7 +439,7 @@ parse_munge(int *argc_p, char ***argv_p,struct tc_pedit_sel *sel)
 				goto bad_val;
 			res = p->parse_peopt(&argc, &argv, sel,&tkey);
 			if (res < 0) {
-				fprintf(stderr,"bad pedit parsing\n");
+//				fprintf(stderr,"bad pedit parsing\n");
 				goto bad_val;
 			}
 			goto done;
@@ -472,20 +473,20 @@ parse_pedit(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, stru
 
 	while (argc > 0) {
 		if (pedit_debug > 1)
-			fprintf(stderr, "while pedit (%d:%s)\n",argc, *argv);
+//			fprintf(stderr, "while pedit (%d:%s)\n",argc, *argv);
 		if (matches(*argv, "pedit") == 0) {
 			NEXT_ARG();
 			ok++;
 			continue;
 		} else if (matches(*argv, "munge") == 0) {
 			if (!ok) {
-				fprintf(stderr, "Illegal pedit construct (%s) \n", *argv);
+//				fprintf(stderr, "Illegal pedit construct (%s) \n", *argv);
 				p_explain();
 				return -1;
 			}
 			NEXT_ARG();
 			if (parse_munge(&argc, &argv,&sel.sel)) {
-				fprintf(stderr, "Illegal pedit construct (%s) \n", *argv);
+//				fprintf(stderr, "Illegal pedit construct (%s) \n", *argv);
 				p_explain();
 				return -1;
 			}
@@ -525,7 +526,7 @@ parse_pedit(struct action_util *a, int *argc_p, char ***argv_p, int tca_id, stru
 		if (matches(*argv, "index") == 0) {
 			NEXT_ARG();
 			if (get_u32(&sel.sel.index, *argv, 10)) {
-				fprintf(stderr, "Pedit: Illegal \"index\"\n");
+//				fprintf(stderr, "Pedit: Illegal \"index\"\n");
 				return -1;
 			}
 			argc--;
