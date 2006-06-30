@@ -33,26 +33,26 @@ int main(int argc, char **argv)
 
 	for (i=1; i<argc; i++) {
 		if (argv[i][0] == '-' || strcmp(argv[i], "help") == 0) {
-			fprintf(stderr, "Usage: rtacct [ LISTofREALMS ]\n");
+//			fprintf(stderr, "Usage: rtacct [ LISTofREALMS ]\n");
 			exit(1);
 		}
 		if (rtnl_rtrealm_a2n(rlist+rhwm, argv[i]))
-			fprintf(stderr, "Warning: realm \"%s\" does not exist. Ignored.\n", argv[i]);
+//			fprintf(stderr, "Warning: realm \"%s\" does not exist. Ignored.\n", argv[i]);
 		else
 			rhwm++;
 	}
 	if (argc>1 && rhwm==0) {
-		fprintf(stderr, "Usage: rtacct [ LISTofREALMS ]\n");
+//		fprintf(stderr, "Usage: rtacct [ LISTofREALMS ]\n");
 		exit(1);
 	}
 
 	fd = open("/proc/net/rt_acct", O_RDONLY);
 	if (fd < 0) {
-		perror("open /proc/net/rt_acct");
+//		perror("open /proc/net/rt_acct");
 		exit(-1);
 	}
 	if ((i = read(fd, buffer, sizeof(buffer))) != sizeof(buffer)) {
-		fprintf(stderr, "read only %d bytes of /proc/net/rt_acct\n", i);
+//		fprintf(stderr, "read only %d bytes of /proc/net/rt_acct\n", i);
 		exit(-1);
 	}
 	printf(

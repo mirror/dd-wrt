@@ -33,13 +33,16 @@
 #include "xfrm.h"
 #include "ip_common.h"
 
+#define usage() exit(-1);
+/*
+
 static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: ip xfrm monitor [ all | LISTofOBJECTS ]\n");
+//	fprintf(stderr, "Usage: ip xfrm monitor [ all | LISTofOBJECTS ]\n");
 	exit(-1);
-}
+}*/
 
 static int xfrm_acquire_print(const struct sockaddr_nl *who,
 			      struct nlmsghdr *n, void *arg)
@@ -58,7 +61,7 @@ static int xfrm_acquire_print(const struct sockaddr_nl *who,
 
 	len -= NLMSG_LENGTH(sizeof(*xacq));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -116,14 +119,14 @@ static int xfrm_state_expire_print(const struct sockaddr_nl *who,
 	struct rtattr * tb[XFRMA_MAX+1];
 
 	if (n->nlmsg_type != XFRM_MSG_EXPIRE) {
-		fprintf(stderr, "Not an expire: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not an expire: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 
 	len -= NLMSG_LENGTH(sizeof(*xexp));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -152,14 +155,14 @@ static int xfrm_policy_expire_print(const struct sockaddr_nl *who,
 	struct rtattr * tb[XFRMA_MAX+1];
 
 	if (n->nlmsg_type != XFRM_MSG_POLEXPIRE) {
-		fprintf(stderr, "Not a polexpire: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not a polexpire: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 
 	len -= NLMSG_LENGTH(sizeof(*xpexp));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -233,7 +236,7 @@ int do_xfrm_monitor(int argc, char **argv)
 		} else if (matches(*argv, "help") == 0) {
 			usage();
 		} else {
-			fprintf(stderr, "Argument \"%s\" is unknown, try \"ip xfrm monitor help\".\n", *argv);
+//			fprintf(stderr, "Argument \"%s\" is unknown, try \"ip xfrm monitor help\".\n", *argv);
 			exit(-1);
 		}
 		argc--;	argv++;

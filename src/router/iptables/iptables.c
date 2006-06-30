@@ -320,7 +320,7 @@ static void free_opts(int reset_offset)
 	}
 }
 
-void
+/*void
 exit_error(enum exittype status, char *msg, ...)
 {
 	va_list args;
@@ -335,7 +335,6 @@ exit_error(enum exittype status, char *msg, ...)
 	if (status == VERSION_PROBLEM)
 		fprintf(stderr,
 			"Perhaps iptables or your kernel needs to be upgraded.\n");
-	/* On error paths, make sure that we don't leak memory */
 	free_opts(1);
 	exit(status);
 }
@@ -350,7 +349,8 @@ exit_tryhelp(int status)
 	free_opts(1);
 	exit(status);
 }
-
+*/
+/*
 void
 exit_printhelp(struct iptables_rule_match *matches)
 {
@@ -421,9 +421,6 @@ exit_printhelp(struct iptables_rule_match *matches)
 "  --set-counters PKTS BYTES	set the counter during insert/append\n"
 "[!] --version	-V		print package version.\n");
 
-	/* Print out any special helps. A user might like to be able
-	   to add a --help to the commandline, and see expected
-	   results. So we call help for all specified matches & targets */
 	for (t = iptables_targets; t ;t = t->next) {
 		if (t->used) {
 			printf("\nNo help available!\n");
@@ -436,7 +433,7 @@ exit_printhelp(struct iptables_rule_match *matches)
 	}
 	exit(0);
 }
-
+*/
 static void
 generic_opt_check(int command, int options)
 {

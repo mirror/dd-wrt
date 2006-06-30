@@ -46,7 +46,10 @@ static struct
 	struct rtnl_handle *rth;
 } filter;
 
-static void usage(void) __attribute__((noreturn));
+
+#define usage() exit(-1);
+
+/*static void usage(void) __attribute__((noreturn));
 
 static void usage(void)
 {
@@ -55,7 +58,7 @@ static void usage(void)
 		        "          | proxy ADDR } [ dev DEV ]\n");
 	fprintf(stderr, "       ip neigh {show|flush} [ to PREFIX ] [ dev DEV ] [ nud STATE ]\n");
 	exit(-1);
-}
+}*/
 
 int nud_state_a2n(unsigned *state, char *arg)
 {
@@ -159,7 +162,7 @@ static int ipneigh_modify(int cmd, int flags, int argc, char **argv)
 		argc--; argv++;
 	}
 	if (d == NULL || !dst_ok || dst.family == AF_UNSPEC) {
-		fprintf(stderr, "Device and destination are required arguments.\n");
+//		fprintf(stderr, "Device and destination are required arguments.\n");
 		exit(-1);
 	}
 	req.ndm.ndm_family = dst.family;
@@ -179,7 +182,7 @@ static int ipneigh_modify(int cmd, int flags, int argc, char **argv)
 	ll_init_map(&rth);
 
 	if ((req.ndm.ndm_ifindex = ll_name_to_index(d)) == 0) {
-		fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//		fprintf(stderr, "Cannot find device \"%s\"\n", d);
 		return -1;
 	}
 
@@ -199,14 +202,14 @@ int print_neigh(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 	char abuf[256];
 
 	if (n->nlmsg_type != RTM_NEWNEIGH && n->nlmsg_type != RTM_DELNEIGH) {
-		fprintf(stderr, "Not RTM_NEWNEIGH: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not RTM_NEWNEIGH: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		
 		return 0;
 	}
 	len -= NLMSG_LENGTH(sizeof(*r));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -335,7 +338,7 @@ int do_show_or_flush(int argc, char **argv, int flush)
 
 	if (flush) {
 		if (argc <= 0) {
-			fprintf(stderr, "Flush requires arguments.\n");
+//			fprintf(stderr, "Flush requires arguments.\n");
 			return -1;
 		}
 		filter.state = ~(NUD_PERMANENT|NUD_NOARP);
@@ -387,7 +390,7 @@ int do_show_or_flush(int argc, char **argv, int flush)
 
 	if (filter_dev) {
 		if ((filter.index = ll_name_to_index(filter_dev)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", filter_dev);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", filter_dev);
 			return -1;
 		}
 	}
@@ -409,12 +412,12 @@ int do_show_or_flush(int argc, char **argv, int flush)
 			}
 			filter.flushed = 0;
 			if (rtnl_dump_filter(&rth, print_neigh, stdout, NULL, NULL) < 0) {
-				fprintf(stderr, "Flush terminated\n");
+//				fprintf(stderr, "Flush terminated\n");
 				exit(1);
 			}
 			if (filter.flushed == 0) {
 				if (round == 0) {
-					fprintf(stderr, "Nothing to flush.\n");
+//					fprintf(stderr, "Nothing to flush.\n");
 				} else if (show_stats)
 					printf("*** Flush is complete after %d round%s ***\n", round, round>1?"s":"");
 				fflush(stdout);
@@ -431,12 +434,12 @@ int do_show_or_flush(int argc, char **argv, int flush)
 	}
 
 	if (rtnl_wilddump_request(&rth, filter.family, RTM_GETNEIGH) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		exit(1);
 	}
 
 	if (rtnl_dump_filter(&rth, print_neigh, stdout, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		exit(1);
 	}
 
@@ -456,7 +459,7 @@ int do_ipneigh(int argc, char **argv)
 		if (matches(*argv, "delete") == 0)
 			return ipneigh_modify(RTM_DELNEIGH, 0, argc-1, argv+1);
 		if (matches(*argv, "get") == 0) {
-			fprintf(stderr, "Sorry, \"neigh get\" is not implemented :-(\n");
+//			fprintf(stderr, "Sorry, \"neigh get\" is not implemented :-(\n");
 			return -1;
 		}
 		if (matches(*argv, "show") == 0 ||
@@ -470,6 +473,6 @@ int do_ipneigh(int argc, char **argv)
 	} else
 		return do_show_or_flush(0, NULL, 0);
 
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip neigh help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip neigh help\".\n", *argv);
 	exit(-1);
 }

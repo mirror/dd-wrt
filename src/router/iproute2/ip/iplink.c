@@ -32,7 +32,11 @@
 #include "ip_common.h"
 
 
-static void usage(void) __attribute__((noreturn));
+#define usage() exit(-1);
+#define iplink_usage() exit(-1);
+
+
+/*static void usage(void) __attribute__((noreturn));
 
 void iplink_usage(void)
 {
@@ -55,10 +59,10 @@ static void usage(void)
 {
 	iplink_usage();
 }
-
+*/
 static int on_off(char *msg)
 {
-	fprintf(stderr, "Error: argument of \"%s\" must be \"on\" or \"off\"\n", msg);
+//	fprintf(stderr, "Error: argument of \"%s\" must be \"on\" or \"off\"\n", msg);
 	return -1;
 }
 
@@ -227,7 +231,7 @@ static int parse_address(const char *dev, int hatype, int halen, char *lla, stru
 	if (alen < 0)
 		return -1;
 	if (alen != halen) {
-		fprintf(stderr, "Wrong address (%s) length: expected %d bytes\n", lla, halen);
+//		fprintf(stderr, "Wrong address (%s) length: expected %d bytes\n", lla, halen);
 		return -1;
 	}
 	return 0; 
@@ -364,7 +368,7 @@ static int do_set(int argc, char **argv)
 	}
 
 	if (!dev) {
-		fprintf(stderr, "Not enough of information: \"dev\" argument is required.\n");
+//		fprintf(stderr, "Not enough of information: \"dev\" argument is required.\n");
 		exit(-1);
 	}
 
@@ -424,6 +428,6 @@ int do_iplink(int argc, char **argv)
 	} else
 		return ipaddr_list_link(0, NULL);
 
-	fprintf(stderr, "Command \"%s\" is unknown, try \"ip link help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"ip link help\".\n", *argv);
 	exit(-1);
 }

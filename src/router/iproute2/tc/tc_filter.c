@@ -32,17 +32,17 @@ static void usage(void);
 
 static void usage(void)
 {
-	fprintf(stderr, "Usage: tc filter [ add | del | change | get ] dev STRING\n");
-	fprintf(stderr, "       [ pref PRIO ] [ protocol PROTO ]\n");
-	fprintf(stderr, "       [ estimator INTERVAL TIME_CONSTANT ]\n");
-	fprintf(stderr, "       [ root | classid CLASSID ] [ handle FILTERID ]\n");
-	fprintf(stderr, "       [ [ FILTER_TYPE ] [ help | OPTIONS ] ]\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "       tc filter show [ dev STRING ] [ root | parent CLASSID ]\n");
-	fprintf(stderr, "Where:\n");
-	fprintf(stderr, "FILTER_TYPE := { rsvp | u32 | fw | route | etc. }\n");
-	fprintf(stderr, "FILTERID := ... format depends on classifier, see there\n");
-	fprintf(stderr, "OPTIONS := ... try tc filter add <desired FILTER_KIND> help\n");
+//	fprintf(stderr, "Usage: tc filter [ add | del | change | get ] dev STRING\n");
+//	fprintf(stderr, "       [ pref PRIO ] [ protocol PROTO ]\n");
+//	fprintf(stderr, "       [ estimator INTERVAL TIME_CONSTANT ]\n");
+//	fprintf(stderr, "       [ root | classid CLASSID ] [ handle FILTERID ]\n");
+//	fprintf(stderr, "       [ [ FILTER_TYPE ] [ help | OPTIONS ] ]\n");
+//	fprintf(stderr, "\n");
+//	fprintf(stderr, "       tc filter show [ dev STRING ] [ root | parent CLASSID ]\n");
+//	fprintf(stderr, "Where:\n");
+//	fprintf(stderr, "FILTER_TYPE := { rsvp | u32 | fw | route | etc. }\n");
+//	fprintf(stderr, "FILTERID := ... format depends on classifier, see there\n");
+//	fprintf(stderr, "OPTIONS := ... try tc filter add <desired FILTER_KIND> help\n");
 	return;
 }
 
@@ -81,7 +81,7 @@ int tc_filter_modify(int cmd, unsigned flags, int argc, char **argv)
 			strncpy(d, *argv, sizeof(d)-1);
 		} else if (strcmp(*argv, "root") == 0) {
 			if (req.t.tcm_parent) {
-				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
+//				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
 				return -1;
 			}
 			req.t.tcm_parent = TC_H_ROOT;
@@ -139,14 +139,14 @@ int tc_filter_modify(int cmd, unsigned flags, int argc, char **argv)
 			return 1;
 	} else {
 		if (fhandle) {
-			fprintf(stderr, "Must specify filter type when using "
-				"\"handle\"\n");
+//			fprintf(stderr, "Must specify filter type when using "
+//				"\"handle\"\n");
 			return -1;
 		}
 		if (argc) {
 			if (matches(*argv, "help") == 0)
 				usage();
-			fprintf(stderr, "Garbage instead of arguments \"%s ...\". Try \"tc filter help\".\n", *argv);
+//			fprintf(stderr, "Garbage instead of arguments \"%s ...\". Try \"tc filter help\".\n", *argv);
 			return -1;
 		}
 	}
@@ -158,13 +158,13 @@ int tc_filter_modify(int cmd, unsigned flags, int argc, char **argv)
  		ll_init_map(&rth);
 
 		if ((req.t.tcm_ifindex = ll_name_to_index(d)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", d);
 			return 1;
 		}
 	}
 
  	if (rtnl_talk(&rth, &req.n, 0, 0, NULL, NULL, NULL) < 0) {
-		fprintf(stderr, "We have an error talking to the kernel\n");
+//		fprintf(stderr, "We have an error talking to the kernel\n");
 		return 2;
 	}
 
@@ -188,12 +188,12 @@ static int print_filter(const struct sockaddr_nl *who,
 	char abuf[256];
 
 	if (n->nlmsg_type != RTM_NEWTFILTER && n->nlmsg_type != RTM_DELTFILTER) {
-		fprintf(stderr, "Not a filter\n");
+//		fprintf(stderr, "Not a filter\n");
 		return 0;
 	}
 	len -= NLMSG_LENGTH(sizeof(*t));
 	if (len < 0) {
-		fprintf(stderr, "Wrong len %d\n", len);
+//		fprintf(stderr, "Wrong len %d\n", len);
 		return -1;
 	}
 
@@ -201,7 +201,7 @@ static int print_filter(const struct sockaddr_nl *who,
 	parse_rtattr(tb, TCA_MAX, TCA_RTA(t), len);
 
 	if (tb[TCA_KIND] == NULL) {
-		fprintf(stderr, "print_filter: NULL kind\n");
+//		fprintf(stderr, "print_filter: NULL kind\n");
 		return -1;
 	}
 
@@ -275,7 +275,7 @@ int tc_filter_list(int argc, char **argv)
 			strncpy(d, *argv, sizeof(d)-1);
 		} else if (strcmp(*argv, "root") == 0) {
 			if (t.tcm_parent) {
-				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
+//				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
 				return -1;
 			}
 			filter_parent = t.tcm_parent = TC_H_ROOT;
@@ -312,7 +312,7 @@ int tc_filter_list(int argc, char **argv)
 		} else if (matches(*argv, "help") == 0) {
 			usage();
 		} else {
-			fprintf(stderr, " What is \"%s\"? Try \"tc filter help\"\n", *argv);
+//			fprintf(stderr, " What is \"%s\"? Try \"tc filter help\"\n", *argv);
 			return -1;
 		}
 
@@ -325,19 +325,19 @@ int tc_filter_list(int argc, char **argv)
 
 	if (d[0]) {
 		if ((t.tcm_ifindex = ll_name_to_index(d)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", d);
 			return 1;
 		}
 		filter_ifindex = t.tcm_ifindex;
 	}
 
  	if (rtnl_dump_request(&rth, RTM_GETTFILTER, &t, sizeof(t)) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		return 1;
 	}
 
  	if (rtnl_dump_filter(&rth, print_filter, stdout, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		return 1;
 	}
 
@@ -365,7 +365,7 @@ int do_filter(int argc, char **argv)
 		return tc_filter_list(argc-1, argv+1);
 	if (matches(*argv, "help") == 0)
 		usage();
-	fprintf(stderr, "Command \"%s\" is unknown, try \"tc filter help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"tc filter help\".\n", *argv);
 	return -1;
 }
 

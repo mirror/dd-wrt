@@ -26,45 +26,10 @@
 
 static int hfsc_get_sc(int *, char ***, struct tc_service_curve *);
 
+#define explain_qdisc()
 
-static void
-explain_qdisc(void)
-{
-	fprintf(stderr,
-		"Usage: ... hfsc [ default CLASSID ]\n"
-		"\n"
-		" default: default class for unclassified packets\n"
-	);
-}
-
-static void
-explain_class(void)
-{
-	fprintf(stderr,
-		"Usage: ... hfsc [ [ rt SC ] [ ls SC ] | [ sc SC ] ] [ ul SC ]\n"
-		"\n"
-		"SC := [ [ m1 BPS ] [ d SEC ] m2 BPS\n"
-		"\n"
-		" m1 : slope of first segment\n"
-		" d  : x-coordinate of intersection\n"
-		" m2 : slope of second segment\n"
-		"\n"
-		"Alternative format:\n"
-		"\n"
-		"SC := [ [ umax BYTE ] dmax SEC ] rate BPS\n"
-		"\n"
-		" umax : maximum unit of work\n"
-		" dmax : maximum delay\n"
-		" rate : rate\n"
-		"\n"
-	);
-}
-
-static void
-explain1(char *arg)
-{
-	fprintf(stderr, "HFSC: Illegal \"%s\"\n", arg);
-}
+#define explain_class()
+#define explain1(a)
 
 static int
 hfsc_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
@@ -77,7 +42,7 @@ hfsc_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
 		if (matches(*argv, "default") == 0) {
 			NEXT_ARG();
 			if (qopt.defcls != 0) {
-				fprintf(stderr, "HFSC: Double \"default\"\n");
+//				fprintf(stderr, "HFSC: Double \"default\"\n");
 				return -1;
 			}
 			if (get_u16(&qopt.defcls, *argv, 16) < 0) {
@@ -88,7 +53,7 @@ hfsc_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nlmsghdr *n)
 			explain_qdisc();
 			return -1;
 		} else {
-			fprintf(stderr, "HFSC: What is \"%s\" ?\n", *argv);
+//			fprintf(stderr, "HFSC: What is \"%s\" ?\n", *argv);
 			explain_qdisc();
 			return -1;
 		}
@@ -186,7 +151,7 @@ hfsc_parse_class_opt(struct qdisc_util *qu, int argc, char **argv,
 			explain_class();
 			return -1;
 		} else {
-			fprintf(stderr, "HFSC: What is \"%s\" ?\n", *argv);
+//			fprintf(stderr, "HFSC: What is \"%s\" ?\n", *argv);
 			explain_class();
 			return -1;
 		}
@@ -194,13 +159,13 @@ hfsc_parse_class_opt(struct qdisc_util *qu, int argc, char **argv,
 	}
 
 	if (!(rsc_ok || fsc_ok || usc_ok)) {
-		fprintf(stderr, "HFSC: no parameters given\n");
+//		fprintf(stderr, "HFSC: no parameters given\n");
 		explain_class();
 		return -1;
 	}
 	if (usc_ok && !fsc_ok) {
-		fprintf(stderr, "HFSC: Upper-limit Service Curve without "
-		                "Link-Share Service Curve\n");
+//		fprintf(stderr, "HFSC: Upper-limit Service Curve without "
+//		                "Link-Share Service Curve\n");
 		explain_class();
 		return -1;
 	}
@@ -243,19 +208,25 @@ hfsc_print_class_opt(struct qdisc_util *qu, FILE *f, struct rtattr *opt)
 
 	if (tb[TCA_HFSC_RSC]) {
 		if (RTA_PAYLOAD(tb[TCA_HFSC_RSC]) < sizeof(*rsc))
-			fprintf(stderr, "HFSC: truncated realtime option\n");
+{
+//			fprintf(stderr, "HFSC: truncated realtime option\n");
+}
 		else
 			rsc = RTA_DATA(tb[TCA_HFSC_RSC]);
 	}
 	if (tb[TCA_HFSC_FSC]) {
 		if (RTA_PAYLOAD(tb[TCA_HFSC_FSC]) < sizeof(*fsc))
-			fprintf(stderr, "HFSC: truncated linkshare option\n");
+{
+//			fprintf(stderr, "HFSC: truncated linkshare option\n");
+}
 		else
 			fsc = RTA_DATA(tb[TCA_HFSC_FSC]);
 	}
 	if (tb[TCA_HFSC_USC]) {
 		if (RTA_PAYLOAD(tb[TCA_HFSC_USC]) < sizeof(*usc))
-			fprintf(stderr, "HFSC: truncated upperlimit option\n");
+{
+//			fprintf(stderr, "HFSC: truncated upperlimit option\n");
+}
 		else
 			usc = RTA_DATA(tb[TCA_HFSC_USC]);
 	}
@@ -363,7 +334,7 @@ hfsc_get_sc2(int *argcp, char ***argvp, struct tc_service_curve *sc)
 		return -1;
 
 	if (umax != 0 && dmax == 0) {
-		fprintf(stderr, "HFSC: umax given but dmax is zero.\n");
+//		fprintf(stderr, "HFSC: umax given but dmax is zero.\n");
 		return -1;
 	}
 
@@ -398,7 +369,7 @@ hfsc_get_sc(int *argcp, char ***argvp, struct tc_service_curve *sc)
 		return -1;
 
 	if (sc->m1 == 0 && sc->m2 == 0) {
-		fprintf(stderr, "HFSC: Service Curve has two zero slopes\n");
+//		fprintf(stderr, "HFSC: Service Curve has two zero slopes\n");
 		return -1;
 	}
 

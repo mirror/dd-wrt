@@ -29,15 +29,15 @@ static int usage(void);
 
 static int usage(void)
 {
-	fprintf(stderr, "Usage: tc qdisc [ add | del | replace | change | get ] dev STRING\n");
-	fprintf(stderr, "       [ handle QHANDLE ] [ root | ingress | parent CLASSID ]\n");
-	fprintf(stderr, "       [ estimator INTERVAL TIME_CONSTANT ]\n");
-	fprintf(stderr, "       [ [ QDISC_KIND ] [ help | OPTIONS ] ]\n");
-	fprintf(stderr, "\n");
-	fprintf(stderr, "       tc qdisc show [ dev STRING ] [ingress]\n");
-	fprintf(stderr, "Where:\n");
-	fprintf(stderr, "QDISC_KIND := { [p|b]fifo | tbf | prio | cbq | red | etc. }\n");
-	fprintf(stderr, "OPTIONS := ... try tc qdisc add <desired QDISC_KIND> help\n");
+//	fprintf(stderr, "Usage: tc qdisc [ add | del | replace | change | get ] dev STRING\n");
+//	fprintf(stderr, "       [ handle QHANDLE ] [ root | ingress | parent CLASSID ]\n");
+//	fprintf(stderr, "       [ estimator INTERVAL TIME_CONSTANT ]\n");
+//	fprintf(stderr, "       [ [ QDISC_KIND ] [ help | OPTIONS ] ]\n");
+//	fprintf(stderr, "\n");
+//	fprintf(stderr, "       tc qdisc show [ dev STRING ] [ingress]\n");
+//	fprintf(stderr, "Where:\n");
+//	fprintf(stderr, "QDISC_KIND := { [p|b]fifo | tbf | prio | cbq | red | etc. }\n");
+//	fprintf(stderr, "OPTIONS := ... try tc qdisc add <desired QDISC_KIND> help\n");
 	return -1;
 }
 
@@ -79,14 +79,14 @@ int tc_qdisc_modify(int cmd, unsigned flags, int argc, char **argv)
 			req.t.tcm_handle = handle;
 		} else if (strcmp(*argv, "root") == 0) {
 			if (req.t.tcm_parent) {
-				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
+//				fprintf(stderr, "Error: \"root\" is duplicate parent ID\n");
 				return -1;
 			}
 			req.t.tcm_parent = TC_H_ROOT;
 #ifdef TC_H_INGRESS
 		} else if (strcmp(*argv, "ingress") == 0) {
 			if (req.t.tcm_parent) {
-				fprintf(stderr, "Error: \"ingress\" is a duplicate parent ID\n");
+//				fprintf(stderr, "Error: \"ingress\" is a duplicate parent ID\n");
 				return -1;
 			}
 			req.t.tcm_parent = TC_H_INGRESS;
@@ -133,7 +133,7 @@ int tc_qdisc_modify(int cmd, unsigned flags, int argc, char **argv)
 			if (matches(*argv, "help") == 0)
 				usage();
 
-			fprintf(stderr, "Garbage instead of arguments \"%s ...\". Try \"tc qdisc help\".\n", *argv);
+//			fprintf(stderr, "Garbage instead of arguments \"%s ...\". Try \"tc qdisc help\".\n", *argv);
 			return -1;
 		}
 	}
@@ -144,7 +144,7 @@ int tc_qdisc_modify(int cmd, unsigned flags, int argc, char **argv)
  		ll_init_map(&rth);
 
 		if ((idx = ll_name_to_index(d)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", d);
 			return 1;
 		}
 		req.t.tcm_ifindex = idx;
@@ -170,12 +170,12 @@ static int print_qdisc(const struct sockaddr_nl *who,
 	char abuf[256];
 
 	if (n->nlmsg_type != RTM_NEWQDISC && n->nlmsg_type != RTM_DELQDISC) {
-		fprintf(stderr, "Not a qdisc\n");
+//		fprintf(stderr, "Not a qdisc\n");
 		return 0;
 	}
 	len -= NLMSG_LENGTH(sizeof(*t));
 	if (len < 0) {
-		fprintf(stderr, "Wrong len %d\n", len);
+//		fprintf(stderr, "Wrong len %d\n", len);
 		return -1;
 	}
 
@@ -186,7 +186,7 @@ static int print_qdisc(const struct sockaddr_nl *who,
 	parse_rtattr(tb, TCA_MAX, TCA_RTA(t), len);
 
 	if (tb[TCA_KIND] == NULL) {
-		fprintf(stderr, "print_qdisc: NULL kind\n");
+//		fprintf(stderr, "print_qdisc: NULL kind\n");
 		return -1;
 	}
 
@@ -253,7 +253,7 @@ int tc_qdisc_list(int argc, char **argv)
 #ifdef TC_H_INGRESS
                 } else if (strcmp(*argv, "ingress") == 0) {
                              if (t.tcm_parent) {
-                                     fprintf(stderr, "Duplicate parent ID\n");
+//                                     fprintf(stderr, "Duplicate parent ID\n");
                                      usage();
                              }
                              t.tcm_parent = TC_H_INGRESS;
@@ -261,7 +261,7 @@ int tc_qdisc_list(int argc, char **argv)
 		} else if (matches(*argv, "help") == 0) {
 			usage();
 		} else {
-			fprintf(stderr, "What is \"%s\"? Try \"tc qdisc help\".\n", *argv);
+//			fprintf(stderr, "What is \"%s\"? Try \"tc qdisc help\".\n", *argv);
 			return -1;
 		}
 
@@ -272,19 +272,19 @@ int tc_qdisc_list(int argc, char **argv)
 
 	if (d[0]) {
 		if ((t.tcm_ifindex = ll_name_to_index(d)) == 0) {
-			fprintf(stderr, "Cannot find device \"%s\"\n", d);
+//			fprintf(stderr, "Cannot find device \"%s\"\n", d);
 			return 1;
 		}
 		filter_ifindex = t.tcm_ifindex;
 	}
 
  	if (rtnl_dump_request(&rth, RTM_GETQDISC, &t, sizeof(t)) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		return 1;
 	}
 
  	if (rtnl_dump_filter(&rth, print_qdisc, stdout, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		return 1;
 	}
 
@@ -314,6 +314,6 @@ int do_qdisc(int argc, char **argv)
 		return tc_qdisc_list(argc-1, argv+1);
 	if (matches(*argv, "help") == 0)
 		usage();
-	fprintf(stderr, "Command \"%s\" is unknown, try \"tc qdisc help\".\n", *argv);
+//	fprintf(stderr, "Command \"%s\" is unknown, try \"tc qdisc help\".\n", *argv);
 	return -1;
 }

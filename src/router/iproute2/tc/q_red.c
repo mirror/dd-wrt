@@ -25,11 +25,7 @@
 
 #include "tc_red.h"
 
-static void explain(void)
-{
-	fprintf(stderr, "Usage: ... red limit BYTES min BYTES max BYTES avpkt BYTES burst PACKETS\n");
-	fprintf(stderr, "               probability PROBABILITY bandwidth KBPS [ ecn ]\n");
-}
+#define explain()
 
 #define usage() return(-1)
 
@@ -52,49 +48,49 @@ static int red_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		if (strcmp(*argv, "limit") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.limit, *argv)) {
-				fprintf(stderr, "Illegal \"limit\"\n");
+//				fprintf(stderr, "Illegal \"limit\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "min") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.qth_min, *argv)) {
-				fprintf(stderr, "Illegal \"min\"\n");
+//				fprintf(stderr, "Illegal \"min\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "max") == 0) {
 			NEXT_ARG();
 			if (get_size(&opt.qth_max, *argv)) {
-				fprintf(stderr, "Illegal \"max\"\n");
+//				fprintf(stderr, "Illegal \"max\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "burst") == 0) {
 			NEXT_ARG();
 			if (get_unsigned(&burst, *argv, 0)) {
-				fprintf(stderr, "Illegal \"burst\"\n");
+//				fprintf(stderr, "Illegal \"burst\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "avpkt") == 0) {
 			NEXT_ARG();
 			if (get_size(&avpkt, *argv)) {
-				fprintf(stderr, "Illegal \"avpkt\"\n");
+//				fprintf(stderr, "Illegal \"avpkt\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "probability") == 0) {
 			NEXT_ARG();
 			if (sscanf(*argv, "%lg", &probability) != 1) {
-				fprintf(stderr, "Illegal \"probability\"\n");
+//				fprintf(stderr, "Illegal \"probability\"\n");
 				return -1;
 			}
 			ok++;
 		} else if (strcmp(*argv, "bandwidth") == 0) {
 			NEXT_ARG();
 			if (get_rate(&rate, *argv)) {
-				fprintf(stderr, "Illegal \"bandwidth\"\n");
+//				fprintf(stderr, "Illegal \"bandwidth\"\n");
 				return -1;
 			}
 			ok++;
@@ -105,7 +101,7 @@ static int red_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 			explain();
 			return -1;
 		} else {
-			fprintf(stderr, "What is \"%s\"?\n", *argv);
+//			fprintf(stderr, "What is \"%s\"?\n", *argv);
 			explain();
 			return -1;
 		}
@@ -119,24 +115,24 @@ static int red_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 		get_rate(&rate, "10Mbit");
 
 	if (!opt.qth_min || !opt.qth_max || !burst || !opt.limit || !avpkt) {
-		fprintf(stderr, "Required parameter (min, max, burst, limit, avpket) is missing\n");
+//		fprintf(stderr, "Required parameter (min, max, burst, limit, avpket) is missing\n");
 		return -1;
 	}
 
 	if ((wlog = tc_red_eval_ewma(opt.qth_min, burst, avpkt)) < 0) {
-		fprintf(stderr, "RED: failed to calculate EWMA constant.\n");
+//		fprintf(stderr, "RED: failed to calculate EWMA constant.\n");
 		return -1;
 	}
 	if (wlog >= 10)
-		fprintf(stderr, "RED: WARNING. Burst %d seems to be to large.\n", burst);
+//		fprintf(stderr, "RED: WARNING. Burst %d seems to be to large.\n", burst);
 	opt.Wlog = wlog;
 	if ((wlog = tc_red_eval_P(opt.qth_min, opt.qth_max, probability)) < 0) {
-		fprintf(stderr, "RED: failed to calculate probability.\n");
+//		fprintf(stderr, "RED: failed to calculate probability.\n");
 		return -1;
 	}
 	opt.Plog = wlog;
 	if ((wlog = tc_red_eval_idle_damping(opt.Wlog, avpkt, rate, sbuf)) < 0) {
-		fprintf(stderr, "RED: failed to calculate idle damping table.\n");
+//		fprintf(stderr, "RED: failed to calculate idle damping table.\n");
 		return -1;
 	}
 	opt.Scell_log = wlog;
@@ -144,7 +140,7 @@ static int red_parse_opt(struct qdisc_util *qu, int argc, char **argv, struct nl
 #ifdef TC_RED_ECN
 		opt.flags |= TC_RED_ECN;
 #else
-		fprintf(stderr, "RED: ECN support is missing in this binary.\n");
+//		fprintf(stderr, "RED: ECN support is missing in this binary.\n");
 		return -1;
 #endif
 	}

@@ -57,12 +57,14 @@ static int dump_msg(const struct sockaddr_nl *who, struct nlmsghdr *n,
 	return 0;
 }
 
-void usage(void)
+#define usage() exit(-1);
+
+/*void usage(void)
 {
 	fprintf(stderr, "Usage: rtmon file FILE [ all | LISTofOBJECTS]\n");
 	fprintf(stderr, "LISTofOBJECTS := [ link ] [ address ] [ route ]\n");
 	exit(-1);
-}
+}*/
 
 int
 main(int argc, char **argv)
@@ -89,9 +91,11 @@ main(int argc, char **argv)
 			else if (strcmp(argv[1], "link") == 0)
 				family = AF_INET6;
 			else if (strcmp(argv[1], "help") == 0)
+			{
 				usage();
+			}
 			else {
-				fprintf(stderr, "Protocol ID \"%s\" is unknown, try \"rtmon help\".\n", argv[1]);
+//				fprintf(stderr, "Protocol ID \"%s\" is unknown, try \"rtmon help\".\n", argv[1]);
 				exit(-1);
 			}
 		} else if (strcmp(argv[1], "-4") == 0) {
@@ -123,14 +127,14 @@ main(int argc, char **argv)
 		} else if (matches(argv[1], "help") == 0) {
 			usage();
 		} else {
-			fprintf(stderr, "Argument \"%s\" is unknown, try \"rtmon help\".\n", argv[1]);
+//			fprintf(stderr, "Argument \"%s\" is unknown, try \"rtmon help\".\n", argv[1]);
 			exit(-1);
 		}
 		argc--;	argv++;
 	}
 
 	if (file == NULL) {
-		fprintf(stderr, "Not enough information: argument \"file\" is required\n");
+//		fprintf(stderr, "Not enough information: argument \"file\" is required\n");
 		exit(-1);
 	}
 	if (llink)
@@ -150,7 +154,7 @@ main(int argc, char **argv)
 
 	fp = fopen(file, "w");
 	if (fp == NULL) {
-		perror("Cannot fopen");
+//		perror("Cannot fopen");
 		exit(-1);
 	}
 
@@ -158,14 +162,14 @@ main(int argc, char **argv)
 		exit(1);
 
 	if (rtnl_wilddump_request(&rth, AF_UNSPEC, RTM_GETLINK) < 0) {
-		perror("Cannot send dump request");
+//		perror("Cannot send dump request");
 		exit(1);
 	}
 
 	write_stamp(fp);
 
 	if (rtnl_dump_filter(&rth, dump_msg, fp, NULL, NULL) < 0) {
-		fprintf(stderr, "Dump terminated\n");
+//		fprintf(stderr, "Dump terminated\n");
 		return 1;
 	}
 

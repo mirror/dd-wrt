@@ -42,14 +42,14 @@ int print_prefix(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 	int family = preferred_family;
 
 	if (n->nlmsg_type != RTM_NEWPREFIX) {
-		fprintf(stderr, "Not a prefix: %08x %08x %08x\n",
-			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
+//		fprintf(stderr, "Not a prefix: %08x %08x %08x\n",
+//			n->nlmsg_len, n->nlmsg_type, n->nlmsg_flags);
 		return 0;
 	}
 
 	len -= NLMSG_LENGTH(sizeof(*prefix));
 	if (len < 0) {
-		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
+//		fprintf(stderr, "BUG: wrong nlmsg len %d\n", len);
 		return -1;
 	}
 
@@ -59,11 +59,11 @@ int print_prefix(const struct sockaddr_nl *who, struct nlmsghdr *n, void *arg)
 		return 0;
 
 	if (prefix->prefix_family != AF_INET6) {
-		fprintf(stderr, "wrong family %d\n", prefix->prefix_family);
+//		fprintf(stderr, "wrong family %d\n", prefix->prefix_family);
 		return 0;
 	}
 	if (prefix->prefix_type != ND_OPT_PREFIX_INFORMATION) {
-		fprintf(stderr, "wrong ND type %d\n", prefix->prefix_type);
+//		fprintf(stderr, "wrong ND type %d\n", prefix->prefix_type);
 		return 0;
 	}
 
