@@ -2802,10 +2802,7 @@ start_pppoe (int pppoe_num)
 #if LOG_PPPOE == 2
     "-d",
 #endif
-    /* Removed by AhMan */
-/*
-                "-C", "disconnected_pppoe", //by tallest 0407
-*/
+    "-C", "disconnected_pppoe", //by tallest 0407
     NULL,			/* set default route */
     NULL, NULL,			/* pppoe_service */
     NULL, NULL,			/* pppoe_ac */
