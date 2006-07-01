@@ -20,7 +20,7 @@ endif
 
 ifeq ($(TARGET_ARCH),linux)
 	ARCH_SPECIFIC_LIBS += 
-	ARCH_SPECIFIC_CFLAGS += 
+	ARCH_SPECIFIC_CFLAGS += $(COPTS)
 endif
 
 ifdef DEBUG
