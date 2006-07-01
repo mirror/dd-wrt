@@ -47,6 +47,7 @@ static RC_TYPE get_username_handler(CMD_DATA *p_cmd, int current_nr, void *p_con
 static RC_TYPE get_password_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_alias_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_dns_server_name_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+static RC_TYPE get_dns_server_url_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_ip_server_name_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_dyndns_system_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE get_update_period_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
@@ -59,6 +60,8 @@ static RC_TYPE get_proxy_server_handler(CMD_DATA *p_cmd, int current_nr, void *p
 static RC_TYPE get_options_from_file_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE set_iterations_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE set_syslog_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+static RC_TYPE set_change_persona_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+static RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 
 static CMD_DESCRIPTION_TYPE cmd_options_table[] = 
 {
@@ -74,23 +77,32 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 	{"--alias",		1,	{get_alias_handler, NULL},	"alias host name. this option can appear multiple times." },
 	{"-a",			1,	{get_alias_handler, NULL},	"alias host name. this option can appear multiple times." },
 
-	{"--input_file", 1, {get_options_from_file_handler, NULL}, "the file containing [further] inadyn options."
+	{DYNDNS_INPUT_FILE_OPT_STRING, 1, {get_options_from_file_handler, NULL}, "the file containing [further] inadyn options."
 			"The default config file, '" DYNDNS_DEFAULT_CONFIG_FILE "' is used if inadyn is called without any cmd line options." },
 	
-	{DYNDNS_INPUT_FILE_OPT_STRING,	1,	{get_ip_server_name_handler, NULL},
-        "[NAME] - local IP is detected calling a CGI from this server name. default checkip.dyndns.org"},
+	{"--ip_server_name",	2,	{get_ip_server_name_handler, NULL},
+        "<srv_name[:port] local_url> - local IP is detected by parsing the response after returned by this server and URL. \n"
+		"\t\tThe first IP in found in http response is considered 'my IP'. \n"
+		"\t\tDefault value: 'checkip.dyndns.org /"},
 
 	{"--dyndns_server_name", 1,	{get_dns_server_name_handler, NULL},	
             "[<NAME>[:port]] \n"
             "\t\tThe server that receives the update DNS request.  \n"
-            "\t\tFor dyndns.org is: members.dyndns.org. \n"
-            "\t\tFor freedns.afraid.org is: freedns.afraid.org \n"
+            "\t\tAllows the use of unknown DNS services that accept HTTP updates.\n"  
             "\t\tIf no proxy is wanted, then it is enough to set the dyndns system. The default servers will be taken."},
+
+	{"--dyndns_server_url", 1, {get_dns_server_url_handler, NULL},	
+            "<name>\n"
+			"\tfull URL relative to DynDNS server root.\n"
+			"\tEx: /some_script.php?hostname=\n"},	
 
 	{"--dyndns_system",	1,	{get_dyndns_system_handler, NULL},	
             "[NAME] - optional DYNDNS service type. SHOULD be one of the following: \n"
-            "\t\t-For dyndns.org DNS system: dyndns@dyndns.org OR statdns@dyndns.org OR custom@dyndns.org.\n"
+            "\t\t-For dyndns.org DNS system: dyndns@dyndns.org OR statdns@dyndns.org OR customdns@dyndns.org.\n"
             "\t\t-For freedns.afraid.org DNS system: default@freedns.afraid.org\n"
+            "\t\t-For www.zoneedit.com DNS system: default@zoneedit.com\n"
+            "\t\t-For www.no-ip.com DNS system: default@no-ip.com\n"
+			"\t\t-For generic DNS system: custom@http_svr_basic_auth\n"
             "\t\tDEFAULT value is intended for default service at dyndns.org (most users): dyndns@dyndns.org"},
 
     {"--proxy_server", 1, {get_proxy_server_handler, NULL},
@@ -107,11 +119,13 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 
 	{"--iterations",	1,	{set_iterations_handler, NULL},	"set the number of DNS updates. Default is 0, which means infinity."},
 	{"--syslog",	0,	{set_syslog_handler, NULL},	"force logging to syslog . (e.g. /var/log/messages). Works on **NIX systems only."},
+	{"--change_persona", 1, {set_change_persona_handler, NULL}, "after init switch to a new user/group. Parameters: <uid[:gid]> to change to. Works on **NIX systems only."},
+	{"--version", 0, {print_version_handler, NULL}, "print the version number\n"},
 	{NULL,		0,	{0, NULL},	NULL }
 };
 
 
-static void print_help_page(void)
+void print_help_page(void)
 {
 	printf("\n\n\n"
 	"			INADYN Help\n\n"
@@ -143,8 +157,14 @@ static void print_help_page(void)
 
 static RC_TYPE help_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 {
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	if (p_self == NULL)
+	{
+		return RC_INVALID_POINTER;
+	}
+	p_self->abort = TRUE;
 	print_help_page();
-	return RC_ERROR;
+	return RC_OK;
 }
 
 static RC_TYPE set_verbose_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
@@ -316,7 +336,7 @@ static RC_TYPE get_name_and_port(char *p_src, char *p_dest_name, int *p_dest_por
 }
 
 /** Returns the svr name and port if the format is :
- * name:port.
+ * name[:port] url.
  */
 static RC_TYPE get_ip_server_name_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 {
@@ -330,7 +350,7 @@ static RC_TYPE get_ip_server_name_handler(CMD_DATA *p_cmd, int current_nr, void 
 	}
 
 	/*user*/
-	if (sizeof(p_self->info.ip_server_name) < strlen(p_cmd->argv[current_nr]))
+	if (sizeof(p_self->info.ip_server_name) < strlen(p_cmd->argv[current_nr]) + 1)
 	{
 		return  RC_DYNDNS_BUFFER_TOO_SMALL;
 	}
@@ -340,7 +360,14 @@ static RC_TYPE get_ip_server_name_handler(CMD_DATA *p_cmd, int current_nr, void 
     if (rc == RC_OK && port != -1)
     {
         p_self->info.ip_server_name.port = port;
-    }                                   
+    }        
+
+	if (sizeof(p_self->info.ip_server_url) < strlen(p_cmd->argv[current_nr + 1]) + 1)
+	{
+		return  RC_DYNDNS_BUFFER_TOO_SMALL;
+	}
+	strcpy(p_self->info.ip_server_url, p_cmd->argv[current_nr + 1]);
+
 	return rc;
 }
 
@@ -370,6 +397,23 @@ static RC_TYPE get_dns_server_name_handler(CMD_DATA *p_cmd, int current_nr, void
 	return rc;
 }
 
+RC_TYPE get_dns_server_url_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
+{
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	if (p_self == NULL)
+	{
+		return RC_INVALID_POINTER;
+	}
+
+	/*name*/
+	if (sizeof(p_self->info.dyndns_server_url) < strlen(p_cmd->argv[current_nr]))
+	{
+		return  RC_DYNDNS_BUFFER_TOO_SMALL;
+	}
+	strcpy(p_self->info.dyndns_server_url, p_cmd->argv[current_nr]);
+	return RC_OK;
+}
+
 /* returns the proxy server nme and port
 */
 static RC_TYPE get_proxy_server_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
@@ -397,10 +441,10 @@ static RC_TYPE get_proxy_server_handler(CMD_DATA *p_cmd, int current_nr, void *p
     }                                   
 	return rc;    
 }
+
 /* Read the dyndnds name update period.
    and impose the max and min limits
 */
-
 static RC_TYPE get_update_period_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 {
 	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
@@ -467,6 +511,55 @@ static RC_TYPE set_syslog_handler(CMD_DATA *p_cmd, int current_nr, void *p_conte
 	return RC_OK;
 }
 
+/**
+ * Reads the params for change persona. Format:
+ * <uid[:gid]>
+ */
+static RC_TYPE set_change_persona_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
+{
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	if (p_self == NULL)
+	{
+		return RC_INVALID_POINTER;
+	}
+
+	{
+		int gid = -1;
+		int uid = -1;
+
+		char *p_gid = strstr(p_cmd->argv[current_nr],":");
+		if (p_gid)
+		{
+			if ((strlen(p_gid + 1) > 0) &&  /* if something is present after :*/
+				sscanf(p_gid + 1, "%d",&gid) != 1)
+			{
+				return RC_DYNDNS_INVALID_OPTION;
+			}
+		}
+		if (sscanf(p_cmd->argv[current_nr], "%d",&uid) != 1)
+		{
+			return RC_DYNDNS_INVALID_OPTION;
+		}
+
+		p_self->change_persona = TRUE;
+		p_self->sys_usr_info.gid = gid;
+		p_self->sys_usr_info.uid = uid;
+	}
+	return RC_OK;
+}
+
+RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
+{
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	if (p_self == NULL)
+	{
+		return RC_INVALID_POINTER;
+	}
+
+	DBG_PRINTF((LOG_INFO, "Version: %s\n", DYNDNS_VERSION_STRING));
+	p_self->abort = TRUE;
+	return RC_OK;
+}
 /** 
     Searches the DYNDNS system by the argument.
     Input is like: system@server.name
@@ -829,10 +922,12 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 			rc = get_cmd_parse_data(argv, argc, cmd_options_table);
 		}
 
-		if (rc != RC_OK)
+		if (rc != RC_OK ||
+			p_self->abort)
 		{
 			break;
 		}	
+
         /*settings that may change due to cmd line options*/
         {
     		/*ip server*/
@@ -844,6 +939,13 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
                     break;
                 }
                 strcpy(p_self->info.ip_server_name.name, p_self->info.p_dns_system->p_ip_server_name);
+
+                if (sizeof(p_self->info.ip_server_url) < strlen(p_self->info.p_dns_system->p_ip_server_url))
+                {
+                    rc = RC_DYNDNS_BUFFER_TOO_SMALL;
+                    break;
+                }
+                strcpy(p_self->info.ip_server_url, p_self->info.p_dns_system->p_ip_server_url);				
             }
             
     		/*dyndns server*/
@@ -855,6 +957,13 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
         			break;
         		}
         		strcpy(p_self->info.dyndns_server_name.name, p_self->info.p_dns_system->p_dyndns_server_name);
+
+        		if (sizeof(p_self->info.dyndns_server_url) < strlen(p_self->info.p_dns_system->p_dyndns_server_url))
+        		{
+        			rc = RC_DYNDNS_BUFFER_TOO_SMALL;
+        			break;
+        		}
+        		strcpy(p_self->info.dyndns_server_url, p_self->info.p_dns_system->p_dyndns_server_url);
             }
         }
 
@@ -874,11 +983,6 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv)
 
 	}
 	while(0);
-
-	if (rc != RC_OK)
-	{
-		print_help_page();
-	}
 
 	return rc;
 }

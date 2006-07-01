@@ -23,7 +23,7 @@ inadyn \- a client for open DNS servers.
 \ ... ]] [\-\-input_file 
 .I path/name
 ] [\-\-ip_server_name
-.I server
+.I server[:port] url
 ] [\-\-dyndns_server_name[:port]
 .I server[:port]
 ] [\-\-dyndns_system
@@ -43,6 +43,9 @@ inadyn \- a client for open DNS servers.
 ] [\-\-iterations
 .I iterations
 ] [\-\-syslog]
+] [\-\-change_persona 
+.I uid[:gid]
+]
 .SH DESCRIPTION
 .B inadyn
 is a client for `open' name servers. That is, it let the user have an
@@ -93,22 +96,16 @@ for a **NIX config   the hash character is used to comment entire
 lines. Spaces are ingored. The long options may be specified without 
 \-\- if placed at the beginning of the line.
 .TP
-.I \-\-ip_server_name
-The client IP is detected by calling a CGI from this server name.
-Defaults to checkip.dyndns.org.
+.I \-\-ip_server_name[:port] url
+The client IP is detected by calling 'url' from this 'ip_server_name:port'.
+Defaults to checkip.dyndns.org:80 /.
 .TP
 .I \-\-dyndns_server_name[:port]
-The server that receives the update DNS requests. The Default is
-members.dyndns.org when
-.UR
-http://www.dyndns.org
-.UE
-is being used and freedns.afraid.org when
-.UR
-http://freedns.afraid.org
-.UE
-is being used. When no proxy is specified it is sufficient to set the
-dyndns_system so that the default servers will be taken.
+The server that receives the update DNS requests. When no proxy is specified it is sufficient to set the
+dyndns_system so that the default servers will be taken. The option is useful for generic DynDNS services that support HTTP update.
+.TP
+.I \-\-dyndns_server_url name
+The update path inside the DynDNS server. 
 .TP
 .I \-\-dyndns_system
 An optional DNS service. For 
@@ -120,7 +117,7 @@ or custom@dyndns.org. There is only one acceptable service for
 .UR
 http://freedns.afraid.org
 .UE
-, which is default@freedns.afraid.org. The default service is 
+, which is default@freedns.afraid.org. Other services are: default@zoneedit.com, custom@http_svr_basic_auth. The default service is 
 dyndns@dyndns.org, which is believed to be used by most users, at least
 initially.
 .TP
@@ -156,6 +153,10 @@ Set the number of DNS updates. The default is 0, which means infinity.
 .I \-\-syslog
 Explicitly sending the output to a syslog like file, such as 
 /var/log/messages.
+.TP
+.I \-\-change_persona uid[:gid]
+After init changes user ID and group ID to the provided ones. This allows dropping unneeded [root] privileges after startup.
+
 
 .SH "TYPICAL USAGE"
 .SS
@@ -212,6 +213,10 @@ of dots. When the connection goes down it could be that
 .B inadyn
 will print some error messages. Those are harmless and should be 
 followed by 'OK' messages after the connection is back up.
+
+.SH Signals
+Any of the SIG_HUP, SIG_INT, SIG_QUIT will cause inadyn to terminate gracefully.
+
 .SH "SEE ALSO"
 .SS "Other manual pages"
 The syntax of the optional configuration file is given by

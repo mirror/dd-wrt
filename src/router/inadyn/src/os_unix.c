@@ -15,12 +15,18 @@ You should have received a copy of the GNU General Public License
 along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
+
+#define MODULE_TAG "OS_UNIX:"
+#include "debug_if.h"
   
 #include "os.h"
+#include "dyndns.h"
 
 #ifdef UNIX_OS
 #include <unistd.h>
 #include <sys/stat.h>
+
+#include "debug_if.h"
 
 void os_sleep_ms(int ms)
 {
@@ -42,11 +48,68 @@ RC_TYPE os_ip_support_cleanup(void)
     return RC_OK;
 }
 
+/* storage fot the parameter needed by the handler */
+static void *global_p_signal_handler_param = NULL;
 
-/* MAIN FUNCTION */
-RC_TYPE os_install_signal_handler(OS_SIGNAL_HANDLER_TYPE hand)
+/** The actual handler 
+	Stops on almost everything .
+*/
+static void unix_signal_handler(int signo)
+{	
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) global_p_signal_handler_param;
+	if (p_self == NULL)
+	{
+		DBG_PRINTF((LOG_WARNING,MODULE_TAG "Signal '0x%x' received. But handler not correctly installed.\n", signo));		
+		return;
+	}
+	switch(signo)
+	{
+		case SIGHUP:
+		case SIGINT:
+		case SIGQUIT:
+		case SIGALRM:
+			DBG_PRINTF((LOG_DEBUG,MODULE_TAG "Signal '0x%x' received. Sending 'Shutdown cmd'.\n", signo));
+			p_self->cmd = CMD_STOP;			
+		break;
+	
+		default:
+			DBG_PRINTF((LOG_DEBUG,MODULE_TAG "Signal '0x%x' received. Ignored.\n", signo));
+		break;
+	}
+	return;
+} 
+
+/**
+	install handler for SIGALRM and HUP, INT, QUIT.
+	avoid receiving HIP,INT, QUIT during ALRM and 
+	
+*/
+RC_TYPE os_install_signal_handler(void *p_dyndns)
 {
-    return RC_OK;
+	RC_TYPE rc;
+    struct sigaction    newact;
+	newact.sa_handler = unix_signal_handler;
+	newact.sa_flags   = 0;
+
+    rc = sigemptyset(&newact.sa_mask)              ||
+	         sigaddset(&newact.sa_mask, SIGHUP)   ||
+	         sigaddset(&newact.sa_mask, SIGINT)   ||
+	         sigaddset(&newact.sa_mask, SIGQUIT)  ||
+             sigaction(SIGALRM, &newact, NULL)    ||
+             sigemptyset(&newact.sa_mask)          ||
+	         sigaddset(&newact.sa_mask, SIGALRM)  ||
+             sigaction(SIGHUP, &newact, NULL)     ||
+             sigaction(SIGINT, &newact, NULL)     ||
+             sigaction(SIGQUIT, &newact, NULL);
+ 	if (rc != RC_OK)
+ 	{
+ 		DBG_PRINTF((LOG_WARNING,"DYNDNS: Error '%s' (0x%x) installing OS signal handler\n", rc));
+	}
+	else
+	{
+		global_p_signal_handler_param = p_dyndns;
+	}
+	return rc;
 }
 
 /*
@@ -111,4 +174,33 @@ RC_TYPE os_syslog_close(void)
     return RC_OK;
 }
 
-#endif 
+RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info)
+{
+	int rc;
+	do
+	{	 
+		if (p_usr_info->gid != -1) 
+		{
+			if ((rc = setgid(p_usr_info->gid)) != 0)
+			{
+				break;
+			}
+		}
+
+		if (p_usr_info->uid != -1) 
+		{			
+			if ((rc = setuid(p_usr_info->uid)) != 0)
+			{
+				break;
+			}    	
+		}
+	}
+	while(0);
+	if (rc != 0)
+    {
+		DBG_PRINTF((LOG_WARNING, "Error changing uid/gid. OS err=0x%x\n",errno));
+		return RC_OS_CHANGE_PERSONA_FAILURE;
+	}
+	return RC_OK;
+}
+#endif

@@ -137,6 +137,14 @@ typedef struct
 	void *p_in_data;
 } OS_SIGNAL_HANDLER_TYPE;
 
+typedef struct
+{
+	int uid;
+	int gid;
+} OS_USER_INFO;
+
+RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info);
+
 /* Blocks a thread the specified number of milliseconds*/
 void os_sleep_ms(int ms);
 
@@ -152,7 +160,7 @@ RC_TYPE os_ip_support_startup(void);
 RC_TYPE os_ip_support_cleanup(void);
 
 /* OS SIGNALS */
-RC_TYPE os_install_signal_handler(OS_SIGNAL_HANDLER_TYPE);
+RC_TYPE os_install_signal_handler(void*);
 
 /*
     returns the inet addr of a char* begining with an IP address: "nnn.nnn.nnn.nnn"
