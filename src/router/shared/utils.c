@@ -1747,9 +1747,11 @@ wds_dev_config (int dev, int up)
   if ((wds = nvram_safe_get (wds_enable_var)) == NULL ||
       strcmp (wds, "0") == 0)
     return -1;
-
+#ifdef HAVE_MSSID
+  snprintf (wds_dev, 31, "wds0.%d", dev + 1);
+#else
   snprintf (wds_dev, 31, "wds0.491%d", 50 + dev + 1);
-
+#endif
   snprintf (ifr.ifr_name, IFNAMSIZ, wds_dev);
 #ifdef WDS_DEBUG
   fprintf (fp, "opening kernelsocket\n");

@@ -2292,7 +2292,7 @@ show_wep (webs_t wp, char *prefix)
 void
 validate_wds (webs_t wp, char *value, struct variable *v)
 {
-  int h, i, devcount = 3;	//changed from 2 to 3
+  int h, i, devcount = 1;	//changed from 2 to 3
   struct variable wds_variables[] = {
   {longname: "WDS Mac", argv:NULL},
   {longname: "WDS IP Address", argv:NULL},
@@ -2479,7 +2479,11 @@ validate_wds (webs_t wp, char *value, struct variable *v)
       snprintf (wdsif_var, 31, "%s_if", wds);
       if (!nvram_match (enabled_var, "0"))
 	{
+#ifdef HAVE_MSSID
+	  snprintf (wds_if, 31, "wds0.%d", (devcount++));
+#else
 	  snprintf (wds_if, 31, "wds0.491%d", 50 + (devcount++));
+#endif
 	  nvram_set (wdsif_var, wds_if);
 	}
       else
