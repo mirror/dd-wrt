@@ -1,11 +1,18 @@
 <script type="text/javascript">
 function setStyle(val) {
 	var linkTags = document.getElementsByTagName("link");
-	if(linkTags[0].href.indexOf("/" + val + "/") != -1) return false;
-	linkTags[0].href = "style/" + val + "/style.css";
-	if(linkTags[1]) linkTags[1].href = "style/" + val + "/style_ie.css";
+	for(var i = 0; i < linkTags.length; i++) {
+		var t = linkTags[i];
+		if(t.getAttribute("rel") != "stylesheet") continue;
+		if(t.getAttribute("href").indexOf("/" + val + "/") != -1) return false;
+		var newStyle = t.getAttribute("href").replace(/style\/\w+\//, "style/" + val + "/");
+		t.removeAttribute("href");
+		t.setAttribute("href", newStyle);
+	}
 }
-document.forms[0].onreset = function() { setStyle("<% nvram_get("router_style"); %>"); }
+document.forms[0].onreset = function() { 
+	setStyle("<% nvram_get("router_style"); %>"); 
+}
 </script>
 <fieldset>
 	<legend><% tran("management.gui_style"); %></legend>
@@ -15,6 +22,5 @@ document.forms[0].onreset = function() { setStyle("<% nvram_get("router_style");
 		    <% show_styles(); %>
 		</select>&nbsp;
 		<script type="text/javascript">document.write("<input type=\"button\" name=\"preview_button\" value=\"" + sbutton.preview + "\" onclick=\"setStyle(this.form.router_style.value)\" />")</script>
-		<!--[if lt IE 7]><script>setElementVisible("preview_button", false);</script><![endif]-->
 	</div>
 </fieldset><br />
