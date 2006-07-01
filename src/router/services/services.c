@@ -1463,7 +1463,7 @@ start_nas (char *type, char *prefix)
 	    {
 	    fprintf(stderr,"%s ",argv[arg++]);
 	    }
-	fprintf("\n");
+	fprintf(stderr,"\n");
 	  _eval (argv, NULL, 0, &pid);
 	}
       else
@@ -1481,7 +1481,7 @@ start_nas (char *type, char *prefix)
 	    {
 	    fprintf(stderr,"%s ",argv[arg++]);
 	    }
-	fprintf("\n");
+	fprintf(stderr,"\n");
 	  _eval (argv, NULL, 0, &pid);
 	}
 
