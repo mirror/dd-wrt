@@ -1421,7 +1421,7 @@ start_nas (char *type, char *prefix)
 
     if (0 == type || 0 == *type)
       type = "lan";
- if (!strcmp(typ,"lan") && nvram_invmatch(apmode,"ap"))
+ if (!strcmp(type,"lan") && nvram_invmatch(apmode,"ap"))
     iface="br0";
  else  
       {
