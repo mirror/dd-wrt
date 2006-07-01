@@ -158,7 +158,7 @@ CONFIG_MKDIR=y
 # CONFIG_PRINTF is not set
 # CONFIG_PWD is not set
 # CONFIG_REALPATH is not set
-# CONFIG_RM is not set
+CONFIG_RM=y
 # CONFIG_RMDIR is not set
 # CONFIG_SEQ is not set
 # CONFIG_SHA1SUM is not set
