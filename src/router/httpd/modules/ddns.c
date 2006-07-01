@@ -222,7 +222,6 @@ ddns_save_value (webs_t wp)
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
       snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype");
-      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
     }
   else if (atoi (enable) == 2)
     {				// afraid
