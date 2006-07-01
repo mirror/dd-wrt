@@ -192,7 +192,7 @@ ddns_save_value (webs_t wp)
 {
   char *enable, *username, *passwd, *hostname, *dyndnstype;
   struct variable ddns_variables[] = {
-  {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4")},
+  {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5")},
   {longname: "DDNS password", argv:ARGV ("30")},
   }, *which;
   int ret = -1;
@@ -237,6 +237,12 @@ ddns_save_value (webs_t wp)
     }
   else if (atoi (enable) == 4)
     {				// no-ip
+      snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
+      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
+      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
+    }
+  else if (atoi (enable) == 5)
+    {				// custom
       snprintf (_username, sizeof (_username), "ddns_username_%s", enable);
       snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
       snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);

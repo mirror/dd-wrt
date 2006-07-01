@@ -64,6 +64,11 @@ init_ddns (void)
       strcpy (service, "default@no-ip.com");
       flag = 4;
     }
+  else if (nvram_match ("ddns_enable", "5"))
+    {
+      strcpy (service, nvram_safe_get ("ddns_custom_5"));
+      flag = 5;
+    }
 
   if (flag == 1)
     {
@@ -90,6 +95,12 @@ init_ddns (void)
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_4");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_4");
     }
+  else if (flag == 5)
+    {
+      snprintf (_username, sizeof (_username), "%s", "ddns_username_5");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_5");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_5");
+    }
 
   return 0;
 }
@@ -110,24 +121,24 @@ start_ddns (void)
     return -1;
 
   /* Generate ddns configuration file */
-  if ((fp = fopen ("/tmp/inadyn.conf", "w")))
+  if ((fp = fopen ("/tmp/ddns/inadyn.conf", "w")))
     {
       fprintf (fp, "--background")
-      fprintf (fp, " --dyndns_system %s", service);
-      fprintf (fp, " -u %s", nvram_safe_get (_username));
-      fprintf (fp, " -p %s", nvram_safe_get (_password));
-      fprintf (fp, " -a %s", nvram_safe_get (_hostname));
-      fprintf (fp, " --update_period_sec %s", "3600");
-      fprintf (fp, " --forced_update_period %s", "2160000");
-      fprintf (fp, " --syslog")
+      fprintf (fp, " --dyndns_system %s", service); //service
+      fprintf (fp, " -u %s", nvram_safe_get (_username)); //username/email
+      fprintf (fp, " -p %s", nvram_safe_get (_password)); // password
+      fprintf (fp, " -a %s", nvram_safe_get (_hostname)); // alias/hostname
+      fprintf (fp, " --update_period_sec %s", "3600"); // check ip every hour
+      fprintf (fp, " --forced_update_period %s", "2160000"); //force update after 25days
+      fprintf (fp, " --log_file", "/tmp/ddns/indyn.log") //log to file
     }
   else
     {
-      perror ("/tmp/inadyn.conf");
+      perror ("/tmp/ddns/inadyn.conf");
       return -1;
     }
 
-  ret = eval ("inadyn", "--input_file", "/tmp/inadyn.conf");
+  ret = eval ("inadyn", "--input_file", "/tmp/ddns/inadyn.conf");
 
   cprintf ("done\n");
 
@@ -157,7 +168,6 @@ ddns_success_main (int argc, char *argv[])
 
   snprintf (buf, sizeof (buf), "%ld,%s", time (NULL), argv[1]);
 
-  nvram_set ("ddns_cache", buf);
   nvram_set ("ddns_status", "1");
   nvram_set ("ddns_enable_buf", nvram_safe_get ("ddns_enable"));
   nvram_set ("ddns_username_buf", nvram_safe_get (_username));
