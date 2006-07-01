@@ -132,7 +132,7 @@ function SelDDNS(num,F) {
 										<option value="2" <% nvram_selmatch("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
 										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %> >zoneedit.com</option>
 										<option value="4" <% nvram_selmatch("ddns_enable", "4", "selected"); %> >no-ip.com</option>
-										<option value="4" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >custom</option>
+										<option value="5" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >custom</option>
 									</select>
 								</div>
 								<% nvram_selmatch("ddns_enable","0","<!--"); %>
