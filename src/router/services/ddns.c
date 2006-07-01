@@ -129,7 +129,8 @@ start_ddns (void)
       fprintf (fp, " -a %s", nvram_safe_get (_hostname)); // alias/hostname
       fprintf (fp, " --update_period_sec %s", "3600"); // check ip every hour
       fprintf (fp, " --forced_update_period %s", "2160000"); //force update after 25days
-      fprintf (fp, " --log_file", "/tmp/ddns.log"); //log to file
+      fprintf (fp, " --log_file", "/tmp/ddns.log\n"); //log to file
+      fclose (fp);
     }
   else
     {
