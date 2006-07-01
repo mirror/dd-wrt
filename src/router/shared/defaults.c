@@ -775,7 +775,7 @@ struct nvram_tuple router_defaults[] = {
 
   /* for DDNS */
   /* for dyndns */
-  {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip */
+  {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip 5:custom */
   {"ddns_username", "", 0},	/* DynDNS Username */
   {"ddns_passwd", "", 0},	/* DynDNS Password */
   {"ddns_hostname", "", 0},	/* DynDNS Hostname */
@@ -792,6 +792,11 @@ struct nvram_tuple router_defaults[] = {
   {"ddns_username_4", "", 0}, 
   {"ddns_passwd_4", "", 0}, 
   {"ddns_hostname_4", "", 0}, 
+  /* for custom */
+  {"ddns_username_5", "", 0}, 
+  {"ddns_passwd_5", "", 0}, 
+  {"ddns_hostname_5", "", 0}, 
+  {"ddns_custom_5", "", 0}, 
 
   /* for last value */
   {"ddns_enable_buf", "", 0},	/* 0:Disable 1:Eanble */
