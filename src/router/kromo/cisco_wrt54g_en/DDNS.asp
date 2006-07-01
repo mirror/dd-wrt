@@ -149,6 +149,14 @@ function SelDDNS(num,F) {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname"); %>" />
 								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.typ"); %></div>
+									<select name="ddns_dyndnstype">
+										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype", "1", "selected"); %> >" + ddns.dynamic + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");</script>
+										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");</script>
+									</select>
+								</div>
 								<% nvram_invmatch("ddns_enable","1","-->"); %>
 								<% nvram_invmatch("ddns_enable","2","<!--"); %>
 								<div class="setting">
@@ -185,7 +193,7 @@ function SelDDNS(num,F) {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_4","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" name="ddns_passwd_4" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_4","","d6nw5v1x2pc7st9m"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
@@ -203,21 +211,13 @@ function SelDDNS(num,F) {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.passwd"); %></div>
-									<input type="password" name="ddns_passwd_3" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_5","","d6nw5v1x2pc7st9m"); %>" />
+									<input type="password" name="ddns_passwd_5" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_5","","d6nw5v1x2pc7st9m"); %>" />
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_5" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_5"); %>" />
 								</div>
 								<% nvram_invmatch("ddns_enable","5","-->"); %>
-								<div class="setting">
-									<div class="label"><% tran("ddns.typ"); %></div>
-									<select name="ddns_dyndnstype">
-										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype", "1", "selected"); %> >" + ddns.dynamic + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");</script>
-										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");</script>
-									</select>
-								</div>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
