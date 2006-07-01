@@ -25,7 +25,6 @@
 /* inadyn scripts by lawnmowerguy1 */
 
 char service[32];
-char disable_ip[20];
 char _username[] = "ddns_username_X";
 char _passwd[] = "ddns_passwd_X";
 char _hostname[] = "ddns_hostname_X";
@@ -121,7 +120,7 @@ start_ddns (void)
     return -1;
 
   /* Generate ddns configuration file */
-  if ((fp = fopen ("/tmp/ddns/inadyn.conf", "w")))
+  if ((fp = fopen ("/tmp/inadyn.conf", "w")))
     {
       fprintf (fp, "--background");
       fprintf (fp, " --dyndns_system %s", service); //service
@@ -130,15 +129,15 @@ start_ddns (void)
       fprintf (fp, " -a %s", nvram_safe_get (_hostname)); // alias/hostname
       fprintf (fp, " --update_period_sec %s", "3600"); // check ip every hour
       fprintf (fp, " --forced_update_period %s", "2160000"); //force update after 25days
-      fprintf (fp, " --log_file", "/tmp/ddns/inadyn.log"); //log to file
+      fprintf (fp, " --log_file", "/tmp/ddns.log"); //log to file
     }
   else
     {
-      perror ("/tmp/ddns/inadyn.conf");
+      perror ("/tmp/inadyn.conf");
       return -1;
     }
 
-  ret = eval ("inadyn", "--input_file", "/tmp/ddns/inadyn.conf");
+  ret = eval ("inadyn", "--input_file", "/tmp/inadyn.conf");
 
   cprintf ("done\n");
 
