@@ -775,16 +775,24 @@ struct nvram_tuple router_defaults[] = {
 
   /* for DDNS */
   /* for dyndns */
-  {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:tzo */
+  {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip */
   {"ddns_username", "", 0},	/* DynDNS Username */
   {"ddns_passwd", "", 0},	/* DynDNS Password */
   {"ddns_hostname", "", 0},	/* DynDNS Hostname */
   {"ddns_dyndnstype", "", 0},	/* DynDNS Type */
-  {"ddns_wildcard", "", 0},	/* DynDNS Wildcard */
-  /* for tzo */
-  {"ddns_username_2", "", 0},	/* TZO Email Address */
-  {"ddns_passwd_2", "", 0},	/* TZO Password Key */
-  {"ddns_hostname_2", "", 0},	/* TZO Domain Name */
+  /* for afraid.org */
+  {"ddns_username_2", "", 0}, 
+  {"ddns_passwd_2", "", 0}, 
+  {"ddns_hostname_2", "", 0}, 
+  /* for zoneedit */
+  {"ddns_username_3", "", 0}, 
+  {"ddns_passwd_3", "", 0}, 
+  {"ddns_hostname_3", "", 0}, 
+  /* for no-ip */
+  {"ddns_username_4", "", 0},.
+  {"ddns_passwd_4", "", 0},
+  {"ddns_hostname_4", "", 0},
+
   /* for last value */
   {"ddns_enable_buf", "", 0},	/* 0:Disable 1:Eanble */
   {"ddns_username_buf", "", 0},	/* DDNS username */
@@ -792,8 +800,7 @@ struct nvram_tuple router_defaults[] = {
   {"ddns_hostname_buf", "", 0},	/* DDNS hostname */
 
   {"ddns_status", "", 0},	/* DDNS status */
-  {"ddns_interval", "60", 0},	/* DDNS timer interval in second */
-  {"ddns_cache", "", 0},	/* DDNS cache data */
+
 
   /* for AOL */
   {"aol_block_traffic", "0", 0},	/* 0:Disable 1:Enable for global */

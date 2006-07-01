@@ -161,7 +161,7 @@ obj-$(CONFIG_PPTP) += pptp-client
 obj-$(CONFIG_PPPD) += pppd
 obj-$(CONFIG_ZEBRA) += zebra
 obj-$(CONFIG_BIRD) += bird
-obj-$(CONFIG_DDNS) += ipupdate
+obj-$(CONFIG_DDNS) += inadyn
 obj-$(CONFIG_OTHERS) += others
 obj-$(CONFIG_EOU) += eou
 obj-$(CONFIG_SER) += ser
@@ -1064,10 +1064,17 @@ ifeq ($(CONFIG_PPPSTATS),y)
 	$(STRIP) $(INSTALLDIR)/pppd/usr/sbin/pppstats
 endif
 
-ipupdate-install:
-#	@true
-	install -D ipupdate/ez-ipupdate $(INSTALLDIR)/ipupdate/usr/sbin/ez-ipupdate
-	$(STRIP) $(INSTALLDIR)/ipupdate/usr/sbin/ez-ipupdate
+# ipupdate-install:
+# #	@true
+# 	install -D ipupdate/ez-ipupdate $(INSTALLDIR)/ipupdate/usr/sbin/ez-ipupdate
+# 	$(STRIP) $(INSTALLDIR)/ipupdate/usr/sbin/ez-ipupdate
+
+inadyn:
+	$(MAKE) -C inadyn
+
+inadyn-install:
+	install -D inadyn/bin/linux/inadyn $(INSTALLDIR)/inadyn/usr/sbin/inadyn
+	$(STRIP) $(INSTALLDIR)/inadyn/usr/sbin/inadyn
 
 zebra:
 ifeq ($(CONFIG_ZEBRA),y)
