@@ -16,6 +16,7 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 #include "os.h"
+#include "dyndns.h"
 #include <stdio.h>
 
 #ifdef PSOS_OS
@@ -42,7 +43,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 
 
 /* MAIN FUNCTION */
-RC_TYPE os_install_signal_handler(OS_SIGNAL_HANDLER_TYPE hand)
+RC_TYPE os_install_signal_handler(void* p_dyndns)
 {
     return RC_OK;
 }
@@ -71,6 +72,11 @@ RC_TYPE os_syslog_open(const char *p_prg_name)
 RC_TYPE os_syslog_close(void)
 {
     return RC_OK;
+}
+
+RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info)
+{
+	return RC_OS_CHANGE_PERSONA_FAILURE;
 }
 
 #endif 

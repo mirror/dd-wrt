@@ -25,7 +25,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "http_client.h"
 #include "debug_if.h"
 
-#define DYNDNS_VERSION_STRING  "1.86"
+#define DYNDNS_VERSION_STRING  "1.96"
 #define DYNDNS_AGENT_NAME  "inadyn/" DYNDNS_VERSION_STRING
 #define DYNDNS_EMAIL_ADDR	"inarcis2002@hotpop.com"
 
@@ -36,6 +36,9 @@ typedef enum
     DYNDNS_CUSTOM,
     DYNDNS_DEFAULT,
     FREEDNS_AFRAID_ORG_DEFAULT,
+	ZONE_EDIT_DEFAULT,
+	CUSTOM_HTTP_BASIC_AUTH,
+	NOIP_DEFAULT,	
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
 
@@ -46,7 +49,9 @@ typedef enum
 #define DYNDNS_MY_USERNAME		"test"
 #define DYNDNS_MY_PASSWD		"test"
 #define DYNDNS_MY_IP_SERVER		"checkip.dyndns.org"
+#define DYNDNS_MY_IP_SERVER_URL	"/"
 #define DYNDNS_MY_DNS_SERVER	"members.dyndns.org"
+#define DYNDNS_MY_DNS_SERVER_URL "/nic/update?"
 #define DYNDNS_MY_HOST_NAME_1	"test.homeip.net"
 #define DYNDNS_MY_HOST_NAME_2	"test2.homeip.net"
 #define DYNDNS_HTTP_PORT		80
@@ -61,21 +66,18 @@ typedef enum
 
 #define DYNDNS_SYSTEM_CUSTOM	"custom"
 #define DYNDNS_SYSTEM_DYNAMIC	"dyndns"
-#define DYNDNS_SYSTEM_STATIC	"statdns"
-#define DYNDNS_SYSTEM_FREEDNS_AFRAID_ORG    "freedns.afraid.org"
+#define DYNDNS_SYSTEM_STATIC	"statdns" 
 
-#define FREEDNS_IP_SERVER_NAME  DYNDNS_MY_IP_SERVER
-#define FREEDNS_DNS_SERVER_NAME DYNDNS_SYSTEM_FREEDNS_AFRAID_ORG
-
+#define GENERIC_DNS_IP_SERVER_NAME DYNDNS_MY_IP_SERVER
 #define  DYNDNS_MY_DNS_SYSTEM  DYNDNS_DEFAULT
 
 /* Conversation with the IP server */
 #define DYNDNS_GET_MY_IP_HTTP_REQUEST  \
-	"GET http://%s/ HTTP/1.0\r\n\r\n"
+	"GET http://%s%s HTTP/1.0\r\n\r\n"
 
 /* dyndns.org specific update address format */	
 #define DYNDNS_GET_MY_IP_HTTP_REQUEST_FORMAT \
-	"GET http://%s/nic/update?" \
+	"GET http://%s%s" \
 		"system=%s&" \
 		"hostname=%s&" \
 		"myip=%s&" \
@@ -90,18 +92,40 @@ typedef enum
     
 /*freedns.afraid.org specific update request format */    
 #define FREEDNS_UPDATE_MY_IP_REQUEST_FORMAT \
-    "GET http://%s/dynamic/update.php?" \
+    "GET http://%s%s" \
     "%s " \
 	 "HTTP/1.0\r\n" \
 	"Host: %s\r\n" \
 	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+
+/** generic update format for sites that perform the update
+	with:
+	http://some.address.domain/somesubdir
+	?some_param_name=MY_ALIAS
+	and then the normal http stuff and basic base64 encoded auth.
+	The parameter here is the entire request but NOT including the alias.
+*/
+#define GENERIC_DNS_BASIC_AUTH_MY_IP_REQUEST_FORMAT \
+    "GET http://%s%s%s " \
+	 "HTTP/1.0\r\n" \
+	"Authorization: Basic %s\r\n" \
+	"Host: %s\r\n" \
+	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+
+#define GENERIC_NOIP_AUTH_MY_IP_REQUEST_FORMAT \
+    "GET http://%s%s%s&myip=%s " \
+	 "HTTP/1.0\r\n" \
+	"Authorization: Basic %s\r\n" \
+	"Host: %s\r\n" \
+	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+
 
 #define DYNDNS_OK_RESPONSE	"good"
 #define DYNDNS_OK_NOCHANGE	"nochg"
 
 
 /* SOME DEFAULT CONFIGURATIONS */
-#define DYNDNS_DEFAULT_SLEEP	(60) /*s*/
+#define DYNDNS_DEFAULT_SLEEP	(120) /*s*/
 #define DYNDNS_MIN_SLEEP	(30) /*s*/
 #define DYNDNS_MAX_SLEEP	(10 * 24 * 3600) /*10 days in s*/
 #define DYNDNS_MY_FORCED_UPDATE_PERIOD_S   (30 * 24 * 3600) /* 30 days in sec*/
@@ -116,19 +140,22 @@ typedef enum
 #define DYNDNS_MY_USERNAME_LENGTH	50 /*chars*/
 #define DYNDNS_MY_PASSWORD_LENGTH	50 /*chars*/
 #define DYNDNS_SERVER_NAME_LENGTH	256 /*chars*/
+#define DYNDNS_SERVER_URL_LENGTH	256 /*chars*/
 #define DYNDNS_HASH_STRING_MAX_LENGTH	256 /*chars*/
 #define IP_V4_MAX_LENGTH            16 /*chars: nnn.nnn.nnn.nnn\0*/
 
 
 /* typedefs */
 struct _DYN_DNS_CLIENT;
+struct DYNDNS_SYSTEM;
 
 /** Types used for DNS system specific configuration 
 */
 /** Function to prepare DNS system specific server requests 
 */
-typedef int (*DNS_SYSTEM_REQUEST_FUNC)(struct _DYN_DNS_CLIENT *this, int nr, void *p_specific_data);
-typedef int (*DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)(struct _DYN_DNS_CLIENT *this, char *p_rsp);
+
+typedef int (*DNS_SYSTEM_REQUEST_FUNC)(struct _DYN_DNS_CLIENT *this, int nr, struct DYNDNS_SYSTEM *p_sys_info);
+typedef int (*DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)(struct _DYN_DNS_CLIENT *this, char *p_rsp, const char*p_ok_str);
 typedef struct 
 {
     const char* p_key;
@@ -136,7 +163,10 @@ typedef struct
     DNS_SYSTEM_SRV_RESPONSE_OK_FUNC p_rsp_ok_func;
     DNS_SYSTEM_REQUEST_FUNC p_dns_update_req_func;
     const char *p_ip_server_name;
+	const char *p_ip_server_url;
     const char *p_dyndns_server_name;
+	const char *p_dyndns_server_url;
+	const char *p_success_string;
 }DYNDNS_SYSTEM;
 
 typedef struct 
@@ -184,7 +214,9 @@ typedef struct
 	DYNDNS_CREDENTIALS credentials;
 	DYNDNS_SYSTEM *p_dns_system;
 	DYNDNS_SERVER_NAME dyndns_server_name;
+	char dyndns_server_url[DYNDNS_SERVER_URL_LENGTH];
 	DYNDNS_SERVER_NAME ip_server_name;
+	char ip_server_url[DYNDNS_SERVER_URL_LENGTH];
 	DYNDNS_SERVER_NAME proxy_server_name;
 } DYNDNS_INFO_TYPE;
 
@@ -195,6 +227,12 @@ typedef struct
 	DYNDNS_HASH_TYPE hashes[DYNDNS_MAX_ALIAS_NUMBER]; 
 	int count;
 } DYNDNS_ALIAS_INFO;
+
+typedef struct
+{
+	int uid;
+	int gid;
+} USER_INFO;
 
 typedef struct DYN_DNS_CLIENT
 {
@@ -208,6 +246,7 @@ typedef struct DYN_DNS_CLIENT
 	BOOL initialized;
 	BOOL run_in_background;
 	BOOL debug_to_syslog;
+	BOOL change_persona;
 
 	HTTP_CLIENT http_to_ip_server;
 	HTTP_CLIENT http_to_dyndns;
@@ -218,14 +257,15 @@ typedef struct DYN_DNS_CLIENT
 	int req_buffer_size;
 
 
+	USER_INFO sys_usr_info; /*info about the current account running inadyn*/
 	DYNDNS_INFO_TYPE info; /*servers, names, passwd*/
 	DYNDNS_ALIAS_INFO alias_info;
 
 	BOOL abort_on_network_errors;
 	BOOL force_addr_update;
     BOOL use_proxy;
+	BOOL abort;
 
-	OS_SIGNAL_HANDLER_TYPE os_signal_handler;
 	/*dbg*/
 	DBG_TYPE dbg;
 } DYN_DNS_CLIENT;
@@ -304,6 +344,12 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self);
 		- launch the IP update action
 */		
 int dyn_dns_main(DYN_DNS_CLIENT *p_self, int argc, char* argv[]);
+
+
+/*
+	help.
+*/
+void print_help_page(void);
 
 /*
     main entry point

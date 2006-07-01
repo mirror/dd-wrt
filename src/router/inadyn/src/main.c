@@ -34,7 +34,8 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
             - no DNS lookup supported -> IPs of the server as parameters			
         November 2003 
             - makefile review
-            - DBG print modified			
+            - DBG print modified  
+		History not updated anymore. See readme.  		
 */
 #define MODULE_TAG "INADYN: "
 #include "debug_if.h"
@@ -63,6 +64,7 @@ int inadyn_main(int argc, char* argv[])
 	/* end of program */
 	if (rc != 0)
 	{
+		print_help_page();
 		/* log error*/	
 		DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Main: Error '%s' (0x%x).\n", errorcode_get_name(rc), rc));
 	}
@@ -73,8 +75,7 @@ int inadyn_main(int argc, char* argv[])
 	{
 		DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Main: Error '%s' (0x%x) in dyn_dns_destruct().\n", errorcode_get_name(rc), rc));
 	}
-	
-	DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Main: Exit.\n"));	
+	 
 
 	os_close_dbg_output();
 	return (int) rc;

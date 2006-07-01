@@ -16,14 +16,14 @@ along with this program; if not, write to the Free Software
 Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 */
 
+#define MODULE_TAG "OS_WIN:"
+#include "debug_if.h"
 
 #include "os.h"
 #include <stdio.h>
-
 #include "dyndns.h"
 
 #ifdef _WIN32
-
 void os_sleep_ms(int ms)
 {
     Sleep(ms);
@@ -111,17 +111,44 @@ static BOOL WINAPI os_signal_wrapper_handler( DWORD dwCtrlType)
     }
 }
 
+/**
+	The actual signal handler for Windows.
+	Does not respond on LOGOFF signal. 
+	Exits on shutdown ..., Ctl-C,...
+*/
+static int dyndns_win32_signal_handler_func(OS_SIGNAL_TYPE signal, void *p_in)
+{
+	int ret_flag = 0;
+
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_in;
+	if (p_self == NULL)
+	{
+		return 0;
+	}
+
+	switch (signal.signal)
+	{
+		case OS_CTRL_C_SIGNAL :
+		case OS_CTRL_CLOSE_SIGNAL :
+		case OS_CTRL_BREAK_SIGNAL :
+		case OS_CTRL_SHUTDOWN_SIGNAL :
+				DBG_PRINTF((LOG_INFO,MODULE_TAG "Signal '0x%x' received. Sending 'Shutdown cmd'.\n", signal));
+				ret_flag = 1;
+				p_self->cmd = CMD_STOP;
+			break;
+			
+		case OS_CTRL_LOGOFF_SIGNAL :						
+		default:
+				DBG_PRINTF((LOG_DEBUG,MODULE_TAG "Signal '0x%x' received. NO ACTION.\n", signal));
+	}
+	return ret_flag;
+}
+
 /* MAIN FUNCTION */
-RC_TYPE os_install_signal_handler(OS_SIGNAL_HANDLER_TYPE hand)
+RC_TYPE os_install_signal_handler(void *p_dyndns)
 {
     BOOL fSuccess;
-
-    if (hand.p_func== NULL)
-    {
-        return RC_INVALID_POINTER;
-    }
-
-    if (global_os_handler.p_func != NULL)
+    if (global_os_handler.p_func != NULL || p_dyndns == NULL)
     {
         return RC_OS_ERROR_INSTALLING_SIGNAL_HANDLER;
     }
@@ -132,7 +159,8 @@ RC_TYPE os_install_signal_handler(OS_SIGNAL_HANDLER_TYPE hand)
 
     if (fSuccess) 
     {
-        global_os_handler = hand;
+        global_os_handler.p_func = dyndns_win32_signal_handler_func;
+		global_os_handler.p_in_data = p_dyndns;
         return RC_OK;
     }
     else
@@ -188,6 +216,11 @@ static unsigned long os_get_inet_addr(char* addr)
 int main(int argc, char* argv[])
 {
   return inadyn_main(argc, argv);
+}
+
+RC_TYPE os_change_persona(OS_USER_INFO *p_usr_info)
+{
+	return RC_OS_CHANGE_PERSONA_FAILURE;
 }
 
 #endif /*WIN32*/
