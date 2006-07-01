@@ -1406,12 +1406,24 @@ start_nas (char *type, char *prefix)
     snprintf (pidfile, sizeof (pidfile), "/tmp/nas.%s%s.pid", prefix, type);
 
     /* Sveasoft rewrite - start nas with explicit parameters */
+
+    char apmode[32];
+    sprintf (apmode, "%s_mode", prefix);
+
+ if (!strcmp(type,"wan") && nvram_match(apmode,"ap"))
+    {
+	return 0;
+    }
+    
+//    if (!strcmp (type, "lan"))
+//      iface = "br0";
+//    else
+
     if (0 == type || 0 == *type)
       type = "lan";
-
-    if (!strcmp (type, "lan"))
-      iface = "br0";
-    else
+ if (!strcmp(typ,"lan") && nvram_invmatch(apmode,"ap"))
+    iface="br0";
+ else  
       {
 
 	if (!strcmp (prefix, "wl0"))
@@ -1431,8 +1443,6 @@ start_nas (char *type, char *prefix)
     auth_mode = getAuthMode (prefix);
     if (auth_mode == NULL)
       return 0;			//no nas required
-    char apmode[32];
-    sprintf (apmode, "%s_mode", prefix);
     if (0 == strcmp (nvram_safe_get (apmode), "ap"))
       mode = "-A";
     else
