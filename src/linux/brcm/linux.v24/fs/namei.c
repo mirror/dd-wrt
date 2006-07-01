@@ -1478,12 +1478,16 @@ exit:
 int vfs_unlink(struct inode *dir, struct dentry *dentry)
 {
 	int error;
+	struct inode *inode;
 
 	error = may_delete(dir, dentry, 0);
 	if (error)
 		return error;
 
-	double_down(&dir->i_zombie, &dentry->d_inode->i_zombie);
+	inode = dentry->d_inode;
+	atomic_inc(&inode->i_count);
+	double_down(&dir->i_zombie, &inode->i_zombie);
+
 	error = -EPERM;
 	if (dir->i_op && dir->i_op->unlink) {
 		DQUOT_INIT(dir);
@@ -1495,7 +1499,9 @@ int vfs_unlink(struct inode *dir, struct dentry *dentry)
 			unlock_kernel();
 		}
 	}
-	double_up(&dir->i_zombie, &dentry->d_inode->i_zombie);
+	double_up(&dir->i_zombie, &inode->i_zombie);
+	iput(inode);
+
 	if (!error) {
 		d_delete(dentry);
 		inode_dir_notify(dir, DN_DELETE);

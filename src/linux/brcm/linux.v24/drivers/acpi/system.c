@@ -748,7 +748,7 @@ acpi_system_write_sleep (
 	
 	state = simple_strtoul(state_string, NULL, 0);
 	
-	if (!system->states[state])
+	if (state >= ACPI_S_STATE_COUNT || !system->states[state])
 		return_VALUE(-ENODEV);
 
 	/*

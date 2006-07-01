@@ -572,7 +572,7 @@ static int dma_timer_expiry (ide_drive_t *drive)
  *	This empty function prevents non-DMA controllers from causing an oops.
  */
 
-int __ide_dma_no_op (void)
+static int __ide_dma_no_op (ide_drive_t *ignored)
 {
 	return 0;
 }
@@ -1235,11 +1235,11 @@ EXPORT_SYMBOL_GPL(ide_setup_dma);
 void ide_setup_no_dma (ide_hwif_t *hwif)
 {
 	if (!hwif->ide_dma_off_quietly)
-		hwif->ide_dma_off_quietly = (int (*)(ide_drive_t *))&__ide_dma_no_op;
+		hwif->ide_dma_off_quietly = &__ide_dma_no_op;
 	if (!hwif->ide_dma_host_off)
-		hwif->ide_dma_host_off = (int (*)(ide_drive_t *))&__ide_dma_no_op;
+		hwif->ide_dma_host_off = &__ide_dma_no_op;
 	if (!hwif->ide_dma_host_on)
-		hwif->ide_dma_host_on = (int (*)(ide_drive_t *))&__ide_dma_no_op;
+		hwif->ide_dma_host_on = &__ide_dma_no_op;
 }
 
 EXPORT_SYMBOL_GPL(ide_setup_no_dma);
