@@ -20,6 +20,14 @@ function ddns_check(F,T) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
 		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
+	} else if(F.ddns_enable.value == 4) {
+		username = eval("F.ddns_username_"+F.ddns_enable.value);
+		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
+		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
+	} else if(F.ddns_enable.value == 5) {
+		username = eval("F.ddns_username_"+F.ddns_enable.value);
+		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
+		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
 	}
 	if(username.value == "") {
 //	alert("You must input a username.");
@@ -35,7 +43,7 @@ function ddns_check(F,T) {
 	}
 	if(hostname.value == "") {
 //	alert("You must input a hostname.");
-    alert(errmsg.err7);
+		alert(errmsg.err7);
 		hostname.focus();
 		return false;
 	}
@@ -215,7 +223,7 @@ function SelDDNS(num,F) {
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.statu"); %></div>
-									<script type="text/javascript">Capture(<% show_ddns_status(); %>)</script>&nbsp;
+									Status is not implemented yet.&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.interipaddr"); %></div>
