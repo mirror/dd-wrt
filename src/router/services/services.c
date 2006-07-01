@@ -1457,6 +1457,13 @@ start_nas (char *type, char *prefix)
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
+	fprintf(stderr,"start nas sup\n";
+	int arg=0;
+	while (argv[arg]!=NULL)
+	    {
+	    fprintf(stderr,"%s ",argv[arg++]);
+	    }
+	fprintf("\n");
 	  _eval (argv, NULL, 0, &pid);
 	}
       else
@@ -1468,10 +1475,17 @@ start_nas (char *type, char *prefix)
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
+	fprintf(stderr,"start nas ap\n";
+	int arg=0;
+	while (argv[arg]!=NULL)
+	    {
+	    fprintf(stderr,"%s ",argv[arg++]);
+	    }
+	fprintf("\n");
 	  _eval (argv, NULL, 0, &pid);
 	}
 
-
+      
       fp = fopen (pidfile, "w");
       if (fp)
 	fprintf (fp, "%d", pid);
