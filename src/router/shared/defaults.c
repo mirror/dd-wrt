@@ -1091,6 +1091,25 @@ struct nvram_tuple router_defaults[] = {
   {"wl_wds8_if", "", 0},
   {"wl_wds9_if", "", 0},
   {"wl_wds10_if", "", 0},
+#ifdef HAVE_MSSID	
+
+  {"wds0.1", "", 0},
+  {"wds0.2", "", 0},
+  {"wds0.3", "", 0},
+  {"wds0.4", "", 0},
+  {"wds0.5", "", 0},
+  {"wds0.6", "", 0},
+  {"wds0.7", "", 0},
+  {"wds0.8", "", 0},
+  {"wds0.9", "", 0},
+  {"wds0.10", "", 0},
+  {"wds0.11", "", 0},
+  {"wds0.12", "", 0},
+  {"wds0.13", "", 0},
+  {"wds0.14", "", 0},
+  {"wds0.15", "", 0},
+  {"wds0.16", "", 0},
+#else
 
   {"wds0.49150", "", 0},
   {"wds0.49151", "", 0},
@@ -1108,7 +1127,7 @@ struct nvram_tuple router_defaults[] = {
   {"wds0.49163", "", 0},
   {"wds0.49164", "", 0},
   {"wds0.49165", "", 0},
-
+#endif
   {"bird_ospf",
    "Please read the BIRD setup instructions at http://bird.network.cz/bird.html",
    0},

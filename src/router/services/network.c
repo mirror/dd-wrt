@@ -20,6 +20,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <unistd.h>
+#ifdef HAVE_MSSID
+#include <math.h>
+#endif
 #include <sys/stat.h>
 #include <sys/ioctl.h>
 #include <sys/types.h>
@@ -437,16 +440,24 @@ wlconf_up (char *name)
       WL_IOCTL (name, WLC_SET_PLCPHDR, &val, sizeof (val));
     }
   // adjust txpwr and txant
-#ifndef HAVE_MSSID
   val = atoi (nvram_safe_get ("txpwr"));
   if (val < 0 || val > TXPWR_MAX)
     val = TXPWR_DEFAULT;
+#ifndef HAVE_MSSID
   val |= WL_TXPWR_OVERRIDE;	// set the power override bit
   
   WL_IOCTL (name, WLC_SET_TXPWR, &val, sizeof (val));
   WL_IOCTL (name, WLC_CURRENT_PWR, &val, sizeof (val));
 #else
-eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
+//convert mw to qdbm and set override flag
+float value = 10 * log(val) / M_LN10;
+value *=4;
+value +=0.5;
+val = (int)value;
+val |= WL_TXPWR_OVERRIDE;
+wl_iovar_setint(name,"qtxpower",val);
+
+//eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 #endif
   /* Set txant */
   val = atoi (nvram_safe_get ("txant"));
