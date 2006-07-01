@@ -123,14 +123,14 @@ start_ddns (void)
   /* Generate ddns configuration file */
   if ((fp = fopen ("/tmp/ddns/inadyn.conf", "w")))
     {
-      fprintf (fp, "--background")
+      fprintf (fp, "--background");
       fprintf (fp, " --dyndns_system %s", service); //service
       fprintf (fp, " -u %s", nvram_safe_get (_username)); //username/email
-      fprintf (fp, " -p %s", nvram_safe_get (_password)); // password
+      fprintf (fp, " -p %s", nvram_safe_get (_passwd)); // password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname)); // alias/hostname
       fprintf (fp, " --update_period_sec %s", "3600"); // check ip every hour
       fprintf (fp, " --forced_update_period %s", "2160000"); //force update after 25days
-      fprintf (fp, " --log_file", "/tmp/ddns/inadyn.log") //log to file
+      fprintf (fp, " --log_file", "/tmp/ddns/inadyn.log"); //log to file
     }
   else
     {
