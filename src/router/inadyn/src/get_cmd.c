@@ -209,6 +209,8 @@ RC_TYPE get_cmd_parse_data(char **argv, int argc, CMD_DESCRIPTION_TYPE *p_cmd_de
 			rc = p_curr_opt->p_handler.p_func(&cmd, curr_arg_nr, p_curr_opt->p_handler.p_context);
 			if (rc != RC_OK)
 			{
+	            DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Error parsing option %d ('%s')\n", 
+	                        curr_arg_nr, cmd.argv[curr_arg_nr-1]));
 				break;
 			}
 			

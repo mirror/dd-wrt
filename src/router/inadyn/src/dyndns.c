@@ -41,10 +41,15 @@ DYNDNS_ORG_SPECIFIC_DATA dyndns_org_dynamic = {"dyndns"};
 DYNDNS_ORG_SPECIFIC_DATA dyndns_org_custom = {"custom"};
 DYNDNS_ORG_SPECIFIC_DATA dyndns_org_static = {"statdns"};
 
-static int get_req_for_dyndns_server(DYN_DNS_CLIENT *this, int nr, void *p_specific_data);
-static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt,  void *p_specific_data);
-static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp);
-static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp);
+static int get_req_for_dyndns_server(DYN_DNS_CLIENT *this, int nr, DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_generic_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
+static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info);
+
+static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
+static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
 { 
@@ -52,28 +57,55 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
         {"default@dyndns.org", &dyndns_org_dynamic, 
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC)get_req_for_dyndns_server,
-             DYNDNS_MY_IP_SERVER, DYNDNS_MY_DNS_SERVER}},
+             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+			DYNDNS_MY_DNS_SERVER, DYNDNS_MY_DNS_SERVER_URL, NULL}},
     {DYNDNS_DYNAMIC, 
         {"dyndns@dyndns.org", &dyndns_org_dynamic,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
-             DYNDNS_MY_IP_SERVER, DYNDNS_MY_DNS_SERVER}},    
+             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+			DYNDNS_MY_DNS_SERVER, DYNDNS_MY_DNS_SERVER_URL, NULL}},    
     {DYNDNS_CUSTOM, 
         {"custom@dyndns.org", &dyndns_org_custom,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
-             DYNDNS_MY_IP_SERVER, DYNDNS_MY_DNS_SERVER}},
+             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+			DYNDNS_MY_DNS_SERVER, DYNDNS_MY_DNS_SERVER_URL, NULL}},
     {DYNDNS_STATIC, 
         {"statdns@dyndns.org", &dyndns_org_static,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
-             DYNDNS_MY_IP_SERVER, DYNDNS_MY_DNS_SERVER}},
+             DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+				DYNDNS_MY_DNS_SERVER, DYNDNS_MY_DNS_SERVER_URL, NULL}},
 
     {FREEDNS_AFRAID_ORG_DEFAULT, 
         {"default@freedns.afraid.org", NULL,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_freedns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_freedns_server,
-            FREEDNS_IP_SERVER_NAME, FREEDNS_DNS_SERVER_NAME}},
+            DYNDNS_MY_IP_SERVER, DYNDNS_MY_IP_SERVER_URL,
+			"freedns.afraid.org", "/dynamic/update.php?", NULL}},
+
+    {ZONE_EDIT_DEFAULT, 
+        {"default@zoneedit.com", NULL,  
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_zoneedit_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_generic_http_dns_server,
+            "dynamic.zoneedit.com", "/checkip.html", 
+			"dynamic.zoneedit.com", "/auth/dynamic.html?host=", ""}},
+
+    {NOIP_DEFAULT, 
+        {"default@no-ip.com", NULL,  
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_noip_http_dns_server,
+            "ip1.dynupdate.no-ip.com", "/", 
+			"dynupdate.no-ip.com", "/nic/update?hostname=", ""}},
+
+    {CUSTOM_HTTP_BASIC_AUTH, 
+        {"custom@http_svr_basic_auth", NULL,  
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_generic_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_generic_http_dns_server,
+            GENERIC_DNS_IP_SERVER_NAME, DYNDNS_MY_IP_SERVER_URL,
+			"", "", "OK"}},
+
     {LAST_DNS_SYSTEM, {NULL, NULL, NULL, NULL, NULL, NULL}}
 };
 
@@ -98,35 +130,6 @@ DYNDNS_SYSTEM_INFO* get_dyndns_system_table(void)
 }
 
 /*************PRIVATE FUNCTIONS ******************/
-static int dyndns_os_signal_handler_func(OS_SIGNAL_TYPE signal, void *p_in)
-{
-	int ret_flag = 0;
-
-	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_in;
-	if (p_self == NULL)
-	{
-		return 0;
-	}
-
-	switch (signal.signal)
-	{
-		case OS_CTRL_C_SIGNAL :
-		case OS_CTRL_CLOSE_SIGNAL :
-		case OS_CTRL_BREAK_SIGNAL :
-		case OS_CTRL_SHUTDOWN_SIGNAL :
-				DBG_PRINTF((LOG_DEBUG,MODULE_TAG "Signal '0x%x' received. Sending 'Shutdown cmd'.\n", signal));
-				ret_flag = 1;
-				p_self->cmd = CMD_STOP;
-			break;
-			
-		case OS_CTRL_LOGOFF_SIGNAL :						
-		default:
-				DBG_PRINTF((LOG_DEBUG,MODULE_TAG "Signal '0x%x' received. NO ACTION.\n", signal));
-	}
-	return ret_flag;
-}
-
-
 static RC_TYPE dyn_dns_wait_for_cmd(DYN_DNS_CLIENT *p_self)
 {
 	int counter = p_self->sleep_sec / p_self->cmd_check_period;
@@ -148,11 +151,13 @@ static RC_TYPE dyn_dns_wait_for_cmd(DYN_DNS_CLIENT *p_self)
 	return RC_OK;
 }
 
-static int get_req_for_dyndns_server(DYN_DNS_CLIENT *p_self, int cnt, void *p_specific_data)
+static int get_req_for_dyndns_server(DYN_DNS_CLIENT *p_self, int cnt,DYNDNS_SYSTEM *p_sys_info)
 {	
-    DYNDNS_ORG_SPECIFIC_DATA *p_dyndns_specific = (DYNDNS_ORG_SPECIFIC_DATA*) p_specific_data;
+    DYNDNS_ORG_SPECIFIC_DATA *p_dyndns_specific = 
+		(DYNDNS_ORG_SPECIFIC_DATA*) p_sys_info->p_specific_data;
 	return sprintf(p_self->p_req_buffer, DYNDNS_GET_MY_IP_HTTP_REQUEST_FORMAT,
         p_self->info.dyndns_server_name.name,
+		p_self->info.dyndns_server_url,
 		p_dyndns_specific->p_system,
 		p_self->alias_info.names[cnt].name,
 		p_self->info.my_ip_address.name,
@@ -162,18 +167,44 @@ static int get_req_for_dyndns_server(DYN_DNS_CLIENT *p_self, int cnt, void *p_sp
 		);
 }
 
-static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt, void *p_specific_data)
+static int get_req_for_freedns_server(DYN_DNS_CLIENT *p_self, int cnt, DYNDNS_SYSTEM *p_sys_info)
 {
+	(void)p_sys_info;
 	return sprintf(p_self->p_req_buffer, FREEDNS_UPDATE_MY_IP_REQUEST_FORMAT,
         p_self->info.dyndns_server_name.name,
+		p_self->info.dyndns_server_url,
 		p_self->alias_info.hashes[cnt].str,
         p_self->info.dyndns_server_name.name);
+}
+
+
+static int get_req_for_generic_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt, DYNDNS_SYSTEM *p_sys_info)
+{
+	(void)p_sys_info;
+	return sprintf(p_self->p_req_buffer, GENERIC_DNS_BASIC_AUTH_MY_IP_REQUEST_FORMAT,
+        p_self->info.dyndns_server_name.name,
+		p_self->info.dyndns_server_url,		
+		p_self->alias_info.names[cnt].name,
+        p_self->info.credentials.p_enc_usr_passwd_buffer,
+		p_self->info.dyndns_server_name.name);
+}
+static int get_req_for_noip_http_dns_server(DYN_DNS_CLIENT *p_self, int cnt,  DYNDNS_SYSTEM *p_sys_info)
+{
+	(void)p_sys_info;
+	return sprintf(p_self->p_req_buffer, GENERIC_NOIP_AUTH_MY_IP_REQUEST_FORMAT,
+        p_self->info.dyndns_server_name.name,
+		p_self->info.dyndns_server_url,		
+		p_self->alias_info.names[cnt].name,
+		p_self->info.my_ip_address.name,
+        p_self->info.credentials.p_enc_usr_passwd_buffer,
+		p_self->info.dyndns_server_name.name		
+		);
 }
 
 static int get_req_for_ip_server(DYN_DNS_CLIENT *p_self, void *p_specific_data)
 {
     return sprintf(p_self->p_req_buffer, DYNDNS_GET_MY_IP_HTTP_REQUEST,
-        p_self->info.ip_server_name.name);
+        p_self->info.ip_server_name.name, p_self->info.ip_server_url);
 }
 
 /* 
@@ -200,6 +231,10 @@ static RC_TYPE do_ip_server_transaction(DYN_DNS_CLIENT *p_self)
 
             p_tr->req_len = get_req_for_ip_server((DYN_DNS_CLIENT*) p_self,
                                                      p_self->info.p_dns_system->p_specific_data);
+			if (p_self->dbg.level > 2) 
+			{
+				DBG_PRINTF((LOG_DEBUG, "The request for IP server:\n%s\n",p_self->p_req_buffer));
+			}
             p_tr->p_req = (char*) p_self->p_req_buffer;		
 			p_tr->p_rsp = (char*) p_self->p_work_buffer;
 			p_tr->max_rsp_len = p_self->work_buffer_size - 1;/*save place for a \0 at the end*/
@@ -316,8 +351,9 @@ static RC_TYPE do_check_alias_update_table(DYN_DNS_CLIENT *p_self)
 /* DynDNS org.specific response validator.
     'good' or 'nochange' are the good answers,
 */
-static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp)
+static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
+	(void) p_ok_string;
     return ( (strstr(p_rsp, DYNDNS_OK_RESPONSE) != NULL) ||
              (strstr(p_rsp, DYNDNS_OK_NOCHANGE) != NULL) );
 }
@@ -327,11 +363,38 @@ static BOOL is_dyndns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp)
     fail blabla and n.n.n.n
     are the good answers. We search our own IP address in response and that's enough.
 */
-static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp)
+static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
 {
+	(void) p_ok_string;
     return (strstr(p_rsp, p_self->info.my_ip_address.name) != NULL);
 }
 
+/** generic http dns server ok parser 
+	parses a given string. If found is ok,
+	Example : 'SUCCESS CODE='
+*/
+static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+{
+	if (p_ok_string == NULL)
+	{
+		return FALSE;
+	}
+    return (strstr(p_rsp, p_ok_string) != NULL);
+}
+
+/**
+	the OK codes are:
+		CODE=200
+		CODE=707, for duplicated updates
+*/
+BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string)
+{
+	return 
+	(		
+		(strstr(p_rsp, "CODE=\"200\"") != NULL) ||
+		(strstr(p_rsp, "CODE=\"707\"") != NULL)
+	);	
+}
 
 static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 {
@@ -357,7 +420,8 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 			{
 				HTTP_TRANSACTION http_tr;
 				http_tr.req_len = p_self->info.p_dns_system->p_dns_update_req_func(
-                        (struct _DYN_DNS_CLIENT*) p_self,i, p_self->info.p_dns_system->p_specific_data);
+                        (struct _DYN_DNS_CLIENT*) p_self,i,
+						(struct DYNDNS_SYSTEM*) p_self->info.p_dns_system);
 				http_tr.p_req = (char*) p_self->p_req_buffer;
 				http_tr.p_rsp = (char*) p_self->p_work_buffer;
 				http_tr.max_rsp_len = p_self->work_buffer_size - 1;/*save place for a \0 at the end*/
@@ -377,7 +441,8 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 				{
 					BOOL update_ok = 
                         p_self->info.p_dns_system->p_rsp_ok_func((struct _DYN_DNS_CLIENT*)p_self, 
-                                                                 http_tr.p_rsp);
+                            http_tr.p_rsp, 
+							p_self->info.p_dns_system->p_success_string);
 					if (update_ok)
 					{
 			                        p_self->alias_info.update_required[i] = FALSE;
@@ -388,15 +453,12 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 						p_self->times_since_last_update = 0;
 							
 					}
-                    else
-                    {
-                            DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "ERROR trying to update alias '%s'.\n", 
-                                        p_self->alias_info.names[i].name));
-                    }
-
-					if (!update_ok || 
-						p_self->dbg.level > 1)
+					else
 					{
+						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "Error validating DYNDNS svr answer. Check usr,pass,hostname!\n", http_tr.p_rsp));
+					}
+					if (p_self->dbg.level > 2)
+					{							
 						http_tr.p_rsp[http_tr.rsp_len] = 0;
 						DBG_PRINTF((LOG_WARNING,"W:" MODULE_TAG "DYNDNS Server response:\n%s\n", http_tr.p_rsp));
 					}
@@ -694,9 +756,6 @@ RC_TYPE dyn_dns_init(DYN_DNS_CLIENT *p_self)
         http_client_set_remote_name(&p_self->http_to_dyndns, p_self->info.dyndns_server_name.name);    
     }
 
-	p_self->os_signal_handler.p_func = dyndns_os_signal_handler_func;
-	p_self->os_signal_handler.p_in_data = (void*) p_self;
-
 	p_self->cmd = NO_CMD;
     if (p_self->cmd_check_period == 0)
     {
@@ -797,8 +856,9 @@ RC_TYPE dyn_dns_update_ip(DYN_DNS_CLIENT *p_self)
 /* 
 	Actions:
 		- read the configuration options
+		- perform various init actions as specified in the options
 		- create and init dyn_dns object.
-		- launch the IP update action
+		- launch the IP update action loop
 */		
 int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 {
@@ -815,7 +875,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 
 	/* read cmd line options and set object properties*/
 	rc = get_config_data(p_dyndns, argc, argv);
-	if (rc != RC_OK)
+	if (rc != RC_OK || p_dyndns->abort)
 	{
 		return rc;
 	}
@@ -843,6 +903,19 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
         }
 	}
 
+	if (p_dyndns->change_persona)
+	{
+		OS_USER_INFO os_usr_info;
+		memset(&os_usr_info, 0, sizeof(os_usr_info));
+		os_usr_info.gid = p_dyndns->sys_usr_info.gid;
+		os_usr_info.uid = p_dyndns->sys_usr_info.uid;
+		rc = os_change_persona(&os_usr_info);
+		if (rc != RC_OK)
+		{
+			return rc;
+		}
+	}
+
     /*if silent required, close console window*/
     if (p_dyndns->run_in_background == TRUE)
     {
@@ -859,6 +932,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 
     dyn_dns_print_hello(NULL);
 
+	/* the real work here */
 	do
 	{
 		/* init object */			
@@ -878,7 +952,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 
 		if (!os_handler_installed)
 		{
-			rc = os_install_signal_handler(p_dyndns->os_signal_handler);
+			rc = os_install_signal_handler(p_dyndns);
 			if (rc != RC_OK)
 			{
 				DBG_PRINTF((LOG_WARNING,"DYNDNS: Error '%s' (0x%x) installing OS signal handler\n",
@@ -889,21 +963,28 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 		}
 		
 		/*update IP address in a loop*/
-		while(  iterations++ < p_dyndns->total_iterations ||
-				p_dyndns->total_iterations == 0 )
+		while(1)
 		{
 			rc = dyn_dns_update_ip(p_dyndns);
 			if (rc != RC_OK)
 			{
-				DBG_PRINTF((LOG_WARNING,"W: DYNDNS: Error '%s' (0x%x) trying to update the IPs. (Iteration %d)\n",
+				DBG_PRINTF((LOG_WARNING,"W:'%s' (0x%x) updating the IPs. (it %d)\n",
 					errorcode_get_name(rc), rc, iterations));			
 				
 			}
 			/* check if the user wants us to stop */
+			++iterations;
+			if (iterations >= p_dyndns->total_iterations &&
+				p_dyndns->total_iterations != 0)
+			{
+				break;
+			}
+
 			/* also sleep the time set in the ->sleep_sec data memeber*/
 			dyn_dns_wait_for_cmd(p_dyndns);
 			if (p_dyndns->cmd == CMD_STOP)
 			{
+				DBG_PRINTF((LOG_DEBUG,"STOP command received. Exiting.\n"));
 				rc = RC_OK;
 				break;
 			}
