@@ -1457,7 +1457,7 @@ start_nas (char *type, char *prefix)
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
-	fprintf(stderr,"start nas sup\n";
+	fprintf(stderr,"start nas sup\n");
 	int arg=0;
 	while (argv[arg]!=NULL)
 	    {
@@ -1475,7 +1475,7 @@ start_nas (char *type, char *prefix)
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
-	fprintf(stderr,"start nas ap\n";
+	fprintf(stderr,"start nas ap\n");
 	int arg=0;
 	while (argv[arg]!=NULL)
 	    {
