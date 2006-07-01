@@ -246,7 +246,7 @@ install package: $(filter-out lib-install,$(obj-install)) $(LINUXDIR)/.config
 	    $(MAKE) -C $(LINUXDIR) modules_install DEPMOD=/bin/true INSTALL_MOD_PATH=$(TARGETDIR) ; \
 	fi
 ifeq ($(CONFIG_MADWIFI),y)
-	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/wl
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/drivers/net/wl
 endif
 #	mkdir -p $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
 #	cp ../wl/ctmisc/ctmisc.o $(TARGETDIR)/lib/modules/2.4.32/kernel/drivers/net/ctmisc
@@ -255,8 +255,8 @@ endif
 	# quick n dirty - stuff Nikki's module where it belongs
 	#mkdir $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996
 	if [ "$(CONFIG_MMC)" = "y" ] ; then \
-	mkdir -p $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/fs/mmc ; \
-	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/fs/mmc ; \
+	mkdir -p $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/fs/mmc ; \
+	cp mmc/mmc.o $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/fs/mmc ; \
 	fi ; 
 #ifeq ($(CONFIG_MSSID),y)
 #	cp adm6996.v24/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
@@ -264,41 +264,41 @@ endif
 #	cp adm6996/adm6996.o $(TARGETDIR)/lib/modules/2.4.32-rc3/kernel/drivers/net/adm6996/adm6996.o
 #endif
 
-	rm -f $(TARGETDIR)/lib/modules/2.4.33-rc1/build
-	mv $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	rm -f $(TARGETDIR)/lib/modules/2.4.33-rc2/build
+	mv $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/drivers/net/diag/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 ifneq ($(CONFIG_DIST),"micro")
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/drivers/net/led/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 endif
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/drivers/net/switch/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 #ifeq ($(CONFIG_MSSID),y)
 #	cp ../wl/wl/wl_v24.o $(TARGETDIR)/lib/modules/2.4.33-rc1/wl.o
 #else
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/drivers/net/wl/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 #endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/fat/* $(TARGETDIR)/lib/modules/2.4.33-pre3
 ifneq ($(CONFIG_DIST),"micro")
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-rc1
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/2.4.33-rc1
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/fs/jffs2/* $(TARGETDIR)/lib/modules/2.4.33-rc2
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/fs/smbfs/* $(TARGETDIR)/lib/modules/2.4.33-rc2
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/fs/ext2/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 endif
 #	mv $(TARGETDIR)/lib/modules/2.4.33-pre3/kernel/fs/vfat/* $(TARGETDIR)/lib/modules/2.4.33-prc1re3
 ifneq ($(CONFIG_DIST),"micro")
 ifneq ($(CONFIG_MSSID),y)
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/lib/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 endif
 endif
 ifneq ($(CONFIG_DIST),"micro")
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/net/bridge/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 endif
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-rc1
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/net/ipv4/netfilter/* $(TARGETDIR)/lib/modules/2.4.33-rc2
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/net/ipv4/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 ifneq ($(CONFIG_DIST),"micro")
-	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/2.4.33-rc1
+	mv -f $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel/net/ipv6/* $(TARGETDIR)/lib/modules/2.4.33-rc2
 endif
-	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc1/kernel
-	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc1/pcmcia
-	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc1/netfilter
-	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/2.4.33-rc1/*.o		
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc2/kernel
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc2/pcmcia
+	rm -rf $(TARGETDIR)/lib/modules/2.4.33-rc2/netfilter
+	mipsel-linux-strip --strip-unneeded --remove-section=.comment $(TARGETDIR)/lib/modules/2.4.33-rc2/*.o		
         # Prepare filesystem
 	cd $(TARGETDIR) && $(TOP)/misc/rootprep.sh
         # Make sure mksquashfs-2.0 is used
@@ -709,7 +709,7 @@ mmc:
 	$(MAKE) -C mmc
 
 mmc-install:
-	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/2.4.33-rc1/mmc.o
+	install -D  mmc/mmc.o $(INSTALLDIR)/mmc/lib/modules/2.4.33-rc2/mmc.o
 	install -D  mmc/config/mmc.webconfig $(INSTALLDIR)/mmc/etc/config/mmc.webconfig
 	install -D  mmc/config/mmc.startup $(INSTALLDIR)/mmc/etc/config/mmc.startup
 	install -D  mmc/config/mmc.nvramconfig $(INSTALLDIR)/mmc/etc/config/mmc.nvramconfig
@@ -1228,9 +1228,9 @@ endif
 
 adm6996-install:
 ifeq ($(CONFIG_MSSID),y)
-	install -D adm6996.v24/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-rc1/kernel/drivers/net/adm6996/adm6996.o
+	install -D adm6996.v24/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-rc2/kernel/drivers/net/adm6996/adm6996.o
 else
-	install -D adm6996/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-rc1/kernel/drivers/net/adm6996/adm6996.o
+	install -D adm6996/adm6996.o $(INSTALLDIR)/adm6996/lib/modules/2.4.33-rc2/kernel/drivers/net/adm6996/adm6996.o
 endif
 #	$(STRIP) $(INSTALLDIR)/adm6996/lib/adm6996.o
 
