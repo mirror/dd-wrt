@@ -252,7 +252,6 @@ function SelDDNS(num,F) {
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
-									<div class="label"><% tran("share.statu"); %></div>
 									<% show_ddns_status(); %>&nbsp;
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
