@@ -92,6 +92,13 @@ startswith (char *source, char *cmp)
 void
 setRouter (char *name)
 {
+#ifdef HAVE_POWERNOC_WORT54G
+    nvram_set (NVROUTER, "WORT54G");
+#endif
+#ifdef HAVE_POWERNOC_WOAP54G
+    nvram_set (NVROUTER, "WOAP54G");
+#endif
+
   if (name)
     nvram_set (NVROUTER, name);
 }

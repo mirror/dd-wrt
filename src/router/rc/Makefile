@@ -251,7 +251,9 @@ install: all
 	cd $(INSTALLDIR)/sbin && ln -sf rc ddns_success
 	cd $(INSTALLDIR)/sbin && ln -sf rc process_monitor
 	cd $(INSTALLDIR)/sbin && ln -sf rc site_survey
+ifneq ($(CONFIG_ARP),y)
 	cd $(INSTALLDIR)/sbin && ln -sf /bin/busybox arp
+endif
 	cd $(INSTALLDIR)/sbin && ln -sf rc sendudp
 	cd $(INSTALLDIR)/sbin && ln -sf rc misc	
 	cd $(INSTALLDIR)/sbin && ln -sf rc check_ses_led	
