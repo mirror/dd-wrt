@@ -1268,7 +1268,9 @@ getAuthMode (char *prefix)
   if (nvram_match (akm, "disabled") || nvram_get (akm) == NULL
       || strlen (nvram_safe_get (akm)) == 0)
     return NULL;
-  if (nvram_match (akm, "wpa") || nvram_match (akm, "radius"))
+  if (nvram_match (akm, "radius"))
+    return "32";
+  else if (nvram_match (akm, "wpa"))
     return "2";
   else if (nvram_match (akm, "psk"))
     return "4";
@@ -1410,20 +1412,20 @@ start_nas (char *type, char *prefix)
     char apmode[32];
     sprintf (apmode, "%s_mode", prefix);
 
- if (!strcmp(type,"wan") && nvram_match(apmode,"ap"))
-    {
+    if (!strcmp (type, "wan") && nvram_match (apmode, "ap"))
+      {
 	return 0;
-    }
-    
+      }
+
 //    if (!strcmp (type, "lan"))
 //      iface = "br0";
 //    else
 
     if (0 == type || 0 == *type)
       type = "lan";
- if (!strcmp(type,"lan") && nvram_invmatch(apmode,"ap"))
-    iface="br0";
- else  
+    if (!strcmp (type, "lan") && nvram_invmatch (apmode, "ap"))
+      iface = "br0";
+    else
       {
 
 	if (!strcmp (prefix, "wl0"))
@@ -1450,8 +1452,15 @@ start_nas (char *type, char *prefix)
 
     char rekey[32];
     char ssid[32];
+    char radius[32];
+    char port[32];
+    char index[32];
+
     sprintf (rekey, "%s_wpa_gtk_rekey", prefix);
     sprintf (ssid, "%s_ssid", prefix);
+    sprintf (radius, "%s_radius_ipaddr", prefix);
+    sprintf (port, "%s_radius_port", prefix);
+    sprintf (index, "%s_key", prefix);
 
     key = getKey (prefix);
 
@@ -1467,35 +1476,55 @@ start_nas (char *type, char *prefix)
 	    sec_mode, "-g",
 	    nvram_safe_get (rekey), NULL
 	  };
-	fprintf(stderr,"start nas sup\n");
-	int arg=0;
-	while (argv[arg]!=NULL)
-	    {
-	    fprintf(stderr,"%s ",argv[arg++]);
-	    }
-	fprintf(stderr,"\n");
 	  _eval (argv, NULL, 0, &pid);
 	}
       else
 	{
-	  char *argv[] =
-	    { "nas", "-P", pidfile, "-H", "34954", "-l",
- nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
-	    auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
-	    sec_mode, "-g",
-	    nvram_safe_get (rekey), NULL
-	  };
-	fprintf(stderr,"start nas ap\n");
-	int arg=0;
-	while (argv[arg]!=NULL)
+	  if (!strcmp (auth_mode, "2") || !strcmp (auth_mode, "64")
+	      || !strcmp (auth_mode, "66"))
 	    {
-	    fprintf(stderr,"%s ",argv[arg++]);
+	      char *argv[] = { "nas", "-P", pidfile, "-H", "34954", "-l",
+		nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
+		sec_mode, "-g", nvram_safe_get (rekey), "-h",
+		nvram_safe_get (radius), "-p", nvram_safe_get (port), "-t",
+		NULL
+	      };
+	      _eval (argv, NULL, 0, &pid);
 	    }
-	fprintf(stderr,"\n");
-	  _eval (argv, NULL, 0, &pid);
+	  else if (!strcmp (auth_mode, "32"))
+	    {
+	      int idx = atoi (nvram_safe_get (index));
+	      char wepkey[32];
+	      sprintf (wepkey, "%s_key%d", prefix, idx);
+
+	      char *argv[] = { "nas", "-P", pidfile, "-H", "34954", "-l",
+		nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
+		sec_mode, "-I", nvram_safe_get (index), "-k",
+		  nvram_safe_get (wepkey), "-h",
+		nvram_safe_get (radius), "-p", nvram_safe_get (port), "-t",
+		NULL
+	      };
+	      _eval (argv, NULL, 0, &pid);
+
+	    }
+	  else
+	    {
+
+	      char *argv[] = { "nas", "-P", pidfile, "-H", "34954", "-l",
+		nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
+		auth_mode, "-k", key, "-s", nvram_safe_get (ssid), "-w",
+		sec_mode, "-g",
+		nvram_safe_get (rekey), NULL
+	      };
+	      _eval (argv, NULL, 0, &pid);
+	    }
+
+
 	}
 
-      
+
       fp = fopen (pidfile, "w");
       if (fp)
 	fprintf (fp, "%d", pid);
@@ -2826,7 +2855,7 @@ start_pppoe (int pppoe_num)
 #if LOG_PPPOE == 2
     "-d",
 #endif
-    "-C", "disconnected_pppoe", //by tallest 0407
+    "-C", "disconnected_pppoe",	//by tallest 0407
     NULL,			/* set default route */
     NULL, NULL,			/* pppoe_service */
     NULL, NULL,			/* pppoe_ac */
@@ -2880,10 +2909,10 @@ start_pppoe (int pppoe_num)
 
 // This should be handled in start_wan_done
 //      while (ifconfig (nvram_safe_get (pppoeifname), IFUP, NULL, NULL)
-//	     && timeout--)
-//	sleep (1);
+//           && timeout--)
+//      sleep (1);
 //      route_add (nvram_safe_get ("wan_iface"), 0, "0.0.0.0", "10.112.112.112",
-//		 "0.0.0.0");
+//               "0.0.0.0");
 
     }
   cprintf ("done. session %d\n", pppoe_num);
