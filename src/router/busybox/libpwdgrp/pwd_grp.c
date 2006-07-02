@@ -29,7 +29,7 @@
 #include "busybox.h"
 #include "pwd_.h"
 #include "grp_.h"
-#include "shadow_.h"
+//#include "shadow_.h"
 
 #ifndef _PATH_SHADOW
 #define	_PATH_SHADOW	"/etc/shadow"
