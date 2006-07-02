@@ -4205,7 +4205,7 @@ struct ej_handler ej_handlers[] = {
   {"dump_route_table", ej_dump_route_table},
   /* for ddns */
   {"show_ddns_status", ej_show_ddns_status},
-  {"show_ddns_ip", ej_show_ddns_ip},
+//  {"show_ddns_ip", ej_show_ddns_ip},
   /* for wireless */
   {"wireless_active_table", ej_wireless_active_table},
   {"wireless_filter_table", ej_wireless_filter_table},
