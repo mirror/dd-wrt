@@ -25,6 +25,18 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, " ");
     }
 
+  if (nvram_match ("ddns_enable", "0"))	// only for no hidden page
+    {
+      websWrite (wp, "<script type=\"text/javascript\">Capture(ddnsm.all_disabled)</script>");
+      return;
+    }
+
+  if (!check_wan_link (0))
+    {
+      websWrite (wp, "<script type=\"text/javascript\">Capture(ddnsm.all_noip)</script>");
+      return;
+    }
+
   /* Open ddns.log and write it */
   fp = fopen("/tmp/ddns.log", "r");
 
