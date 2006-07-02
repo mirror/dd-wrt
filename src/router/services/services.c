@@ -1487,7 +1487,7 @@ start_nas (char *type, char *prefix)
 		nvram_safe_get ("lan_ifname"), "-i", iface, mode, "-m",
 		auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
 		sec_mode, "-g", nvram_safe_get (rekey), "-h",
-		nvram_safe_get (radius), "-p", nvram_safe_get (port), "-t",
+		nvram_safe_get (radius), "-p", nvram_safe_get (port), // "-t", //radius rekey time
 		NULL
 	      };
 	      _eval (argv, NULL, 0, &pid);
@@ -1503,7 +1503,7 @@ start_nas (char *type, char *prefix)
 		auth_mode, "-r", key, "-s", nvram_safe_get (ssid), "-w",
 		sec_mode, "-I", nvram_safe_get (index), "-k",
 		  nvram_safe_get (wepkey), "-h",
-		nvram_safe_get (radius), "-p", nvram_safe_get (port), "-t",
+		nvram_safe_get (radius), "-p", nvram_safe_get (port),// "-t", //radius rekey time
 		NULL
 	      };
 	      _eval (argv, NULL, 0, &pid);
