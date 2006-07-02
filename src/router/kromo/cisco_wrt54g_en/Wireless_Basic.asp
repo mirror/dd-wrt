@@ -14,16 +14,16 @@ function SelWL(num,F) {
 }
 function wl_enable_disable(F,I) {
 	EN_DIS = I;
-	if (F.wl_ssid && F.wl_channel)
+	if (F.wl_ssid && F.wl0_channel)
 	{
 	if( I == "0"){
 		choose_disable(F.wl_ssid);
-		choose_disable(F.wl_channel);
+		choose_disable(F.wl0_channel);
 		<% nvram_match("wl_mode", "ap", "choose_disable(F.wl_closed[0]);"); %>
 		<% nvram_match("wl_mode", "ap", "choose_disable(F.wl_closed[1]);"); %>
 	} else {
 		choose_enable(F.wl_ssid);
-		choose_enable(F.wl_channel);
+		choose_enable(F.wl0_channel);
 		<% nvram_match("wl_mode", "ap", "choose_enable(F.wl_closed[0]);"); %>
 		<% nvram_match("wl_mode", "ap", "choose_enable(F.wl_closed[1]);"); %>
 	}
