@@ -1490,13 +1490,13 @@ show_channel (webs_t wp, char *dev, char *prefix)
 	}
 #else
       websWrite (wp, "var max_channel = 14;\n");
-      websWrite (wp, "var wl_channel = '%s';\n", nvram_safe_get (wl_channel));
+      websWrite (wp, "var wl0_channel = '%s';\n", nvram_safe_get (wl_channel));
       websWrite (wp, "var buf = \"\";");
       websWrite (wp,
 		 "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
       websWrite (wp, "	for(i=0; i<=max_channel ; i++){\n");
       websWrite (wp,
-		 "		if(i == wl_channel)	buf = \"selected\";\n");
+		 "		if(i == wl0_channel)	buf = \"selected\";\n");
       websWrite (wp, "		else			buf = \"\";\n");
       websWrite (wp, "		if(i==0)\n");
       websWrite (wp,
@@ -1788,6 +1788,15 @@ save_prefix (webs_t wp, char *prefix)
     }
   sprintf (n, "%s_net_mode", prefix);
   copytonv (wp, n);
+
+  if (!strcmp(prefix,"wl0"))
+    {
+  char *wl = websGetVar (wp, n, NULL);
+  cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
+  if (wl)
+    nvram_set ("wl_channel", wl);
+    }
+
   sprintf (n, "%s_channel", prefix);
   copytonv (wp, n);
 
