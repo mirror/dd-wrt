@@ -553,7 +553,13 @@ struct nvram_tuple router_defaults[] = {
   {"ath0_channel", "0", 0},	/* Channel number */
   {"ath1_channel", "0", 0},	/* Channel number */
 #else
+
+#ifdef HAVE_MSSID
+  {"wl0_channel", "6", 0},	/* Channel number */
+#else
   {"wl_channel", "6", 0},	/* Channel number */
+#endif
+
 #endif
   {"wl_rate", "0", 0},		/* Rate (bps, 0 for auto) */
   {"wl_rateset", "default", 0},	/* "default" or "all" or "12" */
