@@ -30,13 +30,13 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (fp == NULL) 
     {
-      websWrite (wp, "Unknown"); 
+      websWrite (wp, "Waiting..."); 
       return;
     }
   else
     {
       while (fgets (buff, sizeof (buff), fp))
-      websWrite (wp, "%s", buff);
+      websWrite (wp, "%s\n", buff);
     }
   fclose(fp);
   return;
