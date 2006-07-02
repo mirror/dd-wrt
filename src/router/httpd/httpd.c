@@ -1007,7 +1007,12 @@ encodeString (const char *string)
   while ((ch = *string++))
     {
       // very simple check for what to encode
-      if (isalnum (ch))
+      
+      if (ch>'0'-1 && ch<'9'+1)
+	*p++ = ch;
+      else if (ch>'a'-1 && ch<'z'+1)
+	*p++ = ch;
+      else if (ch>'A'-1 && ch<'Z'+1)
 	*p++ = ch;
       else
 	p += sprintf (p, "&#%d;", (unsigned char) ch);
