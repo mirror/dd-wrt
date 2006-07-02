@@ -797,6 +797,7 @@ struct nvram_tuple router_defaults[] = {
   {"ddns_passwd_5", "", 0}, 
   {"ddns_hostname_5", "", 0}, 
   {"ddns_custom_5", "", 0}, 
+  {"ddns_conf", "", 0}, 
 
   /* for last value */
   {"ddns_enable_buf", "", 0},	/* 0:Disable 1:Eanble */

@@ -128,11 +128,11 @@ function SelDDNS(num,F) {
 									<div class="label"><% tran("ddns.srv"); %></div>
 									<select name="ddns_enable" onchange="SelDDNS(this.form.ddns_enable.selectedIndex,this.form)">
 										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selmatch("ddns_enable", "0", "selected"); %> >" + share.disable + "</option>");</script>
-										<option value="1" <% nvram_selmatch("ddns_enable", "1", "selected"); %> >dyndns.org</option>
+										<option value="1" <% nvram_selmatch("ddns_enable", "1", "selected"); %> >DynDNS.org</option>
 										<option value="2" <% nvram_selmatch("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
-										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %> >zoneedit.com</option>
-										<option value="4" <% nvram_selmatch("ddns_enable", "4", "selected"); %> >no-ip.com</option>
-										<option value="5" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >custom</option>
+										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %> >ZoneEdit.com</option>
+										<option value="4" <% nvram_selmatch("ddns_enable", "4", "selected"); %> >No-IP.com</option>
+										<option value="5" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >Custom</option>
 									</select>
 								</div>
 								<% nvram_selmatch("ddns_enable","0","<!--"); %>
@@ -253,11 +253,7 @@ function SelDDNS(num,F) {
 								<legend><% tran("ddns.statu"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.statu"); %></div>
-									Status is not implemented yet.&nbsp;
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("share.interipaddr"); %></div>
-									<% show_ddns_ip(); %>&nbsp;
+									<% show_ddns_status(); %>&nbsp;
 								</div>
 								<% nvram_selmatch("ddns_enable","0","-->"); %>
 							</fieldset><br />
