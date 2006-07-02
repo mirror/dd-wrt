@@ -10,140 +10,11 @@
 
 #include <broadcom.h>
 
-struct ddns_message
-{
-  char *name;
-  char *desc;
-};
-
-
-#if LANGUAGE == JAPANESE
-struct ddns_message ddns_messages[] = {
-  // Below is DynDNS error code
-  {"dyn_good", "DDNS �X?V͊܂"},
-  {"dyn_noupdate", "DDNS �X?V͊܂"},
-  {"dyn_nohost", "zXg?݂܂�},
-  {"dyn_notfqdn", "h?C?��},
-  {"dyn_!yours", "?[U?[?��},
-  {"dyn_abuse", "zXg�DDNS T?[oɂ�u?bN�܂"},
-  {"dyn_nochg", "DDNS �X?V͊܂"},
-  {"dyn_badauth", "F?؂Ɏs܂ (?[U?[܂̓pX??[h)"},
-  {"dyn_badsys", "VXe p??[^s?ł"},
-  {"dyn_badagent", "̃?[U?[ G?[WFg̓u?bN�܂"},
-  {"dyn_numhost", "zXg邩?Ȃ܂"},
-  {"dyn_dnserr", "DNS G?[?"},
-  -{"dyn_911", "\ʃG?[ł?B (1)"},
-  -{"dyn_999", "\ʃG?[ł?B (2)"},
-  {"dyn_!donator",
-   "NGXgꂽ@\͊�?�ɂ̂ݗLł?B�ⵂĂ?B"},
-  -{"dyn_strange",
-    "s?ł?B?ڑ?�?[o?ǂ?AmF?B"},
-  {"dyn_uncode", "DynDns �sȃ^?[ R?[h"},
-
-  // Below is TZO error code
-  {"tzo_good", "Operation Complete"},
-  {"tzo_noupdate", "Operation Complete"},
-  {"tzo_notfqdn", "Invalid Domain Name"},
-  {"tzo_notmail", "Invalis Email"},
-  {"tzo_notact", "Invalid Action"},
-  {"tzo_notkey", "Invalid Key"},
-  {"tzo_notip", "Invalid IP address"},
-  {"tzo_dupfqdn", "Duplicate Domain Name"},
-  {"tzo_fqdncre",
-   "Domain Name has already been created for this domain name"},
-  {"tzo_expired", "The account has expired"},
-  {"tzo_error", "An unexpected server error"},
-
-  // Below is for all
-  {"all_closed", "DDNS T?[o͌?݃N??[YĂ܂"},
-  -{"all_resolving", "h?C�"},
-  -{"all_errresolv", "h?C̉숂Ɏs܂?B"},
-  -{"all_connecting", "T?[o�ڑ"},
-  -{"all_connectfail", "T?[oւ�ڑɎs܂?B"},
-  -{"all_disabled", "DDNS ͖ł"},
-  -{"all_noip", "C^?[lbg?ڑ��},
-};
-#else
-struct ddns_message ddns_messages[] = {
-  // Below is DynDNS error code
-  {"dyn_strange", "ddnsm.dyn_strange"},
-  {"dyn_good", "ddnsm.dyn_good"},
-  {"dyn_noupdate", "ddnsm.dyn_noupdate"},
-  {"dyn_nohost", "ddnsm.dyn_nohost"},
-  {"dyn_notfqdn", "ddnsm.dyn_notfqdn"},
-  {"dyn_!yours", "ddnsm.dyn_yours"},
-  {"dyn_abuse", "ddnsm.dyn_abuse"},
-  {"dyn_nochg", "ddnsm.dyn_nochg"},
-  {"dyn_badauth", "ddnsm.dyn_badauth"},
-  {"dyn_badsys", "ddnsm.dyn_badsys"},
-  {"dyn_badagent", "ddnsm.dyn_badagent"},
-  {"dyn_numhost", "ddnsm.dyn_numhost"},
-  {"dyn_dnserr", "ddnsm.dyn_dnserr"},
-  {"dyn_911", "ddnsm.dyn_911"},
-  {"dyn_999", "ddnsm.dyn_999"},
-  {"dyn_!donator", "ddnsm.dyn_donator"},
-  {"dyn_uncode", "ddnsm.dyn_uncode"},
-
-  // Below is TZO error code
-  {"tzo_good", "ddnsm.tzo_good"},
-  {"tzo_noupdate", "ddnsm.tzo_noupdate"},
-  {"tzo_notfqdn", "ddnsm.tzo_notfqdn"},
-  {"tzo_notmail", "ddnsm.tzo_notmail"},
-  {"tzo_notact", "ddnsm.tzo_notact"},
-  {"tzo_notkey", "ddnsm.tzo_notkey"},
-  {"tzo_notip", "ddnsm.tzo_notip"},
-  {"tzo_dupfqdn", "ddnsm.tzo_dupfqdn"},
-  {"tzo_fqdncre", "ddnsm.tzo_fqdncre"},
-  {"tzo_expired", "ddnsm.tzo_expired"},
-  {"tzo_error", "ddnsm.tzo_error"},
-
-  // Below is ZON error code
-
-  {"zone_701", "ddnsm.zone_701"},
-  {"zone_702", "ddnsm.zone_702"},
-  {"zone_703", "ddnsm.zone_703"},
-  {"zone_704", "ddnsm.zone_704"},
-  {"zone_705", "ddnsm.zone_705"},
-  {"zone_707", "ddnsm.zone_707"},
-  {"zone_201", "ddnsm.zone_201"},
-  {"zone_badauth", "ddnsm.zone_badauth"},
-  {"zone_good", "ddnsm.zone_good"},
-  {"zone_strange", "ddnsm.zone_strange"},
-
-  // Below is for all
-  {"all_closed", "ddnsm.all_closed"},
-  {"all_resolving", "ddnsm.all_resolving"},
-  {"all_errresolv", "ddnsm.all_errresolv"},
-  {"all_connecting", "ddnsm.all_connecting"},
-  {"all_connectfail", "ddnsm.all_connectfail"},
-  {"all_disabled", "ddnsm.all_disabled"},
-  {"all_noip", "ddnsm.all_noip"},
-};
-#endif
-
-char *
-convert (char *msg)
-{
-  static char buf[200];
-  struct ddns_message *m;
-
-  for (m = ddns_messages; m < &ddns_messages[STRUCT_LEN (ddns_messages)]; m++)
-    {
-      if (!strcmp (m->name, msg))
-	{
-	  snprintf (buf, sizeof (buf), "%s", m->desc);
-	  return buf;
-	}
-    }
-
-  snprintf (buf, sizeof (buf), "%s", msg);
-  return buf;
-}
-
 void
 ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 {
-  char string[80] = "";
+  char buff[512];
+  FILE *fp;
   char *enable = websGetVar (wp, "ddns_enable", NULL);
 
   if (!enable)
@@ -154,36 +25,20 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, " ");
     }
 
-  if (nvram_match ("ddns_enable", "0"))	// only for no hidden page
-    {
-      websWrite (wp, "%s", convert ("all_disabled"));
-      return;
-    }
-  if (!check_wan_link (0))
-    {
-      websWrite (wp, "%s", convert ("all_noip"));
-      return;
-    }
-  if (file_to_buf ("/tmp/ddns_msg", string, sizeof (string)))
-    {
-      if (!strcmp (string, ""))
-	{
-	  if (nvram_match ("ddns_status", "1"))
-	    {
-	      if (nvram_match ("ddns_enable", "1"))
-		websWrite (wp, "%s", convert ("dyn_good"));	// dyndns
-	      if (nvram_match ("ddns_enable", "2"))
-		websWrite (wp, "%s", convert ("tzo_good"));	// tzo
-	      if (nvram_match ("ddns_enable", "3"))
-		websWrite (wp, "%s", convert ("zone_good"));	// zoneedit
-	    }
-	  else
-	    websWrite (wp, "%s", convert ("all_closed"));
-	}
-      else
-	websWrite (wp, "%s", convert (string));
-    }
+  /* Open ddns.log and write it */
+  fp = fopen("/tmp/ddns.log", "r");
 
+  if (fp == NULL) 
+    {
+      websWrite (wp, "Unknown"); 
+      return;
+    }
+  else
+    {
+      while (fgets (buff, sizeof (buff), fp))
+      websWrite (wp, "%s", buff);
+    }
+  fclose(fp);
   return;
 }
 
@@ -280,6 +135,7 @@ ddns_update_value (webs_t wp)
   return 1;
 }
 
+/*
 void
 ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -300,3 +156,4 @@ ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+*/
