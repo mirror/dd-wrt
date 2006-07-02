@@ -105,150 +105,163 @@ getMacAddr (char *ifname, char *mac)
 	   hwbuff[2], hwbuff[3], hwbuff[4], hwbuff[5]);
 
 }
+
 #ifdef HAVE_MSSID
 static unsigned long ptable[128];
 static unsigned long kmem_offset;
-static inline void wlc_get_mem_offset(void)
+static inline void
+wlc_get_mem_offset (void)
 {
-	FILE *f;
-	char s[64];
+  FILE *f;
+  char s[64];
 
-	/* yes, i'm lazy ;) */
-	f = popen("grep '\\[wl]' /proc/ksyms | sort", "r");
-	if (fgets(s, 64, f) == 0)
-		return;
+  /* yes, i'm lazy ;) */
+  f = popen ("grep '\\[wl]' /proc/ksyms | sort", "r");
+  if (fgets (s, 64, f) == 0)
+    return;
 
-	pclose(f);
-	
-	s[8] = 0;
-	kmem_offset = strtoul(s, NULL, 16);
+  pclose (f);
 
-	/* sanity check */
-	if (kmem_offset < 0xc0000000)
-		kmem_offset = 0;
-	return;
+  s[8] = 0;
+  kmem_offset = strtoul (s, NULL, 16);
+
+  /* sanity check */
+  if (kmem_offset < 0xc0000000)
+    kmem_offset = 0;
+  return;
 }
-static int ptable_init(void)
+static int
+ptable_init (void)
 {
-	struct stat statbuf;
-	int fd;
+  struct stat statbuf;
+  int fd;
 
-	if (ptable[0] == PTABLE_MAGIC)
-		return 0;
-	
-	if ((fd = open("/etc/patchtable.bin", O_RDONLY)) < 0)
-		return -1;
-	
-	if (fstat(fd, &statbuf) < 0)
-		goto failed;
+  if (ptable[0] == PTABLE_MAGIC)
+    return 0;
 
-	if (statbuf.st_size < 512)
-		goto failed;
-	
-//	if (lseek(fd, statbuf.st_size - 512, SEEK_SET) < 0) {
-//		perror("lseek");
-//		goto failed;
-//	}
+  if ((fd = open ("/etc/patchtable.bin", O_RDONLY)) < 0)
+    return -1;
 
-	if (read(fd, ptable, 512) < 512)
-		goto failed;
-	
-	if (ptable[0] != PTABLE_MAGIC)
-		goto failed;
-	
-	close(fd);
+  if (fstat (fd, &statbuf) < 0)
+    goto failed;
 
-	wlc_get_mem_offset();
-	if (kmem_offset == 0)
-		return -1;
-	
-	return 0;
-		
+  if (statbuf.st_size < 512)
+    goto failed;
+
+//      if (lseek(fd, statbuf.st_size - 512, SEEK_SET) < 0) {
+//              perror("lseek");
+//              goto failed;
+//      }
+
+  if (read (fd, ptable, 512) < 512)
+    goto failed;
+
+  if (ptable[0] != PTABLE_MAGIC)
+    goto failed;
+
+  close (fd);
+
+  wlc_get_mem_offset ();
+  if (kmem_offset == 0)
+    return -1;
+
+  return 0;
+
 failed:
-	close(fd);
+  close (fd);
 
-	return -1;
+  return -1;
 }
 
-static inline unsigned long wlc_kmem_read(unsigned long offset)
+static inline unsigned long
+wlc_kmem_read (unsigned long offset)
 {
-	int fd;
-	unsigned long ret;
+  int fd;
+  unsigned long ret;
 
-	if ((fd = open("/dev/kmem", O_RDONLY )) < 0)
-		return -1;
-	
-	lseek(fd, 0x70000000, SEEK_SET);
-	lseek(fd, (kmem_offset - 0x70000000) + offset, SEEK_CUR);
-	read(fd, &ret, 4);
-	close(fd);
+  if ((fd = open ("/dev/kmem", O_RDONLY)) < 0)
+    return -1;
 
-	return ret;
+  lseek (fd, 0x70000000, SEEK_SET);
+  lseek (fd, (kmem_offset - 0x70000000) + offset, SEEK_CUR);
+  read (fd, &ret, 4);
+  close (fd);
+
+  return ret;
 }
 
-static inline void wlc_kmem_write(unsigned long offset, unsigned long value)
+static inline void
+wlc_kmem_write (unsigned long offset, unsigned long value)
 {
-	int fd;
+  int fd;
 
-	if ((fd = open("/dev/kmem", O_WRONLY )) < 0)
-		return;
-	
-	lseek(fd, 0x70000000, SEEK_SET);
-	lseek(fd, (kmem_offset - 0x70000000) + offset, SEEK_CUR);
-	write(fd, &value, 4);
-	close(fd);
+  if ((fd = open ("/dev/kmem", O_WRONLY)) < 0)
+    return;
+
+  lseek (fd, 0x70000000, SEEK_SET);
+  lseek (fd, (kmem_offset - 0x70000000) + offset, SEEK_CUR);
+  write (fd, &value, 4);
+  close (fd);
 }
 
-static int wlc_patcher_getval(unsigned long key, unsigned long *val)
+static int
+wlc_patcher_getval (unsigned long key, unsigned long *val)
 {
-	unsigned long *pt = &ptable[1];
-	unsigned long tmp;
-	
-	if (ptable_init() < 0) {
-		fprintf(stderr, "Could not load the ptable\n");
-		return -1;
-	}
+  unsigned long *pt = &ptable[1];
+  unsigned long tmp;
 
-	while (*pt != PTABLE_END) {
-		if (*pt == key) {
-			tmp = wlc_kmem_read(pt[1]);
+  if (ptable_init () < 0)
+    {
+      fprintf (stderr, "Could not load the ptable\n");
+      return -1;
+    }
 
-			if (tmp == pt[2])
-				*val = 0xffffffff;
-			else
-				*val = tmp;
-			
-			return 0;
-		}
-		pt += 3;
+  while (*pt != PTABLE_END)
+    {
+      if (*pt == key)
+	{
+	  tmp = wlc_kmem_read (pt[1]);
+
+	  if (tmp == pt[2])
+	    *val = 0xffffffff;
+	  else
+	    *val = tmp;
+
+	  return 0;
 	}
-	
-	return -1;
+      pt += 3;
+    }
+
+  return -1;
 }
 
-static int wlc_patcher_setval(unsigned long key, unsigned long val)
+static int
+wlc_patcher_setval (unsigned long key, unsigned long val)
 {
-	unsigned long *pt = &ptable[1];
-	
-	if (ptable_init() < 0) {
-		fprintf(stderr, "Could not load the ptable\n");
-		return -1;
-	}
+  unsigned long *pt = &ptable[1];
 
-	if (val != 0xffffffff)
-		val = (pt[2] & ~(0xffff)) | (val & 0xffff);
-	
-	while (*pt != PTABLE_END) {
-		if (*pt == key) {
-			if (val == 0xffffffff) /* default */
-				val = pt[2];
+  if (ptable_init () < 0)
+    {
+      fprintf (stderr, "Could not load the ptable\n");
+      return -1;
+    }
 
-			wlc_kmem_write(pt[1], val);
-		}
-		pt += 3;
+  if (val != 0xffffffff)
+    val = (pt[2] & ~(0xffff)) | (val & 0xffff);
+
+  while (*pt != PTABLE_END)
+    {
+      if (*pt == key)
+	{
+	  if (val == 0xffffffff)	/* default */
+	    val = pt[2];
+
+	  wlc_kmem_write (pt[1], val);
 	}
-	
-	return 0;
+      pt += 3;
+    }
+
+  return 0;
 }
 
 /*
@@ -264,29 +277,31 @@ static int get_wlc_slottime(wlc_param param, void *data, void *value)
 	return ret;
 }
 */
-static int set_wlc_slottime(int value)
+static int
+set_wlc_slottime (int value)
 {
-	int ret = 0;
+  int ret = 0;
 
-	wlc_patcher_setval(PTABLE_SLT1, value);
-	wlc_patcher_setval(PTABLE_SLT2, ((value == -1) ? value : value + 510));
-	return ret;
+  wlc_patcher_setval (PTABLE_SLT1, value);
+  wlc_patcher_setval (PTABLE_SLT2, ((value == -1) ? value : value + 510));
+  return ret;
 }
 
 
-static int wlc_noack(int value)
+static int
+wlc_noack (int value)
 {
-	int ret = 0;
+  int ret = 0;
 
-//	if ((param & PARAM_MODE) == SET) {
-		wlc_patcher_setval(PTABLE_ACKW, (value ? 1 : 0));
-//	} else if ((param & PARAM_MODE) == GET) {
-//		ret = wlc_patcher_getval(PTABLE_ACKW, (unsigned long *) val);
-//		*val &= 0xffff;
-//		*val = (*val ? 1 : 0);
-//	}
+//      if ((param & PARAM_MODE) == SET) {
+  wlc_patcher_setval (PTABLE_ACKW, (value ? 1 : 0));
+//      } else if ((param & PARAM_MODE) == GET) {
+//              ret = wlc_patcher_getval(PTABLE_ACKW, (unsigned long *) val);
+//              *val &= 0xffff;
+//              *val = (*val ? 1 : 0);
+//      }
 
-	return ret;
+  return ret;
 }
 
 #endif
@@ -445,17 +460,17 @@ wlconf_up (char *name)
     val = TXPWR_DEFAULT;
 #ifndef HAVE_MSSID
   val |= WL_TXPWR_OVERRIDE;	// set the power override bit
-  
+
   WL_IOCTL (name, WLC_SET_TXPWR, &val, sizeof (val));
   WL_IOCTL (name, WLC_CURRENT_PWR, &val, sizeof (val));
 #else
 //convert mw to qdbm and set override flag
-float value = 10 * log(val) / M_LN10;
-value *=4;
-value +=0.5;
-val = (int)value;
-val |= WL_TXPWR_OVERRIDE;
-wl_iovar_setint(name,"qtxpower",val);
+  float value = 10 * log (val) / M_LN10;
+  value *= 4;
+  value += 0.5;
+  val = (int) value;
+  val |= WL_TXPWR_OVERRIDE;
+  wl_iovar_setint (name, "qtxpower", val);
 
 //eval("wl","txpwr1","-m","-o",nvram_safe_get("txpwr"));
 #endif
@@ -526,28 +541,28 @@ cprintf("is all?\n");
       val = atoi (v);
       if (v == 0)
 	{
-	  #ifdef HAVE_MSSID
-	  wlc_noack(0);
-	  #else
+#ifdef HAVE_MSSID
+	  wlc_noack (0);
+#else
 	  eval ("/etc/txackset.sh", "0");	// disable ack timing
-	  #endif
+#endif
 	  return 0;
 	}
       else
 	{
-	  #ifdef HAVE_MSSID
-	  wlc_noack(1);
-	  #else
+#ifdef HAVE_MSSID
+	  wlc_noack (1);
+#else
 	  eval ("/etc/txackset.sh", "1");	// enable ack timing
-	  #endif
+#endif
 	}
-	
-      
+
+
       val = 9 + (val / 300) + ((val % 300) ? 1 : 0);
-      #ifdef HAVE_MSSID
-      set_wlc_slottime(val);
-      #else
-      
+#ifdef HAVE_MSSID
+      set_wlc_slottime (val);
+#else
+
       shm = 0x10;
       shm |= (val << 16);
       WL_IOCTL (name, 197, &shm, sizeof (shm));
@@ -556,7 +571,7 @@ cprintf("is all?\n");
       reg.val = val + 510;
       reg.size = 2;
       WL_IOCTL (name, 102, &reg, sizeof (reg));
-      #endif
+#endif
     }
 
   return ret;
@@ -1259,7 +1274,7 @@ start_wan (int status)
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) < 0)
     return;
 #ifdef HAVE_PPPOE
-  /* Check PPPoE version, RP or linksys*/
+  /* Check PPPoE version, RP or linksys */
   int pppoe_rp;
   if (!strcmp (nvram_safe_get ("pppoe_ver"), "1"))
     pppoe_rp = 1;
@@ -2413,7 +2428,7 @@ start_wds_check (void)
 	  br_shutdown ();
 	  //  eval("killall","-9","nas");
 	  //eval ("brctl", "addif", "br1", dev);
-//	  notify_nas ("lan", "br1", "up");
+//        notify_nas ("lan", "br1", "up");
 	}
       /* LAN WDS type */
       else if (nvram_match (wdsvarname, "3"))
@@ -2424,7 +2439,7 @@ start_wds_check (void)
 //        eval("killall","-9","nas");
 //        eval ("brctl", "addif", "br0", dev);
 	  br_shutdown ();
-//	  notify_nas ("lan", "br0", "up");
+//        notify_nas ("lan", "br0", "up");
 	}
 
     }

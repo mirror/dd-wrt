@@ -36,7 +36,7 @@ init_ddns (void)
   int flag = 0;
 
   if (nvram_match ("ddns_enable", "0"))
-    return -1;	
+    return -1;
 
   else if (nvram_match ("ddns_enable", "1"))
     {
@@ -123,13 +123,13 @@ start_ddns (void)
   if ((fp = fopen ("/tmp/inadyn.conf", "w")))
     {
       fprintf (fp, "--background");
-      fprintf (fp, " --dyndns_system %s", service); //service
-      fprintf (fp, " -u %s", nvram_safe_get (_username)); //username/email
-      fprintf (fp, " -p %s", nvram_safe_get (_passwd)); // password
-      fprintf (fp, " -a %s", nvram_safe_get (_hostname)); // alias/hostname
-      fprintf (fp, " --update_period_sec %s", "3600"); // check ip every hour
-      fprintf (fp, " --forced_update_period %s", "2160000"); //force update after 25days
-      fprintf (fp, " --log_file %s", "/tmp/ddns.log\n"); //log to file
+      fprintf (fp, " --dyndns_system %s", service);	//service
+      fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
+      fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
+      fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
+      fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
+      fprintf (fp, " --forced_update_period %s", "2160000");	//force update after 25days
+      fprintf (fp, " --log_file %s", "/tmp/ddns.log\n");	//log to file
       fclose (fp);
     }
   else
