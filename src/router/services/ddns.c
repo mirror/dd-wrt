@@ -150,6 +150,7 @@ stop_ddns (void)
 {
   int ret;
 
+  unlink ("/tmp/ddns.log");
   ret = eval ("killall", "inadyn");
 
   cprintf ("done\n");

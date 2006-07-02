@@ -36,7 +36,7 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
   else
     {
       while (fgets (buff, sizeof (buff), fp))
-      websWrite (wp, "%s\n", buff);
+      websWrite (wp, "%s <br />", buff);
     }
   fclose(fp);
   return;
