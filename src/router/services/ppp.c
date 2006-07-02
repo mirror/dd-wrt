@@ -204,74 +204,80 @@ ipdown_main (int argc, char **argv)
 }
 
 int
-pppevent_main(int argc, char **argv)
+pppevent_main (int argc, char **argv)
 {
-	int argn;
-	char *type = NULL;
+  int argn;
+  char *type = NULL;
 
-	argn = 1;
-        while ( argn < argc && argv[argn][0] == '-' ){
-		if ( strcmp( argv[argn], "-t" ) == 0 ) {
-			++ argn;
-			type = argv[argn];
-		}
-		++ argn;
+  argn = 1;
+  while (argn < argc && argv[argn][0] == '-')
+    {
+      if (strcmp (argv[argn], "-t") == 0)
+	{
+	  ++argn;
+	  type = argv[argn];
 	}
-	
-	if(!type)
-		return 1;
+      ++argn;
+    }
+
+  if (!type)
+    return 1;
 
 
-	if(!strcmp(type, "PAP_AUTH_FAIL") || !strcmp(type, "CHAP_AUTH_FAIL")) {
+  if (!strcmp (type, "PAP_AUTH_FAIL") || !strcmp (type, "CHAP_AUTH_FAIL"))
+    {
 
-		buf_to_file("/tmp/ppp/log", type);
+      buf_to_file ("/tmp/ppp/log", type);
 
-		if(check_hw_type() == BCM4704_BCM5325F_CHIP)	
-			SET_LED(GET_IP_ERROR);
-	}
+      if (check_hw_type () == BCM4704_BCM5325F_CHIP)
+	SET_LED (GET_IP_ERROR);
+    }
 
-	return 0;
+  return 0;
 }
 
 //=============================================================================
 int
-set_pppoepid_to_nv_main(int argc, char **argv) // tallest 1219
+set_pppoepid_to_nv_main (int argc, char **argv)	// tallest 1219
 {
-        if(!strcmp(argv[1],"0"))
-	{
-		nvram_set("pppoe_pid0",getenv("PPPD_PID"));
-		nvram_set("pppoe_ifname0",getenv("IFNAME"));
-	}
-	else if(!strcmp(argv[1],"1"))
-	{
-		nvram_set("pppoe_pid1",getenv("PPPD_PID"));
-		nvram_set("pppoe_ifname1",getenv("IFNAME"));
-	}
+  if (!strcmp (argv[1], "0"))
+    {
+      nvram_set ("pppoe_pid0", getenv ("PPPD_PID"));
+      nvram_set ("pppoe_ifname0", getenv ("IFNAME"));
+    }
+  else if (!strcmp (argv[1], "1"))
+    {
+      nvram_set ("pppoe_pid1", getenv ("PPPD_PID"));
+      nvram_set ("pppoe_ifname1", getenv ("IFNAME"));
+    }
 
-	dprintf("done.( IFNAME = %s DEVICE = %s )\n",getenv("IFNAME"),getenv("DEVICE"));
-        return 0;
+  dprintf ("done.( IFNAME = %s DEVICE = %s )\n", getenv ("IFNAME"),
+	   getenv ("DEVICE"));
+  return 0;
 }
 
 //by tallest 0407
 int
-disconnected_pppoe_main(int argc, char **argv)
+disconnected_pppoe_main (int argc, char **argv)
 {
-	int pppoe_num = atoi(argv[1]);
-	char ppp_demand[2][20]={"ppp_demand","ppp_demand_1"};
+  int pppoe_num = atoi (argv[1]);
+  char ppp_demand[2][20] = { "ppp_demand", "ppp_demand_1" };
 
-	if(nvram_match(ppp_demand[pppoe_num], "1") && nvram_match("action_service",""))
-	{
-		cprintf("tallest:=====( kill pppoe %d )=====\n", pppoe_num);
-		stop_singe_pppoe(pppoe_num);
-		start_pppoe(pppoe_num);
-		dns_to_resolv();
+  if (nvram_match (ppp_demand[pppoe_num], "1")
+      && nvram_match ("action_service", ""))
+    {
+      cprintf ("tallest:=====( kill pppoe %d )=====\n", pppoe_num);
+      stop_singe_pppoe (pppoe_num);
+      start_pppoe (pppoe_num);
+      dns_to_resolv ();
 
-		stop_dnsmasq();
-		start_dnsmasq();
+      stop_dnsmasq ();
+      start_dnsmasq ();
 
-		return 0;
-	}
-	cprintf("tallest:=====( PPPOE Dial On Demand Error!! )=====\n");
-	return 0;
+      return 0;
+    }
+  cprintf ("tallest:=====( PPPOE Dial On Demand Error!! )=====\n");
+  return 0;
 }
+
 //=============================================================================
