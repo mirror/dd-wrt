@@ -57,7 +57,7 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 int
 ddns_save_value (webs_t wp)
 {
-  char *enable, *username, *passwd, *hostname, *dyndnstype *wildcard;
+  char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard;
   struct variable ddns_variables[] = {
   {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5")},
   {longname: "DDNS password", argv:ARGV ("30")},
