@@ -42,8 +42,21 @@ do_mssid (char *lan_ifname)
   if (vifs != NULL)
     foreach (var, vifs, next)
     {
-      ifconfig (var, IFUP, NULL, NULL);
-      br_add_interface (lan_ifname, var);
+      char bridged[32];
+      sprintf (bridged, "%s_bridged", var);
+      if (nvram_match (bridged, "1"))
+	{
+	  ifconfig (var, IFUP, NULL, NULL);
+	  br_add_interface (lan_ifname, var);
+	}
+      else
+	{
+	  char ip[32];
+	  char mask[32];
+	  sprintf (ip, "%s_ipaddr", var);
+	  sprintf (mask, "%s_ipaddr", var);
+	  ifconfig (var, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
+	}
       //  eval ("brctl", "addif", lan_ifname, var);
     }
 }
