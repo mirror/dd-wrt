@@ -128,8 +128,8 @@ function SelMode(num,F) {
 									<div class="label"><% tran("share.intrface"); %></div>
 									<select size="1" name="dr_setting">
 										<script type="text/javascript">document.write("<option value=\"0\" <% nvram_selected("dr_setting", "0", "js"); %> >" + share.disable + "</option>");</script>
-										<option value="1" <% nvram_selected("dr_setting", "1"); %> >LAN &amp; WLAN</option>
-										<option value="2" <% nvram_selected("dr_setting", "2"); %> >WAN</option>
+										<option value="1" <% nvram_selected("dr_setting", "1"); %> >WAN</option>
+										<option value="2" <% nvram_selected("dr_setting", "2"); %> >LAN &amp; WLAN</option>
 										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selected("dr_setting", "3", "js"); %> >" + share.both + "</option>");</script>
 									</select>
 								</div>
