@@ -192,8 +192,8 @@ period_check (int sig)
 		  return;
 		}
 	      if ((brand == ROUTER_WRT54G) || 
-	                (brand == ROUTER_WRTSL54GS) || 
-	      	        (brand == ROUTER_WRT54G1X) ||
+	        (brand == ROUTER_WRTSL54GS) || 
+	      	(brand == ROUTER_WRT54G1X) ||
 		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
 		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
 		  	(brand == ROUTER_BUFFALO_WBR54G) ||
