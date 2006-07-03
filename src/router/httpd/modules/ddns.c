@@ -37,16 +37,16 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  /* Open ddns.log and write it */
   fp = fopen("/tmp/ddns.log", "r");
 
   if (fp == NULL) 
     {
-      websWrite (wp, "Waiting..."); 
+      websWrite (wp, "<script type=\"text/javascript\">Capture(ddnsm.all_connecting)</script>");
       return;
     }
   else
     {
+      /* Just dump the log file onto the web page */
       while (fgets (buff, sizeof (buff), fp))
       websWrite (wp, "%s <br />", buff);
     }
@@ -67,6 +67,7 @@ ddns_save_value (webs_t wp)
   char _passwd[] = "ddns_passwd_X";
   char _hostname[] = "ddns_hostname_X";
   char _dyndnstype[] = "ddns_dyndnstype_X";
+  char _wildcard[] = "ddns_wildcard_X";
 
   which = &ddns_variables[0];
 
@@ -89,6 +90,7 @@ ddns_save_value (webs_t wp)
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
       snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype");
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
     }
   else if (atoi (enable) == 2)
     {				// afraid
@@ -119,6 +121,7 @@ ddns_save_value (webs_t wp)
   passwd = websGetVar (wp, _passwd, NULL);
   hostname = websGetVar (wp, _hostname, NULL);
   dyndnstype = websGetVar (wp, _dyndnstype, NULL);
+  wildcard = websGetVar (wp, _wildcard, NULL);
 
   if (!username || !passwd || !hostname)
     {
@@ -131,6 +134,7 @@ ddns_save_value (webs_t wp)
   nvram_set ("ddns_passwd_buf", nvram_safe_get (_passwd));
   nvram_set ("ddns_hostname_buf", nvram_safe_get (_hostname));
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
+  nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
   nvram_set ("ddns_enable", enable);
   nvram_set (_username, username);
   if (strcmp (passwd, TMP_PASSWD))
