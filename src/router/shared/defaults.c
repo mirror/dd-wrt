@@ -786,6 +786,7 @@ struct nvram_tuple router_defaults[] = {
   {"ddns_passwd", "", 0},	/* DynDNS Password */
   {"ddns_hostname", "", 0},	/* DynDNS Hostname */
   {"ddns_dyndnstype", "", 0},	/* DynDNS Type */
+  {"ddns_wildcard", "", 0},	/* DynDNS Wildcard */
   /* for afraid.org */
   {"ddns_username_2", "", 0}, 
   {"ddns_passwd_2", "", 0}, 
