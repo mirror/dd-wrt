@@ -96,12 +96,15 @@ function SelMode(num,F) {
 							<input type="hidden" name="action" />
 							<input type="hidden" name="static_route" />
 							<h2><% tran("route.h2"); %></h2>
-							<div class="setting">
-								<div class="label"><% tran("route.mod"); %></div>
-								<select name="wk_mode" onchange="SelMode(this.form.wk_mode.selectedIndex,this.form)">
+							<fieldset>
+								<legend><% tran("route.mod"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("route.mod"); %></div>
+									<select name="wk_mode" onchange="SelMode(this.form.wk_mode.selectedIndex,this.form)">
 									<% show_routing(); %>
-								</select>
-							</div>
+									</select>
+								</div>
+							</fieldset>
 							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
 							
 							<fieldset>
