@@ -1161,14 +1161,15 @@ ej_show_security_single (int eid, webs_t wp, int argc, char_t ** argv,
   sprintf (ssid, "%s_ssid", prefix);
   websWrite (wp, "<fieldset>\n");
   //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
-  websWrite (wp, "<legend>Physical Interface %s SSID [%s] HWAddr [%s]</legend>\n",
+  websWrite (wp,
+	     "<legend>Physical Interface %s SSID [%s] HWAddr [%s]</legend>\n",
 	     prefix, nvram_safe_get (ssid), nvram_safe_get (mac));
   show_security_prefix (eid, wp, argc, argv, prefix);
   websWrite (wp, "</fieldset>\n");
   foreach (var, vifs, next)
   {
     sprintf (ssid, "%s_ssid", var);
-    websWrite (wp, "<br />\n"); 
+    websWrite (wp, "<br />\n");
     websWrite (wp, "<fieldset>\n");
     //cprintf("getting %s %s\n",ssid,nvram_safe_get(ssid));
     websWrite (wp, "<legend>Virtual Interface %s SSID [%s]</legend>\n", var,
@@ -1490,7 +1491,8 @@ show_channel (webs_t wp, char *dev, char *prefix)
 	}
 #else
       websWrite (wp, "var max_channel = 14;\n");
-      websWrite (wp, "var wl0_channel = '%s';\n", nvram_safe_get (wl_channel));
+      websWrite (wp, "var wl0_channel = '%s';\n",
+		 nvram_safe_get (wl_channel));
       websWrite (wp, "var buf = \"\";");
       websWrite (wp,
 		 "var freq = new Array(\"Auto\",\"2.412\",\"2.417\",\"2.422\",\"2.427\",\"2.432\",\"2.437\",\"2.442\",\"2.447\",\"2.452\",\"2.457\",\"2.462\",\"2.467\",\"2.472\",\"2.484\");\n");
@@ -1601,6 +1603,58 @@ show_virtualssid (webs_t wp, char *prefix)
 //    show_channel (wp, prefix, var);
     sprintf (ssid, "%s_ap_isolate", var);
     showOption (wp, "AP Isolation", ssid);
+
+    websWrite (wp,
+	       "<div class=\"setting\">\n<div class=\"label\">Network Configuration</div>\n");
+    sprintf (ssid, "%s_bridged", var);
+    websWrite (wp,
+	       "<input type=\"radio\" value=\"0\" name=\"%s_bridged\" %s>Unbridged</input>\n",
+	       var, nvram_match (ssid, "0") ? "checked" : "");
+    websWrite (wp,
+	       "<input type=\"radio\" value=\"1\" name=\"%s_bridged\" %s>Bridged</input>\n",
+	       var, nvram_match (ssid, "1") ? "checked" : "");
+    websWrite (wp, "</div>\n");
+    if (nvram_match (ssid, "0"))
+      {
+//	websWrite (wp, "<legend>Network Settings</legend>\n");
+	websWrite (wp, "<div class=\"setting\">\n");
+	websWrite (wp, "<div class=\"label\">IP Address</div>\n");
+	char ip[32];
+	sprintf (ip, "%s_ipaddr", var);
+	char *ipv=nvram_safe_get(ip);
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,'IP')\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
+		   var, get_single_ip (ipv, 0));
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
+		   var, get_single_ip (ipv, 1));
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
+		   var, get_single_ip (ipv, 2));
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
+		   var, get_single_ip (ipv, 3));
+	websWrite (wp, "</div>\n");
+	websWrite (wp, "<div class=\"setting\">\n");
+	websWrite (wp, "<div class=\"label\">Subnet</div>\n");
+	sprintf (ip, "%s_netmask", var);
+	ipv=nvram_safe_get(ip);
+	
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_0\" value=\"%d\" />.",
+		   var, get_single_ip (ipv, 0));
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_1\" value=\"%d\" />.",
+		   var, get_single_ip (ipv, 1));
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_2\" value=\"%d\" />.",
+		   var, get_single_ip (ipv, 2));
+	websWrite (wp,
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_3\" value=\"%d\" />.",
+		   var, get_single_ip (ipv, 3));
+	websWrite (wp, "</div>\n");
+      }
+
     websWrite (wp, "</fieldset><br />\n");
     count++;
   }
@@ -1676,6 +1730,13 @@ add_vifs_single (char *prefix, int device)
   nvram_set (v2, "default");
   sprintf (v2, "%s_vifs", prefix);
   nvram_set (v2, n);
+  sprintf (v2, "%s_bridged", v);
+  nvram_set (v2, "1");
+  sprintf (v2, "%s_ipaddr", v);
+  nvram_set (v2, "0.0.0.0");
+  sprintf (v2, "%s_netmask", v);
+  nvram_set (v2, "0.0.0.0");
+
 
   sprintf (v2, "%s_gtk_rekey", v);
   nvram_set (v2, "3600");
@@ -1710,18 +1771,26 @@ remove_vifs_single (char *prefix)
   char var[80];
   char wif[16];
   sprintf (wif, "%s_vifs", prefix);
-  int o;
+  int o = -1;
   char *vifs = nvram_safe_get (wif);
   char copy[128];
-  strcpy(copy,vifs);
+  strcpy (copy, vifs);
   int i;
-  
-  for (i=0;i<strlen(copy);i++)
+
+  for (i = 0; i < strlen (copy); i++)
     {
-      if (copy[i]==0x20)o=i;
+      if (copy[i] == 0x20)
+	o = i;
     }
-    copy[o]=0;
-  nvram_set (wif, copy);
+  if (o == -1)
+    {
+      nvram_set (wif, "");
+    }
+  else
+    {
+      copy[o] = 0;
+      nvram_set (wif, copy);
+    }
   //nvram_commit ();
   return 0;
 }
@@ -1775,29 +1844,42 @@ save_prefix (webs_t wp, char *prefix)
 #endif
   sprintf (n, "%s_closed", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_bridged", prefix);
+  copytonv (wp, n);
+
+  char addr[32];
+  sprintf (n, "%s_ipaddr", prefix);
+  if (get_merge_ipaddr (wp, n, addr))
+  nvram_set (n, addr);
+
+  sprintf (n, "%s_netmask", prefix);
+  if (get_merge_ipaddr (wp, n, addr))
+  nvram_set (n, addr);
+
+  copytonv (wp, n);
   sprintf (n, "%s_ap_isolate", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_mode", prefix);
   copytonv (wp, n);
-  if (!strcmp(prefix,"wl0"))
+  if (!strcmp (prefix, "wl0"))
     {
-  char *wl = websGetVar (wp, n, NULL);
-  cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
-  if (wl)
-    nvram_set ("wl_mode", wl);
+      char *wl = websGetVar (wp, n, NULL);
+      cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
+      if (wl)
+	nvram_set ("wl_mode", wl);
     }
   sprintf (n, "%s_net_mode", prefix);
   copytonv (wp, n);
 
-  if (!strcmp(prefix,"wl0"))
+  sprintf (n, "%s_channel", prefix);
+  if (!strcmp (prefix, "wl0"))
     {
-  char *wl = websGetVar (wp, n, NULL);
-  cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
-  if (wl)
-    nvram_set ("wl_channel", wl);
+      char *wl = websGetVar (wp, n, NULL);
+      cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
+      if (wl)
+	nvram_set ("wl_channel", wl);
     }
 
-  sprintf (n, "%s_channel", prefix);
   copytonv (wp, n);
 
 }
@@ -1940,7 +2022,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 
 #endif
-  
+
 #ifdef HAVE_MADWIFI
   if (!strcmp (prefix, "ath0"))	//show client only on first interface
 #endif
@@ -2072,18 +2154,21 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 		 wl_closed, nvram_match (wl_closed, "1") ? "checked" : "");
       websWrite (wp, "</div>\n");
     }
-    
+
 // ACK timing
   sprintf (power, "%s_distance", prefix);
   websWrite (wp, "<br />\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
-  websWrite (wp, "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
+  websWrite (wp,
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
+  websWrite (wp,
+	     "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
 	     power, nvram_safe_get (power));
-  websWrite (wp, "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 20000 \" + share.meters + \")\")</script></span>\n");
+  websWrite (wp,
+	     "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 20000 \" + share.meters + \")\")</script></span>\n");
   websWrite (wp, "</div>\n");
 //end ACK timing
-   
+
   websWrite (wp, "</fieldset>\n");
   websWrite (wp, "<br />\n");
   show_virtualssid (wp, prefix);

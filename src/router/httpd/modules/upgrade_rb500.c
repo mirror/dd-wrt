@@ -207,7 +207,7 @@ void
 do_upgrade_post (char *url, webs_t stream, int len, char *boundary)	//jimmy, https, 8/6/2003
 {
 
-eval("killall","-9","udhcpc");
+  eval ("killall", "-9", "udhcpc");
 #ifndef ANTI_FLASH
   char buf[1024];
   int type = 0;
