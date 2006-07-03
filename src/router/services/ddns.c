@@ -29,6 +29,7 @@ char _username[] = "ddns_username_X";
 char _passwd[] = "ddns_passwd_X";
 char _hostname[] = "ddns_hostname_X";
 char _dyndnstype[] = "ddns_dyndnstype_X";
+char _wildcard[] = "ddns_wildcard_X";
 
 int
 init_ddns (void)
@@ -75,6 +76,7 @@ init_ddns (void)
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
       snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype");
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
     }
   else if (flag == 2)
     {
@@ -127,9 +129,14 @@ start_ddns (void)
       fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
       fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
+      if (nvram_match ("ddns_wildcard", "1")
+	  && nvram_match ("ddns_enable", "1"))
+        fprintf (fp, ",wildcard=ON");
       fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
       fprintf (fp, " --forced_update_period %s", "2160000");	//force update after 25days
       fprintf (fp, " --log_file %s", "/tmp/ddns.log\n");	//log to file
+      if (nvram_invmatch ("ddns_conf", "")
+        fprintf (fp, "%s", nvram_safe_get ("ddns_conf"));
       fclose (fp);
     }
   else
@@ -175,6 +182,7 @@ ddns_success_main (int argc, char *argv[])
   nvram_set ("ddns_passwd_buf", nvram_safe_get (_passwd));
   nvram_set ("ddns_hostname_buf", nvram_safe_get (_hostname));
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
+  nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
   nvram_set ("ddns_change", "");
 
   nvram_commit ();
