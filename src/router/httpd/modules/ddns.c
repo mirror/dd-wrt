@@ -27,30 +27,33 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match ("ddns_enable", "0"))	// only for no hidden page
     {
-      websWrite (wp, "<script type=\"text/javascript\">Capture(ddnsm.all_disabled)</script>");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">Capture(ddnsm.all_disabled)</script>");
       return;
     }
 
   if (!check_wan_link (0))
     {
-      websWrite (wp, "<script type=\"text/javascript\">Capture(ddnsm.all_noip)</script>");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">Capture(ddnsm.all_noip)</script>");
       return;
     }
 
-  fp = fopen("/tmp/ddns.log", "r");
+  fp = fopen ("/tmp/ddns.log", "r");
 
-  if (fp == NULL) 
+  if (fp == NULL)
     {
-      websWrite (wp, "<script type=\"text/javascript\">Capture(ddnsm.all_connecting)</script>");
+      websWrite (wp,
+		 "<script type=\"text/javascript\">Capture(ddnsm.all_connecting)</script>");
       return;
     }
   else
     {
       /* Just dump the log file onto the web page */
       while (fgets (buff, sizeof (buff), fp))
-      websWrite (wp, "%s <br />", buff);
+	websWrite (wp, "%s <br />", buff);
     }
-  fclose(fp);
+  fclose (fp);
   return;
 }
 
