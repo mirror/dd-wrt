@@ -88,7 +88,7 @@ int generate_key;
 extern void gen_key (char *genstr, int weptype);
 int nv_count;
 extern struct variable variables[];
-																																																																																			/* channel info structure *///from 11.9
+																																																																																													    /* channel info structure *///from 11.9
 typedef struct
 {
   uint chan;			/* channel number */
@@ -1774,25 +1774,26 @@ save_prefix (webs_t wp, char *prefix)
   char *v = websGetVar (wp, n, NULL);
   if (v)
     {
-	char auth[32];
-	char wep[32];
-	sprintf(auth,"%s_auth_mode",prefix);
-	sprintf(wep,"%s_wep",prefix);
-    if (!strcmp(v,"wep"))
+      char auth[32];
+      char wep[32];
+      sprintf (auth, "%s_auth_mode", prefix);
+      sprintf (wep, "%s_wep", prefix);
+      if (!strcmp (v, "wep"))
 	{
-	nvram_set(auth,"none");
-	nvram_set(wep,"enabled");	
-	}else
-    if (!strcmp(v,"radius"))
-	{
-	nvram_set(auth,"radius");
-	nvram_set(wep,"enabled");	
-	}else
-	{
-	nvram_set(auth,"none");
-	nvram_set(wep,"disabled");	
+	  nvram_set (auth, "none");
+	  nvram_set (wep, "enabled");
 	}
-    nvram_set (n2, v);
+      else if (!strcmp (v, "radius"))
+	{
+	  nvram_set (auth, "radius");
+	  nvram_set (wep, "enabled");
+	}
+      else
+	{
+	  nvram_set (auth, "none");
+	  nvram_set (wep, "disabled");
+	}
+      nvram_set (n2, v);
     }
 
   copytonv (wp, n);

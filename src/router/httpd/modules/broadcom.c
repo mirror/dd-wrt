@@ -3514,7 +3514,8 @@ initHandlers (void)
 				       0);
 		 //DD-WRT addition end
 		 websSetPassword (nvram_safe_get ("http_passwd"));
-		 websSetRealm ("DD-WRT Router OS Core");}
+		 websSetRealm ("DD-WRT Router OS Core");
+		 }
 
 #else /* !WEBS */
 #ifdef HAVE_SKYTRON
@@ -3839,13 +3840,13 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	  websWrite (wp,
 		     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
 		     dest);
-	if (nvram_invmatch ("dist_type", "micro"))
-	  {
-	  websWrite (wp,
-		     "\t\t<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
-	  websWrite (wp,
-		     "\t\t<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
-	  }	     
+	  if (nvram_invmatch ("dist_type", "micro"))
+	    {
+	      websWrite (wp,
+			 "\t\t<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
+	      websWrite (wp,
+			 "\t\t<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
+	    }
 	  websWrite (wp,
 		     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
 	  websWrite (wp,
@@ -4024,9 +4025,9 @@ static void
 ej_getrebootflags (int eid, webs_t wp, int argc, char_t ** argv)
 {
 #ifdef HAVE_RB500
-websWrite(wp,"1");
+  websWrite (wp, "1");
 #else
-websWrite(wp,"0");
+  websWrite (wp, "0");
 #endif
 }
 
