@@ -186,7 +186,7 @@ internal_getRouterBrand ()
     {
       cprintf ("router is buffalo wla2-g54c\n");
       setRouter ("Buffalo WLA2-G54C / WLI3-TX1-G54");
-      return ROUTER_BUFFALO_WBR2G54S;
+      return ROUTER_BUFFALO_WLA2G54C;
     }
         
   if (nvram_match ("boardnum", "00") &&
