@@ -17,7 +17,7 @@
 // Linksys WRT55AG v1 (4702 cpu)
 #define ROUTER_LINKSYS_WRT55AG 3
 
-// Asus WL-550G-Deluxe
+// Asus WL-500G-Deluxe
 #define ROUTER_ASUS 4
 
 // Buffalo WBR-G54, WLA-G54 (4702 cpu)
