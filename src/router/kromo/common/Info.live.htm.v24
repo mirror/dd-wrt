@@ -1,0 +1,14 @@
+{lan_mac::<% nvram_get("lan_hwaddr"); %>}
+{wan_mac::<% nvram_get("wan_hwaddr"); %>}
+{wl_mac::<% show_wl_mac(); %>}
+{lan_ip::<% nvram_get("lan_ipaddr"); %>}
+{wl_channel::<% get_curchannel(); %>}
+{wl_xmit::<% nvram_get("txpwr"); %> mW}
+{wl_rate::<% get_currate(); %> Mbps}
+{packet_info::<% wl_packet_get(); %>}
+{wl_mode_short::<% nvram_get("wl0_mode"); %>}
+{lan_proto::<% nvram_get("lan_proto"); %>}
+{mem_info::<% dumpmeminfo(); %>}
+{active_wireless::<% active_wireless(1); %>}
+{active_wds::<% active_wds(1); %>}
+{dhcp_leases::<% dumpleases(1); %>}

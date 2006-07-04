@@ -1,0 +1,393 @@
+<% do_pagehead(); %>
+		<title><% nvram_get("router_name"); %> - Info</title>
+		<script type="text/javascript">
+
+document.title = "<% nvram_get("router_name"); %>" + info.titl;
+
+function setWirelessTable() {
+	var table = document.getElementById("wireless_table");
+	var val = arguments;
+	cleanTable(table);
+	if(!val.length) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 5;
+		cell.align = "center";
+		cell.innerHTML = "- " + share.none + " -";
+		return;
+	}
+	for(var i = 0; i < val.length; i = i + 4) {
+		var row = table.insertRow(-1);
+		
+		var mac = val[i];
+		if ("<% nvram_get("maskmac"); %>" != "1") {
+		  var cellmac = row.insertCell(-1);
+		  cellmac.title = share.oui;
+		  cellmac.style.cursor = "pointer";
+		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		  cellmac.innerHTML = mac;
+		} else {
+		  row.insertCell(-1).innerHTML = mac;		 
+		}
+
+		row.insertCell(-1).innerHTML = val[i + 1];
+		row.insertCell(-1).innerHTML = val[i + 2];
+		row.insertCell(-1).innerHTML = val[i + 3];
+		setMeterBar(row.insertCell(-1), (val[i + 1] == "0" ? 0 : parseInt(val[i + 1]) * 1.24 + 116), "");
+	}
+}
+
+function setWDSTable() {
+	var table = document.getElementById("wds_table");
+	var val = arguments;
+	cleanTable(table);
+	if(!val.length) {
+		setElementVisible("wds", false);
+		return;
+	}
+	for(var i = 0; i < val.length; i = i + 5) {
+		var row = table.insertRow(-1);
+		
+		var mac = val[i];
+		if ("<% nvram_get("maskmac"); %>" != "1") {
+		  var cellmac = row.insertCell(-1);
+		  cellmac.title = share.oui;
+		  cellmac.style.cursor = "pointer";
+		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		  cellmac.innerHTML = mac;
+		} else {
+		  row.insertCell(-1).innerHTML = mac;		 
+		}
+		
+		row.insertCell(-1).innerHTML = val[i + 1];
+		row.insertCell(-1).innerHTML = val[i + 2];
+		row.insertCell(-1).innerHTML = val[i + 3];
+		row.insertCell(-1).innerHTML = val[i + 4];
+		setMeterBar(row.insertCell(-1), (val[i + 2] == "0" ? 0 : parseInt(val[i + 2]) * 1.24 + 116), "");
+	}
+	setElementVisible("wds", true);
+}
+
+function setDHCPTable() {
+	var table = document.getElementById("dhcp_leases_table");
+	var val = arguments;
+	cleanTable(table);
+	if(!val.length) {
+		var cell = table.insertRow(-1).insertCell(-1);
+		cell.colSpan = 4;
+		cell.align = "center";
+		cell.innerHTML = "- " + share.none + " -";
+		return;
+	}
+	for(var i = 0; i < val.length; i = i + 5) {
+		
+		var row = table.insertRow(-1);
+		row.insertCell(-1).innerHTML = val[i];
+		row.insertCell(-1).innerHTML = val[i + 1];
+		
+		var mac = val[i + 2];
+		if ("<% nvram_get("maskmac"); %>" != "1") {
+		  var cellmac = row.insertCell(-1);
+		  cellmac.title = share.oui;
+		  cellmac.style.cursor = "pointer";
+		  eval("addEvent(cellmac, 'click', function() { getOUIFromMAC('" + mac + "') })");
+		  cellmac.innerHTML = mac;
+		} else {
+		  row.insertCell(-1).innerHTML = mac;		 
+		}
+
+		row.insertCell(-1).innerHTML = val[i + 3];
+	}
+}
+
+function setPacketInfo(val) {
+	var packet = val.replace(/[A-Za-z=]/g, "").split(";");
+	setElementContent("packet_rx", packet[0] + " OK, " + (packet[1] > 0 ? packet[1] + " " + share.errs : share.none2 + " " + share.err) );
+	setElementContent("packet_tx", packet[2] + " OK, " + (packet[3] > 0 ? packet[3] + " " + share.errs : share.none2 + " " + share.err) );
+}
+
+function setMemoryValues(val) {
+	var mem = val.replace(/'/g, "").split(",");
+	var memTotal = parseInt(mem[19]) / 1024;
+	var memSystem = Math.pow(2, Math.ceil(Math.log(memTotal) / Math.LN2));
+	var memFree = parseInt(mem[22]) / 1024;
+	var memUsed = memTotal - memFree;
+	var memBuffer = parseInt(mem[28]) / 1024;
+	var memCached = parseInt(mem[31]) / 1024;
+	var memActive = parseInt(mem[37]) / 1024;
+	var memInactive = parseInt(mem[40]) / 1024;
+	setElementContent("mem_total", memTotal.toFixed(1) + " MB / " + memSystem.toFixed(1) + " MB");
+	setElementContent("mem_free", memFree.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB");
+	setElementContent("mem_used", memUsed.toFixed(1) + " MB / " + memTotal.toFixed(1) + " MB");
+	setElementContent("mem_buffer", memBuffer.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+	setElementContent("mem_cached", memCached.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+	setElementContent("mem_active", memActive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+	setElementContent("mem_inactive", memInactive.toFixed(1) + " MB / " + memUsed.toFixed(1) + " MB");
+}
+
+var update;
+
+addEvent(window, "load", function() {
+	setPacketInfo("<% wl_packet_get(); %>");
+	setMemoryValues("<% dumpmeminfo(); %>");
+	setWirelessTable(<% active_wireless(1); %>);
+	setWDSTable(<% active_wds(1); %>);
+	setDHCPTable(<% dumpleases(1); %>);
+	setElementVisible("dhcp", "<% nvram_get("wl0_mode"); %>" == "ap" && "<% nvram_get("lan_proto"); %>" == "dhcp");
+
+	update = new StatusUpdate("Info.live.htm", <% nvram_get("refresh_time"); %>);
+	update.onUpdate("packet_info", function(u) {
+		setPacketInfo(u.packet_info);
+	});
+	update.onUpdate("mem_info", function(u) {
+		setMemoryValues(u.mem_info);
+	});
+	update.onUpdate("active_wireless", function(u) {
+		eval('setWirelessTable(' + u.active_wireless + ')');
+	});
+	update.onUpdate("active_wds", function(u) {
+		eval('setWDSTable(' + u.active_wds + ')');
+	});
+	update.onUpdate("dhcp_leases", function(u) {
+		eval('setDHCPTable(' + u.dhcp_leases + ')');
+	});
+	update.onUpdate("lan_proto", function(u) {
+		setElementVisible("dhcp", u.wl_mode_short == "ap" && u.lan_proto == "dhcp");
+	});
+	update.start();
+});
+
+addEvent(window, "unload", function() {
+	update.stop();
+});
+		</script>
+	</head>
+
+	<body class="gui">
+		<% showad(); %>
+		<div id="wrapper">
+			<div id="content" class="infopage">
+				<div id="header">
+					<div id="logo"><h1><% show_control(); %></h1></div>
+					<div id="menu">
+						<div id="menuMain">
+							<ul id="menuMainList">
+								<li><a href="index.asp"><% tran("bmenu.setup"); %></a></li>
+								<li><a href="Wireless_Basic.asp"><% tran("bmenu.wireless"); %></a></li>
+								<% nvram_invmatch("sipgate","1","<!--"); %>
+								<li><a href="Sipath.asp"><% tran("bmenu.sipath"); %></a></li>
+								<% nvram_invmatch("sipgate","1","-->"); %>
+								<li><a href="Firewall.asp"><% tran("bmenu.security"); %></a></li>
+								<li><a href="Filters.asp"><% tran("bmenu.accrestriction"); %></a></li>
+								<li><a href="Forward.asp"><% tran("bmenu.applications"); %></a></li>
+								<li><a href="Management.asp"><% tran("bmenu.admin"); %></a></li>
+								<li><a href="Status_Router.asp"><% tran("bmenu.statu"); %></a></li>
+							</ul>
+						</div>
+					</div>
+				</div>
+				<div id="main">
+					<div id="contentsInfo">
+						<h2><% tran("info.h2"); %></h2>
+						<div class="col2l">
+							<fieldset>
+								<legend><% tran("share.router"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("share.routername"); %></div>
+									<% nvram_get("router_name"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.sys_model"); %></div>
+									<% nvram_get("DD_BOARD"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">LAN MAC</div>
+									<script>document.write("<span id=\"lan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("lan_hwaddr"); %>')\" >");</script><% nvram_get("lan_hwaddr"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">WAN MAC</div>
+									<script>document.write("<span id=\"wan_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% nvram_get("wan_hwaddr"); %>')\" >");</script><% nvram_get("wan_hwaddr"); %></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("info.wlanmac"); %></div>
+									<script>document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");</script><% show_wl_mac(); %></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">WAN IP</div>
+									<% nvram_match("wl0_mode","wet","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_match("wan_proto","disabled","<script type="text/javascript">Capture(share.disabled)</script><!--"); %><% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl0_mode","wet","-->"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">LAN IP</div>
+									<span id="lan_ip"><% nvram_get("lan_ipaddr"); %></span>&nbsp;
+								</div>
+							</fieldset><br />
+							
+							<fieldset>
+								<legend><% tran("share.wireless"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("share.mode"); %></div>
+									<% nvram_match("wl0_mode", "wet", "<script type="text/javascript">Capture(wl_basic.clientBridge)</script>"); %><% nvram_match("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script>"); %><% nvram_match("wl0_mode", "sta", "<script type="text/javascript">Capture(wl_basic.client)</script>"); %><% nvram_match("wl0_mode", "infra", "<script type="text/javascript">Capture(wl_basic.adhoc)</script>"); %><% nvram_match("wl0_mode", "apsta", "Repeater"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_wireless.net"); %></div>
+									<% nvram_match("wl0_net_mode", "disabled","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_net_mode", "mixed", "<script type="text/javascript">Capture(wl_basic.mixed)</script>"); %><% nvram_match("wl0_net_mode", "g-only", "<script type="text/javascript">Capture(wl_basic.g)</script>"); %><% nvram_match("wl0_net_mode", "b-only", "<script type="text/javascript">Capture(wl_basic.b)</script>"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("share.ssid"); %></div>
+									<% nvram_get("wl0_ssid"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("share.channel"); %></div>
+									<span id="wl_channel"><% get_curchannel(); %></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Xmit</div>
+									<span id="wl_xmit"><% nvram_get("txpwr"); %> mW</span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("share.rates"); %></div>
+									<span id="wl_rate"><% get_currate(); %> Mbps</span>&nbsp;
+								</div>
+							</fieldset><br />
+							
+							<fieldset>
+								<legend><% tran("status_wireless.legend2"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("status_wireless.rx"); %></div>
+									<span id="packet_rx"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_wireless.tx"); %></div>
+									<span id="packet_tx"></span>&nbsp;
+								</div>
+							</fieldset><br />
+						</div>
+
+						<div class="col2r">
+							<fieldset>
+								<legend><% tran("info.srv"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("service.dhcp_legend2"); %></div>
+									<% nvram_match("lan_proto", "dhcp", "<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_match("lan_proto", "static", "<script type="text/javascript">Capture(share.disabled)</script>"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">WRT-radauth</div>
+									<% nvram_invmatch("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script><!--"); %><% nvram_match("wl0_radauth","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_radauth","1","<script type="text/javascript">Capture(share.enabled)</script>"); %><% nvram_invmatch("wl0_mode", "ap", "-->"); %>&nbsp;
+								</div>
+								<% nvram_match("dist_type", "mini", "<!--"); %>
+								<% nvram_match("dist_type", "micro", "<!--"); %>
+								<div class="setting">
+									<div class="label">WRT-rflow</div>
+									<% nvram_match("rflow_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("rflow_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">MAC-upd</div>
+									<% nvram_match("macupd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("macupd_enable","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Samba Mount</div>
+									<% nvram_match("samba_mount","0","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("samba_mount","1","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label">Sputnik Agent</div>
+									<% nvram_else_match("apd_enable","0","<script type="text/javascript">Capture(share.disabled)</script>","<script type="text/javascript">Capture(share.enabled)</script>"); %>&nbsp;
+								</div>
+								<% nvram_match("dist_type", "micro", "-->"); %>
+								<% nvram_match("dist_type", "mini", "-->"); %>
+							</fieldset><br />
+							
+							<fieldset>
+								<legend><% tran("status_router.legend3"); %></legend>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_tot"); %></div>
+									<span id="mem_total"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_free"); %></div>
+									<span id="mem_free"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_used"); %></div>
+									<span id="mem_used"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_buf"); %></div>
+									<span id="mem_buffer"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_cached"); %></div>
+									<span id="mem_cached"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_active"); %></div>
+									<span id="mem_active"></span>&nbsp;
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("status_router.mem_inactive"); %></div>
+									<span id="mem_inactive"></span>&nbsp;
+								</div>
+							</fieldset><br />
+							
+						</div><br clear="all" />
+						<h2><% tran("share.wireless"); %></h2>
+						<fieldset>
+							<legend><% nvram_match("wl0_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl0_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl0_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl0_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl0_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
+							<table class="table center" cellspacing="6" id="wireless_table">
+								<tr>
+									<th width="43%"><% tran("share.mac"); %></th>
+									<th width="8%"><% tran("share.signal"); %></th>
+									<th width="8%"><% tran("share.noise"); %></th>
+									<th width="8%">SNR</th>
+									<th width="33%"><% tran("status_wireless.signal_qual"); %></th>
+								</tr>
+							</table>
+						</fieldset><br />
+						
+						<span id="wds" style="display:none">
+							<fieldset>
+								<legend><% tran("status_wireless.wds"); %></legend>
+								<table class="table center" cellspacing="6" id="wds_table">
+									<tr>
+										<th width="16%"><% tran("share.mac"); %></th>
+										<th width="25%"><% tran("share.descr"); %></th>
+										<th width="8%"><% tran("share.signal"); %></th>
+										<th width="8%"><% tran("share.noise"); %></th>
+										<th width="8%">SNR</th>
+										<th width="33%"><% tran("status_wireless.signal_qual"); %></th>
+									</tr>
+								</table>
+							</fieldset><br />
+							
+						</span>
+						<span id="dhcp" style="display:none">
+							<h2><% tran("share.dhcp"); %></h2>
+							<fieldset>
+								<legend><% tran("status_lan.legend3"); %></legend>
+								<table class="table center" cellspacing="6" id="dhcp_leases_table">
+									<tr>
+										<th width="25%"><% tran("share.hostname"); %></th>
+										<th width="25%"><% tran("share.ip"); %></th>
+										<th width="25%"><% tran("share.mac"); %></th>
+										<th width="25%"><% tran("share.expires"); %></th>
+									</tr>
+								</table>
+							</fieldset><br />
+							
+						</span>
+						<div class="center">
+							<% show_paypal(); %>
+						</div><br />
+						<div class="submitFooter">
+							<script>document.write("<input type=\"button\" name=\"refresh_button\" value=\"" + <% nvram_else_match("refresh_time","0","sbutton.refres","sbutton.autorefresh"); %> + "\" onclick=\"window.location.reload()\">");</script>
+						</div>
+					</div>
+				</div>
+				<div id="floatKiller"></div>
+				<div id="statusInfo">
+					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
+					<div class="info">WAN <% nvram_match("wl0_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl0_mode","wet","-->"); %></div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
