@@ -2493,6 +2493,29 @@ stop_pppoe (void)
   cprintf ("done\n");
   return ret;
 }
+
+int
+stop_single_pppoe(int pppoe_num)
+{
+        int ret;
+        char pppoe_pid[15], pppoe_ifname[15];
+        char ppp_unlink[2][20]={"/tmp/ppp/link","/tmp/ppp/link_1"};
+        char ppp_wan_dns[2][20]={"wan_get_dns","wan_get_dns_1"};
+                                                                                                                             
+        sprintf(pppoe_pid,"pppoe_pid%d",pppoe_num);
+        sprintf(pppoe_ifname,"pppoe_ifname%d",pppoe_num);
+        dprintf("start! stop pppoe %d, pid %s \n",pppoe_num,nvram_safe_get(pppoe_pid));
+                                                                                                                             
+        ret = eval("kill",nvram_safe_get(pppoe_pid));
+        unlink(ppp_unlink[pppoe_num]);
+        nvram_unset(pppoe_ifname);
+                                                                                                                             
+        nvram_set(ppp_wan_dns[pppoe_num],"");
+        stop_dns_clear_resolv();
+                                                                                                                             
+        dprintf("done\n");
+        return ret ;
+}
 #endif
 int
 stop_dhcpc (void)
