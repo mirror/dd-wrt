@@ -372,7 +372,9 @@ main_loop (void)
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
-	  if ((brand == ROUTER_WRT54G) ||
+		if ((brand & 0x000f) > 0)
+/*	  
+	  	  if ((brand == ROUTER_WRT54G) ||
 	      (brand == ROUTER_WRT54G1X) ||
 	      (brand == ROUTER_WRTSL54GS) ||
 	      (brand == ROUTER_LINKSYS_WRT55AG) ||
@@ -382,7 +384,7 @@ main_loop (void)
 	      (brand == ROUTER_MOTOROLA_V1) ||
 	      (brand == ROUTER_BOARD_500) ||
 	      (brand == ROUTER_BUFFALO_WZRRSG54) ||
-	      (brand == ROUTER_BUFFALO_WBR2G54S))
+	      (brand == ROUTER_BUFFALO_WBR2G54S))  */
 	    {
 	      stop_service ("resetbutton");
 	    }
@@ -409,6 +411,8 @@ main_loop (void)
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
+		if ((brand & 0x000f) > 0)
+/*
 	  if ((brand == ROUTER_WRT54G) ||
 	      (brand == ROUTER_WRT54G1X) ||
 	      (brand == ROUTER_WRTSL54GS) ||
@@ -419,7 +423,7 @@ main_loop (void)
 	      (brand == ROUTER_MOTOROLA_V1) ||
 	      (brand == ROUTER_BOARD_500) ||
 	      (brand == ROUTER_BUFFALO_WZRRSG54) ||
-	      (brand == ROUTER_BUFFALO_WBR2G54S))
+	      (brand == ROUTER_BUFFALO_WBR2G54S))  */
 	    {
 	      start_service ("resetbutton");
 	    }
