@@ -34,13 +34,13 @@
 #include <rc.h>
 #include <stdarg.h>
 
-#define BCM47XX_SOFTWARE_RESET  0x40	/* GPIO 6 */
+// #define BCM47XX_SOFTWARE_RESET  0x40	/* GPIO 6 */
 #define BCM47XX_SW_PUSH         0x10	/* GPIO 4 */
 
-#define WHR_SOFTWARE_RESET 0x10	//GPIO 4  , should work with Buffalo WBR-G54 too, and WZRRSG54
+// #define WHR_SOFTWARE_RESET 0x10	//GPIO 4  , should work with Buffalo WBR-G54 too, and WZRRSG54
 #define WHR_SW_PUSH 0		//GPIO 0, code unknown
 
-#define WBR2_SOFTWARE_RESET 0x80	//GPIO 7
+// #define WBR2_SOFTWARE_RESET 0x80	//GPIO 7
 #define WBR2_SW_PUSH 0		//GPIO 0, code unknown
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
@@ -146,6 +146,14 @@ period_check (int sig)
   DEBUG ("resetbutton: GPIO = 0x%x\n", val);
   int gpio = 0;
   int state = 0;
+
+  gpio = 1 << (brand & 0x000f);  //calculate gpio pin no.
+
+  if ((brand & 0x0010) == 0)  //check reset button polarity: 0 normal, 1 inversed
+	state = (val & gpio);
+  else
+    state = !(val & gpio);
+/*    
   switch (brand)
     {
     case ROUTER_BUFFALO_WHRG54S:
@@ -170,6 +178,8 @@ period_check (int sig)
       state = !(val & gpio);
       break;
     }
+*/    
+    
   /*  The value is zero during button-pushed. */
   if (state)
     {
@@ -192,15 +202,16 @@ period_check (int sig)
 		  return;
 		}
 		if ((brand & 0x000f) > 0)
-/*
-         if ((brand == ROUTER_WRT54G) || 
+		
+/*      if ((brand == ROUTER_WRT54G) || 
 	        (brand == ROUTER_WRTSL54GS) || 
 	      	(brand == ROUTER_WRT54G1X) ||
 		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
 		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
 		  	(brand == ROUTER_BUFFALO_WBR54G) ||
 		  	(brand == ROUTER_BUFFALO_WBR2G54S) ||
-		  	(brand == ROUTER_BUFFALO_WZRRSG54)) */
+		  	(brand == ROUTER_BUFFALO_WZRRSG54))
+*/
 		{
 		  printf ("resetbutton: factory default.\n");
 		  if (brand == ROUTER_BUFFALO_WBR54G)
@@ -329,7 +340,9 @@ resetbutton_main (int argc, char *argv[])
 
   brand = getRouterBrand ();
 
-  	if ((brand == ROUTER_SIEMENS) || 
+		if ((brand & 0x000f) == 0)
+		
+/*  	if ((brand == ROUTER_SIEMENS) || 
   		(brand == ROUTER_BELKIN) || 
   		(brand == ROUTER_RT210W) ||
   		(brand == ROUTER_MOTOROLA) || 
@@ -338,6 +351,7 @@ resetbutton_main (int argc, char *argv[])
   		(brand == ROUTER_BUFFALO_WLAG54C) ||
   		(brand == ROUTER_BUFFALO_WLA2G54C) ||
   		(brand == ROUTER_ASUS_WL500G_PRE))
+*/
     {
       puts ("sorry, your unit does not support resetbutton feature\n");
       nvram_set ("resetbutton_enable", "0");
