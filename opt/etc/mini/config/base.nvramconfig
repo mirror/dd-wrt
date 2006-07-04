@@ -28,7 +28,7 @@
  "dhcpfwd_enable" "DHCP Forwarder" "CHOICE" "2" "0" "1" "FALSE" "0"
  "dhcpfwd_ip" "DHCP source ip" "MERGEIPADDRS" "FALSE" "0"
  "wan_wins"  "WAN WINS Server"  "MERGEIPADDRS"   "FALSE" "3"   
- "http_username"  "Router Username"  "NAME"  "63"  "TRUE" "3"   
+ "http_username"  "Router Username"  "PASSWORD"  "63"  "TRUE" "3"   
  "http_passwd"  "Router Password"  "PASSWORD"  "63"  "TRUE"  "2"   
  "upnp_enable"  "UPnP"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
  "upnpcas"  "UPnP Clear at Startup"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"  
