@@ -17,7 +17,7 @@
 // Linksys WRT55AG v1 (4702 cpu)
 #define ROUTER_LINKSYS_WRT55AG 3
 
-// Asus WL-500G-Deluxe
+// Asus WL-500G-Deluxe (5365 cpu), (fccid: Asus MSQWL500GD)
 #define ROUTER_ASUS 4
 
 // Buffalo WBR-G54, WLA-G54 (4702 cpu)
@@ -27,47 +27,50 @@
 #define ROUTER_BUFFALO_WBR2G54S 6
 #define ROUTER_BUFFALO_WLA2G54L 6	//should work like a WBR2
 
+// Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
+#define ROUTER_BUFFALO_WLA2G54C 7
+
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
-#define ROUTER_BUFFALO_WHRG54S 7
-#define ROUTER_BUFFALO_HP_WHRG54S 7	//no differences between these models. so we leave it
+#define ROUTER_BUFFALO_WHRG54S 8
+#define ROUTER_BUFFALO_HP_WHRG54S 8	//no differences between these models. so we leave it
 
 // Buffalo WZR-RS-G54 (4704 cpu), WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0)
-#define ROUTER_BUFFALO_WZRRSG54 8
+#define ROUTER_BUFFALO_WZRRSG54 9
 
 // Motorola WR850G v1 (4702 cpu)
-#define ROUTER_MOTOROLA_V1 9
+#define ROUTER_MOTOROLA_V1 10
 
 // Motorola WR850G v2
-#define ROUTER_MOTOROLA 10
+#define ROUTER_MOTOROLA 11
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
 // Siemens se505 v1, Belkin F5D7230-4 v1000
-#define ROUTER_RT210W 11 
+#define ROUTER_RT210W 12 
 
 // RT480W generic and branded (fccid: Askey H8N-RT480W), (4712 cpu + ADM6996)
 // Siemens se505 v2
-#define ROUTER_SIEMENS 12
+#define ROUTER_SIEMENS 13
 
 // Microtik RouterBOARD 500
-#define ROUTER_BOARD_500 13
+#define ROUTER_BOARD_500 14
 
 // ??? 
-#define ROUTER_BELKIN 14
+#define ROUTER_BELKIN 15
 
 // Belkin F5D7230-4 v1444 (4712 cpu, 2MB flash) (fccid: Belkin K7S-F5D72304)
-#define ROUTER_BELKIN_F5D7230 15
+#define ROUTER_BELKIN_F5D7230 16
 
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
-#define ROUTER_MICROSOFT_MN700 16
+#define ROUTER_MICROSOFT_MN700 17
 
 // Buffalo WLA-G54C (4702 cpu)
-#define ROUTER_BUFFALO_WLAG54C 17
+#define ROUTER_BUFFALO_WLAG54C 18
 
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
-#define ROUTER_ASUS_WL500G_PRE 18
+#define ROUTER_ASUS_WL500G_PRE 19
 
 // Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
-#define ROUTER_WRTSL54GS 19
+#define ROUTER_WRTSL54GS 20
 
 
 #define NVROUTER "DD_BOARD"
