@@ -7,70 +7,80 @@
 #include <cy_conf.h>
 #endif
 
+/* 2 byte router ID number; Eko 4.jul.06
+
+X X X X X X X X   R R R P N N N N   = 0xXXXX
+---------------   ----- - -------
+ router num         |   |  gpio num (0000 disable resetbutton)
+                    |   |
+                    |   |--- resetbutton polarity (0: normal, 1 inversed)
+                    |
+                    |-------- reserved for future use (maybe USB supp)
+*/
 
 // Linksys WRT54G, WRT54GS and WRT54GL all models except WRT54G v1.0, v1.1
-#define ROUTER_WRT54G 1
+#define ROUTER_WRT54G 0x0116
 
 // Linksys WRT54G v1.0 and v1.1 (4702 cpu)
-#define ROUTER_WRT54G1X 2
+#define ROUTER_WRT54G1X 0x0216
 
 // Linksys WRT55AG v1 (4702 cpu)
-#define ROUTER_LINKSYS_WRT55AG 3
+#define ROUTER_LINKSYS_WRT55AG 0x0316
 
 // Asus WL-500G-Deluxe (5365 cpu), (fccid: Asus MSQWL500GD)
-#define ROUTER_ASUS 4
+#define ROUTER_ASUS 0x0406
 
 // Buffalo WBR-G54, WLA-G54 (4702 cpu)
-#define ROUTER_BUFFALO_WBR54G 5
+#define ROUTER_BUFFALO_WBR54G 0x0504
 
 // Buffalo WBR2-G54 (fccid: Buffalo FDI-04600142-0), WBR2-G54S and Buffalo WLA2-G54L
-#define ROUTER_BUFFALO_WBR2G54S 6
-#define ROUTER_BUFFALO_WLA2G54L 6	//should work like a WBR2
+#define ROUTER_BUFFALO_WBR2G54S 0x0607
+#define ROUTER_BUFFALO_WLA2G54L 0x0607	//should work like a WBR2
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
-#define ROUTER_BUFFALO_WLA2G54C 7
+#define ROUTER_BUFFALO_WLA2G54C 0x0700
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
-#define ROUTER_BUFFALO_WHRG54S 8
-#define ROUTER_BUFFALO_HP_WHRG54S 8	//no differences between these models. so we leave it
+#define ROUTER_BUFFALO_WHRG54S 0x0804
+#define ROUTER_BUFFALO_HP_WHRG54S 0x0804	//no differences between these models. so we leave it
 
-// Buffalo WZR-RS-G54 (4704 cpu), WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0)
-#define ROUTER_BUFFALO_WZRRSG54 9
+// Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0)
+#define ROUTER_BUFFALO_WZRRSG54 0x0904
 
 // Motorola WR850G v1 (4702 cpu)
-#define ROUTER_MOTOROLA_V1 10
+#define ROUTER_MOTOROLA_V1 0x0a00
 
 // Motorola WR850G v2
-#define ROUTER_MOTOROLA 11
+#define ROUTER_MOTOROLA 0x0b00
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
 // Siemens se505 v1, Belkin F5D7230-4 v1000
-#define ROUTER_RT210W 12 
+#define ROUTER_RT210W 0x0c00 
 
 // RT480W generic and branded (fccid: Askey H8N-RT480W), (4712 cpu + ADM6996)
 // Siemens se505 v2
-#define ROUTER_SIEMENS 13
+#define ROUTER_SIEMENS 0x0d00
 
 // Microtik RouterBOARD 500
-#define ROUTER_BOARD_500 14
+#define ROUTER_BOARD_500 0x0e00
 
 // ??? 
-#define ROUTER_BELKIN 15
+#define ROUTER_BELKIN 0x0f00
 
 // Belkin F5D7230-4 v1444 (4712 cpu, 2MB flash) (fccid: Belkin K7S-F5D72304)
-#define ROUTER_BELKIN_F5D7230 16
+#define ROUTER_BELKIN_F5D7230 0x1000
 
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
-#define ROUTER_MICROSOFT_MN700 17
+#define ROUTER_MICROSOFT_MN700 0x1100
 
 // Buffalo WLA-G54C (4702 cpu)
-#define ROUTER_BUFFALO_WLAG54C 18
+#define ROUTER_BUFFALO_WLAG54C 0x1200
 
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
-#define ROUTER_ASUS_WL500G_PRE 19
+#define ROUTER_ASUS_WL500G_PRE 0x1300
 
 // Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
-#define ROUTER_WRTSL54GS 20
+#define ROUTER_WRTSL54GS 0x1417
 
 
 #define NVROUTER "DD_BOARD"
