@@ -1724,6 +1724,7 @@ add_vifs_single (char *prefix, int device)
   nvram_set (v2, "0");
   sprintf (v2, "%s_mode", v);
   nvram_set (v2, "ap");
+
   sprintf (v2, "%s_ap_isolate", v);
   nvram_set (v2, "0");
   sprintf (v2, "%s_ssid", v);
@@ -1870,7 +1871,8 @@ save_prefix (webs_t wp, char *prefix)
     }
   sprintf (n, "%s_net_mode", prefix);
   copytonv (wp, n);
-
+  convert_wl_gmode(nvram_safe_get(n));
+  
   sprintf (n, "%s_channel", prefix);
   if (!strcmp (prefix, "wl0"))
     {
