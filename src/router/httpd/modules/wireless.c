@@ -2073,7 +2073,11 @@ convert_wl_gmode (char *value)
 	}
 }else*/
   {
+#ifdef HAVE_MSSID
+    if (nvram_match ("wl0_net_mode", value))
+#else
     if (nvram_match ("wl_net_mode", value))
+#endif
       {
 	return;
       }
