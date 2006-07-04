@@ -84,6 +84,7 @@ site_survey_main (int argc, char *argv[])
   params.home_time = -1;
 
   /* can only scan in STA mode */
+  
   wl_ioctl (dev, WLC_GET_AP, &oldap, sizeof (oldap));
   if (oldap > 0)
     wl_ioctl (dev, WLC_SET_AP, &ap, sizeof (ap));
@@ -141,8 +142,11 @@ site_survey_main (int argc, char *argv[])
 endss:
   if (oldap > 0)
     wl_ioctl (dev, WLC_SET_AP, &oldap, sizeof (oldap));
-
+  
   C_led (0);
+#ifdef HAVE_MSSID
+  eval("wl","up");
+#endif
   return 0;
 }
 
