@@ -392,7 +392,6 @@ start_restore_defaults (void)
     {
     case ROUTER_WRTSL54GS:
     case ROUTER_BUFFALO_WZRRSG54:
-    case ROUTER_ASUS_WL500G_PRE:
       linux_overrides = generic;
       break;
     case ROUTER_ASUS:
@@ -860,13 +859,22 @@ start_sysinit (void)
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wan_ifnames", "eth1");
     }
-  if (brand == ROUTER_WRTSL54GS || brand == ROUTER_ASUS_WL500G_PRE)
+  if (brand == ROUTER_WRTSL54GS)
     {
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       nvram_set ("pppoe_wan_ifname", "eth1");
     }
-
+  if (brand == ROUTER_ASUS_WL500G_PRE)
+    {
+	  nvram_set ("lan_ifnames", "vlan0 eth2");
+	  nvram_set ("wl0_ifname", "eth2");
+	  strcpy (wlifname, "eth2");
+      nvram_set ("wan_ifname", "vlan1");	// fix for Asus WL500gPremium WAN problem.
+      nvram_set ("wan_ifnames", "vlan1");
+	  strcpy (wanifname, "vlan1");
+      nvram_set ("vlan1ports", "0 5");
+    }
   if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
     {
       eval ("gpio", "enable", "6");	//MN700 power led on
