@@ -191,14 +191,16 @@ period_check (int sig)
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-	      if ((brand == ROUTER_WRT54G) || 
+		if ((brand & 0x000f) > 0)
+/*
+         if ((brand == ROUTER_WRT54G) || 
 	        (brand == ROUTER_WRTSL54GS) || 
 	      	(brand == ROUTER_WRT54G1X) ||
 		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
 		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
 		  	(brand == ROUTER_BUFFALO_WBR54G) ||
 		  	(brand == ROUTER_BUFFALO_WBR2G54S) ||
-		  	(brand == ROUTER_BUFFALO_WZRRSG54))
+		  	(brand == ROUTER_BUFFALO_WZRRSG54)) */
 		{
 		  printf ("resetbutton: factory default.\n");
 		  if (brand == ROUTER_BUFFALO_WBR54G)
