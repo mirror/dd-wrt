@@ -14,6 +14,8 @@
 #include <sys/ioctl.h>
 #include <sys/sysinfo.h>
 
+#ifndef TESTUTIL
+
 #include <utils.h>
 #include <bcmnvram.h>
 #include <shutils.h>
@@ -2077,3 +2079,21 @@ route_del (char *name, int metric, char *dst, char *gateway, char *genmask)
 {
   return route_manip (SIOCDELRT, name, metric, dst, gateway, genmask);
 }
+#endif
+
+#ifdef TESTUTIL
+void main(int argc,char *argv[])
+{
+char pass1[64];
+char pass2[64];
+strcpy(pass1,argv[1]);
+strcpy(pass2,argv[2]);
+char *encrypted=crypt(pass1,pass2);
+if (strcmp(argv[2],encrypted))
+    {
+    puts("not true");
+    }else
+    puts("true");
+
+}
+#endif

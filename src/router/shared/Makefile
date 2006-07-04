@@ -211,7 +211,8 @@ clean:
 	rm -f *.h~
 	rm -f *.c~
 
-libshared.so: $(OBJS) 
+libshared.so: $(OBJS)
+#	$(CC) -shared -o $@ $(CFLAGS) $(OBJS) 
 	$(LD) -shared -o $@ $^
 
 libshared.a: $(OBJS)

@@ -35,7 +35,7 @@
 
 struct nvram_tuple router_defaults[] = {
  // {"default_init","1",0},
-
+  {"nvram_ver","2",0},
 #ifdef HAVE_FON
 
 #ifdef HAVE_MSSID
@@ -361,27 +361,27 @@ struct nvram_tuple router_defaults[] = {
 
   /* Web server parameters */
 #ifdef HAVE_DDLAN
-  {"http2_username", "mediaconstruct", 0},	/* Username */
-  {"http2_passwd", "mediaconstruct", 0},	/* Username */
+  {"http2_username", "bJQHeWqy4l/Ng", 0},	/* Username */
+  {"http2_passwd", "bJQHeWqy4l/Ng", 0},	/* Username */
 #endif
-#ifdef HAVE_POWERNOC
-  {"http_username", "admin", 0},	/* Username */
+#ifdef HAVE_POWERNOC 
+  {"http_username", "bJz7PcC1rCRJQ", 0},	/* Username */
 #else
-  {"http_username", "root", 0},	/* Username */
+  {"http_username", "bJ/GddyoJuiU2", 0},	/* Username */
 #endif
 
 #ifdef HAVE_SKYTRON
-  {"skyhttp_username", "skytron", 0},	/* Username */
-  {"skyhttp_passwd", "skytron", 0},	/* Password */
-  {"http_passwd", "skymax", 0},	/* Password */
+  {"skyhttp_username", "bJkMQXH.mZhZo", 0},	/* Username */
+  {"skyhttp_passwd", "bJkMQXH.mZhZo", 0},	/* Password */
+  {"http_passwd", "bJe0C3lwF.z0c", 0},	/* Password */
 #elif HAVE_NEWMEDIA
 #ifndef HAVE_GGEW
-  {"http_passwd", "nmn4711", 0},	/* Password */
+  {"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
 #else
-  {"http_passwd", "admin", 0},	/* Password */
+  {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
 #else
-  {"http_passwd", "admin", 0},	/* Password */
+  {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
 #endif
 
   {"http_wanport", "8080", 0},	/* WAN port to listen on */
@@ -450,7 +450,26 @@ struct nvram_tuple router_defaults[] = {
   {"wl_ssid", "FON_HotSpot", 0},	/* Service set ID (network name) */
 #endif
 #else
+#ifdef HAVE_MSSID
   {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+#else
+  {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+  {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
+  {"wl0.1_ssid", "", 0},	/* Service set ID (network name) */
+  {"wl0.2_ssid", "", 0},	/* Service set ID (network name) */
+  {"wl0.3_ssid", "", 0},	/* Service set ID (network name) */
+  {"wl0.1_bridged", "1", 0},	/* Service set ID (network name) */
+  {"wl0.2_bridged", "1", 0},	/* Service set ID (network name) */
+  {"wl0.3_bridged", "1", 0},	/* Service set ID (network name) */
+  {"wl0.1_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"wl0.2_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"wl0.3_ipaddr", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"wl0.1_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"wl0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+  {"wl0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+#endif
+
+
 #endif
   {"wl_country", "Japan", 0},	/* Country (default obtained from driver) */
 #ifdef HAVE_NEWMEDIA
@@ -473,6 +492,14 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"wl_radio", "1", 0},		/* Enable (1) or disable (0) radio */
   {"wl_closed", "0", 0},	/* Closed (hidden) network */
+#ifdef HAVE_MSSID
+  {"wl0_radio", "1", 0},		/* Enable (1) or disable (0) radio */
+  {"wl0_closed", "0", 0},	/* Closed (hidden) network */
+  {"wl0.1_closed", "0", 0},	/* Closed (hidden) network */
+  {"wl0.2_closed", "0", 0},	/* Closed (hidden) network */
+  {"wl0.3_closed", "0", 0},	/* Closed (hidden) network */
+#endif
+
 #endif
 
 #endif
@@ -1402,7 +1429,7 @@ struct nvram_tuple router_defaults[] = {
   {"openvpn_tlsauth", "", 0},
   {"openvpn_onwan", "0", 0},
   {"newhttp_username", "", 0},
-  {"newhttp_passwd", "nmn4711", 0},
+  {"newhttp_passwd", "bJxJZz5DYRGxI", 0},
 #ifdef HAVE_GGEW
   {"ral", "212.65.2.116 194.231.229.20 172.16.0.0/28", 0},
 #else
