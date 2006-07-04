@@ -1091,6 +1091,35 @@ do_timer (void)
 	if(nvram_get(old)) \
 		nvram_set(new, nvram_safe_get(old));
 
+static void
+to64 (char *s, long v, int n)
+{
+
+  unsigned char itoa64[] =
+    "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+  while (--n >= 0)
+    {
+      *s++ = itoa64[v & 0x3f];
+      v >>= 6;
+    }
+}
+
+static char *
+zencrypt (char *passwd)
+{
+  char salt[6];
+  struct timeval tv;
+  char *crypt (const char *, const char *);
+
+  gettimeofday (&tv, 0);
+
+  to64 (&salt[0], random (), 3);
+  to64 (&salt[3], tv.tv_usec, 3);
+  salt[5] = '\0';
+
+  return crypt (passwd, salt);
+}
 
 int
 start_nvram (void)
@@ -1120,6 +1149,7 @@ start_nvram (void)
   nvram_set ("action_service", "");
   nvram_set ("ddns_interval", "60");
   nvram_set ("wan_get_domain", "");
+
 
   //if(!nvram_get("wl_macmode1")){
   //      if(nvram_match("wl_macmode","disabled"))
@@ -1223,6 +1253,12 @@ start_nvram (void)
     nvram_set ("svqos_port3bw", "FULL");
   if (nvram_match ("svqos_port4bw", "full"))
     nvram_set ("svqos_port4bw", "FULL");
+
+  if (nvram_get("nvram_ver")==NULL || !nvram_match ("nvram_ver","2"))
+    {
+    nvram_set("http_passwd",zencrypt(nvram_safe_get("http_passwd")));
+    nvram_set("http_username",zencrypt(nvram_safe_get("http_username")));
+    }
 
   strcpy (style, nvram_safe_get ("router_style"));
 

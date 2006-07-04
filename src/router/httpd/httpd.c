@@ -188,6 +188,35 @@ initialize_listen_socket (usockaddr * usaP)
     }
   return listen_fd;
 }
+static void
+to64 (char *s, long v, int n)
+{
+
+  unsigned char itoa64[] =
+    "./0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+
+  while (--n >= 0)
+    {
+      *s++ = itoa64[v & 0x3f];
+      v >>= 6;
+    }
+}
+
+char *
+zencrypt (char *passwd)
+{
+  char salt[6];
+  struct timeval tv;
+  char *crypt (const char *, const char *);
+
+  gettimeofday (&tv, 0);
+
+  to64 (&salt[0], random (), 3);
+  to64 (&salt[3], tv.tv_usec, 3);
+  salt[5] = '\0';
+
+  return crypt (passwd, salt);
+}
 
 static int
 auth_check (char *dirname, char *authorization)
@@ -224,8 +253,33 @@ auth_check (char *dirname, char *authorization)
 
   /* Is this the right user and password? */
 //#ifdef DDM_SUPPORT
-  if (strcmp (auth_userid, authinfo) == 0
-      && strcmp (auth_passwd, authpass) == 0)
+  char *crypt (const char *, const char *);
+
+char *enc1 = crypt(authinfo,auth_userid);
+if (strcmp (enc1, auth_userid))
+    {
+    return 0;
+    }
+    
+char *enc2 = crypt(authpass,auth_passwd);
+if (strcmp (enc2, auth_passwd))
+    {
+    return 0;
+    }
+
+/*fprintf(stderr,"1Enc %s\n",auth_userid);
+fprintf(stderr,"1Enc2 %s\n",auth_passwd);
+
+fprintf(stderr,"2Enc %s\n",authinfo);
+fprintf(stderr,"2Enc2 %s\n",authpass);
+
+fprintf(stderr,"3Enc %s\n",enc1);
+fprintf(stderr,"3Enc2 %s\n",enc2);
+
+
+*/
+  
+  if (strcmp (enc1, auth_userid) == 0 && strcmp (enc2, auth_passwd) == 0)
     {
       return 1;
     }
@@ -234,7 +288,7 @@ auth_check (char *dirname, char *authorization)
 //    return 1;
 //#endif
   //send_authenticate( dirname );
-  return 0;
+  return 1;
 }
 
 
