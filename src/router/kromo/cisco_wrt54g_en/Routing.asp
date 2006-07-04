@@ -104,7 +104,7 @@ function SelMode(num,F) {
 									<% show_routing(); %>
 									</select>
 								</div>
-							</fieldset>
+							</fieldset><br />
 							<% nvram_else_selmatch("wk_mode","bgp","","<!--"); %>
 							
 							<fieldset>
