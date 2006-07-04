@@ -313,7 +313,7 @@ bmenu.accrestriction="Restrições de Acesso";
 bmenu.webaccess="Acesso à Internet";
 
 
-bmenu.applications="Applications &amp; Gaming";
+bmenu.applications="Aplicativos &amp; Jogos";
 bmenu.applicationsprforwarding="Encaminhamento de Faixa de Portas";
 bmenu.applicationspforwarding="Encaminhamento de Portas";
 bmenu.applicationsptriggering="Port Triggering";
@@ -356,9 +356,9 @@ alive.legend="Reinício Agendado";
 alive.sevr1="Reinício Agendado";
 alive.hour="No Horário Determinado";
 alive.legend2="Watchdog da Conexão WDS";
-alive.sevr2="Habilitar Watchdog";
+alive.sevr2="Habilitar Watchdog do WDS";
 alive.IP="Endereços IP";
-alive.legend3="Watchdog da Conexão/Proxy";
+alive.legend3="Watchdog da Conexão Proxy";
 alive.sevr3="Habilitar Watchdog do Proxy";
 alive.IP2="Endereço IP do Proxy";
 alive.port="Porta do Proxy";
@@ -366,7 +366,7 @@ alive.port="Porta do Proxy";
 //help container
 var halive = new Object();
 halive.right2="Escolha quando reiniciar o roteador. O Cron deve estar habilitado na aba de <em>Gerenciamento</em>.";
-halive.right4="Três IPs no máximo, separados por um <em>ESPAÇO</em> são permitidos.<BR/>Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
+halive.right4="São permitidos três IPs no máximo, separados por um <em>ESPAÇO</em>.<BR/>Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
 
 
 // ******************************************* config.asp *******************************************//
@@ -457,7 +457,7 @@ ddnsm.all_noip="Sem conexão à internet";
 var hddns = new Object();
 hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domínios ao invés de endereços IPs. \
 	O serviço gerencia mudanças no endereço IP e atualiza as informações do seu domínio dinamicamente. \
-	Você deve se inscrever no serviço através de um dos sites: DynDNS.org, TZO.com ou ZoneEdit.com.";
+	Você deve se inscrever no serviço através de um dos sites: DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou Personalizado.";
 
 
 // ******************************************* Diagnostics.asp *******************************************//
@@ -627,13 +627,13 @@ hotspot.h2="Portal do Hotspot";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
 hotspot.nowifibridge="Separar Wi-Fi da Bridge LAN";
-hotspot.pserver="Endereço IP/DNS Primário do Servidor Radius";
-hotspot.bserver="Endereço IP/DNS Secundário do Servidor Radius";
+hotspot.pserver="Endereço Primário do Servidor Radius";
+hotspot.bserver="Endereço Secundário do Servidor Radius";
 hotspot.dns="Endereço IP do DNS";
 hotspot.url="URL de Redirecionamento";
 hotspot.dhcp="Interface DHCP";
 hotspot.radnas="ID NAS do Radius";
-hotspot.uam="UAM Secret";
+hotspot.uam="Segredo UAM";
 hotspot.uamdns="UAM Any DNS";
 hotspot.allowuam="UAM Permitido";
 hotspot.macauth="MACauth";
@@ -867,7 +867,7 @@ management.jffs_clean="Limpar JFFS2";
 management.lang_legend="Selecionar Linguagem";
 management.lang_srv="Linguagem";
 management.lang_bulgarian="Búlgaro";
-management.lang_tradchinese="Chinês Tradicional";
+management.lang_chinese_traditional="Chinês Tradicional";
 management.lang_chinese_simplified="Chinês Simplificado";
 management.lang_croatian="Croata";
 management.lang_czech="Tcheco";
@@ -1011,7 +1011,7 @@ service.dhcp_legend="Cliente DHCP";
 service.dhcp_vendor="Ajustar Vendorclass";
 service.dhcp_legend2="Servidor DHCP";
 service.dhcp_srv="Daemon DHCP";
-service.dhcp_jffs2="Usar JFFS2 Para o BD de Concessão aos Clientes";
+service.dhcp_jffs2="Usar JFFS2 para o BD de Concessão";
 service.dhcp_domain="Domínio Utilizado";
 service.dhcp_landomain="Dominio da LAN";
 service.dhcp_option="Opções Adicionais do DHCPd";
@@ -1205,11 +1205,11 @@ trforward.app="Aplicação";
 
 //help container
 var htrforward = new Object();
-htrforward.right2="Enter the application name of the trigger.";
-htrforward.right4="For each application, list the triggered port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right6="For each application, list the forwarded port number range. Check with the Internet application documentation for the port number(s) needed.";
-htrforward.right8="Enter the starting port number of the Triggered and Forwarded Range.";
-htrforward.right10="Enter the ending port number of the Triggered and Forwarded Range.";
+htrforward.right2="Insira o nome do aplicativo para o trigger.";
+htrforward.right4="Liste a faixa de portas triggered para cada aplicação. Confira com a documentação do aplicativo quais os números das portas necessárias.";
+htrforward.right6="Liste a faixa de portas encaminhadas para cada aplicação. Confira com a documentação do aplicativo quais os números das portas necessárias.";
+htrforward.right8="Insira o número inicial das portas para a Faixa de Portas Triggered ou Encaminhada.";
+htrforward.right10="Insira o número final das portas para a Faixa de Portas Triggerd ou Encaminhada.";
 
 
 // ******************************************* Upgrade.asp *******************************************//
@@ -1239,7 +1239,7 @@ upnp.h2="Plug and Play Universal (UPnP)";
 upnp.legend="Encaminhamentos";
 upnp.legend2="Configurações UPnP";
 upnp.serv="Serviço UPnP";
-upnp.clear="Limpar a lista na inicialização";
+upnp.clear="Limpar a lista UPnP na inicialização";
 upnp.url="Enviar URL de apresentação";
 upnp.msg1="Clique para apagar a concessão";
 upnp.msg2="Remover todas as entradas?";
@@ -1283,7 +1283,7 @@ vlan.trunk="Trunk";
 
 var wep = new Object();
 wep.defkey="Chave Padrão de Transmissão";
-wep.passphrase="Passphrase";
+wep.passphrase="Código";
 
 
 // ******************************************* WOL.asp *******************************************//
@@ -1452,11 +1452,11 @@ wl_adv.label8="Tamanho da Fragmentação";
 wl_adv.label9="Tamanho RTS";
 wl_adv.label10="Número Máximo de Clientes Associados";
 wl_adv.label11="Isolamento AP";
-wl_adv.label12="Antena TX";
-wl_adv.label13="Antena RX";
+wl_adv.label12="Antena TX (Transmissão)";
+wl_adv.label13="Antena RX (Recepção)";
 wl_adv.label14="Preamble";
 wl_adv.reference="Ruído de Referência";
-wl_adv.label15="Força Xmit";
+wl_adv.label15="Força de Xmit";
 wl_adv.label16="Afterburner";
 wl_adv.label17="Acesso Wireless à Interface de Configuração";
 wl_adv.label18="Suporte WMM";
@@ -1493,9 +1493,9 @@ fail.mess2="Falha na Atualização.";
 var success = new Object();
 success.saved="Configurações Salvas.";
 success.restore="Configurações Restauradas.<br/>O roteador está reiniciando. Por favor aguarde um momento...";
-success.upgrade="Sucesso na Atualização.<br/>A unidades está reiniciando. Por favor aguarde um momento...";
+success.upgrade="Sucesso na Atualização.<br/>A unidade está reiniciando. Por favor aguarde um momento...";
 success.success_noreboot="Configurações efetuadas com sucesso.";
-success.success_reboot=success.success_noreboot + "<br />A unidades está reiniciando. Por favor aguarde um momento...";
+success.success_reboot=success.success_noreboot + "<br />A unidade está reiniciando. Por favor aguarde um momento...";
 success.alert_reset="Todos os parâmetros de configuração foram restaurados para os valores padrão.<br /><br />";
 success.alert1="Por favor verifique os seguintes ítens antes de continuar:";
 success.alert2="Se você alterou o endereço IP do roteador, por favor note que você deve liberar/renovar o(s) endereço(s) do(s) cliente(s) na rede.";
