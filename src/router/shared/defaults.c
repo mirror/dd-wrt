@@ -566,6 +566,39 @@ struct nvram_tuple router_defaults[] = {
   {"wl_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
   {"wl_wds", "", 0},		/* xx:xx:xx:xx:xx:xx ... */
   {"wl_wep", "disabled", 0},		/* Data encryption (off|wep|tkip|aes) */
+#ifdef HAVE_MSSID
+  {"wl0_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
+  {"wl0_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
+  {"wl0_key", "1", 0},		/* Current WEP key */
+  {"wl0_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+
+  {"wl0.1_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
+  {"wl0.1_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
+  {"wl0.1_key", "1", 0},		/* Current WEP key */
+  {"wl0.1_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.1_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.1_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.1_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+
+  {"wl0.2_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
+  {"wl0.2_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
+  {"wl0.2_key", "1", 0},		/* Current WEP key */
+  {"wl0.2_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.2_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.2_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.2_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+
+  {"wl0.3_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
+  {"wl0.3_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
+  {"wl0.3_key", "1", 0},		/* Current WEP key */
+  {"wl0.3_key1", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.3_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.3_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+  {"wl0.3_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+#else
   {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
   {"wl_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
   {"wl_key", "1", 0},		/* Current WEP key */
@@ -573,6 +606,8 @@ struct nvram_tuple router_defaults[] = {
   {"wl_key2", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
   {"wl_key3", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
   {"wl_key4", "", 0},		/* 5/13 char ASCII or 10/26 char hex */
+#endif
+
   {"wl_maclist", "", 0},	/* xx:xx:xx:xx:xx:xx ... */
   {"wl_macmode", "disabled", 0},	/* "allow" only, "deny" only, or "disabled" (allow all) */
   {"wl_macmode1", "disabled", 0},	/* "disabled" or "other" for WEBB *//* Add */
@@ -600,6 +635,7 @@ struct nvram_tuple router_defaults[] = {
   {"wl_bcn", "100", 0},		/* Beacon interval */
   {"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
 
+#ifndef HAVE_SSID
 #ifdef HAVE_GGEW
   {"wl_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #elif  HAVE_NEWMEDIA
@@ -607,7 +643,18 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"wl_net_mode", "mixed", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #endif
+#else
+#ifdef HAVE_GGEW
+  {"wl0_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#elif  HAVE_NEWMEDIA
+  {"wl0_net_mode", "disabled", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#else
+  {"wl0_net_mode", "mixed", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
+#endif
+#endif
 
+
+#ifndef HAVE_MSSID
 #ifdef HAVE_SAGAR
   {"wl_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
 #elif HAVE_GGEW
@@ -617,6 +664,19 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"wl_gmode", XSTR (GMODE_AUTO), 0},	/* 54g mode */
 #endif
+#else
+#ifdef HAVE_SAGAR
+  {"wl0_gmode", XSTR (GMODE_LEGACY_B), 0},	/* 54g mode */
+#elif HAVE_GGEW
+  {"wl0_gmode", 0, 0},		/* 54g mode */
+#elif HAVE_NEWMEDIA
+  {"wl0_gmode", "-1", 0},	/* 54g mode */
+#else
+  {"wl0_gmode", XSTR (GMODE_AUTO), 0},	/* 54g mode */
+#endif
+#endif
+
+
   {"wl_gmode_protection", "off", 0},	/* 802.11g RTS/CTS protection (off|auto) */
 #ifdef HAVE_SKYTEL
   {"wl_frameburst", "on", 0},	/* BRCM Frambursting mode (off|on) */
@@ -625,6 +685,7 @@ struct nvram_tuple router_defaults[] = {
 #else
   {"wl_frameburst", "off", 0},	/* BRCM Frambursting mode (off|on) */
 #endif
+
   {"wl_infra", "1", 0},		/* Network Type (BSS/IBSS) */
 
   {"wl_passphrase", "", 0},	/* Passphrase *//* Add */
@@ -641,6 +702,39 @@ struct nvram_tuple router_defaults[] = {
   {"security_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk|wep) for WEB *//* Add */
   {"security_mode_last", "", 0},	/* Save last WPA mode *//* Add */
 #ifndef HAVE_MADWIFI
+#ifdef HAVE_MSSID
+  {"wl0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
+  {"wl0_akm", "", 0},
+  {"wl0_wpa_psk", "", 0},	/* WPA pre-shared key */
+  {"wl0_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
+  {"wl0_radius_port", "1812", 0},	/* RADIUS server UDP port */
+  {"wl0_radius_ipaddr", "", 0},	/* RADIUS server IP address */
+  {"wl0_radius_key", "", 0},	/* RADIUS shared secret */
+
+  {"wl0.1_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
+  {"wl0.1_akm", "", 0},
+  {"wl0.1_wpa_psk", "", 0},	/* WPA pre-shared key */
+  {"wl0.1_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
+  {"wl0.1_radius_port", "1812", 0},	/* RADIUS server UDP port */
+  {"wl0.1_radius_ipaddr", "", 0},	/* RADIUS server IP address */
+  {"wl0.1_radius_key", "", 0},	/* RADIUS shared secret */
+
+  {"wl0.2_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
+  {"wl0.2_akm", "", 0},
+  {"wl0.2_wpa_psk", "", 0},	/* WPA pre-shared key */
+  {"wl0.2_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
+  {"wl0.2_radius_port", "1812", 0},	/* RADIUS server UDP port */
+  {"wl0.2_radius_ipaddr", "", 0},	/* RADIUS server IP address */
+  {"wl0.2_radius_key", "", 0},	/* RADIUS shared secret */
+
+  {"wl0.3_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
+  {"wl0.3_akm", "", 0},
+  {"wl0.3_wpa_psk", "", 0},	/* WPA pre-shared key */
+  {"wl0.3_wpa_gtk_rekey", "3600", 0},	/* WPA GTK rekey interval *//* Modify */
+  {"wl0.3_radius_port", "1812", 0},	/* RADIUS server UDP port */
+  {"wl0.3_radius_ipaddr", "", 0},	/* RADIUS server IP address */
+  {"wl0.3_radius_key", "", 0},	/* RADIUS shared secret */
+#else
   {"wl_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
   {"wl_akm", "", 0},
   {"wl_wpa_psk", "", 0},	/* WPA pre-shared key */
@@ -648,6 +742,9 @@ struct nvram_tuple router_defaults[] = {
   {"wl_radius_port", "1812", 0},	/* RADIUS server UDP port */
   {"wl_radius_ipaddr", "", 0},	/* RADIUS server IP address */
   {"wl_radius_key", "", 0},	/* RADIUS shared secret */
+#endif
+
+
 #else
   {"ath0_auth_mode", "disabled", 0},	/* WPA mode (disabled|radius|wpa|psk) */
   {"ath0_akm", "", 0},
