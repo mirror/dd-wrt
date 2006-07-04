@@ -267,7 +267,7 @@ disconnected_pppoe_main (int argc, char **argv)
       && nvram_match ("action_service", ""))
     {
       cprintf ("tallest:=====( kill pppoe %d )=====\n", pppoe_num);
-      stop_singe_pppoe (pppoe_num);
+      stop_single_pppoe (pppoe_num);
       start_pppoe (pppoe_num);
       dns_to_resolv ();
 
