@@ -160,10 +160,10 @@ function SelDDNS(num,F) {
 										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selmatch("ddns_dyndnstype", "2", "selected"); %> >" + share.sttic + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"3\" <% nvram_selmatch("ddns_dyndnstype", "3", "selected"); %> >" + ddns.custom + "</option>");</script>
 									</select>
+								</div>
 								<div class="setting">
 									<div class="label"><% tran("ddns.wildcard"); %></div>
 									<input type="checkbox" value="1" name="ddns_wildcard" <% nvram_checked("ddns_wildcard", "1"); %> />
-								</div>
 								</div>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<% nvram_selmatch("ddns_enable","3","-->"); %>

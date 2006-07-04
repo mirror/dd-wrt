@@ -144,6 +144,7 @@ ddns_save_value (webs_t wp)
     nvram_set (_passwd, passwd);
   nvram_set (_hostname, hostname);
   nvram_set (_dyndnstype, dyndnstype);
+  nvram_set (_wildcard, wildcard);
 
   return ret;
 }
