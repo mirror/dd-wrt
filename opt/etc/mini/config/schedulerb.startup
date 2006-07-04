@@ -28,5 +28,5 @@ if [ "$(nvram get schedule_enable)" = "1" ]; then
         echo "$SCHEDULE_MINUTES $SCHEDULE_HOURS * * $SCHEDULE_WEEKDAYS root /sbin/reboot" > /tmp/cron.d/check_schedules
     fi
 else
-	rm -f > /tmp/cron.d/check_schedules
+	rm -f /tmp/cron.d/check_schedules
 fi

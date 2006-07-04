@@ -3,7 +3,7 @@
 		<legend><% tran("management.psswd_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.psswd_user"); %></div>
-			<input type="num" maxlength="63" size="20" value="<% nvram_get("http_username"); %>" name="http_username" onblur="valid_name(this,management.psswd_user,SPACE_NO)" />
+			<input type="password" maxlength="63" size="20" value="d6nw5v1x2pc7st9m" name="http_username" onblur="valid_name(this,management.psswd_user,SPACE_NO)" />
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.psswd_pass"); %></div>
