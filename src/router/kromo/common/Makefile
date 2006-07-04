@@ -18,6 +18,7 @@
 # SPECIFICALLY DISCLAIMS ANY IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS
 # FOR A SPECIFIC PURPOSE OR NONINFRINGEMENT CONCERNING THIS SOFTWARE
 #
+include $(TOP)/.config
 
 ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
@@ -30,9 +31,14 @@ install:
 #	-cp -a Cysaja.asp $(INSTALLDIR)/www/
 #	-cp -a SysInfo.htm $(INSTALLDIR)/www/
 #	-cp -a SysInfo1.htm $(INSTALLDIR)/www/
+ifeq ($(CONFIG_NOMUI),y)
+	-cp -a Info.htm.v24 $(INSTALLDIR)/www/Info.htm
+	-cp -a Info.live.htm.v24 $(INSTALLDIR)/www/Info.live.htm
+else
 	-cp -a Info.htm $(INSTALLDIR)/www/
 	-cp -a Info.live.htm $(INSTALLDIR)/www/
-	
+endif
+
 ifdef EMI_TEST
 	cp -a emi_test.asp $(INSTALLDIR)/www/
 endif
