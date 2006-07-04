@@ -212,6 +212,11 @@ ifneq ($(CONFIG_NOCAT),y)
 	rm -f $(INSTALLDIR)/www/splash.html
 	rm -f $(INSTALLDIR)/www/status.html
 endif
+ifeq ($(CONFIG_MSSID),y)
+	cp Status_Wireless.asp.v24 $(INSTALLDIR)/www/Status_Wireless.asp
+	cp Status_Wireless.live.asp.v24 $(INSTALLDIR)/www/Status_Wireless.live.asp
+endif	
+
 
 ifeq ($(CONFIG_NEWMEDIA),y)
 	$(MAKE) -C $(SRCBASE)/router/kromo/newmedia/ install
