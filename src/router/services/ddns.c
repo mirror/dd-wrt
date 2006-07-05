@@ -133,10 +133,11 @@ start_ddns (void)
 	  && nvram_match ("ddns_enable", "1"))
 	fprintf (fp, ",wildcard=ON");
       fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
-      fprintf (fp, " --forced_update_period %s", "2160000");	//force update after 25days
+      fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
       fprintf (fp, " --log_file %s", "/tmp/ddns.log");	//log to file
       if (nvram_invmatch ("ddns_conf", ""))
 	fprintf (fp, "%s", nvram_safe_get ("ddns_conf"));
+      fprintf (fp, "\n"); 
       fclose (fp);
     }
   else
@@ -182,6 +183,7 @@ ddns_success_main (int argc, char *argv[])
   nvram_set ("ddns_hostname_buf", nvram_safe_get (_hostname));
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
   nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
+  nvram_set ("ddns_custom_buf", nvram_safe_get (_custom));
   nvram_set ("ddns_change", "");
 
   nvram_commit ();
