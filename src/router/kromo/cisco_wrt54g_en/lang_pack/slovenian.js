@@ -1462,10 +1462,12 @@ wl_basic.label5="Brez¾ièno oddajanje SSID";
 wl_basic.label6="Obmoèje obèutljivosti (ACK uèasenje)";
 wl_basic.ap="AP";
 wl_basic.client="Odjemalec";
+wl_basic.repeater="Prenosnik";
 wl_basic.clientBridge="Odjemalec-most";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Me¹ano";
 wl_basic.b="Samo-B";
+wl_basic.a="Samo-A";
 wl_basic.g="Samo-G";
 
 //help container
