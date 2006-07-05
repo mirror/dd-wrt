@@ -1457,10 +1457,12 @@ wl_basic.label5="Diffusion SSID sans fil";
 wl_basic.label6="Sensibilité (ACK Timing)";
 wl_basic.ap="AP";
 wl_basic.client="Client";
+wl_basic.repeater="Repeater";
 wl_basic.clientBridge="Pont Client";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mixte";
 wl_basic.b="B-uniquement";
+wl_basic.a="A-uniquement";
 wl_basic.g="G-uniquement";
 
 //help container
