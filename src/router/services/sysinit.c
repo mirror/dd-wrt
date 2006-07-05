@@ -1264,8 +1264,11 @@ start_nvram (void)
 
   if (nvram_get("nvram_ver")==NULL || !nvram_match ("nvram_ver","2"))
     {
-    nvram_set("http_passwd",zencrypt(nvram_safe_get("http_passwd")));
-    nvram_set("http_username",zencrypt(nvram_safe_get("http_username")));
+    if (nvram_get("http_passwd")!=NULL && nvram_get("http_username")!=NULL)
+	{
+	nvram_set("http_passwd",zencrypt(nvram_safe_get("http_passwd")));
+	nvram_set("http_username",zencrypt(nvram_safe_get("http_username")));
+	}
     }
 
   strcpy (style, nvram_safe_get ("router_style"));
