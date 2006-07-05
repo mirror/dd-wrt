@@ -4100,6 +4100,132 @@ ej_nvram_checked (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+#ifdef HAVE_MSSID
+
+static void showencstatus(webs_t wp,char *prefix)
+{
+char akm[64];
+char ssid[64];
+sprintf(akm,"%s_akm",prefix);
+sprintf(ssid,"%s_ssid",prefix);
+websWrite(wp,"<div class=\"setting\">\n");
+websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script> %s</div>\n",prefix);
+websWrite(wp,"<script type=\"text/javascript\">");
+if (nvram_match(akm,"disabled"))
+    {
+    websWrite(wp,"Capture(share.disabled)");
+    return;
+    }
+else
+    {	
+    websWrite(wp,"Capture(share.enable)");
+    websWrite(wp,"</script>,&nbsp;");
+    }
+if (nvram_match(akm,"psk"))
+    websWrite(wp,"WPA Pre-shared Key");
+if (nvram_match(akm,"wpa"))
+    websWrite(wp,"WPA RADIUS");
+if (nvram_match(akm,"psk2"))
+    websWrite(wp,"WPA2 Pre-shared Key");
+if (nvram_match(akm,"wpa2"))
+    websWrite(wp,"WPA2 RADIUS");
+if (nvram_match(akm,"psk psk2"))
+    websWrite(wp,"WPA2 Pre-shared Key Mixed");
+if (nvram_match(akm,"wpa wpa2"))
+    websWrite(wp,"WPA RADIUS Mixed");
+if (nvram_match(akm,"radius"))
+    websWrite(wp,"RADIUS");
+if (nvram_match(akm,"wep"))
+    websWrite(wp,"WEP");
+websWrite(wp,"\n</div>\n");
+
+}
+static void
+ej_getencryptionstatus (int eid, webs_t wp, int argc, char_t ** argv)
+{
+char mode[64];
+char vifs[64];
+  char *next;
+  char var[80];
+#ifndef HAVE_MADWIFI
+sprintf(mode,"%s","wl0");
+sprintf(vifs,"%s_vifs","wl0");
+#else
+sprintf(mode,"%s","ath0");
+sprintf(vifs,"%s_vifs","wl0");
+#endif
+showencstatus(wp,mode);
+  foreach (var, nvram_safe_get(vifs), next)
+  {
+  showencstatus(wp,var);
+  }
+}
+static void
+ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
+{
+char mode[64];
+#ifndef HAVE_MADWIFI
+sprintf(mode,"%s_mode","wl0");
+#else
+sprintf(mode,"%s_mode","ath0");
+#endif
+websWrite(wp,"<script type=\"text/javascript\">");
+if (nvram_match(mode,"wet"))
+    websWrite(wp,"Capture(wl_basic.clientBridge)");
+if (nvram_match(mode,"ap"))
+    websWrite(wp,"Capture(wl_basic.ap)");
+if (nvram_match(mode,"sta"))
+    websWrite(wp,"Capture(wl_basic.client)");
+if (nvram_match(mode,"infra"))
+    websWrite(wp,"Capture(wl_basic.adhoc)");
+if (nvram_match(mode,"apsta"))
+    websWrite(wp,"Capture(wl_basic.repeater)");
+websWrite(wp,"</script>&nbsp;\n");
+							
+}
+static void
+ej_getwirelessnetmode (int eid, webs_t wp, int argc, char_t ** argv)
+{
+char mode[64];
+#ifndef HAVE_MADWIFI
+sprintf(mode,"%s_net_mode","wl0");
+#else
+sprintf(mode,"%s_net_mode","ath0");
+#endif
+websWrite(wp,"<script type=\"text/javascript\">");
+
+if (nvram_match(mode,"disabled"))
+    websWrite(wp,"Capture(share.disabled)");
+if (nvram_match(mode,"mixed"))
+    websWrite(wp,"Capture(wl_basic.mixed)");
+if (nvram_match(mode,"g-only"))
+    websWrite(wp,"Capture(wl_basic.g)");
+if (nvram_match(mode,"b-only"))
+    websWrite(wp,"Capture(wl_basic.b)");
+if (nvram_match(mode,"a-only"))
+    websWrite(wp,"Capture(wl_basic.a)");
+websWrite(wp,"</script>&nbsp;\n");
+
+}
+
+static void
+ej_getwirelessstatus (int eid, webs_t wp, int argc, char_t ** argv)
+{
+char mode[64];
+#ifndef HAVE_MADWIFI
+sprintf(mode,"%s_mode","wl0");
+#else
+sprintf(mode,"%s_mode","ath0");
+#endif
+websWrite(wp,"<script type=\"text/javascript\">");
+if (nvram_match(mode,"wet") || nvram_match(mode,"sta") || nvram_match(mode,"infra") || nvram_match(mode,"apsta"))
+    websWrite(wp,"Capture(info.ap)");
+else
+    websWrite(wp,"Capture(status_wireless.legend3)");
+websWrite(wp,"</script>");
+}
+#endif
+
 
 #endif
 
@@ -4335,6 +4461,12 @@ struct ej_handler ej_handlers[] = {
   {"do_hpagehead", ej_do_hpagehead},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
+#ifdef HAVE_MSSID
+  {"getwirelessstatus", ej_getwirelessstatus},
+  {"getwirelessnetmode", ej_getwirelessnetmode},
+  {"getwirelessmode", ej_getwirelessmode},
+  {"getencryptionstatus", ej_getencryptionstatus},
+#endif
   {NULL, NULL}
 };
 #endif /* !WEBS */

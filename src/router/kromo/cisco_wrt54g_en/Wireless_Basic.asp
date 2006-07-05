@@ -4,7 +4,7 @@
 		
 document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
-var EN_DIS = '<% nvram_else_match("wl_gmode","-1","0","1"); %>';
+var EN_DIS = '<% nvram_else_match("wl0_gmode","-1","0","1"); %>';
 function SelWL(num,F) {
 	if ( num == 0)
 		I = '0';
@@ -64,7 +64,7 @@ function to_submit(F) {
 	apply(F);
 }
 function init() {
-	wl_enable_disable(document.wireless,'<% nvram_else_match("wl_gmode","-1","0","1"); %>');
+	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
 }
 		</script>
 	</head>
