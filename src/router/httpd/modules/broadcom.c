@@ -3647,7 +3647,6 @@ do_apply_post (char *url, webs_t stream, int len, char *boundary)
     }
 }
 
-#ifdef KROMOGUI
 static void
 do_style (char *url, webs_t stream)
 {
@@ -3657,18 +3656,6 @@ do_style (char *url, webs_t stream)
   else
     do_file (style, stream);
 }
-#else
-static void
-do_show_modules (char *url, webs_t stream)
-{
-  show_modules (stream, NULL, NULL, 0, url, NULL, NULL);
-}
-static void
-do_show_forward (char *url, webs_t stream)
-{
-  show_forward (stream, NULL, NULL, 0, url, NULL, NULL);
-}
-#endif
 
 
 #ifdef HAVE_CHILLI
@@ -3931,9 +3918,7 @@ struct mime_handler mime_handlers[] = {
   {"Info.live.htm", "text/html", no_cache, NULL, do_ej, NULL},
   {"**.asp", "text/html", no_cache, NULL, do_ej, do_auth},
   {"**.JPG", "image/jpeg", no_cache, NULL, do_file, NULL},
-#ifdef KROMOGUI
   {"style.css", "text/css", NULL, NULL, do_style, NULL},
-#endif
   {"common.js", "text/javascript", NULL, NULL, do_file, NULL},
   {"lang_pack/language.js", "text/javascript", NULL, NULL, do_language, NULL},
 
@@ -4010,7 +3995,6 @@ struct mime_handler mime_handlers[] = {
 };
 
 
-#ifdef KROMOGUI
 /*
  * Example:
  * wan_proto=dhcp
@@ -4227,7 +4211,6 @@ websWrite(wp,"</script>");
 #endif
 
 
-#endif
 
 // web-writes html escaped (&#xxx;) nvram entries   / test buffered
 int
@@ -4391,12 +4374,6 @@ struct ej_handler ej_handlers[] = {
   {"get_curchannel", ej_get_curchannel},
   {"get_currate", ej_get_currate},
   {"get_uptime", ej_get_uptime},
-#ifndef KROMOGUI
-  {"get_qossvcs", ej_get_qossvcs},
-  {"get_qosips", ej_get_qosips},
-  {"get_qosmacs", ej_get_qosmacs},
-#endif
-#ifdef KROMOGUI
   {"get_services_options", ej_get_services_options},
   {"get_clone_wmac", ej_get_clone_wmac},
   {"show_modules", ej_show_modules},
@@ -4413,7 +4390,6 @@ struct ej_handler ej_handlers[] = {
 //      { "if_config_table",ej_if_config_table},
   {"wme_match_op", ej_wme_match_op},
 //      { "show_advanced_qos", ej_show_advanced_qos },
-#endif
 #ifdef FBNFW
   {"list_fbn", ej_list_fbn},
 #endif
