@@ -884,7 +884,6 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-#ifdef KROMOGUI
   if (!strcmp (type, "input"))
     {
       websWrite (wp, "<div class=\"col2l\">\n");
@@ -938,50 +937,6 @@ ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv)
 
 
 
-#else
-  if (!strcmp (type, "input"))
-    {
-      for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
-	{
-
-	  item = 0 * WL_FILTER_MAC_NUM + i + 1;
-	  ret += websWrite (wp, " \
-	<tr> \n\
-          <td align=\"right\" height=\"30\" width=\"54\"> <font face=Arial size=-1><B>%s %02d : </B></font></td> \n\
-          <td align=\"left\" height=\"30\"><b>&nbsp; </b> \n\
-                <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></td> \n\
-          <td align=\"left\" height=\"30\" width=\"16\">&nbsp;</td>\n", mac_mess, item, box_len, item - 1, wl_filter_mac_get ("mac", item - 1));
-	  ret += websWrite (wp, " \
-          <td align=\"right\" height=\"30\" width=\"54\"> <font face=Arial size=-1><b>%s %02d : </b></font></td> \n\
-          <td align=\"left\" height=\"30\">&nbsp;  \n\
-                <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></td> \n\
-        </tr>\n", mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get ("mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
-
-	}
-      ret += websWrite (wp, " \
-	<tr> \n\
-	<td align=right height=30 colspan=5>\n\
-		<hr color=#c0c0c0 align=right>\n\
-	</td></tr>\n");
-      for (i = 0; i < WL_FILTER_MAC_NUM / 2; i++)
-	{
-
-	  item = 1 * WL_FILTER_MAC_NUM + i + 1;
-	  ret += websWrite (wp, " \
-	<tr> \n\
-          <td align=right height=\"30\" width=\"54\"> <font face=Arial size=-1><b>%s %02d : </b></font></td> \n\
-          <td align=left height=\"30\"><b>&nbsp; </b> \n\
-                <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></td> \n\
-          <td align=left height=\"30\" width=\"16\">&nbsp;</td>\n", mac_mess, item, box_len, item - 1, wl_filter_mac_get ("mac", item - 1));
-	  ret += websWrite (wp, " \
-          <td align=\"right\" height=\"30\" width=\"54\"> <font face=Arial size=-1><b>%s %02d : </b></font></td> \n\
-          <td align=\"left\" height=\"30\">&nbsp;  \n\
-                <input maxlength=\"17\" onblur=\"valid_macs_all(this)\" size=%d name=\"wl_mac%d\" value=\"%s\"></td> \n\
-        </tr>\n", mac_mess, item + (WL_FILTER_MAC_NUM / 2), box_len, item + (WL_FILTER_MAC_NUM / 2) - 1, wl_filter_mac_get ("mac", item + (WL_FILTER_MAC_NUM / 2) - 1));
-
-	}
-    }
-#endif
   //cprintf("%s():set wl_active_add_mac = 0\n",__FUNCTION__);
   nvram_set ("wl_active_add_mac", "0");
   return;

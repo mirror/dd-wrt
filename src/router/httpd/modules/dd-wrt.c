@@ -3242,7 +3242,6 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_match (nvramvar, "1"))
     {
-#ifdef KROMOGUI
       websWrite (wp, "\
 	<div class=\"setting\">\n\
 	          <input type=\"hidden\" name=\"wl_wds%d_ipaddr\" value=\"4\">\n\
@@ -3257,52 +3256,6 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.<input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.<input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.<input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
 
-#else
-
-      websWrite (wp, "\
-	<tr>\n\
-          <td width=156 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</td>\n\
-          <td width=8 background=image/UI_04.gif height=25>&nbsp;</td>\n\
-          <td colSpan=3 height=25>&nbsp;</td>\n\
-          <td width=101 height=25>&nbsp;IP Address:</td>\n\
-          <td width=296 height=25>&nbsp;\n\
-	          <input type=hidden name=wl_wds%d_ipaddr value=4>\n\
-	          <input size=3 maxlength=3 name=wl_wds%d_ipaddr0 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr1 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr2 value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-                  <input size=3 maxlength=3 name=wl_wds%d_ipaddr3 value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=num></td>\n\
-          <td width=13 height=25>&nbsp;</td>\n\
-          <td width=15 background=image/UI_05.gif height=25>&nbsp;</td>\n\
-       </tr>\n", index, index, ip[0], index, ip[1], index, ip[2], index, ip[3], index);
-
-      websWrite (wp, "\
-        <TR>\n\
-          <TD width=156 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>\n\
-          <TD width=8 background=image/UI_04.gif height=24>&nbsp;</TD>\n\
-          <TD colSpan=3 height=25>&nbsp;</TD>\n\
-          <TD width=101 height=24><FONT style=\"FONT-SIZE: 8pt\"><SPAN>Subnet Mask:</SPAN></FONT></TD>\n\
-          <TD width=296 height=24>&nbsp;\n\
-	  <input type=\"hidden\" name=\"wl_wds%d_netmask\" value=\"4\">\n\
-	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  <input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
-	  </TD>\n\
-          <TD width=13 height=24>&nbsp;</TD>\n\
-          <TD width=15 background=image/UI_05.gif height=24>&nbsp;</TD>\n\
-       </TR>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
-
-      websWrite (wp, "\
-        <TR>\n\
-          <TD width=156 bgColor=#e7e7e7 colSpan=3 height=25>&nbsp;</TD>\n\
-          <TD width=8 background=image/UI_04.gif height=24>&nbsp;</TD>\n\
-          <TD colSpan=3 height=25>&nbsp;</TD>\n\
-          <TD width=101 height=24>&nbsp;</TD>\n\
-          <TD width=296 height=24><HR>\n</TD>\n\
-          <TD width=13 height=24>&nbsp;</TD>\n\
-          <TD width=15 background=image/UI_05.gif height=24>&nbsp;</TD>\n\
-       </TR>");
-#endif
     }
 
   return;
@@ -3329,217 +3282,6 @@ save_wds (webs_t wp)
 
 }
 
-#ifndef KROMOGUI
-void
-ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  char *qos_svcs = nvram_safe_get ("svqos_svcs");
-  char name[32], type[32], data[32], level[32];
-  int no_svcs = 0, i = 0, ret = -1;
-
-
-  // calc # of services
-//      no_svcs = strspn(qos_svcs,"|");
-
-  while ((qos_svcs = strpbrk (qos_svcs, "|")))
-    {
-      no_svcs++;
-      qos_svcs++;
-    }
-
-  // write HTML data
-
-  websWrite (wp, "<input type=hidden name=\"svqos_nosvcs\" value=\"%d\">",
-	     no_svcs);
-
-  qos_svcs = nvram_safe_get ("svqos_svcs");
-
-  /* services format is "name type data level | name type data level |" ..etc */
-  for (i = 0; i < no_svcs && qos_svcs && qos_svcs[0]; i++)
-    {
-      if (sscanf (qos_svcs, "%31s %31s %31s %31s ", name, type, data, level) <
-	  4)
-	break;
-
-      websWrite (wp, "<TR>\n\
-			   <TD align=right bgColor=#e7e7e7 height=5></TD>\n\
-			   <TD width=8 background=image/UI_04.gif height=5></TD>\n\
-			   <TD height=5></TD>\n\
-			   <TD colSpan=2>\n\
-		           <TABLE>\n\
-			   <TR>\n\
-			   <TD width=100 height=5><input type=checkbox name=\"svqos_svcdel%d\"></TD>\n\
-			   <TD width=297 height=25>\n\
-		           <TABLE>\n\
-		           <TR>\n\
-			   <CENTER>\n\
-			   <input type=hidden name=\"svqos_svcname%d\" value=\"%s\">\n\
-			   <input type=hidden name=\"svqos_svctype%d\" value=\"%s\">\n\
-			   <TD align=middle width=80><B>%s</B></TD>\n\
-			   <TD align=middle width=80>\n\
-			   <SELECT name=\"svqos_svcprio%d\"> \n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
-			   </SELECT>\n\
-		           </TD>\n\
-			   <TD align=middle width=80><B>&nbsp;</B></TD>\n\
-			   </CENTER>\n\
-			   </TR>\n\
-			   </TABLE>\n\
-			   </TD>\n\
-			   </TR>\n\
-		           </TABLE>\n\
-			   </TD>\n\
-			   </TR>\n", i, i, name, i, type, name, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
-
-      qos_svcs = strpbrk (++qos_svcs, "|");
-      qos_svcs++;
-
-    }
-
-  return;
-}
-
-void
-ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  char *qos_ips = nvram_safe_get ("svqos_ips");
-  char ip[32], level[32];
-  int no_ips = 0, i = 0, ret = -1;
-
-  // calc # of ips
-  while ((qos_ips = strpbrk (qos_ips, "|")))
-    {
-      no_ips++;
-      qos_ips++;
-    }
-
-  // write HTML data
-
-  websWrite (wp, "<input type=hidden name=\"svqos_noips\" value=\"%d\">",
-	     no_ips);
-
-  qos_ips = nvram_safe_get ("svqos_ips");
-
-  /* IP format is "data level | data level |" ..etc */
-  for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++)
-    {
-      if (sscanf (qos_ips, "%31s %31s ", ip, level) < 2)
-	break;
-
-      websWrite (wp, "<TR>\n\
-			   <TD align=right bgColor=#e7e7e7 height=5></TD>\n\
-			   <TD width=8 background=image/UI_04.gif height=5></TD>\n\
-			   <TD height=5></TD>\n\
-			   <TD colSpan=2>\n\
-		           <TABLE>\n\
-			   <TR>\n\
-			   <TD width=90 height=5><input type=checkbox name=\"svqos_ipdel%d\"></TD>\n\
-			   <input type=hidden name=\"svqos_ip%d\" value=\"%s\">\n\
-			   <TD width=297 height=25>\n\
-		           <TABLE>\n\
-		           <TR>\n\
-			   <CENTER>\n\
-			   <TD align=middle width=90><B>%s</B></TD>\n\
-			   <TD align=middle width=80>\n\
-			   <SELECT name=\"svqos_ipprio%d\"> \n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
-			   	<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
-			   </SELECT>\n\
-		           </TD>\n\
-			   <TD align=middle width=80><B>&nbsp;</B></TD>\n\
-			   </CENTER>\n\
-			   </TR>\n\
-			   </TABLE>\n\
-			   </TD>\n\
-			   </TR>\n\
-		           </TABLE>\n\
-			   </TD>\n\
-			   </TR>\n", i, i, ip, ip, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
-
-      qos_ips = strpbrk (++qos_ips, "|");
-      qos_ips++;
-
-    }
-
-  return;
-}
-
-
-void
-ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  char *qos_macs = nvram_safe_get ("svqos_macs");
-  char mac[32], level[32];
-  int no_macs = 0, i = 0, ret = -1;
-
-
-  // calc # of ips
-  while ((qos_macs = strpbrk (qos_macs, "|")))
-    {
-      no_macs++;
-      qos_macs++;
-    }
-
-  // write HTML data
-  websWrite (wp, "<input type=hidden name=\"svqos_nomacs\" value=\"%d\">",
-	     no_macs);
-
-  qos_macs = nvram_safe_get ("svqos_macs");
-
-  /* IP format is "data level | data level |" ..etc */
-  for (i = 0; i < no_macs && qos_macs && qos_macs[0]; i++)
-    {
-      if (sscanf (qos_macs, "%31s %31s ", mac, level) < 2)
-	break;
-
-      websWrite (wp, "<TR>\n\
-			   <TD align=right bgColor=#e7e7e7 height=5></TD>\n\
-			   <TD width=8 background=image/UI_04.gif height=5></TD>\n\
-			   <TD height=5></TD>\n\
-			   <TD colSpan=2>\n\
-		           <TABLE>\n\
-			   <TR>\n\
-			   <TD width=100 height=5><input type=checkbox name=\"svqos_macdel%d\"></TD>\n\
-			   <input type=hidden name=\"svqos_mac%d\" value=\"%s\">\n\
-			   <TD width=297 height=25>\n\
-		           <TABLE>\n\
-		           <TR>\n\
-			   <CENTER>\n\
-			   <TD align=middle width=80><B>%s</B></TD>\n\
-			   <TD align=middle width=80>\n\
-			   <SELECT name=\"svqos_macprio%d\"> \n\
-			   		<script type=\"text/javascript\">document.write(\"<option value=\\\"100\\\" %s >\" + qos.prio_x + \"</option>\");</script>\n\
-			   		<script type=\"text/javascript\">document.write(\"<option value=\\\"10\\\" %s >\" + qos.prio_p + \"</option>\");</script>\n\
-					<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + qos.prio_e + \"</option>\");</script>\n\
-					<script type=\"text/javascript\">document.write(\"<option value=\\\"30\\\" %s >\" + qos.prio_s + \"</option>\");</script>\n\
-					<script type=\"text/javascript\">document.write(\"<option value=\\\"40\\\" %s >\" + qos.prio_b + \"</option>\");</script>\n\
-			   </SELECT>\n\
-		           </TD>\n\
-			   <TD align=middle width=80><B>&nbsp;</B></TD>\n\
-			   </CENTER>\n\
-			   </TR>\n\
-			   </TABLE>\n\
-			   </TD>\n\
-			   </TR>\n\
-		           </TABLE>\n\
-			   </TD>\n\
-			   </TR>\n", i, i, mac, mac, i, strcmp (level, "100") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "10") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "20") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "30") == 0 ? "selected=\\\"selected\\\"" : "", strcmp (level, "40") == 0 ? "selected=\\\"selected\\\"" : "");
-
-      qos_macs = strpbrk (++qos_macs, "|");
-      qos_macs++;
-
-    }
-
-  return;
-}
-#endif
 
 char *
 get_filter_services (void)
@@ -5047,7 +4789,6 @@ int alias_delete_ip(webs_t wp)
 */
 /* end lonewolf additions */
 
-#ifdef KROMOGUI
 void
 ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -5163,60 +4904,6 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
-#else
-void
-ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
-{
-  char *qos_ips = nvram_safe_get ("svqos_ips");
-  char ip[32], level[32];
-  int no_ips = 0, i = 0;
-
-// calc # of ips
-  while ((qos_ips = strpbrk (qos_ips, "|")))
-    {
-      no_ips++;
-      qos_ips++;
-    }
-  websWrite (wp, "<tr>\n\
-  					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
-  					<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n\
-  					<th><script type=\"text/javascript\">Capture(qos.maxrate_b)</script></th>\n\
-  				</tr>\n");
-
-// write HTML data
-
-  websWrite (wp,
-	     "<input type=\"hidden\" name=\"svqos_noips\" value=\"%d\" />",
-	     no_ips);
-
-  qos_ips = nvram_safe_get ("svqos_ips");
-
-  /* IP format is "data level | data level |" ..etc */
-  for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++)
-    {
-      if (sscanf (qos_ips, "%31s %31s ", ip, level) < 2)
-	break;
-
-      websWrite (wp, "<tr>\n\
-					<td>\n\
-						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
-						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
-					</td>\n\
-					<td><em>%s</em></td>\n\
-					<td>\n\
-						<input name=\"svqos_ipprio%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
-						</select>\n\
-					</td>\n\
-				</tr>\n", i, i, ip, ip, i, level);
-
-      qos_ips = strpbrk (++qos_ips, "|");
-      qos_ips++;
-
-    }
-
-  return;
-}
-#endif
 #ifndef HAVE_AQOS
 void
 ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
