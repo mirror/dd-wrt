@@ -39,21 +39,20 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  fp = fopen ("/tmp/ddns.log", "r");
-
-  if (fp == NULL)
+  if ((fp = fopen ("/tmp/ddns.log", "r")))
+    {
+      /* Just dump the log file onto the web page */
+      while (fgets (buff, sizeof (buff), fp))
+	websWrite (wp, "%s <br />", buff);
+      fclose (fp);
+    }
+  else
     {
       websWrite (wp,
 		 "<script type=\"text/javascript\">Capture(ddnsm.all_connecting)</script>");
       return;
     }
-  else
-    {
-      /* Just dump the log file onto the web page */
-      while (fgets (buff, sizeof (buff), fp))
-	websWrite (wp, "%s <br />", buff);
-    }
-  fclose (fp);
+
   return;
 }
 
