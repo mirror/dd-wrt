@@ -1698,8 +1698,10 @@ check_vlan_support (void)
 
 //  if ((nvram_match ("boardtype", "0x0101") || (boardflags & 0x0100))
 //  && nvram_invmatch ("boardnum", "2"))
-  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG
-      || getRouterBrand () == ROUTER_MOTOROLA_V1)
+  int brand = getRouterBrand ();
+  if (brand == ROUTER_LINKSYS_WRT55AG
+      || brand == ROUTER_MOTOROLA_V1
+      || brand == ROUTER_BUFFALO_WLA2G54C)
     return 0;
 
   if (nvram_match ("boardtype", "bcm94710dev")
