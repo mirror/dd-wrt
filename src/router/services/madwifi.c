@@ -493,7 +493,7 @@ deconfigure_single (int count)
   char wifivifs[16];
   sprintf (wifivifs, "ath%d_vifs", count);
   sprintf (dev, "ath%d", count);
-  br_add_interface ("br0", dev);
+  br_del_interface ("br0", dev);
 //  eval ("brctl", "delif", "br0", dev);
   eval ("ifconfig", dev, "down");
   eval ("wlanconfig", dev, "destroy");
@@ -956,6 +956,7 @@ setMacFilter (char *iface)
 
 
 }
+#define IFUP (IFF_UP | IFF_RUNNING | IFF_BROADCAST | IFF_MULTICAST)
 
 static void
 configure_single (int count)
@@ -1101,7 +1102,7 @@ configure_single (int count)
   eval ("ifconfig", dev, "0.0.0.0", "up");
   if (strcmp (m, "sta"))
     {
-      br_add_interface ("br0", dev);
+      br_add_interface (nvram_safe_get("lan_ifname"), dev);
 
 //      eval ("brctl", "addif", "br0", dev);
     }
@@ -1151,7 +1152,22 @@ configure_single (int count)
       //ifconfig (var, IFUP, "0.0.0.0", NULL);
       if (strcmp (m, "sta"))
 	{
-	  br_add_interface ("br0", var);
+	char bridged[32];
+      sprintf (bridged, "%s_bridged", var);
+      if (nvram_match (bridged, "1"))
+	{
+	  ifconfig (var, IFUP, NULL, NULL);
+	  br_add_interface (nvram_safe_get("lan_ifname"), var);
+	}
+      else
+	{
+	  char ip[32];
+	  char mask[32];
+	  sprintf (ip, "%s_ipaddr", var);
+	  sprintf (mask, "%s_ipaddr", var);
+	  ifconfig (var, IFUP, nvram_safe_get (ip), nvram_safe_get (mask));
+	}
+
 	  //  eval ("brctl", "addif", "br0", var);
 	}
       //add to bridge
