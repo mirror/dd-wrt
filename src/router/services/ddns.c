@@ -183,7 +183,6 @@ ddns_success_main (int argc, char *argv[])
   nvram_set ("ddns_hostname_buf", nvram_safe_get (_hostname));
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
   nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
-  nvram_set ("ddns_custom_buf", nvram_safe_get (_custom));
   nvram_set ("ddns_change", "");
 
   nvram_commit ();
