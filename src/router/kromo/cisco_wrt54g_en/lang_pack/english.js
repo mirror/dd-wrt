@@ -1461,10 +1461,12 @@ wl_basic.label5="Wireless SSID Broadcast";
 wl_basic.label6="Sensitivity Range (ACK Timing)";
 wl_basic.ap="AP";
 wl_basic.client="Client";
+wl_basic.repeater="Repeater";
 wl_basic.clientBridge="Client Bridge";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Mixed";
 wl_basic.b="B-Only";
+wl_basic.a="A-Only";
 wl_basic.g="G-Only";
 
 //help container

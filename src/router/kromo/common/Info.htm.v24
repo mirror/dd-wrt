@@ -225,11 +225,11 @@ addEvent(window, "unload", function() {
 								<legend><% tran("share.wireless"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("share.mode"); %></div>
-									<% nvram_match("wl0_mode", "wet", "<script type="text/javascript">Capture(wl_basic.clientBridge)</script>"); %><% nvram_match("wl0_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script>"); %><% nvram_match("wl0_mode", "sta", "<script type="text/javascript">Capture(wl_basic.client)</script>"); %><% nvram_match("wl0_mode", "infra", "<script type="text/javascript">Capture(wl_basic.adhoc)</script>"); %><% nvram_match("wl0_mode", "apsta", "Repeater"); %>&nbsp;
+									<% getwirelessmode(); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.net"); %></div>
-									<% nvram_match("wl0_net_mode", "disabled","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl0_net_mode", "mixed", "<script type="text/javascript">Capture(wl_basic.mixed)</script>"); %><% nvram_match("wl0_net_mode", "g-only", "<script type="text/javascript">Capture(wl_basic.g)</script>"); %><% nvram_match("wl0_net_mode", "b-only", "<script type="text/javascript">Capture(wl_basic.b)</script>"); %>&nbsp;
+									<% getwirelessnetmode(); %>									
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ssid"); %></div>
@@ -330,7 +330,7 @@ addEvent(window, "unload", function() {
 						</div><br clear="all" />
 						<h2><% tran("share.wireless"); %></h2>
 						<fieldset>
-							<legend><% nvram_match("wl0_mode", "wet", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl0_mode", "ap", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %><% nvram_match("wl0_mode", "sta", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl0_mode", "infra", "<script type="text/javascript">Capture(info.ap)</script>"); %><% nvram_match("wl0_mode", "apsta", "<script type="text/javascript">Capture(status_wireless.legend3)</script>"); %></legend>
+							<legend><% getwirelessstatus(); %></legend>
 							<table class="table center" cellspacing="6" id="wireless_table">
 								<tr>
 									<th width="43%"><% tran("share.mac"); %></th>
