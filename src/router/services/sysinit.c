@@ -885,9 +885,9 @@ start_sysinit (void)
       eval ("gpio", "disable", "1");	//WBR2G54 diag led off
     }
 
-  if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
+  if ((brand == ROUTER_BUFFALO_WLA2G54C) || (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446")))
     {
-      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54G v2 interfaces
+      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WLA2G54C & WAP54Gv2 interfaces
       nvram_set ("wl0_ifname", "eth1");
       strcpy (wlifname, "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
