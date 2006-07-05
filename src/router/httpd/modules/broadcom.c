@@ -1623,6 +1623,17 @@ validate_password (webs_t wp, char *value, struct variable *v)
     }
 }
 
+static void
+validate_password2 (webs_t wp, char *value, struct variable *v)
+{
+  if (strcmp (value, TMP_PASSWD) && valid_name (wp, value, v))
+    {
+      nvram_set (v->name, value);
+
+      system ("/sbin/setpasswd");
+    }
+}
+
 
 int
 valid_hwaddr (webs_t wp, char *value, struct variable *v)
@@ -1960,6 +1971,13 @@ Initnvramtab ()
 		  if (!stricmp (tmpstr, "PASSWORD"))
 		    {
 		      tmp->validate = validate_password;
+		      tmp->argv = (char **) malloc (sizeof (char **) * 2);
+		      tmp->argv[0] = getFileString (in);
+		      tmp->argv[1] = NULL;
+		    }
+		  if (!stricmp (tmpstr, "PASSWORD2"))
+		    {
+		      tmp->validate = validate_password2;
 		      tmp->argv = (char **) malloc (sizeof (char **) * 2);
 		      tmp->argv[0] = getFileString (in);
 		      tmp->argv[1] = NULL;
