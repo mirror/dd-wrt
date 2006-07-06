@@ -146,7 +146,7 @@ start_ddns (void)
       return -1;
     }
 
-//  ret = eval ("inadyn", "--input_file", "/tmp/inadyn.conf");
+  ret = eval ("inadyn", "--input_file", "/tmp/inadyn.conf");
 
   cprintf ("done\n");
 
