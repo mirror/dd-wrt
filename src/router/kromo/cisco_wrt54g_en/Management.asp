@@ -146,12 +146,12 @@ addEvent(window, "load", function() {
 		selSSH("<% nvram_get("sshd_enable"); %>", 1);
 
 	if (document.setup.ipv6_enable0) {
-		show_layer_ext('idipv6', "<% nvram_get("ipv6_enable0"); %>" == 1);
+		show_layer_ext('idipv6', <% nvram_get("ipv6_enable0"); %> == 1);
 	}
 		
-	show_layer_ext('idntp_server', "<% nvram_get("ntp_enable"); %>" == 1);
-	show_layer_ext('idntp_server', "<% nvram_get("samba_mount"); %>" == 1);
-	show_layer_ext('idntp_server', "<% nvram_get("wol_enable"); %>" == 1);
+	show_layer_ext('idntp', <% nvram_get("ntp_enable"); %> == 1);
+	show_layer_ext('idsamba', <% nvram_get("samba_mount"); %> == 1);
+	show_layer_ext('idwol', <% nvram_get("wol_enable"); %> == 1);
 
 });
 
