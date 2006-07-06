@@ -654,6 +654,18 @@ main (int argc, char **argv)
   else if (strstr (base, "resetbutton"))
     {
 #ifndef HAVE_RB500
+
+	if ((brand & 0x000f) > 0)
+	  {
+	  return resetbutton_main (argc, argv);
+	  }
+	else
+	  {
+	  fprintf (stderr,
+		   "Your router model doesnt support the resetbutton!\n");
+	  return 0;
+	  }
+/*	  	
       int brand = getRouterBrand ();
 //      fprintf(stderr,"brand = %d\n",brand);
       switch (brand)
@@ -674,6 +686,7 @@ main (int argc, char **argv)
 		   "Your router model doesnt support the resetbutton!\n");
 	  return 0;
 	}
+*/
 #endif
     }
 #ifndef HAVE_MADWIFI
