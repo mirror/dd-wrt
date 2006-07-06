@@ -3,21 +3,22 @@
 	<legend><% tran("management.ipv6_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("management.ipv6_srv"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="ipv6_enable0" <% nvram_checked("ipv6_enable0","1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="ipv6_enable0" <% nvram_checked("ipv6_enable0","0"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="ipv6_enable0" <% nvram_checked("ipv6_enable0","1"); %> onclick="show_layer_ext('idipv6', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="ipv6_enable0" <% nvram_checked("ipv6_enable0","0"); %> onclick="show_layer_ext('idipv6', false)" /><% tran("share.disable"); %>
 	</div>
-	<% nvram_match("ipv6_enable0","0","<!--"); %><div class="setting">
-	<div class="label"><% tran("management.ipv6_rad"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="radvd_enable" <% nvram_checked("radvd_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="radvd_enable" <% nvram_checked("radvd_enable","0"); %> /><% tran("share.disable"); %>
+	<div id="idipv6">
+		<div class="setting">
+			<div class="label"><% tran("management.ipv6_rad"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="radvd_enable" <% nvram_checked("radvd_enable","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="radvd_enable" <% nvram_checked("radvd_enable","0"); %> /><% tran("share.disable"); %>
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("management.ipv6_radconf"); %></div>
+			<textarea id="radvd_conf" name="radvd_conf" cols="60" rows="4"></textarea>
+			<script type="text/javascript">
+				var radvd_conf = fix_cr( '<% nvram_get("radvd_conf"); %>' );
+				document.getElementById("radvd_conf").value = radvd_conf;
+			</script>
+		</div>
 	</div>
-	<div class="setting">
-		<div class="label"><% tran("management.ipv6_radconf"); %></div>
-		<textarea id="radvd_conf" name="radvd_conf" cols="60" rows="4"></textarea>
-		<script type="text/javascript">
-			var radvd_conf = fix_cr( '<% nvram_get("radvd_conf"); %>' );
-			document.getElementById("radvd_conf").value = radvd_conf;
-		</script>
-	</div>
-	<% nvram_match("ipv6_enable0","0","-->"); %>
 </fieldset><br/>
