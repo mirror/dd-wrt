@@ -114,14 +114,13 @@
 		<legend><% tran("management.ntp_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.ntp_srv"); %></div>
-			<input class="spaceradio" type="radio" name="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> onclick="show_layer_ext('idntp_server', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> onclick="show_layer_ext('idntp_server', false)" /><% tran("share.disable"); %>
 		</div>
-		<% nvram_match("ntp_enable","0","<!--"); %>
-		<div class="setting">
+		<div class="setting" id="idntp_server">
 			<div class="label"><% tran("share.srvip"); %></div>
-			<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" /></div>
-		<% nvram_match("ntp_enable","0","-->"); %>
+			<input maxlength="32" size="25" name="ntp_server" value="<% nvram_get("ntp_server"); %>" />
+		</div>
 	</fieldset><br />
 	
 	<fieldset>
