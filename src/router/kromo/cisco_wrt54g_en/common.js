@@ -1,6 +1,20 @@
+// Opera
+op = (navigator.userAgent.indexOf("Opera") != -1 && document.getElementById)
+
+// Internet Explorer e.g. IE4+
+ie4 = (document.all)
+
+// Netscape version 4 :
+ns4 = (document.layers)
+
+// Mozila e.g. Netscape 6 upwards
+ns6 = (!document.all && document.getElementById)
+
+/*
 ie4 = ((navigator.appName == "Microsoft Internet Explorer") && (parseInt(navigator.appVersion) >= 4 ))
 ns4 = ((navigator.appName == "Netscape") && (parseInt(navigator.appVersion) < 6 ))
 ns6 = ((navigator.appName == "Netscape") && (parseInt(navigator.appVersion) >= 6 ))
+*/
 
 // 0.0.0.0
 var ZERO_NO = 1;	// 0x0000 0001
@@ -849,31 +863,6 @@ function getOUIFromMAC(mac) {
 	win.focus();
 }
 
-/*
-// Botho 08/04/2006 : Philip's work about OUI search but for testing ONLY
-function getOUIFromMAC1(mac) {
-	var request;
-	var tab = mac.split(mac.substr(2, 1));
-	if(window.XMLHttpRequest) request = new XMLHttpRequest();
-	if(window.ActiveXObject) request = new ActiveXObject("Microsoft.XMLHTTP");
-	var error = false;
-	try {
-		if(typeof netscape != 'undefined') netscape.security.PrivilegeManager.enablePrivilege('UniversalBrowserRead');
-		request.open("GET", "http://standards.ieee.org/cgi-bin/ouisearch?" + tab[0] + '-' + tab[1] + '-' + tab[2], false);
-		request.send("");
-	} catch(e) {
-		alert("OUI search failed!\nAre you connected to the internet?\nDid you give the right priviliges (please read the help files)?");
-		return;
-	}
-	if(!request.responseText.match(/<pre>([\s\S]*)<\/pre>/)) {
-		alert("OUI search was successful.\nBut " + tab.join(":") + " is not listed in the public section of the IEEE OUI database.\n\n");
-		return;
-	}
-	var orga = RegExp.$1.replace(/.*\t+/g, '').replace(/.*\n/, '');
-	alert("OUI search was successful.\nAccording to the IEEE OUI database, " + tab.join(":") + " belongs to:\n\n" + orga);
-}
-*/
-
 /* Added by Botho 25.April.06 */
 /* write in asp file dynamicaly wait_time and scroll_count dipending of the CPU frequency */
 /* reference values (125 Mhz cpu): 60 sec for a reboot or restore config file, 90 for a reset nvram + reboot */ 
@@ -927,3 +916,33 @@ function setElementMask(id, state) {
 	
 }
 
+function show_layer_ext(id, state)
+{
+	
+	if(state)
+	{
+		visibility_style='visible';
+		display_style='block';
+	}
+	else
+	{
+		visibility_style='hidden';
+		display_style='none';
+	}
+	// Show/hide the layer
+	if(ie4)
+	{
+		eval("document.all." + id + ".style.visibility='" + visibility_style + "'");
+		eval("document.all." + id + ".style.display='" + display_style + "'");
+	}
+	if(ns4)
+	{
+		eval("document." + id + ".visibility='" + visibility_style + "'");
+		eval("document." + id + ".display='" + display_style + "'");
+	}
+	if(ns6 || op)
+	{
+		eval("document.getElementById('" + id + "').style.visibility='" + visibility_style + "'");
+		eval("document.getElementById('" + id + "').style.display='" + display_style + "'");
+	}
+}

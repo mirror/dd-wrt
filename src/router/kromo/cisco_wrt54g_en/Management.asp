@@ -145,6 +145,11 @@ addEvent(window, "load", function() {
 	if (document.setup.remote_mgt_ssh)
 		selSSH("<% nvram_get("sshd_enable"); %>", 1);
 
+	if (document.setup.ipv6_enable0)
+		show_layer_ext('idipv6', "<% nvram_get("ipv6_enable0"); %>" == 1);
+		
+	show_layer_ext('idntp_server', "<% nvram_get("ntp_enable"); %>" == 1);
+
 });
 
 		</script>
