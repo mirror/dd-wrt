@@ -11,16 +11,17 @@ function SelMode(varname,num,F)	{
 	F.security_varname.value = varname;
 	F.submit();
 }
+
 function to_submit(F) {
 	if (valid_value(F)) {
 		F.submit_button.value = "WL_WPATable";
-//		F.save_button.value = "Saved";
 		F.save_button.value = sbutton.saving;
 		
 		F.action.value = "Apply";
        	apply(F);
 	}
 }
+
 function valid_value(F) {
 	if(F.security_mode.value == "disabled")
 		return true;
@@ -31,6 +32,7 @@ function valid_value(F) {
 		return true;
 	}
 }
+
 function valid_radius(F) {
 	if(F.security_mode.value == "radius" || F.security_mode.value == "wpa" || F.security_mode.value == "wpa2" || F.security_mode.value == "wpa wpa2"){
 		if(F.wl_radius_key.value == "") {
@@ -42,6 +44,7 @@ function valid_radius(F) {
 
 	return true;
 }
+
 function valid_wpa_psk(F) {
 	if(F.security_mode.value == "psk" || F.security_mode.value == "psk2" || F.security_mode.value == "psk psk2"){
 		if(F.wl_wpa_psk.value.length == 64){
@@ -60,6 +63,7 @@ function valid_wpa_psk(F) {
 
 	return true;
 }
+
 function valid_wep(F) {
 	if(F.security_mode.value == "psk" || F.security_mode.value == "wpa" || F.security_mode.value == "psk2" || F.security_mode.value == "wpa2" || F.security_mode.value == "psk psk2" || F.security_mode.value == "wpa wpa2")
 		return true;
@@ -90,6 +94,7 @@ function valid_wep(F) {
 
     return true;
 }
+
 function ValidateKey(key, bit, index) {
 	if(bit == 64) {
 		switch(key.value.length){
@@ -121,6 +126,7 @@ function ValidateKey(key, bit, index) {
 
 	return true;
 }
+
 function keyMode(num, F) {
 	var keylength;
 	var key1 = '';
@@ -181,7 +187,7 @@ function generateKey128(F,PREFIX) {
 	F.submit();
 }
 
-addEvent(window, "unload", function() {
+addEvent(window, "load", function() {
 	var F = document.forms[0];
 	if(F.security_mode && F.wl_wep_bit)
 		if(F.security_mode.value == "wep" || F.security_mode.value == "radius") {
