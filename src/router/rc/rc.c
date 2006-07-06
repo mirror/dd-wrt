@@ -655,6 +655,7 @@ main (int argc, char **argv)
     {
 #ifndef HAVE_RB500
 
+    int brand = getRouterBrand ();
 	if ((brand & 0x000f) > 0)
 	  {
 	  return resetbutton_main (argc, argv);
