@@ -3,10 +3,10 @@
 	<legend><% tran("management.samba_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("management.samba_srv"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="samba_mount" <% nvram_match("samba_mount","1","checked"); %> onclick="show_layer_ext('idsamba_mount', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="samba_mount" <% nvram_match("samba_mount","0","checked"); %> onclick="show_layer_ext('idsamba_mount', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="samba_mount" <% nvram_match("samba_mount","1","checked"); %> onclick="show_layer_ext('idsamba', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="samba_mount" <% nvram_match("samba_mount","0","checked"); %> onclick="show_layer_ext('idsamba', false)" /><% tran("share.disable"); %>
 	</div>
-	<div id="idsamba_mount"
+	<div id="idsamba">
 		<div class="setting">
 			<div class="label"><% tran("management.samba_share"); %></div>
 			<input maxlength="100" size="25" name="samba_share" value="<% nvram_get("samba_share"); %>" onblur="valid_name(this,management.samba_share,SPACE_NO)" />
