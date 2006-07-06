@@ -3862,6 +3862,8 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 		     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
 		     style);
 	  websWrite (wp,
+	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
+	  websWrite (wp,
 		     "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->",
 		     style);
 	  return;
@@ -3882,9 +3884,6 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
   websWrite (wp,
 	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
-  websWrite (wp,
-		     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
-
 }
 
 static char no_cache[] =
