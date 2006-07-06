@@ -285,6 +285,8 @@ main_loop (void)
     }
 //create loginprompt
   FILE *fp = fopen ("/tmp/loginprompt", "wb");
+
+#ifdef HAVE_MSSID
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
@@ -299,6 +301,24 @@ main_loop (void)
 	   "DD-WRT v23 SP1 custom Date: " BUILD_DATE
 	   " (c) 2006 NewMedia-NET GmbH\n");
 #endif
+#else
+#ifdef DIST
+  if (strlen (DIST) > 0)
+    fprintf (fp,
+	     "DD-WRT v24 %s Date: " BUILD_DATE
+	     " (c) 2006 NewMedia-NET GmbH\n", DIST);
+  else
+    fprintf (fp,
+	     "DD-WRT v24 custom Date: " BUILD_DATE
+	     " (c) 2006 NewMedia-NET GmbH\n");
+#else
+  fprintf (fp,
+	   "DD-WRT v24 custom Date: " BUILD_DATE
+	   " (c) 2006 NewMedia-NET GmbH\n");
+#endif
+#endif
+
+
   fclose (fp);
 
   /* Loop forever */
