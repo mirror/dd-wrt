@@ -4910,6 +4910,60 @@ ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
 
   return;
 }
+#else
+void
+ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  char *qos_ips = nvram_safe_get ("svqos_ips");
+  char ip[32], level[32];
+  int no_ips = 0, i = 0;
+
+// calc # of ips
+  while ((qos_ips = strpbrk (qos_ips, "|")))
+    {
+      no_ips++;
+      qos_ips++;
+    }
+  websWrite (wp, "<tr>\n\
+  					<th><script type=\"text/javascript\">Capture(share.del)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.ipmask)</script></th>\n\
+  					<th><script type=\"text/javascript\">Capture(qos.maxrate_b)</script></th>\n\
+  				</tr>\n");
+
+// write HTML data
+
+  websWrite (wp,
+	     "<input type=\"hidden\" name=\"svqos_noips\" value=\"%d\" />",
+	     no_ips);
+
+  qos_ips = nvram_safe_get ("svqos_ips");
+
+  /* IP format is "data level | data level |" ..etc */
+  for (i = 0; i < no_ips && qos_ips && qos_ips[0]; i++)
+    {
+      if (sscanf (qos_ips, "%31s %31s ", ip, level) < 2)
+	break;
+
+      websWrite (wp, "<tr>\n\
+					<td>\n\
+						<input type=\"checkbox\" name=\"svqos_ipdel%d\" />\n\
+						<input type=\"hidden\" name=\"svqos_ip%d\" value=\"%s\" />\n\
+					</td>\n\
+					<td><em>%s</em></td>\n\
+					<td>\n\
+						<input name=\"svqos_ipprio%d\" class=\"num\" size=\"5\" maxlength=\"5\" value=\"%s\" /> \n\
+						</select>\n\
+					</td>\n\
+				</tr>\n", i, i, ip, ip, i, level);
+
+      qos_ips = strpbrk (++qos_ips, "|");
+      qos_ips++;
+
+    }
+
+  return;
+}
+#endif
 #ifndef HAVE_AQOS
 void
 ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
@@ -5025,7 +5079,6 @@ ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv)
 #endif
 
 
-#endif
 
 /* Added by Botho 03.April.06 */
 void
