@@ -655,7 +655,7 @@ main (int argc, char **argv)
     {
 #ifndef HAVE_RB500
       int brand = getRouterBrand ();
-      fprintf(stderr,"brand = %d\n",brand);
+//      fprintf(stderr,"brand = %d\n",brand);
       switch (brand)
 	{
 	case ROUTER_WRT54G:
