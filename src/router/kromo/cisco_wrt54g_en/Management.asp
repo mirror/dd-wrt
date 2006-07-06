@@ -148,7 +148,12 @@ addEvent(window, "load", function() {
 	if (document.setup.ipv6_enable0) {
 		show_layer_ext('idipv6', <% nvram_get("ipv6_enable0"); %> == 1);
 	}
-		
+	if (document.setup.remote_mgt_ssh) {
+		show_layer_ext('idssh', <% nvram_get("remote_mgt_ssh"); %> == 1);
+	}
+	
+	show_layer_ext('idhttpd', <% nvram_get("remote_management"); %> == 1);
+	show_layer_ext('idsysinfo', <% nvram_get("status_auth"); %> == 1);
 	show_layer_ext('idntp', <% nvram_get("ntp_enable"); %> == 1);
 	show_layer_ext('idsamba', <% nvram_get("samba_mount"); %> == 1);
 	show_layer_ext('idwol', <% nvram_get("wol_enable"); %> == 1);
