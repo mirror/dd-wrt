@@ -1,6 +1,7 @@
-ie4 = ((navigator.appName == "Microsoft Internet Explorer") && (parseInt(navigator.appVersion) >= 4 ))
-ns4 = ((navigator.appName == "Netscape") && (parseInt(navigator.appVersion) < 6 ))
-ns6 = ((navigator.appName == "Netscape") && (parseInt(navigator.appVersion) >= 6 ))
+op = (navigator.userAgent.indexOf("Opera") != -1 && document.getElementById)
+ie4 = (document.all)
+ns4 = (document.layers)
+ns6 = (!document.all && document.getElementById)
 
 
 var ZERO_NO = 1;
