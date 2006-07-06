@@ -1868,6 +1868,12 @@ save_prefix (webs_t wp, char *prefix)
       cprintf ("copy value %s which is [%s] to nvram\n", n, wl);
       if (wl)
 	nvram_set ("wl_mode", wl);
+#ifndef HAVE_MADWIFI
+      if (strcmp(wl,"ap") && strcmp(wl,"apsta"))
+        {
+	nvram_set("wl0_vifs","");
+	}
+#endif
     }
   sprintf (n, "%s_net_mode", prefix);
   copytonv (wp, n);
