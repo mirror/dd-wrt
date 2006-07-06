@@ -884,7 +884,12 @@ start_sysinit (void)
     {
       eval ("gpio", "disable", "1");	//WBR2G54 diag led off
     }
-
+    
+  if (brand == ROUTER_BUFFALO_WLA2G54C)
+    {
+      eval ("gpio", "enable", "4");	//WLA2-G54C, WLA3-TX1-G54 diag led off
+    }
+    
   if ((brand == ROUTER_BUFFALO_WLA2G54C) || (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446")))
     {
       nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WLA2G54C & WAP54Gv2 interfaces
