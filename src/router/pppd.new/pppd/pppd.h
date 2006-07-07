@@ -521,9 +521,15 @@ size_t strlcat __P((char *, const char *, size_t));	/* safe strncpy */
 void dbglog __P((char *, ...));	/* log a debug message */
 void info __P((char *, ...));	/* log an informational message */
 void notice __P((char *, ...));	/* log a notice-level message */
-void warn __P((char *, ...));	/* log a warning message */
-void error __P((char *, ...));	/* log an error message */
-void fatal __P((char *, ...));	/* log an error message and die(1) */
+
+#define warn(fmt, args...)
+#define error(fmt, args...)
+#define fatal(fmt, args...) exit(-1)
+
+//void warn __P((char *, ...));	/* log a warning message */
+//void error __P((char *, ...));	/* log an error message */
+//void fatal __P((char *, ...));	/* log an error message and die(1) */
+
 void init_pr_log __P((char *, int));	/* initialize for using pr_log */
 void pr_log __P((void *, char *, ...));	/* printer fn, output to syslog */
 void end_pr_log __P((void));	/* finish up after using pr_log */
@@ -691,7 +697,9 @@ int  options_from_list __P((struct wordlist *, int privileged));
 				/* Parse options from a wordlist */
 int  getword __P((FILE *f, char *word, int *newlinep, char *filename));
 				/* Read a word from a file */
-void option_error __P((char *fmt, ...));
+#define option_error(fmt,args...)
+
+//void option_error __P((char *fmt, ...));
 				/* Print an error message about an option */
 int int_option __P((char *, int *));
 				/* Simplified number_option for decimal ints */

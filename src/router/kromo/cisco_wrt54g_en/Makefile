@@ -26,7 +26,7 @@ ifneq ($(CONFIG_DIST),"micro")
 endif
 	cp -a lang_pack $(INSTALLDIR)/www
 
-ifeq ($(CONFIG_NOMUI),y)
+ifneq ($(CONFIG_LANGUAGE),y)
 	rm -f $(INSTALLDIR)/www/lang_pack/*.js
 	rm -f $(INSTALLDIR)/www/images/dd-wrt.gif	
 	rm -f $(INSTALLDIR)/www/images/logo.png

@@ -191,6 +191,8 @@ obj-$(CONFIG_SYSLOG) += syslog
 obj-$(CONFIG_TELNET) += telnet
 obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
 obj-$(CONFIG_IPV6) += ipv6
+obj-$(CONFIG_CONNTRACK) += conntrack
+
 
 
 

@@ -689,7 +689,9 @@ int  options_from_list __P((struct wordlist *, int privileged));
 				/* Parse options from a wordlist */
 int  getword __P((FILE *f, char *word, int *newlinep, char *filename));
 				/* Read a word from a file */
-void option_error __P((char *fmt, ...));
+#define option_error(fmt, args...)
+
+//void option_error __P((char *fmt, ...));
 				/* Print an error message about an option */
 int int_option __P((char *, int *));
 				/* Simplified number_option for decimal ints */
