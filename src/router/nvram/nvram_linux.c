@@ -59,24 +59,50 @@ err:
   perror (PATH_DEV_NVRAM);
   return errno;
 }
+void
+lock (void)
+{
+  FILE *in;
+  while ((in = fopen ("/tmp/.nvlock", "rb")) != NULL)
+    {
+      fclose (in);
+      //cprintf ("nvram lock, waiting....\n");
+      sleep (1);
+    }
+  in = fopen ("/tmp/.nvlock", "wb");
+  fprintf (in, "lock");
+  fclose (in);
+}
+
+
+void
+unlock (void)
+{
+  unlink ("/tmp/.nvlock");
+}
 
 char *
 nvram_get (const char *name)
 {
 //fprintf(stderr,"nvram_get %s\n",name);
-
+//lock();
   size_t count = strlen (name) + 1;
   char tmp[100], *value;
   unsigned long *off = (unsigned long *) tmp;
 
   if (nvram_fd < 0)
     if (nvram_init (NULL))
+      {
+      //unlock();
       return NULL;
-
+      }
   if (count > sizeof (tmp))
     {
       if (!(off = malloc (count)))
+        {
+	//unlock();
 	return NULL;
+	}
     }
 
   /* Get offset into mmap() space */
@@ -94,7 +120,7 @@ nvram_get (const char *name)
 
   if (off != (unsigned long *) tmp)
     free (off);
-
+  //unlock();
   return value;
 }
 
@@ -102,16 +128,20 @@ int
 nvram_getall (char *buf, int count)
 {
 //fprintf(stderr,"getall\n");
-
+//lock();
   int ret;
 
   if (nvram_fd < 0)
     if ((ret = nvram_init (NULL)))
+    {
+    //unlock();
       return ret;
-
+    }
   if (count == 0)
+    {
+    //unlock();
     return 0;
-
+    }
   /* Get all variables */
   *buf = '\0';
 
@@ -119,7 +149,7 @@ nvram_getall (char *buf, int count)
 
   if (ret < 0)
     perror (PATH_DEV_NVRAM);
-
+  //unlock();
   return (ret == count) ? 0 : ret;
 }
 
@@ -172,7 +202,7 @@ nvram_set (const char *name, const char *value)
   extern struct nvram_convert nvram_converts[];
   struct nvram_convert *v;
   int ret;
-
+//lock();
   ret = _nvram_set (name, value);
 
   for (v = nvram_converts; v->name; v++)
@@ -185,22 +215,25 @@ nvram_set (const char *name, const char *value)
 	    _nvram_set (v->d11g_name, value);
 	}
     }
-
+//unlock();
   return ret;
 }
 
 int
 nvram_unset (const char *name)
 {
+//lock();
 //fprintf(stderr,"nvram_unset %s\n",name);
-  return _nvram_set (name, NULL);
+int v = _nvram_set (name, NULL);
+//unlock();
+return v;
 }
 
 int
 nvram_commit (void)
 {
 //fprintf(stderr,"nvram_commit \n");
-
+lock();
   int ret;
   fprintf (stderr, "nvram_commit(): start\n");
   if (nvram_fd < 0)
@@ -208,6 +241,7 @@ nvram_commit (void)
       if ((ret = nvram_init (NULL)))
 	{
 	  fprintf (stderr, "nvram_commit(): failed\n");
+	  unlock();
 	  return ret;
 	}
     }
@@ -221,6 +255,7 @@ nvram_commit (void)
     }
 
   fprintf (stderr, "nvram_commit(): end\n");
+unlock();
   return ret;
 }
 
