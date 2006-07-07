@@ -38,7 +38,6 @@ function to_reboot(F) {
 function to_submit(F) {
 	<% show_iradius_check(); %>
 	F.submit_button.value = "Hotspot";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value="Apply";
@@ -46,12 +45,12 @@ function to_submit(F) {
 	return true;
 }
 
-function setSputnik(val) {
-	setElementsActive("sputnik_mjid_type", "sputnik_mjid", val == "1");
-}
-
 addEvent(window, "load", function() {
-	setSputnik("<% nvram_get("apd_enable"); %>");
+	if (document.setup.apd_enable) show_layer_ext('idsputnik', <% nvram_get("apd_enable"); %> == 1);
+	if (document.setup.chilli_enable) show_layer_ext('idchilli', <% nvram_get("chilli_enable"); %> == 1);
+	if (document.setup.http_redirect_enable) show_layer_ext('idhttpredirect', <% nvram_get("http_redirect_enable"); %> == 1);
+	if (document.setup.NC_enable) show_layer_ext('idnocat', <% nvram_get("NC_enable"); %> == 1);
+	if (document.setup.smtp_redirect_enable) show_layer_ext('smtpredirect', <% nvram_get("smtp_redirect_enable"); %> == 1);	
 });
 
 		</script>
