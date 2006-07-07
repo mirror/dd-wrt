@@ -3848,9 +3848,9 @@ ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 	  if (nvram_invmatch ("dist_type", "micro"))
 	    {
 	      websWrite (wp,
-			 "\t\t<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
+			 "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
 	      websWrite (wp,
-			 "\t\t<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\" />\n");
+			 "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
 	    }
 	  websWrite (wp,
 		     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
