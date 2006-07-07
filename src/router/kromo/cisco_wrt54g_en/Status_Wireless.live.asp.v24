@@ -1,5 +1,5 @@
 {wl_mac::<% show_wl_mac(); %>}
-{wl_ssid::<% nvram_get("wl_ssid"); %>}
+{wl_ssid::<% nvram_get("wl0_ssid"); %>}
 {wl_channel::<% get_curchannel(); %>}
 {wl_xmit::<% nvram_get("txpwr"); %> mW}
 {wl_rate::<% get_currate(); %> Mbps}
