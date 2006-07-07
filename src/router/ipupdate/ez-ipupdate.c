@@ -665,7 +665,7 @@ static int is_in_list(char *needle, char **haystack);
 
 void print_usage( void )
 {
-  int i;
+/*  int i;
   int width;
 
   fprintf(stdout, "usage: ");
@@ -717,16 +717,17 @@ void print_usage( void )
   fprintf(stdout, "      --credits\t\t\tprint the credits and exit\n");
   fprintf(stdout, "      --signalhelp\t\tprint help about signals\n");
   fprintf(stdout, "\n");
+*/
 }
 
 void print_version( void )
 {
-  fprintf(stdout, "%s: - %s - $Id: ez-ipupdate.c,v 1.6 2003/11/20 07:00:30 honor Exp $\n", program_name, VERSION);
+ // fprintf(stdout, "%s: - %s - $Id: ez-ipupdate.c,v 1.6 2003/11/20 07:00:30 honor Exp $\n", program_name, VERSION);
 }
 
 void print_credits( void )
 {
-  fprintf( stdout, "AUTHORS / CONTRIBUTORS\n"
+ /* fprintf( stdout, "AUTHORS / CONTRIBUTORS\n"
       "  Angus Mackay <amackay@gusnet.cx>\n"
       "  Jeremy Bopp <jbopp@mail.utexas.edu>\n"
       "  Mark Jeftovic <markjr@easydns.com>\n"
@@ -734,16 +735,19 @@ void print_credits( void )
       "  Colin Viebrock <colin@easydns.com>\n"
       "  Tim Brown <timb@machine.org.uk>\n"
       "\n" );
+*/
 }
 
 void print_signalhelp( void )
 {
+/*
   fprintf(stdout, "\nsignals are only really used when in daemon mode.\n\n");
   fprintf(stdout, "signals: \n");
   fprintf(stdout, "  HUP\t\tcauses it to re-read its config file\n");
   fprintf(stdout, "  TERM\t\twake up and possibly perform an update\n");
   fprintf(stdout, "  QUIT\t\tshutdown\n");
   fprintf(stdout, "\n");
+*/
 }
 
 #if HAVE_SIGNAL_H

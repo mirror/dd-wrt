@@ -5,6 +5,8 @@
 #
 # Base Features
 #
+CONFIG_ARP=y
+
 CONFIG_HTTPREDIRECT=y
 CONFIG_SMTPREDIRECT=y
 

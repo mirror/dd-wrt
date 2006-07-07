@@ -10,6 +10,7 @@ __DTOR_END__
 __FRAME_END__
 __JCR_END__
 __do_global_ctors_aux
+_DYNAMIC
 __dso_handle
 longjmp
 __linuxthreads_pthread_threads_max
@@ -45,7 +46,6 @@ pthread_rwlockattr_getkind_np
 pthread_exit
 sem_timedwait
 __pthread_manager_thread_bos
-_DYNAMIC
 pthread_condattr_setpshared
 __new_sem_init
 pthread_rwlockattr_setpshared
