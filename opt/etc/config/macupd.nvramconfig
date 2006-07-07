@@ -1,4 +1,0 @@
- "macupd_enable"   "MAC Update Enable"   "CHOICE" "2" "0" "1"  "FALSE" "0"
- "macupd_ip"  "MAC Update IP"  "MERGEIPADDRS"   "FALSE" "0"
- "macupd_port"  "MAC update PORT"  "NULL"   "FALSE" "0"
- "macupd_interval"  "MAC Update Interval"  "NULL"  "FALSE" "0"
