@@ -1243,7 +1243,6 @@ struct nvram_tuple router_defaults[] = {
   {"wds0.16", "", 0},
 #else
 
-  {"wds0.49150", "", 0},
   {"wds0.49151", "", 0},
   {"wds0.49152", "", 0},
   {"wds0.49153", "", 0},
@@ -1259,6 +1258,7 @@ struct nvram_tuple router_defaults[] = {
   {"wds0.49163", "", 0},
   {"wds0.49164", "", 0},
   {"wds0.49165", "", 0},
+  {"wds0.49166", "", 0},
 #endif
   {"bird_ospf",
    "Please read the BIRD setup instructions at http://bird.network.cz/bird.html",
