@@ -6,7 +6,7 @@ if [ -z "$(nvram get pptpd_client_enable)" ]; then
     nvram set pptpd_client_srvmtu="1450"
     nvram set pptpd_client_srvmru="1450"
     nvram set pptpd_client_nat="1"  
-    nvram commit
+    nvram need_commit=1
 fi
 
 if [ "$(nvram get pptpd_client_enable)" = "0" ]; then
