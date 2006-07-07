@@ -1,3 +1,0 @@
-"http_redirect_enable"  "Any HTTP feature"  "CHOICE"  "2" "0" "1"  "TRUE" "0"  
-"http_redirect_destination"  "http destination server"  "NULL" "FALSE" "0"  
-"http_source_network"  "http source network"  "NULL" "FALSE" "0"
