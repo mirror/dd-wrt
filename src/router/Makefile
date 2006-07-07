@@ -103,7 +103,6 @@ obj-$(CONFIG_WWW) += www
 obj-$(CONFIG_GLIBC) += lib
 obj-$(CONFIG_UCLIBC) += lib
 obj-$(CONFIG_BUSYBOX) += busybox net-tools
-#obj-$(CONFIG_TELNET) += telnetd
 obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_IPTABLES) += iptables
 obj-$(CONFIG_LIBIPT) += iptables
@@ -181,6 +180,19 @@ obj-$(CONFIG_OLSRD) += olsrd
 obj-$(CONFIG_HTTPREDIRECT) += http-redirect
 obj-$(CONFIG_SMTPREDIRECT) += smtp-redirect
 obj-$(CONFIG_WLC) += wlc
+obj-$(CONFIG_OVERCLOCKING) += overclocking
+obj-$(CONFIG_PROXYWATCHDOG) += proxywatchdog
+obj-$(CONFIG_JFFS2) += jffs2
+obj-$(CONFIG_LANGUAGE) += language
+obj-$(CONFIG_NETWORKSETTINGS) += networksettings
+obj-$(CONFIG_ROUTERSTYLE) += routerstyle
+obj-$(CONFIG_SCHEDULER) += scheduler
+obj-$(CONFIG_SYSLOG) += syslog
+obj-$(CONFIG_TELNET) += telnet
+obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
+obj-$(CONFIG_IPV6) += ipv6
+
+
 
 obj-clean := $(foreach obj,$(obj-y) $(obj-n),$(obj)-clean)
 obj-install := $(foreach obj,$(obj-y),$(obj)-install)
@@ -787,6 +799,7 @@ http-redirect-install:
 	install -D http-redirect/http-redirect.webhotspot $(INSTALLDIR)/http-redirect/etc/config/http-redirect.webhotspot
 	install -D http-redirect/http-redirect.startup $(INSTALLDIR)/http-redirect/etc/config/http-redirect.startup
 
+
 smtp-redirect:
 	@true
 
@@ -891,6 +904,9 @@ ifeq ($(CONFIG_PPPOERELAY),y)
 else
 	rm -f $(INSTALLDIR)/ppp/usr/sbin/pppoe-relay
 endif
+	install -D rp-pppoe-3.5/config/rppppoe.startup $(INSTALLDIR)/ppp/etc/config/rppppoe.startup
+	install -D rp-pppoe-3.5/config/rppppoe.nvramconfig $(INSTALLDIR)/ppp/etc/config/rppppoe.nvramconfig
+
 ifeq ($(CONFIG_PPPOESERVER),y)
 	install -D rp-pppoe-3.5/src/pppoe-server $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
 	$(STRIP) $(INSTALLDIR)/ppp/usr/sbin/pppoe-server
@@ -915,6 +931,8 @@ udhcpd: shared nvram
 udhcpd-install:
 	install -D udhcpd/udhcpd $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 	install -D udhcpd/dumpleases $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
+	install -D udhcpd/config/dhcpd.webservices $(INSTALLDIR)/udhcpd/etc/config/dhcpd.webservices
+	install -D udhcpd/config/dhcpd.startup $(INSTALLDIR)/udhcpd/etc/config/dhcpd.startup
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/udhcpd
 	$(STRIP) $(INSTALLDIR)/udhcpd/usr/sbin/dumpleases
 	install -D udhcpc/udhcpc $(INSTALLDIR)/udhcpd/usr/sbin/udhcpc
@@ -1393,6 +1411,8 @@ rflow-install:
 	install -D rflow/config/rflow.nvramconfig $(INSTALLDIR)/rflow/etc/config/rflow.nvramconfig
 	install -D rflow/config/rflow.webservices $(INSTALLDIR)/rflow/etc/config/rflow.webservices
 	install -D rflow/config/rflow.startup $(INSTALLDIR)/rflow/etc/config/rflow.startup
+	install -D rflow/config/macupd.startup $(INSTALLDIR)/rflow/etc/config/macupd.startup
+	install -D rflow/config/macupd.nvramconfig $(INSTALLDIR)/rflow/etc/config/macupd.nvramconfig	
 
 #
 # Generic rules
