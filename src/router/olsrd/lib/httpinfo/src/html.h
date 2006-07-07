@@ -91,8 +91,8 @@ static const char *http_ok_head[] =
   "<META http-equiv=\"Content-type\" content=\"text/html; charset=ISO-8859-1\">\n",
   "<TITLE>olsr.org httpinfo plugin</TITLE>\n",
 #ifndef SVEN_OLA
-  "<link rel=\"icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n",
-  "<link rel=\"shortcut icon\" href=\"favicon.ico\" type=\"image/x-icon\">\n",
+  "<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\">\n",
+  "<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\">\n",
 #endif
   "<link rel=\"stylesheet\" type=\"text/css\" href=\"httpinfo.css\">\n",
   "</HEAD>\n",
