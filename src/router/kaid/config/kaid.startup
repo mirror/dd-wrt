@@ -2,7 +2,7 @@
 killall -q -9 kaid
 if [ -z "$(nvram get kaid_enable)" ]; then
     nvram set kaid_enable=0
-    nvram commit
+    nvram need_commit=1
 fi
 if [ "$(nvram get kaid_enable)" = "1" ]; then
     cp /etc/kaid/kaid.conf /tmp/kaid.conf
