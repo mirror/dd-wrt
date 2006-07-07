@@ -344,7 +344,7 @@ showVersion() /*@*/
 inline static void
 showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
 {
-  char const	msg[] = (" [-v] [-h] [-c <filename>] [-n] [-d]\n\n"
+/*  char const	msg[] = (" [-v] [-h] [-c <filename>] [-n] [-d]\n\n"
 			 "  -v              show version\n"
 			 "  -h              show help\n"
 			 "  -c <filename>   read configuration from <filename>\n"
@@ -357,7 +357,7 @@ showHelp(/*@in@*//*@nullterminated@*/char const *cmd) /*@*/
   showVersion();
   (void)write(1, "\nusage: ", 8	);
   (void)write(1, cmd, strlen(cmd));
-  (void)write(1, msg, strlen(msg));
+  (void)write(1, msg, strlen(msg));*/
 }
 
 inline static void

@@ -23,6 +23,9 @@
 
 #include "output.h"
 
+#define LOG(MSG)
+#define LOGSTR(MSG)
+/*
 #ifndef S_SPLINT_S
 #  define LOG(MSG)	writeMsg(MSG, sizeof(MSG)-1)
 #  define LOGSTR(MSG)	writeMsg(MSG, strlen(MSG))
@@ -30,7 +33,7 @@
 #  define LOG(MSG)	assert(MSG!=0)
 #  define LOGSTR(MSG)	assert(MSG!=0)
 #endif
-
+*/
 #ifdef WITH_LOGGING
 void logDHCPPackage(/*@in@*/char const *buffer, size_t len,
 		    /*@in@*/struct in_pktinfo const	*pkinfo,

@@ -28,7 +28,10 @@ mkdir -p dev
 
 # etc
 mkdir -p etc
-echo "/lib" > etc/ld.so.conf
+echo "/jffs/lib" > etc/ld.so.conf
+echo "/jffs/usr/lib" >> etc/ld.so.conf
+echo "/jffs/usr/local/lib" >> etc/ld.so.conf
+echo "/lib" >> etc/ld.so.conf
 echo "/usr/lib" >> etc/ld.so.conf
 /sbin/ldconfig -r $ROOTDIR
 
