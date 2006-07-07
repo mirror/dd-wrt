@@ -21,6 +21,7 @@ if (buf[i]=='/' && buf[i+1]=='/')
     while(buf[i]!=0xa)i++;
     continue;
     }
+        
 if (buf[i]==0xa && i<len-1)
     {
     while(buf[i+1]==0xa && i<len-1)i++;
