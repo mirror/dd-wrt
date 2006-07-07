@@ -157,6 +157,7 @@ addEvent(window, "load", function() {
 	show_layer_ext('idntp', <% nvram_get("ntp_enable"); %> == 1);
 	show_layer_ext('idsamba', <% nvram_get("samba_mount"); %> == 1);
 	show_layer_ext('idwol', <% nvram_get("wol_enable"); %> == 1);
+	show_layer_ext('idjffs2', <% nvram_get("enable_jffs2"); %> == 1)
 
 });
 
