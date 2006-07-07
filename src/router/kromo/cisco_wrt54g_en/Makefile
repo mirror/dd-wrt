@@ -12,7 +12,7 @@ install:
 	install -m 644 $(wildcard *.asp) $(wildcard *.css) $(wildcard *.jpg) $(wildcard *.gif) $(wildcard *.js) $(wildcard *.htm) $(wildcard *.ico) $(wildcard *.html) $(INSTALLDIR)/www
 
 ifeq ($(CONFIG_DIST),"micro")
-	rm -f $(INSTALLDIR)/www/favicon.ico
+	rm -f $(INSTALLDIR)/www/images/favicon.ico
 	rm -f $(INSTALLDIR)/www/images/logo.png
 	cp common_micro.js $(INSTALLDIR)/www/common.js
 	rm -f $(INSTALLDIR)/www/common_micro.js
