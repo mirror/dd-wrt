@@ -110,6 +110,7 @@ int
 start_ddns (void)
 {
   int ret;
+  int i;
   FILE *fp;
 
   /* Get correct username, password and hostname */
@@ -120,6 +121,9 @@ start_ddns (void)
   if (nvram_match (_username, "") ||
       nvram_match (_passwd, "") || nvram_match (_hostname, ""))
     return -1;
+
+  if (nvram_match ("action_service", "ddns"))
+      unlink ("/tmp/ddns.log");	// We want to get new message
 
   /* Generate ddns configuration file */
   if ((fp = fopen ("/tmp/inadyn.conf", "w")))
@@ -135,8 +139,18 @@ start_ddns (void)
       fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
       fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
       fprintf (fp, " --log_file %s", "/tmp/ddns.log");	//log to file
-      if (nvram_invmatch ("ddns_conf", ""))
-	fprintf (fp, "%s", nvram_safe_get ("ddns_conf"));
+      if (nvram_invmatch ("ddns_conf", "")
+	  && nvram_match ("ddns_enable", "5"))
+	{
+	  char *host_key = nvram_safe_get ("ddns_conf");
+	  i = 0;
+	  do
+	    {
+	      if (host_key[i] != 0x0D)
+	      fprintf (fp, "%c", host_key[i]);
+	    }
+	  while (host_key[++i]);
+	}
       fprintf (fp, "\n"); 
       fclose (fp);
     }
@@ -159,6 +173,7 @@ stop_ddns (void)
   int ret;
 
   ret = eval ("killall", "inadyn");
+  unlink ("/tmp/ddns.log");
 
   cprintf ("done\n");
 
