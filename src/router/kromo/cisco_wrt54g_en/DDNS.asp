@@ -249,6 +249,16 @@ function SelDDNS(num,F) {
 									<div class="label"><% tran("share.hostname"); %></div>
 									<input name="ddns_hostname_5" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_5"); %>" />
 								</div>
+								<% nvram_invmatch("expert_mode","1","<!--"); %>
+								<div class="setting">
+									<div class="label">Additional DDNS Options</div>
+									<textarea cols="60" rows="4" id="ddns_conf" name="ddns_conf"></textarea>
+									<script type="text/javascript">
+									var ddns_conf = fix_cr( '<% nvram_get("ddns_conf"); %>' );
+									document.getElementById("ddns_conf").value = ddns_conf;
+									</script>
+								</div>
+								<% nvram_invmatch("expert_mode","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","1","-->"); %>
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
