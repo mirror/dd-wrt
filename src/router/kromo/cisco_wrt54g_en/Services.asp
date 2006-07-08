@@ -82,8 +82,7 @@ addEvent(window, "load", function() {
 		if (document.setup.macupd_enable) show_layer_ext('idMACupd', <% nvram_get("macupd_enable"); %> == 1);
 		if (document.setup.pptpd_enable) show_layer_ext('idpptp', <% nvram_get("pptpd_enable"); %> == 1);
 		if (document.setup.pptpd_client_enable) show_layer_ext('idpptpcli', <% nvram_get("pptpd_client_enable"); %> == 1);
-		if (document.setup.openvpn_enable) show_layer_ext('idvpn', <% nvram_get("openvpn_enable"); %> == 1);
-
+		if (document.setup.openvpn_enable) show_layer_ext('idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
 });
 
 		</script>
