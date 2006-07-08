@@ -1328,7 +1328,22 @@ start_wan (int status)
   /* Set MTU */
   init_mtu (wan_proto);		// add by honor 2002/12/27
 
-  ifr.ifr_mtu = atoi (nvram_safe_get ("wan_mtu"));
+  // Set our Interface to the right MTU
+#ifdef HAVE_PPPOE
+  if (pppoe_rp && (strcmp (wan_proto, "pppoe") == 0))
+    {
+      if (nvram_invmatch ("pppoe_hw_iface_mtu", ""))
+       {
+         if (atoi (nvram_safe_get ("pppoe_hw_iface_mtu")) > 0)
+           ifr.ifr_mtu = atoi (nvram_safe_get ("pppoe_hw_iface_mtu"));
+         else
+           ifr.ifr_mtu = 1500;        // default ethernet frame size
+       }
+    }
+  else
+#endif
+    ifr.ifr_mtu = atoi (nvram_safe_get ("wan_mtu"));
+
   ioctl (s, SIOCSIFMTU, &ifr);
 
   if (nvram_match ("router_disable", "1")
