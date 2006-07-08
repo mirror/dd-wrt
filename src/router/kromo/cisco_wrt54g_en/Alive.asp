@@ -12,7 +12,6 @@ function to_reboot(F) {
 
 function to_submit(F) {
 	F.submit_button.value = "Alive";
-//	F.save_button.value = "Saved";
 	F.save_button.value = sbutton.saving;
 
 	F.action.value="Apply";
@@ -45,6 +44,9 @@ function setAlive() {
 }
 
 function init() {
+	if (document.setup.squid_watchdog_enable) show_layer_ext('idsquid_watchdog', <% nvram_get("squid_watchdog_enable"); %> == 1);
+	if (document.setup.schedule_enable) show_layer_ext('idschedule', <% nvram_get("schedule_enable"); %> == 1);
+	if (document.setup.wds_watchdog_enable) show_layer_ext('idwds_watchdog', <% nvram_get("wds_watchdog_enable"); %> == 1);
 	setWDS(<% nvram_get("wds_watchdog_enable"); %>);
 	setPXY(<% nvram_get("squid_watchdog_enable"); %>);
 	setAlive();
