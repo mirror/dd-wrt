@@ -234,7 +234,7 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<% nvram_selmatch("ddns_enable","4","<!--"); %>
 								<div class="setting">
-									<div class="label">DNS System</div>
+									<div class="label"><% tran("ddns.system"); %></div>
 									<input name="ddns_custom_5" size="30" maxlength="32" value="<% nvram_get("ddns_custom_5"); %>" />
 								</div>
 								<div class="setting">
@@ -251,7 +251,7 @@ function SelDDNS(num,F) {
 								</div>
 								<% nvram_invmatch("expert_mode","1","<!--"); %>
 								<div class="setting">
-									<div class="label">Additional DDNS Options</div>
+									<div class="label"><% tran("ddns.options"); %></div>
 									<textarea cols="60" rows="4" id="ddns_conf" name="ddns_conf"></textarea>
 									<script type="text/javascript">
 									var ddns_conf = fix_cr( '<% nvram_get("ddns_conf"); %>' );
