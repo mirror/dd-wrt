@@ -2394,8 +2394,12 @@ show_wep (webs_t wp, char *prefix)
 void
 validate_wds (webs_t wp, char *value, struct variable *v)
 {
+#ifdef HAVE_MSSID
   int h, i, devcount = 1;	//changed from 2 to 3
-  struct variable wds_variables[] = {
+#else
+  int h, i, devcount = 3;	//changed from 2 to 3
+#endif 
+struct variable wds_variables[] = {
   {longname: "WDS Mac", argv:NULL},
   {longname: "WDS IP Address", argv:NULL},
   {longname: "WDS Subnet Mask", argv:NULL},
