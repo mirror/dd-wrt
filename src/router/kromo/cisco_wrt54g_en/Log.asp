@@ -13,13 +13,9 @@ function to_submit(F) {
 	apply(F);
 }
 
-function setLog(val) {
-	setElementsActive("log_level", "log_outgoing", val == "1");
-	setElementActive("log_all", val == "1");
-}
-
 addEvent(window, "load", function() {
-	setLog("<% nvram_get("log_enable"); %>");
+	show_layer_ext('idlog1', <% nvram_get("log_enable"); %> == 1);
+	show_layer_ext('idlog2', <% nvram_get("log_enable"); %> == 1);
 });
 		</script>
 	</head>
@@ -85,9 +81,10 @@ addEvent(window, "load", function() {
 								<legend><% tran("log.legend"); %></legend>
 								<div class="setting">
 									<div class="label">Log</div>
-									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="setLog(this.value)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="setLog(this.value)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="show_layer_ext('idlog1', true);show_layer_ext('idlog2', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="show_layer_ext('idlog1', false);show_layer_ext('idlog2', false)" /><% tran("share.disable"); %>
 								</div>
+							<div id="idlog1">
 								<div class="setting">
 									<div class="label"><% tran("log.lvl"); %></div>
 									<select name="log_level">
@@ -96,37 +93,41 @@ addEvent(window, "load", function() {
 										<script type="text/javascript">document.write("<option value=\"2\" <% nvram_selected("log_level", "2", "js"); %> >" + share.high + "</option>");</script>
 									</select>
 								</div>
+							</div>
 							</fieldset><br />
 							
-							<fieldset>
-								<legend><% tran("share.option"); %></legend>
-								<div class="setting">
-									<div class="label"><% tran("log.drop"); %></div>
-									<select name="log_dropped">
-										<option value="0" <% nvram_selected("log_dropped", "0"); %>>Off</option>
-										<option value="1" <% nvram_selected("log_dropped", "1"); %>>On</option>
-									</select>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("log.reject"); %></div>
-									<select name="log_rejected">
-										<option value="0" <% nvram_selected("log_rejected", "0"); %>>Off</option>
-										<option value="1" <% nvram_selected("log_rejected", "1"); %>>On</option>
-									</select>
-								</div>
-								<div class="setting">
-									<div class="label"><% tran("log.accept"); %></div>
-									<select name="log_accepted">
-										<option value="0" <% nvram_selected("log_accepted", "0"); %>>Off</option>
-										<option value="1" <% nvram_selected("log_accepted", "1"); %>>On</option>
-									</select>
-								</div>
-							</fieldset><br />
+							<div id="idlog2">
+								<fieldset>
+									<legend><% tran("share.option"); %></legend>
+									<div class="setting">
+										<div class="label"><% tran("log.drop"); %></div>
+										<select name="log_dropped">
+											<option value="0" <% nvram_selected("log_dropped", "0"); %>>Off</option>
+											<option value="1" <% nvram_selected("log_dropped", "1"); %>>On</option>
+										</select>
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("log.reject"); %></div>
+										<select name="log_rejected">
+											<option value="0" <% nvram_selected("log_rejected", "0"); %>>Off</option>
+											<option value="1" <% nvram_selected("log_rejected", "1"); %>>On</option>
+										</select>
+									</div>
+									<div class="setting">
+										<div class="label"><% tran("log.accept"); %></div>
+										<select name="log_accepted">
+											<option value="0" <% nvram_selected("log_accepted", "0"); %>>Off</option>
+											<option value="1" <% nvram_selected("log_accepted", "1"); %>>On</option>
+										</select>
+									</div>
+								</fieldset><br />
+
+								<div class="center">
+									<script type="text/javascript">document.write("<input type=\"button\" name=\"log_incoming\" value=\"" + sbutton.log_in + "\" onclick=\"openWindow('Log_incoming.asp', 580, 600)\" />")</script>
+									<script type="text/javascript">document.write("<input type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600)\" />")</script>
+								</div><br />
+							</div>
 							
-							<div class="center">
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"log_incoming\" value=\"" + sbutton.log_in + "\" onclick=\"openWindow('Log_incoming.asp', 580, 600)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"button\" name=\"log_outgoing\" value=\"" + sbutton.log_out + "\" onclick=\"openWindow('Log_outgoing.asp', 760, 600)\" />")</script>
-							</div><br />
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
 								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"setLog('<% nvram_get("log_enable"); %>')\" />")</script>
