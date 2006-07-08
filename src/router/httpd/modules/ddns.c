@@ -129,7 +129,7 @@ ddns_save_value (webs_t wp)
   dyndnstype = websGetVar (wp, _dyndnstype, NULL);
   wildcard = websGetVar (wp, _wildcard, NULL);
   custom = websGetVar (wp, _custom, NULL);
-  conf = websGetVar (wp, _conf, NULL)
+  conf = websGetVar (wp, _conf, NULL);
 
   if (!username || !passwd || !hostname)
     {
