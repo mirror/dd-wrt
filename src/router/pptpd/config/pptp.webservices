@@ -3,25 +3,25 @@
 	<legend><% tran("service.pptp_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.pptp_srv"); %></div>
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_selmatch("pptpd_enable", "1", "checked"); %> /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvram_selmatch("pptpd_enable", "0", "checked"); %> /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_selmatch("pptpd_enable", "1", "checked"); %> onclick="show_layer_ext('idpptp', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvram_selmatch("pptpd_enable", "0", "checked"); %> onclick="show_layer_ext('idpptp', false)" /><% tran("share.disable"); %>
 	</div>
-	<% nvram_match("pptpd_enable","0","<!--"); %>
-	<div class="setting">
-		<div class="label"><% tran("share.srvip"); %></div>
-		<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" />
+	<div id="idpptp">
+		<div class="setting">
+			<div class="label"><% tran("share.srvip"); %></div>
+			<input size="25" name="pptpd_lip" value="<% nvram_get("pptpd_lip"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.pptp_client"); %></div>
+			<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("service.pptp_chap"); %></div>
+			<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
+			<script type="text/javascript">
+				var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
+				document.getElementById("pptpd_auth").value = var_pptpd_auth;
+			</script>
+		</div>
 	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.pptp_client"); %></div>
-		<input size="25" name="pptpd_rip" value="<% nvram_get("pptpd_rip"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("service.pptp_chap"); %></div>
-		<textarea id="pptpd_auth" name="pptpd_auth" cols="60" rows="4"></textarea>
-		<script type="text/javascript">
-			var var_pptpd_auth = fix_cr( '<% nvram_get("pptpd_auth"); %>' );
-			document.getElementById("pptpd_auth").value = var_pptpd_auth;
-		</script>
-	</div>
-	<% nvram_match("pptpd_enable","0","-->"); %>
 </fieldset><br/>
