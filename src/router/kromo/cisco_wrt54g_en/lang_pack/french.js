@@ -398,6 +398,8 @@ ddns.dynamic="Dynamique";
 ddns.custom="Personnalisé";
 ddns.wildcard="Wildcard";
 ddns.statu="Etat";
+ddns.system="DNS System";
+ddns.options="Options Supplémentaires";
 
 var ddnsm = new Object();
 ddnsm.dyn_strange="Erreur inconnue. Vérifier que vous êtes connecté au bon serveur.";
@@ -634,7 +636,7 @@ hotspot.uam="Secret UAM";
 hotspot.uamdns="UAM Any DNS";
 hotspot.allowuam="UAM Autorisé";
 hotspot.macauth="MACauth";
-hotspot.option="Options additionnelles";
+hotspot.option="Options Supplémentaires";
 hotspot.fon_chilli="Gestion des Utilisateurs Locaux";
 hotspot.fon_user="Liste des Utilisateurs";
 hotspot.http_legend="Redirection HTTP";

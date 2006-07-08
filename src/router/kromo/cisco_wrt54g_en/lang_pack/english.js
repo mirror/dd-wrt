@@ -398,10 +398,11 @@ ddns.srv="DDNS Service";
 ddns.emailaddr="E-mail Address";
 ddns.typ="Type";
 ddns.dynamic="Dynamic";
-// ddns.static="Static"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
+ddns.system="DNS System";
+ddns.options="Additional DDNS Options";
 
 var ddnsm = new Object();
 ddnsm.dyn_strange="Strange server response, are you connecting to the right server?";
