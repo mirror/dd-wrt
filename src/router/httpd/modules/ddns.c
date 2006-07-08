@@ -32,12 +32,12 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }
 
-  if (!check_wan_link (0))
+  /*if (!check_wan_link (0))
     {
       websWrite (wp,
 		 "<script type=\"text/javascript\">Capture(ddnsm.all_noip)</script>");
       return;
-    }
+    }*/
 
   if ((fp = fopen ("/tmp/ddns.log", "r")))
     {
@@ -59,7 +59,7 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
 int
 ddns_save_value (webs_t wp)
 {
-  char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom;
+  char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf;
   struct variable ddns_variables[] = {
   {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5")},
   {longname: "DDNS password", argv:ARGV ("30")},
@@ -71,6 +71,7 @@ ddns_save_value (webs_t wp)
   char _dyndnstype[] = "ddns_dyndnstype_X";
   char _wildcard[] = "ddns_wildcard_X";
   char _custom[] = "ddns_custom_X";
+  char _conf[] = "ddns_conf";
 
   which = &ddns_variables[0];
 
@@ -119,6 +120,7 @@ ddns_save_value (webs_t wp)
       snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", enable);
       snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
       snprintf (_custom, sizeof (_custom), "ddns_custom_%s", enable);
+      snprintf (_conf, sizeof (_conf), "ddns_conf", enable);
     }
 
   username = websGetVar (wp, _username, NULL);
@@ -127,6 +129,7 @@ ddns_save_value (webs_t wp)
   dyndnstype = websGetVar (wp, _dyndnstype, NULL);
   wildcard = websGetVar (wp, _wildcard, NULL);
   custom = websGetVar (wp, _custom, NULL);
+  conf = websGetVar (wp, _conf, NULL)
 
   if (!username || !passwd || !hostname)
     {
@@ -141,6 +144,7 @@ ddns_save_value (webs_t wp)
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
   nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
   nvram_set ("ddns_custom_buf", nvram_safe_get (_custom));
+  nvram_set ("ddns_conf_buf", nvram_safe_get (_conf));
   nvram_set ("ddns_enable", enable);
   nvram_set (_username, username);
   if (strcmp (passwd, TMP_PASSWD))
@@ -149,6 +153,7 @@ ddns_save_value (webs_t wp)
   nvram_set (_dyndnstype, dyndnstype);
   nvram_set (_wildcard, wildcard);
   nvram_set (_custom, custom);
+  nvram_set (_conf, conf);
 
   return ret;
 }
