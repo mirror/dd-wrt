@@ -76,6 +76,7 @@ function to_submit(F) {
 
 	valid_password(F);
 
+	if(F.remote_management)
 	if(F.remote_management[0].checked == true) {
 		if(!ChangePasswd(F))
 			return false;
