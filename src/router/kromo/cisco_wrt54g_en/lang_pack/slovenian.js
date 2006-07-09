@@ -386,10 +386,11 @@ ddns.srv="DDNS servis";
 ddns.emailaddr="email naslov";
 ddns.typ="Tip";
 ddns.dynamic="Dinamièni";
-// ddns.static="Static"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="Prirejen";
 ddns.wildcard="Nadomestni znak";
 ddns.statu="DDNS status";
+ddns.system="DNS sistem";
+ddns.options="Dodatne DDNS mo¾nosti";
 
 var ddnsm = new Object();
 ddnsm.dyn_strange="Neprièakovani odziv stre¾nika; ali se prikljuèujete na pravilni stre¾nik ?";
