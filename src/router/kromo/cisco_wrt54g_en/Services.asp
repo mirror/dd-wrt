@@ -76,6 +76,7 @@ function to_submit(F) {
 addEvent(window, "load", function() {
 
 		if (document.setup.sshd_enable) show_layer_ext('idssh', <% nvram_get("sshd_enable"); %> == 1);
+		if (document.setup.dnsmasq_enable) show_layer_ext('iddnsmasq', <% nvram_get("dnsmasq_enable"); %> == 1);
 		if (document.setup.kaid_enable) show_layer_ext('idkaid', <% nvram_get("kaid_enable"); %> == 1);
 		if (document.setup.snmpd_enable) show_layer_ext('idsnmp', <% nvram_get("snmpd_enable"); %> == 1);
 		if (document.setup.rflow_enable) show_layer_ext('idrflow', <% nvram_get("rflow_enable"); %> == 1);
