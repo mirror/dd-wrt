@@ -3,112 +3,114 @@
 	<legend><% tran("alive.legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("alive.sevr1"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="schedule_enable" <% nvram_checked("schedule_enable","1"); %> onclick="setAlive()" /><% tran("share.enabled"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="schedule_enable" <% nvram_checked("schedule_enable","0"); %> onclick="setAlive()" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="schedule_enable" <% nvram_checked("schedule_enable","1"); %> onclick="setAlive();show_layer_ext('idschedule', true)" /><% tran("share.enabled"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="schedule_enable" <% nvram_checked("schedule_enable","0"); %> onclick="setAlive();show_layer_ext('idschedule', false)" /><% tran("share.disable"); %>
 	</div>
-	<div class="setting">
-		<div class="label"><% tran("share.inter"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="schedule_hour_time" <% nvram_checked("schedule_hour_time","1"); %> onclick="setAlive()" />&nbsp;
-		<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvram_get("schedule_time"); %>" />
-	</div>
-	<div class="setting">
-		<div class="label"><% tran("alive.hour"); %></div>
-		<input class="spaceradio" type="radio" value="2" name="schedule_hour_time" <% nvram_checked("schedule_hour_time","2"); %> onclick="setAlive()" />&nbsp;
-		<select name="schedule_hours">
-			<option value="00" <% nvram_selected("schedule_hours","00"); %>>00</option>
-			<option value="01" <% nvram_selected("schedule_hours","01"); %>>01</option>
-			<option value="02" <% nvram_selected("schedule_hours","02"); %>>02</option>
-			<option value="03" <% nvram_selected("schedule_hours","03"); %>>03</option>
-			<option value="04" <% nvram_selected("schedule_hours","04"); %>>04</option>
-			<option value="05" <% nvram_selected("schedule_hours","05"); %>>05</option>
-			<option value="06" <% nvram_selected("schedule_hours","06"); %>>06</option>
-			<option value="07" <% nvram_selected("schedule_hours","07"); %>>07</option>
-			<option value="08" <% nvram_selected("schedule_hours","08"); %>>08</option>
-			<option value="09" <% nvram_selected("schedule_hours","09"); %>>09</option>
-			<option value="10" <% nvram_selected("schedule_hours","10"); %>>10</option>
-			<option value="11" <% nvram_selected("schedule_hours","11"); %>>11</option>
-			<option value="12" <% nvram_selected("schedule_hours","12"); %>>12</option>
-			<option value="13" <% nvram_selected("schedule_hours","13"); %>>13</option>
-			<option value="14" <% nvram_selected("schedule_hours","14"); %>>14</option>
-			<option value="15" <% nvram_selected("schedule_hours","15"); %>>15</option>
-			<option value="16" <% nvram_selected("schedule_hours","16"); %>>16</option>
-			<option value="17" <% nvram_selected("schedule_hours","17"); %>>17</option>
-			<option value="18" <% nvram_selected("schedule_hours","18"); %>>18</option>
-			<option value="19" <% nvram_selected("schedule_hours","19"); %>>19</option>
-			<option value="20" <% nvram_selected("schedule_hours","20"); %>>20</option>
-			<option value="21" <% nvram_selected("schedule_hours","21"); %>>21</option>
-			<option value="22" <% nvram_selected("schedule_hours","22"); %>>22</option>
-			<option value="23" <% nvram_selected("schedule_hours","23"); %>>23</option>
-		</select>:<select name="schedule_minutes">
-			<option value="00" <% nvram_selected("schedule_minutes","00"); %>>00</option>
-			<option value="01" <% nvram_selected("schedule_minutes","01"); %>>01</option>
-			<option value="02" <% nvram_selected("schedule_minutes","02"); %>>02</option>
-			<option value="03" <% nvram_selected("schedule_minutes","03"); %>>03</option>
-			<option value="04" <% nvram_selected("schedule_minutes","04"); %>>04</option>
-			<option value="05" <% nvram_selected("schedule_minutes","05"); %>>05</option>
-			<option value="06" <% nvram_selected("schedule_minutes","06"); %>>06</option>
-			<option value="07" <% nvram_selected("schedule_minutes","07"); %>>07</option>
-			<option value="08" <% nvram_selected("schedule_minutes","08"); %>>08</option>
-			<option value="09" <% nvram_selected("schedule_minutes","09"); %>>09</option>
-			<option value="10" <% nvram_selected("schedule_minutes","10"); %>>10</option>
-			<option value="11" <% nvram_selected("schedule_minutes","11"); %>>11</option>
-			<option value="12" <% nvram_selected("schedule_minutes","12"); %>>12</option>
-			<option value="13" <% nvram_selected("schedule_minutes","13"); %>>13</option>
-			<option value="14" <% nvram_selected("schedule_minutes","14"); %>>14</option>
-			<option value="15" <% nvram_selected("schedule_minutes","15"); %>>15</option>
-			<option value="16" <% nvram_selected("schedule_minutes","16"); %>>16</option>
-			<option value="17" <% nvram_selected("schedule_minutes","17"); %>>17</option>
-			<option value="18" <% nvram_selected("schedule_minutes","18"); %>>18</option>
-			<option value="19" <% nvram_selected("schedule_minutes","19"); %>>19</option>
-			<option value="20" <% nvram_selected("schedule_minutes","20"); %>>20</option>
-			<option value="21" <% nvram_selected("schedule_minutes","21"); %>>21</option>
-			<option value="22" <% nvram_selected("schedule_minutes","22"); %>>22</option>
-			<option value="23" <% nvram_selected("schedule_minutes","23"); %>>23</option>
-			<option value="24" <% nvram_selected("schedule_minutes","24"); %>>24</option>
-			<option value="25" <% nvram_selected("schedule_minutes","25"); %>>25</option>
-			<option value="26" <% nvram_selected("schedule_minutes","26"); %>>26</option>
-			<option value="27" <% nvram_selected("schedule_minutes","27"); %>>27</option>
-			<option value="28" <% nvram_selected("schedule_minutes","28"); %>>28</option>
-			<option value="29" <% nvram_selected("schedule_minutes","29"); %>>29</option>
-			<option value="30" <% nvram_selected("schedule_minutes","30"); %>>30</option>
-			<option value="31" <% nvram_selected("schedule_minutes","31"); %>>31</option>
-			<option value="32" <% nvram_selected("schedule_minutes","32"); %>>32</option>
-			<option value="33" <% nvram_selected("schedule_minutes","33"); %>>33</option>
-			<option value="34" <% nvram_selected("schedule_minutes","34"); %>>34</option>
-			<option value="35" <% nvram_selected("schedule_minutes","35"); %>>35</option>
-			<option value="36" <% nvram_selected("schedule_minutes","36"); %>>36</option>
-			<option value="37" <% nvram_selected("schedule_minutes","37"); %>>37</option>
-			<option value="38" <% nvram_selected("schedule_minutes","38"); %>>38</option>
-			<option value="39" <% nvram_selected("schedule_minutes","39"); %>>39</option>
-			<option value="40" <% nvram_selected("schedule_minutes","40"); %>>40</option>
-			<option value="41" <% nvram_selected("schedule_minutes","41"); %>>41</option>
-			<option value="42" <% nvram_selected("schedule_minutes","42"); %>>42</option>
-			<option value="43" <% nvram_selected("schedule_minutes","43"); %>>43</option>
-			<option value="44" <% nvram_selected("schedule_minutes","44"); %>>44</option>
-			<option value="45" <% nvram_selected("schedule_minutes","45"); %>>45</option>
-			<option value="46" <% nvram_selected("schedule_minutes","46"); %>>46</option>
-			<option value="47" <% nvram_selected("schedule_minutes","47"); %>>47</option>
-			<option value="48" <% nvram_selected("schedule_minutes","48"); %>>48</option>
-			<option value="49" <% nvram_selected("schedule_minutes","49"); %>>49</option>
-			<option value="50" <% nvram_selected("schedule_minutes","50"); %>>50</option>
-			<option value="51" <% nvram_selected("schedule_minutes","51"); %>>51</option>
-			<option value="52" <% nvram_selected("schedule_minutes","52"); %>>52</option>
-			<option value="53" <% nvram_selected("schedule_minutes","53"); %>>53</option>
-			<option value="54" <% nvram_selected("schedule_minutes","54"); %>>54</option>
-			<option value="55" <% nvram_selected("schedule_minutes","55"); %>>55</option>
-			<option value="56" <% nvram_selected("schedule_minutes","56"); %>>56</option>
-			<option value="57" <% nvram_selected("schedule_minutes","57"); %>>57</option>
-			<option value="58" <% nvram_selected("schedule_minutes","58"); %>>58</option>
-			<option value="59" <% nvram_selected("schedule_minutes","59"); %>>59</option>
-		</select>&nbsp;<select name="schedule_weekdays">
-			<script type="text/javascript">document.write("<option value=\"*\" <% nvram_selected("schedule_weekdays","*","js"); %> >" + share.everyday + "</option>")</script>
-			<script type="text/javascript">document.write("<option value=\"00\" <% nvram_selected("schedule_weekdays","00","js"); %> >" + share.sun + "</option>")</script>
-			<script type="text/javascript">document.write("<option value=\"01\" <% nvram_selected("schedule_weekdays","01","js"); %> >" + share.mon + "</option>")</script>
-			<script type="text/javascript">document.write("<option value=\"02\" <% nvram_selected("schedule_weekdays","02","js"); %> >" + share.tue + "</option>")</script>
-			<script type="text/javascript">document.write("<option value=\"03\" <% nvram_selected("schedule_weekdays","03","js"); %> >" + share.wed + "</option>")</script>
-			<script type="text/javascript">document.write("<option value=\"04\" <% nvram_selected("schedule_weekdays","04","js"); %> >" + share.thu + "</option>")</script>
-			<script type="text/javascript">document.write("<option value=\"05\" <% nvram_selected("schedule_weekdays","05","js"); %> >" + share.fri + "</option>")</script>
-			<script type="text/javascript">document.write("<option value=\"06\" <% nvram_selected("schedule_weekdays","06","js"); %> >" + share.sat + "</option>")</script>
-		</select>
+	<div id="idschedule">
+		<div class="setting">
+			<div class="label"><% tran("share.inter"); %></div>
+			<input class="spaceradio" type="radio" value="1" name="schedule_hour_time" <% nvram_checked("schedule_hour_time","1"); %> onclick="setAlive()" />&nbsp;
+			<input class="num" maxlength="5" size="7" name="schedule_time" value="<% nvram_get("schedule_time"); %>" />
+		</div>
+		<div class="setting">
+			<div class="label"><% tran("alive.hour"); %></div>
+			<input class="spaceradio" type="radio" value="2" name="schedule_hour_time" <% nvram_checked("schedule_hour_time","2"); %> onclick="setAlive()" />&nbsp;
+			<select name="schedule_hours">
+				<option value="00" <% nvram_selected("schedule_hours","00"); %>>00</option>
+				<option value="01" <% nvram_selected("schedule_hours","01"); %>>01</option>
+				<option value="02" <% nvram_selected("schedule_hours","02"); %>>02</option>
+				<option value="03" <% nvram_selected("schedule_hours","03"); %>>03</option>
+				<option value="04" <% nvram_selected("schedule_hours","04"); %>>04</option>
+				<option value="05" <% nvram_selected("schedule_hours","05"); %>>05</option>
+				<option value="06" <% nvram_selected("schedule_hours","06"); %>>06</option>
+				<option value="07" <% nvram_selected("schedule_hours","07"); %>>07</option>
+				<option value="08" <% nvram_selected("schedule_hours","08"); %>>08</option>
+				<option value="09" <% nvram_selected("schedule_hours","09"); %>>09</option>
+				<option value="10" <% nvram_selected("schedule_hours","10"); %>>10</option>
+				<option value="11" <% nvram_selected("schedule_hours","11"); %>>11</option>
+				<option value="12" <% nvram_selected("schedule_hours","12"); %>>12</option>
+				<option value="13" <% nvram_selected("schedule_hours","13"); %>>13</option>
+				<option value="14" <% nvram_selected("schedule_hours","14"); %>>14</option>
+				<option value="15" <% nvram_selected("schedule_hours","15"); %>>15</option>
+				<option value="16" <% nvram_selected("schedule_hours","16"); %>>16</option>
+				<option value="17" <% nvram_selected("schedule_hours","17"); %>>17</option>
+				<option value="18" <% nvram_selected("schedule_hours","18"); %>>18</option>
+				<option value="19" <% nvram_selected("schedule_hours","19"); %>>19</option>
+				<option value="20" <% nvram_selected("schedule_hours","20"); %>>20</option>
+				<option value="21" <% nvram_selected("schedule_hours","21"); %>>21</option>
+				<option value="22" <% nvram_selected("schedule_hours","22"); %>>22</option>
+				<option value="23" <% nvram_selected("schedule_hours","23"); %>>23</option>
+			</select>:<select name="schedule_minutes">
+				<option value="00" <% nvram_selected("schedule_minutes","00"); %>>00</option>
+				<option value="01" <% nvram_selected("schedule_minutes","01"); %>>01</option>
+				<option value="02" <% nvram_selected("schedule_minutes","02"); %>>02</option>
+				<option value="03" <% nvram_selected("schedule_minutes","03"); %>>03</option>
+				<option value="04" <% nvram_selected("schedule_minutes","04"); %>>04</option>
+				<option value="05" <% nvram_selected("schedule_minutes","05"); %>>05</option>
+				<option value="06" <% nvram_selected("schedule_minutes","06"); %>>06</option>
+				<option value="07" <% nvram_selected("schedule_minutes","07"); %>>07</option>
+				<option value="08" <% nvram_selected("schedule_minutes","08"); %>>08</option>
+				<option value="09" <% nvram_selected("schedule_minutes","09"); %>>09</option>
+				<option value="10" <% nvram_selected("schedule_minutes","10"); %>>10</option>
+				<option value="11" <% nvram_selected("schedule_minutes","11"); %>>11</option>
+				<option value="12" <% nvram_selected("schedule_minutes","12"); %>>12</option>
+				<option value="13" <% nvram_selected("schedule_minutes","13"); %>>13</option>
+				<option value="14" <% nvram_selected("schedule_minutes","14"); %>>14</option>
+				<option value="15" <% nvram_selected("schedule_minutes","15"); %>>15</option>
+				<option value="16" <% nvram_selected("schedule_minutes","16"); %>>16</option>
+				<option value="17" <% nvram_selected("schedule_minutes","17"); %>>17</option>
+				<option value="18" <% nvram_selected("schedule_minutes","18"); %>>18</option>
+				<option value="19" <% nvram_selected("schedule_minutes","19"); %>>19</option>
+				<option value="20" <% nvram_selected("schedule_minutes","20"); %>>20</option>
+				<option value="21" <% nvram_selected("schedule_minutes","21"); %>>21</option>
+				<option value="22" <% nvram_selected("schedule_minutes","22"); %>>22</option>
+				<option value="23" <% nvram_selected("schedule_minutes","23"); %>>23</option>
+				<option value="24" <% nvram_selected("schedule_minutes","24"); %>>24</option>
+				<option value="25" <% nvram_selected("schedule_minutes","25"); %>>25</option>
+				<option value="26" <% nvram_selected("schedule_minutes","26"); %>>26</option>
+				<option value="27" <% nvram_selected("schedule_minutes","27"); %>>27</option>
+				<option value="28" <% nvram_selected("schedule_minutes","28"); %>>28</option>
+				<option value="29" <% nvram_selected("schedule_minutes","29"); %>>29</option>
+				<option value="30" <% nvram_selected("schedule_minutes","30"); %>>30</option>
+				<option value="31" <% nvram_selected("schedule_minutes","31"); %>>31</option>
+				<option value="32" <% nvram_selected("schedule_minutes","32"); %>>32</option>
+				<option value="33" <% nvram_selected("schedule_minutes","33"); %>>33</option>
+				<option value="34" <% nvram_selected("schedule_minutes","34"); %>>34</option>
+				<option value="35" <% nvram_selected("schedule_minutes","35"); %>>35</option>
+				<option value="36" <% nvram_selected("schedule_minutes","36"); %>>36</option>
+				<option value="37" <% nvram_selected("schedule_minutes","37"); %>>37</option>
+				<option value="38" <% nvram_selected("schedule_minutes","38"); %>>38</option>
+				<option value="39" <% nvram_selected("schedule_minutes","39"); %>>39</option>
+				<option value="40" <% nvram_selected("schedule_minutes","40"); %>>40</option>
+				<option value="41" <% nvram_selected("schedule_minutes","41"); %>>41</option>
+				<option value="42" <% nvram_selected("schedule_minutes","42"); %>>42</option>
+				<option value="43" <% nvram_selected("schedule_minutes","43"); %>>43</option>
+				<option value="44" <% nvram_selected("schedule_minutes","44"); %>>44</option>
+				<option value="45" <% nvram_selected("schedule_minutes","45"); %>>45</option>
+				<option value="46" <% nvram_selected("schedule_minutes","46"); %>>46</option>
+				<option value="47" <% nvram_selected("schedule_minutes","47"); %>>47</option>
+				<option value="48" <% nvram_selected("schedule_minutes","48"); %>>48</option>
+				<option value="49" <% nvram_selected("schedule_minutes","49"); %>>49</option>
+				<option value="50" <% nvram_selected("schedule_minutes","50"); %>>50</option>
+				<option value="51" <% nvram_selected("schedule_minutes","51"); %>>51</option>
+				<option value="52" <% nvram_selected("schedule_minutes","52"); %>>52</option>
+				<option value="53" <% nvram_selected("schedule_minutes","53"); %>>53</option>
+				<option value="54" <% nvram_selected("schedule_minutes","54"); %>>54</option>
+				<option value="55" <% nvram_selected("schedule_minutes","55"); %>>55</option>
+				<option value="56" <% nvram_selected("schedule_minutes","56"); %>>56</option>
+				<option value="57" <% nvram_selected("schedule_minutes","57"); %>>57</option>
+				<option value="58" <% nvram_selected("schedule_minutes","58"); %>>58</option>
+				<option value="59" <% nvram_selected("schedule_minutes","59"); %>>59</option>
+			</select>&nbsp;<select name="schedule_weekdays">
+				<script type="text/javascript">document.write("<option value=\"*\" <% nvram_selected("schedule_weekdays","*","js"); %> >" + share.everyday + "</option>")</script>
+				<script type="text/javascript">document.write("<option value=\"00\" <% nvram_selected("schedule_weekdays","00","js"); %> >" + share.sun + "</option>")</script>
+				<script type="text/javascript">document.write("<option value=\"01\" <% nvram_selected("schedule_weekdays","01","js"); %> >" + share.mon + "</option>")</script>
+				<script type="text/javascript">document.write("<option value=\"02\" <% nvram_selected("schedule_weekdays","02","js"); %> >" + share.tue + "</option>")</script>
+				<script type="text/javascript">document.write("<option value=\"03\" <% nvram_selected("schedule_weekdays","03","js"); %> >" + share.wed + "</option>")</script>
+				<script type="text/javascript">document.write("<option value=\"04\" <% nvram_selected("schedule_weekdays","04","js"); %> >" + share.thu + "</option>")</script>
+				<script type="text/javascript">document.write("<option value=\"05\" <% nvram_selected("schedule_weekdays","05","js"); %> >" + share.fri + "</option>")</script>
+				<script type="text/javascript">document.write("<option value=\"06\" <% nvram_selected("schedule_weekdays","06","js"); %> >" + share.sat + "</option>")</script>
+			</select>
+		</div>
 	</div>
 </fieldset><br/>
