@@ -1703,25 +1703,40 @@ save_prefix (webs_t wp, char *prefix)
   sprintf (n, "%s_radius_key", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_key1", prefix);
+  char *key1 = websGetVar(wp,n,"");
+  
   copytonv (wp, n);
   sprintf (n, "%s_key2", prefix);
+  char *key2 = websGetVar(wp,n,"");
   copytonv (wp, n);
   sprintf (n, "%s_key3", prefix);
+  char *key3 = websGetVar(wp,n,"");
   copytonv (wp, n);
   sprintf (n, "%s_key4", prefix);
+  char *key4 = websGetVar(wp,n,"");
   copytonv (wp, n);
   sprintf (n, "%s_passphrase", prefix);
+  char *pass = websGetVar(wp,n,"");
   copytonv (wp, n);
   sprintf (n, "%s_key", prefix);
+  char *tx = websGetVar(wp,n,"");
   copytonv (wp, n);
   sprintf (n, "%s_wep_bit", prefix);
   copytonv (wp, n);
-
-  sprintf (n, "%s_wep_gen", prefix);
-  char *wep = nvram_safe_get (n);
+  char buf[128];
+  snprintf (buf, sizeof (buf), "%s:%s:%s:%s:%s:%s", pass,
+		key1, key2, key3, key4,
+		tx);
   sprintf (n, "%s_wep_buf", prefix);
-  nvram_set (n, wep);
-  sprintf (n, "%s_wep_gen", prefix);
+  nvram_set (n, buf);
+
+
+
+//  sprintf (n, "%s_wep_gen", prefix);
+//  char *wep = nvram_safe_get (n);
+//  sprintf (n, "%s_wep_buf", prefix);
+//  nvram_set (n, wep);
+//  sprintf (n, "%s_wep_gen", prefix);
   //nvram_unset(n);
   sprintf (n, "%s_security_mode", p2);
   char n2[80];
