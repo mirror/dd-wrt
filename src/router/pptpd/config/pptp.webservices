@@ -3,8 +3,8 @@
 	<legend><% tran("service.pptp_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.pptp_srv"); %></div>
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_selmatch("pptpd_enable", "1", "checked"); %> onclick="show_layer_ext('idpptp', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvram_selmatch("pptpd_enable", "0", "checked"); %> onclick="show_layer_ext('idpptp', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="1" <% nvram_selmatch("pptpd_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idpptp', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="pptpd_enable" value="0" <% nvram_selmatch("pptpd_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idpptp', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idpptp">
 		<div class="setting">
