@@ -140,6 +140,12 @@ ej_get_firmware_title (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 void
+ej_get_firmware_svnrev (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  websWrite (wp, "%s", SVN_REVISION);
+}
+
+void
 ej_get_web_page_name (int eid, webs_t wp, int argc, char_t ** argv)
 {
   websWrite (wp, "%s.asp", websGetVar (wp, "submit_button", "index"));
