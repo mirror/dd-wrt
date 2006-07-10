@@ -20,7 +20,7 @@ text-decoration:underline;
 		</style>
 	</head>
 	<body>
-		<p><% nvram_match("dist_type", "micro", "<!--"); %><img src="/images/logo.png" width="160" height="70" /><% nvram_match("dist_type", "micro", "--><br /><br />"); %><br /><b><% get_firmware_version(); %></b></p>
+		<p><% nvram_match("dist_type", "micro", "<!--"); %><img src="/images/logo.png" width="160" height="70" /><% nvram_match("dist_type", "micro", "--><br /><br />"); %><br /><b><% get_firmware_version(); %>< /br>(<em>SVN revision</em> <% get_firmware_svnrev(); %>)</b></p>
 		<p>There are several different distributions of the DD-WRT firmware. The <b>mini</b> contains all the features of the standard distribution, 
 		with the exception of chillispot, nocat, rflow, kaid, samba client, SNMP, IPv6, and MMC/SD card support. The <b>standard</b> (std) distribution includes all features, 
 		with the exception of VOIP. The <b>VOIP</b> distribution includes all features, with kaid removed to make room for SiPath. 
