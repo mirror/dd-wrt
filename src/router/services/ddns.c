@@ -11,7 +11,6 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include <time.h>
 #include <sys/time.h>
 #include <syslog.h>
 #include <sys/wait.h>
@@ -122,11 +121,26 @@ start_ddns (void)
       nvram_match (_passwd, "") || nvram_match (_hostname, ""))
     return -1;
 
-  if (nvram_match ("action_service", "ddns"))
-      unlink ("/tmp/ddns.log");	// We want to get new message
+  mkdir ("/tmp/ddns", 0744);
+
+  /* We want to re-update if user change some value from UI */
+  if (strcmp (nvram_safe_get ("ddns_enable_buf"), nvram_safe_get ("ddns_enable")) ||	// ddns mode change
+      strcmp (nvram_safe_get ("ddns_username_buf"), nvram_safe_get (_username)) ||	// ddns username chane
+      strcmp (nvram_safe_get ("ddns_passwd_buf"), nvram_safe_get (_passwd)) ||	// ddns password change
+      strcmp (nvram_safe_get ("ddns_hostname_buf"), nvram_safe_get (_hostname)) ||	// ddns hostname change
+      strcmp (nvram_safe_get ("ddns_dyndnstype_buf"), nvram_safe_get (_dyndnstype)) ||	// ddns dyndnstype change
+      strcmp (nvram_safe_get ("ddns_wildcard_buf"), nvram_safe_get (_wildcard)) || // ddns wildcard change
+      strcmp (nvram_safe_get ("ddns_conf_buf"), nvram_safe_get ("ddns_conf")))
+    {
+	  nvram_unset ("ddns_cache");	// The will let program to re-update
+	  nvram_unset ("ddns_time");
+	  unlink ("/tmp/ddns/ddns.log");	// We want to get new message
+	  unlink ("/tmp/ddns/inadyn_ip.cache");
+	  unlink ("/tmp/ddns/inadyn_time.cache");
+    }
 
   /* Generate ddns configuration file */
-  if ((fp = fopen ("/tmp/inadyn.conf", "w")))
+  if ((fp = fopen ("/tmp/ddns/inadyn.conf", "w")))
     {
       fprintf (fp, "--background");
       fprintf (fp, " --dyndns_system %s", service);	//service
@@ -138,7 +152,8 @@ start_ddns (void)
 	fprintf (fp, ",wildcard=ON");
       fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
       fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
-      fprintf (fp, " --log_file %s", "/tmp/ddns.log");	//log to file
+      fprintf (fp, " --log_file %s", "/tmp/ddns/ddns.log");	//log to file
+//      fprintf (fp, " --exec %s", "ddns_success");	//run after update
       if (nvram_invmatch ("ddns_conf", "")
 	  && nvram_match ("ddns_enable", "5"))
 	{
@@ -156,11 +171,11 @@ start_ddns (void)
     }
   else
     {
-      perror ("/tmp/inadyn.conf");
+      perror ("/tmp/ddns/inadyn.conf");
       return -1;
     }
 
-  ret = eval ("inadyn", "--input_file", "/tmp/inadyn.conf");
+  ret = eval ("inadyn", "--input_file", "/tmp/ddns/inadyn.conf");
 
   cprintf ("done\n");
 
@@ -173,7 +188,7 @@ stop_ddns (void)
   int ret;
 
   ret = eval ("killall", "inadyn");
-  unlink ("/tmp/ddns.log");
+  unlink ("/tmp/ddns/ddns.log");
 
   cprintf ("done\n");
 
@@ -186,10 +201,24 @@ int
 ddns_success_main (int argc, char *argv[])
 {
   char buf[80];
+  char buf2[80];
+  FILE *fp;
 
   init_ddns ();
 
-  snprintf (buf, sizeof (buf), "%ld,%s", time (NULL), argv[1]);
+  if ((fp = fopen ("/tmp/ddns/inadyn_ip.cache", "r")))
+    {
+      fgets (buf, sizeof (buf),fp);
+      fclose(fp);
+      nvram_set ("ddns_cache", buf);
+    }
+
+  if ((fp = fopen ("/tmp/ddns/inadyn_time.cache", "r")))
+    {
+      fgets (buf2, sizeof (buf2),fp);
+      fclose(fp);
+      nvram_set ("ddns_time", buf2);
+    }
 
   nvram_set ("ddns_status", "1");
   nvram_set ("ddns_enable_buf", nvram_safe_get ("ddns_enable"));
@@ -198,6 +227,7 @@ ddns_success_main (int argc, char *argv[])
   nvram_set ("ddns_hostname_buf", nvram_safe_get (_hostname));
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
   nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
+  nvram_set ("ddns_conf_buf", nvram_safe_get ("ddns_conf"));
   nvram_set ("ddns_change", "");
 
   nvram_commit ();
