@@ -44,7 +44,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WHRG54S 0x0804
 #define ROUTER_BUFFALO_HP_WHRG54S 0x0804	//no differences between these models. so we leave it
 
-// Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0)
+// Buffalo WZR-RS-G54 (4704 cpu), WZR-G54, WZR-HP-G54 (4704 cpu, fccid: Buffalo FDI-09101457-0), WHR3-AG54
 #define ROUTER_BUFFALO_WZRRSG54 0x0904
 
 // Motorola WR850G v1 (4702 cpu)

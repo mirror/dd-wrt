@@ -228,6 +228,12 @@ internal_getRouterBrand ()
       		setRouter ("Buffalo WZR-G54");
       		return ROUTER_BUFFALO_WZRRSG54;
     		}
+    	if (nvram_match ("product_name", "WHR3-AG54"))
+    		{
+      		cprintf ("router is Buffalo WHR3-AG54\n");
+      		setRouter ("Buffalo WHR3-AG54");
+      		return ROUTER_BUFFALO_WZRRSG54;
+    		}
     	if (nvram_match ("product_name", "Product_name"))
     		{
       		cprintf ("router is Buffalo WZR series\n");
@@ -240,6 +246,7 @@ internal_getRouterBrand ()
       nvram_match ("boardrev","0x10"))
 //      nvram_match ("boardflags","0x0018"))
     {
+      cprintf ("router is Linksys WRTSL54GS\n");
       setRouter ("Linksys WRTSL54GS");
       return ROUTER_WRTSL54GS;
     }
