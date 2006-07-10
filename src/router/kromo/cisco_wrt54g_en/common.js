@@ -916,33 +916,37 @@ function setElementMask(id, state) {
 	
 }
 
-function show_layer_ext(id, state)
+function show_layer_ext(obj, id, state)
 {
-	
-	if(state)
-	{
-		visibility_style='visible';
-		display_style='block';
-	}
-	else
-	{
-		visibility_style='hidden';
-		display_style='none';
-	}
-	// Show/hide the layer
-	if(ie4)
-	{
-		eval("document.all." + id + ".style.visibility='" + visibility_style + "'");
-		eval("document.all." + id + ".style.display='" + display_style + "'");
-	}
-	if(ns4)
-	{
-		eval("document." + id + ".visibility='" + visibility_style + "'");
-		eval("document." + id + ".display='" + display_style + "'");
-	}
-	if(ns6 || op)
-	{
-		eval("document.getElementById('" + id + "').style.visibility='" + visibility_style + "'");
-		eval("document.getElementById('" + id + "').style.display='" + display_style + "'");
+
+	if (obj) {
+		if(state)
+		{
+			visibility_style='visible';
+			display_style='block';
+		}
+		else
+		{
+			visibility_style='hidden';
+			display_style='none';
+		}
+		// Show/hide the layer
+		if(ie4)
+		{
+			eval("document.all." + id + ".style.visibility='" + visibility_style + "'");
+			eval("document.all." + id + ".style.display='" + display_style + "'");
+		}
+		if(ns4)
+		{
+			eval("document." + id + ".visibility='" + visibility_style + "'");
+			eval("document." + id + ".display='" + display_style + "'");
+		}
+		if(ns6 || op)
+		{
+			eval("document.getElementById('" + id + "').style.visibility='" + visibility_style + "'");
+			eval("document.getElementById('" + id + "').style.display='" + display_style + "'");
+		}
+	} else {
+		return;
 	}
 }
