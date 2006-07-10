@@ -3,8 +3,8 @@
 	<legend><% tran("service.rflow_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.rflow_srv1"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="rflow_enable" <% nvram_selmatch("rflow_enable","1","checked"); %> onclick="show_layer_ext('idrflow', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="rflow_enable" <% nvram_selmatch("rflow_enable","0","checked"); %> onclick="show_layer_ext('idrflow', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="rflow_enable" <% nvram_selmatch("rflow_enable","1","checked"); %> onclick="show_layer_ext(this, 'idrflow', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="rflow_enable" <% nvram_selmatch("rflow_enable","0","checked"); %> onclick="show_layer_ext(this, 'idrflow', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idrflow">
 		<div class="setting">
@@ -20,8 +20,8 @@
 	</div>
 	<div class="setting">
 		<div class="label"><% tran("service.rflow_srv2"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="macupd_enable" <% nvram_selmatch("macupd_enable","1","checked"); %> onclick="show_layer_ext('idMACupd', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="macupd_enable" <% nvram_selmatch("macupd_enable","0","checked"); %> onclick="show_layer_ext('idMACupd', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="macupd_enable" <% nvram_selmatch("macupd_enable","1","checked"); %> onclick="show_layer_ext(this, 'idMACupd', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="macupd_enable" <% nvram_selmatch("macupd_enable","0","checked"); %> onclick="show_layer_ext(this, 'idMACupd', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idMACupd">
 		<div class="setting">
