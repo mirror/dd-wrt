@@ -39,7 +39,7 @@ ej_show_ddns_status (int eid, webs_t wp, int argc, char_t ** argv)
       return;
     }*/
 
-  if ((fp = fopen ("/tmp/ddns.log", "r")))
+  if ((fp = fopen ("/tmp/ddns/ddns.log", "r")))
     {
       /* Just dump the log file onto the web page */
       while (fgets (buff, sizeof (buff), fp))
