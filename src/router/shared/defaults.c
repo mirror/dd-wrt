@@ -937,6 +937,8 @@ struct nvram_tuple router_defaults[] = {
   {"ddns_hostname_buf", "", 0},	/* DDNS hostname */
 
   {"ddns_status", "", 0},	/* DDNS status */
+  {"ddns_cache", "", 0},	/* DDNS cache */
+  {"ddns_time", "", 0},		/* DDNS time */
 
 
   /* for AOL */

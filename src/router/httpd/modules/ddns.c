@@ -84,7 +84,6 @@ ddns_save_value (webs_t wp)
 
   if (atoi (enable) == 0)
     {				// Disable
-      nvram_set ("ddns_enable_buf", nvram_safe_get ("ddns_enable"));
       nvram_set ("ddns_enable", enable);
       return 1;
     }
@@ -137,14 +136,6 @@ ddns_save_value (webs_t wp)
       return 1;
     }
 
-  nvram_set ("ddns_enable_buf", nvram_safe_get ("ddns_enable"));
-  nvram_set ("ddns_username_buf", nvram_safe_get (_username));
-  nvram_set ("ddns_passwd_buf", nvram_safe_get (_passwd));
-  nvram_set ("ddns_hostname_buf", nvram_safe_get (_hostname));
-  nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
-  nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
-  nvram_set ("ddns_custom_buf", nvram_safe_get (_custom));
-  nvram_set ("ddns_conf_buf", nvram_safe_get (_conf));
   nvram_set ("ddns_enable", enable);
   nvram_set (_username, username);
   if (strcmp (passwd, TMP_PASSWD))
