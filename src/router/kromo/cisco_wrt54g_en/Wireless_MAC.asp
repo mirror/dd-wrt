@@ -14,12 +14,8 @@ function to_submit(F) {
 	apply(F);
 }
 
-function setMAC(val) {
-	setElementActive("wl_macmode", val == "other");
-}
-
 addEvent(window, "load", function() {
-	setMAC("<% nvram_get("wl_macmode1"); %>");
+	show_layer_ext(document.wireless.wl_macmode1, 'idmac', "<% nvram_else_match("wl_macmode1", "other", "other", "disabled"); %>" == "other");
 });
 		</script>
 	</head>
@@ -69,10 +65,10 @@ addEvent(window, "load", function() {
 								<legend><% tran("wl_mac.legend"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("wl_mac.label"); %></div>
-									<input class="spaceradio" type="radio" value="other" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","other"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="disabled" name="wl_macmode1" onclick="setMAC(this.value)" <% nvram_checked("wl_macmode1","disabled"); %> /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="other" name="wl_macmode1" <% nvram_checked("wl_macmode1","other"); %> onclick="show_layer_ext(this, 'idmac', true)"/><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="disabled" name="wl_macmode1" <% nvram_checked("wl_macmode1","disabled"); %> onclick="show_layer_ext(this, 'idmac', false)"/><% tran("share.disable"); %>
 								</div>
-								<div class="setting">
+								<div class="setting" id="idmac">
 									<div class="label"><% tran("wl_mac.label2"); %><br />&nbsp;</div>
 									<input class="spaceradio" type="radio" value="deny" name="wl_macmode" <% nvram_invmatch("wl_macmode","allow","checked"); %> /><% tran("wl_mac.deny"); %>
 									<br />
