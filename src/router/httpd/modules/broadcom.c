@@ -4273,6 +4273,7 @@ struct ej_handler ej_handlers[] = {
   {"support_elsematch", ej_support_elsematch},
   {"get_firmware_version", ej_get_firmware_version},
   {"get_firmware_title", ej_get_firmware_title},
+  {"get_firmware_svnrev", ej_get_firmware_svnrev},
   {"get_model_name", ej_get_model_name},
   {"showad", ej_showad},
   {"get_single_ip", ej_get_single_ip},
