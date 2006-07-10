@@ -1,0 +1,1 @@
+#undef CONFIG_INSTALL_NO_USR

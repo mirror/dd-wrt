@@ -1,0 +1,1 @@
+#define ENABLE_FEATURE_TFTP_GET 0
