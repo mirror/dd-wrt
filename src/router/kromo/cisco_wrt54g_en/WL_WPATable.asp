@@ -25,14 +25,16 @@ function to_submit(F) {
 }
 
 function valid_value(F) {
-	if(F.security_mode.value == "disabled")
-		return true;
+	return true;
+	//if (wl0_security_mode)
+	//if(F.security_mode.value == "disabled")
+	//	return true;
 
-	if(!valid_wpa_psk(F) || !valid_wep(F) || !valid_radius(F)) {
-		return false;
-	} else  {
-		return true;
-	}
+	//if(!valid_wpa_psk(F) || !valid_wep(F) || !valid_radius(F)) {
+	//	return false;
+	//} else  {
+	//	return true;
+	//}
 }
 
 function valid_radius(F) {
