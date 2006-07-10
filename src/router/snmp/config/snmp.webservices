@@ -3,8 +3,8 @@
 	<legend><% tran("service.snmp_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.snmp_srv"); %></div>
-		<input class="spaceradio" type="radio" name="snmpd_enable" value="1" <% nvram_selmatch("snmpd_enable", "1", "checked"); %> onclick="show_layer_ext('idsnmp', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="snmpd_enable" value="0" <% nvram_selmatch("snmpd_enable", "0", "checked"); %> onclick="show_layer_ext('idsnmp', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="snmpd_enable" value="1" <% nvram_selmatch("snmpd_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idsnmp', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="snmpd_enable" value="0" <% nvram_selmatch("snmpd_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idsnmp', false)" /><% tran("share.disable"); %>
 	</div>
 	<div id="idsnmp">
 		<div class="setting">
