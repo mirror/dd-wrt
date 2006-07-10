@@ -2025,7 +2025,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (maxpower, "%s_maxpower", prefix);
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value='%s'/> mW (Max: %s)\n",
+	     "<div class=\"label\">TX Power</div><input class=\"num\" name=\"%s\" size=\"6\" maxLength=\"3\" value=\"%s\"/> mW (Max: %s)\n",
 	     power, nvram_safe_get (power), nvram_safe_get (maxpower));
   websWrite (wp, "</div>\n");
 
@@ -2141,7 +2141,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\">Wireless Network Name (SSID)</div><input name=\"%s\" size=\"20\" maxLength=\"32\" onblur=\"valid_name(this,'SSID')\" value='%s' /></div>\n",
+	     "<div class=\"label\">Wireless Network Name (SSID)</div><input name=\"%s\" size=\"20\" maxLength=\"32\" onblur=\"valid_name(this,'SSID')\" value=\"%s\" /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
 
@@ -2170,7 +2170,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   websWrite (wp,
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label6)</script></div>\n");
   websWrite (wp,
-	     "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value='%s' />\n",
+	     "<input class=\"num\" name=\"%s\" size=\"8\" maxlength=\"8\" value=\"%s\" />\n",
 	     power, nvram_safe_get (power));
   websWrite (wp,
 	     "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 20000 \" + share.meters + \")\")</script></span>\n");
@@ -3228,7 +3228,7 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
       char buf[16];
       sprintf (buf, "wl_wds%d_ospf", index);
       websWrite (wp,
-		 "<input name=\"%s\" size=\"2\" maxlength=\"5\" value='%s' />\n",
+		 "<input name=\"%s\" size=\"2\" maxlength=\"5\" value=\"%s\" />\n",
 		 buf, nvram_safe_get (buf));
     }
 
