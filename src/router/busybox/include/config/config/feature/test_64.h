@@ -1,0 +1,1 @@
+#undef CONFIG_FEATURE_TEST_64

@@ -1,0 +1,1 @@
+#define USE_FEATURE_TFTP_BLOCKSIZE(...)
