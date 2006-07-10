@@ -286,7 +286,7 @@ main_loop (void)
 //create loginprompt
   FILE *fp = fopen ("/tmp/loginprompt", "wb");
 
-#ifdef HAVE_MSSID
+#ifndef HAVE_MSSID
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
