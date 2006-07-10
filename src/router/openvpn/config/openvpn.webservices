@@ -3,8 +3,8 @@
 	<legend><% tran("service.vpn_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("service.vpn_srv"); %></div>
-		<input class="spaceradio" type="radio" name="openvpn_enable" value="1" <% nvram_selmatch("openvpn_enable", "1", "checked"); %> onclick="show_layer_ext('idvpn', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" name="openvpn_enable" value="0" <% nvram_selmatch("openvpn_enable", "0", "checked"); %> onclick="show_layer_ext('idvpn', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" name="openvpn_enable" value="1" <% nvram_selmatch("openvpn_enable", "1", "checked"); %> onclick="show_layer_ext(this, 'idvpn', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" name="openvpn_enable" value="0" <% nvram_selmatch("openvpn_enable", "0", "checked"); %> onclick="show_layer_ext(this, 'idvpn', false)" /><% tran("share.disable"); %>
 		</div>
 	<div id="idvpn">
 		<div class="setting">
