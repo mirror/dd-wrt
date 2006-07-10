@@ -1,0 +1,1 @@
+#define USE_FEATURE_GREP_FGREP_ALIAS(...)  __VA_ARGS__

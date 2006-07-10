@@ -1,0 +1,1 @@
+#define ENABLE_MD5SUM 1

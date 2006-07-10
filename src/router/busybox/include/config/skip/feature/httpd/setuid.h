@@ -1,0 +1,1 @@
+#define SKIP_FEATURE_HTTPD_SETUID(...)  __VA_ARGS__
