@@ -3,8 +3,8 @@
 	<legend><% tran("management.jffs_legend"); %></legend>
 	<div class="setting">
 		<div class="label"><% tran("management.jffs_srv"); %></div>
-		<input class="spaceradio" type="radio" value="1" name="enable_jffs2" <% nvram_checked("enable_jffs2","1"); %> onclick="show_layer_ext('idjffs2', true)" /><% tran("share.enable"); %>&nbsp;
-		<input class="spaceradio" type="radio" value="0" name="enable_jffs2" <% nvram_checked("enable_jffs2","0"); %> onclick="show_layer_ext('idjffs2', false)" /><% tran("share.disable"); %>
+		<input class="spaceradio" type="radio" value="1" name="enable_jffs2" <% nvram_checked("enable_jffs2","1"); %> onclick="show_layer_ext(this, 'idjffs2', true)" /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="enable_jffs2" <% nvram_checked("enable_jffs2","0"); %> onclick="show_layer_ext(this, 'idjffs2', false)" /><% tran("share.disable"); %>
 	</div>
 	<div class="setting" id="idjffs2">
 		<div class="label"><% tran("management.jffs_clean"); %></div>
