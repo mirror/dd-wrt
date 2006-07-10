@@ -360,6 +360,8 @@ extern void ej_get_firmware_version (int eid, webs_t wp, int argc,
 				    char_t ** argv);
 extern void ej_get_firmware_title (int eid, webs_t wp, int argc,
 				  char_t ** argv);
+extern void ej_get_firmware_svnrev (int eid, webs_t wp, int argc,
+				  char_t ** argv);
 
 /* Sveasoft additions */
 
