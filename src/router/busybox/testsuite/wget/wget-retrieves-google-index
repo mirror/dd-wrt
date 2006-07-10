@@ -1,2 +1,0 @@
-busybox wget -q -O foo http://www.google.com/
-test -s foo
