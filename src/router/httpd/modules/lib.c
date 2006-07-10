@@ -139,6 +139,7 @@ ej_get_firmware_title (int eid, webs_t wp, int argc, char_t ** argv)
   websWrite (wp, "Wireless-G Broadband Router");
 }
 
+#include <revision.h>
 void
 ej_get_firmware_svnrev (int eid, webs_t wp, int argc, char_t ** argv)
 {
