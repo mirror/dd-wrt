@@ -19,8 +19,8 @@
 		<legend><% tran("management.remote_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.remote_gui"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="remote_management" onclick="show_layer_ext('idhttpd', true);SelPort(1,this.form)" <% nvram_checked("remote_management","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="remote_management" onclick="show_layer_ext('idhttpd', false);SelPort(0,this.form)" <% nvram_checked("remote_management","0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="remote_management" onclick="show_layer_ext(this, 'idhttpd', true);SelPort(1,this.form)" <% nvram_checked("remote_management","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="remote_management" onclick="show_layer_ext(this, 'idhttpd', false);SelPort(0,this.form)" <% nvram_checked("remote_management","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div id="idhttpd">
 			<div class="setting">
@@ -36,8 +36,8 @@
 		<% nvram_match("sshd_web","0","<!--"); %>
 		<div class="setting">
 			<div class="label"><% tran("management.remote_ssh"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="remote_mgt_ssh" onclick="show_layer_ext('idssh', true);selSSH(this.value, 0)" <% nvram_checked("remote_mgt_ssh","1"); %> /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="remote_mgt_ssh" onclick="show_layer_ext('idssh', false);selSSH(this.value, 0)" <% nvram_checked("remote_mgt_ssh","0"); %> /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="remote_mgt_ssh" onclick="show_layer_ext(this, 'idssh', true);selSSH(this.value, 0)" <% nvram_checked("remote_mgt_ssh","1"); %> /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="remote_mgt_ssh" onclick="show_layer_ext(this, 'idssh', false);selSSH(this.value, 0)" <% nvram_checked("remote_mgt_ssh","0"); %> /><% tran("share.disable"); %>
 		</div>
 		<div class="setting" id="idssh">
 			<div class="label"><% tran("management.remote_sshport"); %></div>
@@ -60,8 +60,8 @@
 		</div>
 		<div class="setting">
 			<div class="label"><% tran("management.web_sysinfo"); %></div>
-			<input class="spaceradio" type="radio" value="1" name="status_auth" <% nvram_checked("status_auth","1"); %> onclick="show_layer_ext('idsysinfo', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" value="0" name="status_auth" <% nvram_checked("status_auth","0"); %> onclick="show_layer_ext('idsysinfo', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" value="1" name="status_auth" <% nvram_checked("status_auth","1"); %> onclick="show_layer_ext(this, 'idsysinfo', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" value="0" name="status_auth" <% nvram_checked("status_auth","0"); %> onclick="show_layer_ext(this, 'idsysinfo', false)" /><% tran("share.disable"); %>
 		</div>
 		<div class="setting" id="idsysinfo">
 			<div class="label"><% tran("management.web_sysinfopass"); %></div>
@@ -116,8 +116,8 @@
 		<legend><% tran("management.ntp_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.ntp_srv"); %></div>
-			<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> onclick="show_layer_ext('idntp', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> onclick="show_layer_ext('idntp', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="1" <% nvram_checked("ntp_enable", "1"); %> onclick="show_layer_ext(this, 'idntp', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="ntp_enable" id="ntp_enable" value="0" <% nvram_checked("ntp_enable", "0"); %> onclick="show_layer_ext(this, 'idntp', false)" /><% tran("share.disable"); %>
 		</div>
 		<div class="setting" id="idntp">
 			<div class="label"><% tran("share.srvip"); %></div>
@@ -147,8 +147,8 @@
 		<legend><% tran("management.wol_legend"); %></legend>
 		<div class="setting">
 			<div class="label"><% tran("management.wol_srv"); %></div>
-			<input class="spaceradio" type="radio" name="wol_enable" value="1" <% nvram_checked("wol_enable", "1"); %> onclick="show_layer_ext('idwol', true)" /><% tran("share.enable"); %>&nbsp;
-			<input class="spaceradio" type="radio" name="wol_enable" value="0" <% nvram_checked("wol_enable", "0"); %> onclick="show_layer_ext('idwol', false)" /><% tran("share.disable"); %>
+			<input class="spaceradio" type="radio" name="wol_enable" value="1" <% nvram_checked("wol_enable", "1"); %> onclick="show_layer_ext(this, 'idwol', true)" /><% tran("share.enable"); %>&nbsp;
+			<input class="spaceradio" type="radio" name="wol_enable" value="0" <% nvram_checked("wol_enable", "0"); %> onclick="show_layer_ext(this, 'idwol', false)" /><% tran("share.disable"); %>
 		</div>
 		<div id="idwol">
 			<div class="setting">
