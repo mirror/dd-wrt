@@ -290,15 +290,15 @@ main_loop (void)
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
-	     "DD-WRT v23 SP1 %s Date: " BUILD_DATE
+	     "DD-WRT v23 SP2 %s Date: " BUILD_DATE
 	     " (c) 2006 NewMedia-NET GmbH\n", DIST);
   else
     fprintf (fp,
-	     "DD-WRT v23 SP1 custom Date: " BUILD_DATE
+	     "DD-WRT v23 SP2 custom Date: " BUILD_DATE
 	     " (c) 2006 NewMedia-NET GmbH\n");
 #else
   fprintf (fp,
-	   "DD-WRT v23 SP1 custom Date: " BUILD_DATE
+	   "DD-WRT v23 SP2 custom Date: " BUILD_DATE
 	   " (c) 2006 NewMedia-NET GmbH\n");
 #endif
 #else
