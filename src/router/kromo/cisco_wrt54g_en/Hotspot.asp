@@ -46,11 +46,11 @@ function to_submit(F) {
 }
 
 addEvent(window, "load", function() {
-	if (document.setup.apd_enable) show_layer_ext('idsputnik', <% nvram_get("apd_enable"); %> == 1);
-	if (document.setup.chilli_enable) show_layer_ext('idchilli', <% nvram_get("chilli_enable"); %> == 1);
-	if (document.setup.http_redirect_enable) show_layer_ext('idhttpredirect', <% nvram_get("http_redirect_enable"); %> == 1);
-	if (document.setup.NC_enable) show_layer_ext('idnocat', <% nvram_get("NC_enable"); %> == 1);
-	if (document.setup.smtp_redirect_enable) show_layer_ext('smtpredirect', <% nvram_get("smtp_redirect_enable"); %> == 1);	
+	show_layer_ext(document.setup.apd_enable, 'idsputnik', <% nvram_else_match("apd_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.chilli_enable, 'idchilli', <% nvram_else_match("chilli_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.http_redirect_enable, 'idhttpredirect', <% nvram_else_match("http_redirect_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.NC_enable, 'idnocat', <% nvram_else_match("NC_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.smtp_redirect_enable, 'smtpredirect', <% nvram_else_match("smtp_redirect_enable", "1", "1", "0"); %> == 1);
 });
 
 		</script>

@@ -146,19 +146,14 @@ addEvent(window, "load", function() {
 	if (document.setup.remote_mgt_ssh)
 		selSSH("<% nvram_get("sshd_enable"); %>", 1);
 
-	if (document.setup.ipv6_enable0) {
-		show_layer_ext('idipv6', <% nvram_get("ipv6_enable0"); %> == 1);
-	}
-	if (document.setup.remote_mgt_ssh) {
-		show_layer_ext('idssh', <% nvram_get("remote_mgt_ssh"); %> == 1);
-	}
-	
-	show_layer_ext('idhttpd', <% nvram_get("remote_management"); %> == 1);
-	show_layer_ext('idsysinfo', <% nvram_get("status_auth"); %> == 1);
-	show_layer_ext('idntp', <% nvram_get("ntp_enable"); %> == 1);
-	show_layer_ext('idsamba', <% nvram_get("samba_mount"); %> == 1);
-	show_layer_ext('idwol', <% nvram_get("wol_enable"); %> == 1);
-	show_layer_ext('idjffs2', <% nvram_get("enable_jffs2"); %> == 1)
+	show_layer_ext(document.setup.ipv6_enable0,'idipv6', <% nvram_else_match("ipv6_enable0", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.remote_mgt_ssh, 'idssh', <% nvram_else_match("remote_mgt_ssh", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.remote_management, 'idhttpd', <% nvram_else_match("remote_management", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.status_auth, 'idsysinfo', <% nvram_else_match("status_auth", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.ntp_enable, 'idntp', <% nvram_else_match("ntp_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.samba_mount, 'idsamba', <% nvram_else_match("samba_mount", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.wol_enable, 'idwol', <% nvram_else_match("wol_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.setup.enable_jffs2, 'idjffs2', <% nvram_else_match("enable_jffs2", "1", "1", "0"); %> == 1);
 
 });
 

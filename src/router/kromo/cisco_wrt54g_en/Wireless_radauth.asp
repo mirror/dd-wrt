@@ -20,7 +20,7 @@ function to_submit(F) {
 }
 
 function setRad(val) {
-	show_layer_ext('idradius', val == 1);
+	show_layer_ext(document.wireless.wl_radauth, 'idradius', val == "1");
 	setElementsActive("wl_radmactype", "_radius_override", val == "1");
 }
 

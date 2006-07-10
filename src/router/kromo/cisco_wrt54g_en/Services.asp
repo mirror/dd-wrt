@@ -75,15 +75,15 @@ function to_submit(F) {
 
 addEvent(window, "load", function() {
 
-		if (document.setup.sshd_enable) show_layer_ext('idssh', <% nvram_get("sshd_enable"); %> == 1);
-		if (document.setup.dnsmasq_enable) show_layer_ext('iddnsmasq', <% nvram_get("dnsmasq_enable"); %> == 1);
-		if (document.setup.kaid_enable) show_layer_ext('idkaid', <% nvram_get("kaid_enable"); %> == 1);
-		if (document.setup.snmpd_enable) show_layer_ext('idsnmp', <% nvram_get("snmpd_enable"); %> == 1);
-		if (document.setup.rflow_enable) show_layer_ext('idrflow', <% nvram_get("rflow_enable"); %> == 1);
-		if (document.setup.macupd_enable) show_layer_ext('idMACupd', <% nvram_get("macupd_enable"); %> == 1);
-		if (document.setup.pptpd_enable) show_layer_ext('idpptp', <% nvram_get("pptpd_enable"); %> == 1);
-		if (document.setup.pptpd_client_enable) show_layer_ext('idpptpcli', <% nvram_get("pptpd_client_enable"); %> == 1);
-		if (document.setup.openvpn_enable) show_layer_ext('idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.sshd_enable, 'idssh', <% nvram_else_match("sshd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.dnsmasq_enable, 'iddnsmasq', <% nvram_else_match("dnsmasq_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.kaid_enable, 'idkaid', <% nvram_else_match("kaid_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.snmpd_enable, 'idsnmp', <% nvram_else_match("snmpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.rflow_enable, 'idrflow', <% nvram_else_match("rflow_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.macupd_enable, 'idMACupd', <% nvram_else_match("macupd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_enable, 'idpptp', <% nvram_else_match("pptpd_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.pptpd_client_enable, 'idpptpcli', <% nvram_else_match("pptpd_client_enable", "1", "1", "0"); %> == 1);
+		show_layer_ext(document.setup.openvpn_enable, 'idvpn', <% nvram_else_match("openvpn_enable", "1", "1", "0"); %> == 1);
 });
 
 		</script>
