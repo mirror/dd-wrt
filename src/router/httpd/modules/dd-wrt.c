@@ -2234,7 +2234,7 @@ show_preshared (webs_t wp, char *prefix)
   websWrite (wp, "<div class=\"label\">Group Key Renewal</div>\n");
   sprintf (var, "%s_wpa_gtk_rekey", prefix);
   websWrite (wp,
-	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=valid_range(this,0,99999,'rekey interval') value=\"%s\" /> seconds\n",
+	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,'rekey interval')\" value=\"%s\" /> seconds\n",
 	     prefix, nvram_safe_get (var));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
@@ -2254,23 +2254,23 @@ show_radius (webs_t wp, char *prefix)
   sprintf (var, "%s_radius_ipaddr", prefix);
   char *rad = nvram_safe_get (var);
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=valid_range(this,0,255,'IP') class=\"num\" value=\"%d\" />.",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\" value=\"%d\" />.",
 	     prefix, get_single_ip (rad, 0));
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=valid_range(this,0,255,'IP') class=\"num\" value=\"%d\" />.",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\" value=\"%d\" />.",
 	     prefix, get_single_ip (rad, 1));
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=valid_range(this,0,255,'IP') class=\"num\" value=\"%d\" />.",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\" value=\"%d\" />.",
 	     prefix, get_single_ip (rad, 2));
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=valid_range(this,1,254,'IP') class=\"num\" value=\"%d\" />\n",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\" value=\"%d\" />\n",
 	     prefix, get_single_ip (rad, 3));
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">RADIUS Port</div>\n");
   sprintf (var, "%s_radius_port", prefix);
   websWrite (wp,
-	     "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=valid_range(this,1,65535,'Port') value=\"%s\" /></div>\n",
+	     "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"%s\" /></div>\n",
 	     prefix, nvram_safe_get (var));
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp, "<div class=\"label\">Shared Key</div>\n");
@@ -2302,7 +2302,7 @@ show_wparadius (webs_t wp, char *prefix)
   websWrite (wp, "<div class=\"label\">Key Renewal Timeout</div>\n");
   sprintf (var, "%s_wpa_gtk_rekey", prefix);
   websWrite (wp,
-	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=valid_range(this,0,99999,'rekey interval') value=\"%s\" />",
+	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,'rekey interval')\" value=\"%s\" />",
 	     prefix, nvram_safe_get (var));
   websWrite (wp, "seconds</div>\n");
   websWrite (wp, "</div>\n");
@@ -3256,14 +3256,14 @@ ej_get_wdsp2p (int eid, webs_t wp, int argc, char_t ** argv)
 	<div class=\"setting\">\n\
 	          <input type=\"hidden\" name=\"wl_wds%d_ipaddr\" value=\"4\">\n\
 	          <div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n\
-	          <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr0\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr1\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr2\" value=\"%d\" onblur=valid_range(this,0,255,\"IP\") class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr3\" value=\"%d\" onblur=valid_range(this,1,254,\"IP\") class=\"num\">\n\
+	          <input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr0\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr1\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr2\" value=\"%d\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\">\.<input size=\"3\" maxlength=\"3\" name=\"wl_wds%d_ipaddr3\" value=\"%d\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\">\n\
        </div>\n", index, index, ip[0], index, ip[1], index, ip[2], index, ip[3], index);
 
       websWrite (wp, "\
        	  <div class=\"setting\">\n\
        	  <div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n\
 	  <input type=\"hidden\" name=\"wl_wds%d_netmask\" value=\"4\">\n\
-	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.<input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.<input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\.<input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=valid_range(this,0,255,\"IP\") class=num>\n\
+	  <input name=\"wl_wds%d_netmask0\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\.<input name=\"wl_wds%d_netmask1\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\.<input name=\"wl_wds%d_netmask2\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\.<input name=\"wl_wds%d_netmask3\" value=\"%d\" size=\"3\" maxlength=\"3\" onblur=\"valid_range(this,0,255,'IP')\" class=num>\n\
           </div>\n", index, index, netmask[0], index, netmask[1], index, netmask[2], index, netmask[3]);
 
     }
