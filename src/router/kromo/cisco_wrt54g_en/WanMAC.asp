@@ -22,7 +22,7 @@ function CloneMAC(F) {
 }
 
 function SelMac(val) {
-	show_layer_ext('idmac', val == 1);
+	show_layer_ext(document.mac.mac_clone_enable,'idmac', val == "1");
 	setElementsActive("def_hwaddr", "def_whwaddr_5", val == "1");
 }
 

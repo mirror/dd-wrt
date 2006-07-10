@@ -14,8 +14,8 @@ function to_submit(F) {
 }
 
 addEvent(window, "load", function() {
-	show_layer_ext('idlog1', <% nvram_get("log_enable"); %> == 1);
-	show_layer_ext('idlog2', <% nvram_get("log_enable"); %> == 1);
+	show_layer_ext(document.log.log_enable, 'idlog1', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
+	show_layer_ext(document.log.log_enable, 'idlog2', <% nvram_else_match("log_enable", "1", "1", "0"); %> == 1);
 });
 		</script>
 	</head>
@@ -81,8 +81,8 @@ addEvent(window, "load", function() {
 								<legend><% tran("log.legend"); %></legend>
 								<div class="setting">
 									<div class="label">Log</div>
-									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="show_layer_ext('idlog1', true);show_layer_ext('idlog2', true)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="show_layer_ext('idlog1', false);show_layer_ext('idlog2', false)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" value="1" name="log_enable" <% nvram_checked("log_enable", "1"); %> onclick="show_layer_ext(this, 'idlog1', true);show_layer_ext(this,'idlog2', true)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" value="0" name="log_enable" <% nvram_checked("log_enable", "0"); %> onclick="show_layer_ext(this, 'idlog1', false);show_layer_ext(this,'idlog2', false)" /><% tran("share.disable"); %>
 								</div>
 							<div id="idlog1">
 								<div class="setting">
