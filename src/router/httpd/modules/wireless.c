@@ -2043,14 +2043,13 @@ convert_wl_gmode (char *value)
 	}
 }else*/
   {
-#ifdef HAVE_MSSID
-    if (nvram_match ("wl0_net_mode", value))
-#else
+  fprintf(stderr,"gmode = %s\n",value);
+#ifndef HAVE_MSSID
     if (nvram_match ("wl_net_mode", value))
-#endif
       {
 	return;
       }
+#endif
     if (!strcmp (value, "disabled"))
       {
 	nvram_set ("wl_net_mode", value);
