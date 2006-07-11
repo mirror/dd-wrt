@@ -587,7 +587,7 @@ static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context
 		return RC_INVALID_POINTER;
 	}
 
-	if (sizeof(&p_self->external_command) < strlen(p_cmd->argv[current_nr]))
+	if (sizeof(p_self->external_command) < strlen(p_cmd->argv[current_nr]))
 	{
 		return  RC_DYNDNS_BUFFER_TOO_SMALL;
 	}
