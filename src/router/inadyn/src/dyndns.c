@@ -30,6 +30,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define MODULE_TAG      "INADYN: "  
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include "dyndns.h"
 #include "debug_if.h"
 #include "base64.h"
@@ -263,6 +264,7 @@ static RC_TYPE do_parse_my_ip_address(DYN_DNS_CLIENT *p_self)
 {
 	int ip1 = 0, ip2 = 0, ip3 = 0, ip4 = 0;
 	int count;
+	FILE *fp;
 	char *p_ip;
 	char *p_current_str = p_self->http_tr.p_rsp;
 	BOOL found;
@@ -308,6 +310,14 @@ static RC_TYPE do_parse_my_ip_address(DYN_DNS_CLIENT *p_self)
         sprintf(new_ip_str, DYNDNS_IP_ADDR_FORMAT, ip1, ip2, ip3, ip4);
         p_self->info.my_ip_has_changed = (strcmp(new_ip_str, p_self->info.my_ip_address.name) != 0);
 		strcpy(p_self->info.my_ip_address.name, new_ip_str);
+	if (p_self->info.my_ip_has_changed == 1)
+	{
+		if ((fp=fopen("/tmp/ddns/inadyn_ip.cache", "w")))
+		{
+			fprintf(fp,"%s", new_ip_str);
+			fclose(fp);
+		}
+	}
 		return RC_OK;
 	}
 	else
@@ -400,6 +410,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 {
 	int i;
 	RC_TYPE rc = RC_OK;
+	FILE *fp;
 	
 	do 
 	{			
@@ -451,7 +462,15 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 							p_self->alias_info.names[i].name,
 							p_self->info.my_ip_address.name));                        
 						p_self->times_since_last_update = 0;
-							
+						p_self->forced_update_period_sec = p_self->forced_update_period_sec_orig;
+
+						if ((fp=fopen("/tmp/ddns/inadyn_time.cache", "w")))
+						{
+							fprintf(fp,"%ld", time (NULL));
+							fclose(fp);
+						}
+						if (strlen(p_self->external_command) > 0)
+							exec_cmd(p_self);
 					}
 					else
 					{
@@ -504,7 +523,7 @@ RC_TYPE get_default_config_data(DYN_DNS_CLIENT *p_self)
 		/*forced update period*/
 		p_self->forced_update_period_sec = DYNDNS_MY_FORCED_UPDATE_PERIOD_S;
 		/*update period*/
-		p_self->sleep_sec = DYNDNS_DEFAULT_SLEEP;					
+		p_self->sleep_sec = DYNDNS_DEFAULT_SLEEP;
 	}
 	while(0);
 	
@@ -565,6 +584,23 @@ void dyn_dns_print_hello(void*p)
 	(void) p;
 
     DBG_PRINTF((LOG_INFO, MODULE_TAG "Started 'INADYN version %s' - dynamic DNS updater.\n", DYNDNS_VERSION_STRING));
+}
+
+void exec_cmd(DYN_DNS_CLIENT *p_self)
+{
+	int kid;
+	switch((kid=vfork()))
+	{
+		case 0:
+		/* child */
+			execl("/bin/sh", "sh", "-c", p_self->external_command, (char *) 0);
+			exit(1);
+			
+		break;
+		default:
+		/* parent */
+		break;
+	}	
 }
 /*
 	 basic resource allocations for the dyn_dns object
@@ -867,6 +903,7 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
 	BOOL quit_flag = FALSE;
 	BOOL init_flag;
 	BOOL os_handler_installed = FALSE;
+	FILE *fp;
 
 	if (p_dyndns == NULL)
 	{
@@ -931,6 +968,13 @@ int dyn_dns_main(DYN_DNS_CLIENT *p_dyndns, int argc, char* argv[])
     }
 
     dyn_dns_print_hello(NULL);
+
+    if ((fp=fopen("/tmp/ddns/inadyn_ip.cache", "r")))
+    {
+	fgets (p_dyndns->info.my_ip_address.name, sizeof (p_dyndns->info.my_ip_address.name),fp);
+	fclose(fp);
+	DBG_PRINTF((LOG_INFO, MODULE_TAG "IP read from cache file is '%s'. No update required.\n", p_dyndns->info.my_ip_address.name));
+    }
 
 	/* the real work here */
 	do
