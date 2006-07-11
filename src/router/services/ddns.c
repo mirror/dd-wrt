@@ -153,7 +153,7 @@ start_ddns (void)
       fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
       fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
       fprintf (fp, " --log_file %s", "/tmp/ddns/ddns.log");	//log to file
-//      fprintf (fp, " --exec %s", "ddns_success");	//run after update
+      fprintf (fp, " --exec %s", "ddns_success");	//run after update
       if (nvram_invmatch ("ddns_conf", "")
 	  && nvram_match ("ddns_enable", "5"))
 	{
