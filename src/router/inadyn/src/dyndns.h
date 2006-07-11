@@ -239,6 +239,7 @@ typedef struct DYN_DNS_CLIENT
 	DYN_DNS_CMD cmd;
 	int sleep_sec; /* time between 2 updates*/
 	int forced_update_period_sec; 
+	int forced_update_period_sec_orig; 
 	int times_since_last_update;
 	int forced_update_times; /* the same forced update period counted in sleep periods*/
 	int cmd_check_period; /*time to wait for a command*/
@@ -254,6 +255,7 @@ typedef struct DYN_DNS_CLIENT
 	char *p_work_buffer; /* for HTTP responses*/
 	int work_buffer_size;
 	char *p_req_buffer; /* for HTTP requests*/
+	char external_command[1024];
 	int req_buffer_size;
 
 
@@ -299,6 +301,8 @@ RC_TYPE get_config_data(DYN_DNS_CLIENT *p_self, int argc, char** argv);
 	printout of version
 */
 void dyn_dns_print_hello(void*p);
+
+void exec_cmd(DYN_DNS_CLIENT *p_self);
 
 /*
 	 basic resource allocations for the dyn_dns object

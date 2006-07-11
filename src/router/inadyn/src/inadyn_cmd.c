@@ -34,6 +34,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <time.h>
 #include "dyndns.h"
 #include "debug_if.h"
 #include "base64.h"
@@ -62,6 +63,7 @@ static RC_TYPE set_iterations_handler(CMD_DATA *p_cmd, int current_nr, void *p_c
 static RC_TYPE set_syslog_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE set_change_persona_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 static RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
+static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context);
 
 static CMD_DESCRIPTION_TYPE cmd_options_table[] = 
 {
@@ -121,6 +123,7 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
 	{"--syslog",	0,	{set_syslog_handler, NULL},	"force logging to syslog . (e.g. /var/log/messages). Works on **NIX systems only."},
 	{"--change_persona", 1, {set_change_persona_handler, NULL}, "after init switch to a new user/group. Parameters: <uid[:gid]> to change to. Works on **NIX systems only."},
 	{"--version", 0, {print_version_handler, NULL}, "print the version number\n"},
+	{"--exec", 1, {get_exec_handler, NULL}, "external command to exec after an IP update."},
 	{NULL,		0,	{0, NULL},	NULL }
 };
 
@@ -487,14 +490,29 @@ static RC_TYPE get_update_period_sec_handler(CMD_DATA *p_cmd, int current_nr, vo
 static RC_TYPE get_forced_update_period_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 {
 	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	FILE *fp;
+	char *cache_time_str;
+	time_t now, cache_time;
+	int dif;
 	if (p_self == NULL)
 	{
 		return RC_INVALID_POINTER;
 	}
 
-	if (sscanf(p_cmd->argv[current_nr], "%d", &p_self->forced_update_period_sec) != 1)
+	if (sscanf(p_cmd->argv[current_nr], "%d", &p_self->forced_update_period_sec) != 1
+	    || sscanf(p_cmd->argv[current_nr], "%d", &p_self->forced_update_period_sec_orig) != 1)
 	{
 		return RC_DYNDNS_INVALID_OPTION;
+	}
+
+	if ((fp=fopen("/tmp/ddns/inadyn_time.cache", "r")))
+	{
+		fgets (cache_time_str, sizeof (cache_time_str), fp);
+		fclose(fp);
+		cache_time = (time_t)cache_time_str;
+		now = time (NULL);
+		dif = difftime (now,cache_time);
+		p_self->forced_update_period_sec += dif;
 	}
 	
 	return RC_OK;
@@ -560,6 +578,23 @@ RC_TYPE print_version_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
 	p_self->abort = TRUE;
 	return RC_OK;
 }
+
+static RC_TYPE get_exec_handler(CMD_DATA *p_cmd, int current_nr, void *p_context)
+{
+	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
+	if (p_self == NULL)
+	{
+		return RC_INVALID_POINTER;
+	}
+
+	if (sizeof(&p_self->external_command) < strlen(p_cmd->argv[current_nr]))
+	{
+		return  RC_DYNDNS_BUFFER_TOO_SMALL;
+	}
+	strcpy(p_self->external_command, p_cmd->argv[current_nr]);
+	return RC_OK;
+}
+
 /** 
     Searches the DYNDNS system by the argument.
     Input is like: system@server.name
