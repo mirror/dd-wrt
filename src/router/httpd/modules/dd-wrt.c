@@ -1875,10 +1875,12 @@ save_prefix (webs_t wp, char *prefix)
 	}
 #endif
     }
+  if (!strcmp (prefix, "wl0"))
+  {
   sprintf (n, "%s_net_mode", prefix);
   copytonv (wp, n);
   convert_wl_gmode(nvram_safe_get(n));
-  
+  }
   sprintf (n, "%s_channel", prefix);
   if (!strcmp (prefix, "wl0"))
     {
