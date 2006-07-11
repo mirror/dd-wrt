@@ -417,7 +417,7 @@ struct nvram_tuple router_defaults[] = {
 #ifdef HAVE_DDLAN
   {"wl_distance", "2000", 0},	/* ack timing, distance in meters */
 #else
-  {"wl_distance", "20000", 0},	/* ack timing, distance in meters */
+  {"wl_distance", "2000", 0},	/* ack timing, distance in meters */
 #endif
   {"wl_ifname", "", 0},		/* Interface name */
   {"wl_hwaddr", "", 0},		/* MAC address */
