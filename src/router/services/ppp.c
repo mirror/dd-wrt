@@ -203,6 +203,7 @@ ipdown_main (int argc, char **argv)
   return 1;
 }
 
+/*
 int
 pppevent_main (int argc, char **argv)
 {
@@ -254,7 +255,7 @@ set_pppoepid_to_nv_main (int argc, char **argv)	// tallest 1219
   dprintf ("done.( IFNAME = %s DEVICE = %s )\n", getenv ("IFNAME"),
 	   getenv ("DEVICE"));
   return 0;
-}
+}*/
 
 //by tallest 0407
 int
