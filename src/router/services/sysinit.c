@@ -1160,7 +1160,6 @@ start_nvram (void)
   nvram_set ("wl_active_add_mac", "0");
   nvram_set ("ddns_change", "");
   nvram_set ("action_service", "");
-  nvram_set ("ddns_interval", "60");
   nvram_set ("wan_get_domain", "");
 
 
