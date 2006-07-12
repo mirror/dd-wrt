@@ -1556,6 +1556,10 @@ show_virtualssid (webs_t wp, char *prefix)
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
     return 0;
+#ifndef HAVE_MADWIFI
+  if (!nvram_match("wl0_mode","ap") && !nvram_match("wl0_mode","apsta"))
+    return 0;
+#endif
   int count = 1;
   websWrite (wp, "<h2>Virtual Interfaces</h2>\n");
   websWrite (wp, "<fieldset>\n");
@@ -1663,6 +1667,7 @@ show_virtualssid (webs_t wp, char *prefix)
 #else
   if (count < WL_MAXBSSCFG)
 #endif
+
     websWrite (wp,
 	       "<input type=\"button\" value=\"Add\" onClick=vifs_add_submit(this.form,'%s') />\n",
 	       prefix);
