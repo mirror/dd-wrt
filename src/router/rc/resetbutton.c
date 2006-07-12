@@ -147,7 +147,8 @@ period_check (int sig)
   int gpio = 0;
   int state = 0;
 
-  gpio = 1 << (brand & 0x000f);  //calculate gpio pin no.
+  if ((brand & 0x000f) != 0x000f)
+    gpio = 1 << (brand & 0x000f);  //calculate gpio pin no.
 
   if ((brand & 0x0010) == 0)  //check reset button polarity: 0 normal, 1 inversed
 	state = (val & gpio);
@@ -201,7 +202,7 @@ period_check (int sig)
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-		if ((brand & 0x000f) > 0)
+		if ((brand & 0x000f) != 0x000f)
 		
 /*      if ((brand == ROUTER_WRT54G) || 
 	        (brand == ROUTER_WRTSL54GS) || 
@@ -214,14 +215,17 @@ period_check (int sig)
 */
 		{
 		  printf ("resetbutton: factory default.\n");
-		  if (brand == ROUTER_BUFFALO_WBR54G)
-		    {
-		      eval ("gpio", "disable", "7");	//turn on DIAG led on WBR-G54/WLA-G54
-		    }
-		  if (brand == ROUTER_BUFFALO_WBR2G54S)
-		    {
-		      eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
-		    }
+
+		  switch (brand)
+		  {
+		  	case ROUTER_BUFFALO_WBR54G:
+		  		eval ("gpio", "disable", "7"); 	//turn on DIAG led on WBR-G54/WLA-G54
+		  		break;
+		  	case ROUTER_BUFFALO_WBR2G54S:
+		  		eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
+		  		break;
+	  	  }
+		  	
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  nvram_set ("sv_restore_defaults", "1");
@@ -340,7 +344,7 @@ resetbutton_main (int argc, char *argv[])
 
   brand = getRouterBrand ();
 
-		if ((brand & 0x000f) == 0)
+		if ((brand & 0x000f) == 0x000f)
 		
 /*  	if ((brand == ROUTER_SIEMENS) || 
   		(brand == ROUTER_BELKIN) || 
