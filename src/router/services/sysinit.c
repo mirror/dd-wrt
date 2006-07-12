@@ -874,6 +874,7 @@ start_sysinit (void)
       nvram_set ("wan_ifnames", "vlan1");
 	  strcpy (wanifname, "vlan1");
       nvram_set ("vlan1ports", "0 5");
+      eval ("gpio", "disable", "1");	//Asus WL-500gP power led on
     }
   if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
     {
