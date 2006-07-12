@@ -11,7 +11,7 @@
 
 X X X X X X X X   R R R P N N N N   = 0xXXXX
 ---------------   ----- - -------
- router num         |   |  gpio num (0000 disable resetbutton)
+ router num         |   |  gpio num (1111 = f = disable resetbutton)
                     |   |
                     |   |--- resetbutton polarity (0: normal, 1 inversed)
                     |
@@ -38,7 +38,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLA2G54L 0x0607	//should work like a WBR2
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
-#define ROUTER_BUFFALO_WLA2G54C 0x0700
+#define ROUTER_BUFFALO_WLA2G54C 0x070f
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
@@ -48,33 +48,33 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WZRRSG54 0x0904
 
 // Motorola WR850G v1 (4702 cpu)
-#define ROUTER_MOTOROLA_V1 0x0a00
+#define ROUTER_MOTOROLA_V1 0x0a0f
 
 // Motorola WR850G v2
-#define ROUTER_MOTOROLA 0x0b00
+#define ROUTER_MOTOROLA 0x0b0f
 
 // RT210W generic and branded (fccid: Askey H8N-RT210W), (4702 cpu)
 // Siemens se505 v1, Belkin F5D7230-4 v1000
-#define ROUTER_RT210W 0x0c00 
+#define ROUTER_RT210W 0x0c0f 
 
 // RT480W generic and branded (fccid: Askey H8N-RT480W), (4712 cpu + ADM6996)
 // Siemens se505 v2
-#define ROUTER_SIEMENS 0x0d00
+#define ROUTER_SIEMENS 0x0d0f
 
 // Microtik RouterBOARD 500
-#define ROUTER_BOARD_500 0x0e00
+#define ROUTER_BOARD_500 0x0e0f
 
 // ??? 
-#define ROUTER_BELKIN 0x0f00
+#define ROUTER_BELKIN 0x0f0f
 
 // Belkin F5D7230-4 v1444 (4712 cpu, 2MB flash) (fccid: Belkin K7S-F5D72304)
-#define ROUTER_BELKIN_F5D7230 0x1000
+#define ROUTER_BELKIN_F5D7230 0x100f
 
 // Microsoft MN-700 (4702 cpu), (fccid: Microsoft C3KMN700)
-#define ROUTER_MICROSOFT_MN700 0x1100
+#define ROUTER_MICROSOFT_MN700 0x110f
 
 // Buffalo WLA-G54C (4702 cpu)
-#define ROUTER_BUFFALO_WLAG54C 0x1200
+#define ROUTER_BUFFALO_WLAG54C 0x120f
 
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
 #define ROUTER_ASUS_WL500G_PRE 0x1300
