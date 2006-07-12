@@ -392,7 +392,7 @@ main_loop (void)
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
-		if ((brand & 0x000f) > 0)
+		if ((brand & 0x000f) != 0x000f)
 /*	  
 	  	  if ((brand == ROUTER_WRT54G) ||
 	      (brand == ROUTER_WRT54G1X) ||
@@ -431,7 +431,7 @@ main_loop (void)
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
-		if ((brand & 0x000f) > 0)
+		if ((brand & 0x000f) != 0x000f)
 /*
 	  if ((brand == ROUTER_WRT54G) ||
 	      (brand == ROUTER_WRT54G1X) ||
@@ -676,7 +676,7 @@ main (int argc, char **argv)
 #ifndef HAVE_RB500
 
     int brand = getRouterBrand ();
-	if ((brand & 0x000f) > 0)
+	if ((brand & 0x000f) != 0x000f)
 	  {
 	  return resetbutton_main (argc, argv);
 	  }
