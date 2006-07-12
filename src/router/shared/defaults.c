@@ -526,16 +526,14 @@ struct nvram_tuple router_defaults[] = {
   {"wl0_mode", "sta", 0},
 #else
 
-
 #ifdef HAVE_MSSID
-#ifdef HAVE_FON
+    #ifdef HAVE_FON
   {"wl_mode", "apsta", 0},
   {"wl0_mode", "apsta", 0},
   {"wl_vifs", "wl0.1", 0},
   {"wl0_vifs", "wl0.1", 0},
   {"wl0.1_ssid", "FON", 0},
-#endif
-#else
+    #else
 #ifndef HAVE_MADWIFI
   {"wl_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
   {"wl0_mode", "ap", 0},		/* AP mode (ap|sta|wds) */
@@ -561,6 +559,8 @@ struct nvram_tuple router_defaults[] = {
   {"ath4_xr", "0", 0},	/* AP mode (ap|sta|wds) */
   {"ath5_xr", "0", 0},	/* AP mode (ap|sta|wds) */
 #endif
+
+    #endif
 #endif
 #endif
   {"wl_lazywds", "0", 0},	/* Enable "lazy" WDS mode (0|1) */
