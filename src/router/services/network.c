@@ -438,6 +438,12 @@ wlconf_up (char *name)
     }
 #endif
   ret = eval ("wlconf", name, "up");
+  eval("wl","radio","off");
+  eval("wl","atten","0","0","60");
+  eval("wl","lrl","16");
+  eval("wl","srl","16");
+  eval("wl","interference","0");
+  eval("wl","radio","on");
   gmode = atoi (nvram_safe_get ("wl0_gmode"));
 
   /* Get current phy type */
@@ -850,7 +856,11 @@ start_lan (void)
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
 		eval ("wl", "ap", "0");
+#ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
+#else
+		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+#endif
 #endif
 //              eval ("brctl", "addif", lan_ifname, name);
 #ifndef HAVE_FON
@@ -873,7 +883,11 @@ start_lan (void)
 		ifconfig (name, IFUP | IFF_ALLMULTI, NULL, NULL);
 #ifndef HAVE_MADWIFI
 		eval ("wl", "ap", "0");
+#ifndef HAVE_MSSID
 		eval ("wl", "ssid", nvram_get ("wl_ssid"));
+#else
+		eval ("wl", "ssid", nvram_get ("wl0_ssid"));
+#endif
 #endif
 	      }
 
