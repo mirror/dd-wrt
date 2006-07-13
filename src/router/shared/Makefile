@@ -22,10 +22,12 @@ CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
 else
 CFLAGS	= -I. -I../httpd -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
 endif
+
 #CFLAGS	+= -g -DDEBUG
-CFLAGS	+= -s $(COPTS) 
+CFLAGS	+= -s
 LDFLAGS += -L.
-OBJS := nvparse.o shutils.o wl.o wl_linux.o linux_timer.o defaults.o utils.o nvports.o
+OBJS := nvparse.o shutils.o wl.o wl_linux.o linux_timer.o utils.o nvports.o 
+#defaults.o
 
 ifeq ($(CONFIG_DROPBEAR_SSHD),y)
   CFLAGS += -DHAVE_DROPBEAR -DHAVE_SSHD
@@ -197,12 +199,16 @@ ifeq ($(CONFIG_MATRIXSSL),y)
 #LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixssl
 CFLAGS += -DHAVE_MATRIXSSL
 endif
-
+HFLAGS := $(CFLAGS)
+CFLAGS += $(COPTS)
 all: libshared.so libshared.a
+#	gcc -o defaults $(HFLAGS) defaults.c
+#	./defaults
 
 install: all
 	install -d $(INSTALLDIR)/usr/lib
 	install -m 755 libshared.so $(INSTALLDIR)/usr/lib
+#	install defaults.bin $(INSTALLDIR)/etc
 	$(STRIP) $(INSTALLDIR)/usr/lib/libshared.so
 
 clean:

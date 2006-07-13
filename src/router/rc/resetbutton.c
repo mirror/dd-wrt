@@ -266,6 +266,10 @@ period_check (int sig)
     } 
     else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRTSL54GS)
     {
+  runStartup ("/etc/config", ".sesbutton");
+  runStartup ("/jffs/etc/config", ".sesbutton");	//if available
+  runStartup ("/mmc/etc/config", ".sesbutton");	//if available
+  runStartup ("/tmp/etc/config", ".sesbutton");	//if available
       if (ses_mode == 1)
 	{
 	  //enable orange led
