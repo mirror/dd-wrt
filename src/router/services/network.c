@@ -1725,7 +1725,11 @@ void
 start_wan_service (void)
 {
   //stop_ntp();
+  stop_process_monitor ();
   stop_ddns ();
+  cprintf ("start process monitor\n");
+  start_process_monitor ();
+  cprintf ("start ddns\n");
   //start_ntp();
   start_ddns ();
 }
@@ -1851,7 +1855,7 @@ start_wan_done (char *wan_ifname)
     {
       start_wan_service ();
     }
-  stop_process_monitor ();
+
 #ifdef HAVE_BIRD
   stop_zebra ();
 #endif
@@ -1860,8 +1864,6 @@ start_wan_done (char *wan_ifname)
 #endif
   stop_cron ();
   stop_wshaper ();
-  cprintf ("start process monitor\n");
-  start_process_monitor ();
   cprintf ("start zebra\n");
 #ifdef HAVE_BIRD
   start_zebra ();
