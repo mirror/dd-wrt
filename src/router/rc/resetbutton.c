@@ -33,6 +33,7 @@
 #include <utils.h>
 #include <rc.h>
 #include <stdarg.h>
+#include <dirent.h>
 
 // #define BCM47XX_SOFTWARE_RESET  0x40	/* GPIO 6 */
 #define BCM47XX_SW_PUSH         0x10	/* GPIO 4 */
@@ -76,6 +77,45 @@ alarmtimer (unsigned long sec, unsigned long usec)
 
   itv.it_interval = itv.it_value;
   setitimer (ITIMER_REAL, &itv, NULL);
+}
+int
+endswith (char *str, char *cmp)
+{
+  int cmp_len, str_len, i;
+  cmp_len = strlen (cmp);
+  str_len = strlen (str);
+  if (cmp_len > str_len)
+    return (0);
+  for (i = 0; i < cmp_len; i++)
+    {
+      if (str[(str_len - 1) - i] != cmp[(cmp_len - 1) - i])
+	return (0);
+    }
+  return (1);
+}
+
+void
+runStartup (char *folder, char *extension)
+{
+  struct dirent *entry;
+  DIR *directory;
+  unsigned char *buf;
+  buf = malloc (1024);
+  directory = opendir (folder);
+  if (directory == NULL)
+    return;
+//list all files in this directory 
+  while ((entry = readdir (directory)) != NULL)
+    {
+      if (endswith (entry->d_name, extension))
+	{
+	  sprintf (buf, "%s/%s&\n", folder, entry->d_name);
+	  //execute script     
+	  system (buf);
+	}
+    }
+  free (buf);
+  closedir (directory);
 }
 
 /*
