@@ -49,7 +49,7 @@
 
 /* possible files path */
 #define IPTABLES_SAVE_FILE		"/tmp/.ipt"
-#define CRONTAB					"/var/spool/cron/crontabs/root"
+#define CRONTAB					"/tmp/crontab"
 #define IPTABLES_RULE_STAT		"/tmp/.rule"
 
 /* Known port */

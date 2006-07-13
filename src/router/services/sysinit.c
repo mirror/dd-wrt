@@ -48,7 +48,6 @@
 #include <cyutils.h>
 #include <code_pattern.h>
 #include <cy_conf.h>
-#include <support.h>
 #include <mkfiles.h>
 #include <typedefs.h>
 #include <bcmnvram.h>
@@ -74,6 +73,7 @@ static void unset_nvram (void);
 int start_nvram (void);
 
 extern struct nvram_tuple router_defaults[];
+
 
 
 int
@@ -1242,8 +1242,10 @@ start_nvram (void)
 #endif
 
   /* added 2003-12-24 Sveasoft - force board to 14 channels by setting locale to Japan */
-  nvram_set ("wl0_country_code", "JP");
-  nvram_set ("wl0_country", "Japan");
+//  nvram_set ("wl0_country_code", "JP");
+//  nvram_set ("wl0_country", "Japan");
+  nvram_set ("wl0_country_code", "ALL");
+  nvram_set ("wl0_country", "<unknown>");
   if (check_hw_type () == BCM5352E_CHIP)
     {
       nvram_set ("opo", "0x0008");
@@ -1360,22 +1362,6 @@ unset_nvram (void)
 //        nvram_safe_unset("wl_ap_ip");
 #endif
 
-//#ifndef SYSLOG_SUPPORT
-  {
-    struct support_list *s;
-    char buf[80];
-    for (s = supports; s < &supports[SUPPORT_COUNT]; s++)
-      {
-	snprintf (buf, sizeof (buf), "LOG_%s", s->name);
-	if (nvram_get (buf))
-	  {
-	    nvram_safe_unset (buf);
-	  }
-      }
-  }
-  nvram_safe_unset ("log_show_all");
-  nvram_safe_unset ("log_show_type");
-//#endif
 
 }
 
@@ -1536,7 +1522,8 @@ check_cfe_nv (void)
   switch (getRouterBrand ())
     {
     case ROUTER_ASUS:
-      //check_nv ("wl0_hwaddr", nvram_safe_get ("et0macaddr")); //fixing missing wireless mac
+       ret += check_nv ("wl0_ifname", "eth1");
+     //check_nv ("wl0_hwaddr", nvram_safe_get ("et0macaddr")); //fixing missing wireless mac
       //nvram_commit ();
       return 0;
       break;

@@ -17,6 +17,12 @@
 #include <bcmutils.h>
 #include <wlutils.h>
 #include <shutils.h>
+#include <bcmnvram.h>
+
+
+struct nvram_tuple router_defaults[] = {
+  {0, 0, 0}
+};
 
 
 char *

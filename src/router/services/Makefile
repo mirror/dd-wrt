@@ -15,7 +15,7 @@ endif
 CFLAGS  += -I$(TOP)/iptables/include -I$(TOP)/rc -I$(TOP)/iptables/include/libipq -I$(TOP)/libnet/include -DL_ENDIAN -DLIBNET_LIL_ENDIAN -DLIB1X_LIL_ENDIAN
 CFLAGS  += $(COPTS) 
 
-OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o sysinit.o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o
+OBJS = services.o openvpn.o network.o firewall.o mssid.o wshaper.o ddns.o gpio.o site_survey.o sysinit.o interface.o udhcpc.o ledcontrol.o mkfiles.o iptable.o defaults.o
 OBJS += libbridge_if.o
 OBJS += libbridge_init.o
 
