@@ -1204,8 +1204,11 @@ convert_wds (void)
 		  mac,
 		  nvram_safe_get ("wl_crypto"),
 		  nvram_safe_get ("security_mode"),
+#ifndef HAVE_MSSID
 		  nvram_safe_get ("wl_ssid"), nvram_safe_get ("wl_wpa_psk"));
-
+#else
+		  nvram_safe_get ("wl0_ssid"), nvram_safe_get ("wl_wpa_psk"));
+#endif
 	nvram_set (wl_wds, buf);
 	i++;
       }
@@ -1721,7 +1724,7 @@ start_cron (void)
 
   buf_to_file ("/tmp/cron.d/check_ps", "*/2 * * * * root /sbin/check_ps\n");
   cprintf ("starting cron\n");
-  ret = eval ("/usr/sbin/crond");
+  ret = eval ("/usr/sbin/cron");
 
 
   cprintf ("done\n");
@@ -1734,7 +1737,7 @@ stop_cron (void)
   int ret = 0;
 
   //ret = killps("cron","-9");
-  ret = eval ("killall", "-9", "crond");
+  ret = eval ("killall", "-9", "cron");
 
   cprintf ("done\n");
   return ret;

@@ -13,6 +13,8 @@
 #include <stdio.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <dlfcn.h>
+
 
 
 #include <broadcom.h>
@@ -20,7 +22,63 @@
 
 #define MIN_BUF_SIZE    4096
 
-extern struct nvram_tuple router_defaults[];
+#define SERVICE_MODULE "/usr/lib/services.so"
+#define cprintf(fmt, args...)
+
+/*
+#define cprintf(fmt, args...) do { \
+	FILE *fp = fopen("/dev/console", "w"); \
+	if (fp) { \
+		fprintf(fp, fmt, ## args); \
+		fclose(fp); \
+	} \
+} while (0)
+*/
+
+
+void *
+load_service (char *name)
+{
+  cprintf ("load service %s\n", name);
+  void *handle = dlopen (SERVICE_MODULE, RTLD_LAZY);
+  cprintf ("done()\n");
+  if (handle == NULL && name != NULL)
+    {
+      cprintf ("not found, try to load alternate\n");
+      char dl[64];
+      sprintf (dl, "/usr/lib/%s_service.so", name);
+      cprintf ("try to load %s\n", dl);
+      handle = dlopen (dl, RTLD_LAZY);
+      if (handle == NULL)
+	{
+	  fprintf (stderr, "cannot load %s\n", dl);
+	  return NULL;
+	}
+    }
+  cprintf ("found it, returning handle\n");
+  return handle;
+}
+
+
+void *fhandle;
+void *getPointer(char *name)
+{
+  fhandle = load_service (name);
+  if (fhandle == NULL)
+    {
+      return -1;
+    }
+  void *fptr;
+  fptr = (int (*)(int, char **)) dlsym (fhandle, name);
+return fptr;
+}
+void closePointer(void)
+{
+if (fhandle)
+ dlclose(fhandle);
+}
+
+
 static int restore_ret;
 
 
@@ -165,6 +223,13 @@ sr_config_cgi (char *path, webs_t wp)
 void
 nv_file_out (char *path, webs_t wp)
 {
+
+struct nvram_tuple *router_defaults = (struct nvram_tuple *)getPointer("router_defaults"); 
+if (router_defaults==NULL)
+    {
+    closePointer();
+    return;
+    }
   struct nvram_tuple *v;
   int backupcount = 0;
 #ifdef HAVE_NEWMEDIA
@@ -202,5 +267,6 @@ nv_file_out (char *path, webs_t wp)
 	wfputc (val[i], wp);
 #endif
     }
+closePointer();
   return;
 }

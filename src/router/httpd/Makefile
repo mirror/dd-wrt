@@ -20,9 +20,9 @@ endif
 
 CFLAGS	= $(COPTS)
 ifeq ($(CONFIG_MSSID),y)
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v24 -Wall -I$(SRCBASE)/ -Imodules
 else
-CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/
+CFLAGS	+= -I. -I$(TOP)/shared -I$(SRCBASE)/include.v23 -Wall -I$(SRCBASE)/ -Imodules
 endif
 
 ifeq ($(CONFIG_VFS),y)
@@ -30,7 +30,7 @@ CFLAGS += -I$(TOP)/vfs -DHAVE_VFS
 LDFLAGS += -L$(TOP)/vfs
 endif
 
-LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt
+LDFLAGS	+= -L$(TOP)/nvram -L$(INSTALLDIR)/nvram/usr/lib -lnvram -L$(TOP)/shared  -L$(INSTALLDIR)/shared/usr/lib -lshared -lcrypt -ldl
 
 REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
 REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
@@ -272,7 +272,7 @@ endif
 cert:
 	./gencert.sh
 
-httpd: cgi.o ej.o httpd.o broadcom.o \
+httpd: cgi.o ej.o httpd.o support.o broadcom.o \
        index.o status.o dhcp.o log.o filters.o forward.o dynamic_route.o static_route.o wireless.o ddns.o \
        find_pattern.o lib.o diag.o sysinfo.o wepkey.o md5c.o wl_test.o getservice.o dd-wrt.o nvramsr.o $(OBJS)
 	$(CC) -o $@ $^ $(LDFLAGS)

@@ -13,6 +13,7 @@
  * $Id: defaults.c,v 1.11 2005/11/30 11:53:42 seg Exp $
  */
 
+
 #include <epivers.h>
 #include <string.h>
 #include <bcmnvram.h>
@@ -115,6 +116,7 @@ struct nvram_tuple router_defaults[] = {
   {"lan_ifnames", "", 0},	/* Enslaved LAN interfaces */
   {"lan_hwnames", "", 0},	/* LAN driver names (e.g. et0) */
   {"lan_hwaddr", "", 0},	/* LAN interface MAC address */
+  {"wl0_ifname", "eth1", 0},	/* LAN interface MAC address */
 
   /* LAN TCP/IP parameters */
 #ifdef HAVE_POWERNOC_WOAP54G
@@ -637,7 +639,7 @@ struct nvram_tuple router_defaults[] = {
   {"wl_bcn", "100", 0},		/* Beacon interval */
   {"wl_plcphdr", "long", 0},	/* 802.11b PLCP preamble type */
 
-#ifndef HAVE_SSID
+#ifndef HAVE_MSSID
 #ifdef HAVE_GGEW
   {"wl_net_mode", "b-only", 0},	/* Wireless mode (mixed|g-only|b-only|disable) */
 #elif  HAVE_NEWMEDIA
@@ -1583,3 +1585,37 @@ struct nvram_tuple router_defaults[] = {
 #undef HAVE_POWERNOC_WORT54G
 #undef HAVE_POWERNOC
 #endif
+/*
+void main(int argc,char *argv[])
+{
+FILE *out;
+struct nvram_tuple *v;
+int backupcount = 0;
+char sign[7] = { "DD-WRT" };
+char *val;
+out=fopen("defaults.bin","wb");
+  for (v = router_defaults; v->name; v++)
+    {
+      backupcount++;
+    }
+  fwrite (sign, 6, 1, out);
+  putc (backupcount & 255, out);	//high byte
+  putc (backupcount >> 8, out);	//low byte
+  for (v = router_defaults; v->name; v++)
+    {
+      putc (strlen (v->name), out);
+      int i;
+      for (i = 0; i < strlen (v->name); i++)
+	putc (v->name[i], out);
+      char *val = v->value;
+      putc (strlen (val) & 255, out);
+      putc (strlen (val) >> 8, out);
+      for (i = 0; i < strlen (val); i++)
+	putc (val[i], out);
+    }
+fclose(out);
+
+
+}
+
+*/
