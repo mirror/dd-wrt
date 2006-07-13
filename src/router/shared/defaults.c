@@ -567,6 +567,8 @@ struct nvram_tuple router_defaults[] = {
   {"wl_wds", "", 0},		/* xx:xx:xx:xx:xx:xx ... */
   {"wl_wep", "disabled", 0},		/* Data encryption (off|wep|tkip|aes) */
 #ifdef HAVE_MSSID
+  {"wl_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
+  {"wl_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
   {"wl0_crypto", "off", 0},	/* Data encryption (off|wep|tkip|aes) */
   {"wl0_auth", "0", 0},		/* Shared key authentication optional (0) or required (1) */
   {"wl0_key", "1", 0},		/* Current WEP key */
