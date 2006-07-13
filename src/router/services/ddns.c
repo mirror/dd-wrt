@@ -176,12 +176,10 @@ start_ddns (void)
     }
 
   /* Restore cache data to file */
-  if (nvram_invmatch ("ddns_enable", ""))
-    {
-      nvram2file ("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
-      nvram2file ("ddns_time", "/tmp/ddns/inadyn_time.cache");
-    }
-
+  if (nvram_invmatch ("ddns_cache", ""))
+    nvram2file ("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
+  if (nvram_invmatch ("ddns_time", ""))
+    nvram2file ("ddns_time", "/tmp/ddns/inadyn_time.cache");
 
   ret = eval ("inadyn", "--input_file", "/tmp/ddns/inadyn.conf");
 
@@ -235,7 +233,6 @@ ddns_success_main (int argc, char *argv[])
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
   nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
   nvram_set ("ddns_conf_buf", nvram_safe_get ("ddns_conf"));
-  nvram_set ("ddns_change", "");
 
   nvram_commit ();
 
