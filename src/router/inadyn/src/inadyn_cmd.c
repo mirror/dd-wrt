@@ -510,8 +510,9 @@ static RC_TYPE get_forced_update_period_handler(CMD_DATA *p_cmd, int current_nr,
 		fgets (cache_time_str, sizeof (cache_time_str), fp);
 		fclose(fp);
 		cache_time = (time_t)cache_time_str;
-		now = time (NULL);
-		dif = difftime (now,cache_time);
+		now = time(NULL);
+		DBG_PRINTF((LOG_NOTICE,"I:" MODULE_TAG "The time now is '%ld'\n", now));
+		dif = difftime(now,cache_time);
 		p_self->forced_update_period_sec += dif;
 	}
 	
