@@ -175,6 +175,14 @@ start_ddns (void)
       return -1;
     }
 
+  /* Restore cache data to file */
+  if (nvram_invmatch ("ddns_enable", ""))
+    {
+      nvram2file ("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
+      nvram2file ("ddns_time", "/tmp/ddns/inadyn_time.cache");
+    }
+
+
   ret = eval ("inadyn", "--input_file", "/tmp/ddns/inadyn.conf");
 
   cprintf ("done\n");
@@ -188,7 +196,6 @@ stop_ddns (void)
   int ret;
 
   ret = eval ("killall", "inadyn");
-  unlink ("/tmp/ddns/ddns.log");
 
   cprintf ("done\n");
 
