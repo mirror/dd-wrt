@@ -72,7 +72,7 @@ static int check_pmon_nv (void);
 static void unset_nvram (void);
 int start_nvram (void);
 
-extern struct nvram_tuple router_defaults[];
+extern struct nvram_tuple srouter_defaults[];
 
 
 
@@ -371,7 +371,10 @@ start_restore_defaults (void)
     default:
 
       if (nvram_invmatch ("sv_restore_defaults", "0"))	// || nvram_invmatch("os_name", "linux"))
+        {
+	nvram_unset("sv_restore_defaults");
 	restore_defaults = 1;
+	}
       if (nvram_match ("product_name", "INSPECTION"))
 	{
 	  nvram_unset ("product_name");
@@ -404,7 +407,7 @@ start_restore_defaults (void)
       if (ds != NULL && strlen (ds) > 3)
 	{
 	  fprintf (stderr, "cleaning nvram variables\n");
-	  for (t = router_defaults; t->name; t++)
+	  for (t = srouter_defaults; t->name; t++)
 	    {
 	      nvram_unset (t->name);
 	    }
@@ -444,12 +447,12 @@ start_restore_defaults (void)
   if (strlen (rev) > 0)
     {
       int n = atoi (rev);
-      if (atoi (router_defaults[0].value) != n)
+      if (atoi (srouter_defaults[0].value) != n)
 	reset = 1;
     }
   if (reset)
     {
-      for (t = router_defaults; t->name; t++)
+      for (t = srouter_defaults; t->name; t++)
 	{
 	  for (u = linux_overrides; u && u->name; u++)
 	    {
@@ -467,7 +470,7 @@ start_restore_defaults (void)
   int nvcnt = 0;
 //  if (!nvram_match("default_init","1"))
   {
-    for (t = router_defaults; t->name; t++)
+    for (t = srouter_defaults; t->name; t++)
       {
 	if (restore_defaults || !nvram_get (t->name))
 	  {
