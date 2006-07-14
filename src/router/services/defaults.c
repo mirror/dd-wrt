@@ -34,7 +34,7 @@
 #define HAVE_POWERNOC 1
 #endif
 
-struct nvram_tuple router_defaults[] = {
+struct nvram_tuple srouter_defaults[] = {
  // {"default_init","1",0},
   {"nvram_ver","2",0},
 #ifdef HAVE_FON

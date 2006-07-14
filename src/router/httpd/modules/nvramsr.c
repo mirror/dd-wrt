@@ -224,7 +224,7 @@ void
 nv_file_out (char *path, webs_t wp)
 {
 
-struct nvram_tuple *router_defaults = (struct nvram_tuple *)getPointer("router_defaults"); 
+struct nvram_tuple *router_defaults = (struct nvram_tuple *)getPointer("srouter_defaults"); 
 if (router_defaults==NULL)
     {
     closePointer();
