@@ -304,6 +304,7 @@ void dyn_dns_print_hello(void*p);
 
 void exec_cmd(DYN_DNS_CLIENT *p_self);
 
+char *print_time(void);
 /*
 	 basic resource allocations for the dyn_dns object
 */

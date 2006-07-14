@@ -466,7 +466,7 @@ static RC_TYPE do_update_alias_table(DYN_DNS_CLIENT *p_self)
 
 						if ((fp=fopen("/tmp/ddns/inadyn_time.cache", "w")))
 						{
-							fprintf(fp,"%ld", time(NULL));
+							fprintf(fp,"%ld", time (NULL));
 							fclose(fp);
 						}
 						if (strlen(p_self->external_command) > 0)
