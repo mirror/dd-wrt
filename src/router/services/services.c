@@ -3268,7 +3268,7 @@ start_splashd (void)
   int ret = 0;
   FILE *fp;
 
-  if (nvram_invmatch ("NC_enable", "1"))
+  if (!nvram_match ("NC_enable", "1"))
     return 0;
 
   /* Irving - make sure our WAN link is up first.
