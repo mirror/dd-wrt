@@ -155,7 +155,7 @@ obj-$(CONFIG_DHCPFORWARD) += dhcpforwarder
 obj-$(CONFIG_PARPROUTED) += parprouted
 obj-$(CONFIG_HEARTBEAT) += bpalogin
 #obj-$(CONFIG_TFTPD) += tftpd
-#obj-$(CONFIG_CRON) += cron
+obj-$(CONFIG_CRON) += cron
 obj-$(CONFIG_PPTP) += pptp-client
 obj-$(CONFIG_PPPD) += pppd
 obj-$(CONFIG_ZEBRA) += zebra
@@ -192,6 +192,7 @@ obj-$(CONFIG_TELNET) += telnet
 obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
 obj-$(CONFIG_IPV6) += ipv6
 obj-$(CONFIG_CONNTRACK) += conntrack
+obj-$(CONFIG_MEDIASERVER) += mediaserver
 
 
 

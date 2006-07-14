@@ -3452,3 +3452,27 @@ start_force_to_dial (void)
 
   return ret;
 }
+#ifdef HAVE_MEDIASERVER
+int
+start_hotplug_usb (void)
+{
+//      char *lan_ifname = nvram_safe_get("lan_ifname");
+  char *interface = getenv("INTERFACE"); 
+  char *action = getenv("ACTION");
+  char *product = getenv("PRODUCT");
+  char *devpath = getenv("DEVPATH");
+  char *type = getenv("TYPE");
+  char *devfs = getenv("DEVFS");
+  char *device = getenv("DEVICE");
+cprintf("interface %s\n",interface!=NULL?interface:"");
+cprintf("action %s\n",action!=NULL?action:"");
+cprintf("product %s\n",product!=NULL?product:"");
+cprintf("devpath %s\n",devpath!=NULL?devpath:"");
+cprintf("type %s\n",type!=NULL?type:"");
+cprintf("devfs %s\n",devfs!=NULL?devfs:"");
+cprintf("device %s\n",device!=NULL?device:"");
+
+
+  return 0;
+}
+#endif

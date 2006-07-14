@@ -615,8 +615,13 @@ main (int argc, char **argv)
     {
       if (argc >= 2)
 	{
+	  cprintf("hotplug %s\n",argv[1]);
 	  if (!strcmp (argv[1], "net"))
 	    return start_service ("hotplug_net");
+#ifdef HAVE_MEDIASERVER
+	  if (!strcmp (argv[1], "usb"))
+	    return start_service ("hotplug_usb");
+#endif
 	}
       else
 	{
