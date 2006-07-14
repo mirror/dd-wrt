@@ -491,9 +491,9 @@ static RC_TYPE get_forced_update_period_handler(CMD_DATA *p_cmd, int current_nr,
 {
 	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
 	FILE *fp;
-	char *cache_time_str;
-	time_t now, cache_time;
+	char cache_time[1024];
 	int dif;
+
 	if (p_self == NULL)
 	{
 		return RC_INVALID_POINTER;
@@ -507,13 +507,10 @@ static RC_TYPE get_forced_update_period_handler(CMD_DATA *p_cmd, int current_nr,
 
 	if ((fp=fopen("/tmp/ddns/inadyn_time.cache", "r")))
 	{
-		fgets (cache_time_str, sizeof (cache_time_str), fp);
+		fgets (cache_time, sizeof (cache_time), fp);
 		fclose(fp);
-		cache_time = (time_t)cache_time_str;
-		now = time(NULL);
-		DBG_PRINTF((LOG_NOTICE,"I:" MODULE_TAG "The time now is '%ld'\n", now));
-		dif = difftime(now,cache_time);
-		p_self->forced_update_period_sec += dif;
+		dif = time(NULL) - atoi(cache_time);
+		p_self->forced_update_period_sec -= dif;
 	}
 	
 	return RC_OK;
