@@ -84,6 +84,32 @@ void set_dbg_dest(DBG_DEST dest)
 }
 
 #include <stdarg.h> 
+#include <time.h>
+
+char *print_time(void)
+{
+    time_t now;
+    struct tm *timeptr;
+    static const char wday_name[7][3] = {
+        "Sun", "Mon", "Tue", "Wed",
+        "Thu", "Fri", "Sat"
+    };
+    static const char mon_name[12][3] = {
+        "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+        "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+    };
+    static char result[26];
+
+    time(&now);
+    timeptr = localtime(&now);
+
+    sprintf(result, "%.3s %.3s%3d %.2d:%.2d:%.2d %d:",
+        wday_name[timeptr->tm_wday], mon_name[timeptr->tm_mon],
+        timeptr->tm_mday, timeptr->tm_hour, timeptr->tm_min,
+        timeptr->tm_sec, 1900 + timeptr->tm_year);
+
+    return result;
+}
 
 #define MAXSTRING 1024
 
@@ -100,12 +126,12 @@ void os_printf(int prio, char *fmt, ... )
 	#ifdef HAVE_OS_SYSLOG
     if (get_dbg_dest() == DBG_SYS_LOG)
     {
-        syslog(prio, "%s",message);
+        syslog(prio, "%s %s", print_time(), message);
     }
     else
 	#endif
     {
-        printf("%s",message); fflush(stdout);
+        printf("%s %s", print_time(), message); fflush(stdout);
     }
 
     return;
