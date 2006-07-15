@@ -1,0 +1,45 @@
+Notes on configuring dnsmasq as packaged for Debian.
+
+(1) To configure dnsmasq edit /etc/dnsmasq.conf. The file is well
+    commented; see also the dnsmasq.8 man page for explanation of
+    the options. The file /etc/default/dnsmasq also exists but it
+    shouldn't need to be touched in most cases. To set up DHCP
+    options you might need to refer to a copy of RFC 2132. This is 
+    available on Debian systems in the package doc-rfc-std as the file
+    /usr/share/doc/RFC/draft-standard/rfc2132.txt.gz .
+
+(2) If the Debian resolvconf package is installed then, regardless
+    of what interface configuration daemons are employed, the list of
+    nameservers to which dnsmasq should forward queries can be found
+    in /var/run/dnsmasq/resolv.conf; also, 127.0.0.1 is listed as the
+    first nameserver address in /etc/resolv.conf. This works using the
+    default configurations of resolvconf and dnsmasq.
+
+(3) In the absence of resolvconf, if you are using dhcpcd then
+    dnsmasq should read the list of nameservers from the automatically
+    generated file /etc/dhcpc/resolv.conf.  You should list 127.0.0.1
+    as the first nameserver address in /etc/resolv.conf.
+
+(4) In the absence of resolvconf, if you are using pppd then
+    dnsmasq should read the list of nameservers from the automatically
+    generated file /etc/ppp/resolv.conf.  You should list 127.0.0.1
+    as the first nameserver address in /etc/resolv.conf.
+
+(5) If you run multiple DNS servers on a single machine, each
+    listening on a different interface, then it is necessary from
+    version 2.3 on to use the bind-interfaces option by uncommenting
+    "bind-interfaces" in /etc/dnsmasq.conf. This option stops dnsmasq
+    from binding the wildcard address and allows servers listening on
+    port 53 on interfaces not in use by dnsmasq to work. 
+
+(6) From version 2.28, the ability to read lease-files from ISC dhcpd
+    is not included in the Debian binary package. This facility is
+    considered by upstream to be obsolete. The code still exists, and
+    can be enabled by editing src/config.h and building from
+    source. It is strongly suggested that you either use the
+    DHCP server built in to dnsmasq, or, if you have a very complex DHCP
+    configuration, the ISC server and BIND. For simple configurations, you
+    can move to the builtin server by removing  the dhcp-leasefile
+    configuration item, and adding a dhcp-range configuration. 
+
+

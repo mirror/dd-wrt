@@ -290,7 +290,7 @@ int dnsmasq_main (int argc, char **argv)
 #endif
 	  
 	  if (daemon->dhcp && 
-	      (i == fileno(daemon->lease_stream) || 
+	      ((daemon->lease_stream && i == fileno(daemon->lease_stream)) || 
 #ifndef HAVE_LINUX_NETWORK
 	       i == daemon->dhcp_raw_fd ||
 	       i == daemon->dhcp_icmp_fd ||
@@ -366,6 +366,13 @@ int dnsmasq_main (int argc, char **argv)
       if (if_tmp->name && !if_tmp->used)
 	syslog(LOG_WARNING, _("warning: interface %s does not currently exist"), if_tmp->name);
    
+  if (daemon->options & OPT_NO_RESOLV)
+    {
+      if (daemon->resolv_files && !daemon->resolv_files->is_default)
+	syslog(LOG_WARNING, _("warning: ignoring resolv-file flag because no-resolv is set"));
+      daemon->resolv_files = NULL;
+    } 
+
   if (daemon->dhcp)
     {
       struct dhcp_context *dhcp_tmp;

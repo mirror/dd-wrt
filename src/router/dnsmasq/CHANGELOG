@@ -1883,7 +1883,54 @@ version 2.32
 
 	    Fixed gcc-4.1 strict-alias compilation warning.
 
+version 2.33
+            Remove bash-specific shellcode from the Makefile.
+
+	    Fix breakage with some DHCP relay implementations which
+	    was introduced in 2.28. Believing the source port in
+	    DHCP requests and sending the reply there is sometimes a
+	    bad thing to do, so I've reverted to always sending to
+	    the relay on port 68. Thanks to Daniel Hamlin and Alex
+	    (alde) for bug reports on this.
+
+	    Moved the SuSe packaging files to contrib. I will no
+	    longer attempt to maintain this in the source tarball. It
+	    will be done externally, in the same way as packaging for
+	    other distros. Suse packages are available from 
+	    ftp://ftp.suse.com/pub/people/ug/
+	    
+	    Merged patch from Gentoo to honour $LDFLAGS environment.
+
+	    Warn if --resolv-file flags are ignored because of
+	    --no-resolv. Thanks to Martin F Krafft for spotting this
+	    one.
+
+            Add --leasefile-ro option. This is useful in conjunction
+	    with an external lease database.
+
+	    Provide extra information to lease-change script via its
+	    environment. If the host has a client-id, then
+	    DNSMASQ_CLIENT_ID will be set. Either the lease length (in
+	    DNSMASQ_LEASE_LENGTH) or lease expiry time (in
+	    DNSMASQ_LEASE_EXPIRES) will be set, depending on the
+	    HAVE_BROKEN_RTC compile-time option. This extra
+	    information should make it possible to maintain the lease
+	    database in external storage such as LDAP or a relational
+	    database. Note that while leasefile-ro is set, the script
+            will be called with "old"  events more often now, since 
+	    changes to the client-id and lease length
+	    (HAVE_BROKEN_RTC) or lease expiry time (otherwise) 
+	    are now flagged. 
+
+	    Add contrib/wrt/* which is an example implementation of an
+	    external persistent lease database for *WRT distros with 
+	    the nvram command.
 
 
+	    
+
+
+
+	    
   
 

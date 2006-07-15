@@ -1,0 +1,84 @@
+#!/usr/bin/make -f
+# debian/rules file - for dnsmasq.
+# Copyright 2001 by Simon Kelley
+# Based on the sample in the debian hello package which carries the following:
+# Copyright 1994,1995 by Ian Jackson.
+# I hereby give you perpetual unlimited permission to copy,
+# modify and relicense this file, provided that you do not remove
+# my name from the file itself.  (I assert my moral right of
+# paternity under the Copyright, Designs and Patents Act 1988.)
+# This file may have to be extensively modified
+
+# Pay no attention to the man behind the curtain......
+DBUS ?= -DHAVE_DBUS
+
+package=dnsmasq
+
+clean:
+	$(checkdir)
+	rm -rf debian/tmp debian/*~ debian/files debian/substvars
+	make clean
+
+binary-arch:	checkroot 
+	$(checkdir)
+	rm -rf debian/tmp
+	install -d debian/tmp/DEBIAN\
+	        -d debian/tmp/usr/share/doc/$(package)\
+	        -d debian/tmp/etc/init.d\
+	        -d debian/tmp/etc/resolvconf/update.d\
+	        -d debian/tmp/etc/default\
+		-d debian/tmp/etc/dbus-1/system.d\
+	        -d debian/tmp/var/run\
+	        -d debian/tmp/var/lib/misc
+	install -m 644 debian/conffiles debian/tmp/DEBIAN
+	install -m 755 debian/postinst debian/postrm debian/prerm debian/tmp/DEBIAN
+	install -m 755 debian/init debian/tmp/etc/init.d/dnsmasq
+	install -m 755 debian/resolvconf debian/tmp/etc/resolvconf/update.d/dnsmasq
+	install -m 644 debian/default debian/tmp/etc/default/dnsmasq
+	install -m 644 dnsmasq.conf.example debian/tmp/etc/dnsmasq.conf
+	install -m 644 dbus/dnsmasq.conf debian/tmp/etc/dbus-1/system.d/dnsmasq.conf
+	make install-i18n PREFIX=/usr DESTDIR=`pwd`/debian/tmp COPTS=$(DBUS)
+	cp doc.html debian/tmp/usr/share/doc/$(package)/.
+	cp setup.html debian/tmp/usr/share/doc/$(package)/.
+	cp FAQ debian/tmp/usr/share/doc/$(package)/.
+	gzip -9 debian/tmp/usr/share/doc/$(package)/FAQ
+	cp UPGRADING_to_2.0 debian/tmp/usr/share/doc/$(package)/.
+	gzip -9 debian/tmp/usr/share/doc/$(package)/UPGRADING_to_2.0
+	cp CHANGELOG debian/tmp/usr/share/doc/$(package)/changelog
+	gzip -9 debian/tmp/usr/share/doc/$(package)/changelog
+	cp dbus/DBus-interface debian/tmp/usr/share/doc/$(package)/.
+	gzip -9 debian/tmp/usr/share/doc/$(package)/DBus-interface	
+	cp debian/changelog debian/tmp/usr/share/doc/$(package)/changelog.Debian
+	gzip -9 debian/tmp/usr/share/doc/$(package)/changelog.Debian
+	cp debian/readme debian/tmp/usr/share/doc/$(package)/README.Debian
+	cp debian/copyright debian/tmp/usr/share/doc/$(package)/copyright
+	gzip -9 debian/tmp/usr/share/man/man8/dnsmasq.8
+	for f in debian/tmp/usr/share/man/*; do \
+		if [ -f $$f/man8/dnsmasq.8 ]; then \
+                       gzip -9 $$f/man8/dnsmasq.8 ; \
+                fi \
+	done
+	strip -R .note -R .comment debian/tmp/usr/sbin/dnsmasq
+	dpkg-shlibdeps debian/tmp/usr/sbin/dnsmasq
+	dpkg-gencontrol -isp
+	chown -R root.root debian/tmp
+	chmod -R g-ws debian/tmp
+	dpkg --build debian/tmp ..
+
+define checkdir
+	test -f FAQ -a -f debian/rules
+endef
+
+# Below here is fairly generic really
+
+binary:		binary-arch
+build:		
+binary-indep:
+          
+checkroot:
+	$(checkdir)
+	test root = "`whoami`"
+
+.PHONY: binary binary-arch binary-indep clean checkroot
+
+

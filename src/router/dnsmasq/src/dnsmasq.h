@@ -110,6 +110,7 @@ extern int capset(cap_user_header_t header, cap_user_data_t data);
 #define OPT_DBUS           524288
 #define OPT_BOOTP_DYNAMIC  1048576
 #define OPT_NO_PING        2097152
+#define OPT_LEASE_RO       4194304
 
 struct all_addr {
   union {
@@ -290,7 +291,8 @@ struct dhcp_lease {
   char *hostname, *fqdn; /* name from client-hostname option or config */
   char auth_name;        /* hostname came from config, not from client */
   char new;              /* newly created */
-  char old;              /* read from leasefile */
+  char changed;          /* modified */
+  char aux_changed;      /* CLID or expiry changed */
   time_t expires;        /* lease expiry */
 #ifdef HAVE_BROKEN_RTC
   unsigned int length;

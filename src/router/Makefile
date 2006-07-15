@@ -531,7 +531,8 @@ busybox-distclean: busybox-config
 	rm -f busybox/.depend busybox/include/config.h busybox/scripts/mkdep
 
 dnsmasq-install:
-	@true
+	install -D dnsmasq/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
+	$(STRIP) $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
 #	install -D dnsmasq/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
 #	$(STRIP) $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
 
