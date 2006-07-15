@@ -313,6 +313,10 @@ period_check (int sig)
       if (ses_mode == 1)
 	{
 	  //enable orange led
+#ifdef HAVE_RADIOFF
+	if (nvram_match("radiooff_button","1")
+	  eval("wl","radio","on");
+#endif
 	  eval ("gpio", "enable", "5");
 	  eval ("gpio", "disable", "7");
 	  ses_mode = 2;
@@ -320,18 +324,30 @@ period_check (int sig)
       else if (ses_mode == 0)
 	{
 	  //enable white led
+#ifdef HAVE_RADIOFF
+	if (nvram_match("radiooff_button","1")
+	  eval("wl","radio","on");
+#endif
 	  eval ("gpio", "enable", "7");
 	  eval ("gpio", "disable", "5");
 	  ses_mode = 1;
 	}
       else if (ses_mode == 2)
 	{
+#ifdef HAVE_RADIOFF
+	if (nvram_match("radiooff_button","1")
+	  eval("wl","radio","on");
+#endif
 	  eval ("gpio", "disable", "5");
 	  eval ("gpio", "disable", "7");
 	  ses_mode = 3;
 	}
       else if (ses_mode == 3)
 	{
+#ifdef HAVE_RADIOFF
+	if (nvram_match("radiooff_button","1")
+	  eval("wl","radio","off");
+#endif
 	  eval ("gpio", "enable", "5");
 	  eval ("gpio", "enable", "7");
 	  ses_mode = 0;
