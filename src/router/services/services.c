@@ -918,19 +918,25 @@ start_dnsmasq (void)
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
-	if (usejffs)
+	/*if (usejffs)
 	  {
 	    fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
 	  }
 	else
 	  {
 	    fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
-	  }
+	  }*/
+	fprintf (fp, "leasefile-ro\n");
 	int dhcp_max =
 	  atoi (nvram_safe_get ("dhcp_num")) +
 	  atoi (nvram_safe_get ("static_leasenum"));
 	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
 	fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
+	fprintf (fp, "dhcp-script=%s\n", "/etc/lease_update.sh");
+	if (nvram_invmatch ("wan_wins", "")
+	    && nvram_invmatch ("wan_wins", "0.0.0.0"))
+	  fprintf (fp, "dhcp-option=44,%s\n", nvram_safe_get ("wan_wins"));
+
 	if (nvram_match ("dns_dnsmasq", "0"))
 	  {
 	    dns_list = get_dns_list ();
@@ -1000,10 +1006,6 @@ start_dnsmasq (void)
 	//#dhcp-host=11:22:33:44:55:66,fred,192.168.0.60,45m
 
       }
-  if (nvram_invmatch ("wan_wins", "")
-      && nvram_invmatch ("wan_wins", "0.0.0.0"))
-    fprintf (fp, "dhcp-option=44,%s\n", nvram_safe_get ("wan_wins"));
-
 
   /* Additional options */
   if (nvram_invmatch ("dnsmasq_options", ""))
@@ -1020,10 +1022,13 @@ start_dnsmasq (void)
   fclose (fp);
 
   dns_to_resolv ();
-//char sysbuf[128];
-//sprintf(sysbuf,"dnsmasq -d --conf-file /tmp/dnsmasq.conf &");
-//system(sysbuf);
-  ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
+
+  if (!nvram_match ("wl_mode", "wet"))
+    if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
+	&& nvram_match ("dhcpfwd_enable", "0"))
+    ret = eval ("/etc/lease_update.sh", "init", "|", "dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
+  else
+    ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
 
   cprintf ("done\n");
   return ret;
@@ -1032,7 +1037,6 @@ start_dnsmasq (void)
 int
 stop_dnsmasq (void)
 {
-  //int ret = killps("dnsmasq",NULL);
   int ret = softkill ("dnsmasq");
   unlink ("/tmp/resolv.dnsmasq");
 
