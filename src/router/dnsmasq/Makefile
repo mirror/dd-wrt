@@ -26,7 +26,7 @@ install-common :
 all-i18n :
 	$(MAKE) I18N=-DLOCALEDIR='\"$(LOCALEDIR)\"' -f ../bld/Makefile -C $(SRC) dnsmasq
 	cd $(PO); for f in *.po; do \
-		$(MAKE) -f ../bld/Makefile -C ../$(SRC) $${f/.po/.mo}; \
+		$(MAKE) -f ../bld/Makefile -C ../$(SRC) $${f%.po}.mo; \
 	done
 
 install-i18n : all-i18n install-common

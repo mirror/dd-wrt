@@ -227,15 +227,19 @@ void dhcp_packet(struct daemon *daemon, time_t now)
   if (mess->giaddr.s_addr)
     {
       /* Send to BOOTP relay  */
-      if (!dest.sin_port)
-	dest.sin_port = htons(DHCP_SERVER_PORT);
+      dest.sin_port = htons(DHCP_SERVER_PORT);
       dest.sin_addr = mess->giaddr; 
     }
   else if (mess->ciaddr.s_addr)
     {
-      dest.sin_addr = mess->ciaddr;
-      if (!dest.sin_port)
-	dest.sin_port = htons(DHCP_CLIENT_PORT);
+      /* If the client's idea of its own address tallys with
+	 the source address in the request packet, we believe the
+	 source port too, and send back to that. */
+      if (dest.sin_addr.s_addr != mess->ciaddr.s_addr || !dest.sin_port)
+	{
+	  dest.sin_port = htons(DHCP_CLIENT_PORT); 
+	  dest.sin_addr = mess->ciaddr;
+	}
     } 
 #ifdef HAVE_LINUX_NETWORK
   else if ((ntohs(mess->flags) & 0x8000) || mess->hlen == 0 ||

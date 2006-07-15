@@ -1,0 +1,181 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:       dnsmasq $named
+# Required-Start: $network $remote_fs $syslog
+# Required-Stop:  $network $remote_fs $syslog
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
+# Description:    DHCP and DNS server
+### END INIT INFO
+
+set +e   # Don't exit on error status
+
+PATH=/usr/local/sbin:/usr/local/bin:/sbin:/bin:/usr/sbin:/usr/bin
+DAEMON=/usr/sbin/dnsmasq
+NAME=dnsmasq
+DESC="DNS forwarder and DHCP server"
+
+# Most configuration options in /etc/default/dnsmasq are deprecated
+# but still honoured.
+
+if [ -r /etc/default/$NAME ]; then
+	. /etc/default/$NAME
+fi
+
+test -x $DAEMON || exit 0
+
+# RESOLV_CONF:
+# If the resolvconf package is installed then use the resolv conf file
+# that it provides as the default.  Otherwise use /etc/resolv.conf as
+# the default.
+#
+# This setting can be overridden by setting the RESOLV_CONF environment
+# variable in /etc/default/dnsmasq or by including a resolv-file
+# line in /etc/dnsmasq.conf .
+
+if [ ! "$RESOLV_CONF" ] &&
+   [ -x /sbin/resolvconf ]
+then
+	RESOLV_CONF=/var/run/dnsmasq/resolv.conf
+fi
+
+for INTERFACE in $DNSMASQ_INTERFACE; do
+	DNSMASQ_INTERFACES="$DNSMASQ_INTERFACES -i $INTERFACE"
+done
+
+for INTERFACE in $DNSMASQ_EXCEPT; do
+	DNSMASQ_INTERFACES="$DNSMASQ_INTERFACES -I $INTERFACE"
+done
+
+if [ ! "$DNSMASQ_USER" ]; then
+   DNSMASQ_USER="dnsmasq"
+fi
+
+start()
+{
+	# Return
+	#   0 if daemon has been started
+	#   1 if daemon was already running
+	#   2 if daemon could not be started
+	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid --exec $DAEMON --test > /dev/null || return 1
+	start-stop-daemon --start --quiet --pidfile /var/run/$NAME.pid --exec $DAEMON -- \
+		${MAILHOSTNAME:+ -m $MAILHOSTNAME} \
+		${MAILTARGET:+ -t $MAILTARGET} \
+		${DNSMASQ_USER:+ -u $DNSMASQ_USER} \
+		${DNSMASQ_INTERFACE:+ $DNSMASQ_INTERFACES} \
+		${DHCP_LEASE:+ -l $DHCP_LEASE} \
+		${DOMAIN_SUFFIX:+ -s $DOMAIN_SUFFIX} \
+		${RESOLV_CONF:+ -r $RESOLV_CONF} \
+		${CACHESIZE:+ -c $CACHESIZE} \
+		${DNSMASQ_OPTS:+ $DNSMASQ_OPTS} \
+		|| return 2
+}
+
+start_resolvconf()
+{
+# If interface "lo" is explicitly disabled in /etc/default/dnsmasq
+# Then dnsmasq won't be providing local DNS, so don't add it to
+# the resolvconf server set.
+	for interface in $DNSMASQ_EXCEPT
+	do
+		[ $interface = lo ] && return
+	done
+
+        if [ -x /sbin/resolvconf ] ; then
+		echo "nameserver 127.0.0.1" | /sbin/resolvconf -a lo.$NAME
+	fi
+	return 0
+}
+
+stop()
+{
+	# Return
+	#   0 if daemon has been stopped
+	#   1 if daemon was already stopped
+	#   2 if daemon could not be stopped
+	#   other if a failure occurred
+	start-stop-daemon --stop --quiet --retry=TERM/30/KILL/5 --pidfile /var/run/$NAME.pid --name $NAME
+	RETVAL="$?"
+	[ "$RETVAL" = 2 ] && return 2
+	# Wait for children to finish too
+	start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
+	[ "$?" = 2 ] && return 2
+	rm -f /var/run/$NAME.pid   # Doesn't delete its own pidfile
+	return "$RETVAL"
+}
+
+stop_resolvconf()
+{
+	if [ -x /sbin/resolvconf ] ; then
+		/sbin/resolvconf -d lo.$NAME
+	fi
+	return 0
+}
+
+case "$1" in
+  start)
+	echo -n "Starting $DESC: $NAME"
+	start
+	case "$?" in
+		0)
+			echo "."
+			start_resolvconf
+			exit 0
+			;;
+		1)
+			echo " (already running)."
+			exit 0
+			;;
+		*)
+			echo " (failed)."
+			exit 1
+			;;
+	esac
+	;;
+  stop)
+	stop_resolvconf
+	echo -n "Stopping $DESC: $NAME"
+	stop
+	case "$?" in
+		0) echo "." ; exit 0 ;;
+		1) echo " (not running)." ; exit 0 ;;
+		*) echo " (failed)." ; exit 1 ;;
+	esac
+	;;
+  restart|force-reload)
+	stop_resolvconf
+	echo -n "Restarting $DESC: $NAME"
+	stop
+	case "$?" in
+		0|1)
+			start
+			case "$?" in
+				0)
+					echo "."
+					start_resolvconf
+					exit 0
+					;;
+				1)
+					echo " (failed -- old process is still running)."
+					exit 1
+					;;
+				*)
+					echo " (failed to start)."
+					exit 1
+					;;
+			esac
+			;;
+		*)
+			echo " (failed to stop)."
+			exit 1
+			;;
+	esac
+	;;
+  *)
+	echo "Usage: /etc/init.d/$NAME {start|stop|restart|force-reload}" >&2
+	exit 3
+	;;
+esac
+
+exit 0
+

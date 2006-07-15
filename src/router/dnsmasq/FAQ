@@ -42,10 +42,12 @@ Q: Will dnsmasq compile/run on non-Linux systems?
 A: Yes, there is explicit support for *BSD and MacOS X. There are
    start-up scripts for MacOS X Tiger and Panther in /contrib. Earlier
    dnsmasq releases ran under Solaris, but that capability has
-   probably rotted. Dnsmasq will link with uclibc to provide small
+   rotted. Dnsmasq will link with uclibc to provide small
    binaries suitable for use in embedded systems such as
    routers. (There's special code to support machines with flash
    filesystems and no battery-backed RTC.)
+   If you encounter make errors with *BSD, try installing gmake from
+   ports and building dnsmasq with "make MAKE=gmake" 
    For other systems, try altering the settings in config.h.
  
 Q: My companies' nameserver knows about some names which aren't in the
@@ -383,6 +385,16 @@ Q: Dnsmasq logs "running as root because setting capabilities failed"
 
 A: Change your kernel configuration: either deselect CONFIG_SECURITY
    _or_ select CONFIG_SECURITY_CAPABILITIES.
+
+
+Q: Where can I get .rpms Suitable for Suse?
+
+A: Dnsmasq is in Suse itself, and the latest releases are also
+   available at ftp://ftp.suse.com/pub/people/ug/
+
+
+
+
  
 
 

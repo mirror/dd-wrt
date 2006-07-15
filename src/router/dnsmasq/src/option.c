@@ -24,7 +24,7 @@ struct myoption {
 };
 #endif
 
-#define OPTSTRING "531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:6:7:8:"
+#define OPTSTRING "9531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:6:7:8:"
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -95,6 +95,7 @@ static const struct myoption opts[] =
     {"dhcp-script", 1, 0, '6'},
     {"conf-dir", 1, 0, '7'},
 //    {"log-facility", 1, 0 ,'8'},
+    {"leasefile-ro", 0, 0, '9'},
     { NULL, 0, 0, 0 }
   };
 
@@ -125,6 +126,7 @@ static const struct optflags optmap[] = {
   { '1', OPT_DBUS },
   { '3', OPT_BOOTP_DYNAMIC },
   { '5', OPT_NO_PING },
+  { '9', OPT_LEASE_RO },
   { 'v', 0},
   { 'w', 0},
   { 0, 0 }
@@ -196,6 +198,7 @@ static const struct {
   { "-6, --dhcp-script=path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
   { "-7, --conf-dir=path", gettext_noop("Read configuration from all the files in this directory."), NULL },
 //  { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility."), NULL },
+  { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
   { NULL, NULL, NULL }
 }; 
 
@@ -404,7 +407,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
 
-    /* case '8':
+/*    case '8':
       for (i = 0; facilitynames[i].c_name; i++)
 	if (hostname_isequal((char *)facilitynames[i].c_name, arg))
 	  break;
@@ -416,7 +419,8 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	  option = '?';
 	  problem = "bad log facility";
 	}
-      break; */
+      break;
+*/
       
     case 'x': 
       daemon->runfile = safe_string_alloc(arg);
@@ -1956,11 +1960,10 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
 	  mx->target = daemon->mxtarget;
     }
 
-  if (daemon->options & OPT_NO_RESOLV)
-    daemon->resolv_files = 0;
-  else if (daemon->resolv_files && 
-	   (daemon->resolv_files)->next && 
-	   (daemon->options & OPT_NO_POLL))
+  if (!(daemon->options & OPT_NO_RESOLV) &&
+      daemon->resolv_files && 
+      daemon->resolv_files->next && 
+      (daemon->options & OPT_NO_POLL))
     die(_("only one resolv.conf file allowed in no-poll mode."), NULL);
   
   if (daemon->options & OPT_RESOLV_DOMAIN)
@@ -1968,7 +1971,9 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
       char *line;
       FILE *f;
 
-      if (!daemon->resolv_files || (daemon->resolv_files)->next)
+      if ((daemon->options & OPT_NO_RESOLV) ||
+	  !daemon->resolv_files || 
+	  (daemon->resolv_files)->next)
 	die(_("must have exactly one resolv.conf to read domain from."), NULL);
       
       if (!(f = fopen((daemon->resolv_files)->name, "r")))
