@@ -986,7 +986,12 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
       !strcmp (name, "BACKUP_RESTORE_SUPPORT") ||
       !strcmp (name, "SYSLOG_SUPPORT"))
     return;
-
+#ifdef HAVE_MULTICAST
+  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp(value,"1"))
+    websWrite(wp,output);
+#endif
+    
+/*    
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
@@ -995,7 +1000,7 @@ ej_support_match (int eid, webs_t wp, int argc, char_t ** argv)
 	  return;
 	}
     }
-
+*/
   return;
 }
 
@@ -1034,7 +1039,11 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, output);
       return;
     }
-
+#ifdef HAVE_MULTICAST
+  if (!strcmp (name, "MULTICAST_SUPPORT") && strcmp(value,"1"))
+    websWrite(wp,output);
+#endif
+/*
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name))
@@ -1048,8 +1057,10 @@ ej_support_invmatch (int eid, webs_t wp, int argc, char_t ** argv)
 	    return;
 	}
     }
-
-  websWrite (wp, output);
+*/
+  return;
+  
+  //websWrite (wp, output);
 }
 
 /*
@@ -1088,6 +1099,16 @@ ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
       websWrite (wp, output2);
       return;
     }
+#ifdef HAVE_MULTICAST
+  if (!strcmp (name, "MULTICAST_SUPPORT") && !strcmp(value,"1"))
+    {
+    websWrite(wp,output1);
+    return;
+    }
+#endif
+
+/*
+
   for (v = supports; v < &supports[SUPPORT_COUNT]; v++)
     {
       if (!strcmp (v->supp_name, name) && !strcmp (v->supp_value, value))
@@ -1096,7 +1117,7 @@ ej_support_elsematch (int eid, webs_t wp, int argc, char_t ** argv)
 	  return;
 	}
     }
-
+*/
   websWrite (wp, output2);
 }
 
