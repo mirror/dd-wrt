@@ -453,7 +453,7 @@ ddnsm.all_noip="Connection Internet non détectée";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à une adresse IP Internet dynamique. Cela peut s\'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur derrière le routeur. <br /><br />Avant d\'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, tels que DynDNS.org, TZO.com ou ZoneEdit.com.";
+hddns.right2="DDNS vous permet d\'attribuer un nom de domaine et d\'hôte fixe à une adresse IP Internet dynamique. Cela peut s\'avérer utile si vous hébergez votre propre site Web, un serveur FTP ou tout autre type de serveur derrière le routeur. <br /><br />Avant d\'opter pour cette fonctionnalité, vous devez souscrire à un service DDNS auprès de fournisseurs spécialisés, tels que DynDNS.org, freedns.afraid.org, ZoneEdit.com, No-IP.com ou alors choisissez <em>Personalisé</em> si vous connaissez tous les paramètres.";
 
 
 
