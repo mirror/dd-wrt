@@ -541,22 +541,38 @@ excluded from dnsmasq at compile time, in which case an error will
 occur. In any case note that ISC leasefile integration is a deprecated
 feature. It should not be used in new installations, and will be
 removed in a future release.
+.TP 
+.B \-9, --leasefile-ro
+Read lease information from stdin at startup, instead of from a
+leasefile. Do not write a leasefile as the lease database
+changes. This option is intended for use with an external lease
+database: the database is kept up-to-date by the leasechange script,
+and the lease information is given to dnsmasq at startup via
+stdin. The expected format is the same as a standard dnsmasq
+leasefile. Setting this
+option also forces the leasechange script to be called on changes
+to the client-id and lease length and expiry time.
 .TP
 .B \-6 --dhcp-script=<path>
 Whenever a new DHCP lease is created, or an old one destroyed, the
-binary specified by this option is run. The arguments to the binary
+binary specified by this option is run. The arguments to the process
 are "add", "old" or "del", the MAC
 address of the host (or "<null>"), the IP address, and the hostname,
 if known. "add" means a lease has been created, "del" means it has
 been destroyed, "old" is a notification of an existing lease when
-dnsmasq starts or a change to MAC address or hostname of an existing lease.
+dnsmasq starts or a change to MAC address or hostname of an existing
+lease (also, lease length or expiry and client-id, if leasefile-ro is set).
 The process is run as any unprivileged user which dnsmasq
 runs as, so it may be necessary to inhibit dropping of the root user,
 using the
 .B -u
 directive, if the script needs root privs.
-The environment is inherited from the invoker of dnsmasq,
-and all file decriptors are
+The environment is inherited from the invoker of dnsmasq, and if the
+host provided a client-id, this is stored in the variable
+DNSMASQ_CLIENT_ID. If dnsmasq was compiled with HAVE_BROKEN_RTC, then
+the length of the lease (in seconds) is stored in
+DNSMASQ_LEASE_LENGTH, otherwise the time of lease expiry is stored in DNSMASQ_LEASE_EXPIRES.
+All file decriptors are
 closed except stdin, stdout and stderr which are open to /dev/null
 (except in debug mode).
 The script is not invoked concurrently: if subsequent lease 

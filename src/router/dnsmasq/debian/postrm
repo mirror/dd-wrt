@@ -1,0 +1,7 @@
+#!/bin/sh
+set -e
+
+if [ purge = "$1" ]; then
+   update-rc.d dnsmasq remove >/dev/null
+   /usr/sbin/deluser dnsmasq
+fi

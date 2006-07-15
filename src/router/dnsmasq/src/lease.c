@@ -25,16 +25,24 @@ void lease_init(struct daemon *daemon, time_t now)
   leases = old_leases = NULL;
   leases_left = daemon->dhcp_max;
 
-  /* NOTE: need a+ mode to create file if it doesn't exist */
-  if (!(daemon->lease_stream = fopen(daemon->lease_file, "a+")))
+  if (daemon->options & OPT_LEASE_RO)
+    daemon->lease_stream = fdopen(STDIN_FILENO, "r");
+  else
+    /* NOTE: need a+ mode to create file if it doesn't exist */
+    daemon->lease_stream = fopen(daemon->lease_file, "a+");
+
+  if (!daemon->lease_stream)
     die(_("cannot open or create leases file: %s"), NULL);
      
-  flags = fcntl(fileno(daemon->lease_stream), F_GETFD);
-  if (flags != -1)
-    fcntl(fileno(daemon->lease_stream), F_SETFD, flags | FD_CLOEXEC); 
-  
-  /* a+ mode lease pointer at end. */
-  rewind(daemon->lease_stream);
+  if (!(daemon->options & OPT_LEASE_RO))
+    {
+      flags = fcntl(fileno(daemon->lease_stream), F_GETFD);
+      if (flags != -1)
+	fcntl(fileno(daemon->lease_stream), F_SETFD, flags | FD_CLOEXEC); 
+      
+      /* a+ mode lease pointer at end. */
+      rewind(daemon->lease_stream);
+    }
 
   /* client-id max length is 255 which is 255*2 digits + 254 colons 
      borrow DNS packet buffer which is always larger than 1000 bytes */
@@ -81,6 +89,12 @@ void lease_init(struct daemon *daemon, time_t now)
   file_dirty = 0;
   lease_prune(NULL, now);
   dns_dirty = 1;
+
+  if (daemon->options & OPT_LEASE_RO)
+    {
+      fclose(daemon->lease_stream);
+      daemon->lease_stream = NULL;
+    }
 }
 
 void lease_update_from_configs(struct daemon *daemon)
@@ -117,7 +131,7 @@ void lease_update_file(struct daemon *daemon, time_t now)
   time_t next_event;
   int i, err = 0;
 
-  if (file_dirty != 0)
+  if (file_dirty != 0 && daemon->lease_stream)
     {
       errno = 0;
       rewind(daemon->lease_stream);
@@ -298,7 +312,7 @@ void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now)
       dns_dirty = 1;
       lease->expires = exp;
 #ifndef HAVE_BROKEN_RTC
-      file_dirty = 1;
+      lease->aux_changed = file_dirty = 1;
 #endif
     }
   
@@ -306,7 +320,7 @@ void lease_set_expires(struct dhcp_lease *lease, unsigned int len, time_t now)
   if (len != lease->length)
     {
       lease->length = len;
-      file_dirty = 1;
+      lease->aux_changed = file_dirty = 1; 
     }
 #endif
 } 
@@ -318,11 +332,10 @@ void lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
       hw_type != lease->hwaddr_type || 
       (hw_len != 0 && memcmp(lease->hwaddr, hwaddr, hw_len) != 0))
     {
-      file_dirty = 1;
       memcpy(lease->hwaddr, hwaddr, hw_len);
       lease->hwaddr_len = hw_len;
       lease->hwaddr_type = hw_type;
-      lease->old = 1; /* run script on change */
+      lease->changed = file_dirty = 1; /* run script on change */
     }
 
   /* only update clid when one is available, stops packets
@@ -335,18 +348,19 @@ void lease_set_hwaddr(struct dhcp_lease *lease, unsigned char *hwaddr,
 
       if (lease->clid_len != clid_len)
 	{
-	  file_dirty = 1;
+	  lease->aux_changed = file_dirty = 1;
 	  if (lease->clid)
 	    free(lease->clid);
 	  if (!(lease->clid = malloc(clid_len)))
 	    return;
 	}
       else if (memcmp(lease->clid, clid, clid_len) != 0)
-	file_dirty = 1;
-      
+	lease->aux_changed = file_dirty = 1;
+	  
       lease->clid_len = clid_len;
       memcpy(lease->clid, clid, clid_len);
     }
+
 }
 
 void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int auth)
@@ -375,7 +389,7 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
 	  {
 	    if (lease_tmp->auth_name && !auth)
 	      return;
-	    lease_tmp->old = 1; /* call script on change */
+	    lease_tmp->changed = 1; /* call script on change */
 	    new_name = lease_tmp->hostname;
 	    lease_tmp->hostname = NULL;
 	    if (lease_tmp->fqdn)
@@ -408,7 +422,7 @@ void lease_set_hostname(struct dhcp_lease *lease, char *name, char *suffix, int 
   
   file_dirty = 1;
   dns_dirty = 1; 
-  lease->old = 1; /* run script on change */
+  lease->changed = 1; /* run script on change */
 }
 
 
@@ -417,19 +431,63 @@ static pid_t run_script(struct daemon *daemon, char *action, struct dhcp_lease *
 {
   if (daemon->lease_change_command)
     {
-      char *mac = print_mac(daemon, lease->hwaddr, lease->hwaddr_len);
       char *addr = inet_ntoa(lease->addr);
       char *com = strrchr(daemon->lease_change_command, '/');
-      pid_t pid = fork();
+      char *p;
+      pid_t pid;
+      int i;
 
+      /* stringify MAC into dhcp_buff */
+      p = daemon->dhcp_buff;
+      if (lease->hwaddr_type != ARPHRD_ETHER || lease->hwaddr_len == 0) 
+	p += sprintf(p, "%.2x-", lease->hwaddr_type);
+      for (i = 0; i < lease->hwaddr_len; i++)
+	{
+	  p += sprintf(p, "%.2x", lease->hwaddr[i]);
+	  if (i != lease->hwaddr_len - 1)
+	    p += sprintf(p, ":");
+	}
+      
+      /* and CLID into namebuff */
+      p = daemon->namebuff;
+      if (lease->clid)
+	for (i = 0; i < lease->clid_len; i++)
+	  {
+	    p += sprintf(p, "%.2x", lease->clid[i]);
+	    if (i != lease->clid_len - 1) 
+	      p += sprintf(p, ":");
+	  }
+      
+      /* and expiry or length into dhcp_buff2 */
+#ifdef HAVE_BROKEN_RTC
+      sprintf(daemon->dhcp_buff2, "%u ", lease->length);
+#else
+      sprintf(daemon->dhcp_buff2, "%lu ", (unsigned long)lease->expires);
+#endif
+
+      pid = fork();
+      
       if (pid == -1)
 	return 0; /* fork error */
       else if (pid != 0)
 	return pid;
+      
+      if (lease->clid && lease->clid_len != 0)
+	setenv("DNSMASQ_CLIENT_ID", daemon->namebuff, 1);
+      else
+	unsetenv("DNSMASQ_CLIENT_ID");
+
+#ifdef HAVE_BROKEN_RTC
+      setenv("DNSMASQ_LEASE_LENGTH", daemon->dhcp_buff2, 1);
+      unsetenv("DNSMASQ_LEASE_EXPIRES");
+#else
+      setenv("DNSMASQ_LEASE_EXPIRES", daemon->dhcp_buff2, 1); 
+      unsetenv("DNSMASQ_LEASE_LENGTH");
+#endif
 
       execl(daemon->lease_change_command, 
 	    com ? com+1 : daemon->lease_change_command,
-	    action, mac, addr, lease->hostname, (char*)NULL);
+	    action, daemon->dhcp_buff, addr, lease->hostname, (char*)NULL);
       
       /* log socket should still be open, right? */
       syslog(LOG_ERR, _("failed to execute %s: %m"), 
@@ -470,7 +528,8 @@ void lease_collect(struct daemon *daemon)
     }
 
   for (lease = leases; lease; lease = lease->next)
-    if (lease->new || lease->old)
+    if (lease->new || lease->changed || 
+	(lease->aux_changed && (daemon->options & OPT_LEASE_RO)))
       {
 	if (daemon->script_pid != 0)
 	  return; /* busy */
@@ -479,7 +538,7 @@ void lease_collect(struct daemon *daemon)
 	daemon->script_pid = run_script(daemon, lease->new ? "add" : "old", lease);
 #endif
 
-	lease->new = lease->old = 0;
+	lease->new = lease->changed = lease->aux_changed = 0;
       }
 }
 	  
