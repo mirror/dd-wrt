@@ -1743,6 +1743,7 @@ start_wan_service (void)
   stop_ddns ();
   cprintf ("start process monitor\n");
   start_process_monitor ();
+  sleep(3);
   cprintf ("start ddns\n");
   //start_ntp();
   start_ddns ();
