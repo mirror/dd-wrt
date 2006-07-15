@@ -33,6 +33,10 @@ endif
 ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif
+
+ifeq ($(CONFIG_RADIOOFF),y)
+  CFLAGS += -DHAVE_RADIOOFF
+endif
 ifeq ($(CONFIG_MEDIASERVER),y)
 CFLAGS += -DHAVE_MEDIASERVER
 endif

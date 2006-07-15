@@ -1581,6 +1581,9 @@ struct nvram_tuple srouter_defaults[] = {
   {"pptpd_client_ipparam", "", 0},
   {"pptpd_client_mtu", "1450", 0},
   {"pptpd_client_mru", "1450", 0},
+#ifdef HAVE_RADIOOFF
+  {"radiooff_button", "0", 0},    
+#endif
   {0, 0, 0}
 };
 
