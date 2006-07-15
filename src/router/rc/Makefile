@@ -41,7 +41,9 @@ endif
 ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
 endif
-
+ifeq ($(CONFIG_RADIOOFF),y)
+  CFLAGS += -DHAVE_RADIOOFF
+endif
 ifeq ($(CONFIG_34TELECOM),y)
 CFLAGS += -DHAVE_34TELECOM
 endif
