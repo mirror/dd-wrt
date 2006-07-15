@@ -193,7 +193,7 @@ obj-$(CONFIG_WDSWATCHDOG) += wdswatchdog
 obj-$(CONFIG_IPV6) += ipv6
 obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_MEDIASERVER) += mediaserver
-
+obj-$(CONFIG_RADIOOFF) += radiooff
 
 
 

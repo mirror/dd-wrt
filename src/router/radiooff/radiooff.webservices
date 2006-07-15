@@ -1,0 +1,9 @@
+
+<fieldset>
+	<legend>SES Button</legend>
+	<div class="setting">
+		<div class="label">Use SES for turning off radio</div>
+		<input class="spaceradio" type="radio" value="1" name="radiooff_button" <% nvram_checked("radiooff_button","1"); %> /><% tran("share.enable"); %>&nbsp;
+		<input class="spaceradio" type="radio" value="0" name="radiooff_button" <% nvram_checked("radiooff_button","0"); %> /><% tran("share.disable"); %>
+	</div>
+</fieldset><br/>
