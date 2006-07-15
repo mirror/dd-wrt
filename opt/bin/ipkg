@@ -231,7 +231,7 @@ ipkg_download() {
 	rm -f $IPKG_TMP/$src_file
 	case "$src" in
 	http://* | ftp://*)
-		if ! wget --passive-ftp $proxyoption $proxyuser $proxypassword -P $IPKG_TMP $src; then
+		if ! wget $proxyoption $proxyuser $proxypassword -P $IPKG_TMP $src; then
 			echo "ipkg_download: ERROR: Failed to retrieve $src, returning $err"
 			return 1
 		fi
