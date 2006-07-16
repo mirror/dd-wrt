@@ -1028,7 +1028,7 @@ start_dnsmasq (void)
     {
       chmod ("/etc/lease_update.sh", 0700);
       ret = system ("/etc/lease_update.sh init | dnsmasq --conf-file /tmp/dnsmasq.conf");
-    {
+    }
   else
     ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
 
