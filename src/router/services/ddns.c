@@ -227,7 +227,6 @@ ddns_success_main (int argc, char *argv[])
       nvram_set ("ddns_time", buf2);
     }
 
-  nvram_set ("ddns_status", "1");
   nvram_set ("ddns_enable_buf", nvram_safe_get ("ddns_enable"));
   nvram_set ("ddns_username_buf", nvram_safe_get (_username));
   nvram_set ("ddns_passwd_buf", nvram_safe_get (_passwd));
