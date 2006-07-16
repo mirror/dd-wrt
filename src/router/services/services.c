@@ -841,7 +841,7 @@ stop_udhcpd (void)
 
 int
 
- (void)
+start_dnsmasq (void)
 {
   FILE *fp;
   struct dns_lists *dns_list = NULL;
@@ -1026,7 +1026,7 @@ int
   if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
       && nvram_match ("dhcpfwd_enable", "0"))
     chmod ("/etc/lease_update.sh", 0700);
-    ret = system ("/bin/sh /etc/lease_update.sh init | dnsmasq --conf-file /tmp/dnsmasq.conf");
+    ret = system ("/etc/lease_update.sh init | dnsmasq --conf-file /tmp/dnsmasq.conf");
   else
     ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
 
