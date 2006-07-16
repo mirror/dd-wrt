@@ -491,7 +491,7 @@ static RC_TYPE get_forced_update_period_handler(CMD_DATA *p_cmd, int current_nr,
 {
 	DYN_DNS_CLIENT *p_self = (DYN_DNS_CLIENT *) p_context;
 	FILE *fp;
-	char cache_time[1024];
+	char cache_time[80];
 	int dif;
 
 	if (p_self == NULL)
