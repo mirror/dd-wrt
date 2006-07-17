@@ -886,7 +886,7 @@ start_sysinit (void)
 
   if (brand == ROUTER_BUFFALO_WBR54G)
     {
-      nvram_set ("wl0gpio2", "130");	//Fix for wireless led polarity
+      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity
     }
         
   if (brand == ROUTER_BUFFALO_WBR2G54S)
