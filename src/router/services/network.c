@@ -764,7 +764,7 @@ start_lan (void)
 	else
 	  {
 #ifdef HAVE_MSSID
-	    char tmac[16];
+/*	    char tmac[16];
 	    sprintf (tmac, "%s_hwaddr", "wl0");
 	    nvram_set (tmac, mac);
 
@@ -784,7 +784,7 @@ start_lan (void)
 		  perror ("Write wireless mac fail : ");
 		else
 		  cprintf ("Write wireless mac successfully\n");
-	      }
+	      }*/
 #endif
 
 

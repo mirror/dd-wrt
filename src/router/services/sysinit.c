@@ -155,9 +155,15 @@ enableAfterBurner (void)
 {
 
   int boardflags;
-  if (getRouterBrand () == ROUTER_LINKSYS_WRT55AG
-      || getRouterBrand () == ROUTER_MOTOROLA_V1)
-    return;
+  int brand = getRouterBrand();
+  switch(brand)
+  {
+  case ROUTER_LINKSYS_WRT55AG:
+  case ROUTER_MOTOROLA_V1:
+  case ROUTER_BUFFALO_WZRRSG54:
+  return;
+  break;
+  default:
   if (nvram_get ("boardflags") == NULL)
     return;
   boardflags = strtoul (nvram_safe_get ("boardflags"), NULL, 0);
@@ -171,6 +177,7 @@ enableAfterBurner (void)
       nvram_set ("boardflags", ab);
       nvram_set ("need_commit", "1");
     }
+  }
 }
 
 /*
