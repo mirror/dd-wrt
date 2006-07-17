@@ -65,10 +65,10 @@ process_monitor_main (void)
     {				// && check_wan_link(0) ) {
 
 /* init ntp timer */
-/* #ifdef HAVE_SNMP
+#ifdef HAVE_SNMP
   struct timeval now;
   gettimeofday (&now, NULL);
-#endif */
+#endif 
       if (do_ntp () != 0)
 	{
 	  syslog (LOG_ERR,
@@ -85,16 +85,18 @@ process_monitor_main (void)
 	  timer_settime (ntp1_id, 0, &t4, NULL);
 	}
 
-/* #ifdef HAVE_SNMP
+#ifdef HAVE_SNMP
   struct timeval then;
   gettimeofday (&then, NULL);
 
   if (abs (now.tv_sec - then.tv_sec) > 100000000)
     {
-	  syslog (LOG_DEBUG, "Current time set, restarting snmpd\n");	    
-      startstop("snmp");
+	  stop_service("snmp");  
+	  syslog (LOG_DEBUG, "Restarting snmpd\n");	    
+	  sleep(2);
+      start_service("snmp");
     }
-#endif */
+#endif 
 
       syslog (LOG_DEBUG, "We need to re-update after %d seconds\n",
 	      NTP_M_TIMER);
