@@ -28,12 +28,15 @@ dhcp_reltime (char *buf, time_t t)
   return buf;
 }
 
+/*dump in array: hostname,mac,ip,expires
+read leases from leasefile as: expires mac ip hostname */
 void
 ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   unsigned long expires;
   int i = 0;
+  int count = 0;
   int macmask;
 
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
@@ -82,20 +85,20 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		  mac[10] = 'x';
 		}
 	      websWrite (wp, "%c'%s','%s','%s','%s','%s'",
-			 (i ? ',' : ' '),
+			 (count ? ',' : ' '),
 			 (hostname[0] ? hostname : "unknown"),
 			 ip, mac,
 			 ((expires == 0) ? "never" : dhcp_reltime (buf,
 								   expires)),
 			 p + 1);
 	      ++i;
+              ++count;
 	  }
     }
   else
     {
       struct lease_t lease;
       struct in_addr addr;
-      int count = 0;
       char sigusr1[] = "-XX";
       char *ipaddr, mac[20] = "", expires_time[50] = "";
 
@@ -194,8 +197,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 }
 
 #if 0
-/*dump in array: hostname,mac,ip,expires
-read leases from leasefile as: expires mac ip hostname */
 void
 ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 {
