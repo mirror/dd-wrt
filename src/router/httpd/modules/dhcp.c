@@ -49,6 +49,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
       char hostname[256];
       char buf[512];
       char *p;
+      char *buff;
 
       for (i = 0; i < DHCP_MAX_COUNT; ++i)
 	{
@@ -57,7 +58,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
 	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), i);
 
-	      buf = nvram_safe_get(buf);
+	      buff = nvram_safe_get(buf);
 	      if (sscanf
 		  (buf, "%lu %17s %15s %255s", &expires, mac, ip,
 		   hostname) != 4)
