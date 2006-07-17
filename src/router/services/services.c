@@ -1023,8 +1023,9 @@ start_dnsmasq (void)
 
   dns_to_resolv ();
 
-  if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
-      && nvram_match ("dhcpfwd_enable", "0"))
+  if (!nvram_match ("wl_mode", "wet") && nvram_match ("dhcp_dnsmasq", "1")
+      && nvram_match ("lan_proto", "dhcp") && nvram_match ("dhcpfwd_enable", "0")
+      && (!usejffs))
     {
       chmod ("/etc/lease_update.sh", 0700);
       ret = system ("/etc/lease_update.sh init | dnsmasq --conf-file /tmp/dnsmasq.conf");
