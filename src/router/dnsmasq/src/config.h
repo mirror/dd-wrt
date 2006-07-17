@@ -10,7 +10,7 @@
    GNU General Public License for more details.
 */
 
-#define VERSION "2.33test5"
+#define VERSION "2.33test6"
 
 #define FTABSIZ 150 /* max number of outstanding requests */
 #define MAX_PROCS 20 /* max no children for TCP requests */
@@ -154,7 +154,7 @@ NOTES:
 */
 
 /* platform independent options- uncomment to enable */
-#define HAVE_BROKEN_RTC
+/* #define HAVE_BROKEN_RTC */
 /* #define HAVE_ISC_READER */
 /* #define HAVE_DBUS */
 
