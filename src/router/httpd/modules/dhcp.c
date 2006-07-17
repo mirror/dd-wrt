@@ -1,4 +1,4 @@
-
+  
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -53,10 +53,10 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 
       for (i = 0; i < DHCP_MAX_COUNT; ++i)
 	{
-	       sprintf (buf, "dnsmasq_lease%d.%d.%d.%d",
-	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
-	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
-	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), i);
+	      sprintf (buf, "dnsmasq_lease_%d.%d.%d.%d",
+	      get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
+	      get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
+	      get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), i);
 
 	      buff = nvram_safe_get(buf);
 	      if (sscanf
@@ -96,7 +96,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
     {
       struct lease_t lease;
       struct in_addr addr;
-      int i;
+      int count = 0;
       char sigusr1[] = "-XX";
       char *ipaddr, mac[20] = "", expires_time[50] = "";
 
@@ -182,11 +182,11 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		  expires_time[strlen (expires_time) - 1] = '\0';
 		}
 	      websWrite (wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"",
-			 i ? ',' : ' ',
+			 count ? ',' : ' ',
 			 !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr,
 			 mac, expires_time, get_single_ip (inet_ntoa (addr),
 							   3));
-	      i++;
+	      count++;
 	    }
 	  fclose (fp);
 	}
