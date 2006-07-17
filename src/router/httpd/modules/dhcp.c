@@ -28,14 +28,12 @@ dhcp_reltime (char *buf, time_t t)
   return buf;
 }
 
-/*dump in array: hostname,mac,ip,expires
-read leases from leasefile as: expires mac ip hostname */
 void
 ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 {
   FILE *fp;
   unsigned long expires;
-  int count = 0;
+  int i = 0;
   int macmask;
 
   if (ejArgs (argc, argv, "%d", &macmask) < 1)
@@ -52,18 +50,14 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
       char buf[512];
       char *p;
 
-      /* Write out leases file from DNSMasq */
-      eval ("killall", "-SIGUSR2", "dnsmasq");
-      sleep (1);
-
-      /* Parse leases file */
-      if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
-	fp = fopen ("/jffs/dnsmasq.leases", "r");
-
-      if (fp)
+      for (i = 0; i < DHCP_MAX_COUNT; ++i)
 	{
-	  while (fgets (buf, sizeof (buf), fp))
-	    {
+	       sprintf (buf, "dnsmasq_lease%d.%d.%d.%d",
+	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
+	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
+	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), i);
+
+	      buf = nvram_safe_get(buf);
 	      if (sscanf
 		  (buf, "%lu %17s %15s %255s", &expires, mac, ip,
 		   hostname) != 4)
@@ -87,16 +81,15 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		  mac[10] = 'x';
 		}
 	      websWrite (wp, "%c'%s','%s','%s','%s','%s'",
-			 (count ? ',' : ' '),
+			 (i ? ',' : ' '),
 			 (hostname[0] ? hostname : "unknown"),
 			 ip, mac,
 			 ((expires == 0) ? "never" : dhcp_reltime (buf,
 								   expires)),
 			 p + 1);
-	      ++count;
-	    }
+	      ++i;
+	  }
 	  fclose (fp);
-	}
     }
   else
     {
@@ -188,17 +181,90 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 		  expires_time[strlen (expires_time) - 1] = '\0';
 		}
 	      websWrite (wp, "%c\"%s\",\"%s\",\"%s\",\"%s\",\"%d\"",
-			 count ? ',' : ' ',
+			 i ? ',' : ' ',
 			 !*lease.hostname ? "&nbsp;" : lease.hostname, ipaddr,
 			 mac, expires_time, get_single_ip (inet_ntoa (addr),
 							   3));
-	      count++;
+	      i++;
 	    }
 	  fclose (fp);
 	}
     }
   return;
 }
+
+#if 0
+/*dump in array: hostname,mac,ip,expires
+read leases from leasefile as: expires mac ip hostname */
+void
+ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  FILE *fp;
+  unsigned long expires;
+  int i = 0;
+  int macmask;
+
+  if (ejArgs (argc, argv, "%d", &macmask) < 1)
+    {
+      websError (wp, 400, "Insufficient args\n");
+      return;
+    }
+
+  if (nvram_match ("dhcp_dnsmasq", "1"))
+    {
+      char mac[32];
+      char ip[32];
+      char hostname[256];
+      char buf[512];
+      char *p;
+
+      /* Write out leases file from DNSMasq */
+      eval ("killall", "-SIGUSR2", "dnsmasq");
+      sleep (1);
+
+      /* Parse leases file */
+      if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
+	fp = fopen ("/jffs/dnsmasq.leases", "r");
+
+      if (fp)
+	{
+	  while (fgets (buf, sizeof (buf), fp))
+	    {
+	      if (sscanf
+		  (buf, "%lu %17s %15s %255s", &expires, mac, ip,
+		   hostname) != 4)
+		continue;
+	      p = mac;
+	      while ((*p = toupper (*p)) != 0)
+		++p;
+	      if ((p = strrchr (ip, '.')) == NULL)
+		continue;
+	      if (!strcmp (mac, "00:00:00:00:00:00"))
+		continue;
+	      if (nvram_match ("maskmac", "1") && macmask)
+		{
+		  mac[0] = 'x';
+		  mac[1] = 'x';
+		  mac[3] = 'x';
+		  mac[4] = 'x';
+		  mac[6] = 'x';
+		  mac[7] = 'x';
+		  mac[9] = 'x';
+		  mac[10] = 'x';
+		}
+	      websWrite (wp, "%c'%s','%s','%s','%s','%s'",
+			 (i ? ',' : ' '),
+			 (hostname[0] ? hostname : "unknown"),
+			 ip, mac,
+			 ((expires == 0) ? "never" : dhcp_reltime (buf,
+								   expires)),
+			 p + 1);
+	      ++i;
+	    }
+	  fclose (fp);
+	}
+    }
+#endif
 
 /* Delete lease */
 int
