@@ -403,7 +403,7 @@ wlconf_up (char *name)
     return -1;
   if (!strncmp (name, "br", 2))
     return -1;
-#ifndef HAVE_BRANDING
+/*#ifndef HAVE_BRANDING
   if (nvram_match ("wl_mode", "ap"))
     {
 #ifndef HAVE_FON
@@ -429,6 +429,7 @@ wlconf_up (char *name)
 #endif
     }
 #endif
+*/
 #ifdef HAVE_ONLYCLIENT
   if (nvram_match ("wl_mode", "ap"))
     {
