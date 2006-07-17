@@ -36,7 +36,7 @@
 			<div class="label"><% tran("hotspot.dhcp"); %></div>
 			<select name="chilli_interface">
 				<option value="wan" <% nvram_selmatch("chilli_interface","wan","selected"); %> >WAN</option>
-				<option value="lan" <% nvram_selmatch("chilli_interface","lan","selected"); %> >LAN</option>
+				<option value="lan" <% nvram_selmatch("chilli_interface","wlan","selected"); %> >WLAN</option>
 				<option value="lanwan" <% nvram_selmatch("chilli_interface","lanwan","selected"); %> >LAN &amp; WLAN</option>
 			</select>
 		</div>
