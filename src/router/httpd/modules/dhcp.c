@@ -60,7 +60,7 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 
 	      buff = nvram_safe_get(buf);
 	      if (sscanf
-		  (buf, "%lu %17s %15s %255s", &expires, mac, ip,
+		  (buff, "%lu %17s %15s %255s", &expires, mac, ip,
 		   hostname) != 4)
 		continue;
 	      p = mac;
@@ -90,7 +90,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 			 p + 1);
 	      ++i;
 	  }
-	  fclose (fp);
     }
   else
     {
