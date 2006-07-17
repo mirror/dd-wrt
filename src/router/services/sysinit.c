@@ -847,36 +847,38 @@ start_sysinit (void)
   cprintf ("sysinit() get router\n");
 
   int brand = getRouterBrand ();
-  if (brand == ROUTER_BUFFALO_WZRRSG54)
-    {
+
+  switch (brand)
+  {
+	case ROUTER_BUFFALO_WZRRSG54:
       check_brcm_cpu_type ();
-    }
-  if (brand == ROUTER_MOTOROLA)
-    {
+      setup_4712 ();
+	  break;
+
+	case ROUTER_MOTOROLA:
       nvram_set ("cpu_type", "BCM4712");
       nvram_set ("wl0gpio0", "2");	//Fix for wireless led, Eko.10.may.06
-    }
-
-  if (brand == ROUTER_SIEMENS || brand == ROUTER_MOTOROLA
-      || brand == ROUTER_RT210W || brand == ROUTER_BUFFALO_WZRRSG54
-      || brand == ROUTER_BELKIN_F5D7230)
-    {
       setup_4712 ();
-    }
-
-  if (brand == ROUTER_RT210W)
-    {
+      break;
+      
+	case ROUTER_SIEMENS:
+	case ROUTER_BELKIN_F5D7230:
+      setup_4712 ();
+      break;
+      
+	case ROUTER_RT210W:     
+      setup_4712 ();
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wan_ifnames", "eth1");
-    }
-  if (brand == ROUTER_WRTSL54GS)
-    {
+      break;
+      
+	case ROUTER_WRTSL54GS:
       nvram_set ("wan_ifname", "eth1");
       nvram_set ("wan_ifnames", "eth1");
       nvram_set ("pppoe_wan_ifname", "eth1");
-    }
-  if (brand == ROUTER_ASUS_WL500G_PRE)
-    {
+      break;
+      
+    case ROUTER_ASUS_WL500G_PRE:
 	  nvram_set ("lan_ifnames", "vlan0 eth2");
 	  nvram_set ("wl0_ifname", "eth2");
 	  strcpy (wlifname, "eth2");
@@ -885,30 +887,33 @@ start_sysinit (void)
 	  strcpy (wanifname, "vlan1");
       nvram_set ("vlan1ports", "0 5");
       eval ("gpio", "disable", "1");	//Asus WL-500gP power led on
-    }
-  if ((brand == ROUTER_MICROSOFT_MN700) && nvram_match ("boardnum", "mn700"))
-    {
+      break;
+      
+    case ROUTER_MICROSOFT_MN700:
       eval ("gpio", "enable", "6");	//MN700 power led on
-    }
-
-  if (brand == ROUTER_BUFFALO_WBR54G)
-    {
+      break;
+      
+	case ROUTER_BUFFALO_WBR54G:
       nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity
-    }
+	  break;
         
-  if (brand == ROUTER_BUFFALO_WBR2G54S)
-    {
+	case ROUTER_BUFFALO_WBR2G54S:
       eval ("gpio", "disable", "1");	//WBR2G54 diag led off
-    }
-    
-  if (brand == ROUTER_BUFFALO_WLA2G54C)
-    {
+	  break;
+
+	case ROUTER_BUFFALO_WLA2G54C:
+      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WLA2G54C interfaces
+      nvram_set ("wl0_ifname", "eth1");
+      strcpy (wlifname, "eth1");
+      nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
+      nvram_set ("wan_ifnames", "eth2");
       eval ("gpio", "enable", "4");	//WLA2-G54C, WLA3-TX1-G54 diag led off
-    }
-    
-  if ((brand == ROUTER_BUFFALO_WLA2G54C) || (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446")))
+      break;
+  }
+	
+  if (nvram_match ("boardnum", "1024") && nvram_match ("boardtype", "0x0446"))
     {
-      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WLA2G54C & WAP54Gv2 interfaces
+      nvram_set ("lan_ifnames", "eth0 eth1");	// fix for WAP54Gv2 interfaces
       nvram_set ("wl0_ifname", "eth1");
       strcpy (wlifname, "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
