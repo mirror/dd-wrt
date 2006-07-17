@@ -1926,6 +1926,18 @@ version 2.33
 	    external persistent lease database for *WRT distros with 
 	    the nvram command.
 
+	    Add contrib/wrt/dhcp_release.c which is a small utility 
+	    which removes DHCP leases using DHCPRELEASE operation in
+	    the DHCP protocol.
+
+	    Add "dnsmasq.a" target to the makefile, which produces an
+	    archive of the dnsmasq object files. This is for adding the
+	    dnsmasq binary to busybox, also added a couple of
+	    busybox-specific bits of code. Thanks to Steve Horbachuk
+	    for co-operation on this.
+
+
+
 
 	    
 

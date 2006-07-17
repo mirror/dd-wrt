@@ -11,9 +11,19 @@
 */
 
 /* define this to get facilitynames */
-/* #define SYSLOG_NAMES */
+#ifndef BUSYBOX
+#define SYSLOG_NAMES
+#endif
 
 #include "dnsmasq.h"
+
+#ifdef BUSYBOX
+typedef struct _code {
+        char    *c_name;
+        int     c_val;
+} CODE;
+extern CODE facilitynames[];
+#endif
 
 #ifndef HAVE_GETOPT_LONG
 struct myoption {
@@ -94,7 +104,7 @@ static const struct myoption opts[] =
     {"no-ping", 0, 0, '5'},
     {"dhcp-script", 1, 0, '6'},
     {"conf-dir", 1, 0, '7'},
-//    {"log-facility", 1, 0 ,'8'},
+    {"log-facility", 1, 0 ,'8'},
     {"leasefile-ro", 0, 0, '9'},
     { NULL, 0, 0, 0 }
   };
@@ -197,7 +207,7 @@ static const struct {
   { "-5, --no-ping", gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
   { "-6, --dhcp-script=path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
   { "-7, --conf-dir=path", gettext_noop("Read configuration from all the files in this directory."), NULL },
-//  { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility."), NULL },
+  { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility."), NULL },
   { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
   { NULL, NULL, NULL }
 }; 
@@ -407,7 +417,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	break;
       }
 
-/*    case '8':
+    case '8':
       for (i = 0; facilitynames[i].c_name; i++)
 	if (hostname_isequal((char *)facilitynames[i].c_name, arg))
 	  break;
@@ -420,7 +430,6 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	  problem = "bad log facility";
 	}
       break;
-*/
       
     case 'x': 
       daemon->runfile = safe_string_alloc(arg);

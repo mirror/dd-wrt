@@ -7,10 +7,13 @@ SRC = src
 PO = po
 MAN = man
 
-CFLAGS?= $(COPTS)
+CFLAGS?= -O2
 
 all : 
 	$(MAKE) I18N=-DNO_GETTEXT -f ../bld/Makefile -C $(SRC) dnsmasq 
+
+dnsmasq.a : 
+	$(MAKE) I18N="-DNO_GETTEXT -DBUSYBOX" -f ../bld/Makefile -C $(SRC) dnsmasq.a 
 
 clean :
 	rm -f *~ $(SRC)/*.mo contrib/*/*~ */*~ $(SRC)/*.pot 
