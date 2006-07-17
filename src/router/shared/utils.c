@@ -234,7 +234,7 @@ internal_getRouterBrand ()
       		setRouter ("Buffalo WHR3-AG54");
       		return ROUTER_BUFFALO_WZRRSG54;
     		}
-    	if (nvram_match ("product_name", "Product_name"))
+    	if (nvram_match ("melco_id", "30083"))
     		{
       		cprintf ("router is Buffalo WZR series\n");
       		setRouter ("Buffalo WZR series");
