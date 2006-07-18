@@ -42,6 +42,7 @@
 		<div class="setting">
 			<div class="label"><% tran("hotspot.nocat_verbose"); %></div>
 			<select name="NC_Verbosity">
+				<option value="0" <% nvram_selmatch("NC_Verbosity","0","selected"); %> >0</option>
 				<option value="1" <% nvram_selmatch("NC_Verbosity","1","selected"); %> >1</option>
 				<option value="2" <% nvram_selmatch("NC_Verbosity","2","selected"); %> >2</option>
 				<option value="3" <% nvram_selmatch("NC_Verbosity","3","selected"); %> >3</option>
