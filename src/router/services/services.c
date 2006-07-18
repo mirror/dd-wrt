@@ -2376,7 +2376,7 @@ start_chilli (void)
     }
   else
     {
-      if (nvram_match ("chilli_interface", "lanwan"))
+      if (nvram_match ("chilli_interface", "wanwlan"))
 	{
 	  fprintf (fp, "dhcpif br0\n");
 	}
