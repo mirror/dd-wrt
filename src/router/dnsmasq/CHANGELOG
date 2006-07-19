@@ -1901,6 +1901,11 @@ version 2.33
 	    
 	    Merged patch from Gentoo to honour $LDFLAGS environment.
 
+	    Fix bug in resolv.conf processing when more than one file
+	    is being checked.
+
+	    Add --dns-forward-max option.
+
 	    Warn if --resolv-file flags are ignored because of
 	    --no-resolv. Thanks to Martin F Krafft for spotting this
 	    one.
@@ -1935,7 +1940,6 @@ version 2.33
 	    dnsmasq binary to busybox, also added a couple of
 	    busybox-specific bits of code. Thanks to Steve Horbachuk
 	    for co-operation on this.
-
 
 
 

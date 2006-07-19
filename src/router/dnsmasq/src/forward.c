@@ -14,7 +14,7 @@
 
 static struct frec *frec_list = NULL;
 
-static struct frec *get_new_frec(time_t now);
+static struct frec *get_new_frec(struct daemon *daemon, time_t now);
 static struct frec *lookup_frec(unsigned short id);
 static struct frec *lookup_frec_by_sender(unsigned short id,
 					  union mysockaddr *addr,
@@ -232,7 +232,7 @@ static void forward_query(struct daemon *daemon, int udpfd, union mysockaddr *ud
       if (gotname)
 	flags = search_servers(daemon, now, &addrp, gotname, daemon->namebuff, &type, &domain);
       
-      if (!flags && !(forward = get_new_frec(now)))
+      if (!flags && !(forward = get_new_frec(daemon, now)))
 	/* table full - server failure. */
 	flags = F_NEG;
       
@@ -837,7 +837,7 @@ unsigned char *tcp_request(struct daemon *daemon, int confd, time_t now,
     }
 }
 
-static struct frec *get_new_frec(time_t now)
+static struct frec *get_new_frec(struct daemon *daemon, time_t now)
 {
   struct frec *f = frec_list, *oldest = NULL;
   time_t oldtime = now;
@@ -870,7 +870,7 @@ static struct frec *get_new_frec(time_t now)
       return oldest;
     }
   
-  if (count > FTABSIZ)
+  if (count > daemon->ftabsize)
     { /* limit logging rate so syslog isn't DOSed either */
       if (!warntime || difftime(now, warntime) > LOGRATE)
 	{

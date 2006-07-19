@@ -3,6 +3,7 @@ dnsmasq (2.33-1) unstable; urgency=low
    * New upstream.
    * Remove bashism from Makefile (closes: #375409)
    * Added Provides: $named to LSB header in init script.
+   * Add --dns-forward-max flag. (closes: #377506)
 				
  -- Simon Kelley <simon@thekelleys.org.uk>  Sun, 25 June 2006 18:03:13 +0000
 
