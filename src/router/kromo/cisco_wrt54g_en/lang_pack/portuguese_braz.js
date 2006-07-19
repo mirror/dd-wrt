@@ -363,7 +363,7 @@ alive.sevr3="Habilitar Watchdog do Proxy";
 alive.IP2="Endereço IP do Proxy";
 alive.port="Porta do Proxy";
 
-//help container
+
 var halive = new Object();
 halive.right2="Escolha quando reiniciar o roteador. O Cron deve estar habilitado na aba de <em>Gerenciamento</em>.";
 halive.right4="São permitidos três IPs no máximo, separados por um <em>ESPAÇO</em>.<BR/>Formato dos Endereços IPs: xxx.xxx.xxx.xxx.";
@@ -382,7 +382,7 @@ config.mess2="Por favor selecione um arquivo para restaurar.";
 config.mess3="A T E N Ç Ã O !!";
 config.mess4="Faça upload de backups feitos usando esse firmware a partir de um roteador do mesmo modelo que  o seu.<br />Não utilize nenhum arquivo que não foi criado através dessa interfae!";
 
-//help container
+
 var hconfig = new Object();
 hconfig.right2="Você pode realizar um backup das configurações atuais caso necessite resetar o roteador para os padrões de fábrica.<br /><br />Clique em <em>Backup</em> para salvar as configurações atuais.";
 hconfig.right4="Clique em <em>Procurar...</em> para procurar por um arquivo de configuração salvo em seu computador.<br /><br />Clique em <em>" + sbutton.restore + "</em> para sobrescrever todas as configurações atuais pelo arquivo de configuração.";
@@ -398,7 +398,6 @@ ddns.srv="Serviço DDNS";
 ddns.emailaddr="Endereço de E-mail";
 ddns.typ="Tipo";
 ddns.dynamic="Dinâmico";
-// ddns.static="Estático"; Please note: Mozilla doesn't like ".static", use ".sttic" , Eko 22.mar.06
 ddns.custom="Personalizado";
 ddns.wildcard="Wildcard";
 ddns.statu="Status DDNS";
@@ -433,7 +432,6 @@ ddnsm.tzo_dupfqdn="Nome de Domínio Duplicado";
 ddnsm.tzo_fqdncre="Nome de Domínio já criado para este domínio";
 ddnsm.tzo_expired="A conta expirou";
 ddnsm.tzo_error="Erro inesperado do servidor";
-
 ddnsm.zone_701="Zona não configurada nesta conta";
 ddnsm.zone_702="Falha na Atualização";
 ddnsm.zone_703="Um dos parâmetros <em>zonas</em> ou <em>host</em> é necessário";
@@ -444,7 +442,6 @@ ddnsm.zone_201="Nenhum registro necessita de atualização";
 ddnsm.zone_badauth="Falha na Autorização (Nome de Usuário ou Senha)";
 ddnsm.zone_good="ZoneEdit foi atualizado com sucesso";
 ddnsm.zone_strange="Resposta estranha do servidor, você está se conectando ao servidor correto?";
-
 ddnsm.all_closed="Servidor DDNS está fechado";
 ddnsm.all_resolving="Resolvendo nome de domínio";
 ddnsm.all_errresolv="Falha na resolução do nome de domínio";
@@ -453,7 +450,7 @@ ddnsm.all_connectfail="Falha na conexão ao servidor";
 ddnsm.all_disabled="Função DDNS Desabilitada";
 ddnsm.all_noip="Sem conexão à internet";
 
-//help container
+
 var hddns = new Object();
 hddns.right2="O DDNS permite que você acesse sua rede utilizando nomes de domínios ao invés de endereços IPs. \
 	O serviço gerencia mudanças no endereço IP e atualiza as informações do seu domínio dinamicamente. \
@@ -470,7 +467,7 @@ diag.cmd="Comandos";
 diag.startup="Inicialização";
 diag.firewall="Firewall";
 
-//help container
+
 var hdiag = new Object();
 hdiag.right2="Você pode executar comandos via interface web. Preencha a caixa de texto com seus comandos e clique em <em>" + sbutton.runcmd + "</em> para enviar.";
 
@@ -485,7 +482,7 @@ dmz.serv="Habilitar DMZ";
 dmz.host="Endereço IP do Host DMZ";
 
 
-//help container
+
 var hdmz = new Object();
 hdmz.right2="Habilitando esta opção você irá expor o host especificado à Internet. Todas as portas estarão acessíveis a partir da Internet.";
 
@@ -500,7 +497,7 @@ factdef.restore="Restaurar Padrões de Fábrica";
 
 factdef.mess1="Atenção! Se você clicar em OK, o dispositivo irá resetar aos padrões de fábrica e todas as configurações anteriores serão apagadas.";
 
-//help container
+
 var hfactdef = new Object();
 hfactdef.right1="Esta opção irá restaurar todas as opções para o padrão de fábrica. Todas as suas configurações serão resetadas.";
 
@@ -534,12 +531,9 @@ filter.legend3="Serviços Bloqueados";
 filter.catchall="Capturar todos os protocolos P2P";
 filter.legend4="Bloqueio de Website pelo Endereço URL";
 filter.legend5="Bloqueio de Website por Palavras-Chave";
-
 filter.mess1="Remover política?";
 filter.mess2="Você deve selecionar um dia no mínimo.";
 filter.mess3="O tempo final deve ser maior que o tempo inicial.";
-
-//help container
 var hfilter = new Object();
 hfilter.right2="Você pode definir até 10 políticas de acesso. Clique em <em>" + sbutton.del + "</em> para remover uma política ou em <em>" + sbutton.summary + "</em> para ver um resumo das políticas de acesso atuais.";
 hfilter.right4="Habilitar ou Desabilitar política.";
@@ -577,8 +571,6 @@ firewall.ping="Bloquear Requisições Anônimas da Internet";
 firewall.muticast="Filtrar Multicast";
 filter.nat="Filtrar Redirecionamento NAT da Internet";
 filter.port113="Filtrar IDENT (Porta 113)";
-
-//help container
 var hfirewall = new Object();
 hfirewall.right2="Habilita ou desabilita o firewall SPI.";
 
@@ -590,8 +582,6 @@ prforward.titl=" - Encaminhamento de Faixa de Portas";
 prforward.h2="Encaminhamento de Faixa de Portas";
 prforward.legend="Encaminhamentos";
 prforward.app="Aplicação";
-
-//help container
 var hprforward = new Object();
 hprforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. \
 	Exemplos dessas aplicações incluem servidores e alguns jogos on-line. \
@@ -610,7 +600,7 @@ pforward.app="Aplicação";
 pforward.from="Da Porta";
 pforward.to="Para a Porta";
 
-//help container
+
 var hpforward = new Object();
 hpforward.right2="Determinadas aplicações podem requerer a abertura de portas específicas para que funcionem corretamente. \
 	Exemplos dessas aplicações incluem servidores e alguns jogos on-line. \
@@ -750,9 +740,6 @@ idx.dhcp_lease="Tempo de Concessão ao Cliente";
 idx.dhcp_dnsmasq="Usar DNSMasq para o DHCP";
 idx.dns_dnsmasq="Usar DNSMasq para o DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
-
-
-//help container
 var hidx = new Object();
 hidx.right2="Estas configurações são comumente usadas por provedores à Cabo.";
 hidx.right4="Insira o Host Name fornecido pelo seu ISP.";
@@ -810,60 +797,46 @@ log.accept="Pacotes Aceitos";
 var management = new Object();
 management.titl=" - Administração";
 management.h2="Gerenciamento do Roteador";
-
 management.psswd_legend="Usuário e Senha do Roteador";
 management.psswd_user="Nome de Usuário do Roteador";
 management.psswd_pass="Senha do Roteador";
 management.pass_conf="Confirme a Senha do Roteador";
-
 management.remote_legend="Acesso Remoto";
 management.remote_gui="Gerenciamento via Interface Web";
 management.remote_https="Usar HTTPS";
 management.remote_guiport="Porta da Interface Web";
 management.remote_ssh="Gerenciamento SSH";
 management.remote_sshport="Porta do SSH";
-
 management.web_legend="Acesso Web";
 management.web_refresh="Auto-Atualização (em segundos)";
 management.web_sysinfo="Habilitar Página de Informações";
 management.web_sysinfopass="Proteger Página de Informações";
 management.web_sysinfomasq="Mascaramento de MAC na Página de Informações";
-
 management.boot_legend="Boot Wait";
 management.boot_srv="Boot Wait";
-
 management.cron_legend="Cron";
 management.cron_srvd="Cron";
-
 management.loop_legend="Loopback";
 management.loop_srv="Loopback";
-
 management.wifi_legend="802.1x";
 management.wifi_srv="802.1x";
-
 management.ntp_legend="Cliente NTP";
 management.ntp_srv="NTP";
-
 management.rst_legend="Botão de Reset";
 management.rst_srv="Botão de Reset";
-
 management.routing_legend="Roteamento";
 management.routing_srv="Roteamento";
-
 management.wol_legend="Wake-On-LAN";
 management.wol_srv="WOL";
 management.wol_pass="SecureOn Password";
 management.wol_mac="Endereços MAC<br/>( Formato: xx:xx:xx:xx:xx:xx )";
-
 management.ipv6_legend="Suporte IPv6";
 management.ipv6_srv="IPv6";
 management.ipv6_rad="Habilitar Radvd";
 management.ipv6_radconf="Configurações Radvd";
-
 management.jffs_legend="Suporte JFFS2";
 management.jffs_srv="JFFS2";
 management.jffs_clean="Limpar JFFS2";
-
 management.lang_legend="Selecionar Linguagem";
 management.lang_srv="Linguagem";
 management.lang_bulgarian="Búlgaro";
@@ -898,8 +871,6 @@ management.SIPatH_srv="SIPatH";
 management.SIPatH_port="Porta SIP";
 management.SIPatH_domain="Domínio SIP";
 management.gui_style="Estilo da Interface do Roteador";
-
-//help container
 var hmanagement = new Object();
 hmanagement.right1="Auto-Atualização:";
 hmanagement.right2="Ajuste para o intervalo de atualização automática da interface. Se deseja desabilitar a auto-atualização use o valor 0.";
@@ -937,8 +908,6 @@ qos.legend4="Prioridade de MAC";
 qos.legend5="Prioridade de Porta Ethernet";
 qos.legend6="Nível de Banda Padrão";
 qos.bandwith="Banda em Kbits";
-
-//help container
 var hqos = new Object();
 hqos.right1="Uplink:";
 hqos.right2="Defina para 80%~95% (máx) do total de seu limite de upload.";
@@ -976,8 +945,6 @@ route.static_legend="Roteamento Estático";
 route.static_setno="Selecione um Número de Registro";
 route.static_name="Nome da Rota";
 route.static_ip="Endereço IP de Destino da LAN";
-
-//help container
 var hroute = new Object();
 hroute.right2="Se o roteador está hospedando sua conexão à Internet, selecione o modo <em>Gateway</em>. Se existir algum outro roteador na sua rede, selecione o modo <em>Router</em>.";
 hroute.right4="Este é o número único da rota, você pode definir até 20 rotas.";
@@ -997,16 +964,11 @@ survey.thjoin="Ingressar na Rede";
 // ******************************************* Services.asp *******************************************//
 
 var service = new Object();
-
 service.titl=" - Serviços";
 service.h2="Gerenciamento de Serviços";
-
-//kaid
 service.kaid_legend="XBOX Kaid";
 service.kaid_srv="Iniciar Kaid";
 service.kaid_mac="Console Macs: (deve terminar com um ;)";
-
-//DHCPd
 service.dhcp_legend="Cliente DHCP";
 service.dhcp_vendor="Ajustar Vendorclass";
 service.dhcp_legend2="Servidor DHCP";
@@ -1019,23 +981,15 @@ service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="DNS Local";
 service.dnsmasq_opt="Opções Adicionais de DNS";
-
-//pptp.webservices
 service.pptp_legend="PPTP";
 service.pptp_srv="Servidor PPTP";
-service.pptp_client="IP(s) Clientes";
+service.pptp_client="IP(s) Cliente(s)";
 service.pptp_chap="Segredo-CHAP";
-
-//syslog.webservices
 service.syslog_legend="Log do Sistema";
 service.syslog_srv="Syslogd";
 service.syslog_ip="Servidor Remoto";
-
-//telnet.webservices
 service.telnet_legend="Telnet";
 service.telnet_srv="Telnet";
-
-//pptpd_client.webservices
 service.pptpd_legend="Cliente PPTP";
 service.pptpd_option="Opções do Cliente PPTP";
 service.pptpd_ipdns="IP do Servidor ou Nome DNS";
@@ -1045,17 +999,11 @@ service.pptpd_encry="Criptografia MPPE";
 service.pptpd_mtu="MTU";
 service.pptpd_mru="MRU";
 service.pptpd_nat="NAT";
-
-//rflow.webservices
 service.rflow_legend="RFlow / MACupd";
 service.rflow_srv1="RFlow";
 service.rflow_srv2="MACupd";
-
-//pppoe-relay.webservices
 service.pppoe_legend="Relay PPPOE";
 service.pppoe_srv="Relay";
-
-//snmp.webservices
 service.snmp_legend="SNMP";
 service.snmp_srv="SNMP";
 service.snmp_loc="Localização";
@@ -1063,8 +1011,6 @@ service.snmp_contact="Contato";
 service.snmp_name="Nome";
 service.snmp_read="Comunidade RO";
 service.snmp_write="Comunidade RW";
-
-//openvpn.webservices
 service.vpn_legend="Cliente OpenVPN";
 service.vpn_srv="Iniciar OpenVPN";
 service.vpn_ipname="IP/Namo do Servidor";
@@ -1077,8 +1023,6 @@ service.vpn_srvcert="Certificado Público do Servidor";
 service.vpn_clicert="Certificado Público do Cliente";
 service.vpn_certtype="nsCertType";
 service.vpn_clikey="Chave Privada do Cliente";
-
-//sshd.webservices
 service.ssh_legend="Shell Seguro";
 service.ssh_srv="SSHd";
 service.ssh_password="Login com Senha";
@@ -1102,8 +1046,6 @@ status_lan.legend="Status da LAN";
 status_lan.h22="Protocolo de Configuração Dinâmica de Hosts (DHCP)";
 status_lan.legend2="Status DHCP";
 status_lan.legend3="Clientes DHCP";
-
-//help container
 var hstatus_lan = new Object();
 hstatus_lan.right2="Este é o Endereço MAC do Roteador, como visto na sua rede local (rede Ethernet).";
 hstatus_lan.right4="Este é o Endereço IP do Roteador, como visto na sua rede local (rede Ethernet).";
@@ -1141,8 +1083,6 @@ status_router.h22="Internet";
 status_router.legend5="Tipo de Configuração";
 status_router.www_login="Tipo de Login";
 status_router.www_loginstatus="Status do Login";
-
-//help container
 var hstatus_router = new Object();
 hstatus_router.right2="Este é o nome específico do roteador, que pode ser configurado na aba <i>Configurações</i>.";
 hstatus_router.right4="Este é o Endereço MAC do roteador, visível para o seu ISP.";
@@ -1161,8 +1101,6 @@ status_sputnik.titl=" - Status do Agente Sputnik";
 status_sputnik.h2="Agente Sputnik&reg;&trade;";
 status_sputnik.manage="Gerenciado Por";
 status_sputnik.license="Licença SCC Nº.";
-
-//help container
 var hstatus_sputnik = new Object();
 hstatus_sputnik.right1="Status do Agente Sputnik";
 hstatus_sputnik.right2="Esta tela exibe o status do processo do Agente Sputnik.";
@@ -1186,8 +1124,6 @@ status_wireless.h22="Nós Wireless";
 status_wireless.legend3="Clientes Wireless";
 status_wireless.signal_qual="Qualidade do Sinal";
 status_wireless.wds="Nós WDS";
-
-//help container
 var hstatus_wireless = new Object();
 hstatus_wireless.right2="Este é o Endereço MAC do Roteador, visto pela sua rede wireless.";
 hstatus_wireless.right4="Como selecionado na aba Wireless, ela irá mostrar o modo de operação da rede wireless (Misto, Somente-G, Somente-B ou Desabilitado) utilizado pela rede.";
@@ -1202,8 +1138,6 @@ trforward.legend="Encaminhamentos";
 trforward.trrange="Triggered Port Range";
 trforward.fwdrange="Faixa de Portas Encaminhadas";
 trforward.app="Aplicação";
-
-//help container
 var htrforward = new Object();
 htrforward.right2="Insira o nome do aplicativo para o trigger.";
 htrforward.right4="Liste a faixa de portas triggered para cada aplicação. Confira com a documentação do aplicativo quais os números das portas necessárias.";
@@ -1225,7 +1159,7 @@ upgrad.file="Por favor selecione um arquivo para atualizar";
 upgrad.warning="A T E N Ç Ã O !!";
 upgrad.mess1="A atualização do firmware pode levar alguns minutos.<br />Não desligue o roteador nem pressione o botão de reset!";
 
-//help container
+
 var hupgrad = new Object();
 hupgrad.right2="Clique no botão <em>Pesquisar...</em> para escolher o arquivo de firmware a ser carregado no roteador.<br /><br /> \
 			Clique no botão <em>Atualizar</em> para iniciar o processo de atualização. A atualização não deve ser interrompida.";
@@ -1243,9 +1177,6 @@ upnp.clear="Limpar a lista UPnP na inicialização";
 upnp.url="Enviar URL de apresentação";
 upnp.msg1="Clique para apagar a concessão";
 upnp.msg2="Remover todas as entradas?";
-
-
-//help container
 var hupnp = new Object();
 hupnp.right2="Clique na lixeira para remover uma entrada.";
 hupnp.right4="Permite às aplicações configurarem encaminhamentos de porta automaticamente.";
@@ -1260,8 +1191,6 @@ vpn.legend="Protocolos de VPN";
 vpn.ipsec="Permitir passagem de IPSec";
 vpn.pptp="Permitir passagem de PPTP";
 vpn.l2tp="Permitir passagem de L2TP";
-
-//help container
 var hvpn = new Object();
 hvpn.right1="Você pode escolher habilitar a passagem de IPSec, PPTP e/ou L2TP através dos seus dispositivos de rede para comunicar-se via VPN.";
 
@@ -1300,8 +1229,6 @@ wol.mac="Endereço(s) MAC";
 wol.broadcast="Broadcast de Rede";
 wol.udp="Porta UDP";
 wol.msg1="Clique para remover o host WOL";
-
-//help container
 var hwol = new Object();
 hwol.right2="Esta página lhe permite <em>Acordar</em> hosts na sua rede local (ex.: conectado localmente ao roteador).";
 hwol.right4="Endereços MAC são inseridos no formato xx:xx:xx:xx:xx:xx (ex.: 01:23:45:67:89:AB)";
@@ -1316,8 +1243,6 @@ wanmac.h2="Clone de Endereço MAC";
 wanmac.legend="Clonar MAC";
 wanmac.wan="Clonar MAC WAN";
 wanmac.wlan="Clonar MAC Wireless";
-
-//help container
 var hwanmac = new Object();
 hwanmac.right2="Alguns ISPs requerem o registro do seu endereço MAC. Se você não deseja registrar novamente seu endereço MAC, caso já possua um endereço registrado, você pode clonar o endereço MAC que está registrado com seu ISP e utilizá-lo em seu roteador.";
 
@@ -1339,8 +1264,6 @@ wpa.radius_port="Porta do Servidor RADIUS";
 wpa.radius_key="Chave RADIUS";
 wpa.algorithms="Algoritimos WPA";
 wpa.shared_key="Chave Compartilhada WPA";
-
-//help container
 var hwpa = new Object();
 hwpa.right2="Você pode escolher entre <em>Desabilitado</em>, <em>WEP</em>, <em>Chave WPA Pré-Compartilhada</em>, <em>WPA RADIUS</em>, ou <em>RADIUS</em>. Todos os dispositivos na sua rede deverão usar o mesmo modo de segurança.";
 
@@ -1421,13 +1344,13 @@ wl_basic.label5="Broadcast SSID Wireless";
 wl_basic.label6="Escala de Sensibilidade (Sincronismo ACK)";
 wl_basic.ap="Access Point";
 wl_basic.client="Cliente";
+wl_basic.repeater="Repetidor";
 wl_basic.clientBridge="Cliente Bridge";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Misto";
 wl_basic.b="Somente-B";
+wl_basic.a="Somente-A";
 wl_basic.g="Somente-G";
-
-//help container
 var hwl_basic = new Object();
 hwl_basic.right2="Se você deseja excluir clientes Wireless-G, escolha o modo <em>Somente-B</em>. Se você deseja excluir clientes Wireless-B, escolha o modo <em>Somente-G</em>. Se você deseja desabilitar o acesso wireless, escolha <em>Desabilitar</em>.";
 hwl_basic.right3="Escala de Sensibilidade: ";
@@ -1476,7 +1399,7 @@ wl_adv.table2="Parâmetros EDCA Cliente (Cliente para Access Point)";
 wl_adv.lng="Longo"; 					//************* don't use .long ! *************
 wl_adv.shrt="Curto"; 				//************* don't use .short ! **************
 
-//help container
+
 var hwl_adv = new Object();
 hwl_adv.right2="Você pode escolher entre <em>Automático</em> e <em>Chave Compartilhada</em>. A autenticação de Chave Compartilhada é mais segura, mas todos os dispositivos da rede devem suportar este modo de autenticação.";
 
