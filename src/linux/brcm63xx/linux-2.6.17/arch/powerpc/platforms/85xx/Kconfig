@@ -1,0 +1,31 @@
+menu "Platform support"
+	depends on PPC_85xx
+
+choice
+	prompt "Machine Type"
+	default MPC8540_ADS
+
+config MPC8540_ADS
+	bool "Freescale MPC8540 ADS"
+	select DEFAULT_UIMAGE
+	help
+	  This option enables support for the MPC 8540 ADS board
+
+endchoice
+
+config MPC8540
+	bool
+	select PPC_UDBG_16550
+	select PPC_INDIRECT_PCI
+	default y if MPC8540_ADS
+
+config PPC_INDIRECT_PCI_BE
+	bool
+	depends on PPC_85xx
+	default y
+
+config MPIC
+	bool
+	default y
+
+endmenu
