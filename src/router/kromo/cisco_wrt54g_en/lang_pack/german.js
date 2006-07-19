@@ -287,7 +287,7 @@ bmenu.setupvlan="VLANs";
 
 bmenu.wireless="WLAN";
 bmenu.wirelessBasic="Basis-Einstellungen";
-bmenu.wirelessRADIUS="RADIUS";
+bmenu.wirelessRadius="RADIUS";
 bmenu.wirelessSecurity="WLAN-Sicherheit";
 bmenu.wirelessMac="MAC-Filter";
 bmenu.wirelessAdvanced="Erweiterte Einstellungen";
@@ -325,7 +325,7 @@ bmenu.adminLog="Log";
 bmenu.adminDiag="Diagnose";
 bmenu.adminWol="WOL";
 bmenu.adminFactory="Werkseinstellungen";
-bmenu.adminUpgrade="Firmware-Aktualisierung";
+bmenu.adminUpgrade="Firmware-Update";
 bmenu.adminBackup="Backup";
 
 
