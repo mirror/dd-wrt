@@ -21,7 +21,9 @@ endif
 OBJS := rc.o init.o servicemanager.o services.o stats.o crc.o http.o
 OBJS += resetbutton.o ntp.o listen.o check_ps.o process_monitor.o sendudp.o 
 
-
+REWRITE_REVISION_H1 := $(shell echo -n '\#define SVN_REVISION "' > revision.h)
+REWRITE_REVISION_H2 := $(shell svnversion -n . >> revision.h)
+REWRITE_REVISION_H3 := $(shell echo '"' >> revision.h)
 
 #ifdef $(CONFIG_DIST)
 CFLAGS += -DDIST=\"$(CONFIG_DIST)\"
