@@ -44,7 +44,7 @@ ifeq ($(CONFIG_MULTICAST),y)
 CFLAGS += -DHAVE_MULTICAST
 endif
 ifeq ($(CONFIG_RADIOOFF),y)
-  CFLAGS += -DHAVE_RADIOOFF
+CFLAGS += -DHAVE_RADIOOFF
 endif
 ifeq ($(CONFIG_34TELECOM),y)
 CFLAGS += -DHAVE_34TELECOM
@@ -240,6 +240,7 @@ install: all
 	install rc $(INSTALLDIR)/sbin	
 	$(STRIP) $(INSTALLDIR)/sbin/rc
 	cd $(INSTALLDIR)/sbin && ln -sf rc init
+	cd $(INSTALLDIR)/sbin && ln -sf rc brctl
 	cd $(INSTALLDIR)/sbin && ln -sf rc erase
 	cd $(INSTALLDIR)/sbin && ln -sf rc write
 	cd $(INSTALLDIR)/sbin && ln -sf rc restore

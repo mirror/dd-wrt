@@ -100,8 +100,8 @@ obj-$(CONFIG_RC) += rc services
 #obj-$(CONFIG_LIBBCM) += libbcm
 obj-$(CONFIG_SHARED) += shared
 obj-$(CONFIG_WWW) += www
-obj-$(CONFIG_GLIBC) += lib
-obj-$(CONFIG_UCLIBC) += lib
+obj-$(CONFIG_GLIBC) += lib.mipsel
+obj-$(CONFIG_UCLIBC) += lib.mipsel
 obj-$(CONFIG_BUSYBOX) += busybox net-tools
 obj-$(CONFIG_DNSMASQ) += dnsmasq
 obj-$(CONFIG_IPTABLES) += iptables
@@ -194,6 +194,7 @@ obj-$(CONFIG_IPV6) += ipv6
 obj-$(CONFIG_CONNTRACK) += conntrack
 obj-$(CONFIG_MEDIASERVER) += mediaserver
 obj-$(CONFIG_RADIOOFF) += radiooff
+obj-y += sprom
 
 
 
@@ -653,6 +654,7 @@ wol-install:
 	$(STRIP) $(INSTALLDIR)/wol/usr/sbin/wol
 
 dhcpforwarder:
+	cd dhcpforwarder && ./configure --host=$(ARCH)-linux-elf --sysconfdir=/tmp/dhcp-fwd CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-Os -mips32 -mtune=mips32 -funit-at-a-time -pipe -DHAVE_MALLOC=1 -Drpl_malloc=malloc" 
 	$(MAKE) -C dhcpforwarder
 
 dhcpforwarder-install:
@@ -1213,6 +1215,7 @@ bpalogin-install:
 	$(STRIP) $(INSTALLDIR)/bpalogin/usr/sbin/bpalogin
 
 dropbear:
+	cd dropbear && ./configure --host=$(ARCH)-linux --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-I../zlib $(COPTS) -L../zlib" LDFLAGS="-L../zlib" host_alias=$(ARCH)-linux
 	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
 
 dropbear-install:
@@ -1358,8 +1361,8 @@ sputnik-install:
 	cp -fpR sputnik/config/* $(INSTALLDIR)/sputnik/etc/config
 	mkdir -p $(INSTALLDIR)/sputnik/www/images
 	cp -fpR sputnik/images/* $(INSTALLDIR)/sputnik/www/images
-	install -D sputnik/sputnik $(INSTALLDIR)/sputnik/usr/sbin/sputnik
-	install -D sputnik/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
+	install -D sputnik/$(ARCH)/sputnik $(INSTALLDIR)/sputnik/usr/sbin/sputnik
+	install -D sputnik/$(ARCH)/libiksemel.so $(INSTALLDIR)/sputnik/usr/lib/libiksemel.so
 
 openvpn:
 	cd lzo && ./configure --host=$(ARCH)-linux CFLAGS="$(COPTS)"
@@ -1385,6 +1388,9 @@ else
 	install -D openvpn/config2/openvpn.webservices $(INSTALLDIR)/openvpn/etc/config/openvpn.webservices
 endif
 
+net-tools:
+	make -C net-tools
+	make -C net-tools arp
 
 net-tools-install:
 	@true

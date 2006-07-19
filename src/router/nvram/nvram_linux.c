@@ -84,7 +84,6 @@ unlock (void)
 char *
 nvram_get (const char *name)
 {
-//fprintf(stderr,"nvram_get %s\n",name);
 //lock();
   size_t count = strlen (name) + 1;
   char tmp[100], *value;
@@ -121,6 +120,8 @@ nvram_get (const char *name)
   if (off != (unsigned long *) tmp)
     free (off);
   //unlock();
+  
+//fprintf(stderr,"nvram_get %s = %s\n",name,value!=NULL?value:"");
   return value;
 }
 

@@ -14,6 +14,13 @@
 #define SYSLOG_NAMES
 
 #include "dnsmasq.h"
+//typedef struct _code {
+//	char	*c_name;
+//	int	c_val;
+//} CODE;
+
+//extern CODE prioritynames[];
+//extern CODE facilitynames[];
 
 #ifndef HAVE_GETOPT_LONG
 struct myoption {

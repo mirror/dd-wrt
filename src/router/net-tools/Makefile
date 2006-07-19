@@ -86,7 +86,7 @@ ifeq ($(HAVE_MII),1)
 PROGS	+= mii-tool
 endif
 
-CC = mipsel-linux-uclibc-gcc
+#CC = mipsel-linux-uclibc-gcc
 # Compiler and Linker Options
 # You may need to uncomment and edit these if you are using libc5 and IPv6.
 COPTS += -D_GNU_SOURCE -Wall # -I/usr/inet6/include
@@ -143,6 +143,7 @@ mostlyclean:
 		rm -f *.o DEADJOE config.new *~ *.orig lib/*.o
 
 clean: mostlyclean
+		rm -f *.a
 		rm -f $(PROGS)
 		@for i in $(SUBDIRS); do (cd $$i && $(MAKE) clean) ; done
 		@cd po && $(MAKE) clean

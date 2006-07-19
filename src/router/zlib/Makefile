@@ -16,7 +16,7 @@
 # To install in $HOME instead of /usr/local, use:
 #    make install prefix=$HOME
 
-CC=mipsel-linux-uclibc-gcc
+#CC=mipsel-linux-uclibc-gcc
 
 CFLAGS=$(COPTS) -DUSE_MMAP
 #CFLAGS=-O -DMAX_WBITS=14 -DMAX_MEM_LEVEL=7

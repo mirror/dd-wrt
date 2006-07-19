@@ -3483,3 +3483,35 @@ cprintf("device %s\n",device!=NULL?device:"");
   return 0;
 }
 #endif
+extern int br_add_bridge (const char *brname);
+extern int br_del_bridge (const char *brname);
+extern int br_add_interface (const char *br, const char *dev);
+extern int br_del_interface (const char *br, const char *dev);
+extern int br_set_stp_state (const char *br, int stp_state);
+
+int brctl_main(int argc,char **argv)
+{
+if (argc==1)
+    {
+    fprintf(stderr,"try to be professional!\n");
+    return -1;
+    }
+br_init();
+if (!strcmp(argv[1],"addif"))
+    {
+    br_add_interface(argv[2],argv[3]);
+    }
+if (!strcmp(argv[1],"delif"))
+    {
+    br_del_interface(argv[2],argv[3]);
+    }
+if (!strcmp(argv[1],"addbr"))
+    {
+    br_add_bridge(argv[2]);
+    }
+if (!strcmp(argv[1],"delbr"))
+    {
+    br_del_bridge(argv[2]);
+    }
+br_shutdown();
+}
