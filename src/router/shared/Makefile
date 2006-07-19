@@ -219,7 +219,7 @@ clean:
 
 libshared.so: $(OBJS)
 #	$(CC) -shared -o $@ $(CFLAGS) $(OBJS) 
-	$(LD) -shared -o $@ $^
+	$(LD) -shared -o $@ $^ -L../nvram -lnvram
 
 libshared.a: $(OBJS)
 	$(AR) arc -o  $@ $^

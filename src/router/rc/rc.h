@@ -309,7 +309,7 @@ extern int force_to_dial (void);
 extern char *range (char *start, char *end);
 
 
-static int start_heartbeat (int status);
+//static int start_heartbeat (int status);
 extern int stop_heartbeat (void);
 extern int hb_connect_main (int argc, char **argv);
 extern int hb_disconnect_main (int argc, char **argv);

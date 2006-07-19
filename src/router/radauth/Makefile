@@ -2,8 +2,8 @@ include $(TOP)/.config
 
 WRT_BUILDROOT=/opt/
 
-CC=mipsel-linux-uclibc-gcc
-STRIP=mipsel-linux-uclibc-strip
+#CC=mipsel-linux-uclibc-gcc
+#STRIP=mipsel-linux-uclibc-strip
 
 
 ifeq ($(CONFIG_MSSID),y)
@@ -38,7 +38,7 @@ strip: all
 	$(STRIP) wrt-radauth radius-client macupd
 
 clean:
-	rm -f wrt-radauth md5.o wrt-radauth.o radius.o radius-client.o radius-client macupd
+	rm -f wrt-radauth md5.o wrt-radauth.o radius.o radius-client.o radius-client macupd macupd.o
 
 dist:
 	cd ..; rm -f wrt-radauth.tar.gz; tar -c -v --exclude=wrt-radauth/CVS -z -f wrt-radauth.tar.gz wrt-radauth/

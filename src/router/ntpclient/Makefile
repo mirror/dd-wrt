@@ -1,5 +1,5 @@
 
-CC = mipsel-linux-uclibc-gcc
+#CC = mipsel-linux-uclibc-gcc
 CFLAGS += $(COPTS) -Wall
 
 all: ntpclient

@@ -89,7 +89,7 @@ enum {
   optDHCP_COOKIE = 0x63538263u,
   flgDHCP_BCAST	 = 0x0080u
 #else
-  DHCP_COOKIE  	 = 0x63825363u,
+  optDHCP_COOKIE = 0x63825363u,
   flgDHCP_BCAST	 = 0x8000u
 #endif
 };

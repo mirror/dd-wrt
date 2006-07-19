@@ -277,8 +277,16 @@ period_check (int sig)
     }
   else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRT54G)
     {
+  runStartup ("/etc/config", ".sesbutton");
+  runStartup ("/jffs/etc/config", ".sesbutton");	//if available
+  runStartup ("/mmc/etc/config", ".sesbutton");	//if available
+  runStartup ("/tmp/etc/config", ".sesbutton");	//if available
       if (ses_mode == 1)
 	{
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
+	  eval("wl","radio","on");
+#endif
 	  //enable orange led
 	  eval ("gpio", "enable", "2");
 	  eval ("gpio", "disable", "3");
@@ -286,6 +294,10 @@ period_check (int sig)
 	}
       else if (ses_mode == 0)
 	{
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
+	  eval("wl","radio","on");
+#endif
 	  //enable white led
 	  eval ("gpio", "enable", "3");
 	  eval ("gpio", "disable", "2");
@@ -293,12 +305,20 @@ period_check (int sig)
 	}
       else if (ses_mode == 2)
 	{
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
+	  eval("wl","radio","on");
+#endif
 	  eval ("gpio", "disable", "3");
 	  eval ("gpio", "disable", "2");
 	  ses_mode = 3;
 	}
       else if (ses_mode == 3)
 	{
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
+	  eval("wl","radio","off");
+#endif
 	  eval ("gpio", "enable", "3");
 	  eval ("gpio", "enable", "2");
 	  ses_mode = 0;
@@ -313,8 +333,8 @@ period_check (int sig)
       if (ses_mode == 1)
 	{
 	  //enable orange led
-#ifdef HAVE_RADIOFF
-	if (nvram_match("radiooff_button","1")
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
 	  eval("wl","radio","on");
 #endif
 	  eval ("gpio", "enable", "5");
@@ -324,8 +344,8 @@ period_check (int sig)
       else if (ses_mode == 0)
 	{
 	  //enable white led
-#ifdef HAVE_RADIOFF
-	if (nvram_match("radiooff_button","1")
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
 	  eval("wl","radio","on");
 #endif
 	  eval ("gpio", "enable", "7");
@@ -334,8 +354,8 @@ period_check (int sig)
 	}
       else if (ses_mode == 2)
 	{
-#ifdef HAVE_RADIOFF
-	if (nvram_match("radiooff_button","1")
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
 	  eval("wl","radio","on");
 #endif
 	  eval ("gpio", "disable", "5");
@@ -344,8 +364,8 @@ period_check (int sig)
 	}
       else if (ses_mode == 3)
 	{
-#ifdef HAVE_RADIOFF
-	if (nvram_match("radiooff_button","1")
+#ifdef HAVE_RADIOOFF
+	if (nvram_match("radiooff_button","1"))
 	  eval("wl","radio","off");
 #endif
 	  eval ("gpio", "enable", "5");

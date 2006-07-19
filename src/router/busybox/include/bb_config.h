@@ -6,7 +6,7 @@
 
 /* Version Number */
 #define BB_VER "1.2.0"
-#define BB_BT "2006.07.10-01:02+0000"
+#define BB_BT "2006.07.19-23:17+0000"
 
 #define HAVE_DOT_CONFIG 1
 #define ENABLE_DOT_CONFIG 1
@@ -41,10 +41,10 @@
 #define USE_FEATURE_BUFFERS_GO_IN_BSS(...)
 #define SKIP_FEATURE_BUFFERS_GO_IN_BSS(...)  __VA_ARGS__
 
-#undef CONFIG_SHOW_USAGE
-#define ENABLE_SHOW_USAGE 0
-#define USE_SHOW_USAGE(...)
-#define SKIP_SHOW_USAGE(...)  __VA_ARGS__
+#define CONFIG_SHOW_USAGE 1
+#define ENABLE_SHOW_USAGE 1
+#define USE_SHOW_USAGE(...)  __VA_ARGS__
+#define SKIP_SHOW_USAGE(...)
 
 #undef CONFIG_FEATURE_VERBOSE_USAGE
 #define ENABLE_FEATURE_VERBOSE_USAGE 0
@@ -1397,10 +1397,10 @@
 #define USE_LSATTR(...)
 #define SKIP_LSATTR(...)  __VA_ARGS__
 
-#define CONFIG_MKE2FS 1
-#define ENABLE_MKE2FS 1
-#define USE_MKE2FS(...)  __VA_ARGS__
-#define SKIP_MKE2FS(...)
+#undef CONFIG_MKE2FS
+#define ENABLE_MKE2FS 0
+#define USE_MKE2FS(...)
+#define SKIP_MKE2FS(...)  __VA_ARGS__
 
 #undef CONFIG_TUNE2FS
 #define ENABLE_TUNE2FS 0
@@ -1747,10 +1747,10 @@
 #define USE_BBCONFIG(...)
 #define SKIP_BBCONFIG(...)  __VA_ARGS__
 
-#define CONFIG_CROND 1
-#define ENABLE_CROND 1
-#define USE_CROND(...)  __VA_ARGS__
-#define SKIP_CROND(...)
+#undef CONFIG_CROND
+#define ENABLE_CROND 0
+#define USE_CROND(...)
+#define SKIP_CROND(...)  __VA_ARGS__
 
 #undef CONFIG_DEBUG_CROND_OPTION
 #define ENABLE_DEBUG_CROND_OPTION 0

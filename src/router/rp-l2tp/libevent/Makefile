@@ -18,7 +18,7 @@ all: libevent.a
 libevent.a: $(OBJS)
 	rm -f libevent.a
 	ar -cq libevent.a $(OBJS)
-	mipsel-linux-uclibc-ranlib libevent.a
+	$(ARCH)-linux-uclibc-ranlib libevent.a
 
 event.o: event.c $(HDRS)
 	$(CC) $(CFLAGS) -c -o event.o event.c

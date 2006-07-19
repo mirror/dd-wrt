@@ -172,7 +172,8 @@ endif
 dropbearmulti: multilink 
 
 multibinary: $(HEADERS) $(MULTIOBJS) $(LTC) $(LTM) Makefile
-	$(LD) $(LDFLAGS) -o dropbearmulti$(EXEEXT) $(MULTIOBJS) $(LIBS)
+	$(AR) arc -o dropbear.a $(MULTIOBJS)
+#	$(LD) $(LDFLAGS) -o dropbearmulti$(EXEEXT) $(MULTIOBJS) $(LIBS)
 
 multilink: multibinary $(addprefix link, $(PROGRAMS))
 
