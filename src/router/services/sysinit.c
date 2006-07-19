@@ -893,10 +893,12 @@ start_sysinit (void)
       eval ("gpio", "enable", "6");	//MN700 power led on
       break;
       
+#ifndef HAVE_MSSID      
 	case ROUTER_BUFFALO_WBR54G:
-      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity
+      nvram_set ("wl0gpio0", "130");	//Fix for wireless led polarity (v23 only)
 	  break;
-        
+#endif  
+      
 	case ROUTER_BUFFALO_WBR2G54S:
       eval ("gpio", "disable", "1");	//WBR2G54 diag led off
 	  break;
