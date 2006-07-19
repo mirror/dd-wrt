@@ -474,47 +474,50 @@ int main (int argc, char **argv)
 
 	  if (!(daemon->options & OPT_NO_POLL))
 	    {
-	      struct resolvc *res = daemon->resolv_files, *latest = NULL;
+	      struct resolvc *res, *latest;
 	      struct stat statbuf;
 	      time_t last_change = 0;
 	      /* There may be more than one possible file. 
 		 Go through and find the one which changed _last_.
 		 Warn of any which can't be read. */
-	      while (res)
-		{
-		  if (stat(res->name, &statbuf) == -1)
-		    {
-		      if (!res->logged)
-			syslog(LOG_WARNING, _("failed to access %s: %m"), res->name);
-		      res->logged = 1;
-		    }
-		  else
-		    {
-		      res->logged = 0;
-		      if (statbuf.st_mtime != res->mtime &&
-			  difftime(statbuf.st_mtime, last_change) > 0.0)
-			{
-			  last_change = statbuf.st_mtime;
-			  latest = res;
-			}
-		    }
-		  res = res->next;
-		}
-	  
+	      for (latest = NULL, res = daemon->resolv_files; res; res = res->next)
+		if (stat(res->name, &statbuf) == -1)
+		  {
+		    if (!res->logged)
+		      syslog(LOG_WARNING, _("failed to access %s: %m"), res->name);
+		    res->logged = 1;
+		  }
+		else
+		  {
+		    res->logged = 0;
+		    if (statbuf.st_mtime != res->mtime)
+		      {
+			res->mtime = statbuf.st_mtime;
+			if (difftime(statbuf.st_mtime, last_change) > 0.0)
+			  {
+			    last_change = statbuf.st_mtime;
+			    latest = res;
+			  }
+		      }
+		  }
+	      
 	      if (latest)
 		{
 		  static int warned = 0;
 		  if (reload_servers(latest->name, daemon))
 		    {
 		      syslog(LOG_INFO, _("reading %s"), latest->name);
-		      latest->mtime = last_change;
 		      warned = 0;
 		      check_servers(daemon);
 		    }
-		  else if (!warned)
+		  else 
 		    {
-		      syslog(LOG_WARNING, _("no servers found in %s, will retry"), latest->name);
-		      warned = 1;
+		      latest->mtime = 0;
+		      if (!warned)
+			{
+			  syslog(LOG_WARNING, _("no servers found in %s, will retry"), latest->name);
+			  warned = 1;
+			}
 		    }
 		}
 	    }
@@ -567,7 +570,7 @@ int main (int argc, char **argv)
 		    if (daemon->tcp_pids[i] != 0)
 		      kill(daemon->tcp_pids[i], SIGALRM);
 		  
-		  if (daemon->dhcp)
+		  if (daemon->lease_stream)
 		    fclose(daemon->lease_stream);
 		    
 		  exit(0);

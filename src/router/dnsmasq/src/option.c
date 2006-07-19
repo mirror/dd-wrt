@@ -10,21 +10,10 @@
    GNU General Public License for more details.
 */
 
-#undef BUSYBOX
 /* define this to get facilitynames */
-#ifndef BUSYBOX
 #define SYSLOG_NAMES
-#endif
 
 #include "dnsmasq.h"
-
-#ifdef BUSYBOX
-typedef struct _code {
-        char    *c_name;
-        int     c_val;
-} CODE;
-extern CODE facilitynames[];
-#endif
 
 #ifndef HAVE_GETOPT_LONG
 struct myoption {
@@ -35,7 +24,7 @@ struct myoption {
 };
 #endif
 
-#define OPTSTRING "9531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:6:7:8:"
+#define OPTSTRING "9531yZDNLERKzowefnbvhdkqr:m:p:c:l:s:i:t:u:g:a:x:S:C:A:T:H:Q:I:B:F:G:O:M:X:V:U:j:P:J:W:Y:2:4:6:7:8:0:"
 
 #ifdef HAVE_GETOPT_LONG
 static const struct option opts[] =  
@@ -107,6 +96,7 @@ static const struct myoption opts[] =
     {"conf-dir", 1, 0, '7'},
     {"log-facility", 1, 0 ,'8'},
     {"leasefile-ro", 0, 0, '9'},
+    {"dns-forward-max", 1, 0, '0'},
     { NULL, 0, 0, 0 }
   };
 
@@ -208,8 +198,9 @@ static const struct {
   { "-5, --no-ping", gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
   { "-6, --dhcp-script=path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
   { "-7, --conf-dir=path", gettext_noop("Read configuration from all the files in this directory."), NULL },
-  { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility."), NULL },
+  { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility. (defaults to DAEMON)"), NULL },
   { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
+  { "-0, --dns-forward-max", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
   { NULL, NULL, NULL }
 }; 
 
@@ -338,6 +329,8 @@ static void do_usage(void)
 	    sprintf(buff, "%d", EDNS_PKTSZ);
 	  else if (strcmp(usage[i].arg, "&") == 0)
 	    sprintf(buff, "%d", MAXLEASES);
+	  else if (strcmp(usage[i].arg, "!") == 0)
+	    sprintf(buff, "%d", FTABSIZ);
 	  else 
 	    strcpy(buff, usage[i].arg);
 	}
@@ -431,7 +424,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	  problem = "bad log facility";
 	}
       break;
-
+      
     case 'x': 
       daemon->runfile = safe_string_alloc(arg);
       break;
@@ -824,7 +817,12 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
       if (!atoi_check(arg, &daemon->port))
 	option = '?';
       break;
-      
+    
+    case '0':
+      if (!atoi_check(arg, &daemon->ftabsize))
+	option = '?';
+      break;  
+    
     case 'P':
       {
 	int i;
@@ -1832,6 +1830,7 @@ struct daemon *read_opts(int argc, char **argv, char *compile_opts)
 
   /* Set defaults - everything else is zero or NULL */
   daemon->cachesize = CACHESIZ;
+  daemon->ftabsize = FTABSIZ;
   daemon->port = NAMESERVER_PORT;
   daemon->default_resolv.is_default = 1;
   daemon->default_resolv.name = RESOLVFILE;

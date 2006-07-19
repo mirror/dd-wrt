@@ -424,7 +424,7 @@ struct daemon {
   struct bogus_addr *bogus_addr;
   struct server *servers;
   int log_fac; /* log facility */
-  int cachesize;
+  int cachesize, ftabsize;
   int port, query_port;
   unsigned long local_ttl;
   struct hostsfile *addn_hosts;
