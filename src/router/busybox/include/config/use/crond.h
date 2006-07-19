@@ -1,1 +1,1 @@
-#define USE_CROND(...)  __VA_ARGS__
+#define USE_CROND(...)

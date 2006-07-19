@@ -64,14 +64,14 @@ bindir=${exec_prefix}/bin
 sbindir=${exec_prefix}/sbin
 
 CC=mipsel-linux-uclibc-gcc
-LD=mipsel-linux-uclibc-gcc
-AR=mipsel-linux-ar
-RANLIB=mipsel-linux-ranlib
-STRIP=mipsel-linux-strip
+LD=mipsel-linux-uclibc-ld
+AR=mipsel-linux-uclibc-ar
+RANLIB=mipsel-linux-uclibc-ranlib
+STRIP=@true
 INSTALL=install
-CFLAGS=-I. -I$(srcdir)/libtomcrypt/src/headers/ -I../zlib $(COPTS) -L../zlib
+CFLAGS=-I. -I$(srcdir)/libtomcrypt/src/headers/ -I../zlib -Os -pipe -mips32 -mtune=mips32 -funit-at-a-time -L../zlib
 LIBS=$(LTC) $(LTM) -lutil -lz  -lcrypt
-LDFLAGS=-L../zlib -Wl,--gc-sections
+LDFLAGS=-L../zlib
 
 EXEEXT=
 
@@ -165,7 +165,7 @@ scp: $(SCPOBJS)  $(HEADERS) Makefile
 # multi-binary compilation.
 MULTIOBJS=
 ifeq ($(MULTI),1)
-	MULTIOBJS=$(sort $(foreach prog, $(PROGRAMS), $($(prog)objs)))
+	MULTIOBJS=dbmulti.o $(sort $(foreach prog, $(PROGRAMS), $($(prog)objs)))
 	CFLAGS+=$(addprefix -DDBMULTI_, $(PROGRAMS)) -DDROPBEAR_MULTI
 endif
 
@@ -173,6 +173,7 @@ dropbearmulti: multilink
 
 multibinary: $(HEADERS) $(MULTIOBJS) $(LTC) $(LTM) Makefile
 	$(AR) arc -o dropbear.a $(MULTIOBJS)
+#	$(LD) $(LDFLAGS) -o dropbearmulti$(EXEEXT) $(MULTIOBJS) $(LIBS)
 
 multilink: multibinary $(addprefix link, $(PROGRAMS))
 
@@ -199,7 +200,7 @@ clean: ltc-clean ltm-clean thisclean
 
 thisclean:
 	-rm -f dropbear dbclient dropbearkey dropbearconvert scp scp-progress \
-			dropbearmulti *.a *.o *.da *.bb *.bbg *.prof 
+			dropbearmulti *.o *.da *.bb *.bbg *.prof 
 
 distclean: clean tidy
 	-rm -f config.h

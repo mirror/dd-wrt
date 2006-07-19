@@ -7,7 +7,7 @@ CFLAGS = -MMD $(COPTS) -Wall -g
 endif
 
 # Include directories for CVS version
-CFLAGS += -I. -I../utils -I../hostapd
+CFLAGS += -I. -I../utils -DNEED_PRINTF
 
 ALL=wpa_supplicant wpa_passphrase wpa_cli dynamic_eap_methods
 
@@ -36,10 +36,10 @@ install: all
 	for i in $(ALL); do cp $$i $(DESTDIR)/usr/local/sbin/$$i; done
 
 OBJS = config.o \
-	../hostapd/common.o ../hostapd/md5.o ../hostapd/md4.o \
-	../hostapd/rc4.o ../hostapd/sha1.o
-OBJS_p = wpa_passphrase.o ../hostapd/sha1.o ../hostapd/md5.o ../hostapd/md4.o \
-	../hostapd/common.o
+	common.o md5.o md4.o \
+	rc4.o sha1.o
+OBJS_p = wpa_passphrase.o sha1.o md5.o md4.o \
+	common.o
 OBJS_c = wpa_cli.o wpa_ctrl.o
 
 -include .config
@@ -52,14 +52,14 @@ CONFIG_OS=unix
 endif
 endif
 
-OBJS += ../hostapd/os_$(CONFIG_OS).o
-OBJS_p += ../hostapd/os_$(CONFIG_OS).o
-OBJS_c += ../hostapd/os_$(CONFIG_OS).o
+OBJS += os_$(CONFIG_OS).o
+OBJS_p += os_$(CONFIG_OS).o
+OBJS_c += os_$(CONFIG_OS).o
 
 ifndef CONFIG_ELOOP
 CONFIG_ELOOP=eloop
 endif
-OBJS += ../hostapd/$(CONFIG_ELOOP).o
+OBJS += $(CONFIG_ELOOP).o
 
 
 ifdef CONFIG_EAPOL_TEST
@@ -666,7 +666,7 @@ CFLAGS += -DCONFIG_NO_AES_EAX -DCONFIG_NO_AES_CBC
 endif
 
 ifdef NEED_AES
-OBJS += ../hostapd/aes_wrap.o
+OBJS += aes_wrap.o
 endif
 
 ifdef CONFIG_CLIENT_MLME
@@ -715,7 +715,7 @@ wpa_passphrase: $(OBJS_p)
 wpa_cli: $(OBJS_c)
 	$(LDO) $(LDFLAGS) -o wpa_cli $(OBJS_c) $(LIBS_c)
 
-OBJSa=asn1_test.o asn1.o x509v3.o ../hostapd/common.o ../hostapd/os_unix.o
+OBJSa=asn1_test.o asn1.o x509v3.o common.o os_unix.o
 asn1_test: $(OBJSa)
 	$(LDO) $(LDFLAGS) -o asn1_test $(OBJSa)
 
@@ -775,46 +775,46 @@ wpa_gui/Makefile:
 wpa_gui: wpa_gui/Makefile
 	$(MAKE) -C wpa_gui
 
-TEST_MS_FUNCS_OBJS = crypto.o ../hostapd/sha1.o ../hostapd/md5.o \
-	../hostapd/os_unix.o ../hostapd/rc4.o tests/test_ms_funcs.o
+TEST_MS_FUNCS_OBJS = crypto.o sha1.o md5.o \
+	os_unix.o rc4.o tests/test_ms_funcs.o
 test-ms_funcs: $(TEST_MS_FUNCS_OBJS)
 	$(LDO) $(LDFLAGS) -o $@ $(TEST_MS_FUNCS_OBJS) $(LIBS) -lcrypto
 	./test-ms_funcs
 	rm test-ms_funcs
 
-TEST_SHA1_OBJS = ../hostapd/sha1.o ../hostapd/md5.o tests/test_sha1.o #crypto.o
+TEST_SHA1_OBJS = sha1.o md5.o tests/test_sha1.o #crypto.o
 test-sha1: $(TEST_SHA1_OBJS)
 	$(LDO) $(LDFLAGS) -o $@ $(TEST_SHA1_OBJS) $(LIBS)
 	./test-sha1
 	rm test-sha1
 
-TEST_SHA256_OBJS = ../hostapd/sha256.o ../hostapd/md5.o tests/test_sha256.o crypto.o
+TEST_SHA256_OBJS = sha256.o md5.o tests/test_sha256.o crypto.o
 test-sha256: $(TEST_SHA256_OBJS)
 	$(LDO) $(LDFLAGS) -o $@ $(TEST_SHA256_OBJS) $(LIBS)
 	./test-sha256
 	rm test-sha256
 
-TEST_AES_OBJS = ../hostapd/aes_wrap.o tests/test_aes.o # crypto.o
+TEST_AES_OBJS = aes_wrap.o tests/test_aes.o # crypto.o
 test-aes: $(TEST_AES_OBJS)
 	$(LDO) $(LDFLAGS) -o $@ $(TEST_AES_OBJS) $(LIBS)
 	./test-aes
 	rm test-aes
 
-TEST_EAP_SIM_COMMON_OBJS = ../hostapd/sha1.o ../hostapd/md5.o \
-	../hostapd/aes_wrap.o ../hostapd/common.o ../hostapd/os_unix.o \
+TEST_EAP_SIM_COMMON_OBJS = sha1.o md5.o \
+	aes_wrap.o common.o os_unix.o \
 	tests/test_eap_sim_common.o
 test-eap_sim_common: $(TEST_EAP_SIM_COMMON_OBJS)
 	$(LDO) $(LDFLAGS) -o $@ $(TEST_AES_OBJS) $(LIBS)
 	./test-eap_sim_common
 	rm test-eap_sim_common
 
-TEST_MD4_OBJS = ../hostapd/md4.o tests/test_md4.o #crypto.o
+TEST_MD4_OBJS = md4.o tests/test_md4.o #crypto.o
 test-md4: $(TEST_MD4_OBJS)
 	$(LDO) $(LDFLAGS) -o $@ $(TEST_MD4_OBJS) $(LIBS)
 	./test-md4
 	rm test-md4
 
-TEST_MD5_OBJS = ../hostapd/md5.o tests/test_md5.o #crypto.o
+TEST_MD5_OBJS = md5.o tests/test_md5.o #crypto.o
 test-md5: $(TEST_MD5_OBJS)
 	$(LDO) $(LDFLAGS) -o $@ $(TEST_MD5_OBJS) $(LIBS)
 	./test-md5
