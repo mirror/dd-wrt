@@ -21,32 +21,32 @@ void lease_init(struct daemon *daemon, time_t now)
   struct in_addr addr;
   struct dhcp_lease *lease;
   int flags, clid_len, hw_len, hw_type;
+  FILE *leasestream;
   
   leases = old_leases = NULL;
   leases_left = daemon->dhcp_max;
 
   if (daemon->options & OPT_LEASE_RO)
-    daemon->lease_stream = fdopen(STDIN_FILENO, "r");
+    leasestream = stdin;
   else
-    /* NOTE: need a+ mode to create file if it doesn't exist */
-    daemon->lease_stream = fopen(daemon->lease_file, "a+");
-
-  if (!daemon->lease_stream)
-    die(_("cannot open or create leases file: %s"), NULL);
-     
-  if (!(daemon->options & OPT_LEASE_RO))
     {
-      flags = fcntl(fileno(daemon->lease_stream), F_GETFD);
+      /* NOTE: need a+ mode to create file if it doesn't exist */
+      leasestream = daemon->lease_stream = fopen(daemon->lease_file, "a+");
+      
+      if (!leasestream)
+	die(_("cannot open or create leases file: %s"), NULL);
+      
+      flags = fcntl(fileno(leasestream), F_GETFD);
       if (flags != -1)
-	fcntl(fileno(daemon->lease_stream), F_SETFD, flags | FD_CLOEXEC); 
+	fcntl(fileno(leasestream), F_SETFD, flags | FD_CLOEXEC); 
       
       /* a+ mode lease pointer at end. */
-      rewind(daemon->lease_stream);
+      rewind(leasestream);
     }
-
+  
   /* client-id max length is 255 which is 255*2 digits + 254 colons 
      borrow DNS packet buffer which is always larger than 1000 bytes */
-  while (fscanf(daemon->lease_stream, "%lu %255s %16s %255s %764s",
+  while (fscanf(leasestream, "%lu %255s %16s %255s %764s",
 		&ei, daemon->dhcp_buff2, daemon->namebuff, 
 		daemon->dhcp_buff, daemon->packet) == 5)
     {
@@ -91,10 +91,7 @@ void lease_init(struct daemon *daemon, time_t now)
   dns_dirty = 1;
 
   if (daemon->options & OPT_LEASE_RO)
-    {
-      fclose(daemon->lease_stream);
-      daemon->lease_stream = NULL;
-    }
+    fclose(leasestream);
 }
 
 void lease_update_from_configs(struct daemon *daemon)
