@@ -47,7 +47,7 @@ bool 'Does your system support GNU gettext?' I18N n
 *
 *             Protocol Families.
 * 
-bool 'UNIX protocol family' HAVE_AFUNIX y
+bool 'UNIX protocol family' HAVE_AFUNIX n
 bool 'INET (TCP/IP) protocol family' HAVE_AFINET y
 bool 'INET6 (IPv6) protocol family' HAVE_AFINET6 n
 bool 'Novell IPX/SPX protocol family' HAVE_AFIPX n

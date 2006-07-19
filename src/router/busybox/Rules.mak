@@ -57,7 +57,7 @@ INCS:=-I$(top_builddir)/include -I$(top_srcdir)/include
 CFLAGS=$(INCS) -I$(srcdir) -D_GNU_SOURCE
 CFLAGS+=$(CHECKED_CFLAGS)
 
-LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -lshared -L../libnet/lib  
+LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -L../libnet/lib  
 LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet
 ifeq ($(CONFIG_ARP),y)
 LIBRARIES += ../net-tools/arp.a ../net-tools/lib/libnet-tools.a		
@@ -77,6 +77,8 @@ ifeq ($(CONFIG_DHCPFORWARD),y)
 CFLAGS += -DHAVE_DHCPFWD
 LIBRARIES += ../dhcpforwarder/dhcpfwd.a -lpthread
 endif
+
+#LDFLAGS += ../wireless-tools/libiw.so.29
 
 #ifeq ($(CONFIG_HTTPD),y)
 #CFLAGS += -DHAVE_DDWRTHTTPD

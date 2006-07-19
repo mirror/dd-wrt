@@ -70,6 +70,7 @@ release: FORCE
 clean:
 	rm -f *.o *.a *~
 	rm -f l2tpd
+	rm -f libevent/*.o libevent/*.a
 	$(MAKE) -C handlers clean
 
 distclean: clean

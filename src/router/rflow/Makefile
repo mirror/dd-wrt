@@ -5,7 +5,7 @@ bindir= ${exec_prefix}/bin
 sysconfdir= ${prefix}/etc
 datadir= ${prefix}/share
 
-CC=mipsel-linux-uclibc-gcc -pipe
+#CC=mipsel-linux-uclibc-gcc -pipe
 #CC= gcc -pipe
 LDFLAGS+=-s
 LIBS+= -lpthread

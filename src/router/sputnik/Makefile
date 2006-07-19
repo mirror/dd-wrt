@@ -1,5 +1,5 @@
 CFLAGS += -O2 -Wall
-CC = /opt/3.3.6/bin/mipsel-linux-uclibc-gcc
+CC = /opt/staging_dir_mips/bin/mips-linux-uclibc-gcc
 CFLAGS += -I iksemel
 CFLAGS += -I zlib
 CFLAGS += -I ../../include.v23 -I../shared

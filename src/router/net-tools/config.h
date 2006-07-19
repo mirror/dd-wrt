@@ -26,7 +26,7 @@
  * Protocol Families.
  * 
  */
-#define HAVE_AFUNIX 1
+#define HAVE_AFUNIX 0
 #define HAVE_AFINET 1
 #define HAVE_AFINET6 0
 #define HAVE_AFIPX 0

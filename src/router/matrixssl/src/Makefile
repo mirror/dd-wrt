@@ -5,10 +5,10 @@
 #	Copyright (c) PeerSec Networks, 2002-2005. All Rights Reserved.
 #
 
-CC      = mipsel-linux-uclibc-gcc
-STRIP   = mipsel-linux-uclibc-strip
-AR      = mipsel-linux-uclibc-ar
-RANLIB  = mipsel-linux-uclibc-ranlib
+#CC      = mipsel-linux-uclibc-gcc
+#STRIP   = mipsel-linux-uclibc-strip
+#AR      = mipsel-linux-uclibc-ar
+#RANLIB  = mipsel-linux-uclibc-ranlib
 O       = .o
 SO      = .so
 A       = .a

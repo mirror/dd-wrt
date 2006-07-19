@@ -1,1 +1,1 @@
-#define USE_MKE2FS(...)  __VA_ARGS__
+#define USE_MKE2FS(...)

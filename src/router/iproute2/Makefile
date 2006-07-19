@@ -21,8 +21,9 @@ ADDLIB+=dnet_ntop.o dnet_pton.o
 #options for ipx
 ADDLIB+=ipx_ntop.o ipx_pton.o
 
-CC = mipsel-linux-uclibc-gcc
-HOSTCC = mipsel-linux-uclibc-gcc
+#CC = mipsel-linux-uclibc-gcc
+HOSTCC = $(CC) 
+#ipsel-linux-uclibc-gcc
 CCOPTS = -D_GNU_SOURCE $(COPTS) -Wstrict-prototypes -Wall
 CFLAGS = $(CCOPTS) -I../include $(DEFINES)
 

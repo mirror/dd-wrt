@@ -18,9 +18,15 @@ ROOTDIR=$PWD
 #jffs2
 mkdir -p jffs
 mkdir -p mmc
+mkdir -p usr
+mkdir -p usr/local
+cd usr/local
+ln -sf /tmp/share share
+cd ../../
 # tmp
 mkdir -p tmp
 ln -sf tmp/var var
+
 (cd $ROOTDIR/usr && ln -sf ../tmp)
 
 # dev
@@ -31,6 +37,9 @@ mkdir -p etc
 echo "/jffs/lib" > etc/ld.so.conf
 echo "/jffs/usr/lib" >> etc/ld.so.conf
 echo "/jffs/usr/local/lib" >> etc/ld.so.conf
+echo "/mmc/lib" > etc/ld.so.conf
+echo "/mmc/usr/lib" >> etc/ld.so.conf
+echo "/mmc/usr/local/lib" >> etc/ld.so.conf
 echo "/lib" >> etc/ld.so.conf
 echo "/usr/lib" >> etc/ld.so.conf
 /sbin/ldconfig -r $ROOTDIR

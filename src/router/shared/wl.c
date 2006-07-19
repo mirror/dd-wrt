@@ -265,6 +265,17 @@ struct wifi_channels
   int freq;
 };
 
+static u_int
+ieee80211_mhz2ieee (u_int freq)
+{
+  if (freq == 2484)
+    return 14;
+  if (freq < 2484)
+    return (freq - 2407) / 5;
+  if (freq < 5000)
+    return 15 + ((freq - 2512) / 20);
+  return (freq - 5000) / 5;
+}
 
 static struct wifi_channels *
 list_channelsext (const char *ifname, int allchans)
