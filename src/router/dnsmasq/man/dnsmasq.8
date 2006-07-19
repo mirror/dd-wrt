@@ -326,6 +326,12 @@ Disable negative caching. Negative caching allows dnsmasq to remember
 identical queries without forwarding them again. This flag disables
 negative caching.
 .TP
+.B \-0, --dns-forward-max
+Set the maximum number of concurrent DNS queries. Unanswered queries
+time out after 20 seconds. If you sometimes see the log message 
+"forwarding table overflow: check for server loops." then it is worth
+experimenting with this setting. The default value is 150.
+.TP
 .B \-F, --dhcp-range=[[net:]network-id,]<start-addr>,<end-addr>[[,<netmask>],<broadcast>][,<default lease time>]
 Enable the DHCP server. Addresses will be given out from the range
 <start-addr> to <end-addr> and from statically defined addresses given

@@ -1,16 +1,15 @@
 #!/bin/sh
 
-#Copyright (c) 2006 Simon Kelley
+# Copyright (c) 2006 Simon Kelley
 #
 #  This program is free software; you can redistribute it and/or modify
-#   it under the terms of the GNU General Public License as published by
-#   the Free Software Foundation; version 2 dated June, 1991.
+#  it under the terms of the GNU General Public License as published by
+#  the Free Software Foundation; version 2 dated June, 1991.
 #
-#   This program is distributed in the hope that it will be useful,
-#   but WITHOUT ANY WARRANTY; without even the implied warranty of
-#   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#   GNU General Public License for more details.
-
+#  This program is distributed in the hope that it will be useful,
+#  but WITHOUT ANY WARRANTY; without even the implied warranty of
+#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#  GNU General Public License for more details.
 
 
 # if $1 is add del or old, this is a dnsmasq-called lease-change

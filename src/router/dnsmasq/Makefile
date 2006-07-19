@@ -9,7 +9,9 @@ MAN = man
 
 CFLAGS?= -O2
 
-all : 
+all :   dnsmasq
+
+dnsmasq :
 	$(MAKE) I18N=-DNO_GETTEXT -f ../bld/Makefile -C $(SRC) dnsmasq 
 
 dnsmasq.a : 
@@ -17,7 +19,7 @@ dnsmasq.a :
 
 clean :
 	rm -f *~ $(SRC)/*.mo contrib/*/*~ */*~ $(SRC)/*.pot 
-	rm -f $(SRC)/*.o $(SRC)/*.a $(SRC)/dnsmasq core */core
+	rm -f $(SRC)/*.o $(SRC)/dnsmasq.a $(SRC)/dnsmasq core */core
 
 install : all install-common
 
