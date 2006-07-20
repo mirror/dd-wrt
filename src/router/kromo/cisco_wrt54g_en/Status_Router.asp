@@ -172,7 +172,7 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_router.sys_firmver"); %></div>
-									<% get_firmware_version(); %>
+									<% get_firmware_version(); %> - build <% get_firmware_svnrev(); %>
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.mac"); %></div>
