@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <stdlib.h>
-
+#include <unistd.h>
 #include <bcmnvram.h>
 #include <cy_conf.h>
 #include <rc.h>
