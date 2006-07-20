@@ -9,6 +9,10 @@
 #include <time.h>
 #include <stdlib.h>
 
+#include <bcmnvram.h>
+#include <cy_conf.h>
+#include <rc.h>
+
 int
 radio_timer_main (void)
 {
