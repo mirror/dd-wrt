@@ -27,28 +27,177 @@ function wl_enable_disable(F,I) {
   }
 }
 
+function initArray() {
+    this.length = initArray.arguments.length;
+    for (var i = 0; i < this.length; i++)
+        this[i] = initArray.arguments[i];
+}
+
+function from10toradix(value,radix){
+    var retval = '';
+    var ConvArray = new initArray(0,1,2,3,4,5,6,7,8,9,'A','B','C','D','E','F');
+    var intnum;
+    var tmpnum;
+    var i = 0;
+
+    intnum = parseInt(value,10);
+    if (isNaN(intnum)){
+        retval = 'NaN';
+    }else{
+        while (intnum > 0.9){
+            i++;
+            tmpnum = intnum;
+            // cancatinate return string with new digit:
+            retval = ConvArray[tmpnum % radix] + retval;  
+            intnum = Math.floor(tmpnum / radix);
+            if (i > 100){
+                // break infinite loops
+                retval = 'NaN';
+                break;
+            }
+        }
+    }
+    return retval;
+}
+
+function initWlTimer(hex_radio_on)
+{
+	tmpvar = parseInt(hex_radio_on,16);
+	bin_radio_on = from10toradix(tmpvar,2);
+	
+	var color_red='#FF0000';
+	var color_green='#00FF00';
+	
+	for(var i = 0; i < bin_radio_on.length; i++){
+		if(bin_radio_on.charAt(i)==1){
+			bgcolor=color_green;
+			val=1;
+		}else{
+			bgcolor=color_red;
+			val=0;
+		}
+		if(ie4){
+			eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
+			eval("document.all.td_" + i + ".value = '" + val + "'");
+		}
+		if(ns4) {
+			eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
+			eval("document.td_" + i + ".value = '" + val + "'");
+		}
+		if(ns6 || op) {
+			eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
+			eval("document.getElementById('td_" + i + "').value = '" + val + "'");
+		}
+	}
+}
+
+function setWlTimer(id, state)
+{
+	var color_red='#FF0000';
+	var color_green='#00FF00';
+	
+	if(id=='all'){
+		if(state){
+			bgcolor=color_green;
+			val=1;
+		}else{
+			bgcolor=color_red;
+			val=0;
+		}
+			
+		for(var i = 0; i < 24; i++) {
+			if(ie4){
+				eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
+				eval("document.all.td_" + i + ".value = '" + val + "'");
+			}
+			if(ns4){
+				eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
+				eval("document.td_" + i + ".value = '" + val + "'");
+			}
+			if(ns6 || op){
+				eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
+				eval("document.getElementById('td_" + i + "').value = '" + val + "'");
+			}
+		}
+	} else {
+		if(ie4){
+			if(document.all.id.value==1){
+				document.all.id.style.backgroundColor = color_red;
+				document.all.id.value=0;
+			}else{
+				document.all.id.style.backgroundColor = color_green;
+				document.all.id.value=1;
+			}
+		}
+		if(ns4){
+			if(document.id.value==1){
+				document.id.backgroundColor = color_red;
+				document.id.value=0;
+			}else{
+				document.id.backgroundColor = color_green;
+				document.id.value=1;
+			}
+		}
+		if(ns6 || op){
+			if(document.getElementById(id).value==1){
+				document.getElementById(id).style.backgroundColor = color_red;
+				document.getElementById(id).value = '0';
+			}else{
+				document.getElementById(id).style.backgroundColor = color_green;
+				document.getElementById(id).value = '1';
+			}
+		}
+	}
+}
+
+function computeWlTimer()
+{
+	var bin_radio_on='';
+	
+	for(var i = 0; i < 24; i++){
+		if(ie4){
+			bin_radio_on=bin_radio_on + eval("document.all.td_" + i + ".value");
+		}
+		if(ns4) {
+			bin_radio_on=bin_radio_on + eval("document.td_" + i + ".value");
+		}
+		if(ns6 || op) {
+			bin_radio_on=bin_radio_on + eval("document.getElementById('td_" + i + "').value");
+		}
+	}
+	
+	tmpvar = parseInt(bin_radio_on,2);
+	hex_radio_on = '0x' + from10toradix(tmpvar,16);
+//	alert("bin_radio_on : " + bin_radio_on);
+//	alert("hex_radio_on : " + hex_radio_on.toLowerCase());
+	return hex_radio_on.toLowerCase();
+}
+
+
 function to_submit(F) {
   if(F.wl_ssid.value == ""){
-//    alert("You must input a SSID.");
 	alert(errmsg.err50);
     F.wl_ssid.focus();
     return false;
   }
   F.submit_button.value = "Wireless_Basic";
-//  F.save_button.value = "Saved";
   F.save_button.value = sbutton.saving;
+  F.radio_on_time.value = computeWlTimer();
   
   F.action.value = "Apply";
   apply(F);
 }
 
-function init() {
-  wl_enable_disable(document.wireless,'<% nvram_else_match("wl_gmode","-1","0","1"); %>');
-}
+addEvent(window, "load", function() {
+	wl_enable_disable(document.wireless,'<% nvram_else_match("wl_gmode","-1","0","1"); %>');
+	initWlTimer('<% nvram_get("radio_on_time"); %>');
+});
+
+
 		</script>
 	</head>
 
-  <body class="gui" onload="init()">
+  <body class="gui">
   	<% showad(); %>
     <div id="wrapper">
       <div id="content">
@@ -89,6 +238,7 @@ function init() {
             <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
                 <input type="hidden" name="submit_button" value="Wireless_Basic" />
                 <input type="hidden" name="commit" value="1" />
+                <input type="hidden" name="radio_on_time" />
                 <input type="hidden" name="action" value="Apply" />
                 <h2><% tran("wl_basic.h2"); %></h2>
                 <fieldset>
@@ -104,7 +254,7 @@ function init() {
                   </div>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label2"); %></div>
-                    <select name="wl_net_mode" onchange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
+                    <select name="wl_net_mode" onChange="SelWL(this.form.wl_net_mode.selectedIndex,this.form)">
                       <script type="text/javascript">document.write("<option value=\"disabled\" <% nvram_selected("wl_net_mode", "disabled", "js"); %>>" + share.disable +"</option>");</script>
                       <script type="text/javascript">document.write("<option value=\"mixed\" <% nvram_selected("wl_net_mode", "mixed", "js"); %>>" + wl_basic.mixed + "</option>");</script>
                       <script type="text/javascript">document.write("<option value=\"b-only\" <% nvram_selected("wl_net_mode", "b-only", "js"); %>>" + wl_basic.b + "</option>");</script>
@@ -113,12 +263,12 @@ function init() {
                   </div>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label3"); %></div>
-                    <input name="wl_ssid" size="20" maxlength="32" onblur="valid_name(this,'SSID')" value="<% nvram_get("wl_ssid"); %>" />
+                    <input name="wl_ssid" size="20" maxlength="32" onBlur="valid_name(this,'SSID')" value="<% nvram_get("wl_ssid"); %>" />
                   </div>
                   <% nvram_invmatch("wl_mode", "ap", "<!--"); %>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label4"); %></div>
-                    <select name="wl_channel" onfocus="check_action(this,0)">
+                    <select name="wl_channel" onFocus="check_action(this,0)">
                       <script type="text/javascript">
                         var max_channel = 14;
                         var wl_channel = "<% nvram_get("wl_channel"); %>";
@@ -149,14 +299,61 @@ function init() {
                   <br/>
                   <div class="setting">
                     <div class="label"><% tran("wl_basic.label6"); %></div>
-                    <input class="num" name="wl_distance" size="8" maxlength="8" onblur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvram_get("wl_distance"); %>" />
+                    <input class="num" name="wl_distance" size="8" maxlength="8" onBlur="valid_range(this,0,99999999,wl_basic.label6)" value="<% nvram_get("wl_distance"); %>" />
                     <span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": 2000 " + share.meters + ")")</script></span>
                   </div>
                 </fieldset>
                 <br/>
+                
+                <fieldset>
+                	<legend><% tran("wl_basic.legend2"); %></legend>
+                			<table>
+											  <tr>
+											    <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+											    <td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td>
+											    <td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td>
+											    <td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td>
+											  </tr>
+											  <tr style="cursor:pointer">
+											    <td width="4%" id="td_0" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_1" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_2" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_3" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_4" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_5" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_6" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_7" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_8" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_9" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_10" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_11" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_12" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_13" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_14" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_15" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_16" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_17" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_18" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_19" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_20" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_21" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_22" onClick="setWlTimer(this.id)">&nbsp;</td>
+											    <td width="4%" id="td_23" onClick="setWlTimer(this.id)">&nbsp;</td>
+											  </tr>
+											</table>
+										<div class="setting">
+											<div class=label><% tran("wl_basic.all_on"); %></div>
+											<a title="Always On" href="javascript:setWlTimer('all',true)">On</a>
+										</div>
+										<div class="setting">
+											<div class=label><% tran("wl_basic.all_off"); %></div>
+											<a title="Always Off" href="javascript:setWlTimer('all',false)">Off</a>
+										</div>
+                </fieldset>
+                <br/>
                   <div class="submitFooter">
                     <script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
-                    <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel +"\" />");</script>
+                    <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"initWlTimer('<% nvram_get("radio_on_time"); %>')\" />");</script>
                 </div>
               </form>
           </div>
@@ -169,6 +366,8 @@ function init() {
 							<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
 							<dt class="term"><% tran("hwl_basic.right3"); %></dt>
 							<dd class="definition"><% tran("hwl_basic.right4"); %></dt>
+							<dt class="term"><% tran("wl_basic.legend2"); %></dt>
+							<dd class="definition"><% tran("hwl_basic.right6"); %></dt>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
 					</div>
