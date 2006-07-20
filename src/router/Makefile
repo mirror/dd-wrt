@@ -245,7 +245,7 @@ optimize-lib:
 #  ../../tools/optimize_lib.sh iptables/ libiptables.so libiptables.a libiptables_min.so $(TARGETDIR) $(TARGETDIR)/usr/lib/libiptables.so
 
 
-install package: $(filter-out lib-install,$(obj-install)) $(LINUXDIR)/.config
+install package: $(filter-out lib.mipsel-install,$(obj-install)) $(LINUXDIR)/.config
 	install -d $(TARGETDIR)
 	for dir in $(wildcard $(patsubst %,$(INSTALLDIR)/%,$(obj-y))) ; do \
 	    (cd $${dir} && tar cpf - .) | (cd $(TARGETDIR) && tar xpf -) \
@@ -254,7 +254,7 @@ install package: $(filter-out lib-install,$(obj-install)) $(LINUXDIR)/.config
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	#[ ! -d libcrypto ] || $(MAKE) -C libcrypto optimize
 	# Install (and possibly optimize) C library
-	$(MAKE) lib-install
+	$(MAKE) lib.mipsel-install
 	# optimize the others library by removing unneeded symbols
 	$(MAKE) optimize-lib
 	# Install modules into filesystem
@@ -1214,7 +1214,7 @@ bpalogin-install:
 	install -D bpalogin/bpalogin $(INSTALLDIR)/bpalogin/usr/sbin/bpalogin
 	$(STRIP) $(INSTALLDIR)/bpalogin/usr/sbin/bpalogin
 
-dropbear:
+dropbear: zlib
 	cd dropbear && ./configure --host=$(ARCH)-linux --disable-lastlog --disable-utmp --disable-utmpx --disable-wtmp --disable-wtmpx --disable-libutil CC=$(ARCH)-linux-uclibc-gcc CFLAGS="-I../zlib $(COPTS) -L../zlib" LDFLAGS="-L../zlib" host_alias=$(ARCH)-linux
 	$(MAKE) -C dropbear PROGRAMS="dropbear dbclient dropbearkey dropbearconvert scp" SCPPROGRESS=1 MULTI=1
 
