@@ -22,6 +22,7 @@ radio_timer_main (void)
 long radiotime;  //4 byte int number (3 bytes from gui + 1 for midnight)
 int firsttime, needchange;
 int yr, hr, min;
+char *end_ptr;
 
 needchange = 1;
 firsttime = 1;
@@ -44,7 +45,7 @@ do
 	if ((yr > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
 #endif 
 	{
-		radiotime = strtol(nvram_get ("radio_on_time"));  //can nvram hex be converted to int???? 
+		radiotime = strtol(nvram_get ("radio_on_time"), &end_ptr, 0);  //can nvram hex be converted to int???? 
 				printf("radiotime nvram = %x %d\n",radiotime, radiotime ); //remove	
 		radiotime += ((radiotime & 1) << 24); //duplicate 23-24h bit to the start to take care of midnight
 
