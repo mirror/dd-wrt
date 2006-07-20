@@ -1469,12 +1469,16 @@ wl_basic.mixed="Mixed";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
 wl_basic.g="G-Only";
+wl_basic.legend2="Radio Times Restrictions";
+wl_basic.all_on="Always On";
+wl_basic.all_off="Always Off";
 
 //help container
 var hwl_basic = new Object();
 hwl_basic.right2="If you wish to exclude Wireless-G clients, choose <em>B-Only</em> mode. If you would like to disable wireless access, choose <em>Disable</em>.";
 hwl_basic.right3="Sensitivity Range: ";
 hwl_basic.right4="Adjusts the ack timing. 0 disables ack timing completely.";
+hwl_basic.right6="Click any hour to enable or disable the radio signal (<em>green</em> indicates allowed Wireless access, and <em>red</em> indicates blocked Wireless access)";
 
 
 
