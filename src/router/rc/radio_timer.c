@@ -39,9 +39,9 @@ do
 	printf("year is %d\n",yr);  //remove
 
 #ifdef HAVE_MSSID      
-	if ((yr > 100) && nvram_invmatch ("wl0_radio_mode", "disabled"))	//ntp time must be set  && radio must be on
+	if ((yr > 100) && nvram_invmatch ("wl0_net_mode", "disabled"))	//ntp time must be set  && radio must be on
 #else
-	if ((yr > 100) && nvram_invmatch ("wl_radio_mode", "disabled"))
+	if ((yr > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
 #endif 
 	{
 		radiotime = (long)nvram_safe_get ("radio_on_time");  //can nvram hex be converted to int???? 
