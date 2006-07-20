@@ -44,7 +44,7 @@ do
 	if ((yr > 100) && nvram_invmatch ("wl_radio_mode", "disabled"))
 #endif 
 	{
-		radiotime = nvram_safe_get ("radio_on_time");  //can nvram hex be converted to int???? 
+		radiotime = (long)nvram_safe_get ("radio_on_time");  //can nvram hex be converted to int???? 
 		radiotime += ((radiotime & 1) << 24); //duplicate 23-24h bit to the start to take care of midnight
 
 		hr = currtime->tm_hour;
