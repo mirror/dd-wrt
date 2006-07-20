@@ -36,7 +36,7 @@ do
 	currtime=localtime(&tloc); // convert seconds to date structure
 
 	yr = currtime->tm_year;
-//		printf("year is %d\n",yr);  //remove
+	printf("year is %d\n",yr);  //remove
 
 #ifdef HAVE_MSSID      
 	if ((yr > 100) && nvram_invmatch ("wl0_radio_mode", "disabled"))	//ntp time must be set  && radio must be on
@@ -45,15 +45,16 @@ do
 #endif 
 	{
 		radiotime = (long)nvram_safe_get ("radio_on_time");  //can nvram hex be converted to int???? 
+				printf("radiotime nvram = %d\n",radiotime); //remove	
 		radiotime += ((radiotime & 1) << 24); //duplicate 23-24h bit to the start to take care of midnight
 
 		hr = currtime->tm_hour;
 		min = currtime->tm_min;
-//			printf("hour is %d\n",hr);  //remove
-//			printf("min is %d\n",min);	//remove
+			printf("hour is %d\n",hr);  //remove
+			printf("min is %d\n",min);	//remove
 
 		radiotime = (radiotime >> (24 - hr - 1)) & 3;  //check pattern (last two bits)
-//			printf("radiotime %d\n",radiotime); //remove
+			printf("radiotime mask %d\n",radiotime); //remove
 
 		if (min != 0)  
 			 needchange = 1;	// prevet to be executed more than once when min == 0
@@ -92,11 +93,11 @@ do
 	}
 	else  //if yr < 100 (=2000) wait 5 min and try again (if ntp time is maybe set now)
 	{
-//		printf("SSSS\n");
+		printf("SSSS\n");
 	sleep(242);
 
 	}
-//		printf("sleeping\n");
+		printf("sleeping\n");
 	sleep(58); // loop every 58 s to be sure to catch min == 0
   }
 
