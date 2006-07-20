@@ -747,6 +747,8 @@ main (int argc, char **argv)
 //                return eou_status_main();
   else if (strstr (base, "process_monitor"))
     return process_monitor_main ();
+  else if (strstr (base, "radio_timer"))
+    return radio_timer_main ();
   else if (strstr (base, "restart_dns"))
     {
       stop_service ("dnsmasq");
