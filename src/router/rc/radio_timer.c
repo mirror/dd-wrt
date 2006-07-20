@@ -12,6 +12,8 @@
 #include <bcmnvram.h>
 #include <cy_conf.h>
 #include <rc.h>
+#include <shutils.h>
+
 
 int
 radio_timer_main (void)
