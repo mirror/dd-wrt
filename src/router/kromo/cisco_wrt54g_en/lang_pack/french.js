@@ -1466,12 +1466,16 @@ wl_basic.mixed="Mixte";
 wl_basic.b="B-uniquement";
 wl_basic.a="A-uniquement";
 wl_basic.g="G-uniquement";
+wl_basic.legend2="Plages Horaire de Fonctionnement";
+wl_basic.all_on="Toujours On";
+wl_basic.all_off="Toujours Off";
 
 //help container
 var hwl_basic = new Object();
 hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n\'est muni d\'aucun périphérique sans fil, sélectionnez l\'option <em>Désactiver</em>.";
 hwl_basic.right3="Sensibilité: ";
 hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité.";
+hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé)";
 
 
 
