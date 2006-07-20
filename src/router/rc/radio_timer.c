@@ -32,8 +32,11 @@ do
 	yr = currtime->tm_year;
 //		printf("year is %d\n",yr);  //remove
 
-	if ((yr > 100) && (nvram_invmatch ("wl_radio_mode", "disabled") ||
-					nvram_invmatch ("wl0_radio_mode", "disabled"))) //ntp time must be set  && radio must be on
+#ifdef HAVE_MSSID      
+	if ((yr > 100) && nvram_invmatch ("wl0_radio_mode", "disabled"))	//ntp time must be set  && radio must be on
+#else
+	if ((yr > 100) && nvram_invmatch ("wl_radio_mode", "disabled"))
+#endif 
 	{
 		radiotime = nvram_safe_get ("radio_on_time");  //can nvram hex be converted to int???? 
 		radiotime += ((radiotime & 1) << 24); //duplicate 23-24h bit to the start to take care of midnight
@@ -46,7 +49,7 @@ do
 		radiotime = (radiotime >> (24 - hr - 1)) & 3;  //check pattern (last two bits)
 //			printf("radiotime %d\n",radiotime); //remove
 
-		if (min > 0)  
+		if (min != 0)  
 			 needchange = 1;	// prevet to be executed more than once when min == 0
 
 		if (firsttime)  //first time change
@@ -84,7 +87,7 @@ do
 	else  //if yr < 100 (=2000) wait 5 min and try again (if ntp time is maybe set now)
 	{
 //		printf("SSSS\n");
-	sleep(300);
+	sleep(242);
 
 	}
 //		printf("sleeping\n");
