@@ -121,30 +121,30 @@ function setWlTimer(id, state)
 		}
 	} else {
 		if(ie4){
-			if(document.all.id.value==1){
-				document.all.id.style.backgroundColor = color_red;
-				document.all.id.value=0;
+			if(eval("document.all." + id + ".value")==1){
+				eval("document.all." + id + ".style.backgroundColor = '" + color_red + "'");
+				eval("document.all." + id + ".value = '0'");
 			}else{
-				document.all.id.style.backgroundColor = color_green;
-				document.all.id.value=1;
+				eval("document.all." + id + ".style.backgroundColor = '" + color_green + "'");
+				eval("document.all." + id + ".value = '1'");
 			}
 		}
 		if(ns4){
-			if(document.id.value==1){
-				document.id.backgroundColor = color_red;
-				document.id.value=0;
+			if(eval("document." + id + ".value")==1){
+				eval("document." + id + ".backgroundColor = '" + color_red + "'");
+				eval("document." + id + ".value = '0'");
 			}else{
-				document.id.backgroundColor = color_green;
-				document.id.value=1;
+				eval("document." + id + ".backgroundColor = '" + color_green + "'");
+				eval("document." + id + ".value = '1'");
 			}
 		}
 		if(ns6 || op){
-			if(document.getElementById(id).value==1){
-				document.getElementById(id).style.backgroundColor = color_red;
-				document.getElementById(id).value = '0';
+			if(eval("document.getElementById('" + id + "').value")==1){
+				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_red + "'");
+				eval("document.getElementById('" + id + "').value = '0'");
 			}else{
-				document.getElementById(id).style.backgroundColor = color_green;
-				document.getElementById(id).value = '1';
+				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_green + "'");
+				eval("document.getElementById('" + id + "').value = '1'");
 			}
 		}
 	}
@@ -307,50 +307,50 @@ addEvent(window, "load", function() {
                 
                 <fieldset>
                 	<legend><% tran("wl_basic.legend2"); %></legend>
-                			<table>
-											  <tr>
-											    <td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
-											    <td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td>
-											    <td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td>
-											    <td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td>
-											  </tr>
-											  <tr style="cursor:pointer">
-											    <td width="4%" id="td_0" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_1" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_2" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_3" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_4" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_5" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_6" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_7" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_8" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_9" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_10" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_11" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_12" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_13" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_14" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_15" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_16" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_17" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_18" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_19" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_20" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_21" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_22" onClick="setWlTimer(this.id)">&nbsp;</td>
-											    <td width="4%" id="td_23" onClick="setWlTimer(this.id)">&nbsp;</td>
-											  </tr>
-											</table>
-										<div class="setting">
-											<div class=label><% tran("wl_basic.all_on"); %></div>
-											<a title="Always On" href="javascript:setWlTimer('all',true)">On</a>
-										</div>
-										<div class="setting">
-											<div class=label><% tran("wl_basic.all_off"); %></div>
-											<a title="Always Off" href="javascript:setWlTimer('all',false)">Off</a>
-										</div>
-                </fieldset>
-                <br/>
+                		<table>
+                			<tr>
+                				<td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+                				<td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td>
+                				<td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td>
+                				<td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td>
+                			</tr>
+                			<tr style="cursor:pointer">
+                				<td width="4%" id="td_0" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_1" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_2" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_3" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_4" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_5" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_6" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_7" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_8" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_9" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_10" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_11" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_12" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_13" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_14" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_15" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_16" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_17" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_18" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_19" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_20" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_21" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_22" onClick="setWlTimer(this.id)">&nbsp;</td>
+                				<td width="4%" id="td_23" onClick="setWlTimer(this.id)">&nbsp;</td>
+                			</tr>
+                		</table>
+                		<div class="setting">
+                			<div class=label><% tran("wl_basic.all_on"); %></div>
+                			<a title="Always On" href="javascript:setWlTimer('all',true)">On</a>
+                		</div>
+                		<div class="setting">
+                			<div class=label><% tran("wl_basic.all_off"); %></div>
+                			<a title="Always Off" href="javascript:setWlTimer('all',false)">Off</a>
+                		</div>
+                	</fieldset>
+                	<br/>
                   <div class="submitFooter">
                     <script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
                     <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"initWlTimer('<% nvram_get("radio_on_time"); %>')\" />");</script>
