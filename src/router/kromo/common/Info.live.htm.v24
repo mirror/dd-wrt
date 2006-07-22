@@ -3,6 +3,7 @@
 {wl_mac::<% show_wl_mac(); %>}
 {lan_ip::<% nvram_get("lan_ipaddr"); %>}
 {wl_channel::<% get_curchannel(); %>}
+{wl_radio::<% get_radio_state(); %>}
 {wl_xmit::<% nvram_get("txpwr"); %> mW}
 {wl_rate::<% get_currate(); %> Mbps}
 {packet_info::<% wl_packet_get(); %>}

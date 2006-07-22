@@ -1470,8 +1470,11 @@ wl_basic.b="B-Only";
 wl_basic.a="A-Only";
 wl_basic.g="G-Only";
 wl_basic.legend2="Radio Times Restrictions";
+wl_basic.radio="Radio";
 wl_basic.all_on="Always On";
 wl_basic.all_off="Always Off";
+wl_basic.radio_on="Radio is On";
+wl_basic.radio_off="Radio is Off";
 
 //help container
 var hwl_basic = new Object();

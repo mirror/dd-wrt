@@ -223,7 +223,11 @@ addEvent(window, "unload", function() {
 							
 							<fieldset>
 								<legend><% tran("share.wireless"); %></legend>
-								<div class="setting">
+<!--							<div class="setting">
+									<div class="label"><% tran("wl_basic.legend2"); %></div>
+									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
+								</div>
+-->								<div class="setting">
 									<div class="label"><% tran("share.mode"); %></div>
 									<% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(wl_basic.clientBridge)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(wl_basic.client)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(wl_basic.adhoc)</script>"); %><% nvram_match("wl_mode", "apsta", "Repeater"); %>&nbsp;
 								</div>
