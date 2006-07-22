@@ -335,6 +335,16 @@ start_restore_defaults (void)
     {"wan_ifnames", "eth0", 0},
     {0, 0, 0}
   };
+#elif HAVE_XSCALE
+  struct nvram_tuple generic[] = {
+    {"lan_ifname", "br0", 0},
+    {"lan_ifnames",
+     "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5",
+     0},
+    {"wan_ifname", "eth0", 0},
+    {"wan_ifnames", "eth0", 0},
+    {0, 0, 0}
+  };
 #else
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
@@ -366,6 +376,9 @@ start_restore_defaults (void)
    */
 
 #ifdef HAVE_RB500
+  linux_overrides = generic;
+  int brand = getRouterBrand ();
+#elif HAVE_XSCALE
   linux_overrides = generic;
   int brand = getRouterBrand ();
 #else
@@ -791,16 +804,23 @@ start_sysinit (void)
   time_t tm = 0;
 #ifdef HAVE_RB500
   unlink ("/etc/nvram/.lock");
+#elif HAVE_XSCALE
+  unlink ("/etc/nvram/.lock");
 #endif
   cprintf ("sysinit() proc\n");
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
+#ifdef HAVE_XSCALE
+  mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
+#endif
   cprintf ("sysinit() tmp\n");
 
   /* /tmp */
   mount ("ramfs", "/tmp", "ramfs", MS_MGC_VAL, NULL);
 #ifdef HAVE_RB500
   // fix for linux kernel 2.6
+  mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+#elif HAVE_XSCALE
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 #endif
   eval ("mkdir", "/tmp/www");
@@ -829,6 +849,12 @@ start_sysinit (void)
   eval ("mkdir", "/tmp/nvram");
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
   eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
+#elif HAVE_XSCALE
+mkdir ("/usr/local/nvram", 0777);
+unlink ("/tmp/nvram/.lock");
+eval ("mkdir", "/tmp/nvram");
+eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
+eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 #endif
   cprintf ("sysinit() var\n");
 
@@ -926,7 +952,13 @@ start_sysinit (void)
   uname (&name);
 
   enableAfterBurner ();
-#ifndef HAVE_RB500
+#ifdef HAVE_RB500
+#define MODULES
+#elif HAVE_XSCALE
+#define MODULES
+#endif
+
+#ifndef MODULES
   snprintf (buf, sizeof (buf), "/lib/modules/%s", name.release);
   if (stat ("/proc/modules", &tmp_stat) == 0 && stat (buf, &tmp_stat) == 0)
     {
@@ -1045,6 +1077,11 @@ if (check_vlan_support())
       }
     }
 #else
+eval("/etc/kendin");
+eval("insmod","ixp400th");
+eval("insmod","ixp400");
+eval("insmod","ixp400_eth");
+
 //  eval ("insmod", "mii");
 //  eval ("insmod", "korina");
 //  eval ("insmod", "via-rhine");
@@ -1053,14 +1090,12 @@ if (check_vlan_support())
 #endif
   /* Set a sane date */
   stime (&tm);
-#ifndef HAVE_RB500
   if (brand == ROUTER_SIEMENS)
     {
       eval ("insmod", "led.o");	// Jerry Lee
       powerled_ctrl (0);
       led_ctrl (0);		// turn LED2 off
     }
-#endif
 
   return 0;
   cprintf ("done\n");
