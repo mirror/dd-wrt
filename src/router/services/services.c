@@ -3420,6 +3420,9 @@ stop_process_monitor (void)
 int
 start_radio_timer (void)
 {
+  if (nvram_match ("radio_timer_enable", "0"))
+    return 0;
+
   pid_t pid;
 
   char *argv[] = { "radio_timer", NULL };
