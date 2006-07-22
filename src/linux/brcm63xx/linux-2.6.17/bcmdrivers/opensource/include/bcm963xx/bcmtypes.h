@@ -33,9 +33,7 @@ typedef unsigned long   uint32;
 typedef signed char     int8;
 typedef signed short    int16;
 typedef signed long     int32;
-#if !defined(__cplusplus)
 typedef	int	bool;
-#endif
 #endif
 
 typedef unsigned char   byte;

@@ -132,7 +132,7 @@ int cf_mips_probe(struct platform_device *pdev)
 	cf_gendisk->queue=dev->queue;
 	BUG_ON(cf_gendisk->minors != CF_MAX_PART);
 	strcpy(cf_gendisk->disk_name,"cfa");
-	strcpy(cf_gendisk->devfs_name,"cf/card0");
+//	strcpy(cf_gendisk->devfs_name,"cf/card0");
 	cf_gendisk->fops = &cf_bdops;
 	cf_gendisk->flags = 0 ; /* is not yet GENHD_FL_REMOVABLE */
 	cf_gendisk->private_data=dev;
