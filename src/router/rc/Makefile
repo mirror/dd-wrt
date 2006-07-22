@@ -281,7 +281,8 @@ endif
 ifeq ($(CONFIG_BIRD),y)
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox bird
 endif
-	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dnsmasq
+
+#	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox dnsmasq
 	cd $(INSTALLDIR)/usr/sbin && ln -sf /usr/sbin/iptables iptables-restore
 #ifeq ($(CONFIG_UPNP),y)
 #	cd $(INSTALLDIR)/usr/sbin && ln -sf /bin/busybox upnp

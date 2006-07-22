@@ -45,7 +45,7 @@ static void check_dns_listeners(struct daemon *daemon, fd_set *set, time_t now);
 static void sig_handler(int sig);
 static void manual_delete_lease(void);
 
-int dnsmasq_main (int argc, char **argv)
+int main (int argc, char **argv)
 {
   struct daemon *daemon;
   int bind_fallback = 0;
