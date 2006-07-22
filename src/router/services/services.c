@@ -3418,6 +3418,31 @@ stop_process_monitor (void)
 }
 
 int
+start_radio_timer (void)
+{
+  pid_t pid;
+
+  char *argv[] = { "radio_timer", NULL };
+  int ret = _eval (argv, NULL, 0, &pid);
+
+  cprintf ("done");
+
+  return ret;
+}
+
+int
+stop_radio_timer (void)
+{
+  int ret;
+
+  ret = eval ("killall", "radio_timer");
+
+  cprintf ("done\n");
+
+  return ret;
+}
+
+int
 stop_ntp (void)
 {
   eval ("killall", "-9", "ntpclient");

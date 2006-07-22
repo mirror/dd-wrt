@@ -58,7 +58,7 @@ CFLAGS=$(INCS) -I$(srcdir) -D_GNU_SOURCE
 CFLAGS+=$(CHECKED_CFLAGS)
 
 LDFLAGS	+= -L../nvram -L../mipsel-uclibc/install/nvram/usr/lib -L../shared -L../mipsel-uclibc/install/shared/usr/lib -L../libnet/lib  
-LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet
+#LIBRARIES += ../dnsmasq/src/dnsmasq.a -lnvram -lnet
 ifeq ($(CONFIG_ARP),y)
 LIBRARIES += ../net-tools/arp.a ../net-tools/lib/libnet-tools.a		
 CFLAGS += -DHAVE_ARP
