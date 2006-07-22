@@ -107,6 +107,7 @@ start_services (void)
   start_service ("wland");
   start_service ("wshaper");
   start_service ("cron");
+  start_service ("radio_timer");
 
 #ifdef HAVE_PPTPD
   start_service ("pptpd");
@@ -157,6 +158,7 @@ stop_services (void)
   stop_service ("udhcpd");
   stop_service ("dns_clear_resolv");
   stop_service ("cron");
+  stop_service ("radio_timer");
 
 #ifdef HAVE_TFTP
   stop_service ("tftpd");
