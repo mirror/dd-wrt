@@ -238,7 +238,11 @@ start_config_vlan (void)
 int
 start_setup_vlans (void)
 {
-#ifndef HAVE_RB500
+#ifdef HAVE_RB500
+return 0;
+#elif HAVE_XSCALE
+return 0;
+#else
   /* VLAN #16 is just a convieniant way of storing tagging info.  There is no VLAN #16 */
 
   if (!nvram_get ("port5vlans") || nvram_match ("vlans", "0"))
@@ -441,8 +445,6 @@ start_setup_vlans (void)
     }
 
   return ret;
-#else
-  return 0;
 #endif
 }
 
