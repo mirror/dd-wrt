@@ -197,6 +197,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
       b = getc (fp);
       if (b == ':')
 	cnt++;
+     
       if (cnt == 4)
 	{
 	  getc (fp);
@@ -252,7 +253,7 @@ ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv)
   return;
 }
 
-#elif
+#else
 
 
 void
