@@ -532,10 +532,12 @@ busybox-distclean: busybox-config
 	rm -f busybox/.depend busybox/include/config.h busybox/scripts/mkdep
 
 dnsmasq:
-	$(MAKE) -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) -DNEED_PRINTF" dnsmasq.a
+	$(MAKE) -C dnsmasq COPTS=-DHAVE_BROKEN_RTC CFLAGS="$(COPTS) -DNEED_PRINTF"
 
 dnsmasq-install:
 	install -D dnsmasq/contrib/wrt/lease_update.sh $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
+	install -D dnsmasq/src/dnsmasq $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq
+	$(STRIP) $(INSTALLDIR)/dnsmasq/usr/sbin/dnsmasq	
 	$(STRIP) $(INSTALLDIR)/dnsmasq/etc/lease_update.sh
 
 dnsmasq-clean:

@@ -11,9 +11,7 @@
 */
 
 /* define this to get facilitynames */
-#ifndef BUSYBOX
 #define SYSLOG_NAMES
-#endif
 
 #include "dnsmasq.h"
 
@@ -96,9 +94,7 @@ static const struct myoption opts[] =
     {"no-ping", 0, 0, '5'},
     {"dhcp-script", 1, 0, '6'},
     {"conf-dir", 1, 0, '7'},
-#ifndef BUSYBOX
     {"log-facility", 1, 0 ,'8'},
-#endif
     {"leasefile-ro", 0, 0, '9'},
     {"dns-forward-max", 1, 0, '0'},
     { NULL, 0, 0, 0 }
@@ -202,9 +198,7 @@ static const struct {
   { "-5, --no-ping", gettext_noop("Disable ICMP echo address checking in the DHCP server."), NULL },
   { "-6, --dhcp-script=path", gettext_noop("Script to run on DHCP lease creation and destruction."), NULL },
   { "-7, --conf-dir=path", gettext_noop("Read configuration from all the files in this directory."), NULL },
-#ifndef BUSYBOX
   { "-8, --log-facility=facilty", gettext_noop("Log to this syslog facility. (defaults to DAEMON)"), NULL },
-#endif
   { "-9, --leasefile-ro", gettext_noop("Read leases at startup, but never write the lease file."), NULL },
   { "-0, --dns-forward-max", gettext_noop("Maximum number of concurrent DNS queries. (defaults to %s)"), "!" }, 
   { NULL, NULL, NULL }
@@ -416,7 +410,7 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	closedir(dir_stream);
 	break;
       }
-#ifndef BUSYBOX
+
     case '8':
       for (i = 0; facilitynames[i].c_name; i++)
 	if (hostname_isequal((char *)facilitynames[i].c_name, arg))
@@ -431,7 +425,6 @@ static char *one_opt(struct daemon *daemon, int option, char *arg, char *problem
 	}
       break;
       
-#endif
     case 'x': 
       daemon->runfile = safe_string_alloc(arg);
       break;
