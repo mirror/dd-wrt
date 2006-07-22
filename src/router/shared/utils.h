@@ -64,6 +64,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Microtik RouterBOARD 500
 #define ROUTER_BOARD_500 0x0e0f
 
+// NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
+#define ROUTER_BOARD_XSCALE 0x0e0f
+
 // ??? 
 #define ROUTER_BELKIN 0x0f0f
 

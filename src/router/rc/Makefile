@@ -71,6 +71,9 @@ endif
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
 endif
+ifeq ($(CONFIG_XSCALE),y)
+CFLAGS += -DHAVE_XSCALE
+endif
 
 ifneq ($(CONFIG_RB500),y)
 OBJS += wland.o

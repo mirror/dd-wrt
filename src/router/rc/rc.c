@@ -622,6 +622,10 @@ main (int argc, char **argv)
 	  if (!strcmp (argv[1], "usb"))
 	    return start_service ("hotplug_usb");
 #endif
+#ifdef HAVE_XSCALE
+	  if (!strcmp (argv[1], "firmware"))
+	    return eval("/etc/upload",argv[1]);
+#endif
 	}
       else
 	{

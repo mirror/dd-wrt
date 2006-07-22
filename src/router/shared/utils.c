@@ -121,6 +121,9 @@ internal_getRouterBrand ()
 #ifdef HAVE_RB500
   setRouter ("Mikrotik RB500");
   return ROUTER_BOARD_500;
+#elif HAVE_XSCALE
+  setRouter ("NewMedia Dual A/B/G");
+  return ROUTER_BOARD_XSCALE;
 #else
   char *et0;
   if (nvram_match ("boardnum", "42") &&
@@ -388,6 +391,8 @@ diag_led_4702 (int type, int act)
 {
 #ifdef HAVE_RB500
   return 0;
+#elif HAVE_XSCALE
+  return 0;
 #else
   if (act == START_LED)
     {
@@ -415,6 +420,8 @@ int
 C_led_4702 (int i)
 {
 #ifdef HAVE_RB500
+  return 0;
+#elif HAVE_XSCALE
   return 0;
 #else
   FILE *fp;
@@ -495,6 +502,8 @@ diag_led_4704 (int type, int act)
 {
 #ifdef HAVE_RB500
   return 0;
+#elif HAVE_XSCALE
+ return 0;
 #else
   unsigned int control, in, outen, out;
 
@@ -587,6 +596,8 @@ diag_led_4712 (int type, int act)
 {
   unsigned int control, in, outen, out, ctr_mask, out_mask;
 #ifdef HAVE_RB500
+  return 0;
+#elif HAVE_XSCALE
   return 0;
 #else
 
@@ -1693,7 +1704,10 @@ check_vlan_support (void)
 {
 #ifdef HAVE_RB500
   return 0;
+#elif HAVE_XSCALE // dues support vlans, but not yet implemented
+  return 0;
 #else
+
 
   uint boardflags;
 
