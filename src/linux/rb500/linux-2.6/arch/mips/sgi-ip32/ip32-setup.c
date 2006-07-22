@@ -8,7 +8,6 @@
  * Copyright (C) 2000 Harald Koerfgen
  * Copyright (C) 2002, 2003, 2005 Ilya A. Volynets
  */
-#include <linux/config.h>
 #include <linux/console.h>
 #include <linux/init.h>
 #include <linux/interrupt.h>
@@ -87,7 +86,7 @@ void __init ip32_timer_setup(struct irqaction *irq)
 	setup_irq(IP32_R4K_TIMER_IRQ, irq);
 }
 
-void __init plat_setup(void)
+void __init plat_mem_setup(void)
 {
 	board_be_init = ip32_be_init;
 

@@ -20,9 +20,6 @@
 #ifndef __6338_INTR_H
 #define __6338_INTR_H
 
-#ifdef __cplusplus
-    extern "C" {
-#endif
 
 /*=====================================================================*/
 /* BCM6338 External Interrupt Level Assignments                       */
@@ -64,9 +61,6 @@
 #define INTERRUPT_ID_EMAC1_TX_DMA        (INTERNAL_ISR_TABLE_OFFSET + 16)
 #define INTERRUPT_ID_SDIO                (INTERNAL_ISR_TABLE_OFFSET + 17)
 
-#ifdef __cplusplus
-    }
-#endif                    
 
 #endif  /* __BCM6338_H */
 

@@ -1193,7 +1193,7 @@ static int st_open(struct inode *inode, struct file *filp)
 
 
 /* Flush the tape buffer before close */
-static int st_flush(struct file *filp)
+static int st_flush(struct file *filp, fl_owner_t id)
 {
 	int result = 0, result2;
 	unsigned char cmd[MAX_COMMAND_SIZE];
@@ -2818,7 +2818,7 @@ static int st_int_ioctl(struct scsi_tape *STp, unsigned int cmd_in, unsigned lon
 		    (cmdstatp->sense_hdr.sense_key == NO_SENSE ||
 		     cmdstatp->sense_hdr.sense_key == RECOVERED_ERROR) &&
 		    undone == 0) {
-			ioctl_result = 0;	/* EOF written succesfully at EOM */
+			ioctl_result = 0;	/* EOF written successfully at EOM */
 			if (fileno >= 0)
 				fileno++;
 			STps->drv_file = fileno;
@@ -3599,7 +3599,6 @@ static struct st_buffer *
 	tb->use_sg = max_sg;
 	tb->frp = (struct st_buf_fragment *)(&(tb->sg[0]) + max_sg);
 
-	tb->in_use = 1;
 	tb->dma = need_dma;
 	tb->buffer_size = got;
 
@@ -3839,7 +3838,7 @@ static int __init st_setup(char *str)
 					break;
 				}
 			}
-			if (i >= sizeof(parms) / sizeof(struct st_dev_parm))
+			if (i >= ARRAY_SIZE(parms))
 				 printk(KERN_WARNING "st: invalid parameter in '%s'\n",
 					stp);
 			stp = strchr(stp, ',');

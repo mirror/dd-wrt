@@ -20,7 +20,6 @@
  *
  * See the GNU General Public License for more details.
  */
-#include <linux/config.h>
 #include <linux/compiler.h>
 #include <linux/kernel.h>
 #include <linux/module.h>
@@ -674,7 +673,7 @@ static int llc_ui_recvmsg(struct kiocb *iocb, struct socket *sock,
 
 	lock_sock(sk);
 	copied = -ENOTCONN;
-	if (sk->sk_state == TCP_LISTEN)
+	if (unlikely(sk->sk_type == SOCK_STREAM && sk->sk_state == TCP_LISTEN))
 		goto out;
 
 	timeo = sock_rcvtimeo(sk, nonblock);
@@ -733,7 +732,7 @@ static int llc_ui_recvmsg(struct kiocb *iocb, struct socket *sock,
 			if (sk->sk_shutdown & RCV_SHUTDOWN)
 				break;
 
-			if (sk->sk_state == TCP_CLOSE) {
+			if (sk->sk_type == SOCK_STREAM && sk->sk_state == TCP_CLOSE) {
 				if (!sock_flag(sk, SOCK_DONE)) {
 					/*
 					 * This occurs when user tries to read
@@ -789,7 +788,7 @@ static int llc_ui_recvmsg(struct kiocb *iocb, struct socket *sock,
 			continue;
 
 		if (!(flags & MSG_PEEK)) {
-			sk_eat_skb(sk, skb);
+			sk_eat_skb(sk, skb, 0);
 			*seq = 0;
 		}
 	} while (len > 0);

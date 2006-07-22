@@ -22,7 +22,6 @@
  *
  * Lasat specific setup.
  */
-#include <linux/config.h>
 #include <linux/init.h>
 #include <linux/sched.h>
 #include <linux/pci.h>
@@ -155,7 +154,7 @@ void __init serial_init(void)
 }
 #endif
 
-void __init plat_setup(void)
+void __init plat_mem_setup(void)
 {
 	int i;
 	lasat_misc  = &lasat_misc_info[mips_machtype];
