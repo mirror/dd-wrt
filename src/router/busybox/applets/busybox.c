@@ -112,8 +112,8 @@ int main(int argc, char **argv)
   else if (!strcmp (base, "arp"))
     return arp_main(argc,argv);
 #endif
-//  else if (strstr (base, "dnsmasq"))
-//    return dnsmasq_main(argc, argv);    
+  else if (strstr (base, "dnsmasq"))
+    return dnsmasq_main(argc, argv);    
 	const char *s;
 
 	bb_applet_name=argv[0];
