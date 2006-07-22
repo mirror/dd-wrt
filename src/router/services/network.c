@@ -725,6 +725,12 @@ start_lan (void)
 	    strcpy (realname, "ath0");
 	  }
 	else
+#elif HAVE_XSCALE
+	if (!strcmp (name, "eth2"))
+	  {
+	    strcpy (realname, "ath0");
+	  }
+	else
 #endif
 #endif
 	  strcpy (realname, name);
@@ -958,8 +964,19 @@ start_lan (void)
 #ifdef HAVE_RB500
       nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
 #endif
+#ifdef HAVE_XSCALE
+      nvram_set ("et0macaddr", nvram_safe_get ("lan_hwaddr"));
+#endif
     }
 #ifdef HAVE_RB500
+  strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
+  if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
+    {
+      char eabuf[32];
+      nvram_set ("wl0_hwaddr", ether_etoa (ifr.ifr_hwaddr.sa_data, eabuf));
+    }
+#endif
+#ifdef HAVE_XSCALE
   strncpy (ifr.ifr_name, "ath0", IFNAMSIZ);
   if (ioctl (s, SIOCGIFHWADDR, &ifr) == 0)
     {
@@ -1066,6 +1083,9 @@ start_lan (void)
 	  //eval ("brctl", "addif", "br0", dev);
 	}
     }
+#ifdef HAVE_XSCALE
+#define HAVE_RB500
+#endif
 #ifndef HAVE_RB500
   /* Set QoS mode */
   if ((s = socket (AF_INET, SOCK_RAW, IPPROTO_RAW)) >= 0)
@@ -1108,6 +1128,9 @@ start_lan (void)
 	}
     }
 
+#endif
+#ifdef HAVE_XSCALE
+#undef HAVE_RB500
 #endif
   /* Sveasoft - set default IP gateway defined */
   if (strcmp (nvram_safe_get ("lan_gateway"), "0.0.0.0"))

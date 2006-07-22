@@ -57,6 +57,10 @@ OBJS += upgrade_rb500.o
 else
 OBJS += upgrade.o
 endif
+ifeq ($(CONFIG_XSCALE),y)
+CFLAGS += -DHAVE_XSCALE
+endif
+
 ifeq ($(REGDOMAIN_OVERRIDE),y)
 CFLAGS += -DREGDOMAIN_OVERRIDE
 endif
@@ -150,7 +154,7 @@ ifeq ($(CONFIG_MSSID),y)
 endif
 
 ifeq ($(CONFIG_MADWIFI),y)
-  CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h
+  CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h
 #  OBJS += ../wireless-tools/libiw.so.29
 endif
 

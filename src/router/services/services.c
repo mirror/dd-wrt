@@ -115,12 +115,14 @@ void
 start_vpn_modules (void)
 {
 #ifndef HAVE_RB500
+#ifndef HAVE_XSCALE
   if ((nvram_match ("pptp_pass", "1") || nvram_match ("l2tp_pass", "1")
        || nvram_match ("ipsec_pass", "1")))
     {
       eval ("/sbin/insmod", "ip_conntrack_proto_gre");
       eval ("/sbin/insmod", "ip_nat_proto_gre");
     }
+#endif
 #endif
   if (nvram_match ("pptp_pass", "1"))
     {
@@ -134,12 +136,16 @@ void
 stop_vpn_modules (void)
 {
 #ifndef HAVE_RB500
+#ifndef HAVE_XSCALE
   eval ("/sbin/rmmod", "ip_nat_proto_gre");
+#endif
 #endif
   eval ("/sbin/rmmod", "ip_nat_pptp");
   eval ("/sbin/rmmod", "ip_conntrack_pptp");
 #ifndef HAVE_RB500
+#ifndef HAVE_XSCALE
   eval ("/sbin/rmmod", "ip_conntrack_proto_gre");
+#endif
 #endif
 }
 
@@ -567,11 +573,13 @@ start_udhcpd (void)
       return 0;
     }
 #ifndef HAVE_RB500
+#ifndef HAVE_XSCALE
   if (nvram_match ("wl_mode", "wet"))	//dont start any dhcp services in bridge mode
     {
       nvram_set ("lan_proto", "static");
       return 0;
     }
+#endif
 #endif
 
   if (nvram_match ("router_disable", "1")
@@ -3483,6 +3491,7 @@ cprintf("device %s\n",device!=NULL?device:"");
   return 0;
 }
 #endif
+
 extern int br_add_bridge (const char *brname);
 extern int br_del_bridge (const char *brname);
 extern int br_add_interface (const char *br, const char *dev);

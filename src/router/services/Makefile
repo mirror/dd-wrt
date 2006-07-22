@@ -59,7 +59,7 @@ endif
 
 ifeq ($(CONFIG_MADWIFI),y)
 OBJS += madwifi.o
-CFLAGS += -DHAVE_MADWIFI -I../madwifi/madwifi.dev -include ../madwifi/madwifi.dev/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
+CFLAGS += -DHAVE_MADWIFI -I../madwifi -include ../madwifi/include/compat.h -I../wireless-tools -DHEADERS_KERNEL
 OBJS += ../wireless-tools/libiw.so.29 
 
 
@@ -88,6 +88,9 @@ endif
 
 ifeq ($(CONFIG_RB500),y)
 CFLAGS += -DHAVE_RB500
+endif
+ifeq ($(CONFIG_XSCALE),y)
+CFLAGS += -DHAVE_XSCALE
 endif
 ifeq ($(CONFIG_OPENVPN),y)
 CFLAGS += -DHAVE_OPENVPN
