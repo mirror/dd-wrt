@@ -90,8 +90,8 @@ void lease_init(struct daemon *daemon, time_t now)
   lease_prune(NULL, now);
   dns_dirty = 1;
 
-//  if (daemon->options & OPT_LEASE_RO)
-//    fclose(leasestream);
+  if (daemon->options & OPT_LEASE_RO)
+    fclose(leasestream);
 }
 
 void lease_update_from_configs(struct daemon *daemon)
