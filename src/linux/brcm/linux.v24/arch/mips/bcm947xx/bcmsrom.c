@@ -144,12 +144,12 @@ srom_write(uint bustype, void *curmap, osl_t *osh, uint byteoff, uint nbytes, ui
 
 		nw = crc_range / 2;
 		/* read first 64 words from srom */
-		if (srom_read(bustype, curmap, osh, 0, nw * 2, image))
+		if (srom_read(bustype, curmap, osh, 0, crc_range, image))
 			return 1;
 		if (image[SROM4_SIGN] == SROM4_SIGNATURE) {
-			crc_range = SROM4_WORDS;
-			nw = crc_range / 2;
-			if (srom_read(bustype, curmap, osh, 0, nw * 2, image))
+			nw = SROM4_WORDS;
+			crc_range = nw * 2;
+			if (srom_read(bustype, curmap, osh, 0, crc_range, image))
 				return 1;
 		}
 		/* make changes */
@@ -160,7 +160,7 @@ srom_write(uint bustype, void *curmap, osl_t *osh, uint byteoff, uint nbytes, ui
 	htol16_buf(image, crc_range);
 	crc = ~hndcrc8((uint8 *)image, crc_range - 1, CRC8_INIT_VALUE);
 	ltoh16_buf(image, crc_range);
-	image[(crc_range / 2) - 1] = (crc << 8) | (image[(crc_range / 2) - 1] & 0xff);
+	image[nw - 1] = (crc << 8) | (image[nw - 1] & 0xff);
 
 	if (BUSTYPE(bustype) == PCI_BUS) {
 		srom = (uint16*)((uchar*)curmap + PCI_BAR0_SPROM_OFFSET);
@@ -814,10 +814,13 @@ initvars_srom_pci(void *sbh, void *curmap, char **vars, uint *count)
 		}
 		/* LED Powersave duty cycle (oncount >> 24) (offcount >> 8) */
 		w = b[SROM4_LEDDC];
-		w32 = ((uint32)((unsigned char)(w >> 8) & 0xff) << 24) |  /* oncount */
-			((uint32)((unsigned char)(w & 0xff)) << 8); /* offcount */
-		vp += sprintf(vp, "leddc=%d", w32);
-		vp++;
+		if (w != 0xffff)
+		{
+			w32 = ((uint32)((unsigned char)(w >> 8) & 0xff) << 24) |  /* oncount */
+				((uint32)((unsigned char)(w & 0xff)) << 8); /* offcount */
+			vp += sprintf(vp, "leddc=%d", w32);
+			vp++;
+		}
 
 		w = b[SROM4_AA];
 		vp += sprintf(vp, "aa2g=%d", w & SROM4_AA2G_MASK);

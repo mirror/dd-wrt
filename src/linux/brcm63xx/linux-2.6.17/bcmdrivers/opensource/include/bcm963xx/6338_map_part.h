@@ -20,9 +20,6 @@
 #ifndef __BCM6338_MAP_H
 #define __BCM6338_MAP_H
 
-#if __cplusplus
-extern "C" {
-#endif
 
 #include "bcmtypes.h"
 
@@ -333,9 +330,6 @@ typedef struct MpiRegisters {
 
 #define MPI ((volatile MpiRegisters * const) MPI_BASE)
 
-#if __cplusplus
-}
-#endif
 
 #endif
 

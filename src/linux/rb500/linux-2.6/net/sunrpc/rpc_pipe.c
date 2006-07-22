@@ -8,7 +8,6 @@
  * Copyright (c) 2002, Trond Myklebust <trond.myklebust@fys.uio.no>
  *
  */
-#include <linux/config.h>
 #include <linux/module.h>
 #include <linux/slab.h>
 #include <linux/string.h>
@@ -439,7 +438,7 @@ struct vfsmount *rpc_get_mount(void)
 {
 	int err;
 
-	err = simple_pin_fs("rpc_pipefs", &rpc_mount, &rpc_mount_count);
+	err = simple_pin_fs(&rpc_pipe_fs_type, &rpc_mount, &rpc_mount_count);
 	if (err != 0)
 		return ERR_PTR(err);
 	return rpc_mount;
@@ -516,7 +515,7 @@ rpc_depopulate(struct dentry *parent)
 	struct dentry *dentry, *dvec[10];
 	int n = 0;
 
-	mutex_lock(&dir->i_mutex);
+	mutex_lock_nested(&dir->i_mutex, I_MUTEX_CHILD);
 repeat:
 	spin_lock(&dcache_lock);
 	list_for_each_safe(pos, next, &parent->d_subdirs) {
@@ -632,7 +631,7 @@ rpc_lookup_negative(char *path, struct nameidata *nd)
 	if ((error = rpc_lookup_parent(path, nd)) != 0)
 		return ERR_PTR(error);
 	dir = nd->dentry->d_inode;
-	mutex_lock(&dir->i_mutex);
+	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
 	dentry = lookup_one_len(nd->last.name, nd->dentry, nd->last.len);
 	if (IS_ERR(dentry))
 		goto out_err;
@@ -694,7 +693,7 @@ rpc_rmdir(char *path)
 	if ((error = rpc_lookup_parent(path, &nd)) != 0)
 		return error;
 	dir = nd.dentry->d_inode;
-	mutex_lock(&dir->i_mutex);
+	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
 	dentry = lookup_one_len(nd.last.name, nd.dentry, nd.last.len);
 	if (IS_ERR(dentry)) {
 		error = PTR_ERR(dentry);
@@ -755,7 +754,7 @@ rpc_unlink(char *path)
 	if ((error = rpc_lookup_parent(path, &nd)) != 0)
 		return error;
 	dir = nd.dentry->d_inode;
-	mutex_lock(&dir->i_mutex);
+	mutex_lock_nested(&dir->i_mutex, I_MUTEX_PARENT);
 	dentry = lookup_one_len(nd.last.name, nd.dentry, nd.last.len);
 	if (IS_ERR(dentry)) {
 		error = PTR_ERR(dentry);
@@ -815,11 +814,11 @@ out:
 	return -ENOMEM;
 }
 
-static struct super_block *
+static int
 rpc_get_sb(struct file_system_type *fs_type,
-		int flags, const char *dev_name, void *data)
+		int flags, const char *dev_name, void *data, struct vfsmount *mnt)
 {
-	return get_sb_single(fs_type, flags, data, rpc_fill_super);
+	return get_sb_single(fs_type, flags, data, rpc_fill_super, mnt);
 }
 
 static struct file_system_type rpc_pipe_fs_type = {

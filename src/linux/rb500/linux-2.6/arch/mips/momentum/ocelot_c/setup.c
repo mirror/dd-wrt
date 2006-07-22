@@ -40,7 +40,6 @@
  *  675 Mass Ave, Cambridge, MA 02139, USA.
  *
  */
-#include <linux/config.h>
 #include <linux/bcd.h>
 #include <linux/init.h>
 #include <linux/kernel.h>
@@ -231,7 +230,7 @@ void momenco_time_init(void)
 	rtc_mips_set_time = m48t37y_set_time;
 }
 
-void __init plat_setup(void)
+void __init plat_mem_setup(void)
 {
 	unsigned int tmpword;
 
@@ -242,8 +241,8 @@ void __init plat_setup(void)
 	pm_power_off = momenco_ocelot_power_off;
 
 	/*
-	 * initrd_start = (ulong)ocelot_initrd_start;
-	 * initrd_end = (ulong)ocelot_initrd_start + (ulong)ocelot_initrd_size;
+	 * initrd_start = (unsigned long)ocelot_initrd_start;
+	 * initrd_end = (unsigned long)ocelot_initrd_start + (ulong)ocelot_initrd_size;
 	 * initrd_below_start_ok = 1;
 	 */
 

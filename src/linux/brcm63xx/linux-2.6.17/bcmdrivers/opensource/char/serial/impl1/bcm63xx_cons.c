@@ -20,7 +20,7 @@
 /* Description: Serial port driver for the BCM963XX. */
 
 #define CARDNAME    "bcm963xx_serial driver"
-#define VERSION     "2.0"
+#define VERSION     "2.1 DD-WRT "
 #define VER_STR     CARDNAME " v" VERSION "\n"
 
 
@@ -100,7 +100,7 @@ typedef struct bcm_serial {
 
 static struct bcm_serial multi[BCM_NUM_UARTS];
 static struct bcm_serial *lines[BCM_NUM_UARTS];
-static struct tty_driver serial_driver;
+static struct tty_driver *serial_driver;
 static struct tty_struct *serial_table[BCM_NUM_UARTS];
 static struct termios *serial_termios[BCM_NUM_UARTS];
 static struct termios *serial_termios_locked[BCM_NUM_UARTS];
@@ -114,8 +114,7 @@ static int startup (struct bcm_serial *info);
 static void shutdown (struct bcm_serial * info);
 static void change_speed( volatile Uart *pUart, tcflag_t cFlag );
 static void bcm63xx_cons_flush_chars (struct tty_struct *tty);
-static int bcm63xx_cons_write (struct tty_struct *tty, int from_user,
-    const unsigned char *buf, int count);
+static int bcm63xx_cons_write (struct tty_struct *tty,const unsigned char *buf, int count);
 static int bcm63xx_cons_write_room (struct tty_struct *tty);
 static int bcm_chars_in_buffer (struct tty_struct *tty);
 static void bcm_flush_buffer (struct tty_struct *tty);
@@ -304,15 +303,15 @@ static void shutdown (struct bcm_serial * info)
     if (!info->is_initialized)
         return;
 
-    save_flags (flags);
-    cli ();
+	local_save_flags(flags);
+	local_irq_disable();
 
     info->port->control &= ~(BRGEN|TXEN|RXEN);
     if (info->tty)
         set_bit (TTY_IO_ERROR, &info->tty->flags);
     info->is_initialized = 0;
+    local_irq_restore(flags);
 
-    restore_flags (flags);
 }
 /* 
  * -------------------------------------------------------------------
@@ -324,8 +323,8 @@ static void shutdown (struct bcm_serial * info)
 static void change_speed( volatile Uart *pUart, tcflag_t cFlag )
 {
     unsigned long ulFlags, ulBaud, ulClockFreqHz, ulTmp;
-    save_flags(ulFlags);
-    cli();
+	local_save_flags(ulFlags);
+	local_irq_disable();
     switch( cFlag & (CBAUD | CBAUDEX) )
     {
     case B115200:
@@ -433,7 +432,7 @@ static void change_speed( volatile Uart *pUart, tcflag_t cFlag )
 
     /* Reset and flush uart */
     pUart->fifoctl = RSTTXFIFOS | RSTRXFIFOS;
-    restore_flags( ulFlags );
+    local_irq_restore(ulFlags);
 }
 
 
@@ -456,7 +455,7 @@ static void bcm63xx_cons_flush_chars (struct tty_struct *tty)
  * Main output routine using polled I/O.
  * ------------------------------------------------------------------- 
  */
-static int bcm63xx_cons_write (struct tty_struct *tty, int from_user,
+static int bcm63xx_cons_write (struct tty_struct *tty,
     const unsigned char *buf, int count)
 {
     int c;
@@ -619,14 +618,14 @@ static void send_break (struct bcm_serial *info, int duration)
 
     current->state = TASK_INTERRUPTIBLE;
 
-    save_flags (flags);
-    cli();
+	local_save_flags(flags);
+	local_irq_disable();
 
     info->port->control |= XMITBREAK;
     schedule_timeout(duration);
     info->port->control &= ~XMITBREAK;
 
-    restore_flags (flags);
+    local_irq_restore(flags);
 }
 
 static int bcm_ioctl (struct tty_struct * tty, struct file * file,
@@ -738,12 +737,12 @@ static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp)
     if (!info)
         return;
 
-    save_flags (flags); 
-    cli();
+	local_save_flags(flags);
+	local_irq_disable();
 
     if (tty_hung_up_p (filp))
     {
-        restore_flags (flags);
+	local_irq_restore(flags);
         return;
     }
 
@@ -770,7 +769,7 @@ static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp)
 
     if (info->count)
     {
-        restore_flags (flags);
+	local_irq_restore(flags);
         return;
     }
 
@@ -816,7 +815,7 @@ static void bcm63xx_cons_close (struct tty_struct *tty, struct file *filp)
     }
     wake_up_interruptible (&info->close_wait);
 
-    restore_flags (flags);
+    local_irq_restore(flags);
 }
 
 /*
@@ -907,52 +906,55 @@ static int __init bcm63xx_serialinit(void)
 
     // Print the driver version information
     printk(VER_STR);
+    serial_driver = alloc_tty_driver(BCM_NUM_UARTS);
+    if (!serial_driver)
+		return -ENOMEM;
 
-    memset(&serial_driver, 0, sizeof(struct tty_driver));
+    //memset(&serial_driver, 0, sizeof(struct tty_driver));
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)     
-    serial_driver.owner 	    = THIS_MODULE;
-    serial_driver.devfs_name 	    = "tts/";
+    serial_driver->owner 	    = THIS_MODULE;
+    serial_driver->devfs_name 	    = "tts/";
 #endif    
-    serial_driver.magic             = TTY_DRIVER_MAGIC;
-    serial_driver.name              = "ttyS";
-    serial_driver.major             = TTY_MAJOR;
-    serial_driver.minor_start       = 64;
-    serial_driver.num               = BCM_NUM_UARTS;
-    serial_driver.type              = TTY_DRIVER_TYPE_SERIAL;
-    serial_driver.subtype           = SERIAL_TYPE_NORMAL;
-    serial_driver.init_termios      = tty_std_termios;
-    serial_driver.init_termios.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
-    serial_driver.flags             = TTY_DRIVER_REAL_RAW;
+    serial_driver->magic             = TTY_DRIVER_MAGIC;
+    serial_driver->name              = "ttyS";
+    serial_driver->major             = TTY_MAJOR;
+    serial_driver->minor_start       = 64;
+    serial_driver->num               = BCM_NUM_UARTS;
+    serial_driver->type              = TTY_DRIVER_TYPE_SERIAL;
+    serial_driver->subtype           = SERIAL_TYPE_NORMAL;
+    serial_driver->init_termios      = tty_std_termios;
+    serial_driver->init_termios.c_cflag = B115200 | CS8 | CREAD | CLOCAL;
+    serial_driver->flags             = TTY_DRIVER_REAL_RAW;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,0)    
-    serial_driver.refcount          = serial_refcount;
-    serial_driver.ttys	            = serial_table;    
+    serial_driver->refcount          = serial_refcount;
+    serial_driver->ttys	            = serial_table;    
 #else
-    serial_driver.refcount          = &serial_refcount;
-    serial_driver.table             = serial_table;    
+    serial_driver->refcount          = &serial_refcount;
+    serial_driver->table             = serial_table;    
 #endif    
 
-    serial_driver.termios           = serial_termios;
-    serial_driver.termios_locked    = serial_termios_locked;
-    serial_driver.open              = bcm63xx_cons_open;
-    serial_driver.close             = bcm63xx_cons_close;
-    serial_driver.write             = bcm63xx_cons_write;
-    serial_driver.flush_chars       = bcm63xx_cons_flush_chars;
-    serial_driver.write_room        = bcm63xx_cons_write_room;
-    serial_driver.chars_in_buffer   = bcm_chars_in_buffer;
-    serial_driver.flush_buffer      = bcm_flush_buffer;
-    serial_driver.ioctl             = bcm_ioctl;
-    serial_driver.throttle          = bcm_throttle;
-    serial_driver.unthrottle        = bcm_unthrottle;
-    serial_driver.send_xchar        = bcm_send_xchar;
-    serial_driver.set_termios       = bcm_set_termios;
-    serial_driver.stop              = bcm_stop;
-    serial_driver.start             = bcm_start;
-    serial_driver.hangup            = bcm_hangup;
+    serial_driver->termios           = serial_termios;
+    serial_driver->termios_locked    = serial_termios_locked;
+    serial_driver->open              = bcm63xx_cons_open;
+    serial_driver->close             = bcm63xx_cons_close;
+    serial_driver->write             = bcm63xx_cons_write;
+    serial_driver->flush_chars       = bcm63xx_cons_flush_chars;
+    serial_driver->write_room        = bcm63xx_cons_write_room;
+    serial_driver->chars_in_buffer   = bcm_chars_in_buffer;
+    serial_driver->flush_buffer      = bcm_flush_buffer;
+    serial_driver->ioctl             = bcm_ioctl;
+    serial_driver->throttle          = bcm_throttle;
+    serial_driver->unthrottle        = bcm_unthrottle;
+    serial_driver->send_xchar        = bcm_send_xchar;
+    serial_driver->set_termios       = bcm_set_termios;
+    serial_driver->stop              = bcm_stop;
+    serial_driver->start             = bcm_start;
+    serial_driver->hangup            = bcm_hangup;
 
-    if (tty_register_driver (&serial_driver))
+    if (tty_register_driver (serial_driver))
         panic("Couldn't register serial driver\n");
-
-    save_flags(flags); cli();
+    local_save_flags(flags);
+    local_irq_disable();
     for (i = 0; i < BCM_NUM_UARTS; i++)
     {
         info = &multi[i]; 
@@ -967,7 +969,7 @@ static int __init bcm63xx_serialinit(void)
         info->event                 = 0;
         info->count                 = 0;
         info->blocked_open          = 0;	
-        info->normal_termios        = serial_driver.init_termios;
+        info->normal_termios        = serial_driver->init_termios;
         init_waitqueue_head(&info->open_wait); 
         init_waitqueue_head(&info->close_wait); 
 
@@ -983,7 +985,7 @@ static int __init bcm63xx_serialinit(void)
      * is updated... in request_irq - to immediatedly obliterate
      * it is unwise. 
      */
-    restore_flags(flags);
+    local_irq_restore(flags);
     return 0;
 }
 
@@ -1012,7 +1014,7 @@ static void bcm_console_print (struct console * cons, const char * str,
 static struct tty_driver * bcm_console_device(struct console * c, int *index)
 {
     *index = c->index;
-    return &serial_driver;
+    return serial_driver;
 }
 
 static int __init bcm_console_setup(struct console * co, char * options)
