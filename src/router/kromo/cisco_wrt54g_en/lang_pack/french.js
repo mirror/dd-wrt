@@ -1467,8 +1467,11 @@ wl_basic.b="B-uniquement";
 wl_basic.a="A-uniquement";
 wl_basic.g="G-uniquement";
 wl_basic.legend2="Plages Horaire de Fonctionnement";
+wl_basic.radio="Radio";
 wl_basic.all_on="Toujours On";
 wl_basic.all_off="Toujours Off";
+wl_basic.radio_on="Sans fil On";
+wl_basic.radio_off="Sans fil Off";
 
 //help container
 var hwl_basic = new Object();
