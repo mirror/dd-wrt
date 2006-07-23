@@ -2043,7 +2043,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 //wireless mode
-  websWrite (wp, "<h2><script type=\"text/javascript\">Capture(wl_basic_v24.h2)</script></h2>\n");
+  websWrite (wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_24)</script></h2>\n");
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend>Interface %s - SSID [%s] HWAddr [%s]</legend>\n",
