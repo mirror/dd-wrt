@@ -129,6 +129,9 @@ share.styl="Skin";
 share.err="erreur";
 share.errs="erreurs";
 share.meters="mètres";
+share.full="Full";
+share.half="Half";
+share.quarter="Quarter";
 
 
 var sbutton = new Object();
@@ -1462,6 +1465,8 @@ wl_basic.client="Client";
 wl_basic.repeater="Repeater";
 wl_basic.clientBridge="Pont Client";
 wl_basic.adhoc="Adhoc";
+wl_basic.wdssta="Station WDS";
+wl_basic.wdsap="Point d\'accès WDS";
 wl_basic.mixed="Mixte";
 wl_basic.b="B-uniquement";
 wl_basic.a="A-uniquement";
@@ -1472,6 +1477,13 @@ wl_basic.all_on="Toujours On";
 wl_basic.all_off="Toujours Off";
 wl_basic.radio_on="Sans fil On";
 wl_basic.radio_off="Sans fil Off";
+
+wl_basic_v24.h2="Interface Sans fil";
+wl_basic.regdom="Regulatory Domain";
+wl_basic.TXpower="TX Power";
+wl_basic.diversity="Diversity";
+wl_basic.primary="Primaire";
+wl_basic.secondary="Secondaire";
 
 //help container
 var hwl_basic = new Object();
