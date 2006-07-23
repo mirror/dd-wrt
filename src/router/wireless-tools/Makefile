@@ -102,11 +102,11 @@ ifdef BUILD_WE_ESSENTIAL
 endif
 
 # Other flags
-CFLAGS=$(COPTS) -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow \
+CFLAGS=$(COPTS) -W -Wall -Wstrict-prototypes -Wmissing-prototypes -Wshadow -DNEED_PRINTF \
 	-Wpointer-arith -Wcast-qual -Winline -I.
 #CFLAGS=-O2 -W -Wall -Wstrict-prototypes -I.
 DEPFLAGS=-MMD
-XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG)
+XCFLAGS=$(CFLAGS) $(DEPFLAGS) $(WARN) $(HEADERS) $(WELIB_FLAG) $(WEDEF_FLAG) -DNEED_PRINTF
 PICFLAG=-fPIC
 
 # Standard compilation targets
