@@ -5,11 +5,11 @@
 document.title = "<% nvram_get("router_name"); %>" + wl_basic.titl;
 
 function SelWL(num,F) {
-	if ( num == 0)
-		I = '0';
-	else
-		I = '1';
-	wl_enable_disable(F,I);
+  if ( num == 0)
+    I = "0";
+  else
+    I = "1";
+  wl_enable_disable(F,I);
 }
 
 function wl_enable_disable(F,I) {
@@ -45,49 +45,13 @@ function vifs_remove_submit(F,I) {
 	F.submit();
 }
 
-function initArray() {
-    this.length = initArray.arguments.length;
-    for (var i = 0; i < this.length; i++)
-        this[i] = initArray.arguments[i];
-}
-
-function from10toradix(value,radix){
-    var retval = '';
-    var ConvArray = new initArray(0,1,2,3,4,5,6,7,8,9,'A','B','C','D','E','F');
-    var intnum;
-    var tmpnum;
-    var i = 0;
-
-    intnum = parseInt(value,10);
-    if (isNaN(intnum)){
-        retval = 'NaN';
-    }else{
-        while (intnum > 0.9){
-            i++;
-            tmpnum = intnum;
-            // cancatinate return string with new digit:
-            retval = ConvArray[tmpnum % radix] + retval;  
-            intnum = Math.floor(tmpnum / radix);
-            if (i > 100){
-                // break infinite loops
-                retval = 'NaN';
-                break;
-            }
-        }
-    }
-    return retval;
-}
-
-function initWlTimer(hex_radio_on)
+function initWlTimer(radio_on_time)
 {
-	tmpvar = parseInt(hex_radio_on,16);
-	bin_radio_on = from10toradix(tmpvar,2);
-	
 	var color_red='#FF0000';
 	var color_green='#00FF00';
 	
-	for(var i = 0; i < bin_radio_on.length; i++){
-		if(bin_radio_on.charAt(i)==1){
+	for(var i = 0; i < radio_on_time.length; i++){
+		if(radio_on_time.charAt(i)==1){
 			bgcolor=color_green;
 			val=1;
 		}else{
@@ -170,25 +134,22 @@ function setWlTimer(id, state)
 
 function computeWlTimer()
 {
-	var bin_radio_on='';
+	var radio_on_time='';
 	
 	for(var i = 0; i < 24; i++){
 		if(ie4){
-			bin_radio_on=bin_radio_on + eval("document.all.td_" + i + ".value");
+			radio_on_time=radio_on_time + eval("document.all.td_" + i + ".value");
 		}
 		if(ns4) {
-			bin_radio_on=bin_radio_on + eval("document.td_" + i + ".value");
+			radio_on_time=radio_on_time + eval("document.td_" + i + ".value");
 		}
 		if(ns6 || op) {
-			bin_radio_on=bin_radio_on + eval("document.getElementById('td_" + i + "').value");
+			radio_on_time=radio_on_time + eval("document.getElementById('td_" + i + "').value");
 		}
 	}
 	
-	tmpvar = parseInt(bin_radio_on,2);
-	hex_radio_on = '0x' + from10toradix(tmpvar,16);
-//	alert("bin_radio_on : " + bin_radio_on);
-//	alert("hex_radio_on : " + hex_radio_on.toLowerCase());
-	return hex_radio_on.toLowerCase();
+//	alert("radio_on_time : " + radio_on_time);
+	return radio_on_time;
 }
 
 function to_submit(F) {
@@ -202,7 +163,7 @@ function to_submit(F) {
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-	F.radio_on_time.value = computeWlTimer();
+//	F.radio_on_time.value = computeWlTimer();
 	
 	F.action.value = "Apply";
 	apply(F);
@@ -210,6 +171,7 @@ function to_submit(F) {
 
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
+//	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
 	initWlTimer('<% nvram_get("radio_on_time"); %>');
 });
 
