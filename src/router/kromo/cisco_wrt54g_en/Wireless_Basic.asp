@@ -45,113 +45,6 @@ function vifs_remove_submit(F,I) {
 	F.submit();
 }
 
-function initWlTimer(radio_on_time)
-{
-	var color_red='#FF0000';
-	var color_green='#00FF00';
-	
-	for(var i = 0; i < radio_on_time.length; i++){
-		if(radio_on_time.charAt(i)==1){
-			bgcolor=color_green;
-			val=1;
-		}else{
-			bgcolor=color_red;
-			val=0;
-		}
-		if(ie4){
-			eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
-			eval("document.all.td_" + i + ".value = '" + val + "'");
-		}
-		if(ns4) {
-			eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
-			eval("document.td_" + i + ".value = '" + val + "'");
-		}
-		if(ns6 || op) {
-			eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
-			eval("document.getElementById('td_" + i + "').value = '" + val + "'");
-		}
-	}
-}
-
-function setWlTimer(id, state)
-{
-	var color_red='#FF0000';
-	var color_green='#00FF00';
-	
-	if(id=='all'){
-		if(state){
-			bgcolor=color_green;
-			val=1;
-		}else{
-			bgcolor=color_red;
-			val=0;
-		}
-			
-		for(var i = 0; i < 24; i++) {
-			if(ie4){
-				eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
-				eval("document.all.td_" + i + ".value = '" + val + "'");
-			}
-			if(ns4){
-				eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
-				eval("document.td_" + i + ".value = '" + val + "'");
-			}
-			if(ns6 || op){
-				eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
-				eval("document.getElementById('td_" + i + "').value = '" + val + "'");
-			}
-		}
-	} else {
-		if(ie4){
-			if(eval("document.all." + id + ".value")==1){
-				eval("document.all." + id + ".style.backgroundColor = '" + color_red + "'");
-				eval("document.all." + id + ".value = '0'");
-			}else{
-				eval("document.all." + id + ".style.backgroundColor = '" + color_green + "'");
-				eval("document.all." + id + ".value = '1'");
-			}
-		}
-		if(ns4){
-			if(eval("document." + id + ".value")==1){
-				eval("document." + id + ".backgroundColor = '" + color_red + "'");
-				eval("document." + id + ".value = '0'");
-			}else{
-				eval("document." + id + ".backgroundColor = '" + color_green + "'");
-				eval("document." + id + ".value = '1'");
-			}
-		}
-		if(ns6 || op){
-			if(eval("document.getElementById('" + id + "').value")==1){
-				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_red + "'");
-				eval("document.getElementById('" + id + "').value = '0'");
-			}else{
-				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_green + "'");
-				eval("document.getElementById('" + id + "').value = '1'");
-			}
-		}
-	}
-}
-
-function computeWlTimer()
-{
-	var radio_on_time='';
-	
-	for(var i = 0; i < 24; i++){
-		if(ie4){
-			radio_on_time=radio_on_time + eval("document.all.td_" + i + ".value");
-		}
-		if(ns4) {
-			radio_on_time=radio_on_time + eval("document.td_" + i + ".value");
-		}
-		if(ns6 || op) {
-			radio_on_time=radio_on_time + eval("document.getElementById('td_" + i + "').value");
-		}
-	}
-	
-//	alert("radio_on_time : " + radio_on_time);
-	return radio_on_time;
-}
-
 function to_submit(F) {
 	if(F.wl_ssid)
 		if(F.wl_ssid.value == ""){
@@ -163,7 +56,6 @@ function to_submit(F) {
 	F.submit_button.value = "Wireless_Basic";
 	F.submit_type.value = "save";
 	F.save_button.value = sbutton.saving;
-//	F.radio_on_time.value = computeWlTimer();
 	
 	F.action.value = "Apply";
 	apply(F);
@@ -171,8 +63,6 @@ function to_submit(F) {
 
 addEvent(window, "load", function() {
 	wl_enable_disable(document.wireless,'<% nvram_else_match("wl0_gmode","-1","0","1"); %>');
-//	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
-	initWlTimer('<% nvram_get("radio_on_time"); %>');
 });
 
 		</script>
@@ -221,13 +111,12 @@ addEvent(window, "load", function() {
 		  <input type="hidden" name="submit_type" />
 		  <input type="hidden" name="change_action" />
 		  <input type="hidden" name="iface" />
-		  <input type="hidden" name="radio_on_time" />
 		  <input type="hidden" name="action" value="Apply" />
 		        <% show_wireless(); %>
 		    <br />
 		    <div class="submitFooter">
                     <script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
-                    <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"initWlTimer('<% nvram_get("radio_on_time"); %>')\" />");</script>
+                    <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");</script>
                 </div>
               </form>
           </div>
