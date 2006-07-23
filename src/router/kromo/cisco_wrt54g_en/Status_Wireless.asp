@@ -147,11 +147,18 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.mode"); %></div>
-									<% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(wl_basic.clientBridge)</script>"); %><% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script>"); %><% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(wl_basic.client)</script>"); %><% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(wl_basic.adhoc)</script>"); %><% nvram_match("wl_mode", "apsta", "Repeater"); %>&nbsp;
+									<% nvram_match("wl_mode", "wet", "<script type="text/javascript">Capture(wl_basic.clientBridge)</script>"); %>
+									<% nvram_match("wl_mode", "ap", "<script type="text/javascript">Capture(wl_basic.ap)</script>"); %>
+									<% nvram_match("wl_mode", "sta", "<script type="text/javascript">Capture(wl_basic.client)</script>"); %>
+									<% nvram_match("wl_mode", "infra", "<script type="text/javascript">Capture(wl_basic.adhoc)</script>"); %>
+									<% nvram_match("wl_mode", "apsta", "<script type="text/javascript">Capture(wl_basic.repeater)</script>"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.net"); %></div>
-									<% nvram_match("wl_net_mode", "disabled","<script type="text/javascript">Capture(share.disabled)</script>"); %><% nvram_match("wl_net_mode", "mixed", "<script type="text/javascript">Capture(wl_basic.mixed)</script>"); %><% nvram_match("wl_net_mode", "g-only", "<script type="text/javascript">Capture(wl_basic.g)</script>"); %><% nvram_match("wl_net_mode", "b-only", "<script type="text/javascript">Capture(wl_basic.b)</script>"); %>&nbsp;
+									<% nvram_match("wl_net_mode", "disabled","<script type="text/javascript">Capture(share.disabled)</script>"); %>
+									<% nvram_match("wl_net_mode", "mixed", "<script type="text/javascript">Capture(wl_basic.mixed)</script>"); %>
+									<% nvram_match("wl_net_mode", "g-only", "<script type="text/javascript">Capture(wl_basic.g)</script>"); %>
+									<% nvram_match("wl_net_mode", "b-only", "<script type="text/javascript">Capture(wl_basic.b)</script>"); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ssid"); %></div>
