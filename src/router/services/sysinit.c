@@ -339,10 +339,10 @@ start_restore_defaults (void)
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames",
-     "eth1 eth2 eth3 eth4 eth5 eth6 eth7 eth8 ath0 ath1 ath2 ath3 ath4 ath5",
+     "ixp0.1 ixp0.2 ath0 ath1 ath2 ath3 ath4 ath5",
      0},
-    {"wan_ifname", "eth0", 0},
-    {"wan_ifnames", "eth0", 0},
+    {"wan_ifname", "ixp1", 0},
+    {"wan_ifnames", "ixp1", 0},
     {0, 0, 0}
   };
 #else
@@ -811,6 +811,7 @@ start_sysinit (void)
   /* /proc */
   mount ("proc", "/proc", "proc", MS_MGC_VAL, NULL);
 #ifdef HAVE_XSCALE
+  system("/etc/convert");
   mount ("sysfs", "/sys", "sysfs", MS_MGC_VAL, NULL);
 #endif
   cprintf ("sysinit() tmp\n");
@@ -850,6 +851,10 @@ start_sysinit (void)
   eval ("cp", "/etc/nvram/nvram.db", "/tmp/nvram");
   eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 #elif HAVE_XSCALE
+eval ("mount","-o","remount,rw","/");
+//if (eval("mount","-t","jffs2","/dev/mtdblock/3","/etc/nvram"))
+//    eval("mtd","erase","DDWRT");
+//eval("mount","-t","jffs2","/dev/mtdblock/3","/etc/nvram");    
 mkdir ("/usr/local/nvram", 0777);
 unlink ("/tmp/nvram/.lock");
 eval ("mkdir", "/tmp/nvram");
@@ -1077,10 +1082,13 @@ if (check_vlan_support())
       }
     }
 #else
-eval("/etc/kendin");
+system("/etc/kendin");
 eval("insmod","ixp400th");
 eval("insmod","ixp400");
 eval("insmod","ixp400_eth");
+eval("ifconfig","ixp0","0.0.0.0","up");
+eval("vconfig","add","ixp0","1");
+eval("vconfig","add","ixp0","2");
 
 //  eval ("insmod", "mii");
 //  eval ("insmod", "korina");
