@@ -5,7 +5,13 @@ ifneq ($(wildcard $(SRCBASE)/cy_conf.mak),)
   include $(SRCBASE)/cy_conf.mak
 endif
 
-MODULE:=networksettings
+MODULE:=networksettings.brcm
+ifeq ($(CONFIG_RB500),y)
+MODULE:=networksettings.rb532
+endif
+ifeq ($(CONFIG_XSCALE),y)
+MODULE:=networksettings.rb532
+endif
 
 clean:
 	@true
