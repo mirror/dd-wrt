@@ -134,6 +134,9 @@ share.styl="Style";
 share.err="error";
 share.errs="errors";
 share.meters="meters";
+share.full="Full";
+share.half="Half";
+share.quarter="Quarter";
 
 
 
@@ -1465,6 +1468,8 @@ wl_basic.client="Client";
 wl_basic.repeater="Repeater";
 wl_basic.clientBridge="Client Bridge";
 wl_basic.adhoc="Adhoc";
+wl_basic.wdssta="WDS Station";
+wl_basic.wdsap="WDS AP";
 wl_basic.mixed="Mixed";
 wl_basic.b="B-Only";
 wl_basic.a="A-Only";
@@ -1475,6 +1480,13 @@ wl_basic.all_on="Always On";
 wl_basic.all_off="Always Off";
 wl_basic.radio_on="Radio is On";
 wl_basic.radio_off="Radio is Off";
+
+wl_basic_v24.h2="Wireless Physical Interface";
+wl_basic.regdom="Regulatory Domain";
+wl_basic.TXpower="TX Power";
+wl_basic.diversity="Diversity";
+wl_basic.primary="Primary";
+wl_basic.secondary="Secondary";
 
 //help container
 var hwl_basic = new Object();
