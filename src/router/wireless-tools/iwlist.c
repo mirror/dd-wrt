@@ -1140,7 +1140,7 @@ print_txpower_info(int		skfd,
 
   /* Avoid "Unused parameter" warning */
   args = args; count = count;
-
+  int maxpower=0;
   /* Extract range info */
   if((iw_get_range_info(skfd, ifname, &range) < 0) ||
      (range.we_version_compiled < 10))
@@ -1168,11 +1168,13 @@ print_txpower_info(int		skfd,
 		    {
 		      dbm = iw_mwatt2dbm(range.txpower[k]);
 		      mwatt = range.txpower[k];
+		      if (mwatt>maxpower)maxpower=mwatt;
 		    }
 		  else
 		    {
 		      dbm = range.txpower[k];
 		      mwatt = iw_dbm2mwatt(range.txpower[k]);
+		      if (mwatt>maxpower)maxpower=mwatt;
 		    }
 		  printf("\t  %d dBm  \t(%d mW)\n", dbm, mwatt);
 		}
@@ -1218,6 +1220,7 @@ print_txpower_info(int		skfd,
 		}
 	    }
 	}
+	printf("Maximum Power: %d mW\n",maxpower);
     }
   return(0);
 }
