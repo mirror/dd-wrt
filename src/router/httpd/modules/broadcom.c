@@ -4164,6 +4164,7 @@ showencstatus(wp,mode);
   showencstatus(wp,var);
   }
 }
+
 static void
 ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -4184,9 +4185,13 @@ if (nvram_match(mode,"infra"))
     websWrite(wp,"Capture(wl_basic.adhoc)");
 if (nvram_match(mode,"apsta"))
     websWrite(wp,"Capture(wl_basic.repeater)");
+if (nvram_match(mode,"wdssta"))
+    websWrite(wp,"Capture(wl_basic.wdssta)");
+if (nvram_match(mode,"wdsap"))
+    websWrite(wp,"Capture(wl_basic.wdsap)");
 websWrite(wp,"</script>&nbsp;\n");
-							
 }
+
 static void
 ej_getwirelessnetmode (int eid, webs_t wp, int argc, char_t ** argv)
 {
@@ -4209,7 +4214,6 @@ if (nvram_match(mode,"b-only"))
 if (nvram_match(mode,"a-only"))
     websWrite(wp,"Capture(wl_basic.a)");
 websWrite(wp,"</script>&nbsp;\n");
-
 }
 
 static void
