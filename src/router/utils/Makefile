@@ -19,15 +19,21 @@ include $(TOP)/.config
 
 #LIBS := libbb.so libbcm.so libbcmcrypto.so
 UTILS := mtd
-CFLAGS += -s -Os -mtune=mips32 -mips32 -pipe -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe 
+CFLAGS += -s $(COPTS) -I$(SRCBASE)/include.v23 -I$(SRCBASE)/wl/exe 
 
 vpath %.c $(SRCBASE)/tools/misc
 
 
 vpath %.c $(SRCBASE)/et/freebsd
 
-
+ifneq ($(ARCH),armeb)
 all: $(UTILS)
+else
+all:
+	$(CC) -o mtd -I$(LINUXDIR)/include $(COPTS) mtd_arm.c
+	$(CC) -o jffs2root -I$(LINUXDIR)/include $(COPTS) jffs2root.c	
+endif
+
 
 
 clean:
@@ -39,7 +45,10 @@ install: all
 	install $(UTILS) $(INSTALLDIR)/usr/sbin
 	#install $(LIBS) $(INSTALLDIR)/usr/lib
 #	$(STRIP) $(foreach file,$(UTILS),$(INSTALLDIR)/usr/sbin/$(file))
-
+ifeq ($(ARCH),armeb)
+	install -d $(INSTALLDIR)/sbin
+	install jffs2root $(INSTALLDIR)/sbin	
+endif
 
 ifneq ($(CONFIG_RB500),y)
 ifeq ($(CONFIG_MSSID),y)
