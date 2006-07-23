@@ -1478,7 +1478,7 @@ wl_basic.all_off="Toujours Off";
 wl_basic.radio_on="Sans fil On";
 wl_basic.radio_off="Sans fil Off";
 
-wl_basic_v24.h2="Interface Sans fil";
+wl_basic.h2_v24="Interface Sans fil";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="TX Power";
 wl_basic.diversity="Diversity";
