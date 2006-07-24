@@ -147,11 +147,11 @@ addEvent(window, "unload", function() {
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.mode"); %></div>
-									<% getwirelessmode(); %>
+									<% getwirelessmode(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("status_wireless.net"); %></div>
-									<% getwirelessnetmode(); %>
+									<% getwirelessnetmode(); %>&nbsp;
 								</div>
 								<div class="setting">
 									<div class="label"><% tran("share.ssid"); %></div>
