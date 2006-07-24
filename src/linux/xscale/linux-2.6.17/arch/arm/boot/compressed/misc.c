@@ -312,7 +312,7 @@ decompress_kernel(ulg output_start, ulg free_mem_ptr_p, ulg free_mem_ptr_end_p,
 	arch_decomp_setup();
 
 	makecrc();
-	putstr("Uncompressing Linux...");
+	putstr("Uncompressing DD-WRT...");
 	gunzip();
 	putstr(" done, booting the kernel.\n");
 	return output_ptr;
@@ -326,7 +326,7 @@ int main()
 	output_data = output_buffer;
 
 	makecrc();
-	putstr("Uncompressing Linux...");
+	putstr("Uncompressing DD-WRT...");
 	gunzip();
 	putstr("done.\n");
 	return 0;

@@ -182,7 +182,7 @@ static void __init gtwx5715_init(void)
 }
 
 
-MACHINE_START(GTWX5715, "Gemtek GTWX5715 (Linksys WRV54G)")
+MACHINE_START(GTWX5715, "NewMedia Dual A/B/G")
 	/* Maintainer: George Joseph */
 	.phys_ram	= PHYS_OFFSET,
 	.phys_io	= IXP4XX_UART2_BASE_PHYS,
