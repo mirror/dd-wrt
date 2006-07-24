@@ -4,9 +4,118 @@
 
 document.title = "<% nvram_get("router_name"); %>" + wl_adv.titl;
 
+function initWlTimer(radio_on_time)
+{
+	var color_red='#FF0000';
+	var color_green='#00FF00';
+	
+	for(var i = 0; i < radio_on_time.length; i++){
+		if(radio_on_time.charAt(i)==1){
+			bgcolor=color_green;
+			val=1;
+		}else{
+			bgcolor=color_red;
+			val=0;
+		}
+		if(ie4){
+			eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
+			eval("document.all.td_" + i + ".value = '" + val + "'");
+		}
+		if(ns4) {
+			eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
+			eval("document.td_" + i + ".value = '" + val + "'");
+		}
+		if(ns6 || op) {
+			eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
+			eval("document.getElementById('td_" + i + "').value = '" + val + "'");
+		}
+	}
+}
+
+function setWlTimer(id, state)
+{
+	var color_red='#FF0000';
+	var color_green='#00FF00';
+	
+	if(id=='all'){
+		if(state){
+			bgcolor=color_green;
+			val=1;
+		}else{
+			bgcolor=color_red;
+			val=0;
+		}
+			
+		for(var i = 0; i < 24; i++) {
+			if(ie4){
+				eval("document.all.td_" + i + ".style.backgroundColor = '" + bgcolor + "'");
+				eval("document.all.td_" + i + ".value = '" + val + "'");
+			}
+			if(ns4){
+				eval("document.td_" + i + ".backgroundColor = '" + bgcolor + "'");
+				eval("document.td_" + i + ".value = '" + val + "'");
+			}
+			if(ns6 || op){
+				eval("document.getElementById('td_" + i + "').style.backgroundColor = '" + bgcolor + "'");
+				eval("document.getElementById('td_" + i + "').value = '" + val + "'");
+			}
+		}
+	} else {
+		if(ie4){
+			if(eval("document.all." + id + ".value")==1){
+				eval("document.all." + id + ".style.backgroundColor = '" + color_red + "'");
+				eval("document.all." + id + ".value = '0'");
+			}else{
+				eval("document.all." + id + ".style.backgroundColor = '" + color_green + "'");
+				eval("document.all." + id + ".value = '1'");
+			}
+		}
+		if(ns4){
+			if(eval("document." + id + ".value")==1){
+				eval("document." + id + ".backgroundColor = '" + color_red + "'");
+				eval("document." + id + ".value = '0'");
+			}else{
+				eval("document." + id + ".backgroundColor = '" + color_green + "'");
+				eval("document." + id + ".value = '1'");
+			}
+		}
+		if(ns6 || op){
+			if(eval("document.getElementById('" + id + "').value")==1){
+				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_red + "'");
+				eval("document.getElementById('" + id + "').value = '0'");
+			}else{
+				eval("document.getElementById('" + id + "').style.backgroundColor = '" + color_green + "'");
+				eval("document.getElementById('" + id + "').value = '1'");
+			}
+		}
+	}
+}
+
+function computeWlTimer()
+{
+	var radio_on_time='';
+	
+	for(var i = 0; i < 24; i++){
+		if(ie4){
+			radio_on_time=radio_on_time + eval("document.all.td_" + i + ".value");
+		}
+		if(ns4) {
+			radio_on_time=radio_on_time + eval("document.td_" + i + ".value");
+		}
+		if(ns6 || op) {
+			radio_on_time=radio_on_time + eval("document.getElementById('td_" + i + "').value");
+		}
+	}
+	
+//	alert("radio_on_time : " + radio_on_time);
+	return radio_on_time;
+}
+
 function to_submit(F) {
 	F.submit_button.value = "Wireless_Advanced";
 	F.save_button.value = sbutton.saving;
+	F.radio_on_time.value = computeWlTimer();
+
 	F.action.value = "Apply";
 	apply(F);
 }
@@ -17,6 +126,8 @@ function setWMM(val) {
 
 addEvent(window, "load", function() {
 	setWMM("<% nvram_get("wl_wme"); %>");
+	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
+	initWlTimer('<% nvram_get("radio_on_time"); %>');
 });
 		</script>
 	</head>
@@ -57,10 +168,11 @@ addEvent(window, "load", function() {
 				</div>
 				<div id="main">
 					<div id="contents">
-						<form action="apply.cgi" method="<% get_http_method(); %>" name="wireless" id="wireless">
-							<input type="hidden" name="action" value="Apply" />
+						<form id="wireless" name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
 							<input type="hidden" name="submit_button" value="Wireless_Advanced" />
 							<input type="hidden" name="commit" value="1" />
+							<input type="hidden" name="action" value="Apply" />
+							<input type="hidden" name="radio_on_time" />
 							<h2><% tran("wl_adv.h2"); %></h2>
 							
 							<fieldset>
@@ -197,6 +309,59 @@ addEvent(window, "load", function() {
 							</fieldset><br />
 							
 							<fieldset>
+			                	<legend><% tran("wl_basic.legend2"); %></legend>
+			                	<div class="setting">
+			                		<div class="label"><% tran("wl_basic.radio"); %></div>
+			                		<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
+			                		<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
+			                	</div>
+			                	<div id="radio">
+			                		<table>
+			                			<tr>
+			                				<td>0</td><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td>
+			                				<td>6</td><td>7</td><td>8</td><td>9</td><td>10</td><td>11</td>
+			                				<td>12</td><td>13</td><td>14</td><td>15</td><td>16</td><td>17</td>
+			                				<td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td>
+			                			</tr>
+			                			<tr style="cursor:pointer">
+			                				<td width="4%" id="td_0" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_1" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_2" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_3" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_4" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_5" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_6" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_7" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_8" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_9" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_10" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_11" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_12" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_13" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_14" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_15" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_16" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_17" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_18" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_19" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_20" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_21" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_22" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_23" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                			</tr>
+			                		</table>
+			                		<div class="setting">
+			                			<div class=label><% tran("wl_basic.all_on"); %></div>
+			                			<a title="Always On" href="javascript:setWlTimer('all',true)">On</a>
+			                		</div>
+			                		<div class="setting">
+			                			<div class=label><% tran("wl_basic.all_off"); %></div>
+			                			<a title="Always Off" href="javascript:setWlTimer('all',false)">Off</a>
+			                		</div>
+			                	</div>
+			             	</fieldset><br/>
+
+							<fieldset>
 								<legend><% tran("wl_adv.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label18"); %></div>
@@ -314,7 +479,7 @@ addEvent(window, "load", function() {
 							
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"initWlTimer('<% nvram_get("radio_on_time"); %>')\" />")</script>
 							</div>
 						</form>
 					</div>
