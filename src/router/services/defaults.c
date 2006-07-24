@@ -1586,7 +1586,7 @@ struct nvram_tuple srouter_defaults[] = {
 #ifdef HAVE_RADIOOFF
   {"radiooff_button", "0", 0},
 #endif
-  {"radio_on_time", "0xffffff", 0},  /* Radio timer, always on */
+  {"radio_on_time", "111111111111111111111111", 0},  /* Radio timer, always on */
   {"radio_timer_enable", "0", 0},
 
   {0, 0, 0}
