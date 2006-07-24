@@ -120,17 +120,15 @@ enum
 
 /* SEG addition for dynamic nvram layout */
 extern void Initnvramtab (void);
-
-
 extern void prefix_ip_get (char *name, char *buf, int type);
+
+
 /* for index */
-extern void ej_show_index_setting (int eid, webs_t wp, int argc,
-				  char_t ** argv);
+extern void ej_show_index_setting (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_wds_subnet (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_compile_date (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_compile_time (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_get_wl_max_channel (int eid, webs_t wp, int argc,
-				  char_t ** argv);
+extern void ej_get_wl_max_channel (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wl_domain (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_clone_mac (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_wan_domain (int eid, webs_t wp, int argc, char_t ** argv);
@@ -142,12 +140,10 @@ extern void validate_wan_ipaddr (webs_t wp, char *value, struct variable *v);
 extern int clone_mac (webs_t wp);
 extern int dhcpfwd (webs_t wp);
 extern int wan_proto (webs_t wp);
-/* Added by Botho 10.May.06 */
-extern void ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_show_wan_to_switch (int eid, webs_t wp, int argc, char_t ** argv);	/* Added by Botho 10.May.06 */
+
 
 /* for status */
-
-
 extern int nvram_selmatch (webs_t wp, char *name, char *match);
 extern void ej_show_paypal (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_routing (int eid, webs_t wp, int argc, char_t ** argv);
@@ -155,19 +151,16 @@ extern void ej_show_connectiontype (int eid, webs_t wp, int argc, char_t ** argv
 extern void ej_dumpmeminfo (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_clkfreq (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_show_dhcpd_settings (int eid, webs_t wp, int argc,
-				   char_t ** argv);
+extern void ej_show_dhcpd_settings (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_status (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_localtime (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_nvram_status_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_nvram_get_len (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_dhcp_remaining_time (int eid, webs_t wp, int argc,
-				   char_t ** argv);
+extern void ej_dhcp_remaining_time (int eid, webs_t wp, int argc, char_t ** argv);
 extern int dhcp_renew (webs_t wp);
 extern int dhcp_release (webs_t wp);
 extern int stop_ppp (webs_t wp);
-extern void ej_show_status_setting (int eid, webs_t wp, int argc,
-				   char_t ** argv);
+extern void ej_show_status_setting (int eid, webs_t wp, int argc, char_t ** argv);
 
 
 /*for dhcp */
@@ -177,99 +170,81 @@ extern void validate_dhcp (webs_t wp, char *value, struct variable *v);
 extern void dhcp_check (webs_t wp, char *value, struct variable *v);
 extern int delete_leases (webs_t wp);
 
+
 /* for log */
 extern void ej_dumplog (int eid, webs_t wp, int argc, char_t ** argv);
 #ifdef HAVE_SPUTNIK_APD
-extern void ej_sputnik_apd_status (int eid, webs_t wp, int argc,
-				  char_t ** argv);
+extern void ej_sputnik_apd_status (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_sputnik (int eid, webs_t wp, int argc, char_t ** argv);
 #endif
 extern int log_onload (webs_t wp);
 extern int filtersummary_onload (webs_t wp, char *arg);
 
+
 /* for upgrade */
-extern void do_upgrade_post (char *url, webs_t stream, int len,
-			     char *boundary);
+extern void do_upgrade_post (char *url, webs_t stream, int len, char *boundary);
 extern void do_upgrade_cgi (char *url, webs_t stream);
-
 extern int sys_restore (char *url, webs_t stream, int *total);
-extern void do_restore_post (char *url, webs_t stream, int len,
-			     char *boundary);
+extern void do_restore_post (char *url, webs_t stream, int len, char *boundary);
 extern void do_restore_cgi (char *url, webs_t stream);
-
 extern int macclone_onload (webs_t wp, char *arg);
+
+
 /* for filter */
 extern void ej_filter_init (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_filter_summary_show (int eid, webs_t wp, int argc,
-				   char_t ** argv);
+extern void ej_filter_summary_show (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_ip_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_port_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_dport_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_mac_get (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_filter_policy_select (int eid, webs_t wp, int argc,
-				    char_t ** argv);
-extern void ej_filter_policy_get (int eid, webs_t wp, int argc,
-				 char_t ** argv);
+extern void ej_filter_policy_select (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_filter_policy_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_tod_get (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_filter_web_get (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_filter_port_services_get (int eid, webs_t wp, int argc,
-					char_t ** argv);
-extern void validate_filter_policy (webs_t wp, char *value,
-				    struct variable *v);
-extern void validate_filter_ip_grp (webs_t wp, char *value,
-				    struct variable *v);
-extern void validate_filter_mac_grp (webs_t wp, char *value,
-				     struct variable *v);
-extern void validate_filter_dport_grp (webs_t wp, char *value,
-				       struct variable *v);
+extern void ej_filter_port_services_get (int eid, webs_t wp, int argc, char_t ** argv);
+extern void validate_filter_policy (webs_t wp, char *value, struct variable *v);
+extern void validate_filter_ip_grp (webs_t wp, char *value, struct variable *v);
+extern void validate_filter_mac_grp (webs_t wp, char *value, struct variable *v);
+extern void validate_filter_dport_grp (webs_t wp, char *value, struct variable *v);
 extern void validate_filter_port (webs_t wp, char *value, struct variable *v);
 extern void validate_filter_web (webs_t wp, char *value, struct variable *v);
-extern void validate_blocked_service (webs_t wp, char *value,
-				      struct variable *v);
+extern void validate_blocked_service (webs_t wp, char *value, struct variable *v);
 extern int filter_onload (webs_t wp);
 extern int save_policy (webs_t wp);
 extern int summary_delete_policy (webs_t wp);
 extern int single_delete_policy (webs_t wp);
 extern int save_services_port (webs_t wp);
 
+
 /* for forward */
-extern void ej_show_default_level (int eid, webs_t wp, int argc,
-				  char_t ** argv);
+extern void ej_show_default_level (int eid, webs_t wp, int argc, char_t ** argv);
 extern void port_forward_table (webs_t wp, char *type, int which);
 extern void port_forward_spec (webs_t wp, char *type, int which);
-extern void ej_show_staticleases (int eid, webs_t wp, int argc,
-				 char_t ** argv);
+extern void ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv);
+extern void validate_forward_proto (webs_t wp, char *value, struct variable *v);
+extern void validate_staticleases (webs_t wp, char *value, struct variable *v);
+extern void validate_forward_spec (webs_t wp, char *value, struct variable *v);
+extern void ej_port_trigger_table (int eid, webs_t wp, int argc, char_t ** argv);
+extern void validate_port_trigger (webs_t wp, char *value, struct variable *v);
 
-extern void validate_forward_proto (webs_t wp, char *value,
-				    struct variable *v);
-extern void validate_staticleases (webs_t wp, char *value,
-				   struct variable *v);
-extern void validate_forward_spec (webs_t wp, char *value,
-				   struct variable *v);
-extern void ej_port_trigger_table (int eid, webs_t wp, int argc,
-				  char_t ** argv);
-extern void validate_port_trigger (webs_t wp, char *value,
-				   struct variable *v);
 // Changed by Steve
-//extern int ej_forward_upnp(int eid, webs_t wp, int argc, char_t **argv); //upnp added 
-//extern void validate_forward_upnp(webs_t wp, char *value, struct variable *v); //upnp added 
+//extern int ej_forward_upnp(int eid, webs_t wp, int argc, char_t **argv);			//upnp added 
+//extern void validate_forward_upnp(webs_t wp, char *value, struct variable *v);	//upnp added 
 // End Changed by Steve
 
 
 /* for dynamic route */
 extern void ej_dump_route_table (int eid, webs_t wp, int argc, char_t ** argv);
-extern void validate_dynamic_route (webs_t wp, char *value,
-				    struct variable *v);
+extern void validate_dynamic_route (webs_t wp, char *value, struct variable *v);
 extern int dynamic_route_onload (webs_t wp);
 
+
 /* for static route */
-extern void ej_static_route_setting (int eid, webs_t wp, int argc,
-				    char_t ** argv);
-extern void ej_static_route_table (int eid, webs_t wp, int argc,
-				  char_t ** argv);
-extern void validate_static_route (webs_t wp, char *value,
-				   struct variable *v);
+extern void ej_static_route_setting (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_static_route_table (int eid, webs_t wp, int argc, char_t ** argv);
+extern void validate_static_route (webs_t wp, char *value, struct variable *v);
 extern int delete_static_route (webs_t wp);
+
 
 /* for wireless */
 extern void validate_wl_key (webs_t wp, char *value, struct variable *v);
@@ -282,29 +257,28 @@ extern int generate_key_64 (webs_t wp);
 extern int generate_key_128 (webs_t wp);
 extern void ej_showad (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wep_value (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_get_wl_active_mac (int eid, webs_t wp, int argc,
-				 char_t ** argv);
+extern void ej_get_wl_active_mac (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_wl_value (int eid, webs_t wp, int argc, char_t ** argv);
 #ifdef HAVE_MSSID
 extern int security_save (webs_t wp);
-extern void ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv,
-				char *prefix);
+extern void ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv, char *prefix);
 #else
 extern void ej_show_wpa_setting (int eid, webs_t wp, int argc, char_t ** argv);
 #endif
 extern void wl_unit (webs_t wp, char *value, struct variable *v);
 extern void validate_wpa_psk (webs_t wp, char *value, struct variable *v);
 extern void validate_auth_mode (webs_t wp, char *value, struct variable *v);
-extern void validate_security_mode (webs_t wp, char *value,
-				    struct variable *v);
+extern void validate_security_mode (webs_t wp, char *value, struct variable *v);
 extern void ej_wl_ioctl (int eid, webs_t wp, int argc, char_t ** argv);
 extern void validate_wl_gmode (webs_t wp, char *value, struct variable *v);
 extern void validate_wl_net_mode (webs_t wp, char *value, struct variable *v);
+
 
 /* for nvram save-restore */
 extern void nv_file_in (char *url, webs_t stream, int len, char *boundary);
 extern void nv_file_out (char *path, webs_t wp);
 extern void sr_config_cgi (char *path, webs_t wp);
+
 
 /* for ddns */
 extern int ddns_save_value (webs_t wp);
@@ -315,23 +289,17 @@ extern void ej_show_ddns_ip (int eid, webs_t wp, int argc, char_t ** argv);
 
 extern void validate_macmode (webs_t wp, char *value, struct variable *v);
 extern void validate_wl_hwaddrs (webs_t wp, char *value, struct variable *v);
-extern void ej_wireless_active_table (int eid, webs_t wp, int argc,
-				     char_t ** argv);
-extern void ej_wireless_filter_table (int eid, webs_t wp, int argc,
-				     char_t ** argv);
-extern void ej_show_wl_wep_setting (int eid, webs_t wp, int argc,
-				   char_t ** argv);
+extern void ej_wireless_active_table (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_wireless_filter_table (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_show_wl_wep_setting (int eid, webs_t wp, int argc, char_t ** argv);
 extern void validate_wl_wep_key (webs_t wp, char *value, struct variable *v);
 
-
-/* for test */
 extern void ej_wl_packet_get (int eid, webs_t wp, int argc, char_t ** argv);
 
 
-
+/* Ping and Traceroute */
 extern void ej_dump_ping_log (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_dump_traceroute_log (int eid, webs_t wp, int argc,
-				   char_t ** argv);
+extern void ej_dump_traceroute_log (int eid, webs_t wp, int argc, char_t ** argv);
 extern int diag_ping_start (webs_t wp);
 extern int diag_ping_stop (webs_t wp);
 extern int diag_ping_clear (webs_t wp);
@@ -348,23 +316,18 @@ extern void ej_js_include (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_css_include (int eid, webs_t wp, int argc, char_t ** argv);
 
 
-
 /* for all */
 extern void ej_onload (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_get_web_page_name (int eid, webs_t wp, int argc,
-				 char_t ** argv);
+extern void ej_get_web_page_name (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_compile_date (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_compile_time (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_model_name (int eid, webs_t wp, int argc, char_t ** argv);
-extern void ej_get_firmware_version (int eid, webs_t wp, int argc,
-				    char_t ** argv);
-extern void ej_get_firmware_title (int eid, webs_t wp, int argc,
-				  char_t ** argv);
-extern void ej_get_firmware_svnrev (int eid, webs_t wp, int argc,
-				  char_t ** argv);
+extern void ej_get_firmware_version (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_get_firmware_title (int eid, webs_t wp, int argc, char_t ** argv);
+extern void ej_get_firmware_svnrev (int eid, webs_t wp, int argc, char_t ** argv);
+
 
 /* Sveasoft additions */
-
 extern void save_wds (webs_t wp);
 extern void validate_iradius (webs_t wp, char *value, struct variable *v);
 extern void validate_wds (webs_t wp, char *value, struct variable *v);
@@ -390,13 +353,10 @@ extern void ej_get_uptime (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qossvcs (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosips (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosmacs (int eid, webs_t wp, int argc, char_t ** argv);
-
 extern void ej_get_qossvcs2 (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosips2 (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_qosmacs2 (int eid, webs_t wp, int argc, char_t ** argv);
-
-extern void ej_get_services_options (int eid, webs_t wp, int argc,
-				    char_t ** argv);
+extern void ej_get_services_options (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_infopage (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_control (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_clone_wmac (int eid, webs_t wp, int argc, char_t ** argv);
@@ -409,11 +369,13 @@ extern int ping_wol (webs_t wp);
 extern int ping_startup (webs_t wp);
 extern int ping_firewall (webs_t wp);
 /* end Sveasoft additions */
+
+
 #ifdef HAVE_MSSID
 extern int add_vifs (webs_t wp);
 extern int remove_vifs (webs_t wp);
-
 #endif
+
 //extern int ej_show_virtualssid(int eid, webs_t wp, int argc, char_t **argv);
 extern void ej_show_security (int eid, webs_t wp, int argc, char_t ** argv);
 extern int wireless_save (webs_t wp);
@@ -432,6 +394,7 @@ extern int forwardspec_add (webs_t wp);
 extern int forwardspec_remove (webs_t wp);
 extern int trigger_add (webs_t wp);
 extern int trigger_remove (webs_t wp);
+
 
 /* lonewolf additions */
 extern void ej_port_vlan_table (int eid, webs_t wp, int argc, char_t ** argv);
@@ -489,18 +452,13 @@ extern int ISDIGIT (char *value, int flag);
 extern int ISASCII (char *value, int flag);
 
 extern void do_setup_wizard (char *url, webs_t stream);
-
 extern void ej_show_turbo (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_adwifi (int eid, webs_t wp, int argc, char_t ** argv);
-
 extern void ej_show_wireless (int eid, webs_t wp, int argc, char_t ** argv);
-
-
 extern void ej_show_logo (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_sysinfo (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_show_miscinfo (int eid, webs_t wp, int argc, char_t ** argv);
 extern void ej_get_backup_name (int eid, webs_t wp, int argc, char_t ** argv);
-
 extern struct servent *my_getservbyport (int port, const char *proto);
 extern int get_single_mac (char *macaddr, int which);
 
@@ -527,8 +485,7 @@ extern void ej_list_fbn (int eid, webs_t wp, int argc, char_t ** argv);
 #endif
 extern void ej_wme_match_op (int eid, webs_t wp, int argc, char_t ** argv);
 extern void validate_noack (webs_t wp, char *value, struct variable *v);
-extern void validate_wl_wme_params (webs_t wp, char *value,
-				    struct variable *v);
+extern void validate_wl_wme_params (webs_t wp, char *value, struct variable *v);
 
 extern void validate_choice (webs_t wp, char *value, struct variable *v);
 #define MAX_WDS_DEVS 10
@@ -540,9 +497,6 @@ int sv_valid_range (char *value, int low, int high);
 int sv_valid_statics (char *value);
 void get_network (char *ipaddr, char *netmask);
 void get_broadcast (char *ipaddr, char *netmask);
-int route_manip (int cmd, char *name, int metric, char *dst, char *gateway,
-		 char *genmask);
-int route_add (char *name, int metric, char *dst, char *gateway,
-	       char *genmask);
-int route_del (char *name, int metric, char *dst, char *gateway,
-	       char *genmask);
+int route_manip (int cmd, char *name, int metric, char *dst, char *gateway, char *genmask);
+int route_add (char *name, int metric, char *dst, char *gateway, char *genmask);
+int route_del (char *name, int metric, char *dst, char *gateway, char *genmask);
