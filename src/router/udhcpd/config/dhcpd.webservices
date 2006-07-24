@@ -16,6 +16,10 @@
 	</div>
 	<% nvram_invmatch("enable_jffs2","1","-->"); %>
 	<div class="setting">
+		<div class="label">Use NVRAM for client lease DB</div>
+		<input type="checkbox" value="1" name="_dhcpd_usenvram" <% nvram_selmatch("dhcpd_usenvram", "1", "checked"); %> />
+	</div>
+	<div class="setting">
 		<div class="label"><% tran("service.dhcp_domain"); %></div>
 		<select name="dhcp_domain">
 			<option value="wan" <% nvram_selmatch("dhcp_domain", "wan", "selected"); %> >WAN</option>
