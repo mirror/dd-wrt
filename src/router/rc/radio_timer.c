@@ -46,7 +46,7 @@ do
 	if ((yr > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
 #endif 
 	{
-		radiotime = strtol(nvram_get ("radio_on_time"), &end_ptr, 2);  //convert binary string to long int
+		radiotime = strtol(nvram_get ("radio0_on_time"), &end_ptr, 2);  //convert binary string to long int
 //				printf("radiotime nvram = %x %d\n",radiotime, radiotime ); //remove	
 		radiotime += ((radiotime & 1) << 24); //duplicate 23-24h bit to the start to take care of midnight
 
