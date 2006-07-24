@@ -3064,11 +3064,9 @@ int tty_register_driver(struct tty_driver *driver)
         int i;
 	dev_t dev;
 	void **p = NULL;
-    printk(KERN_INFO "tty register driver call done\n");
 
 	if (driver->flags & TTY_DRIVER_INSTALLED)
 	    {
-	        printk(KERN_INFO "tty register driver already installed\n");
 
 		return 0;
 	    }
@@ -3076,7 +3074,6 @@ int tty_register_driver(struct tty_driver *driver)
 	if (!(driver->flags & TTY_DRIVER_DEVPTS_MEM)) {
 		p = kmalloc(driver->num * 3 * sizeof(void *), GFP_KERNEL);
 		if (!p){
-		    printk(KERN_INFO "tty register memory error\n");
 			return -ENOMEM;
 			}
 		memset(p, 0, driver->num * 3 * sizeof(void *));
@@ -3086,7 +3083,6 @@ int tty_register_driver(struct tty_driver *driver)
 		error = alloc_chrdev_region(&dev, driver->minor_start, driver->num,
 						(char*)driver->name);
 		if (!error) {    
-			printk(KERN_INFO "tty register driver major/minor error\n");
 
 			driver->major = MAJOR(dev);
 			driver->minor_start = MINOR(dev);
@@ -3097,7 +3093,6 @@ int tty_register_driver(struct tty_driver *driver)
 						(char*)driver->name);
 	}
 	if (error < 0) {
-	    printk(KERN_INFO "tty register error while chrdev region\n");
 
 		kfree(p);
 		return error;
@@ -3122,7 +3117,6 @@ int tty_register_driver(struct tty_driver *driver)
 		driver->ttys = NULL;
 		driver->termios = driver->termios_locked = NULL;
 		kfree(p);
-		    printk(KERN_INFO "tty register error while cdev_add\n");
 
 		return error;
 	}
@@ -3137,7 +3131,6 @@ int tty_register_driver(struct tty_driver *driver)
 		    tty_register_device(driver, i, NULL);
 	}
 	proc_tty_register_driver(driver);
-    printk(KERN_INFO "tty register driver proc register done, %s created\n",driver->name);
 	return 0;
 }
 
