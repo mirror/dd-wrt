@@ -4164,6 +4164,23 @@ showencstatus(wp,mode);
   showencstatus(wp,var);
   }
 }
+static void
+ej_getwirelessstatus (int eid, webs_t wp, int argc, char_t ** argv)
+{
+char mode[64];
+#ifndef HAVE_MADWIFI
+sprintf(mode,"%s_mode","wl0");
+#else
+sprintf(mode,"%s_mode","ath0");
+#endif
+websWrite(wp,"<script type=\"text/javascript\">");
+if (nvram_match(mode,"wet") || nvram_match(mode,"sta") || nvram_match(mode,"infra") || nvram_match(mode,"apsta"))
+    websWrite(wp,"Capture(info.ap)");
+else
+    websWrite(wp,"Capture(status_wireless.legend3)");
+websWrite(wp,"</script>");
+}
+#endif
 
 static void
 ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
@@ -4222,25 +4239,6 @@ if (nvram_match(mode,"a-only"))
     websWrite(wp,"Capture(wl_basic.a)");
 websWrite(wp,"</script>&nbsp;\n");
 }
-
-static void
-ej_getwirelessstatus (int eid, webs_t wp, int argc, char_t ** argv)
-{
-char mode[64];
-#ifndef HAVE_MADWIFI
-sprintf(mode,"%s_mode","wl0");
-#else
-sprintf(mode,"%s_mode","ath0");
-#endif
-websWrite(wp,"<script type=\"text/javascript\">");
-if (nvram_match(mode,"wet") || nvram_match(mode,"sta") || nvram_match(mode,"infra") || nvram_match(mode,"apsta"))
-    websWrite(wp,"Capture(info.ap)");
-else
-    websWrite(wp,"Capture(status_wireless.legend3)");
-websWrite(wp,"</script>");
-}
-#endif
-
 
 
 // web-writes html escaped (&#xxx;) nvram entries   / test buffered
