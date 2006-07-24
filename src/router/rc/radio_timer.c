@@ -1,9 +1,9 @@
-// Radio timer by Eko: 19.jul.2006
-//
-// hours are represented as bits in 24 bit = 3 byte number (xxxxxxxx xxxxxxxx xxxxxxxx) from GUI 0xXXXXXX
-// code scans for changes: 10 = radio off, 01 = radio on
-// firsttime change: 00 and 10 = radio off, 11 and 01 = radio on
+/* Radio timer by Eko: 19.jul.2006
 
+   hours are represented as bits in 24 bit = xxxxxxxxxxxxxxxxxxxxxxxx from GUI
+   code scans for changes: 10 = radio off, 01 = radio on
+   firsttime change: 00 and 10 = radio off, 11 and 01 = radio on
+*/
 
 #include <stdio.h>
 #include <time.h>
@@ -19,7 +19,7 @@ int
 radio_timer_main (void)
 {
 
-long radiotime;  //4 byte int number (3 bytes from gui + 1 for midnight)
+long radiotime;  //4 byte int number (24 bits from gui + 1 bit for midnight)
 int firsttime, needchange;
 int yr, hr, min;
 char *end_ptr;
@@ -45,7 +45,7 @@ do
 	if ((yr > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
 #endif 
 	{
-		radiotime = strtol(nvram_get ("radio_on_time"), &end_ptr, 0);  //can nvram hex be converted to int???? 
+		radiotime = strtol(nvram_get ("radio_on_time"), &end_ptr, 2);  //convert binary string to long int
 //				printf("radiotime nvram = %x %d\n",radiotime, radiotime ); //remove	
 		radiotime += ((radiotime & 1) << 24); //duplicate 23-24h bit to the start to take care of midnight
 
