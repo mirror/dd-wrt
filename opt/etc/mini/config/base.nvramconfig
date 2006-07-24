@@ -226,3 +226,4 @@
  "remote_mgt_ssh"  "Remote Management by SSH" "CHOICE" "2" "0"  "1"  "FALSE" "0"
  "sshd_wanport"  "SSH WAN Port"  "RANGE"  "1"  "65535"  "TRUE" "0"
  "radio_on_time" "Time restriction for radio signal" "NULL" "TRUE" "0"
+ "radio_timer_enable"  "Radio Time restriction activation"  "CHOICE" "2"  "0"  "1"  "FALSE" "0"
