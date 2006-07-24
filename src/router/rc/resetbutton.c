@@ -52,8 +52,11 @@
 #define NORMAL_INTERVAL		1	/* second */
 #define URGENT_INTERVAL		100 * 1000	/* microsecond */
 						/* 1/10 second */
+#ifdef HAVE_XSCALE
+#define GPIO_FILE		"/proc/sys/reset"
+#else
 #define GPIO_FILE		"/dev/gpio/in"
-
+#endif
 #if 0
 #define DEBUG printf
 #else
@@ -177,16 +180,24 @@ period_check (int sig)
 
   if ((fp = fopen (GPIO_FILE, "r")))
     {
+#ifdef HAVE_XSCALE
+      fscanf(fp,"%d",&val);
+#else
       fread (&val, 4, 1, fp);
+#endif
       fclose (fp);
     }
   else
     perror (GPIO_FILE);
 
   DEBUG ("resetbutton: GPIO = 0x%x\n", val);
+  
   int gpio = 0;
+  
   int state = 0;
-
+#ifdef HAVE_XSCALE
+  state = val;
+#else
   if ((brand & 0x000f) != 0x000f)
     gpio = 1 << (brand & 0x000f);  //calculate gpio pin no.
 
@@ -194,33 +205,7 @@ period_check (int sig)
 	state = (val & gpio);
   else
     state = !(val & gpio);
-/*    
-  switch (brand)
-    {
-    case ROUTER_BUFFALO_WHRG54S:
-    case ROUTER_BUFFALO_WBR54G:
-    case ROUTER_BUFFALO_WZRRSG54:
-      gpio = WHR_SOFTWARE_RESET;
-      state = (val & gpio);
-      break;
-    case ROUTER_BUFFALO_WBR2G54S:
-      gpio = WBR2_SOFTWARE_RESET;
-      state = (val & gpio);
-      break;
-    case ROUTER_ASUS:
-      gpio = BCM47XX_SOFTWARE_RESET;
-      state = (val & gpio);
-      break;
-    case ROUTER_WRTSL54GS:
-      gpio = 1<<7; // gpio 7
-      state = !(val & gpio);
-    default:
-      gpio = BCM47XX_SOFTWARE_RESET;
-      state = !(val & gpio);
-      break;
-    }
-*/    
-    
+#endif
   /*  The value is zero during button-pushed. */
   if (state)
     {
@@ -242,20 +227,10 @@ period_check (int sig)
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-		if ((brand & 0x000f) != 0x000f)
-		
-/*      if ((brand == ROUTER_WRT54G) || 
-	        (brand == ROUTER_WRTSL54GS) || 
-	      	(brand == ROUTER_WRT54G1X) ||
-		  	(brand == ROUTER_LINKSYS_WRT55AG) ||
-		  	(brand == ROUTER_BUFFALO_WHRG54S) ||
-		  	(brand == ROUTER_BUFFALO_WBR54G) ||
-		  	(brand == ROUTER_BUFFALO_WBR2G54S) ||
-		  	(brand == ROUTER_BUFFALO_WZRRSG54))
-*/
+		if ((brand & 0x000f) != 0x000f)		
 		{
 		  printf ("resetbutton: factory default.\n");
-
+#ifndef HAVE_XSCALE
 		  switch (brand)
 		  {
 		  	case ROUTER_BUFFALO_WBR54G:
@@ -265,7 +240,7 @@ period_check (int sig)
 		  		eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
 		  		break;
 	  	  }
-		  	
+#endif	
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  nvram_set ("sv_restore_defaults", "1");
@@ -275,6 +250,7 @@ period_check (int sig)
 	    }
 	}
     }
+#ifndef HAVE_XSCALE
   else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRT54G)
     {
   runStartup ("/etc/config", ".sesbutton");
@@ -389,6 +365,7 @@ period_check (int sig)
          _eval(led_argv, NULL, 0, &pid); */
 
     }
+#endif
   else
     {
 
