@@ -126,6 +126,8 @@ function setWMM(val) {
 
 addEvent(window, "load", function() {
 	setWMM("<% nvram_get("wl_wme"); %>");
+	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <% nvram_else_match("wl_wme", "on", "1", "0"); %> == 1);
+	
 	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
 	initWlTimer('<% nvram_get("radio_on_time"); %>');
 });
@@ -365,116 +367,118 @@ addEvent(window, "load", function() {
 								<legend><% tran("wl_adv.legend2"); %></legend>
 								<div class="setting">
 									<div class="label"><% tran("wl_adv.label18"); %></div>
-									<input class="spaceradio" type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="setWMM(this.value)" /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="setWMM(this.value)" /><% tran("share.disable"); %>
+									<input class="spaceradio" type="radio" name="wl_wme" value="on" <% nvram_checked("wl_wme", "on"); %>  onclick="show_layer_ext(this, 'idwl_wme', true);setWMM(this.value)" /><% tran("share.enable"); %>&nbsp;
+									<input class="spaceradio" type="radio" name="wl_wme" value="off" <% nvram_checked("wl_wme", "off"); %>  onclick="show_layer_ext(this, 'idwl_wme', false);setWMM(this.value)" /><% tran("share.disable"); %>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
 								</div>
-								<div class="setting">
-									<div class="label"><% tran("wl_adv.label19"); %></div>
-									<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %> /><% tran("share.enable"); %>&nbsp;
-									<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> /><% tran("share.disable"); %>
-									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+								<div id="idwl_wme">
+									<div class="setting">
+										<div class="label"><% tran("wl_adv.label19"); %></div>
+										<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="on" <% nvram_checked("wl_wme_no_ack", "on"); %> /><% tran("share.enable"); %>&nbsp;
+										<input class="spaceradio" type="radio" name="wl_wme_no_ack" value="off" <% nvram_checked("wl_wme_no_ack", "off"); %> /><% tran("share.disable"); %>
+										<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>
+									</div>
+									<table class="table center" cellspacing="5">
+										<tr>
+											<th colspan="7"><% tran("wl_adv.table1"); %></td>
+										</tr>
+										<tr>
+											<td>&nbsp;</td>
+											<td align="center"><% tran("wl_adv.col1"); %></td>
+											<td align="center"><% tran("wl_adv.col2"); %></td>
+											<td align="center"><% tran("wl_adv.col3"); %></td>
+											<td align="center"><% tran("wl_adv.col4"); %></td>
+											<td align="center"><% tran("wl_adv.col5"); %></td>
+											<td align="center"><% tran("wl_adv.col6"); %></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row1"); %><input type="hidden" name="wl_wme_ap_bk" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_bk0" value="<% nvram_list("wl_wme_ap_bk", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_bk1" value="<% nvram_list("wl_wme_ap_bk", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_bk2" value="<% nvram_list("wl_wme_ap_bk", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_bk3" value="<% nvram_list("wl_wme_ap_bk", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_bk4" value="<% nvram_list("wl_wme_ap_bk", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_ap_bk5" value="<% nvram_list("wl_wme_ap_bk", 5); %>" /><input type="checkbox" name="_wl_wme_ap_bk5" <% wme_match_op("wl_wme_ap_bk", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_bk5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row2"); %><input type="hidden" name="wl_wme_ap_be" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_be0" value="<% nvram_list("wl_wme_ap_be", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_be1" value="<% nvram_list("wl_wme_ap_be", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_be2" value="<% nvram_list("wl_wme_ap_be", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_be3" value="<% nvram_list("wl_wme_ap_be", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_be4" value="<% nvram_list("wl_wme_ap_be", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_ap_be5" value="<% nvram_list("wl_wme_ap_be", 5); %>" /><input type="checkbox" name="_wl_wme_ap_be5" <% wme_match_op("wl_wme_ap_be", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_be5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row3"); %><input type="hidden" name="wl_wme_ap_vi" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vi0" value="<% nvram_list("wl_wme_ap_vi", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vi1" value="<% nvram_list("wl_wme_ap_vi", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vi2" value="<% nvram_list("wl_wme_ap_vi", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vi3" value="<% nvram_list("wl_wme_ap_vi", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vi4" value="<% nvram_list("wl_wme_ap_vi", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_ap_vi5" value="<% nvram_list("wl_wme_ap_vi", 5); %>" /><input type="checkbox" name="_wl_wme_ap_vi5" <% wme_match_op("wl_wme_ap_vi", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_vi5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row4"); %><input type="hidden" name="wl_wme_ap_vo" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vo0" value="<% nvram_list("wl_wme_ap_vo", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vo1" value="<% nvram_list("wl_wme_ap_vo", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vo2" value="<% nvram_list("wl_wme_ap_vo", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vo3" value="<% nvram_list("wl_wme_ap_vo", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_ap_vo4" value="<% nvram_list("wl_wme_ap_vo", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_ap_vo5" value="<% nvram_list("wl_wme_ap_vo", 5); %>" /><input type="checkbox" name="_wl_wme_ap_vo5" <% wme_match_op("wl_wme_ap_vo", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_vo5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+									</table>
+									<table cellspacing="5">
+										<tr>
+											<th colspan="7"><% tran("wl_adv.table2"); %></td>
+										</tr>
+										<tr>
+											<td>&nbsp;</td>
+											<td align="center"><% tran("wl_adv.col1"); %></td>
+											<td align="center"><% tran("wl_adv.col2"); %></td>
+											<td align="center"><% tran("wl_adv.col3"); %></td>
+											<td align="center"><% tran("wl_adv.col4"); %></td>
+											<td align="center"><% tran("wl_adv.col5"); %></td>
+											<td align="center"><% tran("wl_adv.col6"); %></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row1"); %><input type="hidden" name="wl_wme_sta_bk" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_bk0" value="<% nvram_list("wl_wme_sta_bk", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_bk1" value="<% nvram_list("wl_wme_sta_bk", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_bk2" value="<% nvram_list("wl_wme_sta_bk", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_bk3" value="<% nvram_list("wl_wme_sta_bk", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_bk4" value="<% nvram_list("wl_wme_sta_bk", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_sta_bk5" value="<% nvram_list("wl_wme_sta_bk", 5); %>" /><input type="checkbox" name="_wl_wme_sta_bk5" <% wme_match_op("wl_wme_sta_bk", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_bk5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row2"); %><input type="hidden" name="wl_wme_sta_be" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_be0" value="<% nvram_list("wl_wme_sta_be", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_be1" value="<% nvram_list("wl_wme_sta_be", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_be2" value="<% nvram_list("wl_wme_sta_be", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_be3" value="<% nvram_list("wl_wme_sta_be", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_be4" value="<% nvram_list("wl_wme_sta_be", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_sta_be5" value="<% nvram_list("wl_wme_sta_be", 5); %>" /><input type="checkbox" name="_wl_wme_sta_be5" <% wme_match_op("wl_wme_sta_be", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_be5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row3"); %><input type="hidden" name="wl_wme_sta_vi" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vi0" value="<% nvram_list("wl_wme_sta_vi", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vi1" value="<% nvram_list("wl_wme_sta_vi", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vi2" value="<% nvram_list("wl_wme_sta_vi", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vi3" value="<% nvram_list("wl_wme_sta_vi", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vi4" value="<% nvram_list("wl_wme_sta_vi", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_sta_vi5" value="<% nvram_list("wl_wme_sta_vi", 5); %>" /><input type="checkbox" name="_wl_wme_sta_vi5" <% wme_match_op("wl_wme_sta_vi", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_vi5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+										<tr>
+											<td><% tran("wl_adv.row4"); %><input type="hidden" name="wl_wme_sta_vo" value="5" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vo0" value="<% nvram_list("wl_wme_sta_vo", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vo1" value="<% nvram_list("wl_wme_sta_vo", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vo2" value="<% nvram_list("wl_wme_sta_vo", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vo3" value="<% nvram_list("wl_wme_sta_vo", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
+											<td align="center"><input class="num" name="wl_wme_sta_vo4" value="<% nvram_list("wl_wme_sta_vo", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
+											<td align="center"><input type="hidden" name="wl_wme_sta_vo5" value="<% nvram_list("wl_wme_sta_vo", 5); %>" /><input type="checkbox" name="_wl_wme_sta_vo5" <% wme_match_op("wl_wme_sta_vo", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_vo5.value = (this.checked ? 'on' : 'off');" /></td>
+										</tr>
+									</table>
 								</div>
-								<table class="table center" cellspacing="5">
-									<tr>
-										<th colspan="7"><% tran("wl_adv.table1"); %></td>
-									</tr>
-									<tr>
-										<td>&nbsp;</td>
-										<td align="center"><% tran("wl_adv.col1"); %></td>
-										<td align="center"><% tran("wl_adv.col2"); %></td>
-										<td align="center"><% tran("wl_adv.col3"); %></td>
-										<td align="center"><% tran("wl_adv.col4"); %></td>
-										<td align="center"><% tran("wl_adv.col5"); %></td>
-										<td align="center"><% tran("wl_adv.col6"); %></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row1"); %><input type="hidden" name="wl_wme_ap_bk" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_bk0" value="<% nvram_list("wl_wme_ap_bk", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_bk1" value="<% nvram_list("wl_wme_ap_bk", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_bk2" value="<% nvram_list("wl_wme_ap_bk", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_bk3" value="<% nvram_list("wl_wme_ap_bk", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_bk4" value="<% nvram_list("wl_wme_ap_bk", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_ap_bk5" value="<% nvram_list("wl_wme_ap_bk", 5); %>" /><input type="checkbox" name="_wl_wme_ap_bk5" <% wme_match_op("wl_wme_ap_bk", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_bk5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row2"); %><input type="hidden" name="wl_wme_ap_be" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_be0" value="<% nvram_list("wl_wme_ap_be", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_be1" value="<% nvram_list("wl_wme_ap_be", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_be2" value="<% nvram_list("wl_wme_ap_be", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_be3" value="<% nvram_list("wl_wme_ap_be", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_be4" value="<% nvram_list("wl_wme_ap_be", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_ap_be5" value="<% nvram_list("wl_wme_ap_be", 5); %>" /><input type="checkbox" name="_wl_wme_ap_be5" <% wme_match_op("wl_wme_ap_be", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_be5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row3"); %><input type="hidden" name="wl_wme_ap_vi" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vi0" value="<% nvram_list("wl_wme_ap_vi", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vi1" value="<% nvram_list("wl_wme_ap_vi", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vi2" value="<% nvram_list("wl_wme_ap_vi", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vi3" value="<% nvram_list("wl_wme_ap_vi", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vi4" value="<% nvram_list("wl_wme_ap_vi", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_ap_vi5" value="<% nvram_list("wl_wme_ap_vi", 5); %>" /><input type="checkbox" name="_wl_wme_ap_vi5" <% wme_match_op("wl_wme_ap_vi", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_vi5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row4"); %><input type="hidden" name="wl_wme_ap_vo" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vo0" value="<% nvram_list("wl_wme_ap_vo", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vo1" value="<% nvram_list("wl_wme_ap_vo", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vo2" value="<% nvram_list("wl_wme_ap_vo", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vo3" value="<% nvram_list("wl_wme_ap_vo", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_ap_vo4" value="<% nvram_list("wl_wme_ap_vo", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_ap_vo5" value="<% nvram_list("wl_wme_ap_vo", 5); %>" /><input type="checkbox" name="_wl_wme_ap_vo5" <% wme_match_op("wl_wme_ap_vo", "on", "checked='checked'"); %> onchange="this.form.wl_wme_ap_vo5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-								</table>
-								<table cellspacing="5">
-									<tr>
-										<th colspan="7"><% tran("wl_adv.table2"); %></td>
-									</tr>
-									<tr>
-										<td>&nbsp;</td>
-										<td align="center"><% tran("wl_adv.col1"); %></td>
-										<td align="center"><% tran("wl_adv.col2"); %></td>
-										<td align="center"><% tran("wl_adv.col3"); %></td>
-										<td align="center"><% tran("wl_adv.col4"); %></td>
-										<td align="center"><% tran("wl_adv.col5"); %></td>
-										<td align="center"><% tran("wl_adv.col6"); %></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row1"); %><input type="hidden" name="wl_wme_sta_bk" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_bk0" value="<% nvram_list("wl_wme_sta_bk", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_bk1" value="<% nvram_list("wl_wme_sta_bk", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_bk2" value="<% nvram_list("wl_wme_sta_bk", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_bk3" value="<% nvram_list("wl_wme_sta_bk", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_bk4" value="<% nvram_list("wl_wme_sta_bk", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_sta_bk5" value="<% nvram_list("wl_wme_sta_bk", 5); %>" /><input type="checkbox" name="_wl_wme_sta_bk5" <% wme_match_op("wl_wme_sta_bk", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_bk5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row2"); %><input type="hidden" name="wl_wme_sta_be" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_be0" value="<% nvram_list("wl_wme_sta_be", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_be1" value="<% nvram_list("wl_wme_sta_be", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_be2" value="<% nvram_list("wl_wme_sta_be", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_be3" value="<% nvram_list("wl_wme_sta_be", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_be4" value="<% nvram_list("wl_wme_sta_be", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_sta_be5" value="<% nvram_list("wl_wme_sta_be", 5); %>" /><input type="checkbox" name="_wl_wme_sta_be5" <% wme_match_op("wl_wme_sta_be", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_be5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row3"); %><input type="hidden" name="wl_wme_sta_vi" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vi0" value="<% nvram_list("wl_wme_sta_vi", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vi1" value="<% nvram_list("wl_wme_sta_vi", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vi2" value="<% nvram_list("wl_wme_sta_vi", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vi3" value="<% nvram_list("wl_wme_sta_vi", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vi4" value="<% nvram_list("wl_wme_sta_vi", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_sta_vi5" value="<% nvram_list("wl_wme_sta_vi", 5); %>" /><input type="checkbox" name="_wl_wme_sta_vi5" <% wme_match_op("wl_wme_sta_vi", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_vi5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-									<tr>
-										<td><% tran("wl_adv.row4"); %><input type="hidden" name="wl_wme_sta_vo" value="5" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vo0" value="<% nvram_list("wl_wme_sta_vo", 0); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col1)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vo1" value="<% nvram_list("wl_wme_sta_vo", 1); %>" size="5" maxlength="6" onblur="valid_range(this,0,32767,wl_adv.col2)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vo2" value="<% nvram_list("wl_wme_sta_vo", 2); %>" size="5" maxlength="6" onblur="valid_range(this,1,15,wl_adv.col3)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vo3" value="<% nvram_list("wl_wme_sta_vo", 3); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col4)" /></td>
-										<td align="center"><input class="num" name="wl_wme_sta_vo4" value="<% nvram_list("wl_wme_sta_vo", 4); %>" size="5" maxlength="6" onblur="valid_range(this,0,65504,wl_adv.col5)" /></td>
-										<td align="center"><input type="hidden" name="wl_wme_sta_vo5" value="<% nvram_list("wl_wme_sta_vo", 5); %>" /><input type="checkbox" name="_wl_wme_sta_vo5" <% wme_match_op("wl_wme_sta_vo", "on", "checked='checked'"); %> onchange="this.form.wl_wme_sta_vo5.value = (this.checked ? 'on' : 'off');" /></td>
-									</tr>
-								</table>
 							</fieldset><br />
 							
 							<div class="submitFooter">
