@@ -902,7 +902,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
       nvram_set ("wan_ifname", "eth1");	// fix for Belkin f5d7230 v1000 WAN problem.
       nvram_set ("wan_ifnames", "eth1");
       if (nvram_get ("et0macaddr")== NULL  || nvram_get ("et0macaddr") == "")
-      	nvram_set ("et0macaddr", "00:90:96:00:00:10"); //fix for missing cfe default = dead LAN ports.
+      	nvram_set ("et0macaddr", "00:16:E3:00:00:10"); //fix for missing cfe default = dead LAN ports.
       break;
       
 	case ROUTER_WRTSL54GS:
