@@ -4170,7 +4170,11 @@ ej_getwirelessmode (int eid, webs_t wp, int argc, char_t ** argv)
 {
 char mode[64];
 #ifndef HAVE_MADWIFI
+ #ifdef HAVE_MSSID
 sprintf(mode,"%s_mode","wl0");
+ #else
+sprintf(mode,"%s_mode","wl");
+ #endif
 #else
 sprintf(mode,"%s_mode","ath0");
 #endif
@@ -4197,12 +4201,15 @@ ej_getwirelessnetmode (int eid, webs_t wp, int argc, char_t ** argv)
 {
 char mode[64];
 #ifndef HAVE_MADWIFI
+ #ifdef HAVE_MSSID
 sprintf(mode,"%s_net_mode","wl0");
+ #else
+sprintf(mode,"%s_net_mode","wl");
+ #endif
 #else
 sprintf(mode,"%s_net_mode","ath0");
 #endif
 websWrite(wp,"<script type=\"text/javascript\">");
-
 if (nvram_match(mode,"disabled"))
     websWrite(wp,"Capture(share.disabled)");
 if (nvram_match(mode,"mixed"))
@@ -4462,10 +4469,10 @@ struct ej_handler ej_handlers[] = {
   {"do_hpagehead", ej_do_hpagehead},	//Eko
   {"show_clocks", ej_show_clocks},
   {"getrebootflags", ej_getrebootflags},
+  {"getwirelessmode", ej_getwirelessmode},
+  {"getwirelessnetmode", ej_getwirelessnetmode},
 #ifdef HAVE_MSSID
   {"getwirelessstatus", ej_getwirelessstatus},
-  {"getwirelessnetmode", ej_getwirelessnetmode},
-  {"getwirelessmode", ej_getwirelessmode},
   {"getencryptionstatus", ej_getencryptionstatus},
 #endif
   {NULL, NULL}
