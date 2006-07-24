@@ -48,6 +48,7 @@ else
      if [ ${1} = old ] || [ ${1} = add ] ; then
           ${NVRAM} set ${PREFIX}${3}="${DNSMASQ_LEASE_LENGTH:-}${DNSMASQ_LEASE_EXPIRES:-} ${2} ${3} ${4:-*} ${DNSMASQ_CLIENT_ID:-*}"
      fi
+     sleep 3
      ${NVRAM} commit
 fi
 
