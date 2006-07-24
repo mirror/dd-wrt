@@ -34,7 +34,6 @@
 } while(0)
 
 static uint32_t pseudo_random;
-static int endmarker_found = 0;
 
 static int jffs2_scan_eraseblock (struct jffs2_sb_info *c, struct jffs2_eraseblock *jeb,
 				  unsigned char *buf, uint32_t buf_size, struct jffs2_summary *s);
@@ -120,8 +119,8 @@ int jffs2_scan_medium(struct jffs2_sb_info *c)
 
 		/* reset summary info for next eraseblock scan */
 		jffs2_sum_reset_collected(s);
-
-		if (endmarker_found)
+		
+		if (c->flags & (1 << 7))
 			ret = BLK_STATE_ALLFF;
 		else
 			ret = jffs2_scan_eraseblock(c, jeb, buf_size?flashbuf:(flashbuf+jeb->offset),
@@ -224,18 +223,6 @@ int jffs2_scan_medium(struct jffs2_sb_info *c)
 			printk(KERN_WARNING "jffs2_scan_medium(): unknown block state\n");
 			BUG();
 		}
-	}
-
-	if (endmarker_found) {
-		printk("jffs2_scan_medium(): erasing all blocks after the end marker...\n");
-		jffs2_erase_pending_blocks(c, -1);
-		printk("jffs2_scan_medium(): done.\n");
-	}
-
-	if (c->flags & (1 << 7)) {
-		printk("jffs2_scan_medium(): erasing all blocks after the end marker...\n");
-		jffs2_erase_pending_blocks(c, -1);
-		printk("jffs2_scan_medium(): done.\n");
 	}
 
 	if (jffs2_sum_active() && s)
@@ -410,8 +397,8 @@ static int jffs2_scan_eraseblock (struct jffs2_sb_info *c, struct jffs2_eraseblo
 		(buf[2] == 0xc0) &&
 		(buf[3] == 0xde)) {
 		/* end of filesystem. erase everything after this point */
-		printk("jffs2_scan_eraseblock(): End of filesystem marker found at 0x%x\n", jeb->offset);
-		endmarker_found = 1;
+		printk("%s(): End of filesystem marker found at 0x%x\n", __func__, jeb->offset);
+		c->flags |= (1 << 7);
 
 		return BLK_STATE_ALLFF;
 	}

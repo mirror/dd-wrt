@@ -946,7 +946,7 @@ static inline void dev_skb_enqueue(priv_data_t *priv, struct sk_buff *skb)
 	 * before re-using it on the Rx-path
 	 */
         skb->nfmark = 0;
-	skb->nfcache = 0;
+//	skb->nfcache = 0;
         nf_conntrack_put(skb->nfct);
         skb->nfct = NULL;
 #ifdef CONFIG_NETFILTER_DEBUG
@@ -1978,7 +1978,7 @@ static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
     unsigned int qlevel;
 #endif
 //phj
-//u8 *vlanh;
+u8 *vlanh;
    
     TRACE;
     dev = (struct net_device *)callbackTag;
@@ -2038,8 +2038,8 @@ static void rx_cb(UINT32 callbackTag, IX_OSAL_MBUF *mbuf, IxEthAccPortId portId)
 	skb->tail = skb->data + len;
 	skb->len = len;
 //phj : mask out the incorrect vlan value from the switch
-//vlanh=(u8 *) skb->data;
-//if (*(vlanh+12)==0x81) *(vlanh+13)=0;
+vlanh=(u8 *) skb->data;
+if (*(vlanh+12)==0x81) *(vlanh+13)=0;
 	
 #ifdef DEBUG_DUMP
 	skb_dump("rx", skb);
