@@ -1430,8 +1430,8 @@ radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
 radius.label="MAC Radius Client";
 radius.label2="MAC Format";
-radius.label3="Radius Server IP";
-radius.label4="Radius Server Port";
+radius.label3="RADIUS Server Address";
+radius.label4="RADIUS Server Port";
 radius.label5="Maximum Unauthenticated Users";
 radius.label6="Password Format";
 radius.label7="RADIUS Shared Secret";
@@ -1488,6 +1488,16 @@ wl_basic.TXpower="TX Power";
 wl_basic.diversity="Diversity";
 wl_basic.primary="Primary";
 wl_basic.secondary="Secondary";
+wl_basic.network="Network Configuration";
+wl_basic.unbridged="Unbridged";
+wl_basic.bridged="bridged";
+wl_basic.turbo="Turbo Mode";
+wl_basic.extrange="Extended Range";
+wl_basic.extchannel="Extended Channel Mode";
+wl_basic.outband="Outdoor Band";
+wl_basic.channel_width="Channel Width";
+
+
 
 //help container
 var hwl_basic = new Object();
