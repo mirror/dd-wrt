@@ -129,7 +129,7 @@ addEvent(window, "load", function() {
 	show_layer_ext(document.wireless.wl_wme, 'idwl_wme', <% nvram_else_match("wl_wme", "on", "1", "0"); %> == 1);
 	
 	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
-	initWlTimer('<% nvram_get("radio_on_time"); %>');
+	initWlTimer('<% nvram_get("radio0_on_time"); %>');
 });
 		</script>
 	</head>
@@ -483,7 +483,7 @@ addEvent(window, "load", function() {
 							
 							<div class="submitFooter">
 								<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />")</script>
-								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"initWlTimer('<% nvram_get("radio_on_time"); %>')\" />")</script>
+								<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" onclick=\"initWlTimer('<% nvram_get("radio0_on_time"); %>')\" />")</script>
 							</div>
 						</form>
 					</div>
