@@ -40,6 +40,8 @@
 				<dd>The default value is <i>Off</i>. This should only be used with WRT54GS Models and only in conjunction with other Linksys "GS" wireless clients that also support Linksys "Speedbooster" technology.</dd>
 				<dt>Wireless GUI Access</dt>
 				<dd>The default value is <i>Enabled</i>. The setting allows access to the routers setup (GUI) from wireless clients. Disable this if you wish to block all wireless clients from accessing the setup pages.</dd>
+				<dt>Radio Times Restrictions</dt>
+				<dd>You can manage the wireless radio transmission and adjust times restriction.</dd>
 				<dt>WMM Support</dt>
 				<dd>Enable support of Wi-Fi Multimedia feature. Configuring QoS options consists of setting parameters on existing queues for different types of wireless traffic. You can configure different minimum and maximum wait times for the transmission of packets in each queue based on the requirements of the media being sent. Queues automatically provide minimum transmission delay for Voice, Video, multimedia, and mission critical applications, and rely on best-effort parameters for traditional IP data.<br /><br />
 					<div class="note">
