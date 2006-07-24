@@ -122,6 +122,9 @@ share.styl="Stil";
 share.err="napak";
 share.errs="napak";
 share.meters="meters";
+share.full="Polni";
+share.half="Polovièni";
+share.quarter="Èetrtinski";
 
 
 
@@ -1034,6 +1037,7 @@ service.dhcp_vendor="Nastavitev Vendorclass";
 service.dhcp_legend2="DHCP stre¾nik";
 service.dhcp_srv="DHCP demon";
 service.dhcp_jffs2="Uporabi JFFS2 za bazo zakupov";
+service.dhcp_nvramlease="Uporabi NVRAM za bazo zakupov";
 service.dhcp_domain="Uporabljena domena";
 service.dhcp_landomain="LAN domena";
 service.dhcp_option="Dodatne DHCPd opcije";
@@ -1461,21 +1465,37 @@ wl_basic.label3="Ime brez¾iène mre¾e (SSID)";
 wl_basic.label4="Brez¾ièni kanal";
 wl_basic.label5="Brez¾ièno oddajanje SSID";
 wl_basic.label6="Obmoèje obèutljivosti (ACK uèasenje)";
-wl_basic.ap="AP";
+wl_basic.ap="Dostopna toèka";
 wl_basic.client="Odjemalec";
 wl_basic.repeater="Prenosnik";
 wl_basic.clientBridge="Odjemalec-most";
+wl_basic.wdssta="WDS Postaja";
+wl_basic.wdsap="WDS toèka";
 wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Me¹ano";
 wl_basic.b="Samo-B";
 wl_basic.a="Samo-A";
 wl_basic.g="Samo-G";
+wl_basic.legend2="Omejitve radijskega èasa";
+wl_basic.radio="Radio";
+wl_basic.all_on="Vedno vkljuèeno";
+wl_basic.all_off="Vedno izkljuèeno";
+wl_basic.radio_on="Radio je vkljuèen";
+wl_basic.radio_off="Radio je izkljuèen";
+
+wl_basic.h2_v24="Brez¾ièni fizièni vmesnik";
+wl_basic.regdom="Regulatorska domena";
+wl_basic.TXpower="TX moè";
+wl_basic.diversity="Diverziteta";
+wl_basic.primary="Prvi";
+wl_basic.secondary="Drugi";
 
 //help container
 var hwl_basic = new Object();
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
 hwl_basic.right4="Prilagodi ACK uèasenje. 0 popolnoma onemogoèi ACK uèasenje.";
+hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 
 
