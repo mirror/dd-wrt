@@ -65,6 +65,14 @@ function to_submit(F) {
 			F.dhcpd_usejffs.value = 0;
 		}
 	}
+
+	if (F._dhcpd_usenvram) {
+		if (F._dhcpd_usenvram.checked == true) {
+			F.dhcpd_usenvram.value = 1;
+		} else {
+			F.dhcpd_usenvram.value = 0;
+		}
+	}
 	
 	F.submit_button.value = "Services";
 	F.save_button.value = sbutton.saving;
