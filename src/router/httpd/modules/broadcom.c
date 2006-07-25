@@ -3924,7 +3924,6 @@ ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 			if (len < 0)
 				return;		//error (unknown)
 			char dest[128];
-			char *style = nvram_get ("router_style");
 			strncpy (dest, cmp, len);
 			dest[len] = 0;
 			cprintf ("destination %s\n", dest);
