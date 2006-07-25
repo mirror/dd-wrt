@@ -1,5 +1,5 @@
 <% do_hpagehead(); %>
-		<title>Help - Firewall</title>
+		<title><% tran("share.help"); %> - <% tran("bmenu.firwall"); %></title>
 	</head>
 	<body>
 		<div id="header">
