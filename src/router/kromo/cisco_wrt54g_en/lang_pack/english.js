@@ -673,6 +673,7 @@ hotspot.sputnik_id="Sputnik Server ID";
 hotspot.sputnik_instant="Use Sputnik Instant Setup";
 hotspot.sputnik_express="Use SputnikNet Express";
 hotspot.sputnik_about="about Sputnik";
+hotspot.sputnik_learn="Learn more";
 
 
 
