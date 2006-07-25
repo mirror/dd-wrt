@@ -316,6 +316,7 @@ addEvent(window, "load", function() {
 			                		<div class="label"><% tran("wl_basic.radio"); %></div>
 			                		<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
 			                		<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>			                	
 			                	</div>
 			                	<div id="radio">
 			                		<table>
