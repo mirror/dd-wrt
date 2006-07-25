@@ -281,7 +281,7 @@ errmsg.err60="Veuillez sélectionner le fichier de mise à jour du routeur.";
 errmsg.err61="Fichier incorrect.";
 
 //Services.asp error messages
-errmsg.err62=" is already defined as a static lease.";
+errmsg.err62=" est déjà definie comme bail dhcp statique.";
 
 
 
@@ -405,7 +405,7 @@ ddns.system="DNS System";
 ddns.options="Options Supplémentaires";
 
 var ddnsm = new Object();
-ddnsm.dyn_strange="Erreur inconnue. Vérifier que vous êtes connecté au bon serveur.";
+ddnsm.dyn_strange="Erreur non répertoriée. Vérifiez que vous êtes connecté au bon serveur.";
 ddnsm.dyn_good="DDNS a été mis à jour avec succès.";
 ddnsm.dyn_noupdate="Aucune mise à jour nécessaire pour le moment.";
 ddnsm.dyn_nohost="Nom d&#39;hôte inconnu.";
@@ -420,7 +420,7 @@ ddnsm.dyn_numhost="Trop ou pas assez d&#39;hôte trouvés";
 ddnsm.dyn_dnserr="Erreur interne DNS.";
 ddnsm.dyn_911="Erreur inattendue 911.";
 ddnsm.dyn_999="Erreur inattendue 999.";
-ddnsm.dyn_donator="A feature requested is only available to donators, please donate.";
+ddnsm.dyn_donator="Une des fonctionnalités demandées n'est accessible qu'aux donateurs, faites une donation afin de la débloquer";
 ddnsm.dyn_uncode="Erreur inconnue.";
 
 ddnsm.tzo_good="Mise à jour terminée avec succès.";
@@ -435,16 +435,16 @@ ddnsm.tzo_fqdncre="Ce nom d&#39;hôte ne vous appartient pas.";
 ddnsm.tzo_expired="Le compte utilisateur est expiré.";
 ddnsm.tzo_error="Erreur inconnue.";
 
-ddnsm.zone_701="Zone is not set up in this account";
+ddnsm.zone_701="Ce nom d&#39;hôte n&#39;a pas été trouvé dans le compte spécifié";
 ddnsm.zone_702="Echec de la mise à jour.";
-ddnsm.zone_703="One of either parameters <em>zones</em> or <em>host</em> are required";
-ddnsm.zone_704="Zone must be a valid <em>dotted</em> internet name";
-ddnsm.zone_705="Zone cannot be empty";
+ddnsm.zone_703="Les paramètres de <em>zone</em> ou de <em>nom d&#39;hôte</em> sont requis";
+ddnsm.zone_704="Le nom d&#39;hôte doit être un domaine internet valide.";
+ddnsm.zone_705="Nom d&#39;hôte incorrect ou vide.";
 ddnsm.zone_707="Duplicate updates for the same host/ip, adjust client settings";
-ddnsm.zone_201="No records need updating";
-ddnsm.zone_badauth="Authorization fails (username or passwords)";
-ddnsm.zone_good="ZoneEdit is updated successfully";
-ddnsm.zone_strange="Strange server response, are you connecting to the right server ?";
+ddnsm.zone_201="Aucune mise à jour nécessaire pour le moment.";
+ddnsm.zone_badauth="L&#39;authentification a échoué (nom d&#39;utilisateur ou mot de passe incorrect).";
+ddnsm.zone_good="ZoneEdit a été mis à jour avec succès.";
+ddnsm.zone_strange="Erreur non répertoriée. Vérifiez que vous êtes connecté au bon serveur.";
 
 ddnsm.all_closed="Le serveur DDNS est actuellement fermé.";
 ddnsm.all_resolving="Résolution du nom de domaine en cours ...";
@@ -666,7 +666,7 @@ hotspot.shat_legend="Zero IP Config";
 hotspot.shat_srv="Zero IP Config";
 hotspot.shat_srv2="Zero IP Config enabled";
 hotspot.sputnik_legend="Sputnik";
-hotspot.sputnik_srv="Sputnik Agent";
+hotspot.sputnik_srv="Agent Sputnik";
 hotspot.sputnik_id="ID Serveur Sputnik";
 hotspot.sputnik_instant="Sputnik Instant Setup";
 hotspot.sputnik_express="SputnikNet Express";
@@ -1135,9 +1135,9 @@ status_lan.legend3="Clients DHCP";
 var hstatus_lan = new Object();
 hstatus_lan.right2="C\'est l\'adresse MAC de l\'interface Ethernet du routeur.";
 hstatus_lan.right4="Adresse IP du routeur sur le réseau local.";
-hstatus_lan.right6="When the Router is using a Subnet Mask, it is shown here.";
-hstatus_lan.right8="If you are using the Router as a DHCP server, that will be displayed here.";
-hstatus_lan.right10="By clicking on any MAC address, you will obtain the Organizationally Unique Identifier of the network interface (IEEE Standards OUI database search).";
+hstatus_lan.right6="Masque de sous-reseau utilisé par le routeur";
+hstatus_lan.right8="Si vous utilisez le routeur comme serveur DHCP, c\'est indiqué ici";
+hstatus_lan.right10="En cliquant sur n\'importe quelle adresse Mac, vous obtiendrez l\'Identifient Unique du Constructeur (Organizationally Unique Identifier) de la carte réseau (recherche dans la base IEEE Standards OUI).";
 
 
 
@@ -1148,56 +1148,56 @@ status_router.titl=" - Router Status";
 status_router.h2="Router Information";
 status_router.legend="System";
 status_router.sys_model="Router Model";
-status_router.sys_firmver="Firmware Version";
+status_router.sys_firmver="Version du Firmware";
 status_router.sys_time="Current Time";
 status_router.sys_up="Uptime";
 status_router.sys_load="Load Average";
 status_router.legend2="CPU";
-status_router.cpu="CPU Model";
-status_router.clock="CPU Clock";
-status_router.legend3="Memory";
-status_router.mem_tot="Total Available";
-status_router.mem_free="Free";
-status_router.mem_used="Used";
+status_router.cpu="Type de CPU";
+status_router.clock="Fréquence du CPU";
+status_router.legend3="Memoire";
+status_router.mem_tot="Total Disponible";
+status_router.mem_free="Libre";
+status_router.mem_used="Utilisé";
 status_router.mem_buf="Buffers";
-status_router.mem_cached="Cached";
+status_router.mem_cached="En cache";
 status_router.mem_active="Active";
 status_router.mem_inactive="Inactive";
-status_router.legend4="Network";
+status_router.legend4="Réseau";
 status_router.net_maxports="IP Filter Maximum Ports";
-status_router.net_conntrack="Active IP Connections";
+status_router.net_conntrack="Connections actives";
 status_router.h22="Internet";
-status_router.legend5="Configuration Type";
-status_router.www_login="Login Type";
-status_router.www_loginstatus="Login Status";
+status_router.legend5="Type de configuration";
+status_router.www_login="Type de Login";
+status_router.www_loginstatus="Statut du Login";
 
 //help container
 var hstatus_router = new Object();
-hstatus_router.right2="This is the specific name for the router, which you set on the <i>Setup</i> tab.";
-hstatus_router.right4="This is the router\'s MAC Address, as seen by your ISP.";
-hstatus_router.right6="This is the router\'s current firmware.";
-hstatus_router.right8="This is time received from the ntp server set on the <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em> tab.";
-hstatus_router.right10="This is a measure of the time the router has been \"up\" and running.";
-hstatus_router.right12="This is given as three numbers that represent the system load during the last one, five, and fifteen minute periods.";
-hstatus_router.right14="This shows the information required by your ISP for connection to the Internet. This information was entered on the Setup Tab. You can <em>Connect</em> or <em>Disconnect</em> your connection here by clicking on that button.";
+hstatus_router.right2="Nom du routeur que vous avez configuré dans l\'onglet <i>Setup</i>.";
+hstatus_router.right4="Adresse Mac vue par votre provider internet";
+hstatus_router.right6="Firmware utilisé sur votre routeur";
+hstatus_router.right8="Ceci est la date reçue depuis le serveur ntp configurable dans l\'onglet <em>" + bmenu.admin + " | " + bmenu.adminManagement + "</em>.";
+hstatus_router.right10="Temps écoulé depuis le dernier démarrage/redémarrage du routeur.";
+hstatus_router.right12="Ce sont 3 nombres qui mesurent la charge de votre routeur sur une période de 1, 5 et 15 minutes.";
+hstatus_router.right14="Ce sont les informations requise par votre provider afin de vous connecter à internet, configurée dans l\'onglet Setup. Vous pouvez connecter votre routeur à internet en cliquant sur <em>Connect</em> ou le déconnecter en cliquant sur <em>Disconnect</em>.";
 
 
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
 var status_sputnik = new Object();
-status_sputnik.titl=" - Sputnik Agent Status";
-status_sputnik.h2="Sputnik&reg; Agent&trade;";
+status_sputnik.titl=" - Etat de l\'Agent Sputnik";
+status_sputnik.h2="Agent&trade; Sputnik&reg;";
 status_sputnik.manage="Managed By";
-status_sputnik.license="SCC License No.";
+status_sputnik.license="No. de License SCC";
 
 //help container
 var hstatus_sputnik = new Object();
-hstatus_sputnik.right1="Sputnik Agent Status";
-hstatus_sputnik.right2="This screen displays the status of the Sputnik Agent process.";
-hstatus_sputnik.right4="The Sputnik Control Center that this access point is connected to.";
-hstatus_sputnik.right6="The current Agent status.";
-hstatus_sputnik.right8="The license number of your Sputnik Control Center.";
+hstatus_sputnik.right1="Etat de l\'Agent Sputnik";
+hstatus_sputnik.right2="Cette partie affiche l\'état du processus de l\'Agent Sputnik.";
+hstatus_sputnik.right4="Le centre de contrôle Sputnik auquel ce point d\'accès est connecté.";
+hstatus_sputnik.right6="Etat actuel de l\'Agent Sputnik";
+hstatus_sputnik.right8="Le numéro de licence de votre centre de contrôle Sputnik.";
 
 
 
@@ -1219,8 +1219,8 @@ status_wireless.wds="Noueds WDS";
 
 //help container
 var hstatus_wireless = new Object();
-hstatus_wireless.right2="This is the Router\'s MAC Address, as seen on your local, wireless network.";
-hstatus_wireless.right4="As selected from the Wireless tab, this will display the wireless mode (Mixed, G-Only, or Disabled) used by the network.";
+hstatus_wireless.right2="Ceci est l\'adresse mac de votre routeur vue depuis votre réseau local (filaire et sans-fil)";
+hstatus_wireless.right4="Comme configuré dans l\'onglet Wireless, ce sont les normes de connexions acceptées pour votre réseau sans-fil (Mixed, G-Only, or Disabled).";
 
 
 
@@ -1247,19 +1247,19 @@ htrforward.right10="Enter the ending port number of the Triggered and Forwarded 
 // ******************************************* Upgrade.asp *******************************************//
 
 var upgrad = new Object();
-upgrad.titl=" - Firmware Upgrade";
-upgrad.h2="Firmware Management";
-upgrad.legend="Firmware Upgrade";
-upgrad.info1="After flashing, reset to";
-upgrad.resetOff="No reset";
-upgrad.resetOn="Default settings";
-upgrad.file="Please select a file to upgrade";
-upgrad.warning="W A R N I N G";
-upgrad.mess1="Upgrading firmware may take a few minutes.<br />Do not turn off the power or press the reset button !";
+upgrad.titl=" - Mise à jour du Firmware";
+upgrad.h2="Gestion du Firmware";
+upgrad.legend="Mise à jour du Firmware";
+upgrad.info1="Après la mise à jour, réinitialiser";
+upgrad.resetOff="Ne pas réinitialiser";
+upgrad.resetOn="les paramètres usine";
+upgrad.file="Veuillez séléctionner le fichier de mise à jour";
+upgrad.warning="A T T E N T I O N";
+upgrad.mess1="La mise à jour du firmware peut prendre quelques minutes.<br />N'éteignez/redémarrez surtout pas votre routeur pendant la mise à jour !";
 
 //help container
 var hupgrad = new Object();
-hupgrad.right2="Click on the <em>Browse...</em> button to select the firmware file to be uploaded to the router.<br /><br /> Click the <em>Upgrade</em> button to begin the upgrade process. Upgrade must not be interrupted.";
+hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour séléctionner le firmware à charger sur le routeur.<br /><br /> Cliquez sur <em>Mettre à jour</em> pour commencer la mise à jour. La mise à jour NE DOIT SURTOUT PAS pas être interrompue.";
 
 
 
@@ -1269,18 +1269,18 @@ var upnp = new Object();
 upnp.titl=" - UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Forwards";
-upnp.legend2="UPnP Configuration";
-upnp.serv="UPnP Service";
-upnp.clear="Clear port forwards at startup";
+upnp.legend2="Configuration UPnP";
+upnp.serv="Service UPnP";
+upnp.clear="Réinitialiser les redirection de ports au démarrage";
 upnp.url="Send presentation URL";
-upnp.msg1="Click to delete lease";
-upnp.msg2="Delete all entries?";
+upnp.msg1="Cliquez pour supprimer le bail";
+upnp.msg2="Etes vous sûr de vouloir effacer toutes les régles UPNP ?";
 
 
 //help container
 var hupnp = new Object();
-hupnp.right2="Click the trash can to delete an individual entry.";
-hupnp.right4="Allows applications to automatically setup port forwardings.";
+hupnp.right2="Cliquer sur le bouton de suppression pour effacer une régle de redirection de port.";
+hupnp.right4="Permet aux applications de créer automatiquement des redirections de ports.";
 
 
 
@@ -1500,7 +1500,6 @@ var hwl_basic = new Object();
 hwl_basic.right2="Si vous disposez à la fois des périphériques 802.11g et 802.11b sur votre réseau, conservez le paramètre par défaut <em>Mixte</em>. Si vous utilisez uniquement des périphériques 802.11g, sélectionnez <em>G-uniquement</em>. Si vous travaillez uniquement avec des périphériques 802.11b, sélectionnez <em>B-uniquement</em>. Si votre réseau n\'est muni d\'aucun périphérique sans fil, sélectionnez l\'option <em>Désactiver</em>.";
 hwl_basic.right3="Sensibilité: ";
 hwl_basic.right4="Permet de régler le <em>ack timing</em>. 0 désactive complètement cette fonctionnalité.";
-hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé)";
 
 
 
@@ -1549,7 +1548,7 @@ wl_adv.shrt="Court";
 //help container
 var hwl_adv = new Object();
 hwl_adv.right2="La valeur <em>Auto</em> définie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. En mode d\'authentification <em>Système ouvert</em>, l\'expéditeur et le destinataire n\'utilisent pas de clé WEP pour l\'authentification. En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
-
+hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé)";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
