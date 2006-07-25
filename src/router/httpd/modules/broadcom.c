@@ -13,8 +13,6 @@
  * $Id: broadcom.c,v 1.9 2005/11/30 11:53:42 seg Exp $
  */
 
-buGGGGGGGGGGGGGG
-
 #ifdef WEBS
 #include <webs.h>
 #include <uemf.h>
