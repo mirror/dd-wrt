@@ -38,7 +38,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLA2G54L 0x0607	//should work like a WBR2
 
 // Buffalo WLA2-G54C == WLI3-TX1-G54 (4712 cpu, no switch),(fccid: Buffalo FDI-09101669-0)
-#define ROUTER_BUFFALO_WLA2G54C 0x070f
+#define ROUTER_BUFFALO_WLA2G54C 0x0712  //gpio 2 is AOSS button, let it acts as reset for now.
 
 // Buffalo WHR-G54S (fccid: Buffalo FDI-04600264-0) and WHR-HP-G54 (fccid: Buffalo FDI-09101577-0)
 #define ROUTER_BUFFALO_WHRG54S 0x0804
