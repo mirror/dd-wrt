@@ -114,7 +114,7 @@ function computeWlTimer()
 function to_submit(F) {
 	F.submit_button.value = "Wireless_Advanced";
 	F.save_button.value = sbutton.saving;
-	F.radio_on_time.value = computeWlTimer();
+	F.radio0_on_time.value = computeWlTimer();
 
 	F.action.value = "Apply";
 	apply(F);
