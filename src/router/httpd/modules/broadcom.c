@@ -3824,85 +3824,129 @@ ej_charset (int eid, webs_t wp, int argc, char_t ** argv)
 void
 ej_do_pagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
-
-  char *lang = getLanguageName ();
-  char buf[64];
-  sprintf (buf, "/www/%s", lang);
-  free (lang);
-// lang_charset.set
-  char *sstring = "lang_charset.set=\"";
-  char s[128];
-  FILE *in = fopen (buf, "rb");
-  while (!feof (in))
-    {
-      fscanf (in, "%s", s);
-      cprintf ("lang scan %s\n", s);
-      char *cmp = strstr (s, sstring);
-      cprintf ("strstr %s\n", cmp);
-      if (cmp)
+	char *lang = getLanguageName ();
+	char buf[64];
+	sprintf (buf, "/www/%s", lang);
+	free (lang);
+	char *sstring = "lang_charset.set=\"";
+	char s[128];
+	FILE *in = fopen (buf, "rb");
+	while (!feof (in))
 	{
-	  fclose (in);
-	  cmp += strlen (sstring);
-	  cprintf ("source %s\n", cmp);
-	  char *t2 = strstr (cmp, "\"");
-	  if (t2 == NULL)
-	    {
-	      cprintf (" length was null\n");
-	      return;		//error (typo?)
-	    }
-	  int len = t2 - cmp;
-	  cprintf ("length = %d\n", len);
-	  if (len < 0)
-	    return;		//error (unknown)
-	  char dest[128];
-	  char *style = nvram_get ("router_style");
-	  strncpy (dest, cmp, len);
-	  dest[len] = 0;
-	  cprintf ("destination %s\n", dest);
-	  websWrite (wp,
-		     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-	  websWrite (wp, "<html>\n");
-	  websWrite (wp, "\t<head>\n");
-	  websWrite (wp,
-		     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
-		     dest);
-	  if (nvram_invmatch ("dist_type", "micro"))
-	    {
-	      websWrite (wp,
-			 "\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
-	      websWrite (wp,
-			 "\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
-	    }
-	  websWrite (wp,
-		     "\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
-	  websWrite (wp,
-		     "\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
-	  websWrite (wp,
-		     "\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
-	  websWrite (wp,
-		     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
-		     style);
-	  websWrite (wp,
-		     "\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->",
-		     style);
-	  return;
+		fscanf (in, "%s", s);
+		cprintf ("lang scan %s\n", s);
+		char *cmp = strstr (s, sstring);
+		cprintf ("strstr %s\n", cmp);
+		if (cmp)
+		{
+			fclose (in);
+			cmp += strlen (sstring);
+			cprintf ("source %s\n", cmp);
+			char *t2 = strstr (cmp, "\"");
+			if (t2 == NULL)
+			{
+				cprintf (" length was null\n");
+				return;		//error (typo?)
+			}
+			
+			int len = t2 - cmp;
+			cprintf ("length = %d\n", len);
+			if (len < 0)
+				return;		//error (unknown)
+			char dest[128];
+			char *style = nvram_get ("router_style");
+			strncpy (dest, cmp, len);
+			dest[len] = 0;
+			cprintf ("destination %s\n", dest);
+			websWrite (wp,
+				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+			websWrite (wp, "<html>\n");
+			websWrite (wp, "\t<head>\n");
+			websWrite (wp,
+				"\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+				dest);
+			if (nvram_invmatch ("dist_type", "micro"))
+			{
+				websWrite (wp,
+					"\t\t<link rel=\"icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+				websWrite (wp,
+					"\t\t<link rel=\"shortcut icon\" href=\"images/favicon.ico\" type=\"image/x-icon\" />\n");
+			}
+			
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"common.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"lang_pack/english.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"lang_pack/language.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style.css\" />\n",
+				style);
+			websWrite (wp,
+				"\t\t<!--[if IE]><link type=\"text/css\" rel=\"stylesheet\" href=\"style/%s/style_ie.css\" /><![endif]-->",
+				style);
+			return;
+		}
 	}
-    }
-  fclose (in);
+	fclose (in);
 }
 
 void
 ej_do_hpagehead (int eid, webs_t wp, int argc, char_t ** argv)	//Eko
 {
-
-  websWrite (wp,
-	     "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
-  websWrite (wp, "<html>\n");
-  websWrite (wp, "\t<head>\n");
-  websWrite (wp,
-	     "\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=iso-8859-1\" />\n");
-  websWrite (wp,
-	     "\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
+	char *lang = getLanguageName ();
+	char buf[64];
+	sprintf (buf, "/www/%s", lang);
+	free (lang);
+	char *sstring = "lang_charset.set=\"";
+	char s[128];
+	FILE *in = fopen (buf, "rb");
+	while (!feof (in))
+	{
+		fscanf (in, "%s", s);
+		cprintf ("lang scan %s\n", s);
+		char *cmp = strstr (s, sstring);
+		cprintf ("strstr %s\n", cmp);
+		if (cmp)
+		{
+			fclose (in);
+			cmp += strlen (sstring);
+			cprintf ("source %s\n", cmp);
+			char *t2 = strstr (cmp, "\"");
+			if (t2 == NULL)
+			{
+				cprintf (" length was null\n");
+				return;		//error (typo?)
+			}
+			
+			int len = t2 - cmp;
+			cprintf ("length = %d\n", len);
+			if (len < 0)
+				return;		//error (unknown)
+			char dest[128];
+			char *style = nvram_get ("router_style");
+			strncpy (dest, cmp, len);
+			dest[len] = 0;
+			cprintf ("destination %s\n", dest);
+			websWrite (wp,
+				"<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">\n");
+			websWrite (wp, "<html>\n");
+			websWrite (wp, "\t<head>\n");
+			websWrite (wp,
+				"\t\t<meta http-equiv=\"Content-Type\" content=\"application/xhtml+xml; charset=%s\" />\n",
+				dest);
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"../common.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"../lang_pack/english.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<script type=\"text/javascript\" src=\"../lang_pack/language.js\"></script>\n");
+			websWrite (wp,
+				"\t\t<link type=\"text/css\" rel=\"stylesheet\" href=\"help.css\">");
+			return;
+		}
+	}
+	fclose (in);
 }
 
 static char no_cache[] =
