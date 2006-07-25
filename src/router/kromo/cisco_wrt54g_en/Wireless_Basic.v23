@@ -169,8 +169,6 @@ addEvent(window, "load", function() {
 							<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
 							<dt class="term"><% tran("hwl_basic.right3"); %></dt>
 							<dd class="definition"><% tran("hwl_basic.right4"); %></dt>
-							<dt class="term"><% tran("wl_basic.legend2"); %></dt>
-							<dd class="definition"><% tran("hwl_basic.right6"); %></dt>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
 					</div>
