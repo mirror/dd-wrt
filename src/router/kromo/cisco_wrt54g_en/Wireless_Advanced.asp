@@ -114,7 +114,7 @@ function computeWlTimer()
 function to_submit(F) {
 	F.submit_button.value = "Wireless_Advanced";
 	F.save_button.value = sbutton.saving;
-	F.radio0_on_time.value = computeWlTimer();
+	F.radio_on_time.value = computeWlTimer();
 
 	F.action.value = "Apply";
 	apply(F);
@@ -174,7 +174,7 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="submit_button" value="Wireless_Advanced" />
 							<input type="hidden" name="commit" value="1" />
 							<input type="hidden" name="action" value="Apply" />
-							<input type="hidden" name="radio_on_time" />
+							<input type="hidden" name="radio0_on_time" />
 							<h2><% tran("wl_adv.h2"); %></h2>
 							
 							<fieldset>
