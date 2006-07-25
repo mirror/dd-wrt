@@ -59,35 +59,45 @@ do
 			 needchange = 1;											//prevet to be executed more than once when min == 0
 
 		if (firsttime)													//first time change
-		{
-		switch (radiotime)
 			{
-			case 1:
-			case 3:
-				eval ("wl", "radio", "on");
-				break;
-			case 0:
-			case 2:
-				eval ("wl", "radio", "off");
-				break;
+			switch (radiotime)
+				{
+				case 3:													//11
+					radiotime = 1;										//01
+					break;
+				case 0:													//00
+					radiotime = 2;										//10
+					break;
+				}
 			}
-		firsttime = 0;
-		needchange = 0;
-		}
 
-		if ((gentime == 0) && (needchange))								//normal change when min = 0
-		{
-		switch (radiotime)
+		if (((gentime == 0) && (needchange)) || (firsttime))			//change when min = 0 or firstime
 			{
-			case 1:
-				eval ("wl", "radio", "on"); 
-				break;
-			case 2:
-				eval ("wl", "radio", "off");
-				break;
+			switch (radiotime)
+				{
+				case 1:													//01 - turn radio on
+#ifdef HAVE_MADWIFI
+					eval ("ifconfig", "ath0", "up");
+#elif HAVE_MSSID
+					eval ("wl", "radio", "on");
+#else
+					eval ("wl", "radio", "on");
+#endif
+					break;
+				
+				case 2:													//10 - turn radio off
+#ifdef HAVE_MADWIFI
+					eval ("ifconfig", "ath0", "down");
+#elif HAVE_MSSID
+					eval ("wl", "radio", "off");
+#else
+					eval ("wl", "radio", "off");
+#endif
+					break;
+				}
+			needchange = 0;
+			firsttime = 0;
 			}
-		needchange = 0;
-		}
 		
 	}
 	else			//if yr < 100 (=2000) wait 5 min and try again (if ntp time is maybe set now)
