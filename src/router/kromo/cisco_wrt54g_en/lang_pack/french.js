@@ -671,6 +671,7 @@ hotspot.sputnik_id="ID Serveur Sputnik";
 hotspot.sputnik_instant="Sputnik Instant Setup";
 hotspot.sputnik_express="SputnikNet Express";
 hotspot.sputnik_about="à propos de Sputnik";
+hotspot.sputnik_learn="En savoir plus";
 
 
 
@@ -1144,10 +1145,10 @@ hstatus_lan.right10="En cliquant sur n\'importe quelle adresse Mac, vous obtiend
 // ******************************************* Status_Router.asp *******************************************//
 
 var status_router = new Object();
-status_router.titl=" - Router Status";
-status_router.h2="Router Information";
-status_router.legend="System";
-status_router.sys_model="Router Model";
+status_router.titl=" - Etat du Router";
+status_router.h2="Informations Router";
+status_router.legend="Système";
+status_router.sys_model="Modèle du Router";
 status_router.sys_firmver="Version du Firmware";
 status_router.sys_time="Current Time";
 status_router.sys_up="Uptime";
@@ -1158,7 +1159,7 @@ status_router.clock="Fréquence du CPU";
 status_router.legend3="Memoire";
 status_router.mem_tot="Total Disponible";
 status_router.mem_free="Libre";
-status_router.mem_used="Utilisé";
+status_router.mem_used="Utilisée";
 status_router.mem_buf="Buffers";
 status_router.mem_cached="En cache";
 status_router.mem_active="Active";
@@ -1271,8 +1272,8 @@ upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Forwards";
 upnp.legend2="Configuration UPnP";
 upnp.serv="Service UPnP";
-upnp.clear="Réinitialiser les redirection de ports au démarrage";
-upnp.url="Send presentation URL";
+upnp.clear="Réinitialiser au démarrage";
+upnp.url="Présentation URL";
 upnp.msg1="Cliquez pour supprimer le bail";
 upnp.msg2="Etes vous sûr de vouloir effacer toutes les régles UPNP ?";
 
@@ -1548,7 +1549,7 @@ wl_adv.shrt="Court";
 //help container
 var hwl_adv = new Object();
 hwl_adv.right2="La valeur <em>Auto</em> définie par défaut vous permet de choisir entre une authentification <em>Système ouvert</em> ou <em>Clé partagée</em>. En mode d\'authentification <em>Système ouvert</em>, l\'expéditeur et le destinataire n\'utilisent pas de clé WEP pour l\'authentification. En revanche, ils utilisent ce type de clé en mode <em>Clé partagée</em>.";
-hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé)";
+hwl_basic.right6="Sélectionnez les heures pendant lesquelles le signal radio sans fil sera activé (<em>vert</em> indique que le signal sans fil est activé, et <em>rouge</em> indique que le signal est désactivé).";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
