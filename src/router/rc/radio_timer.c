@@ -19,9 +19,9 @@ int
 radio_timer_main (void)
 {
 
-long radiotime;  //4 byte int number (24 bits from gui + 1 bit for midnight)
+long radiotime;  														//4 byte int number (24 bits from gui + 1 bit for midnight)
 int firsttime, needchange;
-int yr, hr, min;
+int gentime;															//general-time holds year or hour or minute
 char *end_ptr;
 
 needchange = 1;
@@ -33,35 +33,32 @@ long tloc;
 
 do
   {
-	time (&tloc); // get time in seconds since epoch
-	currtime=localtime(&tloc); // convert seconds to date structure
+	time (&tloc);														// get time in seconds since epoch
+	currtime=localtime(&tloc);											// convert seconds to date structure
 
-	yr = currtime->tm_year;
-//			printf("year is %d\n",yr);  //remove
+		gentime = currtime->tm_year;									//gentime = year
+
 #ifdef HAVE_MADWIFI
-	if ((yr > 100) && nvram_invmatch ("ath0_net_mode", "disabled"))	//ntp time must be set  && radio must be on
+	if ((gentime > 100) && nvram_invmatch ("ath0_net_mode", "disabled"))//ntp time must be set  && radio must be on
 #elif HAVE_MSSID      
-	if ((yr > 100) && nvram_invmatch ("wl0_net_mode", "disabled"))	//ntp time must be set  && radio must be on
+	if ((gentime > 100) && nvram_invmatch ("wl0_net_mode", "disabled"))
 #else
-	if ((yr > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
+	if ((gentime > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
 #endif 
 	{
-		radiotime = strtol(nvram_get ("radio0_on_time"), &end_ptr, 2);  //convert binary string to long int
-//				printf("radiotime nvram = %x %d\n",radiotime, radiotime ); //remove	
-		radiotime += ((radiotime & 1) << 24); //duplicate 23-24h bit to the start to take care of midnight
 
-		hr = currtime->tm_hour;
-		min = currtime->tm_min;
-//			printf("hour is %d\n",hr);  //remove
-//			printf("min is %d\n",min);	//remove
+		gentime = currtime->tm_hour;									//gentime = hour
+		
+		radiotime = strtol(nvram_get ("radio0_on_time"), &end_ptr, 2);	//convert binary string to long int
+		radiotime += ((radiotime & 1) << 24); 							//duplicate 23-24h bit to the start to take care of midnight
+		radiotime = (radiotime >> (24 - gentime - 1)) & 3;				//get pattern only (last two bits)
 
-		radiotime = (radiotime >> (24 - hr - 1)) & 3;  //check pattern (last two bits)
-//			printf("radiotime mask %d\n",radiotime); //remove
+		gentime = currtime->tm_min;										//gentime = min
+		
+		if (gentime != 0)  
+			 needchange = 1;											//prevet to be executed more than once when min == 0
 
-		if (min != 0)  
-			 needchange = 1;	// prevet to be executed more than once when min == 0
-
-		if (firsttime)  //first time change
+		if (firsttime)													//first time change
 		{
 		switch (radiotime)
 			{
@@ -78,7 +75,7 @@ do
 		needchange = 0;
 		}
 
-		if ((min == 0) && (needchange))  //normal change when hour change
+		if ((gentime == 0) && (needchange))								//normal change when min = 0
 		{
 		switch (radiotime)
 			{
@@ -91,20 +88,18 @@ do
 			}
 		needchange = 0;
 		}
-
+		
 	}
-	else  //if yr < 100 (=2000) wait 5 min and try again (if ntp time is maybe set now)
+	else			//if yr < 100 (=2000) wait 5 min and try again (if ntp time is maybe set now)
 	{
-//		printf("SSSS\n");
 	sleep(242);
-
 	}
-//		printf("sleeping\n");
-	sleep(58); // loop every 58 s to be sure to catch min == 0
-  }
 
+	sleep(58);		// loop every 58 s to be sure to catch min == 0
+	
+  }
 while (1);
 
-        return 0;
+return 0;
 
 }
