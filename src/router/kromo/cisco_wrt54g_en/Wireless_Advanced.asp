@@ -497,6 +497,8 @@ addEvent(window, "load", function() {
 						<dl>
 							<dt class="term"><% tran("wl_adv.label"); %>:</dt>
 							<dd class="definition"><% tran("hwl_adv.right2"); %></dd>
+							<dt class="term"><% tran("wl_basic.legend2"); %></dt>
+							<dd class="definition"><% tran("hwl_basic.right6"); %></dt>
 						</dl><br />
 						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWirelessAdvanced.asp');"><% tran("share.more"); %></a>
 					</div>
