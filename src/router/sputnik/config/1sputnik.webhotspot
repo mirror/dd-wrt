@@ -24,7 +24,7 @@
 		</div>
 		<% nvram_invmatch("sputnik_done","1","-->"); %>
 		<div class="center">
-			<a href="http://www.sputnik.com/products/ddwrt.html" target="_new">Learn more</a>&nbsp;<% tran("hotspot.sputnik_about"); %>
+			<a href="http://www.sputnik.com/products/ddwrt.html" target="_new"><% tran("hotspot.sputnik_learn"); %></a>&nbsp;<% tran("hotspot.sputnik_about"); %>
 		</div>
 	</div>
 </fieldset><br />
