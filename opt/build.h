@@ -1,1 +1,1 @@
-#define BUILD_DATE "07/24/06"
+#define BUILD_DATE "07/25/06"
