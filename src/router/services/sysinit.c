@@ -1087,7 +1087,11 @@ if (check_vlan_support())
 system("/etc/kendin");
 eval("insmod","ixp400th");
 eval("insmod","ixp400");
+system("cat /etc/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
 eval("insmod","ixp400_eth");
+eval("insmod","ocf");
+eval("insmod","cryptodev");
+eval("insmod","ixp4xx","init_crypto=0");
 eval("ifconfig","ixp0","0.0.0.0","up");
 eval("vconfig","add","ixp0","1");
 eval("vconfig","add","ixp0","2");
