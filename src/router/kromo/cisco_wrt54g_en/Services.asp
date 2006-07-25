@@ -159,6 +159,7 @@ addEvent(window, "load", function() {
 							<input type="hidden" name="static_leases" value="13" />
 							<input type="hidden" name="openvpn_certtype" />
 							<input type="hidden" name="dhcpd_usejffs" />
+							<input type="hidden" name="dhcpd_usenvram" />
 							<h2><% tran("service.h2"); %></h2>
 							<% show_modules(".webservices"); %>
 							<div class="submitFooter">
