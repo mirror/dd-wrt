@@ -1,5 +1,5 @@
 //////////////////////////////////////////////////////////////////////////////////////////////
-//				French translation DD-WRT V23 SP1 by Botho 17/05/2006						//
+//				French translation DD-WRT V23 SP1 by Botho 17/05/2006															//
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 
@@ -179,6 +179,8 @@ sbutton.survey="Réseaux sans fil à portée";
 sbutton.upgrading="Mise à jour ...";
 sbutton.upgrade="Mettre à jour";
 sbutton.preview="Visualiser";
+sbutton.allways_on="Toujours On";
+sbutton.allways_off="Toujours Off";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
@@ -1475,8 +1477,6 @@ wl_basic.a="A-uniquement";
 wl_basic.g="G-uniquement";
 wl_basic.legend2="Plages Horaire de Fonctionnement";
 wl_basic.radio="Radio";
-wl_basic.all_on="Toujours On";
-wl_basic.all_off="Toujours Off";
 wl_basic.radio_on="Sans fil On";
 wl_basic.radio_off="Sans fil Off";
 
