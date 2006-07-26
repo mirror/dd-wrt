@@ -4283,18 +4283,71 @@ if (nvram_match(mode,"a-only"))
 websWrite(wp,"</script>&nbsp;\n");
 }
 
+
+#ifdef HAVE_NEWMEDIA
+
+
+static void
+ej_show_openvpn_status (int eid, webs_t wp, int argc, char_t ** argv)
+{
+websWrite(wp,"<fieldset>\n<legend>State</legend>\n");
+
+system("/etc/openvpnstate.sh > /tmp/.temp");
+FILE *in = fopen("/tmp/.temp","r");
+while(!feof(in))
+    {
+    int b = getc(in);
+    if (b!=EOF)
+	wfputc(b,wp);
+    }
+fclose(in);
+websWrite(wp,"</fieldset>");
+websWrite(wp,"<fieldset>\n<legend>Status</legend>\n");
+system("/etc/openvpnstatus.sh > /tmp/.temp");
+in = fopen("/tmp/.temp","r");
+while(!feof(in))
+    {
+    int b = getc(in);
+    if (b!=EOF)
+	wfputc(b,wp);
+    }
+fclose(in);
+websWrite(wp,"</fieldset>");
+websWrite(wp,"<fieldset>\n<legend>Log</legend>\n");
+system("/etc/openvpnlog.sh > /tmp/.temp");
+in = fopen("/tmp/.temp","r");
+while(!feof(in))
+    {
+    int b = getc(in);
+    if (b!=EOF)
+	wfputc(b,wp);
+    }
+fclose(in);
+websWrite(wp,"</fieldset>");
+
+}
+
+static void
+ej_show_openvpn (int eid, webs_t wp, int argc, char_t ** argv)
+{
+  if (nvram_match ("openvpn_enable", "1"))
+    {
+      websWrite (wp,
+		 "<li><a href=\"Status_OpenVPN.asp\">VPN</a></li>\n");
+    }
+  return;
+}
+#endif
 static void
 ej_get_radio_state (int eid, webs_t wp, int argc, char_t ** argv)
 {
-int radioon = 0;
-
+int radiooff = -1;
 
 #ifdef HAVE_MADWIFI
 		//????;  no idea how to check this
-#elif HAVE_MSSID
-		//eval ("wl", "radio");  will return 0x0001 or 0x0000 - please check
 #else
-		//eval ("wl", "radio");  will return "radio is on ...." or "radio is off ....will return 0x0001 or 0x0000 - please check
+wl_ioctl(get_wdev(), WLC_GET_RADIO, &radiooff, sizeof(int));
+
 #endif
 
 		//add code here which returns radioon = 1 if radio is on, 2 if radio is off
@@ -4302,13 +4355,15 @@ int radioon = 0;
 switch (radioon)
 	{	
 	case 0:
-		websWrite (wp, "unknown");
-		break;
-	case 1:
 		websWrite (wp, "<script type=\"text/javascript\">Capture(wl_basic.radio_on)</script>&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_on.gif\" width=\"35\" height=\"10\"> ");
 		break;
-	case 2:
+	case 1: // software disabled
+	case 2: // hardware disabled
+	case 3: // both are disabled
 		websWrite (wp, "<script type=\"text/javascript\">Capture(wl_basic.radio_off)</script>&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_off.gif\" width=\"35\" height=\"10\"> ");
+		break;
+	case -1:
+		websWrite (wp, "unknown");
 		break;
 	}
 }
@@ -4410,6 +4465,10 @@ struct ej_handler ej_handlers[] = {
 #ifdef HAVE_SPUTNIK_APD
   {"sputnik_apd_status", ej_sputnik_apd_status},
   {"show_sputnik", ej_show_sputnik},
+#endif
+#ifdef HAVE_NEWMEDIA
+  {"show_openvpn", ej_show_openvpn},
+  {"show_openvpn_status", ej_show_openvpn_status},
 #endif
   /* for filter */
   {"filter_init", ej_filter_init},
