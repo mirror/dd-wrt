@@ -352,15 +352,11 @@ addEvent(window, "load", function() {
 			                				<td width="4%" id="td_22" onClick="setWlTimer(this.id)" a title="22h - 23h">&nbsp;</td>
 			                				<td width="4%" id="td_23" onClick="setWlTimer(this.id)" a title="23h - 24h">&nbsp;</td>
 			                			</tr>
-			                		</table><br />
-              				        <div class="setting">
-			                			<div class=label><% tran("wl_basic.all_on"); %></div>
-			                			<a title="Always On" href="javascript:setWlTimer('all',true)">On</a>
-			                		</div>
-			                		<div class="setting">
-			                			<div class=label><% tran("wl_basic.all_off"); %></div>
-			                			<a title="Always Off" href="javascript:setWlTimer('all',false)">Off</a>
-			                		</div>
+			                		</table>
+			                		<br />
+			                		<div class="center">
+			                			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_on + "\" onclick=\"setWlTimer('all',true)\" />")</script>
+			                			<script type="text/javascript">document.write("<input type=\"button\" value=\"" + sbutton.allways_off + "\" onclick=\"setWlTimer('all',false)\" />")</script>
 			                	</div>
 			             	</fieldset><br/>
 
