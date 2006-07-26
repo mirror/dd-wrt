@@ -939,8 +939,8 @@ start_dnsmasq (void)
 	  atoi (nvram_safe_get ("static_leasenum"));
 	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
 	fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
-	if (nvram_match ("dhcpd_usenvram", "1"))
-	 fprintf (fp, "dhcp-script=%s\n", "/etc/lease_update.sh");
+//	if (nvram_match ("dhcpd_usenvram", "1"))
+	  fprintf (fp, "dhcp-script=%s\n", "/etc/lease_update.sh");
 	if (nvram_invmatch ("wan_wins", "")
 	    && nvram_invmatch ("wan_wins", "0.0.0.0"))
 	  fprintf (fp, "dhcp-option=44,%s\n", nvram_safe_get ("wan_wins"));
