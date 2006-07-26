@@ -185,6 +185,8 @@ sbutton.survey="Site Survey";
 sbutton.upgrading="Upgrading";
 sbutton.upgrade="Upgrade";
 sbutton.preview="Preview";
+sbutton.allways_on="Always On";
+sbutton.allways_off="Always Off";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
@@ -1478,8 +1480,6 @@ wl_basic.a="A-Only";
 wl_basic.g="G-Only";
 wl_basic.legend2="Radio Times Restrictions";
 wl_basic.radio="Radio";
-wl_basic.all_on="Always On";
-wl_basic.all_off="Always Off";
 wl_basic.radio_on="Radio is On";
 wl_basic.radio_off="Radio is Off";
 
