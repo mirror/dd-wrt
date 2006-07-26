@@ -173,6 +173,8 @@ sbutton.survey="Pregled podroèja";
 sbutton.upgrading="Posodabljanje";
 sbutton.upgrade="Posodobi";
 sbutton.preview="Predogled";
+sbutton.allways_on="Vedno vkljuèeno";
+sbutton.allways_off="Vedno izkljuèeno";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
@@ -1466,8 +1468,6 @@ wl_basic.a="Samo-A";
 wl_basic.g="Samo-G";
 wl_basic.legend2="Omejitve radijskega èasa";
 wl_basic.radio="Radio";
-wl_basic.all_on="Vedno vkljuèeno";
-wl_basic.all_off="Vedno izkljuèeno";
 wl_basic.radio_on="Radio je vkljuèen";
 wl_basic.radio_off="Radio je izkljuèen";
 
