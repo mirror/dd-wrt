@@ -942,7 +942,8 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
       strcpy (wlifname, "eth1");
       nvram_set ("wan_ifname", "eth2");	// map WAN port to nonexistant interface
       nvram_set ("wan_ifnames", "eth2");
-      eval ("gpio", "enable", "4");	//WLA2-G54C, WLA3-TX1-G54 diag led off
+      eval ("gpio", "enable", "3");	//WLA2-G54C, WLA3-TX1-G54 diag led off
+      eval ("gpio", "enable", "4");
       break;
   }
 	
