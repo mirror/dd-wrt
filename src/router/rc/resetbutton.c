@@ -241,7 +241,7 @@ period_check (int sig)
 		  		break;
 		  	case ROUTER_BUFFALO_WLA2G54C:
 		  		eval ("gpio", "disable", "3");	//turn on red DIAG led on WLA2G54C / WLI3-TX1-G54
-		  		eval ("gpio", "disable", "4")
+		  		eval ("gpio", "disable", "4");
 		  		break;
 	  	  }
 #endif	
