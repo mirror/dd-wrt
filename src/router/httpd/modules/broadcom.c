@@ -4283,6 +4283,36 @@ if (nvram_match(mode,"a-only"))
 websWrite(wp,"</script>&nbsp;\n");
 }
 
+static void
+ej_get_radio_state (int eid, webs_t wp, int argc, char_t ** argv)
+{
+int radioon = 0;
+
+
+#ifdef HAVE_MADWIFI
+		//????;  no idea how to check this
+#elif HAVE_MSSID
+		//eval ("wl", "radio");  will return 0x0001 or 0x0000 - please check
+#else
+		//eval ("wl", "radio");  will return "radio is on ...." or "radio is off ....will return 0x0001 or 0x0000 - please check
+#endif
+
+		//add code here which returns radioon = 1 if radio is on, 2 if radio is off
+
+switch (radioon)
+	{	
+	case 0:
+		websWrite (wp, "unknown");
+		break;
+	case 1:
+		websWrite (wp, "<script type=\"text/javascript\">Capture(wl_basic.radio_on)</script>&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_on.gif\" width=\"35\" height=\"10\"> ");
+		break;
+	case 2:
+		websWrite (wp, "<script type=\"text/javascript\">Capture(wl_basic.radio_off)</script>&nbsp;&nbsp;<img style=\"border-width: 0em;\" src=\"images/radio_off.gif\" width=\"35\" height=\"10\"> ");
+		break;
+	}
+}
+
 
 // web-writes html escaped (&#xxx;) nvram entries   / test buffered
 int
@@ -4512,6 +4542,7 @@ struct ej_handler ej_handlers[] = {
   {"getrebootflags", ej_getrebootflags},
   {"getwirelessmode", ej_getwirelessmode},
   {"getwirelessnetmode", ej_getwirelessnetmode},
+  {"get_radio_state", ej_get_radio_state},
 #ifdef HAVE_MSSID
   {"getwirelessstatus", ej_getwirelessstatus},
   {"getencryptionstatus", ej_getencryptionstatus},
