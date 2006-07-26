@@ -250,9 +250,7 @@ errmsg.err49="Radius je na volju samo v naèinu AP.";
 errmsg.err50="Vnesti morate SSID.";
 
 // Management.asp error messages
-errmsg.err51="Usmerjalnik trenutno uporablja privzeto geslo. \
-			Zaradi varnosti morate spremeniti geslo preden omogoèite oddaljeni dostop. \
-			Kliknite gumb OK za spremembo gesla. Kliknite gumb Preklièi za onemogoèen oddaljeni dostop.";
+errmsg.err51="Usmerjalnik trenutno uporablja privzeto geslo. Zaradi varnosti morate spremeniti geslo preden omogoèite oddaljeni dostop. Kliknite gumb OK za spremembo gesla. Kliknite gumb Preklièi za onemogoèen oddaljeni dostop.";
 errmsg.err52="Geslo se ne ujema.";
 
 // Port_Services.asp error messages
@@ -275,6 +273,9 @@ errmsg.err59="Ni na voljo! Prosimo, da omogoèite brez¾ièno omre¾je.";
 //Upgrade.asp error messages
 errmsg.err60="Prosimo, da izberete datoteko za posodobitev.";
 errmsg.err61="Nepravilna datoteka.";
+
+//Services.asp error messages
+errmsg.err62=" je ¾e doloèen kot statièni zakup.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
 var bmenu= new Object();
@@ -342,7 +343,6 @@ alive.titl=" - Ohrani ¾ivo";
 alive.h2="Ohrani ¾ivo";
 alive.legend="Razpored ponovnega zagona";
 alive.sevr1="Razpored ponovnega zagona";
-alive.time="Èas (v sekundah)";
 alive.hour="Ob nastavljenem èasu";
 alive.legend2="WDS/Stra¾ni mehanizem";
 alive.sevr2="Omogoèi stra¾ni mehanizem";
@@ -447,9 +447,7 @@ ddnsm.all_noip="Ni medmre¾ne povezave";
 
 //help container
 var hddns = new Object();
-hddns.right2="DDNS omogoèa dostop do va¹e mre¾e z domenskim imenom namesto z IP naslovom. \
-	Ta storitev upravlja s spremembami va¹ega IP naslova in dinamièno posodobi podatke o va¹i domeni. \
-	Prijaviti se morate pri DynDNS.org, TZO.com ali ZoneEdit.com.";
+hddns.right2="DDNS omogoèa dostop do va¹e mre¾e z domenskim imenom namesto z IP naslovom. Ta storitev upravlja s spremembami va¹ega IP naslova in dinamièno posodobi podatke o va¹i domeni. Prijaviti se morate pri DynDNS.org, TZO.com ali ZoneEdit.com.";
 
 
 
@@ -593,10 +591,8 @@ prforward.app="Aplikacija";
 
 //help container
 var hprforward = new Object();
-hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. \
-	Primeri takih aplikacij so stre¾niki in nekatere igre. \
-	Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. \
-	Zaradi varnosti omejite posredovanje vrat samo natista vrata, ki ji uporabljate. ";
+hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
+
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
@@ -611,10 +607,7 @@ pforward.to="Do vrat";
 
 //help container
 var hpforward = new Object();
-hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. \
-	Primeri takih aplikacij so stre¾niki in nekatere igre. \
-	Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. \
-	Zaradi varnosti omejite posredovanje vrat samo natista vrata, ki ji uporabljate. ";
+hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 
 
@@ -625,7 +618,7 @@ hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot portal";
 hotspot.legend="Chillispot";
 hotspot.hotspot="Chillispot";
-hotspot.nowifibridge="Separate Wifi from the LAN Bridge";
+hotspot.nowifibridge="Loèi WiFi od LAN mosta";
 hotspot.pserver="Glavni Radius Server IP/DNS";
 hotspot.bserver="Nadomestni Radius Server IP/DNS";
 hotspot.dns="DNS IP";
@@ -668,6 +661,7 @@ hotspot.sputnik_id="Sputnik stre¾nikov ID";
 hotspot.sputnik_instant="Uporabi Sputnik Instant Setup";
 hotspot.sputnik_express="Uporabi SputnikNet Express";
 hotspot.sputnik_about="o Sputniku";
+hotspot.sputnik_learn="Veè podatkov";
 
 
 
@@ -968,10 +962,8 @@ hqos.right3="Hitrost prenosa k vam:";
 hqos.right4="Nastavite na 80%-100% (maks.) va¹e skupne hitrosti prenosa k vam.";
 hqos.right6="Nadzirate lahko hitrost prenosa glede na aplikacijo, ki uporablja pasovno ¹irino.";
 hqos.right8="Doloèite lahko prioriteto za ves promet z doloèenega IPja ali obsega IPjev.";
-hqos.right10="Doloèite lahko hitrost za ves promet z doloèene naprave na va¹i mre¾i tako, da doloèite ime naprave, \
-			doloèite prioriteto in vnesete MAC naslov.";
-hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na kateri fi¾ièni port je va¹a naprava prikljuèena. \
-			Doloèite lahko prioriteto za naprave prikljuèene na LAN vrata 1 do 4";
+hqos.right10="Doloèite lahko hitrost za ves promet z doloèene naprave na va¹i mre¾i tako, da doloèite ime naprave, doloèite prioriteto in vnesete MAC naslov.";
+hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na kateri fi¾ièni port je va¹a naprava prikljuèena. Doloèite lahko prioriteto za naprave prikljuèene na LAN vrata 1 do 4";
 
 
 
@@ -1101,6 +1093,7 @@ service.vpn_compress="Uporabi LZO stiskanje";
 service.vpn_tunnel="Tunelski protokol";
 service.vpn_srvcert="Javno stre¾ni¹ko potrdilo";
 service.vpn_clicert="Javno odjemalèevo potrdilo";
+service.vpn_certtype="nsCertType";
 service.vpn_clikey="Zasebni odjemalèev kljuè";
 
 //sshd.webservices
@@ -1178,8 +1171,7 @@ hstatus_router.right6="To je usmerjalnikova trenutna strojna programska oprema."
 hstatus_router.right8="To je trenutni èas.";
 hstatus_router.right10="To je èas neprekinjenega delovanja.";
 hstatus_router.right12="To so povpreène obremenitve v zadnji 1, 5 in 15 minutah.";
-hstatus_router.right14="To ka¾e podatke, potrebne za prikljuèitev v medmre¾je. \
-				Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
+hstatus_router.right14="To ka¾e podatke, potrebne za prikljuèitev v medmre¾je. Te podatke ste vnesli v zavihku <em>Namestitev</em>. Tu lahko s klikom na <em>Pove¾i</em> ali <em>Prekini</em> pove¾ete ali prekinete va¹o povezavo.";
 
 
 
@@ -1259,8 +1251,7 @@ upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izljuèujte usmerjal
 
 //help container
 var hupgrad = new Object();
-hupgrad.right2="Kliknite na gumb <em>Prebrskaj...</em> za izbiro datoteke za posodobitev.<br /><br /> \
-			Kliknite na gumb <em>Posodobi</em> za zaèetek posodabljanja. Posodobitve ne smete prekiniti.";
+hupgrad.right2="Kliknite na gumb <em>Prebrskaj...</em> za izbiro datoteke za posodobitev.<br /><br /> Kliknite na gumb <em>Posodobi</em> za zaèetek posodabljanja. Posodobitve ne smete prekiniti.";
 
 
 
@@ -1355,8 +1346,7 @@ wanmac.wlan="Kloniraj brez¾ièni MAC";
 
 //help container
 var hwanmac = new Object();
-hwanmac.right2="nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC naslov. \
-			Èe ne ¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je ¾e prijavljen pri va¹em ponudniku medmere¾ja.";
+hwanmac.right2="nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC naslov. Èe ne ¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je ¾e prijavljen pri va¹em ponudniku medmere¾ja.";
 
 
 
@@ -1368,7 +1358,6 @@ wpa.h2="Brez¾ièna za¹èita";
 wpa.secmode="Naèin za¹èite";
 wpa.legend="Brez¾ièno ¹ifriranje";
 wpa.auth_mode="Mre¾no overovljenje";
-wpa.psk="WPA predhodno deljeni kljuè";
 wpa.wpa="WPA";
 wpa.radius="Radius";
 wpa.gtk_rekey="WPA interval izmenjave kljuèev";
@@ -1378,11 +1367,9 @@ wpa.radius_port="RADIUS vrata stre¾nika";
 wpa.radius_key="RADIUS kljuè";
 wpa.algorithms="WPA algoritm";
 wpa.shared_key="WPA deljeni kljuè";
-wpa.rekeyInt="Interval izmenjave kljuèev";
 
 //help container
 var hwpa = new Object();
-hwpa.right1="Varnostni naèin:";
 hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA predhodno deljeni kljuè, WPA RADIUS, or RADIUS. Vse naprave na va¹i mre¾i morajo uporabljanti isti naèin.";
 
 
@@ -1416,6 +1403,7 @@ wds.legend="WDS nastavitve";
 wds.label="Leni WDS";
 wds.label2="WDS podmre¾a";
 wds.wl_mac="Brez¾ièni MAC";
+wds.lazy_default="Privzeto: onemogoèi";
 wds.nat1="wLAN->WDS";
 wds.nat2="WDS->wLAN";
 wds.subnet="Podmre¾a";
@@ -1489,13 +1477,22 @@ wl_basic.TXpower="TX moè";
 wl_basic.diversity="Diverziteta";
 wl_basic.primary="Prvi";
 wl_basic.secondary="Drugi";
+wl_basic.network="Konfiguracija mre¾e";
+wl_basic.unbridged="Nepremo¹èeno";
+wl_basic.bridged="Premo¹èeno";
+wl_basic.turbo="Turbo naèin";
+wl_basic.extrange="Raz¹irjeno obmoèje";
+wl_basic.extchannel="Raz¹irjeni naèin kanalov";
+wl_basic.outband="Zunanji pas";
+wl_basic.channel_width="©irina kanalov";
+
+
 
 //help container
 var hwl_basic = new Object();
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
 hwl_basic.right4="Prilagodi ACK uèasenje. 0 popolnoma onemogoèi ACK uèasenje.";
-hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 
 
@@ -1544,7 +1541,7 @@ wl_adv.shrt="Kratka"; 				//************* don't use .short ! **************
 //help container
 var hwl_adv = new Object();
 hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuè. Overovljanje z deljenim kljuèem je bolj varno, toda vse naprave na va¹i mre¾i morajo podpirati ta naèin.";
-
+hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
