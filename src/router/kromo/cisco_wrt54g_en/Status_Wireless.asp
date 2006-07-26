@@ -146,7 +146,7 @@ addEvent(window, "unload", function() {
 									<script>document.write("<span id=\"wl_mac\" style=\"cursor:pointer\" title=\"" + share.oui + "\" onclick=\"getOUIFromMAC('<% show_wl_mac(); %>')\" >");</script><% show_wl_mac(); %></span>&nbsp;
 								</div>
 								<div class="setting">
-									<div class="label"><% tran("wl_basic.legend2"); %></div>
+									<div class="label"><% tran("wl_basic.radio"); %></div>
 									<span id="wl_radio"><% get_radio_state(); %></span>&nbsp;
 								</div>
 								<div class="setting">
