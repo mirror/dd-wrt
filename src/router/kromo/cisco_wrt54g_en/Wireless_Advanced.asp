@@ -327,39 +327,39 @@ addEvent(window, "load", function() {
 			                				<td>18</td><td>19</td><td>20</td><td>21</td><td>22</td><td>23</td>
 			                			</tr>
 			                			<tr style="cursor:pointer">
-			                				<td width="4%" id="td_0" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_1" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_2" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_3" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_4" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_5" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_6" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_7" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_8" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_9" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_10" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_11" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_12" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_13" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_14" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_15" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_16" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_17" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_18" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_19" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_20" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_21" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_22" onClick="setWlTimer(this.id)">&nbsp;</td>
-			                				<td width="4%" id="td_23" onClick="setWlTimer(this.id)">&nbsp;</td>
+			                				<td width="4%" id="td_0" onClick="setWlTimer(this.id)" a title="24h - 1h">&nbsp;</td>
+			                				<td width="4%" id="td_1" onClick="setWlTimer(this.id)" a title="1h - 2h">&nbsp;</td>
+			                				<td width="4%" id="td_2" onClick="setWlTimer(this.id)" a title="2h - 3h">&nbsp;</td>
+			                				<td width="4%" id="td_3" onClick="setWlTimer(this.id)" a title="3h - 4h">&nbsp;</td>
+			                				<td width="4%" id="td_4" onClick="setWlTimer(this.id)" a title="4h - 5h">&nbsp;</td>
+			                				<td width="4%" id="td_5" onClick="setWlTimer(this.id)" a title="5h - 6h">&nbsp;</td>
+			                				<td width="4%" id="td_6" onClick="setWlTimer(this.id)" a title="6h - 7h">&nbsp;</td>
+			                				<td width="4%" id="td_7" onClick="setWlTimer(this.id)" a title="7h - 8h">&nbsp;</td>
+			                				<td width="4%" id="td_8" onClick="setWlTimer(this.id)" a title="8h - 9h">&nbsp;</td>
+			                				<td width="4%" id="td_9" onClick="setWlTimer(this.id)" a title="9h - 10h">&nbsp;</td>
+			                				<td width="4%" id="td_10" onClick="setWlTimer(this.id)" a title="10h - 11h">&nbsp;</td>
+			                				<td width="4%" id="td_11" onClick="setWlTimer(this.id)" a title="11h - 12h">&nbsp;</td>
+			                				<td width="4%" id="td_12" onClick="setWlTimer(this.id)" a title="12h - 13h">&nbsp;</td>
+			                				<td width="4%" id="td_13" onClick="setWlTimer(this.id)" a title="13h - 14h">&nbsp;</td>
+			                				<td width="4%" id="td_14" onClick="setWlTimer(this.id)" a title="14h - 15h">&nbsp;</td>
+			                				<td width="4%" id="td_15" onClick="setWlTimer(this.id)" a title="15h - 16h">&nbsp;</td>
+			                				<td width="4%" id="td_16" onClick="setWlTimer(this.id)" a title="16h - 17h">&nbsp;</td>
+			                				<td width="4%" id="td_17" onClick="setWlTimer(this.id)" a title="17h - 18h">&nbsp;</td>
+			                				<td width="4%" id="td_18" onClick="setWlTimer(this.id)" a title="18h - 19h">&nbsp;</td>
+			                				<td width="4%" id="td_19" onClick="setWlTimer(this.id)" a title="19h - 20h">&nbsp;</td>
+			                				<td width="4%" id="td_20" onClick="setWlTimer(this.id)" a title="20h - 21h">&nbsp;</td>
+			                				<td width="4%" id="td_21" onClick="setWlTimer(this.id)" a title="21h - 22h">&nbsp;</td>
+			                				<td width="4%" id="td_22" onClick="setWlTimer(this.id)" a title="22h - 23h">&nbsp;</td>
+			                				<td width="4%" id="td_23" onClick="setWlTimer(this.id)" a title="23h - 24h">&nbsp;</td>
 			                			</tr>
-			                		</table>
+			                		</table><br />
 			                		<div class="setting">
 			                			<div class=label><% tran("wl_basic.all_on"); %></div>
-			                			<a title="Always On" href="javascript:setWlTimer('all',true)">On</a>
+			                			<a title="Always On" href="javascript:setWlTimer('all',true)"><img src="/images/radio_on.gif" border="0"></a>
 			                		</div>
 			                		<div class="setting">
 			                			<div class=label><% tran("wl_basic.all_off"); %></div>
-			                			<a title="Always Off" href="javascript:setWlTimer('all',false)">Off</a>
+			                			<a title="Always Off" href="javascript:setWlTimer('all',false)"><img src="/images/radio_off.gif" border="0"></a>
 			                		</div>
 			                	</div>
 			             	</fieldset><br/>
