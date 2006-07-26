@@ -89,6 +89,8 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
   restore_ret = EINVAL;
   char sign[7];
   sign[6] = 0;
+  char *nvram_ver = NULL;
+
   /* Look for our part */
   while (len > 0)
     {
@@ -137,6 +139,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  len -= (l + 2);
 	  value[l] = 0;
 	  //cprintf("setting %s to %s\n",name,value);
+	  if (!strcmp(name,"nvram_ver"))nvram_ver=value;
 	  nvram_set (name, value);
 	  free (value);
 	  free (name);
@@ -169,6 +172,7 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 	  len -= (l + 2);
 	  value[l] = 0;
 	  //cprintf("setting %s to %s\n",name,value);
+	  if (!strcmp(name,"nvram_ver"))nvram_ver=value;
 	  nvram_set (name, value);
 	  free (value);
 	  free (name);
@@ -198,6 +202,17 @@ nv_file_in (char *url, webs_t wp, int len, char *boundary)
 #endif
 	(void) fgetc (wp);
     }
+    if (nvram_ver==NULL)
+    {
+    nvram_set("http_passwd",zencrypt(nvram_safe_get("http_passwd"))); 
+    nvram_set("http_username",zencrypt(nvram_safe_get("http_username")));
+    if (nvram_get("newhttp_passwd")!=NULL)
+	{
+	nvram_set("newhttp_passwd",zencrypt(nvram_safe_get("newhttp_passwd"))); 
+	nvram_set("newhttp_username",zencrypt(nvram_safe_get("newhttp_username")));
+	}
+    }
+
   chdir ("/www");
 }
 
