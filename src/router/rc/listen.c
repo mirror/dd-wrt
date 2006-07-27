@@ -360,10 +360,11 @@ listen_interface (char *interface)
 	  if (nvram_match ("wan_proto", "pptp"))
 	    {
 	      inet_aton (nvram_safe_get ("pptp_server_ip"), &ipaddr);
-	    } else
+	    }
+	  else
 #endif
 #ifdef HAVE_L2TP
-	if (nvram_match ("wan_proto", "l2tp"))
+	  if (nvram_match ("wan_proto", "l2tp"))
 	    {
 	      inet_aton (nvram_safe_get ("lan_ipaddr"), &ipaddr);
 	    }

@@ -47,28 +47,28 @@ process_monitor_main (void)
 //      if( nvram_invmatch("ntp_enable", "0") && ( ( check_wan_link(0) && nvram_match("ppp_demand", "1") ) || (nvram_match("wan_proto", "pppoe") && nvram_match("ppp_demand", "0") ) ) {
 
   if (nvram_invmatch ("dhcp_dnsmasq", "1"))
-  {
-    leasetime = atol (nvram_safe_get ("dhcp_lease")) * 60;
+    {
+      leasetime = atol (nvram_safe_get ("dhcp_lease")) * 60;
 
-    if (leasetime <= 0)
-      leasetime = 86400;
+      if (leasetime <= 0)
+	leasetime = 86400;
 
-    memset (&t1, 0, sizeof (t1));
-    t1.it_interval.tv_sec = (int) leasetime;
-    t1.it_value.tv_sec = (int) leasetime;
-    timer_create (CLOCK_REALTIME, NULL, (timer_t *) & udhcpd_id);
-    timer_connect (udhcpd_id, check_udhcpd, FIRST);
-    timer_settime (udhcpd_id, 0, &t1, NULL);
-  }
+      memset (&t1, 0, sizeof (t1));
+      t1.it_interval.tv_sec = (int) leasetime;
+      t1.it_value.tv_sec = (int) leasetime;
+      timer_create (CLOCK_REALTIME, NULL, (timer_t *) & udhcpd_id);
+      timer_connect (udhcpd_id, check_udhcpd, FIRST);
+      timer_settime (udhcpd_id, 0, &t1, NULL);
+    }
 
   if (nvram_invmatch ("ntp_enable", "0"))
     {				// && check_wan_link(0) ) {
 
 /* init ntp timer */
 #ifdef HAVE_SNMP
-  struct timeval now;
-  gettimeofday (&now, NULL);
-#endif 
+      struct timeval now;
+      gettimeofday (&now, NULL);
+#endif
       if (do_ntp () != 0)
 	{
 	  syslog (LOG_ERR,
@@ -86,17 +86,17 @@ process_monitor_main (void)
 	}
 
 #ifdef HAVE_SNMP
-  struct timeval then;
-  gettimeofday (&then, NULL);
+      struct timeval then;
+      gettimeofday (&then, NULL);
 
-  if (abs (now.tv_sec - then.tv_sec) > 100000000)
-    {
-	  stop_service("snmp");  
-	  syslog (LOG_DEBUG, "Restarting snmpd\n");	    
-	  sleep(2);
-      start_service("snmp");
-    }
-#endif 
+      if (abs (now.tv_sec - then.tv_sec) > 100000000)
+	{
+	  stop_service ("snmp");
+	  syslog (LOG_DEBUG, "Restarting snmpd\n");
+	  sleep (2);
+	  start_service ("snmp");
+	}
+#endif
 
       syslog (LOG_DEBUG, "We need to re-update after %d seconds\n",
 	      NTP_M_TIMER);

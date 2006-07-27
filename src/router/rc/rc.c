@@ -289,31 +289,31 @@ main_loop (void)
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
-		"DD-WRT v23 SP2 %s (c) 2006 NewMedia-NET GmbH\nRelease: " BUILD_DATE
-		" (SVN revision: %s)\n", DIST, SVN_REVISION);
+	     "DD-WRT v23 SP2 %s (c) 2006 NewMedia-NET GmbH\nRelease: "
+	     BUILD_DATE " (SVN revision: %s)\n", DIST, SVN_REVISION);
   else
     fprintf (fp,
-		"DD-WRT v23 SP2 custom (c) 2006 NewMedia-NET GmbH\nRelease: " BUILD_DATE
-		" (SVN revision: %s)\n", SVN_REVISION);
+	     "DD-WRT v23 SP2 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
+	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
   fprintf (fp,
-		"DD-WRT v23 SP2 custom (c) 2006 NewMedia-NET GmbH\nRelease: " BUILD_DATE
-		" (SVN revision: %s)\n", SVN_REVISION);
+	   "DD-WRT v23 SP2 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
+	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #else
 #ifdef DIST
   if (strlen (DIST) > 0)
     fprintf (fp,
-		"DD-WRT v24 %s (c) 2006 NewMedia-NET GmbH\nRelease: " BUILD_DATE
-		" (SVN revision: %s)\n", DIST, SVN_REVISION);
+	     "DD-WRT v24 %s (c) 2006 NewMedia-NET GmbH\nRelease: " BUILD_DATE
+	     " (SVN revision: %s)\n", DIST, SVN_REVISION);
   else
     fprintf (fp,
-		"DD-WRT v24 custom (c) 2006 NewMedia-NET GmbH\nRelease: " BUILD_DATE
-		" (SVN revision: %s)\n", SVN_REVISION);
+	     "DD-WRT v24 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
+	     BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #else
   fprintf (fp,
-		"DD-WRT v24 custom (c) 2006 NewMedia-NET GmbH\nRelease: " BUILD_DATE
-		" (SVN revision: %s)\n", SVN_REVISION);
+	   "DD-WRT v24 custom (c) 2006 NewMedia-NET GmbH\nRelease: "
+	   BUILD_DATE " (SVN revision: %s)\n", SVN_REVISION);
 #endif
 #endif
 
@@ -391,7 +391,7 @@ main_loop (void)
 	  stop_service ("lan");
 #ifndef HAVE_RB500
 	  cprintf ("STOP RESETBUTTON\n");
-		if ((brand & 0x000f) != 0x000f)
+	  if ((brand & 0x000f) != 0x000f)
 /*	  
 	  	  if ((brand == ROUTER_WRT54G) ||
 	      (brand == ROUTER_WRT54G1X) ||
@@ -430,7 +430,7 @@ main_loop (void)
 		  1);
 	  start_service ("ipv6");
 #ifndef HAVE_RB500
-		if ((brand & 0x000f) != 0x000f)
+	  if ((brand & 0x000f) != 0x000f)
 /*
 	  if ((brand == ROUTER_WRT54G) ||
 	      (brand == ROUTER_WRT54G1X) ||
@@ -559,8 +559,8 @@ main (int argc, char **argv)
     return start_main ("ipdown", argc, argv);
 //  else if (strstr(base, "set-pppoepid")) //tallest 1219
 //     return start_main("set_pppoepid_to_nv",argc, argv);
-  else if (strstr(base, "disconnected_pppoe")) //by tallest 0407
-    return start_main("disconnected_pppoe",argc, argv);
+  else if (strstr (base, "disconnected_pppoe"))	//by tallest 0407
+    return start_main ("disconnected_pppoe", argc, argv);
 //  else if (strstr(base, "ppp_event")) 
 //    return start_main("pppevent_main",argc, argv);
 
@@ -615,7 +615,7 @@ main (int argc, char **argv)
     {
       if (argc >= 2)
 	{
-	  cprintf("hotplug %s\n",argv[1]);
+	  cprintf ("hotplug %s\n", argv[1]);
 	  if (!strcmp (argv[1], "net"))
 	    return start_service ("hotplug_net");
 #ifdef HAVE_MEDIASERVER
@@ -624,7 +624,7 @@ main (int argc, char **argv)
 #endif
 #ifdef HAVE_XSCALE
 	  if (!strcmp (argv[1], "firmware"))
-	    return eval("/etc/upload",argv[1]);
+	    return eval ("/etc/upload", argv[1]);
 #endif
 	}
       else
@@ -683,17 +683,17 @@ main (int argc, char **argv)
     {
 #ifndef HAVE_RB500
 
-    int brand = getRouterBrand ();
-	if ((brand & 0x000f) != 0x000f)
-	  {
+      int brand = getRouterBrand ();
+      if ((brand & 0x000f) != 0x000f)
+	{
 	  return resetbutton_main (argc, argv);
-	  }
-	else
-	  {
+	}
+      else
+	{
 	  fprintf (stderr,
 		   "Your router model doesnt support the resetbutton!\n");
 	  return 0;
-	  }
+	}
 /*	  	
       int brand = getRouterBrand ();
 //      fprintf(stderr,"brand = %d\n",brand);
@@ -773,7 +773,7 @@ main (int argc, char **argv)
   else if (strstr (base, "check_ses_led"))
     return check_ses_led_main (argc, argv);
   else if (strstr (base, "brctl"))
-    return start_main("brctl",argc, argv);
+    return start_main ("brctl", argc, argv);
 
 //  else if (strstr (base, "reboot"))
 //    shutdown_system();

@@ -302,7 +302,7 @@ do_ap_check (void)
 
 //  if (nvram_match ("apwatchdog_enable", "1"))
 //    do_ap_watchdog ();
-start_service("wds_check");
+  start_service ("wds_check");
 //  do_wds_check ();
 
   return 0;
@@ -330,12 +330,13 @@ do_client_check (void)
     {
 #ifdef HAVE_DDLAN
 
-      nvram_unset("cur_rssi");
-      nvram_unset("cur_noise");
-      nvram_unset("cur_bssid");
-      nvram_unset("cur_snr");
-      nvram_set ("cur_state","<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
-      
+      nvram_unset ("cur_rssi");
+      nvram_unset ("cur_noise");
+      nvram_unset ("cur_bssid");
+      nvram_unset ("cur_snr");
+      nvram_set ("cur_state",
+		 "<span style=\"background-color: rgb(255, 0, 0);\">Nicht Verbunden</span>");
+
 //      nvram_set ("cur_state", "Nicht Verbunden");
 #endif
       /*if (nvram_match("wl_mode", "wet"))
@@ -362,7 +363,8 @@ do_client_check (void)
   else
     {
 #ifdef HAVE_DDLAN
-      nvram_set ("cur_state","<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
+      nvram_set ("cur_state",
+		 "<span style=\"background-color: rgb(135, 255, 51);\">Verbunden</span>");
       eval ("/sbin/check.sh");
 #endif
     }				/*else if (nvram_match("wl_mode","bridge"))
