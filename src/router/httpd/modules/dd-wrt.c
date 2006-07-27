@@ -1706,7 +1706,7 @@ show_virtualssid (webs_t wp, char *prefix)
 #else
   if (count < WL_MAXBSSCFG)
 #endif
-
+		websWrite (wp, "<div class=\"center\">\n");
     websWrite (wp,
     	"<script type=\"text/javascript\">document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");</script>\n",
 	       prefix);
@@ -1714,6 +1714,7 @@ show_virtualssid (webs_t wp, char *prefix)
     websWrite (wp,
     	"<script type=\"text/javascript\">document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");</script>\n",
 	       prefix);
+	  websWrite (wp, "</div><br />\n");
 
   return 0;
 }
