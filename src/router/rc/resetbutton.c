@@ -206,6 +206,9 @@ period_check (int sig)
     state = (val & gpio);
   else
     state = !(val & gpio);
+  int push = BCM47XX_SW_PUSH;
+  if (brand==ROUTER_BUFFALO_WHRG54S || brand == ROUTER_BUFFALO_HP_WHRG54S)
+    push = 1;
 #endif
   /*  The value is zero during button-pushed. */
   if (state)
@@ -256,7 +259,7 @@ period_check (int sig)
 	}
     }
 #ifndef HAVE_XSCALE
-  else if (!(val & BCM47XX_SW_PUSH) && brand == ROUTER_WRT54G)
+  else if (!(val & push) && brand == ROUTER_WRT54G)
     {
       runStartup ("/etc/config", ".sesbutton");
       runStartup ("/jffs/etc/config", ".sesbutton");	//if available
@@ -305,8 +308,8 @@ period_check (int sig)
 	  ses_mode = 0;
 	}
     }
-  else if (!(val & BCM47XX_SW_PUSH)
-	   && (brand == ROUTER_WRTSL54GS || brand == ROUTER_ASUS_WL500G_PRE))
+  else if (!(val & push)
+	   && (brand == ROUTER_BUFFALO_WHRG54S || brand == ROUTER_BUFFALO_HP_WHRG54S || brand == ROUTER_WRTSL54GS || brand == ROUTER_ASUS_WL500G_PRE))
     {
       runStartup ("/etc/config", ".sesbutton");
       runStartup ("/jffs/etc/config", ".sesbutton");	//if available
