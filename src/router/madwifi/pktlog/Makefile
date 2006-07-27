@@ -35,7 +35,7 @@ endif
 INCS+=  -I. -I${HAL} -I${HAL}/${OS} -I${obj}/${ATH} -I${obj}/${WLAN} \
         -I${obj}/${DEPTH}
 
-EXTRA_CFLAGS+=${INCS} ${COPTS}
+EXTRA_CFLAGS+=${INCS} ${COPTS2}
 
 -include $(TOPDIR)/Rules.make
 

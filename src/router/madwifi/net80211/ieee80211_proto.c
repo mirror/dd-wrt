@@ -357,7 +357,7 @@ ieee80211_dump_pkt(struct ieee80211com *ic,
 		printf(" QoS [TID %u%s]", qwh->i_qos[0] & IEEE80211_QOS_TID,
 			qwh->i_qos[0] & IEEE80211_QOS_ACKPOLICY ? " ACM" : "");
 	}
-	if (wh->i_fc[1] & IEEE80211_FC1_WEP) {
+	if (wh->i_fc[1] & IEEE80211_FC1_PROT) {
 		int off;
 
 		off = ieee80211_anyhdrspace(ic, wh);
@@ -1088,7 +1088,9 @@ void
 ieee80211_dturbo_switch(struct ieee80211com *ic, int newflags)
 {
 	/* XXX use first vap for debug flags */
+#ifdef IEEE80211_DEBUG
 	struct ieee80211vap *vap = TAILQ_FIRST(&ic->ic_vaps);
+#endif
 	struct ieee80211_channel *chan;
 
 	chan = ieee80211_find_channel(ic, ic->ic_bsschan->ic_freq, newflags);

@@ -4,26 +4,30 @@
 # $Id: //depot/sw/linuxsrc/src/802_11/madwifi/madwifi/ath_rate/onoe/Makefile.kernel#1 $
 #
 
-##2.4##src=.
-##2.6##src:=$(srctree)/$(src)
+src ?= .
+srctree ?= .
 
-include $(src)/../../BuildCaps.inc
+include $(srctree)/$(src)/../../BuildCaps.inc
 
-HAL=	$(src)/../../hal
-ATH=	$(src)/../../ath
-WLAN=	${src}/../../net80211
-COMPAT=	${WLAN}/compat
+HAL=	$(srctree)/$(src)/../../hal
+ATH=	$(srctree)/$(src)/../../ath
+WLAN=	$(srctree)/$(src)/../../net80211
+COMPAT=	$(srctree)/$(src)/../../include
 
-INCS=	-include ${COMPAT}/compat.h -I${COMPAT}
-EXTRA_CFLAGS+=	${INCS} -I${HAL} -I${HAL}/linux -I${ATH} -I${WLAN} -I${src}/../..
+INCS=	-include $(COMPAT)/compat.h -I$(COMPAT)
+EXTRA_CFLAGS+=	$(INCS) -I$(HAL) -I$(HAL)/linux -I$(ATH) -I$(WLAN) -I$(src)/../..
 
-##2.6##obj-$(CONFIG_ATHEROS) += ath_rate_onoe.o
-##2.6##ath_rate_onoe-objs	:= onoe.o
+ifdef LINUX26
+obj-$(CONFIG_ATHEROS) += ath_rate_onoe.o
+ath_rate_onoe-objs	:= onoe.o
+endif
 
-##2.4##obj-$(CONFIG_ATHEROS) := onoe.o
+ifdef LINUX24
+obj-$(CONFIG_ATHEROS) := onoe.o
 
-##2.4##export-objs	:= onoe.o
-##2.4##list-multi	:= ath_rate_onoe.o
+export-objs	:= onoe.o
+list-multi	:= ath_rate_onoe.o
 
-##2.4##O_TARGET	:= ath_rate.o
-##2.4##include $(TOPDIR)/Rules.make
+O_TARGET	:= ath_rate.o
+include $(TOPDIR)/Rules.make
+endif

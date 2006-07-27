@@ -6,5 +6,6 @@
 #define AH_SUPPORT_5112	1
 #define AH_SUPPORT_2413	1
 #define AH_SUPPORT_5413	1
+#define AH_REGOPS_FUNC 1
 #define AH_ENABLE_AP_SUPPORT 1
 #define AH_SUPPORT_XR	1

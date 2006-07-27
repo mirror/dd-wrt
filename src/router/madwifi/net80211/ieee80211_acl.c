@@ -171,7 +171,7 @@ acl_add(struct ieee80211vap *vap, const u_int8_t mac[IEEE80211_ADDR_LEN])
 		IEEE80211_DPRINTF(vap, IEEE80211_MSG_ACL,
 			"ACL: add %s failed, no memory\n", ether_sprintf(mac));
 		/* XXX statistic */
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	ACL_LOCK(as);
@@ -183,7 +183,7 @@ acl_add(struct ieee80211vap *vap, const u_int8_t mac[IEEE80211_ADDR_LEN])
 			IEEE80211_DPRINTF(vap, IEEE80211_MSG_ACL,
 				"ACL: add %s failed, already present\n",
 				ether_sprintf(mac));
-			return EEXIST;
+			return -EEXIST;
 		}
 	}
 	IEEE80211_ADDR_COPY(new->acl_macaddr, mac);
@@ -259,7 +259,7 @@ acl_setpolicy(struct ieee80211vap *vap, int policy)
 		as->as_policy = ACL_POLICY_DENY;
 		break;
 	default:
-		return EINVAL;
+		return -EINVAL;
 	}
 	return 0;
 }

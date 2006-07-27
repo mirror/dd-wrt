@@ -47,6 +47,7 @@
 #include <linux/netdevice.h>
 #include <linux/utsname.h>
 #include <linux/if_arp.h>		/* XXX for ARPHRD_ETHER */
+#include <linux/delay.h>
 #include <net/iw_handler.h>
 
 #if WIRELESS_EXT < 14
@@ -117,6 +118,39 @@ set_quality(struct iw_quality *iq, u_int rssi,int noise)
 	iq->noise = 256 + noise;	
 	iq->level = iq->noise + iq->qual;
 	iq->updated = IW_QUAL_ALL_UPDATED;
+}
+
+static void
+preempt_scan(struct net_device *dev, int max_grace, int max_wait)
+{
+	struct ieee80211vap *vap = dev->priv;
+	struct ieee80211com *ic = vap->iv_ic;
+	int total_delay = 0;
+	int cancelled = 0, ready = 0;
+	while (!ready && total_delay < max_grace + max_wait) {
+	  if ((ic->ic_flags & IEEE80211_F_SCAN) == 0) {
+	    ready = 1;
+	  } else {
+	    if (!cancelled && total_delay > max_grace) {
+	      /* 
+		 Cancel any existing active scan, so that any new parameters
+		 in this scan ioctl (or the defaults) can be honored, then
+		 wait around a while to see if the scan cancels properly.
+	      */
+	      IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
+				"%s: cancel pending scan request\n", __func__);
+	      (void) ieee80211_cancel_scan(vap);
+	      cancelled = 1;
+	    }
+	    mdelay (1);
+	    total_delay += 1;
+	  }
+	}
+	if (!ready) {
+	  IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN, 
+			    "%s: Timeout cancelling current scan.\n", 
+			    __func__); 
+	}
 }
 	
 static struct iw_statistics *
@@ -190,7 +224,7 @@ getiwkeyix(struct ieee80211vap *vap, const struct iw_point* erq, int *kix)
 		*kix = kid;
 		return 0;
 	} else
-		return EINVAL;
+		return -EINVAL;
 }
 
 static int
@@ -207,8 +241,8 @@ ieee80211_ioctl_siwencode(struct net_device *dev,
 		 * set the default transmit key.
 		 */
 		error = getiwkeyix(vap, erq, &kid);
-		if (error)
-			return -error;
+		if (error < 0)
+			return error;
 		if (erq->length > IEEE80211_KEYBUF_SIZE)
 			return -EINVAL;
 		/* XXX no way to install 0-length key */
@@ -307,8 +341,8 @@ ieee80211_ioctl_giwencode(struct net_device *dev, struct iw_request_info *info,
 
 	if (vap->iv_flags & IEEE80211_F_PRIVACY) {
 		error = getiwkeyix(vap, erq, &kid);
-		if (error != 0)
-			return -error;
+		if (error < 0)
+			return error;
 		k = &vap->iv_nw_keys[kid];
 		/* XXX no way to return cipher/key type */
 
@@ -348,7 +382,6 @@ ieee80211_ioctl_siwrate(struct net_device *dev, struct iw_request_info *info,
 	struct ieee80211vap *vap = dev->priv;
 	struct ieee80211com *ic = vap->iv_ic;
 	struct ifreq ifr;
-	struct ifmediareq imr;
 	int rate, retv;
 
 	if (vap->iv_media.ifm_cur == NULL)
@@ -370,13 +403,11 @@ ieee80211_ioctl_siwrate(struct net_device *dev, struct iw_request_info *info,
 	ifmedia_removeall(&vap->iv_media);
 	(void) ieee80211_media_setup(ic, &vap->iv_media,
 		vap->iv_caps, vap->iv_media.ifm_change, vap->iv_media.ifm_status);
-	ieee80211_media_status(dev, &imr);
-	ifmedia_set(&vap->iv_media, imr.ifm_active);
 
 	retv = ifmedia_ioctl(vap->iv_dev, &ifr, &vap->iv_media, SIOCSIFMEDIA);
-	if (retv == ENETRESET)
+	if (retv == -ENETRESET)
 		retv = IS_UP_AUTO(vap) ? ieee80211_open(vap->iv_dev) : 0;
-	return -retv;
+	return retv;
 }
 
 static int
@@ -435,7 +466,7 @@ ieee80211_ioctl_siwrts(struct net_device *dev, struct iw_request_info *info,
 	if (val != vap->iv_rtsthreshold) {
 		vap->iv_rtsthreshold = val;
 		if (IS_UP(vap->iv_dev))
-			return -ic->ic_reset(ic->ic_dev);
+			return ic->ic_reset(ic->ic_dev);
 	}
 	return 0;
 }
@@ -471,7 +502,7 @@ ieee80211_ioctl_siwfrag(struct net_device *dev,	struct iw_request_info *info,
 	if (val != vap->iv_fragthreshold) {
 		vap->iv_fragthreshold = val;
 		if (IS_UP(ic->ic_dev))
-			return -ic->ic_reset(ic->ic_dev);
+			return ic->ic_reset(ic->ic_dev);
 	}
 	return 0;
 }
@@ -494,19 +525,35 @@ ieee80211_ioctl_siwap(struct net_device *dev, struct iw_request_info *info,
 	struct sockaddr *ap_addr, char *extra)
 {
 	static const u_int8_t zero_bssid[IEEE80211_ADDR_LEN];
+	static const u_int8_t broadcast_bssid[IEEE80211_ADDR_LEN] = 
+		"\xff\xff\xff\xff\xff\xff";
 	struct ieee80211vap *vap = dev->priv;
 
 	/* NB: should not be set when in AP mode */
 	if (vap->iv_opmode == IEEE80211_M_HOSTAP)
 		return -EINVAL;
-	IEEE80211_ADDR_COPY(vap->iv_des_bssid, &ap_addr->sa_data);
-	/* looks like a zero address disables */
-	if (IEEE80211_ADDR_EQ(vap->iv_des_bssid, zero_bssid))
+
+	/* 
+	 * zero address corresponds to 'iwconfig ath0 ap off', which means 
+	 * enable automatic choice of AP without actually forcing a
+	 * reassociation.  
+	 *
+	 * broadcast address corresponds to 'iwconfig ath0 ap any', which
+	 * means scan for the current best AP.
+	 *
+	 * anything else specifies a particular AP.
+	 */
+	if (IEEE80211_ADDR_EQ(vap->iv_des_bssid, zero_bssid)) 
 		vap->iv_flags &= ~IEEE80211_F_DESBSSID;
-	else
-		vap->iv_flags |= IEEE80211_F_DESBSSID;
-	if (IS_UP_AUTO(vap))
-		ieee80211_new_state(vap, IEEE80211_S_SCAN, 0);
+	else {
+		IEEE80211_ADDR_COPY(vap->iv_des_bssid, &ap_addr->sa_data);
+		if (IEEE80211_ADDR_EQ(vap->iv_des_bssid, broadcast_bssid))
+			vap->iv_flags &= ~IEEE80211_F_DESBSSID;
+		else 
+			vap->iv_flags |= IEEE80211_F_DESBSSID;
+		if (IS_UP_AUTO(vap))
+			ieee80211_new_state(vap, IEEE80211_S_SCAN, 0);
+	}
 	return 0;
 }
 
@@ -843,7 +890,7 @@ ieee80211_ioctl_siwessid(struct net_device *dev, struct iw_request_info *info,
 			copy_des_ssid(vap->iv_xrvap, vap);
 	}
 #endif
-	return IS_UP_AUTO(vap) ? -ieee80211_init(vap->iv_dev, RESCAN) : 0;
+	return IS_UP_AUTO(vap) ? ieee80211_init(vap->iv_dev, RESCAN) : 0;
 }
 
 static int
@@ -1097,8 +1144,7 @@ ieee80211_ioctl_getspy(struct net_device *dev, struct iw_request_info *info,
 		/* check we are associated w/ this vap */
 		if (ni && (ni->ni_vap == vap)) {
 			int noise = -95;
-			if (ni->ni_ic->ic_getchannelnoise)
-			    noise = (int8_t) ni->ni_ic->ic_getchannelnoise(ni->ni_ic,ni->ni_chan);
+			if (ni->ni_ic->ic_getchannelnoise)noise = (int8_t) ni->ni_ic->ic_getchannelnoise(ni->ni_ic,ni->ni_chan);
 			set_quality(&spy_stat[i], ni->ni_rssi,noise);
 		} else {
 			spy_stat[i].updated = IW_QUAL_ALL_INVALID;
@@ -1107,6 +1153,64 @@ ieee80211_ioctl_getspy(struct net_device *dev, struct iw_request_info *info,
 
 	/* copy results to userspace */
 	data->length = number;
+	return 0;
+}
+
+/* Enhanced iwspy support */
+static int
+ieee80211_ioctl_setthrspy(struct net_device *dev, struct iw_request_info *info,
+	struct iw_point *data, char *extra)
+{
+	struct ieee80211vap *vap = dev->priv;
+	struct iw_thrspy threshold;
+
+	if (data->length != 1)
+		return -EINVAL;
+	
+	/* get the threshold values into the driver */
+	if (data->pointer) {
+		if (copy_from_user(&threshold, data->pointer,
+		    sizeof(struct iw_thrspy)))
+			return -EFAULT;
+        } else
+		return -EINVAL;
+		
+	if (threshold.low.level == 0) {
+		/* disable threshold */
+		vap->iv_spy.thr_low = 0;
+		vap->iv_spy.thr_high = 0;
+		IEEE80211_DPRINTF(vap, IEEE80211_MSG_DEBUG,
+			"%s: disabled iw_spy threshold\n", __func__);
+	} else {
+		/* calculate corresponding rssi values */
+		vap->iv_spy.thr_low = threshold.low.level - 161;
+		vap->iv_spy.thr_high = threshold.high.level - 161;
+		IEEE80211_DPRINTF(vap, IEEE80211_MSG_DEBUG,
+			"%s: enabled iw_spy threshold\n", __func__);
+	}
+
+	return 0;
+}
+
+static int
+ieee80211_ioctl_getthrspy(struct net_device *dev, struct iw_request_info *info,
+	struct iw_point *data, char *extra)
+{
+	struct ieee80211vap *vap = dev->priv;
+	struct iw_thrspy *threshold;	
+	int noise = -95;
+	
+	threshold = (struct iw_thrspy *) extra;
+
+	/* set threshold values */
+	if (vap->iv_ic->ic_getchannelnoise)
+		noise = (int8_t) vap->iv_ic->ic_getchannelnoise(vap->iv_ic,vap->iv_ic->ic_curchan);
+	set_quality(&(threshold->low), vap->iv_spy.thr_low,noise);
+	set_quality(&(threshold->high), vap->iv_spy.thr_high,noise);
+
+	/* copy results to userspace */
+	data->length = 1;
+	
 	return 0;
 }
 
@@ -1197,7 +1301,7 @@ ieee80211_ioctl_siwpower(struct net_device *dev, struct iw_request_info *info,
 		ic->ic_flags |= IEEE80211_F_PMGTON;
 	}
 done:
-	return IS_UP(ic->ic_dev) ? -ic->ic_reset(ic->ic_dev) : 0;
+	return IS_UP(ic->ic_dev) ? ic->ic_reset(ic->ic_dev) : 0;
 }
 
 static int
@@ -1253,7 +1357,7 @@ ieee80211_ioctl_siwretry(struct net_device *dev, struct iw_request_info *info,
 		return 0;
 	}
 done:
-	return IS_UP(vap->iv_dev) ? -ic->ic_reset(vap->iv_dev) : 0;
+	return IS_UP(vap->iv_dev) ? ic->ic_reset(vap->iv_dev) : 0;
 }
 
 static int
@@ -1339,7 +1443,7 @@ ieee80211_ioctl_siwtxpow(struct net_device *dev, struct iw_request_info *info,
 		ic->ic_flags &= ~IEEE80211_F_TXPOW_FIXED;
 	}
 done:
-	return IS_UP(ic->ic_dev) ? -ic->ic_reset(ic->ic_dev) : 0;
+	return IS_UP(ic->ic_dev) ? ic->ic_reset(ic->ic_dev) : 0;
 }
 
 static int
@@ -1424,6 +1528,34 @@ ieee80211_ioctl_siwscan(struct net_device *dev,	struct iw_request_info *info,
 	/* XXX always manual... */
 	IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
 		"%s: active scan request\n", __func__);
+	preempt_scan(dev, 100, 100);
+#if WIRELESS_EXT > 17
+	if (data && (data->flags & IW_SCAN_THIS_ESSID)) {
+		struct iw_scan_req req;
+		struct ieee80211_scan_ssid ssid;
+		int copyLength;
+		IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
+			"%s: SCAN_THIS_ESSID requested\n", __func__);
+		if (data->length > sizeof req) {
+			copyLength = sizeof req;
+		} else {
+			copyLength = data->length;
+		}
+		memset(&req, 0, sizeof req);
+		if (copy_from_user(&req, data->pointer, copyLength))
+			return -EFAULT;
+		memcpy(&ssid.ssid, req.essid, sizeof ssid.ssid);
+		ssid.len = req.essid_len;
+		IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
+				  "%s: requesting scan of essid '%s'\n", __func__, ssid.ssid);
+		(void) ieee80211_start_scan(vap,
+			IEEE80211_SCAN_ACTIVE |
+			IEEE80211_SCAN_NOPICK |
+			IEEE80211_SCAN_ONCE, IEEE80211_SCAN_FOREVER,
+			1, &ssid);
+		return 0;
+	}
+#endif		 
 	(void) ieee80211_start_scan(vap, IEEE80211_SCAN_ACTIVE |
 		IEEE80211_SCAN_NOPICK |	IEEE80211_SCAN_ONCE,
 		IEEE80211_SCAN_FOREVER,
@@ -1733,7 +1865,7 @@ ieee80211_ioctl_setmode(struct net_device *dev, struct iw_request_info *info,
 	struct ieee80211com *ic = vap->iv_ic;
 	struct ifreq ifr;
 	char s[6];		/* big enough for ``11adt'' */
-	int retv, mode, ifr_mode;
+	int retv, mode, ifr_mode, itr_count;
 
 	if (ic->ic_media.ifm_cur == NULL)
 		return -EINVAL;
@@ -1769,6 +1901,18 @@ ieee80211_ioctl_setmode(struct net_device *dev, struct iw_request_info *info,
 		vap->iv_des_mode = mode;
 		if (IS_UP_AUTO(vap)) {
 			ieee80211_cancel_scan(vap);
+			itr_count = 0;
+			while((ic->ic_flags & IEEE80211_F_SCAN) != 0) {
+				mdelay(1);
+				if (itr_count < 100) {
+					itr_count++;
+					continue;
+				}
+				IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
+				  "%s: Timeout cancelling current scan.\n",
+				  __func__);
+                    		return -ETIMEDOUT;
+			}
 			ieee80211_new_state(vap, IEEE80211_S_SCAN, 0);
 		}
 		retv = 0;
@@ -1894,18 +2038,15 @@ ieee80211_ioctl_setparam(struct net_device *dev, struct iw_request_info *info,
 		}
 		switch (value) {
 		case IEEE80211_AUTH_WPA:	/* WPA w/ 802.1x */
-			vap->iv_flags |= IEEE80211_F_PRIVACY;
 			value = IEEE80211_AUTH_8021X;
 			break;
 		case IEEE80211_AUTH_OPEN:	/* open */
-			vap->iv_flags &= ~(IEEE80211_F_WPA|IEEE80211_F_PRIVACY);
+			vap->iv_flags &= ~(IEEE80211_F_WPA);
 			break;
 		case IEEE80211_AUTH_SHARED:	/* shared-key */
 		case IEEE80211_AUTH_AUTO:	/* auto */
 		case IEEE80211_AUTH_8021X:	/* 802.1x */
 			vap->iv_flags &= ~IEEE80211_F_WPA;
-			/* both require a key so mark the PRIVACY capability */
-			vap->iv_flags |= IEEE80211_F_PRIVACY;
 			break;
 		}
 		/* NB: authenticator attach/detach happens on state change */
@@ -2019,6 +2160,12 @@ ieee80211_ioctl_setparam(struct net_device *dev, struct iw_request_info *info,
 			vap->iv_flags |= IEEE80211_F_DROPUNENC;
 		else
 			vap->iv_flags &= ~IEEE80211_F_DROPUNENC;
+		break;
+	case IEEE80211_PARAM_DROPUNENC_EAPOL:
+		if (value)
+			IEEE80211_VAP_DROPUNENC_EAPOL_ENABLE(vap);
+		else
+			IEEE80211_VAP_DROPUNENC_EAPOL_DISABLE(vap);
 		break;
 	case IEEE80211_PARAM_COUNTERMEASURES:
 		if (value) {
@@ -2480,6 +2627,9 @@ ieee80211_ioctl_getparam(struct net_device *dev, struct iw_request_info *info,
 		break;
 	case IEEE80211_PARAM_DROPUNENCRYPTED:
 		param[0] = (vap->iv_flags & IEEE80211_F_DROPUNENC) != 0;
+		break;
+	case IEEE80211_PARAM_DROPUNENC_EAPOL:
+		param[0] = IEEE80211_VAP_DROPUNENC_EAPOL(vap);
 		break;
 	case IEEE80211_PARAM_COUNTERMEASURES:
 		param[0] = (vap->iv_flags & IEEE80211_F_COUNTERM) != 0;
@@ -2981,7 +3131,7 @@ ieee80211_ioctl_wdsmac(struct net_device *dev, struct iw_request_info *info,
 		ether_sprintf(vap->wds_mac));
 
 	if (IS_UP(vap->iv_dev))
-		return -ic->ic_reset(ic->ic_dev);
+		return ic->ic_reset(ic->ic_dev);
 
 	return 0;
 }
@@ -3004,7 +3154,7 @@ ieee80211_ioctl_wdsdelmac(struct net_device *dev, struct iw_request_info *info,
 	if (memcmp(vap->wds_mac, sa->sa_data, IEEE80211_ADDR_LEN) == 0) {
 		memset(vap->wds_mac, 0x00, IEEE80211_ADDR_LEN);
 		if (IS_UP(vap->iv_dev))
-			return -ic->ic_reset(ic->ic_dev);
+			return ic->ic_reset(ic->ic_dev);
 		return 0;			 
 	}
 
@@ -3182,7 +3332,7 @@ ieee80211_ioctl_setwmmparams(struct net_device *dev,
 	switch (param[0]) {
         case IEEE80211_WMMPARAMS_CWMIN:
 		if (param[3] < 0 || param[3] > 15) 
-			return EINVAL;
+			return -EINVAL;
         	if (bss) {
 			wme->wme_wmeBssChanParams.cap_wmeParams[ac].wmep_logcwmin = param[3];
 			if ((wme->wme_flags & WME_F_AGGRMODE) == 0)
@@ -3195,7 +3345,7 @@ ieee80211_ioctl_setwmmparams(struct net_device *dev,
 		break;
 	case IEEE80211_WMMPARAMS_CWMAX:
 		if (param[3] < 0 || param[3] > 15) 
-			return EINVAL;
+			return -EINVAL;
         	if (bss) {
 			wme->wme_wmeBssChanParams.cap_wmeParams[ac].wmep_logcwmax = param[3];
 			if ((wme->wme_flags & WME_F_AGGRMODE) == 0)
@@ -3208,7 +3358,7 @@ ieee80211_ioctl_setwmmparams(struct net_device *dev,
 		break;
         case IEEE80211_WMMPARAMS_AIFS:
 		if (param[3] < 0 || param[3] > 15) 
-			return EINVAL;	
+			return -EINVAL;	
         	if (bss) {
 			wme->wme_wmeBssChanParams.cap_wmeParams[ac].wmep_aifsn = param[3];
 			if ((wme->wme_flags & WME_F_AGGRMODE) == 0)
@@ -3221,7 +3371,7 @@ ieee80211_ioctl_setwmmparams(struct net_device *dev,
 		break;
         case IEEE80211_WMMPARAMS_TXOPLIMIT:
 		if (param[3] < 0 || param[3] > 8192) 
-			return EINVAL;
+			return -EINVAL;
         	if (bss) {
 			wme->wme_wmeBssChanParams.cap_wmeParams[ac].wmep_txopLimit 
 				= IEEE80211_US_TO_TXOP(param[3]);
@@ -3238,7 +3388,7 @@ ieee80211_ioctl_setwmmparams(struct net_device *dev,
 		break;
         case IEEE80211_WMMPARAMS_ACM:
 		if (!bss || param[3] < 0 || param[3] > 1) 
-			return EINVAL;
+			return -EINVAL;
         	/* ACM bit applies to BSS case only */
 		wme->wme_wmeBssChanParams.cap_wmeParams[ac].wmep_acm = param[3];
 		if ((wme->wme_flags & WME_F_AGGRMODE) == 0)
@@ -3246,7 +3396,7 @@ ieee80211_ioctl_setwmmparams(struct net_device *dev,
 		break;
         case IEEE80211_WMMPARAMS_NOACKPOLICY:
 		if (bss || param[3] < 0 || param[3] > 1) 
-			return EINVAL;	
+			return -EINVAL;	
         	/* ack policy applies to non-BSS case only */
 		wme->wme_wmeChanParams.cap_wmeParams[ac].wmep_noackPolicy = param[3];
 		wme->wme_chanParams.cap_wmeParams[ac].wmep_noackPolicy = param[3];
@@ -3831,18 +3981,30 @@ siwauth_drop_unencrypted(struct net_device *dev,
 }
 
 
-/*
- * The exact meaning of the IW_AUTH_ALG_* values is a little unclear.
- * For example, wpa_supplicant uses IW_AUTH_ALG_OPEN_SYSTEM for WPA-PSK
- * APs, unless you happen to set the auth_alg=SHARED option in your config
- * file in which case it uses IW_AUTH_ALG_SHARED_KEY.  Fortunately,
- * neither makes a any difference to madwifi, so for now we ignore it.
- */
 static int
 siwauth_80211_auth_alg(struct net_device *dev,
 	struct iw_request_info *info, struct iw_param *erq, char *buf)
 {
-	return -EOPNOTSUPP;
+#define VALID_ALGS_MASK (IW_AUTH_ALG_OPEN_SYSTEM|IW_AUTH_ALG_SHARED_KEY|IW_AUTH_ALG_LEAP)
+	int mode = erq->value;
+	int args[2];
+
+	args[0] = IEEE80211_PARAM_AUTHMODE;
+
+	if (mode & ~VALID_ALGS_MASK) {
+		return -EINVAL;
+	}
+	if (mode & IW_AUTH_ALG_LEAP) {
+		args[1] = IEEE80211_AUTH_8021X;
+	} else if ((mode & IW_AUTH_ALG_SHARED_KEY) &&
+		  (mode & IW_AUTH_ALG_OPEN_SYSTEM)) {
+		args[1] = IEEE80211_AUTH_AUTO;
+	} else if (mode & IW_AUTH_ALG_SHARED_KEY) {
+		args[1] = IEEE80211_AUTH_SHARED;
+	} else {
+		args[1] = IEEE80211_AUTH_OPEN;
+	}
+	return ieee80211_ioctl_setparam(dev, NULL, NULL, (char*)args);
 }
 
 static int
@@ -3861,23 +4023,20 @@ siwauth_wpa_enabled(struct net_device *dev,
 	return ieee80211_ioctl_setparam(dev, NULL, NULL, (char*)args);
 }
 
-/*
- * The wext API says that user space gets to decide whether EAPOL frames are 
- * supposed to be encrypted or in cleartext.  The code in WPA supplicant 
- * indicates that if the AP is using 802.1x authentication but not WPA for
- * key mgmt the eapol frames should be encrypted.  However, even if I set
- * up my AP (linkys WRT54G, fw 1.00.2) for that config, it sends eapol frames 
- * in the clear.  I'm uncertain whether my AP is violating the specification, 
- * or if wpa_supplicant is doing the wrong thing.  But if I let wpa_supplicant
- * tell madwifi to drop unencrypted eapol frames, it breaks the authentication.
- *
- * Thus, madwifi ignores this parameter.
- */
 static int
 siwauth_rx_unencrypted_eapol(struct net_device *dev,
 	struct iw_request_info *info, struct iw_param *erq, char *buf)
 {
-	return -EOPNOTSUPP;
+	int rxunenc = erq->value;
+	int args[2];
+
+	args[0] = IEEE80211_PARAM_DROPUNENC_EAPOL;
+	if (rxunenc) 
+		args[1] = 1;
+	else
+		args[1] = 0;
+
+	return ieee80211_ioctl_setparam(dev, NULL, NULL, (char*)args);
 }
 
 static int
@@ -4227,8 +4386,8 @@ ieee80211_ioctl_giwencodeext(struct net_device *dev,
 	ext = (struct iw_encode_ext *)extra;
 
 	error = getiwkeyix(vap, erq, &kid);
-	if (error)
-		return -error;
+	if (error < 0)
+		return error;
 
 	wk = &vap->iv_nw_keys[kid];
 	if (wk->wk_keylen > max_key_len)
@@ -4277,8 +4436,8 @@ ieee80211_ioctl_siwencodeext(struct net_device *dev,
 	int error;
 	int kid;
 	error = getiwkeyix(vap, erq, &kid);
-	if (error)
-		return -error;
+	if (error < 0)
+		return error;
 
 	if (ext->key_len > (erq->length - sizeof(struct iw_encode_ext)))
 	   	return -EINVAL;
@@ -4657,6 +4816,10 @@ static const struct iw_priv_args ieee80211_priv_args[] = {
 	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "regclass" },
 	{ IEEE80211_PARAM_REGCLASS,
 	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_regclass" },
+	{ IEEE80211_PARAM_DROPUNENC_EAPOL,
+	  IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, 0, "dropunenceapol" },
+	{ IEEE80211_PARAM_DROPUNENC_EAPOL,
+	  0, IW_PRIV_TYPE_INT | IW_PRIV_SIZE_FIXED | 1, "get_dropunencea" },
 	/*
 	 * NB: these should be roamrssi* etc, but iwpriv usurps all
 	 *     strings that start with roam!
@@ -4728,8 +4891,8 @@ static const iw_handler ieee80211_handlers[] = {
 	(iw_handler) NULL /* kernel code */,		/* SIOCGIWSTATS */
 	(iw_handler) ieee80211_ioctl_setspy,		/* SIOCSIWSPY */
 	(iw_handler) ieee80211_ioctl_getspy,		/* SIOCGIWSPY */
-	(iw_handler) NULL,				/* -- hole -- */
-	(iw_handler) NULL,				/* -- hole -- */
+	(iw_handler) ieee80211_ioctl_setthrspy,		/* SIOCSIWTHRSPY */
+	(iw_handler) ieee80211_ioctl_getthrspy,		/* SIOCGIWTHRSPY */
 	(iw_handler) ieee80211_ioctl_siwap,		/* SIOCSIWAP */
 	(iw_handler) ieee80211_ioctl_giwap,		/* SIOCGIWAP */
 #ifdef SIOCSIWMLME

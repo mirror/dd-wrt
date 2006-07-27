@@ -3,7 +3,7 @@ comment "Atheros 802.11(a/b/g) PCI/Cardbus support"
 
 config ATHEROS
 	tristate "Atheros PCI/Cardbus cards"
-	depends on PCI && NET_RADIO && EXPERIMENTAL && HOTPLUG
+	depends on PCI && NET_RADIO
 	select ATHEROS_HAL
 	select NET80211
        ---help---

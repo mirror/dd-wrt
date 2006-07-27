@@ -46,12 +46,6 @@ export LC_ALL = POSIX
 # OS is the target operating system. Currently only Linux is supported.
 OS=		linux
 
-# TOOLPREFIX is a string that is prepended to all toolchain executables,
-# such as gcc, ld, as, objcopy etc.  This is used for cross-compiling.
-# Default is native compilation.  You can define CROSS_COMPILE instead -
-# it's a more traditional name.
-TOOLPREFIX ?= $(CROSS_COMPILE)
-
 # BUS defines the bus type to which the wireless devices is attached.
 # Currently, the valid BUS types are PCI and AHB.  If BUS is not
 # defined, then, we assume the bus type is PCI
@@ -71,7 +65,7 @@ DESTDIR ?=
 
 # TOOLPATH is the path which contains the crosscompile toolchain (?)
 
-ifeq ($(strip ${BUS}),AHB)
+ifeq ($(strip $(BUS)),AHB)
 # Bus type AHB forces the target platform to be mipsisa32.
 TARGET :=	mipsisa32-be-elf
 
@@ -112,7 +106,7 @@ endif
 
 # KERNELCONF is the name of the file that holds the configuration
 # of the target kernel.
-KERNELCONF ?=	${KERNELPATH}/.config
+KERNELCONF ?=	$(KERNELPATH)/.config
 
 # sanity check: does KERNELCONF exist?
 ifeq ($(wildcard $(KERNELCONF)),)
@@ -121,13 +115,13 @@ endif
 
 # Determine target architecture of the kernel.
 ifeq (,$(ARCH_TARGET))
-ARCH_TARGET=$(shell ${DEPTH}/scripts/get_arch_target.sh $(KERNELCONF))
+ARCH_TARGET=$(shell $(DEPTH)/scripts/get_arch_target.sh $(KERNELCONF))
 ARCH ?= $(word 1,$(ARCH_TARGET))
 TARGET ?= $(word 2,$(ARCH_TARGET))
 endif
 
 ifeq (,$(ARCH))
-$(error Cannot determine kernel architecture, please set ARCH)
+$(error Cannot determine kernel architecture, please check $(KERNELCONF))
 endif
 export ARCH
 export TARGET
@@ -136,14 +130,14 @@ export ARCH_TARGET
 # SYSTEMMAP is the name of the System.map file for the target
 # kernel. This will be needed when DESTDIR is defined in order
 # to run depmod properly.
-SYSTEMMAP ?= 	${KERNELPATH}/System.map
+SYSTEMMAP ?= 	$(KERNELPATH)/System.map
 
-# MODULEPATH nominates the directory where the modules will be
+# KMODPATH nominates the directory where the modules will be
 # installed to
-ifeq ($(strip ${BUS}),AHB)
-MODULEPATH := 	${KERNELPATH}/arch/mips/ar531x/RAMDISK/rootdir/lib/modules/${KERNELRELEASE}/net
+ifeq ($(strip $(BUS)),AHB)
+KMODPATH := 	$(KERNELPATH)/arch/mips/ar531x/RAMDISK/rootdir/lib/modules/$(KERNELRELEASE)/net
 else
-MODULEPATH ?=	/lib/modules/${KERNELRELEASE}/net
+KMODPATH :=	/lib/modules/$(KERNELRELEASE)/net
 endif
 
 # Recognize 2.4.x kernels to support the old build system
@@ -166,20 +160,16 @@ AWK=		awk
 # Path to the HAL source code.
 #
 ifeq ($(HAL),)
-HAL=	${obj}/${DEPTH}/hal
+HAL=	$(obj)/$(DEPTH)/hal
 endif
-#
-# Path to the HAL build area.
-#
-ATH_HAL=${DEPTH}/ath_hal
 #
 # Path to the 802.11 include files.
 #
-WLAN=	${DEPTH}/net80211
+WLAN=	$(DEPTH)/net80211
 #
 # Path to the Atheros device driver.
 #
-ATH=	${DEPTH}/ath
+ATH=	$(DEPTH)/ath
 #
 # Path to the rate control algorithm.
 #
@@ -191,7 +181,7 @@ endif
 # 
 TOOLS=  ${DEPTH}/tools 
 
-COPTS+=	-Werror
+COPTS2+=	-Werror
 INCS=	-include ${obj}/${DEPTH}/include/compat.h -I${obj}/${DEPTH}/include
 
 ifeq ($(strip ${BUS}),AHB)
@@ -203,15 +193,36 @@ endif
 # host machine architecture. You can override TARGET on the make command
 # line or in the environment. See hal/linux/*.inc for the list of
 # supported targets.
-ifeq (,$(wildcard ${HAL}/public/${TARGET}.inc))
-TARGETS=$(basename $(notdir $(wildcard ${HAL}/public/*.inc)))
+ifeq (,$(wildcard $(HAL)/public/$(TARGET).inc))
+TARGETS=$(basename $(notdir $(wildcard $(HAL)/public/*.inc)))
 $(error TARGET $(TARGET) is invalid, valid targets are: $(TARGETS))
 endif
 
-include ${HAL}/public/${TARGET}.inc
-include ${obj}/${DEPTH}/BuildCaps.inc
+# Don't let HAL mess with the toolchain - save toolchain valiables
+save_CC := $(CC)
+save_LD := $(LD)
+save_STRIP := $(STRIP)
+save_OBJCOPY := $(OBJCOPY)
+save_NM := $(NM)
 
-SYMBOLSDIR=${DEPTH}/symbols
+include $(HAL)/public/$(TARGET).inc
+
+# Restore toolchain valiables
+CC := $(save_CC)
+LD := $(save_LD)
+STRIP := $(save_STRIP)
+OBJCOPY := $(save_OBJCOPY)
+NM := $(save_NM)
+
+include $(obj)/$(DEPTH)/BuildCaps.inc
+
+# Ensure correct endianess
+LDFLAGS += $(LDOPTS)
+
+# Filter out compiler options that are not supported by all compilers
+# and that are not needed to ensure compatible architecture and calling
+# conventions.
+COPTS2 := $(filter-out -mshort-load-bytes,$(COPTS2))
 
 
 # The following variables will affect developers only, and are used in the

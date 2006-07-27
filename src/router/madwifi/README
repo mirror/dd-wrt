@@ -1,17 +1,3 @@
-This is a special madwifi version developed by Nbd/OpenWRT and BrainSlayer/DD-WRT
-it contains several new feature on top of the official madwifi distribution and 
-has a also a own special unofficial hal. this version here is still experimental
-and you need know how to handle these new features. (some instructions can be found in ../shared/madwifi)
-
-
-
-(c) 2006 - Sebastian Gottschall / NewMedia-NET GmbH
-
-
-please note. the official license is not touched by our changes
-
-
-================================================================
 MADWIFI: Multimode Atheros Driver for WiFi on Linux (VAP branch)
 ================================================================
 
@@ -20,86 +6,88 @@ MADWIFI: Multimode Atheros Driver for WiFi on Linux (VAP branch)
 Read the file COPYRIGHT for the complete copyright.
 
 
-WARNING: THIS IS A BETA DISTRIBUTION.  THIS SOFTWARE HAS KNOWN PROBLEMS AND
-WARNING: LIMITATIONS THAT WILL BE CORRECTED BEFORE A PRODUCTION RELEASE.
-WARNING: DON'T BLAME US IF THE SOFTWARE EATS YOUR SYSTEM, DESTROYS YOUR DISK
-WARNING: OR MAKES YOUR CORN-FLAKES SOGGY.
+WARNING: THIS IS A BETA DISTRIBUTION.  THIS SOFTWARE HAS KNOWN PROBLEMS
+WARNING: AND LIMITATIONS THAT WILL BE CORRECTED BEFORE A PRODUCTION
+WARNING: RELEASE.  DON'T BLAME US IF THE SOFTWARE EATS YOUR SYSTEM,
+WARNING: DESTROYS YOUR DISK OR MAKES YOUR CORN-FLAKES SOGGY.
 WARNING: USE AT YOUR OWN RISK!
 
 
 Introduction
-============
-This software contains a Linux kernel driver for Atheros-based
-Wireless LAN devices.  The driver supports station, AP, adhoc, and
-monitor modes of operation.  The Atheros driver depends on a
-device-independent implementation of the 802.11 protocols that
-originated in the BSD community (NetBSD in particular).  
+------------
+
+This software contains a Linux kernel driver for Atheros-based Wireless
+LAN devices.  The driver supports station, AP, ad-hoc, and monitor modes
+of operation.  The Atheros driver depends on a device-independent
+implementation of the 802.11 protocols that originated in the BSD
+community (NetBSD in particular).  
 
 The driver functions as a normal network device and uses the Wireless
-Extensions API.  As such normal Linux tools can and should be used
-with it.  Where the wireless extensions are lacking private ioctls
-have been added.
+Extensions API.  As such normal Linux tools can and should be used with
+it.  Where the wireless extensions are lacking private ioctls have been
+added.
 
-There is only one driver included here; it supports PCI, miniPCI
-and Cardbus devices - USB devices are currently not supported by
-this driver!  The driver can be built as a module or linked
-directly into the kernel.  Note however that the net80211 layer is
-device-independent; there is no reason it cannot be used with any
-802.11 device (in fact on BSD systems this is the case).
+There is only one driver included here; it supports PCI, MiniPCI and
+Cardbus devices - USB devices are currently not supported by this
+driver!  The driver can be built as a module or linked directly into the
+kernel.  Note however that the net80211 layer is device-independent;
+there is no reason it cannot be used with any 802.11 device (in fact
+this is the case on BSD systems).
 
 This software is broken into multiple modules.  The Atheros-specific
-device support is found in the ath_pci module; it should be loaded
-when an Atheros wireless device is recognized.  The ath_pci module
-requires an additional device specific module, ath_hal, which is
-described more below.  In addition the driver requires the wlan
-module which contains the 802.11 state machine, protocol support,
-and other device-independent support needed by any 802.11 device.
-This code is derived from work that first appeared in NetBSD and
-then FreeBSD.  The wlan module may also force the loading of
-additional modules for crypto support (wlan_wep, wlan_tkip, wlan_ccmp,
-etc.), for MAC-based ACL support (wlan_acl), and for 802.1x
-authenticator support (wlan_auth, wlan_radius)).  The latter modules
-are only used when operating as an AP.  The crypto modules are
-loaded when keys of that type are created.
+device support is found in the ath_pci module; it should be loaded when
+an Atheros wireless device is recognized.  The ath_pci module requires
+an additional device specific module, ath_hal, which is described more
+below.  In addition the driver requires the wlan module which contains
+the 802.11 state machine, protocol support, and other device-independent
+support needed by any 802.11 device.  This code is derived from work
+that first appeared in NetBSD and then FreeBSD.  The wlan module may
+also force the loading of additional modules for crypto support
+(wlan_wep, wlan_tkip, wlan_ccmp, etc.), for MAC-based ACL support
+(wlan_acl), and for 802.1x authenticator support (wlan_auth,
+wlan_radius).  The latter modules are only used when operating as an AP. 
+The crypto modules are loaded when keys of that type are created.
 
 The ath_hal module contains the Atheros Hardware Access Layer (HAL).
-This code manages much of the chip-specific operation of the driver.
+This code manages much of the chip-specific operation of the driver. 
 The HAL is provided in a binary-only form in order to comply with FCC
 regulations.  In particular, a radio transmitter can only be operated at
-power levels and on frequency channels for which it is approved.  The FCC
-requires that a software-defined radio cannot be configured by a user
-to operate outside the approved power levels and frequency channels.
-This makes it difficult to open-source code that enforces limits on
-the power levels, frequency channels and other parameters of the radio
-transmitter.  See
+power levels and on frequency channels for which it is approved.  The
+FCC requires that a software-defined radio cannot be configured by the
+user to operate outside the approved power levels and frequency
+channels.  This makes it difficult to open-source code that enforces
+limits on the power levels, frequency channels and other parameters of
+the radio transmitter.  See
 http://ftp.fcc.gov/Bureaus/Engineering_Technology/Orders/2001/fcc01264.pdf
 for the specific FCC regulation.  Because the module is provided in a
-binary-only form it is marked "Proprietary"; this means when you load
-it you will see messages that your system is now "tainted".
+binary-only form it is marked "Proprietary"; this means when you load it
+you will see messages that your system is now "tainted".
 
 A detailed discussion of the pros and cons of this design can be found
 at http://madwifi.org/wiki/HAL
 
-If you wish to use this driver on a platform for which an ath_hal
-module is not already provided please contact the author.  Note that
-this is only necessary for new _architectures_; the HAL is not tied to
-any specific version of Linux--in fact the identical HAL binary code
-is used unchanged with other operating systems.
+If you wish to use this driver on a platform for which an ath_hal module
+is not already provided please contact the author.  Note that this is
+only necessary for new _architectures_; the HAL is not tied to any
+specific version of Linux - in fact the identical HAL binary code is
+used unchanged with other operating systems.
+
 
 Atheros Hardware
-================
-There are currently 3 "programming generations" of Atheros 802.11
+----------------
+
+There are currently three "programming generations" of Atheros 802.11
 wireless devices (some of these have multiple hardware implementations
 but otherwise appear identical to users):
 
-5210	supports 11a only
-5211	supports both 11a and 11b
-5212	supports 11a, 11b, and 11g
+  5210	supports 11a only
+  5211	supports both 11a and 11b
+  5212	supports 11a, 11b, and 11g
 
 These parts have been incorporated in a variety of retail products
-including cardbus cards from DLink, Linksys, Netgear, Orinoco,
-Proxim, and 3Com; and mini-pci cards from some of these same vendors.
-In addition many laptop vendors use Atheros mini-pci cards for their
+including Cardbus cards from D-Link, Linksys, Netgear, Orinoco, Proxim,
+and 3Com; and mini-pci cards from some of these same vendors.  In
+addition, many laptop vendors use Atheros mini-pci cards for their
 built-in wireless support.
 
 For an up-to-date list of cards based on Atheros parts visit:
@@ -109,33 +97,37 @@ A list of products that have been reported to be supported by MadWifi
 can be found here:
 http://madwifi.org/wiki/Compatibility
 
-In general, if a device is identified as ``11a only'' it is almost
-certain to contain an Atheros 5210 part in it.  Most retail a+b
-products use the 5211.  Many a+b+g combo products use the 5212
-though other vendors have started to offer dual-band support.  When
-in doubt check the PCI vendor id with a tool like lspci, the Atheros
-vendor id is 0x168c; e.g.
+In general, if a device is identified as ``11a only'', it is almost
+certain to contain an Atheros 5210 part in it.  Most retail a+b products
+use the 5211.  Many a+b+g combo products use the 5212 though other
+vendors have started to offer dual-band support.  When in doubt, check
+the PCI vendor ID with a tool like lspci, the Atheros vendor ID is
+0x168c; e.g.
 
-   00:13.0 Ethernet controller: Unknown device 168c:0012 (rev 01)
+  00:13.0 Ethernet controller: Unknown device 168c:0012 (rev 01)
 
-but beware that come vendors use alternate vendor id's (e.g 3Com, IBM).
-The file hal/ah_devid.h has a list of known PCI id's.
+but beware that some vendors use alternate vendor IDs (e.g 3Com, IBM).
+The file hal/ah_devid.h has a list of known PCI IDs.
+
 
 Building the driver
-===================
+-------------------
+
 The procedure to build the driver is described in the file INSTALL.
 
-Using the driver
-================
-The driver should support any Atheros-based Cardbus or PCI device.
-This version of the driver is managed and controlled by the usual
-Linux tools (ifconfig, iwconfig, iwpriv) plus the wlanconfig tool,
-which is included with the driver in the tools directory and gets
-installed on your system with make install.
 
-First, run "modprobe ath_pci" or the equivalent using "insmod". When
-the driver is successfully loaded it creates two devices, named
-"wifi0" and "ath0". The output from iwconfig should look like this:
+Using the driver
+----------------
+
+The driver should support any Atheros-based Cardbus or PCI device.  This
+version of the driver is managed and controlled by the usual Linux tools
+(ifconfig, iwconfig, iwpriv) plus the wlanconfig tool, which is included
+with the driver in the tools directory and gets installed on your system
+with make install.
+
+First, run "modprobe ath_pci" or the equivalent using "insmod".  When
+the driver is successfully loaded it creates two devices, named "wifi0"
+and "ath0".  The output from iwconfig should look like this:
 
     lo      no wireless extensions.
     
@@ -151,215 +143,235 @@ the driver is successfully loaded it creates two devices, named
 	    Tx excessive retries:0  Invalid misc:0   Missed beacon:0
 
 
-This driver uses wifi%d only as a placeholder for the phyical device, 
+This driver uses wifi%d only as a placeholder for the physical device, 
 and will create one wifi device for each wireless NIC in the system.  
-These wifi devices will reject ifconfig and iwconfig commands. The
-wifi interface provides indicates the existance of a physical Madwifi
-device, but is not of any functional interest other than as a target
-for VAP creation via wlanconfig (see Virtual AP section below).
+These wifi devices will reject ifconfig and iwconfig commands.  The wifi
+interface indicates the existence of a physical MadWifi device, but it
+is not of any functional interest other than as the starting point for
+VAP creation via wlanconfig (see Virtual AP section below).
 
-By default, an ath%d Managed mode interface is also created. This
+By default, an ath%d Managed mode interface is also created.  This
 device is a "virtual ap" (VAP) of the wifi%d physical device, and is
 configurable by the standard networking tools  - ifconfig, iwconfig,
 iwpriv. 
 
-The autocreation function can be manipulated to automatically create
-any one of the other supported device types by using the
-autocreate=mode option when the ath_pci module is first loaded. The
-following example will cause ath%d to be in Master mode:
+The autocreation function can be manipulated to create any one of the
+other supported device types automatically by using the autocreate=mode
+option when the ath_pci module is first loaded.  The following example
+will cause ath%d to be in Master mode:
 
-modprobe ath_pci autocreate=ap
+  modprobe ath_pci autocreate=ap
 
 Autocreation can be disabled:
 
-modprobe ath_pci autocreate=none
+  modprobe ath_pci autocreate=none
 
 Please see the following link for more information:
 http://madwifi.org/wiki/UserDocs/autocreate
 
-Virtual AP's (VAP's) and wlanconfig
-===================================
-An interesting feauture of Madwifi is Virtual AP (VAP) mode, which
-allows the operation of multiple concurrent (virtual) access points,
-and concurrent interfaces running in both AP and station mode. To 
-manipulate VAP's, Madwifi comes with a tool called wlanconfig which
-is used to create and destroy VAPS with various different modes.
 
-The following examples assume that the "autocreate=none" option has
-been parsed to the module at load time. This allows fine control over
-management of VAP's, as the creation of a Managed mode station should
-be delayed until all other required VAP's are first created, as only
-one sta mode VAP can exist per physical device.
+Virtual APs (VAPs) and wlanconfig
+---------------------------------
+
+An interesting feature of MadWifi is Virtual AP (VAP) mode, which allows
+the operation of multiple concurrent (virtual) access points, and
+concurrent interfaces running in both AP and station mode.  To 
+manipulate VAP's, MadWifi comes with a tool called wlanconfig which is
+used to create and destroy VAPS with various different modes.
+
+The following examples assume that the "autocreate=none" option has been
+parsed to the module at load time.  This allows fine control over
+management of VAP's, as the creation of a Managed mode station should be
+delayed until all other required VAP's are first created, as only one
+sta mode VAP can exist per physical device.
 
 To create an access point, use:
 
-wlanconfig ath0 create wlandev wifi0 wlanmode ap
+  wlanconfig ath0 create wlandev wifi0 wlanmode ap
 
 To create an access point and a station, use:
 
-wlanconfig ath0 create wlandev wifi0 wlanmode ap
-wlanconfig ath1 create wlandev wifi0 wlanmode sta nosbeacon
+  wlanconfig ath0 create wlandev wifi0 wlanmode ap
+  wlanconfig ath1 create wlandev wifi0 wlanmode sta nosbeacon
 
-To create APs which share a single MAC address, use the -bssid flag
-when creating the VAPs:
+To create APs that share a single MAC address, use the -bssid flag when
+creating the VAPs:
 
-wlanconfig ath0 create wlandev wifi0 wlanmode ap -bssid
-wlanconfig ath1 create wlandev wifi0 wlanmode ap -bssid
+  wlanconfig ath0 create wlandev wifi0 wlanmode ap -bssid
+  wlanconfig ath1 create wlandev wifi0 wlanmode ap -bssid
 
 Finally, to destroy a VAP, issue the command:
 
-wlanconfig ath0 destroy
+  wlanconfig ath0 destroy
 
-For more information about Virtual AP's, please refer to the
-users-guide document distributed with the Madwifi source code.
+For more information about Virtual AP's, please refer to the users-guide
+document distributed with the MadWifi source code.
 
-For more information about wlanconfig, see its manpage, it is
-installed when you run "make install".
+For more information about wlanconfig, see its manpage, it is installed
+when you run "make install".
+
 
 Operating Mode
-==============
-To lock the operating mode to one of 11a, 11b, or 11g if you have
-a multi-mode card, issue one of the following commands:
-iwpriv ath0 mode 1		lock operation to 11a only
-iwpriv ath0 mode 2		lock operation to 11b only
-iwpriv ath0 mode 3		lock operation to 11g only
-iwpriv ath0 mode 0		autoselect from 11a/b/g (default)
+--------------
+
+If you have a multi-mode card, use one of the following commands to lock
+the operating mode to one of 11a, 11b, or 11g:
+
+  iwpriv ath0 mode 1		lock operation to 11a only
+  iwpriv ath0 mode 2		lock operation to 11b only
+  iwpriv ath0 mode 3		lock operation to 11g only
+  iwpriv ath0 mode 0		autoselect from 11a/b/g (default)
+
 
 Debugging
-=========
+---------
+
 There are some debugging mechanisms for the curious/masochistic:
 
-sysctl -w dev.ath.debug=0xXXX	enable console msgs from the driver
-sysctl -w net.wlan0.debug=0xYYY	enable console msgs from the wlan module
+ sysctl -w dev.ath.debug=0xXXX    enable console msgs from the driver
+ sysctl -w net.wlan0.debug=0xYYY  enable console msgs from the wlan module
 
-The values specified for 0XXX and 0xYYY are bit masks that enable debugging
-in various parts of each module.  For the wlan module these values are
-found in the file net80211/ieee80211_var.h (search for MSG_).  For the
-ath driver look in ath/if_ath.c (search for ATH_DEBUG).  Beware that
-enabling some debugging msgs can affect the operation of the software
-by slowing it down too much.
+The values specified for 0XXX and 0xYYY are bit masks that enable
+debugging in various parts of each module.  For the wlan module these
+values are found in the file net80211/ieee80211_var.h (search for MSG_). 
+For the ath driver look in ath/if_ath.c (search for ATH_DEBUG).  Beware
+that enabling some debugging msgs can affect the operation of the
+software by slowing it down too much.
 
-A more comfortable way to manipulate the debug settings is to make use of
-athdebug and 80211debug tools. Call them with the parameter "-h" to learn
-how they are used, or refer to the appropriate man pages.
+A more comfortable way to manipulate the debug settings is to make use
+of athdebug and 80211debug tools.  Call them with the parameter "-h" to
+learn how they are used, or refer to the appropriate man pages.
 
-In addition the programs tools/athstats and tools/80211stats can
-be very useful in understanding what is going on.  In particular,
-something like:
+In addition the programs tools/athstats and tools/80211stats can be very
+useful in understanding what is going on.  In particular, something like
 
-trouble% athstats 1
+  athstats 1
 
 will give a running display of the most interesting statistics sampled
 every 1 second.  Running athstats without any options will display a
 summary of all non-zero statistics from the time the driver was loaded.
 By default the ath0 device is used; to override this use the -i option.
 
-A wiki page describes common Madwifi debugging methods here:
+A wiki page describes common MadWifi debugging methods here:
 http://madwifi.org/wiki/DevDocs/AthDebug
 
+
 Security/Crypto Support
-=======================
+-----------------------
+
 All Atheros devices implement fixed/shared key WEP in hardware.  Newer
 Atheros hardware is capable of much more (e.g. AES, TKIP and Michael).
 When hardware support is not available for a cipher the net80211 layer
 will automatically do the work in software.
 
 WPA/802.11i station operation (aka supplicant) is supported using Jouni
-Malinen's wpa_supplicant program.  This can obtained from:
+Malinen's wpa_supplicant program.  This can be obtained from:
 
 http://hostap.epitest.fi/wpa_supplicant/
 
 wpa_supplicant also supports a wide range of 802.1x EAP methods, either
-together with WPA/WPA2 or without; consult the wpa_supplicant documentation
-for an up to date list.
+together with WPA/WPA2 or without; consult the wpa_supplicant
+documentation for an up to date list.
+
+MadWifi supports the use of the Wireless Extensions ioctl's equal to or
+greater than WE18 (linux 2.6.15).  When using wpa_supplicant with a
+recent linux kernel, it is preferred to use the 'wext' driver backend,
+rather than the private MadWifi ioctl's.  This means that '-D wext'
+option should be used with wpa_supplicant when the linux kernel version
+is 2.6.15 or above.
 
 NOTE: the in-kernel authenticator is being replaced; to use it you need
       to follow the directions in net80211/Makefile.
 
-When operating as an AP you can use fixed/shared key ciphers and/or
+When operating as an AP, you can use fixed/shared key ciphers and/or
 802.1x authentication.  The authentication mode is specified using
 iwpriv:
 
-iwpriv ath0 authmode 1		# open authenticatoin
-iwpriv ath0 authmode 2		# shared key authentication
-iwpriv ath0 authmode 3		# 802.1x authentication
+  iwpriv ath0 authmode 1		# open authentication
+  iwpriv ath0 authmode 2		# shared key authentication
+  iwpriv ath0 authmode 3		# 802.1x authentication
 
-To use the 802.1x authenticator you must install and configure the hostapd
-program from the same place you got wpa_supplicant from. Consult the hostapd
-documentation for further information.
+To use the 802.1x authenticator you must install and configure the
+hostapd program from the same place you got wpa_supplicant from. 
+Consult the hostapd documentation for further information.
+
 
 Live Monitoring and Writing Raw 802.11 Packets
-==============================================
-The driver can be used in a live "monitor" mode, by creating a monitor VAP
-and sending packets to it. All packets sent to a monitor mode VAP will
-bypass any state machine.
+----------------------------------------------
+
+The driver can be used in a live "monitor" mode, by creating a monitor
+VAP and sending packets to it.  All packets sent to a monitor mode VAP
+will bypass any state machine.
 
 To create a monitor VAP, use:
 
-wlanconfig ath1 create wlandev wifi0 wlanmode monitor
-ifconfig ath1 up
+  wlanconfig ath1 create wlandev wifi0 wlanmode monitor
+  ifconfig ath1 up
 
-Finally, you can choose to receive packets on ath1 in a number of 
-different packet formats:
+Finally, you can choose to receive packets on ath1 in several different
+packet formats:
 
-echo '801' > /proc/sys/net/ath1/dev_type	# only 802.11 headers
-echo '802' > /proc/sys/net/ath1/dev_type	# prism2 headers
-echo '803' > /proc/sys/net/ath1/dev_type	# radiotap headers
-echo '804' > /proc/sys/net/ath1/dev_type 	# atheros descriptors
+  echo '801' > /proc/sys/net/ath1/dev_type	# only 802.11 headers
+  echo '802' > /proc/sys/net/ath1/dev_type	# prism2 headers
+  echo '803' > /proc/sys/net/ath1/dev_type	# radiotap headers
+  echo '804' > /proc/sys/net/ath1/dev_type 	# atheros descriptors
+
 
 Known Problems
-==============
+--------------
+
 [All these problems are to be fixed in future revisions.]
 
-1. Adhoc mode is broken; symptoms are intermittent operation.
+1. Ad-hoc mode is broken; symptoms are intermittent operation.
 
 Other issues might be mentioned in our ticket tracker:
 http://madwifi.org/report/1
 
+
 Getting Support
-===============
-User support is provided via the madwifi-users mailing list, which can be
-reached at:
+---------------
 
-    madwifi-users@lists.sourceforge.net
+User support is provided via the madwifi-users mailing list, which can
+be reached at:
 
-Contact this mailing list if you need help in getting your installation up
-and running. It is suggested that you subscribe to the list prior to sending
-your request (see below).
+  madwifi-users@lists.sourceforge.net
 
-We also offer an IRC channel that might be a better help in urgent cases.
+Contact this mailing list if you need help in getting your installation
+up and running.  We suggest that you subscribe to the list before
+sending your request (see below).
 
-Learn more about the different ways to get support by visiting:
+We also offer an IRC channel that might be a better help in urgent
+cases.  Learn more about the different ways to get support by visiting:
 
-    http://madwifi.org/wiki/Support
-
+  http://madwifi.org/wiki/Support
 
 When sending a support request or problem report be sure to include the
-version of the driver and the part identification the driver prints to the
-console when the module is loaded.  For example:
+version of the driver and the part identification the driver prints to
+the console when the module is loaded.  For example:
 
-ath_hal: 0.8.2.0
-wlan: 0.7.0.0
-ath_pci: 0.8.2.0
-PCI: Found IRQ 11 for device 00:13.0
-ath0: 11a rates: 6Mbps 9Mbps 12Mbps 18Mbps 24Mbps 36Mbps 48Mbps 54Mbps
-ath0: 11b rates: 1Mbps 2Mbps 5.5Mbps 11Mbps
-ath0: 802.11 address: 00:05:5d:6f:99:5f
-ath0: Atheros 5211: mem=0xfebf0000, irq=11
+  ath_hal: 0.8.2.0
+  wlan: 0.7.0.0
+  ath_pci: 0.8.2.0
+  PCI: Found IRQ 11 for device 00:13.0
+  ath0: 11a rates: 6Mbps 9Mbps 12Mbps 18Mbps 24Mbps 36Mbps 48Mbps 54Mbps
+  ath0: 11b rates: 1Mbps 2Mbps 5.5Mbps 11Mbps
+  ath0: 802.11 address: 00:05:5d:6f:99:5f
+  ath0: Atheros 5211: mem=0xfebf0000, irq=11
 
 This says the HAL module is version 0.8.2, the wlan module is version
-0.7, the driver is version 0.8.2 and the hardware uses an Atheros
-5211 chip (which supports 11a and 11b modes).
+0.7, the driver is version 0.8.2 and the hardware uses an Atheros 5211
+chip (which supports 11a and 11b modes).
 
 We will try to respond in a timely manner but understand this software
-is provided as-is; i.e. with no promise of support.
+is provided as-is, without any promise of support.
 
 
 Feedback and Contributions
-==========================
-Reports about reproducable bugs, feature requests and patches should be
+--------------------------
+
+Reports about reproducible bugs, feature requests and patches should be
 submitted in the form of a trouble ticket:
 
-    http://madwifi.org/newticket
+  http://madwifi.org/newticket
         
 Fixes and enhancements are encouraged. 

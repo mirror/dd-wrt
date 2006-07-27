@@ -1,40 +1,34 @@
 #!/bin/sh
 
-if [ "$#" -ne 1 ] ; then
+if [ -z "${1}" ] ; then
 	echo "Purpose:"
-	echo "Locate all madwifi-related kernel modules in a given directory"
+	echo "Locate all madwifi-related kernel modules for a given kernel"
 	echo "(including all its subdirectories)."
 	echo
 	echo "Usage:"
-	echo "$0 <dir>"
+	echo "$0 <kernelrelease> [destdir]"
 	echo
-	echo "<dir>: name of the directory used for the search"
+	echo "<kernelrelease>: the kernel release that madwifi has been compiled for"
+	echo "[destdir]: destination directory for the compiled madwifi modules (optional)"
 	echo
 	exit 1
 fi
 
-SCRIPTS=$(dirname $0)
-if [ -z "$SCRIPTS" ]; then
-	SCRIPTS=.
+KVERS="${1}"
+
+if [ -n "${2}" ]; then
+	KDEST="${2}"
+else
+	KDEST=""
 fi
 
-if [ -e "${SCRIPTS}"/../noask ]; then
-	QUIET="noask"
-fi
+SEARCH="${KDEST}/lib/*/${KVERS}"
 
-SEARCH=${1}
-
-if [ -d "${SEARCH}" ]; then
-	PATTERN="^.*\/(ath_(hal|pci|rate_(onoe|amrr|sample))\.k?o)|(wlan(_(acl|ccmp|scan_(ap|sta)|tkip|wep|xauth))?\.k?o)$"
-	OLD_MODULES=$(find ${SEARCH} -type f -regex '.*\.k?o' 2>/dev/null | grep -w -E "${PATTERN}")
-fi
+PATTERN="^.*\/(ath_(hal(|.mod)|pci|rate_(onoe|amrr|sample))\.k?o)|(wlan(_(acl|ccmp|scan_(ap|sta)|tkip|wep|xauth))\.k?o)|((ah_osdep|hal)\.o)$"
+OLD_MODULES=$(find ${SEARCH} -type f -regex '.*\.k?o' 2>/dev/null | grep -w -E "${PATTERN}")
 
 if [ -n "${OLD_MODULES}" ]; then
-	if [ "${QUIET}" = "noask" ]; then
-		rm -f ${OLD_MODULES}
-		exit
-	fi
-	echo
+	echo ""
 	echo "WARNING:"
 	echo "It seems that there are modules left from previous MadWifi installations."
 	echo "If you are unistalling the MadWifi modules please press \"r\" to remove them."

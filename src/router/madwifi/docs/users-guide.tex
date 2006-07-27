@@ -172,7 +172,7 @@ manipulates only one key.  Thus, to change all 4 keys, 4 separate
 commands must be used.
 
 The key value can be specified as is in the hexadecimal form.  If an
-ASCII string is used for the key value, perpend ``\mytt{s:}'' to the
+ASCII string is used for the key value, prepend ``\mytt{s:}'' to the
 key.  To change a key other than the current key, prepend
 ``[\mytt{index}]'' to the key value, where \mytt{index} is the number of
 the key you wish to change.  To select which key is active, use
@@ -338,7 +338,7 @@ prefix.
 \end{example}
 \begin{example}
   Now, we wish to create two AP VAPs on device \mytt{wifi0}.  Both
-  devices will have a the same MAC address cloned from the underlying
+  devices will have the same MAC address cloned from the underlying
   device.  The first VAP will be \mytt{ath0} and the second VAP will
   be \mytt{ath1}.
   \bv
@@ -387,7 +387,7 @@ This command takes a 256 byte input parameter which specifies?
 
 \subsubsection{\mytt{getoptie} - Get Optional Information Element}
 \argdesc{0}{1}{N/A}{??}
-This commands gets the optional information element.  The information
+This command gets the optional information element.  The information
 element is returned as 256 bytes.
 
 \subsubsection{\mytt{mode} - Set Wireless Mode}
@@ -778,7 +778,7 @@ used.
 This command selects the key management algorithm used.  A single
 parameter is passed into the driver indicating which algorithm to use.
 Table~\ref{tab:keymgtalgs} lists the parameter value and the
-corresponding algorithm.  This command is used used by \mytt{hostapd}
+corresponding algorithm.  This command is used by \mytt{hostapd}
 and \mytt{wpa\_supplicant}.
 \begin{table}
   \centering
@@ -1032,6 +1032,23 @@ their associated actions.
   list on \mytt{ath0}.
   \bv
   \cmd{iwpriv ath0 maccmd 2}
+  \ev
+\end{example}
+
+\subsubsection{\mytt{kickmac} - Disassociate an associated station}
+\argdesc{1}{0}{N/A}{No}
+This command takes a single argument which is the MAC address of a 
+currently associated client. The client is immediately sent a disassociate
+frame (with an unspecified reason). There is nothing to prevent the
+client from immediately reassociating. If you are wishing to permanently
+remove a client from the access point you will need to also make use of the 
+\mytt{maccmd}, \mytt{addmac} and \mytt{delmac} commands to configure the 
+appropriate ACL entries.
+\begin{example}
+  The following command immediately disassociates the client with MAC
+  address 00:03:7f:03:42:3f.
+  \bv
+  \cmd{iwpriv ath0 kickmac 00:03:7f:03:42:3f}
   \ev
 \end{example}
 

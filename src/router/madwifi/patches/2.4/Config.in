@@ -1,4 +1,4 @@
-dep_bool '   Atheros 802.11(a/b/g) PCI/Cardbus support' CONFIG_ATHEROS $CONFIG_PCI
+dep_bool '   Atheros 802.11(a/b/g) PCI/Cardbus support' CONFIG_ATHEROS $CONFIG_PCI $CONFIG_NET_RADIO
 if [ "$CONFIG_ATHEROS" = "y" ]; then
    define_bool CONFIG_ATHEROS_HAL y
    define_bool CONFIG_NET80211 y

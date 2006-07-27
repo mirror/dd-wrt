@@ -6,8 +6,8 @@
 [-i device] +/\- bitmap
 .SH "DESCRIPTION"
 Set and clear debug bitmaps for the madwifi ath device subsystem. Each argument
-is a bitmap (or alias) prefixed by either "-" to clear or "+" to set the
-bitmap.
+is a bitmap or its alias. If a bitmap alias is used then it must be prefixed by 
+either "-" to clear or "+" to set the corresponding bitmap.
 .PP
 All debugging output can be enabled with the 0xffffffff bitmap, while 0x0
 disables all debug output.

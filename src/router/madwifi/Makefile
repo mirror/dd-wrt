@@ -39,67 +39,75 @@
 #
 # Makefile for the HAL-based Atheros driver.
 #
+
+ifeq ($(obj),)
+obj=	.
+endif
+
 DEPTH=	.
 
-include Makefile.inc
+include $(obj)/Makefile.inc
 
-# NB: the order is important here
-DIRS_MODULES=	${ATH_HAL} ${WLAN} ${ATH_RATE} ${ATH}
+DIRS_MODULES = $(ATH) $(ATH_RATE) $(WLAN)
 
-# export for make-release.bash
-export ATH_HAL
+obj-y := ath/ $(ATH_RATE)/ net80211/
 
 all: modules tools
 
 modules: configcheck svnversion.h
-	mkdir -p ${SYMBOLSDIR}
-	for i in ${DIRS_MODULES}; do \
+ifdef LINUX24
+	for i in $(DIRS_MODULES); do \
 		$(MAKE) -C $$i || exit 1; \
 	done
+else
+	$(MAKE) -C $(KERNELPATH) SUBDIRS=$(shell pwd) modules
+endif
 
 .PHONY: svnversion.h
 svnversion.h:
-	if [ -d .svn ]; then \
+	@if [ -d .svn ]; then \
 		ver=`svnversion -nc . | sed -e 's/^[^:]*://;s/[A-Za-z]//'`; \
 		echo "#define SVNVERSION \"svn r$$ver\"" > $@; \
 	elif [ -s SNAPSHOT ]; then \
 		ver=`sed -e '/^Revision: */!d;s///;q' SNAPSHOT`; \
 		echo "#define SVNVERSION \"svn r$$ver\"" > $@; \
+	else \
+		touch svnversion.h; \
 	fi; \
 
 # conflicts with the 'tools' subdirectory
 .PHONY: tools
 tools:
-	$(MAKE) -C ${TOOLS} all || exit 1
+	$(MAKE) -C $(TOOLS) all || exit 1
 
 install: install-modules install-tools
 
 install-modules:
 	@# check if there are modules left from an old installation
 	@# might cause make to abort the build
-	sh scripts/find-madwifi-modules.sh $(DESTDIR)/lib/modules/$(KERNELRELEASE)
+	sh scripts/find-madwifi-modules.sh $(KERNELRELEASE) $(DESTDIR)
 
-	for i in ${DIRS_MODULES}; do \
+	for i in $(DIRS_MODULES); do \
 		$(MAKE) -C $$i install || exit 1; \
 	done
 ifeq ($(DESTDIR),)
-	(export MODULEPATH=${MODULEPATH}; /sbin/depmod -ae)
+	(export KMODPATH=$(KMODPATH); /sbin/depmod -ae)
 endif
 
 install-tools:
-	$(MAKE) -C ${TOOLS} install || exit 1
+	$(MAKE) -C $(TOOLS) install || exit 1
 
 uninstall:
-	sh scripts/find-madwifi-modules.sh $(DESTDIR)/lib/modules/$(KERNELRELEASE)
-	$(MAKE) -C ${TOOLS} uninstall
+	sh scripts/find-madwifi-modules.sh $(KERNELRELEASE) $(DESTDIR)
+	$(MAKE) -C $(TOOLS) uninstall
 
 clean:
-	for i in ${DIRS_MODULES}; do \
+	for i in $(DIRS_MODULES); do \
 		$(MAKE) -C $$i clean; \
 	done
-	-$(MAKE) -C ${TOOLS} clean
-	rm -rf ${SYMBOLSDIR}
-	rm -f svnversion.h
+	-$(MAKE) -C $(TOOLS) clean
+	rm -rf .tmp_versions
+	rm -f Modules.symvers svnversion.h
 
 info:
 	@echo "The following settings will be used for compilation:"
@@ -107,15 +115,15 @@ info:
 	@echo "OS           : $(OS)"
 	@echo "ARCH         : $(ARCH)"
 	@echo "BUS          : $(BUS)"
-	@if [ ! -z "$(TOOLPATH)" ]; then \
+	@if [ -n "$(TOOLPATH)" ]; then \
 	    @echo "TOOLPATH     : $(TOOLPATH)"; \
 	fi	
 	@echo "KERNELRELEASE: $(KERNELRELEASE)"
 	@echo "KERNELPATH   : $(KERNELPATH)"
 	@echo "KERNELCONF   : $(KERNELCONF)"
-	@echo "MODULEPATH   : $(MODULEPATH)"
+	@echo "KMODPATH     : $(KMODPATH)"
 	@echo "KMODSUF      : $(KMODSUF)"
-	@if [ ! -z "$(DESTDIR)" ]; then \
+	@if [ -n "$(DESTDIR)" ]; then \
 	    echo "DESTDIR      : $(DESTDIR)"; \
 	    echo "SYSTEMMAP    : $(SYSTEMMAP)"; \
 	fi
@@ -157,6 +165,15 @@ configcheck: sanitycheck
 	    echo "Please enable sysctl support."; \
 	    exit 1; \
 	fi
+	
+ifneq ($(strip $(BUS)),AHB)
+	@# check PCI support
+	@if [ -z "$(CONFIG_PCI)" ]; then \
+	    echo "FAILED"; \
+	    echo "Please enable PCI support."; \
+	    exit 1; \
+	fi
+endif
 	
 	@# check wireless extensions support is enabled
 	@if [ -z "$(CONFIG_NET_RADIO)" ]; then \

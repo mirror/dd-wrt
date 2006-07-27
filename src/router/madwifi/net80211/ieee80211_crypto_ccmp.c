@@ -105,12 +105,6 @@ ccmp_attach(struct ieee80211vap *vap, struct ieee80211_key *k)
 
 	ctx->cc_vap = vap;
 	ctx->cc_ic = vap->iv_ic;
-	ctx->cc_tfm = crypto_alloc_tfm("aes", 0);
-	if (ctx->cc_tfm == NULL) {
-		FREE(ctx, M_DEVBUF);
-		_MOD_DEC_USE(THIS_MODULE);
-		return NULL;
-	}
 	return ctx;
 }
 
@@ -137,8 +131,20 @@ ccmp_setkey(struct ieee80211_key *k)
 			__func__, k->wk_keylen, 128 / NBBY);
 		return 0;
 	}
-	if (k->wk_flags & IEEE80211_KEY_SWCRYPT)
+	
+	if (k->wk_flags & IEEE80211_KEY_SWCRYPT) {
+		if (ctx->cc_tfm == NULL)
+			ctx->cc_tfm = crypto_alloc_tfm("aes", 0);
+		
+		if (ctx->cc_tfm == NULL) {
+			IEEE80211_DPRINTF(ctx->cc_vap, IEEE80211_MSG_CRYPTO,
+				"%s: Tried to add a software crypto key, but software crypto not available\n",
+				__func__);
+			return 0;
+		}
+		
 		crypto_cipher_setkey(ctx->cc_tfm, k->wk_key, k->wk_keylen);
+	}
 	return 1;
 }
 

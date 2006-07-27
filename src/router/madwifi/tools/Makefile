@@ -26,25 +26,25 @@
 #
 DEPTH=	..
 
-# TOOLPREFIX is a string that is prepended to all toolchain executables,
-# such as gcc, ld, as, objcopy etc.  This is used for cross-compiling.
-# Default is native compilation.  You can define CROSS_COMPILE instead -
-# it's a more traditional name.
-TOOLPREFIX ?= $(CROSS_COMPILE)
+# USER_CROSS_COMPILE is a string that is prepended to all toolchain
+# executables, such as gcc, ld, as, objcopy etc.  This is used for
+# cross-compiling userspace binaries.  If not defined, CROSS_COMPILE
+# is used.
+USER_CROSS_COMPILE ?= $(CROSS_COMPILE)
+STRIP ?= $(USER_CROSS_COMPILE)strip
+CC = $(USER_CROSS_COMPILE)gcc
 
 BINDIR ?= /usr/local/bin
 MANDIR ?= /usr/local/man
-STRIP ?= ${TOOLPREFIX}strip
-CC = ${TOOLPREFIX}gcc
 
 #
 # Path to the HAL source code.
 #
 ifeq ($(HAL),)
-HAL=   ${DEPTH}/hal
+HAL=   $(DEPTH)/hal
 endif
 
-INCS=  -include ${DEPTH}/include/compat.h
+INCS=  -include $(DEPTH)/include/compat.h
 
 
 ALL=	athstats 80211stats athkey athchans athctrl \
@@ -53,7 +53,7 @@ ALL=	athstats 80211stats athkey athchans athctrl \
 all:	${ALL}
 
 INCS+=	-I. -I${HAL} -I${DEPTH}
-CFLAGS=	-g -O2 -Wall
+CFLAGS=	-g -Os -Wall ${COPTS}
 ALL_CFLAGS= ${CFLAGS} ${INCS}
 LDFLAGS=
 

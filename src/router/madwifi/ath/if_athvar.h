@@ -56,7 +56,7 @@
 #define ATH_INIT_TQUEUE(a,b,c)		tasklet_init((a),(b),(unsigned long)(c))
 #define ATH_SCHEDULE_TQUEUE(a,b)	tasklet_schedule((a))
 typedef unsigned long TQUEUE_ARG;
-#define mark_bh(a)
+#define mark_bh(a) do {} while (0)
 #else					/* immediate work queue */
 #define ATH_TQ_STRUCT tq_struct
 #define ATH_INIT_TQUEUE(a,b,c)		INIT_TQUEUE(a,b,c)
@@ -153,7 +153,7 @@ typedef void irqreturn_t;
 #define	ATH_RXBUF	40		/* number of RX buffers */
 #define	ATH_TXBUF	200		/* number of TX buffers */
 
-#define	ATH_BCBUF	4		/* number of beacon buffers */
+#define	ATH_BCBUF	16		/* number of beacon buffers */
 
 /* free buffer threshold to restart net dev */
 #define	ATH_TXBUF_FREE_THRESHOLD  (ATH_TXBUF / 20) 
@@ -391,24 +391,6 @@ struct ath_txq {
 					 * should generate int on this txq.
 					 */
 	/*
-	 * State for patching up CTS when bursting.
-	 */
-	 
-	/* virtual addr of last buffer*/
-	struct  ath_buf  *axq_linkbuf;
-	
-	/* first desc of the last descriptor 
-	 * that contains CTS 
-	 */
-	struct  ath_desc *axq_lastdsWithCTS;
-	
-	/* final desc of the gating desc 
-	 * that determines whether lastdsWithCTS has 
-	 * been DMA'ed or not
-	 */
-	struct  ath_desc *axq_gatingds;
-	
-	/*
 	 * Staging queue for frames awaiting a fast-frame pairing.
 	 */
 	TAILQ_HEAD(axq_headtype, ath_buf) axq_stageq;
@@ -464,7 +446,6 @@ struct ath_vap {
 	STAILQ_INSERT_TAIL( &(_tq)->axq_q, (_elm), _field); \
 	(_tq)->axq_depth++; \
 	(_tq)->axq_totalqueued++; \
-	(_tq)->axq_linkbuf = (_elm); \
 } while (0)
 #define ATH_TXQ_REMOVE_HEAD(_tq, _field) do { \
 	STAILQ_REMOVE_HEAD(&(_tq)->axq_q, _field); \
@@ -475,11 +456,9 @@ struct ath_vap {
 	(_tqd)->axq_depth += (_tqs)->axq_depth; \
 	(_tqd)->axq_totalqueued += (_tqs)->axq_totalqueued; \
 	(_tqd)->axq_link = (_tqs)->axq_link; \
-	(_tqd)->axq_linkbuf = (_tqs)->axq_linkbuf ; \
 	STAILQ_CONCAT(&(_tqd)->axq_q,&(_tqs)->axq_q); \
 	(_tqs)->axq_depth=0; \
 	(_tqs)->axq_totalqueued = 0; \
-	(_tqs)->axq_linkbuf = NULL; \
 	(_tqs)->axq_link = NULL; \
 } while (0)
 
@@ -551,6 +530,7 @@ struct ath_softc {
 	HAL_CHANNEL sc_curchan;			/* current h/w channel */
 	u_int8_t sc_curbssid[IEEE80211_ADDR_LEN];
 	u_int8_t	sc_rixmap[256];			/* IEEE to h/w rate table ix */
+	
 	struct {
 		u_int8_t	ieeerate;		/* IEEE rate */
 		u_int8_t	flags;			/* radiotap flags */
@@ -656,6 +636,9 @@ struct ath_softc {
 	u_int32_t sc_dturbo_bw_turbo;		/* bandwidth threshold */
 #endif
 	u_int sc_slottimeconf;			/* manual override for slottime */
+	u_int8_t sc_channelbw;
+	u_int8_t sc_countrycode;
+	
 };
 
 typedef void (*ath_callback) (struct ath_softc *);

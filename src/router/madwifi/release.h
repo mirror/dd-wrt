@@ -35,6 +35,5 @@
  *
  * $Id: release.h 1590 2006-05-22 04:39:55Z mrenzmann $
  */
-#include "svnversion.h"
-#define	RELEASE_TYPE	"BETA"
-#define RELEASE_VERSION	SVNVERSION
+#define	RELEASE_TYPE	"RELEASE"
+#define RELEASE_VERSION	"0.9.3.DD-WRT"

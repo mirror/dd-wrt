@@ -1,29 +1,4 @@
-/*
-  * This program is derived from code bearing the following Copyright(s)
-  */
- /*                                                        -*- linux-c -*-
-  *   _  _ ____ __ _ ___ ____ ____ __ _ _ _ _ |
-  * .  \/  |--| | \|  |  |--< [__] | \| | _X_ | s e c u r e  s y s t e m s
-  *
-  * .vt|ar5k - PCI/CardBus 802.11a WirelessLAN driver for Atheros AR5k chipsets
-  *
-  * Copyright (c) 2002, .vantronix | secure systems
-  *                     and Reyk Floeter <reyk@va...>
-  *
-  * This program is free software ; you can redistribute it and/or modify
-  * it under the terms of the GNU General Public License as published by
-  * the Free Software Foundation ; either version 2 of the License, or
-  * (at your option) any later version.
-  *
-  * This program is distributed in the hope that it will be useful,
-  * but WITHOUT ANY WARRANTY ; without even the implied warranty of
-  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-  * GNU General Public License for more details.
-  *
-  * You should have received a copy of the GNU General Public License
-  * along with this program ; if not, write to the Free Software
-  * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
-  */
+/* Mjam Tool. SeG */
  
  #include <sys/mman.h>
  #include <stdio.h>

@@ -429,6 +429,15 @@ ath_rate_detach(struct ath_ratectrl *arc)
 }
 EXPORT_SYMBOL(ath_rate_detach);
 
+#ifdef CONFIG_SYSCTL
+void
+ath_rate_dynamic_proc_register(struct ieee80211vap *vap)
+{		
+        /* Onoe rate module reports no statistics */
+}
+EXPORT_SYMBOL(ath_rate_dynamic_proc_register);
+#endif /* CONFIG_SYSCTL */
+
 static int minrateinterval = 500;	/* 500ms */
 static int maxpercent = 100;		/* 100% */
 static int minpercent = 0;		/* 0% */

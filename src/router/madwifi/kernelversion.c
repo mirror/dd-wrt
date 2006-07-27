@@ -7,4 +7,10 @@
  * $Id: kernelversion.c 1426 2006-02-01 20:07:11Z mrenzmann $
  */
 #include <linux/version.h>
+
+/* Linux 2.6.18+ uses <linux/utsrelease.h> */
+#ifndef UTS_RELEASE
+#include <linux/utsrelease.h>
+#endif
+
 char *uts_release = UTS_RELEASE;
