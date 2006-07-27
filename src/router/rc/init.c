@@ -77,7 +77,8 @@ set_term (int fd)
 
 
 
-int console_init ()
+int
+console_init ()
 {
   int fd;
 
@@ -142,7 +143,7 @@ ddrun_shell (int timeout, int nowait)
 	signal (sig, SIG_DFL);
 
       /* Reopen console */
-      console_init();
+      console_init ();
 //      if (ret) exit(0); //no console running
       /* Pass on TZ */
       snprintf (tz, sizeof (tz), "TZ=%s", getenv ("TZ"));
