@@ -1254,14 +1254,14 @@ start_wan (int status)
 
 #ifdef HAVE_PPPOE
 #ifdef HAVE_RB500
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
-					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "eth0";
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname","") ? nvram_safe_get ("pppoe_wan_ifname") : "eth0";
 #else
-  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname",
-					   "") ?
-    nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
 
+#ifdef HAVE_XSCALE
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "ixp1";
+#else
+  char *pppoe_wan_ifname = nvram_invmatch ("pppoe_wan_ifname", "") ? nvram_safe_get ("pppoe_wan_ifname") : "vlan1";
+#endif
   /* Rewritten by Eko, May 10, 2006 */
   int brand = getRouterBrand ();
   switch (brand)
