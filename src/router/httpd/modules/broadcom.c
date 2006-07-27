@@ -4158,7 +4158,7 @@ char ssid[64];
 sprintf(akm,"%s_akm",prefix);
 sprintf(ssid,"%s_ssid",prefix);
 websWrite(wp,"<div class=\"setting\">\n");
-websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script> %s</div>\n",prefix);
+websWrite(wp,"<div class=\"label\"><script type=\"text/javascript\">Capture(share.encrypt)</script>&nbsp;<script type=\"text/javascript\">Capture(share.intrface)</script>&nbsp;%s</div>\n",prefix);
 websWrite(wp,"<script type=\"text/javascript\">");
 if (nvram_match(akm,"disabled"))
     {
