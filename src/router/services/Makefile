@@ -33,6 +33,9 @@ endif
 ifeq ($(CONFIG_SAMBA),y)
   CFLAGS += -DHAVE_SAMBA
 endif
+ifeq ($(CONFIG_KODATA),y)
+  CFLAGS += -DHAVE_KODATA
+endif
 
 ifeq ($(CONFIG_RADIOOFF),y)
   CFLAGS += -DHAVE_RADIOOFF
@@ -252,8 +255,8 @@ clean:
 	rm -f *.c~
 
 install: all
-	install -d $(INSTALLDIR)/usr/lib	
-	install services.so $(INSTALLDIR)/usr/lib
+	install -d $(INSTALLDIR)/lib	
+	install services.so $(INSTALLDIR)/lib
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
