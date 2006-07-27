@@ -1454,6 +1454,28 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Gemischt";
 wl_basic.b="Nur-B";
 wl_basic.g="Nur-G";
+wl_basic.a="Nur-A";
+
+wl_basic.legend2="WLAN-Zeiteinschräkung";
+wl_basic.radio="WLAN";
+wl_basic.radio_on="WLAN ist An";
+wl_basic.radio_off="WLAN ist Aus";
+
+wl_basic.h2_v24="Drahtloses Physisikalisches Interface";
+wl_basic.regdom="Regulatory Domain";
+wl_basic.TXpower="TX Power";
+wl_basic.diversity="Diversity";
+wl_basic.primary="Primär";
+wl_basic.secondary="Sekundär";
+wl_basic.network="Network Konfiguration";
+wl_basic.unbridged="Getrennt";
+wl_basic.bridged="bridged";
+wl_basic.turbo="Turbo Modus";
+wl_basic.extrange="Extended Range (XR)";
+wl_basic.extchannel="Erweiterter Kanal Modus";
+wl_basic.outband="Outdoor Band";
+wl_basic.channel_width="Kanal Breite";
+
 
 //help container
 var hwl_basic = new Object();
