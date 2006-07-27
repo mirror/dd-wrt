@@ -48,6 +48,7 @@
 #include "if_media.h"
 
 #include <net80211/ieee80211_var.h>
+#include <net80211/ieee80211_proto.h>
 
 static void ieee80211_set_tim(struct ieee80211_node *ni, int set);
 
@@ -111,8 +112,10 @@ ieee80211_node_saveq_drain(struct ieee80211_node *ni)
 
 	IEEE80211_NODE_SAVEQ_LOCK(ni);
 	qlen = skb_queue_len(&ni->ni_savedq);
-	while ((skb = __skb_dequeue(&ni->ni_savedq)) != NULL)
+	while ((skb = __skb_dequeue(&ni->ni_savedq)) != NULL) {
+		ieee80211_free_node(ni);
 		dev_kfree_skb_any(skb);
+	}
 	IEEE80211_NODE_SAVEQ_UNLOCK(ni);
 
 	return qlen;
@@ -208,7 +211,7 @@ ieee80211_pwrsave(struct ieee80211_node *ni, struct sk_buff *skb)
 
 	spin_lock_irqsave(&ni->ni_savedq.lock, flags);
 	if (skb_queue_len(&ni->ni_savedq) >= IEEE80211_PS_MAX_QUEUE) {
-		IEEE80211_NODE_STAT(ni,psq_drops);
+		IEEE80211_NODE_STAT(ni, psq_drops);
 		spin_unlock_irqrestore(&ni->ni_savedq.lock, flags);
 		IEEE80211_NOTE(vap, IEEE80211_MSG_ANY, ni,
 			"pwr save q overflow, drops %d (size %d)",
@@ -300,8 +303,12 @@ ieee80211_node_pwrsave(struct ieee80211_node *ni, int enable)
 		 *
 		 * Set the M_PWR_SAV bit on skb to allow encap to test for
 		 * adding MORE_DATA bit to wh.
+		 *
+		 * The 802.11 MAC Spec says we should only set MORE_DATA for 
+		 * unicast packets when the STA is in PS mode (7.1.3.1.8);
+		 * which it isn't.
 		 */
-		M_PWR_SAV_SET(skb);
+		// M_PWR_SAV_SET(skb);
 
 #ifdef ATH_SUPERG_XR
 		/*
@@ -313,10 +320,9 @@ ieee80211_node_pwrsave(struct ieee80211_node *ni, int enable)
 			skb->dev = vap->iv_xrvap->iv_dev;
 		else
 			skb->dev = vap->iv_dev;		/* XXX? unnecessary */
-#else
-		skb->dev = vap->iv_dev;		/* XXX? unnecessary */
 #endif
-		dev_queue_xmit(skb);
+		
+		ieee80211_parent_queue_xmit(skb);
 	}
 	vap->iv_set_tim(ni, 0);
 }
@@ -356,7 +362,7 @@ ieee80211_sta_pwrsave(struct ieee80211vap *vap, int enable)
 				IEEE80211_NODE_SAVEQ_UNLOCK(ni);
 				if (skb == NULL)
 					break;
-				dev_queue_xmit(skb);
+				ieee80211_parent_queue_xmit(skb);
 			}
 		}
 	} else {

@@ -2,22 +2,17 @@
 # Makefile for the 802.11 NET80211 module.
 #
 
-##2.4##obj=.
-##2.4##src=.
-##2.6##src:=$(srctree)/$(src)
+src ?= .
+srctree ?= .
 
-include $(src)/../BuildCaps.inc
+include $(srctree)/$(src)/../BuildCaps.inc
 
-COMPAT = $(src)/compat
+COMPAT = $(srctree)/$(src)/../include
 
-HAL = $(src)/../hal
+HAL = $(srctree)/$(src)/../hal
 
-EXTRA_CFLAGS+= -DATH_SUPERG_FF=1
-EXTRA_CFLAGS+= -DATH_SUPERG_DYNTURBO=1
-EXTRA_CFLAGS+= -DATH_TURBO_SCAN=1
-
-EXTRA_CFLAGS+=	-include ${COMPAT}/compat.h -I${COMPAT} -I${src}/.. \
-	-I${HAL} -I${HAL}/linux
+EXTRA_CFLAGS+=	-include $(COMPAT)/compat.h -I$(COMPAT) -I$(src)/.. \
+	-I$(HAL) -I$(HAL)/linux
 
 #
 # There are two authenticator mechanisms: an in-kernel implementation
@@ -52,32 +47,34 @@ wlan_acl-objs	:= ieee80211_acl.o
 wlan_scan_sta-objs := ieee80211_scan_sta.o
 wlan_scan_ap-objs  := ieee80211_scan_ap.o
 
-##2.4##export-objs	:= if_media.o \
-##2.4##		   ieee80211.o ieee80211_beacon.o ieee80211_crypto.o \
-##2.4##		   ieee80211_crypto_none.o ieee80211_input.o ieee80211_node.o \
-##2.4##		   ieee80211_output.o ieee80211_power.o ieee80211_proto.o \
-##2.4##		   ieee80211_scan.o ieee80211_wireless.o ieee80211_linux.o \
-##2.4##		   ieee80211_crypto_wep.o ieee80211_crypto_tkip.o \
-##2.4##		   ieee80211_crypto_ccmp.o ieee80211_xauth.o
-##2.4##list-multi	:= wlan.o wlan_wep.o wlan_tkip.o wlan_ccmp.o wlan_acl.o \
-##2.4##		   $(MOD_AUTH) $(MOD_SCAN)
+ifdef LINUX24
+export-objs	:= if_media.o \
+		   ieee80211.o ieee80211_beacon.o ieee80211_crypto.o \
+		   ieee80211_crypto_none.o ieee80211_input.o ieee80211_node.o \
+		   ieee80211_output.o ieee80211_power.o ieee80211_proto.o \
+		   ieee80211_scan.o ieee80211_wireless.o ieee80211_linux.o \
+		   ieee80211_crypto_wep.o ieee80211_crypto_tkip.o \
+		   ieee80211_crypto_ccmp.o ieee80211_xauth.o
+list-multi	:= wlan.o wlan_wep.o wlan_tkip.o wlan_ccmp.o wlan_acl.o \
+		   $(MOD_AUTH) $(MOD_SCAN)
 
-##2.4##O_TARGET := net80211.o
-##2.4##include $(TOPDIR)/Rules.make
+O_TARGET := net80211.o
+include $(TOPDIR)/Rules.make
 
-##2.4##wlan.o:	$(wlan-objs)
-##2.4##	$(LD) -o wlan.o -r $(wlan-objs)
-##2.4##wlan_wep.o:	$(wlan_wep-objs)
-##2.4##	$(LD) -o wlan_wep.o -r $(wlan_wep-objs)
-##2.4##wlan_tkip.o:	$(wlan_tkip-objs)
-##2.4##	$(LD) -o wlan_tkip.o -r $(wlan_tkip-objs)
-##2.4##wlan_ccmp.o:	$(wlan_ccmp-objs)
-##2.4##	$(LD) -o wlan_ccmp.o -r $(wlan_ccmp-objs)
-##2.4##wlan_xauth.o:	$(wlan_xauth-objs)
-##2.4##	$(LD) -o wlan_xauth.o -r $(wlan_xauth-objs)
-##2.4##wlan_acl.o:	$(wlan_acl-objs)
-##2.4##	$(LD) -o wlan_acl.o -r $(wlan_acl-objs)
-##2.4##wlan_scan_sta.o: $(wlan_scan_sta-objs)
-##2.4##	$(LD) -o wlan_scan_sta.o -r $(wlan_scan_sta-objs)
-##2.4##wlan_scan_ap.o:	$(wlan_scan_ap-objs)
-##2.4##	$(LD) -o wlan_scan_ap.o -r $(wlan_scan_ap-objs)
+wlan.o:	$(wlan-objs)
+	$(LD) -o wlan.o -r $(wlan-objs)
+wlan_wep.o:	$(wlan_wep-objs)
+	$(LD) -o wlan_wep.o -r $(wlan_wep-objs)
+wlan_tkip.o:	$(wlan_tkip-objs)
+	$(LD) -o wlan_tkip.o -r $(wlan_tkip-objs)
+wlan_ccmp.o:	$(wlan_ccmp-objs)
+	$(LD) -o wlan_ccmp.o -r $(wlan_ccmp-objs)
+wlan_xauth.o:	$(wlan_xauth-objs)
+	$(LD) -o wlan_xauth.o -r $(wlan_xauth-objs)
+wlan_acl.o:	$(wlan_acl-objs)
+	$(LD) -o wlan_acl.o -r $(wlan_acl-objs)
+wlan_scan_sta.o: $(wlan_scan_sta-objs)
+	$(LD) -o wlan_scan_sta.o -r $(wlan_scan_sta-objs)
+wlan_scan_ap.o:	$(wlan_scan_ap-objs)
+	$(LD) -o wlan_scan_ap.o -r $(wlan_scan_ap-objs)
+endif

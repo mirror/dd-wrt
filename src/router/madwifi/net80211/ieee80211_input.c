@@ -46,6 +46,9 @@
 #include <linux/etherdevice.h>
 #include <linux/random.h>
 #include <linux/if_vlan.h>
+#include <net/iw_handler.h> /* wireless_send_event(..) */
+#include <linux/wireless.h> /* SIOCGIWTHRSPY */
+#include <linux/if_arp.h> /* ARPHRD_ETHER */
 
 #include "if_llc.h"
 #include "if_ethersubr.h"
@@ -115,6 +118,9 @@ static struct sk_buff *ieee80211_decap(struct ieee80211vap *,
 static void ieee80211_send_error(struct ieee80211_node *, const u_int8_t *,
 	int, int);
 static void ieee80211_recv_pspoll(struct ieee80211_node *, struct sk_buff *);
+static int accept_data_frame(struct ieee80211vap *, struct ieee80211_node *,
+	struct ieee80211_key *, struct sk_buff *, struct ether_header *);
+
 
 #ifdef ATH_SUPERG_FF
 static void athff_decap(struct sk_buff *);
@@ -122,6 +128,83 @@ static void athff_decap(struct sk_buff *);
 #ifdef USE_HEADERLEN_RESV
 static unsigned short ath_eth_type_trans(struct sk_buff *, struct net_device *);
 #endif
+
+/* Enhanced iwspy support */
+#ifdef CONFIG_NET_WIRELESS
+#if WIRELESS_EXT >= 16
+
+#ifndef IW_QUAL_QUAL_UPDATED
+#define IW_QUAL_QUAL_UPDATED	0x01
+#define IW_QUAL_LEVEL_UPDATED	0x02
+#define IW_QUAL_NOISE_UPDATED	0x04
+#endif /* IW_QUAL_QUAL_UPDATED */
+
+/**
+ * This function is a clone of set_quality(..) in ieee80211_wireless.c
+ */
+static void
+set_quality(struct iw_quality *iq, u_int rssi)
+{
+	iq->qual = rssi;
+	/* NB: max is 94 because noise is hardcoded to 161 */
+	if (iq->qual > 94)
+		iq->qual = 94;
+
+	iq->noise = 161;		/* -95dBm */
+	iq->level = iq->noise + iq->qual;
+	iq->updated = IW_QUAL_QUAL_UPDATED | IW_QUAL_LEVEL_UPDATED |
+		IW_QUAL_NOISE_UPDATED;
+}
+
+/**
+ * Given a node and the rssi value of a just received frame from the node, this
+ * function checks if to raise an iwspy event because we iwspy the node and rssi
+ * exceeds threshold (if active).
+ * 
+ * @param vap: vap
+ * @param ni: sender node
+ * @param rssi: rssi value of received frame
+ */
+static void
+iwspy_event(struct ieee80211vap *vap, struct ieee80211_node *ni, u_int rssi)
+{
+	if (vap->iv_spy.thr_low && vap->iv_spy.num && ni && (rssi <
+		vap->iv_spy.thr_low || rssi > vap->iv_spy.thr_high)) {
+		int i;
+		for (i = 0; i < vap->iv_spy.num; i++) {
+			if (IEEE80211_ADDR_EQ(ni->ni_macaddr,
+				&(vap->iv_spy.mac[i * IEEE80211_ADDR_LEN]))) {
+					
+				union iwreq_data wrq;
+				struct iw_thrspy thr;
+				IEEE80211_DPRINTF(vap, IEEE80211_MSG_DEBUG,
+					"%s: we spy %s, threshold is active "
+					"and rssi exceeds it -> raise an iwspy"
+					" event\n", __func__, ether_sprintf(
+					 ni->ni_macaddr));
+				memset(&wrq, 0, sizeof(wrq));
+				wrq.data.length = 1;
+				memset(&thr, 0, sizeof(struct iw_thrspy));
+				memcpy(thr.addr.sa_data, ni->ni_macaddr,
+					IEEE80211_ADDR_LEN);
+				thr.addr.sa_family = ARPHRD_ETHER;
+				set_quality(&thr.qual, rssi);
+				set_quality(&thr.low, vap->iv_spy.thr_low);
+				set_quality(&thr.high, vap->iv_spy.thr_high);
+				wireless_send_event(vap->iv_dev,
+					SIOCGIWTHRSPY, &wrq, (char*) &thr);
+				break;
+			}
+		}
+	}
+}
+
+#else
+#define iwspy_event(_vap, _ni, _rssi)
+#endif /* WIRELESS_EXT >= 16 */
+#else
+#define iwspy_event(_vap, _ni, _rssi)
+#endif /* CONFIG_NET_WIRELESS */
 
 /*
  * Process a received frame.  The node associated with the sender
@@ -256,6 +339,8 @@ ieee80211_input(struct ieee80211_node *ni,
 					}
 				}
 			}
+			iwspy_event(vap, ni, rssi);
+			iwspy_event(vap, ni, rssi);
 			break;
 		case IEEE80211_M_HOSTAP:
 			if (dir != IEEE80211_FC1_DIR_NODS)
@@ -542,7 +627,7 @@ ieee80211_input(struct ieee80211_node *ni,
 		 * crypto cipher modules used to do delayed update
 		 * of replay sequence numbers.
 		 */
-		if (wh->i_fc[1] & IEEE80211_FC1_WEP) {
+		if (wh->i_fc[1] & IEEE80211_FC1_PROT) {
 			if ((vap->iv_flags & IEEE80211_F_PRIVACY) == 0) {
 				/*
 				 * Discard encrypted frames when privacy is off.
@@ -560,7 +645,7 @@ ieee80211_input(struct ieee80211_node *ni,
 				goto out;
 			}
 			wh = (struct ieee80211_frame *)skb->data;
-			wh->i_fc[1] &= ~IEEE80211_FC1_WEP;
+			wh->i_fc[1] &= ~IEEE80211_FC1_PROT;
 		} else
 			key = NULL;
 
@@ -602,40 +687,10 @@ ieee80211_input(struct ieee80211_node *ni,
 			goto err;
 		}
 		eh = (struct ether_header *) skb->data;
-		if (!ieee80211_node_is_authorized(ni)) {
-			/*
-			 * Deny any non-PAE frames received prior to
-			 * authorization.  For open/shared-key
-			 * authentication the port is mark authorized
-			 * after authentication completes.  For 802.1x
-			 * the port is not marked authorized by the
-			 * authenticator until the handshake has completed.
-			 */
-			if (eh->ether_type != __constant_htons(ETHERTYPE_PAE)) {
-				IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
-					eh->ether_shost, "data",
-					"unauthorized port: ether type 0x%x len %u",
-					eh->ether_type, skb->len);
-				vap->iv_stats.is_rx_unauth++;
-				IEEE80211_NODE_STAT(ni, rx_unauth);
-				goto err;
-			}
-		} else {
-			/*
-			 * When denying unencrypted frames, discard
-			 * any non-PAE frames received without encryption.
-			 */
-			if ((vap->iv_flags & IEEE80211_F_DROPUNENC) &&
-			    key == NULL &&
-			    eh->ether_type != __constant_htons(ETHERTYPE_PAE)) {
-				/*
-				 * Drop unencrypted frames.
-				 */
-				vap->iv_stats.is_rx_unencrypted++;
-				IEEE80211_NODE_STAT(ni, rx_unencrypted);
-				goto out;
-			}
-		}
+
+		if (! accept_data_frame(vap, ni, key, skb, eh))
+			goto out;
+
 		vap->iv_devstats.rx_packets++;
 		vap->iv_devstats.rx_bytes += skb->len;
 		IEEE80211_NODE_STAT(ni, rx_data);
@@ -734,7 +789,7 @@ ieee80211_input(struct ieee80211_node *ni,
 				ether_sprintf(wh->i_addr2), rssi);
 		}
 #endif
-		if (wh->i_fc[1] & IEEE80211_FC1_WEP) {
+		if (wh->i_fc[1] & IEEE80211_FC1_PROT) {
 			if (subtype != IEEE80211_FC0_SUBTYPE_AUTH) {
 				/*
 				 * Only shared key auth frames with a challenge
@@ -763,7 +818,7 @@ ieee80211_input(struct ieee80211_node *ni,
 				goto out;
 			}
 			wh = (struct ieee80211_frame *)skb->data;
-			wh->i_fc[1] &= ~IEEE80211_FC1_WEP;
+			wh->i_fc[1] &= ~IEEE80211_FC1_PROT;
 		}
 		ic->ic_recv_mgmt(ni, skb, subtype, rssi, rstamp);
 		goto out;
@@ -791,6 +846,75 @@ out:
 #undef HAS_SEQ
 }
 EXPORT_SYMBOL(ieee80211_input);
+
+
+/*
+ * Determines whether a frame should be accepted, based on information
+ * about the frame's origin and encryption, and policy for this vap.
+ */
+static int accept_data_frame(struct ieee80211vap *vap,
+       struct ieee80211_node *ni, struct ieee80211_key *key,
+       struct sk_buff *skb, struct ether_header *eh)
+{
+#define IS_EAPOL(eh) ((eh)->ether_type == __constant_htons(ETHERTYPE_PAE))
+#define PAIRWISE_SET(vap) ((vap)->iv_nw_keys[0].wk_cipher != &ieee80211_cipher_none)
+       if (IS_EAPOL(eh)) {
+               /* encrypted eapol is always OK */
+               if (key)
+                       return 1;
+               /* cleartext eapol is OK if we don't have pairwise keys yet */
+               if (! PAIRWISE_SET(vap))
+                       return 1;
+               /* cleartext eapol is OK if configured to allow it */
+               if (! IEEE80211_VAP_DROPUNENC_EAPOL(vap))
+                       return 1;
+               /* cleartext eapol is OK if other unencrypted is OK */
+               if (! (vap->iv_flags & IEEE80211_F_DROPUNENC))
+                       return 1;
+               /* not OK */
+               IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
+                       eh->ether_shost, "data",
+                       "unauthorized port: ether type 0x%x len %u",
+                       eh->ether_type, skb->len);
+               vap->iv_stats.is_rx_unauth++;
+               vap->iv_devstats.rx_errors++;
+               IEEE80211_NODE_STAT(ni, rx_unauth);
+               return 0;
+       }
+
+       if (!ieee80211_node_is_authorized(ni)) {
+               /*
+                * Deny any non-PAE frames received prior to
+                * authorization.  For open/shared-key
+                * authentication the port is mark authorized
+                * after authentication completes.  For 802.1x
+                * the port is not marked authorized by the
+                * authenticator until the handshake has completed.
+                */
+               IEEE80211_DISCARD_MAC(vap, IEEE80211_MSG_INPUT,
+                       eh->ether_shost, "data",
+                       "unauthorized port: ether type 0x%x len %u",
+                       eh->ether_type, skb->len);
+               vap->iv_stats.is_rx_unauth++;
+               vap->iv_devstats.rx_errors++;
+               IEEE80211_NODE_STAT(ni, rx_unauth);
+               return 0;
+       } else {
+               /*
+                * When denying unencrypted frames, discard
+                * any non-PAE frames received without encryption.
+                */
+               if ((vap->iv_flags & IEEE80211_F_DROPUNENC) && key == NULL) {
+                       IEEE80211_NODE_STAT(ni, rx_unencrypted);
+                       return 0;
+               }
+       }
+       return 1;
+
+#undef IS_EAPOL
+#undef PAIRWISE_SET
+}
+
 
 /*
  * Context: softIRQ (tasklet)
@@ -1589,33 +1713,33 @@ ieee80211_ssid_mismatch(struct ieee80211vap *vap, const char *tag,
 	  (((const u_int8_t *)(p))[2] << 16) |		\
 	  (((const u_int8_t *)(p))[3] << 24)))
 
-static int __inline
+static __inline int
 iswpaoui(const u_int8_t *frm)
 {
 	return frm[1] > 3 && LE_READ_4(frm+2) == ((WPA_OUI_TYPE<<24)|WPA_OUI);
 }
 
-static int __inline
+static __inline int
 iswmeoui(const u_int8_t *frm)
 {
 	return frm[1] > 3 && LE_READ_4(frm+2) == ((WME_OUI_TYPE<<24)|WME_OUI);
 }
 
-static int __inline
+static __inline int
 iswmeparam(const u_int8_t *frm)
 {
 	return frm[1] > 5 && LE_READ_4(frm+2) == ((WME_OUI_TYPE<<24)|WME_OUI) &&
 		frm[6] == WME_PARAM_OUI_SUBTYPE;
 }
 
-static int __inline
+static __inline int
 iswmeinfo(const u_int8_t *frm)
 {
 	return frm[1] > 5 && LE_READ_4(frm+2) == ((WME_OUI_TYPE<<24)|WME_OUI) &&
 		frm[6] == WME_INFO_OUI_SUBTYPE;
 }
 
-static int __inline
+static __inline int
 isatherosoui(const u_int8_t *frm)
 {
 	return frm[1] > 3 && LE_READ_4(frm+2) == ((ATH_OUI_TYPE<<24)|ATH_OUI);
@@ -3325,9 +3449,9 @@ ieee80211_recv_pspoll(struct ieee80211_node *ni, struct sk_buff *skb0)
 		if (vap->iv_set_tim != NULL)
 			vap->iv_set_tim(ni, 0);
 	}
-	M_PWR_SAV_SET(skb);		/* bypass PS handling */
-	skb->dev = vap->iv_dev;		/* XXX needed? */
-	(void) dev_queue_xmit(skb);	/* resubmit */
+	M_PWR_SAV_SET(skb);		/* ensure MORE_DATA bit is set correctly */
+
+ 	ieee80211_parent_queue_xmit(skb);	/* Submit to parent device, including updating stats */
 }
 
 #ifdef ATH_SUPERG_FF

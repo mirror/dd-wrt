@@ -592,6 +592,7 @@ enum {
 	IEEE80211_PARAM_EOSPDROP	= 57,	/* force uapsd EOSP drop (ap only) */
 	IEEE80211_PARAM_MARKDFS		= 58,	/* mark a dfs interference channel when found */
 	IEEE80211_PARAM_REGCLASS	= 59,	/* enable regclass ids in country IE */
+	IEEE80211_PARAM_DROPUNENC_EAPOL	= 60,	/* drop unencrypted eapol frames */
 };
 
 #define	SIOCG80211STATS			(SIOCDEVPRIVATE+2)

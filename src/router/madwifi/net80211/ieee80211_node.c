@@ -510,8 +510,9 @@ int
 ieee80211_ibss_merge(struct ieee80211_node *ni)
 {
 	struct ieee80211vap *vap = ni->ni_vap;
+#ifdef IEEE80211_DEBUG
 	struct ieee80211com *ic = ni->ni_ic;
-
+#endif
 	if (ni == vap->iv_bss ||
 	    IEEE80211_ADDR_EQ(ni->ni_bssid, vap->iv_bss->ni_bssid)) {
 		/* unchanged, nothing to do */
@@ -1722,8 +1723,9 @@ static void
 ieee80211_node_join_11g(struct ieee80211_node *ni)
 {
 	struct ieee80211com *ic = ni->ni_ic;
+#ifdef IEEE80211_DEBUG
 	struct ieee80211vap *vap = ni->ni_vap;
-
+#endif
 	IEEE80211_LOCK_ASSERT(ic);
 
 	KASSERT(IEEE80211_IS_CHAN_ANYG(ic->ic_bsschan),
@@ -2025,8 +2027,11 @@ ieee80211_getrssi(struct ieee80211com *ic)
 	case IEEE80211_M_AHDEMO:	/* average of all neighbors */
 		/* XXX locking */
 		TAILQ_FOREACH(ni, &nt->nt_node, ni_list) {
-			rssi_samples++;
-			rssi_total += ic->ic_node_getrssi(ni);
+			if (memcmp(ni->ni_vap->iv_myaddr, ni->ni_macaddr, 
+						IEEE80211_ADDR_LEN)!=0) {
+				rssi_samples++;
+				rssi_total += ic->ic_node_getrssi(ni);
+			}
 		}
 		break;
 	case IEEE80211_M_HOSTAP:	/* average of all associated stations */

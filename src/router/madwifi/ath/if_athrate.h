@@ -86,6 +86,13 @@ struct ath_ratectrl {
 struct ath_ratectrl *ath_rate_attach(struct ath_softc *);
 void ath_rate_detach(struct ath_ratectrl *);
 
+#ifdef CONFIG_SYSCTL
+/*
+ * Allow rate control module to register proc entries with a vap 
+ * Deallocation of the entries will be dealt with when the vap is destroyed
+ */
+void ath_rate_dynamic_proc_register(struct ieee80211vap *vap);
+#endif /* CONFIG_SYSCTL */
 
 /*
  * State storage handling.

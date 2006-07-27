@@ -2,26 +2,57 @@
 # Makefile for the Atheros WLAN driver.
 #
 
-##2.4##obj=.
-##2.4##src=.
-##2.6##src:=$(srctree)/$(src)
+obj ?= .
+src ?= .
+srctree ?= .
 
-include $(src)/../BuildCaps.inc
+include $(srctree)/$(src)/../BuildCaps.inc
 
-HAL=	$(src)/../hal
-ATH_HAL=$(obj)/../_ath_hal
-WLAN=	${src}/../net80211
-COMPAT=	${WLAN}/compat
+HAL=	$(srctree)/$(src)/../hal
+WLAN=	$(srctree)/$(src)/../net80211
+COMPAT=	$(srctree)/$(src)/../include
 
-EXTRA_CFLAGS+= -DATH_SUPERG_FF=1
-EXTRA_CFLAGS+= -DATH_SUPERG_DYNTURBO=1
-EXTRA_CFLAGS+= -DATH_SUPERG_SCAN=1
-EXTRA_CFLAGS+= -DATH_PHYERR_DIAG=1
+
+# Determine endianess.  Note that it's not indicated for some CPUs at
+# all, so this value is only valid for certain processors.
+ifeq ($(filter-out arm%,$(ARCH)),)
+ENDIAN = le
+endif
+
+ifeq ($(filter-out mips%,$(ARCH)),)
+ENDIAN = be
+endif
+
+ifneq ($(CONFIG_CPU_BIG_ENDIAN)$(CONFIG_BIG_ENDIAN),)
+ENDIAN = be
+endif
+
+ifneq ($(CONFIG_CPU_LITTLE_ENDIAN)$(CONFIG_LITTLE_ENDIAN),)
+ENDIAN = le
+endif
+
+# Determine the target (i.e. which HAL to use).
+# The default is $(ARCH)-elf
+TARGET-$(CONFIG_CPU_32v4) = armv4-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_MIPS32_R1) = mips1-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_MIPS32_R2) = mips-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_R4X00) = mipsisa32-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_TX49XX) = mipsisa32-$(ENDIAN)-elf
+TARGET-$(CONFIG_PPC32) = powerpc-be-elf
+TARGET-$(CONFIG_CPU_SH4) = sh4-le-elf
+TARGET-$(CONFIG_SPARC32) = sparc-be-elf
+TARGET-$(CONFIG_SPARC64) = sparc64-be-elf
+TARGET-$(CONFIG_CPU_SA110) = xscale-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_SA1100) = xscale-$(ENDIAN)-elf
+TARGET-$(CONFIG_CPU_XSCALE) = xscale-$(ENDIAN)-elf
+
+TARGET = $(if $(TARGET-y),$(TARGET-y),$(ARCH)-elf)
+
 
 #
 # Select bus-specific code.  Note that this defaults to PCI.
 #
-ifeq ($(strip ${BUS}),AHB)
+ifeq ($(strip $(BUS)),AHB)
 BUSNAME=ahb
 EXTRA_CFLAGS+= -DATH_AHB
 else
@@ -29,17 +60,34 @@ BUSNAME=pci
 EXTRA_CFLAGS+= -DATH_PCI
 endif
 
-INCS=	-include ${COMPAT}/compat.h -I${COMPAT}
-EXTRA_CFLAGS+=	${INCS} -I${HAL} -I${HAL}/linux -I${ATH_HAL} -I${WLAN} \
-	-I${src}/..
+INCS = -include $(COMPAT)/compat.h -I$(COMPAT) -I$(HAL) -I$(HAL)/linux \
+	-I$(WLAN) -I$(src)/.. -I$(src)
 
-##2.6##obj-$(CONFIG_ATHEROS) += ath_${BUSNAME}.o
-##2.6##ath_${BUSNAME}-objs	:= if_ath.o if_ath_${BUSNAME}.o
+EXTRA_CFLAGS += $(INCS) -DOPT_AH_H=\"$(HAL)/public/$(TARGET).opt_ah.h\"
 
-##2.4##obj-$(CONFIG_ATHEROS) := if_ath.o if_ath_${BUSNAME}.o
+ifdef LINUX26
+obj-$(CONFIG_ATHEROS) += ath_$(BUSNAME).o ath_hal.o
+ath_$(BUSNAME)-objs	:= if_ath.o if_ath_$(BUSNAME).o
+ath_hal-objs	:= ah_osdep.o $(TARGET).hal.o
 
-##2.4##O_TARGET := ath_${BUSNAME}.o
-##2.4##include $(TOPDIR)/Rules.make
+hostprogs-y := uudecode
+host-progs := $(hostprogs-y)
+endif
 
-##2.4##export-objs	:= if_ath_${BUSNAME}.o
-##2.4##list-multi	:= ath_${BUSNAME}.o
+ifdef LINUX24
+obj-$(CONFIG_ATHEROS) := if_ath.o if_ath_$(BUSNAME).o
+obj-$(CONFIG_ATHEROS) += ah_osdep.o $(TARGET).hal.o
+
+O_TARGET := ath_$(BUSNAME).o ath_hal.o
+include $(TOPDIR)/Rules.make
+
+export-objs	:= if_ath_$(BUSNAME).o ah_osdep.o
+list-multi	:= ath_$(BUSNAME).o ath_hal.o
+
+uudecode: uudecode.c
+	$(HOSTCC) $(HOSTCFLAGS) -o $@ $<
+endif
+
+$(obj)/$(TARGET).hal.o: $(HAL)/public/$(TARGET).hal.o.uu $(obj)/uudecode
+	$(Q)echo "deps_$@ :=" >$(@D)/.$(@F).cmd
+	$(Q)$(obj)/uudecode -o $@ $<

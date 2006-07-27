@@ -43,6 +43,7 @@
 #include <linux/skbuff.h>
 #include <linux/netdevice.h>
 #include <linux/init.h>
+#include <linux/random.h>
 #include <linux/delay.h>
 
 #include "if_media.h"
@@ -275,59 +276,83 @@ ap_end(struct ieee80211_scan_state *ss, struct ieee80211vap *vap,
 	struct ap_state *as = ss->ss_priv;
 	struct ieee80211com *ic = vap->iv_ic;
 	int i, chan, bestchan, bestchanix;
-
+	unsigned int random;
 	KASSERT(vap->iv_opmode == IEEE80211_M_HOSTAP,
 		("wrong opmode %u", vap->iv_opmode));
 	/* XXX select channel more intelligently, e.g. channel spread, power */
 	bestchan = -1;
 	bestchanix = 0;		/* NB: silence compiler */
-	/* NB: use scan list order to preserve channel preference */
-	for (i = 0; i < ss->ss_last; i++) {
-		/*
-		 * If the channel is unoccupied the max rssi
-		 * should be zero; just take it.  Otherwise
-		 * track the channel with the lowest rssi and
-		 * use that when all channels appear occupied.
-		 */
-		/*
-		 * Check for channel interference, and if found,
-		 * skip the channel.  We assume that all channels
-		 * will be checked so atleast one can be found
-		 * suitable and will change.  IF this changes,
-		 * then we must know when we "have to" change
-		 * channels for radar and move off.
-		 */
+	if (ic->ic_isdfsregdomain && (ic->ic_curmode == IEEE80211_MODE_11A)) {
+	   if (ss->ss_last) {
+try_again:
+		/* Pick up a random channel to start */
+		get_random_bytes(&random, sizeof(random));
+
+		i = random % ss->ss_last;
+			 
 
 		if (ss->ss_chans[i]->ic_flags & IEEE80211_CHAN_RADAR)
-			continue;
+		    goto try_again; 
 		if (flags & IEEE80211_SCAN_KEEPMODE) {
 			if (ic->ic_curchan != NULL) {
 				if ((ss->ss_chans[i]->ic_flags & IEEE80211_CHAN_ALLTURBO) != (ic->ic_curchan->ic_flags & IEEE80211_CHAN_ALLTURBO))
-					continue;
+					goto try_again;
 			}
 		}
 
 		chan = ieee80211_chan2ieee(ic, ss->ss_chans[i]);
 
 		IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
-			"%s: channel %u rssi %d bestchan %d bestchan rssi %d\n",
-			__func__, chan, as->as_maxrssi[chan],
-			bestchan, bestchan != -1 ? as->as_maxrssi[bestchan] : 0);
+			    		"%s: picked random channel %u\n",
+	    		__func__, chan);
 
-		if (as->as_maxrssi[chan] == 0) {
+		bestchan = chan;
+		bestchanix = i;
+	   }
+	} else {
+		/* NB: use scan list order to preserve channel preference */
+		for (i = 0; i < ss->ss_last; i++) {
+			/*
+		 	 * If the channel is unoccupied the max rssi
+		 	 * should be zero; just take it.  Otherwise
+		 	 * track the channel with the lowest rssi and
+		 	 * use that when all channels appear occupied.
+		 	*/
+			/*
+		 	 * Check for channel interference, and if found,
+		 	 * skip the channel.  We assume that all channels
+		 	 * will be checked so atleast one can be found
+		 	 * suitable and will change.  IF this changes,
+		 	 * then we must know when we "have to" change
+		 	 * channels for radar and move off.
+		 	*/
+
+			if (ss->ss_chans[i]->ic_flags & IEEE80211_CHAN_RADAR)
+				continue;
+
+			chan = ieee80211_chan2ieee(ic, ss->ss_chans[i]);
+
+			IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
+		    	"%s: channel %u rssi %d bestchan %d bestchan rssi %d\n",
+		    	__func__, chan, as->as_maxrssi[chan],
+		    	bestchan, bestchan != -1 ? as->as_maxrssi[bestchan] : 0);
+
+			if (as->as_maxrssi[chan] == 0) {
 			bestchan = chan;
-			bestchanix = i;
-			/* XXX use other considerations */
-			break;
+				bestchanix = i;
+				/* XXX use other considerations */
+				break;
+			}
+			if (bestchan == -1 ||
+		    		as->as_maxrssi[chan] < as->as_maxrssi[bestchan])
+					bestchan = chan;
 		}
-		if (bestchan == -1 ||
-		    as->as_maxrssi[chan] < as->as_maxrssi[bestchan])
-			bestchan = chan;
-	}
+    }
+
 	if (bestchan == -1) {
 		/* no suitable channel, should not happen */
 		IEEE80211_DPRINTF(vap, IEEE80211_MSG_SCAN,
-			"%s: no suitable channel! (should not happen)\n", __func__);
+			    	"%s: no suitable channel! (should not happen)\n", __func__); 
 		/* XXX print something? */
 		return 0;			/* restart scan */
 	} else {

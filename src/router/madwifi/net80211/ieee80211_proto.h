@@ -72,6 +72,7 @@ void ieee80211_recv_mgmt(struct ieee80211_node *, struct sk_buff *,
 	int, int, u_int32_t);
 void ieee80211_sta_pwrsave(struct ieee80211vap *, int);
 int ieee80211_hardstart(struct sk_buff *, struct net_device *);
+void ieee80211_parent_queue_xmit(struct sk_buff *);
 int ieee80211_send_nulldata(struct ieee80211_node *);
 int ieee80211_send_qosnulldata(struct ieee80211_node *, int);
 int ieee80211_send_mgmt(struct ieee80211_node *, int, int);

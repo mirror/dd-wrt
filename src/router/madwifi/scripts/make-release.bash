@@ -92,7 +92,7 @@ fi
 # make sure that the local working copy is in sync with the repository
 repos=$(svn info | grep URL | cut -d" " -f2)
 localrev=$(svn info | grep Last\ Changed\ Rev | cut -d" " -f4)
-remoterev=$(svn info $repos | grep Last\ Changed\ Rev | cut -d" " -f4)
+remoterev=$(svn log -r HEAD --quiet $repos | grep '^r[0-9]* ' | cut -d" " -f1 | cut -b2-)
 
 if [[ "$localrev" != "$remoterev" ]]; then
     echo
@@ -107,7 +107,7 @@ fi
 
 
 # ask developer about the version of the new release
-reproot=$(svn info | grep Root | cut -d" " -f3)
+reproot=$(svn info | grep URL | cut -d" " -f2 | cut -d"/" -f1-3)
 latest=$(svn list $reproot/tags | grep -e "^release-" | cut -d"-" -f2 | cut -d"/" -f1 | sort | tail -n 1)
 
 echo
@@ -196,7 +196,7 @@ echo "temporarily adjusting release.h..."
 mv release.h release.h.old
 sed -e "/svnversion.h/d" \
     -e "/RELEASE_TYPE/ s/\".*\"/\"RELEASE\"/" \
-    -e "/RELEASE_VERSION/ s/SVNVERSION/\"$newrelease\"/" release.h.old > release.h
+    -e "/RELEASE_VERSION/ s/\".*\"/\"$newrelease\"/" release.h.old > release.h
 rm -f release.h.old 
 
 
@@ -207,21 +207,33 @@ msg="Tagging r$localrev as release $newrelease."
 tag="release-$newrelease"
 svn copy . $reproot/tags/release-$newrelease -m "$msg"
 
-# revert local changes to release.h
+# revert local changes to release.h ...
 echo "revert changes to release.h..."
 svn revert release.h
 
+# ... and modify the RELEASE_VERSION for trunk, too. We assume that the next
+# release will be a point release.
+echo "adjusting release.h in trunk..."
+trunkrelease="$newmajor.$newminor.$((newpoint+1))"
+mv release.h release.h.old
+sed -e "/RELEASE_VERSION/ s/\"[0-9.]*\"/\"$trunkrelease\"/" release.h.old > release.h
+rm -f release.h.old
+
+msg="Adjust release version in response to release $newrelease."
+svn commit release.h -m "$msg"
+svn update -q
+
+# create the tarball packaging directory
 tmp=$RELEASE_TMP
 store=$RELEASE_STORE
 
-# create the tarball packaging directory
 [[ -d $tmp/madwifi-release ]] || {
     echo "creating packaging directory..."
     mkdir $tmp/madwifi-release || exit 1
 }
 
 # remove old directories
-rm -r $tmp/madwifi-release/*
+rm -r $tmp/madwifi-release/* > /dev/null
 
 # create tarball
 echo "exporting new release from repository..."

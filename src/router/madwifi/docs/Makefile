@@ -16,8 +16,9 @@ all: $(DOCS)
 	$(PS2PDF) $< $@
 
 %.dvi: %.tex
-	@while $(LATEX) $< 2>&1 | $(LATEX_RERUN); do \
-		echo "Restarting LaTeX"; \
+	while $(LATEX) $< </dev/null; do \
+		test -f $*.log || exit 1; \
+		$(LATEX_RERUN) $*.log || exit 0; \
 	done
 
 clean:

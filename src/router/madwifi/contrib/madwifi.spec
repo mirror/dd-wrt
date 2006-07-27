@@ -87,7 +87,7 @@ export KERNELRELEASE=%{mykversion}
 export KERNELPATH=/lib/modules/%{mykversion}/build
 export KERNELCONF=/lib/modules/%{mykversion}/build/.config
 export MODULEPATH=/lib/modules/%{mykversion}/net
-export COPTS="-I /lib/modules/%{mykversion}/build/include/ $COPTS"
+export COPTS="-I /lib/modules/%{mykversion}/build/include/ $COPTS2"
 # export ATH_RATE=ath_rate/onoe
 make 
 # cd tools ; make all ; cd ..

@@ -366,7 +366,147 @@ add_channels(struct ieee80211com *ic,
 }
 
 static const u_int16_t rcl1[] =		/* 8 FCC channel: 52, 56, 60, 64, 36, 40, 44, 48 */
-{ 5140,5160,5180,5200,5220,5240,5260,5280,5300,5320,5340,5360,5380,5400,5420,5440,5460,5480,5500,5520,5540,5560,5580,5600,5620,5640,5660,5680,5700,5720,5740,5760,5780,5800,5820};
+{ 
+5140,
+5145,
+5150,
+5155,
+5160,
+5165,
+5170,
+5175,
+5180,
+5185,
+5190,
+5195,
+5200,
+5205,
+5210,
+5215,
+5220,
+5225,
+5230,
+5235,
+5240,
+5245,
+5250,
+5255,
+5260,
+5265,
+5270,
+5275,
+5280,
+5285,
+5290,
+5295,
+5300,
+5305,
+5310,
+5315,
+5320,
+5325,
+5330,
+5335,
+5340,
+5345,
+5350,
+5355,
+5360,
+5365,
+5370,
+5375,
+5380,
+5385,
+5390,
+5395,
+5400,
+5405,
+5410,
+5415,
+5420,
+5425,
+5430,
+5435,
+5440,
+5445,
+5450,
+5455,
+5460,
+5465,
+5470,
+5475,
+5480,
+5485,
+5490,
+5495,
+5500,
+5505,
+5510,
+5515,
+5520,
+5525,
+5530,
+5535,
+5540,
+5545,
+5550,
+5555,
+5560,
+5565,
+5570,
+5575,
+5580,
+5585,
+5590,
+5595,
+5600,
+5605,
+5610,
+5615,
+5620,
+5625,
+5630,
+5635,
+5640,
+5645,
+5650,
+5655,
+5660,
+5665,
+5670,
+5675,
+5680,
+5685,
+5690,
+5695,
+5700,
+5705,
+5710,
+5715,
+5720,
+5725,
+5730,
+5735,
+5740,
+5745,
+5750,
+5755,
+5760,
+5765,
+5770,
+5775,
+5780,
+5785,
+5790,
+5795,
+5800,
+5805,
+5810,
+5815,
+5820,
+5825,
+5830,
+5835};
 //, 5280, 5300, 5320, 5180, 5200, 5220, 5240 };
 static const u_int16_t rcl2[] =		/* 4 MKK channels: 34, 38, 42, 46 */
 { 5170, 5190, 5210, 5230 };
@@ -427,6 +567,8 @@ static const struct scanlist staScanTable[] = {
 #endif /* ATH_TURBO_SCAN */
 	{ .list = NULL }
 };
+
+#undef X
 
 static int
 checktable(const struct scanlist *scan, const struct ieee80211_channel *c)
@@ -1131,28 +1273,6 @@ static const struct ieee80211_scanner sta_default = {
 };
 
 /*
- * Adhoc mode-specific support.
- */
-
-static const u_int16_t adhocWorld[] =		/* 36, 40, 44, 48 */
-{ 5180, 5200, 5220, 5240 };
-static const u_int16_t adhocFcc3[] =		/* 36, 40, 44, 48 145, 149, 153, 157, 161, 165 */
-{ 5180, 5200, 5220, 5240, 5725, 5745, 5765, 5785, 5805, 5825 };
-static const u_int16_t adhocMkk[] =		/* 34, 38, 42, 46 */
-{ 5170, 5190, 5210, 5230 };
-static const u_int16_t adhoc11b[] =		/* 10, 11 */
-{ 2457, 2462 };
-
-static const struct scanlist adhocScanTable[] = {
-	{ IEEE80211_MODE_11B,   X(adhoc11b) },
-	{ IEEE80211_MODE_11A,   X(adhocWorld) },
-	{ IEEE80211_MODE_11A,   X(adhocFcc3) },
-	{ IEEE80211_MODE_11B,   X(adhocMkk) },
-	{ .list = NULL }
-};
-#undef X
-
-/*
  * Start an adhoc-mode scan by populating the channel list.
  */
 static int
@@ -1170,7 +1290,7 @@ adhoc_start(struct ieee80211_scan_state *ss, struct ieee80211vap *vap)
 	 * of channels for scanning.  Any channels in the ordered
 	 * list not in the master list will be discarded.
 	 */
-	for (scan = adhocScanTable; scan->list != NULL; scan++) {
+	for (scan = staScanTable; scan->list != NULL; scan++) {
 		mode = scan->mode;
 		if (vap->iv_des_mode != IEEE80211_MODE_AUTO) {
 			/*

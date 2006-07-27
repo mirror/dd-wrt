@@ -46,7 +46,7 @@
 #define IEEE80211_SCHEDULE_TQUEUE(a)	tasklet_schedule((a))
 #define IEEE80211_CANCEL_TQUEUE(a)	if (!in_interrupt()) tasklet_kill((a))
 typedef unsigned long IEEE80211_TQUEUE_ARG;
-#define mark_bh(a)
+#define mark_bh(a) do {} while (0)
 #else					/* immediate work queue */
 #define IEEE80211_TQ_STRUCT tq_struct
 #define IEEE80211_INIT_TQUEUE(a,b,c)		INIT_TQUEUE(a,b,c)
@@ -479,6 +479,9 @@ static __inline unsigned long msecs_to_jiffies(const unsigned int m)
 
 void ieee80211_sysctl_vattach(struct ieee80211vap *);
 void ieee80211_sysctl_vdetach(struct ieee80211vap *);
+int ieee80211_proc_vcreate(struct ieee80211vap *, struct file_operations *,
+	       char *);
+void ieee80211_proc_cleanup(struct ieee80211vap *);
 #endif /* CONFIG_SYSCTL */
 
 #if defined(CONFIG_VLAN_8021Q) || defined(CONFIG_VLAN_8021Q_MODULE)
