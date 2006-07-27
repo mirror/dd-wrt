@@ -339,7 +339,7 @@ start_restore_defaults (void)
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
     {"lan_ifnames",
-     "ixp0.1 ixp0.2 ath0 ath1 ath2 ath3 ath4 ath5",
+     "ixp0.1 ixp0.2 ath0 ath1",
      0},
     {"wan_ifname", "ixp1", 0},
     {"wan_ifnames", "ixp1", 0},
@@ -823,9 +823,12 @@ start_sysinit (void)
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
 #elif HAVE_XSCALE
   mount ("devpts", "/dev/pts", "devpts", MS_MGC_VAL, NULL);
+  eval("mount","/etc/www.fs","/www","-t","squashfs","-o","loop");
+  eval("mount","/etc/modules.fs","/lib/modules","-t","squashfs","-o","loop");
+  eval("mount","/etc/usr.fs","/usr","-t","squashfs","-o","loop");
 #endif
   eval ("mkdir", "/tmp/www");
-
+  
 #ifdef HAVE_RB500
   //load ext2 
   // eval("insmod","jbd");
@@ -1085,10 +1088,19 @@ if (check_vlan_support())
       }
     }
 #else
+eval("insmod","md5");
+eval("insmod","aes");
+eval("insmod","blowfish");
+eval("insmod","deflate");
+eval("insmod","des");
+eval("insmod","michael_mic");
+eval("insmod","cast5");
+eval("insmod","crypto_null");
+
 system("/etc/kendin");
 eval("insmod","ixp400th");
 eval("insmod","ixp400");
-system("cat /etc/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
+system("cat /usr/lib/firmware/IxNpeMicrocode.dat > /dev/IxNpe");
 eval("insmod","ixp400_eth");
 eval("insmod","ocf");
 eval("insmod","cryptodev");
@@ -1340,13 +1352,23 @@ start_nvram (void)
     nvram_set ("svqos_port3bw", "FULL");
   if (nvram_match ("svqos_port4bw", "full"))
     nvram_set ("svqos_port4bw", "FULL");
+    //dirty fix for WBR2 units
+    
 
-  if (nvram_get("nvram_ver")==NULL || !nvram_match ("nvram_ver","2"))
+  if ((nvram_get("nvram_ver")==NULL || !nvram_match ("nvram_ver","2")) && nvram_get("http_passwd")!=NULL)
     {
-    nvram_set("http_username","root");
-    nvram_set("http_passwd","admin");
+    if (strlen(nvram_safe_get("http_username"))==0)
+    nvram_set("http_username",zencrypt("root"));
+    if (strlen(nvram_safe_get("http_passwd"))==0)
+    nvram_set("http_passwd",zencrypt("admin"));
+
     nvram_set("http_passwd",zencrypt(nvram_safe_get("http_passwd"))); 
     nvram_set("http_username",zencrypt(nvram_safe_get("http_username")));
+    if (nvram_get("newhttp_passwd")!=NULL)
+    {
+    nvram_set("newhttp_passwd",zencrypt(nvram_safe_get("newhttp_passwd"))); 
+    nvram_set("newhttp_username",zencrypt(nvram_safe_get("newhttp_username")));
+    }
     }
 
   strcpy (style, nvram_safe_get ("router_style"));

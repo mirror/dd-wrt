@@ -377,10 +377,12 @@ struct nvram_tuple srouter_defaults[] = {
   {"skyhttp_passwd", "bJkMQXH.mZhZo", 0},	/* Password */
   {"http_passwd", "bJe0C3lwF.z0c", 0},	/* Password */
 #elif HAVE_NEWMEDIA
-#ifndef HAVE_GGEW
-  {"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */
-#else
+#ifdef HAVE_GGEW
   {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
+#elif HAVE_KODATA
+  {"http_passwd", "bJDLObifZlIRQ", 0},	/* Password */
+#else
+  {"http_passwd", "bJxJZz5DYRGxI", 0},	/* Password */  
 #endif
 #else
   {"http_passwd", "bJz7PcC1rCRJQ", 0},	/* Password */
@@ -1542,8 +1544,13 @@ struct nvram_tuple srouter_defaults[] = {
   {"openvpn_dh", "", 0},
   {"openvpn_tlsauth", "", 0},
   {"openvpn_onwan", "0", 0},
+#ifdef HAVE_KODATA
+{"newhttp_username", "bJ/GddyoJuiU2", 0},
+{"newhttp_passwd", "bJDLObifZlIRQ", 0},
+#else
   {"newhttp_username", "", 0},
   {"newhttp_passwd", "bJxJZz5DYRGxI", 0},
+#endif
 #ifdef HAVE_GGEW
   {"ral", "212.65.2.116 194.231.229.20 172.16.0.0/28", 0},
 #else
