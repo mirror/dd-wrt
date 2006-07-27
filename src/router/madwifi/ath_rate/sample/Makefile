@@ -52,22 +52,21 @@ include $(obj)/${DEPTH}/Makefile.inc
 INCS+=	-I${HAL} -I${HAL}/${OS} -I${obj}/${ATH} -I${obj}/${WLAN} \
 	-I${obj}/${DEPTH}
 
-EXTRA_CFLAGS+= ${INCS} ${COPTS}
+EXTRA_CFLAGS+= ${INCS} ${COPTS2}
 
 -include $(TOPDIR)/Rules.make
 
 all:
-	$(MAKE) -C $(KERNELPATH) SUBDIRS=$(shell pwd) MODVERDIR=$(shell pwd)/${SYMBOLSDIR} modules
+	$(MAKE) -C $(KERNELPATH) SUBDIRS=$(shell pwd) modules
 
 install:
-	test -d ${DESTDIR}/${MODULEPATH} || mkdir -p ${DESTDIR}/${MODULEPATH}
-	${TOOLPREFIX}strip -S ath_rate_sample.$(KMODSUF)
-	cp ath_rate_sample.${KMODSUF} ${DESTDIR}/${MODULEPATH}
+	test -d $(DESTDIR)/$(KMODPATH) || mkdir -p $(DESTDIR)/$(KMODPATH)
+	cp ath_rate_sample.$(KMODSUF) $(DESTDIR)/$(KMODPATH)
 
 clean:
 	-rm -f *~ *.o *.ko *.mod.c
 	-rm -f .depend .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
 	-rm -rf .tmp_versions
 
-ath_rate_sample.o: ${ath_rate_sample-objs}
+ath_rate_sample.o: $(ath_rate_sample-objs)
 	$(LD) $(LDOPTS) -o ath_rate_sample.$(KMODSUF) -r $(ath_rate_sample-objs)

@@ -53,6 +53,7 @@
 
 #include <linux/pci.h>
 
+#include <asm/io.h>
 #include <asm/uaccess.h>
 
 #include "if_media.h"
@@ -265,9 +266,7 @@ ath_pci_suspend(struct pci_dev *pdev, pm_message_t state)
 	ath_suspend(dev);
 	PCI_SAVE_STATE(pdev, ((struct ath_pci_softc *)dev->priv)->aps_pmstate);
 	pci_disable_device(pdev);
-	if (pci_set_power_state(pdev, PCI_D3hot)); /* XXX: what? */
-
-	return 0;
+	return pci_set_power_state(pdev, PCI_D3hot);
 }
 
 static int
@@ -275,14 +274,19 @@ ath_pci_resume(struct pci_dev *pdev)
 {
 	struct net_device *dev = pci_get_drvdata(pdev);
 	u32 val;
-	if (pci_set_power_state(pdev, PCI_D0))
-		return 1;
+	int err;
+
+	err = pci_set_power_state(pdev, PCI_D0);
+	if (err)
+		return err;
 
 	/* XXX - Should this return nonzero on fail? */
 	PCI_RESTORE_STATE(pdev,	((struct ath_pci_softc *)dev->priv)->aps_pmstate);
 
-	if (pci_enable_device(pdev))
-		return 1;
+	err = pci_enable_device(pdev);
+	if (err)
+		return err;
+
 	pci_set_master(pdev);
 	/*
 	 * Suspend/Resume resets the PCI configuration space, so we have to
@@ -360,7 +364,6 @@ init_ath_pci(void)
 
 	if (pci_register_driver(&ath_pci_drv_id) < 0) {
 		printk("ath_pci: No devices found, driver not installed.\n");
-		pci_unregister_driver(&ath_pci_drv_id);
 		return (-ENODEV);
 	}
 #ifdef CONFIG_SYSCTL

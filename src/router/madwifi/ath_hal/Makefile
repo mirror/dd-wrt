@@ -52,7 +52,7 @@ endif
 
 INCS+=	-I${HAL} -I${HAL}/${OS} -I${obj}/${ATH_HAL} -I${obj}/${DEPTH}
 
-EXTRA_CFLAGS+= ${INCS} ${COPTS}
+EXTRA_CFLAGS+= ${INCS} ${COPTS2}
 
 -include $(TOPDIR)/Rules.make
 
@@ -75,9 +75,9 @@ opt_ah.h: ${HAL}/public/${TARGET}.opt_ah.h
 	cp -f ${HAL}/public/${TARGET}.opt_ah.h opt_ah.h
 
 install:
-	test -d ${DESTDIR}/${MODULEPATH} || mkdir -p ${DESTDIR}/${MODULEPATH}
+	test -d ${DESTDIR}/${KMODPATH} || mkdir -p ${DESTDIR}/${KMODPATH}
 	$(STRIP) -S ath_hal.$(KMODSUF)
-	cp ath_hal.${KMODSUF} ${DESTDIR}/${MODULEPATH}
+	cp ath_hal.${KMODSUF} ${DESTDIR}/${KMODPATH}
 
 clean:
 	-rm -f *~ *.o *.ko *.mod.c uudecode .uudecode.cmd

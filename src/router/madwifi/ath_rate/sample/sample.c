@@ -50,9 +50,9 @@
 #include <linux/random.h>
 #include <linux/delay.h>
 #include <linux/cache.h>
-#include <linux/sysctl.h>
 #include <linux/proc_fs.h>
 #include <linux/if_arp.h>
+#include <linux/vmalloc.h>
 
 #include <asm/uaccess.h>
 
@@ -939,6 +939,129 @@ ath_rate_detach(struct ath_ratectrl *arc)
 	kfree(osc);
 }
 EXPORT_SYMBOL(ath_rate_detach);
+
+#ifdef CONFIG_SYSCTL
+static int
+proc_read_nodes(struct ieee80211vap *vap, const int size, char *buf, int space)
+{
+	char *p = buf;
+	struct ieee80211_node *ni;
+	struct ath_node *an;
+	struct sample_node *sn;
+	struct ieee80211_node_table *nt = 
+		(struct ieee80211_node_table *) &vap->iv_ic->ic_sta;
+	int x = 0;
+	int size_bin = 0;
+
+	TAILQ_FOREACH(ni, &nt->nt_node, ni_list) {
+		/* Assume each node needs 500 bytes */
+		if (buf + space < p + 500)
+			break;
+		an = ATH_NODE(ni);
+		sn = ATH_NODE_SAMPLE(an);
+		/* Skip ourself */
+		if (memcmp(vap->iv_myaddr, ni->ni_macaddr, 
+					IEEE80211_ADDR_LEN)==0) {
+			continue;
+		}
+
+		size_bin = size_to_bin(size);
+		p += sprintf(p, "%s\n", ether_sprintf(ni->ni_macaddr));
+		p += sprintf(p, 
+				"rate\ttt\tperfect\tfailed\tpkts\tavg_tries\tlast_tx\n");
+		for (x = 0; x < sn->num_rates; x++) {
+			int a = 1;
+			int t = 1;
+
+			p += sprintf(p, "%s", 
+					(x == sn->current_rate[size_bin]) ? "*" : " ");
+
+			p += sprintf(p, "%3d%s",
+					sn->rates[x].rate/2,
+					(sn->rates[x].rate & 0x1) != 0 ? ".5" : "  ");
+
+			p += sprintf(p, "\t%4d\t%4d\t%2d\t%3d",
+					sn->stats[size_bin][x].average_tx_time,
+					sn->stats[size_bin][x].perfect_tx_time,
+					sn->stats[size_bin][x].successive_failures,
+					sn->stats[size_bin][x].total_packets);
+
+			if (sn->stats[size_bin][x].total_packets) {
+				a = sn->stats[size_bin][x].total_packets;
+				t = sn->stats[size_bin][x].tries;
+			}
+			p += sprintf(p, "\t%d.%02d\t", t/a, (t*100/a) % 100);
+			if (sn->stats[size_bin][x].last_tx) {
+				unsigned d = jiffies - 
+					sn->stats[size_bin][x].last_tx;
+				p += sprintf(p, "%d.%02d", d / HZ, d % HZ);
+			} else {
+				p += sprintf(p, "-");
+			}
+			p += sprintf(p, "\n");
+		}
+		printk("\n");
+	}
+
+	return (p - buf);
+}
+
+int
+proc_ratesample_open(struct inode *inode, struct file *file)
+{
+	struct proc_ieee80211_priv *pv = NULL;
+	struct proc_dir_entry *dp = PDE(inode);
+	struct ieee80211vap *vap = dp->data;
+	int size = 0;
+
+	if (!(file->private_data = kmalloc(sizeof(struct proc_ieee80211_priv),
+					GFP_KERNEL)))
+		return -ENOMEM;
+
+	/* intially allocate both read and write buffers */
+	pv = (struct proc_ieee80211_priv *) file->private_data;
+	memset(pv, 0, sizeof(struct proc_ieee80211_priv));
+	pv->rbuf = vmalloc(MAX_PROC_IEEE80211_SIZE);
+	if (!pv->rbuf) {
+		kfree(pv);
+		return -ENOMEM;
+	}
+	pv->wbuf = vmalloc(MAX_PROC_IEEE80211_SIZE);
+	if (!pv->wbuf) {
+		vfree(pv->rbuf);
+		kfree(pv);
+		return -ENOMEM;
+	}
+	memset(pv->wbuf, 0, MAX_PROC_IEEE80211_SIZE);
+	memset(pv->rbuf, 0, MAX_PROC_IEEE80211_SIZE);
+	pv->max_wlen = MAX_PROC_IEEE80211_SIZE;
+	pv->max_rlen = MAX_PROC_IEEE80211_SIZE;
+
+	/* Determine what size packets to get stats for based on proc filename */
+	size = (int)simple_strtol(dp->name + 10, NULL, 0);
+
+	/* now read the data into the buffer */
+	pv->rlen = proc_read_nodes(vap, size, pv->rbuf, MAX_PROC_IEEE80211_SIZE);
+	return 0;
+}
+
+static struct file_operations proc_ratesample_ops = {
+	.read = NULL,
+	.write = NULL,
+	.open = proc_ratesample_open,
+	.release = NULL,
+};
+
+void
+ath_rate_dynamic_proc_register(struct ieee80211vap *vap)
+{		
+	/* Create proc entries for the rate control algorithm */
+	ieee80211_proc_vcreate(vap, &proc_ratesample_ops, "ratestats_250");
+	ieee80211_proc_vcreate(vap, &proc_ratesample_ops, "ratestats_1600");
+	ieee80211_proc_vcreate(vap, &proc_ratesample_ops, "ratestats_3000");	
+}
+EXPORT_SYMBOL(ath_rate_dynamic_proc_register);
+#endif /* CONFIG_SYSCTL */
 
 MODULE_AUTHOR("John Bicket");
 MODULE_DESCRIPTION("SampleRate bit-rate selection algorithm for Atheros devices");

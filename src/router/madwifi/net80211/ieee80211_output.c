@@ -226,8 +226,7 @@ ieee80211_hardstart(struct sk_buff *skb, struct net_device *dev)
 	
         if (vap->iv_opmode == IEEE80211_M_MONITOR) {
 		ieee80211_monitor_encap(vap, skb);
-		skb->dev = parent;
-                (void) dev_queue_xmit(skb);
+                ieee80211_parent_queue_xmit(skb);
                 return 0;
         }
 	if (ic->ic_flags & IEEE80211_F_SCAN)		/* cancel bg scan */
@@ -252,33 +251,31 @@ ieee80211_hardstart(struct sk_buff *skb, struct net_device *dev)
 			"%s: discard, classification failure", __func__);
 		goto bad;
 	}
+	
+	cb->ni = ni;
+	
 	/* power-save checks */
 	if (WME_UAPSD_AC_CAN_TRIGGER(skb->priority, ni)) {
 		/* U-APSD power save queue */
 		/* XXXAPSD: assuming triggerable means deliverable */
 		M_FLAG_SET(skb, M_UAPSD);
-	} else if ((ni->ni_flags & IEEE80211_NODE_PWR_MGT) && !M_PWR_SAV_GET(skb)) {
+	} else if ((ni->ni_flags & IEEE80211_NODE_PWR_MGT)) {
 		/*
 		 * Station in power save mode; stick the frame
 		 * on the sta's power save queue and continue.
 		 * We'll get the frame back when the time is right.
 		 */
 		ieee80211_pwrsave(ni, skb);
-		goto reclaim;
+		return 0;
 	}
-	M_FLAG_KEEP_ONLY(skb, M_UAPSD | M_PWR_SAV);
-	cb->ni = ni;
 
-	vap->iv_devstats.tx_packets++;
-	vap->iv_devstats.tx_bytes += skb->len;
-	ic->ic_lastdata = jiffies;
-
-	skb->dev = parent;
 #ifdef ATH_SUPERG_XR
 	/* 
 	 * broadcast/multicast  packets need to be sent on XR vap in addition to
 	 * normal vap.
 	 */
+
+	/* FIXME: ieee80211_parent_queue_xmit */
 	if (vap->iv_xrvap && ni == vap->iv_bss &&
 	    vap->iv_xrvap->iv_sta_assoc) {
 		struct sk_buff *skb1;
@@ -293,15 +290,27 @@ ieee80211_hardstart(struct sk_buff *skb, struct net_device *dev)
 		}
 	}
 #endif
-	(void) dev_queue_xmit(skb);
+	ieee80211_parent_queue_xmit(skb);
 	return 0;
+
 bad:
 	if (skb != NULL)
 		dev_kfree_skb(skb);
-reclaim:
 	if (ni != NULL)
 		ieee80211_free_node(ni);
 	return 0;
+}
+
+void ieee80211_parent_queue_xmit(struct sk_buff *skb) {
+	struct ieee80211vap *vap = skb->dev->priv;
+
+	vap->iv_devstats.tx_packets++;
+	vap->iv_devstats.tx_bytes += skb->len;
+	vap->iv_ic->ic_lastdata = jiffies;
+
+	// Dispatch the packet to the parent device
+	skb->dev = vap->iv_ic->ic_dev;
+	(void) dev_queue_xmit(skb);
 }
 
 /*
@@ -398,7 +407,7 @@ ieee80211_mgmt_output(struct ieee80211_node *ni, struct sk_buff *skb, int type)
 		cb->flags &= ~M_LINK0;
 		IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_AUTH, wh->i_addr1,
 			"encrypting frame (%s)", __func__);
-		wh->i_fc[1] |= IEEE80211_FC1_WEP;
+		wh->i_fc[1] |= IEEE80211_FC1_PROT;
 	}
 
 	if (IEEE80211_VAP_IS_SLEEPING(ni->ni_vap))
@@ -1103,7 +1112,7 @@ ieee80211_encap(struct ieee80211_node *ni, struct sk_buff *skb, int *framecnt)
 		    !KEY_UNDEFINED(*key) : !KEY_UNDEFINED(ni->ni_ucastkey)))) {
 			int force_swmic = (fragcnt > 1) ? 1 : 0;
 
-			wh->i_fc[1] |= IEEE80211_FC1_WEP;
+			wh->i_fc[1] |= IEEE80211_FC1_PROT;
 
 			if (!ieee80211_crypto_enmic(vap, key, skb, force_swmic)) {
 				IEEE80211_NOTE_MAC(vap, IEEE80211_MSG_OUTPUT,
@@ -1714,7 +1723,7 @@ ieee80211_send_probereq(struct ieee80211_node *ni,
 	if (skb == NULL) {
 		vap->iv_stats.is_tx_nobuf++;
 		ieee80211_free_node(ni);
-		return ENOMEM;
+		return -ENOMEM;
 	}
 
 	frm = ieee80211_add_ssid(frm, ssid, ssidlen);

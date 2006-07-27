@@ -192,7 +192,7 @@ ifmedia_ioctl(struct net_device *dev, struct ifreq *ifr,
 	int error = 0, sticky;
 
 	if (dev == NULL || ifr == NULL || ifm == NULL)
-		return EINVAL;
+		return -EINVAL;
 
 	switch (cmd) {
 	/*
@@ -212,7 +212,7 @@ ifmedia_ioctl(struct net_device *dev, struct ifreq *ifr,
 					newmedia);
 			}
 #endif
-			return ENXIO;
+			return -ENXIO;
 		}
 
 		/*
@@ -242,7 +242,7 @@ ifmedia_ioctl(struct net_device *dev, struct ifreq *ifr,
 		ifm->ifm_cur = match;
 		ifm->ifm_media = newmedia;
 		error = (*ifm->ifm_change)(dev);
-		if (error && (error != ENETRESET)) {
+		if ((error < 0) && (error != -ENETRESET)) {
 			ifm->ifm_cur = oldentry;
 			ifm->ifm_media = oldmedia;
 		}
@@ -285,14 +285,14 @@ ifmedia_ioctl(struct net_device *dev, struct ifreq *ifr,
 		if (ifmr->ifm_count > usermax)
 			ifmr->ifm_count = usermax;
 		else if (ifmr->ifm_count < 0)
-			return (EINVAL);
+			return (-EINVAL);
 
 		if (ifmr->ifm_count != 0) {
 			kptr = (int *)kmalloc(ifmr->ifm_count * sizeof(int),
 			    GFP_KERNEL);
 
 			if (kptr == NULL)
-				return (ENOMEM);
+				return (-ENOMEM);
 			/*
 			 * Get the media words from the interface's list.
 			 */
@@ -302,7 +302,7 @@ ifmedia_ioctl(struct net_device *dev, struct ifreq *ifr,
 				kptr[count] = ep->ifm_media;
 
 			if (ep != NULL)
-				error = E2BIG;	/* oops! */
+				error = -E2BIG;	/* oops! */
 		} else
 			count = usermax;
 
@@ -313,7 +313,7 @@ ifmedia_ioctl(struct net_device *dev, struct ifreq *ifr,
 		 * under BSD/OS 3.0
 		 */
 		sticky = error;
-		if ((error == 0 || error == E2BIG) && ifmr->ifm_count != 0) {
+		if ((error == 0 || error == -E2BIG) && ifmr->ifm_count != 0) {
 			error = copy_to_user(ifmr->ifm_ulist,
 				kptr, ifmr->ifm_count * sizeof(int));
 		}
@@ -329,7 +329,7 @@ ifmedia_ioctl(struct net_device *dev, struct ifreq *ifr,
 	}
 
 	default:
-		return EINVAL;
+		return -EINVAL;
 	}
 
 	return error;
