@@ -1588,7 +1588,7 @@ show_virtualssid (webs_t wp, char *prefix)
   char var[80];
   char ssid[80];
   char vif[16];
-  char mac[16];
+//  char mac[16];
   sprintf (vif, "%s_vifs", prefix);
   char *vifs = nvram_safe_get (vif);
   if (vifs == NULL)
@@ -1598,15 +1598,15 @@ show_virtualssid (webs_t wp, char *prefix)
     return 0;
 #endif
   int count = 1;
-  websWrite (wp, "<h2>Virtual Interfaces</h2>\n");
-  websWrite (wp, "<fieldset>\n");
+  websWrite (wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_vi)</script></h2>\n");
   foreach (var, vifs, next)
   {
-    sprintf (mac, "%s_hwaddr", var);
+//    sprintf (mac, "%s_hwaddr", var);  ?? doesn't exists
     sprintf (ssid, "%s_ssid", var);
     websWrite (wp,
-	       "<fieldset><legend>Interface %s SSID [%s] HWAddr [%s]</legend>\n",
-	       var, nvram_safe_get (ssid), nvram_safe_get (mac));
+	       "<fieldset><legend>Interface %s SSID [%s]</legend>\n",
+	       var, nvram_safe_get (ssid));
+//	       var, nvram_safe_get (ssid), nvram_safe_get (mac));
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
 	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
@@ -1708,13 +1708,12 @@ show_virtualssid (webs_t wp, char *prefix)
 #endif
 
     websWrite (wp,
-    	"<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");</script>\n",
+    	"<script type=\"text/javascript\">document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");</script>\n",
 	       prefix);
   if (count > 1)
     websWrite (wp,
-    	"<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");</script>\n",
+    	"<script type=\"text/javascript\">document.write(\"<input class=\\\"center\\\" type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");</script>\n",
 	       prefix);
-  websWrite (wp, "</fieldset>\n");
 
   return 0;
 }
@@ -1736,8 +1735,6 @@ get_vifcount (char *prefix)
   }
   return count;
 }
-
-
 
 
 int
@@ -1782,7 +1779,6 @@ add_vifs_single (char *prefix, int device)
   sprintf (v2, "%s_netmask", v);
   nvram_set (v2, "0.0.0.0");
 
-
   sprintf (v2, "%s_gtk_rekey", v);
   nvram_set (v2, "3600");
 
@@ -1791,7 +1787,6 @@ add_vifs_single (char *prefix, int device)
 
   sprintf (v2, "%s_radius_ipaddr", v);
   nvram_set (v2, "0.0.0.0");
-
 
   //nvram_commit ();
   free (n);
@@ -1945,7 +1940,6 @@ save_prefix (webs_t wp, char *prefix)
 
 }
 
-
 int
 wireless_save (webs_t wp)
 {
@@ -2023,13 +2017,7 @@ websWrite(wp,"</script>\n");
 }
 
 
-
-
 #ifdef HAVE_MSSID
-
-
-
-
 
 void
 ej_show_wireless_single (webs_t wp, char *prefix)
@@ -2043,7 +2031,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
 
 //wireless mode
-  websWrite (wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_24)</script></h2>\n");
+  websWrite (wp, "<h2><script type=\"text/javascript\">Capture(wl_basic.h2_v24)</script></h2>\n");
   websWrite (wp, "<fieldset>\n");
   websWrite (wp,
 	     "<legend>Interface %s - SSID [%s] HWAddr [%s]</legend>\n",
@@ -2158,13 +2146,13 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_width, "%s_channelbw", prefix);
   sprintf (wl_xr, "%s_xr", prefix);
 
-  showOption (wp, "Turbo Mode", wl_turbo);
-  showOption (wp, "Extended Range", wl_xr);
-  showOption (wp, "Extended Channel Mode", wl_xchanmode);
-  showOption (wp, "Outdoor Band", wl_outdoor);
-  showOption (wp, "Diversity", wl_diversity);
+  showOption (wp, "wl_basic.turbo", wl_turbo);
+  showOption (wp, "wl_basic.extrange", wl_xr);
+  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
+  showOption (wp, "wl_basic.outband", wl_outdoor);
+  showOption (wp, "wl_basic.diversity", wl_diversity);
   websWrite (wp,
-	     "<div class=\"setting\"><div class=\"label\">Channel Width</div><select name=\"%s\" >\n",
+	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
 	     wl_width);
   websWrite (wp,
 		"<script type=\"text/javascript\">document.write(\"<option value=\\\"20\\\" %s >\" + share.full + \"</option>\");</script>\n",
@@ -2213,7 +2201,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,'SSID')\" value=\"%s\" /></div>\n",
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
   if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta"))
@@ -2287,29 +2275,31 @@ show_preshared (webs_t wp, char *prefix)
   websWrite (wp, "<div class=\"label\">WPA Algorithms</div>\n");
   websWrite (wp, "<select name=\"%s_crypto\">\n", prefix);
   websWrite (wp, "<option value=\"tkip\" %s>TKIP</option>\n",
-	     selmatch (var, "tkip", "selected"));
+	     selmatch (var, "tkip", "selected=\"selected\""));
   websWrite (wp, "<option value=\"aes\" %s>AES</option>\n",
-	     selmatch (var, "aes", "selected"));
+	     selmatch (var, "aes", "selected=\"selected\""));
   websWrite (wp, "<option value=\"tkip+aes\" %s>TKIP+AES</option>\n",
-	     selmatch (var, "tkip+aes", "selected"));
+	     selmatch (var, "tkip+aes", "selected=\"selected\""));
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">WPA Shared Key</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.shared_key)</script></div>\n");
   sprintf (var, "%s_wpa_psk", prefix);
   websWrite (wp,
 	     "<input name=\"%s_wpa_psk\" maxlength=\"64\" size=\"32\" value=\"%s\" />\n",
 	     prefix, nvram_safe_get (var));
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Group Key Renewal</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wpa.rekey)</script></div>\n");
   sprintf (var, "%s_wpa_gtk_rekey", prefix);
   websWrite (wp,
-	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"10\" onblur=\"valid_range(this,0,99999,'rekey interval')\" value=\"%s\" /> seconds\n",
+	     "<input name=\"%s_wpa_gtk_rekey\" maxlength=\"5\" size=\"5\" onblur=\"valid_range(this,0,99999,wpa.rekey)\" value=\"%s\" />\n",
+	     prefix, nvram_safe_get (var));
+  websWrite (wp,
+	     "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 3600, \" + share.range + \": 1 - 99999)\")</script></span>\n",
 	     prefix, nvram_safe_get (var));
   websWrite (wp, "</div>\n");
   websWrite (wp, "</div>\n");
-
 }
 
 void
@@ -2318,38 +2308,38 @@ show_radius (webs_t wp, char *prefix)
   char var[80];
   cprintf ("show radius\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">RADIUS Server Address</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label3)</script></div>\n");
   websWrite (wp,
 	     "<input type=\"hidden\" name=\"%s_radius_ipaddr\" value=\"4\" />\n",
 	     prefix);
   sprintf (var, "%s_radius_ipaddr", prefix);
   char *rad = nvram_safe_get (var);
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\" value=\"%d\" />.",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_0\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
 	     prefix, get_single_ip (rad, 0));
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\" value=\"%d\" />.",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_1\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
 	     prefix, get_single_ip (rad, 1));
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,'IP')\" class=\"num\" value=\"%d\" />.",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_2\" onblur=\"valid_range(this,0,255,radius.label3)\" class=\"num\" value=\"%d\" />.",
 	     prefix, get_single_ip (rad, 2));
   websWrite (wp,
-	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,'IP')\" class=\"num\" value=\"%d\" />\n",
+	     "<input size=\"3\" maxlength=\"3\" name=\"%s_radius_ipaddr_3\" onblur=\"valid_range(this,1,254,radius.label3)\" class=\"num\" value=\"%d\" />\n",
 	     prefix, get_single_ip (rad, 3));
   websWrite (wp, "</div>\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">RADIUS Port</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label4)</script></div>\n");
   sprintf (var, "%s_radius_port", prefix);
   websWrite (wp,
-	     "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,'Port')\" value=\"%s\" /></div>\n",
+	     "<input name=\"%s_radius_port\" size=\"3\" maxlength=\"5\" onblur=\"valid_range(this,1,65535,radius.label4)\" value=\"%s\" /></div>\n",
 	     prefix, nvram_safe_get (var));
+  websWrite (wp, "<span class=\"default\"><script type=\"text/javascript\">document.write(\"(\" + share.deflt + \": 1812)\")</script></span>\n");
   websWrite (wp, "<div class=\"setting\">\n");
-  websWrite (wp, "<div class=\"label\">Shared Key</div>\n");
+  websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(radius.label7)</script></div>\n");
   sprintf (var, "%s_radius_key", prefix);
   websWrite (wp,
 	     "<input name=\"%s_radius_key\" size=\"20\" maxlength=\"79\" value=\"%s\" /></div>\n",
 	     prefix, nvram_safe_get (var));
-
 }
 
 void
@@ -2453,14 +2443,7 @@ show_wep (webs_t wp, char *prefix)
   websWrite (wp, "</div>\n");
 }
 
-
-
-
-
-
 #endif
-
-
 
 void
 validate_wds (webs_t wp, char *value, struct variable *v)
