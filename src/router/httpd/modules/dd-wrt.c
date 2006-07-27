@@ -1578,10 +1578,6 @@ show_netmode (webs_t wp, char *prefix)
 #endif
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
-
- websWrite (wp,
-	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s>\" + share.disabled + \"</option>\");</script>\n",
-	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
 }
 
 
@@ -1613,33 +1609,36 @@ show_virtualssid (webs_t wp, char *prefix)
 	       var, nvram_safe_get (ssid), nvram_safe_get (mac));
     websWrite (wp, "<div class=\"setting\">\n");
     websWrite (wp,
-	       "<div class=\"label\">Wireless Network Name (SSID)</div>\n");
+	       "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div>\n");
 
     websWrite (wp,
-	       "<input name=\"%s_ssid\" size=\"20\" maxLength=\"32\" onblur=\"valid_name(this,'SSID')\" value=\"%s\" /></div>\n",
+	       "<input name=\"%s_ssid\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	       var, nvram_safe_get (ssid));
     websWrite (wp, "<div class=\"setting\">\n");
-    websWrite (wp, "<div class=\"label\">Wireless SSID Broadcast</div>");
+    websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label5)</script></div>");
     sprintf (ssid, "%s_closed", var);
     websWrite (wp,
-	       "<input type=\"radio\" value=\"0\" name=\"%s_closed\" %s>Enable</input>\n",
-	       var, nvram_match (ssid, "0") ? "checked" : "");
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.enable)</script></input>&nbsp;\n",
+	       var, nvram_match (ssid, "0") ? "checked=\"checked\"" : "");
     websWrite (wp,
-	       "<input type=\"radio\" value=\"1\" name=\"%s_closed\" %s>Disable</input>\n",
-	       var, nvram_match (ssid, "1") ? "checked" : "");
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_closed\" %s><script type=\"text/javascript\">Capture(share.disable)</script></input>\n",
+	       var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
 #ifdef HAVE_MADWIFI
     char wl_mode[16];
     sprintf (wl_mode, "%s_mode", var);
     websWrite (wp,
-	       "<div class=\"setting\"><div class=\"label\">Wireless Mode</div><select name=\"%s\" >\n",
+	       "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label)</script></div><select name=\"%s\" >\n",
 	       wl_mode);
-    websWrite (wp, "<option value=\"ap\" %s>AP</option>\n",
-	       nvram_match (wl_mode, "ap") ? "selected" : "");
-    websWrite (wp, "<option value=\"wdssta\" %s>WDS Station</option>\n",
-	       nvram_match (wl_mode, "wdssta") ? "selected" : "");
-    websWrite (wp, "<option value=\"wdsap\" %s>WDS AP</option>\n",
-	       nvram_match (wl_mode, "wdsap") ? "selected" : "");
+    websWrite (wp,
+		"<script type=\"text/javascript\">document.write(\"<option value=\\\"ap\\\" %s >\" + wl_basic.ap + \"</option>\");</script>\n",
+		nvram_match (wl_mode, "ap") ? "selected=\\\"selected\\\"" : "");
+    websWrite (wp,
+		"<script type=\"text/javascript\">document.write(\"<option value=\\\"wdssta\\\" %s >\" + wl_basic.wdssta + \"</option>\");</script>\n",
+		nvram_match (wl_mode, "wdssta") ? "selected=\\\"selected\\\"" : "");
+    websWrite (wp,
+		"<script type=\"text/javascript\">document.write(\"<option value=\\\"wdsap\\\" %s >\" + wl_basic.wdsap + \"</option>\");</script>\n",
+		nvram_match (wl_mode, "wdsap") ? "selected=\\\"selected\\\"" : "");
     websWrite (wp, "</select>\n");
     websWrite (wp, "</div>\n");
 #endif
@@ -1647,59 +1646,58 @@ show_virtualssid (webs_t wp, char *prefix)
 //    show_netmode (wp, var);
 //    show_channel (wp, prefix, var);
     sprintf (ssid, "%s_ap_isolate", var);
-    showOption (wp, "AP Isolation", ssid);
+    showOption (wp, "wl_adv.label11", ssid);
 
     websWrite (wp,
-	       "<div class=\"setting\">\n<div class=\"label\">Network Configuration</div>\n");
+	       "<div class=\"setting\">\n<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.network)</script></div>\n");
     sprintf (ssid, "%s_bridged", var);
     websWrite (wp,
-	       "<input type=\"radio\" value=\"0\" name=\"%s_bridged\" %s>Unbridged</input>\n",
-	       var, nvram_match (ssid, "0") ? "checked" : "");
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"0\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.unbridged)</script></input>&nbsp;\n",
+	       var, nvram_match (ssid, "0") ? "checked=\"checked\"" : "");
     websWrite (wp,
-	       "<input type=\"radio\" value=\"1\" name=\"%s_bridged\" %s>Bridged</input>\n",
-	       var, nvram_match (ssid, "1") ? "checked" : "");
+	       "<input class=\"spaceradio\" type=\"radio\" value=\"1\" name=\"%s_bridged\" %s><script type=\"text/javascript\">Capture(wl_basic.bridged)</script></input>\n",
+	       var, nvram_match (ssid, "1") ? "checked=\"checked\"" : "");
     websWrite (wp, "</div>\n");
     if (nvram_match (ssid, "0"))
       {
 //	websWrite (wp, "<legend>Network Settings</legend>\n");
 	websWrite (wp, "<div class=\"setting\">\n");
-	websWrite (wp, "<div class=\"label\">IP Address</div>\n");
+	websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.ip)</script></div>\n");
 	char ip[32];
 	sprintf (ip, "%s_ipaddr", var);
 	char *ipv=nvram_safe_get(ip);
 	websWrite (wp,
-		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,'IP')\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,1,223,share.ip)\" name=\"%s_ipaddr_0\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 0));
 	websWrite (wp,
-		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_1\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 1));
 	websWrite (wp,
-		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.ip)\" name=\"%s_ipaddr_2\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 2));
 	websWrite (wp,
 		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'IP')\" name=\"%s_ipaddr_3\" value=\"%d\" />\n",
 		   var, get_single_ip (ipv, 3));
 	websWrite (wp, "</div>\n");
 	websWrite (wp, "<div class=\"setting\">\n");
-	websWrite (wp, "<div class=\"label\">Subnet</div>\n");
+	websWrite (wp, "<div class=\"label\"><script type=\"text/javascript\">Capture(share.subnet)</script></div>\n");
 	sprintf (ip, "%s_netmask", var);
 	ipv=nvram_safe_get(ip);
 	
 	websWrite (wp,
-		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_0\" value=\"%d\" />.",
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_0\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 0));
 	websWrite (wp,
-		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_1\" value=\"%d\" />.",
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_1\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 1));
 	websWrite (wp,
-		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_2\" value=\"%d\" />.",
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_2\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 2));
 	websWrite (wp,
-		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,'Netmask')\" name=\"%s_netmask_3\" value=\"%d\" />.",
+		   "<input class=\"num\" maxlength=\"3\" size=\"3\" onblur=\"valid_range(this,0,255,share.subnet)\" name=\"%s_netmask_3\" value=\"%d\" />.",
 		   var, get_single_ip (ipv, 3));
 	websWrite (wp, "</div>\n");
       }
-
     websWrite (wp, "</fieldset><br />\n");
     count++;
   }
@@ -1710,11 +1708,11 @@ show_virtualssid (webs_t wp, char *prefix)
 #endif
 
     websWrite (wp,
-	       "<input type=\"button\" value=\"Add\" onClick=vifs_add_submit(this.form,'%s') />\n",
+    	"<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" value=\\\"\" + sbutton.add + \"\\\" onclick=\\\"vifs_add_submit(this.form,'%s')\\\" />\");</script>\n",
 	       prefix);
   if (count > 1)
     websWrite (wp,
-	       "<input type=\"button\" value=\"Remove\" onClick=vifs_remove_submit(this.form,'%s') />\n",
+    	"<script type=\"text/javascript\">document.write(\"<input type=\\\"button\\\" value=\\\"\" + sbutton.remove + \"\\\" onclick=\\\"vifs_remove_submit(this.form,'%s')\\\" />\");</script>\n",
 	       prefix);
   websWrite (wp, "</fieldset>\n");
 
