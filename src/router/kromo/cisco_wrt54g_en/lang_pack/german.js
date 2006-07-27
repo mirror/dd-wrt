@@ -22,7 +22,7 @@ share.landomainname="LAN Domain Name";
 share.statu="Status";
 share.start="Start";
 share.end="Ende";
-share.proto="Protokol";
+share.proto="Protokoll";
 share.ip="IP-Adresse";
 share.mac="MAC-Adresse";
 share.none="Nichts";
@@ -170,6 +170,8 @@ sbutton.survey="WLAN-Suche";
 sbutton.upgrading="Aktualisiere";
 sbutton.upgrade="Aktualisierung";
 sbutton.preview="Vorschau";
+sbutton.allways_on="Alles An";
+sbutton.allways_off="Alles Aus";
 
 
 
@@ -301,7 +303,7 @@ bmenu.accrestriction="Zugriffsbeschränkung";
 bmenu.webaccess="Internet-Zugriff";
 
 
-bmenu.applications="Applikationen &amp; Spiele";
+bmenu.applications="Anwendungen &amp; Spiele";
 bmenu.applicationsprforwarding="Port-Bereichs-Weiterleitung";
 bmenu.applicationspforwarding="Port-Weiterleitung";
 bmenu.applicationsptriggering="Port-Triggering";
@@ -588,7 +590,7 @@ var prforward = new Object();
 prforward.titl=" - Port-Bereichs-Weiterleitung";
 prforward.h2="Port-Bereichs-Weiterleitung";
 prforward.legend="Weiterleitungen";
-prforward.app="Applikation";
+prforward.app="Anwendung";
 
 //help container
 var hprforward = new Object();
@@ -1026,6 +1028,7 @@ service.dhcp_vendor="Setze Vendorclass";
 service.dhcp_legend2="DHCP-Server";
 service.dhcp_srv="DHCP-Daemon";
 service.dhcp_jffs2="Nutze JFFS2 für Clientzuweisungs-DB)";
+service.dhcp_nvramlease="Nutze NVRAM für Clientzuweisungs-DB";
 service.dhcp_domain="Genutzte Domain";
 service.dhcp_landomain="LAN-Domain";
 service.dhcp_option="Zusätzliche DHCPD-Optionen";
@@ -1086,7 +1089,7 @@ service.vpn_mtu="TUN-MTU-Einstellungen";
 service.vpn_mru="TUN-MTU-Extra";
 service.vpn_mss="TCP-MSS";
 service.vpn_compress="Nutze LZO-Compression";
-service.vpn_tunnel="Tunnel-Protokol";
+service.vpn_tunnel="Tunnel-Protokoll";
 service.vpn_srvcert="Öffentliches Server-Zertifikat";
 service.vpn_clicert="Öffentliches Client-Zertifikat";
 service.vpn_clikey="Privater Client-Schlüssel";
@@ -1115,7 +1118,7 @@ var status_lan = new Object();
 status_lan.titl=" - LAN-Status";
 status_lan.h2="Lokales Netzwerk";
 status_lan.legend="LAN-Status";
-status_lan.h22="Dynamic Host Configuration Protokol";
+status_lan.h22="Dynamic Host Configuration Protokoll";
 status_lan.legend2="DHCP-Status";
 status_lan.legend3="DHCP-Clients";
 
@@ -1456,7 +1459,7 @@ wl_basic.b="Nur-B";
 wl_basic.g="Nur-G";
 wl_basic.a="Nur-A";
 
-wl_basic.legend2="WLAN-Zeiteinschräkung";
+wl_basic.legend2="WLAN-Zeiteinschränkung";
 wl_basic.radio="WLAN";
 wl_basic.radio_on="WLAN ist An";
 wl_basic.radio_off="WLAN ist Aus";
@@ -1523,9 +1526,9 @@ wl_adv.row1="Background";
 wl_adv.row2="Best Effort";
 wl_adv.row3="Video";
 wl_adv.row4="Voice";
-wl_adv.table2="EDCA STA Parameters (Client to AP)";
-wl_adv.lng="Long"; 					//************* don't use .long ! *************
-wl_adv.shrt="Short"; 				//************* don't use .short ! **************
+wl_adv.table2="EDCA STA Parameter (Client nach AP)";
+wl_adv.lng="Lang"; 					//************* don't use .long ! *************
+wl_adv.shrt="Kurz"; 				//************* don't use .short ! **************
 
 //help container
 var hwl_adv = new Object();
