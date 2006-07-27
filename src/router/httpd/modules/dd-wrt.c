@@ -61,7 +61,7 @@ ej_show_clocks (int eid, webs_t wp, int argc, char_t ** argv)
       char clock[16];
       sprintf (clock, "%d", c[i]);
       websWrite (wp, "<option value=\"%d\" %s >%d Mhz</option>\n", c[i],
-		 nvram_match ("overclocking", clock) ? "selected" : "", c[i]);
+		 nvram_match ("overclocking", clock) ? "selected=\"selected\"" : "", c[i]);
 
     }
 }
@@ -326,9 +326,6 @@ ej_show_cpuinfo (int eid, webs_t wp, int argc, char_t ** argv)
 #define ASSOCLIST_CMD	"wl assoclist"
 #define RSSI_CMD	"wl rssi"
 #define NOISE_CMD	"wl noise"
-
-
-
 
 
 void
@@ -987,16 +984,16 @@ ej_show_staticleases (int eid, webs_t wp, int argc, char_t ** argv)
     {
       char *sep = strsep (&leases, "=");
       websWrite (wp,
-		 "<tr><td><input name=\"lease%d_hwaddr\" value=\"%s\" size=\"18\" maxlength=\"18\" onblur=\"valid_name(this,'MAC',SPACE_NO)\" /></td>",
+		 "<tr><td><input name=\"lease%d_hwaddr\" value=\"%s\" size=\"18\" maxlength=\"18\" onblur=\"valid_name(this,share.mac,SPACE_NO)\" /></td>",
 		 i, sep != NULL ? sep : "");
       sep = strsep (&leases, "=");
       websWrite (wp,
-		 "<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"24\" maxlength=\"24\" onblur=\"valid_name(this,'HOSTNAME',SPACE_NO)\" /></td>",
+		 "<td><input name=\"lease%d_hostname\" value=\"%s\" size=\"24\" maxlength=\"24\" onblur=\"valid_name(this,share.hostname,SPACE_NO)\" /></td>",
 		 i, sep != NULL ? sep : "");
       sep = strsep (&leases, " ");
       websWrite (wp,
-		 "<td><input name=\"lease%d_ip\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" onblur=\"valid_name(this,'IP',SPACE_NO)\" /></td></tr>\n",
-		 i, sep != NULL ? sep : "");
+		 "<td><input name=\"lease%d_ip\" value=\"%s\" size=\"15\" maxlength=\"15\" class=\"num\" onblur=\"valid_name(this,share.ip,SPACE_NO)\" /></td></tr>\n",
+		 i, sep != NULL ? sep : "");		 
     }
   free (originalpointer);
   return;
@@ -1409,7 +1406,7 @@ showOption (webs_t wp, char *propname, char *nvname)
 {
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\">%s</div><select name=\"%s\">\n",
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(%s)</script></div><select name=\"%s\">\n",
 	     propname, nvname);
   websWrite (wp,
 	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s>\" + share.disabled + \"</option>\");</script>\n",
@@ -1498,7 +1495,7 @@ show_channel (webs_t wp, char *dev, char *prefix)
       sprintf (wl_channel, "%s_channel", prefix);
       websWrite (wp, "<div class=\"setting\">\n");
       websWrite (wp,
-		 "<div class=\"label\">Wireless Channel</div><select name=\"%s\" onFocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n",
+		 "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label4)</script></div><select name=\"%s\" onfocus=\"check_action(this,0)\"><script type=\"text/javascript\">\n",
 		 wl_channel);
 #ifdef HAVE_MADWIFI
       struct wifi_channels *chan;
@@ -1510,8 +1507,8 @@ show_channel (webs_t wp, char *dev, char *prefix)
 	{
 	  //int cnt = getchannelcount ();
 	  websWrite (wp,
-		     "document.write(\"<option value=0 %s>Auto</option>\");\n",
-		     nvram_match (wl_channel, "0") ? "selected" : "");
+		     "document.write(\"<option value=\\\"0\\\" %s>\" + share.auto + \"</option>\");\n",
+		     nvram_match (wl_channel, "0") ? "selected=\\\"selected\\\"" : "");
 	  int i = 0;
 	  while (chan[i].freq != -1)
 	    {
@@ -1520,8 +1517,8 @@ show_channel (webs_t wp, char *dev, char *prefix)
 
 	      sprintf (cn, "%d", chan[i].channel);
 	      websWrite (wp,
-			 "document.write(\"<option value=%s %s>%s - %dMhz</option>\");\n",
-			 cn, nvram_match (wl_channel, cn) ? "selected" : "",
+			 "document.write(\"<option value=\\\"%s\\\" %s>%s - %dMhz</option>\");\n",
+			 cn, nvram_match (wl_channel, cn) ? "selected=\\\"selected\\\"" : "",
 			 cn, chan[i].freq);
 	      //free (chan[i].freq);
 	      i++;
@@ -1541,7 +1538,7 @@ show_channel (webs_t wp, char *dev, char *prefix)
       websWrite (wp, "		else			buf = \"\";\n");
       websWrite (wp, "		if(i==0)\n");
       websWrite (wp,
-		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">Auto</option>\");\n");
+		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\" + share.auto + \"</option>\");\n");
       websWrite (wp, "		else\n");
       websWrite (wp,
 		 "		 document.write(\"<option value=\"+i+\" \"+buf+\">\"+i+\" - \"+freq[i]+\"GHz</option>\");\n");
@@ -1550,7 +1547,6 @@ show_channel (webs_t wp, char *dev, char *prefix)
 #endif
       websWrite (wp, "</script></select></div>\n");
     }
-
 }
 
 void
@@ -1561,26 +1557,32 @@ show_netmode (webs_t wp, char *prefix)
 
   websWrite (wp, "<div class=\"setting\">\n");
   websWrite (wp,
-	     "<div class=\"label\">Wireless Network Mode</div><select name=\"%s\" onChange=\"SelWL(this.form.%s.selectedIndex,this.form)\">\n",
+	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label2)</script></div><select name=\"%s\" onchange=\"SelWL(this.form.%s.selectedIndex,this.form)\">\n",
 	     wl_net_mode, wl_net_mode);
-  websWrite (wp, "<option value=\"disabled\" %s>Disabled</option>\n",
-	     nvram_match (wl_net_mode, "disabled") ? "selected" : "");
-  websWrite (wp, "<option value=\"mixed\" %s>Mixed</option>\n",
-	     nvram_match (wl_net_mode, "mixed") ? "selected" : "");
-  websWrite (wp, "<option value=\"b-only\" %s>B-Only</option>\n",
-	     nvram_match (wl_net_mode, "b-only") ? "selected" : "");
-  websWrite (wp, "<option value=\"g-only\" %s>G-Only</option>\n",
-	     nvram_match (wl_net_mode, "g-only") ? "selected" : "");
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"disabled\\\" %s>\" + share.disabled + \"</option>\");</script>\n",
+	     nvram_match (wl_net_mode, "disabled") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"mixed\\\" %s>\" + wl_basic.mixed + \"</option>\");</script>\n",
+	     nvram_match (wl_net_mode, "mixed") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"b-only\\\" %s>\" + wl_basic.b + \"</option>\");</script>\n",
+	     nvram_match (wl_net_mode, "b-only") ? "selected=\\\"selected\\\"" : "");
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"g-only\\\" %s>\" + wl_basic.g + \"</option>\");</script>\n",
+	     nvram_match (wl_net_mode, "g-only") ? "selected=\\\"selected\\\"" : "");
 #ifdef HAVE_MADWIFI
-  websWrite (wp, "<option value=\"a-only\" %s>A-Only</option>\n",
-	     nvram_match (wl_net_mode, "a-only") ? "selected" : "");
+  websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"a-only\\\" %s>\" + wl_basic.a + \"</option>\");</script>\n",
+	     nvram_match (wl_net_mode, "a-only") ? "selected=\\\"selected\\\"" : "");
 #endif
   websWrite (wp, "</select>\n");
   websWrite (wp, "</div>\n");
 
-
+ websWrite (wp,
+	     "<script type=\"text/javascript\">document.write(\"<option value=\\\"0\\\" %s>\" + share.disabled + \"</option>\");</script>\n",
+	     nvram_match (nvname, "0") ? "selected=\\\"selected\\\"" : "");
 }
-
 
 
 int
