@@ -1,0 +1,89 @@
+/*
+ * WPA Supplicant / dbus-based control interface
+ * Copyright (c) 2006, Dan Williams <dcbw@redhat.com> and Red Hat, Inc.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License version 2 as
+ * published by the Free Software Foundation.
+ *
+ * Alternatively, this software may be distributed under the terms of BSD
+ * license.
+ *
+ * See README and COPYING for more details.
+ */
+
+#ifndef CTRL_IFACE_DBUS_H
+#define CTRL_IFACE_DBUS_H
+
+#ifdef CONFIG_CTRL_IFACE_DBUS
+
+#define WPAS_DBUS_SERVICE	"fi.epitest.hostap.WPASupplicant"
+#define WPAS_DBUS_PATH		"/fi/epitest/hostap/WPASupplicant"
+#define WPAS_DBUS_INTERFACE	"fi.epitest.hostap.WPASupplicant"
+
+#define WPAS_INTERFACES_DBUS_PATH	WPAS_DBUS_PATH "/Interfaces"
+#define WPAS_INTERFACES_DBUS_INTERFACE	WPAS_DBUS_INTERFACE ".Interfaces"
+
+#define INTERFACES_PATH_NETWORKS_PART	"/Networks/"
+#define INTERFACES_PATH_BSSIDS_PART	"/BSSIDs/"
+
+
+/* Errors */
+#define WPAS_ERROR_INVALID_NETWORK \
+	WPAS_INTERFACES_DBUS_INTERFACE ".InvalidNetwork"
+#define WPAS_ERROR_INVALID_BSSID \
+	WPAS_INTERFACES_DBUS_INTERFACE ".InvalidBSSID"
+
+#define WPAS_ERROR_INVALID_OPTS \
+	WPAS_DBUS_INTERFACE ".InvalidOptions"
+#define WPAS_ERROR_INVALID_IFACE \
+	WPAS_DBUS_INTERFACE ".InvalidInterface"
+
+#define WPAS_ERROR_ADD_ERROR \
+	WPAS_DBUS_INTERFACE ".AddError"
+#define WPAS_ERROR_EXISTS_ERROR \
+	WPAS_DBUS_INTERFACE ".ExistsError"
+#define WPAS_ERROR_REMOVE_ERROR \
+	WPAS_DBUS_INTERFACE ".RemoveError"
+
+#define WPAS_ERROR_SCAN_ERROR \
+	WPAS_INTERFACES_DBUS_INTERFACE ".ScanError"
+#define WPAS_ERROR_ADD_NETWORK_ERROR \
+	WPAS_INTERFACES_DBUS_INTERFACE ".AddNetworkError"
+#define WPAS_ERROR_INTERNAL_ERROR \
+	WPAS_INTERFACES_DBUS_INTERFACE ".InternalError"
+
+/* Maximum length of an object path that we'll allocated dynamically. */
+#define WPAS_DBUS_MAX_OBJECT_PATH_LEN	150
+
+#define WPAS_DBUS_BSSID_FORMAT "%02x%02x%02x%02x%02x%02x"
+
+struct wpa_global;
+struct wpa_supplicant;
+
+struct ctrl_iface_dbus_priv *
+wpa_supplicant_dbus_ctrl_iface_init(struct wpa_global *global);
+void wpa_supplicant_dbus_ctrl_iface_deinit(struct ctrl_iface_dbus_priv *iface);
+void wpa_supplicant_dbus_notify_scan_results(struct wpa_supplicant *wpa_s);
+
+#else /* CONFIG_CTRL_IFACE_DBUS */
+
+static inline struct ctrl_iface_dbus_priv *
+wpa_supplicant_dbus_ctrl_iface_init(struct wpa_global *global)
+{
+	return (struct ctrl_iface_dbus_priv *) 1;
+}
+
+static inline void
+wpa_supplicant_dbus_ctrl_iface_deinit(struct ctrl_iface_dbus_priv *iface)
+{
+}
+
+static inline void
+wpa_supplicant_dbus_notify_scan_results(struct wpa_supplicant *wpa_s)
+{
+}
+
+#endif /* CONFIG_CTRL_IFACE_DBUS */
+
+#endif /* CTRL_IFACE_DBUS_H */
