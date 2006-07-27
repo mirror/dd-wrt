@@ -617,6 +617,9 @@ stop_wshaper (void)
 #ifdef HAVE_RB500
   ret = eval (script_name, "stop", "XX", "eth0");
   ret = eval (script_name, "stop", "XX", "ath0");
+#elif HAVE_XSCALE
+  ret = eval (script_name, "stop", "XX", "ixp1");
+  ret = eval (script_name, "stop", "XX", "ath0");
 #else
   ret = eval (script_name, "stop", "XX", "vlan1");
   ret = eval (script_name, "stop", "XX", "eth1");
