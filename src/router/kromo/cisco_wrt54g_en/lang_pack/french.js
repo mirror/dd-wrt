@@ -1035,15 +1035,15 @@ service.kaid_srv="Démarrer Kaid";
 service.kaid_mac="Console Macs: (must end with;)";
 
 //DHCPd
-service.dhcp_legend="DHCP Client";
-service.dhcp_vendor="Set Vendorclass";
-service.dhcp_legend2="DHCP Server";
-service.dhcp_srv="DHCP Daemon";
-service.dhcp_jffs2="Use JFFS2 for client lease DB";
-service.dhcp_nvramlease="Use NVRAM for client lease DB";
-service.dhcp_domain="Used Domain";
-service.dhcp_landomain="LAN Domain";
-service.dhcp_option="Additional DHCPd Options";
+service.dhcp_legend="Client DHCP";
+service.dhcp_vendor="Vendorclass";
+service.dhcp_legend2="Serveur DHCP";
+service.dhcp_srv="Daemon DHCP";
+service.dhcp_jffs2="Stocker les baux en JFFS2";
+service.dhcp_nvramlease="Stocker les baux en NVRAM";
+service.dhcp_domain="Domaine";
+service.dhcp_landomain="Domaine LAN";
+service.dhcp_option="Paramètres complémentaires DHCPd";
 service.dnsmasq_legend="DNSMasq";
 service.dnsmasq_srv="DNSMasq";
 service.dnsmasq_loc="DNS Local";
@@ -1051,14 +1051,14 @@ service.dnsmasq_opt="Options DNS";
 
 //pptp.webservices
 service.pptp_legend="PPTP";
-service.pptp_srv="PPTP Server";
+service.pptp_srv="Serveur PPTP";
 service.pptp_client="Client IP(s)";
 service.pptp_chap="CHAP-Secrets";
 
 //syslog.webservices
 service.syslog_legend="System Log";
 service.syslog_srv="Syslogd";
-service.syslog_ip="Remote Server";
+service.syslog_ip="Serveur Distant";
 
 //telnet.webservices
 service.telnet_legend="Telnet";
@@ -1481,6 +1481,7 @@ wl_basic.radio_on="Sans fil On";
 wl_basic.radio_off="Sans fil Off";
 
 wl_basic.h2_v24="Interface Sans fil";
+wl_basic.h2_vi="Interfaces Virtuelles";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="TX Power";
 wl_basic.diversity="Diversity";
