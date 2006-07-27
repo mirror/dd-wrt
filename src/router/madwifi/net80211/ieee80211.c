@@ -248,7 +248,7 @@ ieee80211_ifattach(struct ieee80211com *ic)
 	struct ifmediareq imr;
 	int i;
 
-	_MOD_INC_USE(THIS_MODULE, return ENODEV);
+	_MOD_INC_USE(THIS_MODULE, return -ENODEV);
 
 	/*
 	 * Pick an initial operating mode until we have a vap
@@ -578,6 +578,7 @@ ieee80211_vap_detach(struct ieee80211vap *vap)
 	ifmedia_removeall(&vap->iv_media);
 
 	ieee80211_sysctl_vdetach(vap);
+	ieee80211_proc_cleanup(vap);
 	ieee80211_ioctl_vdetach(vap);
 	ieee80211_vlan_vdetach(vap);
 	ieee80211_scan_vdetach(vap);
@@ -1074,7 +1075,7 @@ ieee80211com_media_change(struct net_device *dev)
 	 * First, identify the phy mode.
 	 */
 	if (!media2mode(ime, &newphymode))
-		return EINVAL;
+		return -EINVAL;
 	/* NB: mode must be supported, no need to check */
 	/*
 	 * Autoselect doesn't make sense when operating as an AP.
@@ -1186,7 +1187,7 @@ ieee80211_media_change(struct net_device *dev)
 	 * First, identify the desired phy mode.
 	 */
 	if (!media2mode(ime, &newmode))
-		return EINVAL;
+		return -EINVAL;
 	/*
 	 * Check for fixed/variable rate.
 	 */
@@ -1197,7 +1198,7 @@ ieee80211_media_change(struct net_device *dev)
 		 */
 		newrate = ieee80211_media2rate(ime->ifm_media);
 		if (newrate == 0 || !checkrate(ic, newmode, newrate))
-			return EINVAL;
+			return -EINVAL;
 	} else
 		newrate = IEEE80211_FIXED_RATE_NONE;
 

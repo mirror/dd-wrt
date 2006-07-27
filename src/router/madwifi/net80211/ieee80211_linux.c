@@ -44,6 +44,9 @@
 #include <linux/etherdevice.h>
 #include <linux/if_vlan.h>
 #include <linux/vmalloc.h>
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2,6,18)
+#include <linux/proc_fs.h>
+#endif
 
 #include <net/iw_handler.h>
 #include <linux/wireless.h>
@@ -318,22 +321,8 @@ ieee80211_load_module(const char *modname)
 
 #ifdef CONFIG_SYSCTL
 
-#define MAX_PROC_IEEE80211_SIZE 16383
-#define PROC_IEEE80211_PERM 0644
-
 static struct proc_dir_entry *proc_madwifi;
 static int proc_madwifi_count = 0;
-
-/* XXX: Not the right place for such a declaration */
-struct proc_ieee80211_priv {
-     int rlen;
-     int max_rlen;
-     char *rbuf;
-
-     int wlen;
-     int max_wlen;
-     char *wbuf;
-};
 
 static int
 proc_read_nodes(struct ieee80211vap *vap, char *buf, int space)
@@ -602,6 +591,7 @@ ieee80211_sysctl_vattach(struct ieee80211vap *vap)
 {
 	int i, space;
 	char *devname = NULL;
+	struct ieee80211_proc_entry *tmp=NULL;
 	
 	space = 5 * sizeof(struct ctl_table) + sizeof(ieee80211_sysctl_template);
 	vap->iv_sysctls = kmalloc(space, GFP_KERNEL);
@@ -653,34 +643,137 @@ ieee80211_sysctl_vattach(struct ieee80211vap *vap)
 		vap->iv_sysctls = NULL;
 	}
 
+	/* Ensure the base madwifi directory exists */
 	if (!proc_madwifi && proc_net != NULL) {
 		proc_madwifi = proc_mkdir("madwifi", proc_net);
 		if (!proc_madwifi)
 			printk(KERN_WARNING "Failed to mkdir /proc/net/madwifi\n");
 	}
 
+	/* Create a proc directory named after the VAP */
 	if (proc_madwifi) {
 		proc_madwifi_count++;
 		vap->iv_proc = proc_mkdir(vap->iv_dev->name, proc_madwifi);
+	}
+	
+	/* Create a proc entry listing the associated stations */
+	ieee80211_proc_vcreate(vap, &proc_ieee80211_ops, "associated_sta");
+
+	/* Recreate any other proc entries that have been registered */
 		if (vap->iv_proc) {
-			vap->iv_proc_stations = create_proc_entry("associated_sta",
+		tmp = vap->iv_proc_entries;
+		while (tmp) {
+			if (!tmp->entry) {
+				tmp->entry = create_proc_entry(tmp->name, 
 				PROC_IEEE80211_PERM, vap->iv_proc);
-			vap->iv_proc_stations->data = vap;
-			vap->iv_proc_stations->proc_fops = &proc_ieee80211_ops;
+				tmp->entry->data = vap;
+				tmp->entry->proc_fops = tmp->fileops;
+			}
+			tmp = tmp->next;
 		}
 	}
 }
 
+/* Frees all memory used for the list of proc entries */
+void 
+ieee80211_proc_cleanup(struct ieee80211vap *vap)
+{
+	struct ieee80211_proc_entry *tmp=vap->iv_proc_entries;
+	struct ieee80211_proc_entry *next = NULL;
+	while (tmp) {
+		next = tmp->next;
+		kfree(tmp);
+		tmp = next;
+	}
+}
+
+/* Called by other modules to register a proc entry under the vap directory */
+int 
+ieee80211_proc_vcreate(struct ieee80211vap *vap, 
+		struct file_operations *fileops, char *name)
+{
+	struct ieee80211_proc_entry *entry;
+	struct ieee80211_proc_entry *tmp=NULL;
+
+	/* Ignore if already in the list */
+	if (vap->iv_proc_entries) {
+		tmp = vap->iv_proc_entries;
+		do {
+			if (strcmp(tmp->name, name)==0)
+				return -1;
+			/* Check for end of list */
+			if (!tmp->next)
+				break;
+			/* Otherwise move on */
+			tmp = tmp->next;
+		} while (1);
+	}
+	
+	/* Create an item in our list for the new entry */
+	entry = kmalloc(sizeof(struct ieee80211_proc_entry), GFP_KERNEL);
+	if (entry == NULL) {
+		printk("%s: no memory for new proc entry (%s)!\n", __func__, 
+				name);
+		return -1;
+	}
+
+	/* Replace null fileops pointers with our standard functions */
+	if (!fileops->open)
+		fileops->open = proc_ieee80211_open;
+	if (!fileops->release)
+		fileops->release = proc_ieee80211_close;
+	if (!fileops->read)
+		fileops->read = proc_ieee80211_read;
+	if (!fileops->write)
+		fileops->write = proc_ieee80211_write;
+	
+	/* Create the entry record */
+	entry->name = name;
+	entry->fileops = fileops;
+	entry->next = NULL;
+	entry->entry = NULL;
+
+	/* Create the actual proc entry */
+	if (vap->iv_proc) {
+		entry->entry = create_proc_entry(entry->name, 
+				PROC_IEEE80211_PERM, vap->iv_proc);
+		entry->entry->data = vap;
+		entry->entry->proc_fops = entry->fileops;
+	}
+
+	/* Add it to the list */
+	if (!tmp) {
+		/* Add to the start */
+		vap->iv_proc_entries = entry;
+	} else {
+		/* Add to the end */
+		tmp->next = entry;
+	}
+
+	return 0;
+}
+EXPORT_SYMBOL(ieee80211_proc_vcreate);
+
 void
 ieee80211_sysctl_vdetach(struct ieee80211vap *vap)
 {
+	struct ieee80211_proc_entry *tmp=NULL;
+
 	if (vap->iv_sysctl_header) {
 		unregister_sysctl_table(vap->iv_sysctl_header);
 		vap->iv_sysctl_header = NULL;
 	}
 
 	if (vap->iv_proc) {
-		remove_proc_entry("associated_sta", vap->iv_proc);
+		/* Remove child proc entries but leave them in the list */
+		tmp = vap->iv_proc_entries;
+		while (tmp) {
+			if (tmp->entry) {
+				remove_proc_entry(tmp->name, vap->iv_proc);
+				tmp->entry = NULL;
+			}
+			tmp = tmp->next;
+		}
 		remove_proc_entry(vap->iv_proc->name, proc_madwifi);
 		if (proc_madwifi_count == 1) {
 			remove_proc_entry("madwifi", proc_net);

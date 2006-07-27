@@ -798,7 +798,7 @@ extern	HAL_BOOL __ahdecl ath_hal_init_channels(struct ath_hal *,
 		HAL_CHANNEL *chans, u_int maxchans, u_int *nchans,
 		u_int8_t *regclassids, u_int maxregids, u_int *nregids,
 		HAL_CTRY_CODE cc, u_int16_t modeSelect,
-		HAL_BOOL enableOutdoor, HAL_BOOL enableExtendedChannels);
+		HAL_BOOL enableOutdoor, HAL_BOOL enableExtendedChannels,uint channelbw);
 
 /*
  * Calibrate noise floor data following a channel scan or similar.
@@ -828,6 +828,11 @@ extern u_int16_t __ahdecl ath_hal_computetxtime(struct ath_hal *,
  * Return if device is public safety.
  */
 extern HAL_BOOL __ahdecl ath_hal_ispublicsafetysku(struct ath_hal *);
+
+/*
+ * Return if regdomain supports DFS.
+ */
+extern HAL_BOOL __ahdecl ath_hal_isdfsregdomain(struct ath_hal *);
 
 /*
  * Convert between IEEE channel number and channel frequency

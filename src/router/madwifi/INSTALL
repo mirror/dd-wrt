@@ -1,4 +1,3 @@
-================================================================
 MADWIFI: Multimode Atheros Driver for WiFi on Linux (VAP branch)
 ================================================================
 
@@ -8,25 +7,26 @@ Read the file COPYRIGHT for the complete copyright.
 
 
 Requirements
-============
+------------
 
-o Kernel sources of the target kernel (some Linux distributions provide
+- Kernel sources of the target kernel (some Linux distributions provide
   headers, makefiles and configuration data - it should suffice).
-o Wireless Extensions support (14 or later, 17 preferred) - option
+- Wireless Extensions support (14 or later, 17 preferred) - option
   CONFIG_NET_RADIO in kernel .config file.
-o Sysctl support - option CONFIG_SYSCTL in kernel .config file.
-o Crypto API support - option CONFIG_CRYPTO in kernel .config file (AES
+- Sysctl support - option CONFIG_SYSCTL in kernel .config file.
+- Crypto API support - option CONFIG_CRYPTO in kernel .config file (AES
   support is used if present, otherwise the AES-CCMP cipher module falls
   back to a private implementation).
-o gcc of same version that was used to compile the kernel (ignoring this
+- gcc of same version that was used to compile the kernel (ignoring this
   will cause "Invalid module format" errors during module load).
 
 2.4.x kernels starting with 2.4.20 and 2.6 kernels should work without
-problems. Other kernel versions may require modifications, e.g. for
+problems.  Other kernel versions may require modifications, e.g. for
 crypto support and/or updated wireless extensions.
 
+
 Building the driver
-===================
+-------------------
 
 The driver is built using the Linux kernel build mechanism.  This means
 you must have some part of the kernel source distribution installed on
@@ -34,217 +34,128 @@ the machine where you want to build the driver.  In particular, the
 kernel include files, makefiles, build scripts and configuration must be
 available.
 
-If you built your kernel from source then this will be present. 
-Otherwise you may need to install some packages your distribution (look
-for kernel-headers or kernel-devel).
+This will be present if you built your kernel from source.  Otherwise
+you may need to install an additional kernel development package from
+your distribution that would match your kernel.  For example, the
+development package for the default kernel is called linux-headers on
+Debian and kernel-devel on Fedora Core.  Installing a package with full
+kernel sources should not be generally necessary.
 
 Note: in the following examples "trouble%" stands for your system
-prompt; you're not expected to type that as part of the actual
-command.
-
+prompt; you're not expected to type that as part of the actual command.
 
 Most people can just type:
 
-trouble% make
+  trouble% make
 
-in the top-level madwifi source directory to build all the modules for
+in the top-level MadWifi source directory to build all the modules for
 the currently running system.
 
-You MUST do a "make clean" before compiling for a different
-version of Linux; e.g. building for 2.6 after building for 2.4.
+You MUST do a "make clean" before compiling for a different version of
+Linux, e.g. building for 2.6 after building for 2.4.
 
-If you want to compile madwifi for a different kernel, you need to
+If you want to compile MadWifi for a different kernel, you need to
 specify the location of the kernel build tree, e.g.:
 
-trouble% make KERNELPATH=/usr/src/linux-2.6.3
+  trouble% make KERNELPATH=/usr/src/linux-2.6.3
 
 Note that you can also specify this path by setting an environment
 variable; e.g.
 
-trouble% export KERNELPATH=/usr/src/linux-2.6.3
-trouble% make
+  trouble% export KERNELPATH=/usr/src/linux-2.6.3
+  trouble% make
 
 If the kernel was built outside the source directory, KERNELPATH should
-point to the output directory, not to the sources.
+point to the output directory where .config is located, not to the
+sources.
 
-In rare cases you may also need to specify the kernel version using the
-KERNELRELEASE variable.  This used to be necessary for the kernels that
-had their exact version set during compilation.  For instance, some
-distribution could ship a '2.6.10-4-686' kernel compiled from 2.6.10
-sources.  If you still need to use the KERNELRELEASE option, please
-report it.
+MadWifi currently provides three different rate control algorithms,
+ONOE, AMRR and SAMPLE.  SAMPLE is the most advanced one and is used by
+default.  In order to make MadWifi use AMRR instead, you have to specify
+that via the ATH_RATE environment variable; e.g.
 
+  trouble% export ATH_RATE=ath_rate/amrr
+  trouble% make
 
-Madwifi currently provides three different rate control algorithms,
-ONOE, AMRR and SAMPLE. SAMPLE is the most advanced one and is used
-by default. In order to make madwifi use AMRR instead, you have to
-specify that via the ATH_RATE environment variable; e.g.
-
-trouble% export ATH_RATE=ath_rate/amrr
-trouble% make
-
-Note:
-Changing the rate control is only required (and recommended) for users
-who want to setup an access point using madwifi in difficult
-(e.g. lossy) environments and who know what they are doing.
-
+NOTE: Changing the rate control is only required (and recommended) for
+      users who want to setup an access point using MadWifi in difficult
+      (e.g. lossy) environments and who know what they are doing.
 
 This distribution includes support for a variety of target platforms.
-Because of the binary nature of the HAL not all platforms are
-supported (the list grows as time permits).  The supported target
-platforms can be found with:
+Because of the binary nature of the HAL not all platforms are supported
+(the list grows as time permits).  The supported target platforms can be
+found with:
 
-trouble% ls hal/linux/*.inc
-hal/linux/Makefile.inc          hal/linux/mips1-le-elf.inc
-hal/linux/arm9-le-thumb-elf.inc hal/linux/mipsisa32-be-elf.inc
-hal/linux/armv4-be-elf.inc      hal/linux/mipsisa32-le-elf.inc
-hal/linux/armv4-le-elf.inc      hal/linux/powerpc-be-eabi.inc
-hal/linux/i386-elf.inc          hal/linux/powerpc-le-eabi.inc
-hal/linux/mips-be-elf.inc       hal/linux/sh4-le-elf.inc
-hal/linux/mips-le-elf.inc       hal/linux/xscale-be-elf.inc
-hal/linux/mips1-be-elf.inc
+  trouble% ls hal/pub/*.inc
 
 A target specifies the CPU architecture, byte order, and the ABI/file
 format.  For most popular platforms, the build system will find the
 appropriate files.  When cross-compiling or compiling for less common
-platforms, the target platform should be specified using the TARGET
+platforms, the target platform may need to be specified using the TARGET
 variable, e.g:
 
-trouble% make TARGET=armv4-le-elf
+  trouble% make TARGET=armv4-le-elf
 
 Consult the contents of the .inc file to find out what the target
 platform is and what toolchain was used to build the HAL object module. 
-Beware of mixing toolchains; many target platforms require that the HAL
+Beware of mixing toolchains; some target platforms require that the HAL
 and driver be built with the same toolchain (i.e. compiler, assembler,
-and loader).  If you want to override the default toolchain specified in
-the .inc file you can do that by editing the .inc file or by specifying
-environment variables.
-
-For example, the file for xscale-be-elf is:
-
-#
-# Compilation configuration for building big-endian XScale/arm-elf.
-#
-
-#
-# Built with GNU cross-devel tools:
-#
-# PREFIX=/pub/gnu
-# BINUTILS=binutils-2.14
-# GCC=gcc-3.3.2
-# target=arm-elf
-#
-# ${BINUTILS}/configure --target=$target --prefix=${PREFIX}
-# ${GCC}/configure --target=$target   --prefix=${PREFIX} \
-#	--enable-languages=c   --with-gnu-as --with-gnu-ld \
-#	--with-newlib   --with-gxx-include-dir=${PREFIX}/$target/include
-#
-ifndef TOOLPREFIX
-TOOLPREFIX=	/pub/gnu/bin/arm-elf-
-endif
-#
-CC=	${TOOLPREFIX}gcc
-LD=	${TOOLPREFIX}ld
-STRIP=	${TOOLPREFIX}strip
-OBJCOPY=${TOOLPREFIX}objcopy
-NM=	${TOOLPREFIX}nm
-
-LDOPTS=	-EB
-COPTS+=	-DAH_BYTE_ORDER=AH_BIG_ENDIAN
-COPTS+= -march=armv4 -mbig-endian -fno-strict-aliasing -fno-common -mapcs-32 \
-	-mtune=xscale  -mshort-load-bytes -msoft-float
-
-The first set of definitions specify the location and name of the
-programs used to build the software.  The rest of the file defines
-the compilation options for the target platform.  The latter should
-usually not be changed because they were the options used to build
-the binary HAL module, but TOOLPREFIX is unlikely to be right for
-your system and you will want to change it; e.g.
-
-trouble% export TOOLPREFIX=/usr/local/bin/arm-elf-
-
-to use programs installed in /usr/local/bin.  Note that mixing different
-versions of the GNU tools may not work.  The .inc file for each target
-platform specifies the exact toolchains used, including where they
-were obtained (if pre-built).
+and linker) and the same compiler flags.  If you get warnings about
+incompatible compiler flags, chances are that you are compiling for a
+wrong target or using an incompatible compiler.
 
 The build system is designed to support cross-building without any
-modification to the distribution files.  If you cannot do what you
-need by setting environment variables please send patches to show
-where things failed to do the right thing.
+modification to the distribution files.  If you cannot do what you need
+by setting environment variables please send patches to show where
+things failed to do the right thing.
 
 
 Building the software will generate numerous loadable modules:
 
-Linux 2.6
-    ath/ath_pci.ko (Atheros driver for PCI/Cardbus devices),
-    ath_hal/ath_hal.ko (Atheros HAL), and
-    net80211/wlan.ko (802.11 support layer)
-    net80211/wlan_wep.ko (WEP cipher support)
-    net80211/wlan_tkip.ko (TKIP cipher support)
-    net80211/wlan_ccmp.ko (AES-CCMP cipher support)
-    net80211/wlan_xauth.ko (external authenticator)
-    net80211/wlan_auth.ko (802.1x authenticator)
-    net80211/wlan_radius.ko (RADIUS client for 802.1x authenticator)
-    net80211/wlan_acl.ko (MAC ACL support for AP operation)
+  ath_pci		Atheros driver for PCI/Cardbus devices
+  ath_hal		Atheros HAL
+  wlan			802.11 support layer
+  wlan_wep		WEP cipher support
+  wlan_tkip		TKIP cipher support
+  wlan_ccmp		AES-CCMP cipher support
+  wlan_xauth		external authenticator
+  wlan_acl		MAC ACL support for AP operation
+  wlan_scan_ap		AP scanning support
+  wlan_scan_sta		station scanning support
 
-    and, depending on the rate control algorithm you choose (see above),
-    one of these:
+and, depending on the rate control algorithm you choose (see above), one
+of these:
 
-    ath_rate/onoe/ath_rate_onoe.ko (ONOE rate control)
-    ath_rate/amrr/ath_rate_amrr.ko (AMRR rate control)
-    ath_rate/sample/ath_rate_sample.ko (SAMPLE rate control)
+  ath_rate_onoe		ONOE rate control
+  ath_rate_amrr		AMRR rate control
+  ath_rate_sample	SAMPLE rate control
 
+The ath_pci module must be loaded either manually or by the system, e.g.
+through the hotplug or card manager support.  The remaining modules are
+loaded automatically as needed, so after doing a "make install" you only
+need to run following:
 
-Linux 2.4
-    ath/ath_pci.o (Atheros driver for PCI/Cardbus devices),
-    ath_hal/ath_hal.o (Atheros HAL), and
-    net80211/wlan.o (802.11 support layer)
-    net80211/wlan_wep.o (WEP cipher support)
-    net80211/wlan_tkip.o (TKIP cipher support)
-    net80211/wlan_ccmp.o (AES-CCMP cipher support)
-    net80211/wlan_xauth.o (external authenticator)
-    net80211/wlan_auth.o (802.1x authenticator)
-    net80211/wlan_radius.o (RADIUS client for 802.1x authenticator)
-    net80211/wlan_acl.o (MAC ACL support for AP operation)
-
-    and, depending on the rate control algorithm you choose (see above),
-    one of these:
-
-    ath_rate/onoe/ath_rate_onoe.o (ONOE rate control)
-    ath_rate/amrr/ath_rate_amrr.o (AMRR rate control)
-    ath_rate/sample/ath_rate_sample.o (SAMPLE rate control)
-
-
-The first three files must be loaded either manually or by the
-system, e.g. through the hotplug or card manager support.  The
-remaining modules are loaded by the wlan module as needed. Typically
-modules are automatically loaded via dependencies, so after doing a
-make install you only need to do:
-
-    modprobe ath_pci
+  modprobe ath_pci
 
 For automatic module loading you may need to modify your system's
-configuration files so the necessary modules are loaded when an
-Atheros device is recognized.  The exact procedure varies from
-system to system.
+configuration files so the necessary modules are loaded when an Atheros
+device is recognized.  The exact procedure varies from system to system.
 
 There are module parameters available to fit your needs, e.g. you can
 set the countrycode manually if your card's EEPROM does not contain the
-correct one for your location.
-See http://www.unicode.org/onlinedat/countries.html to find your code.
+correct one for your location.  See
+http://www.unicode.org/onlinedat/countries.html to find your code.
 
 To activate German frequencies you would specify:
 
-    modprobe ath_pci countrycode=276
+  modprobe ath_pci countrycode=276
 
 To see available parameters type:
 
-    modinfo ath_pci
-
+  modinfo ath_pci
 
 Further information on how to work with the driver can be found in the
-file README. In addition, the project's wiki has a lot of valuable
+file README.  In addition, the project's wiki has a lot of valuable
 information:
 
 http://madwifi.org/

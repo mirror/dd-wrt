@@ -60,8 +60,8 @@ LD=	${TOOLPREFIX}ld
 STRIP=	${TOOLPREFIX}strip
 OBJCOPY=${TOOLPREFIX}objcopy
 NM=	${TOOLPREFIX}nm
-COPTS+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
+COPTS2+=	-DAH_BYTE_ORDER=AH_LITTLE_ENDIAN
 
 LDOPTS=	-EL
-COPTS+=	-O2 -G 0 -mno-abicalls -fno-pic -pipe -mips32 -mtune=mips32 -funit-at-a-time -Wa,--trap \
+COPTS2+=	-O2 -G 0 -mno-abicalls -fno-pic -pipe -mips32 -mtune=mips32 -funit-at-a-time -Wa,--trap \
 	-fno-strict-aliasing -fno-common -fomit-frame-pointer -mlong-calls

@@ -33,7 +33,7 @@ BuildRequires:  /lib/modules/%{mykversion}/build/Makefile
 
 %description 
 This software contains a Linux kernel driver for Atheros-based
-Wireless LAN devices.  The driver supports station, AP, adhoc, and
+Wireless LAN devices.  The driver supports station, AP, ad-hoc, and
 monitor modes of operation.  The Atheros driver depends on a
 device-independent implementation of the 802.11 protocols that
 originated in the BSD community (NetBSD in particular).
@@ -86,8 +86,8 @@ find . -name Makefile\* | xargs perl -pi -e's,/sbin/depmod,: /sbin/depmod,'
 export KERNELRELEASE=%{mykversion}
 export KERNELPATH=/lib/modules/%{mykversion}/build
 export KERNELCONF=/lib/modules/%{mykversion}/build/.config
-export MODULEPATH=/lib/modules/%{mykversion}/net
-export COPTS="-I /lib/modules/%{mykversion}/build/include/ $COPTS"
+export KMODPATH=/lib/modules/%{mykversion}/net
+export COPTS="-I /lib/modules/%{mykversion}/build/include/ $COPTS2"
 # export ATH_RATE=ath_rate/onoe
 make 
 # cd tools ; make all ; cd ..
@@ -96,13 +96,13 @@ make
 export KERNELRELEASE=%{mykversion}
 export KERNELPATH=/lib/modules/%{mykversion}/build
 export KERNELCONF=/lib/modules/%{mykversion}/build/.config
-export MODULEPATH=/lib/modules/%{mykversion}/net
+export KMODPATH=/lib/modules/%{mykversion}/net
 
 rm -rf %{buildroot}
 
 # make info
 mkdir -p  %{buildroot}/usr/local/bin
-mkdir -p  %{buildroot}/$MODULEPATH
+mkdir -p  %{buildroot}/$KMODPATH
 mkdir -p  %{buildroot}/usr/share/madwifi
 
 make install DESTDIR=%{buildroot} KERNELPATH=/lib/modules/%{mykversion}/build
@@ -138,7 +138,7 @@ rm -rf %{buildroot}
 - Incorporate the changes made on the Makefile
 - Cleaning on the Description fields
 - Changing the URL to the new madwifi.org's one.
-- Install under /usr/share/doc/madwifi-release the  INSTALL and THANKS files
+- Install under /usr/share/doc/madwifi-release the INSTALL and THANKS files
 - Install under /usr/share/doc/madwifi-release the docs files.
 
 * Sun Oct 30 2005  Patrick Pichon <Patrick.Pichon@laposte.net>
@@ -148,7 +148,7 @@ rm -rf %{buildroot}
 - Fix the --rebuild option.
 
 * Mon Oct 3 2005  Lyonel Vincent <>
-- Build by default on lastest kernel installed
+- Build by default on latest kernel installed
 
 * Wed Jul 20 2005 Patrick Pichon <Patrick.Pichon@laposte.net
 - target particular kernel
@@ -163,7 +163,7 @@ rm -rf %{buildroot}
 - Update WPA has been merged into HEAD
 
 * Mon Jul 27 2004 Patrick Pichon <Patrick.Pichon@laposte.net>
-- Update to handle WPA branche.
+- Update to handle WPA branch.
 
 * Tue Jul 08 2004 Patrick Pichon <Patrick.Pichon@laposte.net>
 - Initial Release

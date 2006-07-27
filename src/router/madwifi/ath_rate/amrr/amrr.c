@@ -481,6 +481,15 @@ ath_rate_detach(struct ath_ratectrl *arc)
 }
 EXPORT_SYMBOL(ath_rate_detach);
 
+#ifdef CONFIG_SYSCTL
+void
+ath_rate_dynamic_proc_register(struct ieee80211vap *vap)
+{		
+        /* Amrr rate module reports no statistics */
+}
+EXPORT_SYMBOL(ath_rate_dynamic_proc_register);
+#endif /* CONFIG_SYSCTL */
+
 static int minrateinterval = 500;	/* 500ms */
 static int maxint = 0x7fffffff;		/* 32-bit big */
 static int min_threshold = 1;

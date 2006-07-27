@@ -1,4 +1,4 @@
-Acknowledgements
+Acknowledgments
 ================
 This work could not have been done without the support of Atheros
 and in particular the efforts of Greg Chesson.  Comments from David
@@ -76,6 +76,32 @@ Charles Bovy
 Ian M. Rawley
 Beat Meier
 Alexander Warg
+Jiri Fojtasek
+Joshua Wright
+Dan Williams
+Aurelien Jarno
+Daniel Wu
+Paolo Cristiani
+"stiabhan"
+Elias Oltmanns
+Imre Kaloz
+Brian Eaton
+"paolo"
+Daniel J Blueman
+Digger Vermont
+Felix Fietkau
+Colubris Networks
+Matthew W. S. Bell
+Ivan S. Subrov
+Jochem Berndsen
+Nicholas J Kreucher
+Terry Todd
+Dave Platt
+Scott Raynel
+Christian Buennig
+Joe Parks
+Pavel Novak
+Wade Mealing
 
 Apologies to anyone whose name was unintentionally left off.
 Please let us know if you think your name should be mentioned here!
@@ -88,10 +114,24 @@ We also would like to thank the following individuals and companies
   3 MiniPCI cards
 
 * Linux-Consulting, USA - http://www.linux-consulting.com
-  madwifi.org domain name, DNS server maintainance
+  madwifi.org domain name, DNS server maintenance
 
+* Netgate, USA - http://www.netgate.com
+  1U server (P3/850, 1GB RAM, 2x200GB HDD)
+
+  A special thanks goes to Will Herrick, who invested a lot of
+  personal time and money to pick up the server and ship it to
+  Germany!
+
+* Suzo, Slovakia - http://www.suzo.sk
+  1 Wistron DCMA-81 MiniPCI card
+  
 * true global communications GmbH, Germany - http://www.tgc.de
   Free server and bandwidth for madwifi.org
+
+* Voyage, Hong Kong - htt://www.voyage.hk
+  1 Senao NMP-8602 Plus MiniPCI card, 2 pigtails and 2 rubber
+  antenna
 
 To learn more about donations to our project visit:
 http://madwifi.org/wiki/Donations

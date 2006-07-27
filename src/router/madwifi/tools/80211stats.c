@@ -63,7 +63,7 @@
 #endif
 
 /* printf modifier for u_int64_t */
-#ifdef _LP64
+#if defined(_LP64) || defined(__alpha__)
 #define INT64FMT "%lu"
 #else
 #define INT64FMT "%llu"

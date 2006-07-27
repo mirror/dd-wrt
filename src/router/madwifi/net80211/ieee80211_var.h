@@ -173,6 +173,8 @@ struct ieee80211com {
 	u_int ic_nregclass;			/* # entries in ic_regclassids */
 	u_int8_t ic_regclassids[IEEE80211_REGCLASSIDS_MAX];
 
+	u_int8_t		ic_isdfsregdomain; /* is this DFS regdomain? */
+
 	/* scan-related state */
 	struct ieee80211_scan_state *ic_scan;	/* scan state */
 	enum ieee80211_roamingmode ic_roaming;	/* roaming mode */
@@ -267,8 +269,32 @@ struct ieee80211_nsparams {
 #define IW_MAX_SPY 8
 struct ieee80211_spy {
         u_int8_t mac[IW_MAX_SPY * IEEE80211_ADDR_LEN];
+        u_int8_t thr_low;	/* 1 byte rssi value, 0 = threshold is off */
+        u_int8_t thr_high;	/* 1 byte rssi value */   
         u_int8_t num;
 };
+
+#ifdef CONFIG_SYSCTL
+#define MAX_PROC_IEEE80211_SIZE 16383
+#define PROC_IEEE80211_PERM 0644
+
+struct proc_ieee80211_priv {
+     int rlen;
+     int max_rlen;
+     char *rbuf;
+
+     int wlen;
+     int max_wlen;
+     char *wbuf;
+};
+
+struct ieee80211_proc_entry {
+	char *name;
+	struct file_operations *fileops;
+	struct proc_dir_entry *entry;
+	struct ieee80211_proc_entry *next;
+};
+#endif
 
 struct ieee80211vap {
 	struct net_device *iv_dev;		/* associated device */
@@ -280,8 +306,8 @@ struct ieee80211vap {
 #ifdef CONFIG_SYSCTL
 	struct ctl_table_header	*iv_sysctl_header;
 	struct ctl_table *iv_sysctls;
-	struct proc_dir_entry *iv_proc_stations;
 	struct proc_dir_entry *iv_proc;
+	struct ieee80211_proc_entry *iv_proc_entries;
 #endif
 	struct vlan_group *iv_vlgrp;		/* vlan group state */
 
@@ -432,6 +458,7 @@ MALLOC_DECLARE(M_80211_VAP);
 #define IEEE80211_FEXT_REGCLASS	0x00000100	/* CONF: send regclassids in country ie */
 #define IEEE80211_FEXT_ERPUPDATE 0x00000200	/* STATUS: update ERP element */
 #define IEEE80211_FEXT_SWBMISS 0x00000400	/* CONF: use software beacon timer */
+#define IEEE80211_FEXT_DROPUNENC_EAPOL 0x00000800      /* CONF: drop unencrypted eapol frames */
 
 #define IEEE80211_COM_UAPSD_ENABLE(_ic)		((_ic)->ic_flags_ext |= IEEE80211_FEXT_UAPSD)
 #define IEEE80211_COM_UAPSD_DISABLE(_ic)	((_ic)->ic_flags_ext &= ~IEEE80211_FEXT_UAPSD)
@@ -449,6 +476,10 @@ MALLOC_DECLARE(M_80211_VAP);
 #define IEEE80211_VAP_EOSPDROP_ENABLE(_v)  ((_v)->iv_flags_ext |= IEEE80211_FEXT_EOSPDROP)
 #define IEEE80211_VAP_EOSPDROP_DISABLE(_v) ((_v)->iv_flags_ext &= ~IEEE80211_FEXT_EOSPDROP)
 #define IEEE80211_VAP_EOSPDROP_ENABLED(_v) ((_v)->iv_flags_ext & IEEE80211_FEXT_EOSPDROP)
+#define IEEE80211_VAP_DROPUNENC_EAPOL_ENABLE(_v)  ((_v)->iv_flags_ext |= IEEE80211_FEXT_DROPUNENC_EAPOL)
+#define IEEE80211_VAP_DROPUNENC_EAPOL_DISABLE(_v) ((_v)->iv_flags_ext &= ~IEEE80211_FEXT_DROPUNENC_EAPOL)
+#define IEEE80211_VAP_DROPUNENC_EAPOL(_v) ((_v)->iv_flags_ext & IEEE80211_FEXT_DROPUNENC_EAPOL)
+
 
 /* ic_caps */
 #define	IEEE80211_C_WEP		0x00000001	/* CAPABILITY: WEP available */
@@ -645,6 +676,7 @@ void ieee80211_note_frame(struct ieee80211vap *,
 	ieee80211_msg(_vap, IEEE80211_MSG_ASSOC)
 #else
 #define	IEEE80211_DPRINTF(_vap, _m, _fmt, ...)
+#define	IEEE80211_NOTE(_vap, _m, _ni, _fmt, ...)
 #define	IEEE80211_NOTE_FRAME(_vap, _m, _wh, _fmt, ...)
 #define	IEEE80211_NOTE_MAC(_vap, _m, _mac, _fmt, ...)
 #define	ieee80211_msg_dumppkts(_vap)	0

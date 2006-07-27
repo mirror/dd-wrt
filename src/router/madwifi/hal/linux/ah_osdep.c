@@ -559,6 +559,7 @@ EXPORT_SYMBOL(ath_hal_getwirelessmodes);
 EXPORT_SYMBOL(ath_hal_computetxtime);
 EXPORT_SYMBOL(ath_hal_mhz2ieee);
 EXPORT_SYMBOL(ath_hal_process_noisefloor);
+EXPORT_SYMBOL(ath_hal_isdfsregdomain);
 
 static int __init
 init_ath_hal(void)

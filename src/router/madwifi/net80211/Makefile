@@ -86,12 +86,12 @@ include $(obj)/${DEPTH}/Makefile.inc
 INCS+=	-I${HAL} -I${HAL}/${OS} -I$(obj)/${ATH_HAL} -I$(obj)/${WLAN} \
 	-I${obj}/${DEPTH}
 
-EXTRA_CFLAGS+=$(INCS) ${COPTS}
+EXTRA_CFLAGS+=$(INCS) ${COPTS2}
 
 -include $(TOPDIR)/Rules.make
 
 all:
-	$(MAKE) -C $(KERNELPATH) SUBDIRS=$(shell pwd) MODVERDIR=$(shell pwd)/${SYMBOLSDIR} modules
+	$(MAKE) -C $(KERNELPATH) SUBDIRS=$(shell pwd) modules
 
 wlan.o:	$(wlan-objs)
 	$(LD) $(LDOPTS) -o wlan.$(KMODSUF) -r $(wlan-objs)
@@ -111,11 +111,10 @@ wlan_acl.o:	$(wlan_acl-objs)
 	$(LD) $(LDOPTS) -o wlan_acl.$(KMODSUF) -r $(wlan_acl-objs)
 
 install:
-	test -d ${DESTDIR}/${MODULEPATH} || mkdir -p ${DESTDIR}/${MODULEPATH}
-	for i in ${MOD_INSTALL}; do \
+	test -d $(DESTDIR)/$(KMODPATH) || mkdir -p $(DESTDIR)/$(KMODPATH)
+	for i in $(MOD_INSTALL); do \
 		f=`basename $$i .o`; \
-		${TOOLPREFIX}strip -S $$f.$(KMODSUF); \
-		cp $$f.${KMODSUF} ${DESTDIR}/${MODULEPATH}; \
+		cp $$f.$(KMODSUF) $(DESTDIR)/$(KMODPATH); \
 	done
 
 clean:
