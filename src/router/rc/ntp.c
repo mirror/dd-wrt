@@ -32,7 +32,7 @@ extern void timer_cancel (timer_t timerid);
 int
 isRunning (char *name)
 {
-  return eval ("pidof", name)==0?1:0;
+  return eval ("pidof", name) == 0 ? 1 : 0;
 }
 
 void
@@ -83,7 +83,10 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
     return 0;
 
   if (sscanf (nvram_safe_get ("time_zone"), "%f %*d %d", &fofs, &dst) != 2)
-    return 1;			// OFS[.5] UNK DSTIDX
+    {
+      fprintf (stderr, "invalid timezone\n");
+      return 1;			// OFS[.5] UNK DSTIDX
+    }
   if (((i = atoi (nvram_safe_get ("dstcode"))) > 0) && (i <= 5))
     dst = i;
   if (!nvram_match ("daylight_time", "1"))
@@ -94,7 +97,10 @@ do_ntp (void)			// called from ntp_main and process_monitor_main; called every h
 
   char *argv[] = { "ntpclient", servers, NULL };
   if (_eval (argv, NULL, 20, NULL) != 0)
-    return 1;
+    {
+      fprintf (stderr, "ntp returned a error\n");
+      return 1;
+    }
 
   // -- probably should move to ntpclient
 

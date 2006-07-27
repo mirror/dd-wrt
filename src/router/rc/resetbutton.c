@@ -35,13 +35,13 @@
 #include <stdarg.h>
 #include <dirent.h>
 
-// #define BCM47XX_SOFTWARE_RESET  0x40	/* GPIO 6 */
+// #define BCM47XX_SOFTWARE_RESET  0x40 /* GPIO 6 */
 #define BCM47XX_SW_PUSH         0x10	/* GPIO 4 */
 
-// #define WHR_SOFTWARE_RESET 0x10	//GPIO 4  , should work with Buffalo WBR-G54 too, and WZRRSG54
+// #define WHR_SOFTWARE_RESET 0x10      //GPIO 4  , should work with Buffalo WBR-G54 too, and WZRRSG54
 #define WHR_SW_PUSH 0		//GPIO 0, code unknown
 
-// #define WBR2_SOFTWARE_RESET 0x80	//GPIO 7
+// #define WBR2_SOFTWARE_RESET 0x80     //GPIO 7
 #define WBR2_SW_PUSH 0		//GPIO 0, code unknown
 
 #define	SES_LED_CHECK_TIMES	"9999"	/* How many times to check? */
@@ -81,6 +81,7 @@ alarmtimer (unsigned long sec, unsigned long usec)
   itv.it_interval = itv.it_value;
   setitimer (ITIMER_REAL, &itv, NULL);
 }
+
 int
 endswith (char *str, char *cmp)
 {
@@ -181,7 +182,7 @@ period_check (int sig)
   if ((fp = fopen (GPIO_FILE, "r")))
     {
 #ifdef HAVE_XSCALE
-      fscanf(fp,"%d",&val);
+      fscanf (fp, "%d", &val);
 #else
       fread (&val, 4, 1, fp);
 #endif
@@ -191,18 +192,18 @@ period_check (int sig)
     perror (GPIO_FILE);
 
   DEBUG ("resetbutton: GPIO = 0x%x\n", val);
-  
+
   int gpio = 0;
-  
+
   int state = 0;
 #ifdef HAVE_XSCALE
   state = val;
 #else
   if ((brand & 0x000f) != 0x000f)
-    gpio = 1 << (brand & 0x000f);  //calculate gpio pin no.
+    gpio = 1 << (brand & 0x000f);	//calculate gpio pin no.
 
-  if ((brand & 0x0010) == 0)  //check reset button polarity: 0 normal, 1 inversed
-	state = (val & gpio);
+  if ((brand & 0x0010) == 0)	//check reset button polarity: 0 normal, 1 inversed
+    state = (val & gpio);
   else
     state = !(val & gpio);
 #endif
@@ -227,24 +228,24 @@ period_check (int sig)
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  return;
 		}
-		if ((brand & 0x000f) != 0x000f)		
+	      if ((brand & 0x000f) != 0x000f)
 		{
 		  printf ("resetbutton: factory default.\n");
 #ifndef HAVE_XSCALE
 		  switch (brand)
-		  {
-		  	case ROUTER_BUFFALO_WBR54G:
-		  		eval ("gpio", "disable", "7"); 	//turn on DIAG led on WBR-G54/WLA-G54
-		  		break;
-		  	case ROUTER_BUFFALO_WBR2G54S:
-		  		eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
-		  		break;
-		  	case ROUTER_BUFFALO_WLA2G54C:
-		  		eval ("gpio", "disable", "3");	//turn on red DIAG led on WLA2G54C / WLI3-TX1-G54
-		  		eval ("gpio", "disable", "4");
-		  		break;
-	  	  }
-#endif	
+		    {
+		    case ROUTER_BUFFALO_WBR54G:
+		      eval ("gpio", "disable", "7");	//turn on DIAG led on WBR-G54/WLA-G54
+		      break;
+		    case ROUTER_BUFFALO_WBR2G54S:
+		      eval ("gpio", "enable", "1");	//turn on DIAG led on WBR2-G54
+		      break;
+		    case ROUTER_BUFFALO_WLA2G54C:
+		      eval ("gpio", "disable", "3");	//turn on red DIAG led on WLA2G54C / WLI3-TX1-G54
+		      eval ("gpio", "disable", "4");
+		      break;
+		    }
+#endif
 		  ACTION ("ACT_HW_RESTORE");
 		  alarmtimer (0, 0);	/* Stop the timer alarm */
 		  nvram_set ("sv_restore_defaults", "1");
@@ -255,17 +256,17 @@ period_check (int sig)
 	}
     }
 #ifndef HAVE_XSCALE
-  else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRT54G)
+  else if (!(val & BCM47XX_SW_PUSH) && brand == ROUTER_WRT54G)
     {
-  runStartup ("/etc/config", ".sesbutton");
-  runStartup ("/jffs/etc/config", ".sesbutton");	//if available
-  runStartup ("/mmc/etc/config", ".sesbutton");	//if available
-  runStartup ("/tmp/etc/config", ".sesbutton");	//if available
+      runStartup ("/etc/config", ".sesbutton");
+      runStartup ("/jffs/etc/config", ".sesbutton");	//if available
+      runStartup ("/mmc/etc/config", ".sesbutton");	//if available
+      runStartup ("/tmp/etc/config", ".sesbutton");	//if available
       if (ses_mode == 1)
 	{
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","on");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "on");
 #endif
 	  //enable orange led
 	  eval ("gpio", "enable", "2");
@@ -275,8 +276,8 @@ period_check (int sig)
       else if (ses_mode == 0)
 	{
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","on");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "on");
 #endif
 	  //enable white led
 	  eval ("gpio", "enable", "3");
@@ -286,8 +287,8 @@ period_check (int sig)
       else if (ses_mode == 2)
 	{
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","on");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "on");
 #endif
 	  eval ("gpio", "disable", "3");
 	  eval ("gpio", "disable", "2");
@@ -296,60 +297,73 @@ period_check (int sig)
       else if (ses_mode == 3)
 	{
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","off");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "off");
 #endif
 	  eval ("gpio", "enable", "3");
 	  eval ("gpio", "enable", "2");
 	  ses_mode = 0;
 	}
-    } 
-    else if (!(val & BCM47XX_SW_PUSH) && brand==ROUTER_WRTSL54GS)
+    }
+  else if (!(val & BCM47XX_SW_PUSH)
+	   && (brand == ROUTER_WRTSL54GS || brand == ROUTER_ASUS_WL500G_PRE))
     {
-  runStartup ("/etc/config", ".sesbutton");
-  runStartup ("/jffs/etc/config", ".sesbutton");	//if available
-  runStartup ("/mmc/etc/config", ".sesbutton");	//if available
-  runStartup ("/tmp/etc/config", ".sesbutton");	//if available
+      runStartup ("/etc/config", ".sesbutton");
+      runStartup ("/jffs/etc/config", ".sesbutton");	//if available
+      runStartup ("/mmc/etc/config", ".sesbutton");	//if available
+      runStartup ("/tmp/etc/config", ".sesbutton");	//if available
       if (ses_mode == 1)
 	{
 	  //enable orange led
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","on");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "on");
 #endif
-	  eval ("gpio", "enable", "5");
-	  eval ("gpio", "disable", "7");
+	  if (brand == ROUTER_WRTSL54GS)
+	    {
+	      eval ("gpio", "enable", "5");
+	      eval ("gpio", "disable", "7");
+	    }
 	  ses_mode = 2;
 	}
       else if (ses_mode == 0)
 	{
 	  //enable white led
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","on");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "on");
 #endif
-	  eval ("gpio", "enable", "7");
-	  eval ("gpio", "disable", "5");
+	  if (brand == ROUTER_WRTSL54GS)
+	    {
+	      eval ("gpio", "enable", "7");
+	      eval ("gpio", "disable", "5");
+	    }
 	  ses_mode = 1;
 	}
       else if (ses_mode == 2)
 	{
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","on");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "on");
 #endif
-	  eval ("gpio", "disable", "5");
-	  eval ("gpio", "disable", "7");
+	  if (brand == ROUTER_WRTSL54GS)
+	    {
+	      eval ("gpio", "disable", "5");
+	      eval ("gpio", "disable", "7");
+	    }
 	  ses_mode = 3;
 	}
       else if (ses_mode == 3)
 	{
 #ifdef HAVE_RADIOOFF
-	if (nvram_match("radiooff_button","1"))
-	  eval("wl","radio","off");
+	  if (nvram_match ("radiooff_button", "1"))
+	    eval ("wl", "radio", "off");
 #endif
-	  eval ("gpio", "enable", "5");
-	  eval ("gpio", "enable", "7");
+	  if (brand == ROUTER_WRTSL54GS)
+	    {
+	      eval ("gpio", "enable", "5");
+	      eval ("gpio", "enable", "7");
+	    }
 	  ses_mode = 0;
 	}
 
@@ -405,8 +419,8 @@ resetbutton_main (int argc, char *argv[])
 
   brand = getRouterBrand ();
 
-		if ((brand & 0x000f) == 0x000f)
-		
+  if ((brand & 0x000f) == 0x000f)
+
 /*  	if ((brand == ROUTER_SIEMENS) || 
   		(brand == ROUTER_BELKIN) || 
   		(brand == ROUTER_RT210W) ||

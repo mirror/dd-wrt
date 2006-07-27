@@ -19,97 +19,97 @@ int
 radio_timer_main (void)
 {
 
-long radiotime;  														//4 byte int number (24 bits from gui + 1 bit for midnight)
-int firsttime, needchange;
-int gentime;															//general-time holds year or hour or minute
-char *end_ptr;
+  long radiotime;		//4 byte int number (24 bits from gui + 1 bit for midnight)
+  int firsttime, needchange;
+  int gentime;			//general-time holds year or hour or minute
+  char *end_ptr;
 
-needchange = 1;
-firsttime = 1;
+  needchange = 1;
+  firsttime = 1;
 
-struct tm *currtime;
-long tloc;
+  struct tm *currtime;
+  long tloc;
 
 
-do
-  {
-	time (&tloc);														// get time in seconds since epoch
-	currtime=localtime(&tloc);											// convert seconds to date structure
+  do
+    {
+      time (&tloc);		// get time in seconds since epoch
+      currtime = localtime (&tloc);	// convert seconds to date structure
 
-		gentime = currtime->tm_year;									//gentime = year
+      gentime = currtime->tm_year;	//gentime = year
 
 #ifdef HAVE_MADWIFI
-	if ((gentime > 100) && nvram_invmatch ("ath0_net_mode", "disabled"))//ntp time must be set  && radio must be on
-#elif HAVE_MSSID      
-	if ((gentime > 100) && nvram_invmatch ("wl0_net_mode", "disabled"))
+      if ((gentime > 100) && nvram_invmatch ("ath0_net_mode", "disabled"))	//ntp time must be set  && radio must be on
+#elif HAVE_MSSID
+      if ((gentime > 100) && nvram_invmatch ("wl0_net_mode", "disabled"))
 #else
-	if ((gentime > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
-#endif 
+      if ((gentime > 100) && nvram_invmatch ("wl_net_mode", "disabled"))
+#endif
 	{
 
-		gentime = currtime->tm_hour;									//gentime = hour
-		
-		radiotime = strtol(nvram_get ("radio0_on_time"), &end_ptr, 2);	//convert binary string to long int
-		radiotime += ((radiotime & 1) << 24); 							//duplicate 23-24h bit to the start to take care of midnight
-		radiotime = (radiotime >> (24 - gentime - 1)) & 3;				//get pattern only (last two bits)
+	  gentime = currtime->tm_hour;	//gentime = hour
 
-		gentime = currtime->tm_min;										//gentime = min
-		
-		if (gentime != 0)  
-			 needchange = 1;											//prevet to be executed more than once when min == 0
+	  radiotime = strtol (nvram_get ("radio0_on_time"), &end_ptr, 2);	//convert binary string to long int
+	  radiotime += ((radiotime & 1) << 24);	//duplicate 23-24h bit to the start to take care of midnight
+	  radiotime = (radiotime >> (24 - gentime - 1)) & 3;	//get pattern only (last two bits)
 
-		if (firsttime)													//first time change
-			{
-			switch (radiotime)
-				{
-				case 3:													//11
-					radiotime = 1;										//01
-					break;
-				case 0:													//00
-					radiotime = 2;										//10
-					break;
-				}
-			}
+	  gentime = currtime->tm_min;	//gentime = min
 
-		if (((gentime == 0) && (needchange)) || (firsttime))			//change when min = 0 or firstime
-			{
-			switch (radiotime)
-				{
-				case 1:													//01 - turn radio on
+	  if (gentime != 0)
+	    needchange = 1;	//prevet to be executed more than once when min == 0
+
+	  if (firsttime)	//first time change
+	    {
+	      switch (radiotime)
+		{
+		case 3:	//11
+		  radiotime = 1;	//01
+		  break;
+		case 0:	//00
+		  radiotime = 2;	//10
+		  break;
+		}
+	    }
+
+	  if (((gentime == 0) && (needchange)) || (firsttime))	//change when min = 0 or firstime
+	    {
+	      switch (radiotime)
+		{
+		case 1:	//01 - turn radio on
 #ifdef HAVE_MADWIFI
-					eval ("ifconfig", "ath0", "up");
+		  eval ("ifconfig", "ath0", "up");
 #elif HAVE_MSSID
-					eval ("wl", "radio", "on");
+		  eval ("wl", "radio", "on");
 #else
-					eval ("wl", "radio", "on");
+		  eval ("wl", "radio", "on");
 #endif
-					break;
-				
-				case 2:													//10 - turn radio off
+		  break;
+
+		case 2:	//10 - turn radio off
 #ifdef HAVE_MADWIFI
-					eval ("ifconfig", "ath0", "down");
+		  eval ("ifconfig", "ath0", "down");
 #elif HAVE_MSSID
-					eval ("wl", "radio", "off");
+		  eval ("wl", "radio", "off");
 #else
-					eval ("wl", "radio", "off");
+		  eval ("wl", "radio", "off");
 #endif
-					break;
-				}
-			needchange = 0;
-			firsttime = 0;
-			}
-		
+		  break;
+		}
+	      needchange = 0;
+	      firsttime = 0;
+	    }
+
 	}
-	else			//if yr < 100 (=2000) wait 5 min and try again (if ntp time is maybe set now)
+      else			//if yr < 100 (=2000) wait 5 min and try again (if ntp time is maybe set now)
 	{
-	sleep(242);
+	  sleep (242);
 	}
 
-	sleep(58);		// loop every 58 s to be sure to catch min == 0
-	
-  }
-while (1);
+      sleep (58);		// loop every 58 s to be sure to catch min == 0
 
-return 0;
+    }
+  while (1);
+
+  return 0;
 
 }
