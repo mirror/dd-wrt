@@ -585,7 +585,8 @@ redial_main (int argc, char **argv)
 		  eval ("killall", "-9", "pppoecd");
 		  sleep (1);
 		  start_service ("wan_redial");
-		}else
+		}
+	      else
 #endif
 #ifdef HAVE_PPTP
 	      if (nvram_match ("wan_proto", "pptp"))
@@ -596,7 +597,7 @@ redial_main (int argc, char **argv)
 		}
 #endif
 #ifdef HAVE_PPTP | HAVE_PPPOE
-else
+	      else
 #endif
 	      if (nvram_match ("wan_proto", "l2tp"))
 		{
