@@ -107,39 +107,41 @@ addEvent(window, "load", function() {
             <div id="main">
                <div id="contents">
                   <form name="wireless" action="apply.cgi" method="<% get_http_method(); %>">
-		  <input type="hidden" name="submit_button" value="Wireless_Basic" />
-		  <input type="hidden" name="submit_type" />
-		  <input type="hidden" name="change_action" />
-		  <input type="hidden" name="iface" />
-		  <input type="hidden" name="action" value="Apply" />
-		        <% show_wireless(); %>
-		    <br />
-		    <div class="submitFooter">
-                    <script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
-                    <script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");</script>
+                  	<input type="hidden" name="submit_button" value="Wireless_Basic" />
+                  	<input type="hidden" name="submit_type" />
+                  	<input type="hidden" name="change_action" />
+                  	<input type="hidden" name="iface" />
+                  	<input type="hidden" name="action" value="Apply" />
+                  	
+                  	<% show_wireless(); %>
+                  	
+                  	<br />
+                  	<div class="submitFooter">
+                  		<script type="text/javascript">document.write("<input type=\"button\" name=\"save_button\" value=\"" + sbutton.save + "\" onclick=\"to_submit(this.form)\" />");</script>
+                  		<script type="text/javascript">document.write("<input type=\"reset\" value=\"" + sbutton.cancel + "\" />");</script>
+                  	</div>
+                  </form>
                 </div>
-              </form>
-          </div>
-        </div>
-				<div id="helpContainer">
-					<div id="help">
-						<div id="logo"><h2><% tran("share.help"); %></h2></div>
-						<dl>
-							<dt class="term"><% tran("wl_basic.label2"); %>:</dt>
-							<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
-							<dt class="term"><% tran("hwl_basic.right3"); %></dt>
-							<dd class="definition"><% tran("hwl_basic.right4"); %></dt>
-						</dl><br />
-						<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
-					</div>
+              </div>
+              <div id="helpContainer">
+              	<div id="help">
+              		<div id="logo"><h2><% tran("share.help"); %></h2></div>
+              		<dl>
+              			<dt class="term"><% tran("wl_basic.label2"); %>:</dt>
+              			<dd class="definition"><% tran("hwl_basic.right2"); %></dd>
+              			<dt class="term"><% tran("hwl_basic.right3"); %></dt>
+              			<dd class="definition"><% tran("hwl_basic.right4"); %></dt>
+              		</dl><br />
+             		<a href="javascript:openHelpWindow<% nvram_selmatch("dist_type","micro","Ext"); %>('HWireless.asp')"><% tran("share.more"); %></a>
+             	</div>
+            </div>
+						<div id="floatKiller"></div>
+						<div id="statusInfo">
+							<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
+							<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
+							<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
+						</div>
 				</div>
-				<div id="floatKiller"></div>
-				<div id="statusInfo">
-					<div class="info"><% tran("share.firmware"); %>: <script>document.write("<a title=\"" + share.about + "\" href=\"javascript:openAboutWindow()\"><% get_firmware_version(); %></a>");</script></div>
-					<div class="info"><% tran("share.time"); %>: <% get_uptime(); %></div>
-					<div class="info">WAN <% nvram_match("wl_mode","wet","disabled <!--"); %><% nvram_match("wan_proto","disabled","disabled <!--"); %>IP: <% nvram_status_get("wan_ipaddr"); %><% nvram_match("wan_proto","disabled","-->"); %><% nvram_match("wl_mode","wet","-->"); %></div>
-				</div>
-			</div>
 		</div>
 	</body>
 </html>
