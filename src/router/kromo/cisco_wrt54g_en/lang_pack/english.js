@@ -1484,6 +1484,7 @@ wl_basic.radio_on="Radio is On";
 wl_basic.radio_off="Radio is Off";
 
 wl_basic.h2_v24="Wireless Physical Interface";
+wl_basic.h2_vi="Virtual Interfaces";
 wl_basic.regdom="Regulatory Domain";
 wl_basic.TXpower="TX Power";
 wl_basic.diversity="Diversity";
