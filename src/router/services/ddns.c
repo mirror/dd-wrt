@@ -177,7 +177,7 @@ start_ddns (void)
 
   /* Restore cache data to file */
   if (nvram_invmatch ("ddns_cache", "")
-      || nvram_invmatch ("ddns_time", ""))
+      && nvram_invmatch ("ddns_time", ""))
     {
       nvram2file ("ddns_cache", "/tmp/ddns/inadyn_ip.cache");
       nvram2file ("ddns_time", "/tmp/ddns/inadyn_time.cache");
