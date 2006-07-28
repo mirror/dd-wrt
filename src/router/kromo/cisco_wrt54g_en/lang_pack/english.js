@@ -405,7 +405,7 @@ ddns.dynamic="Dynamic";
 ddns.custom="Custom";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
-ddns.system="DNS System";
+ddns.system="DYNDNS Server";
 ddns.options="Additional DDNS Options";
 
 var ddnsm = new Object();
