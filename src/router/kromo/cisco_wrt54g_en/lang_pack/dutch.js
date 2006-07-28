@@ -1,21 +1,11 @@
-// Not working in IE & Opera ?
-//************ Include the current language file after english.js ************//
-//  var Head = document.getElementsByTagName('head')[0];
-//  var head_inc = document.createElement('script');
-//  head_inc.setAttribute('type','text/javascript');
-//  head_inc.setAttribute('src',"lang_pack/language.js");
-//  Head.appendChild(head_inc);
-
 //////////////////////////////////////////////////////////////////////////////////////////////
-//		Dutch reference translation file - DD-WRT V23 SP1 by Fabian 22/6/2006				//
+//		Dutch reference translation file - DD-WRT V23 SP1 by Fabian 22/6/2006									//
 //////////////////////////////////////////////////////////////////////////////////////////////
-
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
-var lang_charset = new Object();
+
 lang_charset.set="iso-8859-1";
 
-var share = new Object();
 share.firmware="Firmware";
 share.time="Tijd";
 share.interipaddr="Internet IP Adres";
@@ -132,9 +122,6 @@ share.styl="Stijl";
 share.err="fout";
 share.errs="fouten";
 
-
-
-var sbutton = new Object();
 sbutton.save="Bewaar instellingen";
 sbutton.saving="Opgeslagen";
 sbutton.cmd="Bezig met uitvoeren";
@@ -182,7 +169,7 @@ sbutton.preview="Voorbeeld";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
-var errmsg = new Object();
+
 errmsg.err0="U moet een gebruikersnaam invullen.";
 errmsg.err1="U  moet een Router Naam invullen.";
 errmsg.err2="Buiten het bereik, gelieve het start IP adres aan te passen of het gebruikers nr.";
@@ -286,7 +273,7 @@ errmsg.err61="Ongeldig image bestand.";
 errmsg.err62=" is reeds gedefinieerd als statische lease.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
-var bmenu= new Object();
+
 bmenu.setup="Setup";
 bmenu.setupbasic="Basis Instellingen";
 bmenu.setupddns="DDNS";
@@ -346,7 +333,6 @@ bmenu.statuSysInfo="Systeem-Info";
 
 // ******************************************* Alive.asp *******************************************//
 
-var alive = new Object();
 alive.titl=" - Keep Alive";
 alive.h2="Keep Alive";
 alive.legend="Reboot Invoegen";
@@ -361,7 +347,7 @@ alive.IP2="Proxy IP Adres";
 alive.port="Proxy Poort";
 
 //help container
-var halive = new Object();
+
 halive.right2="Selecteer indien u de router wilt rebooten. Cron moet geactiveerd zijn in de Beheer tab.";
 halive.right4="Maximum drie verschillende IPs gescheiden door een <em>SPATIE</em> zijn toegelaten.<BR/>IP Formaat is xxx.xxx.xxx.xxx.";
 
@@ -369,7 +355,6 @@ halive.right4="Maximum drie verschillende IPs gescheiden door een <em>SPATIE</em
 
 // ******************************************* config.asp *******************************************//
 
-var config = new Object();
 config.titl=" - Backup & Herstellen";
 config.h2="Backup Configuratie";
 config.legend="Backup Instellingen";
@@ -381,7 +366,7 @@ config.mess3="O P G E L E T";
 config.mess4="Gelieve enkel bestanden te uploaden die met deze firmware of het zelfde model van router zijn gemaakt.<br />Upload geen bestanden die niet gecreëerd werden door deze interface!";
 
 //help container
-var hconfig = new Object();
+
 hconfig.right2="U kan uw huidige configuratie opslaan in het gevalt dat u uw router terug naar zijn fabriek instellingen moet zetten.<br /><br />Klik op de <em>Backup</em> knop om uw huidige configuratie op ge slaan.";
 hconfig.right4="Klik op de <em>Browse...</em> knop om naar een configuratie bestand te zoeken dat zich momenteel op je computer bevind.<br /><br />Klik op de <em>" + sbutton.restore + "</em> knop om alle huidige configuraties te wissen met de gene uit het configuratie bestand.";
 
@@ -389,7 +374,6 @@ hconfig.right4="Klik op de <em>Browse...</em> knop om naar een configuratie best
 
 // ******************************************* DDNS.asp *******************************************//
 
-var ddns = new Object();
 ddns.titl=" - Dynamische DNS"
 ddns.h2="Dynamisch Domein Naam Systeem (DDNS)";
 ddns.legend="DDNS";
@@ -402,7 +386,7 @@ ddns.custom="Aangepast";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS Status";
 
-var ddnsm = new Object();
+
 ddnsm.dyn_strange="Ongewoon server antwoord, hebt u de juiste server in gegeven?";
 ddnsm.dyn_good="DDNS is succesvol geupdate";
 ddnsm.dyn_noupdate="Er is geen update noodzakelijk op dit moment";
@@ -453,7 +437,7 @@ ddnsm.all_disabled="DDNS functie is niet actief";
 ddnsm.all_noip="Geen actieve internet verbinding";
 
 //help container
-var hddns = new Object();
+
 hddns.right2="DDNS biedt toegang tot uw netwerk via een hostnaam in plaats van een IP adres. \
 	Deze service houdt uw domein informatie dynamisch up-to-date. \
 	U moet hiervoor registreren op volgende site: DynDNS.org, TZO.com of ZoneEdit.com.";
@@ -462,7 +446,6 @@ hddns.right2="DDNS biedt toegang tot uw netwerk via een hostnaam in plaats van e
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-var diag = new Object();
 diag.titl=" - Diagnostics";
 diag.h2="Diagnostics";
 diag.legend="Commando Shell";
@@ -471,14 +454,13 @@ diag.startup="Opstarten";
 diag.firewall="Firewall";
 
 //help container
-var hdiag = new Object();
+
 hdiag.right2="U kan commando's uitvoeren via de webinterface. Vul uw commando in, in het tekst veld en klik <em>" + sbutton.runcmd + "</em>.";
 
 
 
 // ******************************************* DMZ.asp *******************************************//
 
-var dmz = new Object();
 dmz.titl=" - DMZ";
 dmz.h2="Gedemilitariseerde Zone (DMZ)";
 dmz.legend="DMZ";
@@ -487,14 +469,13 @@ dmz.host="DMZ Host IP Adres";
 
 
 //help container
-var hdmz = new Object();
+
 hdmz.right2="Indien u deze optie activeerd zal u bepaalde hosts openstellen naar het internet toe. Alle poorten zullen bereikbaar zijn vanuit het internet.";
 
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
-var factdef = new Object();
 factdef.titl=" - Fabricatie Instellingen";
 factdef.h2="Fabricatie Instellingen";
 factdef.legend="Reset router instellingen";
@@ -503,14 +484,13 @@ factdef.restore="Herstel Fabricatie Instellingen";
 factdef.mess1="Opgelet! Indien u OK klikt, zal het aparaat naar fabricatie instellingen omgezet worden, alle voorgaande instellingen gaan verloren.";
 
 //help container
-var hfactdef = new Object();
+
 hfactdef.right1="Dit zal al uw instellingen herstellen naar fabricatie instellingen. Al uw voorgaande instellingen worden gewist.";
 
 
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
-var filterIP = new Object();
 filterIP.titl=" - Lijst van PCs";
 filterIP.h2="Lijst van PCs";
 filterIP.h3="Voer het MAC Adres van de PCs in, in dit formaat: xx:xx:xx:xx:xx:xx";
@@ -522,7 +502,6 @@ filterIP.ip_range="IP Range";
 
 // ******************************************* Filter.asp *******************************************//
 
-var filter = new Object();
 filter.titl=" - Toegang Beperking";
 filter.h2="Toegang Beperking";
 filter.legend="Toegangs Beleid";
@@ -544,7 +523,7 @@ filter.mess2="U moet een dag selecteren.";
 filter.mess3="De eindtijd moet groter dan de begintijd zijn.";
 
 //help container
-var hfilter = new Object();
+
 hfilter.right2="U kan tot 10 toegangs beperkingen aanmaken. Klik op <em>" + sbutton.del + "</em> om een beperking te verwijderen of <em>" + sbutton.summary + "</em> om een overzicht te krijgen.";
 hfilter.right4="Activeer of Deactiveer een beperking.";
 hfilter.right6="U mag het beleid een naam geven.";
@@ -558,7 +537,6 @@ hfilter.right16="U kan toegang tot een bepaalde website verbieden aan de hand va
 
 // ******************************************* FilterSummary.asp *******************************************//
 
-var filterSum = new Object();
 filterSum.titl=" - Overzicht Toegangs Beperking";
 filterSum.h2="Overzicht Internet Beleid";
 filterSum.polnum="Nee.";
@@ -568,7 +546,6 @@ filterSum.polday="Tijd en Dag";
 
 // ******************************************* Firewall.asp *******************************************//
 
-var firewall = new Object();
 firewall.titl=" - Firewall";
 firewall.h2="Security";
 firewall.legend="Firewall Bescherming";
@@ -585,21 +562,20 @@ filter.nat="Filter Internet NAT Redirection";
 filter.port113="Filter IDENT (Port 113)";
 
 //help container
-var hfirewall = new Object();
+
 hfirewall.right2="Activeer of deactiveer de SPI firewall.";
 
 
 
 // ******************************************* Forward.asp *******************************************//
 
-var prforward = new Object();
 prforward.titl=" - Poort Bereik Forwarden";
 prforward.h2="Poort Bereik Forward";
 prforward.legend="Forwards";
 prforward.app="Applicatie";
 
 //help container
-var hprforward = new Object();
+
 hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. \
 	Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. \
 	Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de route de data doorsturen naar de computer dat u wenst. \
@@ -610,7 +586,6 @@ hprforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze 
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-var pforward = new Object();
 pforward.titl=" - Poort Forwarden";
 pforward.h2="Poort Forward";
 pforward.legend="Forwards";
@@ -619,7 +594,7 @@ pforward.from="Van poort";
 pforward.to="Naar poort";
 
 //help container
-var hpforward = new Object();
+
 hpforward.right2="Bepaalde applicaties vereisen bepaalde open poorten zodat ze correct kunnen functioneren. \
 Voorbeelden van deze applicaties houden ook servers en bepaalde online games in. \
 	Wanneer een aanvraag voor een bepaalde poort toekomt van het internet, zal de route de data doorsturen naar de computer dat u wenst. \
@@ -630,7 +605,6 @@ Voorbeelden van deze applicaties houden ook servers en bepaalde online games in.
 
 // ******************************************* Hotspot.asp *******************************************//
 
-var hotspot = new Object();
 hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot Portaal";
 hotspot.legend="Chillispot";
@@ -683,7 +657,6 @@ hotspot.sputnik_about="over Sputnik";
 
 // ******************************************* Info.htm *******************************************//
 
-var info = new Object();
 info.titl=" - Info";
 info.h2="Systeem Informatie";
 info.wlanmac="Wireless MAC";
@@ -694,7 +667,6 @@ info.ap="Access Point";
 
 // ******************************************* index_heartbeat.asp *******************************************//
 
-var idx_h = new Object();
 idx_h.srv="Heart Beat Server";
 idx_h.con_strgy="Connectie Strategie";
 idx_h.max_idle="Verbinden op aanvraag: Max Idle Tijd";
@@ -704,21 +676,18 @@ idx_h.alive="Keep Alive: Herverbinding Periode";
 
 // ******************************************* index_l2tp.asp *******************************************//
 
-var idx_l = new Object();
 idx_l.srv="L2TP Server";
 
 
 
 // ******************************************* index_pppoe.asp *******************************************//
 
-var idx_pppoe = new Object();
 idx_pppoe.use_rp="Gebruik RP PPPoE";
 
 
 
 // ******************************************* index_pptp.asp *******************************************//
 
-var idx_pptp = new Object();
 idx_pptp.srv="Gebruik DHCP";
 idx_pptp.wan_ip="Internet IP Adres";
 idx_pptp.gateway="Gateway (PPTP Server)";
@@ -728,14 +697,12 @@ idx_pptp.encrypt="PPTP Encyptie";
 
 // ******************************************* index_static.asp *******************************************//
 
-var idx_static = new Object();
 idx_static.dns="Statische DNS";
 
 
 
 // ******************************************* index.asp *******************************************//
 
-var idx = new Object();
 idx.titl=" - Instellen";
 idx.h2="Internet Instellen";
 idx.h22="Draadloos Instellen";
@@ -770,7 +737,7 @@ idx.auth_dnsmasq="DHCP-Authoritatie";
 
 
 //help container
-var hidx = new Object();
+
 hidx.right2="Deze instellingen worden het meest gebruikt door Cabel operatoren.";
 hidx.right4="Voer de hostnaam toegewezen door uw ISP in.";
 hidx.right6="Voer de domeinnaam in aangewezen door uw ISP.";
@@ -785,8 +752,6 @@ hidx.right18="Kies de tijd zone en zomer tijd periode waarin u zich bevind. De r
 
 // ******************************************* Join.asp *******************************************//
 
-var join = new Object();
-
 //sshd.webservices
 join.titl=" - Join";
 join.mess1="Succesvol het volgende netwerk als client betreed: ";
@@ -795,7 +760,6 @@ join.mess1="Succesvol het volgende netwerk als client betreed: ";
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-var log_in = new Object();
 log_in.titl=" - Inkomende Log Tabel";
 log_in.h2="Inkomende Log Tabel";
 log_in.th_ip="IP Afkomst";
@@ -805,7 +769,6 @@ log_in.th_port="Destinatie Poort Nummer";
 
 // ******************************************* Log_outgoing.asp *******************************************//
 
-var log_out = new Object();
 log_out.titl=" - Uitgaande Log Tabel";
 log_out.h2="Outgoing Log Table";
 log_out.th_lanip="LAN IP";
@@ -816,7 +779,6 @@ log_out.th_port="Service/Poort Nummer";
 
 // ******************************************* Log.asp *******************************************//
 
-var log = new Object();
 log.titl=" - Log";
 log.h2="Log Beheer";
 log.legend="Log";
@@ -829,7 +791,6 @@ log.accept="Toegelaten";
 
 // ******************************************* Management.asp *******************************************//
 
-var management = new Object();
 management.titl=" - Beheer";
 management.h2="Router Beheer";
 
@@ -928,9 +889,8 @@ management.SIPatH_domain="SIP Domein";
 management.gui_style="Router GUI Stijl";
 
 
-
 //help container
-var hmanagement = new Object();
+
 hmanagement.right1="Auto-Vernieuwen:";
 hmanagement.right2="Past de automatische vernieuwings interval van de Web GUI aan. 0 zet deze functie volledig uit.";
 
@@ -938,7 +898,6 @@ hmanagement.right2="Past de automatische vernieuwings interval van de Web GUI aa
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
-var portserv = new Object();
 portserv.titl=" - Poort Diensten";
 portserv.h2="Poort Diensten";
 
@@ -946,7 +905,6 @@ portserv.h2="Poort Diensten";
 
 // ******************************************* QoS.asp *******************************************//
 
-var qos = new Object();
 qos.titl=" - Quality of Service";
 qos.h2="Quality Of Service (QoS)";
 qos.legend="QoS Instellingen";
@@ -971,7 +929,7 @@ qos.legend6="Standaard Bandbreedte Level";
 qos.bandwith="Bandbreedte in Kbits";
 
 //help container
-var hqos = new Object();
+
 hqos.right1="Uplink:";
 hqos.right2="Stel dit in op 80%-95% (max) van uw totale upload limiet.";
 hqos.right3="Downlink:";
@@ -987,7 +945,6 @@ hqos.right12="U kan uw bandbreedte beheren volgens de fysieke LAN poort waarop h
 
 // ******************************************* RouteTable.asp *******************************************//
 
-var routetbl = new Object();
 routetbl.titl=" - Route Tabel";
 routetbl.h2="Route Tabel Entry Lijst";
 routetbl.th1="Bestemming LAN IP";
@@ -996,7 +953,6 @@ routetbl.th1="Bestemming LAN IP";
 
 // ******************************************* Routing.asp *******************************************//
 
-var route = new Object();
 route.titl=" - Route";
 route.h2="Geavanceerde Routering";
 route.mod="Operatie Modus";
@@ -1012,7 +968,7 @@ route.static_name="Route Naam";
 route.static_ip="Bestemming LAN IP";
 
 //help container
-var hroute = new Object();
+
 hroute.right2="Indien de router gehost is via uw internet connectie, kies dan <em>Gateway</em> modus. Indien er zich een andere router bevind in het netwerk, selecteer <em>Router</em> modus.";
 hroute.right4="Dit is het unieke routerings nummer, je kan tot 20 routes aanmaken.";
 hroute.right6="Voer de naam in die u wilt toekennen aan deze route.";
@@ -1022,7 +978,6 @@ hroute.right10="Herkent de host en netwerk grootte.";
 
 // ******************************************* Site_Survey.asp *******************************************//
 
-var survey = new Object();
 survey.titl=" - Site Onderzoek";
 survey.h2="Neighbor&#39;s Draadloze Netwerken";
 survey.thjoin="Join Site";
@@ -1030,8 +985,6 @@ survey.thjoin="Join Site";
 
 
 // ******************************************* Services.asp *******************************************//
-
-var service = new Object();
 
 service.titl=" - Diensten";
 service.h2="Diensten Beheer";
@@ -1123,7 +1076,6 @@ service.ssh_key="Toegelaten Sleutels";
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 
-var sipath = new Object();
 sipath.titl=" - SiPath Overzicht";
 sipath.phone_titl=" - Telefoonboek";
 sipath.status_titl=" - Status";
@@ -1132,7 +1084,6 @@ sipath.status_titl=" - Status";
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-var status_lan = new Object();
 status_lan.titl=" - LAN Status";
 status_lan.h2="Locaal Netwerk";
 status_lan.legend="LAN Status";
@@ -1141,7 +1092,7 @@ status_lan.legend2="DHCP Status";
 status_lan.legend3="DHCP Clienten";
 
 //help container
-var hstatus_lan = new Object();
+
 hstatus_lan.right2="Dit is het MAC Adres van de router, zoals ingesteld op uw lokaal, Ethernet network.";
 hstatus_lan.right4="Dit toont het IP Adres van de router, zoals ingesteld op uw lokaal, Ethernet network.";
 hstatus_lan.right6="Wanneer de router een Subnet Mask gebruikt vindt u deze hier.";
@@ -1152,7 +1103,6 @@ hstatus_lan.right10="Door op een MAC adres te klikken, zal u de producent van de
 
 // ******************************************* Status_Router.asp *******************************************//
 
-var status_router = new Object();
 status_router.titl=" - Router Status";
 status_router.h2="Router Informatie";
 status_router.legend="Systeem";
@@ -1181,7 +1131,7 @@ status_router.www_login="Login Type";
 status_router.www_loginstatus="Login Status";
 
 //help container
-var hstatus_router = new Object();
+
 hstatus_router.right2="Dit is de specifieke naam gegeven aan de router, U kan deze veranderen op de <i>Setup</i> tab.";
 hstatus_router.right4="Dit is het MAC Adres van de router, zoals uw ISP het zal herkennen.";
 hstatus_router.right6="Dit is de huidige firmware van de router.";
@@ -1195,14 +1145,14 @@ hstatus_router.right14="Dit geeft de informatie die vereist is door uw ISP weer.
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-var status_sputnik = new Object();
+
 status_sputnik.titl=" - Sputnik Agent Status";
 status_sputnik.h2="Sputnik&reg; Agent&trade;";
 status_sputnik.manage="Managed By";
 status_sputnik.license="SCC License No.";
 
 //help container
-var hstatus_sputnik = new Object();
+
 hstatus_sputnik.right1="Sputnik Agent Status";
 hstatus_sputnik.right2="Dit scherm geeft de status van uw Sputnik Agent weer.";
 hstatus_sputnik.right4="Het Sputnik Controle Centrum waarmee uw accesspoint verbonden is.";
@@ -1213,7 +1163,6 @@ hstatus_sputnik.right8="Het licentie van uw Sputnik Controle Centrum.";
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-var status_wireless = new Object();
 status_wireless.titl=" - Draadloze Status";
 status_wireless.h2="Draadloos";
 status_wireless.legend="Draadloze Status";
@@ -1228,7 +1177,7 @@ status_wireless.signal_qual="Signaal Qualiteit";
 status_wireless.wds="WDS Nodes";
 
 //help container
-var hstatus_wireless = new Object();
+
 hstatus_wireless.right2="Dit is het MAC Adres van de router, zoals het wordt weergegeven op uw, draadloos netwerk.";
 hstatus_wireless.right4="U hebt de draadloze modus ingesteld op de Draadloos tab, dit zal de huidige draadloze modus weergeven (Mixed, G-Enkel, B-Enkel of Niet Geactiveerd).";
 
@@ -1236,7 +1185,6 @@ hstatus_wireless.right4="U hebt de draadloze modus ingesteld op de Draadloos tab
 
 // ******************************************* Triggering.asp *******************************************//
 
-var trforward = new Object();
 trforward.titl=" - Poort Triggering";
 trforward.h2="Poort Triggering";
 trforward.legend="Forwards";
@@ -1245,7 +1193,7 @@ trforward.fwdrange="Forwarded Poort Bereik";
 trforward.app="Applicatie";
 
 //help container
-var htrforward = new Object();
+
 htrforward.right2="Voer de applicatie naam van de trigger in.";
 htrforward.right4="Voer voor elke applicatie een lijst van getriggerde poorten in. Controleer de Internet Applicatie documentatie voor het vereiste poort nummer.";
 htrforward.right6="Voer voor elke applicatie een lijst van geforwarde poorten in. Controleer de Internet Applicatie documentatie voor het vereiste poort nummer.";
@@ -1256,7 +1204,6 @@ htrforward.right10="Voer het eindend poort nummer in van de Trigger en Forward R
 
 // ******************************************* Upgrade.asp *******************************************//
 
-var upgrad = new Object();
 upgrad.titl=" - Firmware Upgrade";
 upgrad.h2="Firmware Beheer";
 upgrad.legend="Firmware Upgrade";
@@ -1268,7 +1215,7 @@ upgrad.warning="O P G E L E T";
 upgrad.mess1="Firmware upgraden kan enkele minuten duren.<br />Zet uw router NIET af, reset uw router NIET, gedurende dit proces!";
 
 //help container
-var hupgrad = new Object();
+
 hupgrad.right2="Klik op de <em>Browse...</em> knop om het firmware bestand te selecteren dat vereist is voor de upgrade.<br /><br /> \
 			Klik op de <em>Upgrade</em> knop om het upgrade proces te starten. De upgrade mag niet onderbroken worden.";
 
@@ -1276,7 +1223,6 @@ hupgrad.right2="Klik op de <em>Browse...</em> knop om het firmware bestand te se
 
 // ******************************************* UPnP.asp *******************************************//
 
-var upnp = new Object();
 upnp.titl=" - UPnP";
 upnp.h2="Universele Plug and Play (UPnP)";
 upnp.legend="Forwards";
@@ -1289,7 +1235,7 @@ upnp.msg2="Verwijder alle waarden?";
 
 
 //help container
-var hupnp = new Object();
+
 hupnp.right2="Klik op de vuilnisbak om een individuele waarde te verwijderen.";
 hupnp.right4="Staat applicaties toe automatisch poort forwards in te stellen.";
 
@@ -1297,7 +1243,6 @@ hupnp.right4="Staat applicaties toe automatisch poort forwards in te stellen.";
 
 // ******************************************* VPN.asp *******************************************//
 
-var vpn = new Object();
 vpn.titl=" - VPN";
 vpn.h2="Virtueel Private Netwerk (VPN)";
 vpn.legend="VPN Passthrough";
@@ -1306,13 +1251,12 @@ vpn.pptp="PPTP Passthrough";
 vpn.l2tp="L2TP Passthrough";
 
 //help container
-var hvpn = new Object();
+
 hvpn.right1="U kan IPSec, PPTP en/of L2TP activeren, zodat uw netwerk aparaten via VPN kunnen communiceren.";
 
 
 // ******************************************* Vlan.asp *******************************************//
 
-var vlan = new Object();
 vlan.titl=" - Virtual LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
@@ -1325,7 +1269,6 @@ vlan.trunk="Trunk";
 
 // ******************************************* WEP.asp *******************************************//
 
-var wep = new Object();
 wep.defkey="Standaard Transmit Sleutel";
 wep.passphrase="Sleutelzin";
 
@@ -1333,7 +1276,6 @@ wep.passphrase="Sleutelzin";
 
 // ******************************************* WOL.asp *******************************************//
 
-var wol = new Object();
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Beschikbare Hosts";
@@ -1349,7 +1291,7 @@ wol.udp="UDP Poort";
 wol.msg1="Klik om een WOL host te verwijderen";
 
 //help container
-var hwol = new Object();
+
 hwol.right2="Op deze pagina kan u hosts <em>Wakker Maken</em> die verbonden zijn met uw netwerk (bv. locaal verbonden met uw router).";
 hwol.right4="MAC Adressen moeten ingevoerd worden volgens het formaat xx:xx:xx:xx:xx:xx (bv. 01:23:45:67:89:AB)";
 hwol.right6="Het IP Adres is het broadcast adres van het netwerk, maar kan ook een remote adres zijn indien het doel zich niet in het locale bevind."
@@ -1358,7 +1300,6 @@ hwol.right6="Het IP Adres is het broadcast adres van het netwerk, maar kan ook e
 
 // ******************************************* WanMAC.asp *******************************************//
 
-var wanmac = new Object();
 wanmac.titl=" - MAC Adres Clone";
 wanmac.h2="MAC Adres Clone";
 wanmac.legend="MAC Clone";
@@ -1366,7 +1307,7 @@ wanmac.wan="Clone WAN MAC";
 wanmac.wlan="Clone Draadloos MAC";
 
 //help container
-var hwanmac = new Object();
+
 hwanmac.right2="Sommige ISP's eisen dat je je MAC adres registreerd. \
 			Indien je je MAC adres niet wilt herregistreren, kan je de router je MAC adres laten clonen met hetgene dat je geregistreerd hebt bij je ISP.";
 
@@ -1374,7 +1315,6 @@ hwanmac.right2="Sommige ISP's eisen dat je je MAC adres registreerd. \
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
-var wpa = new Object();
 wpa.titl=" - Draadloze Beveiliging";
 wpa.h2="Draadloze Beveiliging";
 wpa.secmode="Beveiligings Modus";
@@ -1393,7 +1333,7 @@ wpa.shared_key="WPA Gedeelde Sleutel";
 wpa.rekeyInt="rekey interval";
 
 //help container
-var hwpa = new Object();
+
 hwpa.right1="Veligheids Modus:";
 hwpa.right2="U hebt keuze uit Deactiveren, WEP, WPA Pre-Shared Key, WPA RADIUS, of RADIUS. Alle apparaten in uw newerk moeten de geselecteerde beveiligingmodus gebruiken.";
 
@@ -1401,7 +1341,6 @@ hwpa.right2="U hebt keuze uit Deactiveren, WEP, WPA Pre-Shared Key, WPA RADIUS, 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-var wl_filter = new Object();
 wl_filter.titl=" - MAC Adres Filter Lijst";
 wl_filter.h2="MAC Adres Filter Lijst";
 wl_filter.h3="Voer het MAC Adres in dit formaat&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx in";
@@ -1410,7 +1349,6 @@ wl_filter.h3="Voer het MAC Adres in dit formaat&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-var wl_active = new Object();
 wl_active.titl=" - Draadloze Clienten Lijst";
 wl_active.h2="Draadloze Clienten MAC Lijst";
 wl_active.h3="Activeer MAC Filter";
@@ -1421,7 +1359,6 @@ wl_active.inactive="Inactieve PC";
 
 // ******************************************* Wireless_WDS.asp *******************************************//
 
-var wds = new Object();
 wds.titl=" - WDS";
 wds.h2="Draadloos Distributie Systeem";
 wds.legend="WDS Instellingen";
@@ -1438,7 +1375,6 @@ wds.legend2="Extra Opties";
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-var radius = new Object();
 radius.titl=" - Radius";
 radius.h2="Remote Authenticatie Dial-In Gebruikers Dienst";
 radius.legend="Radius";
@@ -1456,7 +1392,6 @@ radius.mac="MAC";
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-var wl_mac = new Object();
 wl_mac.titl=" - MAC Filter";
 wl_mac.h2="Draadloze MAC Filter";
 wl_mac.legend="MAC Filter";
@@ -1469,7 +1404,6 @@ wl_mac.allow="Sta enkel toegang toe aan de PC's die toegevoegd zijn aan de lijst
 
 // ******************************************* Wireless_Basic.asp *******************************************//
 
-var wl_basic = new Object();
 wl_basic.titl=" - Draadloos";
 wl_basic.h2="Draadloos";
 wl_basic.legend="Basis Instellingen";
@@ -1489,7 +1423,7 @@ wl_basic.g="G-Only";
 wl_basic.sensitivity="Standaard: 20000 meter";
 
 //help container
-var hwl_basic = new Object();
+
 hwl_basic.right2="Indien u Draadloos-G clienten wilt verbieden, kies dan <em>B-Enkel</em> modus. Indien u draadloze toegang geheel wilt verbieden, kies dan <em>Deactiveer</em>.";
 hwl_basic.right3="Gevoeligheid Range: ";
 hwl_basic.right4="Pas de ack timing aan. 0 schakelt ack timing volledig uit.";
@@ -1498,7 +1432,6 @@ hwl_basic.right4="Pas de ack timing aan. 0 schakelt ack timing volledig uit.";
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-var wl_adv = new Object();
 wl_adv.titl=" - Geadvanceerde Draadloze Instellingen";
 wl_adv.h2="Geadvanceerde Draadloze Instellingen";
 wl_adv.legend="Geadvanceerde Instellingen";
@@ -1539,14 +1472,13 @@ wl_adv.lng="Lang"; 					//************* don't use .long ! *************
 wl_adv.shrt="Kort"; 				//************* don't use .short ! **************
 
 //help container
-var hwl_adv = new Object();
+
 hwl_adv.right2="You may choose from Auto or Shared Key. Shared key authentication is more secure, but all devices on your network must also support Shared Key authentication.";
 
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
-var fail = new Object();
 fail.mess1="De waarden die u invoerde zijn niet geldig. Probeer nog eens.";
 fail.mess2="Upgrade mislukt.";
 
@@ -1554,7 +1486,6 @@ fail.mess2="Upgrade mislukt.";
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
-var success = new Object();
 success.saved="Instellingen opgeslagen.";
 success.restore="Instellingen herstelt.<br/>Unit reboot nu. Gelieve even te wachten...";
 success.upgrade="Upgrade sucesvol.<br/>Unit reboot nu. Gelieve even te wachten...";
@@ -1569,11 +1500,10 @@ success.alert3="Indien u verbonden bent via WLAN, sluit u dan aan bij het netwer
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-var dhcp = new Object();
 dhcp.titl=" - DHCP Actieve IP Tabel";
 dhcp.h2="DHCP Actieve IP Tabel";
 dhcp.server="DHCP Server IP Adres :";
 dhcp.tclient="Client Host Naam";
 
-var donate = new Object();
+
 donate.mb="U kan ook geld doneren via de Moneybookers acount mb@dd-wrt.com";
