@@ -159,14 +159,7 @@ start_ddns (void)
       if (nvram_invmatch ("ddns_conf", "")
 	  && nvram_match ("ddns_enable", "5"))
 	{
-	  char *host_key = nvram_safe_get ("ddns_conf");
-	  i = 0;
-	  do
-	    {
-	      if (host_key[i] != 0x0D)
-	      fprintf (fp, "%c", host_key[i]);
-	    }
-	  while (host_key[++i]);
+	  fprintf (fp, " %s", nvram_safe_get ("ddns_conf"));
 	}
       fprintf (fp, "\n"); 
       fclose (fp);
