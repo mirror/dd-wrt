@@ -27,7 +27,23 @@ void lease_init(struct daemon *daemon, time_t now)
   leases_left = daemon->dhcp_max;
 
   if (daemon->options & OPT_LEASE_RO)
-    leasestream = stdin;
+    {
+      /* run <lease_change_script> init once to get the
+	 initial state of the database. If leasefile-ro is
+	 set without a script, we just do without any 
+	 lease database. */
+      if (!daemon->lease_change_command)
+	{
+	  file_dirty = dns_dirty = 0;
+	  return;
+	}
+      strcpy(daemon->dhcp_buff, daemon->lease_change_command);
+      strcat(daemon->dhcp_buff, " init");
+      leasestream = popen(daemon->dhcp_buff, "r");
+
+      if (!leasestream)
+	die(_("cannot run lease-init script: %s"), NULL);
+    }
   else
     {
       /* NOTE: need a+ mode to create file if it doesn't exist */
@@ -85,13 +101,13 @@ void lease_init(struct daemon *daemon, time_t now)
 	lease_set_hostname(lease, daemon->dhcp_buff, daemon->domain_suffix, 0);
     }
 
+  if (!daemon->lease_stream)
+    pclose(leasestream);
+
   /* Some leases may have expired */
   file_dirty = 0;
   lease_prune(NULL, now);
   dns_dirty = 1;
-
-  if (daemon->options & OPT_LEASE_RO)
-    fclose(leasestream);
 }
 
 void lease_update_from_configs(struct daemon *daemon)
