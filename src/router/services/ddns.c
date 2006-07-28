@@ -65,7 +65,7 @@ init_ddns (void)
     }
   else if (nvram_match ("ddns_enable", "5"))
     {
-      strcpy (service, "custom@http_srv_basic_auth");
+      strcpy (service, "custom@http_svr_basic_auth");
       flag = 5;
     }
 
@@ -164,7 +164,7 @@ start_ddns (void)
 	  do
 	    {
 	      if (host_key[i] != 0x0D)
-	      fprintf (fp, "%c", host_key[i]);
+	      fprintf (fp, " %c", host_key[i]);
 	    }
 	  while (host_key[++i]);
 	}
