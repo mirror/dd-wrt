@@ -1,9 +1,8 @@
 
 // ******************************************* COMMON SHARE LABEL *******************************************//
-var lang_charset = new Object();
+
 lang_charset.set="iso-8859-2";
 
-var share = new Object();
 share.firmware="Strojna programska oprema";
 share.time="Èas";
 share.interipaddr="Internetni IP naslov";
@@ -127,8 +126,6 @@ share.half="Polovièni";
 share.quarter="Èetrtinski";
 
 
-
-var sbutton = new Object();
 sbutton.save="Shrani nastavitve";
 sbutton.saving="Shranjeno";
 sbutton.cmd="Izvajam";
@@ -178,7 +175,7 @@ sbutton.allways_off="Vedno izkljuèeno";
 
 
 // ******************************************* COMMON ERROR MESSAGES  *******************************************//
-var errmsg = new Object();
+
 errmsg.err0="Vnesti morate uporabni¹ko ime.";
 errmsg.err1="Vnesti morate ime usmerjalnika.";
 errmsg.err2="Izven dovoljenega obmoèja. Prosimo, do popravite zaèetni IP naslov ali ¹tevilo uporabnikov.";
@@ -280,7 +277,7 @@ errmsg.err61="Nepravilna datoteka.";
 errmsg.err62=" je ¾e doloèen kot statièni zakup.";
 
 // *******************************************  COMMON MENU ENTRIES  *******************************************//
-var bmenu= new Object();
+
 bmenu.setup="Namestitev";
 bmenu.setupbasic="Osnovna namestitev";
 bmenu.setupddns="DDNS";
@@ -340,7 +337,6 @@ bmenu.statuSysInfo="Info stran";
 
 // ******************************************* Alive.asp *******************************************//
 
-var alive = new Object();
 alive.titl=" - Ohrani ¾ivo";
 alive.h2="Ohrani ¾ivo";
 alive.legend="Razpored ponovnega zagona";
@@ -355,7 +351,7 @@ alive.IP2="Proksi IP naslov";
 alive.port="Proksi vrata";
 
 //help container
-var halive = new Object();
+
 halive.right2="Izbira ponovnega zagona usmerjalnika. Cron mora biti omogoèen pod zavihkom Upravljanje.";
 halive.right4="Dovoljeni so najveè trije IP naslovi loèeni s <em>PRESLEDEK</em>.<BR/>Format IP je xxx.xxx.xxx.xxx.";
 
@@ -363,7 +359,6 @@ halive.right4="Dovoljeni so najveè trije IP naslovi loèeni s <em>PRESLEDEK</em>.
 
 // ******************************************* config.asp *******************************************//
 
-var config = new Object();
 config.titl=" - Varnostna kopija & Obnovitev";
 config.h2="Konfiguracija varnostnega kopiranja";
 config.legend="Varnostna kopija";
@@ -375,7 +370,7 @@ config.mess3="O P O Z O R I L O";
 config.mess4="Obnovitev je mo¾na samo z datoteko ustvarjeno na istem modelu usmerjalnika in isto verzijo strojne programske opreme.<br />Ne nalagajte datotek, ki niso bile ustvarjene s tem uporabni¹kim vmesnikom!";
 
 //help container
-var hconfig = new Object();
+
 hconfig.right2="Varnostno kopijo lahko naredite v primeru, da morate usmerjalnik ponastaviti na tovarni¹ko privzete nastavitve.<br /><br />Kliknite gumb <em>Varnostno kopiranje</em> za varnostno kopiranje trenutne konfiguracije.";
 hconfig.right4="Kliknite gumb <em>Prebrskaj...</em> za iskanje varnostne kopije, ki je trenutno na va¹em PCju.<br /><br />Kliknite gumb <em>" + sbutton.restore + "</em> za nalaganje varnstne kopije. To bo nadomestilo trenutno konfiguracijo s konfiguracijo shranjeno v varnostni kopiji.";
 
@@ -383,7 +378,6 @@ hconfig.right4="Kliknite gumb <em>Prebrskaj...</em> za iskanje varnostne kopije,
 
 // ******************************************* DDNS.asp *******************************************//
 
-var ddns = new Object();
 ddns.titl=" - Dinamièni DNS"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
@@ -397,7 +391,7 @@ ddns.statu="DDNS status";
 ddns.system="DNS sistem";
 ddns.options="Dodatne DDNS mo¾nosti";
 
-var ddnsm = new Object();
+
 ddnsm.dyn_strange="Neprièakovani odziv stre¾nika; ali se prikljuèujete na pravilni stre¾nik ?";
 ddnsm.dyn_good="DDNS posodobitev je uspela";
 ddnsm.dyn_noupdate="Posodobitev trenutno ni potrebna";
@@ -448,14 +442,13 @@ ddnsm.all_disabled="DDNS funkcija je onemogoèena";
 ddnsm.all_noip="Ni medmre¾ne povezave";
 
 //help container
-var hddns = new Object();
+
 hddns.right2="DDNS omogoèa dostop do va¹e mre¾e z domenskim imenom namesto z IP naslovom. Ta storitev upravlja s spremembami va¹ega IP naslova in dinamièno posodobi podatke o va¹i domeni. Prijaviti se morate pri DynDNS.org, TZO.com ali ZoneEdit.com.";
 
 
 
 // ******************************************* Diagnostics.asp *******************************************//
 
-var diag = new Object();
 diag.titl=" - Diagnostika";
 diag.h2="Diagnostika";
 diag.legend="Ukazna lupina";
@@ -464,14 +457,13 @@ diag.startup="Zagon";
 diag.firewall="Po¾arni zid";
 
 //help container
-var hdiag = new Object();
+
 hdiag.right2="Ukaze lahko za¾enete preko uporabni¹kega vmesnika. Vnesite ukaze v textovno polje in kliknite <em>" + sbutton.runcmd + "</em>.";
 
 
 
 // ******************************************* DMZ.asp *******************************************//
 
-var dmz = new Object();
 dmz.titl=" - DMZ";
 dmz.h2="Demilitarizirano obmocèje (DMZ)";
 dmz.legend="DMZ";
@@ -480,14 +472,13 @@ dmz.host="DMZ gostiteljev IP naslov";
 
 
 //help container
-var hdmz = new Object();
+
 hdmz.right2="Omogoèanje te opcije bo izpostavilo gostitelja medmre¾ju. Vsa vrata bodo dostopna z medmre¾ja.";
 
 
 
 // ******************************************* Factory_Defaults.asp *******************************************//
 
-var factdef = new Object();
 factdef.titl=" - Privzete nastavitve";
 factdef.h2="Privzete nastavitve";
 factdef.legend="Ponastavi nastavitve usmerjalnika";
@@ -496,14 +487,13 @@ factdef.restore="Obnovi privzete nastavitve";
 factdef.mess1="Opozorilo! Èe kliknete OK, bodo nastavljene privzete nastavitve in vse prej¹nje nastavitve bodo izbrisane.";
 
 //help container
-var hfactdef = new Object();
+
 hfactdef.right1="To bo ponastavilo privzete nastavitve. Vse va¹e nastavitve bodo izbrisane.";
 
 
 
 // ******************************************* FilterIP%AC.asp *******************************************//
 
-var filterIP = new Object();
 filterIP.titl=" - Seznam PCjev";
 filterIP.h2="Seznam PCjev";
 filterIP.h3="Vnesi PCjev MAC v tem formatu formatu: xx:xx:xx:xx:xx:xx";
@@ -515,7 +505,6 @@ filterIP.ip_range="IP obseg";
 
 // ******************************************* Filter.asp *******************************************//
 
-var filter = new Object();
 filter.titl=" - Omejitve dostopa";
 filter.h2="Dostop do medmre¾ja";
 filter.legend="Smernica dostopa";
@@ -537,7 +526,7 @@ filter.mess2="Izbrati morate vsaj dan.";
 filter.mess3="Konèni èas mora biti veèji od zaèetnega.";
 
 //help container
-var hfilter = new Object();
+
 hfilter.right2="Doloèite lahko do 10 smernic dostopa. Kliknite <em>" + sbutton.del + "</em>, da zbri¹ete smernico, ali <em>" + sbutton.summary + "</em> za povzetek smernice.";
 hfilter.right4="Omogoèi ali onemogoèi smernico.";
 hfilter.right6="Smernici lahko doloèite ime.";
@@ -551,7 +540,6 @@ hfilter.right16="Zaprete lahko doloèena spleti¹èa tako, da vnesete kljuèno besed
 
 // ******************************************* FilterSummary.asp *******************************************//
 
-var filterSum = new Object();
 filterSum.titl=" - Povtetek omejitev dostopa";
 filterSum.h2="Povzetek smernic dostopa do medmre¾ja";
 filterSum.polnum="©t.";
@@ -561,7 +549,6 @@ filterSum.polday="Èas dneva";
 
 // ******************************************* Firewall.asp *******************************************//
 
-var firewall = new Object();
 firewall.titl=" - Po¾arni zid";
 firewall.h2="Varnost";
 firewall.legend="Za¹èita s po¾arnim zidom";
@@ -578,28 +565,26 @@ filter.nat="Filter za NAT preusmeritev";
 filter.port113="Filter za IDENT (vrata 113)";
 
 //help container
-var hfirewall = new Object();
+
 hfirewall.right2="Omogoèi ali onemogoèi za¹èito s SPI po¾arnim zidom.";
 
 
 
 // ******************************************* Forward.asp *******************************************//
 
-var prforward = new Object();
 prforward.titl=" - Posredovanje obsega vrat";
 prforward.h2="Posredovanje obsega vrat";
 prforward.legend="Posredovanje";
 prforward.app="Aplikacija";
 
 //help container
-var hprforward = new Object();
+
 hprforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 
 
 // ******************************************* ForwardSpec.asp *******************************************//
 
-var pforward = new Object();
 pforward.titl=" - Posredovanje vrat";
 pforward.h2="Posredovanje vrat";
 pforward.legend="Posredovanje";
@@ -608,14 +593,13 @@ pforward.from="Od vrat";
 pforward.to="Do vrat";
 
 //help container
-var hpforward = new Object();
+
 hpforward.right2="Nekatere aplikacije zahtevajo, da so doloèena vrata odprta za njihovo pravilno delovanje. Primeri takih aplikacij so stre¾niki in nekatere igre. Ko z medmre¾ja pride zahteva za doloèena vrata, bo usmerjalnik usmeril podatke do doloèenega raèunalnika. Zaradi varnosti omejite posredovanje vrat samo na tista vrata, ki ji uporabljate. ";
 
 
 
 // ******************************************* Hotspot.asp *******************************************//
 
-var hotspot = new Object();
 hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot portal";
 hotspot.legend="Chillispot";
@@ -669,7 +653,6 @@ hotspot.sputnik_learn="Veè podatkov";
 
 // ******************************************* Info.htm *******************************************//
 
-var info = new Object();
 info.titl=" - Info";
 info.h2="Sistemske informacije";
 info.wlanmac="Brez¾ièni MAC";
@@ -680,7 +663,6 @@ info.ap="Dostopna toèka";
 
 // ******************************************* index_heartbeat.asp *******************************************//
 
-var idx_h = new Object();
 idx_h.srv="Heart Beat stre¾nik";
 idx_h.con_strgy="Strategija povezovanja";
 idx_h.max_idle="Pove¾i po potrebi: najveèji nedejavni èas";
@@ -690,21 +672,18 @@ idx_h.alive="Ohrani zvezo: èas ponovnega klicanja";
 
 // ******************************************* index_l2tp.asp *******************************************//
 
-var idx_l = new Object();
 idx_l.srv="L2TP stre¾nik";
 
 
 
 // ******************************************* index_pppoe.asp *******************************************//
 
-var idx_pppoe = new Object();
 idx_pppoe.use_rp="Uporabi RP PPPoE";
 
 
 
 // ******************************************* index_pptp.asp *******************************************//
 
-var idx_pptp = new Object();
 idx_pptp.srv="Uporabi DHCP";
 idx_pptp.wan_ip="IP naslov";
 idx_pptp.gateway="Prehod (PPTP stre¾nik)";
@@ -714,14 +693,12 @@ idx_pptp.encrypt="PPTP ¹ifrirnje";
 
 // ******************************************* index_static.asp *******************************************//
 
-var idx_static = new Object();
 idx_static.dns="Statièni DNS";
 
 
 
 // ******************************************* index.asp *******************************************//
 
-var idx = new Object();
 idx.titl=" - Namestitev";
 idx.h2="Namestitev medmre¾ja";
 idx.h22="Namestitev brez¾iènega omre¾ja";
@@ -756,7 +733,7 @@ idx.auth_dnsmasq="DHCP-Authoritative";
 
 
 //help container
-var hidx = new Object();
+
 hidx.right2="Ta nastavitev se pogosto uporablja za kabelske ponudnike (ISP).";
 hidx.right4="Vnesi uporabni¹ko ime dodeljeno s strani va¹ega ISP.";
 hidx.right6="Vnesi domensko ime dodeljeno s strani va¹ega ISP.";
@@ -771,8 +748,6 @@ hidx.right18="Izberite va¹o èasovno cono in obdobje poletnega èasa. Usmerjalnik 
 
 // ******************************************* Join.asp *******************************************//
 
-var join = new Object();
-
 //sshd.webservices
 join.titl=" - Pove¾i";
 join.mess1="Kot odjemalec ste se uspe¹no povezali s sledeèo mre¾o: ";
@@ -781,7 +756,6 @@ join.mess1="Kot odjemalec ste se uspe¹no povezali s sledeèo mre¾o: ";
 
 // ******************************************* Log_incoming.asp *******************************************//
 
-var log_in = new Object();
 log_in.titl=" - Tabela vhodnega dnevnika";
 log_in.h2="Tabela vhodnega dnevnika";
 log_in.th_ip="Izvorni IP";
@@ -791,7 +765,6 @@ log_in.th_port="©t. naslovnih vrat";
 
 // ******************************************* Log_outgoing.asp *******************************************//
 
-var log_out = new Object();
 log_out.titl=" - Tabela izhodnega dnevnika";
 log_out.h2="Tabela izhodnega dnevnika";
 log_out.th_lanip="LAN IP";
@@ -802,7 +775,6 @@ log_out.th_port="Storitev/¹t. vrat";
 
 // ******************************************* Log.asp *******************************************//
 
-var log = new Object();
 log.titl=" - Dnevnik";
 log.h2="Upravljanje dnevnika";
 log.legend="Dnevnik";
@@ -815,7 +787,6 @@ log.accept="Sprejeti";
 
 // ******************************************* Management.asp *******************************************//
 
-var management = new Object();
 management.titl=" - Administracija";
 management.h2="Upravljanje usmerjalnika";
 
@@ -916,7 +887,7 @@ management.gui_style="Stil usmerjalnikovega uporabni¹kega vmesnika";
 
 
 //help container
-var hmanagement = new Object();
+
 hmanagement.right1="Samodejno osve¾evanje:";
 hmanagement.right2="Nastavite interval samodejnega osve¾evanja. 0 popolnoma onemogoèi samodejno osve¾evanje.";
 
@@ -924,7 +895,6 @@ hmanagement.right2="Nastavite interval samodejnega osve¾evanja. 0 popolnoma onem
 
 // ************ Port_Services.asp (used by Filters.asp and QoS.asp, QOSPort_Services.asp not used anymor) *****************************************//
 
-var portserv = new Object();
 portserv.titl=" - Storitve vrat";
 portserv.h2="Storitve vrat";
 
@@ -932,7 +902,6 @@ portserv.h2="Storitve vrat";
 
 // ******************************************* QoS.asp *******************************************//
 
-var qos = new Object();
 qos.titl=" - Kakovost storitev (QoS)";
 qos.h2="Kakovost storitev (QoS)";
 qos.legend="QoS nastavitve";
@@ -957,7 +926,7 @@ qos.legend6="Privzeti nivo pasovne ¹irine";
 qos.bandwith="Pasovna ¹irina v Kbits";
 
 //help container
-var hqos = new Object();
+
 hqos.right1="Hitrost prenosa od vas:";
 hqos.right2="Nastavite na 80%-95% (maks.) va¹e skupne hitrosti prenosa od vas.";
 hqos.right3="Hitrost prenosa k vam:";
@@ -971,7 +940,6 @@ hqos.right12="Nadzirate lahko hitrost za ves promet glede na to na kateri fi¾ièn
 
 // ******************************************* RouteTable.asp *******************************************//
 
-var routetbl = new Object();
 routetbl.titl=" - Usmerjalna tabela";
 routetbl.h2="Seznam vnosov v usmerjalno tabelo";
 routetbl.th1="Ciljni LAN IP";
@@ -980,7 +948,6 @@ routetbl.th1="Ciljni LAN IP";
 
 // ******************************************* Routing.asp *******************************************//
 
-var route = new Object();
 route.titl=" - Usmerjanje";
 route.h2="Napredno usmerjanje";
 route.mod="Naèin";
@@ -996,7 +963,7 @@ route.static_name="Ime smeri";
 route.static_ip="Ciljni LAN IP";
 
 //help container
-var hroute = new Object();
+
 hroute.right2="Èe usmerjalnik gosti va¹o povezavo v medmere¾je, izberite naèin <em>Prehod</em>. Èe na va¹i mre¾i obstaja kak drug usmerjevalnik, izberite naèin <em>Usmerjevalnik</em>.";
 hroute.right4="To je edinstvena ¹tevilka, doloèite lahko do 20 smeri.";
 hroute.right6="Vnesite ime, ki ga doloèite za smer.";
@@ -1006,7 +973,6 @@ hroute.right10="Doloèi gostitelja in mre¾o.";
 
 // ******************************************* Site_Survey.asp *******************************************//
 
-var survey = new Object();
 survey.titl=" - Pregled podroèja";
 survey.h2="Sosednja brez¾ièna omre¾ja";
 survey.thjoin="Pove¾i";
@@ -1014,8 +980,6 @@ survey.thjoin="Pove¾i";
 
 
 // ******************************************* Services.asp *******************************************//
-
-var service = new Object();
 
 service.titl=" - Storitve";
 service.h2="Upravljanje storitev";
@@ -1108,7 +1072,6 @@ service.ssh_key="Poobla¹èeni kljuèi";
 
 // ******************************************* Sipath.asp + cgi *******************************************//
 
-var sipath = new Object();
 sipath.titl=" - SiPath pregled";
 sipath.phone_titl=" - Imenik";
 sipath.status_titl=" - Status";
@@ -1117,7 +1080,6 @@ sipath.status_titl=" - Status";
 
 // ******************************************* Status_Lan.asp *******************************************//
 
-var status_lan = new Object();
 status_lan.titl=" - LAN status";
 status_lan.h2="Lokalna mre¾a";
 status_lan.legend="LAN status";
@@ -1126,7 +1088,7 @@ status_lan.legend2="DHCP status";
 status_lan.legend3="DHCP odjemalci";
 
 //help container
-var hstatus_lan = new Object();
+
 hstatus_lan.right2="To je usmerjalnikov MAC naslov, kot je viden v va¹i lokalni mre¾i.";
 hstatus_lan.right4="To je usmerjalnikov IP naslov, kot je viden v va¹i lokalni mre¾i.";
 hstatus_lan.right6="To je maska podmre¾e, kadar jo usmerjalnik uporablja.";
@@ -1137,7 +1099,6 @@ hstatus_lan.right10="S klikom na MAC naslov boste dobili ime iz Organizationally
 
 // ******************************************* Status_Router.asp *******************************************//
 
-var status_router = new Object();
 status_router.titl=" - Status usmerjalnika";
 status_router.h2="Informacije usmerjalnika";
 status_router.legend="Sistem";
@@ -1166,7 +1127,7 @@ status_router.www_login="Naèin prijave";
 status_router.www_loginstatus="Status prijave";
 
 //help container
-var hstatus_router = new Object();
+
 hstatus_router.right2="To je ime usmerjalnika, kot ste ga doloèili v zavihku <i>Nemestitev</i>.";
 hstatus_router.right4="To je usmerjalnikov MAC naslov, kot ga vidi va¹ ponudnik medmre¾ja.";
 hstatus_router.right6="To je usmerjalnikova trenutna strojna programska oprema.";
@@ -1179,14 +1140,13 @@ hstatus_router.right14="To ka¾e podatke, potrebne za prikljuèitev v medmre¾je. T
 
 // ******************************************* Status_SputnikAPD.asp *******************************************//
 
-var status_sputnik = new Object();
 status_sputnik.titl=" - Status Sputnik agenta";
 status_sputnik.h2="Sputnik&reg; agent&trade;";
 status_sputnik.manage="Upravljan od";
 status_sputnik.license="SCC ¹t. licence.";
 
 //help container
-var hstatus_sputnik = new Object();
+
 hstatus_sputnik.right1="Status Sputnik agenta";
 hstatus_sputnik.right2="Ta zaslon prikazuje status Sputnik agenta.";
 hstatus_sputnik.right4="Sputnikov kontrolni center na katerega je ta usmerjalnik povezan.";
@@ -1197,7 +1157,6 @@ hstatus_sputnik.right8="©t. licence va¹ega Sputnik kontrolnega centra.";
 
 // ******************************************* Status_Wireless.asp *******************************************//
 
-var status_wireless = new Object();
 status_wireless.titl=" - Brez¾ièni status";
 status_wireless.h2="Brez¾ièno";
 status_wireless.legend="Brez¾ièni status";
@@ -1212,7 +1171,7 @@ status_wireless.signal_qual="Kakovost signala";
 status_wireless.wds="WDS vozli¹èa";
 
 //help container
-var hstatus_wireless = new Object();
+
 hstatus_wireless.right2="To je usmerjalnikov MAC naslov, kot je viden v va¹i lokalni brez¾ièni mre¾i..";
 hstatus_wireless.right4="Tu je prikazan brez¾ièni naèin, kot je izbran v zavihku Brez¾ièno (Me¹ano, Samo-G, Samo-B ali Onemogoèeno) used by the network.";
 
@@ -1220,7 +1179,6 @@ hstatus_wireless.right4="Tu je prikazan brez¾ièni naèin, kot je izbran v zavihku
 
 // ******************************************* Triggering.asp *******************************************//
 
-var trforward = new Object();
 trforward.titl=" - Pro¾enje vrat";
 trforward.h2="Pro¾enje vrat";
 trforward.legend="Posredovanja";
@@ -1229,7 +1187,7 @@ trforward.fwdrange="Obseg posredovanja vrat";
 trforward.app="Aplikacija";
 
 //help container
-var htrforward = new Object();
+
 htrforward.right2="Vnesite ime aplikacije za pro¾enje.";
 htrforward.right4="Za vsako aplikacijo vnesite obseg pro¾enja vrat. Preverite dokumentacijo za potrebne ¹tevilke vrat.";
 htrforward.right6="Za vsako aplikacijo vnesite obseg posredovanja vrat. Preverite dokumentacijo za potrebne ¹tevilke vrat.";
@@ -1240,7 +1198,6 @@ htrforward.right10="Vnesite konèna vrata za obseg pro¾enja ali posredovanja vrat
 
 // ******************************************* Upgrade.asp *******************************************//
 
-var upgrad = new Object();
 upgrad.titl=" - Posodabljanje strojne programske opreme";
 upgrad.h2="Upravljanje s strojno programsko opremo";
 upgrad.legend="Posodabljanje strojne programske opreme";
@@ -1252,14 +1209,13 @@ upgrad.warning="O P O Z O R I L O";
 upgrad.mess1="Posodabljanje lahko traja nekaj minut.<br />Ne izljuèujte usmerjalnika in ne pritiskajte na gumb za ponastavitev!";
 
 //help container
-var hupgrad = new Object();
+
 hupgrad.right2="Kliknite na gumb <em>Prebrskaj...</em> za izbiro datoteke za posodobitev.<br /><br /> Kliknite na gumb <em>Posodobi</em> za zaèetek posodabljanja. Posodobitve ne smete prekiniti.";
 
 
 
 // ******************************************* UPnP.asp *******************************************//
 
-var upnp = new Object();
 upnp.titl=" - UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Posredovanja";
@@ -1272,7 +1228,7 @@ upnp.msg2="Izbri¹i vse vnose?";
 
 
 //help container
-var hupnp = new Object();
+
 hupnp.right2="Kliknite na ko¹ za izbris posameznega vnosa.";
 hupnp.right4="Dovoli aplikacijam, da samostojno nastavijo posredovanja.";
 
@@ -1280,7 +1236,6 @@ hupnp.right4="Dovoli aplikacijam, da samostojno nastavijo posredovanja.";
 
 // ******************************************* VPN.asp *******************************************//
 
-var vpn = new Object();
 vpn.titl=" - VPN";
 vpn.h2="Navidezno zasebno omre¾je (VPN)";
 vpn.legend="VPN prehajanje";
@@ -1289,13 +1244,12 @@ vpn.pptp="PPTP prehajanje";
 vpn.l2tp="L2TP prehajanje";
 
 //help container
-var hvpn = new Object();
+
 hvpn.right1="Izberete lahko IPSec, PPTP in/ali L2TP prehajanje, da se lahko va¹e naprave pove¾ejo v VPN.";
 
 
 // ******************************************* Vlan.asp *******************************************//
 
-var vlan = new Object();
 vlan.titl=" - Virtualni LAN";
 vlan.h2="Virtualno lokalno omre¾je (VLAN)";
 vlan.legend="VLAN";
@@ -1308,7 +1262,6 @@ vlan.trunk="Povezava";
 
 // ******************************************* WEP.asp *******************************************//
 
-var wep = new Object();
 wep.defkey="Privzeti oddajni kljuè";
 wep.passphrase="Geslo";
 
@@ -1316,7 +1269,6 @@ wep.passphrase="Geslo";
 
 // ******************************************* WOL.asp *******************************************//
 
-var wol = new Object();
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Razpolo¾ljivi gostitelji";
@@ -1330,7 +1282,7 @@ wol.udp="UDP vrata";
 wol.msg1="Kliknite za odstranitev WOL gostitelja";
 
 //help container
-var hwol = new Object();
+
 hwol.right2="Ta stran omogoèa da <em>zbudite</em> na va¹i lokalni mre¾i (t.j. prikljuèene na va¹ usmerjalnik).";
 hwol.right4="MAC naslove vnesite v formatu xx:xx:xx:xx:xx:xx (t.j. 01:23:45:67:89:AB)";
 hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mre¾o. Lahko pa je oddaljeni naslov, èe gostitelj ni prikljuèenj na va¹o lokalno mre¾o."
@@ -1339,7 +1291,6 @@ hwol.right6="IP naslov je ponavadi broadcast naslov za lokalno mre¾o. Lahko pa j
 
 // ******************************************* WanMAC.asp *******************************************//
 
-var wanmac = new Object();
 wanmac.titl=" - Kloniranje MAC naslova";
 wanmac.h2="Kloniranje MAC naslova";
 wanmac.legend="Kloniranje MAC";
@@ -1347,14 +1298,13 @@ wanmac.wan="Kloniraj WAN MAC";
 wanmac.wlan="Kloniraj brez¾ièni MAC";
 
 //help container
-var hwanmac = new Object();
+
 hwanmac.right2="nekateri ponudniki medmere¾ja zahtevajo, da prijavite va¹ MAC naslov. Èe ne ¾elite prijaviti novega MAC naslova lahko klonirate naslov, ki je ¾e prijavljen pri va¹em ponudniku medmere¾ja.";
 
 
 
 // ******************************************* WL_WPATable.asp / WPA.asp / Radius.asp *******************************************//
 
-var wpa = new Object();
 wpa.titl=" - Brez¾ièna za¹èita";
 wpa.h2="Brez¾ièna za¹èita";
 wpa.secmode="Naèin za¹èite";
@@ -1371,14 +1321,13 @@ wpa.algorithms="WPA algoritm";
 wpa.shared_key="WPA deljeni kljuè";
 
 //help container
-var hwpa = new Object();
+
 hwpa.right2="Izberete lahko med: Onemogoèeno, WEP, WPA predhodno deljeni kljuè, WPA RADIUS, or RADIUS. Vse naprave na va¹i mre¾i morajo uporabljanti isti naèin.";
 
 
 
 // ******************************************* WL_FilterTable.asp *******************************************//
 
-var wl_filter = new Object();
 wl_filter.titl=" - Seznam filtra MAC naslovov";
 wl_filter.h2="Seznam filtra MAC naslovov";
 wl_filter.h3="Vnesi MAC naslov v tem formatu&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
@@ -1387,7 +1336,6 @@ wl_filter.h3="Vnesi MAC naslov v tem formatu&nbsp;:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx
 
 // ******************************************* WL_ActiveTable.asp *******************************************//
 
-var wl_active = new Object();
 wl_active.titl=" - Seznam MAC aktivnih brez¾iènih odjemalcev";
 wl_active.h2="Seznam MAC brez¾iènih odjemalcev";
 wl_active.h3="Omogoèi MAC filter";
@@ -1398,7 +1346,6 @@ wl_active.inactive="Neaktivni PCji";
 
 // ******************************************* Wireless_WDS.asp *******************************************//
 
-var wds = new Object();
 wds.titl=" - WDS";
 wds.h2="Brez¾ièni distribucijski sistem (WDS)";
 wds.legend="WDS nastavitve";
@@ -1415,7 +1362,6 @@ wds.legend2="Dodatne opcije";
 
 // ******************************************* Wireless_radauth.asp *******************************************//
 
-var radius = new Object();
 radius.titl=" - Radius";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="Radius";
@@ -1432,7 +1378,6 @@ radius.label8="razveljavi Radius, èe stre¾nik ni na voljo";
 
 // ******************************************* Wireless_MAC.asp *******************************************//
 
-var wl_mac = new Object();
 wl_mac.titl=" - MAC filter";
 wl_mac.h2="Brez¾ièni filter MAC";
 wl_mac.legend="MAC filter";
@@ -1445,7 +1390,6 @@ wl_mac.allow="Dovoli PCjem na seznamu dostop do brez¾iènega omre¾ja";
 
 // ******************************************* Wireless_Basic.asp *******************************************//
 
-var wl_basic = new Object();
 wl_basic.titl=" - Brez¾ièno";
 wl_basic.h2="Brez¾ièno";
 wl_basic.legend="Osnovne nastavitve";
@@ -1489,7 +1433,7 @@ wl_basic.channel_width="©irina kanalov";
 
 
 //help container
-var hwl_basic = new Object();
+
 hwl_basic.right2="Èe ¾elite prepovedati vstop odjemalcem G, izberite <em>Samo-B</em> naèin. Èe ¾elite izkljuèiti brez¾ièno omre¾je, izberite <em>Onemogoèie</em>.";
 hwl_basic.right3="Obmoèje obèutljivosti: ";
 hwl_basic.right4="Prilagodi ACK uèasenje. 0 popolnoma onemogoèi ACK uèasenje.";
@@ -1498,7 +1442,6 @@ hwl_basic.right4="Prilagodi ACK uèasenje. 0 popolnoma onemogoèi ACK uèasenje.";
 
 // ******************************************* Wireless_Advanced.asp *******************************************//
 
-var wl_adv = new Object();
 wl_adv.titl=" - Napredne brez¾iène nastavitve";
 wl_adv.h2="Napredne brez¾iène nastavitve";
 wl_adv.legend="Napredne nastavitve";
@@ -1539,14 +1482,13 @@ wl_adv.lng="Dolga"; 					//************* don't use .long ! *************
 wl_adv.shrt="Kratka"; 				//************* don't use .short ! **************
 
 //help container
-var hwl_adv = new Object();
+
 hwl_adv.right2="Izberete lahko med Avto ali Deljeni kljuè. Overovljanje z deljenim kljuèem je bolj varno, toda vse naprave na va¹i mre¾i morajo podpirati ta naèin.";
 hwl_basic.right6="Klikni na uro za omogoèenje ali onemogoèenje radijskega signala (<em>zeleno</em> pomeni dovoljen brez¾ièni dostop, <em>rdeèe</em> pomeni nedovoljen brez¾ièni dostop)";
 
 
 // ******************************************* Fail_s.asp / Fail_u_s.asp / Fail.asp *******************************************//
 
-var fail = new Object();
 fail.mess1="Vne¹ene vrednosti so neveljavne. Prosimo, da poskusite znova.";
 fail.mess2="Posodabljanje ni uspelo.";
 
@@ -1554,7 +1496,6 @@ fail.mess2="Posodabljanje ni uspelo.";
 
 // ******************************************* Success*.asp / Reboot.asp  *******************************************//
 
-var success = new Object();
 success.saved="Nastavitve so shranjene.";
 success.restore="Nastavitve so obnovljene.<br/>Ponovni zagon naprave. Prosimo, da poèakate trenutek...";
 success.upgrade="Posodabljanje je uspelo.<br/>Ponovni zagon naprave. Prosimo, da poèakate trenutek...";
@@ -1569,11 +1510,10 @@ success.alert3="Èe ste povezani brez¾ièno, se morate ponovno povezati v omre¾je,
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-var dhcp = new Object();
 dhcp.titl=" - DHCP tabela aktivnih IP";
 dhcp.h2="DHCP tabela aktivnih IP";
 dhcp.server="DHCP stre¾nikov IP naslov :";
 dhcp.tclient="Odjemalèevo gostiteljevo ime";
 
-var donate = new Object();
+
 donate.mb="Darujete lahko tudi preko Moneybookerjevega raèuna mb@dd-wrt.com";
