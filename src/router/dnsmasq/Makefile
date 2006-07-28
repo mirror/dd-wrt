@@ -12,7 +12,7 @@ CFLAGS?= -O2
 all :   dnsmasq
 
 dnsmasq :
-	$(MAKE) I18N=-DNO_GETTEXT -f ../bld/Makefile -C $(SRC) dnsmasq
+	$(MAKE) I18N=-DNO_GETTEXT -f ../bld/Makefile -C $(SRC) dnsmasq 
 
 dnsmasq.a : 
 	$(MAKE) I18N="-DNO_GETTEXT -DBUSYBOX" -f ../bld/Makefile -C $(SRC) dnsmasq.a 
