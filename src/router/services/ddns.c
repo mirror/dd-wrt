@@ -65,7 +65,7 @@ init_ddns (void)
     }
   else if (nvram_match ("ddns_enable", "5"))
     {
-      strcpy (service, nvram_safe_get ("ddns_custom_5"));
+      strcpy (service, "custom@http_srv_basic_auth");
       flag = 5;
     }
 
@@ -144,6 +144,8 @@ start_ddns (void)
     {
       fprintf (fp, "--background");
       fprintf (fp, " --dyndns_system %s", service);	//service
+      if (nvram_match ("ddns_enable", "5"))
+	fprintf (fp, " --dyndns_server_name %s", nvram_safe_get("ddns_custom_5"));
       fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
       fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
