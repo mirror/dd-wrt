@@ -1466,7 +1466,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"NC_SplashURL", "", 0},
   {"NC_MacWhiteList", "", 0},
 
+#ifdef HAVE_MSSID
+  {"wl_wme", "on", 0},		/* WME mode (off|on) */
+#else
   {"wl_wme", "off", 0},		/* WME mode (off|on) */
+#endif
   /* WME parameters */
   /* EDCA parameters for STA */
   {"wl_wme_sta_bk", "15 1023 7 0 0 off off", 0},	/* WME STA AC_BK paramters */
@@ -1479,8 +1483,12 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl_wme_ap_be", "15 63 3 0 0 off off", 0},	/* WME AP AC_BE paramters */
   {"wl_wme_ap_vi", "7 15 1 6016 3008 off off", 0},	/* WME AP AC_VI paramters */
   {"wl_wme_ap_vo", "3 7 1 3264 1504 off off", 0},	/* WME AP AC_VO paramters */
+#ifdef HAVE_MSSID
 
+  {"wl_wme_no_ack", "on", 0},	/* WME No-Acknowledgmen mode */
+#else
   {"wl_wme_no_ack", "off", 0},	/* WME No-Acknowledgmen mode */
+#endif
   {"wl_maxassoc", "128", 0},	/* Max associations driver could support */
 #ifdef HAVE_ZEROIP
   {"shat_enable", "0", 0},
