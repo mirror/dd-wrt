@@ -848,7 +848,6 @@ stop_udhcpd (void)
 
 
 int
-
 start_dnsmasq (void)
 {
   FILE *fp;
@@ -927,12 +926,12 @@ start_dnsmasq (void)
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
-	if (usejffs)
-	  fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
-	else if (nvram_match ("dhcpd_usenvram", "1"))
+//	if (usejffs)
+//	  fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
+//	else if (nvram_match ("dhcpd_usenvram", "1"))
 	  fprintf (fp, "leasefile-ro\n");
-	else
-	  fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
+//	else
+//	  fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
 
 	int dhcp_max =
 	  atoi (nvram_safe_get ("dhcp_num")) +
@@ -1031,15 +1030,8 @@ start_dnsmasq (void)
 
   dns_to_resolv ();
 
-  if (!nvram_match ("wl_mode", "wet") && nvram_match ("dhcp_dnsmasq", "1")
-      && nvram_match ("lan_proto", "dhcp") && nvram_match ("dhcpfwd_enable", "0")
-      && nvram_match ("dhcpd_usenvram", "1"))
-    {
-      chmod ("/etc/lease_update.sh", 0700);
-      ret = system ("/etc/lease_update.sh init | dnsmasq --conf-file /tmp/dnsmasq.conf");
-    }
-  else
-    ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
+  chmod ("/etc/lease_update.sh", 0700);
+  ret = eval ("dnsmasq", "--conf-file", "/tmp/dnsmasq.conf");
 
   cprintf ("done\n");
   return ret;
