@@ -164,7 +164,7 @@ start_ddns (void)
 	  do
 	    {
 	      if (host_key[i] != 0x0D)
-	      fprintf (fp, " %c", host_key[i]);
+	      fprintf (fp, "%c", host_key[i]);
 	    }
 	  while (host_key[++i]);
 	}
