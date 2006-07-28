@@ -139,7 +139,6 @@ share.half="Half";
 share.quarter="Quarter";
 
 
-
 var sbutton = new Object();
 sbutton.save="Save Settings";
 sbutton.saving="Saved";

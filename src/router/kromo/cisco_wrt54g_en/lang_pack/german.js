@@ -1,9 +1,11 @@
+//////////////////////////////////////////////////////////////////////////////////////////////
+//				French translation DD-WRT V23 SP1 by DD-WRT guru 06/2006												//
+//////////////////////////////////////////////////////////////////////////////////////////////
 
 // ************************************************************ COMMON SHARE LABEL ***************************************************************//
-var lang_charset = new Object();
+
 lang_charset.set="iso-8859-1";
 
-var share = new Object();
 share.firmware="Firmware";
 share.time="Zeit";
 share.interipaddr="Internet-IP-Addresse";
@@ -124,8 +126,6 @@ share.errs="Fehler";
 share.meters="meters";
 
 
-
-var sbutton = new Object();
 sbutton.save="Einstellungen speichern";
 sbutton.saving="Gespeichert";
 sbutton.cmd="Ausführen";
@@ -177,7 +177,7 @@ sbutton.allways_off="Alles Aus";
 
 
 // ************************************************************ COMMON ERROR MESSAGES  ***************************************************************//
-var errmsg = new Object();
+
 errmsg.err0="Sie müssen einen Nutzernamen angeben.";
 errmsg.err1="Sie müssen einen Routernamen angeben.";
 errmsg.err2="Auserhalb des zulässigen Bereichs, bitte verändern Sie die Start-IP-Adresse oder die anzahl der Nutzer.";
@@ -279,7 +279,7 @@ errmsg.err61="Ungültiges Dateiformat.";
 
 
 // **************************************************************  COMMON MENU ENTRIES  **********************************************************//
-var bmenu= new Object();
+
 bmenu.setup="Setup";
 bmenu.setupbasic="Basis-Setup";
 bmenu.setupddns="DDNS";
@@ -340,7 +340,6 @@ bmenu.statuSysInfo="Sys-Info";
 
 // **************************************************************** Alive.asp **********************************************************************//
 
-var alive = new Object();
 alive.titl=" - Lebenserhaltung";
 alive.h2="Lebenserhaltung";
 alive.legend="Geplanter Neustart";
@@ -355,13 +354,12 @@ alive.IP2="Proxy-IP-Adresse";
 alive.port="Proxy-Port";
 
 //help container
-var halive = new Object();
+
 halive.right2="Wählen Sie aus, wann der Router neu starten soll. Cron muss hierfür auf dem Management-Tab, eingeschaltet sein.";
 halive.right4="Maximal 3 IPs (mit einem <em>Leerzeichen</em> getrennt) sind erlaubt.<BR/>IP-Format ist xxx.xxx.xxx.xxx.";
 
 // **************************************************************** config.asp **********************************************************************//
 
-var config = new Object();
 config.titl=" - Backup & Wiederherstellung";
 config.h2="Backup Konfiguration";
 config.legend="Backup-Einstellungen";
@@ -373,14 +371,13 @@ config.mess3="W A R N U N G";
 config.mess4="Uploaden Sie nur Dateien, die auch mit dieser Firmware auf dem selben Routermodell erstellt wurden!";
 
 //help container
-var hconfig = new Object();
+
 hconfig.right2="Sie können hier Ihre aktuelle Konfiguration sichern für den Fall, dass Sie Ihren Router einmal zurücksetzen müssen.<br /><br />Klicken Sie den <em>Backup</em>-Button, um Ihre Konfiguration zu sichern.";
 hconfig.right4="Klicken Sie den <em>Durchsuchen...</em>-Button, um eine Konfigurations Datei auszuwählen, die auf Ihrem PC gespeichert ist.<br /><br />Klicken Sie den <em>" + sbutton.restore + "</em>-Button, um alle aktuellen Konfigurationseinträge mit Ihrer neuen Konfiguration zu überschreiben.";
 
 
 // **************************************************************** DDNS.asp **********************************************************************//
 
-var ddns = new Object();
 ddns.titl=" - Dynamic DNS"
 ddns.h2="Dynamic Domain Name System (DDNS)";
 ddns.legend="DDNS";
@@ -393,7 +390,7 @@ ddns.custom="Spezifisch";
 ddns.wildcard="Wildcard";
 ddns.statu="DDNS-Status";
 
-var ddnsm = new Object();
+
 ddnsm.dyn_strange="Ungewöhnliche Serverantwort, ist dies der richtige Server?";
 ddnsm.dyn_good="DDNS erfolgreich aktualisiert";
 ddnsm.dyn_noupdate="Diesmal ist keine Aktualisierung erforderlich";
@@ -444,7 +441,7 @@ ddnsm.all_disabled="DDNS-Funktion ist abgeschaltet";
 ddnsm.all_noip="Keine Internetverbindung";
 
 //help container
-var hddns = new Object();
+
 hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfename eines Domainnamens anstatt einer IP-Adresse. \
 	Der Service verwaltet und ändert die IP-Adresse sowie die Domaininformation dynamisch.\
 	Sie müssen sich für den Service bei TZO.com, ZoneEdit.com oder DynDNS.ORG anmelden.";
@@ -452,13 +449,8 @@ hddns.right2="DDNS erlaubt Ihnen den Zugriff auf Ihr Netzwerk unter Zuhilfename 
 
 
 
-
-
-
-
 // **************************************************************** Diagnostics.asp **********************************************************************//
 
-var diag = new Object();
 diag.titl=" - Diagnose";
 diag.h2="Diagnose";
 diag.legend="Kommandozeile";
@@ -467,14 +459,13 @@ diag.startup="Startup";
 diag.firewall="Firewall";
 
 //help container
-var hdiag = new Object();
+
 hdiag.right2="Hier können Sie mit Hilfe des Web-GUI Kommandos auf der Kommandozeile starten. Geben Sie einfach Ihre Kommandos in das Textfeld ein und klicken Sie <em>" + sbutton.runcmd + "</em> um diese auszuführen.";
 
 
 
 // **************************************************************** DMZ.asp **********************************************************************//
 
-var dmz = new Object();
 dmz.titl=" - DMZ";
 dmz.h2="Demilitarisierte Zone (DMZ)";
 dmz.legend="DMZ";
@@ -483,14 +474,13 @@ dmz.host="IP-Adresse des DMZ-Hosts";
 
 
 //help container
-var hdmz = new Object();
+
 hdmz.right2="Wenn Sie diese Option aktivieren wird der angegebende Host in das Internet durchgeschaltet. Alle Ports sind dann vom Internet aus erreichbar";
 
 
 
 // **************************************************************** Factory_Defaults.asp **********************************************************************//
 
-var factdef = new Object();
 factdef.titl=" - Werkseinstellungen";
 factdef.h2="Werkseinstellungen";
 factdef.legend="Router-Einstellungen zurücksetzen";
@@ -499,12 +489,11 @@ factdef.restore="Werkseinstellungen wiederherstellen";
 factdef.mess1="Warnung! Wenn Sie OK klicken wird das Gerät auf die Werkseinstellungen zurückgesetzt und alle vorherigen Einstellunge gelöscht.";
 
 //help container
-var hfactdef = new Object();
+
 hfactdef.right1="Diese Funktion setzt die Konfiguration auf den Auslieferungszustand zurück. Alle Ihre Einstellungen werden gelöscht.";
 
 // **************************************************************** FilterIP%AC.asp **********************************************************************//
 
-var filterIP = new Object();
 filterIP.titl=" - Liste der PCs";
 filterIP.h2="Liste der PCs";
 filterIP.h3="Geben Sie die MAC-Adresse der PCs in folgendem Format an: xx:xx:xx:xx:xx:xx";
@@ -515,7 +504,6 @@ filterIP.ip_range="IP Bereich";
 
 // **************************************************************** Filter.asp **********************************************************************//
 
-var filter = new Object();
 filter.titl=" - Zugriffsbeschränkung";
 filter.h2="Internetzugriff";
 filter.legend="Zugriffsrichtlinie";
@@ -537,7 +525,7 @@ filter.mess2="Sie müssen mindestens einen Tag angeben.";
 filter.mess3="Die Endzeit muss nach der Startzeit liegen.";
 
 //help container
-var hfilter = new Object();
+
 hfilter.right2="Sie können bis zu 10 Zugriffsrichtlinien definieren. Klicken Sie <em>" + sbutton.del + "</em> um eine Richtlinie zu löschen, oder <em>" + sbutton.summary + "</em> um sich die Zusammenfassung der Richtlinie anzuschauen.";
 hfilter.right4="Hier könnnen Sie eine Richtlinie ein- oder ausschalten.";
 hfilter.right6="Hier können Sie ihrer Richtlinie einen Namen zuweisen.";
@@ -550,11 +538,8 @@ hfilter.right16="Hier können Sie mit Hilfe von Schlagworten Webseiten blockieren
 
 
 
-
-
 // **************************************************************** FilterSummary.asp **********************************************************************//
 
-var filterSum = new Object();
 filterSum.titl=" - Zusammenfassung Zugriffsbeschränkung ";
 filterSum.h2="Zusammenfassung Internetrichtlinie ";
 filterSum.polnum="Nr.";
@@ -564,7 +549,6 @@ filterSum.polday="Uhrzeit";
 
 // **************************************************************** Firewall.asp **********************************************************************//
 
-var firewall = new Object();
 firewall.titl=" - Firewall";
 firewall.h2="Sicherheit";
 firewall.legend="Firewall-Schutz";
@@ -581,19 +565,20 @@ filter.nat="Internet-NAT-Umleitung filtern";
 filter.port113="IDENT (Port 113) filttern";
 
 //help container
-var hfirewall = new Object();
+
 hfirewall.right2="Schaltet die SPI-Firewall ein oder aus.";
+
+
 
 // **************************************************************** Forward.asp **********************************************************************//
 
-var prforward = new Object();
 prforward.titl=" - Port-Bereichs-Weiterleitung";
 prforward.h2="Port-Bereichs-Weiterleitung";
 prforward.legend="Weiterleitungen";
 prforward.app="Anwendung";
 
 //help container
-var hprforward = new Object();
+
 hprforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt funktionieren. \
 	Beispiele sind Server-Anwendungen oder einige Onlinespiele. \
 	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
@@ -603,7 +588,6 @@ hprforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt 
 
 // **************************************************************** ForwardSpec.asp **********************************************************************//
 
-var pforward = new Object();
 pforward.titl=" - Port-Weiterleitung";
 pforward.h2="Port-Weiterleitung";
 pforward.legend="Weiterleitungen";
@@ -612,7 +596,7 @@ pforward.from="Von Port";
 pforward.to="Nach Port";
 
 //help container
-var hpforward = new Object();
+
 hpforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt funktionieren. \
 	Beispiele sind Server-Anwendungen oder einige Onlinespiele. \
 	Wenn eine Anfrage auf einem dieser Ports aus dem Internet kommt, wird der Router diese auf den entsprechend angegebenen Computer weiterleiten. \
@@ -620,14 +604,8 @@ hpforward.right2="Einige Anwendungen benötigen offene Ports, damit sie korrekt f
 
 
 
-
-
-
-
-
 // **************************************************************** Hotspot.asp **********************************************************************//
 
-var hotspot = new Object();
 hotspot.titl=" - Hotspot";
 hotspot.h2="Hotspot-Portal";
 hotspot.legend="Chillispot";
@@ -680,7 +658,6 @@ hotspot.sputnik_about="über Sputnik";
 
 // **************************************************************** index_heartbeat.asp *********************************************************//
 
-var idx_h = new Object();
 idx_h.srv="Heartbeat-Server";
 idx_h.con_strgy="Verbindungsstrategie";
 idx_h.max_idle="Bei Bedarf verbinden: Maximale Ruhezeit";
@@ -690,21 +667,18 @@ idx_h.alive="Lebenserhaltung: Zeitabstand Wiedereinwahl";
 
 // **************************************************************** index_l2tp.asp *********************************************************//
 
-var idx_l = new Object();
 idx_l.srv="L2TP-Server";
 
 
 
 // **************************************************************** index_pppoe.asp *********************************************************//
 
-var idx_pppoe = new Object();
 idx_pppoe.use_rp="Nutze RP PPPoE";
 
 
 
 // **************************************************************** index_pptp.asp *********************************************************//
 
-var idx_pptp = new Object();
 idx_pptp.srv="Nutze DHCP";
 idx_pptp.wan_ip="Internet-IP-Adresse";
 idx_pptp.gateway="Gateway (PPTP-Server)";
@@ -714,14 +688,12 @@ idx_pptp.encrypt="PPTP-Verschlüsselung";
 
 // **************************************************************** index_static.asp *********************************************************//
 
-var idx_static = new Object();
 idx_static.dns="Statischer DNS";
 
 
 
 // **************************************************************** index.asp *********************************************************//
 
-var idx = new Object();
 idx.titl=" - Einstellungen";
 idx.h2="Internet-Einstellungen";
 idx.h22="WLAN-Einstellungen";
@@ -754,7 +726,7 @@ idx.dns_dnsmasq="Nutze DNSMasq für DNS";
 idx.auth_dnsmasq="DHCP-Authoritative";
 
 //help container
-var hidx = new Object();
+
 hidx.right2="Diese Einstellung wird von fast allen Providern genutzt.";
 hidx.right4="Geben Sie hier den Hostnamen ein, der Ihnen vom Provider zugewiesen wurde.";
 hidx.right6="Geben Sie hier den Domainnamen ein, der Ihnen vom Provider zugewiesen wurde.";
@@ -769,8 +741,6 @@ hidx.right18="Wählen Sie hier Ihre Zeitzone und die Sommerzeit-Einstellungen. De
 
 // **************************************************************** Join.asp **********************************************************************//
 
-var join = new Object();
-
 //sshd.webservices
 join.titl=" - beitreten";
 join.mess1="Sie sind nun erfolgreich dem folgendem Netzerk als Client beigetreten: ";
@@ -779,7 +749,6 @@ join.mess1="Sie sind nun erfolgreich dem folgendem Netzerk als Client beigetrete
 
 // **************************************************************** Log_incoming.asp **********************************************************************//
 
-var log_in = new Object();
 log_in.titl=" - Eingehende Log-Tabelle";
 log_in.h2="Eingehende Log-Tabelle";
 log_in.th_ip="Ursprungs-IP";
@@ -789,7 +758,6 @@ log_in.th_port="Ziel-Port-Nummer";
 
 // **************************************************************** Log_outgoing.asp **********************************************************************//
 
-var log_out = new Object();
 log_out.titl=" - Ausgehende Log-Tabelle";
 log_out.h2="Ausgehende Log-Tabelle";
 log_out.th_lanip="LAN-IP";
@@ -800,7 +768,6 @@ log_out.th_port="Service-/Port-Nummer";
 
 // **************************************************************** Log.asp **********************************************************************//
 
-var log = new Object();
 log.titl=" - Log";
 log.h2="Log-Verwaltung";
 log.legend="Log";
@@ -813,7 +780,6 @@ log.accept="Akzeptiert";
 
 // **************************************************************** Management.asp **********************************************************************//
 
-var management = new Object();
 management.titl=" - Administration";
 management.h2="Router Management";
 
@@ -912,7 +878,7 @@ management.SIPatH_domain="SIP-Domain";
 management.gui_style="Stil des Router-GUI";
 
 //help container
-var hmanagement = new Object();
+
 hmanagement.right1="Automatisches Auffrischen:";
 hmanagement.right2="Steuert das automatische Auffrischen diverser GUI-Elemente. 0 Schaltet diese Funktion ab.";
 
@@ -920,7 +886,6 @@ hmanagement.right2="Steuert das automatische Auffrischen diverser GUI-Elemente. 
 
 // **************************************************************** Port_Services.asp **********************************************************************//
 
-var portserv = new Object();
 portserv.titl=" - Port-Services";
 portserv.h2="Port-Services";
 
@@ -928,7 +893,6 @@ portserv.h2="Port-Services";
 
 // **************************************************************** QoS.asp **********************************************************************//
 
-var qos = new Object();
 qos.titl=" - Service-Qualität";
 qos.h2="Service-Qualität (QoS)";
 qos.legend="QoS-Einstellungen";
@@ -953,7 +917,7 @@ qos.legend6="Standard-Bandbreiten-Zuweisung";
 qos.bandwith="Bandbreite in Kbits";
 
 //help container
-var hqos = new Object();
+
 hqos.right1="Uplink:";
 hqos.right2="Setzen Sie dies auf 80%-95% (max) Ihrer gesamten Upload-Bandbreite.";
 hqos.right3="Downlink:";
@@ -967,7 +931,6 @@ hqos.right12="Hier können Sie die Datenrate der physischen LAN-Ports an Ihrem Ro
 
 // **************************************************************** RouteTable.asp **********************************************************************//
 
-var routetbl = new Object();
 routetbl.titl=" - Routen-Tabelle";
 routetbl.h2="Routen-Tabelle";
 routetbl.th1="Ziel-LAN-IP";
@@ -976,7 +939,6 @@ routetbl.th1="Ziel-LAN-IP";
 
 // **************************************************************** Routing.asp **********************************************************************//
 
-var route = new Object();
 route.titl=" - Routing";
 route.h2="Erweitertes Routing";
 route.mod="Betriebsmodus";
@@ -992,7 +954,7 @@ route.static_name="Routen-Name";
 route.static_ip="Ziel-LAN-IP";
 
 //help container
-var hroute = new Object();
+
 hroute.right2="Wenn Ihr Router die Internetverbindung bereitstellt, nutzen Sie bitte den <em>Gateway</em>-Modus. Wenn ein anderer Router in Ihrem Netzwerk existiert, nutzen Sie den <em>Router</em>-Modus.";
 hroute.right4="Dies ist eine eindeutige Routen-Nummer, Sie können bis zu 20 Routen definieren.";
 hroute.right6="Geben Sie einen Namen an, den Sie der Route zuweisen möchten.";
@@ -1004,7 +966,6 @@ hroute.right10="Setzt den angewanden Netzwerk-Bereich.";
 
 // **************************************************************** Site_Survey.asp **********************************************************************//
 
-var survey = new Object();
 survey.titl=" - Netzsuche";
 survey.h2="Benachbarte WLAN-Netzwerke";
 survey.thjoin="Netz beitreten";
@@ -1013,7 +974,6 @@ survey.thjoin="Netz beitreten";
 
 // **************************************************************** Services.asp **********************************************************************//
 
-var service = new Object();
 service.titl=" - Services";
 service.h2="Service-Management";
 
@@ -1105,7 +1065,6 @@ service.ssh_key="Authorisierte Schlüssel";
 
 // **************************************************************** Sipath.asp + cgi **********************************************************************//
 
-var sipath = new Object();
 sipath.titl=" - SiPath-Übersicht";
 sipath.phone_titl=" - Telefonbuch";
 sipath.status_titl=" - Status";
@@ -1114,7 +1073,6 @@ sipath.status_titl=" - Status";
 
 // **************************************************************** Status_Lan.asp **********************************************************************//
 
-var status_lan = new Object();
 status_lan.titl=" - LAN-Status";
 status_lan.h2="Lokales Netzwerk";
 status_lan.legend="LAN-Status";
@@ -1123,7 +1081,7 @@ status_lan.legend2="DHCP-Status";
 status_lan.legend3="DHCP-Clients";
 
 //help container
-var hstatus_lan = new Object();
+
 hstatus_lan.right2="Dies ist die Router-MAC-Adresse wie sie in Ihrem lokalen Ethernet-Netzwerk sichtbar ist.";
 hstatus_lan.right4="Dies zeigt die Router-IP-Adresse wie sie in Ihrem lokalen Ethernet-Netzwerk sichtbar ist.";
 hstatus_lan.right6="Wenn der Router eine Subnetz-Maske nutzt, wird diese hier angezeigt.";
@@ -1132,7 +1090,6 @@ hstatus_lan.right10="Indem Sie auf irgendeine MAC-Adresse klicken, erhalten Sie 
 
 // **************************************************************** Status_Router.asp **********************************************************************//
 
-var status_router = new Object();
 status_router.titl=" - Router-Status";
 status_router.h2="Router-Information";
 status_router.legend="System";
@@ -1161,7 +1118,7 @@ status_router.www_login="Login-Typ";
 status_router.www_loginstatus="Login-Status";
 
 //help container
-var hstatus_router = new Object();
+
 hstatus_router.right2="Dies ist der Name des Routers, wie er unter <i>Setup</i> gesetzt wurde.";
 hstatus_router.right4="Dies ist die Router MAC-Adresse, wie sie von Ihrem Anbieter gesehen wird.";
 hstatus_router.right6="Dies ist die aktuelle Firmware des Routers.";
@@ -1174,14 +1131,13 @@ hstatus_router.right14="Dies zeigt die Informationen an, welche von Ihrem Anbiet
 
 // **************************************************************** Status_SputnikAPD.asp **********************************************************************//
 
-var status_sputnik = new Object();
 status_sputnik.titl=" - Status Sputnik-Agent";
 status_sputnik.h2="Sputnik&reg;-Agent&trade;";
 status_sputnik.manage="Verwaltet von";
 status_sputnik.license="SCC-Lizenz-Nr.";
 
 //help container
-var hstatus_sputnik = new Object();
+
 hstatus_sputnik.right1="Status Sputnik-Agent";
 hstatus_sputnik.right2="Diese Seite zeigt Ihnen den Status des Sputnik-Agenten an.";
 hstatus_sputnik.right4="Das Sputnik Control Center (SCC) zu dem Ihr Accesspoint verbunden ist.";
@@ -1192,7 +1148,6 @@ hstatus_sputnik.right8="Die Lizenz-Nummer Ihres Sputnik Control Centers.";
 
 // **************************************************************** Status_Wireless.asp **********************************************************************//
 
-var status_wireless = new Object();
 status_wireless.titl=" - WLAN-Status";
 status_wireless.h2="WLAN";
 status_wireless.legend="WLAN-Status";
@@ -1207,16 +1162,14 @@ status_wireless.signal_qual="Signalqualität";
 status_wireless.wds="WDS-Knotenpunkte";
 
 //help container
-var hstatus_wireless = new Object();
+
 hstatus_wireless.right2="Dies ist die Router-MAC-Adresse, wie sie in Ihrem lokalen WLAN Netzwerk sichbar ist.";
 hstatus_wireless.right4="Wie auf dem WLAN-Tab angegeben, zeigt Ihnen dies den Modus Ihres WLAN-Interface an (Mixed, Nur-G, or ausgeschaltet).";
 
 
 
-
 // **************************************************************** Triggering.asp **********************************************************************//
 
-var trforward = new Object();
 trforward.titl=" - Port-Triggering";
 trforward.h2="Port-Triggering";
 trforward.legend="Weiterleitungen";
@@ -1225,7 +1178,7 @@ trforward.fwdrange="Weitergeleiteter Port-Bereich";
 trforward.app="Anwendung";
 
 //help container
-var htrforward = new Object();
+
 htrforward.right2="Geben Sie den Namen der Anwendung für diesen Trigger ein.";
 htrforward.right4="Gibt für jede Anwendung den ausgelösten Port-Bereich an. Konsultieren Sie hierzu auch die Dokumentation Ihrer Anwendung.";
 htrforward.right6="Gibt für jede Anwendung den weitergeleiteten Port-Bereich an. Konsultieren Sie hierzu auch die Dokumentation Ihrer Anwendung.";
@@ -1234,7 +1187,6 @@ htrforward.right10="Geben Sie den End-Port des ausgelösten und weitergeleiteten 
 
 // **************************************************************** Upgrade.asp **********************************************************************//
 
-var upgrad = new Object();
 upgrad.titl=" - Firmware-Aktualisierung";
 upgrad.h2="Firmware-Management";
 upgrad.legend="Firmware-Aktualisierung";
@@ -1246,16 +1198,14 @@ upgrad.warning="W A R N U N G";
 upgrad.mess1="Das Aktualisieren der Firmware kann einige Minuten dauern.<br />Bitte schalten Sie nicht das Gerät ab und drücken Sie auch nicht den Reset-Knopf!";
 
 //help container
-var hupgrad = new Object();
+
 hupgrad.right2="Klicken Sie auf den <em>Durchsuchen...</em>-Button, um eine Firmware auszuwählen die auf das Gerät hochgeladen werden soll.<br /><br /> \
 			Klicken Sie den <em>Aktualisieren</em>-Button um den Aktualisierungsprozess zu starten. Der Aktualisierungsprozess darf nicht unterbrochen werden.";
 
 
 
-
 // **************************************************************** UPnP.asp **********************************************************************//
 
-var upnp = new Object();
 upnp.titl=" - UPnP";
 upnp.h2="Universal Plug and Play (UPnP)";
 upnp.legend="Weiterleitungen";
@@ -1268,13 +1218,12 @@ upnp.msg2="Alle Einträge löschen?";
 
 
 //help container
-var hupnp = new Object();
+
 hupnp.right2="Klicken Sie auf den Papierkorb, um einen einzelnen Eintrag zu löschen.";
 hupnp.right4="Erlaubt Anwendungen, eine automatische Port-Weiterleitung auf dem Router durchzuführen.";
 
 // ******************************************* VPN.asp *******************************************//
 
-var vpn = new Object();
 vpn.titl=" - VPN";
 vpn.h2="Virtual Private Network (VPN)";
 vpn.legend="VPN-Durchleitung";
@@ -1283,14 +1232,13 @@ vpn.pptp="PPTP-Durchleitung";
 vpn.l2tp="L2TP-Durchleitung";
 
 //help container
-var hvpn = new Object();
+
 hvpn.right1="Sie können hier die IPsec-, PPTP- und/oder L2TP-Durchleitung aktivieren im Ihren Netzwerkgeräten die Kommuniktation via VPN zu ermöglichen.";
 
 
 
 // **************************************************************** Vlan.asp **********************************************************************//
 
-var vlan = new Object();
 vlan.titl=" - Virtuelles LAN";
 vlan.h2="Virtual Local Area Network (VLAN)";
 vlan.legend="VLAN";
@@ -1303,14 +1251,12 @@ vlan.trunk="Trunk";
 
 // **************************************************************** WEP.asp **********************************************************************//
 
-var wep = new Object();
 wep.defkey="Standard-Übermittelungsschlüssel";
 wep.passphrase="Schlüsselwort";
 
 
 // **************************************************************** WOL.asp **********************************************************************//
 
-var wol = new Object();
 wol.titl=" - WOL";
 wol.h2="Wake-On-LAN";
 wol.legend="Verfügbare Hosts";
@@ -1324,14 +1270,13 @@ wol.udp="UDP-Port";
 wol.msg1="Klicken, um einen WOL-Host zu entfernen";
 
 //help container
-var hwol = new Object();
+
 hwol.right2="Diese Seite erlaubt Ihnen, definierte Hosts in Ihrem Netzwerk aufzuwecken (insofern Sie mit Ihrem Router lokal verbunden sind).";
 hwol.right4="Die MAC-Adressen werden in folgendem Format angegeben xx:xx:xx:xx:xx:xx (Bsp. 01:23:45:67:89:AB)";
 hwol.right6="IP-Adresse ist typischerweise die Broadcast-Adresse für Ihr lokales Netzwerk. Es kann aber auch eine Remote-Adresse sein wenn der Host nicht in Ihrem lokalen Netzwerk verbunden ist."
 
 // **************************************************************** WanMAC.asp **********************************************************************//
 
-var wanmac = new Object();
 wanmac.titl=" - MAC-Adresse klonen";
 wanmac.h2="MAC-Adresse klonen";
 wanmac.legend="MAC-Klonen";
@@ -1339,7 +1284,7 @@ wanmac.wan="Klone WAN MAC";
 wanmac.wlan="Klone WLAN MAC";
 
 //help container
-var hwanmac = new Object();
+
 hwanmac.right2="Manche Anbieter setzen eine Registrierung Ihrer MAC-Adresse vorraus. \
 			Wenn Sie Ihre MAC-Adresse nicht neu registrieren möchten, können Sie hier Ihre MAC-Adresse klonen, so wie sie bei Ihrem Anbieter registriert ist.";
 
@@ -1347,7 +1292,6 @@ hwanmac.right2="Manche Anbieter setzen eine Registrierung Ihrer MAC-Adresse vorr
 // **************************************************************** WL_WPATable.asp **************************************************************//
 // **************************************************************** WPA.asp **********************************************************************//
 
-var wpa = new Object();
 wpa.titl=" - WLAN-Sicherheit";
 wpa.h2="WLAN-Sicherheit";
 wpa.secmode="Sicherheitsmodus";
@@ -1366,7 +1310,7 @@ wpa.shared_key="WPA Shared Key";
 wpa.rekeyInt="Rekey Interval";
 
 //help container
-var hwpa = new Object();
+
 hwpa.right1="Sicherheits-Modus:";
 hwpa.right2="Hier können Sie zwischen deaktiviert, WEP, WPA Pre-Shared Key, WPA RADIUS, oder RADIUS wählen. Alle Geräte in Ihrem Netzwerk müssen den selben Modus verwenden.";
 
@@ -1374,7 +1318,6 @@ hwpa.right2="Hier können Sie zwischen deaktiviert, WEP, WPA Pre-Shared Key, WPA 
 
 // **************************************************************** WL_FilterTable.asp **************************************************************//
 
-var wl_filter = new Object();
 wl_filter.titl=" - MAC-Adressen-Filterliste";
 wl_filter.h2="MAC-Adressen-Filterliste";
 wl_filter.h3="Geben Sie die MAC-Adresse in folgendem Format an:&nbsp;&nbsp;&nbsp;xx:xx:xx:xx:xx:xx";
@@ -1383,7 +1326,6 @@ wl_filter.h3="Geben Sie die MAC-Adresse in folgendem Format an:&nbsp;&nbsp;&nbsp
 
 // **************************************************************** WL_ActiveTable.asp **************************************************************//
 
-var wl_active = new Object();
 wl_active.titl=" - MAC-Liste der aktiven WLAN-Clients";
 wl_active.h2="WLAN-Client-MAC-Liste";
 wl_active.h3="Aktiviere MAC-Filter";
@@ -1394,7 +1336,6 @@ wl_active.inactive="Inaktive PCs";
 
 // **************************************************************** Wireless_WDS.asp ***************************************************************//
 
-var wds = new Object();
 wds.titl=" - WDS";
 wds.h2="Wireless Distribution System";
 wds.legend="WDS-Einstellungen";
@@ -1410,7 +1351,6 @@ wds.legend2="Erweiterte Optionen";
 
 // **************************************************************** Wireless_radauth.asp ***************************************************************//
 
-var radius = new Object();
 radius.titl=" - RADIUS";
 radius.h2="Remote Authentication Dial-In User Service";
 radius.legend="RADIUS";
@@ -1427,7 +1367,6 @@ radius.label8="Umgehen, wenn Server nicht verfügbar";
 
 // **************************************************************** Wireless_MAC.asp ***************************************************************//
 
-var wl_mac = new Object();
 wl_mac.titl=" - MAC-Filter";
 wl_mac.h2="WLAN-MAC-Filter";
 wl_mac.legend="MAC-Filter";
@@ -1440,7 +1379,6 @@ wl_mac.allow="WLAN-MAC-Adressen, die auf das Netzwerk zugreifen dürfen";
 
 // **************************************************************** Wireless_Basic.asp ***************************************************************//
 
-var wl_basic = new Object();
 wl_basic.titl=" - WLAN";
 wl_basic.h2="WLAN";
 wl_basic.legend="Basis-Einstellungen";
@@ -1481,7 +1419,7 @@ wl_basic.channel_width="Kanal Breite";
 
 
 //help container
-var hwl_basic = new Object();
+
 hwl_basic.right2="Wenn Sie G-Clients komplett ausschließen wollen, sollten Sie <em>Nur-B</em> wählen. Wenn Sie den WLAN Zugriff abschalten wollen, wählen Sie <em>abschalten</em>.";
 hwl_basic.right3="Empfindlichkeitsbereich: ";
 hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
@@ -1490,7 +1428,6 @@ hwl_basic.right4="Setzt das ACK Timing. 0 Schaltet das ACK timing komplett ab.";
 
 // **************************************************************** Wireless_Advanced.asp ***************************************************************//
 
-var wl_adv = new Object();
 wl_adv.titl=" - Erweiterte WLAN-Einstellungen";
 wl_adv.h2="Erweiterte WLAN-Einstellungen";
 wl_adv.legend="Erweiterte Einstellungen";
@@ -1531,14 +1468,13 @@ wl_adv.lng="Lang"; 					//************* don't use .long ! *************
 wl_adv.shrt="Kurz"; 				//************* don't use .short ! **************
 
 //help container
-var hwl_adv = new Object();
+
 hwl_adv.right2="Sie können Auto oder Shared Key wählen. Die Shared Key Authentifizierung ist wesentlich sicherer, allerdings muss dazu jedes Gerät in Ihrem Netzwerk diesen Betriebsmodus unterstützen.";
 
 
 
 // **************************************************************** Fail_s.asp & Fail_u_s.asp & Fail.asp **********************************************************************//
 
-var fail = new Object();
 fail.mess1="Die angegebenen Werte sind nicht korrekt. Bitte versuchen Sie es erneut.";
 fail.mess2="Aktualisierung fehlgeschlagem.";
 
@@ -1546,7 +1482,6 @@ fail.mess2="Aktualisierung fehlgeschlagem.";
 
 // **************************************************************** Success*.asp & Reboot.asp  **********************************************************************//
 
-var success = new Object();
 success.saved="Einstellungen gespeichert.";
 success.restore="Einstellungen wiederhergestellt.<br/>Das Gerät wird nun neu gestartet. Bitte warten Sie einen Moment...";
 success.upgrade="Aktualisierung erfolgreich.<br/>Das Gerät wird nun neu gestartet. Bitte warten Sie einen Moment...";
@@ -1562,17 +1497,13 @@ success.alert3="Wenn Sie via WLAN verbunden sind, treten Sie dem Netzwerk erneut
 
 
 
-
-
 // *****************************************************		OLD PAGES 		************************************************************************//
 // **************************************************************** DHCPTable.asp **********************************************************************//
 
-var dhcp = new Object();
+
 dhcp.titl=" - DHCP aktive IP-Tabelle";
 dhcp.h2="DHCP aktive IP-Tabelle";
 dhcp.server="DHCP Server-IP-Adresse :";
 dhcp.tclient="Client-Hostname";
 
-
-var donate = new Object();
 donate.mb="Sie können auch durch den Moneybookers-Account mb@dd-wrt.com spenden";
