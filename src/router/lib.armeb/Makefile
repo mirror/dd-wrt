@@ -28,6 +28,7 @@ lib-$(CONFIG_LIBPTHREAD) += libpthread
 lib-$(CONFIG_LIBRESOLV) += libresolv
 lib-$(CONFIG_LIBUTIL) += libutil
 
+
 ifeq ($(CONFIG_UCLIBC),y)
 
 # uClibc names
