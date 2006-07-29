@@ -10,28 +10,36 @@ endif
 IXP400_DIR := drivers/ixp400
 IX_XSCALE_SW := $(IXP400_DIR)/ixp400_xscale_sw
 OSAL_DIR := $(IX_XSCALE_SW)/../ixp_osal
+IX_DEVICE :=ixp42X
+IX_PLATFORM:=ixdp42x
+IX_TARGET:=linuxbe
+IX_LINUXVER:=2.6
 
-ifeq ($(CPU_IXP46X),y)
-EXTRA_CFLAGS += -D__ixp46X
-EXTRA_CFLAGS += -DIX_DEVICE=ixp46X
-EXTRA_CFLAGS += -DIX_PLATFORM=ixdp46x
-else
+#ifeq ($(CPU_IXP46X),y)
+#EXTRA_CFLAGS += -D__ixp46X
+#EXTRA_CFLAGS += -DIX_DEVICE=ixp46X
+#EXTRA_CFLAGS += -DIX_PLATFORM=ixdp46x
+#else
 EXTRA_CFLAGS += -D__ixp42X
 EXTRA_CFLAGS += -DIX_DEVICE=ixp42X
 EXTRA_CFLAGS += -DIX_PLATFORM=ixdp42x
-endif
+#endif
 
 EXTRA_CFLAGS += \
 	-D__linux \
 	-DIX_TARGET=linuxbe \
 	-DIX_UTOPIAMODE=0 \
+	-DIX_PLATFORM=ixdp42x \
+	-DIX_DEVICE=ixp42X \
+	-DIX_LINUXVER=2.6 \
 	-DIX_MPHYSINGLEPORT=0 \
-	-DIX_ACC_DRAM_PHYS_OFFSET=0 \
 	-DIX_NPEDL_READ_MICROCODE_FROM_FILE \
+	-DIX_ACC_DRAM_PHYS_OFFSET=0 \
 	-D__LINUX_ARM_ARCH__=5 \
 	-DCPU=33 \
 	-DXSCALE=33 \
 	-DSIMSPARCSOLARIS=0 \
+	-DNDEBUG \
 	-I$(IXP400_DIR) \
 	-I$(IX_XSCALE_SW)/src/include \
 	-I$(OSAL_DIR)/ \
@@ -70,7 +78,11 @@ EXTRA_CFLAGS += \
 	-I$(IX_XSCALE_SW)/src/ethAcc/include \
 	-I$(IX_XSCALE_SW)/src/ethDB/include \
 	-I$(IX_XSCALE_SW)/src/npeMh/include \
-	-I$(IX_XSCALE_SW)/src/npeDl/include
+	-I$(IX_XSCALE_SW)/src/npeDl/include \
+	-I$(IX_XSCALE_SW)/src/qmgr \
+	-I$(IX_XSCALE_SW)/src/	\
+	-I$(IX_XSCALE_SW)/src/ethDB
+	
 
 
 ixp400-objs += \
@@ -146,3 +158,22 @@ ixp400-objs += \
 	ixp400_xscale_sw/src/npeDl/IxNpeDlNpeMgrUtils.o \
 	ixp400_xscale_sw/src/npeDl/IxNpeDlSymbols.o \
 	ixp400_xscale_sw/src/npeDl/IxNpeMicrocode.o
+
+ixp400-objs +=  ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccUtilities.o		\
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAcc.o			        \
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccDescMgmt.o		    \
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccCCDMgmt.o		    \
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccQAccess.o		    \
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccCryptoRegister.o	\
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccCryptoPerform.o
+		 
+ifeq ($(CPU_IXP46X),y)
+ixp400-objs += ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccPkeCommon.o     \
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccPkeEau.o                \
+		 ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccPkeHash.o
+endif
+ixp400-objs += ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccXScaleWep.o
+ixp400-objs += ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccSymbols.o
+
+drivers/ixp400/ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccXScaleWep.o: drivers/ixp400/ixp400_xscale_sw/src/cryptoAcc/IxCryptoAccXScaleWep.s
+	$(CC) $(CFLAGS)	$(EXTRA_CFLAGS) -P -x assembler-with-cpp  	$< -c -o $@
