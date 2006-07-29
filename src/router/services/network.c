@@ -635,7 +635,7 @@ start_lan (void)
 
   // find wireless interface
   diag_led (DIAG, STOP_LED);	// stop that blinking
-  strcpy (wl_face, getwlif ());
+  strcpy (wl_face, get_wdev ());
 #ifdef HAVE_MADWIFI
   deconfigure_wifi ();
 #else
@@ -1285,7 +1285,7 @@ start_wan (int status)
 
   if (isClient ())
     {
-      pppoe_wan_ifname = getwlif ();
+      pppoe_wan_ifname = get_wdev ();
     }
 
 /*	if (strcmp(wan_proto,"pppoe"))
@@ -2002,9 +2002,9 @@ start_wan_done (char *wan_ifname)
 #ifdef HAVE_FON
   br_init ();
 #ifndef HAVE_MSSID
-  br_del_interface (nvram_safe_get ("lan_ifname"), getwlif ());
+  br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
   //eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+  ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
   if (nvram_match ("wl0_mode", "apsta"))
     {
@@ -2014,9 +2014,9 @@ start_wan_done (char *wan_ifname)
     }
   else if (nvram_match ("wl0_mode", "ap"))
     {
-      br_del_interface (nvram_safe_get ("lan_ifname"), getwlif ());
+      br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
 //      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-      ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+      ifconfig (get_wdev, IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
     }
   stop_chilli ();
   start_chilli ();
@@ -2027,9 +2027,9 @@ start_wan_done (char *wan_ifname)
 	  && nvram_match ("chilli_enable", "1")))
     {
 #ifndef HAVE_MSSID
-      br_del_interface (nvram_safe_get ("lan_ifname"), getwlif ());
+      br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
 //      eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-      ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+      ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 #else
       if (nvram_match ("wl0_mode", "apsta"))
 	{
@@ -2039,9 +2039,9 @@ start_wan_done (char *wan_ifname)
 	}
       else if (nvram_match ("wl0_mode", "ap"))
 	{
-	  br_del_interface (nvram_safe_get ("lan_ifname"), getwlif ());
-//        eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), getwlif ());
-	  ifconfig (getwlif (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
+	  br_del_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
+//        eval ("brctl", "delif", nvram_safe_get ("lan_ifname"), get_wdev ());
+	  ifconfig (get_wdev (), IFUP | IFF_ALLMULTI, "0.0.0.0", NULL);
 	}
       stop_chilli ();
       start_chilli ();
@@ -2125,7 +2125,7 @@ stop_wan (void)
 #endif
     {
       br_init ();
-      br_add_interface (nvram_safe_get ("lan_ifname"), getwlif ());
+      br_add_interface (nvram_safe_get ("lan_ifname"), get_wdev ());
       br_shutdown ();
     }
 //    eval ("brctl", "addif", nvram_safe_get ("lan_ifname"), getwlif ());
