@@ -85,7 +85,9 @@ static	int swcr_newsession(void *, u_int32_t *, struct cryptoini *);
 static	int swcr_freesession(void *, u_int64_t);
 
 static int debug = 0;
-MODULE_PARM(debug, "i");
+#include <linux/moduleparam.h>
+
+module_param(debug, int, 0);
 MODULE_PARM_DESC(debug,
 	   "Enable debug");
 

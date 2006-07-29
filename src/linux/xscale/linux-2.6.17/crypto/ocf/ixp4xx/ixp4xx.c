@@ -127,11 +127,13 @@ static int ixp_freesession(void *, u_int64_t);
 static kmem_cache_t *qcache;
 
 static int debug = 0;
-MODULE_PARM(debug, "i");
+#include <linux/moduleparam.h>
+
+module_param(debug, int, 0);
 MODULE_PARM_DESC(debug, "Enable debug");
 
 static int init_crypto = 1;
-MODULE_PARM(init_crypto, "i");
+module_param(init_crypto, int, 0);
 MODULE_PARM_DESC(init_crypto, "Call ixCryptoAccInit (default is 1)");
 
 static void ixp_process_pending(void *arg);

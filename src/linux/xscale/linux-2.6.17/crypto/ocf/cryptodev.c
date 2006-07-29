@@ -60,12 +60,14 @@ __FBSDID("$FreeBSD: src/sys/opencrypto/cryptodev.c,v 1.25 2005/02/27 22:10:25 ph
 #include <uio.h>
 
 static int debug = 0;
-MODULE_PARM(debug, "i");
+#include <linux/moduleparam.h>
+
+module_param(debug, int, 0);
 MODULE_PARM_DESC(debug,
 	   "Enable debug");
 
 static int crypto_devsel = 0;
-MODULE_PARM(crypto_devsel, "i");
+module_param(crypto_devsel, int, 0);
 MODULE_PARM_DESC(crypto_devsel,
 	   "Select cryptodev drivers: -1=software only, 1=HW only, 0=any");
 
