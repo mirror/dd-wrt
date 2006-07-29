@@ -4136,17 +4136,17 @@ port_vlan_table_save (webs_t wp)
     case 0:
       if (strlen (br0vlans) > 0)
 	strcat (br0vlans, " ");
-      strcat (br0vlans, getwlif ());
+      strcat (br0vlans, get_wdev ());
       break;
     case 1:
       if (strlen (br1vlans) > 0)
 	strcat (br1vlans, " ");
-      strcat (br1vlans, getwlif ());
+      strcat (br1vlans, get_wdev());
       break;
     case 2:
       if (strlen (br2vlans) > 0)
 	strcat (br2vlans, " ");
-      strcat (br2vlans, getwlif ());
+      strcat (br2vlans, get_wdev ());
       break;
     }
 

@@ -65,7 +65,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BOARD_500 0x0e0f
 
 // NMN A/B/G Router Protoype (266 Mhz Xscale, dual minipci)
-#define ROUTER_BOARD_XSCALE 0x0e0f
+#define ROUTER_BOARD_XSCALE 0x0e01
 
 // ??? 
 #define ROUTER_BELKIN 0x0f0f
@@ -80,7 +80,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLAG54C 0x120f
 
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
-#define ROUTER_ASUS_WL500G_PRE 0x130f
+#define ROUTER_ASUS_WL500G_PRE 0x1300
 
 // Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x1416

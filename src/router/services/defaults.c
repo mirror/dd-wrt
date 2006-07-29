@@ -116,8 +116,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"lan_ifnames", "", 0},	/* Enslaved LAN interfaces */
   {"lan_hwnames", "", 0},	/* LAN driver names (e.g. et0) */
   {"lan_hwaddr", "", 0},	/* LAN interface MAC address */
+#ifdef HAVE_MADWIFI
+  {"wl0_ifname", "ath0", 0},	/* LAN interface MAC address */
+#else
   {"wl0_ifname", "eth1", 0},	/* LAN interface MAC address */
-
+#endif
   /* LAN TCP/IP parameters */
 #ifdef HAVE_POWERNOC_WOAP54G
   {"lan_proto", "static", 0},	/* [static|dhcp] */
