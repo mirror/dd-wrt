@@ -139,22 +139,24 @@ static int ixpdev_max_backlog = 290;
 
 static int datapath_poll = 1;     /* default : rx/tx polling, not interrupt driven*/
 
-MODULE_PARM(ixpdev_max_backlog, "i");
+#include <linux/moduleparam.h>
+
+module_param(ixpdev_max_backlog, int, 0);
 MODULE_PARM_DESC(ixpdev_max_backlog, "Should be set to the value of /proc/sys/net/core/netdev_max_backlog (perf affecting)");
-MODULE_PARM(datapath_poll, "i");
+module_param(datapath_poll, int, 0);
 MODULE_PARM_DESC(datapath_poll, "If non-zero, use polling method for datapath instead of interrupts");
 #endif /* CONFIG_IXP400_NAPI */
-MODULE_PARM(npe_learning, "i");
+module_param(npe_learning, int, 0);
 MODULE_PARM_DESC(npe_learning, "If non-zero, NPE MAC Address Learning & Filtering feature will be enabled");
-MODULE_PARM(log_level, "i");
+module_param(log_level, int, 0);
 MODULE_PARM_DESC(log_level, "Set log level: 0 - None, 1 - Verbose, 2 - Debug");
-MODULE_PARM(no_ixp400_sw_init, "i");
+module_param(no_ixp400_sw_init, int, 0);
 MODULE_PARM_DESC(no_ixp400_sw_init, "If non-zero, do not initialise Intel IXP400 Software Release core components");
-MODULE_PARM(no_phy_scan, "i");
+module_param(no_phy_scan, int, 0);
 MODULE_PARM_DESC(no_phy_scan, "If non-zero, use hard-coded phy addresses");
-MODULE_PARM(phy_reset, "i");
+module_param(phy_reset, int, 0);
 MODULE_PARM_DESC(phy_reset, "If non-zero, reset the phys");
-MODULE_PARM(dev_max_count, "i");
+module_param(dev_max_count, int, 0);
 MODULE_PARM_DESC(dev_max_count, "Number of devices to initialize");
 
 /* devices will be called ixp0 and ixp1 */
@@ -3513,6 +3515,17 @@ static int __devexit dev_eth_remove(int dev_count)
 
     return 0;
 }
+static int cryptoacc_init(void)
+{
+    int res;
+
+    if ((res = ixCryptoAccInit()))
+    {
+       printk("ixCryptoAccInit failed with res=%d\n", res);
+       return res;
+    }
+       return 0;
+}
 
 
 #if IS_KERNEL26 || defined MODULE
@@ -3603,6 +3616,8 @@ static int __init ixp400_eth_init(void)
 
     /* Initialise the NPEs and access layer */
     TRACE;
+    if ((res = cryptoacc_init()))
+        return res;
 
     if ((res = ethacc_init()))
 	return res;
@@ -3745,7 +3760,6 @@ static int __init ixp400_eth_init(void)
     return 0;
 }
 #endif /* IS_KERNEL26 || defined MODULE */
-
 #if IS_KERNEL26 || defined (MODULE)
 void __exit ixp400_eth_exit(void)
 {

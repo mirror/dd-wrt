@@ -474,7 +474,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 					*s, long long start_block,
 					int length)
 {
-	int i, n;
+	int i, n, nf;
 	struct squashfs_sb_info *msblk = s->s_fs_info;
 
 	while ( 1 ) {
@@ -484,6 +484,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 				msblk->fragment[i].block != start_block; i++);
 
 		if (i == SQUASHFS_CACHED_FRAGMENTS) {
+			nf = (msblk->next_fragment + 1) % SQUASHFS_CACHED_FRAGMENTS;
 			for (i = msblk->next_fragment, n =
 				SQUASHFS_CACHED_FRAGMENTS; n &&
 				msblk->fragment[i].locked; n--, i = (i + 1) %
@@ -503,8 +504,7 @@ SQSH_EXTERN struct squashfs_fragment_cache *get_cached_fragment(struct super_blo
 									&wait);
 				continue;
 			}
-			msblk->next_fragment = (msblk->next_fragment + 1) %
-				SQUASHFS_CACHED_FRAGMENTS;
+			msblk->next_fragment = nf;
 			
 			if (msblk->fragment[i].data == NULL)
 				if (!(msblk->fragment[i].data = SQUASHFS_ALLOC
