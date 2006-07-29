@@ -85,11 +85,7 @@ ifndef IXPDIR
 IXPDIR = ixp-version-is-not-supported
 endif
 
-ifeq ($(CONFIG_MACH_IXDP465),y)
-IXP_CFLAGS += -D__ixp46X
-else
 IXP_CFLAGS += -D__ixp42X
-endif
 
 CFLAGS_ixp4xx/ixp4xx.o += $(IXP_CFLAGS)
 CFLAGS_ixp4xx.o += $(IXP_CFLAGS)

@@ -117,7 +117,8 @@ static kmem_cache_t *cryptop_zone;
 static kmem_cache_t *cryptodesc_zone;
 
 static int debug = 0;
-MODULE_PARM(debug, "i");
+#include <linux/moduleparam.h>
+module_param(debug, int, 0);
 MODULE_PARM_DESC(debug,
 	   "Enable debug");
 
@@ -134,7 +135,7 @@ MODULE_PARM_DESC(debug,
 
 static atomic_t crypto_q_cnt;
 static int crypto_q_max = 1000;
-MODULE_PARM(crypto_q_max, "i");
+module_param(crypto_q_max, int,0);
 MODULE_PARM_DESC(crypto_q_max,
 		"Maximum number of outstanding crypto requests");
 
@@ -145,17 +146,19 @@ int *crypto_debug = &debug;
 EXPORT_SYMBOL(crypto_debug);
 
 static int crypto_verbose = 0;
-MODULE_PARM(crypto_verbose, "i");
+
+module_param(crypto_verbose, int , 0);
 MODULE_PARM_DESC(crypto_verbose,
 	   "Enable verbose crypto startup");
 
 int	crypto_userasymcrypto = 1;	/* userland may do asym crypto reqs */
-MODULE_PARM(crypto_userasymcrypto, "i");
+module_param(crypto_userasymcrypto, int , 0);
 MODULE_PARM_DESC(crypto_userasymcrypto,
 	   "Enable/disable user-mode access to asymmetric crypto support");
 
 int	crypto_devallowsoft = 0;	/* only use hardware crypto for asym */
-MODULE_PARM(crypto_devallowsoft, "i");
+module_param(crypto_devallowsoft, int , 0);
+
 MODULE_PARM_DESC(crypto_devallowsoft,
 	   "Enable/disable use of software asym crypto support");
 
