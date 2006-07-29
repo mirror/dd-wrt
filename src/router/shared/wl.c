@@ -25,18 +25,6 @@ struct nvram_tuple router_defaults[] = {
 };
 
 
-char *
-getwlif ()
-{
-#ifdef HAVE_MADWIFI
-  return "ath0";
-#else
-  if (wl_probe ("eth2"))
-    return "eth1";
-  else
-    return "eth2";
-#endif
-}
 
 /* DD-WRT addition  (loaned from radauth) */
 
@@ -488,10 +476,14 @@ return count[0];
 char *
 get_wdev (void)
 {
-  if (wl_probe ("eth2"))	// identify wireless interface
+#ifdef HAVE_MADWIFI
+  return "ath0";
+#else
+  if (wl_probe ("eth2"))
     return "eth1";
   else
     return "eth2";
+#endif
 }
 
 /* end Sveasoft addition */
