@@ -210,10 +210,15 @@ all: libshared.so libshared.a
 #	./defaults
 
 install: all
+ifeq ($(CONFIG_XSCALE),y)
+	install -d $(INSTALLDIR)/lib
+	install -m 755 libshared.so $(INSTALLDIR)/lib
+else
 	install -d $(INSTALLDIR)/usr/lib
 	install -m 755 libshared.so $(INSTALLDIR)/usr/lib
+endif
 #	install defaults.bin $(INSTALLDIR)/etc
-	$(STRIP) $(INSTALLDIR)/usr/lib/libshared.so
+	$(STRIP) $(INSTALLDIR)/lib/libshared.so
 
 clean:
 	rm -f *.o *.so

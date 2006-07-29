@@ -267,6 +267,10 @@ get_wan_face (void)
     {
       strcpy (localwanface, "ath0");
     }
+  else if (nvram_match ("ath1_mode", "sta"))
+    {
+      strcpy (localwanface, "ath1");
+    }
 #endif
   else
     strncpy (localwanface, nvram_safe_get ("wan_ifname"), IFNAMSIZ);

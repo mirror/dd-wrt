@@ -453,13 +453,18 @@ flush_interfaces (void)
 {
   char all_ifnames[256] = { 0 }, *c, *next, buff[32], buff2[32];
 
+
+#ifdef HAVE_MADWIFI
+    snprintf (all_ifnames, 255, "%s %s %s", "ixp0",
+	      nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
+#else
   if (wl_probe ("eth2"))
     snprintf (all_ifnames, 255, "%s %s %s", "eth0",
 	      nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
   else
     snprintf (all_ifnames, 255, "%s %s %s %s", "eth0", "eth1",
 	      nvram_safe_get ("lan_ifnames"), nvram_safe_get ("wan_ifnames"));
-
+#endif
   //strcpy(all_ifnames, "eth0 ");
   //strcpy(all_ifnames, "eth0 eth1 "); //James, note: eth1 is the wireless interface on V2/GS's. I think we need a check here.
   //strcat(all_ifnames, nvram_safe_get("lan_ifnames"));

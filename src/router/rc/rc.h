@@ -68,7 +68,7 @@ extern void start_wan_done (char *ifname);
 extern void stop_wan (void);
 extern int hotplug_net (void);
 extern int isClient (void);
-extern char *getwlif (void);
+extern char *get_wdev (void);
 
 
 /* services */

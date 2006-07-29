@@ -487,7 +487,7 @@ start_dhcpfwd (void)
       if (nvram_match ("wl_mode", "sta"))
 #endif
 	{
-	  wan_ifname = getwlif ();	//returns eth1/eth2 for broadcom and ath0 for atheros
+	  wan_ifname = get_wdev ();	//returns eth1/eth2 for broadcom and ath0 for atheros
 	}
 #ifdef HAVE_PPPOE
       if (strcmp (wan_proto, "pppoe") == 0)
@@ -2059,7 +2059,7 @@ bird_init (void)
 	    {
 	      if (nvram_match ("wl_mode", "sta")
 		  || nvram_match ("wl_mode", "apsta"))
-		fprintf (fp, "	interface \"%s\" { };\n", getwlif ());
+		fprintf (fp, "	interface \"%s\" { };\n", get_wdev ());
 	      else
 		fprintf (fp, "	interface \"%s\" { };\n",
 			 nvram_safe_get ("wan_ifname"));
@@ -2355,6 +2355,12 @@ start_chilli (void)
   if (nvram_match ("chilli_interface", "wlan")
       || nvram_match ("chilli_interface", "wan"))
     {
+#ifdef HAVE_MADWIFI
+      if (nvram_match("ath0_mode","ap"))
+	fprintf (fp, "dhcpif ath0\n");
+      else
+	fprintf (fp, "dhcpif ath1\n");
+#else
 #ifndef HAVE_MSSID
       if (wl_probe ("eth2"))
 	fprintf (fp, "dhcpif eth1\n");
@@ -2373,6 +2379,7 @@ start_chilli (void)
 	    fprintf (fp, "dhcpif eth2\n");
 	}
 #endif
+#endif
     }
   else
     {
@@ -2382,6 +2389,7 @@ start_chilli (void)
 	}
       else
 	{
+	
 	  fprintf (fp, "dhcpif vlan0\n");
 	}
     }
@@ -2834,7 +2842,7 @@ start_pppoe (int pppoe_num)
   char *wan_ifname = nvram_safe_get ("wan_ifname");
   if (isClient ())
     {
-      wan_ifname = getwlif ();
+      wan_ifname = get_wdev ();
     }
 
   pid_t pid;
