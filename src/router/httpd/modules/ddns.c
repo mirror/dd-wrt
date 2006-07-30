@@ -61,7 +61,7 @@ ddns_save_value (webs_t wp)
 {
   char *enable, *username, *passwd, *hostname, *dyndnstype, *wildcard, *custom, *conf;
   struct variable ddns_variables[] = {
-  {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5")},
+  {longname: "DDNS enable", argv:ARGV ("0", "1", "2", "3", "4", "5", "6")},
   {longname: "DDNS password", argv:ARGV ("30")},
   }, *which;
   int ret = -1;
@@ -120,6 +120,14 @@ ddns_save_value (webs_t wp)
       snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", enable);
       snprintf (_custom, sizeof (_custom), "ddns_custom_%s", enable);
       snprintf (_conf, sizeof (_conf), "ddns_conf", enable);
+    }
+   /* botho 30/07/06 : add www.3322.org */
+  else if (atoi (enable) == 6)
+    {				// 3322 dynamic
+      snprintf (_username, sizeof (_username), "%s", "ddns_username");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
     }
 
   username = websGetVar (wp, _username, NULL);
