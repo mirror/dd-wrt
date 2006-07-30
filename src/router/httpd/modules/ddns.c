@@ -127,6 +127,7 @@ ddns_save_value (webs_t wp)
       snprintf (_username, sizeof (_username), "%s", "ddns_username_%s");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_%s");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_%s");
+      snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype_%s");
       snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_%s");
     }
 
