@@ -124,10 +124,10 @@ ddns_save_value (webs_t wp)
    /* botho 30/07/06 : add www.3322.org */
   else if (atoi (enable) == 6)
     {				// 3322 dynamic
-      snprintf (_username, sizeof (_username), "%s", "ddns_username");
-      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
-      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
-      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
+      snprintf (_username, sizeof (_username), "%s", "ddns_username_%s");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_%s");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_%s");
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_%s");
     }
 
   username = websGetVar (wp, _username, NULL);
