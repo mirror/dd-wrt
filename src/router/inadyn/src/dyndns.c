@@ -52,6 +52,7 @@ static BOOL is_freedns_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* 
 static BOOL is_generic_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 static BOOL is_zoneedit_server_rsp_ok( DYN_DNS_CLIENT *p_self, char*p_rsp, char* p_ok_string);
 
+/* botho 30/07/06 : add www.3322.org */
 DYNDNS_SYSTEM_INFO dns_system_table[] = 
 { 
     {DYNDNS_DEFAULT, 
@@ -100,13 +101,12 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             "ip1.dynupdate.no-ip.com", "/", 
 			"dynupdate.no-ip.com", "/nic/update?hostname=", ""}},
 		
-		/* botho 30/07/06 : add www.3322.org */
-		{3322_DYNAMIC, 
+		{DYNDNS_3322_DYNAMIC, 
         {"dyndns@3322.org", NULL,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
-            3322_MY_IP_SERVER, 3322_MY_IP_SERVER_URL,
-			3322_MY_DNS_SERVER, 3322_MY_DNS_SERVER_URL, NULL}},
+            DYNDNS_3322_MY_IP_SERVER, DYNDNS_3322_MY_IP_SERVER_URL,
+			DYNDNS_3322_MY_DNS_SERVER, DYNDNS_3322_MY_DNS_SERVER_URL, NULL}},
 
     {CUSTOM_HTTP_BASIC_AUTH, 
         {"custom@http_svr_basic_auth", NULL,  
