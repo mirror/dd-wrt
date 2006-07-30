@@ -29,6 +29,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #define DYNDNS_AGENT_NAME  "inadyn/" DYNDNS_VERSION_STRING
 #define DYNDNS_EMAIL_ADDR	"inarcis2002@hotpop.com"
 
+/* botho 30/07/06 : add www.3322.org */
 typedef enum
 {
     DYNDNS_DYNAMIC,
@@ -39,7 +40,6 @@ typedef enum
     ZONE_EDIT_DEFAULT,
     CUSTOM_HTTP_BASIC_AUTH,
     NOIP_DEFAULT,
-    /* botho 30/07/06 : add www.3322.org */
     3322_DYNAMIC,
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
