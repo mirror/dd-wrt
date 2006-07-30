@@ -40,7 +40,7 @@ typedef enum
     ZONE_EDIT_DEFAULT,
     CUSTOM_HTTP_BASIC_AUTH,
     NOIP_DEFAULT,
-    3322_DYNAMIC,
+    DYNDNS_3322_DYNAMIC,
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
 
@@ -59,11 +59,11 @@ typedef enum
 #define DYNDNS_HTTP_PORT		80
 
 /* botho 30/07/06 : add www.3322.org */
-#define 3322_MY_IP_SERVER		"www.bliao.com:2000"
-#define 3322_MY_IP_SERVER_URL	"ip.phtml"
-#define 3322_MY_DNS_SERVER	"members.3322.org"
-#define 3322_MY_DNS_SERVER_URL "/dyndns/update?"
-#define 3322_HTTP_PORT		80
+#define DYNDNS_3322_MY_IP_SERVER		"www.bliao.com:2000"
+#define DYNDNS_3322_MY_IP_SERVER_URL	"ip.phtml"
+#define DYNDNS_3322_MY_DNS_SERVER	"members.3322.org"
+#define DYNDNS_3322_MY_DNS_SERVER_URL "/dyndns/update?"
+#define DYNDNS_3322_HTTP_PORT		80
 
 /*REQ/RSP definitions*/
 
