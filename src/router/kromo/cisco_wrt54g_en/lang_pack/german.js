@@ -1398,7 +1398,7 @@ wl_basic.g="Nur-G";
 wl_basic.a="Nur-A";
 
 wl_basic.legend2="WLAN-Zeiteinschränkung";
-wl_basic.radio="WLAN";
+wl_basic.radio="WLAN Schaltuhr";
 wl_basic.radio_on="WLAN ist An";
 wl_basic.radio_off="WLAN ist Aus";
 
