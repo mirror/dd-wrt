@@ -25,6 +25,12 @@ function ddns_check(F,T) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
 		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
 		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
+	} else if(F.ddns_enable.value == 6) {
+		username = eval("F.ddns_username_"+F.ddns_enable.value);
+		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
+		hostname = eval("F.ddns_hostname_"+F.ddns_enable.value);
+		dyndnstype = eval("F.ddns_dyndnstype_"+F.ddns_enable.value);
+		wildcard = eval("F.ddns_wildcard_"+F.ddns_enable.value);
 	} else if(F.ddns_enable.value == 5) {
 		username = eval("F.ddns_username_"+F.ddns_enable.value);
 		passwd = eval("F.ddns_passwd_"+F.ddns_enable.value);
@@ -50,15 +56,6 @@ function ddns_check(F,T) {
 	}
 
 	return true;
-}
-
-function to_save(F) {
-	if(!ddns_check(F,"update")) return;
-	F.change_action.value = "gozila_cgi";
-	F.submit_button.value = "DDNS";
-	F.submit_type.value = "save";
-	F.action.value = "Apply";
-	F.submit();
 }
 
 function to_submit(F) {
@@ -133,14 +130,18 @@ function SelDDNS(num,F) {
 										<option value="2" <% nvram_selmatch("ddns_enable", "2", "selected"); %> >freedns.afraid.org</option>
 										<option value="3" <% nvram_selmatch("ddns_enable", "3", "selected"); %> >ZoneEdit.com</option>
 										<option value="4" <% nvram_selmatch("ddns_enable", "4", "selected"); %> >No-IP.com</option>
+										<option value="6" <% nvram_selmatch("ddns_enable", "6", "selected"); %> >3322.org</option>
 										<script type="text/javascript">document.write("<option value=\"5\" <% nvram_selmatch("ddns_enable", "5", "selected"); %> >" + ddns.custom + "</option>");</script>
 									</select>
 								</div>
+
+								<!-- 1 : Dyndns.org -->
 								<% nvram_selmatch("ddns_enable","0","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<% nvram_selmatch("ddns_enable","4","<!--"); %>
 								<% nvram_selmatch("ddns_enable","5","<!--"); %>
+								<% nvram_selmatch("ddns_enable","6","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username"); %>" />
@@ -169,10 +170,14 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
 								<% nvram_selmatch("ddns_enable","4","-->"); %>
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
+								<% nvram_selmatch("ddns_enable","6","-->"); %>
+																
+								<!-- 2 : freedns.afraid.org -->
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<% nvram_selmatch("ddns_enable","4","<!--"); %>
 								<% nvram_selmatch("ddns_enable","5","<!--"); %>
+								<% nvram_selmatch("ddns_enable","6","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username_2" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_2"); %>" />
@@ -189,10 +194,14 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
 								<% nvram_selmatch("ddns_enable","4","-->"); %>
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
+								<% nvram_selmatch("ddns_enable","6","-->"); %>
+																
+								<!-- 3 : zoneedit.com -->
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","4","<!--"); %>
 								<% nvram_selmatch("ddns_enable","5","<!--"); %>
+								<% nvram_selmatch("ddns_enable","6","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username_3" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_3"); %>" />
@@ -209,10 +218,14 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<% nvram_selmatch("ddns_enable","4","-->"); %>
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
+								<% nvram_selmatch("ddns_enable","6","-->"); %>
+																
+								<!-- 4 : no-ip.com -->
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<% nvram_selmatch("ddns_enable","5","<!--"); %>
+								<% nvram_selmatch("ddns_enable","6","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("share.usrname"); %></div>
 									<input name="ddns_username_4" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_4"); %>" />
@@ -229,10 +242,48 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
+								<% nvram_selmatch("ddns_enable","6","-->"); %>
+								
+								<!-- 6 : 3322.org -->
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<% nvram_selmatch("ddns_enable","4","<!--"); %>
+								<% nvram_selmatch("ddns_enable","5","<!--"); %>
+								<div class="setting">
+									<div class="label"><% tran("share.usrname"); %></div>
+									<input name="ddns_username_6" size="30" maxlength="32" onblur="valid_name(this,share.usrname)" value="<% nvram_get("ddns_username_6"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("share.passwd"); %></div>
+									<input type="password" name="ddns_passwd_6" size="30" maxlength="32" onblur="valid_name(this,share.passwd)" value="<% nvram_invmatch("ddns_passwd_6","","d6nw5v1x2pc7st9m"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("share.hostname"); %></div>
+									<input name="ddns_hostname_6" size="42" maxlength="48" onblur="valid_name(this,share.hostname)" value="<% nvram_get("ddns_hostname_6"); %>" />
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.typ"); %></div>
+									<select name="ddns_dyndnstype_6">
+										<script type="text/javascript">document.write("<option value=\"1\" <% nvram_selmatch("ddns_dyndnstype_6", "1", "selected"); %> >" + ddns.dynamic + "</option>");</script>
+									</select>
+								</div>
+								<div class="setting">
+									<div class="label"><% tran("ddns.wildcard"); %></div>
+									<input type="checkbox" value="1" name="ddns_wildcard_6" <% nvram_checked("ddns_wildcard_6", "1"); %> />
+								</div>
+								<% nvram_selmatch("ddns_enable","1","-->"); %>
+								<% nvram_selmatch("ddns_enable","2","-->"); %>
+								<% nvram_selmatch("ddns_enable","3","-->"); %>
+								<% nvram_selmatch("ddns_enable","4","-->"); %>
+								<% nvram_selmatch("ddns_enable","5","-->"); %>
+								
+								<!-- 5 : CUSTOM PARAMETERS -->
+								<% nvram_selmatch("ddns_enable","1","<!--"); %>
+								<% nvram_selmatch("ddns_enable","2","<!--"); %>
+								<% nvram_selmatch("ddns_enable","3","<!--"); %>
+								<% nvram_selmatch("ddns_enable","4","<!--"); %>
+								<% nvram_selmatch("ddns_enable","6","<!--"); %>
 								<div class="setting">
 									<div class="label"><% tran("ddns.system"); %></div>
 									<input name="ddns_custom_5" size="30" maxlength="32" value="<% nvram_get("ddns_custom_5"); %>" />
@@ -263,6 +314,7 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","2","-->"); %>
 								<% nvram_selmatch("ddns_enable","3","-->"); %>
 								<% nvram_selmatch("ddns_enable","4","-->"); %>
+								<% nvram_selmatch("ddns_enable","6","-->"); %>
 							</fieldset><br />
 							<fieldset>
 								<legend><% tran("ddns.statu"); %></legend>
