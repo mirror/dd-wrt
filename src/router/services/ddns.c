@@ -110,10 +110,11 @@ init_ddns (void)
     /* botho 30/07/06 : add www.3322.org */
   else if (flag == 6)
     {
-      snprintf (_username, sizeof (_username), "%s", "ddns_username");
-      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
-      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
-      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
+      snprintf (_username, sizeof (_username), "ddns_username_%s", flag);
+      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", flag);
+      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", flag);
+      snprintf (_dyndnstype, sizeof (_dyndnstype), "ddns_dyndnstype_%s", flag);
+      snprintf (_wildcard, sizeof (_wildcard), "ddns_wildcard_%s", flag);
     }
 
   return 0;
