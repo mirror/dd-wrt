@@ -102,10 +102,10 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
 			"dynupdate.no-ip.com", "/nic/update?hostname=", ""}},
 		
 		{DYNDNS_3322_DYNAMIC, 
-        {"dyndns@3322.org", NULL,  
+        {"dyndns@3322.org", &dyndns_org_dynamic,  
             (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
-            DYNDNS_3322_MY_IP_SERVER, DYNDNS_3322_MY_IP_SERVER_URL,
+             DYNDNS_3322_MY_IP_SERVER, DYNDNS_3322_MY_IP_SERVER_URL,
 			DYNDNS_3322_MY_DNS_SERVER, DYNDNS_3322_MY_DNS_SERVER_URL, NULL}},
 
     {CUSTOM_HTTP_BASIC_AUTH, 
