@@ -99,6 +99,14 @@ DYNDNS_SYSTEM_INFO dns_system_table[] =
             (DNS_SYSTEM_REQUEST_FUNC) get_req_for_noip_http_dns_server,
             "ip1.dynupdate.no-ip.com", "/", 
 			"dynupdate.no-ip.com", "/nic/update?hostname=", ""}},
+		
+		/* botho 30/07/06 : add www.3322.org */
+		{3322_DYNAMIC, 
+        {"dyndns@3322.org", NULL,  
+            (DNS_SYSTEM_SRV_RESPONSE_OK_FUNC)is_dyndns_server_rsp_ok, 
+            (DNS_SYSTEM_REQUEST_FUNC) get_req_for_dyndns_server,
+            3322_MY_IP_SERVER, 3322_MY_IP_SERVER_URL,
+			3322_MY_DNS_SERVER, 3322_MY_DNS_SERVER_URL, NULL}},
 
     {CUSTOM_HTTP_BASIC_AUTH, 
         {"custom@http_svr_basic_auth", NULL,  
