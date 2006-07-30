@@ -75,6 +75,7 @@ init_ddns (void)
       flag = 6;
     }
 
+/* botho 30/07/06 : add www.3322.org */
   if (flag == 1)
     {
       snprintf (_username, sizeof (_username), "%s", "ddns_username");
@@ -107,14 +108,13 @@ init_ddns (void)
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_5");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_5");
     }
-    /* botho 30/07/06 : add www.3322.org */
   else if (flag == 6)
     {
-      snprintf (_username, sizeof (_username), "ddns_username_%s", flag);
-      snprintf (_passwd, sizeof (_passwd), "ddns_passwd_%s", flag);
-      snprintf (_hostname, sizeof (_hostname), "ddns_hostname_%s", flag);
-      snprintf (_dyndnstype, sizeof (_dyndnstype), "ddns_dyndnstype_%s", flag);
-      snprintf (_wildcard, sizeof (_wildcard), "ddns_wildcard_%s", flag);
+    	snprintf (_username, sizeof (_username), "%s", "ddns_username_6");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_6");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_6");
+      snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype_6");
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard_6");
     }
 
   return 0;
