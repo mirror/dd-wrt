@@ -36,9 +36,11 @@ typedef enum
     DYNDNS_CUSTOM,
     DYNDNS_DEFAULT,
     FREEDNS_AFRAID_ORG_DEFAULT,
-	ZONE_EDIT_DEFAULT,
-	CUSTOM_HTTP_BASIC_AUTH,
-	NOIP_DEFAULT,	
+    ZONE_EDIT_DEFAULT,
+    CUSTOM_HTTP_BASIC_AUTH,
+    NOIP_DEFAULT,
+    /* botho 30/07/06 : add www.3322.org */
+    3322_DYNAMIC,
     LAST_DNS_SYSTEM = -1
 } DYNDNS_SYSTEM_ID;
 
@@ -56,6 +58,12 @@ typedef enum
 #define DYNDNS_MY_HOST_NAME_2	"test2.homeip.net"
 #define DYNDNS_HTTP_PORT		80
 
+/* botho 30/07/06 : add www.3322.org */
+#define 3322_MY_IP_SERVER		"www.bliao.com:2000"
+#define 3322_MY_IP_SERVER_URL	"ip.phtml"
+#define 3322_MY_DNS_SERVER	"members.3322.org"
+#define 3322_MY_DNS_SERVER_URL "/dyndns/update?"
+#define 3322_HTTP_PORT		80
 
 /*REQ/RSP definitions*/
 
@@ -69,13 +77,14 @@ typedef enum
 #define DYNDNS_SYSTEM_STATIC	"statdns" 
 
 #define GENERIC_DNS_IP_SERVER_NAME DYNDNS_MY_IP_SERVER
-#define  DYNDNS_MY_DNS_SYSTEM  DYNDNS_DEFAULT
+#define DYNDNS_MY_DNS_SYSTEM  DYNDNS_DEFAULT
 
 /* Conversation with the IP server */
 #define DYNDNS_GET_MY_IP_HTTP_REQUEST  \
 	"GET http://%s%s HTTP/1.0\r\n\r\n"
 
-/* dyndns.org specific update address format */	
+/* dyndns.org specific update address format */
+/* 3322.org has the same parameters ...*/
 #define DYNDNS_GET_MY_IP_HTTP_REQUEST_FORMAT \
 	"GET http://%s%s" \
 		"system=%s&" \
@@ -83,12 +92,12 @@ typedef enum
 		"myip=%s&" \
 		"wildcard=ON&" \
 		"mx=%s&" \
-	   "backmx=NO&" \
-	   "offline=NO " \
-	 "HTTP/1.0\r\n" \
-	"Host: %s\r\n" \
-	"Authorization: Basic %s\r\n" \
-	"User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
+	  "backmx=NO&" \
+	  "offline=NO " \
+	  "HTTP/1.0\r\n" \
+	  "Host: %s\r\n" \
+	  "Authorization: Basic %s\r\n" \
+	  "User-Agent: "DYNDNS_AGENT_NAME " " DYNDNS_EMAIL_ADDR"\r\n\r\n"
     
 /*freedns.afraid.org specific update request format */    
 #define FREEDNS_UPDATE_MY_IP_REQUEST_FORMAT \
@@ -167,7 +176,7 @@ typedef struct
     const char *p_dyndns_server_name;
 	const char *p_dyndns_server_url;
 	const char *p_success_string;
-}DYNDNS_SYSTEM;
+} DYNDNS_SYSTEM;
 
 typedef struct 
 {

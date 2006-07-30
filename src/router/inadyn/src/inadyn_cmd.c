@@ -104,10 +104,11 @@ static CMD_DESCRIPTION_TYPE cmd_options_table[] =
             "\t\t-For freedns.afraid.org DNS system: default@freedns.afraid.org\n"
             "\t\t-For www.zoneedit.com DNS system: default@zoneedit.com\n"
             "\t\t-For www.no-ip.com DNS system: default@no-ip.com\n"
+            "\t\t-For www.3322.org DNS system: dyndns@3322.org\n"
 			"\t\t-For generic DNS system: custom@http_svr_basic_auth\n"
             "\t\tDEFAULT value is intended for default service at dyndns.org (most users): dyndns@dyndns.org"},
 
-    {"--proxy_server", 1, {get_proxy_server_handler, NULL},
+  {"--proxy_server", 1, {get_proxy_server_handler, NULL},
             "[NAME[:port]]  - the http proxy server name and port. Default is none."},
 	{"--update_period",	1,	{get_update_period_handler, NULL},	
             "how often the IP is checked. The period is in [ms]. Default is about 1 min. Max is 10 days"},
