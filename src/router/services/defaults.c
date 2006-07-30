@@ -922,7 +922,7 @@ struct nvram_tuple srouter_defaults[] = {
 
   /* for DDNS */
   /* for dyndns */
-  {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip 5:custom */
+  {"ddns_enable", "0", 0},	/* 0:Disable 1:dyndns 2:afraid 3:zoneedit 4:no-ip 5:custom 6:3322.org */
   {"ddns_username", "", 0},	/* DynDNS Username */
   {"ddns_passwd", "", 0},	/* DynDNS Password */
   {"ddns_hostname", "", 0},	/* DynDNS Hostname */
@@ -946,6 +946,13 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_hostname_5", "", 0}, 
   {"ddns_custom_5", "", 0}, 
   {"ddns_conf", "", 0}, 
+  /* for 3322.org */
+  {"ddns_enable_6", "0", 0},
+  {"ddns_username_6", "", 0},
+  {"ddns_passwd_6", "", 0},
+  {"ddns_hostname_6", "", 0},
+  {"ddns_dyndnstype_6", "", 0},
+  {"ddns_wildcard_6", "", 0},
 
   /* for last value */
   {"ddns_enable_buf", "", 0},	/* 0:Disable 1:Eanble */
