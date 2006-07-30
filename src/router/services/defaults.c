@@ -947,7 +947,6 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_custom_5", "", 0}, 
   {"ddns_conf", "", 0}, 
   /* for 3322.org */
-  {"ddns_enable_6", "0", 0},
   {"ddns_username_6", "", 0},
   {"ddns_passwd_6", "", 0},
   {"ddns_hostname_6", "", 0},
