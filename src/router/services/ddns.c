@@ -68,6 +68,12 @@ init_ddns (void)
       strcpy (service, "custom@http_svr_basic_auth");
       flag = 5;
     }
+    /* botho 30/07/06 : add www.3322.org */
+  else if (nvram_match ("ddns_enable", "6"))
+    {
+      strcpy (service, "dyndns@3322.org");
+      flag = 6;
+    }
 
   if (flag == 1)
     {
@@ -100,6 +106,14 @@ init_ddns (void)
       snprintf (_username, sizeof (_username), "%s", "ddns_username_5");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_5");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_5");
+    }
+    /* botho 30/07/06 : add www.3322.org */
+  else if (flag == 6)
+    {
+      snprintf (_username, sizeof (_username), "%s", "ddns_username");
+      snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd");
+      snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname");
+      snprintf (_wildcard, sizeof (_wildcard), "%s", "ddns_wildcard");
     }
 
   return 0;
