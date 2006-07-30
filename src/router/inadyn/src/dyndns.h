@@ -59,7 +59,7 @@ typedef enum
 #define DYNDNS_HTTP_PORT		80
 
 /* botho 30/07/06 : add www.3322.org */
-#define DYNDNS_3322_MY_IP_SERVER		"www.bliao.com:2000"
+#define DYNDNS_3322_MY_IP_SERVER		"bliao.com"
 #define DYNDNS_3322_MY_IP_SERVER_URL	"/ip.phtml"
 #define DYNDNS_3322_MY_DNS_SERVER	"members.3322.org"
 #define DYNDNS_3322_MY_DNS_SERVER_URL "/dyndns/update?"
