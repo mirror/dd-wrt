@@ -65,7 +65,6 @@ typedef enum
 #define DYNDNS_3322_MY_IP_SERVER_URL	"/"
 #define DYNDNS_3322_MY_DNS_SERVER	"members.3322.org"
 #define DYNDNS_3322_MY_DNS_SERVER_URL "/dyndns/update?"
-#define DYNDNS_3322_HTTP_PORT		80
 
 /*REQ/RSP definitions*/
 
