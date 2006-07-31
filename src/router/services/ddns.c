@@ -29,6 +29,7 @@ char _passwd[] = "ddns_passwd_X";
 char _hostname[] = "ddns_hostname_X";
 char _dyndnstype[] = "ddns_dyndnstype_X";
 char _wildcard[] = "ddns_wildcard_X";
+char _conf[] = "ddns_conf_X";
 
 int
 init_ddns (void)
@@ -107,10 +108,11 @@ init_ddns (void)
       snprintf (_username, sizeof (_username), "%s", "ddns_username_5");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_5");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_5");
+      snprintf (_conf, sizeof (_conf), "%s", "ddns_conf");
     }
   else if (flag == 6)
     {
-    	snprintf (_username, sizeof (_username), "%s", "ddns_username_6");
+      snprintf (_username, sizeof (_username), "%s", "ddns_username_6");
       snprintf (_passwd, sizeof (_passwd), "%s", "ddns_passwd_6");
       snprintf (_hostname, sizeof (_hostname), "%s", "ddns_hostname_6");
       snprintf (_dyndnstype, sizeof (_dyndnstype), "%s", "ddns_dyndnstype_6");
@@ -145,13 +147,15 @@ start_ddns (void)
       strcmp (nvram_safe_get ("ddns_hostname_buf"), nvram_safe_get (_hostname)) ||	// ddns hostname change
       strcmp (nvram_safe_get ("ddns_dyndnstype_buf"), nvram_safe_get (_dyndnstype)) ||	// ddns dyndnstype change
       strcmp (nvram_safe_get ("ddns_wildcard_buf"), nvram_safe_get (_wildcard)) || // ddns wildcard change
-      strcmp (nvram_safe_get ("ddns_conf_buf"), nvram_safe_get ("ddns_conf")))
+      strcmp (nvram_safe_get ("ddns_conf_buf"), nvram_safe_get (_conf)) || // ddns conf change
+      strcmp (nvram_safe_get ("ddns_custom_5_buf"), nvram_safe_get ("ddns_custom_5")))
     {
-	  nvram_unset ("ddns_cache");	// The will let program to re-update
-	  nvram_unset ("ddns_time");
-	  unlink ("/tmp/ddns/ddns.log");	// We want to get new message
-	  unlink ("/tmp/ddns/inadyn_ip.cache");
-	  unlink ("/tmp/ddns/inadyn_time.cache");
+      /* If the user changed anything in the GUI, delete all cache and log */
+      nvram_unset ("ddns_cache");
+      nvram_unset ("ddns_time");
+      unlink ("/tmp/ddns/ddns.log");
+      unlink ("/tmp/ddns/inadyn_ip.cache");
+      unlink ("/tmp/ddns/inadyn_time.cache");
     }
 
   /* Generate ddns configuration file */
@@ -164,8 +168,9 @@ start_ddns (void)
       fprintf (fp, " -u %s", nvram_safe_get (_username));	//username/email
       fprintf (fp, " -p %s", nvram_safe_get (_passwd));	// password
       fprintf (fp, " -a %s", nvram_safe_get (_hostname));	// alias/hostname
-      if (nvram_match ("ddns_wildcard", "1")
-	  && nvram_match ("ddns_enable", "1"))
+      if (nvram_match ("ddns_wildcard", "1") && nvram_match ("ddns_enable", "1"))
+	fprintf (fp, ",wildcard=ON");
+      if (nvram_match ("ddns_wildcard_6", "1") && nvram_match ("ddns_enable", "6"))
 	fprintf (fp, ",wildcard=ON");
       fprintf (fp, " --update_period_sec %s", "3600");	// check ip every hour
       fprintf (fp, " --forced_update_period %s", "2419200");	//force update after 28days
@@ -174,7 +179,7 @@ start_ddns (void)
       if (nvram_invmatch ("ddns_conf", "")
 	  && nvram_match ("ddns_enable", "5"))
 	{
-	  fprintf (fp, " %s", nvram_safe_get ("ddns_conf"));
+	  fprintf (fp, " %s", nvram_safe_get (_conf));
 	}
       fprintf (fp, "\n"); 
       fclose (fp);
@@ -185,7 +190,7 @@ start_ddns (void)
       return -1;
     }
 
-  /* Restore cache data to file */
+  /* Restore cache data to file from NV */
   if (nvram_invmatch ("ddns_cache", "")
       && nvram_invmatch ("ddns_time", ""))
     {
@@ -243,7 +248,8 @@ ddns_success_main (int argc, char *argv[])
   nvram_set ("ddns_hostname_buf", nvram_safe_get (_hostname));
   nvram_set ("ddns_dyndnstype_buf", nvram_safe_get (_dyndnstype));
   nvram_set ("ddns_wildcard_buf", nvram_safe_get (_wildcard));
-  nvram_set ("ddns_conf_buf", nvram_safe_get ("ddns_conf"));
+  nvram_set ("ddns_conf_buf", nvram_safe_get (_conf));
+  nvram_set ("ddns_custom_5_buf", nvram_safe_get ("ddns_custom_5"));
 
   nvram_commit ();
 
