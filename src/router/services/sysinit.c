@@ -923,6 +923,7 @@ eval ("cp", "/etc/nvram/offsets.db", "/tmp/nvram");
 	  strcpy (wanifname, "vlan1");
       nvram_set ("vlan1ports", "0 5");
       eval ("gpio", "disable", "1");	//Asus WL-500gP power led on
+      eval ("gpio", "disable", "0");	//reset the reset button to 0
       break;
       
     case ROUTER_MICROSOFT_MN700:
