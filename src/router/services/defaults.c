@@ -954,12 +954,11 @@ struct nvram_tuple srouter_defaults[] = {
   {"ddns_wildcard_6", "", 0},
 
   /* for last value */
-  {"ddns_enable_buf", "", 0},	/* 0:Disable 1:Eanble */
-  {"ddns_username_buf", "", 0},	/* DDNS username */
-  {"ddns_passwd_buf", "", 0},	/* DDNS password */
-  {"ddns_hostname_buf", "", 0},	/* DDNS hostname */
+  {"ddns_enable_buf", "", 0}, 
+  {"ddns_username_buf", "", 0}, 
+  {"ddns_passwd_buf", "", 0}, 
+  {"ddns_hostname_buf", "", 0}, 
 
-  {"ddns_status", "", 0},	/* DDNS status */
   {"ddns_cache", "", 0},	/* DDNS cache */
   {"ddns_time", "", 0},		/* DDNS time */
 
