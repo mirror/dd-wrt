@@ -4,8 +4,9 @@
 
 document.title = "<% nvram_get("router_name"); %>" + status_lan.titl;
 
-function deleteLease(val) {
-	document.forms[0].d_0.value = val;
+function deleteLease(val, val2) {
+	document.forms[0].ip_del.value = val;
+	document.forms[0].mac_del.value = val2;
 	document.forms[0].submit();
 }
 
@@ -38,7 +39,7 @@ function setDHCPTable() {
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err58;
-		eval("addEvent(cell, 'click', function() { deleteLease(" + val[i + 4] + ") })");
+		eval("addEvent(cell, 'click', function() { deleteLease(" + val[i + 1] + "," + mac + ") })");
 	}
 }
 
@@ -112,7 +113,8 @@ addEvent(window, "unload", function() {
 							<input type="hidden" name="submit_button" value="DHCPTable" />
 							<input type="hidden" name="change_action" value="gozila_cgi" />
 							<input type="hidden" name="submit_type" value="delete" />
-							<input type="hidden" name="d_0" />
+							<input type="hidden" name="mac_del" />
+							<input type="hidden" name="ip_del" />
 							<input type="hidden" name="next_page" value="Status_Lan.asp" />
 							<h2><% tran("status_lan.h2"); %></h2>
 							<fieldset>
