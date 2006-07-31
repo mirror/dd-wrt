@@ -1875,6 +1875,8 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_turbo", prefix);
   copytonv (wp, n);
+  sprintf (n, "%s_xr", prefix);
+  copytonv (wp, n);
 //  sprintf (n, "%s_xchanmode", prefix);
 //  copytonv (wp, n);
 //  sprintf (n, "%s_outdoor", prefix);
@@ -2148,8 +2150,8 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_xr, "%s_xr", prefix);
 
   showOption (wp, "wl_basic.turbo", wl_turbo);
-//  showOption (wp, "wl_basic.extrange", wl_xr);
-  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
+  showOption (wp, "wl_basic.extrange", wl_xr);
+//  showOption (wp, "wl_basic.extchannel", wl_xchanmode);
 //  showOption (wp, "wl_basic.outband", wl_outdoor);
   showOption (wp, "wl_basic.diversity", wl_diversity);
   websWrite (wp,
@@ -2205,7 +2207,7 @@ ej_show_wireless_single (webs_t wp, char *prefix)
 	     "<div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.label3)</script></div><input name=\"%s\" size=\"20\" maxlength=\"32\" onblur=\"valid_name(this,wl_basic.label3)\" value=\"%s\" /></div>\n",
 	     wl_ssid, nvram_safe_get (wl_ssid));
 
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta"))
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match (wl_mode, "wdsap"))
     {
       show_channel (wp, prefix, prefix);
 
