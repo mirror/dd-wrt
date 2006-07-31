@@ -252,8 +252,8 @@ int
 delete_leases (webs_t wp)
 {
   char buf[100];
-  char mac[32];
-  char ip[32];
+  char *mac;
+  char *ip;
 
   if (nvram_match ("lan_proto", "static"))
     return -1;
