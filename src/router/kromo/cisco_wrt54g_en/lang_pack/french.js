@@ -1223,7 +1223,7 @@ upgrad.mess1="La mise à jour du firmware peut prendre quelques minutes.<br />N'é
 
 //help container
 
-hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour séléctionner le firmware à charger sur le routeur.<br /><br /> Cliquez sur <em>Mettre à jour</em> pour commencer la mise à jour. La mise à jour NE DOIT SURTOUT PAS pas être interrompue.";
+hupgrad.right2="Cliquez sur le bouton <em>Parcourir...</em> pour séléctionner le firmware à charger sur le routeur.<br /><br /> Cliquez sur <em>Mettre à jour</em> pour commencer la mise à jour. La mise à jour NE DOIT SURTOUT PAS être interrompue.";
 
 
 
