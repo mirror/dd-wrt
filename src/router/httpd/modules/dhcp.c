@@ -251,49 +251,19 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 int
 delete_leases (webs_t wp)
 {
-  int i;
-  FILE *fp_w;
-  const char *value;
-  char name[32];
+  char buf[100];
+  char mac[32];
+  char ip[32];
 
   if (nvram_match ("lan_proto", "static"))
     return -1;
 
-  if ((fp_w = fopen ("/tmp/.delete_leases", "w")) == NULL)
-    {
-      websError (wp, 400, "Error opening delete lease file\n");
-      return -1;
-    }
-  for (i = 0; i < DHCP_MAX_COUNT; ++i)
-    {
-      sprintf (name, "d_%d", i);
-      value = websGetVar (wp, name, NULL);
-      if (!value)
-	continue;
-      fprintf (fp_w, "%d.%d.%d.%s\n",
-	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 0),
-	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 1),
-	       get_single_ip (nvram_safe_get ("lan_ipaddr"), 2), value);
-    }
-  fclose (fp_w);
-  if (nvram_match ("dhcp_dnsmasq", "1"))
-    {
-      if (!(fp_w = fopen ("/var/run/dnsmasq.pid", "r")))
-	{
-	  websError (wp, 400, "Write leases error\n");
-	  return -1;
-	}
-      eval ("killall", "-SIGUSR2", "dnsmasq");
-    }
-  else
-    {
-      if (!(fp_w = fopen ("/var/run/udhcpd.pid", "r")))
-	{
-	  websError (wp, 400, "Write leases error\n");
-	  return -1;
-	}
-      eval ("killall", "-SIGUSR2", "udhcpd");
-    }
+  mac = websGetVar (wp, mac_del, NULL);
+  ip = websGetVar (wp, ip_del, NULL);
+
+  sprintf (buf, "dhcp_release %s %s %s", "br0", ip, mac);
+  system (buf);
+
   return 0;
 }
 
