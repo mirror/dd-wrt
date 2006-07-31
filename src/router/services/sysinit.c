@@ -348,14 +348,14 @@ start_restore_defaults (void)
 #else
   struct nvram_tuple generic[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "eth0 eth2", 0},
+    {"lan_ifnames", "eth0 eth2 eth3 eth4", 0},
     {"wan_ifname", "eth1", 0},
     {"wan_ifnames", "eth1", 0},
     {0, 0, 0}
   };
   struct nvram_tuple vlan[] = {
     {"lan_ifname", "br0", 0},
-    {"lan_ifnames", "vlan0 eth1", 0},
+    {"lan_ifnames", "vlan0 eth1 eth2 eth3", 0},
     {"wan_ifname", "vlan1", 0},
     {"wan_ifnames", "vlan1", 0},
     {0, 0, 0}
