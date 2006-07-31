@@ -1489,7 +1489,7 @@ show_channel (webs_t wp, char *dev, char *prefix)
 {
   char wl_mode[16];
   sprintf (wl_mode, "%s_mode", prefix);
-  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta"))
+  if (nvram_match (wl_mode, "ap") || nvram_match (wl_mode, "apsta") || nvram_match(wl_mode,"wdsap"))
     {
       char wl_channel[16];
       sprintf (wl_channel, "%s_channel", prefix);
