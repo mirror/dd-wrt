@@ -235,6 +235,8 @@ OBJS  += site_survey.o
 
 #OBJS += http.o
 
+ifneq ($(CONFIG_NOSSL),y)
+
 ifneq ($(CONFIG_MATRIXSSL),y)
 ifeq ($(CONFIG_OPENSSL),y)
 CFLAGS += -I$(TOP)/openssl/include  -I$(TOP)/openssl/include/openssl
@@ -250,6 +252,8 @@ LDFLAGS += -L$(TOP)/matrixssl/src -lmatrixsslstatic -lpthread
 CFLAGS += -DHAVE_MATRIXSSL
 CFLAGS += -DHAVE_HTTPS
 OBJS += matrixssl_xface.o
+endif
+
 endif
 
 #OBJS  += common.o server.o

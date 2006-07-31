@@ -931,7 +931,7 @@ start_lan (void)
     {				// FIXME
       /* Bring up interface */
       ifconfig (lan_ifname, IFUP, NULL, NULL);
-
+#ifndef HAVE_MADWIFI
       /* config wireless i/f */
       if (!wlconf_up (lan_ifname))
 	{
@@ -947,6 +947,7 @@ start_lan (void)
 	    ifconfig (lan_ifname, IFUP | IFF_ALLMULTI, NULL, NULL);
 
 	}
+#endif
 
     }
 
@@ -1194,14 +1195,16 @@ stop_lan (void)
   ifconfig (lan_ifname, 0, NULL, NULL);
   br_init ();
 #ifdef HAVE_MSSID
-  br_del_bridge ("wl0.1");
+#ifndef HAVE_MADWIFI
+  br_del_interface(lan_ifname,"wl0.1");
   ifconfig ("wl0.1", 0, NULL, NULL);
-  br_del_bridge ("wl0.2");
+  br_del_interface(lan_ifname,"wl0.2");
   ifconfig ("wl0.2", 0, NULL, NULL);
-  br_del_bridge ("wl0.3");
+  br_del_interface(lan_ifname,"wl0.3");
   ifconfig ("wl0.3", 0, NULL, NULL);
-  br_del_bridge ("wl0.4");
+  br_del_interface(lan_ifname,"wl0.4");
   ifconfig ("wl0.4", 0, NULL, NULL);
+#endif
 #endif
   /* Bring down bridged interfaces */
   if (strncmp (lan_ifname, "br", 2) == 0)
