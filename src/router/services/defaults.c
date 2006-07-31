@@ -464,8 +464,6 @@ struct nvram_tuple srouter_defaults[] = {
 #else
 #ifdef HAVE_MSSID
   {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
-#else
-  {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"wl0_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
   {"wl0.1_ssid", "", 0},	/* Service set ID (network name) */
   {"wl0.2_ssid", "", 0},	/* Service set ID (network name) */
@@ -479,6 +477,8 @@ struct nvram_tuple srouter_defaults[] = {
   {"wl0.1_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.2_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
   {"wl0.3_netmask", "0.0.0.0", 0},	/* Service set ID (network name) */
+#else
+  {"wl_ssid", "dd-wrt", 0},	/* Service set ID (network name) */
 #endif
 
 

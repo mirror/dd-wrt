@@ -399,13 +399,13 @@ list_channels (char *devnr)
 int
 getdevicecount (void)
 {
-  eval ("ifconfig", "wifi0", "up");
+/*  eval ("ifconfig", "wifi0", "up");
   eval ("ifconfig", "wifi1", "up");
   eval ("ifconfig", "wifi2", "up");
   eval ("ifconfig", "wifi3", "up");
   eval ("ifconfig", "wifi4", "up");
   eval ("ifconfig", "wifi5", "up");
-
+*/
   system ("/sbin/ifconfig|grep wifi|wc -l>/tmp/.counts");
   FILE *in = fopen ("/tmp/.counts", "rb");
   if (in == NULL)

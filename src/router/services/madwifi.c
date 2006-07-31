@@ -503,9 +503,9 @@ deconfigure_single (int count)
     {
       eval ("wlanconfig", var, "destroy");
     }
-  char buf[16];
-  sprintf (buf, "wifi%d", count);
-  eval ("ifconfig", buf, "down");
+//  char buf[16];
+//  sprintf (buf, "wifi%d", count);
+//  eval ("ifconfig", buf, "down");
 }
 
 void
@@ -525,7 +525,7 @@ deconfigure_wifi (void)
   int i;
   for (i = 0; i < c; i++)
     deconfigure_single (i);
-  eval ("rmmod", "wlan_scan_sta");
+/*  eval ("rmmod", "wlan_scan_sta");
   eval ("rmmod", "wlan_scan_ap");
   eval ("rmmod", "wlan_xauth");
   eval ("rmmod", "wlan_wep");
@@ -533,7 +533,7 @@ deconfigure_wifi (void)
   eval ("rmmod", "wlan_ccmp");
   eval ("rmmod", "wlan_acl");
   eval ("modprobe", "-r", "ath_pci");
-
+*/
 }
 
 
@@ -874,6 +874,7 @@ set_netmode (char *wif, char *dev)
 //  fprintf (stderr, "set netmode of %s to %s\n", net, netmode);
   cprintf ("configure net mode %s\n", netmode);
 
+  eval("iwconfig",dev,"channel","0");
 //  else
   {
     eval ("iwpriv", dev, "turbo", "0");
@@ -1208,6 +1209,7 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
 {
   //bridge the virtual interfaces too
   memset (iflist, 0, 1024);
+/*
   char countrycode[64];
   char xchanmode[64];
   char outdoor[64];
@@ -1227,46 +1229,8 @@ configure_wifi (void)		//madwifi implementation for atheros based cards
     sprintf (outdoor, "outdoor=%s", nvram_safe_get ("wl_outdoor"));
   else
     sprintf (outdoor, "outdoor=0");
+*/
 
-/*#ifdef HAVE_RB500
-  eval ("setpci","-s","0:04.0","SUBORDINATE_BUS=0A");
-  eval ("setpci","-s","0:05.0","SUBORDINATE_BUS=0A");
-  eval ("setpci","-s","0:06.0","SUBORDINATE_BUS=0A");
-  eval ("setpci","-s","0:07.0","SUBORDINATE_BUS=0A");
-  eval ("setpci","-s","0:08.0","SUBORDINATE_BUS=0A");
-  eval ("setpci","-s","0:09.0","SUBORDINATE_BUS=0A");
-#endif*/
-//  eval ("insmod", "wlan");
-//  eval ("insmod", "ath_hal");
-//  eval ("insmod", "ath_rate_onoe");
-//  sleep(1);
-#ifdef HAVE_MADOLD
-
-  eval ("modprobe", "ath_pci");
-#else
-
-  eval ("insmod", "ath_hal");
-  eval ("insmod", "wlan");
-  eval ("insmod", "ath_rate_sample");
-  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none", countrycode,
-	xchanmode, outdoor);
-
-//  eval ("modprobe", "ath_pci", countrycode, xchanmode, outdoor);  //busybox bug, modprobe doesnt support options
-
-//      "autocreate=none");
-#endif
-//  sleep(1);
-//  eval ("modprobe", "-r", "ath_pci");
-//  sleep(1);
-//  eval ("modprobe", "ath_pci",countrycode,xchanmode,outdoor);
-
-  eval ("insmod", "wlan_acl");
-  eval ("insmod", "wlan_ccmp");
-  eval ("insmod", "wlan_tkip");
-  eval ("insmod", "wlan_wep");
-  eval ("insmod", "wlan_xauth");
-  eval ("insmod", "wlan_scan_ap");
-  eval ("insmod", "wlan_scan_sta");
 
   int c = getdevicecount ();
   int i;
