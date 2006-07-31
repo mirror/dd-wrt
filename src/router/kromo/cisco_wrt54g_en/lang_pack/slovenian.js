@@ -1411,7 +1411,7 @@ wl_basic.b="Samo-B";
 wl_basic.a="Samo-A";
 wl_basic.g="Samo-G";
 wl_basic.legend2="Omejitve radijskega èasa";
-wl_basic.radio="Radio";
+wl_basic.radio="Radijska tabela";
 wl_basic.radio_on="Radio je vkljuèen";
 wl_basic.radio_off="Radio je izkljuèen";
 
