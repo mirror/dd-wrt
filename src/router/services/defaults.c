@@ -1033,7 +1033,7 @@ struct nvram_tuple srouter_defaults[] = {
   {"cron_enable", "1", 0},
 #endif
   {"dhcpd_options", "", 0},
-  {"dhcpd_usenvram", "0", 0},
+  {"dhcpd_usenvram", "1", 0},
   {"local_dns", "0", 0},
 #ifdef HAVE_POWERNOC_WOAP54G
   {"dnsmasq_enable", "0", 0},
