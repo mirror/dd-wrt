@@ -314,7 +314,7 @@ start_pptpd (void)
   // Exctract chap-secrets from nvram and add the default account with routers password
   lpTemp = nvram_safe_get ("pptpd_auth");
   fp = fopen ("/tmp/pptpd/chap-secrets", "w");
-  fprintf (fp, "root\t*\t%s\t*\n", nvram_safe_get ("http_passwd"));
+//  fprintf (fp, "root\t*\t%s\t*\n", nvram_safe_get ("http_passwd"));
   if (strlen (lpTemp) != 0)
     fprintf (fp, "%s\n", lpTemp);
   fclose (fp);
