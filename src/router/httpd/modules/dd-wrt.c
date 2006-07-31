@@ -5176,11 +5176,9 @@ ej_js_include (int eid, webs_t wp, int argc, char_t ** argv)
   char *lang = nvram_get ("language");
 
   do_file ("common.js", wp);
-  if (lang == NULL)
-    {
-      do_file ("lang_pack/english.js", wp);
-    }
-  else
+  do_file ("lang_pack/english.js", wp);
+  
+  if (lang != NULL)
     {
       char l[60];
       sprintf (l, "lang_pack/%s.js", lang);
