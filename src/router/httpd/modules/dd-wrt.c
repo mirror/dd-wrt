@@ -1875,10 +1875,10 @@ save_prefix (webs_t wp, char *prefix)
   copytonv (wp, n);
   sprintf (n, "%s_turbo", prefix);
   copytonv (wp, n);
-  sprintf (n, "%s_xchanmode", prefix);
-  copytonv (wp, n);
-  sprintf (n, "%s_outdoor", prefix);
-  copytonv (wp, n);
+//  sprintf (n, "%s_xchanmode", prefix);
+//  copytonv (wp, n);
+//  sprintf (n, "%s_outdoor", prefix);
+//  copytonv (wp, n);
   sprintf (n, "%s_diversity", prefix);
   copytonv (wp, n);
   sprintf (n, "%s_txantenna", prefix);
@@ -2131,16 +2131,16 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   //turbo options
 #ifdef HAVE_MADWIFI
   char wl_turbo[16];
-  char wl_xchanmode[16];
-  char wl_outdoor[16];
+//  char wl_xchanmode[16];
+//  char wl_outdoor[16];
   char wl_diversity[16];
   char wl_rxantenna[16];
   char wl_txantenna[16];
   char wl_width[16];
   char wl_xr[16];
   sprintf (wl_turbo, "%s_turbo", prefix);
-  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
-  sprintf (wl_outdoor, "%s_outdoor", prefix);
+//  sprintf (wl_xchanmode, "%s_xchanmode", prefix);
+//  sprintf (wl_outdoor, "%s_outdoor", prefix);
   sprintf (wl_diversity, "%s_diversity", prefix);
   sprintf (wl_rxantenna, "%s_rxantenna", prefix);
   sprintf (wl_txantenna, "%s_txantenna", prefix);
@@ -2148,9 +2148,9 @@ ej_show_wireless_single (webs_t wp, char *prefix)
   sprintf (wl_xr, "%s_xr", prefix);
 
   showOption (wp, "wl_basic.turbo", wl_turbo);
-  showOption (wp, "wl_basic.extrange", wl_xr);
+//  showOption (wp, "wl_basic.extrange", wl_xr);
   showOption (wp, "wl_basic.extchannel", wl_xchanmode);
-  showOption (wp, "wl_basic.outband", wl_outdoor);
+//  showOption (wp, "wl_basic.outband", wl_outdoor);
   showOption (wp, "wl_basic.diversity", wl_diversity);
   websWrite (wp,
 	     "<div class=\"setting\"><div class=\"label\"><script type=\"text/javascript\">Capture(wl_basic.channel_width)</script></div><select name=\"%s\" >\n",
