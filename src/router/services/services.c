@@ -926,20 +926,21 @@ start_dnsmasq (void)
     if (nvram_match ("dhcp_dnsmasq", "1") && nvram_match ("lan_proto", "dhcp")
 	&& nvram_match ("dhcpfwd_enable", "0"))
       {
-//	if (usejffs)
-//	  fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
-//	else if (nvram_match ("dhcpd_usenvram", "1"))
-	  fprintf (fp, "leasefile-ro\n");
-//	else
-//	  fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
+	if (usejffs)
+	  fprintf (fp, "dhcp-leasefile=/jffs/dnsmasq.leases\n");
+	else if (nvram_match ("dhcpd_usenvram", "1"))
+	  {
+	    fprintf (fp, "leasefile-ro\n");
+	    fprintf (fp, "dhcp-script=%s\n", "/etc/lease_update.sh");
+	  }
+	else
+	  fprintf (fp, "dhcp-leasefile=/tmp/dnsmasq.leases\n");
 
 	int dhcp_max =
 	  atoi (nvram_safe_get ("dhcp_num")) +
 	  atoi (nvram_safe_get ("static_leasenum"));
 	fprintf (fp, "dhcp-lease-max=%d\n", dhcp_max);
 	fprintf (fp, "dhcp-option=3,%s\n", nvram_safe_get ("lan_ipaddr"));
-//	if (nvram_match ("dhcpd_usenvram", "1"))
-	  fprintf (fp, "dhcp-script=%s\n", "/etc/lease_update.sh");
 	if (nvram_invmatch ("wan_wins", "")
 	    && nvram_invmatch ("wan_wins", "0.0.0.0"))
 	  fprintf (fp, "dhcp-option=44,%s\n", nvram_safe_get ("wan_wins"));
