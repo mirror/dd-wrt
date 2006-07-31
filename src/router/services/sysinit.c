@@ -487,7 +487,12 @@ start_restore_defaults (void)
 	}
     }
 #endif
+#ifdef HAVE_XSCALE
+if (restore_defaults)
+    eval("rm","-f","/etc/nvram/*"); // delete nvram database
+#endif
   int nvcnt = 0;
+ 
 //  if (!nvram_match("default_init","1"))
   {
     for (t = srouter_defaults; t->name; t++)
@@ -1109,6 +1114,28 @@ eval("insmod","ixp4xx","init_crypto=0");
 eval("ifconfig","ixp0","0.0.0.0","up");
 eval("vconfig","add","ixp0","1");
 eval("vconfig","add","ixp0","2");
+
+  eval ("insmod", "ath_hal");
+  eval ("insmod", "wlan");
+  eval ("insmod", "ath_rate_sample");
+  eval ("insmod", "ath_pci", "rfkill=0", "autocreate=none");
+
+
+  eval ("insmod", "wlan_acl");
+  eval ("insmod", "wlan_ccmp");
+  eval ("insmod", "wlan_tkip");
+  eval ("insmod", "wlan_wep");
+  eval ("insmod", "wlan_xauth");
+  eval ("insmod", "wlan_scan_ap");
+  eval ("insmod", "wlan_scan_sta");
+
+  eval ("ifconfig", "wifi0", "up");
+  eval ("ifconfig", "wifi1", "up");
+  eval ("ifconfig", "wifi2", "up");
+  eval ("ifconfig", "wifi3", "up");
+  eval ("ifconfig", "wifi4", "up");
+  eval ("ifconfig", "wifi5", "up");
+
 
 //  eval ("insmod", "mii");
 //  eval ("insmod", "korina");
