@@ -41,7 +41,7 @@
 				<dt>Wireless GUI Access</dt>
 				<dd>The default value is <i>Enabled</i>. The setting allows access to the routers setup (GUI) from wireless clients. Disable this if you wish to block all wireless clients from accessing the setup pages.</dd>
 				<dt>Radio Times Restrictions</dt>
-				<dd>You can manage the wireless radio transmission and adjust times restrictions.</dd>
+				<dd>The <em>Radio Times Restriction</em> facility constitutes a time switch for the radio. By default, the time switch is not active and the WLAN is permanently on. Enable the time switch, if you want to turn off the WLAN during some hours of the day. Hours during which the WLAN is on are marked in green, while red indicates that the radio is off. Clicking on the respective hour toggles between on and off.</dd>
 				<dt>WMM Support</dt>
 				<dd>Enable support of Wi-Fi Multimedia feature. Configuring QoS options consists of setting parameters on existing queues for different types of wireless traffic. You can configure different minimum and maximum wait times for the transmission of packets in each queue based on the requirements of the media being sent. Queues automatically provide minimum transmission delay for Voice, Video, multimedia, and mission critical applications, and rely on best-effort parameters for traditional IP data.<br /><br />
 					<div class="note">
