@@ -56,10 +56,6 @@ ej_dumpleases (int eid, webs_t wp, int argc, char_t ** argv)
 
   if (nvram_invmatch ("dhcpd_usenvram", "1"))
     {
-      /* Write out leases file from DNSMasq */
-      eval ("killall", "-SIGUSR2", "dnsmasq");
-      sleep (1);
-
       /* Parse leases file */
       if (!(fp = fopen ("/tmp/dnsmasq.leases", "r")))
 	fp = fopen ("/jffs/dnsmasq.leases", "r");
