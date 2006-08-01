@@ -39,7 +39,7 @@ function setDHCPTable() {
 		var cell = row.insertCell(-1);
 		cell.className = "bin";
 		cell.title = errmsg.err58;
-		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i + 1] + , + mac + "') })");
+		eval("addEvent(cell, 'click', function() { deleteLease('" + val[i + 1], mac + "') })");
 	}
 }
 
