@@ -1858,9 +1858,9 @@ start_wan_done (char *wan_ifname)
   stop_udhcpd ();
   start_udhcpd ();
   cprintf ("restart dns proxy\n");
-  /* Restart DNS proxy */
+  /* Restart DNS proxy 
   stop_dnsmasq ();
-  start_dnsmasq ();
+  start_dnsmasq (); */
   cprintf ("start firewall\n");
   /* Start firewall */
   start_firewall ();
