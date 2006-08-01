@@ -141,6 +141,7 @@ addEvent(window, "unload", function() {
 											<li><a href="Status_Lan.asp"><% tran("bmenu.statuLAN"); %></a></li>
 											<li><a href="Status_Wireless.asp"><% tran("bmenu.statuWLAN"); %></a></li>
 											<% show_sputnik(); %>
+											<% show_openvpn(); %>
 											<% nvram_invmatch("status_auth","1","<!--"); %>
 											<li><a href="Info.htm"><% tran("bmenu.statuSysInfo"); %></a></li>
 											<% nvram_invmatch("status_auth","1","-->"); %>
