@@ -80,7 +80,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_BUFFALO_WLAG54C 0x120f
 
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
-#define ROUTER_ASUS_WL500G_PRE 0x1300
+#define ROUTER_ASUS_WL500G_PRE 0x130f
 
 // Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x1416
