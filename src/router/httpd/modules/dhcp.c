@@ -248,16 +248,31 @@ int
 delete_leases (webs_t wp)
 {
   char buf[100];
-  char *mac;
+  char *iface;
   char *ip;
+  char *mac;
 
   if (nvram_match ("lan_proto", "static"))
     return -1;
 
+  if (nvram_match ("fon_enable", "1")
+      || (nvram_match ("chilli_nowifibridge", "1")
+	  && nvram_match ("chilli_enable", "1")))
+    {
+      iface = nvram_safe_get ("wl0_ifname"));
+    }
+  else
+    {
+      if (nvram_match ("chilli_enable", "1"))
+	iface = nvram_safe_get ("wl0_ifname");
+      else
+	iface = nvram_safe_get ("lan_ifname");
+    }
+
   ip = websGetVar (wp, "ip_del", NULL);
   mac = websGetVar (wp, "mac_del", NULL);
 
-  snprintf (buf, sizeof(buf), "dhcp_release %s %s %s", "br0", ip, mac);
+  snprintf (buf, sizeof(buf), "dhcp_release %s %s %s", iface, ip, mac);
   system (buf);
 
   return 0;
