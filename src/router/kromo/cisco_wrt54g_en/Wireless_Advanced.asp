@@ -313,7 +313,7 @@ addEvent(window, "load", function() {
 							<fieldset>
 			                	<legend><% tran("wl_basic.legend2"); %></legend>
 			                	<div class="setting">
-			                		<div class="label"><% tran("wl_basic.radio"); %></div>
+			                		<div class="label"><% tran("wl_basic.radiotimer"); %></div>
 			                		<input class="spaceradio" type="radio" value="1" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "1"); %> onclick="show_layer_ext(this, 'radio', true)" /><% tran("share.enable"); %>&nbsp;
 			                		<input class="spaceradio" type="radio" value="0" name="radio_timer_enable" <% nvram_checked("radio_timer_enable", "0"); %> onclick="show_layer_ext(this, 'radio', false)" /><% tran("share.disable"); %>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.disable + ")")</script></span>			                	
