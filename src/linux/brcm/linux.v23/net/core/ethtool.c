@@ -349,7 +349,7 @@ static int ethtool_set_coalesce(struct net_device *dev, void __user *useraddr)
 {
 	struct ethtool_coalesce coalesce;
 
-	if (!dev->ethtool_ops->get_coalesce)
+	if (!dev->ethtool_ops->set_coalesce)
 		return -EOPNOTSUPP;
 
 	if (copy_from_user(&coalesce, useraddr, sizeof(coalesce)))
@@ -403,7 +403,7 @@ static int ethtool_set_pauseparam(struct net_device *dev, void __user *useraddr)
 {
 	struct ethtool_pauseparam pauseparam;
 
-	if (!dev->ethtool_ops->get_pauseparam)
+	if (!dev->ethtool_ops->set_pauseparam)
 		return -EOPNOTSUPP;
 
 	if (copy_from_user(&pauseparam, useraddr, sizeof(pauseparam)))
