@@ -85,6 +85,9 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x1416
 
+//Buffalo WZR-G300N MIMO Router
+#define ROUTER_WZRG300N 0x1507
+
 
 #define NVROUTER "DD_BOARD"
 
