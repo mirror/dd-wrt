@@ -259,7 +259,7 @@ delete_leases (webs_t wp)
       || (nvram_match ("chilli_nowifibridge", "1")
 	  && nvram_match ("chilli_enable", "1")))
     {
-      iface = nvram_safe_get ("wl0_ifname"));
+      iface = nvram_safe_get ("wl0_ifname");
     }
   else
     {
