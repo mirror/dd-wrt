@@ -309,7 +309,7 @@ period_check (int sig)
 	}
     }
   else if (!(val & push)
-	   && (brand == ROUTER_BUFFALO_WHRG54S || brand == ROUTER_BUFFALO_HP_WHRG54S || brand == ROUTER_WRTSL54GS || brand == ROUTER_ASUS_WL500G_PRE))
+	   && (brand == ROUTER_BUFFALO_WHRG54S || brand == ROUTER_BUFFALO_HP_WHRG54S || brand == ROUTER_WRTSL54GS))
     {
       runStartup ("/etc/config", ".sesbutton");
       runStartup ("/jffs/etc/config", ".sesbutton");	//if available
