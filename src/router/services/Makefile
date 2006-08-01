@@ -255,8 +255,8 @@ clean:
 	rm -f *.c~
 
 install: all
-	install -d $(INSTALLDIR)/lib	
-	install services.so $(INSTALLDIR)/lib
+	install -d $(INSTALLDIR)/usr/lib	
+	install services.so $(INSTALLDIR)/usr/lib
 
 services.so: $(OBJS)
 #	$(AR) arc -o $@.a $^
