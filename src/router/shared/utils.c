@@ -344,6 +344,13 @@ internal_getRouterBrand ()
       }
   }
   
+  if (nvram_match ("boardnum", "20060330") &&
+      nvram_match ("boardtype","0x0472"))
+    {
+    setRouter ("Buffalo WZR-G300N");
+    return ROUTER_WZRG300N;
+    }
+  
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "bcm94710dev"))
     {
