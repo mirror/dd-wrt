@@ -183,11 +183,45 @@ static int wlcompat_ioctl_getiwrange(struct net_device *dev,
 		range->max_frag = 2346;
 
 	range->txpower_capa = IW_TXPOW_DBM;
+/*	range->encoding_size[0] = WEP1_KEY_SIZE;
+	range->encoding_size[1] = WEP128_KEY_SIZE;
+#if WIRELESS_EXT > 17
+	range->encoding_size[2] = TKIP_KEY_SIZE;
+#else
+	range->encoding_size[2] = 0;
+	range->encoding_size[3] = AES_KEY_SIZE;
 
+
+
+	
+#if WIRELESS_EXT > 17
+	range->enc_capa = IW_ENC_CAPA_WPA;
+	range->enc_capa |= IW_ENC_CAPA_CHIPHER_TKIP;
+	range->enc_capa |= IW_ENC_CAPA_CHIPHER_CCMP;
+	range->enc_capa |= IW_ENC_CAPA_WPA2;
+#endif	
+*/	
 	return 0;
 }
+/*
+#if WIRELESS_EXT > 17
+static bool
+ie_is_wpa_ie(uint8 **wpaie, uint8 **tlvs, int *tlvs_len)
+{
+	uint8 *ie = *wpaie;
 
+	if ((ie[1] >= 6) && 
+		!bcmp((const void *)&ie[2], (const void *)(WPA_OUI "\x01"), 4)) {
+		return TRUE;
+	}
 
+	ie += ie[1] + 2;
+	*tlvs_len -= (int)ie - (int)*tlvs;
+	*tlvs = ie;
+	return FALSE;
+}
+#endif
+*/
 static int wlcompat_set_scan(struct net_device *dev,
 			 struct iw_request_info *info,
 			 union iwreq_data *wrqu,
