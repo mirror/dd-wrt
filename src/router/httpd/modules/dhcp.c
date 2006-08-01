@@ -254,10 +254,16 @@ delete_leases (webs_t wp)
   if (nvram_match ("lan_proto", "static"))
     return -1;
 
-  mac = websGetVar (wp, "mac_del", NULL);
   ip = websGetVar (wp, "ip_del", NULL);
+  mac = websGetVar (wp, "mac_del", NULL);
 
-  sprintf (buf, "dhcp_release %s %s %s", "br0", ip, mac);
+  FILE *fp;
+  fp = fopen("/tmp/delete_lease", "w");
+  fprintf(fp, "%s", ip);
+  fprintf(fp, "%s", mac);
+  fclose(fp);
+
+  snprintf (buf, sizeof(buf), "dhcp_release %s %s %s", "br0", ip, mac);
   system (buf);
 
   return 0;
