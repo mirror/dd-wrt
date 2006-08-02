@@ -1,0 +1,40 @@
+#
+# FREEBSD SPECIFIC CONFIGURATION
+#
+
+INSTALL_PREFIX ?= /usr/local
+SBINDIR = $(INSTALL_PREFIX)/sbin
+ETCDIR = $(INSTALL_PREFIX)/etc
+LIBDIR = $(INSTALL_PREFIX)/lib
+DOCDIR = $(INSTALL_PREFIX)/share/doc
+MANDIR = $(INSTALL_PREFIX)/man
+
+SRCS +=		$(wildcard src/bsd/*.c) $(wildcard src/unix/*.c)
+HDRS +=		$(wildcard src/bsd/*.h) $(wildcard src/unix/*.h)
+
+LIBS =
+
+CFLAGS +=	-DOLSRD_GLOBAL_CONF_FILE=\"$(CFGFILE)\"
+
+ifdef NO_80211
+CFLAGS += -DFBSD_NO_80211=1
+endif
+
+ifdef LIBNET
+
+CFLAGS +=	-DSPOOF -I$(INSTALL_PREFIX)/include
+LIBS +=		-L$(INSTALL_PREFIX)/lib -lnet
+
+endif
+
+ifdef OLSRD_PLUGIN
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
+endif
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
+INSTALL_LIB =	install -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig
+
+OS_LIB_PTHREAD = -pthread
+OS_LIB_DYNLOAD =

@@ -1,0 +1,22 @@
+#
+# WINDOWS CE SPECIFIC CONFIGURATION
+#
+
+INSTALL_PREFIX ?=
+LIBDIR =	$(INSTALL_PREFIX)/usr/lib
+
+SRCS +=		$(wildcard src/win32/*.c)
+HDRS +=		$(wildcard src/win32/*.h)
+
+DEFINES =	-DWIN32 -DWINCE
+LIBS =		-lwinsock -liphlpapi
+
+INCLUDES += 	-Isrc/win32 -Isrc/win32/ce
+
+ifdef OLSRD_PLUGIN
+CFLAGS +=	
+LDFLAGS +=	-lolsrd
+endif
+
+OS_LIB_PTHREAD =
+OS_LIB_DYNLOAD =

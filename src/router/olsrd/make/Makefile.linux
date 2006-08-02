@@ -1,0 +1,31 @@
+#
+# LINUX SPECIFIC CONFIGURATION
+#
+
+INSTALL_PREFIX ?=
+LIBDIR =	$(INSTALL_PREFIX)/usr/lib
+
+SRCS += 	$(wildcard src/linux/*.c) $(wildcard src/unix/*.c)
+HDRS +=		$(wildcard src/linux/*.h) $(wildcard src/unix/*.h)
+
+DEFINES = 	-Dlinux
+LIBS =		
+
+PLUGIN_FULLNAME ?= $(PLUGIN_NAME).so.$(PLUGIN_VER)
+INSTALL_LIB =	install -D -m 755 $(PLUGIN_FULLNAME) $(LIBDIR)/$(PLUGIN_FULLNAME); \
+		/sbin/ldconfig -n $(LIBDIR)
+
+ifdef OLSRD_PLUGIN
+GENERATE_PIC = true
+endif
+ifeq ($(shell arch),x86_64)
+GENERATE_PIC = true
+endif
+
+ifdef GENERATE_PIC
+CFLAGS +=	-fPIC
+LDFLAGS +=	-fPIC
+endif
+		
+OS_LIB_PTHREAD = -lpthread
+OS_LIB_DYNLOAD = -ldl
