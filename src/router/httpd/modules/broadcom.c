@@ -4280,6 +4280,8 @@ if (nvram_match(mode,"g-only"))
     websWrite(wp,"Capture(wl_basic.g)");
 if (nvram_match(mode,"b-only"))
     websWrite(wp,"Capture(wl_basic.b)");
+if (nvram_match(mode,"n-only"))
+    websWrite(wp,"Capture(wl_basic.n)");
 if (nvram_match(mode,"a-only"))
     websWrite(wp,"Capture(wl_basic.a)");
 websWrite(wp,"</script>&nbsp;\n");

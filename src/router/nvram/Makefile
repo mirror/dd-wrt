@@ -31,8 +31,8 @@ vpath %.c $(SRCBASE)/shared/nvram
 all: libnvram.so nvram
 
 install: all
-	install -D libnvram.so $(INSTALLDIR)/usr/lib/libnvram.so
-	$(STRIP) $(INSTALLDIR)/usr/lib/libnvram.so
+	install -D libnvram.so $(INSTALLDIR)/lib/libnvram.so
+	$(STRIP) $(INSTALLDIR)/lib/libnvram.so
 	install -D nvram $(INSTALLDIR)/usr/sbin/nvram
 	$(STRIP) $(INSTALLDIR)/usr/sbin/nvram
 
@@ -42,7 +42,12 @@ clean:
 ifeq ($(ARCH),i386)
 libnvram.so: nvram_linux_gen.o nvram_convert.o
 	$(LD) -shared -o $@ $^
-else
+endif
+ifeq ($(ARCH),armeb)
+libnvram.so: nvram_linux_gen.o nvram_convert.o
+	$(LD) -shared -o $@ $^
+endif
+ifeq ($(ARCH),mipsel)
 libnvram.so: nvram_linux.o nvram_convert.o
 	$(LD) -shared -o $@ $^
 endif
