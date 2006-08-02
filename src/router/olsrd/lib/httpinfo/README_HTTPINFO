@@ -1,0 +1,82 @@
+HTTP MINI-SERVER PLUGIN FOR OLSRD 0.1
+by Andreas Tønnesen(andreto@olsr.org)
+
+-----------------------------------------------------
+
+ ABOUT
+
+This plugin implements a tiny HTTP server that
+will gespond to a GET request by returning a HTML
+formatted page contanin various information about
+the currently running olsrd process.
+This information includes detailed link status for
+all links and neighbors, all olsrd routes in the 
+kernel, local configuration, uptime and more. The
+plugin can also generate a olsrd configfile based
+on current running configuration.
+In adittion an experimental administrtion interface
+is available.
+
+-----------------------------------------------------
+
+ PARAMETERS
+
+The plugin takes the parameter "Port" "[portnumber]" 
+to set the TCP port on which the server is to run. 
+It defaults to 1978.
+Now remember to open this port in your firewall if 
+planning to access the HTTP server from a remote host!
+The parameter "Host" "[IP address]" is used to allow
+access from a single host(muliple such entries can
+be set) and the parameter "Net" "[IP net] [IP mask]"
+is used to allow access from entire net-ranges.
+To allow access from all hosts do:
+ PlParam   "Net" "0.0.0.0 0.0.0.0"
+
+A configuration example:
+LoadPlugin "olsrd_httpinfo.so.0.1"
+{
+    PlParam     "port"   "80"
+    PlParam     "Host"   "163.24.87.3"
+    PlParam     "Host"   "80.23.53.22"
+    PlParam     "Net"    "10.0.0.0 255.0.0.0"
+    PlParam     "Net"    "192.168.0.0 255.255.0.0"
+}
+
+This will run the webserver on port 80(the normal
+HTTP port) and allow access from the hosts 163.24.87.3
+and 80.23.53.22 and the networks 10.0.0.0/8 and
+192.168.0.0/16.
+access is always allowed from 127.0.0.1(localhost).
+
+-----------------------------------------------------
+
+ EXPERIMENTAL ADMIN INTERFACE
+
+The plugin can be compiled with a experimental 
+adminitrator interface. This is a web page that will
+let the user change olsrd settings in realtime.
+To compile with this feature pass ADMIN_INTERFACE=1
+as an argument to make(eg. make ADMIN_INTERFACE=1)
+
+-----------------------------------------------------
+
+NOTE!
+This plugin is very olsrd version sensitive. This means
+that to be sure everything woks as it is supposed to
+you should use the version of olsrd that the plugin 
+was shipped with. If using CVS you should check 
+out/update both olsrd and this plugin.
+
+The plugin should now compile on windows and FreeBSD
+as well.
+To compile in windows:
+make OS=win32
+to compile in FreeBSD:
+gmake OS=fbsd
+
+installation:
+make
+make install
+
+- Andreas T
