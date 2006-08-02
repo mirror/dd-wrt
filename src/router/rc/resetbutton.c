@@ -311,8 +311,8 @@ period_check (int sig)
 	    }
 	  if (brand == ROUTER_WRTSL54GS)
 	    {
-	      eval ("gpio", "enable", "5");
-	      eval ("gpio", "disable", "7");
+	      eval ("gpio", "enable", "7");
+	      eval ("gpio", "disable", "5");
 	    }
 	  ses_mode = 1;
 	}
