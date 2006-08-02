@@ -548,17 +548,6 @@ occur. In any case note that ISC leasefile integration is a deprecated
 feature. It should not be used in new installations, and will be
 removed in a future release.
 .TP 
-.B \-9, --leasefile-ro
-Read lease information from stdin at startup, instead of from a
-leasefile. Do not write a leasefile as the lease database
-changes. This option is intended for use with an external lease
-database: the database is kept up-to-date by the leasechange script,
-and the lease information is given to dnsmasq at startup via
-stdin. The expected format is the same as a standard dnsmasq
-leasefile. Setting this
-option also forces the leasechange script to be called on changes
-to the client-id and lease length and expiry time.
-.TP
 .B \-6 --dhcp-script=<path>
 Whenever a new DHCP lease is created, or an old one destroyed, the
 binary specified by this option is run. The arguments to the process
@@ -587,6 +576,20 @@ invokation exits. At dnsmasq startup, the script will be invoked for
 all existing leases as they are read from the lease file. Expired
 leases will be called with "del" and others with "old". <path>
 must be an absolute pathname, no PATH search occurs.
+.TP 
+.B \-9, --leasefile-ro
+Completely suppress use of the lease database file. The file will not
+be created, read, or written. Change the way the lease-change
+script (if one is provided) is called, so that the lease database may
+be maintained in external storage by the script. In addition to the
+invokations  given in 
+.B  --dhcp-script
+the lease-change script is called once, at dnsmasq startup, with the
+single argument "init". When called like this the script should write
+the saved state of the lease database, in dnsmasq leasefile format, to
+stdout and exit with zero exit code. Setting this
+option also forces the leasechange script to be called on changes
+to the client-id and lease length and expiry time.
 .TP
 .B \-s, --domain=<domain>
 Specifies the domain for the DHCP server. This has two effects;

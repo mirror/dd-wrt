@@ -16,23 +16,30 @@ corresponding to the line in a leasefile:
 
 dnsmasq_lease_192.168.1.56=3600 00:41:4a:05:80:74 192.168.1.56 * *
 
-By giving dnsmasq the leasefile-ro command, it no longer writes a
-leasefile, but it does read an initial leasefile from stdin at
-startup, so if we startup dnsmasq as
+By giving dnsmasq the leasefile-ro command, it no longer creates or writes a
+leasefile; responsibility for maintaining the lease database transfers
+to the lease change script. At startup, in leasefile-ro mode,
+dnsmasq will run
 
-lease_update.sh init | dnsmasq --leasefile-ro
+"<lease_change_script> init" 
 
-then existing leases will by sucked out of the NVRAM and fed into dnsmasq.
+and read whatever that command spits out, expecting it to
+be in dnsmasq leasefile format.
 
-The second part of the problem is keeping the NVRAM up-to-date: This
+So the lease change script, given "init" as argv[1] will 
+suck existing leases out of the NVRAM and emit them from
+stdout in the correct format.
+
+The second part of the problem is keeping the NVRAM up-to-date: this
 is done by the lease-change script which dnsmasq runs when a lease is
-updated. lease-update.sh handles this function too, so the complete
-startup is
+updated. When it is called with argv[1] as "old", "add", or "del"
+it updates the relevant nvram entry.
 
-lease_update.sh init | dnsmasq --leasefile-ro --dhcp-script=/path/to/lease_update.sh
+So, dnsmasq should be run as :
 
-Now, when a lease record is created/destroyed/updated the script will
-run, and update the NVRAM records.
+dnsmasq --leasefile-ro --dhcp-script=/path/to/lease_update.sh
+
+or the same flags added to /etc/dnsmasq.conf
 
 
 
@@ -61,11 +68,13 @@ ammended, probably by changing it to read the output of
 
 Thanks:
 
-To Steve Horbachuk for checks on the script.
+To Steve Horbachuk for checks on the script and debugging beyond the 
+call of duty.
 
 
 Simon Kelley
-Fri Jul 14 14:25:12 BST 2006
+Fri Jul 28 11:51:13 BST 2006
+
 
 
 
