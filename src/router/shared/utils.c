@@ -350,6 +350,13 @@ internal_getRouterBrand ()
     setRouter ("Buffalo WZR-G300N");
     return ROUTER_WZRG300N;
     }
+  if (nvram_match ("boardnum","42") &&
+      nvram_match ("boardtype","0x0472")&&
+      nvram_match ("cardbus","1"))
+    {
+    setRouter ("Linksys WRT WZR-G300N");    
+    return ROUTER_WRT300N;
+    }
   
   if (nvram_match ("boardnum", "42") &&
       nvram_match ("boardtype", "bcm94710dev"))

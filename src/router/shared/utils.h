@@ -88,6 +88,8 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 //Buffalo WZR-G300N MIMO Router
 #define ROUTER_WZRG300N 0x1504
 
+//Linksys WRT300N v1
+#define ROUTER_WRT300N 0x160f
 
 #define NVROUTER "DD_BOARD"
 
