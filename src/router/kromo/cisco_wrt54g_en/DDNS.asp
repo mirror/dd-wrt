@@ -135,7 +135,7 @@ function SelDDNS(num,F) {
 									</select>
 								</div>
 
-								<!-- 1 : Dyndns.org -->
+
 								<% nvram_selmatch("ddns_enable","0","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
@@ -172,7 +172,7 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
 								<% nvram_selmatch("ddns_enable","6","-->"); %>
 																
-								<!-- 2 : freedns.afraid.org -->
+
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
 								<% nvram_selmatch("ddns_enable","4","<!--"); %>
@@ -196,7 +196,7 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
 								<% nvram_selmatch("ddns_enable","6","-->"); %>
 																
-								<!-- 3 : zoneedit.com -->
+
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","4","<!--"); %>
@@ -220,7 +220,7 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
 								<% nvram_selmatch("ddns_enable","6","-->"); %>
 																
-								<!-- 4 : no-ip.com -->
+
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
@@ -244,7 +244,7 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
 								<% nvram_selmatch("ddns_enable","6","-->"); %>
 								
-								<!-- 6 : 3322.org -->
+
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
@@ -278,7 +278,7 @@ function SelDDNS(num,F) {
 								<% nvram_selmatch("ddns_enable","4","-->"); %>
 								<% nvram_selmatch("ddns_enable","5","-->"); %>
 								
-								<!-- 5 : CUSTOM PARAMETERS -->
+
 								<% nvram_selmatch("ddns_enable","1","<!--"); %>
 								<% nvram_selmatch("ddns_enable","2","<!--"); %>
 								<% nvram_selmatch("ddns_enable","3","<!--"); %>
