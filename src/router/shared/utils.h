@@ -82,13 +82,13 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 // Asus WL-500g Premium (4704 cpu + BCM5325E switch), (fccid MSQWL500GP)
 #define ROUTER_ASUS_WL500G_PRE 0x130f
 
-// Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
+// Linksys WRTSL54GS (4704 cpu + BCM5325E switch), (fccid: Q87-WTSLGS, same without USB: Q87-WRTH54GS) 
 #define ROUTER_WRTSL54GS 0x1416
 
-//Buffalo WZR-G300N MIMO Router
+//Buffalo WZR-G300N MIMO Router (radio fccid: Buffalo FDI-09101466-0)
 #define ROUTER_WZRG300N 0x1504
 
-//Linksys WRT300N v1
+//Linksys WRT300N v1 (4704 cpu + BCM5325F switch), (fccid: Linksys Q87-WRT300N or Q87-WRT300NV1)
 #define ROUTER_WRT300N 0x1616
 
 #define NVROUTER "DD_BOARD"
