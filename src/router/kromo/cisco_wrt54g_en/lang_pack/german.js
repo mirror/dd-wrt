@@ -1395,8 +1395,9 @@ wl_basic.adhoc="Adhoc";
 wl_basic.mixed="Gemischt";
 wl_basic.b="Nur-B";
 wl_basic.g="Nur-G";
+wl_basic.bg="BG-Gemischt";
 wl_basic.a="Nur-A";
-
+wl_basic.n="Nur-N";
 wl_basic.legend2="WLAN-Zeiteinschränkung";
 wl_basic.radio="WLAN Schaltuhr";
 wl_basic.radio_on="WLAN ist An";

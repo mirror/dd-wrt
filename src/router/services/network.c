@@ -439,12 +439,12 @@ wlconf_up (char *name)
     }
 #endif
   ret = eval ("wlconf", name, "up");
-  eval("wl","radio","off");
+/*  eval("wl","radio","off");
   eval("wl","atten","0","0","60");
   eval("wl","lrl","16");
   eval("wl","srl","16");
   eval("wl","interference","0");
-  eval("wl","radio","on");
+  eval("wl","radio","on");*/
   gmode = atoi (nvram_safe_get ("wl0_gmode"));
 
   /* Get current phy type */
@@ -666,10 +666,10 @@ start_lan (void)
       MAC_ADD (mac);
       MAC_ADD (mac);		// The wireless mac equal lan mac add 2
       ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
-      if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_macaddr"))
+//      if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_macaddr"))
 	{
 	  nvram_set ("wl0_hwaddr", mac);
-	  nvram_commit ();
+//	  nvram_commit ();
 	}
     }
   ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -770,6 +770,46 @@ start_lan (void)
 	  br_add_interface (lan_ifname, name);	// eval ("brctl", "addif", lan_ifname, name);
 	else
 	  {
+
+  if (nvram_match ("mac_clone_enable", "1") &&
+      nvram_invmatch ("def_whwaddr", "00:00:00:00:00:00") &&
+      nvram_invmatch ("def_whwaddr", ""))
+    {
+      ether_atoe (nvram_safe_get ("def_whwaddr"), ifr.ifr_hwaddr.sa_data);
+
+#ifndef HAVE_MADWIFI
+    }
+  else
+    {
+      strcpy (mac, nvram_safe_get ("et0macaddr"));
+      MAC_ADD (mac);
+      MAC_ADD (mac);		// The wireless mac equal lan mac add 2
+      ether_atoe (mac, ifr.ifr_hwaddr.sa_data);
+//      if (nvram_match ("wl0_hwaddr", "") || !nvram_get ("wl0_macaddr"))
+	{
+	  nvram_set ("wl0_hwaddr", mac);
+//	  nvram_commit ();
+	}
+    }
+  ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+  strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
+
+  if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+    perror ("Write wireless mac fail : ");
+  else
+    cprintf ("Write wireless mac successfully\n");
+
+#else
+
+      ifr.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+      strncpy (ifr.ifr_name, wl_face, IFNAMSIZ);
+
+      if (ioctl (s, SIOCSIFHWADDR, &ifr) == -1)
+	perror ("Write wireless mac fail : ");
+      else
+	cprintf ("Write wireless mac successfully\n");
+    }
+#endif
 #ifdef HAVE_MSSID
 /*	    char tmac[16];
 	    sprintf (tmac, "%s_hwaddr", "wl0");
