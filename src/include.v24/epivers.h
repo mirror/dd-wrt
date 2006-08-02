@@ -18,18 +18,18 @@
 
 #define	EPI_MINOR_VERSION	80
 
-#define	EPI_RC_NUMBER		9
+#define	EPI_RC_NUMBER		17
 
 #define	EPI_INCREMENTAL_NUMBER	2
 
 #define	EPI_BUILD_NUMBER	0
 
-#define	EPI_VERSION		4, 80, 9, 2
+#define	EPI_VERSION		4, 80, 17, 0
 
-#define	EPI_VERSION_NUM		0x04500902
+#define	EPI_VERSION_NUM		0x04501100
 
 /* Driver Version String, ASCII, 32 chars max */
-#define	EPI_VERSION_STR		"4.80.9.2"
-#define	EPI_ROUTER_VERSION_STR	"4.81.9.2"
+#define	EPI_VERSION_STR		"4.80.17.0"
+#define	EPI_ROUTER_VERSION_STR	"4.81.17.0"
 
 #endif /* _epivers_h_ */
