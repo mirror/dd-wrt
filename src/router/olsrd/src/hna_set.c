@@ -318,7 +318,6 @@ olsr_time_out_hna_set(void *foo)
  *
  *@return nada
  */
-#ifndef SVEN_OLA
 void
 olsr_print_hna_set()
 {
@@ -365,6 +364,5 @@ olsr_print_hna_set()
     }
 
 }
-#endif
 
 

@@ -349,7 +349,6 @@ olsr_set_dup_forward(union olsr_ip_addr *originator,
 
 
 
-#ifndef SVEN_OLA
 
 void
 olsr_print_duplicate_table()
@@ -374,4 +373,3 @@ olsr_print_duplicate_table()
 printf("\n");
 
 }
-#endif

@@ -1,6 +1,6 @@
 /*
  * The olsr.org Optimized Link-State Routing daemon(olsrd)
- * Copyright (c) 2004, Thomas Lopatic (thomas@lopatic.de)
+ * Copyright (c) 2004, Andreas Tønnesen(andreto@olsr.org)
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without 
@@ -36,43 +36,20 @@
  * to the project. For more information see the website or contact
  * the copyright holders.
  *
- * $Id: lq_list.h,v 1.3 2005/02/20 18:52:18 kattemat Exp $
+ * $Id: print_packet.h,v 1.1 2005/05/26 09:55:11 kattemat Exp $
  */
 
-#ifndef _LQ_LIST_H
-#define _LQ_LIST_H
+#ifndef _PRINT_PACKET
+#define _PRINT_PACKET
 
-struct list_node
-{
-  struct list_node *next;
-  struct list_node *prev;
+#include "olsr_types.h"
+#include "olsr_protocol.h"
+#include <stdio.h>
 
-  void *data;
-};
+olsr_8_t
+print_olsr_serialized_packet(FILE *, union olsr_packet *, olsr_u16_t, union olsr_ip_addr *);
 
-struct list
-{
-  struct list_node *head;
-  struct list_node *tail;
-};
-
-void list_init(struct list *list);
-
-struct list_node *list_get_head(struct list *list);
-struct list_node *list_get_tail(struct list *list);
-
-struct list_node *list_get_next(struct list_node *node);
-struct list_node *list_get_prev(struct list_node *node);
-
-void list_add_head(struct list *list, struct list_node *node);
-void list_add_tail(struct list *list, struct list_node *node);
-
-void list_add_before(struct list *list, struct list_node *pos_node,
-                     struct list_node *node);
-void list_add_after(struct list *list, struct list_node *pos_node,
-                    struct list_node *node);
-
-void list_remove(struct list *list, struct list_node *node);
+olsr_8_t
+print_olsr_serialized_message(FILE *, union olsr_message *);
 
 #endif
-

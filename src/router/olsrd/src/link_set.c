@@ -849,7 +849,6 @@ olsr_time_out_hysteresis()
   return;
 }
 
-#ifndef SVEN_OLA
 void olsr_print_link_set(void)
 {
   struct link_entry *walker;
@@ -890,7 +889,6 @@ void olsr_print_link_set(void)
 		walker->neigh_link_quality, etx)
   }
 }
-#endif
 
 static void update_packet_loss_worker(struct link_entry *entry, int lost)
 {

@@ -50,9 +50,7 @@
 #include "rebuild_packet.h"
 #include "net_os.h"
 #include "log.h"
-#ifndef SVEN_OLA
 #include "print_packet.h"
-#endif
 
 #ifdef WIN32
 #undef EWOULDBLOCK
@@ -176,11 +174,9 @@ parse_packet(struct olsr *olsr, int size, struct interface *in_if, union olsr_ip
 
   //printf("Message from %s\n\n", olsr_ip_to_string(from_addr)); 
       
-#ifndef SVEN_OLA
   /* Display packet */
   if(disp_pack_in)
     print_olsr_serialized_packet(stdout, (union olsr_packet *)olsr, size, from_addr);
-#endif
 
   if(olsr_cnf->ip_version == AF_INET)
     msgsize = ntohs(m->v4.olsr_msgsize);

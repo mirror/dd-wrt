@@ -48,7 +48,6 @@ void list_init(struct list *list)
   list->tail = NULL;
 }
 
-#ifndef SVEN_OLA
 struct list_node *list_get_head(struct list *list)
 {
   return list->head;
@@ -68,7 +67,6 @@ struct list_node *list_get_prev(struct list_node *node)
 {
   return node->prev;
 }
-#endif
 
 void list_add_head(struct list *list, struct list_node *node)
 {
