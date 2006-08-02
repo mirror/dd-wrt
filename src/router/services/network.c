@@ -580,6 +580,20 @@ cprintf("is all?\n");
       WL_IOCTL (name, 102, &reg, sizeof (reg));
 #endif
     }
+		
+		if (nvram_match("wl0_mode","sta") || nvram_match("wl0_mode","infra"))
+		{
+		val = 0;
+		WL_IOCTL(name, WLC_SET_WET, &val, sizeof(val));
+		if (nvram_match("wl_mode", "infra")){
+			val = 0;
+			WL_IOCTL(name, WLC_SET_INFRA, &val, sizeof(val));
+		}
+		else{
+			val = 1;
+			WL_IOCTL(name, WLC_SET_INFRA, &val, sizeof(val));
+		}
+		}
 
   return ret;
 
