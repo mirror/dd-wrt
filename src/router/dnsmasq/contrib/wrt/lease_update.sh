@@ -15,7 +15,7 @@
 # if $1 is add del or old, this is a dnsmasq-called lease-change
 # script, update the nvram database. if $1 is init, emit a 
 # dnsmasq-format lease file to stdout representing the current state of the 
-# database, this is called by the dnsmasq startup script.
+# database, this is called by dnsmasq at startup.
 
 NVRAM=/usr/sbin/nvram
 PREFIX=dnsmasq_lease_
