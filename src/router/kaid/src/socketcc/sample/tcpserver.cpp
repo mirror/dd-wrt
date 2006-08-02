@@ -38,7 +38,7 @@
 /******************************************************************************/
 TCPServer::TCPServer(int iPortNumber, int iBacklog, int iMinSleepThreads,
                      int iMaxSleepThreads, int iThreadInc,
-                     TCPServerThread *pcInitialThread = NULL, bool bUseIPv6 = false)
+                     TCPServerThread *pcInitialThread, bool bUseIPv6)
 {
     pcListeningSocket = new TCPServerSocket(iPortNumber, iBacklog, bUseIPv6);
     StartServer(pcInitialThread, iMinSleepThreads, iMaxSleepThreads, iThreadInc);
@@ -52,7 +52,7 @@ TCPServer::TCPServer(int iPortNumber, int iBacklog, int iMinSleepThreads,
 /******************************************************************************/
 TCPServer::TCPServer(IPAddress &cServerAddress, int iPortNumber, int iBacklog,
                      int iMinSleepThreads, int iMaxSleepThreads, int iThreadInc,
-                     TCPServerThread *pcInitialThread = NULL)
+                     TCPServerThread *pcInitialThread)
 {
     pcListeningSocket = new TCPServerSocket(cServerAddress, iPortNumber, iBacklog);
     StartServer(pcInitialThread, iMinSleepThreads, iMaxSleepThreads, iThreadInc);

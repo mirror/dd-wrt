@@ -34,8 +34,8 @@
 #include <netinet/udp.h>
 #include <netinet/tcp.h>
 
-#include "../../libpcap/pcap.h"
-#include "../../libpcap/pcap-bpf.h"
+#include "libpcap/pcap.h"
+#include "libpcap/pcap-bpf.h"
 #include "pthreadcc.h"
 #include "socketcc.h"
 
@@ -51,6 +51,7 @@
 #include "OrbDgramThread.h"
 #include "PktSnifferThread.h"
 #include "ConfigFile.h"
+#include "PersistFile.h"
 #include "Api.h"
 #include "StrUtils.h"
 
@@ -79,6 +80,14 @@ CKaiEngine::MyPort ()
 IPAddress & CKaiEngine::MyIP ()
 {
 	return m_cUOrb->MyIP ();
+}
+IPAddress & CKaiEngine::MyDeepIP ()
+{
+	return m_cUOrb->MyDeepIP ();
+}
+int CKaiEngine::MyDeepPort()
+{
+	return m_cUOrb->MyDeepPort();
 }
 
 void
@@ -563,12 +572,19 @@ CKaiEngine::HandleUIRequest ()
 			}
 			else
 			{
+				m_cUOrb->RemakeSocket();
+
+				if(m_cConf->DeepPort!=0)
+				{
+					SendClientStatus ("Scanning deep resolution servers...");
+					m_cUOrb->ScanDeepResolutionServers();
+				}
+				
 				SendClientStatus ("Querying orbital mesh...");
 				StartTimer(ORB_REQUERY_TIMER);
 				IPAddress cNearestOrb;
 				
 				// First attempt
-				m_cUOrb->RemakeSocket();
 				cNearestOrb = m_cUOrb->FindNearestOrb();
 				
 				while (!m_cUOrb->m_bOrbFound)
@@ -591,11 +607,25 @@ CKaiEngine::HandleUIRequest ()
 			// UDP to contact
 			CMessengerItem *theContact;
 			theContact = FindUser (vsSegments[1]);
-			if (theContact)	// TODO: DeepIP stuff...
-				m_cUOrb->RelayDatagram ("P;" + m_cConf->Username +
-							";" + vsSegments[2] + ";",
-							theContact->m_sIPAddress,
-							theContact->m_iPort);
+			if (theContact)
+			{
+				if(theContact->m_bUseDeep)
+				{
+					m_cUOrb->RelayDatagram ("P;" + m_cConf->Username +
+								";" + vsSegments[2] + ";",
+								theContact->m_sDeepIP,
+								theContact->m_iDeepPort,
+								true);
+				}
+				else
+				{
+					m_cUOrb->RelayDatagram ("P;" + m_cConf->Username +
+								";" + vsSegments[2] + ";",
+								theContact->m_sIPAddress,
+								theContact->m_iPort,
+								false);
+				}
+			}			
 			break;
 		}
 		case KAI_CLIENT_DETACH:
@@ -647,10 +677,13 @@ CKaiEngine::HandleUIRequest ()
 			string s = case_lower(temp.substr (0, temp.find(" ")));
 			if (s == "/orb")
 			{
+				// Make sure there's something after /orb before passing it along - MF
+				if(temp.size()>5)
+					
 				// The ui has send ao orb request - process it
-				if (m_cTOrb)
-					m_cTOrb->SendStream ("KAI_ORB_COMMAND;" +
-								 temp.substr (5) + ";");
+					if (m_cTOrb)
+						m_cTOrb->SendStream ("KAI_ORB_COMMAND;" +
+								 	temp.substr (5) + ";");
 				return;
 			}
 			else if (s == "/engine")
@@ -792,11 +825,10 @@ CKaiEngine::HandleUIRequest ()
 				break;
 			}
 			string msg = "$;" + m_cConf->Username + ";" + vsSegments[2] + ";";
-			if (!theGuy->m_sIPAddress.empty()) {
-				m_cUOrb->RelayDatagram(msg, theGuy->m_sIPAddress, theGuy->m_iPort);
-			} else {
-				// TODO: Send via Deep
-			}
+			if(theGuy->m_bUseDeep)
+				m_cUOrb->RelayDatagram(msg, theGuy->m_sDeepIP, theGuy->m_iDeepPort, true);
+			else
+				m_cUOrb->RelayDatagram(msg, theGuy->m_sIPAddress, theGuy->m_iPort, false);
 			break;
 		}
 		case KAI_CLIENT_SPEEX_ON:
@@ -832,15 +864,12 @@ CKaiEngine::HandleUIRequest ()
 			if(!theGuy) {
 				break;
 			} else {
-				if( theGuy->m_sIPAddress.empty() )
-				{
-					// Empty! Send via Deep
-				}
-				else
-				{
+				if(theGuy->m_bUseDeep)
 					m_cUOrb->RelayDatagram("};" + m_cConf->Username + ";" + vsSegments[2] + ";",
-						theGuy->m_sIPAddress, theGuy->m_iPort);
-				}
+						theGuy->m_sDeepIP, theGuy->m_iDeepPort, true);
+				else			
+					m_cUOrb->RelayDatagram("};" + m_cConf->Username + ";" + vsSegments[2] + ";",
+						theGuy->m_sIPAddress, theGuy->m_iPort, false);
 			}
 			break;
 		}
@@ -868,19 +897,26 @@ CKaiEngine::Execute ()
 	int iBytesTransferred, retval;
 	char pcBuffer[2048];
 	SocketSet mySet;
-
+	struct timeval timeout;
+	
 	syslog (LOG_INFO, "Now waiting for UI commands.");
 
-	mySet += (SocketBase *) m_cListeningSocket;
-
+	
 	while (!m_bTerminate)
 	{
 		try
 		{
-			retval = select ((int) mySet + 1, mySet, NULL, NULL,
-					 NULL);
-			if (retval == -1)
-				throw errClientError;
+			// Changed to 1-second timeout to allow clean shutdown - MF
+			do
+			{
+				timeout.tv_sec=1;
+				timeout.tv_usec=0;
+				mySet.Clear();
+				mySet += (SocketBase *) m_cListeningSocket;
+				retval = select ((int) mySet + 1, mySet, NULL, NULL, &timeout);
+				if (retval == -1)
+					throw errClientError;
+			} while((retval==0) && (!m_bTerminate));
 
 			iBytesTransferred =
 				m_cListeningSocket->ReceiveDatagram (pcBuffer,
@@ -907,6 +943,12 @@ CKaiEngine::Execute ()
 		}
 		catch (...)
 		{
+			if(!m_bTerminate)
+			{
+				// If the engine throws an error, shut down cleanly - MF
+				verbositylog(1,"ENGINE","An unrecoverable error occurred in the engine process.  kaid is shutting down.");
+				raise(SIGTERM);
+			}
 			Shutdown();
 			return NULL;
 		}
@@ -1029,12 +1071,12 @@ CMessengerItem *
 CKaiEngine::FindUser (string sIP, int iPort)
 {
 	vector <CMessengerItem*>::iterator i;
-	for (i = m_cMessengerContacts.begin ();
-	     i != m_cMessengerContacts.end (); i++) {
-		if (((*i)->m_sIPAddress == sIP) && ((*i)->m_iPort == iPort))
+	for (i = m_cMessengerContacts.begin (); i != m_cMessengerContacts.end (); i++)
 		{
+		if (((*i)->m_sIPAddress == sIP) && ((*i)->m_iPort == iPort))
 			return *i;
-		}
+		if(((*i)->m_sDeepIP == sIP) && ((*i)->m_iDeepPort == iPort))
+			return *i;
 	}
 	return NULL;
 }
@@ -1059,9 +1101,9 @@ CKaiEngine::FindArenaUser (string sIP, int iPort)
 	for (i = m_cArenaContacts.begin (); i != m_cArenaContacts.end (); i++)
 	{
 		if (((*i)->m_sIPAddress == sIP) && ((*i)->m_iPort == iPort))
-		{
 			return *i;
-		}
+		if(((*i)->m_sDeepIP == sIP) && ((*i)->m_iDeepPort == iPort))
+			return *i;		
 	}
 	return NULL;
 }
@@ -1092,6 +1134,8 @@ CKaiEngine::SetOfflineContact (const string & user)
 //	if(theGuy->m_bSpeexConnected)
 //			SendClientResponse("KAI_CLIENT_SPEEX_DISCONNECTED;");
 	theGuy->m_bSpeexConnected = false;
+	theGuy->m_bUseDeep=false;
+	theGuy->m_bDeepUnknown=false;
 
 	CheckIfSpeexNeeded();
 }
@@ -1187,6 +1231,7 @@ CKaiEngine::AddArenaContact (string name, string ip, int port, string deepip,
 	newGuy->m_iPort = port;
 	newGuy->m_sDeepIP = deepip;
 	newGuy->m_iDeepPort = deepport;
+	newGuy->m_bDeepUnknown=((m_cConf->UseDeep) && (deepip.size()>0) && (deepport!=0));
 	m_cArenaContacts.push_back (newGuy);
 }
 
@@ -1204,7 +1249,9 @@ CKaiEngine::SetOnlineContact (string contact, string ipaddress,
 	theGuy->m_sIPAddress = ipaddress;
 	theGuy->m_iPort = port;
 	theGuy->m_iState = 1;
-	// TODO: Handle Deep Stuff    
+	theGuy->m_sDeepIP=deepip;
+	theGuy->m_iDeepPort=deepport;
+	theGuy->m_bDeepUnknown=((m_cConf->UseDeep) && (deepip.size()>0) && (deepport!=0));
 }
 
 void
@@ -1240,12 +1287,17 @@ CKaiEngine::RequeryMessengerConnections ()
 		theGuy->Reset();
 		theGuy->m_tvLastConnectionQuery = Now();
 
-		// Tell the streamer to send it - to any non null ip
-		// TODO: Handle Deep stuff
+		if(theGuy->m_bDeepUnknown || theGuy->m_bUseDeep)			
 		m_cUOrb->
 			RelayDatagram ((theGuy->m_iSpeexMode !=
 					0) ? "1;1;" : "1;0;",
-				       theGuy->m_sIPAddress, theGuy->m_iPort);
+					       theGuy->m_sDeepIP, theGuy->m_iDeepPort, true);
+		if(theGuy->m_bDeepUnknown || !theGuy->m_bUseDeep)
+			m_cUOrb->
+				RelayDatagram ((theGuy->m_iSpeexMode !=
+						0) ? "1;1;" : "1;0;",
+					       theGuy->m_sIPAddress, theGuy->m_iPort, false);
+			
 	}
 	mutexProtect.Unlock ();
 }
@@ -1268,8 +1320,10 @@ CKaiEngine::RequeryArenaConnections ()
 	theGuy->m_tvLastConnectionQuery = Now();
 
 	// Tell the streamer to send it - to any non null ip
-	// TODO: Handle Deep stuff
-	m_cUOrb->RelayDatagram ("3;", theGuy->m_sIPAddress, theGuy->m_iPort);
+	if(theGuy->m_bDeepUnknown || theGuy->m_bUseDeep)
+		m_cUOrb->RelayDatagram ("3;", theGuy->m_sDeepIP, theGuy->m_iDeepPort, true);
+	if(theGuy->m_bDeepUnknown || !theGuy->m_bUseDeep)
+		m_cUOrb->RelayDatagram ("3;", theGuy->m_sIPAddress, theGuy->m_iPort, false);
 	mutexProtect.Unlock();
 }
 
@@ -1289,7 +1343,9 @@ CKaiEngine::CleanMessengerContacts ()
 				m_cTOrb->Deliver (c->m_sContactName, '6',
 						  m_cConf->Username,
 						  MyIP ().GetAddressString (),
-						  MyPort (), "", 0);
+						  MyPort (), 
+						  (m_cConf->UseDeep?MyDeepIP().GetAddressString():""),
+						  (m_cConf->UseDeep?MyDeepPort():0));
 			}
 		}
 	}
@@ -1394,7 +1450,10 @@ CKaiEngine::SendPresteering()
 						if (TimeDelta(b->m_tvLastPacketTime) < 1000 && a!=b)
 						{
 							// Send it
-							m_cUOrb->RelayDatagram ("^;"+b->m_sContactName+";", a->m_sIPAddress, a->m_iPort);
+							if(a->m_bUseDeep)
+								m_cUOrb->RelayDatagram ("^;"+b->m_sContactName+";", a->m_sDeepIP, a->m_iDeepPort, true);
+							else
+								m_cUOrb->RelayDatagram ("^;"+b->m_sContactName+";", a->m_sIPAddress, a->m_iPort, false);
 						}
 					}
 				}
@@ -1435,6 +1494,7 @@ CKaiEngine::HandleEthernetFrame (const u_char * packet, int packet_size,
     
 	// Strip eth parts
 	char aux[18];
+	string sConsoleID;
 	string srcmac, dstmac, srcip, dstip;
 	int srcport, dstport;
 	struct ether_header *ep;
@@ -1516,19 +1576,24 @@ CKaiEngine::HandleEthernetFrame (const u_char * packet, int packet_size,
 		// Make sure only known patterns are allowed to go
 		// through. Every other mac pattern is dropped.
 		bool IsXbox = false, IsPS2 = false, IsGC = false, IsPSP = false;
-		IsXbox = (console == "0050F2" || console == "000D3A");
-		IsPS2 = (console == "00041F" || console == "001315");
-		IsGC = (console == "0009BF");
-		IsPSP = (console == "00014A");
+		sConsoleID=m_cConf->GetConsoleID(console);
+		if(sConsoleID=="Xbox")
+			IsXbox=true;
+		else if(sConsoleID=="Playstation 2")
+			IsPS2=true;
+		else if(sConsoleID=="Gamecube")
+			IsGC=true;
+		else if(sConsoleID=="PSP")
+			IsPSP=true;
 		
 		// Never let them through if they arent a console
 		if(!IsXbox && !IsPS2 && !IsGC && !IsPSP) return;
 
 		// If this is Xbox, never let them through if they arent sending *to* a console
 		string destconsole=dstmac.substr(0,6);
-		if (IsXbox && destconsole!="0050F2" && destconsole!="000D3A" && 
-			destconsole!="00041F" && destconsole!="00014A" && destconsole!="001315" &&
-			destconsole!="0009BF" && destconsole!="FFFFFF") return;
+		sConsoleID=m_cConf->GetConsoleID(destconsole);
+		if(IsXbox && sConsoleID=="")
+			return;
 			
 		// Do we need to DHCP this?
 		if (srcport==68)
@@ -1660,10 +1725,17 @@ CKaiEngine::HandleDHCPQuery (string console, string srcmac,
 	
 	// Identify IP segment from device class
 	unsigned int uiIPSegment;
-		if(console == "0050F2" || console == "000D3A") uiIPSegment=252; 
-			else if(console == "00041F" || console=="001315") uiIPSegment=253;
-				else if (console == "0009BF") uiIPSegment=254;
-					else return;
+	string sConsoleID;
+	
+	sConsoleID=m_cConf->GetConsoleID(console);
+	if(sConsoleID=="Xbox")
+		uiIPSegment=252;
+	else if(sConsoleID=="Playstation 2")
+		uiIPSegment=253;
+	else if(sConsoleID=="Gamecube")
+		uiIPSegment=254;
+	else
+		return;
 	
 	// Get transaction ID from frame
 	u_char trans_id[4];
@@ -1758,13 +1830,15 @@ CKaiEngine::HandleFrame (string console, string dstmac, string srcmac,
     int psize = packet_size + 2;
     u_char newbuf[psize];
     char Opcode;
+    string sConsoleID;
 	
+	sConsoleID=m_cConf->GetConsoleID(console);
 	// Set byte 0 of outgoing based on console
-	if (console=="0050F2" || console=="000D3A") 
+	if(sConsoleID=="Xbox")
 		Opcode = m_sCurrentArena.empty () ? 'X' : 'R'; // Box
-	else if (console=="0009BF") 
+	else if (sConsoleID=="Gamecube") 
 		Opcode = m_sCurrentArena.empty () ? 'Y' : 'S'; // Cube
-	else if (console=="00041F" || console=="00014A" || console=="001315") 
+	else if ((sConsoleID=="Playstation 2") || (sConsoleID=="PSP"))
 		Opcode = m_sCurrentArena.empty () ? 'p' : 'q'; // PS2 / PSP    
 	else return;
 	
@@ -1848,32 +1922,20 @@ CKaiEngine::HandleFrame (string console, string dstmac, string srcmac,
 					c = m_cMessengerContacts[i];
 					if (c->m_iState == 1)
 					{
-						if (!c->m_sIPAddress.empty ())
-						{
-							m_cUOrb->RelayPacket(newbuf, psize, c->m_sIPAddress, c->m_iPort);
-						}
+						if(c->m_bUseDeep)
+							m_cUOrb->RelayPacket(newbuf, psize, c->m_sDeepIP, c->m_iDeepPort, true);
 						else
-						{
-							m_cUOrb->RelayPacket(newbuf, psize, c->m_sDeepIP, c->m_iDeepPort);
-						}
+							m_cUOrb->RelayPacket(newbuf, psize, c->m_sIPAddress, c->m_iPort, false);
 					}
 				}
 			}
 			else
 			{
 				// Identified target
-				if (!c->m_sIPAddress.empty ())
-				{
-					m_cUOrb->RelayPacket (newbuf, psize,
-							      c->m_sIPAddress,
-							      c->m_iPort);
-				}
-				else
-				{
-					m_cUOrb->RelayPacket (newbuf, psize,
-							      c->m_sDeepIP,
-							      c->m_iDeepPort);
-				}
+				if(c->m_bUseDeep)
+					m_cUOrb->RelayPacket (newbuf, psize,c->m_sDeepIP,c->m_iDeepPort,true);
+				else			
+					m_cUOrb->RelayPacket (newbuf, psize,c->m_sIPAddress,c->m_iPort,false);
 			}
 		}
 	}
@@ -2026,29 +2088,24 @@ CKaiEngine::HandleFrame (string console, string dstmac, string srcmac,
 					if ( bProcess )
 					{						
                         // Send RAW over internet
-                        if (!a->m_sIPAddress.empty())
-                        {
-                            m_cUOrb->RelayArenaPacket(newbuf, psize, a->m_sIPAddress,
-                             a->m_iPort);
+                        		if(a->m_bUseDeep)
+                        			m_cUOrb->RelayArenaPacket(newbuf,psize,a->m_sDeepIP,
+                        								 a->m_iDeepPort, true);
+                        		else
+                            		m_cUOrb->RelayArenaPacket(newbuf, psize, a->m_sIPAddress,
+                             							 a->m_iPort, false);
+                    }
+                }
                         }
                         else
                         {
-                            // TODO: Deep stuff
-                        }
-                    }
-                }
-            }
-			else
-			{
-				if (!a->m_sIPAddress.empty())
-				{
-					m_cUOrb->RelayArenaPacket (newbuf, psize, a->m_sIPAddress,
-                                           a->m_iPort);
-				}
-				else
-				{
-					// TODO: Deep stuff
-				}
+						if(a->m_bUseDeep)
+                        			m_cUOrb->RelayArenaPacket(newbuf,psize,a->m_sDeepIP,
+                        								 a->m_iDeepPort, true);
+						else
+							m_cUOrb->RelayArenaPacket (newbuf, psize, a->m_sIPAddress,
+                                     					  a->m_iPort, a->m_bUseDeep);
+	
 			}
 		}
     }

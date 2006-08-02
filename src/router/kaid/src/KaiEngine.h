@@ -3,7 +3,7 @@
 
 #include <iostream>
 #include <vector>
-#include "../../libpcap/pcap.h"
+#include "libpcap/pcap.h"
 #include <pthreadcc.h>
 #include <socketcc.h>
 #include <sys/time.h>
@@ -22,6 +22,7 @@ class CPktSnifferThread;
 class COrbStreamThread;
 class COrbDgramThread;
 class CConfigFile;
+class CPersistFile;
 
 class CKaiDevice
 {
@@ -71,6 +72,7 @@ class CKaiEngine:public ThreadBase
 		string m_sStoredPrivs;
 		virtual ~ CKaiEngine ();
 
+		CPersistFile *Persist;
 		void verbositylog(int level, string sSection, string sMessage);
 		string m_strStatusCache, m_sCurrentArena, m_sLastVectorChange;
 		string m_sStoredAdmins, m_sChatMode, m_sReachable;
@@ -127,7 +129,9 @@ class CKaiEngine:public ThreadBase
 		void AddLocalDevice(string mac);
 		void OnTimer (unsigned int id);
 		int MyPort ();
-			IPAddress & MyIP ();
+		IPAddress & MyIP ();
+		int MyDeepPort ();
+		IPAddress & MyDeepIP ();
 		void RequeryMessengerConnections ();
 		void CleanMessengerContacts ();
 		CArenaItem* WhoHasDevice (string device);
