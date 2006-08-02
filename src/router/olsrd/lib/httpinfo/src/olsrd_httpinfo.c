@@ -61,9 +61,7 @@
 #include "olsrd_httpinfo.h"
 #include "admin_interface.h"
 #include "html.h"
-#ifndef SVEN_OLA
 #include "gfx.h"
-#endif
 
 #ifdef OS
 #undef OS
@@ -208,13 +206,10 @@ struct tab_entry tab_entries[] =
     {"Admin", "admin", build_admin_body, OLSR_TRUE},
 #endif
     {"About", "about", build_about_body, OLSR_TRUE},
-#ifndef SVEN_OLA
     {"FOO", "cfgfile", build_cfgfile_body, OLSR_FALSE},
-#endif
     {NULL, NULL, NULL}
   };
 
-#ifndef SVEN_OLA
 struct static_bin_file_entry static_bin_files[] =
   {
     {"favicon.ico", favicon_ico, 1406/*favicon_ico_len*/},
@@ -222,7 +217,6 @@ struct static_bin_file_entry static_bin_files[] =
     {"grayline.gif", grayline_gif, 43/*grayline_gif_len*/},
     {NULL, NULL, 0}
   };
-#endif
 
 struct static_txt_file_entry static_txt_files[] =
   {
@@ -424,7 +418,6 @@ parse_http_request(int fd)
       int i = 0;
       int y = 0;
 
-#ifndef SVEN_OLA
       while(static_bin_files[i].filename)
 	{
 	  if(FILENREQ_MATCH(filename, static_bin_files[i].filename))
@@ -442,7 +435,6 @@ parse_http_request(int fd)
 	}
 
       i = 0;
-#endif
 
       while(static_txt_files[i].filename)
 	{
@@ -1188,7 +1180,6 @@ build_about_body(char *buf, olsr_u32_t bufsize)
   return size;
 }
 
-#ifndef SVEN_OLA
 int
 build_cfgfile_body(char *buf, olsr_u32_t bufsize)
 {
@@ -1216,7 +1207,7 @@ build_cfgfile_body(char *buf, olsr_u32_t bufsize)
  
   return size;
 }
-#endif
+
 
 olsr_bool
 check_allowed_ip(union olsr_ip_addr *addr)
