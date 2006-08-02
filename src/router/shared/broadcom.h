@@ -122,6 +122,8 @@ enum
 extern void Initnvramtab (void);
 extern void prefix_ip_get (char *name, char *buf, int type);
 
+extern int has_mimo(void);
+
 
 /* for index */
 extern void ej_show_index_setting (int eid, webs_t wp, int argc, char_t ** argv);

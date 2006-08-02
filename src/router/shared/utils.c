@@ -383,6 +383,13 @@ internal_getRouterBrand ()
 #endif
 
 }
+int has_mimo()
+{
+if (nvram_match("wl0_phytype","n"))
+    return 1;
+return 0;
+}
+
 static int router_type = -1;
 int
 getRouterBrand ()
