@@ -14,9 +14,9 @@
 #ifndef _epivers_h_
 #define _epivers_h_
 
-#ifdef	linux
-#include <linux/config.h>
-#endif
+//#ifdef	linux
+//#include <linux/config.h>
+//#endif
 
 /* Vendor Name, ASCII, 32 chars max */
 #ifdef COMPANYNAME
