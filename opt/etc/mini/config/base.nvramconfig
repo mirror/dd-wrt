@@ -172,6 +172,7 @@
  "wl_net_mode"  "802.11g mode"  "WLNETMODE"  "6" "a-only" "disabled"  "mixed"  "b-only"  "g-only"  "speedbooster"  "FALSE" "0"  
  "wl_turbo" "Turbo" "CHOICE" "2" "0" "1" "FALSE" "0"
  "wl_gmode_protection"  "54g Protection"  "CHOICE" "2"  "off"  "auto"  "FALSE" "0"  
+ "wl_nmode_protection"  "54g Protection"  "CHOICE" "2"  "off"  "auto"  "FALSE" "0"  
  "wl_frameburst"  "Frame Bursting"  "CHOICE" "2"  "off"  "on"  "FALSE" "3"   
  "wl_plcphdr"  "Preamble Type"  "CHOICE" "3"  "long"  "short" "auto" "FALSE" "0"  
  "wl_phytype"  "Radio Band"  "CHOICE" "3"  "a"  "b"  "g"  "TRUE" "0"  
