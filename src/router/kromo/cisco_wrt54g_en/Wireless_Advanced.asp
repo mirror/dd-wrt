@@ -4,6 +4,10 @@
 
 document.title = "<% nvram_get("router_name"); %>" + wl_adv.titl;
 
+
+var wl_phytype = '<% nvram_get("wl0_phytype"); %>';
+var wl_net_mode = '<% nvram_get("wl_net_mode"); %>';
+
 function initWlTimer(radio_on_time)
 {
 	var color_red='#FF0000';
@@ -110,6 +114,37 @@ function computeWlTimer()
 //	alert("radio_on_time : " + radio_on_time);
 	return radio_on_time;
 }
+function create_nrate(num,F)
+{
+	var bw20 = new Array("6.5", "13", "19.5", "26", "39", "52", "58.5", "65", "13", "26", "39", "52", "78", "104", "117", "130");		
+	var bw40 = new Array("13.5", "27", "40.5", "54", "81", "108", "121.5", "135", "27", "54", "81", "108", "162", "216", "243", "270");
+	var index = '<% nvram_get("wl_nmcsidx"); %>';
+	
+
+	F.wl_nmcsidx[0] = new Option(share.auto);
+	F.wl_nmcsidx[0].value = "-1";
+
+	if(num == 0 || num == 20) {
+	    for(i=0;i<bw20.length;i++) {
+		F.wl_nmcsidx[i+1] = new Option(i+" - "+bw20[i]+"Mbps ");
+		F.wl_nmcsidx[i+1].value = i;
+	    }
+	}
+	else {
+	    for(i=0;i<bw40.length;i++) {
+		F.wl_nmcsidx[i+1] = new Option(i+" - "+bw40[i]+"Mbps");
+		F.wl_nmcsidx[i+1].value = i;
+	    }
+	}
+
+	if(index == "-2" && ('<% nvram_get("wl_net_mode"); %>' == "g-only" || '<% nvram_get("wl_net_mode"); %>' == "b-only")) {
+		F.wl_nmcsidx[0].selected = true;
+		choose_disable(F.wl_nmcsidx);
+	}
+	else
+		F.wl_nmcsidx[parseInt(index)+1].selected = true;
+}
+
 
 function to_submit(F) {
 	F.wl_nmode_protection.value = F.wl_gmode_protection.value;
@@ -131,6 +166,11 @@ addEvent(window, "load", function() {
 	
 	show_layer_ext(document.wireless.radio_timer_enable, 'radio', <% nvram_else_match("radio_timer_enable", "1", "1", "0"); %> == 1);
 	initWlTimer('<% nvram_get("radio0_on_time"); %>');
+	if(document.wireless.wl_nmcsidx)
+		create_nrate('<% nvram_get("wl_nbw"); %>',document.wireless);
+	if(wl_phytype == 'g')	choose_disable(document.wireless.wl_nmcsidx);
+	if(wl_net_mode == 'n-only')	choose_disable(document.wireless.wl_rate);
+
 });
 		</script>
 	</head>
@@ -193,6 +233,12 @@ addEvent(window, "load", function() {
 										<option value="12" <% nvram_selected("wl_rateset", "12"); %> />1-2 Mbps</option>
 										<script type="text/javascript">document.write("<option value=\"default\" <% nvram_selected("wl_rateset", "default", "js"); %>>" + share.deflt + "</option>");</script>
 										<script type="text/javascript">document.write("<option value=\"all\" <% nvram_selected("wl_rateset", "all", "js"); %>>" + share.all + "</option>");</script>
+									</select>
+									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.deflt + ")")</script></span>
+								</div>
+								<div class="setting">
+									<div class="label">MIMO <% tran("wl_adv.label3"); %></div>
+									<select name="wl_nmcsidx">
 									</select>
 									<span class="default"><script type="text/javascript">document.write("(" + share.deflt + ": " + share.deflt + ")")</script></span>
 								</div>
