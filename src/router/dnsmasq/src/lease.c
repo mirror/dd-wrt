@@ -28,7 +28,7 @@ void lease_init(struct daemon *daemon, time_t now)
 
   if (daemon->options & OPT_LEASE_RO)
     {
-      /* run <lease_change_script> init once to get the
+      /* run "<lease_change_script> init" once to get the
 	 initial state of the database. If leasefile-ro is
 	 set without a script, we just do without any 
 	 lease database. */
@@ -40,9 +40,6 @@ void lease_init(struct daemon *daemon, time_t now)
       strcpy(daemon->dhcp_buff, daemon->lease_change_command);
       strcat(daemon->dhcp_buff, " init");
       leasestream = popen(daemon->dhcp_buff, "r");
-
-      if (!leasestream)
-	die(_("cannot run lease-init script: %s"), NULL);
     }
   else
     {
@@ -50,7 +47,7 @@ void lease_init(struct daemon *daemon, time_t now)
       leasestream = daemon->lease_stream = fopen(daemon->lease_file, "a+");
       
       if (!leasestream)
-	die(_("cannot open or create leases file: %s"), NULL);
+	die(_("cannot open or create lease file %s: %s"), daemon->lease_file);
       
       flags = fcntl(fileno(leasestream), F_GETFD);
       if (flags != -1)
@@ -62,47 +59,66 @@ void lease_init(struct daemon *daemon, time_t now)
   
   /* client-id max length is 255 which is 255*2 digits + 254 colons 
      borrow DNS packet buffer which is always larger than 1000 bytes */
-  while (fscanf(leasestream, "%lu %255s %16s %255s %764s",
-		&ei, daemon->dhcp_buff2, daemon->namebuff, 
-		daemon->dhcp_buff, daemon->packet) == 5)
-    {
-      hw_len = parse_hex(daemon->dhcp_buff2, (unsigned char *)daemon->dhcp_buff2, DHCP_CHADDR_MAX, NULL, &hw_type);
-      /* For backwards compatibility, no explict MAC address type means ether. */
-      if (hw_type == 0 && hw_len != 0)
-	hw_type = ARPHRD_ETHER;
-
-      addr.s_addr = inet_addr(daemon->namebuff);
-
-      /* decode hex in place */
-      clid_len = 0;
-      if (strcmp(daemon->packet, "*") != 0)
-	clid_len = parse_hex(daemon->packet, (unsigned char *)daemon->packet, 255, NULL, NULL);
-      
-      if (!(lease = lease_allocate(addr)))
-	die (_("too many stored leases"), NULL);
-      /* not actually new */
-      lease->new = 0;
-
+  if (leasestream)
+    while (fscanf(leasestream, "%lu %255s %16s %255s %764s",
+		  &ei, daemon->dhcp_buff2, daemon->namebuff, 
+		  daemon->dhcp_buff, daemon->packet) == 5)
+      {
+	hw_len = parse_hex(daemon->dhcp_buff2, (unsigned char *)daemon->dhcp_buff2, DHCP_CHADDR_MAX, NULL, &hw_type);
+	/* For backwards compatibility, no explict MAC address type means ether. */
+	if (hw_type == 0 && hw_len != 0)
+	  hw_type = ARPHRD_ETHER;
+	
+	addr.s_addr = inet_addr(daemon->namebuff);
+	
+	/* decode hex in place */
+	clid_len = 0;
+	if (strcmp(daemon->packet, "*") != 0)
+	  clid_len = parse_hex(daemon->packet, (unsigned char *)daemon->packet, 255, NULL, NULL);
+	
+	if (!(lease = lease_allocate(addr)))
+	  die (_("too many stored leases"), NULL);
+	/* not actually new */
+	lease->new = 0;
+	
 #ifdef HAVE_BROKEN_RTC
-      if (ei != 0)
-	lease->expires = (time_t)ei + now;
-      else
-	lease->expires = (time_t)0;
-      lease->length = ei;
+	if (ei != 0)
+	  lease->expires = (time_t)ei + now;
+	else
+	  lease->expires = (time_t)0;
+	lease->length = ei;
 #else
-      /* strictly time_t is opaque, but this hack should work on all sane systems,
-	 even when sizeof(time_t) == 8 */
-      lease->expires = (time_t)ei;
+	/* strictly time_t is opaque, but this hack should work on all sane systems,
+	   even when sizeof(time_t) == 8 */
+	lease->expires = (time_t)ei;
 #endif
-
-      lease_set_hwaddr(lease, (unsigned char *)daemon->dhcp_buff2, (unsigned char *)daemon->packet, hw_len, hw_type, clid_len);
-
-      if (strcmp(daemon->dhcp_buff, "*") !=  0)
-	lease_set_hostname(lease, daemon->dhcp_buff, daemon->domain_suffix, 0);
-    }
-
+	
+	lease_set_hwaddr(lease, (unsigned char *)daemon->dhcp_buff2, (unsigned char *)daemon->packet, hw_len, hw_type, clid_len);
+	
+	if (strcmp(daemon->dhcp_buff, "*") !=  0)
+	  lease_set_hostname(lease, daemon->dhcp_buff, daemon->domain_suffix, 0);
+      }
+  
   if (!daemon->lease_stream)
-    pclose(leasestream);
+    {
+      int rc = 0;
+
+      /* shell returns 127 for "command not found", 126 for bad permissions. */
+      if (!leasestream || (rc = pclose(leasestream)) == -1 || WEXITSTATUS(rc) == 127 || WEXITSTATUS(rc) == 126)
+	{
+	  if (WEXITSTATUS(rc) == 127)
+	    errno = ENOENT;
+	  else if (WEXITSTATUS(rc) == 126)
+	    errno = EACCES;
+	  die(_("cannot run lease-init script %s: %s"), daemon->lease_change_command);
+	}
+      
+      if (WEXITSTATUS(rc) != 0)
+	{
+	  sprintf(daemon->dhcp_buff, "%d", WEXITSTATUS(rc));
+	  die(_("lease-init script returned exit code %s"), daemon->dhcp_buff);
+	}
+    }
 
   /* Some leases may have expired */
   file_dirty = 0;
