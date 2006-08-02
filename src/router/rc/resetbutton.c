@@ -210,8 +210,7 @@ period_check (int sig)
   int push;
   switch (brand)
   	{
-  	case ROUTER_BUFFALO_WHRG54S:
-  	case ROUTER_BUFFALO_HP_WHRG54S:
+  	case ROUTER_BUFFALO_WHRG54S: // ROUTER_BUFFALO_HP_WHRG54S too
 		push = 0x01;  //gpio 0
   		break;
   	case ROUTER_ASUS_WL500G_PRE:
