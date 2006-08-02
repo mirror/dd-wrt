@@ -10,6 +10,7 @@ CArenaItem::CArenaItem()
 	m_iRecast = m_iDeepPort = m_iCheckCounter = m_iPort = m_iLastStatus = 0;
     m_iLastPing = m_iLastPlayers = 0;
 	m_sContactName = m_sDeepIP = m_sIPAddress = "";
+	m_bUseDeep = m_bDeepUnknown = false;
 	m_vsDevices.clear();
 	m_ucGCNCheck[0]=0;
 	m_ucGCNCheck[1]=0;
@@ -26,7 +27,10 @@ unsigned int CArenaItem::Ping()
 	m_tvLastQueryResponse = Now();
     m_tvLastCompletePing = m_tvLastQueryResponse;
     daPing = TimeDelta(m_tvLastConnectionQuery);
-	return (daPing < 0 ? 0 : daPing);
+  // AhMan  20051112  Bug fix  daPing can never be a negative number as it's unsigned
+  // if the ping is over 1000 sec, it may as well be bad
+  //	return (daPing < 0 ? 0 : daPing);
+  return (daPing > 1000000 ? 0 : daPing);
 }
 
 int CArenaItem::FindDevice(string device)

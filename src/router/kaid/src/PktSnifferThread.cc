@@ -8,9 +8,12 @@
 #include <sys/ioctl.h>
 #include <net/bpf.h>
 #endif
+#ifdef PLATFORM_macosx_jaguar
+#include <sys/errno.h>
+#endif
 
-#include "../../libpcap/pcap.h"
-#include "../../libpcap/pcap-bpf.h"
+#include "libpcap/pcap.h"
+#include "libpcap/pcap-bpf.h"
 #include "PktSnifferThread.h"
 #include "Kaid.h"
 #include "KaiEngine.h"
@@ -158,6 +161,7 @@ void *CPktSnifferThread::Execute()
 {
 	struct pcap_pkthdr pkthdr;	
 	u_char* packet;
+	struct timeval timeout;
 	try
 	{
 		
@@ -165,10 +169,16 @@ void *CPktSnifferThread::Execute()
 			#ifndef PLATFORM_macosx_jaguar
 			fd_set rfds;
 			int ret;
-			FD_ZERO(&rfds);
-			FD_SET(pcap_fileno(m_ptHandle), &rfds);
 			
-			ret = select(pcap_fileno(m_ptHandle) + 1, &rfds, NULL, NULL, NULL);
+			// Changed to 1-second timeout to allow clean shutdown - MF
+			do
+			{
+				timeout.tv_sec=1;
+				timeout.tv_usec=0;
+				FD_ZERO(&rfds);
+				FD_SET(pcap_fileno(m_ptHandle), &rfds);
+				ret = select(pcap_fileno(m_ptHandle) + 1, &rfds, NULL, NULL, &timeout);
+			} while((ret==0) && (!m_bTerminate));
 			if(m_bTerminate)
 				return NULL;
 			if( ret == -1)
@@ -231,7 +241,8 @@ void CPktSnifferThread::LockConsoles(string MacAddressList)
 		m_cParent->verbositylog(2,"PCAP","Applying libpcap filter ("+m_sFilter+")...");
 		check = pcap_compile(m_ptHandle, &filter, pcapfilt, 0, net);
 		if (check == -1)
-			throw errInvalidFilter;
+			return;
+			//throw errInvalidFilter;
 	
 		pcap_freecode(&filter);
 	}

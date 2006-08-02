@@ -16,6 +16,8 @@ class CArenaItem
 		char 			m_gcnLastCheck[2]; // GCN? Gamecube stuff?
 
 		string 			m_sDeepIP, m_sIPAddress, m_sContactName;
+		bool			m_bUseDeep;
+		bool			m_bDeepUnknown;
 		vector<string>  m_vsDevices;
 
 		struct timeval	m_tvLastCompletePing, m_tvLastQueryResponse;
