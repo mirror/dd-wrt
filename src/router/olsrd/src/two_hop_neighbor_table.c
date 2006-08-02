@@ -236,7 +236,6 @@ olsr_lookup_two_hop_neighbor_table_mid(union olsr_ip_addr *dest)
 
 
 
-#ifndef SVEN_OLA
 /**
  *Print the two hop neighbor table to STDOUT.
  *
@@ -289,4 +288,3 @@ olsr_print_two_hop_neighbor_table()
 	}
     }
 }
-#endif

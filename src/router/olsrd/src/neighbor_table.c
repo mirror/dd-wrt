@@ -468,7 +468,6 @@ olsr_time_out_neighborhood_tables()
  *
  *@return nada
  */
-#ifndef SVEN_OLA
 void
 olsr_print_neighbor_table()
 {
@@ -518,7 +517,6 @@ olsr_print_neighbor_table()
         }
     }
 }
-#endif
 
 
 
