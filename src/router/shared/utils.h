@@ -89,7 +89,7 @@ X X X X X X X X   R R R P N N N N   = 0xXXXX
 #define ROUTER_WZRG300N 0x1504
 
 //Linksys WRT300N v1
-#define ROUTER_WRT300N 0x160f
+#define ROUTER_WRT300N 0x1616
 
 #define NVROUTER "DD_BOARD"
 
