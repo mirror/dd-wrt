@@ -1,0 +1,69 @@
+README-OLSR
+Modified: 05/17/2005
+
+#========================================================================
+#  These programs NEVER meet your needs.  In fact, they can cause
+#  serious damages to your precious things, including, but not being
+#  limited to, time, money, effort, computer files, information,
+#  hardware, software, and other things that you value.
+#
+#  The author DOES NOT request or even suggest that you use any of these
+#  programs. You understand clearly that you are taking a big risk
+#  in using these programs and that you are completely (100%) liable
+#  for using them.
+#
+#  You further understand that although you can use these programs
+#  without paying the author or the employer of the author, you
+#  do not own them.  You will give proper credits to the
+#  author and his employer whenever you use them; i.e.,
+#  you will never pretend that you are the author of these programs.
+#  If you make any changes to them, you will send a copy
+#  of each modified programs to the author.  You will also NEVER
+#  sell or give any of them to anyone else without the approval of the
+#  author or his employer.
+
+
+Parser: OLSRConnect.py
+Description: This parser has been written to interface with a plugin for
+	     the version 4.9 OLSR from olsr.org.  The plugin can also be 
+	     found in this directory.  
+
+Parser for OLSR: 	OLSRConnect.py
+Plugin for OLSRv4.9:	olsr_v4.9-pgraph-plugin
+
+Usage:
+	1) Copy the "olsr_v4.9-pgraph-plugin" directory from this distribution
+	   to the "/<your OLSRv4.9 path>/lib/."
+
+	2) cd to the "/<your OLSRv4.9 path>/lib/." directory, 
+           run "make" and "make install"
+	   This will create the "olsrd_pgraph.so.1.1" file and install it. 
+
+	3) Modify the "/etc/olsrd.conf" file of the system you wish to
+	   monitor from to load the plugin. 
+	   Add the line: "LoadPlugin "olsrd_pgraph.so.1.1" {}"
+
+	4) The plugin actually allows any host to connect regardless of
+           what is specified in the olsrd.conf file.  This is currently 
+           done for testing purposes and due to the fact that the "Host" 
+           parameter in the olsrd.conf file never worked.  
+
+           # By default only localhost will be able to connect to the IPC
+	   # system of the olsrd process so if you are not going to be 
+	   # running pgraph locally, modify the "Host" variable of the 
+	   # "IpcConnect" structure in the "/etc/olsrd.conf" file to 
+	   # reflect the IP address of the host you will be connecting from. 
+
+	5) Start olsrd and make sure that the plugin has loaded correctly.
+
+	6) On the machine you will be running pgraph from, use the 
+	   "OLSRConnect.py" parser to connect to the olsrd plugin and pipe
+	   the output to pgraph. 
+
+Usage: (note the use of the backquote "`") 
+"python  OLSRConnect.py <ip of machine running plugin> 2004 | `python pgraph.py`"
+
+- Where the "2004" above is the default port that the plugin will be listening on.
+
+To kill pgraph when using the parser:
+- Hit "Ctl-C" in the terminal. 
